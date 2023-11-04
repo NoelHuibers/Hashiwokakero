@@ -4,6 +4,12 @@ use clap::{App, Arg};
 use std::fs::File;
 use std::io::{self, Read};
 
+mod parse_input;
+mod printer;
+
+use parse_input::{GameBoard, parse_input};
+use printer::print_infos;
+
 // To run an example from root: cargo run --package backend -- --input [FILE PATH]
 fn main() {
     let matches = App::new("File Reader")
@@ -19,9 +25,10 @@ fn main() {
 
     let input_file = matches.value_of("input").unwrap();
 
-    match read_file(input_file) {
-        //TODO: Parse the content @Laura
-        Ok(contents) => println!("File contents:\n{}", contents),
+    match parse_input(input_file) {
+        Ok(game_board) => {
+            print_infos(&game_board);
+        }
         Err(err) => eprintln!("Error: {}", err),
     }
 }
@@ -33,3 +40,4 @@ fn read_file(file_path: &str) -> io::Result<String> {
 
     Ok(contents)
 }
+
