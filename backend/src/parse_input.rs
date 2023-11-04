@@ -52,12 +52,15 @@ fn parse_rows_and_cols(header: &str) -> io::Result<(usize, usize)> {
         "Missing number of columns",
     ))?;
 
-    let rows = rows_str.parse().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-    let cols = cols_str.parse().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let rows = rows_str
+        .parse()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let cols = cols_str
+        .parse()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
     Ok((rows, cols))
 }
-
 
 fn parse_islands_and_bridges(lines: &[&str]) -> io::Result<(Vec<Island>, Vec<Bridge>)> {
     let mut islands = Vec::new();
