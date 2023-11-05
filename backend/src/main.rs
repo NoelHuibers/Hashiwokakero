@@ -4,6 +4,7 @@ use clap::{command, Arg};
 
 mod dfs;
 mod generate_clauses;
+mod generator;
 mod parse_input;
 mod reconstruct;
 mod solver;
@@ -114,5 +115,7 @@ fn main() {
             eprint!("Error: Use either 'encode' or 'solve' as mode");
         }
     }
+
+    generator::generator(6);
 }
 
