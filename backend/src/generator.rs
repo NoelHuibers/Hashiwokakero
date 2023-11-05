@@ -14,8 +14,9 @@ pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
     grid[x][y] = degree;
 
     let new_points = get_new_points(degree);
+    println!("New points: {}", new_points);
     if new_points == 1 {
-        connect_one(&mut grid, x, y, grid_size);
+        connect_one(&mut grid, x, y, grid_size, degree);
     } else if new_points == 2 {
         connect_two(&mut grid, x, y, grid_size, degree);
     } else if new_points == 3 {
@@ -44,15 +45,18 @@ fn get_max_degree(grid_size: usize, x: usize, y: usize, min: u8) -> u8 {
 fn get_new_points(degree: u8) -> u8 {
     match degree {
         1 => 1,
-        2 => rand::thread_rng().gen_range(1..2),
-        3 | 4 => rand::thread_rng().gen_range(2..degree),
-        5 | 6 => rand::thread_rng().gen_range(3..degree),
+        2 => rand::thread_rng().gen_range(1..=2),
+        3 => rand::thread_rng().gen_range(2..=3),
+        4 => rand::thread_rng().gen_range(2..=4),
+        5 | 6 => rand::thread_rng().gen_range(3..=4),
         7 | 8 => 4,
         _ => 0,
     }
 }
 
-fn connect_one(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize) {
+fn connect_one(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
+    println!("Connecting one with {} degree", degree);
+    println!("x: {}, y: {}", x, y);
     let mut rng = rand::thread_rng();
 
     let axis = rng.gen_bool(0.5);
@@ -62,31 +66,85 @@ fn connect_one(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize) {
     let second_axis = generate_other_axis(other_axis, grid_size);
 
     if axis {
-        grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 1);
+        if degree == 1 {
+            grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 1);
+        } else {
+            grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 2);
+        }
     } else {
-        grid[second_axis][first_axis] = get_max_degree(grid_size, first_axis, second_axis, 1);
+        if degree == 1 {
+            grid[second_axis][first_axis] = get_max_degree(grid_size, first_axis, second_axis, 1);
+        } else {
+            grid[second_axis][first_axis] = get_max_degree(grid_size, first_axis, second_axis, 2);
+        }
     };
 }
 
-//TODO: Make this right and not just a copy of connect_two
-fn connect_two(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, _degree: u8) {
+//FIXME: Make this right if its an edge point.
+fn connect_two(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
+    println!("Connecting two with {} degree", degree);
+    println!("x: {}, y: {}", x, y);
     let mut rng = rand::thread_rng();
 
-    let axis = rng.gen_bool(0.5);
-    let first_axis = if axis { x } else { y };
-    let other_axis = if axis { y } else { x };
+    let first_random_number = rng.gen_range(0..4);
 
-    let second_axis = generate_other_axis(other_axis, grid_size);
+    let mut second_random_number;
+    loop {
+        second_random_number = rng.gen_range(0..4);
+        if second_random_number != first_random_number {
+            break;
+        }
+    }
 
-    if axis {
-        grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 2);
-    } else {
-        grid[second_axis][first_axis] = get_max_degree(grid_size, first_axis, second_axis, 2);
-    };
+    for i in 0..2 {
+        let mut first_axis = x;
+        let mut second_axis = y;
+
+        let compared_number = if i == 0 {
+            first_random_number
+        } else {
+            second_random_number
+        };
+
+        if compared_number == 0 {
+            if x + 1 == grid_size - 1 {
+                first_axis = x + 1;
+            } else {
+                first_axis = rng.gen_range(x + 1..grid_size);
+            }
+        }
+        if compared_number == 1 {
+            if x == 1 {
+                first_axis = 0;
+            } else {
+                first_axis = rng.gen_range(0..x);
+            }
+        }
+        if compared_number == 2 {
+            if y + 1 == grid_size - 1 {
+                second_axis = y + 1;
+            } else {
+                second_axis = rng.gen_range(y + 1..grid_size);
+            }
+        }
+        if compared_number == 3 {
+            if y == 1 {
+                second_axis = 0;
+            } else {
+                second_axis = rng.gen_range(0..y);
+            }
+        }
+        println!("New point:");
+        println!("x: {}, y: {}", first_axis, second_axis);
+        grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 1)
+    }
 }
 
 //TODO: Make this right and not just a copy of connect_one
-fn connect_three(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, _degree: u8) {
+fn connect_three(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
+    println!("Connecting three with {} degree", degree);
+    println!("x: {}, y: {}", x, y);
+    println!("NOT IMPLEMENTED");
     let mut rng = rand::thread_rng();
 
     let axis = rng.gen_bool(0.5);
@@ -118,25 +176,25 @@ fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, d
             if x + 1 == grid_size - 1 {
                 first_axis = x + 1;
             } else {
-                first_axis = rng.gen_range(x + 1..grid_size - 1);
+                first_axis = rng.gen_range(x + 1..grid_size);
             }
         } else if i == 1 {
             if x == 1 {
                 first_axis = 0;
             } else {
-                first_axis = rng.gen_range(0..x - 1);
+                first_axis = rng.gen_range(0..x);
             }
         } else if i == 2 {
             if y + 1 == grid_size - 1 {
                 second_axis = y + 1;
             } else {
-                second_axis = rng.gen_range(y + 1..grid_size - 1);
+                second_axis = rng.gen_range(y + 1..grid_size);
             }
         } else if i == 3 {
             if y == 1 {
                 second_axis = 0;
             } else {
-                second_axis = rng.gen_range(0..y - 1);
+                second_axis = rng.gen_range(0..y);
             }
         }
 
@@ -160,7 +218,7 @@ fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, d
 fn generate_other_axis(other_axis: usize, grid_size: usize) -> usize {
     let mut second_axis = rand::thread_rng().gen_range(0..grid_size);
     while other_axis == second_axis {
-        second_axis = rand::thread_rng().gen_range(0..grid_size - 1);
+        second_axis = rand::thread_rng().gen_range(0..grid_size);
     }
     second_axis
 }
