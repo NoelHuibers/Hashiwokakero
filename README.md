@@ -50,4 +50,4 @@ To build the project, open a terminal in the project root directory and execute:
 **Florian:**
 
 - [ ] Translate input data into clauses.
-- [ ] Implement parsing functionality for calculating DMAX.
+- [ ] Implement parsing functionality for calculating DIMACS.
