@@ -30,18 +30,24 @@ To build the project, open a terminal in the project root directory and execute:
 
 ## Team Responsibilities
 
-- Noel:
+**Noel:**
 
-  - Initialize the project.
-  - Develop the Command Line Interface (CLI) for our application.
-  - Implement SAT-Solver integration and the ability to select the appropriate solver based on input data.
+- [x] Initialize the project.
+- [x] Develop the Command Line Interface (CLI) for our application.
+- [ ] CLI for displaying solution.
+- [x] Implement SAT-Solver integration and the ability to select the appropriate solver based on input data.
+- [ ] Frontend Leptos/Yew integration.
+- [ ] Generator
 
-- Laura:
+**Laura:**
 
-  - Handle the parsing of input files.
-  - Establish a data structure for passing input data within the application.
-  - Manage the creation and formatting of output files.
+- [x] Handle the parsing of input files.
+- [x] Establish a data structure for passing input data within the application.
+- [x] Manage the creation and formatting of output files.
+- [ ] Test structure
+- [ ] Benchmarking
 
-- Florian:
-  -Translate input data into clauses.
-  -Implement parsing functionality for calculating DMAX.
+**Florian:**
+
+- [ ] Translate input data into clauses.
+- [ ] Implement parsing functionality for calculating DMAX.
