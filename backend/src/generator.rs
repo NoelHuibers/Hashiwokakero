@@ -2,6 +2,13 @@ use rand::Rng;
 use std::fs::File;
 use std::io::{Result, Write};
 
+// Enum with corner, edge, normal
+enum Part {
+    Corner,
+    Edge,
+    Normal,
+}
+
 pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
     let mut grid: Vec<Vec<u8>> = vec![vec![0; grid_size]; grid_size];
     //TODO: Use Bridges or maybe a second grid with all blocked cells?
@@ -10,10 +17,11 @@ pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
 
     let x = rand::thread_rng().gen_range(0..grid_size - 1);
     let y = rand::thread_rng().gen_range(0..grid_size - 1);
-    let degree = get_max_degree(grid.len(), x, y, 1);
+    let part = get_part(x, y, grid_size);
+    let degree = get_max_degree(&part, 1);
     grid[x][y] = degree;
 
-    let new_points = get_new_points(degree);
+    let new_points = get_new_points(&degree, &part);
     println!("New points: {}", new_points);
     if new_points == 1 {
         connect_one(&mut grid, x, y, grid_size, degree);
@@ -27,22 +35,30 @@ pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
     grid
 }
 
-fn get_max_degree(grid_size: usize, x: usize, y: usize, min: u8) -> u8 {
+fn get_part(x: usize, y: usize, grid_size: usize) -> Part {
     if (x == 0 && y == 0)
         || (x == 0 && y == grid_size - 1)
         || (x == grid_size - 1 && y == 0)
         || (x == grid_size - 1 && y == grid_size - 1)
     {
-        return rand::thread_rng().gen_range(min..=4);
+        return Part::Corner;
     } else if x == 0 || x == grid_size - 1 || y == 0 || y == grid_size - 1 {
-        return rand::thread_rng().gen_range(min..=6);
+        return Part::Edge;
     } else {
-        return rand::thread_rng().gen_range(min..=8);
+        return Part::Normal;
+    }
+}
+
+fn get_max_degree(part: &Part, min: u8) -> u8 {
+    match part {
+        Part::Corner => rand::thread_rng().gen_range(min..=4),
+        Part::Edge => rand::thread_rng().gen_range(min..=6),
+        Part::Normal => rand::thread_rng().gen_range(min..=8),
     }
 }
 
 //FIXME: Overflow error, if degree is 4-6 and its an edge point we cant have 4 connections
-fn get_new_points(degree: u8) -> u8 {
+fn get_new_points(degree: &u8, part: &Part) -> u8 {
     match degree {
         1 => 1,
         2 => rand::thread_rng().gen_range(1..=2),
@@ -66,16 +82,18 @@ fn connect_one(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, de
     let second_axis = generate_other_axis(other_axis, grid_size);
 
     if axis {
+        let part = get_part(first_axis, second_axis, grid_size);
         if degree == 1 {
-            grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 1);
+            grid[first_axis][second_axis] = get_max_degree(&part, 1);
         } else {
-            grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 2);
+            grid[first_axis][second_axis] = get_max_degree(&part, 2);
         }
     } else {
+        let part = get_part(second_axis, first_axis, grid_size);
         if degree == 1 {
-            grid[second_axis][first_axis] = get_max_degree(grid_size, first_axis, second_axis, 1);
+            grid[second_axis][first_axis] = get_max_degree(&part, 1);
         } else {
-            grid[second_axis][first_axis] = get_max_degree(grid_size, first_axis, second_axis, 2);
+            grid[second_axis][first_axis] = get_max_degree(&part, 2);
         }
     };
 }
@@ -136,7 +154,8 @@ fn connect_two(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, de
         }
         println!("New point:");
         println!("x: {}, y: {}", first_axis, second_axis);
-        grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 1)
+        let part = get_part(first_axis, second_axis, grid_size);
+        grid[first_axis][second_axis] = get_max_degree(&part, 1)
     }
 }
 
@@ -154,9 +173,11 @@ fn connect_three(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, 
     let second_axis = generate_other_axis(other_axis, grid_size);
 
     if axis {
-        grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 3);
+        let part = get_part(first_axis, second_axis, grid_size);
+        grid[first_axis][second_axis] = get_max_degree(&part, 3);
     } else {
-        grid[second_axis][first_axis] = get_max_degree(grid_size, first_axis, second_axis, 3);
+        let part = get_part(second_axis, first_axis, grid_size);
+        grid[second_axis][first_axis] = get_max_degree(&part, 3);
     };
 }
 
@@ -203,14 +224,15 @@ fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, d
             i, first_axis, second_axis
         );
 
+        let part = get_part(first_axis, second_axis, grid_size);
         if degree == 7 && alreadyset == false {
-            let new_degree = get_max_degree(grid_size, first_axis, second_axis, 1);
+            let new_degree = get_max_degree(&part, 1);
             grid[first_axis][second_axis] = new_degree;
             if new_degree == 1 {
                 alreadyset = true
             }
         } else {
-            grid[first_axis][second_axis] = get_max_degree(grid_size, first_axis, second_axis, 2)
+            grid[first_axis][second_axis] = get_max_degree(&part, 2)
         }
     }
 }
