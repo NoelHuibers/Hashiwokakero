@@ -11,6 +11,7 @@ members = [
 
     #Internal
     "common",
+    "frontend/tauri",
 ]
 
 [dependencies]

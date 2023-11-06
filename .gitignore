@@ -2,3 +2,6 @@
 /backend/output/*
 .vscode/settings.json
 /node_modules
+/backend/output
+/frontend/target
+/frontend/dist

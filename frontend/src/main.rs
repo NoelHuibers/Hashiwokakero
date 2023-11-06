@@ -1,5 +1,8 @@
+pub mod App;
+
+use crate::App::App;
+use leptos::*;
+
 fn main() {
-    tauri::Builder::default()
-        .run(tauri::generate_context!())
-        .expect("unable to run Tauri application");
+    leptos::mount_to_body(|| view! { <App/> })
 }
