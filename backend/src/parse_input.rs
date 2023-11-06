@@ -111,14 +111,32 @@ fn build_bridges(board: &mut GameBoard) {
 
     // Sort the bridges to ensure order
     bridges.sort_by(|a, b| {
-        if a.from != b.from {
-            a.from.cmp(&b.from)
-        } else {
-            a.to.cmp(&b.to)
-        }
+        let a_sorted = sort_coordinates(a.from, a.to);
+        let b_sorted = sort_coordinates(b.from, b.to);
+        a_sorted.cmp(&b_sorted)
     });
-
-    board.bridges = bridges;
+    
+    // Deduplicate bridges
+    let mut unique_bridges = Vec::new();
+    let mut seen_bridges = BTreeSet::new();
+    
+    for bridge in bridges {
+        let sorted_bridge = sort_coordinates(bridge.from, bridge.to);
+        if seen_bridges.insert(sorted_bridge) {
+            unique_bridges.push(bridge);
+        }
+    }
+    
+    board.bridges = unique_bridges;
+    
+    // Helper function to sort coordinates
+    fn sort_coordinates(coord1: (usize, usize), coord2: (usize, usize)) -> ((usize, usize), (usize, usize)) {
+        if coord1 <= coord2 {
+            (coord1, coord2)
+        } else {
+            (coord2, coord1)
+        }
+    }
 }
 
 
