@@ -3,12 +3,12 @@ extern crate clap;
 use clap::{App, Arg};
 
 mod parse_input;
-mod printer;
 mod solver;
 mod writer;
 
 use parse_input::{parse_input, print_infos};
 
+//TODO: Update clap to 4.4
 // To run an example from root: cargo run --package backend -- --input [FILE PATH]
 fn main() {
     let matches = App::new("File Reader")
