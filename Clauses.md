@@ -1,0 +1,132 @@
+# Concept for SAT-Reduction
+
+## Rule 1
+
+Rule 1.1: There are no more than two bridges in the same direction  
+Rule 1.2: The number on an island must match its outgoing bridges
+
+### variables
+
+We chose the variables to be the possible edges between two connectable islands.
+
+### clauses
+
+We chose clauses to be the restrictions per island.
+
+### Assumtions
+
+We assume to always receive valid games that match the ruleset of the game.
+
+### Cases
+
+#### Bridges with eight possible Bridges
+
+We count bridges using $\lor$ for the upper and lower bound. This way we can force exactly $n$ out of $k$ variables to be true:
+
+$$
+\begin{align*}
+\text{lower bound}\\
+&(x_1 \lor \dots \lor x_k) \land\\
+&(x_2 \lor \dots \lor x_k) \land\\
+&\vdots\\
+&(x_n \lor \dots \lor x_k) \land\\
+\text{upper bound}\\
+&(\neg x_1 \lor \dots \lor \neg x_k) \land\\
+&(\neg x_2 \lor \dots \lor \neg x_k) \land\\
+&\vdots\\
+&(\neg x_{k-n} \lor \dots \lor \neg x_k) \land\\
+\end{align*}
+$$
+
+This results in $k$ clauses with a maximum size of $k \cdot (k-1)$. This is much better than our previous approach (see commit history).
+
+#### Examples
+
+##### Island with Number 4
+
+```
+  ||
+=(4)=
+  ||
+```
+
+Assuming edges are labled from `a` to `h`:
+
+$$
+\begin{align*}
+\text{At least 4 prop variables in positive polarity}\\
+(a \lor b \lor c \lor d \lor e \lor f \lor g \lor h) \land\\
+(b \lor c \lor d \lor e \lor f \lor g \lor h) \land\\
+(c \lor d \lor e \lor f \lor g \lor h) \land\\
+(d \lor e \lor f \lor g \lor h) \land\\
+\text{At least 4 prop variables in negative polarity}\\
+(\neg a \lor \neg b \lor \neg c \lor \neg d \lor \neg e \lor \neg f \lor \neg g \lor \neg h) \land\\
+(\neg b \lor \neg c \lor \neg d \lor \neg e \lor \neg f \lor \neg g \lor \neg h) \land\\
+(\neg c \lor \neg d \lor \neg e \lor \neg f \lor \neg g \lor \neg h) \land\\
+(\neg d \lor \neg e \lor \neg f \lor \neg g \lor \neg h) \land\\
+\end{align*}
+$$
+
+##### Island with Number 5
+
+$$
+\begin{align*}
+\text{At least 5 prop variables in positive polarity}\\
+(a \lor b \lor c \lor d \lor e \lor f \lor g \lor h) \land\\
+(b \lor c \lor d \lor e \lor f \lor g \lor h) \land\\
+(c \lor d \lor e \lor f \lor g \lor h) \land\\
+(d \lor e \lor f \lor g \lor h) \land\\
+(e \lor f \lor g \lor h)\\
+\text{At least 3 prop variables in negative polarity}\\
+(\neg a \lor \neg b \lor \neg c \lor \neg d \lor \neg e \lor \neg f \lor \neg g \lor \neg h) \land\\
+(\neg b \lor \neg c \lor \neg d \lor \neg e \lor \neg f \lor \neg g \lor \neg h) \land\\
+(\neg c \lor \neg d \lor \neg e \lor \neg f \lor \neg g \lor \neg h) \land\\
+\end{align*}
+$$
+
+## Rule 2
+
+1.1: All Islands must be connected  
+1.2: Cycles are possible
+
+A Graph of $n$ Islands needs at least $n-1$ unique Bridges to be connected. Assuming a pair of possible Bridges is called $a, b$ we can use $\lor$ as a constraint for at least one Bridge. In order to retain [Rule 1](#rule-1) we need to increase our bridges to $l = \frac{1}{n}\sum_{k=0}^n \text{number}(\text{Island}(k))$
+
+We can start by conjuncting those constraints for all possible bridges. Then we remove the constraints for the bridges with the lowest sum of connecting Islands until we reach a total of $l$ bridges.
+
+### Example
+```
+(1)==(2)
+||    ||
+||    ||
+(1)==(2)
+```
+
+$n = 4$  
+$l = 3$  
+
+Bridges are labelled after start-to-end indices starting with coordinate 00 in the left upper corner.
+
+Concunction of Disjunctions:
+
+("00|10|0" $\lor$ "00|10|1") $\land$  
+("00|01|0" $\lor$ "00|01|1") $\land$  
+("10|11|0" $\lor$ "10|11|1") $\land$  
+("01|11|0" $\lor$ "01|11|1") $\land$  
+
+Size $\geq l \Rightarrow$ Remove edge with lowest node sum:
+
+"00|10|0" = "00|10|1" = 3  
+"00|01|0" = "00|01|1" = 2  
+"10|11|0" = "10|11|1" = 4  
+"01|11|0" = "01|11|1" = 3  
+
+Remove constraint ("00|01|0" $\lor$ "00|01|1").
+
+Now Size $= l$
+
+Final constraints:
+
+("00|10|0" $\lor$ "00|10|1") $\land$  
+("10|11|0" $\lor$ "10|11|1") $\land$  
+("01|11|0" $\lor$ "01|11|1") $\land$  
+
