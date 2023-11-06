@@ -3,10 +3,8 @@ extern crate clap;
 use clap::{App, Arg};
 
 mod parse_input;
-mod printer;
 
-use parse_input::parse_input;
-use printer::print_infos;
+use parse_input::{parse_input, print_infos};
 
 // To run an example from root: cargo run --package backend -- --input [FILE PATH]
 fn main() {
