@@ -64,8 +64,8 @@ fn parse_rows_and_cols(header: &str) -> io::Result<(usize, usize)> {
 fn parse_islands(lines: &[&str]) -> io::Result<Vec<Island>> {
     let mut islands = Vec::new();
 
-    for (x, line) in lines.iter().enumerate() {
-        for (y, ch) in line.chars().enumerate() {
+    for (y, line) in lines.iter().enumerate() {
+        for (x, ch) in line.chars().enumerate() {
             if ch != '.' {
                 let connections = ch
                     .to_digit(10)
@@ -95,7 +95,7 @@ fn build_bridges(board: &mut GameBoard) {
                 let to_island = islands.iter().find(|&island| island.x == cx as usize && island.y == cy as usize);
                 if let Some(to_island) = to_island {
                     // If there is an island at the target coordinates, create a bridge
-                    let bridge = Bridge { from: (x, y), to: (to_island.x, to_island.y) };
+                    let bridge = Bridge { from: (x, y), to: (to_island.x, to_island.y) }; // Swap the coordinates
                     if !bridges.contains(&bridge) {
                         bridges.push(bridge);
                     }
@@ -138,7 +138,6 @@ fn build_bridges(board: &mut GameBoard) {
         }
     }
 }
-
 
 pub fn print_infos(game_board: &GameBoard) {
     println!("Puzzle Infos:");
