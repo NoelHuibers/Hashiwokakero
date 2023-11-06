@@ -3,6 +3,7 @@ extern crate clap;
 use clap::{App, Arg};
 
 mod parse_input;
+mod generate_clauses;
 
 use parse_input::{parse_input, print_infos};
 
