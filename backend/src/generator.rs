@@ -57,16 +57,30 @@ fn get_max_degree(part: &Part, min: u8) -> u8 {
     }
 }
 
-//FIXME: Overflow error, if degree is 4-6 and its an edge point we cant have 4 connections
 fn get_new_points(degree: &u8, part: &Part) -> u8 {
-    match degree {
-        1 => 1,
-        2 => rand::thread_rng().gen_range(1..=2),
-        3 => rand::thread_rng().gen_range(2..=3),
-        4 => rand::thread_rng().gen_range(2..=4),
-        5 | 6 => rand::thread_rng().gen_range(3..=4),
-        7 | 8 => 4,
-        _ => 0,
+    match part {
+        Part::Corner => match degree {
+            1 => 1,
+            2 => rand::thread_rng().gen_range(1..=2),
+            3 | 4 => 2,
+            _ => 0,
+        },
+        Part::Edge => match degree {
+            1 => 1,
+            2 => rand::thread_rng().gen_range(1..=2),
+            3 | 4 => rand::thread_rng().gen_range(2..=3),
+            5 | 6 => 3,
+            _ => 0,
+        },
+        Part::Normal => match degree {
+            1 => 1,
+            2 => rand::thread_rng().gen_range(1..=2),
+            3 => rand::thread_rng().gen_range(2..=3),
+            4 => rand::thread_rng().gen_range(2..=4),
+            5 | 6 => rand::thread_rng().gen_range(3..=4),
+            7 | 8 => 4,
+            _ => 0,
+        },
     }
 }
 
