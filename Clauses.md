@@ -86,8 +86,8 @@ $$
 
 ## Rule 2
 
-1.1: All Islands must be connected  
-1.2: Cycles are possible
+2.1: All Islands must be connected  
+2.2: Cycles are possible
 
 A Graph of $n$ Islands needs at least $n-1$ unique Bridges to be connected. Assuming a pair of possible Bridges is called $a, b$ we can use $\lor$ as a constraint for at least one Bridge. In order to retain [Rule 1](#rule-1) we need to increase our bridges to $l = \frac{1}{n}\sum_{k=0}^n \text{number}(\text{Island}(k))$
 
@@ -130,3 +130,36 @@ Final constraints:
 ("10|11|0" $\lor$ "10|11|1") $\land$  
 ("01|11|0" $\lor$ "01|11|1") $\land$  
 
+## Rule 3
+
+3.1 Bridges don't cross other bridges  
+3.2 Brdiges don't cross islands
+
+We start by collecting all Islands that cross each other by checking for each bridge (Assuming possible bridges are stored left to right and top to bottom):  
+
+Separate all bridges into vertical and horizontal:
+
+Iterate over vertical subsets $A$:  
+Iterate over horizontal subsets $B$:
+
+Check for $((x_{a_{\text{from}}}, y_{a_{\text{from}}}), (x_{a_{\text{to}}}, y_{a_{\text{to}}})) \in A$ and $((x_{b_{\text{from}}}, y_{b_{\text{from}}}), (x_{b_{\text{to}}}, y_{b_{\text{to}}})) \in B$:
+
+$$
+\begin{align*}
+(y_{a_{\text{from}}} < y_{b_{\text{from}}} = y_{b_{\text{to}}} < y_{a_{\text{to}}}) \land
+(x_{a_{\text{from}}} < x_{b_{\text{from}}} = x_{b_{\text{to}}} < x_{a_{\text{to}}})
+\end{align*}
+$$
+
+All edges $(a,b)$ where the above check results in true can be converted to clausels in the form of $a \oplus b$ and then be conjucted.
+
+resolve xor to CNF:
+$$
+\begin{align}
+  &a \oplus b\\
+  &\Rightarrow (a \land \neg b) \lor (\neg a \land b)\\
+  &\Rightarrow_{\text{dist}} ((a \land \neg b) \lor \neg a) \land ((a \land \neg b) \lor b)\\
+  &\Rightarrow_{\text{dist}} ((a \lor \neg a) \land (\neg b \lor \neg a)) \land ((a \lor b) \land (\neg b \lor b))\\
+  &\Rightarrow_{\text{res}} (\neg a \lor \neg b) \land (a \lor b)
+\end{align}
+$$
