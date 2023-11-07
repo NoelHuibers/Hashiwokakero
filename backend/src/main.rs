@@ -4,10 +4,8 @@ use clap::{command, Arg};
 
 mod parse_input;
 mod generate_clauses;
-mod printer;
 mod solver;
 mod writer;
-mod generate_clauses;
 
 use parse_input::{parse_input, print_infos};
 

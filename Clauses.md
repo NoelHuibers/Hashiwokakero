@@ -151,7 +151,7 @@ $$
 \end{align*}
 $$
 
-All edges $(a,b)$ where the above check results in true can be converted to clausels in the form of $a \oplus b$ and then be conjucted.
+All edges $(a,b)$ where the above check results in true can be converted to clausels in the form of $a \oplus b$ and then be conjucted. Considering two bridges for each $a$ and $b$ we can expand the formula to $(a_1 \oplus b_1) \land (a_2 \oplus b_1) \land (a_1 \oplus b_2) \land (a_2 \oplus b_2)$
 
 resolve xor to CNF:
 $$
