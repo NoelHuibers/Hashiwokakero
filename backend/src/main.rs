@@ -1,6 +1,6 @@
 extern crate clap;
 
-use clap::{App, Arg};
+use clap::{command, Arg};
 
 mod parse_input;
 mod solver;
@@ -8,21 +8,19 @@ mod writer;
 
 use parse_input::{parse_input, print_infos};
 
-//TODO: Update clap to 4.4
 // To run an example from root: cargo run --package backend -- --input [FILE PATH]
 fn main() {
-    let matches = App::new("File Reader")
+    let matches = command!()
         .arg(
-            Arg::with_name("input")
-                .short("i")
+            Arg::new("input")
+                .short('i')
                 .long("input")
                 .value_name("FILE")
-                .takes_value(true)
                 .required(true),
         )
         .get_matches();
 
-    let input_file = matches.value_of("input").unwrap();
+    let input_file = matches.get_one::<String>("input").unwrap();
 
     match parse_input(input_file) {
         Ok(game_board) => {
