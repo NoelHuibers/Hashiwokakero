@@ -89,9 +89,9 @@ $$
 2.1: All Islands must be connected  
 2.2: Cycles are possible
 
-A Graph of $n$ Islands needs at least $n-1$ unique Bridges to be connected. Assuming a pair of possible Bridges is called $a, b$ we can use $\lor$ as a constraint for at least one Bridge. In order to retain [Rule 1](#rule-1) we need to increase our bridges to $l = \frac{1}{n}\sum_{k=0}^n \text{number}(\text{Island}(k))$
+A Graph of $n$ Islands needs at least $n-1$ unique bridges to be connected (based on a spanning tree). Assuming a pair of possible Bridges is called $a, b$ we can use $\lor$ as a constraint for at least one Bridge. We demand at least one unique bridge for at least $n-1$ nodes to make sure every island is connected.
 
-We can start by conjuncting those constraints for all possible bridges. Then we remove the constraints for the bridges with the lowest sum of connecting Islands until we reach a total of $l$ bridges.
+
 
 ### Example
 ```
@@ -102,33 +102,25 @@ We can start by conjuncting those constraints for all possible bridges. Then we 
 ```
 
 $n = 4$  
-$l = 3$  
+$n-1 = 3$  
 
 Bridges are labelled after start-to-end indices starting with coordinate 00 in the left upper corner.
 
 Concunction of Disjunctions:
 
-("00|10|0" $\lor$ "00|10|1") $\land$  
-("00|01|0" $\lor$ "00|01|1") $\land$  
-("10|11|0" $\lor$ "10|11|1") $\land$  
-("01|11|0" $\lor$ "01|11|1") $\land$  
-
-Size $\geq l \Rightarrow$ Remove edge with lowest node sum:
-
-"00|10|0" = "00|10|1" = 3  
-"00|01|0" = "00|01|1" = 2  
-"10|11|0" = "10|11|1" = 4  
-"01|11|0" = "01|11|1" = 3  
-
-Remove constraint ("00|01|0" $\lor$ "00|01|1").
-
-Now Size $= l$
-
-Final constraints:
-
-("00|10|0" $\lor$ "00|10|1") $\land$  
-("10|11|0" $\lor$ "10|11|1") $\land$  
-("01|11|0" $\lor$ "01|11|1") $\land$  
+$$
+\begin{align*}
+(("00|10|0" \lor "00|10|1") \lor
+("00|01|0" \lor "00|01|1") \lor
+("10|11|0" \lor "10|11|1") \lor
+("01|11|0" \lor "01|11|1")) \land\\
+(("00|10|0" \lor "00|10|1") \lor
+("00|01|0" \lor "00|01|1") \lor
+("10|11|0" \lor "10|11|1")) \land\\
+(("00|01|0" \lor "00|01|1") \lor
+("10|11|0" \lor "10|11|1")) \land\\
+\end{align*}
+$$
 
 ## Rule 3
 
