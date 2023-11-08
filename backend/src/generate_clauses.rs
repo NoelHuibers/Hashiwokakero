@@ -21,10 +21,7 @@ fn generate(game: GameBoard) -> Vec<Vec<i32>> {
             })
             .collect();
         // Bridges are duplicated because we allow two bridges between islands
-        dimacs.append(&mut outgoing_bridges((
-            island,
-            bridges,
-        )))
+        dimacs.append(&mut outgoing_bridges((island, bridges)))
     }
     dimacs.append(&mut connected_bridges(game.bridges.clone(), game.islands));
     dimacs.append(&mut avoid_crosses(game.bridges));
@@ -53,28 +50,24 @@ fn outgoing_bridges(island: (Island, Vec<Bridge>)) -> Vec<Vec<i32>> {
     for i in 0..possible_bridges.len() - bridge_nr as usize {
         bounds.push(possible_bridges[i as usize..].iter().map(|v| -v).collect());
     }
-    return bounds;
+    bounds
 }
 
 // Rule 2
 fn connected_bridges(mut bridges: Vec<Bridge>, islands: Vec<Island>) -> Vec<Vec<i32>> {
-    let island_map = islands
+    let mut bounds: Vec<Vec<i32>> = vec![];
+    let possible_bridges = bridges
         .iter()
-        .map(|island| ((island.x, island.y), island.connections))
-        .collect::<HashMap<_, _>>();
-    bridges.sort_by(|a, b| {
-        let bridge_sum_a = island_map.get(&(a.from.0, a.from.1)).unwrap()
-            + island_map.get(&(a.to.0, a.to.1)).unwrap();
-        let bridge_sum_b = island_map.get(&(b.from.0, b.from.1)).unwrap()
-            + island_map.get(&(b.to.0, b.to.1)).unwrap();
-        bridge_sum_b.cmp(&bridge_sum_a)
-    });
-    // TODO: Maybe not the right approach...
-    let total_bridges = islands.len()-1;
-    bridges[..total_bridges as usize]
-        .iter()
-        .map(|bridge| vec![gen_bridge_name(bridge, 1), gen_bridge_name(bridge, 2)])
-        .collect::<Vec<Vec<i32>>>()
+        .map(|bridge| (gen_bridge_name(bridge, 1), gen_bridge_name(bridge, 2)))
+        .collect::<Vec<(i32, i32)>>();
+    for i in 0..islands.len() - 1 {
+        let clause = possible_bridges[i..]
+            .into_iter()
+            .flat_map(|(a, b)| vec![*a, *b])
+            .collect::<Vec<i32>>();
+        bounds.push(clause)
+    }
+    bounds
 }
 
 // Rule 3
@@ -129,7 +122,10 @@ fn gen_bridge_name(bridge: &Bridge, idx: i32) -> i32 {
 
 #[test]
 fn should_gen_bridge_name() {
-    let bridge = &Bridge { from: (2, 0), to: (2, 3) };
+    let bridge = &Bridge {
+        from: (2, 0),
+        to: (2, 3),
+    };
     let bridge_name = gen_bridge_name(bridge, 1);
     assert_eq!(31341, bridge_name);
 }
