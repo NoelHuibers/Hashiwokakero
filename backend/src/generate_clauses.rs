@@ -31,17 +31,12 @@ fn generate(game: GameBoard) -> Vec<Vec<i32>> {
 // Rule 1
 fn outgoing_bridges(island: (Island, Vec<Bridge>)) -> Vec<Vec<i32>> {
     let mut bounds: Vec<Vec<i32>> = vec![];
-    let lhs_bridges: Vec<i32> = island
+    let possible_bridges = island
         .1
         .iter()
-        .map(|bridge| gen_bridge_name(bridge, 1))
-        .collect();
-    let rhs_bridges: Vec<i32> = island
-        .1
-        .iter()
-        .map(|bridge| gen_bridge_name(&bridge, 2))
-        .collect();
-    let possible_bridges = [lhs_bridges, rhs_bridges].concat();
+        .zip(island.1.iter())
+        .flat_map(|(lhs, rhs)| vec![gen_bridge_name(lhs, 1), gen_bridge_name(rhs, 2)])
+        .collect::<Vec<i32>>();
     let bridge_nr = island.0.connections;
     for i in 0..bridge_nr {
         // Conversion shouldn't fail as our max connections limit is 8
@@ -55,19 +50,18 @@ fn outgoing_bridges(island: (Island, Vec<Bridge>)) -> Vec<Vec<i32>> {
 
 // Rule 2
 fn connected_bridges(mut bridges: Vec<Bridge>, islands: Vec<Island>) -> Vec<Vec<i32>> {
-    let mut bounds: Vec<Vec<i32>> = vec![];
-    let possible_bridges = bridges
-        .iter()
-        .map(|bridge| (gen_bridge_name(bridge, 1), gen_bridge_name(bridge, 2)))
-        .collect::<Vec<(i32, i32)>>();
-    for i in 0..islands.len() - 1 {
-        let clause = possible_bridges[i..]
-            .into_iter()
-            .flat_map(|(a, b)| vec![*a, *b])
-            .collect::<Vec<i32>>();
-        bounds.push(clause)
-    }
-    bounds
+    (0..islands.len() - 1)
+        .into_iter()
+        .map(|i| {
+            bridges
+                .iter()
+                .map(|bridge| (gen_bridge_name(bridge, 1), gen_bridge_name(bridge, 2)))
+                .collect::<Vec<(i32, i32)>>()[i..]
+                .into_iter()
+                .flat_map(|(a, b)| vec![*a, *b])
+                .collect::<Vec<i32>>()
+        })
+        .collect::<Vec<Vec<i32>>>()
 }
 
 // Rule 3
