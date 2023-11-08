@@ -173,26 +173,63 @@ fn connect_two(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, de
     }
 }
 
-//TODO: Make this right and not just a copy of connect_one
+//TODO: Edge cases (Edge or Side)
 fn connect_three(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
     println!("Connecting three with {} degree", degree);
     println!("x: {}, y: {}", x, y);
-    println!("NOT IMPLEMENTED");
     let mut rng = rand::thread_rng();
 
-    let axis = rng.gen_bool(0.5);
-    let first_axis = if axis { x } else { y };
-    let other_axis = if axis { y } else { x };
+    let mut alreadyset = false;
+    let axis = rng.gen_range(0..4);
 
-    let second_axis = generate_other_axis(other_axis, grid_size);
+    for i in 0..4 {
+        let mut first_axis = x;
+        let mut second_axis = y;
 
-    if axis {
-        let part = get_part(first_axis, second_axis, grid_size);
-        grid[first_axis][second_axis] = get_max_degree(&part, 3);
-    } else {
-        let part = get_part(second_axis, first_axis, grid_size);
-        grid[second_axis][first_axis] = get_max_degree(&part, 3);
-    };
+        if i == 0 {
+            if x + 1 == grid_size - 1 {
+                first_axis = x + 1;
+            } else {
+                first_axis = rng.gen_range(x + 1..grid_size);
+            }
+        } else if i == 1 {
+            if x == 1 {
+                first_axis = 0;
+            } else {
+                first_axis = rng.gen_range(0..x);
+            }
+        } else if i == 2 {
+            if y + 1 == grid_size - 1 {
+                second_axis = y + 1;
+            } else {
+                second_axis = rng.gen_range(y + 1..grid_size);
+            }
+        } else if i == 3 {
+            if y == 1 {
+                second_axis = 0;
+            } else {
+                second_axis = rng.gen_range(0..y);
+            }
+        }
+
+        println!(
+            "i: {}, first_axis: {}, second_axis: {} ",
+            i, first_axis, second_axis
+        );
+
+        if axis != i {
+            let part = get_part(first_axis, second_axis, grid_size);
+            if degree == 5 && alreadyset == false {
+                let new_degree = get_max_degree(&part, 1);
+                grid[first_axis][second_axis] = new_degree;
+                if new_degree == 1 {
+                    alreadyset = true
+                }
+            } else {
+                grid[first_axis][second_axis] = get_max_degree(&part, 2)
+            }
+        }
+    }
 }
 
 //TODO: What if 4-6 degrees have four connections?
