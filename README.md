@@ -35,7 +35,7 @@ To build the project, open a terminal in the project root directory and execute:
 - [x] Initialize the project.
 - [x] Develop the Command Line Interface (CLI) for our application.
 - [x] Implement SAT-Solver integration and the ability to select the appropriate solver based on input data.
-- [ ] Clap integration encode or solve.
+- [x] Clap integration encode or solve.
 - [ ] CLI for displaying solution.
 - [ ] Frontend Leptos/Yew integration.
 - [ ] Generator
