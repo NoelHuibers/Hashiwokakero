@@ -97,6 +97,7 @@ fn get_new_points(degree: &u8, part: &Part) -> u8 {
     }
 }
 
+//TODO: Handling max degree
 fn connect_one(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
     println!("Connecting one with {} degree", degree);
     println!("x: {}, y: {}", x, y);
@@ -125,7 +126,7 @@ fn connect_one(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, de
     };
 }
 
-//TODO: Handling degree
+//TODO: Handling max degree
 //TODO: Spaghetti code should be refactored
 fn connect_two(
     grid: &mut Vec<Vec<u8>>,
@@ -201,6 +202,7 @@ fn connect_two(
         }
     }
 
+    let mut isset = false;
     for i in 0..2 {
         let mut first_axis = x;
         let mut second_axis = y;
@@ -242,11 +244,24 @@ fn connect_two(
         println!("New point:");
         println!("x: {}, y: {}", first_axis, second_axis);
         let part = get_cell_position(first_axis, second_axis, grid_size);
-        grid[first_axis][second_axis] = get_max_degree(&part, 1)
+        match isset {
+            true => grid[first_axis][second_axis] = get_max_degree(&part, 2),
+            false => match degree {
+                2 => grid[first_axis][second_axis] = get_max_degree(&part, 1),
+                3 => {
+                    let newdegree = get_max_degree(&part, 1);
+                    grid[first_axis][second_axis] = newdegree;
+                    if newdegree == 1 {
+                        isset = true
+                    }
+                }
+                _ => grid[first_axis][second_axis] = get_max_degree(&part, 2),
+            },
+        }
     }
 }
 
-//TODO: Handling degree
+//TODO: Handling min & max degree
 //TODO: Spaghetti code should be refactored
 fn connect_three(
     grid: &mut Vec<Vec<u8>>,
@@ -357,7 +372,7 @@ fn connect_three(
     }
 }
 
-//TODO: What if 4-6 degrees have four connections? (Handling degree)
+//TODO: Handling min & max degree
 fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
     println!("Connecting 4 with {} degree", degree);
     println!("x: {}, y: {}", x, y);
