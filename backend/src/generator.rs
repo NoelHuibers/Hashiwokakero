@@ -43,7 +43,7 @@ pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
     } else if new_points == 3 {
         connect_three(&mut grid, x, y, grid_size, degree, part);
     } else if new_points == 4 {
-        connect_four(&mut grid, x, y, grid_size, degree, part);
+        connect_four(&mut grid, x, y, grid_size, degree);
     }
     grid
 }
@@ -246,7 +246,8 @@ fn connect_two(
     }
 }
 
-//TODO: Edge cases (Edge or Side)
+//TODO: Handling degree
+//TODO: Spaghetti code should be refactored
 fn connect_three(
     grid: &mut Vec<Vec<u8>>,
     x: usize,
@@ -259,68 +260,105 @@ fn connect_three(
     println!("x: {}, y: {}", x, y);
     let mut rng = rand::thread_rng();
 
-    let mut alreadyset = false;
-    let axis = rng.gen_range(0..4);
+    let mut first_random_number = 0;
+    let mut second_random_number = 0;
+    let mut third_random_number = 0;
 
-    for i in 0..4 {
+    match part {
+        Part::Edge(Edge::Top) => {
+            first_random_number = 0;
+            second_random_number = 2;
+            third_random_number = 3;
+        }
+        Part::Edge(Edge::Bottom) => {
+            first_random_number = 1;
+            second_random_number = 2;
+            third_random_number = 3;
+        }
+        Part::Edge(Edge::Left) => {
+            first_random_number = 0;
+            second_random_number = 1;
+            third_random_number = 2;
+        }
+        Part::Edge(Edge::Right) => {
+            first_random_number = 0;
+            second_random_number = 1;
+            third_random_number = 3;
+        }
+        Part::Normal => {
+            let not = rng.gen_range(0..=3);
+            (
+                first_random_number,
+                second_random_number,
+                third_random_number,
+            ) = match not {
+                0 => (0, 2, 3),
+                1 => (1, 2, 3),
+                2 => (0, 1, 2),
+                _ => (0, 1, 3),
+            }
+        }
+        _ => (),
+    };
+
+    let mut alreadyset = false;
+
+    for i in 0..3 {
         let mut first_axis = x;
         let mut second_axis = y;
+        let compared_number = match i {
+            0 => first_random_number,
+            1 => second_random_number,
+            _ => third_random_number,
+        };
 
-        if i == 0 {
+        if compared_number == 0 {
             if x + 1 == grid_size - 1 {
                 first_axis = x + 1;
             } else {
                 first_axis = rng.gen_range(x + 1..grid_size);
             }
-        } else if i == 1 {
+        }
+        if compared_number == 1 {
             if x == 1 {
                 first_axis = 0;
             } else {
                 first_axis = rng.gen_range(0..x);
             }
-        } else if i == 2 {
+        }
+        if compared_number == 2 {
             if y + 1 == grid_size - 1 {
                 second_axis = y + 1;
             } else {
                 second_axis = rng.gen_range(y + 1..grid_size);
             }
-        } else if i == 3 {
+        }
+        if compared_number == 3 {
             if y == 1 {
                 second_axis = 0;
             } else {
                 second_axis = rng.gen_range(0..y);
             }
         }
-
         println!(
             "i: {}, first_axis: {}, second_axis: {} ",
             i, first_axis, second_axis
         );
-
-        if axis != i {
-            let part = get_cell_position(first_axis, second_axis, grid_size);
-            if degree == 5 && alreadyset == false {
-                let new_degree = get_max_degree(&part, 1);
-                grid[first_axis][second_axis] = new_degree;
-                if new_degree == 1 {
-                    alreadyset = true
-                }
-            } else {
-                grid[first_axis][second_axis] = get_max_degree(&part, 2)
+        let part = get_cell_position(first_axis, second_axis, grid_size);
+        if degree == 5 && alreadyset == false {
+            let new_degree = get_max_degree(&part, 1);
+            grid[first_axis][second_axis] = new_degree;
+            if new_degree == 1 {
+                alreadyset = true
             }
+        } else {
+            grid[first_axis][second_axis] = get_max_degree(&part, 2)
         }
     }
 }
 
-//TODO: What if 4-6 degrees have four connections?
-fn connect_four(
-    grid: &mut Vec<Vec<u8>>,
-    x: usize,
-    y: usize,
-    grid_size: usize,
-    degree: u8,
-    part: Part,
-) {
+//TODO: What if 4-6 degrees have four connections? (Handling degree)
+fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
     println!("Connecting 4 with {} degree", degree);
     println!("x: {}, y: {}", x, y);
 
