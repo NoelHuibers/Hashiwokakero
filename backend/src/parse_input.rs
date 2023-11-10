@@ -32,10 +32,12 @@ pub(crate) fn parse_input(filename: &str) -> io::Result<GameBoard> {
     }
 
     let input = fs::read_to_string(filename)?;
-
     let lines: Vec<&str> = input.lines().collect();
 
     let (rows, cols) = parse_rows_and_cols(&lines[0])?;
+
+    check_game_board_format(&lines[1..], rows, cols)?;
+
     let islands = parse_islands(&lines[1..])?;
     let mut game_board = GameBoard {
         rows,
@@ -49,23 +51,51 @@ pub(crate) fn parse_input(filename: &str) -> io::Result<GameBoard> {
     Ok(game_board)
 }
 
+
 fn parse_rows_and_cols(header: &str) -> io::Result<(usize, usize)> {
     let mut parts = header.split_whitespace();
 
-    let rows_str = parts.next().ok_or(io::Error::new(
+    let first_part = parts.next().ok_or(io::Error::new(
         io::ErrorKind::InvalidData,
-        "Missing number of rows",
-    ))?;
-    let cols_str = parts.next().ok_or(io::Error::new(
-        io::ErrorKind::InvalidData,
-        "Missing number of columns",
+        "Invalid header: missing size information",
     ))?;
 
-    let rows = parse_usize(rows_str, "Invalid number of rows")?;
-    let cols = parse_usize(cols_str, "Invalid number of columns")?;
+    if first_part.chars().all(|c| c.is_digit(10)) {
+        if let Ok(size) = parse_usize(first_part, "Invalid size") {
+            if size >= 1 {
+                if let Some(second_part) = parts.next() {
+                    if second_part.chars().all(|c| c.is_digit(10)) {
+                        if let Ok(cols) = parse_usize(second_part, "Invalid number of columns") {
+                            return Ok((size, cols));
+                        } else {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                "Invalid number of columns",
+                            ));
+                        }
+                    } else {
+                        // If only one number is present, consider it as both rows and columns
+                        return Ok((size, size)); 
+                    }
+                } else {
+                    // If no second number is present, consider the first number as both rows and columns
+                    return Ok((size, size)); 
+                }
+            } else {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Invalid size: size must be at least 1",
+                ));
+            }
+        }
+    }
 
-    Ok((rows, cols))
+    Err(io::Error::new(
+        io::ErrorKind::InvalidData,
+        "Invalid header format",
+    ))
 }
+
 
 fn parse_usize(s: &str, error_message: &str) -> io::Result<usize> {
     s.parse().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("{}: {}", error_message, e)))
@@ -128,6 +158,36 @@ fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
     }
 
     board.bridges = bridges;
+    Ok(())
+}
+
+fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::Result<()> {
+    // Check if the number of lines matches the specified rows
+    if lines.len() != rows {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Invalid game board format: incorrect number of rows",
+        ));
+    }
+
+    for line in lines {
+        // Check if the length of each line matches the specified columns
+        if line.len() != cols {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid game board format: incorrect number of columns",
+            ));
+        }
+
+        // Check if each character is either '.' or a digit between 1 and 8
+        if !line.chars().all(|c| c == '.' || (c.is_digit(10) && c != '0')) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid game board format: invalid characters",
+            ));
+        }
+    }
+
     Ok(())
 }
 
