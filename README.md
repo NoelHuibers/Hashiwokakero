@@ -42,7 +42,7 @@ To build the project, open a terminal in the project root directory and execute:
 **Laura:**
 
 - [x] Handle the parsing of input files.
-- [ ] Error Handling of input files.
+- [x] Error Handling of input files.
 - [x] Establish a data structure for passing input data within the application.
 - [x] Manage the creation and formatting of output files.
 - [ ] Test structure
