@@ -21,15 +21,13 @@ We assume to always receive valid games that match the ruleset of the game.
 
 #### Bridges with eight possible Bridges
 
-We count bridges using $\lor$ for the upper and lower bound. This way we can force exactly $n$ out of $k$ variables to be true:
+We count bridges using $\lor$ for the upper and lower bound. This way we can force exactly $k$ out of $n$ variables to be true:
 
 $$
 \begin{align*}
 \text{lower bound}\\
-&(x_1 \lor \dots \lor x_k) \land\\
-&(x_2 \lor \dots \lor x_k) \land\\
-&\vdots\\
-&(x_n \lor \dots \lor x_k) \land\\
+\binom{n}{k}\text{combinations}:\\
+
 \text{upper bound}\\
 &(\neg x_1 \lor \dots \lor \neg x_k) \land\\
 &(\neg x_2 \lor \dots \lor \neg x_k) \land\\

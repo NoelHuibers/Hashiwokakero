@@ -30,22 +30,28 @@ fn generate(game: GameBoard) -> Vec<Vec<i32>> {
 
 // Rule 1
 fn outgoing_bridges(island: (Island, Vec<Bridge>)) -> Vec<Vec<i32>> {
-    let mut bounds: Vec<Vec<i32>> = vec![];
     let possible_bridges = island
         .1
         .iter()
         .zip(island.1.iter())
-        .flat_map(|(lhs, rhs)| vec![gen_bridge_name(lhs, 1), gen_bridge_name(rhs, 2)])
-        .collect::<Vec<i32>>();
-    let bridge_nr = island.0.connections;
-    for i in 0..bridge_nr {
-        // Conversion shouldn't fail as our max connections limit is 8
-        bounds.push(possible_bridges[i as usize..].to_vec());
-    }
-    for i in 0..possible_bridges.len() - bridge_nr as usize {
-        bounds.push(possible_bridges[i as usize..].iter().map(|v| -v).collect());
-    }
-    bounds
+        .flat_map(|(lhs, rhs)| vec![gen_bridge_name(lhs, 1), gen_bridge_name(rhs, 2)]);
+    let bridge_nr = island.0.connections as i8;
+    exactly_k_of_n_true(bridge_nr, possible_bridges.collect())
+}
+
+fn exactly_k_of_n_true(k: i8, vars: Vec<i32>) -> Vec<Vec<i32>> {
+    let n = vars.len() as i8;
+    let k = k;
+    let min_true_vars = n - k + 1;
+    let min_false_vars = k + 1;
+    let lower: Vec<Vec<i32>> =
+        itertools::Itertools::combinations((vars.clone()).into_iter(), min_true_vars as usize)
+            .collect();
+    let upper: Vec<Vec<i32>> =
+        itertools::Itertools::combinations((vars).into_iter(), min_false_vars as usize)
+            .map(|v| v.iter().map(|i| -*i).collect())
+            .collect();
+    [lower, upper].concat()
 }
 
 // Rule 2
@@ -128,4 +134,44 @@ fn should_gen_bridge_name() {
 fn should_gen_fst_rule() {
     let game = crate::parse_input::parse_input("./backend/input/test1.txt").unwrap();
     println!("Clauses: \n{:?}", generate(game));
+}
+
+#[test]
+fn should_have_two_cnf_positivie_one_cnf_negative() {
+    let vars = vec![1, 2, 3, 4];
+    let clauses = exactly_k_of_n_true(3, vars);
+    assert_eq!(
+        clauses,
+        [
+            // Each var occurs exactly three times => at least three must be true
+            vec![1, 2],
+            vec![1, 3],
+            vec![1, 4],
+            vec![2, 3],
+            vec![2, 4],
+            vec![3, 4],
+            // At least one must be false
+            vec![-1, -2, -3, -4]
+        ]
+    )
+}
+
+#[test]
+fn should_have_() {
+    let vars = vec![1, 2, 3, 4, 5, 6, 7, 8];
+    let clauses = exactly_k_of_n_true(2, vars);
+    assert_eq!(
+        clauses,
+        [
+            // Each var occurs exactly three times => at least three must be true
+            vec![1, 2],
+            vec![1, 3],
+            vec![1, 4],
+            vec![2, 3],
+            vec![2, 4],
+            vec![3, 4],
+            // At least one must be false
+            vec![-1, -2, -3, -4]
+        ]
+    )
 }
