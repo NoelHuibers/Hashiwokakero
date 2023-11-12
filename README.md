@@ -34,15 +34,16 @@ To build the project, open a terminal in the project root directory and execute:
 
 - [x] Initialize the project.
 - [x] Develop the Command Line Interface (CLI) for our application.
-- [ ] CLI for displaying solution.
 - [x] Implement SAT-Solver integration and the ability to select the appropriate solver based on input data.
+- [x] Clap integration encode or solve.
+- [ ] CLI for displaying solution.
 - [ ] Frontend Leptos/Yew integration.
 - [ ] Generator
 
 **Laura:**
 
 - [x] Handle the parsing of input files.
-- [ ] Error Handling of input files.
+- [x] Error Handling of input files.
 - [x] Establish a data structure for passing input data within the application.
 - [x] Manage the creation and formatting of output files.
 - [ ] Test structure
@@ -50,5 +51,10 @@ To build the project, open a terminal in the project root directory and execute:
 
 **Florian:**
 
-- [ ] Translate input data into clauses.
-- [ ] Implement parsing functionality for calculating DIMACS.
+- [x] Translate input data into clauses.
+- [x] Implement parsing functionality for calculating DIMACS.
+- [ ] Parsing for CLI output
+
+**Unsolved:**
+
+- [ ] Rule 2 in CNF

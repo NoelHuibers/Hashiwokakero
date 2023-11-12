@@ -7,3 +7,7 @@ pub fn solve(clauses: Vec<Vec<i32>>) {
         Err(e) => panic!("s UNKNOWN; {}", e),
     }
 }
+
+pub fn parse(input_file: &str) {
+    //TODO: parse input file
+}
