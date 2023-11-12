@@ -4,10 +4,31 @@ use itertools::Itertools;
 
 use crate::parse_input::{Bridge, GameBoard, Island};
 
-const MAX_BRIDGES: u8 = 8;
+// TODO: rhs/lhs could be bool and coord u8
+type BridgeCoord = (usize, usize, usize, usize, usize);
 
 fn generate(game: GameBoard) -> Vec<Vec<i32>> {
     let mut dimacs: Vec<Vec<i32>> = vec![];
+    let bridge_iter = game
+        .bridges
+        .iter()
+        .zip(game.bridges.iter())
+        .flat_map(|(lhs, rhs)| {
+            [
+                (lhs.from.0, lhs.from.1, lhs.to.0, lhs.to.1, 1),
+                (rhs.from.0, rhs.from.1, rhs.to.0, rhs.to.1, 2),
+            ]
+        })
+        .enumerate();
+
+    let from_idx = bridge_iter
+        .clone()
+        .map(|(idx, var)| (idx as i32 + 1, var))
+        .collect::<HashMap<i32, BridgeCoord>>();
+
+    let from_var = bridge_iter
+        .map(|(idx, var)| (var, idx as i32 + 1))
+        .collect::<HashMap<BridgeCoord, i32>>();
 
     for island in game.islands.clone() {
         let bridges: Vec<Bridge> = game
@@ -23,20 +44,23 @@ fn generate(game: GameBoard) -> Vec<Vec<i32>> {
             })
             .collect();
         // Bridges are duplicated because we allow two bridges between islands
-        dimacs.append(&mut outgoing_bridges((island, bridges)))
+        dimacs.append(&mut outgoing_bridges((island, bridges), from_var.clone()))
     }
-    dimacs.append(&mut connected_bridges(game.bridges.clone(), game.islands));
-    dimacs.append(&mut avoid_crosses(game.bridges));
+    dimacs.append(&mut avoid_crosses(game.bridges.clone(), from_var.clone()));
+    dimacs.append(&mut connected_bridges(game.bridges.clone(), game.islands, from_var));
     return dimacs;
 }
 
 // Rule 1
-fn outgoing_bridges(island: (Island, Vec<Bridge>)) -> Vec<Vec<i32>> {
+fn outgoing_bridges(
+    island: (Island, Vec<Bridge>),
+    var_map: HashMap<BridgeCoord, i32>,
+) -> Vec<Vec<i32>> {
     let possible_bridges = island
         .1
         .iter()
         .zip(island.1.iter())
-        .flat_map(|(lhs, rhs)| vec![gen_bridge_name(lhs, 1), gen_bridge_name(rhs, 2)]);
+        .flat_map(|(lhs, rhs)| vec![lhs_bridge(lhs, var_map.clone()), rhs_bridge(rhs, var_map.clone())]);
     let bridge_nr = island.0.connections as i8;
     exactly_k_of_n_true(bridge_nr, possible_bridges.collect())
 }
@@ -57,7 +81,7 @@ fn exactly_k_of_n_true(k: i8, vars: Vec<i32>) -> Vec<Vec<i32>> {
 }
 
 // Rule 2
-fn avoid_crosses(bridges: Vec<Bridge>) -> Vec<Vec<i32>> {
+fn avoid_crosses(bridges: Vec<Bridge>, var_map: HashMap<BridgeCoord, i32>) -> Vec<Vec<i32>> {
     // Assuming all bridges are give from left to right and top to bottom
     // Assuming bridges that cross islands are already excluded
     let (vert, horiz): (Vec<Bridge>, Vec<Bridge>) = bridges
@@ -67,10 +91,10 @@ fn avoid_crosses(bridges: Vec<Bridge>) -> Vec<Vec<i32>> {
     for v in vert {
         for h in horiz.clone() {
             if v.from.1 < h.from.1 && h.to.1 < v.to.1 && h.from.0 < v.from.0 && v.to.0 < h.to.0 {
-                let a_1 = gen_bridge_name(&v, 1);
-                let a_2 = gen_bridge_name(&v, 2);
-                let b_1 = gen_bridge_name(&h, 1);
-                let b_2 = gen_bridge_name(&h, 2);
+                let a_1 = lhs_bridge(&v, var_map.clone());
+                let a_2 = rhs_bridge(&v, var_map.clone());
+                let b_1 = lhs_bridge(&h, var_map.clone());
+                let b_2 = rhs_bridge(&h, var_map.clone());
                 clauses.append(&mut vec![
                     // XOR for a_1, b_1
                     vec![-a_1, -b_1],
@@ -93,43 +117,26 @@ fn avoid_crosses(bridges: Vec<Bridge>) -> Vec<Vec<i32>> {
 }
 
 // Rule 3
-fn connected_bridges(mut bridges: Vec<Bridge>, islands: Vec<Island>) -> Vec<Vec<i32>> {
-    (0..islands.len() - 1)
-        .into_iter()
-        .map(|i| {
-            bridges
-                .iter()
-                .map(|bridge| (gen_bridge_name(bridge, 1), gen_bridge_name(bridge, 2)))
-                .collect::<Vec<(i32, i32)>>()[i..]
-                .into_iter()
-                .flat_map(|(a, b)| vec![*a, *b])
-                .collect::<Vec<i32>>()
-        })
-        .collect::<Vec<Vec<i32>>>()
+fn connected_bridges(clone: Vec<Bridge>, islands: Vec<Island>, from_var: HashMap<(usize, usize, usize, usize, usize), i32>) -> Vec<Vec<i32>> {
+    todo!()
 }
 
-fn gen_bridge_name(bridge: &Bridge, idx: i32) -> i32 {
-    format!(
-        "{}{}{}{}{}",
-        // Indices are incremented in order to avoid illegal DIMACS vars
-        bridge.from.0 + 1,
-        bridge.from.1 + 1,
-        bridge.to.0 + 1,
-        bridge.to.1 + 1,
-        idx
-    )
-    .parse()
-    .unwrap()
+fn lhs_bridge(bridge: &Bridge, var_map: HashMap<BridgeCoord, i32>) -> i32 {
+    *var_map
+        .get(&(bridge.from.0, bridge.from.1, bridge.to.0, bridge.to.1, 1))
+        .expect(&format!(
+            "The bridge {:?} was not parsed as a possible bridge.",
+            bridge
+        ))
 }
 
-#[test]
-fn should_gen_bridge_name() {
-    let bridge = &Bridge {
-        from: (2, 0),
-        to: (2, 3),
-    };
-    let bridge_name = gen_bridge_name(bridge, 1);
-    assert_eq!(31341, bridge_name);
+fn rhs_bridge(bridge: &Bridge, var_map: HashMap<BridgeCoord, i32>) -> i32 {
+    *var_map
+        .get(&(bridge.from.0, bridge.from.1, bridge.to.0, bridge.to.1, 2))
+        .expect(&format!(
+            "The bridge {:?} was not parsed as a possible bridge.",
+            bridge
+        ))
 }
 
 #[test]
