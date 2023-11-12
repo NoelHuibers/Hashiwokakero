@@ -1,5 +1,7 @@
 use std::{collections::HashMap, vec};
 
+use itertools::Itertools;
+
 use crate::parse_input::{Bridge, GameBoard, Island};
 
 const MAX_BRIDGES: u8 = 8;
@@ -55,22 +57,6 @@ fn exactly_k_of_n_true(k: i8, vars: Vec<i32>) -> Vec<Vec<i32>> {
 }
 
 // Rule 2
-fn connected_bridges(mut bridges: Vec<Bridge>, islands: Vec<Island>) -> Vec<Vec<i32>> {
-    (0..islands.len() - 1)
-        .into_iter()
-        .map(|i| {
-            bridges
-                .iter()
-                .map(|bridge| (gen_bridge_name(bridge, 1), gen_bridge_name(bridge, 2)))
-                .collect::<Vec<(i32, i32)>>()[i..]
-                .into_iter()
-                .flat_map(|(a, b)| vec![*a, *b])
-                .collect::<Vec<i32>>()
-        })
-        .collect::<Vec<Vec<i32>>>()
-}
-
-// Rule 3
 fn avoid_crosses(bridges: Vec<Bridge>) -> Vec<Vec<i32>> {
     // Assuming all bridges are give from left to right and top to bottom
     // Assuming bridges that cross islands are already excluded
@@ -106,6 +92,22 @@ fn avoid_crosses(bridges: Vec<Bridge>) -> Vec<Vec<i32>> {
     clauses
 }
 
+// Rule 3
+fn connected_bridges(mut bridges: Vec<Bridge>, islands: Vec<Island>) -> Vec<Vec<i32>> {
+    (0..islands.len() - 1)
+        .into_iter()
+        .map(|i| {
+            bridges
+                .iter()
+                .map(|bridge| (gen_bridge_name(bridge, 1), gen_bridge_name(bridge, 2)))
+                .collect::<Vec<(i32, i32)>>()[i..]
+                .into_iter()
+                .flat_map(|(a, b)| vec![*a, *b])
+                .collect::<Vec<i32>>()
+        })
+        .collect::<Vec<Vec<i32>>>()
+}
+
 fn gen_bridge_name(bridge: &Bridge, idx: i32) -> i32 {
     format!(
         "{}{}{}{}{}",
@@ -131,12 +133,6 @@ fn should_gen_bridge_name() {
 }
 
 #[test]
-fn should_gen_fst_rule() {
-    let game = crate::parse_input::parse_input("./backend/input/test1.txt").unwrap();
-    println!("Clauses: \n{:?}", generate(game));
-}
-
-#[test]
 fn should_have_two_cnf_positivie_one_cnf_negative() {
     let vars = vec![1, 2, 3, 4];
     let clauses = exactly_k_of_n_true(3, vars);
@@ -157,21 +153,36 @@ fn should_have_two_cnf_positivie_one_cnf_negative() {
 }
 
 #[test]
-fn should_have_() {
-    let vars = vec![1, 2, 3, 4, 5, 6, 7, 8];
+fn should_have_four_cnf_positive_three_cnf_negative() {
+    let vars = vec![1, 2, 3, 4, 5];
     let clauses = exactly_k_of_n_true(2, vars);
     assert_eq!(
         clauses,
         [
-            // Each var occurs exactly three times => at least three must be true
-            vec![1, 2],
-            vec![1, 3],
-            vec![1, 4],
-            vec![2, 3],
-            vec![2, 4],
-            vec![3, 4],
-            // At least one must be false
-            vec![-1, -2, -3, -4]
+            // Each var occurs exactly two times => at least two must be true
+            vec![1, 2, 3, 4],
+            vec![1, 2, 3, 5],
+            vec![1, 2, 4, 5],
+            vec![1, 3, 4, 5],
+            vec![2, 3, 4, 5],
+            // At least three must be false
+            vec![-1, -2, -3],
+            vec![-1, -2, -4],
+            vec![-1, -2, -5],
+            vec![-1, -3, -4],
+            vec![-1, -3, -5],
+            vec![-1, -4, -5],
+            vec![-2, -3, -4],
+            vec![-2, -3, -5],
+            vec![-2, -4, -5],
+            vec![-3, -4, -5]
         ]
     )
+}
+
+#[test]
+fn should_have_one_cnf_positive() {
+    let vars = 1..=8;
+    let clauses = exactly_k_of_n_true(8, vars.collect_vec());
+    assert_eq!(clauses, [[1], [2], [3], [4], [5], [6], [7], [8]])
 }
