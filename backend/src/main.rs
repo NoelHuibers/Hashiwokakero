@@ -1,10 +1,13 @@
 extern crate clap;
 
+use clap::{command, Arg};
+
 mod parse_input;
+mod generate_clauses;
 mod solver;
 mod writer;
 
-use clap::{command, Arg};
+use generate_clauses::generate;
 use parse_input::{parse_input, print_infos};
 
 // To run an example from root: cargo run --package backend -- --mode [encode/solve] --input [FILE PATH]
@@ -34,6 +37,8 @@ fn main() {
         "encode" => match parse_input(input_file) {
             Ok(game_board) => {
                 print_infos(&game_board);
+                let (clauses, _) = generate(&game_board);
+                print!("Clauses as Vec<Vec<i32>>: {:?}", clauses);
             }
             Err(err) => eprintln!("Error: {}", err),
         },
