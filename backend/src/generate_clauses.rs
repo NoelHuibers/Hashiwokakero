@@ -7,7 +7,7 @@ use crate::parse_input::{Bridge, GameBoard, Island};
 // TODO: rhs/lhs could be bool and coord u8
 type BridgeCoord = (usize, usize, usize, usize, usize);
 
-fn generate(game: GameBoard) -> Vec<Vec<i32>> {
+pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
     let mut dimacs: Vec<Vec<i32>> = vec![];
     let bridge_iter = game
         .bridges
@@ -47,8 +47,8 @@ fn generate(game: GameBoard) -> Vec<Vec<i32>> {
         dimacs.append(&mut outgoing_bridges((island, bridges), from_var.clone()))
     }
     dimacs.append(&mut avoid_crosses(game.bridges.clone(), from_var.clone()));
-    dimacs.append(&mut connected_bridges(game.bridges.clone(), game.islands, from_var));
-    return dimacs;
+    dimacs.append(&mut connected_bridges(game.bridges.clone(), &game.islands, from_var));
+    return (dimacs, from_idx);
 }
 
 // Rule 1
@@ -117,8 +117,9 @@ fn avoid_crosses(bridges: Vec<Bridge>, var_map: HashMap<BridgeCoord, i32>) -> Ve
 }
 
 // Rule 3
-fn connected_bridges(clone: Vec<Bridge>, islands: Vec<Island>, from_var: HashMap<(usize, usize, usize, usize, usize), i32>) -> Vec<Vec<i32>> {
-    todo!()
+fn connected_bridges(clone: Vec<Bridge>, islands: &Vec<Island>, from_var: HashMap<(usize, usize, usize, usize, usize), i32>) -> Vec<Vec<i32>> {
+    print!("Rule 3 Not yet implemented");
+    vec![vec![]]
 }
 
 fn lhs_bridge(bridge: &Bridge, var_map: HashMap<BridgeCoord, i32>) -> i32 {
