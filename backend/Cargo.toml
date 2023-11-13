@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.7", features = ["cargo"] }
+itertools = "0.11.0"
 splr = "0.17.1"
 
 
