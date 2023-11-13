@@ -1,2 +1,3 @@
 /target
 /backend/output/*
+.vscode/settings.json

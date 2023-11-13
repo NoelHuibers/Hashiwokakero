@@ -1,7 +1,8 @@
 use std::fs::File;
 use std::io::{BufWriter, Write};
 
-fn generate_dimacs(
+//pub instead of private
+pub fn generate_dimacs(
     clauses: &Vec<Vec<i32>>,
     variables: i32,
     output_filename: &str,
