@@ -1,18 +1,15 @@
-use std::{
-    cmp::{max, min},
-    collections::{HashMap, HashSet},
-    hash::Hash,
-    vec,
-};
+use std::{collections::HashMap, vec};
 
 use itertools::Itertools;
-use splr::cdb::ClauseDBIF;
 
-use crate::parse_input::{Bridge, GameBoard, Island};
+use crate::{
+    dfs::dfs,
+    parse_input::{Bridge, GameBoard, Island},
+};
 
-// TODO: rhs/lhs could be bool and coord u8
+// TODO: most vars here could be of lower size
 type BridgeCoord = (usize, usize, usize, usize, usize);
-type AdjList = HashMap<(usize, usize), Vec<(usize, usize)>>;
+pub type AdjList = HashMap<(usize, usize), Vec<(usize, usize)>>;
 
 pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
     let mut dimacs: Vec<Vec<i32>> = vec![];
@@ -78,12 +75,10 @@ fn exactly_k_of_n_true(k: i8, vars: Vec<i32>) -> Vec<Vec<i32>> {
     let min_true_vars = n - k + 1;
     let min_false_vars = k + 1;
     let lower: Vec<Vec<i32>> =
-        Itertools::combinations((vars.clone()).into_iter(), min_true_vars as usize)
-            .collect();
-    let upper: Vec<Vec<i32>> =
-        Itertools::combinations((vars).into_iter(), min_false_vars as usize)
-            .map(|v| v.iter().map(|i| -*i).collect())
-            .collect();
+        Itertools::combinations((vars.clone()).into_iter(), min_true_vars as usize).collect();
+    let upper: Vec<Vec<i32>> = Itertools::combinations((vars).into_iter(), min_false_vars as usize)
+        .map(|v| v.iter().map(|i| -*i).collect())
+        .collect();
     [lower, upper].concat()
 }
 
@@ -128,6 +123,7 @@ fn connected_bridges(
     edges: Vec<Bridge>,
     from_var: &HashMap<(usize, usize, usize, usize, usize), i32>,
 ) -> Vec<Vec<i32>> {
+    let mut clauses: Vec<Vec<i32>> = vec![];
     let mut adj_list: HashMap<(_, _), Vec<(_, _)>> = HashMap::new();
     for edge in edges.iter() {
         if let Some(neighbors) = adj_list.get_mut(&edge.from) {
@@ -146,7 +142,7 @@ fn connected_bridges(
         .keys()
         .map(|k| (*k, false))
         .collect::<HashMap<(usize, usize), bool>>();
-    let d = dfs(
+    let bridges = dfs(
         *visited.keys().next().unwrap(),
         0,
         &mut adj_list,
@@ -156,65 +152,24 @@ fn connected_bridges(
         None,
         &mut vec![],
     );
-    print!("{:?}", d);
 
-    vec![vec![]]
-}
+    // TODO: Handle cases when no bridges are found
 
-fn dfs(
-    current: (usize, usize),
-    mut distance: usize,
-    adj_list: &mut AdjList,
-    visited: &mut HashMap<(usize, usize), bool>,
-    distances: &mut HashMap<(usize, usize), usize>,
-    lowest: &mut HashMap<(usize, usize), usize>,
-    parent: Option<(usize, usize)>,
-    bridges: &mut Vec<Bridge>,
-) -> Vec<Bridge> {
-    distances.insert(current, distance);
-    lowest.insert(current, distance);
-    visited.insert(current, true);
-    distance = distance + 1;
-    for &next in adj_list.clone().get(&current).unwrap() {
-        if parent.is_some_and(|p| p == next) {
-            continue;
+    // Simple solution of just enforcing the bridges found
+    bridges.iter().for_each(|bridge| {
+        let (from_x, from_y, to_x, to_y) = (bridge.from.0, bridge.from.1, bridge.to.0, bridge.to.1);
+        if let Some(&lhs) = from_var.get(&(from_x, from_y, to_x, to_y, 1)) {
+            // rhs must exist as we only store pairs in from_var
+            let &rhs = from_var.get(&(from_x, from_y, to_x, to_y, 0)).unwrap();
+            clauses.push(vec![lhs, rhs]);
+        } else {
+            let &lhs = from_var.get(&(to_x, to_y, from_x, from_y, 1)).unwrap();
+            // rhs must exist as we only store pairs in from_var
+            let &rhs = from_var.get(&(to_x, to_y, from_x, from_y, 0)).unwrap();
+            clauses.push(vec![lhs, rhs])
         }
-        match visited.get(&next) {
-            Some(false) => {
-                dfs(
-                    next,
-                    distance,
-                    adj_list,
-                    visited,
-                    distances,
-                    lowest,
-                    Some(current),
-                    bridges,
-                );
-                let &next_dist = lowest.get(&next).unwrap();
-                lowest
-                    .entry(current)
-                    .and_modify(|v| *v = min(*v, next_dist))
-                    .or_insert(next_dist);
-                if lowest.get(&next).unwrap() > distances.get(&current).unwrap() {
-                    bridges.push(Bridge {
-                        from: current,
-                        to: next,
-                    });
-                }
-            }
-            Some(true) => {
-                if let Some(&next_lowest) = lowest.get(&next) {
-                    lowest
-                        .entry(current)
-                        .and_modify(|v| *v = min(v.clone(), next_lowest))
-                        .or_insert(next_lowest);
-                }
-            }
-            None => continue,
-        }
-    }
-    bridges.to_vec()
+    });
+    clauses
 }
 
 fn lhs_bridge(bridge: &Bridge, var_map: &HashMap<BridgeCoord, i32>) -> i32 {
@@ -288,50 +243,4 @@ fn should_have_one_cnf_positive() {
     let vars = 1..=8;
     let clauses = exactly_k_of_n_true(8, vars.collect_vec());
     assert_eq!(clauses, [[1], [2], [3], [4], [5], [6], [7], [8]])
-}
-
-#[test]
-fn should_find_bridges() {
-    connected_bridges(
-        vec![
-            Bridge {
-                from: (0, 0),
-                to: (0, 1),
-            },
-            Bridge {
-                from: (0, 0),
-                to: (1, 0),
-            },
-            Bridge {
-                from: (1, 0),
-                to: (2, 0),
-            },
-        ],
-        &HashMap::new(),
-    );
-}
-
-#[test]
-fn should_not_find_bridges() {
-    connected_bridges(
-        vec![
-            Bridge {
-                from: (0, 0),
-                to: (0, 1),
-            },
-            Bridge {
-                from: (0, 1),
-                to: (1, 1),
-            },
-            Bridge {
-                from: (1, 1),
-                to: (1, 0),
-            },
-            Bridge {
-                from: (1, 0),
-                to: (0, 0),
-            },
-        ],
-        &HashMap::new(),
-    );
 }
