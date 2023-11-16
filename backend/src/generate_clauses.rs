@@ -1,4 +1,9 @@
-use std::{collections::HashMap, hash::Hash, vec, cmp::max};
+use std::{
+    cmp::{max, min},
+    collections::{HashMap, HashSet},
+    hash::Hash,
+    vec,
+};
 
 use itertools::Itertools;
 use splr::cdb::ClauseDBIF;
@@ -137,51 +142,79 @@ fn connected_bridges(
             adj_list.insert(edge.to, vec![edge.from]);
         }
     }
-    let cloned = adj_list.clone();
-    let d = dfs(&mut adj_list, *cloned.keys().next().unwrap());
+    let mut visited = adj_list
+        .keys()
+        .map(|k| (*k, false))
+        .collect::<HashMap<(usize, usize), bool>>();
+    let d = dfs(
+        *visited.keys().next().unwrap(),
+        0,
+        &mut adj_list,
+        &mut visited,
+        &mut HashMap::new(),
+        &mut HashMap::new(),
+        None,
+        &mut vec![],
+    );
     print!("{:?}", d);
 
     vec![vec![]]
 }
 
-fn dfs(adj_list: &mut AdjList, start: (usize, usize)) -> HashMap<(usize, usize), bool> {
-    let mut stack = vec![start];
-    let mut distance = 0;
-    let mut distances: HashMap<(usize, usize), usize> = HashMap::new();
-    let mut lowest: HashMap<(usize, usize), usize> = HashMap::new();
-    let mut visited = adj_list
-        .keys()
-        .map(|k| (*k, false))
-        .collect::<HashMap<(usize, usize), bool>>();
-    let mut parent = None;
-    while !stack.is_empty() {
-        // We trust that unwrap here :)
-        let current = stack.pop().unwrap();
-        if let Some(false) = visited.get(&current) {
-            visited.insert(current, true);
-
+fn dfs(
+    current: (usize, usize),
+    mut distance: usize,
+    adj_list: &mut AdjList,
+    visited: &mut HashMap<(usize, usize), bool>,
+    distances: &mut HashMap<(usize, usize), usize>,
+    lowest: &mut HashMap<(usize, usize), usize>,
+    parent: Option<(usize, usize)>,
+    bridges: &mut Vec<Bridge>,
+) -> Vec<Bridge> {
+    distances.insert(current, distance);
+    lowest.insert(current, distance);
+    visited.insert(current, true);
+    distance = distance + 1;
+    for &next in adj_list.clone().get(&current).unwrap() {
+        if parent.is_some_and(|p| p == next) {
+            continue;
         }
-        for next_node in adj_list.get(&current).unwrap() {
-            if parent.is_some_and(|p| p == *next_node) {
-                continue;
+        match visited.get(&next) {
+            Some(false) => {
+                dfs(
+                    next,
+                    distance,
+                    adj_list,
+                    visited,
+                    distances,
+                    lowest,
+                    Some(current),
+                    bridges,
+                );
+                let &next_dist = lowest.get(&next).unwrap();
+                lowest
+                    .entry(current)
+                    .and_modify(|v| *v = min(*v, next_dist))
+                    .or_insert(next_dist);
+                if lowest.get(&next).unwrap() > distances.get(&current).unwrap() {
+                    bridges.push(Bridge {
+                        from: current,
+                        to: next,
+                    });
+                }
             }
-            match visited.get(&current) {
-                Some(false) => {
-                    stack.push(*next_node);
-                    let next_node_dist = distances.get_mut(next_node).unwrap();
-                    distances.entry(current).and_modify(|i| *i = *max(i, next_node_dist)).or_insert();
-                },
-                Some(true) => ,
-                None => continue,
+            Some(true) => {
+                if let Some(&next_lowest) = lowest.get(&next) {
+                    lowest
+                        .entry(current)
+                        .and_modify(|v| *v = min(v.clone(), next_lowest))
+                        .or_insert(next_lowest);
+                }
             }
+            None => continue,
         }
-        let _ = parent.insert(current);
     }
-    visited
-}
-
-fn overwrite<K, V>(map: HashMap<K, V>, value) {
-
+    bridges.to_vec()
 }
 
 fn lhs_bridge(bridge: &Bridge, var_map: &HashMap<BridgeCoord, i32>) -> i32 {
@@ -268,6 +301,35 @@ fn should_find_bridges() {
             Bridge {
                 from: (0, 0),
                 to: (1, 0),
+            },
+            Bridge {
+                from: (1, 0),
+                to: (2, 0),
+            },
+        ],
+        &HashMap::new(),
+    );
+}
+
+#[test]
+fn should_not_find_bridges() {
+    connected_bridges(
+        vec![
+            Bridge {
+                from: (0, 0),
+                to: (0, 1),
+            },
+            Bridge {
+                from: (0, 1),
+                to: (1, 1),
+            },
+            Bridge {
+                from: (1, 1),
+                to: (1, 0),
+            },
+            Bridge {
+                from: (1, 0),
+                to: (0, 0),
             },
         ],
         &HashMap::new(),
