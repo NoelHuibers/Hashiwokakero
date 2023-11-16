@@ -43,14 +43,7 @@ fn main() {
             Err(err) => eprintln!("Error: {}", err),
         },
         "solve" => {
-            let clauses = match solver::parse(input_file) {
-                Ok(clauses) => clauses,
-                Err(err) => {
-                    eprintln!("Error: {}", err);
-                    return;
-                }
-            };
-            solver::solve(clauses);
+            let _ = solver::solve(input_file);
         }
         _ => {
             eprint!("Error: Use either 'encode' or 'solve' as mode");
