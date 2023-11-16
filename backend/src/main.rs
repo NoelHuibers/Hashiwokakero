@@ -2,8 +2,8 @@ extern crate clap;
 
 use clap::{command, Arg};
 
-mod parse_input;
 mod generate_clauses;
+mod parse_input;
 mod solver;
 mod writer;
 
@@ -43,7 +43,14 @@ fn main() {
             Err(err) => eprintln!("Error: {}", err),
         },
         "solve" => {
-            solver::parse(&input_file);
+            let clauses = match solver::parse(input_file) {
+                Ok(clauses) => clauses,
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    return;
+                }
+            };
+            solver::solve(clauses);
         }
         _ => {
             eprint!("Error: Use either 'encode' or 'solve' as mode");
