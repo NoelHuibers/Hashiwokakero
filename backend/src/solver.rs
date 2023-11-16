@@ -9,11 +9,14 @@ pub fn solve(filepath: &str) -> io::Result<Certificate> {
                 println!("{:?}", ans);
                 Ok(ans)
             }
-            Err(_) => Ok(Certificate::UNSAT),
+            Err(_) => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Only DIMACS CNF files are supported",
+            )),
         },
         Err(_) => Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "Only .cnf files are allowed.",
+            "Only DIMACS CNF files are supported",
         )),
     }
 }
