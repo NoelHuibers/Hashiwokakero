@@ -61,6 +61,30 @@ $$
 
 Please find more examples in tests.
 
+##### Island with number 2 and island with number 1
+
+Rule 1.1: There are no more than two bridges in the same direction.
+
+    Example: If you have an island A and an island B, you can have at most two bridges connecting A to B, and at most two bridges connecting B to A.
+
+Rule 1.2: The number on an island must match its outgoing bridges.
+
+    Example: If an island has a number "2" on it, it means that there must be exactly two bridges connecting to other islands from that island.
+
+Putting both rules together:
+
+    Island A has the number "2" on it. This means there are exactly two bridges going out from Island A.
+    Island B is connected to Island A with two bridges.
+    Island B has the number "1" on it. This means there is exactly one bridge going out from Island B.
+    Island C is connected to Island B with one bridge.
+
+   (2)      (1)
+A -----> B -----> C
+
+TODO: do the same as in the example above for variables.
+TODO: variations of this f.e connect a to a D below or B to an E below (by incrementing the number of course)
+
+
 ## Rule 2
 
 2.1 Bridges don't cross other bridges  
@@ -133,3 +157,31 @@ $$
 ("10|11|0" \lor "10|11|1")) \land\\
 \end{align*}
 $$
+
+
+### Example 3
+
+Let's consider a simple example of a Hashi puzzle with four islands:
+
+    Island A has the number "1" on it.
+    Island B has the number "3" on it.
+    Island C has the number "1" on it.
+    Island D has the number "2" on it.
+    Island E has the number "1" on it.
+
+Here's a possible solution that adheres to the connectivity rules:
+
+(1)    (3)     (1)
+A ----- B ----- C
+        |
+(1)  (2)|
+E ----- D
+
+TODO:
+
+Prove connectivity by "Cut Vertices (Articulation Points)":
+  1. Perform Depth-First Search (DFS)
+  2. Identify Back Edges
+  3. Lowest Reachable Ancestor
+  4. Cut vertices
+  5. Bridges
