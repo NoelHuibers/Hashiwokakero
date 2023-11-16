@@ -77,10 +77,9 @@ Putting both rules together:
     Island B is connected to Island A with two bridges.
     Island B has the number "1" on it. This means there is exactly one bridge going out from Island B.
     Island C is connected to Island B with one bridge.
-
-   (2)      (1)
-A -----> B -----> C
-
+```
+A ----- B ----- C
+```
 TODO: do the same as in the example above for variables.
 TODO: variations of this f.e connect a to a D below or B to an E below (by incrementing the number of course)
 
@@ -170,13 +169,12 @@ Let's consider a simple example of a Hashi puzzle with four islands:
     Island E has the number "1" on it.
 
 Here's a possible solution that adheres to the connectivity rules:
-
-(1)    (3)     (1)
+```
 A ----- B ----- C
         |
-(1)  (2)|
+        |
 E ----- D
-
+```
 TODO:
 
 Prove connectivity by "Cut Vertices (Articulation Points)":
