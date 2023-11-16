@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash, vec};
+use std::{collections::HashMap, hash::Hash, vec, cmp::max};
 
 use itertools::Itertools;
 use splr::cdb::ClauseDBIF;
@@ -130,36 +130,58 @@ fn connected_bridges(
         } else {
             adj_list.insert(edge.from, vec![edge.to]);
         }
+        // reverse (undirected graph)
+        if let Some(neighbors) = adj_list.get_mut(&edge.to) {
+            neighbors.push(edge.from);
+        } else {
+            adj_list.insert(edge.to, vec![edge.from]);
+        }
     }
     let cloned = adj_list.clone();
-    let _ = dfs(&mut adj_list, *cloned.keys().next().unwrap());
-    print!("{:?}", adj_list);
+    let d = dfs(&mut adj_list, *cloned.keys().next().unwrap());
+    print!("{:?}", d);
 
     vec![vec![]]
 }
 
 fn dfs(adj_list: &mut AdjList, start: (usize, usize)) -> HashMap<(usize, usize), bool> {
     let mut stack = vec![start];
+    let mut distance = 0;
+    let mut distances: HashMap<(usize, usize), usize> = HashMap::new();
+    let mut lowest: HashMap<(usize, usize), usize> = HashMap::new();
     let mut visited = adj_list
         .keys()
         .map(|k| (*k, false))
         .collect::<HashMap<(usize, usize), bool>>();
+    let mut parent = None;
     while !stack.is_empty() {
         // We trust that unwrap here :)
         let current = stack.pop().unwrap();
-        match visited.get(&current) {
-            Some(false) => {
-                visited.insert(current, true);
-            }
-            _ => continue,
+        if let Some(false) = visited.get(&current) {
+            visited.insert(current, true);
+
         }
         for next_node in adj_list.get(&current).unwrap() {
-            if let Some(false) = visited.get(&current) {
-                stack.push(*next_node);
+            if parent.is_some_and(|p| p == *next_node) {
+                continue;
+            }
+            match visited.get(&current) {
+                Some(false) => {
+                    stack.push(*next_node);
+                    let next_node_dist = distances.get_mut(next_node).unwrap();
+                    distances.entry(current).and_modify(|i| *i = *max(i, next_node_dist)).or_insert();
+                },
+                Some(true) => ,
+                None => continue,
             }
         }
+        let _ = parent.insert(current);
     }
     visited
+}
+
+fn overwrite<K, V>(map: HashMap<K, V>, value) {
+
 }
 
 fn lhs_bridge(bridge: &Bridge, var_map: &HashMap<BridgeCoord, i32>) -> i32 {
