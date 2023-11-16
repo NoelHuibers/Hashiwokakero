@@ -78,10 +78,10 @@ fn exactly_k_of_n_true(k: i8, vars: Vec<i32>) -> Vec<Vec<i32>> {
     let min_true_vars = n - k + 1;
     let min_false_vars = k + 1;
     let lower: Vec<Vec<i32>> =
-        itertools::Itertools::combinations((vars.clone()).into_iter(), min_true_vars as usize)
+        Itertools::combinations((vars.clone()).into_iter(), min_true_vars as usize)
             .collect();
     let upper: Vec<Vec<i32>> =
-        itertools::Itertools::combinations((vars).into_iter(), min_false_vars as usize)
+        Itertools::combinations((vars).into_iter(), min_false_vars as usize)
             .map(|v| v.iter().map(|i| -*i).collect())
             .collect();
     [lower, upper].concat()
