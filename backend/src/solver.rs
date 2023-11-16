@@ -1,18 +1,19 @@
 use splr::*;
+use std::io;
 
-//minor changes (from println! to Strings) for testing 
-pub fn solve(clauses: Vec<Vec<i32>>) -> String {
-    let result = match Certificate::try_from(clauses) {
-        Ok(Certificate::SAT(ans)) => format!("SATISFIABLE: {:?}", ans),
-        Ok(Certificate::UNSAT) => "UNSATISFIABLE".to_string(),
-        Err(e) => panic!("UNKNOWN; {}", e),
-    };
-
-    println!("{}", result);
-
-    result
-}
-
-pub fn parse(input_file: &str) {
-    //TODO: parse input file
+pub fn solve(filepath: &str) -> io::Result<Certificate> {
+    let config = Config::from(filepath);
+    match Solver::build(&config) {
+        Ok(mut s) => match s.solve() {
+            Ok(ans) => {
+                println!("{:?}", ans);
+                Ok(ans)
+            }
+            Err(_) => Ok(Certificate::UNSAT),
+        },
+        Err(_) => Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Only .cnf files are allowed.",
+        )),
+    }
 }
