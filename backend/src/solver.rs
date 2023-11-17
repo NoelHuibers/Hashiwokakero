@@ -7,15 +7,9 @@ pub fn solve(filepath: &str) -> io::Result<Certificate> {
     match Solver::build(&config) {
         Ok(mut s) => match s.solve() {
             Ok(ans) => Ok(ans),
-            Err(_) => Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Only DIMACS CNF files are supported",
-            )),
+            Err(e) => Err(io::Error::new(io::ErrorKind::InvalidInput, e.to_string())),
         },
-        Err(_) => Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "Only DIMACS CNF files are supported",
-        )),
+        Err(e) => Err(io::Error::new(io::ErrorKind::InvalidInput, e.to_string())),
     }
 }
 
