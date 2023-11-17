@@ -9,7 +9,6 @@ use crate::{
 
 // TODO: most vars here could be of lower size
 pub(crate) type BridgeCoord = (usize, usize, usize, usize, usize);
-pub type AdjList = HashMap<(usize, usize), Vec<(usize, usize)>>;
 
 pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
     let mut dimacs: Vec<Vec<i32>> = vec![];
@@ -98,8 +97,7 @@ fn avoid_crosses(bridges: Vec<Bridge>, var_map: &HashMap<BridgeCoord, i32>) -> V
                 let b_1 = lhs_bridge(&h, &var_map);
                 let b_2 = rhs_bridge(&h, &var_map);
                 clauses.append(&mut vec![
-                    // (a_1 \/ a_2) XOR (b_1 \/ b_2)
-                    vec![a_1, a_2, b_1, b_2],
+                    // (a_1 \/ a_2) XOR (b_1 \/ b_2) XOR (-a_1 /\ -a_2 /\ -b_1 /\ -b_2)
                     vec![a_1, -a_2, b_1, -b_2],
                     vec![a_1, -a_2, -b_1, b_2],
                     vec![a_1, -a_2, -b_1, -b_2],

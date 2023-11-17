@@ -1,8 +1,8 @@
-use crate::generate_clauses::AdjList;
 use crate::parse_input::Bridge;
 use core::cmp::min;
 use std::collections::HashMap;
 
+type AdjList = HashMap<(usize, usize), Vec<(usize, usize)>>;
 type Node = (usize, usize);
 
 pub fn dfs(
