@@ -33,7 +33,7 @@ pub fn write_solution(certificate: Certificate, output_file: &str) -> io::Result
         Certificate::SAT(model) => {
             writeln!(writer, "SAT")?;
             for literal in model {
-                write!(writer, "{}, ", literal)?;
+                write!(writer, "{} ", literal)?;
             }
         }
         Certificate::UNSAT => {

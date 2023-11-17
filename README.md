@@ -36,7 +36,7 @@ To build the project, open a terminal in the project root directory and execute:
 - [x] Develop the Command Line Interface (CLI) for our application.
 - [x] Implement SAT-Solver integration and the ability to select the appropriate solver based on input data.
 - [x] Clap integration encode or solve.
-- [ ] CLI for displaying solution.
+- [ ] Solver Error no DIMACS File
 - [ ] Frontend Leptos/Yew integration.
 - [ ] Generator
 
@@ -46,15 +46,14 @@ To build the project, open a terminal in the project root directory and execute:
 - [x] Error Handling of input files.
 - [x] Establish a data structure for passing input data within the application.
 - [x] Manage the creation and formatting of output files.
-- [ ] Test structure
+- [x] Test structure
 - [ ] Benchmarking
+- [ ] Game Board Format
 
 **Florian:**
 
 - [x] Translate input data into clauses.
 - [x] Implement parsing functionality for calculating DIMACS.
-- [ ] Parsing for CLI output
-
-**Unsolved:**
-
-- [ ] Rule 2 in CNF
+- [x] Parsing for CLI output
+- [x] Rule 3 in CNF
+- [ ] Reconstruct unwraps

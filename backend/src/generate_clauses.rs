@@ -8,7 +8,7 @@ use crate::{
 };
 
 // TODO: most vars here could be of lower size
-type BridgeCoord = (usize, usize, usize, usize, usize);
+pub(crate) type BridgeCoord = (usize, usize, usize, usize, usize);
 pub type AdjList = HashMap<(usize, usize), Vec<(usize, usize)>>;
 
 pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
@@ -114,7 +114,6 @@ fn avoid_crosses(bridges: Vec<Bridge>, var_map: &HashMap<BridgeCoord, i32>) -> V
             }
         }
     }
-    print!("nop");
     clauses
 }
 
@@ -160,13 +159,19 @@ fn connected_bridges(
         let (from_x, from_y, to_x, to_y) = (bridge.from.0, bridge.from.1, bridge.to.0, bridge.to.1);
         if let Some(&lhs) = from_var.get(&(from_x, from_y, to_x, to_y, 1)) {
             // rhs must exist as we only store pairs in from_var
-            let &rhs = from_var.get(&(from_x, from_y, to_x, to_y, 0)).unwrap();
-            clauses.push(vec![lhs, rhs]);
+            if let Some(&rhs) = from_var.get(&(from_x, from_y, to_x, to_y, 0)) {
+                clauses.push(vec![lhs, rhs]);
+            } else {
+                clauses.push(vec![lhs]);
+            }
         } else {
             let &lhs = from_var.get(&(to_x, to_y, from_x, from_y, 1)).unwrap();
             // rhs must exist as we only store pairs in from_var
-            let &rhs = from_var.get(&(to_x, to_y, from_x, from_y, 0)).unwrap();
-            clauses.push(vec![lhs, rhs])
+            if let Some(&rhs) = from_var.get(&(to_x, to_y, from_x, from_y, 0)) {
+                clauses.push(vec![lhs, rhs]);
+            } else {
+                clauses.push(vec![lhs]);
+            }
         }
     });
     clauses

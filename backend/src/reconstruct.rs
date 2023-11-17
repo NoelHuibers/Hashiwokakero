@@ -11,8 +11,8 @@ use crate::{
     parse_input::{Bridge, GameBoard, Island},
 };
 
-fn reconstruct_puzzle(
-    sat_output_path: String,
+pub fn reconstruct_puzzle(
+    sat_output_path: &String,
     var_map: &HashMap<i32, BridgeCoord>,
     game_board: &GameBoard,
 ) {
@@ -21,7 +21,6 @@ fn reconstruct_puzzle(
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect(&format!("Could not read contents of {}", sat_output_path));
-    println!("{}", contents);
     if contents.contains("UNSAT") {
         println!("Problem is UNSAT");
         return;
@@ -34,7 +33,6 @@ fn reconstruct_puzzle(
             .filter_map(|i| var_map.get(&i))
             .map(|v| *v)
             .collect();
-        println!("{:?}", bridges);
         let mut bridge_map = HashMap::new();
         for bridge in bridges.clone() {
             let mut bridge_symbols = ('-', '|');
@@ -137,5 +135,5 @@ fn should_parse_sat_output() {
             },
         ],
     };
-    reconstruct_puzzle(path.into(), &var_map, &game_board);
+    reconstruct_puzzle(&path.to_string(), &var_map, &game_board);
 }

@@ -2,12 +2,12 @@ extern crate clap;
 
 use clap::{command, Arg};
 
+mod dfs;
 mod generate_clauses;
 mod parse_input;
+mod reconstruct;
 mod solver;
 mod writer;
-mod dfs;
-mod reconstruct;
 
 use generate_clauses::generate;
 use parse_input::{parse_input, print_infos};
@@ -50,7 +50,7 @@ fn main() {
                 print_infos(&game_board);
                 let (clauses, var_map) = generate(&game_board);
                 print!("Clauses as Vec<Vec<i32>>: {:?}", clauses);
-                let out_file = &format!("{}.sat", input_file);
+                let out_file = &format!("{}.cnf", input_file);
                 let dimacs_generated = generate_dimacs(&clauses, var_map.keys().len(), out_file);
                 match dimacs_generated {
                     Ok(_) => println!("Successfully generated {}", out_file),
@@ -76,6 +76,41 @@ fn main() {
             Err(err) => {
                 eprintln!("Error: {}", err);
             }
+        },
+        "encodesolvereconstruct" | "esr" => match parse_input(input_file) {
+            Ok(game_board) => {
+                let (clauses, var_map) = generate(&game_board);
+                let out_file = &format!("{}.cnf", input_file);
+                let dimacs_generated = generate_dimacs(&clauses, var_map.keys().len(), out_file);
+                match dimacs_generated {
+                    Ok(_) => match solver::solve(&out_file) {
+                        Ok(certificate) => match output_file {
+                            Some(output_file) => {
+                                match solver::write_solution(certificate, output_file) {
+                                    Ok(_) => {
+                                        reconstruct::reconstruct_puzzle(
+                                            output_file,
+                                            &var_map,
+                                            &game_board,
+                                        );
+                                    }
+                                    Err(err) => {
+                                        eprintln!("Error: {}", err);
+                                    }
+                                }
+                            }
+                            None => {
+                                println!("Solution: {:?}", certificate);
+                            }
+                        },
+                        Err(err) => {
+                            eprintln!("Error: {}", err);
+                        }
+                    },
+                    Err(e) => eprint!("{}", e),
+                }
+            }
+            Err(err) => eprintln!("Error: {}", err),
         },
         _ => {
             eprint!("Error: Use either 'encode' or 'solve' as mode");
