@@ -28,13 +28,20 @@ fn main() {
             Arg::new("input")
                 .short('i')
                 .long("input")
-                .value_name("FILE")
+                .value_name("INPUTFILE")
                 .required(true),
+        )
+        .arg(
+            Arg::new("output")
+                .short('o')
+                .long("output")
+                .value_name("OUTPUTFILE"),
         )
         .get_matches();
 
     let input_file = matches.get_one::<String>("input").unwrap();
     let mode = matches.get_one::<String>("mode").unwrap();
+    let output_file = matches.get_one::<String>("output");
 
     match mode.as_str() {
         "encode" => match parse_input(input_file) {
@@ -51,9 +58,24 @@ fn main() {
             }
             Err(err) => eprintln!("Error: {}", err),
         },
-        "solve" => {
-            solver::parse(&input_file);
-        }
+        "solve" => match solver::solve(input_file) {
+            Ok(certificate) => match output_file {
+                Some(output_file) => match solver::write_solution(certificate, output_file) {
+                    Ok(_) => {
+                        println!("Solution written to {}", output_file);
+                    }
+                    Err(err) => {
+                        eprintln!("Error: {}", err);
+                    }
+                },
+                None => {
+                    println!("Solution: {:?}", certificate);
+                }
+            },
+            Err(err) => {
+                eprintln!("Error: {}", err);
+            }
+        },
         _ => {
             eprint!("Error: Use either 'encode' or 'solve' as mode");
         }
