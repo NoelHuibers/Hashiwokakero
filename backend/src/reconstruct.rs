@@ -1,15 +1,6 @@
-use std::{
-    collections::HashMap,
-    fs::File,
-    hash::Hash,
-    io::{Read, Write},
-    ops::{Index, IndexMut},
-};
+use std::{collections::HashMap, fs::File, io::Read};
 
-use crate::{
-    generate_clauses::BridgeCoord,
-    parse_input::{Bridge, GameBoard, Island},
-};
+use crate::{generate_clauses::BridgeCoord, parse_input::GameBoard};
 
 pub fn reconstruct_puzzle(
     sat_output_path: &String,
@@ -80,7 +71,7 @@ fn should_parse_sat_output() {
     let path = "/tmp/sat/test.txt";
     let mut file = File::create(path).unwrap();
     let content = "SAT\n1 2 3 -4 5 -6 7 -8";
-    file.write_all(content.as_bytes()).unwrap();
+    std::io::Write::write_all(&mut file, content.as_bytes()).unwrap();
     let var_map = HashMap::from([
         (1, (0, 0, 0, 2, 1)),
         (2, (0, 0, 0, 2, 2)),
@@ -95,41 +86,41 @@ fn should_parse_sat_output() {
         rows: 5,
         cols: 3,
         islands: vec![
-            Island {
+            crate::parse_input::Island {
                 x: 0,
                 y: 0,
                 connections: 3,
             },
-            Island {
+            crate::parse_input::Island {
                 x: 0,
                 y: 2,
                 connections: 3,
             },
-            Island {
+            crate::parse_input::Island {
                 x: 2,
                 y: 0,
                 connections: 2,
             },
-            Island {
+            crate::parse_input::Island {
                 x: 2,
                 y: 2,
                 connections: 2,
             },
         ],
         bridges: vec![
-            Bridge {
+            crate::parse_input::Bridge {
                 from: (0, 0),
                 to: (0, 2),
             },
-            Bridge {
+            crate::parse_input::Bridge {
                 from: (0, 0),
                 to: (2, 0),
             },
-            Bridge {
+            crate::parse_input::Bridge {
                 from: (2, 0),
                 to: (2, 2),
             },
-            Bridge {
+            crate::parse_input::Bridge {
                 from: (0, 2),
                 to: (2, 2),
             },

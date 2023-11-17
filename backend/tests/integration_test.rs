@@ -1,9 +1,6 @@
 use backend::{
-    generate_clauses::generate,
-    parse_input::parse_input,
-    reconstruct,
-    solver::{self, solve},
-    writer::{self, generate_dimacs},
+    generate_clauses::generate, parse_input::parse_input, reconstruct, solver,
+    writer::generate_dimacs,
 };
 
 /*
