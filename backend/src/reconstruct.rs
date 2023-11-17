@@ -49,13 +49,13 @@ pub fn reconstruct_puzzle(
             .iter()
             .map(|i| ((i.x, i.y), i.connections))
             .collect::<HashMap<_, _>>();
-        for col in 0..game_board.cols {
-            for row in 0..game_board.rows {
-                if let Some(num) = island_map.get(&(row, col)) {
+        for row in 0..game_board.rows {
+            for col in 0..game_board.cols {
+                if let Some(num) = island_map.get(&(col, row)) {
                     print!("{}", num);
                     continue;
                 }
-                if let Some(bridge) = bridge_map.get(&(row, col)) {
+                if let Some(bridge) = bridge_map.get(&(col, row)) {
                     print!("{}", bridge);
                     continue;
                 }

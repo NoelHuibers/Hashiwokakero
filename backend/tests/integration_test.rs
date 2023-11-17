@@ -1,3 +1,5 @@
+use std::env::current_dir;
+
 use backend::{
     generate_clauses::generate, parse_input::parse_input, reconstruct, solver,
     writer::generate_dimacs,
@@ -24,7 +26,9 @@ fn test_integration() {
     //assert_eq!(output, expected_output);
 }
 */
-
+fn get_current_working_dir() -> std::io::Result<std::path::PathBuf> {
+    std::env::current_dir()
+}
 #[test]
 fn test_integration() {
     for i in 1..=22 {
