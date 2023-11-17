@@ -6,6 +6,7 @@ mod generate_clauses;
 mod parse_input;
 mod solver;
 mod writer;
+mod dfs;
 mod reconstruct;
 
 use generate_clauses::generate;
