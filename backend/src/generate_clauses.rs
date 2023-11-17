@@ -98,18 +98,17 @@ fn avoid_crosses(bridges: Vec<Bridge>, var_map: &HashMap<BridgeCoord, i32>) -> V
                 let b_1 = lhs_bridge(&h, &var_map);
                 let b_2 = rhs_bridge(&h, &var_map);
                 clauses.append(&mut vec![
-                    // XOR for a_1, b_1
-                    vec![-a_1, -b_1],
-                    vec![a_1, b_1],
-                    // XOR for a_2, b_1
-                    vec![-a_2, -b_1],
-                    vec![a_2, b_1],
-                    // XOR for a_1, b_2
-                    vec![-a_1, -b_2],
-                    vec![a_1, b_2],
-                    // XOR for a_2, b_2
-                    vec![-a_2, -b_2],
-                    vec![a_2, b_2],
+                    // (a_1 \/ a_2) XOR (b_1 \/ b_2)
+                    vec![a_1, a_2, b_1, b_2],
+                    vec![a_1, -a_2, b_1, -b_2],
+                    vec![a_1, -a_2, -b_1, b_2],
+                    vec![a_1, -a_2, -b_1, -b_2],
+                    vec![-a_1, a_2, b_1, -b_2],
+                    vec![-a_1, a_2, -b_1, b_2],
+                    vec![-a_1, a_2, -b_1, -b_2],
+                    vec![-a_1, -a_2, b_1, -b_2],
+                    vec![-a_1, -a_2, -b_1, b_2],
+                    vec![-a_1, -a_2, -b_1, -b_2],
                 ]);
             }
         }
