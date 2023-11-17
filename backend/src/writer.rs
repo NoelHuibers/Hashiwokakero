@@ -4,7 +4,7 @@ use std::io::{BufWriter, Write};
 //pub instead of private
 pub fn generate_dimacs(
     clauses: &Vec<Vec<i32>>,
-    variables: i32,
+    variables: usize,
     output_filename: &str,
 ) -> std::io::Result<()> {
     let file = File::create(output_filename)?;

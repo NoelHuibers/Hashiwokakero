@@ -5,7 +5,7 @@ use itertools::Itertools;
 use crate::parse_input::{Bridge, GameBoard, Island};
 
 // TODO: rhs/lhs could be bool and coord u8
-type BridgeCoord = (usize, usize, usize, usize, usize);
+pub type BridgeCoord = (usize, usize, usize, usize, usize);
 
 pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
     let mut dimacs: Vec<Vec<i32>> = vec![];
