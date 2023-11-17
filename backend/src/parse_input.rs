@@ -94,7 +94,12 @@ pub fn parse_rows_and_cols(header: &str) -> io::Result<(usize, usize)> {
 }
 
 pub fn parse_usize(s: &str, error_message: &str) -> io::Result<usize> {
-    s.parse().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("{}: {}", error_message, e)))
+    s.parse().map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("{}: {}", error_message, e),
+        )
+    })
 }
 
 fn parse_islands(lines: &[&str]) -> io::Result<Vec<Island>> {
@@ -104,8 +109,11 @@ fn parse_islands(lines: &[&str]) -> io::Result<Vec<Island>> {
         for (x, ch) in line.chars().enumerate() {
             if ch != '.' {
                 let connections = parse_usize(&ch.to_string(), "Invalid island connection count")?;
-                islands.push(Island { x, y, connections: connections as u32 });
-
+                islands.push(Island {
+                    x,
+                    y,
+                    connections: connections as u32,
+                });
             }
         }
     }
@@ -128,18 +136,26 @@ pub fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
             while (0..board.rows as i32).contains(&cy) && (0..board.cols as i32).contains(&cx) {
                 let current_coords = (cx as usize, cy as usize);
 
-                if let Some(current_index) = islands.iter().position(|island| (island.x, island.y) == current_coords) {
+                if let Some(current_index) = islands
+                    .iter()
+                    .position(|island| (island.x, island.y) == current_coords)
+                {
                     if index < current_index {
                         let valid_bridge = if x == current_coords.0 {
-                            (y.min(current_coords.1) + 1..y.max(current_coords.1))
-                                .all(|i| !islands.iter().any(|island| island.x == x && island.y == i))
+                            (y.min(current_coords.1) + 1..y.max(current_coords.1)).all(|i| {
+                                !islands.iter().any(|island| island.x == x && island.y == i)
+                            })
                         } else {
-                            (x.min(current_coords.0) + 1..x.max(current_coords.0))
-                                .all(|i| !islands.iter().any(|island| island.x == i && island.y == y))
+                            (x.min(current_coords.0) + 1..x.max(current_coords.0)).all(|i| {
+                                !islands.iter().any(|island| island.x == i && island.y == y)
+                            })
                         };
 
                         if valid_bridge {
-                            let bridge = Bridge { from: (x, y), to: current_coords };
+                            let bridge = Bridge {
+                                from: (x, y),
+                                to: current_coords,
+                            };
                             bridges.push(bridge);
                             connected_islands.insert((x, y));
                             connected_islands.insert(current_coords);
@@ -166,7 +182,11 @@ pub fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::
         ));
     }
 
-    for (i, line) in lines.iter().enumerate().filter(|(_, line)| !line.trim().is_empty()) {
+    for (i, line) in lines
+        .iter()
+        .enumerate()
+        .filter(|(_, line)| !line.trim().is_empty())
+    {
         // Check if the length of each line matches the specified columns
         if line.len() != cols {
             return Err(io::Error::new(
@@ -176,9 +196,8 @@ pub fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::
         }
 
         // Check if each character is either '.' or a digit between 1 and 8
-        for (j, c) in line.chars().enumerate() {
+        for (_, c) in line.chars().enumerate() {
             if c != '.' && !c.is_digit(10) {
-
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!("Invalid game board format: invalid character: {}", c),
