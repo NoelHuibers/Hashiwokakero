@@ -105,7 +105,7 @@ $$
 \end{align*}
 $$
 
-All edges $(a,b)$ where the above check results in true can be converted to clausels in the form of $a \oplus b$ and then be conjucted. Considering two bridges for each $a$ and $b$ we can expand the formula to $(a_1 \oplus b_1) \land (a_2 \oplus b_1) \land (a_1 \oplus b_2) \land (a_2 \oplus b_2)$
+All edges $(a,b)$ where the above check results in true can be converted to clausels in the form of $a \oplus b$ and then be conjucted. Considering two bridges for each $a$ and $b$ we can expand the formula to $(a_1 \lor a_2) \oplus (b_1 \lor b_2) \oplus (\neg a_1 \land \neg a_2 \land \neg b_1 \land \neg b_2)$
 
 resolve xor to CNF:
 $$
@@ -118,47 +118,31 @@ $$
 \end{align}
 $$
 
+Above constraint in CNF:
+
+$$
+\begin{align}
+&(a_1 \lor \neg a_2 \lor b_1 \lor \neg b_2) \land\\
+&(a_1 \lor \neg a_2 \lor \neg b_1 \lor b_2) \land\\
+&(a_1 \lor \neg a_2 \lor \neg b_1 \lor \neg b_2) \land\\
+&(\neg a_1 \lor a_2 \lor b_1 \lor \neg b_2) \land\\
+&(\neg a_1 \lor a_2 \lor \neg b_1 \lor b_2) \land\\
+&(\neg a_1 \lor a_2 \lor \neg b_1 \lor \neg b_2) \land\\
+&(\neg a_1 \lor \neg a_2 \lor b_1 \lor \neg b_2) \land\\
+&(\neg a_1 \lor \neg a_2 \lor \neg b_1 \lor b_2) \land\\
+&(\neg a_1 \lor \neg a_2 \lor \neg b_1 \lor \neg b_2)
+\end{align}
+$$
+
 
 ## Rule 3
 
 3.1: All Islands must be connected  
 3.2: Cycles are possible
 
-A Graph of $n$ Islands needs at least $n-1$ unique bridges to be connected (based on a spanning tree). Assuming a pair of possible Bridges is called $a, b$ we can use $\lor$ as a constraint for at least one Bridge. We demand at least one unique bridge for at least $n-1$ nodes to make sure every island is connected.
+We view the puzzle as an undirected graph considering all possible bridges as edges and islands as nodes. We look for bridges in the graph using Tarjans algorithm. As bridges are the fragile edges of the graph where we definetely force a bridge by adding the bridge pair in a clause.
 
-
-
-### Example
-```
-(1)==(2)
-||    ||
-||    ||
-(1)==(2)
-```
-
-$n = 4$  
-$n-1 = 3$  
-
-Bridges are labelled after start-to-end indices starting with coordinate 00 in the left upper corner.
-
-Concunction of Disjunctions:
-
-$$
-\begin{align*}
-(("00|10|0" \lor "00|10|1") \lor
-("00|01|0" \lor "00|01|1") \lor
-("10|11|0" \lor "10|11|1") \lor
-("01|11|0" \lor "01|11|1")) \land\\
-(("00|10|0" \lor "00|10|1") \lor
-("00|01|0" \lor "00|01|1") \lor
-("10|11|0" \lor "10|11|1")) \land\\
-(("00|01|0" \lor "00|01|1") \lor
-("10|11|0" \lor "10|11|1")) \land\\
-\end{align*}
-$$
-
-
-### Example 3
+### Examples
 
 Let's consider a simple example of a Hashi puzzle with four islands:
 
@@ -175,7 +159,6 @@ A ----- B ----- C
         |
 E ----- D
 ```
-TODO:
 
 Prove connectivity by "Cut Vertices (Articulation Points)":
   1. Perform Depth-First Search (DFS)

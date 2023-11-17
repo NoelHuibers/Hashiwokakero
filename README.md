@@ -28,6 +28,10 @@ To build the project, open a terminal in the project root directory and execute:
 
 `cargo build`
 
+## SAT Conversion
+
+See [Clauses](Clauses.md)
+
 ## Team Responsibilities
 
 **Noel:**
@@ -36,7 +40,7 @@ To build the project, open a terminal in the project root directory and execute:
 - [x] Develop the Command Line Interface (CLI) for our application.
 - [x] Implement SAT-Solver integration and the ability to select the appropriate solver based on input data.
 - [x] Clap integration encode or solve.
-- [ ] Solver Error no DIMACS File
+- [x] Solver Error no DIMACS File
 - [ ] Frontend Leptos/Yew integration.
 - [ ] Generator
 
@@ -56,4 +60,5 @@ To build the project, open a terminal in the project root directory and execute:
 - [x] Implement parsing functionality for calculating DIMACS.
 - [x] Parsing for CLI output
 - [x] Rule 3 in CNF
-- [ ] Reconstruct unwraps
+- [x] Reconstruct unwraps
+- [ ] Update instructions on how to run
