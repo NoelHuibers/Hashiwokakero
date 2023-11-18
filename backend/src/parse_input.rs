@@ -175,10 +175,12 @@ pub fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
 
 pub fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::Result<()> {
     // Check if the number of lines matches the specified rows
-    if lines.len() != rows {
+    let non_empty_lines: Vec<&str> = lines.iter().filter(|line| !line.trim().is_empty()).cloned().collect();
+
+    if non_empty_lines.len() != rows {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            format!("Invalid game board format: incorrect number of rows (expected {}, found {}). Check for empty lines!", rows, lines.len()),
+            format!("Invalid game board format: incorrect number of rows (expected {}, found {}). Check for empty lines!", rows, non_empty_lines.len()),
         ));
     }
 
