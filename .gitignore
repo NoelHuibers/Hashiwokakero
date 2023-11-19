@@ -1,7 +1,6 @@
 /target
 /backend/output/*
-.vscode/settings.json
-/node_modules
+.vscode
 /backend/output
-/frontend/target
-/frontend/dist
+/dist
+/node_modules
