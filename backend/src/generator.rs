@@ -47,53 +47,53 @@ pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
     grid
 }
 
-fn second_round(
-    points: u8,
-    grid: &mut Vec<Vec<u8>>,
-    grid_size: usize,
-    x: Vec<usize>,
-    y: Vec<usize>,
-    degree: Vec<u8>,
-    part: Vec<Part>,
-) {
-    for i in 0..points {
-        let new_points = get_new_points(&degree[i as usize], &part[i as usize]);
-        println!("New points: {}", new_points);
-        if new_points == 1 {
-            connect_one(
-                &mut grid,
-                x[i as usize],
-                y[i as usize],
-                grid_size,
-                degree[i as usize],
-            );
-        } else if new_points == 2 {
-            connect_two(
-                &mut grid,
-                x[i as usize],
-                y[i as usize],
-                grid_size,
-                degree[i as usize],
-            );
-        } else if new_points == 3 {
-            connect_three(
-                &mut grid,
-                x[i as usize],
-                y[i as usize],
-                grid_size,
-                degree[i as usize],
-            );
-        } else if new_points == 4 {
-            connect_four(
-                &mut grid,
-                x[i as usize],
-                y[i as usize],
-                grid_size,
-                degree[i as usize],
-            );
-        }
-    }
-}
+// fn second_round(
+//     points: u8,
+//     grid: &mut Vec<Vec<u8>>,
+//     grid_size: usize,
+//     x: Vec<usize>,
+//     y: Vec<usize>,
+//     degree: Vec<u8>,
+//     part: Vec<Part>,
+// ) {
+//     for i in 0..points {
+//         let new_points = get_new_points(&degree[i as usize], &part[i as usize]);
+//         println!("New points: {}", new_points);
+//         if new_points == 1 {
+//             connect_one(
+//                 &mut grid,
+//                 x[i as usize],
+//                 y[i as usize],
+//                 grid_size,
+//                 degree[i as usize],
+//             );
+//         } else if new_points == 2 {
+//             connect_two(
+//                 &mut grid,
+//                 x[i as usize],
+//                 y[i as usize],
+//                 grid_size,
+//                 degree[i as usize],
+//             );
+//         } else if new_points == 3 {
+//             connect_three(
+//                 &mut grid,
+//                 x[i as usize],
+//                 y[i as usize],
+//                 grid_size,
+//                 degree[i as usize],
+//             );
+//         } else if new_points == 4 {
+//             connect_four(
+//                 &mut grid,
+//                 x[i as usize],
+//                 y[i as usize],
+//                 grid_size,
+//                 degree[i as usize],
+//             );
+//         }
+//     }
+// }
 
 fn get_cell_position(x: usize, y: usize, grid_size: usize) -> Part {
     match (x, y) {
@@ -506,3 +506,4 @@ pub fn output_to_file(grid: &Vec<Vec<u8>>, _filename: &str) -> Result<()> {
 
     Ok(())
 }
+
