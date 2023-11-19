@@ -1,4 +1,4 @@
-use std::{collections::HashMap, vec};
+use std::{collections::HashMap, vec, iter};
 
 use itertools::Itertools;
 
@@ -50,7 +50,11 @@ pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) 
         dimacs.append(&mut outgoing_bridges((island, bridges), from_var.clone()))
     }
     dimacs.append(&mut avoid_crosses(game.bridges.clone(), &from_var));
-    dimacs.append(&mut connected_bridges(game.bridges.clone(), &from_var));
+    dimacs.append(&mut connected_bridges(
+        &game.bridges,
+        &game.islands,
+        &from_var,
+    ));
     return (dimacs, from_idx);
 }
 
@@ -97,16 +101,12 @@ fn avoid_crosses(bridges: Vec<Bridge>, var_map: &HashMap<BridgeCoord, i32>) -> V
                 let b_1 = lhs_bridge(&h, &var_map);
                 let b_2 = rhs_bridge(&h, &var_map);
                 clauses.append(&mut vec![
-                    // (a_1 \/ a_2) XOR (b_1 \/ b_2) XOR (-a_1 /\ -a_2 /\ -b_1 /\ -b_2)
-                    vec![a_1, -a_2, b_1, -b_2],
-                    vec![a_1, -a_2, -b_1, b_2],
-                    vec![a_1, -a_2, -b_1, -b_2],
-                    vec![-a_1, a_2, b_1, -b_2],
-                    vec![-a_1, a_2, -b_1, b_2],
-                    vec![-a_1, a_2, -b_1, -b_2],
-                    vec![-a_1, -a_2, b_1, -b_2],
-                    vec![-a_1, -a_2, -b_1, b_2],
-                    vec![-a_1, -a_2, -b_1, -b_2],
+                    // (a_1 \/ a_2) XOR (b_1 \/ b_2) XOR (¬a_1 /\ ¬a_2 /\ ¬b_1 /\ ¬b_2)
+                    // <=> (¬a_1 ∨ ¬b_1) /\ (¬a_1 ∨ ¬b2) /\ (¬a_2 ∨ ¬b_1) /\ (¬a_2 ∨ ¬b_2)
+                    vec![-a_1, -b_1],
+                    vec![-a_1, -b_2],
+                    vec![-a_2, -b_1],
+                    vec![-a_2, -b_2],
                 ]);
             }
         }
@@ -116,10 +116,64 @@ fn avoid_crosses(bridges: Vec<Bridge>, var_map: &HashMap<BridgeCoord, i32>) -> V
 
 // Rule 3
 fn connected_bridges(
-    edges: Vec<Bridge>,
+    edges: &Vec<Bridge>,
+    nodes: &Vec<Island>,
     from_var: &HashMap<(usize, usize, usize, usize, usize), i32>,
 ) -> Vec<Vec<i32>> {
-    let mut clauses: Vec<Vec<i32>> = vec![];
+    let mut clauses = vec![];
+    let (mut bridges, visited) = find_bridges(edges);
+
+    // Case there aren't even possible bridges to connect the puzzle (invalid puzzle)
+    if !visited.values().fold(true, |acc, v| acc && *v) {
+        // Forcing empty clause that is only revealed after initial SAT check
+        clauses.push(vec![1, 2]);
+        clauses.push(vec![-1]);
+        clauses.push(vec![-2]);
+        return clauses;
+    }
+
+    // Case every node has exactly number "2", allowing pairwise double bridges.
+    // If at least one number is "1" or greater than "2" connectedness will be
+    // enforced by bridges / Rule 1. In this case we (a_1 \/ a_2) all pairs.
+    if nodes.iter().fold(true, |acc, n| acc && n.connections == 2) {
+        let mut tmp_edges = edges.clone();
+        while bridges.is_empty() && tmp_edges.len() >= nodes.len() {
+            let iterations = tmp_edges.len().clone();
+            for i in 0..iterations {
+                let removed = tmp_edges.get_mut(i).unwrap().clone();
+                tmp_edges.remove(i);
+                let (tmp_bridges, _) = find_bridges(&tmp_edges);
+                if tmp_bridges.is_empty() {
+                    break;
+                }
+                tmp_edges.insert(i, removed.clone());
+            }
+            if tmp_edges.len() == iterations {
+                tmp_edges.pop();
+            }
+            let (tmp_bridges, _) = find_bridges(&tmp_edges);
+            bridges = tmp_bridges;
+        }
+    }
+
+    // Case otherwise => Find bridges
+    bridges.iter().for_each(|bridge| {
+        let (from_x, from_y, to_x, to_y) = (bridge.from.0, bridge.from.1, bridge.to.0, bridge.to.1);
+        if let Some(&lhs) = from_var.get(&(from_x, from_y, to_x, to_y, 1)) {
+            // We trust that unwrap because every node is inserted as lhs and rhs
+            let &rhs = from_var.get(&(from_x, from_y, to_x, to_y, 2)).unwrap();
+            clauses.push(vec![lhs, rhs])
+        } else {
+            // If the undirected dfs found an edge and it wasn't a->b it must be b->a
+            let &lhs = from_var.get(&(to_x, to_y, from_x, from_y, 1)).unwrap();
+            let &rhs = from_var.get(&(to_x, to_y, from_x, from_y, 2)).unwrap();
+            clauses.push(vec![lhs, rhs]);
+        }
+    });
+    clauses
+}
+
+fn find_bridges(edges: &Vec<Bridge>) -> (Vec<Bridge>, HashMap<(usize, usize), bool>) {
     let mut adj_list: HashMap<(_, _), Vec<(_, _)>> = HashMap::new();
     for edge in edges.iter() {
         if let Some(neighbors) = adj_list.get_mut(&edge.from) {
@@ -138,40 +192,20 @@ fn connected_bridges(
         .keys()
         .map(|k| (*k, false))
         .collect::<HashMap<(usize, usize), bool>>();
-    let bridges = dfs(
+    let mut distances = HashMap::new();
+    let mut lowest = HashMap::new();
+    let mut vec = vec![];
+    let (bridges, visited) = dfs(
         *visited.keys().next().unwrap(),
         0,
         &mut adj_list,
         &mut visited,
-        &mut HashMap::new(),
-        &mut HashMap::new(),
+        &mut distances,
+        &mut lowest,
         None,
-        &mut vec![],
+        &mut vec,
     );
-
-    // TODO: Handle cases when no bridges are found
-
-    // Simple solution of just enforcing the bridges found
-    bridges.iter().for_each(|bridge| {
-        let (from_x, from_y, to_x, to_y) = (bridge.from.0, bridge.from.1, bridge.to.0, bridge.to.1);
-        if let Some(&lhs) = from_var.get(&(from_x, from_y, to_x, to_y, 1)) {
-            // rhs must exist as we only store pairs in from_var
-            if let Some(&rhs) = from_var.get(&(from_x, from_y, to_x, to_y, 0)) {
-                clauses.push(vec![lhs, rhs]);
-            } else {
-                clauses.push(vec![lhs]);
-            }
-        } else {
-            let &lhs = from_var.get(&(to_x, to_y, from_x, from_y, 1)).unwrap();
-            // rhs must exist as we only store pairs in from_var
-            if let Some(&rhs) = from_var.get(&(to_x, to_y, from_x, from_y, 0)) {
-                clauses.push(vec![lhs, rhs]);
-            } else {
-                clauses.push(vec![lhs]);
-            }
-        }
-    });
-    clauses
+    (bridges, visited.clone())
 }
 
 fn lhs_bridge(bridge: &Bridge, var_map: &HashMap<BridgeCoord, i32>) -> i32 {

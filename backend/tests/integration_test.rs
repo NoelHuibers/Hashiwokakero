@@ -31,7 +31,7 @@ fn get_current_working_dir() -> std::io::Result<std::path::PathBuf> {
 }
 #[test]
 fn test_integration() {
-    for i in 1..=22 {
+    for i in 1..=24 {
         println!("Test {}", i);
         let input_file = format!("./input/test{}.txt", i);
         let output_file = format!("./output/test{}.txt", i);
@@ -56,7 +56,6 @@ fn test_integration() {
                                 }
                             }
                         }
-
                         Err(err) => {
                             eprintln!("Error: {}", err);
                         }

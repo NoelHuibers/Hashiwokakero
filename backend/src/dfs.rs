@@ -5,16 +5,16 @@ use std::collections::HashMap;
 type AdjList = HashMap<(usize, usize), Vec<(usize, usize)>>;
 type Node = (usize, usize);
 
-pub fn dfs(
+pub fn dfs<'a>(
     current: Node,
     mut distance: usize,
-    adj_list: &mut AdjList,
-    visited: &mut HashMap<Node, bool>,
-    distances: &mut HashMap<Node, usize>,
-    lowest: &mut HashMap<Node, usize>,
+    adj_list: &'a mut AdjList,
+    visited: &'a mut HashMap<Node, bool>,
+    distances: &'a mut HashMap<Node, usize>,
+    lowest: &'a mut HashMap<Node, usize>,
     parent: Option<Node>,
-    bridges: &mut Vec<Bridge>,
-) -> Vec<Bridge> {
+    bridges: &'a mut Vec<Bridge>,
+) -> (Vec<Bridge>, &'a mut HashMap<(usize, usize), bool>) {
     distances.insert(current, distance);
     lowest.insert(current, distance);
     visited.insert(current, true);
@@ -58,7 +58,7 @@ pub fn dfs(
             None => continue,
         }
     }
-    bridges.to_vec()
+    (bridges.to_vec(), visited)
 }
 
 #[test]
@@ -96,7 +96,7 @@ fn should_find_bridges() {
         .keys()
         .map(|k| (*k, false))
         .collect::<HashMap<(usize, usize), bool>>();
-    let d = dfs(
+    let (d, v) = dfs(
         *visited.keys().next().unwrap(),
         0,
         &mut adj_list,
@@ -158,7 +158,7 @@ fn should_not_find_bridges() {
         .keys()
         .map(|k| (*k, false))
         .collect::<HashMap<(usize, usize), bool>>();
-    let d = dfs(
+    let (d, _) = dfs(
         *visited.keys().next().unwrap(),
         0,
         &mut adj_list,
