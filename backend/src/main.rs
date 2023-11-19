@@ -47,9 +47,7 @@ fn main() {
     match mode.as_str() {
         "encode" => match parse_input(input_file) {
             Ok(game_board) => {
-                print_infos(&game_board);
                 let (clauses, var_map) = generate(&game_board);
-                print!("Clauses as Vec<Vec<i32>>: {:?}", clauses);
                 let out_file = &format!("{}.cnf", input_file);
                 let dimacs_generated = generate_dimacs(&clauses, var_map.keys().len(), out_file);
                 match dimacs_generated {
@@ -117,3 +115,4 @@ fn main() {
         }
     }
 }
+
