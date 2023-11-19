@@ -1,12 +1,15 @@
+use rand::seq::SliceRandom;
 use rand::Rng;
 use std::fs::File;
 use std::io::{Result, Write};
 
+#[derive(Debug, Clone)]
 pub enum Part {
     Corner(Corner),
     Edge(Edge),
     Normal,
 }
+#[derive(Debug, Clone)]
 pub enum Corner {
     TopLeft,
     TopRight,
@@ -14,6 +17,7 @@ pub enum Corner {
     BottomRight,
 }
 
+#[derive(Debug, Clone)]
 pub enum Edge {
     Top,
     Bottom,
@@ -21,22 +25,29 @@ pub enum Edge {
     Right,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Direction {
+    North,
+    East,
+    South,
+    West,
+}
+
 pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
     let mut grid: Vec<Vec<u8>> = vec![vec![0; grid_size]; grid_size];
-    //TODO: Use Bridges or maybe a second grid with all blocked cells?
-    //Undecided, because of checking if bridges are crossing each other. (Maybe able to read out of the second grid?)
-    let mut _bridges: Vec<Vec<u8>> = vec![vec![0; grid_size]; grid_size];
+    //TODO: Have a second grid where all blocked cells are marked with true (Bridges and islands)
+    let mut _2grid: Vec<Vec<bool>> = vec![vec![false; grid_size]; grid_size];
 
-    let x = rand::thread_rng().gen_range(0..grid_size - 1);
-    let y = rand::thread_rng().gen_range(0..grid_size - 1);
+    let x = rand::thread_rng().gen_range(0..=grid_size - 1);
+    let y = rand::thread_rng().gen_range(0..=grid_size - 1);
     let part = get_cell_position(x, y, grid_size);
     let degree = get_max_degree(&part, 1, 0);
-    grid[x][y] = degree;
+    grid[y][x] = degree;
 
     let new_points = get_new_points(&degree, &part);
     println!("New points: {}", new_points);
     if new_points == 1 {
-        connect_one(&mut grid, x, y, grid_size, degree);
+        connect_one(&mut grid, x, y, grid_size, degree, part);
     } else if new_points == 2 {
         connect_two(&mut grid, x, y, grid_size, degree, part);
     } else if new_points == 3 {
@@ -46,6 +57,18 @@ pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
     }
     grid
 }
+
+// TODO: Implement making all Satisfied.
+// To get a depth first search, we need to make sure that all cells are satisfied.
+// After this we can check if the grid is full and continue with the newly generated points that satsifyed the
+// current configuration.
+// Step 1: Generate for all new points all points needed to make a puzzle that is SAT.
+// How can we achieve this? Safe all points that are from
+// the second round in a new vec only for this round, because we can have circles! If a point is new and a 2 and another point
+// needs the same connection just add the value that is needed to satisfy the other point.
+// Step 2: Check if the grid is full and if not, continue with the newly generated points
+// that satsifyed the current configuration) [random generate if we continue and what higher degree is possible]
+// If this text is still here, I didn't implement it yet. For questions, ask me.
 
 // fn second_round(
 //     points: u8,
@@ -96,15 +119,20 @@ pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
 // }
 
 fn get_cell_position(x: usize, y: usize, grid_size: usize) -> Part {
-    match (x, y) {
-        (0, 0) => Part::Corner(Corner::TopLeft),
-        (0, _) if y == grid_size - 1 => Part::Corner(Corner::TopRight),
-        _ if x == grid_size - 1 && y == 0 => Part::Corner(Corner::BottomLeft),
-        _ if x == grid_size - 1 && y == grid_size - 1 => Part::Corner(Corner::BottomRight),
-        (0, _) => Part::Edge(Edge::Top),
-        _ if x == grid_size - 1 => Part::Edge(Edge::Bottom),
-        (_, 0) => Part::Edge(Edge::Left),
-        _ if y == grid_size - 1 => Part::Edge(Edge::Right),
+    let near_left = x == 0 || x == 1;
+    let near_right = x == grid_size - 1 || x == grid_size - 2;
+    let near_top = y == 0 || y == 1;
+    let near_bottom = y == grid_size - 1 || y == grid_size - 2;
+
+    match (near_left, near_right, near_top, near_bottom) {
+        (true, false, true, false) => Part::Corner(Corner::TopLeft),
+        (true, false, false, true) => Part::Corner(Corner::BottomLeft),
+        (false, true, true, false) => Part::Corner(Corner::TopRight),
+        (false, true, false, true) => Part::Corner(Corner::BottomRight),
+        (true, false, _, _) => Part::Edge(Edge::Left),
+        (false, true, _, _) => Part::Edge(Edge::Right),
+        (_, _, true, false) => Part::Edge(Edge::Top),
+        (_, _, false, true) => Part::Edge(Edge::Bottom),
         _ => Part::Normal,
     }
 }
@@ -144,37 +172,83 @@ fn get_new_points(degree: &u8, part: &Part) -> u8 {
     }
 }
 
-//TODO: Handling max degree
-fn connect_one(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
-    println!("Connecting one with {} degree", degree);
-    println!("x: {}, y: {}", x, y);
-    let mut rng = rand::thread_rng();
-
-    let axis = rng.gen_bool(0.5);
-    let first_axis = if axis { x } else { y };
-    let other_axis = if axis { y } else { x };
-
-    let second_axis = generate_other_axis(other_axis, grid_size);
-
-    if axis {
-        let part = get_cell_position(first_axis, second_axis, grid_size);
-        if degree == 1 {
-            grid[first_axis][second_axis] = get_max_degree(&part, 1, 1);
-        } else {
-            grid[first_axis][second_axis] = get_max_degree(&part, 2, 0);
-        }
-    } else {
-        let part = get_cell_position(second_axis, first_axis, grid_size);
-        if degree == 1 {
-            grid[second_axis][first_axis] = get_max_degree(&part, 1, 1);
-        } else {
-            grid[second_axis][first_axis] = get_max_degree(&part, 2, 0);
-        }
-    };
+fn get_possible_directions(part: &Part) -> &[Direction] {
+    match part {
+        Part::Corner(corner) => match corner {
+            Corner::TopLeft => &[Direction::South, Direction::East],
+            Corner::TopRight => &[Direction::South, Direction::West],
+            Corner::BottomLeft => &[Direction::North, Direction::East],
+            Corner::BottomRight => &[Direction::North, Direction::West],
+        },
+        Part::Edge(edge) => match edge {
+            Edge::Top => &[Direction::South, Direction::East, Direction::West],
+            Edge::Bottom => &[Direction::North, Direction::East, Direction::West],
+            Edge::Left => &[Direction::North, Direction::South, Direction::West],
+            Edge::Right => &[Direction::North, Direction::South, Direction::East],
+        },
+        Part::Normal => &[
+            Direction::North,
+            Direction::South,
+            Direction::East,
+            Direction::West,
+        ],
+    }
 }
 
-//TODO: Handling max degree
-//TODO: Spaghetti code should be refactored
+fn get_directions(part: &Part, num_directions: usize) -> Vec<Direction> {
+    let mut rng = rand::thread_rng();
+    let possible_directions = get_possible_directions(&part);
+    let mut directions = Vec::new();
+
+    for _ in 0..num_directions {
+        let mut direction = possible_directions.choose(&mut rng).unwrap();
+        while directions.contains(direction) {
+            direction = possible_directions.choose(&mut rng).unwrap();
+        }
+        directions.push(*direction);
+    }
+
+    directions
+}
+
+fn get_new_coordinate(
+    direction: &Direction,
+    x: usize,
+    y: usize,
+    grid_size: usize,
+) -> (usize, usize) {
+    let mut rng = rand::thread_rng();
+    match direction {
+        Direction::North => (x, rng.gen_range(0..y - 1)),
+        Direction::East => (rng.gen_range(x + 1..grid_size), y),
+        Direction::South => (x, rng.gen_range(y + 1..grid_size)),
+        Direction::West => (rng.gen_range(0..x - 1), y),
+    }
+}
+
+fn connect_one(
+    grid: &mut Vec<Vec<u8>>,
+    x: usize,
+    y: usize,
+    grid_size: usize,
+    degree: u8,
+    part: Part,
+) {
+    println!("Connecting one with {} degree", degree);
+    println!("x: {}, y: {}", x, y);
+    let directions = get_directions(&part, 1);
+    let direction = directions.get(0).unwrap();
+    println!("Direction: {:?}", direction);
+    let (new_x, new_y) = get_new_coordinate(direction, x, y, grid_size);
+    println!("New point:");
+    println!("x: {}, y: {}", new_x, new_y);
+    grid[new_y][new_x] = get_max_degree(
+        &part,
+        if degree == 1 { 1 } else { 2 },
+        if degree == 1 { 1 } else { 0 },
+    );
+}
+
 fn connect_two(
     grid: &mut Vec<Vec<u8>>,
     x: usize,
@@ -185,131 +259,34 @@ fn connect_two(
 ) {
     println!("Connecting two with {} degree", degree);
     println!("x: {}, y: {}", x, y);
-    let mut rng = rand::thread_rng();
-    let first_random_number;
-    let mut second_random_number;
-
-    match part {
-        Part::Corner(Corner::TopLeft) => {
-            first_random_number = 0;
-            second_random_number = 2;
-        }
-        Part::Corner(Corner::TopRight) => {
-            first_random_number = 0;
-            second_random_number = 3;
-        }
-        Part::Corner(Corner::BottomLeft) => {
-            first_random_number = 1;
-            second_random_number = 2;
-        }
-        Part::Corner(Corner::BottomRight) => {
-            first_random_number = 1;
-            second_random_number = 3;
-        }
-        Part::Edge(Edge::Top) => {
-            let not = rng.gen_range(0..=2);
-            (first_random_number, second_random_number) = match not {
-                0 => (0, 3),
-                1 => (0, 2),
-                _ => (2, 3),
-            };
-        }
-        Part::Edge(Edge::Bottom) => {
-            let not = rng.gen_range(0..=2);
-            (first_random_number, second_random_number) = match not {
-                0 => (1, 3),
-                1 => (1, 2),
-                _ => (2, 3),
-            };
-        }
-        Part::Edge(Edge::Left) => {
-            let not = rng.gen_range(0..=2);
-            (first_random_number, second_random_number) = match not {
-                0 => (0, 1),
-                1 => (0, 2),
-                _ => (1, 2),
-            };
-        }
-        Part::Edge(Edge::Right) => {
-            let not = rng.gen_range(0..=2);
-            (first_random_number, second_random_number) = match not {
-                0 => (0, 1),
-                1 => (0, 3),
-                _ => (1, 3),
-            };
-        }
-        Part::Normal => {
-            first_random_number = rng.gen_range(1..=3);
-            loop {
-                second_random_number = rng.gen_range(1..=3);
-                if second_random_number != first_random_number {
-                    break;
-                }
-            }
-        }
-    }
+    let directions = get_directions(&part, 2);
+    println!("Directions: {:?}", directions);
 
     let mut isset = false;
     for i in 0..2 {
-        let mut first_axis = x;
-        let mut second_axis = y;
+        let direction = directions.get(i).unwrap();
+        let (new_x, new_y) = get_new_coordinate(direction, x, y, grid_size);
+        println!("{}. new point:", i + 1);
+        println!("x: {}, y: {}", new_x, new_y);
 
-        let compared_number = if i == 0 {
-            first_random_number
-        } else {
-            second_random_number
-        };
-
-        if compared_number == 0 {
-            if x + 1 == grid_size - 1 {
-                first_axis = x + 1;
-            } else {
-                first_axis = rng.gen_range(x + 1..grid_size);
-            }
-        }
-        if compared_number == 1 {
-            if x == 1 {
-                first_axis = 0;
-            } else {
-                first_axis = rng.gen_range(0..x);
-            }
-        }
-        if compared_number == 2 {
-            if y + 1 == grid_size - 1 {
-                second_axis = y + 1;
-            } else {
-                second_axis = rng.gen_range(y + 1..grid_size);
-            }
-        }
-        if compared_number == 3 {
-            if y == 1 {
-                second_axis = 0;
-            } else {
-                second_axis = rng.gen_range(0..y);
-            }
-        }
-        println!("New point:");
-        println!("x: {}, y: {}", first_axis, second_axis);
-        let part = get_cell_position(first_axis, second_axis, grid_size);
+        let part = get_cell_position(new_x, new_y, grid_size);
         match isset {
-            true => grid[first_axis][second_axis] = get_max_degree(&part, 2, 0),
+            true => grid[new_y][new_x] = get_max_degree(&part, 2, 0),
             false => match degree {
-                2 => grid[first_axis][second_axis] = get_max_degree(&part, 1, 0),
+                2 => grid[new_y][new_x] = get_max_degree(&part, 1, 0),
                 3 => {
                     let newdegree = get_max_degree(&part, 1, 0);
-                    grid[first_axis][second_axis] = newdegree;
+                    grid[new_y][new_x] = newdegree;
                     if newdegree == 1 {
                         isset = true
                     }
                 }
-                _ => grid[first_axis][second_axis] = get_max_degree(&part, 2, 0),
+                _ => grid[new_y][new_x] = get_max_degree(&part, 2, 0),
             },
         }
     }
 }
 
-//TODO: Handling min & max degree
-//TODO: Spaghetti code should be refactored
 fn connect_three(
     grid: &mut Vec<Vec<u8>>,
     x: usize,
@@ -320,167 +297,55 @@ fn connect_three(
 ) {
     println!("Connecting three with {} degree", degree);
     println!("x: {}, y: {}", x, y);
-    let mut rng = rand::thread_rng();
-
-    let mut first_random_number = 0;
-    let mut second_random_number = 0;
-    let mut third_random_number = 0;
-
-    match part {
-        Part::Edge(Edge::Top) => {
-            first_random_number = 0;
-            second_random_number = 2;
-            third_random_number = 3;
-        }
-        Part::Edge(Edge::Bottom) => {
-            first_random_number = 1;
-            second_random_number = 2;
-            third_random_number = 3;
-        }
-        Part::Edge(Edge::Left) => {
-            first_random_number = 0;
-            second_random_number = 1;
-            third_random_number = 2;
-        }
-        Part::Edge(Edge::Right) => {
-            first_random_number = 0;
-            second_random_number = 1;
-            third_random_number = 3;
-        }
-        Part::Normal => {
-            let not = rng.gen_range(0..=3);
-            (
-                first_random_number,
-                second_random_number,
-                third_random_number,
-            ) = match not {
-                0 => (0, 2, 3),
-                1 => (1, 2, 3),
-                2 => (0, 1, 2),
-                _ => (0, 1, 3),
-            }
-        }
-        _ => (),
-    };
+    let directions = get_directions(&part, 3);
+    println!("Directions: {:?}", directions);
 
     let mut alreadyset = false;
 
     for i in 0..3 {
-        let mut first_axis = x;
-        let mut second_axis = y;
-        let compared_number = match i {
-            0 => first_random_number,
-            1 => second_random_number,
-            _ => third_random_number,
-        };
+        let direction = directions.get(i).unwrap();
+        let (new_x, new_y) = get_new_coordinate(direction, x, y, grid_size);
+        println!("{}. new point:", i + 1);
+        println!("x: {}, y: {}", new_x, new_y);
 
-        if compared_number == 0 {
-            if x + 1 == grid_size - 1 {
-                first_axis = x + 1;
-            } else {
-                first_axis = rng.gen_range(x + 1..grid_size);
-            }
-        }
-        if compared_number == 1 {
-            if x == 1 {
-                first_axis = 0;
-            } else {
-                first_axis = rng.gen_range(0..x);
-            }
-        }
-        if compared_number == 2 {
-            if y + 1 == grid_size - 1 {
-                second_axis = y + 1;
-            } else {
-                second_axis = rng.gen_range(y + 1..grid_size);
-            }
-        }
-        if compared_number == 3 {
-            if y == 1 {
-                second_axis = 0;
-            } else {
-                second_axis = rng.gen_range(0..y);
-            }
-        }
-        println!(
-            "i: {}, first_axis: {}, second_axis: {} ",
-            i, first_axis, second_axis
-        );
-        let part = get_cell_position(first_axis, second_axis, grid_size);
+        let part = get_cell_position(new_x, new_y, grid_size);
         if degree == 5 && alreadyset == false {
             let new_degree = get_max_degree(&part, 1, 0);
-            grid[first_axis][second_axis] = new_degree;
+            grid[new_y][new_x] = new_degree;
             if new_degree == 1 {
                 alreadyset = true
             }
         } else {
-            grid[first_axis][second_axis] = get_max_degree(&part, 2, 0)
+            grid[new_y][new_x] = get_max_degree(&part, 2, 0)
         }
     }
 }
 
-//TODO: Handling min & max degree
 fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
     println!("Connecting 4 with {} degree", degree);
     println!("x: {}, y: {}", x, y);
-
-    let mut rng = rand::thread_rng();
+    let directions = get_directions(&Part::Normal, 3);
+    println!("Directions: {:?}", directions);
 
     let mut alreadyset = false;
+
     for i in 0..4 {
-        let mut first_axis = x;
-        let mut second_axis = y;
+        let direction = directions.get(i).unwrap();
+        let (new_x, new_y) = get_new_coordinate(direction, x, y, grid_size);
+        println!("{}. new point:", i + 1);
+        println!("x: {}, y: {}", new_x, new_y);
 
-        if i == 0 {
-            if x + 1 == grid_size - 1 {
-                first_axis = x + 1;
-            } else {
-                first_axis = rng.gen_range(x + 1..grid_size);
-            }
-        } else if i == 1 {
-            if x == 1 {
-                first_axis = 0;
-            } else {
-                first_axis = rng.gen_range(0..x);
-            }
-        } else if i == 2 {
-            if y + 1 == grid_size - 1 {
-                second_axis = y + 1;
-            } else {
-                second_axis = rng.gen_range(y + 1..grid_size);
-            }
-        } else if i == 3 {
-            if y == 1 {
-                second_axis = 0;
-            } else {
-                second_axis = rng.gen_range(0..y);
-            }
-        }
-
-        println!(
-            "i: {}, first_axis: {}, second_axis: {} ",
-            i, first_axis, second_axis
-        );
-
-        let part = get_cell_position(first_axis, second_axis, grid_size);
+        let part = get_cell_position(new_x, new_y, grid_size);
         if degree == 7 && alreadyset == false {
             let new_degree = get_max_degree(&part, 1, 0);
-            grid[first_axis][second_axis] = new_degree;
+            grid[new_y][new_x] = new_degree;
             if new_degree == 1 {
                 alreadyset = true
             }
         } else {
-            grid[first_axis][second_axis] = get_max_degree(&part, 2, 0)
+            grid[new_y][new_x] = get_max_degree(&part, 2, 0)
         }
     }
-}
-
-fn generate_other_axis(other_axis: usize, grid_size: usize) -> usize {
-    let mut second_axis = rand::thread_rng().gen_range(0..grid_size);
-    while other_axis == second_axis {
-        second_axis = rand::thread_rng().gen_range(0..grid_size);
-    }
-    second_axis
 }
 
 pub fn output_to_file(grid: &Vec<Vec<u8>>, _filename: &str) -> Result<()> {
