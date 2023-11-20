@@ -33,27 +33,27 @@ pub enum Direction {
     West,
 }
 
-pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
-    let mut grid: Vec<Vec<u8>> = vec![vec![0; grid_size]; grid_size];
+pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
+    let mut grid: Vec<Vec<u8>> = vec![vec![0; columns]; rows];
     //TODO: Have a second grid where all blocked cells are marked with true (Bridges and islands)
-    let mut _2grid: Vec<Vec<bool>> = vec![vec![false; grid_size]; grid_size];
+    let mut _2grid: Vec<Vec<bool>> = vec![vec![false; columns]; rows];
 
-    let x = rand::thread_rng().gen_range(0..=grid_size - 1);
-    let y = rand::thread_rng().gen_range(0..=grid_size - 1);
-    let part = get_cell_position(x, y, grid_size);
+    let x = rand::thread_rng().gen_range(0..=columns - 1);
+    let y = rand::thread_rng().gen_range(0..=rows - 1);
+    let part = get_cell_position(x, y, rows, columns);
     let degree = get_max_degree(&part, 1, 0);
     grid[y][x] = degree;
 
     let new_points = get_new_points(&degree, &part);
     println!("New points: {}", new_points);
     if new_points == 1 {
-        connect_one(&mut grid, x, y, grid_size, degree, part);
+        connect_one(&mut grid, x, y, rows, columns, degree, part);
     } else if new_points == 2 {
-        connect_two(&mut grid, x, y, grid_size, degree, part);
+        connect_two(&mut grid, x, y, rows, columns, degree, part);
     } else if new_points == 3 {
-        connect_three(&mut grid, x, y, grid_size, degree, part);
+        connect_three(&mut grid, x, y, rows, columns, degree, part);
     } else if new_points == 4 {
-        connect_four(&mut grid, x, y, grid_size, degree);
+        connect_four(&mut grid, x, y, rows, columns, degree);
     }
     grid
 }
@@ -118,11 +118,11 @@ pub fn generator(grid_size: usize) -> Vec<Vec<u8>> {
 //     }
 // }
 
-fn get_cell_position(x: usize, y: usize, grid_size: usize) -> Part {
+fn get_cell_position(x: usize, y: usize, rows: usize, columns: usize) -> Part {
     let near_left = x == 0 || x == 1;
-    let near_right = x == grid_size - 1 || x == grid_size - 2;
+    let near_right = x == columns - 1 || x == columns - 2;
     let near_top = y == 0 || y == 1;
-    let near_bottom = y == grid_size - 1 || y == grid_size - 2;
+    let near_bottom = y == rows - 1 || y == rows - 2;
 
     match (near_left, near_right, near_top, near_bottom) {
         (true, false, true, false) => Part::Corner(Corner::TopLeft),
@@ -215,13 +215,14 @@ fn get_new_coordinate(
     direction: &Direction,
     x: usize,
     y: usize,
-    grid_size: usize,
+    rows: usize,
+    columns: usize,
 ) -> (usize, usize) {
     let mut rng = rand::thread_rng();
     match direction {
         Direction::North => (x, rng.gen_range(0..y - 1)),
-        Direction::East => (rng.gen_range(x + 1..grid_size), y),
-        Direction::South => (x, rng.gen_range(y + 1..grid_size)),
+        Direction::East => (rng.gen_range(x + 1..columns), y),
+        Direction::South => (x, rng.gen_range(y + 1..rows)),
         Direction::West => (rng.gen_range(0..x - 1), y),
     }
 }
@@ -230,7 +231,8 @@ fn connect_one(
     grid: &mut Vec<Vec<u8>>,
     x: usize,
     y: usize,
-    grid_size: usize,
+    rows: usize,
+    columns: usize,
     degree: u8,
     part: Part,
 ) {
@@ -239,7 +241,7 @@ fn connect_one(
     let directions = get_directions(&part, 1);
     let direction = directions.get(0).unwrap();
     println!("Direction: {:?}", direction);
-    let (new_x, new_y) = get_new_coordinate(direction, x, y, grid_size);
+    let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
     println!("New point:");
     println!("x: {}, y: {}", new_x, new_y);
     grid[new_y][new_x] = get_max_degree(
@@ -253,7 +255,8 @@ fn connect_two(
     grid: &mut Vec<Vec<u8>>,
     x: usize,
     y: usize,
-    grid_size: usize,
+    rows: usize,
+    columns: usize,
     degree: u8,
     part: Part,
 ) {
@@ -265,11 +268,11 @@ fn connect_two(
     let mut isset = false;
     for i in 0..2 {
         let direction = directions.get(i).unwrap();
-        let (new_x, new_y) = get_new_coordinate(direction, x, y, grid_size);
+        let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
         println!("{}. new point:", i + 1);
         println!("x: {}, y: {}", new_x, new_y);
 
-        let part = get_cell_position(new_x, new_y, grid_size);
+        let part = get_cell_position(new_x, new_y, rows, columns);
         match isset {
             true => grid[new_y][new_x] = get_max_degree(&part, 2, 0),
             false => match degree {
@@ -291,7 +294,8 @@ fn connect_three(
     grid: &mut Vec<Vec<u8>>,
     x: usize,
     y: usize,
-    grid_size: usize,
+    rows: usize,
+    columns: usize,
     degree: u8,
     part: Part,
 ) {
@@ -304,11 +308,11 @@ fn connect_three(
 
     for i in 0..3 {
         let direction = directions.get(i).unwrap();
-        let (new_x, new_y) = get_new_coordinate(direction, x, y, grid_size);
+        let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
         println!("{}. new point:", i + 1);
         println!("x: {}, y: {}", new_x, new_y);
 
-        let part = get_cell_position(new_x, new_y, grid_size);
+        let part = get_cell_position(new_x, new_y, rows, columns);
         if degree == 5 && alreadyset == false {
             let new_degree = get_max_degree(&part, 1, 0);
             grid[new_y][new_x] = new_degree;
@@ -321,7 +325,14 @@ fn connect_three(
     }
 }
 
-fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, degree: u8) {
+fn connect_four(
+    grid: &mut Vec<Vec<u8>>,
+    x: usize,
+    y: usize,
+    rows: usize,
+    columns: usize,
+    degree: u8,
+) {
     println!("Connecting 4 with {} degree", degree);
     println!("x: {}, y: {}", x, y);
     let directions = get_directions(&Part::Normal, 3);
@@ -331,11 +342,11 @@ fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, d
 
     for i in 0..4 {
         let direction = directions.get(i).unwrap();
-        let (new_x, new_y) = get_new_coordinate(direction, x, y, grid_size);
+        let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
         println!("{}. new point:", i + 1);
         println!("x: {}, y: {}", new_x, new_y);
 
-        let part = get_cell_position(new_x, new_y, grid_size);
+        let part = get_cell_position(new_x, new_y, rows, columns);
         if degree == 7 && alreadyset == false {
             let new_degree = get_max_degree(&part, 1, 0);
             grid[new_y][new_x] = new_degree;
@@ -351,8 +362,9 @@ fn connect_four(grid: &mut Vec<Vec<u8>>, x: usize, y: usize, grid_size: usize, d
 pub fn output_to_file(grid: &Vec<Vec<u8>>, _filename: &str) -> Result<()> {
     let mut file = File::create("./backend/output/testpuzzle.txt")?;
 
-    let size = grid.len();
-    writeln!(file, "{} {}", size, size)?;
+    let rows = grid.len();
+    let columns = grid[0].len();
+    writeln!(file, "{} {}", rows, columns)?;
 
     for row in grid {
         for &cell in row {

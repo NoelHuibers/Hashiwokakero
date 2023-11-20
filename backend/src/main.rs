@@ -116,7 +116,7 @@ fn main() {
         }
     }
 
-    let game = generator::generator(7);
+    let game = generator::generator(6, 7);
 
     let _ = generator::output_to_file(&game, "./backend/output/testpuzzle.txt");
 }
