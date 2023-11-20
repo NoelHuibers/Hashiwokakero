@@ -6,15 +6,15 @@ pub fn reconstruct_puzzle(
     sat_output_path: &String,
     var_map: &HashMap<i32, BridgeCoord>,
     game_board: &GameBoard,
-) {
+) -> String {
+    let mut output = String::new();
     let mut file = File::open(sat_output_path.clone())
         .expect(&format!("File {} does not exist", sat_output_path));
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect(&format!("Could not read contents of {}", sat_output_path));
     if contents.contains("UNSAT") {
-        println!("Problem is UNSAT");
-        return;
+        return "Problem is UNSAT".into()
     }
     let line = contents.lines().skip(1).next();
     if let Some(vars) = line {
@@ -52,18 +52,21 @@ pub fn reconstruct_puzzle(
         for row in 0..game_board.rows {
             for col in 0..game_board.cols {
                 if let Some(num) = island_map.get(&(col, row)) {
-                    print!("{}", num);
+                    output.push(format!("{}", num).chars().next().unwrap());
                     continue;
                 }
                 if let Some(bridge) = bridge_map.get(&(col, row)) {
-                    print!("{}", bridge);
+                    output.push(*bridge);
                     continue;
                 }
-                print!(".")
+                output.push('.');
             }
-            println!("");
+            output.push('\n');
         }
+    } else {
+        output ="Problem had no variables".into();
     }
+    output
 }
 
 #[test]
