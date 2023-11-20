@@ -205,3 +205,30 @@ fn NotFound() -> impl IntoView {
     view! { <h1>"Not Found"</h1> }
 }
 
+#[server(Solve, "/solve")]
+pub async fn solvepuzzle(puzzle: Vec<Vec<i32>>) -> Result<(), ServerFnError> {
+
+    Ok(())
+}
+
+#[server(ToCNF, "/to_cnf")]
+pub async fn to_cnf(puzzle: Vec<Vec<i32>>) -> Result<(), ServerFnError> {
+
+    Ok(())
+}
+
+#[server(Generate, "/generate")]
+pub async fn generate(rows: i32, columns: i32) -> Result<(), ServerFnError> {
+
+    Ok(())
+}
+
+
+
+
+
+
+
+
+
+
