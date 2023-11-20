@@ -1,6 +1,8 @@
 use leptos::{ev::SubmitEvent, *};
 use leptos_meta::*;
 use leptos_router::*;
+use wasm_bindgen::JsCast;
+use web_sys::HtmlFormElement;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -78,11 +80,28 @@ fn Table(
     tableprop: ReadSignal<Vec<Vec<i32>>>,
     set_tableprop: WriteSignal<Vec<Vec<i32>>>,
 ) -> impl IntoView {
+    let (test, set_test) = create_signal(0);
     let on_submit = move |ev: SubmitEvent| {
         ev.prevent_default();
         let submitid = ev.submitter().unwrap().id();
         // TODO: Use the Vec<Vec<i32>> to generate the CNF or Solve the puzzle.
-        let testinput = tableprop.get();
+        if submitid == "0" {
+            // To CNF
+        } else if submitid == "1" {
+            // Solve
+        } else if submitid == "2" {
+            // Generate
+        } else if submitid == "3" {
+            let form = ev
+                .target()
+                .map(|target| target.dyn_into::<HtmlFormElement>().ok())
+                .flatten();
+            if let Some(form) = form {
+                form.reset();
+                set_tableprop(vec![vec![0; columns.get() as usize]; rows.get() as usize]);
+            }
+        }
+        set_test(tableprop.get()[4][4]);
     };
     view! {
         <form on:submit=on_submit class="flex flex-col items-center">
@@ -106,27 +125,28 @@ fn Table(
                     type="submit"
                     id="0"
                     value="To CNF"
-                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100"
+                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
                 />
                 <input
                     type="submit"
                     id="1"
                     value="Solve"
-                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100"
+                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
                 />
                 <input
                     type="submit"
                     id="2"
                     value="Generate"
-                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100"
+                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
                 />
                 <input
                     type="submit"
                     id="3"
                     value="Clear"
-                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100"
+                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
                 />
             </div>
+            <p>{test}</p>
         </form>
     }
 }
