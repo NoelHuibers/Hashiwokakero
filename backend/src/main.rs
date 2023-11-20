@@ -87,11 +87,12 @@ fn main() {
                             Some(output_file) => {
                                 match solver::write_solution(certificate, output_file) {
                                     Ok(_) => {
-                                        reconstruct::reconstruct_puzzle(
+                                        let res = reconstruct::reconstruct_puzzle(
                                             output_file,
                                             &var_map,
                                             &game_board,
                                         );
+                                        print!("{}", res);
                                     }
                                     Err(err) => {
                                         eprintln!("Error: {}", err);
