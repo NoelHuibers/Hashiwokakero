@@ -217,22 +217,3 @@ pub fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::
     Ok(())
 }
 
-pub fn print_infos(game_board: &GameBoard) {
-    println!("Puzzle Infos:");
-    println!("Rows: {}", game_board.rows);
-    println!("Cols: {}", game_board.cols);
-    println!("Islands:");
-    for island in &game_board.islands {
-        println!(
-            "Island at ({}, {}), Allowed connections: {}",
-            island.x, island.y, island.connections
-        );
-    }
-    println!("Bridges:");
-    for bridge in &game_board.bridges {
-        println!(
-            "Bridge from ({}, {}) to ({}, {})",
-            bridge.from.0, bridge.from.1, bridge.to.0, bridge.to.1
-        );
-    }
-}

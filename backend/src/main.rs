@@ -10,7 +10,7 @@ mod solver;
 mod writer;
 
 use generate_clauses::generate;
-use parse_input::{parse_input, print_infos};
+use parse_input::parse_input;
 
 use crate::writer::generate_dimacs;
 
