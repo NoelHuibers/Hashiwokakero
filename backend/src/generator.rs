@@ -220,10 +220,10 @@ fn get_new_coordinate(
 ) -> (usize, usize) {
     let mut rng = rand::thread_rng();
     match direction {
-        Direction::North => (x, rng.gen_range(0..y - 1)),
-        Direction::East => (rng.gen_range(x + 1..columns), y),
-        Direction::South => (x, rng.gen_range(y + 1..rows)),
-        Direction::West => (rng.gen_range(0..x - 1), y),
+        Direction::North => (x, rng.gen_range(0..y - 2)),
+        Direction::East => (rng.gen_range(x + 2..columns), y),
+        Direction::South => (x, rng.gen_range(y + 2..rows)),
+        Direction::West => (rng.gen_range(0..x - 2), y),
     }
 }
 
@@ -359,8 +359,8 @@ fn connect_four(
     }
 }
 
-pub fn output_to_file(grid: &Vec<Vec<u8>>, _filename: &str) -> Result<()> {
-    let mut file = File::create("./backend/output/testpuzzle.txt")?;
+pub fn output_to_file(grid: &Vec<Vec<u8>>, filename: &str) -> Result<()> {
+    let mut file = File::create(filename)?;
 
     let rows = grid.len();
     let columns = grid[0].len();
@@ -384,3 +384,8 @@ pub fn output_to_file(grid: &Vec<Vec<u8>>, _filename: &str) -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn should_gen() {
+    let game = generator(6, 7);
+    output_to_file(&game, "./output/testpuzzle.txt").unwrap();
+}
