@@ -106,18 +106,33 @@ fn should_find_bridges() {
         None,
         &mut vec![],
     );
-    assert!(d.contains(&Bridge {
-        from: (1, 0),
-        to: (2, 0)
-    }));
-    assert!(d.contains(&Bridge {
-        from: (0, 0),
-        to: (1, 0)
-    }));
-    assert!(d.contains(&Bridge {
-        from: (0, 1),
-        to: (0, 0)
-    }));
+    assert!(
+        d.contains(&Bridge {
+            from: (0, 0),
+            to: (0, 1)
+        }) || d.contains(&Bridge {
+            from: (0, 1),
+            to: (0, 0)
+        })
+    );
+    assert!(
+        d.contains(&Bridge {
+            from: (1, 0),
+            to: (0, 0)
+        }) || d.contains(&Bridge {
+            from: (0, 0),
+            to: (1, 0)
+        })
+    );
+    assert!(
+        d.contains(&Bridge {
+            from: (2, 0),
+            to: (1, 0)
+        }) || d.contains(&Bridge {
+            from: (1, 0),
+            to: (2, 0)
+        })
+    );
 }
 
 #[test]
