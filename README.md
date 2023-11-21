@@ -42,9 +42,11 @@ To execute the rlease build for `test1` and print the reconstructed solution:
 
 ### Benchmarking
 
-To execute the criterion benchmarking execute:
+To execute the criterion benchmarking execute: 
 
 `cargo bench`
+
+See [Evaluation](hashi_report.pdf)
 
 ## SAT Conversion
 
@@ -70,7 +72,9 @@ See [Clauses](Clauses.md)
 - [x] Manage the creation and formatting of output files.
 - [x] Test structure
 - [x] Benchmarking
-- [ ] Game Board Format
+- [x] Game Board Format
+- [ ] [Evaluation of Performance (Update)](hashi_report.pdf)
+
 
 **Florian:**
 
