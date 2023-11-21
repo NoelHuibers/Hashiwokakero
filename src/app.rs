@@ -52,13 +52,16 @@ fn HomePage() -> impl IntoView {
                     let mut first_line = lines.next().unwrap().split_whitespace();
                     let rows = first_line.next().unwrap().parse::<i32>().unwrap();
                     let columns = first_line.next().unwrap().parse::<i32>().unwrap();
+                    let mut table = vec![vec![0; columns as usize]; rows as usize];
                     set_rows(rows);
                     set_columns(columns);
-                    let mut table = vec![vec![0; columns as usize]; rows as usize];
                     for (i, line) in lines.enumerate() {
-                        let numbers = line.split_whitespace();
-                        for (j, number) in numbers.enumerate() {
-                            table[i][j] = number.parse::<i32>().unwrap();
+                        for (j, number) in line.chars().enumerate() {
+                            if number != '.' {
+                                table[j][i] = number.to_digit(10).unwrap() as i32;
+                            } else {
+                                table[j][i] = 0;
+                            }
                         }
                     }
                     set_tableprop(table);
@@ -223,7 +226,16 @@ fn Column(
                     view! {
                         <input
                             type="text"
-                            value=move || tableprop.get()[id as usize][rowid as usize].to_string()
+                            prop:value=move || {
+                                tableprop
+                                    .with(|vec| {
+                                        vec.get(id as usize)
+                                            .and_then(|row| row.get(rowid as usize))
+                                            .map(|n| n.to_string())
+                                    })
+                                    .unwrap_or_default()
+                            }
+
                             min="0"
                             max="8"
                             class="h-16 w-16 border bg-violet-700 justify-center p-2 text-slate-100 text-lg"
@@ -314,6 +326,19 @@ pub async fn generatfield(rows: i32, columns: i32) -> Result<(), ServerFnError> 
     //let game = generator(rows, columns);
     Ok(())
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
