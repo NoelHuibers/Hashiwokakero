@@ -546,6 +546,10 @@ video {
   display: table;
 }
 
+.contents {
+  display: contents;
+}
+
 .h-12 {
   height: 3rem;
 }
@@ -688,9 +692,4 @@ video {
 .text-violet-700 {
   --tw-text-opacity: 1;
   color: rgb(109 40 217 / var(--tw-text-opacity));
-}
-
-.text-red-100 {
-  --tw-text-opacity: 1;
-  color: rgb(254 226 226 / var(--tw-text-opacity));
 }

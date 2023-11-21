@@ -23,6 +23,33 @@ pub struct GameBoard {
     pub bridges: Vec<Bridge>,
 }
 
+pub fn parse_vec_input(input: Vec<Vec<i32>>) -> io::Result<GameBoard> {
+    // Get the row and column count from the Vec input length
+    let rows = input.len();
+    let cols = input[0].len();
+    //Get the islands from the Vec input and generate the bridges
+    let mut islands = Vec::new();
+    for (y, row) in input.iter().enumerate() {
+        for (x, &connections) in row.iter().enumerate() {
+            if connections != 0 {
+                islands.push(Island {
+                    x,
+                    y,
+                    connections: connections as u32,
+                });
+            }
+        }
+    }
+    let mut game_board = GameBoard {
+        rows,
+        cols,
+        islands,
+        bridges: Vec::new(),
+    };
+    build_bridges(&mut game_board)?;
+    Ok(game_board)
+}
+
 pub fn parse_input(filename: &str) -> io::Result<GameBoard> {
     if !filename.ends_with(".txt") {
         return Err(io::Error::new(
@@ -175,7 +202,11 @@ pub fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
 
 pub fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::Result<()> {
     // Check if the number of lines matches the specified rows
-    let non_empty_lines: Vec<&str> = lines.iter().filter(|line| !line.trim().is_empty()).cloned().collect();
+    let non_empty_lines: Vec<&str> = lines
+        .iter()
+        .filter(|line| !line.trim().is_empty())
+        .cloned()
+        .collect();
 
     if non_empty_lines.len() != rows {
         return Err(io::Error::new(

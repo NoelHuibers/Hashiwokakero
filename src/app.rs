@@ -1,8 +1,9 @@
-use leptos::{ev::SubmitEvent, *};
+use leptos::{ev::SubmitEvent, *, html::Input};
 use leptos_meta::*;
 use leptos_router::*;
 use wasm_bindgen::JsCast;
-use web_sys::HtmlFormElement;
+use wasm_bindgen::closure::Closure;
+use web_sys::{Event, HtmlFormElement};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -38,6 +39,37 @@ fn HomePage() -> impl IntoView {
         set_tableprop(vec![vec![0; columns.get() as usize]; rows.get() as usize]);
     });
 
+    let file_input: NodeRef<Input> = create_node_ref();
+    let filechanged = move |ev: Event| {
+        if let Some(files) = file_input.get().and_then(|f: HtmlElement<Input>|
+            f.files()) {
+                let file = files.get(0).unwrap();
+                let reader = web_sys::FileReader::new().unwrap();
+                let onload = Closure::wrap(Box::new(move |event: web_sys::Event| {
+                    let reader = event.target().unwrap().dyn_into::<web_sys::FileReader>().unwrap();
+                    let result = reader.result().unwrap().as_string().unwrap();
+                    let mut lines = result.lines();
+                    let mut first_line = lines.next().unwrap().split_whitespace();
+                    let rows = first_line.next().unwrap().parse::<i32>().unwrap();
+                    let columns = first_line.next().unwrap().parse::<i32>().unwrap();
+                    set_rows(rows);
+                    set_columns(columns);
+                    let mut table = vec![vec![0; columns as usize]; rows as usize];
+                    for (i, line) in lines.enumerate() {
+                        let numbers = line.split_whitespace();
+                        for (j, number) in numbers.enumerate() {
+                            table[i][j] = number.parse::<i32>().unwrap();
+                        }
+                    }
+                    set_tableprop(table);
+                }) as Box<dyn FnMut(_)>);
+                reader.add_event_listener_with_callback("loadend", onload.as_ref().unchecked_ref()).unwrap();
+                onload.forget();
+
+                reader.read_as_text(&file).unwrap();
+            }
+    };
+
     view! {
         <main class="h-full w-full min-h-screen min-w-full flex flex-col items-center space-y-4 bg-slate-100 p-16">
             <h1 class="font-bold text-4xl text-violet-700">"Hashiwakakeru"</h1>
@@ -67,8 +99,23 @@ fn HomePage() -> impl IntoView {
 
             </div>
             <div class="h-fit w-fit items-center">
-                <Table rows=rows columns=columns tableprop=tableprop set_tableprop=set_tableprop/>
+                <Table
+                    rows=rows
+                    columns=columns
+                    tableprop=tableprop.clone()
+                    set_tableprop=set_tableprop.clone()
+                />
             </div>
+            <input
+                name="Upload"
+                type="file"
+                accept=".txt"
+                node_ref=file_input
+                on:change=move |ev| {
+                    filechanged(ev);
+                }
+            />
+
         </main>
     }
 }
@@ -80,15 +127,25 @@ fn Table(
     tableprop: ReadSignal<Vec<Vec<i32>>>,
     set_tableprop: WriteSignal<Vec<Vec<i32>>>,
 ) -> impl IntoView {
-    let (test, set_test) = create_signal(0);
+    let (testprop, set_testprop) = create_signal("0".to_string());
     let on_submit = move |ev: SubmitEvent| {
         ev.prevent_default();
         let submitid = ev.submitter().unwrap().id();
-        // TODO: Use the Vec<Vec<i32>> to generate the CNF or Solve the puzzle.
-        if submitid == "0" {
-            // To CNF
-        } else if submitid == "1" {
-            // Solve
+        // if submitid == "0" {         async move {
+        //     let res = to_cnf(tableprop.get()).await;
+        //     };
+        // }
+        if submitid == "1" {
+                // spawn_local(async {
+                //     match solvepuzzle(tableprop.get()).await {
+                //         Ok(result) => {
+                //             set_testprop(result);
+                //         }
+                //         Err(error) => {
+                //             set_testprop("Error".to_string());
+                //         }
+                //     }
+                // });
         } else if submitid == "2" {
             // Generate
         } else if submitid == "3" {
@@ -101,7 +158,6 @@ fn Table(
                 set_tableprop(vec![vec![0; columns.get() as usize]; rows.get() as usize]);
             }
         }
-        set_test(tableprop.get()[4][4]);
     };
     view! {
         <form on:submit=on_submit class="flex flex-col items-center">
@@ -146,8 +202,8 @@ fn Table(
                     class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
                 />
             </div>
-            <p>{test}</p>
         </form>
+        <p>{testprop}</p>
     }
 }
 
@@ -167,6 +223,7 @@ fn Column(
                     view! {
                         <input
                             type="text"
+                            value=move || tableprop.get()[id as usize][rowid as usize].to_string()
                             min="0"
                             max="8"
                             class="h-16 w-16 border bg-violet-700 justify-center p-2 text-slate-100 text-lg"
@@ -205,23 +262,115 @@ fn NotFound() -> impl IntoView {
     view! { <h1>"Not Found"</h1> }
 }
 
+use backend::parse_input::parse_vec_input;
+use backend::solver::solve;
+use backend::solver::get_content;
+use backend::generate_clauses::generate;
+use backend::writer::generate_dimacs;
+use backend::reconstruct::reconstruct_puzzle;
 #[server(Solve, "/solve")]
-pub async fn solvepuzzle(puzzle: Vec<Vec<i32>>) -> Result<(), ServerFnError> {
-
-    Ok(())
+pub async fn solvepuzzle(puzzle: Vec<Vec<i32>>) -> Result<String, ServerFnError> {
+    let game_board = parse_vec_input(puzzle);
+    match game_board {
+        Ok(game_board) => {
+            let (clauses, var_map) = generate(&game_board);
+            let dimacs_generated = generate_dimacs(&clauses, var_map.keys().len(), "output.cnf");
+            match dimacs_generated {
+                Ok(_) => {
+                    match solve("output.cnf") {
+                        Ok(certificate) => {
+                            let contents = get_content(certificate);
+                            let res = reconstruct_puzzle(
+                                contents,
+                                &var_map,
+                                &game_board);
+                            Ok(res)
+                        }
+                        Err(e) => Err(ServerFnError::ServerError(e.to_string()))
+                    }
+                }
+                Err(e) => Err(ServerFnError::ServerError(e.to_string()))
+            }
+        }
+        Err(e) => Err(ServerFnError::ServerError(e.to_string()))
+    }
 }
 
 #[server(ToCNF, "/to_cnf")]
 pub async fn to_cnf(puzzle: Vec<Vec<i32>>) -> Result<(), ServerFnError> {
-
-    Ok(())
+    let game_board = parse_vec_input(puzzle);
+    match game_board {
+        Ok(game_board) => {
+            let (clauses, var_map) = generate(&game_board);
+            let dimacs_generated = generate_dimacs(&clauses, var_map.keys().len(), "output.cnf");
+            Ok(dimacs_generated?)
+        }
+        _ => {Ok(())}
+    }
 }
 
 #[server(Generate, "/generate")]
-pub async fn generate(rows: i32, columns: i32) -> Result<(), ServerFnError> {
-
+pub async fn generatfield(rows: i32, columns: i32) -> Result<(), ServerFnError> {
+    //let game = generator(rows, columns);
     Ok(())
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

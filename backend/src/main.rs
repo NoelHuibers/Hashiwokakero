@@ -12,7 +12,7 @@ mod writer;
 use generate_clauses::generate;
 use parse_input::parse_input;
 
-use crate::writer::generate_dimacs;
+use crate::{reconstruct::get_content, writer::generate_dimacs};
 
 // To run an example from root: cargo run --package backend -- --mode [encode/solve] --input [FILE PATH]
 // Short: cargo run --package backend -- -m [encode/solve] -i [FILE PATH]
@@ -86,8 +86,9 @@ fn main() {
                             Some(output_file) => {
                                 match solver::write_solution(certificate, output_file) {
                                     Ok(_) => {
+                                        let contents = get_content(output_file);
                                         let res = reconstruct::reconstruct_puzzle(
-                                            output_file,
+                                            contents,
                                             &var_map,
                                             &game_board,
                                         );
