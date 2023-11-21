@@ -5,8 +5,10 @@
 The project is organized into three main folders:
 
 - **backend**: Contains the backend code for the Hashi - Bridges Puzzle game.
-- **frontend**: Houses the frontend code, responsible for the user interface and interactions.
+- **benches**: Contains the code required for benchmarking.
 - **common**: Shared code and resources that are used by both the backend and frontend.
+- **frontend**: Houses the frontend code, responsible for the user interface and interactions.
+- **solutions**: Contains the .cnf and solution .txt files for all initial test problems.
 
 ## How to Run
 
@@ -18,15 +20,31 @@ To run the project, open a terminal in the project root directory and execute th
 
 or for backend:
 
-`cargo run --package backend`
+`cargo run --package backend -- --mode [MODE] --input [FILEPATH] --output [FILEPATH]`
 
-Additionally, you can provide an input file using the `--input` flag like this:
+### MODE
 
-`cargo run --package backend -- --input [FILEPATH]`
+We currently support three modes:
+
+|Flag|Alias|Functionality|
+|-|-|-|
+|encode||Reads a .txt file containing an ASCII hashi puzzle and generates an according .cnf in that directory|
+|solve||Reads a CNF file and solves it using minisat|
+|encodesolvereconstruct|esr|Reads a .txt file containing an ASCII hashi puzzle, generates a .cnf, solves the CNF file using minisat, reconstructs the solution and prints the reconstructed solved hasi puzzle. 
 
 To build the project, open a terminal in the project root directory and execute:
 
-`cargo build`
+`cargo build --rlelease`
+
+To execute the rlease build for `test1` and print the reconstructed solution:
+
+`../target/release/backend  --mode esr --input ./input/test1.txt --output ./input/test1.minisat-output.txt`
+
+### Benchmarking
+
+To execute the criterion benchmarking execute:
+
+`cargo bench`
 
 ## SAT Conversion
 
@@ -51,7 +69,7 @@ See [Clauses](Clauses.md)
 - [x] Establish a data structure for passing input data within the application.
 - [x] Manage the creation and formatting of output files.
 - [x] Test structure
-- [ ] Benchmarking
+- [x] Benchmarking
 - [ ] Game Board Format
 
 **Florian:**
@@ -60,5 +78,5 @@ See [Clauses](Clauses.md)
 - [x] Implement parsing functionality for calculating DIMACS.
 - [x] Parsing for CLI output
 - [x] Rule 3 in CNF
-- [x] Reconstruct unwraps
-- [ ] Update instructions on how to run
+- [x] Reproduce / Fix unwrap errors in Rule 3
+- [x] Update instructions on how to run
