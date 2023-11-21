@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Read};
+use std::{collections::HashMap, fs::{File, remove_file}, io::Read};
 
 use crate::{generate_clauses::BridgeCoord, parse_input::GameBoard};
 
@@ -14,7 +14,7 @@ pub fn reconstruct_puzzle(
     file.read_to_string(&mut contents)
         .expect(&format!("Could not read contents of {}", sat_output_path));
     if contents.contains("UNSAT") {
-        return "Problem is UNSAT".into()
+        return "Problem is UNSAT\n".into()
     }
     let line = contents.lines().skip(1).next();
     if let Some(vars) = line {
@@ -71,7 +71,7 @@ pub fn reconstruct_puzzle(
 
 #[test]
 fn should_parse_sat_output() {
-    let path = "/tmp/sat/test.txt";
+    let path = "test.txt";
     let mut file = File::create(path).unwrap();
     let content = "SAT\n1 2 3 -4 5 -6 7 -8";
     std::io::Write::write_all(&mut file, content.as_bytes()).unwrap();
@@ -130,4 +130,5 @@ fn should_parse_sat_output() {
         ],
     };
     reconstruct_puzzle(&path.to_string(), &var_map, &game_board);
+    remove_file(path).unwrap();
 }
