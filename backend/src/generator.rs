@@ -2,6 +2,7 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use std::fs::File;
 use std::io::{Result, Write};
+use std::ops::Range;
 
 #[derive(Debug, Clone)]
 pub enum Part {
@@ -46,14 +47,12 @@ pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
 
     let new_points = get_new_points(&degree, &part);
     println!("New points: {}", new_points);
-    if new_points == 1 {
-        connect_one(&mut grid, x, y, rows, columns, degree, part);
-    } else if new_points == 2 {
-        connect_two(&mut grid, x, y, rows, columns, degree, part);
-    } else if new_points == 3 {
-        connect_three(&mut grid, x, y, rows, columns, degree, part);
-    } else if new_points == 4 {
-        connect_four(&mut grid, x, y, rows, columns, degree);
+    match new_points {
+        1 => connect_one(&mut grid, x, y, rows, columns, degree, part),
+        2 => connect_two(&mut grid, x, y, rows, columns, degree, part),
+        3 => connect_three(&mut grid, x, y, rows, columns, degree, part),
+        4 => connect_four(&mut grid, x, y, rows, columns, degree),
+        _ => panic!("Invalid grow size"),
     }
     grid
 }
@@ -70,53 +69,62 @@ pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
 // that satsifyed the current configuration) [random generate if we continue and what higher degree is possible]
 // If this text is still here, I didn't implement it yet. For questions, ask me.
 
-// fn second_round(
-//     points: u8,
-//     grid: &mut Vec<Vec<u8>>,
-//     grid_size: usize,
-//     x: Vec<usize>,
-//     y: Vec<usize>,
-//     degree: Vec<u8>,
-//     part: Vec<Part>,
-// ) {
-//     for i in 0..points {
-//         let new_points = get_new_points(&degree[i as usize], &part[i as usize]);
-//         println!("New points: {}", new_points);
-//         if new_points == 1 {
-//             connect_one(
-//                 &mut grid,
-//                 x[i as usize],
-//                 y[i as usize],
-//                 grid_size,
-//                 degree[i as usize],
-//             );
-//         } else if new_points == 2 {
-//             connect_two(
-//                 &mut grid,
-//                 x[i as usize],
-//                 y[i as usize],
-//                 grid_size,
-//                 degree[i as usize],
-//             );
-//         } else if new_points == 3 {
-//             connect_three(
-//                 &mut grid,
-//                 x[i as usize],
-//                 y[i as usize],
-//                 grid_size,
-//                 degree[i as usize],
-//             );
-//         } else if new_points == 4 {
-//             connect_four(
-//                 &mut grid,
-//                 x[i as usize],
-//                 y[i as usize],
-//                 grid_size,
-//                 degree[i as usize],
-//             );
-//         }
-//     }
-// }
+/* fn second_round(
+    points: u8,
+    mut grid: &mut Vec<Vec<u8>>,
+    grid_size: usize,
+    x: Vec<usize>,
+    y: Vec<usize>,
+    degree: Vec<u8>,
+    part: Vec<Part>,
+) {
+    for i in 0..points {
+        let new_points = get_new_points(&degree[i as usize], &part[i as usize]);
+        println!("New points: {}", new_points);
+        let rows = grid_size;
+        let columns = grid[0].len();
+        if new_points == 1 {
+            connect_one(
+                &mut grid,
+                x[i as usize],
+                y[i as usize],
+                rows,
+                columns,
+                degree[i as usize],
+                get_cell_position(x[i as usize], y[i as usize], rows, columns),
+            );
+        } else if new_points == 2 {
+            connect_two(
+                &mut grid,
+                x[i as usize],
+                y[i as usize],
+                rows,
+                columns,
+                degree[i as usize],
+                get_cell_position(x[i as usize], y[i as usize], rows, columns),
+            );
+        } else if new_points == 3 {
+            connect_three(
+                &mut grid,
+                x[i as usize],
+                y[i as usize],
+                rows,
+                columns,
+                degree[i as usize],
+                get_cell_position(x[i as usize], y[i as usize], rows, columns),
+            );
+        } else if new_points == 4 {
+            connect_four(
+                &mut grid,
+                x[i as usize],
+                y[i as usize],
+                rows,
+                columns,
+                degree[i as usize],
+            );
+        }
+    }
+} */
 
 fn get_cell_position(x: usize, y: usize, rows: usize, columns: usize) -> Part {
     let near_left = x == 0 || x == 1;
@@ -211,6 +219,15 @@ fn get_directions(part: &Part, num_directions: usize) -> Vec<Direction> {
     directions
 }
 
+fn random(range: Range<usize>) -> usize {
+    if range.is_empty() {
+        print!("{:?}, {}", range.start, range.end);
+        panic!("Empty Range");
+    }
+    let mut rng = rand::thread_rng();
+    rng.gen_range(range)
+}
+
 fn get_new_coordinate(
     direction: &Direction,
     x: usize,
@@ -220,10 +237,10 @@ fn get_new_coordinate(
 ) -> (usize, usize) {
     let mut rng = rand::thread_rng();
     match direction {
-        Direction::North => (x, rng.gen_range(0..y - 2)),
-        Direction::East => (rng.gen_range(x + 2..columns), y),
-        Direction::South => (x, rng.gen_range(y + 2..rows)),
-        Direction::West => (rng.gen_range(0..x - 2), y),
+        Direction::North => (x, random(0..y - 2)),
+        Direction::East => (random(x + 2..columns), y),
+        Direction::South => (x, random(y + 2..rows)),
+        Direction::West => (random(0..x - 2), y),
     }
 }
 
@@ -242,6 +259,12 @@ fn connect_one(
     let direction = directions.get(0).unwrap();
     println!("Direction: {:?}", direction);
     let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
+    // if bridge crosses island or other bridge
+    if place_bridge(grid, x, y, new_x, new_y) {
+        // TODO: should be 1 or 2 depending on single or double bridge expected
+        grid[x][y] = grid[x][y] - 1;
+        return;
+    }
     println!("New point:");
     println!("x: {}, y: {}", new_x, new_y);
     grid[new_y][new_x] = get_max_degree(
@@ -249,6 +272,32 @@ fn connect_one(
         if degree == 1 { 1 } else { 2 },
         if degree == 1 { 1 } else { 0 },
     );
+}
+
+fn place_bridge(
+    grid: &mut Vec<Vec<u8>>,
+    start_x: usize,
+    start_y: usize,
+    end_x: usize,
+    end_y: usize,
+) -> bool {
+    let bridge_cancelled = false;
+    match (start_x, start_y, end_x, end_y) {
+        _ if start_x == end_x => (start_y + 1..end_y).into_iter().for_each(|y| {
+            if grid[y][start_x] == 0 {
+                grid[y][start_x] = 9
+            } else {
+            }
+        }),
+        _ if start_y == end_y => (start_x + 1..end_x).into_iter().for_each(|x| {
+            if grid[start_y][x] == 0 {
+                grid[start_y][x] = 9
+            } else {
+            }
+        }),
+        _ => panic!("Bridge is not diagnal or horizontal"),
+    };
+    bridge_cancelled
 }
 
 fn connect_two(
@@ -269,6 +318,10 @@ fn connect_two(
     for i in 0..2 {
         let direction = directions.get(i).unwrap();
         let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
+        if place_bridge(grid, x, y, new_x, new_y) {
+            grid[x][y] = grid[x][y] - 1;
+            return;
+        }
         println!("{}. new point:", i + 1);
         println!("x: {}, y: {}", new_x, new_y);
 
@@ -309,6 +362,10 @@ fn connect_three(
     for i in 0..3 {
         let direction = directions.get(i).unwrap();
         let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
+        if place_bridge(grid, x, y, new_x, new_y) {
+            grid[x][y] = grid[x][y] - 1;
+            return;
+        }
         println!("{}. new point:", i + 1);
         println!("x: {}, y: {}", new_x, new_y);
 
@@ -343,6 +400,10 @@ fn connect_four(
     for i in 0..4 {
         let direction = directions.get(i).unwrap();
         let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
+        if place_bridge(grid, x, y, new_x, new_y) {
+            grid[x][y] = grid[x][y] - 1;
+            return;
+        }
         println!("{}. new point:", i + 1);
         println!("x: {}, y: {}", new_x, new_y);
 
@@ -371,7 +432,7 @@ pub fn output_to_file(grid: &Vec<Vec<u8>>, filename: &str) -> Result<()> {
             write!(
                 file,
                 "{}",
-                if cell > 0 {
+                if cell > 0 { // TODO: cell > 0 || cell < 9
                     cell.to_string()
                 } else {
                     ".".to_string()
