@@ -51,7 +51,7 @@ pub fn parse_input(filename: &str) -> io::Result<GameBoard> {
 
     build_bridges(&mut game_board)?;
     let duration = start.elapsed();
-    println!("Time elapsed in parse_input() is: {:?}", duration);
+    //println!("Time elapsed in parse_input() is: {:?}", duration);
 
     Ok(game_board)
 }

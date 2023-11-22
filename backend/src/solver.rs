@@ -7,7 +7,7 @@ pub fn solve(filepath: &str) -> io::Result<Certificate> {
     let start = Instant::now();
     let config = Config::from(filepath);
     let duration = start.elapsed();
-    println!("Time elapsed in solve() is: {:?}", duration);
+    //println!("Time elapsed in solve() is: {:?}", duration);
     match Solver::build(&config) {
         Ok(mut s) => match s.solve() {
             Ok(ans) => Ok(ans),
@@ -40,6 +40,6 @@ pub fn write_solution(certificate: Certificate, output_file: &str) -> io::Result
         }
     }
     let duration = start.elapsed();
-    println!("Time elapsed in write_solution() is: {:?}", duration);
+    //println!("Time elapsed in write_solution() is: {:?}", duration);
     Ok(())
 }
