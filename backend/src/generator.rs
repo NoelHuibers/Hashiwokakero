@@ -143,8 +143,10 @@ fn satsifythegrid(
     columns: usize,
     points: Vec<(usize, usize, bool)>,
 ) {
-    let mut roundpoints = vec![()];
-    for i in 0..points.len() {
+    println!("{:?}", points);
+    println!("{:?}", points.len());
+    for (i, _points) in points.iter().enumerate() {
+        println!("i: {}", i);
         let x = points[i].1;
         let y = points[i].0;
         let mut degree = grid[y][x];
@@ -175,88 +177,107 @@ fn satsifythegrid(
                 }
             }
         }
+        println!("Degree vorgänger: {}", points[i].2);
+        println!("Degree: {}", degree);
         if points[i].2 == true {
             degree = degree - 2;
         } else {
             degree = degree - 1;
         }
         if degree == 0 {
-            return;
+            continue;
         }
-        let satpoints = get_new_points2(&degree, real_directions.clone());
+
+        let (satpoints, minuspoints) = get_new_points2(&degree, &real_directions, x, y);
+        grid[y][x] = grid[y][x] - minuspoints as u8;
+        println!("Satpoints: {}", satpoints);
+        println!("Minuspoints: {}", minuspoints);
         if satpoints == 0 {
-            grid[x][y] = grid[x][y] - degree
+            grid[y][x] = grid[y][x] - degree;
         }
+
         real_directions.shuffle(&mut rand::thread_rng());
+        let mut twos = degree as usize - satpoints;
         for (iteration, &direction) in real_directions[0..satpoints].to_vec().iter().enumerate() {
             match direction {
                 Direction::North => {
-                    let mut min = 0;
-                    for i in 0..y - 2 {
-                        if refgrid[i][x] {
+                    let mut min = y - 2;
+                    for i in (0..y - 2).rev() {
+                        if !refgrid[i][x] {
                             min = i;
+                        } else {
+                            break;
                         }
                     }
                     let new_y = random(min..y - 2);
                     place_bridge(refgrid, x, y, x, new_y);
-                    if decide_new_degree(degree, &real_directions, satpoints, iteration) {
-                        grid[new_y][x] = 1;
-                        degree = degree - 1;
-                    } else {
+                    if twos != 0 {
                         grid[new_y][x] = 2;
                         degree = degree - 2;
+                        twos = twos - 1;
+                    } else {
+                        grid[new_y][x] = 1;
+                        degree = degree - 1;
                     }
                 }
                 Direction::East => {
-                    let mut max: usize = columns;
+                    let mut max: usize = x + 2;
                     for i in x + 2..columns {
-                        if refgrid[y][i] {
+                        if !refgrid[y][i] {
                             max = i;
+                        } else {
+                            break;
                         }
                     }
                     let new_x = random(x + 2..max);
                     place_bridge(refgrid, x, y, new_x, y);
-                    if decide_new_degree(degree, &real_directions, satpoints, iteration) {
-                        grid[y][new_x] = 1;
-                        degree = degree - 1;
-                    } else {
+                    if twos != 0 {
                         grid[y][new_x] = 2;
                         degree = degree - 2;
+                        twos = twos - 1;
+                    } else {
+                        grid[y][new_x] = 1;
+                        degree = degree - 1;
                     }
                 }
                 Direction::South => {
-                    let mut max = rows;
+                    let mut max = y + 2;
                     for i in y + 2..rows {
-                        if refgrid[i][x] {
+                        if !refgrid[i][x] {
                             max = i;
+                        } else {
+                            break;
                         }
                     }
                     let new_y = random(y + 2..max);
                     place_bridge(refgrid, x, y, x, new_y);
-                    if decide_new_degree(degree, &real_directions, satpoints, iteration) {
-                        grid[new_y][x] = 1;
-                        degree = degree - 1;
-                    } else {
+                    if twos != 0 {
                         grid[new_y][x] = 2;
                         degree = degree - 2;
+                        twos = twos - 1;
+                    } else {
+                        grid[new_y][x] = 1;
+                        degree = degree - 1;
                     }
                 }
                 Direction::West => {
-                    let mut min = 0;
-                    for i in 0..x - 2 {
-                        if refgrid[y][i] {
+                    let mut min = x - 2;
+                    for i in (0..x - 2).rev() {
+                        if !refgrid[y][i] {
                             min = i;
+                        } else {
+                            break;
                         }
                     }
                     let new_x = random(min..x - 2);
                     place_bridge(refgrid, x, y, new_x, y);
-                    if decide_new_degree(degree, &real_directions, satpoints, iteration) {
-                        grid[y][new_x] = 1;
-
-                        degree = degree - 1;
-                    } else {
+                    if twos != 0 {
                         grid[y][new_x] = 2;
                         degree = degree - 2;
+                        twos = twos - 1;
+                    } else {
+                        grid[y][new_x] = 1;
+                        degree = degree - 1;
                     }
                 }
             }
@@ -267,28 +288,29 @@ fn satsifythegrid(
     }
 }
 
-fn decide_new_degree(degree: u8, directions: &Vec<&Direction>, satpoints: usize, iteration: usize) -> bool {
-    return degree as usize / (directions[0..satpoints].len() - iteration) == 1;
-}
-
-fn get_new_points2(degree: &u8, dir: Vec<&Direction>) -> usize {
+fn get_new_points2(degree: &u8, dir: &Vec<&Direction>, x: usize, y: usize) -> (usize, usize) {
     match dir.len() {
-        1 => 1,
+        1 => match degree {
+            1 | 2 => (1, 0),
+            3 | 4 => (1, 2),
+            _ => (1, 4),
+        },
         2 => match degree {
-            0 => 0,
-            1 => 1,
-            2 => random(1..2),
-            _ => 2,
+            0 => (0, 0),
+            1 => (1, 0),
+            2 => (random(1..2), 0),
+            3 | 4 => (2, 0),
+            _ => (2, 2),
         },
         3 => match degree {
-            0 => 0,
-            1 => 1,
-            2 => random(1..2),
-            3 => random(2..3),
-            4 => random(2..3),
-            _ => 3,
+            0 => (0, 0),
+            1 => (1, 0),
+            2 => (random(1..2), 0),
+            3 => (random(2..3), 0),
+            4 => (random(2..3), 0),
+            _ => (3, 0),
         },
-        _ => 0,
+        _ => (0, 0),
     }
 }
 
@@ -656,17 +678,24 @@ fn should_gen() {
     match backend::parse_input::parse_input(&input_file) {
         Ok(game_board) => {
             let (clauses, var_map) = backend::generate_clauses::generate(&game_board);
-            let dimacs_generated = backend::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
+            let dimacs_generated =
+                backend::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
             match dimacs_generated {
                 Ok(_) => match backend::solver::solve(&output_file) {
-                    Ok(certificate) => match backend::solver::write_solution(certificate, &output_file) {
-                        Ok(_) => {
-                            backend::reconstruct::reconstruct_puzzle(&output_file.to_string(), &var_map, &game_board);
+                    Ok(certificate) => {
+                        match backend::solver::write_solution(certificate, &output_file) {
+                            Ok(_) => {
+                                backend::reconstruct::reconstruct_puzzle(
+                                    &output_file.to_string(),
+                                    &var_map,
+                                    &game_board,
+                                );
+                            }
+                            Err(err) => {
+                                eprintln!("Error: {}", err);
+                            }
                         }
-                        Err(err) => {
-                            eprintln!("Error: {}", err);
-                        }
-                    },
+                    }
                     Err(err) => {
                         eprintln!("Error: {}", err);
                     }
@@ -677,3 +706,4 @@ fn should_gen() {
         Err(err) => eprintln!("Error: {}", err),
     }
 }
+
