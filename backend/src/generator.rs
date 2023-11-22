@@ -654,11 +654,12 @@ fn should_gen() {
                                 &output_file,
                             ) {
                                 Ok(_) => {
-                                    backend::reconstruct::reconstruct_puzzle(
+                                    let s = backend::reconstruct::reconstruct_puzzle(
                                         &output_file.to_string(),
                                         &var_map,
                                         &game_board,
                                     );
+                                    println!("{}", s);
                                 }
                                 Err(err) => {
                                     eprintln!("Error: {}", err);
