@@ -1,6 +1,5 @@
 use rand::seq::SliceRandom;
 use rand::Rng;
-use splr::Certificate;
 use std::cmp::{max, min};
 use std::fs::File;
 use std::io::{Result, Write};
@@ -55,7 +54,6 @@ pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
     grid[y][x] = degree;
 
     let new_points = get_new_points(&degree, &part);
-    println!("New points: {}", new_points);
     // TODO: Init must be 0 not true or false.
     generatepoints(
         new_points,
@@ -125,12 +123,6 @@ pub fn generatepoints(
     satsifythegrid(grid, &mut refgrid, rows, columns, newpoints);
 }
 
-// TODO: Implement making all Satisfied.
-// To get a depth first search, we need to make sure that all cells are satisfied.
-// After this we can check if the grid is full and continue with the newly generated points that satsifyed the
-// current configuration.
-// Step 1: Generate for all new points all points needed to make a puzzle that is SAT.
-// How can we achieve this? Safe all points that are from
 // the second round in a new vec only for this round, because we can have circles! If a point is new and a 2 and another point
 // needs the same connection just add the value that is needed to satisfy the other point.
 // Step 2: Check if the grid is full and if not, continue with the newly generated points
@@ -144,10 +136,7 @@ fn satsifythegrid(
     columns: usize,
     points: Vec<(usize, usize, bool)>,
 ) {
-    println!("{:?}", points);
-    println!("{:?}", points.len());
     for (i, _points) in points.iter().enumerate() {
-        println!("i: {}", i);
         let x = points[i].1;
         let y = points[i].0;
         let mut degree = grid[y][x];
@@ -178,8 +167,6 @@ fn satsifythegrid(
                 }
             }
         }
-        println!("Degree vorgänger: {}", points[i].2);
-        println!("Degree: {}", degree);
         if points[i].2 == true {
             degree = degree - 2;
         } else {
@@ -192,8 +179,6 @@ fn satsifythegrid(
         let (satpoints, minuspoints) = get_new_points2(&degree, &real_directions, x, y);
         grid[y][x] = grid[y][x] - minuspoints;
         degree = degree - minuspoints;
-        println!("Satpoints: {}", satpoints);
-        println!("Minuspoints: {}", minuspoints);
         if satpoints == 0 {
             grid[y][x] = grid[y][x] - degree;
         }
@@ -284,9 +269,6 @@ fn satsifythegrid(
                 }
             }
         }
-    }
-    for row in refgrid {
-        println!("{:?}", row);
     }
 }
 
@@ -446,17 +428,12 @@ fn connect_one(
     degree: u8,
     part: Part,
 ) -> Vec<(usize, usize, bool)> {
-    println!("Connecting one with {} degree", degree);
-    println!("x: {}, y: {}", x, y);
     let directions = get_directions(&part, 1);
     let direction = directions.get(0).unwrap();
-    println!("Direction: {:?}", direction);
     let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
     // if bridge crosses island or other bridge
     place_bridge(refgrid, x, y, new_x, new_y);
 
-    println!("New point:");
-    println!("x: {}, y: {}", new_x, new_y);
     if degree == 1 {
         grid[new_y][new_x] = get_max_degree(&part, 1, 1);
         vec![(new_y, new_x, false)]
@@ -498,18 +475,13 @@ fn connect_two(
     degree: u8,
     part: Part,
 ) -> Vec<(usize, usize, bool)> {
-    println!("Connecting two with {} degree", degree);
-    println!("x: {}, y: {}", x, y);
     let directions = get_directions(&part, 2);
-    println!("Directions: {:?}", directions);
 
     let mut newpoints = Vec::new();
     for i in 0..2 {
         let direction = directions.get(i).unwrap();
         let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
         place_bridge(refgrid, x, y, new_x, new_y);
-        println!("{}. new point:", i + 1);
-        println!("x: {}, y: {}", new_x, new_y);
 
         let part = get_cell_position(new_x, new_y, rows, columns);
         grid[new_y][new_x] = get_max_degree(&part, 2, 0);
@@ -543,18 +515,13 @@ fn connect_three(
     degree: u8,
     part: Part,
 ) -> Vec<(usize, usize, bool)> {
-    println!("Connecting three with {} degree", degree);
-    println!("x: {}, y: {}", x, y);
     let directions = get_directions(&part, 3);
-    println!("Directions: {:?}", directions);
 
     let mut newpoints = Vec::new();
     for i in 0..3 {
         let direction = directions.get(i).unwrap();
         let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
         place_bridge(refgrid, x, y, new_x, new_y);
-        println!("{}. new point:", i + 1);
-        println!("x: {}, y: {}", new_x, new_y);
 
         let part = get_cell_position(new_x, new_y, rows, columns);
         grid[new_y][new_x] = get_max_degree(&part, 2, 0);
@@ -594,10 +561,7 @@ fn connect_four(
     columns: usize,
     degree: u8,
 ) -> Vec<(usize, usize, bool)> {
-    println!("Connecting 4 with {} degree", degree);
-    println!("x: {}, y: {}", x, y);
     let directions = get_directions(&Part::Normal, 4);
-    println!("Directions: {:?}", directions);
 
     let mut newpoints = Vec::new();
 
@@ -605,8 +569,6 @@ fn connect_four(
         let direction = directions.get(i).unwrap();
         let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
         place_bridge(refgrid, x, y, new_x, new_y);
-        println!("{}. new point:", i + 1);
-        println!("x: {}, y: {}", new_x, new_y);
 
         let part = get_cell_position(new_x, new_y, rows, columns);
         grid[new_y][new_x] = get_max_degree(&part, 2, 0);
@@ -672,9 +634,9 @@ pub fn output_to_file(grid: &Vec<Vec<u8>>, filename: &str) -> Result<()> {
 
 #[test]
 fn should_gen() {
-    for i in 0..=100 {
+    for i in 0..=10000 {
         println!("Iteration: {}", i);
-        let game = generator(6, 7);
+        let game = generator(30, 30);
         let name = "./backend/output/testpuzzle.txt";
         output_to_file(&game, name).unwrap();
         let input_file = name;
@@ -686,9 +648,9 @@ fn should_gen() {
                     backend::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
                 match dimacs_generated {
                     Ok(_) => match backend::solver::solve(&output_file) {
-                        Ok(Certificate::SAT(certificate)) => {
+                        Ok(splr::Certificate::SAT(certificate)) => {
                             match backend::solver::write_solution(
-                                Certificate::SAT(certificate),
+                                splr::Certificate::SAT(certificate),
                                 &output_file,
                             ) {
                                 Ok(_) => {
@@ -704,7 +666,7 @@ fn should_gen() {
                             }
                         }
 
-                        Ok(Certificate::UNSAT) => {
+                        Ok(splr::Certificate::UNSAT) => {
                             println!("UNSAT at iteration {}", i);
                             break;
                         }
