@@ -1,5 +1,6 @@
 use rand::seq::SliceRandom;
 use rand::Rng;
+use std::cmp::{max, min};
 use std::fs::File;
 use std::io::{Result, Write};
 use std::ops::Range;
@@ -44,7 +45,7 @@ pub enum Direction {
 
 pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
     let mut grid: Vec<Vec<u8>> = vec![vec![0; columns]; rows];
-    let mut refgrid: Vec<Vec<bool>> = vec![vec![false; columns]; rows];
+    let refgrid: Vec<Vec<bool>> = vec![vec![false; columns]; rows];
 
     let x = rand::thread_rng().gen_range(0..=columns - 1);
     let y = rand::thread_rng().gen_range(0..=rows - 1);
@@ -58,7 +59,7 @@ pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
     generatepoints(
         new_points,
         &mut grid,
-        &mut refgrid,
+        refgrid,
         rows,
         columns,
         (x, y, false),
@@ -71,7 +72,7 @@ pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
 pub fn generatepoints(
     new_points: u8,
     grid: &mut Vec<Vec<u8>>,
-    refgrid: &mut Vec<Vec<bool>>,
+    mut refgrid: Vec<Vec<bool>>,
     rows: usize,
     columns: usize,
     touple: (usize, usize, bool),
@@ -80,18 +81,47 @@ pub fn generatepoints(
 ) -> () {
     let newpoints = match new_points {
         1 => connect_one(
-            grid, refgrid, touple.0, touple.1, rows, columns, degree, part,
+            grid,
+            &mut refgrid,
+            touple.0,
+            touple.1,
+            rows,
+            columns,
+            degree,
+            part,
         ),
         2 => connect_two(
-            grid, refgrid, touple.0, touple.1, rows, columns, degree, part,
+            grid,
+            &mut refgrid,
+            touple.0,
+            touple.1,
+            rows,
+            columns,
+            degree,
+            part,
         ),
         3 => connect_three(
-            grid, refgrid, touple.0, touple.1, rows, columns, degree, part,
+            grid,
+            &mut refgrid,
+            touple.0,
+            touple.1,
+            rows,
+            columns,
+            degree,
+            part,
         ),
-        4 => connect_four(grid, refgrid, touple.0, touple.1, rows, columns, degree),
+        4 => connect_four(
+            grid,
+            &mut refgrid,
+            touple.0,
+            touple.1,
+            rows,
+            columns,
+            degree,
+        ),
         _ => panic!("Invalid grow size"),
     };
-    satsifythegrid(grid, refgrid, rows, columns, newpoints);
+    satsifythegrid(grid, &mut refgrid, rows, columns, newpoints);
 }
 
 // TODO: Implement making all Satisfied.
@@ -124,22 +154,22 @@ fn satsifythegrid(
         for direction in possible_directions {
             match direction {
                 Direction::North => {
-                    if refgrid[y - 1][x] || refgrid[y - 2][x] {
+                    if !(refgrid[y - 1][x] || refgrid[y - 2][x]) {
                         real_directions.push(direction);
                     }
                 }
                 Direction::East => {
-                    if refgrid[y][x + 1] || refgrid[y][x + 2] {
+                    if !(refgrid[y][x + 1] || refgrid[y][x + 2]) {
                         real_directions.push(direction);
                     }
                 }
                 Direction::South => {
-                    if refgrid[y + 1][x] || refgrid[y + 2][x] {
+                    if !(refgrid[y + 1][x] || refgrid[y + 2][x]) {
                         real_directions.push(direction);
                     }
                 }
                 Direction::West => {
-                    if refgrid[y][x - 1] || refgrid[y][x - 2] {
+                    if !(refgrid[y][x - 1] || refgrid[y][x - 2]) {
                         real_directions.push(direction);
                     }
                 }
@@ -150,23 +180,26 @@ fn satsifythegrid(
         } else {
             degree = degree - 1;
         }
+        if degree == 0 {
+            return;
+        }
         let satpoints = get_new_points2(&degree, real_directions.clone());
         if satpoints == 0 {
             grid[x][y] = grid[x][y] - degree
         }
         real_directions.shuffle(&mut rand::thread_rng());
-        let mut i = 0;
-        for direction in real_directions[0..satpoints].to_vec() {
+        for (iteration, &direction) in real_directions[0..satpoints].to_vec().iter().enumerate() {
             match direction {
                 Direction::North => {
                     let mut min = 0;
-                    for i in y - 2..0 {
+                    for i in 0..y - 2 {
                         if refgrid[i][x] {
                             min = i;
                         }
                     }
                     let new_y = random(min..y - 2);
-                    if degree as usize / real_directions.len() - i == 1 {
+                    place_bridge(refgrid, x, y, x, new_y);
+                    if decide_new_degree(degree, &real_directions, satpoints, iteration) {
                         grid[new_y][x] = 1;
                         degree = degree - 1;
                     } else {
@@ -175,14 +208,15 @@ fn satsifythegrid(
                     }
                 }
                 Direction::East => {
-                    let mut max: usize = 0;
+                    let mut max: usize = columns;
                     for i in x + 2..columns {
                         if refgrid[y][i] {
                             max = i;
                         }
                     }
                     let new_x = random(x + 2..max);
-                    if degree as usize / real_directions.len() - i == 1 {
+                    place_bridge(refgrid, x, y, new_x, y);
+                    if decide_new_degree(degree, &real_directions, satpoints, iteration) {
                         grid[y][new_x] = 1;
                         degree = degree - 1;
                     } else {
@@ -191,14 +225,15 @@ fn satsifythegrid(
                     }
                 }
                 Direction::South => {
-                    let mut max = 0;
+                    let mut max = rows;
                     for i in y + 2..rows {
                         if refgrid[i][x] {
                             max = i;
                         }
                     }
                     let new_y = random(y + 2..max);
-                    if degree as usize / real_directions.len() - i == 1 {
+                    place_bridge(refgrid, x, y, x, new_y);
+                    if decide_new_degree(degree, &real_directions, satpoints, iteration) {
                         grid[new_y][x] = 1;
                         degree = degree - 1;
                     } else {
@@ -208,13 +243,14 @@ fn satsifythegrid(
                 }
                 Direction::West => {
                     let mut min = 0;
-                    for i in x - 2..0 {
+                    for i in 0..x - 2 {
                         if refgrid[y][i] {
                             min = i;
                         }
                     }
                     let new_x = random(min..x - 2);
-                    if degree as usize / real_directions.len() - i == 1 {
+                    place_bridge(refgrid, x, y, new_x, y);
+                    if decide_new_degree(degree, &real_directions, satpoints, iteration) {
                         grid[y][new_x] = 1;
 
                         degree = degree - 1;
@@ -224,20 +260,28 @@ fn satsifythegrid(
                     }
                 }
             }
-            i = i + 1;
         }
     }
+    for row in refgrid {
+        println!("{:?}", row);
+    }
+}
+
+fn decide_new_degree(degree: u8, directions: &Vec<&Direction>, satpoints: usize, iteration: usize) -> bool {
+    return degree as usize / (directions[0..satpoints].len() - iteration) == 1;
 }
 
 fn get_new_points2(degree: &u8, dir: Vec<&Direction>) -> usize {
     match dir.len() {
         1 => 1,
         2 => match degree {
+            0 => 0,
             1 => 1,
             2 => random(1..2),
             _ => 2,
         },
         3 => match degree {
+            0 => 0,
             1 => 1,
             2 => random(1..2),
             3 => random(2..3),
@@ -342,8 +386,11 @@ fn get_directions(part: &Part, num_directions: usize) -> Vec<Direction> {
 }
 
 fn random(range: Range<usize>) -> usize {
+    if range.start == range.end {
+        return range.start;
+    }
     if range.is_empty() {
-        print!("{:?}, {}", range.start, range.end);
+        println!("{:?}, {}", range.start, range.end);
         panic!("Empty Range");
     }
     let mut rng = rand::thread_rng();
@@ -403,12 +450,16 @@ fn place_bridge(
     end_y: usize,
 ) -> () {
     match (start_x, start_y, end_x, end_y) {
-        _ if start_x == end_x => (start_y..=end_y).into_iter().for_each(|y| {
-            refgrid[y][start_x] = true;
-        }),
-        _ if start_y == end_y => (start_x..=end_x).into_iter().for_each(|x| {
-            refgrid[start_y][x] = true;
-        }),
+        _ if start_x == end_x => (min(start_y, end_y)..=max(start_y, end_y))
+            .into_iter()
+            .for_each(|y| {
+                refgrid[y][start_x] = true;
+            }),
+        _ if start_y == end_y => (min(start_x, end_x)..=max(start_x, end_x))
+            .into_iter()
+            .for_each(|x| {
+                refgrid[start_y][x] = true;
+            }),
         _ => panic!("Bridge is not diagnal or horizontal"),
     };
 }
@@ -521,7 +572,7 @@ fn connect_four(
 ) -> Vec<(usize, usize, bool)> {
     println!("Connecting 4 with {} degree", degree);
     println!("x: {}, y: {}", x, y);
-    let directions = get_directions(&Part::Normal, 3);
+    let directions = get_directions(&Part::Normal, 4);
     println!("Directions: {:?}", directions);
 
     let mut newpoints = Vec::new();
@@ -598,6 +649,31 @@ pub fn output_to_file(grid: &Vec<Vec<u8>>, filename: &str) -> Result<()> {
 #[test]
 fn should_gen() {
     let game = generator(6, 7);
-    output_to_file(&game, "./output/testpuzzle.txt").unwrap();
+    let name = "./backend/output/testpuzzle.txt";
+    output_to_file(&game, name).unwrap();
+    let input_file = name;
+    let output_file = format!("{}.out.txt", input_file);
+    match backend::parse_input::parse_input(&input_file) {
+        Ok(game_board) => {
+            let (clauses, var_map) = backend::generate_clauses::generate(&game_board);
+            let dimacs_generated = backend::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
+            match dimacs_generated {
+                Ok(_) => match backend::solver::solve(&output_file) {
+                    Ok(certificate) => match backend::solver::write_solution(certificate, &output_file) {
+                        Ok(_) => {
+                            backend::reconstruct::reconstruct_puzzle(&output_file.to_string(), &var_map, &game_board);
+                        }
+                        Err(err) => {
+                            eprintln!("Error: {}", err);
+                        }
+                    },
+                    Err(err) => {
+                        eprintln!("Error: {}", err);
+                    }
+                },
+                Err(e) => eprint!("{}", e),
+            }
+        }
+        Err(err) => eprintln!("Error: {}", err),
+    }
 }
-
