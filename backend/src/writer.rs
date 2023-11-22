@@ -22,6 +22,6 @@ pub fn generate_dimacs(
     }
 
     let duration = start.elapsed();
-    println!("Time elapsed in generate_dimacs() is: {:?}", duration);
+    //println!("Time elapsed in generate_dimacs() is: {:?}", duration);
     Ok(())
 }

@@ -77,7 +77,7 @@ See [Clauses](Clauses.md)
 - [x] Test structure
 - [x] Benchmarking
 - [x] Game Board Format
-- [ ] Evaluation of Performance
+- [x] Evaluation of Performance
 
 
 **Florian:**

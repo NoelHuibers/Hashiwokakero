@@ -58,7 +58,7 @@ pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) 
         &from_var,
     ));
     let duration = start.elapsed();
-    println!("Time elapsed in generate() is: {:?}", duration);
+    //println!("Time elapsed in generate() is: {:?}", duration);
     return (dimacs, from_idx);
 }
 
