@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fs;
 use std::io;
+use std::time::Instant;
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Ord, PartialOrd)]
 pub struct Bridge {
@@ -24,6 +25,7 @@ pub struct GameBoard {
 }
 
 pub fn parse_input(filename: &str) -> io::Result<GameBoard> {
+    let start = Instant::now();
     if !filename.ends_with(".txt") {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -47,6 +49,8 @@ pub fn parse_input(filename: &str) -> io::Result<GameBoard> {
     };
 
     build_bridges(&mut game_board)?;
+    let duration = start.elapsed();
+    println!("Time elapsed in parse_input() is: {:?}", duration);
 
     Ok(game_board)
 }

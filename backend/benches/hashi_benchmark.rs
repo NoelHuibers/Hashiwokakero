@@ -1,16 +1,16 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
+use backend::{modes::{encode_mode, solve_mode, esr_mode}};
 
-use backend::modes::{encode_mode, solve_mode, esr_mode};
 
+const TEST_FILES: [&str; 3] = [
+    "backend/input/test1.txt",
+    "backend/input/test8.txt",
+    "backend/input/test20.txt",
+];
+
+// benches modes
 fn encode_benchmark(c: &mut Criterion) {
-    let test_files = vec![
-        "backend/input/test1.txt",
-        "backend/input/test8.txt",
-        "backend/input/test20.txt",
-        // Add more test files with different/larger grid sizes
-    ];
-
-    for input_file in &test_files {
+    for input_file in &TEST_FILES {
         let benchmark_name = format!("encode_{}", input_file);
         c.bench_function(&benchmark_name, |b| {
             b.iter(|| {
@@ -24,14 +24,7 @@ fn encode_benchmark(c: &mut Criterion) {
 }
 
 fn solve_benchmark(c: &mut Criterion) {
-    let test_files = vec![
-        "backend/input/test1.txt",
-        "backend/input/test8.txt",
-        "backend/input/test20.txt",
-        // Add more test files with different/larger grid sizes
-    ];
-
-    for input_file in &test_files {
+    for input_file in &TEST_FILES {
         let benchmark_name = format!("solve_{}", input_file);
         c.bench_function(&benchmark_name, |b| {
             b.iter(|| {
@@ -45,15 +38,9 @@ fn solve_benchmark(c: &mut Criterion) {
     }
 }
 
+//total performance of 
 fn esr_benchmark(c: &mut Criterion) {
-    let test_files = vec![
-        "backend/input/test1.txt",
-        "backend/input/test8.txt",
-        "backend/input/test20.txt",
-        // Add more test files with different/larger grid sizes
-    ];
-
-    for input_file in &test_files {
+    for input_file in &TEST_FILES {
         let benchmark_name = format!("esr_{}", input_file);
         c.bench_function(&benchmark_name, |b| {
             b.iter(|| {
@@ -67,13 +54,11 @@ fn esr_benchmark(c: &mut Criterion) {
     }
 }
 
+criterion_group!(
+    benches,
+    encode_benchmark,
+    solve_benchmark,
+    esr_benchmark
+);
 
-fn main() {
-    let mut criterion = Criterion::default();
-    encode_benchmark(&mut criterion);
-    solve_benchmark(&mut criterion);
-    esr_benchmark(&mut criterion);
-    criterion.final_summary();
-}
-
-// Path: backend/benches/hashi_benchmark.rs
+criterion_main!(benches);

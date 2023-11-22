@@ -1,4 +1,5 @@
 use std::{collections::HashMap, vec, iter};
+use std::time::Instant;
 
 use itertools::Itertools;
 
@@ -11,6 +12,7 @@ use crate::{
 pub(crate) type BridgeCoord = (usize, usize, usize, usize, usize);
 
 pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
+    let start = Instant::now();
     let mut dimacs: Vec<Vec<i32>> = vec![];
     let bridge_iter = game
         .bridges
@@ -55,6 +57,8 @@ pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) 
         &game.islands,
         &from_var,
     ));
+    let duration = start.elapsed();
+    println!("Time elapsed in generate() is: {:?}", duration);
     return (dimacs, from_idx);
 }
 

@@ -1,9 +1,13 @@
 use splr::*;
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
+use std::time::Instant;
 
 pub fn solve(filepath: &str) -> io::Result<Certificate> {
+    let start = Instant::now();
     let config = Config::from(filepath);
+    let duration = start.elapsed();
+    println!("Time elapsed in solve() is: {:?}", duration);
     match Solver::build(&config) {
         Ok(mut s) => match s.solve() {
             Ok(ans) => Ok(ans),
@@ -14,6 +18,7 @@ pub fn solve(filepath: &str) -> io::Result<Certificate> {
 }
 
 pub fn write_solution(certificate: Certificate, output_file: &str) -> io::Result<()> {
+    let start = Instant::now();
     if !output_file.ends_with(".txt") {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -34,5 +39,7 @@ pub fn write_solution(certificate: Certificate, output_file: &str) -> io::Result
             write!(writer, "UNSAT")?;
         }
     }
+    let duration = start.elapsed();
+    println!("Time elapsed in write_solution() is: {:?}", duration);
     Ok(())
 }
