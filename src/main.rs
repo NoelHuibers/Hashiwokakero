@@ -1,5 +1,6 @@
 #[cfg(feature = "ssr")]
 #[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     use actix_files::Files;
     use actix_web::*;
@@ -67,5 +68,13 @@ pub fn main() {
 
     leptos::mount_to_body(App);
 }
+
+
+
+
+
+
+
+
 
 

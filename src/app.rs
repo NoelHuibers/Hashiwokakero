@@ -131,6 +131,11 @@ fn Table(
     set_tableprop: WriteSignal<Vec<Vec<i32>>>,
 ) -> impl IntoView {
     let (testprop, set_testprop) = create_signal("0".to_string());
+    let solve = create_server_action::<Solve>();
+    let to_cnf = create_server_action::<ToCNF>();
+    let generate = create_server_action::<LetsTest>();
+    let testdata = generate.value();
+
     let on_submit = move |ev: SubmitEvent| {
         ev.prevent_default();
         let submitid = ev.submitter().unwrap().id();
@@ -150,7 +155,6 @@ fn Table(
                 //     }
                 // });
         } else if submitid == "2" {
-            // Generate
         } else if submitid == "3" {
             let form = ev
                 .target()
@@ -163,7 +167,7 @@ fn Table(
         }
     };
     view! {
-        <form on:submit=on_submit class="flex flex-col items-center">
+        <ActionForm action=generate class="flex flex-col items-center">
             <For
                 each=move || (0..rows.get()).into_iter()
                 key=|counter| *counter
@@ -182,31 +186,12 @@ fn Table(
             <div class="flex flex-row space-x-4 py-8">
                 <input
                     type="submit"
-                    id="0"
-                    value="To CNF"
-                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
-                />
-                <input
-                    type="submit"
-                    id="1"
-                    value="Solve"
-                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
-                />
-                <input
-                    type="submit"
                     id="2"
-                    value="Generate"
-                    class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
-                />
-                <input
-                    type="submit"
-                    id="3"
-                    value="Clear"
                     class="w-24 h-12 rounded px-2 bg-violet-700 text-slate-100 cursor-pointer"
                 />
             </div>
-        </form>
-        <p>{testprop}</p>
+        </ActionForm>
+        <p>"Returned from the server fn: " {testdata}</p>
     }
 }
 
@@ -321,54 +306,11 @@ pub async fn to_cnf(puzzle: Vec<Vec<i32>>) -> Result<(), ServerFnError> {
     }
 }
 
-#[server(Generate, "/generate")]
-pub async fn generatfield(rows: i32, columns: i32) -> Result<(), ServerFnError> {
-    //let game = generator(rows, columns);
-    Ok(())
+#[server(LetsTest, "/generate")]
+pub async fn generatfield() -> Result<String, ServerFnError> {
+    let test = format!("test");
+    Ok(test)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
