@@ -55,7 +55,7 @@ pub fn reconstruct_puzzle(
                     output.push(format!("{}", num).chars().next().unwrap());
                     continue;
                 }
-                if let Some(bridge) = bridge_map.get(&(col, row)) {
+                if let Some(bridge) = bridge_map.get(&(col.into(), row.into())) {
                     output.push(*bridge);
                     continue;
                 }

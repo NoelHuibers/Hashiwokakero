@@ -9,7 +9,7 @@ use crate::{
 };
 
 // TODO: most vars here could be of lower size
-pub(crate) type BridgeCoord = (usize, usize, usize, usize, usize);
+pub(crate) type BridgeCoord = (u8, u8, u8, u8, u8);
 
 pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
     let start = Instant::now();
@@ -122,7 +122,7 @@ fn avoid_crosses(bridges: Vec<Bridge>, var_map: &HashMap<BridgeCoord, i32>) -> V
 fn connected_bridges(
     edges: &Vec<Bridge>,
     nodes: &Vec<Island>,
-    from_var: &HashMap<(usize, usize, usize, usize, usize), i32>,
+    from_var: &HashMap<(u8, u8, u8, u8, u8), i32>,
 ) -> Vec<Vec<i32>> {
     let mut clauses = vec![];
     let (mut bridges, visited) = find_bridges(edges);
@@ -177,7 +177,7 @@ fn connected_bridges(
     clauses
 }
 
-fn find_bridges(edges: &Vec<Bridge>) -> (Vec<Bridge>, HashMap<(usize, usize), bool>) {
+fn find_bridges(edges: &Vec<Bridge>) -> (Vec<Bridge>, HashMap<(u8, u8), bool>) {
     let mut adj_list: HashMap<(_, _), Vec<(_, _)>> = HashMap::new();
     for edge in edges.iter() {
         if let Some(neighbors) = adj_list.get_mut(&edge.from) {
@@ -195,7 +195,7 @@ fn find_bridges(edges: &Vec<Bridge>) -> (Vec<Bridge>, HashMap<(usize, usize), bo
     let mut visited = adj_list
         .keys()
         .map(|k| (*k, false))
-        .collect::<HashMap<(usize, usize), bool>>();
+        .collect::<HashMap<(u8, u8), bool>>();
     let mut distances = HashMap::new();
     let mut lowest = HashMap::new();
     let mut vec = vec![];

@@ -2,19 +2,19 @@ use crate::parse_input::Bridge;
 use core::cmp::min;
 use std::collections::HashMap;
 
-type AdjList = HashMap<(usize, usize), Vec<(usize, usize)>>;
-type Node = (usize, usize);
+type AdjList = HashMap<(u8, u8), Vec<(u8, u8)>>;
+type Node = (u8, u8);
 
 pub fn dfs<'a>(
     current: Node,
-    mut distance: usize,
+    mut distance: u8,
     adj_list: &'a mut AdjList,
     visited: &'a mut HashMap<Node, bool>,
-    distances: &'a mut HashMap<Node, usize>,
-    lowest: &'a mut HashMap<Node, usize>,
+    distances: &'a mut HashMap<Node, u8>,
+    lowest: &'a mut HashMap<Node, u8>,
     parent: Option<Node>,
     bridges: &'a mut Vec<Bridge>,
-) -> (Vec<Bridge>, &'a mut HashMap<(usize, usize), bool>) {
+) -> (Vec<Bridge>, &'a mut HashMap<(u8, u8), bool>) {
     distances.insert(current, distance);
     lowest.insert(current, distance);
     visited.insert(current, true);
@@ -95,7 +95,7 @@ fn should_find_bridges() {
     let mut visited = adj_list
         .keys()
         .map(|k| (*k, false))
-        .collect::<HashMap<(usize, usize), bool>>();
+        .collect::<HashMap<(u8, u8), bool>>();
     let (d, v) = dfs(
         *visited.keys().next().unwrap(),
         0,
@@ -172,7 +172,7 @@ fn should_not_find_bridges() {
     let mut visited = adj_list
         .keys()
         .map(|k| (*k, false))
-        .collect::<HashMap<(usize, usize), bool>>();
+        .collect::<HashMap<(u8, u8), bool>>();
     let (d, _) = dfs(
         *visited.keys().next().unwrap(),
         0,
