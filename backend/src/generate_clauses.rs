@@ -79,8 +79,12 @@ fn outgoing_bridges(
 fn exactly_k_of_n_true(k: i8, vars: Vec<i32>) -> Vec<Vec<i32>> {
     let n = vars.len() as i8;
     let k = k;
-    let min_true_vars = n - k + 1;
-    let min_false_vars = k + 1;
+    let mut min_true_vars = n - k + 1;
+    let mut min_false_vars = k + 1;
+    if min_true_vars < 0 {
+        min_true_vars = n;
+        min_false_vars = n;
+    }
     let lower: Vec<Vec<i32>> =
         Itertools::combinations((vars.clone()).into_iter(), min_true_vars as usize).collect();
     let upper: Vec<Vec<i32>> = Itertools::combinations((vars).into_iter(), min_false_vars as usize)
@@ -283,4 +287,12 @@ fn should_have_one_cnf_positive() {
     let vars = 1..=8;
     let clauses = exactly_k_of_n_true(8, vars.collect_vec());
     assert_eq!(clauses, [[1], [2], [3], [4], [5], [6], [7], [8]])
+}
+
+#[test]
+fn infinite_iterator_bug() {
+    let vars = vec![5, 6];
+    let k = 4;
+    let cnf = exactly_k_of_n_true(k, vars);
+    assert_eq!(cnf, [[5, 6], [-5, -6]])
 }
