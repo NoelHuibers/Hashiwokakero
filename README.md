@@ -40,6 +40,10 @@ To execute the rlease build for `test1` and print the reconstructed solution:
 
 `../target/release/backend  --mode esr --input ./input/test1.txt --output ./input/test1.minisat-output.txt`
 
+To execute the integration test containing all given test scenarios and some aditional edge cases:
+
+`cargo test --package backend --test integration_test -- test_integration --exact --nocapture`
+
 ### Benchmarking
 
 To execute the criterion benchmarking open a terminal in the project backend directory and execute: 
