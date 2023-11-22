@@ -1,5 +1,6 @@
 use rand::seq::SliceRandom;
 use rand::Rng;
+use splr::Certificate;
 use std::cmp::{max, min};
 use std::fs::File;
 use std::io::{Result, Write};
@@ -189,7 +190,8 @@ fn satsifythegrid(
         }
 
         let (satpoints, minuspoints) = get_new_points2(&degree, &real_directions, x, y);
-        grid[y][x] = grid[y][x] - minuspoints as u8;
+        grid[y][x] = grid[y][x] - minuspoints;
+        degree = degree - minuspoints;
         println!("Satpoints: {}", satpoints);
         println!("Minuspoints: {}", minuspoints);
         if satpoints == 0 {
@@ -288,7 +290,7 @@ fn satsifythegrid(
     }
 }
 
-fn get_new_points2(degree: &u8, dir: &Vec<&Direction>, x: usize, y: usize) -> (usize, usize) {
+fn get_new_points2(degree: &u8, dir: &Vec<&Direction>, x: usize, y: usize) -> (usize, u8) {
     match dir.len() {
         1 => match degree {
             1 | 2 => (1, 0),
@@ -620,14 +622,14 @@ fn connect_four(
         }
         5 => {
             newpoints.shuffle(&mut rng);
-            for point in &mut newpoints[0..2] {
+            for point in &mut newpoints[0..3] {
                 grid[point.0][point.1] = grid[point.0][point.1] - 1;
                 *point = (point.0, point.1, false);
             }
         }
         6 => {
             newpoints.shuffle(&mut rng);
-            for point in &mut newpoints[0..3] {
+            for point in &mut newpoints[0..2] {
                 grid[point.0][point.1] = grid[point.0][point.1] - 1;
                 *point = (point.0, point.1, false);
             }
@@ -670,40 +672,51 @@ pub fn output_to_file(grid: &Vec<Vec<u8>>, filename: &str) -> Result<()> {
 
 #[test]
 fn should_gen() {
-    let game = generator(6, 7);
-    let name = "./backend/output/testpuzzle.txt";
-    output_to_file(&game, name).unwrap();
-    let input_file = name;
-    let output_file = format!("{}.out.txt", input_file);
-    match backend::parse_input::parse_input(&input_file) {
-        Ok(game_board) => {
-            let (clauses, var_map) = backend::generate_clauses::generate(&game_board);
-            let dimacs_generated =
-                backend::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
-            match dimacs_generated {
-                Ok(_) => match backend::solver::solve(&output_file) {
-                    Ok(certificate) => {
-                        match backend::solver::write_solution(certificate, &output_file) {
-                            Ok(_) => {
-                                backend::reconstruct::reconstruct_puzzle(
-                                    &output_file.to_string(),
-                                    &var_map,
-                                    &game_board,
-                                );
-                            }
-                            Err(err) => {
-                                eprintln!("Error: {}", err);
+    for i in 0..=100 {
+        println!("Iteration: {}", i);
+        let game = generator(6, 7);
+        let name = "./backend/output/testpuzzle.txt";
+        output_to_file(&game, name).unwrap();
+        let input_file = name;
+        let output_file = format!("{}.out.txt", input_file);
+        match backend::parse_input::parse_input(&input_file) {
+            Ok(game_board) => {
+                let (clauses, var_map) = backend::generate_clauses::generate(&game_board);
+                let dimacs_generated =
+                    backend::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
+                match dimacs_generated {
+                    Ok(_) => match backend::solver::solve(&output_file) {
+                        Ok(Certificate::SAT(certificate)) => {
+                            match backend::solver::write_solution(
+                                Certificate::SAT(certificate),
+                                &output_file,
+                            ) {
+                                Ok(_) => {
+                                    backend::reconstruct::reconstruct_puzzle(
+                                        &output_file.to_string(),
+                                        &var_map,
+                                        &game_board,
+                                    );
+                                }
+                                Err(err) => {
+                                    eprintln!("Error: {}", err);
+                                }
                             }
                         }
-                    }
-                    Err(err) => {
-                        eprintln!("Error: {}", err);
-                    }
-                },
-                Err(e) => eprint!("{}", e),
+
+                        Ok(Certificate::UNSAT) => {
+                            println!("UNSAT at iteration {}", i);
+                            break;
+                        }
+                        Err(err) => {
+                            eprintln!("Error: {}", err);
+                        }
+                    },
+                    Err(e) => eprint!("{}", e),
+                }
             }
+            Err(err) => eprintln!("Error: {}", err),
         }
-        Err(err) => eprintln!("Error: {}", err),
     }
 }
 
