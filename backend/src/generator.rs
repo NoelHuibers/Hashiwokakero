@@ -637,7 +637,7 @@ fn should_gen() {
     for i in 0..=10000 {
         println!("Iteration: {}", i);
         let game = generator(30, 30);
-        let name = "./backend/output/testpuzzle.txt";
+        let name = "./output/testpuzzle.txt";
         output_to_file(&game, name).unwrap();
         let input_file = name;
         let output_file = format!("{}.out.txt", input_file);

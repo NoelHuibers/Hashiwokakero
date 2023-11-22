@@ -66,7 +66,7 @@ See [Clauses](Clauses.md)
 - [x] Clap integration encode or solve.
 - [x] Solver Error no DIMACS File
 - [ ] Frontend Leptos/Yew integration.
-- [ ] Generator
+- [x] Generator
 
 **Laura:**
 
