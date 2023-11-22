@@ -19,6 +19,6 @@
 | test17 | SAT     |
 | test18 | INVALID |
 | test19 | SAT     |
-| test20 | UNSAT   |
+| test20 | SAT   |
 | test21 | INVALID |
 | test22 | SAT     |

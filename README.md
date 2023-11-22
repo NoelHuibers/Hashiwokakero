@@ -34,7 +34,7 @@ We currently support three modes:
 
 To build the project, open a terminal in the project root directory and execute:
 
-`cargo build --rlelease`
+`cargo build --release`
 
 To execute the rlease build for `test1` and print the reconstructed solution:
 
@@ -42,7 +42,7 @@ To execute the rlease build for `test1` and print the reconstructed solution:
 
 ### Benchmarking
 
-To execute the criterion benchmarking execute: 
+To execute the criterion benchmarking open a terminal in the project backend directory and execute: 
 
 `cargo bench`
 
@@ -73,7 +73,7 @@ See [Clauses](Clauses.md)
 - [x] Test structure
 - [x] Benchmarking
 - [x] Game Board Format
-- [ ] [Evaluation of Performance (Update)](hashi_report.pdf)
+- [ ] Evaluation of Performance
 
 
 **Florian:**

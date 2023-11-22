@@ -1,5 +1,4 @@
-use std::{collections::HashMap, fs::{File, remove_file}, io::Read};
-
+use std::{collections::HashMap, fs::{File, remove_file}, io::Read, time::Instant};
 use crate::{generate_clauses::BridgeCoord, parse_input::GameBoard};
 
 pub fn reconstruct_puzzle(
@@ -7,6 +6,7 @@ pub fn reconstruct_puzzle(
     var_map: &HashMap<i32, BridgeCoord>,
     game_board: &GameBoard,
 ) -> String {
+    let start = Instant::now();
     let mut output = String::new();
     let mut file = File::open(sat_output_path.clone())
         .expect(&format!("File {} does not exist", sat_output_path));
@@ -66,6 +66,8 @@ pub fn reconstruct_puzzle(
     } else {
         output ="Problem had no variables".into();
     }
+    let duration = start.elapsed();
+    println!("Time elapsed in reconstruct_puzzle() is: {:?}", duration);
     output
 }
 
