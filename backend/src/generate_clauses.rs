@@ -1,4 +1,5 @@
 use std::{collections::HashMap, vec, iter};
+use std::time::Instant;
 
 use itertools::Itertools;
 
@@ -8,7 +9,7 @@ use crate::{
 };
 
 // TODO: most vars here could be of lower size
-pub(crate) type BridgeCoord = (usize, usize, usize, usize, usize);
+pub(crate) type BridgeCoord = (u8, u8, u8, u8, u8);
 
 pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
     let mut dimacs: Vec<Vec<i32>> = vec![];
@@ -75,8 +76,12 @@ fn outgoing_bridges(
 fn exactly_k_of_n_true(k: i8, vars: Vec<i32>) -> Vec<Vec<i32>> {
     let n = vars.len() as i8;
     let k = k;
-    let min_true_vars = n - k + 1;
-    let min_false_vars = k + 1;
+    let mut min_true_vars = n - k + 1;
+    let mut min_false_vars = k + 1;
+    if min_true_vars < 0 {
+        min_true_vars = n;
+        min_false_vars = n;
+    }
     let lower: Vec<Vec<i32>> =
         Itertools::combinations((vars.clone()).into_iter(), min_true_vars as usize).collect();
     let upper: Vec<Vec<i32>> = Itertools::combinations((vars).into_iter(), min_false_vars as usize)
@@ -118,7 +123,7 @@ fn avoid_crosses(bridges: Vec<Bridge>, var_map: &HashMap<BridgeCoord, i32>) -> V
 fn connected_bridges(
     edges: &Vec<Bridge>,
     nodes: &Vec<Island>,
-    from_var: &HashMap<(usize, usize, usize, usize, usize), i32>,
+    from_var: &HashMap<(u8, u8, u8, u8, u8), i32>,
 ) -> Vec<Vec<i32>> {
     let mut clauses = vec![];
     let (mut bridges, visited) = find_bridges(edges);
@@ -173,7 +178,7 @@ fn connected_bridges(
     clauses
 }
 
-fn find_bridges(edges: &Vec<Bridge>) -> (Vec<Bridge>, HashMap<(usize, usize), bool>) {
+fn find_bridges(edges: &Vec<Bridge>) -> (Vec<Bridge>, HashMap<(u8, u8), bool>) {
     let mut adj_list: HashMap<(_, _), Vec<(_, _)>> = HashMap::new();
     for edge in edges.iter() {
         if let Some(neighbors) = adj_list.get_mut(&edge.from) {
@@ -191,7 +196,7 @@ fn find_bridges(edges: &Vec<Bridge>) -> (Vec<Bridge>, HashMap<(usize, usize), bo
     let mut visited = adj_list
         .keys()
         .map(|k| (*k, false))
-        .collect::<HashMap<(usize, usize), bool>>();
+        .collect::<HashMap<(u8, u8), bool>>();
     let mut distances = HashMap::new();
     let mut lowest = HashMap::new();
     let mut vec = vec![];
@@ -279,4 +284,12 @@ fn should_have_one_cnf_positive() {
     let vars = 1..=8;
     let clauses = exactly_k_of_n_true(8, vars.collect_vec());
     assert_eq!(clauses, [[1], [2], [3], [4], [5], [6], [7], [8]])
+}
+
+#[test]
+fn infinite_iterator_bug() {
+    let vars = vec![5, 6];
+    let k = 4;
+    let cnf = exactly_k_of_n_true(k, vars);
+    assert_eq!(cnf, [[5, 6], [-5, -6]])
 }

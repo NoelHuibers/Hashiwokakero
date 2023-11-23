@@ -1,5 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Read};
-
+use std::{collections::HashMap, fs::{File, remove_file}, io::Read, time::Instant};
 use crate::{generate_clauses::BridgeCoord, parse_input::GameBoard};
 
 pub fn get_content(sat_output_path: &String) -> String {
@@ -59,7 +58,7 @@ pub fn reconstruct_puzzle(
                     output.push(format!("{}", num).chars().next().unwrap());
                     continue;
                 }
-                if let Some(bridge) = bridge_map.get(&(col, row)) {
+                if let Some(bridge) = bridge_map.get(&(col.into(), row.into())) {
                     output.push(*bridge);
                     continue;
                 }
@@ -75,7 +74,7 @@ pub fn reconstruct_puzzle(
 
 #[test]
 fn should_parse_sat_output() {
-    let path = "/tmp/sat/test.txt";
+    let path = "test.txt";
     let mut file = File::create(path).unwrap();
     let content = "SAT\n1 2 3 -4 5 -6 7 -8";
     std::io::Write::write_all(&mut file, content.as_bytes()).unwrap();

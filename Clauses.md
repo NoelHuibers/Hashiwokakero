@@ -15,7 +15,7 @@ We chose clauses to be the restrictions per island.
 
 ### Assumtions
 
-We assume to always receive valid games that match the ruleset of the game.
+We assume to always receive valid games that match the rule set of the game.
 
 ### Cases
 
@@ -140,7 +140,28 @@ $$
 3.1: All Islands must be connected  
 3.2: Cycles are possible
 
-We view the puzzle as an undirected graph considering all possible bridges as edges and islands as nodes. We look for bridges in the graph using Tarjans algorithm. As bridges are the fragile edges of the graph where we definetely force a bridge by adding the bridge pair in a clause.
+We view the puzzle as an undirected graph considering all possible bridges as edges and islands as nodes. We look for bridges in the graph using Tarjans algorithm. As bridges are the fragile edges of the graph where we definitely force a bridge by adding the bridge pair in a clause.
+
+However, finding bridges in the possible edges we collect is not enough. There are two special cases we need to consider:
+
+1. Two disconnected island groups where no edge would be possible (invalid game)
+2. Puzzles where every island has exactly the number 2 (special case as max amount of bridges is 2 as well)
+
+As the first game is an invalid game, we check the reached edges from our iteration of the Tarjan algorithm and force empty clauses if the dfs in Tarjan results in unconnectedness.
+
+For the second case we first thought of banning double bridges. But cases like shown below would still fail:
+
+```
+2-2
+| |
+2-2
+
+2-2
+| |
+2-2
+```
+
+So in the case of having only islands with number two we consecutively remove those edges in the graph whose removal doesn't lead to new bridges. We do that until there is no such edge any more. In that case we remove an arbitrary edge and go back to our base case finding bridges and forcing them through constraints.
 
 ### Examples
 

@@ -9,6 +9,7 @@ edition = "2021"
 clap = { version = "4.4.7", features = ["cargo"] }
 itertools = "0.11.0"
 splr = "0.17.1"
+rand = "0.8.5"
 
 
 [dev-dependencies]

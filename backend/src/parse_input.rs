@@ -1,37 +1,41 @@
 use std::collections::HashSet;
 use std::fs;
 use std::io;
+use std::time::Instant;
+use std::collections::HashMap;
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Ord, PartialOrd)]
 pub struct Bridge {
-    pub from: (usize, usize),
-    pub to: (usize, usize),
+    pub from: (u8, u8),
+    pub to: (u8, u8),
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Island {
-    pub x: usize,
-    pub y: usize,
+    pub x: u8,
+    pub y: u8,
     pub connections: u32,
 }
 
 #[derive(Debug, Clone)]
 pub struct GameBoard {
-    pub rows: usize,
-    pub cols: usize,
+    pub rows: u8,
+    pub cols: u8,
     pub islands: Vec<Island>,
     pub bridges: Vec<Bridge>,
 }
 
 pub fn parse_vec_input(input: Vec<Vec<i32>>) -> io::Result<GameBoard> {
     // Get the row and column count from the Vec input length
-    let rows = input.len();
-    let cols = input[0].len();
+    let rows = input.len() as u8;
+    let cols = input[0].len() as u8;
     //Get the islands from the Vec input and generate the bridges
     let mut islands = Vec::new();
     for (y, row) in input.iter().enumerate() {
         for (x, &connections) in row.iter().enumerate() {
             if connections != 0 {
+                let x = x as u8;
+                let y = y as u8;
                 islands.push(Island {
                     x,
                     y,
@@ -78,7 +82,7 @@ pub fn parse_input(filename: &str) -> io::Result<GameBoard> {
     Ok(game_board)
 }
 
-pub fn parse_rows_and_cols(header: &str) -> io::Result<(usize, usize)> {
+fn parse_rows_and_cols(header: &str) -> io::Result<(u8, u8)> {
     let mut parts = header.split_whitespace();
 
     let first_part = parts.next().ok_or(io::Error::new(
@@ -87,11 +91,11 @@ pub fn parse_rows_and_cols(header: &str) -> io::Result<(usize, usize)> {
     ))?;
 
     if first_part.chars().all(|c| c.is_digit(10)) && first_part.len() <= 2 {
-        if let Ok(size) = parse_usize(first_part, "Invalid size") {
+        if let Ok(size) = parse_u8(first_part, "Invalid size") {
             if size >= 1 {
                 if let Some(second_part) = parts.next() {
                     if second_part.chars().all(|c| c.is_digit(10)) {
-                        if let Ok(cols) = parse_usize(second_part, "Invalid number of columns") {
+                        if let Ok(cols) = parse_u8(second_part, "Invalid number of columns") {
                             if parts.next().is_none() && size > 1 && cols > 1 {
                                 return Ok((size, cols));
                             }
@@ -120,7 +124,7 @@ pub fn parse_rows_and_cols(header: &str) -> io::Result<(usize, usize)> {
     ))
 }
 
-pub fn parse_usize(s: &str, error_message: &str) -> io::Result<usize> {
+fn parse_u8(s: &str, error_message: &str) -> io::Result<u8> {
     s.parse().map_err(|e| {
         io::Error::new(
             io::ErrorKind::InvalidData,
@@ -135,10 +139,10 @@ fn parse_islands(lines: &[&str]) -> io::Result<Vec<Island>> {
     for (y, line) in lines.iter().enumerate() {
         for (x, ch) in line.chars().enumerate() {
             if ch != '.' {
-                let connections = parse_usize(&ch.to_string(), "Invalid island connection count")?;
+                let connections = parse_u8(&ch.to_string(), "Invalid island connection count")?;
                 islands.push(Island {
-                    x,
-                    y,
+                    x: x.try_into().unwrap(),
+                    y: y.try_into().unwrap(),
                     connections: connections as u32,
                 });
             }
@@ -148,10 +152,13 @@ fn parse_islands(lines: &[&str]) -> io::Result<Vec<Island>> {
     Ok(islands)
 }
 
-pub fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
+
+fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
     let islands = &board.islands;
     let mut bridges: Vec<Bridge> = Vec::new();
-    let mut connected_islands: HashSet<(usize, usize)> = HashSet::new();
+    let mut connected_islands: HashSet<(u8, u8)> = HashSet::new();
+
+    let island_map: HashMap<(u8, u8), &Island> = islands.iter().map(|island| ((island.x, island.y), island)).collect();
 
     for (index, island) in islands.iter().enumerate() {
         let (x, y) = (island.x, island.y);
@@ -161,20 +168,17 @@ pub fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
             let mut cy = y as i32;
 
             while (0..board.rows as i32).contains(&cy) && (0..board.cols as i32).contains(&cx) {
-                let current_coords = (cx as usize, cy as usize);
+                let current_coords = (cx as u8, cy as u8);
 
-                if let Some(current_index) = islands
-                    .iter()
-                    .position(|island| (island.x, island.y) == current_coords)
-                {
-                    if index < current_index {
+                if let Some(current_island) = island_map.get(&current_coords) {
+                    if index < islands.iter().position(|i| i == *current_island).unwrap() {
                         let valid_bridge = if x == current_coords.0 {
                             (y.min(current_coords.1) + 1..y.max(current_coords.1)).all(|i| {
-                                !islands.iter().any(|island| island.x == x && island.y == i)
+                                !island_map.contains_key(&(x, i))
                             })
                         } else {
                             (x.min(current_coords.0) + 1..x.max(current_coords.0)).all(|i| {
-                                !islands.iter().any(|island| island.x == i && island.y == y)
+                                !island_map.contains_key(&(i, y))
                             })
                         };
 
@@ -200,7 +204,8 @@ pub fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
     Ok(())
 }
 
-pub fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::Result<()> {
+
+fn check_game_board_format(lines: &[&str], rows: u8, cols: u8) -> io::Result<()> {
     // Check if the number of lines matches the specified rows
     let non_empty_lines: Vec<&str> = lines
         .iter()
@@ -208,7 +213,7 @@ pub fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::
         .cloned()
         .collect();
 
-    if non_empty_lines.len() != rows {
+    if non_empty_lines.len() != rows.into() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!("Invalid game board format: incorrect number of rows (expected {}, found {}). Check for empty lines!", rows, non_empty_lines.len()),
@@ -221,7 +226,7 @@ pub fn check_game_board_format(lines: &[&str], rows: usize, cols: usize) -> io::
         .filter(|(_, line)| !line.trim().is_empty())
     {
         // Check if the length of each line matches the specified columns
-        if line.len() != cols {
+        if line.len() != cols.into() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Invalid game board format: incorrect number of columns in row {} (expected {}, found {})", i+1, cols, line.len()),
