@@ -12,7 +12,6 @@ use crate::{
 pub(crate) type BridgeCoord = (u8, u8, u8, u8, u8);
 
 pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) {
-    let start = Instant::now();
     let mut dimacs: Vec<Vec<i32>> = vec![];
     let bridge_iter = game
         .bridges
@@ -57,8 +56,6 @@ pub fn generate(game: &GameBoard) -> (Vec<Vec<i32>>, HashMap<i32, BridgeCoord>) 
         &game.islands,
         &from_var,
     ));
-    let duration = start.elapsed();
-    //println!("Time elapsed in generate() is: {:?}", duration);
     return (dimacs, from_idx);
 }
 

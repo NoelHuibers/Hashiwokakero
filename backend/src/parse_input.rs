@@ -27,13 +27,15 @@ pub struct GameBoard {
 
 pub fn parse_vec_input(input: Vec<Vec<i32>>) -> io::Result<GameBoard> {
     // Get the row and column count from the Vec input length
-    let rows = input.len();
-    let cols = input[0].len();
+    let rows = input.len() as u8;
+    let cols = input[0].len() as u8;
     //Get the islands from the Vec input and generate the bridges
     let mut islands = Vec::new();
     for (y, row) in input.iter().enumerate() {
         for (x, &connections) in row.iter().enumerate() {
             if connections != 0 {
+                let x = x as u8;
+                let y = y as u8;
                 islands.push(Island {
                     x,
                     y,
@@ -53,7 +55,6 @@ pub fn parse_vec_input(input: Vec<Vec<i32>>) -> io::Result<GameBoard> {
 }
 
 pub fn parse_input(filename: &str) -> io::Result<GameBoard> {
-    let start = Instant::now();
     if !filename.ends_with(".txt") {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -77,8 +78,6 @@ pub fn parse_input(filename: &str) -> io::Result<GameBoard> {
     };
 
     build_bridges(&mut game_board)?;
-    let duration = start.elapsed();
-    //println!("Time elapsed in parse_input() is: {:?}", duration);
 
     Ok(game_board)
 }

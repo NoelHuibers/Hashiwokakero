@@ -1,6 +1,5 @@
 extern crate clap;
 
-use backend::modes;
 use clap::{command, Arg};
 
 mod dfs;
@@ -10,6 +9,7 @@ mod parse_input;
 mod reconstruct;
 mod solver;
 mod writer;
+mod modes;
 
 use generator::output_to_file;
 use modes::{encode_mode, esr_mode, solve_mode};
@@ -56,16 +56,15 @@ fn main() {
     let output_file: Option<String> = matches
         .get_one::<String>("output")
         .and_then(|s| Some(s.clone()));
-    let x = matches
-        .get_one::<String>("grid_x")
-        .unwrap()
-        .parse::<usize>()
+    let (mut grid_x, mut grid_y) = (0, 0);
+    if let Some(x) = matches.get_one::<String>("grid_x") {
+        grid_x = x.parse::<usize>()
         .unwrap();
-    let y = matches
-        .get_one::<String>("grid_y")
-        .unwrap()
-        .parse::<usize>()
+    }
+    if let Some(y) = matches.get_one::<String>("grid_y") {
+        grid_y = y.parse::<usize>()
         .unwrap();
+    }
 
     match mode.as_str() {
         "encode" => encode_mode(input_file.to_string()),
@@ -73,7 +72,7 @@ fn main() {
         "encodesolvereconstruct" | "esr" => esr_mode(input_file.to_string(), output_file),
         "generate" => match output_file {
             Some(output) => {
-                let vec = generator::generator(x, y);
+                let vec = generator::generator(grid_y, grid_x);
                 output_to_file(&vec, &output).unwrap();
             }
             None => eprint!("Invalid"),

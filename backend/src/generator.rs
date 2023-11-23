@@ -28,13 +28,6 @@ pub enum Edge {
     Right,
 }
 
-enum BoxedIn {
-    Top,
-    Bottom,
-    Left,
-    Right,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Direction {
     North,
@@ -176,7 +169,7 @@ fn satsifythegrid(
             continue;
         }
 
-        let (satpoints, minuspoints) = get_new_points2(&degree, &real_directions, x, y);
+        let (satpoints, minuspoints) = get_new_points2(&degree, &real_directions);
         grid[y][x] = grid[y][x] - minuspoints;
         degree = degree - minuspoints;
         if satpoints == 0 {
@@ -272,7 +265,7 @@ fn satsifythegrid(
     }
 }
 
-fn get_new_points2(degree: &u8, dir: &Vec<&Direction>, x: usize, y: usize) -> (usize, u8) {
+fn get_new_points2(degree: &u8, dir: &Vec<&Direction>) -> (usize, u8) {
     match dir.len() {
         1 => match degree {
             1 | 2 => (1, 0),

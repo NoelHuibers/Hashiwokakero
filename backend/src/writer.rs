@@ -7,7 +7,6 @@ pub fn generate_dimacs(
     variables: usize,
     output_filename: &str,
 ) -> std::io::Result<()> {
-    let start = Instant::now();
     let file = File::create(output_filename)?;
     let mut writer = BufWriter::new(file);
 
@@ -21,7 +20,5 @@ pub fn generate_dimacs(
         writeln!(writer, "0")?;
     }
 
-    let duration = start.elapsed();
-    //println!("Time elapsed in generate_dimacs() is: {:?}", duration);
     Ok(())
 }
