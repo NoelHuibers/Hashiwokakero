@@ -1,20 +1,23 @@
 use std::{collections::HashMap, fs::{File, remove_file}, io::Read, time::Instant};
 use crate::{generate_clauses::BridgeCoord, parse_input::GameBoard};
 
-pub fn reconstruct_puzzle(
-    sat_output_path: &String,
-    var_map: &HashMap<i32, BridgeCoord>,
-    game_board: &GameBoard,
-) -> String {
-    let start = Instant::now();
-    let mut output = String::new();
+pub fn get_content(sat_output_path: &String) -> String {
     let mut file = File::open(sat_output_path.clone())
         .expect(&format!("File {} does not exist", sat_output_path));
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect(&format!("Could not read contents of {}", sat_output_path));
+    contents
+}
+
+pub fn reconstruct_puzzle(
+    contents: String,
+    var_map: &HashMap<i32, BridgeCoord>,
+    game_board: &GameBoard,
+) -> String {
+    let mut output = String::new();
     if contents.contains("UNSAT") {
-        return "Problem is UNSAT\n".into()
+        return "Problem is UNSAT".into();
     }
     let line = contents.lines().skip(1).next();
     if let Some(vars) = line {
@@ -64,7 +67,7 @@ pub fn reconstruct_puzzle(
             output.push('\n');
         }
     } else {
-        output ="Problem had no variables".into();
+        output = "Problem had no variables".into();
     }
     let duration = start.elapsed();
     //println!("Time elapsed in reconstruct_puzzle() is: {:?}", duration);
@@ -131,6 +134,7 @@ fn should_parse_sat_output() {
             },
         ],
     };
-    reconstruct_puzzle(&path.to_string(), &var_map, &game_board);
-    remove_file(path).unwrap();
+    let contents = get_content(&path.to_string());
+    reconstruct_puzzle(contents, &var_map, &game_board);
 }
+

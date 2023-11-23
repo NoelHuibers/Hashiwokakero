@@ -43,3 +43,18 @@ pub fn write_solution(certificate: Certificate, output_file: &str) -> io::Result
     //println!("Time elapsed in write_solution() is: {:?}", duration);
     Ok(())
 }
+
+pub fn get_content(certificate: Certificate) -> String {
+    let contents = match certificate {
+        Certificate::SAT(model) => {
+            let mut res = String::from("SAT\n");
+            for literal in model {
+                res.push_str(&format!("{} ", literal));
+            }
+            res
+        }
+        Certificate::UNSAT => String::from("UNSAT"),
+    };
+    contents
+}
+

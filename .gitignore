@@ -1,4 +1,6 @@
 /target
 /backend/output/*
-.vscode/settings.json
+.vscode
+/backend/output
+/dist
 /node_modules
