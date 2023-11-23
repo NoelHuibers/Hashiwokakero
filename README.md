@@ -65,7 +65,7 @@ See [Clauses](Clauses.md)
 - [x] Implement SAT-Solver integration and the ability to select the appropriate solver based on input data.
 - [x] Clap integration encode or solve.
 - [x] Solver Error no DIMACS File
-- [ ] Frontend Leptos/Yew integration.
+- [x] Frontend Leptos/Yew integration.
 - [x] Generator
 
 **Laura:**
