@@ -64,7 +64,8 @@ fn test_integration() {
             continue;
         }
 
-        let res = reconstruct::reconstruct_puzzle(&output_file, &var_map, &game_board);
+        let content = reconstruct::get_content(&output_file);
+        let res = reconstruct::reconstruct_puzzle(content, &var_map, &game_board);
         print!("{}", res);
     }
 }

@@ -69,8 +69,6 @@ pub fn reconstruct_puzzle(
     } else {
         output = "Problem had no variables".into();
     }
-    let duration = start.elapsed();
-    //println!("Time elapsed in reconstruct_puzzle() is: {:?}", duration);
     output
 }
 

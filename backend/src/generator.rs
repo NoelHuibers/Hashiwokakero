@@ -654,8 +654,9 @@ fn should_gen() {
                                 &output_file,
                             ) {
                                 Ok(_) => {
+                                    let contents = backend::reconstruct::get_content(&output_file);
                                     let s = backend::reconstruct::reconstruct_puzzle(
-                                        &output_file.to_string(),
+                                        contents,
                                         &var_map,
                                         &game_board,
                                     );

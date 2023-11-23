@@ -73,7 +73,10 @@ pub fn esr_mode(input_file: String, output_file: Option<String>) {
             return;
         }
 
-        let res = reconstruct::reconstruct_puzzle(&output_file, &var_map, &game_board);
+        let contents = reconstruct::get_content(&output_file);
+        let res = reconstruct::reconstruct_puzzle(contents, &var_map, &game_board);
+
+
         print!("{}", res);
     } else {
         println!("Solution: {:?}", certificate);
