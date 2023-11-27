@@ -4,7 +4,7 @@
 
 **Noel:**
 
-- [ ] Init
+- [x] Init
 - [ ] CLI
 - [ ] Parser
 - [ ] Random Restarts
