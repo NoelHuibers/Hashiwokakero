@@ -6,7 +6,7 @@
 
 - [x] Init
 - [ ] CLI
-- [ ] Parser
+- [x] Parser
 - [ ] Random Restarts
 
 **Laura:**
