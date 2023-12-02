@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
 type BVar = i32;
+type CIdx = usize;
 
 #[derive(Debug, Clone)]
 enum DIMACSOutput {
@@ -18,7 +19,7 @@ struct Clause<'a> {
     unassign_vars: u8,
 }
 
-struct Variable {
+struct Literal {
     val: bool,
     is_free: bool,
 }
@@ -30,14 +31,14 @@ struct Assignment {
 }
 
 fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
+    let mut assignment_stack: Vec<Assignment> = Vec::new();
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     let mut clauses = HashMap::new();
+    let mut lit_val = HashMap::new();
     let mut neg_occ = HashMap::new();
     let mut pos_occ = HashMap::new();
-    let mut lit_val = HashMap::new();
     // Using VecDaque for better push_front complexity
     let mut unit_queue = VecDeque::new();
-    let mut assignment_stack: Vec<Assignment> = Vec::new();
 
     // * read formula
     // Using iterators where possible for better performance
@@ -56,7 +57,7 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
             let lit = literal.abs();
             lit_val.insert(
                 lit,
-                Variable {
+                Literal {
                     val: false,
                     is_free: true,
                 },
@@ -66,11 +67,11 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
                 // When not checking clauses like (a \/ -a \/ ...) would not be taken into account.
                 1 => pos_occ
                     .entry(lit)
-                    .and_modify(|clauses: &mut Vec<usize>| clauses.push(c))
+                    .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
                     .or_insert(vec![c]),
                 -1 => neg_occ
                     .entry(lit)
-                    .and_modify(|clauses: &mut Vec<usize>| clauses.push(c))
+                    .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
                     .or_insert(vec![c]),
                 _ => panic!("0 is not a valid Variable in the DIMACS format"),
             };
@@ -79,12 +80,12 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
 
     // * unit propagation
     let unsat = unit_prop(
-        &mut unit_queue,
-        &mut clauses,
         &mut assignment_stack,
+        &mut clauses,
         &mut lit_val,
-        &mut pos_occ,
         &mut neg_occ,
+        &mut pos_occ,
+        &mut unit_queue,
     );
     if unsat {
         return DIMACSOutput::Unsat;
@@ -92,34 +93,32 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
 
     loop {
         // * choose literal var
-        let (var, val) = choose_literal(
+        let (var, val) = pick_literal(
             &mut clauses,
-            &mut assignment_stack,
             &mut lit_val,
-            &mut unit_queue,
         );
         // * set value var
         set_var(
-            var,
-            false,
-            val,
-            &mut unit_queue,
-            &mut clauses,
             &mut assignment_stack,
+            &mut clauses,
+            false,
             &mut lit_val,
-            &mut pos_occ,
             &mut neg_occ,
+            &mut pos_occ,
+            &mut unit_queue,
+            val,
+            var,
         );
 
         // * unit propagation
         loop {
             let conflict = unit_prop(
-                &mut unit_queue,
-                &mut clauses,
                 &mut assignment_stack,
+                &mut clauses,
                 &mut lit_val,
-                &mut pos_occ,
                 &mut neg_occ,
+                &mut pos_occ,
+                &mut unit_queue,
             );
             if !conflict {
                 break;
@@ -127,12 +126,12 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
 
             // * if conflict detected
             let unsat = backtrack(
-                &mut clauses,
                 &mut assignment_stack,
+                &mut clauses,
                 &mut lit_val,
-                &mut unit_queue,
-                &mut pos_occ,
                 &mut neg_occ,
+                &mut pos_occ,
+                &mut unit_queue,
             );
             if unsat {
                 return DIMACSOutput::Unsat;
@@ -147,16 +146,16 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
 }
 
 fn backtrack(
-    clauses: &mut HashMap<usize, Clause>,
     assignment_stack: &mut Vec<Assignment>,
-    lit_val: &mut HashMap<i32, Variable>,
-    unit_queue: &mut VecDeque<i32>,
-    pos_occ: &mut HashMap<i32, Vec<usize>>,
-    neg_occ: &mut HashMap<i32, Vec<usize>>,
+    clauses: &mut HashMap<CIdx, Clause>,
+    lit_val: &mut HashMap<BVar, Literal>,
+    neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    unit_queue: &mut VecDeque<BVar>,
 ) -> bool {
     let mut last_step = assignment_stack.pop();
     while last_step.as_ref().is_some_and(|step| step.forced) {
-        unset_var(last_step.unwrap().var, clauses, lit_val, pos_occ, neg_occ);
+        unset_var(clauses, lit_val, neg_occ, pos_occ, last_step.unwrap().var);
         last_step = assignment_stack.pop();
     }
     if last_step.is_none() {
@@ -164,29 +163,27 @@ fn backtrack(
     }
     let var = last_step.as_ref().unwrap().var;
     let val = last_step.unwrap().val;
-    unset_var(var, clauses, lit_val, pos_occ, neg_occ);
+    unset_var(clauses, lit_val, neg_occ, pos_occ, var);
     unit_queue.clear();
     set_var(
-        var,
-        true,
-        !val,
-        unit_queue,
-        clauses,
         assignment_stack,
+        clauses,
+        true,
         lit_val,
-        pos_occ,
         neg_occ,
+        pos_occ,
+        unit_queue,
+        !val,
+        var,
     );
     false
 }
 
 // TODO: @Laura hier können die Heuristiken rein. Gerne auch mit enum flag welche an/aus sind.
-fn choose_literal(
-    clauses: &mut HashMap<usize, Clause>,
-    assignment_stack: &mut Vec<Assignment>,
-    lit_val: &mut HashMap<i32, Variable>,
-    unit_queue: &mut VecDeque<i32>,
-) -> (i32, bool) {
+fn pick_literal(
+    clauses: &mut HashMap<CIdx, Clause>,
+    lit_val: &mut HashMap<BVar, Literal>,
+) -> (BVar, bool) {
     let arbitrary_unset_var = lit_val.iter().find(|v| v.1.is_free);
     (
         *arbitrary_unset_var.unwrap().0,
@@ -195,26 +192,26 @@ fn choose_literal(
 }
 
 fn unit_prop(
-    unit_queue: &mut VecDeque<i32>,
-    clauses: &mut HashMap<usize, Clause>,
     assignment_stack: &mut Vec<Assignment>,
-    lit_val: &mut HashMap<i32, Variable>,
-    pos_occ: &mut HashMap<i32, Vec<usize>>,
-    neg_occ: &mut HashMap<i32, Vec<usize>>,
+    clauses: &mut HashMap<CIdx, Clause>,
+    lit_val: &mut HashMap<BVar, Literal>,
+    neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    unit_queue: &mut VecDeque<BVar>,
 ) -> bool {
     while !unit_queue.is_empty() {
         let forced_lit = unit_queue.pop_back().unwrap();
         // mark all clauses with pos_occ as sat
         let unsat = set_var(
-            forced_lit,
-            true,
-            forced_lit.is_positive(),
-            unit_queue,
-            clauses,
             assignment_stack,
+            clauses,
+            true,
             lit_val,
-            pos_occ,
             neg_occ,
+            pos_occ,
+            unit_queue,
+            forced_lit.is_positive(),
+            forced_lit,
         );
         if unsat {
             return true;
@@ -224,15 +221,15 @@ fn unit_prop(
 }
 
 fn set_var(
-    var: BVar,
-    forced: bool,
-    val: bool,
-    unit_queue: &mut VecDeque<i32>,
-    clauses: &mut HashMap<usize, Clause>,
     assignment_stack: &mut Vec<Assignment>,
-    lit_val: &mut HashMap<i32, Variable>,
-    pos_occ: &mut HashMap<i32, Vec<usize>>,
-    neg_occ: &mut HashMap<i32, Vec<usize>>,
+    clauses: &mut HashMap<CIdx, Clause>,
+    forced: bool,
+    lit_val: &mut HashMap<BVar, Literal>,
+    neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    unit_queue: &mut VecDeque<BVar>,
+    val: bool,
+    var: BVar,
 ) -> bool {
     assignment_stack.push(Assignment { var, val, forced });
     let mut conflict = false;
@@ -259,7 +256,7 @@ fn set_var(
         .get(&var.abs())
         .unwrap()
         .iter()
-        .for_each(|c: &usize| {
+        .for_each(|c: &CIdx| {
             clauses.entry(*c).and_modify(|sat_clause| {
                 if sat_clause.sat_by_var == 0 {
                     sat_clause.sat_by_var = var;
@@ -287,11 +284,11 @@ fn set_var(
 }
 
 fn unset_var(
+    clauses: &mut HashMap<CIdx, Clause>,
+    lit_val: &mut HashMap<BVar, Literal>,
+    neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
     var: BVar,
-    clauses: &mut HashMap<usize, Clause>,
-    lit_val: &mut HashMap<i32, Variable>,
-    pos_occ: &mut HashMap<i32, Vec<usize>>,
-    neg_occ: &mut HashMap<i32, Vec<usize>>,
 ) {
     let mut lit_var = lit_val.get_mut(&var.abs()).unwrap();
     lit_var.is_free = true;
