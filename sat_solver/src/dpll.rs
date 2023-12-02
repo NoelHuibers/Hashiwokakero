@@ -56,7 +56,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
         };
         let fist_var = &clause.vars[0];
         clauses.insert(c, clause);
-        if vars.len() == 1 {
+        if vars.len() == 1 && !unit_queue.contains(fist_var) {
             unit_queue.push_front(*fist_var);
         }
         vars.iter().for_each(|literal| {
@@ -86,7 +86,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
     });
 
     // * unit propagation
-    unit_prop(
+    let conflict = unit_prop(
         &mut assignment_stack,
         &mut clauses,
         &mut free_lits,
@@ -96,6 +96,19 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
         &mut unit_queue,
         &mut unsat_clauses,
     );
+    if conflict {
+        return DIMACSOutput::Unsat
+    }
+    if clauses.values().fold(true, |i, c| i && c.sat_by_var != 0) {
+        let res: Vec<i32> = lit_val
+            .iter()
+            .map(|v| match v.1.val {
+                true => *v.0,
+                false => -v.0,
+            })
+            .collect();
+        return DIMACSOutput::Sat(res);
+    }
 
     loop {
         // * choose literal var
@@ -258,7 +271,7 @@ fn unit_prop(
             pos_occ,
             unit_queue,
             unsat_clauses,
-            forced_lit.is_positive(),
+            true,
             forced_lit,
         );
         if unsat {
