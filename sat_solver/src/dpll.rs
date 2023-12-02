@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    u8::MAX,
-};
+use std::collections::{HashMap, VecDeque};
 
 type BVar = i32;
 
@@ -22,29 +19,24 @@ struct Clause<'a> {
 }
 
 struct Variable {
-    value: bool,
+    val: bool,
     is_free: bool,
 }
 
 struct Assignment {
     var: BVar,
-    value: bool,
+    val: bool,
     forced: bool,
 }
 
 fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
-    // The first element in (i32, &Vec<i32>, u8) represents whether a clause was satisfied and if yes by which var:
-    // 0 -> not satisfied
-    // n -> satisfied by n
     let mut clauses = HashMap::new();
     let mut neg_occ = HashMap::new();
     let mut pos_occ = HashMap::new();
-    // variable maps to 0|1, free|set
-    let mut var_value = HashMap::new();
+    let mut lit_val = HashMap::new();
     // Using VecDaque for better push_front complexity
     let mut unit_queue = VecDeque::new();
-    // (i32, bool, bool) is the variable (incl. polarity), the value 0|1 and whether branched|forced
     let mut assignment_stack: Vec<Assignment> = Vec::new();
 
     // * read formula
@@ -55,16 +47,17 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
             vars: &vars,
             unassign_vars: vars.len() as u8,
         };
+        let fist_var = &clause.vars[0];
         clauses.insert(c, clause);
         if vars.len() == 1 {
-            unit_queue.push_front(c);
+            unit_queue.push_front(*fist_var);
         }
         vars.iter().for_each(|literal| {
             let lit = literal.abs();
-            var_value.insert(
+            lit_val.insert(
                 lit,
                 Variable {
-                    value: false,
+                    val: false,
                     is_free: true,
                 },
             );
@@ -89,7 +82,7 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
         &mut unit_queue,
         &mut clauses,
         &mut assignment_stack,
-        &mut var_value,
+        &mut lit_val,
         &mut pos_occ,
         &mut neg_occ,
     );
@@ -99,7 +92,12 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
 
     loop {
         // * choose literal var
-        let (var, val) = choose_literal(&mut var_value);
+        let (var, val) = choose_literal(
+            &mut clauses,
+            &mut assignment_stack,
+            &mut lit_val,
+            &mut unit_queue,
+        );
         // * set value var
         set_var(
             var,
@@ -108,27 +106,30 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
             &mut unit_queue,
             &mut clauses,
             &mut assignment_stack,
-            &mut var_value,
+            &mut lit_val,
             &mut pos_occ,
             &mut neg_occ,
         );
 
         // * unit propagation
-        let unsat = unit_prop(
-            &mut unit_queue,
-            &mut clauses,
-            &mut assignment_stack,
-            &mut var_value,
-            &mut pos_occ,
-            &mut neg_occ,
-        );
+        loop {
+            let conflict = unit_prop(
+                &mut unit_queue,
+                &mut clauses,
+                &mut assignment_stack,
+                &mut lit_val,
+                &mut pos_occ,
+                &mut neg_occ,
+            );
+            if !conflict {
+                break;
+            };
 
-        // * if conflict detected
-        if unsat {
+            // * if conflict detected
             let unsat = backtrack(
                 &mut clauses,
                 &mut assignment_stack,
-                &mut var_value,
+                &mut lit_val,
                 &mut unit_queue,
                 &mut pos_occ,
                 &mut neg_occ,
@@ -136,19 +137,11 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
             if unsat {
                 return DIMACSOutput::Unsat;
             }
-            let _ = unit_prop(
-                &mut unit_queue,
-                &mut clauses,
-                &mut assignment_stack,
-                &mut var_value,
-                &mut pos_occ,
-                &mut neg_occ,
-            );
         }
 
         // * if all clauses satisfied
         if clauses.values().fold(true, |i, c| i && c.sat_by_var != 0) {
-            return todo!();
+            return DIMACSOutput::Sat(vec![]);
         }
     }
 }
@@ -156,22 +149,22 @@ fn solve(input: Vec<Vec<i32>>) -> DIMACSOutput {
 fn backtrack(
     clauses: &mut HashMap<usize, Clause>,
     assignment_stack: &mut Vec<Assignment>,
-    var_value: &mut HashMap<i32, Variable>,
-    unit_queue: &mut VecDeque<usize>,
+    lit_val: &mut HashMap<i32, Variable>,
+    unit_queue: &mut VecDeque<i32>,
     pos_occ: &mut HashMap<i32, Vec<usize>>,
     neg_occ: &mut HashMap<i32, Vec<usize>>,
 ) -> bool {
     let mut last_step = assignment_stack.pop();
     while last_step.as_ref().is_some_and(|step| step.forced) {
-        unset_var(last_step.unwrap().var, clauses, var_value, pos_occ, neg_occ);
+        unset_var(last_step.unwrap().var, clauses, lit_val, pos_occ, neg_occ);
         last_step = assignment_stack.pop();
     }
-    if assignment_stack.is_empty() {
+    if last_step.is_none() {
         return true;
     }
     let var = last_step.as_ref().unwrap().var;
-    let val = last_step.unwrap().value;
-    unset_var(var, clauses, var_value, pos_occ, neg_occ);
+    let val = last_step.unwrap().val;
+    unset_var(var, clauses, lit_val, pos_occ, neg_occ);
     unit_queue.clear();
     set_var(
         var,
@@ -180,7 +173,7 @@ fn backtrack(
         unit_queue,
         clauses,
         assignment_stack,
-        var_value,
+        lit_val,
         pos_occ,
         neg_occ,
     );
@@ -188,41 +181,38 @@ fn backtrack(
 }
 
 // TODO: @Laura hier können die Heuristiken rein. Gerne auch mit enum flag welche an/aus sind.
-fn choose_literal(var_value: &mut HashMap<i32, Variable>) -> (i32, bool) {
-    let arbitrary_unset_var = var_value.iter().find(|v| v.1.is_free).unwrap();
-    (*arbitrary_unset_var.0, arbitrary_unset_var.1.value)
+fn choose_literal(
+    clauses: &mut HashMap<usize, Clause>,
+    assignment_stack: &mut Vec<Assignment>,
+    lit_val: &mut HashMap<i32, Variable>,
+    unit_queue: &mut VecDeque<i32>,
+) -> (i32, bool) {
+    let arbitrary_unset_var = lit_val.iter().find(|v| v.1.is_free);
+    (
+        *arbitrary_unset_var.unwrap().0,
+        arbitrary_unset_var.unwrap().1.val,
+    )
 }
 
 fn unit_prop(
-    unit_queue: &mut VecDeque<usize>,
+    unit_queue: &mut VecDeque<i32>,
     clauses: &mut HashMap<usize, Clause>,
     assignment_stack: &mut Vec<Assignment>,
-    var_value: &mut HashMap<i32, Variable>,
+    lit_val: &mut HashMap<i32, Variable>,
     pos_occ: &mut HashMap<i32, Vec<usize>>,
     neg_occ: &mut HashMap<i32, Vec<usize>>,
 ) -> bool {
     while !unit_queue.is_empty() {
-        let unit_clause = unit_queue.pop_back().unwrap();
-        let clause = clauses.get(&unit_clause).unwrap();
-        let forced_var = clause
-            .vars
-            .iter()
-            .find(|v| var_value.get(&v.abs()).unwrap().is_free)
-            .unwrap();
-        assignment_stack.push(Assignment {
-            var: *forced_var,
-            value: forced_var.is_positive(),
-            forced: true,
-        });
+        let forced_lit = unit_queue.pop_back().unwrap();
         // mark all clauses with pos_occ as sat
         let unsat = set_var(
-            *forced_var,
+            forced_lit,
             true,
-            forced_var.is_positive(),
+            forced_lit.is_positive(),
             unit_queue,
             clauses,
             assignment_stack,
-            var_value,
+            lit_val,
             pos_occ,
             neg_occ,
         );
@@ -236,86 +226,147 @@ fn unit_prop(
 fn set_var(
     var: BVar,
     forced: bool,
-    value: bool,
-    unit_queue: &mut VecDeque<usize>,
+    val: bool,
+    unit_queue: &mut VecDeque<i32>,
     clauses: &mut HashMap<usize, Clause>,
     assignment_stack: &mut Vec<Assignment>,
-    var_value: &mut HashMap<i32, Variable>,
+    lit_val: &mut HashMap<i32, Variable>,
     pos_occ: &mut HashMap<i32, Vec<usize>>,
     neg_occ: &mut HashMap<i32, Vec<usize>>,
 ) -> bool {
-    assignment_stack.push(Assignment { var, value, forced });
-    let mut var_value = var_value.get_mut(&var.abs()).unwrap();
-    var_value.is_free = false;
+    assignment_stack.push(Assignment { var, val, forced });
+    let mut conflict = false;
+    let mut lit = lit_val.get_mut(&var.abs()).unwrap();
+    lit.is_free = false;
     // -1 true => 1 false
     // -1 false => 1 true
     // 1 true => 1 true
     // 1 false => 1 false
     // <=> var.is_pos == value
-    var_value.value = value == var.is_positive();
+    let new_val = val == var.is_positive();
+    lit.val = new_val;
     // mark all clauses with pos_occ as sat
-    // -1 true => pos 1 sat
-    // -1 false => neg 1 sat
-    // 1 true => pos 1 sat
-    // 1 false => neg 1 sat
-    let (mark_sat, mark_unsat) = match var.is_positive() & value {
+    // -1 true => neg_occ is sat
+    // -1 false => pos_occ is sat
+    // 1 true => pos_occ is sat
+    // 1 false => neg_occ is sat
+    // <=> var.is_pos == value
+    let (mark_sat, mark_unsat) = match new_val {
         true => (pos_occ, neg_occ),
         false => (neg_occ, pos_occ),
     };
-    mark_sat.get(&var.abs()).unwrap().iter().for_each(|c: &usize| {
-        clauses.entry(*c).and_modify(|sat_clause| {
-            sat_clause.sat_by_var = var;
+    mark_sat
+        .get(&var.abs())
+        .unwrap()
+        .iter()
+        .for_each(|c: &usize| {
+            clauses.entry(*c).and_modify(|sat_clause| {
+                if sat_clause.sat_by_var == 0 {
+                    sat_clause.sat_by_var = var;
+                }
+            });
         });
-    });
     for c in mark_unsat.get(&var.abs()).unwrap() {
         let unsat_clause = clauses.get_mut(c).unwrap();
         unsat_clause.unassign_vars = unsat_clause.unassign_vars - 1;
         match unsat_clause.unassign_vars {
-            0 => return true,
-            1 => unit_queue.push_front(*c),
+            0 => conflict = true,
+            1 => {
+                if let Some(free_lit) = unsat_clause
+                    .vars
+                    .iter()
+                    .find(|&v| lit_val.get(&v.abs()).unwrap().is_free && !unit_queue.contains(v))
+                {
+                    unit_queue.push_front(*free_lit);
+                }
+            }
             _ => continue,
         };
     }
-    false
+    conflict
 }
 
 fn unset_var(
     var: BVar,
     clauses: &mut HashMap<usize, Clause>,
-    var_value: &mut HashMap<i32, Variable>,
+    lit_val: &mut HashMap<i32, Variable>,
     pos_occ: &mut HashMap<i32, Vec<usize>>,
     neg_occ: &mut HashMap<i32, Vec<usize>>,
 ) {
-    let mut var_value = var_value.get_mut(&var.abs()).unwrap();
-    var_value.is_free = true;
-    // Value actually doesn't matter
-    var_value.value = false;
-    let (mark_sat, mark_unsat) = match var.is_positive() & var_value.value {
+    let mut lit_var = lit_val.get_mut(&var.abs()).unwrap();
+    lit_var.is_free = true;
+    // Value of lit_var actually doesn't matter
+    let (mark_sat, mark_unsat) = match lit_var.val {
         true => (pos_occ, neg_occ),
         false => (neg_occ, pos_occ),
     };
-    mark_sat.get(&var).unwrap().iter().for_each(|c| {
+    mark_sat.get(&var.abs()).unwrap().iter().for_each(|c| {
         clauses.entry(*c).and_modify(|sat_clause| {
             if sat_clause.sat_by_var == var {
                 sat_clause.sat_by_var = 0;
             }
         });
     });
-    for c in mark_unsat.get(&var).unwrap() {
+    for c in mark_unsat.get(&var.abs()).unwrap() {
         let unsat_clause = clauses.get_mut(c).unwrap();
-        unsat_clause.unassign_vars = unsat_clause.unassign_vars - 1;
+        unsat_clause.unassign_vars = unsat_clause.unassign_vars + 1;
     }
 }
 
 #[test]
-fn should_solve_sat() {
+fn should_solve_sat_small() {
     let res = solve(vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]]);
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
 
-fn should_solve_unsat() {
+#[test]
+fn should_solve_sat() {
+    let res = solve(vec![
+        vec![1, 2, 3],
+        vec![1, 2, 4],
+        vec![1, 3, 4],
+        vec![2, 3, 4],
+        vec![-1, -2, -3],
+        vec![-1, -2, -4],
+        vec![-1, -3, -4],
+        vec![-2, -3, -4],
+        vec![1, 2, 5],
+        vec![1, 2, 6],
+        vec![1, 5, 6],
+        vec![2, 5, 6],
+        vec![-1, -2, -5],
+        vec![-1, -2, -6],
+        vec![-1, -5, -6],
+        vec![-2, -5, -6],
+        vec![3, 4, 7],
+        vec![3, 4, 8],
+        vec![3, 7, 8],
+        vec![4, 7, 8],
+        vec![-3, -4, -7],
+        vec![-3, -4, -8],
+        vec![-3, -7, -8],
+        vec![-4, -7, -8],
+        vec![5, 6, 7],
+        vec![5, 6, 8],
+        vec![5, 7, 8],
+        vec![6, 7, 8],
+        vec![-5, -6, -7],
+        vec![-5, -6, -8],
+        vec![-5, -7, -8],
+        vec![-6, -7, -8],
+        vec![3, 4],
+        vec![1, 2],
+        vec![5, 6],
+    ]);
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+}
+
+#[test]
+fn should_solve_unsat_small() {
     let res = solve(vec![
         vec![1, -2, 3],
         vec![-1, 2],
@@ -323,6 +374,84 @@ fn should_solve_unsat() {
         vec![1],
         vec![2],
         vec![3],
+    ]);
+    if let DIMACSOutput::Sat(_) = res {
+        panic!("Was SAT but expected UNSAT.")
+    }
+}
+
+#[test]
+fn should_solve_unsat() {
+    let res = solve(vec![
+        vec![1, 2],
+        vec![-1, -2],
+        vec![3, 4, 5],
+        vec![3, 4, 6],
+        vec![3, 5, 6],
+        vec![4, 5, 6],
+        vec![-3, -4, -5],
+        vec![-3, -4, -6],
+        vec![-3, -5, -6],
+        vec![-4, -5, -6],
+        vec![3, 4, 7],
+        vec![3, 4, 8],
+        vec![3, 7, 8],
+        vec![4, 7, 8],
+        vec![-3, -4, -7],
+        vec![-3, -4, -8],
+        vec![-3, -7, -8],
+        vec![-4, -7, -8],
+        vec![5, 6, 9],
+        vec![5, 6, 10],
+        vec![5, 9, 10],
+        vec![6, 9, 10],
+        vec![-5, -6, -9],
+        vec![-5, -6, -10],
+        vec![-5, -9, -10],
+        vec![-6, -9, -10],
+        vec![1, 2, 9, 10],
+        vec![1, 2, 9, 11],
+        vec![1, 2, 9, 12],
+        vec![1, 2, 10, 11],
+        vec![1, 2, 10, 12],
+        vec![1, 2, 11, 12],
+        vec![1, 9, 10, 11],
+        vec![1, 9, 10, 12],
+        vec![1, 9, 11, 12],
+        vec![1, 10, 11, 12],
+        vec![2, 9, 10, 11],
+        vec![2, 9, 10, 12],
+        vec![2, 9, 11, 12],
+        vec![2, 10, 11, 12],
+        vec![9, 10, 11, 12],
+        vec![-1, -2, -9, -10],
+        vec![-1, -2, -9, -11],
+        vec![-1, -2, -9, -12],
+        vec![-1, -2, -10, -11],
+        vec![-1, -2, -10, -12],
+        vec![-1, -2, -11, -12],
+        vec![-1, -9, -10, -11],
+        vec![-1, -9, -10, -12],
+        vec![-1, -9, -11, -12],
+        vec![-1, -10, -11, -12],
+        vec![-2, -9, -10, -11],
+        vec![-2, -9, -10, -12],
+        vec![-2, -9, -11, -12],
+        vec![-2, -10, -11, -12],
+        vec![-9, -10, -11, -12],
+        vec![7, 8, 11],
+        vec![7, 8, 12],
+        vec![7, 11, 12],
+        vec![8, 11, 12],
+        vec![-7, -8, -11],
+        vec![-7, -8, -12],
+        vec![-7, -11, -12],
+        vec![-8, -11, -12],
+        vec![-1, -3],
+        vec![-1, -4],
+        vec![-2, -3],
+        vec![-2, -4],
+        vec![1, 2],
     ]);
     if let DIMACSOutput::Sat(_) = res {
         panic!("Was SAT but expected UNSAT.")
