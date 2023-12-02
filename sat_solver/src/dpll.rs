@@ -1,4 +1,7 @@
-use crate::{heuristsics::{arbitrary, dlis, dlcs, mom, boehm, jeroslaw_wang, custom}, parse::parse};
+use crate::{
+    heuristsics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom},
+    parse::parse,
+};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 type BVar = i32;
@@ -299,11 +302,8 @@ fn set_var(
         true => (pos_occ, neg_occ),
         false => (neg_occ, pos_occ),
     };
-    mark_sat
-        .get(&var.abs())
-        .unwrap()
-        .iter()
-        .for_each(|c: &CIdx| {
+    if let Some(occ) = mark_sat.get(&var.abs()) {
+        occ.iter().for_each(|c: &CIdx| {
             clauses.entry(*c).and_modify(|sat_clause| {
                 if sat_clause.sat_by_var == 0 {
                     sat_clause.sat_by_var = var;
@@ -311,24 +311,25 @@ fn set_var(
                 }
             });
         });
-    for c in mark_unsat.get(&var.abs()).unwrap() {
-        let unsat_clause = clauses.get_mut(c).unwrap();
-        unsat_clauses.remove(&(unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
-        unsat_clause.unassign_vars = unsat_clause.unassign_vars - 1;
-        unsat_clauses.insert((unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
-        match unsat_clause.unassign_vars {
-            0 => conflict = true,
-            1 => {
-                if let Some(free_lit) = unsat_clause
-                    .vars
-                    .iter()
-                    .find(|&v| lit_val.get(&v.abs()).unwrap().is_free && !unit_queue.contains(v))
-                {
-                    unit_queue.push_front(*free_lit);
+    }
+    if let Some(occ) = mark_unsat.get(&var.abs()) {
+        occ.iter().for_each(|c| {
+            let unsat_clause = clauses.get_mut(c).unwrap();
+            unsat_clauses.remove(&(unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
+            unsat_clause.unassign_vars = unsat_clause.unassign_vars - 1;
+            unsat_clauses.insert((unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
+            match unsat_clause.unassign_vars {
+                0 => conflict = true,
+                1 => {
+                    if let Some(free_lit) = unsat_clause.vars.iter().find(|&v| {
+                        lit_val.get(&v.abs()).unwrap().is_free && !unit_queue.contains(v)
+                    }) {
+                        unit_queue.push_front(*free_lit);
+                    }
                 }
-            }
-            _ => continue,
-        };
+                _ => (),
+            };
+        })
     }
     conflict
 }
@@ -350,19 +351,23 @@ fn unset_var(
         true => (pos_occ, neg_occ),
         false => (neg_occ, pos_occ),
     };
-    mark_sat.get(&var.abs()).unwrap().iter().for_each(|c| {
-        clauses.entry(*c).and_modify(|sat_clause| {
-            if sat_clause.sat_by_var == var {
-                sat_clause.sat_by_var = 0;
-                unsat_clauses.insert((sat_clause.vars.to_vec(), sat_clause.unassign_vars));
-            }
-        });
-    });
-    for c in mark_unsat.get(&var.abs()).unwrap() {
-        let unsat_clause = clauses.get_mut(c).unwrap();
-        unsat_clauses.remove(&(unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
-        unsat_clause.unassign_vars = unsat_clause.unassign_vars + 1;
-        unsat_clauses.insert((unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
+    if let Some(occ) = mark_sat.get(&var.abs()) {
+        occ.iter().for_each(|c| {
+            clauses.entry(*c).and_modify(|sat_clause| {
+                if sat_clause.sat_by_var == var {
+                    sat_clause.sat_by_var = 0;
+                    unsat_clauses.insert((sat_clause.vars.to_vec(), sat_clause.unassign_vars));
+                }
+            });
+        })
+    };
+    if let Some(occ) = mark_unsat.get(&var.abs()) {
+        occ.iter().for_each(|c| {
+            let unsat_clause = clauses.get_mut(c).unwrap();
+            unsat_clauses.remove(&(unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
+            unsat_clause.unassign_vars = unsat_clause.unassign_vars + 1;
+            unsat_clauses.insert((unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
+        })
     }
 }
 
