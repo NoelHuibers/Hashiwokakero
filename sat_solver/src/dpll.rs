@@ -1,7 +1,4 @@
-use crate::{
-    heuristsics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom},
-    parse::parse,
-};
+use crate::heuristsics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 type BVar = i32;
@@ -89,7 +86,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
     });
 
     // * unit propagation
-    let unsat = unit_prop(
+    unit_prop(
         &mut assignment_stack,
         &mut clauses,
         &mut free_lits,
@@ -99,9 +96,6 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
         &mut unit_queue,
         &mut unsat_clauses,
     );
-    if unsat {
-        return DIMACSOutput::Unsat;
-    }
 
     loop {
         // * choose literal var
@@ -155,7 +149,14 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
 
         // * if all clauses satisfied
         if clauses.values().fold(true, |i, c| i && c.sat_by_var != 0) {
-            return DIMACSOutput::Sat(vec![]);
+            let res: Vec<i32> = lit_val
+                .iter()
+                .map(|v| match v.1.val {
+                    true => *v.0,
+                    false => -v.0,
+                })
+                .collect();
+            return DIMACSOutput::Sat(res);
         }
     }
 }
@@ -285,6 +286,7 @@ fn set_var(
     let mut lit = lit_val.get_mut(&var.abs()).unwrap();
     lit.is_free = false;
     free_lits.remove(&var);
+    free_lits.remove(&-var);
     // -1 true => 1 false
     // -1 false => 1 true
     // 1 true => 1 true
@@ -346,6 +348,7 @@ fn unset_var(
     let mut lit_var = lit_val.get_mut(&var.abs()).unwrap();
     lit_var.is_free = true;
     free_lits.insert(var);
+    free_lits.insert(-var);
     // Value of lit_var actually doesn't matter
     let (mark_sat, mark_unsat) = match lit_var.val {
         true => (pos_occ, neg_occ),
@@ -530,9 +533,18 @@ fn should_solve_unsat() {
 
 #[test]
 fn should_parse_and_solve() {
-    let input = parse("/home/florian/Git/gruppe-m/backend/output/test2.cnf").unwrap();
+    let input = crate::parse::parse("/home/florian/Git/gruppe-m/backend/output/test2.cnf").unwrap();
     let res = solve(input, "arbitrary");
-    if let DIMACSOutput::Sat(_) = res {
-        panic!("Was SAT but expected UNSAT.")
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+}
+
+#[test]
+fn should_parse_and_solve2() {
+    let input = crate::parse::parse("/home/florian/Git/gruppe-m/backend/output/test3.cnf").unwrap();
+    let res = solve(input, "arbitrary");
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
     }
 }
