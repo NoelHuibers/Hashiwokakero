@@ -1,3 +1,5 @@
+use std::{io, fs};
+
 pub fn parse(input_file: &str) -> io::Result<Vec<Vec<i32>>> {
     if !input_file.ends_with(".cnf") {
         return Err(io::Error::new(
