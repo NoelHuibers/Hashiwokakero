@@ -26,6 +26,12 @@ fn main() {
                 .long("heuristic")
                 .value_name("HEURISTIC")
                 .default_value("arbitrary"),
+        ).arg(
+            Arg::new("depth")
+                .short('d')
+                .long("depth")
+                .value_name("DEPTH")
+                .default_value("false"),
         )
         .get_matches();
 
@@ -33,8 +39,9 @@ fn main() {
     let mode = matches.get_one::<String>("mode").unwrap();
     let heuristic = matches.get_one::<String>("heuristic").unwrap();
     let vars = parse::parse(input_file.as_str()).unwrap();
+    let depth = matches.get_one::<String>("depth").unwrap();
     let cert = match mode.as_str() {
-        "dpll" => dpll::solve(vars, heuristic.as_str()),
+        "dpll" => dpll::solve(vars, heuristic.as_str(), depth.parse::<bool>().unwrap()),
         "cdcl" => todo!(),
         otherwise => panic!("{} is not a valid mode.", otherwise)
     };

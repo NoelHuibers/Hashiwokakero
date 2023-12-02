@@ -31,11 +31,15 @@ struct Assignment {
     forced: bool,
 }
 
-pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
+pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSOutput {
     let mut assignment_stack: Vec<Assignment> = Vec::new();
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     let mut clauses = HashMap::new();
     let mut lit_val = HashMap::new();
+    let mut min_depth: u16 = match show_depth {
+        true => u16::MAX,
+        false => 0,
+    };
     let mut neg_occ = HashMap::new();
     let mut pos_occ = HashMap::new();
     // Using VecDaque for better push_front complexity
@@ -97,7 +101,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
         &mut unsat_clauses,
     );
     if conflict {
-        return DIMACSOutput::Unsat
+        return DIMACSOutput::Unsat;
     }
     if clauses.values().fold(true, |i, c| i && c.sat_by_var != 0) {
         let res: Vec<i32> = lit_val
@@ -150,6 +154,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str) -> DIMACSOutput {
                 &mut clauses,
                 &mut free_lits,
                 &mut lit_val,
+                &mut min_depth,
                 &mut neg_occ,
                 &mut pos_occ,
                 &mut unit_queue,
@@ -179,6 +184,7 @@ fn backtrack(
     clauses: &mut HashMap<CIdx, Clause>,
     free_lits: &mut HashSet<BVar>,
     lit_val: &mut HashMap<BVar, Literal>,
+    min_depth: &mut u16,
     neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
     pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
     unit_queue: &mut VecDeque<BVar>,
@@ -196,6 +202,10 @@ fn backtrack(
             last_step.unwrap().var,
         );
         last_step = assignment_stack.pop();
+    }
+    if assignment_stack.len() as u16 <= *min_depth {
+        *min_depth = assignment_stack.len() as u16;
+        println!("backtracked to depth {}", assignment_stack.len());
     }
     if last_step.is_none() {
         return true;
@@ -392,6 +402,7 @@ fn should_solve_sat_small() {
     let res = solve(
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         "arbitrary",
+        true,
     );
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
@@ -439,6 +450,7 @@ fn should_solve_sat() {
             vec![5, 6],
         ],
         "arbitrary",
+        true,
     );
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
@@ -457,6 +469,7 @@ fn should_solve_unsat_small() {
             vec![3],
         ],
         "arbitrary",
+        true,
     );
     if let DIMACSOutput::Sat(_) = res {
         panic!("Was SAT but expected UNSAT.")
@@ -538,6 +551,7 @@ fn should_solve_unsat() {
             vec![1, 2],
         ],
         "arbitrary",
+        true,
     );
     if let DIMACSOutput::Sat(_) = res {
         panic!("Was SAT but expected UNSAT.")
@@ -547,7 +561,7 @@ fn should_solve_unsat() {
 #[test]
 fn should_parse_and_solve() {
     let input = crate::parse::parse("/home/florian/Git/gruppe-m/backend/output/test2.cnf").unwrap();
-    let res = solve(input, "arbitrary");
+    let res = solve(input, "arbitrary", true);
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
     }
@@ -556,7 +570,7 @@ fn should_parse_and_solve() {
 #[test]
 fn should_parse_and_solve2() {
     let input = crate::parse::parse("/home/florian/Git/gruppe-m/backend/output/test3.cnf").unwrap();
-    let res = solve(input, "arbitrary");
+    let res = solve(input, "arbitrary", true);
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
     }
