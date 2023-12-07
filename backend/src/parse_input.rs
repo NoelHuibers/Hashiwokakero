@@ -1,8 +1,8 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs;
 use std::io;
 use std::time::Instant;
-use std::collections::HashMap;
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Ord, PartialOrd)]
 pub struct Bridge {
@@ -25,7 +25,7 @@ pub struct GameBoard {
     pub bridges: Vec<Bridge>,
 }
 
-pub fn parse_vec_input(input: Vec<Vec<i32>>) -> io::Result<GameBoard> {
+pub fn parse_vec_input(input: Vec<Vec<u8>>) -> io::Result<GameBoard> {
     // Get the row and column count from the Vec input length
     let rows = input.len() as u8;
     let cols = input[0].len() as u8;
@@ -152,13 +152,15 @@ fn parse_islands(lines: &[&str]) -> io::Result<Vec<Island>> {
     Ok(islands)
 }
 
-
 fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
     let islands = &board.islands;
     let mut bridges: Vec<Bridge> = Vec::new();
     let mut connected_islands: HashSet<(u8, u8)> = HashSet::new();
 
-    let island_map: HashMap<(u8, u8), &Island> = islands.iter().map(|island| ((island.x, island.y), island)).collect();
+    let island_map: HashMap<(u8, u8), &Island> = islands
+        .iter()
+        .map(|island| ((island.x, island.y), island))
+        .collect();
 
     for (index, island) in islands.iter().enumerate() {
         let (x, y) = (island.x, island.y);
@@ -173,13 +175,11 @@ fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
                 if let Some(current_island) = island_map.get(&current_coords) {
                     if index < islands.iter().position(|i| i == *current_island).unwrap() {
                         let valid_bridge = if x == current_coords.0 {
-                            (y.min(current_coords.1) + 1..y.max(current_coords.1)).all(|i| {
-                                !island_map.contains_key(&(x, i))
-                            })
+                            (y.min(current_coords.1) + 1..y.max(current_coords.1))
+                                .all(|i| !island_map.contains_key(&(x, i)))
                         } else {
-                            (x.min(current_coords.0) + 1..x.max(current_coords.0)).all(|i| {
-                                !island_map.contains_key(&(i, y))
-                            })
+                            (x.min(current_coords.0) + 1..x.max(current_coords.0))
+                                .all(|i| !island_map.contains_key(&(i, y)))
                         };
 
                         if valid_bridge {
@@ -203,7 +203,6 @@ fn build_bridges(board: &mut GameBoard) -> io::Result<()> {
     board.bridges = bridges;
     Ok(())
 }
-
 
 fn check_game_board_format(lines: &[&str], rows: u8, cols: u8) -> io::Result<()> {
     // Check if the number of lines matches the specified rows

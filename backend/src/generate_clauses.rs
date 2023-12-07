@@ -1,5 +1,5 @@
-use std::{collections::HashMap, vec, iter};
 use std::time::Instant;
+use std::{collections::HashMap, iter, vec};
 
 use itertools::Itertools;
 
@@ -293,3 +293,4 @@ fn infinite_iterator_bug() {
     let cnf = exactly_k_of_n_true(k, vars);
     assert_eq!(cnf, [[5, 6], [-5, -6]])
 }
+
