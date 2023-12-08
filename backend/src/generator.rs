@@ -178,7 +178,7 @@ fn satsifythegrid(
 
         real_directions.shuffle(&mut rand::thread_rng());
         let mut twos = degree as usize - satpoints;
-        for (iteration, &direction) in real_directions[0..satpoints].to_vec().iter().enumerate() {
+        for (_iteration, &direction) in real_directions[0..satpoints].to_vec().iter().enumerate() {
             match direction {
                 Direction::North => {
                     let mut min = y - 2;

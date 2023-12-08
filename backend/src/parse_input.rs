@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs;
 use std::io;
-use std::time::Instant;
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Ord, PartialOrd)]
 pub struct Bridge {

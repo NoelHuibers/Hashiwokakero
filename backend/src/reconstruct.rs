@@ -1,5 +1,5 @@
-use std::{collections::HashMap, fs::{File, remove_file}, io::Read, time::Instant};
 use crate::{generate_clauses::BridgeCoord, parse_input::GameBoard};
+use std::{collections::HashMap, fs::File, io::Read};
 
 pub fn get_content(sat_output_path: &String) -> String {
     let mut file = File::open(sat_output_path.clone())

@@ -1,16 +1,15 @@
 use backend::generator::generator;
 use js_sys::Array;
-use leptos::{ev::SubmitEvent, *, html::Input};
+use leptos::{*, html::Input};
 use serde::{Serialize,Deserialize};
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::closure::Closure;
-use web_sys::{Event, HtmlFormElement, Blob, Url, MouseEvent};
+use web_sys::{Event, Blob, Url, MouseEvent};
 use crate::error_template::{AppError, ErrorTemplate};
 use leptos_meta::*;
 use leptos_router::*;
 use serde_json::json;
-use js_sys::JsString;
 
 #[derive(Serialize, Deserialize)]
 struct FullTable(Vec<Vec<u8>>);
@@ -190,7 +189,6 @@ fn HomePage() -> impl IntoView {
                             />
                             <input type="hidden" name="tableprop" prop:value=json/>
                             <input type="hidden" name="rows" prop:value=rows/>
-                            <input type="hidden" name="columns" prop:value=columns/>
                         </ActionForm>
                         <ActionForm action=to_cnf>
                             <input
@@ -200,7 +198,6 @@ fn HomePage() -> impl IntoView {
                             />
                             <input type="hidden" name="tableprop" prop:value=json/>
                             <input type="hidden" name="rows" prop:value=rows/>
-                            <input type="hidden" name="columns" prop:value=columns/>
                         </ActionForm>
                         <ActionForm action=generate>
                             <input
@@ -397,7 +394,7 @@ use backend::generate_clauses::generate;
 use backend::writer::generate_dimacs;
 use backend::reconstruct::reconstruct_puzzle;
 #[server(Solve, "/api")]
-pub async fn solvepuzzle(tableprop: String, rows: usize, columns: usize) -> Result<String, ServerFnError> {
+pub async fn solvepuzzle(tableprop: String, rows: usize) -> Result<String, ServerFnError> {
     let oldtable: Vec<Vec<u8>> = serde_json::from_str(&tableprop)?;
     let table = oldtable.into_iter().fold(vec![vec![]; rows], |mut acc, x| {
         for (i, y) in x.into_iter().enumerate() {
@@ -432,7 +429,7 @@ pub async fn solvepuzzle(tableprop: String, rows: usize, columns: usize) -> Resu
 }
 
 #[server(ToCNF, "/api")]
-pub async fn to_cnf(tableprop: String, rows: usize, columns: usize) -> Result<String, ServerFnError> {
+pub async fn to_cnf(tableprop: String, rows: usize) -> Result<String, ServerFnError> {
     let oldtable: Vec<Vec<u8>> = serde_json::from_str(&tableprop)?;
     let table = oldtable.into_iter().fold(vec![vec![]; rows], |mut acc, x| {
         for (i, y) in x.into_iter().enumerate() {
@@ -472,3 +469,4 @@ pub async fn generatfield(rows: usize, columns: usize) -> Result<Vec<Vec<u8>>, S
     });
     Ok(newgrid)
 }
+

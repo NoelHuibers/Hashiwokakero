@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::time::Instant;
 
 pub fn generate_dimacs(
     clauses: &Vec<Vec<i32>>,
@@ -22,3 +21,4 @@ pub fn generate_dimacs(
 
     Ok(())
 }
+
