@@ -1,6 +1,7 @@
 use crate::heuristsics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom};
 use std::collections::{HashMap, HashSet, VecDeque};
 
+type Atom = u16;
 type BVar = i32;
 type CIdx = usize;
 
@@ -40,6 +41,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSO
         true => u16::MAX,
         false => 0,
     };
+    // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     let mut neg_occ = HashMap::new();
     let mut pos_occ = HashMap::new();
     // Using VecDaque for better push_front complexity
@@ -64,7 +66,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSO
             unit_queue.push_front(*fist_var);
         }
         vars.iter().for_each(|literal| {
-            let lit = literal.abs();
+            let lit = literal.abs() as Atom;
             lit_val.insert(
                 lit,
                 Literal {
@@ -72,6 +74,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSO
                     is_free: true,
                 },
             );
+            // Just for heuristics
             free_lits.insert(*literal);
             match literal.signum() {
                 // TODO: Is it neccessary to check whether a variable occurs twice in same pol. in a clause?
@@ -106,22 +109,25 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSO
     if clauses.values().fold(true, |i, c| i && c.sat_by_var != 0) {
         let res: Vec<i32> = lit_val
             .iter()
-            .map(|v| match v.1.val {
-                true => *v.0,
-                false => -v.0,
+            .map(|(atom, lit)| match lit.val {
+                true => *atom as BVar,
+                false => -(*atom as BVar),
             })
             .collect();
         return DIMACSOutput::Sat(res);
     }
 
+    // * pure lit elim
+    let mut pure_lits = get_pure_lits(&neg_occ, &pos_occ);
+
     loop {
         // * choose literal var
-        let (var, val) = pick_literal(&clauses, &free_lits, heuristic, &lit_val, &unsat_clauses);
+        let (var, val, forced) = pick_literal(&clauses, &free_lits, heuristic, &lit_val, &mut pure_lits, &unsat_clauses);
         // * set value var
         set_var(
             &mut assignment_stack,
             &mut clauses,
-            false,
+            forced,
             &mut free_lits,
             &mut lit_val,
             &mut neg_occ,
@@ -169,9 +175,9 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSO
         if clauses.values().fold(true, |i, c| i && c.sat_by_var != 0) {
             let res: Vec<i32> = lit_val
                 .iter()
-                .map(|v| match v.1.val {
-                    true => *v.0,
-                    false => -v.0,
+                .map(|(atom, lit)| match lit.val {
+                    true => *atom as BVar,
+                    false => -(*atom as BVar),
                 })
                 .collect();
             return DIMACSOutput::Sat(res);
@@ -179,14 +185,32 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSO
     }
 }
 
+fn get_pure_lits(
+    neg_occ: &HashMap<Atom, Vec<CIdx>>,
+    pos_occ: &HashMap<Atom, Vec<CIdx>>,
+) -> Vec<BVar> {
+    let neg_hs = neg_occ.keys().collect::<HashSet<&Atom>>();
+    let pos_hs = pos_occ.keys().collect::<HashSet<&Atom>>();
+    // neg_occ \ pos_occ
+    let pure = neg_hs.difference(&pos_hs);
+    pure.into_iter().map(|&literal| {
+        // TODO: is the sign in the unitque important?
+        let sign = match neg_hs.get(literal) {
+            Some(_) => 1,
+            None => -1,
+        };
+        *literal as BVar * sign
+    }).collect::<Vec<BVar>>()
+}
+
 fn backtrack(
     assignment_stack: &mut Vec<Assignment>,
     clauses: &mut HashMap<CIdx, Clause>,
     free_lits: &mut HashSet<BVar>,
-    lit_val: &mut HashMap<BVar, Literal>,
+    lit_val: &mut HashMap<Atom, Literal>,
     min_depth: &mut u16,
-    neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
-    pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    neg_occ: &mut HashMap<Atom, Vec<CIdx>>,
+    pos_occ: &mut HashMap<Atom, Vec<CIdx>>,
     unit_queue: &mut VecDeque<BVar>,
     unsat_clauses: &mut HashSet<(Vec<BVar>, u8)>,
 ) -> bool {
@@ -243,10 +267,16 @@ fn pick_literal(
     clauses: &HashMap<CIdx, Clause>,
     free_vars: &HashSet<BVar>,
     heuristic: &str,
-    lit_val: &HashMap<BVar, Literal>,
+    lit_val: &HashMap<Atom, Literal>,
+    pure_lits: &mut Vec<BVar>,
     unsat_clauses: &HashSet<(Vec<BVar>, u8)>,
-) -> (BVar, bool) {
-    match heuristic {
+) -> (BVar, bool, bool) {
+    if !pure_lits.is_empty() {
+        let lit = pure_lits.pop().unwrap();
+        // As the lit occurs only in one polarity it doesn't make sense to try both assignments
+        return (lit, lit.is_positive(), true)
+    }
+    let (var, val) = match heuristic {
         "arbitrary" => arbitrary(clauses, free_vars, lit_val, unsat_clauses),
         "DLIS" => dlis(clauses, free_vars, lit_val, unsat_clauses),
         "DLCS" => dlcs(clauses, free_vars, lit_val, unsat_clauses),
@@ -255,16 +285,17 @@ fn pick_literal(
         "Jeroslaw-Wang" => jeroslaw_wang(clauses, free_vars, lit_val, unsat_clauses),
         "Custom" => custom(clauses, free_vars, lit_val, unsat_clauses),
         _ => panic!("Unsupported heuristic"),
-    }
+    };
+    (var, val, false)
 }
 
 fn unit_prop(
     assignment_stack: &mut Vec<Assignment>,
     clauses: &mut HashMap<CIdx, Clause>,
     free_lits: &mut HashSet<BVar>,
-    lit_val: &mut HashMap<BVar, Literal>,
-    neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
-    pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    lit_val: &mut HashMap<Atom, Literal>,
+    neg_occ: &mut HashMap<Atom, Vec<CIdx>>,
+    pos_occ: &mut HashMap<Atom, Vec<CIdx>>,
     unit_queue: &mut VecDeque<BVar>,
     unsat_clauses: &mut HashSet<(Vec<BVar>, u8)>,
 ) -> bool {
@@ -296,9 +327,9 @@ fn set_var(
     clauses: &mut HashMap<CIdx, Clause>,
     forced: bool,
     free_lits: &mut HashSet<BVar>,
-    lit_val: &mut HashMap<BVar, Literal>,
-    neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
-    pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    lit_val: &mut HashMap<Atom, Literal>,
+    neg_occ: &mut HashMap<Atom, Vec<CIdx>>,
+    pos_occ: &mut HashMap<Atom, Vec<CIdx>>,
     unit_queue: &mut VecDeque<BVar>,
     unsat_clauses: &mut HashSet<(Vec<BVar>, u8)>,
     val: bool,
@@ -306,8 +337,9 @@ fn set_var(
 ) -> bool {
     assignment_stack.push(Assignment { var, val, forced });
     let mut conflict = false;
-    let mut lit = lit_val.get_mut(&var.abs()).unwrap();
+    let mut lit = lit_val.get_mut(&(var.abs() as Atom)).unwrap();
     lit.is_free = false;
+    // Just for heuristics
     free_lits.remove(&var);
     free_lits.remove(&-var);
     // -1 true => 1 false
@@ -327,7 +359,7 @@ fn set_var(
         true => (pos_occ, neg_occ),
         false => (neg_occ, pos_occ),
     };
-    if let Some(occ) = mark_sat.get(&var.abs()) {
+    if let Some(occ) = mark_sat.get(&(var.abs() as Atom)) {
         occ.iter().for_each(|c: &CIdx| {
             clauses.entry(*c).and_modify(|sat_clause| {
                 if sat_clause.sat_by_var == 0 {
@@ -337,7 +369,7 @@ fn set_var(
             });
         });
     }
-    if let Some(occ) = mark_unsat.get(&var.abs()) {
+    if let Some(occ) = mark_unsat.get(&(var.abs() as Atom)) {
         occ.iter().for_each(|c| {
             let unsat_clause = clauses.get_mut(c).unwrap();
             unsat_clauses.remove(&(unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
@@ -347,7 +379,7 @@ fn set_var(
                 0 => conflict = true,
                 1 => {
                     if let Some(free_lit) = unsat_clause.vars.iter().find(|&v| {
-                        lit_val.get(&v.abs()).unwrap().is_free && !unit_queue.contains(v)
+                        lit_val.get(&(v.abs() as Atom)).unwrap().is_free && !unit_queue.contains(v)
                     }) {
                         unit_queue.push_front(*free_lit);
                     }
@@ -362,14 +394,15 @@ fn set_var(
 fn unset_var(
     clauses: &mut HashMap<CIdx, Clause>,
     free_lits: &mut HashSet<BVar>,
-    lit_val: &mut HashMap<BVar, Literal>,
-    neg_occ: &mut HashMap<BVar, Vec<CIdx>>,
-    pos_occ: &mut HashMap<BVar, Vec<CIdx>>,
+    lit_val: &mut HashMap<Atom, Literal>,
+    neg_occ: &mut HashMap<Atom, Vec<CIdx>>,
+    pos_occ: &mut HashMap<Atom, Vec<CIdx>>,
     unsat_clauses: &mut HashSet<(Vec<BVar>, u8)>,
     var: BVar,
 ) {
-    let mut lit_var = lit_val.get_mut(&var.abs()).unwrap();
+    let mut lit_var = lit_val.get_mut(&(var.abs() as Atom)).unwrap();
     lit_var.is_free = true;
+    // Just for heuristics
     free_lits.insert(var);
     free_lits.insert(-var);
     // Value of lit_var actually doesn't matter
@@ -377,7 +410,8 @@ fn unset_var(
         true => (pos_occ, neg_occ),
         false => (neg_occ, pos_occ),
     };
-    if let Some(occ) = mark_sat.get(&var.abs()) {
+    if let Some(occ) = mark_sat.get(&(var.abs() as Atom)) {
+        let x = var as u16;
         occ.iter().for_each(|c| {
             clauses.entry(*c).and_modify(|sat_clause| {
                 if sat_clause.sat_by_var == var {
@@ -387,7 +421,7 @@ fn unset_var(
             });
         })
     };
-    if let Some(occ) = mark_unsat.get(&var.abs()) {
+    if let Some(occ) = mark_unsat.get(&(var.abs() as Atom)) {
         occ.iter().for_each(|c| {
             let unsat_clause = clauses.get_mut(c).unwrap();
             unsat_clauses.remove(&(unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
@@ -559,8 +593,8 @@ fn should_solve_unsat() {
 }
 
 #[test]
-fn should_parse_and_solve() {
-    let input = crate::parse::parse("/home/florian/Git/gruppe-m/backend/output/test2.cnf").unwrap();
+fn should_parse_and_solve_sat() {
+    let input = crate::parse::parse("./dimacs-files/input/sat/aim-50-1_6-yes1-1.cnf").unwrap();
     let res = solve(input, "arbitrary", true);
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
@@ -568,10 +602,10 @@ fn should_parse_and_solve() {
 }
 
 #[test]
-fn should_parse_and_solve2() {
-    let input = crate::parse::parse("/home/florian/Git/gruppe-m/backend/output/test3.cnf").unwrap();
+fn should_parse_and_solve_unsat() {
+    let input = crate::parse::parse("./dimacs-files/input/unsat/aim-50-1_6-no-1.cnf").unwrap();
     let res = solve(input, "arbitrary", true);
-    if let DIMACSOutput::Unsat = res {
+    if let DIMACSOutput::Sat(_) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }

@@ -1,5 +1,25 @@
 # DPLL Solver
 
+## Running the SAT-Solver
+
+Once built via `cargo build --release` the solver can be executed the following:
+
+`./target/release/dpll_solver --mode [MODE] --input [FILEPATH] --heuristic [HEURISTIC] --depth [DEPTH]`
+
+### MODE
+
+Currently, only the DPLL mode is available.
+
+### DEPTH
+
+The depth flag can be set to true or false and determines whether the currently lowest backtracking depth is printed to the terminal. This gives some idea of the progress.
+
+### HEURISTIC
+
+Supported Heuristics are:
+
++ TODO
+
 ## Team Responsibilities
 
 **Noel:**
@@ -17,5 +37,5 @@
 
 **Flo:**
 
-- [ ] DPLL Algorithm
+- [x] DPLL Algorithm
 - [ ] Pure literal Elimination
