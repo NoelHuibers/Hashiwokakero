@@ -27,6 +27,7 @@ Supported Heuristics are:
 - [x] Init
 - [ ] CLI
 - [x] Parser
+- [ ] Edge cases for parser (e.G. newlines before 0 was found as in Zulip question)
 - [ ] Random Restarts
 
 **Laura:**
@@ -38,4 +39,5 @@ Supported Heuristics are:
 **Flo:**
 
 - [x] DPLL Algorithm
-- [ ] Pure literal Elimination
+- [x] Pure literal Elimination
+- [ ] Better mem allocations

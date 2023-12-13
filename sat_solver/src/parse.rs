@@ -1,6 +1,6 @@
 use std::{io, fs};
 
-pub fn parse(input_file: &str) -> io::Result<Vec<Vec<i32>>> {
+pub fn parse(input_file: &str) -> io::Result<(Vec<Vec<i32>>, usize, usize)> {
     if !input_file.ends_with(".cnf") {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -11,10 +11,19 @@ pub fn parse(input_file: &str) -> io::Result<Vec<Vec<i32>>> {
     let input = fs::read_to_string(input_file)?;
     let lines: Vec<&str> = input.lines().collect();
     let mut clauses = Vec::new();
+    let mut var_count = 0;
+    let mut clause_count = 0;
 
     for line in lines {
         {
-            if line.starts_with('c') || line.starts_with('p') {
+            if line.starts_with('c') {
+                continue;
+            }
+
+            if line.starts_with('p') {
+                let meta_info = line.split_whitespace().collect::<Vec<&str>>();
+                var_count = meta_info[2].parse().unwrap();
+                clause_count = meta_info[3].parse().unwrap();
                 continue;
             }
 
@@ -32,5 +41,5 @@ pub fn parse(input_file: &str) -> io::Result<Vec<Vec<i32>>> {
             clauses.push(clause);
         }
     }
-    Ok(clauses)
+    Ok((clauses, var_count, clause_count))
 }

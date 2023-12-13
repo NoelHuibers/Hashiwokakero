@@ -38,10 +38,10 @@ fn main() {
     let input_file = matches.get_one::<String>("input").unwrap();
     let mode = matches.get_one::<String>("mode").unwrap();
     let heuristic = matches.get_one::<String>("heuristic").unwrap();
-    let vars = parse::parse(input_file.as_str()).unwrap();
+    let (vars, v_count, c_count) = parse::parse(input_file.as_str()).unwrap();
     let depth = matches.get_one::<String>("depth").unwrap();
     let cert = match mode.as_str() {
-        "dpll" => dpll::solve(vars, heuristic.as_str(), depth.parse::<bool>().unwrap()),
+        "dpll" => dpll::solve(vars, v_count, c_count, heuristic.as_str(), depth.parse::<bool>().unwrap()),
         "cdcl" => todo!(),
         otherwise => panic!("{} is not a valid mode.", otherwise)
     };

@@ -32,24 +32,24 @@ struct Assignment {
     forced: bool,
 }
 
-pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSOutput {
+pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuristic: &str, show_depth: bool) -> DIMACSOutput {
     let mut assignment_stack: Vec<Assignment> = Vec::new();
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
-    let mut clauses = HashMap::new();
-    let mut lit_val = HashMap::new();
+    let mut clauses = HashMap::with_capacity(clause_count);
+    let mut lit_val = HashMap::with_capacity(lit_count);
     let mut min_depth: u16 = match show_depth {
         true => u16::MAX,
         false => 0,
     };
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
-    let mut neg_occ = HashMap::new();
-    let mut pos_occ = HashMap::new();
+    let mut neg_occ = HashMap::with_capacity(lit_count);
+    let mut pos_occ = HashMap::with_capacity(lit_count);
     // Using VecDaque for better push_front complexity
     let mut unit_queue = VecDeque::new();
 
     // Those are for the heuristics:
-    let mut free_lits = HashSet::new();
-    let mut unsat_clauses = HashSet::new();
+    let mut free_lits = HashSet::with_capacity(lit_count);
+    let mut unsat_clauses = HashSet::with_capacity(clause_count);
 
     // * read formula
     // Using iterators where possible for better performance
@@ -119,6 +119,7 @@ pub fn solve(input: Vec<Vec<i32>>, heuristic: &str, show_depth: bool) -> DIMACSO
 
     // * pure lit elim
     let mut pure_lits = get_pure_lits(&neg_occ, &pos_occ);
+    // TODO: No need to backtrack this early. Clauses can just be removed at this point.
 
     loop {
         // * choose literal var
@@ -434,7 +435,7 @@ fn unset_var(
 #[test]
 fn should_solve_sat_small() {
     let res = solve(
-        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
+        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]], 3, 3,
         "arbitrary",
         true,
     );
@@ -482,7 +483,7 @@ fn should_solve_sat() {
             vec![3, 4],
             vec![1, 2],
             vec![5, 6],
-        ],
+        ],8, 35,
         "arbitrary",
         true,
     );
@@ -501,7 +502,7 @@ fn should_solve_unsat_small() {
             vec![1],
             vec![2],
             vec![3],
-        ],
+        ], 3, 6,
         "arbitrary",
         true,
     );
@@ -583,7 +584,7 @@ fn should_solve_unsat() {
             vec![-2, -3],
             vec![-2, -4],
             vec![1, 2],
-        ],
+        ], 12, 68,
         "arbitrary",
         true,
     );
@@ -594,8 +595,8 @@ fn should_solve_unsat() {
 
 #[test]
 fn should_parse_and_solve_sat() {
-    let input = crate::parse::parse("./dimacs-files/input/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let res = solve(input, "arbitrary", true);
+    let (input, v_c, c_c) = crate::parse::parse("./dimacs-files/input/sat/aim-50-1_6-yes1-1.cnf").unwrap();
+    let res = solve(input, v_c, c_c, "arbitrary", true);
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
     }
@@ -603,8 +604,8 @@ fn should_parse_and_solve_sat() {
 
 #[test]
 fn should_parse_and_solve_unsat() {
-    let input = crate::parse::parse("./dimacs-files/input/unsat/aim-50-1_6-no-1.cnf").unwrap();
-    let res = solve(input, "arbitrary", true);
+    let (input, v_c, c_c) = crate::parse::parse("./dimacs-files/input/unsat/aim-50-1_6-no-1.cnf").unwrap();
+    let res = solve(input, v_c, c_c, "arbitrary", true);
     if let DIMACSOutput::Sat(_) = res {
         panic!("Was UNSAT but expected SAT.")
     }
