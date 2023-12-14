@@ -1,5 +1,6 @@
 use crate::heuristsics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom};
 use std::collections::{HashMap, HashSet, VecDeque};
+use flame;
 
 type Atom = u16;
 type BVar = i32;
@@ -32,7 +33,10 @@ struct Assignment {
     forced: bool,
 }
 
+
 pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuristic: &str, show_depth: bool) -> DIMACSOutput {
+    flame::start("solve");
+
     let mut assignment_stack: Vec<Assignment> = Vec::new();
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     let mut clauses = HashMap::with_capacity(clause_count);
@@ -44,7 +48,7 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     let mut neg_occ = HashMap::with_capacity(lit_count);
     let mut pos_occ = HashMap::with_capacity(lit_count);
-    // Using VecDaque for better push_front complexity
+    // Using VecDeque for better push_front complexity
     let mut unit_queue = VecDeque::new();
 
     // Those are for the heuristics:
@@ -77,7 +81,7 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
             // Just for heuristics
             free_lits.insert(*literal);
             match literal.signum() {
-                // TODO: Is it neccessary to check whether a variable occurs twice in same pol. in a clause?
+                // TODO: Is it necessary to check whether a variable occurs twice in the same pol. in a clause?
                 // When not checking clauses like (a \/ -a \/ ...) would not be taken into account.
                 1 => pos_occ
                     .entry(lit)
@@ -104,6 +108,7 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
         &mut unsat_clauses,
     );
     if conflict {
+        flame::end("solve");
         return DIMACSOutput::Unsat;
     }
     if clauses.values().fold(true, |i, c| i && c.sat_by_var != 0) {
@@ -114,6 +119,7 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
                 false => -(*atom as BVar),
             })
             .collect();
+        flame::end("solve");
         return DIMACSOutput::Sat(res);
     }
 
@@ -168,6 +174,7 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
                 &mut unsat_clauses,
             );
             if unsat {
+                flame::end("solve");
                 return DIMACSOutput::Unsat;
             }
         }
@@ -181,28 +188,40 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
                     false => -(*atom as BVar),
                 })
                 .collect();
+            flame::end("solve");
             return DIMACSOutput::Sat(res);
         }
     }
 }
 
+
+
 fn get_pure_lits(
     neg_occ: &HashMap<Atom, Vec<CIdx>>,
     pos_occ: &HashMap<Atom, Vec<CIdx>>,
 ) -> Vec<BVar> {
+    flame::start("get_pure_lits");
     let neg_hs = neg_occ.keys().collect::<HashSet<&Atom>>();
     let pos_hs = pos_occ.keys().collect::<HashSet<&Atom>>();
+
     // neg_occ \ pos_occ
     let pure = neg_hs.difference(&pos_hs);
-    pure.into_iter().map(|&literal| {
-        // TODO: is the sign in the unitque important?
-        let sign = match neg_hs.get(literal) {
-            Some(_) => 1,
-            None => -1,
-        };
-        *literal as BVar * sign
-    }).collect::<Vec<BVar>>()
+
+    let pure_lits = pure
+        .into_iter()
+        .map(|&literal| {
+            // TODO: is the sign in the unitque important?
+            let sign = match neg_hs.get(literal) {
+                Some(_) => 1,
+                None => -1,
+            };
+            *literal as BVar * sign
+        })
+        .collect::<Vec<BVar>>();
+    flame::end("get_pure_lits");
+    pure_lits
 }
+
 
 fn backtrack(
     assignment_stack: &mut Vec<Assignment>,
@@ -215,8 +234,11 @@ fn backtrack(
     unit_queue: &mut VecDeque<BVar>,
     unsat_clauses: &mut HashSet<(Vec<BVar>, u8)>,
 ) -> bool {
+    flame::start("backtrack");
+
     let mut last_step = assignment_stack.pop();
     while last_step.as_ref().is_some_and(|step| step.forced) {
+        flame::start("backtrack_undo_step");
         unset_var(
             clauses,
             free_lits,
@@ -226,17 +248,24 @@ fn backtrack(
             unsat_clauses,
             last_step.unwrap().var,
         );
+        flame::end("backtrack_undo_step");
         last_step = assignment_stack.pop();
     }
+
     if assignment_stack.len() as u16 <= *min_depth {
         *min_depth = assignment_stack.len() as u16;
         println!("backtracked to depth {}", assignment_stack.len());
     }
+
     if last_step.is_none() {
+        flame::end("backtrack");
         return true;
     }
+
     let var = last_step.as_ref().unwrap().var;
     let val = last_step.unwrap().val;
+
+    flame::start("backtrack_unset_var");
     unset_var(
         clauses,
         free_lits,
@@ -246,7 +275,13 @@ fn backtrack(
         unsat_clauses,
         var,
     );
+    flame::end("backtrack_unset_var");
+
+    flame::start("backtrack_clear_queue");
     unit_queue.clear();
+    flame::end("backtrack_clear_queue");
+
+    flame::start("backtrack_set_var");
     set_var(
         assignment_stack,
         clauses,
@@ -260,6 +295,8 @@ fn backtrack(
         !val,
         var,
     );
+    flame::end("backtrack_set_var");
+    flame::end("backtrack");
     false
 }
 
@@ -272,6 +309,7 @@ fn pick_literal(
     pure_lits: &mut Vec<BVar>,
     unsat_clauses: &HashSet<(Vec<BVar>, u8)>,
 ) -> (BVar, bool, bool) {
+    flame::start("pick_literal");
     if !pure_lits.is_empty() {
         let lit = pure_lits.pop().unwrap();
         // As the lit occurs only in one polarity it doesn't make sense to try both assignments
@@ -287,6 +325,7 @@ fn pick_literal(
         "Custom" => custom(clauses, free_vars, lit_val, unsat_clauses),
         _ => panic!("Unsupported heuristic"),
     };
+    flame::end("pick_literal");
     (var, val, false)
 }
 
@@ -300,6 +339,7 @@ fn unit_prop(
     unit_queue: &mut VecDeque<BVar>,
     unsat_clauses: &mut HashSet<(Vec<BVar>, u8)>,
 ) -> bool {
+    flame::start("unit_prop"); 
     while !unit_queue.is_empty() {
         let forced_lit = unit_queue.pop_back().unwrap();
         // mark all clauses with pos_occ as sat
@@ -317,11 +357,14 @@ fn unit_prop(
             forced_lit,
         );
         if unsat {
+            flame::end("unit_prop"); 
             return true;
         }
     }
+    flame::end("unit_prop"); 
     false
 }
+
 
 fn set_var(
     assignment_stack: &mut Vec<Assignment>,
@@ -336,6 +379,8 @@ fn set_var(
     val: bool,
     var: BVar,
 ) -> bool {
+    flame::start("set_var");
+
     assignment_stack.push(Assignment { var, val, forced });
     let mut conflict = false;
     let mut lit = lit_val.get_mut(&(var.abs() as Atom)).unwrap();
@@ -389,6 +434,8 @@ fn set_var(
             };
         })
     }
+
+    flame::end("set_var");
     conflict
 }
 
@@ -401,6 +448,7 @@ fn unset_var(
     unsat_clauses: &mut HashSet<(Vec<BVar>, u8)>,
     var: BVar,
 ) {
+    flame::start("unset_var");
     let mut lit_var = lit_val.get_mut(&(var.abs() as Atom)).unwrap();
     lit_var.is_free = true;
     // Just for heuristics
@@ -412,7 +460,6 @@ fn unset_var(
         false => (neg_occ, pos_occ),
     };
     if let Some(occ) = mark_sat.get(&(var.abs() as Atom)) {
-        let x = var as u16;
         occ.iter().for_each(|c| {
             clauses.entry(*c).and_modify(|sat_clause| {
                 if sat_clause.sat_by_var == var {
@@ -430,7 +477,9 @@ fn unset_var(
             unsat_clauses.insert((unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
         })
     }
+    flame::end("unset_var");
 }
+
 
 #[test]
 fn should_solve_sat_small() {
