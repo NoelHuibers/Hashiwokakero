@@ -4,7 +4,8 @@
 
 Once built via `cargo build --release` the solver can be executed the following:
 
-`./target/release/dpll_solver --mode [MODE] --input [FILEPATH] --heuristic [HEURISTIC] --depth [DEPTH]`
+`./target/release/dpll_solver -- bin dpll --mode [MODE] --input [FILEPATH] --heuristic [HEURISTIC] --depth [DEPTH]`
+
 
 ### MODE
 
@@ -18,7 +19,17 @@ The depth flag can be set to true or false and determines whether the currently 
 
 Supported Heuristics are:
 
-+ TODO
+- arbitrary (in progress)
+- dlis (in progress)
+- dlcs (in progress)
+- mom (TODO)
+- boehm (TODO)
+- jeroslaw_wang (TODO)
+
+### CPU Time Measurement
+To measure the CPU time for each `.cnf` file in `dimacs-files/input`, run the `cputime` binary:
+
+`cargo run --bin cputime`
 
 ## Team Responsibilities
 
@@ -32,7 +43,8 @@ Supported Heuristics are:
 
 **Laura:**
 
-- [ ] Testing & Benchmarks
+- [x] Testing / Profiling
+- [x] Benchmarks / CPU Time
 - [ ] Cactus plots
 - [ ] Heuristics
 

@@ -13,3 +13,14 @@ flame = "0.2.2"
 [profile.release]
 debug = true
 
+[lib]
+name = "dpll_solver"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dpll" 
+path = "src/main.rs" 
+
+[[bin]]
+name = "cputime"
+path = "src/cputime/cputime.rs"

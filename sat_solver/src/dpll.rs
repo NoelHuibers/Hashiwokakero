@@ -35,7 +35,6 @@ struct Assignment {
 
 
 pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuristic: &str, show_depth: bool) -> DIMACSOutput {
-    flame::start("solve");
 
     let mut assignment_stack: Vec<Assignment> = Vec::new();
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
@@ -108,7 +107,6 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
         &mut unsat_clauses,
     );
     if conflict {
-        flame::end("solve");
         return DIMACSOutput::Unsat;
     }
     if clauses.values().fold(true, |i, c| i && c.sat_by_var != 0) {
@@ -119,7 +117,6 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
                 false => -(*atom as BVar),
             })
             .collect();
-        flame::end("solve");
         return DIMACSOutput::Sat(res);
     }
 
@@ -174,7 +171,6 @@ pub fn solve(input: Vec<Vec<i32>>, lit_count: usize, clause_count: usize, heuris
                 &mut unsat_clauses,
             );
             if unsat {
-                flame::end("solve");
                 return DIMACSOutput::Unsat;
             }
         }
