@@ -19,12 +19,13 @@ The depth flag can be set to true or false and determines whether the currently 
 
 Supported Heuristics are:
 
-- arbitrary (in progress)
-- dlis (in progress)
-- dlcs (in progress)
-- mom (TODO)
-- boehm (TODO)
-- jeroslaw_wang (TODO)
+- arbitrary
+- dlis
+- dlcs 
+- mom 
+- boehm 
+- jeroslaw_wang 
+- custom (in progress)
 
 ### CPU Time Measurement
 To measure the CPU time for each `.cnf` file in `dimacs-files/input`, run the `cputime` binary:
@@ -46,7 +47,7 @@ To measure the CPU time for each `.cnf` file in `dimacs-files/input`, run the `c
 - [x] Testing / Profiling
 - [x] Benchmarks / CPU Time
 - [ ] Cactus plots
-- [ ] Heuristics
+- [x] Heuristics
 
 **Flo:**
 
