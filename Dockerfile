@@ -35,8 +35,11 @@ WORKDIR /app
 
 # Set any required env variables and
 ENV RUST_LOG="info"
+ENV LEPTOS_OUTPUT_NAME="hashi"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
 ENV LEPTOS_SITE_ROOT="site"
+ENV LEPTOS_SITE_PKG_DIR="pkg"
+ENV LEPTOS_ENV="production"
 EXPOSE 8080
 # Run the server
 CMD ["/app/hashi"]

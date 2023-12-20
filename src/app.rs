@@ -20,7 +20,7 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/tailwind.css"/>
+        <Stylesheet id="leptos" href="/pkg/hashi.css"/>
 
         // sets the document title
         <Title text="Hashiwakakeru"/>
@@ -469,4 +469,5 @@ pub async fn generatfield(rows: usize, columns: usize) -> Result<Vec<Vec<u8>>, S
     });
     Ok(newgrid)
 }
+
 

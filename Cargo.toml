@@ -1,6 +1,6 @@
 [package]
 name = "hashi"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 
 [workspace]
@@ -66,9 +66,21 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
+# These dev profiles smooth development without the --release flag
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 'z'
+
+[profile.server-dev]
+inherits = "dev"
+opt-level = 2
+
 [package.metadata.leptos]
+# Since we'll be testing without --release, we'll set up a dev profile to allow some optimization
+bin-profile-dev = "server-dev"
+lib-profile-dev = "wasm-dev"
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name
-output-name = "tailwind"
+output_name = "hashi"
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
 site-root = "target/site"
 # The site-root relative folder where all compiled output (JS, WASM and CSS) is written
@@ -115,3 +127,7 @@ lib-features = ["hydrate"]
 # If the --no-default-features flag should be used when compiling the lib target
 # Optional. Defaults to false.
 lib-default-features = false
+# The profile to use for the lib target when compiling for release
+#
+# Optional. Defaults to "release".
+lib-profile-release = "wasm-release"
