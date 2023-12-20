@@ -33,14 +33,20 @@ struct Assignment {
 }
 
 pub struct DPLL {
-    assignment_stack: Vec<Assignment>,
+    // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     clauses: HashMap<usize, Clause>,
     heuristic: String,
+    history: Vec<Assignment>,
+    // Memory allocation in the history is a bottle neck thus the initial unit prop and pure lit elim don't need to expand it
+    history_enabled: bool,
     lit_val: HashMap<Atom, Literal>,
     min_depth: u16,
+    // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     neg_occ: HashMap<Atom, Vec<CIdx>>,
     pos_occ: HashMap<Atom, Vec<CIdx>>,
+    // Using VecDaque for better push_front complexity
     unit_queue: VecDeque<BVar>,
+    // Those are for the heuristics:
     unsat_clauses: HashSet<(Vec<BVar>, u8)>,
     free_lits: HashSet<BVar>,
 }
@@ -54,9 +60,10 @@ impl DPLL {
         show_depth: bool,
     ) -> Self {
         let mut dpll = DPLL {
-            assignment_stack: Vec::new(),
             clauses: HashMap::with_capacity(clause_count),
             heuristic,
+            history: Vec::new(),
+            history_enabled: false,
             lit_val: HashMap::with_capacity(lit_count),
             min_depth: match show_depth {
                 true => u16::MAX,
@@ -137,11 +144,21 @@ impl DPLL {
 
         // * pure lit elim
         let mut pure_lits = self.get_pure_lits();
-        // TODO: No need to backtrack this early. Clauses can just be removed at this point.
 
         loop {
             // * choose literal var
-            let (var, val, forced) = self.pick_literal(&mut pure_lits);
+            let (var, val, forced) = match pure_lits.is_empty() {
+                true => {
+                    self.history_enabled = true;
+                    let (var, val) = self.pick_literal();
+                    (var, val, false)
+                }
+                false => {
+                    let lit = pure_lits.pop().unwrap();
+                    // As the lit occurs only in one polarity it doesn't make sense to try both assignments
+                    (lit, lit.is_positive(), true)
+                }
+            };
             // * set value var
             self.set_var(forced, val, var);
 
@@ -196,14 +213,14 @@ impl DPLL {
     }
 
     fn backtrack(&mut self) -> bool {
-        let mut last_step = self.assignment_stack.pop();
+        let mut last_step = self.history.pop();
         while last_step.as_ref().is_some_and(|step| step.forced) {
             self.unset_var(last_step.unwrap().var);
-            last_step = self.assignment_stack.pop();
+            last_step = self.history.pop();
         }
-        if self.assignment_stack.len() as u16 <= self.min_depth {
-            self.min_depth = self.assignment_stack.len() as u16;
-            println!("backtracked to depth {}", self.assignment_stack.len());
+        if self.history.len() as u16 <= self.min_depth {
+            self.min_depth = self.history.len() as u16;
+            println!("backtracked to depth {}", self.history.len());
         }
         if last_step.is_none() {
             return true;
@@ -217,12 +234,7 @@ impl DPLL {
     }
 
     // TODO: @Laura hier können die Heuristiken rein. Gerne auch mit enum flag welche an/aus sind.
-    fn pick_literal(&self, pure_lits: &mut Vec<BVar>) -> (BVar, bool, bool) {
-        if !pure_lits.is_empty() {
-            let lit = pure_lits.pop().unwrap();
-            // As the lit occurs only in one polarity it doesn't make sense to try both assignments
-            return (lit, lit.is_positive(), true);
-        }
+    fn pick_literal(&self) -> (BVar, bool) {
         let (var, val) = match self.heuristic.as_str() {
             "arbitrary" => arbitrary(
                 &self.clauses,
@@ -268,7 +280,7 @@ impl DPLL {
             ),
             _ => panic!("Unsupported heuristic"),
         };
-        (var, val, false)
+        (var, val)
     }
 
     fn unit_prop(&mut self) -> bool {
@@ -284,9 +296,11 @@ impl DPLL {
     }
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar) -> bool {
-        self.assignment_stack.push(Assignment { var, val, forced });
+        if self.history_enabled {
+            self.history.push(Assignment { var, val, forced });
+        }
         let mut conflict = false;
-        let mut lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
+        let lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit.is_free = false;
         // Just for heuristics
         self.free_lits.remove(&var);
@@ -345,7 +359,7 @@ impl DPLL {
     }
 
     fn unset_var(&mut self, var: BVar) {
-        let mut lit_var = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
+        let lit_var = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
         // Just for heuristics
         self.free_lits.insert(var);

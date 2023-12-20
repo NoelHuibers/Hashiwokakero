@@ -20,15 +20,23 @@ Supported Heuristics are:
 
 + TODO
 
-## Team Responsibilities
+## Running the tests
+
+When cloning make sure to also sync the submodule which includes testfiles:
+
+`git submodule update --init --recursive`
+
+Run the tests using cargo:
+
+``
+
+# Team Responsibilities
 
 **Noel:**
 
 - [x] Init
-- [ ] CLI
 - [x] Parser
 - [ ] Edge cases for parser (e.G. newlines before 0 was found as in Zulip question)
-- [ ] Random Restarts
 
 **Laura:**
 
@@ -40,4 +48,4 @@ Supported Heuristics are:
 
 - [x] DPLL Algorithm
 - [x] Pure literal Elimination
-- [ ] Better mem allocations
+- [x] Better mem allocations
