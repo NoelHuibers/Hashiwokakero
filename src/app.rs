@@ -23,7 +23,7 @@ pub fn App() -> impl IntoView {
         <Stylesheet id="leptos" href="/pkg/hashi.css"/>
 
         // sets the document title
-        <Title text="Hashiwakakeru"/>
+        <Title text="Hashiwokakero"/>
 
         <Router fallback=|| {
             let mut outside_errors = Errors::default();
@@ -142,7 +142,7 @@ fn HomePage() -> impl IntoView {
 
     view! {
         <main class="h-full w-full min-h-screen min-w-full flex flex-col items-center space-y-4 bg-slate-100 p-16">
-            <h1 class="font-bold text-4xl text-violet-700">"Hashiwakakeru"</h1>
+            <h1 class="font-bold text-4xl text-violet-700">"Hashiwokakero"</h1>
             <h2 class="font-bold text-xl text-violet-600">"Bridges Game"</h2>
             <div class="flex flex-col items-center space-y-4">
                 <Show when=move || solved.get() == vec![""]>
@@ -469,5 +469,7 @@ pub async fn generatfield(rows: usize, columns: usize) -> Result<Vec<Vec<u8>>, S
     });
     Ok(newgrid)
 }
+
+
 
 
