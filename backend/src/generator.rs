@@ -10,8 +10,20 @@ use std::vec;
 pub enum Part {
     Corner(Corner),
     Edge(Edge),
+    Unusual(Unusual),
     Normal,
 }
+
+#[derive(Debug, Clone)]
+pub enum Unusual {
+    Left,
+    Right,
+    Top,
+    Bottom,
+    MiddleX,
+    MiddleY,
+}
+
 #[derive(Debug, Clone)]
 pub enum Corner {
     TopLeft,
@@ -40,14 +52,21 @@ pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
     let mut grid: Vec<Vec<u8>> = vec![vec![0; columns]; rows];
     let refgrid: Vec<Vec<bool>> = vec![vec![false; columns]; rows];
 
-    let x = rand::thread_rng().gen_range(0..=columns - 1);
-    let y = rand::thread_rng().gen_range(0..=rows - 1);
+    let mut x = rand::thread_rng().gen_range(0..=columns - 1);
+    let mut y = rand::thread_rng().gen_range(0..=rows - 1);
+
+    if rows == 3 && columns == 3 {
+        while x == 1 && y == 1 {
+            x = rand::thread_rng().gen_range(0..=columns - 1);
+            y = rand::thread_rng().gen_range(0..=rows - 1);
+        }
+    }
+
     let part = get_cell_position(x, y, rows, columns);
     let degree = get_max_degree(&part, 1, 0);
     grid[y][x] = degree;
 
     let new_points = get_new_points(&degree, &part);
-    // TODO: Init must be 0 not true or false.
     generatepoints(
         new_points,
         &mut grid,
@@ -297,6 +316,28 @@ fn get_cell_position(x: usize, y: usize, rows: usize, columns: usize) -> Part {
     let near_top = y == 0 || y == 1;
     let near_bottom = y == rows - 1 || y == rows - 2;
 
+    if rows == 3 && y == 1 {
+        if x == 0 || x == 1 {
+            return Part::Unusual(Unusual::Left);
+        }
+        if x == columns - 1 || x == columns - 2 {
+            return Part::Unusual(Unusual::Right);
+        } else {
+            return Part::Unusual(Unusual::MiddleY);
+        }
+    }
+
+    if columns == 3 && x == 1 {
+        if y == 0 || y == 1 {
+            return Part::Unusual(Unusual::Top);
+        }
+        if y == rows - 1 || y == rows - 2 {
+            return Part::Unusual(Unusual::Bottom);
+        } else {
+            return Part::Unusual(Unusual::MiddleX);
+        }
+    }
+
     match (near_left, near_right, near_top, near_bottom) {
         (true, false, true, false) => Part::Corner(Corner::TopLeft),
         (true, false, false, true) => Part::Corner(Corner::BottomLeft),
@@ -315,6 +356,11 @@ fn get_max_degree(part: &Part, min: u8, subtract: u8) -> u8 {
         Part::Corner(_) => rand::thread_rng().gen_range(min..=4 - subtract),
         Part::Edge(_) => rand::thread_rng().gen_range(min..=6 - subtract),
         Part::Normal => rand::thread_rng().gen_range(min..=8 - subtract),
+        Part::Unusual(unusual) => match unusual {
+            Unusual::MiddleX => rand::thread_rng().gen_range(min..=4 - subtract),
+            Unusual::MiddleY => rand::thread_rng().gen_range(min..=4 - subtract),
+            _ => rand::thread_rng().gen_range(min..=2 - subtract),
+        },
     }
 }
 
@@ -342,6 +388,18 @@ fn get_new_points(degree: &u8, part: &Part) -> u8 {
             7 | 8 => 4,
             _ => 0,
         },
+        Part::Unusual(unusual) => match unusual {
+            Unusual::MiddleX | Unusual::MiddleY => match degree {
+                1 => 1,
+                2 => rand::thread_rng().gen_range(1..=2),
+                3 | 4 => 2,
+                _ => 0,
+            },
+            _ => match degree {
+                1 | 2 => 1,
+                _ => 0,
+            },
+        },
     }
 }
 
@@ -365,6 +423,14 @@ fn get_possible_directions(part: &Part) -> &[Direction] {
             Direction::East,
             Direction::West,
         ],
+        Part::Unusual(unusual) => match unusual {
+            Unusual::Left => &[Direction::East],
+            Unusual::Right => &[Direction::West],
+            Unusual::Top => &[Direction::South],
+            Unusual::Bottom => &[Direction::North],
+            Unusual::MiddleX => &[Direction::North, Direction::South],
+            Unusual::MiddleY => &[Direction::East, Direction::West],
+        },
     }
 }
 

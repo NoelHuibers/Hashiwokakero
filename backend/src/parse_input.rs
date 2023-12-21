@@ -211,7 +211,7 @@ fn check_game_board_format(lines: &[&str], rows: u8, cols: u8) -> io::Result<()>
         .cloned()
         .collect();
 
-    if non_empty_lines.len() != rows.into() {
+    if non_empty_lines.len() != <u8 as Into<usize>>::into(rows) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!("Invalid game board format: incorrect number of rows (expected {}, found {}). Check for empty lines!", rows, non_empty_lines.len()),
@@ -224,7 +224,7 @@ fn check_game_board_format(lines: &[&str], rows: u8, cols: u8) -> io::Result<()>
         .filter(|(_, line)| !line.trim().is_empty())
     {
         // Check if the length of each line matches the specified columns
-        if line.len() != cols.into() {
+        if line.len() != <u8 as Into<usize>>::into(cols) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!("Invalid game board format: incorrect number of columns in row {} (expected {}, found {})", i+1, cols, line.len()),
