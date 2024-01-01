@@ -11,9 +11,8 @@ pub(crate) fn arbitrary(
     (*free_vars.iter().next().unwrap(), true)
 }
 
-/*DLIS:  picks the variable that appears in the largest number of unsatisfied clauses, 
-* aiming to quickly reduce the search space
-*/
+// DLIS:  picks the variable that appears in the largest number of unsatisfied clauses, 
+// aiming to quickly reduce the search space
 pub(crate) fn dlis(
     clauses: &HashMap<usize, Clause>,
     free_vars: &HashSet<i32>,
@@ -54,10 +53,9 @@ pub(crate) fn dlis(
     (max_var.abs(), val)
 }
 
-/*DLCS: chooses the variable that appears the most in the unsatisfied clauses, 
-* counting both its positive and negative occurrences. 
-* It's similar to DLIS but considers both polarities of the variable.
-*/
+// DLCS: chooses the variable that appears the most in the unsatisfied clauses, 
+// counting both its positive and negative occurrences. 
+// It's similar to DLIS but considers both polarities of the variable.
 pub(crate) fn dlcs(
     clauses: &HashMap<usize, Clause>,
     free_vars: &HashSet<i32>,
@@ -84,10 +82,9 @@ pub(crate) fn dlcs(
     (max_var, val)
 }
 
-/*MOM:  selects a variable from the smallest unsatisfied clauses. 
-* Within these clauses, it picks the variable that occurs the most frequently. 
-* This heuristic focuses on resolving smaller clauses first, as they are closer to causing conflicts.
-*/
+// MOM:  selects a variable from the smallest unsatisfied clauses. 
+// Within these clauses, it picks the variable that occurs the most frequently. 
+// This heuristic focuses on resolving smaller clauses first, as they are closer to causing conflicts.
 pub(crate) fn mom(
     clauses: &HashMap<usize, Clause>,
     free_vars: &HashSet<i32>,
@@ -116,10 +113,9 @@ pub(crate) fn mom(
     (max_var, val)
 }
 
-/*Boehm: is a variation of MOM. 
-* It includes a bias term to favor variables appearing in smaller clauses. 
-* This term is usually a power of the number of occurrences of the variable in small clauses.
-*/
+// Boehm: is a variation of MOM. 
+// It includes a bias term to favor variables appearing in smaller clauses. 
+// This term is usually a power of the number of occurrences of the variable in small clauses.
 pub(crate) fn boehm(
     clauses: &HashMap<usize, Clause>,
     free_vars: &HashSet<i32>,
@@ -148,10 +144,9 @@ pub(crate) fn boehm(
     (max_var, val)
 }
 
-/*Jeroslaw-Wang: calculates a score for each variable based on its appearances in the clauses. 
-* The score of a literal in a clause is 2^(-clause_size). 
-* The total score for a variable is the sum of the scores of its literals.
-*/
+// Jeroslaw-Wang: calculates a score for each variable based on its appearances in the clauses. 
+// The score of a literal in a clause is 2^(-clause_size). 
+// The total score for a variable is the sum of the scores of its literals.
 pub(crate) fn jeroslaw_wang(
     clauses: &HashMap<usize, Clause>,
     free_vars: &HashSet<i32>,
@@ -178,7 +173,7 @@ pub(crate) fn jeroslaw_wang(
     (max_var, val)
 }
 
-
+//TODO implement custom heuristic
 pub(crate) fn custom(
     clauses: &HashMap<usize, Clause>,
     free_vars: &HashSet<i32>,
