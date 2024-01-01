@@ -30,4 +30,4 @@ path = "src/cputime/cputime.rs"
 
 [[bin]]
 name = "plot"
-path = "src/cactus.rs"
+path = "src/visuals/cactus.rs"

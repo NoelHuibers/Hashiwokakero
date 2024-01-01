@@ -58,8 +58,9 @@ To create the plots for the existing `.csv` files in  `src/cputime`, run the `pl
 
 - [x] Testing / Profiling
 - [x] Benchmarks / CPU Time
-- [ ] Cactus plots
+- [x] Test: Cactus plots (small test set)
 - [x] Heuristics
+- [ ] Complete benchmarking of test data + plots
 
 **Flo:**
 
