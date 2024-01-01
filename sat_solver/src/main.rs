@@ -3,7 +3,7 @@ use flame;
 
 pub mod dpll;
 pub mod parse;
-mod heuristsics;
+mod heuristics;
 
 fn main() {
     let matches = command!()
@@ -52,5 +52,5 @@ fn main() {
     println!("{:?}", cert);
     flame::end("main");
 
-    //flame::dump_html(std::fs::File::create("visuals/graphs/flamegraph.html").unwrap()).unwrap();
+    flame::dump_html(std::fs::File::create("visuals/graphs/flamegraph.html").unwrap()).unwrap();
 }

@@ -1,6 +1,7 @@
-use crate::heuristsics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom};
+use crate::heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom};
 use std::collections::{HashMap, HashSet, VecDeque};
 use flame;
+use std::fs::File;
 
 type Atom = u16;
 type BVar = i32;
@@ -54,6 +55,7 @@ impl DPLL {
         heuristic: String,
         show_depth: bool,
     ) -> Self {
+        flame::start("DPLL::new");
         let mut dpll = DPLL {
             assignment_stack: Vec::new(),
             clauses: HashMap::with_capacity(clause_count),
@@ -78,10 +80,10 @@ impl DPLL {
                 vars: vars.clone(),
                 unassign_vars: vars.len() as u8,
             };
-            let fist_var = &clause.vars.clone()[0];
+            let first_var = &clause.vars.clone()[0];
             dpll.clauses.insert(c, clause);
-            if vars.len() == 1 && !dpll.unit_queue.contains(fist_var) {
-                dpll.unit_queue.push_front(*fist_var);
+            if vars.len() == 1 && !dpll.unit_queue.contains(first_var) {
+                dpll.unit_queue.push_front(*first_var);
             }
             vars.iter().for_each(|literal| {
                 let lit = literal.abs() as Atom;
@@ -111,13 +113,16 @@ impl DPLL {
                 };
             })
         });
+        flame::end("DPLL::new");
         dpll
     }
 
     pub fn solve(&mut self) -> DIMACSOutput {
         // * unit propagation
+        flame::start("DPLL::solve");
         let conflict = self.unit_prop();
         if conflict {
+            flame::end("DPLL::solve");
             return DIMACSOutput::Unsat;
         }
         if self
@@ -133,6 +138,7 @@ impl DPLL {
                     false => -(*atom as BVar),
                 })
                 .collect();
+            flame::end("DPLL::solve");
             return DIMACSOutput::Sat(res);
         }
 
@@ -156,6 +162,7 @@ impl DPLL {
                 // * if conflict detected
                 let unsat = self.backtrack();
                 if unsat {
+                    flame::end("DPLL::solve");
                     return DIMACSOutput::Unsat;
                 }
             }
@@ -174,17 +181,19 @@ impl DPLL {
                         false => -(*atom as BVar),
                     })
                     .collect();
+                flame::end("DPLL::solve");
                 return DIMACSOutput::Sat(res);
             }
         }
     }
 
     fn get_pure_lits(&self) -> Vec<BVar> {
+        flame::start("get_pure_lits");
         let neg_hs = self.neg_occ.keys().collect::<HashSet<&Atom>>();
         let pos_hs = self.pos_occ.keys().collect::<HashSet<&Atom>>();
         // neg_occ \ pos_occ
         let pure = neg_hs.difference(&pos_hs);
-        pure.into_iter()
+        let result = pure.into_iter()
             .map(|&literal| {
                 // TODO: is the sign in the unitque important?
                 let sign = match neg_hs.get(literal) {
@@ -193,10 +202,13 @@ impl DPLL {
                 };
                 *literal as BVar * sign
             })
-            .collect::<Vec<BVar>>()
+            .collect::<Vec<BVar>>();
+        flame::end("get_pure_lits");
+        result
     }
 
     fn backtrack(&mut self) -> bool {
+        flame::start("backtrack");
         let mut last_step = self.assignment_stack.pop();
         while last_step.as_ref().is_some_and(|step| step.forced) {
             self.unset_var(last_step.unwrap().var);
@@ -207,6 +219,7 @@ impl DPLL {
             println!("backtracked to depth {}", self.assignment_stack.len());
         }
         if last_step.is_none() {
+            flame::end("backtrack");
             return true;
         }
         let var = last_step.as_ref().unwrap().var;
@@ -214,13 +227,16 @@ impl DPLL {
         self.unset_var(var);
         self.unit_queue.clear();
         self.set_var(true, !val, var);
+        flame::end("backtrack");
         false
     }
 
     // TODO: @Laura hier können die Heuristiken rein. Gerne auch mit enum flag welche an/aus sind.
     fn pick_literal(&self, pure_lits: &mut Vec<BVar>) -> (BVar, bool, bool) {
+        flame::start("pick literal");
         if !pure_lits.is_empty() {
             let lit = pure_lits.pop().unwrap();
+            flame::end("pick literal");
             // As the lit occurs only in one polarity it doesn't make sense to try both assignments
             return (lit, lit.is_positive(), true);
         }
@@ -269,22 +285,27 @@ impl DPLL {
             ),
             _ => panic!("Unsupported heuristic"),
         };
+        flame::end("pick literal");
         (var, val, false)
     }
 
     fn unit_prop(&mut self) -> bool {
+        flame::start("unit propagation");
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // mark all clauses with pos_occ as sat
             let unsat = self.set_var(true, true, forced_lit);
             if unsat {
+                flame::end("unit propagation");
                 return true;
             }
         }
+        flame::end("unit propagation");
         false
     }
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar) -> bool {
+        flame::start("set var");
         self.assignment_stack.push(Assignment { var, val, forced });
         let mut conflict = false;
         let mut lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
@@ -342,10 +363,12 @@ impl DPLL {
                 };
             })
         }
+        flame::end("set var");
         conflict
     }
 
     fn unset_var(&mut self, var: BVar) {
+        flame::start("unset var");
         let mut lit_var = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
         // Just for heuristics
@@ -378,6 +401,7 @@ impl DPLL {
                     .insert((unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
             })
         }
+        flame::end("unset var");
     }
 }
 
