@@ -52,5 +52,5 @@ fn main() {
     println!("{:?}", cert);
     flame::end("main");
 
-    flame::dump_html(std::fs::File::create("visuals/graphs/flamegraph.html").unwrap()).unwrap();
+    flame::dump_html(std::fs::File::create("src/visuals/graphs/flamegraph.html").unwrap()).unwrap();
 }
