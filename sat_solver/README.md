@@ -30,7 +30,13 @@ Supported Heuristics are:
 ### CPU Time Measurement
 To measure the CPU time for each `.cnf` file in `dimacs-files/input`, run the `cputime` binary:
 
-`cargo run --bin cputime`
+`cargo run --bin cputime --time-limit [TIME-LIMIT] --heuristic [HEURISTIC]`
+
+### TIME-LIMIT
+
+Time-Limit arguments:
+- true: 60sec execution time frame
+- false: measures the duration of the execution without timeout
 
 ## Team Responsibilities
 

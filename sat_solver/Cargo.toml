@@ -9,6 +9,9 @@ edition = "2021"
 clap = { version = "4.4.10", features = ["cargo"] }
 criterion = "0.5.1"
 flame = "0.2.2"
+plotters = "0.3" 
+csv = "1.1"
+
 
 [profile.release]
 debug = true
