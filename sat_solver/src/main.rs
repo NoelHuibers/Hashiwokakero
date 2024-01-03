@@ -52,5 +52,6 @@ fn main() {
     println!("{:?}", cert);
     flame::end("main");
 
+    //to create flamegraph for profiling. Portrayal does not work properly with usage of multithreading (-> cputime.rs)
     flame::dump_html(std::fs::File::create("src/visuals/graphs/flamegraph.html").unwrap()).unwrap();
 }
