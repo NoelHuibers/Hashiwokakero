@@ -31,15 +31,23 @@ To measure the CPU time for each `.cnf` file in `dimacs-files/input`, run the `c
 
 `cargo run --bin cputime`
 
-## Team Responsibilities
+## Running the tests
+
+When cloning make sure to also sync the submodule which includes testfiles:
+
+`git submodule update --init --recursive`
+
+Run the tests using cargo:
+
+``
+
+# Team Responsibilities
 
 **Noel:**
 
 - [x] Init
-- [ ] CLI
 - [x] Parser
 - [ ] Edge cases for parser (e.G. newlines before 0 was found as in Zulip question)
-- [ ] Random Restarts
 
 **Laura:**
 
@@ -52,4 +60,4 @@ To measure the CPU time for each `.cnf` file in `dimacs-files/input`, run the `c
 
 - [x] DPLL Algorithm
 - [x] Pure literal Elimination
-- [ ] Better mem allocations
+- [x] Better mem allocations

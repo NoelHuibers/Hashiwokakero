@@ -44,7 +44,7 @@ fn main() {
     let depth = matches.get_one::<String>("depth").unwrap();
     flame::start("main_solve"); 
     let cert = match mode.as_str() {
-        "dpll" => dpll::solve(vars, v_count, c_count, heuristic.as_str(), depth.parse::<bool>().unwrap()),
+        "dpll" => dpll::DPLL::new(vars, v_count, c_count, heuristic.to_string(), depth.parse::<bool>().unwrap()).solve(),
         "cdcl" => todo!(),
         otherwise => panic!("{} is not a valid mode.", otherwise)
     };
