@@ -13,6 +13,7 @@ plotters = "0.3"
 csv = "1.1"
 glob = "0.3"
 threadpool = "1.8"
+wait-timeout = "0.2"
 
 [profile.release]
 debug = true
