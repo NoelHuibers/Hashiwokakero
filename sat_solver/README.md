@@ -19,17 +19,30 @@ The depth flag can be set to true or false and determines whether the currently 
 
 Supported Heuristics are:
 
-- arbitrary (in progress)
-- dlis (in progress)
-- dlcs (in progress)
-- mom (TODO)
-- boehm (TODO)
-- jeroslaw_wang (TODO)
+- arbitrary
+- dlis
+- dlcs 
+- mom 
+- boehm 
+- jeroslaw_wang 
+- custom (in progress)
 
-### CPU Time Measurement
-To measure the CPU time for each `.cnf` file in `dimacs-files/input`, run the `cputime` binary:
+## CPU Time Measurement
+To measure the CPU time for each `.cnf` file in `src/inputs`, run the `cputime` binary:
 
-`cargo run --bin cputime`
+`cargo run --bin cputime --time-limit [TIME-LIMIT] --heuristic [HEURISTIC]`
+
+
+### TIME-LIMIT
+
+Time-Limit arguments:
+- true: 60sec execution time frame
+- false: measures the duration of the execution without timeout
+
+## Plotting
+To create the plots for the existing `.csv` files in  `src/cputime`, run the `plot` binary:
+`cargo run --bin plot`
+
 
 ## Running the tests
 
@@ -53,8 +66,9 @@ Run the tests using cargo:
 
 - [x] Testing / Profiling
 - [x] Benchmarks / CPU Time
-- [ ] Cactus plots
-- [ ] Heuristics
+- [x] Test: Cactus plots (small test set)
+- [x] Heuristics
+- [ ] Complete benchmarking of test data + plots
 
 **Flo:**
 

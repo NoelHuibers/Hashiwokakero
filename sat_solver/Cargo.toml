@@ -9,6 +9,11 @@ edition = "2021"
 clap = { version = "4.4.10", features = ["cargo"] }
 criterion = "0.5.1"
 flame = "0.2.2"
+plotters = "0.3" 
+csv = "1.1"
+glob = "0.3"
+threadpool = "1.8"
+wait-timeout = "0.2"
 
 [profile.release]
 debug = true
@@ -24,3 +29,11 @@ path = "src/main.rs"
 [[bin]]
 name = "cputime"
 path = "src/cputime/cputime.rs"
+
+[[bin]]
+name = "results"
+path = "src/cputime/results.rs"
+
+[[bin]]
+name = "plot"
+path = "src/visuals/cactus.rs"

@@ -1,6 +1,8 @@
 use std::{io, fs};
+use flame;
 
 pub fn parse(input_file: &str) -> io::Result<(Vec<Vec<i32>>, usize, usize)> {
+    flame::start("parse");
     if !input_file.ends_with(".cnf") {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -41,5 +43,6 @@ pub fn parse(input_file: &str) -> io::Result<(Vec<Vec<i32>>, usize, usize)> {
             clauses.push(clause);
         }
     }
+    flame::end("parse");
     Ok((clauses, var_count, clause_count))
 }
