@@ -61,17 +61,21 @@ Run the tests using cargo:
 - [x] Init
 - [x] Parser
 - [ ] Edge cases for parser (e.G. newlines before 0 was found as in Zulip question)
+- [ ] Custom Heuristics
+- [ ] Code Refactoring with Clap
 
 **Laura:**
 
 - [x] Testing / Profiling
 - [x] Benchmarks / CPU Time
-- [x] Test: Cactus plots (small test set)
+- [x] Set Up: Cactus plots
 - [x] Heuristics
-- [ ] Complete benchmarking of test data + plots
+- [ ] Complete benchmarking of test data + Cactus plots
+
 
 **Flo:**
 
 - [x] DPLL Algorithm
 - [x] Pure literal Elimination
 - [x] Better mem allocations
+- [ ] Bug Fix DPLL 
