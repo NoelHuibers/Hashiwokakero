@@ -1,57 +1,41 @@
-use clap::{command, Arg};
 use flame;
 
+pub mod cli;
 pub mod dpll;
-pub mod parse;
 mod heuristics;
+pub mod parse;
 
 fn main() {
-    let matches = command!()
-        .arg(
-            Arg::new("mode")
-                .short('m')
-                .long("mode")
-                .value_name("MODE")
-                .required(true),
-        )
-        .arg(
-            Arg::new("input")
-                .short('i')
-                .long("input")
-                .value_name("INPUTFILE")
-                .required(true),
-        )
-        .arg(
-            Arg::new("heuristic")
-                .short('H')
-                .long("heuristic")
-                .value_name("HEURISTIC")
-                .default_value("arbitrary"),
-        ).arg(
-            Arg::new("depth")
-                .short('d')
-                .long("depth")
-                .value_name("DEPTH")
-                .default_value("false"),
-        )
-        .get_matches();
+    let arguments = cli::cli();
 
-    flame::start("main");
-    let input_file = matches.get_one::<String>("input").unwrap();
-    let mode = matches.get_one::<String>("mode").unwrap();
-    let heuristic = matches.get_one::<String>("heuristic").unwrap();
-    let (vars, v_count, c_count) = parse::parse(input_file.as_str()).unwrap();
-    let depth = matches.get_one::<String>("depth").unwrap();
-    flame::start("main_solve"); 
-    let cert = match mode.as_str() {
-        "dpll" => dpll::DPLL::new(vars, v_count, c_count, heuristic.to_string(), depth.parse::<bool>().unwrap()).solve(),
+    if arguments.flamegraph {
+        flame::start("main");
+    }
+
+    let heuristic = arguments.heuristic.unwrap_or("arbitrary".to_string());
+    let (vars, v_count, c_count) = parse::parse(&arguments.inputpath).unwrap();
+    let depth = arguments.depth;
+
+    if arguments.flamegraph {
+        flame::start("main_solve");
+    }
+
+    let cert = match arguments.solver.as_str() {
+        "dpll" => dpll::DPLL::new(vars, v_count, c_count, heuristic, depth).solve(),
         "cdcl" => todo!(),
-        otherwise => panic!("{} is not a valid mode.", otherwise)
+        otherwise => panic!("{} is not a valid mode.", otherwise),
     };
-    flame::end("main_solve");
-    println!("{:?}", cert);
-    flame::end("main");
 
-    //to create flamegraph for profiling. Portrayal does not work properly with usage of multithreading (-> cputime.rs)
-    flame::dump_html(std::fs::File::create("src/visuals/graphs/flamegraph.html").unwrap()).unwrap();
+    if arguments.flamegraph {
+        flame::start("main_solve");
+    }
+
+    println!("{:?}", cert);
+
+    if arguments.flamegraph {
+        flame::end("main");
+        //to create flamegraph for profiling. Portrayal does not work properly with usage of multithreading (-> cputime.rs)
+        flame::dump_html(std::fs::File::create("src/visuals/graphs/flamegraph.html").unwrap())
+            .unwrap();
+    }
 }

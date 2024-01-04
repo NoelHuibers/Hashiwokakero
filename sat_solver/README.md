@@ -4,15 +4,11 @@
 
 Once built via `cargo build --release` the solver can be executed the following:
 
-`./target/release/dpll_solver -- bin dpll --mode [MODE] --input [FILEPATH] --heuristic [HEURISTIC] --depth [DEPTH]`
+`./target/release/dpll_solver -- bin dpll [MODE] [FILEPATH] --heuristic [HEURISTIC] [FLAGS]`
 
 ### MODE
 
 Currently, only the DPLL mode is available.
-
-### DEPTH
-
-The depth flag can be set to true or false and determines whether the currently lowest backtracking depth is printed to the terminal. This gives some idea of the progress.
 
 ### HEURISTIC
 
@@ -25,6 +21,14 @@ Supported Heuristics are:
 - boehm
 - jeroslaw_wang
 - custom (in progress)
+
+### Flags
+
+Flags that can be set are: --depth or in short -d and --flamegraph or in short -f
+Depth:
+The depth flag can be set to true or false and determines whether the currently lowest backtracking depth is printed to the terminal. This gives some idea of the progress.
+Flamegraph:
+Makes the flamegraph.
 
 ## CPU Time Measurement
 
