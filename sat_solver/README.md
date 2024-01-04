@@ -6,7 +6,6 @@ Once built via `cargo build --release` the solver can be executed the following:
 
 `./target/release/dpll_solver -- bin dpll --mode [MODE] --input [FILEPATH] --heuristic [HEURISTIC] --depth [DEPTH]`
 
-
 ### MODE
 
 Currently, only the DPLL mode is available.
@@ -21,28 +20,29 @@ Supported Heuristics are:
 
 - arbitrary
 - dlis
-- dlcs 
-- mom 
-- boehm 
-- jeroslaw_wang 
+- dlcs
+- mom
+- boehm
+- jeroslaw_wang
 - custom (in progress)
 
 ## CPU Time Measurement
+
 To measure the CPU time for each `.cnf` file in `src/inputs`, run the `cputime` binary:
 
 `cargo run --bin cputime --time-limit [TIME-LIMIT] --heuristic [HEURISTIC]`
 
-
 ### TIME-LIMIT
 
 Time-Limit arguments:
+
 - true: 60sec execution time frame
 - false: measures the duration of the execution without timeout
 
 ## Plotting
-To create the plots for the existing `.csv` files in  `src/cputime`, run the `plot` binary:
-`cargo run --bin plot`
 
+To create the plots for the existing `.csv` files in `src/cputime`, run the `plot` binary:
+`cargo run --bin plot`
 
 ## Running the tests
 
@@ -58,9 +58,9 @@ Run the tests using cargo:
 
 **Noel:**
 
-- [x] Init
+- [x] Initializing the project
 - [x] Parser
-- [ ] Edge cases for parser (e.G. newlines before 0 was found as in Zulip question)
+- [x] Edge cases for parser (e.g., newlines before 0 was found as in Zulip question)
 - [ ] Custom Heuristics
 - [ ] Code Refactoring with Clap
 
@@ -72,10 +72,9 @@ Run the tests using cargo:
 - [x] Heuristics
 - [ ] Complete benchmarking of test data + Cactus plots
 
-
 **Flo:**
 
 - [x] DPLL Algorithm
 - [x] Pure literal Elimination
-- [x] Better mem allocations
-- [ ] Bug Fix DPLL 
+- [x] Better memory allocations
+- [ ] Bug Fix DPLL
