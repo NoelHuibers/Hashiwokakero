@@ -1,6 +1,6 @@
-use crate::heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom};
-use std::collections::{HashMap, HashSet, VecDeque};
+use crate::heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids};
 use flame;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 type Atom = u16;
 type BVar = i32;
@@ -209,7 +209,8 @@ impl DPLL {
         let pos_hs = self.pos_occ.keys().collect::<HashSet<&Atom>>();
         // neg_occ \ pos_occ
         let pure = neg_hs.difference(&pos_hs);
-        let result = pure.into_iter()
+        let result = pure
+            .into_iter()
             .map(|&literal| {
                 // TODO: is the sign in the unitque important?
                 let sign = match neg_hs.get(literal) {
@@ -221,7 +222,6 @@ impl DPLL {
             .collect::<Vec<BVar>>();
         flame::end("get_pure_lits");
         result
-    
     }
 
     fn backtrack(&mut self) -> bool {
@@ -252,48 +252,14 @@ impl DPLL {
     fn pick_literal(&self) -> (BVar, bool) {
         flame::start("pick literal");
         let (var, val) = match self.heuristic.as_str() {
-            "arbitrary" => arbitrary(
-                &self.clauses,
-                &self.free_lits,
-                &self.lit_val,
-                &self.unsat_clauses,
-            ),
-            "DLIS" => dlis(
-                &self.clauses,
-                &self.free_lits,
-                &self.lit_val,
-                &self.unsat_clauses,
-            ),
-            "DLCS" => dlcs(
-                &self.clauses,
-                &self.free_lits,
-                &self.lit_val,
-                &self.unsat_clauses,
-            ),
-            "MOM" => mom(
-                &self.clauses,
-                &self.free_lits,
-                &self.lit_val,
-                &self.unsat_clauses,
-            ),
-            "Boehm" => boehm(
-                &self.clauses,
-                &self.free_lits,
-                &self.lit_val,
-                &self.unsat_clauses,
-            ),
-            "Jeroslaw-Wang" => jeroslaw_wang(
-                &self.clauses,
-                &self.free_lits,
-                &self.lit_val,
-                &self.unsat_clauses,
-            ),
-            "Custom" => custom(
-                &self.clauses,
-                &self.free_lits,
-                &self.lit_val,
-                &self.unsat_clauses,
-            ),
+            "arbitrary" => arbitrary(&self.free_lits),
+            "DLIS" => dlis(&self.free_lits, &self.unsat_clauses),
+            "DLCS" => dlcs(&self.free_lits, &self.lit_val, &self.unsat_clauses),
+            "MOM" => mom(&self.free_lits, &self.lit_val, &self.unsat_clauses),
+            "Boehm" => boehm(&self.free_lits, &self.lit_val, &self.unsat_clauses),
+            "Jeroslaw-Wang" => jeroslaw_wang(&self.free_lits, &self.lit_val, &self.unsat_clauses),
+            "VSIDS" => vsids(&self.free_lits, &self.unsat_clauses),
+            "Custom" => custom(&self.free_lits, &self.unsat_clauses),
             _ => panic!("Unsupported heuristic"),
         };
         flame::end("pick literal");
@@ -393,7 +359,6 @@ impl DPLL {
             false => (&self.neg_occ, &self.pos_occ),
         };
         if let Some(occ) = mark_sat.get(&(var.abs() as Atom)) {
-            let x = var as u16;
             occ.iter().for_each(|c| {
                 self.clauses.entry(*c).and_modify(|sat_clause| {
                     if sat_clause.sat_by_var == var {
