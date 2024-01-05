@@ -12,7 +12,6 @@ fn main() {
         flame::start("main");
     }
 
-    let heuristic = arguments.heuristic.unwrap_or("arbitrary".to_string());
     let (vars, v_count, c_count) = parse::parse(&arguments.inputpath).unwrap();
     let depth = arguments.depth;
 
@@ -21,7 +20,7 @@ fn main() {
     }
 
     let cert = match arguments.solver.as_str() {
-        "dpll" => dpll::DPLL::new(vars, v_count, c_count, heuristic, depth).solve(),
+        "dpll" => dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, depth).solve(),
         "cdcl" => todo!(),
         otherwise => panic!("{} is not a valid mode.", otherwise),
     };

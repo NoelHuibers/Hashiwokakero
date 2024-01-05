@@ -4,7 +4,7 @@ use clap::{command, Arg, ArgAction};
 pub struct CliArgs {
     pub solver: String,
     pub inputpath: String,
-    pub heuristic: Option<String>,
+    pub heuristic: String,
     pub depth: bool,
     pub flamegraph: bool,
 }
@@ -29,7 +29,8 @@ pub fn cli() -> CliArgs {
             Arg::new("heuristic")
                 .help("Specify the heuristic to use")
                 .long("heuristic")
-                .short('e')
+                .short('H')
+                .default_value("arbitrary")
         )
         .arg(
             Arg::new("depth")
@@ -57,13 +58,13 @@ pub fn cli() -> CliArgs {
         None => panic!("Input is required"),
     };
 
-    let mut heuristic = None;
-    if arguments.contains_id("heuristic") {
-        heuristic = match arguments.get_one::<String>("heuristic") {
-            Some(heuristic) => Some(heuristic.to_string()),
-            None => Some(String::from("arbirtray")),
-        };
-    }
+    let heuristic = match arguments.get_one::<String>("heuristic") {
+        Some(heuristic) => heuristic.to_string(),
+        None => {
+            println!("No heuristic specified, using arbitrary");
+            String::from("arbirtray")
+        }
+    };
 
     return CliArgs {
         solver,
