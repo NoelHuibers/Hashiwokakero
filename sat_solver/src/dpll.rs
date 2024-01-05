@@ -1,6 +1,9 @@
-use crate::heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids};
+use crate::{
+    cli::Heuristic,
+    heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids},
+};
 use flame;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque}; // Add this line to import the `cli` module from the crate root
 
 type Atom = u16;
 type BVar = i32;
@@ -36,7 +39,7 @@ struct Assignment {
 pub struct DPLL {
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     clauses: HashMap<usize, Clause>,
-    heuristic: String,
+    heuristic: Heuristic,
     history: Vec<Assignment>,
     // Memory allocation in the history is a bottle neck thus the initial unit prop and pure lit elim don't need to expand it
     history_enabled: bool,
@@ -57,7 +60,7 @@ impl DPLL {
         input: Vec<Vec<i32>>,
         lit_count: usize,
         clause_count: usize,
-        heuristic: String,
+        heuristic: Heuristic,
         show_depth: bool,
     ) -> Self {
         flame::start("DPLL::new");
@@ -251,16 +254,17 @@ impl DPLL {
     // TODO: @Laura hier können die Heuristiken rein. Gerne auch mit enum flag welche an/aus sind.
     fn pick_literal(&self) -> (BVar, bool) {
         flame::start("pick literal");
-        let (var, val) = match self.heuristic.as_str() {
-            "arbitrary" => arbitrary(&self.free_lits),
-            "DLIS" => dlis(&self.free_lits, &self.unsat_clauses),
-            "DLCS" => dlcs(&self.free_lits, &self.lit_val, &self.unsat_clauses),
-            "MOM" => mom(&self.free_lits, &self.lit_val, &self.unsat_clauses),
-            "Boehm" => boehm(&self.free_lits, &self.lit_val, &self.unsat_clauses),
-            "Jeroslaw-Wang" => jeroslaw_wang(&self.free_lits, &self.lit_val, &self.unsat_clauses),
-            "VSIDS" => vsids(&self.free_lits, &self.unsat_clauses),
-            "Custom" => custom(&self.free_lits, &self.unsat_clauses),
-            _ => panic!("Unsupported heuristic"),
+        let (var, val) = match self.heuristic {
+            Heuristic::Arbitrary => arbitrary(&self.free_lits),
+            Heuristic::DLIS => dlis(&self.free_lits, &self.unsat_clauses),
+            Heuristic::DLCS => dlcs(&self.free_lits, &self.lit_val, &self.unsat_clauses),
+            Heuristic::MOM => mom(&self.free_lits, &self.lit_val, &self.unsat_clauses),
+            Heuristic::Boehm => boehm(&self.free_lits, &self.lit_val, &self.unsat_clauses),
+            Heuristic::JeroslawWang => {
+                jeroslaw_wang(&self.free_lits, &self.lit_val, &self.unsat_clauses)
+            }
+            Heuristic::VSIDS => vsids(&self.free_lits, &self.unsat_clauses),
+            Heuristic::Custom => custom(&self.free_lits, &self.unsat_clauses),
         };
         flame::end("pick literal");
         (var, val)
@@ -389,7 +393,7 @@ fn should_solve_sat_small() {
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         3,
         3,
-        "arbitrary".to_string(),
+        Heuristic::Arbitrary,
         true,
     )
     .solve();
@@ -440,7 +444,7 @@ fn should_solve_sat() {
         ],
         8,
         35,
-        "arbitrary".to_string(),
+        Heuristic::Arbitrary,
         true,
     )
     .solve();
@@ -462,7 +466,7 @@ fn should_solve_unsat_small() {
         ],
         3,
         6,
-        "arbitrary".to_string(),
+        Heuristic::Arbitrary,
         true,
     )
     .solve();
@@ -547,7 +551,7 @@ fn should_solve_unsat() {
         ],
         12,
         68,
-        "arbitrary".to_string(),
+        Heuristic::Arbitrary,
         true,
     )
     .solve();
@@ -560,7 +564,7 @@ fn should_solve_unsat() {
 fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) =
         crate::parse::parse("./dimacs-files/input/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let res = DPLL::new(input, v_c, c_c, "arbitrary".to_string(), true).solve();
+    let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
     }
@@ -570,7 +574,7 @@ fn should_parse_and_solve_sat() {
 fn should_parse_and_solve_unsat() {
     let (input, v_c, c_c) =
         crate::parse::parse("./dimacs-files/input/unsat/aim-50-1_6-no-1.cnf").unwrap();
-    let res = DPLL::new(input, v_c, c_c, "arbitrary".to_string(), true).solve();
+    let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
     if let DIMACSOutput::Sat(_) = res {
         panic!("Was UNSAT but expected SAT.")
     }

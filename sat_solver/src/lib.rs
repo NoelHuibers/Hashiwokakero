@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod dpll;
-pub mod parse;
 pub mod heuristics;
+pub mod parse;
