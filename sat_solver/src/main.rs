@@ -4,7 +4,6 @@ pub mod cli;
 pub mod dpll;
 mod heuristics;
 pub mod parse;
-mod cdcl;
 
 fn main() {
     let arguments = cli::cli();

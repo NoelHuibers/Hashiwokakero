@@ -594,7 +594,7 @@ fn should_solve_unsat() {
 #[test]
 fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) =
-        crate::parse::parse("./dimacs-files/input/sat/aim-50-1_6-yes1-1.cnf").unwrap();
+        crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, "arbitrary".to_string(), true).solve();
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
@@ -604,9 +604,40 @@ fn should_parse_and_solve_sat() {
 #[test]
 fn should_parse_and_solve_unsat() {
     let (input, v_c, c_c) =
-        crate::parse::parse("./dimacs-files/input/unsat/aim-50-1_6-no-1.cnf").unwrap();
+        crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, "arbitrary".to_string(), true).solve();
     if let DIMACSOutput::Sat(_) = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+}
+
+#[test]
+fn bug_jan_2nd_should_be_sat() {
+    let (mut input, mut v_c, mut c_c) =
+        crate::parse::parse("./src/inputs/sat/ssa7552-159.cnf").unwrap();
+    let res = DPLL::new(input, v_c, c_c, "arbitrary".to_string(), true).solve();
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+
+    (input, v_c, c_c) =
+        crate::parse::parse("./src/inputs/sat/ssa7552-158.cnf").unwrap();
+    let res = DPLL::new(input, v_c, c_c, "arbitrary".to_string(), true).solve();
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+
+    (input, v_c, c_c) =
+        crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
+    let res = DPLL::new(input, v_c, c_c, "arbitrary".to_string(), true).solve();
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+
+    (input, v_c, c_c) =
+        crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
+    let res = DPLL::new(input, v_c, c_c, "arbitrary".to_string(), true).solve();
+    if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
