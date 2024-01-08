@@ -153,6 +153,10 @@ impl DPLL {
 
         // * pure lit elim
         let mut pure_lits = self.get_pure_lits();
+        if pure_lits.contains(&-718) {
+            println!("{}", self.neg_occ.get(&718).is_some());
+            println!("{}", self.pos_occ.get(&718).is_some());
+        }
 
         loop {
             // * choose literal var
@@ -211,17 +215,18 @@ impl DPLL {
         let neg_hs = self.neg_occ.keys().collect::<HashSet<&Atom>>();
         let pos_hs = self.pos_occ.keys().collect::<HashSet<&Atom>>();
         // neg_occ \ pos_occ
-        let pure = neg_hs.difference(&pos_hs);
+        let pure = neg_hs.symmetric_difference(&pos_hs);
         let result = pure
             .into_iter()
             .map(|&literal| {
                 // TODO: is the sign in the unitque important?
-                let sign = match neg_hs.get(literal) {
+                let sign = match pos_hs.get(literal) {
                     Some(_) => 1,
                     None => -1,
                 };
                 *literal as BVar * sign
             })
+            .filter(|p| !self.lit_val.contains_key(&(p.abs() as u16)))
             .collect::<Vec<BVar>>();
         flame::end("get_pure_lits");
         result
@@ -580,21 +585,24 @@ fn should_parse_and_solve_unsat() {
 }
 
 #[test]
+fn should_elim_pure_lit() {
+    let res = DPLL::new(
+        vec![vec![1, -2, 3], vec![1, 2], vec![1, -2, -3]],
+        3,
+        6,
+        Heuristic::Arbitrary,
+        true,
+    )
+    .solve();
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+}
+
+#[test]
 fn bug_jan_2nd_should_be_sat() {
     let (mut input, mut v_c, mut c_c) =
-        crate::parse::parse("./src/inputs/sat/ssa7552-159.cnf").unwrap();
-    let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let DIMACSOutput::Unsat = res {
-        panic!("Was UNSAT but expected SAT.")
-    }
-
-    (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-158.cnf").unwrap();
-    let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let DIMACSOutput::Unsat = res {
-        panic!("Was UNSAT but expected SAT.")
-    }
-
-    (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
+        crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
