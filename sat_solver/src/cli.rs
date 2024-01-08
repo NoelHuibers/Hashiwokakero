@@ -4,9 +4,21 @@ use clap::{command, Arg, ArgAction};
 pub struct CliArgs {
     pub solver: String,
     pub inputpath: String,
-    pub heuristic: String,
+    pub heuristic: Heuristic,
     pub depth: bool,
     pub flamegraph: bool,
+}
+
+#[derive(Debug)]
+pub enum Heuristic {
+    Arbitrary,
+    DLIS,
+    DLCS,
+    MOM,
+    Boehm,
+    JeroslawWang,
+    VSIDS,
+    Custom,
 }
 
 pub fn cli() -> CliArgs {
@@ -59,10 +71,23 @@ pub fn cli() -> CliArgs {
     };
 
     let heuristic = match arguments.get_one::<String>("heuristic") {
-        Some(heuristic) => heuristic.to_string(),
+        Some(heuristic) => match heuristic.as_str() {
+            "arbitrary" => Heuristic::Arbitrary,
+            "dlis" => Heuristic::DLIS,
+            "dlcs" => Heuristic::DLCS,
+            "mom" => Heuristic::MOM,
+            "boehm" => Heuristic::Boehm,
+            "jeroslawwang" => Heuristic::JeroslawWang,
+            "vsids" => Heuristic::VSIDS,
+            "custom" => Heuristic::Custom,
+            _ => {
+                println!("Heuristic not found using arbitrary");
+                Heuristic::Arbitrary
+            }
+        },
         None => {
             println!("No heuristic specified, using arbitrary");
-            String::from("arbirtray")
+            Heuristic::Arbitrary
         }
     };
 
