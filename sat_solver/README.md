@@ -4,11 +4,11 @@
 
 Once built via `cargo build --release` the solver can be executed the following:
 
-`./target/release/dpll_solver -- bin dpll [MODE] [FILEPATH] --heuristic [HEURISTIC] [FLAGS]`
+`./target/release/dpll [MODE] [FILEPATH] --heuristic [HEURISTIC] [FLAGS]`
 
 ### MODE
 
-Currently, only the DPLL mode is available.
+Currently, only the `dpll` mode is available.
 
 ### HEURISTIC
 
@@ -19,8 +19,9 @@ Supported Heuristics are:
 - dlcs
 - mom
 - boehm
-- jeroslaw_wang
-- custom (in progress)
+- jeroslawwang
+- vsids
+- custom
 
 ### Flags
 
