@@ -19,7 +19,7 @@ Supported Heuristics are:
 - dlcs
 - mom
 - boehm
-- jeroslawwang
+- jeroslaw_wang
 - vsids
 - custom
 
@@ -35,13 +35,13 @@ Makes the flamegraph.
 
 To measure the CPU time for each `.cnf` file in `src/inputs`, run the `cputime` binary:
 
-`cargo run --bin cputime --time-limit [TIME-LIMIT] --heuristic [HEURISTIC]`
+`cargo run --bin cputime -- --time-limit [TIME-LIMIT] --heuristic [HEURISTIC]`
 
 ### TIME-LIMIT
 
 Time-Limit arguments:
 
-- true: 60sec execution time frame
+- true: 60sec execution time frame (default value)
 - false: measures the duration of the execution without timeout
 
 ## Plotting
@@ -66,8 +66,8 @@ Run the tests using cargo:
 - [x] Initializing the project
 - [x] Parser
 - [x] Edge cases for parser (e.g., newlines before 0 was found as in Zulip question)
-- [ ] Custom Heuristics
-- [ ] Code Refactoring with Clap
+- [x] Custom Heuristics
+- [x] Code Refactoring with Clap
 
 **Laura:**
 
@@ -75,11 +75,11 @@ Run the tests using cargo:
 - [x] Benchmarks / CPU Time
 - [x] Set Up: Cactus plots
 - [x] Heuristics
-- [ ] Complete benchmarking of test data + Cactus plots
+- [x] Complete benchmarking of test data + Cactus plots
 
 **Flo:**
 
 - [x] DPLL Algorithm
 - [x] Pure literal Elimination
 - [x] Better memory allocations
-- [ ] Bug Fix DPLL
+- [x] Bug Fix DPLL
