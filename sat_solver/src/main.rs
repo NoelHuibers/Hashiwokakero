@@ -1,5 +1,6 @@
 use flame;
 
+pub mod cdcl;
 pub mod cli;
 pub mod dpll;
 mod heuristics;
@@ -21,7 +22,7 @@ fn main() {
 
     let cert = match arguments.solver.as_str() {
         "dpll" => dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, depth).solve(),
-        "cdcl" => todo!(),
+        "cdcl" => cdcl::CDCL::new(vars, v_count, c_count, depth).solve(),
         otherwise => panic!("{} is not a valid mode.", otherwise),
     };
 

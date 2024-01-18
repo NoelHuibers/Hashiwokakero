@@ -77,7 +77,7 @@ pub fn cli() -> CliArgs {
             "dlcs" => Heuristic::DLCS,
             "mom" => Heuristic::MOM,
             "boehm" => Heuristic::Boehm,
-            "jeroslawwang" => Heuristic::JeroslawWang,
+            "jeroslaw_wang" => Heuristic::JeroslawWang,
             "vsids" => Heuristic::VSIDS,
             "custom" => Heuristic::Custom,
             _ => {
