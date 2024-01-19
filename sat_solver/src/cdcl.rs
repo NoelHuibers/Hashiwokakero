@@ -1,5 +1,5 @@
 use flame;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 use crate::dpll::DIMACSOutput; // Add this line to import the `cli` module from the crate root
 
@@ -12,9 +12,9 @@ type CIdx = usize;
 // - https://doc.rust-lang.org/reference/type-layout.html#tuple-layout
 // - https://doc.rust-lang.org/reference/types/struct.html#structtype
 pub(crate) struct Clause {
-    pub(crate) sat_by_var: BVar,
+    pub(crate) watched_lhs: BVar,
+    pub(crate) watched_rhs: BVar,
     pub(crate) vars: Vec<BVar>,
-    pub(crate) unassign_vars: u8,
 }
 
 pub(crate) struct Literal {
@@ -37,8 +37,7 @@ pub struct CDCL {
     lit_val: HashMap<Atom, Literal>,
     min_depth: u16,
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
-    neg_occ: HashMap<Atom, Vec<CIdx>>,
-    pos_occ: HashMap<Atom, Vec<CIdx>>,
+    pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
     // Using VecDaque for better push_front complexity
     unit_queue: VecDeque<BVar>,
 }
@@ -50,7 +49,6 @@ impl CDCL {
         clause_count: usize,
         show_depth: bool,
     ) -> Self {
-        flame::start("CDCL::new");
         let mut cdcl = CDCL {
             clauses: HashMap::with_capacity(clause_count),
             history: Vec::new(),
@@ -60,66 +58,58 @@ impl CDCL {
                 true => u16::MAX,
                 false => 0,
             },
-            neg_occ: HashMap::with_capacity(lit_count),
-            pos_occ: HashMap::with_capacity(lit_count),
+            pos_watched_occ: HashMap::with_capacity(clause_count * 2),
             unit_queue: VecDeque::new(),
         };
         // * read formula
         // Using iterators where possible for better performance
         input.into_iter().enumerate().for_each(|(c, vars)| {
             let clause = Clause {
-                sat_by_var: 0,
+                watched_lhs: *vars.first().unwrap(),
+                watched_rhs: *vars.last().unwrap(),
                 vars: vars.clone(),
-                unassign_vars: vars.len() as u8,
             };
             let fist_var = &clause.vars.clone()[0];
             cdcl.clauses.insert(c, clause);
             if vars.len() == 1 && !cdcl.unit_queue.contains(fist_var) {
                 cdcl.unit_queue.push_front(*fist_var);
             }
+            // Only set watched lits in watched_occ
+            vec![vars.first().unwrap(), vars.last().unwrap()]
+                .iter()
+                .for_each(|literal| {
+                    cdcl.pos_watched_occ
+                        .entry(**literal)
+                        .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
+                        .or_insert(vec![c]);
+                });
+            // All vars will be initialized and set as free
             vars.iter().for_each(|literal| {
-                let lit = literal.abs() as Atom;
+                let lit = literal;
                 cdcl.lit_val.insert(
-                    lit,
+                    literal.abs() as Atom,
                     Literal {
                         val: false,
                         is_free: true,
                     },
                 );
-                match literal.signum() {
-                    // TODO: Is it neccessary to check whether a variable occurs twice in same pol. in a clause?
-                    // When not checking clauses like (a \/ -a \/ ...) would not be taken into account.
-                    1 => cdcl
-                        .pos_occ
-                        .entry(lit)
-                        .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
-                        .or_insert(vec![c]),
-                    -1 => cdcl
-                        .neg_occ
-                        .entry(lit)
-                        .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
-                        .or_insert(vec![c]),
-                    _ => panic!("0 is not a valid Variable in the DIMACS format"),
-                };
-            })
+            });
         });
-        flame::end("CDCL::new");
         cdcl
     }
 
     pub fn solve(&mut self) -> DIMACSOutput {
         // * unit propagation
-        flame::start("CDCL::solve");
         let conflict = self.unit_prop();
         if conflict {
-            flame::end("CDCL::solve");
             return DIMACSOutput::Unsat;
         }
-        if self
-            .clauses
-            .values()
-            .fold(true, |i, c| i && c.sat_by_var != 0)
-        {
+        self.history_enabled = true;
+        if self.clauses.values().fold(true, |i, c| {
+            let lhs = self.lit_val.get(&(c.watched_lhs.abs() as Atom));
+            let rhs = self.lit_val.get(&(c.watched_rhs.abs() as Atom));
+            i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
+        }) {
             let res: Vec<i32> = self
                 .lit_val
                 .iter()
@@ -128,33 +118,27 @@ impl CDCL {
                     false => -(*atom as BVar),
                 })
                 .collect();
-            flame::end("CDCL::solve");
             return DIMACSOutput::Sat(res);
         }
 
         // * pure lit elim
-        let mut pure_lits = self.get_pure_lits();
-        if pure_lits.contains(&-718) {
-            println!("{}", self.neg_occ.get(&718).is_some());
-            println!("{}", self.pos_occ.get(&718).is_some());
-        }
 
         loop {
             // * choose literal var
-            let (var, val, forced) = match pure_lits.is_empty() {
-                true => {
-                    self.history_enabled = true;
-                    let (var, val) = todo!();
-                    (var, val, false)
-                }
-                false => {
-                    let lit = pure_lits.pop().unwrap();
-                    // As the lit occurs only in one polarity it doesn't make sense to try both assignments
-                    (lit, lit.is_positive(), true)
-                }
-            };
+            println!("Branching:");
+            // TODO is currently very inefficient and needs to be replaced by picking conflict literals.
+            let pos_occ = self
+                .pos_watched_occ
+                .iter()
+                .filter(|(var, _)| {
+                    self.lit_val
+                        .get(&(var.abs() as Atom))
+                        .is_some_and(|v| v.is_free)
+                })
+                .next();
+            let (var, val, forced) = (pos_occ.unwrap().0, true, false);
             // * set value var
-            self.set_var(forced, val, var);
+            self.set_var(forced, val, *var);
 
             // * unit propagation
             loop {
@@ -166,17 +150,16 @@ impl CDCL {
                 // * if conflict detected
                 let unsat = self.backtrack();
                 if unsat {
-                    flame::end("CDCL::solve");
                     return DIMACSOutput::Unsat;
                 }
             }
 
             // * if all clauses satisfied
-            if self
-                .clauses
-                .values()
-                .fold(true, |i, c| i && c.sat_by_var != 0)
-            {
+            if self.clauses.values().fold(true, |i, c| {
+                let lhs = self.lit_val.get(&(c.watched_lhs.abs() as Atom));
+                let rhs = self.lit_val.get(&(c.watched_rhs.abs() as Atom));
+                i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
+            }) {
                 let res: Vec<i32> = self
                     .lit_val
                     .iter()
@@ -185,36 +168,13 @@ impl CDCL {
                         false => -(*atom as BVar),
                     })
                     .collect();
-                flame::end("CDCL::solve");
                 return DIMACSOutput::Sat(res);
             }
         }
     }
 
-    fn get_pure_lits(&self) -> Vec<BVar> {
-        flame::start("get_pure_lits");
-        let neg_hs = self.neg_occ.keys().collect::<HashSet<&Atom>>();
-        let pos_hs = self.pos_occ.keys().collect::<HashSet<&Atom>>();
-        // neg_occ \ pos_occ
-        let pure = neg_hs.symmetric_difference(&pos_hs);
-        let result = pure
-            .into_iter()
-            .map(|&literal| {
-                // TODO: is the sign in the unitque important?
-                let sign = match pos_hs.get(literal) {
-                    Some(_) => 1,
-                    None => -1,
-                };
-                *literal as BVar * sign
-            })
-            .filter(|p| !self.lit_val.contains_key(&(p.abs() as u16)))
-            .collect::<Vec<BVar>>();
-        flame::end("get_pure_lits");
-        result
-    }
-
     fn backtrack(&mut self) -> bool {
-        flame::start("backtrack");
+        println!("Backtracking:");
         let mut last_step = self.history.pop();
         while last_step.as_ref().is_some_and(|step| step.forced) {
             self.unset_var(last_step.unwrap().var);
@@ -225,7 +185,6 @@ impl CDCL {
             println!("backtracked to depth {}", self.history.len());
         }
         if last_step.is_none() {
-            flame::end("backtrack");
             return true;
         }
         let var = last_step.as_ref().unwrap().var;
@@ -233,27 +192,24 @@ impl CDCL {
         self.unset_var(var);
         self.unit_queue.clear();
         self.set_var(true, !val, var);
-        flame::end("backtrack");
         false
     }
 
     fn unit_prop(&mut self) -> bool {
-        flame::start("unit propagation");
+        println!("Unit Prop:");
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // mark all clauses with pos_occ as sat
             let unsat = self.set_var(true, true, forced_lit);
             if unsat {
-                flame::end("unit propagation");
                 return true;
             }
         }
-        flame::end("unit propagation");
         false
     }
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar) -> bool {
-        flame::start("set var");
+        println!("\tsetting {} to {} (f: {})", var, val, forced);
         if self.history_enabled {
             self.history.push(Assignment { var, val, forced });
         }
@@ -267,72 +223,54 @@ impl CDCL {
         // <=> var.is_pos == value
         let new_val = val == var.is_positive();
         lit.val = new_val;
-        // mark all clauses with pos_occ as sat
-        // -1 true => neg_occ is sat
-        // -1 false => pos_occ is sat
-        // 1 true => pos_occ is sat
-        // 1 false => neg_occ is sat
-        // <=> var.is_pos == value
-        let (mark_sat, mark_unsat) = match new_val {
-            true => (&self.pos_occ, &self.neg_occ),
-            false => (&self.neg_occ, &self.pos_occ),
-        };
-        if let Some(occ) = mark_sat.get(&(var.abs() as Atom)) {
-            occ.iter().for_each(|c: &CIdx| {
-                self.clauses.entry(*c).and_modify(|sat_clause| {
-                    if sat_clause.sat_by_var == 0 {
-                        sat_clause.sat_by_var = var;
-                    }
-                });
-            });
+        let conflict_clauses = self.pos_watched_occ.get(&(var * -1));
+        if let None = conflict_clauses {
+            return conflict;
         }
-        if let Some(occ) = mark_unsat.get(&(var.abs() as Atom)) {
-            occ.iter().for_each(|c| {
-                let unsat_clause = self.clauses.get_mut(c).unwrap();
-                unsat_clause.unassign_vars = unsat_clause.unassign_vars - 1;
-                match unsat_clause.unassign_vars {
-                    0 => conflict = true,
-                    1 => {
-                        if let Some(free_lit) = unsat_clause.vars.iter().find(|&v| {
-                            self.lit_val.get(&(v.abs() as Atom)).unwrap().is_free
-                                && !self.unit_queue.contains(v)
-                        }) {
-                            self.unit_queue.push_front(*free_lit);
-                        }
+        for c_idx in conflict_clauses.unwrap().clone().iter() {
+            let clause = self.clauses.get_mut(c_idx).unwrap();
+            let new_watched_cand = clause
+                .vars
+                .iter()
+                .filter(|&v| self.lit_val.get(&(v.abs() as Atom)).unwrap().is_free)
+                .collect::<Vec<&BVar>>();
+            match new_watched_cand.len() {
+                0 => {
+                    conflict = true;
+                    break;
+                }
+                1 => {
+                    if new_watched_cand[0].is_positive() == val {
+                        break;
+                    } else {
+                        self.unit_queue.push_front(*new_watched_cand[0])
                     }
-                    _ => (),
-                };
-            })
+                }
+                _ => (),
+            }
+            let b = new_watched_cand.first().unwrap();
+            // TODO remove previous watched?
+            match var == clause.watched_lhs {
+                true => clause.watched_lhs = **b,
+                false => clause.watched_rhs = **b,
+            }
+            let old = var * -1;
+            let new = b;
+            let vars = self.pos_watched_occ.get_mut(&old).unwrap();
+            let idx = vars.iter().position(|x| x == c_idx).unwrap();
+            vars.remove(idx);
+            self.pos_watched_occ
+                .get_mut(new)
+                .get_or_insert(&mut vec![*c_idx])
+                .push(*c_idx);
         }
-        flame::end("set var");
         conflict
     }
 
     fn unset_var(&mut self, var: BVar) {
-        flame::start("unset var");
+        println!("\tunsetting {}", var);
         let lit_var = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
-        // Value of lit_var actually doesn't matter
-        let (mark_sat, mark_unsat) = match lit_var.val {
-            true => (&self.pos_occ, &self.neg_occ),
-            false => (&self.neg_occ, &self.pos_occ),
-        };
-        if let Some(occ) = mark_sat.get(&(var.abs() as Atom)) {
-            occ.iter().for_each(|c| {
-                self.clauses.entry(*c).and_modify(|sat_clause| {
-                    if sat_clause.sat_by_var == var {
-                        sat_clause.sat_by_var = 0;
-                    }
-                });
-            })
-        };
-        if let Some(occ) = mark_unsat.get(&(var.abs() as Atom)) {
-            occ.iter().for_each(|c| {
-                let unsat_clause = self.clauses.get_mut(c).unwrap();
-                unsat_clause.unassign_vars = unsat_clause.unassign_vars + 1;
-            })
-        }
-        flame::end("unset var");
     }
 }
 
