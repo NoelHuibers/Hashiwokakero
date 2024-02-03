@@ -1,5 +1,8 @@
 use flame;
-use std::{collections::{HashMap, HashSet, VecDeque}, io::stdout};
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    io::stdout,
+};
 
 use crate::dpll::DIMACSOutput; // Add this line to import the `cli` module from the crate root
 
@@ -111,7 +114,7 @@ impl CDCL {
         if self.clauses.values().fold(true, |i, c| {
             let lhs = self.lit_val.get(&(c.watched_lhs.abs() as Atom));
             let rhs = self.lit_val.get(&(c.watched_rhs.abs() as Atom));
-            i && (lhs.is_some_and(|l| !l.is_free) && rhs.is_some_and(|l| !l.is_free))
+            i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
         }) {
             let res: Vec<i32> = self
                 .lit_val
@@ -128,7 +131,6 @@ impl CDCL {
 
         loop {
             // * choose literal var
-            println!("Branching:");
             // TODO is currently very inefficient and needs to be replaced by picking conflict literals.
             let var = self.free_vars.iter().next().unwrap();
             let (var, val, forced) = (var, var.is_positive(), false);
@@ -153,7 +155,7 @@ impl CDCL {
             if self.clauses.values().fold(true, |i, c| {
                 let lhs = self.lit_val.get(&(c.watched_lhs.abs() as Atom));
                 let rhs = self.lit_val.get(&(c.watched_rhs.abs() as Atom));
-                i && (lhs.is_some_and(|l| !l.is_free) && rhs.is_some_and(|l| !l.is_free))
+                i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
             }) {
                 let res: Vec<i32> = self
                     .lit_val
@@ -169,7 +171,6 @@ impl CDCL {
     }
 
     fn backtrack(&mut self) -> bool {
-        println!("Backtracking:");
         let mut last_step = self.history.pop();
         while last_step.as_ref().is_some_and(|step| step.forced) {
             self.unset_var(last_step.unwrap().var);
@@ -191,7 +192,6 @@ impl CDCL {
     }
 
     fn unit_prop(&mut self) -> bool {
-        println!("Unit Prop:");
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // mark all clauses with pos_occ as sat
@@ -204,10 +204,6 @@ impl CDCL {
     }
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar) -> bool {
-        if var == -3 {
-            println!("Test")
-        }
-        println!("\tsetting {} to {} (f: {})", var, val, forced);
         let mut conflict = false;
         if self.history_enabled {
             self.history.push(Assignment { var, val, forced });
@@ -232,7 +228,7 @@ impl CDCL {
             return conflict;
         }
         for c_idx in conflict_clauses.unwrap().clone().iter() {
-            let clause = self.clauses.get_mut(c_idx).unwrap();
+            let mut clause = self.clauses.get_mut(c_idx).unwrap();
             // * if satisfying literal encountert
             if clause.vars.iter().any(|&v| {
                 self.lit_val
@@ -240,7 +236,7 @@ impl CDCL {
                     .is_some_and(|a: &Literal| !a.is_free && (a.val == v.is_positive()))
             }) {
                 // Because this clause is already sat
-                break;
+                continue;
             }
             let new_watched_cands = clause
                 .vars
@@ -253,13 +249,13 @@ impl CDCL {
                     conflict = true;
                 }
                 1 => {
-                // * if only one is found
+                    // * if only one is found
                     self.unit_queue
                         .push_front(**new_watched_cands.iter().next().unwrap());
                 }
                 _ => (),
             }
-            let other_watched = match var == clause.watched_rhs {
+            let other_watched = match conflict_literal == clause.watched_rhs {
                 true => clause.watched_lhs,
                 false => clause.watched_rhs,
             };
@@ -269,11 +265,11 @@ impl CDCL {
                 .filter(|&v| **v != other_watched)
                 .collect();
             if new_watched_cands.len() == 0 {
-                break;
+                continue;
             }
             let new = *new_watched_cands.first().unwrap();
             // * mark new var as watched
-            match var == clause.watched_rhs {
+            match conflict_literal == clause.watched_rhs {
                 true => clause.watched_rhs = **new,
                 false => clause.watched_lhs = **new,
             };
@@ -283,20 +279,144 @@ impl CDCL {
             vars.remove(idx);
             // * add clause to watch list
             self.pos_watched_occ
-                .get_mut(new)
-                .get_or_insert(&mut vec![*c_idx])
-                .push(*c_idx);
+                .entry(**new)
+                .and_modify(|vec| vec.push(*c_idx))
+                .or_insert(vec![*c_idx]);
         }
         conflict
     }
 
     fn unset_var(&mut self, var: BVar) {
-        println!("\tunsetting {}", var);
         self.free_vars.insert(var);
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
     }
+}
+
+#[test]
+fn set_var_1_true() {
+    let mut cdcl: CDCL = CDCL::new(
+        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
+        3,
+        3,
+        true,
+    );
+    assert_eq!(cdcl.free_vars.len(), 6);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
+    assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
+    let c = cdcl.set_var(false, true, 1);
+    assert!(!c);
+    assert_eq!(cdcl.free_vars.len(), 4);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().val, true);
+    assert_eq!(cdcl.unit_queue.len(), 1);
+    assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2)
+}
+
+#[test]
+fn set_var_neg_1_false() {
+    let mut cdcl: CDCL = CDCL::new(
+        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
+        3,
+        3,
+        true,
+    );
+    assert_eq!(cdcl.free_vars.len(), 6);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
+    assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
+    let c = cdcl.set_var(false, false, -1);
+    assert!(!c);
+    assert_eq!(cdcl.free_vars.len(), 4);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().val, true);
+    assert_eq!(cdcl.unit_queue.len(), 1);
+    assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2)
+}
+
+#[test]
+fn set_var_neg_1_true() {
+    let mut cdcl: CDCL = CDCL::new(
+        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
+        3,
+        3,
+        true,
+    );
+    assert_eq!(cdcl.free_vars.len(), 6);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
+    assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
+    let c = cdcl.set_var(false, true, -1);
+    assert!(!c);
+    assert_eq!(cdcl.free_vars.len(), 4);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().val, false);
+    assert_eq!(cdcl.unit_queue.len(), 0);
+    assert_eq!(cdcl.clauses.get(&0).unwrap().watched_lhs, -2)
+}
+
+#[test]
+fn set_var_1_false() {
+    let mut cdcl: CDCL = CDCL::new(
+        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
+        3,
+        3,
+        true,
+    );
+    assert_eq!(cdcl.free_vars.len(), 6);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
+    assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
+    let c = cdcl.set_var(false, true, -1);
+    assert!(!c);
+    assert_eq!(cdcl.free_vars.len(), 4);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
+    assert_eq!(cdcl.lit_val.get(&1).unwrap().val, false);
+    assert_eq!(cdcl.unit_queue.len(), 0);
+    assert_eq!(cdcl.clauses.get(&0).unwrap().watched_lhs, -2)
+}
+
+#[test]
+fn conflict_2() {
+    let mut cdcl: CDCL = CDCL::new(
+        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
+        3,
+        3,
+        true,
+    );
+    cdcl.set_var(false, false, -1);
+    let c = cdcl.set_var(false, false, 2);
+    assert!(c)
+}
+
+#[test]
+fn conflict_3() {
+    let mut cdcl: CDCL = CDCL::new(
+        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
+        3,
+        3,
+        true,
+    );
+    cdcl.set_var(false, false, -1);
+    let c_1 = cdcl.set_var(false, false, -2);
+    let c_2 = cdcl.set_var(false, false, -3);
+    assert!(!c_1);
+    assert!(c_2);
+}
+
+#[test]
+fn unit_prop() {
+    let mut cdcl: CDCL = CDCL::new(
+        vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
+        3,
+        3,
+        true,
+    );
+    cdcl.set_var(false, false, -1);
+    assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2);
+    cdcl.set_var(false, false, -2);
+    assert_eq!(cdcl.unit_queue.len(), 2);
+    cdcl.unit_prop();
+    assert_eq!(cdcl.lit_val.get(&3).unwrap().is_free, false);
+    assert_eq!(cdcl.lit_val.get(&3).unwrap().val, false);
 }
 
 #[test]
@@ -479,8 +599,7 @@ fn should_parse_and_solve_sat() {
 
 #[test]
 fn should_parse_and_solve_unsat() {
-    let (input, v_c, c_c) =
-        crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, true).solve();
     if let DIMACSOutput::Sat(_) = res {
         panic!("Was UNSAT but expected SAT.")
