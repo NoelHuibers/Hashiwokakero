@@ -194,14 +194,16 @@ impl CDCL {
     fn unit_prop(&mut self) -> bool {
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
-            // mark all clauses with pos_occ as sat
+            // Try to set the literal. If this results in a conflict, `unsat` is true.
             let unsat = self.set_var(true, true, forced_lit);
             if unsat {
-                return true;
+                // A conflict has been detected, so derive and add a conflict clause.
+                self.derive_and_add_conflict_clause();
+                return true; // Signalize that a conflict has occurred
             }
         }
-        false
-    }
+        false // No conflict found
+    } 
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar) -> bool {
         let mut conflict = false;
@@ -291,6 +293,24 @@ impl CDCL {
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
+    }
+    
+    fn derive_and_add_conflict_clause(&mut self) {
+        if let Some(last_assignment) = self.history.last() {
+            let conflict_var = last_assignment.var;
+            let conflict_clause = vec![-conflict_var]; //  simple conflict clause containing only the negated last literal
+
+            // Create a new Clause instance
+            let new_clause = Clause {
+                watched_lhs: conflict_clause[0],
+                watched_rhs: conflict_clause[0], // if the clause contains only one literal, this is used as both observed literals
+                vars: conflict_clause,
+            };
+
+            // Add the new clause to the clause database
+            let new_clause_id = self.clauses.len();
+            self.clauses.insert(new_clause_id, new_clause);
+        }
     }
 }
 
@@ -634,4 +654,20 @@ fn bug_jan_2nd_should_be_sat() {
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
     }
+}
+
+#[test]
+fn test_derive_and_add_conflict_clause() {
+    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2]], 2, 2, false);
+    
+    // Set an assignment that would lead to a conflict
+    cdcl.history.push(Assignment { var: 1, val: true, forced: false });
+    
+    // Simulate the unit propagation that recognizes a conflict
+    cdcl.derive_and_add_conflict_clause();
+
+    // Check whether a new conflict clause has been added
+    assert_eq!(cdcl.clauses.len(), 3); // Expect that there are now 3 clauses in the database
+    let new_clause = cdcl.clauses.get(&2).unwrap(); // The new conflict clause should have the ID 2
+    assert_eq!(new_clause.vars, vec![-1]); // The new conflict clause should contain the negated literal
 }
