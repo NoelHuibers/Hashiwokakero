@@ -1,8 +1,5 @@
-use flame;
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    io::stdout,
-};
+//use flame;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::dpll::DIMACSOutput; // Add this line to import the `cli` module from the crate root
 
@@ -29,6 +26,15 @@ struct Assignment {
     var: BVar,
     val: bool,
     forced: bool,
+    decision_level: u32,
+}
+
+#[derive(Debug, Clone)]
+struct ImplicationGraphNode {
+    literal: BVar,
+    decision_level: u32, 
+    reason: Option<usize>, 
+    predecessors: Vec<BVar>,
 }
 
 pub struct CDCL {
@@ -44,6 +50,7 @@ pub struct CDCL {
     pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
     // Using VecDaque for better push_front complexity
     unit_queue: VecDeque<BVar>,
+    implication_graph: HashMap<BVar, ImplicationGraphNode>,
 }
 
 impl CDCL {
@@ -65,6 +72,7 @@ impl CDCL {
             },
             pos_watched_occ: HashMap::with_capacity(clause_count * 2),
             unit_queue: VecDeque::new(),
+            implication_graph: HashMap::new(),
         };
         // * read formula
         // Using iterators where possible for better performance
@@ -208,7 +216,8 @@ impl CDCL {
     fn set_var(&mut self, forced: bool, val: bool, var: BVar) -> bool {
         let mut conflict = false;
         if self.history_enabled {
-            self.history.push(Assignment { var, val, forced });
+            let decision_level = self.history.len() as u32;
+            self.history.push(Assignment { var, val, forced, decision_level });
         }
         let lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit.is_free = false;
@@ -294,23 +303,151 @@ impl CDCL {
         let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
     }
+
+    // Function for deriving and adding a conflict clause
+    fn derive_and_add_conflict_clause(&mut self) -> Result<(), String> {
+        match self.analyze_conflict() {
+            Ok((conflict_clause, backtrack_level)) => {
+                if conflict_clause.is_empty() {
+                    let error_message = "No conflict clause found. Check the implementation of analyze_conflict.".to_string();
+                    println!("{}", &error_message);
+                    return Err(error_message);
+                }
     
-    fn derive_and_add_conflict_clause(&mut self) {
-        if let Some(last_assignment) = self.history.last() {
-            let conflict_var = last_assignment.var;
-            let conflict_clause = vec![-conflict_var]; //  simple conflict clause containing only the negated last literal
-
-            // Create a new Clause instance
-            let new_clause = Clause {
-                watched_lhs: conflict_clause[0],
-                watched_rhs: conflict_clause[0], // if the clause contains only one literal, this is used as both observed literals
-                vars: conflict_clause,
-            };
-
-            // Add the new clause to the clause database
-            let new_clause_id = self.clauses.len();
-            self.clauses.insert(new_clause_id, new_clause);
+                // Add conflict clause to the database
+                let clause_id = self.clauses.len();
+                self.clauses.insert(clause_id, Clause {
+                    watched_lhs: conflict_clause[0],
+                    watched_rhs: conflict_clause.get(1).cloned().unwrap_or(conflict_clause[0]),
+                    vars: conflict_clause,
+                });
+    
+                // Perform non-chronological backtracking
+                self.non_chronological_backtrack(backtrack_level);
+    
+                Ok(())
+            },
+            Err(e) => {
+                // Handle the error case
+                Err(e)
+            }
         }
+    }    
+
+    // Function for conflict analysis
+    fn analyze_conflict(&mut self) -> Result<(Vec<BVar>, u32), String> {
+        let conflict_var = self.history.last().ok_or("No history found for conflict")?.var;
+        let mut seen = HashSet::new();
+        let mut stack = vec![conflict_var];
+        let mut involved_literals = Vec::new();
+        let mut backtrack_level = 0;
+        let current_decision_level = self.current_decision_level();
+    
+        let mut last_common_ancestor = None; // Variable for saving the 1-UIP
+        
+        while let Some(var) = stack.pop() {
+            if seen.contains(&var) {
+                continue;
+            }
+            seen.insert(var);
+    
+            if let Some(node) = self.implication_graph.get(&var) {
+                if node.reason.is_none() && var != conflict_var {
+                    continue;
+                }
+    
+                involved_literals.push(var); // Collecting the literals involved
+    
+                //  for identifying the 1-UIP
+                if last_common_ancestor.is_none() || self.implication_graph[&var].decision_level < current_decision_level {
+                    last_common_ancestor = Some(var);
+                }
+    
+                for &pred in &node.predecessors {
+                    if self.implication_graph[&pred].decision_level < current_decision_level {
+                        backtrack_level = backtrack_level.max(self.implication_graph[&pred].decision_level);
+                    } else {
+                        stack.push(pred);
+                    }
+                }
+            }
+        }
+    
+        // Use last_common_ancestor and the literals involved to create the conflict clause
+        let conflict_clause = self.derive_conflict_clause(&involved_literals, last_common_ancestor)?;
+    
+        Ok((conflict_clause, backtrack_level))
+    }
+
+    fn derive_conflict_clause(&self, involved_literals: &Vec<BVar>, last_common_ancestor: Option<BVar>) -> Result<Vec<BVar>, String> {
+        if let Some(ancestor) = last_common_ancestor {
+            let conflict_clause: Vec<BVar> = involved_literals.iter().filter(|&&lit| lit == ancestor || self.is_descendant_of(lit, ancestor)).map(|&lit| -lit).collect();
+            if conflict_clause.is_empty() {
+                return Err("No literals found for conflict clause".to_string());
+            }
+            Ok(conflict_clause)
+        } else {
+            Err("1-UIP not found".to_string())
+        }
+    }
+    
+    fn is_descendant_of(&self, lit: BVar, ancestor: BVar) -> bool {
+        let mut stack = vec![lit]; // Stack for DFS, starting with `lit`
+        let mut seen = HashSet::new(); // Set to note already visited nodes
+    
+        while let Some(current_lit) = stack.pop() {
+            if current_lit == ancestor {
+                return true; // `ancestor` found, `lit` is a descendant
+            }
+    
+            // Avoid visiting the same node more than once
+            if !seen.insert(current_lit) {
+                continue;
+            }
+    
+            // Access the current node in the implication graph
+            if let Some(node) = self.implication_graph.get(&current_lit) {
+                // Add all predecessors of the current node to the stack for the further search
+                for &pred in &node.predecessors {
+                    stack.push(pred);
+                }
+            }
+        }  
+        false // `ancestor` was not found, `lit` is not a descendant
+    }
+    
+
+    fn current_decision_level(&self) -> u32 {
+        self.history.iter().map(|a| a.decision_level).max().unwrap_or(0)
+    }
+
+    fn non_chronological_backtrack(&mut self, assertion_level: u32) {
+        // Reset assignments that were made after the assertion level
+        while let Some(assignment) = self.history.last() {
+            if assignment.decision_level < assertion_level {
+                break; 
+            }
+    
+            // Undo assignment
+            let var = assignment.var;
+            let lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
+            lit.is_free = true; // Mark literal as free
+            self.free_vars.insert(var); // Insert back into the set of free variables
+            self.free_vars.insert(-var); // Also the negated literal
+    
+            // Remove last assignment from the history
+            self.history.pop();
+        }
+    
+        // Empty the unit queue, as all subsequent units are invalid
+        self.unit_queue.clear();
+    
+        // Update the implication graph to reflect the undone assignments
+        self.update_implication_graph(assertion_level);
+    }
+    
+    fn update_implication_graph(&mut self, valid_level: u32) {
+        self.implication_graph.retain(|_, node| node.decision_level <= valid_level);
     }
 }
 
@@ -656,18 +793,97 @@ fn bug_jan_2nd_should_be_sat() {
     }
 }
 
+//TODO -> fails
 #[test]
 fn test_derive_and_add_conflict_clause() {
-    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2]], 2, 2, false);
-    
-    // Set an assignment that would lead to a conflict
-    cdcl.history.push(Assignment { var: 1, val: true, forced: false });
-    
-    // Simulate the unit propagation that recognizes a conflict
-    cdcl.derive_and_add_conflict_clause();
+    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2], vec![-2, 3]], 3, 3, false);
+    cdcl.history.push(Assignment { var: 1, val: true, forced: false, decision_level: 1 });
+    cdcl.history.push(Assignment { var: -2, val: true, forced: true, decision_level: 2 });
 
-    // Check whether a new conflict clause has been added
-    assert_eq!(cdcl.clauses.len(), 3); // Expect that there are now 3 clauses in the database
-    let new_clause = cdcl.clauses.get(&2).unwrap(); // The new conflict clause should have the ID 2
-    assert_eq!(new_clause.vars, vec![-1]); // The new conflict clause should contain the negated literal
+   // Simulate a conflict with Literal -2
+    cdcl.implication_graph.insert(-2, ImplicationGraphNode {
+        literal: -2,
+        decision_level: 2,
+        reason: Some(2), 
+        predecessors: vec![1],
+    });
+
+    assert!(cdcl.derive_and_add_conflict_clause().is_ok());
+    assert_eq!(cdcl.clauses.len(), 4);
 }
+
+//TODO -> fails
+#[test]
+fn test_analyze_conflict() {
+    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2]], 2, 2, false);
+    cdcl.history.push(Assignment { var: 1, val: true, forced: false, decision_level: 1 });
+    cdcl.history.push(Assignment { var: -2, val: true, forced: true, decision_level: 1 });
+
+    // Simulate a conflict 
+    let result = cdcl.analyze_conflict();
+    assert!(result.is_ok());
+    let (conflict_clause, backtrack_level) = result.unwrap();
+    assert!(!conflict_clause.is_empty()); 
+    assert_eq!(backtrack_level, 1); 
+}
+
+#[test]
+fn test_derive_conflict_clause() {
+    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2]], 2, 2, false);
+    // Assuming the literals involved are 1 and -2, and 1 is the 1-UIP
+    let involved_literals = vec![1, -2];
+    let last_common_ancestor = Some(1);
+
+    let result = cdcl.derive_conflict_clause(&involved_literals, last_common_ancestor);
+    assert!(result.is_ok());
+
+    let conflict_clause = result.unwrap();
+    // Expect the conflict-indicating clause to contain -1, since 1 is the 1-UIP and is negated
+    assert!(conflict_clause.contains(&-1));
+}
+
+#[test]
+fn test_current_decision_level() {
+    let mut cdcl = CDCL::new(vec![], 0, 0, false);
+    assert_eq!(cdcl.current_decision_level(), 0); // No assignments, decision level should be 0
+
+    cdcl.history.push(Assignment { var: 1, val: true, forced: false, decision_level: 1 });
+    assert_eq!(cdcl.current_decision_level(), 1); // An assignment at level 1
+
+    cdcl.history.push(Assignment { var: 2, val: false, forced: true, decision_level: 2 });
+    assert_eq!(cdcl.current_decision_level(), 2); // Another assignment at level 2
+}
+
+#[test]
+fn test_is_descendant_of() {
+    let mut cdcl = CDCL::new(vec![], 0, 0, false);
+    cdcl.implication_graph.insert(1, ImplicationGraphNode {
+        literal: 1,
+        decision_level: 1,
+        reason: None,
+        predecessors: vec![],
+    });
+    cdcl.implication_graph.insert(-2, ImplicationGraphNode {
+        literal: -2,
+        decision_level: 2,
+        reason: Some(1),
+        predecessors: vec![1],
+    });
+
+    assert!(cdcl.is_descendant_of(-2, 1));
+    assert!(!cdcl.is_descendant_of(1, -2)); // 1 is not a descendant of -2
+}
+
+//TODO -> fails
+#[test]
+fn test_non_chronological_backtrack() {
+    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2]], 2, 2, false);
+    cdcl.history.push(Assignment { var: 1, val: true, forced: false, decision_level: 1 });
+    cdcl.history.push(Assignment { var: 2, val: true, forced: true, decision_level: 2 });
+
+    cdcl.non_chronological_backtrack(1);
+
+    assert_eq!(cdcl.current_decision_level(), 1);
+    assert!(cdcl.history.iter().all(|a| a.decision_level <= 1));
+}
+
