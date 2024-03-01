@@ -793,24 +793,46 @@ fn bug_jan_2nd_should_be_sat() {
     }
 }
 
-//TODO -> fails
 #[test]
 fn test_derive_and_add_conflict_clause() {
     let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2], vec![-2, 3]], 3, 3, false);
+
+    // Initialize the values and status for the variables in the Literal Values HashMap
+    cdcl.lit_val.insert(1, Literal { val: true, is_free: false });
+    cdcl.lit_val.insert(2, Literal { val: false, is_free: false });
+    cdcl.lit_val.insert(3, Literal { val: false, is_free: true });
+
+    // Add assignments to the history
     cdcl.history.push(Assignment { var: 1, val: true, forced: false, decision_level: 1 });
     cdcl.history.push(Assignment { var: -2, val: true, forced: true, decision_level: 2 });
 
-   // Simulate a conflict with Literal -2
+    // Make sure that all required nodes are present in the implication_graph
+    cdcl.implication_graph.insert(1, ImplicationGraphNode {
+        literal: 1,
+        decision_level: 1,
+        reason: None, // No reason for decision knots
+        predecessors: vec![],
+    });
     cdcl.implication_graph.insert(-2, ImplicationGraphNode {
         literal: -2,
         decision_level: 2,
-        reason: Some(2), 
+        reason: Some(2), // Refers to an existing clause
         predecessors: vec![1],
     });
 
-    assert!(cdcl.derive_and_add_conflict_clause().is_ok());
-    assert_eq!(cdcl.clauses.len(), 4);
+    // Make sure that the clause to which the reason refers exists
+    cdcl.clauses.insert(2, Clause {
+        watched_lhs: -2,
+        watched_rhs: 3,
+        vars: vec![-2, 3],
+    });
+
+    let result = cdcl.derive_and_add_conflict_clause();
+    assert!(result.is_ok(), "Conflict clause should be successfully derived.");
+
+    assert_eq!(cdcl.clauses.len(), 4, "A new conflict clause should have been added.");
 }
+
 
 //TODO -> fails
 #[test]
