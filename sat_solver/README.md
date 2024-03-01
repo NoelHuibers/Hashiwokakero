@@ -66,8 +66,10 @@ Run the tests using cargo:
 - [x] Initializing the project
 - [x] Parser
 - [x] Edge cases for parser (e.g., newlines before 0 was found as in Zulip question)
-- [ ] Custom Heuristics
-- [ ] Code Refactoring with Clap
+- [x] Custom Heuristics
+- [x] Code Refactoring with Clap
+- [ ] Use `analyze_conflict` and `non_chronological_backtrack` with the implication graph created during unit prop
+- [ ] Replace `backtrack` with `non_chronological_backtrack` => TODO: remove assignment stack?
 
 **Laura:**
 
@@ -75,11 +77,11 @@ Run the tests using cargo:
 - [x] Benchmarks / CPU Time
 - [x] Set Up: Cactus plots
 - [x] Heuristics
-- [ ] Complete benchmarking of test data + Cactus plots
+- [x] Complete benchmarking of test data + Cactus plots
 
 **Flo:**
 
 - [x] DPLL Algorithm
 - [x] Pure literal Elimination
 - [x] Better memory allocations
-- [ ] Bug Fix DPLL
+- [x] Bug Fix DPLL
