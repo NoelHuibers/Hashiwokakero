@@ -158,7 +158,10 @@ impl CDCL {
                 };
 
                 // * if conflict detected
-                let unsat = self.backtrack();
+                let unsat = match self.backtrack_non_chron() {
+                    Ok(b) => b,
+                    Err(e) => panic!("{}", e),
+                };
                 if unsat {
                     return DIMACSOutput::Unsat;
                 }
@@ -331,10 +334,11 @@ impl CDCL {
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
+        self.implication_graph.0.remove(&var.abs());
     }
 
     // Function for deriving and adding a conflict clause
-    fn derive_and_add_conflict_clause(&mut self) -> Result<(), String> {
+    fn backtrack_non_chron(&mut self) -> Result<bool, String> {
         match self.analyze_conflict() {
             Ok((conflict_clause, backtrack_level)) => {
                 if conflict_clause.is_empty() {
@@ -347,12 +351,10 @@ impl CDCL {
 
                 // Add conflict clause to the database
                 let clause_id = self.clauses.len() + self.clause_db.len();
-                self.insert_clause(clause_id, conflict_clause);
+                self.insert_clause(clause_id, conflict_clause.clone());
 
                 // Perform non-chronological backtracking
-                self.non_chronological_backtrack(backtrack_level);
-
-                Ok(())
+                Ok(self.non_chronological_backtrack(backtrack_level, conflict_clause))
             }
             Err(e) => {
                 // Handle the error case
@@ -366,29 +368,30 @@ impl CDCL {
         let mut stack = self.history.clone();
         let mut seen = HashSet::new(); // Set to note already visited nodes
         let mut current_node: Option<&ImplicationGraphNode> = None;
-        let mut current_vars = self.clauses[&self
-            .implication_graph
-            .get_conflict_node()?
-            .reason
-            .unwrap()]
+        let mut current_vars = self.clauses
+            [&self.implication_graph.get_conflict_node()?.reason.unwrap()]
             .vars
             .clone();
         let literals_of_max_branch_depth = self.literals_conflict_depth();
         while !is_asserting(&current_vars, &literals_of_max_branch_depth) {
-            current_node = self.implication_graph.0.get(&stack.pop().unwrap().var);
-            if let None = current_node {
-                continue;
+            if let Some(next) = stack.pop() {
+                current_node = self.implication_graph.0.get(&next.var);
+                if let None = current_node {
+                    continue;
+                }
+                if !seen.insert(current_node) {
+                    continue;
+                }
+                if let None = current_node.unwrap().reason {
+                    continue;
+                }
+                current_vars = resolution(
+                    &current_vars,
+                    &self.clauses[&current_node.unwrap().reason.unwrap()].vars,
+                );
+            } else {
+                return Err("Backtracked until the end without finding an asserting clause.".into());
             }
-            if !seen.insert(current_node) {
-                continue;
-            }
-            if let None = current_node.unwrap().reason {
-                continue;
-            }
-            current_vars = resolution(
-                &current_vars,
-                &self.clauses[&current_node.unwrap().reason.unwrap()].vars,
-            );
         }
         let backtrack_depth = current_vars
             .iter()
@@ -422,10 +425,15 @@ impl CDCL {
         Vec::from_iter(result)
     }
 
-    fn non_chronological_backtrack(&mut self, assertion_level: u32) {
+    fn non_chronological_backtrack(
+        &mut self,
+        assertion_level: u32,
+        conflict_clause: Vec<i32>,
+    ) -> bool {
+        // * undo all assignments of branching level > d
         // Reset assignments that were made after the assertion level
         while let Some(assignment) = self.history.last() {
-            if assignment.decision_level < assertion_level {
+            if assignment.decision_level <= assertion_level {
                 break;
             }
 
@@ -435,12 +443,24 @@ impl CDCL {
             // Remove last assignment from the history
             self.history.pop();
         }
+        if self.history.is_empty() {
+            return true;
+        }
+
+        // * set branching depth to d
+        self.branch_depth = assertion_level;
 
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
 
-        // Update the implication graph to reflect the undone assignments
-        self.implication_graph.update(assertion_level);
+        // TODO: not so nice to filter the clause here. I'm sure this literal can be retrieved during conflict analysis
+        let &unit_lit = conflict_clause
+            .iter()
+            .filter(|l| !self.lit_val[&(l.abs() as Atom)].is_free)
+            .next()
+            .unwrap();
+        self.unit_queue.push_front(unit_lit);
+        false
     }
 
     fn insert_clause(&mut self, clause_id: usize, conflict_clause: Vec<i32>) {
@@ -894,7 +914,7 @@ fn test_derive_and_add_conflict_clause() {
     cdcl.set_var(true, false, true, 1);
     cdcl.unit_prop();
 
-    let result = cdcl.derive_and_add_conflict_clause();
+    let result = cdcl.backtrack_non_chron();
     assert!(
         result.is_ok(),
         "Conflict clause should be successfully derived."
@@ -930,4 +950,3 @@ fn test_current_decision_level() {
     cdcl.solve();
     assert_eq!(cdcl.branch_depth, 2); // Assign 1 -> unit prop 2 -> Assign 2 => decision_level of 2
 }
-
