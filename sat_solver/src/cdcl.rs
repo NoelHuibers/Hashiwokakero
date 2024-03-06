@@ -4,7 +4,10 @@ use std::{
     vec,
 };
 
-use crate::dpll::DIMACSOutput; // Add this line to import the `cli` module from the crate root
+use crate::{
+    dpll::DIMACSOutput,
+    implication_graph::{ImplicationGraph, ImplicationGraphNode},
+}; // Add this line to import the `cli` module from the crate root
 
 type Atom = u16;
 type BVar = i32;
@@ -25,73 +28,12 @@ pub(crate) struct Literal {
     pub(crate) is_free: bool,
 }
 
+#[derive(Clone)]
 struct Assignment {
     var: BVar,
     val: bool,
     forced: bool,
     decision_level: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct ImplicationGraphNode {
-    literal: BVar,
-    decision_level: u32,
-    reason: Option<usize>,
-    predecessors: Vec<BVar>,
-}
-
-#[derive(Debug, Clone)]
-struct ImplicationGraph(HashMap<BVar, ImplicationGraphNode>);
-
-impl ImplicationGraph {
-    fn new() -> Self {
-        ImplicationGraph(HashMap::new())
-    }
-    fn insert_leaf(&mut self, var: i32, depth: u32) {
-        self.0.insert(
-            var.abs(),
-            ImplicationGraphNode {
-                literal: var,
-                decision_level: depth,
-                reason: None,
-                predecessors: vec![],
-            },
-        );
-    }
-    fn insert_conflict_node(&mut self, c_idx: CIdx, vars: Vec<i32>, depth: u32) {
-        self.0.insert(
-            0,
-            ImplicationGraphNode {
-                literal: 0,
-                decision_level: depth,
-                reason: Some(c_idx),
-                predecessors: vars.iter().map(|v| v.abs()).collect(),
-            },
-        );
-    }
-    fn insert_edge(&mut self, vars: Vec<i32>, source: i32, val: bool, c_idx: CIdx, depth: u32) {
-        // Abort if the polarity of var ist not actually conflicting with the literal in c_idx
-        if source.is_negative() == val {
-            return;
-        }
-        let vars = vars
-            .iter()
-            .filter(|&v| self.0.get(v).is_some() || self.0.get(&-v).is_some())
-            .map(|v| *v)
-            .collect::<Vec<i32>>();
-        self.0
-            .entry(source.abs())
-            .and_modify(|node| node.predecessors.extend(vars.clone()))
-            .or_insert(ImplicationGraphNode {
-                literal: source,
-                decision_level: depth,
-                reason: Some(c_idx),
-                predecessors: vars.iter().map(|v| v.abs()).collect(),
-            });
-    }
-    fn get_conflict_node(&self) -> Option<&ImplicationGraphNode> {
-        self.0.get(&0)
-    }
 }
 
 pub struct CDCL {
@@ -277,7 +219,7 @@ impl CDCL {
     fn set_var(&mut self, branched: bool, forced: bool, val: bool, var: BVar) -> bool {
         let mut conflict = false;
         if self.history_enabled {
-            let decision_level = self.history.len() as u32;
+            let decision_level = self.branch_depth;
             self.history.push(Assignment {
                 var,
                 val,
@@ -310,7 +252,10 @@ impl CDCL {
             return conflict;
         }
         for c_idx in conflict_clauses.unwrap().clone().iter() {
-            let mut clause = self.clauses.get_mut(c_idx).unwrap();
+            let mut clause = match self.clauses.get_mut(&c_idx) {
+                Some(c) => c,
+                None => self.clause_db.get_mut(c_idx).unwrap(),
+            };
             // * if satisfying literal encountert
             if clause.vars.iter().any(|&v| {
                 self.lit_val
@@ -402,17 +347,7 @@ impl CDCL {
 
                 // Add conflict clause to the database
                 let clause_id = self.clauses.len() + self.clause_db.len();
-                self.clause_db.insert(
-                    clause_id,
-                    Clause {
-                        watched_lhs: conflict_clause[0],
-                        watched_rhs: conflict_clause
-                            .get(1)
-                            .cloned()
-                            .unwrap_or(conflict_clause[0]),
-                        vars: conflict_clause,
-                    },
-                );
+                self.insert_clause(clause_id, conflict_clause);
 
                 // Perform non-chronological backtracking
                 self.non_chronological_backtrack(backtrack_level);
@@ -428,52 +363,39 @@ impl CDCL {
 
     // 1-UIP Cut
     fn analyze_conflict(&mut self) -> Result<(Vec<BVar>, u32), String> {
-        let conflict_node = self.implication_graph.get_conflict_node().unwrap();
-        let mut queue = VecDeque::new(); // Queue for BFS, starting with `lit`
-        queue.push_front(conflict_node);
+        let mut stack = self.history.clone();
         let mut seen = HashSet::new(); // Set to note already visited nodes
-        let mut current_node = Some(conflict_node);
-        let mut current_vars = self.clauses[&current_node.unwrap().reason.unwrap()]
+        let mut current_node: Option<&ImplicationGraphNode> = None;
+        let mut current_vars = self.clauses[&self
+            .implication_graph
+            .get_conflict_node()?
+            .reason
+            .unwrap()]
             .vars
             .clone();
-        let mut conflict_vars = HashSet::new();
         let literals_of_max_branch_depth = self.literals_conflict_depth();
         while !is_asserting(&current_vars, &literals_of_max_branch_depth) {
-            current_node = queue.pop_back();
+            current_node = self.implication_graph.0.get(&stack.pop().unwrap().var);
             if let None = current_node {
                 continue;
             }
-            let current_node = current_node.unwrap();
             if !seen.insert(current_node) {
                 continue;
             }
-            // Add all predecessors of the current node to the queue for the further search
-            current_node.predecessors.iter().for_each(|pred| {
-                queue.push_front(&self.implication_graph.0[&pred]);
-            });
-            if let None = current_node.reason {
+            if let None = current_node.unwrap().reason {
                 continue;
             }
             current_vars = resolution(
                 &current_vars,
-                &self.clauses[&current_node.reason.unwrap()].vars,
+                &self.clauses[&current_node.unwrap().reason.unwrap()].vars,
             );
-            conflict_vars = conflict_vars
-                .union(&HashSet::from_iter(
-                    current_node.predecessors.iter().cloned(),
-                ))
-                .map(|v| *v)
-                .collect();
-            conflict_vars.remove(&current_node.literal.abs());
         }
-        conflict_vars = conflict_vars
-            .into_iter()
-            .map(|var| match self.lit_val[&(var as Atom)].val {
-                true => -var,
-                false => var,
-            })
-            .collect();
-        Ok((conflict_vars.into_iter().collect(), 0))
+        let backtrack_depth = current_vars
+            .iter()
+            .map(|v| self.implication_graph.0[&v.abs()].decision_level)
+            .min()
+            .unwrap();
+        Ok((current_vars.into_iter().collect(), backtrack_depth))
     }
 
     // This could be tracked during construction of impl graph
@@ -509,11 +431,7 @@ impl CDCL {
 
             // Undo assignment
             let var = assignment.var;
-            let lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
-            lit.is_free = true; // Mark literal as free
-            self.free_vars.insert(var); // Insert back into the set of free variables
-            self.free_vars.insert(-var); // Also the negated literal
-
+            self.unset_var(var);
             // Remove last assignment from the history
             self.history.pop();
         }
@@ -522,13 +440,24 @@ impl CDCL {
         self.unit_queue.clear();
 
         // Update the implication graph to reflect the undone assignments
-        self.update_implication_graph(assertion_level);
+        self.implication_graph.update(assertion_level);
     }
 
-    fn update_implication_graph(&mut self, valid_level: u32) {
-        self.implication_graph
-            .0
-            .retain(|_, node| node.decision_level <= valid_level);
+    fn insert_clause(&mut self, clause_id: usize, conflict_clause: Vec<i32>) {
+        self.clause_db.insert(
+            clause_id,
+            Clause {
+                watched_lhs: conflict_clause[0],
+                watched_rhs: conflict_clause
+                    .get(1)
+                    .cloned()
+                    .unwrap_or(conflict_clause[0]),
+                vars: conflict_clause.clone(),
+            },
+        );
+        conflict_clause
+            .iter()
+            .for_each(|lit| self.pos_watched_occ.get_mut(lit).unwrap().push(clause_id));
     }
 }
 
@@ -574,6 +503,7 @@ fn test_lecture() {
         11,
         false,
     );
+    cdcl.history_enabled = true;
     cdcl.set_var(true, false, false, 9);
     cdcl.branch_depth += 1;
     cdcl.unit_prop();
@@ -600,10 +530,12 @@ fn test_lecture() {
     assert!(cdcl.implication_graph.0[&3].predecessors.contains(&9));
     assert!(cdcl.implication_graph.0[&11].predecessors.contains(&10));
     assert!(cdcl.implication_graph.0[&13].predecessors.contains(&12));
+    assert_eq!(cdcl.literals_conflict_depth().len(), 6); // Inclduing 0 for the conflict node
     assert_eq!(cdcl.implication_graph.0[&9].decision_level, 0);
     assert_eq!(cdcl.implication_graph.0[&6].decision_level, 3);
     assert_eq!(cdcl.implication_graph.0[&6].reason, Some(4));
     let conflict = cdcl.analyze_conflict();
+    assert_eq!(conflict.clone().unwrap().1, 1);
     assert!(conflict.clone().unwrap().0.contains(&-4));
     assert!(conflict.clone().unwrap().0.contains(&10));
     assert!(conflict.unwrap().0.contains(&11));
@@ -953,74 +885,14 @@ fn bug_jan_2nd_should_be_sat() {
 
 #[test]
 fn test_derive_and_add_conflict_clause() {
-    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2], vec![-2, 3]], 3, 3, false);
+    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2], vec![-2, -1]], 3, 3, false);
 
     // Initialize the values and status for the variables in the Literal Values HashMap
-    cdcl.lit_val.insert(
-        1,
-        Literal {
-            val: true,
-            is_free: false,
-        },
-    );
-    cdcl.lit_val.insert(
-        2,
-        Literal {
-            val: false,
-            is_free: false,
-        },
-    );
-    cdcl.lit_val.insert(
-        3,
-        Literal {
-            val: false,
-            is_free: true,
-        },
-    );
 
-    // Add assignments to the history
-    cdcl.history.push(Assignment {
-        var: 1,
-        val: true,
-        forced: false,
-        decision_level: 1,
-    });
-    cdcl.history.push(Assignment {
-        var: -2,
-        val: true,
-        forced: true,
-        decision_level: 2,
-    });
-
-    // Make sure that all required nodes are present in the implication_graph
-    cdcl.implication_graph.0.insert(
-        1,
-        ImplicationGraphNode {
-            literal: 1,
-            decision_level: 1,
-            reason: None, // No reason for decision knots
-            predecessors: vec![],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        -2,
-        ImplicationGraphNode {
-            literal: -2,
-            decision_level: 2,
-            reason: Some(2), // Refers to an existing clause
-            predecessors: vec![1],
-        },
-    );
-
-    // Make sure that the clause to which the reason refers exists
-    cdcl.clauses.insert(
-        2,
-        Clause {
-            watched_lhs: -2,
-            watched_rhs: 3,
-            vars: vec![-2, 3],
-        },
-    );
+    cdcl.history_enabled = true;
+    cdcl.branch_depth += 1;
+    cdcl.set_var(true, false, true, 1);
+    cdcl.unit_prop();
 
     let result = cdcl.derive_and_add_conflict_clause();
     assert!(
@@ -1029,28 +901,19 @@ fn test_derive_and_add_conflict_clause() {
     );
 
     assert_eq!(
-        cdcl.clauses.len(),
+        cdcl.clauses.len() + cdcl.clause_db.len(),
         4,
         "A new conflict clause should have been added."
     );
 }
 
-//TODO -> fails
 #[test]
 fn test_analyze_conflict() {
-    let mut cdcl = CDCL::new(vec![vec![1, -2], vec![-1, 2]], 2, 2, false);
-    cdcl.history.push(Assignment {
-        var: 1,
-        val: true,
-        forced: false,
-        decision_level: 1,
-    });
-    cdcl.history.push(Assignment {
-        var: -2,
-        val: true,
-        forced: true,
-        decision_level: 1,
-    });
+    let mut cdcl = CDCL::new(vec![vec![-1, -2], vec![-1, 2]], 2, 2, false);
+    cdcl.history_enabled = true;
+    cdcl.branch_depth += 1;
+    cdcl.set_var(true, false, true, 1);
+    cdcl.unit_prop();
 
     // Simulate a conflict
     let result = cdcl.analyze_conflict();
@@ -1059,3 +922,12 @@ fn test_analyze_conflict() {
     assert!(!conflict_clause.is_empty());
     assert_eq!(backtrack_level, 1);
 }
+
+#[test]
+fn test_current_decision_level() {
+    let mut cdcl = CDCL::new(vec![vec![1, 2], vec![2, 3]], 0, 0, false);
+    assert_eq!(cdcl.branch_depth, 0); // No assignments, decision level should be 0
+    cdcl.solve();
+    assert_eq!(cdcl.branch_depth, 2); // Assign 1 -> unit prop 2 -> Assign 2 => decision_level of 2
+}
+
