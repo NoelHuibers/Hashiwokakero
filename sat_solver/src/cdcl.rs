@@ -48,7 +48,6 @@ pub struct CDCL {
     history_enabled: bool,
     implication_graph: ImplicationGraph,
     lit_val: HashMap<Atom, Literal>,
-    min_depth: u16,
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
     // Using VecDaque for better push_front complexity
@@ -72,10 +71,6 @@ impl CDCL {
             history_enabled: false,
             implication_graph: ImplicationGraph::new(),
             lit_val: HashMap::with_capacity(lit_count),
-            min_depth: match show_depth {
-                true => u16::MAX,
-                false => 0,
-            },
             pos_watched_occ: HashMap::with_capacity(clause_count * 2),
             unit_queue: VecDeque::new(),
         };
@@ -193,10 +188,6 @@ impl CDCL {
             self.unset_var(last_step.unwrap().var);
             last_step = self.history.pop();
         }
-        if self.history.len() as u16 <= self.min_depth {
-            self.min_depth = self.history.len() as u16;
-            println!("backtracked to depth {}", self.history.len());
-        }
         if last_step.is_none() {
             return true;
         }
@@ -297,8 +288,7 @@ impl CDCL {
                     );
                 }
                 _ => (),
-            }
-            // TODO: should this all be done inside the _ => case above? (Should work both ways)
+            };
             let other_watched = match conflict_literal == clause.watched_rhs {
                 true => clause.watched_lhs,
                 false => clause.watched_rhs,
@@ -363,9 +353,9 @@ impl CDCL {
             }
         }
     }
-
     // 1-UIP Cut
     fn analyze_conflict(&mut self) -> Result<(Vec<BVar>, u32), String> {
+        // TODO use iter instead of clone()
         let mut stack = self.history.clone();
         let mut seen = HashSet::new(); // Set to note already visited nodes
         let mut current_node: Option<&ImplicationGraphNode> = None;
@@ -439,6 +429,7 @@ impl CDCL {
         conflict_clause: Vec<i32>,
     ) -> bool {
         // * undo all assignments of branching level > d
+        self.implication_graph.clear_conflict();
         // Reset assignments that were made after the assertion level
         while let Some(assignment) = self.history.last() {
             if assignment.decision_level <= assertion_level {
@@ -512,6 +503,9 @@ fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &Vec<i32>) -> b
 fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Vec<i32> {
     let mut hs_1: HashSet<i32> = HashSet::from_iter(clause1.iter().cloned());
     let mut hs_2: HashSet<i32> = HashSet::from_iter(clause2.iter().cloned());
+    if hs_1 == hs_2 {
+        return clause1.clone();
+    }
     for c_1 in clause1.iter() {
         if clause2.contains(&-c_1) {
             hs_1.remove(c_1);
@@ -963,7 +957,7 @@ fn test_analyze_conflict() {
 
 #[test]
 fn test_current_decision_level() {
-    let mut cdcl = CDCL::new(vec![vec![1, 2], vec![2, 3]], 0, 0, false);
+    let mut cdcl = CDCL::new(vec![vec![1, 2], vec![2, 3], vec![3, 1]], 0, 0, false);
     assert_eq!(cdcl.branch_depth, 0); // No assignments, decision level should be 0
     cdcl.solve();
     assert_eq!(cdcl.branch_depth, 2); // Assign 1 -> unit prop 2 -> Assign 2 => decision_level of 2
