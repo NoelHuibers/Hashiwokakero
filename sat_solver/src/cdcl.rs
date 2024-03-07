@@ -1,6 +1,7 @@
 //use flame;
 use std::{
     collections::{vec_deque, HashMap, HashSet, VecDeque},
+    fmt::format,
     vec,
 };
 
@@ -368,8 +369,8 @@ impl CDCL {
         let mut stack = self.history.clone();
         let mut seen = HashSet::new(); // Set to note already visited nodes
         let mut current_node: Option<&ImplicationGraphNode> = None;
-        let mut current_vars = self.clauses
-            [&self.implication_graph.get_conflict_node()?.reason.unwrap()]
+        let mut current_vars = self
+            .get_clause(self.implication_graph.get_conflict_node()?.reason.unwrap())?
             .vars
             .clone();
         let literals_of_max_branch_depth = self.literals_conflict_depth();
@@ -387,15 +388,22 @@ impl CDCL {
                 }
                 current_vars = resolution(
                     &current_vars,
-                    &self.clauses[&current_node.unwrap().reason.unwrap()].vars,
+                    &self.get_clause(current_node.unwrap().reason.unwrap())?.vars,
                 );
             } else {
-                return Err("Backtracked until the end without finding an asserting clause.".into());
+                return Err(
+                    "Backtracked until the end without finding an asserting clause.".into(),
+                );
             }
         }
         let backtrack_depth = current_vars
             .iter()
-            .map(|v| self.implication_graph.0[&v.abs()].decision_level)
+            .filter_map(|v| {
+                self.implication_graph
+                    .0
+                    .get(&v.abs())
+                    .and_then(|node: &ImplicationGraphNode| Some(node.decision_level))
+            })
             .min()
             .unwrap();
         Ok((current_vars.into_iter().collect(), backtrack_depth))
@@ -475,9 +483,19 @@ impl CDCL {
                 vars: conflict_clause.clone(),
             },
         );
-        conflict_clause
-            .iter()
-            .for_each(|lit| self.pos_watched_occ.get_mut(lit).unwrap().push(clause_id));
+        conflict_clause.iter().for_each(|lit| {
+            self.pos_watched_occ
+                .entry(*lit)
+                .and_modify(|clause| clause.push(clause_id))
+                .or_insert(vec![clause_id]);
+        });
+    }
+
+    fn get_clause(&self, c_idx: CIdx) -> Result<&Clause, String> {
+        match self.clauses.get(&c_idx).or(self.clause_db.get(&c_idx)) {
+            Some(c) => Ok(c),
+            None => Err(format!("Requested clause with index {} not found.", c_idx)),
+        }
     }
 }
 
@@ -504,7 +522,7 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Vec<i32> {
 }
 
 #[test]
-fn test_lecture() {
+fn should_derive_1_UIP_from_lecture() {
     let mut cdcl = CDCL::new(
         vec![
             vec![-1, 2],
@@ -562,7 +580,7 @@ fn test_lecture() {
 }
 
 #[test]
-fn set_var_1_true() {
+fn should_set_var_1_true_watched_literals() {
     let mut cdcl: CDCL = CDCL::new(
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         3,
@@ -582,7 +600,7 @@ fn set_var_1_true() {
 }
 
 #[test]
-fn set_var_neg_1_false() {
+fn should_set_var_neg_1_false_watched_literals() {
     let mut cdcl: CDCL = CDCL::new(
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         3,
@@ -602,7 +620,7 @@ fn set_var_neg_1_false() {
 }
 
 #[test]
-fn set_var_neg_1_true() {
+fn should_set_var_neg_1_true_watched_literals() {
     let mut cdcl: CDCL = CDCL::new(
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         3,
@@ -622,7 +640,7 @@ fn set_var_neg_1_true() {
 }
 
 #[test]
-fn set_var_1_false() {
+fn should_set_var_1_false_watched_literals() {
     let mut cdcl: CDCL = CDCL::new(
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         3,
@@ -642,7 +660,7 @@ fn set_var_1_false() {
 }
 
 #[test]
-fn conflict_2() {
+fn should_detect_conflict_watched_literals() {
     let mut cdcl: CDCL = CDCL::new(
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         3,
@@ -655,7 +673,7 @@ fn conflict_2() {
 }
 
 #[test]
-fn conflict_3() {
+fn should_detect_conflict_watched_literals_2() {
     let mut cdcl: CDCL = CDCL::new(
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         3,
@@ -670,7 +688,7 @@ fn conflict_3() {
 }
 
 #[test]
-fn unit_prop() {
+fn should_unit_prop_watched_literals() {
     let mut cdcl: CDCL = CDCL::new(
         vec![vec![1, -2, 3], vec![-1, 2], vec![-1, -2, -3]],
         3,
