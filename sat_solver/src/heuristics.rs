@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::dpll::Literal;
+use crate::{dpll::Literal, implication_graph::ImplicationGraph};
 
 pub(crate) fn arbitrary(free_lits: &HashSet<i32>) -> (i32, bool) {
     match free_lits.iter().next() {
@@ -217,6 +217,55 @@ pub(crate) fn vsids(
     let val = true; // Default assignment
     (max_var, val)
 }
+
+// VMTF: Selects the last variable involved in a conflict
+pub(crate) fn vmtf(
+    free_lits: &HashSet<i32>,
+    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    learned_clauses: &Vec<Vec<i32>>, 
+) -> (i32, bool) {
+    let mut lit_counters: HashMap<i32, usize> = HashMap::new();
+    for clause in learned_clauses.iter() {
+        for &lit in clause {
+            *lit_counters.entry(lit.abs()).or_insert(0) += 1;
+        }
+    }
+
+    // Sort the literals based on `n(a)`
+    let mut sorted_lits: Vec<(i32, usize)> = lit_counters.into_iter().collect();
+    sorted_lits.sort_by_key(|k| std::cmp::Reverse(k.1));
+
+    // Select the first free literal from the sorted list
+    for (lit, _) in sorted_lits {
+        if free_lits.contains(&lit) {
+            return (lit, true);
+        }
+    }
+
+    arbitrary(free_lits)
+}
+
+// BerkMin: Selects a variable from the most recent unsatisfied clause
+pub(crate) fn berkmin(
+    implication_graph: &ImplicationGraph,
+    free_lits: &HashSet<i32>,
+) -> (i32, bool) {
+    if let Ok(conflict_node) = implication_graph.get_conflict_node() {
+        // Filter the predecessors of the conflict node to include only free literals
+        let conflict_literals = conflict_node.predecessors.iter().filter(|&lit| free_lits.contains(&lit.abs()));
+
+        // Selection of the literal with the highest priority based on a criterion,
+        // here simplified by the number of predecessors in the implication graph
+        if let Some(&selected_lit) = conflict_literals.max_by_key(|&lit| implication_graph.0.get(&lit.abs()).map_or(0, |node| node.predecessors.len())) {
+            return (selected_lit.abs(), selected_lit > 0);
+        }
+    }
+
+    // Fallback if no suitable literal is found or there is no conflict
+    arbitrary(free_lits)
+}
+
+
 
 // Custom: Least number of clauses: selects the variable that appears in the smallest number of clauses.
 pub(crate) fn custom(
