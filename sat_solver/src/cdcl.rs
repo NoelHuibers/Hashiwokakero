@@ -1,7 +1,6 @@
 //use flame;
 use std::{
-    collections::{vec_deque, HashMap, HashSet, VecDeque},
-    fmt::format,
+    collections::{HashMap, HashSet, VecDeque},
     vec,
 };
 
@@ -516,7 +515,7 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Vec<i32> {
 }
 
 #[test]
-fn should_derive_1_UIP_from_lecture() {
+fn should_derive_1_uip_from_lecture() {
     let mut cdcl = CDCL::new(
         vec![
             vec![-1, 2],

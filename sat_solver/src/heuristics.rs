@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
-use crate::{dpll::Literal, implication_graph::ImplicationGraph};
+use crate::dpll::Literal;
 
 pub(crate) fn arbitrary(free_lits: &HashSet<i32>) -> (i32, bool) {
     match free_lits.iter().next() {
@@ -222,63 +222,104 @@ pub(crate) fn vsids(
 pub(crate) fn vmtf(
     free_lits: &HashSet<i32>,
     learned_clauses: &Vec<Vec<i32>>,
-) -> (i32, bool) {
-    let mut lit_counters: HashMap<i32, usize> = HashMap::new();
+    vmtf_order: &mut VecDeque<i32>,
+    initial_weights: &HashMap<i32, usize>, // Contains the initial weights h(a)
+    num_conflicts: usize, 
+) -> (i32, bool){
+    // Dynamic adjustment of the number of clauses considered based on the number of conflicts
+    let num_recent_clauses = std::cmp::min(10 + num_conflicts / 100, learned_clauses.len());
 
-    // Counts only free literals in the learned clauses
-    for clause in learned_clauses.iter() {
+    let mut lit_weights = initial_weights.clone(); // Starts with the initial weights h(a)
+
+    // Updates the weights based on the last learned clauses
+    for clause in learned_clauses.iter().rev().take(num_recent_clauses) {
         for &lit in clause {
-            let lit_abs = lit.abs();
-            if free_lits.contains(&lit_abs) {
-                *lit_counters.entry(lit_abs).or_insert(0) += 1;
+            let abs_lit = lit.abs();
+            if free_lits.contains(&abs_lit) {
+                *lit_weights.entry(abs_lit).or_insert(0) += 1; // Increments the weight
             }
         }
     }
 
-    // Sorts the free literals based on their frequency
-    let mut sorted_lits: Vec<(i32, usize)> = lit_counters.into_iter().collect();
-    sorted_lits.sort_by_key(|k| std::cmp::Reverse(k.1));
-
-    // Selects the first literal in the sorted list
-    if let Some((lit, _)) = sorted_lits.first() {
-        return (*lit, true);
-    }
-
-    //Fallback
-    arbitrary(free_lits)
-}
-
-// BerkMin: Selects a variable from the most recent unsatisfied clause
-pub(crate) fn berkmin(
-    implication_graph: &ImplicationGraph,
-    free_lits: &HashSet<i32>,
-) -> (i32, bool) {
-    if let Ok(conflict_node) = implication_graph.get_conflict_node() {
-       // Filters only the free predecessors of the conflict node
-        let conflict_literals: Vec<i32> = conflict_node.predecessors.iter()
-            .filter_map(|&lit| {
-                let lit_abs = lit.abs();
-                if free_lits.contains(&lit_abs) {
-                    Some(lit)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        // Selects the literal with the highest priority
-        if let Some(&selected_lit) = conflict_literals.iter().max_by_key(|&lit| {
-            implication_graph.0.get(&lit.abs()).map_or(0, |node| node.predecessors.len())
-        }) {
-            return (selected_lit.abs(), selected_lit > 0);
+    // Direct update of the order in vmtf_order without removing/adding
+    let mut updated_order: VecDeque<i32> = VecDeque::new();
+    for &lit in vmtf_order.iter() {
+        if lit_weights.contains_key(&lit) {
+            updated_order.push_front(lit); // Sets literals with weight at the beginning
+            lit_weights.remove(&lit); // Removes the literal from lit_weights as it has already been processed
+        } else {
+            updated_order.push_back(lit); // Sets other literals at the end
         }
     }
 
-    // Fallback if no suitable literal is found or there is no conflict
-    arbitrary(free_lits)
+    // Updates vmtf_order with the new order
+    *vmtf_order = updated_order;
+
+    // Selects the first literal in the list
+    if let Some(&lit) = vmtf_order.front() {
+        let value = true; 
+        return (lit, value);
+    }
+    // Fallback
+    if let Some(&fallback_lit) = free_lits.iter().next() {
+        return (fallback_lit, true); // Returns a random free literal with the default value `true`.
+    }
+
+   // Error handling if no literals are available
+    (0, false) //or panic!("VMTF: No free literal available");
 }
 
+// BerkMin: Selects a variable from the most recent unsatisfied clause
+pub struct BerkMinData {
+    priorities: HashMap<i32, f64>,
+}
 
+impl BerkMinData {
+    pub(crate) fn new() -> Self {
+        BerkMinData {
+            priorities: HashMap::new(),
+        }
+    }
+
+    // Function for incrementing the priorities for literals in conflict clauses
+    pub(crate) fn update_priorities(&mut self, clause: &Vec<i32>) {
+        for &lit in clause {
+            *self.priorities.entry(lit.abs()).or_insert(0.0) += 1.0;
+        }
+    }
+}
+
+// Implementation of the BerkMin heuristic using the BerkMinData structure
+pub(crate) fn berkmin(
+    free_lits: &HashSet<i32>,
+    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    berkmin_data: &mut BerkMinData,
+) -> (i32, bool) {
+    // Identifies the most recent unfulfilled clause
+    let most_recent_clause = unsat_clauses.iter().last().unwrap().0.clone(); 
+
+    // Updates the priorities for literals in this clause
+    berkmin_data.update_priorities(&most_recent_clause);
+
+    // Selects the literal with the highest priority from this clause
+    let &selected_lit = most_recent_clause
+    .iter()
+    .filter(|&lit| free_lits.contains(&lit.abs()))
+    .max_by(|&a, &b| {
+        // Compares the priorities of the literals taking
+        berkmin_data.priorities.get(&a.abs())
+            .unwrap_or(&0.0)
+            .partial_cmp(&berkmin_data.priorities.get(&b.abs()).unwrap_or(&0.0))
+            .unwrap_or(std::cmp::Ordering::Equal)
+    })
+    .unwrap_or(&0);
+
+    if selected_lit == 0 {
+        return (*free_lits.iter().next().unwrap(), true);
+    }
+
+    (selected_lit.abs(), selected_lit > 0)
+}
 
 // Custom: Least number of clauses: selects the variable that appears in the smallest number of clauses.
 pub(crate) fn custom(
