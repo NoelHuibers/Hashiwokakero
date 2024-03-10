@@ -191,7 +191,7 @@ pub(crate) fn jeroslaw_wang(
 }
 
 // VSIDS
-pub(crate) fn vsids(
+pub(crate) fn vsids_dpll(
     free_lits: &HashSet<i32>,
     unsat_clauses: &HashSet<(Vec<i32>, u8)>,
 ) -> (i32, bool) {
@@ -217,6 +217,75 @@ pub(crate) fn vsids(
     let val = true; // Default assignment
     (max_var, val)
 }
+
+//VSIDS for CDCL
+pub(crate) struct VsidsData {
+    scores: HashMap<i32, f64>,
+    counters: HashMap<i32, usize>,
+    branching_counter: usize,
+}
+
+impl VsidsData {
+    pub(crate) fn new() -> Self {
+        VsidsData {
+            scores: HashMap::new(),
+            counters: HashMap::new(),
+            branching_counter: 0,
+        }
+    }
+
+    // Function to update the scores for literals in conflict clauses
+    pub(crate) fn update_scores(&mut self, clause: &[i32]) {
+        for &lit in clause {
+            *self.counters.entry(lit.abs()).or_insert(0) += 1; // Increment the counter for each literal
+        }
+    }
+
+    // Function to periodically update the scores
+    pub(crate) fn decay_scores(&mut self) {
+        for (lit, score) in self.scores.iter_mut() {
+            let counter = *self.counters.get(&lit).unwrap_or(&0); // Get the counter for the literal
+            *score = *score / 2.0 + counter as f64; // Update the score
+            *self.counters.get_mut(&lit).unwrap_or(&mut 0) = 0; // Reset the counter
+        }
+        self.branching_counter = 0; // Reset the branching counter
+    }
+}
+
+pub(crate) fn vsids(
+    free_lits: &HashSet<i32>,
+    unsat_clauses: &[(Vec<i32>, u8)],
+    vsids_data: &mut VsidsData,
+) -> (i32, bool) {
+    // Increment the branching counter
+    vsids_data.branching_counter += 1;
+
+    // Update the scores based on the unsatisfied clauses
+    for (clause, _) in unsat_clauses {
+        vsids_data.update_scores(clause);
+    }
+
+    // Perform periodic update of scores
+    if vsids_data.branching_counter >= 255 {
+        vsids_data.decay_scores();
+    }
+
+    // Select the literal with the highest score
+    let (max_var, _) = vsids_data.scores.iter().max_by(|(_, &score_a), (_, &score_b)| {
+        score_a.partial_cmp(&score_b).unwrap_or(std::cmp::Ordering::Equal)
+    }).unwrap_or((&0, &0.0));
+
+    // Return the selected literal
+    if *max_var == 0 {
+        // Fallback mechanism if no literal was selected
+        return (*free_lits.iter().next().unwrap(), true);
+    }
+
+    // Default assignment for the selected literal
+    let val = true;
+    (*max_var, val)
+}
+
 
 // VMTF: Selects the last variable involved in a conflict
 pub(crate) fn vmtf(
