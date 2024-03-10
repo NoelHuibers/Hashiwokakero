@@ -221,27 +221,30 @@ pub(crate) fn vsids(
 // VMTF: Selects the last variable involved in a conflict
 pub(crate) fn vmtf(
     free_lits: &HashSet<i32>,
-    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
-    learned_clauses: &Vec<Vec<i32>>, 
+    learned_clauses: &Vec<Vec<i32>>,
 ) -> (i32, bool) {
     let mut lit_counters: HashMap<i32, usize> = HashMap::new();
+
+    // Counts only free literals in the learned clauses
     for clause in learned_clauses.iter() {
         for &lit in clause {
-            *lit_counters.entry(lit.abs()).or_insert(0) += 1;
+            let lit_abs = lit.abs();
+            if free_lits.contains(&lit_abs) {
+                *lit_counters.entry(lit_abs).or_insert(0) += 1;
+            }
         }
     }
 
-    // Sort the literals based on `n(a)`
+    // Sorts the free literals based on their frequency
     let mut sorted_lits: Vec<(i32, usize)> = lit_counters.into_iter().collect();
     sorted_lits.sort_by_key(|k| std::cmp::Reverse(k.1));
 
-    // Select the first free literal from the sorted list
-    for (lit, _) in sorted_lits {
-        if free_lits.contains(&lit) {
-            return (lit, true);
-        }
+    // Selects the first literal in the sorted list
+    if let Some((lit, _)) = sorted_lits.first() {
+        return (*lit, true);
     }
 
+    //Fallback
     arbitrary(free_lits)
 }
 
@@ -251,12 +254,22 @@ pub(crate) fn berkmin(
     free_lits: &HashSet<i32>,
 ) -> (i32, bool) {
     if let Ok(conflict_node) = implication_graph.get_conflict_node() {
-        // Filter the predecessors of the conflict node to include only free literals
-        let conflict_literals = conflict_node.predecessors.iter().filter(|&lit| free_lits.contains(&lit.abs()));
+       // Filters only the free predecessors of the conflict node
+        let conflict_literals: Vec<i32> = conflict_node.predecessors.iter()
+            .filter_map(|&lit| {
+                let lit_abs = lit.abs();
+                if free_lits.contains(&lit_abs) {
+                    Some(lit)
+                } else {
+                    None
+                }
+            })
+            .collect();
 
-        // Selection of the literal with the highest priority based on a criterion,
-        // here simplified by the number of predecessors in the implication graph
-        if let Some(&selected_lit) = conflict_literals.max_by_key(|&lit| implication_graph.0.get(&lit.abs()).map_or(0, |node| node.predecessors.len())) {
+        // Selects the literal with the highest priority
+        if let Some(&selected_lit) = conflict_literals.iter().max_by_key(|&lit| {
+            implication_graph.0.get(&lit.abs()).map_or(0, |node| node.predecessors.len())
+        }) {
             return (selected_lit.abs(), selected_lit > 0);
         }
     }
