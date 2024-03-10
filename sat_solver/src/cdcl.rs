@@ -514,6 +514,35 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Vec<i32> {
     Vec::from_iter(hs_1.union(&hs_2).cloned())
 }
 
+// Implementation of the k-bounded Learning Strategy
+pub fn k_bounded_learning(cdcl: &mut CDCL, k: usize) {
+    let mut deleted_clauses = vec![];
+
+    // Check and process learned clauses
+    for (clause_id, clause) in &cdcl.clause_db {
+        // Check if the width of the clause exceeds the limit
+        if clause.vars.len() > k {
+            // Check if two literals in the clause are unassigned
+            if clause.vars.iter().filter(|&lit| cdcl.lit_val[&(lit.abs() as Atom)].is_free).count() >= 2 {
+                // Delete the clause
+                deleted_clauses.push(*clause_id);
+            }
+        }
+    }
+
+    // Delete identified clauses
+    for clause_id in deleted_clauses {
+        let clause = cdcl.clause_db.remove(&clause_id).unwrap();
+        for lit in &clause.vars {
+            if let Some(clauses) = cdcl.pos_watched_occ.get_mut(&lit) {
+                if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
+                    clauses.remove(index);
+                }
+            }
+        }
+    }
+}
+
 #[test]
 fn should_derive_1_uip_from_lecture() {
     let mut cdcl = CDCL::new(
