@@ -487,6 +487,68 @@ impl CDCL {
             None => Err(format!("Requested clause with index {} not found.", c_idx)),
         }
     }
+
+    //Deletion strategies
+    // Implementation of the k-bounded Learning Strategy
+    pub fn k_bounded_learning(cdcl: &mut CDCL, k: usize) {
+        let mut deleted_clauses = vec![];
+
+        // Check and process learned clauses
+        for (clause_id, clause) in &cdcl.clause_db {
+            // Check if the width of the clause exceeds the limit
+            if clause.vars.len() > k {
+                // Check if two literals in the clause are unassigned
+                if clause.vars.iter().filter(|&lit| cdcl.lit_val[&(lit.abs() as Atom)].is_free).count() >= 2 {
+                    // Delete the clause
+                    deleted_clauses.push(*clause_id);
+                }
+            }
+        }
+
+        // Delete identified clauses
+        for clause_id in deleted_clauses {
+            let clause = cdcl.clause_db.remove(&clause_id).unwrap();
+            for lit in &clause.vars {
+                if let Some(clauses) = cdcl.pos_watched_occ.get_mut(&lit) {
+                    if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
+                        clauses.remove(index);
+                    }
+                }
+            }
+        }
+    }
+
+    // Implementation of the m-size relevance based learning Strategy as a free function
+    pub fn m_size_relevance_learning(cdcl: &mut CDCL, m: usize) {
+        let mut deleted_clauses = vec![];
+
+        // Check and process learned clauses
+        for (clause_id, clause) in &cdcl.clause_db {
+            // Check if more than m literals in the clause are unassigned
+            if clause.vars.iter().filter(|&lit| cdcl.lit_val[&(lit.abs() as Atom)].is_free).count() > m {
+                // Delete the clause
+                deleted_clauses.push(*clause_id);
+            }
+        }
+
+        // Delete identified clauses
+        for clause_id in deleted_clauses {
+            let clause = cdcl.clause_db.remove(&clause_id).unwrap();
+            for lit in &clause.vars {
+                if let Some(clauses) = cdcl.pos_watched_occ.get_mut(&lit) {
+                    if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
+                        clauses.remove(index);
+                    }
+                }
+            }
+        }
+    }
+
+    // Combined strategy: k-bounded learning and m-size relevance based learning
+    pub fn combined_learning_strategy(&mut self, k: usize, m: usize) {
+        CDCL::k_bounded_learning(self, k);
+        CDCL::m_size_relevance_learning(self, m);
+    }
 }
 
 fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &Vec<i32>) -> bool {
@@ -512,35 +574,6 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Vec<i32> {
         }
     }
     Vec::from_iter(hs_1.union(&hs_2).cloned())
-}
-
-// Implementation of the k-bounded Learning Strategy
-pub fn k_bounded_learning(cdcl: &mut CDCL, k: usize) {
-    let mut deleted_clauses = vec![];
-
-    // Check and process learned clauses
-    for (clause_id, clause) in &cdcl.clause_db {
-        // Check if the width of the clause exceeds the limit
-        if clause.vars.len() > k {
-            // Check if two literals in the clause are unassigned
-            if clause.vars.iter().filter(|&lit| cdcl.lit_val[&(lit.abs() as Atom)].is_free).count() >= 2 {
-                // Delete the clause
-                deleted_clauses.push(*clause_id);
-            }
-        }
-    }
-
-    // Delete identified clauses
-    for clause_id in deleted_clauses {
-        let clause = cdcl.clause_db.remove(&clause_id).unwrap();
-        for lit in &clause.vars {
-            if let Some(clauses) = cdcl.pos_watched_occ.get_mut(&lit) {
-                if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
-                    clauses.remove(index);
-                }
-            }
-        }
-    }
 }
 
 #[test]
