@@ -156,7 +156,7 @@ impl CDCL {
                 // * if conflict detected
                 let unsat = match self.backtrack_non_chron() {
                     Ok(b) => b,
-                    Err(e) => panic!("{}", e),
+                    Err(e) => panic!("{}, at history_len: {}", e, self.history.len()),
                 };
                 if unsat {
                     return DIMACSOutput::Unsat;
@@ -200,6 +200,7 @@ impl CDCL {
     }
 
     fn unit_prop(&mut self) -> bool {
+        println!("Unitprop:");
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // Try to set the literal. If this results in a conflict, `unsat` is true.
@@ -212,6 +213,7 @@ impl CDCL {
     }
 
     fn set_var(&mut self, branched: bool, forced: bool, val: bool, var: BVar) -> bool {
+        println!("\tset {} to {}", var, val);
         let mut conflict = false;
         if self.history_enabled {
             let decision_level = self.branch_depth;
@@ -247,7 +249,7 @@ impl CDCL {
             return conflict;
         }
         for c_idx in conflict_clauses.unwrap().clone().iter() {
-            let mut clause = match self.clauses.get_mut(&c_idx) {
+            let clause = match self.clauses.get_mut(&c_idx) {
                 Some(c) => c,
                 None => self.clause_db.get_mut(c_idx).unwrap(),
             };
@@ -321,6 +323,7 @@ impl CDCL {
     }
 
     fn unset_var(&mut self, var: BVar) {
+        println!("\tunset {}", var);
         self.free_vars.insert(var);
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
@@ -330,6 +333,7 @@ impl CDCL {
 
     // Function for deriving and adding a conflict clause
     fn backtrack_non_chron(&mut self) -> Result<bool, String> {
+        println!("Backtracking:");
         match self.analyze_conflict() {
             Ok((conflict_clause, backtrack_level)) => {
                 if conflict_clause.is_empty() {
@@ -357,7 +361,7 @@ impl CDCL {
     fn analyze_conflict(&mut self) -> Result<(Vec<BVar>, u32), String> {
         // TODO use iter instead of clone()
         let mut stack = self.history.clone();
-        let mut seen = HashSet::new(); // Set to note already visited nodes
+        let mut ancestors = HashSet::new(); // Set to note already visited nodes
         let mut current_node: Option<&ImplicationGraphNode> = None;
         let mut current_vars = self
             .get_clause(self.implication_graph.get_conflict_node()?.reason.unwrap())?
@@ -370,7 +374,7 @@ impl CDCL {
                 if let None = current_node {
                     continue;
                 }
-                if !seen.insert(current_node) {
+                if !ancestors.insert(current_node) {
                     continue;
                 }
                 if let None = current_node.unwrap().reason {
@@ -379,23 +383,25 @@ impl CDCL {
                 current_vars = resolution(
                     &current_vars,
                     &self.get_clause(current_node.unwrap().reason.unwrap())?.vars,
-                );
+                )?;
             } else {
                 return Err(
                     "Backtracked until the end without finding an asserting clause.".into(),
                 );
             }
         }
-        let backtrack_depth = current_vars
+        let mut decision_levels: Vec<u32> = current_vars
             .iter()
             .filter_map(|v| {
                 self.implication_graph
                     .0
                     .get(&v.abs())
                     .and_then(|node: &ImplicationGraphNode| Some(node.decision_level))
-            })
-            .min()
-            .unwrap();
+            }).collect();
+            decision_levels.sort();
+            decision_levels.reverse();
+            // Second largest (largest excluding conflict literal) decision level
+        let backtrack_depth = decision_levels[1];
         Ok((current_vars.into_iter().collect(), backtrack_depth))
     }
 
@@ -499,20 +505,57 @@ fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &Vec<i32>) -> b
         == 1
 }
 
-// TODO: Is it safe to assume that resolution can happen? Double check in proof from lecture
-fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Vec<i32> {
+fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String> {
     let mut hs_1: HashSet<i32> = HashSet::from_iter(clause1.iter().cloned());
     let mut hs_2: HashSet<i32> = HashSet::from_iter(clause2.iter().cloned());
     if hs_1 == hs_2 {
-        return clause1.clone();
+        // TODO: throw error here and fix history
+        return Ok(clause1.clone());
     }
     for c_1 in clause1.iter() {
         if clause2.contains(&-c_1) {
             hs_1.remove(c_1);
             hs_2.remove(&-c_1);
+            return Ok(Vec::from_iter(hs_1.union(&hs_2).cloned()))
         }
     }
-    Vec::from_iter(hs_1.union(&hs_2).cloned())
+    Err(format!("Could not apply resolution to {:?} and {:?}", clause1, clause2))
+}
+
+#[test]
+fn should_derive_1_UIP_from_princeton_paper() {
+    let mut cdcl = CDCL::new(vec![vec![1, 2], vec![1, 3, 7], vec![-2, -3, 4], vec![-4, 5, 8], vec![-4, 6, 9], vec![-5, -6]], 9, 5, false);
+    cdcl.history_enabled = true;
+    cdcl.set_var(true, false, false, 7);
+    cdcl.branch_depth += 1;
+    cdcl.unit_prop();
+    cdcl.set_var(true, false, false, 8);
+    cdcl.unit_prop();
+    cdcl.branch_depth += 1;
+    cdcl.set_var(true, false, false, 9);
+    cdcl.unit_prop();
+    cdcl.branch_depth += 1;
+    cdcl.set_var(true, false, false, 1);
+    let conflict = cdcl.unit_prop();
+    cdcl.branch_depth += 1;
+    assert!(conflict);
+    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&5));
+    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&6));
+    assert_eq!(cdcl.implication_graph.0[&0].decision_level, 3);
+    assert!(cdcl.implication_graph.0[&5].predecessors.contains(&8));
+    assert!(cdcl.implication_graph.0[&5].predecessors.contains(&4));
+    assert_eq!(cdcl.implication_graph.0[&5].decision_level, 3);
+    assert!(cdcl.implication_graph.0[&6].predecessors.contains(&4));
+    assert!(cdcl.implication_graph.0[&6].predecessors.contains(&9));
+    assert_eq!(cdcl.implication_graph.0[&6].decision_level, 3);
+    assert_eq!(cdcl.implication_graph.0[&8].decision_level, 1);
+    let conflict = cdcl.analyze_conflict();
+    assert_eq!(conflict.clone().unwrap().1, 2);
+    assert!(conflict.clone().unwrap().0.contains(&-4));
+    assert!(conflict.clone().unwrap().0.contains(&9));
+    assert_eq!(conflict.clone().unwrap().0.len(), 3);
+    assert!(conflict.unwrap().0.contains(&8));
+
 }
 
 #[test]
