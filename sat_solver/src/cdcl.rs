@@ -466,7 +466,8 @@ impl CDCL {
         self.unset_var(var);
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
-        self.unit_queue.push_front(var);
+        // TODO: Should this new var be connected to the impl graph and if yes to what node?
+        self.set_var(true, true, !val, var);
         false
     }
 
