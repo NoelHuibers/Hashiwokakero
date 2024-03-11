@@ -1,6 +1,7 @@
+mod cdcl;
 pub mod cli;
 pub mod dpll;
 pub mod heuristics;
-pub mod parse;
-mod cdcl;
 mod implication_graph;
+pub mod parse;
+pub mod preprocessing;
