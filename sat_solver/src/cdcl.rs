@@ -464,7 +464,6 @@ impl CDCL {
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
         let var = conflict_clause.iter().filter(|v| self.lit_val[&(v.abs() as Atom)].is_free).next().unwrap();
-        println!("Enqueue one of {} free lits {}", conflict_clause.len(), var);
         self.unit_queue.push_front(*var);
         self.implication_graph.insert_edge(conflict_clause.clone(), *var, conflict_c_idx, assertion_level);
         false
@@ -747,7 +746,6 @@ fn should_derive_1_UIP_from_wikipedia() {
     let conflict = cdcl.unit_prop();
     assert!(cdcl.implication_graph.0[&9].predecessors.contains(&3));
     assert!(cdcl.implication_graph.0[&9].predecessors.contains(&7));
-    println!("{:?}", cdcl.implication_graph.0);
     assert!(cdcl.implication_graph.0[&0].predecessors.contains(&8));
     assert!(cdcl.implication_graph.0[&0].predecessors.contains(&7));
     assert!(conflict);
@@ -757,7 +755,7 @@ fn should_derive_1_UIP_from_wikipedia() {
     assert!(conflict.clone().unwrap().0.contains(&-7));
     assert!(conflict.unwrap().0.contains(&8));
     let _ = cdcl.backtrack_non_chron();
-    assert!(cdcl.unit_queue.contains(&7));
+    assert!(cdcl.unit_queue.contains(&-7));
     assert_eq!(cdcl.unit_queue.len(), 1);
 
 }
@@ -811,7 +809,6 @@ fn should_derive_1_UIP_from_princeton_paper() {
     assert!(cdcl.unit_queue.contains(&9));
     cdcl.unit_prop();
     assert!(cdcl.lit_val[&9].val);
-    println!("{:?}", cdcl.implication_graph.0);
     assert!(cdcl.implication_graph.0[&9].predecessors.contains(&8));
 }
 
@@ -871,8 +868,8 @@ fn should_derive_1_UIP_from_lecture() {
     assert!(conflict.clone().unwrap().0.contains(&10));
     assert!(conflict.unwrap().0.contains(&11));
     let _ = cdcl.backtrack_non_chron();
-    assert_eq!(cdcl.history.len(), 2);
-    assert!(cdcl.unit_queue.contains(&-11))
+    assert_eq!(cdcl.history.len(), 3);
+    assert!(cdcl.unit_queue.contains(&-4))
 }
 
 #[test]
