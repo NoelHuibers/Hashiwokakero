@@ -285,7 +285,6 @@ impl CDCL {
                     self.implication_graph.insert_edge(
                         clause.vars.clone(),
                         *new_watched_cands[0],
-                        val,
                         *c_idx,
                         self.branch_depth,
                     );
@@ -350,7 +349,7 @@ impl CDCL {
                 self.insert_clause(clause_id, conflict_clause.clone());
 
                 // Perform non-chronological backtracking
-                Ok(self.non_chronological_backtrack(backtrack_level, conflict_clause))
+                Ok(self.non_chronological_backtrack(backtrack_level, clause_id, conflict_clause))
             }
             Err(e) => {
                 // Handle the error case
@@ -434,10 +433,12 @@ impl CDCL {
     fn non_chronological_backtrack(
         &mut self,
         assertion_level: u32,
+        conflict_c_idx: CIdx,
         conflict_clause: Vec<i32>,
     ) -> bool {
         // * undo all assignments of branching level > d
         self.implication_graph.clear_conflict();
+        let mut last_step = None;
         // Reset assignments that were made after the assertion level
         while let Some(assignment) = self.history.last() {
             if assignment.decision_level <= assertion_level {
@@ -448,26 +449,24 @@ impl CDCL {
             let var = assignment.var;
             self.unset_var(var);
             // Remove last assignment from the history
-            self.history.pop();
+            last_step = self.history.pop();
         }
-        if self.history.is_empty() {
+        if let None = last_step {
             return true;
         }
 
         // * set branching depth to d
         self.branch_depth = assertion_level;
 
-        let last_step = self.history.pop();
         if last_step.is_none() {
             return true;
         }
-        let var = last_step.as_ref().unwrap().var;
-        let val = last_step.unwrap().val;
-        self.unset_var(var);
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
-        // TODO: Should this new var be connected to the impl graph and if yes to what node?
-        self.set_var(true, true, !val, var);
+        let var = conflict_clause.iter().filter(|v| self.lit_val[&(v.abs() as Atom)].is_free).next().unwrap();
+        println!("Enqueue one of {} free lits {}", conflict_clause.len(), var);
+        self.unit_queue.push_front(*var);
+        self.implication_graph.insert_edge(conflict_clause.clone(), *var, conflict_c_idx, assertion_level);
         false
     }
 
@@ -698,9 +697,69 @@ fn should_analyze_conflict() {
             predecessors: vec![7, 8, 1, 2, 4],
         },
     );
-
+    cdcl.branch_depth = 3;
     let res = cdcl.analyze_conflict();
     assert!(res.is_ok());
+}
+
+#[test]
+fn should_derive_1_UIP_from_wikipedia() {
+    let mut cdcl = CDCL::new(
+        vec![
+            vec![1, 4],
+            vec![1, -3, -8],
+            vec![1, 8, 12],
+            vec![2, 11],
+            vec![-7, -3, 9],
+            vec![-7, 8, -9],
+            vec![7, 8, -10],
+            vec![7, 10, -12],
+        ],
+        9,
+        5,
+        false,
+    );
+    cdcl.history_enabled = true;
+    cdcl.set_var(true, false, false, 1);
+    cdcl.unit_prop();
+    assert!(cdcl.implication_graph.0.get(&1).is_some());
+    cdcl.branch_depth += 1;
+    cdcl.set_var(true, false, true, 4);
+    cdcl.unit_prop();
+    assert!(cdcl.implication_graph.0[&4].predecessors.contains(&1));
+    cdcl.branch_depth += 1;
+    cdcl.set_var(true, false, true, 3);
+    assert!(cdcl.implication_graph.0.get(&3).is_some());
+    cdcl.unit_prop();
+    assert!(cdcl.implication_graph.0[&12].predecessors.contains(&1));
+    assert!(cdcl.implication_graph.0[&12].predecessors.contains(&8));
+    assert!(cdcl.implication_graph.0[&8].predecessors.contains(&1));
+    assert!(cdcl.implication_graph.0[&4].predecessors.contains(&1));
+    assert!(cdcl.implication_graph.0[&8].predecessors.contains(&3));
+    cdcl.branch_depth += 1;
+    cdcl.set_var(true, false, false, 2);
+    assert!(cdcl.implication_graph.0.get(&2).is_some());
+    cdcl.unit_prop();
+    assert!(cdcl.implication_graph.0[&11].predecessors.contains(&2));
+    cdcl.branch_depth += 1;
+    cdcl.set_var(true, false, true, 7);
+    assert!(cdcl.implication_graph.0.get(&7).is_some());
+    let conflict = cdcl.unit_prop();
+    assert!(cdcl.implication_graph.0[&9].predecessors.contains(&3));
+    assert!(cdcl.implication_graph.0[&9].predecessors.contains(&7));
+    println!("{:?}", cdcl.implication_graph.0);
+    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&8));
+    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&7));
+    assert!(conflict);
+    let conflict = cdcl.analyze_conflict();
+    assert!(conflict.is_ok());
+    assert!(conflict.clone().unwrap().0.contains(&-3));
+    assert!(conflict.clone().unwrap().0.contains(&-7));
+    assert!(conflict.unwrap().0.contains(&8));
+    let _ = cdcl.backtrack_non_chron();
+    assert!(cdcl.unit_queue.contains(&7));
+    assert_eq!(cdcl.unit_queue.len(), 1);
+
 }
 
 #[test]
@@ -720,8 +779,8 @@ fn should_derive_1_UIP_from_princeton_paper() {
     );
     cdcl.history_enabled = true;
     cdcl.set_var(true, false, false, 7);
-    cdcl.branch_depth += 1;
     cdcl.unit_prop();
+    cdcl.branch_depth += 1;
     cdcl.set_var(true, false, false, 8);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
@@ -730,7 +789,6 @@ fn should_derive_1_UIP_from_princeton_paper() {
     cdcl.branch_depth += 1;
     cdcl.set_var(true, false, false, 1);
     let conflict = cdcl.unit_prop();
-    cdcl.branch_depth += 1;
     assert!(conflict);
     assert!(cdcl.implication_graph.0[&0].predecessors.contains(&5));
     assert!(cdcl.implication_graph.0[&0].predecessors.contains(&6));
@@ -752,7 +810,9 @@ fn should_derive_1_UIP_from_princeton_paper() {
     assert_eq!(cdcl.history.len(), 2);
     assert!(cdcl.unit_queue.contains(&9));
     cdcl.unit_prop();
-    assert!(cdcl.lit_val[&9].val)
+    assert!(cdcl.lit_val[&9].val);
+    println!("{:?}", cdcl.implication_graph.0);
+    assert!(cdcl.implication_graph.0[&9].predecessors.contains(&8));
 }
 
 #[test]
@@ -777,8 +837,8 @@ fn should_derive_1_UIP_from_lecture() {
     );
     cdcl.history_enabled = true;
     cdcl.set_var(true, false, false, 9);
-    cdcl.branch_depth += 1;
     cdcl.unit_prop();
+    cdcl.branch_depth += 1;
     cdcl.set_var(true, false, false, 10);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
@@ -787,7 +847,6 @@ fn should_derive_1_UIP_from_lecture() {
     cdcl.branch_depth += 1;
     cdcl.set_var(true, false, true, 1);
     let conflict = cdcl.unit_prop();
-    cdcl.branch_depth += 1;
     assert!(conflict);
     assert!(cdcl.implication_graph.0[&0].predecessors.contains(&5));
     assert!(cdcl.implication_graph.0[&0].predecessors.contains(&6));
