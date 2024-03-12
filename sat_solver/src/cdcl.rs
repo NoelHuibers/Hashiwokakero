@@ -328,7 +328,7 @@ impl CDCL {
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
-        self.implication_graph.0.remove(&var.abs());
+        //self.implication_graph.0.remove(&var.abs());
     }
 
     // Function for deriving and adding a conflict clause
@@ -402,32 +402,21 @@ impl CDCL {
         decision_levels.sort();
         decision_levels.reverse();
         // Second largest (largest excluding conflict literal) decision level
-        let backtrack_depth = decision_levels.get(1).expect("Conflict Clause is a unitclause: ");
+        let backtrack_depth = decision_levels
+            .get(1)
+            .or_else(|| Some(&decision_levels[0]))
+            .expect("Could not choose assertion level because conflict clause has no literals.");
         Ok((current_vars.into_iter().collect(), *backtrack_depth))
     }
 
     // This could be tracked during construction of impl graph
     fn literals_conflict_depth(&self) -> Vec<i32> {
-        let conflict = self.implication_graph.get_conflict_node().unwrap();
-        let mut stack = vec![conflict.literal]; // Stack for DFS, starting with `lit`
-        let mut seen = HashSet::new(); // Set to note already visited nodes
-        let mut result = HashSet::new();
-        while let Some(current_lit) = stack.pop() {
-            if !seen.insert(current_lit) {
-                continue;
-            }
-            if let Some(node) = self.implication_graph.0.get(&current_lit.abs()) {
-                if node.decision_level != conflict.decision_level {
-                    continue;
-                }
-                // Add all predecessors of the current node to the stack for the further search
-                result.insert(node.literal);
-                for &pred in &node.predecessors {
-                    stack.push(pred);
-                }
-            }
-        }
-        Vec::from_iter(result)
+        self.implication_graph
+            .0
+            .values()
+            .filter(|n| n.decision_level == self.branch_depth)
+            .map(|n| n.literal)
+            .collect()
     }
 
     fn non_chronological_backtrack(
@@ -454,18 +443,24 @@ impl CDCL {
         if let None = last_step {
             return true;
         }
-
         // * set branching depth to d
         self.branch_depth = assertion_level;
-
-        if last_step.is_none() {
-            return true;
-        }
+        self.implication_graph
+            .update_implication_graph(assertion_level);
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
-        let var = conflict_clause.iter().filter(|v| self.lit_val[&(v.abs() as Atom)].is_free).next().unwrap();
+        let var = conflict_clause
+            .iter()
+            .filter(|v| self.lit_val[&(v.abs() as Atom)].is_free)
+            .next()
+            .unwrap();
         self.unit_queue.push_front(*var);
-        self.implication_graph.insert_edge(conflict_clause.clone(), *var, conflict_c_idx, assertion_level);
+        self.implication_graph.insert_edge(
+            conflict_clause.clone(),
+            *var,
+            conflict_c_idx,
+            assertion_level,
+        );
         false
     }
 
@@ -517,7 +512,14 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String
         if clause2.contains(&-c_1) {
             hs_1.remove(c_1);
             hs_2.remove(&-c_1);
-            return Ok(Vec::from_iter(hs_1.union(&hs_2).cloned()));
+            let res = Vec::from_iter(hs_1.union(&hs_2).cloned());
+            println!(
+                "\t\t resolve {:?} with {:?} to {:?}",
+                clause1,
+                clause2,
+                res.clone()
+            );
+            return Ok(res);
         }
     }
     Err(format!(
@@ -757,7 +759,7 @@ fn should_derive_1_UIP_from_wikipedia() {
     let _ = cdcl.backtrack_non_chron();
     assert!(cdcl.unit_queue.contains(&-7));
     assert_eq!(cdcl.unit_queue.len(), 1);
-
+    cdcl.unit_prop();
 }
 
 #[test]
@@ -805,11 +807,11 @@ fn should_derive_1_UIP_from_princeton_paper() {
     assert_eq!(conflict.clone().unwrap().0.len(), 3);
     assert!(conflict.unwrap().0.contains(&8));
     let _ = cdcl.backtrack_non_chron();
-    assert_eq!(cdcl.history.len(), 2);
-    assert!(cdcl.unit_queue.contains(&9));
+    assert_eq!(cdcl.history.len(), 3);
+    assert!(cdcl.unit_queue.contains(&-4));
     cdcl.unit_prop();
-    assert!(cdcl.lit_val[&9].val);
-    assert!(cdcl.implication_graph.0[&9].predecessors.contains(&8));
+    assert!(!cdcl.lit_val[&4].val);
+    assert!(cdcl.implication_graph.0[&4].predecessors.contains(&8));
 }
 
 #[test]
