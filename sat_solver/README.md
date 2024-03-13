@@ -66,6 +66,7 @@ Run the tests using cargo:
 - [x] Fix issue with Conflict analysis
 - [ ] Restarts
 - [ ] Preprocessing
+- [ ] Drup logging
 
 **Laura:**
 
@@ -73,11 +74,12 @@ Run the tests using cargo:
 - [x] Conflict analysis
 - [ ] Clause deletion strategy
 - [ ] Heuristics
-- [ ] Drup logging
 
 **Flo:**
 
 - [x] 2-Watched Literals
 - [x] Update impl. graph while setting vars
 - [x] Update Conflict analysis
-- [ ] Test + Debug non-chronological backtracking
+- [x] Test + Debug non-chronological backtracking
+- [ ] Check whether unit clauses can occur in conflict analysis
+- [ ] Check impl for set_var in respect to unit clauses
