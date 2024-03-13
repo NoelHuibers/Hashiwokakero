@@ -202,15 +202,20 @@ impl CDCL {
 
     fn unit_prop(&mut self) -> bool {
         println!("Unitprop:");
+        let mut unsat = false;
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // Try to set the literal. If this results in a conflict, `unsat` is true.
-            let unsat = self.set_var(false, true, true, forced_lit);
+            if !self.lit_val[&(forced_lit.abs() as u16)].is_free {
+                println!("Warning attemted to set {} again.", forced_lit);
+                continue;
+            }
+            unsat = self.set_var(false, true, true, forced_lit);
             if unsat {
-                return true; // Signalize that a conflict has occurred
+                break; // Signalize that a conflict has occurred
             }
         }
-        false // No conflict found
+        unsat // No conflict found
     }
 
     fn set_var(&mut self, branched: bool, forced: bool, val: bool, var: BVar) -> bool {
@@ -280,11 +285,11 @@ impl CDCL {
                 }
                 1 => {
                     // * if only one is found
-                    self.unit_queue
-                        .push_front(**new_watched_cands.iter().next().unwrap());
+                    let lit_to_queue = *new_watched_cands[0];
+                    self.unit_queue.push_front(lit_to_queue);
                     self.implication_graph.insert_edge(
                         clause.vars.clone(),
-                        *new_watched_cands[0],
+                        lit_to_queue,
                         *c_idx,
                         self.branch_depth,
                     );
@@ -328,7 +333,7 @@ impl CDCL {
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
-        //self.implication_graph.0.remove(&var.abs());
+        self.implication_graph.0.remove(&var.abs());
     }
 
     // Function for deriving and adding a conflict clause
@@ -402,11 +407,11 @@ impl CDCL {
         decision_levels.sort();
         decision_levels.reverse();
         // Second largest (largest excluding conflict literal) decision level
-        let backtrack_depth = decision_levels
-            .get(1)
-            .or_else(|| Some(&decision_levels[0]))
-            .expect("Could not choose assertion level because conflict clause has no literals.");
-        Ok((current_vars.into_iter().collect(), *backtrack_depth))
+        let backtrack_depth = match decision_levels.len() > 1 {
+            true => decision_levels[1],
+            false => decision_levels[0] - 1,
+        };
+        Ok((current_vars.into_iter().collect(), backtrack_depth))
     }
 
     // This could be tracked during construction of impl graph
@@ -445,8 +450,6 @@ impl CDCL {
         }
         // * set branching depth to d
         self.branch_depth = assertion_level;
-        self.implication_graph
-            .update_implication_graph(assertion_level);
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
         let var = conflict_clause
@@ -470,8 +473,11 @@ impl CDCL {
             Clause {
                 watched_lhs: conflict_clause[0],
                 watched_rhs: conflict_clause
-                    .get(1)
+                    .iter()
+                    .skip(1)
+                    .filter(|l| self.lit_val[&(l.abs() as u16)].is_free)
                     .cloned()
+                    .next()
                     .unwrap_or(conflict_clause[0]),
                 vars: conflict_clause.clone(),
             },
@@ -1182,7 +1188,7 @@ fn should_parse_and_solve_unsat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, true).solve();
     if let DIMACSOutput::Sat(_) = res {
-        panic!("Was UNSAT but expected SAT.")
+        panic!("Was SAT but expected UNSAT.")
     }
 }
 
