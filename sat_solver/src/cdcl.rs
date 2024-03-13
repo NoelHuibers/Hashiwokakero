@@ -1,9 +1,8 @@
 //use flame;
 use std::{
-    collections::{vec_deque, HashMap, HashSet, VecDeque},
-    fmt::format,
-    vec,
+    collections::{vec_deque, HashMap, HashSet, VecDeque}, fmt::format, fs::File, io::Write, vec
 };
+
 
 use crate::{
     dpll::DIMACSOutput,
@@ -287,12 +286,15 @@ impl CDCL {
                     // * if only one is found
                     let lit_to_queue = *new_watched_cands[0];
                     self.unit_queue.push_front(lit_to_queue);
-                    self.implication_graph.insert_edge(
+                    let res = self.implication_graph.insert_edge(
                         clause.vars.clone(),
                         lit_to_queue,
                         *c_idx,
                         self.branch_depth,
                     );
+                    if let Err(_) = res {
+                        print!("{:?}", clause.vars);
+                    }
                 }
                 _ => (),
             };
@@ -358,12 +360,13 @@ impl CDCL {
             }
             Err(e) => {
                 // Handle the error case
+                self.print();
                 Err(e)
             }
         }
     }
     // 1-UIP Cut
-    fn analyze_conflict(&mut self) -> Result<(Vec<BVar>, u32), String> {
+    fn analyze_conflict(&self) -> Result<(Vec<BVar>, u32), String> {
         // TODO use iter instead of clone()
         let mut stack = self.history.clone();
         let mut ancestors = HashSet::new(); // Set to note already visited nodes
@@ -385,10 +388,14 @@ impl CDCL {
                 if let None = current_node.unwrap().reason {
                     continue;
                 }
-                current_vars = resolution(
+                if let Ok(res) = resolution(
                     &current_vars,
                     &self.get_clause(current_node.unwrap().reason.unwrap())?.vars,
-                )?;
+                ) {
+                    current_vars = res;
+                } else {
+                    println!("res skip")
+                }
             } else {
                 return Err(
                     "Backtracked until the end without finding an asserting clause.".into(),
@@ -431,7 +438,6 @@ impl CDCL {
         conflict_clause: Vec<i32>,
     ) -> bool {
         // * undo all assignments of branching level > d
-        self.implication_graph.clear_conflict();
         let mut last_step = None;
         // Reset assignments that were made after the assertion level
         while let Some(assignment) = self.history.last() {
@@ -445,7 +451,7 @@ impl CDCL {
             // Remove last assignment from the history
             last_step = self.history.pop();
         }
-        if let None = last_step {
+        if self.history.is_empty() {
             return true;
         }
         // * set branching depth to d
@@ -458,12 +464,15 @@ impl CDCL {
             .next()
             .unwrap();
         self.unit_queue.push_front(*var);
-        self.implication_graph.insert_edge(
+        let res = self.implication_graph.insert_edge(
             conflict_clause.clone(),
             *var,
             conflict_c_idx,
             assertion_level,
         );
+        if let Err(_) = res {
+            print!("{:?}", conflict_clause)
+        }
         false
     }
 
@@ -496,15 +505,59 @@ impl CDCL {
             None => Err(format!("Requested clause with index {} not found.", c_idx)),
         }
     }
+
+    fn print(&self) {
+        let nodes = self
+            .implication_graph
+            .0
+            .iter()
+            .map(|n| {
+                format!(
+                    "{} [label=\"{{{{{}|{}|{}}}|{:?}}}\"];\n",
+                    n.0,
+                    n.0,
+                    n.1.literal.signum(),
+                    n.1.decision_level,
+                    match n.1.reason {
+                        Some(c) => self.get_clause(c).unwrap().vars.clone(),
+                        None => vec![],
+                    },
+                )
+            })
+            .collect::<Vec<String>>()
+            .concat();
+        let edges = self
+            .implication_graph
+            .0
+            .iter()
+            .flat_map(|n| {
+                n.1.predecessors
+                    .iter()
+                    .map(move |p| format!("{} -> {};\n", n.0, p.abs()))
+            })
+            .collect::<Vec<String>>()
+            .concat();
+        let graph = format!("digraph G {{ node [shape=record];\n{}\n{}}}", nodes, edges);
+        let file_path = "imp_graph.dot";
+
+        // Open the file in write mode, creating it if it doesn't exist
+        let mut file = match File::create(file_path) {
+            Ok(file) => file,
+            Err(why) => panic!("Couldn't create file: {}", why),
+        };
+
+        // Write the content to the file
+        let _ignored = file.write_all(graph.as_bytes());
+    }
 }
 
 fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &Vec<i32>) -> bool {
-    HashSet::<i32>::from_iter(clause.iter().map(|l| l.abs()))
+    let res = HashSet::<i32>::from_iter(clause.iter().map(|l| l.abs()))
         .intersection(&HashSet::<i32>::from_iter(
             literals_of_max_branch_depth.iter().map(|l| l.abs()),
         ))
-        .count()
-        == 1
+        .count();
+    res == 1
 }
 
 fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String> {
@@ -520,7 +573,7 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String
             hs_2.remove(&-c_1);
             let res = Vec::from_iter(hs_1.union(&hs_2).cloned());
             println!(
-                "\t\t resolve {:?} with {:?} to {:?}",
+                "\t resolve {:?} with {:?} to {:?}",
                 clause1,
                 clause2,
                 res.clone()
@@ -766,6 +819,7 @@ fn should_derive_1_UIP_from_wikipedia() {
     assert!(cdcl.unit_queue.contains(&-7));
     assert_eq!(cdcl.unit_queue.len(), 1);
     cdcl.unit_prop();
+    cdcl.print();
 }
 
 #[test]
@@ -818,6 +872,7 @@ fn should_derive_1_UIP_from_princeton_paper() {
     cdcl.unit_prop();
     assert!(!cdcl.lit_val[&4].val);
     assert!(cdcl.implication_graph.0[&4].predecessors.contains(&8));
+    cdcl.print();
 }
 
 #[test]
@@ -876,6 +931,7 @@ fn should_derive_1_UIP_from_lecture() {
     assert!(conflict.clone().unwrap().0.contains(&10));
     assert!(conflict.unwrap().0.contains(&11));
     let _ = cdcl.backtrack_non_chron();
+    cdcl.print();
     assert_eq!(cdcl.history.len(), 3);
     assert!(cdcl.unit_queue.contains(&-4))
 }
@@ -1177,8 +1233,10 @@ fn should_solve_unsat() {
 #[test]
 fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let res = CDCL::new(input, v_c, c_c, true).solve();
+    let mut cdcl = CDCL::new(input, v_c, c_c, true);
+    let res = cdcl.solve();
     if let DIMACSOutput::Unsat = res {
+        cdcl.print();
         panic!("Was UNSAT but expected SAT.")
     }
 }
