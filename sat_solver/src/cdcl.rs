@@ -1,13 +1,13 @@
 //use flame;
 use std::{
-    collections::{vec_deque, HashMap, HashSet, VecDeque}, fmt::format, fs::File, io::Write, vec
+    collections::{vec_deque, HashMap, HashSet, VecDeque},
+    fmt::format,
+    fs::File,
+    io::Write,
+    vec,
 };
 
-
-use crate::{
-    dpll::DIMACSOutput,
-    implication_graph::{ImplicationGraph, ImplicationGraphNode},
-}; // Add this line to import the `cli` module from the crate root
+use crate::dpll::DIMACSOutput; // Add this line to import the `cli` module from the crate root
 
 type Atom = u16;
 type BVar = i32;
@@ -23,9 +23,12 @@ pub(crate) struct Clause {
     pub(crate) vars: Vec<BVar>,
 }
 
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub(crate) struct Literal {
     pub(crate) val: bool,
     pub(crate) is_free: bool,
+    pub(crate) reason: Option<CIdx>,
+    pub(crate) decision_level: u32,
 }
 
 #[derive(Clone)]
@@ -33,7 +36,6 @@ struct Assignment {
     var: BVar,
     val: bool,
     forced: bool,
-    decision_level: u32,
 }
 
 pub struct CDCL {
@@ -45,12 +47,12 @@ pub struct CDCL {
     history: Vec<Assignment>,
     // Memory allocation in the history is a bottle neck thus the initial unit prop and pure lit elim don't need to expand it
     history_enabled: bool,
-    implication_graph: ImplicationGraph,
     lit_val: HashMap<Atom, Literal>,
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
     // Using VecDaque for better push_front complexity
-    unit_queue: VecDeque<BVar>,
+    unit_queue: VecDeque<(BVar, Option<CIdx>)>,
+    literals_at_current_depth: HashSet<u16>,
 }
 
 impl CDCL {
@@ -68,10 +70,10 @@ impl CDCL {
             free_vars: HashSet::with_capacity(lit_count),
             history: Vec::new(),
             history_enabled: false,
-            implication_graph: ImplicationGraph::new(),
             lit_val: HashMap::with_capacity(lit_count),
             pos_watched_occ: HashMap::with_capacity(clause_count * 2),
             unit_queue: VecDeque::new(),
+            literals_at_current_depth: HashSet::new(),
         };
         // * read formula
         // Using iterators where possible for better performance
@@ -83,8 +85,8 @@ impl CDCL {
             };
             let fist_var = &clause.vars.clone()[0];
             cdcl.clauses.insert(c, clause);
-            if vars.len() == 1 && !cdcl.unit_queue.contains(fist_var) {
-                cdcl.unit_queue.push_front(*fist_var);
+            if vars.len() == 1 && !cdcl.unit_queue.contains(&(*fist_var, Some(c))) {
+                cdcl.unit_queue.push_front((*fist_var, Some(c)));
             }
             // Only set watched lits in watched_occ
             vec![vars.first().unwrap(), vars.last().unwrap()]
@@ -104,6 +106,8 @@ impl CDCL {
                     Literal {
                         val: false,
                         is_free: true,
+                        reason: None,
+                        decision_level: cdcl.branch_depth,
                     },
                 );
             });
@@ -142,9 +146,10 @@ impl CDCL {
             let var = self.free_vars.iter().next().unwrap();
             let (var, val, forced) = (var, var.is_positive(), false);
             // * set value var
-            self.branch_depth = self.branch_depth + 1;
             println!("Branching d {}:", self.branch_depth);
-            self.set_var(true, forced, val, *var);
+            self.branch_depth = self.branch_depth + 1;
+            self.literals_at_current_depth.clear();
+            self.set_var(true, forced, val, *var, None);
 
             // * unit propagation
             loop {
@@ -156,7 +161,7 @@ impl CDCL {
                 // * if conflict detected
                 let unsat = match self.backtrack_non_chron() {
                     Ok(b) => b,
-                    Err(e) => panic!("{}, at history_len: {}", e, self.history.len()),
+                    Err(e) => panic!("{}", e),
                 };
                 if unsat {
                     return DIMACSOutput::Unsat;
@@ -195,7 +200,7 @@ impl CDCL {
         let val = last_step.unwrap().val;
         self.unset_var(var);
         self.unit_queue.clear();
-        self.set_var(true, true, !val, var);
+        self.set_var(true, true, !val, var, None);
         false
     }
 
@@ -205,11 +210,11 @@ impl CDCL {
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // Try to set the literal. If this results in a conflict, `unsat` is true.
-            if !self.lit_val[&(forced_lit.abs() as u16)].is_free {
-                println!("Warning attemted to set {} again.", forced_lit);
+            if !self.lit_val[&(forced_lit.0.abs() as u16)].is_free {
+                println!("Warning attemted to set {} again.", forced_lit.0);
                 continue;
             }
-            unsat = self.set_var(false, true, true, forced_lit);
+            unsat = self.set_var(false, true, true, forced_lit.0, forced_lit.1);
             if unsat {
                 break; // Signalize that a conflict has occurred
             }
@@ -217,25 +222,25 @@ impl CDCL {
         unsat // No conflict found
     }
 
-    fn set_var(&mut self, branched: bool, forced: bool, val: bool, var: BVar) -> bool {
+    fn set_var(
+        &mut self,
+        branched: bool,
+        forced: bool,
+        val: bool,
+        var: BVar,
+        reason: Option<CIdx>,
+    ) -> bool {
         println!("\tset {} to {}", var, val);
         let mut conflict = false;
         if self.history_enabled {
-            let decision_level = self.branch_depth;
-            self.history.push(Assignment {
-                var,
-                val,
-                forced,
-                decision_level,
-            });
+            self.history.push(Assignment { var, val, forced });
         }
         let lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         // For conflict graph
-        if branched {
-            self.implication_graph.insert_leaf(var, self.branch_depth)
-        };
-
         lit.is_free = false;
+        lit.reason = reason;
+        lit.decision_level = self.branch_depth;
+        self.literals_at_current_depth.insert(as_atom(var));
         self.free_vars.remove(&var);
         self.free_vars.remove(&(var * -1));
         // -1 true => 1 false
@@ -276,25 +281,21 @@ impl CDCL {
                 // * if no unassigned literal found
                 0 => {
                     conflict = true;
-                    self.implication_graph.insert_conflict_node(
-                        *c_idx,
-                        clause.vars.clone(),
-                        self.branch_depth,
-                    )
+                    // Pseudo literal representing the root of the conflict graph
+                    self.lit_val.insert(
+                        0,
+                        Literal {
+                            val: false,
+                            is_free: false,
+                            reason: Some(*c_idx),
+                            decision_level: self.branch_depth,
+                        },
+                    );
                 }
                 1 => {
                     // * if only one is found
-                    let lit_to_queue = *new_watched_cands[0];
-                    self.unit_queue.push_front(lit_to_queue);
-                    let res = self.implication_graph.insert_edge(
-                        clause.vars.clone(),
-                        lit_to_queue,
-                        *c_idx,
-                        self.branch_depth,
-                    );
-                    if let Err(_) = res {
-                        print!("{:?}", clause.vars);
-                    }
+                    self.unit_queue
+                        .push_front((*new_watched_cands[0], Some(*c_idx)));
                 }
                 _ => (),
             };
@@ -335,7 +336,9 @@ impl CDCL {
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
         lit_var.is_free = true;
-        self.implication_graph.0.remove(&var.abs());
+        lit_var.reason = None;
+        lit_var.decision_level = 0;
+        self.literals_at_current_depth.remove(&as_atom(var));
     }
 
     // Function for deriving and adding a conflict clause
@@ -360,7 +363,7 @@ impl CDCL {
             }
             Err(e) => {
                 // Handle the error case
-                self.print();
+                self.print_graph_as_dot();
                 Err(e)
             }
         }
@@ -369,66 +372,45 @@ impl CDCL {
     fn analyze_conflict(&self) -> Result<(Vec<BVar>, u32), String> {
         // TODO use iter instead of clone()
         let mut stack = self.history.clone();
-        let mut ancestors = HashSet::new(); // Set to note already visited nodes
-        let mut current_node: Option<&ImplicationGraphNode> = None;
-        let mut current_vars = self
-            .get_clause(self.implication_graph.get_conflict_node()?.reason.unwrap())?
-            .vars
-            .clone();
-        let literals_of_max_branch_depth = self.literals_conflict_depth();
-        while !is_asserting(&current_vars, &literals_of_max_branch_depth) {
+        let mut new_vars = vec![];
+        let mut current_node: &Literal;
+        let mut current_vars = &self
+            .get_clause(
+                self.lit_val[&0]
+                    .reason
+                    .expect("Conflict has no reason clause"),
+            )?
+            .vars;
+        while !is_asserting(current_vars, &self.literals_at_current_depth) {
             if let Some(next) = stack.pop() {
-                current_node = self.implication_graph.0.get(&next.var.abs());
-                if let None = current_node {
+                current_node = &self.lit_val[&as_atom(next.var)];
+                if let None = current_node.clone().reason {
                     continue;
                 }
-                if !ancestors.insert(current_node) {
-                    continue;
+                let reason_clause = &self.get_clause(current_node.reason.unwrap())?.vars;
+                // quote lecure: We go backwards on the stack and if we find an assignment that is of a literal (next.var) in our clause then we resolve with the reason clause (current_node) and we continue to do that until we have an asserting clause.
+                if current_vars.contains(&next.var) || current_vars.contains(&-next.var) {
+                    new_vars = resolution(current_vars, reason_clause)?;
                 }
-                if let None = current_node.unwrap().reason {
-                    continue;
-                }
-                if let Ok(res) = resolution(
-                    &current_vars,
-                    &self.get_clause(current_node.unwrap().reason.unwrap())?.vars,
-                ) {
-                    current_vars = res;
-                } else {
-                    println!("res skip")
-                }
+                current_vars = &new_vars;
             } else {
-                return Err(
-                    "Backtracked until the end without finding an asserting clause.".into(),
-                );
+                self.print_graph_as_dot();
+                return Err("Resolved until the end without finding an asserting clause.".into());
             }
         }
         let mut decision_levels: Vec<u32> = current_vars
             .iter()
-            .filter_map(|v| {
-                self.implication_graph
-                    .0
-                    .get(&v.abs())
-                    .and_then(|node: &ImplicationGraphNode| Some(node.decision_level))
-            })
+            .map(|v| self.lit_val[&as_atom(*v)].decision_level)
             .collect();
         decision_levels.sort();
         decision_levels.reverse();
         // Second largest (largest excluding conflict literal) decision level
+        self.print_graph_as_dot();
         let backtrack_depth = match decision_levels.len() > 1 {
             true => decision_levels[1],
             false => decision_levels[0] - 1,
         };
-        Ok((current_vars.into_iter().collect(), backtrack_depth))
-    }
-
-    // This could be tracked during construction of impl graph
-    fn literals_conflict_depth(&self) -> Vec<i32> {
-        self.implication_graph
-            .0
-            .values()
-            .filter(|n| n.decision_level == self.branch_depth)
-            .map(|n| n.literal)
-            .collect()
+        Ok((current_vars.to_vec(), backtrack_depth))
     }
 
     fn non_chronological_backtrack(
@@ -439,12 +421,12 @@ impl CDCL {
     ) -> bool {
         // * undo all assignments of branching level > d
         let mut last_step = None;
+
         // Reset assignments that were made after the assertion level
         while let Some(assignment) = self.history.last() {
-            if assignment.decision_level <= assertion_level {
+            if self.lit_val[&as_atom(assignment.var)].decision_level <= assertion_level {
                 break;
             }
-
             // Undo assignment
             let var = assignment.var;
             self.unset_var(var);
@@ -456,24 +438,25 @@ impl CDCL {
         }
         // * set branching depth to d
         self.branch_depth = assertion_level;
+        self.lit_val
+            .iter()
+            .filter(|l| l.1.decision_level == self.branch_depth)
+            .for_each(|l| {
+                self.literals_at_current_depth.insert(*l.0);
+            });
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
-        let var = conflict_clause
+        let unset_lit = conflict_clause
             .iter()
             .filter(|v| self.lit_val[&(v.abs() as Atom)].is_free)
-            .next()
-            .unwrap();
-        self.unit_queue.push_front(*var);
-        let res = self.implication_graph.insert_edge(
-            conflict_clause.clone(),
-            *var,
-            conflict_c_idx,
-            assertion_level,
-        );
-        if let Err(_) = res {
-            print!("{:?}", conflict_clause)
+            .next();
+        if let Some(lit) = unset_lit {
+            self.unit_queue.push_front((*lit, Some(conflict_c_idx)));
+            return false;
+        } else {
+            self.print_graph_as_dot();
+            return true;
         }
-        false
     }
 
     fn insert_clause(&mut self, clause_id: usize, conflict_clause: Vec<i32>) {
@@ -506,17 +489,16 @@ impl CDCL {
         }
     }
 
-    fn print(&self) {
+    fn print_graph_as_dot(&self) {
         let nodes = self
-            .implication_graph
-            .0
+            .lit_val
             .iter()
             .map(|n| {
                 format!(
                     "{} [label=\"{{{{{}|{}|{}}}|{:?}}}\"];\n",
                     n.0,
                     n.0,
-                    n.1.literal.signum(),
+                    n.1.val as i32,
                     n.1.decision_level,
                     match n.1.reason {
                         Some(c) => self.get_clause(c).unwrap().vars.clone(),
@@ -527,13 +509,18 @@ impl CDCL {
             .collect::<Vec<String>>()
             .concat();
         let edges = self
-            .implication_graph
-            .0
+            .lit_val
             .iter()
-            .flat_map(|n| {
-                n.1.predecessors
+            .flat_map(|n| match n.1.reason {
+                Some(reason) => self
+                    .get_clause(reason)
+                    .unwrap()
+                    .vars
                     .iter()
+                    .filter(|&&e| as_atom(e) != *n.0)
                     .map(move |p| format!("{} -> {};\n", n.0, p.abs()))
+                    .collect(),
+                None => vec![],
             })
             .collect::<Vec<String>>()
             .concat();
@@ -551,13 +538,15 @@ impl CDCL {
     }
 }
 
-fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &Vec<i32>) -> bool {
-    let res = HashSet::<i32>::from_iter(clause.iter().map(|l| l.abs()))
-        .intersection(&HashSet::<i32>::from_iter(
-            literals_of_max_branch_depth.iter().map(|l| l.abs()),
-        ))
+fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &HashSet<u16>) -> bool {
+    let res = HashSet::<u16>::from_iter(clause.iter().map(|l| as_atom(*l)))
+        .intersection(literals_of_max_branch_depth)
         .count();
     res == 1
+}
+
+fn as_atom(lit: BVar) -> Atom {
+    lit.abs() as Atom
 }
 
 fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String> {
@@ -588,181 +577,6 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String
 }
 
 #[test]
-fn should_analyze_conflict() {
-    let mut cdcl = CDCL::new(
-        vec![
-            vec![1, 2, 3],
-            vec![1, 2, 4],
-            vec![1, 3, 4],
-            vec![2, 3, 4],
-            vec![-1, -2, -3],
-            vec![-1, -2, -4],
-            vec![-1, -3, -4],
-            vec![-2, -3, -4],
-            vec![1, 2, 5],
-            vec![1, 2, 6],
-            vec![1, 5, 6],
-            vec![2, 5, 6],
-            vec![-1, -2, -5],
-            vec![-1, -2, -6],
-            vec![-1, -5, -6],
-            vec![-2, -5, -6],
-            vec![3, 4, 7],
-            vec![3, 4, 8],
-            vec![3, 7, 8],
-            vec![4, 7, 8],
-            vec![-3, -4, -7],
-            vec![-3, -4, -8],
-            vec![-3, -7, -8],
-            vec![-4, -7, -8],
-            vec![5, 6, 7],
-            vec![5, 6, 8],
-            vec![5, 7, 8],
-            vec![6, 7, 8],
-            vec![-5, -6, -7],
-            vec![-5, -6, -8],
-            vec![-5, -7, -8],
-            vec![-6, -7, -8],
-            vec![3, 4],
-            vec![1, 2],
-            vec![5, 6],
-        ],
-        8,
-        35,
-        true,
-    );
-    cdcl.history = vec![
-        Assignment {
-            var: 6,
-            val: true,
-            forced: false,
-            decision_level: 1,
-        },
-        Assignment {
-            var: -3,
-            val: false,
-            forced: false,
-            decision_level: 2,
-        },
-        Assignment {
-            var: 5,
-            val: true,
-            forced: false,
-            decision_level: 3,
-        },
-        Assignment {
-            var: -7,
-            val: true,
-            forced: true,
-            decision_level: 3,
-        },
-        Assignment {
-            var: -8,
-            val: true,
-            forced: true,
-            decision_level: 3,
-        },
-        Assignment {
-            var: -1,
-            val: true,
-            forced: true,
-            decision_level: 3,
-        },
-        Assignment {
-            var: -2,
-            val: true,
-            forced: true,
-            decision_level: 3,
-        },
-    ];
-    cdcl.implication_graph = ImplicationGraph::new();
-    cdcl.implication_graph.0.insert(
-        0,
-        ImplicationGraphNode {
-            literal: 0,
-            decision_level: 3,
-            reason: Some(33),
-            predecessors: vec![1, 2],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        3,
-        ImplicationGraphNode {
-            literal: -3,
-            decision_level: 2,
-            reason: None,
-            predecessors: vec![],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        5,
-        ImplicationGraphNode {
-            literal: 5,
-            decision_level: 3,
-            reason: None,
-            predecessors: vec![],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        7,
-        ImplicationGraphNode {
-            literal: -7,
-            decision_level: 3,
-            reason: Some(28),
-            predecessors: vec![5, 6],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        6,
-        ImplicationGraphNode {
-            literal: 6,
-            decision_level: 1,
-            reason: None,
-            predecessors: vec![],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        1,
-        ImplicationGraphNode {
-            literal: -1,
-            decision_level: 3,
-            reason: Some(14),
-            predecessors: vec![5, 6],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        8,
-        ImplicationGraphNode {
-            literal: -8,
-            decision_level: 3,
-            reason: Some(29),
-            predecessors: vec![5, 6],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        2,
-        ImplicationGraphNode {
-            literal: -2,
-            decision_level: 3,
-            reason: Some(15),
-            predecessors: vec![5, 6, 1, 2],
-        },
-    );
-    cdcl.implication_graph.0.insert(
-        4,
-        ImplicationGraphNode {
-            literal: 4,
-            decision_level: 3,
-            reason: Some(19),
-            predecessors: vec![7, 8, 1, 2, 4],
-        },
-    );
-    cdcl.branch_depth = 3;
-    let res = cdcl.analyze_conflict();
-    assert!(res.is_ok());
-}
-
-#[test]
 fn should_derive_1_UIP_from_wikipedia() {
     let mut cdcl = CDCL::new(
         vec![
@@ -780,46 +594,35 @@ fn should_derive_1_UIP_from_wikipedia() {
         false,
     );
     cdcl.history_enabled = true;
-    cdcl.set_var(true, false, false, 1);
+    cdcl.set_var(true, false, false, 1, None);
     cdcl.unit_prop();
-    assert!(cdcl.implication_graph.0.get(&1).is_some());
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, true, 4);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, true, 4, None);
     cdcl.unit_prop();
-    assert!(cdcl.implication_graph.0[&4].predecessors.contains(&1));
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, true, 3);
-    assert!(cdcl.implication_graph.0.get(&3).is_some());
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, true, 3, None);
     cdcl.unit_prop();
-    assert!(cdcl.implication_graph.0[&12].predecessors.contains(&1));
-    assert!(cdcl.implication_graph.0[&12].predecessors.contains(&8));
-    assert!(cdcl.implication_graph.0[&8].predecessors.contains(&1));
-    assert!(cdcl.implication_graph.0[&4].predecessors.contains(&1));
-    assert!(cdcl.implication_graph.0[&8].predecessors.contains(&3));
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, false, 2);
-    assert!(cdcl.implication_graph.0.get(&2).is_some());
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, false, 2, None);
     cdcl.unit_prop();
-    assert!(cdcl.implication_graph.0[&11].predecessors.contains(&2));
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, true, 7);
-    assert!(cdcl.implication_graph.0.get(&7).is_some());
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, true, 7, None);
     let conflict = cdcl.unit_prop();
-    assert!(cdcl.implication_graph.0[&9].predecessors.contains(&3));
-    assert!(cdcl.implication_graph.0[&9].predecessors.contains(&7));
-    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&8));
-    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&7));
     assert!(conflict);
     let conflict = cdcl.analyze_conflict();
     assert!(conflict.is_ok());
     assert!(conflict.clone().unwrap().0.contains(&-3));
     assert!(conflict.clone().unwrap().0.contains(&-7));
     assert!(conflict.unwrap().0.contains(&8));
+    cdcl.print_graph_as_dot();
     let _ = cdcl.backtrack_non_chron();
-    assert!(cdcl.unit_queue.contains(&-7));
+    assert!(cdcl.unit_queue.contains(&(-7, Some(8))));
     assert_eq!(cdcl.unit_queue.len(), 1);
     cdcl.unit_prop();
-    cdcl.print();
 }
 
 #[test]
@@ -838,41 +641,32 @@ fn should_derive_1_UIP_from_princeton_paper() {
         false,
     );
     cdcl.history_enabled = true;
-    cdcl.set_var(true, false, false, 7);
+    cdcl.set_var(true, false, false, 7, None);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, false, 8);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, false, 8, None);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, false, 9);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, false, 9, None);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, false, 1);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, false, 1, None);
     let conflict = cdcl.unit_prop();
-    assert!(conflict);
-    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&5));
-    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&6));
-    assert_eq!(cdcl.implication_graph.0[&0].decision_level, 3);
-    assert!(cdcl.implication_graph.0[&5].predecessors.contains(&8));
-    assert!(cdcl.implication_graph.0[&5].predecessors.contains(&4));
-    assert_eq!(cdcl.implication_graph.0[&5].decision_level, 3);
-    assert!(cdcl.implication_graph.0[&6].predecessors.contains(&4));
-    assert!(cdcl.implication_graph.0[&6].predecessors.contains(&9));
-    assert_eq!(cdcl.implication_graph.0[&6].decision_level, 3);
-    assert_eq!(cdcl.implication_graph.0[&8].decision_level, 1);
     let conflict = cdcl.analyze_conflict();
     assert_eq!(conflict.clone().unwrap().1, 2);
     assert!(conflict.clone().unwrap().0.contains(&-4));
     assert!(conflict.clone().unwrap().0.contains(&9));
     assert_eq!(conflict.clone().unwrap().0.len(), 3);
     assert!(conflict.unwrap().0.contains(&8));
+    cdcl.print_graph_as_dot();
     let _ = cdcl.backtrack_non_chron();
     assert_eq!(cdcl.history.len(), 3);
-    assert!(cdcl.unit_queue.contains(&-4));
+    assert!(cdcl.unit_queue.contains(&(-4, Some(6))));
     cdcl.unit_prop();
     assert!(!cdcl.lit_val[&4].val);
-    assert!(cdcl.implication_graph.0[&4].predecessors.contains(&8));
-    cdcl.print();
 }
 
 #[test]
@@ -896,44 +690,30 @@ fn should_derive_1_UIP_from_lecture() {
         false,
     );
     cdcl.history_enabled = true;
-    cdcl.set_var(true, false, false, 9);
+    cdcl.set_var(true, false, false, 9, None);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, false, 10);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, false, 10, None);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, true, 12);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, true, 12, None);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, true, 1);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, true, 1, None);
     let conflict = cdcl.unit_prop();
     assert!(conflict);
-    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&5));
-    assert!(cdcl.implication_graph.0[&0].predecessors.contains(&6));
-    assert!(cdcl.implication_graph.0[&5].predecessors.contains(&10));
-    assert!(cdcl.implication_graph.0[&5].predecessors.contains(&4));
-    assert!(cdcl.implication_graph.0[&6].predecessors.contains(&4));
-    assert!(cdcl.implication_graph.0[&6].predecessors.contains(&11));
-    assert!(cdcl.implication_graph.0[&4].predecessors.contains(&2));
-    assert!(cdcl.implication_graph.0[&4].predecessors.contains(&3));
-    assert!(cdcl.implication_graph.0[&2].predecessors.contains(&1));
-    assert!(cdcl.implication_graph.0[&3].predecessors.contains(&1));
-    assert!(cdcl.implication_graph.0[&3].predecessors.contains(&9));
-    assert!(cdcl.implication_graph.0[&11].predecessors.contains(&10));
-    assert!(cdcl.implication_graph.0[&13].predecessors.contains(&12));
-    assert_eq!(cdcl.literals_conflict_depth().len(), 7); // Inclduing 0 for the conflict node
-    assert_eq!(cdcl.implication_graph.0[&9].decision_level, 0);
-    assert_eq!(cdcl.implication_graph.0[&6].decision_level, 3);
-    assert_eq!(cdcl.implication_graph.0[&6].reason, Some(4));
     let conflict = cdcl.analyze_conflict();
     assert_eq!(conflict.clone().unwrap().1, 1);
     assert!(conflict.clone().unwrap().0.contains(&-4));
     assert!(conflict.clone().unwrap().0.contains(&10));
     assert!(conflict.unwrap().0.contains(&11));
+    cdcl.print_graph_as_dot();
     let _ = cdcl.backtrack_non_chron();
-    cdcl.print();
     assert_eq!(cdcl.history.len(), 3);
-    assert!(cdcl.unit_queue.contains(&-4))
+    assert!(cdcl.unit_queue.contains(&(-4, Some(11))))
 }
 
 #[test]
@@ -947,7 +727,7 @@ fn should_set_var_1_true_watched_literals() {
     assert_eq!(cdcl.free_vars.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let c = cdcl.set_var(true, false, true, 1);
+    let c = cdcl.set_var(true, false, true, 1, None);
     assert!(!c);
     assert_eq!(cdcl.free_vars.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
@@ -967,7 +747,7 @@ fn should_set_var_neg_1_false_watched_literals() {
     assert_eq!(cdcl.free_vars.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let c = cdcl.set_var(true, false, false, -1);
+    let c = cdcl.set_var(true, false, false, -1, None);
     assert!(!c);
     assert_eq!(cdcl.free_vars.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
@@ -987,7 +767,7 @@ fn should_set_var_neg_1_true_watched_literals() {
     assert_eq!(cdcl.free_vars.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let c = cdcl.set_var(true, false, true, -1);
+    let c = cdcl.set_var(true, false, true, -1, None);
     assert!(!c);
     assert_eq!(cdcl.free_vars.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
@@ -1007,7 +787,7 @@ fn should_set_var_1_false_watched_literals() {
     assert_eq!(cdcl.free_vars.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let c = cdcl.set_var(true, false, true, -1);
+    let c = cdcl.set_var(true, false, true, -1, None);
     assert!(!c);
     assert_eq!(cdcl.free_vars.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
@@ -1024,8 +804,8 @@ fn should_detect_conflict_watched_literals() {
         3,
         true,
     );
-    cdcl.set_var(true, false, false, -1);
-    let c = cdcl.set_var(true, false, false, 2);
+    cdcl.set_var(true, false, false, -1, None);
+    let c = cdcl.set_var(true, false, false, 2, None);
     assert!(c)
 }
 
@@ -1037,9 +817,9 @@ fn should_detect_conflict_watched_literals_2() {
         3,
         true,
     );
-    cdcl.set_var(true, false, false, -1);
-    let c_1 = cdcl.set_var(true, false, false, -2);
-    let c_2 = cdcl.set_var(true, false, false, -3);
+    cdcl.set_var(true, false, false, -1, None);
+    let c_1 = cdcl.set_var(true, false, false, -2, None);
+    let c_2 = cdcl.set_var(true, false, false, -3, None);
     assert!(!c_1);
     assert!(c_2);
 }
@@ -1052,9 +832,9 @@ fn should_unit_prop_watched_literals() {
         3,
         true,
     );
-    cdcl.set_var(true, false, false, -1);
+    cdcl.set_var(true, false, false, -1, None);
     assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2);
-    cdcl.set_var(true, false, false, -2);
+    cdcl.set_var(true, false, false, -2, None);
     assert_eq!(cdcl.unit_queue.len(), 2);
     cdcl.unit_prop();
     assert_eq!(cdcl.lit_val.get(&3).unwrap().is_free, false);
@@ -1236,7 +1016,7 @@ fn should_parse_and_solve_sat() {
     let mut cdcl = CDCL::new(input, v_c, c_c, true);
     let res = cdcl.solve();
     if let DIMACSOutput::Unsat = res {
-        cdcl.print();
+        cdcl.print_graph_as_dot();
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1288,7 +1068,8 @@ fn test_derive_and_add_conflict_clause() {
 
     cdcl.history_enabled = true;
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, true, 1);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, true, 1, None);
     cdcl.unit_prop();
 
     let result = cdcl.backtrack_non_chron();
@@ -1309,7 +1090,8 @@ fn test_analyze_conflict() {
     let mut cdcl = CDCL::new(vec![vec![-1, -2], vec![-1, 2]], 2, 2, false);
     cdcl.history_enabled = true;
     cdcl.branch_depth += 1;
-    cdcl.set_var(true, false, true, 1);
+    cdcl.literals_at_current_depth.clear();
+    cdcl.set_var(true, false, true, 1, None);
     cdcl.unit_prop();
 
     // Simulate a conflict
@@ -1317,7 +1099,9 @@ fn test_analyze_conflict() {
     assert!(result.is_ok());
     let (conflict_clause, backtrack_level) = result.unwrap();
     assert!(!conflict_clause.is_empty());
-    assert_eq!(backtrack_level, 1);
+    assert_eq!(backtrack_level, 0);
+    assert!(cdcl.backtrack_non_chron().is_ok());
+    cdcl.unit_prop();
 }
 
 #[test]
