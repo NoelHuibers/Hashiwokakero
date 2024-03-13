@@ -363,7 +363,6 @@ impl CDCL {
             }
             Err(e) => {
                 // Handle the error case
-                self.print_graph_as_dot();
                 Err(e)
             }
         }
@@ -394,7 +393,6 @@ impl CDCL {
                 }
                 current_vars = &new_vars;
             } else {
-                self.print_graph_as_dot();
                 return Err("Resolved until the end without finding an asserting clause.".into());
             }
         }
@@ -405,7 +403,6 @@ impl CDCL {
         decision_levels.sort();
         decision_levels.reverse();
         // Second largest (largest excluding conflict literal) decision level
-        self.print_graph_as_dot();
         let backtrack_depth = match decision_levels.len() > 1 {
             true => decision_levels[1],
             false => decision_levels[0] - 1,
@@ -454,7 +451,6 @@ impl CDCL {
             self.unit_queue.push_front((*lit, Some(conflict_c_idx)));
             return false;
         } else {
-            self.print_graph_as_dot();
             return true;
         }
     }
@@ -1016,7 +1012,6 @@ fn should_parse_and_solve_sat() {
     let mut cdcl = CDCL::new(input, v_c, c_c, true);
     let res = cdcl.solve();
     if let DIMACSOutput::Unsat = res {
-        cdcl.print_graph_as_dot();
         panic!("Was UNSAT but expected SAT.")
     }
 }
