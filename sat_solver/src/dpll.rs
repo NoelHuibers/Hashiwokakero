@@ -1,6 +1,6 @@
 use crate::{
     cli::Heuristic,
-    heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids},
+    heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids_dpll},
 };
 use flame;
 use std::collections::{HashMap, HashSet, VecDeque}; // Add this line to import the `cli` module from the crate root
@@ -268,7 +268,7 @@ impl DPLL {
             Heuristic::JeroslawWang => {
                 jeroslaw_wang(&self.free_lits, &self.lit_val, &self.unsat_clauses)
             }
-            Heuristic::VSIDS => vsids(&self.free_lits, &self.unsat_clauses),
+            Heuristic::VSIDS => vsids_dpll(&self.free_lits, &self.unsat_clauses),
             Heuristic::Custom => custom(&self.free_lits, &self.unsat_clauses),
         };
         flame::end("pick literal");

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::dpll::Literal;
 
@@ -191,7 +191,7 @@ pub(crate) fn jeroslaw_wang(
 }
 
 // VSIDS
-pub(crate) fn vsids(
+pub(crate) fn vsids_dpll(
     free_lits: &HashSet<i32>,
     unsat_clauses: &HashSet<(Vec<i32>, u8)>,
 ) -> (i32, bool) {
@@ -217,6 +217,197 @@ pub(crate) fn vsids(
     let val = true; // Default assignment
     (max_var, val)
 }
+
+//VSIDS for CDCL
+pub(crate) struct VsidsData {
+    scores: HashMap<i32, f64>,
+    counters: HashMap<i32, usize>,
+    branching_counter: usize,
+}
+
+impl VsidsData {
+    pub(crate) fn new() -> Self {
+        VsidsData {
+            scores: HashMap::new(),
+            counters: HashMap::new(),
+            branching_counter: 0,
+        }
+    }
+
+    // Function to update the scores for literals in conflict clauses
+    pub(crate) fn update_scores(&mut self, clause: &[i32]) {
+        for &lit in clause {
+            *self.counters.entry(lit.abs()).or_insert(0) += 1; // Increment the counter for each literal
+        }
+    }
+
+    // Function to periodically update the scores
+    pub(crate) fn decay_scores(&mut self) {
+        for (lit, score) in self.scores.iter_mut() {
+            let counter = *self.counters.get(&lit).unwrap_or(&0); // Get the counter for the literal
+            *score = *score / 2.0 + counter as f64; // Update the score
+            *self.counters.get_mut(&lit).unwrap_or(&mut 0) = 0; // Reset the counter
+        }
+        self.branching_counter = 0; // Reset the branching counter
+    }
+}
+
+pub(crate) fn vsids(
+    free_lits: &HashSet<i32>,
+    unsat_clauses: &[(Vec<i32>, u8)],
+    vsids_data: &mut VsidsData,
+) -> (i32, bool) {
+    // Increment the branching counter
+    vsids_data.branching_counter += 1;
+
+    // Update the scores based on the unsatisfied clauses
+    for (clause, _) in unsat_clauses {
+        vsids_data.update_scores(clause);
+    }
+
+    // Perform periodic update of scores
+    if vsids_data.branching_counter >= 255 {
+        vsids_data.decay_scores();
+    }
+
+    // Select the literal with the highest score
+    let (max_var, _) = vsids_data.scores.iter().max_by(|(_, &score_a), (_, &score_b)| {
+        score_a.partial_cmp(&score_b).unwrap_or(std::cmp::Ordering::Equal)
+    }).unwrap_or((&0, &0.0));
+
+    // Return the selected literal
+    if *max_var == 0 {
+        // Fallback mechanism if no literal was selected
+        return (*free_lits.iter().next().unwrap(), true);
+    }
+
+    // Default assignment for the selected literal
+    let val = true;
+    (*max_var, val)
+}
+
+
+// VMTF: Selects the last variable involved in a conflict
+pub(crate) fn vmtf(
+    free_lits: &HashSet<i32>,
+    all_clauses: &Vec<Vec<i32>>, 
+    learned_clauses: &Vec<Vec<i32>>,
+    vmtf_order: &mut VecDeque<i32>,
+    num_conflicts: usize,
+) -> (i32, bool) {
+    // Initialization of n(a) based on the initial heuristic h(a)
+    let mut initial_weights = HashMap::new();
+    for clause in all_clauses {
+        for &lit in clause {
+            let abs_lit = lit.abs();
+            *initial_weights.entry(abs_lit).or_insert(0) += 1;
+        }
+    }
+
+    // Using the initial weights as a starting point
+    let mut lit_weights = initial_weights.clone();
+
+    // Dynamic adjustment of the number of clauses last viewed
+    let num_recent_clauses = std::cmp::min(10 + num_conflicts / 100, learned_clauses.len());
+
+    // Updating the weights based on the last learned clauses
+    for clause in learned_clauses.iter().rev().take(num_recent_clauses) {
+        for &lit in clause {
+            let abs_lit = lit.abs();
+            if free_lits.contains(&abs_lit) {
+                *lit_weights.entry(abs_lit).or_insert(0) += 1;
+            }
+        }
+    }
+
+    // Sorting of literals based on their updated weights
+    let mut sorted_lits: Vec<(i32, usize)> = lit_weights.iter().map(|(&lit, &weight)| (lit, weight)).collect();
+    sorted_lits.sort_by(|a, b| b.1.cmp(&a.1));
+
+    // Moving the literals with the highest weights to the beginning of vmtf_order
+    for (lit, _) in sorted_lits.iter().take(std::cmp::min(sorted_lits.len(), 8)) {
+        vmtf_order.retain(|&x| x != *lit);
+        vmtf_order.push_front(*lit);
+    }
+
+    // Selection of the first literal in the list
+    if let Some(&lit) = vmtf_order.front() {
+        return (lit, true);
+    }
+
+    // Fallback
+    if let Some(&fallback_lit) = free_lits.iter().next() {
+        return (fallback_lit, true);
+    }
+
+    // Error Handling
+    (0, false)
+}
+
+
+// BerkMin: Selects a variable from the most recent unsatisfied clause
+pub struct BerkMinData {
+    priorities: HashMap<i32, f64>,
+    decay_factor: f64, // Factor for periodic updating
+}
+
+impl BerkMinData {
+    pub(crate) fn new() -> Self {
+        BerkMinData {
+            priorities: HashMap::new(),
+            decay_factor: 0.25, 
+        }
+    }
+
+    // Function for updating the priorities for literals in conflict clauses
+    pub(crate) fn update_priorities(&mut self, clause: &Vec<i32>) {
+        for &lit in clause {
+            *self.priorities.entry(lit.abs()).or_insert(0.0) += 1.0;
+        }
+    }
+
+    // Function for periodically updating the priorities
+    pub(crate) fn decay_priorities(&mut self) {
+        for priority in self.priorities.values_mut() {
+            *priority *= self.decay_factor; // Updates the priorities by multiplying by the decay factor
+        }
+    }
+}
+
+pub(crate) fn berkmin(
+    free_lits: &HashSet<i32>,
+    unsat_clauses: &[(Vec<i32>, u8)], 
+    berkmin_data: &mut BerkMinData,
+) -> (i32, bool) {
+    if let Some((most_recent_clause, _)) = unsat_clauses.last() { // Access to the latest unfulfilled clause
+        berkmin_data.update_priorities(most_recent_clause);
+
+        // Selects the literal with the highest priority from this clause
+        let &selected_lit = most_recent_clause
+            .iter()
+            .filter(|&lit| free_lits.contains(&lit.abs()))
+            .max_by(|&a, &b| {
+                berkmin_data.priorities.get(&a.abs())
+                .unwrap_or(&0.0) 
+                .partial_cmp(berkmin_data.priorities.get(&b.abs()).unwrap_or(&0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .unwrap_or(&0);
+
+        if selected_lit != 0 {
+            return (selected_lit.abs(), selected_lit > 0);
+        }
+    }
+
+    // Selects the literal with the highest priority from this clause
+    if let Some(&fallback_lit) = free_lits.iter().next() {
+        return (fallback_lit, true);
+    }
+
+    // Error handling if no literals are available
+    (0, false) // or panic!("BerkMin: No free literal available");
+}
+
 
 // Custom: Least number of clauses: selects the variable that appears in the smallest number of clauses.
 pub(crate) fn custom(
