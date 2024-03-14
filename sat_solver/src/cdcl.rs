@@ -1,7 +1,6 @@
 //use flame;
 use std::{
-    collections::{vec_deque, HashMap, HashSet, VecDeque},
-    fmt::format,
+    collections::{HashMap, HashSet, VecDeque},
     fs::File,
     io::Write,
     vec,
@@ -17,18 +16,19 @@ type CIdx = usize;
 // Same mem layout as for tuples:
 // - https://doc.rust-lang.org/reference/type-layout.html#tuple-layout
 // - https://doc.rust-lang.org/reference/types/struct.html#structtype
+#[derive(Clone)]
 pub(crate) struct Clause {
-    pub(crate) watched_lhs: BVar,
-    pub(crate) watched_rhs: BVar,
-    pub(crate) vars: Vec<BVar>,
+    watched_lhs: BVar,
+    watched_rhs: BVar,
+    vars: Vec<BVar>,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub(crate) struct Literal {
-    pub(crate) val: bool,
-    pub(crate) is_free: bool,
-    pub(crate) reason: Option<CIdx>,
-    pub(crate) decision_level: u32,
+    val: bool,
+    is_free: bool,
+    reason: Option<CIdx>,
+    decision_level: u32,
 }
 
 #[derive(Clone)]
@@ -102,7 +102,7 @@ impl CDCL {
                 let lit = literal;
                 cdcl.free_vars.insert(*lit);
                 cdcl.lit_val.insert(
-                    literal.abs() as Atom,
+                    as_atom(*literal),
                     Literal {
                         val: false,
                         is_free: true,
@@ -123,8 +123,8 @@ impl CDCL {
         }
         self.history_enabled = true;
         if self.clauses.values().fold(true, |i, c| {
-            let lhs = self.lit_val.get(&(c.watched_lhs.abs() as Atom));
-            let rhs = self.lit_val.get(&(c.watched_rhs.abs() as Atom));
+            let lhs = self.lit_val.get(&as_atom(c.watched_lhs));
+            let rhs = self.lit_val.get(&as_atom(c.watched_rhs));
             i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
         }) {
             let res: Vec<i32> = self
@@ -170,8 +170,8 @@ impl CDCL {
 
             // * if all clauses satisfied
             if self.clauses.values().fold(true, |i, c| {
-                let lhs = self.lit_val.get(&(c.watched_lhs.abs() as Atom));
-                let rhs = self.lit_val.get(&(c.watched_rhs.abs() as Atom));
+                let lhs = self.lit_val.get(&as_atom(c.watched_lhs));
+                let rhs = self.lit_val.get(&as_atom(c.watched_rhs));
                 i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
             }) {
                 let res: Vec<i32> = self
@@ -210,7 +210,7 @@ impl CDCL {
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // Try to set the literal. If this results in a conflict, `unsat` is true.
-            if !self.lit_val[&(forced_lit.0.abs() as u16)].is_free {
+            if !self.lit_val[&as_atom(forced_lit.0)].is_free {
                 println!("Warning attemted to set {} again.", forced_lit.0);
                 continue;
             }
@@ -235,7 +235,7 @@ impl CDCL {
         if self.history_enabled {
             self.history.push(Assignment { var, val, forced });
         }
-        let lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
+        let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
         // For conflict graph
         lit.is_free = false;
         lit.reason = reason;
@@ -266,7 +266,7 @@ impl CDCL {
             // * if satisfying literal encountert
             if clause.vars.iter().any(|&v| {
                 self.lit_val
-                    .get(&(v.abs() as Atom))
+                    .get(&as_atom(v))
                     .is_some_and(|a: &Literal| !a.is_free && (a.val == v.is_positive()))
             }) {
                 // Because this clause is already sat
@@ -275,7 +275,7 @@ impl CDCL {
             let new_watched_cands = clause
                 .vars
                 .iter()
-                .filter(|&v| self.lit_val.get(&(v.abs() as Atom)).unwrap().is_free)
+                .filter(|&v| self.lit_val.get(&as_atom(*v)).unwrap().is_free)
                 .collect::<Vec<&BVar>>();
             match new_watched_cands.len() {
                 // * if no unassigned literal found
@@ -334,7 +334,7 @@ impl CDCL {
         println!("\tunset {}", var);
         self.free_vars.insert(var);
         self.free_vars.insert(var * -1);
-        let lit_var: &mut Literal = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
+        let lit_var: &mut Literal = self.lit_val.get_mut(&as_atom(var)).unwrap();
         lit_var.is_free = true;
         lit_var.reason = None;
         lit_var.decision_level = 0;
@@ -346,7 +346,7 @@ impl CDCL {
         println!("Backtracking:");
         match self.analyze_conflict() {
             Ok((conflict_clause, backtrack_level)) => {
-                if conflict_clause.is_empty() {
+                if conflict_clause.vars.is_empty() {
                     let error_message =
                         "No conflict clause found. Check the implementation of analyze_conflict."
                             .to_string();
@@ -368,7 +368,7 @@ impl CDCL {
         }
     }
     // 1-UIP Cut
-    fn analyze_conflict(&self) -> Result<(Vec<BVar>, u32), String> {
+    fn analyze_conflict(&self) -> Result<(Clause, u32), String> {
         // TODO use iter instead of clone()
         let mut stack = self.history.clone();
         let mut new_vars = vec![];
@@ -396,25 +396,29 @@ impl CDCL {
                 return Err("Resolved until the end without finding an asserting clause.".into());
             }
         }
-        let mut decision_levels: Vec<u32> = current_vars
-            .iter()
-            .map(|v| self.lit_val[&as_atom(*v)].decision_level)
-            .collect();
-        decision_levels.sort();
-        decision_levels.reverse();
+        let mut vars = current_vars.to_vec();
+        vars.sort_by_key(|&v| self.lit_val[&as_atom(v)].decision_level);
+        vars.reverse();
         // Second largest (largest excluding conflict literal) decision level
-        let backtrack_depth = match decision_levels.len() > 1 {
-            true => decision_levels[1],
-            false => decision_levels[0] - 1,
+        let watched_lhs = vars[0];
+        let watched_rhs = *vars.get(1).unwrap_or(&watched_lhs);
+        let conflict_clause = Clause {
+            watched_lhs,
+            watched_rhs,
+            vars,
         };
-        Ok((current_vars.to_vec(), backtrack_depth))
+        let assetion_level = match watched_lhs == watched_rhs {
+            true => 0,
+            false => self.lit_val[&as_atom(watched_rhs)].decision_level,
+        };
+        Ok((conflict_clause, assetion_level))
     }
 
     fn non_chronological_backtrack(
         &mut self,
         assertion_level: u32,
         conflict_c_idx: CIdx,
-        conflict_clause: Vec<i32>,
+        conflict_clause: Clause,
     ) -> bool {
         // * undo all assignments of branching level > d
         let mut last_step = None;
@@ -443,34 +447,15 @@ impl CDCL {
             });
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
-        let unset_lit = conflict_clause
-            .iter()
-            .filter(|v| self.lit_val[&(v.abs() as Atom)].is_free)
-            .next();
-        if let Some(lit) = unset_lit {
-            self.unit_queue.push_front((*lit, Some(conflict_c_idx)));
-            return false;
-        } else {
-            return true;
-        }
+        self.unit_queue
+            .push_front((conflict_clause.watched_lhs, Some(conflict_c_idx)));
+        false
     }
 
-    fn insert_clause(&mut self, clause_id: usize, conflict_clause: Vec<i32>) {
-        self.clause_db.insert(
-            clause_id,
-            Clause {
-                watched_lhs: conflict_clause[0],
-                watched_rhs: conflict_clause
-                    .iter()
-                    .skip(1)
-                    .filter(|l| self.lit_val[&(l.abs() as u16)].is_free)
-                    .cloned()
-                    .next()
-                    .unwrap_or(conflict_clause[0]),
-                vars: conflict_clause.clone(),
-            },
-        );
-        conflict_clause.iter().for_each(|lit| {
+    fn insert_clause(&mut self, clause_id: usize, conflict_clause: Clause) {
+        let vars = conflict_clause.vars.clone();
+        self.clause_db.insert(clause_id, conflict_clause);
+        vars.iter().for_each(|lit| {
             self.pos_watched_occ
                 .entry(*lit)
                 .and_modify(|clause| clause.push(clause_id))
@@ -611,9 +596,9 @@ fn should_derive_1_UIP_from_wikipedia() {
     assert!(conflict);
     let conflict = cdcl.analyze_conflict();
     assert!(conflict.is_ok());
-    assert!(conflict.clone().unwrap().0.contains(&-3));
-    assert!(conflict.clone().unwrap().0.contains(&-7));
-    assert!(conflict.unwrap().0.contains(&8));
+    assert!(conflict.clone().unwrap().0.vars.contains(&-3));
+    assert!(conflict.clone().unwrap().0.vars.contains(&-7));
+    assert!(conflict.unwrap().0.vars.contains(&8));
     cdcl.print_graph_as_dot();
     let _ = cdcl.backtrack_non_chron();
     assert!(cdcl.unit_queue.contains(&(-7, Some(8))));
@@ -653,10 +638,10 @@ fn should_derive_1_UIP_from_princeton_paper() {
     let conflict = cdcl.unit_prop();
     let conflict = cdcl.analyze_conflict();
     assert_eq!(conflict.clone().unwrap().1, 2);
-    assert!(conflict.clone().unwrap().0.contains(&-4));
-    assert!(conflict.clone().unwrap().0.contains(&9));
-    assert_eq!(conflict.clone().unwrap().0.len(), 3);
-    assert!(conflict.unwrap().0.contains(&8));
+    assert!(conflict.clone().unwrap().0.vars.contains(&-4));
+    assert!(conflict.clone().unwrap().0.vars.contains(&9));
+    assert_eq!(conflict.clone().unwrap().0.vars.len(), 3);
+    assert!(conflict.unwrap().0.vars.contains(&8));
     cdcl.print_graph_as_dot();
     let _ = cdcl.backtrack_non_chron();
     assert_eq!(cdcl.history.len(), 3);
@@ -703,9 +688,9 @@ fn should_derive_1_UIP_from_lecture() {
     assert!(conflict);
     let conflict = cdcl.analyze_conflict();
     assert_eq!(conflict.clone().unwrap().1, 1);
-    assert!(conflict.clone().unwrap().0.contains(&-4));
-    assert!(conflict.clone().unwrap().0.contains(&10));
-    assert!(conflict.unwrap().0.contains(&11));
+    assert!(conflict.clone().unwrap().0.vars.contains(&-4));
+    assert!(conflict.clone().unwrap().0.vars.contains(&10));
+    assert!(conflict.unwrap().0.vars.contains(&11));
     cdcl.print_graph_as_dot();
     let _ = cdcl.backtrack_non_chron();
     assert_eq!(cdcl.history.len(), 3);
@@ -1093,8 +1078,8 @@ fn test_analyze_conflict() {
     let result = cdcl.analyze_conflict();
     assert!(result.is_ok());
     let (conflict_clause, backtrack_level) = result.unwrap();
-    assert!(!conflict_clause.is_empty());
-    assert_eq!(backtrack_level, 0);
+    assert!(!conflict_clause.vars.is_empty());
+    assert_eq!(backtrack_level, 1);
     assert!(cdcl.backtrack_non_chron().is_ok());
     cdcl.unit_prop();
 }
