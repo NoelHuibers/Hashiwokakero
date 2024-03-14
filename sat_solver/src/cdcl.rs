@@ -122,20 +122,8 @@ impl CDCL {
             return DIMACSOutput::Unsat;
         }
         self.history_enabled = true;
-        if self.clauses.values().fold(true, |i, c| {
-            let lhs = self.lit_val.get(&as_atom(c.watched_lhs));
-            let rhs = self.lit_val.get(&as_atom(c.watched_rhs));
-            i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
-        }) {
-            let res: Vec<i32> = self
-                .lit_val
-                .iter()
-                .map(|(atom, lit)| match lit.val {
-                    true => *atom as BVar,
-                    false => -(*atom as BVar),
-                })
-                .collect();
-            return DIMACSOutput::Sat(res);
+        if let Some(res) = self.is_sat() {
+            return res;
         }
 
         // * pure lit elim
@@ -169,20 +157,8 @@ impl CDCL {
             }
 
             // * if all clauses satisfied
-            if self.clauses.values().fold(true, |i, c| {
-                let lhs = self.lit_val.get(&as_atom(c.watched_lhs));
-                let rhs = self.lit_val.get(&as_atom(c.watched_rhs));
-                i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
-            }) {
-                let res: Vec<i32> = self
-                    .lit_val
-                    .iter()
-                    .map(|(atom, lit)| match lit.val {
-                        true => *atom as BVar,
-                        false => -(*atom as BVar),
-                    })
-                    .collect();
-                return DIMACSOutput::Sat(res);
+            if let Some(res) = self.is_sat() {
+                return res;
             }
         }
     }
@@ -367,6 +343,7 @@ impl CDCL {
             }
         }
     }
+
     // 1-UIP Cut
     fn analyze_conflict(&self) -> Result<(Clause, u32), String> {
         // TODO use iter instead of clone()
@@ -474,14 +451,15 @@ impl CDCL {
     }
 
     fn insert_clause(&mut self, clause_id: usize, conflict_clause: Clause) {
-        let vars = conflict_clause.vars.clone();
-        self.clause_db.insert(clause_id, conflict_clause);
-        vars.iter().for_each(|lit| {
-            self.pos_watched_occ
-                .entry(*lit)
-                .and_modify(|clause| clause.push(clause_id))
-                .or_insert(vec![clause_id]);
-        });
+        self.clause_db.insert(clause_id, conflict_clause.clone());
+        [conflict_clause.watched_lhs, conflict_clause.watched_rhs]
+            .iter()
+            .for_each(|lit| {
+                self.pos_watched_occ
+                    .entry(*lit)
+                    .and_modify(|clause| clause.push(clause_id))
+                    .or_insert(vec![clause_id]);
+            });
     }
 
     fn get_clause(&self, c_idx: CIdx) -> Result<&Clause, String> {
@@ -538,6 +516,25 @@ impl CDCL {
         // Write the content to the file
         let _ignored = file.write_all(graph.as_bytes());
     }
+
+    fn is_sat(&self) -> Option<DIMACSOutput> {
+        if self.clauses.values().fold(true, |i, c| {
+            let lhs = self.lit_val.get(&as_atom(c.watched_lhs));
+            let rhs = self.lit_val.get(&as_atom(c.watched_rhs));
+            i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
+        }) {
+            let res: Vec<i32> = self
+                .lit_val
+                .iter()
+                .map(|(atom, lit)| match lit.val {
+                    true => *atom as BVar,
+                    false => -(*atom as BVar),
+                })
+                .collect();
+            return Some(DIMACSOutput::Sat(res));
+        }
+        None
+    }
 }
 
 fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &HashSet<u16>) -> bool {
@@ -571,6 +568,33 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String
         "Could not apply resolution to {:?} and {:?}",
         clause1, clause2
     ))
+}
+
+#[test]
+fn should_be_sat_bug_mar_14th_1() {
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-159.cnf").unwrap();
+    let res = CDCL::new(input, v_c, c_c, true).solve();
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+}
+
+#[test]
+fn should_be_sat_bug_mar_14th_2() {
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
+    let res = CDCL::new(input, v_c, c_c, true).solve();
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+}
+
+#[test]
+fn should_be_sat_bug_mar_14th_3() {
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-158.cnf").unwrap();
+    let res = CDCL::new(input, v_c, c_c, true).solve();
+    if let DIMACSOutput::Unsat = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
 }
 
 #[test]

@@ -577,7 +577,7 @@ fn should_parse_and_solve_sat() {
 #[test]
 fn should_parse_and_solve_unsat() {
     let (input, v_c, c_c) =
-        crate::parse::parse("./dimacs-files/input/unsat/aim-50-1_6-no-1.cnf").unwrap();
+        crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
     if let DIMACSOutput::Sat(_) = res {
         panic!("Was UNSAT but expected SAT.")
