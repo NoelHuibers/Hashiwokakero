@@ -260,7 +260,6 @@ impl DPLL {
     fn pick_literal(&self) -> (BVar, bool) {
         flame::start("pick literal");
         let (var, val) = match self.heuristic {
-            Heuristic::Arbitrary => arbitrary(&self.free_lits),
             Heuristic::DLIS => dlis(&self.free_lits, &self.unsat_clauses),
             Heuristic::DLCS => dlcs(&self.free_lits, &self.lit_val, &self.unsat_clauses),
             Heuristic::MOM => mom(&self.free_lits, &self.lit_val, &self.unsat_clauses),
@@ -270,6 +269,7 @@ impl DPLL {
             }
             Heuristic::VSIDS => vsids_dpll(&self.free_lits, &self.unsat_clauses),
             Heuristic::Custom => custom(&self.free_lits, &self.unsat_clauses),
+            _ => arbitrary(&self.free_lits),
         };
         flame::end("pick literal");
         (var, val)

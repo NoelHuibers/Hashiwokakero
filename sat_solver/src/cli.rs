@@ -18,6 +18,8 @@ pub enum Heuristic {
     Boehm,
     JeroslawWang,
     VSIDS,
+    VMTF,
+    BerkMin,
     Custom,
 }
 

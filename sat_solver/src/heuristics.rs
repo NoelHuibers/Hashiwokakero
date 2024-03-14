@@ -254,7 +254,7 @@ impl VsidsData {
 
 pub(crate) fn vsids(
     free_lits: &HashSet<i32>,
-    unsat_clauses: &[(Vec<i32>, u8)],
+    unsat_clauses: &Vec<(Vec<i32>, u8)>,
     vsids_data: &mut VsidsData,
 ) -> (i32, bool) {
     // Increment the branching counter
