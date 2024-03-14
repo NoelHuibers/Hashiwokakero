@@ -5,7 +5,6 @@ pub mod cli;
 pub mod dpll;
 mod heuristics;
 pub mod parse;
-pub mod implication_graph;
 
 fn main() {
     let arguments = cli::cli();

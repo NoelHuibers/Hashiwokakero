@@ -146,8 +146,8 @@ impl CDCL {
             let var = self.free_vars.iter().next().unwrap();
             let (var, val, forced) = (var, var.is_positive(), false);
             // * set value var
-            println!("Branching d {}:", self.branch_depth);
             self.branch_depth = self.branch_depth + 1;
+            //println!("Branching d {}:", self.branch_depth);
             self.literals_at_current_depth.clear();
             self.set_var(true, forced, val, *var, None);
 
@@ -205,13 +205,13 @@ impl CDCL {
     }
 
     fn unit_prop(&mut self) -> bool {
-        println!("Unitprop:");
+        //println!("Unitprop:");
         let mut unsat = false;
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // Try to set the literal. If this results in a conflict, `unsat` is true.
             if !self.lit_val[&as_atom(forced_lit.0)].is_free {
-                println!("Warning attemted to set {} again.", forced_lit.0);
+                //println!("Warning attemted to set {} again.", forced_lit.0);
                 continue;
             }
             unsat = self.set_var(false, true, true, forced_lit.0, forced_lit.1);
@@ -230,7 +230,7 @@ impl CDCL {
         var: BVar,
         reason: Option<CIdx>,
     ) -> bool {
-        println!("\tset {} to {}", var, val);
+        //println!("\tset {} to {}", var, val);
         let mut conflict = false;
         if self.history_enabled {
             self.history.push(Assignment { var, val, forced });
@@ -331,7 +331,7 @@ impl CDCL {
     }
 
     fn unset_var(&mut self, var: BVar) {
-        println!("\tunset {}", var);
+        //println!("\tunset {}", var);
         self.free_vars.insert(var);
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&as_atom(var)).unwrap();
@@ -343,7 +343,7 @@ impl CDCL {
 
     // Function for deriving and adding a conflict clause
     fn backtrack_non_chron(&mut self) -> Result<bool, String> {
-        println!("Backtracking:");
+        //println!("Backtracking:");
         match self.analyze_conflict() {
             Ok((conflict_clause, backtrack_level)) => {
                 if conflict_clause.vars.is_empty() {
@@ -408,7 +408,7 @@ impl CDCL {
             vars,
         };
         let assetion_level = match watched_lhs == watched_rhs {
-            true => 0,
+            true => self.lit_val[&as_atom(watched_rhs)].decision_level - 1,
             false => self.lit_val[&as_atom(watched_rhs)].decision_level,
         };
         Ok((conflict_clause, assetion_level))
@@ -434,11 +434,26 @@ impl CDCL {
             // Remove last assignment from the history
             last_step = self.history.pop();
         }
+        // * set branching depth to d
+        // It can happen that during complete backtracking and forcing the last
+        // branched value we will end up with branch_depth 0. But we shouldn't
+        // unit prop with branch_depth 0 because assignments would be permanent
+        self.branch_depth = match assertion_level {
+            0 => 1,
+            _ => assertion_level,
+        };
         if self.history.is_empty() {
+            // Just like in DPLL
+            let last_step = last_step.unwrap();
+            if !last_step.forced {
+                self.unit_queue.clear();
+                self.set_var(true, true, !last_step.val, last_step.var, None);
+                return false;
+            }
             return true;
         }
-        // * set branching depth to d
-        self.branch_depth = assertion_level;
+        // As we're tracking literals_at_current_depth during setting/unsetting vars we
+        // need to collect "leftovers" when setting the decision_level to a lover val
         self.lit_val
             .iter()
             .filter(|l| l.1.decision_level == self.branch_depth)
@@ -447,6 +462,12 @@ impl CDCL {
             });
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
+        if !self.lit_val[&as_atom(conflict_clause.watched_lhs)].is_free {
+            panic!(
+                "watched_lhs {} is already set and thus won't be queued.",
+                conflict_clause.watched_lhs
+            );
+        }
         self.unit_queue
             .push_front((conflict_clause.watched_lhs, Some(conflict_c_idx)));
         false
@@ -542,12 +563,7 @@ fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String
             hs_1.remove(c_1);
             hs_2.remove(&-c_1);
             let res = Vec::from_iter(hs_1.union(&hs_2).cloned());
-            println!(
-                "\t resolve {:?} with {:?} to {:?}",
-                clause1,
-                clause2,
-                res.clone()
-            );
+            //println!("\t resolve {:?} with {:?} to {:?}", clause1, clause2, res.clone());
             return Ok(res);
         }
     }
@@ -1025,15 +1041,17 @@ fn should_elim_pure_lit() {
 }
 
 #[test]
-fn bug_jan_2nd_should_be_sat() {
-    let (mut input, mut v_c, mut c_c) =
-        crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
+fn should_be_sat_bug_jan_2nd_1() {
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, true).solve();
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
     }
+}
 
-    (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
+#[test]
+fn should_be_sat_bug_jan_2nd_2() {
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, true).solve();
     if let DIMACSOutput::Unsat = res {
         panic!("Was UNSAT but expected SAT.")
@@ -1079,7 +1097,7 @@ fn test_analyze_conflict() {
     assert!(result.is_ok());
     let (conflict_clause, backtrack_level) = result.unwrap();
     assert!(!conflict_clause.vars.is_empty());
-    assert_eq!(backtrack_level, 1);
+    assert_eq!(backtrack_level, 0);
     assert!(cdcl.backtrack_non_chron().is_ok());
     cdcl.unit_prop();
 }
