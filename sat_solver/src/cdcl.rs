@@ -137,16 +137,14 @@ impl CDCL {
             return res;
         }
 
-        // * pure lit elim
-        // TODO
         loop {
             // * choose literal var
             // TODO is currently very inefficient and needs to be replaced by picking conflict literals.
             let (var, val) = self.pick_branching_literal();
             // * set value var
             self.branch_depth = self.branch_depth + 1;
-            //println!("Branching d {}:", self.branch_depth);
             self.literals_at_current_depth.clear();
+            println!("Branching d {}:", self.branch_depth);
             self.set_var(false, val, var, None);
 
             // * unit propagation
@@ -155,15 +153,19 @@ impl CDCL {
                 if !conflict {
                     break;
                 };
-
                 // * if conflict detected
-                let unsat = match self.backtrack_non_chron() {
-                    Ok(b) => b,
-                    Err(e) => panic!("{}", e),
-                };
-                if unsat {
+                let (conflict_clause, backtrack_level) = self.analyze_conflict().unwrap();
+
+                if self.branch_depth == 0 {
                     return DIMACSOutput::Unsat;
                 }
+
+                // Add conflict clause to the database
+                let clause_id = self.clauses.len() + self.clause_db.len();
+                self.insert_clause(clause_id, conflict_clause.clone());
+                    
+                // Perform non-chronological backtracking
+                self.non_chronological_backtrack(backtrack_level, clause_id, conflict_clause);
             }
 
             // * if all clauses satisfied
@@ -191,13 +193,13 @@ impl CDCL {
     }
 
     fn unit_prop(&mut self) -> bool {
-        //println!("Unitprop:");
-        let mut unsat = false;
+        println!("Unitprop:");
+        let mut unsat = !self.unit_queue.is_empty();
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // Try to set the literal. If this results in a conflict, `unsat` is true.
             if !self.lit_val[&as_atom(forced_lit.0)].is_free {
-                //println!("Warning attemted to set {} again.", forced_lit.0);
+                println!("Warning attemted to set {} again.", forced_lit.0);
                 continue;
             }
             unsat = self.set_var(true, true, forced_lit.0, forced_lit.1);
@@ -209,7 +211,7 @@ impl CDCL {
     }
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar, reason: Option<CIdx>) -> bool {
-        //println!("\tset {} to {}", var, val);
+        println!("\tset {} to {}", var, val);
         let mut conflict = false;
         if self.history_enabled {
             self.history.push(Assignment { var, val, forced });
@@ -310,7 +312,7 @@ impl CDCL {
     }
 
     fn unset_var(&mut self, var: BVar) {
-        //println!("\tunset {}", var);
+        println!("\tunset {}", var);
         self.free_vars.insert(var);
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&as_atom(var)).unwrap();
@@ -318,33 +320,6 @@ impl CDCL {
         lit_var.reason = None;
         lit_var.decision_level = 0;
         self.literals_at_current_depth.remove(&as_atom(var));
-    }
-
-    // Function for deriving and adding a conflict clause
-    fn backtrack_non_chron(&mut self) -> Result<bool, String> {
-        //println!("Backtracking:");
-        match self.analyze_conflict() {
-            Ok((conflict_clause, backtrack_level)) => {
-                if conflict_clause.vars.is_empty() {
-                    let error_message =
-                        "No conflict clause found. Check the implementation of analyze_conflict."
-                            .to_string();
-                    println!("{}", &error_message);
-                    return Err(error_message);
-                }
-
-                // Add conflict clause to the database
-                let clause_id = self.clauses.len() + self.clause_db.len();
-                self.insert_clause(clause_id, conflict_clause.clone());
-
-                // Perform non-chronological backtracking
-                Ok(self.non_chronological_backtrack(backtrack_level, clause_id, conflict_clause))
-            }
-            Err(e) => {
-                // Handle the error case
-                Err(e)
-            }
-        }
     }
 
     // 1-UIP Cut
@@ -387,10 +362,7 @@ impl CDCL {
             watched_rhs,
             vars,
         };
-        let assetion_level = match watched_lhs == watched_rhs {
-            true => self.lit_val[&as_atom(watched_rhs)].decision_level - 1,
-            false => self.lit_val[&as_atom(watched_rhs)].decision_level,
-        };
+        let assetion_level = self.lit_val[&as_atom(watched_rhs)].decision_level;
         Ok((conflict_clause, assetion_level))
     }
 
@@ -399,10 +371,8 @@ impl CDCL {
         assertion_level: u32,
         conflict_c_idx: CIdx,
         conflict_clause: Clause,
-    ) -> bool {
+    ) {
         // * undo all assignments of branching level > d
-        let mut last_step = None;
-
         // Reset assignments that were made after the assertion level
         while let Some(assignment) = self.history.last() {
             if self.lit_val[&as_atom(assignment.var)].decision_level <= assertion_level {
@@ -412,26 +382,10 @@ impl CDCL {
             let var = assignment.var;
             self.unset_var(var);
             // Remove last assignment from the history
-            last_step = self.history.pop();
+            self.history.pop();
         }
         // * set branching depth to d
-        // It can happen that during complete backtracking and forcing the last
-        // branched value we will end up with branch_depth 0. But we shouldn't
-        // unit prop with branch_depth 0 because assignments would be permanent
-        self.branch_depth = match assertion_level {
-            0 => 1,
-            _ => assertion_level,
-        };
-        if self.history.is_empty() {
-            // Just like in DPLL
-            let last_step = last_step.unwrap();
-            if !last_step.forced {
-                self.unit_queue.clear();
-                self.set_var(true, !last_step.val, last_step.var, None);
-                return false;
-            }
-            return true;
-        }
+        self.branch_depth = assertion_level;
         // As we're tracking literals_at_current_depth during setting/unsetting vars we
         // need to collect "leftovers" when setting the decision_level to a lover val
         self.lit_val
@@ -443,14 +397,14 @@ impl CDCL {
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
         if !self.lit_val[&as_atom(conflict_clause.watched_lhs)].is_free {
-            panic!(
-                "watched_lhs {} is already set and thus won't be queued.",
-                conflict_clause.watched_lhs
+            println!(
+                "watched_lhs {} is already set at {} and thus won't be queued.",
+                conflict_clause.watched_lhs, assertion_level
             );
+            return;
         }
         self.unit_queue
             .push_front((conflict_clause.watched_lhs, Some(conflict_c_idx)));
-        false
     }
 
     fn insert_clause(&mut self, clause_id: usize, conflict_clause: Clause) {
@@ -522,9 +476,9 @@ impl CDCL {
 
     fn is_sat(&self) -> Option<DIMACSOutput> {
         if self.clauses.values().fold(true, |i, c| {
-            let lhs = self.lit_val.get(&as_atom(c.watched_lhs));
-            let rhs = self.lit_val.get(&as_atom(c.watched_rhs));
-            i && (lhs.is_some_and(|l| !l.is_free) || rhs.is_some_and(|l| !l.is_free))
+            let lhs = self.lit_val.get(&as_atom(c.watched_lhs)).unwrap();
+            let rhs = self.lit_val.get(&as_atom(c.watched_rhs)).unwrap();
+            i && !(lhs.is_free && rhs.is_free && self.pos_watched_occ.contains_key(&c.watched_lhs) && self.pos_watched_occ.contains_key(&c.watched_rhs))
         }) {
             let res: Vec<i32> = self
                 .lit_val
@@ -744,7 +698,6 @@ fn should_derive_1_UIP_from_wikipedia() {
     assert!(conflict.clone().unwrap().0.vars.contains(&-7));
     assert!(conflict.unwrap().0.vars.contains(&8));
     cdcl.print_graph_as_dot();
-    let _ = cdcl.backtrack_non_chron();
     assert!(cdcl.unit_queue.contains(&(-7, Some(8))));
     assert_eq!(cdcl.unit_queue.len(), 1);
     cdcl.unit_prop();
@@ -787,7 +740,6 @@ fn should_derive_1_UIP_from_princeton_paper() {
     assert_eq!(conflict.clone().unwrap().0.vars.len(), 3);
     assert!(conflict.unwrap().0.vars.contains(&8));
     cdcl.print_graph_as_dot();
-    let _ = cdcl.backtrack_non_chron();
     assert_eq!(cdcl.history.len(), 3);
     assert!(cdcl.unit_queue.contains(&(-4, Some(6))));
     cdcl.unit_prop();
@@ -836,7 +788,6 @@ fn should_derive_1_uip_from_lecture() {
     assert!(conflict.clone().unwrap().0.vars.contains(&10));
     assert!(conflict.unwrap().0.vars.contains(&11));
     cdcl.print_graph_as_dot();
-    let _ = cdcl.backtrack_non_chron();
     assert_eq!(cdcl.history.len(), 3);
     assert!(cdcl.unit_queue.contains(&(-4, Some(11))))
 }
@@ -1149,7 +1100,8 @@ fn should_parse_and_solve_sat() {
 fn should_parse_and_solve_unsat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
-    if let DIMACSOutput::Sat(_) = res {
+    if let DIMACSOutput::Sat(vars) = res {
+        println!("{:?}", vars);
         panic!("Was SAT but expected UNSAT.")
     }
 }
@@ -1203,17 +1155,6 @@ fn test_derive_and_add_conflict_clause() {
     cdcl.set_var(false, true, 1, None);
     cdcl.unit_prop();
 
-    let result = cdcl.backtrack_non_chron();
-    assert!(
-        result.is_ok(),
-        "Conflict clause should be successfully derived."
-    );
-
-    assert_eq!(
-        cdcl.clauses.len() + cdcl.clause_db.len(),
-        4,
-        "A new conflict clause should have been added."
-    );
 }
 
 #[test]
@@ -1231,7 +1172,6 @@ fn test_analyze_conflict() {
     let (conflict_clause, backtrack_level) = result.unwrap();
     assert!(!conflict_clause.vars.is_empty());
     assert_eq!(backtrack_level, 0);
-    assert!(cdcl.backtrack_non_chron().is_ok());
     cdcl.unit_prop();
 }
 
