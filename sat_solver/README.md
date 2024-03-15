@@ -1,14 +1,15 @@
-# DPLL Solver
+# SAT-Solver
 
 ## Running the SAT-Solver
 
 Once built via `cargo build --release` the solver can be executed the following:
 
-`./target/release/dpll [MODE] [FILEPATH] --heuristic [HEURISTIC] [FLAGS]`
+`./target/release/sat [MODE] [FILEPATH] [FILEPATH] --heuristic [HEURISTIC] [FLAGS]`
 
 ### MODE
 
-Currently, only the `dpll` mode is available.
+* dpll
+* cdcl
 
 ### HEURISTIC
 
@@ -64,9 +65,10 @@ Run the tests using cargo:
 **Noel:**
 
 - [x] Fix issue with Conflict analysis
+- [x] Subsumed Clauses
 - [ ] Restarts
-- [ ] Preprocessing
 - [ ] Drup logging
+- [ ] Heuristics
 
 **Laura:**
 
@@ -81,5 +83,6 @@ Run the tests using cargo:
 - [x] Update impl. graph while setting vars
 - [x] Update Conflict analysis
 - [x] Test + Debug non-chronological backtracking
-- [ ] Check whether unit clauses can occur in conflict analysis
-- [ ] Check impl for set_var in respect to unit clauses
+- [x] Check whether unit clauses can occur in conflict analysis
+- [x] Check impl for set_var in respect to unit clauses
+- [x] Pure literal elimination as preprocessing
