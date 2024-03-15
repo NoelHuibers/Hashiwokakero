@@ -32,7 +32,7 @@ pub(crate) struct Literal {
     val: bool,
     is_free: bool,
     reason: Option<CIdx>,
-    decision_level: u32,
+    decision_level: i64,
 }
 
 #[derive(Clone)]
@@ -43,11 +43,11 @@ struct Assignment {
 }
 
 pub struct CDCL {
-    branch_depth: u32,
+    branch_depth: i64,
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     clauses: HashMap<usize, Clause>,
     clause_db: HashMap<usize, Clause>,
-    free_vars: HashSet<i32>,
+    free_vars: HashSet<BVar>,
     heuristic: Heuristic,
     history: Vec<Assignment>,
     // Memory allocation in the history is a bottle neck thus the initial unit prop and pure lit elim don't need to expand it
@@ -57,7 +57,7 @@ pub struct CDCL {
     pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
     // Using VecDaque for better push_front complexity
     unit_queue: VecDeque<(BVar, Option<CIdx>)>,
-    literals_at_current_depth: HashSet<u16>,
+    literals_at_current_depth: HashSet<Atom>,
 
     vsids_data: VsidsData,
     berkmin_data: BerkMinData,
@@ -65,7 +65,7 @@ pub struct CDCL {
 
 impl CDCL {
     pub fn new(
-        input: Vec<Vec<i32>>,
+        input: Vec<Vec<BVar>>,
         lit_count: usize,
         clause_count: usize,
         heuristic: Heuristic,
@@ -144,7 +144,7 @@ impl CDCL {
             // * set value var
             self.branch_depth = self.branch_depth + 1;
             self.literals_at_current_depth.clear();
-            println!("Branching d {}:", self.branch_depth);
+            //println!("Branching d {}:", self.branch_depth);
             self.set_var(false, val, var, None);
 
             // * unit propagation
@@ -156,14 +156,14 @@ impl CDCL {
                 // * if conflict detected
                 let (conflict_clause, backtrack_level) = self.analyze_conflict().unwrap();
 
-                if self.branch_depth == 0 {
+                if backtrack_level < 0 {
                     return DIMACSOutput::Unsat;
                 }
 
                 // Add conflict clause to the database
                 let clause_id = self.clauses.len() + self.clause_db.len();
                 self.insert_clause(clause_id, conflict_clause.clone());
-                    
+
                 // Perform non-chronological backtracking
                 self.non_chronological_backtrack(backtrack_level, clause_id, conflict_clause);
             }
@@ -193,13 +193,13 @@ impl CDCL {
     }
 
     fn unit_prop(&mut self) -> bool {
-        println!("Unitprop:");
+        //println!("Unitprop:");
         let mut unsat = !self.unit_queue.is_empty();
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // Try to set the literal. If this results in a conflict, `unsat` is true.
             if !self.lit_val[&as_atom(forced_lit.0)].is_free {
-                println!("Warning attemted to set {} again.", forced_lit.0);
+                //println!("Warning attemted to set {} again.", forced_lit.0);
                 continue;
             }
             unsat = self.set_var(true, true, forced_lit.0, forced_lit.1);
@@ -211,7 +211,7 @@ impl CDCL {
     }
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar, reason: Option<CIdx>) -> bool {
-        println!("\tset {} to {}", var, val);
+        //println!("\tset {} to {}", var, val);
         let mut conflict = false;
         if self.history_enabled {
             self.history.push(Assignment { var, val, forced });
@@ -312,7 +312,7 @@ impl CDCL {
     }
 
     fn unset_var(&mut self, var: BVar) {
-        println!("\tunset {}", var);
+        //println!("\tunset {}", var);
         self.free_vars.insert(var);
         self.free_vars.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&as_atom(var)).unwrap();
@@ -323,7 +323,7 @@ impl CDCL {
     }
 
     // 1-UIP Cut
-    fn analyze_conflict(&self) -> Result<(Clause, u32), String> {
+    fn analyze_conflict(&self) -> Result<(Clause, i64), String> {
         // TODO use iter instead of clone()
         let mut stack = self.history.clone();
         let mut new_vars = vec![];
@@ -362,13 +362,17 @@ impl CDCL {
             watched_rhs,
             vars,
         };
-        let assetion_level = self.lit_val[&as_atom(watched_rhs)].decision_level;
+        let mut assetion_level = self.lit_val[&as_atom(watched_rhs)].decision_level;
+        if assetion_level == self.branch_depth {
+            self.print_graph_as_dot();
+            assetion_level = assetion_level -1 ;
+        }
         Ok((conflict_clause, assetion_level))
     }
 
     fn non_chronological_backtrack(
         &mut self,
-        assertion_level: u32,
+        assertion_level: i64,
         conflict_c_idx: CIdx,
         conflict_clause: Clause,
     ) {
@@ -397,11 +401,10 @@ impl CDCL {
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
         if !self.lit_val[&as_atom(conflict_clause.watched_lhs)].is_free {
-            println!(
-                "watched_lhs {} is already set at {} and thus won't be queued.",
-                conflict_clause.watched_lhs, assertion_level
+            panic!(
+                "watched_lhs {} is already set and thus won't be queued.",
+                conflict_clause.watched_lhs
             );
-            return;
         }
         self.unit_queue
             .push_front((conflict_clause.watched_lhs, Some(conflict_c_idx)));
@@ -478,7 +481,10 @@ impl CDCL {
         if self.clauses.values().fold(true, |i, c| {
             let lhs = self.lit_val.get(&as_atom(c.watched_lhs)).unwrap();
             let rhs = self.lit_val.get(&as_atom(c.watched_rhs)).unwrap();
-            i && !(lhs.is_free && rhs.is_free && self.pos_watched_occ.contains_key(&c.watched_lhs) && self.pos_watched_occ.contains_key(&c.watched_rhs))
+            i && !(lhs.is_free
+                && rhs.is_free
+                && self.pos_watched_occ.contains_key(&c.watched_lhs)
+                && self.pos_watched_occ.contains_key(&c.watched_rhs))
         }) {
             let res: Vec<i32> = self
                 .lit_val
@@ -1154,7 +1160,6 @@ fn test_derive_and_add_conflict_clause() {
     cdcl.literals_at_current_depth.clear();
     cdcl.set_var(false, true, 1, None);
     cdcl.unit_prop();
-
 }
 
 #[test]
