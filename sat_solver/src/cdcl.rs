@@ -8,7 +8,7 @@ use std::{
 use crate::{
     cli::Heuristic,
     dpll::{DIMACSOutput, Error},
-    heuristics::{self, berkmin, BerkMinData, VsidsData},
+    heuristics::{self, berkmin, BerkMinData, VsidsData}, preprocessing::delete_subsumed_clauses,
 };
 
 type Atom = u16;
@@ -66,7 +66,7 @@ pub struct CDCL {
 
 impl CDCL {
     pub fn new(
-        input: Vec<Vec<BVar>>,
+        mut input: Vec<Vec<BVar>>,
         lit_count: usize,
         clause_count: usize,
         heuristic: Heuristic,
@@ -89,6 +89,7 @@ impl CDCL {
             vsids_data: VsidsData::new(),
             berkmin_data: BerkMinData::new(),
         };
+        delete_subsumed_clauses(&mut input);
         // * read formula
         // Using iterators where possible for better performance
         input.into_iter().enumerate().for_each(|(c, vars)| {

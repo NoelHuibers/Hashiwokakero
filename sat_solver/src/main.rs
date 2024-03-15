@@ -7,6 +7,7 @@ pub mod cli;
 pub mod dpll;
 mod heuristics;
 pub mod parse;
+pub mod preprocessing;
 
 fn main() {
     let arguments = cli::cli();

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-fn delete_subsumed_clauses(clauses: &mut Vec<Vec<i32>>) {
+pub(crate) fn delete_subsumed_clauses(clauses: &mut Vec<Vec<i32>>) {
     let clause_sets: Vec<HashSet<i32>> = clauses
         .iter()
         .map(|clause| clause.iter().copied().collect())
