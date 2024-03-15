@@ -1,3 +1,5 @@
+use std::{fs::File, io::Write};
+
 use flame;
 
 pub mod cdcl;
@@ -30,7 +32,21 @@ fn main() {
         flame::start("main_solve");
     }
 
-    println!("{:?}", cert);
+    match cert {
+        Ok(sol) => {
+            println!("{}", sol);
+            if let Some(output) = arguments.outputpath {
+                let res = format!("{}\n", sol);
+                let mut file = match File::create(output) {
+                    Ok(file) => file,
+                    Err(why) => panic!("Couldn't create file: {}", why),
+                };
+                let _ = file.write_all(res.as_bytes());
+                // Write the content to the file
+            };
+        }
+        Err(e) => println!("Sat-Solver failed to solve: {:?}", e),
+    }
 
     if arguments.flamegraph {
         flame::end("main");

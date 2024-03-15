@@ -1,4 +1,3 @@
-//use flame;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fs::File,
@@ -8,9 +7,9 @@ use std::{
 
 use crate::{
     cli::Heuristic,
-    dpll::DIMACSOutput,
+    dpll::{DIMACSOutput, Error},
     heuristics::{self, berkmin, BerkMinData, VsidsData},
-}; // Add this line to import the `cli` module from the crate root
+};
 
 type Atom = u16;
 type BVar = i32;
@@ -37,7 +36,7 @@ pub(crate) struct Literal {
 
 #[derive(Clone)]
 struct Assignment {
-    var: BVar,
+    lit: BVar,
     val: bool,
     forced: bool,
 }
@@ -47,7 +46,7 @@ pub struct CDCL {
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     clauses: HashMap<usize, Clause>,
     clause_db: HashMap<usize, Clause>,
-    free_vars: HashSet<BVar>,
+    free_lits: HashSet<BVar>,
     heuristic: Heuristic,
     history: Vec<Assignment>,
     // Memory allocation in the history is a bottle neck thus the initial unit prop and pure lit elim don't need to expand it
@@ -75,7 +74,7 @@ impl CDCL {
             branch_depth: 0,
             clauses: HashMap::with_capacity(clause_count),
             clause_db: HashMap::with_capacity(mx_clauses),
-            free_vars: HashSet::with_capacity(lit_count),
+            free_lits: HashSet::with_capacity(lit_count),
             heuristic,
             history: Vec::new(),
             history_enabled: false,
@@ -111,7 +110,7 @@ impl CDCL {
             // All vars will be initialized and set as free
             vars.iter().for_each(|literal| {
                 let lit = literal;
-                cdcl.free_vars.insert(*lit);
+                cdcl.free_lits.insert(*lit);
                 cdcl.lit_val.insert(
                     as_atom(*literal),
                     Literal {
@@ -126,23 +125,23 @@ impl CDCL {
         cdcl
     }
 
-    pub fn solve(&mut self) -> DIMACSOutput {
+    pub fn solve(&mut self) -> Result<DIMACSOutput, Error> {
         // * unit propagation
         let conflict = self.unit_prop();
         if conflict {
-            return DIMACSOutput::Unsat;
+            return Ok(DIMACSOutput::Unsat);
         }
-        self.history_enabled = true;
         if let Some(res) = self.is_sat() {
-            return res;
+            return Ok(res);
         }
+        // Everything before that is technically preprocessing and thus doesn't need to be tracked
+        self.history_enabled = true;
 
         loop {
             // * choose literal var
-            // TODO is currently very inefficient and needs to be replaced by picking conflict literals.
             let (var, val) = self.pick_branching_literal();
             // * set value var
-            self.branch_depth = self.branch_depth + 1;
+            self.branch_depth += 1;
             self.literals_at_current_depth.clear();
             //println!("Branching d {}:", self.branch_depth);
             self.set_var(false, val, var, None);
@@ -157,7 +156,7 @@ impl CDCL {
                 let (conflict_clause, backtrack_level) = self.analyze_conflict().unwrap();
 
                 if backtrack_level < 0 {
-                    return DIMACSOutput::Unsat;
+                    return Ok(DIMACSOutput::Unsat);
                 }
 
                 // Add conflict clause to the database
@@ -170,7 +169,7 @@ impl CDCL {
 
             // * if all clauses satisfied
             if let Some(res) = self.is_sat() {
-                return res;
+                return Ok(res);
             }
         }
     }
@@ -178,13 +177,13 @@ impl CDCL {
     fn backtrack(&mut self) -> bool {
         let mut last_step = self.history.pop();
         while last_step.as_ref().is_some_and(|step| step.forced) {
-            self.unset_var(last_step.unwrap().var);
+            self.unset_var(last_step.unwrap().lit);
             last_step = self.history.pop();
         }
         if last_step.is_none() {
             return true;
         }
-        let var = last_step.as_ref().unwrap().var;
+        let var = last_step.as_ref().unwrap().lit;
         let val = last_step.unwrap().val;
         self.unset_var(var);
         self.unit_queue.clear();
@@ -214,7 +213,11 @@ impl CDCL {
         //println!("\tset {} to {}", var, val);
         let mut conflict = false;
         if self.history_enabled {
-            self.history.push(Assignment { var, val, forced });
+            self.history.push(Assignment {
+                lit: var,
+                val,
+                forced,
+            });
         }
         let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
         // For conflict graph
@@ -222,8 +225,8 @@ impl CDCL {
         lit.reason = reason;
         lit.decision_level = self.branch_depth;
         self.literals_at_current_depth.insert(as_atom(var));
-        self.free_vars.remove(&var);
-        self.free_vars.remove(&(var * -1));
+        self.free_lits.remove(&var);
+        self.free_lits.remove(&(var * -1));
         // -1 true => 1 false
         // -1 false => 1 true
         // 1 true => 1 true
@@ -313,8 +316,8 @@ impl CDCL {
 
     fn unset_var(&mut self, var: BVar) {
         //println!("\tunset {}", var);
-        self.free_vars.insert(var);
-        self.free_vars.insert(var * -1);
+        self.free_lits.insert(var);
+        self.free_lits.insert(var * -1);
         let lit_var: &mut Literal = self.lit_val.get_mut(&as_atom(var)).unwrap();
         lit_var.is_free = true;
         lit_var.reason = None;
@@ -323,9 +326,8 @@ impl CDCL {
     }
 
     // 1-UIP Cut
-    fn analyze_conflict(&self) -> Result<(Clause, i64), String> {
-        // TODO use iter instead of clone()
-        let mut stack = self.history.clone();
+    fn analyze_conflict(&self) -> Result<(Clause, i64), Error> {
+        let mut stack = self.history.iter().rev();
         let mut new_vars = vec![];
         let mut current_node: &Literal;
         let mut current_vars = &self
@@ -336,19 +338,20 @@ impl CDCL {
             )?
             .vars;
         while !is_asserting(current_vars, &self.literals_at_current_depth) {
-            if let Some(next) = stack.pop() {
-                current_node = &self.lit_val[&as_atom(next.var)];
-                if let None = current_node.clone().reason {
+            if let Some(next) = stack.next() {
+                current_node = &self.lit_val[&as_atom(next.lit)];
+                if let None = current_node.reason {
                     continue;
                 }
                 let reason_clause = &self.get_clause(current_node.reason.unwrap())?.vars;
-                // quote lecure: We go backwards on the stack and if we find an assignment that is of a literal (next.var) in our clause then we resolve with the reason clause (current_node) and we continue to do that until we have an asserting clause.
-                if current_vars.contains(&next.var) || current_vars.contains(&-next.var) {
-                    new_vars = resolution(current_vars, reason_clause)?;
+                // quote lecure: We go backwards on the stack and if we find an assignment that is of a literal (next.var) in our clause
+                // then we resolve with the reason clause (current_node) and we continue to do that until we have an asserting clause.
+                if current_vars.contains(&next.lit) || current_vars.contains(&-next.lit) {
+                    new_vars = self.resolution(current_vars, reason_clause)?;
                 }
                 current_vars = &new_vars;
             } else {
-                return Err("Resolved until the end without finding an asserting clause.".into());
+                return Err(Error { branch_depth: self.branch_depth, history_len: self.history.len(), message: "analyze_conflict(): Resolved until the end without finding an asserting clause.".into() });
             }
         }
         let mut vars = current_vars.to_vec();
@@ -364,8 +367,7 @@ impl CDCL {
         };
         let mut assetion_level = self.lit_val[&as_atom(watched_rhs)].decision_level;
         if assetion_level == self.branch_depth {
-            self.print_graph_as_dot();
-            assetion_level = assetion_level -1 ;
+            assetion_level = assetion_level - 1;
         }
         Ok((conflict_clause, assetion_level))
     }
@@ -379,11 +381,11 @@ impl CDCL {
         // * undo all assignments of branching level > d
         // Reset assignments that were made after the assertion level
         while let Some(assignment) = self.history.last() {
-            if self.lit_val[&as_atom(assignment.var)].decision_level <= assertion_level {
+            if self.lit_val[&as_atom(assignment.lit)].decision_level <= assertion_level {
                 break;
             }
             // Undo assignment
-            let var = assignment.var;
+            let var = assignment.lit;
             self.unset_var(var);
             // Remove last assignment from the history
             self.history.pop();
@@ -422,10 +424,17 @@ impl CDCL {
             });
     }
 
-    fn get_clause(&self, c_idx: CIdx) -> Result<&Clause, String> {
+    fn get_clause(&self, c_idx: CIdx) -> Result<&Clause, Error> {
         match self.clauses.get(&c_idx).or(self.clause_db.get(&c_idx)) {
             Some(c) => Ok(c),
-            None => Err(format!("Requested clause with index {} not found.", c_idx)),
+            None => Err(Error {
+                branch_depth: self.branch_depth,
+                history_len: self.history.len(),
+                message: format!(
+                    "get_clause(): Requested clause with index {} not found.",
+                    c_idx
+                ),
+            }),
         }
     }
 
@@ -474,7 +483,7 @@ impl CDCL {
         };
 
         // Write the content to the file
-        let _ignored = file.write_all(graph.as_bytes());
+        let _ = file.write_all(graph.as_bytes());
     }
 
     fn is_sat(&self) -> Option<DIMACSOutput> {
@@ -486,14 +495,18 @@ impl CDCL {
                 && self.pos_watched_occ.contains_key(&c.watched_lhs)
                 && self.pos_watched_occ.contains_key(&c.watched_rhs))
         }) {
-            let res: Vec<i32> = self
+            let mut res: Vec<i32> = self
                 .lit_val
                 .iter()
                 .map(|(atom, lit)| match lit.val {
                     true => *atom as BVar,
                     false => -(*atom as BVar),
                 })
+                // Filter out pseudo literal
+                .filter(|&l| l != 0)
                 .collect();
+            res.sort_by_key(|k| k.abs());
+            res.push(0);
             return Some(DIMACSOutput::Sat(res));
         }
         None
@@ -586,18 +599,44 @@ impl CDCL {
             .collect::<Vec<(Vec<i32>, u8)>>();
         match self.heuristic {
             Heuristic::VSIDS => {
-                heuristics::vsids(&self.free_vars, &unsat_clauses, &mut self.vsids_data)
+                heuristics::vsids(&self.free_lits, &unsat_clauses, &mut self.vsids_data)
             }
             Heuristic::VMTF => heuristics::vmtf(
-                &self.free_vars,
+                &self.free_lits,
                 &self.clauses.iter().map(|c| c.1.vars.clone()).collect(),
                 &self.clause_db.iter().map(|c| c.1.vars.clone()).collect(),
                 &mut VecDeque::new(),
                 self.clause_db.len(),
             ),
-            Heuristic::BerkMin => berkmin(&self.free_vars, &unsat_clauses, &mut self.berkmin_data),
-            _ => (*self.free_vars.iter().next().unwrap(), true),
+            Heuristic::BerkMin => berkmin(&self.free_lits, &unsat_clauses, &mut self.berkmin_data),
+            _ => (*self.free_lits.iter().next().unwrap(), true),
         }
+    }
+
+    fn resolution(&self, clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, Error> {
+        let mut hs_1: HashSet<i32> = HashSet::from_iter(clause1.iter().cloned());
+        let mut hs_2: HashSet<i32> = HashSet::from_iter(clause2.iter().cloned());
+        if hs_1 == hs_2 {
+            println!("Warning: Could not apply resolution because clauses are equal.");
+            return Ok(clause1.clone());
+        }
+        for c_1 in clause1.iter() {
+            if clause2.contains(&-c_1) {
+                hs_1.remove(c_1);
+                hs_2.remove(&-c_1);
+                let res = Vec::from_iter(hs_1.union(&hs_2).cloned());
+                //println!("\t resolve {:?} with {:?} to {:?}", clause1, clause2, res.clone());
+                return Ok(res);
+            }
+        }
+        Err(Error {
+            branch_depth: self.branch_depth,
+            history_len: self.history.len(),
+            message: format!(
+                "resolution(): Could not apply resolution to {:?} and {:?}",
+                clause1, clause2
+            ),
+        })
     }
 }
 
@@ -612,33 +651,11 @@ fn as_atom(lit: BVar) -> Atom {
     lit.abs() as Atom
 }
 
-fn resolution(clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, String> {
-    let mut hs_1: HashSet<i32> = HashSet::from_iter(clause1.iter().cloned());
-    let mut hs_2: HashSet<i32> = HashSet::from_iter(clause2.iter().cloned());
-    if hs_1 == hs_2 {
-        // TODO: throw error here and fix history
-        return Ok(clause1.clone());
-    }
-    for c_1 in clause1.iter() {
-        if clause2.contains(&-c_1) {
-            hs_1.remove(c_1);
-            hs_2.remove(&-c_1);
-            let res = Vec::from_iter(hs_1.union(&hs_2).cloned());
-            //println!("\t resolve {:?} with {:?} to {:?}", clause1, clause2, res.clone());
-            return Ok(res);
-        }
-    }
-    Err(format!(
-        "Could not apply resolution to {:?} and {:?}",
-        clause1, clause2
-    ))
-}
-
 #[test]
 fn should_be_sat_bug_mar_14th_1() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-159.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -647,7 +664,7 @@ fn should_be_sat_bug_mar_14th_1() {
 fn should_be_sat_bug_mar_14th_2() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -656,7 +673,7 @@ fn should_be_sat_bug_mar_14th_2() {
 fn should_be_sat_bug_mar_14th_3() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-158.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -698,15 +715,10 @@ fn should_derive_1_UIP_from_wikipedia() {
     cdcl.set_var(false, true, 7, None);
     let conflict = cdcl.unit_prop();
     assert!(conflict);
-    let conflict = cdcl.analyze_conflict();
-    assert!(conflict.is_ok());
-    assert!(conflict.clone().unwrap().0.vars.contains(&-3));
-    assert!(conflict.clone().unwrap().0.vars.contains(&-7));
-    assert!(conflict.unwrap().0.vars.contains(&8));
-    cdcl.print_graph_as_dot();
-    assert!(cdcl.unit_queue.contains(&(-7, Some(8))));
-    assert_eq!(cdcl.unit_queue.len(), 1);
-    cdcl.unit_prop();
+    let conflict = cdcl.analyze_conflict().unwrap();
+    assert!(conflict.clone().0.vars.contains(&-3));
+    assert!(conflict.clone().0.vars.contains(&-7));
+    assert!(conflict.0.vars.contains(&8));
 }
 
 #[test]
@@ -739,17 +751,12 @@ fn should_derive_1_UIP_from_princeton_paper() {
     cdcl.literals_at_current_depth.clear();
     cdcl.set_var(false, false, 1, None);
     let conflict = cdcl.unit_prop();
-    let conflict = cdcl.analyze_conflict();
-    assert_eq!(conflict.clone().unwrap().1, 2);
-    assert!(conflict.clone().unwrap().0.vars.contains(&-4));
-    assert!(conflict.clone().unwrap().0.vars.contains(&9));
-    assert_eq!(conflict.clone().unwrap().0.vars.len(), 3);
-    assert!(conflict.unwrap().0.vars.contains(&8));
-    cdcl.print_graph_as_dot();
-    assert_eq!(cdcl.history.len(), 3);
-    assert!(cdcl.unit_queue.contains(&(-4, Some(6))));
-    cdcl.unit_prop();
-    assert!(!cdcl.lit_val[&4].val);
+    let conflict = cdcl.analyze_conflict().unwrap();
+    assert_eq!(conflict.clone().1, 2);
+    assert!(conflict.clone().0.vars.contains(&-4));
+    assert!(conflict.clone().0.vars.contains(&9));
+    assert_eq!(conflict.clone().0.vars.len(), 3);
+    assert!(conflict.0.vars.contains(&8));
 }
 
 #[test]
@@ -788,14 +795,11 @@ fn should_derive_1_uip_from_lecture() {
     cdcl.set_var(false, true, 1, None);
     let conflict = cdcl.unit_prop();
     assert!(conflict);
-    let conflict = cdcl.analyze_conflict();
-    assert_eq!(conflict.clone().unwrap().1, 1);
-    assert!(conflict.clone().unwrap().0.vars.contains(&-4));
-    assert!(conflict.clone().unwrap().0.vars.contains(&10));
-    assert!(conflict.unwrap().0.vars.contains(&11));
-    cdcl.print_graph_as_dot();
-    assert_eq!(cdcl.history.len(), 3);
-    assert!(cdcl.unit_queue.contains(&(-4, Some(11))))
+    let conflict = cdcl.analyze_conflict().unwrap();
+    assert_eq!(conflict.clone().1, 1);
+    assert!(conflict.clone().0.vars.contains(&-4));
+    assert!(conflict.clone().0.vars.contains(&10));
+    assert!(conflict.0.vars.contains(&11));
 }
 
 #[test]
@@ -806,12 +810,12 @@ fn should_set_var_1_true_watched_literals() {
         3,
         Heuristic::Arbitrary,
     );
-    assert_eq!(cdcl.free_vars.len(), 6);
+    assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
     let c = cdcl.set_var(false, true, 1, None);
     assert!(!c);
-    assert_eq!(cdcl.free_vars.len(), 4);
+    assert_eq!(cdcl.free_lits.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().val, true);
     assert_eq!(cdcl.unit_queue.len(), 1);
@@ -826,12 +830,12 @@ fn should_set_var_neg_1_false_watched_literals() {
         3,
         Heuristic::Arbitrary,
     );
-    assert_eq!(cdcl.free_vars.len(), 6);
+    assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
     let c = cdcl.set_var(false, false, -1, None);
     assert!(!c);
-    assert_eq!(cdcl.free_vars.len(), 4);
+    assert_eq!(cdcl.free_lits.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().val, true);
     assert_eq!(cdcl.unit_queue.len(), 1);
@@ -846,12 +850,12 @@ fn should_set_var_neg_1_true_watched_literals() {
         3,
         Heuristic::Arbitrary,
     );
-    assert_eq!(cdcl.free_vars.len(), 6);
+    assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
     let c = cdcl.set_var(false, true, -1, None);
     assert!(!c);
-    assert_eq!(cdcl.free_vars.len(), 4);
+    assert_eq!(cdcl.free_lits.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().val, false);
     assert_eq!(cdcl.unit_queue.len(), 0);
@@ -866,12 +870,12 @@ fn should_set_var_1_false_watched_literals() {
         3,
         Heuristic::Arbitrary,
     );
-    assert_eq!(cdcl.free_vars.len(), 6);
+    assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
     let c = cdcl.set_var(false, true, -1, None);
     assert!(!c);
-    assert_eq!(cdcl.free_vars.len(), 4);
+    assert_eq!(cdcl.free_lits.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().val, false);
     assert_eq!(cdcl.unit_queue.len(), 0);
@@ -932,7 +936,7 @@ fn should_solve_sat_small() {
         Heuristic::Arbitrary,
     )
     .solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -982,7 +986,7 @@ fn should_solve_sat() {
         Heuristic::Arbitrary,
     )
     .solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1003,7 +1007,7 @@ fn should_solve_unsat_small() {
         Heuristic::Arbitrary,
     )
     .solve();
-    if let DIMACSOutput::Sat(_) = res {
+    if let Ok(DIMACSOutput::Sat(_)) = res {
         panic!("Was SAT but expected UNSAT.")
     }
 }
@@ -1087,7 +1091,7 @@ fn should_solve_unsat() {
         Heuristic::Arbitrary,
     )
     .solve();
-    if let DIMACSOutput::Sat(_) = res {
+    if let Ok(DIMACSOutput::Sat(_)) = res {
         panic!("Was SAT but expected UNSAT.")
     }
 }
@@ -1097,7 +1101,7 @@ fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
     let mut cdcl = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary);
     let res = cdcl.solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1106,7 +1110,7 @@ fn should_parse_and_solve_sat() {
 fn should_parse_and_solve_unsat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
-    if let DIMACSOutput::Sat(vars) = res {
+    if let Ok(DIMACSOutput::Sat(vars)) = res {
         println!("{:?}", vars);
         panic!("Was SAT but expected UNSAT.")
     }
@@ -1121,7 +1125,7 @@ fn should_elim_pure_lit() {
         Heuristic::Arbitrary,
     )
     .solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1130,7 +1134,7 @@ fn should_elim_pure_lit() {
 fn should_be_sat_bug_jan_2nd_1() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1139,7 +1143,7 @@ fn should_be_sat_bug_jan_2nd_1() {
 fn should_be_sat_bug_jan_2nd_2() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }

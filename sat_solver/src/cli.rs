@@ -4,6 +4,7 @@ use clap::{command, Arg, ArgAction};
 pub struct CliArgs {
     pub solver: String,
     pub inputpath: String,
+    pub outputpath: Option<String>,
     pub heuristic: Heuristic,
     pub depth: bool,
     pub flamegraph: bool,
@@ -40,6 +41,12 @@ pub fn cli() -> CliArgs {
                 .index(2),
         )
         .arg(
+            Arg::new("output")
+                .help("Specify the output file or directory.")
+                .required(false)
+                .index(3),
+        )
+        .arg(
             Arg::new("heuristic")
                 .help("Specify the heuristic to use")
                 .long("heuristic")
@@ -72,6 +79,8 @@ pub fn cli() -> CliArgs {
         None => panic!("Input is required"),
     };
 
+    let outputpath = arguments.get_one::<String>("output").cloned();
+
     let heuristic = match arguments.get_one::<String>("heuristic") {
         Some(heuristic) => match heuristic.as_str() {
             "arbitrary" => Heuristic::Arbitrary,
@@ -96,6 +105,7 @@ pub fn cli() -> CliArgs {
     return CliArgs {
         solver,
         inputpath,
+        outputpath,
         heuristic,
         depth: arguments.get_flag("depth"),
         flamegraph: arguments.get_flag("flamegraph"),

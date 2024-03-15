@@ -3,7 +3,10 @@ use crate::{
     heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids_dpll},
 };
 use flame;
-use std::collections::{HashMap, HashSet, VecDeque}; // Add this line to import the `cli` module from the crate root
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    fmt,
+}; // Add this line to import the `cli` module from the crate root
 
 type Atom = u16;
 type BVar = i32;
@@ -13,6 +16,44 @@ type CIdx = usize;
 pub enum DIMACSOutput {
     Sat(Vec<i32>),
     Unsat,
+}
+
+impl fmt::Display for DIMACSOutput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DIMACSOutput::Sat(variables) => {
+                write!(f, "SAT")?;
+                if !variables.is_empty() {
+                    write!(f, "\n")?;
+                    for (index, var) in variables.iter().enumerate() {
+                        if index > 0 {
+                            write!(f, " ")?;
+                        }
+                        write!(f, "{}", var)?;
+                    }
+                }
+                Ok(())
+            }
+            DIMACSOutput::Unsat => write!(f, "UNSAT"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Error {
+    pub branch_depth: i64,
+    pub history_len: usize,
+    pub message: String,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Error: {} (branch depth: {}, history length: {})",
+            self.message, self.branch_depth, self.history_len
+        )
+    }
 }
 
 // Using structs instead of tuples for readability
@@ -126,20 +167,20 @@ impl DPLL {
         dpll
     }
 
-    pub fn solve(&mut self) -> DIMACSOutput {
+    pub fn solve(&mut self) -> Result<DIMACSOutput, Error> {
         // * unit propagation
         flame::start("DPLL::solve");
         let conflict = self.unit_prop();
         if conflict {
             flame::end("DPLL::solve");
-            return DIMACSOutput::Unsat;
+            return Ok(DIMACSOutput::Unsat);
         }
         if self
             .clauses
             .values()
             .fold(true, |i, c| i && c.sat_by_var != 0)
         {
-            let res: Vec<i32> = self
+            let mut res: Vec<i32> = self
                 .lit_val
                 .iter()
                 .map(|(atom, lit)| match lit.val {
@@ -147,8 +188,9 @@ impl DPLL {
                     false => -(*atom as BVar),
                 })
                 .collect();
+            res.sort_by_key(|k| k.abs());
             flame::end("DPLL::solve");
-            return DIMACSOutput::Sat(res);
+            return Ok(DIMACSOutput::Sat(res));
         }
 
         // * pure lit elim
@@ -186,7 +228,7 @@ impl DPLL {
                 let unsat = self.backtrack();
                 if unsat {
                     flame::end("DPLL::solve");
-                    return DIMACSOutput::Unsat;
+                    return Ok(DIMACSOutput::Unsat);
                 }
             }
 
@@ -196,7 +238,7 @@ impl DPLL {
                 .values()
                 .fold(true, |i, c| i && c.sat_by_var != 0)
             {
-                let res: Vec<i32> = self
+                let mut res: Vec<i32> = self
                     .lit_val
                     .iter()
                     .map(|(atom, lit)| match lit.val {
@@ -204,8 +246,9 @@ impl DPLL {
                         false => -(*atom as BVar),
                     })
                     .collect();
+                res.sort_by_key(|k| k.abs());
                 flame::end("DPLL::solve");
-                return DIMACSOutput::Sat(res);
+                return Ok(DIMACSOutput::Sat(res));
             }
         }
     }
@@ -402,7 +445,7 @@ fn should_solve_sat_small() {
         true,
     )
     .solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -453,7 +496,7 @@ fn should_solve_sat() {
         true,
     )
     .solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -475,7 +518,7 @@ fn should_solve_unsat_small() {
         true,
     )
     .solve();
-    if let DIMACSOutput::Sat(_) = res {
+    if let Ok(DIMACSOutput::Sat(_)) = res {
         panic!("Was SAT but expected UNSAT.")
     }
 }
@@ -560,7 +603,7 @@ fn should_solve_unsat() {
         true,
     )
     .solve();
-    if let DIMACSOutput::Sat(_) = res {
+    if let Ok(DIMACSOutput::Sat(_)) = res {
         panic!("Was SAT but expected UNSAT.")
     }
 }
@@ -569,17 +612,16 @@ fn should_solve_unsat() {
 fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
 
 #[test]
 fn should_parse_and_solve_unsat() {
-    let (input, v_c, c_c) =
-        crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let DIMACSOutput::Sat(_) = res {
+    if let Ok(DIMACSOutput::Sat(_)) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -594,7 +636,7 @@ fn should_elim_pure_lit() {
         true,
     )
     .solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -604,13 +646,13 @@ fn bug_jan_2nd_should_be_sat() {
     let (mut input, mut v_c, mut c_c) =
         crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 
     (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let DIMACSOutput::Unsat = res {
+    if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
 }
