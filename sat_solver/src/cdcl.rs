@@ -54,6 +54,8 @@ pub struct CDCL {
     lit_val: HashMap<Atom, Literal>,
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
+    pos_occ: HashSet<i32>,
+    neg_occ: HashSet<i32>,
     // Using VecDaque for better push_front complexity
     unit_queue: VecDeque<(BVar, Option<CIdx>)>,
     literals_at_current_depth: HashSet<Atom>,
@@ -80,6 +82,8 @@ impl CDCL {
             history_enabled: false,
             lit_val: HashMap::with_capacity(lit_count),
             pos_watched_occ: HashMap::with_capacity(clause_count * 2),
+            pos_occ: HashSet::with_capacity(lit_count),
+            neg_occ: HashSet::with_capacity(lit_count),
             unit_queue: VecDeque::new(),
             literals_at_current_depth: HashSet::new(),
             vsids_data: VsidsData::new(),
@@ -109,8 +113,11 @@ impl CDCL {
                 });
             // All vars will be initialized and set as free
             vars.iter().for_each(|literal| {
-                let lit = literal;
-                cdcl.free_lits.insert(*lit);
+                match literal.is_positive() {
+                    true => cdcl.pos_occ.insert(literal.abs()),
+                    false => cdcl.neg_occ.insert(literal.abs()),
+                };
+                cdcl.free_lits.insert(*literal);
                 cdcl.lit_val.insert(
                     as_atom(*literal),
                     Literal {
@@ -136,15 +143,27 @@ impl CDCL {
         }
         // Everything before that is technically preprocessing and thus doesn't need to be tracked
         self.history_enabled = true;
+        let mut pure_lits: Vec<i32> = self.pos_occ.symmetric_difference(&self.neg_occ).cloned().collect();
 
         loop {
             // * choose literal var
-            let (var, val) = self.pick_branching_literal();
+            let (var, val, forced) = match pure_lits.is_empty() {
+                true => {
+                    self.history_enabled = true;
+                    let (var, val) = self.pick_branching_literal();
+                    (var, val, false)
+                }
+                false => {
+                    let lit = pure_lits.pop().unwrap();
+                    // As the lit occurs only in one polarity it doesn't make sense to try both assignments
+                    (lit, self.pos_occ.get(&lit).is_some(), true)
+                }
+            };
             // * set value var
             self.branch_depth += 1;
             self.literals_at_current_depth.clear();
             //println!("Branching d {}:", self.branch_depth);
-            self.set_var(false, val, var, None);
+            self.set_var(forced, val, var, None);
 
             // * unit propagation
             loop {
@@ -218,6 +237,9 @@ impl CDCL {
                 val,
                 forced,
             });
+        } else {
+            self.pos_occ.remove(&var);
+            self.neg_occ.remove(&var);
         }
         let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
         // For conflict graph

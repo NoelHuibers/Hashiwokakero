@@ -195,10 +195,6 @@ impl DPLL {
 
         // * pure lit elim
         let mut pure_lits = self.get_pure_lits();
-        if pure_lits.contains(&-718) {
-            println!("{}", self.neg_occ.get(&718).is_some());
-            println!("{}", self.pos_occ.get(&718).is_some());
-        }
 
         loop {
             // * choose literal var
