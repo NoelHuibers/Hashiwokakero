@@ -3,3 +3,4 @@ pub mod dpll;
 pub mod heuristics;
 pub mod parse;
 pub mod cdcl;
+pub mod preprocessing;
