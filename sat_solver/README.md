@@ -80,9 +80,10 @@ Run the tests using cargo:
 **Flo:**
 
 - [x] 2-Watched Literals
-- [x] Update impl. graph while setting vars
-- [x] Update Conflict analysis
+- [x] Fix/Update impl. graph while setting vars
+- [x] Fix/Rewrite Conflict analysis
 - [x] Test + Debug non-chronological backtracking
 - [x] Check whether unit clauses can occur in conflict analysis
 - [x] Check impl for set_var in respect to unit clauses
 - [x] Pure literal elimination as preprocessing
+- [x] Output valid DIMACS solution
