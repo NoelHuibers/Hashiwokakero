@@ -189,6 +189,7 @@ impl DPLL {
                 })
                 .collect();
             res.sort_by_key(|k| k.abs());
+            res.push(0);
             flame::end("DPLL::solve");
             return Ok(DIMACSOutput::Sat(res));
         }

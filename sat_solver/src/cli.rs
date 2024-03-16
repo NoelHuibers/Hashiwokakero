@@ -8,6 +8,7 @@ pub struct CliArgs {
     pub heuristic: Heuristic,
     pub depth: bool,
     pub flamegraph: bool,
+    pub subsumed_clauses: bool,
 }
 
 #[derive(Debug)]
@@ -61,6 +62,13 @@ pub fn cli() -> CliArgs {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("subsumed_clauses")
+                .help("Eliminates subsumed clauses")
+                .long("subsumed_clauses")
+                .short('s')
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("flamegraph")
                 .help("Specify whether to create a flamegraph")
                 .long("flamegraph")
@@ -108,6 +116,7 @@ pub fn cli() -> CliArgs {
         outputpath,
         heuristic,
         depth: arguments.get_flag("depth"),
+        subsumed_clauses: arguments.get_flag("subsumed_clauses"),
         flamegraph: arguments.get_flag("flamegraph"),
     };
 }
