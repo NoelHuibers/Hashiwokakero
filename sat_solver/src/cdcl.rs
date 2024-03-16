@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{BinaryHeap, HashMap, HashSet, VecDeque},
     fs::File,
     io::Write,
     vec,
@@ -8,7 +8,7 @@ use std::{
 use crate::{
     cli::Heuristic,
     dpll::{DIMACSOutput, Error},
-    heuristics::{self, berkmin, BerkMinData, VsidsData},
+    heuristics::{self, berkmin, BerkMinData},
     preprocessing::delete_subsumed_clauses,
 };
 
@@ -33,6 +33,8 @@ pub(crate) struct Literal {
     is_free: bool,
     reason: Option<CIdx>,
     decision_level: i64,
+    prio: u32,
+    counter: u32,
 }
 
 #[derive(Clone)]
@@ -42,8 +44,22 @@ struct Assignment {
     forced: bool,
 }
 
+impl PartialOrd for Literal {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.prio.partial_cmp(&other.prio)
+    }
+}
+
+impl Ord for Literal {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.prio.cmp(&other.prio)
+    }
+}
+
 pub struct CDCL {
     branch_depth: i64,
+    // Max value needs to be 255
+    branch_counter: u64,
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     clauses: HashMap<usize, Clause>,
     clause_db: HashMap<usize, Clause>,
@@ -61,7 +77,8 @@ pub struct CDCL {
     unit_queue: VecDeque<(BVar, Option<CIdx>)>,
     literals_at_current_depth: HashSet<Atom>,
 
-    vsids_data: VsidsData,
+    vsids_prio_queue: BinaryHeap<(u32, BVar)>,
+    vsids_counter: u32,
     berkmin_data: BerkMinData,
 }
 
@@ -76,6 +93,7 @@ impl CDCL {
         let mx_clauses = 42; //TODO: use useful value here according to deletion strat
         let mut cdcl = CDCL {
             branch_depth: 0,
+            branch_counter: 0,
             clauses: HashMap::with_capacity(clause_count),
             clause_db: HashMap::with_capacity(mx_clauses),
             free_lits: HashSet::with_capacity(lit_count),
@@ -88,7 +106,8 @@ impl CDCL {
             neg_occ: HashSet::with_capacity(lit_count),
             unit_queue: VecDeque::new(),
             literals_at_current_depth: HashSet::new(),
-            vsids_data: VsidsData::new(),
+            vsids_prio_queue: BinaryHeap::new(),
+            vsids_counter: 0,
             berkmin_data: BerkMinData::new(),
         };
         if subsumed_clauses {
@@ -122,7 +141,7 @@ impl CDCL {
                     true => cdcl.pos_occ.insert(literal.abs()),
                     false => cdcl.neg_occ.insert(literal.abs()),
                 };
-                cdcl.free_lits.insert(*literal);
+                let new = cdcl.free_lits.insert(*literal);
                 cdcl.lit_val.insert(
                     as_atom(*literal),
                     Literal {
@@ -130,6 +149,8 @@ impl CDCL {
                         is_free: true,
                         reason: None,
                         decision_level: cdcl.branch_depth,
+                        prio: 0,
+                        counter: cdcl.vsids_counter,
                     },
                 );
             });
@@ -159,7 +180,7 @@ impl CDCL {
             let (var, val, forced) = match pure_lits.is_empty() {
                 true => {
                     self.history_enabled = true;
-                    let (var, val) = self.pick_branching_literal();
+                    let (var, val) = self.pick_branching_literal()?;
                     (var, val, false)
                 }
                 false => {
@@ -168,6 +189,7 @@ impl CDCL {
                     (lit, self.pos_occ.get(&lit).is_some(), true)
                 }
             };
+            self.branch_counter += 1;
             // * set value var
             self.branch_depth += 1;
             self.literals_at_current_depth.clear();
@@ -304,6 +326,8 @@ impl CDCL {
                             is_free: false,
                             reason: Some(*c_idx),
                             decision_level: self.branch_depth,
+                            counter: 0,
+                            prio: 0,
                         },
                     );
                 }
@@ -453,6 +477,10 @@ impl CDCL {
                     .and_modify(|clause| clause.push(clause_id))
                     .or_insert(vec![clause_id]);
             });
+        conflict_clause
+            .vars
+            .iter()
+            .for_each(|&v| self.lit_val.get_mut(&as_atom(v)).unwrap().counter += 1);
     }
 
     fn get_clause(&self, c_idx: CIdx) -> Result<&Clause, Error> {
@@ -616,7 +644,7 @@ impl CDCL {
         CDCL::k_bounded_learning(self, k);
         CDCL::m_size_relevance_learning(self, m);
     }
-    fn pick_branching_literal(&mut self) -> (i32, bool) {
+    fn pick_branching_literal(&mut self) -> Result<(i32, bool), Error> {
         // TODO: track clauses
         let unsat_clauses = self
             .clause_db
@@ -630,17 +658,37 @@ impl CDCL {
             .collect::<Vec<(Vec<i32>, u8)>>();
         match self.heuristic {
             Heuristic::VSIDS => {
-                heuristics::vsids(&self.free_lits, &unsat_clauses, &mut self.vsids_data)
+                if self.branch_counter % 256 == 255 {
+                    self.lit_val.iter_mut().for_each(|v| {
+                        v.1.prio = v.1.prio / 2 + v.1.counter;
+                        if v.1.prio > 0 {
+                            self.vsids_prio_queue
+                                .push((v.1.prio, as_literal(*v.0, v.1.val)))
+                        }
+                    })
+                }
+                while let Some(vsids) = self.vsids_prio_queue.pop() {
+                    if self.free_lits.contains(&vsids.1) {
+                        return Ok((vsids.1, true));
+                    }
+                    if self.free_lits.contains(&-vsids.1) {
+                        return Ok((vsids.1, false));
+                    }
+                }
+                // fallback
+                return Ok((*self.free_lits.iter().next().unwrap(), true));
             }
-            Heuristic::VMTF => heuristics::vmtf(
-                &self.free_lits,
-                &self.clauses.iter().map(|c| c.1.vars.clone()).collect(),
-                &self.clause_db.iter().map(|c| c.1.vars.clone()).collect(),
-                &mut VecDeque::new(),
-                self.clause_db.len(),
-            ),
-            Heuristic::BerkMin => berkmin(&self.free_lits, &unsat_clauses, &mut self.berkmin_data),
-            _ => (*self.free_lits.iter().next().unwrap(), true),
+            Heuristic::Arbitrary => Ok((*self.free_lits.iter().next().unwrap(), true)),
+            _ => {
+                return Err(Error {
+                    branch_depth: self.branch_depth,
+                    history_len: self.history.len(),
+                    message: format!(
+                        "Heuristic {:?} is not implemented/embedded into CDCL",
+                        self.heuristic
+                    ),
+                })
+            }
         }
     }
 
@@ -680,6 +728,10 @@ fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &HashSet<u16>) 
 
 fn as_atom(lit: BVar) -> Atom {
     lit.abs() as Atom
+}
+
+fn as_literal(atom: Atom, polarity: bool) -> BVar {
+    atom as i32 * (polarity as i32)
 }
 
 #[test]
@@ -1145,6 +1197,16 @@ fn should_solve_unsat() {
 fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
     let mut cdcl = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false);
+    let res = cdcl.solve();
+    if let Ok(DIMACSOutput::Unsat) = res {
+        panic!("Was UNSAT but expected SAT.")
+    }
+}
+
+#[test]
+fn should_parse_and_solve_sat_vsids() {
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/par16-2.cnf").unwrap();
+    let mut cdcl = CDCL::new(input, v_c, c_c, Heuristic::VSIDS, false);
     let res = cdcl.solve();
     if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
