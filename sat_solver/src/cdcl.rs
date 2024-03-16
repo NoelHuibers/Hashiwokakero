@@ -9,6 +9,7 @@ use crate::{
     cli::Heuristic,
     dpll::{DIMACSOutput, Error},
     heuristics::{self, berkmin, BerkMinData, VsidsData},
+    preprocessing::delete_subsumed_clauses,
 };
 
 type Atom = u16;
@@ -54,6 +55,8 @@ pub struct CDCL {
     lit_val: HashMap<Atom, Literal>,
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
+    pos_occ: HashSet<i32>,
+    neg_occ: HashSet<i32>,
     // Using VecDaque for better push_front complexity
     unit_queue: VecDeque<(BVar, Option<CIdx>)>,
     literals_at_current_depth: HashSet<Atom>,
@@ -64,10 +67,11 @@ pub struct CDCL {
 
 impl CDCL {
     pub fn new(
-        input: Vec<Vec<BVar>>,
+        mut input: Vec<Vec<BVar>>,
         lit_count: usize,
         clause_count: usize,
         heuristic: Heuristic,
+        subsumed_clauses: bool,
     ) -> Self {
         let mx_clauses = 42; //TODO: use useful value here according to deletion strat
         let mut cdcl = CDCL {
@@ -80,11 +84,16 @@ impl CDCL {
             history_enabled: false,
             lit_val: HashMap::with_capacity(lit_count),
             pos_watched_occ: HashMap::with_capacity(clause_count * 2),
+            pos_occ: HashSet::with_capacity(lit_count),
+            neg_occ: HashSet::with_capacity(lit_count),
             unit_queue: VecDeque::new(),
             literals_at_current_depth: HashSet::new(),
             vsids_data: VsidsData::new(),
             berkmin_data: BerkMinData::new(),
         };
+        if subsumed_clauses {
+            delete_subsumed_clauses(&mut input);
+        }
         // * read formula
         // Using iterators where possible for better performance
         input.into_iter().enumerate().for_each(|(c, vars)| {
@@ -109,8 +118,11 @@ impl CDCL {
                 });
             // All vars will be initialized and set as free
             vars.iter().for_each(|literal| {
-                let lit = literal;
-                cdcl.free_lits.insert(*lit);
+                match literal.is_positive() {
+                    true => cdcl.pos_occ.insert(literal.abs()),
+                    false => cdcl.neg_occ.insert(literal.abs()),
+                };
+                cdcl.free_lits.insert(*literal);
                 cdcl.lit_val.insert(
                     as_atom(*literal),
                     Literal {
@@ -136,15 +148,31 @@ impl CDCL {
         }
         // Everything before that is technically preprocessing and thus doesn't need to be tracked
         self.history_enabled = true;
+        let mut pure_lits: Vec<i32> = self
+            .pos_occ
+            .symmetric_difference(&self.neg_occ)
+            .cloned()
+            .collect();
 
         loop {
             // * choose literal var
-            let (var, val) = self.pick_branching_literal();
+            let (var, val, forced) = match pure_lits.is_empty() {
+                true => {
+                    self.history_enabled = true;
+                    let (var, val) = self.pick_branching_literal();
+                    (var, val, false)
+                }
+                false => {
+                    let lit = pure_lits.pop().unwrap();
+                    // As the lit occurs only in one polarity it doesn't make sense to try both assignments
+                    (lit, self.pos_occ.get(&lit).is_some(), true)
+                }
+            };
             // * set value var
             self.branch_depth += 1;
             self.literals_at_current_depth.clear();
             //println!("Branching d {}:", self.branch_depth);
-            self.set_var(false, val, var, None);
+            self.set_var(forced, val, var, None);
 
             // * unit propagation
             loop {
@@ -218,6 +246,9 @@ impl CDCL {
                 val,
                 forced,
             });
+        } else {
+            self.pos_occ.remove(&var);
+            self.neg_occ.remove(&var);
         }
         let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
         // For conflict graph
@@ -654,7 +685,7 @@ fn as_atom(lit: BVar) -> Atom {
 #[test]
 fn should_be_sat_bug_mar_14th_1() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-159.cnf").unwrap();
-    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
+    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false).solve();
     if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
@@ -663,7 +694,7 @@ fn should_be_sat_bug_mar_14th_1() {
 #[test]
 fn should_be_sat_bug_mar_14th_2() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
-    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
+    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false).solve();
     if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
@@ -672,7 +703,7 @@ fn should_be_sat_bug_mar_14th_2() {
 #[test]
 fn should_be_sat_bug_mar_14th_3() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-158.cnf").unwrap();
-    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
+    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false).solve();
     if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
@@ -694,6 +725,7 @@ fn should_derive_1_UIP_from_wikipedia() {
         9,
         5,
         Heuristic::Arbitrary,
+        false,
     );
     cdcl.history_enabled = true;
     cdcl.set_var(false, false, 1, None);
@@ -735,6 +767,7 @@ fn should_derive_1_UIP_from_princeton_paper() {
         9,
         5,
         Heuristic::Arbitrary,
+        false,
     );
     cdcl.history_enabled = true;
     cdcl.set_var(false, false, 7, None);
@@ -778,6 +811,7 @@ fn should_derive_1_uip_from_lecture() {
         13,
         11,
         Heuristic::Arbitrary,
+        false,
     );
     cdcl.history_enabled = true;
     cdcl.set_var(false, false, 9, None);
@@ -809,6 +843,7 @@ fn should_set_var_1_true_watched_literals() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
@@ -829,6 +864,7 @@ fn should_set_var_neg_1_false_watched_literals() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
@@ -849,6 +885,7 @@ fn should_set_var_neg_1_true_watched_literals() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
@@ -869,6 +906,7 @@ fn should_set_var_1_false_watched_literals() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
@@ -889,6 +927,7 @@ fn should_detect_conflict_watched_literals() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     );
     cdcl.set_var(false, false, -1, None);
     let c = cdcl.set_var(false, false, 2, None);
@@ -902,6 +941,7 @@ fn should_detect_conflict_watched_literals_2() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     );
     cdcl.set_var(false, false, -1, None);
     let c_1 = cdcl.set_var(false, false, -2, None);
@@ -917,6 +957,7 @@ fn should_unit_prop_watched_literals() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     );
     cdcl.set_var(false, false, -1, None);
     assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2);
@@ -934,6 +975,7 @@ fn should_solve_sat_small() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -984,6 +1026,7 @@ fn should_solve_sat() {
         8,
         35,
         Heuristic::Arbitrary,
+        false,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -1005,6 +1048,7 @@ fn should_solve_unsat_small() {
         3,
         6,
         Heuristic::Arbitrary,
+        false,
     )
     .solve();
     if let Ok(DIMACSOutput::Sat(_)) = res {
@@ -1089,6 +1133,7 @@ fn should_solve_unsat() {
         12,
         68,
         Heuristic::Arbitrary,
+        false,
     )
     .solve();
     if let Ok(DIMACSOutput::Sat(_)) = res {
@@ -1099,7 +1144,7 @@ fn should_solve_unsat() {
 #[test]
 fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let mut cdcl = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary);
+    let mut cdcl = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false);
     let res = cdcl.solve();
     if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
@@ -1109,7 +1154,7 @@ fn should_parse_and_solve_sat() {
 #[test]
 fn should_parse_and_solve_unsat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
-    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
+    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false).solve();
     if let Ok(DIMACSOutput::Sat(vars)) = res {
         println!("{:?}", vars);
         panic!("Was SAT but expected UNSAT.")
@@ -1123,6 +1168,7 @@ fn should_elim_pure_lit() {
         3,
         6,
         Heuristic::Arbitrary,
+        false,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -1133,7 +1179,7 @@ fn should_elim_pure_lit() {
 #[test]
 fn should_be_sat_bug_jan_2nd_1() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
-    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
+    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false).solve();
     if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
@@ -1142,7 +1188,7 @@ fn should_be_sat_bug_jan_2nd_1() {
 #[test]
 fn should_be_sat_bug_jan_2nd_2() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
-    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary).solve();
+    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false).solve();
     if let Ok(DIMACSOutput::Unsat) = res {
         panic!("Was UNSAT but expected SAT.")
     }
@@ -1155,6 +1201,7 @@ fn test_derive_and_add_conflict_clause() {
         3,
         3,
         Heuristic::Arbitrary,
+        false,
     );
 
     // Initialize the values and status for the variables in the Literal Values HashMap
@@ -1168,7 +1215,13 @@ fn test_derive_and_add_conflict_clause() {
 
 #[test]
 fn test_analyze_conflict() {
-    let mut cdcl = CDCL::new(vec![vec![-1, -2], vec![-1, 2]], 2, 2, Heuristic::Arbitrary);
+    let mut cdcl = CDCL::new(
+        vec![vec![-1, -2], vec![-1, 2]],
+        2,
+        2,
+        Heuristic::Arbitrary,
+        false,
+    );
     cdcl.history_enabled = true;
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
@@ -1191,6 +1244,7 @@ fn test_current_decision_level() {
         0,
         0,
         Heuristic::Arbitrary,
+        false,
     );
     assert_eq!(cdcl.branch_depth, 0); // No assignments, decision level should be 0
     cdcl.solve();

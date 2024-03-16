@@ -7,6 +7,7 @@ pub mod cli;
 pub mod dpll;
 mod heuristics;
 pub mod parse;
+pub mod preprocessing;
 
 fn main() {
     let arguments = cli::cli();
@@ -16,15 +17,14 @@ fn main() {
     }
 
     let (vars, v_count, c_count) = parse::parse(&arguments.inputpath).unwrap();
-    let depth = arguments.depth;
 
     if arguments.flamegraph {
         flame::start("main_solve");
     }
 
     let cert = match arguments.solver.as_str() {
-        "dpll" => dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, depth).solve(),
-        "cdcl" => cdcl::CDCL::new(vars, v_count, c_count, arguments.heuristic).solve(),
+        "dpll" => dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, arguments.depth).solve(),
+        "cdcl" => cdcl::CDCL::new(vars, v_count, c_count, arguments.heuristic, arguments.subsumed_clauses).solve(),
         otherwise => panic!("{} is not a valid mode.", otherwise),
     };
 
