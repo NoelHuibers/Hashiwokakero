@@ -8,7 +8,6 @@ use std::{
 use crate::{
     cli::Heuristic,
     dpll::{DIMACSOutput, Error},
-    heuristics::{self, berkmin, BerkMinData},
     preprocessing::delete_subsumed_clauses,
 };
 
@@ -33,8 +32,6 @@ pub(crate) struct Literal {
     is_free: bool,
     reason: Option<CIdx>,
     decision_level: i64,
-    prio: u32,
-    counter: u32,
 }
 
 #[derive(Clone)]
@@ -44,13 +41,20 @@ struct Assignment {
     forced: bool,
 }
 
-impl PartialOrd for Literal {
+#[derive(Clone, PartialEq, Eq)]
+struct VSIDSPrio {
+    prio: u32,
+    counter: u32,
+    literal: i32,
+}
+
+impl PartialOrd for VSIDSPrio {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.prio.partial_cmp(&other.prio)
     }
 }
 
-impl Ord for Literal {
+impl Ord for VSIDSPrio {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.prio.cmp(&other.prio)
     }
@@ -69,17 +73,16 @@ pub struct CDCL {
     // Memory allocation in the history is a bottle neck thus the initial unit prop and pure lit elim don't need to expand it
     history_enabled: bool,
     lit_val: HashMap<Atom, Literal>,
+    literals_at_current_depth: HashSet<Atom>,
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
     pos_occ: HashSet<i32>,
     neg_occ: HashSet<i32>,
     // Using VecDaque for better push_front complexity
     unit_queue: VecDeque<(BVar, Option<CIdx>)>,
-    literals_at_current_depth: HashSet<Atom>,
 
-    vsids_prio_queue: BinaryHeap<(u32, BVar)>,
-    vsids_counter: u32,
-    berkmin_data: BerkMinData,
+    vsids_counters: HashMap<BVar, VSIDSPrio>,
+    vsids_prio_queue: BinaryHeap<VSIDSPrio>,
 }
 
 impl CDCL {
@@ -106,9 +109,8 @@ impl CDCL {
             neg_occ: HashSet::with_capacity(lit_count),
             unit_queue: VecDeque::new(),
             literals_at_current_depth: HashSet::new(),
+            vsids_counters: HashMap::new(),
             vsids_prio_queue: BinaryHeap::new(),
-            vsids_counter: 0,
-            berkmin_data: BerkMinData::new(),
         };
         if subsumed_clauses {
             delete_subsumed_clauses(&mut input);
@@ -141,7 +143,7 @@ impl CDCL {
                     true => cdcl.pos_occ.insert(literal.abs()),
                     false => cdcl.neg_occ.insert(literal.abs()),
                 };
-                let new = cdcl.free_lits.insert(*literal);
+                cdcl.free_lits.insert(*literal);
                 cdcl.lit_val.insert(
                     as_atom(*literal),
                     Literal {
@@ -149,8 +151,6 @@ impl CDCL {
                         is_free: true,
                         reason: None,
                         decision_level: cdcl.branch_depth,
-                        prio: 0,
-                        counter: cdcl.vsids_counter,
                     },
                 );
             });
@@ -215,6 +215,9 @@ impl CDCL {
 
                 // Perform non-chronological backtracking
                 self.non_chronological_backtrack(backtrack_level, clause_id, conflict_clause);
+
+                // Keep clauses w(C) <= 3, delete clauses with more than 5 unassigned vars
+                //self.combined_learning_strategy(3, 5);
             }
 
             // * if all clauses satisfied
@@ -298,7 +301,10 @@ impl CDCL {
         for c_idx in conflict_clauses.unwrap().clone().iter() {
             let clause = match self.clauses.get_mut(&c_idx) {
                 Some(c) => c,
-                None => self.clause_db.get_mut(c_idx).unwrap(),
+                None => match self.clause_db.get_mut(c_idx){
+                    Some(c) => c,
+                    None => break,
+                },
             };
             // * if satisfying literal encountert
             if clause.vars.iter().any(|&v| {
@@ -326,8 +332,6 @@ impl CDCL {
                             is_free: false,
                             reason: Some(*c_idx),
                             decision_level: self.branch_depth,
-                            counter: 0,
-                            prio: 0,
                         },
                     );
                 }
@@ -477,10 +481,16 @@ impl CDCL {
                     .and_modify(|clause| clause.push(clause_id))
                     .or_insert(vec![clause_id]);
             });
-        conflict_clause
-            .vars
-            .iter()
-            .for_each(|&v| self.lit_val.get_mut(&as_atom(v)).unwrap().counter += 1);
+        conflict_clause.vars.iter().for_each(|&v| {
+            self.vsids_counters
+                .entry(v)
+                .and_modify(|p| p.counter += 1)
+                .or_insert(VSIDSPrio {
+                    prio: 0,
+                    counter: 1,
+                    literal: v,
+                });
+        });
     }
 
     fn get_clause(&self, c_idx: CIdx) -> Result<&Clause, Error> {
@@ -572,21 +582,20 @@ impl CDCL {
     }
 
     // Deletion strategies
-    // Implementation of the k-bounded Learning Strategy
-    pub fn k_bounded_learning(cdcl: &mut CDCL, k: usize) {
+    fn combined_learning_strategy(&mut self, k: usize, m: usize) {
         let mut deleted_clauses = vec![];
 
         // Check and process learned clauses
-        for (clause_id, clause) in &cdcl.clause_db {
+        for (clause_id, clause) in &self.clause_db {
             // Check if the width of the clause exceeds the limit
             if clause.vars.len() > k {
                 // Check if two literals in the clause are unassigned
                 if clause
                     .vars
                     .iter()
-                    .filter(|&lit| cdcl.lit_val[&(lit.abs() as Atom)].is_free)
+                    .filter(|&lit| self.lit_val[&(lit.abs() as Atom)].is_free)
                     .count()
-                    >= 2
+                    > m
                 {
                     // Delete the clause
                     deleted_clauses.push(*clause_id);
@@ -595,10 +604,11 @@ impl CDCL {
         }
 
         // Delete identified clauses
+        // TODO: apply to conflict graph
         for clause_id in deleted_clauses {
-            let clause = cdcl.clause_db.remove(&clause_id).unwrap();
+            let clause = self.clause_db.remove(&clause_id).unwrap();
             for lit in &clause.vars {
-                if let Some(clauses) = cdcl.pos_watched_occ.get_mut(&lit) {
+                if let Some(clauses) = self.pos_watched_occ.get_mut(&lit) {
                     if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
                         clauses.remove(index);
                     }
@@ -607,43 +617,6 @@ impl CDCL {
         }
     }
 
-    // Implementation of the m-size relevance based learning Strategy as a free function
-    pub fn m_size_relevance_learning(cdcl: &mut CDCL, m: usize) {
-        let mut deleted_clauses = vec![];
-
-        // Check and process learned clauses
-        for (clause_id, clause) in &cdcl.clause_db {
-            // Check if more than m literals in the clause are unassigned
-            if clause
-                .vars
-                .iter()
-                .filter(|&lit| cdcl.lit_val[&(lit.abs() as Atom)].is_free)
-                .count()
-                > m
-            {
-                // Delete the clause
-                deleted_clauses.push(*clause_id);
-            }
-        }
-
-        // Delete identified clauses
-        for clause_id in deleted_clauses {
-            let clause = cdcl.clause_db.remove(&clause_id).unwrap();
-            for lit in &clause.vars {
-                if let Some(clauses) = cdcl.pos_watched_occ.get_mut(&lit) {
-                    if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
-                        clauses.remove(index);
-                    }
-                }
-            }
-        }
-    }
-
-    // Combined strategy: k-bounded learning and m-size relevance based learning
-    pub fn combined_learning_strategy(&mut self, k: usize, m: usize) {
-        CDCL::k_bounded_learning(self, k);
-        CDCL::m_size_relevance_learning(self, m);
-    }
     fn pick_branching_literal(&mut self) -> Result<(i32, bool), Error> {
         // TODO: track clauses
         let unsat_clauses = self
@@ -658,21 +631,15 @@ impl CDCL {
             .collect::<Vec<(Vec<i32>, u8)>>();
         match self.heuristic {
             Heuristic::VSIDS => {
-                if self.branch_counter % 256 == 255 {
-                    self.lit_val.iter_mut().for_each(|v| {
+                if self.branch_counter % 255 == 254 {
+                    self.vsids_counters.iter_mut().for_each(|v| {
                         v.1.prio = v.1.prio / 2 + v.1.counter;
-                        if v.1.prio > 0 {
-                            self.vsids_prio_queue
-                                .push((v.1.prio, as_literal(*v.0, v.1.val)))
-                        }
+                        self.vsids_prio_queue.push(v.1.clone())
                     })
                 }
                 while let Some(vsids) = self.vsids_prio_queue.pop() {
-                    if self.free_lits.contains(&vsids.1) {
-                        return Ok((vsids.1, true));
-                    }
-                    if self.free_lits.contains(&-vsids.1) {
-                        return Ok((vsids.1, false));
+                    if self.free_lits.contains(&vsids.literal) {
+                        return Ok((vsids.literal, true));
                     }
                 }
                 // fallback
