@@ -8,6 +8,7 @@ pub mod dpll;
 mod heuristics;
 pub mod parse;
 pub mod preprocessing;
+pub mod randomrestarts;
 
 fn main() {
     let arguments = cli::cli();
@@ -23,8 +24,17 @@ fn main() {
     }
 
     let cert = match arguments.solver.as_str() {
-        "dpll" => dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, arguments.depth).solve(),
-        "cdcl" => cdcl::CDCL::new(vars, v_count, c_count, arguments.heuristic, arguments.subsumed_clauses).solve(),
+        "dpll" => {
+            dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, arguments.depth).solve()
+        }
+        "cdcl" => cdcl::CDCL::new(
+            vars,
+            v_count,
+            c_count,
+            arguments.heuristic,
+            arguments.subsumed_clauses,
+        )
+        .solve(None, false, None),
         otherwise => panic!("{} is not a valid mode.", otherwise),
     };
 
