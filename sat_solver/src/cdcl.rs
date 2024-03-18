@@ -35,11 +35,7 @@ pub(crate) struct Literal {
 }
 
 #[derive(Clone)]
-struct Assignment {
-    lit: BVar,
-    val: bool,
-    forced: bool,
-}
+struct Assignment(BVar, bool, bool);
 
 #[derive(Clone, PartialEq, Eq)]
 struct VSIDSPrio {
@@ -204,7 +200,7 @@ impl CDCL {
                 let conflict = self.unit_prop();
                 if !conflict {
                     // Keep clauses w(C) <= 3, delete clauses with more than 5 unassigned vars
-                    self.combined_learning_strategy(3, 3);
+                    //self.combined_learning_strategy(3, 5);
                     break;
                 };
                 // * if conflict detected
@@ -219,7 +215,8 @@ impl CDCL {
                 self.insert_clause(clause_id, conflict_clause.clone());
 
                 // Perform non-chronological backtracking
-                self.non_chronological_backtrack(backtrack_level, clause_id, conflict_clause);
+                self.non_chronological_backtrack(backtrack_level);
+                self.update_queue(clause_id, conflict_clause);
             }
 
             // * if all clauses satisfied
@@ -227,23 +224,6 @@ impl CDCL {
                 return Ok(res);
             }
         }
-    }
-
-    fn backtrack(&mut self) -> bool {
-        let mut last_step = self.history.pop();
-        while last_step.as_ref().is_some_and(|step| step.forced) {
-            self.unset_var(last_step.unwrap().lit);
-            last_step = self.history.pop();
-        }
-        if last_step.is_none() {
-            return true;
-        }
-        let var = last_step.as_ref().unwrap().lit;
-        let val = last_step.unwrap().val;
-        self.unset_var(var);
-        self.unit_queue.clear();
-        self.set_var(true, !val, var, None);
-        false
     }
 
     fn unit_prop(&mut self) -> bool {
@@ -268,11 +248,7 @@ impl CDCL {
         //println!("\tset {} to {}", var, val);
         let mut conflict = false;
         if self.history_enabled {
-            self.history.push(Assignment {
-                lit: var,
-                val,
-                forced,
-            });
+            self.history.push(Assignment(var, val, forced));
         } else {
             self.pos_occ.remove(&var);
             self.neg_occ.remove(&var);
@@ -418,14 +394,14 @@ impl CDCL {
             .vars;
         while !is_asserting(current_vars, &self.literals_at_current_depth) {
             if let Some(next) = stack.next() {
-                current_node = &self.lit_val[&as_atom(next.lit)];
+                current_node = &self.lit_val[&as_atom(next.0)];
                 if let None = current_node.reason {
-                    panic!("Node {} has no reason", next.lit);
+                    panic!("Node {} has no reason", next.0);
                 }
                 let reason_clause = &self.get_clause(current_node.reason.unwrap())?.vars;
                 // quote lecure: We go backwards on the stack and if we find an assignment that is of a literal (next.var) in our clause
                 // then we resolve with the reason clause (current_node) and we continue to do that until we have an asserting clause.
-                if current_vars.contains(&next.lit) || current_vars.contains(&-next.lit) {
+                if current_vars.contains(&next.0) || current_vars.contains(&-next.0) {
                     new_vars = self.resolution(current_vars, reason_clause)?;
                 }
                 current_vars = &new_vars;
@@ -451,20 +427,15 @@ impl CDCL {
         Ok((conflict_clause, assetion_level))
     }
 
-    fn non_chronological_backtrack(
-        &mut self,
-        assertion_level: i64,
-        conflict_c_idx: CIdx,
-        conflict_clause: Clause,
-    ) {
+    fn non_chronological_backtrack(&mut self, assertion_level: i64) {
         // * undo all assignments of branching level > d
         // Reset assignments that were made after the assertion level
         while let Some(assignment) = self.history.last() {
-            if self.lit_val[&as_atom(assignment.lit)].decision_level <= assertion_level {
+            if self.lit_val[&as_atom(assignment.0)].decision_level <= assertion_level {
                 break;
             }
             // Undo assignment
-            let var = assignment.lit;
+            let var = assignment.0;
             self.unset_var(var);
             // Remove last assignment from the history
             self.history.pop();
@@ -481,6 +452,9 @@ impl CDCL {
             });
         // Empty the unit queue, as all subsequent units are invalid
         self.unit_queue.clear();
+    }
+
+    fn update_queue(&mut self, conflict_c_idx: CIdx, conflict_clause: Clause) {
         if !self.lit_val[&as_atom(conflict_clause.watched_lhs)].is_free {
             panic!(
                 "watched_lhs {} is already set and thus won't be queued.",
@@ -629,9 +603,16 @@ impl CDCL {
 
         // Delete identified clauses
         for clause_id in deleted_clauses {
-            println!("Remove clause {}", clause_id);
-            let clause = self.clause_db.remove(&clause_id).unwrap();
             // Unset watched literals of that clause
+            self.print_graph_as_dot();
+            let clause = self.clause_db.remove(&clause_id).unwrap();
+            println!("Remove clause {}", clause_id);
+            if !self.lit_val[&as_atom(clause.watched_lhs)].is_free {
+                self.unset_var(clause.watched_lhs);
+            }
+            if !self.lit_val[&as_atom(clause.watched_rhs)].is_free {
+                self.unset_var(clause.watched_rhs);
+            }
             for lit in [clause.watched_lhs, clause.watched_rhs] {
                 if let Some(clauses) = self.pos_watched_occ.get_mut(&lit) {
                     if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
@@ -712,10 +693,6 @@ fn as_atom(lit: BVar) -> Atom {
     lit.abs() as Atom
 }
 
-fn as_literal(atom: Atom, polarity: bool) -> BVar {
-    atom as i32 * (polarity as i32)
-}
-
 #[test]
 fn should_be_sat_bug_mar_14th_1() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/ssa7552-159.cnf").unwrap();
@@ -744,7 +721,7 @@ fn should_be_sat_bug_mar_14th_3() {
 }
 
 #[test]
-fn should_derive_1_UIP_from_wikipedia() {
+fn should_derive_1_uip_from_wikipedia() {
     let mut cdcl = CDCL::new(
         vec![
             vec![1, 4],
@@ -788,7 +765,7 @@ fn should_derive_1_UIP_from_wikipedia() {
 }
 
 #[test]
-fn should_derive_1_UIP_from_princeton_paper() {
+fn should_derive_1_uip_from_princeton_paper() {
     let mut cdcl = CDCL::new(
         vec![
             vec![1, 2],
@@ -817,7 +794,7 @@ fn should_derive_1_UIP_from_princeton_paper() {
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
     cdcl.set_var(false, false, 1, None);
-    let conflict = cdcl.unit_prop();
+    let _ = cdcl.unit_prop();
     let conflict = cdcl.analyze_conflict().unwrap();
     assert_eq!(conflict.clone().1, 2);
     assert!(conflict.clone().0.vars.contains(&-4));
@@ -1312,6 +1289,6 @@ fn test_current_decision_level() {
         false,
     );
     assert_eq!(cdcl.branch_depth, 0); // No assignments, decision level should be 0
-    cdcl.solve();
+    let _ = cdcl.solve();
     assert_eq!(cdcl.branch_depth, 2); // Assign 1 -> unit prop 2 -> Assign 2 => decision_level of 2
 }
