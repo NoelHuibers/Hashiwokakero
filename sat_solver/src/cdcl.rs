@@ -35,6 +35,7 @@ pub(crate) struct Literal {
     decision_level: i64,
 }
 
+// var, val, forced
 #[derive(Clone)]
 struct Assignment(BVar, bool, bool);
 
@@ -69,6 +70,7 @@ pub struct CDCL {
     history: Vec<Assignment>,
     // Memory allocation in the history is a bottle neck thus the initial unit prop and pure lit elim don't need to expand it
     history_enabled: bool,
+    learned_size: usize,
     lit_val: HashMap<Atom, Literal>,
     literals_at_current_depth: HashSet<Atom>,
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
@@ -76,7 +78,6 @@ pub struct CDCL {
     pos_occ: HashSet<BVar>,
     neg_occ: HashSet<BVar>,
     // Using VecDaque for better push_front complexity
-
     reason_for: HashMap<CIdx, HashSet<BVar>>,
 
     vsids_counters: HashMap<BVar, VSIDSPrio>,
@@ -104,6 +105,7 @@ impl CDCL {
             heuristic,
             history: Vec::new(),
             history_enabled: false,
+            learned_size: clause_count,
             lit_val: HashMap::with_capacity(lit_count),
             pos_watched_occ: HashMap::with_capacity(clause_count * 2),
             pos_occ: HashSet::with_capacity(lit_count),
@@ -122,7 +124,7 @@ impl CDCL {
         // Using iterators where possible for better performance
         input.into_iter().enumerate().for_each(|(c, vars)| {
             let clause = Clause {
-                watched_lhs: *vars.first().unwrap(),
+                watched_lhs: vars[0],
                 watched_rhs: *vars.last().unwrap(),
                 vars: vars.clone(),
             };
@@ -252,8 +254,6 @@ impl CDCL {
             loop {
                 let conflict = self.unit_prop();
                 if !conflict {
-                    // Keep clauses w(C) <= 3, delete clauses with more than 5 unassigned vars
-                    //self.combined_learning_strategy(3, 5);
                     break;
                 };
                 // * if conflict detected
@@ -264,12 +264,13 @@ impl CDCL {
                 }
 
                 // Add conflict clause to the database
-                let clause_id = self.clauses.len() + self.clause_db.len();
-                self.insert_clause(clause_id, conflict_clause.clone());
+                let clause_id = self.insert_clause(conflict_clause.clone());
 
                 // Perform non-chronological backtracking
                 self.non_chronological_backtrack(backtrack_level);
                 self.update_queue(clause_id, conflict_clause);
+                // Keep clauses w(C) <= 3, delete clauses with more than 5 unassigned vars
+                //self.combined_learning_strategy(3, 10);
             }
 
             // * if all clauses satisfied
@@ -337,7 +338,7 @@ impl CDCL {
         if let None = conflict_clauses {
             return conflict;
         }
-        for c_idx in conflict_clauses.unwrap().clone().iter() {
+        for c_idx in conflict_clauses.unwrap_or(&vec![]).clone().iter() {
             let clause = match self.clauses.get_mut(&c_idx) {
                 Some(c) => c,
                 None => self.clause_db.get_mut(c_idx).unwrap(),
@@ -354,7 +355,7 @@ impl CDCL {
             let new_watched_cands = clause
                 .vars
                 .iter()
-                .filter(|&v| self.lit_val.get(&as_atom(*v)).unwrap().is_free)
+                .filter(|&v| self.lit_val[&as_atom(*v)].is_free)
                 .collect::<Vec<&BVar>>();
             match new_watched_cands.len() {
                 // * if no unassigned literal found
@@ -390,7 +391,7 @@ impl CDCL {
             if new_watched_cands.len() == 0 {
                 continue;
             }
-            let new = *new_watched_cands.first().unwrap();
+            let new = new_watched_cands[0];
             // * mark new var as watched
             match conflict_literal == clause.watched_rhs {
                 true => clause.watched_rhs = **new,
@@ -403,7 +404,11 @@ impl CDCL {
             // * add clause to watch list
             self.pos_watched_occ
                 .entry(**new)
-                .and_modify(|vec| vec.push(*c_idx))
+                .and_modify(|vec| {
+                    if !vec.contains(c_idx) {
+                        vec.push(*c_idx);
+                    }
+                })
                 .or_insert(vec![*c_idx]);
         }
         conflict
@@ -518,7 +523,9 @@ impl CDCL {
             .push_front((conflict_clause.watched_lhs, Some(conflict_c_idx)));
     }
 
-    fn insert_clause(&mut self, clause_id: usize, conflict_clause: Clause) {
+    fn insert_clause(&mut self, conflict_clause: Clause) -> usize {
+        self.learned_size += 1;
+        let clause_id = self.learned_size;
         self.clause_db.insert(clause_id, conflict_clause.clone());
         [conflict_clause.watched_lhs, conflict_clause.watched_rhs]
             .iter()
@@ -538,6 +545,7 @@ impl CDCL {
                     literal: v,
                 });
         });
+        self.learned_size
     }
 
     fn get_clause(&self, c_idx: CIdx) -> Result<&Clause, Error> {
@@ -640,7 +648,7 @@ impl CDCL {
                 continue;
             }
             if clause.vars.len() > k {
-                // Check if two literals in the clause are unassigned
+                // Check if k literals in the clause are unassigned
                 if clause
                     .vars
                     .iter()
@@ -657,15 +665,8 @@ impl CDCL {
         // Delete identified clauses
         for clause_id in deleted_clauses {
             // Unset watched literals of that clause
-            self.print_graph_as_dot();
             let clause = self.clause_db.remove(&clause_id).unwrap();
-            println!("Remove clause {}", clause_id);
-            if !self.lit_val[&as_atom(clause.watched_lhs)].is_free {
-                self.unset_var(clause.watched_lhs);
-            }
-            if !self.lit_val[&as_atom(clause.watched_rhs)].is_free {
-                self.unset_var(clause.watched_rhs);
-            }
+            // println!("Remove clause {}", clause_id);
             for lit in [clause.watched_lhs, clause.watched_rhs] {
                 if let Some(clauses) = self.pos_watched_occ.get_mut(&lit) {
                     if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
@@ -673,6 +674,34 @@ impl CDCL {
                     }
                 }
             }
+            // TODO: remove below
+            // Doublechecking there is no reference left hanging
+           assert!(!self.clause_db.contains_key(&clause_id));
+            assert!(!self.clauses.contains_key(&clause_id));
+            assert!(self.get_clause(clause_id).is_err());
+            assert!(self.history_enabled);
+            assert!(self.reason_for.get(&clause_id).is_none());
+            assert!(
+                self.lit_val
+                    .iter()
+                    .filter(|lv| lv.1.reason.is_some_and(|r| r == clause_id))
+                    .count()
+                    == 0
+            );
+            assert!(
+                self.pos_watched_occ
+                    .values()
+                    .filter(|v| v.contains(&clause_id))
+                    .count()
+                    == 0
+            );
+            assert!(
+                self.unit_queue
+                    .iter()
+                    .filter(|p| p.1.is_some_and(|c| c == clause_id))
+                    .count()
+                    == 0
+            );
         }
     }
 
@@ -723,7 +752,6 @@ impl CDCL {
                 return Ok(res);
             }
         }
-        self.print_graph_as_dot();
         Err(Error {
             branch_depth: self.branch_depth,
             history_len: self.history.len(),
@@ -1237,7 +1265,18 @@ fn should_parse_and_solve_unsat() {
 }
 
 #[test]
-fn should_solve_regardless_of_clause_deletion() -> Result<(), Error> {
+fn should_solve_regardless_of_clause_deletion_1() -> Result<(), Error> {
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/unsat/ssa0432-003.cnf").unwrap();
+    let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false).solve(None, false, None);
+    if let DIMACSOutput::Sat(vars) = res? {
+        println!("{:?}", vars);
+        panic!("Was SAT but expected UNSAT.")
+    }
+    Ok(())
+}
+
+#[test]
+fn should_solve_regardless_of_clause_deletion_2() -> Result<(), Error> {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/test/unsat/subset6.cnf").unwrap();
     let res = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false).solve(None, false, None);
     if let DIMACSOutput::Sat(vars) = res? {
