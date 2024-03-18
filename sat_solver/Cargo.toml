@@ -1,5 +1,5 @@
 [package]
-name = "dpll_solver"
+name = "sat_solver"
 version = "0.1.0"
 edition = "2021"
 
@@ -19,11 +19,11 @@ wait-timeout = "0.2"
 debug = true
 
 [lib]
-name = "dpll_solver"
+name = "sat_solver"
 path = "src/lib.rs"
 
 [[bin]]
-name = "dpll" 
+name = "sat" 
 path = "src/main.rs" 
 
 [[bin]]
