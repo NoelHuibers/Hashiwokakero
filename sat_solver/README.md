@@ -30,6 +30,8 @@ Supported heuristics are:
 |-|-|-|
 |-d|--depth|show progress when using dpll|
 |-s|--subsumed_clauses|Use subsumed_clauses preprocessing|
+|-k|--k|Argument for k-bounded learning|
+|-m|--m|Argument for m-size relevance based learning|
 |-f|--flamegraph|Produces a Flamegraph|
 |-h|--help|Print help|
 |-v|--version|Print version|
