@@ -33,8 +33,11 @@ fn main() {
             c_count,
             arguments.heuristic,
             arguments.subsumed_clauses,
+            None,
+            false,
+            None,
         )
-        .solve(None, false, None),
+        .solve(),
         otherwise => panic!("{} is not a valid mode.", otherwise),
     };
 

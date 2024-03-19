@@ -15,10 +15,19 @@ pub fn luby_sequence(step: usize) -> usize {
 #[test]
 fn test_restart_resets_solver_state() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let mut solver = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false);
+    let mut solver = CDCL::new(
+        input,
+        v_c,
+        c_c,
+        Heuristic::Arbitrary,
+        false,
+        None,
+        false,
+        None,
+    );
 
     solver
-        .solve(None, false, None)
+        .solve()
         .unwrap_or_else(|_| panic!("Initial solving failed"));
 
     solver.restart();
@@ -29,9 +38,18 @@ fn test_restart_resets_solver_state() {
 #[test]
 fn test_solve_without_restart_threshold() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let mut solver = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false);
+    let mut solver = CDCL::new(
+        input,
+        v_c,
+        c_c,
+        Heuristic::Arbitrary,
+        false,
+        None,
+        false,
+        None,
+    );
 
-    solver.solve(None, false, None).unwrap();
+    solver.solve().unwrap();
 
     assert_eq!(solver.restart_count, 0, "Solver should not have restarted");
 }
@@ -39,9 +57,18 @@ fn test_solve_without_restart_threshold() {
 #[test]
 fn test_solve_with_restart_threshold() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let mut solver = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false);
+    let mut solver = CDCL::new(
+        input,
+        v_c,
+        c_c,
+        Heuristic::Arbitrary,
+        false,
+        Some(1),
+        false,
+        None,
+    );
 
-    solver.solve(Some(1), false, None).unwrap();
+    solver.solve().unwrap();
 
     assert!(
         solver.restart_count > 0,
@@ -52,10 +79,19 @@ fn test_solve_with_restart_threshold() {
 #[test]
 fn test_solver_uses_luby_sequence_for_restarts() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let mut solver = CDCL::new(input, v_c, c_c, Heuristic::Arbitrary, false);
-
     let base_conflict_threshold = Some(1);
-    solver.solve(base_conflict_threshold, true, None).unwrap();
+    let mut solver = CDCL::new(
+        input,
+        v_c,
+        c_c,
+        Heuristic::Arbitrary,
+        false,
+        base_conflict_threshold,
+        true,
+        None,
+    );
+
+    solver.solve().unwrap();
 
     assert!(
         solver.restart_count > 0,

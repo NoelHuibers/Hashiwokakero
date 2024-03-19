@@ -13,7 +13,7 @@ Once built via `cargo build --release` the solver can be executed the following:
 
 ### HEURISTIC
 
-Supported Heuristics are:
+Supported heuristics are:
 
 - arbitrary
 - dlis
@@ -26,11 +26,13 @@ Supported Heuristics are:
 
 ### Flags
 
-Flags that can be set are: --depth or in short -d and --flamegraph or in short -f
-Depth:
-The depth flag can be set to true or false and determines whether the currently lowest backtracking depth is printed to the terminal. This gives some idea of the progress.
-Flamegraph:
-Makes the flamegraph.
+|short|long|description|
+|-|-|-|
+|-d|--depth|show progress when using dpll|
+|-s|--subsumed_clauses|Use subsumed_clauses preprocessing|
+|-f|--flamegraph|Produces a Flamegraph|
+|-h|--help|Print help|
+|-v|--version|Print version|
 
 ## CPU Time Measurement
 
@@ -58,7 +60,7 @@ When cloning make sure to also sync the submodule which includes testfiles:
 
 Run the tests using cargo:
 
-``
+`cargo test --package sat_solver --lib -- cdcl --nocapture`
 
 # Team Responsibilities
 
@@ -66,24 +68,27 @@ Run the tests using cargo:
 
 - [x] Fix issue with Conflict analysis
 - [x] Subsumed Clauses
-- [ ] Restarts
+- [x] Restarts
 - [ ] Drup logging
-- [ ] Heuristics
 
 **Laura:**
 
 - [x] Implication Graph
 - [x] Conflict analysis
-- [ ] Clause deletion strategy
-- [ ] Heuristics
 
 **Flo:**
 
 - [x] 2-Watched Literals
 - [x] Fix/Update impl. graph while setting vars
 - [x] Fix/Rewrite Conflict analysis
+- [x] Non-chron backtracking
 - [x] Test + Debug non-chronological backtracking
 - [x] Check whether unit clauses can occur in conflict analysis
 - [x] Check impl for set_var in respect to unit clauses
 - [x] Pure literal elimination as preprocessing
 - [x] Output valid DIMACS solution
+- [ ] VSIDS performance
+
+# Our favourite Implication Graph during debugging
+
+![](graphviz.svg)
