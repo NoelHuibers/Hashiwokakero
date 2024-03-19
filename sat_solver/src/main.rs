@@ -36,6 +36,8 @@ fn main() {
             None,
             false,
             None,
+            arguments.k,
+            arguments.m,
         )
         .solve(),
         otherwise => panic!("{} is not a valid mode.", otherwise),

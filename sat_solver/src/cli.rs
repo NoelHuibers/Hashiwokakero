@@ -1,3 +1,5 @@
+use std::default;
+
 use clap::{command, Arg, ArgAction};
 
 #[derive(Debug)]
@@ -9,6 +11,8 @@ pub struct CliArgs {
     pub depth: bool,
     pub flamegraph: bool,
     pub subsumed_clauses: bool,
+    pub k: usize,
+    pub m: usize,
 }
 
 #[derive(Debug)]
@@ -60,6 +64,18 @@ pub fn cli() -> CliArgs {
                 .long("depth")
                 .short('d')
                 .action(ArgAction::SetTrue),
+        ).arg(
+            Arg::new("k")
+                .help("Argument for k-bounded learning")
+                .long("k")
+                .short('k')
+                .default_value("10")
+        ).arg(
+            Arg::new("m")
+                .help("Argument for m-size relevance based learning")
+                .long("m")
+                .short('m')
+                .default_value("10")
         )
         .arg(
             Arg::new("subsumed_clauses")
@@ -110,6 +126,11 @@ pub fn cli() -> CliArgs {
         }
     };
 
+    // can unwrap since it has a default value
+    let k = arguments.get_one::<String>("k").unwrap().parse().unwrap();
+    // can unwrap since it has a default value
+    let m = arguments.get_one::<String>("m").unwrap().parse().unwrap();
+
     return CliArgs {
         solver,
         inputpath,
@@ -118,5 +139,7 @@ pub fn cli() -> CliArgs {
         depth: arguments.get_flag("depth"),
         subsumed_clauses: arguments.get_flag("subsumed_clauses"),
         flamegraph: arguments.get_flag("flamegraph"),
+        k,
+        m,
     };
 }

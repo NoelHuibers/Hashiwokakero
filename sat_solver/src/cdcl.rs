@@ -77,16 +77,20 @@ pub struct CDCL {
     pos_watched_occ: HashMap<BVar, Vec<CIdx>>,
     pos_occ: HashSet<BVar>,
     neg_occ: HashSet<BVar>,
-    // Using VecDaque for better push_front complexity
     reason_for: HashMap<CIdx, HashSet<BVar>>,
 
     vsids_counters: HashMap<BVar, VSIDSPrio>,
     vsids_prio_queue: BinaryHeap<VSIDSPrio>,
+    // Using VecDaque for better push_front complexity
     pub unit_queue: VecDeque<(BVar, Option<CIdx>)>,
+    pub restart: Restart,
+    deletion_start: (usize, usize),
+}
 
-    pub restart_count: usize,
+pub struct Restart {
+    pub count: usize,
     conflict_count: usize,
-    restart_threshold: Option<usize>,
+    threshold: Option<usize>,
     use_luby: bool,
     luby_step: usize,
     factor: Option<usize>,
@@ -102,6 +106,8 @@ impl CDCL {
         restart_threshold: Option<usize>,
         use_luby: bool,
         factor: Option<usize>,
+        k: usize,
+        m: usize,
     ) -> Self {
         let mx_clauses = 42; //TODO: use useful value here according to deletion strat
         let mut cdcl = CDCL {
@@ -123,12 +129,15 @@ impl CDCL {
             reason_for: HashMap::new(),
             vsids_counters: HashMap::new(),
             vsids_prio_queue: BinaryHeap::new(),
-            restart_count: 0,
-            conflict_count: 0,
-            restart_threshold,
-            use_luby,
-            luby_step: 1,
-            factor,
+            restart: Restart {
+                count: 0,
+                conflict_count: 0,
+                threshold: restart_threshold,
+                use_luby,
+                luby_step: 1,
+                factor,
+            },
+            deletion_start: (k, m),
         };
         if subsumed_clauses {
             delete_subsumed_clauses(&mut input);
@@ -177,28 +186,28 @@ impl CDCL {
     }
 
     fn restart_policy(&mut self, conflict: bool) -> bool {
-        match (self.restart_threshold, conflict) {
+        match (self.restart.threshold, conflict) {
             (Some(threshold), true) => {
-                self.conflict_count += 1;
-                let lubythreshowld = if self.use_luby {
-                    let luby_multiplier = luby_sequence(self.luby_step);
+                self.restart.conflict_count += 1;
+                let lubythreshowld = if self.restart.use_luby {
+                    let luby_multiplier = luby_sequence(self.restart.luby_step);
                     threshold * luby_multiplier
                 } else {
                     threshold
                 };
 
-                if self.conflict_count >= lubythreshowld {
+                if self.restart.conflict_count >= lubythreshowld {
                     self.restart();
-                    self.conflict_count = 0;
-                    match self.factor {
+                    self.restart.conflict_count = 0;
+                    match self.restart.factor {
                         Some(f) => {
-                            self.restart_threshold = Some(self.restart_threshold.unwrap() * f)
+                            self.restart.threshold = Some(self.restart.threshold.unwrap() * f)
                         }
                         None => (),
                     }
 
-                    if self.use_luby {
-                        self.luby_step += 1;
+                    if self.restart.use_luby {
+                        self.restart.luby_step += 1;
                     }
                     return true;
                 }
@@ -221,7 +230,7 @@ impl CDCL {
         }
         self.history.clear();
         self.literals_at_current_depth.clear();
-        self.restart_count += 1;
+        self.restart.count += 1;
     }
 
     pub fn solve(&mut self) -> Result<DIMACSOutput, Error> {
@@ -285,7 +294,7 @@ impl CDCL {
                 self.non_chronological_backtrack(backtrack_level);
                 self.update_queue(clause_id, conflict_clause);
                 // Keep clauses w(C) <= 3, delete clauses with more than 5 unassigned vars
-                self.combined_learning_strategy(3, 10);
+                self.combined_learning_strategy();
             }
 
             // * if all clauses satisfied
@@ -663,7 +672,9 @@ impl CDCL {
     }
 
     // Deletion strategies
-    fn combined_learning_strategy(&mut self, k: usize, m: usize) {
+    fn combined_learning_strategy(&mut self) {
+        let k = self.deletion_start.0;
+        let m = self.deletion_start.1;
         let mut deleted_clauses = vec![];
 
         // Check and process learned clauses
@@ -784,6 +795,8 @@ fn should_be_sat_bug_mar_14th_1() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -803,6 +816,8 @@ fn should_be_sat_bug_mar_14th_2() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -822,6 +837,8 @@ fn should_be_sat_bug_mar_14th_3() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -849,6 +866,8 @@ fn should_derive_1_uip_from_wikipedia() {
         None,
         false,
         None,
+        10,
+        10,
     );
     cdcl.history_enabled = true;
     cdcl.set_var(false, false, 1, None);
@@ -894,6 +913,8 @@ fn should_derive_1_uip_from_princeton_paper() {
         None,
         false,
         None,
+        10,
+        10,
     );
     cdcl.history_enabled = true;
     cdcl.set_var(false, false, 7, None);
@@ -941,6 +962,8 @@ fn should_derive_1_uip_from_lecture() {
         None,
         false,
         None,
+        10,
+        10,
     );
     cdcl.history_enabled = true;
     cdcl.set_var(false, false, 9, None);
@@ -976,6 +999,8 @@ fn should_set_var_1_true_watched_literals() {
         None,
         false,
         None,
+        10,
+        10,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
@@ -1000,6 +1025,8 @@ fn should_set_var_neg_1_false_watched_literals() {
         None,
         false,
         None,
+        10,
+        10,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
@@ -1024,6 +1051,8 @@ fn should_set_var_neg_1_true_watched_literals() {
         None,
         false,
         None,
+        10,
+        10,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
@@ -1048,6 +1077,8 @@ fn should_set_var_1_false_watched_literals() {
         None,
         false,
         None,
+        10,
+        10,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
@@ -1072,6 +1103,8 @@ fn should_detect_conflict_watched_literals() {
         None,
         false,
         None,
+        10,
+        10,
     );
     cdcl.set_var(false, false, -1, None);
     let c = cdcl.set_var(false, false, 2, None);
@@ -1089,6 +1122,8 @@ fn should_detect_conflict_watched_literals_2() {
         None,
         false,
         None,
+        10,
+        10,
     );
     cdcl.set_var(false, false, -1, None);
     let c_1 = cdcl.set_var(false, false, -2, None);
@@ -1108,6 +1143,8 @@ fn should_unit_prop_watched_literals() {
         None,
         false,
         None,
+        10,
+        10,
     );
     cdcl.set_var(false, false, -1, None);
     assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2);
@@ -1129,6 +1166,8 @@ fn should_solve_sat_small() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -1183,6 +1222,8 @@ fn should_solve_sat() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -1208,6 +1249,8 @@ fn should_solve_unsat_small() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Sat(_)) = res {
@@ -1296,6 +1339,8 @@ fn should_solve_unsat() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Sat(_)) = res {
@@ -1315,6 +1360,8 @@ fn should_parse_and_solve_sat() {
         None,
         false,
         None,
+        10,
+        10,
     );
     let res = cdcl.solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -1325,7 +1372,18 @@ fn should_parse_and_solve_sat() {
 #[test]
 fn should_parse_and_solve_sat_vsids() -> Result<(), Error> {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/par16-2.cnf").unwrap();
-    let mut cdcl = CDCL::new(input, v_c, c_c, Heuristic::VSIDS, false, None, false, None);
+    let mut cdcl = CDCL::new(
+        input,
+        v_c,
+        c_c,
+        Heuristic::VSIDS,
+        false,
+        None,
+        false,
+        None,
+        10,
+        10,
+    );
     let res = cdcl.solve();
     if let DIMACSOutput::Unsat = res? {
         panic!("Was UNSAT but expected SAT.")
@@ -1345,6 +1403,8 @@ fn should_parse_and_solve_unsat() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Sat(vars)) = res {
@@ -1365,6 +1425,8 @@ fn should_solve_regardless_of_clause_deletion_1() -> Result<(), Error> {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let DIMACSOutput::Sat(vars) = res? {
@@ -1386,6 +1448,8 @@ fn should_solve_regardless_of_clause_deletion_2() -> Result<(), Error> {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let DIMACSOutput::Sat(vars) = res? {
@@ -1406,6 +1470,8 @@ fn should_elim_pure_lit() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -1425,6 +1491,8 @@ fn should_be_sat_bug_jan_2nd_1() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -1444,6 +1512,8 @@ fn should_be_sat_bug_jan_2nd_2() {
         None,
         false,
         None,
+        10,
+        10,
     )
     .solve();
     if let Ok(DIMACSOutput::Unsat) = res {
@@ -1462,6 +1532,8 @@ fn test_derive_and_add_conflict_clause() {
         None,
         false,
         None,
+        10,
+        10,
     );
 
     // Initialize the values and status for the variables in the Literal Values HashMap
@@ -1484,6 +1556,8 @@ fn test_analyze_conflict() {
         None,
         false,
         None,
+        10,
+        10,
     );
     cdcl.history_enabled = true;
     cdcl.branch_depth += 1;
@@ -1511,6 +1585,8 @@ fn test_current_decision_level() {
         None,
         false,
         None,
+        10,
+        10,
     );
     assert_eq!(cdcl.branch_depth, 0); // No assignments, decision level should be 0
     let _ = cdcl.solve();

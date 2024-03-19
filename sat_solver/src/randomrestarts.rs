@@ -23,7 +23,7 @@ fn test_restart_resets_solver_state() {
         false,
         None,
         false,
-        None,
+        None,10,10
     );
 
     solver
@@ -46,12 +46,12 @@ fn test_solve_without_restart_threshold() {
         false,
         None,
         false,
-        None,
+        None,10,10
     );
 
     solver.solve().unwrap();
 
-    assert_eq!(solver.restart_count, 0, "Solver should not have restarted");
+    assert_eq!(solver.restart.count, 0, "Solver should not have restarted");
 }
 
 #[test]
@@ -65,13 +65,13 @@ fn test_solve_with_restart_threshold() {
         false,
         Some(1),
         false,
-        None,
+        None,10,10
     );
 
     solver.solve().unwrap();
 
     assert!(
-        solver.restart_count > 0,
+        solver.restart.count > 0,
         "Solver should have restarted at least once"
     );
 }
@@ -88,13 +88,13 @@ fn test_solver_uses_luby_sequence_for_restarts() {
         false,
         base_conflict_threshold,
         true,
-        None,
+        None,10,10
     );
 
     solver.solve().unwrap();
 
     assert!(
-        solver.restart_count > 0,
+        solver.restart.count > 0,
         "Solver should have restarted at least once"
     );
 }
