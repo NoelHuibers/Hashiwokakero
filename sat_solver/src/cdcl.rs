@@ -205,32 +205,6 @@ impl CDCL {
             .collect();
 
         loop {
-            let conflict = self.unit_prop();
-            match (restart_threshold, conflict) {
-                (Some(threshold), true) => {
-                    conflict_count += 1;
-                    let lubythreshowld = if use_luby {
-                        let luby_multiplier = luby_sequence(luby_step);
-                        threshold * luby_multiplier
-                    } else {
-                        threshold
-                    };
-
-                    if conflict_count >= lubythreshowld {
-                        self.restart();
-                        conflict_count = 0;
-                        match factor {
-                            Some(f) => restart_threshold = Some(restart_threshold.unwrap() * f),
-                            None => (),
-                        }
-
-                        if use_luby {
-                            luby_step += 1;
-                        }
-                    }
-                }
-                _ => {}
-            }
             // * choose literal var
             let (var, val, forced) = match pure_lits.is_empty() {
                 true => {
@@ -253,6 +227,31 @@ impl CDCL {
             // * unit propagation
             loop {
                 let conflict = self.unit_prop();
+                match (restart_threshold, conflict) {
+                    (Some(threshold), true) => {
+                        conflict_count += 1;
+                        let lubythreshowld = if use_luby {
+                            let luby_multiplier = luby_sequence(luby_step);
+                            threshold * luby_multiplier
+                        } else {
+                            threshold
+                        };
+
+                        if conflict_count >= lubythreshowld {
+                            self.restart();
+                            conflict_count = 0;
+                            match factor {
+                                Some(f) => restart_threshold = Some(restart_threshold.unwrap() * f),
+                                None => (),
+                            }
+
+                            if use_luby {
+                                luby_step += 1;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
                 if !conflict {
                     break;
                 };
@@ -270,7 +269,7 @@ impl CDCL {
                 self.non_chronological_backtrack(backtrack_level);
                 self.update_queue(clause_id, conflict_clause);
                 // Keep clauses w(C) <= 3, delete clauses with more than 5 unassigned vars
-                //self.combined_learning_strategy(3, 10);
+                self.combined_learning_strategy(3, 10);
             }
 
             // * if all clauses satisfied
@@ -674,34 +673,6 @@ impl CDCL {
                     }
                 }
             }
-            // TODO: remove below
-            // Doublechecking there is no reference left hanging
-           assert!(!self.clause_db.contains_key(&clause_id));
-            assert!(!self.clauses.contains_key(&clause_id));
-            assert!(self.get_clause(clause_id).is_err());
-            assert!(self.history_enabled);
-            assert!(self.reason_for.get(&clause_id).is_none());
-            assert!(
-                self.lit_val
-                    .iter()
-                    .filter(|lv| lv.1.reason.is_some_and(|r| r == clause_id))
-                    .count()
-                    == 0
-            );
-            assert!(
-                self.pos_watched_occ
-                    .values()
-                    .filter(|v| v.contains(&clause_id))
-                    .count()
-                    == 0
-            );
-            assert!(
-                self.unit_queue
-                    .iter()
-                    .filter(|p| p.1.is_some_and(|c| c == clause_id))
-                    .count()
-                    == 0
-            );
         }
     }
 
