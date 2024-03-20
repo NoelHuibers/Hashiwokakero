@@ -28,13 +28,18 @@ Supported heuristics are:
 
 | short | long               | description                                  |
 | ----- | ------------------ | -------------------------------------------- |
-| -d    | --depth            | show progress when using dpll                |
-| -s    | --subsumed_clauses | Use subsumed_clauses preprocessing           |
-| -k    | --k                | Argument for k-bounded learning              |
-| -m    | --m                | Argument for m-size relevance based learning |
-| -f    | --flamegraph       | Produces a Flamegraph                        |
-| -h    | --help             | Print help                                   |
-| -v    | --version          | Print version                                |
+| -H|--heuristic |Specify the heuristic to use [default: arbitrary]|
+| -d|--depth|Shows the depth of the search tree|
+| -k|--k |Argument for k-bounded learning [default: 10]|
+| -m|--m |Argument for m-size relevance based learning [default: 10]|
+| -s|--subsumed_clauses|Eliminates subsumed clauses|
+| -f|--flamegraph|Specify whether to create a flamegraph|
+| -r|--restarts_threshold |Specify the heuristic to use|
+| -l|--luby|Use luby sequence for restarts|
+| -F|--restart_factor |Specify the factor for restarts|
+| -D|--DRUP|Output in DRUP format|
+| -h|--help|Print help|
+| -V|--version|Print version|
 
 ## CPU Time Measurement
 
