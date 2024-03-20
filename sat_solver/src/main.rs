@@ -34,9 +34,9 @@ fn main() {
             c_count,
             arguments.heuristic,
             arguments.subsumed_clauses,
-            None,
-            false,
-            None,
+            arguments.threshold,
+            arguments.luby,
+            arguments.factor,
             arguments.k,
             arguments.m,
         )

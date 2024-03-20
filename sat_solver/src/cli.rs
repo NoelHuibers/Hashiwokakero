@@ -1,5 +1,3 @@
-use std::default;
-
 use clap::{command, Arg, ArgAction};
 
 #[derive(Debug)]
@@ -13,6 +11,10 @@ pub struct CliArgs {
     pub subsumed_clauses: bool,
     pub k: usize,
     pub m: usize,
+    pub threshold: Option<u32>,
+    pub luby: bool,
+    pub factor: Option<u32>,
+    pub drup: bool,
 }
 
 #[derive(Debug)]
@@ -90,7 +92,25 @@ pub fn cli() -> CliArgs {
                 .long("flamegraph")
                 .short('f')
                 .action(ArgAction::SetTrue),
-        )
+        ).arg(Arg::new("restarts_threshold")
+                .help("Specify the heuristic to use")
+                .long("restarts_threshold")
+                .short('r')
+        ).arg(Arg::new("luby")
+                .help("Use luby sequence for restarts")
+                .long("luby")
+                .short('l')
+                .action(ArgAction::SetTrue),
+        ).arg(
+            Arg::new("restart_factor")
+                .help("Specify the factor for restarts")
+                .long("restart_factor")
+                .short('F'))
+            .arg(Arg::new("DRUP")
+                .help("Output in DRUP format")
+                .long("DRUP")
+                .short('D')
+                .action(ArgAction::SetTrue))
         .get_matches();
 
     let solver = match arguments.get_one::<String>("solver") {
@@ -126,10 +146,41 @@ pub fn cli() -> CliArgs {
         }
     };
 
-    // can unwrap since it has a default value
-    let k = arguments.get_one::<String>("k").unwrap().parse().unwrap();
-    // can unwrap since it has a default value
-    let m = arguments.get_one::<String>("m").unwrap().parse().unwrap();
+    let k = match arguments.get_one::<String>("k") {
+        Some(k) => match k.parse::<usize>() {
+            Ok(k) => k,
+            Err(_) => panic!("K must be a number"),
+        },
+        None => panic!("K is required"),
+    };
+
+    let m = match arguments.get_one::<String>("m") {
+        Some(m) => match m.parse::<usize>() {
+            Ok(m) => m,
+            Err(_) => panic!("M must be a number"),
+        },
+        None => panic!("M is required"),
+    };
+
+    let threshold = match arguments.get_one::<String>("restarts_threshold") {
+        Some(threshold) => Some(match threshold.parse::<u32>() {
+            Ok(threshold) => threshold,
+            Err(_) => panic!("Threshold must be a number"),
+        }),
+        None => None,
+    };
+
+    let luby = arguments.get_flag("luby");
+
+    let factor = match arguments.get_one::<String>("factor") {
+        Some(factor) => match factor.parse::<u32>() {
+            Ok(factor) => Some(factor),
+            Err(_) => panic!("Factor must be a number"),
+        },
+        None => None,
+    };
+
+    let drup = arguments.get_flag("DRUP");
 
     return CliArgs {
         solver,
@@ -141,5 +192,9 @@ pub fn cli() -> CliArgs {
         flamegraph: arguments.get_flag("flamegraph"),
         k,
         m,
+        threshold,
+        luby,
+        factor,
+        drup,
     };
 }
