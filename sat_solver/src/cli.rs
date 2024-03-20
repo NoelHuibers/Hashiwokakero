@@ -93,7 +93,7 @@ pub fn cli() -> CliArgs {
                 .short('f')
                 .action(ArgAction::SetTrue),
         ).arg(Arg::new("restarts_threshold")
-                .help("Specify the heuristic to use")
+                .help("Specify the conflict threshold for a restart")
                 .long("restarts_threshold")
                 .short('r')
         ).arg(Arg::new("luby")
@@ -103,7 +103,7 @@ pub fn cli() -> CliArgs {
                 .action(ArgAction::SetTrue),
         ).arg(
             Arg::new("restart_factor")
-                .help("Specify the factor for restarts")
+                .help("Specify the factor for restarts in percent")
                 .long("restart_factor")
                 .short('F'))
             .arg(Arg::new("DRUP")

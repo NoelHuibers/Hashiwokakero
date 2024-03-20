@@ -24,6 +24,12 @@ fn main() {
         flame::start("main_solve");
     }
 
+    let logger = match (arguments.outputpath.clone(), arguments.drup) {
+        (Some(path), true) => Some(format!("{}.log", path).into()),
+        (None, true) => panic!("Please specify an output path when using the drup flag."),
+        _ => None,
+    };
+
     let cert = match arguments.solver.as_str() {
         "dpll" => {
             dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, arguments.depth).solve()
@@ -39,6 +45,7 @@ fn main() {
             arguments.factor,
             arguments.k,
             arguments.m,
+            logger,
         )
         .solve(),
         otherwise => panic!("{} is not a valid mode.", otherwise),

@@ -1,24 +1,18 @@
-use std::io::{BufWriter, Write};
+use std::{fs::OpenOptions, io::Write};
 
-pub(crate) struct ProofLogger {
-    writer: BufWriter<std::fs::File>,
-}
+pub fn log_clause(clause: &[i32], operation: char, path: &str) {
+    let mut file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(path)
+        .unwrap();
 
-impl ProofLogger {
-    pub fn new(path: &str) -> std::io::Result<Self> {
-        let file = std::fs::File::create(path)?;
-        let writer = BufWriter::new(file);
-        Ok(ProofLogger { writer })
+    // Write a new line to the file
+    write!(file, "{} ", operation).unwrap();
+    // Write the clause
+    for &lit in clause {
+        write!(file, "{} ", lit).unwrap();
     }
-
-    pub fn log_clause(&mut self, clause: &[i32], operation: char) -> std::io::Result<()> {
-        // Prefix with 'a' for add or 'd' for delete
-        write!(self.writer, "{} ", operation)?;
-        // Write the clause
-        for &lit in clause {
-            write!(self.writer, "{} ", lit)?;
-        }
-        // End with 0
-        writeln!(self.writer, "0")
-    }
+    // End with 0
+    let _ = writeln!(file, "0");
 }

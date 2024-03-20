@@ -25,6 +25,7 @@ fn test_restart_resets_solver_state() {
         None,
         10,
         10,
+        None,
     );
 
     solver
@@ -50,6 +51,7 @@ fn test_solve_without_restart_threshold() {
         None,
         10,
         10,
+        None,
     );
 
     solver.solve().unwrap();
@@ -71,6 +73,7 @@ fn test_solve_with_restart_threshold() {
         None,
         10,
         10,
+        None,
     );
 
     solver.solve().unwrap();
@@ -96,6 +99,7 @@ fn test_solver_uses_luby_sequence_for_restarts() {
         None,
         10,
         10,
+        None,
     );
 
     solver.solve().unwrap();

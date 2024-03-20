@@ -34,7 +34,7 @@ Supported heuristics are:
 | -m|--m |Argument for m-size relevance based learning [default: 10]|
 | -s|--subsumed_clauses|Eliminates subsumed clauses|
 | -f|--flamegraph|Specify whether to create a flamegraph|
-| -r|--restarts_threshold |Specify the heuristic to use|
+| -r|--restarts_threshold |Specify the conflict threshold for a restart|
 | -l|--luby|Use luby sequence for restarts|
 | -F|--restart_factor |Specify the factor for restarts|
 | -D|--DRUP|Output in DRUP format|

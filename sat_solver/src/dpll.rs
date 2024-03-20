@@ -22,9 +22,8 @@ impl fmt::Display for DIMACSOutput {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DIMACSOutput::Sat(variables) => {
-                write!(f, "SAT")?;
+                writeln!(f, "SAT")?;
                 if !variables.is_empty() {
-                    write!(f, "\n")?;
                     for (index, var) in variables.iter().enumerate() {
                         if index > 0 {
                             write!(f, " ")?;
