@@ -125,9 +125,9 @@ impl CDCL {
             pos_occ: HashSet::with_capacity(lit_count),
             neg_occ: HashSet::with_capacity(lit_count),
             unit_queue: VecDeque::new(),
-            literals_at_current_depth: HashSet::new(),
-            reason_for: HashMap::new(),
-            vsids_counters: HashMap::new(),
+            literals_at_current_depth: HashSet::with_capacity(lit_count),
+            reason_for: HashMap::with_capacity(clause_count / 2),
+            vsids_counters: HashMap::with_capacity(lit_count),
             vsids_prio_queue: BinaryHeap::new(),
             restart: Restart {
                 count: 0,
@@ -269,7 +269,8 @@ impl CDCL {
             self.branch_depth += 1;
             self.literals_at_current_depth.clear();
             //println!("Branching d {}:", self.branch_depth);
-            self.set_var(forced, val, var, None);
+            let conflict_literal = self.set_var(forced, val, var, None);
+            self.update_watched(conflict_literal);
             // * unit propagation
             loop {
                 let conflict = self.unit_prop();
@@ -314,7 +315,8 @@ impl CDCL {
                 //println!("Warning attemted to set {} again.", forced_lit.0);
                 continue;
             }
-            unsat = self.set_var(true, true, forced_lit.0, forced_lit.1);
+            let conflict_literal = self.set_var(true, true, forced_lit.0, forced_lit.1);
+            unsat = self.update_watched(conflict_literal);
             if unsat {
                 break; // Signalize that a conflict has occurred
             }
@@ -322,9 +324,8 @@ impl CDCL {
         unsat // No conflict found
     }
 
-    fn set_var(&mut self, forced: bool, val: bool, var: BVar, reason: Option<CIdx>) -> bool {
+    fn set_var(&mut self, forced: bool, val: bool, var: BVar, reason: Option<CIdx>) -> BVar {
         //println!("\tset {} to {}", var, val);
-        let mut conflict = false;
         if self.history_enabled {
             self.history.push(Assignment(var, val, forced));
         } else {
@@ -354,10 +355,14 @@ impl CDCL {
         // <=> var.is_pos == value
         let new_val = val == var.is_positive();
         lit.val = new_val;
-        let conflict_literal = match val {
+        match val {
             true => var * -1,
             false => var,
-        };
+        }
+    }
+
+    fn update_watched(&mut self, conflict_literal: i32) -> bool {
+        let mut conflict = false;
         let conflict_clauses = self.pos_watched_occ.get(&conflict_literal);
         if let None = conflict_clauses {
             return conflict;
@@ -870,23 +875,28 @@ fn should_derive_1_uip_from_wikipedia() {
         10,
     );
     cdcl.history_enabled = true;
-    cdcl.set_var(false, false, 1, None);
+    let conflict_literal = cdcl.set_var(false, false, 1, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, true, 4, None);
+    let conflict_literal = cdcl.set_var(false, true, 4, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, true, 3, None);
+    let conflict_literal = cdcl.set_var(false, true, 3, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, false, 2, None);
+    let conflict_literal = cdcl.set_var(false, false, 2, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, true, 7, None);
+    let conflict_literal = cdcl.set_var(false, true, 7, None);
+    cdcl.update_watched(conflict_literal);
     let conflict = cdcl.unit_prop();
     assert!(conflict);
     let conflict = cdcl.analyze_conflict().unwrap();
@@ -917,19 +927,23 @@ fn should_derive_1_uip_from_princeton_paper() {
         10,
     );
     cdcl.history_enabled = true;
-    cdcl.set_var(false, false, 7, None);
+    let conflict_literal = cdcl.set_var(false, false, 7, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, false, 8, None);
+    let conflict_literal = cdcl.set_var(false, false, 8, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, false, 9, None);
+    let conflict_literal = cdcl.set_var(false, false, 9, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, false, 1, None);
+    let conflict_literal = cdcl.set_var(false, false, 1, None);
+    cdcl.update_watched(conflict_literal);
     let _ = cdcl.unit_prop();
     let conflict = cdcl.analyze_conflict().unwrap();
     assert_eq!(conflict.clone().1, 2);
@@ -966,19 +980,23 @@ fn should_derive_1_uip_from_lecture() {
         10,
     );
     cdcl.history_enabled = true;
-    cdcl.set_var(false, false, 9, None);
+    let conflict_literal = cdcl.set_var(false, false, 9, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, false, 10, None);
+    let conflict_literal = cdcl.set_var(false, false, 10, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, true, 12, None);
+    let conflict_literal = cdcl.set_var(false, true, 12, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, true, 1, None);
+    let conflict_literal = cdcl.set_var(false, true, 1, None);
+    cdcl.update_watched(conflict_literal);
     let conflict = cdcl.unit_prop();
     assert!(conflict);
     let conflict = cdcl.analyze_conflict().unwrap();
@@ -1005,7 +1023,8 @@ fn should_set_var_1_true_watched_literals() {
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let c = cdcl.set_var(false, true, 1, None);
+    let conflict_literal = cdcl.set_var(false, true, 1, None);
+    let c = cdcl.update_watched(conflict_literal);
     assert!(!c);
     assert_eq!(cdcl.free_lits.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
@@ -1031,7 +1050,8 @@ fn should_set_var_neg_1_false_watched_literals() {
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let c = cdcl.set_var(false, false, -1, None);
+    let conflict_literal = cdcl.set_var(false, false, -1, None);
+    let c = cdcl.update_watched(conflict_literal);
     assert!(!c);
     assert_eq!(cdcl.free_lits.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
@@ -1057,7 +1077,8 @@ fn should_set_var_neg_1_true_watched_literals() {
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let c = cdcl.set_var(false, true, -1, None);
+    let conflict_literal = cdcl.set_var(false, true, -1, None);
+    let c = cdcl.update_watched(conflict_literal);
     assert!(!c);
     assert_eq!(cdcl.free_lits.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
@@ -1083,7 +1104,8 @@ fn should_set_var_1_false_watched_literals() {
     assert_eq!(cdcl.free_lits.len(), 6);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let c = cdcl.set_var(false, true, -1, None);
+    let conflict_literal = cdcl.set_var(false, true, -1, None);
+    let c = cdcl.update_watched(conflict_literal);
     assert!(!c);
     assert_eq!(cdcl.free_lits.len(), 4);
     assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
@@ -1106,8 +1128,10 @@ fn should_detect_conflict_watched_literals() {
         10,
         10,
     );
-    cdcl.set_var(false, false, -1, None);
-    let c = cdcl.set_var(false, false, 2, None);
+    let conflict_literal = cdcl.set_var(false, false, -1, None);
+    cdcl.update_watched(conflict_literal);
+    let conflict_literal = cdcl.set_var(false, false, 2, None);
+    let c = cdcl.update_watched(conflict_literal);
     assert!(c)
 }
 
@@ -1125,9 +1149,12 @@ fn should_detect_conflict_watched_literals_2() {
         10,
         10,
     );
-    cdcl.set_var(false, false, -1, None);
-    let c_1 = cdcl.set_var(false, false, -2, None);
-    let c_2 = cdcl.set_var(false, false, -3, None);
+    let conflict_literal = cdcl.set_var(false, false, -1, None);
+    cdcl.update_watched(conflict_literal);
+    let conflict_literal = cdcl.set_var(false, false, -2, None);
+    let c_1 = cdcl.update_watched(conflict_literal);
+    let conflict_literal = cdcl.set_var(false, false, -3, None);
+    let c_2 = cdcl.update_watched(conflict_literal);
     assert!(!c_1);
     assert!(c_2);
 }
@@ -1146,9 +1173,11 @@ fn should_unit_prop_watched_literals() {
         10,
         10,
     );
-    cdcl.set_var(false, false, -1, None);
+    let conflict_literal = cdcl.set_var(false, false, -1, None);
+    cdcl.update_watched(conflict_literal);
     assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2);
-    cdcl.set_var(false, false, -2, None);
+    let conflict_literal = cdcl.set_var(false, false, -2, None);
+    cdcl.update_watched(conflict_literal);
     assert_eq!(cdcl.unit_queue.len(), 2);
     cdcl.unit_prop();
     assert_eq!(cdcl.lit_val.get(&3).unwrap().is_free, false);
@@ -1541,7 +1570,8 @@ fn test_derive_and_add_conflict_clause() {
     cdcl.history_enabled = true;
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, true, 1, None);
+    let conflict_literal = cdcl.set_var(false, true, 1, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
 }
 
@@ -1562,7 +1592,8 @@ fn test_analyze_conflict() {
     cdcl.history_enabled = true;
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    cdcl.set_var(false, true, 1, None);
+    let conflict_literal = cdcl.set_var(false, true, 1, None);
+    cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
 
     // Simulate a conflict
