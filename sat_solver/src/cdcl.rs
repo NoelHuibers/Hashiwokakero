@@ -571,7 +571,7 @@ impl CDCL {
     }
 
     fn insert_clause(&mut self, conflict_clause: Clause) -> usize {
-        let _ = self.proof_logger.log_clause(&conflict_clause.vars, 'a');
+        let _ = self.proof_logger.log_clause(&conflict_clause.vars, ' ');
         self.learned_size += 1;
         let clause_id = self.learned_size;
         self.clause_db.insert(clause_id, conflict_clause.clone());
