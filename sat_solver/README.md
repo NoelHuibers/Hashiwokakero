@@ -1,18 +1,19 @@
-# DPLL Solver
+# SAT-Solver
 
 ## Running the SAT-Solver
 
 Once built via `cargo build --release` the solver can be executed the following:
 
-`./target/release/dpll [MODE] [FILEPATH] --heuristic [HEURISTIC] [FLAGS]`
+`./target/release/sat [MODE] [FILEPATH] [FILEPATH] --heuristic [HEURISTIC] [FLAGS]`
 
 ### MODE
 
-Currently, only the `dpll` mode is available.
+- dpll
+- cdcl
 
 ### HEURISTIC
 
-Supported Heuristics are:
+Supported heuristics are:
 
 - arbitrary
 - dlis
@@ -25,11 +26,20 @@ Supported Heuristics are:
 
 ### Flags
 
-Flags that can be set are: --depth or in short -d and --flamegraph or in short -f
-Depth:
-The depth flag can be set to true or false and determines whether the currently lowest backtracking depth is printed to the terminal. This gives some idea of the progress.
-Flamegraph:
-Makes the flamegraph.
+| short | long               | description                                  |
+| ----- | ------------------ | -------------------------------------------- |
+| -H|--heuristic |Specify the heuristic to use [default: arbitrary]|
+| -d|--depth|Shows the depth of the search tree|
+| -k|--k |Argument for k-bounded learning [default: 10]|
+| -m|--m |Argument for m-size relevance based learning [default: 10]|
+| -s|--subsumed_clauses|Eliminates subsumed clauses|
+| -f|--flamegraph|Specify whether to create a flamegraph|
+| -r|--restarts_threshold |Specify the conflict threshold for a restart|
+| -l|--luby|Use luby sequence for restarts|
+| -F|--restart_factor |Specify the factor for restarts|
+| -D|--DRUP|Output in DRUP format|
+| -h|--help|Print help|
+| -V|--version|Print version|
 
 ## CPU Time Measurement
 
@@ -57,29 +67,35 @@ When cloning make sure to also sync the submodule which includes testfiles:
 
 Run the tests using cargo:
 
-``
+`cargo test --package sat_solver --lib -- cdcl --nocapture`
 
 # Team Responsibilities
 
 **Noel:**
 
-- [x] Initializing the project
-- [x] Parser
-- [x] Edge cases for parser (e.g., newlines before 0 was found as in Zulip question)
-- [x] Custom Heuristics
-- [x] Code Refactoring with Clap
+- [x] Fix issue with Conflict analysis
+- [x] Subsumed Clauses
+- [x] Restarts
+- [x] Drup logging
 
 **Laura:**
 
-- [x] Testing / Profiling
-- [x] Benchmarks / CPU Time
-- [x] Set Up: Cactus plots
-- [x] Heuristics
-- [x] Complete benchmarking of test data + Cactus plots
+- [x] Implication Graph
+- [x] Conflict analysis
 
 **Flo:**
 
-- [x] DPLL Algorithm
-- [x] Pure literal Elimination
-- [x] Better memory allocations
-- [x] Bug Fix DPLL
+- [x] 2-Watched Literals
+- [x] Fix/Update impl. graph while setting vars
+- [x] Fix/Rewrite Conflict analysis
+- [x] Non-chron backtracking
+- [x] Test + Debug non-chronological backtracking
+- [x] Check whether unit clauses can occur in conflict analysis
+- [x] Check impl for set_var in respect to unit clauses
+- [x] Pure literal elimination as preprocessing
+- [x] Output valid DIMACS solution
+- [ ] VSIDS performance
+
+# Our favourite Implication Graph during debugging
+
+![](graphviz.svg)
