@@ -91,11 +91,13 @@ pub struct CDCL {
 
 pub struct Restart {
     pub count: usize,
-    conflict_count: usize,
-    threshold: Option<usize>,
+    conflict_count: u32,
+    threshold: Option<u32>,
     use_luby: bool,
-    luby_step: usize,
-    factor: Option<usize>,
+    u: u32,
+    v: u32,
+    luby_step: u32,
+    factor: Option<u32>,
 }
 
 impl CDCL {
@@ -105,9 +107,9 @@ impl CDCL {
         clause_count: usize,
         heuristic: Heuristic,
         subsumed_clauses: bool,
-        restart_threshold: Option<usize>,
+        restart_threshold: Option<u32>,
         use_luby: bool,
-        factor: Option<usize>,
+        factor: Option<u32>,
         k: usize,
         m: usize,
     ) -> Self {
@@ -136,6 +138,8 @@ impl CDCL {
                 conflict_count: 0,
                 threshold: restart_threshold,
                 use_luby,
+                u: 1,
+                v: 1,
                 luby_step: 1,
                 factor,
             },
@@ -193,8 +197,8 @@ impl CDCL {
             (Some(threshold), true) => {
                 self.restart.conflict_count += 1;
                 let lubythreshowld = if self.restart.use_luby {
-                    let luby_multiplier = luby_sequence(self.restart.luby_step);
-                    threshold * luby_multiplier
+                    let luby_multiplier = luby_sequence(self.restart.u, self.restart.v);
+                    threshold * luby_multiplier.1
                 } else {
                     threshold
                 };
