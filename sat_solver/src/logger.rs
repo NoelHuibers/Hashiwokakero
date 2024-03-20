@@ -1,6 +1,6 @@
 use std::io::{BufWriter, Write};
 
-struct ProofLogger {
+pub(crate) struct ProofLogger {
     writer: BufWriter<std::fs::File>,
 }
 
@@ -13,12 +13,12 @@ impl ProofLogger {
 
     pub fn log_clause(&mut self, clause: &[i32], operation: char) -> std::io::Result<()> {
         // Prefix with 'a' for add or 'd' for delete
-        write!(self.file, "{} ", operation)?;
+        write!(self.writer, "{} ", operation)?;
         // Write the clause
         for &lit in clause {
-            write!(self.file, "{} ", lit)?;
+            write!(self.writer, "{} ", lit)?;
         }
         // End with 0
-        writeln!(self.file, "0")
+        writeln!(self.writer, "0")
     }
 }
