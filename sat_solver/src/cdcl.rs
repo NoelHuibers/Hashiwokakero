@@ -8,6 +8,7 @@ use std::{
 use crate::{
     cli::Heuristic,
     dpll::{DIMACSOutput, Error},
+    logger::ProofLogger,
     preprocessing::delete_subsumed_clauses,
     randomrestarts::luby_sequence,
 };
@@ -85,6 +86,7 @@ pub struct CDCL {
     pub unit_queue: VecDeque<(BVar, Option<CIdx>)>,
     pub restart: Restart,
     deletion_start: (usize, usize),
+    proof_logger: ProofLogger,
 }
 
 pub struct Restart {
@@ -138,6 +140,7 @@ impl CDCL {
                 factor,
             },
             deletion_start: (k, m),
+            proof_logger: ProofLogger::new("./output.log").unwrap(),
         };
         if subsumed_clauses {
             delete_subsumed_clauses(&mut input);
@@ -559,6 +562,7 @@ impl CDCL {
     }
 
     fn insert_clause(&mut self, conflict_clause: Clause) -> usize {
+        let _ = self.proof_logger.log_clause(&conflict_clause.vars, 'a');
         self.learned_size += 1;
         let clause_id = self.learned_size;
         self.clause_db.insert(clause_id, conflict_clause.clone());
@@ -704,6 +708,7 @@ impl CDCL {
             // Unset watched literals of that clause
             let clause = self.clause_db.remove(&clause_id).unwrap();
             // println!("Remove clause {}", clause_id);
+            let _ = self.proof_logger.log_clause(&clause.vars, 'd');
             for lit in [clause.watched_lhs, clause.watched_rhs] {
                 if let Some(clauses) = self.pos_watched_occ.get_mut(&lit) {
                     if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
@@ -1591,4 +1596,26 @@ fn test_current_decision_level() {
     assert_eq!(cdcl.branch_depth, 0); // No assignments, decision level should be 0
     let _ = cdcl.solve();
     assert_eq!(cdcl.branch_depth, 2); // Assign 1 -> unit prop 2 -> Assign 2 => decision_level of 2
+}
+
+#[test]
+fn testunsat() {
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/unsat/aim-50-1_6-no-1.cnf").unwrap();
+    let res = CDCL::new(
+        input,
+        v_c,
+        c_c,
+        Heuristic::Arbitrary,
+        false,
+        None,
+        false,
+        None,
+        10,
+        10,
+    )
+    .solve();
+    if let Ok(DIMACSOutput::Sat(vars)) = res {
+        println!("{:?}", vars);
+        panic!("Was SAT but expected UNSAT.")
+    }
 }

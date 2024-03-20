@@ -6,6 +6,7 @@ pub mod cdcl;
 pub mod cli;
 pub mod dpll;
 mod heuristics;
+pub mod logger;
 pub mod parse;
 pub mod preprocessing;
 pub mod randomrestarts;

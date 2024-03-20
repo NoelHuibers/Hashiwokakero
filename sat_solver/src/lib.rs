@@ -6,3 +6,4 @@ pub mod parse;
 pub mod preprocessing;
 pub mod randomrestarts;
 pub mod solver;
+pub mod logger;
