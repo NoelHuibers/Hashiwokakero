@@ -172,7 +172,7 @@ pub fn cli() -> CliArgs {
 
     let luby = arguments.get_flag("luby");
 
-    let factor = match arguments.get_one::<String>("factor") {
+    let factor = match arguments.get_one::<String>("restart_factor") {
         Some(factor) => match factor.parse::<u32>() {
             Ok(factor) => Some(factor),
             Err(_) => panic!("Factor must be a number"),
