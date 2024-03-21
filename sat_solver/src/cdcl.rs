@@ -213,9 +213,7 @@ impl CDCL {
                             Some(f) => {
                                 Some((self.restart.actual_threshhold.unwrap() as f32 * f) as u32)
                             }
-                            None => {
-                                self.restart.actual_threshhold
-                            }
+                            None => self.restart.actual_threshhold,
                         }
                     };
                     self.restart.conflict_count = 0;
@@ -391,11 +389,11 @@ impl CDCL {
                 // Because this clause is already sat
                 continue;
             }
-            let new_watched_cands = clause
+            let mut new_watched_cands = clause
                 .vars
                 .iter()
                 .filter(|&v| self.lit_val[&as_atom(*v)].is_free)
-                .collect::<Vec<&BVar>>();
+                .collect::<HashSet<&BVar>>();
             match new_watched_cands.len() {
                 // * if no unassigned literal found
                 0 => {
@@ -414,7 +412,7 @@ impl CDCL {
                 1 => {
                     // * if only one is found
                     self.unit_queue
-                        .push_front((*new_watched_cands[0], Some(*c_idx)));
+                        .push_front((**new_watched_cands.iter().next().unwrap(), Some(*c_idx)));
                 }
                 _ => (),
             };
@@ -423,14 +421,11 @@ impl CDCL {
                 false => clause.watched_rhs,
             };
             // At least one of them is already implicitly removed but we don't know which one at this point.
-            let new_watched_cands: Vec<_> = new_watched_cands
-                .iter()
-                .filter(|&v| **v != other_watched)
-                .collect();
+            new_watched_cands.remove(&other_watched);
             if new_watched_cands.len() == 0 {
                 continue;
             }
-            let new = new_watched_cands[0];
+            let new = new_watched_cands.iter().next().unwrap();
             // * mark new var as watched
             match conflict_literal == clause.watched_rhs {
                 true => clause.watched_rhs = **new,
@@ -664,29 +659,30 @@ impl CDCL {
     }
 
     fn is_sat(&self) -> Option<DIMACSOutput> {
-        if self.clauses.values().fold(true, |i, c| {
+        for c in self.clauses.values() {
             let lhs = self.lit_val.get(&as_atom(c.watched_lhs)).unwrap();
             let rhs = self.lit_val.get(&as_atom(c.watched_rhs)).unwrap();
-            i && !(lhs.is_free
+            if lhs.is_free
                 && rhs.is_free
                 && self.pos_watched_occ.contains_key(&c.watched_lhs)
-                && self.pos_watched_occ.contains_key(&c.watched_rhs))
-        }) {
-            let mut res: Vec<i32> = self
-                .lit_val
-                .iter()
-                .map(|(atom, lit)| match lit.val {
-                    true => *atom as BVar,
-                    false => -(*atom as BVar),
-                })
-                // Filter out pseudo literal
-                .filter(|&l| l != 0)
-                .collect();
-            res.sort_by_key(|k| k.abs());
-            res.push(0);
-            return Some(DIMACSOutput::Sat(res));
+                && self.pos_watched_occ.contains_key(&c.watched_rhs)
+            {
+                return None;
+            }
         }
-        None
+        let mut res: Vec<i32> = self
+            .lit_val
+            .iter()
+            .map(|(atom, lit)| match lit.val {
+                true => *atom as BVar,
+                false => -(*atom as BVar),
+            })
+            // Filter out pseudo literal
+            .filter(|&l| l != 0)
+            .collect();
+        res.sort_by_key(|k| k.abs());
+        res.push(0);
+        return Some(DIMACSOutput::Sat(res));
     }
 
     // Deletion strategies
