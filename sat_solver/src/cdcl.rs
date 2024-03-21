@@ -13,7 +13,7 @@ use crate::{
     randomrestarts::luby_sequence,
 };
 
-type Atom = u16;
+type Atom = u32;
 type BVar = i32;
 type CIdx = usize;
 
@@ -42,9 +42,9 @@ struct Assignment(BVar, bool, bool);
 
 #[derive(Clone, PartialEq, Eq)]
 struct VSIDSPrio {
-    prio: u32,
-    counter: u32,
-    literal: i32,
+    prio: u64,
+    counter: u64,
+    literal: BVar,
 }
 
 impl PartialOrd for VSIDSPrio {
@@ -252,7 +252,7 @@ impl CDCL {
         }
         // Everything before that is technically preprocessing and thus doesn't need to be tracked
         self.history_enabled = true;
-        let mut pure_lits: Vec<i32> = self
+        let mut pure_lits: Vec<BVar> = self
             .pos_occ
             .symmetric_difference(&self.neg_occ)
             .cloned()
@@ -369,7 +369,7 @@ impl CDCL {
         }
     }
 
-    fn update_watched(&mut self, conflict_literal: i32) -> bool {
+    fn update_watched(&mut self, conflict_literal: BVar) -> bool {
         let mut conflict = false;
         let conflict_clauses = self.pos_watched_occ.get(&conflict_literal);
         if let None = conflict_clauses {
@@ -619,7 +619,7 @@ impl CDCL {
                     "{} [label=\"{{{{{}|{}|{}}}|{:?}}}\"];\n",
                     n.0,
                     n.0,
-                    n.1.val as i32,
+                    n.1.val as BVar,
                     n.1.decision_level,
                     match n.1.reason {
                         Some(c) => self.get_clause(c).unwrap().vars.clone(),
@@ -670,7 +670,7 @@ impl CDCL {
                 return None;
             }
         }
-        let mut res: Vec<i32> = self
+        let mut res: Vec<BVar> = self
             .lit_val
             .iter()
             .map(|(atom, lit)| match lit.val {
@@ -731,7 +731,7 @@ impl CDCL {
         }
     }
 
-    fn pick_branching_literal(&mut self) -> Result<(i32, bool), Error> {
+    fn pick_branching_literal(&mut self) -> Result<(BVar, bool), Error> {
         match self.heuristic {
             Heuristic::VSIDS => {
                 if self.branch_counter % 255 == 254 {
@@ -762,9 +762,9 @@ impl CDCL {
         }
     }
 
-    fn resolution(&self, clause1: &Vec<i32>, clause2: &Vec<i32>) -> Result<Vec<i32>, Error> {
-        let mut hs_1: HashSet<i32> = HashSet::from_iter(clause1.iter().cloned());
-        let mut hs_2: HashSet<i32> = HashSet::from_iter(clause2.iter().cloned());
+    fn resolution(&self, clause1: &Vec<BVar>, clause2: &Vec<BVar>) -> Result<Vec<BVar>, Error> {
+        let mut hs_1: HashSet<BVar> = HashSet::from_iter(clause1.iter().cloned());
+        let mut hs_2: HashSet<BVar> = HashSet::from_iter(clause2.iter().cloned());
         if hs_1 == hs_2 {
             println!("Warning: Could not apply resolution because clauses are equal.");
             return Ok(clause1.clone());
@@ -789,8 +789,8 @@ impl CDCL {
     }
 }
 
-fn is_asserting(clause: &Vec<i32>, literals_of_max_branch_depth: &HashSet<u16>) -> bool {
-    let res = HashSet::<u16>::from_iter(clause.iter().map(|l| as_atom(*l)))
+fn is_asserting(clause: &Vec<BVar>, literals_of_max_branch_depth: &HashSet<Atom>) -> bool {
+    let res = HashSet::<Atom>::from_iter(clause.iter().map(|l| as_atom(*l)))
         .intersection(literals_of_max_branch_depth)
         .count();
     res == 1
