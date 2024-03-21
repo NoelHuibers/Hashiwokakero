@@ -69,6 +69,16 @@ Run the tests using cargo:
 
 `cargo test --package sat_solver --lib -- cdcl --nocapture`
 
+# Performance
+
+We were able to solve 199 of the 202 cnfs from exercise 2 correctly (same var assignment as minisat) with a timout of 60 seconds.
+The remaining three problems could be solved in just over a minute.
+
+Average time for all 202 problems: 1.4s with vsids, without restarts. (`gruppe-m-2/src/cputime/60sec_arbitrary.csv`)
+Average time for all 202 problems: 12.17s without vsids, without restarts. (`gruppe-m-2/src/cputime/60sec_vsids.csv`)
+
+The problems from 2006th sat competition we tried to solve took no longer than 15mins.
+
 # Team Responsibilities
 
 **Noel:**
