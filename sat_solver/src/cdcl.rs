@@ -196,12 +196,12 @@ impl CDCL {
         cdcl
     }
 
-    fn restart_policy(&mut self, conflict: bool) -> bool {
-        match (self.restart.threshold, conflict) {
-            (Some(threshold), true) => {
+    // Counts a (learned) conflict and returns whether the solver should restart
+    fn restart_policy(&mut self) -> bool {
+        match self.restart.threshold {
+            Some(threshold) => {
                 self.restart.conflict_count += 1;
                 if self.restart.conflict_count >= self.restart.actual_threshhold.unwrap() {
-                    self.restart();
                     self.restart.actual_threshhold = if self.restart.use_luby {
                         let (u, v) = luby_sequence(self.restart.u, self.restart.v);
                         self.restart.u = u;
@@ -226,18 +226,9 @@ impl CDCL {
     }
 
     pub fn restart(&mut self) {
-        self.branch_depth = 0;
-        self.unit_queue.clear();
-        for (lit, lit_state) in self.lit_val.iter_mut() {
-            lit_state.decision_level = 0;
-            lit_state.is_free = true;
-            lit_state.reason = None;
-            self.free_lits.insert(*lit as BVar);
-            self.free_lits.insert(-(*lit as BVar));
-            self.reason_for.clear();
-        }
-        self.history.clear();
-        self.literals_at_current_depth.clear();
+        // Only undo the decisions, the assignments at level 0 follow from the formula and the learned clauses.
+        // Unit clauses are propagated just once, so unsetting those would silently drop them.
+        self.non_chronological_backtrack(0);
         self.restart.count += 1;
     }
 
@@ -280,12 +271,9 @@ impl CDCL {
             let conflict_literal = self.set_var(forced, val, var, None);
             self.update_watched(conflict_literal);
             // * unit propagation
+            let mut restart_pending = false;
             loop {
                 let conflict = self.unit_prop();
-                let restarted = self.restart_policy(conflict);
-                if restarted {
-                    break;
-                }
                 if !conflict {
                     break;
                 };
@@ -304,11 +292,16 @@ impl CDCL {
                 self.update_queue(clause_id, conflict_clause);
                 // Keep clauses w(C) <= 3, delete clauses with more than 5 unassigned vars
                 self.combined_learning_strategy();
+                // Restarting before the conflict is learned would throw it away and run into it again
+                restart_pending |= self.restart_policy();
             }
 
             // * if all clauses satisfied
             if let Some(res) = self.is_sat() {
                 return Ok(res);
+            }
+            if restart_pending {
+                self.restart();
             }
         }
     }
@@ -523,7 +516,12 @@ impl CDCL {
             watched_rhs,
             vars,
         };
-        let mut assetion_level = self.lit_val[&as_atom(watched_rhs)].decision_level;
+        // A learned unit clause holds independent of any decision, so it's asserted at level 0. Asserting it any
+        // higher gets it undone by the next restart, after which it's never propagated again and learned over and over.
+        let mut assetion_level = match conflict_clause.vars.len() {
+            1 => 0,
+            _ => self.lit_val[&as_atom(watched_rhs)].decision_level,
+        };
         if assetion_level == self.branch_depth {
             assetion_level = assetion_level - 1;
         }

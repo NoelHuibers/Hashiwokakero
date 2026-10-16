@@ -86,8 +86,10 @@ fn test_solve_with_restart_threshold() {
 
 #[test]
 fn test_solver_uses_luby_sequence_for_restarts() {
-    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
-    let base_conflict_threshold = Some(10);
+    // The branching order depends on HashMap iteration, so the number of conflicts varies between runs.
+    // A low threshold on an instance with plenty of conflicts makes sure a restart happens every time.
+    let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
+    let base_conflict_threshold = Some(1);
     let mut solver = CDCL::new(
         input,
         v_c,
