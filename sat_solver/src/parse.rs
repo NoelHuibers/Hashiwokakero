@@ -1,4 +1,4 @@
-use flame;
+use crate::profiling;
 use std::fs;
 use std::num::ParseIntError;
 
@@ -23,7 +23,7 @@ impl From<ParseIntError> for ParseError {
 
 // Due to clauses being able to span over multiple lines (see Zulip), it's not possible to parallelize the parsing.
 pub fn parse(input_file: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseError> {
-    flame::start("parse");
+    profiling::start("parse");
     if !input_file.ends_with(".cnf") {
         return Err(ParseError::InvalidInput(
             "Only .cnf files are allowed.".to_string(),
@@ -60,6 +60,6 @@ pub fn parse(input_file: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseErr
         clauses.push(clause);
     }
 
-    flame::end("parse");
+    profiling::end("parse");
     Ok((clauses, var_count, clause_count))
 }

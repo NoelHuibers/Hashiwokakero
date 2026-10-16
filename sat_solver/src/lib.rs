@@ -4,6 +4,6 @@ pub mod dpll;
 pub mod heuristics;
 pub mod parse;
 pub mod preprocessing;
+pub mod profiling;
 pub mod randomrestarts;
-pub mod solver;
 pub mod logger;

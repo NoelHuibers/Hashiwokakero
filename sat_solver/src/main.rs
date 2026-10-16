@@ -1,7 +1,5 @@
 use std::{fs::File, io::Write};
 
-use flame;
-
 pub mod cdcl;
 pub mod cli;
 pub mod dpll;
@@ -9,19 +7,21 @@ mod heuristics;
 pub mod logger;
 pub mod parse;
 pub mod preprocessing;
+pub mod profiling;
 pub mod randomrestarts;
 
 fn main() {
     let arguments = cli::cli();
 
     if arguments.flamegraph {
-        flame::start("main");
+        profiling::enable();
+        profiling::start("main");
     }
 
     let (vars, v_count, c_count) = parse::parse(&arguments.inputpath).unwrap();
 
     if arguments.flamegraph {
-        flame::start("main_solve");
+        profiling::start("main_solve");
     }
 
     let logger = match (arguments.outputpath.clone(), arguments.drup) {
@@ -52,7 +52,7 @@ fn main() {
     };
 
     if arguments.flamegraph {
-        flame::start("main_solve");
+        profiling::end("main_solve");
     }
 
     match cert {
@@ -72,9 +72,8 @@ fn main() {
     }
 
     if arguments.flamegraph {
-        flame::end("main");
+        profiling::end("main");
         //to create flamegraph for profiling. Portrayal does not work properly with usage of multithreading (-> cputime.rs)
-        flame::dump_html(std::fs::File::create("src/visuals/graphs/flamegraph.html").unwrap())
-            .unwrap();
+        profiling::dump_html("flamegraph.html").unwrap();
     }
 }

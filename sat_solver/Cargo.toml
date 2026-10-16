@@ -7,33 +7,17 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.10", features = ["cargo"] }
-criterion = "0.5.1"
-flame = "0.2.2"
-plotters = "0.3" 
-csv = "1.1"
-glob = "0.3"
-threadpool = "1.8"
-wait-timeout = "0.2"
+flame = { version = "0.2.2", optional = true }
 
-[profile.release]
-debug = true
+[features]
+default = ["flamegraph"]
+# Profiling with --flamegraph, flame doesn't build for wasm
+flamegraph = ["dep:flame"]
 
 [lib]
 name = "sat_solver"
 path = "src/lib.rs"
 
 [[bin]]
-name = "sat" 
-path = "src/main.rs" 
-
-[[bin]]
-name = "cputime"
-path = "src/cputime/cputime.rs"
-
-[[bin]]
-name = "results"
-path = "src/cputime/results.rs"
-
-[[bin]]
-name = "plot"
-path = "src/visuals/cactus.rs"
+name = "sat"
+path = "src/main.rs"
