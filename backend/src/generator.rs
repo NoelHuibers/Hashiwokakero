@@ -692,6 +692,7 @@ pub fn output_to_file(grid: &Vec<Vec<u8>>, filename: &str) -> Result<()> {
 }
 
 #[test]
+#[ignore = "stress test: solves 10000 generated 30x30 puzzles"]
 fn should_gen() {
     for i in 0..=10000 {
         println!("Iteration: {}", i);
@@ -700,21 +701,21 @@ fn should_gen() {
         output_to_file(&game, name).unwrap();
         let input_file = name;
         let output_file = format!("{}.out.txt", input_file);
-        match backend::parse_input::parse_input(&input_file) {
+        match crate::parse_input::parse_input(&input_file) {
             Ok(game_board) => {
-                let (clauses, var_map) = backend::generate_clauses::generate(&game_board);
+                let (clauses, var_map) = crate::generate_clauses::generate(&game_board);
                 let dimacs_generated =
-                    backend::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
+                    crate::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
                 match dimacs_generated {
-                    Ok(_) => match backend::solver::solve(&output_file) {
+                    Ok(_) => match crate::solver::solve(&output_file) {
                         Ok(splr::Certificate::SAT(certificate)) => {
-                            match backend::solver::write_solution(
+                            match crate::solver::write_solution(
                                 splr::Certificate::SAT(certificate),
                                 &output_file,
                             ) {
                                 Ok(_) => {
-                                    let contents = backend::reconstruct::get_content(&output_file);
-                                    let s = backend::reconstruct::reconstruct_puzzle(
+                                    let contents = crate::reconstruct::get_content(&output_file);
+                                    let s = crate::reconstruct::reconstruct_puzzle(
                                         contents,
                                         &var_map,
                                         &game_board,

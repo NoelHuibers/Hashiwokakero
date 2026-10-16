@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use backend::{modes::{encode_mode, solve_mode, esr_mode}};
+use backend::{modes::{encode_mode, solve_mode, esr_mode}, solver::SolverKind};
 
 
 const TEST_FILES: [&str; 3] = [
@@ -24,33 +24,37 @@ fn encode_benchmark(c: &mut Criterion) {
 }
 
 fn solve_benchmark(c: &mut Criterion) {
-    for input_file in &TEST_FILES {
-        let benchmark_name = format!("solve_{}", input_file);
-        c.bench_function(&benchmark_name, |b| {
-            b.iter(|| {
-                if !std::path::Path::new(input_file).exists() {
-                    return; 
-                }
-                let output_file = Some("/output/solution.txt");
-                solve_mode(input_file.to_string(), output_file.map(|s| s.to_string()));
-            })
-        });
+    for solver_kind in SolverKind::ALL {
+        for input_file in &TEST_FILES {
+            let benchmark_name = format!("solve_{}_{}", solver_kind, input_file);
+            c.bench_function(&benchmark_name, |b| {
+                b.iter(|| {
+                    if !std::path::Path::new(input_file).exists() {
+                        return; 
+                    }
+                    let output_file = Some("/output/solution.txt");
+                    solve_mode(input_file.to_string(), output_file.map(|s| s.to_string()), solver_kind);
+                })
+            });
+        }
     }
 }
 
 //total performance of 
 fn esr_benchmark(c: &mut Criterion) {
-    for input_file in &TEST_FILES {
-        let benchmark_name = format!("esr_{}", input_file);
-        c.bench_function(&benchmark_name, |b| {
-            b.iter(|| {
-                if !std::path::Path::new(input_file).exists() {
-                    return; 
-                }
-                let output_file = Some("/output/solution.txt");
-                esr_mode(input_file.to_string(), output_file.map(|s| s.to_string()));
-            })
-        });
+    for solver_kind in SolverKind::ALL {
+        for input_file in &TEST_FILES {
+            let benchmark_name = format!("esr_{}_{}", solver_kind, input_file);
+            c.bench_function(&benchmark_name, |b| {
+                b.iter(|| {
+                    if !std::path::Path::new(input_file).exists() {
+                        return; 
+                    }
+                    let output_file = Some("/output/solution.txt");
+                    esr_mode(input_file.to_string(), output_file.map(|s| s.to_string()), solver_kind);
+                })
+            });
+        }
     }
 }
 

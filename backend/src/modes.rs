@@ -1,5 +1,6 @@
 use crate::parse_input::parse_input;
 use crate::generate_clauses::generate;
+use crate::solver::SolverKind;
 use crate::{reconstruct, solver};
 use crate::writer::generate_dimacs;
 
@@ -22,8 +23,8 @@ pub fn encode_mode(input_file: String) {
     println!("Successfully generated {}", out_file);
 }
 
-pub fn solve_mode(input_file: String, output_file: Option<String>) {
-    let certificate = match solver::solve(&input_file) {
+pub fn solve_mode(input_file: String, output_file: Option<String>, solver_kind: SolverKind) {
+    let certificate = match solver::solve_with(&input_file, solver_kind) {
         Ok(certificate) => certificate,
         Err(err) => {
             eprintln!("Error: {}", err);
@@ -43,7 +44,7 @@ pub fn solve_mode(input_file: String, output_file: Option<String>) {
     }
 }
 
-pub fn esr_mode(input_file: String, output_file: Option<String>) {
+pub fn esr_mode(input_file: String, output_file: Option<String>, solver_kind: SolverKind) {
     let game_board = match parse_input(&input_file) {
         Ok(game_board) => game_board,
         Err(err) => {
@@ -59,7 +60,7 @@ pub fn esr_mode(input_file: String, output_file: Option<String>) {
         return;
     }
 
-    let certificate = match solver::solve(&out_file) {
+    let certificate = match solver::solve_with(&out_file, solver_kind) {
         Ok(certificate) => certificate,
         Err(err) => {
             eprintln!("Error: {}", err);

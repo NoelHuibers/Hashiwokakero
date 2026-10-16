@@ -13,6 +13,7 @@ mod modes;
 
 use generator::output_to_file;
 use modes::{encode_mode, esr_mode, solve_mode};
+use solver::SolverKind;
 
 // To run an example from root: cargo run --package backend -- --mode [encode/solve] --input [FILE PATH]
 // Short: cargo run --package backend -- -m [encode/solve] -i [FILE PATH]
@@ -38,6 +39,14 @@ fn main() {
                 .value_name("OUTPUTFILE"),
         )
         .arg(
+            Arg::new("solver")
+                .short('s')
+                .long("solver")
+                .value_name("SOLVER")
+                .help("SAT solver to use: splr or cdcl")
+                .default_value("splr"),
+        )
+        .arg(
             Arg::new("grid_x")
                 .short('x')
                 .long("grid_x")
@@ -56,6 +65,13 @@ fn main() {
     let output_file: Option<String> = matches
         .get_one::<String>("output")
         .and_then(|s| Some(s.clone()));
+    let solver_kind = match matches.get_one::<String>("solver").unwrap().parse::<SolverKind>() {
+        Ok(solver_kind) => solver_kind,
+        Err(err) => {
+            eprintln!("Error: {}", err);
+            return;
+        }
+    };
     let (mut grid_x, mut grid_y) = (0, 0);
     if let Some(x) = matches.get_one::<String>("grid_x") {
         grid_x = x.parse::<usize>()
@@ -68,8 +84,10 @@ fn main() {
 
     match mode.as_str() {
         "encode" => encode_mode(input_file.to_string()),
-        "solve" => solve_mode(input_file.to_string(), output_file),
-        "encodesolvereconstruct" | "esr" => esr_mode(input_file.to_string(), output_file),
+        "solve" => solve_mode(input_file.to_string(), output_file, solver_kind),
+        "encodesolvereconstruct" | "esr" => {
+            esr_mode(input_file.to_string(), output_file, solver_kind)
+        }
         "generate" => match output_file {
             Some(output) => {
                 let vec = generator::generator(grid_y, grid_x);
