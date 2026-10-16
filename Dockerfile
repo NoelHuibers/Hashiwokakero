@@ -1,5 +1,5 @@
 # Get started with a build env with Rust nightly
-FROM rustlang/rust:nightly-bullseye as builder
+FROM rustlang/rust:nightly-bookworm as builder
 
 # If you’re using stable, use this instead
 # FROM rust:1.70-bullseye as builder
@@ -21,10 +21,13 @@ RUN mkdir -p /app
 WORKDIR /app
 COPY . .
 
+# The project uses Tailwind v3 (tailwind.config.js), newer cargo-leptos defaults to v4
+ENV LEPTOS_TAILWIND_VERSION="v3.4.17"
+
 # Build the app
 RUN cargo leptos build --release -vv
 
-FROM rustlang/rust:nightly-bullseye as runner
+FROM rustlang/rust:nightly-bookworm as runner
 # Copy the server binary to the /app directory
 COPY --from=builder /app/target/release/hashi /app/
 # /target/site contains our JS/WASM/CSS, etc.

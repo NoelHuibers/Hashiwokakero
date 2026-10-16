@@ -23,7 +23,7 @@ simple_logger = "4.3.0"
 tokio = { version = "1.25.0", optional = true }
 tower = { version = "0.4.13", optional = true }
 tower-http = { version = "0.4", features = ["fs"], optional = true }
-wasm-bindgen = "=0.2.89"
+wasm-bindgen = "=0.2.129"
 thiserror = "1.0.50"
 tracing = { version = "0.1.40", optional = true }
 serde_json = "1.0"
