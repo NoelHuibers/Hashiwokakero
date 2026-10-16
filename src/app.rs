@@ -189,6 +189,13 @@ fn HomePage() -> impl IntoView {
                             />
                             <input type="hidden" name="tableprop" prop:value=json/>
                             <input type="hidden" name="rows" prop:value=rows/>
+                            <select
+                                name="solver"
+                                class="h-12 ml-2 bg-slate-100 border rounded p-2 text-violet-700"
+                            >
+                                <option value="splr" selected>"splr"</option>
+                                <option value="cdcl">"Own CDCL"</option>
+                            </select>
                         </ActionForm>
                         <ActionForm action=to_cnf>
                             <input
@@ -388,13 +395,17 @@ fn Column(
 }
 
 use backend::parse_input::parse_vec_input;
-use backend::solver::solve;
+use backend::solver::solve_with;
 use backend::solver::get_content;
+use backend::solver::SolverKind;
 use backend::generate_clauses::generate;
 use backend::writer::generate_dimacs;
 use backend::reconstruct::reconstruct_puzzle;
 #[server(Solve, "/api")]
-pub async fn solvepuzzle(tableprop: String, rows: usize) -> Result<String, ServerFnError> {
+pub async fn solvepuzzle(tableprop: String, rows: usize, solver: String) -> Result<String, ServerFnError> {
+    let solver_kind: SolverKind = solver
+        .parse()
+        .map_err(|e: std::io::Error| ServerFnError::ServerError(e.to_string()))?;
     let oldtable: Vec<Vec<u8>> = serde_json::from_str(&tableprop)?;
     let table = oldtable.into_iter().fold(vec![vec![]; rows], |mut acc, x| {
         for (i, y) in x.into_iter().enumerate() {
@@ -409,7 +420,7 @@ pub async fn solvepuzzle(tableprop: String, rows: usize) -> Result<String, Serve
             let dimacs_generated = generate_dimacs(&clauses, var_map.keys().len(), "output.cnf");
             match dimacs_generated {
                 Ok(_) => {
-                    match solve("output.cnf") {
+                    match solve_with("output.cnf", solver_kind) {
                         Ok(certificate) => {
                             let contents = get_content(certificate);
                             let res = reconstruct_puzzle(

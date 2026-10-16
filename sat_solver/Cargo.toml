@@ -1,0 +1,23 @@
+[package]
+name = "sat_solver"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.4.10", features = ["cargo"] }
+flame = { version = "0.2.2", optional = true }
+
+[features]
+default = ["flamegraph"]
+# Profiling with --flamegraph, flame doesn't build for wasm
+flamegraph = ["dep:flame"]
+
+[lib]
+name = "sat_solver"
+path = "src/lib.rs"
+
+[[bin]]
+name = "sat"
+path = "src/main.rs"

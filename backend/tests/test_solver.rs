@@ -1,4 +1,6 @@
-use backend::solver::solve;
+use backend::generate_clauses::generate;
+use backend::parse_input::parse_input;
+use backend::solver::{solve, solve_with, SolverKind};
 use std::{io::Write, vec};
 use tempfile;
 
@@ -87,4 +89,86 @@ fn test_unsat_problem() {
             false
         }
     });
+}
+
+fn write_cnf(clauses: &[Vec<i32>], variables: usize) -> tempfile::NamedTempFile {
+    let temp_file = tempfile::Builder::new()
+        .suffix(".cnf")
+        .tempfile()
+        .expect("Failed to create temp file");
+    backend::writer::generate_dimacs(
+        &clauses.to_vec(),
+        variables,
+        temp_file.path().to_str().unwrap(),
+    )
+    .expect("Failed to write CNF");
+    temp_file
+}
+
+fn satisfies(model: &[i32], clauses: &[Vec<i32>]) -> bool {
+    clauses
+        .iter()
+        .all(|clause| clause.iter().any(|lit| model.contains(lit)))
+}
+
+#[test]
+fn test_cdcl_small_problems() {
+    let sat = write_cnf(&[vec![1, -2], vec![-1, 2], vec![1, 2]], 2);
+    let unsat = write_cnf(&[vec![1, 2], vec![-1], vec![-2]], 2);
+    match solve_with(sat.path().to_str().unwrap(), SolverKind::Cdcl) {
+        Ok(splr::Certificate::SAT(model)) => {
+            assert!(satisfies(&model, &[vec![1, -2], vec![-1, 2], vec![1, 2]]))
+        }
+        other => panic!("Expected SAT, got {:?}", other),
+    }
+    assert!(matches!(
+        solve_with(unsat.path().to_str().unwrap(), SolverKind::Cdcl),
+        Ok(splr::Certificate::UNSAT)
+    ));
+}
+
+// CDCL has to agree with splr on all example puzzles and return a valid model
+#[test]
+fn test_cdcl_on_puzzles() {
+    let mut inputs: Vec<_> = std::fs::read_dir("./input")
+        .expect("Failed to read input dir")
+        .map(|entry| entry.unwrap().path())
+        .filter(|path| path.extension().map_or(false, |e| e == "txt"))
+        .collect();
+    inputs.sort();
+
+    for input in inputs {
+        let game_board = match parse_input(input.to_str().unwrap()) {
+            Ok(game_board) => game_board,
+            // Some inputs are intentionally invalid
+            Err(_) => continue,
+        };
+        let (clauses, var_map) = generate(&game_board);
+        let cnf = write_cnf(&clauses, var_map.keys().len());
+        let cnf_path = cnf.path().to_str().unwrap();
+
+        let expected_sat = matches!(
+            solve_with(cnf_path, SolverKind::Splr),
+            Ok(splr::Certificate::SAT(_))
+        );
+        match solve_with(cnf_path, SolverKind::Cdcl) {
+            Ok(splr::Certificate::SAT(model)) => {
+                assert!(expected_sat, "{:?} is UNSAT but got SAT", input);
+                assert!(satisfies(&model, &clauses), "Invalid model for {:?}", input);
+            }
+            Ok(splr::Certificate::UNSAT) => {
+                assert!(!expected_sat, "{:?} is SAT but got UNSAT", input)
+            }
+            Err(err) => panic!("{:?} failed: {}", input, err),
+        }
+    }
+}
+
+#[test]
+fn test_solver_kind_from_str() {
+    for kind in SolverKind::ALL {
+        assert_eq!(kind.to_string().parse::<SolverKind>().unwrap(), kind);
+    }
+    assert_eq!("CDCL".parse::<SolverKind>().unwrap(), SolverKind::Cdcl);
+    assert!("minisat".parse::<SolverKind>().is_err());
 }
