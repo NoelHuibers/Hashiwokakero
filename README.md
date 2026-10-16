@@ -67,36 +67,3 @@ See [Evaluation](hashi_report.pdf)
 ## SAT Conversion
 
 See [Clauses](Clauses.md)
-
-## Team Responsibilities
-
-**Noel:**
-
-- [x] Initialize the project.
-- [x] Develop the Command Line Interface (CLI) for our application.
-- [x] Implement SAT-Solver integration and the ability to select the appropriate solver based on input data.
-- [x] Clap integration encode or solve.
-- [x] Solver Error no DIMACS File
-- [x] Frontend Leptos/Yew integration.
-- [x] Generator
-
-**Laura:**
-
-- [x] Handle the parsing of input files.
-- [x] Error Handling of input files.
-- [x] Establish a data structure for passing input data within the application.
-- [x] Manage the creation and formatting of output files.
-- [x] Test structure
-- [x] Benchmarking
-- [x] Game Board Format
-- [x] Evaluation of Performance
-
-
-**Florian:**
-
-- [x] Translate input data into clauses.
-- [x] Implement parsing functionality for calculating DIMACS.
-- [x] Parsing for CLI output
-- [x] Rule 3 in CNF
-- [x] Reproduce / Fix unwrap errors in Rule 3
-- [x] Update instructions on how to run
