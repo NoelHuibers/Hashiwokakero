@@ -1,12 +1,23 @@
 //! Server functions. Solving and generating run on the server, in the backend crate; users and
 //! daily results live in the database (see `server`).
 
+// In the browser build `#[server]` replaces each body with a request to the server, and the
+// trait impl the macro generates keeps an `async fn` that has nothing to await
+#![cfg_attr(
+    feature = "hydrate",
+    expect(
+        clippy::unused_async_trait_impl,
+        reason = "`#[server]` generates an `async fn` without `.await` for the client side"
+    )
+)]
+
 use common::{GenerateParams, GeneratedPuzzle, Puzzle, SolveReport, SolverConfig};
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
 use crate::model::{
-    AllTimeEntry, DailyInfo, DojoBoard, DojoMe, DojoSubmission, Leaderboard, SubmitResult, UserInfo, UserStats,
+    AllTimeEntry, DailyInfo, DojoBoard, DojoMe, DojoSubmission, Leaderboard, SubmitResult,
+    UserInfo, UserStats,
 };
 #[cfg(feature = "ssr")]
 use crate::server::{auth, daily, db, dojo, run_blocking};
@@ -75,7 +86,9 @@ pub async fn current_user() -> Result<Option<UserInfo>, ServerFnError> {
 #[server(input = Json)]
 pub async fn register(username: String, password: String) -> Result<UserInfo, ServerFnError> {
     let conn = db::conn()?;
-    Ok(auth::register(&conn, username.trim(), password).await?.info())
+    Ok(auth::register(&conn, username.trim(), password)
+        .await?
+        .info())
 }
 
 #[server(input = Json)]
@@ -150,7 +163,11 @@ pub async fn daily_reveal(day: i64) -> Result<Vec<u8>, ServerFnError> {
 }
 
 #[server(input = Json)]
-pub async fn submit_daily(day: i64, bridges: Vec<u8>, moves: u32) -> Result<SubmitResult, ServerFnError> {
+pub async fn submit_daily(
+    day: i64,
+    bridges: Vec<u8>,
+    moves: u32,
+) -> Result<SubmitResult, ServerFnError> {
     let (conn, user) = signed_in().await?;
     daily::submit(&conn, user.id, day, bridges, moves).await
 }

@@ -12,7 +12,12 @@ type Section = (&'static str, &'static [&'static str]);
 const IMPRESSUM_DE: &[Section] = &[
     (
         "Angaben gemäß § 5 DDG",
-        &["Noel Huibers", "[Straße und Hausnummer]", "[PLZ und Ort]", "Deutschland"],
+        &[
+            "Noel Huibers",
+            "[Straße und Hausnummer]",
+            "[PLZ und Ort]",
+            "Deutschland",
+        ],
     ),
     ("Kontakt", &["E-Mail: [E-Mail-Adresse]"]),
     (
@@ -21,14 +26,21 @@ const IMPRESSUM_DE: &[Section] = &[
     ),
     (
         "Verbraucherstreitbeilegung",
-        &["Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen."],
+        &[
+            "Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.",
+        ],
     ),
 ];
 
 const IMPRESSUM_EN: &[Section] = &[
     (
         "Information according to § 5 DDG (German Digital Services Act)",
-        &["Noel Huibers", "[Street and number]", "[Postcode and city]", "Germany"],
+        &[
+            "Noel Huibers",
+            "[Street and number]",
+            "[Postcode and city]",
+            "Germany",
+        ],
     ),
     ("Contact", &["Email: [email address]"]),
     (
@@ -44,11 +56,15 @@ const PRIVACY_DE: &[Section] = &[
     ),
     (
         "Kurz gesagt",
-        &["Hashi kommt ohne Werbung, Tracking und Analyse-Tools aus. Wir verarbeiten nur die Daten, die für das Spiel nötig sind."],
+        &[
+            "Hashi kommt ohne Werbung, Tracking und Analyse-Tools aus. Wir verarbeiten nur die Daten, die für das Spiel nötig sind.",
+        ],
     ),
     (
         "Hosting",
-        &["Die Website läuft bei Fly.io (Fly.io, Inc., USA, Rechenzentrum in Amsterdam). Beim Aufruf werden technisch notwendige Daten wie IP-Adresse, Zeitpunkt und aufgerufene Seite verarbeitet und kurzzeitig in Server-Logs gespeichert (Art. 6 Abs. 1 lit. f DSGVO, Betrieb und Sicherheit der Website). [Auftragsverarbeitungsvertrag und Grundlage der Übermittlung in die USA ergänzen.]"],
+        &[
+            "Die Website läuft bei Fly.io (Fly.io, Inc., USA, Rechenzentrum in Amsterdam). Beim Aufruf werden technisch notwendige Daten wie IP-Adresse, Zeitpunkt und aufgerufene Seite verarbeitet und kurzzeitig in Server-Logs gespeichert (Art. 6 Abs. 1 lit. f DSGVO, Betrieb und Sicherheit der Website). [Auftragsverarbeitungsvertrag und Grundlage der Übermittlung in die USA ergänzen.]",
+        ],
     ),
     (
         "Konto, Tagesrätsel und Rangliste",
@@ -60,35 +76,50 @@ const PRIVACY_DE: &[Section] = &[
     ),
     (
         "Cookies und lokaler Speicher",
-        &["Neben dem Sitzungs-Cookie merkt sich das Cookie „i18n_pref_locale“ deine Sprache. Im lokalen Speicher deines Browsers liegen das Farbschema und dein aktuelles Übungsspiel; diese Daten verlassen dein Gerät nicht. Alle sind technisch notwendig (§ 25 Abs. 2 TDDDG)."],
+        &[
+            "Neben dem Sitzungs-Cookie merkt sich das Cookie „i18n_pref_locale“ deine Sprache. Im lokalen Speicher deines Browsers liegen das Farbschema und dein aktuelles Übungsspiel; diese Daten verlassen dein Gerät nicht. Alle sind technisch notwendig (§ 25 Abs. 2 TDDDG).",
+        ],
     ),
     (
         "Schriftarten",
-        &["Schriftarten werden von Google Fonts (Google Ireland Limited) geladen, dabei wird deine IP-Adresse an Google übermittelt. [Prüfen: Schriften selbst hosten, dann entfällt dieser Abschnitt.]"],
+        &[
+            "Schriftarten werden von Google Fonts (Google Ireland Limited) geladen, dabei wird deine IP-Adresse an Google übermittelt. [Prüfen: Schriften selbst hosten, dann entfällt dieser Abschnitt.]",
+        ],
     ),
     (
         "Deine Rechte",
-        &["Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch (Art. 15–21 DSGVO) sowie auf Beschwerde bei einer Datenschutz-Aufsichtsbehörde. Schreib uns dafür einfach eine E-Mail."],
+        &[
+            "Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch (Art. 15–21 DSGVO) sowie auf Beschwerde bei einer Datenschutz-Aufsichtsbehörde. Schreib uns dafür einfach eine E-Mail.",
+        ],
     ),
 ];
 
 const PRIVACY_EN: &[Section] = &[
-    ("Controller", &["Noel Huibers, [address], email: [email address]"]),
+    (
+        "Controller",
+        &["Noel Huibers, [address], email: [email address]"],
+    ),
     (
         "In short",
         &["Hashi has no ads, tracking or analytics. We only process the data the game needs."],
     ),
     (
         "Hosting",
-        &["The site is hosted by Fly.io (Fly.io, Inc., USA, data centre in Amsterdam). Requests are processed with technically necessary data such as IP address, time and page, kept briefly in server logs (Art. 6 (1) f GDPR)."],
+        &[
+            "The site is hosted by Fly.io (Fly.io, Inc., USA, data centre in Amsterdam). Requests are processed with technically necessary data such as IP address, time and page, kept briefly in server logs (Art. 6 (1) f GDPR).",
+        ],
     ),
     (
         "Account, daily puzzle and leaderboard",
-        &["Playing the daily creates a guest account with the cookie \"hashi_session\". We store a random guest name, your results and a hash of the session token; registered accounts add a username and an Argon2 password hash. Names and times are public on the leaderboard. The database is hosted by Turso (Art. 6 (1) b GDPR)."],
+        &[
+            "Playing the daily creates a guest account with the cookie \"hashi_session\". We store a random guest name, your results and a hash of the session token; registered accounts add a username and an Argon2 password hash. Names and times are public on the leaderboard. The database is hosted by Turso (Art. 6 (1) b GDPR).",
+        ],
     ),
     (
         "Cookies and local storage",
-        &["The cookie \"i18n_pref_locale\" remembers your language; your colour scheme and practice game stay in your browser's local storage. All of these are strictly necessary."],
+        &[
+            "The cookie \"i18n_pref_locale\" remembers your language; your colour scheme and practice game stay in your browser's local storage. All of these are strictly necessary.",
+        ],
     ),
     (
         "Fonts",
@@ -96,7 +127,9 @@ const PRIVACY_EN: &[Section] = &[
     ),
     (
         "Your rights",
-        &["You have the right to access, rectification, erasure, restriction, portability and objection (Art. 15–21 GDPR) and to lodge a complaint with a supervisory authority. Just send us an email."],
+        &[
+            "You have the right to access, rectification, erasure, restriction, portability and objection (Art. 15–21 GDPR) and to lodge a complaint with a supervisory authority. Just send us an email.",
+        ],
     ),
 ];
 

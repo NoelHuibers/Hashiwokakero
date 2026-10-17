@@ -3,10 +3,10 @@ use leptos::prelude::*;
 use leptos_router::components::A;
 
 use crate::components::board::{BoardMode, BoardView};
+use crate::components::layout::use_localized;
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::separator::Separator;
-use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
 use crate::seo::{PageMeta, faq_ld, rules_faq};
 
@@ -19,7 +19,9 @@ fn example(width: u8, height: u8, bridges: &[ExampleBridge]) -> (Board, Vec<u8>)
     for &((ax, ay), (bx, by), n) in bridges {
         for (x, y) in [(ax, ay), (bx, by)] {
             let pos = Pos::new(x, y);
-            let current = puzzle.island_at(pos).map_or(0, |i| puzzle.islands[i].required);
+            let current = puzzle
+                .island_at(pos)
+                .map_or(0, |i| puzzle.islands[i].required);
             puzzle.set(pos, current + n);
         }
     }

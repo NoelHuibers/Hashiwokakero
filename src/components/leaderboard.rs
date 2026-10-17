@@ -2,9 +2,9 @@ use leptos::prelude::*;
 use leptos_router::components::A;
 
 use super::ui::badge::{Badge, BadgeVariant};
-use crate::model::{LeaderboardEntry, format_duration};
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
+use crate::model::{LeaderboardEntry, format_duration};
 use crate::state::Auth;
 
 /// 🥇🥈🥉 as pixel-ish kanji medals: 金 gold, 銀 silver, 銅 bronze.
@@ -74,7 +74,10 @@ pub fn LeaderboardTable(
 ) -> impl IntoView {
     let i18n = use_i18n();
     let my_id = me.as_ref().map(|m| m.user_id);
-    let shown: Vec<LeaderboardEntry> = entries.into_iter().take(limit.unwrap_or(usize::MAX)).collect();
+    let shown: Vec<LeaderboardEntry> = entries
+        .into_iter()
+        .take(limit.unwrap_or(usize::MAX))
+        .collect();
     let me_below = me.filter(|m| !shown.iter().any(|e| e.user_id == m.user_id));
     if shown.is_empty() {
         return view! {

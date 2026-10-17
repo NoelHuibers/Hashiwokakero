@@ -1,6 +1,6 @@
 use leptos::prelude::*;
-use leptos_meta::{HashedStylesheet, Link, Meta, MetaTags, provide_meta_context};
 use leptos_i18n_router::I18nRoute;
+use leptos_meta::{HashedStylesheet, Link, Meta, MetaTags, provide_meta_context};
 use leptos_router::components::{Outlet, Route, Router, Routes};
 use leptos_router::path;
 

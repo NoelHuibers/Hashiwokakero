@@ -4,14 +4,18 @@ use leptos_router::components::A;
 use leptos_router::hooks::use_location;
 
 use super::leaderboard::AccountButton;
-use super::ui::switch::Switch;
 use super::sprites::{BOAT, PixelSprite};
+use super::ui::switch::Switch;
 use crate::i18n::{Locale, t, t_string, use_i18n};
 use crate::lang::{localized, native_name, unlocalized};
 use crate::state::{Settings, ToastKind, Toasts};
 
 /// The hanko 判子 seal with 橋 (bridge), used as logo.
 #[component]
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "Leptos components take their props by value"
+)]
 pub fn Hanko(#[prop(into, optional)] class: String) -> impl IntoView {
     view! {
         <span
@@ -183,7 +187,11 @@ pub fn HelpButton() -> impl IntoView {
 }
 
 /// Closes a pop-up on a click outside of `root` and on Escape (focus goes back to `button`).
-fn use_dismiss(open: RwSignal<bool>, root: NodeRef<leptos::html::Div>, button: NodeRef<leptos::html::Button>) {
+fn use_dismiss(
+    open: RwSignal<bool>,
+    root: NodeRef<leptos::html::Div>,
+    button: NodeRef<leptos::html::Button>,
+) {
     let outside = window_event_listener(leptos::ev::pointerdown, move |ev| {
         if !open.get_untracked() {
             return;
@@ -299,7 +307,12 @@ pub fn LanguagePicker() -> impl IntoView {
         format!(
             "{}{}",
             localized(l, &unlocalized(&location.pathname.get())),
-            location.search.get().is_empty().then(String::new).unwrap_or_else(|| format!("?{}", location.search.get()))
+            location
+                .search
+                .get()
+                .is_empty()
+                .then(String::new)
+                .unwrap_or_else(|| format!("?{}", location.search.get()))
         )
     };
     // Short label: the language code, the two Chinese scripts by their own name

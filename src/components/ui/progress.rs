@@ -12,7 +12,10 @@ pub fn Progress(
         format!("transform: translateX(-{}%)", 100.0 - pct)
     };
 
-    let merged_class = tw_merge!("relative h-2 w-full overflow-hidden rounded-full bg-secondary", class);
+    let merged_class = tw_merge!(
+        "relative h-2 w-full overflow-hidden rounded-full bg-secondary",
+        class
+    );
 
     view! {
         <div

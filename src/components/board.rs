@@ -2,8 +2,8 @@ use common::{Board, Orientation, Pos};
 use leptos::ev::PointerEvent;
 use leptos::prelude::*;
 
-use crate::i18n::{t_string, use_i18n};
 use super::sprites::{BoardDefs, BridgeSprite, CELL, Decor, Span};
+use crate::i18n::{t_string, use_i18n};
 
 /// Space around the grid, decorations stick out of the top row.
 const PAD: i32 = 6;
@@ -77,18 +77,18 @@ fn span_of(board: &Board, edge: usize) -> Span {
     let (a, b) = board.endpoints(edge);
     Span {
         horizontal: board.edges[edge].orientation == Orientation::Horizontal,
-        a: (a.x as i32, a.y as i32),
-        b: (b.x as i32, b.y as i32),
+        a: (i32::from(a.x), i32::from(a.y)),
+        b: (i32::from(b.x), i32::from(b.y)),
     }
 }
 
 /// Midpoint of an edge in art pixels.
 fn midpoint(board: &Board, edge: usize) -> (f64, f64) {
     let (a, b) = board.endpoints(edge);
-    let c = CELL as f64;
+    let c = f64::from(CELL);
     (
-        (a.x as f64 + b.x as f64) / 2.0 * c + c / 2.0,
-        (a.y as f64 + b.y as f64) / 2.0 * c + c / 2.0,
+        f64::midpoint(f64::from(a.x), f64::from(b.x)) * c + c / 2.0,
+        f64::midpoint(f64::from(a.y), f64::from(b.y)) * c + c / 2.0,
     )
 }
 
@@ -111,11 +111,11 @@ fn edge_at(board: &Board, cells: &[Vec<usize>], px: f64, py: f64) -> Option<usiz
         return None;
     }
     let candidates = cells.get(pos.y as usize * board.puzzle.width as usize + pos.x as usize)?;
-    let c = CELL as f64;
+    let c = f64::from(CELL);
     candidates.iter().copied().min_by(|&e, &f| {
         let dist = |edge: usize| match board.edges[edge].orientation {
-            Orientation::Horizontal => (py - (pos.y as f64 * c + c / 2.0)).abs(),
-            Orientation::Vertical => (px - (pos.x as f64 * c + c / 2.0)).abs(),
+            Orientation::Horizontal => (py - (f64::from(pos.y) * c + c / 2.0)).abs(),
+            Orientation::Vertical => (px - (f64::from(pos.x) * c + c / 2.0)).abs(),
         };
         dist(e).total_cmp(&dist(f))
     })
@@ -125,8 +125,24 @@ fn cell_of(board: &Board, px: f64, py: f64) -> Option<Pos> {
     if px < 0.0 || py < 0.0 {
         return None;
     }
-    let (x, y) = ((px / CELL as f64) as u32, (py / CELL as f64) as u32);
-    (x < board.puzzle.width as u32 && y < board.puzzle.height as u32).then(|| Pos::new(x as u8, y as u8))
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "flooring a non-negative pixel offset to a cell index, `as` saturates and the \
+                  result is bounds-checked against the board size below"
+    )]
+    let (x, y) = ((px / f64::from(CELL)) as u32, (py / f64::from(CELL)) as u32);
+    let (x, y) = (u8::try_from(x).ok()?, u8::try_from(y).ok()?);
+    (x < board.puzzle.width && y < board.puzzle.height).then(|| Pos::new(x, y))
+}
+
+/// Rounds a pixel position or scroll offset to whole pixels.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "pixel values on screen are far inside the i32 range, and `as` saturates anyway"
+)]
+fn whole_px(v: f64) -> i32 {
+    v.round() as i32
 }
 
 /// The edge leaving `island` in the direction of the drag vector, if any.
@@ -194,8 +210,8 @@ pub fn BoardView(
 
     let view_box = move || {
         board.with(|b| {
-            let w = b.puzzle.width as i32 * CELL + 2 * PAD;
-            let h = b.puzzle.height as i32 * CELL + 2 * PAD;
+            let w = i32::from(b.puzzle.width) * CELL + 2 * PAD;
+            let h = i32::from(b.puzzle.height) * CELL + 2 * PAD;
             (w, h)
         })
     };
@@ -207,8 +223,10 @@ pub fn BoardView(
             return None;
         }
         let (w, h) = view_box();
-        let px = (ev.client_x() as f64 - rect.left()) / rect.width() * w as f64 - PAD as f64;
-        let py = (ev.client_y() as f64 - rect.top()) / rect.height() * h as f64 - PAD as f64;
+        let px =
+            (f64::from(ev.client_x()) - rect.left()) / rect.width() * f64::from(w) - f64::from(PAD);
+        let py =
+            (f64::from(ev.client_y()) - rect.top()) / rect.height() * f64::from(h) - f64::from(PAD);
         Some((px, py))
     };
 
@@ -229,7 +247,9 @@ pub fn BoardView(
     let cycle = move |edge: usize, delta: i8| {
         let Some(cb) = on_cycle else { return };
         let current = bridges.with_untracked(|b| b.get(edge).copied().unwrap_or(0));
-        let next = (current as i8 + delta).rem_euclid(3) as u8;
+        let next = (current.cast_signed() + delta)
+            .rem_euclid(3)
+            .cast_unsigned();
         let blocked = current == 0
             && next > 0
             && board.with_untracked(|b| bridges.with_untracked(|br| b.is_blocked(br, edge)));
@@ -249,10 +269,20 @@ pub fn BoardView(
     // A chime when an island gets all its bridges (not when a game is loaded or reset)
     if mode == BoardMode::Play {
         Effect::new(move |prev: Option<(usize, Vec<u8>)>| {
-            let done = board.with(|b| degrees.with(|d| b.puzzle.islands.iter().zip(d).filter(|(i, d)| i.required == **d).count()));
+            let done = board.with(|b| {
+                degrees.with(|d| {
+                    b.puzzle
+                        .islands
+                        .iter()
+                        .zip(d)
+                        .filter(|(i, d)| i.required == **d)
+                        .count()
+                })
+            });
             let now = bridges.get();
             if let Some((before, last)) = prev {
-                let changed = now.len() == last.len() && now.iter().zip(&last).filter(|(a, b)| a != b).count() == 1;
+                let changed = now.len() == last.len()
+                    && now.iter().zip(&last).filter(|(a, b)| a != b).count() == 1;
                 if changed && done > before {
                     crate::audio::play(crate::audio::Sfx::Island);
                 }
@@ -263,14 +293,22 @@ pub fn BoardView(
 
     // The zoom that makes cells about MAX_CELL_PX wide, given how wide the board fits
     let max_scale = move || {
-        let width = scroller.get_untracked().map_or(0.0, |el| f64::from(el.client_width()));
+        let width = scroller
+            .get_untracked()
+            .map_or(0.0, |el| f64::from(el.client_width()));
         let (w, _) = view_box();
         let cells = f64::from(w) / f64::from(CELL);
-        if width <= 0.0 { 4.0 } else { (MAX_CELL_PX * cells / width).clamp(1.0, 6.0) }
+        if width <= 0.0 {
+            4.0
+        } else {
+            (MAX_CELL_PX * cells / width).clamp(1.0, 6.0)
+        }
     };
     // Zooms to `target`, keeping the board point under `focus` (screen coordinates) in place
     let zoom_to = move |target: f64, focus: (f64, f64)| {
-        let Some(el) = scroller.get_untracked() else { return };
+        let Some(el) = scroller.get_untracked() else {
+            return;
+        };
         let old = scale.get_untracked();
         let new = target.clamp(1.0, max_scale());
         if (new - old).abs() < 1e-3 {
@@ -278,25 +316,33 @@ pub fn BoardView(
         }
         let rect = el.get_bounding_client_rect();
         let (fx, fy) = (focus.0 - rect.left(), focus.1 - rect.top());
-        let (cx, cy) = (f64::from(el.scroll_left()) + fx, f64::from(el.scroll_top()) + fy);
+        let (cx, cy) = (
+            f64::from(el.scroll_left()) + fx,
+            f64::from(el.scroll_top()) + fy,
+        );
         let ratio = new / old;
         scale.set(new);
         // After the new size is laid out
         request_animation_frame(move || {
-            el.set_scroll_left((cx * ratio - fx).round() as i32);
-            el.set_scroll_top((cy * ratio - fy).round() as i32);
+            el.set_scroll_left(whole_px(cx * ratio - fx));
+            el.set_scroll_top(whole_px(cy * ratio - fy));
         });
     };
     let pan_by = move |(dx, dy): (f64, f64)| {
         if let Some(el) = scroller.get_untracked() {
-            el.set_scroll_left(el.scroll_left() - dx.round() as i32);
-            el.set_scroll_top(el.scroll_top() - dy.round() as i32);
+            el.set_scroll_left(el.scroll_left() - whole_px(dx));
+            el.set_scroll_top(el.scroll_top() - whole_px(dy));
         }
     };
     let zoom_step = move |factor: f64| {
-        let Some(el) = scroller.get_untracked() else { return };
+        let Some(el) = scroller.get_untracked() else {
+            return;
+        };
         let rect = el.get_bounding_client_rect();
-        let center = (rect.left() + rect.width() / 2.0, rect.top() + rect.height() / 2.0);
+        let center = (
+            rect.left() + rect.width() / 2.0,
+            rect.top() + rect.height() / 2.0,
+        );
         zoom_to(scale.get_untracked() * factor, center);
     };
 
@@ -311,7 +357,11 @@ pub fn BoardView(
                 t.active.retain(|(id, ..)| *id != ev.pointer_id());
                 t.active.push((ev.pointer_id(), x, y));
                 if t.active.len() == 1 {
-                    *t = Touches { active: t.active.clone(), start: (x, y), ..Touches::default() };
+                    *t = Touches {
+                        active: t.active.clone(),
+                        start: (x, y),
+                        ..Touches::default()
+                    };
                 }
                 t.active.len()
             });
@@ -343,7 +393,8 @@ pub fn BoardView(
             }
             return;
         }
-        let island = board.with_untracked(|b| cell_of(b, px, py).and_then(|p| b.puzzle.island_at(p)));
+        let island =
+            board.with_untracked(|b| cell_of(b, px, py).and_then(|p| b.puzzle.island_at(p)));
         if let Some(island) = island {
             if ev.button() == 0 {
                 drag.set_value(Some(Drag {
@@ -377,7 +428,11 @@ pub fn BoardView(
             let mut pinch = None;
             touches.update_value(|t| {
                 let before = t.midpoint();
-                let last = t.active.iter().find(|(id, ..)| *id == ev.pointer_id()).map(|&(_, lx, ly)| (lx, ly));
+                let last = t
+                    .active
+                    .iter()
+                    .find(|(id, ..)| *id == ev.pointer_id())
+                    .map(|&(_, lx, ly)| (lx, ly));
                 if let Some(p) = t.active.iter_mut().find(|(id, ..)| *id == ev.pointer_id()) {
                     *p = (ev.pointer_id(), x, y);
                 }
@@ -385,8 +440,14 @@ pub fn BoardView(
                     t.moved = true;
                     t.tap = None;
                 }
-                if let (Some((d0, s0)), Some(d), Some(mid), Some(before)) = (t.pinch, t.spread(), t.midpoint(), before) {
-                    pinch = Some((s0 * d / d0.max(1.0), mid, (mid.0 - before.0, mid.1 - before.1)));
+                if let (Some((d0, s0)), Some(d), Some(mid), Some(before)) =
+                    (t.pinch, t.spread(), t.midpoint(), before)
+                {
+                    pinch = Some((
+                        s0 * d / d0.max(1.0),
+                        mid,
+                        (mid.0 - before.0, mid.1 - before.1),
+                    ));
                 } else if t.active.len() == 1 && t.moved {
                     pan = last.map(|(lx, ly)| (x - lx, y - ly));
                 }
@@ -478,7 +539,9 @@ pub fn BoardView(
     if mode == BoardMode::Edit {
         Effect::new(move |_| {
             let handle = window_event_listener(leptos::ev::keydown, move |ev| {
-                let (Some(cb), Some(pos)) = (on_cell, hover_cell.get_untracked()) else { return };
+                let (Some(cb), Some(pos)) = (on_cell, hover_cell.get_untracked()) else {
+                    return;
+                };
                 let action = match ev.key().as_str() {
                     k if k.len() == 1 && ('0'..='8').contains(&k.chars().next().unwrap_or(' ')) => {
                         CellAction::Set(k.as_bytes()[0] - b'0')
@@ -522,8 +585,9 @@ pub fn BoardView(
         board.with(|b| {
             let current = bridges.with(|br| br.get(edge).copied().unwrap_or(0));
             let blocked = current == 0 && bridges.with(|br| b.is_blocked(br, edge));
-            (current < 2 && !blocked)
-                .then(|| view! { <BridgeSprite span=span_of(b, edge) count=current + 1 class="ghost" /> })
+            (current < 2 && !blocked).then(
+                || view! { <BridgeSprite span=span_of(b, edge) count=current + 1 class="ghost" /> },
+            )
         })
     };
 
@@ -538,24 +602,24 @@ pub fn BoardView(
                 let required = island.required;
                 let decor = Decor::for_pos(x, y).id();
                 let class = move || {
-                    let mut c = String::from("island");
+                    let mut classes = String::from("island");
                     if mode == BoardMode::Play {
-                        let d = degrees.with(|d| d.get(i).copied().unwrap_or(0));
-                        if d == required {
-                            c.push_str(" done");
-                        } else if d > required {
-                            c.push_str(" over");
+                        let degree = degrees.with(|d| d.get(i).copied().unwrap_or(0));
+                        if degree == required {
+                            classes.push_str(" done");
+                        } else if degree > required {
+                            classes.push_str(" over");
                         }
                         if selected.get() == Some(i) {
-                            c.push_str(" selected");
+                            classes.push_str(" selected");
                         }
                     }
-                    c
+                    classes
                 };
                 view! {
                     <g
                         class=class
-                        transform=format!("translate({},{})", x as i32 * CELL, y as i32 * CELL)
+                        transform=format!("translate({},{})", i32::from(x) * CELL, i32::from(y) * CELL)
                         data-island=i
                     >
                         {decor.map(|href| view! { <use href=href /> })}
@@ -580,8 +644,8 @@ pub fn BoardView(
                             dots.push(view! {
                                 <rect
                                     class="grid-dot"
-                                    x=x as i32 * CELL + 7
-                                    y=y as i32 * CELL + 7
+                                    x=i32::from(x) * CELL + 7
+                                    y=i32::from(y) * CELL + 7
                                     width="2"
                                     height="2"
                                 />
@@ -599,8 +663,8 @@ pub fn BoardView(
         (mode == BoardMode::Edit).then(|| {
             view! {
                 <rect
-                    x=pos.x as i32 * CELL
-                    y=pos.y as i32 * CELL
+                    x=i32::from(pos.x) * CELL
+                    y=i32::from(pos.y) * CELL
                     width=CELL
                     height=CELL
                     fill="none"
@@ -615,7 +679,7 @@ pub fn BoardView(
 
     let blocked_layer = move || {
         blocked.get().map(|(x, y, key)| {
-            let (x, y) = (x.round() as i32, y.round() as i32);
+            let (x, y) = (whole_px(x), whole_px(y));
             view! {
                 <g class="blocked-x" data-key=key pointer-events="none">
                     <rect x=x - 3 y=y - 3 width="2" height="2" class="px-shu" />
@@ -630,7 +694,8 @@ pub fn BoardView(
 
     let frame = if framed { 14 } else { 0 };
     // Big boards get small cells on phones: pinch, or use + and −, to zoom in
-    let can_zoom = move || mode != BoardMode::View && board.with(|b| b.puzzle.width.max(b.puzzle.height) >= 9);
+    let can_zoom =
+        move || mode != BoardMode::View && board.with(|b| b.puzzle.width.max(b.puzzle.height) >= 9);
     let zoomed = move || scale.get() > 1.0 + 1e-3;
     // Outside of view!, where `>` would end the tag
     let at_max = move || scale.get() >= max_scale() - 1e-3;

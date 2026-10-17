@@ -1,16 +1,17 @@
 //! The daily puzzle: one per UTC day, the same for everyone, timed by the server.
 
+use std::collections::HashMap;
+
 use common::{Board, Difficulty, GenerateParams, Puzzle};
 use leptos::prelude::*;
 use libsql::{Connection, params};
 use sha2::{Digest, Sha256};
 
 use super::db::db_err;
-use super::{now_ms, run_blocking};
+use super::{count, now_ms, run_blocking};
 use crate::model::{
-    ApiError,
-    AllTimeEntry, AttemptInfo, DailyInfo, DayResult, Leaderboard, LeaderboardEntry, SubmitResult,
-    UserStats, daily_difficulty, day_of, pick_hint, streaks, wrong_edges,
+    AllTimeEntry, ApiError, AttemptInfo, DailyInfo, DayResult, Leaderboard, LeaderboardEntry,
+    SubmitResult, UserStats, daily_difficulty, day_of, pick_hint, streaks, wrong_edges,
 };
 
 /// Ranked entries shown on a daily leaderboard.
@@ -30,6 +31,7 @@ fn seed(day: i64) -> u64 {
     u64::from_le_bytes(digest[..8].try_into().expect("8 bytes"))
 }
 
+#[derive(Debug)]
 pub struct Daily {
     pub difficulty: Difficulty,
     pub puzzle: Puzzle,
@@ -111,7 +113,11 @@ pub async fn archived(conn: &Connection, day: i64) -> Result<Option<Puzzle>, Ser
     Ok(load(conn, day).await?.map(|d| d.puzzle))
 }
 
-pub async fn attempt(conn: &Connection, user: i64, day: i64) -> Result<Option<AttemptInfo>, ServerFnError> {
+pub async fn attempt(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+) -> Result<Option<AttemptInfo>, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT started_at, finished_at, hints, checks, revealed, time_ms, bridges
@@ -150,7 +156,11 @@ pub async fn finishers(conn: &Connection, day: i64) -> Result<i64, ServerFnError
 }
 
 /// Today's daily for the current user. The puzzle is only included once they started.
-pub async fn info(conn: &Connection, user: Option<i64>, day: i64) -> Result<DailyInfo, ServerFnError> {
+pub async fn info(
+    conn: &Connection,
+    user: Option<i64>,
+    day: i64,
+) -> Result<DailyInfo, ServerFnError> {
     let attempt = match user {
         Some(user) => attempt(conn, user, day).await?,
         None => None,
@@ -198,7 +208,12 @@ fn check_bridges(board: &Board, bridges: &[u8]) -> Result<(), ServerFnError> {
 }
 
 /// Fixes one bridge, costs a hint penalty.
-pub async fn hint(conn: &Connection, user: i64, day: i64, bridges: Vec<u8>) -> Result<Option<(usize, u8)>, ServerFnError> {
+pub async fn hint(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+) -> Result<Option<(usize, u8)>, ServerFnError> {
     running(conn, user, day).await?;
     let daily = get_or_create(conn, day).await?;
     let board = Board::new(daily.puzzle);
@@ -216,7 +231,12 @@ pub async fn hint(conn: &Connection, user: i64, day: i64, bridges: Vec<u8>) -> R
 }
 
 /// Bridges that aren't part of the solution, costs a check penalty.
-pub async fn check(conn: &Connection, user: i64, day: i64, bridges: Vec<u8>) -> Result<Vec<usize>, ServerFnError> {
+pub async fn check(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+) -> Result<Vec<usize>, ServerFnError> {
     running(conn, user, day).await?;
     let daily = get_or_create(conn, day).await?;
     check_bridges(&Board::new(daily.puzzle), &bridges)?;
@@ -243,7 +263,12 @@ pub async fn reveal(conn: &Connection, user: i64, day: i64) -> Result<Vec<u8>, S
 }
 
 /// Rank among the ranked finishers: faster times first, earlier finishes break ties.
-async fn rank(conn: &Connection, day: i64, time_ms: i64, finished_at: i64) -> Result<i64, ServerFnError> {
+async fn rank(
+    conn: &Connection,
+    day: i64,
+    time_ms: i64,
+    finished_at: i64,
+) -> Result<i64, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT COUNT(*) + 1 FROM attempts
@@ -260,7 +285,13 @@ async fn rank(conn: &Connection, day: i64, time_ms: i64, finished_at: i64) -> Re
 }
 
 /// Verifies a finished board and records the time.
-pub async fn submit(conn: &Connection, user: i64, day: i64, bridges: Vec<u8>, moves: u32) -> Result<SubmitResult, ServerFnError> {
+pub async fn submit(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+    moves: u32,
+) -> Result<SubmitResult, ServerFnError> {
     let attempt = running(conn, user, day).await?;
     let daily = get_or_create(conn, day).await?;
     let board = Board::new(daily.puzzle);
@@ -273,7 +304,14 @@ pub async fn submit(conn: &Connection, user: i64, day: i64, bridges: Vec<u8>, mo
     conn.execute(
         "UPDATE attempts SET finished_at = ?3, time_ms = ?4, moves = ?5, bridges = ?6
          WHERE user_id = ?1 AND day = ?2 AND finished_at IS NULL AND revealed = 0",
-        params![user, day, finished_at, time_ms, moves as i64, json(&bridges)?],
+        params![
+            user,
+            day,
+            finished_at,
+            time_ms,
+            i64::from(moves),
+            json(&bridges)?
+        ],
     )
     .await
     .map_err(db_err)?;
@@ -299,7 +337,11 @@ fn entry(row: &libsql::Row, rank: i64) -> Result<LeaderboardEntry, libsql::Error
 const ENTRY_COLUMNS: &str =
     "a.user_id, u.name, u.username, a.time_ms, a.hints, a.checks, a.finished_at";
 
-pub async fn leaderboard(conn: &Connection, day: i64, me: Option<i64>) -> Result<Leaderboard, ServerFnError> {
+pub async fn leaderboard(
+    conn: &Connection,
+    day: i64,
+    me: Option<i64>,
+) -> Result<Leaderboard, ServerFnError> {
     let mut rows = conn
         .query(
             &format!(
@@ -313,7 +355,7 @@ pub async fn leaderboard(conn: &Connection, day: i64, me: Option<i64>) -> Result
         .map_err(db_err)?;
     let mut entries = Vec::new();
     while let Some(row) = rows.next().await.map_err(db_err)? {
-        entries.push(entry(&row, entries.len() as i64 + 1).map_err(db_err)?);
+        entries.push(entry(&row, count(entries.len() + 1)).map_err(db_err)?);
     }
 
     let mut mine = entries.iter().find(|e| Some(e.user_id) == me).cloned();
@@ -375,7 +417,7 @@ pub async fn all_time(conn: &Connection) -> Result<Vec<AllTimeEntry>, ServerFnEr
     let mut list = Vec::new();
     while let Some(row) = rows.next().await.map_err(db_err)? {
         list.push(AllTimeEntry {
-            rank: list.len() as i64 + 1,
+            rank: count(list.len() + 1),
             user_id: row.get(0).map_err(db_err)?,
             name: row.get(1).map_err(db_err)?,
             guest: row.get::<Option<String>>(2).map_err(db_err)?.is_none(),
@@ -400,10 +442,12 @@ pub async fn all_time(conn: &Connection) -> Result<Vec<AllTimeEntry>, ServerFnEr
         )
         .await
         .map_err(db_err)?;
-    let mut days: std::collections::HashMap<i64, Vec<i64>> = Default::default();
+    let mut days: HashMap<i64, Vec<i64>> = HashMap::new();
     while let Some(row) = rows.next().await.map_err(db_err)? {
         let user: i64 = row.get(0).map_err(db_err)?;
-        days.entry(user).or_default().push(row.get(1).map_err(db_err)?);
+        days.entry(user)
+            .or_default()
+            .push(row.get(1).map_err(db_err)?);
     }
     let today = today();
     for entry in &mut list {
@@ -439,7 +483,7 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
     }
     let best_time_ms = finished.iter().map(|f| f.1).min();
     let average_time_ms = (!finished.is_empty())
-        .then(|| finished.iter().map(|f| f.1).sum::<i64>() / finished.len() as i64);
+        .then(|| finished.iter().map(|f| f.1).sum::<i64>() / count(finished.len()));
 
     let recent = (today - RECENT_DAYS + 1..=today)
         .map(|day| {
@@ -453,7 +497,7 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
         .collect();
 
     Ok(UserStats {
-        solved: days.len() as i64,
+        solved: count(days.len()),
         current_streak,
         best_streak,
         best_time_ms,
@@ -469,23 +513,37 @@ mod tests {
     use crate::server::db;
 
     /// A fresh database file, removed again when dropped.
-    struct TestDb(std::path::PathBuf, libsql::Database);
+    struct TestDb {
+        path: std::path::PathBuf,
+        /// Kept open for as long as the test runs.
+        _database: libsql::Database,
+    }
 
     impl Drop for TestDb {
         fn drop(&mut self) {
-            let _ = std::fs::remove_file(&self.0);
+            let _ = std::fs::remove_file(&self.path);
         }
     }
 
     async fn test_db() -> (TestDb, Connection) {
-        let name = format!("hashi-test-{}-{}.db", std::process::id(), now_ms() ^ rand_suffix());
+        let name = format!(
+            "hashi-test-{}-{}.db",
+            std::process::id(),
+            now_ms() ^ rand_suffix()
+        );
         let path = std::env::temp_dir().join(name);
         let database = db::open_local(path.to_str().unwrap()).await.unwrap();
         let conn = database.connect().unwrap();
         db::migrate(&conn).await.unwrap();
         // Running the migrations again is a no-op
         db::migrate(&conn).await.unwrap();
-        (TestDb(path, database), conn)
+        (
+            TestDb {
+                path,
+                _database: database,
+            },
+            conn,
+        )
     }
 
     fn rand_suffix() -> i64 {
@@ -543,11 +601,19 @@ mod tests {
         let board = Board::new(daily.puzzle.clone());
 
         // Not started yet
-        assert!(submit(&conn, a, MONDAY, daily.solution.clone(), 10).await.is_err());
+        assert!(
+            submit(&conn, a, MONDAY, daily.solution.clone(), 10)
+                .await
+                .is_err()
+        );
         start(&conn, a, MONDAY).await.unwrap();
         start(&conn, b, MONDAY).await.unwrap();
         // Wrong boards are rejected
-        assert!(submit(&conn, a, MONDAY, board.empty_bridges(), 1).await.is_err());
+        assert!(
+            submit(&conn, a, MONDAY, board.empty_bridges(), 1)
+                .await
+                .is_err()
+        );
         assert!(submit(&conn, a, MONDAY, vec![1], 1).await.is_err());
 
         // b asks for a hint and a check, a doesn't
@@ -559,12 +625,20 @@ mod tests {
         wrong[extra] = daily.solution[extra] + 1;
         assert_eq!(check(&conn, b, MONDAY, wrong).await.unwrap(), vec![extra]);
 
-        let ra = submit(&conn, a, MONDAY, daily.solution.clone(), 20).await.unwrap();
-        let rb = submit(&conn, b, MONDAY, daily.solution.clone(), 25).await.unwrap();
+        let ra = submit(&conn, a, MONDAY, daily.solution.clone(), 20)
+            .await
+            .unwrap();
+        let rb = submit(&conn, b, MONDAY, daily.solution.clone(), 25)
+            .await
+            .unwrap();
         assert!(rb.time_ms >= HINT_PENALTY_MS + CHECK_PENALTY_MS);
         assert_eq!((ra.rank, rb.rank, rb.finishers), (1, 2, 2));
         // Finished is final
-        assert!(submit(&conn, a, MONDAY, daily.solution.clone(), 20).await.is_err());
+        assert!(
+            submit(&conn, a, MONDAY, daily.solution.clone(), 20)
+                .await
+                .is_err()
+        );
         assert!(hint(&conn, a, MONDAY, board.empty_bridges()).await.is_err());
 
         let board = leaderboard(&conn, MONDAY, Some(b)).await.unwrap();
@@ -584,7 +658,13 @@ mod tests {
         let attempt = attempt(&conn, id, MONDAY).await.unwrap().unwrap();
         assert!(attempt.revealed && attempt.finished());
         assert_eq!(finishers(&conn, MONDAY).await.unwrap(), 0);
-        assert!(leaderboard(&conn, MONDAY, Some(id)).await.unwrap().me.is_none());
+        assert!(
+            leaderboard(&conn, MONDAY, Some(id))
+                .await
+                .unwrap()
+                .me
+                .is_none()
+        );
     }
 
     #[tokio::test]
@@ -594,7 +674,12 @@ mod tests {
         let b = user(&conn, "bob", Some("bob")).await;
         let today = today();
         // alice: 3 days in a row up to yesterday, bob: one day
-        for (u, day, time) in [(a, today - 3, 90_000), (a, today - 2, 80_000), (a, today - 1, 70_000), (b, today - 1, 60_000)] {
+        for (u, day, time) in [
+            (a, today - 3, 90_000),
+            (a, today - 2, 80_000),
+            (a, today - 1, 70_000),
+            (b, today - 1, 60_000),
+        ] {
             conn.execute(
                 "INSERT INTO attempts (user_id, day, started_at, finished_at, time_ms) VALUES (?1, ?2, 0, ?3, ?3)",
                 params![u, day, time],

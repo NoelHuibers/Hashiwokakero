@@ -19,14 +19,14 @@ struct TabsListCtx {
 /*                       Enums                                */
 /* ========================================================== */
 
-#[derive(Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum TabsVariant {
     #[default]
     Default,
     Line,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum TabsOrientation {
     #[default]
     Horizontal,
@@ -48,7 +48,15 @@ pub fn Tabs(
     provide_context(TabsCtx { selected });
 
     let is_horizontal = orientation == TabsOrientation::Horizontal;
-    let class = tw_merge!("group/tabs flex gap-2", if is_horizontal { "flex-col" } else { "flex-row" }, class);
+    let class = tw_merge!(
+        "group/tabs flex gap-2",
+        if is_horizontal {
+            "flex-col"
+        } else {
+            "flex-row"
+        },
+        class
+    );
 
     view! {
         <div class=class data-name="Tabs" data-orientation=if is_horizontal { "Horizontal" } else { "Vertical" }>
@@ -71,7 +79,11 @@ pub fn TabsList(
         // Orientation via group-data on parent Tabs element (works — Tailwind scans static strings)
         "group-data-[orientation=Horizontal]/tabs:h-8",
         "group-data-[orientation=Vertical]/tabs:h-fit group-data-[orientation=Vertical]/tabs:flex-col",
-        if is_line { "gap-1 bg-transparent rounded-none p-0" } else { "bg-muted" },
+        if is_line {
+            "gap-1 bg-transparent rounded-none p-0"
+        } else {
+            "bg-muted"
+        },
         class
     );
 

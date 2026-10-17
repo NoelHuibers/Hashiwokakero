@@ -11,7 +11,7 @@ pub fn Petals(#[prop(default = 42)] count: usize) -> impl IntoView {
         seed ^= seed << 13;
         seed ^= seed >> 17;
         seed ^= seed << 5;
-        (seed % 10_000) as f64 / 10_000.0
+        f64::from(seed % 10_000) / 10_000.0
     };
     (0..count)
         .map(|_| {
@@ -34,6 +34,10 @@ pub fn Petals(#[prop(default = 42)] count: usize) -> impl IntoView {
 
 /// The stamp shown on top of the board when a puzzle is finished.
 #[component]
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "Leptos components take their props by value"
+)]
 pub fn Stamp(#[prop(into)] kanji: String, #[prop(into, optional)] class: String) -> impl IntoView {
     view! {
         <span

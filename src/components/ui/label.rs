@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use tw_merge::*;
+use tw_merge::tw_merge;
 
 #[component]
 pub fn Label(
@@ -7,10 +7,10 @@ pub fn Label(
     #[prop(optional, into)] html_for: String,
     children: Children,
 ) -> impl IntoView {
-    let peer_classes = if !html_for.is_empty() {
-        format!("peer-disabled/{}:cursor-not-allowed peer-disabled/{}:opacity-50", html_for, html_for)
-    } else {
+    let peer_classes = if html_for.is_empty() {
         "peer-disabled:cursor-not-allowed peer-disabled:opacity-50".to_string()
+    } else {
+        format!("peer-disabled/{html_for}:cursor-not-allowed peer-disabled/{html_for}:opacity-50")
     };
 
     let class = tw_merge!(

@@ -42,7 +42,9 @@ mod imp {
     use std::cell::{Cell, RefCell};
 
     use leptos::prelude::{IntervalHandle, set_interval_with_handle};
-    use web_sys::{AudioContext, AudioContextState, AudioNode, BiquadFilterType, GainNode, OscillatorType};
+    use web_sys::{
+        AudioContext, AudioContextState, AudioNode, BiquadFilterType, GainNode, OscillatorType,
+    };
 
     use super::Sfx;
 
@@ -135,20 +137,42 @@ mod imp {
     }
 
     /// One note: `f0` gliding to `f1`, with a quick attack and an exponential decay.
-    #[allow(clippy::too_many_arguments)]
-    fn note(audio: &Audio, dest: &AudioNode, wave: OscillatorType, f0: f64, f1: f64, at: f64, length: f64, volume: f32) {
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "one argument per property of the note, a struct would only add noise"
+    )]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "audible frequencies lose nothing as the f32 that Web Audio parameters take"
+    )]
+    fn note(
+        audio: &Audio,
+        dest: &AudioNode,
+        wave: OscillatorType,
+        f0: f64,
+        f1: f64,
+        at: f64,
+        length: f64,
+        volume: f32,
+    ) {
         let ctx = &audio.ctx;
-        let (Ok(osc), Ok(gain)) = (ctx.create_oscillator(), ctx.create_gain()) else { return };
+        let (Ok(osc), Ok(gain)) = (ctx.create_oscillator(), ctx.create_gain()) else {
+            return;
+        };
         osc.set_type(wave);
         let _ = osc.frequency().set_value_at_time(f0 as f32, at);
         if (f1 - f0).abs() > 0.5 {
-            let _ = osc.frequency().exponential_ramp_to_value_at_time(f1 as f32, at + length * 0.6);
+            let _ = osc
+                .frequency()
+                .exponential_ramp_to_value_at_time(f1 as f32, at + length * 0.6);
         }
         let g = gain.gain();
         let _ = g.set_value_at_time(0.0, at);
         let _ = g.linear_ramp_to_value_at_time(volume, at + 0.006);
         let _ = g.exponential_ramp_to_value_at_time(0.0001, at + length);
-        if osc.connect_with_audio_node(&gain).is_err() || gain.connect_with_audio_node(dest).is_err() {
+        if osc.connect_with_audio_node(&gain).is_err()
+            || gain.connect_with_audio_node(dest).is_err()
+        {
             return;
         }
         let _ = osc.start_with_when(at);
@@ -177,18 +201,54 @@ mod imp {
                 Sfx::Remove => note(audio, dest, tri, 523.0, 330.0, t, 0.14, 0.4),
                 Sfx::Blocked => note(audio, dest, sq, 140.0, 110.0, t, 0.16, 0.12),
                 Sfx::Island => {
-                    note(audio, dest, sine, scale_freq(13), scale_freq(13), t, 0.25, 0.3);
-                    note(audio, dest, sine, scale_freq(15), scale_freq(15), t + 0.08, 0.35, 0.3);
+                    note(
+                        audio,
+                        dest,
+                        sine,
+                        scale_freq(13),
+                        scale_freq(13),
+                        t,
+                        0.25,
+                        0.3,
+                    );
+                    note(
+                        audio,
+                        dest,
+                        sine,
+                        scale_freq(15),
+                        scale_freq(15),
+                        t + 0.08,
+                        0.35,
+                        0.3,
+                    );
                 }
                 Sfx::Hint => {
-                    for (i, d) in [12, 14, 17].into_iter().enumerate() {
+                    for (i, d) in (0u8..).zip([12, 14, 17]) {
                         let f = scale_freq(d);
-                        note(audio, dest, tri, f, f, t + 0.07 * i as f64, 0.2, 0.25);
+                        note(audio, dest, tri, f, f, t + 0.07 * f64::from(i), 0.2, 0.25);
                     }
                 }
                 Sfx::Correct => {
-                    note(audio, dest, sine, scale_freq(10), scale_freq(10), t, 0.2, 0.3);
-                    note(audio, dest, sine, scale_freq(13), scale_freq(13), t + 0.1, 0.3, 0.3);
+                    note(
+                        audio,
+                        dest,
+                        sine,
+                        scale_freq(10),
+                        scale_freq(10),
+                        t,
+                        0.2,
+                        0.3,
+                    );
+                    note(
+                        audio,
+                        dest,
+                        sine,
+                        scale_freq(13),
+                        scale_freq(13),
+                        t + 0.1,
+                        0.3,
+                        0.3,
+                    );
                 }
                 Sfx::Wrong => {
                     note(audio, dest, sq, 220.0, 220.0, t, 0.14, 0.1);
@@ -196,9 +256,9 @@ mod imp {
                 }
                 Sfx::Win => {
                     // Up the In scale, then a ringing chord
-                    for (i, d) in [5, 7, 8, 10, 12, 13, 15].into_iter().enumerate() {
+                    for (i, d) in (0u8..).zip([5, 7, 8, 10, 12, 13, 15]) {
                         let f = scale_freq(d);
-                        note(audio, dest, tri, f, f, t + 0.09 * i as f64, 0.35, 0.3);
+                        note(audio, dest, tri, f, f, t + 0.09 * f64::from(i), 0.35, 0.3);
                     }
                     for d in [10, 13, 15] {
                         let f = scale_freq(d);
@@ -217,7 +277,11 @@ mod imp {
         MUSIC.set(on);
         if on {
             // Only possible after a gesture; `unlock` starts it then
-            let ready = AUDIO.with(|a| a.borrow().as_ref().is_some_and(|a| a.ctx.state() == AudioContextState::Running));
+            let ready = AUDIO.with(|a| {
+                a.borrow()
+                    .as_ref()
+                    .is_some_and(|a| a.ctx.state() == AudioContextState::Running)
+            });
             if ready {
                 start_music();
             }
@@ -266,42 +330,87 @@ mod imp {
 
     /// Schedules the melody a little ahead of the audio clock.
     fn compose() {
-        AUDIO.with(|a| {
-            let a = a.borrow();
-            let Some(audio) = a.as_ref() else { return };
+        AUDIO.with(|cell| {
+            let state = cell.borrow();
+            let Some(audio) = state.as_ref() else { return };
             let now = audio.ctx.current_time();
             let dest: &AudioNode = &audio.music;
-            COMPOSER.with(|c| {
-                let mut c = c.borrow_mut();
+            COMPOSER.with(|composer| {
+                let mut c = composer.borrow_mut();
                 // After a pause in the tab, start fresh instead of catching up
                 if c.next < now {
                     c.next = now + 0.05;
                 }
+                #[expect(
+                    clippy::while_float,
+                    reason = "schedules steps until the lookahead on the audio clock, the float is \
+                              a time and not a loop counter"
+                )]
                 while c.next < now + LOOKAHEAD {
-                    let t = c.next;
+                    let at = c.next;
                     if c.step % 32 == 0 {
                         // A low drone on D or A
-                        let d = if random() < 0.6 { -5 } else { -2 };
-                        let f = scale_freq(d);
-                        note(audio, dest, OscillatorType::Sine, f, f, t, 6.0, 0.22);
+                        let drone = scale_freq(if random() < 0.6 { -5 } else { -2 });
+                        note(
+                            audio,
+                            dest,
+                            OscillatorType::Sine,
+                            drone,
+                            drone,
+                            at,
+                            6.0,
+                            0.22,
+                        );
                     }
                     if c.rest > 0 {
                         c.rest -= 1;
                     } else if random() < 0.62 {
-                        let r = random();
-                        let step = if r < 0.4 { 1 } else if r < 0.8 { -1 } else if r < 0.9 { 2 } else { -2 };
+                        let roll = random();
+                        let step = if roll < 0.4 {
+                            1
+                        } else if roll < 0.8 {
+                            -1
+                        } else if roll < 0.9 {
+                            2
+                        } else {
+                            -2
+                        };
                         c.degree = (c.degree + step).clamp(4, 14);
-                        let f = scale_freq(c.degree);
-                        note(audio, dest, OscillatorType::Triangle, f, f, t, 1.8, 0.2);
+                        let melody = scale_freq(c.degree);
+                        note(
+                            audio,
+                            dest,
+                            OscillatorType::Triangle,
+                            melody,
+                            melody,
+                            at,
+                            1.8,
+                            0.2,
+                        );
                         if random() < 0.12 {
-                            let g = scale_freq(c.degree - 2);
-                            note(audio, dest, OscillatorType::Sine, g, g, t + 0.02, 1.4, 0.12);
+                            let below = scale_freq(c.degree - 2);
+                            note(
+                                audio,
+                                dest,
+                                OscillatorType::Sine,
+                                below,
+                                below,
+                                at + 0.02,
+                                1.4,
+                                0.12,
+                            );
                         }
                     }
                     c.step += 1;
                     // Phrases of eight steps, with a breath in between
                     if c.step % 8 == 0 && random() < 0.5 {
-                        c.rest = 2 + (random() * 3.0) as u32;
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            clippy::cast_sign_loss,
+                            reason = "`random()` is in [0, 1), so this floors to 0, 1 or 2"
+                        )]
+                        let breath = (random() * 3.0) as u32;
+                        c.rest = 2 + breath;
                     }
                     c.next += STEP;
                 }

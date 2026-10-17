@@ -3,9 +3,9 @@
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    use axum::Router;
     use axum::extract::Request;
     use axum::middleware::{self, Next};
-    use axum::Router;
     use hashi::app::{App, shell};
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, generate_route_list};
@@ -24,36 +24,49 @@ async fn main() {
     let routes = generate_route_list(App);
     let hash_files = leptos_options.hash_files;
 
-    let app = Router::new()
-        .route(
-            "/sitemap.xml",
-            axum::routing::get(|| async {
-                ([(axum::http::header::CONTENT_TYPE, "application/xml")], hashi::seo::sitemap())
-            }),
-        )
-        // The SAT Dojo: uploads, reports from the worker, house entries (see server/dojo.rs)
-        .route(
-            "/dojo/submit",
-            axum::routing::post(hashi::server::dojo::submit_handler)
-                .layer(axum::extract::DefaultBodyLimit::max(dojo::MAX_WASM_BYTES + 64 * 1024)),
-        )
-        .route("/dojo/report", axum::routing::post(hashi::server::dojo::report_handler))
-        .route("/dojo/board.json", axum::routing::get(hashi::server::dojo::board_json))
-        .route(
-            "/dojo/house",
-            axum::routing::post(hashi::server::dojo::house_handler)
-                .layer(axum::extract::DefaultBodyLimit::max(dojo::MAX_WASM_BYTES)),
-        )
-        .leptos_routes(&leptos_options, routes, {
-            let leptos_options = leptos_options.clone();
-            move || shell(leptos_options.clone())
-        })
-        .fallback(leptos_axum::file_and_error_handler(shell))
-        .layer(middleware::from_fn(move |req: Request, next: Next| async move {
-            cache_control(hash_files, req, next).await
-        }))
-        .layer(CompressionLayer::new())
-        .with_state(leptos_options);
+    let app =
+        Router::new()
+            .route(
+                "/sitemap.xml",
+                axum::routing::get(|| async {
+                    (
+                        [(axum::http::header::CONTENT_TYPE, "application/xml")],
+                        hashi::seo::sitemap(),
+                    )
+                }),
+            )
+            // The SAT Dojo: uploads, reports from the worker, house entries (see server/dojo.rs)
+            .route(
+                "/dojo/submit",
+                axum::routing::post(hashi::server::dojo::submit_handler).layer(
+                    axum::extract::DefaultBodyLimit::max(dojo::MAX_WASM_BYTES + 64 * 1024),
+                ),
+            )
+            .route(
+                "/dojo/report",
+                axum::routing::post(hashi::server::dojo::report_handler),
+            )
+            .route(
+                "/dojo/board.json",
+                axum::routing::get(hashi::server::dojo::board_json),
+            )
+            .route(
+                "/dojo/house",
+                axum::routing::post(hashi::server::dojo::house_handler)
+                    .layer(axum::extract::DefaultBodyLimit::max(dojo::MAX_WASM_BYTES)),
+            )
+            .leptos_routes(&leptos_options, routes, {
+                let leptos_options = leptos_options.clone();
+                move || shell(leptos_options.clone())
+            })
+            .fallback(leptos_axum::file_and_error_handler(shell))
+            .layer(middleware::from_fn(
+                move |req: Request, next: Next| async move {
+                    cache_control(hash_files, req, next).await
+                },
+            ))
+            .layer(CompressionLayer::new())
+            .with_state(leptos_options);
 
     let listener = tokio::net::TcpListener::bind(&addr)
         .await

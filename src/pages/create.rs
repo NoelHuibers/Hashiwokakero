@@ -1,24 +1,30 @@
 use common::{Board, Difficulty, GenerateParams, MAX_SIZE, MIN_SIZE, Pos, Puzzle, SolveOutcome};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
 use crate::api::generate_puzzle;
 use crate::components::board::{BoardMode, BoardView, CellAction};
+use crate::components::layout::use_localized;
 use crate::components::solver_panel::{PanelButton, SolverPanel};
 use crate::components::ui::alert::{Alert, AlertDescription, AlertTitle};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::label::Label;
-use crate::components::layout::use_localized;
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::{difficulty_name, error_text};
-use crate::state::{self, Editor, Game, Settings, Source, ToastKind, download, random_seed, toast};
 use crate::seo::PageMeta;
+use crate::state::{self, Editor, Game, Settings, Source, ToastKind, download, random_seed, toast};
 
 #[component]
-fn SizeInput(id: &'static str, #[prop(into)] label: Signal<String>, #[prop(into)] value: Signal<u8>, on_change: Callback<u8>) -> impl IntoView {
+fn SizeInput(
+    id: &'static str,
+    #[prop(into)] label: Signal<String>,
+    #[prop(into)] value: Signal<u8>,
+    on_change: Callback<u8>,
+) -> impl IntoView {
     let id = format!("size-{id}");
     view! {
         <div class="flex flex-col gap-2">
@@ -50,8 +56,8 @@ fn warnings(locale: Locale, puzzle: &Puzzle) -> Vec<String> {
     }
     let board = Board::new(puzzle.clone());
     for (i, island) in puzzle.islands.iter().enumerate() {
-        let max = board.incident[i].len() as u8 * 2;
-        if max < island.required {
+        let max = board.incident[i].len() * 2;
+        if max < usize::from(island.required) {
             out.push(
                 td_string!(
                     locale,
@@ -65,9 +71,9 @@ fn warnings(locale: Locale, puzzle: &Puzzle) -> Vec<String> {
             );
         }
     }
-    let total: u32 = puzzle.islands.iter().map(|i| i.required as u32).sum();
+    let total: u32 = puzzle.islands.iter().map(|i| u32::from(i.required)).sum();
     if total % 2 == 1 {
-        out.push(td_string!(locale, create.warning_odd, total).to_string());
+        out.push(td_string!(locale, create.warning_odd, total));
     }
     out.truncate(4);
     out
@@ -85,7 +91,11 @@ pub fn CreatePage() -> impl IntoView {
     let board = Memo::new(move |_| Board::new(editor.puzzle.get()));
     let bridges = Signal::derive(move || {
         let n = board.with(|b| b.edges.len());
-        editor.solution.get().filter(|s| s.len() == n).unwrap_or_else(|| vec![0; n])
+        editor
+            .solution
+            .get()
+            .filter(|s| s.len() == n)
+            .unwrap_or_else(|| vec![0; n])
     });
     let generating = RwSignal::new(false);
     let width = Signal::derive(move || editor.puzzle.with(|p| p.width));
@@ -111,23 +121,40 @@ pub fn CreatePage() -> impl IntoView {
                 (CellAction::Set(n), _) => n.min(8),
             };
             p.set(pos, next);
-        })
+        });
     });
 
     let solve = move |unique: bool| {
         let puzzle = editor.puzzle.get_untracked();
         let config = settings.solver.get_untracked();
         spawn_local(async move {
-            let solution = state::run_solver(puzzle.clone(), config, unique, editor.report, editor.solving).await;
+            let solution = state::run_solver(
+                puzzle.clone(),
+                config,
+                unique,
+                editor.report,
+                editor.solving,
+            )
+            .await;
             // Ignore the result if the puzzle was edited meanwhile
             if editor.puzzle.with_untracked(|p| *p == puzzle) {
                 editor.solution.set(solution);
-                let outcome = editor.report.with_untracked(|r| r.as_ref().map(|r| r.outcome.clone()));
-                if unique && let Some(SolveOutcome::Solved { unique: Some(u), .. }) = outcome {
+                let outcome = editor
+                    .report
+                    .with_untracked(|r| r.as_ref().map(|r| r.outcome.clone()));
+                if unique
+                    && let Some(SolveOutcome::Solved {
+                        unique: Some(u), ..
+                    }) = outcome
+                {
                     if u {
-                        toast(ToastKind::Success, |l| td_string!(l, create.unique).to_string());
+                        toast(ToastKind::Success, |l| {
+                            td_string!(l, create.unique).to_string()
+                        });
                     } else {
-                        toast(ToastKind::Info, |l| td_string!(l, create.not_unique).to_string());
+                        toast(ToastKind::Info, |l| {
+                            td_string!(l, create.not_unique).to_string()
+                        });
                     }
                 }
             }
@@ -156,19 +183,31 @@ pub fn CreatePage() -> impl IntoView {
 
     let file_input = NodeRef::<leptos::html::Input>::new();
     let import = move |_| {
-        let Some(input) = file_input.get_untracked() else { return };
-        let Some(file) = input.files().and_then(|f| f.get(0)) else { return };
+        let Some(input) = file_input.get_untracked() else {
+            return;
+        };
+        let Some(file) = input.files().and_then(|f| f.get(0)) else {
+            return;
+        };
         let name = file.name();
         input.set_value("");
         spawn_local(async move {
             let text = wasm_bindgen_futures::JsFuture::from(file.text()).await;
-            match text.ok().and_then(|t| t.as_string()).map(|t| Puzzle::parse_txt(&t)) {
+            match text
+                .ok()
+                .and_then(|t| t.as_string())
+                .map(|t| Puzzle::parse_txt(&t))
+            {
                 Some(Ok(puzzle)) => {
                     editor.edit(|p| *p = puzzle);
-                    toast(ToastKind::Success, move |l| td_string!(l, create.imported, name = name.clone()).to_string());
+                    toast(ToastKind::Success, move |l| {
+                        td_string!(l, create.imported, name = name.clone())
+                    });
                 }
                 Some(Err(e)) => toast(ToastKind::Error, move |_| format!("{name}: {e}")),
-                None => toast(ToastKind::Error, move |l| td_string!(l, create.unreadable, name = name.clone()).to_string()),
+                None => toast(ToastKind::Error, move |l| {
+                    td_string!(l, create.unreadable, name = name.clone())
+                }),
             }
         });
     };
@@ -176,12 +215,14 @@ pub fn CreatePage() -> impl IntoView {
     let play = move |_| {
         let puzzle = editor.puzzle.get_untracked();
         let solution = editor.solution.get_untracked();
-        let unique = editor.report.with_untracked(|r| match r.as_ref().map(|r| &r.outcome) {
-            Some(SolveOutcome::Solved { unique, .. }) => *unique,
-            _ => None,
-        });
+        let unique = editor
+            .report
+            .with_untracked(|r| match r.as_ref().map(|r| &r.outcome) {
+                Some(SolveOutcome::Solved { unique, .. }) => *unique,
+                _ => None,
+            });
         game.set_puzzle(puzzle, solution, unique, Source::Custom);
-        navigate(&practice_path(), Default::default());
+        navigate(&practice_path(), NavigateOptions::default());
     };
 
     view! {
@@ -221,7 +262,7 @@ pub fn CreatePage() -> impl IntoView {
                                 let title = move || match b {
                                     None => t_string!(i18n, create.brush.count_up).to_string(),
                                     Some(0) => t_string!(i18n, create.brush.erase).to_string(),
-                                    Some(n) => t_string!(i18n, create.brush.place, number = n).to_string(),
+                                    Some(n) => t_string!(i18n, create.brush.place, number = n),
                                 };
                                 view! {
                                     <button
@@ -281,7 +322,7 @@ pub fn CreatePage() -> impl IntoView {
                             <CardDescription>
                                 {move || {
                                     let n = editor.puzzle.with(|p| p.islands.len());
-                                    t_string!(i18n, create.grid_size, width = width.get(), height = height.get(), count = n).to_string()
+                                    t_string!(i18n, create.grid_size, width = width.get(), height = height.get(), count = n)
                                 }}
                             </CardDescription>
                         </CardHeader>
@@ -292,7 +333,7 @@ pub fn CreatePage() -> impl IntoView {
                                     label=Signal::derive(move || t_string!(i18n, create.width).to_string())
                                     value=width
                                     on_change=Callback::new(move |w| {
-                                        editor.edit(|p| *p = p.resized(w, p.height))
+                                        editor.edit(|p| *p = p.resized(w, p.height));
                                     })
                                 />
                                 <SizeInput
@@ -300,7 +341,7 @@ pub fn CreatePage() -> impl IntoView {
                                     label=Signal::derive(move || t_string!(i18n, create.height).to_string())
                                     value=height
                                     on_change=Callback::new(move |h| {
-                                        editor.edit(|p| *p = p.resized(p.width, h))
+                                        editor.edit(|p| *p = p.resized(p.width, h));
                                     })
                                 />
                             </div>
@@ -345,7 +386,7 @@ pub fn CreatePage() -> impl IntoView {
                                     class="w-full"
                                     attr:disabled=move || empty.get()
                                     on:click=move |_| {
-                                        download("hashi.txt", &editor.puzzle.get_untracked().to_txt(), "text/plain")
+                                        download("hashi.txt", &editor.puzzle.get_untracked().to_txt(), "text/plain");
                                     }
                                 >
                                     {t!(i18n, create.export)}
@@ -377,20 +418,20 @@ pub fn CreatePage() -> impl IntoView {
                         <PanelButton
                             primary=true
                             disabled=Signal::derive(move || busy.get() || empty.get())
-                            on_click=Callback::new(move |_| solve(false))
+                            on_click=Callback::new(move |()| solve(false))
                         >
                             {t!(i18n, common.game.solve)} " 解く"
                         </PanelButton>
                         <PanelButton
                             disabled=Signal::derive(move || busy.get() || empty.get())
-                            on_click=Callback::new(move |_| solve(true))
+                            on_click=Callback::new(move |()| solve(true))
                         >
                             {t!(i18n, common.game.unique)}
                         </PanelButton>
                         <PanelButton
                             disabled=Signal::derive(move || busy.get() || empty.get())
-                            on_click=Callback::new(move |_| {
-                                crate::pages::download_cnf(editor.puzzle.get_untracked())
+                            on_click=Callback::new(move |()| {
+                                crate::pages::download_cnf(editor.puzzle.get_untracked());
                             })
                         >
                             "CNF ↓"

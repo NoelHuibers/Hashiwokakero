@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use strum::AsRefStr;
 use tw_merge::tw_merge;
 
-#[derive(Default, Clone, Copy, PartialEq, Eq, AsRefStr)]
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq, AsRefStr)]
 #[strum(serialize_all = "lowercase")]
 pub enum InputType {
     #[default]
@@ -26,6 +26,10 @@ pub enum InputType {
 }
 
 #[component]
+#[expect(
+    clippy::fn_params_excessive_bools,
+    reason = "the props mirror the boolean attributes of the HTML input element"
+)]
 pub fn Input(
     // Styling
     #[prop(into, optional)] class: String,

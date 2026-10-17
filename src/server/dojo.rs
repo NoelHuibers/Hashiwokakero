@@ -22,7 +22,7 @@ use sha2::{Digest, Sha256};
 
 use super::auth::{self, User};
 use super::db::{self, db_err};
-use super::now_ms;
+use super::{count, hex, now_ms};
 use crate::model::{DojoBoard, DojoEntry, DojoMe, DojoRow, DojoState, DojoSubmission, MS_PER_DAY};
 
 /// Submissions per account and day (house entries don't count).
@@ -38,14 +38,17 @@ const MAX_RUNNING: i64 = 2;
 const BOARD_SIZE: usize = 100;
 
 pub fn season() -> u32 {
-    std::env::var("DOJO_SEASON").ok().and_then(|s| s.parse().ok()).unwrap_or(1)
+    std::env::var("DOJO_SEASON")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1)
 }
 
 /// The secret seed of a season's hidden set.
 pub fn test_seed(season: u32) -> String {
     let secret = std::env::var("DOJO_SECRET").unwrap_or_else(|_| "hashi-dojo-local".into());
     let digest = Sha256::digest(format!("{secret}:season:{season}").as_bytes());
-    digest.iter().map(|b| format!("{b:02x}")).collect()
+    hex(&digest)
 }
 
 fn token() -> Option<String> {
@@ -82,9 +85,11 @@ async fn ranked(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, Server
         if !house && !seen.insert(user) {
             continue;
         }
-        let Some(score) = score_of(row.get(4).map_err(db_err)?) else { continue };
+        let Some(score) = score_of(row.get(4).map_err(db_err)?) else {
+            continue;
+        };
         entries.push(DojoEntry {
-            rank: entries.len() as u32 + 1,
+            rank: u32::try_from(entries.len() + 1).unwrap_or(u32::MAX),
             id,
             name: row.get(1).map_err(db_err)?,
             author: row.get(2).map_err(db_err)?,
@@ -103,10 +108,13 @@ pub async fn board(conn: &Connection) -> Result<DojoBoard, ServerFnError> {
     let season = season();
     let entries = ranked(conn, season).await?;
     let mut rows = conn
-        .query("SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running')", ())
+        .query(
+            "SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running')",
+            (),
+        )
         .await
         .map_err(db_err)?;
-    let queued: i64 = match rows.next().await.map_err(db_err)? {
+    let queued: u32 = match rows.next().await.map_err(db_err)? {
         Some(row) => row.get(0).map_err(db_err)?,
         None => 0,
     };
@@ -115,11 +123,15 @@ pub async fn board(conn: &Connection) -> Result<DojoBoard, ServerFnError> {
         formulas: dojo::SET_SIZE,
         budget: DEFAULT_BUDGET,
         entries,
-        queued: queued as u32,
+        queued,
     })
 }
 
-pub async fn submission(conn: &Connection, id: i64, me: Option<i64>) -> Result<Option<DojoSubmission>, ServerFnError> {
+pub async fn submission(
+    conn: &Connection,
+    id: i64,
+    me: Option<i64>,
+) -> Result<Option<DojoSubmission>, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT s.id, s.name, s.description, s.source_url, COALESCE(u.username, u.name, 'Hashi'), s.house,
@@ -132,8 +144,12 @@ pub async fn submission(conn: &Connection, id: i64, me: Option<i64>) -> Result<O
     let Some(row) = rows.next().await.map_err(db_err)? else {
         return Ok(None);
     };
-    let season: u32 = row.get::<i64>(8).map_err(db_err)? as u32;
-    let rank = ranked(conn, season).await?.into_iter().find(|e| e.id == id).map(|e| e.rank);
+    let season: u32 = row.get(8).map_err(db_err)?;
+    let rank = ranked(conn, season)
+        .await?
+        .into_iter()
+        .find(|e| e.id == id)
+        .map(|e| e.rank);
     let user: Option<i64> = row.get(15).map_err(db_err)?;
     let error: Option<String> = row.get(12).map_err(db_err)?;
     Ok(Some(DojoSubmission {
@@ -146,8 +162,8 @@ pub async fn submission(conn: &Connection, id: i64, me: Option<i64>) -> Result<O
         created_at: row.get(6).map_err(db_err)?,
         state: DojoState::from_id(&row.get::<String>(7).map_err(db_err)?),
         season,
-        progress: row.get::<i64>(9).map_err(db_err)? as u32,
-        total: row.get::<i64>(10).map_err(db_err)? as u32,
+        progress: row.get(9).map_err(db_err)?,
+        total: row.get(10).map_err(db_err)?,
         score: score_of(row.get(11).map_err(db_err)?),
         rejection: error.and_then(|e| serde_json::from_str(&e).ok()),
         rank,
@@ -166,14 +182,18 @@ async fn submitted_today(conn: &Connection, user: i64) -> Result<u32, ServerFnEr
         .await
         .map_err(db_err)?;
     Ok(match rows.next().await.map_err(db_err)? {
-        Some(row) => row.get::<i64>(0).map_err(db_err)? as u32,
+        Some(row) => row.get::<u32>(0).map_err(db_err)?,
         None => 0,
     })
 }
 
 pub async fn me(conn: &Connection, user: Option<&User>) -> Result<DojoMe, ServerFnError> {
     let Some(user) = user else {
-        return Ok(DojoMe { registered: false, left_today: 0, submissions: Vec::new() });
+        return Ok(DojoMe {
+            registered: false,
+            left_today: 0,
+            submissions: Vec::new(),
+        });
     };
     let mut rows = conn
         .query(
@@ -221,15 +241,15 @@ pub enum SubmitError {
 impl SubmitError {
     pub fn code(self) -> &'static str {
         match self {
-            SubmitError::SignIn => "sign_in",
-            SubmitError::Name => "name",
-            SubmitError::Description => "description",
-            SubmitError::Url => "url",
-            SubmitError::Size => "size",
-            SubmitError::NotWasm => "not_wasm",
-            SubmitError::Duplicate => "duplicate",
-            SubmitError::Limit => "limit",
-            SubmitError::Server => "server",
+            Self::SignIn => "sign_in",
+            Self::Name => "name",
+            Self::Description => "description",
+            Self::Url => "url",
+            Self::Size => "size",
+            Self::NotWasm => "not_wasm",
+            Self::Duplicate => "duplicate",
+            Self::Limit => "limit",
+            Self::Server => "server",
         }
     }
 }
@@ -245,14 +265,19 @@ pub struct Form {
 impl Form {
     fn check(&self) -> Result<(), SubmitError> {
         let name = self.name.trim();
-        if name.is_empty() || name.chars().count() > NAME_MAX || name.chars().any(char::is_control) {
+        if name.is_empty() || name.chars().count() > NAME_MAX || name.chars().any(char::is_control)
+        {
             return Err(SubmitError::Name);
         }
         if self.description.chars().count() > DESCRIPTION_MAX {
             return Err(SubmitError::Description);
         }
         let url = self.source_url.trim();
-        if !url.is_empty() && (!url.starts_with("https://") || url.len() > URL_MAX || url.contains(char::is_whitespace)) {
+        if !url.is_empty()
+            && (!url.starts_with("https://")
+                || url.len() > URL_MAX
+                || url.contains(char::is_whitespace))
+        {
             return Err(SubmitError::Url);
         }
         if self.wasm.len() > MAX_WASM_BYTES {
@@ -267,7 +292,11 @@ impl Form {
 }
 
 /// Stores a submission and queues it. `user` is `None` for house entries.
-pub async fn submit(conn: &Connection, user: Option<&User>, form: Form) -> Result<i64, SubmitError> {
+pub async fn submit(
+    conn: &Connection,
+    user: Option<&User>,
+    form: Form,
+) -> Result<i64, SubmitError> {
     form.check()?;
     let server = |e: libsql::Error| {
         eprintln!("dojo submit: {e}");
@@ -277,14 +306,19 @@ pub async fn submit(conn: &Connection, user: Option<&User>, form: Form) -> Resul
         if user.username.is_none() {
             return Err(SubmitError::SignIn);
         }
-        let today = submitted_today(conn, user.id).await.map_err(|_| SubmitError::Server)?;
+        let today = submitted_today(conn, user.id)
+            .await
+            .map_err(|_| SubmitError::Server)?;
         if today >= PER_DAY {
             return Err(SubmitError::Limit);
         }
     }
-    let sha256: String = Sha256::digest(&form.wasm).iter().map(|b| format!("{b:02x}")).collect();
+    let sha256 = hex(&Sha256::digest(&form.wasm));
     let mut rows = conn
-        .query("SELECT 1 FROM dojo_submissions WHERE sha256 = ?1", params![sha256.clone()])
+        .query(
+            "SELECT 1 FROM dojo_submissions WHERE sha256 = ?1",
+            params![sha256.clone()],
+        )
         .await
         .map_err(server)?;
     if rows.next().await.map_err(server)?.is_some() {
@@ -298,13 +332,13 @@ pub async fn submit(conn: &Connection, user: Option<&User>, form: Form) -> Resul
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, 'queued', ?10)",
         params![
             user.map(|u| u.id),
-            user.is_none() as i64,
+            i64::from(user.is_none()),
             form.name.trim().to_string(),
             form.description.trim().to_string(),
             (!url.is_empty()).then(|| url.to_string()),
             form.wasm.clone(),
             sha256,
-            form.wasm.len() as i64,
+            count(form.wasm.len()),
             now,
             season()
         ],
@@ -335,23 +369,27 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             }
         };
         let name = field.name().unwrap_or_default().to_string();
-        match name.as_str() {
-            "wasm" => match field.bytes().await {
+        if name.as_str() == "wasm" {
+            match field.bytes().await {
                 Ok(bytes) => form.wasm = bytes.to_vec(),
                 Err(_) => too_large = true,
-            },
-            _ => {
-                let text = field.text().await.unwrap_or_default();
-                match name.as_str() {
-                    "name" => form.name = text,
-                    "description" => form.description = text,
-                    "source_url" => form.source_url = text,
-                    // The language prefix to redirect to, e.g. "/de"
-                    "prefix" if text.len() <= 8 && text.chars().all(|c| c == '/' || c == '-' || c.is_ascii_alphabetic()) => {
-                        prefix = text
-                    }
-                    _ => {}
+            }
+        } else {
+            let text = field.text().await.unwrap_or_default();
+            match name.as_str() {
+                "name" => form.name = text,
+                "description" => form.description = text,
+                "source_url" => form.source_url = text,
+                // The language prefix to redirect to, e.g. "/de"
+                "prefix"
+                    if text.len() <= 8
+                        && text
+                            .chars()
+                            .all(|c| c == '/' || c == '-' || c.is_ascii_alphabetic()) =>
+                {
+                    prefix = text;
                 }
+                _ => {}
             }
         }
     }
@@ -380,7 +418,11 @@ fn authorized(headers: &HeaderMap) -> bool {
         .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .is_some_and(|v| {
-            v.len() == expected.len() && v.bytes().zip(expected.bytes()).fold(0, |acc, (a, b)| acc | (a ^ b)) == 0
+            v.len() == expected.len()
+                && v.bytes()
+                    .zip(expected.bytes())
+                    .fold(0, |acc, (a, b)| acc | (a ^ b))
+                    == 0
         })
 }
 
@@ -400,7 +442,7 @@ pub async fn board_json() -> Response {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct HouseQuery {
     name: String,
     #[serde(default)]
@@ -408,7 +450,11 @@ pub struct HouseQuery {
 }
 
 /// `POST /dojo/house?name=` with the token: adds one of our own solvers to the leaderboard.
-pub async fn house_handler(headers: HeaderMap, Query(q): Query<HouseQuery>, wasm: Bytes) -> Response {
+pub async fn house_handler(
+    headers: HeaderMap,
+    Query(q): Query<HouseQuery>,
+    wasm: Bytes,
+) -> Response {
     if !authorized(&headers) {
         return StatusCode::UNAUTHORIZED.into_response();
     }
@@ -435,7 +481,12 @@ pub async fn house_handler(headers: HeaderMap, Query(q): Query<HouseQuery>, wasm
 pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Error> {
     let now = now_ms();
     match report {
-        Report::Progress { id, season, done, total } => {
+        Report::Progress {
+            id,
+            season,
+            done,
+            total,
+        } => {
             conn.execute(
                 "UPDATE dojo_submissions SET state = 'running', progress = ?1, total = ?2, updated_at = ?3
                  WHERE id = ?4 AND season = ?5 AND state IN ('queued', 'running')",
@@ -461,7 +512,11 @@ pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Err
             )
             .await?;
         }
-        Report::Failed { id, season, message } => {
+        Report::Failed {
+            id,
+            season,
+            message,
+        } => {
             eprintln!("dojo #{id}: worker failed: {message}");
             conn.execute(
                 "UPDATE dojo_submissions SET state = 'queued', updated_at = ?1 WHERE id = ?2 AND season = ?3",
@@ -474,7 +529,10 @@ pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Err
 }
 
 /// `POST /dojo/report` from the worker.
-pub async fn report_handler(headers: HeaderMap, axum::Json(report): axum::Json<Report>) -> StatusCode {
+pub async fn report_handler(
+    headers: HeaderMap,
+    axum::Json(report): axum::Json<Report>,
+) -> StatusCode {
     if !authorized(&headers) {
         return StatusCode::UNAUTHORIZED;
     }
@@ -511,11 +569,16 @@ pub async fn housekeeping(conn: &Connection) -> Result<(), libsql::Error> {
 
 /// Sends queued submissions to the worker.
 pub async fn dispatch() -> Result<(), String> {
-    let (Some(url), Some(token)) = (std::env::var("DOJO_URL").ok().filter(|u| !u.is_empty()), token()) else {
+    static BUSY: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    let (Some(url), Some(token)) = (
+        std::env::var("DOJO_URL").ok().filter(|u| !u.is_empty()),
+        token(),
+    ) else {
         return Ok(());
     };
-    static BUSY: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-    let Ok(_guard) = BUSY.try_lock() else { return Ok(()) };
+    let Ok(_guard) = BUSY.try_lock() else {
+        return Ok(());
+    };
     let conn = db::conn().map_err(|e| e.to_string())?;
     housekeeping(&conn).await.map_err(|e| e.to_string())?;
     let client = reqwest::Client::new();
@@ -529,23 +592,35 @@ pub async fn dispatch() -> Result<(), String> {
             )
             .await
             .map_err(|e| e.to_string())?;
-        let Some(row) = rows.next().await.map_err(|e| e.to_string())? else { return Ok(()) };
+        let Some(row) = rows.next().await.map_err(|e| e.to_string())? else {
+            return Ok(());
+        };
         let running: i64 = row.get(0).map_err(|e| e.to_string())?;
-        let Some(id) = row.get::<Option<i64>>(1).map_err(|e| e.to_string())? else { return Ok(()) };
+        let Some(id) = row.get::<Option<i64>>(1).map_err(|e| e.to_string())? else {
+            return Ok(());
+        };
         if running >= MAX_RUNNING {
             return Ok(());
         }
         let mut rows = conn
-            .query("SELECT wasm, season FROM dojo_submissions WHERE id = ?1", params![id])
+            .query(
+                "SELECT wasm, season FROM dojo_submissions WHERE id = ?1",
+                params![id],
+            )
             .await
             .map_err(|e| e.to_string())?;
-        let Some(row) = rows.next().await.map_err(|e| e.to_string())? else { return Ok(()) };
+        let Some(row) = rows.next().await.map_err(|e| e.to_string())? else {
+            return Ok(());
+        };
         let wasm: Vec<u8> = row.get(0).map_err(|e| e.to_string())?;
-        let season = row.get::<i64>(1).map_err(|e| e.to_string())? as u32;
+        let season = row.get::<u32>(1).map_err(|e| e.to_string())?;
         let seed = test_seed(season);
         // The worker machine may have to start first
         let sent = client
-            .post(format!("{}/jobs?id={id}&season={season}&seed={seed}", url.trim_end_matches('/')))
+            .post(format!(
+                "{}/jobs?id={id}&season={season}&seed={seed}",
+                url.trim_end_matches('/')
+            ))
             .bearer_auth(&token)
             .body(wasm)
             .timeout(Duration::from_secs(120))
@@ -553,7 +628,7 @@ pub async fn dispatch() -> Result<(), String> {
             .await;
         let now = now_ms();
         match sent {
-            Ok(r) if r.status() == reqwest::StatusCode::ACCEPTED => {
+            Ok(r) if r.status() == StatusCode::ACCEPTED => {
                 conn.execute(
                     "UPDATE dojo_submissions SET state = 'running', attempts = attempts + 1, updated_at = ?1 WHERE id = ?2",
                     params![now, id],
@@ -561,10 +636,13 @@ pub async fn dispatch() -> Result<(), String> {
                 .await
                 .map_err(|e| e.to_string())?;
             }
-            Ok(r) if r.status() == reqwest::StatusCode::UNPROCESSABLE_ENTITY => {
+            Ok(r) if r.status() == StatusCode::UNPROCESSABLE_ENTITY => {
                 let body = r.bytes().await.unwrap_or_default();
-                let reason = serde_json::from_slice(&body).unwrap_or(Rejection::Invalid(String::new()));
-                apply(&conn, &Report::Rejected { id, season, reason }).await.map_err(|e| e.to_string())?;
+                let reason =
+                    serde_json::from_slice(&body).unwrap_or(Rejection::Invalid(String::new()));
+                apply(&conn, &Report::Rejected { id, season, reason })
+                    .await
+                    .map_err(|e| e.to_string())?;
             }
             Ok(r) => return Err(format!("worker answered {}", r.status())),
             Err(e) => return Err(format!("worker unreachable: {e}")),
@@ -590,7 +668,8 @@ mod tests {
     use dojo::{Answer, Family, Outcome, RunResult};
 
     async fn test_db(name: &str) -> Connection {
-        let path = std::env::temp_dir().join(format!("hashi-dojo-{name}-{}.db", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("hashi-dojo-{name}-{}.db", std::process::id()));
         let _ = std::fs::remove_file(&path);
         let db = db::open_local(path.to_str().unwrap()).await.unwrap();
         let conn = db.connect().unwrap();
@@ -605,19 +684,37 @@ mod tests {
         )
         .await
         .unwrap();
-        User { id: conn.last_insert_rowid(), username: registered.then(|| name.into()), name: name.into(), created_at: 0 }
+        User {
+            id: conn.last_insert_rowid(),
+            username: registered.then(|| name.into()),
+            name: name.into(),
+            created_at: 0,
+        }
     }
 
     fn form(name: &str, extra: u8) -> Form {
-        Form { name: name.into(), wasm: vec![0, b'a', b's', b'm', 1, 0, 0, 0, extra], ..Default::default() }
+        Form {
+            name: name.into(),
+            wasm: vec![0, b'a', b's', b'm', 1, 0, 0, 0, extra],
+            ..Default::default()
+        }
     }
 
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "test PAR-2 values are small and positive"
+    )]
     fn score(par2: f64, wrong: u32) -> Score {
         let results = [RunResult {
             name: "x".into(),
             family: Family::Hashi,
             expected: Answer::Sat,
-            outcome: if wrong > 0 { Outcome::Wrong } else { Outcome::Solved(Answer::Sat) },
+            outcome: if wrong > 0 {
+                Outcome::Wrong
+            } else {
+                Outcome::Solved(Answer::Sat)
+            },
             fuel: (par2 * 1e9) as u64,
             wall_ms: 1,
         }];
@@ -631,44 +728,156 @@ mod tests {
         let guest = user(&conn, "Guest 1", false).await;
         let season = season();
 
-        assert_eq!(submit(&conn, Some(&guest), form("x", 0)).await, Err(SubmitError::SignIn));
-        assert_eq!(submit(&conn, Some(&alice), form("", 0)).await, Err(SubmitError::Name));
-        let bad_url = Form { source_url: "http://x".into(), ..form("x", 0) };
-        assert_eq!(submit(&conn, Some(&alice), bad_url).await, Err(SubmitError::Url));
-        let not_wasm = Form { wasm: b"hello".to_vec(), ..form("x", 0) };
-        assert_eq!(submit(&conn, Some(&alice), not_wasm).await, Err(SubmitError::NotWasm));
+        assert_eq!(
+            submit(&conn, Some(&guest), form("x", 0)).await,
+            Err(SubmitError::SignIn)
+        );
+        assert_eq!(
+            submit(&conn, Some(&alice), form("", 0)).await,
+            Err(SubmitError::Name)
+        );
+        let bad_url = Form {
+            source_url: "http://x".into(),
+            ..form("x", 0)
+        };
+        assert_eq!(
+            submit(&conn, Some(&alice), bad_url).await,
+            Err(SubmitError::Url)
+        );
+        let not_wasm = Form {
+            wasm: b"hello".to_vec(),
+            ..form("x", 0)
+        };
+        assert_eq!(
+            submit(&conn, Some(&alice), not_wasm).await,
+            Err(SubmitError::NotWasm)
+        );
 
         let a1 = submit(&conn, Some(&alice), form("first", 1)).await.unwrap();
-        assert_eq!(submit(&conn, Some(&alice), form("again", 1)).await, Err(SubmitError::Duplicate));
-        let a2 = submit(&conn, Some(&alice), form("second", 2)).await.unwrap();
+        assert_eq!(
+            submit(&conn, Some(&alice), form("again", 1)).await,
+            Err(SubmitError::Duplicate)
+        );
+        let a2 = submit(&conn, Some(&alice), form("second", 2))
+            .await
+            .unwrap();
         let a3 = submit(&conn, Some(&alice), form("third", 3)).await.unwrap();
-        assert_eq!(submit(&conn, Some(&alice), form("fourth", 4)).await, Err(SubmitError::Limit));
+        assert_eq!(
+            submit(&conn, Some(&alice), form("fourth", 4)).await,
+            Err(SubmitError::Limit)
+        );
         let house = submit(&conn, None, form("Hashi CDCL", 5)).await.unwrap();
 
-        apply(&conn, &Report::Progress { id: a1, season, done: 3, total: 34 }).await.unwrap();
-        let s = submission(&conn, a1, Some(alice.id)).await.unwrap().unwrap();
-        assert_eq!((s.state, s.progress, s.total, s.mine), (DojoState::Running, 3, 34, true));
+        apply(
+            &conn,
+            &Report::Progress {
+                id: a1,
+                season,
+                done: 3,
+                total: 34,
+            },
+        )
+        .await
+        .unwrap();
+        let s = submission(&conn, a1, Some(alice.id))
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            (s.state, s.progress, s.total, s.mine),
+            (DojoState::Running, 3, 34, true)
+        );
 
-        apply(&conn, &Report::Finished { id: a1, season, score: score(2.0, 0) }).await.unwrap();
-        apply(&conn, &Report::Finished { id: a2, season, score: score(1.0, 0) }).await.unwrap();
-        apply(&conn, &Report::Finished { id: a3, season, score: score(0.5, 1) }).await.unwrap();
-        apply(&conn, &Report::Finished { id: house, season, score: score(1.5, 0) }).await.unwrap();
+        apply(
+            &conn,
+            &Report::Finished {
+                id: a1,
+                season,
+                score: score(2.0, 0),
+            },
+        )
+        .await
+        .unwrap();
+        apply(
+            &conn,
+            &Report::Finished {
+                id: a2,
+                season,
+                score: score(1.0, 0),
+            },
+        )
+        .await
+        .unwrap();
+        apply(
+            &conn,
+            &Report::Finished {
+                id: a3,
+                season,
+                score: score(0.5, 1),
+            },
+        )
+        .await
+        .unwrap();
+        apply(
+            &conn,
+            &Report::Finished {
+                id: house,
+                season,
+                score: score(1.5, 0),
+            },
+        )
+        .await
+        .unwrap();
         // Stale seasons are ignored
-        apply(&conn, &Report::Finished { id: a1, season: season + 1, score: score(0.1, 0) }).await.unwrap();
+        apply(
+            &conn,
+            &Report::Finished {
+                id: a1,
+                season: season + 1,
+                score: score(0.1, 0),
+            },
+        )
+        .await
+        .unwrap();
 
         let board = board(&conn).await.unwrap();
-        let names: Vec<_> = board.entries.iter().map(|e| (e.rank, e.name.as_str())).collect();
+        let names: Vec<_> = board
+            .entries
+            .iter()
+            .map(|e| (e.rank, e.name.as_str()))
+            .collect();
         // Alice's best (the wrong one is disqualified), then the house entry
         assert_eq!(names, [(1, "second"), (2, "Hashi CDCL")]);
-        assert_eq!(submission(&conn, a2, None).await.unwrap().unwrap().rank, Some(1));
-        assert_eq!(submission(&conn, a1, None).await.unwrap().unwrap().rank, None);
+        assert_eq!(
+            submission(&conn, a2, None).await.unwrap().unwrap().rank,
+            Some(1)
+        );
+        assert_eq!(
+            submission(&conn, a1, None).await.unwrap().unwrap().rank,
+            None
+        );
 
         let me = me(&conn, Some(&alice)).await.unwrap();
-        assert_eq!((me.registered, me.left_today, me.submissions.len()), (true, 0, 3));
+        assert_eq!(
+            (me.registered, me.left_today, me.submissions.len()),
+            (true, 0, 3)
+        );
 
-        apply(&conn, &Report::Rejected { id: house, season, reason: Rejection::NoStart }).await.unwrap();
+        apply(
+            &conn,
+            &Report::Rejected {
+                id: house,
+                season,
+                reason: Rejection::NoStart,
+            },
+        )
+        .await
+        .unwrap();
         let s = submission(&conn, house, None).await.unwrap().unwrap();
-        assert_eq!((s.state, s.rejection), (DojoState::Rejected, Some(Rejection::NoStart)));
+        assert_eq!(
+            (s.state, s.rejection),
+            (DojoState::Rejected, Some(Rejection::NoStart))
+        );
     }
 
     #[tokio::test]
@@ -683,7 +892,10 @@ mod tests {
         .await
         .unwrap();
         housekeeping(&conn).await.unwrap();
-        assert_eq!(submission(&conn, id, None).await.unwrap().unwrap().state, DojoState::Queued);
+        assert_eq!(
+            submission(&conn, id, None).await.unwrap().unwrap().state,
+            DojoState::Queued
+        );
         conn.execute(
             "UPDATE dojo_submissions SET state = 'running', attempts = 3, updated_at = 0 WHERE id = ?1",
             params![id],
@@ -691,6 +903,9 @@ mod tests {
         .await
         .unwrap();
         housekeeping(&conn).await.unwrap();
-        assert_eq!(submission(&conn, id, None).await.unwrap().unwrap().state, DojoState::Failed);
+        assert_eq!(
+            submission(&conn, id, None).await.unwrap().unwrap().state,
+            DojoState::Failed
+        );
     }
 }

@@ -48,7 +48,7 @@ impl AttemptInfo {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DailyInfo {
     pub day: i64,
     pub difficulty: Difficulty,
@@ -61,7 +61,7 @@ pub struct DailyInfo {
     pub finishers: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SubmitResult {
     pub time_ms: i64,
     pub rank: i64,
@@ -79,7 +79,7 @@ pub struct LeaderboardEntry {
     pub checks: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Leaderboard {
     pub day: i64,
     pub difficulty: Difficulty,
@@ -137,26 +137,26 @@ pub enum DojoState {
 impl DojoState {
     pub fn id(self) -> &'static str {
         match self {
-            DojoState::Queued => "queued",
-            DojoState::Running => "running",
-            DojoState::Done => "done",
-            DojoState::Rejected => "rejected",
-            DojoState::Failed => "failed",
+            Self::Queued => "queued",
+            Self::Running => "running",
+            Self::Done => "done",
+            Self::Rejected => "rejected",
+            Self::Failed => "failed",
         }
     }
 
     pub fn from_id(id: &str) -> Self {
         match id {
-            "running" => DojoState::Running,
-            "done" => DojoState::Done,
-            "rejected" => DojoState::Rejected,
-            "failed" => DojoState::Failed,
-            _ => DojoState::Queued,
+            "running" => Self::Running,
+            "done" => Self::Done,
+            "rejected" => Self::Rejected,
+            "failed" => Self::Failed,
+            _ => Self::Queued,
         }
     }
 
     pub fn busy(self) -> bool {
-        matches!(self, DojoState::Queued | DojoState::Running)
+        matches!(self, Self::Queued | Self::Running)
     }
 }
 
@@ -249,46 +249,48 @@ pub enum ApiError {
 }
 
 impl ApiError {
-    pub const ALL: [ApiError; 14] = [
-        ApiError::Database,
-        ApiError::Internal,
-        ApiError::ArchiveOnlyPast,
-        ApiError::PasswordTooShort,
-        ApiError::PasswordTooLong,
-        ApiError::UsernameInvalid,
-        ApiError::UsernameTaken,
-        ApiError::WrongLogin,
-        ApiError::TooManyAttempts,
-        ApiError::SessionExpired,
-        ApiError::NotStarted,
-        ApiError::NotSolved,
-        ApiError::WrongPuzzle,
-        ApiError::AlreadyFinished,
+    pub const ALL: [Self; 14] = [
+        Self::Database,
+        Self::Internal,
+        Self::ArchiveOnlyPast,
+        Self::PasswordTooShort,
+        Self::PasswordTooLong,
+        Self::UsernameInvalid,
+        Self::UsernameTaken,
+        Self::WrongLogin,
+        Self::TooManyAttempts,
+        Self::SessionExpired,
+        Self::NotStarted,
+        Self::NotSolved,
+        Self::WrongPuzzle,
+        Self::AlreadyFinished,
     ];
 
     pub fn code(self) -> &'static str {
         match self {
-            ApiError::Database => "database",
-            ApiError::Internal => "internal",
-            ApiError::ArchiveOnlyPast => "archive_only_past",
-            ApiError::PasswordTooShort => "password_too_short",
-            ApiError::PasswordTooLong => "password_too_long",
-            ApiError::UsernameInvalid => "username_invalid",
-            ApiError::UsernameTaken => "username_taken",
-            ApiError::WrongLogin => "wrong_login",
-            ApiError::TooManyAttempts => "too_many_attempts",
-            ApiError::SessionExpired => "session_expired",
-            ApiError::NotStarted => "not_started",
-            ApiError::NotSolved => "not_solved",
-            ApiError::WrongPuzzle => "wrong_puzzle",
-            ApiError::AlreadyFinished => "already_finished",
+            Self::Database => "database",
+            Self::Internal => "internal",
+            Self::ArchiveOnlyPast => "archive_only_past",
+            Self::PasswordTooShort => "password_too_short",
+            Self::PasswordTooLong => "password_too_long",
+            Self::UsernameInvalid => "username_invalid",
+            Self::UsernameTaken => "username_taken",
+            Self::WrongLogin => "wrong_login",
+            Self::TooManyAttempts => "too_many_attempts",
+            Self::SessionExpired => "session_expired",
+            Self::NotStarted => "not_started",
+            Self::NotSolved => "not_solved",
+            Self::WrongPuzzle => "wrong_puzzle",
+            Self::AlreadyFinished => "already_finished",
         }
     }
 
     /// Finds the `E:<code>` marker in an error message.
     pub fn from_message(message: &str) -> Option<Self> {
         let code = message.split("E:").nth(1)?;
-        let code = code.split(|c: char| !(c.is_ascii_alphanumeric() || c == '_')).next()?;
+        let code = code
+            .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+            .next()?;
         Self::ALL.into_iter().find(|e| e.code() == code)
     }
 }
@@ -296,7 +298,7 @@ impl ApiError {
 #[cfg(feature = "ssr")]
 impl From<ApiError> for leptos::prelude::ServerFnError {
     fn from(e: ApiError) -> Self {
-        leptos::prelude::ServerFnError::new(format!("E:{}", e.code()))
+        Self::new(format!("E:{}", e.code()))
     }
 }
 
@@ -355,6 +357,11 @@ pub fn day_of(ms: i64) -> i64 {
 }
 
 /// (year, month, day) of a day number, Howard Hinnant's `civil_from_days`.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "day of month (1..=31) and month (1..=12) are in range by construction"
+)]
 pub fn civil(day: i64) -> (i64, u32, u32) {
     let z = day + 719_468;
     let era = z.div_euclid(146_097);
@@ -373,8 +380,8 @@ pub fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
     let y = if m <= 2 { y - 1 } else { y };
     let era = y.div_euclid(400);
     let yoe = y.rem_euclid(400);
-    let m = m as i64;
-    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d as i64 - 1;
+    let m = i64::from(m);
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + i64::from(d) - 1;
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     era * 146_097 + doe - 719_468
 }
@@ -398,6 +405,10 @@ pub fn parse_date(s: &str) -> Option<i64> {
 }
 
 /// 0 = Monday … 6 = Sunday
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "`rem_euclid(7)` is in 0..7"
+)]
 pub fn weekday(day: i64) -> usize {
     (day + 3).rem_euclid(7) as usize
 }
@@ -479,7 +490,10 @@ mod tests {
         assert_eq!(date_string(0), "1970-01-01");
         assert_eq!(date_string(LAUNCH_DAY), "2026-10-17");
         assert_eq!(parse_date("2026-10-17"), Some(LAUNCH_DAY));
-        assert_eq!(parse_date("2024-02-29").map(date_string).as_deref(), Some("2024-02-29"));
+        assert_eq!(
+            parse_date("2024-02-29").map(date_string).as_deref(),
+            Some("2024-02-29")
+        );
         assert_eq!(parse_date("2026-02-30"), None);
         assert_eq!(parse_date("nope"), None);
         for day in [-1000, 0, 1, 59, 60, 11_016, LAUNCH_DAY, 100_000] {
