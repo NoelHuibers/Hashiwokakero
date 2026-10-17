@@ -1,746 +1,964 @@
-use rand::seq::SliceRandom;
-use rand::Rng;
-use std::cmp::{max, min};
-use std::fs::File;
-use std::io::{Result, Write};
-use std::ops::Range;
-use std::vec;
+//! Puzzle generator.
+//!
+//! 1. **Grow** a connected bridge network: repeatedly pick a free cell that sees an existing
+//!    island (or the middle of a bridge, which is then split by a new island) over open water,
+//!    preferring cells in empty regions, short bridges and no long parallel bridges, and connect
+//!    it with a single or double bridge. Now and then close a cycle instead (a bridge between two
+//!    islands that see each other). Islands are never placed orthogonally adjacent.
+//! 2. The numbers are the degrees of this intended solution.
+//! 3. **Uniqueness**: search another solution with the backtracking search of
+//!    [`crate::deduce`] (the SAT solver takes over if the search gives up). If there is one,
+//!    **repair** the puzzle where the two solutions differ (split a bridge with a new island,
+//!    remove a bridge on a cycle, switch a bridge between single and double, or build the other
+//!    solution's bridge) and check again.
+//! 4. **Difficulty**: rate the unique puzzle with the human-style solver in [`crate::deduce`]
+//!    ([`Analysis::score`]) and tune it towards the target range of the difficulty with a small
+//!    local search (ease where the solver gets stuck / add bridges).
+//! 5. Repeat for several candidates and keep the one closest to the target range. Its
+//!    uniqueness is confirmed by the SAT solver (with the lazy connectivity loop).
+//!
+//! Everything is driven by a seeded RNG and fixed work limits, so the same [`GenerateParams`]
+//! give the same puzzle. Wall-clock limits only exist as a safety net.
 
-#[derive(Debug, Clone)]
-pub enum Part {
-    Corner(Corner),
-    Edge(Edge),
-    Unusual(Unusual),
-    Normal,
+use std::collections::BTreeMap;
+use std::time::{Duration, Instant};
+
+use common::{
+    Board, Difficulty, GenerateParams, GeneratedPuzzle, Island, MAX_SIZE, MIN_SIZE, Pos, Puzzle,
+    SolverConfig,
+};
+use rand::{RngExt, SeedableRng, rngs::StdRng, seq::SliceRandom};
+
+use crate::api::{Search, other_solution};
+use crate::deduce::{self, Analysis, Uniqueness};
+
+/// Knobs of the generator for one difficulty.
+#[derive(Clone, Copy, Debug)]
+struct Profile {
+    /// Islands per cell to aim for.
+    density: f64,
+    /// Probability that a new bridge is double.
+    double: f64,
+    /// Probability to close a cycle (an extra bridge between two islands that see each
+    /// other) instead of adding an island while growing.
+    cycles: f64,
+    /// Weight of removing a bridge on a cycle when repairing (fewer cycles, easier puzzles).
+    remove: f64,
+    /// Acceptable range of [`Analysis::score`].
+    score: (f64, f64),
+    /// Candidates to try at most (each with several repairs).
+    candidates: u32,
+    /// Safety net in milliseconds, only reached on pathological inputs.
+    budget_ms: u64,
 }
 
-#[derive(Debug, Clone)]
-pub enum Unusual {
-    Left,
-    Right,
-    Top,
-    Bottom,
-    MiddleX,
-    MiddleY,
-}
-
-#[derive(Debug, Clone)]
-pub enum Corner {
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
-
-#[derive(Debug, Clone)]
-pub enum Edge {
-    Top,
-    Bottom,
-    Left,
-    Right,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Direction {
-    North,
-    East,
-    South,
-    West,
-}
-
-pub fn generator(rows: usize, columns: usize) -> Vec<Vec<u8>> {
-    let mut grid: Vec<Vec<u8>> = vec![vec![0; columns]; rows];
-    let refgrid: Vec<Vec<bool>> = vec![vec![false; columns]; rows];
-
-    let mut x = rand::thread_rng().gen_range(0..=columns - 1);
-    let mut y = rand::thread_rng().gen_range(0..=rows - 1);
-
-    if rows == 3 && columns == 3 {
-        while x == 1 && y == 1 {
-            x = rand::thread_rng().gen_range(0..=columns - 1);
-            y = rand::thread_rng().gen_range(0..=rows - 1);
-        }
+fn profile(difficulty: Difficulty) -> Profile {
+    match difficulty {
+        Difficulty::Easy => Profile {
+            density: 0.20,
+            double: 0.4,
+            cycles: 0.03,
+            remove: 3.0,
+            score: (0.0, 0.0),
+            candidates: 30,
+            budget_ms: 250,
+        },
+        Difficulty::Medium => Profile {
+            density: 0.22,
+            double: 0.35,
+            cycles: 0.12,
+            remove: 1.5,
+            score: (5.0, 40.0),
+            candidates: 20,
+            budget_ms: 250,
+        },
+        Difficulty::Hard => Profile {
+            density: 0.24,
+            double: 0.35,
+            cycles: 0.18,
+            remove: 1.0,
+            score: (40.0, 58.0),
+            candidates: 24,
+            budget_ms: 1_200,
+        },
+        Difficulty::Expert => Profile {
+            density: 0.255,
+            double: 0.31,
+            cycles: 0.26,
+            remove: 0.6,
+            score: (58.0, 72.0),
+            candidates: 30,
+            budget_ms: 1_200,
+        },
+        Difficulty::Oni => Profile {
+            density: 0.26,
+            double: 0.3,
+            cycles: 0.18,
+            remove: 0.5,
+            score: (72.0, f64::INFINITY),
+            candidates: 16,
+            budget_ms: 3_000,
+        },
     }
-
-    let part = get_cell_position(x, y, rows, columns);
-    let degree = get_max_degree(&part, 1, 0);
-    grid[y][x] = degree;
-
-    let new_points = get_new_points(&degree, &part);
-    generatepoints(
-        new_points,
-        &mut grid,
-        refgrid,
-        rows,
-        columns,
-        (x, y, false),
-        degree,
-        part,
-    );
-    grid
 }
 
-pub fn generatepoints(
-    new_points: u8,
-    grid: &mut Vec<Vec<u8>>,
-    mut refgrid: Vec<Vec<bool>>,
-    rows: usize,
-    columns: usize,
-    touple: (usize, usize, bool),
-    degree: u8,
-    part: Part,
-) -> () {
-    let newpoints = match new_points {
-        1 => connect_one(
-            grid,
-            &mut refgrid,
-            touple.0,
-            touple.1,
-            rows,
-            columns,
-            degree,
-            part,
-        ),
-        2 => connect_two(
-            grid,
-            &mut refgrid,
-            touple.0,
-            touple.1,
-            rows,
-            columns,
-            degree,
-            part,
-        ),
-        3 => connect_three(
-            grid,
-            &mut refgrid,
-            touple.0,
-            touple.1,
-            rows,
-            columns,
-            degree,
-            part,
-        ),
-        4 => connect_four(
-            grid,
-            &mut refgrid,
-            touple.0,
-            touple.1,
-            rows,
-            columns,
-            degree,
-        ),
-        _ => panic!("Invalid grow size"),
+/// Upper bound of the safety time limit for large grids.
+const MAX_BUDGET_MS: u64 = 4_000;
+
+/// The range of [`Analysis::score`] the generator aims for.
+pub fn score_range(difficulty: Difficulty) -> (f64, f64) {
+    profile(difficulty).score
+}
+
+/// The SAT solver for uniqueness checks: splr is much faster than our own CDCL on the hard
+/// puzzles and deterministic (when the backtracking search gives up while repairing, the other
+/// solution found by the SAT solver decides how the puzzle is repaired).
+fn sat_solver() -> SolverConfig {
+    SolverConfig {
+        timeout_ms: 2_000,
+        ..SolverConfig::splr()
+    }
+}
+
+pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
+    let start = Instant::now();
+    let params = GenerateParams {
+        width: params.width.clamp(MIN_SIZE, MAX_SIZE),
+        height: params.height.clamp(MIN_SIZE, MAX_SIZE),
+        ..*params
     };
-    satsifythegrid(grid, &mut refgrid, rows, columns, newpoints);
-}
+    let mut profile = profile(params.difficulty);
+    // Candidates get more expensive on grids larger than the default size of the difficulty:
+    // try fewer of them and allow more time (the time limit is only a safety net, hitting it
+    // makes the result depend on the speed of the machine)
+    let (dw, dh) = params.difficulty.size();
+    let scale = (params.width as f64 * params.height as f64) / (dw as f64 * dh as f64);
+    if scale > 1.0 {
+        profile.candidates = ((profile.candidates as f64 / scale.sqrt()).ceil() as u32).max(4);
+        profile.budget_ms = ((profile.budget_ms as f64 * scale.sqrt()) as u64).min(MAX_BUDGET_MS);
+    }
+    let deadline = start + Duration::from_millis(profile.budget_ms);
+    // Mix the parameters into the seed, so e.g. sizes don't share the same random stream
+    let seed = params.seed
+        ^ (params.width as u64) << 56
+        ^ (params.height as u64) << 48
+        ^ (params.difficulty as u64) << 40;
+    let mut rng = StdRng::seed_from_u64(seed);
 
-// the second round in a new vec only for this round, because we can have circles! If a point is new and a 2 and another point
-// needs the same connection just add the value that is needed to satisfy the other point.
-// Step 2: Check if the grid is full and if not, continue with the newly generated points
-// that satsifyed the current configuration) [random generate if we continue and what higher degree is possible]
-// If this text is still here, I didn't implement it yet. For questions, ask me.
-
-fn satsifythegrid(
-    grid: &mut Vec<Vec<u8>>,
-    refgrid: &mut Vec<Vec<bool>>,
-    rows: usize,
-    columns: usize,
-    points: Vec<(usize, usize, bool)>,
-) {
-    for (i, _points) in points.iter().enumerate() {
-        let x = points[i].1;
-        let y = points[i].0;
-        let mut degree = grid[y][x];
-        let part = get_cell_position(x, y, rows, columns);
-        let possible_directions = get_possible_directions(&part);
-        let mut real_directions = vec![];
-        for direction in possible_directions {
-            match direction {
-                Direction::North => {
-                    if !(refgrid[y - 1][x] || refgrid[y - 2][x]) {
-                        real_directions.push(direction);
-                    }
-                }
-                Direction::East => {
-                    if !(refgrid[y][x + 1] || refgrid[y][x + 2]) {
-                        real_directions.push(direction);
-                    }
-                }
-                Direction::South => {
-                    if !(refgrid[y + 1][x] || refgrid[y + 2][x]) {
-                        real_directions.push(direction);
-                    }
-                }
-                Direction::West => {
-                    if !(refgrid[y][x - 1] || refgrid[y][x - 2]) {
-                        real_directions.push(direction);
-                    }
-                }
+    let mut best: Option<(f64, Candidate)> = None;
+    let mut attempts = 0;
+    let mut fallback: Option<Candidate> = None;
+    for round in 0..profile.candidates * 2 {
+        if Instant::now() >= deadline && (best.is_some() || fallback.is_some()) {
+            break;
+        }
+        // Second half, only if nothing unique was found: fewer cycles, which makes unique
+        // puzzles more likely
+        let mut p = profile;
+        if round >= profile.candidates {
+            if best.is_some() {
+                break;
             }
+            p.cycles /= 3.0;
         }
-        if points[i].2 == true {
-            degree = degree - 2;
-        } else {
-            degree = degree - 1;
-        }
-        if degree == 0 {
+        attempts += 1;
+        let Some(candidate) = make_candidate(&params, &p, &mut rng, deadline) else {
+            continue;
+        };
+        attempts += candidate.repairs;
+        if !candidate.unique {
+            if fallback.is_none() {
+                fallback = Some(candidate);
+            }
             continue;
         }
-
-        let (satpoints, minuspoints) = get_new_points2(&degree, &real_directions);
-        grid[y][x] = grid[y][x] - minuspoints;
-        degree = degree - minuspoints;
-        if satpoints == 0 {
-            grid[y][x] = grid[y][x] - degree;
-        }
-
-        real_directions.shuffle(&mut rand::thread_rng());
-        let mut twos = degree as usize - satpoints;
-        for (_iteration, &direction) in real_directions[0..satpoints].to_vec().iter().enumerate() {
-            match direction {
-                Direction::North => {
-                    let mut min = y - 2;
-                    for i in (0..y - 2).rev() {
-                        if !refgrid[i][x] {
-                            min = i;
-                        } else {
-                            break;
-                        }
-                    }
-                    let new_y = random(min..y - 2);
-                    place_bridge(refgrid, x, y, x, new_y);
-                    if twos != 0 {
-                        grid[new_y][x] = 2;
-                        degree = degree - 2;
-                        twos = twos - 1;
-                    } else {
-                        grid[new_y][x] = 1;
-                        degree = degree - 1;
-                    }
+        let distance = distance(candidate.analysis.score(), p.score);
+        if best.as_ref().is_none_or(|(d, _)| distance < *d) {
+            // The search already showed uniqueness, the SAT solver has to confirm it
+            match sat_other_solution(
+                &candidate.puzzle,
+                &candidate.solution,
+                &sat_solver(),
+                deadline,
+            ) {
+                Some(Search::Unsat) => best = Some((distance, candidate)),
+                Some(Search::Found(_)) => {
+                    debug_assert!(false, "search and SAT solver disagree on uniqueness");
+                    continue;
                 }
-                Direction::East => {
-                    let mut max: usize = x + 2;
-                    for i in x + 2..columns {
-                        if !refgrid[y][i] {
-                            max = i;
-                        } else {
-                            break;
-                        }
-                    }
-                    let new_x = random(x + 2..max);
-                    place_bridge(refgrid, x, y, new_x, y);
-                    if twos != 0 {
-                        grid[y][new_x] = 2;
-                        degree = degree - 2;
-                        twos = twos - 1;
-                    } else {
-                        grid[y][new_x] = 1;
-                        degree = degree - 1;
-                    }
-                }
-                Direction::South => {
-                    let mut max = y + 2;
-                    for i in y + 2..rows {
-                        if !refgrid[i][x] {
-                            max = i;
-                        } else {
-                            break;
-                        }
-                    }
-                    let new_y = random(y + 2..max);
-                    place_bridge(refgrid, x, y, x, new_y);
-                    if twos != 0 {
-                        grid[new_y][x] = 2;
-                        degree = degree - 2;
-                        twos = twos - 1;
-                    } else {
-                        grid[new_y][x] = 1;
-                        degree = degree - 1;
-                    }
-                }
-                Direction::West => {
-                    let mut min = x - 2;
-                    for i in (0..x - 2).rev() {
-                        if !refgrid[y][i] {
-                            min = i;
-                        } else {
-                            break;
-                        }
-                    }
-                    let new_x = random(min..x - 2);
-                    place_bridge(refgrid, x, y, new_x, y);
-                    if twos != 0 {
-                        grid[y][new_x] = 2;
-                        degree = degree - 2;
-                        twos = twos - 1;
-                    } else {
-                        grid[y][new_x] = 1;
-                        degree = degree - 1;
-                    }
-                }
+                _ => continue,
             }
         }
-    }
-}
-
-fn get_new_points2(degree: &u8, dir: &Vec<&Direction>) -> (usize, u8) {
-    match dir.len() {
-        1 => match degree {
-            1 | 2 => (1, 0),
-            3 | 4 => (1, 2),
-            _ => (1, 4),
-        },
-        2 => match degree {
-            0 => (0, 0),
-            1 => (1, 0),
-            2 => (random(1..2), 0),
-            3 | 4 => (2, 0),
-            _ => (2, 2),
-        },
-        3 => match degree {
-            0 => (0, 0),
-            1 => (1, 0),
-            2 => (random(1..2), 0),
-            3 => (random(2..3), 0),
-            4 => (random(2..3), 0),
-            _ => (3, 0),
-        },
-        _ => (0, 0),
-    }
-}
-
-fn get_cell_position(x: usize, y: usize, rows: usize, columns: usize) -> Part {
-    let near_left = x == 0 || x == 1;
-    let near_right = x == columns - 1 || x == columns - 2;
-    let near_top = y == 0 || y == 1;
-    let near_bottom = y == rows - 1 || y == rows - 2;
-
-    if rows == 3 && y == 1 {
-        if x == 0 || x == 1 {
-            return Part::Unusual(Unusual::Left);
-        }
-        if x == columns - 1 || x == columns - 2 {
-            return Part::Unusual(Unusual::Right);
-        } else {
-            return Part::Unusual(Unusual::MiddleY);
+        if distance == 0.0 {
+            break;
         }
     }
 
-    if columns == 3 && x == 1 {
-        if y == 0 || y == 1 {
-            return Part::Unusual(Unusual::Top);
-        }
-        if y == rows - 1 || y == rows - 2 {
-            return Part::Unusual(Unusual::Bottom);
-        } else {
-            return Part::Unusual(Unusual::MiddleX);
-        }
-    }
-
-    match (near_left, near_right, near_top, near_bottom) {
-        (true, false, true, false) => Part::Corner(Corner::TopLeft),
-        (true, false, false, true) => Part::Corner(Corner::BottomLeft),
-        (false, true, true, false) => Part::Corner(Corner::TopRight),
-        (false, true, false, true) => Part::Corner(Corner::BottomRight),
-        (true, false, _, _) => Part::Edge(Edge::Left),
-        (false, true, _, _) => Part::Edge(Edge::Right),
-        (_, _, true, false) => Part::Edge(Edge::Top),
-        (_, _, false, true) => Part::Edge(Edge::Bottom),
-        _ => Part::Normal,
-    }
-}
-
-fn get_max_degree(part: &Part, min: u8, subtract: u8) -> u8 {
-    match part {
-        Part::Corner(_) => rand::thread_rng().gen_range(min..=4 - subtract),
-        Part::Edge(_) => rand::thread_rng().gen_range(min..=6 - subtract),
-        Part::Normal => rand::thread_rng().gen_range(min..=8 - subtract),
-        Part::Unusual(unusual) => match unusual {
-            Unusual::MiddleX => rand::thread_rng().gen_range(min..=4 - subtract),
-            Unusual::MiddleY => rand::thread_rng().gen_range(min..=4 - subtract),
-            _ => rand::thread_rng().gen_range(min..=2 - subtract),
-        },
-    }
-}
-
-fn get_new_points(degree: &u8, part: &Part) -> u8 {
-    match part {
-        Part::Corner(_) => match degree {
-            1 => 1,
-            2 => rand::thread_rng().gen_range(1..=2),
-            3 | 4 => 2,
-            _ => 0,
-        },
-        Part::Edge(_) => match degree {
-            1 => 1,
-            2 => rand::thread_rng().gen_range(1..=2),
-            3 | 4 => rand::thread_rng().gen_range(2..=3),
-            5 | 6 => 3,
-            _ => 0,
-        },
-        Part::Normal => match degree {
-            1 => 1,
-            2 => rand::thread_rng().gen_range(1..=2),
-            3 => rand::thread_rng().gen_range(2..=3),
-            4 => rand::thread_rng().gen_range(2..=4),
-            5 | 6 => rand::thread_rng().gen_range(3..=4),
-            7 | 8 => 4,
-            _ => 0,
-        },
-        Part::Unusual(unusual) => match unusual {
-            Unusual::MiddleX | Unusual::MiddleY => match degree {
-                1 => 1,
-                2 => rand::thread_rng().gen_range(1..=2),
-                3 | 4 => 2,
-                _ => 0,
-            },
-            _ => match degree {
-                1 | 2 => 1,
-                _ => 0,
-            },
-        },
-    }
-}
-
-fn get_possible_directions(part: &Part) -> &[Direction] {
-    match part {
-        Part::Corner(corner) => match corner {
-            Corner::TopLeft => &[Direction::South, Direction::East],
-            Corner::TopRight => &[Direction::South, Direction::West],
-            Corner::BottomLeft => &[Direction::North, Direction::East],
-            Corner::BottomRight => &[Direction::North, Direction::West],
-        },
-        Part::Edge(edge) => match edge {
-            Edge::Top => &[Direction::South, Direction::East, Direction::West],
-            Edge::Bottom => &[Direction::North, Direction::East, Direction::West],
-            Edge::Left => &[Direction::North, Direction::South, Direction::East],
-            Edge::Right => &[Direction::North, Direction::South, Direction::West],
-        },
-        Part::Normal => &[
-            Direction::North,
-            Direction::South,
-            Direction::East,
-            Direction::West,
-        ],
-        Part::Unusual(unusual) => match unusual {
-            Unusual::Left => &[Direction::East],
-            Unusual::Right => &[Direction::West],
-            Unusual::Top => &[Direction::South],
-            Unusual::Bottom => &[Direction::North],
-            Unusual::MiddleX => &[Direction::North, Direction::South],
-            Unusual::MiddleY => &[Direction::East, Direction::West],
-        },
-    }
-}
-
-fn get_directions(part: &Part, num_directions: usize) -> Vec<Direction> {
-    let mut rng = rand::thread_rng();
-    let possible_directions = get_possible_directions(&part);
-    let mut directions = Vec::new();
-
-    for _ in 0..num_directions {
-        let mut direction = possible_directions.choose(&mut rng).unwrap();
-        while directions.contains(direction) {
-            direction = possible_directions.choose(&mut rng).unwrap();
-        }
-        directions.push(*direction);
-    }
-
-    directions
-}
-
-fn random(range: Range<usize>) -> usize {
-    if range.start == range.end {
-        return range.start;
-    }
-    if range.is_empty() {
-        println!("{:?}, {}", range.start, range.end);
-        panic!("Empty Range");
-    }
-    let mut rng = rand::thread_rng();
-    rng.gen_range(range)
-}
-
-fn get_new_coordinate(
-    direction: &Direction,
-    x: usize,
-    y: usize,
-    rows: usize,
-    columns: usize,
-) -> (usize, usize) {
-    match direction {
-        Direction::North => (x, random(0..y - 2)),
-        Direction::East => (random(x + 2..columns), y),
-        Direction::South => (x, random(y + 2..rows)),
-        Direction::West => (random(0..x - 2), y),
-    }
-}
-
-fn connect_one(
-    grid: &mut Vec<Vec<u8>>,
-    refgrid: &mut Vec<Vec<bool>>,
-    x: usize,
-    y: usize,
-    rows: usize,
-    columns: usize,
-    degree: u8,
-    part: Part,
-) -> Vec<(usize, usize, bool)> {
-    let directions = get_directions(&part, 1);
-    let direction = directions.get(0).unwrap();
-    let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
-    // if bridge crosses island or other bridge
-    place_bridge(refgrid, x, y, new_x, new_y);
-
-    if degree == 1 {
-        grid[new_y][new_x] = get_max_degree(&part, 1, 1);
-        vec![(new_y, new_x, false)]
-    } else {
-        grid[new_y][new_x] = get_max_degree(&part, 2, 0);
-        vec![(new_y, new_x, true)]
-    }
-}
-
-fn place_bridge(
-    refgrid: &mut Vec<Vec<bool>>,
-    start_x: usize,
-    start_y: usize,
-    end_x: usize,
-    end_y: usize,
-) -> () {
-    match (start_x, start_y, end_x, end_y) {
-        _ if start_x == end_x => (min(start_y, end_y)..=max(start_y, end_y))
-            .into_iter()
-            .for_each(|y| {
-                refgrid[y][start_x] = true;
-            }),
-        _ if start_y == end_y => (min(start_x, end_x)..=max(start_x, end_x))
-            .into_iter()
-            .for_each(|x| {
-                refgrid[start_y][x] = true;
-            }),
-        _ => panic!("Bridge is not diagnal or horizontal"),
+    let candidate = match (best, fallback) {
+        (Some((_, c)), _) => c,
+        (None, Some(c)) => c,
+        // Not even a non-unique puzzle (tiny grids): fall back to the smallest valid puzzle
+        (None, None) => trivial(&params),
     };
+    GeneratedPuzzle {
+        puzzle: candidate.puzzle,
+        solution: candidate.solution,
+        params,
+        unique: candidate.unique,
+        attempts,
+        generate_ms: start.elapsed().as_secs_f64() * 1000.0,
+    }
 }
 
-fn connect_two(
-    grid: &mut Vec<Vec<u8>>,
-    refgrid: &mut Vec<Vec<bool>>,
-    x: usize,
-    y: usize,
-    rows: usize,
-    columns: usize,
-    degree: u8,
-    part: Part,
-) -> Vec<(usize, usize, bool)> {
-    let directions = get_directions(&part, 2);
-
-    let mut newpoints = Vec::new();
-    for i in 0..2 {
-        let direction = directions.get(i).unwrap();
-        let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
-        place_bridge(refgrid, x, y, new_x, new_y);
-
-        let part = get_cell_position(new_x, new_y, rows, columns);
-        grid[new_y][new_x] = get_max_degree(&part, 2, 0);
-        newpoints.push((new_y, new_x, true));
+fn distance(score: f64, (lo, hi): (f64, f64)) -> f64 {
+    if score < lo {
+        lo - score
+    } else if score > hi {
+        score - hi
+    } else {
+        0.0
     }
-    match degree {
-        2 => {
-            for point in &mut newpoints {
-                grid[point.0][point.1] = grid[point.0][point.1] - 1;
-                *point = (point.0, point.1, false);
-            }
-        }
-        3 => {
-            let index = rand::thread_rng().gen_range(0..newpoints.len());
-            let point = newpoints.get_mut(index).unwrap();
-            grid[point.0][point.1] = grid[point.0][point.1] - 1;
-            *point = (point.0, point.1, false);
-        }
-        _ => {}
-    }
-    newpoints
 }
 
-fn connect_three(
-    grid: &mut Vec<Vec<u8>>,
-    refgrid: &mut Vec<Vec<bool>>,
-    x: usize,
-    y: usize,
-    rows: usize,
-    columns: usize,
-    degree: u8,
-    part: Part,
-) -> Vec<(usize, usize, bool)> {
-    let directions = get_directions(&part, 3);
-
-    let mut newpoints = Vec::new();
-    for i in 0..3 {
-        let direction = directions.get(i).unwrap();
-        let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
-        place_bridge(refgrid, x, y, new_x, new_y);
-
-        let part = get_cell_position(new_x, new_y, rows, columns);
-        grid[new_y][new_x] = get_max_degree(&part, 2, 0);
-        newpoints.push((new_y, new_x, true));
-    }
-    match degree {
-        3 => {
-            for point in &mut newpoints {
-                grid[point.0][point.1] = grid[point.0][point.1] - 1;
-                *point = (point.0, point.1, false);
-            }
-        }
-        4 => {
-            newpoints.shuffle(&mut rand::thread_rng());
-            for point in &mut newpoints[0..2] {
-                grid[point.0][point.1] = grid[point.0][point.1] - 1;
-                *point = (point.0, point.1, false);
-            }
-        }
-        5 => {
-            let index = rand::thread_rng().gen_range(0..newpoints.len());
-            let point = newpoints.get_mut(index).unwrap();
-            grid[point.0][point.1] = grid[point.0][point.1] - 1;
-            *point = (point.0, point.1, false);
-        }
-        _ => {}
-    }
-    newpoints
+struct Candidate {
+    puzzle: Puzzle,
+    solution: Vec<u8>,
+    unique: bool,
+    repairs: u32,
+    analysis: Analysis,
 }
 
-fn connect_four(
-    grid: &mut Vec<Vec<u8>>,
-    refgrid: &mut Vec<Vec<bool>>,
-    x: usize,
-    y: usize,
-    rows: usize,
-    columns: usize,
-    degree: u8,
-) -> Vec<(usize, usize, bool)> {
-    let directions = get_directions(&Part::Normal, 4);
-
-    let mut newpoints = Vec::new();
-
-    for i in 0..4 {
-        let direction = directions.get(i).unwrap();
-        let (new_x, new_y) = get_new_coordinate(direction, x, y, rows, columns);
-        place_bridge(refgrid, x, y, new_x, new_y);
-
-        let part = get_cell_position(new_x, new_y, rows, columns);
-        grid[new_y][new_x] = get_max_degree(&part, 2, 0);
-        newpoints.push((new_y, new_x, true));
+fn make_candidate(
+    params: &GenerateParams,
+    p: &Profile,
+    rng: &mut StdRng,
+    deadline: Instant,
+) -> Option<Candidate> {
+    let (w, h) = (params.width as usize, params.height as usize);
+    let mut grid = Grid::new(w, h);
+    let target = ((w * h) as f64 * p.density).round().max(2.0) as usize;
+    grid.grow(rng, target, p.double, p.cycles);
+    if grid.islands.len() < 2 {
+        return None;
     }
-    let mut rng = rand::thread_rng();
-    match degree {
-        4 => {
-            for point in &mut newpoints {
-                grid[point.0][point.1] = grid[point.0][point.1] - 1;
-                *point = (point.0, point.1, false);
-            }
-        }
-        5 => {
-            newpoints.shuffle(&mut rng);
-            for point in &mut newpoints[0..3] {
-                grid[point.0][point.1] = grid[point.0][point.1] - 1;
-                *point = (point.0, point.1, false);
-            }
-        }
-        6 => {
-            newpoints.shuffle(&mut rng);
-            for point in &mut newpoints[0..2] {
-                grid[point.0][point.1] = grid[point.0][point.1] - 1;
-                *point = (point.0, point.1, false);
-            }
-        }
-        7 => {
-            let index = rng.gen_range(0..newpoints.len());
-            let point = newpoints.get_mut(index).unwrap();
-            grid[point.0][point.1] = grid[point.0][point.1] - 1;
-            *point = (point.0, point.1, false);
-        }
-        _ => {}
-    }
-    newpoints
-}
+    grid.add_cycles(rng, p.cycles / 2.0, p.double);
 
-pub fn output_to_file(grid: &Vec<Vec<u8>>, filename: &str) -> Result<()> {
-    let mut file = File::create(filename)?;
-
-    let rows = grid.len();
-    let columns = grid[0].len();
-    writeln!(file, "{} {}", rows, columns)?;
-
-    for row in grid {
-        for &cell in row {
-            write!(
-                file,
-                "{}",
-                if cell > 0 {
-                    cell.to_string()
-                } else {
-                    ".".to_string()
-                }
-            )?;
-        }
-        writeln!(file)?;
-    }
-
-    Ok(())
-}
-
-#[test]
-#[ignore = "stress test: solves 10000 generated 30x30 puzzles"]
-fn should_gen() {
-    for i in 0..=10000 {
-        println!("Iteration: {}", i);
-        let game = generator(30, 30);
-        let name = "./output/testpuzzle.txt";
-        output_to_file(&game, name).unwrap();
-        let input_file = name;
-        let output_file = format!("{}.out.txt", input_file);
-        match crate::parse_input::parse_input(&input_file) {
-            Ok(game_board) => {
-                let (clauses, var_map) = crate::generate_clauses::generate(&game_board);
-                let dimacs_generated =
-                    crate::writer::generate_dimacs(&clauses, var_map.keys().len(), &output_file);
-                match dimacs_generated {
-                    Ok(_) => match crate::solver::solve(&output_file) {
-                        Ok(splr::Certificate::SAT(certificate)) => {
-                            match crate::solver::write_solution(
-                                splr::Certificate::SAT(certificate),
-                                &output_file,
-                            ) {
-                                Ok(_) => {
-                                    let contents = crate::reconstruct::get_content(&output_file);
-                                    let s = crate::reconstruct::reconstruct_puzzle(
-                                        contents,
-                                        &var_map,
-                                        &game_board,
-                                    );
-                                    println!("{}", s);
-                                }
-                                Err(err) => {
-                                    eprintln!("Error: {}", err);
-                                }
-                            }
-                        }
-
-                        Ok(splr::Certificate::UNSAT) => {
-                            println!("UNSAT at iteration {}", i);
-                            break;
-                        }
-                        Err(err) => {
-                            eprintln!("Error: {}", err);
-                        }
-                    },
-                    Err(e) => eprint!("{}", e),
+    let max_repairs = 8 + grid.islands.len() as u32 / 4;
+    let mut repairs = 0;
+    loop {
+        let (puzzle, board, solution) = grid.puzzle();
+        let other = match deduce::other_solution(&board, &solution, SEARCH_NODES) {
+            Uniqueness::Unique => None,
+            Uniqueness::Other(other) => Some(other),
+            // The search gave up, ask the SAT solver
+            Uniqueness::Unknown => {
+                match sat_other_solution(&puzzle, &solution, &sat_solver(), deadline) {
+                    Some(Search::Unsat) => None,
+                    Some(Search::Found(other)) => Some(other),
+                    _ => return None,
                 }
             }
-            Err(err) => eprintln!("Error: {}", err),
+        };
+        let Some(other) = other else {
+            let analysis = deduce::analyze(&board, MAX_TRIALS);
+            let mut candidate = Candidate {
+                puzzle,
+                solution,
+                unique: true,
+                repairs,
+                analysis,
+            };
+            tune(&mut grid, &mut candidate, rng, p, deadline);
+            return Some(candidate);
+        };
+        if repairs >= max_repairs
+            || Instant::now() >= deadline
+            || !grid.repair(rng, &board, &solution, &other, p)
+        {
+            return Some(Candidate {
+                puzzle,
+                solution,
+                unique: false,
+                repairs,
+                analysis: Analysis::default(),
+            });
+        }
+        repairs += 1;
+    }
+}
+
+/// Local search towards the target difficulty: ease the puzzle where the deduction solver gets
+/// stuck (too hard) or add bridges between islands that see each other (too easy). A change is
+/// kept if the puzzle stays unique and the score gets closer to the target range.
+fn tune(
+    grid: &mut Grid,
+    candidate: &mut Candidate,
+    rng: &mut StdRng,
+    p: &Profile,
+    deadline: Instant,
+) {
+    let mut harden_steps = 0;
+    for _ in 0..TUNE_STEPS {
+        let current = distance(candidate.analysis.score(), p.score);
+        if current == 0.0 || Instant::now() >= deadline {
+            return;
+        }
+        let too_hard = candidate.analysis.score() > p.score.1;
+        if !too_hard {
+            // Hardening rarely works (new bridges tend to allow other solutions)
+            harden_steps += 1;
+            if harden_steps > HARDEN_STEPS {
+                return;
+            }
+        }
+        let mut changed = grid.clone();
+        let (_, board, solution) = grid.puzzle();
+        let moved = if too_hard {
+            changed.ease(rng, &board, &solution, &candidate.analysis.undecided, p)
+        } else {
+            changed.harden(rng, p)
+        };
+        if !moved {
+            return;
+        }
+        // Easing changes numbers, which may allow other solutions: repair a few times
+        let mut unique = None;
+        for _ in 0..TUNE_REPAIRS {
+            let (puzzle, board, solution) = changed.puzzle();
+            match deduce::other_solution(&board, &solution, SEARCH_NODES) {
+                Uniqueness::Unique => {
+                    unique = Some((puzzle, board, solution));
+                    break;
+                }
+                Uniqueness::Other(other) => {
+                    if !changed.repair(rng, &board, &solution, &other, p) {
+                        break;
+                    }
+                }
+                Uniqueness::Unknown => break,
+            }
+        }
+        let Some((puzzle, board, solution)) = unique else {
+            continue;
+        };
+        let analysis = deduce::analyze(&board, MAX_TRIALS);
+        if distance(analysis.score(), p.score) < current {
+            *grid = changed;
+            *candidate = Candidate {
+                puzzle,
+                solution,
+                unique: true,
+                repairs: candidate.repairs + 1,
+                analysis,
+            };
         }
     }
 }
 
+/// Steps of the local search towards the target difficulty.
+const TUNE_STEPS: u32 = 16;
+/// Steps of the local search that try to make a puzzle harder.
+const HARDEN_STEPS: u32 = 4;
+/// Repairs after a step of the local search that made the puzzle ambiguous.
+const TUNE_REPAIRS: u32 = 4;
+
+/// Bound for the trial steps of the deduction solver, high enough to never matter in practice
+/// (each step decides something) but keeps the rating bounded.
+pub const MAX_TRIALS: u32 = 10_000;
+
+/// Node limit of the backtracking search used to check uniqueness while repairing.
+const SEARCH_NODES: u32 = 2_000;
+
+/// Another solution according to the SAT solver (with the lazy connectivity loop).
+fn sat_other_solution(
+    puzzle: &Puzzle,
+    solution: &[u8],
+    config: &SolverConfig,
+    deadline: Instant,
+) -> Option<Search> {
+    let check_deadline = deadline
+        .max(Instant::now() + Duration::from_millis(200))
+        .min(Instant::now() + Duration::from_millis(2_000));
+    other_solution(puzzle, solution, config, Some(check_deadline)).ok()
+}
+
+/// Two islands with a single bridge: always valid and unique.
+fn trivial(params: &GenerateParams) -> Candidate {
+    let islands = vec![
+        Island {
+            pos: Pos::new(0, 0),
+            required: 1,
+        },
+        Island {
+            pos: Pos::new(2, 0),
+            required: 1,
+        },
+    ];
+    let puzzle = Puzzle::new(params.width, params.height, islands);
+    Candidate {
+        puzzle,
+        solution: vec![1],
+        unique: true,
+        repairs: 0,
+        analysis: Analysis::default(),
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Cell {
+    Water,
+    Island(usize),
+    /// A built bridge, `true` if horizontal.
+    Bridge(bool),
+}
+
+const DIRECTIONS: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
+
+/// Short bridges are more common, long ones are allowed now and then.
+fn length_weight(len: i32) -> f64 {
+    match len {
+        2 | 3 => 1.0,
+        4 => 0.6,
+        5 => 0.25,
+        6 => 0.1,
+        _ => 0.04,
+    }
+}
+
+fn direction(a: Pos, b: Pos) -> (i32, i32) {
+    (
+        (b.x as i32 - a.x as i32).signum(),
+        (b.y as i32 - a.y as i32).signum(),
+    )
+}
+
+/// Picks an item with probability proportional to its weight.
+fn pick_weighted<T: Copy>(rng: &mut StdRng, items: &[(T, f64)]) -> Option<T> {
+    let total: f64 = items.iter().map(|i| i.1).sum();
+    if items.is_empty() || total <= 0.0 {
+        return None;
+    }
+    let mut pick = rng.random_range(0.0..total);
+    for &(item, weight) in items {
+        pick -= weight;
+        if pick < 0.0 {
+            return Some(item);
+        }
+    }
+    items.last().map(|i| i.0)
+}
+
+/// The intended solution while it is being built.
+#[derive(Clone)]
+struct Grid {
+    w: usize,
+    h: usize,
+    cells: Vec<Cell>,
+    islands: Vec<Pos>,
+    /// Built bridges between island indices (smaller index first).
+    bridges: BTreeMap<(usize, usize), u8>,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum Source {
+    Island(usize),
+    /// The middle of a bridge that gets split by a new island.
+    Split(Pos),
+}
+
+enum Repair {
+    Split(Pos),
+    Remove(usize, usize),
+    SetCount(usize, usize, u8),
+    Add(usize, usize, u8),
+}
+
+impl Grid {
+    fn new(w: usize, h: usize) -> Self {
+        Grid {
+            w,
+            h,
+            cells: vec![Cell::Water; w * h],
+            islands: Vec::new(),
+            bridges: BTreeMap::new(),
+        }
+    }
+
+    fn cell(&self, x: i32, y: i32) -> Option<Cell> {
+        (x >= 0 && y >= 0 && (x as usize) < self.w && (y as usize) < self.h)
+            .then(|| self.cells[y as usize * self.w + x as usize])
+    }
+
+    fn set(&mut self, p: Pos, cell: Cell) {
+        self.cells[p.y as usize * self.w + p.x as usize] = cell;
+    }
+
+    fn island_at(&self, p: Pos) -> Option<usize> {
+        match self.cell(p.x as i32, p.y as i32) {
+            Some(Cell::Island(i)) => Some(i),
+            _ => None,
+        }
+    }
+
+    /// An island may be placed on water that has no island as orthogonal neighbour.
+    fn can_place(&self, x: i32, y: i32) -> bool {
+        self.cell(x, y) == Some(Cell::Water) && self.no_island_around(x, y)
+    }
+
+    fn no_island_around(&self, x: i32, y: i32) -> bool {
+        DIRECTIONS
+            .iter()
+            .all(|(dx, dy)| !matches!(self.cell(x + dx, y + dy), Some(Cell::Island(_))))
+    }
+
+    fn add_island(&mut self, p: Pos) -> usize {
+        let i = self.islands.len();
+        self.islands.push(p);
+        self.set(p, Cell::Island(i));
+        i
+    }
+
+    /// Water cells strictly between two islands in a line.
+    fn between(&self, a: usize, b: usize) -> Vec<Pos> {
+        let (pa, pb) = (self.islands[a], self.islands[b]);
+        if pa.y == pb.y {
+            let (x0, x1) = (pa.x.min(pb.x), pa.x.max(pb.x));
+            (x0 + 1..x1).map(|x| Pos::new(x, pa.y)).collect()
+        } else {
+            let (y0, y1) = (pa.y.min(pb.y), pa.y.max(pb.y));
+            (y0 + 1..y1).map(|y| Pos::new(pa.x, y)).collect()
+        }
+    }
+
+    fn build(&mut self, a: usize, b: usize, count: u8) {
+        let horizontal = self.islands[a].y == self.islands[b].y;
+        for p in self.between(a, b) {
+            self.set(p, Cell::Bridge(horizontal));
+        }
+        self.bridges.insert((a.min(b), a.max(b)), count);
+    }
+
+    fn unbuild(&mut self, a: usize, b: usize) {
+        for p in self.between(a, b) {
+            self.set(p, Cell::Water);
+        }
+        self.bridges.remove(&(a.min(b), a.max(b)));
+    }
+
+    fn degree(&self, i: usize) -> u8 {
+        self.bridges
+            .iter()
+            .filter(|((a, b), _)| *a == i || *b == i)
+            .map(|(_, &c)| c)
+            .sum()
+    }
+
+    /// How occupied the area around (x, y) is: islands (and a bit for bridges) within
+    /// Chebyshev distance 2.
+    fn crowd(&self, x: i32, y: i32) -> f64 {
+        let mut n = 0.0;
+        for dy in -2..=2 {
+            for dx in -2..=2 {
+                n += match self.cell(x + dx, y + dy) {
+                    Some(Cell::Island(_)) => 1.0,
+                    Some(Cell::Bridge(_)) => 0.2,
+                    _ => 0.0,
+                };
+            }
+        }
+        n
+    }
+
+    /// Bridge cells next to the path from `p` in direction (dx, dy) over `len` cells that run
+    /// parallel to it (long parallel bridges side by side look bad and play badly).
+    fn parallel_neighbours(&self, p: Pos, (dx, dy): (i32, i32), len: i32) -> usize {
+        let horizontal = dy == 0;
+        (1..len)
+            .map(|k| (p.x as i32 + dx * k, p.y as i32 + dy * k))
+            .flat_map(|(x, y)| [(x + dy, y + dx), (x - dy, y - dx)])
+            .filter(|&(x, y)| self.cell(x, y) == Some(Cell::Bridge(horizontal)))
+            .count()
+    }
+
+    fn grow(&mut self, rng: &mut StdRng, target: usize, p_double: f64, p_cycle: f64) {
+        let (w, h) = (self.w as i32, self.h as i32);
+        // Start away from the border on larger grids
+        let margin = |n: i32| if n >= 7 { n / 4 } else { 0 };
+        let x = rng.random_range(margin(w)..w - margin(w));
+        let y = rng.random_range(margin(h)..h - margin(h));
+        self.add_island(Pos::new(x as u8, y as u8));
+
+        let mut options = Vec::new();
+        while self.islands.len() < target {
+            // Close a cycle now and then, before the lines of sight get blocked
+            if self.islands.len() > 3 && rng.random_bool(p_cycle) {
+                let edges = self
+                    .free_edges()
+                    .into_iter()
+                    .filter(|&(a, b)| self.degree(a) < 8 && self.degree(b) < 8)
+                    .map(|(a, b)| {
+                        let len = self.between(a, b).len() as i32 + 1;
+                        let dir = direction(self.islands[a], self.islands[b]);
+                        let parallel = self.parallel_neighbours(self.islands[a], dir, len);
+                        let weight = length_weight(len) * 0.4f64.powi(parallel as i32);
+                        ((a, b), weight)
+                    })
+                    .collect::<Vec<_>>();
+                if let Some((a, b)) = pick_weighted(rng, &edges) {
+                    let count = if rng.random_bool(p_double) { 2 } else { 1 };
+                    let count = count.min(8 - self.degree(a)).min(8 - self.degree(b));
+                    self.build(a, b, count);
+                    continue;
+                }
+            }
+            options.clear();
+            for (i, &p) in self.islands.iter().enumerate() {
+                if self.degree(i) < 8 {
+                    self.collect_options(p, &DIRECTIONS, Source::Island(i), 1.0, &mut options);
+                }
+            }
+            // Growing from the middle of a bridge (splitting it with a new island) reaches
+            // regions that are walled in by bridges
+            for y in 0..self.h {
+                for x in 0..self.w {
+                    let p = Pos::new(x as u8, y as u8);
+                    if let Cell::Bridge(horizontal) = self.cells[y * self.w + x] {
+                        if !self.no_island_around(x as i32, y as i32) {
+                            continue;
+                        }
+                        let dirs: &[(i32, i32)] = if horizontal {
+                            &[(0, 1), (0, -1)]
+                        } else {
+                            &[(1, 0), (-1, 0)]
+                        };
+                        self.collect_options(p, dirs, Source::Split(p), 0.5, &mut options);
+                    }
+                }
+            }
+            let Some((target_pos, source)) = pick_weighted(rng, &options) else {
+                break;
+            };
+            let from = match source {
+                Source::Island(i) => i,
+                Source::Split(cell) => self.split(cell),
+            };
+            let new = self.add_island(target_pos);
+            let count = if rng.random_bool(p_double) { 2 } else { 1 };
+            self.build(from, new, count);
+        }
+    }
+
+    /// Places for a new island seen from `p` in the given directions, weighted by how empty
+    /// the area is, the length of the bridge and parallel bridges next to it.
+    fn collect_options(
+        &self,
+        p: Pos,
+        dirs: &[(i32, i32)],
+        source: Source,
+        factor: f64,
+        options: &mut Vec<((Pos, Source), f64)>,
+    ) {
+        for &dir @ (dx, dy) in dirs {
+            for len in 1.. {
+                let (cx, cy) = (p.x as i32 + dx * len, p.y as i32 + dy * len);
+                if self.cell(cx, cy) != Some(Cell::Water) {
+                    break;
+                }
+                if len >= 2 && self.can_place(cx, cy) {
+                    let crowd = self.crowd(cx, cy);
+                    let parallel = self.parallel_neighbours(p, dir, len);
+                    let weight = factor * length_weight(len) / (1.0 + crowd).powi(2)
+                        * 0.4f64.powi(parallel as i32);
+                    options.push(((Pos::new(cx as u8, cy as u8), source), weight));
+                }
+            }
+        }
+    }
+
+    /// The two islands joined by the bridge over `cell`.
+    fn bridge_at(&self, cell: Pos) -> (usize, usize) {
+        let Some(Cell::Bridge(horizontal)) = self.cell(cell.x as i32, cell.y as i32) else {
+            panic!("no bridge at {cell:?}");
+        };
+        let (dx, dy) = if horizontal { (1, 0) } else { (0, 1) };
+        let end = |sign: i32| {
+            (1..)
+                .find_map(|k| {
+                    match self.cell(cell.x as i32 + sign * dx * k, cell.y as i32 + sign * dy * k) {
+                        Some(Cell::Island(i)) => Some(i),
+                        _ => None,
+                    }
+                })
+                .unwrap()
+        };
+        (end(-1), end(1))
+    }
+
+    /// Replaces the bridge over `cell` by an island with two bridges of the same count.
+    fn split(&mut self, cell: Pos) -> usize {
+        let (a, b) = self.bridge_at(cell);
+        let count = self.bridges[&(a.min(b), a.max(b))];
+        self.unbuild(a, b);
+        let new = self.add_island(cell);
+        self.build(a, new, count);
+        self.build(new, b, count);
+        new
+    }
+
+    /// Possible bridges of the current islands that aren't built and don't cross a bridge.
+    fn free_edges(&self) -> Vec<(usize, usize)> {
+        let mut edges = Vec::new();
+        for (i, &p) in self.islands.iter().enumerate() {
+            for (dx, dy) in [(1, 0), (0, 1)] {
+                for len in 1.. {
+                    let (cx, cy) = (p.x as i32 + dx * len, p.y as i32 + dy * len);
+                    match self.cell(cx, cy) {
+                        Some(Cell::Water) => continue,
+                        Some(Cell::Island(j))
+                            if len >= 2 && !self.bridges.contains_key(&(i.min(j), i.max(j))) =>
+                        {
+                            edges.push((i, j));
+                        }
+                        _ => {}
+                    }
+                    break;
+                }
+            }
+        }
+        edges
+    }
+
+    fn add_cycles(&mut self, rng: &mut StdRng, p_cycle: f64, p_double: f64) {
+        let mut edges = self.free_edges();
+        edges.shuffle(rng);
+        for (a, b) in edges {
+            let free = self
+                .between(a, b)
+                .iter()
+                .all(|p| self.cell(p.x as i32, p.y as i32) == Some(Cell::Water));
+            if free && self.degree(a) < 8 && self.degree(b) < 8 && rng.random_bool(p_cycle) {
+                let count = if rng.random_bool(p_double) { 2 } else { 1 };
+                let count = count.min(8 - self.degree(a)).min(8 - self.degree(b));
+                self.build(a, b, count);
+            }
+        }
+    }
+
+    /// The puzzle, its board and the intended solution indexed like `board.edges`.
+    fn puzzle(&self) -> (Puzzle, Board, Vec<u8>) {
+        let islands = self
+            .islands
+            .iter()
+            .enumerate()
+            .map(|(i, &pos)| Island {
+                pos,
+                required: self.degree(i),
+            })
+            .collect();
+        let puzzle = Puzzle::new(self.w as u8, self.h as u8, islands);
+        let board = Board::new(puzzle.clone());
+        let solution = self.solution(&board);
+        (puzzle, board, solution)
+    }
+
+    fn solution(&self, board: &Board) -> Vec<u8> {
+        (0..board.edges.len())
+            .map(|e| {
+                let (ga, gb) = self.grid_edge(board, e);
+                self.bridges
+                    .get(&(ga.min(gb), ga.max(gb)))
+                    .copied()
+                    .unwrap_or(0)
+            })
+            .collect()
+    }
+
+    /// Grid island indices of a board edge.
+    fn grid_edge(&self, board: &Board, e: usize) -> (usize, usize) {
+        let (pa, pb) = board.endpoints(e);
+        (self.island_at(pa).unwrap(), self.island_at(pb).unwrap())
+    }
+
+    /// Whether the built bridges stay connected without the bridge between a and b.
+    fn connected_without(&self, a: usize, b: usize) -> bool {
+        let n = self.islands.len();
+        let mut adj = vec![Vec::new(); n];
+        for &(x, y) in self.bridges.keys() {
+            if (x, y) != (a.min(b), a.max(b)) {
+                adj[x].push(y);
+                adj[y].push(x);
+            }
+        }
+        let mut seen = vec![false; n];
+        let mut stack = vec![0];
+        seen[0] = true;
+        while let Some(i) = stack.pop() {
+            for &j in &adj[i] {
+                if !seen[j] {
+                    seen[j] = true;
+                    stack.push(j);
+                }
+            }
+        }
+        seen.iter().all(|&s| s)
+    }
+
+    /// Ways to change the intended solution at the given edges (see [`Repair`]), weighted.
+    fn moves_at(
+        &self,
+        board: &Board,
+        solution: &[u8],
+        other: Option<&[u8]>,
+        edges: &[usize],
+        p: &Profile,
+    ) -> Vec<(Repair, f64)> {
+        let mut moves = Vec::new();
+        let too_dense = self.islands.len() as f64 > 1.15 * p.density * (self.w * self.h) as f64;
+        for &e in edges {
+            let s = solution[e];
+            let (a, b) = self.grid_edge(board, e);
+            if s > 0 {
+                let cells = self.between(a, b);
+                // Prefer the middle of the bridge
+                let mid = cells.len() as f64 / 2.0;
+                let split = cells
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, c)| self.no_island_around(c.x as i32, c.y as i32))
+                    .min_by_key(|(i, _)| ((*i as f64 + 0.5 - mid).abs() * 2.0) as i32);
+                if let Some((_, &c)) = split {
+                    moves.push((Repair::Split(c), if too_dense { 0.5 } else { 3.0 }));
+                }
+                if self.connected_without(a, b) {
+                    moves.push((Repair::Remove(a, b), p.remove));
+                }
+                let count = 3 - s;
+                if self.degree(a) - s + count <= 8 && self.degree(b) - s + count <= 8 {
+                    moves.push((Repair::SetCount(a, b, count), 1.0));
+                }
+            } else {
+                let count = other.map_or(1, |o| o[e].max(1));
+                let free = self
+                    .between(a, b)
+                    .iter()
+                    .all(|c| self.cell(c.x as i32, c.y as i32) == Some(Cell::Water));
+                if free && self.degree(a) + count <= 8 && self.degree(b) + count <= 8 {
+                    moves.push((Repair::Add(a, b, count), 0.5));
+                }
+            }
+        }
+        moves
+    }
+
+    fn apply(&mut self, repair: Repair) {
+        match repair {
+            Repair::Split(c) => {
+                self.split(c);
+            }
+            Repair::Remove(a, b) => self.unbuild(a, b),
+            Repair::SetCount(a, b, count) | Repair::Add(a, b, count) => self.build(a, b, count),
+        }
+    }
+
+    /// Changes the intended solution where it differs from `other`, so that `other` stops
+    /// being a solution. Returns false if there is nothing to repair.
+    fn repair(
+        &mut self,
+        rng: &mut StdRng,
+        board: &Board,
+        solution: &[u8],
+        other: &[u8],
+        p: &Profile,
+    ) -> bool {
+        let diff = (0..board.edges.len())
+            .filter(|&e| solution[e] != other[e])
+            .collect::<Vec<_>>();
+        let moves = self.moves_at(board, solution, Some(other), &diff, p);
+        match pick_weighted_index(rng, &moves) {
+            Some(i) => {
+                self.apply(moves.into_iter().nth(i).unwrap().0);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Makes the puzzle easier around an edge the deduction solver couldn't decide.
+    fn ease(
+        &mut self,
+        rng: &mut StdRng,
+        board: &Board,
+        solution: &[u8],
+        undecided: &[usize],
+        p: &Profile,
+    ) -> bool {
+        let Some(&e) = undecided.get(rng.random_range(0..undecided.len().max(1))) else {
+            return false;
+        };
+        // The undecided edge itself and the edges next to it
+        let mut edges = vec![e];
+        for island in [board.edges[e].a, board.edges[e].b] {
+            edges.extend(board.incident[island].iter().filter(|&&f| f != e));
+        }
+        // Adding bridges rarely makes a puzzle easier
+        let moves = self
+            .moves_at(board, solution, None, &edges, p)
+            .into_iter()
+            .filter(|(m, _)| !matches!(m, Repair::Add(..)))
+            .collect::<Vec<_>>();
+        match pick_weighted_index(rng, &moves) {
+            Some(i) => {
+                self.apply(moves.into_iter().nth(i).unwrap().0);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Makes the puzzle harder: a new bridge between two islands that see each other.
+    fn harden(&mut self, rng: &mut StdRng, p: &Profile) -> bool {
+        let edges = self
+            .free_edges()
+            .into_iter()
+            .filter(|&(a, b)| self.degree(a) < 8 && self.degree(b) < 8)
+            .collect::<Vec<_>>();
+        let Some(&(a, b)) = edges.get(rng.random_range(0..edges.len().max(1))) else {
+            return false;
+        };
+        let count = if rng.random_bool(p.double) { 2 } else { 1 };
+        let count = count.min(8 - self.degree(a)).min(8 - self.degree(b));
+        self.build(a, b, count);
+        true
+    }
+}
+
+/// Like [`pick_weighted`], but returns the index.
+fn pick_weighted_index<T>(rng: &mut StdRng, items: &[(T, f64)]) -> Option<usize> {
+    let indexed = items
+        .iter()
+        .enumerate()
+        .map(|(i, it)| (i, it.1))
+        .collect::<Vec<_>>();
+    pick_weighted(rng, &indexed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn grid_puzzle_matches_solution() {
+        let mut rng = StdRng::seed_from_u64(1);
+        let mut grid = Grid::new(10, 10);
+        grid.grow(&mut rng, 20, 0.4, 0.3);
+        grid.add_cycles(&mut rng, 0.5, 0.4);
+        let (_, board, solution) = grid.puzzle();
+        assert!(board.check(&solution).solved);
+        for (i, &p) in grid.islands.iter().enumerate() {
+            assert!(
+                grid.no_island_around(p.x as i32, p.y as i32),
+                "island {i} has a neighbour"
+            );
+        }
+    }
+}

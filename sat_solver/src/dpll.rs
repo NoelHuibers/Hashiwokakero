@@ -6,7 +6,8 @@ use crate::{
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt,
-}; // Add this line to import the `cli` module from the crate root
+    time::Instant,
+};
 
 type Atom = u16;
 type BVar = i32;
@@ -16,6 +17,8 @@ type CIdx = usize;
 pub enum DIMACSOutput {
     Sat(Vec<i32>),
     Unsat,
+    /// The solver gave up because its deadline passed (see `set_deadline`).
+    Timeout,
 }
 
 impl fmt::Display for DIMACSOutput {
@@ -34,6 +37,7 @@ impl fmt::Display for DIMACSOutput {
                 Ok(())
             }
             DIMACSOutput::Unsat => write!(f, "UNSAT"),
+            DIMACSOutput::Timeout => write!(f, "UNKNOWN (timeout)"),
         }
     }
 }
@@ -62,7 +66,7 @@ impl fmt::Display for Error {
 pub(crate) struct Clause {
     pub(crate) sat_by_var: BVar,
     pub(crate) vars: Vec<BVar>,
-    pub(crate) unassign_vars: u8,
+    pub(crate) unassign_vars: u32,
 }
 
 pub(crate) struct Literal {
@@ -91,13 +95,19 @@ pub struct DPLL {
     // Using VecDaque for better push_front complexity
     unit_queue: VecDeque<BVar>,
     // Those are for the heuristics:
-    unsat_clauses: HashSet<(Vec<BVar>, u8)>,
+    unsat_clauses: HashSet<(Vec<BVar>, u32)>,
     free_lits: HashSet<BVar>,
+    show_depth: bool,
+    decisions: u64,
+    // Give up (DIMACSOutput::Timeout) once this point in time has passed
+    deadline: Option<Instant>,
+    // The input contained an empty clause, so the formula is trivially UNSAT
+    has_empty_clause: bool,
 }
 
 impl DPLL {
     pub fn new(
-        input: Vec<Vec<i32>>,
+        mut input: Vec<Vec<i32>>,
         lit_count: usize,
         clause_count: usize,
         heuristic: Heuristic,
@@ -119,15 +129,23 @@ impl DPLL {
             unit_queue: VecDeque::new(),
             free_lits: HashSet::with_capacity(lit_count),
             unsat_clauses: HashSet::with_capacity(clause_count),
+            show_depth,
+            decisions: 0,
+            deadline: None,
+            has_empty_clause: false,
         };
+        if input.iter().any(|c| c.is_empty()) {
+            dpll.has_empty_clause = true;
+            input.retain(|c| !c.is_empty());
+        }
         // * read formula
         // Using iterators where possible for better performance
         input.into_iter().enumerate().for_each(|(c, vars)| {
-            dpll.unsat_clauses.insert((vars.clone(), vars.len() as u8));
+            dpll.unsat_clauses.insert((vars.clone(), vars.len() as u32));
             let clause = Clause {
                 sat_by_var: 0,
                 vars: vars.clone(),
-                unassign_vars: vars.len() as u8,
+                unassign_vars: vars.len() as u32,
             };
             let fist_var = &clause.vars.clone()[0];
             dpll.clauses.insert(c, clause);
@@ -166,7 +184,34 @@ impl DPLL {
         dpll
     }
 
+    /// Stop searching once `deadline` has passed, `solve` then returns [`DIMACSOutput::Timeout`].
+    pub fn set_deadline(&mut self, deadline: Option<Instant>) {
+        self.deadline = deadline;
+    }
+
+    /// Builder style variant of [`DPLL::set_deadline`].
+    pub fn with_deadline(mut self, deadline: Option<Instant>) -> Self {
+        self.deadline = deadline;
+        self
+    }
+
+    /// Number of branching decisions (excluding pure literals and forced assignments) so far.
+    pub fn decisions(&self) -> u64 {
+        self.decisions
+    }
+
+    fn timed_out(&self, step: u64) -> bool {
+        step % 16 == 0 && self.deadline.is_some_and(|d| Instant::now() >= d)
+    }
+
     pub fn solve(&mut self) -> Result<DIMACSOutput, Error> {
+        if self.has_empty_clause {
+            return Ok(DIMACSOutput::Unsat);
+        }
+        if self.deadline.is_some_and(|d| Instant::now() >= d) {
+            return Ok(DIMACSOutput::Timeout);
+        }
+        let mut steps: u64 = 0;
         // * unit propagation
         profiling::start("DPLL::solve");
         let conflict = self.unit_prop();
@@ -197,11 +242,17 @@ impl DPLL {
         let mut pure_lits = self.get_pure_lits();
 
         loop {
+            steps += 1;
+            if self.timed_out(steps) {
+                profiling::end("DPLL::solve");
+                return Ok(DIMACSOutput::Timeout);
+            }
             // * choose literal var
             let (var, val, forced) = match pure_lits.is_empty() {
                 true => {
                     self.history_enabled = true;
                     let (var, val) = self.pick_literal();
+                    self.decisions += 1;
                     (var, val, false)
                 }
                 false => {
@@ -220,6 +271,11 @@ impl DPLL {
                     break;
                 };
 
+                steps += 1;
+                if self.timed_out(steps) {
+                    profiling::end("DPLL::solve");
+                    return Ok(DIMACSOutput::Timeout);
+                }
                 // * if conflict detected
                 let unsat = self.backtrack();
                 if unsat {
@@ -278,7 +334,7 @@ impl DPLL {
             self.unset_var(last_step.unwrap().var);
             last_step = self.history.pop();
         }
-        if self.history.len() as u16 <= self.min_depth {
+        if self.show_depth && self.history.len() as u16 <= self.min_depth {
             self.min_depth = self.history.len() as u16;
             println!("backtracked to depth {}", self.history.len());
         }

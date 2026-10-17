@@ -1,12 +1,12 @@
 [package]
 name = "sat_solver"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.4.10", features = ["cargo"] }
+clap = { version = "4.6.7", features = ["cargo"] }
 flame = { version = "0.2.2", optional = true }
 
 [features]

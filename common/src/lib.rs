@@ -1,14 +1,14 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+//! Types shared by the backend (encoding, solving, generating) and the frontend (playing).
+//!
+//! Coordinates follow the backend convention: `x` is the column, `y` is the row.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod board;
+pub mod config;
+pub mod puzzle;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use board::{Board, Check, Edge, Orientation};
+pub use config::*;
+pub use puzzle::{Island, Pos, Puzzle};
+
+/// At most two bridges may connect the same pair of islands.
+pub const MAX_BRIDGES: u8 = 2;

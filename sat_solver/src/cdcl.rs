@@ -2,6 +2,7 @@ use std::{
     collections::{BinaryHeap, HashMap, HashSet, VecDeque},
     fs::File,
     io::Write,
+    time::Instant,
     vec,
 };
 
@@ -87,6 +88,10 @@ pub struct CDCL {
     pub restart: Restart,
     deletion_start: (usize, usize),
     drup_output: Option<String>,
+    // Give up (DIMACSOutput::Timeout) once this point in time has passed
+    deadline: Option<Instant>,
+    // The input contained an empty clause, so the formula is trivially UNSAT
+    has_empty_clause: bool,
 }
 
 pub struct Restart {
@@ -149,7 +154,13 @@ impl CDCL {
             },
             deletion_start: (k, m),
             drup_output: drup_path,
+            deadline: None,
+            has_empty_clause: false,
         };
+        if input.iter().any(|c| c.is_empty()) {
+            cdcl.has_empty_clause = true;
+            input.retain(|c| !c.is_empty());
+        }
         if subsumed_clauses {
             delete_subsumed_clauses(&mut input);
         }
@@ -196,6 +207,32 @@ impl CDCL {
         cdcl
     }
 
+    /// Stop searching once `deadline` has passed, `solve` then returns [`DIMACSOutput::Timeout`].
+    pub fn set_deadline(&mut self, deadline: Option<Instant>) {
+        self.deadline = deadline;
+    }
+
+    /// Builder style variant of [`CDCL::set_deadline`].
+    pub fn with_deadline(mut self, deadline: Option<Instant>) -> Self {
+        self.deadline = deadline;
+        self
+    }
+
+    /// Number of branching decisions (including pure literal assignments) so far.
+    pub fn decisions(&self) -> u64 {
+        self.branch_counter
+    }
+
+    /// Number of restarts so far.
+    pub fn restarts(&self) -> u64 {
+        self.restart.count as u64
+    }
+
+    // Checking the clock is cheap compared to an iteration of the solver, but there is no need to do it every time
+    fn timed_out(&self, step: u64) -> bool {
+        step % 16 == 0 && self.deadline.is_some_and(|d| Instant::now() >= d)
+    }
+
     // Counts a (learned) conflict and returns whether the solver should restart
     fn restart_policy(&mut self) -> bool {
         match self.restart.threshold {
@@ -233,6 +270,13 @@ impl CDCL {
     }
 
     pub fn solve(&mut self) -> Result<DIMACSOutput, Error> {
+        if self.has_empty_clause {
+            return Ok(DIMACSOutput::Unsat);
+        }
+        if self.deadline.is_some_and(|d| Instant::now() >= d) {
+            return Ok(DIMACSOutput::Timeout);
+        }
+        let mut steps: u64 = 0;
         // * unit propagation
         let conflict = self.unit_prop();
         if conflict {
@@ -250,6 +294,10 @@ impl CDCL {
             .collect();
 
         loop {
+            steps += 1;
+            if self.timed_out(steps) {
+                return Ok(DIMACSOutput::Timeout);
+            }
             // * choose literal var
             let (var, val, forced) = match pure_lits.is_empty() {
                 true => {
@@ -269,14 +317,19 @@ impl CDCL {
             self.literals_at_current_depth.clear();
             //println!("Branching d {}:", self.branch_depth);
             let conflict_literal = self.set_var(forced, val, var, None);
-            self.update_watched(conflict_literal);
+            // The decision itself can falsify a clause, that conflict must not get lost
+            let mut decision_conflict = self.update_watched(conflict_literal);
             // * unit propagation
             let mut restart_pending = false;
             loop {
-                let conflict = self.unit_prop();
+                let conflict = std::mem::take(&mut decision_conflict) || self.unit_prop();
                 if !conflict {
                     break;
                 };
+                steps += 1;
+                if self.timed_out(steps) {
+                    return Ok(DIMACSOutput::Timeout);
+                }
                 // * if conflict detected
                 let (conflict_clause, backtrack_level) = self.analyze_conflict()?;
 
@@ -308,7 +361,8 @@ impl CDCL {
 
     fn unit_prop(&mut self) -> bool {
         //println!("Unitprop:");
-        let mut unsat = !self.unit_queue.is_empty();
+        // Queued literals that are already assigned are skipped, so an empty round is no conflict
+        let mut unsat = false;
         while !self.unit_queue.is_empty() {
             let forced_lit = self.unit_queue.pop_back().unwrap();
             // Try to set the literal. If this results in a conflict, `unsat` is true.
@@ -608,6 +662,7 @@ impl CDCL {
         }
     }
 
+    #[allow(dead_code)]
     fn print_graph_as_dot(&self) {
         let nodes = self
             .lit_val
@@ -657,16 +712,19 @@ impl CDCL {
     }
 
     fn is_sat(&self) -> Option<DIMACSOutput> {
-        for c in self.clauses.values() {
-            let lhs = self.lit_val.get(&as_atom(c.watched_lhs)).unwrap();
-            let rhs = self.lit_val.get(&as_atom(c.watched_rhs)).unwrap();
-            if lhs.is_free
-                && rhs.is_free
-                && self.pos_watched_occ.contains_key(&c.watched_lhs)
-                && self.pos_watched_occ.contains_key(&c.watched_rhs)
-            {
-                return None;
-            }
+        // Every clause needs a literal that is currently assigned true. Looking only at the
+        // watched literals isn't enough: after backjumping a watch can stay on a literal assigned
+        // false at a lower level while the rest of the clause is unassigned, and free variables
+        // still carry the value of their last assignment, so such a model could violate clauses.
+        let satisfied = |c: &Clause| {
+            c.vars.iter().any(|&v| {
+                self.lit_val
+                    .get(&as_atom(v))
+                    .is_some_and(|l| !l.is_free && l.val == v.is_positive())
+            })
+        };
+        if !self.clauses.values().all(satisfied) {
+            return None;
         }
         let mut res: Vec<BVar> = self
             .lit_val
@@ -755,7 +813,7 @@ impl CDCL {
                         "Heuristic {:?} is not implemented/embedded into CDCL",
                         self.heuristic
                     ),
-                })
+                });
             }
         }
     }
@@ -764,7 +822,7 @@ impl CDCL {
         let mut hs_1: HashSet<BVar> = HashSet::from_iter(clause1.iter().cloned());
         let mut hs_2: HashSet<BVar> = HashSet::from_iter(clause2.iter().cloned());
         if hs_1 == hs_2 {
-            println!("Warning: Could not apply resolution because clauses are equal.");
+            // Resolving a clause with itself is a no-op. This used to print a warning, which spammed the server logs.
             return Ok(clause1.clone());
         }
         for c_1 in clause1.iter() {
@@ -1682,5 +1740,45 @@ fn testunsat() {
     if let Ok(DIMACSOutput::Sat(vars)) = res {
         println!("{:?}", vars);
         panic!("Was SAT but expected UNSAT.")
+    }
+}
+
+#[test]
+fn should_return_valid_models_hashi_oct_2026() {
+    // Conflicts caused directly by a decision used to be ignored, so the solver could continue
+    // past a falsified clause and report a model violating the formula (nondeterministically,
+    // depending on HashMap iteration order).
+    let (input, v_c, c_c) =
+        crate::parse::parse("./src/inputs/sat/hashi_test20_subsumed.cnf").unwrap();
+    for subsumption in [false, true] {
+        for _ in 0..25 {
+            let res = CDCL::new(
+                input.clone(),
+                v_c,
+                c_c,
+                Heuristic::VSIDS,
+                subsumption,
+                Some(32),
+                true,
+                None,
+                10,
+                10,
+                None,
+            )
+            .solve();
+            let Ok(DIMACSOutput::Sat(model)) = res else {
+                panic!("Expected SAT");
+            };
+            let mut values = vec![false; v_c + 1];
+            for lit in model.into_iter().filter(|&l| l != 0) {
+                values[lit.unsigned_abs() as usize] = lit > 0;
+            }
+            for clause in &input {
+                assert!(
+                    clause.iter().any(|&l| values[l.unsigned_abs() as usize] == (l > 0)),
+                    "model violates {clause:?}"
+                );
+            }
+        }
     }
 }

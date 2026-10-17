@@ -1,4 +1,8 @@
-use std::{fs::File, io::Write};
+use std::{
+    fs::File,
+    io::Write,
+    time::{Duration, Instant},
+};
 
 pub mod cdcl;
 pub mod cli;
@@ -30,10 +34,13 @@ fn main() {
         _ => None,
     };
 
+    let deadline = arguments
+        .timeout
+        .map(|t| Instant::now() + Duration::from_secs_f64(t));
     let cert = match arguments.solver.as_str() {
-        "dpll" => {
-            dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, arguments.depth).solve()
-        }
+        "dpll" => dpll::DPLL::new(vars, v_count, c_count, arguments.heuristic, arguments.depth)
+            .with_deadline(deadline)
+            .solve(),
         "cdcl" => cdcl::CDCL::new(
             vars,
             v_count,
@@ -47,6 +54,7 @@ fn main() {
             arguments.m,
             logger,
         )
+        .with_deadline(deadline)
         .solve(),
         otherwise => panic!("{} is not a valid mode.", otherwise),
     };

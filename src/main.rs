@@ -1,88 +1,51 @@
-use hashi::app::Generate;
-use hashi::app::ToCNF;
-use hashi::app::Solve;
+#![recursion_limit = "256"]
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
-    use axum::{routing::post, Router};
-    use leptos::*;
-    use leptos_axum::{generate_route_list, LeptosRoutes};
-    use hashi::app::*;
-    use hashi::fileserv::file_and_error_handler;
+    use axum::Router;
+    use hashi::app::{App, shell};
+    use leptos::prelude::*;
+    use leptos_axum::{LeptosRoutes, generate_route_list};
+    use tower_http::compression::CompressionLayer;
 
-    //simple_logger::init_with_level(log::Level::Debug).expect("couldn't initialize logging");
-
-    // Setting get_configuration(None) means we'll be using cargo-leptos's env values
-    // For deployment these variables are:
-    // <https://github.com/leptos-rs/start-axum#executing-a-server-on-a-remote-machine-without-the-toolchain>
-    // Alternately a file can be specified such as Some("Cargo.toml")
-    // The file would need to be included with the executable when moved to deployment
-    let conf = get_configuration(None).await.unwrap();
+    // Reads the cargo-leptos settings (Cargo.toml) or the LEPTOS_* environment variables
+    let conf = get_configuration(None).expect("invalid Leptos configuration");
     let leptos_options = conf.leptos_options;
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(App);
 
-    // build our application with a route
     let app = Router::new()
-        .route("/api/*fn_name", post(leptos_axum::handle_server_fns))
-        .leptos_routes(&leptos_options, routes, App)
-        .fallback(file_and_error_handler)
+        .leptos_routes(&leptos_options, routes, {
+            let leptos_options = leptos_options.clone();
+            move || shell(leptos_options.clone())
+        })
+        .fallback(leptos_axum::file_and_error_handler(shell))
+        .layer(CompressionLayer::new())
         .with_state(leptos_options);
 
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
-    log::info!("listening on http://{}", &addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
-        .unwrap();
+        .expect("could not bind the server address");
+    println!("listening on http://{addr}");
+    axum::serve(listener, app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .expect("server error");
+}
+
+/// fly.io stops machines with SIGINT/SIGTERM, which a container's PID 1 ignores by default.
+#[cfg(feature = "ssr")]
+async fn shutdown_signal() {
+    use tokio::signal::unix::{SignalKind, signal};
+    let mut terminate = signal(SignalKind::terminate()).expect("could not listen for SIGTERM");
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {}
+        _ = terminate.recv() => {}
+    }
 }
 
 #[cfg(not(feature = "ssr"))]
 pub fn main() {
-    let _ = Generate::register();
-    let _ = ToCNF::register();
-    let _ = Solve::register();
-    // no client-side main function
-    // unless we want this to work with e.g., Trunk for a purely client-side app
-    // see lib.rs for hydration function instead
+    // No client-side main function, see lib.rs for the hydration entry point
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

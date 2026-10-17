@@ -1,48 +1,43 @@
-# Get started with a build env with Rust nightly
-FROM rustlang/rust:nightly-bookworm as builder
+# syntax=docker/dockerfile:1
 
-# If you’re using stable, use this instead
-# FROM rust:1.70-bullseye as builder
-
-# Install cargo-binstall, which makes it easier to install other
-# cargo extensions like cargo-leptos
-RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
-RUN tar -xvf cargo-binstall-x86_64-unknown-linux-musl.tgz
-RUN cp cargo-binstall /usr/local/cargo/bin
-
-# Install cargo-leptos
-RUN cargo binstall cargo-leptos -y
-
-# Add the WASM target
-RUN rustup target add wasm32-unknown-unknown
-
-# Make an /app dir, which everything will eventually live in
-RUN mkdir -p /app
+# Tailwind v4 (the CLI and tw-animate-css) comes from npm, cargo-leptos runs node_modules/.bin/tailwindcss
+FROM node:26-trixie-slim AS css-deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+
+FROM rust:1.99-trixie AS builder
+
+# cargo-binstall makes it easier to install cargo extensions like cargo-leptos
+RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+RUN cargo binstall -y cargo-leptos@0.3.11
+
+WORKDIR /app
+COPY --from=css-deps /usr/local/bin/node /usr/local/bin/node
 COPY . .
+COPY --from=css-deps /app/node_modules ./node_modules
 
-# The project uses Tailwind v3 (tailwind.config.js), newer cargo-leptos defaults to v4
-ENV LEPTOS_TAILWIND_VERSION="v3.4.17"
+# Installs the toolchain from rust-toolchain.toml (stable + wasm32-unknown-unknown)
+RUN rustup toolchain install
 
-# Build the app
 RUN cargo leptos build --release -vv
 
-FROM rustlang/rust:nightly-bookworm as runner
-# Copy the server binary to the /app directory
-COPY --from=builder /app/target/release/hashi /app/
-# /target/site contains our JS/WASM/CSS, etc.
-COPY --from=builder /app/target/site /app/site
-# Copy Cargo.toml if it’s needed at runtime
-COPY --from=builder /app/Cargo.toml /app/
-WORKDIR /app
+FROM debian:trixie-slim AS runner
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set any required env variables and
+WORKDIR /app
+# The server binary and the site (JS/WASM/CSS and public assets)
+COPY --from=builder /app/target/release/hashi /app/
+COPY --from=builder /app/target/site /app/site
+
 ENV RUST_LOG="info"
 ENV LEPTOS_OUTPUT_NAME="hashi"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
 ENV LEPTOS_SITE_ROOT="site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"
-ENV LEPTOS_ENV="production"
+ENV LEPTOS_ENV="PROD"
 EXPOSE 8080
-# Run the server
+
 CMD ["/app/hashi"]

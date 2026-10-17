@@ -1,8 +1,10 @@
 [package]
 name = "common"
-version = "0.1.0"
-edition = "2021"
+version = "0.2.0"
+edition = "2024"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# Shared between the backend (encoding, solving, generating) and the frontend (playing).
+# Must stay wasm-compatible: no std::time, no filesystem, no heavy dependencies.
 
 [dependencies]
+serde = { version = "1.0.229", features = ["derive"] }

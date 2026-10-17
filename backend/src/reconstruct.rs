@@ -1,5 +1,35 @@
 use crate::{generate_clauses::BridgeCoord, parse_input::GameBoard};
+use common::{Board, Orientation};
 use std::{collections::HashMap, fs::File, io::Read};
+
+/// Draws the puzzle with bridges: `-`/`=` horizontal, `|`/`‖` vertical single/double bridges.
+pub fn render(board: &Board, bridges: &[u8]) -> String {
+    let mut grid = board
+        .puzzle
+        .to_grid()
+        .into_iter()
+        .map(|row| {
+            row.into_iter()
+                .map(|n| if n == 0 { '.' } else { (b'0' + n) as char })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    for (e, &count) in bridges.iter().enumerate() {
+        let symbol = match (board.edges[e].orientation, count) {
+            (_, 0) => continue,
+            (Orientation::Horizontal, 1) => '-',
+            (Orientation::Horizontal, _) => '=',
+            (Orientation::Vertical, 1) => '|',
+            (Orientation::Vertical, _) => '‖',
+        };
+        for cell in board.cells(e) {
+            grid[cell.y as usize][cell.x as usize] = symbol;
+        }
+    }
+    grid.into_iter()
+        .map(|row| row.into_iter().collect::<String>() + "\n")
+        .collect()
+}
 
 pub fn get_content(sat_output_path: &String) -> String {
     let mut file = File::open(sat_output_path.clone())
@@ -74,7 +104,8 @@ pub fn reconstruct_puzzle(
 
 #[test]
 fn should_parse_sat_output() {
-    let path = "test.txt";
+    let file = tempfile::Builder::new().suffix(".txt").tempfile().unwrap();
+    let path = file.path().to_str().unwrap();
     let mut file = File::create(path).unwrap();
     let content = "SAT\n1 2 3 -4 5 -6 7 -8";
     std::io::Write::write_all(&mut file, content.as_bytes()).unwrap();
@@ -133,6 +164,16 @@ fn should_parse_sat_output() {
         ],
     };
     let contents = get_content(&path.to_string());
-    reconstruct_puzzle(contents, &var_map, &game_board);
+    let res = reconstruct_puzzle(contents, &var_map, &game_board);
+    assert!(res.starts_with("3-2"), "{res}");
 }
 
+#[test]
+fn renders_solution() {
+    let board = Board::new(common::Puzzle::parse_txt("3 3\n2.3\n...\n1.2\n").unwrap());
+    let mut bridges = board.empty_bridges();
+    bridges[board.edge_between(0, 1).unwrap()] = 1;
+    bridges[board.edge_between(0, 2).unwrap()] = 1;
+    bridges[board.edge_between(1, 3).unwrap()] = 2;
+    assert_eq!(render(&board, &bridges), "2-3\n|.‖\n1.2\n");
+}

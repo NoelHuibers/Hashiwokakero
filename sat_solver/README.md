@@ -1,6 +1,6 @@
 # SAT-Solver
 
-DPLL/CDCL SAT solver from the SAT solving lab (`gruppe-m-3-abgabe`, commit `1f464e7`), used by the Hashi backend as an alternative to splr (see `backend/src/solver.rs`).
+DPLL/CDCL SAT solver from the SAT solving lab (`gruppe-m-3-abgabe`, commit `1f464e7`), used by the Hashi backend as an alternative to splr (see `backend/src/sat.rs`). The library can bound the runtime of `CDCL`/`DPLL` with `set_deadline`/`with_deadline` (`DIMACSOutput::Timeout`) and reports statistics via `decisions()` and `restarts()`.
 
 Only the solver library, the `sat` binary and the inputs needed by the unit tests are included here. The benchmark tooling (`cputime`, `results`, `plot`) and the full set of benchmark inputs remain in the original repository.
 
@@ -42,6 +42,7 @@ Supported heuristics are:
 | -l|--luby|Use luby sequence for restarts|
 | -F|--restart_factor |Specify the factor for restarts|
 | -D|--DRUP|Output in DRUP format|
+| -t|--timeout |Give up after this many seconds and print `UNKNOWN (timeout)`|
 | -h|--help|Print help|
 | -V|--version|Print version|
 

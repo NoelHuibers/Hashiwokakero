@@ -13,7 +13,7 @@ pub(crate) fn arbitrary(free_lits: &HashSet<i32>) -> (i32, bool) {
 // aiming to quickly reduce the search space
 pub(crate) fn dlis(
     free_lits: &HashSet<i32>,
-    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
     // Create a map to count the occurrences of each variable in unsatisfied clauses
     let mut var_occurrences: HashMap<i32, usize> = HashMap::new();
@@ -55,7 +55,7 @@ pub(crate) fn dlis(
 pub(crate) fn dlcs(
     free_lits: &HashSet<i32>,
     _lit_val: &HashMap<u16, Literal>,
-    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
     let mut var_occurrences: HashMap<i32, usize> = HashMap::new();
 
@@ -87,7 +87,7 @@ pub(crate) fn dlcs(
 pub(crate) fn mom(
     free_lits: &HashSet<i32>,
     _lit_val: &HashMap<u16, Literal>,
-    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
     let min_clause_size = unsat_clauses
         .iter()
@@ -125,7 +125,7 @@ pub(crate) fn mom(
 pub(crate) fn boehm(
     free_lits: &HashSet<i32>,
     _lit_val: &HashMap<u16, Literal>,
-    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
     let min_clause_size = unsat_clauses
         .iter()
@@ -164,7 +164,7 @@ pub(crate) fn boehm(
 pub(crate) fn jeroslaw_wang(
     free_lits: &HashSet<i32>,
     _lit_val: &HashMap<u16, Literal>,
-    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
     let mut scores: HashMap<i32, f64> = HashMap::new();
 
@@ -193,7 +193,7 @@ pub(crate) fn jeroslaw_wang(
 // VSIDS
 pub(crate) fn vsids_dpll(
     free_lits: &HashSet<i32>,
-    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
     let mut scores: HashMap<i32, f64> = HashMap::new();
 
@@ -254,7 +254,7 @@ impl VsidsData {
 
 pub(crate) fn vsids(
     free_lits: &HashSet<i32>,
-    unsat_clauses: &Vec<(Vec<i32>, u8)>,
+    unsat_clauses: &Vec<(Vec<i32>, u32)>,
     vsids_data: &mut VsidsData,
 ) -> (i32, bool) {
     // Increment the branching counter
@@ -271,7 +271,7 @@ pub(crate) fn vsids(
     }
 
     // Select the literal with the highest score
-    let (max_var, _) = vsids_data.scores.iter().max_by(|(_, &score_a), (_, &score_b)| {
+    let (max_var, _) = vsids_data.scores.iter().max_by(|&(_, &score_a), &(_, &score_b)| {
         score_a.partial_cmp(&score_b).unwrap_or(std::cmp::Ordering::Equal)
     }).unwrap_or((&0, &0.0));
 
@@ -376,7 +376,7 @@ impl BerkMinData {
 
 pub(crate) fn berkmin(
     free_lits: &HashSet<i32>,
-    unsat_clauses: &[(Vec<i32>, u8)], 
+    unsat_clauses: &[(Vec<i32>, u32)], 
     berkmin_data: &mut BerkMinData,
 ) -> (i32, bool) {
     if let Some((most_recent_clause, _)) = unsat_clauses.last() { // Access to the latest unfulfilled clause
@@ -412,7 +412,7 @@ pub(crate) fn berkmin(
 // Custom: Least number of clauses: selects the variable that appears in the smallest number of clauses.
 pub(crate) fn custom(
     free_lits: &HashSet<i32>,
-    unsat_clauses: &HashSet<(Vec<i32>, u8)>,
+    unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
     let mut scores: HashMap<i32, usize> = HashMap::new();
 
