@@ -2,6 +2,7 @@
 #![recursion_limit = "256"]
 
 pub mod api;
+pub mod audio;
 pub mod app;
 pub mod components;
 pub mod lang;

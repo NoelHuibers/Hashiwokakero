@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Karanlık modu aç/kapat",
     "to_day": "Gündüze geç 昼",
-    "to_night": "Geceye geç 夜"
+    "to_night": "Geceye geç 夜",
+    "night": "Gece modu"
   },
   "footer": {
     "tagline": "<em>köprüleri kur</em>. SAT çözer, sen oynarsın.",
@@ -93,7 +94,9 @@
     "zoom": "Yakınlaştır",
     "fit": "Tahtayı sığdır",
     "zoom_hint": "Gezinmek için kaydır, köprü kurmak için dokun",
-    "cells_small": "Hücreler çok mu küçük?"
+    "cells_small": "Hücreler çok mu küçük?",
+    "pinch": "Yakınlaştırmak için iki parmak",
+    "zoom_out": "Uzaklaştır"
   },
   "not_found": {
     "title": "Denizde kayboldun",
@@ -157,5 +160,11 @@
     "imprint": "Künye",
     "privacy": "Gizlilik",
     "english": "İngilizce sürüm"
-  }
+  },
+  "audio": {
+    "sound": "Ses efektleri",
+    "music": "Müzik",
+    "music_hint": "Sakin koto melodileri"
+  },
+  "settings": "Ayarlar"
 }

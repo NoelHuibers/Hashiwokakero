@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Ganti mode gelap",
     "to_day": "Ganti ke siang 昼",
-    "to_night": "Ganti ke malam 夜"
+    "to_night": "Ganti ke malam 夜",
+    "night": "Mode malam"
   },
   "footer": {
     "tagline": "<em>bangun jembatan</em>. Dipecahkan oleh SAT, dimainkan olehmu.",
@@ -93,7 +94,9 @@
     "zoom": "Perbesar",
     "fit": "Paskan papan",
     "zoom_hint": "Geser untuk berpindah, ketuk untuk membangun",
-    "cells_small": "Sel terlalu kecil?"
+    "cells_small": "Sel terlalu kecil?",
+    "pinch": "Cubit untuk zoom",
+    "zoom_out": "Perkecil"
   },
   "not_found": {
     "title": "Tersesat di laut",
@@ -157,5 +160,11 @@
     "imprint": "Info legal",
     "privacy": "Privasi",
     "english": "Versi bahasa Inggris"
-  }
+  },
+  "audio": {
+    "sound": "Efek suara",
+    "music": "Musik",
+    "music_hint": "Melodi koto yang tenang"
+  },
+  "settings": "Pengaturan"
 }

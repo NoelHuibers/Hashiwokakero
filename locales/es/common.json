@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Cambiar modo oscuro",
     "to_day": "Cambiar a día 昼",
-    "to_night": "Cambiar a noche 夜"
+    "to_night": "Cambiar a noche 夜",
+    "night": "Modo noche"
   },
   "footer": {
     "tagline": "<em>construye puentes</em>. Resuelto por SAT, jugado por ti.",
@@ -93,7 +94,9 @@
     "zoom": "Ampliar",
     "fit": "Ajustar tablero",
     "zoom_hint": "Desliza para moverte, toca para construir",
-    "cells_small": "¿Casillas muy pequeñas?"
+    "cells_small": "¿Casillas muy pequeñas?",
+    "pinch": "Pellizca para hacer zoom",
+    "zoom_out": "Alejar"
   },
   "not_found": {
     "title": "Perdido en el mar",
@@ -157,5 +160,11 @@
     "imprint": "Aviso legal",
     "privacy": "Privacidad",
     "english": "Versión en inglés"
-  }
+  },
+  "audio": {
+    "sound": "Efectos de sonido",
+    "music": "Música",
+    "music_hint": "Melodías tranquilas de koto"
+  },
+  "settings": "Ajustes"
 }

@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Bật/tắt chế độ tối",
     "to_day": "Chuyển sang ngày 昼",
-    "to_night": "Chuyển sang đêm 夜"
+    "to_night": "Chuyển sang đêm 夜",
+    "night": "Chế độ ban đêm"
   },
   "footer": {
     "tagline": "<em>hãy xây cầu</em>. SAT giải đố, bạn chơi.",
@@ -93,7 +94,9 @@
     "zoom": "Phóng to",
     "fit": "Vừa màn hình",
     "zoom_hint": "Vuốt để di chuyển, chạm để xây cầu",
-    "cells_small": "Ô quá nhỏ?"
+    "cells_small": "Ô quá nhỏ?",
+    "pinch": "Chụm hai ngón để thu phóng",
+    "zoom_out": "Thu nhỏ"
   },
   "not_found": {
     "title": "Lạc giữa biển khơi",
@@ -157,5 +160,11 @@
     "imprint": "Thông tin pháp lý",
     "privacy": "Quyền riêng tư",
     "english": "Bản tiếng Anh"
-  }
+  },
+  "audio": {
+    "sound": "Hiệu ứng âm thanh",
+    "music": "Nhạc nền",
+    "music_hint": "Giai điệu koto êm dịu"
+  },
+  "settings": "Cài đặt"
 }

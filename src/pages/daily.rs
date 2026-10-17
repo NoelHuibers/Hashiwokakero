@@ -526,6 +526,7 @@ pub fn DailyPage() -> impl IntoView {
                 Ok(wrong) => {
                     daily.update_attempt(|a| a.checks += 1);
                     if wrong.is_empty() {
+                        crate::audio::play(crate::audio::Sfx::Correct);
                         toast(ToastKind::Success, |l| td_string!(l, common.toast.all_correct).to_string());
                     } else {
                         let count = wrong.len();

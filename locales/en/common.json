@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Toggle dark mode",
     "to_day": "Switch to day 昼",
-    "to_night": "Switch to night 夜"
+    "to_night": "Switch to night 夜",
+    "night": "Night mode"
   },
   "footer": {
     "tagline": "<em>build bridges</em>. Solved by SAT, played by you.",
@@ -93,7 +94,9 @@
     "zoom": "Zoom in",
     "fit": "Fit board",
     "zoom_hint": "Swipe to move around, tap to build",
-    "cells_small": "Cells too small?"
+    "cells_small": "Cells too small?",
+    "pinch": "Pinch to zoom",
+    "zoom_out": "Zoom out"
   },
   "not_found": {
     "title": "Lost at sea",
@@ -157,5 +160,11 @@
     "imprint": "Legal notice",
     "privacy": "Privacy",
     "english": "English version"
-  }
+  },
+  "audio": {
+    "sound": "Sound effects",
+    "music": "Music",
+    "music_hint": "Calm koto melodies"
+  },
+  "settings": "Settings"
 }

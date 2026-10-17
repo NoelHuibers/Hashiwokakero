@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "切換深色模式",
     "to_day": "切換到白天 昼",
-    "to_night": "切換到夜晚 夜"
+    "to_night": "切換到夜晚 夜",
+    "night": "夜間模式"
   },
   "footer": {
     "tagline": "<em>把橋搭起來</em>。SAT 負責解，你負責玩。",
@@ -93,7 +94,9 @@
     "zoom": "放大",
     "fit": "符合畫面",
     "zoom_hint": "滑動來移動畫面，點一下來搭橋",
-    "cells_small": "格子太小？"
+    "cells_small": "格子太小？",
+    "pinch": "雙指縮放",
+    "zoom_out": "縮小"
   },
   "not_found": {
     "title": "在海上迷路了",
@@ -157,5 +160,11 @@
     "imprint": "法律聲明",
     "privacy": "隱私權政策",
     "english": "英文版"
-  }
+  },
+  "audio": {
+    "sound": "音效",
+    "music": "音樂",
+    "music_hint": "舒緩的箏樂"
+  },
+  "settings": "設定"
 }

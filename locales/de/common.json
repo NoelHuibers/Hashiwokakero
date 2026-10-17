@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Dunkelmodus umschalten",
     "to_day": "Zum Tag wechseln 昼",
-    "to_night": "Zur Nacht wechseln 夜"
+    "to_night": "Zur Nacht wechseln 夜",
+    "night": "Nachtmodus"
   },
   "footer": {
     "tagline": "<em>Bau Brücken</em>. Vom SAT-Solver gelöst, von dir gespielt.",
@@ -93,7 +94,9 @@
     "zoom": "Vergrößern",
     "fit": "Spielfeld einpassen",
     "zoom_hint": "Wischen zum Verschieben, tippen zum Bauen",
-    "cells_small": "Felder zu klein?"
+    "cells_small": "Felder zu klein?",
+    "pinch": "Mit zwei Fingern zoomen",
+    "zoom_out": "Verkleinern"
   },
   "not_found": {
     "title": "Verschollen auf See",
@@ -157,5 +160,11 @@
     "imprint": "Impressum",
     "privacy": "Datenschutz",
     "english": "English version"
-  }
+  },
+  "audio": {
+    "sound": "Soundeffekte",
+    "music": "Musik",
+    "music_hint": "Ruhige Koto-Melodien"
+  },
+  "settings": "Einstellungen"
 }
