@@ -4,7 +4,7 @@ use crate::cdcl::CDCL;
 use crate::cli::Heuristic;
 
 pub fn luby_sequence(mut u: u32, mut v: u32) -> (u32, u32) {
-    if (u & u.wrapping_neg()) == v {
+    if u.isolate_lowest_one() == v {
         u += 1;
         v = 1;
     } else {
@@ -116,7 +116,7 @@ fn test_solver_uses_luby_sequence_for_restarts() {
 
 #[test]
 fn test_luby_sequence() {
-    let expected = vec![
+    let expected = [
         (1, 1),
         (2, 1),
         (2, 2),
@@ -131,6 +131,6 @@ fn test_luby_sequence() {
         let first = actual.last().unwrap();
         let res = luby_sequence(first.0, first.1);
         actual.push(res);
-        assert_eq!(res, expected[i + 1])
+        assert_eq!(res, expected[i + 1]);
     }
 }

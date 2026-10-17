@@ -29,7 +29,7 @@ fn main() {
     }
 
     let logger = match (arguments.outputpath.clone(), arguments.drup) {
-        (Some(path), true) => Some(format!("{}.log", path).into()),
+        (Some(path), true) => Some(format!("{path}.log")),
         (None, true) => panic!("Please specify an output path when using the drup flag."),
         _ => None,
     };
@@ -56,7 +56,7 @@ fn main() {
         )
         .with_deadline(deadline)
         .solve(),
-        otherwise => panic!("{} is not a valid mode.", otherwise),
+        otherwise => panic!("{otherwise} is not a valid mode."),
     };
 
     if arguments.flamegraph {
@@ -65,18 +65,18 @@ fn main() {
 
     match cert {
         Ok(sol) => {
-            println!("{}", sol);
+            println!("{sol}");
             if let Some(output) = arguments.outputpath {
-                let res = format!("{}\n", sol);
+                let res = format!("{sol}\n");
                 let mut file = match File::create(output) {
                     Ok(file) => file,
-                    Err(why) => panic!("Couldn't create file: {}", why),
+                    Err(why) => panic!("Couldn't create file: {why}"),
                 };
                 let _ = file.write_all(res.as_bytes());
                 // Write the content to the file
-            };
+            }
         }
-        Err(e) => println!("Sat-Solver failed to solve: {:?}", e),
+        Err(e) => println!("Sat-Solver failed to solve: {e:?}"),
     }
 
     if arguments.flamegraph {

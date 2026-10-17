@@ -26,7 +26,7 @@ pub const MAX_TIMEOUT_MS: u32 = 120_000;
 pub fn solve(puzzle: &Puzzle, config: &SolverConfig) -> Result<SolveReport, String> {
     validate(puzzle)?;
     let config = config.normalized();
-    let mut session = Session::new(puzzle, &config, deadline(&config));
+    let mut session = Session::new(puzzle, &config, Some(deadline(&config)));
     let outcome = match session.find()? {
         Search::Found(bridges) => SolveOutcome::Solved {
             bridges,
@@ -41,13 +41,15 @@ pub fn solve(puzzle: &Puzzle, config: &SolverConfig) -> Result<SolveReport, Stri
     })
 }
 
-/// Like [`solve`], but afterwards blocks the found solution and solves again (with the
-/// connectivity loop) to decide whether it is the only one: `SolveOutcome::Solved { unique }`
-/// is `Some(true)`/`Some(false)`, or `None` if the second part ran out of time.
+/// Like [`solve`], but also decides whether the solution is the only one.
+///
+/// Afterwards it blocks the found solution and solves again (with the connectivity loop):
+/// `SolveOutcome::Solved { unique }` is `Some(true)`/`Some(false)`, or `None` if the second part
+/// ran out of time.
 pub fn solve_unique(puzzle: &Puzzle, config: &SolverConfig) -> Result<SolveReport, String> {
     validate(puzzle)?;
     let config = config.normalized();
-    let mut session = Session::new(puzzle, &config, deadline(&config));
+    let mut session = Session::new(puzzle, &config, Some(deadline(&config)));
     let outcome = match session.find()? {
         Search::Found(bridges) => {
             session.block(&bridges);
@@ -81,9 +83,11 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
     crate::generator::generate(params)
 }
 
-/// Checks that the puzzle can be encoded: size within `MIN_SIZE..=MAX_SIZE`, at least one
-/// island, numbers within 1..=8, islands inside the grid, sorted in reading order and on
-/// distinct cells (as produced by [`Puzzle::new`]).
+/// Checks that the puzzle can be encoded.
+///
+/// That is: size within `MIN_SIZE..=MAX_SIZE`, at least one island, numbers within 1..=8,
+/// islands inside the grid, sorted in reading order and on distinct cells (as produced by
+/// [`Puzzle::new`]).
 pub fn validate(puzzle: &Puzzle) -> Result<(), String> {
     for (name, size) in [("width", puzzle.width), ("height", puzzle.height)] {
         if !(MIN_SIZE..=MAX_SIZE).contains(&size) {
@@ -120,12 +124,12 @@ pub fn validate(puzzle: &Puzzle) -> Result<(), String> {
     Ok(())
 }
 
-fn deadline(config: &SolverConfig) -> Option<Instant> {
+fn deadline(config: &SolverConfig) -> Instant {
     let ms = match config.timeout_ms {
         0 => DEFAULT_TIMEOUT_MS,
         ms => ms.min(MAX_TIMEOUT_MS),
     };
-    Some(Instant::now() + Duration::from_millis(ms as u64))
+    Instant::now() + Duration::from_millis(u64::from(ms))
 }
 
 pub(crate) enum Search {
@@ -150,11 +154,11 @@ pub(crate) struct Session {
 }
 
 impl Session {
-    pub fn new(puzzle: &Puzzle, config: &SolverConfig, deadline: Option<Instant>) -> Self {
+    pub(crate) fn new(puzzle: &Puzzle, config: &SolverConfig, deadline: Option<Instant>) -> Self {
         let start = Instant::now();
         let board = Board::new(puzzle.clone());
         let Encoding { num_vars, clauses } = encoding::encode(&board);
-        Session {
+        Self {
             board,
             num_vars,
             static_clauses: clauses.len(),
@@ -170,7 +174,7 @@ impl Session {
     }
 
     /// Finds a connected solution that satisfies all clauses added so far.
-    pub fn find(&mut self) -> Result<Search, String> {
+    pub(crate) fn find(&mut self) -> Result<Search, String> {
         let start = Instant::now();
         let result = self.find_inner();
         self.solve_time += start.elapsed();
@@ -207,11 +211,11 @@ impl Session {
     }
 
     /// Excludes a solution from further searches.
-    pub fn block(&mut self, bridges: &[u8]) {
+    pub(crate) fn block(&mut self, bridges: &[u8]) {
         self.clauses.push(encoding::blocking_clause(bridges));
     }
 
-    pub fn stats(&self) -> SolveStats {
+    pub(crate) fn stats(&self) -> SolveStats {
         SolveStats {
             config: self.config.describe(),
             variables: self.num_vars,

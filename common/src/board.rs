@@ -97,7 +97,7 @@ impl Board {
             incident[e.b].push(i);
         }
 
-        Board {
+        Self {
             puzzle,
             edges,
             crossings,
@@ -145,11 +145,6 @@ impl Board {
     }
 
     pub fn check(&self, bridges: &[u8]) -> Check {
-        let n = self.puzzle.islands.len();
-        let mut degrees = vec![0u8; n];
-        let mut crossing = Vec::new();
-        let mut parent: Vec<usize> = (0..n).collect();
-
         fn find(parent: &mut [usize], mut i: usize) -> usize {
             while parent[i] != i {
                 parent[i] = parent[parent[i]];
@@ -157,6 +152,11 @@ impl Board {
             }
             i
         }
+
+        let n = self.puzzle.islands.len();
+        let mut degrees = vec![0u8; n];
+        let mut crossing = Vec::new();
+        let mut parent: Vec<usize> = (0..n).collect();
 
         for (i, (&count, edge)) in bridges.iter().zip(&self.edges).enumerate() {
             if count == 0 {

@@ -22,3 +22,6 @@ tempfile = "3.27.0"
 [[bench]]
 name = "hashi_benchmark"
 harness = false
+
+[lints]
+workspace = true

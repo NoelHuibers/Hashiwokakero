@@ -26,7 +26,7 @@ pub struct SatStats {
 
 impl SatStats {
     /// Adds the numbers of another run.
-    pub fn add(&mut self, other: SatStats) {
+    pub fn add(&mut self, other: Self) {
         fn sum(a: Option<u64>, b: Option<u64>) -> Option<u64> {
             match (a, b) {
                 (None, None) => None,
@@ -53,7 +53,7 @@ pub fn solve_clauses(
     deadline: Option<Instant>,
 ) -> Result<(SatOutcome, SatStats), String> {
     let config = config.normalized();
-    if clauses.iter().any(|c| c.is_empty()) {
+    if clauses.iter().any(Vec::is_empty) {
         return Ok((SatOutcome::Unsat, SatStats::default()));
     }
     if clauses.is_empty() {
@@ -77,15 +77,14 @@ pub fn solve_clauses(
         // splr 0.19 trips debug assertions in its eliminator on some formulas (debug builds
         // only), fall back to our CDCL then
         SolverKind::Splr => {
-            match catch_unwind(AssertUnwindSafe(|| solve_splr(clauses, deadline))) {
-                Ok(result) => result?,
-                Err(_) => {
-                    let cdcl = SolverConfig {
-                        kind: SolverKind::Cdcl,
-                        ..SolverConfig::default()
-                    };
-                    solve_own(clauses, num_vars, &cdcl, deadline)?
-                }
+            if let Ok(result) = catch_unwind(AssertUnwindSafe(|| solve_splr(clauses, deadline))) {
+                result?
+            } else {
+                let cdcl = SolverConfig {
+                    kind: SolverKind::Cdcl,
+                    ..SolverConfig::default()
+                };
+                solve_own(clauses, num_vars, &cdcl, deadline)?
             }
         }
         SolverKind::Cdcl | SolverKind::Dpll => catch_unwind(AssertUnwindSafe(|| {
@@ -94,7 +93,7 @@ pub fn solve_clauses(
         .map_err(|e| {
             let msg = e
                 .downcast_ref::<&str>()
-                .map(|s| s.to_string())
+                .map(ToString::to_string)
                 .or_else(|| e.downcast_ref::<String>().cloned())
                 .unwrap_or_default();
             format!("{} crashed: {msg}", config.kind.label())
@@ -211,40 +210,37 @@ fn solve_own(
     deadline: Option<Instant>,
 ) -> Result<(Raw, SatStats), String> {
     let heuristic = own_heuristic(config.heuristic);
-    let (result, stats) = match config.kind {
-        SolverKind::Dpll => {
-            let mut dpll = DPLL::new(clauses.to_vec(), num_vars, clauses.len(), heuristic, false)
-                .with_deadline(deadline);
-            let result = dpll.solve();
-            let stats = SatStats {
-                decisions: Some(dpll.decisions()),
-                restarts: None,
-            };
-            (result, stats)
-        }
-        _ => {
-            let (threshold, luby, factor) = restart_params(config.restarts);
-            let mut cdcl = CDCL::new(
-                clauses.to_vec(),
-                num_vars,
-                clauses.len(),
-                heuristic,
-                config.subsumption,
-                threshold,
-                luby,
-                factor,
-                CDCL_K,
-                CDCL_M,
-                None,
-            )
+    let (result, stats) = if config.kind == SolverKind::Dpll {
+        let mut dpll = DPLL::new(clauses.to_vec(), num_vars, clauses.len(), heuristic, false)
             .with_deadline(deadline);
-            let result = cdcl.solve();
-            let stats = SatStats {
-                decisions: Some(cdcl.decisions()),
-                restarts: Some(cdcl.restarts()),
-            };
-            (result, stats)
-        }
+        let result = dpll.solve();
+        let stats = SatStats {
+            decisions: Some(dpll.decisions()),
+            restarts: None,
+        };
+        (result, stats)
+    } else {
+        let (threshold, luby, factor) = restart_params(config.restarts);
+        let mut cdcl = CDCL::new(
+            clauses.to_vec(),
+            num_vars,
+            clauses.len(),
+            heuristic,
+            config.subsumption,
+            threshold,
+            luby,
+            factor,
+            CDCL_K,
+            CDCL_M,
+            None,
+        )
+        .with_deadline(deadline);
+        let result = cdcl.solve();
+        let stats = SatStats {
+            decisions: Some(cdcl.decisions()),
+            restarts: Some(cdcl.restarts()),
+        };
+        (result, stats)
     };
     match result {
         Ok(DIMACSOutput::Sat(model)) => Ok((Raw::Model(model), stats)),

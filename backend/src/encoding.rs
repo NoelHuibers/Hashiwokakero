@@ -20,15 +20,20 @@ pub struct Encoding {
 }
 
 /// Variable of the `k`-th bridge (1 or 2) on edge `edge`.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    reason = "a puzzle of at most 30x30 cells has a few thousand edges, far below i32::MAX"
+)]
 pub fn var(edge: usize, k: u8) -> i32 {
     debug_assert!(k == 1 || k == 2);
-    (2 * edge + k as usize) as i32
+    (2 * edge + usize::from(k)) as i32
 }
 
 /// The edge and bridge number (1 or 2) of a variable.
 pub fn edge_of(var: i32) -> (usize, u8) {
     let v = var.unsigned_abs() as usize - 1;
-    (v / 2, (v % 2) as u8 + 1)
+    (v / 2, u8::from(v % 2 == 1) + 1)
 }
 
 pub fn encode(board: &Board) -> Encoding {
@@ -106,9 +111,15 @@ pub fn exactly_k_of_n(k: usize, vars: &[i32]) -> Vec<Vec<i32>> {
 
 /// Bridge counts per edge from a model (`model[v]` is the value of variable `v`).
 pub fn decode(board: &Board, model: &[bool]) -> Vec<u8> {
-    let value = |v: i32| model.get(v as usize).copied().unwrap_or(false);
+    let value = |v: i32| {
+        usize::try_from(v)
+            .ok()
+            .and_then(|v| model.get(v))
+            .copied()
+            .unwrap_or(false)
+    };
     (0..board.edges.len())
-        .map(|e| value(var(e, 1)) as u8 + (value(var(e, 1)) && value(var(e, 2))) as u8)
+        .map(|e| u8::from(value(var(e, 1))) + u8::from(value(var(e, 1)) && value(var(e, 2))))
         .collect()
 }
 
@@ -285,7 +296,7 @@ mod tests {
             exactly_k_of_n(1, &[1, 2, 3]),
             vec![vec![1, 2, 3], vec![-1, -2], vec![-1, -3], vec![-2, -3]]
         );
-        assert!(exactly_k_of_n(0, &[]).is_empty());
+        assert_eq!(exactly_k_of_n(0, &[]), Vec::<Vec<i32>>::new());
     }
 
     #[test]
@@ -342,7 +353,7 @@ mod tests {
 
         let puzzle = Puzzle::parse_txt("3 3\n1.1\n...\n1..\n").unwrap();
         let puzzle = Puzzle::new(puzzle.width, puzzle.height, {
-            let mut i = puzzle.islands.clone();
+            let mut i = puzzle.islands;
             i.retain(|i| i.pos.y == 0);
             i.push(common::Island {
                 pos: common::Pos::new(1, 2),

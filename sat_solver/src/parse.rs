@@ -1,6 +1,7 @@
 use crate::profiling;
 use std::fs;
 use std::num::ParseIntError;
+use std::path::Path;
 
 #[derive(Debug)]
 pub enum ParseError {
@@ -10,21 +11,24 @@ pub enum ParseError {
 }
 
 impl From<std::io::Error> for ParseError {
-    fn from(err: std::io::Error) -> ParseError {
-        ParseError::Io(err)
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(err)
     }
 }
 
 impl From<ParseIntError> for ParseError {
-    fn from(err: ParseIntError) -> ParseError {
-        ParseError::Parse(err)
+    fn from(err: ParseIntError) -> Self {
+        Self::Parse(err)
     }
 }
 
 // Due to clauses being able to span over multiple lines (see Zulip), it's not possible to parallelize the parsing.
 pub fn parse(input_file: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseError> {
     profiling::start("parse");
-    if !input_file.ends_with(".cnf") {
+    if !Path::new(input_file)
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("cnf"))
+    {
         return Err(ParseError::InvalidInput(
             "Only .cnf files are allowed.".to_string(),
         ));
@@ -37,7 +41,7 @@ pub fn parse(input_file: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseErr
     // Get the metainfo
     let p_line = lines
         .next()
-        .ok_or(ParseError::InvalidInput("Missing 'p' line".to_string()))?;
+        .ok_or_else(|| ParseError::InvalidInput("Missing 'p' line".to_string()))?;
     let meta_info = p_line.split_whitespace().collect::<Vec<&str>>();
     let var_count = meta_info[2].parse()?;
     let clause_count = meta_info[3].parse()?;

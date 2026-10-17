@@ -1,7 +1,9 @@
 //! Solving DIMACS CNF files (used by the CLI and the tests). The web server uses [`crate::api`].
 
+use std::fmt::Write as _;
 use std::fs::{self, File};
 use std::io::{self, BufWriter, Write};
+use std::path::Path;
 use std::time::{Duration, Instant};
 
 use common::SolverConfig;
@@ -31,13 +33,21 @@ pub fn solve_file(filepath: &str, config: &SolverConfig) -> io::Result<Certifica
     let (clauses, num_vars) =
         parse_dimacs(&text).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     let deadline = (config.timeout_ms > 0)
-        .then(|| Instant::now() + Duration::from_millis(config.timeout_ms as u64));
+        .then(|| Instant::now() + Duration::from_millis(u64::from(config.timeout_ms)));
     let (outcome, _) =
         sat::solve_clauses(&clauses, num_vars, config, deadline).map_err(io::Error::other)?;
     match outcome {
         SatOutcome::Sat(model) => Ok(Certificate::SAT(
             (1..model.len())
-                .map(|v| if model[v] { v as i32 } else { -(v as i32) })
+                .map(|v| {
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        clippy::cast_possible_wrap,
+                        reason = "parse_dimacs rejects more variables than i32 literals can name"
+                    )]
+                    let v_lit = v as i32;
+                    if model[v] { v_lit } else { -v_lit }
+                })
                 .collect(),
         )),
         SatOutcome::Unsat => Ok(Certificate::UNSAT),
@@ -63,10 +73,13 @@ pub fn parse_dimacs(text: &str) -> Result<(Vec<Vec<i32>>, usize), String> {
             if parts.len() != 4 || parts[1] != "cnf" {
                 return Err(format!("Invalid problem line '{line}'"));
             }
+            // Literals are i32, there can't be more variables than they can name
             num_vars = Some(
                 parts[2]
                     .parse::<usize>()
-                    .map_err(|_| format!("Invalid problem line '{line}'"))?,
+                    .ok()
+                    .filter(|&n| i32::try_from(n).is_ok())
+                    .ok_or_else(|| format!("Invalid problem line '{line}'"))?,
             );
             continue;
         }
@@ -92,7 +105,10 @@ pub fn parse_dimacs(text: &str) -> Result<(Vec<Vec<i32>>, usize), String> {
 }
 
 pub fn write_solution(certificate: Certificate, output_file: &str) -> io::Result<()> {
-    if !output_file.ends_with(".txt") {
+    if Path::new(output_file)
+        .extension()
+        .is_none_or(|ext| ext != "txt")
+    {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             "Only .txt files are allowed as output from a solver.",
@@ -108,7 +124,7 @@ pub fn get_content(certificate: Certificate) -> String {
         Certificate::SAT(model) => {
             let mut res = String::from("SAT\n");
             for literal in model {
-                res.push_str(&format!("{literal} "));
+                let _ = write!(res, "{literal} ");
             }
             res
         }

@@ -26,10 +26,10 @@ pub(crate) fn delete_subsumed_clauses(clauses: &mut Vec<Vec<i32>>) {
         .iter()
         .enumerate()
         .filter_map(|(i, clause)| {
-            if !to_remove[i] {
-                Some(clause.clone())
-            } else {
+            if to_remove[i] {
                 None
+            } else {
+                Some(clause.clone())
             }
         })
         .collect();

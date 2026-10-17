@@ -21,9 +21,9 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        Options {
+        Self {
             limits: Limits::default(),
-            threads: std::thread::available_parallelism().map_or(1, |n| n.get()),
+            threads: std::thread::available_parallelism().map_or(1, std::num::NonZero::get),
             stderr: false,
         }
     }
@@ -35,9 +35,22 @@ fn seed(instance: &Instance) -> u64 {
     u64::from_le_bytes(digest[..8].try_into().unwrap_or_default())
 }
 
-pub fn run_one(sandbox: &Sandbox, solver: &Solver, instance: &Instance, options: &Options) -> RunResult {
-    let input = instance.cnf.dimacs(&format!("{} from the Hashi SAT Dojo", instance.name));
-    let run = sandbox.run(solver, &input, seed(instance), &options.limits, options.stderr);
+pub fn run_one(
+    sandbox: &Sandbox,
+    solver: &Solver,
+    instance: &Instance,
+    options: &Options,
+) -> RunResult {
+    let input = instance
+        .cnf
+        .dimacs(&format!("{} from the Hashi SAT Dojo", instance.name));
+    let run = sandbox.run(
+        solver,
+        &input,
+        seed(instance),
+        &options.limits,
+        options.stderr,
+    );
     let outcome = match run.end {
         End::Exited => judge(&instance.cnf, instance.expected, &parse(&run.stdout)),
         End::OutOfFuel | End::WallClock => Outcome::Timeout,
@@ -49,7 +62,7 @@ pub fn run_one(sandbox: &Sandbox, solver: &Solver, instance: &Instance, options:
         expected: instance.expected,
         outcome,
         fuel: run.fuel,
-        wall_ms: run.wall.as_millis() as u64,
+        wall_ms: u64::try_from(run.wall.as_millis()).unwrap_or(u64::MAX),
     }
 }
 
@@ -80,5 +93,10 @@ pub fn evaluate(
             });
         }
     });
-    results.into_inner().unwrap_or_default().into_iter().flatten().collect()
+    results
+        .into_inner()
+        .unwrap_or_default()
+        .into_iter()
+        .flatten()
+        .collect()
 }

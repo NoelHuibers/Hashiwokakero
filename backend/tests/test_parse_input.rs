@@ -1,4 +1,4 @@
-use backend::parse_input::parse_input; 
+use backend::parse_input::parse_input;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -7,7 +7,7 @@ use std::path::Path;
 fn test_game_board_creation_valid() {
     // Setup - Create a temporary file with test data
     let path = Path::new("temp_test_file1.txt");
-    let mut file = File::create(&path).expect("Failed to create test file.");
+    let mut file = File::create(path).expect("Failed to create test file.");
     writeln!(file, "4 4").expect("Failed to write to test file.");
     writeln!(file, "1...").expect("Failed to write to test file.");
     writeln!(file, "....").expect("Failed to write to test file.");
@@ -26,7 +26,7 @@ fn test_game_board_creation_valid() {
 #[test]
 fn test_game_board_creation_invalid_length() {
     let path = Path::new("temp_test_file2.txt");
-    let mut file = File::create(&path).expect("Failed to create test file.");
+    let mut file = File::create(path).expect("Failed to create test file.");
     writeln!(file, "2 2 2").expect("Failed to write to test file.");
     writeln!(file, "1.").expect("Failed to write to test file.");
     writeln!(file, ".2").expect("Failed to write to test file.");
@@ -38,11 +38,10 @@ fn test_game_board_creation_invalid_length() {
     std::fs::remove_file(path).expect("Failed to clean up test file.");
 }
 
-
 #[test]
 fn test_parse_input_invalid_char() {
     let path = Path::new("temp_test_file3.txt");
-    let mut file = File::create(&path).expect("Failed to create test file.");
+    let mut file = File::create(path).expect("Failed to create test file.");
     writeln!(file, "3 3").expect("Failed to write to test file.");
     writeln!(file, "a..").expect("Failed to write to test file.");
     writeln!(file, ".22").expect("Failed to write to test file.");
@@ -58,7 +57,7 @@ fn test_parse_input_invalid_char() {
 #[test]
 fn test_parse_input_invalid_zero() {
     let path = Path::new("temp_test_file4.txt");
-    let mut file = File::create(&path).expect("Failed to create test file.");
+    let mut file = File::create(path).expect("Failed to create test file.");
     writeln!(file, "3 3").expect("Failed to write to test file.");
     writeln!(file, "1..").expect("Failed to write to test file.");
     writeln!(file, ".22").expect("Failed to write to test file.");
@@ -73,7 +72,7 @@ fn test_parse_input_invalid_zero() {
 #[test]
 fn test_parse_input_invalid_gt8() {
     let path = Path::new("temp_test_file5.txt");
-    let mut file = File::create(&path).expect("Failed to create test file.");
+    let mut file = File::create(path).expect("Failed to create test file.");
     writeln!(file, "3 3").expect("Failed to write to test file.");
     writeln!(file, "1..").expect("Failed to write to test file.");
     writeln!(file, ".29").expect("Failed to write to test file.");

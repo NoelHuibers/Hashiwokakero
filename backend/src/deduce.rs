@@ -41,16 +41,20 @@ pub struct Analysis {
 
 impl Analysis {
     /// A rough difficulty score, 0 for puzzles solved by basic propagation only.
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "edge counts of a puzzle are far below 2^52"
+    )]
     pub fn score(&self) -> f64 {
         let undecided_basic = 1.0 - self.basic_fraction;
-        let trials = self.trial_steps as f64 / self.edges.max(1) as f64;
+        let trials = f64::from(self.trial_steps) / self.edges.max(1) as f64;
         let unsolved = if self.solved {
             0.0
         } else {
             1.0 - self.decided_fraction
         };
         100.0 * undecided_basic
-            + 2.0 * self.connectivity_steps.min(20) as f64
+            + 2.0 * f64::from(self.connectivity_steps.min(20))
             + 300.0 * trials
             + 150.0 * unsolved
     }
@@ -62,6 +66,24 @@ struct State {
     hi: Vec<u8>,
     /// Islands whose edges changed since basic propagation last looked at them.
     dirty: Vec<usize>,
+}
+
+impl State {
+    fn decided(&self) -> usize {
+        self.lo.iter().zip(&self.hi).filter(|(l, h)| l == h).count()
+    }
+
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "edge counts of a puzzle are far below 2^52"
+    )]
+    fn decided_fraction(&self) -> f64 {
+        if self.lo.is_empty() {
+            1.0
+        } else {
+            self.decided() as f64 / self.lo.len() as f64
+        }
+    }
 }
 
 struct Contradiction;
@@ -83,18 +105,17 @@ pub fn analyze(board: &Board, max_trial_steps: u32) -> Analysis {
         ..Default::default()
     };
     let mut state = solver.initial();
-    match solver.basic(&mut state) {
-        Ok(rounds) => analysis.basic_rounds = rounds,
-        Err(Contradiction) => {
-            analysis.undecided = (0..edges).collect();
-            return analysis;
-        }
+    if let Ok(rounds) = solver.basic(&mut state) {
+        analysis.basic_rounds = rounds;
+    } else {
+        analysis.undecided = (0..edges).collect();
+        return analysis;
     }
-    analysis.basic_fraction = solver.decided_fraction(&state);
+    analysis.basic_fraction = state.decided_fraction();
 
     let result = (|| -> Result<(), Contradiction> {
         loop {
-            if solver.decided(&state) == edges {
+            if state.decided() == edges {
                 analysis.solved = solver.connected(&state);
                 return Ok(());
             }
@@ -114,7 +135,7 @@ pub fn analyze(board: &Board, max_trial_steps: u32) -> Analysis {
     if result.is_err() {
         analysis.solved = false;
     }
-    analysis.decided_fraction = solver.decided_fraction(&state);
+    analysis.decided_fraction = state.decided_fraction();
     analysis.undecided = (0..edges).filter(|&e| state.lo[e] < state.hi[e]).collect();
     analysis
 }
@@ -130,9 +151,10 @@ pub enum Uniqueness {
     Unknown,
 }
 
-/// Searches a solution different from `known` with backtracking on top of the deduction
-/// rules. Much faster than the SAT solver on the small, almost unique puzzles of the
-/// generator, but gives up after `node_limit` search nodes.
+/// Searches a solution different from `known` with backtracking on top of the deduction rules.
+///
+/// Much faster than the SAT solver on the small, almost unique puzzles of the generator, but
+/// gives up after `node_limit` search nodes.
 pub fn other_solution(board: &Board, known: &[u8], node_limit: u32) -> Uniqueness {
     let solver = Solver {
         board,
@@ -241,18 +263,6 @@ impl Solver<'_> {
         Ok(())
     }
 
-    fn decided(&self, s: &State) -> usize {
-        s.lo.iter().zip(&s.hi).filter(|(l, h)| l == h).count()
-    }
-
-    fn decided_fraction(&self, s: &State) -> f64 {
-        if s.lo.is_empty() {
-            1.0
-        } else {
-            self.decided(s) as f64 / s.lo.len() as f64
-        }
-    }
-
     /// Level 1 until nothing changes, returns the number of rounds (waves of islands to look
     /// at). Only islands whose edges changed are looked at again.
     fn basic(&self, s: &mut State) -> Result<u32, Contradiction> {
@@ -268,18 +278,29 @@ impl Solver<'_> {
             }
             for i in wave {
                 let incident = &board.incident[i];
-                let r = self.required[i] as i32;
-                let sum_lo: i32 = incident.iter().map(|&e| s.lo[e] as i32).sum();
-                let sum_hi: i32 = incident.iter().map(|&e| s.hi[e] as i32).sum();
+                let r = i32::from(self.required[i]);
+                let sum_lo: i32 = incident.iter().map(|&e| i32::from(s.lo[e])).sum();
+                let sum_hi: i32 = incident.iter().map(|&e| i32::from(s.hi[e])).sum();
                 if sum_lo > r || sum_hi < r {
                     return Err(Contradiction);
                 }
                 for &e in incident {
                     // Stale sums after a change only weaken the bounds until the island is
                     // looked at again (it is queued again by the change)
-                    let (lo, hi) = (s.lo[e] as i32, s.hi[e] as i32);
-                    self.set_lo(s, e, lo.max(r - (sum_hi - hi)) as u8)?;
-                    self.set_hi(s, e, hi.min(r - (sum_lo - lo)).max(0) as u8)?;
+                    let (lo, hi) = (i32::from(s.lo[e]), i32::from(s.hi[e]));
+                    // The new minimum is within `lo..=r` (the other edges' sum is never
+                    // negative, `r` comes from a u8), the new maximum within `0..=hi`
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        clippy::cast_sign_loss,
+                        reason = "both new bounds are within 0..=255, see above"
+                    )]
+                    let (new_lo, new_hi) = (
+                        lo.max(r - (sum_hi - hi)) as u8,
+                        hi.min(r - (sum_lo - lo)).max(0) as u8,
+                    );
+                    self.set_lo(s, e, new_lo)?;
+                    self.set_hi(s, e, new_hi)?;
                 }
             }
         }
@@ -329,8 +350,8 @@ impl Solver<'_> {
         let mut need = vec![0i32; count];
         let mut size = vec![0usize; count];
         for (i, &c) in comp.iter().enumerate() {
-            let have: i32 = board.incident[i].iter().map(|&e| s.lo[e] as i32).sum();
-            need[c] += self.required[i] as i32 - have;
+            let have: i32 = board.incident[i].iter().map(|&e| i32::from(s.lo[e])).sum();
+            need[c] += i32::from(self.required[i]) - have;
             size[c] += 1;
         }
         let mut exits = vec![Vec::new(); count];
@@ -383,7 +404,7 @@ impl Solver<'_> {
         loop {
             self.basic(s)?;
             if !self.connectivity(s)? {
-                if self.decided(s) == s.lo.len() && !self.connected(s) {
+                if s.decided() == s.lo.len() && !self.connected(s) {
                     return Err(Contradiction);
                 }
                 return Ok(());

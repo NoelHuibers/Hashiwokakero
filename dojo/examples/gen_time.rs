@@ -1,4 +1,4 @@
-//! How long each family takes to generate: gen_time <family> <sizes...>
+//! How long each family takes to generate: `gen_time` <family> <sizes...>
 use std::time::Instant;
 
 use dojo::Family;

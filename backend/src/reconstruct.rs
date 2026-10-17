@@ -1,6 +1,6 @@
 use crate::{generate_clauses::BridgeCoord, parse_input::GameBoard};
 use common::{Board, Orientation};
-use std::{collections::HashMap, fs::File, io::Read};
+use std::{collections::HashMap, fs::File, hash::BuildHasher, io::Read};
 
 /// Draws the puzzle with bridges: `-`/`=` horizontal, `|`/`‖` vertical single/double bridges.
 pub fn render(board: &Board, bridges: &[u8]) -> String {
@@ -33,29 +33,29 @@ pub fn render(board: &Board, bridges: &[u8]) -> String {
 
 pub fn get_content(sat_output_path: &String) -> String {
     let mut file = File::open(sat_output_path.clone())
-        .expect(&format!("File {} does not exist", sat_output_path));
+        .unwrap_or_else(|_| panic!("File {sat_output_path} does not exist"));
     let mut contents = String::new();
     file.read_to_string(&mut contents)
-        .expect(&format!("Could not read contents of {}", sat_output_path));
+        .unwrap_or_else(|_| panic!("Could not read contents of {sat_output_path}"));
     contents
 }
 
-pub fn reconstruct_puzzle(
-    contents: String,
-    var_map: &HashMap<i32, BridgeCoord>,
+pub fn reconstruct_puzzle<S: BuildHasher>(
+    contents: &str,
+    var_map: &HashMap<i32, BridgeCoord, S>,
     game_board: &GameBoard,
 ) -> String {
     let mut output = String::new();
     if contents.contains("UNSAT") {
         return "Problem is UNSAT".into();
     }
-    let line = contents.lines().skip(1).next();
+    let line = contents.lines().nth(1);
     if let Some(vars) = line {
         let vars = vars.split(' ').filter_map(|v| v.parse::<i32>().ok());
         let bridges: Vec<BridgeCoord> = vars
             .filter(|i| i.is_positive())
             .filter_map(|i| var_map.get(&i))
-            .map(|v| *v)
+            .copied()
             .collect();
         let mut bridge_map = HashMap::new();
         for bridge in bridges.clone() {
@@ -85,10 +85,10 @@ pub fn reconstruct_puzzle(
         for row in 0..game_board.rows {
             for col in 0..game_board.cols {
                 if let Some(num) = island_map.get(&(col, row)) {
-                    output.push(format!("{}", num).chars().next().unwrap());
+                    output.push(format!("{num}").chars().next().unwrap());
                     continue;
                 }
-                if let Some(bridge) = bridge_map.get(&(col.into(), row.into())) {
+                if let Some(bridge) = bridge_map.get(&(col, row)) {
                     output.push(*bridge);
                     continue;
                 }
@@ -164,7 +164,7 @@ fn should_parse_sat_output() {
         ],
     };
     let contents = get_content(&path.to_string());
-    let res = reconstruct_puzzle(contents, &var_map, &game_board);
+    let res = reconstruct_puzzle(&contents, &var_map, &game_board);
     assert!(res.starts_with("3-2"), "{res}");
 }
 

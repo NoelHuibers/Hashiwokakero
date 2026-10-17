@@ -17,43 +17,45 @@ pub enum SolverKind {
 }
 
 impl SolverKind {
-    pub const ALL: [SolverKind; 3] = [SolverKind::Cdcl, SolverKind::Dpll, SolverKind::Splr];
+    pub const ALL: [Self; 3] = [Self::Cdcl, Self::Dpll, Self::Splr];
 
     pub fn id(self) -> &'static str {
         match self {
-            SolverKind::Splr => "splr",
-            SolverKind::Cdcl => "cdcl",
-            SolverKind::Dpll => "dpll",
+            Self::Splr => "splr",
+            Self::Cdcl => "cdcl",
+            Self::Dpll => "dpll",
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            SolverKind::Splr => "splr",
-            SolverKind::Cdcl => "Own CDCL",
-            SolverKind::Dpll => "Own DPLL",
+            Self::Splr => "splr",
+            Self::Cdcl => "Own CDCL",
+            Self::Dpll => "Own DPLL",
         }
     }
 
     pub fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|k| k.id().eq_ignore_ascii_case(id))
+        Self::ALL
+            .into_iter()
+            .find(|k| k.id().eq_ignore_ascii_case(id))
     }
 
     /// Branching heuristics the solver implements.
     pub fn heuristics(self) -> &'static [Heuristic] {
         match self {
-            SolverKind::Splr => &[],
-            SolverKind::Cdcl => &[Heuristic::Vsids, Heuristic::Arbitrary],
-            SolverKind::Dpll => &Heuristic::ALL,
+            Self::Splr => &[],
+            Self::Cdcl => &[Heuristic::Vsids, Heuristic::Arbitrary],
+            Self::Dpll => &Heuristic::ALL,
         }
     }
 
     pub fn supports_restarts(self) -> bool {
-        self == SolverKind::Cdcl
+        self == Self::Cdcl
     }
 
     pub fn supports_subsumption(self) -> bool {
-        self == SolverKind::Cdcl
+        self == Self::Cdcl
     }
 }
 
@@ -72,45 +74,47 @@ pub enum Heuristic {
 }
 
 impl Heuristic {
-    pub const ALL: [Heuristic; 8] = [
-        Heuristic::Vsids,
-        Heuristic::Arbitrary,
-        Heuristic::Dlis,
-        Heuristic::Dlcs,
-        Heuristic::Mom,
-        Heuristic::Boehm,
-        Heuristic::JeroslawWang,
-        Heuristic::Custom,
+    pub const ALL: [Self; 8] = [
+        Self::Vsids,
+        Self::Arbitrary,
+        Self::Dlis,
+        Self::Dlcs,
+        Self::Mom,
+        Self::Boehm,
+        Self::JeroslawWang,
+        Self::Custom,
     ];
 
     pub fn id(self) -> &'static str {
         match self {
-            Heuristic::Arbitrary => "arbitrary",
-            Heuristic::Dlis => "dlis",
-            Heuristic::Dlcs => "dlcs",
-            Heuristic::Mom => "mom",
-            Heuristic::Boehm => "boehm",
-            Heuristic::JeroslawWang => "jeroslaw_wang",
-            Heuristic::Vsids => "vsids",
-            Heuristic::Custom => "custom",
+            Self::Arbitrary => "arbitrary",
+            Self::Dlis => "dlis",
+            Self::Dlcs => "dlcs",
+            Self::Mom => "mom",
+            Self::Boehm => "boehm",
+            Self::JeroslawWang => "jeroslaw_wang",
+            Self::Vsids => "vsids",
+            Self::Custom => "custom",
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            Heuristic::Arbitrary => "Arbitrary",
-            Heuristic::Dlis => "DLIS",
-            Heuristic::Dlcs => "DLCS",
-            Heuristic::Mom => "MOM",
-            Heuristic::Boehm => "Böhm",
-            Heuristic::JeroslawWang => "Jeroslow-Wang",
-            Heuristic::Vsids => "VSIDS",
-            Heuristic::Custom => "Custom",
+            Self::Arbitrary => "Arbitrary",
+            Self::Dlis => "DLIS",
+            Self::Dlcs => "DLCS",
+            Self::Mom => "MOM",
+            Self::Boehm => "Böhm",
+            Self::JeroslawWang => "Jeroslow-Wang",
+            Self::Vsids => "VSIDS",
+            Self::Custom => "Custom",
         }
     }
 
     pub fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|h| h.id().eq_ignore_ascii_case(id))
+        Self::ALL
+            .into_iter()
+            .find(|h| h.id().eq_ignore_ascii_case(id))
     }
 }
 
@@ -130,32 +134,32 @@ pub enum Restarts {
 impl Restarts {
     pub fn id(self) -> &'static str {
         match self {
-            Restarts::None => "none",
-            Restarts::Fixed { .. } => "fixed",
-            Restarts::Geometric { .. } => "geometric",
-            Restarts::Luby { .. } => "luby",
+            Self::None => "none",
+            Self::Fixed { .. } => "fixed",
+            Self::Geometric { .. } => "geometric",
+            Self::Luby { .. } => "luby",
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            Restarts::None => "No restarts",
-            Restarts::Fixed { .. } => "Fixed interval",
-            Restarts::Geometric { .. } => "Geometric",
-            Restarts::Luby { .. } => "Luby sequence",
+            Self::None => "No restarts",
+            Self::Fixed { .. } => "Fixed interval",
+            Self::Geometric { .. } => "Geometric",
+            Self::Luby { .. } => "Luby sequence",
         }
     }
 
     /// The policy with sensible default parameters.
     pub fn from_id(id: &str) -> Option<Self> {
         match id {
-            "none" => Some(Restarts::None),
-            "fixed" => Some(Restarts::Fixed { threshold: 100 }),
-            "geometric" => Some(Restarts::Geometric {
+            "none" => Some(Self::None),
+            "fixed" => Some(Self::Fixed { threshold: 100 }),
+            "geometric" => Some(Self::Geometric {
                 threshold: 100,
                 factor_percent: 150,
             }),
-            "luby" => Some(Restarts::Luby { unit: 32 }),
+            "luby" => Some(Self::Luby { unit: 32 }),
             _ => None,
         }
     }
@@ -176,7 +180,7 @@ pub struct SolverConfig {
 
 impl Default for SolverConfig {
     fn default() -> Self {
-        SolverConfig {
+        Self {
             kind: SolverKind::Cdcl,
             heuristic: Heuristic::Vsids,
             restarts: Restarts::Luby { unit: 32 },
@@ -188,13 +192,14 @@ impl Default for SolverConfig {
 
 impl SolverConfig {
     pub fn splr() -> Self {
-        SolverConfig {
+        Self {
             kind: SolverKind::Splr,
             ..Default::default()
         }
     }
 
     /// The configuration with options the chosen solver doesn't support reset to defaults.
+    #[must_use]
     pub fn normalized(mut self) -> Self {
         let heuristics = self.kind.heuristics();
         if !heuristics.is_empty() && !heuristics.contains(&self.heuristic) {
@@ -243,10 +248,13 @@ pub struct SolveStats {
     pub connectivity_cuts: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SolveOutcome {
     /// Bridge counts per [`crate::Board::edges`] index.
-    Solved { bridges: Vec<u8>, unique: Option<bool> },
+    Solved {
+        bridges: Vec<u8>,
+        unique: Option<bool>,
+    },
     Unsatisfiable,
     Timeout,
 }
@@ -268,53 +276,53 @@ pub enum Difficulty {
 }
 
 impl Difficulty {
-    pub const ALL: [Difficulty; 5] = [
-        Difficulty::Easy,
-        Difficulty::Medium,
-        Difficulty::Hard,
-        Difficulty::Expert,
-        Difficulty::Oni,
+    pub const ALL: [Self; 5] = [
+        Self::Easy,
+        Self::Medium,
+        Self::Hard,
+        Self::Expert,
+        Self::Oni,
     ];
 
     pub fn id(self) -> &'static str {
         match self {
-            Difficulty::Easy => "easy",
-            Difficulty::Medium => "medium",
-            Difficulty::Hard => "hard",
-            Difficulty::Expert => "expert",
-            Difficulty::Oni => "oni",
+            Self::Easy => "easy",
+            Self::Medium => "medium",
+            Self::Hard => "hard",
+            Self::Expert => "expert",
+            Self::Oni => "oni",
         }
     }
 
     pub fn label(self) -> &'static str {
         match self {
-            Difficulty::Easy => "Easy",
-            Difficulty::Medium => "Medium",
-            Difficulty::Hard => "Hard",
-            Difficulty::Expert => "Expert",
-            Difficulty::Oni => "Oni",
+            Self::Easy => "Easy",
+            Self::Medium => "Medium",
+            Self::Hard => "Hard",
+            Self::Expert => "Expert",
+            Self::Oni => "Oni",
         }
     }
 
     /// Japanese name shown next to the label.
     pub fn kanji(self) -> &'static str {
         match self {
-            Difficulty::Easy => "初級",
-            Difficulty::Medium => "中級",
-            Difficulty::Hard => "上級",
-            Difficulty::Expert => "達人",
-            Difficulty::Oni => "鬼",
+            Self::Easy => "初級",
+            Self::Medium => "中級",
+            Self::Hard => "上級",
+            Self::Expert => "達人",
+            Self::Oni => "鬼",
         }
     }
 
     /// Default grid size (width, height).
     pub fn size(self) -> (u8, u8) {
         match self {
-            Difficulty::Easy => (7, 7),
-            Difficulty::Medium => (10, 10),
-            Difficulty::Hard => (14, 14),
-            Difficulty::Expert => (18, 18),
-            Difficulty::Oni => (24, 24),
+            Self::Easy => (7, 7),
+            Self::Medium => (10, 10),
+            Self::Hard => (14, 14),
+            Self::Expert => (18, 18),
+            Self::Oni => (24, 24),
         }
     }
 

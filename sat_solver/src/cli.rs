@@ -1,6 +1,10 @@
 use clap::{Arg, ArgAction, command};
 
 #[derive(Debug)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "one field per command line flag, mirrors the clap arguments"
+)]
 pub struct CliArgs {
     pub solver: String,
     pub inputpath: String,
@@ -120,19 +124,19 @@ pub fn cli() -> CliArgs {
         .get_matches();
 
     let solver = match arguments.get_one::<String>("solver") {
-        Some(solver) => solver.to_string(),
+        Some(solver) => solver.clone(),
         None => panic!("Solver is required"),
     };
 
     let inputpath = match arguments.get_one::<String>("input") {
-        Some(path) => path.to_string(),
+        Some(path) => path.clone(),
         None => panic!("Input is required"),
     };
 
     let outputpath = arguments.get_one::<String>("output").cloned();
 
-    let heuristic = match arguments.get_one::<String>("heuristic") {
-        Some(heuristic) => match heuristic.as_str() {
+    let heuristic = if let Some(heuristic) = arguments.get_one::<String>("heuristic") {
+        match heuristic.as_str() {
             "arbitrary" => Heuristic::Arbitrary,
             "dlis" => Heuristic::DLIS,
             "dlcs" => Heuristic::DLCS,
@@ -145,46 +149,41 @@ pub fn cli() -> CliArgs {
                 println!("Heuristic not found using arbitrary");
                 Heuristic::Arbitrary
             }
-        },
-        None => {
-            println!("No heuristic specified, using arbitrary");
-            Heuristic::Arbitrary
         }
+    } else {
+        println!("No heuristic specified, using arbitrary");
+        Heuristic::Arbitrary
     };
 
     let k = match arguments.get_one::<String>("k") {
-        Some(k) => match k.parse::<usize>() {
-            Ok(k) => k,
-            Err(_) => panic!("K must be a number"),
-        },
+        Some(k) => k
+            .parse::<usize>()
+            .unwrap_or_else(|e| panic!("K must be a number: {e}")),
         None => panic!("K is required"),
     };
 
     let m = match arguments.get_one::<String>("m") {
-        Some(m) => match m.parse::<usize>() {
-            Ok(m) => m,
-            Err(_) => panic!("M must be a number"),
-        },
+        Some(m) => m
+            .parse::<usize>()
+            .unwrap_or_else(|e| panic!("M must be a number: {e}")),
         None => panic!("M is required"),
     };
 
-    let threshold = match arguments.get_one::<String>("restarts_threshold") {
-        Some(threshold) => Some(match threshold.parse::<u32>() {
-            Ok(threshold) => threshold,
-            Err(_) => panic!("Threshold must be a number"),
-        }),
-        None => None,
-    };
+    let threshold = arguments
+        .get_one::<String>("restarts_threshold")
+        .map(|threshold| {
+            threshold
+                .parse::<u32>()
+                .unwrap_or_else(|e| panic!("Threshold must be a number: {e}"))
+        });
 
     let luby = arguments.get_flag("luby");
 
-    let factor = match arguments.get_one::<String>("restart_factor") {
-        Some(factor) => match factor.parse::<u32>() {
-            Ok(factor) => Some(factor),
-            Err(_) => panic!("Factor must be a number"),
-        },
-        None => None,
-    };
+    let factor = arguments.get_one::<String>("restart_factor").map(|factor| {
+        factor
+            .parse::<u32>()
+            .unwrap_or_else(|e| panic!("Factor must be a number: {e}"))
+    });
 
     let drup = arguments.get_flag("DRUP");
 
@@ -195,7 +194,7 @@ pub fn cli() -> CliArgs {
             _ => panic!("Timeout must be a non-negative number of seconds"),
         });
 
-    return CliArgs {
+    CliArgs {
         solver,
         inputpath,
         outputpath,
@@ -210,5 +209,5 @@ pub fn cli() -> CliArgs {
         factor,
         drup,
         timeout,
-    };
+    }
 }

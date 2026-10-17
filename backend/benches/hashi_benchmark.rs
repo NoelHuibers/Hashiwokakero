@@ -20,7 +20,7 @@ fn puzzles() -> Vec<(&'static str, Puzzle)> {
 fn encode_benchmark(c: &mut Criterion) {
     for (name, puzzle) in puzzles() {
         c.bench_function(&format!("encode {name}"), |b| {
-            b.iter(|| encoding::encode_puzzle(black_box(&puzzle)))
+            b.iter(|| encoding::encode_puzzle(black_box(&puzzle)));
         });
     }
 }
@@ -33,7 +33,7 @@ fn solve_benchmark(c: &mut Criterion) {
         };
         for (name, puzzle) in puzzles() {
             c.bench_function(&format!("solve_unique {} {name}", kind.id()), |b| {
-                b.iter(|| api::solve_unique(black_box(&puzzle), &config).unwrap())
+                b.iter(|| api::solve_unique(black_box(&puzzle), &config).unwrap());
             });
         }
     }
@@ -54,7 +54,7 @@ fn generate_benchmark(c: &mut Criterion) {
                     difficulty,
                     seed,
                 })
-            })
+            });
         });
     }
     group.finish();

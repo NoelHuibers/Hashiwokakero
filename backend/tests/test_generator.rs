@@ -103,8 +103,8 @@ fn puzzles_fill_the_grid() {
     for difficulty in [Difficulty::Medium, Difficulty::Hard] {
         for seed in 1..=3 {
             let g = api::generate(&params(difficulty, seed));
-            let cells = g.puzzle.width as f64 * g.puzzle.height as f64;
-            let density = g.puzzle.islands.len() as f64 / cells;
+            let cells = f64::from(g.puzzle.width) * f64::from(g.puzzle.height);
+            let density = f64::from(u32::try_from(g.puzzle.islands.len()).unwrap()) / cells;
             assert!(
                 (0.17..=0.32).contains(&density),
                 "{difficulty:?} {seed}: {density}"
@@ -208,9 +208,13 @@ fn generator_report() {
                 hist[i.required as usize] += 1;
             }
             let built = g.solution.iter().filter(|&&b| b > 0).count();
-            let doubles = g.solution.iter().filter(|&&b| b == 2).count();
+            let doubles = g
+                .solution
+                .iter()
+                .map(|&b| usize::from(b == 2))
+                .sum::<usize>();
             let cycles = built + 1 - g.puzzle.islands.len();
-            let cells = g.puzzle.width as usize * g.puzzle.height as usize;
+            let cells = f64::from(g.puzzle.width) * f64::from(g.puzzle.height);
             scores.push(a.score());
             analyze_times.push(analyze_ms);
             if !quiet {
@@ -221,7 +225,7 @@ fn generator_report() {
                     g.unique,
                     g.attempts,
                     g.puzzle.islands.len(),
-                    100.0 * g.puzzle.islands.len() as f64 / cells as f64,
+                    100.0 * f64::from(u32::try_from(g.puzzle.islands.len()).unwrap()) / cells,
                     &hist[1..],
                     doubles,
                     built,
