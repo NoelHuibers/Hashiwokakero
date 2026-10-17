@@ -444,12 +444,28 @@ pub fn BoardView(
     };
 
     let frame = if framed { 14 } else { 0 };
+    // Phones: big boards get tiny cells, zooming gives every cell ~34px and lets the board scroll
+    let zoom = RwSignal::new(false);
+    let can_zoom = move || mode != BoardMode::View && board.with(|b| b.puzzle.width.max(b.puzzle.height) >= 9);
+    let zoomed = move || zoom.get() && can_zoom();
     let frame_style = move || {
         let (w, h) = view_box();
-        format!("width: min(100%, calc({max_height} * {w} / {h} + {frame}px));")
+        if zoomed() {
+            format!("width: calc({w}px * 34 / 16 + {frame}px);")
+        } else {
+            format!("width: min(100%, calc({max_height} * {w} / {h} + {frame}px));")
+        }
     };
 
     view! {
+        <div>
+        <div
+            class=move || if zoomed() {
+                "max-h-[72vh] overflow-auto overscroll-contain rounded-2xl"
+            } else {
+                ""
+            }
+        >
         <div
             class="mx-auto"
             class=(["rounded-2xl", "bg-[var(--px-wood)]", "p-[7px]", "pixel-frame"], framed)
@@ -462,7 +478,9 @@ pub fn BoardView(
             class:cursor-crosshair=mode == BoardMode::Edit
             style=move || {
                 let (w, h) = view_box();
-                format!("aspect-ratio: {w} / {h};")
+                // Zoomed, one finger scrolls the board; taps still build bridges
+                let touch = if zoomed() { " touch-action: pan-x pan-y;" } else { "" };
+                format!("aspect-ratio: {w} / {h};{touch}")
             }
             viewBox=move || {
                 let (w, h) = view_box();
@@ -493,6 +511,24 @@ pub fn BoardView(
             {hover_cell_layer}
             {blocked_layer}
         </svg>
+        </div>
+        </div>
+        <Show when=can_zoom>
+            <div class="mt-2 flex items-center justify-end gap-2 md:hidden">
+                <span class="text-xs text-muted-foreground">
+                    {move || if zoomed() { "Swipe to move around, tap to build" } else { "Cells too small?" }}
+                </span>
+                <button
+                    type="button"
+                    class="flex h-9 items-center gap-1.5 rounded-lg border bg-card px-3 text-sm font-medium shadow-xs active:scale-[0.98]"
+                    aria-pressed=move || zoomed().to_string()
+                    on:click=move |_| zoom.update(|z| *z = !*z)
+                >
+                    <span class="font-pixel">{move || if zoomed() { "－" } else { "＋" }}</span>
+                    {move || if zoomed() { "Fit board" } else { "Zoom in" }}
+                </button>
+            </div>
+        </Show>
         </div>
     }
 }

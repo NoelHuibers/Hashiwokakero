@@ -215,7 +215,7 @@ pub fn LabPage() -> impl IntoView {
                 </p>
             </div>
 
-            <div class="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
                 <aside class="flex flex-col gap-4">
                     <Card class="gap-4">
                         <CardHeader>
@@ -273,7 +273,7 @@ pub fn LabPage() -> impl IntoView {
                         </CardHeader>
                         <CardContent class="flex flex-col gap-3">
                             <Tabs default_value="cdcl" class="w-full">
-                                <TabsList class="w-full">
+                                <TabsList class="w-full group-data-[orientation=Horizontal]/tabs:h-10 md:group-data-[orientation=Horizontal]/tabs:h-8">
                                     <TabsTrigger value="cdcl">"CDCL"</TabsTrigger>
                                     <TabsTrigger value="dpll">"DPLL"</TabsTrigger>
                                     <TabsTrigger value="splr">"splr"</TabsTrigger>
@@ -367,10 +367,10 @@ pub fn LabPage() -> impl IntoView {
                                         <tr class="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
                                             <th class="py-2 pr-3 font-semibold">"Configuration"</th>
                                             <th class="py-2 pr-3 font-semibold">"Result"</th>
-                                            <th class="w-[34%] py-2 pr-3 font-semibold">"Time"</th>
-                                            <th class="py-2 pr-3 text-right font-semibold">"Decisions"</th>
-                                            <th class="py-2 pr-3 text-right font-semibold">"Restarts"</th>
-                                            <th class="py-2 text-right font-semibold">"SAT calls"</th>
+                                            <th class="py-2 text-right font-semibold sm:w-[34%] sm:pr-3 sm:text-left">"Time"</th>
+                                            <th class="hidden py-2 pr-3 text-right font-semibold sm:table-cell">"Decisions"</th>
+                                            <th class="hidden py-2 pr-3 text-right font-semibold sm:table-cell">"Restarts"</th>
+                                            <th class="hidden py-2 text-right font-semibold sm:table-cell">"SAT calls"</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -434,6 +434,16 @@ pub fn LabPage() -> impl IntoView {
                                                         }
                                                         _ => (String::new(), 0.0, String::new(), String::new(), String::new()),
                                                     };
+                                                    let summary = if decisions.is_empty() {
+                                                        String::new()
+                                                    } else {
+                                                        let mut parts = vec![format!("{decisions} decisions")];
+                                                        if restarts != "—" {
+                                                            parts.push(format!("{restarts} restarts"));
+                                                        }
+                                                        parts.push(format!("{calls} SAT calls"));
+                                                        parts.join(" · ")
+                                                    };
                                                     view! {
                                                         <tr class="border-b last:border-0" class:bg-accent=is_fastest>
                                                             <td class="py-2.5 pr-3">
@@ -444,11 +454,20 @@ pub fn LabPage() -> impl IntoView {
                                                                             <span class="ml-2 font-pixel text-xs text-primary">"最速"</span>
                                                                         }
                                                                     })}
+                                                                // Phones: the counters as a line instead of three columns
+                                                                {(!summary.is_empty())
+                                                                    .then(|| {
+                                                                        view! {
+                                                                            <span class="mt-0.5 block text-xs text-muted-foreground sm:hidden">
+                                                                                {summary}
+                                                                            </span>
+                                                                        }
+                                                                    })}
                                                             </td>
                                                             <td class="py-2.5 pr-3">{result}</td>
-                                                            <td class="py-2.5 pr-3">
-                                                                <div class="flex items-center gap-2">
-                                                                    <div class="h-3 flex-1 overflow-hidden rounded-sm bg-muted">
+                                                            <td class="py-2.5 sm:pr-3">
+                                                                <div class="flex items-center justify-end gap-2 sm:justify-start">
+                                                                    <div class="hidden h-3 flex-1 overflow-hidden rounded-sm bg-muted sm:block">
                                                                         <div
                                                                             class="h-full bg-primary transition-all duration-500"
                                                                             style=format!(
@@ -456,12 +475,12 @@ pub fn LabPage() -> impl IntoView {
                                                                             )
                                                                         ></div>
                                                                     </div>
-                                                                    <span class="w-16 text-right font-pixel tabular-nums">{time}</span>
+                                                                    <span class="whitespace-nowrap text-right font-pixel tabular-nums sm:w-16">{time}</span>
                                                                 </div>
                                                             </td>
-                                                            <td class="py-2.5 pr-3 text-right font-pixel tabular-nums">{decisions}</td>
-                                                            <td class="py-2.5 pr-3 text-right font-pixel tabular-nums">{restarts}</td>
-                                                            <td class="py-2.5 text-right font-pixel tabular-nums">{calls}</td>
+                                                            <td class="hidden py-2.5 pr-3 text-right font-pixel tabular-nums sm:table-cell">{decisions}</td>
+                                                            <td class="hidden py-2.5 pr-3 text-right font-pixel tabular-nums sm:table-cell">{restarts}</td>
+                                                            <td class="hidden py-2.5 text-right font-pixel tabular-nums sm:table-cell">{calls}</td>
                                                         </tr>
                                                     }
                                                 })

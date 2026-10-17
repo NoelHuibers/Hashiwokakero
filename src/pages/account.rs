@@ -103,9 +103,10 @@ fn StatTile(label: &'static str, jp: &'static str, value: String) -> impl IntoVi
     view! {
         <div class="flex flex-col items-center rounded-lg border bg-background px-2 py-3">
             <span class="font-pixel text-2xl tabular-nums leading-tight">{value}</span>
-            <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                {label} " · " {jp}
+            <span class="text-center text-[10px] font-bold uppercase leading-tight tracking-wider text-muted-foreground">
+                {label}
             </span>
+            <span class="font-pixel text-[10px] leading-tight text-primary/80">{jp}</span>
         </div>
     }
 }
@@ -193,7 +194,7 @@ pub fn AccountPage() -> impl IntoView {
                 </h1>
             </div>
 
-            <div class="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <Card class="gap-4 self-start">
                     <CardHeader>
                         <CardTitle class="flex items-baseline gap-2 text-xl">
@@ -273,7 +274,7 @@ pub fn AccountPage() -> impl IntoView {
                                 </CardHeader>
                                 <CardContent>
                                     <Tabs default_value="register" class="w-full">
-                                        <TabsList class="w-full">
+                                        <TabsList class="w-full group-data-[orientation=Horizontal]/tabs:h-10 md:group-data-[orientation=Horizontal]/tabs:h-8">
                                             <TabsTrigger value="register">"Create account"</TabsTrigger>
                                             <TabsTrigger value="signin">"Sign in"</TabsTrigger>
                                         </TabsList>
