@@ -11,11 +11,12 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::progress::Progress;
 use crate::state::{
-    self, Game, Settings, Source, Status, ToastKind, format_time, random_seed, toast,
+    self, Game, Settings, Source, Status, format_time, random_seed,
 };
 use crate::components::layout::use_localized;
+use crate::components::share::ShareBar;
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::difficulty_name;
+use crate::lang::{difficulty_name, localized};
 use crate::seo::PageMeta;
 
 fn new_random(game: Game, difficulty: Difficulty) {
@@ -178,10 +179,10 @@ fn WinOverlay() -> impl IntoView {
         dismissed.set(false);
     });
 
-    let share = move |_| {
+    let share_text = move || {
         let locale = i18n.get_locale_untracked();
-        let text = format!(
-            "🌉 Hashi · {} · {} · 橋をかけろ",
+        format!(
+            "🌉 Hashi · {} · {} · 橋をかけろ\n{}",
             game.source.get_untracked().title(locale),
             td_string!(
                 locale,
@@ -190,9 +191,8 @@ fn WinOverlay() -> impl IntoView {
                 moves = game.moves.get_untracked(),
                 hints = game.hints.get_untracked()
             ),
-        );
-        let _ = window().navigator().clipboard().write_text(&text);
-        toast(ToastKind::Success, |l| td_string!(l, common.toast.copied).to_string());
+            window().location().origin().unwrap_or_default() + &localized(locale, "/practice"),
+        )
     };
 
     view! {
@@ -216,12 +216,10 @@ fn WinOverlay() -> impl IntoView {
                         <Button on:click=move |_| new_random(game, settings.difficulty.get_untracked())>
                             {t!(i18n, practice.next)} " 次へ"
                         </Button>
-                        <Button variant=ButtonVariant::Outline on:click=share>
-                            {t!(i18n, practice.share_button)}
-                        </Button>
                         <Button variant=ButtonVariant::Ghost on:click=move |_| dismissed.set(true)>
                             {t!(i18n, practice.admire)}
                         </Button>
+                        <ShareBar text=share_text outline=true />
                     </div>
                 </Card>
             </div>

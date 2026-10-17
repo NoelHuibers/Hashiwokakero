@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, the Japanese bridges puzzle, playable for free in the browser.",
     "game": "Connect the islands with bridges so that every island has as many bridges as its number says. A daily puzzle with a leaderboard, five difficulties, pixel art, and every puzzle has exactly one solution."
+  },
+  "copy": "Copy",
+  "legal": {
+    "imprint": "Legal notice",
+    "privacy": "Privacy",
+    "english": "English version"
   }
 }

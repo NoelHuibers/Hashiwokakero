@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, el puzle japonés de puentes, gratis en el navegador.",
     "game": "Une las islas con puentes para que cada isla tenga tantos puentes como indica su número. Un reto diario con clasificación, cinco dificultades, pixel art, y cada puzle tiene exactamente una solución."
+  },
+  "copy": "Copiar",
+  "legal": {
+    "imprint": "Aviso legal",
+    "privacy": "Privacidad",
+    "english": "Versión en inglés"
   }
 }

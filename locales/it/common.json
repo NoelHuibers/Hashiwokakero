@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, il rompicapo giapponese dei ponti, da giocare gratis nel browser.",
     "game": "Collega le isole con dei ponti in modo che ogni isola abbia tanti ponti quanti ne indica il suo numero. Una sfida quotidiana con classifica, cinque livelli di difficoltà, pixel art, e ogni puzzle ha esattamente una soluzione."
+  },
+  "copy": "Copia",
+  "legal": {
+    "imprint": "Note legali",
+    "privacy": "Privacy",
+    "english": "Versione inglese"
   }
 }

@@ -20,6 +20,7 @@ use crate::model::{
     WEEKDAY_KANJI, daily_difficulty, daily_number, date_string, format_duration,
     weekday,
 };
+use crate::components::share::ShareBar;
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name, error_text, localized};
@@ -238,8 +239,8 @@ fn ResultCard(daily: Daily) -> impl IntoView {
     let auth = expect_context::<Auth>();
     let practice = use_localized("/practice");
     let account = use_localized("/account");
-    let share = move |_| {
-        let Some(info) = daily.info.get_untracked() else { return };
+    let share_text = move || {
+        let Some(info) = daily.info.get_untracked() else { return String::new() };
         let rank = daily
             .result
             .get_untracked()
@@ -257,13 +258,11 @@ fn ResultCard(daily: Daily) -> impl IntoView {
         let rank = rank
             .map(|(rank, total)| format!(" · {}", td_string!(locale, daily.share_rank, rank, total)))
             .unwrap_or_default();
-        let text = format!(
+        format!(
             "{headline}\n⏱ {}{rank}\n{origin}{}",
             format_duration(daily.elapsed_ms()),
             localized(locale, "/"),
-        );
-        let _ = window().navigator().clipboard().write_text(&text);
-        toast(ToastKind::Success, |l| td_string!(l, common.toast.copied).to_string());
+        )
     };
     let revealed = move || daily.game.status.get() == Status::Revealed;
     view! {
@@ -307,7 +306,7 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                 }
             }}
             <div class="flex w-full flex-col gap-2">
-                <Button on:click=share class="w-full">{t!(i18n, common.game.share)}</Button>
+                <ShareBar text=share_text />
                 <A
                     href=practice
                     attr:class="inline-flex min-h-10 items-center justify-center text-sm text-primary underline-offset-4 hover:underline"

@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, japońska łamigłówka z mostami, do grania za darmo w przeglądarce.",
     "game": "Połącz wyspy mostami tak, aby każda wyspa miała tyle mostów, ile wskazuje jej liczba. Łamigłówka dnia z rankingiem, pięć poziomów trudności, pixel art, a każda łamigłówka ma dokładnie jedno rozwiązanie."
+  },
+  "copy": "Kopiuj",
+  "legal": {
+    "imprint": "Nota prawna",
+    "privacy": "Prywatność",
+    "english": "Wersja angielska"
   }
 }

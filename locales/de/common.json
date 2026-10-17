@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, das japanische Brückenrätsel, kostenlos im Browser spielbar.",
     "game": "Verbinde die Inseln mit Brücken, sodass jede Insel so viele Brücken hat, wie ihre Zahl angibt. Ein Tagesrätsel mit Rangliste, fünf Schwierigkeitsgrade, Pixel-Art – und jedes Rätsel hat genau eine Lösung."
+  },
+  "copy": "Kopieren",
+  "legal": {
+    "imprint": "Impressum",
+    "privacy": "Datenschutz",
+    "english": "English version"
   }
 }

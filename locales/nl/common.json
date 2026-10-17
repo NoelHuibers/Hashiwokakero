@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, de Japanse bruggenpuzzel, gratis te spelen in je browser.",
     "game": "Verbind de eilanden met bruggen zodat elk eiland zoveel bruggen heeft als zijn getal aangeeft. Een dagpuzzel met ranglijst, vijf moeilijkheidsgraden, pixelart, en elke puzzel heeft precies één oplossing."
+  },
+  "copy": "Kopiëren",
+  "legal": {
+    "imprint": "Colofon",
+    "privacy": "Privacy",
+    "english": "Engelse versie"
   }
 }
