@@ -123,18 +123,18 @@ fn main() {
         }
     };
 
-    let needs_input = |f: fn(String)| match &input_file {
-        Some(input) => f(input.clone()),
+    let needs_input = |f: fn(&str)| match &input_file {
+        Some(input) => f(input),
         None => eprintln!("Error: mode '{mode}' needs an input file (-i)"),
     };
     match mode.as_str() {
         "encode" => needs_input(encode_mode),
         "solve" => match input_file {
-            Some(input) => solve_mode(input, output_file, config),
+            Some(input) => solve_mode(&input, output_file, config),
             None => eprintln!("Error: mode 'solve' needs a CNF file (-i)"),
         },
         "encodesolvereconstruct" | "esr" => match input_file {
-            Some(input) => esr_mode(input, output_file, config),
+            Some(input) => esr_mode(&input, output_file, config),
             None => eprintln!("Error: mode 'esr' needs an input file (-i)"),
         },
         "generate" => {
@@ -148,7 +148,7 @@ fn main() {
             let size = |arg: &str, default: u8| {
                 matches
                     .get_one::<u16>(arg)
-                    .map_or(default, |&s| s.min(u8::MAX as u16) as u8)
+                    .map_or(default, |&s| u8::try_from(s).unwrap_or(u8::MAX))
             };
             let params = GenerateParams {
                 width: size("grid_x", w),

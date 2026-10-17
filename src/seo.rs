@@ -1,6 +1,8 @@
 //! Metadata for search engines and social previews: one [`PageMeta`] per route, plus the
 //! JSON-LD structured data that describes the game and the rules.
 
+use std::fmt::Write as _;
+
 use leptos::prelude::*;
 use leptos_i18n::Locale as _;
 use leptos_meta::{Link, Meta, Script, Title};
@@ -132,11 +134,26 @@ pub fn site_ld(locale: Locale) -> String {
 /// The questions on the rules page, also the source of its structured data.
 pub fn rules_faq(locale: Locale) -> [(&'static str, &'static str); 5] {
     [
-        (td_string!(locale, rules.faq.what_q), td_string!(locale, rules.faq.what_a)),
-        (td_string!(locale, rules.faq.how_many_q), td_string!(locale, rules.faq.how_many_a)),
-        (td_string!(locale, rules.faq.cross_q), td_string!(locale, rules.faq.cross_a)),
-        (td_string!(locale, rules.faq.connected_q), td_string!(locale, rules.faq.connected_a)),
-        (td_string!(locale, rules.faq.unique_q), td_string!(locale, rules.faq.unique_a)),
+        (
+            td_string!(locale, rules.faq.what_q),
+            td_string!(locale, rules.faq.what_a),
+        ),
+        (
+            td_string!(locale, rules.faq.how_many_q),
+            td_string!(locale, rules.faq.how_many_a),
+        ),
+        (
+            td_string!(locale, rules.faq.cross_q),
+            td_string!(locale, rules.faq.cross_a),
+        ),
+        (
+            td_string!(locale, rules.faq.connected_q),
+            td_string!(locale, rules.faq.connected_a),
+        ),
+        (
+            td_string!(locale, rules.faq.unique_q),
+            td_string!(locale, rules.faq.unique_a),
+        ),
     ]
 }
 
@@ -190,10 +207,11 @@ pub fn sitemap() -> String {
             )))
             .collect();
         for l in Locale::get_all() {
-            xml.push_str(&format!(
+            let _ = write!(
+                xml,
                 "  <url>\n    <loc>{SITE_URL}{}</loc>\n{alternates}    <changefreq>{freq}</changefreq>\n    <priority>{priority}</priority>\n  </url>\n",
                 localized(*l, path)
-            ));
+            );
         }
     }
     xml.push_str("</urlset>\n");

@@ -15,7 +15,7 @@ use libsql::{Connection, params};
 use sha2::{Digest, Sha256};
 
 use super::db::db_err;
-use super::{now_ms, run_blocking};
+use super::{hex, now_ms, run_blocking};
 use crate::model::{ApiError, MS_PER_DAY, UserInfo};
 
 const COOKIE: &str = "hashi_session";
@@ -47,10 +47,6 @@ fn random_bytes<const N: usize>() -> [u8; N] {
     let mut buf = [0u8; N];
     getrandom::fill(&mut buf).expect("no system randomness");
     buf
-}
-
-fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 fn hash_token(token: &str) -> String {
@@ -121,7 +117,10 @@ pub async fn current_user(conn: &Connection) -> Result<Option<User>, ServerFnErr
 }
 
 /// The signed in user, for plain axum handlers outside of Leptos.
-pub async fn user_from_headers(conn: &Connection, headers: &HeaderMap) -> Result<Option<User>, ServerFnError> {
+pub async fn user_from_headers(
+    conn: &Connection,
+    headers: &HeaderMap,
+) -> Result<Option<User>, ServerFnError> {
     match token_from_headers(headers) {
         Some(token) => user_by_token(conn, &token).await,
         None => Ok(None),
@@ -225,7 +224,11 @@ async fn verify_password(password: String, hash: String) -> Result<bool, ServerF
 }
 
 /// Gives the current guest a username and password, or creates a new account.
-pub async fn register(conn: &Connection, username: &str, password: String) -> Result<User, ServerFnError> {
+pub async fn register(
+    conn: &Connection,
+    username: &str,
+    password: String,
+) -> Result<User, ServerFnError> {
     validate_username(username)?;
     validate_password(&password)?;
     let hash = hash_password(password).await?;
@@ -269,25 +272,37 @@ pub async fn register(conn: &Connection, username: &str, password: String) -> Re
 static FAILED_LOGINS: Mutex<Option<HashMap<String, (u32, i64)>>> = Mutex::new(None);
 
 fn login_allowed(username: &str) -> bool {
-    let mut map = FAILED_LOGINS.lock().unwrap_or_else(|e| e.into_inner());
-    let map = map.get_or_insert_with(HashMap::new);
     let now = now_ms();
+    let mut guard = FAILED_LOGINS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let map = guard.get_or_insert_with(HashMap::new);
     map.retain(|_, (_, since)| now - *since < LOGIN_WINDOW_MS);
-    map.get(username).is_none_or(|(count, _)| *count < MAX_FAILED_LOGINS)
+    let allowed = map
+        .get(username)
+        .is_none_or(|(count, _)| *count < MAX_FAILED_LOGINS);
+    drop(guard);
+    allowed
 }
 
 fn record_failed_login(username: &str) {
-    let mut map = FAILED_LOGINS.lock().unwrap_or_else(|e| e.into_inner());
-    let entry = map
+    let now = now_ms();
+    FAILED_LOGINS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
         .get_or_insert_with(HashMap::new)
         .entry(username.to_string())
-        .or_insert((0, now_ms()));
-    entry.0 += 1;
+        .or_insert((0, now))
+        .0 += 1;
 }
 
 /// Signs in. Daily results the player made as a guest in this browser move to the account,
 /// unless the account already has a result for that day.
-pub async fn login(conn: &Connection, username: &str, password: String) -> Result<User, ServerFnError> {
+pub async fn login(
+    conn: &Connection,
+    username: &str,
+    password: String,
+) -> Result<User, ServerFnError> {
     let key = username.to_lowercase();
     if !login_allowed(&key) {
         return Err(ApiError::TooManyAttempts.into());
@@ -319,9 +334,12 @@ pub async fn login(conn: &Connection, username: &str, password: String) -> Resul
         merge_guest(conn, guest.id, user.id).await?;
     }
     if let Some(token) = request_token().await {
-        conn.execute("DELETE FROM sessions WHERE token_hash = ?1", params![hash_token(&token)])
-            .await
-            .map_err(db_err)?;
+        conn.execute(
+            "DELETE FROM sessions WHERE token_hash = ?1",
+            params![hash_token(&token)],
+        )
+        .await
+        .map_err(db_err)?;
     }
     create_session(conn, user.id).await?;
     Ok(user)
@@ -346,9 +364,12 @@ async fn merge_guest(conn: &Connection, guest: i64, user: i64) -> Result<(), Ser
 
 pub async fn logout(conn: &Connection) -> Result<(), ServerFnError> {
     if let Some(token) = request_token().await {
-        conn.execute("DELETE FROM sessions WHERE token_hash = ?1", params![hash_token(&token)])
-            .await
-            .map_err(db_err)?;
+        conn.execute(
+            "DELETE FROM sessions WHERE token_hash = ?1",
+            params![hash_token(&token)],
+        )
+        .await
+        .map_err(db_err)?;
     }
     set_cookie("", 0);
     Ok(())

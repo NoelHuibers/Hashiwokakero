@@ -63,7 +63,7 @@ fn splr_agrees_with_cdcl_on_perturbed_puzzles() {
             let puzzle = generated(difficulty, seed);
             for k in 0..6 {
                 let mut p = puzzle.clone();
-                let i = (seed as usize * 7 + k * 13) % p.islands.len();
+                let i = (usize::try_from(seed).unwrap() * 7 + k * 13) % p.islands.len();
                 let n = p.islands[i].required;
                 p.islands[i].required = if k % 2 == 0 {
                     (n % 8) + 1

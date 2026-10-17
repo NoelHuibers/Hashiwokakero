@@ -56,21 +56,21 @@ pub enum Family {
 }
 
 impl Family {
-    pub const ALL: [Family; 5] = [
-        Family::Hashi,
-        Family::HashiParity,
-        Family::Random3Sat,
-        Family::Pigeonhole,
-        Family::Queens,
+    pub const ALL: [Self; 5] = [
+        Self::Hashi,
+        Self::HashiParity,
+        Self::Random3Sat,
+        Self::Pigeonhole,
+        Self::Queens,
     ];
 
     pub fn id(self) -> &'static str {
         match self {
-            Family::Hashi => "hashi",
-            Family::HashiParity => "hashi-parity",
-            Family::Random3Sat => "random-3sat",
-            Family::Pigeonhole => "pigeonhole",
-            Family::Queens => "queens",
+            Self::Hashi => "hashi",
+            Self::HashiParity => "hashi-parity",
+            Self::Random3Sat => "random-3sat",
+            Self::Pigeonhole => "pigeonhole",
+            Self::Queens => "queens",
         }
     }
 
@@ -102,12 +102,12 @@ pub enum Outcome {
 
 impl Outcome {
     pub fn solved(self) -> bool {
-        matches!(self, Outcome::Solved(_))
+        matches!(self, Self::Solved(_))
     }
 }
 
 /// One instance of an evaluation. Only shown for the public development set.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RunResult {
     pub name: String,
     pub family: Family,
@@ -142,16 +142,32 @@ pub struct Score {
     pub families: Vec<FamilyScore>,
 }
 
+/// A number of instances as `u32` (a set has a few dozen), saturating.
+pub(crate) fn count(n: usize) -> u32 {
+    u32::try_from(n).unwrap_or(u32::MAX)
+}
+
 impl Score {
     pub fn from_results(results: &[RunResult], budget: u64) -> Self {
         const G: f64 = 1e9;
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "fuel (at most a few budgets of 10^10) and instance counts are far below \
+                      2^53, so the conversions are exact"
+        )]
         let par2 = |rs: &[&RunResult]| {
             if rs.is_empty() {
                 return 0.0;
             }
             let sum: f64 = rs
                 .iter()
-                .map(|r| if r.outcome.solved() { r.fuel as f64 } else { 2.0 * budget as f64 })
+                .map(|r| {
+                    if r.outcome.solved() {
+                        r.fuel as f64
+                    } else {
+                        2.0 * budget as f64
+                    }
+                })
                 .sum();
             sum / rs.len() as f64 / G
         };
@@ -162,31 +178,42 @@ impl Score {
                 let rs: Vec<&RunResult> = results.iter().filter(|r| r.family == family).collect();
                 (!rs.is_empty()).then(|| FamilyScore {
                     family,
-                    solved: rs.iter().filter(|r| r.outcome.solved()).count() as u32,
-                    total: rs.len() as u32,
+                    solved: count(rs.iter().filter(|r| r.outcome.solved()).count()),
+                    total: count(rs.len()),
                     par2: par2(&rs),
                 })
             })
             .collect();
-        Score {
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "fuel per instance is at most the budget (10^10 by default), far below \
+                      2^53, so the conversion is exact"
+        )]
+        let fuel = results
+            .iter()
+            .filter(|r| r.outcome.solved())
+            .map(|r| r.fuel as f64)
+            .sum::<f64>()
+            / G;
+        Self {
             par2: par2(&all),
-            solved: results.iter().filter(|r| r.outcome.solved()).count() as u32,
-            total: results.len() as u32,
-            wrong: results.iter().filter(|r| r.outcome == Outcome::Wrong).count() as u32,
+            solved: count(results.iter().filter(|r| r.outcome.solved()).count()),
+            total: count(results.len()),
+            wrong: count(
+                results
+                    .iter()
+                    .filter(|r| r.outcome == Outcome::Wrong)
+                    .count(),
+            ),
             budget,
-            fuel: results
-                .iter()
-                .filter(|r| r.outcome.solved())
-                .map(|r| r.fuel as f64)
-                .sum::<f64>()
-                / G,
+            fuel,
             families,
         }
     }
 }
 
 /// Why a submission was refused before running it.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Rejection {
     TooLarge,
     /// Not a valid WebAssembly module, or one using features the Dojo doesn't allow.
@@ -201,20 +228,37 @@ pub enum Rejection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Report {
-    Progress { id: i64, season: u32, done: u32, total: u32 },
-    Finished { id: i64, season: u32, score: Score },
-    Rejected { id: i64, season: u32, reason: Rejection },
+    Progress {
+        id: i64,
+        season: u32,
+        done: u32,
+        total: u32,
+    },
+    Finished {
+        id: i64,
+        season: u32,
+        score: Score,
+    },
+    Rejected {
+        id: i64,
+        season: u32,
+        reason: Rejection,
+    },
     /// Our fault, not the submission's: the website tries again later.
-    Failed { id: i64, season: u32, message: String },
+    Failed {
+        id: i64,
+        season: u32,
+        message: String,
+    },
 }
 
 impl Report {
     pub fn id(&self) -> i64 {
         match self {
-            Report::Progress { id, .. }
-            | Report::Finished { id, .. }
-            | Report::Rejected { id, .. }
-            | Report::Failed { id, .. } => *id,
+            Self::Progress { id, .. }
+            | Self::Finished { id, .. }
+            | Self::Rejected { id, .. }
+            | Self::Failed { id, .. } => *id,
         }
     }
 }

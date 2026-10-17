@@ -9,7 +9,7 @@ pub struct Pos {
 
 impl Pos {
     pub const fn new(x: u8, y: u8) -> Self {
-        Pos { x, y }
+        Self { x, y }
     }
 }
 
@@ -34,7 +34,7 @@ pub struct Puzzle {
 impl Puzzle {
     pub fn new(width: u8, height: u8, mut islands: Vec<Island>) -> Self {
         islands.sort_by_key(|i| (i.pos.y, i.pos.x));
-        Puzzle {
+        Self {
             width,
             height,
             islands,
@@ -42,24 +42,33 @@ impl Puzzle {
     }
 
     pub fn empty(width: u8, height: u8) -> Self {
-        Puzzle::new(width, height, vec![])
+        Self::new(width, height, vec![])
     }
 
     /// Builds a puzzle from a row-major grid (`grid[y][x]`), 0 means water.
+    ///
+    /// Panics if the grid has more than 255 rows or columns.
     pub fn from_grid(grid: &[Vec<u8>]) -> Self {
-        let height = grid.len() as u8;
-        let width = grid.first().map_or(0, |r| r.len()) as u8;
+        let height = u8::try_from(grid.len()).expect("a grid has at most 255 rows");
+        let width =
+            u8::try_from(grid.first().map_or(0, Vec::len)).expect("a grid has at most 255 columns");
         let islands = grid
             .iter()
             .enumerate()
             .flat_map(|(y, row)| {
-                row.iter().enumerate().filter(|(_, n)| **n > 0).map(move |(x, &n)| Island {
-                    pos: Pos::new(x as u8, y as u8),
-                    required: n,
-                })
+                row.iter()
+                    .enumerate()
+                    .filter(|(_, n)| **n > 0)
+                    .map(move |(x, &n)| Island {
+                        pos: Pos::new(
+                            u8::try_from(x).expect("a grid has at most 255 columns"),
+                            u8::try_from(y).expect("a grid has at most 255 rows"),
+                        ),
+                        required: n,
+                    })
             })
             .collect();
-        Puzzle::new(width, height, islands)
+        Self::new(width, height, islands)
     }
 
     /// Row-major grid (`grid[y][x]`), 0 means water.
@@ -96,6 +105,7 @@ impl Puzzle {
     }
 
     /// Resizes the grid, dropping islands that no longer fit.
+    #[must_use]
     pub fn resized(&self, width: u8, height: u8) -> Self {
         let islands = self
             .islands
@@ -103,7 +113,7 @@ impl Puzzle {
             .filter(|i| i.pos.x < width && i.pos.y < height)
             .cloned()
             .collect();
-        Puzzle::new(width, height, islands)
+        Self::new(width, height, islands)
     }
 
     /// Parses the ASCII format used by the test inputs:
@@ -117,7 +127,7 @@ impl Puzzle {
     pub fn parse_txt(input: &str) -> Result<Self, String> {
         let mut lines = input.lines().map(str::trim).filter(|l| !l.is_empty());
         let header = lines.next().ok_or("The file is empty")?;
-        let mut sizes = header.split_whitespace().map(|s| s.parse::<u8>());
+        let mut sizes = header.split_whitespace().map(str::parse::<u8>);
         let rows = sizes
             .next()
             .ok_or("Missing grid size in the first line")?
@@ -154,7 +164,7 @@ impl Puzzle {
         if grid.len() != rows as usize {
             return Err(format!("Expected {rows} rows, found {}", grid.len()));
         }
-        Ok(Puzzle::from_grid(&grid))
+        Ok(Self::from_grid(&grid))
     }
 
     /// Inverse of [`Puzzle::parse_txt`].

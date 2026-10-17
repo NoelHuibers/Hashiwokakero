@@ -14,11 +14,10 @@ pub fn generate_dimacs(
 
     for clause in clauses {
         for literal in clause {
-            write!(writer, "{} ", literal)?;
+            write!(writer, "{literal} ")?;
         }
         writeln!(writer, "0")?;
     }
 
     Ok(())
 }
-

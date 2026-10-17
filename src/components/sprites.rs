@@ -29,7 +29,9 @@ const ISLAND: [&str; 16] = [
 ];
 
 /// Decorations sit on the top right rim of an island and may stick out of the cell.
-const PINE: [&str; 7] = ["..T..", ".TtT.", "TTtTT", ".TTT.", "TTTTT", "..b..", "..b.."];
+const PINE: [&str; 7] = [
+    "..T..", ".TtT.", "TTtTT", ".TTT.", "TTTTT", "..b..", "..b..",
+];
 const SAKURA: [&str; 6] = [".kkk.", "kKkkk", "kkkKk", ".kKk.", "..b..", "..b.."];
 const TORII: [&str; 5] = ["rrrrrr", ".R..R.", ".rrrr.", ".r..r.", ".r..r."];
 const LANTERN: [&str; 5] = [".NN.", "NNNN", ".yn.", ".nn.", "nNNn"];
@@ -51,6 +53,11 @@ pub const BOAT: [&str; 9] = [
 ];
 
 /// Horizontal runs of equal pixels: (x, y, width, char).
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    reason = "pixel art is a few dozen pixels wide and tall"
+)]
 pub fn runs(art: &[&str]) -> Vec<(i32, i32, i32, char)> {
     let mut out = Vec::new();
     for (y, row) in art.iter().enumerate() {
@@ -72,7 +79,11 @@ pub fn runs(art: &[&str]) -> Vec<(i32, i32, i32, char)> {
 
 /// Renders pixel art at an offset (in art pixels).
 #[component]
-pub fn PixelArt(art: &'static [&'static str], #[prop(optional)] x: i32, #[prop(optional)] y: i32) -> impl IntoView {
+pub fn PixelArt(
+    art: &'static [&'static str],
+    #[prop(optional)] x: i32,
+    #[prop(optional)] y: i32,
+) -> impl IntoView {
     runs(art)
         .into_iter()
         .map(|(rx, ry, w, c)| {
@@ -102,7 +113,7 @@ pub fn PixelSprite(
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Decor {
     None,
     Pine,
@@ -114,27 +125,27 @@ pub enum Decor {
 impl Decor {
     /// A stable, scattered choice per position, so islands keep their decoration.
     pub fn for_pos(x: u8, y: u8) -> Self {
-        let h = (x as u32)
+        let h = u32::from(x)
             .wrapping_mul(73_856_093)
-            .wrapping_add((y as u32).wrapping_mul(19_349_663))
+            .wrapping_add(u32::from(y).wrapping_mul(19_349_663))
             .rotate_left(7)
             .wrapping_mul(2_654_435_761);
         match (h >> 24) % 9 {
-            0 | 1 => Decor::Pine,
-            2 | 3 => Decor::Sakura,
-            4 => Decor::Torii,
-            5 => Decor::Lantern,
-            _ => Decor::None,
+            0 | 1 => Self::Pine,
+            2 | 3 => Self::Sakura,
+            4 => Self::Torii,
+            5 => Self::Lantern,
+            _ => Self::None,
         }
     }
 
     pub fn id(self) -> Option<&'static str> {
         match self {
-            Decor::None => None,
-            Decor::Pine => Some("#d-pine"),
-            Decor::Sakura => Some("#d-sakura"),
-            Decor::Torii => Some("#d-torii"),
-            Decor::Lantern => Some("#d-lantern"),
+            Self::None => None,
+            Self::Pine => Some("#d-pine"),
+            Self::Sakura => Some("#d-sakura"),
+            Self::Torii => Some("#d-torii"),
+            Self::Lantern => Some("#d-lantern"),
         }
     }
 }
@@ -216,7 +227,7 @@ pub fn BoardDefs() -> impl IntoView {
 }
 
 /// Geometry of a bridge between two island cells (cell coordinates).
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Span {
     pub horizontal: bool,
     /// Cell coordinates of the two islands, `a` left of / above `b`.
@@ -226,6 +237,10 @@ pub struct Span {
 
 /// Draws a bridge. `count` 1 is a rustic wooden bridge, 2 a vermilion taiko-bashi.
 #[component]
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "Leptos components take their props by value"
+)]
 pub fn BridgeSprite(span: Span, count: u8, #[prop(into, optional)] class: String) -> impl IntoView {
     let (ax, ay) = span.a;
     let (bx, by) = span.b;

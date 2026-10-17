@@ -40,3 +40,10 @@ worker = ["runner", "dep:anyhow", "dep:axum", "dep:reqwest", "dep:serde_json", "
 [[bin]]
 name = "dojo"
 required-features = ["bench"]
+
+[lints]
+workspace = true
+
+[[example]]
+name = "gen_time"
+required-features = ["bench"]

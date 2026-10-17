@@ -38,7 +38,7 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Limits {
+        Self {
             fuel: crate::DEFAULT_BUDGET,
             memory_bytes: 1 << 30,
             wall: Duration::from_secs(120),
@@ -83,7 +83,8 @@ impl HostWallClock for VirtualClock {
     }
     fn now(&self) -> Duration {
         // 2027-01-15, a fixed date
-        Duration::from_secs(1_800_000_000) + Duration::from_nanos(self.0.fetch_add(1_000, Ordering::Relaxed))
+        Duration::from_hours(500_000)
+            + Duration::from_nanos(self.0.fetch_add(1_000, Ordering::Relaxed))
     }
 }
 
@@ -93,6 +94,7 @@ struct State {
 }
 
 /// A compiled submission.
+#[derive(Debug)]
 pub struct Solver {
     module: Module,
 }
@@ -100,6 +102,14 @@ pub struct Solver {
 pub struct Sandbox {
     engine: Engine,
     linker: Arc<Linker<State>>,
+}
+
+impl std::fmt::Debug for Sandbox {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Sandbox")
+            .field("engine", &self.engine)
+            .finish_non_exhaustive()
+    }
 }
 
 impl Sandbox {
@@ -128,18 +138,29 @@ impl Sandbox {
             }
         });
 
-        Ok(Sandbox { engine, linker: Arc::new(linker) })
+        Ok(Self {
+            engine,
+            linker: Arc::new(linker),
+        })
     }
 
     /// Checks and compiles a submission.
     pub fn load(&self, wasm: &[u8]) -> Result<Solver, Rejection> {
         validate(wasm)?;
-        let module = Module::new(&self.engine, wasm).map_err(|e| Rejection::Invalid(format!("{e:#}")))?;
+        let module =
+            Module::new(&self.engine, wasm).map_err(|e| Rejection::Invalid(format!("{e:#}")))?;
         Ok(Solver { module })
     }
 
     /// Runs the solver on `input` (DIMACS text). `seed` seeds its random numbers.
-    pub fn run(&self, solver: &Solver, input: &str, seed: u64, limits: &Limits, show_stderr: bool) -> Run {
+    pub fn run(
+        &self,
+        solver: &Solver,
+        input: &str,
+        seed: u64,
+        limits: &Limits,
+        show_stderr: bool,
+    ) -> Run {
         let stdout = MemoryOutputPipe::new(MAX_STDOUT);
         let mut wasi = WasiCtxBuilder::new();
         wasi.args(&["solver"])
@@ -147,7 +168,7 @@ impl Sandbox {
             .stdout(stdout.clone())
             .secure_random(StdRng::seed_from_u64(seed))
             .insecure_random(StdRng::seed_from_u64(seed ^ 0x9e37_79b9_7f4a_7c15))
-            .insecure_random_seed(seed as u128)
+            .insecure_random_seed(u128::from(seed))
             .monotonic_clock(VirtualClock(AtomicU64::new(0)))
             .wall_clock(VirtualClock(AtomicU64::new(0)));
         if show_stderr {
@@ -165,7 +186,8 @@ impl Sandbox {
         let mut store = Store::new(&self.engine, state);
         store.limiter(|s| &mut s.limits);
         let _ = store.set_fuel(limits.fuel);
-        store.set_epoch_deadline((limits.wall.as_millis() / TICK.as_millis()).max(1) as u64);
+        let ticks = (limits.wall.as_millis() / TICK.as_millis()).max(1);
+        store.set_epoch_deadline(u64::try_from(ticks).unwrap_or(u64::MAX));
         store.epoch_deadline_trap();
 
         let started = Instant::now();
@@ -207,35 +229,76 @@ mod tests {
         (data (i32.const 0) "\64\00\00\00\10\00\00\00")"#;
 
     fn solver(sandbox: &Sandbox, body: &str) -> Solver {
-        let wasm = wat::parse_str(format!(r#"(module {WASI} (func (export "_start") {body}))"#)).unwrap();
+        let wasm = wat::parse_str(format!(
+            r#"(module {WASI} (func (export "_start") {body}))"#
+        ))
+        .unwrap();
         sandbox.load(&wasm).unwrap()
     }
 
     fn limits(fuel: u64) -> Limits {
-        Limits { fuel, ..Default::default() }
+        Limits {
+            fuel,
+            ..Default::default()
+        }
     }
 
     #[test]
     fn answers_and_meters() {
         let sandbox = Sandbox::new().unwrap();
         let print = "(drop (call $write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 8)))";
-        let run = sandbox.run(&solver(&sandbox, print), "p cnf 1 1\n1 0\n", 1, &limits(1_000_000), false);
+        let run = sandbox.run(
+            &solver(&sandbox, print),
+            "p cnf 1 1\n1 0\n",
+            1,
+            &limits(1_000_000),
+            false,
+        );
         assert_eq!(run.end, End::Exited);
         assert_eq!(run.stdout, "s UNSATISFIABLE\n");
         let small = run.fuel;
         assert!(small > 0 && small < 1_000);
 
         // Same program and input: same fuel, every time
-        let again = sandbox.run(&solver(&sandbox, print), "p cnf 1 1\n1 0\n", 1, &limits(1_000_000), false);
+        let again = sandbox.run(
+            &solver(&sandbox, print),
+            "p cnf 1 1\n1 0\n",
+            1,
+            &limits(1_000_000),
+            false,
+        );
         assert_eq!(again.fuel, small);
 
         // Bulk operations cost one unit per byte: filling 64 KiB costs 65535 more than one byte
-        let fill = |n: u32| format!("(memory.fill (i32.const 0) (i32.const 0) (i32.const {n})) {print}");
-        let one = sandbox.run(&solver(&sandbox, &fill(1)), "", 1, &limits(1_000_000), false).fuel;
-        let many = sandbox.run(&solver(&sandbox, &fill(65536)), "", 1, &limits(1_000_000), false).fuel;
+        let fill =
+            |n: u32| format!("(memory.fill (i32.const 0) (i32.const 0) (i32.const {n})) {print}");
+        let one = sandbox
+            .run(
+                &solver(&sandbox, &fill(1)),
+                "",
+                1,
+                &limits(1_000_000),
+                false,
+            )
+            .fuel;
+        let many = sandbox
+            .run(
+                &solver(&sandbox, &fill(65536)),
+                "",
+                1,
+                &limits(1_000_000),
+                false,
+            )
+            .fuel;
         assert_eq!(many - one, 65535);
         // ... and runs out of fuel if the budget is smaller than that
-        let poor = sandbox.run(&solver(&sandbox, &fill(65536)), "", 1, &limits(10_000), false);
+        let poor = sandbox.run(
+            &solver(&sandbox, &fill(65536)),
+            "",
+            1,
+            &limits(10_000),
+            false,
+        );
         assert_eq!(poor.end, End::OutOfFuel);
         assert_eq!(poor.fuel, 10_000);
     }
@@ -244,15 +307,27 @@ mod tests {
     fn limits_hold() {
         let sandbox = Sandbox::new().unwrap();
         let spin = solver(&sandbox, "(loop $l (br $l))");
-        assert_eq!(sandbox.run(&spin, "", 1, &limits(100_000), false).end, End::OutOfFuel);
-        let wall = Limits { fuel: u64::MAX / 2, wall: Duration::from_millis(50), ..Default::default() };
+        assert_eq!(
+            sandbox.run(&spin, "", 1, &limits(100_000), false).end,
+            End::OutOfFuel
+        );
+        let wall = Limits {
+            fuel: u64::MAX / 2,
+            wall: Duration::from_millis(50),
+            ..Default::default()
+        };
         assert_eq!(sandbox.run(&spin, "", 1, &wall, false).end, End::WallClock);
         let crash = solver(&sandbox, "unreachable");
-        assert!(matches!(sandbox.run(&crash, "", 1, &limits(1_000), false).end, End::Crashed(_)));
+        assert!(matches!(
+            sandbox.run(&crash, "", 1, &limits(1_000), false).end,
+            End::Crashed(_)
+        ));
         let greedy = solver(&sandbox, "(drop (memory.grow (i32.const 30000)))");
-        let small = Limits { memory_bytes: 1 << 20, ..limits(1_000) };
+        let small = Limits {
+            memory_bytes: 1 << 20,
+            ..limits(1_000)
+        };
         // A failed grow returns -1, the program goes on
         assert_eq!(sandbox.run(&greedy, "", 1, &small, false).end, End::Exited);
     }
 }
-

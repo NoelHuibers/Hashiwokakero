@@ -18,7 +18,7 @@ pub fn to_puzzle(game: &GameBoard) -> Puzzle {
         .iter()
         .map(|i| Island {
             pos: Pos::new(i.x, i.y),
-            required: i.connections.min(u8::MAX as u32) as u8,
+            required: u8::try_from(i.connections).unwrap_or(u8::MAX),
         })
         .collect();
     Puzzle::new(game.cols, game.rows, islands)

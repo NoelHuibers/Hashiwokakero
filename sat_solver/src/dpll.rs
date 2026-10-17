@@ -9,7 +9,8 @@ use std::{
     time::Instant,
 };
 
-type Atom = u16;
+// Absolute value of a literal. This used to be u16, which silently merged variables above 65535.
+type Atom = u32;
 type BVar = i32;
 type CIdx = usize;
 
@@ -24,20 +25,20 @@ pub enum DIMACSOutput {
 impl fmt::Display for DIMACSOutput {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DIMACSOutput::Sat(variables) => {
+            Self::Sat(variables) => {
                 writeln!(f, "SAT")?;
                 if !variables.is_empty() {
                     for (index, var) in variables.iter().enumerate() {
                         if index > 0 {
                             write!(f, " ")?;
                         }
-                        write!(f, "{}", var)?;
+                        write!(f, "{var}")?;
                     }
                 }
                 Ok(())
             }
-            DIMACSOutput::Unsat => write!(f, "UNSAT"),
-            DIMACSOutput::Timeout => write!(f, "UNKNOWN (timeout)"),
+            Self::Unsat => write!(f, "UNSAT"),
+            Self::Timeout => write!(f, "UNKNOWN (timeout)"),
         }
     }
 }
@@ -63,23 +64,27 @@ impl fmt::Display for Error {
 // Same mem layout as for tuples:
 // - https://doc.rust-lang.org/reference/type-layout.html#tuple-layout
 // - https://doc.rust-lang.org/reference/types/struct.html#structtype
+#[derive(Debug)]
 pub(crate) struct Clause {
     pub(crate) sat_by_var: BVar,
     pub(crate) vars: Vec<BVar>,
     pub(crate) unassign_vars: u32,
 }
 
+#[derive(Debug)]
 pub(crate) struct Literal {
     pub(crate) val: bool,
     pub(crate) is_free: bool,
 }
 
+#[derive(Debug)]
 struct Assignment {
     var: BVar,
     val: bool,
     forced: bool,
 }
 
+#[derive(Debug)]
 pub struct DPLL {
     // Using HashMaps due to better get(i) / append complexity, see https://doc.rust-lang.org/std/collections/#sequences
     clauses: HashMap<usize, Clause>,
@@ -88,7 +93,7 @@ pub struct DPLL {
     // Memory allocation in the history is a bottle neck thus the initial unit prop and pure lit elim don't need to expand it
     history_enabled: bool,
     lit_val: HashMap<Atom, Literal>,
-    min_depth: u16,
+    min_depth: usize,
     // Keys don't contain the sign as abs is cheaper than calculating the sign every time
     neg_occ: HashMap<Atom, Vec<CIdx>>,
     pos_occ: HashMap<Atom, Vec<CIdx>>,
@@ -114,16 +119,13 @@ impl DPLL {
         show_depth: bool,
     ) -> Self {
         profiling::start("DPLL::new");
-        let mut dpll = DPLL {
+        let mut dpll = Self {
             clauses: HashMap::with_capacity(clause_count),
             heuristic,
             history: Vec::new(),
             history_enabled: false,
             lit_val: HashMap::with_capacity(lit_count),
-            min_depth: match show_depth {
-                true => u16::MAX,
-                false => 0,
-            },
+            min_depth: if show_depth { usize::MAX } else { 0 },
             neg_occ: HashMap::with_capacity(lit_count),
             pos_occ: HashMap::with_capacity(lit_count),
             unit_queue: VecDeque::new(),
@@ -134,26 +136,27 @@ impl DPLL {
             deadline: None,
             has_empty_clause: false,
         };
-        if input.iter().any(|c| c.is_empty()) {
+        if input.iter().any(Vec::is_empty) {
             dpll.has_empty_clause = true;
             input.retain(|c| !c.is_empty());
         }
         // * read formula
         // Using iterators where possible for better performance
         input.into_iter().enumerate().for_each(|(c, vars)| {
-            dpll.unsat_clauses.insert((vars.clone(), vars.len() as u32));
+            let len = u32::try_from(vars.len()).expect("a clause has fewer than 2^32 literals");
+            dpll.unsat_clauses.insert((vars.clone(), len));
             let clause = Clause {
                 sat_by_var: 0,
                 vars: vars.clone(),
-                unassign_vars: vars.len() as u32,
+                unassign_vars: len,
             };
             let fist_var = &clause.vars.clone()[0];
             dpll.clauses.insert(c, clause);
             if vars.len() == 1 && !dpll.unit_queue.contains(fist_var) {
                 dpll.unit_queue.push_front(*fist_var);
             }
-            vars.iter().for_each(|literal| {
-                let lit = literal.abs() as Atom;
+            for literal in &vars {
+                let lit = as_atom(*literal);
                 dpll.lit_val.insert(
                     lit,
                     Literal {
@@ -170,15 +173,15 @@ impl DPLL {
                         .pos_occ
                         .entry(lit)
                         .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
-                        .or_insert(vec![c]),
+                        .or_insert_with(|| vec![c]),
                     -1 => dpll
                         .neg_occ
                         .entry(lit)
                         .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
-                        .or_insert(vec![c]),
+                        .or_insert_with(|| vec![c]),
                     _ => panic!("0 is not a valid Variable in the DIMACS format"),
                 };
-            })
+            }
         });
         profiling::end("DPLL::new");
         dpll
@@ -190,6 +193,7 @@ impl DPLL {
     }
 
     /// Builder style variant of [`DPLL::set_deadline`].
+    #[must_use]
     pub fn with_deadline(mut self, deadline: Option<Instant>) -> Self {
         self.deadline = deadline;
         self
@@ -201,7 +205,7 @@ impl DPLL {
     }
 
     fn timed_out(&self, step: u64) -> bool {
-        step % 16 == 0 && self.deadline.is_some_and(|d| Instant::now() >= d)
+        step.is_multiple_of(16) && self.deadline.is_some_and(|d| Instant::now() >= d)
     }
 
     pub fn solve(&mut self) -> Result<DIMACSOutput, Error> {
@@ -219,17 +223,16 @@ impl DPLL {
             profiling::end("DPLL::solve");
             return Ok(DIMACSOutput::Unsat);
         }
-        if self
-            .clauses
-            .values()
-            .fold(true, |i, c| i && c.sat_by_var != 0)
-        {
+        if self.clauses.values().all(|c| c.sat_by_var != 0) {
             let mut res: Vec<i32> = self
                 .lit_val
                 .iter()
-                .map(|(atom, lit)| match lit.val {
-                    true => *atom as BVar,
-                    false => -(*atom as BVar),
+                .map(|(atom, lit)| {
+                    if lit.val {
+                        as_lit(*atom)
+                    } else {
+                        -as_lit(*atom)
+                    }
                 })
                 .collect();
             res.sort_by_key(|k| k.abs());
@@ -248,18 +251,15 @@ impl DPLL {
                 return Ok(DIMACSOutput::Timeout);
             }
             // * choose literal var
-            let (var, val, forced) = match pure_lits.is_empty() {
-                true => {
-                    self.history_enabled = true;
-                    let (var, val) = self.pick_literal();
-                    self.decisions += 1;
-                    (var, val, false)
-                }
-                false => {
-                    let lit = pure_lits.pop().unwrap();
-                    // As the lit occurs only in one polarity it doesn't make sense to try both assignments
-                    (lit, lit.is_positive(), true)
-                }
+            let (var, val, forced) = if pure_lits.is_empty() {
+                self.history_enabled = true;
+                let (var, val) = self.pick_literal();
+                self.decisions += 1;
+                (var, val, false)
+            } else {
+                let lit = pure_lits.pop().unwrap();
+                // As the lit occurs only in one polarity it doesn't make sense to try both assignments
+                (lit, lit.is_positive(), true)
             };
             // * set value var
             self.set_var(forced, val, var);
@@ -269,7 +269,7 @@ impl DPLL {
                 let conflict = self.unit_prop();
                 if !conflict {
                     break;
-                };
+                }
 
                 steps += 1;
                 if self.timed_out(steps) {
@@ -285,17 +285,16 @@ impl DPLL {
             }
 
             // * if all clauses satisfied
-            if self
-                .clauses
-                .values()
-                .fold(true, |i, c| i && c.sat_by_var != 0)
-            {
+            if self.clauses.values().all(|c| c.sat_by_var != 0) {
                 let mut res: Vec<i32> = self
                     .lit_val
                     .iter()
-                    .map(|(atom, lit)| match lit.val {
-                        true => *atom as BVar,
-                        false => -(*atom as BVar),
+                    .map(|(atom, lit)| {
+                        if lit.val {
+                            as_lit(*atom)
+                        } else {
+                            -as_lit(*atom)
+                        }
                     })
                     .collect();
                 res.sort_by_key(|k| k.abs());
@@ -319,9 +318,9 @@ impl DPLL {
                     Some(_) => 1,
                     None => -1,
                 };
-                *literal as BVar * sign
+                as_lit(*literal) * sign
             })
-            .filter(|p| !self.lit_val.contains_key(&(p.abs() as u16)))
+            .filter(|p| !self.lit_val.contains_key(&as_atom(*p)))
             .collect::<Vec<BVar>>();
         profiling::end("get_pure_lits");
         result
@@ -334,8 +333,8 @@ impl DPLL {
             self.unset_var(last_step.unwrap().var);
             last_step = self.history.pop();
         }
-        if self.show_depth && self.history.len() as u16 <= self.min_depth {
-            self.min_depth = self.history.len() as u16;
+        if self.show_depth && self.history.len() <= self.min_depth {
+            self.min_depth = self.history.len();
             println!("backtracked to depth {}", self.history.len());
         }
         if last_step.is_none() {
@@ -391,7 +390,7 @@ impl DPLL {
             self.history.push(Assignment { var, val, forced });
         }
         let mut conflict = false;
-        let lit = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
+        let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
         lit.is_free = false;
         // Just for heuristics
         self.free_lits.remove(&var);
@@ -409,42 +408,43 @@ impl DPLL {
         // 1 true => pos_occ is sat
         // 1 false => neg_occ is sat
         // <=> var.is_pos == value
-        let (mark_sat, mark_unsat) = match new_val {
-            true => (&self.pos_occ, &self.neg_occ),
-            false => (&self.neg_occ, &self.pos_occ),
+        let (mark_sat, mark_unsat) = if new_val {
+            (&self.pos_occ, &self.neg_occ)
+        } else {
+            (&self.neg_occ, &self.pos_occ)
         };
-        if let Some(occ) = mark_sat.get(&(var.abs() as Atom)) {
-            occ.iter().for_each(|c: &CIdx| {
+        if let Some(occ) = mark_sat.get(&as_atom(var)) {
+            for c in occ {
                 self.clauses.entry(*c).and_modify(|sat_clause| {
                     if sat_clause.sat_by_var == 0 {
                         sat_clause.sat_by_var = var;
                         self.unsat_clauses
-                            .remove(&(sat_clause.vars.to_vec(), sat_clause.unassign_vars));
+                            .remove(&(sat_clause.vars.clone(), sat_clause.unassign_vars));
                     }
                 });
-            });
+            }
         }
-        if let Some(occ) = mark_unsat.get(&(var.abs() as Atom)) {
-            occ.iter().for_each(|c| {
+        if let Some(occ) = mark_unsat.get(&as_atom(var)) {
+            for c in occ {
                 let unsat_clause = self.clauses.get_mut(c).unwrap();
                 self.unsat_clauses
-                    .remove(&(unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
-                unsat_clause.unassign_vars = unsat_clause.unassign_vars - 1;
+                    .remove(&(unsat_clause.vars.clone(), unsat_clause.unassign_vars));
+                unsat_clause.unassign_vars -= 1;
                 self.unsat_clauses
-                    .insert((unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
+                    .insert((unsat_clause.vars.clone(), unsat_clause.unassign_vars));
                 match unsat_clause.unassign_vars {
                     0 => conflict = true,
                     1 => {
                         if let Some(free_lit) = unsat_clause.vars.iter().find(|&v| {
-                            self.lit_val.get(&(v.abs() as Atom)).unwrap().is_free
+                            self.lit_val.get(&as_atom(*v)).unwrap().is_free
                                 && !self.unit_queue.contains(v)
                         }) {
                             self.unit_queue.push_front(*free_lit);
                         }
                     }
                     _ => (),
-                };
-            })
+                }
+            }
         }
         profiling::end("set var");
         conflict
@@ -452,39 +452,49 @@ impl DPLL {
 
     fn unset_var(&mut self, var: BVar) {
         profiling::start("unset var");
-        let lit_var = self.lit_val.get_mut(&(var.abs() as Atom)).unwrap();
+        let lit_var = self.lit_val.get_mut(&as_atom(var)).unwrap();
         lit_var.is_free = true;
         // Just for heuristics
         self.free_lits.insert(var);
         self.free_lits.insert(-var);
         // Value of lit_var actually doesn't matter
-        let (mark_sat, mark_unsat) = match lit_var.val {
-            true => (&self.pos_occ, &self.neg_occ),
-            false => (&self.neg_occ, &self.pos_occ),
+        let (mark_sat, mark_unsat) = if lit_var.val {
+            (&self.pos_occ, &self.neg_occ)
+        } else {
+            (&self.neg_occ, &self.pos_occ)
         };
-        if let Some(occ) = mark_sat.get(&(var.abs() as Atom)) {
-            occ.iter().for_each(|c| {
+        if let Some(occ) = mark_sat.get(&as_atom(var)) {
+            for c in occ {
                 self.clauses.entry(*c).and_modify(|sat_clause| {
                     if sat_clause.sat_by_var == var {
                         sat_clause.sat_by_var = 0;
                         self.unsat_clauses
-                            .insert((sat_clause.vars.to_vec(), sat_clause.unassign_vars));
+                            .insert((sat_clause.vars.clone(), sat_clause.unassign_vars));
                     }
                 });
-            })
-        };
-        if let Some(occ) = mark_unsat.get(&(var.abs() as Atom)) {
-            occ.iter().for_each(|c| {
+            }
+        }
+        if let Some(occ) = mark_unsat.get(&as_atom(var)) {
+            for c in occ {
                 let unsat_clause = self.clauses.get_mut(c).unwrap();
                 self.unsat_clauses
-                    .remove(&(unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
-                unsat_clause.unassign_vars = unsat_clause.unassign_vars + 1;
+                    .remove(&(unsat_clause.vars.clone(), unsat_clause.unassign_vars));
+                unsat_clause.unassign_vars += 1;
                 self.unsat_clauses
-                    .insert((unsat_clause.vars.to_vec(), unsat_clause.unassign_vars));
-            })
+                    .insert((unsat_clause.vars.clone(), unsat_clause.unassign_vars));
+            }
         }
         profiling::end("unset var");
     }
+}
+
+fn as_atom(lit: BVar) -> Atom {
+    lit.unsigned_abs()
+}
+
+// Atoms are absolute values of BVar literals, so they convert back without wrapping
+const fn as_lit(atom: Atom) -> BVar {
+    atom.cast_signed()
 }
 
 #[test]
@@ -497,7 +507,7 @@ fn should_solve_sat_small() {
         true,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -548,7 +558,7 @@ fn should_solve_sat() {
         true,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -664,7 +674,7 @@ fn should_solve_unsat() {
 fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -688,7 +698,7 @@ fn should_elim_pure_lit() {
         true,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -699,13 +709,13 @@ fn bug_jan_2nd_should_be_sat() {
     let (mut input, mut v_c, mut c_c) =
         crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 
     (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }

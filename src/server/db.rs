@@ -5,15 +5,16 @@
 
 use std::sync::OnceLock;
 
-use libsql::{Builder, Connection, Database, params};
 use leptos::prelude::ServerFnError;
+use libsql::{Builder, Connection, Database, params};
 
-use super::now_ms;
+use super::{count, now_ms};
 
 static DB: OnceLock<Database> = OnceLock::new();
 
 /// Schema versions, applied in order and recorded in `schema_migrations`.
-const MIGRATIONS: &[&str] = &[r#"
+const MIGRATIONS: &[&str] = &[
+    r"
 CREATE TABLE IF NOT EXISTS users (
     id            INTEGER PRIMARY KEY,
     -- NULL for guests
@@ -56,7 +57,8 @@ CREATE TABLE IF NOT EXISTS attempts (
     PRIMARY KEY (user_id, day)
 );
 CREATE INDEX IF NOT EXISTS attempts_ranking ON attempts (day, time_ms);
-"#, r#"
+",
+    r"
 -- SAT Dojo submissions, see server/dojo.rs
 CREATE TABLE IF NOT EXISTS dojo_submissions (
     id          INTEGER PRIMARY KEY,
@@ -89,7 +91,8 @@ CREATE TABLE IF NOT EXISTS dojo_submissions (
 CREATE INDEX IF NOT EXISTS dojo_board ON dojo_submissions (season, state, par2);
 CREATE INDEX IF NOT EXISTS dojo_user ON dojo_submissions (user_id, created_at);
 CREATE INDEX IF NOT EXISTS dojo_queue ON dojo_submissions (state, created_at);
-"#];
+",
+];
 
 pub async fn init() -> Result<(), String> {
     let url = std::env::var("TURSO_DATABASE_URL").unwrap_or_default();
@@ -106,7 +109,8 @@ pub async fn init() -> Result<(), String> {
             .map_err(|e| format!("could not connect to Turso: {e}"))?
     };
     migrate(&db.connect().map_err(|e| e.to_string())?).await?;
-    DB.set(db).map_err(|_| "database initialized twice".to_string())
+    DB.set(db)
+        .map_err(|_| "database initialized twice".to_string())
 }
 
 pub async fn open_local(path: &str) -> Result<Database, String> {
@@ -125,18 +129,23 @@ pub async fn migrate(conn: &Connection) -> Result<(), String> {
     .await
     .map_err(err)?;
     let mut rows = conn
-        .query("SELECT COALESCE(MAX(version), 0) FROM schema_migrations", ())
+        .query(
+            "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
+            (),
+        )
         .await
         .map_err(err)?;
     let current: i64 = match rows.next().await.map_err(err)? {
         Some(row) => row.get(0).map_err(err)?,
         None => 0,
     };
-    for (i, sql) in MIGRATIONS.iter().enumerate().skip(current as usize) {
+    // A version that doesn't fit (never written by this code) skips everything, like before
+    let applied = usize::try_from(current).unwrap_or(usize::MAX);
+    for (i, sql) in MIGRATIONS.iter().enumerate().skip(applied) {
         conn.execute_batch(sql).await.map_err(err)?;
         conn.execute(
             "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
-            params![i as i64 + 1, now_ms()],
+            params![count(i + 1), now_ms()],
         )
         .await
         .map_err(err)?;
@@ -152,6 +161,10 @@ pub fn conn() -> Result<Connection, ServerFnError> {
         .map_err(db_err)
 }
 
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "made for `.map_err(db_err)`, which hands over the error by value"
+)]
 pub fn db_err(e: libsql::Error) -> ServerFnError {
     // Details go to the log, not to the player
     eprintln!("database error: {e}");

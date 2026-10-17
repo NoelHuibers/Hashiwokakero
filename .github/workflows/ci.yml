@@ -17,18 +17,26 @@ jobs:
       # Installs the toolchain from rust-toolchain.toml (stable + wasm32 target, rustfmt, clippy)
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
+      # Lints first, they fail fastest. The lint levels live in Cargo.toml ([workspace.lints]);
+      # -D warnings makes every warning an error, in every crate, target and feature set.
+      - name: Formatting
+        run: |
+          cargo fmt --all --check
+          cargo fmt --manifest-path dojo/starter/Cargo.toml --check
+      - name: Clippy (library crates, dojo worker, tests)
+        run: cargo clippy -p common -p sat_solver -p backend -p dojo -p house --all-targets --features dojo/worker -- -D warnings
+      - name: Clippy (website, server)
+        run: cargo clippy -p hashi --all-targets --no-default-features --features ssr -- -D warnings
+      - name: Clippy (website, browser)
+        run: cargo clippy -p hashi --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -- -D warnings
+      - name: Clippy (starter kit)
+        run: cargo clippy --manifest-path dojo/starter/Cargo.toml --target wasm32-wasip1 -- -D warnings
       - name: Test backend crates
         run: cargo test -p common -p backend -p sat_solver
       - name: Test the SAT Dojo (sandbox, scoring, worker)
         run: cargo test --release -p dojo --features worker
       - name: Test the website's server code
         run: cargo test --no-default-features --features ssr -p hashi --lib
-      - name: Clippy (dojo)
-        run: cargo clippy -p dojo -p house --features dojo/worker
-      - name: Clippy (server)
-        run: cargo clippy --no-default-features --features ssr -p hashi
-      - name: Clippy (client)
-        run: cargo clippy --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -p hashi
 
   build:
     name: Build site

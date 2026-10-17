@@ -95,6 +95,15 @@ fn par2(score: &Score) -> String {
     format!("{:.3}", score.par2)
 }
 
+/// A file size in KiB, for display.
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "uploads are a few MiB at most, far below f64's 52-bit mantissa"
+)]
+fn kib(bytes: i64) -> f64 {
+    bytes as f64 / 1024.0
+}
+
 /// One small square per family, filled by the share of solved formulas.
 #[component]
 fn FamilyChips(score: Score) -> impl IntoView {
@@ -105,7 +114,7 @@ fn FamilyChips(score: Score) -> impl IntoView {
                 .families
                 .into_iter()
                 .map(|f| {
-                    let share = if f.total == 0 { 0.0 } else { f.solved as f64 / f.total as f64 };
+                    let share = if f.total == 0 { 0.0 } else { f64::from(f.solved) / f64::from(f.total) };
                     let title = move || format!("{}: {}/{}", family_name(i18n.get_locale(), f.family), f.solved, f.total);
                     view! {
                         <span
@@ -197,7 +206,7 @@ fn Leaderboard(board: RwSignal<Option<DojoBoard>>) -> impl IntoView {
                                                         </td>
                                                         <td class="py-2.5 pe-3 text-end font-pixel tabular-nums">{par2(&e.score)}</td>
                                                         <td class="hidden py-2.5 sm:table-cell">
-                                                            <FamilyChips score=e.score.clone() />
+                                                            <FamilyChips score=e.score />
                                                         </td>
                                                     </tr>
                                                 }
@@ -433,7 +442,7 @@ fn SubmitCard(me: RwSignal<Option<DojoMe>>) -> impl IntoView {
                                             if left == 0 {
                                                 t_string!(i18n, dojo.submit.none_left).to_string()
                                             } else {
-                                                t_string!(i18n, dojo.submit.left, count = left).to_string()
+                                                t_string!(i18n, dojo.submit.left, count = left)
                                             }
                                         }}
                                     </span>
@@ -505,7 +514,13 @@ pub fn DojoPage() -> impl IntoView {
         view! { <span class="rounded-full border bg-card px-3 py-1 text-xs font-semibold">{move || text.get()}</span> }
     };
     let board_stat = move |f: fn(&DojoBoard, Locale) -> String| {
-        Signal::derive(move || board.with(|b| b.as_ref().map(|b| f(b, i18n.get_locale())).unwrap_or_default()))
+        Signal::derive(move || {
+            board.with(|b| {
+                b.as_ref()
+                    .map(|b| f(b, i18n.get_locale()))
+                    .unwrap_or_default()
+            })
+        })
     };
 
     view! {
@@ -520,10 +535,10 @@ pub fn DojoPage() -> impl IntoView {
                 <h1 class="text-4xl font-black">{t!(i18n, dojo.title)}</h1>
                 <p class="max-w-3xl text-muted-foreground">{t!(i18n, dojo.intro)}</p>
                 <div class="flex flex-wrap gap-2">
-                    {stat(board_stat(|b, l| td_string!(l, dojo.stats.season, season = b.season).to_string()))}
-                    {stat(board_stat(|b, l| td_string!(l, dojo.stats.formulas, count = b.formulas).to_string()))}
-                    {stat(board_stat(|b, l| td_string!(l, dojo.stats.budget, budget = b.budget / 1_000_000_000).to_string()))}
-                    {stat(board_stat(|b, l| td_string!(l, dojo.stats.queued, count = b.queued).to_string()))}
+                    {stat(board_stat(|b, l| td_string!(l, dojo.stats.season, season = b.season)))}
+                    {stat(board_stat(|b, l| td_string!(l, dojo.stats.formulas, count = b.formulas)))}
+                    {stat(board_stat(|b, l| td_string!(l, dojo.stats.budget, budget = b.budget / 1_000_000_000)))}
+                    {stat(board_stat(|b, l| td_string!(l, dojo.stats.queued, count = b.queued)))}
                 </div>
                 <div class="flex flex-wrap gap-2 pt-1">
                     <a href="#submit" class="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm">
@@ -568,8 +583,12 @@ pub fn DojoPage() -> impl IntoView {
 fn rejection_text(locale: Locale, rejection: &Rejection) -> String {
     match rejection {
         Rejection::TooLarge => td_string!(locale, dojo.rejection.too_large).to_string(),
-        Rejection::Invalid(detail) => td_string!(locale, dojo.rejection.invalid, detail = detail.clone()).to_string(),
-        Rejection::Import(detail) => td_string!(locale, dojo.rejection.import, detail = detail.clone()).to_string(),
+        Rejection::Invalid(detail) => {
+            td_string!(locale, dojo.rejection.invalid, detail = detail.clone())
+        }
+        Rejection::Import(detail) => {
+            td_string!(locale, dojo.rejection.import, detail = detail.clone())
+        }
         Rejection::NoStart => td_string!(locale, dojo.rejection.no_start).to_string(),
     }
 }
@@ -600,7 +619,7 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
             </div>
             <div class="rounded-lg border bg-card px-3 py-2">
                 <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t!(i18n, dojo.detail.rank_label)}</p>
-                <p class="font-pixel text-2xl tabular-nums">{s.rank.map_or("—".to_string(), |r| format!("#{r}"))}</p>
+                <p class="font-pixel text-2xl tabular-nums">{s.rank.map_or_else(|| "—".to_string(), |r| format!("#{r}"))}</p>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -618,7 +637,7 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
                         .iter()
                         .map(|f| {
                             let family = f.family;
-                            let share = if f.total == 0 { 0.0 } else { f.solved as f64 * 100.0 / f.total as f64 };
+                            let share = if f.total == 0 { 0.0 } else { f64::from(f.solved) * 100.0 / f64::from(f.total) };
                             view! {
                                 <tr class="border-b last:border-0">
                                     <td class="py-2.5 pe-3">
@@ -669,7 +688,11 @@ pub fn DojoSubmissionPage() -> impl IntoView {
     });
     // Poll while it waits or runs
     Effect::new(move |_| {
-        let busy = submission.with(|s| s.as_ref().and_then(|s| s.as_ref()).is_some_and(|s| s.state.busy()));
+        let busy = submission.with(|s| {
+            s.as_ref()
+                .and_then(|s| s.as_ref())
+                .is_some_and(|s| s.state.busy())
+        });
         if busy && let Ok(handle) = set_interval_with_handle(fetch, Duration::from_secs(3)) {
             on_cleanup(move || handle.clear());
         }
@@ -677,7 +700,11 @@ pub fn DojoSubmissionPage() -> impl IntoView {
 
     let title = Signal::derive(move || {
         submission.with(|s| match s {
-            Some(Some(s)) => td_string!(i18n.get_locale(), dojo.detail.meta_title, name = s.name.clone()).to_string(),
+            Some(Some(s)) => td_string!(
+                i18n.get_locale(),
+                dojo.detail.meta_title,
+                name = s.name.clone()
+            ),
             _ => t_string!(i18n, dojo.meta.title).to_string(),
         })
     });
@@ -707,14 +734,14 @@ pub fn DojoSubmissionPage() -> impl IntoView {
                                 <span>{t!(i18n, dojo.detail.submitted, date)}</span>
                                 <span>{t!(i18n, dojo.detail.season, season = s.season)}</span>
                                 <span class="font-pixel" title=s.sha256.clone()>
-                                    {format!("{:.0} KiB · {}", s.size as f64 / 1024.0, &s.sha256[..s.sha256.len().min(12)])}
+                                    {format!("{:.0} KiB · {}", kib(s.size), &s.sha256[..s.sha256.len().min(12)])}
                                 </span>
                             </p>
                             {s.source_url
                                 .clone()
                                 .map(|url| {
                                     view! {
-                                        <a href=url.clone() target="_blank" rel="noopener nofollow ugc" class="w-fit text-sm text-primary underline underline-offset-4">
+                                        <a href=url target="_blank" rel="noopener nofollow ugc" class="w-fit text-sm text-primary underline underline-offset-4">
                                             {t!(i18n, dojo.detail.source)} " ↗"
                                         </a>
                                     }
@@ -733,7 +760,7 @@ pub fn DojoSubmissionPage() -> impl IntoView {
                                 (DojoState::Running, _, _) => {
                                     view! {
                                         <p class="text-sm text-muted-foreground">{t!(i18n, dojo.detail.running, done, total)}</p>
-                                        <Progress value=Signal::stored(done as f64) max=total.max(1) as f64 class="h-3" />
+                                        <Progress value=Signal::stored(f64::from(done)) max=f64::from(total.max(1)) class="h-3" />
                                     }
                                         .into_any()
                                 }

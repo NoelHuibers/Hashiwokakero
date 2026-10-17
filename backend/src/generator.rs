@@ -132,16 +132,30 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
     // try fewer of them and allow more time (the time limit is only a safety net, hitting it
     // makes the result depend on the speed of the machine)
     let (dw, dh) = params.difficulty.size();
-    let scale = (params.width as f64 * params.height as f64) / (dw as f64 * dh as f64);
+    let scale =
+        (f64::from(params.width) * f64::from(params.height)) / (f64::from(dw) * f64::from(dh));
     if scale > 1.0 {
-        profile.candidates = ((profile.candidates as f64 / scale.sqrt()).ceil() as u32).max(4);
-        profile.budget_ms = ((profile.budget_ms as f64 * scale.sqrt()) as u64).min(MAX_BUDGET_MS);
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "a positive count below the profile's value"
+        )]
+        let candidates = (f64::from(profile.candidates) / scale.sqrt()).ceil() as u32;
+        profile.candidates = candidates.max(4);
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_precision_loss,
+            reason = "a few seconds in milliseconds, scaled by at most 30x30 cells"
+        )]
+        let budget_ms = (profile.budget_ms as f64 * scale.sqrt()) as u64;
+        profile.budget_ms = budget_ms.min(MAX_BUDGET_MS);
     }
     let deadline = start + Duration::from_millis(profile.budget_ms);
     // Mix the parameters into the seed, so e.g. sizes don't share the same random stream
     let seed = params.seed
-        ^ (params.width as u64) << 56
-        ^ (params.height as u64) << 48
+        ^ u64::from(params.width) << 56
+        ^ u64::from(params.height) << 48
         ^ (params.difficulty as u64) << 40;
     let mut rng = StdRng::seed_from_u64(seed);
 
@@ -195,8 +209,7 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
     }
 
     let candidate = match (best, fallback) {
-        (Some((_, c)), _) => c,
-        (None, Some(c)) => c,
+        (Some((_, c)), _) | (None, Some(c)) => c,
         // Not even a non-unique puzzle (tiny grids): fall back to the smallest valid puzzle
         (None, None) => trivial(&params),
     };
@@ -234,15 +247,22 @@ fn make_candidate(
     rng: &mut StdRng,
     deadline: Instant,
 ) -> Option<Candidate> {
-    let (w, h) = (params.width as usize, params.height as usize);
-    let mut grid = Grid::new(w, h);
-    let target = ((w * h) as f64 * p.density).round().max(2.0) as usize;
+    let mut grid = Grid::new(params.width, params.height);
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a positive number of islands below the number of cells"
+    )]
+    let target = (f64::from(params.width) * f64::from(params.height) * p.density)
+        .round()
+        .max(2.0) as usize;
     grid.grow(rng, target, p.double, p.cycles);
     if grid.islands.len() < 2 {
         return None;
     }
     grid.add_cycles(rng, p.cycles / 2.0, p.double);
 
+    #[expect(clippy::cast_possible_truncation, reason = "at most 30x30 islands")]
     let max_repairs = 8 + grid.islands.len() as u32 / 4;
     let mut repairs = 0;
     loop {
@@ -427,9 +447,20 @@ fn length_weight(len: i32) -> f64 {
 
 fn direction(a: Pos, b: Pos) -> (i32, i32) {
     (
-        (b.x as i32 - a.x as i32).signum(),
-        (b.y as i32 - a.y as i32).signum(),
+        (i32::from(b.x) - i32::from(a.x)).signum(),
+        (i32::from(b.y) - i32::from(a.y)).signum(),
     )
+}
+
+/// The cell at (x, y), which must be on the grid.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "coordinates on the grid are within 0..30"
+)]
+fn pos(x: i32, y: i32) -> Pos {
+    debug_assert!((0..i32::from(MAX_SIZE)).contains(&x) && (0..i32::from(MAX_SIZE)).contains(&y));
+    Pos::new(x as u8, y as u8)
 }
 
 /// Picks an item with probability proportional to its weight.
@@ -451,8 +482,8 @@ fn pick_weighted<T: Copy>(rng: &mut StdRng, items: &[(T, f64)]) -> Option<T> {
 /// The intended solution while it is being built.
 #[derive(Clone)]
 struct Grid {
-    w: usize,
-    h: usize,
+    w: u8,
+    h: u8,
     cells: Vec<Cell>,
     islands: Vec<Pos>,
     /// Built bridges between island indices (smaller index first).
@@ -466,6 +497,7 @@ enum Source {
     Split(Pos),
 }
 
+#[derive(Clone, Copy, Debug)]
 enum Repair {
     Split(Pos),
     Remove(usize, usize),
@@ -474,27 +506,32 @@ enum Repair {
 }
 
 impl Grid {
-    fn new(w: usize, h: usize) -> Self {
-        Grid {
+    fn new(w: u8, h: u8) -> Self {
+        Self {
             w,
             h,
-            cells: vec![Cell::Water; w * h],
+            cells: vec![Cell::Water; usize::from(w) * usize::from(h)],
             islands: Vec::new(),
             bridges: BTreeMap::new(),
         }
     }
 
+    fn index(&self, x: usize, y: usize) -> usize {
+        y * usize::from(self.w) + x
+    }
+
     fn cell(&self, x: i32, y: i32) -> Option<Cell> {
-        (x >= 0 && y >= 0 && (x as usize) < self.w && (y as usize) < self.h)
-            .then(|| self.cells[y as usize * self.w + x as usize])
+        let (x, y) = (usize::try_from(x).ok()?, usize::try_from(y).ok()?);
+        (x < usize::from(self.w) && y < usize::from(self.h)).then(|| self.cells[self.index(x, y)])
     }
 
     fn set(&mut self, p: Pos, cell: Cell) {
-        self.cells[p.y as usize * self.w + p.x as usize] = cell;
+        let i = self.index(usize::from(p.x), usize::from(p.y));
+        self.cells[i] = cell;
     }
 
     fn island_at(&self, p: Pos) -> Option<usize> {
-        match self.cell(p.x as i32, p.y as i32) {
+        match self.cell(i32::from(p.x), i32::from(p.y)) {
             Some(Cell::Island(i)) => Some(i),
             _ => None,
         }
@@ -569,24 +606,32 @@ impl Grid {
         n
     }
 
-    /// Bridge cells next to the path from `p` in direction (dx, dy) over `len` cells that run
-    /// parallel to it (long parallel bridges side by side look bad and play badly).
-    fn parallel_neighbours(&self, p: Pos, (dx, dy): (i32, i32), len: i32) -> usize {
+    /// Weight factor for the bridge cells next to the path from `p` in direction (dx, dy) over
+    /// `len` cells that run parallel to it (long parallel bridges side by side look bad and play
+    /// badly): 0.4 to the power of their number.
+    fn parallel_factor(&self, p: Pos, (dx, dy): (i32, i32), len: i32) -> f64 {
         let horizontal = dy == 0;
-        (1..len)
-            .map(|k| (p.x as i32 + dx * k, p.y as i32 + dy * k))
+        let parallel = (1..len)
+            .map(|k| (i32::from(p.x) + dx * k, i32::from(p.y) + dy * k))
             .flat_map(|(x, y)| [(x + dy, y + dx), (x - dy, y - dx)])
             .filter(|&(x, y)| self.cell(x, y) == Some(Cell::Bridge(horizontal)))
-            .count()
+            .count();
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_possible_wrap,
+            reason = "at most two cells per cell of a bridge, which is shorter than 30"
+        )]
+        let parallel = parallel as i32;
+        0.4f64.powi(parallel)
     }
 
     fn grow(&mut self, rng: &mut StdRng, target: usize, p_double: f64, p_cycle: f64) {
-        let (w, h) = (self.w as i32, self.h as i32);
+        let (width, height) = (i32::from(self.w), i32::from(self.h));
         // Start away from the border on larger grids
         let margin = |n: i32| if n >= 7 { n / 4 } else { 0 };
-        let x = rng.random_range(margin(w)..w - margin(w));
-        let y = rng.random_range(margin(h)..h - margin(h));
-        self.add_island(Pos::new(x as u8, y as u8));
+        let x = rng.random_range(margin(width)..width - margin(width));
+        let y = rng.random_range(margin(height)..height - margin(height));
+        self.add_island(pos(x, y));
 
         let mut options = Vec::new();
         while self.islands.len() < target {
@@ -597,10 +642,15 @@ impl Grid {
                     .into_iter()
                     .filter(|&(a, b)| self.degree(a) < 8 && self.degree(b) < 8)
                     .map(|(a, b)| {
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            clippy::cast_possible_wrap,
+                            reason = "bridges are shorter than 30 cells"
+                        )]
                         let len = self.between(a, b).len() as i32 + 1;
                         let dir = direction(self.islands[a], self.islands[b]);
-                        let parallel = self.parallel_neighbours(self.islands[a], dir, len);
-                        let weight = length_weight(len) * 0.4f64.powi(parallel as i32);
+                        let parallel = self.parallel_factor(self.islands[a], dir, len);
+                        let weight = length_weight(len) * parallel;
                         ((a, b), weight)
                     })
                     .collect::<Vec<_>>();
@@ -621,9 +671,11 @@ impl Grid {
             // regions that are walled in by bridges
             for y in 0..self.h {
                 for x in 0..self.w {
-                    let p = Pos::new(x as u8, y as u8);
-                    if let Cell::Bridge(horizontal) = self.cells[y * self.w + x] {
-                        if !self.no_island_around(x as i32, y as i32) {
+                    let p = Pos::new(x, y);
+                    if let Cell::Bridge(horizontal) =
+                        self.cells[self.index(usize::from(x), usize::from(y))]
+                    {
+                        if !self.no_island_around(i32::from(x), i32::from(y)) {
                             continue;
                         }
                         let dirs: &[(i32, i32)] = if horizontal {
@@ -660,16 +712,15 @@ impl Grid {
     ) {
         for &dir @ (dx, dy) in dirs {
             for len in 1.. {
-                let (cx, cy) = (p.x as i32 + dx * len, p.y as i32 + dy * len);
+                let (cx, cy) = (i32::from(p.x) + dx * len, i32::from(p.y) + dy * len);
                 if self.cell(cx, cy) != Some(Cell::Water) {
                     break;
                 }
                 if len >= 2 && self.can_place(cx, cy) {
                     let crowd = self.crowd(cx, cy);
-                    let parallel = self.parallel_neighbours(p, dir, len);
-                    let weight = factor * length_weight(len) / (1.0 + crowd).powi(2)
-                        * 0.4f64.powi(parallel as i32);
-                    options.push(((Pos::new(cx as u8, cy as u8), source), weight));
+                    let parallel = self.parallel_factor(p, dir, len);
+                    let weight = factor * length_weight(len) / (1.0 + crowd).powi(2) * parallel;
+                    options.push(((pos(cx, cy), source), weight));
                 }
             }
         }
@@ -677,14 +728,17 @@ impl Grid {
 
     /// The two islands joined by the bridge over `cell`.
     fn bridge_at(&self, cell: Pos) -> (usize, usize) {
-        let Some(Cell::Bridge(horizontal)) = self.cell(cell.x as i32, cell.y as i32) else {
+        let Some(Cell::Bridge(horizontal)) = self.cell(i32::from(cell.x), i32::from(cell.y)) else {
             panic!("no bridge at {cell:?}");
         };
         let (dx, dy) = if horizontal { (1, 0) } else { (0, 1) };
         let end = |sign: i32| {
             (1..)
                 .find_map(|k| {
-                    match self.cell(cell.x as i32 + sign * dx * k, cell.y as i32 + sign * dy * k) {
+                    match self.cell(
+                        i32::from(cell.x) + sign * dx * k,
+                        i32::from(cell.y) + sign * dy * k,
+                    ) {
                         Some(Cell::Island(i)) => Some(i),
                         _ => None,
                     }
@@ -711,7 +765,7 @@ impl Grid {
         for (i, &p) in self.islands.iter().enumerate() {
             for (dx, dy) in [(1, 0), (0, 1)] {
                 for len in 1.. {
-                    let (cx, cy) = (p.x as i32 + dx * len, p.y as i32 + dy * len);
+                    let (cx, cy) = (i32::from(p.x) + dx * len, i32::from(p.y) + dy * len);
                     match self.cell(cx, cy) {
                         Some(Cell::Water) => continue,
                         Some(Cell::Island(j))
@@ -735,7 +789,7 @@ impl Grid {
             let free = self
                 .between(a, b)
                 .iter()
-                .all(|p| self.cell(p.x as i32, p.y as i32) == Some(Cell::Water));
+                .all(|p| self.cell(i32::from(p.x), i32::from(p.y)) == Some(Cell::Water));
             if free && self.degree(a) < 8 && self.degree(b) < 8 && rng.random_bool(p_cycle) {
                 let count = if rng.random_bool(p_double) { 2 } else { 1 };
                 let count = count.min(8 - self.degree(a)).min(8 - self.degree(b));
@@ -755,7 +809,7 @@ impl Grid {
                 required: self.degree(i),
             })
             .collect();
-        let puzzle = Puzzle::new(self.w as u8, self.h as u8, islands);
+        let puzzle = Puzzle::new(self.w, self.h, islands);
         let board = Board::new(puzzle.clone());
         let solution = self.solution(&board);
         (puzzle, board, solution)
@@ -813,18 +867,29 @@ impl Grid {
         p: &Profile,
     ) -> Vec<(Repair, f64)> {
         let mut moves = Vec::new();
-        let too_dense = self.islands.len() as f64 > 1.15 * p.density * (self.w * self.h) as f64;
+        #[expect(clippy::cast_precision_loss, reason = "at most 30x30 islands")]
+        let too_dense =
+            self.islands.len() as f64 > 1.15 * p.density * (f64::from(self.w) * f64::from(self.h));
         for &e in edges {
             let s = solution[e];
             let (a, b) = self.grid_edge(board, e);
             if s > 0 {
                 let cells = self.between(a, b);
                 // Prefer the middle of the bridge
+                #[expect(
+                    clippy::cast_precision_loss,
+                    reason = "bridges are shorter than 30 cells"
+                )]
                 let mid = cells.len() as f64 / 2.0;
+                #[expect(
+                    clippy::cast_precision_loss,
+                    clippy::cast_possible_truncation,
+                    reason = "indices and distances within a bridge, shorter than 30 cells"
+                )]
                 let split = cells
                     .iter()
                     .enumerate()
-                    .filter(|(_, c)| self.no_island_around(c.x as i32, c.y as i32))
+                    .filter(|(_, c)| self.no_island_around(i32::from(c.x), i32::from(c.y)))
                     .min_by_key(|(i, _)| ((*i as f64 + 0.5 - mid).abs() * 2.0) as i32);
                 if let Some((_, &c)) = split {
                     moves.push((Repair::Split(c), if too_dense { 0.5 } else { 3.0 }));
@@ -841,7 +906,7 @@ impl Grid {
                 let free = self
                     .between(a, b)
                     .iter()
-                    .all(|c| self.cell(c.x as i32, c.y as i32) == Some(Cell::Water));
+                    .all(|c| self.cell(i32::from(c.x), i32::from(c.y)) == Some(Cell::Water));
                 if free && self.degree(a) + count <= 8 && self.degree(b) + count <= 8 {
                     moves.push((Repair::Add(a, b, count), 0.5));
                 }
@@ -956,7 +1021,7 @@ mod tests {
         assert!(board.check(&solution).solved);
         for (i, &p) in grid.islands.iter().enumerate() {
             assert!(
-                grid.no_island_around(p.x as i32, p.y as i32),
+                grid.no_island_around(i32::from(p.x), i32::from(p.y)),
                 "island {i} has a neighbour"
             );
         }

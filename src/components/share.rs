@@ -1,4 +1,4 @@
-//! Sharing a result: the phone's share sheet, WhatsApp, X, or the clipboard.
+//! Sharing a result: the phone's share sheet, `WhatsApp`, X, or the clipboard.
 
 use leptos::prelude::*;
 use wasm_bindgen::{JsCast, JsValue};
@@ -9,11 +9,13 @@ use crate::state::{ToastKind, toast};
 
 fn copy(text: &str) {
     let _ = window().navigator().clipboard().write_text(text);
-    toast(ToastKind::Success, |l| td_string!(l, common.toast.copied).to_string());
+    toast(ToastKind::Success, |l| {
+        td_string!(l, common.toast.copied).to_string()
+    });
 }
 
-fn open(url: String) {
-    let _ = window().open_with_url_and_target(&url, "_blank");
+fn open(url: &str) {
+    let _ = window().open_with_url_and_target(url, "_blank");
 }
 
 fn encode(text: &str) -> String {
@@ -51,7 +53,9 @@ pub fn ShareBar(
     #[prop(optional)] outline: bool,
 ) -> impl IntoView {
     let i18n = use_i18n();
-    let small = move |label: AnyView, path: Option<&'static str>, on: Box<dyn Fn() + Send + Sync>| {
+    let small = move |label: AnyView,
+                      path: Option<&'static str>,
+                      on: Box<dyn Fn() + Send + Sync>| {
         view! {
             <Button
                 variant=ButtonVariant::Ghost
@@ -84,12 +88,12 @@ pub fn ShareBar(
                 {small(
                     "WhatsApp".into_any(),
                     Some(WHATSAPP),
-                    Box::new(move || open(format!("https://wa.me/?text={}", encode(&text())))),
+                    Box::new(move || open(&format!("https://wa.me/?text={}", encode(&text())))),
                 )}
                 {small(
                     view! { <span class="sr-only">"X"</span> }.into_any(),
                     Some(X_LOGO),
-                    Box::new(move || open(format!("https://x.com/intent/post?text={}", encode(&text())))),
+                    Box::new(move || open(&format!("https://x.com/intent/post?text={}", encode(&text())))),
                 )}
                 {small(t!(i18n, common.copy).into_any(), None, Box::new(move || copy(&text())))}
             </div>

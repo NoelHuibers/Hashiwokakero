@@ -15,6 +15,7 @@
 //! a [`Rejection`] when the module can't be run.
 
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -58,7 +59,9 @@ struct Shared {
 }
 
 fn now_secs() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs())
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs())
 }
 
 fn authorized(headers: &HeaderMap, token: &str) -> bool {
@@ -66,10 +69,21 @@ fn authorized(headers: &HeaderMap, token: &str) -> bool {
     headers
         .get(header::AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
-        .is_some_and(|v| v.len() == expected.len() && v.bytes().zip(expected.bytes()).fold(0, |acc, (a, b)| acc | (a ^ b)) == 0)
+        .is_some_and(|v| {
+            v.len() == expected.len()
+                && v.bytes()
+                    .zip(expected.bytes())
+                    .fold(0, |acc, (a, b)| acc | (a ^ b))
+                    == 0
+        })
 }
 
-async fn submit(State(shared): State<Shared>, Query(q): Query<JobQuery>, headers: HeaderMap, wasm: Bytes) -> Response {
+async fn submit(
+    State(shared): State<Shared>,
+    Query(q): Query<JobQuery>,
+    headers: HeaderMap,
+    wasm: Bytes,
+) -> Response {
     if !authorized(&headers, &shared.token) {
         return StatusCode::UNAUTHORIZED.into_response();
     }
@@ -78,7 +92,12 @@ async fn submit(State(shared): State<Shared>, Query(q): Query<JobQuery>, headers
         return (StatusCode::UNPROCESSABLE_ENTITY, axum::Json(reason)).into_response();
     }
     shared.pending.fetch_add(1, Ordering::Relaxed);
-    let job = Job { id: q.id, season: q.season, seed: q.seed, wasm };
+    let job = Job {
+        id: q.id,
+        season: q.season,
+        seed: q.seed,
+        wasm,
+    };
     match shared.jobs.send(job) {
         Ok(()) => StatusCode::ACCEPTED.into_response(),
         Err(_) => StatusCode::SERVICE_UNAVAILABLE.into_response(),
@@ -115,21 +134,34 @@ impl Reporter {
 }
 
 /// Evaluates jobs one after another on a blocking thread (each one uses every core).
-fn evaluator(mut jobs: mpsc::UnboundedReceiver<Job>, reporter: Reporter, shared: Shared, runtime: tokio::runtime::Handle) {
+fn evaluator(
+    mut jobs: mpsc::UnboundedReceiver<Job>,
+    reporter: &Reporter,
+    shared: &Shared,
+    runtime: &tokio::runtime::Handle,
+) {
     let sandbox = match Sandbox::new() {
         Ok(s) => s,
         Err(e) => panic!("no sandbox: {e}"),
     };
     let mut options = Options::default();
-    if let Some(threads) = std::env::var("DOJO_THREADS").ok().and_then(|t| t.parse().ok()) {
+    if let Some(threads) = std::env::var("DOJO_THREADS")
+        .ok()
+        .and_then(|t| t.parse().ok())
+    {
         options.threads = threads;
     }
-    if let Some(mb) = std::env::var("DOJO_MEMORY_MB").ok().and_then(|t| t.parse::<usize>().ok()) {
+    if let Some(mb) = std::env::var("DOJO_MEMORY_MB")
+        .ok()
+        .and_then(|t| t.parse::<usize>().ok())
+    {
         options.limits.memory_bytes = mb << 20;
     }
     // Sets by seed: every submission of a season gets the same one
     let mut sets: HashMap<String, Arc<Vec<Instance>>> = HashMap::new();
-    let cache = std::env::var("DOJO_CACHE_DIR").ok().map(std::path::PathBuf::from);
+    let cache = std::env::var("DOJO_CACHE_DIR")
+        .ok()
+        .map(std::path::PathBuf::from);
     let send = |report: Report| runtime.block_on(reporter.send(&report));
 
     while let Some(job) = jobs.blocking_recv() {
@@ -142,31 +174,57 @@ fn evaluator(mut jobs: mpsc::UnboundedReceiver<Job>, reporter: Reporter, shared:
         if sets.len() > 3 {
             sets.retain(|seed, _| *seed == job.seed);
         }
-        let total = set.len() as u32;
+        let total = crate::count(set.len());
         let report = match sandbox.load(&job.wasm) {
             Err(reason) => Report::Rejected { id, season, reason },
             Ok(solver) => {
-                send(Report::Progress { id, season, done: 0, total });
+                send(Report::Progress {
+                    id,
+                    season,
+                    done: 0,
+                    total,
+                });
                 let last = Mutex::new(Instant::now());
                 let results = evaluate(&sandbox, &solver, &set, &options, |done, _| {
                     // At most every few seconds, the page polls anyway
-                    let mut last = last.lock().unwrap_or_else(|e| e.into_inner());
-                    if last.elapsed() > Duration::from_secs(3) && (done as u32) < total {
-                        *last = Instant::now();
-                        let report = Report::Progress { id, season, done: done as u32, total };
+                    let due = {
+                        let mut last = last
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner);
+                        let due = last.elapsed() > Duration::from_secs(3) && done < set.len();
+                        if due {
+                            *last = Instant::now();
+                        }
+                        due
+                    };
+                    if due {
+                        let report = Report::Progress {
+                            id,
+                            season,
+                            done: crate::count(done),
+                            total,
+                        };
                         let reporter = reporter.clone();
                         runtime.spawn(async move { reporter.send(&report).await });
                     }
                 });
-                if results.len() as u32 == total {
+                if results.len() == set.len() {
                     let score = Score::from_results(&results, options.limits.fuel);
                     Report::Finished { id, season, score }
                 } else {
-                    Report::Failed { id, season, message: "some runs were lost".into() }
+                    Report::Failed {
+                        id,
+                        season,
+                        message: "some runs were lost".into(),
+                    }
                 }
             }
         };
-        eprintln!("#{id} season {season}: {:?} in {:.1?}", short(&report), started.elapsed());
+        eprintln!(
+            "#{id} season {season}: {:?} in {:.1?}",
+            short(&report),
+            started.elapsed()
+        );
         send(report);
         shared.pending.fetch_sub(1, Ordering::Relaxed);
         shared.active.store(now_secs(), Ordering::Relaxed);
@@ -179,7 +237,11 @@ fn load_or_generate(cache: Option<&std::path::Path>, seed: &str) -> Vec<Instance
     let name = {
         use sha2::Digest;
         let digest = sha2::Sha256::digest(format!("file:{seed}").as_bytes());
-        format!("set-{}.json", digest.iter().take(12).map(|b| format!("{b:02x}")).collect::<String>())
+        let hex = digest.iter().take(12).fold(String::new(), |mut hex, b| {
+            let _ = write!(hex, "{b:02x}");
+            hex
+        });
+        format!("set-{hex}.json")
     };
     let path = cache.map(|dir| dir.join(&name));
     if let Some(set) = path
@@ -192,7 +254,11 @@ fn load_or_generate(cache: Option<&std::path::Path>, seed: &str) -> Vec<Instance
     }
     let started = Instant::now();
     let set = bench::generate(seed);
-    eprintln!("generated a set of {} in {:.1?}", set.len(), started.elapsed());
+    eprintln!(
+        "generated a set of {} in {:.1?}",
+        set.len(),
+        started.elapsed()
+    );
     if let Some(path) = path {
         let tmp = path.with_extension("tmp");
         let written = serde_json::to_vec(&set)
@@ -208,17 +274,24 @@ fn load_or_generate(cache: Option<&std::path::Path>, seed: &str) -> Vec<Instance
 
 fn short(report: &Report) -> String {
     match report {
-        Report::Finished { score, .. } => format!("solved {}/{} par2 {:.3}", score.solved, score.total, score.par2),
+        Report::Finished { score, .. } => format!(
+            "solved {}/{} par2 {:.3}",
+            score.solved, score.total, score.par2
+        ),
         Report::Rejected { reason, .. } => format!("rejected {reason:?}"),
         other => format!("{other:?}"),
     }
 }
 
 pub fn serve() -> Result<(), String> {
-    let token: Arc<str> = std::env::var("DOJO_TOKEN").map_err(|_| "DOJO_TOKEN is not set")?.into();
+    let token: Arc<str> = std::env::var("DOJO_TOKEN")
+        .map_err(|_| "DOJO_TOKEN is not set")?
+        .into();
     let app_url = std::env::var("APP_URL").unwrap_or_else(|_| "http://127.0.0.1:3000".into());
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".into());
-    let idle_exit = std::env::var("DOJO_IDLE_EXIT_SECS").ok().and_then(|s| s.parse::<u64>().ok());
+    let idle_exit = std::env::var("DOJO_IDLE_EXIT_SECS")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok());
 
     let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
     runtime.block_on(async move {
@@ -236,7 +309,7 @@ pub fn serve() -> Result<(), String> {
         };
         let handle = tokio::runtime::Handle::current();
         let evaluator_shared = shared.clone();
-        std::thread::spawn(move || evaluator(rx, reporter, evaluator_shared, handle));
+        std::thread::spawn(move || evaluator(rx, &reporter, &evaluator_shared, &handle));
 
         if let Some(idle) = idle_exit {
             let shared = shared.clone();

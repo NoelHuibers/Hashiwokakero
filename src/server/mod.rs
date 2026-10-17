@@ -5,12 +5,29 @@ pub mod daily;
 pub mod db;
 pub mod dojo;
 
+use std::fmt::Write as _;
+
 use leptos::prelude::ServerFnError;
+
+/// Lowercase hex digits of some bytes.
+pub fn hex(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .fold(String::with_capacity(2 * bytes.len()), |mut out, b| {
+            let _ = write!(out, "{b:02x}");
+            out
+        })
+}
+
+/// A count or length as stored in the database.
+pub fn count(n: usize) -> i64 {
+    i64::try_from(n).unwrap_or(i64::MAX)
+}
 
 pub fn now_ms() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_millis() as i64)
+        .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX))
 }
 
 /// Runs CPU bound work off the async runtime. The fly.io VM has a single shared CPU, so only a

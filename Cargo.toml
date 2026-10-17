@@ -8,6 +8,42 @@ license = "MIT"
 members = ["backend", "common", "dojo", "dojo/house", "sat_solver"]
 exclude = ["dojo/starter"]
 
+# As strict as is sensible: everything in clippy's pedantic and nursery groups, CI fails on any
+# warning. The few lints switched off below don't fit this code base, each with its reason.
+[workspace.lints.rust]
+unsafe_code = "forbid"
+rust_2018_idioms = { level = "warn", priority = -1 }
+unused_qualifications = "warn"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
+unreachable_pub = "warn"
+missing_debug_implementations = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+# Leptos components are long `view!` trees, splitting them only for the line count hurts
+too_many_lines = "allow"
+# Would put #[must_use] on nearly every getter and constructor
+must_use_candidate = "allow"
+# Errors and panics are documented where they matter, not as a section on every function
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+# Nursery: `const fn` everywhere constrains future changes for no benefit here
+missing_const_for_fn = "allow"
+# Nursery: `map_or_else` with two closures often reads worse than `if let`
+option_if_let_else = "allow"
+# Nursery: contradicts `unreachable_pub` above, which we prefer
+redundant_pub_crate = "allow"
+# Nursery: WebAssembly has no fused multiply-add, `mul_add` is slower there
+suboptimal_flops = "allow"
+
+[lints]
+workspace = true
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 

@@ -1,4 +1,4 @@
-//! shadcn/ui components for Leptos from rust-ui (https://rust-ui.com, MIT licensed).
+//! shadcn/ui components for Leptos from rust-ui (<https://rust-ui.com>, MIT licensed).
 //!
 //! They are copied into the project like shadcn intends (`ui add <component>`), so they can be
 //! adapted freely. `switch.rs` and `select.rs` were changed to be controlled by signals.

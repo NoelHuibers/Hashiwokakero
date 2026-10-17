@@ -77,7 +77,7 @@ fn all_solvers_agree_on_inputs() {
                     match (unique, result.1) {
                         _ if !sat => {}
                         (Some(a), Some(b)) => {
-                            assert_eq!(a, b, "{label}: disagrees on uniqueness")
+                            assert_eq!(a, b, "{label}: disagrees on uniqueness");
                         }
                         _ => assert_eq!(config.kind, SolverKind::Dpll, "{label}: unknown"),
                     }
@@ -195,7 +195,7 @@ fn rejects_invalid_puzzles() {
     outside.islands[1].pos.x = 3;
     let mut unsorted = ok.clone();
     unsorted.islands.reverse();
-    let mut duplicate = ok.clone();
+    let mut duplicate = ok;
     duplicate.islands[1] = duplicate.islands[0].clone();
     for puzzle in [
         empty, small, large, zero, nine, outside, unsorted, duplicate,
@@ -234,7 +234,11 @@ fn all_solver_options_work() {
         Restarts::Luby { unit: 2 },
     ];
     for kind in SolverKind::ALL {
-        for &heuristic in kind.heuristics().iter().chain([Heuristic::Mom].iter()) {
+        for &heuristic in kind
+            .heuristics()
+            .iter()
+            .chain(std::iter::once(&Heuristic::Mom))
+        {
             for restarts in restarts {
                 for subsumption in [false, true] {
                     let config = SolverConfig {
@@ -258,7 +262,7 @@ fn all_solver_options_work() {
 
 /// Every CDCL mode the web app offers, on every input, a few times: the solver used to
 /// return models violating the formula after subsumption (a conflict caused directly by a
-/// decision was ignored). HashMap iteration order makes such bugs nondeterministic.
+/// decision was ignored). `HashMap` iteration order makes such bugs nondeterministic.
 #[test]
 fn cdcl_modes_agree_with_splr_on_inputs() {
     let restarts = ["none", "fixed", "geometric", "luby"].map(|id| Restarts::from_id(id).unwrap());
@@ -267,7 +271,11 @@ fn cdcl_modes_agree_with_splr_on_inputs() {
             continue;
         }
         let board = Board::new(puzzle.clone());
-        let expected = summary(&api::solve(&puzzle, &SolverConfig::splr()).unwrap(), &board, &label);
+        let expected = summary(
+            &api::solve(&puzzle, &SolverConfig::splr()).unwrap(),
+            &board,
+            &label,
+        );
         for restarts in restarts {
             for subsumption in [false, true] {
                 let config = SolverConfig {

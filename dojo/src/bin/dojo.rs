@@ -9,6 +9,7 @@
 //!     The worker service for hashi.rs (see dojo::worker for its settings).
 //! ```
 
+use std::fmt::Write as _;
 use std::process::ExitCode;
 use std::time::Instant;
 
@@ -22,7 +23,10 @@ use dojo::{Answer, DEV_SEED, Family};
 use dojo::{Outcome, Score};
 
 fn flag(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned()
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
 }
 
 fn set(args: &[String]) -> Vec<Instance> {
@@ -36,7 +40,11 @@ fn set(args: &[String]) -> Vec<Instance> {
         });
         set.retain(|i| i.family == family);
     }
-    eprintln!("set {seed}: {} formulas, generated in {:.1?}", set.len(), started.elapsed());
+    eprintln!(
+        "set {seed}: {} formulas, generated in {:.1?}",
+        set.len(),
+        started.elapsed()
+    );
     set
 }
 
@@ -45,10 +53,18 @@ fn run(args: &[String]) -> Result<(), String> {
     let path = args.first().ok_or("usage: dojo run <solver.wasm>")?;
     let wasm = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
     let sandbox = Sandbox::new()?;
-    let solver = sandbox.load(&wasm).map_err(|e| format!("rejected: {e:?}"))?;
-    let mut options = Options { stderr: args.iter().any(|a| a == "--stderr"), ..Default::default() };
+    let solver = sandbox
+        .load(&wasm)
+        .map_err(|e| format!("rejected: {e:?}"))?;
+    let mut options = Options {
+        stderr: args.iter().any(|a| a == "--stderr"),
+        ..Default::default()
+    };
     if let Some(budget) = flag(args, "--budget") {
-        options.limits.fuel = budget.replace('_', "").parse().map_err(|_| "--budget takes a number")?;
+        options.limits.fuel = budget
+            .replace('_', "")
+            .parse()
+            .map_err(|_| "--budget takes a number")?;
     }
     if let Some(threads) = flag(args, "--threads") {
         options.threads = threads.parse().map_err(|_| "--threads takes a number")?;
@@ -56,6 +72,11 @@ fn run(args: &[String]) -> Result<(), String> {
     let set = set(args);
     let started = Instant::now();
     let results = evaluate(&sandbox, &solver, &set, &options, |done, r| {
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "fuel is at most the budget, far below 2^53, and only printed"
+        )]
+        let gfuel = r.fuel as f64 / 1e9;
         eprintln!(
             "[{done:>2}/{}] {:<16} {:<5} {:<9} {:>8.3} Gfuel {:>7} ms",
             set.len(),
@@ -71,14 +92,20 @@ fn run(args: &[String]) -> Result<(), String> {
                 Outcome::Crashed => "crashed",
                 Outcome::Wrong => "WRONG",
             },
-            r.fuel as f64 / 1e9,
+            gfuel,
             r.wall_ms,
         );
     });
     let score = Score::from_results(&results, options.limits.fuel);
     println!();
     for f in &score.families {
-        println!("{:<14} {:>2}/{:<2} solved  PAR-2 {:>7.3}", f.family.id(), f.solved, f.total, f.par2);
+        println!(
+            "{:<14} {:>2}/{:<2} solved  PAR-2 {:>7.3}",
+            f.family.id(),
+            f.solved,
+            f.total,
+            f.par2
+        );
     }
     println!(
         "\nsolved {}/{}  PAR-2 {:.3} Gfuel  ({:.1?})",
@@ -88,7 +115,10 @@ fn run(args: &[String]) -> Result<(), String> {
         started.elapsed()
     );
     if score.wrong > 0 {
-        println!("{} WRONG answers: the leaderboard would disqualify this solver", score.wrong);
+        println!(
+            "{} WRONG answers: the leaderboard would disqualify this solver",
+            score.wrong
+        );
     }
     Ok(())
 }
@@ -116,7 +146,7 @@ fn export(args: &[String]) -> Result<(), String> {
             Answer::Sat => "SAT",
             Answer::Unsat => "UNSAT",
         };
-        answers.push_str(&format!("{} {answer}\n", instance.name));
+        let _ = writeln!(answers, "{} {answer}", instance.name);
     }
     std::fs::write(dir.join("answers.txt"), answers).map_err(|e| e.to_string())?;
     std::fs::write(dir.join("README.txt"), README).map_err(|e| e.to_string())?;

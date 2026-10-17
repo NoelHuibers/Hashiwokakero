@@ -8,10 +8,10 @@ pub fn log_clause(clause: &[i32], operation: char, path: &str) {
         .unwrap();
 
     // Write a new line to the file
-    write!(file, "{} ", operation).unwrap();
+    write!(file, "{operation} ").unwrap();
     // Write the clause
     for &lit in clause {
-        write!(file, "{} ", lit).unwrap();
+        write!(file, "{lit} ").unwrap();
     }
     // End with 0
     let _ = writeln!(file, "0");

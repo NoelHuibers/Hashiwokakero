@@ -14,8 +14,8 @@ fn read_puzzle(input_file: &str) -> Result<Puzzle, String> {
 }
 
 /// Writes the static encoding of a puzzle to `<input_file>.cnf`.
-pub fn encode_mode(input_file: String) {
-    let result = read_puzzle(&input_file).and_then(|p| api::to_dimacs(&p));
+pub fn encode_mode(input_file: &str) {
+    let result = read_puzzle(input_file).and_then(|p| api::to_dimacs(&p));
     let dimacs = match result {
         Ok(dimacs) => dimacs,
         Err(err) => {
@@ -32,8 +32,8 @@ pub fn encode_mode(input_file: String) {
 }
 
 /// Solves a DIMACS CNF file.
-pub fn solve_mode(input_file: String, output_file: Option<String>, config: SolverConfig) {
-    let certificate = match solver::solve_file(&input_file, &config) {
+pub fn solve_mode(input_file: &str, output_file: Option<String>, config: SolverConfig) {
+    let certificate = match solver::solve_file(input_file, &config) {
         Ok(certificate) => certificate,
         Err(err) => {
             eprintln!("Error: {err}");
@@ -53,8 +53,8 @@ pub fn solve_mode(input_file: String, output_file: Option<String>, config: Solve
 }
 
 /// Encodes, solves (with connectivity and uniqueness check) and draws the solution of a puzzle.
-pub fn esr_mode(input_file: String, output_file: Option<String>, config: SolverConfig) {
-    let report = match read_puzzle(&input_file).and_then(|p| {
+pub fn esr_mode(input_file: &str, output_file: Option<String>, config: SolverConfig) {
+    let report = match read_puzzle(input_file).and_then(|p| {
         let report = api::solve_unique(&p, &config)?;
         Ok((p, report))
     }) {
@@ -118,18 +118,17 @@ pub fn generate_mode(params: GenerateParams, output_file: Option<String>) {
         generated.generate_ms
     );
     let text = generated.puzzle.to_txt();
-    match output_file {
-        Some(output_file) => match fs::write(&output_file, &text) {
+    if let Some(output_file) = output_file {
+        match fs::write(&output_file, &text) {
             Ok(()) => println!("Puzzle written to {output_file}"),
             Err(err) => eprintln!("Error: {err}"),
-        },
-        None => {
-            print!("{text}");
-            println!();
-            print!(
-                "{}",
-                reconstruct::render(&Board::new(generated.puzzle.clone()), &generated.solution)
-            );
         }
+    } else {
+        print!("{text}");
+        println!();
+        print!(
+            "{}",
+            reconstruct::render(&Board::new(generated.puzzle.clone()), &generated.solution)
+        );
     }
 }

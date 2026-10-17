@@ -2,7 +2,6 @@ use backend::generate_clauses::generate;
 use backend::parse_input::parse_input;
 use backend::solver::{SolverKind, solve, solve_with};
 use std::{io::Write, vec};
-use tempfile;
 
 #[test]
 fn test_sat_problem() {
@@ -37,13 +36,7 @@ fn test_sat_problem() {
             .expect("Failed to convert path to str"),
     );
 
-    assert!(match output {
-        Ok(cert) => match cert {
-            splr::Certificate::SAT(_) => true,
-            _ => false,
-        },
-        Err(_) => false,
-    });
+    assert!(matches!(output, Ok(splr::Certificate::SAT(_))));
 }
 
 #[test]
@@ -80,12 +73,9 @@ fn test_unsat_problem() {
     );
 
     assert!(match output {
-        Ok(cert) => match cert {
-            splr::Certificate::UNSAT => true,
-            _ => false,
-        },
+        Ok(cert) => matches!(cert, splr::Certificate::UNSAT),
         Err(err) => {
-            println!("Error: {:?}", err);
+            println!("Error: {err:?}");
             false
         }
     });
@@ -117,9 +107,9 @@ fn test_cdcl_small_problems() {
     let unsat = write_cnf(&[vec![1, 2], vec![-1], vec![-2]], 2);
     match solve_with(sat.path().to_str().unwrap(), SolverKind::Cdcl) {
         Ok(splr::Certificate::SAT(model)) => {
-            assert!(satisfies(&model, &[vec![1, -2], vec![-1, 2], vec![1, 2]]))
+            assert!(satisfies(&model, &[vec![1, -2], vec![-1, 2], vec![1, 2]]));
         }
-        other => panic!("Expected SAT, got {:?}", other),
+        other => panic!("Expected SAT, got {other:?}"),
     }
     assert!(matches!(
         solve_with(unsat.path().to_str().unwrap(), SolverKind::Cdcl),
@@ -133,15 +123,14 @@ fn test_cdcl_on_puzzles() {
     let mut inputs: Vec<_> = std::fs::read_dir("./input")
         .expect("Failed to read input dir")
         .map(|entry| entry.unwrap().path())
-        .filter(|path| path.extension().map_or(false, |e| e == "txt"))
+        .filter(|path| path.extension().is_some_and(|e| e == "txt"))
         .collect();
     inputs.sort();
 
     for input in inputs {
-        let game_board = match parse_input(input.to_str().unwrap()) {
-            Ok(game_board) => game_board,
-            // Some inputs are intentionally invalid
-            Err(_) => continue,
+        // Some inputs are intentionally invalid
+        let Ok(game_board) = parse_input(input.to_str().unwrap()) else {
+            continue;
         };
         let (clauses, var_map) = generate(&game_board);
         let cnf = write_cnf(&clauses, var_map.keys().len());
@@ -153,13 +142,13 @@ fn test_cdcl_on_puzzles() {
         );
         match solve_with(cnf_path, SolverKind::Cdcl) {
             Ok(splr::Certificate::SAT(model)) => {
-                assert!(expected_sat, "{:?} is UNSAT but got SAT", input);
-                assert!(satisfies(&model, &clauses), "Invalid model for {:?}", input);
+                assert!(expected_sat, "{input:?} is UNSAT but got SAT");
+                assert!(satisfies(&model, &clauses), "Invalid model for {input:?}");
             }
             Ok(splr::Certificate::UNSAT) => {
-                assert!(!expected_sat, "{:?} is SAT but got UNSAT", input)
+                assert!(!expected_sat, "{input:?} is SAT but got UNSAT");
             }
-            Err(err) => panic!("{:?} failed: {}", input, err),
+            Err(err) => panic!("{input:?} failed: {err}"),
         }
     }
 }

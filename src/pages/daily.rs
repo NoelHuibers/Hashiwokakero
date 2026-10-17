@@ -6,27 +6,27 @@ use leptos::task::spawn_local;
 use leptos_router::components::A;
 
 use crate::api::{
-    daily_check, daily_hint, daily_leaderboard, daily_reveal, daily_today, start_daily, submit_daily,
+    daily_check, daily_hint, daily_leaderboard, daily_reveal, daily_today, start_daily,
+    submit_daily,
 };
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::{Petals, Stamp};
+use crate::components::layout::use_localized;
 use crate::components::leaderboard::LeaderboardTable;
+use crate::components::share::ShareBar;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::progress::Progress;
-use crate::model::{
-    CHECK_PENALTY_MS, DailyInfo, HINT_PENALTY_MS, Leaderboard, MS_PER_DAY, SubmitResult,
-    WEEKDAY_KANJI, daily_difficulty, daily_number, date_string, format_duration,
-    weekday,
-};
-use crate::components::share::ShareBar;
-use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name, error_text, localized};
-use crate::state::{Auth, DailyGame, Game, Source, Status, ToastKind, toast};
-use crate::pages::play::SeoIntro;
+use crate::model::{
+    CHECK_PENALTY_MS, DailyInfo, HINT_PENALTY_MS, Leaderboard, MS_PER_DAY, SubmitResult,
+    WEEKDAY_KANJI, daily_difficulty, daily_number, date_string, format_duration, weekday,
+};
+use crate::pages::play::{SeoIntro, islands_percent};
 use crate::seo::{PageMeta, site_ld};
+use crate::state::{Auth, DailyGame, Game, Source, Status, ToastKind, toast};
 
 fn params_for(day: i64) -> GenerateParams {
     let difficulty = daily_difficulty(day);
@@ -37,6 +37,15 @@ fn params_for(day: i64) -> GenerateParams {
         difficulty,
         seed: 0,
     }
+}
+
+/// The browser clock, unix time in ms.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "`Date.now()` is a whole number of ms, far inside the i64 range"
+)]
+fn browser_now() -> i64 {
+    js_sys::Date::now() as i64
 }
 
 /// `05:12:09` until the next daily.
@@ -68,12 +77,16 @@ impl Daily {
     }
 
     fn started(&self) -> bool {
-        self.info.with(|i| i.as_ref().is_some_and(|i| i.attempt.is_some()))
+        self.info
+            .with(|i| i.as_ref().is_some_and(|i| i.attempt.is_some()))
     }
 
     fn finished(&self) -> bool {
-        self.info
-            .with(|i| i.as_ref().and_then(|i| i.attempt.as_ref()).is_some_and(|a| a.finished()))
+        self.info.with(|i| {
+            i.as_ref()
+                .and_then(|i| i.attempt.as_ref())
+                .is_some_and(super::super::model::AttemptInfo::finished)
+        })
     }
 
     /// Running time including penalties, or the final time.
@@ -92,18 +105,18 @@ impl Daily {
     }
 
     fn apply(&self, info: DailyInfo) {
-        self.skew.set(info.server_now - js_sys::Date::now() as i64);
+        self.skew.set(info.server_now - browser_now());
         if let Some(puzzle) = &info.puzzle {
             let loaded = self.game.status.get_untracked() != Status::Empty
                 && self.game.board.with_untracked(|b| b.puzzle == *puzzle);
             if !loaded {
-                self.load_puzzle(&info, puzzle.clone());
+                self.load_puzzle(&info, puzzle);
             }
         }
         self.info.set(Some(info));
     }
 
-    fn load_puzzle(&self, info: &DailyInfo, puzzle: Puzzle) {
+    fn load_puzzle(&self, info: &DailyInfo, puzzle: &Puzzle) {
         let game = self.game;
         let source = Source::Daily {
             date: date_string(info.day),
@@ -115,10 +128,14 @@ impl Daily {
                 if let Some(bridges) = &a.bridges {
                     game.bridges.set(bridges.clone());
                 }
-                game.status.set(if a.revealed { Status::Revealed } else { Status::Won });
+                game.status.set(if a.revealed {
+                    Status::Revealed
+                } else {
+                    Status::Won
+                });
             }
             _ => {
-                game.restore_progress(&puzzle);
+                game.restore_progress(puzzle);
             }
         }
     }
@@ -153,7 +170,11 @@ impl Daily {
 }
 
 #[component]
-fn Stat(#[prop(into)] label: Signal<String>, jp: &'static str, #[prop(into)] value: Signal<String>) -> impl IntoView {
+fn Stat(
+    #[prop(into)] label: Signal<String>,
+    jp: &'static str,
+    #[prop(into)] value: Signal<String>,
+) -> impl IntoView {
     view! {
         <div class="flex min-w-[4.5rem] flex-col items-center rounded-lg border bg-card px-3 py-1.5 shadow-xs">
             <span class="font-pixel text-xl tabular-nums leading-tight">{move || value.get()}</span>
@@ -222,8 +243,8 @@ fn Cover(daily: Daily) -> impl IntoView {
                     </Button>
                     <p class="text-xs text-muted-foreground">
                         {move || match auth.user.get() {
-                            Some(u) if !u.guest => t_string!(i18n, daily.cover.playing_as, name = u.name).to_string(),
-                            Some(u) => t_string!(i18n, daily.cover.playing_as_guest, name = u.name).to_string(),
+                            Some(u) if !u.guest => t_string!(i18n, daily.cover.playing_as, name = u.name),
+                            Some(u) => t_string!(i18n, daily.cover.playing_as_guest, name = u.name),
                             None => t_string!(i18n, daily.cover.no_account).to_string(),
                         }}
                     </p>
@@ -240,12 +261,19 @@ fn ResultCard(daily: Daily) -> impl IntoView {
     let practice = use_localized("/practice");
     let account = use_localized("/account");
     let share_text = move || {
-        let Some(info) = daily.info.get_untracked() else { return String::new() };
+        let Some(info) = daily.info.get_untracked() else {
+            return String::new();
+        };
         let rank = daily
             .result
             .get_untracked()
             .map(|r| (r.rank, r.finishers))
-            .or_else(|| daily.ranking.with_untracked(|lb| lb.as_ref().and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))));
+            .or_else(|| {
+                daily.ranking.with_untracked(|lb| {
+                    lb.as_ref()
+                        .and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))
+                })
+            });
         let locale = i18n.get_locale_untracked();
         let origin = window().location().origin().unwrap_or_default();
         let headline = td_string!(
@@ -256,7 +284,9 @@ fn ResultCard(daily: Daily) -> impl IntoView {
             difficulty = difficulty_name(locale, info.difficulty)
         );
         let rank = rank
-            .map(|(rank, total)| format!(" · {}", td_string!(locale, daily.share_rank, rank, total)))
+            .map(|(rank, total)| {
+                format!(" · {}", td_string!(locale, daily.share_rank, rank, total))
+            })
             .unwrap_or_default();
         format!(
             "{headline}\n⏱ {}{rank}\n{origin}{}",
@@ -296,7 +326,7 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                                             })
                                     });
                                 match rank {
-                                    Some((rank, total)) => t_string!(i18n, daily.result.rank, rank, total).to_string(),
+                                    Some((rank, total)) => t_string!(i18n, daily.result.rank, rank, total),
                                     None => t_string!(i18n, daily.result.ranking).to_string(),
                                 }
                             }}
@@ -321,7 +351,7 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                     .map(|u| {
                         view! {
                             <div class="w-full rounded-lg border border-dashed bg-muted/50 p-3 text-start text-sm">
-                                <p>{t!(i18n, daily.result.on_board, name = u.name.clone(), <b> = <b />)}</p>
+                                <p>{t!(i18n, daily.result.on_board, name = u.name, <b> = <b />)}</p>
                                 <A href=account attr:class="font-medium text-primary underline-offset-4 hover:underline">
                                     {t!(i18n, daily.result.claim)}
                                 </A>
@@ -355,9 +385,7 @@ fn RankingCard(daily: Daily) -> impl IntoView {
                     {move || {
                         daily
                             .ranking
-                            .with(|lb| lb.as_ref().map(|lb| lb.finishers))
-                            .map(|count| t_string!(i18n, daily.ranking.crossed, count).to_string())
-                            .unwrap_or_else(|| t_string!(i18n, common.game.loading).to_string())
+                            .with(|lb| lb.as_ref().map(|lb| lb.finishers)).map_or_else(|| t_string!(i18n, common.game.loading).to_string(), |count| t_string!(i18n, daily.ranking.crossed, count))
                     }}
                 </CardDescription>
             </CardHeader>
@@ -445,10 +473,10 @@ pub fn DailyPage() -> impl IntoView {
         if first.is_some() {
             return;
         }
-        daily.now.set(js_sys::Date::now() as i64);
+        daily.now.set(browser_now());
         daily.reload();
         if let Ok(handle) = set_interval_with_handle(
-            move || daily.now.set(js_sys::Date::now() as i64),
+            move || daily.now.set(browser_now()),
             Duration::from_millis(100),
         ) {
             on_cleanup(move || handle.clear());
@@ -457,7 +485,9 @@ pub fn DailyPage() -> impl IntoView {
 
     // A new day started while the page was open
     Effect::new(move |_| {
-        let Some(day) = daily.info.with(|i| i.as_ref().map(|i| i.day)) else { return };
+        let Some(day) = daily.info.with(|i| i.as_ref().map(|i| i.day)) else {
+            return;
+        };
         if daily.server_now() >= (day + 1) * MS_PER_DAY && daily.finished() {
             daily.info.set(None);
             daily.reload();
@@ -476,7 +506,7 @@ pub fn DailyPage() -> impl IntoView {
         spawn_local(async move {
             match submit_daily(day, bridges, moves).await {
                 Ok(result) => {
-                    let end = js_sys::Date::now() as i64 + daily.skew.get_untracked();
+                    let end = browser_now() + daily.skew.get_untracked();
                     daily.update_attempt(|a| {
                         a.finished_at = Some(end);
                         a.time_ms = Some(result.time_ms);
@@ -512,7 +542,9 @@ pub fn DailyPage() -> impl IntoView {
                         Duration::from_millis(3000),
                     );
                 }
-                Ok(None) => toast(ToastKind::Info, |l| td_string!(l, common.toast.nothing_to_hint).to_string()),
+                Ok(None) => toast(ToastKind::Info, |l| {
+                    td_string!(l, common.toast.nothing_to_hint).to_string()
+                }),
                 Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
         });
@@ -527,11 +559,13 @@ pub fn DailyPage() -> impl IntoView {
                     daily.update_attempt(|a| a.checks += 1);
                     if wrong.is_empty() {
                         crate::audio::play(crate::audio::Sfx::Correct);
-                        toast(ToastKind::Success, |l| td_string!(l, common.toast.all_correct).to_string());
+                        toast(ToastKind::Success, |l| {
+                            td_string!(l, common.toast.all_correct).to_string()
+                        });
                     } else {
                         let count = wrong.len();
                         toast(ToastKind::Error, move |l| {
-                            td_string!(l, common.toast.wrong_bridges, count).to_string()
+                            td_string!(l, common.toast.wrong_bridges, count)
                         });
                         game.wrong.set(wrong);
                         set_timeout(move || game.wrong.set(vec![]), Duration::from_millis(2400));
@@ -556,7 +590,9 @@ pub fn DailyPage() -> impl IntoView {
                     game.status.set(Status::Revealed);
                     daily.update_attempt(|a| a.revealed = true);
                     let current = game.bridges.get_untracked();
-                    let missing: Vec<usize> = (0..current.len()).filter(|&e| current[e] != solution[e]).collect();
+                    let missing: Vec<usize> = (0..current.len())
+                        .filter(|&e| current[e] != solution[e])
+                        .collect();
                     let step = (2000 / missing.len().max(1) as u64).clamp(10, 80);
                     for (k, edge) in missing.into_iter().enumerate() {
                         let value = solution[edge];
@@ -571,12 +607,21 @@ pub fn DailyPage() -> impl IntoView {
         });
     };
 
-    let playing = Signal::derive(move || daily.started() && !daily.finished() && game.status.get() == Status::Playing);
+    let playing = Signal::derive(move || {
+        daily.started() && !daily.finished() && game.status.get() == Status::Playing
+    });
     let check_state = Memo::new(move |_| game.board.with(|b| game.bridges.with(|br| b.check(br))));
     let islands = Memo::new(move |_| game.board.with(|b| b.puzzle.islands.len()));
     let islands_done = Memo::new(move |_| {
         game.board.with(|b| {
-            check_state.with(|c| b.puzzle.islands.iter().zip(&c.degrees).filter(|(i, d)| i.required == **d).count())
+            check_state.with(|c| {
+                b.puzzle
+                    .islands
+                    .iter()
+                    .zip(&c.degrees)
+                    .filter(|(i, d)| i.required == **d)
+                    .count()
+            })
         })
     });
 
@@ -637,7 +682,7 @@ pub fn DailyPage() -> impl IntoView {
                                 value=Signal::derive(move || {
                                     let p = daily
                                         .info
-                                        .with(|i| i.as_ref().and_then(|i| i.attempt.as_ref()).map(|a| a.penalty_ms()))
+                                        .with(|i| i.as_ref().and_then(|i| i.attempt.as_ref()).map(super::super::model::AttemptInfo::penalty_ms))
                                         .unwrap_or(0);
                                     format!("+{}s", p / 1000)
                                 })
@@ -688,14 +733,13 @@ pub fn DailyPage() -> impl IntoView {
                                 <span>
                                     {move || {
                                         let c = check_state.with(|c| c.components);
-                                        if c > 1 { t_string!(i18n, common.game.groups, count = c).to_string() } else { t_string!(i18n, common.game.all_connected).to_string() }
+                                        if c > 1 { t_string!(i18n, common.game.groups, count = c) } else { t_string!(i18n, common.game.all_connected).to_string() }
                                     }}
                                 </span>
                             </div>
                             <Progress
                                 value=Signal::derive(move || {
-                                    let n = islands.get();
-                                    if n == 0 { 0.0 } else { islands_done.get() as f64 / n as f64 * 100.0 }
+                                    islands_percent(islands_done.get(), islands.get())
                                 })
                                 class="h-2.5"
                             />

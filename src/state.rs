@@ -2,9 +2,7 @@
 
 use std::time::Duration;
 
-use common::{
-    Board, Difficulty, GenerateParams, Puzzle, SolveOutcome, SolveReport, SolverConfig,
-};
+use common::{Board, Difficulty, GenerateParams, Puzzle, SolveOutcome, SolveReport, SolverConfig};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -33,7 +31,16 @@ pub struct Toast {
     pub text: ToastText,
 }
 
-#[derive(Clone, Copy)]
+impl std::fmt::Debug for Toast {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Toast")
+            .field("id", &self.id)
+            .field("kind", &self.kind)
+            .finish_non_exhaustive()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct Toasts(pub RwSignal<Vec<Toast>>);
 
 impl Toasts {
@@ -68,10 +75,13 @@ pub fn toast(kind: ToastKind, text: impl Fn(Locale) -> String + Send + Sync + 's
 /*  Game                                                               */
 /* ------------------------------------------------------------------ */
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Source {
     Generated(GenerateParams),
-    Daily { date: String, params: GenerateParams },
+    Daily {
+        date: String,
+        params: GenerateParams,
+    },
     Custom,
     Imported(String),
 }
@@ -79,21 +89,21 @@ pub enum Source {
 impl Source {
     pub fn title(&self, locale: Locale) -> String {
         match self {
-            Source::Generated(p) => format!(
+            Self::Generated(p) => format!(
                 "{} {}×{}",
                 crate::lang::difficulty_name(locale, p.difficulty),
                 p.width,
                 p.height
             ),
-            Source::Daily { date, .. } => td_string!(locale, common.source.daily, date).to_string(),
-            Source::Custom => td_string!(locale, common.source.custom).to_string(),
-            Source::Imported(name) => td_string!(locale, common.source.imported, name).to_string(),
+            Self::Daily { date, .. } => td_string!(locale, common.source.daily, date),
+            Self::Custom => td_string!(locale, common.source.custom).to_string(),
+            Self::Imported(name) => td_string!(locale, common.source.imported, name),
         }
     }
 
     pub fn difficulty(&self) -> Option<Difficulty> {
         match self {
-            Source::Generated(p) | Source::Daily { params: p, .. } => Some(p.difficulty),
+            Self::Generated(p) | Self::Daily { params: p, .. } => Some(p.difficulty),
             _ => None,
         }
     }
@@ -131,7 +141,7 @@ const THEME_KEY: &str = "hashi.theme";
 const SOUND_KEY: &str = "hashi.sound";
 const MUSIC_KEY: &str = "hashi.music";
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Game {
     pub board: RwSignal<Board>,
     pub bridges: RwSignal<Vec<u8>>,
@@ -161,7 +171,7 @@ pub struct Game {
 impl Game {
     pub fn new(key: &'static str) -> Self {
         let board = Board::new(Puzzle::empty(7, 7));
-        Game {
+        Self {
             bridges: RwSignal::new(board.empty_bridges()),
             board: RwSignal::new(board),
             undo_stack: RwSignal::new(vec![]),
@@ -251,8 +261,12 @@ impl Game {
         if !self.is_playing() {
             return;
         }
-        let current = self.bridges.with_untracked(|b| b.get(edge).copied().unwrap_or(0));
-        let next = (current as i8 + delta).rem_euclid(3) as u8;
+        let current = self
+            .bridges
+            .with_untracked(|b| b.get(edge).copied().unwrap_or(0));
+        let next = (current.cast_signed() + delta)
+            .rem_euclid(3)
+            .cast_unsigned();
         self.set_edges(&[(edge, next)]);
         self.moves.update(|m| *m += 1);
         self.hint.set(None);
@@ -285,7 +299,10 @@ impl Game {
     /// Removes all bridges and starts over.
     pub fn restart(&self) {
         let empty = self.board.with_untracked(Board::empty_bridges);
-        if self.status.get_untracked() != Status::Playing {
+        if self.status.get_untracked() == Status::Playing {
+            let changes: Vec<(usize, u8)> = (0..empty.len()).map(|e| (e, 0)).collect();
+            self.set_edges(&changes);
+        } else {
             self.undo_stack.set(vec![]);
             self.redo_stack.set(vec![]);
             self.bridges.set(empty);
@@ -293,9 +310,6 @@ impl Game {
             self.elapsed.set(0);
             self.moves.set(0);
             self.hints.set(0);
-        } else {
-            let changes: Vec<(usize, u8)> = (0..empty.len()).map(|e| (e, 0)).collect();
-            self.set_edges(&changes);
         }
         self.hint.set(None);
     }
@@ -331,7 +345,7 @@ impl Game {
         if saved.bridges.len() != board.edges.len() || board.puzzle.islands.is_empty() {
             return false;
         }
-        self.set_puzzle(board.puzzle.clone(), saved.solution, saved.unique, saved.source);
+        self.set_puzzle(board.puzzle, saved.solution, saved.unique, saved.source);
         self.bridges.set(saved.bridges);
         self.status.set(saved.status);
         self.elapsed.set(saved.elapsed);
@@ -357,11 +371,11 @@ impl Game {
 }
 
 /// The daily puzzle, separate from the practice game so neither overwrites the other.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct DailyGame(pub Game);
 
 /// The signed in user (or guest), loaded after hydration.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Auth {
     pub user: RwSignal<Option<crate::model::UserInfo>>,
     pub loaded: RwSignal<bool>,
@@ -384,7 +398,7 @@ impl Auth {
 /*  Editor                                                             */
 /* ------------------------------------------------------------------ */
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Editor {
     pub puzzle: RwSignal<Puzzle>,
     /// Bridges of the last solver run, shown on top of the edited puzzle.
@@ -395,7 +409,7 @@ pub struct Editor {
 
 impl Editor {
     pub fn new() -> Self {
-        Editor {
+        Self {
             puzzle: RwSignal::new(Puzzle::empty(8, 8)),
             solution: RwSignal::new(None),
             report: RwSignal::new(None),
@@ -420,7 +434,7 @@ impl Default for Editor {
 /*  Settings                                                           */
 /* ------------------------------------------------------------------ */
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Settings {
     pub solver: RwSignal<SolverConfig>,
     pub difficulty: RwSignal<Difficulty>,
@@ -433,7 +447,7 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> Self {
-        Settings {
+        Self {
             solver: RwSignal::new(SolverConfig::default()),
             difficulty: RwSignal::new(Difficulty::Medium),
             dark: RwSignal::new(false),
@@ -566,7 +580,10 @@ pub fn provide_state() {
         set_interval(
             move || {
                 let visible = document().visibility_state() == web_sys::VisibilityState::Visible;
-                if visible && game.status.get_untracked() == Status::Playing && !game.loading.get_untracked() {
+                if visible
+                    && game.status.get_untracked() == Status::Playing
+                    && !game.loading.get_untracked()
+                {
                     game.elapsed.update(|e| *e += 1);
                 }
             },
@@ -579,6 +596,12 @@ pub fn provide_state() {
 /*  Async actions                                                      */
 /* ------------------------------------------------------------------ */
 
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "`Math.random()` is in [0, 1), so the first value fits in 32 bits, and `Date.now()` \
+              is a positive whole number of ms"
+)]
 pub fn random_seed() -> u64 {
     let a = (js_sys::Math::random() * 4_294_967_296.0) as u64;
     let b = js_sys::Date::now() as u64;
@@ -620,11 +643,15 @@ pub async fn run_solver(
             let solution = match &r.outcome {
                 SolveOutcome::Solved { bridges, .. } => Some(bridges.clone()),
                 SolveOutcome::Unsatisfiable => {
-                    toast(ToastKind::Error, |l| td_string!(l, common.toast.unsat).to_string());
+                    toast(ToastKind::Error, |l| {
+                        td_string!(l, common.toast.unsat).to_string()
+                    });
                     None
                 }
                 SolveOutcome::Timeout => {
-                    toast(ToastKind::Error, |l| td_string!(l, common.toast.timeout).to_string());
+                    toast(ToastKind::Error, |l| {
+                        td_string!(l, common.toast.timeout).to_string()
+                    });
                     None
                 }
             };
@@ -638,7 +665,7 @@ pub async fn run_solver(
     }
 }
 
-async fn game_solver(game: Game, settings: Settings, unique: bool) -> Option<Vec<u8>> {
+async fn game_solver(game: &Game, settings: Settings, unique: bool) -> Option<Vec<u8>> {
     let epoch = game.epoch.get_untracked();
     let solution = run_solver(
         game.puzzle(),
@@ -651,8 +678,11 @@ async fn game_solver(game: Game, settings: Settings, unique: bool) -> Option<Vec
     if game.epoch.get_untracked() != epoch {
         return None;
     }
-    if let Some(SolveOutcome::Solved { unique: Some(u), .. }) =
-        game.report.with_untracked(|r| r.as_ref().map(|r| r.outcome.clone()))
+    if let Some(SolveOutcome::Solved {
+        unique: Some(u), ..
+    }) = game
+        .report
+        .with_untracked(|r| r.as_ref().map(|r| r.outcome.clone()))
     {
         game.unique.set(Some(u));
     }
@@ -662,7 +692,7 @@ async fn game_solver(game: Game, settings: Settings, unique: bool) -> Option<Vec
     solution
 }
 
-async fn ensure_solution(game: Game, settings: Settings) -> Option<Vec<u8>> {
+async fn ensure_solution(game: &Game, settings: Settings) -> Option<Vec<u8>> {
     match game.solution.get_untracked() {
         Some(s) => Some(s),
         None => game_solver(game, settings, false).await,
@@ -676,7 +706,9 @@ pub fn hint(game: Game, settings: Settings) {
     }
     spawn_local(async move {
         let epoch = game.epoch.get_untracked();
-        let Some(solution) = ensure_solution(game, settings).await else { return };
+        let Some(solution) = ensure_solution(&game, settings).await else {
+            return;
+        };
         if game.epoch.get_untracked() != epoch || !game.is_playing() {
             return;
         }
@@ -699,7 +731,9 @@ pub fn hint(game: Game, settings: Settings) {
                     Duration::from_millis(3000),
                 );
             }
-            None => toast(ToastKind::Info, |l| td_string!(l, common.toast.nothing_to_hint).to_string()),
+            None => toast(ToastKind::Info, |l| {
+                td_string!(l, common.toast.nothing_to_hint).to_string()
+            }),
         }
     });
 }
@@ -708,7 +742,9 @@ pub fn hint(game: Game, settings: Settings) {
 pub fn check(game: Game, settings: Settings) {
     spawn_local(async move {
         let epoch = game.epoch.get_untracked();
-        let Some(solution) = ensure_solution(game, settings).await else { return };
+        let Some(solution) = ensure_solution(&game, settings).await else {
+            return;
+        };
         if game.epoch.get_untracked() != epoch {
             return;
         }
@@ -717,11 +753,13 @@ pub fn check(game: Game, settings: Settings) {
             .with_untracked(|b| crate::model::wrong_edges(b, &solution));
         if wrong.is_empty() {
             crate::audio::play(crate::audio::Sfx::Correct);
-            toast(ToastKind::Success, |l| td_string!(l, common.toast.all_correct).to_string());
+            toast(ToastKind::Success, |l| {
+                td_string!(l, common.toast.all_correct).to_string()
+            });
         } else {
             let count = wrong.len();
             toast(ToastKind::Error, move |l| {
-                td_string!(l, common.toast.wrong_bridges, count).to_string()
+                td_string!(l, common.toast.wrong_bridges, count)
             });
             game.wrong.set(wrong);
             set_timeout(move || game.wrong.set(vec![]), Duration::from_millis(2400));
@@ -733,7 +771,9 @@ pub fn check(game: Game, settings: Settings) {
 pub fn reveal(game: Game, settings: Settings) {
     spawn_local(async move {
         let epoch = game.epoch.get_untracked();
-        let Some(solution) = game_solver(game, settings, false).await else { return };
+        let Some(solution) = game_solver(&game, settings, false).await else {
+            return;
+        };
         if game.epoch.get_untracked() != epoch {
             return;
         }
@@ -749,7 +789,9 @@ pub fn reveal(game: Game, settings: Settings) {
                 }
             }
         });
-        let missing: Vec<usize> = (0..current.len()).filter(|&e| current[e] < solution[e]).collect();
+        let missing: Vec<usize> = (0..current.len())
+            .filter(|&e| current[e] < solution[e])
+            .collect();
         let step = (2400 / missing.len().max(1) as u64).clamp(12, 90);
         for (k, edge) in missing.into_iter().enumerate() {
             let value = solution[edge];
@@ -768,10 +810,14 @@ pub fn reveal(game: Game, settings: Settings) {
 /// Asks the solver whether the solution is unique.
 pub fn check_unique(game: Game, settings: Settings) {
     spawn_local(async move {
-        if game_solver(game, settings, true).await.is_some() {
+        if game_solver(&game, settings, true).await.is_some() {
             match game.unique.get_untracked() {
-                Some(true) => toast(ToastKind::Success, |l| td_string!(l, common.toast.unique).to_string()),
-                Some(false) => toast(ToastKind::Info, |l| td_string!(l, common.toast.not_unique).to_string()),
+                Some(true) => toast(ToastKind::Success, |l| {
+                    td_string!(l, common.toast.unique).to_string()
+                }),
+                Some(false) => toast(ToastKind::Info, |l| {
+                    td_string!(l, common.toast.not_unique).to_string()
+                }),
                 None => {}
             }
         }
@@ -809,8 +855,12 @@ pub fn download(filename: &str, content: &str, mime: &str) {
     let parts = js_sys::Array::of1(&wasm_bindgen::JsValue::from_str(content));
     let options = web_sys::BlobPropertyBag::new();
     options.set_type(mime);
-    let Ok(blob) = web_sys::Blob::new_with_str_sequence_and_options(&parts, &options) else { return };
-    let Ok(url) = web_sys::Url::create_object_url_with_blob(&blob) else { return };
+    let Ok(blob) = web_sys::Blob::new_with_str_sequence_and_options(&parts, &options) else {
+        return;
+    };
+    let Ok(url) = web_sys::Url::create_object_url_with_blob(&blob) else {
+        return;
+    };
     if let Ok(link) = document().create_element("a")
         && let Ok(link) = link.dyn_into::<web_sys::HtmlAnchorElement>()
     {

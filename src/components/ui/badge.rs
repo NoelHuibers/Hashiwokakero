@@ -1,3 +1,10 @@
+// Attributes on the macro call itself are ignored, so the expectation covers this file, which
+// holds nothing but the `variants!` call
+#![expect(
+    clippy::expl_impl_clone_on_copy,
+    reason = "the `TwVariant` derive inside `variants!` writes out `Clone` by hand next to `Copy`"
+)]
+
 use leptos::prelude::*;
 use leptos_ui::variants;
 

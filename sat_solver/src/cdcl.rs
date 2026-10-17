@@ -22,14 +22,14 @@ type CIdx = usize;
 // Same mem layout as for tuples:
 // - https://doc.rust-lang.org/reference/type-layout.html#tuple-layout
 // - https://doc.rust-lang.org/reference/types/struct.html#structtype
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Clause {
     watched_lhs: BVar,
     watched_rhs: BVar,
     vars: Vec<BVar>,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct Literal {
     val: bool,
     is_free: bool,
@@ -37,11 +37,11 @@ pub(crate) struct Literal {
     decision_level: i64,
 }
 
-// var, val, forced
-#[derive(Clone)]
-struct Assignment(BVar, bool, bool);
+// An assigned var on the trail, which is all that undoing it and conflict analysis need
+#[derive(Clone, Debug)]
+struct Assignment(BVar);
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct VSIDSPrio {
     prio: u64,
     counter: u64,
@@ -50,7 +50,7 @@ struct VSIDSPrio {
 
 impl PartialOrd for VSIDSPrio {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.prio.partial_cmp(&other.prio)
+        Some(self.cmp(other))
     }
 }
 
@@ -60,6 +60,7 @@ impl Ord for VSIDSPrio {
     }
 }
 
+#[derive(Debug)]
 pub struct CDCL {
     // Max value needs to be 255
     branch_counter: u64,
@@ -94,6 +95,7 @@ pub struct CDCL {
     has_empty_clause: bool,
 }
 
+#[derive(Debug)]
 pub struct Restart {
     pub count: usize,
     conflict_count: u32,
@@ -102,10 +104,15 @@ pub struct Restart {
     use_luby: bool,
     u: u32,
     v: u32,
-    factor: Option<f32>,
+    // In percent
+    factor: Option<u32>,
 }
 
 impl CDCL {
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "public constructor used by the backend and the CLI, one argument per solver option"
+    )]
     pub fn new(
         mut input: Vec<Vec<BVar>>,
         lit_count: usize,
@@ -120,7 +127,7 @@ impl CDCL {
         drup_path: Option<String>,
     ) -> Self {
         let mx_clauses = 42; //TODO: use useful value here according to deletion strat
-        let mut cdcl = CDCL {
+        let mut cdcl = Self {
             branch_depth: 0,
             branch_counter: 0,
             clauses: HashMap::with_capacity(clause_count),
@@ -147,17 +154,14 @@ impl CDCL {
                 actual_threshhold: restart_threshold,
                 u: 1,
                 v: 1,
-                factor: match factor {
-                    Some(u) => Some(u as f32 / 100.0),
-                    None => None,
-                },
+                factor,
             },
             deletion_start: (k, m),
             drup_output: drup_path,
             deadline: None,
             has_empty_clause: false,
         };
-        if input.iter().any(|c| c.is_empty()) {
+        if input.iter().any(Vec::is_empty) {
             cdcl.has_empty_clause = true;
             input.retain(|c| !c.is_empty());
         }
@@ -178,19 +182,18 @@ impl CDCL {
                 cdcl.unit_queue.push_front((*fist_var, Some(c)));
             }
             // Only set watched lits in watched_occ
-            vec![vars.first().unwrap(), vars.last().unwrap()]
-                .iter()
-                .for_each(|literal| {
-                    cdcl.pos_watched_occ
-                        .entry(**literal)
-                        .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
-                        .or_insert(vec![c]);
-                });
+            for literal in [vars.first().unwrap(), vars.last().unwrap()] {
+                cdcl.pos_watched_occ
+                    .entry(*literal)
+                    .and_modify(|clauses: &mut Vec<CIdx>| clauses.push(c))
+                    .or_insert_with(|| vec![c]);
+            }
             // All vars will be initialized and set as free
-            vars.iter().for_each(|literal| {
-                match literal.is_positive() {
-                    true => cdcl.pos_occ.insert(literal.abs()),
-                    false => cdcl.neg_occ.insert(literal.abs()),
+            for literal in &vars {
+                if literal.is_positive() {
+                    cdcl.pos_occ.insert(literal.abs())
+                } else {
+                    cdcl.neg_occ.insert(literal.abs())
                 };
                 cdcl.free_lits.insert(*literal);
                 cdcl.lit_val.insert(
@@ -202,7 +205,7 @@ impl CDCL {
                         decision_level: cdcl.branch_depth,
                     },
                 );
-            });
+            }
         });
         cdcl
     }
@@ -213,6 +216,7 @@ impl CDCL {
     }
 
     /// Builder style variant of [`CDCL::set_deadline`].
+    #[must_use]
     pub fn with_deadline(mut self, deadline: Option<Instant>) -> Self {
         self.deadline = deadline;
         self
@@ -230,36 +234,40 @@ impl CDCL {
 
     // Checking the clock is cheap compared to an iteration of the solver, but there is no need to do it every time
     fn timed_out(&self, step: u64) -> bool {
-        step % 16 == 0 && self.deadline.is_some_and(|d| Instant::now() >= d)
+        step.is_multiple_of(16) && self.deadline.is_some_and(|d| Instant::now() >= d)
     }
 
     // Counts a (learned) conflict and returns whether the solver should restart
+    #[expect(
+        clippy::cast_precision_loss,
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "restart thresholds and factors are small and positive, an approximate (truncated) threshold is fine"
+    )]
     fn restart_policy(&mut self) -> bool {
-        match self.restart.threshold {
-            Some(threshold) => {
-                self.restart.conflict_count += 1;
-                if self.restart.conflict_count >= self.restart.actual_threshhold.unwrap() {
-                    self.restart.actual_threshhold = if self.restart.use_luby {
-                        let (u, v) = luby_sequence(self.restart.u, self.restart.v);
-                        self.restart.u = u;
-                        self.restart.v = v;
-                        let luby_multiplier = v;
-                        Some(threshold * luby_multiplier)
-                    } else {
-                        match self.restart.factor {
-                            Some(f) => {
-                                Some((self.restart.actual_threshhold.unwrap() as f32 * f) as u32)
-                            }
-                            None => self.restart.actual_threshhold,
+        if let Some(threshold) = self.restart.threshold {
+            self.restart.conflict_count += 1;
+            if self.restart.conflict_count >= self.restart.actual_threshhold.unwrap() {
+                self.restart.actual_threshhold = if self.restart.use_luby {
+                    let (u, v) = luby_sequence(self.restart.u, self.restart.v);
+                    self.restart.u = u;
+                    self.restart.v = v;
+                    let luby_multiplier = v;
+                    Some(threshold * luby_multiplier)
+                } else {
+                    match self.restart.factor {
+                        Some(percent) => {
+                            let f = percent as f32 / 100.0;
+                            Some((self.restart.actual_threshhold.unwrap() as f32 * f) as u32)
                         }
-                    };
-                    self.restart.conflict_count = 0;
-                    return true;
-                }
+                        None => self.restart.actual_threshhold,
+                    }
+                };
+                self.restart.conflict_count = 0;
+                return true;
             }
-            _ => {}
         }
-        return false;
+        false
     }
 
     pub fn restart(&mut self) {
@@ -290,7 +298,7 @@ impl CDCL {
         let mut pure_lits: Vec<BVar> = self
             .pos_occ
             .symmetric_difference(&self.neg_occ)
-            .cloned()
+            .copied()
             .collect();
 
         loop {
@@ -299,24 +307,20 @@ impl CDCL {
                 return Ok(DIMACSOutput::Timeout);
             }
             // * choose literal var
-            let (var, val, forced) = match pure_lits.is_empty() {
-                true => {
-                    self.history_enabled = true;
-                    let (var, val) = self.pick_branching_literal()?;
-                    (var, val, false)
-                }
-                false => {
-                    let lit = pure_lits.pop().unwrap();
-                    // As the lit occurs only in one polarity it doesn't make sense to try both assignments
-                    (lit, self.pos_occ.get(&lit).is_some(), true)
-                }
+            let (var, val) = if pure_lits.is_empty() {
+                self.history_enabled = true;
+                self.pick_branching_literal()?
+            } else {
+                let lit = pure_lits.pop().unwrap();
+                // As the lit occurs only in one polarity it doesn't make sense to try both assignments
+                (lit, self.pos_occ.contains(&lit))
             };
             self.branch_counter += 1;
             // * set value var
             self.branch_depth += 1;
             self.literals_at_current_depth.clear();
             //println!("Branching d {}:", self.branch_depth);
-            let conflict_literal = self.set_var(forced, val, var, None);
+            let conflict_literal = self.set_var(val, var, None);
             // The decision itself can falsify a clause, that conflict must not get lost
             let mut decision_conflict = self.update_watched(conflict_literal);
             // * unit propagation
@@ -325,7 +329,7 @@ impl CDCL {
                 let conflict = std::mem::take(&mut decision_conflict) || self.unit_prop();
                 if !conflict {
                     break;
-                };
+                }
                 steps += 1;
                 if self.timed_out(steps) {
                     return Ok(DIMACSOutput::Timeout);
@@ -338,11 +342,11 @@ impl CDCL {
                 }
 
                 // Add conflict clause to the database
-                let clause_id = self.insert_clause(conflict_clause.clone());
+                let clause_id = self.insert_clause(&conflict_clause);
 
                 // Perform non-chronological backtracking
                 self.non_chronological_backtrack(backtrack_level);
-                self.update_queue(clause_id, conflict_clause);
+                self.update_queue(clause_id, &conflict_clause);
                 // Keep clauses w(C) <= 3, delete clauses with more than 5 unassigned vars
                 self.combined_learning_strategy();
                 // Restarting before the conflict is learned would throw it away and run into it again
@@ -370,7 +374,7 @@ impl CDCL {
                 //println!("Warning attemted to set {} again.", forced_lit.0);
                 continue;
             }
-            let conflict_literal = self.set_var(true, true, forced_lit.0, forced_lit.1);
+            let conflict_literal = self.set_var(true, forced_lit.0, forced_lit.1);
             unsat = self.update_watched(conflict_literal);
             if unsat {
                 break; // Signalize that a conflict has occurred
@@ -379,10 +383,10 @@ impl CDCL {
         unsat // No conflict found
     }
 
-    fn set_var(&mut self, forced: bool, val: bool, var: BVar, reason: Option<CIdx>) -> BVar {
+    fn set_var(&mut self, val: bool, var: BVar, reason: Option<CIdx>) -> BVar {
         //println!("\tset {} to {}", var, val);
         if self.history_enabled {
-            self.history.push(Assignment(var, val, forced));
+            self.history.push(Assignment(var));
         } else {
             self.pos_occ.remove(&var);
             self.neg_occ.remove(&var);
@@ -397,12 +401,12 @@ impl CDCL {
                 .and_modify(|vars| {
                     vars.insert(var);
                 })
-                .or_insert(HashSet::from([var]));
+                .or_insert_with(|| HashSet::from([var]));
         }
         lit.decision_level = self.branch_depth;
         self.literals_at_current_depth.insert(as_atom(var));
         self.free_lits.remove(&var);
-        self.free_lits.remove(&(var * -1));
+        self.free_lits.remove(&-var);
         // -1 true => 1 false
         // -1 false => 1 true
         // 1 true => 1 true
@@ -410,20 +414,17 @@ impl CDCL {
         // <=> var.is_pos == value
         let new_val = val == var.is_positive();
         lit.val = new_val;
-        match val {
-            true => var * -1,
-            false => var,
-        }
+        if val { -var } else { var }
     }
 
     fn update_watched(&mut self, conflict_literal: BVar) -> bool {
         let mut conflict = false;
         let conflict_clauses = self.pos_watched_occ.get(&conflict_literal);
-        if let None = conflict_clauses {
+        if conflict_clauses.is_none() {
             return conflict;
         }
-        for c_idx in conflict_clauses.unwrap_or(&vec![]).clone().iter() {
-            let clause = match self.clauses.get_mut(&c_idx) {
+        for c_idx in &conflict_clauses.unwrap_or(&vec![]).clone() {
+            let clause = match self.clauses.get_mut(c_idx) {
                 Some(c) => c,
                 None => self.clause_db.get_mut(c_idx).unwrap(),
             };
@@ -462,22 +463,24 @@ impl CDCL {
                         .push_front((**new_watched_cands.iter().next().unwrap(), Some(*c_idx)));
                 }
                 _ => (),
-            };
-            let other_watched = match conflict_literal == clause.watched_rhs {
-                true => clause.watched_lhs,
-                false => clause.watched_rhs,
+            }
+            let other_watched = if conflict_literal == clause.watched_rhs {
+                clause.watched_lhs
+            } else {
+                clause.watched_rhs
             };
             // At least one of them is already implicitly removed but we don't know which one at this point.
             new_watched_cands.remove(&other_watched);
-            if new_watched_cands.len() == 0 {
+            if new_watched_cands.is_empty() {
                 continue;
             }
             let new = new_watched_cands.iter().next().unwrap();
             // * mark new var as watched
-            match conflict_literal == clause.watched_rhs {
-                true => clause.watched_rhs = **new,
-                false => clause.watched_lhs = **new,
-            };
+            if conflict_literal == clause.watched_rhs {
+                clause.watched_rhs = **new;
+            } else {
+                clause.watched_lhs = **new;
+            }
             let old = conflict_literal;
             let vars = self.pos_watched_occ.get_mut(&old).unwrap();
             let idx = vars.iter().position(|x| x == c_idx).unwrap();
@@ -490,7 +493,7 @@ impl CDCL {
                         vec.push(*c_idx);
                     }
                 })
-                .or_insert(vec![*c_idx]);
+                .or_insert_with(|| vec![*c_idx]);
         }
         conflict
     }
@@ -498,7 +501,7 @@ impl CDCL {
     fn unset_var(&mut self, var: BVar) {
         //println!("\tunset {}", var);
         self.free_lits.insert(var);
-        self.free_lits.insert(var * -1);
+        self.free_lits.insert(-var);
         let lit_var: &mut Literal = self.lit_val.get_mut(&as_atom(var)).unwrap();
         lit_var.is_free = true;
         // clear reason
@@ -506,7 +509,7 @@ impl CDCL {
             let mut remove_key = false;
             self.reason_for.entry(c_idx).and_modify(|vars| {
                 vars.remove(&var);
-                if vars.len() == 0 {
+                if vars.is_empty() {
                     remove_key = true;
                 }
             });
@@ -534,9 +537,11 @@ impl CDCL {
         while !is_asserting(current_vars, &self.literals_at_current_depth) {
             if let Some(next) = stack.next() {
                 current_node = &self.lit_val[&as_atom(next.0)];
-                if let None = current_node.reason {
-                    panic!("Node {} has no reason", next.0);
-                }
+                assert!(
+                    current_node.reason.is_some(),
+                    "Node {} has no reason",
+                    next.0
+                );
                 let reason_clause = &self.get_clause(current_node.reason.unwrap())?.vars;
                 // quote lecure: We go backwards on the stack and if we find an assignment that is of a literal (next.var) in our clause
                 // then we resolve with the reason clause (current_node) and we continue to do that until we have an asserting clause.
@@ -559,7 +564,7 @@ impl CDCL {
                 return Err(Error { branch_depth: self.branch_depth, history_len: self.history.len(), message: "analyze_conflict(): Resolved until the end without finding an asserting clause.".into() });
             }
         }
-        let mut vars = current_vars.to_vec();
+        let mut vars = current_vars.clone();
         vars.sort_by_key(|&v| self.lit_val[&as_atom(v)].decision_level);
         vars.reverse();
         // Second largest (largest excluding conflict literal) decision level
@@ -577,7 +582,7 @@ impl CDCL {
             _ => self.lit_val[&as_atom(watched_rhs)].decision_level,
         };
         if assetion_level == self.branch_depth {
-            assetion_level = assetion_level - 1;
+            assetion_level -= 1;
         }
         Ok((conflict_clause, assetion_level))
     }
@@ -609,33 +614,30 @@ impl CDCL {
         self.unit_queue.clear();
     }
 
-    fn update_queue(&mut self, conflict_c_idx: CIdx, conflict_clause: Clause) {
-        if !self.lit_val[&as_atom(conflict_clause.watched_lhs)].is_free {
-            panic!(
-                "watched_lhs {} is already set and thus won't be queued.",
-                conflict_clause.watched_lhs
-            );
-        }
+    fn update_queue(&mut self, conflict_c_idx: CIdx, conflict_clause: &Clause) {
+        assert!(
+            self.lit_val[&as_atom(conflict_clause.watched_lhs)].is_free,
+            "watched_lhs {} is already set and thus won't be queued.",
+            conflict_clause.watched_lhs
+        );
         self.unit_queue
             .push_front((conflict_clause.watched_lhs, Some(conflict_c_idx)));
     }
 
-    fn insert_clause(&mut self, conflict_clause: Clause) -> usize {
+    fn insert_clause(&mut self, conflict_clause: &Clause) -> usize {
         if let Some(path) = &self.drup_output {
-            let _ = log_clause(&conflict_clause.vars, ' ', path);
+            let () = log_clause(&conflict_clause.vars, ' ', path);
         }
         self.learned_size += 1;
         let clause_id = self.learned_size;
         self.clause_db.insert(clause_id, conflict_clause.clone());
-        [conflict_clause.watched_lhs, conflict_clause.watched_rhs]
-            .iter()
-            .for_each(|lit| {
-                self.pos_watched_occ
-                    .entry(*lit)
-                    .and_modify(|clause| clause.push(clause_id))
-                    .or_insert(vec![clause_id]);
-            });
-        conflict_clause.vars.iter().for_each(|&v| {
+        for lit in [conflict_clause.watched_lhs, conflict_clause.watched_rhs] {
+            self.pos_watched_occ
+                .entry(lit)
+                .and_modify(|clause| clause.push(clause_id))
+                .or_insert_with(|| vec![clause_id]);
+        }
+        for &v in &conflict_clause.vars {
             self.vsids_counters
                 .entry(v)
                 .and_modify(|p| p.counter += 1)
@@ -644,20 +646,21 @@ impl CDCL {
                     counter: 1,
                     literal: v,
                 });
-        });
+        }
         self.learned_size
     }
 
     fn get_clause(&self, c_idx: CIdx) -> Result<&Clause, Error> {
-        match self.clauses.get(&c_idx).or(self.clause_db.get(&c_idx)) {
+        match self
+            .clauses
+            .get(&c_idx)
+            .or_else(|| self.clause_db.get(&c_idx))
+        {
             Some(c) => Ok(c),
             None => Err(Error {
                 branch_depth: self.branch_depth,
                 history_len: self.history.len(),
-                message: format!(
-                    "get_clause(): Requested clause with index {} not found.",
-                    c_idx
-                ),
+                message: format!("get_clause(): Requested clause with index {c_idx} not found."),
             }),
         }
     }
@@ -672,7 +675,7 @@ impl CDCL {
                     "{} [label=\"{{{{{}|{}|{}}}|{:?}}}\"];\n",
                     n.0,
                     n.0,
-                    n.1.val as BVar,
+                    BVar::from(n.1.val),
                     n.1.decision_level,
                     match n.1.reason {
                         Some(c) => self.get_clause(c).unwrap().vars.clone(),
@@ -698,13 +701,13 @@ impl CDCL {
             })
             .collect::<Vec<String>>()
             .concat();
-        let graph = format!("digraph G {{ node [shape=record];\n{}\n{}}}", nodes, edges);
+        let graph = format!("digraph G {{ node [shape=record];\n{nodes}\n{edges}}}");
         let file_path = "imp_graph.dot";
 
         // Open the file in write mode, creating it if it doesn't exist
         let mut file = match File::create(file_path) {
             Ok(file) => file,
-            Err(why) => panic!("Couldn't create file: {}", why),
+            Err(why) => panic!("Couldn't create file: {why}"),
         };
 
         // Write the content to the file
@@ -729,16 +732,20 @@ impl CDCL {
         let mut res: Vec<BVar> = self
             .lit_val
             .iter()
-            .map(|(atom, lit)| match lit.val {
-                true => *atom as BVar,
-                false => -(*atom as BVar),
+            // Atoms are absolute values of BVar literals, so they convert back without wrapping
+            .map(|(atom, lit)| {
+                if lit.val {
+                    atom.cast_signed()
+                } else {
+                    -atom.cast_signed()
+                }
             })
             // Filter out pseudo literal
             .filter(|&l| l != 0)
             .collect();
         res.sort_by_key(|k| k.abs());
         res.push(0);
-        return Some(DIMACSOutput::Sat(res));
+        Some(DIMACSOutput::Sat(res))
     }
 
     // Deletion strategies
@@ -750,7 +757,7 @@ impl CDCL {
         // Check and process learned clauses
         for (clause_id, clause) in &self.clause_db {
             // Check if the width of the clause exceeds the limit
-            if let Some(_) = self.reason_for.get(&clause_id) {
+            if self.reason_for.contains_key(clause_id) {
                 // Skip clauses that are a reason for variable assignments (See minisat paper)
                 continue;
             }
@@ -759,7 +766,7 @@ impl CDCL {
                 if clause
                     .vars
                     .iter()
-                    .filter(|&lit| self.lit_val[&(lit.abs() as Atom)].is_free)
+                    .filter(|&lit| self.lit_val[&lit.unsigned_abs()].is_free)
                     .count()
                     > m
                 {
@@ -775,13 +782,13 @@ impl CDCL {
             let clause = self.clause_db.remove(&clause_id).unwrap();
             // println!("Remove clause {}", clause_id);
             if let Some(path) = &self.drup_output {
-                let _ = log_clause(&clause.vars, 'd', path);
+                let () = log_clause(&clause.vars, 'd', path);
             }
             for lit in [clause.watched_lhs, clause.watched_rhs] {
-                if let Some(clauses) = self.pos_watched_occ.get_mut(&lit) {
-                    if let Some(index) = clauses.iter().position(|&x| x == clause_id) {
-                        clauses.remove(index);
-                    }
+                if let Some(clauses) = self.pos_watched_occ.get_mut(&lit)
+                    && let Some(index) = clauses.iter().position(|&x| x == clause_id)
+                {
+                    clauses.remove(index);
                 }
             }
         }
@@ -793,8 +800,8 @@ impl CDCL {
                 if self.branch_counter % 255 == 254 {
                     self.vsids_counters.iter_mut().for_each(|v| {
                         v.1.prio = v.1.prio / 2 + v.1.counter;
-                        self.vsids_prio_queue.push(v.1.clone())
-                    })
+                        self.vsids_prio_queue.push(v.1.clone());
+                    });
                 }
                 while let Some(vsids) = self.vsids_prio_queue.pop() {
                     if self.free_lits.contains(&vsids.literal) {
@@ -802,34 +809,32 @@ impl CDCL {
                     }
                 }
                 // fallback
-                return Ok((*self.free_lits.iter().next().unwrap(), true));
+                Ok((*self.free_lits.iter().next().unwrap(), true))
             }
             Heuristic::Arbitrary => Ok((*self.free_lits.iter().next().unwrap(), true)),
-            _ => {
-                return Err(Error {
-                    branch_depth: self.branch_depth,
-                    history_len: self.history.len(),
-                    message: format!(
-                        "Heuristic {:?} is not implemented/embedded into CDCL",
-                        self.heuristic
-                    ),
-                });
-            }
+            _ => Err(Error {
+                branch_depth: self.branch_depth,
+                history_len: self.history.len(),
+                message: format!(
+                    "Heuristic {:?} is not implemented/embedded into CDCL",
+                    self.heuristic
+                ),
+            }),
         }
     }
 
-    fn resolution(&self, clause1: &Vec<BVar>, clause2: &Vec<BVar>) -> Result<Vec<BVar>, Error> {
-        let mut hs_1: HashSet<BVar> = HashSet::from_iter(clause1.iter().cloned());
-        let mut hs_2: HashSet<BVar> = HashSet::from_iter(clause2.iter().cloned());
+    fn resolution(&self, clause1: &[BVar], clause2: &[BVar]) -> Result<Vec<BVar>, Error> {
+        let mut hs_1: HashSet<BVar> = HashSet::from_iter(clause1.iter().copied());
+        let mut hs_2: HashSet<BVar> = HashSet::from_iter(clause2.iter().copied());
         if hs_1 == hs_2 {
             // Resolving a clause with itself is a no-op. This used to print a warning, which spammed the server logs.
-            return Ok(clause1.clone());
+            return Ok(clause1.to_vec());
         }
-        for c_1 in clause1.iter() {
+        for c_1 in clause1 {
             if clause2.contains(&-c_1) {
                 hs_1.remove(c_1);
                 hs_2.remove(&-c_1);
-                let res = Vec::from_iter(hs_1.union(&hs_2).cloned());
+                let res = Vec::from_iter(hs_1.union(&hs_2).copied());
                 //println!("\t resolve {:?} with {:?} to {:?}", clause1, clause2, res.clone());
                 return Ok(res);
             }
@@ -838,14 +843,13 @@ impl CDCL {
             branch_depth: self.branch_depth,
             history_len: self.history.len(),
             message: format!(
-                "resolution(): Could not apply resolution to {:?} and {:?}",
-                clause1, clause2
+                "resolution(): Could not apply resolution to {clause1:?} and {clause2:?}"
             ),
         })
     }
 }
 
-fn is_asserting(clause: &Vec<BVar>, literals_of_max_branch_depth: &HashSet<Atom>) -> bool {
+fn is_asserting(clause: &[BVar], literals_of_max_branch_depth: &HashSet<Atom>) -> bool {
     let res = HashSet::<Atom>::from_iter(clause.iter().map(|l| as_atom(*l)))
         .intersection(literals_of_max_branch_depth)
         .count();
@@ -853,7 +857,7 @@ fn is_asserting(clause: &Vec<BVar>, literals_of_max_branch_depth: &HashSet<Atom>
 }
 
 fn as_atom(lit: BVar) -> Atom {
-    lit.abs() as Atom
+    lit.unsigned_abs()
 }
 
 #[test]
@@ -873,7 +877,7 @@ fn should_be_sat_bug_mar_14th_1() {
         None,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -895,7 +899,7 @@ fn should_be_sat_bug_mar_14th_2() {
         None,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -917,7 +921,7 @@ fn should_be_sat_bug_mar_14th_3() {
         None,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -947,33 +951,33 @@ fn should_derive_1_uip_from_wikipedia() {
         None,
     );
     cdcl.history_enabled = true;
-    let conflict_literal = cdcl.set_var(false, false, 1, None);
+    let conflict_literal = cdcl.set_var(false, 1, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, true, 4, None);
+    let conflict_literal = cdcl.set_var(true, 4, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, true, 3, None);
+    let conflict_literal = cdcl.set_var(true, 3, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, false, 2, None);
+    let conflict_literal = cdcl.set_var(false, 2, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, true, 7, None);
+    let conflict_literal = cdcl.set_var(true, 7, None);
     cdcl.update_watched(conflict_literal);
     let conflict = cdcl.unit_prop();
     assert!(conflict);
     let conflict = cdcl.analyze_conflict().unwrap();
-    assert!(conflict.clone().0.vars.contains(&-3));
-    assert!(conflict.clone().0.vars.contains(&-7));
+    assert!(conflict.0.vars.contains(&-3));
+    assert!(conflict.0.vars.contains(&-7));
     assert!(conflict.0.vars.contains(&8));
 }
 
@@ -1000,29 +1004,29 @@ fn should_derive_1_uip_from_princeton_paper() {
         None,
     );
     cdcl.history_enabled = true;
-    let conflict_literal = cdcl.set_var(false, false, 7, None);
+    let conflict_literal = cdcl.set_var(false, 7, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, false, 8, None);
+    let conflict_literal = cdcl.set_var(false, 8, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, false, 9, None);
+    let conflict_literal = cdcl.set_var(false, 9, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, false, 1, None);
+    let conflict_literal = cdcl.set_var(false, 1, None);
     cdcl.update_watched(conflict_literal);
     let _ = cdcl.unit_prop();
     let conflict = cdcl.analyze_conflict().unwrap();
-    assert_eq!(conflict.clone().1, 2);
-    assert!(conflict.clone().0.vars.contains(&-4));
-    assert!(conflict.clone().0.vars.contains(&9));
-    assert_eq!(conflict.clone().0.vars.len(), 3);
+    assert_eq!(conflict.1, 2);
+    assert!(conflict.0.vars.contains(&-4));
+    assert!(conflict.0.vars.contains(&9));
+    assert_eq!(conflict.0.vars.len(), 3);
     assert!(conflict.0.vars.contains(&8));
 }
 
@@ -1054,29 +1058,29 @@ fn should_derive_1_uip_from_lecture() {
         None,
     );
     cdcl.history_enabled = true;
-    let conflict_literal = cdcl.set_var(false, false, 9, None);
+    let conflict_literal = cdcl.set_var(false, 9, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, false, 10, None);
+    let conflict_literal = cdcl.set_var(false, 10, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, true, 12, None);
+    let conflict_literal = cdcl.set_var(true, 12, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, true, 1, None);
+    let conflict_literal = cdcl.set_var(true, 1, None);
     cdcl.update_watched(conflict_literal);
     let conflict = cdcl.unit_prop();
     assert!(conflict);
     let conflict = cdcl.analyze_conflict().unwrap();
-    assert_eq!(conflict.clone().1, 1);
-    assert!(conflict.clone().0.vars.contains(&-4));
-    assert!(conflict.clone().0.vars.contains(&10));
+    assert_eq!(conflict.1, 1);
+    assert!(conflict.0.vars.contains(&-4));
+    assert!(conflict.0.vars.contains(&10));
     assert!(conflict.0.vars.contains(&11));
 }
 
@@ -1096,16 +1100,16 @@ fn should_set_var_1_true_watched_literals() {
         None,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
+    assert!(cdcl.lit_val.get(&1).unwrap().is_free);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let conflict_literal = cdcl.set_var(false, true, 1, None);
+    let conflict_literal = cdcl.set_var(true, 1, None);
     let c = cdcl.update_watched(conflict_literal);
     assert!(!c);
     assert_eq!(cdcl.free_lits.len(), 4);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().val, true);
+    assert!(!cdcl.lit_val.get(&1).unwrap().is_free);
+    assert!(cdcl.lit_val.get(&1).unwrap().val);
     assert_eq!(cdcl.unit_queue.len(), 1);
-    assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2)
+    assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2);
 }
 
 #[test]
@@ -1124,14 +1128,14 @@ fn should_set_var_neg_1_false_watched_literals() {
         None,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
+    assert!(cdcl.lit_val.get(&1).unwrap().is_free);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let conflict_literal = cdcl.set_var(false, false, -1, None);
+    let conflict_literal = cdcl.set_var(false, -1, None);
     let c = cdcl.update_watched(conflict_literal);
     assert!(!c);
     assert_eq!(cdcl.free_lits.len(), 4);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().val, true);
+    assert!(!cdcl.lit_val.get(&1).unwrap().is_free);
+    assert!(cdcl.lit_val.get(&1).unwrap().val);
     assert_eq!(cdcl.unit_queue.len(), 1);
     assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2);
 }
@@ -1152,16 +1156,16 @@ fn should_set_var_neg_1_true_watched_literals() {
         None,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
+    assert!(cdcl.lit_val.get(&1).unwrap().is_free);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let conflict_literal = cdcl.set_var(false, true, -1, None);
+    let conflict_literal = cdcl.set_var(true, -1, None);
     let c = cdcl.update_watched(conflict_literal);
     assert!(!c);
     assert_eq!(cdcl.free_lits.len(), 4);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().val, false);
+    assert!(!cdcl.lit_val.get(&1).unwrap().is_free);
+    assert!(!cdcl.lit_val.get(&1).unwrap().val);
     assert_eq!(cdcl.unit_queue.len(), 0);
-    assert_eq!(cdcl.clauses.get(&0).unwrap().watched_lhs, -2)
+    assert_eq!(cdcl.clauses.get(&0).unwrap().watched_lhs, -2);
 }
 
 #[test]
@@ -1180,16 +1184,16 @@ fn should_set_var_1_false_watched_literals() {
         None,
     );
     assert_eq!(cdcl.free_lits.len(), 6);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, true);
+    assert!(cdcl.lit_val.get(&1).unwrap().is_free);
     assert_eq!(cdcl.pos_watched_occ.get(&1).unwrap(), &vec![0]);
-    let conflict_literal = cdcl.set_var(false, true, -1, None);
+    let conflict_literal = cdcl.set_var(true, -1, None);
     let c = cdcl.update_watched(conflict_literal);
     assert!(!c);
     assert_eq!(cdcl.free_lits.len(), 4);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().is_free, false);
-    assert_eq!(cdcl.lit_val.get(&1).unwrap().val, false);
+    assert!(!cdcl.lit_val.get(&1).unwrap().is_free);
+    assert!(!cdcl.lit_val.get(&1).unwrap().val);
     assert_eq!(cdcl.unit_queue.len(), 0);
-    assert_eq!(cdcl.clauses.get(&0).unwrap().watched_lhs, -2)
+    assert_eq!(cdcl.clauses.get(&0).unwrap().watched_lhs, -2);
 }
 
 #[test]
@@ -1207,11 +1211,11 @@ fn should_detect_conflict_watched_literals() {
         10,
         None,
     );
-    let conflict_literal = cdcl.set_var(false, false, -1, None);
+    let conflict_literal = cdcl.set_var(false, -1, None);
     cdcl.update_watched(conflict_literal);
-    let conflict_literal = cdcl.set_var(false, false, 2, None);
+    let conflict_literal = cdcl.set_var(false, 2, None);
     let c = cdcl.update_watched(conflict_literal);
-    assert!(c)
+    assert!(c);
 }
 
 #[test]
@@ -1229,11 +1233,11 @@ fn should_detect_conflict_watched_literals_2() {
         10,
         None,
     );
-    let conflict_literal = cdcl.set_var(false, false, -1, None);
+    let conflict_literal = cdcl.set_var(false, -1, None);
     cdcl.update_watched(conflict_literal);
-    let conflict_literal = cdcl.set_var(false, false, -2, None);
+    let conflict_literal = cdcl.set_var(false, -2, None);
     let c_1 = cdcl.update_watched(conflict_literal);
-    let conflict_literal = cdcl.set_var(false, false, -3, None);
+    let conflict_literal = cdcl.set_var(false, -3, None);
     let c_2 = cdcl.update_watched(conflict_literal);
     assert!(!c_1);
     assert!(c_2);
@@ -1254,15 +1258,15 @@ fn should_unit_prop_watched_literals() {
         10,
         None,
     );
-    let conflict_literal = cdcl.set_var(false, false, -1, None);
+    let conflict_literal = cdcl.set_var(false, -1, None);
     cdcl.update_watched(conflict_literal);
     assert_eq!(cdcl.clauses.get(&2).unwrap().watched_lhs, -2);
-    let conflict_literal = cdcl.set_var(false, false, -2, None);
+    let conflict_literal = cdcl.set_var(false, -2, None);
     cdcl.update_watched(conflict_literal);
     assert_eq!(cdcl.unit_queue.len(), 2);
     cdcl.unit_prop();
-    assert_eq!(cdcl.lit_val.get(&3).unwrap().is_free, false);
-    assert_eq!(cdcl.lit_val.get(&3).unwrap().val, false);
+    assert!(!cdcl.lit_val.get(&3).unwrap().is_free);
+    assert!(!cdcl.lit_val.get(&3).unwrap().val);
 }
 
 #[test]
@@ -1281,7 +1285,7 @@ fn should_solve_sat_small() {
         None,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1338,7 +1342,7 @@ fn should_solve_sat() {
         None,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1479,7 +1483,7 @@ fn should_parse_and_solve_sat() {
         None,
     );
     let res = cdcl.solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1501,7 +1505,7 @@ fn should_parse_and_solve_sat_vsids() -> Result<(), Error> {
         None,
     );
     let res = cdcl.solve();
-    if let DIMACSOutput::Unsat = res? {
+    if matches!(res?, DIMACSOutput::Unsat) {
         panic!("Was UNSAT but expected SAT.")
     }
     Ok(())
@@ -1525,7 +1529,7 @@ fn should_parse_and_solve_unsat() {
     )
     .solve();
     if let Ok(DIMACSOutput::Sat(vars)) = res {
-        println!("{:?}", vars);
+        println!("{vars:?}");
         panic!("Was SAT but expected UNSAT.")
     }
 }
@@ -1548,7 +1552,7 @@ fn should_solve_regardless_of_clause_deletion_1() -> Result<(), Error> {
     )
     .solve();
     if let DIMACSOutput::Sat(vars) = res? {
-        println!("{:?}", vars);
+        println!("{vars:?}");
         panic!("Was SAT but expected UNSAT.")
     }
     Ok(())
@@ -1572,7 +1576,7 @@ fn should_solve_regardless_of_clause_deletion_2() -> Result<(), Error> {
     )
     .solve();
     if let DIMACSOutput::Sat(vars) = res? {
-        println!("{:?}", vars);
+        println!("{vars:?}");
         panic!("Was SAT but expected UNSAT.")
     }
     Ok(())
@@ -1594,7 +1598,7 @@ fn should_elim_pure_lit() {
         None,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1616,7 +1620,7 @@ fn should_be_sat_bug_jan_2nd_1() {
         None,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1638,7 +1642,7 @@ fn should_be_sat_bug_jan_2nd_2() {
         None,
     )
     .solve();
-    if let Ok(DIMACSOutput::Unsat) = res {
+    if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
 }
@@ -1664,7 +1668,7 @@ fn test_derive_and_add_conflict_clause() {
     cdcl.history_enabled = true;
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, true, 1, None);
+    let conflict_literal = cdcl.set_var(true, 1, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
 }
@@ -1687,7 +1691,7 @@ fn test_analyze_conflict() {
     cdcl.history_enabled = true;
     cdcl.branch_depth += 1;
     cdcl.literals_at_current_depth.clear();
-    let conflict_literal = cdcl.set_var(false, true, 1, None);
+    let conflict_literal = cdcl.set_var(true, 1, None);
     cdcl.update_watched(conflict_literal);
     cdcl.unit_prop();
 
@@ -1695,7 +1699,7 @@ fn test_analyze_conflict() {
     let result = cdcl.analyze_conflict();
     assert!(result.is_ok());
     let (conflict_clause, backtrack_level) = result.unwrap();
-    assert!(!conflict_clause.vars.is_empty());
+    assert_ne!(conflict_clause.vars, Vec::<i32>::new());
     assert_eq!(backtrack_level, 0);
     cdcl.unit_prop();
 }
@@ -1738,7 +1742,7 @@ fn testunsat() {
     )
     .solve();
     if let Ok(DIMACSOutput::Sat(vars)) = res {
-        println!("{:?}", vars);
+        println!("{vars:?}");
         panic!("Was SAT but expected UNSAT.")
     }
 }
@@ -1775,7 +1779,9 @@ fn should_return_valid_models_hashi_oct_2026() {
             }
             for clause in &input {
                 assert!(
-                    clause.iter().any(|&l| values[l.unsigned_abs() as usize] == (l > 0)),
+                    clause
+                        .iter()
+                        .any(|&l| values[l.unsigned_abs() as usize] == (l > 0)),
                     "model violates {clause:?}"
                 );
             }

@@ -1,7 +1,9 @@
 //! CNF formulas: DIMACS text, checking models and scrambling.
 
-use rand::{Rng, RngExt};
+use std::fmt::Write as _;
+
 use rand::seq::SliceRandom;
+use rand::{Rng, RngExt};
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Cnf {
@@ -11,7 +13,7 @@ pub struct Cnf {
 
 impl Cnf {
     pub fn new(vars: u32, clauses: Vec<Vec<i32>>) -> Self {
-        Cnf { vars, clauses }
+        Self { vars, clauses }
     }
 
     pub fn dimacs(&self, comment: &str) -> String {
@@ -21,7 +23,7 @@ impl Cnf {
             out.push_str(line);
             out.push('\n');
         }
-        out.push_str(&format!("p cnf {} {}\n", self.vars, self.clauses.len()));
+        let _ = writeln!(out, "p cnf {} {}", self.vars, self.clauses.len());
         for clause in &self.clauses {
             for lit in clause {
                 out.push_str(&lit.to_string());
@@ -49,21 +51,26 @@ impl Cnf {
             value[v] = want;
         }
         Some(self.clauses.iter().all(|c| {
-            c.iter().any(|&l| value[l.unsigned_abs() as usize] == if l > 0 { 1 } else { 2 })
+            c.iter()
+                .any(|&l| value[l.unsigned_abs() as usize] == if l > 0 { 1 } else { 2 })
         }))
     }
 
     /// Renames and negates variables at random and shuffles clauses and literals, so the
     /// formula can't be recognised by its layout. Returns the new formula and the literal
     /// that each old variable became, to carry a model over.
-    pub fn scramble<R: Rng + ?Sized>(&self, rng: &mut R) -> (Cnf, Vec<i32>) {
-        let mut names: Vec<i32> = (1..=self.vars as i32).collect();
+    pub fn scramble<R: Rng + ?Sized>(&self, rng: &mut R) -> (Self, Vec<i32>) {
+        let vars = i32::try_from(self.vars).expect("variables are i32 literals");
+        let mut names: Vec<i32> = (1..=vars).collect();
         names.shuffle(rng);
         let mut map = vec![0i32; self.vars as usize + 1];
         for (old, new) in (1..=self.vars as usize).zip(names) {
             map[old] = if rng.random_bool(0.5) { new } else { -new };
         }
-        let rename = |l: i32| if l > 0 { map[l as usize] } else { -map[(-l) as usize] };
+        let rename = |l: i32| {
+            let renamed = map[l.unsigned_abs() as usize];
+            if l > 0 { renamed } else { -renamed }
+        };
         let mut clauses: Vec<Vec<i32>> = self
             .clauses
             .iter()
@@ -74,13 +81,18 @@ impl Cnf {
             })
             .collect();
         clauses.shuffle(rng);
-        (Cnf::new(self.vars, clauses), map)
+        (Self::new(self.vars, clauses), map)
     }
 }
 
 /// A model (`model[v]` for v in 1..) as literals.
 pub fn literals(model: &[bool]) -> Vec<i32> {
-    (1..model.len()).map(|v| if model[v] { v as i32 } else { -(v as i32) }).collect()
+    (1..model.len())
+        .map(|v| {
+            let l = i32::try_from(v).expect("variables are i32 literals");
+            if model[v] { l } else { -l }
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -107,7 +119,10 @@ mod tests {
         let (scrambled, map) = cnf.scramble(&mut StdRng::seed_from_u64(7));
         let model: Vec<i32> = [1, 2, -3]
             .iter()
-            .map(|&l: &i32| if l > 0 { map[l as usize] } else { -map[(-l) as usize] })
+            .map(|&l: &i32| {
+                let renamed = map[l.unsigned_abs() as usize];
+                if l > 0 { renamed } else { -renamed }
+            })
             .collect();
         assert_eq!(scrambled.check(&model), Some(true));
         assert!(scrambled.dimacs("x").starts_with("c x\np cnf 3 3\n"));

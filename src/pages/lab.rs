@@ -1,6 +1,6 @@
 use common::{
-    Board, Difficulty, GenerateParams, Heuristic, Puzzle, Restarts, SolveOutcome, SolveReport, SolverConfig,
-    SolverKind,
+    Board, Difficulty, GenerateParams, Heuristic, Puzzle, Restarts, SolveOutcome, SolveReport,
+    SolverConfig, SolverKind,
 };
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -42,8 +42,16 @@ fn presets() -> Vec<SolverConfig> {
     let mut list = vec![
         cdcl(Heuristic::Vsids, luby, false),
         cdcl(Heuristic::Vsids, Restarts::None, false),
-        cdcl(Heuristic::Vsids, Restarts::from_id("geometric").unwrap_or_default(), false),
-        cdcl(Heuristic::Vsids, Restarts::from_id("fixed").unwrap_or_default(), false),
+        cdcl(
+            Heuristic::Vsids,
+            Restarts::from_id("geometric").unwrap_or_default(),
+            false,
+        ),
+        cdcl(
+            Heuristic::Vsids,
+            Restarts::from_id("fixed").unwrap_or_default(),
+            false,
+        ),
         cdcl(Heuristic::Vsids, luby, true),
         cdcl(Heuristic::Arbitrary, luby, false),
     ];
@@ -68,7 +76,11 @@ enum PuzzleSource {
 }
 
 fn fmt_ms(ms: f64) -> String {
-    if ms < 1000.0 { format!("{ms:.1} ms") } else { format!("{:.2} s", ms / 1000.0) }
+    if ms < 1000.0 {
+        format!("{ms:.1} ms")
+    } else {
+        format!("{:.2} s", ms / 1000.0)
+    }
 }
 
 #[component]
@@ -81,7 +93,9 @@ pub fn LabPage() -> impl IntoView {
     let presets = presets();
     let default_on = [0usize, 1, 2, 4, 6, 9, 11, 14];
     let selected = RwSignal::new(
-        (0..presets.len()).map(|i| default_on.contains(&i)).collect::<Vec<bool>>(),
+        (0..presets.len())
+            .map(|i| default_on.contains(&i))
+            .collect::<Vec<bool>>(),
     );
     let source = RwSignal::new(PuzzleSource::Game);
     let fresh = RwSignal::new(None::<Puzzle>);
@@ -90,13 +104,16 @@ pub fn LabPage() -> impl IntoView {
     let running = RwSignal::new(false);
     let presets = StoredValue::new(presets);
 
-    let puzzle = Memo::new(move |_| match source.get() {
-        PuzzleSource::Game => Some(game.board.with(|b| b.puzzle.clone())),
-        PuzzleSource::Workshop => Some(editor.puzzle.get()),
-        PuzzleSource::Fresh => fresh.get(),
-    }
-    .filter(|p| !p.islands.is_empty()));
-    let preview = Signal::derive(move || Board::new(puzzle.get().unwrap_or_else(|| Puzzle::empty(8, 8))));
+    let puzzle = Memo::new(move |_| {
+        match source.get() {
+            PuzzleSource::Game => Some(game.board.with(|b| b.puzzle.clone())),
+            PuzzleSource::Workshop => Some(editor.puzzle.get()),
+            PuzzleSource::Fresh => fresh.get(),
+        }
+        .filter(|p| !p.islands.is_empty())
+    });
+    let preview =
+        Signal::derive(move || Board::new(puzzle.get().unwrap_or_else(|| Puzzle::empty(8, 8))));
     let preview_bridges = Signal::derive(move || preview.with(Board::empty_bridges));
 
     let generate = move |difficulty: Difficulty| {
@@ -127,7 +144,9 @@ pub fn LabPage() -> impl IntoView {
 
     let race = move |_| {
         let Some(puzzle) = puzzle.get_untracked() else {
-            toast(ToastKind::Info, |l| td_string!(l, lab.toast.pick_puzzle).to_string());
+            toast(ToastKind::Info, |l| {
+                td_string!(l, lab.toast.pick_puzzle).to_string()
+            });
             return;
         };
         let configs: Vec<SolverConfig> = presets.with_value(|p| {
@@ -143,7 +162,9 @@ pub fn LabPage() -> impl IntoView {
             })
         });
         if configs.is_empty() {
-            toast(ToastKind::Info, |l| td_string!(l, lab.toast.pick_solver).to_string());
+            toast(ToastKind::Info, |l| {
+                td_string!(l, lab.toast.pick_solver).to_string()
+            });
             return;
         }
         runs.set(configs.iter().map(|c| (*c, RunState::Queued)).collect());
@@ -240,14 +261,12 @@ pub fn LabPage() -> impl IntoView {
                             <CardDescription>
                                 {move || {
                                     puzzle
-                                        .get()
-                                        .map(|p| {
+                                        .get().map_or_else(|| t_string!(i18n, lab.puzzle.none).to_string(), |p| {
                                             t_string!(
                                                 i18n, lab.puzzle.size, width = p.width, height = p.height, count = p.islands.len()
                                             )
-                                                .to_string()
+
                                         })
-                                        .unwrap_or_else(|| t_string!(i18n, lab.puzzle.none).to_string())
                                 }}
                             </CardDescription>
                         </CardHeader>
@@ -306,7 +325,7 @@ pub fn LabPage() -> impl IntoView {
                                         view! {
                                             <TabsContent value=kind.id() class="flex flex-col gap-1.5">
                                                 {presets
-                                                    .with_value(|p| p.clone())
+                                                    .with_value(Clone::clone)
                                                     .into_iter()
                                                     .enumerate()
                                                     .filter(|(_, c)| c.kind == kind)
@@ -455,8 +474,8 @@ pub fn LabPage() -> impl IntoView {
                                                             (
                                                                 fmt_ms(total),
                                                                 (total / max * 100.0).clamp(2.0, 100.0),
-                                                                r.stats.decisions.map_or("—".into(), |d| d.to_string()),
-                                                                r.stats.restarts.map_or("—".into(), |d| d.to_string()),
+                                                                r.stats.decisions.map_or_else(|| "—".into(), |d| d.to_string()),
+                                                                r.stats.restarts.map_or_else(|| "—".into(), |d| d.to_string()),
                                                                 r.stats.sat_calls.to_string(),
                                                             )
                                                         }
@@ -465,11 +484,11 @@ pub fn LabPage() -> impl IntoView {
                                                     let summary = if decisions.is_empty() {
                                                         String::new()
                                                     } else {
-                                                        let mut parts = vec![t_string!(i18n, lab.summary.decisions, count = decisions.clone()).to_string()];
+                                                        let mut parts = vec![t_string!(i18n, lab.summary.decisions, count = decisions.clone())];
                                                         if restarts != "—" {
-                                                            parts.push(t_string!(i18n, lab.summary.restarts, count = restarts.clone()).to_string());
+                                                            parts.push(t_string!(i18n, lab.summary.restarts, count = restarts.clone()));
                                                         }
-                                                        parts.push(t_string!(i18n, lab.summary.calls, count = calls.clone()).to_string());
+                                                        parts.push(t_string!(i18n, lab.summary.calls, count = calls.clone()));
                                                         parts.join(" · ")
                                                     };
                                                     view! {

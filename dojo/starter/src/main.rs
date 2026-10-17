@@ -43,7 +43,12 @@ impl Solver {
                 occurs[l as usize].push(i);
             }
         }
-        Solver { clauses, occurs, value: vec![0; vars + 1], trail: Vec::new() }
+        Solver {
+            clauses,
+            occurs,
+            value: vec![0; vars + 1],
+            trail: Vec::new(),
+        }
     }
 
     fn is_true(&self, l: Lit) -> bool {
@@ -100,7 +105,9 @@ impl Solver {
 
     /// The first unassigned variable. Your first improvement: a better heuristic!
     fn pick(&self) -> Option<Lit> {
-        (1..self.value.len()).find(|&v| self.value[v] == 0).map(|v| 2 * v as u32)
+        (1..self.value.len())
+            .find(|&v| self.value[v] == 0)
+            .map(|v| 2 * v as u32)
     }
 
     fn solve(&mut self) -> bool {
@@ -139,7 +146,9 @@ impl Solver {
 
 fn main() {
     let mut text = String::new();
-    std::io::stdin().read_to_string(&mut text).expect("could not read stdin");
+    std::io::stdin()
+        .read_to_string(&mut text)
+        .expect("could not read stdin");
     let mut vars = 0;
     let mut clauses = Vec::new();
     let mut clause = Vec::new();
@@ -148,10 +157,17 @@ fn main() {
             continue;
         }
         if let Some(header) = line.strip_prefix("p cnf") {
-            vars = header.split_whitespace().next().and_then(|v| v.parse().ok()).unwrap_or(0);
+            vars = header
+                .split_whitespace()
+                .next()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0);
             continue;
         }
-        for n in line.split_whitespace().filter_map(|t| t.parse::<i32>().ok()) {
+        for n in line
+            .split_whitespace()
+            .filter_map(|t| t.parse::<i32>().ok())
+        {
             if n == 0 {
                 clauses.push(std::mem::take(&mut clause));
             } else {

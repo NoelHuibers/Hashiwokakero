@@ -1,20 +1,19 @@
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
 use crate::api::{all_time_leaderboard, archived_daily, daily_leaderboard};
+use crate::components::layout::use_localized;
 use crate::components::leaderboard::{LeaderboardTable, RankCell};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
-use crate::model::{
-    AllTimeEntry, LAUNCH_DAY, Leaderboard, WEEKDAY_KANJI, daily_number, weekday,
-};
-use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name, error_text};
-use crate::state::{Game, Source, ToastKind, toast};
+use crate::model::{AllTimeEntry, LAUNCH_DAY, Leaderboard, WEEKDAY_KANJI, daily_number, weekday};
 use crate::seo::PageMeta;
+use crate::state::{Game, Source, ToastKind, toast};
 
 #[component]
 pub fn RanksPage() -> impl IntoView {
@@ -74,11 +73,17 @@ pub fn RanksPage() -> impl IntoView {
                         puzzle,
                         None,
                         Some(true),
-                        Source::Imported(td_string!(i18n.get_locale_untracked(), ranks.archive_name, number = daily_number(d)).to_string()),
+                        Source::Imported(td_string!(
+                            i18n.get_locale_untracked(),
+                            ranks.archive_name,
+                            number = daily_number(d)
+                        )),
                     );
-                    navigate(&practice_path(), Default::default());
+                    navigate(&practice_path(), NavigateOptions::default());
                 }
-                Ok(None) => toast(ToastKind::Info, |l| td_string!(l, ranks.no_puzzle).to_string()),
+                Ok(None) => toast(ToastKind::Info, |l| {
+                    td_string!(l, ranks.no_puzzle).to_string()
+                }),
                 Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
         });
@@ -118,7 +123,7 @@ pub fn RanksPage() -> impl IntoView {
                                     <CardTitle class="text-xl">
                                         {move || {
                                             shown_day()
-                                                .map(|d| t_string!(i18n, daily.title, number = daily_number(d)).to_string())
+                                                .map(|d| t_string!(i18n, daily.title, number = daily_number(d)))
                                                 .unwrap_or_default()
                                         }}
                                     </CardTitle>

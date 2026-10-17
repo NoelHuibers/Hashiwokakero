@@ -3,23 +3,34 @@ use leptos::prelude::*;
 
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::{Petals, Stamp};
-use crate::components::sprites::{BOAT, PixelSprite};
+use crate::components::layout::use_localized;
+use crate::components::share::ShareBar;
 use crate::components::solver_panel::{PanelButton, SolverPanel};
+use crate::components::sprites::{BOAT, PixelSprite};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::progress::Progress;
-use crate::state::{
-    self, Game, Settings, Source, Status, format_time, random_seed,
-};
-use crate::components::layout::use_localized;
-use crate::components::share::ShareBar;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{difficulty_name, localized};
 use crate::seo::PageMeta;
+use crate::state::{self, Game, Settings, Source, Status, format_time, random_seed};
 
-fn new_random(game: Game, difficulty: Difficulty) {
+/// Share of the islands that are done, for the progress bar.
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "island counts are tiny, far below f64's 52-bit mantissa"
+)]
+pub fn islands_percent(done: usize, total: usize) -> f64 {
+    if total == 0 {
+        0.0
+    } else {
+        done as f64 / total as f64 * 100.0
+    }
+}
+
+fn new_random(game: &Game, difficulty: Difficulty) {
     let (width, height) = difficulty.size();
     let params = GenerateParams {
         width,
@@ -27,11 +38,15 @@ fn new_random(game: Game, difficulty: Difficulty) {
         difficulty,
         seed: random_seed(),
     };
-    state::new_puzzle(game, params, Source::Generated(params));
+    state::new_puzzle(*game, params, Source::Generated(params));
 }
 
 #[component]
-fn Stat(#[prop(into)] label: Signal<String>, jp: &'static str, #[prop(into)] value: Signal<String>) -> impl IntoView {
+fn Stat(
+    #[prop(into)] label: Signal<String>,
+    jp: &'static str,
+    #[prop(into)] value: Signal<String>,
+) -> impl IntoView {
     view! {
         <div class="flex min-w-[4.5rem] flex-col items-center rounded-lg border bg-card px-3 py-1.5 shadow-xs">
             <span class="font-pixel text-xl tabular-nums leading-tight">{move || value.get()}</span>
@@ -101,7 +116,7 @@ fn NewGameCard() -> impl IntoView {
                     <Button
                         class="flex-1"
                         attr:disabled=move || game.loading.get()
-                        on:click=move |_| new_random(game, settings.difficulty.get_untracked())
+                        on:click=move |_| new_random(&game, settings.difficulty.get_untracked())
                     >
                         {move || if game.loading.get() { t_string!(i18n, practice.generating).to_string() } else { format!("{} 生成", t_string!(i18n, practice.generate)) }}
                     </Button>
@@ -213,7 +228,7 @@ fn WinOverlay() -> impl IntoView {
                         )}
                     </p>
                     <div class="flex w-full flex-wrap justify-center gap-2 pt-1">
-                        <Button on:click=move |_| new_random(game, settings.difficulty.get_untracked())>
+                        <Button on:click=move |_| new_random(&game, settings.difficulty.get_untracked())>
                             {t!(i18n, practice.next)} " 次へ"
                         </Button>
                         <Button variant=ButtonVariant::Ghost on:click=move |_| dismissed.set(true)>
@@ -238,7 +253,7 @@ fn WinOverlay() -> impl IntoView {
                     <Button
                         size=ButtonSize::Sm
                         variant=ButtonVariant::Outline
-                        on:click=move |_| new_random(game, settings.difficulty.get_untracked())
+                        on:click=move |_| new_random(&game, settings.difficulty.get_untracked())
                     >
                         {t!(i18n, practice.new_puzzle)}
                     </Button>
@@ -260,7 +275,7 @@ pub fn PlayPage() -> impl IntoView {
     // First visit: restore the saved game or generate one
     Effect::new(move |first: Option<()>| {
         if first.is_none() && !game.ensure_restored() {
-            new_random(game, settings.difficulty.get_untracked());
+            new_random(&game, settings.difficulty.get_untracked());
         }
     });
 
@@ -270,7 +285,9 @@ pub fn PlayPage() -> impl IntoView {
             let target_is_input = ev
                 .target()
                 .and_then(|t| wasm_bindgen::JsCast::dyn_into::<web_sys::Element>(t).ok())
-                .is_some_and(|el| matches!(el.tag_name().as_str(), "INPUT" | "SELECT" | "TEXTAREA"));
+                .is_some_and(|el| {
+                    matches!(el.tag_name().as_str(), "INPUT" | "SELECT" | "TEXTAREA")
+                });
             if target_is_input {
                 return;
             }
@@ -316,7 +333,7 @@ pub fn PlayPage() -> impl IntoView {
                         <div class="flex items-center gap-3">
                             <span class="vertical-jp hidden font-pixel text-sm leading-none text-primary sm:block">
                                 {move || {
-                                    game.source.with(|s| s.difficulty()).map(|d| d.kanji()).unwrap_or("自作")
+                                    game.source.with(Source::difficulty).map_or("自作", Difficulty::kanji)
                                 }}
                             </span>
                             <div>
@@ -341,7 +358,7 @@ pub fn PlayPage() -> impl IntoView {
                                         None => ().into_any(),
                                     }}
                                     <Badge variant=BadgeVariant::Muted>
-                                        {move || t_string!(i18n, common.game.islands, count = island_count.get()).to_string()}
+                                        {move || t_string!(i18n, common.game.islands, count = island_count.get())}
                                     </Badge>
                                 </div>
                             </div>
@@ -389,7 +406,7 @@ pub fn PlayPage() -> impl IntoView {
                                 {move || {
                                     let c = check.get();
                                     if c.components > 1 {
-                                        t_string!(i18n, common.game.groups, count = c.components).to_string()
+                                        t_string!(i18n, common.game.groups, count = c.components)
                                     } else {
                                         t_string!(i18n, common.game.all_connected).to_string()
                                     }
@@ -398,8 +415,7 @@ pub fn PlayPage() -> impl IntoView {
                         </div>
                         <Progress
                             value=Signal::derive(move || {
-                                let n = island_count.get();
-                                if n == 0 { 0.0 } else { islands_done.get() as f64 / n as f64 * 100.0 }
+                                islands_percent(islands_done.get(), island_count.get())
                             })
                             class="h-2.5"
                         />
@@ -452,19 +468,19 @@ pub fn PlayPage() -> impl IntoView {
                         <PanelButton
                             primary=true
                             disabled=busy
-                            on_click=Callback::new(move |_| state::reveal(game, settings))
+                            on_click=Callback::new(move |()| state::reveal(game, settings))
                         >
                             {t!(i18n, common.game.solve)} " 解く"
                         </PanelButton>
                         <PanelButton
                             disabled=busy
-                            on_click=Callback::new(move |_| state::check_unique(game, settings))
+                            on_click=Callback::new(move |()| state::check_unique(game, settings))
                         >
                             {t!(i18n, common.game.unique)}
                         </PanelButton>
                         <PanelButton
                             disabled=busy
-                            on_click=Callback::new(move |_| crate::pages::download_cnf(game.puzzle()))
+                            on_click=Callback::new(move |()| crate::pages::download_cnf(game.puzzle()))
                         >
                             "CNF ↓"
                         </PanelButton>
@@ -480,11 +496,11 @@ pub fn PlayPage() -> impl IntoView {
 /// the search engine itself, the board is just an SVG to it).
 #[component]
 pub fn SeoIntro() -> impl IntoView {
+    const LINK: &str = "font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
     let i18n = use_i18n();
     let rules = use_localized("/rules");
     let create = use_localized("/create");
     let lab = use_localized("/lab");
-    const LINK: &str = "font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
     view! {
         <article class="mx-auto max-w-7xl px-4 pb-4 pt-10 sm:px-6">
             <div class="mb-6 flex items-end gap-3">

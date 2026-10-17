@@ -9,3 +9,6 @@ publish = false
 [dependencies]
 backend = { path = "../../backend" }
 common = { path = "../../common" }
+
+[lints]
+workspace = true

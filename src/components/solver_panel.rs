@@ -1,3 +1,5 @@
+use std::fmt::Write as _;
+
 use common::{Heuristic, Restarts, SolveOutcome, SolveReport, SolverConfig, SolverKind};
 use leptos::prelude::*;
 
@@ -12,7 +14,12 @@ use crate::i18n::{t, t_string, use_i18n};
 use crate::lang::{restarts_name, solver_name};
 use crate::state::Settings;
 
-const TIMEOUTS: [(u32, &str); 4] = [(2_000, "2 s"), (5_000, "5 s"), (10_000, "10 s"), (20_000, "20 s")];
+const TIMEOUTS: [(u32, &str); 4] = [
+    (2_000, "2 s"),
+    (5_000, "5 s"),
+    (10_000, "10 s"),
+    (20_000, "20 s"),
+];
 
 /// Solver, heuristic, restart policy and preprocessing options.
 #[component]
@@ -25,7 +32,7 @@ pub fn SolverOptions() -> impl IntoView {
         config.update(|c| {
             f(c);
             *c = c.normalized();
-        })
+        });
     };
 
     let subsumption = RwSignal::new(config.get_untracked().subsumption);
@@ -154,7 +161,7 @@ fn fmt_ms(ms: f64) -> String {
     }
 }
 
-fn fmt_int(n: usize) -> String {
+fn fmt_int(n: impl std::fmt::Display) -> String {
     let s = n.to_string();
     let mut out = String::new();
     for (i, c) in s.chars().enumerate() {
@@ -170,10 +177,10 @@ fn fmt_int(n: usize) -> String {
 fn command_line(config: &SolverConfig) -> String {
     let mut cmd = format!("hashi solve --solver {}", config.kind.id());
     if !config.kind.heuristics().is_empty() {
-        cmd.push_str(&format!(" -H {}", config.heuristic.id()));
+        let _ = write!(cmd, " -H {}", config.heuristic.id());
     }
     if config.kind.supports_restarts() {
-        cmd.push_str(&format!(" --restarts {}", config.restarts.id()));
+        let _ = write!(cmd, " --restarts {}", config.restarts.id());
     }
     if config.subsumption {
         cmd.push_str(" --subsumption");
@@ -238,8 +245,8 @@ pub fn SolverTerminal(
                         {row("clauses", fmt_int(s.clauses))}
                         {row("encode", fmt_ms(s.encode_ms))}
                         {row("solve", fmt_ms(s.solve_ms))}
-                        {s.decisions.map(|d| row("decisions", fmt_int(d as usize)))}
-                        {s.restarts.map(|d| row("restarts", fmt_int(d as usize)))}
+                        {s.decisions.map(|d| row("decisions", fmt_int(d)))}
+                        {s.restarts.map(|d| row("restarts", fmt_int(d)))}
                         {row(
                             "sat calls",
                             format!(

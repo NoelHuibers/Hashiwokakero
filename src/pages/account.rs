@@ -7,9 +7,9 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::input::{Input, InputType};
 use crate::components::ui::label::Label;
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
-use crate::model::{UserStats, date_string, format_duration};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_short, error_text};
+use crate::model::{UserStats, date_string, format_duration};
 use crate::state::{Auth, ToastKind, toast};
 use leptos_meta::{Meta, Title};
 
@@ -27,7 +27,16 @@ fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl IntoView {
     let password = RwSignal::new(String::new());
     let busy = RwSignal::new(false);
     let error = RwSignal::new(None::<String>);
-    let id = |field: &str| format!("{}-{field}", if mode == Mode::SignIn { "login" } else { "register" });
+    let id = |field: &str| {
+        format!(
+            "{}-{field}",
+            if mode == Mode::SignIn {
+                "login"
+            } else {
+                "register"
+            }
+        )
+    };
 
     let submit = move |ev: leptos::ev::SubmitEvent| {
         ev.prevent_default();
@@ -46,7 +55,10 @@ fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl IntoView {
                 Ok(user) => {
                     let name = user.name.clone();
                     toast(ToastKind::Success, move |l| {
-                        format!("{} ようこそ", td_string!(l, account.welcome, name = name.clone()))
+                        format!(
+                            "{} ようこそ",
+                            td_string!(l, account.welcome, name = name.clone())
+                        )
                     });
                     auth.user.set(Some(user));
                     password.set(String::new());
@@ -172,7 +184,9 @@ pub fn AccountPage() -> impl IntoView {
                 Ok(()) => {
                     auth.user.set(None);
                     stats.set(None);
-                    toast(ToastKind::Info, |l| format!("{} またね!", td_string!(l, account.signed_out)));
+                    toast(ToastKind::Info, |l| {
+                        format!("{} またね!", td_string!(l, account.signed_out))
+                    });
                 }
                 Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
@@ -189,7 +203,7 @@ pub fn AccountPage() -> impl IntoView {
                 <p class="font-pixel text-sm text-primary">"自分 · jibun"</p>
                 <h1 class="text-3xl font-black">
                     {move || match auth.user.get() {
-                        Some(u) if !u.guest => t_string!(i18n, account.hello, name = u.name).to_string(),
+                        Some(u) if !u.guest => t_string!(i18n, account.hello, name = u.name),
                         _ => t_string!(i18n, account.title).to_string(),
                     }}
                 </h1>
@@ -203,13 +217,13 @@ pub fn AccountPage() -> impl IntoView {
                         </CardTitle>
                         <CardDescription>
                             {move || match auth.user.get() {
-                                Some(u) if u.guest => t_string!(i18n, account.guest_here, name = u.name).to_string(),
+                                Some(u) if u.guest => t_string!(i18n, account.guest_here, name = u.name),
                                 Some(u) => t_string!(
                                     i18n,
                                     account.member_since,
                                     date = date_short(i18n.get_locale(), u.created_at.div_euclid(crate::model::MS_PER_DAY))
                                 )
-                                .to_string(),
+                                ,
                                 None => t_string!(i18n, account.no_record).to_string(),
                             }}
                         </CardDescription>
@@ -225,12 +239,12 @@ pub fn AccountPage() -> impl IntoView {
                                         <StatTile
                                             label=t_string!(i18n, account.stats.fastest).to_string()
                                             jp="最速"
-                                            value=s.best_time_ms.map(format_duration).unwrap_or("–".into())
+                                            value=s.best_time_ms.map_or_else(|| "–".into(), format_duration)
                                         />
                                         <StatTile
                                             label=t_string!(i18n, account.stats.average).to_string()
                                             jp="平均"
-                                            value=s.average_time_ms.map(format_duration).unwrap_or("–".into())
+                                            value=s.average_time_ms.map_or_else(|| "–".into(), format_duration)
                                         />
                                         <StatTile
                                             label=t_string!(i18n, account.stats.week).to_string()

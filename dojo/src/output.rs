@@ -30,7 +30,10 @@ pub fn parse(stdout: &str) -> Claim {
                 return Claim::Malformed;
             }
             status = Some(s.trim().to_string());
-        } else if let Some(v) = line.strip_prefix("v ").or((line == "v").then_some("")) {
+        } else if let Some(v) = line
+            .strip_prefix("v ")
+            .or_else(|| (line == "v").then_some(""))
+        {
             for token in v.split_whitespace() {
                 match token.parse::<i32>() {
                     Ok(0) => ended = true,
@@ -49,7 +52,9 @@ pub fn parse(stdout: &str) -> Claim {
     }
 }
 
-/// Judges a claim. Models are always checked; UNSAT is accepted when the formula is known to
+/// Judges a claim.
+///
+/// Models are always checked; UNSAT is accepted when the formula is known to
 /// be unsatisfiable. A model for a formula we believed unsatisfiable still counts (it is
 /// checked, so the solver is right and our label was wrong).
 pub fn judge(cnf: &Cnf, expected: Answer, claim: &Claim) -> Outcome {
@@ -59,9 +64,8 @@ pub fn judge(cnf: &Cnf, expected: Answer, claim: &Claim) -> Outcome {
             _ => Outcome::Wrong,
         },
         Claim::Unsat if expected == Answer::Unsat => Outcome::Solved(Answer::Unsat),
-        Claim::Unsat => Outcome::Wrong,
         Claim::Unknown => Outcome::Unknown,
-        Claim::Malformed => Outcome::Wrong,
+        Claim::Unsat | Claim::Malformed => Outcome::Wrong,
     }
 }
 
@@ -71,7 +75,10 @@ mod tests {
 
     #[test]
     fn parses_competition_output() {
-        assert_eq!(parse("c hi\ns SATISFIABLE\nv 1 -2\nv 3 0\n"), Claim::Sat(vec![1, -2, 3]));
+        assert_eq!(
+            parse("c hi\ns SATISFIABLE\nv 1 -2\nv 3 0\n"),
+            Claim::Sat(vec![1, -2, 3])
+        );
         assert_eq!(parse("s UNSATISFIABLE\n"), Claim::Unsat);
         assert_eq!(parse("s UNKNOWN\n"), Claim::Unknown);
         assert_eq!(parse(""), Claim::Unknown);
@@ -84,11 +91,23 @@ mod tests {
     #[test]
     fn judges() {
         let cnf = Cnf::new(2, vec![vec![1, 2], vec![-1]]);
-        assert_eq!(judge(&cnf, Answer::Sat, &Claim::Sat(vec![-1, 2])), Outcome::Solved(Answer::Sat));
-        assert_eq!(judge(&cnf, Answer::Sat, &Claim::Sat(vec![1, 2])), Outcome::Wrong);
+        assert_eq!(
+            judge(&cnf, Answer::Sat, &Claim::Sat(vec![-1, 2])),
+            Outcome::Solved(Answer::Sat)
+        );
+        assert_eq!(
+            judge(&cnf, Answer::Sat, &Claim::Sat(vec![1, 2])),
+            Outcome::Wrong
+        );
         assert_eq!(judge(&cnf, Answer::Sat, &Claim::Unsat), Outcome::Wrong);
-        assert_eq!(judge(&cnf, Answer::Unsat, &Claim::Unsat), Outcome::Solved(Answer::Unsat));
-        assert_eq!(judge(&cnf, Answer::Unsat, &Claim::Sat(vec![-1, 2])), Outcome::Solved(Answer::Sat));
+        assert_eq!(
+            judge(&cnf, Answer::Unsat, &Claim::Unsat),
+            Outcome::Solved(Answer::Unsat)
+        );
+        assert_eq!(
+            judge(&cnf, Answer::Unsat, &Claim::Sat(vec![-1, 2])),
+            Outcome::Solved(Answer::Sat)
+        );
         assert_eq!(judge(&cnf, Answer::Sat, &Claim::Unknown), Outcome::Unknown);
     }
 }

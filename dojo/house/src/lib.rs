@@ -17,10 +17,17 @@ pub fn parse(text: &str) -> (Vec<Vec<i32>>, usize) {
             continue;
         }
         if let Some(header) = line.strip_prefix("p cnf") {
-            vars = header.split_whitespace().next().and_then(|v| v.parse().ok()).unwrap_or(0);
+            vars = header
+                .split_whitespace()
+                .next()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0);
             continue;
         }
-        for lit in line.split_whitespace().filter_map(|t| t.parse::<i32>().ok()) {
+        for lit in line
+            .split_whitespace()
+            .filter_map(|t| t.parse::<i32>().ok())
+        {
             if lit == 0 {
                 clauses.push(std::mem::take(&mut clause));
             } else {
@@ -33,7 +40,9 @@ pub fn parse(text: &str) -> (Vec<Vec<i32>>, usize) {
 
 pub fn run(config: SolverConfig) {
     let mut text = String::new();
-    std::io::stdin().read_to_string(&mut text).expect("could not read stdin");
+    std::io::stdin()
+        .read_to_string(&mut text)
+        .expect("could not read stdin");
     let (clauses, vars) = parse(&text);
     let mut out = std::io::stdout().lock();
     let _ = match solve_clauses(&clauses, vars, &config, None) {

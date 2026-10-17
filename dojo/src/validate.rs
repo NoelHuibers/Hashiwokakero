@@ -15,17 +15,21 @@ pub fn validate(wasm: &[u8]) -> Result<(), Rejection> {
     let invalid = |e: wasmparser::BinaryReaderError| Rejection::Invalid(e.message().to_string());
     // Validated with the features the sandbox allows (no threads, no 64-bit memories, ...)
     let mut features = wasmparser::WasmFeatures::default();
-    features.remove(wasmparser::WasmFeatures::THREADS | wasmparser::WasmFeatures::SHARED_EVERYTHING_THREADS);
+    features.remove(
+        wasmparser::WasmFeatures::THREADS | wasmparser::WasmFeatures::SHARED_EVERYTHING_THREADS,
+    );
     features.remove(wasmparser::WasmFeatures::MEMORY64 | wasmparser::WasmFeatures::MULTI_MEMORY);
     features.remove(wasmparser::WasmFeatures::COMPONENT_MODEL);
-    wasmparser::Validator::new_with_features(features).validate_all(wasm).map_err(invalid)?;
+    wasmparser::Validator::new_with_features(features)
+        .validate_all(wasm)
+        .map_err(invalid)?;
 
-    let (mut types, mut has_imports, mut has_start) = (0u32, false, false);
+    let (mut types, mut has_imports, mut has_start) = (0usize, false, false);
     for payload in Parser::new(0).parse_all(wasm) {
         match payload.map_err(invalid)? {
             Payload::TypeSection(section) => {
                 for group in section {
-                    types += group.map_err(invalid)?.types().len() as u32;
+                    types += group.map_err(invalid)?.types().len();
                 }
             }
             Payload::ImportSection(section) => {
@@ -33,14 +37,18 @@ pub fn validate(wasm: &[u8]) -> Result<(), Rejection> {
                 for import in section {
                     let import = import.map_err(invalid)?;
                     if import.module != WASI {
-                        return Err(Rejection::Import(format!("{}.{}", import.module, import.name)));
+                        return Err(Rejection::Import(format!(
+                            "{}.{}",
+                            import.module, import.name
+                        )));
                     }
                 }
             }
             Payload::ExportSection(section) => {
                 for export in section {
                     let export = export.map_err(invalid)?;
-                    has_start |= export.name == "_start" && export.kind == wasmparser::ExternalKind::Func;
+                    has_start |=
+                        export.name == "_start" && export.kind == wasmparser::ExternalKind::Func;
                 }
             }
             _ => {}
@@ -50,7 +58,9 @@ pub fn validate(wasm: &[u8]) -> Result<(), Rejection> {
         return Err(Rejection::NoStart);
     }
     if !has_imports || types == 0 {
-        return Err(Rejection::Invalid("the module doesn't use WASI, so it can't print an answer".into()));
+        return Err(Rejection::Invalid(
+            "the module doesn't use WASI, so it can't print an answer".into(),
+        ));
     }
     Ok(())
 }
@@ -74,12 +84,12 @@ mod tests {
     #[test]
     fn rejects_bad_submissions() {
         assert!(matches!(validate(b"not wasm"), Err(Rejection::Invalid(_))));
-        let other = wat::parse_str(
-            r#"(module (import "env" "f" (func)) (func (export "_start")))"#,
-        )
-        .unwrap();
+        let other =
+            wat::parse_str(r#"(module (import "env" "f" (func)) (func (export "_start")))"#)
+                .unwrap();
         assert_eq!(validate(&other), Err(Rejection::Import("env.f".into())));
-        let library = wat::parse_str(format!(r#"(module {START} (func (export "solve")))"#)).unwrap();
+        let library =
+            wat::parse_str(format!(r#"(module {START} (func (export "solve")))"#)).unwrap();
         assert_eq!(validate(&library), Err(Rejection::NoStart));
         let threads = wat::parse_str(
             r#"(module (import "wasi_snapshot_preview1" "proc_exit" (func (param i32)))
