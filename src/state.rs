@@ -128,6 +128,8 @@ const DAILY_KEY: &str = "hashi.daily.v1";
 const EDITOR_KEY: &str = "hashi.editor.v2";
 const SOLVER_KEY: &str = "hashi.solver.v2";
 const THEME_KEY: &str = "hashi.theme";
+const SOUND_KEY: &str = "hashi.sound";
+const MUSIC_KEY: &str = "hashi.music";
 
 #[derive(Clone, Copy)]
 pub struct Game {
@@ -423,6 +425,10 @@ pub struct Settings {
     pub solver: RwSignal<SolverConfig>,
     pub difficulty: RwSignal<Difficulty>,
     pub dark: RwSignal<bool>,
+    /// Sound effects, on unless turned off.
+    pub sound: RwSignal<bool>,
+    /// Background music, off unless turned on.
+    pub music: RwSignal<bool>,
 }
 
 impl Settings {
@@ -431,6 +437,8 @@ impl Settings {
             solver: RwSignal::new(SolverConfig::default()),
             difficulty: RwSignal::new(Difficulty::Medium),
             dark: RwSignal::new(false),
+            sound: RwSignal::new(true),
+            music: RwSignal::new(false),
         }
     }
 }
@@ -474,7 +482,39 @@ pub fn provide_state() {
                 .document_element()
                 .is_some_and(|el| el.class_list().contains("dark")),
         );
+        if let Some(sound) = load::<bool>(SOUND_KEY) {
+            settings.sound.set(sound);
+        }
+        if let Some(music) = load::<bool>(MUSIC_KEY) {
+            settings.music.set(music);
+        }
+        // Browsers allow audio only after a gesture
+        let unlock = window_event_listener(leptos::ev::pointerdown, |_| crate::audio::unlock());
+        let unlock_keys = window_event_listener(leptos::ev::keydown, |_| crate::audio::unlock());
+        on_cleanup(move || {
+            unlock.remove();
+            unlock_keys.remove();
+        });
         auth.refresh();
+    });
+
+    // Sound settings, saved like the theme
+    Effect::new(move |prev: Option<()>| {
+        let sound = settings.sound.get();
+        crate::audio::set_sound(sound);
+        if prev.is_some() {
+            store(SOUND_KEY, &sound);
+        }
+    });
+    Effect::new(move |prev: Option<()>| {
+        let music = settings.music.get();
+        crate::audio::set_music(music);
+        if prev.is_some() {
+            store(MUSIC_KEY, &music);
+            if music {
+                crate::audio::unlock();
+            }
+        }
     });
 
     Effect::new(move |_| game.save());
@@ -502,6 +542,18 @@ pub fn provide_state() {
             let solved = g.board.with(|b| g.bridges.with(|br| b.check(br).solved));
             if solved && g.status.get_untracked() == Status::Playing {
                 g.status.set(Status::Won);
+                crate::audio::play(crate::audio::Sfx::Win);
+            }
+        });
+        // Hints and checks sound the same everywhere
+        Effect::new(move |_| {
+            if g.hint.get().is_some() {
+                crate::audio::play(crate::audio::Sfx::Hint);
+            }
+        });
+        Effect::new(move |_| {
+            if g.wrong.with(|w| !w.is_empty()) {
+                crate::audio::play(crate::audio::Sfx::Wrong);
             }
         });
     }
@@ -664,6 +716,7 @@ pub fn check(game: Game, settings: Settings) {
             .bridges
             .with_untracked(|b| crate::model::wrong_edges(b, &solution));
         if wrong.is_empty() {
+            crate::audio::play(crate::audio::Sfx::Correct);
             toast(ToastKind::Success, |l| td_string!(l, common.toast.all_correct).to_string());
         } else {
             let count = wrong.len();

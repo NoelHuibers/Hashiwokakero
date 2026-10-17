@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "ダークモード切替",
     "to_day": "昼モードにする",
-    "to_night": "夜モードにする"
+    "to_night": "夜モードにする",
+    "night": "ナイトモード"
   },
   "footer": {
     "tagline": "<em>橋をかけろ</em>。SATで解かれ、あなたが遊ぶ。",
@@ -93,7 +94,9 @@
     "zoom": "拡大",
     "fit": "全体表示",
     "zoom_hint": "スワイプで移動、タップで橋をかける",
-    "cells_small": "マスが小さすぎる？"
+    "cells_small": "マスが小さすぎる？",
+    "pinch": "2本指でズーム",
+    "zoom_out": "縮小"
   },
   "not_found": {
     "title": "海で迷子",
@@ -157,5 +160,11 @@
     "imprint": "運営者情報",
     "privacy": "プライバシー",
     "english": "英語版"
-  }
+  },
+  "audio": {
+    "sound": "効果音",
+    "music": "音楽",
+    "music_hint": "穏やかな箏の調べ"
+  },
+  "settings": "設定"
 }

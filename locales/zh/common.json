@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "切换深色模式",
     "to_day": "切换到白天 昼",
-    "to_night": "切换到夜晚 夜"
+    "to_night": "切换到夜晚 夜",
+    "night": "夜间模式"
   },
   "footer": {
     "tagline": "<em>架起桥来</em>。SAT 来解，你来玩。",
@@ -93,7 +94,9 @@
     "zoom": "放大",
     "fit": "适应屏幕",
     "zoom_hint": "滑动移动视图，点按搭桥",
-    "cells_small": "格子太小？"
+    "cells_small": "格子太小？",
+    "pinch": "双指缩放",
+    "zoom_out": "缩小"
   },
   "not_found": {
     "title": "迷失在海上",
@@ -157,5 +160,11 @@
     "imprint": "法律声明",
     "privacy": "隐私政策",
     "english": "英文版"
-  }
+  },
+  "audio": {
+    "sound": "音效",
+    "music": "音乐",
+    "music_hint": "舒缓的筝乐"
+  },
+  "settings": "设置"
 }

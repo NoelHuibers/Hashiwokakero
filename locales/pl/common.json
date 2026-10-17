@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Przełącz tryb ciemny",
     "to_day": "Przełącz na dzień 昼",
-    "to_night": "Przełącz na noc 夜"
+    "to_night": "Przełącz na noc 夜",
+    "night": "Tryb nocny"
   },
   "footer": {
     "tagline": "<em>buduj mosty</em>. Rozwiązane przez SAT, rozgrywane przez ciebie.",
@@ -93,7 +94,9 @@
     "zoom": "Powiększ",
     "fit": "Dopasuj planszę",
     "zoom_hint": "Przesuń palcem, by się poruszać, stuknij, by budować",
-    "cells_small": "Za małe pola?"
+    "cells_small": "Za małe pola?",
+    "pinch": "Uszczypnij, aby powiększyć",
+    "zoom_out": "Pomniejsz"
   },
   "not_found": {
     "title": "Zagubieni na morzu",
@@ -157,5 +160,11 @@
     "imprint": "Nota prawna",
     "privacy": "Prywatność",
     "english": "Wersja angielska"
-  }
+  },
+  "audio": {
+    "sound": "Efekty dźwiękowe",
+    "music": "Muzyka",
+    "music_hint": "Spokojne melodie koto"
+  },
+  "settings": "Ustawienia"
 }

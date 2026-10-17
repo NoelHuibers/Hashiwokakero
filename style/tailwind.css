@@ -459,13 +459,14 @@ html[lang="th"] { --app-font: "Mali", "Zen Maru Gothic", system-ui, sans-serif; 
   to { margin-left: 24px; }
 }
 
-/* A little boat drifting across the hero */
+/* A little boat sailing across its container (an @container), from just off the left edge to
+   just off the right one, then again. Left to right in every language, the boat faces right. */
 @keyframes drift {
-  from { transform: translateX(-10%); }
-  to { transform: translateX(110%); }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100cqw); }
 }
 .drift {
-  animation: drift 38s linear infinite;
+  animation: drift 45s linear infinite;
 }
 @keyframes bob {
   0%, 100% { transform: translateY(0); }

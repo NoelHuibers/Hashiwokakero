@@ -8,6 +8,7 @@ use leptos_router::components::A;
 
 use crate::api::{generate_puzzle, solve_puzzle};
 use crate::components::board::{BoardMode, BoardView};
+use crate::components::leaderboard::HIGHLIGHT_ROW;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
@@ -472,7 +473,7 @@ pub fn LabPage() -> impl IntoView {
                                                         parts.join(" · ")
                                                     };
                                                     view! {
-                                                        <tr class="border-b last:border-0" class:bg-accent=is_fastest>
+                                                        <tr class=format!("border-b last:border-0 {}", if is_fastest { HIGHLIGHT_ROW } else { "" })>
                                                             <td class="py-2.5 pe-3">
                                                                 <span class="font-medium">{config_name(i18n.get_locale(), &config)}</span>
                                                                 {is_fastest

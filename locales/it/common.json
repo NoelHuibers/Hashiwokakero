@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Attiva/disattiva tema scuro",
     "to_day": "Passa al giorno 昼",
-    "to_night": "Passa alla notte 夜"
+    "to_night": "Passa alla notte 夜",
+    "night": "Modalità notte"
   },
   "footer": {
     "tagline": "<em>costruisci ponti</em>. Risolto dal SAT, giocato da te.",
@@ -93,7 +94,9 @@
     "zoom": "Ingrandisci",
     "fit": "Adatta la griglia",
     "zoom_hint": "Scorri per spostarti, tocca per costruire",
-    "cells_small": "Caselle troppo piccole?"
+    "cells_small": "Caselle troppo piccole?",
+    "pinch": "Pizzica per zoomare",
+    "zoom_out": "Riduci"
   },
   "not_found": {
     "title": "Perso in mare",
@@ -157,5 +160,11 @@
     "imprint": "Note legali",
     "privacy": "Privacy",
     "english": "Versione inglese"
-  }
+  },
+  "audio": {
+    "sound": "Effetti sonori",
+    "music": "Musica",
+    "music_hint": "Melodie di koto rilassanti"
+  },
+  "settings": "Impostazioni"
 }

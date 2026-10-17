@@ -35,12 +35,16 @@ pub fn RankCell(rank: i64) -> impl IntoView {
     }
 }
 
+/// A highlighted table row (your own result, the fastest solver): a rounded, padded pill, since
+/// a `<tr>` itself can't have rounded corners.
+pub const HIGHLIGHT_ROW: &str = "[&>td]:bg-accent [&>td:first-child]:rounded-s-lg [&>td:first-child]:ps-2 [&>td:last-child]:rounded-e-lg [&>td:last-child]:pe-2";
+
 #[component]
 fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
     let i18n = use_i18n();
     let penalties = entry.hints + entry.checks;
     view! {
-        <tr class="border-b last:border-0" class:bg-accent=me>
+        <tr class=format!("border-b last:border-0 {}", if me { HIGHLIGHT_ROW } else { "" })>
             <td class="py-2 pe-2">
                 <RankCell rank=entry.rank />
             </td>

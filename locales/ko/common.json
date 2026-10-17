@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "다크 모드 전환",
     "to_day": "낮 모드로 전환 昼",
-    "to_night": "밤 모드로 전환 夜"
+    "to_night": "밤 모드로 전환 夜",
+    "night": "야간 모드"
   },
   "footer": {
     "tagline": "<em>다리를 놓아라</em>. SAT가 풀고, 당신이 즐겨요.",
@@ -93,7 +94,9 @@
     "zoom": "확대",
     "fit": "보드 맞춤",
     "zoom_hint": "스와이프로 이동, 탭으로 다리 놓기",
-    "cells_small": "칸이 너무 작나요?"
+    "cells_small": "칸이 너무 작나요?",
+    "pinch": "두 손가락으로 확대",
+    "zoom_out": "축소"
   },
   "not_found": {
     "title": "바다에서 길을 잃었어요",
@@ -157,5 +160,11 @@
     "imprint": "법적 고지",
     "privacy": "개인정보 처리방침",
     "english": "영어 버전"
-  }
+  },
+  "audio": {
+    "sound": "효과음",
+    "music": "음악",
+    "music_hint": "잔잔한 고토 선율"
+  },
+  "settings": "설정"
 }

@@ -34,6 +34,45 @@ struct Drag {
     start: (f64, f64),
 }
 
+/// Fingers on the board (phones): one finger taps, drags from an island or pans a zoomed board,
+/// two fingers pinch to zoom.
+#[derive(Default)]
+struct Touches {
+    /// Pointer id and its last position on screen.
+    active: Vec<(i32, f64, f64)>,
+    /// Where the first finger went down.
+    start: (f64, f64),
+    /// Moved too far (or a second finger came) to count as a tap.
+    moved: bool,
+    /// A tap on the water builds when the finger lifts, so panning doesn't build bridges.
+    tap: Option<usize>,
+    /// Distance between the two fingers and the zoom when the pinch started.
+    pinch: Option<(f64, f64)>,
+}
+
+impl Touches {
+    fn midpoint(&self) -> Option<(f64, f64)> {
+        match self.active.as_slice() {
+            [(_, ax, ay), (_, bx, by), ..] => Some(((ax + bx) / 2.0, (ay + by) / 2.0)),
+            _ => None,
+        }
+    }
+
+    fn spread(&self) -> Option<f64> {
+        match self.active.as_slice() {
+            [(_, ax, ay), (_, bx, by), ..] => Some((ax - bx).hypot(ay - by)),
+            _ => None,
+        }
+    }
+}
+
+/// Fingers that move less than this (CSS pixels) still tap.
+const TAP_SLOP: f64 = 10.0;
+/// The largest zoom gives cells of about this many CSS pixels.
+const MAX_CELL_PX: f64 = 56.0;
+/// One press of + or −.
+const ZOOM_STEP: f64 = 1.4;
+
 fn span_of(board: &Board, edge: usize) -> Span {
     let (a, b) = board.endpoints(edge);
     Span {
@@ -138,6 +177,10 @@ pub fn BoardView(
     let selected = RwSignal::new(None::<usize>);
     let blocked = RwSignal::new(None::<(f64, f64, u32)>);
     let drag = StoredValue::new(None::<Drag>);
+    let touches = StoredValue::new(Touches::default());
+    // 1 shows the whole board, bigger zooms in and the board scrolls
+    let scale = RwSignal::new(1.0_f64);
+    let scroller = NodeRef::<leptos::html::Div>::new();
 
     // A new puzzle resets all interaction state
     Effect::new(move |_| {
@@ -146,6 +189,7 @@ pub fn BoardView(
         preview_edge.set(None);
         selected.set(None);
         drag.set_value(None);
+        scale.set(1.0);
     });
 
     let view_box = move || {
@@ -190,15 +234,99 @@ pub fn BoardView(
             && next > 0
             && board.with_untracked(|b| bridges.with_untracked(|br| b.is_blocked(br, edge)));
         if blocked {
+            crate::audio::play(crate::audio::Sfx::Blocked);
             flash_blocked(edge);
         } else {
+            crate::audio::play(match next {
+                0 => crate::audio::Sfx::Remove,
+                1 => crate::audio::Sfx::Place,
+                _ => crate::audio::Sfx::Double,
+            });
             cb.run((edge, delta));
         }
+    };
+
+    // A chime when an island gets all its bridges (not when a game is loaded or reset)
+    if mode == BoardMode::Play {
+        Effect::new(move |prev: Option<(usize, Vec<u8>)>| {
+            let done = board.with(|b| degrees.with(|d| b.puzzle.islands.iter().zip(d).filter(|(i, d)| i.required == **d).count()));
+            let now = bridges.get();
+            if let Some((before, last)) = prev {
+                let changed = now.len() == last.len() && now.iter().zip(&last).filter(|(a, b)| a != b).count() == 1;
+                if changed && done > before {
+                    crate::audio::play(crate::audio::Sfx::Island);
+                }
+            }
+            (done, now)
+        });
+    }
+
+    // The zoom that makes cells about MAX_CELL_PX wide, given how wide the board fits
+    let max_scale = move || {
+        let width = scroller.get_untracked().map_or(0.0, |el| f64::from(el.client_width()));
+        let (w, _) = view_box();
+        let cells = f64::from(w) / f64::from(CELL);
+        if width <= 0.0 { 4.0 } else { (MAX_CELL_PX * cells / width).clamp(1.0, 6.0) }
+    };
+    // Zooms to `target`, keeping the board point under `focus` (screen coordinates) in place
+    let zoom_to = move |target: f64, focus: (f64, f64)| {
+        let Some(el) = scroller.get_untracked() else { return };
+        let old = scale.get_untracked();
+        let new = target.clamp(1.0, max_scale());
+        if (new - old).abs() < 1e-3 {
+            return;
+        }
+        let rect = el.get_bounding_client_rect();
+        let (fx, fy) = (focus.0 - rect.left(), focus.1 - rect.top());
+        let (cx, cy) = (f64::from(el.scroll_left()) + fx, f64::from(el.scroll_top()) + fy);
+        let ratio = new / old;
+        scale.set(new);
+        // After the new size is laid out
+        request_animation_frame(move || {
+            el.set_scroll_left((cx * ratio - fx).round() as i32);
+            el.set_scroll_top((cy * ratio - fy).round() as i32);
+        });
+    };
+    let pan_by = move |(dx, dy): (f64, f64)| {
+        if let Some(el) = scroller.get_untracked() {
+            el.set_scroll_left(el.scroll_left() - dx.round() as i32);
+            el.set_scroll_top(el.scroll_top() - dy.round() as i32);
+        }
+    };
+    let zoom_step = move |factor: f64| {
+        let Some(el) = scroller.get_untracked() else { return };
+        let rect = el.get_bounding_client_rect();
+        let center = (rect.left() + rect.width() / 2.0, rect.top() + rect.height() / 2.0);
+        zoom_to(scale.get_untracked() * factor, center);
     };
 
     let on_down = move |ev: PointerEvent| {
         if mode == BoardMode::View {
             return;
+        }
+        let touch = ev.pointer_type() == "touch";
+        if touch {
+            let (x, y) = (f64::from(ev.client_x()), f64::from(ev.client_y()));
+            let fingers = touches.try_update_value(|t| {
+                t.active.retain(|(id, ..)| *id != ev.pointer_id());
+                t.active.push((ev.pointer_id(), x, y));
+                if t.active.len() == 1 {
+                    *t = Touches { active: t.active.clone(), start: (x, y), ..Touches::default() };
+                }
+                t.active.len()
+            });
+            if fingers.unwrap_or(1) >= 2 {
+                // A pinch: whatever the first finger started is off
+                drag.set_value(None);
+                preview_edge.set(None);
+                let current = scale.get_untracked();
+                touches.update_value(|t| {
+                    t.moved = true;
+                    t.tap = None;
+                    t.pinch = t.spread().map(|d| (d, current));
+                });
+                return;
+            }
         }
         let Some((px, py)) = to_svg(&ev) else { return };
         let backwards = ev.button() == 2 || ev.shift_key();
@@ -230,14 +358,52 @@ pub fn BoardView(
         }
         let edge = board.with_untracked(|b| cells.with_untracked(|c| edge_at(b, c, px, py)));
         if let Some(edge) = edge {
-            selected.set(None);
-            cycle(edge, if backwards { -1 } else { 1 });
+            if touch {
+                touches.update_value(|t| t.tap = Some(edge));
+            } else {
+                selected.set(None);
+                cycle(edge, if backwards { -1 } else { 1 });
+            }
         }
     };
 
     let on_move = move |ev: PointerEvent| {
         if mode == BoardMode::View {
             return;
+        }
+        if ev.pointer_type() == "touch" {
+            let (x, y) = (f64::from(ev.client_x()), f64::from(ev.client_y()));
+            let mut pan = None;
+            let mut pinch = None;
+            touches.update_value(|t| {
+                let before = t.midpoint();
+                let last = t.active.iter().find(|(id, ..)| *id == ev.pointer_id()).map(|&(_, lx, ly)| (lx, ly));
+                if let Some(p) = t.active.iter_mut().find(|(id, ..)| *id == ev.pointer_id()) {
+                    *p = (ev.pointer_id(), x, y);
+                }
+                if (x - t.start.0).hypot(y - t.start.1) > TAP_SLOP {
+                    t.moved = true;
+                    t.tap = None;
+                }
+                if let (Some((d0, s0)), Some(d), Some(mid), Some(before)) = (t.pinch, t.spread(), t.midpoint(), before) {
+                    pinch = Some((s0 * d / d0.max(1.0), mid, (mid.0 - before.0, mid.1 - before.1)));
+                } else if t.active.len() == 1 && t.moved {
+                    pan = last.map(|(lx, ly)| (x - lx, y - ly));
+                }
+            });
+            if let Some((target, mid, shift)) = pinch {
+                zoom_to(target, mid);
+                pan_by(shift);
+                return;
+            }
+            // One finger on a zoomed board moves it, unless it drags from an island
+            if let Some(shift) = pan
+                && drag.with_value(Option::is_none)
+                && scale.get_untracked() > 1.0
+            {
+                pan_by(shift);
+                return;
+            }
         }
         let Some((px, py)) = to_svg(&ev) else { return };
         if mode == BoardMode::Edit {
@@ -261,6 +427,23 @@ pub fn BoardView(
     };
 
     let on_up = move |ev: PointerEvent| {
+        if ev.pointer_type() == "touch" {
+            let mut tap = None;
+            touches.update_value(|t| {
+                t.active.retain(|(id, ..)| *id != ev.pointer_id());
+                if t.active.len() < 2 {
+                    t.pinch = None;
+                }
+                if t.active.is_empty() && !t.moved {
+                    tap = t.tap.take();
+                }
+            });
+            if let Some(edge) = tap {
+                selected.set(None);
+                cycle(edge, 1);
+                return;
+            }
+        }
         let Some(d) = drag.get_value() else { return };
         drag.set_value(None);
         if let Some(svg) = svg_ref.get_untracked() {
@@ -446,22 +629,23 @@ pub fn BoardView(
     };
 
     let frame = if framed { 14 } else { 0 };
-    // Phones: big boards get tiny cells, zooming gives every cell ~34px and lets the board scroll
-    let zoom = RwSignal::new(false);
+    // Big boards get small cells on phones: pinch, or use + and −, to zoom in
     let can_zoom = move || mode != BoardMode::View && board.with(|b| b.puzzle.width.max(b.puzzle.height) >= 9);
-    let zoomed = move || zoom.get() && can_zoom();
+    let zoomed = move || scale.get() > 1.0 + 1e-3;
+    // Outside of view!, where `>` would end the tag
+    let at_max = move || scale.get() >= max_scale() - 1e-3;
     let frame_style = move || {
         let (w, h) = view_box();
-        if zoomed() {
-            format!("width: calc({w}px * 34 / 16 + {frame}px);")
-        } else {
-            format!("width: min(100%, calc({max_height} * {w} / {h} + {frame}px));")
-        }
+        format!(
+            "width: calc(min(100%, calc({max_height} * {w} / {h} + {frame}px)) * {:.4});",
+            scale.get()
+        )
     };
 
     view! {
         <div>
         <div
+            node_ref=scroller
             class=move || if zoomed() {
                 "max-h-[72vh] overflow-auto overscroll-contain rounded-2xl"
             } else {
@@ -480,9 +664,7 @@ pub fn BoardView(
             class:cursor-crosshair=mode == BoardMode::Edit
             style=move || {
                 let (w, h) = view_box();
-                // Zoomed, one finger scrolls the board; taps still build bridges
-                let touch = if zoomed() { " touch-action: pan-x pan-y;" } else { "" };
-                format!("aspect-ratio: {w} / {h};{touch}")
+                format!("aspect-ratio: {w} / {h};")
             }
             viewBox=move || {
                 let (w, h) = view_box();
@@ -494,9 +676,14 @@ pub fn BoardView(
             on:pointerdown=on_down
             on:pointermove=on_move
             on:pointerup=on_up
-            on:pointercancel=move |_| {
+            on:pointercancel=move |ev: PointerEvent| {
                 drag.set_value(None);
                 preview_edge.set(None);
+                touches.update_value(|t| {
+                    t.active.retain(|(id, ..)| *id != ev.pointer_id());
+                    t.pinch = None;
+                    t.tap = None;
+                });
             }
             on:pointerleave=on_leave
             on:contextmenu=|ev| ev.prevent_default()
@@ -516,19 +703,42 @@ pub fn BoardView(
         </div>
         </div>
         <Show when=can_zoom>
-            <div class="mt-2 flex items-center justify-end gap-2 md:hidden">
-                <span class="text-xs text-muted-foreground">
-                    {move || if zoomed() { t_string!(i18n, common.board.zoom_hint) } else { t_string!(i18n, common.board.cells_small) }}
+            <div class="mt-2 flex items-center justify-end gap-2">
+                <span class="me-auto text-xs text-muted-foreground md:hidden">
+                    {move || if zoomed() { t_string!(i18n, common.board.zoom_hint) } else { t_string!(i18n, common.board.pinch) }}
                 </span>
-                <button
-                    type="button"
-                    class="flex h-9 items-center gap-1.5 rounded-lg border bg-card px-3 text-sm font-medium shadow-xs active:scale-[0.98]"
-                    aria-pressed=move || zoomed().to_string()
-                    on:click=move |_| zoom.update(|z| *z = !*z)
-                >
-                    <span class="font-pixel">{move || if zoomed() { "－" } else { "＋" }}</span>
-                    {move || if zoomed() { t_string!(i18n, common.board.fit) } else { t_string!(i18n, common.board.zoom) }}
-                </button>
+                <div class="flex items-center overflow-hidden rounded-lg border bg-card shadow-xs">
+                    <button
+                        type="button"
+                        class="grid h-9 w-10 place-items-center font-pixel text-lg disabled:opacity-40"
+                        title=move || t_string!(i18n, common.board.zoom_out)
+                        aria-label=move || t_string!(i18n, common.board.zoom_out)
+                        disabled=move || !zoomed()
+                        on:click=move |_| zoom_step(1.0 / ZOOM_STEP)
+                    >
+                        "－"
+                    </button>
+                    <button
+                        type="button"
+                        class="h-9 min-w-14 border-x px-2 font-pixel text-xs tabular-nums disabled:opacity-60"
+                        title=move || t_string!(i18n, common.board.fit)
+                        aria-label=move || t_string!(i18n, common.board.fit)
+                        disabled=move || !zoomed()
+                        on:click=move |_| scale.set(1.0)
+                    >
+                        {move || format!("{:.0}%", scale.get() * 100.0)}
+                    </button>
+                    <button
+                        type="button"
+                        class="grid h-9 w-10 place-items-center font-pixel text-lg disabled:opacity-40"
+                        title=move || t_string!(i18n, common.board.zoom)
+                        aria-label=move || t_string!(i18n, common.board.zoom)
+                        disabled=at_max
+                        on:click=move |_| zoom_step(ZOOM_STEP)
+                    >
+                        "＋"
+                    </button>
+                </div>
             </div>
         </Show>
         </div>

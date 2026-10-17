@@ -14,7 +14,8 @@
   "theme": {
     "toggle": "Donkere modus aan/uit",
     "to_day": "Naar dag 昼",
-    "to_night": "Naar nacht 夜"
+    "to_night": "Naar nacht 夜",
+    "night": "Nachtmodus"
   },
   "footer": {
     "tagline": "<em>bouw bruggen</em>. Opgelost door SAT, gespeeld door jou.",
@@ -93,7 +94,9 @@
     "zoom": "Inzoomen",
     "fit": "Bord passend maken",
     "zoom_hint": "Veeg om te bewegen, tik om te bouwen",
-    "cells_small": "Vakjes te klein?"
+    "cells_small": "Vakjes te klein?",
+    "pinch": "Knijp om te zoomen",
+    "zoom_out": "Uitzoomen"
   },
   "not_found": {
     "title": "Verdwaald op zee",
@@ -157,5 +160,11 @@
     "imprint": "Colofon",
     "privacy": "Privacy",
     "english": "Engelse versie"
-  }
+  },
+  "audio": {
+    "sound": "Geluidseffecten",
+    "music": "Muziek",
+    "music_hint": "Rustige koto-melodieën"
+  },
+  "settings": "Instellingen"
 }

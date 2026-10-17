@@ -4,6 +4,7 @@ use leptos_router::components::A;
 use leptos_router::hooks::use_location;
 
 use super::leaderboard::AccountButton;
+use super::ui::switch::Switch;
 use super::sprites::{BOAT, PixelSprite};
 use crate::i18n::{Locale, t, t_string, use_i18n};
 use crate::lang::{localized, native_name, unlocalized};
@@ -148,7 +149,7 @@ pub fn ThemeToggle() -> impl IntoView {
     let settings = expect_context::<Settings>();
     view! {
         <button
-            class="grid size-10 shrink-0 place-items-center rounded-lg border bg-card text-lg transition-transform hover:-translate-y-0.5 active:translate-y-0"
+            class="hidden size-10 shrink-0 place-items-center rounded-lg border bg-card text-lg transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:grid"
             title=move || {
                 if settings.dark.get() {
                     t_string!(i18n, common.theme.to_day)
@@ -181,48 +182,196 @@ pub fn HelpButton() -> impl IntoView {
     }
 }
 
-/// The language picker: a small button with the language code, a native select on top of it
-/// (accessible, and phones show their own picker).
+/// Closes a pop-up on a click outside of `root` and on Escape (focus goes back to `button`).
+fn use_dismiss(open: RwSignal<bool>, root: NodeRef<leptos::html::Div>, button: NodeRef<leptos::html::Button>) {
+    let outside = window_event_listener(leptos::ev::pointerdown, move |ev| {
+        if !open.get_untracked() {
+            return;
+        }
+        let inside = root.get_untracked().is_some_and(|root| {
+            ev.target()
+                .and_then(|t| wasm_bindgen::JsCast::dyn_into::<web_sys::Node>(t).ok())
+                .is_some_and(|t| root.contains(Some(&t)))
+        });
+        if !inside {
+            open.set(false);
+        }
+    });
+    let escape = window_event_listener(leptos::ev::keydown, move |ev| {
+        if ev.key() == "Escape" && open.get_untracked() {
+            open.set(false);
+            if let Some(button) = button.get_untracked() {
+                let _ = button.focus();
+            }
+        }
+    });
+    on_cleanup(move || {
+        outside.remove();
+        escape.remove();
+    });
+}
+
+const SPEAKER: &str = "M11 5 6 9H3v6h3l5 4V5z";
+
+/// Settings: sound effects and music (and on phones, where the header has no room for the theme
+/// button, night mode), each with a switch; saved in the browser.
+#[component]
+pub fn SoundButton() -> impl IntoView {
+    let i18n = use_i18n();
+    let settings = expect_context::<Settings>();
+    let open = RwSignal::new(false);
+    let root = NodeRef::<leptos::html::Div>::new();
+    let button = NodeRef::<leptos::html::Button>::new();
+    use_dismiss(open, root, button);
+    let on = move || settings.sound.get() || settings.music.get();
+    view! {
+        <div node_ref=root class="relative shrink-0">
+            <button
+                node_ref=button
+                class="grid size-10 place-items-center rounded-lg border bg-card transition-transform hover:-translate-y-0.5"
+                class:ring-2=move || open.get()
+                class:ring-primary=move || open.get()
+                aria-haspopup="true"
+                aria-expanded=move || open.get().to_string()
+                aria-label=move || t_string!(i18n, common.settings)
+                title=move || t_string!(i18n, common.settings)
+                on:click=move |_| open.update(|o| *o = !*o)
+            >
+                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d=SPEAKER fill="currentColor" />
+                    {move || {
+                        if on() {
+                            view! { <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> }.into_any()
+                        } else {
+                            view! { <path d="m16 9 6 6M22 9l-6 6" /> }.into_any()
+                        }
+                    }}
+                </svg>
+            </button>
+            <Show when=move || open.get()>
+                <div class="absolute end-0 top-full z-50 mt-2 flex w-64 flex-col gap-1 rounded-xl border bg-card p-3 shadow-2xl animate-in fade-in zoom-in-95">
+                    <p class="pb-1 font-pixel text-xs text-muted-foreground">"設定 · " {t!(i18n, common.settings)}</p>
+                    <label class="flex min-h-10 cursor-pointer items-center justify-between gap-3 text-sm font-medium sm:hidden">
+                        <span>{t!(i18n, common.theme.night)} " 夜"</span>
+                        <Switch
+                            checked=settings.dark
+                            aria_label=Signal::derive(move || t_string!(i18n, common.theme.night).to_string())
+                        />
+                    </label>
+                    <label class="flex min-h-10 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
+                        {t!(i18n, common.audio.sound)}
+                        <Switch
+                            checked=settings.sound
+                            aria_label=Signal::derive(move || t_string!(i18n, common.audio.sound).to_string())
+                        />
+                    </label>
+                    <label class="flex min-h-10 cursor-pointer items-center justify-between gap-3 text-sm font-medium">
+                        <span>
+                            {t!(i18n, common.audio.music)}
+                            <span class="block text-xs font-normal text-muted-foreground">{t!(i18n, common.audio.music_hint)}</span>
+                        </span>
+                        <Switch
+                            checked=settings.music
+                            aria_label=Signal::derive(move || t_string!(i18n, common.audio.music).to_string())
+                        />
+                    </label>
+                </div>
+            </Show>
+        </div>
+    }
+}
+
+/// The language picker: a button with the language code that opens a panel with every language
+/// in its own script. The entries are links to the same page in that language, so they work
+/// before the app is loaded and crawlers can follow them.
 #[component]
 pub fn LanguagePicker() -> impl IntoView {
     let i18n = use_i18n();
-    let on_change = move |ev| {
-        let id = event_target_value(&ev);
-        if let Some(locale) = Locale::get_all().iter().find(|l| l.as_str() == id) {
-            i18n.set_locale(*locale);
-        }
+    let location = use_location();
+    let open = RwSignal::new(false);
+    let root = NodeRef::<leptos::html::Div>::new();
+    let button = NodeRef::<leptos::html::Button>::new();
+
+    use_dismiss(open, root, button);
+
+    // The current page in another language, keeping the query
+    let href = move |l: Locale| {
+        format!(
+            "{}{}",
+            localized(l, &unlocalized(&location.pathname.get())),
+            location.search.get().is_empty().then(String::new).unwrap_or_else(|| format!("?{}", location.search.get()))
+        )
     };
+    // Short label: the language code, the two Chinese scripts by their own name
+    let code = |l: Locale| match l.as_str() {
+        "zh" => "简".to_string(),
+        "zh-Hant" => "繁".to_string(),
+        other => other.to_string(),
+    };
+
     view! {
-        <label class="relative grid h-10 min-w-10 shrink-0 cursor-pointer place-items-center rounded-lg border bg-card px-2 text-xs font-bold uppercase transition-transform hover:-translate-y-0.5">
-            <span aria-hidden="true" class="flex items-center gap-1">
-                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-                <span class="hidden sm:inline">
-                    {move || i18n.get_locale().as_str().split('-').next().unwrap_or_default().to_string()}
-                </span>
-            </span>
-            <span class="sr-only">{t!(i18n, common.language)}</span>
-            <select
-                class="absolute inset-0 cursor-pointer opacity-0"
+        <div node_ref=root class="relative shrink-0">
+            <button
+                node_ref=button
+                class="grid h-10 min-w-10 place-items-center rounded-lg border bg-card px-2 text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
+                class:ring-2=move || open.get()
+                class:ring-primary=move || open.get()
+                aria-haspopup="true"
+                aria-expanded=move || open.get().to_string()
                 aria-label=move || t_string!(i18n, common.language)
-                prop:value=move || i18n.get_locale().as_str()
-                on:change=on_change
+                title=move || t_string!(i18n, common.language)
+                on:click=move |_| open.update(|o| *o = !*o)
             >
-                {Locale::get_all()
-                    .iter()
-                    .map(|l| {
-                        let l = *l;
-                        view! {
-                            <option value=l.as_str() lang=l.as_str()>
-                                {native_name(l)}
-                            </option>
-                        }
-                    })
-                    .collect_view()}
-            </select>
-        </label>
+                <span class="flex items-center gap-1" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                    <span class="hidden sm:inline">{move || code(i18n.get_locale())}</span>
+                </span>
+            </button>
+            <Show when=move || open.get()>
+                // Phones: across the screen below the header, the button isn't at the edge
+                <div class="fixed inset-x-3 top-16 z-50 rounded-xl border bg-card p-2 shadow-2xl animate-in fade-in zoom-in-95 sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-[26rem]">
+                    <p class="px-2 pb-2 pt-1 font-pixel text-xs text-muted-foreground">
+                        "言語 · " {t!(i18n, common.language)}
+                    </p>
+                    <ul class="grid max-h-[min(70vh,28rem)] grid-cols-2 gap-1 overflow-y-auto">
+                        {Locale::get_all()
+                            .iter()
+                            .map(|l| {
+                                let l = *l;
+                                let current = move || i18n.get_locale() == l;
+                                view! {
+                                    <li>
+                                        <a
+                                            href=move || href(l)
+                                            lang=l.as_str()
+                                            hreflang=l.as_str()
+                                            aria-current=move || current().then_some("true")
+                                            class=move || {
+                                                format!(
+                                                    "flex min-h-10 items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm transition-colors {}",
+                                                    if current() {
+                                                        "bg-primary text-primary-foreground"
+                                                    } else {
+                                                        "hover:bg-secondary"
+                                                    },
+                                                )
+                                            }
+                                            on:click=move |_| open.set(false)
+                                        >
+                                            <span class="truncate">{native_name(l)}</span>
+                                            <span class="shrink-0 font-pixel text-[11px] uppercase opacity-70">{code(l)}</span>
+                                        </a>
+                                    </li>
+                                }
+                            })
+                            .collect_view()}
+                    </ul>
+                </div>
+            </Show>
+        </div>
     }
 }
 
@@ -256,6 +405,7 @@ pub fn Header() -> impl IntoView {
                 <AccountButton />
                 <HelpButton />
                 <LanguagePicker />
+                <SoundButton />
                 <ThemeToggle />
             </div>
         </header>
@@ -267,6 +417,7 @@ pub fn Footer() -> impl IntoView {
     let i18n = use_i18n();
     let rules = use_localized("/rules");
     let impressum = use_localized("/impressum");
+    let dojo = use_localized("/dojo");
     let privacy = use_localized("/datenschutz");
     let author = move || {
         view! {
@@ -283,8 +434,8 @@ pub fn Footer() -> impl IntoView {
     view! {
         <footer class="relative mt-16 overflow-hidden border-t">
             <div class="seigaiha absolute inset-0 opacity-80" aria-hidden="true"></div>
-            <div class="pointer-events-none absolute inset-x-0 top-3 h-8" aria-hidden="true">
-                <div class="drift absolute w-12">
+            <div class="@container pointer-events-none absolute inset-x-0 top-3 h-8" aria-hidden="true">
+                <div class="drift absolute left-0 w-12">
                     <PixelSprite art=&BOAT class="bob w-12" />
                 </div>
             </div>
@@ -301,6 +452,10 @@ pub fn Footer() -> impl IntoView {
                     <span aria-hidden="true">"·"</span>
                     <A href=rules attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
                         {t!(i18n, common.footer.how_to_play)} " 遊び方"
+                    </A>
+                    <span aria-hidden="true">"·"</span>
+                    <A href=dojo attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
+                        {t!(i18n, dojo.title)} " 道場"
                     </A>
                     <span aria-hidden="true">"·"</span>
                     <a
