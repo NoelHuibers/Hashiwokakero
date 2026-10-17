@@ -17,6 +17,8 @@ The frontend is [Leptos](https://leptos.dev) 0.8 (SSR + hydration) with Tailwind
 - **common**: Types shared by the frontend and the backend: puzzle, board geometry and validation, solver/generator options and results.
 - **backend**: Encoding to CNF, solving (splr or our own solvers), uniqueness checks, the generator and the CLI.
 - **sat_solver**: Our own DPLL/CDCL SAT solver from the SAT solving lab.
+- **dojo**: The SAT Dojo: benchmark sets, the WebAssembly sandbox and the worker that scores submitted solvers. `dojo/house` builds our own solvers as entries, `dojo/starter` is a small solver to start from.
+- **locales**: The translations, one folder per language with a JSON file per page.
 - **solutions**: The .cnf and solution .txt files for all initial test problems.
 
 ## Running the web app
@@ -36,6 +38,18 @@ A release build: `cargo leptos build --release`, the server binary is `target/re
 ## Deployment
 
 Pushes to `main` deploy to [fly.io](https://fly.io) with the multi-stage `Dockerfile` (Node 26 for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime). Dependabot keeps Cargo, npm, Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request.
+
+## SAT Dojo
+
+At [hashi.rs/dojo](https://hashi.rs/dojo) anyone can submit a SAT solver compiled to WebAssembly (WASI preview 1). Solvers read DIMACS on stdin, answer in the SAT competition format and are scored by *fuel*, the number of executed WebAssembly instructions, on a hidden set that changes every season. A run is fully deterministic: clocks and random numbers are seeded, so the same solver always gets the same score.
+
+```sh
+cargo build -p house --release --target wasm32-wasip1           # our own solvers as .wasm
+cargo run -p dojo --release --features worker -- run target/wasm32-wasip1/release/splr.wasm
+cargo run -p dojo --release --features bench -- export dev-set/  # the public dev set as .cnf files
+```
+
+The website stores submissions and sends them to the worker (`dojo serve`, its own Fly app in `dojo/fly.toml`), which starts on demand, evaluates and reports back. See `src/server/dojo.rs` and `dojo/src/worker.rs` for the settings.
 
 ## Backend CLI
 
@@ -107,3 +121,7 @@ See [Evaluation](hashi_report.pdf)
 ## SAT Conversion
 
 See [Clauses](Clauses.md)
+
+## License
+
+[MIT](LICENSE) © Noel Huibers

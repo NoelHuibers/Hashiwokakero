@@ -15,6 +15,7 @@ async fn main() {
         eprintln!("{e}");
         std::process::exit(1);
     }
+    hashi::server::dojo::start_dispatcher();
 
     // Reads the cargo-leptos settings (Cargo.toml) or the LEPTOS_* environment variables
     let conf = get_configuration(None).expect("invalid Leptos configuration");
@@ -29,6 +30,19 @@ async fn main() {
             axum::routing::get(|| async {
                 ([(axum::http::header::CONTENT_TYPE, "application/xml")], hashi::seo::sitemap())
             }),
+        )
+        // The SAT Dojo: uploads, reports from the worker, house entries (see server/dojo.rs)
+        .route(
+            "/dojo/submit",
+            axum::routing::post(hashi::server::dojo::submit_handler)
+                .layer(axum::extract::DefaultBodyLimit::max(dojo::MAX_WASM_BYTES + 64 * 1024)),
+        )
+        .route("/dojo/report", axum::routing::post(hashi::server::dojo::report_handler))
+        .route("/dojo/board.json", axum::routing::get(hashi::server::dojo::board_json))
+        .route(
+            "/dojo/house",
+            axum::routing::post(hashi::server::dojo::house_handler)
+                .layer(axum::extract::DefaultBodyLimit::max(dojo::MAX_WASM_BYTES)),
         )
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();

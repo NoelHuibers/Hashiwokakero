@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "SAT Dojo · uma academia para solvers SAT · Hashi",
+    "description": "Envie seu solver SAT em WebAssembly e suba no ranking: avaliado em fórmulas novas e ocultas com combustível determinístico, não segundos. Aberto e reproduzível."
+  },
+  "title": "SAT Dojo",
+  "intro": "Uma academia para solvers SAT. Compile o seu para WebAssembly, envie, e ele é avaliado num conjunto oculto de fórmulas novas: puzzles Hashi, armadilhas de paridade, 3-SAT aleatório, pombos e rainhas.",
+  "stats": {
+    "season": "Temporada {{ season }}",
+    "formulas": "Fórmulas: {{ count }}",
+    "budget": "{{ budget }} Gfuel por fórmula",
+    "queued": "Na fila: {{ count }}"
+  },
+  "cta": {
+    "submit": "Enviar um solver",
+    "starter": "Kit inicial",
+    "dev_set": "Baixar o dev set"
+  },
+  "board": {
+    "title": "Ranking",
+    "solver": "Solver",
+    "solved": "Resolvidas",
+    "par2": "PAR-2",
+    "families": "Famílias",
+    "empty": "Nenhum solver entrou no dojo ainda. Seja o primeiro!",
+    "house": "da casa",
+    "par2_hint": "Combustível médio por fórmula, em bilhões; fórmulas não resolvidas contam o dobro do orçamento. Menor é melhor."
+  },
+  "how": {
+    "title": "Como funciona",
+    "build_title": "Compile",
+    "build": "Qualquer linguagem que compile para WASI preview 1 serve: Rust, C e C++ com wasi-sdk, Zig, Go. Leia DIMACS da stdin e responda como na SAT Competition.",
+    "train_title": "Treine",
+    "train": "Avalie seu solver localmente no dev set público com a ferramenta dojo. Ela roda exatamente como o ranking, então você sabe sua pontuação antes de enviar.",
+    "submit_title": "Envie",
+    "submit": "Faça upload do arquivo .wasm. Ele roda no conjunto oculto da temporada atual, na nossa própria máquina.",
+    "climb_title": "Suba",
+    "climb": "Vence o menor PAR-2: o combustível médio por fórmula, em que fórmulas não resolvidas contam o dobro do orçamento."
+  },
+  "family": {
+    "title": "As fórmulas",
+    "hashi": "Hashi",
+    "hashi_text": "Puzzles Hashiwokakero de 10×10 a 28×28 em CNF, sem a regra de conectividade. Sempre satisfatíveis.",
+    "hashi_parity": "Paridade Hashi",
+    "hashi_parity_text": "Puzzles com um número alterado para que a soma dos números seja ímpar. Insatisfatíveis, pois cada ponte soma dois. Fácil de ver, difícil de provar por resolução.",
+    "random_3sat": "3-SAT aleatório",
+    "random_3sat_text": "3-SAT aleatório uniforme na transição de fase, 4,26 cláusulas por variável, cerca de metade satisfatível.",
+    "pigeonhole": "Casa dos pombos",
+    "pigeonhole_text": "n+1 pombos em n casas: o clássico que exige provas por resolução de tamanho exponencial. Mais algumas instâncias em que todos cabem.",
+    "queens": "Rainhas",
+    "queens_text": "N rainhas em tabuleiros de até 48×48 com algumas casas proibidas."
+  },
+  "fair": {
+    "title": "Jogo limpo",
+    "fuel_title": "Combustível, não segundos",
+    "fuel": "Cada instrução WebAssembly executada custa uma unidade de combustível; operações de memória em massa, uma por byte. Relógios e números aleatórios têm semente fixa, então um solver obtém a mesma pontuação em qualquer máquina, sempre.",
+    "hidden_title": "Fórmulas ocultas e novas",
+    "hidden": "O conjunto de teste vem de uma semente secreta que muda a cada temporada, e cada fórmula é embaralhada: variáveis renomeadas e negadas, cláusulas misturadas. Os resultados aparecem só por família, nunca por fórmula.",
+    "checked_title": "Toda resposta verificada",
+    "checked": "Os modelos são verificados contra a fórmula. UNSAT só conta para fórmulas sabidamente insatisfatíveis. Uma única resposta errada desclassifica o envio, então chutar nunca compensa.",
+    "sandbox_title": "Uma sandbox selada",
+    "sandbox": "Sem arquivos, sem rede, sem variáveis de ambiente. Memória e saída têm limite, e os envios rodam numa máquina separada que não guarda dados.",
+    "accounts_title": "Uma conta, o melhor envio",
+    "accounts": "Contas registradas podem enviar três vezes por dia. Arquivos idênticos são recusados e só o seu melhor envio entra no ranking.",
+    "seasons_title": "Temporadas",
+    "seasons": "Uma nova temporada traz um novo conjunto oculto, e todos os envios são avaliados de novo."
+  },
+  "science": {
+    "title": "Para pesquisadores",
+    "text": "O combustível é determinístico, então os resultados são reproduzíveis e comparáveis entre artigos: informe a temporada e a semente do dev set. O ranking está disponível em JSON em /dojo/board.json, e o harness é de código aberto."
+  },
+  "submit": {
+    "title": "Entre no dojo",
+    "sign_in": "Para enviar, você precisa de uma conta com nome de usuário; convidados não podem enviar.",
+    "create_account": "Criar uma conta",
+    "name": "Nome do seu solver",
+    "description": "Descrição (opcional)",
+    "description_hint": "Como ele funciona? Que ideias você testou?",
+    "source": "Link para o código-fonte (opcional)",
+    "file": "Arquivo WebAssembly (.wasm, WASI preview 1)",
+    "button": "Enviar",
+    "left": "Envios restantes hoje: {{ count }}",
+    "none_left": "Sem envios restantes hoje, volte amanhã.",
+    "errors": {
+      "sign_in": "Entre primeiro com uma conta registrada.",
+      "name": "Dê ao seu solver um nome de até 40 caracteres.",
+      "description": "A descrição pode ter no máximo 600 caracteres.",
+      "url": "O link do código-fonte precisa ser um endereço https://.",
+      "size": "O arquivo é grande demais; o limite é 8 MiB.",
+      "not_wasm": "Isso não é um arquivo WebAssembly.",
+      "duplicate": "Este mesmo arquivo já foi enviado antes.",
+      "limit": "Você já enviou três vezes hoje.",
+      "server": "Algo deu errado do nosso lado, tente de novo."
+    }
+  },
+  "mine": {
+    "title": "Seus envios",
+    "empty": "Nada enviado ainda."
+  },
+  "state": {
+    "queued": "na fila",
+    "running": "rodando",
+    "done": "pronto",
+    "rejected": "rejeitado",
+    "failed": "falhou",
+    "disqualified": "desclassificado"
+  },
+  "detail": {
+    "meta_title": "{{ name }} · SAT Dojo",
+    "by": "por {{ author }}",
+    "submitted": "Enviado em {{ date }}",
+    "size": "Tamanho",
+    "source": "Código-fonte",
+    "queued": "Aguardando o worker…",
+    "running": "Avaliando fórmulas: {{ done }} de {{ total }}",
+    "unranked": "Fora do ranking: o autor tem um envio melhor.",
+    "solved": "Resolvidas",
+    "fuel": "Combustível das fórmulas resolvidas",
+    "family": "Família",
+    "wrong": "Respostas erradas: {{ count }}. O envio foi desclassificado; teste-o no dev set com dojo run.",
+    "failed": "A avaliação falhou do nosso lado. Vamos tentar de novo.",
+    "back": "Voltar ao ranking",
+    "not_found": "Esse envio não existe.",
+    "season": "Temporada {{ season }}",
+    "rank_label": "Posição"
+  },
+  "rejection": {
+    "title": "O worker recusou este arquivo",
+    "too_large": "O arquivo tem mais de 8 MiB.",
+    "invalid": "Não é um módulo WebAssembly válido para o dojo: {{ detail }}",
+    "import": "Ele importa {{ detail }}, mas só wasi_snapshot_preview1 está disponível.",
+    "no_start": "Não há função _start. Compile um programa (um binário), não uma biblioteca."
+  },
+  "lab_banner": {
+    "title": "Novidade: o SAT Dojo",
+    "text": "Acha que seu solver bate o nosso? Envie e suba no ranking.",
+    "button": "Ir para o dojo"
+  }
+}

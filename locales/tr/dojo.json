@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "SAT Dojo · SAT çözücüleri için spor salonu · Hashi",
+    "description": "SAT çözücünü WebAssembly olarak gönder ve sıralamada yüksel: saniye yerine deterministik yakıtla, gizli ve yeni formüllerde puanlanır. Ücretsiz, açık kaynak."
+  },
+  "title": "SAT Dojo",
+  "intro": "SAT çözücüleri için bir spor salonu. Çözücünü WebAssembly'ye derle, gönder; gizli ve yeni formüllerden oluşan bir sette puanlansın: Hashi bulmacaları, parite tuzakları, rastgele 3-SAT, güvercinler ve vezirler.",
+  "stats": {
+    "season": "Sezon {{ season }}",
+    "formulas": "Formül: {{ count }}",
+    "budget": "Formül başına {{ budget }} Gfuel",
+    "queued": "Sırada: {{ count }}"
+  },
+  "cta": {
+    "submit": "Çözücü gönder",
+    "starter": "Başlangıç kiti",
+    "dev_set": "Geliştirme setini indir"
+  },
+  "board": {
+    "title": "Sıralama",
+    "solver": "Çözücü",
+    "solved": "Çözülen",
+    "par2": "PAR-2",
+    "families": "Aileler",
+    "empty": "Henüz hiçbir çözücü dojoya girmedi. İlk sen ol!",
+    "house": "resmî",
+    "par2_hint": "Formül başına milyar cinsinden ortalama yakıt; çözülemeyen formüller bütçenin iki katı sayılır. Düşük olan daha iyidir."
+  },
+  "how": {
+    "title": "Nasıl çalışır",
+    "build_title": "Derle",
+    "build": "WASI preview 1'e derlenen her dil olur: Rust, wasi-sdk ile C ve C++, Zig, Go. DIMACS'i stdin'den oku ve SAT Competition'daki gibi cevap ver.",
+    "train_title": "Antrenman",
+    "train": "Çözücünü dojo aracıyla açık geliştirme setinde yerel olarak puanla. Sıralamayla birebir aynı şekilde çalışır, yani göndermeden önce puanını bilirsin.",
+    "submit_title": "Gönder",
+    "submit": ".wasm dosyasını yükle. Mevcut sezonun gizli setinde, kendi makinemizde çalıştırılır.",
+    "climb_title": "Yüksel",
+    "climb": "En düşük PAR-2 kazanır: formül başına ortalama yakıt; çözülemeyen formüller bütçenin iki katı sayılır."
+  },
+  "family": {
+    "title": "Formüller",
+    "hashi": "Hashi",
+    "hashi_text": "10×10'dan 28×28'e kadar Hashiwokakero bulmacaları CNF olarak, bağlantılılık kuralı olmadan. Her zaman sağlanabilir.",
+    "hashi_parity": "Hashi parite",
+    "hashi_parity_text": "Bir sayısı değiştirilerek sayıların toplamı tek yapılmış bulmacalar. Her köprü toplama iki eklediği için sağlanamaz. Görmesi kolay, rezolüsyonla kanıtlaması zor.",
+    "random_3sat": "Rastgele 3-SAT",
+    "random_3sat_text": "Faz geçişinde düzgün rastgele 3-SAT, değişken başına 4,26 tümce; yaklaşık yarısı sağlanabilir.",
+    "pigeonhole": "Güvercin yuvası",
+    "pigeonhole_text": "n yuvada n+1 güvercin: üstel uzunlukta rezolüsyon kanıtları gerektiren klasik. Artı güvercinlerin sığdığı birkaç örnek.",
+    "queens": "Vezirler",
+    "queens_text": "48×48'e kadar tahtalarda, birkaç yasak kareyle N vezir."
+  },
+  "fair": {
+    "title": "Adil oyun",
+    "fuel_title": "Saniye değil, yakıt",
+    "fuel": "Çalıştırılan her WebAssembly komutu bir birim yakıt harcar, toplu bellek işlemleri bayt başına bir birim. Saatler ve rastgele sayılar sabit tohumludur, böylece bir çözücü her makinede, her seferinde aynı puanı alır.",
+    "hidden_title": "Gizli, yeni formüller",
+    "hidden": "Test seti her sezon değişen gizli bir tohumdan üretilir ve her formül karıştırılır: değişkenler yeniden adlandırılır ve olumsuzlanır, tümcelerin sırası karıştırılır. Sonuçlar formül bazında değil, yalnızca aile bazında gösterilir.",
+    "checked_title": "Her cevap kontrol edilir",
+    "checked": "Modeller formüle karşı doğrulanır. UNSAT yalnızca sağlanamaz olduğu bilinen formüllerde geçerlidir. Tek bir yanlış cevap gönderimi diskalifiye eder, yani tahmin etmek asla işe yaramaz.",
+    "sandbox_title": "Kapalı bir korumalı alan",
+    "sandbox": "Dosya yok, ağ yok, ortam değişkeni yok. Bellek ve çıktı sınırlıdır ve gönderimler hiçbir veri tutmayan ayrı bir makinede çalışır.",
+    "accounts_title": "Tek hesap, en iyi gönderim",
+    "accounts": "Kayıtlı hesaplar günde üç kez gönderim yapabilir. Aynı dosyalar reddedilir ve yalnızca en iyi gönderimin sıralamaya girer.",
+    "seasons_title": "Sezonlar",
+    "seasons": "Yeni bir sezon yeni bir gizli set getirir ve tüm gönderimler yeniden değerlendirilir."
+  },
+  "science": {
+    "title": "Araştırmacılar için",
+    "text": "Yakıt deterministiktir, bu yüzden sonuçlar tekrarlanabilir ve makaleler arasında karşılaştırılabilir: sezonu ve geliştirme setinin tohumunu belirt. Sıralama /dojo/board.json adresinde JSON olarak mevcut, test düzeneği açık kaynak."
+  },
+  "submit": {
+    "title": "Dojoya gir",
+    "sign_in": "Gönderim için kullanıcı adı olan bir hesap gerekir, misafirler gönderemez.",
+    "create_account": "Hesap oluştur",
+    "name": "Çözücünün adı",
+    "description": "Açıklama (isteğe bağlı)",
+    "description_hint": "Nasıl çalışıyor? Hangi fikirleri denedin?",
+    "source": "Kaynak kod bağlantısı (isteğe bağlı)",
+    "file": "WebAssembly dosyası (.wasm, WASI preview 1)",
+    "button": "Gönder",
+    "left": "Bugün kalan gönderim: {{ count }}",
+    "none_left": "Bugün gönderim hakkın kalmadı, yarın tekrar gel.",
+    "errors": {
+      "sign_in": "Lütfen önce kayıtlı bir hesapla giriş yap.",
+      "name": "Çözücüne en fazla 40 karakterlik bir ad ver.",
+      "description": "Açıklama en fazla 600 karakter olabilir.",
+      "url": "Kaynak bağlantısı bir https:// adresi olmalı.",
+      "size": "Dosya çok büyük, sınır 8 MiB.",
+      "not_wasm": "Bu bir WebAssembly dosyası değil.",
+      "duplicate": "Bu dosyanın aynısı daha önce gönderildi.",
+      "limit": "Bugün zaten üç kez gönderim yaptın.",
+      "server": "Bizim tarafımızda bir şeyler ters gitti, lütfen tekrar dene."
+    }
+  },
+  "mine": {
+    "title": "Gönderimlerin",
+    "empty": "Henüz gönderim yok."
+  },
+  "state": {
+    "queued": "sırada",
+    "running": "çalışıyor",
+    "done": "bitti",
+    "rejected": "reddedildi",
+    "failed": "başarısız",
+    "disqualified": "diskalifiye"
+  },
+  "detail": {
+    "meta_title": "{{ name }} · SAT Dojo",
+    "by": "gönderen: {{ author }}",
+    "submitted": "Gönderim: {{ date }}",
+    "size": "Boyut",
+    "source": "Kaynak kod",
+    "queued": "Worker bekleniyor…",
+    "running": "Değerlendiriliyor: {{ done }} / {{ total }} formül",
+    "unranked": "Sıralamada değil, yazarın daha iyi bir gönderimi var.",
+    "solved": "Çözülen",
+    "fuel": "Çözülen formüllerin yakıtı",
+    "family": "Aile",
+    "wrong": "Yanlış cevap: {{ count }}. Gönderim diskalifiye edildi; dojo run ile geliştirme setinde kontrol et.",
+    "failed": "Değerlendirme bizim tarafımızda başarısız oldu. Tekrar deneyeceğiz.",
+    "back": "Sıralamaya dön",
+    "not_found": "Böyle bir gönderim yok.",
+    "season": "Sezon {{ season }}",
+    "rank_label": "Sıra"
+  },
+  "rejection": {
+    "title": "Worker bu dosyayı reddetti",
+    "too_large": "Dosya 8 MiB'tan büyük.",
+    "invalid": "Dojo için geçerli bir WebAssembly modülü değil: {{ detail }}",
+    "import": "Şunu içe aktarıyor: {{ detail }}. Yalnızca wasi_snapshot_preview1 kullanılabilir.",
+    "no_start": "_start fonksiyonu yok. Kütüphane değil, bir program (çalıştırılabilir dosya) derle."
+  },
+  "lab_banner": {
+    "title": "Yeni: SAT Dojo",
+    "text": "Çözücünün bizimkini yeneceğini mi düşünüyorsun? Gönder ve sıralamada yüksel.",
+    "button": "Dojoya git"
+  }
+}

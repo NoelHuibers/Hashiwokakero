@@ -13,8 +13,8 @@ pub const LOCALES: [&str; 20] = [
     "th", "ja", "ko", "zh", "zh-Hant",
 ];
 
-pub const NAMESPACES: [&str; 8] =
-    ["common", "daily", "practice", "ranks", "account", "create", "lab", "rules"];
+pub const NAMESPACES: [&str; 9] =
+    ["common", "daily", "practice", "ranks", "account", "create", "lab", "rules", "dojo"];
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo::rerun-if-changed=build.rs");

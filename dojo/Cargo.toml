@@ -1,0 +1,42 @@
+[package]
+name = "dojo"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "The SAT Dojo: benchmark sets, a sandbox for WASI SAT solvers and deterministic scoring"
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+
+# Benchmark generation and answer checking (`bench`)
+backend = { path = "../backend", optional = true }
+common = { path = "../common", optional = true }
+rand = { version = "0.10.3", optional = true }
+sha2 = { version = "0.11.1", optional = true }
+
+# Running submissions (`runner`)
+wasmtime = { version = "49.0.3", optional = true, default-features = false, features = ["cranelift", "runtime", "std", "parallel-compilation"] }
+wasmtime-wasi = { version = "49.0.3", optional = true, default-features = false, features = ["p1"] }
+wasmparser = { version = "0.240", optional = true }
+
+# The worker service (`worker`)
+anyhow = { version = "1", optional = true }
+axum = { version = "0.8.9", optional = true }
+# 0.12: its rustls uses ring, 0.13 needs aws-lc (a C build)
+reqwest = { version = "0.12.28", optional = true, default-features = false, features = ["json", "rustls-tls"] }
+serde_json = { version = "1.0.154", optional = true }
+tokio = { version = "1", optional = true, features = ["rt-multi-thread", "macros", "sync", "time", "signal"] }
+
+[dev-dependencies]
+wat = "1"
+
+[features]
+default = []
+bench = ["dep:backend", "dep:common", "dep:rand", "dep:sha2"]
+runner = ["bench", "dep:wasmtime", "dep:wasmtime-wasi", "dep:wasmparser"]
+worker = ["runner", "dep:anyhow", "dep:axum", "dep:reqwest", "dep:serde_json", "dep:tokio"]
+
+# `export` needs `bench`, `run` needs `runner`, `serve` needs `worker`
+[[bin]]
+name = "dojo"
+required-features = ["bench"]

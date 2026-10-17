@@ -1,0 +1,11 @@
+[package]
+name = "house"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Hashi's own solvers as Dojo submissions: cargo build -p house --release --target wasm32-wasip1"
+publish = false
+
+[dependencies]
+backend = { path = "../../backend" }
+common = { path = "../../common" }

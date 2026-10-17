@@ -1,0 +1,43 @@
+# The SAT Dojo worker: evaluates submissions for hashi.rs.
+#
+# Private: no public IPs, the website reaches it at http://hashi-dojo.flycast, which starts the
+# machine when a job comes in. The worker exits after a few idle minutes, which stops it again.
+# Secrets: DOJO_TOKEN (the same as on the website).
+
+app = "hashi-dojo"
+primary_region = "ams"
+
+[env]
+  APP_URL = "https://hashi.rs"
+  PORT = "8080"
+  DOJO_IDLE_EXIT_SECS = "300"
+  DOJO_CACHE_DIR = "/data"
+  DOJO_THREADS = "4"
+  DOJO_MEMORY_MB = "768"
+
+# Generated benchmark sets, generating one takes minutes
+[mounts]
+  source = "dojo_cache"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = false
+  # The worker stops itself when idle (DOJO_IDLE_EXIT_SECS), mid-evaluation it gets no requests
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 25
+
+[[restart]]
+  policy = "on-failure"
+  retries = 3
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 4
+  memory_mb = 4096

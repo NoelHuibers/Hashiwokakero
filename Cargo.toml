@@ -2,15 +2,19 @@
 name = "hashi"
 version = "2.0.0"
 edition = "2024"
+license = "MIT"
 
 [workspace]
-members = ["backend", "common", "sat_solver"]
+members = ["backend", "common", "dojo", "dojo/house", "sat_solver"]
+exclude = ["dojo/starter"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 common = { path = "./common" }
+# The SAT Dojo: only its result types here, the worker runs submissions
+dojo = { path = "./dojo" }
 leptos = "0.8.22"
 leptos_meta = "0.8.7"
 leptos_router = "0.8.17"
@@ -53,11 +57,13 @@ console_error_panic_hook = { version = "0.1.7", optional = true }
 
 # Server only
 argon2 = { version = "0.6.0", optional = true }
-axum = { version = "0.8.9", optional = true }
+axum = { version = "0.8.9", features = ["multipart"], optional = true }
 backend = { path = "./backend", optional = true }
 getrandom = { version = "0.4.3", optional = true }
 leptos_axum = { version = "0.8.10", optional = true }
 # Turso (libSQL): remote databases in production, a local file in development and tests
+# Sends Dojo jobs to the worker
+reqwest = { version = "0.12.28", default-features = false, features = ["rustls-tls"], optional = true }
 libsql = { version = "0.10.0", default-features = false, features = ["core", "remote", "tls"], optional = true }
 sha2 = { version = "0.11.1", optional = true }
 tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "signal", "sync"], optional = true }
@@ -77,6 +83,7 @@ ssr = [
   "dep:getrandom",
   "dep:leptos_axum",
   "dep:libsql",
+  "dep:reqwest",
   "dep:sha2",
   "dep:tokio",
   "dep:tower-http",

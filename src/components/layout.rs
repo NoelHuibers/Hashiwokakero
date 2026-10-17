@@ -57,7 +57,12 @@ fn PageName(page: Page) -> impl IntoView {
 /// Whether the current location (in any language) is `href`.
 fn is_active(href: &str, path: &str) -> bool {
     let path = unlocalized(path);
-    if href == "/" { path == "/" } else { path.starts_with(href) }
+    match href {
+        "/" => path == "/",
+        // The dojo belongs to the lab
+        "/lab" => path.starts_with("/lab") || path.starts_with("/dojo"),
+        _ => path.starts_with(href),
+    }
 }
 
 /// A link to `path` in the current language.
