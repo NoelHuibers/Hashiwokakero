@@ -12,6 +12,7 @@ use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
 use crate::state::{Editor, Game, ToastKind, random_seed, toast};
+use crate::seo::PageMeta;
 
 fn cdcl(heuristic: Heuristic, restarts: Restarts, subsumption: bool) -> SolverConfig {
     SolverConfig {
@@ -200,6 +201,11 @@ pub fn LabPage() -> impl IntoView {
     };
 
     view! {
+        <PageMeta
+            title="SAT solver lab · CDCL, DPLL and splr on Hashi puzzles"
+            description="Race one Hashiwokakero puzzle through our own CDCL and DPLL SAT solvers with different branching heuristics and restart policies, and compare them with splr."
+            path="/lab"
+        />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="mb-5">
                 <p class="font-pixel text-sm text-primary">"研究室 · kenkyūshitsu"</p>

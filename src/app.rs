@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use leptos_meta::{HashedStylesheet, Link, Meta, MetaTags, Title, provide_meta_context};
+use leptos_meta::{HashedStylesheet, Meta, MetaTags, provide_meta_context};
 use leptos_router::components::{Route, Router, Routes};
 use leptos_router::path;
 
@@ -23,6 +23,12 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
             <head>
                 <meta charset="utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <meta name="author" content="Noel Huibers" />
+                <meta name="color-scheme" content="light dark" />
+                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+                <link rel="icon" href="/favicon.ico" sizes="32x32" />
+                <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+                <link rel="manifest" href="/manifest.webmanifest" />
                 <script inner_html=THEME_SCRIPT></script>
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
@@ -46,13 +52,8 @@ pub fn App() -> impl IntoView {
     provide_state();
 
     view! {
-        <Title text="Hashi · 橋をかけろ — the bridges puzzle, solved by SAT" />
-        <Meta
-            name="description"
-            content="Play Hashiwokakero (Bridges) in cute pixel art. Every puzzle is generated with a unique solution and can be solved by our own CDCL and DPLL SAT solvers."
-        />
+        // Title, description and social tags are set per page, see seo::PageMeta
         <Meta name="theme-color" content="#cf3a24" />
-        <Link rel="icon" href="/favicon.svg" />
 
         <Router>
             <div class="flex min-h-screen flex-col">
