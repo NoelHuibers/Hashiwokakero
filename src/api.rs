@@ -1,34 +1,27 @@
-//! Server functions. Solving and generating run on the server, in the backend crate.
+//! Server functions. Solving and generating run on the server, in the backend crate; users and
+//! daily results live in the database (see `server`).
 
 use common::{GenerateParams, GeneratedPuzzle, Puzzle, SolveReport, SolverConfig};
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
+use crate::model::{AllTimeEntry, DailyInfo, Leaderboard, SubmitResult, UserInfo, UserStats};
+#[cfg(feature = "ssr")]
+use crate::server::{auth, daily, db, run_blocking};
+
 /// Upper bound for a single solver run, whatever the client asks for.
 #[cfg(feature = "ssr")]
 const MAX_TIMEOUT_MS: u32 = 20_000;
-
-/// Runs CPU bound backend work off the async runtime. The fly.io VM has a single shared CPU,
-/// so only a couple of jobs run at the same time and the rest queue up.
-#[cfg(feature = "ssr")]
-async fn run_blocking<T: Send + 'static>(
-    job: impl FnOnce() -> Result<T, String> + Send + 'static,
-) -> Result<T, ServerFnError> {
-    use tokio::sync::Semaphore;
-    static PERMITS: Semaphore = Semaphore::const_new(2);
-
-    let _permit = PERMITS.acquire().await.map_err(ServerFnError::new)?;
-    tokio::task::spawn_blocking(job)
-        .await
-        .map_err(ServerFnError::new)?
-        .map_err(ServerFnError::new)
-}
 
 /// Deserializing skips `Puzzle::new`, which keeps the islands in reading order.
 #[cfg(feature = "ssr")]
 fn normalized(puzzle: Puzzle) -> Puzzle {
     Puzzle::new(puzzle.width, puzzle.height, puzzle.islands)
 }
+
+/* ------------------------------------------------------------------ */
+/*  Puzzles and solvers                                                */
+/* ------------------------------------------------------------------ */
 
 /// Generates a new puzzle with a unique solution.
 #[server(input = Json)]
@@ -64,4 +57,119 @@ pub async fn solve_puzzle(
 pub async fn puzzle_cnf(puzzle: Puzzle) -> Result<String, ServerFnError> {
     let puzzle = normalized(puzzle);
     run_blocking(move || backend::api::to_dimacs(&puzzle)).await
+}
+
+/* ------------------------------------------------------------------ */
+/*  Users                                                              */
+/* ------------------------------------------------------------------ */
+
+#[server(input = Json)]
+pub async fn current_user() -> Result<Option<UserInfo>, ServerFnError> {
+    let conn = db::conn()?;
+    Ok(auth::current_user(&conn).await?.map(|u| u.info()))
+}
+
+/// Creates an account. A guest keeps their results and streak.
+#[server(input = Json)]
+pub async fn register(username: String, password: String) -> Result<UserInfo, ServerFnError> {
+    let conn = db::conn()?;
+    Ok(auth::register(&conn, username.trim(), password).await?.info())
+}
+
+#[server(input = Json)]
+pub async fn login(username: String, password: String) -> Result<UserInfo, ServerFnError> {
+    let conn = db::conn()?;
+    Ok(auth::login(&conn, username.trim(), password).await?.info())
+}
+
+#[server(input = Json)]
+pub async fn logout() -> Result<(), ServerFnError> {
+    auth::logout(&db::conn()?).await
+}
+
+/// Statistics of the current user, `None` without a session.
+#[server(input = Json)]
+pub async fn my_stats() -> Result<Option<UserStats>, ServerFnError> {
+    let conn = db::conn()?;
+    match auth::current_user(&conn).await? {
+        Some(user) => Ok(Some(daily::stats(&conn, user.id).await?)),
+        None => Ok(None),
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Daily puzzle                                                       */
+/* ------------------------------------------------------------------ */
+
+/// Today's daily, with the puzzle only if the current user already started it.
+#[server(input = Json)]
+pub async fn daily_today() -> Result<DailyInfo, ServerFnError> {
+    let conn = db::conn()?;
+    let user = auth::current_user(&conn).await?;
+    daily::info(&conn, user.map(|u| u.id), daily::today()).await
+}
+
+/// Starts today's daily for the current user (a guest is created if needed).
+#[server(input = Json)]
+pub async fn start_daily() -> Result<DailyInfo, ServerFnError> {
+    let conn = db::conn()?;
+    let user = auth::ensure_user(&conn).await?;
+    daily::start(&conn, user.id, daily::today()).await
+}
+
+#[cfg(feature = "ssr")]
+async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> {
+    let conn = db::conn()?;
+    let user = auth::current_user(&conn)
+        .await?
+        .ok_or_else(|| ServerFnError::new("Your session expired, please reload"))?;
+    Ok((conn, user))
+}
+
+/// One correct bridge, +30 s.
+#[server(input = Json)]
+pub async fn daily_hint(day: i64, bridges: Vec<u8>) -> Result<Option<(usize, u8)>, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    daily::hint(&conn, user.id, day, bridges).await
+}
+
+/// Bridges that don't belong to the solution, +10 s.
+#[server(input = Json)]
+pub async fn daily_check(day: i64, bridges: Vec<u8>) -> Result<Vec<usize>, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    daily::check(&conn, user.id, day, bridges).await
+}
+
+/// The solution. The attempt is no longer ranked.
+#[server(input = Json)]
+pub async fn daily_reveal(day: i64) -> Result<Vec<u8>, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    daily::reveal(&conn, user.id, day).await
+}
+
+#[server(input = Json)]
+pub async fn submit_daily(day: i64, bridges: Vec<u8>, moves: u32) -> Result<SubmitResult, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    daily::submit(&conn, user.id, day, bridges, moves).await
+}
+
+/// The ranking of a day, today if `day` is `None`.
+#[server(input = Json)]
+pub async fn daily_leaderboard(day: Option<i64>) -> Result<Leaderboard, ServerFnError> {
+    let conn = db::conn()?;
+    let me = auth::current_user(&conn).await?.map(|u| u.id);
+    let today = daily::today();
+    let day = day.unwrap_or(today).min(today);
+    daily::leaderboard(&conn, day, me).await
+}
+
+#[server(input = Json)]
+pub async fn all_time_leaderboard() -> Result<Vec<AllTimeEntry>, ServerFnError> {
+    daily::all_time(&db::conn()?).await
+}
+
+/// An earlier daily, to play it in practice mode.
+#[server(input = Json)]
+pub async fn archived_daily(day: i64) -> Result<Option<Puzzle>, ServerFnError> {
+    daily::archived(&db::conn()?, day).await
 }

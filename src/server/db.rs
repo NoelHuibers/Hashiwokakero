@@ -1,0 +1,126 @@
+//! The database: Turso (libSQL) in production, a local SQLite file in development and tests.
+//!
+//! - `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`: remote Turso database
+//! - otherwise `HASHI_DB_PATH` (default `hashi.db`): local file
+
+use std::sync::OnceLock;
+
+use libsql::{Builder, Connection, Database, params};
+use leptos::prelude::ServerFnError;
+
+use super::now_ms;
+
+static DB: OnceLock<Database> = OnceLock::new();
+
+/// Schema versions, applied in order and recorded in `schema_migrations`.
+const MIGRATIONS: &[&str] = &[r#"
+CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER PRIMARY KEY,
+    -- NULL for guests
+    username      TEXT UNIQUE COLLATE NOCASE,
+    name          TEXT NOT NULL,
+    password_hash TEXT,
+    created_at    INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    -- SHA-256 of the cookie value, the token itself is never stored
+    token_hash TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS sessions_user ON sessions (user_id);
+
+-- One puzzle per UTC day, stored so it never changes once played
+CREATE TABLE IF NOT EXISTS dailies (
+    day        INTEGER PRIMARY KEY,
+    difficulty TEXT NOT NULL,
+    puzzle     TEXT NOT NULL,
+    solution   TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS attempts (
+    user_id     INTEGER NOT NULL,
+    day         INTEGER NOT NULL,
+    started_at  INTEGER NOT NULL,
+    finished_at INTEGER,
+    hints       INTEGER NOT NULL DEFAULT 0,
+    checks      INTEGER NOT NULL DEFAULT 0,
+    revealed    INTEGER NOT NULL DEFAULT 0,
+    -- finished_at - started_at + penalties
+    time_ms     INTEGER,
+    moves       INTEGER,
+    bridges     TEXT,
+    PRIMARY KEY (user_id, day)
+);
+CREATE INDEX IF NOT EXISTS attempts_ranking ON attempts (day, time_ms);
+"#];
+
+pub async fn init() -> Result<(), String> {
+    let url = std::env::var("TURSO_DATABASE_URL").unwrap_or_default();
+    let db = if url.is_empty() {
+        let path = std::env::var("HASHI_DB_PATH").unwrap_or_else(|_| "hashi.db".into());
+        println!("database: local file {path} (set TURSO_DATABASE_URL to use Turso)");
+        open_local(&path).await?
+    } else {
+        let token = std::env::var("TURSO_AUTH_TOKEN").unwrap_or_default();
+        println!("database: Turso {url}");
+        Builder::new_remote(url, token)
+            .build()
+            .await
+            .map_err(|e| format!("could not connect to Turso: {e}"))?
+    };
+    migrate(&db.connect().map_err(|e| e.to_string())?).await?;
+    DB.set(db).map_err(|_| "database initialized twice".to_string())
+}
+
+pub async fn open_local(path: &str) -> Result<Database, String> {
+    Builder::new_local(path)
+        .build()
+        .await
+        .map_err(|e| format!("could not open {path}: {e}"))
+}
+
+pub async fn migrate(conn: &Connection) -> Result<(), String> {
+    let err = |e: libsql::Error| format!("migration failed: {e}");
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)",
+        (),
+    )
+    .await
+    .map_err(err)?;
+    let mut rows = conn
+        .query("SELECT COALESCE(MAX(version), 0) FROM schema_migrations", ())
+        .await
+        .map_err(err)?;
+    let current: i64 = match rows.next().await.map_err(err)? {
+        Some(row) => row.get(0).map_err(err)?,
+        None => 0,
+    };
+    for (i, sql) in MIGRATIONS.iter().enumerate().skip(current as usize) {
+        conn.execute_batch(sql).await.map_err(err)?;
+        conn.execute(
+            "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
+            params![i as i64 + 1, now_ms()],
+        )
+        .await
+        .map_err(err)?;
+    }
+    Ok(())
+}
+
+/// A connection for the current request.
+pub fn conn() -> Result<Connection, ServerFnError> {
+    DB.get()
+        .ok_or_else(|| ServerFnError::new("database not initialized"))?
+        .connect()
+        .map_err(db_err)
+}
+
+pub fn db_err(e: libsql::Error) -> ServerFnError {
+    // Details go to the log, not to the player
+    eprintln!("database error: {e}");
+    ServerFnError::new("database error, please try again")
+}

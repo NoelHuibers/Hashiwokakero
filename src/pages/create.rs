@@ -164,7 +164,7 @@ pub fn CreatePage() -> impl IntoView {
             _ => None,
         });
         game.set_puzzle(puzzle, solution, unique, Source::Custom);
-        navigate("/", Default::default());
+        navigate("/practice", Default::default());
     };
 
     view! {

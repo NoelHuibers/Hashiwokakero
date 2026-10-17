@@ -7,6 +7,7 @@ pub mod alert;
 pub mod badge;
 pub mod button;
 pub mod card;
+pub mod input;
 pub mod kbd;
 pub mod label;
 pub mod progress;
