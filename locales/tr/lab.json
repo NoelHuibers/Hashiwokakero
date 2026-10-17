@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "SAT çözücü laboratuvarı · Hashi'de CDCL, DPLL ve splr",
+    "description": "Bir Hashiwokakero bulmacasını farklı dallanma sezgiselleri ve yeniden başlatma politikalarıyla CDCL ve DPLL çözücülerimizde yarıştır, splr ile kıyasla."
+  },
+  "title": "Çözücü laboratuvarı",
+  "intro": "Bir bulmacayı kendi CDCL ve DPLL çözücülerimizde farklı modlarla (dallanma sezgiselleri, yeniden başlatma politikaları, kapsama) yarıştır ve splr ile karşılaştır.",
+  "puzzle": {
+    "title": "1 · Bulmaca",
+    "size": "{{ width }}×{{ height }}, {{ count }} ada",
+    "none": "Bulmaca seçilmedi",
+    "game": "Mevcut oyun",
+    "workshop": "Atölye",
+    "fresh": "Yeni"
+  },
+  "solvers": {
+    "title": "2 · Çözücüler",
+    "description": "Karşılaştırılacak ayarları seç.",
+    "timeout": "Çalıştırma başına zaman aşımı"
+  },
+  "racing": "Yarışıyor…",
+  "start": "Yarışı başlat",
+  "results": {
+    "title": "3 · Sonuçlar",
+    "description": "Toplam süre kodlama artı çözme süresidir. Bağlantısız çözümler gerektikçe reddedilir, her ret bir SAT çağrısı daha demektir.",
+    "empty": "Henüz yarış yok."
+  },
+  "table": {
+    "config": "Ayar",
+    "result": "Sonuç",
+    "decisions": "Karar",
+    "restarts": "Yeniden başlatma",
+    "calls": "SAT çağrısı"
+  },
+  "badge": {
+    "queued": "sırada",
+    "solving": "çözülüyor…",
+    "error": "hata",
+    "timeout": "zaman aşımı"
+  },
+  "summary": {
+    "decisions": "Karar: {{ count }}",
+    "restarts": "Yeniden başlatma: {{ count }}",
+    "calls": "SAT çağrısı: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Önce bir bulmaca seç.",
+    "pick_solver": "En az bir çözücü ayarı seç."
+  }
+}

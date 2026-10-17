@@ -13,6 +13,9 @@ use crate::components::ui::progress::Progress;
 use crate::state::{
     self, Game, Settings, Source, Status, ToastKind, format_time, random_seed, toast,
 };
+use crate::components::layout::use_localized;
+use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::lang::difficulty_name;
 use crate::seo::PageMeta;
 
 fn new_random(game: Game, difficulty: Difficulty) {
@@ -27,12 +30,12 @@ fn new_random(game: Game, difficulty: Difficulty) {
 }
 
 #[component]
-fn Stat(label: &'static str, jp: &'static str, #[prop(into)] value: Signal<String>) -> impl IntoView {
+fn Stat(#[prop(into)] label: Signal<String>, jp: &'static str, #[prop(into)] value: Signal<String>) -> impl IntoView {
     view! {
         <div class="flex min-w-[4.5rem] flex-col items-center rounded-lg border bg-card px-3 py-1.5 shadow-xs">
             <span class="font-pixel text-xl tabular-nums leading-tight">{move || value.get()}</span>
             <span class="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                {label} " · " {jp}
+                {move || label.get()} " · " {jp}
             </span>
         </div>
     }
@@ -40,6 +43,7 @@ fn Stat(label: &'static str, jp: &'static str, #[prop(into)] value: Signal<Strin
 
 #[component]
 fn DifficultyPicker() -> impl IntoView {
+    let i18n = use_i18n();
     let settings = expect_context::<Settings>();
     view! {
         <div class="grid grid-cols-5 gap-1.5">
@@ -59,11 +63,13 @@ fn DifficultyPicker() -> impl IntoView {
                                     },
                                 )
                             }
-                            title=format!("{} · {w}×{h}", d.label())
+                            title=move || format!("{} · {w}×{h}", difficulty_name(i18n.get_locale(), d))
                             on:click=move |_| settings.difficulty.set(d)
                         >
                             <span class="font-pixel text-lg leading-none">{d.kanji()}</span>
-                            <span class="mt-1 text-[10px] font-bold uppercase tracking-wider">{d.label()}</span>
+                            <span class="mt-1 max-w-full truncate text-[10px] font-bold uppercase tracking-wider">
+                                {move || difficulty_name(i18n.get_locale(), d)}
+                            </span>
                             <span class="text-[10px] opacity-70">{format!("{w}×{h}")}</span>
                         </button>
                     }
@@ -75,16 +81,17 @@ fn DifficultyPicker() -> impl IntoView {
 
 #[component]
 fn NewGameCard() -> impl IntoView {
+    let i18n = use_i18n();
     let game = expect_context::<Game>();
     let settings = expect_context::<Settings>();
     view! {
         <Card class="gap-4">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-xl">
-                    "Practice" <span class="font-pixel text-sm text-primary">"練習"</span>
+                    {t!(i18n, practice.card.title)} <span class="font-pixel text-sm text-primary">"練習"</span>
                 </CardTitle>
                 <CardDescription>
-                    "As many fresh puzzles as you like, each proven by the SAT solver to have exactly one solution. No clock pressure, the daily bridge is on the home page."
+                    {t!(i18n, practice.card.text)}
                 </CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-3">
@@ -95,7 +102,7 @@ fn NewGameCard() -> impl IntoView {
                         attr:disabled=move || game.loading.get()
                         on:click=move |_| new_random(game, settings.difficulty.get_untracked())
                     >
-                        {move || if game.loading.get() { "Generating…" } else { "Generate 生成" }}
+                        {move || if game.loading.get() { t_string!(i18n, practice.generating).to_string() } else { format!("{} 生成", t_string!(i18n, practice.generate)) }}
                     </Button>
                 </div>
             </CardContent>
@@ -114,13 +121,14 @@ fn legend_board(required: u8, count: u8) -> (Board, Vec<u8>) {
 
 #[component]
 fn LegendCard() -> impl IntoView {
+    let i18n = use_i18n();
     let (single, single_bridges) = legend_board(1, 1);
     let (double, double_bridges) = legend_board(2, 2);
     view! {
         <Card class="gap-3">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-base">
-                    "How to build" <span class="font-pixel text-sm text-primary">"操作"</span>
+                    {t!(i18n, practice.legend.title)} <span class="font-pixel text-sm text-primary">"操作"</span>
                 </CardTitle>
             </CardHeader>
             <CardContent class="flex flex-col gap-3 text-sm">
@@ -132,7 +140,7 @@ fn LegendCard() -> impl IntoView {
                             mode=BoardMode::View
                             max_height="2.6rem"
                         />
-                        <span class="text-xs text-muted-foreground">"1 · wooden bridge"</span>
+                        <span class="text-xs text-muted-foreground">"1 · " {t!(i18n, practice.legend.single)}</span>
                     </div>
                     <div class="flex flex-col items-center gap-1">
                         <BoardView
@@ -141,18 +149,16 @@ fn LegendCard() -> impl IntoView {
                             mode=BoardMode::View
                             max_height="2.6rem"
                         />
-                        <span class="text-xs text-muted-foreground">"2 · vermilion bridge"</span>
+                        <span class="text-xs text-muted-foreground">"2 · " {t!(i18n, practice.legend.double)}</span>
                     </div>
                 </div>
                 <ul class="flex flex-col gap-1.5 text-muted-foreground">
-                    <li>"Click the water between two islands, or drag from an island."</li>
-                    <li>"Click again for a second bridge, a third click removes them."</li>
+                    <li>{t!(i18n, practice.legend.build)}</li>
+                    <li>{t!(i18n, practice.legend.again)}</li>
+                    <li>{t!(i18n, practice.legend.remove, <kbd> = <Kbd />)}</li>
                     <li>
-                        "Right click or " <Kbd>"Shift"</Kbd> " + click removes a bridge."
-                    </li>
-                    <li>
-                        <Kbd>"Ctrl Z"</Kbd> " undo · " <Kbd>"Ctrl Y"</Kbd> " redo · " <Kbd>"H"</Kbd>
-                        " hint"
+                        <Kbd>"Ctrl Z"</Kbd> " " {t!(i18n, common.game.undo)} " · " <Kbd>"Ctrl Y"</Kbd> " "
+                        {t!(i18n, common.game.redo)} " · " <Kbd>"H"</Kbd> " " {t!(i18n, common.game.hint)}
                     </li>
                 </ul>
             </CardContent>
@@ -162,6 +168,7 @@ fn LegendCard() -> impl IntoView {
 
 #[component]
 fn WinOverlay() -> impl IntoView {
+    let i18n = use_i18n();
     let game = expect_context::<Game>();
     let settings = expect_context::<Settings>();
     let dismissed = RwSignal::new(false);
@@ -172,19 +179,20 @@ fn WinOverlay() -> impl IntoView {
     });
 
     let share = move |_| {
+        let locale = i18n.get_locale_untracked();
         let text = format!(
-            "🌉 Hashi · {} · solved in {} with {} moves{} · 橋をかけろ",
-            game.source.get_untracked().title(),
-            format_time(game.elapsed.get_untracked()),
-            game.moves.get_untracked(),
-            match game.hints.get_untracked() {
-                0 => String::new(),
-                1 => " and 1 hint".to_string(),
-                n => format!(" and {n} hints"),
-            }
+            "🌉 Hashi · {} · {} · 橋をかけろ",
+            game.source.get_untracked().title(locale),
+            td_string!(
+                locale,
+                practice.share,
+                time = format_time(game.elapsed.get_untracked()),
+                moves = game.moves.get_untracked(),
+                hints = game.hints.get_untracked()
+            ),
         );
         let _ = window().navigator().clipboard().write_text(&text);
-        toast(ToastKind::Success, "Result copied to the clipboard.");
+        toast(ToastKind::Success, |l| td_string!(l, common.toast.copied).to_string());
     };
 
     view! {
@@ -193,26 +201,26 @@ fn WinOverlay() -> impl IntoView {
             <div class="absolute inset-0 z-10 grid place-items-center p-4">
                 <Card class="w-full max-w-sm items-center gap-3 px-6 text-center shadow-2xl animate-in zoom-in-95 fade-in">
                     <Stamp kanji="完" class="size-20 text-5xl" />
-                    <h2 class="text-2xl font-black">"見事！ Well done!"</h2>
+                    <h2 class="text-2xl font-black">"見事！ " {t!(i18n, common.game.well_done)}</h2>
                     <p class="text-muted-foreground">
-                        "Every island is connected, in "
-                        <span class="font-pixel text-foreground">{move || format_time(game.elapsed.get())}</span>
-                        " with " {move || game.moves.get()} " moves"
-                        {move || match game.hints.get() {
-                            0 => " and no hints.".to_string(),
-                            1 => " and one hint.".to_string(),
-                            n => format!(" and {n} hints."),
-                        }}
+                        {t!(
+                            i18n,
+                            practice.won,
+                            time = move || format_time(game.elapsed.get()),
+                            moves = move || game.moves.get(),
+                            hints = move || game.hints.get(),
+                            <b> = <span class="font-pixel text-foreground" />
+                        )}
                     </p>
                     <div class="flex w-full flex-wrap justify-center gap-2 pt-1">
                         <Button on:click=move |_| new_random(game, settings.difficulty.get_untracked())>
-                            "Next puzzle 次へ"
+                            {t!(i18n, practice.next)} " 次へ"
                         </Button>
                         <Button variant=ButtonVariant::Outline on:click=share>
-                            "Share"
+                            {t!(i18n, practice.share_button)}
                         </Button>
                         <Button variant=ButtonVariant::Ghost on:click=move |_| dismissed.set(true)>
-                            "Admire"
+                            {t!(i18n, practice.admire)}
                         </Button>
                     </div>
                 </Card>
@@ -225,16 +233,16 @@ fn WinOverlay() -> impl IntoView {
                     <span class="hanko grid size-9 shrink-0 rotate-[-6deg] place-items-center rounded-md font-pixel text-xl">
                         "解"
                     </span>
-                    <span>"Solved by the SAT solver."</span>
+                    <span>{t!(i18n, practice.revealed)}</span>
                     <Button size=ButtonSize::Sm on:click=move |_| game.restart()>
-                        "Play it myself"
+                        {t!(i18n, practice.play_myself)}
                     </Button>
                     <Button
                         size=ButtonSize::Sm
                         variant=ButtonVariant::Outline
                         on:click=move |_| new_random(game, settings.difficulty.get_untracked())
                     >
-                        "New puzzle"
+                        {t!(i18n, practice.new_puzzle)}
                     </Button>
                     <Button size=ButtonSize::Sm variant=ButtonVariant::Ghost on:click=move |_| dismissed.set(true)>
                         "✕"
@@ -247,6 +255,7 @@ fn WinOverlay() -> impl IntoView {
 
 #[component]
 pub fn PlayPage() -> impl IntoView {
+    let i18n = use_i18n();
     let game = expect_context::<Game>();
     let settings = expect_context::<Settings>();
 
@@ -298,8 +307,8 @@ pub fn PlayPage() -> impl IntoView {
 
     view! {
         <PageMeta
-            title="Practice Hashiwokakero · unlimited free puzzles · Hashi"
-            description="Practice Hashiwokakero (Bridges) without the clock: unlimited generated puzzles in five sizes from 7×7 to 24×24, hints and checks, every puzzle with exactly one solution."
+            title=Signal::derive(move || t_string!(i18n, practice.meta.title).to_string())
+            description=Signal::derive(move || t_string!(i18n, practice.meta.description).to_string())
             path="/practice"
         />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
@@ -314,35 +323,35 @@ pub fn PlayPage() -> impl IntoView {
                             </span>
                             <div>
                                 <h1 class="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                                    "Hashiwokakero · the bridges puzzle"
+                                    "Hashiwokakero · " {t!(i18n, practice.heading)}
                                 </h1>
-                                <p class="text-2xl font-black sm:text-3xl">{move || game.source.get().title()}</p>
+                                <p class="text-2xl font-black sm:text-3xl">{move || game.source.get().title(i18n.get_locale())}</p>
                                 <div class="mt-1 flex gap-1.5">
                                     {move || match game.unique.get() {
                                         Some(true) => {
                                             view! {
-                                                <Badge variant=BadgeVariant::Success>"unique solution ✓"</Badge>
+                                                <Badge variant=BadgeVariant::Success>{t!(i18n, common.game.unique_solution)}</Badge>
                                             }
                                                 .into_any()
                                         }
                                         Some(false) => {
                                             view! {
-                                                <Badge variant=BadgeVariant::Warning>"several solutions"</Badge>
+                                                <Badge variant=BadgeVariant::Warning>{t!(i18n, common.game.several_solutions)}</Badge>
                                             }
                                                 .into_any()
                                         }
                                         None => ().into_any(),
                                     }}
                                     <Badge variant=BadgeVariant::Muted>
-                                        {move || format!("{} islands", island_count.get())}
+                                        {move || t_string!(i18n, common.game.islands, count = island_count.get()).to_string()}
                                     </Badge>
                                 </div>
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <Stat label="Time" jp="時間" value=Signal::derive(move || format_time(game.elapsed.get())) />
-                            <Stat label="Moves" jp="手" value=Signal::derive(move || game.moves.get().to_string()) />
-                            <Stat label="Hints" jp="助" value=Signal::derive(move || game.hints.get().to_string()) />
+                            <Stat label=Signal::derive(move || t_string!(i18n, common.game.time).to_string()) jp="時間" value=Signal::derive(move || format_time(game.elapsed.get())) />
+                            <Stat label=Signal::derive(move || t_string!(i18n, common.game.moves).to_string()) jp="手" value=Signal::derive(move || game.moves.get().to_string()) />
+                            <Stat label=Signal::derive(move || t_string!(i18n, common.game.hints).to_string()) jp="助" value=Signal::derive(move || game.hints.get().to_string()) />
                         </div>
                     </div>
 
@@ -360,9 +369,9 @@ pub fn PlayPage() -> impl IntoView {
                             <div class="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-background/55 backdrop-blur-sm">
                                 <div class="flex flex-col items-center gap-3 text-center">
                                     <PixelSprite art=&BOAT class="bob w-20" />
-                                    <p class="font-pixel text-lg">"生成中 · generating"</p>
+                                    <p class="font-pixel text-lg">"生成中 · " {t!(i18n, practice.generating)}</p>
                                     <p class="max-w-xs text-sm text-muted-foreground">
-                                        "Growing islands, building bridges, and asking the SAT solver whether the solution is unique…"
+                                        {t!(i18n, practice.generating_text)}
                                     </p>
                                 </div>
                             </div>
@@ -376,15 +385,15 @@ pub fn PlayPage() -> impl IntoView {
                                 <span class="font-pixel text-foreground">
                                     {move || format!("{} / {}", islands_done.get(), island_count.get())}
                                 </span>
-                                " islands complete"
+                                " " {t!(i18n, common.game.islands_complete)}
                             </span>
                             <span>
                                 {move || {
                                     let c = check.get();
                                     if c.components > 1 {
-                                        format!("{} separate groups", c.components)
+                                        t_string!(i18n, common.game.groups, count = c.components).to_string()
                                     } else {
-                                        "all connected".to_string()
+                                        t_string!(i18n, common.game.all_connected).to_string()
                                     }
                                 }}
                             </span>
@@ -404,36 +413,36 @@ pub fn PlayPage() -> impl IntoView {
                             attr:disabled=move || not_playing.get() || game.undo_stack.with(Vec::is_empty)
                             on:click=move |_| game.undo()
                         >
-                            "↶ Undo"
+                            "↶ " {t!(i18n, common.game.undo)}
                         </Button>
                         <Button
                             variant=ButtonVariant::Outline
                             attr:disabled=move || not_playing.get() || game.redo_stack.with(Vec::is_empty)
                             on:click=move |_| game.redo()
                         >
-                            "Redo ↷"
+                            {t!(i18n, common.game.redo)} " ↷"
                         </Button>
                         <Button
                             variant=ButtonVariant::Ghost
                             attr:disabled=move || busy.get() || game.status.get() == Status::Empty
                             on:click=move |_| game.restart()
                         >
-                            "Restart"
+                            {t!(i18n, common.game.restart)}
                         </Button>
-                        <div class="contents sm:ml-auto sm:flex sm:gap-2">
+                        <div class="contents sm:ms-auto sm:flex sm:gap-2">
                             <Button
                                 variant=ButtonVariant::Secondary
                                 attr:disabled=move || not_playing.get()
                                 on:click=move |_| state::check(game, settings)
                             >
-                                "Check" <span class="hidden sm:inline">" 確認"</span>
+                                {t!(i18n, common.game.check)} <span class="hidden sm:inline">" 確認"</span>
                             </Button>
                             <Button
                                 variant=ButtonVariant::Secondary
                                 attr:disabled=move || not_playing.get()
                                 on:click=move |_| state::hint(game, settings)
                             >
-                                "Hint" <span class="hidden sm:inline">" 助言"</span>
+                                {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span>
                             </Button>
                         </div>
                     </div>
@@ -443,21 +452,24 @@ pub fn PlayPage() -> impl IntoView {
                     <NewGameCard />
                     <SolverPanel report=game.report busy=game.solving>
                         <PanelButton
-                            label="Solve 解く"
                             primary=true
                             disabled=busy
                             on_click=Callback::new(move |_| state::reveal(game, settings))
-                        />
+                        >
+                            {t!(i18n, common.game.solve)} " 解く"
+                        </PanelButton>
                         <PanelButton
-                            label="Unique?"
                             disabled=busy
                             on_click=Callback::new(move |_| state::check_unique(game, settings))
-                        />
+                        >
+                            {t!(i18n, common.game.unique)}
+                        </PanelButton>
                         <PanelButton
-                            label="CNF ↓"
                             disabled=busy
                             on_click=Callback::new(move |_| crate::pages::download_cnf(game.puzzle()))
-                        />
+                        >
+                            "CNF ↓"
+                        </PanelButton>
                     </SolverPanel>
                     <LegendCard />
                 </aside>
@@ -470,55 +482,59 @@ pub fn PlayPage() -> impl IntoView {
 /// the search engine itself, the board is just an SVG to it).
 #[component]
 pub fn SeoIntro() -> impl IntoView {
-    let link = "font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
+    let i18n = use_i18n();
+    let rules = use_localized("/rules");
+    let create = use_localized("/create");
+    let lab = use_localized("/lab");
+    const LINK: &str = "font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
     view! {
         <article class="mx-auto max-w-7xl px-4 pb-4 pt-10 sm:px-6">
             <div class="mb-6 flex items-end gap-3">
                 <span class="vertical-jp hidden font-pixel text-sm leading-none text-primary sm:block">"橋をかけろ"</span>
                 <div>
-                    <p class="font-pixel text-sm text-primary">"about the game"</p>
-                    <h2 class="text-2xl font-black sm:text-3xl">"Hashiwokakero, the bridges puzzle"</h2>
+                    <p class="font-pixel text-sm text-primary">{t!(i18n, practice.about.kicker)}</p>
+                    <h2 class="text-2xl font-black sm:text-3xl">{t!(i18n, practice.about.title)}</h2>
                 </div>
             </div>
-            <div class="grid gap-x-10 gap-y-8 text-[15px] leading-relaxed text-muted-foreground md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-x-10 gap-y-8 text-[15px] leading-relaxed text-muted-foreground md:grid-cols-2">
                 <section class="flex flex-col gap-2">
-                    <h3 class="text-lg font-bold text-foreground">"What is Hashiwokakero?"</h3>
+                    <h3 class="text-lg font-bold text-foreground">{t!(i18n, practice.about.what_title)}</h3>
+                    <p>{t!(i18n, practice.about.what, <b> = <b class="font-semibold text-foreground" />)}</p>
+                </section>
+                <section class="flex flex-col gap-2">
+                    <h3 class="text-lg font-bold text-foreground">{t!(i18n, practice.about.how_title)}</h3>
                     <p>
-                        "Hashiwokakero (橋をかけろ, “build bridges!”) is a Japanese logic puzzle published by Nikoli, "
-                        "also known as "<b class="font-semibold text-foreground">"Bridges"</b>", "
-                        <b class="font-semibold text-foreground">"Hashi"</b>" or Ai-Ki-Ai. A grid of numbered islands has to be "
-                        "joined by bridges: every island gets exactly as many bridges as its number, bridges run straight and never cross, "
-                        "at most two join the same pair of islands, and in the end every island can be reached from every other. "
-                        "Like Sudoku or Nurikabe it needs no arithmetic, only deduction."
+                        {t!(
+                            i18n,
+                            practice.about.how,
+                            <a> = move |children: ChildrenFn| view! { <a class=LINK href=rules>{children()}</a> }
+                        )}
                     </p>
                 </section>
                 <section class="flex flex-col gap-2">
-                    <h3 class="text-lg font-bold text-foreground">"How to play Bridges online"</h3>
-                    <p>
-                        "Pick a difficulty from Easy (7×7) to Oni (24×24) and press Generate. Click the water between two islands to "
-                        "build a bridge, click again for a double bridge, a third click removes them, or simply drag from one island to the next. "
-                        "Finished islands turn green, overfull ones red. Stuck? Ask for a hint, or let the solver check your bridges. "
-                        "The full rules with a solved example are on the "
-                        <a class=link href="/rules">"how to play"</a>" page."
-                    </p>
-                </section>
-                <section class="flex flex-col gap-2">
-                    <h3 class="text-lg font-bold text-foreground">"Solving techniques that avoid guessing"</h3>
-                    <ul class="list-disc space-y-1 pl-5">
-                        <li>"An island whose number equals twice its neighbours has a double bridge to every one of them: an 8 in the open, a 6 on an edge, a 4 in a corner."</li>
-                        <li>"A 1 never connects to another 1, and two 2s are never joined by a double bridge, that would cut them off from the rest."</li>
-                        <li>"Count what is still missing: if an island needs 5 more bridges across three neighbours, each neighbour gets at least one."</li>
-                        <li>"Bridges block the lines they cross, so a placed bridge can force the islands on both sides to connect elsewhere."</li>
-                        <li>"Everything has to end up connected: a group that can only reach the rest through one gap must use it."</li>
+                    <h3 class="text-lg font-bold text-foreground">{t!(i18n, practice.about.techniques_title)}</h3>
+                    <ul class="list-disc space-y-1 ps-5">
+                        <li>{t!(i18n, practice.about.technique_double)}</li>
+                        <li>{t!(i18n, practice.about.technique_isolation)}</li>
+                        <li>{t!(i18n, practice.about.technique_count)}</li>
+                        <li>{t!(i18n, practice.about.technique_block)}</li>
+                        <li>{t!(i18n, practice.about.technique_connect)}</li>
                     </ul>
                 </section>
                 <section class="flex flex-col gap-2">
-                    <h3 class="text-lg font-bold text-foreground">"Why play Hashi here"</h3>
-                    <ul class="list-disc space-y-1 pl-5">
-                        <li>"Every puzzle has "<b class="font-semibold text-foreground">"exactly one solution"</b>", proven by a SAT solver before you see it, so logic alone is always enough."</li>
-                        <li>"Unlimited free puzzles in five sizes, with hints and checks that come from the real solution, not from heuristics."</li>
-                        <li>"Cute Japanese pixel art, a day and a night theme, keyboard shortcuts, undo and redo, and your game is saved in the browser."</li>
-                        <li>"Make your own puzzles in the "<a class=link href="/create">"workshop"</a>", or watch our own CDCL and DPLL SAT solvers race in the "<a class=link href="/lab">"lab"</a>". The whole game is open source and written in Rust."</li>
+                    <h3 class="text-lg font-bold text-foreground">{t!(i18n, practice.about.why_title)}</h3>
+                    <ul class="list-disc space-y-1 ps-5">
+                        <li>{t!(i18n, practice.about.why_unique, <b> = <b class="font-semibold text-foreground" />)}</li>
+                        <li>{t!(i18n, practice.about.why_unlimited)}</li>
+                        <li>{t!(i18n, practice.about.why_art)}</li>
+                        <li>
+                            {t!(
+                                i18n,
+                                practice.about.why_workshop,
+                                <workshop> = move |children: ChildrenFn| view! { <a class=LINK href=create>{children()}</a> },
+                                <lab> = move |children: ChildrenFn| view! { <a class=LINK href=lab>{children()}</a> }
+                            )}
+                        </li>
                     </ul>
                 </section>
             </div>

@@ -11,16 +11,19 @@ use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::label::Label;
+use crate::components::layout::use_localized;
+use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
+use crate::lang::{difficulty_name, error_text};
 use crate::state::{self, Editor, Game, Settings, Source, ToastKind, download, random_seed, toast};
 use crate::seo::PageMeta;
 
 #[component]
-fn SizeInput(label: &'static str, #[prop(into)] value: Signal<u8>, on_change: Callback<u8>) -> impl IntoView {
-    let id = format!("size-{}", label.to_lowercase());
+fn SizeInput(id: &'static str, #[prop(into)] label: Signal<String>, #[prop(into)] value: Signal<u8>, on_change: Callback<u8>) -> impl IntoView {
+    let id = format!("size-{id}");
     view! {
         <div class="flex flex-col gap-2">
             <Label html_for=id.clone()>
-                {label} <span class="ml-auto font-pixel tabular-nums">{move || value.get()}</span>
+                {move || label.get()} <span class="ms-auto font-pixel tabular-nums">{move || value.get()}</span>
             </Label>
             <input
                 id=id
@@ -40,7 +43,7 @@ fn SizeInput(label: &'static str, #[prop(into)] value: Signal<u8>, on_change: Ca
 }
 
 /// Quick sanity checks that don't need a SAT solver.
-fn warnings(puzzle: &Puzzle) -> Vec<String> {
+fn warnings(locale: Locale, puzzle: &Puzzle) -> Vec<String> {
     let mut out = Vec::new();
     if puzzle.islands.is_empty() {
         return out;
@@ -49,18 +52,22 @@ fn warnings(puzzle: &Puzzle) -> Vec<String> {
     for (i, island) in puzzle.islands.iter().enumerate() {
         let max = board.incident[i].len() as u8 * 2;
         if max < island.required {
-            out.push(format!(
-                "Island {} at ({}, {}) needs {} bridges but can have at most {max}.",
-                island.required,
-                island.pos.x + 1,
-                island.pos.y + 1,
-                island.required
-            ));
+            out.push(
+                td_string!(
+                    locale,
+                    create.warning_capacity,
+                    number = island.required,
+                    x = island.pos.x + 1,
+                    y = island.pos.y + 1,
+                    max
+                )
+                .to_string(),
+            );
         }
     }
     let total: u32 = puzzle.islands.iter().map(|i| i.required as u32).sum();
     if total % 2 == 1 {
-        out.push(format!("The numbers add up to {total}, an odd sum can never be solved."));
+        out.push(td_string!(locale, create.warning_odd, total).to_string());
     }
     out.truncate(4);
     out
@@ -68,6 +75,8 @@ fn warnings(puzzle: &Puzzle) -> Vec<String> {
 
 #[component]
 pub fn CreatePage() -> impl IntoView {
+    let i18n = use_i18n();
+    let practice_path = use_localized("/practice");
     let editor = expect_context::<Editor>();
     let game = expect_context::<Game>();
     let settings = expect_context::<Settings>();
@@ -81,7 +90,10 @@ pub fn CreatePage() -> impl IntoView {
     let generating = RwSignal::new(false);
     let width = Signal::derive(move || editor.puzzle.with(|p| p.width));
     let height = Signal::derive(move || editor.puzzle.with(|p| p.height));
-    let issues = Memo::new(move |_| editor.puzzle.with(warnings));
+    let issues = Memo::new(move |_| {
+        let locale = i18n.get_locale();
+        editor.puzzle.with(|p| warnings(locale, p))
+    });
     let busy = Signal::derive(move || editor.solving.get() || generating.get());
     let empty = Signal::derive(move || editor.puzzle.with(|p| p.islands.is_empty()));
 
@@ -113,9 +125,9 @@ pub fn CreatePage() -> impl IntoView {
                 let outcome = editor.report.with_untracked(|r| r.as_ref().map(|r| r.outcome.clone()));
                 if unique && let Some(SolveOutcome::Solved { unique: Some(u), .. }) = outcome {
                     if u {
-                        toast(ToastKind::Success, "Unique: a fine puzzle!");
+                        toast(ToastKind::Success, |l| td_string!(l, create.unique).to_string());
                     } else {
-                        toast(ToastKind::Info, "More than one solution, add or change islands.");
+                        toast(ToastKind::Info, |l| td_string!(l, create.not_unique).to_string());
                     }
                 }
             }
@@ -136,7 +148,7 @@ pub fn CreatePage() -> impl IntoView {
                     editor.edit(|p| *p = g.puzzle);
                     editor.solution.set(None);
                 }
-                Err(e) => toast(ToastKind::Error, format!("Could not generate: {e}")),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
             generating.set(false);
         });
@@ -153,10 +165,10 @@ pub fn CreatePage() -> impl IntoView {
             match text.ok().and_then(|t| t.as_string()).map(|t| Puzzle::parse_txt(&t)) {
                 Some(Ok(puzzle)) => {
                     editor.edit(|p| *p = puzzle);
-                    toast(ToastKind::Success, format!("Imported {name}"));
+                    toast(ToastKind::Success, move |l| td_string!(l, create.imported, name = name.clone()).to_string());
                 }
-                Some(Err(e)) => toast(ToastKind::Error, format!("{name}: {e}")),
-                None => toast(ToastKind::Error, format!("Could not read {name}")),
+                Some(Err(e)) => toast(ToastKind::Error, move |_| format!("{name}: {e}")),
+                None => toast(ToastKind::Error, move |l| td_string!(l, create.unreadable, name = name.clone()).to_string()),
             }
         });
     };
@@ -169,42 +181,47 @@ pub fn CreatePage() -> impl IntoView {
             _ => None,
         });
         game.set_puzzle(puzzle, solution, unique, Source::Custom);
-        navigate("/practice", Default::default());
+        navigate(&practice_path(), Default::default());
     };
 
     view! {
         <PageMeta
-            title="Make your own Hashiwokakero puzzle · Hashi"
-            description="Design a Bridges puzzle in the workshop: place islands, let a SAT solver check that it has exactly one solution, export it as a text file, and play it."
+            title=Signal::derive(move || t_string!(i18n, create.meta.title).to_string())
+            description=Signal::derive(move || t_string!(i18n, create.meta.description).to_string())
             path="/create"
         />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="font-pixel text-sm text-primary">"作る · tsukuru"</p>
-                    <h1 class="text-3xl font-black">"Puzzle workshop"</h1>
+                    <h1 class="text-3xl font-black">{t!(i18n, create.title)}</h1>
                     <p class="mt-1 max-w-2xl text-muted-foreground">
-                        "Place islands, let the SAT solver check that your puzzle has exactly one solution, then play it."
+                        {t!(i18n, create.intro)}
                     </p>
                 </div>
                 <div class="hidden flex-wrap gap-2 text-xs text-muted-foreground md:flex">
-                    <span><Kbd>"Click"</Kbd> " +1"</span>
-                    <span><Kbd>"Right click"</Kbd> " −1"</span>
-                    <span><Kbd>"1"</Kbd> "–" <Kbd>"8"</Kbd> " set · " <Kbd>"⌫"</Kbd> " erase (while hovering)"</span>
+                    <span><Kbd>{t!(i18n, create.keys.click)}</Kbd> " +1"</span>
+                    <span><Kbd>{t!(i18n, create.keys.right_click)}</Kbd> " −1"</span>
+                    <span><Kbd>"1"</Kbd> "–" <Kbd>"8"</Kbd> " " {t!(i18n, create.keys.set)} " · " <Kbd>"⌫"</Kbd> " " {t!(i18n, create.keys.erase)}</span>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <div class="flex min-w-0 flex-col gap-4">
-                    <div class="grid grid-cols-5 gap-1.5 sm:grid-cols-10 sm:gap-1" role="radiogroup" aria-label="Brush">
+                    <div class="grid grid-cols-5 gap-1.5 sm:grid-cols-10 sm:gap-1" role="radiogroup" aria-label=move || t_string!(i18n, create.brush_label)>
                         {std::iter::once(None)
                             .chain((1..=8).map(Some))
                             .chain(std::iter::once(Some(0)))
                             .map(|b| {
-                                let (label, title) = match b {
-                                    None => ("+1".to_string(), "Each tap counts up".to_string()),
-                                    Some(0) => ("消".to_string(), "Erase".to_string()),
-                                    Some(n) => (n.to_string(), format!("Place a {n}")),
+                                let label = match b {
+                                    None => "+1".to_string(),
+                                    Some(0) => "消".to_string(),
+                                    Some(n) => n.to_string(),
+                                };
+                                let title = move || match b {
+                                    None => t_string!(i18n, create.brush.count_up).to_string(),
+                                    Some(0) => t_string!(i18n, create.brush.erase).to_string(),
+                                    Some(n) => t_string!(i18n, create.brush.place, number = n).to_string(),
                                 };
                                 view! {
                                     <button
@@ -243,9 +260,9 @@ pub fn CreatePage() -> impl IntoView {
                             .then(|| {
                                 view! {
                                     <Alert class="border-warning/50 bg-warning-light text-warning-dark">
-                                        <AlertTitle>"注意 · Heads up"</AlertTitle>
+                                        <AlertTitle>"注意 · " {t!(i18n, create.heads_up)}</AlertTitle>
                                         <AlertDescription>
-                                            <ul class="list-disc pl-5">
+                                            <ul class="list-disc ps-5">
                                                 {list.into_iter().map(|w| view! { <li>{w}</li> }).collect_view()}
                                             </ul>
                                         </AlertDescription>
@@ -259,26 +276,28 @@ pub fn CreatePage() -> impl IntoView {
                     <Card class="gap-4">
                         <CardHeader>
                             <CardTitle class="flex items-baseline gap-2 text-xl">
-                                "Grid" <span class="font-pixel text-sm text-primary">"盤"</span>
+                                {t!(i18n, create.grid)} <span class="font-pixel text-sm text-primary">"盤"</span>
                             </CardTitle>
                             <CardDescription>
                                 {move || {
                                     let n = editor.puzzle.with(|p| p.islands.len());
-                                    format!("{}×{} cells, {n} islands", width.get(), height.get())
+                                    t_string!(i18n, create.grid_size, width = width.get(), height = height.get(), count = n).to_string()
                                 }}
                             </CardDescription>
                         </CardHeader>
                         <CardContent class="flex flex-col gap-4">
                             <div class="grid grid-cols-2 gap-4">
                                 <SizeInput
-                                    label="Width"
+                                    id="width"
+                                    label=Signal::derive(move || t_string!(i18n, create.width).to_string())
                                     value=width
                                     on_change=Callback::new(move |w| {
                                         editor.edit(|p| *p = p.resized(w, p.height))
                                     })
                                 />
                                 <SizeInput
-                                    label="Height"
+                                    id="height"
+                                    label=Signal::derive(move || t_string!(i18n, create.height).to_string())
                                     value=height
                                     on_change=Callback::new(move |h| {
                                         editor.edit(|p| *p = p.resized(p.width, h))
@@ -286,7 +305,7 @@ pub fn CreatePage() -> impl IntoView {
                                 />
                             </div>
                             <div class="flex flex-col gap-2">
-                                <Label>"Fill with a generated puzzle"</Label>
+                                <Label>{t!(i18n, create.fill)}</Label>
                                 <div class="grid grid-cols-5 gap-1.5">
                                     {Difficulty::ALL
                                         .into_iter()
@@ -296,7 +315,7 @@ pub fn CreatePage() -> impl IntoView {
                                                     variant=ButtonVariant::Outline
                                                     size=ButtonSize::Sm
                                                     class="w-full font-pixel"
-                                                    attr:title=d.label()
+                                                    attr:title=move || difficulty_name(i18n.get_locale(), d)
                                                     attr:disabled=move || busy.get()
                                                     on:click=move |_| generate(d)
                                                 >
@@ -318,7 +337,7 @@ pub fn CreatePage() -> impl IntoView {
                                         }
                                     }
                                 >
-                                    "Import .txt"
+                                    {t!(i18n, create.import)}
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Outline
@@ -329,7 +348,7 @@ pub fn CreatePage() -> impl IntoView {
                                         download("hashi.txt", &editor.puzzle.get_untracked().to_txt(), "text/plain")
                                     }
                                 >
-                                    "Export .txt"
+                                    {t!(i18n, create.export)}
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Ghost
@@ -338,7 +357,7 @@ pub fn CreatePage() -> impl IntoView {
                                     attr:disabled=move || empty.get()
                                     on:click=move |_| editor.edit(|p| *p = Puzzle::empty(p.width, p.height))
                                 >
-                                    "Clear"
+                                    {t!(i18n, common.game.clear)}
                                 </Button>
                             </div>
                             <input
@@ -349,30 +368,33 @@ pub fn CreatePage() -> impl IntoView {
                                 on:change=import
                             />
                             <Button attr:disabled=move || empty.get() on:click=play>
-                                "Play this puzzle 遊ぶ →"
+                                {t!(i18n, create.play)} " 遊ぶ →"
                             </Button>
                         </CardContent>
                     </Card>
 
                     <SolverPanel report=editor.report busy=editor.solving>
                         <PanelButton
-                            label="Solve 解く"
                             primary=true
                             disabled=Signal::derive(move || busy.get() || empty.get())
                             on_click=Callback::new(move |_| solve(false))
-                        />
+                        >
+                            {t!(i18n, common.game.solve)} " 解く"
+                        </PanelButton>
                         <PanelButton
-                            label="Unique?"
                             disabled=Signal::derive(move || busy.get() || empty.get())
                             on_click=Callback::new(move |_| solve(true))
-                        />
+                        >
+                            {t!(i18n, common.game.unique)}
+                        </PanelButton>
                         <PanelButton
-                            label="CNF ↓"
                             disabled=Signal::derive(move || busy.get() || empty.get())
                             on_click=Callback::new(move |_| {
                                 crate::pages::download_cnf(editor.puzzle.get_untracked())
                             })
-                        />
+                        >
+                            "CNF ↓"
+                        </PanelButton>
                     </SolverPanel>
                 </aside>
             </div>

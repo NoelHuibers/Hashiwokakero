@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Cómo jugar a Hashiwokakero · Reglas y consejos · Hashi",
+    "description": "Las reglas de Hashiwokakero (Puentes) con un ejemplo resuelto, las deducciones que resuelven casi cualquier puzle sin adivinar y cómo SAT prueba que es único."
+  },
+  "title": "Cómo jugar",
+  "intro": "Hashiwokakero (橋をかけろ, «¡construye puentes!») es un puzle lógico publicado por Nikoli. Conecta todas las islas con puentes para que cada isla tenga exactamente tantos puentes como indica su número.",
+  "rule": {
+    "count_title": "Cuenta los puentes",
+    "count": "El número de una isla indica cuántos puentes terminan en ella.",
+    "double_title": "Uno o dos",
+    "double": "Las islas pueden unirse con un puente sencillo de madera o un puente doble bermellón, nunca más.",
+    "straight_title": "Rectos, sin cruces",
+    "straight": "Los puentes van en horizontal o en vertical y no pueden cruzar otros puentes ni islas.",
+    "connected_title": "Un solo archipiélago",
+    "connected": "Al final, se tiene que poder llegar a cada isla desde todas las demás."
+  },
+  "example": "Un puzle resuelto",
+  "controls": {
+    "title": "Controles",
+    "tap": "Haz clic en el agua entre dos islas para construir un puente, otra vez para un segundo, un tercer clic los quita.",
+    "drag": "O arrastra desde una isla hacia su vecina, o haz clic en dos islas, una tras otra.",
+    "remove": "<right>Clic derecho</right> / <shift>Mayús</shift> + clic quita un puente.",
+    "colors": "Las islas terminadas se vuelven verdes; las que se pasan, rojas. ¿Te has atascado? Pide al solver SAT una pista o que compruebe tus puentes."
+  },
+  "hood": {
+    "title": "Bajo el capó",
+    "variables": "Cada puente posible <e>e</e> entre dos islas vecinas recibe dos variables booleanas: <e1>e₁</e1> (al menos un puente) y <e2>e₂</e2> (un segundo puente), con <imp>e₂ → e₁</imp> para que cada disposición tenga exactamente un modelo.",
+    "islands": "Una isla con número n necesita que exactamente n de sus variables sean verdaderas, lo que se escribe como cláusulas sobre todas las combinaciones. Los puentes que se cruzan se excluyen mutuamente:",
+    "connectivity": "La conectividad es difícil de expresar en CNF, así que se añade de forma perezosa: cada vez que el solver devuelve grupos de islas separados, se añade una cláusula que exige un puente que salga de ese grupo y el solver vuelve a ejecutarse.",
+    "generator": "El generador hace crecer un archipiélago aleatorio y demuestra la unicidad bloqueando la solución encontrada y pidiéndole otra al solver. Prueba los distintos modos del solver en el <a>laboratorio</a>."
+  },
+  "faq_title": "Preguntas sobre Hashiwokakero",
+  "faq": {
+    "what_q": "¿Qué es Hashiwokakero?",
+    "what_a": "Hashiwokakero (橋をかけろ, «construye puentes»), también llamado Puentes o Hashi, es un puzle lógico japonés publicado por Nikoli. La cuadrícula muestra islas numeradas; las conectas con puentes horizontales y verticales para que cada isla tenga exactamente tantos puentes como indica su número, ningún puente se cruce con otro y todas las islas formen un solo grupo conectado.",
+    "how_many_q": "¿Cuántos puentes pueden unir dos islas?",
+    "how_many_a": "Como mucho dos. Un puente sencillo o uno doble puede unir dos islas que estén en la misma fila o columna sin nada en medio.",
+    "cross_q": "¿Se pueden cruzar los puentes?",
+    "cross_a": "No. Los puentes van rectos en horizontal o en vertical y no pueden cruzar otros puentes ni pasar por encima de islas.",
+    "connected_q": "¿Tienen que estar conectadas todas las islas?",
+    "connected_a": "Sí. En un puzle terminado puedes ir de cualquier isla a cualquier otra por los puentes: las islas forman una sola red.",
+    "unique_q": "¿Hay siempre exactamente una solución?",
+    "unique_a": "En Hashi, sí: cada puzle generado lo comprueba un solver SAT, que demuestra que no existe una segunda solución, así que nunca tienes que adivinar."
+  }
+}

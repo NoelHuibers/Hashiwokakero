@@ -14,6 +14,9 @@ common = { path = "./common" }
 leptos = "0.8.22"
 leptos_meta = "0.8.7"
 leptos_router = "0.8.17"
+# Translations, compile time checked (locales/<lang>/<namespace>.json, see build.rs)
+leptos_i18n = "0.6.2"
+leptos_i18n_router = "0.6.2"
 leptos_ui = "0.3.22"
 tw_merge = { version = "0.1.22", features = ["variant"] }
 strum = { version = "0.28.0", features = ["derive"] }
@@ -61,7 +64,12 @@ tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "signal",
 tower-http = { version = "0.7.1", features = ["compression-gzip", "compression-br"], optional = true }
 
 [features]
-hydrate = ["leptos/hydrate", "dep:console_error_panic_hook"]
+hydrate = [
+  "leptos/hydrate",
+  "leptos_i18n/hydrate",
+  "leptos_i18n_build/hydrate",
+  "dep:console_error_panic_hook",
+]
 ssr = [
   "dep:argon2",
   "dep:axum",
@@ -75,7 +83,13 @@ ssr = [
   "leptos/ssr",
   "leptos_meta/ssr",
   "leptos_router/ssr",
+  "leptos_i18n/axum",
+  "leptos_i18n_router/ssr",
+  "leptos_i18n_build/ssr",
 ]
+
+[build-dependencies]
+leptos_i18n_build = "0.6.2"
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 [profile.wasm-release]
@@ -105,6 +119,8 @@ site-pkg-dir = "pkg"
 hash-files = true
 # Tailwind v4 entry point, configured in CSS. It imports tw-animate-css from node_modules (npm ci).
 tailwind-input-file = "style/tailwind.css"
+# Rebuild when translations change
+watch-additional-files = ["locales"]
 # Assets source dir. All files found here will be copied and synchronized to site-root.
 assets-dir = "public"
 # The IP and port (ex: 127.0.0.1:3000) where the server serves the content. Use it in your server setup.

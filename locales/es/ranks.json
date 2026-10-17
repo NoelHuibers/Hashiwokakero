@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Clasificación diaria · Hashi, el puzle de los puentes",
+    "description": "Los más rápidos de hoy en Hashiwokakero, la clasificación de cada reto diario pasado y el salón de la fama con más retos resueltos y las rachas más largas."
+  },
+  "title": "Clasificación",
+  "intro": "Cada día todos juegan el mismo puente. Gana el mejor tiempo, las pistas y comprobaciones se suman, y las soluciones reveladas no cuentan.",
+  "finished": "han terminado: {{ count }}",
+  "earlier": "Anterior",
+  "later": "Siguiente",
+  "today": "Hoy",
+  "missed": "¿Te lo perdiste? Juégalo sin reloj.",
+  "practice_it": "Jugarlo",
+  "archive_name": "Reto n.º {{ number }}",
+  "no_puzzle": "Nadie jugó ese día, así que no hay puzle.",
+  "fame": {
+    "title": "Salón de la fama",
+    "text": "Más retos resueltos y la racha más larga de días seguidos.",
+    "empty": "Aún no hay retos resueltos.",
+    "player": "Jugador"
+  }
+}

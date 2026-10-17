@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "橋をかけろのパズルを自作 · Hashi",
+    "description": "工房で橋をかけろのパズルを作ろう：島を置き、SATソルバーで唯一解を確認して、テキストで書き出して遊べます。"
+  },
+  "kicker": "作る · tsukuru",
+  "title": "パズル工房",
+  "intro": "島を置いて、SATソルバーで答えがひとつだけか確かめたら、さっそく遊んでみましょう。",
+  "keys": {
+    "click": "クリック",
+    "right_click": "右クリック",
+    "set": "置く",
+    "erase": "消す（カーソルを合わせて）"
+  },
+  "brush": {
+    "count_up": "タップごとに数が増える",
+    "erase": "消しゴム",
+    "place": "{{ number }}を置く"
+  },
+  "heads_up": "注意",
+  "warning_capacity": "({{ x }}, {{ y }}) の{{ number }}は橋が{{ number }}本必要ですが、最大{{ max }}本しかかけられません。",
+  "warning_odd": "数字の合計が{{ total }}です。合計が奇数のパズルは解けません。",
+  "grid": "盤面",
+  "grid_size": "{{ width }}×{{ height }}マス、島 {{ count }}個",
+  "width": "幅",
+  "height": "高さ",
+  "fill": "自動生成で埋める",
+  "import": ".txtを読み込む",
+  "export": ".txtで書き出す",
+  "play": "このパズルで遊ぶ",
+  "unique": "唯一解：いいパズルです！",
+  "not_unique": "解が複数あります。島を追加・変更してください。",
+  "imported": "{{ name }}を読み込みました",
+  "unreadable": "{{ name }}を読み込めませんでした",
+  "brush_label": "ブラシ"
+}

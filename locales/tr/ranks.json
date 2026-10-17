@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Günlük sıralama · Hashi, köprü bulmacası",
+    "description": "Bugünün en hızlı Hashiwokakero çözücüleri, geçmiş tüm günlük bulmacaların sıralaması ve en çok bulmaca çözenlerle en uzun serilerin şöhretler listesi."
+  },
+  "title": "Sıralama",
+  "intro": "Herkes her gün aynı köprüyü oynar. En hızlı süre kazanır, ipuçları ve kontroller süreye eklenir, açılan çözümler sayılmaz.",
+  "finished": "bitiren: {{ count }}",
+  "earlier": "Önceki",
+  "later": "Sonraki",
+  "today": "Bugün",
+  "missed": "Bunu kaçırdın mı? Süresiz oyna.",
+  "practice_it": "Pratik yap",
+  "archive_name": "Günlük #{{ number }}",
+  "no_puzzle": "O gün kimse oynamadı, bu yüzden bulmaca yok.",
+  "fame": {
+    "title": "Şöhretler listesi",
+    "text": "En çok çözülen günlük bulmaca ve art arda en uzun gün serisi.",
+    "empty": "Henüz çözülmüş günlük bulmaca yok.",
+    "player": "Oyuncu"
+  }
+}

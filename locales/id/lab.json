@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "Lab solver SAT · CDCL, DPLL dan splr pada teka-teki Hashi",
+    "description": "Adu teka-teki Hashiwokakero di solver SAT CDCL dan DPLL buatan kami dengan heuristik percabangan dan kebijakan restart berbeda, lalu bandingkan dengan splr."
+  },
+  "title": "Lab solver",
+  "intro": "Adu satu teka-teki di solver CDCL dan DPLL buatan kami dalam berbagai mode (heuristik percabangan, kebijakan restart, subsumsi) dan bandingkan dengan splr.",
+  "puzzle": {
+    "title": "1 · Teka-teki",
+    "size": "{{ width }}×{{ height }}, {{ count }} pulau",
+    "none": "Belum ada teka-teki dipilih",
+    "game": "Permainan saat ini",
+    "workshop": "Bengkel",
+    "fresh": "Baru"
+  },
+  "solvers": {
+    "title": "2 · Solver",
+    "description": "Pilih konfigurasi yang ingin dibandingkan.",
+    "timeout": "Batas waktu per proses"
+  },
+  "racing": "Berlomba…",
+  "start": "Mulai lomba",
+  "results": {
+    "title": "3 · Hasil",
+    "description": "Total waktu adalah pengodean ditambah pemecahan. Solusi yang tidak terhubung disanggah secara lazy, dan setiap sanggahan butuh satu panggilan SAT lagi.",
+    "empty": "Belum ada lomba."
+  },
+  "table": {
+    "config": "Konfigurasi",
+    "result": "Hasil",
+    "decisions": "Keputusan",
+    "restarts": "Restart",
+    "calls": "Panggilan SAT"
+  },
+  "badge": {
+    "queued": "antre",
+    "solving": "memecahkan…",
+    "error": "galat",
+    "timeout": "waktu habis"
+  },
+  "summary": {
+    "decisions": "Keputusan: {{ count }}",
+    "restarts": "Restart: {{ count }}",
+    "calls": "Panggilan SAT: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Pilih teka-teki dulu.",
+    "pick_solver": "Pilih minimal satu konfigurasi solver."
+  }
+}

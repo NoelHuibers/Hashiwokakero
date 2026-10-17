@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "Phòng lab SAT · CDCL, DPLL và splr trên câu đố Hashi",
+    "description": "Cho một câu đố Hashiwokakero đua qua các bộ giải SAT CDCL và DPLL tự viết với nhiều heuristic phân nhánh và chiến lược khởi động lại, so với splr."
+  },
+  "title": "Phòng lab bộ giải",
+  "intro": "Cho một câu đố chạy đua qua các bộ giải CDCL và DPLL tự viết ở nhiều chế độ (heuristic phân nhánh, chiến lược khởi động lại, loại mệnh đề bao hàm) và so sánh với splr.",
+  "puzzle": {
+    "title": "1 · Câu đố",
+    "size": "{{ width }}×{{ height }}, {{ count }} đảo",
+    "none": "Chưa chọn câu đố",
+    "game": "Ván hiện tại",
+    "workshop": "Xưởng",
+    "fresh": "Mới"
+  },
+  "solvers": {
+    "title": "2 · Bộ giải",
+    "description": "Chọn các cấu hình để so sánh.",
+    "timeout": "Giới hạn thời gian mỗi lượt"
+  },
+  "racing": "Đang đua…",
+  "start": "Bắt đầu đua",
+  "results": {
+    "title": "3 · Kết quả",
+    "description": "Tổng thời gian gồm mã hóa và giải. Các lời giải không liên thông bị bác bỏ dần khi gặp, mỗi lần bác bỏ tốn thêm một lần gọi SAT.",
+    "empty": "Chưa có cuộc đua nào."
+  },
+  "table": {
+    "config": "Cấu hình",
+    "result": "Kết quả",
+    "decisions": "Quyết định",
+    "restarts": "Khởi động lại",
+    "calls": "Lần gọi SAT"
+  },
+  "badge": {
+    "queued": "đang chờ",
+    "solving": "đang giải…",
+    "error": "lỗi",
+    "timeout": "hết giờ"
+  },
+  "summary": {
+    "decisions": "Quyết định: {{ count }}",
+    "restarts": "Khởi động lại: {{ count }}",
+    "calls": "Lần gọi SAT: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Hãy chọn câu đố trước.",
+    "pick_solver": "Hãy chọn ít nhất một cấu hình bộ giải."
+  }
+}

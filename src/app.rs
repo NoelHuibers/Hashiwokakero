@@ -1,9 +1,12 @@
 use leptos::prelude::*;
-use leptos_meta::{HashedStylesheet, Meta, MetaTags, provide_meta_context};
-use leptos_router::components::{Route, Router, Routes};
+use leptos_meta::{HashedStylesheet, Link, Meta, MetaTags, provide_meta_context};
+use leptos_i18n_router::I18nRoute;
+use leptos_router::components::{Outlet, Route, Router, Routes};
 use leptos_router::path;
 
 use crate::components::layout::{Footer, Header, MobileNav, Toaster};
+use crate::i18n::{I18nContextProvider, Locale, use_i18n};
+use crate::lang::script_font;
 use crate::pages::NotFound;
 use crate::pages::account::AccountPage;
 use crate::pages::create::CreatePage;
@@ -22,7 +25,7 @@ const FONTS: &str = "https://fonts.googleapis.com/css2?family=DotGothic16&family
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
-        <html lang="en">
+        <html>
             <head>
                 <meta charset="utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -55,21 +58,27 @@ pub fn App() -> impl IntoView {
     provide_state();
 
     view! {
+        // Sets <html lang dir>, remembers the language in a cookie, reads Accept-Language on the server
+        <I18nContextProvider>
         // Title, description and social tags are set per page, see seo::PageMeta
         <Meta name="theme-color" content="#cf3a24" />
+        <ScriptFont />
 
         <Router>
             <div class="flex min-h-screen flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
                 <Header />
                 <main class="flex-1">
                     <Routes fallback=|| view! { <NotFound /> }>
-                        <Route path=path!("") view=DailyPage />
-                        <Route path=path!("/practice") view=PlayPage />
-                        <Route path=path!("/ranks") view=RanksPage />
-                        <Route path=path!("/account") view=AccountPage />
-                        <Route path=path!("/create") view=CreatePage />
-                        <Route path=path!("/lab") view=LabPage />
-                        <Route path=path!("/rules") view=RulesPage />
+                        // Every page in every language: /rules, /de/rules, /ja/rules, ...
+                        <I18nRoute<Locale, _, _> view=Outlet>
+                            <Route path=path!("") view=DailyPage />
+                            <Route path=path!("/practice") view=PlayPage />
+                            <Route path=path!("/ranks") view=RanksPage />
+                            <Route path=path!("/account") view=AccountPage />
+                            <Route path=path!("/create") view=CreatePage />
+                            <Route path=path!("/lab") view=LabPage />
+                            <Route path=path!("/rules") view=RulesPage />
+                        </I18nRoute<Locale, _, _>>
                     </Routes>
                 </main>
                 <Footer />
@@ -77,5 +86,23 @@ pub fn App() -> impl IntoView {
             <MobileNav />
             <Toaster />
         </Router>
+        </I18nContextProvider>
+    }
+}
+
+/// Korean, Chinese, Arabic, Hindi and Thai need a font for their script, loaded only for them.
+#[component]
+fn ScriptFont() -> impl IntoView {
+    let i18n = use_i18n();
+    move || {
+        script_font(i18n.get_locale()).map(|family| {
+            // Through leptos_meta, a <link> in the body breaks hydration
+            view! {
+                <Link
+                    rel="stylesheet"
+                    href=format!("https://fonts.googleapis.com/css2?family={family}&display=swap")
+                />
+            }
+        })
     }
 }

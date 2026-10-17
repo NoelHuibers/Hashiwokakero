@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "나만의 하시 퍼즐 만들기 · Hashi",
+    "description": "공방에서 다리 놓기 퍼즐을 만들어 보세요: 섬을 놓고, SAT 솔버로 해답이 하나뿐인지 확인하고, 텍스트 파일로 내보내 플레이할 수 있어요."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "퍼즐 공방",
+  "intro": "섬을 놓고 SAT 솔버로 해답이 하나뿐인지 확인한 다음, 바로 플레이해 보세요.",
+  "keys": {
+    "click": "클릭",
+    "right_click": "우클릭",
+    "set": "놓기",
+    "erase": "지우기 (마우스를 올린 채)"
+  },
+  "brush": {
+    "count_up": "탭할 때마다 숫자 증가",
+    "erase": "지우개",
+    "place": "{{ number }} 놓기"
+  },
+  "heads_up": "주의",
+  "warning_capacity": "({{ x }}, {{ y }})의 {{ number }}에는 다리가 {{ number }}개 필요하지만 최대 {{ max }}개만 놓을 수 있어요.",
+  "warning_odd": "숫자의 합이 {{ total }}이에요. 합이 홀수면 절대 풀 수 없어요.",
+  "grid": "격자",
+  "grid_size": "{{ width }}×{{ height }}칸, 섬 {{ count }}개",
+  "width": "너비",
+  "height": "높이",
+  "fill": "자동 생성 퍼즐로 채우기",
+  "import": ".txt 가져오기",
+  "export": ".txt 내보내기",
+  "play": "이 퍼즐 플레이",
+  "unique": "유일해: 멋진 퍼즐이에요!",
+  "not_unique": "해답이 여러 개예요. 섬을 추가하거나 바꿔 보세요.",
+  "imported": "{{ name }} 가져옴",
+  "unreadable": "{{ name }}을(를) 읽을 수 없어요",
+  "brush_label": "브러시"
+}

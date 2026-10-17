@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Hashiwokakero spielen · Regeln und Lösungstipps · Hashi",
+    "description": "Die Regeln von Hashiwokakero (Brücken bauen) mit Beispiel, Schlüsse, die fast jedes Rätsel ohne Raten knacken, und wie ein SAT-Solver Eindeutigkeit beweist."
+  },
+  "title": "Spielanleitung",
+  "intro": "Hashiwokakero (橋をかけろ, „Baut Brücken!“) ist ein Logikrätsel des Verlags Nikoli. Verbinde alle Inseln mit Brücken, sodass jede Insel genau so viele Brücken hat, wie ihre Zahl angibt.",
+  "rule": {
+    "count_title": "Brücken zählen",
+    "count": "Die Zahl auf einer Insel gibt an, wie viele Brücken dort enden.",
+    "double_title": "Eine oder zwei",
+    "double": "Inseln können durch eine einfache Holzbrücke oder eine doppelte zinnoberrote Brücke verbunden werden, nie durch mehr.",
+    "straight_title": "Gerade, ohne Kreuzungen",
+    "straight": "Brücken verlaufen waagerecht oder senkrecht und dürfen weder andere Brücken noch Inseln kreuzen.",
+    "connected_title": "Ein Archipel",
+    "connected": "Am Ende muss jede Insel von jeder anderen aus erreichbar sein."
+  },
+  "example": "Ein gelöstes Rätsel",
+  "controls": {
+    "title": "Steuerung",
+    "tap": "Klick aufs Wasser zwischen zwei Inseln, um eine Brücke zu bauen, noch einmal für eine zweite, ein dritter Klick entfernt beide.",
+    "drag": "Oder zieh von einer Insel zu ihrer Nachbarin oder klick nacheinander zwei Inseln an.",
+    "remove": "<right>Rechtsklick</right> / <shift>Shift</shift> + Klick entfernt eine Brücke.",
+    "colors": "Fertige Inseln werden grün, überfüllte rot. Du steckst fest? Bitte den SAT-Solver um einen Tipp oder lass ihn deine Brücken prüfen."
+  },
+  "hood": {
+    "title": "Unter der Haube",
+    "variables": "Jede mögliche Brücke <e>e</e> zwischen zwei benachbarten Inseln bekommt zwei boolesche Variablen: <e1>e₁</e1> (mindestens eine Brücke) und <e2>e₂</e2> (eine zweite Brücke), mit <imp>e₂ → e₁</imp>, damit jede Anordnung genau ein Modell hat.",
+    "islands": "Eine Insel mit der Zahl n braucht genau n wahre Variablen, ausgedrückt als Klauseln über alle Kombinationen. Kreuzende Brücken schließen sich gegenseitig aus:",
+    "connectivity": "Zusammenhang lässt sich in CNF nur schwer ausdrücken, deshalb wird er erst bei Bedarf hinzugefügt: Sobald der Solver getrennte Inselgruppen liefert, kommt eine Klausel dazu, die eine Brücke aus so einer Gruppe heraus verlangt, und der Solver läuft erneut.",
+    "generator": "Der Generator lässt ein zufälliges Archipel wachsen und beweist die Eindeutigkeit, indem er die gefundene Lösung sperrt und den Solver nach einer weiteren fragt. Probier die verschiedenen Solver-Modi im <a>Labor</a> aus."
+  },
+  "faq_title": "Fragen zu Hashiwokakero",
+  "faq": {
+    "what_q": "Was ist Hashiwokakero?",
+    "what_a": "Hashiwokakero (橋をかけろ, „Baut Brücken“), auch Brücken bauen oder Hashi genannt, ist ein japanisches Logikrätsel des Verlags Nikoli. Das Gitter zeigt nummerierte Inseln; du verbindest sie mit waagerechten und senkrechten Brücken, sodass jede Insel genau so viele Brücken hat, wie ihre Zahl angibt, sich keine Brücken kreuzen und alle Inseln eine zusammenhängende Gruppe bilden.",
+    "how_many_q": "Wie viele Brücken dürfen zwei Inseln verbinden?",
+    "how_many_a": "Höchstens zwei. Eine einfache oder doppelte Brücke darf zwei Inseln verbinden, die in derselben Zeile oder Spalte liegen, ohne dass etwas dazwischen ist.",
+    "cross_q": "Dürfen sich Brücken kreuzen?",
+    "cross_a": "Nein. Brücken verlaufen gerade, waagerecht oder senkrecht, und dürfen weder andere Brücken kreuzen noch über Inseln führen.",
+    "connected_q": "Müssen alle Inseln verbunden sein?",
+    "connected_a": "Ja. In einem fertigen Rätsel kommst du über die Brücken von jeder Insel zu jeder anderen, die Inseln bilden ein einziges Netz.",
+    "unique_q": "Gibt es immer genau eine Lösung?",
+    "unique_a": "Bei Hashi ja: Jedes erzeugte Rätsel wird von einem SAT-Solver geprüft, der beweist, dass es keine zweite Lösung gibt – du musst also nie raten."
+  }
+}

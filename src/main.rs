@@ -24,6 +24,12 @@ async fn main() {
     let hash_files = leptos_options.hash_files;
 
     let app = Router::new()
+        .route(
+            "/sitemap.xml",
+            axum::routing::get(|| async {
+                ([(axum::http::header::CONTENT_TYPE, "application/xml")], hashi::seo::sitemap())
+            }),
+        )
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
             move || shell(leptos_options.clone())

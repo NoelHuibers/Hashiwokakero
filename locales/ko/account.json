@@ -1,0 +1,32 @@
+{
+  "title": "내 계정",
+  "hello": "안녕하세요, {{ name }}님",
+  "record": "나의 기록",
+  "guest_here": "이 브라우저에서 {{ name }}(게스트)(으)로 플레이 중이에요.",
+  "member_since": "{{ date }}부터 함께했어요.",
+  "no_record": "데일리 퍼즐을 풀고 기록을 시작해 보세요.",
+  "stats": {
+    "solved": "해결",
+    "streak": "연속",
+    "best": "최장 연속",
+    "fastest": "최고 기록",
+    "average": "평균",
+    "week": "이번 주",
+    "best_streak_short": "연속"
+  },
+  "last_weeks": "최근 5주",
+  "calendar_rank": "{{ rank }}위",
+  "not_solved": "미해결",
+  "guest_cta": "계정을 만들면 이 게스트의 기록과 연속 기록을 그대로 이어 가고, 다른 기기에서도 플레이할 수 있어요.",
+  "sign_in_cta": "로그인하면 어느 기기에서든 연속 기록을 볼 수 있어요. 게스트로 그냥 플레이해도 돼요.",
+  "create": "계정 만들기",
+  "username": "사용자 이름",
+  "password": "비밀번호",
+  "password_hint": "8자 이상",
+  "busy": "잠시만요…",
+  "welcome": "{{ name }}님, 환영해요!",
+  "signed_out": "로그아웃했어요.",
+  "name_hint": "이 이름으로 순위표에 기록이 올라가요.",
+  "sign_out": "로그아웃",
+  "no_dailies": "아직 데일리 기록이 없어요."
+}

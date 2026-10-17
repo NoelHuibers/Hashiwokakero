@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "SAT 솔버 실험실 · CDCL, DPLL, splr",
+    "description": "하시 퍼즐 하나를 자체 CDCL·DPLL SAT 솔버로 풀며 분기 휴리스틱과 재시작 정책을 바꿔 보고, splr과 속도를 비교해 보세요."
+  },
+  "title": "솔버 실험실",
+  "intro": "퍼즐 하나를 자체 CDCL·DPLL 솔버의 여러 모드(분기 휴리스틱, 재시작 정책, 포섭 제거)로 경주시키고 splr과 비교해 보세요.",
+  "puzzle": {
+    "title": "1 · 퍼즐",
+    "size": "{{ width }}×{{ height }}, 섬 {{ count }}개",
+    "none": "선택된 퍼즐 없음",
+    "game": "현재 게임",
+    "workshop": "공방",
+    "fresh": "새 퍼즐"
+  },
+  "solvers": {
+    "title": "2 · 솔버",
+    "description": "비교할 설정을 고르세요.",
+    "timeout": "실행당 제한 시간"
+  },
+  "racing": "경주 중…",
+  "start": "경주 시작",
+  "results": {
+    "title": "3 · 결과",
+    "description": "총 시간은 인코딩과 풀이 시간의 합이에요. 연결되지 않은 해답은 지연 방식으로 반박되며, 반박할 때마다 SAT 호출이 한 번 더 들어요.",
+    "empty": "아직 경주 기록이 없어요."
+  },
+  "table": {
+    "config": "설정",
+    "result": "결과",
+    "decisions": "결정",
+    "restarts": "재시작",
+    "calls": "SAT 호출"
+  },
+  "badge": {
+    "queued": "대기 중",
+    "solving": "푸는 중…",
+    "error": "오류",
+    "timeout": "시간 초과"
+  },
+  "summary": {
+    "decisions": "결정: {{ count }}",
+    "restarts": "재시작: {{ count }}",
+    "calls": "SAT 호출: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "먼저 퍼즐을 고르세요.",
+    "pick_solver": "솔버 설정을 하나 이상 선택하세요."
+  }
+}

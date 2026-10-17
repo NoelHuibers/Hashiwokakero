@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "데일리",
+    "practice": "연습",
+    "ranks": "순위",
+    "create": "만들기",
+    "lab": "실험실",
+    "main": "주 메뉴"
+  },
+  "tagline_short": "다리 놓기",
+  "language": "언어",
+  "account": "계정",
+  "sign_in": "로그인",
+  "theme": {
+    "toggle": "다크 모드 전환",
+    "to_day": "낮 모드로 전환 昼",
+    "to_night": "밤 모드로 전환 夜"
+  },
+  "footer": {
+    "tagline": "<em>다리를 놓아라</em>. SAT가 풀고, 당신이 즐겨요.",
+    "made_by": "만든 사람: {{ author }}",
+    "how_to_play": "게임 방법",
+    "open_source": "GitHub 오픈 소스",
+    "tech": "Rust · Leptos · Turso · 자체 CDCL·DPLL 솔버"
+  },
+  "difficulty": {
+    "easy": "쉬움",
+    "medium": "보통",
+    "hard": "어려움",
+    "expert": "전문가",
+    "oni": "오니"
+  },
+  "source": {
+    "daily": "데일리 · {{ date }}",
+    "custom": "나만의 퍼즐",
+    "imported": "가져옴 · {{ name }}"
+  },
+  "toast": {
+    "unsat": "SAT 솔버가 증명했어요: 이 퍼즐은 해답이 없어요.",
+    "timeout": "솔버의 시간이 다 됐어요. 다른 설정으로 시도해 보세요.",
+    "nothing_to_hint": "힌트가 없어요. 모든 다리가 제자리에 있어요.",
+    "all_correct": "지금까지 좋아요: 놓은 다리가 모두 정답에 속해요.",
+    "wrong_bridges": "정답에 없는 다리: {{ count }}개",
+    "unique": "증명 완료: 해답은 하나뿐이에요.",
+    "not_unique": "이 퍼즐은 해답이 여러 개예요.",
+    "copied": "결과를 클립보드에 복사했어요."
+  },
+  "errors": {
+    "unknown": "문제가 생겼어요: {{ detail }}",
+    "database": "데이터베이스가 응답하지 않아요. 다시 시도해 주세요.",
+    "internal": "서버에 문제가 생겼어요. 다시 시도해 주세요.",
+    "archive_only_past": "지난 데일리만 연습할 수 있어요.",
+    "password_too_short": "비밀번호는 8자 이상이어야 해요.",
+    "password_too_long": "비밀번호는 최대 128자까지 가능해요.",
+    "username_invalid": "사용자 이름은 3~20자이며 영문, 숫자, _, -만 쓸 수 있어요.",
+    "username_taken": "이미 사용 중인 사용자 이름이에요.",
+    "wrong_login": "사용자 이름 또는 비밀번호가 틀렸어요.",
+    "too_many_attempts": "실패한 시도가 너무 많아요. 몇 분 후에 다시 시도해 주세요.",
+    "session_expired": "세션이 만료됐어요. 페이지를 새로 고쳐 주세요.",
+    "not_started": "먼저 데일리 퍼즐을 시작해 주세요.",
+    "not_solved": "아직 정답이 아니에요.",
+    "wrong_puzzle": "이 다리들은 이 퍼즐의 것이 아니에요.",
+    "already_finished": "이 데일리는 이미 완료했어요."
+  },
+  "solver": {
+    "title": "SAT 솔버",
+    "description": "퍼즐을 CNF로 인코딩하고 SAT 실험실의 자체 솔버로 풀어요.",
+    "solver": "솔버",
+    "own_cdcl": "자체 CDCL",
+    "own_dpll": "자체 DPLL",
+    "heuristic": "분기 휴리스틱",
+    "splr_heuristic": "splr 기본 (EVSIDS)",
+    "restarts": "재시작",
+    "restarts_none": "재시작 없음",
+    "restarts_fixed": "고정 간격",
+    "restarts_geometric": "기하급수",
+    "restarts_luby": "Luby 수열",
+    "subsumption": "포섭 제거",
+    "subsumption_short": "포섭 제거",
+    "subsumption_hint": "풀기 전에 포섭된 절을 제거해요",
+    "preprocess": "전처리",
+    "timeout": "제한 시간"
+  },
+  "ranking": {
+    "you": "나",
+    "guest": "게스트",
+    "guest_name": "게스트",
+    "penalties": "힌트 · 확인",
+    "empty": "아직 아무도 건너지 않았어요. 첫 번째가 되어 보세요!"
+  },
+  "board": {
+    "label": "하시 퍼즐 보드",
+    "zoom": "확대",
+    "fit": "보드 맞춤",
+    "zoom_hint": "스와이프로 이동, 탭으로 다리 놓기",
+    "cells_small": "칸이 너무 작나요?"
+  },
+  "not_found": {
+    "title": "바다에서 길을 잃었어요",
+    "text": "이 페이지로 가는 다리는 없어요. 섬으로 돌아가요.",
+    "back": "게임으로 돌아가기"
+  },
+  "game": {
+    "time": "시간",
+    "moves": "이동",
+    "hints": "힌트",
+    "undo": "실행 취소",
+    "redo": "다시 실행",
+    "clear": "지우기",
+    "restart": "처음부터",
+    "check": "확인",
+    "hint": "힌트",
+    "solve": "풀기",
+    "unique": "유일해?",
+    "well_done": "잘했어요!",
+    "share": "결과 공유",
+    "loading": "불러오는 중…",
+    "islands_complete": "섬 완성",
+    "groups": "{{ count }}개 그룹으로 나뉨",
+    "all_connected": "모두 연결됨",
+    "islands": "섬 {{ count }}개",
+    "unique_solution": "유일한 해답 ✓",
+    "several_solutions": "해답 여러 개"
+  },
+  "weekday": {
+    "mon": "월요일",
+    "tue": "화요일",
+    "wed": "수요일",
+    "thu": "목요일",
+    "fri": "금요일",
+    "sat": "토요일",
+    "sun": "일요일"
+  },
+  "month": {
+    "jan": "1월",
+    "feb": "2월",
+    "mar": "3월",
+    "apr": "4월",
+    "may": "5월",
+    "jun": "6월",
+    "jul": "7월",
+    "aug": "8월",
+    "sep": "9월",
+    "oct": "10월",
+    "nov": "11월",
+    "dec": "12월"
+  },
+  "date_long": "{{ year }}년 {{ month }} {{ day }}일 {{ weekday }}",
+  "date_short": "{{ year }}년 {{ month }} {{ day }}일",
+  "og_image_alt": "픽셀 아트로 그린 완성된 하시 퍼즐: 숫자가 적힌 섬들이 나무 다리와 주홍색 다리로 연결되어 있어요",
+  "ld": {
+    "site": "일본의 다리 놓기 퍼즐 하시(Hashiwokakero)를 브라우저에서 무료로 즐겨요.",
+    "game": "모든 섬에 적힌 숫자만큼 다리가 연결되도록 섬들을 다리로 이어 보세요. 순위표가 있는 데일리 퍼즐, 다섯 가지 난이도, 픽셀 아트, 그리고 모든 퍼즐의 해답은 단 하나예요."
+  }
+}

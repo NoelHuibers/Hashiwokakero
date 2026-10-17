@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Eigenes Hashiwokakero-Rätsel erstellen · Hashi",
+    "description": "Entwirf ein Brückenrätsel in der Werkstatt: Inseln setzen, vom SAT-Solver auf genau eine Lösung prüfen lassen, als Textdatei exportieren und spielen."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Rätselwerkstatt",
+  "intro": "Setz Inseln, lass den SAT-Solver prüfen, ob dein Rätsel genau eine Lösung hat, und spiel es dann.",
+  "keys": {
+    "click": "Klick",
+    "right_click": "Rechtsklick",
+    "set": "setzen",
+    "erase": "löschen (beim Darüberfahren)"
+  },
+  "brush": {
+    "count_up": "Jedes Tippen zählt hoch",
+    "erase": "Löschen",
+    "place": "Eine {{ number }} setzen"
+  },
+  "heads_up": "Achtung",
+  "warning_capacity": "Die {{ number }} bei ({{ x }}, {{ y }}) braucht {{ number }} Brücken, kann aber höchstens {{ max }} haben.",
+  "warning_odd": "Die Zahlen ergeben zusammen {{ total }} – eine ungerade Summe ist nie lösbar.",
+  "grid": "Gitter",
+  "grid_size": "{{ width }}×{{ height }} Felder, Inseln: {{ count }}",
+  "width": "Breite",
+  "height": "Höhe",
+  "fill": "Mit erzeugtem Rätsel füllen",
+  "import": ".txt importieren",
+  "export": ".txt exportieren",
+  "play": "Dieses Rätsel spielen",
+  "unique": "Eindeutig: ein feines Rätsel!",
+  "not_unique": "Mehr als eine Lösung – füge Inseln hinzu oder ändere sie.",
+  "imported": "{{ name }} importiert",
+  "unreadable": "{{ name }} konnte nicht gelesen werden",
+  "brush_label": "Pinsel"
+}

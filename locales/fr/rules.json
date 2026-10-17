@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Comment jouer au Hashiwokakero · Règles et astuces · Hashi",
+    "description": "Les règles du Hashiwokakero (Ponts) avec un exemple résolu, les déductions qui résolvent la plupart des grilles sans deviner, et comment SAT prouve l’unicité."
+  },
+  "title": "Comment jouer",
+  "intro": "Le Hashiwokakero (橋をかけろ, « construis des ponts ! ») est un casse-tête logique publié par Nikoli. Relie toutes les îles par des ponts pour que chaque île ait exactement autant de ponts que son chiffre l’indique.",
+  "rule": {
+    "count_title": "Compte les ponts",
+    "count": "Le chiffre d’une île indique combien de ponts y aboutissent.",
+    "double_title": "Un ou deux",
+    "double": "Deux îles peuvent être reliées par un pont simple en bois ou un pont double vermillon, jamais plus.",
+    "straight_title": "Tout droit, sans croisement",
+    "straight": "Les ponts sont horizontaux ou verticaux et ne doivent croiser ni d’autres ponts ni des îles.",
+    "connected_title": "Un seul archipel",
+    "connected": "À la fin, chaque île doit être accessible depuis toutes les autres."
+  },
+  "example": "Une grille résolue",
+  "controls": {
+    "title": "Commandes",
+    "tap": "Clique sur l’eau entre deux îles pour construire un pont, encore une fois pour un second, un troisième clic les retire.",
+    "drag": "Ou fais glisser d’une île vers sa voisine, ou clique sur deux îles l’une après l’autre.",
+    "remove": "<right>Clic droit</right> / <shift>Maj</shift> + clic retire un pont.",
+    "colors": "Les îles terminées passent au vert, celles qui débordent au rouge. Bloqué ? Demande au solveur SAT un indice ou de vérifier tes ponts."
+  },
+  "hood": {
+    "title": "Sous le capot",
+    "variables": "Chaque pont possible <e>e</e> entre deux îles voisines reçoit deux variables booléennes : <e1>e₁</e1> (au moins un pont) et <e2>e₂</e2> (un second pont), avec <imp>e₂ → e₁</imp> pour que chaque configuration ait exactement un modèle.",
+    "islands": "Une île de chiffre n a besoin qu’exactement n de ses variables soient vraies, ce qui s’écrit en clauses sur toutes les combinaisons. Les ponts qui se croisent s’excluent mutuellement :",
+    "connectivity": "La connexité est difficile à exprimer en CNF, elle est donc ajoutée paresseusement : chaque fois que le solveur renvoie des groupes d’îles séparés, on ajoute une clause exigeant un pont qui sorte d’un tel groupe, et le solveur repart.",
+    "generator": "Le générateur fait pousser un archipel aléatoire et prouve l’unicité en bloquant la solution trouvée puis en demandant une autre au solveur. Essaie les différents modes du solveur dans le <a>labo</a>."
+  },
+  "faq_title": "Questions sur le Hashiwokakero",
+  "faq": {
+    "what_q": "Qu’est-ce que le Hashiwokakero ?",
+    "what_a": "Le Hashiwokakero (橋をかけろ, « construis des ponts »), aussi appelé Ponts ou Hashi, est un casse-tête logique japonais publié par Nikoli. La grille montre des îles numérotées ; on les relie par des ponts horizontaux et verticaux pour que chaque île ait exactement autant de ponts que son chiffre, qu’aucun pont n’en croise un autre et que toutes les îles forment un seul groupe connecté.",
+    "how_many_q": "Combien de ponts peuvent relier deux îles ?",
+    "how_many_a": "Deux au maximum. Un pont simple ou double peut relier deux îles situées sur la même ligne ou la même colonne, sans rien entre elles.",
+    "cross_q": "Les ponts peuvent-ils se croiser ?",
+    "cross_a": "Non. Les ponts sont droits, horizontaux ou verticaux, et ne peuvent ni croiser d’autres ponts ni passer par-dessus des îles.",
+    "connected_q": "Toutes les îles doivent-elles être reliées ?",
+    "connected_a": "Oui. Dans une grille terminée, on peut aller de n’importe quelle île à n’importe quelle autre par les ponts : les îles forment un seul réseau.",
+    "unique_q": "Y a-t-il toujours exactement une solution ?",
+    "unique_a": "Sur Hashi, oui : chaque grille générée est vérifiée par un solveur SAT, qui prouve qu’il n’existe pas de deuxième solution. Tu n’as donc jamais besoin de deviner."
+  }
+}

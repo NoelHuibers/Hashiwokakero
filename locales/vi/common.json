@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "Hôm nay",
+    "practice": "Luyện tập",
+    "ranks": "Xếp hạng",
+    "create": "Tạo",
+    "lab": "Lab",
+    "main": "Điều hướng chính"
+  },
+  "tagline_short": "Nối cầu",
+  "language": "Ngôn ngữ",
+  "account": "Tài khoản",
+  "sign_in": "Đăng nhập",
+  "theme": {
+    "toggle": "Bật/tắt chế độ tối",
+    "to_day": "Chuyển sang ngày 昼",
+    "to_night": "Chuyển sang đêm 夜"
+  },
+  "footer": {
+    "tagline": "<em>hãy xây cầu</em>. SAT giải đố, bạn chơi.",
+    "made_by": "Tạo bởi {{ author }}",
+    "how_to_play": "Cách chơi",
+    "open_source": "Mã nguồn mở trên GitHub",
+    "tech": "Rust · Leptos · Turso · bộ giải CDCL & DPLL tự viết"
+  },
+  "difficulty": {
+    "easy": "Dễ",
+    "medium": "Vừa",
+    "hard": "Khó",
+    "expert": "Chuyên gia",
+    "oni": "Quỷ"
+  },
+  "source": {
+    "daily": "Cầu mỗi ngày · {{ date }}",
+    "custom": "Câu đố của bạn",
+    "imported": "Đã nhập · {{ name }}"
+  },
+  "toast": {
+    "unsat": "Bộ giải SAT đã chứng minh: câu đố này không có lời giải.",
+    "timeout": "Bộ giải đã hết thời gian. Hãy thử cấu hình khác.",
+    "nothing_to_hint": "Không còn gì để gợi ý, mọi cây cầu đều đã đúng chỗ.",
+    "all_correct": "Đến giờ vẫn ổn: mọi cây cầu đều thuộc lời giải.",
+    "wrong_bridges": "Cầu không thuộc lời giải: {{ count }}",
+    "unique": "Đã chứng minh: lời giải là duy nhất.",
+    "not_unique": "Câu đố này có nhiều hơn một lời giải.",
+    "copied": "Đã sao chép kết quả vào bộ nhớ tạm."
+  },
+  "errors": {
+    "unknown": "Đã xảy ra lỗi: {{ detail }}",
+    "database": "Cơ sở dữ liệu không phản hồi, vui lòng thử lại.",
+    "internal": "Máy chủ gặp sự cố, vui lòng thử lại.",
+    "archive_only_past": "Chỉ có thể luyện các câu đố của những ngày trước.",
+    "password_too_short": "Mật khẩu cần ít nhất 8 ký tự.",
+    "password_too_long": "Mật khẩu chỉ được tối đa 128 ký tự.",
+    "username_invalid": "Tên người dùng gồm 3 đến 20 ký tự: chữ cái, chữ số, _ và -.",
+    "username_taken": "Tên người dùng này đã có người dùng.",
+    "wrong_login": "Sai tên người dùng hoặc mật khẩu.",
+    "too_many_attempts": "Quá nhiều lần thử thất bại, vui lòng đợi vài phút.",
+    "session_expired": "Phiên đã hết hạn, vui lòng tải lại trang.",
+    "not_started": "Hãy bắt đầu câu đố hôm nay trước.",
+    "not_solved": "Đó chưa phải là lời giải.",
+    "wrong_puzzle": "Những cây cầu này không thuộc câu đố này.",
+    "already_finished": "Bạn đã hoàn thành câu đố ngày này rồi."
+  },
+  "solver": {
+    "title": "Bộ giải SAT",
+    "description": "Câu đố được mã hóa thành CNF và giải bằng các bộ giải tự viết của phòng lab SAT.",
+    "solver": "Bộ giải",
+    "own_cdcl": "CDCL tự viết",
+    "own_dpll": "DPLL tự viết",
+    "heuristic": "Heuristic phân nhánh",
+    "splr_heuristic": "mặc định của splr (EVSIDS)",
+    "restarts": "Khởi động lại",
+    "restarts_none": "Không khởi động lại",
+    "restarts_fixed": "Chu kỳ cố định",
+    "restarts_geometric": "Cấp số nhân",
+    "restarts_luby": "Dãy Luby",
+    "subsumption": "Bao hàm",
+    "subsumption_short": "bao hàm",
+    "subsumption_hint": "Loại bỏ các mệnh đề bị bao hàm trước khi giải",
+    "preprocess": "tiền xử lý",
+    "timeout": "Giới hạn thời gian"
+  },
+  "ranking": {
+    "you": "bạn",
+    "guest": "khách",
+    "guest_name": "Khách",
+    "penalties": "gợi ý · kiểm tra",
+    "empty": "Chưa ai qua cầu. Hãy là người đầu tiên!"
+  },
+  "board": {
+    "label": "Bàn chơi Hashiwokakero",
+    "zoom": "Phóng to",
+    "fit": "Vừa màn hình",
+    "zoom_hint": "Vuốt để di chuyển, chạm để xây cầu",
+    "cells_small": "Ô quá nhỏ?"
+  },
+  "not_found": {
+    "title": "Lạc giữa biển khơi",
+    "text": "Không có cây cầu nào dẫn tới trang này, để mình đưa bạn về lại quần đảo nhé.",
+    "back": "Quay lại trò chơi"
+  },
+  "game": {
+    "time": "Thời gian",
+    "moves": "Nước đi",
+    "hints": "Gợi ý",
+    "undo": "Hoàn tác",
+    "redo": "Làm lại",
+    "clear": "Xóa hết",
+    "restart": "Chơi lại",
+    "check": "Kiểm tra",
+    "hint": "Gợi ý",
+    "solve": "Giải",
+    "unique": "Duy nhất?",
+    "well_done": "Giỏi lắm!",
+    "share": "Chia sẻ kết quả",
+    "loading": "Đang tải…",
+    "islands_complete": "đảo hoàn thành",
+    "groups": "{{ count }} nhóm tách rời",
+    "all_connected": "đã nối liền",
+    "islands": "{{ count }} đảo",
+    "unique_solution": "lời giải duy nhất ✓",
+    "several_solutions": "nhiều lời giải"
+  },
+  "weekday": {
+    "mon": "Thứ Hai",
+    "tue": "Thứ Ba",
+    "wed": "Thứ Tư",
+    "thu": "Thứ Năm",
+    "fri": "Thứ Sáu",
+    "sat": "Thứ Bảy",
+    "sun": "Chủ Nhật"
+  },
+  "month": {
+    "jan": "tháng 1",
+    "feb": "tháng 2",
+    "mar": "tháng 3",
+    "apr": "tháng 4",
+    "may": "tháng 5",
+    "jun": "tháng 6",
+    "jul": "tháng 7",
+    "aug": "tháng 8",
+    "sep": "tháng 9",
+    "oct": "tháng 10",
+    "nov": "tháng 11",
+    "dec": "tháng 12"
+  },
+  "date_long": "{{ weekday }}, ngày {{ day }} {{ month }} năm {{ year }}",
+  "date_short": "{{ day }} {{ month }}, {{ year }}",
+  "og_image_alt": "Một câu đố Hashiwokakero đã giải theo phong cách pixel art: các hòn đảo đánh số được nối bằng cầu gỗ và cầu đỏ son",
+  "ld": {
+    "site": "Hashiwokakero, trò chơi nối cầu của Nhật Bản, chơi miễn phí trên trình duyệt.",
+    "game": "Nối các hòn đảo bằng cầu sao cho số cầu của mỗi đảo đúng bằng con số ghi trên đảo. Câu đố mỗi ngày kèm bảng xếp hạng, năm mức độ khó, đồ họa pixel art, và mỗi câu đố có đúng một lời giải."
+  }
+}

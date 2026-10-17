@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Papan peringkat harian · Hashi, teka-teki jembatan",
+    "description": "Pemain Hashiwokakero tercepat hari ini, peringkat setiap teka-teki harian sebelumnya, dan hall of fame dengan teka-teki terbanyak dan rentetan terpanjang."
+  },
+  "title": "Papan peringkat",
+  "intro": "Semua orang memainkan jembatan yang sama setiap hari. Waktu tercepat menang, petunjuk dan cek menambah waktu, solusi yang dibuka tidak dihitung.",
+  "finished": "selesai: {{ count }}",
+  "earlier": "Sebelumnya",
+  "later": "Berikutnya",
+  "today": "Hari ini",
+  "missed": "Terlewat? Mainkan tanpa jam.",
+  "practice_it": "Latihan",
+  "archive_name": "Harian #{{ number }}",
+  "no_puzzle": "Tidak ada yang bermain hari itu, jadi tidak ada teka-teki.",
+  "fame": {
+    "title": "Hall of fame",
+    "text": "Teka-teki harian terbanyak yang diselesaikan, dan rentetan hari berturut-turut terpanjang.",
+    "empty": "Belum ada teka-teki harian yang diselesaikan.",
+    "player": "Pemain"
+  }
+}

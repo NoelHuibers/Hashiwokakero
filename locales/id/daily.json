@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Teka-teki Hashiwokakero (Jembatan) harian, gratis",
+    "description": "Teka-teki Hashiwokakero (Jembatan) baru setiap hari, sama untuk semua: pixel art Jepang yang imut, papan peringkat, rentetan, dan selalu tepat satu solusi."
+  },
+  "title": "Jembatan harian #{{ number }}",
+  "penalty": "Penalti",
+  "give_up": "Menyerah",
+  "give_up_confirm": "Biarkan solver SAT menunjukkan solusinya? Permainan hari ini tidak akan masuk peringkat.",
+  "share": "Hashi 橋 Harian #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "Jembatan hari ini",
+    "text": "Teka-teki muncul saat kamu menekan mulai, dan jam berjalan di server. Petunjuk menambah 30 dtk, cek 10 dtk, dan membuka solusi membuatmu tidak masuk peringkat.",
+    "start": "Mulai",
+    "preparing": "Menyiapkan…",
+    "playing_as": "Bermain sebagai {{ name }}",
+    "playing_as_guest": "Bermain sebagai {{ name }} (tamu)",
+    "no_account": "Tidak perlu akun, kamu akan bermain sebagai tamu."
+  },
+  "result": {
+    "revealed_title": "Dipecahkan oleh solver SAT",
+    "revealed_text": "Yang ini tidak dihitung untuk peringkat. Sampai jumpa besok!",
+    "rank": "Peringkat {{ rank }} dari {{ total }} hari ini",
+    "ranking": "Menghitung peringkat…",
+    "more": "Teka-teki lain di mode latihan →",
+    "on_board": "Kamu ada di papan peringkat sebagai <b>{{ name }}</b>.",
+    "claim": "Klaim namamu agar rentetanmu tersimpan di semua perangkat →"
+  },
+  "ranking": {
+    "title": "Peringkat hari ini",
+    "all": "Semua →",
+    "crossed": "Menyeberang hari ini: {{ count }}"
+  },
+  "week": {
+    "title": "Minggu ini",
+    "text": "Seperti teka-teki di koran, jembatannya makin sulit menjelang hari Minggu.",
+    "next": "Jembatan berikutnya dalam"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Tages-Rangliste · Hashi, das Brückenrätsel",
+    "description": "Die schnellsten Hashiwokakero-Löser von heute, die Rangliste jedes vergangenen Tagesrätsels und die Ruhmeshalle mit den meisten Lösungen und längsten Serien."
+  },
+  "title": "Rangliste",
+  "intro": "Alle spielen jeden Tag dieselbe Brücke. Die schnellste Zeit gewinnt, Tipps und Prüfungen werden aufgeschlagen, aufgedeckte Lösungen zählen nicht.",
+  "finished": "geschafft: {{ count }}",
+  "earlier": "Früher",
+  "later": "Später",
+  "today": "Heute",
+  "missed": "Verpasst? Spiel es ohne Uhr.",
+  "practice_it": "Üben",
+  "archive_name": "Tagesrätsel #{{ number }}",
+  "no_puzzle": "An diesem Tag hat niemand gespielt, darum gibt es kein Rätsel.",
+  "fame": {
+    "title": "Ruhmeshalle",
+    "text": "Die meisten gelösten Tagesrätsel und die längste Serie an Tagen am Stück.",
+    "empty": "Noch keine Tagesrätsel gelöst.",
+    "player": "Spieler"
+  }
+}

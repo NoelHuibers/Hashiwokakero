@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Classifica del giorno · Hashi, il rompicapo dei ponti",
+    "description": "I solutori di Hashiwokakero più veloci di oggi, la classifica di ogni sfida passata e l’albo d’oro delle sfide più risolte e delle serie più lunghe."
+  },
+  "title": "Classifica",
+  "intro": "Ogni giorno tutti giocano lo stesso ponte. Vince il tempo migliore, indizi e verifiche si sommano, le soluzioni rivelate non contano.",
+  "finished": "hanno finito: {{ count }}",
+  "earlier": "Prima",
+  "later": "Dopo",
+  "today": "Oggi",
+  "missed": "Te lo sei perso? Giocalo senza cronometro.",
+  "practice_it": "Giocalo",
+  "archive_name": "Sfida n. {{ number }}",
+  "no_puzzle": "Quel giorno non ha giocato nessuno, quindi non c’è nessun puzzle.",
+  "fame": {
+    "title": "Albo d’oro",
+    "text": "Più sfide risolte e la serie più lunga di giorni consecutivi.",
+    "empty": "Ancora nessuna sfida risolta.",
+    "player": "Giocatore"
+  }
+}

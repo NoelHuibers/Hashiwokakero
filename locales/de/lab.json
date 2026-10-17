@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "SAT-Solver-Labor · CDCL, DPLL und splr an Hashi-Rätseln",
+    "description": "Jag ein Hashiwokakero-Rätsel durch unsere CDCL- und DPLL-SAT-Solver mit verschiedenen Heuristiken und Neustart-Strategien und vergleiche sie mit splr."
+  },
+  "title": "Solver-Labor",
+  "intro": "Schick ein Rätsel ins Rennen durch unsere eigenen CDCL- und DPLL-Solver in verschiedenen Modi (Verzweigungsheuristiken, Neustart-Strategien, Subsumption) und vergleiche sie mit splr.",
+  "puzzle": {
+    "title": "1 · Rätsel",
+    "size": "{{ width }}×{{ height }}, Inseln: {{ count }}",
+    "none": "Kein Rätsel ausgewählt",
+    "game": "Aktuelles Spiel",
+    "workshop": "Werkstatt",
+    "fresh": "Neu"
+  },
+  "solvers": {
+    "title": "2 · Solver",
+    "description": "Wähle die Konfigurationen für den Vergleich.",
+    "timeout": "Zeitlimit pro Lauf"
+  },
+  "racing": "Rennen läuft…",
+  "start": "Rennen starten",
+  "results": {
+    "title": "3 · Ergebnisse",
+    "description": "Die Gesamtzeit ist Kodieren plus Lösen. Unzusammenhängende Lösungen werden erst bei Bedarf widerlegt, jede Widerlegung kostet einen weiteren SAT-Aufruf.",
+    "empty": "Noch kein Rennen."
+  },
+  "table": {
+    "config": "Konfiguration",
+    "result": "Ergebnis",
+    "decisions": "Entscheidungen",
+    "restarts": "Neustarts",
+    "calls": "SAT-Aufrufe"
+  },
+  "badge": {
+    "queued": "wartet",
+    "solving": "löst…",
+    "error": "Fehler",
+    "timeout": "Zeitlimit"
+  },
+  "summary": {
+    "decisions": "Entscheidungen: {{ count }}",
+    "restarts": "Neustarts: {{ count }}",
+    "calls": "SAT-Aufrufe: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Wähle zuerst ein Rätsel.",
+    "pick_solver": "Wähle mindestens eine Solver-Konfiguration."
+  }
+}

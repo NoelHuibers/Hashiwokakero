@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Dagelijkse Hashiwokakero-bruggenpuzzel, gratis",
+    "description": "Elke dag een nieuwe Hashiwokakero-puzzel (Bruggen bouwen), voor iedereen dezelfde: schattige Japanse pixelart, ranglijst en reeksen, altijd één oplossing."
+  },
+  "title": "Brug van de dag #{{ number }}",
+  "penalty": "Straftijd",
+  "give_up": "Opgeven",
+  "give_up_confirm": "De SAT-solver de oplossing laten tonen? Dan telt je poging van vandaag niet mee voor de ranking.",
+  "share": "Hashi 橋 Dagpuzzel #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "De brug van vandaag",
+    "text": "De puzzel verschijnt zodra je op start drukt, de klok loopt op de server. Een hint kost 30 s, een controle 10 s, en wie de oplossing laat zien, komt niet in de ranking.",
+    "start": "Start",
+    "preparing": "Voorbereiden…",
+    "playing_as": "Je speelt als {{ name }}",
+    "playing_as_guest": "Je speelt als {{ name }} (gast)",
+    "no_account": "Geen account nodig, je speelt als gast."
+  },
+  "result": {
+    "revealed_title": "Opgelost door de SAT-solver",
+    "revealed_text": "Deze telt niet mee voor de ranking. Tot morgen!",
+    "rank": "Plek {{ rank }} van {{ total }} vandaag",
+    "ranking": "Plek bepalen…",
+    "more": "Meer puzzels in de oefenmodus →",
+    "on_board": "Je staat in de ranglijst als <b>{{ name }}</b>.",
+    "claim": "Claim je naam en houd je reeks op elk apparaat →"
+  },
+  "ranking": {
+    "title": "Ranking van vandaag",
+    "all": "Alles →",
+    "crossed": "Vandaag overgestoken: {{ count }}"
+  },
+  "week": {
+    "title": "Deze week",
+    "text": "Net als een krantenpuzzel worden de bruggen richting zondag steeds moeilijker.",
+    "next": "Volgende brug over"
+  }
+}

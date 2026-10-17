@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Jak grać w Hashiwokakero · zasady i porady · Hashi",
+    "description": "Zasady Hashiwokakero (Mosty) z rozwiązanym przykładem, wnioskowania, które łamią większość łamigłówek bez zgadywania, i jak solver SAT dowodzi jednoznaczności."
+  },
+  "title": "Jak grać",
+  "intro": "Hashiwokakero (橋をかけろ, „buduj mosty!”) to łamigłówka logiczna wydawnictwa Nikoli. Połącz wszystkie wyspy mostami tak, aby każda wyspa miała dokładnie tyle mostów, ile wskazuje jej liczba.",
+  "rule": {
+    "count_title": "Policz mosty",
+    "count": "Liczba na wyspie mówi, ile mostów się na niej kończy.",
+    "double_title": "Jeden lub dwa",
+    "double": "Wyspy można połączyć pojedynczym drewnianym mostem albo podwójnym cynobrowym, nigdy większą liczbą.",
+    "straight_title": "Prosto, bez skrzyżowań",
+    "straight": "Mosty biegną poziomo lub pionowo i nie mogą przecinać innych mostów ani wysp.",
+    "connected_title": "Jeden archipelag",
+    "connected": "Na końcu z każdej wyspy musi dać się dotrzeć do każdej innej."
+  },
+  "example": "Rozwiązana łamigłówka",
+  "controls": {
+    "title": "Sterowanie",
+    "tap": "Kliknij wodę między dwiema wyspami, by zbudować most, jeszcze raz, by dodać drugi, trzecie kliknięcie usuwa oba.",
+    "drag": "Możesz też przeciągnąć od wyspy w stronę sąsiada albo kliknąć kolejno dwie wyspy.",
+    "remove": "<right>Prawy przycisk</right> / <shift>Shift</shift> + klik usuwa most.",
+    "colors": "Ukończone wyspy robią się zielone, przepełnione czerwone. Nie wiesz, co dalej? Poproś solver SAT o podpowiedź albo o sprawdzenie twoich mostów."
+  },
+  "hood": {
+    "title": "Pod maską",
+    "variables": "Każdy możliwy most <e>e</e> między dwiema sąsiednimi wyspami dostaje dwie zmienne logiczne: <e1>e₁</e1> (co najmniej jeden most) i <e2>e₂</e2> (drugi most), z warunkiem <imp>e₂ → e₁</imp>, dzięki czemu każdy układ ma dokładnie jeden model.",
+    "islands": "Wyspa z liczbą n potrzebuje dokładnie n prawdziwych zmiennych, co zapisuje się jako klauzule po wszystkich kombinacjach. Krzyżujące się mosty wzajemnie się wykluczają:",
+    "connectivity": "Spójność trudno wyrazić w CNF, więc jest dodawana leniwie: za każdym razem, gdy solver zwróci osobne grupy wysp, dochodzi klauzula wymagająca mostu wychodzącego z takiej grupy, a solver rusza ponownie.",
+    "generator": "Generator hoduje losowy archipelag i dowodzi jednoznaczności, blokując znalezione rozwiązanie i prosząc solver o kolejne. Wypróbuj różne tryby solvera w <a>laboratorium</a>."
+  },
+  "faq_title": "Pytania o Hashiwokakero",
+  "faq": {
+    "what_q": "Czym jest Hashiwokakero?",
+    "what_a": "Hashiwokakero (橋をかけろ, „buduj mosty”), nazywane też Mostami lub Hashi, to japońska łamigłówka logiczna wydawnictwa Nikoli. Na planszy są ponumerowane wyspy; łączysz je poziomymi i pionowymi mostami tak, aby każda wyspa miała dokładnie tyle mostów, ile wskazuje jej liczba, żadne mosty się nie krzyżowały, a wszystkie wyspy tworzyły jedną spójną grupę.",
+    "how_many_q": "Ile mostów może łączyć dwie wyspy?",
+    "how_many_a": "Najwyżej dwa. Pojedynczy lub podwójny most może połączyć dwie wyspy leżące w tym samym wierszu lub kolumnie, jeśli nic nie stoi między nimi.",
+    "cross_q": "Czy mosty mogą się krzyżować?",
+    "cross_a": "Nie. Mosty biegną prosto, poziomo lub pionowo, i nie mogą ani przecinać innych mostów, ani przechodzić nad wyspami.",
+    "connected_q": "Czy wszystkie wyspy muszą być połączone?",
+    "connected_a": "Tak. W ukończonej łamigłówce z każdej wyspy można dojść mostami do każdej innej, wyspy tworzą jedną sieć.",
+    "unique_q": "Czy zawsze jest dokładnie jedno rozwiązanie?",
+    "unique_a": "W Hashi tak: każdą wygenerowaną łamigłówkę sprawdza solver SAT, który dowodzi, że drugie rozwiązanie nie istnieje, więc nigdy nie musisz zgadywać."
+  }
+}

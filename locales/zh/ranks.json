@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "每日排行榜 · Hashi 数桥谜题",
+    "description": "今日最快的数桥（Hashiwokakero）玩家、往期每日谜题排名，以及解题最多、连胜最长的名人堂。"
+  },
+  "title": "排行榜",
+  "intro": "每天大家都玩同一座桥。用时最短者胜，提示和检查会加时，查看答案的不计成绩。",
+  "finished": "完成：{{ count }} 人",
+  "earlier": "更早",
+  "later": "更晚",
+  "today": "今天",
+  "missed": "错过了这一题？不计时再玩一次吧。",
+  "practice_it": "去练习",
+  "archive_name": "每日 #{{ number }}",
+  "no_puzzle": "那天没人玩，所以没有谜题。",
+  "fame": {
+    "title": "名人堂",
+    "text": "解出每日谜题最多的玩家，以及连续天数最长的连胜。",
+    "empty": "还没有人解出每日谜题。",
+    "player": "玩家"
+  }
+}

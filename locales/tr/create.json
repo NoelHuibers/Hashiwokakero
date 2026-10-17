@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Kendi Hashiwokakero bulmacanı yap · Hashi",
+    "description": "Atölyede bir Köprüler bulmacası tasarla: adaları yerleştir, SAT çözücü tek çözümü olduğunu kontrol etsin, metin dosyası olarak dışa aktar ve oyna."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Bulmaca atölyesi",
+  "intro": "Adaları yerleştir, SAT çözücü bulmacanın tam olarak tek bir çözümü olduğunu kontrol etsin, sonra oyna.",
+  "keys": {
+    "click": "Tıkla",
+    "right_click": "Sağ tık",
+    "set": "yerleştir",
+    "erase": "sil (üzerindeyken)"
+  },
+  "brush": {
+    "count_up": "Her dokunuş sayıyı artırır",
+    "erase": "Sil",
+    "place": "Yerleştir: {{ number }}"
+  },
+  "heads_up": "Dikkat",
+  "warning_capacity": "({{ x }}, {{ y }}) konumundaki {{ number }} sayısı {{ number }} köprü istiyor ama en fazla {{ max }} köprü alabilir.",
+  "warning_odd": "Sayıların toplamı: {{ total }}. Toplamı tek olan bir bulmaca asla çözülemez.",
+  "grid": "Izgara",
+  "grid_size": "{{ width }}×{{ height }} hücre, {{ count }} ada",
+  "width": "Genişlik",
+  "height": "Yükseklik",
+  "fill": "Üretilmiş bir bulmacayla doldur",
+  "import": ".txt içe aktar",
+  "export": ".txt dışa aktar",
+  "play": "Bu bulmacayı oyna",
+  "unique": "Tek çözüm: güzel bir bulmaca!",
+  "not_unique": "Birden fazla çözüm var, ada ekle veya değiştir.",
+  "imported": "İçe aktarıldı: {{ name }}",
+  "unreadable": "Okunamadı: {{ name }}",
+  "brush_label": "Fırça"
+}

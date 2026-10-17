@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "きょう",
+    "practice": "れんしゅう",
+    "ranks": "じゅんい",
+    "create": "つくる",
+    "lab": "けんきゅう",
+    "main": "メインナビゲーション"
+  },
+  "tagline_short": "パズル",
+  "language": "言語",
+  "account": "アカウント",
+  "sign_in": "ログイン",
+  "theme": {
+    "toggle": "ダークモード切替",
+    "to_day": "昼モードにする",
+    "to_night": "夜モードにする"
+  },
+  "footer": {
+    "tagline": "<em>橋をかけろ</em>。SATで解かれ、あなたが遊ぶ。",
+    "made_by": "制作：{{ author }}",
+    "how_to_play": "遊び方",
+    "open_source": "GitHubでオープンソース",
+    "tech": "Rust · Leptos · Turso · 自作のCDCL・DPLLソルバー"
+  },
+  "difficulty": {
+    "easy": "かんたん",
+    "medium": "ふつう",
+    "hard": "むずかしい",
+    "expert": "達人",
+    "oni": "鬼"
+  },
+  "source": {
+    "daily": "デイリー · {{ date }}",
+    "custom": "自作パズル",
+    "imported": "読み込み · {{ name }}"
+  },
+  "toast": {
+    "unsat": "SATソルバーが証明しました：このパズルには解がありません。",
+    "timeout": "ソルバーが時間切れになりました。別の設定を試してください。",
+    "nothing_to_hint": "ヒントはありません。橋はすべて正しく置かれています。",
+    "all_correct": "ここまで順調です：置いた橋はすべて正解の一部です。",
+    "wrong_bridges": "正解に含まれない橋：{{ count }}本",
+    "unique": "証明完了：解はひとつだけです。",
+    "not_unique": "このパズルには解が複数あります。",
+    "copied": "結果をクリップボードにコピーしました。"
+  },
+  "errors": {
+    "unknown": "エラーが発生しました：{{ detail }}",
+    "database": "データベースが応答しません。もう一度お試しください。",
+    "internal": "サーバーでエラーが発生しました。もう一度お試しください。",
+    "archive_only_past": "練習できるのは過去のデイリーだけです。",
+    "password_too_short": "パスワードは8文字以上にしてください。",
+    "password_too_long": "パスワードは128文字以内にしてください。",
+    "username_invalid": "ユーザー名は3〜20文字で、英字・数字・_・- が使えます。",
+    "username_taken": "このユーザー名はすでに使われています。",
+    "wrong_login": "ユーザー名またはパスワードが違います。",
+    "too_many_attempts": "失敗が多すぎます。数分待ってからお試しください。",
+    "session_expired": "セッションが切れました。ページを再読み込みしてください。",
+    "not_started": "先にデイリーパズルを始めてください。",
+    "not_solved": "まだ正解ではありません。",
+    "wrong_puzzle": "この橋はこのパズルのものではありません。",
+    "already_finished": "このデイリーはもうクリア済みです。"
+  },
+  "solver": {
+    "title": "SATソルバー",
+    "description": "パズルをCNFに変換し、SATラボの自作ソルバーで解きます。",
+    "solver": "ソルバー",
+    "own_cdcl": "自作CDCL",
+    "own_dpll": "自作DPLL",
+    "heuristic": "分岐ヒューリスティック",
+    "splr_heuristic": "splr独自（EVSIDS）",
+    "restarts": "リスタート",
+    "restarts_none": "リスタートなし",
+    "restarts_fixed": "固定間隔",
+    "restarts_geometric": "等比",
+    "restarts_luby": "Luby数列",
+    "subsumption": "包含除去",
+    "subsumption_short": "包含除去",
+    "subsumption_hint": "解く前に包含される節を除去する",
+    "preprocess": "前処理",
+    "timeout": "制限時間"
+  },
+  "ranking": {
+    "you": "あなた",
+    "guest": "ゲスト",
+    "guest_name": "ゲスト",
+    "penalties": "ヒント · チェック",
+    "empty": "まだ誰も渡っていません。一番乗りを目指そう！"
+  },
+  "board": {
+    "label": "橋をかけろの盤面",
+    "zoom": "拡大",
+    "fit": "全体表示",
+    "zoom_hint": "スワイプで移動、タップで橋をかける",
+    "cells_small": "マスが小さすぎる？"
+  },
+  "not_found": {
+    "title": "海で迷子",
+    "text": "このページへの橋はありません。島へ戻りましょう。",
+    "back": "ゲームに戻る"
+  },
+  "game": {
+    "time": "時間",
+    "moves": "手数",
+    "hints": "ヒント",
+    "undo": "元に戻す",
+    "redo": "やり直す",
+    "clear": "消去",
+    "restart": "最初から",
+    "check": "チェック",
+    "hint": "ヒント",
+    "solve": "答え",
+    "unique": "唯一解？",
+    "well_done": "クリア！",
+    "share": "結果をシェア",
+    "loading": "読み込み中…",
+    "islands_complete": "島が完成",
+    "groups": "{{ count }}つのグループに分かれています",
+    "all_connected": "すべてつながっています",
+    "islands": "島 {{ count }}個",
+    "unique_solution": "唯一解 ✓",
+    "several_solutions": "複数解あり"
+  },
+  "weekday": {
+    "mon": "月曜日",
+    "tue": "火曜日",
+    "wed": "水曜日",
+    "thu": "木曜日",
+    "fri": "金曜日",
+    "sat": "土曜日",
+    "sun": "日曜日"
+  },
+  "month": {
+    "jan": "1月",
+    "feb": "2月",
+    "mar": "3月",
+    "apr": "4月",
+    "may": "5月",
+    "jun": "6月",
+    "jul": "7月",
+    "aug": "8月",
+    "sep": "9月",
+    "oct": "10月",
+    "nov": "11月",
+    "dec": "12月"
+  },
+  "date_long": "{{ year }}年{{ month }}{{ day }}日（{{ weekday }}）",
+  "date_short": "{{ year }}年{{ month }}{{ day }}日",
+  "og_image_alt": "ピクセルアートで描かれた解答済みの橋をかけろ：数字の島が木の橋と朱色の橋でつながっている",
+  "ld": {
+    "site": "日本生まれの橋のパズル「橋をかけろ」を、ブラウザで無料でプレイ。",
+    "game": "島に書かれた数字と同じ本数の橋をかけて、すべての島をつなぎましょう。ランキング付きのデイリーパズル、5段階の難易度、ピクセルアート、そしてどのパズルも答えはひとつだけです。"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Hashiwokakero (Puentes) diario, gratis en línea",
+    "description": "Un nuevo Hashiwokakero (Puentes) cada día, el mismo para todos: pixel art japonés, clasificación y rachas, y cada puzle tiene exactamente una solución."
+  },
+  "title": "Puente del día n.º {{ number }}",
+  "penalty": "Penalización",
+  "give_up": "Rendirse",
+  "give_up_confirm": "¿Dejar que el solver SAT muestre la solución? La partida de hoy no entrará en la clasificación.",
+  "share": "Hashi 橋 Reto diario #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "El puente de hoy",
+    "text": "El puzle aparece al pulsar Empezar, el reloj corre en el servidor. Cada pista suma 30 s, cada comprobación 10 s, y revelar la solución te deja fuera de la clasificación.",
+    "start": "Empezar",
+    "preparing": "Preparando…",
+    "playing_as": "Juegas como {{ name }}",
+    "playing_as_guest": "Juegas como {{ name }} (invitado)",
+    "no_account": "No necesitas cuenta, jugarás como invitado."
+  },
+  "result": {
+    "revealed_title": "Resuelto por el solver SAT",
+    "revealed_text": "Este no cuenta para la clasificación. ¡Hasta mañana!",
+    "rank": "Puesto {{ rank }} de {{ total }} hoy",
+    "ranking": "Clasificando…",
+    "more": "Más puzles en el modo práctica →",
+    "on_board": "Estás en la clasificación como <b>{{ name }}</b>.",
+    "claim": "Reserva tu nombre para mantener tu racha en todos tus dispositivos →"
+  },
+  "ranking": {
+    "title": "Clasificación de hoy",
+    "all": "Toda →",
+    "crossed": "Han cruzado hoy: {{ count }}"
+  },
+  "week": {
+    "title": "Esta semana",
+    "text": "Como los pasatiempos del periódico, los puentes se ponen más difíciles a medida que se acerca el domingo.",
+    "next": "Próximo puente en"
+  }
+}

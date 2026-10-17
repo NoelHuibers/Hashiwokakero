@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Crea tu propio puzle de Hashiwokakero · Hashi",
+    "description": "Diseña un puzle de Puentes en el taller: coloca islas, deja que un solver SAT compruebe que tiene una sola solución, expórtalo como texto y juégalo."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Taller de puzles",
+  "intro": "Coloca islas, deja que el solver SAT compruebe que tu puzle tiene exactamente una solución y luego juégalo.",
+  "keys": {
+    "click": "Clic",
+    "right_click": "Clic derecho",
+    "set": "poner",
+    "erase": "borrar (al pasar por encima)"
+  },
+  "brush": {
+    "count_up": "Cada toque suma uno",
+    "erase": "Borrar",
+    "place": "Poner un {{ number }}"
+  },
+  "heads_up": "Atención",
+  "warning_capacity": "La isla {{ number }} en ({{ x }}, {{ y }}) necesita {{ number }} puentes, pero puede tener como máximo {{ max }}.",
+  "warning_odd": "Los números suman {{ total }}: una suma impar nunca tiene solución.",
+  "grid": "Cuadrícula",
+  "grid_size": "{{ width }}×{{ height }} casillas, {{ count }} islas",
+  "width": "Ancho",
+  "height": "Alto",
+  "fill": "Rellenar con un puzle generado",
+  "import": "Importar .txt",
+  "export": "Exportar .txt",
+  "play": "Jugar este puzle",
+  "unique": "Única: ¡un buen puzle!",
+  "not_unique": "Más de una solución, añade o cambia islas.",
+  "imported": "{{ name }} importado",
+  "unreadable": "No se pudo leer {{ name }}",
+  "brush_label": "Pincel"
+}

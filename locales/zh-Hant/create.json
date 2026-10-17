@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "自製數橋謎題 · Hashi 謎題工作坊",
+    "description": "在工作坊設計數橋謎題：放置小島，讓 SAT 求解器檢查是否唯一解，匯出成文字檔，然後開始玩。"
+  },
+  "kicker": "作る · tsukuru",
+  "title": "謎題工作坊",
+  "intro": "放置小島，讓 SAT 求解器檢查你的謎題是否只有唯一解，然後開始玩。",
+  "keys": {
+    "click": "點一下",
+    "right_click": "按右鍵",
+    "set": "設定",
+    "erase": "刪除（游標停留時）"
+  },
+  "brush": {
+    "count_up": "每點一下加一",
+    "erase": "擦除",
+    "place": "放置 {{ number }}"
+  },
+  "heads_up": "注意",
+  "warning_capacity": "（{{ x }}，{{ y }}）的 {{ number }} 需要 {{ number }} 座橋，但最多只能有 {{ max }} 座。",
+  "warning_odd": "數字總和是 {{ total }}，總和為奇數就永遠無解。",
+  "grid": "格子",
+  "grid_size": "{{ width }}×{{ height }} 格，{{ count }} 座島",
+  "width": "寬度",
+  "height": "高度",
+  "fill": "用產生的謎題填滿",
+  "import": "匯入 .txt",
+  "export": "匯出 .txt",
+  "play": "玩這道謎題",
+  "unique": "唯一解：好謎題！",
+  "not_unique": "不只一個解，請新增或修改小島。",
+  "imported": "已匯入 {{ name }}",
+  "unreadable": "無法讀取 {{ name }}",
+  "brush_label": "筆刷"
+}

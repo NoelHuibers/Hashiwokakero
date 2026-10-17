@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Ranking dnia · Hashi, łamigłówka z mostami",
+    "description": "Najszybsi dziś gracze Hashiwokakero, ranking każdej wcześniejszej łamigłówki dnia i galeria sław z najwięcej rozwiązanymi dniami i najdłuższymi seriami."
+  },
+  "title": "Ranking",
+  "intro": "Każdego dnia wszyscy grają ten sam most. Wygrywa najlepszy czas, podpowiedzi i sprawdzenia go wydłużają, odkryte rozwiązania się nie liczą.",
+  "finished": "na mecie: {{ count }}",
+  "earlier": "Wcześniej",
+  "later": "Później",
+  "today": "Dziś",
+  "missed": "Przegapione? Zagraj bez zegara.",
+  "practice_it": "Ćwicz",
+  "archive_name": "Most dnia #{{ number }}",
+  "no_puzzle": "Tego dnia nikt nie grał, więc nie ma łamigłówki.",
+  "fame": {
+    "title": "Galeria sław",
+    "text": "Najwięcej rozwiązanych łamigłówek dnia i najdłuższa seria dni z rzędu.",
+    "empty": "Nie rozwiązano jeszcze żadnej łamigłówki dnia.",
+    "player": "Gracz"
+  }
+}

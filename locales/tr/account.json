@@ -1,0 +1,32 @@
+{
+  "title": "Hesabın",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Köprülerin",
+  "guest_here": "Bu tarayıcıda misafir olarak oynuyorsun: {{ name }}",
+  "member_since": "Üyelik tarihi: {{ date }}",
+  "no_record": "Kaydını başlatmak için bir günlük bulmaca oyna.",
+  "stats": {
+    "solved": "Çözülen",
+    "streak": "Seri",
+    "best": "En iyi seri",
+    "fastest": "En hızlı",
+    "average": "Ortalama",
+    "week": "Bu hafta",
+    "best_streak_short": "Seri"
+  },
+  "last_weeks": "Son beş hafta",
+  "calendar_rank": "sıra: {{ rank }}",
+  "not_solved": "çözülmedi",
+  "guest_cta": "Bu misafirin sonuçlarını ve serisini korumak ve başka cihazlarda oynamak için bir hesap oluştur.",
+  "sign_in_cta": "Serini her cihazda görmek için giriş yap. İstersen misafir olarak da oynayabilirsin.",
+  "create": "Hesap oluştur",
+  "username": "Kullanıcı adı",
+  "password": "Şifre",
+  "password_hint": "En az 8 karakter.",
+  "busy": "Bir saniye…",
+  "welcome": "Hoş geldin, {{ name }}!",
+  "signed_out": "Çıkış yapıldı.",
+  "name_hint": "Sonuçların sıralamada bu adla görünür.",
+  "sign_out": "Çıkış yap",
+  "no_dailies": "Henüz günlük bulmaca yok."
+}

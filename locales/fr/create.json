@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Crée ta propre grille de Hashiwokakero · Hashi",
+    "description": "Conçois une grille de Ponts dans l’atelier : place des îles, laisse un solveur SAT vérifier qu’elle a une seule solution, exporte-la en texte et joue-la."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Atelier de grilles",
+  "intro": "Place des îles, laisse le solveur SAT vérifier que ta grille a exactement une solution, puis joue-la.",
+  "keys": {
+    "click": "Clic",
+    "right_click": "Clic droit",
+    "set": "placer",
+    "erase": "effacer (au survol)"
+  },
+  "brush": {
+    "count_up": "Chaque appui augmente le chiffre",
+    "erase": "Effacer",
+    "place": "Placer un {{ number }}"
+  },
+  "heads_up": "Attention",
+  "warning_capacity": "L’île {{ number }} en ({{ x }}, {{ y }}) demande {{ number }} ponts, mais ne peut pas en avoir plus de {{ max }}.",
+  "warning_odd": "La somme des chiffres vaut {{ total }} : une somme impaire n’a jamais de solution.",
+  "grid": "Grille",
+  "grid_size": "{{ width }}×{{ height }} cases, {{ count }} îles",
+  "width": "Largeur",
+  "height": "Hauteur",
+  "fill": "Remplir avec une grille générée",
+  "import": "Importer .txt",
+  "export": "Exporter .txt",
+  "play": "Jouer cette grille",
+  "unique": "Unique : une belle grille !",
+  "not_unique": "Plus d’une solution, ajoute ou modifie des îles.",
+  "imported": "{{ name }} importé",
+  "unreadable": "Impossible de lire {{ name }}",
+  "brush_label": "Pinceau"
+}

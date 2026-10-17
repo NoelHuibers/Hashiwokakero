@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "Daily",
+    "practice": "Practice",
+    "ranks": "Ranks",
+    "create": "Create",
+    "lab": "Lab",
+    "main": "Main navigation"
+  },
+  "tagline_short": "Bridges",
+  "language": "Language",
+  "account": "Account",
+  "sign_in": "Sign in",
+  "theme": {
+    "toggle": "Toggle dark mode",
+    "to_day": "Switch to day 昼",
+    "to_night": "Switch to night 夜"
+  },
+  "footer": {
+    "tagline": "<em>build bridges</em>. Solved by SAT, played by you.",
+    "made_by": "Made by {{ author }}",
+    "how_to_play": "How to play",
+    "open_source": "Open source on GitHub",
+    "tech": "Rust · Leptos · Turso · own CDCL & DPLL solvers"
+  },
+  "difficulty": {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "expert": "Expert",
+    "oni": "Oni"
+  },
+  "source": {
+    "daily": "Daily bridge · {{ date }}",
+    "custom": "Your own puzzle",
+    "imported": "Imported · {{ name }}"
+  },
+  "toast": {
+    "unsat": "The SAT solver proved: this puzzle has no solution.",
+    "timeout": "The solver ran out of time. Try another configuration.",
+    "nothing_to_hint": "Nothing to hint, every bridge is in place.",
+    "all_correct": "So far so good: every bridge belongs to the solution.",
+    "wrong_bridges": "Bridges that are not part of the solution: {{ count }}",
+    "unique": "Proven: the solution is unique.",
+    "not_unique": "This puzzle has more than one solution.",
+    "copied": "Result copied to the clipboard."
+  },
+  "errors": {
+    "unknown": "Something went wrong: {{ detail }}",
+    "database": "The database didn't answer, please try again.",
+    "internal": "Something went wrong on the server, please try again.",
+    "archive_only_past": "Only earlier dailies can be practised.",
+    "password_too_short": "Passwords need at least 8 characters.",
+    "password_too_long": "Passwords can have at most 128 characters.",
+    "username_invalid": "Usernames have 3 to 20 characters: letters, digits, _ and -.",
+    "username_taken": "This username is already taken.",
+    "wrong_login": "Wrong username or password.",
+    "too_many_attempts": "Too many failed attempts, please wait a few minutes.",
+    "session_expired": "Your session expired, please reload the page.",
+    "not_started": "Start the daily puzzle first.",
+    "not_solved": "That isn't a solution yet.",
+    "wrong_puzzle": "These bridges don't belong to this puzzle.",
+    "already_finished": "You already finished this daily."
+  },
+  "solver": {
+    "title": "SAT Solver",
+    "description": "The puzzle is encoded as CNF and solved by our own solvers from the SAT solving lab.",
+    "solver": "Solver",
+    "own_cdcl": "Own CDCL",
+    "own_dpll": "Own DPLL",
+    "heuristic": "Branching heuristic",
+    "splr_heuristic": "splr's own (EVSIDS)",
+    "restarts": "Restarts",
+    "restarts_none": "No restarts",
+    "restarts_fixed": "Fixed interval",
+    "restarts_geometric": "Geometric",
+    "restarts_luby": "Luby sequence",
+    "subsumption": "Subsumption",
+    "subsumption_short": "subsumption",
+    "subsumption_hint": "Eliminate subsumed clauses before solving",
+    "preprocess": "preprocess",
+    "timeout": "Timeout"
+  },
+  "ranking": {
+    "you": "you",
+    "guest": "guest",
+    "guest_name": "Guest",
+    "penalties": "hints · checks",
+    "empty": "Nobody has crossed yet. Be the first!"
+  },
+  "board": {
+    "label": "Hashiwokakero board",
+    "zoom": "Zoom in",
+    "fit": "Fit board",
+    "zoom_hint": "Swipe to move around, tap to build",
+    "cells_small": "Cells too small?"
+  },
+  "not_found": {
+    "title": "Lost at sea",
+    "text": "There is no bridge to this page, let's get you back to the islands.",
+    "back": "Back to the game"
+  },
+  "game": {
+    "time": "Time",
+    "moves": "Moves",
+    "hints": "Hints",
+    "undo": "Undo",
+    "redo": "Redo",
+    "clear": "Clear",
+    "restart": "Restart",
+    "check": "Check",
+    "hint": "Hint",
+    "solve": "Solve",
+    "unique": "Unique?",
+    "well_done": "Well done!",
+    "share": "Share result",
+    "loading": "Loading…",
+    "islands_complete": "islands complete",
+    "groups": "{{ count }} separate groups",
+    "all_connected": "all connected",
+    "islands": "{{ count }} islands",
+    "unique_solution": "unique solution ✓",
+    "several_solutions": "several solutions"
+  },
+  "weekday": {
+    "mon": "Monday",
+    "tue": "Tuesday",
+    "wed": "Wednesday",
+    "thu": "Thursday",
+    "fri": "Friday",
+    "sat": "Saturday",
+    "sun": "Sunday"
+  },
+  "month": {
+    "jan": "January",
+    "feb": "February",
+    "mar": "March",
+    "apr": "April",
+    "may": "May",
+    "jun": "June",
+    "jul": "July",
+    "aug": "August",
+    "sep": "September",
+    "oct": "October",
+    "nov": "November",
+    "dec": "December"
+  },
+  "date_long": "{{ weekday }}, {{ day }} {{ month }} {{ year }}",
+  "date_short": "{{ day }} {{ month }} {{ year }}",
+  "og_image_alt": "A solved Hashiwokakero puzzle in pixel art: numbered islands joined by wooden and vermilion bridges",
+  "ld": {
+    "site": "Hashiwokakero, the Japanese bridges puzzle, playable for free in the browser.",
+    "game": "Connect the islands with bridges so that every island has as many bridges as its number says. A daily puzzle with a leaderboard, five difficulties, pixel art, and every puzzle has exactly one solution."
+  }
+}

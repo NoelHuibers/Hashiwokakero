@@ -1,0 +1,32 @@
+{
+  "title": "Tài khoản của bạn",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Những cây cầu của bạn",
+  "guest_here": "Đang chơi với tên {{ name }} (khách) trên trình duyệt này.",
+  "member_since": "Thành viên từ {{ date }}.",
+  "no_record": "Hãy chơi một câu đố mỗi ngày để bắt đầu ghi thành tích.",
+  "stats": {
+    "solved": "Đã giải",
+    "streak": "Chuỗi",
+    "best": "Chuỗi dài nhất",
+    "fastest": "Nhanh nhất",
+    "average": "Trung bình",
+    "week": "Tuần này",
+    "best_streak_short": "Chuỗi"
+  },
+  "last_weeks": "Năm tuần qua",
+  "calendar_rank": "hạng {{ rank }}",
+  "not_solved": "chưa giải",
+  "guest_cta": "Tạo tài khoản để giữ kết quả và chuỗi ngày của khách này, và chơi trên các thiết bị khác.",
+  "sign_in_cta": "Đăng nhập để xem chuỗi ngày của bạn trên mọi thiết bị. Bạn cũng có thể chơi luôn với tư cách khách.",
+  "create": "Tạo tài khoản",
+  "username": "Tên người dùng",
+  "password": "Mật khẩu",
+  "password_hint": "Ít nhất 8 ký tự.",
+  "busy": "Chờ một chút…",
+  "welcome": "Chào mừng, {{ name }}!",
+  "signed_out": "Đã đăng xuất.",
+  "name_hint": "Kết quả của bạn sẽ hiện trên bảng xếp hạng với tên này.",
+  "sign_out": "Đăng xuất",
+  "no_dailies": "Chưa có câu đố ngày nào."
+}

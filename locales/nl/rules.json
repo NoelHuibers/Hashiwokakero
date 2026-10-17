@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Hashiwokakero spelen · regels en tips · Hashi",
+    "description": "De regels van Hashiwokakero (Bruggen bouwen) met een opgelost voorbeeld, slimme trucs zonder gokken, en hoe een SAT-solver bewijst dat de oplossing uniek is."
+  },
+  "title": "Speluitleg",
+  "intro": "Hashiwokakero (橋をかけろ, “bouw bruggen!”) is een logische puzzel van uitgever Nikoli. Verbind alle eilanden met bruggen zodat elk eiland precies zoveel bruggen heeft als zijn getal aangeeft.",
+  "rule": {
+    "count_title": "Tel de bruggen",
+    "count": "Het getal op een eiland zegt hoeveel bruggen daar eindigen.",
+    "double_title": "Eén of twee",
+    "double": "Eilanden kunnen verbonden worden door een enkele houten brug of een dubbele vermiljoenrode brug, nooit meer.",
+    "straight_title": "Recht, zonder kruisingen",
+    "straight": "Bruggen lopen horizontaal of verticaal en mogen geen andere bruggen of eilanden kruisen.",
+    "connected_title": "Eén archipel",
+    "connected": "Aan het eind moet elk eiland vanaf elk ander eiland bereikbaar zijn."
+  },
+  "example": "Een opgeloste puzzel",
+  "controls": {
+    "title": "Besturing",
+    "tap": "Klik op het water tussen twee eilanden om een brug te bouwen, nog eens voor een tweede, een derde klik haalt ze weg.",
+    "drag": "Of sleep van een eiland naar zijn buur, of klik twee eilanden na elkaar aan.",
+    "remove": "<right>Rechtsklik</right> / <shift>Shift</shift> + klik haalt een brug weg.",
+    "colors": "Afgeronde eilanden worden groen, overvolle rood. Vastgelopen? Vraag de SAT-solver om een hint of om je bruggen te controleren."
+  },
+  "hood": {
+    "title": "Onder de motorkap",
+    "variables": "Elke mogelijke brug <e>e</e> tussen twee naburige eilanden krijgt twee booleaanse variabelen: <e1>e₁</e1> (minstens één brug) en <e2>e₂</e2> (een tweede brug), met <imp>e₂ → e₁</imp>, zodat elke opstelling precies één model heeft.",
+    "islands": "Een eiland met getal n heeft precies n ware variabelen nodig, geschreven als clausules over alle combinaties. Kruisende bruggen sluiten elkaar uit:",
+    "connectivity": "Samenhang is lastig uit te drukken in CNF, dus die wordt pas achteraf toegevoegd: telkens als de solver losse groepen eilanden teruggeeft, komt er een clausule bij die een brug uit zo’n groep eist, en draait de solver opnieuw.",
+    "generator": "De generator laat een willekeurige archipel groeien en bewijst uniciteit door de gevonden oplossing te blokkeren en de solver om een andere te vragen. Probeer de verschillende solvermodi in het <a>lab</a>."
+  },
+  "faq_title": "Vragen over Hashiwokakero",
+  "faq": {
+    "what_q": "Wat is Hashiwokakero?",
+    "what_a": "Hashiwokakero (橋をかけろ, “bouw bruggen”), ook wel Bruggen bouwen of Hashi genoemd, is een Japanse logische puzzel van uitgever Nikoli. Het rooster toont genummerde eilanden; je verbindt ze met horizontale en verticale bruggen zodat elk eiland precies zoveel bruggen heeft als zijn getal, geen bruggen elkaar kruisen en alle eilanden één samenhangende groep vormen.",
+    "how_many_q": "Hoeveel bruggen kunnen twee eilanden verbinden?",
+    "how_many_a": "Hoogstens twee. Een enkele of dubbele brug mag twee eilanden verbinden die in dezelfde rij of kolom liggen, zonder iets ertussen.",
+    "cross_q": "Mogen bruggen elkaar kruisen?",
+    "cross_a": "Nee. Bruggen lopen recht, horizontaal of verticaal, en mogen geen andere bruggen kruisen of over eilanden gaan.",
+    "connected_q": "Moeten alle eilanden verbonden zijn?",
+    "connected_a": "Ja. In een afgeronde puzzel kun je via de bruggen van elk eiland naar elk ander reizen, de eilanden vormen één netwerk.",
+    "unique_q": "Is er altijd precies één oplossing?",
+    "unique_a": "Op Hashi wel: elke gegenereerde puzzel wordt gecontroleerd door een SAT-solver, die bewijst dat er geen tweede oplossing bestaat, dus je hoeft nooit te gokken."
+  }
+}

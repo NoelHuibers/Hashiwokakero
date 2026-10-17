@@ -122,7 +122,7 @@ async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> 
     let conn = db::conn()?;
     let user = auth::current_user(&conn)
         .await?
-        .ok_or_else(|| ServerFnError::new("Your session expired, please reload"))?;
+        .ok_or_else(|| crate::model::ApiError::SessionExpired.fail())?;
     Ok((conn, user))
 }
 

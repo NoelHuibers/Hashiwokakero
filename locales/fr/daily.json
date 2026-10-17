@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Hashiwokakero (Ponts) du jour, gratuit en ligne",
+    "description": "Une nouvelle grille de Hashiwokakero (Ponts) chaque jour, la même pour tous : pixel art japonais, classement, séries, et une seule solution par grille."
+  },
+  "title": "Pont du jour n° {{ number }}",
+  "penalty": "Pénalité",
+  "give_up": "Abandonner",
+  "give_up_confirm": "Laisser le solveur SAT montrer la solution ? Ta partie du jour ne sera pas classée.",
+  "share": "Hashi 橋 Défi du jour #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "Le pont du jour",
+    "text": "La grille apparaît quand tu appuies sur Commencer, le chrono tourne sur le serveur. Un indice ajoute 30 s, une vérification 10 s, et révéler la solution te retire du classement.",
+    "start": "Commencer",
+    "preparing": "Préparation…",
+    "playing_as": "Tu joues en tant que {{ name }}",
+    "playing_as_guest": "Tu joues en tant que {{ name }} (invité)",
+    "no_account": "Pas besoin de compte, tu joueras en invité."
+  },
+  "result": {
+    "revealed_title": "Résolu par le solveur SAT",
+    "revealed_text": "Celle-ci ne compte pas pour le classement. À demain !",
+    "rank": "Rang {{ rank }} sur {{ total }} aujourd’hui",
+    "ranking": "Classement…",
+    "more": "Plus de grilles en jeu libre →",
+    "on_board": "Tu es au classement sous le nom <b>{{ name }}</b>.",
+    "claim": "Réserve ton pseudo pour garder ta série sur tous tes appareils →"
+  },
+  "ranking": {
+    "title": "Classement du jour",
+    "all": "Tout →",
+    "crossed": "Ont traversé aujourd’hui : {{ count }}"
+  },
+  "week": {
+    "title": "Cette semaine",
+    "text": "Comme les jeux du journal, les ponts deviennent plus durs à l’approche du dimanche.",
+    "next": "Prochain pont dans"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "title": "Akunmu",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Jembatanmu",
+  "guest_here": "Bermain sebagai {{ name }} (tamu) di browser ini.",
+  "member_since": "Anggota sejak {{ date }}.",
+  "no_record": "Mainkan teka-teki harian untuk memulai catatanmu.",
+  "stats": {
+    "solved": "Selesai",
+    "streak": "Beruntun",
+    "best": "Rekor beruntun",
+    "fastest": "Tercepat",
+    "average": "Rata-rata",
+    "week": "Minggu ini",
+    "best_streak_short": "Beruntun"
+  },
+  "last_weeks": "Lima minggu terakhir",
+  "calendar_rank": "peringkat {{ rank }}",
+  "not_solved": "belum selesai",
+  "guest_cta": "Buat akun untuk menyimpan hasil dan rentetan tamu ini, dan bermain di perangkat lain.",
+  "sign_in_cta": "Masuk untuk melihat rentetanmu di perangkat apa pun. Kamu juga bisa langsung bermain sebagai tamu.",
+  "create": "Buat akun",
+  "username": "Nama pengguna",
+  "password": "Kata sandi",
+  "password_hint": "Minimal 8 karakter.",
+  "busy": "Sebentar…",
+  "welcome": "Selamat datang, {{ name }}!",
+  "signed_out": "Kamu sudah keluar.",
+  "name_hint": "Hasilmu tercatat di papan peringkat dengan nama ini.",
+  "sign_out": "Keluar",
+  "no_dailies": "Belum ada teka-teki harian."
+}

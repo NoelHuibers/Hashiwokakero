@@ -1,0 +1,32 @@
+{
+  "title": "Je account",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Jouw bruggen",
+  "guest_here": "Je speelt in deze browser als {{ name }} (gast).",
+  "member_since": "Lid sinds {{ date }}.",
+  "no_record": "Speel een dagpuzzel om je statistieken te starten.",
+  "stats": {
+    "solved": "Opgelost",
+    "streak": "Reeks",
+    "best": "Beste reeks",
+    "fastest": "Snelste",
+    "average": "Gemiddeld",
+    "week": "Deze week",
+    "best_streak_short": "Reeks"
+  },
+  "last_weeks": "Laatste vijf weken",
+  "calendar_rank": "plek {{ rank }}",
+  "not_solved": "niet opgelost",
+  "guest_cta": "Maak een account aan om de resultaten en reeks van deze gast te bewaren en op andere apparaten te spelen.",
+  "sign_in_cta": "Log in om je reeks op elk apparaat te zien. Je kunt ook gewoon als gast spelen.",
+  "create": "Account aanmaken",
+  "username": "Gebruikersnaam",
+  "password": "Wachtwoord",
+  "password_hint": "Minstens 8 tekens.",
+  "busy": "Even geduld…",
+  "welcome": "Welkom, {{ name }}!",
+  "signed_out": "Uitgelogd.",
+  "name_hint": "Onder deze naam tellen je resultaten mee in de ranglijst.",
+  "sign_out": "Uitloggen",
+  "no_dailies": "Nog geen dagpuzzels."
+}

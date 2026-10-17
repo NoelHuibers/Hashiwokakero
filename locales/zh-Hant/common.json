@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "每日",
+    "practice": "練習",
+    "ranks": "排行",
+    "create": "創作",
+    "lab": "實驗室",
+    "main": "主選單"
+  },
+  "tagline_short": "造橋",
+  "language": "語言",
+  "account": "帳號",
+  "sign_in": "登入",
+  "theme": {
+    "toggle": "切換深色模式",
+    "to_day": "切換到白天 昼",
+    "to_night": "切換到夜晚 夜"
+  },
+  "footer": {
+    "tagline": "<em>把橋搭起來</em>。SAT 負責解，你負責玩。",
+    "made_by": "由 {{ author }} 製作",
+    "how_to_play": "玩法說明",
+    "open_source": "在 GitHub 上開源",
+    "tech": "Rust · Leptos · Turso · 自製 CDCL 與 DPLL 求解器"
+  },
+  "difficulty": {
+    "easy": "簡單",
+    "medium": "普通",
+    "hard": "困難",
+    "expert": "專家",
+    "oni": "鬼"
+  },
+  "source": {
+    "daily": "每日一橋 · {{ date }}",
+    "custom": "你的自製謎題",
+    "imported": "已匯入 · {{ name }}"
+  },
+  "toast": {
+    "unsat": "SAT 求解器證明：這道謎題無解。",
+    "timeout": "求解器逾時了，換個設定試試看吧。",
+    "nothing_to_hint": "沒什麼好提示的，每座橋都已到位。",
+    "all_correct": "目前都對：每座橋都屬於正確解答。",
+    "wrong_bridges": "不屬於解答的橋：{{ count }} 座",
+    "unique": "已證明：解答唯一。",
+    "not_unique": "這道謎題不只一個解。",
+    "copied": "成績已複製到剪貼簿。"
+  },
+  "errors": {
+    "unknown": "發生錯誤：{{ detail }}",
+    "database": "資料庫沒有回應，請再試一次。",
+    "internal": "伺服器出了點問題，請再試一次。",
+    "archive_only_past": "只能練習先前的每日謎題。",
+    "password_too_short": "密碼至少需要 8 個字元。",
+    "password_too_long": "密碼最多 128 個字元。",
+    "username_invalid": "使用者名稱需為 3 到 20 個字元：英文字母、數字、_ 和 -。",
+    "username_taken": "這個使用者名稱已經有人使用了。",
+    "wrong_login": "使用者名稱或密碼錯誤。",
+    "too_many_attempts": "失敗次數太多，請稍等幾分鐘再試。",
+    "session_expired": "工作階段已過期，請重新整理頁面。",
+    "not_started": "請先開始每日謎題。",
+    "not_solved": "這還不是正確解答喔。",
+    "wrong_puzzle": "這些橋不屬於這道謎題。",
+    "already_finished": "你已經完成過這道每日謎題了。"
+  },
+  "solver": {
+    "title": "SAT 求解器",
+    "description": "謎題會編碼成 CNF，交給我們 SAT 求解實驗室裡的自製求解器來解。",
+    "solver": "求解器",
+    "own_cdcl": "自製 CDCL",
+    "own_dpll": "自製 DPLL",
+    "heuristic": "分支啟發法",
+    "splr_heuristic": "splr 內建（EVSIDS）",
+    "restarts": "重新啟動",
+    "restarts_none": "不重新啟動",
+    "restarts_fixed": "固定間隔",
+    "restarts_geometric": "幾何成長",
+    "restarts_luby": "Luby 數列",
+    "subsumption": "子句包含消去",
+    "subsumption_short": "包含消去",
+    "subsumption_hint": "求解前先消去被包含的子句",
+    "preprocess": "前處理",
+    "timeout": "逾時"
+  },
+  "ranking": {
+    "you": "你",
+    "guest": "訪客",
+    "guest_name": "訪客",
+    "penalties": "提示 · 檢查",
+    "empty": "還沒有人過橋，快來當第一個！"
+  },
+  "board": {
+    "label": "數橋（Hashiwokakero）盤面",
+    "zoom": "放大",
+    "fit": "符合畫面",
+    "zoom_hint": "滑動來移動畫面，點一下來搭橋",
+    "cells_small": "格子太小？"
+  },
+  "not_found": {
+    "title": "在海上迷路了",
+    "text": "沒有橋通往這個頁面，我們帶你回到島上吧。",
+    "back": "回到遊戲"
+  },
+  "game": {
+    "time": "時間",
+    "moves": "步數",
+    "hints": "提示",
+    "undo": "復原",
+    "redo": "重做",
+    "clear": "清除",
+    "restart": "重來",
+    "check": "檢查",
+    "hint": "提示",
+    "solve": "解答",
+    "unique": "唯一？",
+    "well_done": "太厲害了！",
+    "share": "分享成績",
+    "loading": "載入中…",
+    "islands_complete": "座島已完成",
+    "groups": "{{ count }} 個分開的島群",
+    "all_connected": "全部連通",
+    "islands": "{{ count }} 座島",
+    "unique_solution": "唯一解 ✓",
+    "several_solutions": "多組解"
+  },
+  "weekday": {
+    "mon": "週一",
+    "tue": "週二",
+    "wed": "週三",
+    "thu": "週四",
+    "fri": "週五",
+    "sat": "週六",
+    "sun": "週日"
+  },
+  "month": {
+    "jan": "1月",
+    "feb": "2月",
+    "mar": "3月",
+    "apr": "4月",
+    "may": "5月",
+    "jun": "6月",
+    "jul": "7月",
+    "aug": "8月",
+    "sep": "9月",
+    "oct": "10月",
+    "nov": "11月",
+    "dec": "12月"
+  },
+  "date_long": "{{ year }}年{{ month }}{{ day }}日（{{ weekday }}）",
+  "date_short": "{{ year }}年{{ month }}{{ day }}日",
+  "og_image_alt": "像素風格的已解數橋（Hashiwokakero）謎題：標有數字的小島以木橋和朱紅色的橋相連",
+  "ld": {
+    "site": "數橋（Hashiwokakero），來自日本的造橋邏輯謎題，在瀏覽器上免費暢玩。",
+    "game": "用橋把小島連起來，讓每座島的橋數等於島上的數字。每日謎題搭配排行榜，五種難度，像素畫風，每道題都只有唯一解。"
+  }
+}

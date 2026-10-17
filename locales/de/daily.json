@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Tägliches Hashiwokakero-Brückenrätsel, gratis",
+    "description": "Jeden Tag ein neues Hashiwokakero-Rätsel (Brücken bauen), für alle gleich: süße japanische Pixel-Art, Rangliste und Serien, immer genau eine Lösung."
+  },
+  "title": "Brücke des Tages #{{ number }}",
+  "penalty": "Strafzeit",
+  "give_up": "Aufgeben",
+  "give_up_confirm": "Soll der SAT-Solver die Lösung zeigen? Dein heutiger Lauf kommt dann nicht in die Wertung.",
+  "share": "Hashi 橋 Tagesrätsel #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "Die Brücke von heute",
+    "text": "Das Rätsel erscheint, sobald du auf Start drückst, die Uhr läuft auf dem Server. Tipps kosten 30 s, Prüfungen 10 s, wer sich die Lösung zeigen lässt, kommt nicht in die Wertung.",
+    "start": "Start",
+    "preparing": "Wird vorbereitet…",
+    "playing_as": "Du spielst als {{ name }}",
+    "playing_as_guest": "Du spielst als {{ name }} (Gast)",
+    "no_account": "Kein Konto nötig, du spielst als Gast."
+  },
+  "result": {
+    "revealed_title": "Vom SAT-Solver gelöst",
+    "revealed_text": "Das zählt diesmal nicht für die Rangliste. Bis morgen!",
+    "rank": "Heute Platz {{ rank }} von {{ total }}",
+    "ranking": "Platzierung wird ermittelt…",
+    "more": "Mehr Rätsel im Übungsmodus →",
+    "on_board": "Du stehst als <b>{{ name }}</b> in der Rangliste.",
+    "claim": "Sichere dir deinen Namen und behalte deine Serie auf jedem Gerät →"
+  },
+  "ranking": {
+    "title": "Rangliste von heute",
+    "all": "Alle →",
+    "crossed": "Heute geschafft: {{ count }}"
+  },
+  "week": {
+    "title": "Diese Woche",
+    "text": "Wie beim Zeitungsrätsel werden die Brücken bis Sonntag immer kniffliger.",
+    "next": "Nächste Brücke in"
+  }
+}

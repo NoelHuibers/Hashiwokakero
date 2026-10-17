@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "Du jour",
+    "practice": "Libre",
+    "ranks": "Podium",
+    "create": "Créer",
+    "lab": "Labo",
+    "main": "Navigation principale"
+  },
+  "tagline_short": "Ponts",
+  "language": "Langue",
+  "account": "Compte",
+  "sign_in": "Connexion",
+  "theme": {
+    "toggle": "Basculer le mode sombre",
+    "to_day": "Passer au jour 昼",
+    "to_night": "Passer à la nuit 夜"
+  },
+  "footer": {
+    "tagline": "<em>construis des ponts</em>. Résolu par SAT, joué par toi.",
+    "made_by": "Créé par {{ author }}",
+    "how_to_play": "Comment jouer",
+    "open_source": "Open source sur GitHub",
+    "tech": "Rust · Leptos · Turso · solveurs CDCL et DPLL maison"
+  },
+  "difficulty": {
+    "easy": "Facile",
+    "medium": "Moyen",
+    "hard": "Difficile",
+    "expert": "Expert",
+    "oni": "Oni"
+  },
+  "source": {
+    "daily": "Pont du jour · {{ date }}",
+    "custom": "Ta propre grille",
+    "imported": "Importée · {{ name }}"
+  },
+  "toast": {
+    "unsat": "Le solveur SAT l’a prouvé : cette grille n’a pas de solution.",
+    "timeout": "Le solveur a manqué de temps. Essaie une autre configuration.",
+    "nothing_to_hint": "Rien à suggérer, tous les ponts sont en place.",
+    "all_correct": "Jusqu’ici, tout va bien : chaque pont fait partie de la solution.",
+    "wrong_bridges": "Ponts qui ne font pas partie de la solution : {{ count }}",
+    "unique": "Prouvé : la solution est unique.",
+    "not_unique": "Cette grille a plus d’une solution.",
+    "copied": "Résultat copié dans le presse-papiers."
+  },
+  "errors": {
+    "unknown": "Un problème est survenu : {{ detail }}",
+    "database": "La base de données n’a pas répondu, réessaie.",
+    "internal": "Un problème est survenu sur le serveur, réessaie.",
+    "archive_only_past": "Seuls les défis des jours passés peuvent être rejoués.",
+    "password_too_short": "Le mot de passe doit faire au moins 8 caractères.",
+    "password_too_long": "Le mot de passe peut faire au plus 128 caractères.",
+    "username_invalid": "Le pseudo doit faire de 3 à 20 caractères : lettres, chiffres, _ et -.",
+    "username_taken": "Ce pseudo est déjà pris.",
+    "wrong_login": "Pseudo ou mot de passe incorrect.",
+    "too_many_attempts": "Trop de tentatives échouées, patiente quelques minutes.",
+    "session_expired": "Ta session a expiré, recharge la page.",
+    "not_started": "Commence d’abord le défi du jour.",
+    "not_solved": "Ce n’est pas encore une solution.",
+    "wrong_puzzle": "Ces ponts n’appartiennent pas à cette grille.",
+    "already_finished": "Tu as déjà terminé ce défi du jour."
+  },
+  "solver": {
+    "title": "Solveur SAT",
+    "description": "La grille est encodée en CNF et résolue par nos propres solveurs, tout droit sortis du labo SAT.",
+    "solver": "Solveur",
+    "own_cdcl": "CDCL maison",
+    "own_dpll": "DPLL maison",
+    "heuristic": "Heuristique de branchement",
+    "splr_heuristic": "Celle de splr (EVSIDS)",
+    "restarts": "Redémarrages",
+    "restarts_none": "Aucun redémarrage",
+    "restarts_fixed": "Intervalle fixe",
+    "restarts_geometric": "Géométrique",
+    "restarts_luby": "Suite de Luby",
+    "subsumption": "Subsomption",
+    "subsumption_short": "subsomption",
+    "subsumption_hint": "Éliminer les clauses subsumées avant la résolution",
+    "preprocess": "prétraitement",
+    "timeout": "Temps limite"
+  },
+  "ranking": {
+    "you": "toi",
+    "guest": "invité",
+    "guest_name": "Invité",
+    "penalties": "indices · vérifications",
+    "empty": "Personne n’a encore traversé. À toi d’ouvrir la voie !"
+  },
+  "board": {
+    "label": "Grille de Hashiwokakero",
+    "zoom": "Zoomer",
+    "fit": "Ajuster la grille",
+    "zoom_hint": "Glisse pour te déplacer, touche pour construire",
+    "cells_small": "Cases trop petites ?"
+  },
+  "not_found": {
+    "title": "Perdu en mer",
+    "text": "Aucun pont ne mène à cette page, on te ramène vers les îles.",
+    "back": "Retour au jeu"
+  },
+  "game": {
+    "time": "Temps",
+    "moves": "Coups",
+    "hints": "Indices",
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "clear": "Effacer",
+    "restart": "Recommencer",
+    "check": "Vérifier",
+    "hint": "Indice",
+    "solve": "Résoudre",
+    "unique": "Unique ?",
+    "well_done": "Bravo !",
+    "share": "Partager le résultat",
+    "loading": "Chargement…",
+    "islands_complete": "îles terminées",
+    "groups": "{{ count }} groupes séparés",
+    "all_connected": "tout est relié",
+    "islands": "{{ count }} îles",
+    "unique_solution": "solution unique ✓",
+    "several_solutions": "plusieurs solutions"
+  },
+  "weekday": {
+    "mon": "lundi",
+    "tue": "mardi",
+    "wed": "mercredi",
+    "thu": "jeudi",
+    "fri": "vendredi",
+    "sat": "samedi",
+    "sun": "dimanche"
+  },
+  "month": {
+    "jan": "janvier",
+    "feb": "février",
+    "mar": "mars",
+    "apr": "avril",
+    "may": "mai",
+    "jun": "juin",
+    "jul": "juillet",
+    "aug": "août",
+    "sep": "septembre",
+    "oct": "octobre",
+    "nov": "novembre",
+    "dec": "décembre"
+  },
+  "date_long": "{{ weekday }} {{ day }} {{ month }} {{ year }}",
+  "date_short": "{{ day }} {{ month }} {{ year }}",
+  "og_image_alt": "Une grille de Hashiwokakero résolue en pixel art : des îles numérotées reliées par des ponts en bois et vermillon",
+  "ld": {
+    "site": "Hashiwokakero, le casse-tête japonais des ponts, jouable gratuitement dans le navigateur.",
+    "game": "Relie les îles par des ponts pour que chaque île ait autant de ponts que son chiffre l’indique. Un défi quotidien avec classement, cinq niveaux de difficulté, du pixel art, et chaque grille a exactement une solution."
+  }
+}

@@ -8,6 +8,8 @@ use super::ui::label::Label;
 use super::ui::select::SelectNative;
 use super::ui::switch::Switch;
 use super::ui::toggle_group::{ToggleGroup, ToggleGroupItem, ToggleGroupVariant};
+use crate::i18n::{t, t_string, use_i18n};
+use crate::lang::{restarts_name, solver_name};
 use crate::state::Settings;
 
 const TIMEOUTS: [(u32, &str); 4] = [(2_000, "2 s"), (5_000, "5 s"), (10_000, "10 s"), (20_000, "20 s")];
@@ -15,6 +17,7 @@ const TIMEOUTS: [(u32, &str); 4] = [(2_000, "2 s"), (5_000, "5 s"), (10_000, "10
 /// Solver, heuristic, restart policy and preprocessing options.
 #[component]
 pub fn SolverOptions() -> impl IntoView {
+    let i18n = use_i18n();
     let settings = expect_context::<Settings>();
     let config = settings.solver;
     let kind = Memo::new(move |_| config.get().kind);
@@ -37,19 +40,19 @@ pub fn SolverOptions() -> impl IntoView {
     view! {
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
-                <Label>"Solver"</Label>
+                <Label>{t!(i18n, common.solver.solver)}</Label>
                 <ToggleGroup variant=ToggleGroupVariant::Outline spacing=0 class="w-full">
                     {SolverKind::ALL
                         .into_iter()
                         .map(|k| {
                             view! {
                                 <ToggleGroupItem
-                                    title=k.label()
+                                    title=Signal::derive(move || solver_name(i18n.get_locale(), k))
                                     pressed=Signal::derive(move || kind.get() == k)
                                     class="font-semibold data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                                     on:click=move |_| set(&|c| c.kind = k)
                                 >
-                                    {k.label()}
+                                    {move || solver_name(i18n.get_locale(), k)}
                                 </ToggleGroupItem>
                             }
                         })
@@ -59,7 +62,7 @@ pub fn SolverOptions() -> impl IntoView {
 
             <div class="grid grid-cols-2 gap-3">
                 <div class="flex flex-col gap-2">
-                    <Label html_for="heuristic">"Branching heuristic"</Label>
+                    <Label html_for="heuristic">{t!(i18n, common.solver.heuristic)}</Label>
                     <SelectNative
                         id="heuristic"
                         value=Signal::derive(move || config.get().heuristic.id().to_string())
@@ -73,7 +76,7 @@ pub fn SolverOptions() -> impl IntoView {
                         {move || {
                             let hs = kind.get().heuristics();
                             if hs.is_empty() {
-                                view! { <option value="vsids">"splr's own (EVSIDS)"</option> }.into_any()
+                                view! { <option value="vsids">{t!(i18n, common.solver.splr_heuristic)}</option> }.into_any()
                             } else {
                                 hs.iter()
                                     .map(|h| view! { <option value=h.id()>{h.label()}</option> })
@@ -84,7 +87,7 @@ pub fn SolverOptions() -> impl IntoView {
                     </SelectNative>
                 </div>
                 <div class="flex flex-col gap-2">
-                    <Label html_for="restarts">"Restarts"</Label>
+                    <Label html_for="restarts">{t!(i18n, common.solver.restarts)}</Label>
                     <SelectNative
                         id="restarts"
                         value=Signal::derive(move || config.get().restarts.id().to_string())
@@ -98,8 +101,8 @@ pub fn SolverOptions() -> impl IntoView {
                         {["none", "fixed", "geometric", "luby"]
                             .into_iter()
                             .map(|id| {
-                                let label = Restarts::from_id(id).map(|r| r.label()).unwrap_or(id);
-                                view! { <option value=id>{label}</option> }
+                                let restarts = Restarts::from_id(id).unwrap_or_default();
+                                view! { <option value=id>{move || restarts_name(i18n.get_locale(), restarts)}</option> }
                             })
                             .collect_view()}
                     </SelectNative>
@@ -108,19 +111,19 @@ pub fn SolverOptions() -> impl IntoView {
 
             <div class="grid grid-cols-2 gap-3">
                 <div class="flex flex-col gap-2">
-                    <Label html_for="subsumption">"Subsumption"</Label>
+                    <Label html_for="subsumption">{t!(i18n, common.solver.subsumption)}</Label>
                     <div class="flex h-9 items-center gap-2">
                         <Switch
                             id="subsumption"
                             checked=subsumption
-                            aria_label="Eliminate subsumed clauses before solving"
+                            aria_label=Signal::derive(move || t_string!(i18n, common.solver.subsumption_hint).to_string())
                             disabled=Signal::derive(move || !kind.get().supports_subsumption())
                         />
-                        <span class="text-xs text-muted-foreground">"preprocess"</span>
+                        <span class="text-xs text-muted-foreground">{t!(i18n, common.solver.preprocess)}</span>
                     </div>
                 </div>
                 <div class="flex flex-col gap-2">
-                    <Label html_for="timeout">"Timeout"</Label>
+                    <Label html_for="timeout">{t!(i18n, common.solver.timeout)}</Label>
                     <SelectNative
                         id="timeout"
                         value=Signal::derive(move || config.get().timeout_ms.to_string())
@@ -195,6 +198,7 @@ pub fn SolverTerminal(
     };
     view! {
         <div
+            dir="ltr"
             class="terminal font-pixel rounded-lg px-4 py-3 text-[13px] leading-relaxed"
             class:busy=move || busy.get()
             aria-live="polite"
@@ -261,6 +265,7 @@ pub fn SolverPanel(
     #[prop(into)] busy: Signal<bool>,
     children: Children,
 ) -> impl IntoView {
+    let i18n = use_i18n();
     let settings = expect_context::<Settings>();
     view! {
         <Card class="gap-4 overflow-hidden">
@@ -268,14 +273,14 @@ pub fn SolverPanel(
                 <div class="flex w-full items-start justify-between gap-2">
                     <div class="flex flex-col gap-1.5">
                         <CardTitle class="flex items-baseline gap-2 text-xl">
-                            "SAT Solver" <span class="font-pixel text-sm text-primary">"充足可能性"</span>
+                            {t!(i18n, common.solver.title)} <span class="font-pixel text-sm text-primary">"充足可能性"</span>
                         </CardTitle>
                         <CardDescription>
-                            "The puzzle is encoded as CNF and solved by our own solvers from the SAT solving lab."
+                            {t!(i18n, common.solver.description)}
                         </CardDescription>
                     </div>
                     <Badge variant=BadgeVariant::Outline class="shrink-0 font-pixel">
-                        {move || settings.solver.get().kind.label()}
+                        {move || solver_name(i18n.get_locale(), settings.solver.get().kind)}
                     </Badge>
                 </div>
             </CardHeader>
@@ -291,7 +296,7 @@ pub fn SolverPanel(
 /// A small helper for the action buttons inside the solver panel.
 #[component]
 pub fn PanelButton(
-    #[prop(into)] label: String,
+    children: Children,
     #[prop(optional)] primary: bool,
     #[prop(into, optional)] disabled: Signal<bool>,
     #[prop(into)] on_click: Callback<()>,
@@ -304,7 +309,7 @@ pub fn PanelButton(
             attr:disabled=move || disabled.get()
             on:click=move |_| on_click.run(())
         >
-            {label}
+            {children()}
         </Button>
     }
 }

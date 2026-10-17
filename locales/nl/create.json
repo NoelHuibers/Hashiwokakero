@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Maak je eigen Hashiwokakero-puzzel · Hashi",
+    "description": "Ontwerp een bruggenpuzzel in de werkplaats: plaats eilanden, laat een SAT-solver checken of er precies één oplossing is, exporteer als tekstbestand en speel."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Puzzelwerkplaats",
+  "intro": "Plaats eilanden, laat de SAT-solver controleren of je puzzel precies één oplossing heeft en speel hem dan.",
+  "keys": {
+    "click": "Klik",
+    "right_click": "Rechtsklik",
+    "set": "plaatsen",
+    "erase": "wissen (bij hoveren)"
+  },
+  "brush": {
+    "count_up": "Elke tik telt op",
+    "erase": "Wissen",
+    "place": "Plaats een {{ number }}"
+  },
+  "heads_up": "Let op",
+  "warning_capacity": "De {{ number }} op ({{ x }}, {{ y }}) heeft {{ number }} bruggen nodig, maar kan er hoogstens {{ max }} hebben.",
+  "warning_odd": "De getallen tellen op tot {{ total }}, een oneven som is nooit oplosbaar.",
+  "grid": "Rooster",
+  "grid_size": "{{ width }}×{{ height }} vakjes, eilanden: {{ count }}",
+  "width": "Breedte",
+  "height": "Hoogte",
+  "fill": "Vullen met een gegenereerde puzzel",
+  "import": ".txt importeren",
+  "export": ".txt exporteren",
+  "play": "Speel deze puzzel",
+  "unique": "Uniek: een prima puzzel!",
+  "not_unique": "Meer dan één oplossing, voeg eilanden toe of pas ze aan.",
+  "imported": "{{ name }} geïmporteerd",
+  "unreadable": "Kon {{ name }} niet lezen",
+  "brush_label": "Penseel"
+}

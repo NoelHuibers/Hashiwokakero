@@ -84,7 +84,7 @@ pub fn ToggleGroup(
 pub fn ToggleGroupItem(
     children: Children,
     #[prop(optional, into)] class: String,
-    #[prop(into)] title: String,
+    #[prop(into)] title: Signal<String>,
     #[prop(optional, into)] pressed: Signal<bool>,
 ) -> impl IntoView {
     let ctx = use_context::<ToggleGroupCtx>().unwrap_or_default();
@@ -95,12 +95,12 @@ pub fn ToggleGroupItem(
 
     let rounded = match (is_grouped, is_vertical) {
         (true, true) => "rounded-none first:rounded-t-md last:rounded-b-md",
-        (true, false) => "rounded-none first:rounded-l-md last:rounded-r-md",
+        (true, false) => "rounded-none first:rounded-s-md last:rounded-e-md",
         (false, _) => "rounded-md",
     };
 
     let border = if is_outline && is_grouped {
-        if is_vertical { "border border-t-0 first:border-t" } else { "border border-l-0 first:border-l" }
+        if is_vertical { "border border-t-0 first:border-t" } else { "border border-s-0 first:border-s" }
     } else if is_outline {
         "border"
     } else {
@@ -124,7 +124,7 @@ pub fn ToggleGroupItem(
             class=merged_class
             role="radio"
             tabindex="-1"
-            title=title
+            title=move || title.get()
             data-state=move || if pressed.get() { "on" } else { "off" }
         >
             {children()}

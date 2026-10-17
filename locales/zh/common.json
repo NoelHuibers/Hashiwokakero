@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "每日",
+    "practice": "练习",
+    "ranks": "排行",
+    "create": "创作",
+    "lab": "实验室",
+    "main": "主导航"
+  },
+  "tagline_short": "搭桥",
+  "language": "语言",
+  "account": "账号",
+  "sign_in": "登录",
+  "theme": {
+    "toggle": "切换深色模式",
+    "to_day": "切换到白天 昼",
+    "to_night": "切换到夜晚 夜"
+  },
+  "footer": {
+    "tagline": "<em>架起桥来</em>。SAT 来解，你来玩。",
+    "made_by": "由 {{ author }} 制作",
+    "how_to_play": "玩法说明",
+    "open_source": "在 GitHub 上开源",
+    "tech": "Rust · Leptos · Turso · 自研 CDCL 与 DPLL 求解器"
+  },
+  "difficulty": {
+    "easy": "简单",
+    "medium": "中等",
+    "hard": "困难",
+    "expert": "专家",
+    "oni": "鬼"
+  },
+  "source": {
+    "daily": "每日一桥 · {{ date }}",
+    "custom": "你的自制谜题",
+    "imported": "已导入 · {{ name }}"
+  },
+  "toast": {
+    "unsat": "SAT 求解器证明：这道谜题无解。",
+    "timeout": "求解器超时了，换个配置试试吧。",
+    "nothing_to_hint": "没什么可提示的，所有桥都已就位。",
+    "all_correct": "目前都对：每座桥都属于正确答案。",
+    "wrong_bridges": "不属于答案的桥：{{ count }} 座",
+    "unique": "已证明：答案唯一。",
+    "not_unique": "这道谜题不止一个解。",
+    "copied": "成绩已复制到剪贴板。"
+  },
+  "errors": {
+    "unknown": "出错了：{{ detail }}",
+    "database": "数据库没有响应，请重试。",
+    "internal": "服务器出了点问题，请重试。",
+    "archive_only_past": "只能练习以前的每日谜题。",
+    "password_too_short": "密码至少需要 8 个字符。",
+    "password_too_long": "密码最多 128 个字符。",
+    "username_invalid": "用户名需 3 到 20 个字符：字母、数字、_ 和 -。",
+    "username_taken": "该用户名已被占用。",
+    "wrong_login": "用户名或密码错误。",
+    "too_many_attempts": "失败次数过多，请过几分钟再试。",
+    "session_expired": "会话已过期，请刷新页面。",
+    "not_started": "请先开始每日谜题。",
+    "not_solved": "这还不是正确答案哦。",
+    "wrong_puzzle": "这些桥不属于这道谜题。",
+    "already_finished": "你已经完成过这道每日谜题了。"
+  },
+  "solver": {
+    "title": "SAT 求解器",
+    "description": "谜题被编码为 CNF，由我们 SAT 求解实验室里的自研求解器求解。",
+    "solver": "求解器",
+    "own_cdcl": "自研 CDCL",
+    "own_dpll": "自研 DPLL",
+    "heuristic": "分支启发式",
+    "splr_heuristic": "splr 自带（EVSIDS）",
+    "restarts": "重启",
+    "restarts_none": "不重启",
+    "restarts_fixed": "固定间隔",
+    "restarts_geometric": "几何增长",
+    "restarts_luby": "Luby 序列",
+    "subsumption": "子句包含消除",
+    "subsumption_short": "包含消除",
+    "subsumption_hint": "求解前消除被包含的子句",
+    "preprocess": "预处理",
+    "timeout": "超时"
+  },
+  "ranking": {
+    "you": "你",
+    "guest": "游客",
+    "guest_name": "游客",
+    "penalties": "提示 · 检查",
+    "empty": "还没有人过桥，来当第一个吧！"
+  },
+  "board": {
+    "label": "数桥（Hashiwokakero）棋盘",
+    "zoom": "放大",
+    "fit": "适应屏幕",
+    "zoom_hint": "滑动移动视图，点按搭桥",
+    "cells_small": "格子太小？"
+  },
+  "not_found": {
+    "title": "迷失在海上",
+    "text": "没有桥通向这个页面，带你回到岛上吧。",
+    "back": "返回游戏"
+  },
+  "game": {
+    "time": "时间",
+    "moves": "步数",
+    "hints": "提示",
+    "undo": "撤销",
+    "redo": "重做",
+    "clear": "清空",
+    "restart": "重来",
+    "check": "检查",
+    "hint": "提示",
+    "solve": "求解",
+    "unique": "唯一？",
+    "well_done": "干得漂亮！",
+    "share": "分享成绩",
+    "loading": "加载中…",
+    "islands_complete": "座岛已完成",
+    "groups": "{{ count }} 个分离的岛群",
+    "all_connected": "全部连通",
+    "islands": "{{ count }} 座岛",
+    "unique_solution": "唯一解 ✓",
+    "several_solutions": "多个解"
+  },
+  "weekday": {
+    "mon": "星期一",
+    "tue": "星期二",
+    "wed": "星期三",
+    "thu": "星期四",
+    "fri": "星期五",
+    "sat": "星期六",
+    "sun": "星期日"
+  },
+  "month": {
+    "jan": "1月",
+    "feb": "2月",
+    "mar": "3月",
+    "apr": "4月",
+    "may": "5月",
+    "jun": "6月",
+    "jul": "7月",
+    "aug": "8月",
+    "sep": "9月",
+    "oct": "10月",
+    "nov": "11月",
+    "dec": "12月"
+  },
+  "date_long": "{{ year }}年{{ month }}{{ day }}日 {{ weekday }}",
+  "date_short": "{{ year }}年{{ month }}{{ day }}日",
+  "og_image_alt": "像素风的已解数桥（Hashiwokakero）谜题：带数字的小岛由木桥和朱红桥相连",
+  "ld": {
+    "site": "数桥（Hashiwokakero），来自日本的搭桥逻辑谜题，在浏览器里免费畅玩。",
+    "game": "用桥把小岛连起来，让每座岛的桥数等于它的数字。每日谜题配排行榜，五种难度，像素画风，每道题都只有唯一解。"
+  }
+}

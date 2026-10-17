@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Make your own Hashiwokakero puzzle · Hashi",
+    "description": "Design a Bridges puzzle in the workshop: place islands, let a SAT solver check that it has exactly one solution, export it as a text file, and play it."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Puzzle workshop",
+  "intro": "Place islands, let the SAT solver check that your puzzle has exactly one solution, then play it.",
+  "keys": {
+    "click": "Click",
+    "right_click": "Right click",
+    "set": "set",
+    "erase": "erase (while hovering)"
+  },
+  "brush": {
+    "count_up": "Each tap counts up",
+    "erase": "Erase",
+    "place": "Place a {{ number }}"
+  },
+  "heads_up": "Heads up",
+  "warning_capacity": "The {{ number }} at ({{ x }}, {{ y }}) needs {{ number }} bridges but can have at most {{ max }}.",
+  "warning_odd": "The numbers add up to {{ total }}, an odd sum can never be solved.",
+  "grid": "Grid",
+  "grid_size": "{{ width }}×{{ height }} cells, {{ count }} islands",
+  "width": "Width",
+  "height": "Height",
+  "fill": "Fill with a generated puzzle",
+  "import": "Import .txt",
+  "export": "Export .txt",
+  "play": "Play this puzzle",
+  "unique": "Unique: a fine puzzle!",
+  "not_unique": "More than one solution, add or change islands.",
+  "imported": "Imported {{ name }}",
+  "unreadable": "Could not read {{ name }}",
+  "brush_label": "Brush"
+}

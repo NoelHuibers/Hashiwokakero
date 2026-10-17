@@ -15,7 +15,7 @@ pub use components::*;
 pub fn Switch(
     #[prop(optional, into)] id: String,
     checked: RwSignal<bool>,
-    #[prop(into, optional, default = "Toggle switch".to_string())] aria_label: String,
+    #[prop(into, optional, default = Signal::stored("Toggle switch".to_string()))] aria_label: Signal<String>,
     #[prop(into, optional)] disabled: Signal<bool>,
     #[prop(into, optional)] class: String,
 ) -> impl IntoView {
@@ -33,7 +33,7 @@ pub fn Switch(
             type="button"
             role="switch"
             aria-checked=move || checked.get().to_string()
-            aria-label=aria_label
+            aria-label=move || aria_label.get()
             data-state=state
             class=track_class
             disabled=move || disabled.get()
@@ -41,7 +41,7 @@ pub fn Switch(
         >
             <span
                 data-state=state
-                class="block rounded-full ring-0 shadow-lg transition-transform pointer-events-none size-5 bg-background data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+                class="block rounded-full ring-0 shadow-lg transition-transform pointer-events-none size-5 bg-background data-[state=checked]:translate-x-5 rtl:data-[state=checked]:-translate-x-5 data-[state=unchecked]:translate-x-0"
             />
         </button>
     }

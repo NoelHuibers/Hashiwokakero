@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Codzienna łamigłówka Hashiwokakero (Mosty) online",
+    "description": "Codziennie nowa łamigłówka Hashiwokakero (Mosty), ta sama dla wszystkich: urocza japońska grafika pixel art, ranking, serie i zawsze jedno rozwiązanie."
+  },
+  "title": "Most dnia #{{ number }}",
+  "penalty": "Kara",
+  "give_up": "Poddaję się",
+  "give_up_confirm": "Pokazać rozwiązanie od solvera SAT? Dzisiejsza gra nie trafi wtedy do rankingu.",
+  "share": "Hashi 橋 Most dnia #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "Dzisiejszy most",
+    "text": "Łamigłówka pojawi się po naciśnięciu Start, zegar działa na serwerze. Podpowiedź to +30 s, sprawdzenie +10 s, a odkrycie rozwiązania wyklucza cię z rankingu.",
+    "start": "Start",
+    "preparing": "Przygotowuję…",
+    "playing_as": "Grasz jako {{ name }}",
+    "playing_as_guest": "Grasz jako {{ name }} (gość)",
+    "no_account": "Konto nie jest potrzebne, zagrasz jako gość."
+  },
+  "result": {
+    "revealed_title": "Rozwiązane przez solver SAT",
+    "revealed_text": "Ta gra nie liczy się do rankingu. Do jutra!",
+    "rank": "Dziś miejsce {{ rank }} na {{ total }}",
+    "ranking": "Liczę miejsce…",
+    "more": "Więcej łamigłówek w trybie treningu →",
+    "on_board": "Jesteś w rankingu jako <b>{{ name }}</b>.",
+    "claim": "Zarezerwuj swoją nazwę, by mieć serię na każdym urządzeniu →"
+  },
+  "ranking": {
+    "title": "Dzisiejszy ranking",
+    "all": "Wszystko →",
+    "crossed": "Dziś na mecie: {{ count }}"
+  },
+  "week": {
+    "title": "Ten tydzień",
+    "text": "Jak w gazetowej łamigłówce, mosty robią się trudniejsze z każdym dniem aż do niedzieli.",
+    "next": "Następny most za"
+  }
+}

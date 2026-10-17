@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "SAT solver lab · CDCL, DPLL and splr on Hashi puzzles",
+    "description": "Race one Hashiwokakero puzzle through our own CDCL and DPLL SAT solvers with different branching heuristics and restart policies, and compare them with splr."
+  },
+  "title": "Solver lab",
+  "intro": "Race one puzzle through our own CDCL and DPLL solvers in different modes (branching heuristics, restart policies, subsumption) and compare them to splr.",
+  "puzzle": {
+    "title": "1 · Puzzle",
+    "size": "{{ width }}×{{ height }}, {{ count }} islands",
+    "none": "No puzzle selected",
+    "game": "Current game",
+    "workshop": "Workshop",
+    "fresh": "Fresh"
+  },
+  "solvers": {
+    "title": "2 · Solvers",
+    "description": "Pick the configurations to compare.",
+    "timeout": "Timeout per run"
+  },
+  "racing": "Racing…",
+  "start": "Start the race",
+  "results": {
+    "title": "3 · Results",
+    "description": "Total time is encoding plus solving. Disconnected solutions are refuted lazily, each refutation costs another SAT call.",
+    "empty": "No race yet."
+  },
+  "table": {
+    "config": "Configuration",
+    "result": "Result",
+    "decisions": "Decisions",
+    "restarts": "Restarts",
+    "calls": "SAT calls"
+  },
+  "badge": {
+    "queued": "queued",
+    "solving": "solving…",
+    "error": "error",
+    "timeout": "timeout"
+  },
+  "summary": {
+    "decisions": "Decisions: {{ count }}",
+    "restarts": "Restarts: {{ count }}",
+    "calls": "SAT calls: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Pick a puzzle first.",
+    "pick_solver": "Select at least one solver configuration."
+  }
+}

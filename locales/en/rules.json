@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "How to play Hashiwokakero · Rules and solving tips · Hashi",
+    "description": "The rules of Hashiwokakero (Bridges) with a solved example, the deductions that crack most puzzles without guessing, and how a SAT solver proves a solution unique."
+  },
+  "title": "How to play",
+  "intro": "Hashiwokakero (橋をかけろ, “build bridges!”) is a logic puzzle published by Nikoli. Connect all islands with bridges so that every island has exactly as many bridges as its number says.",
+  "rule": {
+    "count_title": "Count the bridges",
+    "count": "The number on an island is how many bridges end there.",
+    "double_title": "One or two",
+    "double": "Islands can be joined by a single wooden bridge or a double vermilion bridge, never more.",
+    "straight_title": "Straight, no crossings",
+    "straight": "Bridges run horizontally or vertically and must not cross other bridges or islands.",
+    "connected_title": "One archipelago",
+    "connected": "In the end every island has to be reachable from every other one."
+  },
+  "example": "A solved puzzle",
+  "controls": {
+    "title": "Controls",
+    "tap": "Click the water between two islands to build a bridge, again for a second one, a third click removes them.",
+    "drag": "Or drag from an island towards its neighbour, or click two islands one after the other.",
+    "remove": "<right>Right click</right> / <shift>Shift</shift> + click removes a bridge.",
+    "colors": "Finished islands turn green, overfull ones red. Stuck? Ask the SAT solver for a hint or to check your bridges."
+  },
+  "hood": {
+    "title": "Under the hood",
+    "variables": "Every possible bridge <e>e</e> between two neighbouring islands gets two boolean variables: <e1>e₁</e1> (at least one bridge) and <e2>e₂</e2> (a second bridge), with <imp>e₂ → e₁</imp> so that every arrangement has exactly one model.",
+    "islands": "An island with number n needs exactly n of its variables to be true, written as clauses over all combinations. Crossing bridges exclude each other:",
+    "connectivity": "Connectivity is hard to express in CNF, so it is added lazily: whenever the solver returns separate groups of islands, a clause demanding a bridge out of such a group is added and the solver runs again.",
+    "generator": "The generator grows a random archipelago and proves uniqueness by blocking the found solution and asking the solver for another one. Try the different solver modes in the <a>lab</a>."
+  },
+  "faq_title": "Questions about Hashiwokakero",
+  "faq": {
+    "what_q": "What is Hashiwokakero?",
+    "what_a": "Hashiwokakero (橋をかけろ, “build bridges”), also called Bridges or Hashi, is a Japanese logic puzzle published by Nikoli. The grid shows numbered islands; you connect them with horizontal and vertical bridges so that every island has exactly as many bridges as its number, no bridges cross, and all islands form one connected group.",
+    "how_many_q": "How many bridges can connect two islands?",
+    "how_many_a": "At most two. A single bridge or a double bridge may join two islands that are in the same row or column with nothing in between.",
+    "cross_q": "Can bridges cross each other?",
+    "cross_a": "No. Bridges run straight horizontally or vertically and may neither cross other bridges nor pass over islands.",
+    "connected_q": "Do all islands have to be connected?",
+    "connected_a": "Yes. In a finished puzzle you can travel from any island to any other over the bridges, the islands form a single network.",
+    "unique_q": "Is there always exactly one solution?",
+    "unique_a": "On Hashi, yes: every generated puzzle is checked by a SAT solver, which proves that no second solution exists, so you never have to guess."
+  }
+}

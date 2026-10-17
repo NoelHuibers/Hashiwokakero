@@ -8,6 +8,7 @@ use sha2::{Digest, Sha256};
 use super::db::db_err;
 use super::{now_ms, run_blocking};
 use crate::model::{
+    ApiError,
     AllTimeEntry, AttemptInfo, DailyInfo, DayResult, Leaderboard, LeaderboardEntry, SubmitResult,
     UserStats, daily_difficulty, day_of, pick_hint, streaks, wrong_edges,
 };
@@ -99,13 +100,13 @@ pub async fn get_or_create(conn: &Connection, day: i64) -> Result<Daily, ServerF
     .map_err(db_err)?;
     load(conn, day)
         .await?
-        .ok_or_else(|| ServerFnError::new("daily puzzle missing"))
+        .ok_or_else(|| ApiError::Internal.fail())
 }
 
 /// A puzzle of an earlier day, for practice.
 pub async fn archived(conn: &Connection, day: i64) -> Result<Option<Puzzle>, ServerFnError> {
     if day >= today() {
-        return Err(ServerFnError::new("Only earlier dailies can be practised"));
+        return Err(ApiError::ArchiveOnlyPast.into());
     }
     Ok(load(conn, day).await?.map(|d| d.puzzle))
 }
@@ -183,15 +184,15 @@ pub async fn start(conn: &Connection, user: i64, day: i64) -> Result<DailyInfo, 
 /// The running attempt of a user, or an error if there is none.
 async fn running(conn: &Connection, user: i64, day: i64) -> Result<AttemptInfo, ServerFnError> {
     match attempt(conn, user, day).await? {
-        Some(a) if a.finished() => Err(ServerFnError::new("This daily is already finished")),
+        Some(a) if a.finished() => Err(ApiError::AlreadyFinished.into()),
         Some(a) => Ok(a),
-        None => Err(ServerFnError::new("Start the daily puzzle first")),
+        None => Err(ApiError::NotStarted.into()),
     }
 }
 
 fn check_bridges(board: &Board, bridges: &[u8]) -> Result<(), ServerFnError> {
     if bridges.len() != board.edges.len() || bridges.iter().any(|&b| b > 2) {
-        return Err(ServerFnError::new("These bridges don't belong to this puzzle"));
+        return Err(ApiError::WrongPuzzle.into());
     }
     Ok(())
 }
@@ -265,7 +266,7 @@ pub async fn submit(conn: &Connection, user: i64, day: i64, bridges: Vec<u8>, mo
     let board = Board::new(daily.puzzle);
     check_bridges(&board, &bridges)?;
     if !board.check(&bridges).solved {
-        return Err(ServerFnError::new("That isn't a solution yet"));
+        return Err(ApiError::NotSolved.into());
     }
     let finished_at = now_ms();
     let time_ms = finished_at - attempt.started_at + attempt.penalty_ms();
