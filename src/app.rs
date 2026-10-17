@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use leptos_meta::{Link, Meta, MetaTags, Stylesheet, Title, provide_meta_context};
+use leptos_meta::{HashedStylesheet, Link, Meta, MetaTags, Title, provide_meta_context};
 use leptos_router::components::{Route, Router, Routes};
 use leptos_router::path;
 
@@ -27,6 +27,8 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
                 <link rel="stylesheet" href=FONTS />
+                // Rendered here and not in <App/>: the hashed file name is only known on the server
+                <HashedStylesheet options=options.clone() id="leptos" />
                 <AutoReload options=options.clone() />
                 <HydrationScripts options />
                 <MetaTags />
@@ -44,7 +46,6 @@ pub fn App() -> impl IntoView {
     provide_state();
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/hashi.css" />
         <Title text="Hashi · 橋をかけろ — the bridges puzzle, solved by SAT" />
         <Meta
             name="description"

@@ -90,6 +90,10 @@ output-name = "hashi"
 site-root = "target/site"
 # The site-root relative folder where all compiled output (JS, WASM and CSS) is written
 site-pkg-dir = "pkg"
+# Content hashes in the JS/WASM/CSS file names (hashi.<hash>.css), listed in hash.txt next to the
+# server binary. Every deploy gets new URLs, so browsers never keep a stale stylesheet, and the
+# server can send them with long-lived cache headers (see main.rs).
+hash-files = true
 # Tailwind v4 entry point, configured in CSS. It imports tw-animate-css from node_modules (npm ci).
 tailwind-input-file = "style/tailwind.css"
 # Assets source dir. All files found here will be copied and synchronized to site-root.
