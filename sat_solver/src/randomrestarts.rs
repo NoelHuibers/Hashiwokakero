@@ -1,4 +1,6 @@
+#[cfg(test)]
 use crate::cdcl::CDCL;
+#[cfg(test)]
 use crate::cli::Heuristic;
 
 pub fn luby_sequence(mut u: u32, mut v: u32) -> (u32, u32) {

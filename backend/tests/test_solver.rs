@@ -1,6 +1,6 @@
 use backend::generate_clauses::generate;
 use backend::parse_input::parse_input;
-use backend::solver::{solve, solve_with, SolverKind};
+use backend::solver::{SolverKind, solve, solve_with};
 use std::{io::Write, vec};
 use tempfile;
 
@@ -165,10 +165,10 @@ fn test_cdcl_on_puzzles() {
 }
 
 #[test]
-fn test_solver_kind_from_str() {
+fn test_solver_kind_from_id() {
     for kind in SolverKind::ALL {
-        assert_eq!(kind.to_string().parse::<SolverKind>().unwrap(), kind);
+        assert_eq!(SolverKind::from_id(kind.id()), Some(kind));
     }
-    assert_eq!("CDCL".parse::<SolverKind>().unwrap(), SolverKind::Cdcl);
-    assert!("minisat".parse::<SolverKind>().is_err());
+    assert_eq!(SolverKind::from_id("CDCL"), Some(SolverKind::Cdcl));
+    assert_eq!(SolverKind::from_id("minisat"), None);
 }

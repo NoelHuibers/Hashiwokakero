@@ -1,4 +1,4 @@
-use clap::{command, Arg, ArgAction};
+use clap::{Arg, ArgAction, command};
 
 #[derive(Debug)]
 pub struct CliArgs {
@@ -15,6 +15,8 @@ pub struct CliArgs {
     pub luby: bool,
     pub factor: Option<u32>,
     pub drup: bool,
+    /// Give up after this many seconds
+    pub timeout: Option<f64>,
 }
 
 #[derive(Debug)]
@@ -111,6 +113,10 @@ pub fn cli() -> CliArgs {
                 .long("DRUP")
                 .short('D')
                 .action(ArgAction::SetTrue))
+            .arg(Arg::new("timeout")
+                .help("Give up after this many seconds (prints UNKNOWN)")
+                .long("timeout")
+                .short('t'))
         .get_matches();
 
     let solver = match arguments.get_one::<String>("solver") {
@@ -182,6 +188,13 @@ pub fn cli() -> CliArgs {
 
     let drup = arguments.get_flag("DRUP");
 
+    let timeout = arguments
+        .get_one::<String>("timeout")
+        .map(|t| match t.parse::<f64>() {
+            Ok(t) if t >= 0.0 => t,
+            _ => panic!("Timeout must be a non-negative number of seconds"),
+        });
+
     return CliArgs {
         solver,
         inputpath,
@@ -196,5 +209,6 @@ pub fn cli() -> CliArgs {
         luby,
         factor,
         drup,
+        timeout,
     };
 }

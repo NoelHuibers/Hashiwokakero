@@ -4,3 +4,5 @@
 /backend/output
 /dist
 /node_modules
+/backend/test.txt
+/style/output.css

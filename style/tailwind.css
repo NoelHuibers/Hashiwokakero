@@ -1,0 +1,494 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@source "../src";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------ */
+/*  Theme: traditional Japanese colours on shadcn's variable names     */
+/*  昼 day: washi paper, sumi ink, shu vermillion                       */
+/*  夜 night: ai indigo sky, paper lanterns                             */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --radius: 0.75rem;
+
+  --background: #f4ecdd; /* kinari 生成り */
+  --foreground: #2b2420; /* sumi 墨 */
+  --card: #fbf6ec;
+  --card-foreground: #2b2420;
+  --popover: #fbf6ec;
+  --popover-foreground: #2b2420;
+  --primary: #cf3a24; /* shu 朱 */
+  --primary-foreground: #fff7ee;
+  --secondary: #e8dcc6;
+  --secondary-foreground: #2b2420;
+  --muted: #ece2cf;
+  --muted-foreground: #776a5c;
+  --accent: #f6dadd; /* sakura 桜 */
+  --accent-foreground: #6e2633;
+  --destructive: #b3261e;
+  --destructive-foreground: #fff7ee;
+  --border: #dccdb1;
+  --input: #d6c6a8;
+  --ring: #cf3a24;
+  --success: #6b8e23; /* matcha 抹茶 */
+  --success-foreground: #f7fbe9;
+  --success-light: #e3edc7;
+  --success-dark: #44611a;
+  --warning: #e6a117; /* yamabuki 山吹 */
+  --warning-foreground: #3a2a05;
+  --warning-light: #fbecc4;
+  --warning-dark: #7a520a;
+  --info-light: #d6e4f0;
+  --info-dark: #1f4e79; /* ai 藍 */
+
+  /* Pixel art palette */
+  --px-sea: #59acd0;
+  --px-sea-light: #8fd0ea;
+  --px-sea-deep: #3e8db6;
+  --px-foam: #e8f7fc;
+  --px-ink: #2b2420;
+  --px-grass: #79b552;
+  --px-grass-light: #a3d672;
+  --px-grass-dark: #4f8b3b;
+  --px-sand: #f2dca2;
+  --px-sand-dark: #d6b36b;
+  --px-plate: #fff8e8;
+  --px-plate-shade: #e6d6b4;
+  --px-number: #2b2420;
+  --px-wood: #c88a4c;
+  --px-wood-light: #e3ab6b;
+  --px-wood-dark: #74471f;
+  --px-shu: #d8402a;
+  --px-shu-light: #f2715a;
+  --px-shu-dark: #8e2415;
+  --px-gold: #f2b830;
+  --px-pine: #2f6b45;
+  --px-pine-light: #4b9160;
+  --px-blossom: #f7b6c8;
+  --px-blossom-dark: #e07c99;
+  --px-stone: #a7a39a;
+  --px-stone-dark: #6f6b63;
+  --px-trunk: #6b4226;
+
+  --washi-fiber: rgb(120 90 50 / 0.07);
+  --wave-line: rgb(31 78 121 / 0.09);
+}
+
+.dark {
+  --background: #101827;
+  --foreground: #f1e8d7;
+  --card: #172238;
+  --card-foreground: #f1e8d7;
+  --popover: #172238;
+  --popover-foreground: #f1e8d7;
+  --primary: #ff6a45;
+  --primary-foreground: #1b0d08;
+  --secondary: #223050;
+  --secondary-foreground: #f1e8d7;
+  --muted: #1c2942;
+  --muted-foreground: #9aa7bf;
+  --accent: #3b2a40;
+  --accent-foreground: #ffd3dc;
+  --destructive: #ff5a4f;
+  --destructive-foreground: #1b0d08;
+  --border: #2a3a5c;
+  --input: #34466b;
+  --ring: #ff6a45;
+  --success: #9ccc4a;
+  --success-foreground: #142004;
+  --success-light: #22341a;
+  --success-dark: #c6ec8a;
+  --warning: #ffc44d;
+  --warning-foreground: #2b1d02;
+  --warning-light: #3a2e12;
+  --warning-dark: #ffd98a;
+  --info-light: #1c3150;
+  --info-dark: #a9cdf2;
+
+  --px-sea: #1f4a73;
+  --px-sea-light: #3a72a3;
+  --px-sea-deep: #173a5c;
+  --px-foam: #7fb4dc;
+  --px-ink: #0b1020;
+  --px-grass: #4f8a46;
+  --px-grass-light: #6fae5c;
+  --px-grass-dark: #335f31;
+  --px-sand: #cdb57e;
+  --px-sand-dark: #9e8552;
+  --px-plate: #ffe9b0; /* lantern glow 提灯 */
+  --px-plate-shade: #d9b46a;
+  --px-number: #2b1606;
+  --px-wood: #a9713d;
+  --px-wood-light: #c98d52;
+  --px-wood-dark: #4f2f14;
+  --px-shu: #e2543a;
+  --px-shu-light: #ff8a6b;
+  --px-shu-dark: #8a2617;
+  --px-pine: #24563a;
+  --px-pine-light: #387553;
+  --px-blossom: #e79ab2;
+  --px-blossom-dark: #b8607d;
+  --px-stone: #8a8780;
+  --px-stone-dark: #57544f;
+
+  --washi-fiber: rgb(200 220 255 / 0.035);
+  --wave-line: rgb(169 205 242 / 0.06);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-light: var(--success-light);
+  --color-success-dark: var(--success-dark);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-light: var(--warning-light);
+  --color-warning-dark: var(--warning-dark);
+  --color-info-light: var(--info-light);
+  --color-info-dark: var(--info-dark);
+  --color-sea: var(--px-sea);
+  --color-shu: var(--px-shu);
+  --color-gold: var(--px-gold);
+  --color-sakura: var(--px-blossom);
+  --color-matcha: var(--px-grass);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: "Zen Maru Gothic", ui-rounded, system-ui, sans-serif;
+  --font-pixel: "DotGothic16", ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    /* washi paper: soft fibres + a seigaiha 青海波 wave pattern fading in at the bottom */
+    background-image:
+      radial-gradient(circle at 20% 15%, var(--washi-fiber) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 70% 60%, var(--washi-fiber) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 40% 85%, var(--washi-fiber) 0 1.2px, transparent 1.7px);
+    background-size: 23px 29px, 31px 37px, 41px 43px;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  dialog {
+    margin: auto;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Decorations                                                        */
+/* ------------------------------------------------------------------ */
+
+@utility font-pixel {
+  font-family: var(--font-pixel);
+  letter-spacing: 0.02em;
+}
+
+/* 青海波 seigaiha: overlapping concentric half circles */
+.seigaiha {
+  --s: 44px;
+  --c1: var(--wave-line);
+  background:
+    radial-gradient(circle at 50% 100%, transparent 18%, var(--c1) 19% 22%, transparent 23% 34%, var(--c1) 35% 38%, transparent 39% 50%, var(--c1) 51% 54%, transparent 55%) 0 0 / var(--s) calc(var(--s) / 2),
+    radial-gradient(circle at 50% 100%, transparent 18%, var(--c1) 19% 22%, transparent 23% 34%, var(--c1) 35% 38%, transparent 39% 50%, var(--c1) 51% 54%, transparent 55%) calc(var(--s) / 2) calc(var(--s) / 4) / var(--s) calc(var(--s) / 2);
+}
+
+/* Stepped pixel corners on cards and the board frame */
+.pixel-frame {
+  box-shadow:
+    0 -4px 0 0 var(--px-wood-dark),
+    0 4px 0 0 var(--px-wood-dark),
+    -4px 0 0 0 var(--px-wood-dark),
+    4px 0 0 0 var(--px-wood-dark),
+    0 8px 0 0 rgb(0 0 0 / 0.12);
+}
+
+.pixel-shadow {
+  box-shadow:
+    0 -3px 0 0 var(--foreground),
+    0 3px 0 0 var(--foreground),
+    -3px 0 0 0 var(--foreground),
+    3px 0 0 0 var(--foreground),
+    3px 6px 0 0 rgb(0 0 0 / 0.15);
+}
+
+/* The hanko 判子 seal used as logo */
+.hanko {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow:
+    inset 0 0 0 3px var(--primary),
+    inset 0 0 0 5px var(--primary-foreground);
+}
+
+.vertical-jp {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
+
+/* ------------------------------------------------------------------ */
+/*  The board                                                          */
+/* ------------------------------------------------------------------ */
+
+.board-svg {
+  shape-rendering: crispEdges;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  display: block;
+}
+
+.board-svg text {
+  font-family: var(--font-pixel);
+  shape-rendering: auto;
+}
+
+.px-o { fill: var(--px-ink); }
+.px-g { fill: var(--isl-grass, var(--px-grass)); }
+.px-l { fill: var(--isl-grass-light, var(--px-grass-light)); }
+.px-G { fill: var(--isl-grass-dark, var(--px-grass-dark)); }
+.px-s { fill: var(--px-sand); }
+.px-S { fill: var(--px-sand-dark); }
+.px-P { fill: var(--isl-plate, var(--px-plate)); }
+.px-Q { fill: var(--isl-plate-shade, var(--px-plate-shade)); }
+.px-w { fill: var(--px-foam); }
+.px-T { fill: var(--px-pine); }
+.px-t { fill: var(--px-pine-light); }
+.px-b { fill: var(--px-trunk); }
+.px-k { fill: var(--px-blossom); }
+.px-K { fill: var(--px-blossom-dark); }
+.px-r { fill: var(--px-shu); }
+.px-R { fill: var(--px-shu-dark); }
+.px-y { fill: var(--px-gold); }
+.px-n { fill: var(--px-stone); }
+.px-N { fill: var(--px-stone-dark); }
+.px-sea { fill: var(--px-sea); }
+.px-sea-light { fill: var(--px-sea-light); }
+.px-sea-deep { fill: var(--px-sea-deep); }
+.px-wood { fill: var(--px-wood); }
+.px-wood-light { fill: var(--px-wood-light); }
+.px-wood-dark { fill: var(--px-wood-dark); }
+.px-shu { fill: var(--px-shu); }
+.px-shu-light { fill: var(--px-shu-light); }
+.px-shu-dark { fill: var(--px-shu-dark); }
+.px-gold { fill: var(--px-gold); }
+
+.island {
+  cursor: pointer;
+  transition: filter 120ms;
+}
+.island:hover {
+  filter: brightness(1.07);
+}
+.island .num {
+  fill: var(--isl-number, var(--px-number));
+  font-size: 8.6px;
+  font-weight: 400;
+  pointer-events: none;
+}
+.island.done {
+  --isl-plate: #e5f2c9;
+  --isl-plate-shade: #b9d48a;
+  --isl-number: #3e6b12;
+  --isl-grass: #8cc45f;
+}
+.dark .island.done {
+  --isl-plate: #cdeb98;
+  --isl-plate-shade: #8fb556;
+  --isl-number: #1f3a05;
+}
+.island.over {
+  --isl-plate: var(--px-shu);
+  --isl-plate-shade: var(--px-shu-dark);
+  --isl-number: #fff7ee;
+  animation: shake 0.35s steps(4) 1;
+}
+.island.selected .sel {
+  display: block;
+}
+.island .sel {
+  display: none;
+  fill: none;
+  stroke: var(--px-gold);
+  stroke-width: 1;
+  animation: blink 0.8s steps(2) infinite;
+}
+.island.hinted .sel {
+  display: block;
+  stroke: var(--px-blossom-dark);
+}
+
+.bridge {
+  transition: opacity 150ms;
+}
+.bridge.ghost {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.bridge.wrong {
+  animation: wrong-blink 0.5s steps(2) 4;
+}
+.bridge.hint {
+  animation: hint-glow 0.6s steps(2) 5;
+}
+.bridge.pop {
+  animation: bridge-pop 220ms steps(3) 1;
+}
+
+.edge-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+.edge-hit:hover + .edge-hover,
+.edge-hover.on {
+  opacity: 0.5;
+}
+.edge-hover {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 100ms;
+}
+
+.blocked-x {
+  animation: blocked 0.6s steps(3) 1 forwards;
+}
+
+.cell-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+.cell-hit:hover {
+  fill: rgb(255 255 255 / 0.22);
+}
+.grid-dot {
+  fill: var(--px-sea-light);
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Animations                                                         */
+/* ------------------------------------------------------------------ */
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1px); }
+  75% { transform: translateX(1px); }
+}
+@keyframes blink {
+  50% { opacity: 0.2; }
+}
+@keyframes wrong-blink {
+  50% { opacity: 0.15; }
+}
+@keyframes hint-glow {
+  50% { filter: brightness(1.6) drop-shadow(0 0 2px var(--px-gold)); }
+}
+@keyframes bridge-pop {
+  0% { transform: scale(0.9); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes blocked {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Sakura petals 桜吹雪 when a puzzle is solved */
+.petal {
+  position: fixed;
+  top: -24px;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  z-index: 60;
+  image-rendering: pixelated;
+  animation: petal-fall linear forwards, petal-sway ease-in-out infinite alternate;
+}
+@keyframes petal-fall {
+  to { transform: translateY(110vh) rotate(540deg); }
+}
+@keyframes petal-sway {
+  from { margin-left: -24px; }
+  to { margin-left: 24px; }
+}
+
+/* A little boat drifting across the hero */
+@keyframes drift {
+  from { transform: translateX(-10%); }
+  to { transform: translateX(110%); }
+}
+.drift {
+  animation: drift 38s linear infinite;
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.bob {
+  animation: bob 2.4s steps(2) infinite;
+}
+
+@keyframes stamp {
+  0% { transform: scale(2.2) rotate(-12deg); opacity: 0; }
+  60% { transform: scale(0.92) rotate(-4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-6deg); opacity: 1; }
+}
+.stamp-in {
+  animation: stamp 420ms cubic-bezier(.2, .9, .3, 1.2) both;
+}
+
+@keyframes solver-scan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 24px; }
+}
+.terminal {
+  background-color: #14110f;
+  color: #f4e7c9;
+  background-image: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 3px);
+}
+.terminal.busy {
+  animation: solver-scan 0.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .petal, .drift, .bob, .island.over, .bridge.pop, .terminal.busy {
+    animation: none !important;
+  }
+}
