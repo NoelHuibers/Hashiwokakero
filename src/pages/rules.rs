@@ -89,7 +89,7 @@ pub fn RulesPage() -> impl IntoView {
                 </div>
             </div>
 
-            <div class="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div class="grid grid-cols-1 items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <div class="flex flex-col gap-6">
                     <Rule number="一" title="Count the bridges">
                         "The number on an island is how many bridges end there."
@@ -118,7 +118,7 @@ pub fn RulesPage() -> impl IntoView {
 
             <Separator class="my-10" />
 
-            <div class="grid gap-6 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle class="flex items-baseline gap-2 text-xl">

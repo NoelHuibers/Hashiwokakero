@@ -219,8 +219,9 @@ fn WinOverlay() -> impl IntoView {
             </div>
         </Show>
         <Show when=move || game.status.get() == Status::Revealed && !dismissed.get()>
-            <div class="absolute inset-x-0 bottom-3 z-10 flex justify-center px-4">
-                <div class="flex flex-wrap items-center gap-3 rounded-xl border bg-card/95 px-4 py-2 text-sm shadow-xl backdrop-blur animate-in slide-in-from-bottom-4 fade-in">
+            // Below the board on phones, where it would cover the bottom rows
+            <div class="relative z-10 mt-3 flex justify-center sm:absolute sm:inset-x-0 sm:bottom-3 sm:mt-0 sm:px-4">
+                <div class="flex flex-wrap items-center justify-center gap-3 rounded-xl border bg-card/95 px-4 py-2 text-sm shadow-xl backdrop-blur animate-in slide-in-from-bottom-4 fade-in">
                     <span class="hanko grid size-9 shrink-0 rotate-[-6deg] place-items-center rounded-md font-pixel text-xl">
                         "解"
                     </span>
@@ -302,7 +303,7 @@ pub fn PlayPage() -> impl IntoView {
             path="/practice"
         />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <div class="flex min-w-0 flex-col gap-4">
                     <div class="flex flex-wrap items-end justify-between gap-3">
                         <div class="flex items-center gap-3">
@@ -397,7 +398,7 @@ pub fn PlayPage() -> impl IntoView {
                         />
                     </div>
 
-                    <div class="flex flex-wrap gap-2">
+                    <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
                         <Button
                             variant=ButtonVariant::Outline
                             attr:disabled=move || not_playing.get() || game.undo_stack.with(Vec::is_empty)
@@ -419,20 +420,20 @@ pub fn PlayPage() -> impl IntoView {
                         >
                             "Restart"
                         </Button>
-                        <div class="ml-auto flex gap-2">
+                        <div class="contents sm:ml-auto sm:flex sm:gap-2">
                             <Button
                                 variant=ButtonVariant::Secondary
                                 attr:disabled=move || not_playing.get()
                                 on:click=move |_| state::check(game, settings)
                             >
-                                "Check 確認"
+                                "Check" <span class="hidden sm:inline">" 確認"</span>
                             </Button>
                             <Button
                                 variant=ButtonVariant::Secondary
                                 attr:disabled=move || not_playing.get()
                                 on:click=move |_| state::hint(game, settings)
                             >
-                                "Hint 助言"
+                                "Hint" <span class="hidden sm:inline">" 助言"</span>
                             </Button>
                         </div>
                     </div>

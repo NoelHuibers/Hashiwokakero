@@ -28,7 +28,7 @@ fn SizeInput(label: &'static str, #[prop(into)] value: Signal<u8>, on_change: Ca
                 min=MIN_SIZE
                 max=MAX_SIZE
                 prop:value=move || value.get()
-                class="w-full accent-[var(--primary)]"
+                class="h-9 w-full cursor-pointer accent-[var(--primary)]"
                 on:input=move |ev| {
                     if let Ok(v) = event_target_value(&ev).parse::<u8>() {
                         on_change.run(v.clamp(MIN_SIZE, MAX_SIZE));
@@ -85,13 +85,18 @@ pub fn CreatePage() -> impl IntoView {
     let busy = Signal::derive(move || editor.solving.get() || generating.get());
     let empty = Signal::derive(move || editor.puzzle.with(|p| p.islands.is_empty()));
 
+    // None: clicks count up, Some(0): erase, Some(n): place n (tap again to remove). Phones have
+    // no right click or keyboard, the palette makes every number one tap away.
+    let brush = RwSignal::new(None::<u8>);
     let on_cell = Callback::new(move |(pos, action): (Pos, CellAction)| {
         editor.edit(|p| {
             let current = p.island_at(pos).map_or(0, |i| p.islands[i].required);
-            let next = match action {
-                CellAction::Increment => (current + 1) % 9,
-                CellAction::Decrement => (current + 8) % 9,
-                CellAction::Set(n) => n.min(8),
+            let next = match (action, brush.get_untracked()) {
+                (CellAction::Increment, Some(n)) if n == current => 0,
+                (CellAction::Increment, Some(n)) => n,
+                (CellAction::Increment, None) => (current + 1) % 9,
+                (CellAction::Decrement, _) => (current + 8) % 9,
+                (CellAction::Set(n), _) => n.min(8),
             };
             p.set(pos, next);
         })
@@ -182,15 +187,49 @@ pub fn CreatePage() -> impl IntoView {
                         "Place islands, let the SAT solver check that your puzzle has exactly one solution, then play it."
                     </p>
                 </div>
-                <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <div class="hidden flex-wrap gap-2 text-xs text-muted-foreground md:flex">
                     <span><Kbd>"Click"</Kbd> " +1"</span>
                     <span><Kbd>"Right click"</Kbd> " −1"</span>
                     <span><Kbd>"1"</Kbd> "–" <Kbd>"8"</Kbd> " set · " <Kbd>"⌫"</Kbd> " erase (while hovering)"</span>
                 </div>
             </div>
 
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <div class="flex min-w-0 flex-col gap-4">
+                    <div class="grid grid-cols-5 gap-1.5 sm:grid-cols-10 sm:gap-1" role="radiogroup" aria-label="Brush">
+                        {std::iter::once(None)
+                            .chain((1..=8).map(Some))
+                            .chain(std::iter::once(Some(0)))
+                            .map(|b| {
+                                let (label, title) = match b {
+                                    None => ("+1".to_string(), "Each tap counts up".to_string()),
+                                    Some(0) => ("消".to_string(), "Erase".to_string()),
+                                    Some(n) => (n.to_string(), format!("Place a {n}")),
+                                };
+                                view! {
+                                    <button
+                                        type="button"
+                                        role="radio"
+                                        title=title
+                                        aria-checked=move || (brush.get() == b).to_string()
+                                        class=move || {
+                                            format!(
+                                                "grid h-10 place-items-center rounded-md border font-pixel text-base transition-colors {}",
+                                                if brush.get() == b {
+                                                    "border-primary bg-primary text-primary-foreground shadow-sm"
+                                                } else {
+                                                    "bg-card hover:border-primary/50"
+                                                },
+                                            )
+                                        }
+                                        on:click=move |_| brush.set(b)
+                                    >
+                                        {label}
+                                    </button>
+                                }
+                            })
+                            .collect_view()}
+                    </div>
                     <BoardView
                         board=board
                         bridges=bridges

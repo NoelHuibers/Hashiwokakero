@@ -3,7 +3,7 @@ use leptos_meta::{HashedStylesheet, Meta, MetaTags, provide_meta_context};
 use leptos_router::components::{Route, Router, Routes};
 use leptos_router::path;
 
-use crate::components::layout::{Footer, Header, Toaster};
+use crate::components::layout::{Footer, Header, MobileNav, Toaster};
 use crate::pages::NotFound;
 use crate::pages::account::AccountPage;
 use crate::pages::create::CreatePage;
@@ -25,7 +25,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
         <html lang="en">
             <head>
                 <meta charset="utf-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
                 <meta name="author" content="Noel Huibers" />
                 <meta name="color-scheme" content="light dark" />
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -59,7 +59,7 @@ pub fn App() -> impl IntoView {
         <Meta name="theme-color" content="#cf3a24" />
 
         <Router>
-            <div class="flex min-h-screen flex-col">
+            <div class="flex min-h-screen flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
                 <Header />
                 <main class="flex-1">
                     <Routes fallback=|| view! { <NotFound /> }>
@@ -74,6 +74,7 @@ pub fn App() -> impl IntoView {
                 </main>
                 <Footer />
             </div>
+            <MobileNav />
             <Toaster />
         </Router>
     }

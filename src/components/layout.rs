@@ -21,13 +21,62 @@ pub fn Hanko(#[prop(into, optional)] class: String) -> impl IntoView {
     }
 }
 
+const NAV: [(&str, &str, &str); 5] = [
+    ("/", "今日", "Daily"),
+    ("/practice", "練習", "Practice"),
+    ("/ranks", "順位", "Ranks"),
+    ("/create", "作る", "Create"),
+    ("/lab", "研究", "Lab"),
+];
+
+fn is_active(href: &str, path: &str) -> bool {
+    if href == "/" { path == "/" } else { path.starts_with(href) }
+}
+
+/// Tab bar at the bottom of the screen on phones, the header has no room for five links.
+#[component]
+pub fn MobileNav() -> impl IntoView {
+    let location = use_location();
+    view! {
+        <nav
+            class="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+            aria-label="Main"
+        >
+            <div class="mx-auto grid max-w-md grid-cols-5">
+                {NAV
+                    .into_iter()
+                    .map(|(href, jp, label)| {
+                        let active = move || is_active(href, &location.pathname.get());
+                        view! {
+                            <A
+                                href=href
+                                attr:class=move || {
+                                    format!(
+                                        "flex min-h-14 flex-col items-center justify-center gap-0.5 transition-colors {}",
+                                        if active() { "text-primary" } else { "text-foreground/60" },
+                                    )
+                                }
+                            >
+                                <span class=move || {
+                                    format!(
+                                        "grid h-7 min-w-11 place-items-center rounded-full px-2 font-pixel text-base leading-none transition-colors {}",
+                                        if active() { "bg-primary text-primary-foreground" } else { "" },
+                                    )
+                                }>{jp}</span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider">{label}</span>
+                            </A>
+                        }
+                    })
+                    .collect_view()}
+            </div>
+        </nav>
+    }
+}
+
 #[component]
 fn NavLink(href: &'static str, jp: &'static str, label: &'static str) -> impl IntoView {
     let location = use_location();
-    let active = move || {
-        let path = location.pathname.get();
-        if href == "/" { path == "/" } else { path.starts_with(href) }
-    };
+    let active = move || is_active(href, &location.pathname.get());
     view! {
         <A
             href=href
@@ -79,13 +128,14 @@ pub fn Header() -> impl IntoView {
                         </span>
                     </span>
                 </A>
-                <nav class="-my-1 ml-auto flex items-center gap-0.5 overflow-x-auto py-1 sm:gap-1.5">
-                    <NavLink href="/" jp="今日" label="Daily" />
-                    <NavLink href="/practice" jp="練習" label="Practice" />
-                    <NavLink href="/ranks" jp="順位" label="Ranks" />
-                    <NavLink href="/create" jp="作る" label="Create" />
-                    <NavLink href="/lab" jp="研究" label="Lab" />
+                <span class="flex flex-col leading-none sm:hidden">
+                    <span class="font-pixel text-xl tracking-wide">"Hashi"</span>
+                    <span class="text-[10px] font-bold tracking-[0.18em] text-muted-foreground">"橋をかけろ"</span>
+                </span>
+                <nav class="ml-auto hidden items-center gap-1.5 md:flex" aria-label="Main">
+                    {NAV.into_iter().map(|(href, jp, label)| view! { <NavLink href jp label /> }).collect_view()}
                 </nav>
+                <span class="ml-auto md:hidden"></span>
                 <AccountButton />
                 <ThemeToggle />
             </div>
@@ -149,7 +199,7 @@ pub fn Footer() -> impl IntoView {
 pub fn Toaster() -> impl IntoView {
     let toasts = expect_context::<Toasts>();
     view! {
-        <div class="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2">
+        <div class="pointer-events-none fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2 md:bottom-4">
             <For
                 each=move || toasts.0.get()
                 key=|t| t.id

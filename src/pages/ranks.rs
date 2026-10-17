@@ -94,7 +94,7 @@ pub fn RanksPage() -> impl IntoView {
                 </p>
             </div>
 
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <Card class="gap-4">
                     <CardHeader>
                         <div class="flex w-full flex-wrap items-center justify-between gap-3">

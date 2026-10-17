@@ -295,7 +295,10 @@ fn ResultCard(daily: Daily) -> impl IntoView {
             }}
             <div class="flex w-full flex-col gap-2">
                 <Button on:click=share class="w-full">"Share result"</Button>
-                <A href="/practice" attr:class="text-sm text-primary underline-offset-4 hover:underline">
+                <A
+                    href="/practice"
+                    attr:class="inline-flex min-h-10 items-center justify-center text-sm text-primary underline-offset-4 hover:underline"
+                >
                     "More puzzles in practice mode →"
                 </A>
             </div>
@@ -329,7 +332,10 @@ fn RankingCard(daily: Daily) -> impl IntoView {
                     <CardTitle class="flex items-baseline gap-2 text-lg">
                         "Today's ranking" <span class="font-pixel text-sm text-primary">"順位"</span>
                     </CardTitle>
-                    <A href="/ranks" attr:class="text-xs text-primary underline-offset-4 hover:underline">
+                    <A
+                        href="/ranks"
+                        attr:class="-mr-2 inline-flex min-h-9 items-center px-2 text-xs text-primary underline-offset-4 hover:underline"
+                    >
                         "All →"
                     </A>
                 </div>
@@ -598,7 +604,7 @@ pub fn DailyPage() -> impl IntoView {
             json_ld=site_ld()
         />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <div class="flex min-w-0 flex-col gap-4">
                     <div class="flex min-h-16 flex-wrap items-end justify-between gap-3">
                         {header}
@@ -680,7 +686,7 @@ pub fn DailyPage() -> impl IntoView {
                                 class="h-2.5"
                             />
                         </div>
-                        <div class="flex flex-wrap gap-2">
+                        <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
                             <Button
                                 variant=ButtonVariant::Outline
                                 attr:disabled=move || !playing.get() || game.undo_stack.with(Vec::is_empty)
@@ -702,14 +708,14 @@ pub fn DailyPage() -> impl IntoView {
                             >
                                 "Clear"
                             </Button>
-                            <div class="ml-auto flex flex-wrap gap-2">
+                            <div class="contents sm:ml-auto sm:flex sm:gap-2">
                                 <Button
                                     variant=ButtonVariant::Secondary
                                     attr:disabled=move || !playing.get()
                                     attr:title=format!("+{} s", CHECK_PENALTY_MS / 1000)
                                     on:click=check
                                 >
-                                    "Check 確認 " <span class="text-xs opacity-70">"+10s"</span>
+                                    "Check" <span class="hidden sm:inline">" 確認"</span> <span class="text-xs opacity-70">"+10s"</span>
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Secondary
@@ -717,7 +723,7 @@ pub fn DailyPage() -> impl IntoView {
                                     attr:title=format!("+{} s", HINT_PENALTY_MS / 1000)
                                     on:click=hint
                                 >
-                                    "Hint 助言 " <span class="text-xs opacity-70">"+30s"</span>
+                                    "Hint" <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70">"+30s"</span>
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Ghost
