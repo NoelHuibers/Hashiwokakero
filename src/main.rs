@@ -11,6 +11,11 @@ async fn main() {
     use leptos_axum::{LeptosRoutes, generate_route_list};
     use tower_http::compression::CompressionLayer;
 
+    if let Err(e) = hashi::server::db::init().await {
+        eprintln!("{e}");
+        std::process::exit(1);
+    }
+
     // Reads the cargo-leptos settings (Cargo.toml) or the LEPTOS_* environment variables
     let conf = get_configuration(None).expect("invalid Leptos configuration");
     let leptos_options = conf.leptos_options;

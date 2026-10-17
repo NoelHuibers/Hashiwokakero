@@ -2,6 +2,7 @@ use leptos::prelude::*;
 use leptos_router::components::A;
 use leptos_router::hooks::use_location;
 
+use super::leaderboard::AccountButton;
 use super::sprites::{BOAT, PixelSprite};
 use crate::state::{Settings, ToastKind, Toasts};
 
@@ -78,12 +79,14 @@ pub fn Header() -> impl IntoView {
                         </span>
                     </span>
                 </A>
-                <nav class="ml-auto flex items-center gap-0.5 sm:gap-2">
-                    <NavLink href="/" jp="遊ぶ" label="Play" />
+                <nav class="-my-1 ml-auto flex items-center gap-0.5 overflow-x-auto py-1 sm:gap-1.5">
+                    <NavLink href="/" jp="今日" label="Daily" />
+                    <NavLink href="/practice" jp="練習" label="Practice" />
+                    <NavLink href="/ranks" jp="順位" label="Ranks" />
                     <NavLink href="/create" jp="作る" label="Create" />
                     <NavLink href="/lab" jp="研究" label="Lab" />
-                    <NavLink href="/rules" jp="遊び方" label="Rules" />
                 </nav>
+                <AccountButton />
                 <ThemeToggle />
             </div>
         </header>
@@ -122,6 +125,10 @@ pub fn Footer() -> impl IntoView {
                         </a>
                     </span>
                     <span aria-hidden="true">"·"</span>
+                    <A href="/rules" attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
+                        "How to play 遊び方"
+                    </A>
+                    <span aria-hidden="true">"·"</span>
                     <a
                         class="underline decoration-primary/50 underline-offset-4 hover:text-foreground"
                         href=crate::seo::REPO_URL
@@ -131,7 +138,7 @@ pub fn Footer() -> impl IntoView {
                         "Open source on GitHub"
                     </a>
                     <span aria-hidden="true">"·"</span>
-                    <span>"Rust · Leptos · own CDCL & DPLL solvers"</span>
+                    <span>"Rust · Leptos · Turso · own CDCL & DPLL solvers"</span>
                 </p>
             </div>
         </footer>

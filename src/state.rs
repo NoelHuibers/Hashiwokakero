@@ -114,6 +114,7 @@ struct SavedGame {
 }
 
 const GAME_KEY: &str = "hashi.game.v2";
+const DAILY_KEY: &str = "hashi.daily.v1";
 const EDITOR_KEY: &str = "hashi.editor.v2";
 const SOLVER_KEY: &str = "hashi.solver.v2";
 const THEME_KEY: &str = "hashi.theme";
@@ -141,10 +142,12 @@ pub struct Game {
     pub report: RwSignal<Option<SolveReport>>,
     pub solving: RwSignal<bool>,
     restored: StoredValue<bool>,
+    /// Local storage key of the saved game.
+    key: &'static str,
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(key: &'static str) -> Self {
         let board = Board::new(Puzzle::empty(7, 7));
         Game {
             bridges: RwSignal::new(board.empty_bridges()),
@@ -165,6 +168,7 @@ impl Game {
             report: RwSignal::new(None),
             solving: RwSignal::new(false),
             restored: StoredValue::new(false),
+            key,
         }
     }
 
@@ -303,12 +307,12 @@ impl Game {
             moves: self.moves.get(),
             hints: self.hints.get(),
         };
-        store(GAME_KEY, &saved);
+        store(self.key, &saved);
     }
 
     /// Restores the last game from local storage.
     fn restore(&self) -> bool {
-        let Some(saved) = load::<SavedGame>(GAME_KEY) else {
+        let Some(saved) = load::<SavedGame>(self.key) else {
             return false;
         };
         let board = Board::new(saved.puzzle);
@@ -325,9 +329,42 @@ impl Game {
     }
 }
 
-impl Default for Game {
-    fn default() -> Self {
-        Self::new()
+impl Game {
+    /// Restores the saved bridges if they belong to `puzzle` (daily progress of today).
+    pub fn restore_progress(&self, puzzle: &Puzzle) -> bool {
+        let Some(saved) = load::<SavedGame>(self.key) else {
+            return false;
+        };
+        if saved.puzzle != *puzzle || saved.bridges.len() != self.bridges.with_untracked(Vec::len) {
+            return false;
+        }
+        self.bridges.set(saved.bridges);
+        self.moves.set(saved.moves);
+        true
+    }
+}
+
+/// The daily puzzle, separate from the practice game so neither overwrites the other.
+#[derive(Clone, Copy)]
+pub struct DailyGame(pub Game);
+
+/// The signed in user (or guest), loaded after hydration.
+#[derive(Clone, Copy)]
+pub struct Auth {
+    pub user: RwSignal<Option<crate::model::UserInfo>>,
+    pub loaded: RwSignal<bool>,
+}
+
+impl Auth {
+    pub fn refresh(&self) {
+        let auth = *self;
+        spawn_local(async move {
+            match crate::api::current_user().await {
+                Ok(user) => auth.user.set(user),
+                Err(e) => leptos::logging::warn!("could not load the user: {e}"),
+            }
+            auth.loaded.set(true);
+        });
     }
 }
 
@@ -396,10 +433,17 @@ impl Default for Settings {
 
 /// Creates all state and wires up persistence, the timer and win detection.
 pub fn provide_state() {
-    let game = Game::new();
+    let game = Game::new(GAME_KEY);
+    let daily = Game::new(DAILY_KEY);
     let editor = Editor::new();
     let settings = Settings::new();
+    let auth = Auth {
+        user: RwSignal::new(None),
+        loaded: RwSignal::new(false),
+    };
     provide_context(game);
+    provide_context(DailyGame(daily));
+    provide_context(auth);
     provide_context(editor);
     provide_context(settings);
     provide_context(Toasts(RwSignal::new(vec![])));
@@ -420,9 +464,11 @@ pub fn provide_state() {
                 .document_element()
                 .is_some_and(|el| el.class_list().contains("dark")),
         );
+        auth.refresh();
     });
 
     Effect::new(move |_| game.save());
+    Effect::new(move |_| daily.save());
     Effect::new(move |_| store(EDITOR_KEY, &editor.puzzle.get()));
     Effect::new(move |_| store(SOLVER_KEY, &settings.solver.get()));
     Effect::new(move |prev: Option<bool>| {
@@ -441,12 +487,14 @@ pub fn provide_state() {
     });
 
     // Win detection
-    Effect::new(move |_| {
-        let solved = game.board.with(|b| game.bridges.with(|br| b.check(br).solved));
-        if solved && game.status.get_untracked() == Status::Playing {
-            game.status.set(Status::Won);
-        }
-    });
+    for g in [game, daily] {
+        Effect::new(move |_| {
+            let solved = g.board.with(|b| g.bridges.with(|br| b.check(br).solved));
+            if solved && g.status.get_untracked() == Status::Playing {
+                g.status.set(Status::Won);
+            }
+        });
+    }
 
     // Timer, paused while the tab is hidden
     Effect::new(move |first: Option<()>| {
@@ -473,26 +521,6 @@ pub fn random_seed() -> u64 {
     let a = (js_sys::Math::random() * 4_294_967_296.0) as u64;
     let b = js_sys::Date::now() as u64;
     (a << 32) ^ b
-}
-
-pub fn today() -> String {
-    let d = js_sys::Date::new_0();
-    format!("{:04}-{:02}-{:02}", d.get_full_year(), d.get_month() + 1, d.get_date())
-}
-
-/// The same puzzle for everyone on a given day.
-pub fn daily_params(date: &str) -> GenerateParams {
-    // FNV-1a
-    let seed = date
-        .bytes()
-        .fold(0xcbf29ce484222325u64, |h, b| (h ^ b as u64).wrapping_mul(0x100000001b3));
-    let (width, height) = Difficulty::Hard.size();
-    GenerateParams {
-        width,
-        height,
-        difficulty: Difficulty::Hard,
-        seed,
-    }
 }
 
 pub fn new_puzzle(game: Game, params: GenerateParams, source: Source) {
@@ -591,20 +619,10 @@ pub fn hint(game: Game, settings: Settings) {
             return;
         }
         let current = game.bridges.get_untracked();
-        // Wrong bridges first, then the missing bridge at the most constrained island
-        let target = (0..current.len()).find(|&e| current[e] > solution[e]).or_else(|| {
-            game.board.with_untracked(|b| {
-                let missing_at = |island: usize| {
-                    b.incident[island]
-                        .iter()
-                        .filter(|&&e| current[e] < solution[e])
-                        .count()
-                };
-                (0..current.len())
-                    .filter(|&e| current[e] < solution[e])
-                    .min_by_key(|&e| missing_at(b.edges[e].a).min(missing_at(b.edges[e].b)))
-            })
-        });
+        let target = game
+            .board
+            .with_untracked(|b| crate::model::pick_hint(b, &current, &solution))
+            .map(|(edge, _)| edge);
         match target {
             Some(edge) => {
                 game.set_edges(&[(edge, solution[edge])]);
@@ -632,14 +650,9 @@ pub fn check(game: Game, settings: Settings) {
         if game.epoch.get_untracked() != epoch {
             return;
         }
-        let wrong: Vec<usize> = game.bridges.with_untracked(|b| {
-            b.iter()
-                .zip(&solution)
-                .enumerate()
-                .filter(|(_, (c, s))| c > s)
-                .map(|(e, _)| e)
-                .collect()
-        });
+        let wrong = game
+            .bridges
+            .with_untracked(|b| crate::model::wrong_edges(b, &solution));
         if wrong.is_empty() {
             toast(ToastKind::Success, "So far so good: every bridge matches the solution.");
         } else {

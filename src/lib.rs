@@ -4,8 +4,11 @@
 pub mod api;
 pub mod app;
 pub mod components;
+pub mod model;
 pub mod pages;
 pub mod seo;
+#[cfg(feature = "ssr")]
+pub mod server;
 pub mod state;
 
 #[cfg(feature = "hydrate")]

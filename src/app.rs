@@ -5,9 +5,12 @@ use leptos_router::path;
 
 use crate::components::layout::{Footer, Header, Toaster};
 use crate::pages::NotFound;
+use crate::pages::account::AccountPage;
 use crate::pages::create::CreatePage;
+use crate::pages::daily::DailyPage;
 use crate::pages::lab::LabPage;
 use crate::pages::play::PlayPage;
+use crate::pages::ranks::RanksPage;
 use crate::pages::rules::RulesPage;
 use crate::state::provide_state;
 
@@ -60,7 +63,10 @@ pub fn App() -> impl IntoView {
                 <Header />
                 <main class="flex-1">
                     <Routes fallback=|| view! { <NotFound /> }>
-                        <Route path=path!("") view=PlayPage />
+                        <Route path=path!("") view=DailyPage />
+                        <Route path=path!("/practice") view=PlayPage />
+                        <Route path=path!("/ranks") view=RanksPage />
+                        <Route path=path!("/account") view=AccountPage />
                         <Route path=path!("/create") view=CreatePage />
                         <Route path=path!("/lab") view=LabPage />
                         <Route path=path!("/rules") view=RulesPage />

@@ -11,10 +11,9 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::progress::Progress;
 use crate::state::{
-    self, Game, Settings, Source, Status, ToastKind, daily_params, format_time, random_seed, today,
-    toast,
+    self, Game, Settings, Source, Status, ToastKind, format_time, random_seed, toast,
 };
-use crate::seo::{PageMeta, site_ld};
+use crate::seo::PageMeta;
 
 fn new_random(game: Game, difficulty: Difficulty) {
     let (width, height) = difficulty.size();
@@ -25,12 +24,6 @@ fn new_random(game: Game, difficulty: Difficulty) {
         seed: random_seed(),
     };
     state::new_puzzle(game, params, Source::Generated(params));
-}
-
-fn new_daily(game: Game) {
-    let date = today();
-    let params = daily_params(&date);
-    state::new_puzzle(game, params, Source::Daily { date, params });
 }
 
 #[component]
@@ -88,10 +81,10 @@ fn NewGameCard() -> impl IntoView {
         <Card class="gap-4">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-xl">
-                    "New puzzle" <span class="font-pixel text-sm text-primary">"新しい橋"</span>
+                    "Practice" <span class="font-pixel text-sm text-primary">"練習"</span>
                 </CardTitle>
                 <CardDescription>
-                    "Freshly generated, and proven by the SAT solver to have exactly one solution."
+                    "As many fresh puzzles as you like, each proven by the SAT solver to have exactly one solution. No clock pressure, the daily bridge is on the home page."
                 </CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-3">
@@ -103,14 +96,6 @@ fn NewGameCard() -> impl IntoView {
                         on:click=move |_| new_random(game, settings.difficulty.get_untracked())
                     >
                         {move || if game.loading.get() { "Generating…" } else { "Generate 生成" }}
-                    </Button>
-                    <Button
-                        variant=ButtonVariant::Secondary
-                        class="flex-1"
-                        attr:disabled=move || game.loading.get()
-                        on:click=move |_| new_daily(game)
-                    >
-                        "Daily 今日の橋"
                     </Button>
                 </div>
             </CardContent>
@@ -312,10 +297,9 @@ pub fn PlayPage() -> impl IntoView {
 
     view! {
         <PageMeta
-            title="Hashi · Play Hashiwokakero (Bridges) online for free"
-            description="Play Hashiwokakero (Bridges) free in your browser: cute Japanese pixel art, five sizes from 7×7 to 24×24, hints, and every puzzle has exactly one solution."
-            path="/"
-            json_ld=site_ld()
+            title="Practice Hashiwokakero · unlimited free puzzles · Hashi"
+            description="Practice Hashiwokakero (Bridges) without the clock: unlimited generated puzzles in five sizes from 7×7 to 24×24, hints and checks, every puzzle with exactly one solution."
+            path="/practice"
         />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -478,14 +462,13 @@ pub fn PlayPage() -> impl IntoView {
                 </aside>
             </div>
         </section>
-        <SeoIntro />
     }
 }
 
 /// Text about the puzzle below the game, for people who arrive from a search engine (and for
 /// the search engine itself, the board is just an SVG to it).
 #[component]
-fn SeoIntro() -> impl IntoView {
+pub fn SeoIntro() -> impl IntoView {
     let link = "font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
     view! {
         <article class="mx-auto max-w-7xl px-4 pb-4 pt-10 sm:px-6">
