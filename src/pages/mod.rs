@@ -6,6 +6,7 @@ pub mod rules;
 use common::Puzzle;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos_meta::{Meta, Title};
 use leptos_router::components::A;
 
 use crate::api::puzzle_cnf;
@@ -31,6 +32,8 @@ pub fn NotFound() -> impl IntoView {
         }
     }
     view! {
+        <Title text="Page not found · Hashi" />
+        <Meta name="robots" content="noindex" />
         <section class="mx-auto flex max-w-xl flex-col items-center gap-4 px-6 py-24 text-center">
             <Stamp kanji="迷" class="size-24 text-6xl" />
             <h1 class="text-3xl font-black">"Lost at sea"</h1>

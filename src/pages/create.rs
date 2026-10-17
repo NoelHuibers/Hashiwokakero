@@ -12,6 +12,7 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::label::Label;
 use crate::state::{self, Editor, Game, Settings, Source, ToastKind, download, random_seed, toast};
+use crate::seo::PageMeta;
 
 #[component]
 fn SizeInput(label: &'static str, #[prop(into)] value: Signal<u8>, on_change: Callback<u8>) -> impl IntoView {
@@ -167,6 +168,11 @@ pub fn CreatePage() -> impl IntoView {
     };
 
     view! {
+        <PageMeta
+            title="Make your own Hashiwokakero puzzle · Hashi"
+            description="Design a Bridges puzzle in the workshop: place islands, let a SAT solver check that it has exactly one solution, export it as a text file, and play it."
+            path="/create"
+        />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>

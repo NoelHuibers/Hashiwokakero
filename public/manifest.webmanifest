@@ -1,0 +1,15 @@
+{
+  "name": "Hashi — Hashiwokakero, the bridges puzzle",
+  "short_name": "Hashi",
+  "description": "Play Hashiwokakero (Bridges) online for free. Cute Japanese pixel art, five difficulties, every puzzle has exactly one solution.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4ecdd",
+  "theme_color": "#cf3a24",
+  "lang": "en",
+  "categories": ["games", "puzzle"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

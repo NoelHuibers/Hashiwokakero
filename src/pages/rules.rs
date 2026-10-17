@@ -6,6 +6,7 @@ use crate::components::board::{BoardMode, BoardView};
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::separator::Separator;
+use crate::seo::{PageMeta, RULES_FAQ, faq_ld};
 
 /// A bridge between two cells (x, y) with its count.
 type ExampleBridge = ((u8, u8), (u8, u8), u8);
@@ -70,6 +71,12 @@ pub fn RulesPage() -> impl IntoView {
     );
 
     view! {
+        <PageMeta
+            title="How to play Hashiwokakero · Rules and solving tips · Hashi"
+            description="The rules of Hashiwokakero (Bridges) with a solved example, the deductions that crack most puzzles without guessing, and how a SAT solver proves a solution unique."
+            path="/rules"
+            json_ld=faq_ld(&RULES_FAQ)
+        />
         <section class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
             <div class="mb-8 flex items-end gap-4">
                 <span class="vertical-jp font-pixel text-4xl leading-none text-primary">"橋をかけろ"</span>
@@ -156,6 +163,28 @@ pub fn RulesPage() -> impl IntoView {
                     </CardContent>
                 </Card>
             </div>
+
+            <Separator class="my-10" />
+
+            <section class="flex flex-col gap-5" id="faq">
+                <div>
+                    <p class="font-pixel text-sm text-primary">"よくある質問 · FAQ"</p>
+                    <h2 class="text-2xl font-black">"Questions about Hashiwokakero"</h2>
+                </div>
+                <dl class="grid gap-x-8 gap-y-5 md:grid-cols-2">
+                    {RULES_FAQ
+                        .iter()
+                        .map(|(q, a)| {
+                            view! {
+                                <div class="flex flex-col gap-1.5">
+                                    <dt class="font-bold">{*q}</dt>
+                                    <dd class="text-sm leading-relaxed text-muted-foreground">{*a}</dd>
+                                </div>
+                            }
+                        })
+                        .collect_view()}
+                </dl>
+            </section>
         </section>
     }
 }
