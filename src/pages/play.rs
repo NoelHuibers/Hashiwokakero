@@ -14,6 +14,7 @@ use crate::state::{
     self, Game, Settings, Source, Status, ToastKind, daily_params, format_time, random_seed, today,
     toast,
 };
+use crate::seo::{PageMeta, site_ld};
 
 fn new_random(game: Game, difficulty: Difficulty) {
     let (width, height) = difficulty.size();
@@ -310,6 +311,12 @@ pub fn PlayPage() -> impl IntoView {
     let not_playing = Signal::derive(move || game.status.get() != Status::Playing || busy.get());
 
     view! {
+        <PageMeta
+            title="Hashi · Play Hashiwokakero (Bridges) online for free"
+            description="Play Hashiwokakero (Bridges) free in your browser: cute Japanese pixel art, five sizes from 7×7 to 24×24, hints, and every puzzle has exactly one solution."
+            path="/"
+            json_ld=site_ld()
+        />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <div class="flex min-w-0 flex-col gap-4">
@@ -321,10 +328,10 @@ pub fn PlayPage() -> impl IntoView {
                                 }}
                             </span>
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                                    "Hashiwokakero"
-                                </p>
-                                <h1 class="text-2xl font-black sm:text-3xl">{move || game.source.get().title()}</h1>
+                                <h1 class="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                                    "Hashiwokakero · the bridges puzzle"
+                                </h1>
+                                <p class="text-2xl font-black sm:text-3xl">{move || game.source.get().title()}</p>
                                 <div class="mt-1 flex gap-1.5">
                                     {move || match game.unique.get() {
                                         Some(true) => {
@@ -471,5 +478,66 @@ pub fn PlayPage() -> impl IntoView {
                 </aside>
             </div>
         </section>
+        <SeoIntro />
+    }
+}
+
+/// Text about the puzzle below the game, for people who arrive from a search engine (and for
+/// the search engine itself, the board is just an SVG to it).
+#[component]
+fn SeoIntro() -> impl IntoView {
+    let link = "font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
+    view! {
+        <article class="mx-auto max-w-7xl px-4 pb-4 pt-10 sm:px-6">
+            <div class="mb-6 flex items-end gap-3">
+                <span class="vertical-jp hidden font-pixel text-sm leading-none text-primary sm:block">"橋をかけろ"</span>
+                <div>
+                    <p class="font-pixel text-sm text-primary">"about the game"</p>
+                    <h2 class="text-2xl font-black sm:text-3xl">"Hashiwokakero, the bridges puzzle"</h2>
+                </div>
+            </div>
+            <div class="grid gap-x-10 gap-y-8 text-[15px] leading-relaxed text-muted-foreground md:grid-cols-2">
+                <section class="flex flex-col gap-2">
+                    <h3 class="text-lg font-bold text-foreground">"What is Hashiwokakero?"</h3>
+                    <p>
+                        "Hashiwokakero (橋をかけろ, “build bridges!”) is a Japanese logic puzzle published by Nikoli, "
+                        "also known as "<b class="font-semibold text-foreground">"Bridges"</b>", "
+                        <b class="font-semibold text-foreground">"Hashi"</b>" or Ai-Ki-Ai. A grid of numbered islands has to be "
+                        "joined by bridges: every island gets exactly as many bridges as its number, bridges run straight and never cross, "
+                        "at most two join the same pair of islands, and in the end every island can be reached from every other. "
+                        "Like Sudoku or Nurikabe it needs no arithmetic, only deduction."
+                    </p>
+                </section>
+                <section class="flex flex-col gap-2">
+                    <h3 class="text-lg font-bold text-foreground">"How to play Bridges online"</h3>
+                    <p>
+                        "Pick a difficulty from Easy (7×7) to Oni (24×24) and press Generate. Click the water between two islands to "
+                        "build a bridge, click again for a double bridge, a third click removes them, or simply drag from one island to the next. "
+                        "Finished islands turn green, overfull ones red. Stuck? Ask for a hint, or let the solver check your bridges. "
+                        "The full rules with a solved example are on the "
+                        <a class=link href="/rules">"how to play"</a>" page."
+                    </p>
+                </section>
+                <section class="flex flex-col gap-2">
+                    <h3 class="text-lg font-bold text-foreground">"Solving techniques that avoid guessing"</h3>
+                    <ul class="list-disc space-y-1 pl-5">
+                        <li>"An island whose number equals twice its neighbours has a double bridge to every one of them: an 8 in the open, a 6 on an edge, a 4 in a corner."</li>
+                        <li>"A 1 never connects to another 1, and two 2s are never joined by a double bridge, that would cut them off from the rest."</li>
+                        <li>"Count what is still missing: if an island needs 5 more bridges across three neighbours, each neighbour gets at least one."</li>
+                        <li>"Bridges block the lines they cross, so a placed bridge can force the islands on both sides to connect elsewhere."</li>
+                        <li>"Everything has to end up connected: a group that can only reach the rest through one gap must use it."</li>
+                    </ul>
+                </section>
+                <section class="flex flex-col gap-2">
+                    <h3 class="text-lg font-bold text-foreground">"Why play Hashi here"</h3>
+                    <ul class="list-disc space-y-1 pl-5">
+                        <li>"Every puzzle has "<b class="font-semibold text-foreground">"exactly one solution"</b>", proven by a SAT solver before you see it, so logic alone is always enough."</li>
+                        <li>"Unlimited free puzzles in five sizes, with hints and checks that come from the real solution, not from heuristics."</li>
+                        <li>"Cute Japanese pixel art, a day and a night theme, keyboard shortcuts, undo and redo, and your game is saved in the browser."</li>
+                        <li>"Make your own puzzles in the "<a class=link href="/create">"workshop"</a>", or watch our own CDCL and DPLL SAT solvers race in the "<a class=link href="/lab">"lab"</a>". The whole game is open source and written in Rust."</li>
+                    </ul>
+                </section>
+            </div>
+        </article>
     }
 }

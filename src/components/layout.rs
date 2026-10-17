@@ -109,16 +109,29 @@ pub fn Footer() -> impl IntoView {
                         ". Solved by SAT, played by you."
                     </p>
                 </div>
-                <p>
-                    "Rust · Leptos · rust-ui · own CDCL & DPLL solvers · "
+                <p class="flex flex-wrap items-center gap-x-1.5 sm:justify-end">
+                    <span>
+                        "Made by "
+                        <a
+                            class="font-semibold text-foreground underline decoration-primary/50 underline-offset-4 hover:text-primary"
+                            href=crate::seo::AUTHOR_URL
+                            rel="author noopener"
+                            target="_blank"
+                        >
+                            {crate::seo::AUTHOR}
+                        </a>
+                    </span>
+                    <span aria-hidden="true">"·"</span>
                     <a
                         class="underline decoration-primary/50 underline-offset-4 hover:text-foreground"
-                        href="https://github.com/NoelHuibers/Hashiwokakero"
+                        href=crate::seo::REPO_URL
                         target="_blank"
                         rel="noopener"
                     >
-                        "GitHub"
+                        "Open source on GitHub"
                     </a>
+                    <span aria-hidden="true">"·"</span>
+                    <span>"Rust · Leptos · own CDCL & DPLL solvers"</span>
                 </p>
             </div>
         </footer>
