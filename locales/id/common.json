@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, teka-teki jembatan dari Jepang, bisa dimainkan gratis di browser.",
     "game": "Hubungkan pulau-pulau dengan jembatan sehingga setiap pulau punya jembatan sebanyak angkanya. Teka-teki harian dengan papan peringkat, lima tingkat kesulitan, pixel art, dan setiap teka-teki punya tepat satu solusi."
+  },
+  "copy": "Salin",
+  "legal": {
+    "imprint": "Info legal",
+    "privacy": "Privasi",
+    "english": "Versi bahasa Inggris"
   }
 }

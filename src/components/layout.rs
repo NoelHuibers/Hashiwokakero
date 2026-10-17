@@ -159,6 +159,23 @@ pub fn ThemeToggle() -> impl IntoView {
     }
 }
 
+/// The rules, reachable from every page (on phones the footer link is far down).
+#[component]
+pub fn HelpButton() -> impl IntoView {
+    let i18n = use_i18n();
+    let rules = use_localized("/rules");
+    view! {
+        <A
+            href=rules
+            attr:class="grid size-10 shrink-0 place-items-center rounded-lg border bg-card font-pixel text-lg leading-none transition-transform hover:-translate-y-0.5"
+            attr:title=move || t_string!(i18n, common.footer.how_to_play)
+            attr:aria-label=move || t_string!(i18n, common.footer.how_to_play)
+        >
+            "?"
+        </A>
+    }
+}
+
 /// The language picker: a small button with the language code, a native select on top of it
 /// (accessible, and phones show their own picker).
 #[component]
@@ -232,6 +249,7 @@ pub fn Header() -> impl IntoView {
                 </nav>
                 <span class="ms-auto md:hidden"></span>
                 <AccountButton />
+                <HelpButton />
                 <LanguagePicker />
                 <ThemeToggle />
             </div>
@@ -243,6 +261,8 @@ pub fn Header() -> impl IntoView {
 pub fn Footer() -> impl IntoView {
     let i18n = use_i18n();
     let rules = use_localized("/rules");
+    let impressum = use_localized("/impressum");
+    let privacy = use_localized("/datenschutz");
     let author = move || {
         view! {
             <a
@@ -288,6 +308,14 @@ pub fn Footer() -> impl IntoView {
                     </a>
                     <span aria-hidden="true">"·"</span>
                     <span>{t!(i18n, common.footer.tech)}</span>
+                    <span aria-hidden="true">"·"</span>
+                    <A href=impressum attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
+                        {t!(i18n, common.legal.imprint)}
+                    </A>
+                    <span aria-hidden="true">"·"</span>
+                    <A href=privacy attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
+                        {t!(i18n, common.legal.privacy)}
+                    </A>
                 </p>
             </div>
         </footer>

@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, Japon köprü bulmacası, tarayıcıda ücretsiz oynanır.",
     "game": "Adaları köprülerle bağla; her adada, üzerindeki sayı kadar köprü olsun. Sıralamalı günlük bulmaca, beş zorluk seviyesi, piksel sanatı ve her bulmacanın tam olarak tek bir çözümü var."
+  },
+  "copy": "Kopyala",
+  "legal": {
+    "imprint": "Künye",
+    "privacy": "Gizlilik",
+    "english": "İngilizce sürüm"
   }
 }

@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, trò chơi nối cầu của Nhật Bản, chơi miễn phí trên trình duyệt.",
     "game": "Nối các hòn đảo bằng cầu sao cho số cầu của mỗi đảo đúng bằng con số ghi trên đảo. Câu đố mỗi ngày kèm bảng xếp hạng, năm mức độ khó, đồ họa pixel art, và mỗi câu đố có đúng một lời giải."
+  },
+  "copy": "Sao chép",
+  "legal": {
+    "imprint": "Thông tin pháp lý",
+    "privacy": "Quyền riêng tư",
+    "english": "Bản tiếng Anh"
   }
 }

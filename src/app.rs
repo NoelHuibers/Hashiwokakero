@@ -12,6 +12,7 @@ use crate::pages::account::AccountPage;
 use crate::pages::create::CreatePage;
 use crate::pages::daily::DailyPage;
 use crate::pages::lab::LabPage;
+use crate::pages::legal::{ImpressumPage, PrivacyPage};
 use crate::pages::play::PlayPage;
 use crate::pages::ranks::RanksPage;
 use crate::pages::rules::RulesPage;
@@ -78,6 +79,8 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/create") view=CreatePage />
                             <Route path=path!("/lab") view=LabPage />
                             <Route path=path!("/rules") view=RulesPage />
+                            <Route path=path!("/impressum") view=ImpressumPage />
+                            <Route path=path!("/datenschutz") view=PrivacyPage />
                         </I18nRoute<Locale, _, _>>
                     </Routes>
                 </main>

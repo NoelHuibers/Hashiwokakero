@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, o puzzle japonês das pontes, para jogar grátis no navegador.",
     "game": "Ligue as ilhas com pontes para que cada ilha tenha tantas pontes quanto indica seu número. Um desafio diário com ranking, cinco dificuldades, pixel art, e cada puzzle tem exatamente uma solução."
+  },
+  "copy": "Copiar",
+  "legal": {
+    "imprint": "Aviso legal",
+    "privacy": "Privacidade",
+    "english": "Versão em inglês"
   }
 }

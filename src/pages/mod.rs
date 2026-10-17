@@ -2,6 +2,7 @@ pub mod account;
 pub mod create;
 pub mod daily;
 pub mod lab;
+pub mod legal;
 pub mod play;
 pub mod ranks;
 pub mod rules;

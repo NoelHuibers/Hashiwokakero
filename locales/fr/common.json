@@ -151,5 +151,11 @@
   "ld": {
     "site": "Hashiwokakero, le casse-tête japonais des ponts, jouable gratuitement dans le navigateur.",
     "game": "Relie les îles par des ponts pour que chaque île ait autant de ponts que son chiffre l’indique. Un défi quotidien avec classement, cinq niveaux de difficulté, du pixel art, et chaque grille a exactement une solution."
+  },
+  "copy": "Copier",
+  "legal": {
+    "imprint": "Mentions légales",
+    "privacy": "Confidentialité",
+    "english": "Version anglaise"
   }
 }
