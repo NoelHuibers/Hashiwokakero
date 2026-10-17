@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "Dojo SAT · phòng tập cho bộ giải SAT · Hashi",
+    "description": "Gửi bộ giải SAT dạng WebAssembly và leo bảng xếp hạng: chấm trên các công thức mới, ẩn, bằng fuel tất định thay vì giây. Miễn phí, mã nguồn mở, tái lập được."
+  },
+  "title": "Dojo SAT",
+  "intro": "Phòng tập cho các bộ giải SAT. Biên dịch bộ giải của bạn sang WebAssembly, gửi lên, và nó được chấm điểm trên một tập ẩn gồm các công thức mới: câu đố Hashi, bẫy chẵn lẻ, 3-SAT ngẫu nhiên, chim bồ câu và quân hậu.",
+  "stats": {
+    "season": "Mùa {{ season }}",
+    "formulas": "Công thức: {{ count }}",
+    "budget": "{{ budget }} Gfuel mỗi công thức",
+    "queued": "Đang chờ: {{ count }}"
+  },
+  "cta": {
+    "submit": "Gửi bộ giải",
+    "starter": "Bộ khởi đầu",
+    "dev_set": "Tải tập dev"
+  },
+  "board": {
+    "title": "Bảng xếp hạng",
+    "solver": "Bộ giải",
+    "solved": "Đã giải",
+    "par2": "PAR-2",
+    "families": "Họ",
+    "empty": "Chưa có bộ giải nào vào dojo. Hãy là người đầu tiên!",
+    "house": "chính thức",
+    "par2_hint": "Fuel trung bình mỗi công thức, tính bằng tỷ; công thức chưa giải được tính gấp đôi ngân sách. Càng thấp càng tốt."
+  },
+  "how": {
+    "title": "Cách hoạt động",
+    "build_title": "Xây dựng",
+    "build": "Mọi ngôn ngữ biên dịch được sang WASI preview 1 đều dùng được: Rust, C và C++ với wasi-sdk, Zig, Go. Đọc DIMACS từ stdin và trả lời như trong cuộc thi SAT.",
+    "train_title": "Luyện tập",
+    "train": "Chấm điểm bộ giải ngay trên máy của bạn với tập dev công khai bằng công cụ dojo. Nó chạy y hệt bảng xếp hạng, nên bạn biết điểm của mình trước khi gửi.",
+    "submit_title": "Gửi",
+    "submit": "Tải lên tệp .wasm. Tệp sẽ chạy trên tập ẩn của mùa hiện tại, trên máy của chúng tôi.",
+    "climb_title": "Leo hạng",
+    "climb": "PAR-2 thấp nhất thắng: fuel trung bình mỗi công thức, trong đó công thức chưa giải được tính gấp đôi ngân sách."
+  },
+  "family": {
+    "title": "Các công thức",
+    "hashi": "Hashi",
+    "hashi_text": "Câu đố Hashiwokakero từ 10×10 đến 28×28 dưới dạng CNF, bỏ quy tắc liên thông. Luôn thỏa mãn được.",
+    "hashi_parity": "Hashi chẵn lẻ",
+    "hashi_parity_text": "Câu đố bị đổi một con số để tổng các số là số lẻ. Không thỏa mãn được, vì mỗi cây cầu cộng thêm hai. Dễ thấy, nhưng khó chứng minh bằng phép hợp giải (resolution).",
+    "random_3sat": "3-SAT ngẫu nhiên",
+    "random_3sat_text": "3-SAT ngẫu nhiên đều tại điểm chuyển pha, 4,26 mệnh đề mỗi biến, khoảng một nửa thỏa mãn được.",
+    "pigeonhole": "Chuồng bồ câu",
+    "pigeonhole_text": "n+1 con bồ câu trong n cái chuồng: bài toán kinh điển cần chứng minh hợp giải dài theo hàm mũ. Thêm vài bài vừa đủ chỗ.",
+    "queens": "Quân hậu",
+    "queens_text": "N quân hậu trên bàn cờ đến 48×48 với vài ô bị cấm."
+  },
+  "fair": {
+    "title": "Chơi đẹp",
+    "fuel_title": "Fuel, không phải giây",
+    "fuel": "Mỗi lệnh WebAssembly được thực thi tốn một đơn vị fuel, thao tác bộ nhớ khối tốn một đơn vị mỗi byte. Đồng hồ và số ngẫu nhiên đều có seed cố định, nên một bộ giải luôn đạt cùng điểm trên mọi máy, mọi lần chạy.",
+    "hidden_title": "Công thức ẩn và mới",
+    "hidden": "Tập kiểm thử sinh từ một seed bí mật thay đổi mỗi mùa, và mọi công thức đều bị xáo trộn: biến được đổi tên và phủ định, mệnh đề bị trộn thứ tự. Kết quả chỉ hiện theo từng họ, không bao giờ theo từng công thức.",
+    "checked_title": "Mọi câu trả lời đều được kiểm tra",
+    "checked": "Mô hình được kiểm chứng với công thức. UNSAT chỉ được tính cho công thức đã biết là không thỏa mãn được. Chỉ một câu trả lời sai là bài gửi bị loại, nên đoán mò không bao giờ có lợi.",
+    "sandbox_title": "Hộp cát kín",
+    "sandbox": "Không tệp, không mạng, không biến môi trường. Bộ nhớ và đầu ra bị giới hạn, và bài gửi chạy trên một máy riêng không chứa dữ liệu nào.",
+    "accounts_title": "Một tài khoản, bài tốt nhất",
+    "accounts": "Tài khoản đã đăng ký được gửi ba lần mỗi ngày. Tệp trùng lặp bị từ chối và chỉ bài gửi tốt nhất của bạn được xếp hạng.",
+    "seasons_title": "Các mùa",
+    "seasons": "Mùa mới mang đến tập ẩn mới và mọi bài gửi được chấm lại."
+  },
+  "science": {
+    "title": "Cho nhà nghiên cứu",
+    "text": "Fuel là tất định, nên kết quả tái lập được và so sánh được giữa các bài báo: hãy ghi rõ mùa và seed dev. Bảng xếp hạng có sẵn dạng JSON tại /dojo/board.json, bộ chấm (harness) là mã nguồn mở."
+  },
+  "submit": {
+    "title": "Bước vào dojo",
+    "sign_in": "Cần tài khoản có tên người dùng để gửi, khách không gửi được.",
+    "create_account": "Tạo tài khoản",
+    "name": "Tên bộ giải của bạn",
+    "description": "Mô tả (không bắt buộc)",
+    "description_hint": "Nó hoạt động thế nào? Bạn đã thử những ý tưởng nào?",
+    "source": "Liên kết mã nguồn (không bắt buộc)",
+    "file": "Tệp WebAssembly (.wasm, WASI preview 1)",
+    "button": "Gửi",
+    "left": "Lượt gửi còn lại hôm nay: {{ count }}",
+    "none_left": "Hôm nay đã hết lượt gửi, hãy quay lại vào ngày mai.",
+    "errors": {
+      "sign_in": "Vui lòng đăng nhập bằng tài khoản đã đăng ký trước.",
+      "name": "Hãy đặt tên cho bộ giải, tối đa 40 ký tự.",
+      "description": "Mô tả chỉ được tối đa 600 ký tự.",
+      "url": "Liên kết mã nguồn phải là địa chỉ https://.",
+      "size": "Tệp quá lớn, giới hạn là 8 MiB.",
+      "not_wasm": "Đó không phải là tệp WebAssembly.",
+      "duplicate": "Tệp y hệt này đã được gửi trước đây.",
+      "limit": "Hôm nay bạn đã gửi đủ ba lần rồi.",
+      "server": "Có lỗi từ phía chúng tôi, vui lòng thử lại."
+    }
+  },
+  "mine": {
+    "title": "Bài gửi của bạn",
+    "empty": "Chưa gửi gì."
+  },
+  "state": {
+    "queued": "đang chờ",
+    "running": "đang chạy",
+    "done": "xong",
+    "rejected": "bị từ chối",
+    "failed": "thất bại",
+    "disqualified": "bị loại"
+  },
+  "detail": {
+    "meta_title": "{{ name }} · Dojo SAT",
+    "by": "bởi {{ author }}",
+    "submitted": "Gửi ngày {{ date }}",
+    "size": "Kích thước",
+    "source": "Mã nguồn",
+    "queued": "Đang chờ máy chấm…",
+    "running": "Đang chấm: {{ done }}/{{ total }} công thức",
+    "unranked": "Không xếp hạng, tác giả có bài gửi tốt hơn.",
+    "solved": "Đã giải",
+    "fuel": "Fuel của các công thức đã giải",
+    "family": "Họ",
+    "wrong": "Câu trả lời sai: {{ count }}. Bài gửi bị loại; hãy kiểm tra trên tập dev bằng dojo run.",
+    "failed": "Việc chấm điểm bị lỗi từ phía chúng tôi. Chúng tôi sẽ thử lại.",
+    "back": "Về bảng xếp hạng",
+    "not_found": "Không có bài gửi này.",
+    "season": "Mùa {{ season }}",
+    "rank_label": "Hạng"
+  },
+  "rejection": {
+    "title": "Máy chấm đã từ chối tệp này",
+    "too_large": "Tệp lớn hơn 8 MiB.",
+    "invalid": "Không phải mô-đun WebAssembly hợp lệ cho dojo: {{ detail }}",
+    "import": "Tệp nhập {{ detail }}, nhưng chỉ có wasi_snapshot_preview1.",
+    "no_start": "Không có hàm _start. Hãy build một chương trình (tệp thực thi), không phải thư viện."
+  },
+  "lab_banner": {
+    "title": "Mới: Dojo SAT",
+    "text": "Nghĩ bộ giải của bạn hơn của chúng tôi? Gửi lên và leo bảng xếp hạng.",
+    "button": "Đến dojo"
+  }
+}

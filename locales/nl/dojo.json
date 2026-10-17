@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "SAT Dojo · een sportschool voor SAT-solvers · Hashi",
+    "description": "Stuur je SAT-solver in als WebAssembly en klim op de ranglijst: geheime, verse formules, deterministische brandstof in plaats van seconden. Open source."
+  },
+  "title": "SAT Dojo",
+  "intro": "Een sportschool voor SAT-solvers. Compileer de jouwe naar WebAssembly, stuur hem in en hij wordt beoordeeld op een geheime set verse formules: Hashi-puzzels, pariteitsvallen, random 3-SAT, duiven en koninginnen.",
+  "stats": {
+    "season": "Seizoen {{ season }}",
+    "formulas": "Formules: {{ count }}",
+    "budget": "{{ budget }} Gfuel per formule",
+    "queued": "In de wachtrij: {{ count }}"
+  },
+  "cta": {
+    "submit": "Solver insturen",
+    "starter": "Starterkit",
+    "dev_set": "Download de devset"
+  },
+  "board": {
+    "title": "Ranglijst",
+    "solver": "Solver",
+    "solved": "Opgelost",
+    "par2": "PAR-2",
+    "families": "Families",
+    "empty": "Nog geen enkele solver heeft de dojo betreden. Wees de eerste!",
+    "house": "eigen",
+    "par2_hint": "Gemiddelde brandstof per formule in miljarden, onopgeloste formules tellen voor twee keer het budget. Lager is beter."
+  },
+  "how": {
+    "title": "Zo werkt het",
+    "build_title": "Bouwen",
+    "build": "Elke taal die naar WASI preview 1 compileert werkt: Rust, C en C++ met wasi-sdk, Zig, Go. Lees DIMACS van stdin en antwoord zoals in de SAT Competition.",
+    "train_title": "Trainen",
+    "train": "Beoordeel je solver lokaal op de openbare devset met de dojo-tool. Die werkt precies zoals de ranglijst, dus je kent je score al voordat je instuurt.",
+    "submit_title": "Insturen",
+    "submit": "Upload het .wasm-bestand. Het draait op de geheime set van het huidige seizoen, op onze eigen machine.",
+    "climb_title": "Klimmen",
+    "climb": "De laagste PAR-2 wint: de gemiddelde brandstof per formule, waarbij onopgeloste formules voor twee keer het budget tellen."
+  },
+  "family": {
+    "title": "De formules",
+    "hashi": "Hashi",
+    "hashi_text": "Hashiwokakero-puzzels van 10×10 tot 28×28 als CNF, zonder de samenhangsregel. Altijd vervulbaar.",
+    "hashi_parity": "Hashi-pariteit",
+    "hashi_parity_text": "Puzzels waarin één getal is veranderd zodat de som oneven is. Onvervulbaar, want elke brug telt twee keer mee. Makkelijk te zien, moeilijk te bewijzen met resolutie.",
+    "random_3sat": "Random 3-SAT",
+    "random_3sat_text": "Uniform random 3-SAT bij de faseovergang, 4,26 clausules per variabele, ongeveer de helft vervulbaar.",
+    "pigeonhole": "Duiventil",
+    "pigeonhole_text": "n+1 duiven in n hokjes: de klassieker die exponentieel lange resolutiebewijzen nodig heeft. Plus een paar waarbij het wel past.",
+    "queens": "Koninginnen",
+    "queens_text": "N koninginnen op borden tot 48×48 met een paar verboden velden."
+  },
+  "fair": {
+    "title": "Fair play",
+    "fuel_title": "Brandstof, geen seconden",
+    "fuel": "Elke uitgevoerde WebAssembly-instructie kost één eenheid brandstof, bulk-geheugenoperaties één per byte. Klokken en willekeurige getallen hebben een vaste seed, dus een solver krijgt op elke machine telkens dezelfde score.",
+    "hidden_title": "Geheime, verse formules",
+    "hidden": "De testset komt uit een geheime seed die elk seizoen verandert, en elke formule wordt door elkaar gehusseld: variabelen hernoemd en geïnverteerd, clausules geschud. Resultaten worden alleen per familie getoond, nooit per formule.",
+    "checked_title": "Elk antwoord gecontroleerd",
+    "checked": "Modellen worden tegen de formule gecontroleerd. UNSAT telt alleen bij formules waarvan bekend is dat ze onvervulbaar zijn. Eén fout antwoord diskwalificeert de inzending, gokken loont dus nooit.",
+    "sandbox_title": "Een verzegelde sandbox",
+    "sandbox": "Geen bestanden, geen netwerk, geen omgevingsvariabelen. Geheugen en uitvoer zijn begrensd, en inzendingen draaien op een aparte machine zonder gegevens.",
+    "accounts_title": "Eén account, beste inzending",
+    "accounts": "Geregistreerde accounts kunnen drie keer per dag insturen. Identieke bestanden worden geweigerd en alleen je beste inzending komt in de ranglijst.",
+    "seasons_title": "Seizoenen",
+    "seasons": "Een nieuw seizoen brengt een nieuwe geheime set en elke inzending wordt opnieuw beoordeeld."
+  },
+  "science": {
+    "title": "Voor onderzoekers",
+    "text": "Brandstof is deterministisch, dus resultaten zijn reproduceerbaar en vergelijkbaar tussen papers: noem het seizoen en de dev-seed. De ranglijst is als JSON beschikbaar op /dojo/board.json, de harness is open source."
+  },
+  "submit": {
+    "title": "Betreed de dojo",
+    "sign_in": "Om in te sturen heb je een account met gebruikersnaam nodig, gasten kunnen niet insturen.",
+    "create_account": "Account aanmaken",
+    "name": "Naam van je solver",
+    "description": "Beschrijving (optioneel)",
+    "description_hint": "Hoe werkt hij? Welke ideeën heb je geprobeerd?",
+    "source": "Link naar de broncode (optioneel)",
+    "file": "WebAssembly-bestand (.wasm, WASI preview 1)",
+    "button": "Insturen",
+    "left": "Inzendingen over vandaag: {{ count }}",
+    "none_left": "Geen inzendingen meer over vandaag, kom morgen terug.",
+    "errors": {
+      "sign_in": "Log eerst in met een geregistreerd account.",
+      "name": "Geef je solver een naam van hoogstens 40 tekens.",
+      "description": "De beschrijving mag hoogstens 600 tekens lang zijn.",
+      "url": "De broncodelink moet een https://-adres zijn.",
+      "size": "Het bestand is te groot, de limiet is 8 MiB.",
+      "not_wasm": "Dat is geen WebAssembly-bestand.",
+      "duplicate": "Precies dit bestand is al eerder ingestuurd.",
+      "limit": "Je hebt vandaag al drie keer ingestuurd.",
+      "server": "Er ging bij ons iets mis, probeer het opnieuw."
+    }
+  },
+  "mine": {
+    "title": "Jouw inzendingen",
+    "empty": "Nog niets ingestuurd."
+  },
+  "state": {
+    "queued": "wachtend",
+    "running": "bezig",
+    "done": "klaar",
+    "rejected": "geweigerd",
+    "failed": "mislukt",
+    "disqualified": "gediskwalificeerd"
+  },
+  "detail": {
+    "meta_title": "{{ name }} · SAT Dojo",
+    "by": "door {{ author }}",
+    "submitted": "Ingestuurd op {{ date }}",
+    "size": "Grootte",
+    "source": "Broncode",
+    "queued": "Wachten op de worker…",
+    "running": "Beoordelen: {{ done }} van {{ total }} formules",
+    "unranked": "Niet in de ranglijst, de auteur heeft een betere inzending.",
+    "solved": "Opgelost",
+    "fuel": "Brandstof van de opgeloste formules",
+    "family": "Familie",
+    "wrong": "Foute antwoorden: {{ count }}. De inzending is gediskwalificeerd; test hem op de devset met dojo run.",
+    "failed": "De beoordeling is bij ons misgegaan. We proberen het opnieuw.",
+    "back": "Terug naar de ranglijst",
+    "not_found": "Deze inzending bestaat niet.",
+    "season": "Seizoen {{ season }}",
+    "rank_label": "Plaats"
+  },
+  "rejection": {
+    "title": "De worker heeft dit bestand geweigerd",
+    "too_large": "Het bestand is groter dan 8 MiB.",
+    "invalid": "Geen geldige WebAssembly-module voor de dojo: {{ detail }}",
+    "import": "Het importeert {{ detail }}, alleen wasi_snapshot_preview1 is beschikbaar.",
+    "no_start": "Er is geen _start-functie. Bouw een programma (een binary), geen bibliotheek."
+  },
+  "lab_banner": {
+    "title": "Nieuw: de SAT Dojo",
+    "text": "Denk je dat jouw solver de onze verslaat? Stuur hem in en klim op de ranglijst.",
+    "button": "Naar de dojo"
+  }
+}

@@ -2,6 +2,7 @@
 name = "common"
 version = "0.2.0"
 edition = "2024"
+license = "MIT"
 
 # Shared between the backend (encoding, solving, generating) and the frontend (playing).
 # Must stay wasm-compatible: no std::time, no filesystem, no heavy dependencies.

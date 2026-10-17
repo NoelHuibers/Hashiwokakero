@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "SAT道場 · SAT 求解器的健身房 · Hashi",
+    "description": "把你的 SAT 求解器編譯成 WebAssembly 提交，衝上排行榜：在隱藏的全新公式上評分，用確定性的燃料取代秒數。免費、開源、可重現。"
+  },
+  "title": "SAT道場",
+  "intro": "SAT 求解器的健身房。把你的求解器編譯成 WebAssembly 並提交，它會在一組隱藏的全新公式上評分：數橋謎題、奇偶陷阱、隨機 3-SAT、鴿籠和皇后。",
+  "stats": {
+    "season": "第 {{ season }} 季",
+    "formulas": "公式：{{ count }} 個",
+    "budget": "每個公式 {{ budget }} Gfuel",
+    "queued": "排隊中：{{ count }} 個"
+  },
+  "cta": {
+    "submit": "提交求解器",
+    "starter": "入門套件",
+    "dev_set": "下載開發集"
+  },
+  "board": {
+    "title": "排行榜",
+    "solver": "求解器",
+    "solved": "已解",
+    "par2": "PAR-2",
+    "families": "類別",
+    "empty": "還沒有求解器進入道場，快來當第一個！",
+    "house": "官方",
+    "par2_hint": "每個公式的平均燃料（單位：十億），未解出的公式以預算的兩倍計。越低越好。"
+  },
+  "how": {
+    "title": "運作方式",
+    "build_title": "建置",
+    "build": "任何能編譯成 WASI preview 1 的語言都可以：Rust、搭配 wasi-sdk 的 C 和 C++、Zig、Go。從標準輸入讀取 DIMACS，並依照 SAT 競賽的格式作答。",
+    "train_title": "訓練",
+    "train": "用 dojo 工具在公開的開發集上於本機為求解器評分。它的執行方式和排行榜完全相同，提交前就能知道分數。",
+    "submit_title": "提交",
+    "submit": "上傳 .wasm 檔案。它會在我們自己的機器上，以本季的隱藏測試集執行。",
+    "climb_title": "攀升",
+    "climb": "PAR-2 最低者勝出：也就是每個公式的平均燃料，未解出的公式以預算的兩倍計。"
+  },
+  "family": {
+    "title": "公式",
+    "hashi": "數橋",
+    "hashi_text": "從 10×10 到 28×28 的數橋謎題編碼成的 CNF，不含連通性規則。一定可滿足。",
+    "hashi_parity": "數橋奇偶",
+    "hashi_parity_text": "改動一個數字、讓數字總和變成奇數的謎題。每座橋都會讓總和加二，所以不可滿足。一眼就看得出來，用歸結卻很難證明。",
+    "random_3sat": "隨機 3-SAT",
+    "random_3sat_text": "位於相變點的均勻隨機 3-SAT，每個變數 4.26 個子句，大約一半可滿足。",
+    "pigeonhole": "鴿籠",
+    "pigeonhole_text": "n+1 隻鴿子放進 n 個籠子：需要指數長度歸結證明的經典問題。另外還有幾個剛好放得下的。",
+    "queens": "皇后",
+    "queens_text": "最大 48×48 棋盤上的 N 皇后問題，附帶幾個禁用格。"
+  },
+  "fair": {
+    "title": "公平競賽",
+    "fuel_title": "看燃料，不看秒數",
+    "fuel": "每執行一道 WebAssembly 指令消耗一單位燃料，批次記憶體操作則每位元組一單位。時鐘和亂數都有固定種子，所以同一個求解器在任何機器上、任何時候都會拿到相同分數。",
+    "hidden_title": "隱藏的全新公式",
+    "hidden": "測試集由每季更換的祕密種子產生，每個公式都經過打亂：變數重新命名並取反，子句重新排序。結果只依類別顯示，絕不逐一公式顯示。",
+    "checked_title": "每個答案都會驗證",
+    "checked": "模型會代入公式驗證。UNSAT 只在已知不可滿足的公式上才算數。只要答錯一次，提交就會被取消資格，所以亂猜絕對不划算。",
+    "sandbox_title": "密封的沙盒",
+    "sandbox": "沒有檔案、沒有網路、沒有環境變數。記憶體和輸出都有上限，提交會在一台不存放任何資料的獨立機器上執行。",
+    "accounts_title": "一個帳號，只計最佳",
+    "accounts": "註冊帳號每天可以提交三次。完全相同的檔案會被拒絕，只有你最好的一次提交會列入排名。",
+    "seasons_title": "賽季",
+    "seasons": "新賽季會帶來新的隱藏測試集，所有提交都會重新評測。"
+  },
+  "science": {
+    "title": "給研究者",
+    "text": "燃料是確定性的，所以結果可重現，也能在論文之間比較：註明賽季和開發集種子即可。排行榜以 JSON 格式提供於 /dojo/board.json，評測框架也是開源的。"
+  },
+  "submit": {
+    "title": "踏入道場",
+    "sign_in": "提交需要一個有使用者名稱的帳號，訪客無法提交。",
+    "create_account": "建立帳號",
+    "name": "求解器名稱",
+    "description": "簡介（選填）",
+    "description_hint": "它是怎麼運作的？你嘗試了哪些點子？",
+    "source": "原始碼連結（選填）",
+    "file": "WebAssembly 檔案（.wasm，WASI preview 1）",
+    "button": "提交",
+    "left": "今天剩餘提交次數：{{ count }}",
+    "none_left": "今天的提交次數已用完，明天再來吧。",
+    "errors": {
+      "sign_in": "請先用註冊帳號登入。",
+      "name": "請為你的求解器取一個不超過 40 個字元的名稱。",
+      "description": "簡介最多 600 個字元。",
+      "url": "原始碼連結必須是 https:// 網址。",
+      "size": "檔案太大，上限為 8 MiB。",
+      "not_wasm": "這不是 WebAssembly 檔案。",
+      "duplicate": "完全相同的檔案之前已經提交過了。",
+      "limit": "你今天已經提交三次了。",
+      "server": "我們這邊出了問題，請再試一次。"
+    }
+  },
+  "mine": {
+    "title": "我的提交",
+    "empty": "還沒有提交。"
+  },
+  "state": {
+    "queued": "排隊中",
+    "running": "執行中",
+    "done": "完成",
+    "rejected": "已拒絕",
+    "failed": "失敗",
+    "disqualified": "取消資格"
+  },
+  "detail": {
+    "meta_title": "{{ name }} · SAT道場",
+    "by": "作者：{{ author }}",
+    "submitted": "提交於 {{ date }}",
+    "size": "大小",
+    "source": "原始碼",
+    "queued": "正在等待評測機…",
+    "running": "評測中：{{ done }} / {{ total }} 個公式",
+    "unranked": "未列入排名，作者有更好的提交。",
+    "solved": "已解",
+    "fuel": "已解公式的燃料",
+    "family": "類別",
+    "wrong": "錯誤答案：{{ count }} 個。這次提交已被取消資格；請用 dojo run 在開發集上檢查。",
+    "failed": "評測在我們這邊失敗了，我們會再試一次。",
+    "back": "回到排行榜",
+    "not_found": "找不到這個提交。",
+    "season": "第 {{ season }} 季",
+    "rank_label": "名次"
+  },
+  "rejection": {
+    "title": "評測機拒絕了這個檔案",
+    "too_large": "檔案超過 8 MiB。",
+    "invalid": "不是道場可用的有效 WebAssembly 模組：{{ detail }}",
+    "import": "它匯入了 {{ detail }}，但只有 wasi_snapshot_preview1 可用。",
+    "no_start": "沒有 _start 函式。請建置成程式（執行檔），而不是函式庫。"
+  },
+  "lab_banner": {
+    "title": "新功能：SAT道場",
+    "text": "覺得你的求解器比我們的強？提交上來，衝上排行榜。",
+    "button": "前往道場"
+  }
+}

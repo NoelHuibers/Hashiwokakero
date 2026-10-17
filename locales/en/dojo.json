@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "SAT Dojo · a gym for SAT solvers · Hashi",
+    "description": "Submit your SAT solver as WebAssembly and climb the leaderboard: scored on hidden, fresh formulas with deterministic fuel instead of seconds. Free, open source, reproducible."
+  },
+  "title": "SAT Dojo",
+  "intro": "A gym for SAT solvers. Compile yours to WebAssembly, submit it, and it is scored on a hidden set of fresh formulas: Hashi puzzles, parity traps, random 3-SAT, pigeons and queens.",
+  "stats": {
+    "season": "Season {{ season }}",
+    "formulas": "Formulas: {{ count }}",
+    "budget": "{{ budget }} Gfuel per formula",
+    "queued": "In the queue: {{ count }}"
+  },
+  "cta": {
+    "submit": "Submit a solver",
+    "starter": "Starter kit",
+    "dev_set": "Download the dev set"
+  },
+  "board": {
+    "title": "Leaderboard",
+    "solver": "Solver",
+    "solved": "Solved",
+    "par2": "PAR-2",
+    "families": "Families",
+    "empty": "No solver has entered the dojo yet. Be the first!",
+    "house": "house",
+    "par2_hint": "Mean fuel per formula in billions, unsolved formulas count twice the budget. Lower is better."
+  },
+  "how": {
+    "title": "How it works",
+    "build_title": "Build",
+    "build": "Any language that compiles to WASI preview 1 works: Rust, C and C++ with wasi-sdk, Zig, Go. Read DIMACS on stdin and answer like in the SAT competition.",
+    "train_title": "Train",
+    "train": "Score your solver locally on the public dev set with the dojo tool. It runs exactly like the leaderboard, so you know your score before you submit.",
+    "submit_title": "Submit",
+    "submit": "Upload the .wasm file. It runs on the hidden set of the current season, on our own machine.",
+    "climb_title": "Climb",
+    "climb": "The lowest PAR-2 wins: the mean fuel per formula, where unsolved formulas count twice the budget."
+  },
+  "family": {
+    "title": "The formulas",
+    "hashi": "Hashi",
+    "hashi_text": "Hashiwokakero puzzles from 10×10 to 28×28 as CNF, without the connectivity rule. Always satisfiable.",
+    "hashi_parity": "Hashi parity",
+    "hashi_parity_text": "Puzzles with one number changed so the numbers add up to an odd sum. Unsatisfiable, since every bridge adds two. Easy to see, hard to prove by resolution.",
+    "random_3sat": "Random 3-SAT",
+    "random_3sat_text": "Uniform random 3-SAT at the phase transition, 4.26 clauses per variable, about half of them satisfiable.",
+    "pigeonhole": "Pigeonhole",
+    "pigeonhole_text": "n+1 pigeons in n holes: the classic that needs exponentially long resolution proofs. Plus a few that do fit.",
+    "queens": "Queens",
+    "queens_text": "N queens on boards up to 48×48 with a few forbidden squares."
+  },
+  "fair": {
+    "title": "Fair play",
+    "fuel_title": "Fuel, not seconds",
+    "fuel": "Every executed WebAssembly instruction costs one unit of fuel, bulk memory operations one per byte. Clocks and random numbers are seeded, so a solver gets the same score on every machine, every time.",
+    "hidden_title": "Hidden, fresh formulas",
+    "hidden": "The test set comes from a secret seed that changes every season, and every formula is scrambled: variables renamed and negated, clauses shuffled. Results are shown per family only, never per formula.",
+    "checked_title": "Every answer checked",
+    "checked": "Models are verified against the formula. UNSAT counts only for formulas known to be unsatisfiable. A single wrong answer disqualifies the submission, so guessing never pays.",
+    "sandbox_title": "A sealed sandbox",
+    "sandbox": "No files, no network, no environment. Memory and output are capped, and submissions run on a separate machine that holds no data.",
+    "accounts_title": "One account, best entry",
+    "accounts": "Registered accounts can submit three times a day. Identical files are refused and only your best submission is ranked.",
+    "seasons_title": "Seasons",
+    "seasons": "A new season brings a new hidden set and every submission is evaluated again."
+  },
+  "science": {
+    "title": "For researchers",
+    "text": "Fuel is deterministic, so results are reproducible and comparable between papers: name the season and the dev seed. The leaderboard is available as JSON at /dojo/board.json, the harness is open source."
+  },
+  "submit": {
+    "title": "Enter the dojo",
+    "sign_in": "Submitting needs an account with a username, guests can't submit.",
+    "create_account": "Create an account",
+    "name": "Name of your solver",
+    "description": "Description (optional)",
+    "description_hint": "How does it work? Which ideas did you try?",
+    "source": "Link to the source code (optional)",
+    "file": "WebAssembly file (.wasm, WASI preview 1)",
+    "button": "Submit",
+    "left": "Submissions left today: {{ count }}",
+    "none_left": "No submissions left today, come back tomorrow.",
+    "errors": {
+      "sign_in": "Please sign in with a registered account first.",
+      "name": "Give your solver a name of up to 40 characters.",
+      "description": "The description can be at most 600 characters long.",
+      "url": "The source link has to be an https:// address.",
+      "size": "The file is too large, the limit is 8 MiB.",
+      "not_wasm": "That is not a WebAssembly file.",
+      "duplicate": "This exact file was submitted before.",
+      "limit": "You already submitted three times today.",
+      "server": "Something went wrong on our side, please try again."
+    }
+  },
+  "mine": {
+    "title": "Your submissions",
+    "empty": "Nothing submitted yet."
+  },
+  "state": {
+    "queued": "queued",
+    "running": "running",
+    "done": "done",
+    "rejected": "rejected",
+    "failed": "failed",
+    "disqualified": "disqualified"
+  },
+  "detail": {
+    "meta_title": "{{ name }} · SAT Dojo",
+    "by": "by {{ author }}",
+    "submitted": "Submitted {{ date }}",
+    "size": "Size",
+    "source": "Source code",
+    "queued": "Waiting for the worker…",
+    "running": "Evaluating: {{ done }} of {{ total }} formulas",
+    "unranked": "Not ranked, the author has a better submission.",
+    "solved": "Solved",
+    "fuel": "Fuel of the solved formulas",
+    "family": "Family",
+    "wrong": "Wrong answers: {{ count }}. The submission is disqualified; check it on the dev set with dojo run.",
+    "failed": "The evaluation failed on our side. We will try again.",
+    "back": "Back to the leaderboard",
+    "not_found": "There is no such submission.",
+    "season": "Season {{ season }}",
+    "rank_label": "Rank"
+  },
+  "rejection": {
+    "title": "The worker refused this file",
+    "too_large": "The file is larger than 8 MiB.",
+    "invalid": "Not a valid WebAssembly module for the dojo: {{ detail }}",
+    "import": "It imports {{ detail }}, only wasi_snapshot_preview1 is available.",
+    "no_start": "There is no _start function. Build a program (a binary), not a library."
+  },
+  "lab_banner": {
+    "title": "New: the SAT Dojo",
+    "text": "Think your solver beats ours? Submit it and climb the leaderboard.",
+    "button": "To the dojo"
+  }
+}
