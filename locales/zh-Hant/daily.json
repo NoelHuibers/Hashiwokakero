@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · 每日數橋邏輯謎題 · 免費線上玩",
+    "description": "每天一道新的數橋（Hashiwokakero）謎題，大家都玩同一題：可愛的日式像素畫風、排行榜與連勝紀錄，每題唯一解。"
+  },
+  "title": "每日一橋 #{{ number }}",
+  "penalty": "罰時",
+  "give_up": "放棄",
+  "give_up_confirm": "要讓 SAT 求解器顯示解答嗎？今天的成績將不列入排名。",
+  "share": "Hashi 橋 每日 #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "今日之橋",
+    "text": "按下開始後謎題才會出現，計時在伺服器上進行。提示加 30 秒，檢查加 10 秒，查看解答就不列入排名。",
+    "start": "開始",
+    "preparing": "準備中…",
+    "playing_as": "以 {{ name }} 的身分遊玩",
+    "playing_as_guest": "以 {{ name }}（訪客）的身分遊玩",
+    "no_account": "不用註冊帳號，你會以訪客身分遊玩。"
+  },
+  "result": {
+    "revealed_title": "由 SAT 求解器解出",
+    "revealed_text": "這局不列入排名。明天見！",
+    "rank": "今日第 {{ rank }} 名，共 {{ total }} 人",
+    "ranking": "排名中…",
+    "more": "練習模式還有更多謎題 →",
+    "on_board": "你以 <b>{{ name }}</b> 的名字登上排行榜了。",
+    "claim": "註冊你的名字，在所有裝置上保留連勝紀錄 →"
+  },
+  "ranking": {
+    "title": "今日排名",
+    "all": "全部 →",
+    "crossed": "今日過橋：{{ count }} 人"
+  },
+  "week": {
+    "title": "本週",
+    "text": "就像報紙上的謎題，越接近週日，橋就越難。",
+    "next": "下一座橋還有"
+  }
+}

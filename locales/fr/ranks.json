@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Classement du jour · Hashi, le casse-tête des ponts",
+    "description": "Les joueurs de Hashiwokakero les plus rapides du jour, le classement de chaque défi passé et le panthéon des défis les plus résolus et des plus longues séries."
+  },
+  "title": "Classement",
+  "intro": "Chaque jour, tout le monde joue le même pont. Le meilleur temps gagne, les indices et vérifications s’y ajoutent, les solutions révélées ne comptent pas.",
+  "finished": "ont terminé : {{ count }}",
+  "earlier": "Précédent",
+  "later": "Suivant",
+  "today": "Aujourd’hui",
+  "missed": "Tu l’as raté ? Joue-le sans chrono.",
+  "practice_it": "Y jouer",
+  "archive_name": "Défi n° {{ number }}",
+  "no_puzzle": "Personne n’a joué ce jour-là, il n’y a donc pas de grille.",
+  "fame": {
+    "title": "Panthéon",
+    "text": "Le plus de défis résolus, et la plus longue série de jours d’affilée.",
+    "empty": "Aucun défi résolu pour l’instant.",
+    "player": "Joueur"
+  }
+}

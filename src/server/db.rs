@@ -114,7 +114,7 @@ pub async fn migrate(conn: &Connection) -> Result<(), String> {
 /// A connection for the current request.
 pub fn conn() -> Result<Connection, ServerFnError> {
     DB.get()
-        .ok_or_else(|| ServerFnError::new("database not initialized"))?
+        .ok_or_else(|| crate::model::ApiError::Internal.fail())?
         .connect()
         .map_err(db_err)
 }
@@ -122,5 +122,5 @@ pub fn conn() -> Result<Connection, ServerFnError> {
 pub fn db_err(e: libsql::Error) -> ServerFnError {
     // Details go to the log, not to the player
     eprintln!("database error: {e}");
-    ServerFnError::new("database error, please try again")
+    crate::model::ApiError::Database.fail()
 }

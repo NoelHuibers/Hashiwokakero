@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Crie seu próprio puzzle Hashiwokakero · Hashi",
+    "description": "Monte um puzzle de Pontes na oficina: posicione ilhas, deixe um solver SAT verificar que há uma única solução, exporte como texto e jogue."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Oficina de puzzles",
+  "intro": "Posicione ilhas, deixe o solver SAT verificar que seu puzzle tem exatamente uma solução e depois jogue.",
+  "keys": {
+    "click": "Clique",
+    "right_click": "Clique direito",
+    "set": "colocar",
+    "erase": "apagar (com o cursor em cima)"
+  },
+  "brush": {
+    "count_up": "Cada toque aumenta o número",
+    "erase": "Apagar",
+    "place": "Colocar um {{ number }}"
+  },
+  "heads_up": "Atenção",
+  "warning_capacity": "O {{ number }} em ({{ x }}, {{ y }}) precisa de {{ number }} pontes, mas pode ter no máximo {{ max }}.",
+  "warning_odd": "Os números somam {{ total }}, uma soma ímpar nunca tem solução.",
+  "grid": "Grade",
+  "grid_size": "{{ width }}×{{ height }} células, ilhas: {{ count }}",
+  "width": "Largura",
+  "height": "Altura",
+  "fill": "Preencher com um puzzle gerado",
+  "import": "Importar .txt",
+  "export": "Exportar .txt",
+  "play": "Jogar este puzzle",
+  "unique": "Única: um belo puzzle!",
+  "not_unique": "Mais de uma solução, adicione ou altere ilhas.",
+  "imported": "Importado: {{ name }}",
+  "unreadable": "Não foi possível ler {{ name }}",
+  "brush_label": "Pincel"
+}

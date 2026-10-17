@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Daily Hashiwokakero (Bridges) puzzle, free online",
+    "description": "A new Hashiwokakero (Bridges) puzzle every day, the same for everyone: cute Japanese pixel art, a leaderboard and streaks, and every puzzle has exactly one solution."
+  },
+  "title": "Daily bridge #{{ number }}",
+  "penalty": "Penalty",
+  "give_up": "Give up",
+  "give_up_confirm": "Let the SAT solver show the solution? Today's run won't be ranked.",
+  "share": "Hashi 橋 Daily #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "Today's bridge",
+    "text": "The puzzle appears when you press start, the clock runs on the server. Hints add 30 s, checks 10 s, revealing the solution leaves you unranked.",
+    "start": "Start",
+    "preparing": "Preparing…",
+    "playing_as": "Playing as {{ name }}",
+    "playing_as_guest": "Playing as {{ name }} (guest)",
+    "no_account": "No account needed, you'll play as a guest."
+  },
+  "result": {
+    "revealed_title": "Solved by the SAT solver",
+    "revealed_text": "This one doesn't count for the ranking. See you tomorrow!",
+    "rank": "Rank {{ rank }} of {{ total }} today",
+    "ranking": "Ranking…",
+    "more": "More puzzles in practice mode →",
+    "on_board": "You're on the board as <b>{{ name }}</b>.",
+    "claim": "Claim your name to keep your streak on every device →"
+  },
+  "ranking": {
+    "title": "Today's ranking",
+    "all": "All →",
+    "crossed": "Crossed today: {{ count }}"
+  },
+  "week": {
+    "title": "This week",
+    "text": "Like a newspaper puzzle, the bridges get harder towards Sunday.",
+    "next": "Next bridge in"
+  }
+}

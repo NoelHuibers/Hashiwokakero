@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Cara bermain Hashiwokakero · Aturan dan tips · Hashi",
+    "description": "Aturan Hashiwokakero (Jembatan) dengan contoh, deduksi yang memecahkan sebagian besar teka-teki tanpa menebak, dan cara solver SAT membuktikan solusi unik."
+  },
+  "title": "Cara bermain",
+  "intro": "Hashiwokakero (橋をかけろ, “bangun jembatan!”) adalah teka-teki logika terbitan Nikoli. Hubungkan semua pulau dengan jembatan sehingga setiap pulau punya jembatan tepat sebanyak angkanya.",
+  "rule": {
+    "count_title": "Hitung jembatannya",
+    "count": "Angka di sebuah pulau menunjukkan berapa jembatan yang berujung di sana.",
+    "double_title": "Satu atau dua",
+    "double": "Pulau bisa dihubungkan dengan satu jembatan kayu atau jembatan ganda berwarna merah, tidak lebih.",
+    "straight_title": "Lurus, tanpa silang",
+    "straight": "Jembatan berjalan horizontal atau vertikal dan tidak boleh menyilang jembatan atau pulau lain.",
+    "connected_title": "Satu kepulauan",
+    "connected": "Pada akhirnya setiap pulau harus bisa dicapai dari pulau mana pun."
+  },
+  "example": "Teka-teki yang sudah selesai",
+  "controls": {
+    "title": "Kontrol",
+    "tap": "Klik air di antara dua pulau untuk membangun jembatan, klik lagi untuk jembatan kedua, klik ketiga menghapus keduanya.",
+    "drag": "Atau seret dari sebuah pulau ke tetangganya, atau klik dua pulau satu per satu.",
+    "remove": "<right>Klik kanan</right> / <shift>Shift</shift> + klik menghapus jembatan.",
+    "colors": "Pulau yang lengkap jadi hijau, yang kelebihan jadi merah. Buntu? Minta solver SAT memberi petunjuk atau mengecek jembatanmu."
+  },
+  "hood": {
+    "title": "Di balik layar",
+    "variables": "Setiap jembatan yang mungkin <e>e</e> di antara dua pulau bertetangga mendapat dua variabel boolean: <e1>e₁</e1> (minimal satu jembatan) dan <e2>e₂</e2> (jembatan kedua), dengan <imp>e₂ → e₁</imp> sehingga setiap susunan punya tepat satu model.",
+    "islands": "Pulau dengan angka n butuh tepat n variabelnya bernilai benar, ditulis sebagai klausa atas semua kombinasi. Jembatan yang bersilangan saling meniadakan:",
+    "connectivity": "Keterhubungan sulit dinyatakan dalam CNF, jadi ditambahkan secara lazy: setiap kali solver mengembalikan kelompok pulau yang terpisah, klausa yang mewajibkan jembatan keluar dari kelompok itu ditambahkan dan solver dijalankan lagi.",
+    "generator": "Generator menumbuhkan kepulauan acak dan membuktikan keunikan dengan memblokir solusi yang ditemukan lalu meminta solver mencari solusi lain. Coba berbagai mode solver di <a>lab</a>."
+  },
+  "faq_title": "Pertanyaan tentang Hashiwokakero",
+  "faq": {
+    "what_q": "Apa itu Hashiwokakero?",
+    "what_a": "Hashiwokakero (橋をかけろ, “bangun jembatan”), juga disebut Bridges atau Hashi, adalah teka-teki logika Jepang terbitan Nikoli. Kisi menampilkan pulau bernomor; kamu menghubungkannya dengan jembatan horizontal dan vertikal sehingga setiap pulau punya jembatan tepat sebanyak angkanya, tidak ada jembatan yang bersilangan, dan semua pulau membentuk satu kelompok yang terhubung.",
+    "how_many_q": "Berapa jembatan yang bisa menghubungkan dua pulau?",
+    "how_many_a": "Paling banyak dua. Jembatan tunggal atau ganda bisa menghubungkan dua pulau yang berada di baris atau kolom yang sama tanpa ada apa pun di antaranya.",
+    "cross_q": "Bolehkah jembatan saling bersilangan?",
+    "cross_a": "Tidak. Jembatan berjalan lurus secara horizontal atau vertikal dan tidak boleh menyilang jembatan lain maupun melewati pulau.",
+    "connected_q": "Apakah semua pulau harus terhubung?",
+    "connected_a": "Ya. Pada teka-teki yang selesai, kamu bisa berpindah dari pulau mana pun ke pulau lain lewat jembatan; semua pulau membentuk satu jaringan.",
+    "unique_q": "Apakah selalu ada tepat satu solusi?",
+    "unique_a": "Di Hashi, ya: setiap teka-teki yang dibuat dicek oleh solver SAT, yang membuktikan tidak ada solusi kedua, jadi kamu tidak perlu menebak."
+  }
+}

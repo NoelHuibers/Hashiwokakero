@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "Täglich",
+    "practice": "Üben",
+    "ranks": "Ranking",
+    "create": "Bauen",
+    "lab": "Labor",
+    "main": "Hauptnavigation"
+  },
+  "tagline_short": "Brücken",
+  "language": "Sprache",
+  "account": "Konto",
+  "sign_in": "Anmelden",
+  "theme": {
+    "toggle": "Dunkelmodus umschalten",
+    "to_day": "Zum Tag wechseln 昼",
+    "to_night": "Zur Nacht wechseln 夜"
+  },
+  "footer": {
+    "tagline": "<em>Bau Brücken</em>. Vom SAT-Solver gelöst, von dir gespielt.",
+    "made_by": "Gemacht von {{ author }}",
+    "how_to_play": "Spielanleitung",
+    "open_source": "Open Source auf GitHub",
+    "tech": "Rust · Leptos · Turso · eigene CDCL- & DPLL-Solver"
+  },
+  "difficulty": {
+    "easy": "Leicht",
+    "medium": "Mittel",
+    "hard": "Schwer",
+    "expert": "Experte",
+    "oni": "Oni"
+  },
+  "source": {
+    "daily": "Brücke des Tages · {{ date }}",
+    "custom": "Dein eigenes Rätsel",
+    "imported": "Importiert · {{ name }}"
+  },
+  "toast": {
+    "unsat": "Der SAT-Solver hat bewiesen: Dieses Rätsel hat keine Lösung.",
+    "timeout": "Dem Solver ist die Zeit ausgegangen. Probier eine andere Konfiguration.",
+    "nothing_to_hint": "Kein Tipp nötig, jede Brücke liegt schon.",
+    "all_correct": "So weit, so gut: Jede Brücke gehört zur Lösung.",
+    "wrong_bridges": "Brücken, die nicht zur Lösung gehören: {{ count }}",
+    "unique": "Bewiesen: Die Lösung ist eindeutig.",
+    "not_unique": "Dieses Rätsel hat mehr als eine Lösung.",
+    "copied": "Ergebnis in die Zwischenablage kopiert."
+  },
+  "errors": {
+    "unknown": "Etwas ist schiefgelaufen: {{ detail }}",
+    "database": "Die Datenbank antwortet nicht, bitte versuch es noch einmal.",
+    "internal": "Auf dem Server ist etwas schiefgelaufen, bitte versuch es noch einmal.",
+    "archive_only_past": "Nur frühere Tagesrätsel können geübt werden.",
+    "password_too_short": "Passwörter brauchen mindestens 8 Zeichen.",
+    "password_too_long": "Passwörter dürfen höchstens 128 Zeichen haben.",
+    "username_invalid": "Benutzernamen haben 3 bis 20 Zeichen: Buchstaben, Ziffern, _ und -.",
+    "username_taken": "Dieser Benutzername ist schon vergeben.",
+    "wrong_login": "Falscher Benutzername oder falsches Passwort.",
+    "too_many_attempts": "Zu viele Fehlversuche, bitte warte ein paar Minuten.",
+    "session_expired": "Deine Sitzung ist abgelaufen, bitte lade die Seite neu.",
+    "not_started": "Starte zuerst das Tagesrätsel.",
+    "not_solved": "Das ist noch keine Lösung.",
+    "wrong_puzzle": "Diese Brücken gehören nicht zu diesem Rätsel.",
+    "already_finished": "Du hast dieses Tagesrätsel schon abgeschlossen."
+  },
+  "solver": {
+    "title": "SAT-Solver",
+    "description": "Das Rätsel wird als CNF kodiert und von unseren eigenen Solvern aus dem SAT-Labor gelöst.",
+    "solver": "Solver",
+    "own_cdcl": "Eigener CDCL",
+    "own_dpll": "Eigener DPLL",
+    "heuristic": "Verzweigungsheuristik",
+    "splr_heuristic": "splrs eigene (EVSIDS)",
+    "restarts": "Neustarts",
+    "restarts_none": "Keine Neustarts",
+    "restarts_fixed": "Festes Intervall",
+    "restarts_geometric": "Geometrisch",
+    "restarts_luby": "Luby-Folge",
+    "subsumption": "Subsumption",
+    "subsumption_short": "Subsumption",
+    "subsumption_hint": "Subsumierte Klauseln vor dem Lösen entfernen",
+    "preprocess": "Vorverarbeitung",
+    "timeout": "Zeitlimit"
+  },
+  "ranking": {
+    "you": "du",
+    "guest": "Gast",
+    "guest_name": "Gast",
+    "penalties": "Tipps · Prüfungen",
+    "empty": "Noch hat niemand die Brücke überquert. Mach den Anfang!"
+  },
+  "board": {
+    "label": "Hashiwokakero-Spielfeld",
+    "zoom": "Vergrößern",
+    "fit": "Spielfeld einpassen",
+    "zoom_hint": "Wischen zum Verschieben, tippen zum Bauen",
+    "cells_small": "Felder zu klein?"
+  },
+  "not_found": {
+    "title": "Verschollen auf See",
+    "text": "Zu dieser Seite führt keine Brücke. Wir bringen dich zurück zu den Inseln.",
+    "back": "Zurück zum Spiel"
+  },
+  "game": {
+    "time": "Zeit",
+    "moves": "Züge",
+    "hints": "Tipps",
+    "undo": "Rückgängig",
+    "redo": "Wiederholen",
+    "clear": "Leeren",
+    "restart": "Neustart",
+    "check": "Prüfen",
+    "hint": "Tipp",
+    "solve": "Lösen",
+    "unique": "Eindeutig?",
+    "well_done": "Gut gemacht!",
+    "share": "Ergebnis teilen",
+    "loading": "Lädt…",
+    "islands_complete": "Inseln fertig",
+    "groups": "{{ count }} getrennte Gruppen",
+    "all_connected": "alles verbunden",
+    "islands": "{{ count }} Inseln",
+    "unique_solution": "eindeutige Lösung ✓",
+    "several_solutions": "mehrere Lösungen"
+  },
+  "weekday": {
+    "mon": "Montag",
+    "tue": "Dienstag",
+    "wed": "Mittwoch",
+    "thu": "Donnerstag",
+    "fri": "Freitag",
+    "sat": "Samstag",
+    "sun": "Sonntag"
+  },
+  "month": {
+    "jan": "Januar",
+    "feb": "Februar",
+    "mar": "März",
+    "apr": "April",
+    "may": "Mai",
+    "jun": "Juni",
+    "jul": "Juli",
+    "aug": "August",
+    "sep": "September",
+    "oct": "Oktober",
+    "nov": "November",
+    "dec": "Dezember"
+  },
+  "date_long": "{{ weekday }}, {{ day }}. {{ month }} {{ year }}",
+  "date_short": "{{ day }}. {{ month }} {{ year }}",
+  "og_image_alt": "Ein gelöstes Hashiwokakero-Rätsel in Pixel-Art: nummerierte Inseln, verbunden durch hölzerne und zinnoberrote Brücken",
+  "ld": {
+    "site": "Hashiwokakero, das japanische Brückenrätsel, kostenlos im Browser spielbar.",
+    "game": "Verbinde die Inseln mit Brücken, sodass jede Insel so viele Brücken hat, wie ihre Zahl angibt. Ein Tagesrätsel mit Rangliste, fünf Schwierigkeitsgrade, Pixel-Art – und jedes Rätsel hat genau eine Lösung."
+  }
+}

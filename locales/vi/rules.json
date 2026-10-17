@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Cách chơi Hashiwokakero · Luật và mẹo giải · Hashi",
+    "description": "Luật chơi Hashiwokakero (Nối cầu) kèm ví dụ, các suy luận giải được hầu hết câu đố mà không cần đoán, và cách bộ giải SAT chứng minh lời giải duy nhất."
+  },
+  "title": "Cách chơi",
+  "intro": "Hashiwokakero (橋をかけろ, “hãy xây cầu!”) là câu đố logic do Nikoli phát hành. Hãy nối tất cả các đảo bằng cầu sao cho số cầu của mỗi đảo đúng bằng con số ghi trên nó.",
+  "rule": {
+    "count_title": "Đếm cầu",
+    "count": "Con số trên đảo cho biết có bao nhiêu cây cầu nối tới đảo đó.",
+    "double_title": "Một hoặc hai",
+    "double": "Hai đảo có thể được nối bằng một cầu gỗ đơn hoặc một cầu đôi đỏ son, không hơn.",
+    "straight_title": "Thẳng, không cắt nhau",
+    "straight": "Cầu chạy theo chiều ngang hoặc dọc và không được cắt qua cầu khác hay đảo.",
+    "connected_title": "Một quần đảo",
+    "connected": "Cuối cùng, từ mỗi đảo phải đi được tới mọi đảo khác."
+  },
+  "example": "Một câu đố đã giải",
+  "controls": {
+    "title": "Điều khiển",
+    "tap": "Bấm vào mặt nước giữa hai đảo để xây cầu, bấm lần nữa để thêm cầu thứ hai, lần thứ ba sẽ gỡ bỏ.",
+    "drag": "Hoặc kéo từ một đảo về phía đảo láng giềng, hoặc bấm lần lượt vào hai đảo.",
+    "remove": "<right>Chuột phải</right> / <shift>Shift</shift> + bấm để gỡ một cây cầu.",
+    "colors": "Đảo hoàn thành chuyển xanh lá, đảo thừa cầu chuyển đỏ. Bí rồi? Hãy nhờ bộ giải SAT gợi ý hoặc kiểm tra các cây cầu của bạn."
+  },
+  "hood": {
+    "title": "Bên trong",
+    "variables": "Mỗi cây cầu khả dĩ <e>e</e> giữa hai đảo láng giềng có hai biến boolean: <e1>e₁</e1> (có ít nhất một cầu) và <e2>e₂</e2> (có cầu thứ hai), với <imp>e₂ → e₁</imp> để mỗi cách xếp cầu ứng với đúng một mô hình.",
+    "islands": "Một đảo mang số n cần đúng n biến của nó nhận giá trị đúng, được viết thành các mệnh đề trên mọi tổ hợp. Các cầu cắt nhau loại trừ lẫn nhau:",
+    "connectivity": "Tính liên thông khó biểu diễn trong CNF, nên được thêm vào một cách lười biếng: mỗi khi bộ giải trả về các nhóm đảo tách rời, một mệnh đề yêu cầu có cầu đi ra khỏi nhóm đó được thêm vào và bộ giải chạy lại.",
+    "generator": "Bộ sinh tạo ra một quần đảo ngẫu nhiên và chứng minh tính duy nhất bằng cách chặn lời giải vừa tìm được rồi yêu cầu bộ giải tìm lời giải khác. Hãy thử các chế độ bộ giải khác nhau trong <a>phòng lab</a>."
+  },
+  "faq_title": "Câu hỏi về Hashiwokakero",
+  "faq": {
+    "what_q": "Hashiwokakero là gì?",
+    "what_a": "Hashiwokakero (橋をかけろ, “hãy xây cầu”), còn gọi là Nối cầu, Bridges hay Hashi, là câu đố logic Nhật Bản do Nikoli phát hành. Lưới gồm các hòn đảo đánh số; bạn nối chúng bằng các cây cầu ngang và dọc sao cho số cầu của mỗi đảo đúng bằng con số của nó, không có cầu nào cắt nhau, và tất cả các đảo tạo thành một nhóm liên thông.",
+    "how_many_q": "Hai đảo có thể được nối bởi bao nhiêu cây cầu?",
+    "how_many_a": "Tối đa hai. Một cầu đơn hoặc cầu đôi có thể nối hai đảo nằm cùng hàng hoặc cùng cột mà không có gì ở giữa.",
+    "cross_q": "Các cây cầu có được cắt nhau không?",
+    "cross_a": "Không. Cầu chạy thẳng theo chiều ngang hoặc dọc, không được cắt qua cầu khác cũng như không được đi qua đảo.",
+    "connected_q": "Tất cả các đảo có phải được nối với nhau không?",
+    "connected_a": "Có. Trong một câu đố đã hoàn thành, bạn có thể đi từ bất kỳ đảo nào tới bất kỳ đảo nào khác qua các cây cầu, các đảo tạo thành một mạng lưới duy nhất.",
+    "unique_q": "Có luôn đúng một lời giải không?",
+    "unique_a": "Trên Hashi thì có: mỗi câu đố được tạo ra đều được bộ giải SAT kiểm tra và chứng minh không tồn tại lời giải thứ hai, nên bạn không bao giờ phải đoán."
+  }
+}

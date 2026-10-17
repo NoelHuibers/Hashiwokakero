@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "Harian",
+    "practice": "Latihan",
+    "ranks": "Peringkat",
+    "create": "Buat",
+    "lab": "Lab",
+    "main": "Navigasi utama"
+  },
+  "tagline_short": "Jembatan",
+  "language": "Bahasa",
+  "account": "Akun",
+  "sign_in": "Masuk",
+  "theme": {
+    "toggle": "Ganti mode gelap",
+    "to_day": "Ganti ke siang 昼",
+    "to_night": "Ganti ke malam 夜"
+  },
+  "footer": {
+    "tagline": "<em>bangun jembatan</em>. Dipecahkan oleh SAT, dimainkan olehmu.",
+    "made_by": "Dibuat oleh {{ author }}",
+    "how_to_play": "Cara bermain",
+    "open_source": "Sumber terbuka di GitHub",
+    "tech": "Rust · Leptos · Turso · solver CDCL & DPLL buatan sendiri"
+  },
+  "difficulty": {
+    "easy": "Mudah",
+    "medium": "Sedang",
+    "hard": "Sulit",
+    "expert": "Ahli",
+    "oni": "Oni"
+  },
+  "source": {
+    "daily": "Jembatan harian · {{ date }}",
+    "custom": "Teka-teki buatanmu",
+    "imported": "Diimpor · {{ name }}"
+  },
+  "toast": {
+    "unsat": "Solver SAT membuktikan: teka-teki ini tidak punya solusi.",
+    "timeout": "Waktu solver habis. Coba konfigurasi lain.",
+    "nothing_to_hint": "Tidak ada petunjuk, semua jembatan sudah di tempatnya.",
+    "all_correct": "Sejauh ini bagus: semua jembatan termasuk dalam solusi.",
+    "wrong_bridges": "Jembatan yang bukan bagian dari solusi: {{ count }}",
+    "unique": "Terbukti: solusinya unik.",
+    "not_unique": "Teka-teki ini punya lebih dari satu solusi.",
+    "copied": "Hasil disalin ke papan klip."
+  },
+  "errors": {
+    "unknown": "Terjadi kesalahan: {{ detail }}",
+    "database": "Database tidak merespons, coba lagi.",
+    "internal": "Terjadi kesalahan di server, coba lagi.",
+    "archive_only_past": "Hanya teka-teki harian sebelumnya yang bisa dilatih.",
+    "password_too_short": "Kata sandi minimal 8 karakter.",
+    "password_too_long": "Kata sandi maksimal 128 karakter.",
+    "username_invalid": "Nama pengguna terdiri dari 3 sampai 20 karakter: huruf, angka, _ dan -.",
+    "username_taken": "Nama pengguna ini sudah dipakai.",
+    "wrong_login": "Nama pengguna atau kata sandi salah.",
+    "too_many_attempts": "Terlalu banyak percobaan gagal, tunggu beberapa menit.",
+    "session_expired": "Sesimu sudah berakhir, muat ulang halaman.",
+    "not_started": "Mulai dulu teka-teki hariannya.",
+    "not_solved": "Itu belum solusi.",
+    "wrong_puzzle": "Jembatan ini bukan milik teka-teki ini.",
+    "already_finished": "Kamu sudah menyelesaikan teka-teki harian ini."
+  },
+  "solver": {
+    "title": "Solver SAT",
+    "description": "Teka-teki dikodekan sebagai CNF dan dipecahkan oleh solver buatan kami sendiri dari lab SAT.",
+    "solver": "Solver",
+    "own_cdcl": "CDCL kami",
+    "own_dpll": "DPLL kami",
+    "heuristic": "Heuristik percabangan",
+    "splr_heuristic": "Bawaan splr (EVSIDS)",
+    "restarts": "Restart",
+    "restarts_none": "Tanpa restart",
+    "restarts_fixed": "Interval tetap",
+    "restarts_geometric": "Geometris",
+    "restarts_luby": "Deret Luby",
+    "subsumption": "Subsumsi",
+    "subsumption_short": "subsumsi",
+    "subsumption_hint": "Hapus klausa yang tersubsumsi sebelum memecahkan",
+    "preprocess": "praproses",
+    "timeout": "Batas waktu"
+  },
+  "ranking": {
+    "you": "kamu",
+    "guest": "tamu",
+    "guest_name": "Tamu",
+    "penalties": "petunjuk · cek",
+    "empty": "Belum ada yang menyeberang. Jadilah yang pertama!"
+  },
+  "board": {
+    "label": "Papan Hashiwokakero",
+    "zoom": "Perbesar",
+    "fit": "Paskan papan",
+    "zoom_hint": "Geser untuk berpindah, ketuk untuk membangun",
+    "cells_small": "Sel terlalu kecil?"
+  },
+  "not_found": {
+    "title": "Tersesat di laut",
+    "text": "Tidak ada jembatan ke halaman ini, ayo kembali ke pulau-pulau.",
+    "back": "Kembali ke permainan"
+  },
+  "game": {
+    "time": "Waktu",
+    "moves": "Langkah",
+    "hints": "Petunjuk",
+    "undo": "Urungkan",
+    "redo": "Ulangi",
+    "clear": "Hapus",
+    "restart": "Mulai ulang",
+    "check": "Cek",
+    "hint": "Petunjuk",
+    "solve": "Pecahkan",
+    "unique": "Unik?",
+    "well_done": "Hebat!",
+    "share": "Bagikan hasil",
+    "loading": "Memuat…",
+    "islands_complete": "pulau lengkap",
+    "groups": "{{ count }} kelompok terpisah",
+    "all_connected": "semua terhubung",
+    "islands": "{{ count }} pulau",
+    "unique_solution": "solusi unik ✓",
+    "several_solutions": "beberapa solusi"
+  },
+  "weekday": {
+    "mon": "Senin",
+    "tue": "Selasa",
+    "wed": "Rabu",
+    "thu": "Kamis",
+    "fri": "Jumat",
+    "sat": "Sabtu",
+    "sun": "Minggu"
+  },
+  "month": {
+    "jan": "Januari",
+    "feb": "Februari",
+    "mar": "Maret",
+    "apr": "April",
+    "may": "Mei",
+    "jun": "Juni",
+    "jul": "Juli",
+    "aug": "Agustus",
+    "sep": "September",
+    "oct": "Oktober",
+    "nov": "November",
+    "dec": "Desember"
+  },
+  "date_long": "{{ weekday }}, {{ day }} {{ month }} {{ year }}",
+  "date_short": "{{ day }} {{ month }} {{ year }}",
+  "og_image_alt": "Teka-teki Hashiwokakero yang sudah selesai dalam pixel art: pulau bernomor dihubungkan jembatan kayu dan merah",
+  "ld": {
+    "site": "Hashiwokakero, teka-teki jembatan dari Jepang, bisa dimainkan gratis di browser.",
+    "game": "Hubungkan pulau-pulau dengan jembatan sehingga setiap pulau punya jembatan sebanyak angkanya. Teka-teki harian dengan papan peringkat, lima tingkat kesulitan, pixel art, dan setiap teka-teki punya tepat satu solusi."
+  }
+}

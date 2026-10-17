@@ -3,6 +3,8 @@ use leptos_router::components::A;
 
 use super::ui::badge::{Badge, BadgeVariant};
 use crate::model::{LeaderboardEntry, format_duration};
+use crate::components::layout::use_localized;
+use crate::i18n::{t, t_string, use_i18n};
 use crate::state::Auth;
 
 /// 🥇🥈🥉 as pixel-ish kanji medals: 金 gold, 銀 silver, 銅 bronze.
@@ -35,23 +37,24 @@ pub fn RankCell(rank: i64) -> impl IntoView {
 
 #[component]
 fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
+    let i18n = use_i18n();
     let penalties = entry.hints + entry.checks;
     view! {
         <tr class="border-b last:border-0" class:bg-accent=me>
-            <td class="py-2 pr-2">
+            <td class="py-2 pe-2">
                 <RankCell rank=entry.rank />
             </td>
-            <td class="max-w-0 py-2 pr-2">
+            <td class="max-w-0 py-2 pe-2">
                 <div class="flex items-center gap-2">
                     <span class="truncate font-medium">{entry.name}</span>
-                    {me.then(|| view! { <Badge variant=BadgeVariant::Default size=crate::components::ui::badge::BadgeSize::Sm>"you"</Badge> })}
-                    {entry.guest.then(|| view! { <span class="text-xs text-muted-foreground">"guest"</span> })}
+                    {me.then(|| view! { <Badge variant=BadgeVariant::Default size=crate::components::ui::badge::BadgeSize::Sm>{t!(i18n, common.ranking.you)}</Badge> })}
+                    {entry.guest.then(|| view! { <span class="text-xs text-muted-foreground">{t!(i18n, common.ranking.guest)}</span> })}
                 </div>
             </td>
-            <td class="py-2 pr-2 text-right text-xs text-muted-foreground" title="hints · checks">
+            <td class="py-2 pe-2 text-end text-xs text-muted-foreground" title=move || t_string!(i18n, common.ranking.penalties)>
                 {(penalties > 0).then(|| format!("{}h {}c", entry.hints, entry.checks))}
             </td>
-            <td class="py-2 text-right font-pixel tabular-nums">{format_duration(entry.time_ms)}</td>
+            <td class="py-2 text-end font-pixel tabular-nums">{format_duration(entry.time_ms)}</td>
         </tr>
     }
 }
@@ -65,13 +68,14 @@ pub fn LeaderboardTable(
     #[prop(optional)]
     limit: Option<usize>,
 ) -> impl IntoView {
+    let i18n = use_i18n();
     let my_id = me.as_ref().map(|m| m.user_id);
     let shown: Vec<LeaderboardEntry> = entries.into_iter().take(limit.unwrap_or(usize::MAX)).collect();
     let me_below = me.filter(|m| !shown.iter().any(|e| e.user_id == m.user_id));
     if shown.is_empty() {
         return view! {
             <div class="seigaiha grid h-32 place-items-center rounded-lg border border-dashed text-sm text-muted-foreground">
-                <p class="rounded-md bg-card px-3 py-1">"Nobody has crossed yet. Be the first! 一番乗り"</p>
+                <p class="rounded-md bg-card px-3 py-1">{t!(i18n, common.ranking.empty)} " 一番乗り"</p>
             </div>
         }
         .into_any();
@@ -110,12 +114,14 @@ pub fn LeaderboardTable(
 /// The signed in player in the header, or a sign in link.
 #[component]
 pub fn AccountButton() -> impl IntoView {
+    let i18n = use_i18n();
     let auth = expect_context::<Auth>();
+    let to = use_localized("/account");
     view! {
         <A
-            href="/account"
+            href=to
             attr:class="flex h-10 shrink-0 items-center gap-2 rounded-lg border bg-card px-2 transition-transform hover:-translate-y-0.5"
-            attr:title="Account"
+            attr:title=move || t_string!(i18n, common.account)
         >
             {move || match auth.user.get() {
                 Some(user) => {
@@ -126,7 +132,7 @@ pub fn AccountButton() -> impl IntoView {
                             if user.guest { "bg-secondary text-secondary-foreground" } else { "hanko" },
                         )>{initial}</span>
                         <span class="hidden max-w-28 truncate text-sm font-medium lg:inline">
-                            {if user.guest { "Guest".to_string() } else { user.name }}
+                            {if user.guest { t_string!(i18n, common.ranking.guest_name).to_string() } else { user.name }}
                         </span>
                     }
                         .into_any()
@@ -134,7 +140,7 @@ pub fn AccountButton() -> impl IntoView {
                 None => {
                     view! {
                         <span class="grid size-7 place-items-center rounded-md bg-secondary font-pixel text-sm">"入"</span>
-                        <span class="hidden text-sm font-medium lg:inline">"Sign in"</span>
+                        <span class="hidden text-sm font-medium lg:inline">{t!(i18n, common.sign_in)}</span>
                     }
                         .into_any()
                 }

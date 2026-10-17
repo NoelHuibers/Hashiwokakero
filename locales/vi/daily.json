@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Câu đố Nối cầu (Hashiwokakero) mỗi ngày, miễn phí",
+    "description": "Mỗi ngày một câu đố Hashiwokakero (Nối cầu) mới, chung cho mọi người: pixel art Nhật Bản dễ thương, bảng xếp hạng, chuỗi ngày và luôn có đúng một lời giải."
+  },
+  "title": "Cầu mỗi ngày #{{ number }}",
+  "penalty": "Phạt",
+  "give_up": "Bỏ cuộc",
+  "give_up_confirm": "Để bộ giải SAT hiện lời giải? Lượt chơi hôm nay sẽ không được xếp hạng.",
+  "share": "Hashi 橋 Mỗi ngày #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "Cây cầu hôm nay",
+    "text": "Câu đố sẽ hiện ra khi bạn bấm Bắt đầu, đồng hồ chạy trên máy chủ. Mỗi gợi ý cộng 30 giây, mỗi lần kiểm tra cộng 10 giây, xem lời giải thì không được xếp hạng.",
+    "start": "Bắt đầu",
+    "preparing": "Đang chuẩn bị…",
+    "playing_as": "Đang chơi với tên {{ name }}",
+    "playing_as_guest": "Đang chơi với tên {{ name }} (khách)",
+    "no_account": "Không cần tài khoản, bạn sẽ chơi với tư cách khách."
+  },
+  "result": {
+    "revealed_title": "Bộ giải SAT đã giải",
+    "revealed_text": "Lượt này không tính vào bảng xếp hạng. Hẹn gặp lại ngày mai!",
+    "rank": "Hạng {{ rank }} trên {{ total }} hôm nay",
+    "ranking": "Đang xếp hạng…",
+    "more": "Thêm câu đố ở chế độ luyện tập →",
+    "on_board": "Bạn đã lên bảng với tên <b>{{ name }}</b>.",
+    "claim": "Giữ tên của bạn để lưu chuỗi ngày trên mọi thiết bị →"
+  },
+  "ranking": {
+    "title": "Xếp hạng hôm nay",
+    "all": "Tất cả →",
+    "crossed": "Đã qua cầu hôm nay: {{ count }}"
+  },
+  "week": {
+    "title": "Tuần này",
+    "text": "Như câu đố trên báo, cầu khó dần về cuối tuần, khó nhất vào Chủ Nhật.",
+    "next": "Cầu tiếp theo sau"
+  }
+}

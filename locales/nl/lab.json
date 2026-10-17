@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "SAT-solverlab · CDCL, DPLL en splr op Hashi-puzzels",
+    "description": "Laat één Hashiwokakero-puzzel racen door onze eigen CDCL- en DPLL-SAT-solvers met verschillende heuristieken en herstartstrategieën, en vergelijk ze met splr."
+  },
+  "title": "Solverlab",
+  "intro": "Laat één puzzel racen door onze eigen CDCL- en DPLL-solvers in verschillende modi (vertakkingsheuristieken, herstartstrategieën, subsumptie) en vergelijk ze met splr.",
+  "puzzle": {
+    "title": "1 · Puzzel",
+    "size": "{{ width }}×{{ height }}, eilanden: {{ count }}",
+    "none": "Geen puzzel gekozen",
+    "game": "Huidig spel",
+    "workshop": "Werkplaats",
+    "fresh": "Nieuw"
+  },
+  "solvers": {
+    "title": "2 · Solvers",
+    "description": "Kies de configuraties om te vergelijken.",
+    "timeout": "Tijdslimiet per run"
+  },
+  "racing": "Racen…",
+  "start": "Start de race",
+  "results": {
+    "title": "3 · Resultaten",
+    "description": "De totale tijd is coderen plus oplossen. Niet-samenhangende oplossingen worden pas achteraf weerlegd, elke weerlegging kost nog een SAT-aanroep.",
+    "empty": "Nog geen race."
+  },
+  "table": {
+    "config": "Configuratie",
+    "result": "Resultaat",
+    "decisions": "Beslissingen",
+    "restarts": "Herstarts",
+    "calls": "SAT-aanroepen"
+  },
+  "badge": {
+    "queued": "wachtend",
+    "solving": "oplossen…",
+    "error": "fout",
+    "timeout": "tijd op"
+  },
+  "summary": {
+    "decisions": "Beslissingen: {{ count }}",
+    "restarts": "Herstarts: {{ count }}",
+    "calls": "SAT-aanroepen: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Kies eerst een puzzel.",
+    "pick_solver": "Kies minstens één solverconfiguratie."
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "Günlük",
+    "practice": "Pratik",
+    "ranks": "Sıralama",
+    "create": "Oluştur",
+    "lab": "Lab",
+    "main": "Ana menü"
+  },
+  "tagline_short": "Köprüler",
+  "language": "Dil",
+  "account": "Hesap",
+  "sign_in": "Giriş yap",
+  "theme": {
+    "toggle": "Karanlık modu aç/kapat",
+    "to_day": "Gündüze geç 昼",
+    "to_night": "Geceye geç 夜"
+  },
+  "footer": {
+    "tagline": "<em>köprüleri kur</em>. SAT çözer, sen oynarsın.",
+    "made_by": "Yapan: {{ author }}",
+    "how_to_play": "Nasıl oynanır",
+    "open_source": "GitHub'da açık kaynak",
+    "tech": "Rust · Leptos · Turso · kendi CDCL ve DPLL çözücülerimiz"
+  },
+  "difficulty": {
+    "easy": "Kolay",
+    "medium": "Orta",
+    "hard": "Zor",
+    "expert": "Uzman",
+    "oni": "Oni"
+  },
+  "source": {
+    "daily": "Günün köprüsü · {{ date }}",
+    "custom": "Kendi bulmacan",
+    "imported": "İçe aktarıldı · {{ name }}"
+  },
+  "toast": {
+    "unsat": "SAT çözücü kanıtladı: bu bulmacanın çözümü yok.",
+    "timeout": "Çözücünün süresi doldu. Başka bir ayar dene.",
+    "nothing_to_hint": "Verilecek ipucu yok, tüm köprüler yerinde.",
+    "all_correct": "Şimdilik her şey yolunda: tüm köprüler çözüme ait.",
+    "wrong_bridges": "Çözüme ait olmayan köprüler: {{ count }}",
+    "unique": "Kanıtlandı: çözüm tek.",
+    "not_unique": "Bu bulmacanın birden fazla çözümü var.",
+    "copied": "Sonuç panoya kopyalandı."
+  },
+  "errors": {
+    "unknown": "Bir şeyler ters gitti: {{ detail }}",
+    "database": "Veritabanı yanıt vermedi, lütfen tekrar dene.",
+    "internal": "Sunucuda bir şeyler ters gitti, lütfen tekrar dene.",
+    "archive_only_past": "Sadece geçmiş günlük bulmacalarla pratik yapılabilir.",
+    "password_too_short": "Şifre en az 8 karakter olmalı.",
+    "password_too_long": "Şifre en fazla 128 karakter olabilir.",
+    "username_invalid": "Kullanıcı adı 3 ila 20 karakter olmalı: harf, rakam, _ ve -.",
+    "username_taken": "Bu kullanıcı adı zaten alınmış.",
+    "wrong_login": "Kullanıcı adı veya şifre yanlış.",
+    "too_many_attempts": "Çok fazla başarısız deneme, lütfen birkaç dakika bekle.",
+    "session_expired": "Oturumun sona erdi, lütfen sayfayı yenile.",
+    "not_started": "Önce günlük bulmacayı başlat.",
+    "not_solved": "Bu henüz bir çözüm değil.",
+    "wrong_puzzle": "Bu köprüler bu bulmacaya ait değil.",
+    "already_finished": "Bu günlük bulmacayı zaten bitirdin."
+  },
+  "solver": {
+    "title": "SAT çözücü",
+    "description": "Bulmaca CNF olarak kodlanır ve SAT laboratuvarımızdaki kendi çözücülerimizle çözülür.",
+    "solver": "Çözücü",
+    "own_cdcl": "Kendi CDCL",
+    "own_dpll": "Kendi DPLL",
+    "heuristic": "Dallanma sezgiseli",
+    "splr_heuristic": "splr'nin kendisi (EVSIDS)",
+    "restarts": "Yeniden başlatma",
+    "restarts_none": "Yeniden başlatma yok",
+    "restarts_fixed": "Sabit aralık",
+    "restarts_geometric": "Geometrik",
+    "restarts_luby": "Luby dizisi",
+    "subsumption": "Kapsama",
+    "subsumption_short": "kapsama",
+    "subsumption_hint": "Çözmeden önce kapsanan tümceleri ele",
+    "preprocess": "ön işleme",
+    "timeout": "Zaman aşımı"
+  },
+  "ranking": {
+    "you": "sen",
+    "guest": "misafir",
+    "guest_name": "Misafir",
+    "penalties": "ipucu · kontrol",
+    "empty": "Henüz kimse karşıya geçmedi. İlk sen ol!"
+  },
+  "board": {
+    "label": "Hashiwokakero tahtası",
+    "zoom": "Yakınlaştır",
+    "fit": "Tahtayı sığdır",
+    "zoom_hint": "Gezinmek için kaydır, köprü kurmak için dokun",
+    "cells_small": "Hücreler çok mu küçük?"
+  },
+  "not_found": {
+    "title": "Denizde kayboldun",
+    "text": "Bu sayfaya giden bir köprü yok, haydi seni adalara geri götürelim.",
+    "back": "Oyuna dön"
+  },
+  "game": {
+    "time": "Süre",
+    "moves": "Hamle",
+    "hints": "İpucu",
+    "undo": "Geri al",
+    "redo": "Yinele",
+    "clear": "Temizle",
+    "restart": "Baştan",
+    "check": "Kontrol",
+    "hint": "İpucu",
+    "solve": "Çöz",
+    "unique": "Tek mi?",
+    "well_done": "Harika!",
+    "share": "Sonucu paylaş",
+    "loading": "Yükleniyor…",
+    "islands_complete": "ada tamam",
+    "groups": "{{ count }} ayrı grup",
+    "all_connected": "hepsi bağlı",
+    "islands": "{{ count }} ada",
+    "unique_solution": "tek çözüm ✓",
+    "several_solutions": "birden çok çözüm"
+  },
+  "weekday": {
+    "mon": "Pazartesi",
+    "tue": "Salı",
+    "wed": "Çarşamba",
+    "thu": "Perşembe",
+    "fri": "Cuma",
+    "sat": "Cumartesi",
+    "sun": "Pazar"
+  },
+  "month": {
+    "jan": "Ocak",
+    "feb": "Şubat",
+    "mar": "Mart",
+    "apr": "Nisan",
+    "may": "Mayıs",
+    "jun": "Haziran",
+    "jul": "Temmuz",
+    "aug": "Ağustos",
+    "sep": "Eylül",
+    "oct": "Ekim",
+    "nov": "Kasım",
+    "dec": "Aralık"
+  },
+  "date_long": "{{ day }} {{ month }} {{ year }} {{ weekday }}",
+  "date_short": "{{ day }} {{ month }} {{ year }}",
+  "og_image_alt": "Piksel sanatıyla çözülmüş bir Hashiwokakero bulmacası: ahşap ve kırmızı köprülerle bağlanmış numaralı adalar",
+  "ld": {
+    "site": "Hashiwokakero, Japon köprü bulmacası, tarayıcıda ücretsiz oynanır.",
+    "game": "Adaları köprülerle bağla; her adada, üzerindeki sayı kadar köprü olsun. Sıralamalı günlük bulmaca, beş zorluk seviyesi, piksel sanatı ve her bulmacanın tam olarak tek bir çözümü var."
+  }
+}

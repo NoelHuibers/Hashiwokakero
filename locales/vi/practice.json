@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "title": "Luyện Hashiwokakero · câu đố Nối cầu miễn phí · Hashi",
+    "description": "Luyện Hashiwokakero (Nối cầu) không tính giờ: vô hạn câu đố ở năm kích thước từ 7×7 đến 24×24, có gợi ý và kiểm tra, mỗi câu có đúng một lời giải."
+  },
+  "heading": "câu đố nối cầu",
+  "generate": "Tạo mới",
+  "generating": "Đang tạo…",
+  "generating_text": "Đang mọc đảo, xây cầu và hỏi bộ giải SAT xem lời giải có duy nhất không…",
+  "card": {
+    "title": "Luyện tập",
+    "text": "Bao nhiêu câu đố mới cũng được, mỗi câu đều được bộ giải SAT chứng minh có đúng một lời giải. Không áp lực thời gian, cầu mỗi ngày nằm ở trang chủ."
+  },
+  "legend": {
+    "title": "Cách xây cầu",
+    "single": "cầu gỗ",
+    "double": "cầu đỏ son",
+    "build": "Bấm vào mặt nước giữa hai đảo, hoặc kéo từ một đảo.",
+    "again": "Bấm lần nữa để thêm cầu thứ hai, bấm lần thứ ba để gỡ bỏ.",
+    "remove": "Chuột phải hoặc <kbd>Shift</kbd> + bấm để gỡ một cây cầu."
+  },
+  "share": "giải trong {{ time }} với {{ moves }} nước đi và {{ hints }} gợi ý",
+  "won": "Mọi hòn đảo đã được nối, trong <b>{{ time }}</b> với {{ moves }} nước đi và {{ hints }} gợi ý.",
+  "next": "Câu tiếp theo",
+  "share_button": "Chia sẻ",
+  "admire": "Ngắm nhìn",
+  "revealed": "Bộ giải SAT đã giải.",
+  "play_myself": "Tự mình chơi",
+  "new_puzzle": "Câu đố mới",
+  "about": {
+    "kicker": "về trò chơi",
+    "title": "Hashiwokakero, câu đố nối cầu",
+    "what_title": "Hashiwokakero là gì?",
+    "what": "Hashiwokakero (橋をかけろ, “hãy xây cầu!”) là câu đố logic Nhật Bản do Nikoli phát hành, còn được gọi là <b>Nối cầu</b> (Bridges), <b>Hashi</b> hay Ai-Ki-Ai. Trên lưới có các hòn đảo đánh số cần được nối bằng cầu: số cầu của mỗi đảo đúng bằng con số của nó, cầu chạy thẳng và không bao giờ cắt nhau, mỗi cặp đảo được nối bởi tối đa hai cầu, và cuối cùng từ mọi đảo đều đi được tới mọi đảo khác. Giống Sudoku hay Nurikabe, trò chơi không cần tính toán, chỉ cần suy luận.",
+    "how_title": "Cách chơi Nối cầu trực tuyến",
+    "how": "Chọn độ khó từ Dễ (7×7) đến Quỷ (24×24) rồi bấm Tạo mới. Bấm vào mặt nước giữa hai đảo để xây cầu, bấm lần nữa để có cầu đôi, lần thứ ba sẽ gỡ bỏ, hoặc đơn giản là kéo từ đảo này sang đảo kia. Đảo hoàn thành chuyển xanh lá, đảo thừa cầu chuyển đỏ. Bí rồi? Hãy xin gợi ý, hoặc để bộ giải kiểm tra các cây cầu của bạn. Luật chơi đầy đủ kèm ví dụ đã giải có ở trang <a>cách chơi</a>.",
+    "techniques_title": "Kỹ thuật giải không cần đoán",
+    "technique_double": "Đảo có con số bằng hai lần số đảo láng giềng sẽ có cầu đôi tới từng láng giềng: số 8 ở giữa, số 6 ở cạnh, số 4 ở góc.",
+    "technique_isolation": "Số 1 không bao giờ nối với một số 1 khác, và hai số 2 không bao giờ nối bằng cầu đôi, vì như vậy chúng sẽ bị tách khỏi phần còn lại.",
+    "technique_count": "Đếm số cầu còn thiếu: nếu một đảo cần thêm 5 cầu mà chỉ có ba láng giềng, mỗi láng giềng nhận ít nhất một cầu.",
+    "technique_block": "Cầu chặn các đường mà nó cắt qua, nên một cây cầu đã đặt có thể buộc các đảo hai bên phải nối theo hướng khác.",
+    "technique_connect": "Cuối cùng mọi thứ phải liên thông: một nhóm chỉ có thể đến phần còn lại qua một khe hở thì bắt buộc phải dùng nó.",
+    "why_title": "Vì sao nên chơi Hashi ở đây",
+    "why_unique": "Mỗi câu đố có <b>đúng một lời giải</b>, được bộ giải SAT chứng minh trước khi bạn nhìn thấy, nên chỉ cần logic là đủ.",
+    "why_unlimited": "Câu đố miễn phí không giới hạn ở năm kích thước, với gợi ý và kiểm tra dựa trên lời giải thật, không phải heuristic.",
+    "why_art": "Pixel art Nhật Bản dễ thương, giao diện ngày và đêm, phím tắt, hoàn tác và làm lại, và ván chơi được lưu trong trình duyệt.",
+    "why_workshop": "Tự tạo câu đố trong <workshop>xưởng</workshop>, hoặc xem các bộ giải SAT CDCL và DPLL tự viết đua nhau trong <lab>phòng lab</lab>. Toàn bộ trò chơi là mã nguồn mở và được viết bằng Rust."
+  }
+}

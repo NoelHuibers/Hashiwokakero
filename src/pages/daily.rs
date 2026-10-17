@@ -17,9 +17,12 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::progress::Progress;
 use crate::model::{
     CHECK_PENALTY_MS, DailyInfo, HINT_PENALTY_MS, Leaderboard, MS_PER_DAY, SubmitResult,
-    WEEKDAY_KANJI, daily_difficulty, daily_number, date_string, format_duration, pretty_date,
+    WEEKDAY_KANJI, daily_difficulty, daily_number, date_string, format_duration,
     weekday,
 };
+use crate::components::layout::use_localized;
+use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::lang::{date_long, difficulty_name, error_text, localized};
 use crate::state::{Auth, DailyGame, Game, Source, Status, ToastKind, toast};
 use crate::pages::play::SeoIntro;
 use crate::seo::{PageMeta, site_ld};
@@ -133,7 +136,7 @@ impl Daily {
         spawn_local(async move {
             match daily_today().await {
                 Ok(info) => this.apply(info),
-                Err(e) => toast(ToastKind::Error, format!("Could not load the daily puzzle: {e}")),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
         });
         self.refresh_ranking();
@@ -149,12 +152,12 @@ impl Daily {
 }
 
 #[component]
-fn Stat(label: &'static str, jp: &'static str, #[prop(into)] value: Signal<String>) -> impl IntoView {
+fn Stat(#[prop(into)] label: Signal<String>, jp: &'static str, #[prop(into)] value: Signal<String>) -> impl IntoView {
     view! {
         <div class="flex min-w-[4.5rem] flex-col items-center rounded-lg border bg-card px-3 py-1.5 shadow-xs">
             <span class="font-pixel text-xl tabular-nums leading-tight">{move || value.get()}</span>
             <span class="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                {label} " · " {jp}
+                {move || label.get()} " · " {jp}
             </span>
         </div>
     }
@@ -163,6 +166,7 @@ fn Stat(label: &'static str, jp: &'static str, #[prop(into)] value: Signal<Strin
 /// The board before the start: an empty sea in the fog.
 #[component]
 fn Cover(daily: Daily) -> impl IntoView {
+    let i18n = use_i18n();
     let auth = expect_context::<Auth>();
     let size = Signal::derive(move || {
         let day = daily.info.with(|i| i.as_ref().map(|i| i.day)).unwrap_or(0);
@@ -183,7 +187,7 @@ fn Cover(daily: Daily) -> impl IntoView {
                     daily.apply(info);
                     auth.refresh();
                 }
-                Err(e) => toast(ToastKind::Error, format!("Could not start: {e}")),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
             daily.busy.set(false);
         });
@@ -203,9 +207,9 @@ fn Cover(daily: Daily) -> impl IntoView {
                     <span class="hanko grid size-16 rotate-[-6deg] place-items-center rounded-lg font-pixel text-4xl">
                         "橋"
                     </span>
-                    <h2 class="text-2xl font-black">"Today's bridge 今日の橋"</h2>
+                    <h2 class="text-2xl font-black">{t!(i18n, daily.cover.title)} " 今日の橋"</h2>
                     <p class="text-sm text-muted-foreground">
-                        "The puzzle appears when you press start, the clock runs on the server. Hints add 30 s, checks 10 s, revealing the solution leaves you unranked."
+                        {t!(i18n, daily.cover.text)}
                     </p>
                     <Button
                         size=ButtonSize::Lg
@@ -213,13 +217,13 @@ fn Cover(daily: Daily) -> impl IntoView {
                         attr:disabled=move || daily.busy.get() || daily.info.with(Option::is_none)
                         on:click=start
                     >
-                        {move || if daily.busy.get() { "Preparing…" } else { "Start 始め" }}
+                        {move || if daily.busy.get() { t_string!(i18n, daily.cover.preparing).to_string() } else { format!("{} 始め", t_string!(i18n, daily.cover.start)) }}
                     </Button>
                     <p class="text-xs text-muted-foreground">
                         {move || match auth.user.get() {
-                            Some(u) if !u.guest => format!("Playing as {}", u.name),
-                            Some(u) => format!("Playing as {} (guest)", u.name),
-                            None => "No account needed, you'll play as a guest.".to_string(),
+                            Some(u) if !u.guest => t_string!(i18n, daily.cover.playing_as, name = u.name).to_string(),
+                            Some(u) => t_string!(i18n, daily.cover.playing_as_guest, name = u.name).to_string(),
+                            None => t_string!(i18n, daily.cover.no_account).to_string(),
                         }}
                     </p>
                 </Card>
@@ -230,7 +234,10 @@ fn Cover(daily: Daily) -> impl IntoView {
 
 #[component]
 fn ResultCard(daily: Daily) -> impl IntoView {
+    let i18n = use_i18n();
     let auth = expect_context::<Auth>();
+    let practice = use_localized("/practice");
+    let account = use_localized("/account");
     let share = move |_| {
         let Some(info) = daily.info.get_untracked() else { return };
         let rank = daily
@@ -238,17 +245,25 @@ fn ResultCard(daily: Daily) -> impl IntoView {
             .get_untracked()
             .map(|r| (r.rank, r.finishers))
             .or_else(|| daily.ranking.with_untracked(|lb| lb.as_ref().and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))));
+        let locale = i18n.get_locale_untracked();
         let origin = window().location().origin().unwrap_or_default();
+        let headline = td_string!(
+            locale,
+            daily.share,
+            number = daily_number(info.day),
+            weekday = WEEKDAY_KANJI[weekday(info.day)],
+            difficulty = difficulty_name(locale, info.difficulty)
+        );
+        let rank = rank
+            .map(|(rank, total)| format!(" · {}", td_string!(locale, daily.share_rank, rank, total)))
+            .unwrap_or_default();
         let text = format!(
-            "Hashi 橋 Daily #{} · {} {}\n⏱ {}{}\n{origin}",
-            daily_number(info.day),
-            WEEKDAY_KANJI[weekday(info.day)],
-            info.difficulty.label(),
+            "{headline}\n⏱ {}{rank}\n{origin}{}",
             format_duration(daily.elapsed_ms()),
-            rank.map(|(r, n)| format!(" · 🏅 #{r} of {n}")).unwrap_or_default(),
+            localized(locale, "/"),
         );
         let _ = window().navigator().clipboard().write_text(&text);
-        toast(ToastKind::Success, "Result copied to the clipboard.");
+        toast(ToastKind::Success, |l| td_string!(l, common.toast.copied).to_string());
     };
     let revealed = move || daily.game.status.get() == Status::Revealed;
     view! {
@@ -259,16 +274,14 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                         <span class="hanko grid size-16 rotate-[-6deg] place-items-center rounded-lg font-pixel text-4xl">
                             "解"
                         </span>
-                        <h2 class="text-xl font-black">"Solved by the SAT solver"</h2>
-                        <p class="text-sm text-muted-foreground">
-                            "This one doesn't count for the ranking. See you tomorrow!"
-                        </p>
+                        <h2 class="text-xl font-black">{t!(i18n, daily.result.revealed_title)}</h2>
+                        <p class="text-sm text-muted-foreground">{t!(i18n, daily.result.revealed_text)}</p>
                     }
                         .into_any()
                 } else {
                     view! {
                         <Stamp kanji="完" class="size-20 text-5xl" />
-                        <h2 class="text-2xl font-black">"見事！ Well done!"</h2>
+                        <h2 class="text-2xl font-black">"見事！ " {t!(i18n, common.game.well_done)}</h2>
                         <p class="font-pixel text-3xl tabular-nums">{move || format_duration(daily.elapsed_ms())}</p>
                         <p class="text-sm text-muted-foreground">
                             {move || {
@@ -284,8 +297,8 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                                             })
                                     });
                                 match rank {
-                                    Some((r, n)) => format!("Rank {r} of {n} today"),
-                                    None => "Ranking…".to_string(),
+                                    Some((rank, total)) => t_string!(i18n, daily.result.rank, rank, total).to_string(),
+                                    None => t_string!(i18n, daily.result.ranking).to_string(),
                                 }
                             }}
                         </p>
@@ -294,12 +307,12 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                 }
             }}
             <div class="flex w-full flex-col gap-2">
-                <Button on:click=share class="w-full">"Share result"</Button>
+                <Button on:click=share class="w-full">{t!(i18n, common.game.share)}</Button>
                 <A
-                    href="/practice"
+                    href=practice
                     attr:class="inline-flex min-h-10 items-center justify-center text-sm text-primary underline-offset-4 hover:underline"
                 >
-                    "More puzzles in practice mode →"
+                    {t!(i18n, daily.result.more)}
                 </A>
             </div>
             {move || {
@@ -308,12 +321,10 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                     .filter(|u| u.guest)
                     .map(|u| {
                         view! {
-                            <div class="w-full rounded-lg border border-dashed bg-muted/50 p-3 text-left text-sm">
-                                <p>
-                                    "You're on the board as " <b>{u.name}</b> "."
-                                </p>
-                                <A href="/account" attr:class="font-medium text-primary underline-offset-4 hover:underline">
-                                    "Claim your name to keep your streak on every device →"
+                            <div class="w-full rounded-lg border border-dashed bg-muted/50 p-3 text-start text-sm">
+                                <p>{t!(i18n, daily.result.on_board, name = u.name.clone(), <b> = <b />)}</p>
+                                <A href=account attr:class="font-medium text-primary underline-offset-4 hover:underline">
+                                    {t!(i18n, daily.result.claim)}
                                 </A>
                             </div>
                         }
@@ -325,18 +336,20 @@ fn ResultCard(daily: Daily) -> impl IntoView {
 
 #[component]
 fn RankingCard(daily: Daily) -> impl IntoView {
+    let i18n = use_i18n();
+    let ranks = use_localized("/ranks");
     view! {
         <Card class="gap-3">
             <CardHeader>
                 <div class="flex w-full items-baseline justify-between">
                     <CardTitle class="flex items-baseline gap-2 text-lg">
-                        "Today's ranking" <span class="font-pixel text-sm text-primary">"順位"</span>
+                        {t!(i18n, daily.ranking.title)} <span class="font-pixel text-sm text-primary">"順位"</span>
                     </CardTitle>
                     <A
-                        href="/ranks"
-                        attr:class="-mr-2 inline-flex min-h-9 items-center px-2 text-xs text-primary underline-offset-4 hover:underline"
+                        href=ranks
+                        attr:class="-me-2 inline-flex min-h-9 items-center px-2 text-xs text-primary underline-offset-4 hover:underline"
                     >
-                        "All →"
+                        {t!(i18n, daily.ranking.all)}
                     </A>
                 </div>
                 <CardDescription>
@@ -344,8 +357,8 @@ fn RankingCard(daily: Daily) -> impl IntoView {
                         daily
                             .ranking
                             .with(|lb| lb.as_ref().map(|lb| lb.finishers))
-                            .map(|n| format!("{n} {} crossed today", if n == 1 { "player has" } else { "players have" }))
-                            .unwrap_or_else(|| "Loading…".to_string())
+                            .map(|count| t_string!(i18n, daily.ranking.crossed, count).to_string())
+                            .unwrap_or_else(|| t_string!(i18n, common.game.loading).to_string())
                     }}
                 </CardDescription>
             </CardHeader>
@@ -363,14 +376,15 @@ fn RankingCard(daily: Daily) -> impl IntoView {
 
 #[component]
 fn WeekCard(daily: Daily) -> impl IntoView {
+    let i18n = use_i18n();
     let today = Signal::derive(move || daily.info.with(|i| i.as_ref().map(|i| i.day)));
     view! {
         <Card class="gap-3">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-lg">
-                    "This week" <span class="font-pixel text-sm text-primary">"週"</span>
+                    {t!(i18n, daily.week.title)} <span class="font-pixel text-sm text-primary">"週"</span>
                 </CardTitle>
-                <CardDescription>"Like a newspaper puzzle, the bridges get harder towards Sunday."</CardDescription>
+                <CardDescription>{t!(i18n, daily.week.text)}</CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-3">
                 <div class="grid grid-cols-7 gap-1">
@@ -388,7 +402,7 @@ fn WeekCard(daily: Daily) -> impl IntoView {
                                 <div
                                     class="flex flex-col items-center rounded-md border py-1.5"
                                     class=(["border-primary", "bg-primary", "text-primary-foreground"], is_today)
-                                    title=d.label()
+                                    title=move || difficulty_name(i18n.get_locale(), d)
                                 >
                                     <span class="font-pixel text-base leading-none">{WEEKDAY_KANJI[wd]}</span>
                                     <span class="mt-1 font-pixel text-[11px] opacity-80">{d.kanji()}</span>
@@ -398,7 +412,7 @@ fn WeekCard(daily: Daily) -> impl IntoView {
                         .collect_view()}
                 </div>
                 <p class="flex items-center justify-between text-sm">
-                    <span class="text-muted-foreground">"Next bridge in"</span>
+                    <span class="text-muted-foreground">{t!(i18n, daily.week.next)}</span>
                     <span class="font-pixel tabular-nums">
                         {move || {
                             today
@@ -415,6 +429,7 @@ fn WeekCard(daily: Daily) -> impl IntoView {
 
 #[component]
 pub fn DailyPage() -> impl IntoView {
+    let i18n = use_i18n();
     let game = expect_context::<DailyGame>().0;
     let daily = Daily {
         game,
@@ -471,7 +486,7 @@ pub fn DailyPage() -> impl IntoView {
                     daily.refresh_ranking();
                 }
                 Err(e) => {
-                    toast(ToastKind::Error, format!("Could not submit: {e}"));
+                    toast(ToastKind::Error, move |l| error_text(l, &e));
                     game.status.set(Status::Playing);
                 }
             }
@@ -498,8 +513,8 @@ pub fn DailyPage() -> impl IntoView {
                         Duration::from_millis(3000),
                     );
                 }
-                Ok(None) => toast(ToastKind::Info, "Nothing to hint, every bridge is in place."),
-                Err(e) => toast(ToastKind::Error, e.to_string()),
+                Ok(None) => toast(ToastKind::Info, |l| td_string!(l, common.toast.nothing_to_hint).to_string()),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
         });
     };
@@ -512,18 +527,17 @@ pub fn DailyPage() -> impl IntoView {
                 Ok(wrong) => {
                     daily.update_attempt(|a| a.checks += 1);
                     if wrong.is_empty() {
-                        toast(ToastKind::Success, "So far so good: every bridge belongs to the solution.");
+                        toast(ToastKind::Success, |l| td_string!(l, common.toast.all_correct).to_string());
                     } else {
-                        let n = wrong.len();
-                        toast(
-                            ToastKind::Error,
-                            format!("{n} bridge{} not part of the solution.", if n == 1 { " is" } else { "s are" }),
-                        );
+                        let count = wrong.len();
+                        toast(ToastKind::Error, move |l| {
+                            td_string!(l, common.toast.wrong_bridges, count).to_string()
+                        });
                         game.wrong.set(wrong);
                         set_timeout(move || game.wrong.set(vec![]), Duration::from_millis(2400));
                     }
                 }
-                Err(e) => toast(ToastKind::Error, e.to_string()),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
         });
     };
@@ -531,7 +545,7 @@ pub fn DailyPage() -> impl IntoView {
     let give_up = move |_| {
         let Some(day) = daily.day() else { return };
         let sure = window()
-            .confirm_with_message("Let the SAT solver show the solution? Today's run won't be ranked.")
+            .confirm_with_message(t_string!(i18n, daily.give_up_confirm))
             .unwrap_or(false);
         if !sure {
             return;
@@ -552,7 +566,7 @@ pub fn DailyPage() -> impl IntoView {
                         );
                     }
                 }
-                Err(e) => toast(ToastKind::Error, e.to_string()),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
         });
     };
@@ -576,14 +590,14 @@ pub fn DailyPage() -> impl IntoView {
                     </span>
                     <div>
                         <p class="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                            {pretty_date(info.day)}
+                            {move || date_long(i18n.get_locale(), info.day)}
                         </p>
                         <h1 class="text-2xl font-black sm:text-3xl">
-                            {format!("Daily bridge #{}", daily_number(info.day))}
+                            {t!(i18n, daily.title, number = daily_number(info.day))}
                         </h1>
                         <div class="mt-1 flex gap-1.5">
                             <Badge variant=BadgeVariant::Default>
-                                {format!("{} {}", info.difficulty.kanji(), info.difficulty.label())}
+                                {info.difficulty.kanji()} " " {move || difficulty_name(i18n.get_locale(), info.difficulty)}
                             </Badge>
                             <Badge variant=BadgeVariant::Muted>
                                 {let (w, h) = info.difficulty.size();
@@ -598,10 +612,10 @@ pub fn DailyPage() -> impl IntoView {
 
     view! {
         <PageMeta
-            title="Hashi · Daily Hashiwokakero (Bridges) puzzle, free online"
-            description="A new Hashiwokakero (Bridges) puzzle every day, the same for everyone: cute Japanese pixel art, a leaderboard and streaks, and every puzzle has exactly one solution."
+            title=Signal::derive(move || t_string!(i18n, daily.meta.title).to_string())
+            description=Signal::derive(move || t_string!(i18n, daily.meta.description).to_string())
             path="/"
-            json_ld=site_ld()
+            json_ld=site_ld(i18n.get_locale_untracked())
         />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -610,15 +624,15 @@ pub fn DailyPage() -> impl IntoView {
                         {header}
                         <div class="flex gap-2">
                             <Stat
-                                label="Time"
+                                label=Signal::derive(move || t_string!(i18n, common.game.time).to_string())
                                 jp="時間"
                                 value=Signal::derive(move || {
                                     if daily.started() { format_duration(daily.elapsed_ms()) } else { "–".into() }
                                 })
                             />
-                            <Stat label="Moves" jp="手" value=Signal::derive(move || game.moves.get().to_string()) />
+                            <Stat label=Signal::derive(move || t_string!(i18n, common.game.moves).to_string()) jp="手" value=Signal::derive(move || game.moves.get().to_string()) />
                             <Stat
-                                label="Penalty"
+                                label=Signal::derive(move || t_string!(i18n, daily.penalty).to_string())
                                 jp="罰"
                                 value=Signal::derive(move || {
                                     let p = daily
@@ -635,7 +649,7 @@ pub fn DailyPage() -> impl IntoView {
                         if daily.info.with(Option::is_none) {
                             view! {
                                 <div class="grid aspect-square w-full place-items-center rounded-2xl border border-dashed text-muted-foreground">
-                                    <p class="font-pixel">"読み込み中 · loading"</p>
+                                    <p class="font-pixel">"読み込み中 · " {t!(i18n, common.game.loading)}</p>
                                 </div>
                             }
                                 .into_any()
@@ -669,12 +683,12 @@ pub fn DailyPage() -> impl IntoView {
                                     <span class="font-pixel text-foreground">
                                         {move || format!("{} / {}", islands_done.get(), islands.get())}
                                     </span>
-                                    " islands complete"
+                                    " " {t!(i18n, common.game.islands_complete)}
                                 </span>
                                 <span>
                                     {move || {
                                         let c = check_state.with(|c| c.components);
-                                        if c > 1 { format!("{c} separate groups") } else { "all connected".to_string() }
+                                        if c > 1 { t_string!(i18n, common.game.groups, count = c).to_string() } else { t_string!(i18n, common.game.all_connected).to_string() }
                                     }}
                                 </span>
                             </div>
@@ -692,30 +706,30 @@ pub fn DailyPage() -> impl IntoView {
                                 attr:disabled=move || !playing.get() || game.undo_stack.with(Vec::is_empty)
                                 on:click=move |_| game.undo()
                             >
-                                "↶ Undo"
+                                "↶ " {t!(i18n, common.game.undo)}
                             </Button>
                             <Button
                                 variant=ButtonVariant::Outline
                                 attr:disabled=move || !playing.get() || game.redo_stack.with(Vec::is_empty)
                                 on:click=move |_| game.redo()
                             >
-                                "Redo ↷"
+                                {t!(i18n, common.game.redo)} " ↷"
                             </Button>
                             <Button
                                 variant=ButtonVariant::Ghost
                                 attr:disabled=move || !playing.get()
                                 on:click=move |_| game.restart()
                             >
-                                "Clear"
+                                {t!(i18n, common.game.clear)}
                             </Button>
-                            <div class="contents sm:ml-auto sm:flex sm:gap-2">
+                            <div class="contents sm:ms-auto sm:flex sm:gap-2">
                                 <Button
                                     variant=ButtonVariant::Secondary
                                     attr:disabled=move || !playing.get()
                                     attr:title=format!("+{} s", CHECK_PENALTY_MS / 1000)
                                     on:click=check
                                 >
-                                    "Check" <span class="hidden sm:inline">" 確認"</span> <span class="text-xs opacity-70">"+10s"</span>
+                                    {t!(i18n, common.game.check)} <span class="hidden sm:inline">" 確認"</span> <span class="text-xs opacity-70">"+10s"</span>
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Secondary
@@ -723,14 +737,14 @@ pub fn DailyPage() -> impl IntoView {
                                     attr:title=format!("+{} s", HINT_PENALTY_MS / 1000)
                                     on:click=hint
                                 >
-                                    "Hint" <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70">"+30s"</span>
+                                    {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70">"+30s"</span>
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Ghost
                                     attr:disabled=move || !playing.get()
                                     on:click=give_up
                                 >
-                                    "Give up"
+                                    {t!(i18n, daily.give_up)}
                                 </Button>
                             </div>
                         </div>

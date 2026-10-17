@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "SATソルバーラボ · CDCL・DPLL・splr",
+    "description": "橋をかけろのパズルを自作のCDCL・DPLL SATソルバーで解き比べ。分岐ヒューリスティックやリスタート方式を変えて、splrと速さを競わせます。"
+  },
+  "title": "ソルバーラボ",
+  "intro": "ひとつのパズルを、自作のCDCL・DPLLソルバーのさまざまなモード（分岐ヒューリスティック、リスタート方式、包含除去）で競わせ、splrと比べます。",
+  "puzzle": {
+    "title": "1 · パズル",
+    "size": "{{ width }}×{{ height }}、島 {{ count }}個",
+    "none": "パズル未選択",
+    "game": "プレイ中",
+    "workshop": "工房",
+    "fresh": "新規"
+  },
+  "solvers": {
+    "title": "2 · ソルバー",
+    "description": "比べたい設定を選んでください。",
+    "timeout": "1回の制限時間"
+  },
+  "racing": "レース中…",
+  "start": "レース開始",
+  "results": {
+    "title": "3 · 結果",
+    "description": "合計時間はエンコードと求解の合計です。つながっていない解は遅延的に否定され、否定のたびにSAT呼び出しが1回増えます。",
+    "empty": "まだレースしていません。"
+  },
+  "table": {
+    "config": "設定",
+    "result": "結果",
+    "decisions": "決定数",
+    "restarts": "リスタート",
+    "calls": "SAT呼出"
+  },
+  "badge": {
+    "queued": "待機中",
+    "solving": "求解中…",
+    "error": "エラー",
+    "timeout": "時間切れ"
+  },
+  "summary": {
+    "decisions": "決定数：{{ count }}",
+    "restarts": "リスタート：{{ count }}",
+    "calls": "SAT呼び出し：{{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "先にパズルを選んでください。",
+    "pick_solver": "ソルバー設定を1つ以上選んでください。"
+  }
+}

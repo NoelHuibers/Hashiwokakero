@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Come si gioca a Hashiwokakero · Regole e consigli · Hashi",
+    "description": "Le regole di Hashiwokakero (Ponti) con un esempio risolto, le deduzioni che risolvono quasi ogni puzzle senza tirare a indovinare e come SAT ne prova l’unicità."
+  },
+  "title": "Come si gioca",
+  "intro": "Hashiwokakero (橋をかけろ, «costruisci ponti!») è un rompicapo logico pubblicato da Nikoli. Collega tutte le isole con dei ponti in modo che ogni isola abbia esattamente tanti ponti quanti ne indica il suo numero.",
+  "rule": {
+    "count_title": "Conta i ponti",
+    "count": "Il numero su un’isola indica quanti ponti vi arrivano.",
+    "double_title": "Uno o due",
+    "double": "Le isole possono essere unite da un ponte singolo di legno o da un ponte doppio vermiglio, mai di più.",
+    "straight_title": "Dritti, senza incroci",
+    "straight": "I ponti corrono in orizzontale o in verticale e non devono incrociare altri ponti né isole.",
+    "connected_title": "Un solo arcipelago",
+    "connected": "Alla fine ogni isola deve essere raggiungibile da tutte le altre."
+  },
+  "example": "Un puzzle risolto",
+  "controls": {
+    "title": "Comandi",
+    "tap": "Clicca sull’acqua tra due isole per costruire un ponte, di nuovo per un secondo, un terzo clic li rimuove.",
+    "drag": "Oppure trascina da un’isola verso la vicina, o clicca due isole una dopo l’altra.",
+    "remove": "<right>Clic destro</right> / <shift>Maiusc</shift> + clic rimuove un ponte.",
+    "colors": "Le isole completate diventano verdi, quelle con troppi ponti rosse. Bloccato? Chiedi al solver SAT un indizio o di verificare i tuoi ponti."
+  },
+  "hood": {
+    "title": "Sotto il cofano",
+    "variables": "Ogni ponte possibile <e>e</e> tra due isole vicine riceve due variabili booleane: <e1>e₁</e1> (almeno un ponte) e <e2>e₂</e2> (un secondo ponte), con <imp>e₂ → e₁</imp> in modo che ogni disposizione abbia esattamente un modello.",
+    "islands": "Un’isola con numero n richiede che esattamente n delle sue variabili siano vere, il che si scrive con clausole su tutte le combinazioni. I ponti che si incrociano si escludono a vicenda:",
+    "connectivity": "La connettività è difficile da esprimere in CNF, quindi viene aggiunta in modo pigro: ogni volta che il solver restituisce gruppi di isole separati, si aggiunge una clausola che richiede un ponte in uscita da quel gruppo e il solver riparte.",
+    "generator": "Il generatore fa crescere un arcipelago casuale e dimostra l’unicità bloccando la soluzione trovata e chiedendone un’altra al solver. Prova le diverse modalità del solver nel <a>laboratorio</a>."
+  },
+  "faq_title": "Domande su Hashiwokakero",
+  "faq": {
+    "what_q": "Cos’è Hashiwokakero?",
+    "what_a": "Hashiwokakero (橋をかけろ, «costruisci ponti»), detto anche Ponti o Hashi, è un rompicapo logico giapponese pubblicato da Nikoli. La griglia mostra isole numerate; le colleghi con ponti orizzontali e verticali in modo che ogni isola abbia esattamente tanti ponti quanto indica il suo numero, che nessun ponte ne incroci un altro e che tutte le isole formino un unico gruppo connesso.",
+    "how_many_q": "Quanti ponti possono collegare due isole?",
+    "how_many_a": "Al massimo due. Un ponte singolo o doppio può unire due isole sulla stessa riga o colonna senza nulla in mezzo.",
+    "cross_q": "I ponti possono incrociarsi?",
+    "cross_a": "No. I ponti corrono dritti in orizzontale o in verticale e non possono né incrociare altri ponti né passare sopra le isole.",
+    "connected_q": "Tutte le isole devono essere collegate?",
+    "connected_a": "Sì. In un puzzle completato puoi andare da qualsiasi isola a qualsiasi altra attraverso i ponti: le isole formano un’unica rete.",
+    "unique_q": "C’è sempre esattamente una soluzione?",
+    "unique_a": "Su Hashi sì: ogni puzzle generato viene controllato da un solver SAT, che dimostra che non esiste una seconda soluzione, quindi non devi mai tirare a indovinare."
+  }
+}

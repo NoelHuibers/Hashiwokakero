@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · 매일 새로운 다리 놓기 무료 퍼즐",
+    "description": "매일 새로운 하시(다리 놓기) 퍼즐을 무료로! 모두에게 같은 문제, 귀여운 일본풍 픽셀 아트, 순위표와 연속 기록. 해답은 항상 하나예요."
+  },
+  "title": "데일리 #{{ number }}",
+  "penalty": "페널티",
+  "give_up": "포기",
+  "give_up_confirm": "SAT 솔버에게 정답을 보여 달라고 할까요? 오늘 기록은 순위에 오르지 않아요.",
+  "share": "Hashi 橋 데일리 #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 {{ total }}명 중 {{ rank }}위",
+  "cover": {
+    "title": "오늘의 다리",
+    "text": "시작을 누르면 퍼즐이 나타나고, 시간은 서버에서 재요. 힌트는 30초, 확인은 10초가 추가되고, 정답을 보면 순위에서 빠져요.",
+    "start": "시작",
+    "preparing": "준비 중…",
+    "playing_as": "{{ name }}(으)로 플레이",
+    "playing_as_guest": "{{ name }}(게스트)(으)로 플레이",
+    "no_account": "계정이 없어도 돼요. 게스트로 플레이할 수 있어요."
+  },
+  "result": {
+    "revealed_title": "SAT 솔버가 풀었어요",
+    "revealed_text": "이번 판은 순위에 들어가지 않아요. 내일 또 만나요!",
+    "rank": "오늘 {{ total }}명 중 {{ rank }}위",
+    "ranking": "순위 계산 중…",
+    "more": "연습 모드에서 더 많은 퍼즐 →",
+    "on_board": "<b>{{ name }}</b>(으)로 순위표에 올랐어요.",
+    "claim": "이름을 등록하고 모든 기기에서 연속 기록을 지켜요 →"
+  },
+  "ranking": {
+    "title": "오늘의 순위",
+    "all": "전체 →",
+    "crossed": "오늘 건넌 사람: {{ count }}명"
+  },
+  "week": {
+    "title": "이번 주",
+    "text": "신문 퍼즐처럼, 일요일로 갈수록 다리가 어려워져요.",
+    "next": "다음 다리까지"
+  }
+}

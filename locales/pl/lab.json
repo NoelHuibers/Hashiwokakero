@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "Laboratorium SAT · CDCL, DPLL i splr na łamigłówkach Hashi",
+    "description": "Puść jedną łamigłówkę Hashiwokakero przez nasze własne solvery SAT CDCL i DPLL z różnymi heurystykami i strategiami restartów i porównaj je ze splr."
+  },
+  "title": "Laboratorium solverów",
+  "intro": "Puść jedną łamigłówkę przez nasze własne solvery CDCL i DPLL w różnych trybach (heurystyki rozgałęziania, strategie restartów, subsumpcja) i porównaj je ze splr.",
+  "puzzle": {
+    "title": "1 · Łamigłówka",
+    "size": "{{ width }}×{{ height }}, wyspy: {{ count }}",
+    "none": "Nie wybrano łamigłówki",
+    "game": "Bieżąca gra",
+    "workshop": "Warsztat",
+    "fresh": "Nowa"
+  },
+  "solvers": {
+    "title": "2 · Solvery",
+    "description": "Wybierz konfiguracje do porównania.",
+    "timeout": "Limit czasu na przebieg"
+  },
+  "racing": "Wyścig trwa…",
+  "start": "Start wyścigu",
+  "results": {
+    "title": "3 · Wyniki",
+    "description": "Łączny czas to kodowanie plus rozwiązywanie. Niespójne rozwiązania są odrzucane leniwie, każde odrzucenie kosztuje kolejne wywołanie SAT.",
+    "empty": "Jeszcze nie było wyścigu."
+  },
+  "table": {
+    "config": "Konfiguracja",
+    "result": "Wynik",
+    "decisions": "Decyzje",
+    "restarts": "Restarty",
+    "calls": "Wywołania SAT"
+  },
+  "badge": {
+    "queued": "w kolejce",
+    "solving": "rozwiązuje…",
+    "error": "błąd",
+    "timeout": "limit czasu"
+  },
+  "summary": {
+    "decisions": "Decyzje: {{ count }}",
+    "restarts": "Restarty: {{ count }}",
+    "calls": "Wywołania SAT: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Najpierw wybierz łamigłówkę.",
+    "pick_solver": "Wybierz co najmniej jedną konfigurację solvera."
+  }
+}

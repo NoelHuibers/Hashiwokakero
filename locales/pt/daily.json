@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Hashiwokakero (Pontes) diário, grátis online",
+    "description": "Um novo puzzle Hashiwokakero (Pontes) todo dia, igual para todos: pixel art japonesa fofa, ranking e sequências, e cada puzzle tem uma única solução."
+  },
+  "title": "Ponte diária #{{ number }}",
+  "penalty": "Penalidade",
+  "give_up": "Desistir",
+  "give_up_confirm": "Deixar o solver SAT mostrar a solução? A partida de hoje não entrará no ranking.",
+  "share": "Hashi 橋 Diário #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "A ponte de hoje",
+    "text": "O puzzle aparece quando você aperta começar, e o relógio roda no servidor. Dicas somam 30 s, verificações 10 s, e revelar a solução tira você do ranking.",
+    "start": "Começar",
+    "preparing": "Preparando…",
+    "playing_as": "Jogando como {{ name }}",
+    "playing_as_guest": "Jogando como {{ name }} (convidado)",
+    "no_account": "Não precisa de conta, você joga como convidado."
+  },
+  "result": {
+    "revealed_title": "Resolvido pelo solver SAT",
+    "revealed_text": "Este não conta para o ranking. Até amanhã!",
+    "rank": "Posição {{ rank }} de {{ total }} hoje",
+    "ranking": "Classificando…",
+    "more": "Mais puzzles no modo treino →",
+    "on_board": "Você está no ranking como <b>{{ name }}</b>.",
+    "claim": "Registre seu nome para manter sua sequência em qualquer dispositivo →"
+  },
+  "ranking": {
+    "title": "Ranking de hoje",
+    "all": "Todos →",
+    "crossed": "Atravessaram hoje: {{ count }}"
+  },
+  "week": {
+    "title": "Esta semana",
+    "text": "Como o puzzle do jornal, as pontes ficam mais difíceis até domingo.",
+    "next": "Próxima ponte em"
+  }
+}

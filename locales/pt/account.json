@@ -1,0 +1,32 @@
+{
+  "title": "Sua conta",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Suas pontes",
+  "guest_here": "Jogando como {{ name }} (convidado) neste navegador.",
+  "member_since": "Membro desde {{ date }}.",
+  "no_record": "Jogue um desafio diário para começar seu histórico.",
+  "stats": {
+    "solved": "Resolvidos",
+    "streak": "Sequência",
+    "best": "Melhor sequência",
+    "fastest": "Mais rápido",
+    "average": "Média",
+    "week": "Esta semana",
+    "best_streak_short": "Sequência"
+  },
+  "last_weeks": "Últimas cinco semanas",
+  "calendar_rank": "posição {{ rank }}",
+  "not_solved": "não resolvido",
+  "guest_cta": "Crie uma conta para manter os resultados e a sequência deste convidado e jogar em outros dispositivos.",
+  "sign_in_cta": "Entre para ver sua sequência em qualquer dispositivo. Ou simplesmente jogue como convidado.",
+  "create": "Criar conta",
+  "username": "Nome de usuário",
+  "password": "Senha",
+  "password_hint": "Pelo menos 8 caracteres.",
+  "busy": "Só um momento…",
+  "welcome": "Boas-vindas, {{ name }}!",
+  "signed_out": "Você saiu da conta.",
+  "name_hint": "Seus resultados aparecem no ranking com este nome.",
+  "sign_out": "Sair",
+  "no_dailies": "Nenhum desafio diário ainda."
+}

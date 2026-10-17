@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Stwórz własną łamigłówkę Hashiwokakero · Hashi",
+    "description": "Zaprojektuj łamigłówkę Mosty w warsztacie: rozmieść wyspy, niech solver SAT sprawdzi, czy ma jedno rozwiązanie, wyeksportuj ją do pliku tekstowego i zagraj."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Warsztat łamigłówek",
+  "intro": "Rozmieść wyspy, niech solver SAT sprawdzi, czy twoja łamigłówka ma dokładnie jedno rozwiązanie, a potem w nią zagraj.",
+  "keys": {
+    "click": "Klik",
+    "right_click": "Prawy klik",
+    "set": "postaw",
+    "erase": "usuń (po najechaniu)"
+  },
+  "brush": {
+    "count_up": "Każde stuknięcie zwiększa liczbę",
+    "erase": "Gumka",
+    "place": "Postaw {{ number }}"
+  },
+  "heads_up": "Uwaga",
+  "warning_capacity": "Wyspa {{ number }} na polu ({{ x }}, {{ y }}) wymaga mostów w liczbie {{ number }}, a może mieć najwyżej {{ max }}.",
+  "warning_odd": "Liczby sumują się do {{ total }}, a nieparzystej sumy nigdy nie da się rozwiązać.",
+  "grid": "Plansza",
+  "grid_size": "plansza {{ width }}×{{ height }}, wyspy: {{ count }}",
+  "width": "Szerokość",
+  "height": "Wysokość",
+  "fill": "Wypełnij wygenerowaną łamigłówką",
+  "import": "Importuj .txt",
+  "export": "Eksportuj .txt",
+  "play": "Zagraj w tę łamigłówkę",
+  "unique": "Jednoznaczna: świetna łamigłówka!",
+  "not_unique": "Więcej niż jedno rozwiązanie, dodaj lub zmień wyspy.",
+  "imported": "Zaimportowano {{ name }}",
+  "unreadable": "Nie udało się odczytać {{ name }}",
+  "brush_label": "Pędzel"
+}

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Crea il tuo puzzle Hashiwokakero · Hashi",
+    "description": "Progetta un puzzle Ponti nell’officina: piazza le isole, fai verificare a un solver SAT che abbia una sola soluzione, esportalo come file di testo e giocalo."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Officina dei puzzle",
+  "intro": "Piazza le isole, fai verificare al solver SAT che il tuo puzzle abbia esattamente una soluzione, poi giocalo.",
+  "keys": {
+    "click": "Clic",
+    "right_click": "Clic destro",
+    "set": "imposta",
+    "erase": "cancella (al passaggio)"
+  },
+  "brush": {
+    "count_up": "Ogni tocco aumenta il numero",
+    "erase": "Cancella",
+    "place": "Piazza un {{ number }}"
+  },
+  "heads_up": "Attenzione",
+  "warning_capacity": "L’isola {{ number }} in ({{ x }}, {{ y }}) richiede {{ number }} ponti, ma può averne al massimo {{ max }}.",
+  "warning_odd": "La somma dei numeri è {{ total }}: una somma dispari non può mai essere risolta.",
+  "grid": "Griglia",
+  "grid_size": "{{ width }}×{{ height }} caselle, {{ count }} isole",
+  "width": "Larghezza",
+  "height": "Altezza",
+  "fill": "Riempi con un puzzle generato",
+  "import": "Importa .txt",
+  "export": "Esporta .txt",
+  "play": "Gioca questo puzzle",
+  "unique": "Unica: un bel puzzle!",
+  "not_unique": "Più di una soluzione, aggiungi o modifica le isole.",
+  "imported": "Importato {{ name }}",
+  "unreadable": "Impossibile leggere {{ name }}",
+  "brush_label": "Pennello"
+}

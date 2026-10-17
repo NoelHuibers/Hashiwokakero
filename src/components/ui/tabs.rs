@@ -105,7 +105,7 @@ pub fn TabsTrigger(
         // After pseudo-element (underline indicator)
         "after:absolute after:bg-foreground after:transition-opacity",
         "group-data-[orientation=Horizontal]/tabs:after:inset-x-0 group-data-[orientation=Horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=Horizontal]/tabs:after:h-0.5",
-        "group-data-[orientation=Vertical]/tabs:after:inset-y-0 group-data-[orientation=Vertical]/tabs:after:-right-1 group-data-[orientation=Vertical]/tabs:after:w-0.5",
+        "group-data-[orientation=Vertical]/tabs:after:inset-y-0 group-data-[orientation=Vertical]/tabs:after:-end-1 group-data-[orientation=Vertical]/tabs:after:w-0.5",
         class
     );
 
@@ -149,7 +149,7 @@ pub fn TabsContent(
                 tw_merge!(
                     "flex-1 text-sm outline-none",
                 // Orientation via group-data on parent
-                "group-data-[orientation=Horizontal]/tabs:mt-2 group-data-[orientation=Vertical]/tabs:ml-4",
+                "group-data-[orientation=Horizontal]/tabs:mt-2 group-data-[orientation=Vertical]/tabs:ms-4",
                 &class,
                 if is_active.get() { "" } else { "hidden" }
                 )

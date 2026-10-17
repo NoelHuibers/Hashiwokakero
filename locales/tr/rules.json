@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Hashiwokakero nasıl oynanır · Kurallar ve ipuçları · Hashi",
+    "description": "Çözülmüş örnekle Hashiwokakero (Köprüler) kuralları, çoğu bulmacayı tahminsiz çözen çıkarımlar ve SAT çözücünün çözümün tekliğini nasıl kanıtladığı."
+  },
+  "title": "Nasıl oynanır",
+  "intro": "Hashiwokakero (橋をかけろ, “köprüleri kur!”), Nikoli tarafından yayımlanan bir mantık bulmacasıdır. Tüm adaları köprülerle bağla; her adada, üzerindeki sayı kadar köprü olsun.",
+  "rule": {
+    "count_title": "Köprüleri say",
+    "count": "Bir adadaki sayı, orada kaç köprünün bittiğini gösterir.",
+    "double_title": "Bir veya iki",
+    "double": "Adalar tek bir ahşap köprüyle ya da çift kırmızı köprüyle bağlanabilir, daha fazlasıyla asla.",
+    "straight_title": "Düz, kesişme yok",
+    "straight": "Köprüler yatay veya dikey gider; başka köprüleri ya da adaları kesemez.",
+    "connected_title": "Tek bir takımada",
+    "connected": "Sonunda her adadan diğer her adaya ulaşılabilmelidir."
+  },
+  "example": "Çözülmüş bir bulmaca",
+  "controls": {
+    "title": "Kontroller",
+    "tap": "Köprü kurmak için iki ada arasındaki suya tıkla, ikinci köprü için tekrar tıkla, üçüncü tık köprüleri kaldırır.",
+    "drag": "Ya da bir adadan komşusuna doğru sürükle veya iki adaya art arda tıkla.",
+    "remove": "<right>Sağ tık</right> / <shift>Shift</shift> + tık bir köprüyü kaldırır.",
+    "colors": "Tamamlanan adalar yeşile, fazla dolanlar kırmızıya döner. Takıldın mı? SAT çözücüden ipucu iste ya da köprülerini kontrol ettir."
+  },
+  "hood": {
+    "title": "Perde arkası",
+    "variables": "Komşu iki ada arasındaki her olası köprü <e>e</e> iki mantıksal değişken alır: <e1>e₁</e1> (en az bir köprü) ve <e2>e₂</e2> (ikinci köprü); <imp>e₂ → e₁</imp> sayesinde her yerleşimin tam olarak bir modeli olur.",
+    "islands": "Sayısı n olan bir adada değişkenlerinden tam olarak n tanesi doğru olmalıdır; bu, tüm kombinasyonlar üzerinden tümceler olarak yazılır. Kesişen köprüler birbirini dışlar:",
+    "connectivity": "Bağlılığı CNF ile ifade etmek zordur, bu yüzden gerektikçe eklenir: çözücü ayrı ada grupları döndürdüğünde, o gruptan dışarı bir köprü isteyen bir tümce eklenir ve çözücü yeniden çalışır.",
+    "generator": "Üretici rastgele bir takımada büyütür ve bulunan çözümü engelleyip çözücüden başka bir çözüm isteyerek tekliği kanıtlar. Farklı çözücü modlarını <a>laboratuvarda</a> dene."
+  },
+  "faq_title": "Hashiwokakero hakkında sorular",
+  "faq": {
+    "what_q": "Hashiwokakero nedir?",
+    "what_a": "Hashiwokakero (橋をかけろ, “köprüleri kur”), Köprüler veya Hashi olarak da bilinen, Nikoli tarafından yayımlanan bir Japon mantık bulmacasıdır. Izgarada numaralı adalar vardır; bunları yatay ve dikey köprülerle bağlarsın, öyle ki her adada sayısı kadar köprü olsun, köprüler kesişmesin ve tüm adalar tek bir bağlı grup oluştursun.",
+    "how_many_q": "İki adayı kaç köprü bağlayabilir?",
+    "how_many_a": "En fazla iki. Aynı satır veya sütunda olan ve arasında hiçbir şey bulunmayan iki ada tek ya da çift köprüyle bağlanabilir.",
+    "cross_q": "Köprüler birbirini kesebilir mi?",
+    "cross_a": "Hayır. Köprüler yatay veya dikey olarak düz gider; ne başka köprüleri kesebilir ne de adaların üzerinden geçebilir.",
+    "connected_q": "Tüm adaların bağlı olması gerekir mi?",
+    "connected_a": "Evet. Bitmiş bir bulmacada köprüler üzerinden herhangi bir adadan diğer herhangi bir adaya gidebilirsin; adalar tek bir ağ oluşturur.",
+    "unique_q": "Her zaman tam olarak tek bir çözüm var mı?",
+    "unique_a": "Hashi'de evet: üretilen her bulmaca, ikinci bir çözüm olmadığını kanıtlayan bir SAT çözücüyle kontrol edilir; yani asla tahmin yürütmen gerekmez."
+  }
+}

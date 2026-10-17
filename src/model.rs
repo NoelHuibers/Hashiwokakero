@@ -119,6 +119,90 @@ pub struct UserStats {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Errors                                                             */
+/* ------------------------------------------------------------------ */
+
+/// Errors the server reports to players. They travel as `E:<code>` in the server function error
+/// and are translated on the client (`common.errors.<code>`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ApiError {
+    Database,
+    Internal,
+    ArchiveOnlyPast,
+    PasswordTooShort,
+    PasswordTooLong,
+    UsernameInvalid,
+    UsernameTaken,
+    WrongLogin,
+    TooManyAttempts,
+    SessionExpired,
+    NotStarted,
+    NotSolved,
+    WrongPuzzle,
+    AlreadyFinished,
+}
+
+impl ApiError {
+    pub const ALL: [ApiError; 14] = [
+        ApiError::Database,
+        ApiError::Internal,
+        ApiError::ArchiveOnlyPast,
+        ApiError::PasswordTooShort,
+        ApiError::PasswordTooLong,
+        ApiError::UsernameInvalid,
+        ApiError::UsernameTaken,
+        ApiError::WrongLogin,
+        ApiError::TooManyAttempts,
+        ApiError::SessionExpired,
+        ApiError::NotStarted,
+        ApiError::NotSolved,
+        ApiError::WrongPuzzle,
+        ApiError::AlreadyFinished,
+    ];
+
+    pub fn code(self) -> &'static str {
+        match self {
+            ApiError::Database => "database",
+            ApiError::Internal => "internal",
+            ApiError::ArchiveOnlyPast => "archive_only_past",
+            ApiError::PasswordTooShort => "password_too_short",
+            ApiError::PasswordTooLong => "password_too_long",
+            ApiError::UsernameInvalid => "username_invalid",
+            ApiError::UsernameTaken => "username_taken",
+            ApiError::WrongLogin => "wrong_login",
+            ApiError::TooManyAttempts => "too_many_attempts",
+            ApiError::SessionExpired => "session_expired",
+            ApiError::NotStarted => "not_started",
+            ApiError::NotSolved => "not_solved",
+            ApiError::WrongPuzzle => "wrong_puzzle",
+            ApiError::AlreadyFinished => "already_finished",
+        }
+    }
+
+    /// Finds the `E:<code>` marker in an error message.
+    pub fn from_message(message: &str) -> Option<Self> {
+        let code = message.split("E:").nth(1)?;
+        let code = code.split(|c: char| !(c.is_ascii_alphanumeric() || c == '_')).next()?;
+        Self::ALL.into_iter().find(|e| e.code() == code)
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl From<ApiError> for leptos::prelude::ServerFnError {
+    fn from(e: ApiError) -> Self {
+        leptos::prelude::ServerFnError::new(format!("E:{}", e.code()))
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl ApiError {
+    /// The error as a server function error, where `.into()` can't infer the type.
+    pub fn fail(self) -> leptos::prelude::ServerFnError {
+        self.into()
+    }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Hints                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -316,6 +400,15 @@ mod tests {
         assert_eq!(streaks(&[8, 9], 10), (2, 2));
         assert_eq!(streaks(&[7, 8], 10), (0, 2));
         assert_eq!(streaks(&[1, 2, 3, 4, 9, 10], 10), (2, 4));
+    }
+
+    #[test]
+    fn error_codes_round_trip() {
+        for e in ApiError::ALL {
+            let message = format!("error running server function: E:{}", e.code());
+            assert_eq!(ApiError::from_message(&message), Some(e));
+        }
+        assert_eq!(ApiError::from_message("something else"), None);
     }
 
     #[test]

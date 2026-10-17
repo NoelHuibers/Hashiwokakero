@@ -1,0 +1,32 @@
+{
+  "title": "Dein Konto",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Deine Brücken",
+  "guest_here": "Du spielst in diesem Browser als {{ name }} (Gast).",
+  "member_since": "Dabei seit {{ date }}.",
+  "no_record": "Spiel ein Tagesrätsel, um deine Bilanz zu starten.",
+  "stats": {
+    "solved": "Gelöst",
+    "streak": "Serie",
+    "best": "Beste Serie",
+    "fastest": "Schnellste",
+    "average": "Schnitt",
+    "week": "Diese Woche",
+    "best_streak_short": "Serie"
+  },
+  "last_weeks": "Letzte fünf Wochen",
+  "calendar_rank": "Platz {{ rank }}",
+  "not_solved": "nicht gelöst",
+  "guest_cta": "Erstelle ein Konto, um die Ergebnisse und die Serie dieses Gasts zu behalten und auf anderen Geräten zu spielen.",
+  "sign_in_cta": "Melde dich an, um deine Serie auf jedem Gerät zu sehen. Du kannst auch einfach als Gast spielen.",
+  "create": "Konto erstellen",
+  "username": "Benutzername",
+  "password": "Passwort",
+  "password_hint": "Mindestens 8 Zeichen.",
+  "busy": "Einen Moment…",
+  "welcome": "Willkommen, {{ name }}!",
+  "signed_out": "Abgemeldet.",
+  "name_hint": "Unter diesem Namen erscheinen deine Ergebnisse in der Rangliste.",
+  "sign_out": "Abmelden",
+  "no_dailies": "Noch keine Tagesrätsel."
+}

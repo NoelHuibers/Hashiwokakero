@@ -16,7 +16,7 @@ use sha2::{Digest, Sha256};
 
 use super::db::db_err;
 use super::{now_ms, run_blocking};
-use crate::model::{MS_PER_DAY, UserInfo};
+use crate::model::{ApiError, MS_PER_DAY, UserInfo};
 
 const COOKIE: &str = "hashi_session";
 const SESSION_DAYS: i64 = 365;
@@ -176,17 +176,15 @@ pub fn validate_username(username: &str) -> Result<(), ServerFnError> {
     if ok_len && ok_chars {
         Ok(())
     } else {
-        Err(ServerFnError::new(
-            "Usernames have 3 to 20 characters: letters, digits, _ and -",
-        ))
+        Err(ApiError::UsernameInvalid.into())
     }
 }
 
 pub fn validate_password(password: &str) -> Result<(), ServerFnError> {
     match password.chars().count() {
-        0..=7 => Err(ServerFnError::new("Passwords need at least 8 characters")),
+        0..=7 => Err(ApiError::PasswordTooShort.into()),
         8..=128 => Ok(()),
-        _ => Err(ServerFnError::new("Passwords can have at most 128 characters")),
+        _ => Err(ApiError::PasswordTooLong.into()),
     }
 }
 
@@ -234,7 +232,7 @@ pub async fn register(conn: &Connection, username: &str, password: String) -> Re
     };
     if let Err(e) = result {
         return Err(if e.to_string().contains("UNIQUE") {
-            ServerFnError::new("This username is already taken")
+            ApiError::UsernameTaken.into()
         } else {
             db_err(e)
         });
@@ -249,7 +247,7 @@ pub async fn register(conn: &Connection, username: &str, password: String) -> Re
     };
     user_by_id(conn, id)
         .await?
-        .ok_or_else(|| ServerFnError::new("account vanished"))
+        .ok_or_else(|| ApiError::Internal.fail())
 }
 
 static FAILED_LOGINS: Mutex<Option<HashMap<String, (u32, i64)>>> = Mutex::new(None);
@@ -276,9 +274,7 @@ fn record_failed_login(username: &str) {
 pub async fn login(conn: &Connection, username: &str, password: String) -> Result<User, ServerFnError> {
     let key = username.to_lowercase();
     if !login_allowed(&key) {
-        return Err(ServerFnError::new(
-            "Too many failed attempts, please wait a few minutes",
-        ));
+        return Err(ApiError::TooManyAttempts.into());
     }
     let mut rows = conn
         .query(
@@ -300,7 +296,7 @@ pub async fn login(conn: &Connection, username: &str, password: String) -> Resul
     };
     let Some((user, _)) = found.filter(|_| valid) else {
         record_failed_login(&key);
-        return Err(ServerFnError::new("Wrong username or password"));
+        return Err(ApiError::WrongLogin.into());
     };
 
     if let Some(guest) = current_user(conn).await?.filter(|u| u.username.is_none()) {

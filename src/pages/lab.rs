@@ -11,8 +11,10 @@ use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
-use crate::state::{Editor, Game, ToastKind, random_seed, toast};
+use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::lang::{config_name, difficulty_name, error_text};
 use crate::seo::PageMeta;
+use crate::state::{Editor, Game, ToastKind, random_seed, toast};
 
 fn cdcl(heuristic: Heuristic, restarts: Restarts, subsumption: bool) -> SolverConfig {
     SolverConfig {
@@ -69,6 +71,7 @@ fn fmt_ms(ms: f64) -> String {
 
 #[component]
 pub fn LabPage() -> impl IntoView {
+    let i18n = use_i18n();
     let game = expect_context::<Game>();
     let editor = expect_context::<Editor>();
 
@@ -105,7 +108,7 @@ pub fn LabPage() -> impl IntoView {
         spawn_local(async move {
             match generate_puzzle(params).await {
                 Ok(g) => fresh.set(Some(g.puzzle)),
-                Err(e) => toast(ToastKind::Error, format!("Could not generate: {e}")),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
             running.set(false);
         });
@@ -121,7 +124,7 @@ pub fn LabPage() -> impl IntoView {
 
     let race = move |_| {
         let Some(puzzle) = puzzle.get_untracked() else {
-            toast(ToastKind::Info, "Pick a puzzle first.");
+            toast(ToastKind::Info, |l| td_string!(l, lab.toast.pick_puzzle).to_string());
             return;
         };
         let configs: Vec<SolverConfig> = presets.with_value(|p| {
@@ -137,7 +140,7 @@ pub fn LabPage() -> impl IntoView {
             })
         });
         if configs.is_empty() {
-            toast(ToastKind::Info, "Select at least one solver configuration.");
+            toast(ToastKind::Info, |l| td_string!(l, lab.toast.pick_solver).to_string());
             return;
         }
         runs.set(configs.iter().map(|c| (*c, RunState::Queued)).collect());
@@ -148,7 +151,7 @@ pub fn LabPage() -> impl IntoView {
                 runs.update(|r| r[i].1 = RunState::Running);
                 let state = match solve_puzzle(puzzle.clone(), config, false).await {
                     Ok(report) => RunState::Done(report),
-                    Err(e) => RunState::Failed(e.to_string()),
+                    Err(e) => RunState::Failed(error_text(i18n.get_locale_untracked(), &e)),
                 };
                 runs.update(|r| {
                     if let Some(slot) = r.get_mut(i) {
@@ -185,7 +188,7 @@ pub fn LabPage() -> impl IntoView {
         })
     });
 
-    let source_button = move |s: PuzzleSource, label: &'static str| {
+    let source_button = move |s: PuzzleSource, label: AnyView| {
         view! {
             <Button
                 variant=Signal::derive(move || {
@@ -202,16 +205,16 @@ pub fn LabPage() -> impl IntoView {
 
     view! {
         <PageMeta
-            title="SAT solver lab · CDCL, DPLL and splr on Hashi puzzles"
-            description="Race one Hashiwokakero puzzle through our own CDCL and DPLL SAT solvers with different branching heuristics and restart policies, and compare them with splr."
+            title=Signal::derive(move || t_string!(i18n, lab.meta.title).to_string())
+            description=Signal::derive(move || t_string!(i18n, lab.meta.description).to_string())
             path="/lab"
         />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="mb-5">
                 <p class="font-pixel text-sm text-primary">"研究室 · kenkyūshitsu"</p>
-                <h1 class="text-3xl font-black">"Solver lab"</h1>
+                <h1 class="text-3xl font-black">{t!(i18n, lab.title)}</h1>
                 <p class="mt-1 max-w-3xl text-muted-foreground">
-                    "Race one puzzle through our own CDCL and DPLL solvers in different modes (branching heuristics, restart policies, subsumption) and compare them to splr."
+                    {t!(i18n, lab.intro)}
                 </p>
             </div>
 
@@ -219,21 +222,26 @@ pub fn LabPage() -> impl IntoView {
                 <aside class="flex flex-col gap-4">
                     <Card class="gap-4">
                         <CardHeader>
-                            <CardTitle class="text-lg">"1 · Puzzle"</CardTitle>
+                            <CardTitle class="text-lg">{t!(i18n, lab.puzzle.title)}</CardTitle>
                             <CardDescription>
                                 {move || {
                                     puzzle
                                         .get()
-                                        .map(|p| format!("{}×{} with {} islands", p.width, p.height, p.islands.len()))
-                                        .unwrap_or_else(|| "No puzzle selected".to_string())
+                                        .map(|p| {
+                                            t_string!(
+                                                i18n, lab.puzzle.size, width = p.width, height = p.height, count = p.islands.len()
+                                            )
+                                                .to_string()
+                                        })
+                                        .unwrap_or_else(|| t_string!(i18n, lab.puzzle.none).to_string())
                                 }}
                             </CardDescription>
                         </CardHeader>
                         <CardContent class="flex flex-col gap-3">
                             <div class="flex gap-2">
-                                {source_button(PuzzleSource::Game, "Current game")}
-                                {source_button(PuzzleSource::Workshop, "Workshop")}
-                                {source_button(PuzzleSource::Fresh, "Fresh")}
+                                {source_button(PuzzleSource::Game, t!(i18n, lab.puzzle.game).into_any())}
+                                {source_button(PuzzleSource::Workshop, t!(i18n, lab.puzzle.workshop).into_any())}
+                                {source_button(PuzzleSource::Fresh, t!(i18n, lab.puzzle.fresh).into_any())}
                             </div>
                             <Show when=move || source.get() == PuzzleSource::Fresh>
                                 <div class="grid grid-cols-5 gap-1.5">
@@ -245,7 +253,7 @@ pub fn LabPage() -> impl IntoView {
                                                     variant=ButtonVariant::Outline
                                                     size=ButtonSize::Sm
                                                     class="w-full font-pixel"
-                                                    attr:title=d.label()
+                                                    attr:title=move || difficulty_name(i18n.get_locale(), d)
                                                     attr:disabled=move || running.get()
                                                     on:click=move |_| generate(d)
                                                 >
@@ -268,8 +276,8 @@ pub fn LabPage() -> impl IntoView {
 
                     <Card class="gap-4">
                         <CardHeader>
-                            <CardTitle class="text-lg">"2 · Solvers"</CardTitle>
-                            <CardDescription>"Pick the configurations to compare."</CardDescription>
+                            <CardTitle class="text-lg">{t!(i18n, lab.solvers.title)}</CardTitle>
+                            <CardDescription>{t!(i18n, lab.solvers.description)}</CardDescription>
                         </CardHeader>
                         <CardContent class="flex flex-col gap-3">
                             <Tabs default_value="cdcl" class="w-full">
@@ -298,7 +306,7 @@ pub fn LabPage() -> impl IntoView {
                                                                     prop:checked=on
                                                                     on:change=move |_| selected.update(|s| s[i] = !s[i])
                                                                 />
-                                                                <span>{c.describe()}</span>
+                                                                <span>{move || config_name(i18n.get_locale(), &c)}</span>
                                                             </label>
                                                         }
                                                     })
@@ -309,7 +317,7 @@ pub fn LabPage() -> impl IntoView {
                                     .collect_view()}
                             </Tabs>
                             <div class="flex items-center gap-2 text-sm">
-                                <span class="text-muted-foreground">"Timeout per run"</span>
+                                <span class="text-muted-foreground">{t!(i18n, lab.solvers.timeout)}</span>
                                 {[2_000u32, 5_000, 10_000]
                                     .into_iter()
                                     .map(|ms| {
@@ -335,7 +343,13 @@ pub fn LabPage() -> impl IntoView {
                                 attr:disabled=move || running.get() || puzzle.with(Option::is_none)
                                 on:click=race
                             >
-                                {move || if running.get() { "Racing…" } else { "Start the race 競争" }}
+                                {move || {
+                                    if running.get() {
+                                        t_string!(i18n, lab.racing).to_string()
+                                    } else {
+                                        format!("{} 競争", t_string!(i18n, lab.start))
+                                    }
+                                }}
                             </Button>
                         </CardContent>
                     </Card>
@@ -344,19 +358,19 @@ pub fn LabPage() -> impl IntoView {
                 <Card class="gap-4">
                     <CardHeader>
                         <CardTitle class="flex items-baseline gap-2 text-lg">
-                            "3 · Results" <span class="font-pixel text-sm text-primary">"結果"</span>
+                            {t!(i18n, lab.results.title)} " " <span class="font-pixel text-sm text-primary">"結果"</span>
                         </CardTitle>
                         <CardDescription>
-                            "Total time is encoding plus solving. Disconnected solutions are refuted lazily, each refutation costs another SAT call."
+                            {t!(i18n, lab.results.description)}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Show
                             when=move || runs.with(|r| !r.is_empty())
-                            fallback=|| {
+                            fallback=move || {
                                 view! {
                                     <div class="seigaiha grid h-64 place-items-center rounded-lg border border-dashed text-muted-foreground">
-                                        <p class="rounded-md bg-card px-3 py-1">"No race yet. 待機中"</p>
+                                        <p class="rounded-md bg-card px-3 py-1">{t!(i18n, lab.results.empty)} " 待機中"</p>
                                     </div>
                                 }
                             }
@@ -364,13 +378,13 @@ pub fn LabPage() -> impl IntoView {
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm">
                                     <thead>
-                                        <tr class="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
-                                            <th class="py-2 pr-3 font-semibold">"Configuration"</th>
-                                            <th class="py-2 pr-3 font-semibold">"Result"</th>
-                                            <th class="py-2 text-right font-semibold sm:w-[34%] sm:pr-3 sm:text-left">"Time"</th>
-                                            <th class="hidden py-2 pr-3 text-right font-semibold sm:table-cell">"Decisions"</th>
-                                            <th class="hidden py-2 pr-3 text-right font-semibold sm:table-cell">"Restarts"</th>
-                                            <th class="hidden py-2 text-right font-semibold sm:table-cell">"SAT calls"</th>
+                                        <tr class="border-b text-start text-xs uppercase tracking-wider text-muted-foreground">
+                                            <th class="py-2 pe-3 font-semibold">{t!(i18n, lab.table.config)}</th>
+                                            <th class="py-2 pe-3 font-semibold">{t!(i18n, lab.table.result)}</th>
+                                            <th class="py-2 text-end font-semibold sm:w-[34%] sm:pe-3 sm:text-start">{t!(i18n, common.game.time)}</th>
+                                            <th class="hidden py-2 pe-3 text-end font-semibold sm:table-cell">{t!(i18n, lab.table.decisions)}</th>
+                                            <th class="hidden py-2 pe-3 text-end font-semibold sm:table-cell">{t!(i18n, lab.table.restarts)}</th>
+                                            <th class="hidden py-2 text-end font-semibold sm:table-cell">{t!(i18n, lab.table.calls)}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -382,13 +396,13 @@ pub fn LabPage() -> impl IntoView {
                                                     let is_fastest = fastest.get() == Some(i);
                                                     let result = match &state {
                                                         RunState::Queued => {
-                                                            view! { <Badge variant=BadgeVariant::Muted>"queued"</Badge> }
+                                                            view! { <Badge variant=BadgeVariant::Muted>{t!(i18n, lab.badge.queued)}</Badge> }
                                                                 .into_any()
                                                         }
                                                         RunState::Running => {
                                                             view! {
                                                                 <Badge variant=BadgeVariant::Warning class="animate-pulse">
-                                                                    "solving…"
+                                                                    {t!(i18n, lab.badge.solving)}
                                                                 </Badge>
                                                             }
                                                                 .into_any()
@@ -396,7 +410,7 @@ pub fn LabPage() -> impl IntoView {
                                                         RunState::Failed(e) => {
                                                             view! {
                                                                 <Badge variant=BadgeVariant::Destructive attr:title=e.clone()>
-                                                                    "error"
+                                                                    {t!(i18n, lab.badge.error)}
                                                                 </Badge>
                                                             }
                                                                 .into_any()
@@ -413,7 +427,7 @@ pub fn LabPage() -> impl IntoView {
                                                                 }
                                                                 SolveOutcome::Timeout => {
                                                                     view! {
-                                                                        <Badge variant=BadgeVariant::Destructive>"timeout"</Badge>
+                                                                        <Badge variant=BadgeVariant::Destructive>{t!(i18n, lab.badge.timeout)}</Badge>
                                                                     }
                                                                         .into_any()
                                                                 }
@@ -437,21 +451,21 @@ pub fn LabPage() -> impl IntoView {
                                                     let summary = if decisions.is_empty() {
                                                         String::new()
                                                     } else {
-                                                        let mut parts = vec![format!("{decisions} decisions")];
+                                                        let mut parts = vec![t_string!(i18n, lab.summary.decisions, count = decisions.clone()).to_string()];
                                                         if restarts != "—" {
-                                                            parts.push(format!("{restarts} restarts"));
+                                                            parts.push(t_string!(i18n, lab.summary.restarts, count = restarts.clone()).to_string());
                                                         }
-                                                        parts.push(format!("{calls} SAT calls"));
+                                                        parts.push(t_string!(i18n, lab.summary.calls, count = calls.clone()).to_string());
                                                         parts.join(" · ")
                                                     };
                                                     view! {
                                                         <tr class="border-b last:border-0" class:bg-accent=is_fastest>
-                                                            <td class="py-2.5 pr-3">
-                                                                <span class="font-medium">{config.describe()}</span>
+                                                            <td class="py-2.5 pe-3">
+                                                                <span class="font-medium">{config_name(i18n.get_locale(), &config)}</span>
                                                                 {is_fastest
                                                                     .then(|| {
                                                                         view! {
-                                                                            <span class="ml-2 font-pixel text-xs text-primary">"最速"</span>
+                                                                            <span class="ms-2 font-pixel text-xs text-primary">"最速"</span>
                                                                         }
                                                                     })}
                                                                 // Phones: the counters as a line instead of three columns
@@ -464,8 +478,8 @@ pub fn LabPage() -> impl IntoView {
                                                                         }
                                                                     })}
                                                             </td>
-                                                            <td class="py-2.5 pr-3">{result}</td>
-                                                            <td class="py-2.5 sm:pr-3">
+                                                            <td class="py-2.5 pe-3">{result}</td>
+                                                            <td class="py-2.5 sm:pe-3">
                                                                 <div class="flex items-center justify-end gap-2 sm:justify-start">
                                                                     <div class="hidden h-3 flex-1 overflow-hidden rounded-sm bg-muted sm:block">
                                                                         <div
@@ -475,12 +489,12 @@ pub fn LabPage() -> impl IntoView {
                                                                             )
                                                                         ></div>
                                                                     </div>
-                                                                    <span class="whitespace-nowrap text-right font-pixel tabular-nums sm:w-16">{time}</span>
+                                                                    <span class="whitespace-nowrap text-end font-pixel tabular-nums sm:w-16">{time}</span>
                                                                 </div>
                                                             </td>
-                                                            <td class="hidden py-2.5 pr-3 text-right font-pixel tabular-nums sm:table-cell">{decisions}</td>
-                                                            <td class="hidden py-2.5 pr-3 text-right font-pixel tabular-nums sm:table-cell">{restarts}</td>
-                                                            <td class="hidden py-2.5 text-right font-pixel tabular-nums sm:table-cell">{calls}</td>
+                                                            <td class="hidden py-2.5 pe-3 text-end font-pixel tabular-nums sm:table-cell">{decisions}</td>
+                                                            <td class="hidden py-2.5 pe-3 text-end font-pixel tabular-nums sm:table-cell">{restarts}</td>
+                                                            <td class="hidden py-2.5 text-end font-pixel tabular-nums sm:table-cell">{calls}</td>
                                                         </tr>
                                                     }
                                                 })

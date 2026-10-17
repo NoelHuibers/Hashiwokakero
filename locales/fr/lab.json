@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "Labo de solveurs SAT · CDCL, DPLL et splr sur Hashi",
+    "description": "Fais courir une grille de Hashiwokakero dans nos solveurs SAT CDCL et DPLL maison, avec diverses heuristiques et politiques de redémarrage, face à splr."
+  },
+  "title": "Labo de solveurs",
+  "intro": "Fais courir une grille dans nos solveurs CDCL et DPLL maison selon différents modes (heuristiques de branchement, politiques de redémarrage, subsomption) et compare-les à splr.",
+  "puzzle": {
+    "title": "1 · Grille",
+    "size": "{{ width }}×{{ height }}, {{ count }} îles",
+    "none": "Aucune grille sélectionnée",
+    "game": "Partie en cours",
+    "workshop": "Atelier",
+    "fresh": "Nouvelle"
+  },
+  "solvers": {
+    "title": "2 · Solveurs",
+    "description": "Choisis les configurations à comparer.",
+    "timeout": "Temps limite par essai"
+  },
+  "racing": "Course en cours…",
+  "start": "Lancer la course",
+  "results": {
+    "title": "3 · Résultats",
+    "description": "Le temps total comprend l’encodage et la résolution. Les solutions non connexes sont réfutées paresseusement, chaque réfutation coûte un appel SAT de plus.",
+    "empty": "Pas encore de course."
+  },
+  "table": {
+    "config": "Configuration",
+    "result": "Résultat",
+    "decisions": "Décisions",
+    "restarts": "Redémarrages",
+    "calls": "Appels SAT"
+  },
+  "badge": {
+    "queued": "en attente",
+    "solving": "résolution…",
+    "error": "erreur",
+    "timeout": "temps écoulé"
+  },
+  "summary": {
+    "decisions": "Décisions : {{ count }}",
+    "restarts": "Redémarrages : {{ count }}",
+    "calls": "Appels SAT : {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Choisis d’abord une grille.",
+    "pick_solver": "Sélectionne au moins une configuration de solveur."
+  }
+}

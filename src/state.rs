@@ -10,6 +10,7 @@ use leptos::task::spawn_local;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::api::{generate_puzzle, solve_puzzle};
+use crate::i18n::{Locale, td_string};
 
 /* ------------------------------------------------------------------ */
 /*  Toasts                                                             */
@@ -22,25 +23,28 @@ pub enum ToastKind {
     Error,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+/// The text of a toast in a given language, so it follows the language picker.
+pub type ToastText = std::sync::Arc<dyn Fn(Locale) -> String + Send + Sync>;
+
+#[derive(Clone)]
 pub struct Toast {
     pub id: u32,
     pub kind: ToastKind,
-    pub text: String,
+    pub text: ToastText,
 }
 
 #[derive(Clone, Copy)]
 pub struct Toasts(pub RwSignal<Vec<Toast>>);
 
 impl Toasts {
-    pub fn push(&self, kind: ToastKind, text: impl Into<String>) {
+    pub fn push(&self, kind: ToastKind, text: impl Fn(Locale) -> String + Send + Sync + 'static) {
         let list = self.0;
         let id = list.with_untracked(|l| l.iter().map(|t| t.id + 1).max().unwrap_or(0));
         list.update(|l| {
             l.push(Toast {
                 id,
                 kind,
-                text: text.into(),
+                text: std::sync::Arc::new(text),
             });
             if l.len() > 3 {
                 l.remove(0);
@@ -53,7 +57,8 @@ impl Toasts {
     }
 }
 
-pub fn toast(kind: ToastKind, text: impl Into<String>) {
+/// Shows a toast, e.g. `toast(ToastKind::Info, |l| td_string!(l, common.toast.copied).to_string())`.
+pub fn toast(kind: ToastKind, text: impl Fn(Locale) -> String + Send + Sync + 'static) {
     if let Some(t) = use_context::<Toasts>() {
         t.push(kind, text);
     }
@@ -72,12 +77,17 @@ pub enum Source {
 }
 
 impl Source {
-    pub fn title(&self) -> String {
+    pub fn title(&self, locale: Locale) -> String {
         match self {
-            Source::Generated(p) => format!("{} {}×{}", p.difficulty.label(), p.width, p.height),
-            Source::Daily { date, .. } => format!("Daily bridge · {date}"),
-            Source::Custom => "Your own puzzle".into(),
-            Source::Imported(name) => format!("Imported · {name}"),
+            Source::Generated(p) => format!(
+                "{} {}×{}",
+                crate::lang::difficulty_name(locale, p.difficulty),
+                p.width,
+                p.height
+            ),
+            Source::Daily { date, .. } => td_string!(locale, common.source.daily, date).to_string(),
+            Source::Custom => td_string!(locale, common.source.custom).to_string(),
+            Source::Imported(name) => td_string!(locale, common.source.imported, name).to_string(),
         }
     }
 
@@ -536,7 +546,7 @@ pub fn new_puzzle(game: Game, params: GenerateParams, source: Source) {
                 Some(generated.unique),
                 source,
             ),
-            Err(e) => toast(ToastKind::Error, format!("Could not generate a puzzle: {e}")),
+            Err(e) => toast(ToastKind::Error, move |l| crate::lang::error_text(l, &e)),
         }
         game.loading.set(false);
     });
@@ -558,11 +568,11 @@ pub async fn run_solver(
             let solution = match &r.outcome {
                 SolveOutcome::Solved { bridges, .. } => Some(bridges.clone()),
                 SolveOutcome::Unsatisfiable => {
-                    toast(ToastKind::Error, "The SAT solver proved: this puzzle has no solution.");
+                    toast(ToastKind::Error, |l| td_string!(l, common.toast.unsat).to_string());
                     None
                 }
                 SolveOutcome::Timeout => {
-                    toast(ToastKind::Error, "The solver ran out of time. Try another configuration.");
+                    toast(ToastKind::Error, |l| td_string!(l, common.toast.timeout).to_string());
                     None
                 }
             };
@@ -570,7 +580,7 @@ pub async fn run_solver(
             solution
         }
         Err(e) => {
-            toast(ToastKind::Error, format!("Solver failed: {e}"));
+            toast(ToastKind::Error, move |l| crate::lang::error_text(l, &e));
             None
         }
     }
@@ -637,7 +647,7 @@ pub fn hint(game: Game, settings: Settings) {
                     Duration::from_millis(3000),
                 );
             }
-            None => toast(ToastKind::Info, "Nothing to hint, every bridge is in place."),
+            None => toast(ToastKind::Info, |l| td_string!(l, common.toast.nothing_to_hint).to_string()),
         }
     });
 }
@@ -654,13 +664,12 @@ pub fn check(game: Game, settings: Settings) {
             .bridges
             .with_untracked(|b| crate::model::wrong_edges(b, &solution));
         if wrong.is_empty() {
-            toast(ToastKind::Success, "So far so good: every bridge matches the solution.");
+            toast(ToastKind::Success, |l| td_string!(l, common.toast.all_correct).to_string());
         } else {
-            let n = wrong.len();
-            toast(
-                ToastKind::Error,
-                format!("{n} bridge{} not part of the solution.", if n == 1 { " is" } else { "s are" }),
-            );
+            let count = wrong.len();
+            toast(ToastKind::Error, move |l| {
+                td_string!(l, common.toast.wrong_bridges, count).to_string()
+            });
             game.wrong.set(wrong);
             set_timeout(move || game.wrong.set(vec![]), Duration::from_millis(2400));
         }
@@ -708,8 +717,8 @@ pub fn check_unique(game: Game, settings: Settings) {
     spawn_local(async move {
         if game_solver(game, settings, true).await.is_some() {
             match game.unique.get_untracked() {
-                Some(true) => toast(ToastKind::Success, "Proven: the solution is unique."),
-                Some(false) => toast(ToastKind::Info, "This puzzle has more than one solution."),
+                Some(true) => toast(ToastKind::Success, |l| td_string!(l, common.toast.unique).to_string()),
+                Some(false) => toast(ToastKind::Info, |l| td_string!(l, common.toast.not_unique).to_string()),
                 None => {}
             }
         }

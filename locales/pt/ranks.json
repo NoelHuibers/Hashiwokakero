@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Ranking diário · Hashi, o puzzle das pontes",
+    "description": "Os jogadores mais rápidos de Hashiwokakero hoje, o ranking de cada desafio diário anterior e o hall da fama com mais diários resolvidos e maiores sequências."
+  },
+  "title": "Ranking",
+  "intro": "Todo mundo joga a mesma ponte a cada dia. Vence o tempo mais rápido, dicas e verificações somam tempo, e soluções reveladas não contam.",
+  "finished": "concluídos: {{ count }}",
+  "earlier": "Anterior",
+  "later": "Seguinte",
+  "today": "Hoje",
+  "missed": "Perdeu este? Jogue sem relógio.",
+  "practice_it": "Treinar",
+  "archive_name": "Diário #{{ number }}",
+  "no_puzzle": "Ninguém jogou nesse dia, então não há puzzle.",
+  "fame": {
+    "title": "Hall da fama",
+    "text": "Mais desafios diários resolvidos e a maior sequência de dias seguidos.",
+    "empty": "Nenhum desafio diário resolvido ainda.",
+    "player": "Jogador"
+  }
+}

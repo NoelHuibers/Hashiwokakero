@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Dagelijkse ranglijst · Hashi, de bruggenpuzzel",
+    "description": "De snelste Hashiwokakero-puzzelaars van vandaag, de ranglijst van elke eerdere dagpuzzel en de eregalerij met de meeste dagpuzzels en de langste reeksen."
+  },
+  "title": "Ranglijst",
+  "intro": "Iedereen speelt elke dag dezelfde brug. De snelste tijd wint, hints en controles tellen erbij op, getoonde oplossingen tellen niet mee.",
+  "finished": "klaar: {{ count }}",
+  "earlier": "Eerder",
+  "later": "Later",
+  "today": "Vandaag",
+  "missed": "Gemist? Speel hem zonder klok.",
+  "practice_it": "Oefenen",
+  "archive_name": "Dagpuzzel #{{ number }}",
+  "no_puzzle": "Niemand speelde die dag, dus er is geen puzzel.",
+  "fame": {
+    "title": "Eregalerij",
+    "text": "De meeste opgeloste dagpuzzels, en de langste reeks dagen op rij.",
+    "empty": "Nog geen dagpuzzels opgelost.",
+    "player": "Speler"
+  }
+}

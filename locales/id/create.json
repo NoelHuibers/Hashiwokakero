@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Buat teka-teki Hashiwokakero sendiri · Hashi",
+    "description": "Rancang teka-teki Jembatan di bengkel: taruh pulau, biarkan solver SAT memastikan solusinya tepat satu, ekspor sebagai file teks, lalu mainkan."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Bengkel teka-teki",
+  "intro": "Taruh pulau, biarkan solver SAT memastikan teka-tekimu punya tepat satu solusi, lalu mainkan.",
+  "keys": {
+    "click": "Klik",
+    "right_click": "Klik kanan",
+    "set": "taruh",
+    "erase": "hapus (saat kursor di atasnya)"
+  },
+  "brush": {
+    "count_up": "Setiap ketukan menambah angka",
+    "erase": "Hapus",
+    "place": "Taruh angka {{ number }}"
+  },
+  "heads_up": "Perhatian",
+  "warning_capacity": "Angka {{ number }} di ({{ x }}, {{ y }}) butuh {{ number }} jembatan, tetapi paling banyak hanya bisa punya {{ max }}.",
+  "warning_odd": "Jumlah semua angka adalah {{ total }}, jumlah ganjil tidak akan pernah bisa dipecahkan.",
+  "grid": "Kisi",
+  "grid_size": "{{ width }}×{{ height }} sel, {{ count }} pulau",
+  "width": "Lebar",
+  "height": "Tinggi",
+  "fill": "Isi dengan teka-teki acak",
+  "import": "Impor .txt",
+  "export": "Ekspor .txt",
+  "play": "Mainkan teka-teki ini",
+  "unique": "Unik: teka-teki yang bagus!",
+  "not_unique": "Lebih dari satu solusi, tambah atau ubah pulau.",
+  "imported": "Diimpor: {{ name }}",
+  "unreadable": "Tidak bisa membaca {{ name }}",
+  "brush_label": "Kuas"
+}

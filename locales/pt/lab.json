@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "Laboratório SAT · CDCL, DPLL e splr em puzzles Hashi",
+    "description": "Coloque um puzzle Hashiwokakero para correr nos nossos solvers SAT CDCL e DPLL, com heurísticas e políticas de reinício diferentes, e compare com o splr."
+  },
+  "title": "Laboratório de solvers",
+  "intro": "Coloque um puzzle para correr nos nossos solvers CDCL e DPLL em modos diferentes (heurísticas de ramificação, políticas de reinício, subsunção) e compare com o splr.",
+  "puzzle": {
+    "title": "1 · Puzzle",
+    "size": "{{ width }}×{{ height }}, ilhas: {{ count }}",
+    "none": "Nenhum puzzle selecionado",
+    "game": "Jogo atual",
+    "workshop": "Oficina",
+    "fresh": "Novo"
+  },
+  "solvers": {
+    "title": "2 · Solvers",
+    "description": "Escolha as configurações para comparar.",
+    "timeout": "Tempo limite por execução"
+  },
+  "racing": "Correndo…",
+  "start": "Iniciar a corrida",
+  "results": {
+    "title": "3 · Resultados",
+    "description": "O tempo total é codificação mais resolução. Soluções desconexas são refutadas sob demanda, e cada refutação custa outra chamada SAT.",
+    "empty": "Nenhuma corrida ainda."
+  },
+  "table": {
+    "config": "Configuração",
+    "result": "Resultado",
+    "decisions": "Decisões",
+    "restarts": "Reinícios",
+    "calls": "Chamadas SAT"
+  },
+  "badge": {
+    "queued": "na fila",
+    "solving": "resolvendo…",
+    "error": "erro",
+    "timeout": "tempo esgotado"
+  },
+  "summary": {
+    "decisions": "Decisões: {{ count }}",
+    "restarts": "Reinícios: {{ count }}",
+    "calls": "Chamadas SAT: {{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "Escolha um puzzle primeiro.",
+    "pick_solver": "Selecione pelo menos uma configuração de solver."
+  }
+}

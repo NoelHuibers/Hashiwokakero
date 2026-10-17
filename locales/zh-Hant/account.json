@@ -1,0 +1,32 @@
+{
+  "title": "我的帳號",
+  "hello": "こんにちは、{{ name }}",
+  "record": "我的橋",
+  "guest_here": "正在這個瀏覽器以 {{ name }}（訪客）的身分遊玩。",
+  "member_since": "{{ date }} 加入。",
+  "no_record": "玩一道每日謎題，開始你的紀錄吧。",
+  "stats": {
+    "solved": "已解",
+    "streak": "連勝",
+    "best": "最長連勝",
+    "fastest": "最快",
+    "average": "平均",
+    "week": "本週",
+    "best_streak_short": "連勝"
+  },
+  "last_weeks": "最近五週",
+  "calendar_rank": "第 {{ rank }} 名",
+  "not_solved": "未解出",
+  "guest_cta": "建立帳號，就能保留這位訪客的成績和連勝，還能在其他裝置上繼續玩。",
+  "sign_in_cta": "登入後就能在任何裝置上查看連勝紀錄。也可以直接以訪客身分遊玩。",
+  "create": "建立帳號",
+  "username": "使用者名稱",
+  "password": "密碼",
+  "password_hint": "至少 8 個字元。",
+  "busy": "請稍候…",
+  "welcome": "歡迎，{{ name }}！",
+  "signed_out": "已登出。",
+  "name_hint": "你的成績會以這個名字列入排行榜。",
+  "sign_out": "登出",
+  "no_dailies": "還沒有每日謎題紀錄。"
+}

@@ -8,13 +8,18 @@ use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::model::{
-    AllTimeEntry, LAUNCH_DAY, Leaderboard, WEEKDAY_KANJI, daily_number, pretty_date, weekday,
+    AllTimeEntry, LAUNCH_DAY, Leaderboard, WEEKDAY_KANJI, daily_number, weekday,
 };
+use crate::components::layout::use_localized;
+use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::lang::{date_long, difficulty_name, error_text};
 use crate::state::{Game, Source, ToastKind, toast};
 use crate::seo::PageMeta;
 
 #[component]
 pub fn RanksPage() -> impl IntoView {
+    let i18n = use_i18n();
+    let practice_path = use_localized("/practice");
     let game = expect_context::<Game>();
     let navigate = use_navigate();
 
@@ -36,7 +41,7 @@ pub fn RanksPage() -> impl IntoView {
                     }
                     board.set(Some(lb));
                 }
-                Err(e) => toast(ToastKind::Error, format!("Could not load the ranking: {e}")),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
             loading.set(false);
         });
@@ -69,28 +74,28 @@ pub fn RanksPage() -> impl IntoView {
                         puzzle,
                         None,
                         Some(true),
-                        Source::Imported(format!("Daily #{}", daily_number(d))),
+                        Source::Imported(td_string!(i18n.get_locale_untracked(), ranks.archive_name, number = daily_number(d)).to_string()),
                     );
-                    navigate("/practice", Default::default());
+                    navigate(&practice_path(), Default::default());
                 }
-                Ok(None) => toast(ToastKind::Info, "Nobody played that day, so there is no puzzle."),
-                Err(e) => toast(ToastKind::Error, e.to_string()),
+                Ok(None) => toast(ToastKind::Info, |l| td_string!(l, ranks.no_puzzle).to_string()),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
         });
     };
 
     view! {
         <PageMeta
-            title="Daily leaderboard · Hashi, the bridges puzzle"
-            description="Today's fastest Hashiwokakero solvers, the ranking of every past daily puzzle, and the hall of fame of the most solved dailies and longest streaks."
+            title=Signal::derive(move || t_string!(i18n, ranks.meta.title).to_string())
+            description=Signal::derive(move || t_string!(i18n, ranks.meta.description).to_string())
             path="/ranks"
         />
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="mb-5">
                 <p class="font-pixel text-sm text-primary">"順位 · jun'i"</p>
-                <h1 class="text-3xl font-black">"Leaderboard"</h1>
+                <h1 class="text-3xl font-black">{t!(i18n, ranks.title)}</h1>
                 <p class="mt-1 max-w-2xl text-muted-foreground">
-                    "Everyone plays the same bridge each day. Fastest time wins, hints and checks add to it, revealed solutions don't count."
+                    {t!(i18n, ranks.intro)}
                 </p>
             </div>
 
@@ -113,8 +118,8 @@ pub fn RanksPage() -> impl IntoView {
                                     <CardTitle class="text-xl">
                                         {move || {
                                             shown_day()
-                                                .map(|d| format!("Daily bridge #{}", daily_number(d)))
-                                                .unwrap_or_else(|| "Daily bridge".into())
+                                                .map(|d| t_string!(i18n, daily.title, number = daily_number(d)).to_string())
+                                                .unwrap_or_default()
                                         }}
                                     </CardTitle>
                                     <CardDescription>
@@ -122,12 +127,13 @@ pub fn RanksPage() -> impl IntoView {
                                             board
                                                 .get()
                                                 .map(|b| {
+                                                    let locale = i18n.get_locale();
                                                     format!(
-                                                        "{} · {} {} · {} finished",
-                                                        pretty_date(b.day),
+                                                        "{} · {} {} · {}",
+                                                        date_long(locale, b.day),
                                                         b.difficulty.kanji(),
-                                                        b.difficulty.label(),
-                                                        b.finishers,
+                                                        difficulty_name(locale, b.difficulty),
+                                                        td_string!(locale, ranks.finished, count = b.finishers),
                                                     )
                                                 })
                                                 .unwrap_or_default()
@@ -142,7 +148,7 @@ pub fn RanksPage() -> impl IntoView {
                                     attr:disabled=move || shown_day().is_none_or(|d| d <= LAUNCH_DAY)
                                     on:click=move |_| go(-1)
                                 >
-                                    "← Earlier"
+                                    "← " {t!(i18n, ranks.earlier)}
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Outline
@@ -150,7 +156,7 @@ pub fn RanksPage() -> impl IntoView {
                                     attr:disabled=move || shown_day() == today.get()
                                     on:click=move |_| go(1)
                                 >
-                                    "Later →"
+                                    {t!(i18n, ranks.later)} " →"
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Ghost
@@ -158,7 +164,7 @@ pub fn RanksPage() -> impl IntoView {
                                     attr:disabled=move || shown_day() == today.get()
                                     on:click=move |_| day.set(None)
                                 >
-                                    "Today"
+                                    {t!(i18n, ranks.today)}
                                 </Button>
                             </div>
                         </div>
@@ -167,9 +173,9 @@ pub fn RanksPage() -> impl IntoView {
                         {move || board.get().map(|b| view! { <LeaderboardTable entries=b.entries me=b.me /> })}
                         <Show when=move || { shown_day().zip(today.get()).is_some_and(|(d, t)| d < t) }>
                             <div class="flex items-center justify-between gap-3 rounded-lg border border-dashed p-3 text-sm">
-                                <span class="text-muted-foreground">"Missed this one? Play it without the clock."</span>
+                                <span class="text-muted-foreground">{t!(i18n, ranks.missed)}</span>
                                 <Button size=ButtonSize::Sm variant=ButtonVariant::Secondary on:click=practice.clone()>
-                                    "Practice it 練習"
+                                    {t!(i18n, ranks.practice_it)} " 練習"
                                 </Button>
                             </div>
                         </Show>
@@ -179,15 +185,15 @@ pub fn RanksPage() -> impl IntoView {
                 <Card class="gap-3 self-start">
                     <CardHeader>
                         <CardTitle class="flex items-baseline gap-2 text-lg">
-                            "Hall of fame" <span class="font-pixel text-sm text-primary">"殿堂"</span>
+                            {t!(i18n, ranks.fame.title)} <span class="font-pixel text-sm text-primary">"殿堂"</span>
                         </CardTitle>
-                        <CardDescription>"Most dailies solved, and the longest streak of days in a row."</CardDescription>
+                        <CardDescription>{t!(i18n, ranks.fame.text)}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {move || match all_time.get() {
-                            None => view! { <p class="text-sm text-muted-foreground">"Loading…"</p> }.into_any(),
+                            None => view! { <p class="text-sm text-muted-foreground">{t!(i18n, common.game.loading)}</p> }.into_any(),
                             Some(list) if list.is_empty() => {
-                                view! { <p class="text-sm text-muted-foreground">"No dailies solved yet."</p> }.into_any()
+                                view! { <p class="text-sm text-muted-foreground">{t!(i18n, ranks.fame.empty)}</p> }.into_any()
                             }
                             Some(list) => {
                                 view! {
@@ -199,11 +205,11 @@ pub fn RanksPage() -> impl IntoView {
                                             <col class="w-16" />
                                         </colgroup>
                                         <thead>
-                                            <tr class="border-b text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+                                            <tr class="border-b text-start text-[10px] uppercase tracking-wider text-muted-foreground">
                                                 <th></th>
-                                                <th class="py-1.5 font-semibold">"Player"</th>
-                                                <th class="py-1.5 text-right font-semibold">"Solved"</th>
-                                                <th class="py-1.5 text-right font-semibold">"Streak"</th>
+                                                <th class="py-1.5 font-semibold">{t!(i18n, ranks.fame.player)}</th>
+                                                <th class="py-1.5 text-end font-semibold">{t!(i18n, account.stats.solved)}</th>
+                                                <th class="py-1.5 text-end font-semibold">{t!(i18n, account.stats.best_streak_short)}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -212,14 +218,14 @@ pub fn RanksPage() -> impl IntoView {
                                                 .map(|e| {
                                                     view! {
                                                         <tr class="border-b last:border-0">
-                                                            <td class="py-2 pr-2"><RankCell rank=e.rank /></td>
-                                                            <td class="max-w-0 py-2 pr-2">
+                                                            <td class="py-2 pe-2"><RankCell rank=e.rank /></td>
+                                                            <td class="max-w-0 py-2 pe-2">
                                                                 <span class="truncate font-medium">{e.name}</span>
-                                                                {e.guest.then(|| view! { <span class="ml-1.5 text-xs text-muted-foreground">"guest"</span> })}
+                                                                {e.guest.then(|| view! { <span class="ms-1.5 text-xs text-muted-foreground">{t!(i18n, common.ranking.guest)}</span> })}
                                                             </td>
-                                                            <td class="py-2 text-right font-pixel tabular-nums">{e.solved}</td>
-                                                            <td class="py-2 text-right font-pixel tabular-nums">
-                                                                <Badge variant=BadgeVariant::Muted>{format!("{}日", e.best_streak)}</Badge>
+                                                            <td class="py-2 text-end font-pixel tabular-nums">{e.solved}</td>
+                                                            <td class="py-2 text-end font-pixel tabular-nums">
+                                                                <Badge variant=BadgeVariant::Muted>{e.best_streak}</Badge>
                                                             </td>
                                                         </tr>
                                                     }

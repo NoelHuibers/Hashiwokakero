@@ -2,6 +2,7 @@ use common::{Board, Orientation, Pos};
 use leptos::ev::PointerEvent;
 use leptos::prelude::*;
 
+use crate::i18n::{t_string, use_i18n};
 use super::sprites::{BoardDefs, BridgeSprite, CELL, Decor, Span};
 
 /// Space around the grid, decorations stick out of the top row.
@@ -126,6 +127,7 @@ pub fn BoardView(
     #[prop(optional)]
     framed: bool,
 ) -> impl IntoView {
+    let i18n = use_i18n();
     let svg_ref = NodeRef::<leptos::svg::Svg>::new();
     let cells = Memo::new(move |_| board.with(cell_edges));
     let degrees = Memo::new(move |_| board.with(|b| bridges.with(|br| b.check(br).degrees)));
@@ -488,7 +490,7 @@ pub fn BoardView(
             }
             xmlns="http://www.w3.org/2000/svg"
             role="img"
-            aria-label="Hashiwokakero board"
+            aria-label=move || t_string!(i18n, common.board.label)
             on:pointerdown=on_down
             on:pointermove=on_move
             on:pointerup=on_up
@@ -516,7 +518,7 @@ pub fn BoardView(
         <Show when=can_zoom>
             <div class="mt-2 flex items-center justify-end gap-2 md:hidden">
                 <span class="text-xs text-muted-foreground">
-                    {move || if zoomed() { "Swipe to move around, tap to build" } else { "Cells too small?" }}
+                    {move || if zoomed() { t_string!(i18n, common.board.zoom_hint) } else { t_string!(i18n, common.board.cells_small) }}
                 </span>
                 <button
                     type="button"
@@ -525,7 +527,7 @@ pub fn BoardView(
                     on:click=move |_| zoom.update(|z| *z = !*z)
                 >
                     <span class="font-pixel">{move || if zoomed() { "－" } else { "＋" }}</span>
-                    {move || if zoomed() { "Fit board" } else { "Zoom in" }}
+                    {move || if zoomed() { t_string!(i18n, common.board.fit) } else { t_string!(i18n, common.board.zoom) }}
                 </button>
             </div>
         </Show>

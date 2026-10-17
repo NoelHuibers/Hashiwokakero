@@ -2,8 +2,12 @@
 //! JSON-LD structured data that describes the game and the rules.
 
 use leptos::prelude::*;
+use leptos_i18n::Locale as _;
 use leptos_meta::{Link, Meta, Script, Title};
 use serde_json::json;
+
+use crate::i18n::{Locale, t_string, td_string, use_i18n};
+use crate::lang::{localized, og_locale};
 
 pub const SITE_URL: &str = "https://hashi.rs";
 pub const SITE_NAME: &str = "Hashi";
@@ -11,42 +15,66 @@ pub const AUTHOR: &str = "Noel Huibers";
 pub const AUTHOR_URL: &str = "https://github.com/NoelHuibers";
 pub const REPO_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero";
 pub const OG_IMAGE: &str = "https://hashi.rs/og.png";
-const OG_IMAGE_ALT: &str =
-    "A solved Hashiwokakero puzzle in pixel art: numbered islands joined by wooden and vermilion bridges";
 
 /// Title, description, canonical URL, Open Graph and Twitter tags of a page.
 #[component]
 pub fn PageMeta(
     /// Shown in the tab and as the search result title, keep it under 60 characters.
-    title: &'static str,
+    #[prop(into)]
+    title: Signal<String>,
     /// The search result snippet, keep it under 160 characters.
-    description: &'static str,
+    #[prop(into)]
+    description: Signal<String>,
     /// Path of the page, e.g. `/rules`.
     path: &'static str,
     /// JSON-LD structured data, see [`site_ld`] and [`faq_ld`].
     #[prop(optional)]
     json_ld: Option<String>,
 ) -> impl IntoView {
-    let url = format!("{SITE_URL}{path}");
+    let i18n = use_i18n();
+    // The language is fixed per request on the server, where crawlers read these tags
+    let locale = i18n.get_locale_untracked();
+    let url = format!("{SITE_URL}{}", localized(locale, path));
+    let alternates = Locale::get_all()
+        .iter()
+        .map(|l| {
+            view! {
+                <Link
+                    rel="alternate"
+                    hreflang=l.as_str()
+                    href=format!("{SITE_URL}{}", localized(*l, path))
+                />
+            }
+        })
+        .collect_view();
+    let og_alternates = Locale::get_all()
+        .iter()
+        .filter(|l| **l != locale)
+        .map(|l| view! { <Meta property="og:locale:alternate" content=og_locale(*l) /> })
+        .collect_view();
+    let image_alt = move || t_string!(i18n, common.og_image_alt).to_string();
     view! {
-        <Title text=title />
-        <Meta name="description" content=description />
+        <Title text=move || title.get() />
+        <Meta name="description" content=move || description.get() />
         <Link rel="canonical" href=url.clone() />
+        {alternates}
+        <Link rel="alternate" hreflang="x-default" href=format!("{SITE_URL}{path}") />
         <Meta property="og:type" content="website" />
         <Meta property="og:site_name" content=SITE_NAME />
-        <Meta property="og:locale" content="en_US" />
-        <Meta property="og:title" content=title />
-        <Meta property="og:description" content=description />
+        <Meta property="og:locale" content=og_locale(locale) />
+        {og_alternates}
+        <Meta property="og:title" content=move || title.get() />
+        <Meta property="og:description" content=move || description.get() />
         <Meta property="og:url" content=url />
         <Meta property="og:image" content=OG_IMAGE />
         <Meta property="og:image:width" content="1200" />
         <Meta property="og:image:height" content="630" />
-        <Meta property="og:image:alt" content=OG_IMAGE_ALT />
+        <Meta property="og:image:alt" content=image_alt />
         <Meta name="twitter:card" content="summary_large_image" />
-        <Meta name="twitter:title" content=title />
-        <Meta name="twitter:description" content=description />
+        <Meta name="twitter:title" content=move || title.get() />
+        <Meta name="twitter:description" content=move || description.get() />
         <Meta name="twitter:image" content=OG_IMAGE />
-        <Meta name="twitter:image:alt" content=OG_IMAGE_ALT />
+        <Meta name="twitter:image:alt" content=image_alt />
         {json_ld.map(|json| view! { <Script type_="application/ld+json">{json}</Script> })}
     }
 }
@@ -61,7 +89,8 @@ fn author() -> serde_json::Value {
 }
 
 /// The website and the game itself, for the home page.
-pub fn site_ld() -> String {
+pub fn site_ld(locale: Locale) -> String {
+    let lang = locale.as_str();
     json!({
         "@context": "https://schema.org",
         "@graph": [
@@ -70,8 +99,8 @@ pub fn site_ld() -> String {
                 "@id": format!("{SITE_URL}/#website"),
                 "url": SITE_URL,
                 "name": SITE_NAME,
-                "description": "Hashiwokakero, the Japanese bridges puzzle, playable for free in the browser.",
-                "inLanguage": "en",
+                "description": td_string!(locale, common.ld.site),
+                "inLanguage": lang,
                 "publisher": { "@id": format!("{SITE_URL}/#author") },
             },
             {
@@ -79,15 +108,15 @@ pub fn site_ld() -> String {
                 "@id": format!("{SITE_URL}/#game"),
                 "name": "Hashi – Hashiwokakero",
                 "alternateName": ["Hashiwokakero", "Bridges", "橋をかけろ", "Hashi"],
-                "url": SITE_URL,
+                "url": format!("{SITE_URL}{}", localized(locale, "/")),
                 "image": OG_IMAGE,
-                "description": "Connect the islands with bridges so that every island has as many bridges as its number says. Five difficulties, pixel art, and every puzzle has exactly one solution.",
+                "description": td_string!(locale, common.ld.game),
                 "genre": ["Puzzle", "Logic"],
                 "gamePlatform": "Web browser",
                 "playMode": "SinglePlayer",
                 "applicationCategory": "Game",
                 "operatingSystem": "Any",
-                "inLanguage": "en",
+                "inLanguage": Locale::get_all().iter().map(|l| l.as_str()).collect::<Vec<_>>(),
                 "isAccessibleForFree": true,
                 "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
                 "author": { "@id": format!("{SITE_URL}/#author") },
@@ -100,12 +129,24 @@ pub fn site_ld() -> String {
     .to_string()
 }
 
+/// The questions on the rules page, also the source of its structured data.
+pub fn rules_faq(locale: Locale) -> [(&'static str, &'static str); 5] {
+    [
+        (td_string!(locale, rules.faq.what_q), td_string!(locale, rules.faq.what_a)),
+        (td_string!(locale, rules.faq.how_many_q), td_string!(locale, rules.faq.how_many_a)),
+        (td_string!(locale, rules.faq.cross_q), td_string!(locale, rules.faq.cross_a)),
+        (td_string!(locale, rules.faq.connected_q), td_string!(locale, rules.faq.connected_a)),
+        (td_string!(locale, rules.faq.unique_q), td_string!(locale, rules.faq.unique_a)),
+    ]
+}
+
 /// Questions and answers, for the rules page.
-pub fn faq_ld(items: &[(&str, &str)]) -> String {
+pub fn faq_ld(locale: Locale) -> String {
     json!({
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        "mainEntity": items
+        "inLanguage": locale.as_str(),
+        "mainEntity": rules_faq(locale)
             .iter()
             .map(|(q, a)| json!({
                 "@type": "Question",
@@ -117,26 +158,58 @@ pub fn faq_ld(items: &[(&str, &str)]) -> String {
     .to_string()
 }
 
-/// The questions on the rules page, also the source of its structured data.
-pub const RULES_FAQ: [(&str, &str); 5] = [
-    (
-        "What is Hashiwokakero?",
-        "Hashiwokakero (橋をかけろ, “build bridges”), also called Bridges or Hashi, is a Japanese logic puzzle published by Nikoli. The grid shows numbered islands; you connect them with horizontal and vertical bridges so that every island has exactly as many bridges as its number, no bridges cross, and all islands form one connected group.",
-    ),
-    (
-        "How many bridges can connect two islands?",
-        "At most two. A single bridge or a double bridge may join two islands that are in the same row or column with nothing in between.",
-    ),
-    (
-        "Can bridges cross each other?",
-        "No. Bridges run straight horizontally or vertically and may neither cross other bridges nor pass over islands.",
-    ),
-    (
-        "Do all islands have to be connected?",
-        "Yes. In a finished puzzle you can travel from any island to any other over the bridges, the islands form a single network.",
-    ),
-    (
-        "Is there always exactly one solution?",
-        "On Hashi, yes: every generated puzzle is checked by a SAT solver, which proves that no second solution exists, so you never have to guess.",
-    ),
+/// The pages in the sitemap with their change frequency and priority.
+const SITEMAP: [(&str, &str, &str); 6] = [
+    ("/", "daily", "1.0"),
+    ("/practice", "monthly", "0.8"),
+    ("/ranks", "daily", "0.7"),
+    ("/rules", "monthly", "0.8"),
+    ("/create", "monthly", "0.6"),
+    ("/lab", "monthly", "0.5"),
 ];
+
+/// `sitemap.xml` with every page in every language, each listing its translations.
+pub fn sitemap() -> String {
+    let mut xml = String::from(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+         <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n",
+    );
+    for (path, freq, priority) in SITEMAP {
+        let alternates: String = Locale::get_all()
+            .iter()
+            .map(|l| {
+                format!(
+                    "    <xhtml:link rel=\"alternate\" hreflang=\"{}\" href=\"{SITE_URL}{}\"/>\n",
+                    l.as_str(),
+                    localized(*l, path)
+                )
+            })
+            .chain(std::iter::once(format!(
+                "    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"{SITE_URL}{path}\"/>\n"
+            )))
+            .collect();
+        for l in Locale::get_all() {
+            xml.push_str(&format!(
+                "  <url>\n    <loc>{SITE_URL}{}</loc>\n{alternates}    <changefreq>{freq}</changefreq>\n    <priority>{priority}</priority>\n  </url>\n",
+                localized(*l, path)
+            ));
+        }
+    }
+    xml.push_str("</urlset>\n");
+    xml
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sitemap_lists_every_language() {
+        let xml = sitemap();
+        let pages = SITEMAP.len() * Locale::get_all().len();
+        assert_eq!(xml.matches("<url>").count(), pages);
+        assert!(xml.contains("<loc>https://hashi.rs/</loc>"));
+        assert!(xml.contains("<loc>https://hashi.rs/de/rules</loc>"));
+        assert!(xml.contains("hreflang=\"zh-Hant\" href=\"https://hashi.rs/zh-Hant/lab\""));
+    }
+}

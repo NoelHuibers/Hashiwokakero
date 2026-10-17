@@ -1,0 +1,32 @@
+{
+  "title": "Tu cuenta",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Tus puentes",
+  "guest_here": "Juegas como {{ name }} (invitado) en este navegador.",
+  "member_since": "Miembro desde el {{ date }}.",
+  "no_record": "Juega un reto diario para empezar tu historial.",
+  "stats": {
+    "solved": "Resueltos",
+    "streak": "Racha",
+    "best": "Mejor racha",
+    "fastest": "Más rápido",
+    "average": "Media",
+    "week": "Esta semana",
+    "best_streak_short": "Racha"
+  },
+  "last_weeks": "Últimas cinco semanas",
+  "calendar_rank": "puesto {{ rank }}",
+  "not_solved": "sin resolver",
+  "guest_cta": "Crea una cuenta para conservar los resultados y la racha de este invitado, y para jugar en otros dispositivos.",
+  "sign_in_cta": "Entra para ver tu racha en cualquier dispositivo. También puedes jugar sin más, como invitado.",
+  "create": "Crear cuenta",
+  "username": "Nombre de usuario",
+  "password": "Contraseña",
+  "password_hint": "Al menos 8 caracteres.",
+  "busy": "Un momento…",
+  "welcome": "¡Hola, {{ name }}!",
+  "signed_out": "Sesión cerrada.",
+  "name_hint": "Tus resultados cuentan en la clasificación con este nombre.",
+  "sign_out": "Cerrar sesión",
+  "no_dailies": "Aún no hay retos."
+}

@@ -1,0 +1,32 @@
+{
+  "title": "アカウント",
+  "hello": "こんにちは、{{ name }}さん",
+  "record": "あなたの記録",
+  "guest_here": "このブラウザでは {{ name }}（ゲスト）としてプレイ中です。",
+  "member_since": "{{ date }}から参加しています。",
+  "no_record": "デイリーパズルを解いて、記録を始めましょう。",
+  "stats": {
+    "solved": "クリア",
+    "streak": "連続",
+    "best": "最長連続",
+    "fastest": "最速",
+    "average": "平均",
+    "week": "今週",
+    "best_streak_short": "連続"
+  },
+  "last_weeks": "最近の5週間",
+  "calendar_rank": "{{ rank }}位",
+  "not_solved": "未クリア",
+  "guest_cta": "アカウントを作ると、このゲストの結果と連続記録を引き継げて、ほかの端末でも遊べます。",
+  "sign_in_cta": "ログインすると、どの端末でも連続記録を確認できます。ゲストのままでも遊べます。",
+  "create": "アカウント作成",
+  "username": "ユーザー名",
+  "password": "パスワード",
+  "password_hint": "8文字以上",
+  "busy": "少々お待ちください…",
+  "welcome": "{{ name }}さん！",
+  "signed_out": "ログアウトしました。",
+  "name_hint": "この名前でランキングに載ります。",
+  "sign_out": "ログアウト",
+  "no_dailies": "まだデイリーの記録はありません。"
+}

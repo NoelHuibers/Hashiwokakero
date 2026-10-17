@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "Vandaag",
+    "practice": "Oefenen",
+    "ranks": "Ranking",
+    "create": "Maken",
+    "lab": "Lab",
+    "main": "Hoofdnavigatie"
+  },
+  "tagline_short": "Bruggen",
+  "language": "Taal",
+  "account": "Account",
+  "sign_in": "Inloggen",
+  "theme": {
+    "toggle": "Donkere modus aan/uit",
+    "to_day": "Naar dag 昼",
+    "to_night": "Naar nacht 夜"
+  },
+  "footer": {
+    "tagline": "<em>bouw bruggen</em>. Opgelost door SAT, gespeeld door jou.",
+    "made_by": "Gemaakt door {{ author }}",
+    "how_to_play": "Speluitleg",
+    "open_source": "Open source op GitHub",
+    "tech": "Rust · Leptos · Turso · eigen CDCL- & DPLL-solvers"
+  },
+  "difficulty": {
+    "easy": "Makkelijk",
+    "medium": "Gemiddeld",
+    "hard": "Moeilijk",
+    "expert": "Expert",
+    "oni": "Oni"
+  },
+  "source": {
+    "daily": "Brug van de dag · {{ date }}",
+    "custom": "Je eigen puzzel",
+    "imported": "Geïmporteerd · {{ name }}"
+  },
+  "toast": {
+    "unsat": "De SAT-solver heeft het bewezen: deze puzzel heeft geen oplossing.",
+    "timeout": "De solver had niet genoeg tijd. Probeer een andere configuratie.",
+    "nothing_to_hint": "Geen hint nodig, elke brug ligt al op zijn plek.",
+    "all_correct": "Tot nu toe goed: elke brug hoort bij de oplossing.",
+    "wrong_bridges": "Bruggen die niet bij de oplossing horen: {{ count }}",
+    "unique": "Bewezen: de oplossing is uniek.",
+    "not_unique": "Deze puzzel heeft meer dan één oplossing.",
+    "copied": "Resultaat gekopieerd naar het klembord."
+  },
+  "errors": {
+    "unknown": "Er ging iets mis: {{ detail }}",
+    "database": "De database reageerde niet, probeer het opnieuw.",
+    "internal": "Er ging iets mis op de server, probeer het opnieuw.",
+    "archive_only_past": "Alleen eerdere dagpuzzels kun je oefenen.",
+    "password_too_short": "Wachtwoorden hebben minstens 8 tekens nodig.",
+    "password_too_long": "Wachtwoorden mogen hoogstens 128 tekens hebben.",
+    "username_invalid": "Gebruikersnamen hebben 3 tot 20 tekens: letters, cijfers, _ en -.",
+    "username_taken": "Deze gebruikersnaam is al bezet.",
+    "wrong_login": "Verkeerde gebruikersnaam of verkeerd wachtwoord.",
+    "too_many_attempts": "Te veel mislukte pogingen, wacht een paar minuten.",
+    "session_expired": "Je sessie is verlopen, herlaad de pagina.",
+    "not_started": "Start eerst de dagpuzzel.",
+    "not_solved": "Dat is nog geen oplossing.",
+    "wrong_puzzle": "Deze bruggen horen niet bij deze puzzel.",
+    "already_finished": "Je hebt deze dagpuzzel al afgerond."
+  },
+  "solver": {
+    "title": "SAT-solver",
+    "description": "De puzzel wordt als CNF gecodeerd en opgelost door onze eigen solvers uit het SAT-lab.",
+    "solver": "Solver",
+    "own_cdcl": "Eigen CDCL",
+    "own_dpll": "Eigen DPLL",
+    "heuristic": "Vertakkingsheuristiek",
+    "splr_heuristic": "Die van splr (EVSIDS)",
+    "restarts": "Herstarts",
+    "restarts_none": "Geen herstarts",
+    "restarts_fixed": "Vast interval",
+    "restarts_geometric": "Geometrisch",
+    "restarts_luby": "Luby-reeks",
+    "subsumption": "Subsumptie",
+    "subsumption_short": "subsumptie",
+    "subsumption_hint": "Gesubsumeerde clausules vóór het oplossen verwijderen",
+    "preprocess": "voorbewerking",
+    "timeout": "Tijdslimiet"
+  },
+  "ranking": {
+    "you": "jij",
+    "guest": "gast",
+    "guest_name": "Gast",
+    "penalties": "hints · controles",
+    "empty": "Nog niemand is overgestoken. Wees de eerste!"
+  },
+  "board": {
+    "label": "Hashiwokakero-speelbord",
+    "zoom": "Inzoomen",
+    "fit": "Bord passend maken",
+    "zoom_hint": "Veeg om te bewegen, tik om te bouwen",
+    "cells_small": "Vakjes te klein?"
+  },
+  "not_found": {
+    "title": "Verdwaald op zee",
+    "text": "Er loopt geen brug naar deze pagina. We brengen je terug naar de eilanden.",
+    "back": "Terug naar het spel"
+  },
+  "game": {
+    "time": "Tijd",
+    "moves": "Zetten",
+    "hints": "Hints",
+    "undo": "Ongedaan",
+    "redo": "Opnieuw",
+    "clear": "Wissen",
+    "restart": "Herstart",
+    "check": "Controleer",
+    "hint": "Hint",
+    "solve": "Oplossen",
+    "unique": "Uniek?",
+    "well_done": "Goed gedaan!",
+    "share": "Resultaat delen",
+    "loading": "Laden…",
+    "islands_complete": "eilanden klaar",
+    "groups": "{{ count }} losse groepen",
+    "all_connected": "alles verbonden",
+    "islands": "{{ count }} eilanden",
+    "unique_solution": "unieke oplossing ✓",
+    "several_solutions": "meerdere oplossingen"
+  },
+  "weekday": {
+    "mon": "Maandag",
+    "tue": "Dinsdag",
+    "wed": "Woensdag",
+    "thu": "Donderdag",
+    "fri": "Vrijdag",
+    "sat": "Zaterdag",
+    "sun": "Zondag"
+  },
+  "month": {
+    "jan": "januari",
+    "feb": "februari",
+    "mar": "maart",
+    "apr": "april",
+    "may": "mei",
+    "jun": "juni",
+    "jul": "juli",
+    "aug": "augustus",
+    "sep": "september",
+    "oct": "oktober",
+    "nov": "november",
+    "dec": "december"
+  },
+  "date_long": "{{ weekday }} {{ day }} {{ month }} {{ year }}",
+  "date_short": "{{ day }} {{ month }} {{ year }}",
+  "og_image_alt": "Een opgeloste Hashiwokakero-puzzel in pixelart: genummerde eilanden verbonden door houten en vermiljoenrode bruggen",
+  "ld": {
+    "site": "Hashiwokakero, de Japanse bruggenpuzzel, gratis te spelen in je browser.",
+    "game": "Verbind de eilanden met bruggen zodat elk eiland zoveel bruggen heeft als zijn getal aangeeft. Een dagpuzzel met ranglijst, vijf moeilijkheidsgraden, pixelart, en elke puzzel heeft precies één oplossing."
+  }
+}

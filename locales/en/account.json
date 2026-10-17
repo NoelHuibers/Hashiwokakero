@@ -1,0 +1,32 @@
+{
+  "title": "Your account",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Your bridges",
+  "guest_here": "Playing as {{ name }} (guest) in this browser.",
+  "member_since": "Member since {{ date }}.",
+  "no_record": "Play a daily puzzle to start your record.",
+  "stats": {
+    "solved": "Solved",
+    "streak": "Streak",
+    "best": "Best streak",
+    "fastest": "Fastest",
+    "average": "Average",
+    "week": "This week",
+    "best_streak_short": "Streak"
+  },
+  "last_weeks": "Last five weeks",
+  "calendar_rank": "rank {{ rank }}",
+  "not_solved": "not solved",
+  "guest_cta": "Create an account to keep this guest's results and streak, and to play on other devices.",
+  "sign_in_cta": "Sign in to see your streak on any device. You can also just play, as a guest.",
+  "create": "Create account",
+  "username": "Username",
+  "password": "Password",
+  "password_hint": "At least 8 characters.",
+  "busy": "Just a moment…",
+  "welcome": "Welcome, {{ name }}!",
+  "signed_out": "Signed out.",
+  "name_hint": "Your results count on the leaderboard under this name.",
+  "sign_out": "Sign out",
+  "no_dailies": "No dailies yet."
+}

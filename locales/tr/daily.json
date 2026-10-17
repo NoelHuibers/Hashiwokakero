@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "title": "Hashi · Günlük Hashiwokakero (Köprüler) bulmacası, ücretsiz",
+    "description": "Her gün herkes için aynı yeni bir Hashiwokakero (Köprüler) bulmacası: sevimli Japon piksel sanatı, sıralama, seriler ve her bulmacanın tek bir çözümü var."
+  },
+  "title": "Günün köprüsü #{{ number }}",
+  "penalty": "Ceza",
+  "give_up": "Pes et",
+  "give_up_confirm": "Çözümü SAT çözücü göstersin mi? Bugünkü oyunun sıralamaya girmez.",
+  "share": "Hashi 橋 Günlük #{{ number }} · {{ weekday }} {{ difficulty }}",
+  "share_rank": "🏅 #{{ rank }} / {{ total }}",
+  "cover": {
+    "title": "Günün köprüsü",
+    "text": "Bulmaca başlata bastığında görünür, saat sunucuda işler. İpuçları 30 sn, kontroller 10 sn ekler; çözümü açarsan sıralamaya girmezsin.",
+    "start": "Başla",
+    "preparing": "Hazırlanıyor…",
+    "playing_as": "Oyuncu: {{ name }}",
+    "playing_as_guest": "Oyuncu: {{ name }} (misafir)",
+    "no_account": "Hesap gerekmez, misafir olarak oynarsın."
+  },
+  "result": {
+    "revealed_title": "SAT çözücü çözdü",
+    "revealed_text": "Bu sıralamaya sayılmaz. Yarın görüşürüz!",
+    "rank": "Bugünkü sıran: {{ rank }} / {{ total }}",
+    "ranking": "Sıralanıyor…",
+    "more": "Pratik modunda daha fazla bulmaca →",
+    "on_board": "Sıralamadaki adın: <b>{{ name }}</b>",
+    "claim": "Serini her cihazda korumak için adını sahiplen →"
+  },
+  "ranking": {
+    "title": "Bugünün sıralaması",
+    "all": "Tümü →",
+    "crossed": "Bugün karşıya geçen: {{ count }}"
+  },
+  "week": {
+    "title": "Bu hafta",
+    "text": "Gazete bulmacaları gibi, köprüler Pazar'a doğru zorlaşır.",
+    "next": "Sonraki köprüye kalan"
+  }
+}

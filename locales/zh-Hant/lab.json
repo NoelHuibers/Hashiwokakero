@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "SAT 求解器實驗室 · CDCL、DPLL 與 splr",
+    "description": "讓一道數橋謎題跑過我們自製的 CDCL 和 DPLL SAT 求解器，比較不同分支啟發法、重新啟動策略，並與 splr 對照。"
+  },
+  "title": "求解器實驗室",
+  "intro": "讓一道謎題以不同模式（分支啟發法、重新啟動策略、子句包含消去）跑過我們自製的 CDCL 和 DPLL 求解器，並與 splr 比較。",
+  "puzzle": {
+    "title": "1 · 謎題",
+    "size": "{{ width }}×{{ height }}，{{ count }} 座島",
+    "none": "尚未選擇謎題",
+    "game": "目前的遊戲",
+    "workshop": "工作坊",
+    "fresh": "全新產生"
+  },
+  "solvers": {
+    "title": "2 · 求解器",
+    "description": "選擇要比較的設定。",
+    "timeout": "每次執行的逾時"
+  },
+  "racing": "比賽中…",
+  "start": "開始比賽",
+  "results": {
+    "title": "3 · 結果",
+    "description": "總時間 = 編碼 + 求解。不連通的解會以延遲方式排除，每次排除都要再呼叫一次 SAT。",
+    "empty": "還沒有比賽。"
+  },
+  "table": {
+    "config": "設定",
+    "result": "結果",
+    "decisions": "決策數",
+    "restarts": "重啟數",
+    "calls": "SAT 呼叫"
+  },
+  "badge": {
+    "queued": "排隊中",
+    "solving": "求解中…",
+    "error": "錯誤",
+    "timeout": "逾時"
+  },
+  "summary": {
+    "decisions": "決策：{{ count }}",
+    "restarts": "重新啟動：{{ count }}",
+    "calls": "SAT 呼叫：{{ count }}"
+  },
+  "toast": {
+    "pick_puzzle": "請先選擇一道謎題。",
+    "pick_solver": "請至少選擇一種求解器設定。"
+  }
+}

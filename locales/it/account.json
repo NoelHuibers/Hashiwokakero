@@ -1,0 +1,32 @@
+{
+  "title": "Il tuo account",
+  "hello": "こんにちは, {{ name }}",
+  "record": "I tuoi ponti",
+  "guest_here": "Giochi come {{ name }} (ospite) in questo browser.",
+  "member_since": "Membro dal {{ date }}.",
+  "no_record": "Gioca una sfida del giorno per iniziare il tuo palmarès.",
+  "stats": {
+    "solved": "Risolti",
+    "streak": "Serie",
+    "best": "Serie migliore",
+    "fastest": "Più veloce",
+    "average": "Media",
+    "week": "Questa settimana",
+    "best_streak_short": "Serie"
+  },
+  "last_weeks": "Ultime cinque settimane",
+  "calendar_rank": "posizione {{ rank }}",
+  "not_solved": "non risolto",
+  "guest_cta": "Crea un account per conservare i risultati e la serie di questo ospite e per giocare su altri dispositivi.",
+  "sign_in_cta": "Accedi per vedere la tua serie su qualsiasi dispositivo. Puoi anche giocare e basta, come ospite.",
+  "create": "Crea account",
+  "username": "Nome utente",
+  "password": "Password",
+  "password_hint": "Almeno 8 caratteri.",
+  "busy": "Un attimo…",
+  "welcome": "Eccoti, {{ name }}!",
+  "signed_out": "Disconnessione effettuata.",
+  "name_hint": "I tuoi risultati compaiono in classifica con questo nome.",
+  "sign_out": "Esci",
+  "no_dailies": "Ancora nessuna sfida."
+}

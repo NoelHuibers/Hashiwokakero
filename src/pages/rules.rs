@@ -6,7 +6,9 @@ use crate::components::board::{BoardMode, BoardView};
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::separator::Separator;
-use crate::seo::{PageMeta, RULES_FAQ, faq_ld};
+use crate::components::layout::use_localized;
+use crate::i18n::{t, t_string, use_i18n};
+use crate::seo::{PageMeta, faq_ld, rules_faq};
 
 /// A bridge between two cells (x, y) with its count.
 type ExampleBridge = ((u8, u8), (u8, u8), u8);
@@ -34,7 +36,7 @@ fn example(width: u8, height: u8, bridges: &[ExampleBridge]) -> (Board, Vec<u8>)
 }
 
 #[component]
-fn Rule(number: &'static str, title: &'static str, children: Children) -> impl IntoView {
+fn Rule(number: &'static str, title: AnyView, children: Children) -> impl IntoView {
     view! {
         <div class="flex gap-4">
             <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-primary font-pixel text-2xl text-primary-foreground shadow-md">
@@ -51,12 +53,14 @@ fn Rule(number: &'static str, title: &'static str, children: Children) -> impl I
 #[component]
 fn Clause(children: Children) -> impl IntoView {
     view! {
-        <code class="terminal block overflow-x-auto rounded-md px-3 py-2 font-pixel text-[13px]">{children()}</code>
+        <code dir="ltr" class="terminal block overflow-x-auto rounded-md px-3 py-2 font-pixel text-[13px]">{children()}</code>
     }
 }
 
 #[component]
 pub fn RulesPage() -> impl IntoView {
+    let i18n = use_i18n();
+    let lab = use_localized("/lab");
     let (board, bridges) = example(
         5,
         5,
@@ -72,36 +76,36 @@ pub fn RulesPage() -> impl IntoView {
 
     view! {
         <PageMeta
-            title="How to play Hashiwokakero · Rules and solving tips · Hashi"
-            description="The rules of Hashiwokakero (Bridges) with a solved example, the deductions that crack most puzzles without guessing, and how a SAT solver proves a solution unique."
+            title=Signal::derive(move || t_string!(i18n, rules.meta.title).to_string())
+            description=Signal::derive(move || t_string!(i18n, rules.meta.description).to_string())
             path="/rules"
-            json_ld=faq_ld(&RULES_FAQ)
+            json_ld=faq_ld(i18n.get_locale_untracked())
         />
         <section class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
             <div class="mb-8 flex items-end gap-4">
                 <span class="vertical-jp font-pixel text-4xl leading-none text-primary">"橋をかけろ"</span>
                 <div>
                     <p class="font-pixel text-sm text-primary">"遊び方 · asobikata"</p>
-                    <h1 class="text-4xl font-black">"How to play"</h1>
+                    <h1 class="text-4xl font-black">{t!(i18n, rules.title)}</h1>
                     <p class="mt-2 max-w-2xl text-muted-foreground">
-                        "Hashiwokakero (橋をかけろ, “build bridges!”) is a logic puzzle published by Nikoli. Connect all islands with bridges so that every island has exactly as many bridges as its number says."
+                        {t!(i18n, rules.intro)}
                     </p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <div class="flex flex-col gap-6">
-                    <Rule number="一" title="Count the bridges">
-                        "The number on an island is how many bridges end there."
+                    <Rule number="一" title=t!(i18n, rules.rule.count_title).into_any()>
+                        {t!(i18n, rules.rule.count)}
                     </Rule>
-                    <Rule number="二" title="One or two">
-                        "Islands can be joined by a single wooden bridge or a double vermilion bridge, never more."
+                    <Rule number="二" title=t!(i18n, rules.rule.double_title).into_any()>
+                        {t!(i18n, rules.rule.double)}
                     </Rule>
-                    <Rule number="三" title="Straight, no crossings">
-                        "Bridges run horizontally or vertically and must not cross other bridges or islands."
+                    <Rule number="三" title=t!(i18n, rules.rule.straight_title).into_any()>
+                        {t!(i18n, rules.rule.straight)}
                     </Rule>
-                    <Rule number="四" title="One archipelago">
-                        "In the end every island has to be reachable from every other one."
+                    <Rule number="四" title=t!(i18n, rules.rule.connected_title).into_any()>
+                        {t!(i18n, rules.rule.connected)}
                     </Rule>
                 </div>
                 <div class="flex flex-col items-center gap-3">
@@ -112,7 +116,7 @@ pub fn RulesPage() -> impl IntoView {
                         max_height="22rem"
                         framed=true
                     />
-                    <p class="text-sm text-muted-foreground">"A solved puzzle"</p>
+                    <p class="text-sm text-muted-foreground">{t!(i18n, rules.example)}</p>
                 </div>
             </div>
 
@@ -122,43 +126,45 @@ pub fn RulesPage() -> impl IntoView {
                 <Card>
                     <CardHeader>
                         <CardTitle class="flex items-baseline gap-2 text-xl">
-                            "Controls" <span class="font-pixel text-sm text-primary">"操作"</span>
+                            {t!(i18n, rules.controls.title)} " " <span class="font-pixel text-sm text-primary">"操作"</span>
                         </CardTitle>
                     </CardHeader>
                     <CardContent class="flex flex-col gap-2 text-sm text-muted-foreground">
-                        <p>"Click the water between two islands to build a bridge, again for a second one, a third click removes them."</p>
-                        <p>"Or drag from an island towards its neighbour, or click two islands one after the other."</p>
-                        <p><Kbd>"Right click"</Kbd> " / " <Kbd>"Shift"</Kbd> " + click removes a bridge."</p>
+                        <p>{t!(i18n, rules.controls.tap)}</p>
+                        <p>{t!(i18n, rules.controls.drag)}</p>
+                        <p>{t!(i18n, rules.controls.remove, <right> = <Kbd />, <shift> = <Kbd />)}</p>
                         <p>
-                            <Kbd>"Ctrl Z"</Kbd> " undo · " <Kbd>"Ctrl Y"</Kbd> " redo · " <Kbd>"H"</Kbd>
-                            " hint"
+                            <Kbd>"Ctrl Z"</Kbd> " " {t!(i18n, common.game.undo)} " · " <Kbd>"Ctrl Y"</Kbd> " "
+                            {t!(i18n, common.game.redo)} " · " <Kbd>"H"</Kbd> " " {t!(i18n, common.game.hint)}
                         </p>
-                        <p>"Finished islands turn green, overfull ones red. Stuck? Ask the SAT solver for a hint or to check your bridges."</p>
+                        <p>{t!(i18n, rules.controls.colors)}</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
                         <CardTitle class="flex items-baseline gap-2 text-xl">
-                            "Under the hood" <span class="font-pixel text-sm text-primary">"仕組み"</span>
+                            {t!(i18n, rules.hood.title)} " " <span class="font-pixel text-sm text-primary">"仕組み"</span>
                         </CardTitle>
                     </CardHeader>
                     <CardContent class="flex flex-col gap-3 text-sm text-muted-foreground">
                         <p>
-                            "Every possible bridge " <i>"e"</i> " between two neighbouring islands gets two boolean variables: "
-                            <i>"e₁"</i> " (at least one bridge) and " <i>"e₂"</i> " (a second bridge), with "
-                            <i>"e₂ → e₁"</i> " so that every arrangement has exactly one model."
+                            {t!(i18n, rules.hood.variables, <e> = <i />, <e1> = <i />, <e2> = <i />, <imp> = <i />)}
                         </p>
                         <Clause>"¬e₂ ∨ e₁"</Clause>
-                        <p>"An island with number n needs exactly n of its variables to be true, written as clauses over all combinations. Crossing bridges exclude each other:"</p>
+                        <p>{t!(i18n, rules.hood.islands)}</p>
                         <Clause>"¬h₁ ∨ ¬v₁"</Clause>
                         <p>
-                            "Connectivity is hard to express in CNF, so it is added lazily: whenever the solver returns separate groups of islands, a clause demanding a bridge out of such a group is added and the solver runs again."
+                            {t!(i18n, rules.hood.connectivity)}
                         </p>
                         <p>
-                            "The generator grows a random archipelago and proves uniqueness by blocking the found solution and asking the solver for another one. Try the different solver modes in the "
-                            <A href="/lab" attr:class="text-primary underline underline-offset-4">"lab"</A>
-                            "."
+                            {t!(
+                                i18n,
+                                rules.hood.generator,
+                                <a> = move |children: ChildrenFn| view! {
+                                    <A href=lab attr:class="text-primary underline underline-offset-4">{children()}</A>
+                                }
+                            )}
                         </p>
                     </CardContent>
                 </Card>
@@ -169,16 +175,16 @@ pub fn RulesPage() -> impl IntoView {
             <section class="flex flex-col gap-5" id="faq">
                 <div>
                     <p class="font-pixel text-sm text-primary">"よくある質問 · FAQ"</p>
-                    <h2 class="text-2xl font-black">"Questions about Hashiwokakero"</h2>
+                    <h2 class="text-2xl font-black">{t!(i18n, rules.faq_title)}</h2>
                 </div>
                 <dl class="grid gap-x-8 gap-y-5 md:grid-cols-2">
-                    {RULES_FAQ
-                        .iter()
+                    {move || rules_faq(i18n.get_locale())
+                        .into_iter()
                         .map(|(q, a)| {
                             view! {
                                 <div class="flex flex-col gap-1.5">
-                                    <dt class="font-bold">{*q}</dt>
-                                    <dd class="text-sm leading-relaxed text-muted-foreground">{*a}</dd>
+                                    <dt class="font-bold">{q}</dt>
+                                    <dd class="text-sm leading-relaxed text-muted-foreground">{a}</dd>
                                 </div>
                             }
                         })

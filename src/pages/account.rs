@@ -7,15 +7,11 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::input::{Input, InputType};
 use crate::components::ui::label::Label;
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
-use crate::model::{UserStats, date_string, format_duration, pretty_date};
+use crate::model::{UserStats, date_string, format_duration};
+use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::lang::{date_short, error_text};
 use crate::state::{Auth, ToastKind, toast};
 use leptos_meta::{Meta, Title};
-
-/// Server errors arrive as "error running server function: …", keep the message only.
-fn message(e: ServerFnError) -> String {
-    let text = e.to_string();
-    text.rsplit_once(": ").map_or(text.clone(), |(_, m)| m.to_string())
-}
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Mode {
@@ -25,6 +21,7 @@ enum Mode {
 
 #[component]
 fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl IntoView {
+    let i18n = use_i18n();
     let auth = expect_context::<Auth>();
     let username = RwSignal::new(String::new());
     let password = RwSignal::new(String::new());
@@ -47,14 +44,17 @@ fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl IntoView {
             };
             match result {
                 Ok(user) => {
-                    toast(ToastKind::Success, format!("Welcome, {}! ようこそ", user.name));
+                    let name = user.name.clone();
+                    toast(ToastKind::Success, move |l| {
+                        format!("{} ようこそ", td_string!(l, account.welcome, name = name.clone()))
+                    });
                     auth.user.set(Some(user));
                     password.set(String::new());
                     if let Ok(s) = my_stats().await {
                         stats.set(s);
                     }
                 }
-                Err(e) => error.set(Some(message(e))),
+                Err(e) => error.set(Some(error_text(i18n.get_locale_untracked(), &e))),
             }
             busy.set(false);
         });
@@ -63,7 +63,7 @@ fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl IntoView {
     view! {
         <form class="flex flex-col gap-4" on:submit=submit>
             <div class="flex flex-col gap-2">
-                <Label html_for=id("username")>"Username"</Label>
+                <Label html_for=id("username")>{t!(i18n, account.username)}</Label>
                 <Input
                     id=id("username")
                     bind_value=username
@@ -74,7 +74,7 @@ fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl IntoView {
                 />
             </div>
             <div class="flex flex-col gap-2">
-                <Label html_for=id("password")>"Password"</Label>
+                <Label html_for=id("password")>{t!(i18n, account.password)}</Label>
                 <Input
                     id=id("password")
                     r#type=InputType::Password
@@ -84,14 +84,14 @@ fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl IntoView {
                     minlength=if mode == Mode::SignIn { 1 } else { 8 }
                 />
                 {(mode == Mode::Register)
-                    .then(|| view! { <p class="text-xs text-muted-foreground">"At least 8 characters."</p> })}
+                    .then(|| view! { <p class="text-xs text-muted-foreground">{t!(i18n, account.password_hint)}</p> })}
             </div>
             {move || error.get().map(|e| view! { <p class="text-sm text-destructive">{e}</p> })}
             <Button attr:r#type="submit" attr:disabled=move || busy.get() class="w-full">
                 {move || match (mode, busy.get()) {
-                    (_, true) => "Just a moment…",
-                    (Mode::SignIn, false) => "Sign in 入る",
-                    (Mode::Register, false) => "Create account 登録",
+                    (_, true) => t_string!(i18n, account.busy).to_string(),
+                    (Mode::SignIn, false) => format!("{} 入る", t_string!(i18n, common.sign_in)),
+                    (Mode::Register, false) => format!("{} 登録", t_string!(i18n, account.create)),
                 }}
             </Button>
         </form>
@@ -99,7 +99,7 @@ fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl IntoView {
 }
 
 #[component]
-fn StatTile(label: &'static str, jp: &'static str, value: String) -> impl IntoView {
+fn StatTile(label: String, jp: &'static str, value: String) -> impl IntoView {
     view! {
         <div class="flex flex-col items-center rounded-lg border bg-background px-2 py-3">
             <span class="font-pixel text-2xl tabular-nums leading-tight">{value}</span>
@@ -114,6 +114,8 @@ fn StatTile(label: &'static str, jp: &'static str, value: String) -> impl IntoVi
 /// The last weeks as a grid of pixel squares, gold for top 3 finishes.
 #[component]
 fn Calendar(stats: UserStats) -> impl IntoView {
+    let i18n = use_i18n();
+    let locale = i18n.get_locale_untracked();
     view! {
         <div class="grid grid-cols-7 gap-1.5">
             {stats
@@ -121,21 +123,19 @@ fn Calendar(stats: UserStats) -> impl IntoView {
                 .into_iter()
                 .map(|d| {
                     let (class, title) = match (d.time_ms, d.rank) {
-                        (Some(t), Some(r)) if r <= 3 => {
-                            ("bg-[var(--px-gold)]", format!("{} · {} · rank {r}", pretty_date(d.day), format_duration(t)))
-                        }
                         (Some(t), r) => {
+                            let rank = r
+                                .map(|rank| format!(" · {}", td_string!(locale, account.calendar_rank, rank)))
+                                .unwrap_or_default();
                             (
-                                "bg-[var(--px-grass)]",
-                                format!(
-                                    "{} · {}{}",
-                                    pretty_date(d.day),
-                                    format_duration(t),
-                                    r.map(|r| format!(" · rank {r}")).unwrap_or_default(),
-                                ),
+                                if r.is_some_and(|r| r <= 3) { "bg-[var(--px-gold)]" } else { "bg-[var(--px-grass)]" },
+                                format!("{} · {}{rank}", date_short(locale, d.day), format_duration(t)),
                             )
                         }
-                        _ => ("bg-muted", format!("{} · not solved", pretty_date(d.day))),
+                        _ => (
+                            "bg-muted",
+                            format!("{} · {}", date_short(locale, d.day), td_string!(locale, account.not_solved)),
+                        ),
                     };
                     view! {
                         <div
@@ -152,6 +152,7 @@ fn Calendar(stats: UserStats) -> impl IntoView {
 
 #[component]
 pub fn AccountPage() -> impl IntoView {
+    let i18n = use_i18n();
     let auth = expect_context::<Auth>();
     let stats = RwSignal::new(None::<UserStats>);
 
@@ -171,9 +172,9 @@ pub fn AccountPage() -> impl IntoView {
                 Ok(()) => {
                     auth.user.set(None);
                     stats.set(None);
-                    toast(ToastKind::Info, "Signed out. またね!");
+                    toast(ToastKind::Info, |l| format!("{} またね!", td_string!(l, account.signed_out)));
                 }
-                Err(e) => toast(ToastKind::Error, message(e)),
+                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
             }
         });
     };
@@ -181,15 +182,15 @@ pub fn AccountPage() -> impl IntoView {
     let registered = move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.guest));
 
     view! {
-        <Title text="Your account · Hashi" />
+        <Title text=move || format!("{} · Hashi", t_string!(i18n, account.title)) />
         <Meta name="robots" content="noindex" />
         <section class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
             <div class="mb-6">
                 <p class="font-pixel text-sm text-primary">"自分 · jibun"</p>
                 <h1 class="text-3xl font-black">
                     {move || match auth.user.get() {
-                        Some(u) if !u.guest => format!("こんにちは, {}", u.name),
-                        _ => "Your account".to_string(),
+                        Some(u) if !u.guest => t_string!(i18n, account.hello, name = u.name).to_string(),
+                        _ => t_string!(i18n, account.title).to_string(),
                     }}
                 </h1>
             </div>
@@ -198,13 +199,18 @@ pub fn AccountPage() -> impl IntoView {
                 <Card class="gap-4 self-start">
                     <CardHeader>
                         <CardTitle class="flex items-baseline gap-2 text-xl">
-                            "Your bridges" <span class="font-pixel text-sm text-primary">"記録"</span>
+                            {t!(i18n, account.record)} <span class="font-pixel text-sm text-primary">"記録"</span>
                         </CardTitle>
                         <CardDescription>
                             {move || match auth.user.get() {
-                                Some(u) if u.guest => format!("Playing as {} (guest) in this browser.", u.name),
-                                Some(u) => format!("Member since {}.", pretty_date(u.created_at.div_euclid(crate::model::MS_PER_DAY))),
-                                None => "Play a daily puzzle to start your record.".to_string(),
+                                Some(u) if u.guest => t_string!(i18n, account.guest_here, name = u.name).to_string(),
+                                Some(u) => t_string!(
+                                    i18n,
+                                    account.member_since,
+                                    date = date_short(i18n.get_locale(), u.created_at.div_euclid(crate::model::MS_PER_DAY))
+                                )
+                                .to_string(),
+                                None => t_string!(i18n, account.no_record).to_string(),
                             }}
                         </CardDescription>
                     </CardHeader>
@@ -213,28 +219,28 @@ pub fn AccountPage() -> impl IntoView {
                             Some(s) => {
                                 view! {
                                     <div class="grid grid-cols-3 gap-2">
-                                        <StatTile label="Solved" jp="解" value=s.solved.to_string() />
-                                        <StatTile label="Streak" jp="連続" value=format!("{}日", s.current_streak) />
-                                        <StatTile label="Best" jp="最長" value=format!("{}日", s.best_streak) />
+                                        <StatTile label=t_string!(i18n, account.stats.solved).to_string() jp="解" value=s.solved.to_string() />
+                                        <StatTile label=t_string!(i18n, account.stats.streak).to_string() jp="連続" value=s.current_streak.to_string() />
+                                        <StatTile label=t_string!(i18n, account.stats.best).to_string() jp="最長" value=s.best_streak.to_string() />
                                         <StatTile
-                                            label="Fastest"
+                                            label=t_string!(i18n, account.stats.fastest).to_string()
                                             jp="最速"
                                             value=s.best_time_ms.map(format_duration).unwrap_or("–".into())
                                         />
                                         <StatTile
-                                            label="Average"
+                                            label=t_string!(i18n, account.stats.average).to_string()
                                             jp="平均"
                                             value=s.average_time_ms.map(format_duration).unwrap_or("–".into())
                                         />
                                         <StatTile
-                                            label="This week"
+                                            label=t_string!(i18n, account.stats.week).to_string()
                                             jp="週"
                                             value=s.recent.iter().rev().take(7).filter(|d| d.time_ms.is_some()).count().to_string()
                                         />
                                     </div>
                                     <div class="flex flex-col gap-2">
                                         <p class="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                                            "Last five weeks"
+                                            {t!(i18n, account.last_weeks)}
                                         </p>
                                         <Calendar stats=s />
                                     </div>
@@ -244,7 +250,7 @@ pub fn AccountPage() -> impl IntoView {
                             None => {
                                 view! {
                                     <div class="seigaiha grid h-40 place-items-center rounded-lg border border-dashed text-sm text-muted-foreground">
-                                        <p class="rounded-md bg-card px-3 py-1">"No dailies yet. 待っています"</p>
+                                        <p class="rounded-md bg-card px-3 py-1">{t!(i18n, account.no_dailies)} " 待っています"</p>
                                     </div>
                                 }
                                     .into_any()
@@ -260,14 +266,14 @@ pub fn AccountPage() -> impl IntoView {
                             view! {
                                 <CardHeader>
                                     <CardTitle class="flex items-baseline gap-2 text-xl">
-                                        "Sign in" <span class="font-pixel text-sm text-primary">"入口"</span>
+                                        {t!(i18n, common.sign_in)} <span class="font-pixel text-sm text-primary">"入口"</span>
                                     </CardTitle>
                                     <CardDescription>
                                         {move || {
                                             if auth.user.with(|u| u.as_ref().is_some_and(|u| u.guest)) {
-                                                "Create an account to keep this guest's results and streak, and to play on other devices."
+                                                t_string!(i18n, account.guest_cta)
                                             } else {
-                                                "Sign in to see your streak on any device. You can also just play, as a guest."
+                                                t_string!(i18n, account.sign_in_cta)
                                             }
                                         }}
                                     </CardDescription>
@@ -275,8 +281,8 @@ pub fn AccountPage() -> impl IntoView {
                                 <CardContent>
                                     <Tabs default_value="register" class="w-full">
                                         <TabsList class="w-full group-data-[orientation=Horizontal]/tabs:h-10 md:group-data-[orientation=Horizontal]/tabs:h-8">
-                                            <TabsTrigger value="register">"Create account"</TabsTrigger>
-                                            <TabsTrigger value="signin">"Sign in"</TabsTrigger>
+                                            <TabsTrigger value="register">{t!(i18n, account.create)}</TabsTrigger>
+                                            <TabsTrigger value="signin">{t!(i18n, common.sign_in)}</TabsTrigger>
                                         </TabsList>
                                         <TabsContent value="register" class="pt-2">
                                             <AuthForm mode=Mode::Register stats=stats />
@@ -302,13 +308,13 @@ pub fn AccountPage() -> impl IntoView {
                                 </span>
                                 <div>
                                     <CardTitle class="text-xl">{move || auth.user.with(|u| u.as_ref().map(|u| u.name.clone()))}</CardTitle>
-                                    <CardDescription>"Your results count on the leaderboard under this name."</CardDescription>
+                                    <CardDescription>{t!(i18n, account.name_hint)}</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
                             <Button variant=ButtonVariant::Outline class="w-full" on:click=sign_out>
-                                "Sign out"
+                                {t!(i18n, account.sign_out)}
                             </Button>
                         </CardContent>
                     </Show>

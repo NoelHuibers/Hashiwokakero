@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "自制数桥谜题 · Hashi 谜题工坊",
+    "description": "在工坊里设计数桥谜题：放置小岛，让 SAT 求解器检查是否唯一解，导出为文本文件，然后开玩。"
+  },
+  "kicker": "作る · tsukuru",
+  "title": "谜题工坊",
+  "intro": "放置小岛，让 SAT 求解器检查你的谜题是否只有唯一解，然后开玩。",
+  "keys": {
+    "click": "点击",
+    "right_click": "右键",
+    "set": "设置",
+    "erase": "删除（悬停时）"
+  },
+  "brush": {
+    "count_up": "每点一次加一",
+    "erase": "擦除",
+    "place": "放置 {{ number }}"
+  },
+  "heads_up": "注意",
+  "warning_capacity": "（{{ x }}，{{ y }}）处的 {{ number }} 需要 {{ number }} 座桥，但最多只能有 {{ max }} 座。",
+  "warning_odd": "数字总和为 {{ total }}，总和为奇数永远无解。",
+  "grid": "网格",
+  "grid_size": "{{ width }}×{{ height }} 格，{{ count }} 座岛",
+  "width": "宽",
+  "height": "高",
+  "fill": "用生成的谜题填充",
+  "import": "导入 .txt",
+  "export": "导出 .txt",
+  "play": "玩这道谜题",
+  "unique": "唯一解：好谜题！",
+  "not_unique": "不止一个解，请添加或修改小岛。",
+  "imported": "已导入 {{ name }}",
+  "unreadable": "无法读取 {{ name }}",
+  "brush_label": "画笔"
+}

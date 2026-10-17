@@ -1,0 +1,32 @@
+{
+  "title": "Twoje konto",
+  "hello": "こんにちは, {{ name }}",
+  "record": "Twoje mosty",
+  "guest_here": "Grasz w tej przeglądarce jako {{ name }} (gość).",
+  "member_since": "W grze od {{ date }}.",
+  "no_record": "Zagraj w łamigłówkę dnia, by zacząć swoją historię.",
+  "stats": {
+    "solved": "Rozwiązane",
+    "streak": "Seria",
+    "best": "Najlepsza seria",
+    "fastest": "Najszybciej",
+    "average": "Średnio",
+    "week": "Ten tydzień",
+    "best_streak_short": "Seria"
+  },
+  "last_weeks": "Ostatnie pięć tygodni",
+  "calendar_rank": "miejsce {{ rank }}",
+  "not_solved": "nierozwiązane",
+  "guest_cta": "Załóż konto, by zachować wyniki i serię tego gościa oraz grać na innych urządzeniach.",
+  "sign_in_cta": "Zaloguj się, by widzieć swoją serię na każdym urządzeniu. Możesz też po prostu grać jako gość.",
+  "create": "Załóż konto",
+  "username": "Nazwa użytkownika",
+  "password": "Hasło",
+  "password_hint": "Co najmniej 8 znaków.",
+  "busy": "Chwileczkę…",
+  "welcome": "Witaj, {{ name }}!",
+  "signed_out": "Wylogowano.",
+  "name_hint": "Pod tą nazwą twoje wyniki pojawią się w rankingu.",
+  "sign_out": "Wyloguj się",
+  "no_dailies": "Brak łamigłówek dnia."
+}

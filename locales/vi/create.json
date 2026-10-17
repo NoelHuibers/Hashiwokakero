@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Tự tạo câu đố Hashiwokakero · Hashi",
+    "description": "Thiết kế câu đố Nối cầu trong xưởng: đặt đảo, để bộ giải SAT kiểm tra câu đố có đúng một lời giải, xuất ra tệp văn bản và chơi thử."
+  },
+  "kicker": "作る · tsukuru",
+  "title": "Xưởng câu đố",
+  "intro": "Đặt các hòn đảo, để bộ giải SAT kiểm tra câu đố có đúng một lời giải, rồi chơi thử.",
+  "keys": {
+    "click": "Bấm",
+    "right_click": "Chuột phải",
+    "set": "đặt",
+    "erase": "xóa (khi rê chuột)"
+  },
+  "brush": {
+    "count_up": "Mỗi lần chạm tăng 1",
+    "erase": "Xóa",
+    "place": "Đặt số {{ number }}"
+  },
+  "heads_up": "Chú ý",
+  "warning_capacity": "Số {{ number }} tại ({{ x }}, {{ y }}) cần {{ number }} cầu nhưng chỉ có thể có tối đa {{ max }}.",
+  "warning_odd": "Tổng các số là {{ total }}, tổng lẻ thì không bao giờ giải được.",
+  "grid": "Lưới",
+  "grid_size": "{{ width }}×{{ height }} ô, {{ count }} đảo",
+  "width": "Chiều rộng",
+  "height": "Chiều cao",
+  "fill": "Điền câu đố tự động",
+  "import": "Nhập .txt",
+  "export": "Xuất .txt",
+  "play": "Chơi câu đố này",
+  "unique": "Duy nhất: một câu đố tuyệt vời!",
+  "not_unique": "Có nhiều hơn một lời giải, hãy thêm hoặc sửa đảo.",
+  "imported": "Đã nhập {{ name }}",
+  "unreadable": "Không đọc được {{ name }}",
+  "brush_label": "Cọ"
+}

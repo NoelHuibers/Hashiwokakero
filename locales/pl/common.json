@@ -1,0 +1,155 @@
+{
+  "nav": {
+    "daily": "Dziś",
+    "practice": "Trening",
+    "ranks": "Ranking",
+    "create": "Twórz",
+    "lab": "Lab",
+    "main": "Nawigacja główna"
+  },
+  "tagline_short": "Mosty",
+  "language": "Język",
+  "account": "Konto",
+  "sign_in": "Zaloguj się",
+  "theme": {
+    "toggle": "Przełącz tryb ciemny",
+    "to_day": "Przełącz na dzień 昼",
+    "to_night": "Przełącz na noc 夜"
+  },
+  "footer": {
+    "tagline": "<em>buduj mosty</em>. Rozwiązane przez SAT, rozgrywane przez ciebie.",
+    "made_by": "Autor: {{ author }}",
+    "how_to_play": "Jak grać",
+    "open_source": "Open source na GitHubie",
+    "tech": "Rust · Leptos · Turso · własne solvery CDCL i DPLL"
+  },
+  "difficulty": {
+    "easy": "Łatwy",
+    "medium": "Średni",
+    "hard": "Trudny",
+    "expert": "Ekspert",
+    "oni": "Oni"
+  },
+  "source": {
+    "daily": "Most dnia · {{ date }}",
+    "custom": "Twoja własna łamigłówka",
+    "imported": "Zaimportowano · {{ name }}"
+  },
+  "toast": {
+    "unsat": "Solver SAT udowodnił: ta łamigłówka nie ma rozwiązania.",
+    "timeout": "Solverowi skończył się czas. Spróbuj innej konfiguracji.",
+    "nothing_to_hint": "Nie ma czego podpowiadać, wszystkie mosty są na miejscu.",
+    "all_correct": "Na razie dobrze: każdy most należy do rozwiązania.",
+    "wrong_bridges": "Mosty spoza rozwiązania: {{ count }}",
+    "unique": "Udowodnione: rozwiązanie jest jednoznaczne.",
+    "not_unique": "Ta łamigłówka ma więcej niż jedno rozwiązanie.",
+    "copied": "Wynik skopiowany do schowka."
+  },
+  "errors": {
+    "unknown": "Coś poszło nie tak: {{ detail }}",
+    "database": "Baza danych nie odpowiada, spróbuj ponownie.",
+    "internal": "Coś poszło nie tak na serwerze, spróbuj ponownie.",
+    "archive_only_past": "Ćwiczyć można tylko wcześniejsze łamigłówki dnia.",
+    "password_too_short": "Hasło musi mieć co najmniej 8 znaków.",
+    "password_too_long": "Hasło może mieć najwyżej 128 znaków.",
+    "username_invalid": "Nazwa użytkownika ma od 3 do 20 znaków: litery, cyfry, _ i -.",
+    "username_taken": "Ta nazwa użytkownika jest już zajęta.",
+    "wrong_login": "Błędna nazwa użytkownika lub hasło.",
+    "too_many_attempts": "Za dużo nieudanych prób, odczekaj kilka minut.",
+    "session_expired": "Sesja wygasła, odśwież stronę.",
+    "not_started": "Najpierw rozpocznij łamigłówkę dnia.",
+    "not_solved": "To jeszcze nie jest rozwiązanie.",
+    "wrong_puzzle": "Te mosty nie pasują do tej łamigłówki.",
+    "already_finished": "Ta łamigłówka dnia jest już przez ciebie ukończona."
+  },
+  "solver": {
+    "title": "Solver SAT",
+    "description": "Łamigłówka jest kodowana jako CNF i rozwiązywana przez nasze własne solvery z laboratorium SAT.",
+    "solver": "Solver",
+    "own_cdcl": "Własny CDCL",
+    "own_dpll": "Własny DPLL",
+    "heuristic": "Heurystyka rozgałęziania",
+    "splr_heuristic": "Własna heurystyka splr (EVSIDS)",
+    "restarts": "Restarty",
+    "restarts_none": "Bez restartów",
+    "restarts_fixed": "Stały interwał",
+    "restarts_geometric": "Geometryczne",
+    "restarts_luby": "Ciąg Luby’ego",
+    "subsumption": "Subsumpcja",
+    "subsumption_short": "subsumpcja",
+    "subsumption_hint": "Usuń pochłonięte klauzule przed rozwiązywaniem",
+    "preprocess": "preprocessing",
+    "timeout": "Limit czasu"
+  },
+  "ranking": {
+    "you": "ty",
+    "guest": "gość",
+    "guest_name": "Gość",
+    "penalties": "podpowiedzi · sprawdzenia",
+    "empty": "Nikt jeszcze nie przeszedł na drugi brzeg. Przetrzyj szlak!"
+  },
+  "board": {
+    "label": "Plansza Hashiwokakero",
+    "zoom": "Powiększ",
+    "fit": "Dopasuj planszę",
+    "zoom_hint": "Przesuń palcem, by się poruszać, stuknij, by budować",
+    "cells_small": "Za małe pola?"
+  },
+  "not_found": {
+    "title": "Zagubieni na morzu",
+    "text": "Do tej strony nie prowadzi żaden most. Zabierzemy cię z powrotem na wyspy.",
+    "back": "Wróć do gry"
+  },
+  "game": {
+    "time": "Czas",
+    "moves": "Ruchy",
+    "hints": "Podpowiedzi",
+    "undo": "Cofnij",
+    "redo": "Ponów",
+    "clear": "Wyczyść",
+    "restart": "Od nowa",
+    "check": "Sprawdź",
+    "hint": "Podpowiedź",
+    "solve": "Rozwiąż",
+    "unique": "Jednoznaczna?",
+    "well_done": "Brawo!",
+    "share": "Udostępnij wynik",
+    "loading": "Ładowanie…",
+    "islands_complete": "gotowe wyspy",
+    "groups": "osobne grupy: {{ count }}",
+    "all_connected": "wszystko połączone",
+    "islands": "wyspy: {{ count }}",
+    "unique_solution": "jednoznaczne rozwiązanie ✓",
+    "several_solutions": "kilka rozwiązań"
+  },
+  "weekday": {
+    "mon": "Poniedziałek",
+    "tue": "Wtorek",
+    "wed": "Środa",
+    "thu": "Czwartek",
+    "fri": "Piątek",
+    "sat": "Sobota",
+    "sun": "Niedziela"
+  },
+  "month": {
+    "jan": "stycznia",
+    "feb": "lutego",
+    "mar": "marca",
+    "apr": "kwietnia",
+    "may": "maja",
+    "jun": "czerwca",
+    "jul": "lipca",
+    "aug": "sierpnia",
+    "sep": "września",
+    "oct": "października",
+    "nov": "listopada",
+    "dec": "grudnia"
+  },
+  "date_long": "{{ weekday }}, {{ day }} {{ month }} {{ year }}",
+  "date_short": "{{ day }} {{ month }} {{ year }}",
+  "og_image_alt": "Rozwiązana łamigłówka Hashiwokakero w pixel arcie: ponumerowane wyspy połączone drewnianymi i cynobrowymi mostami",
+  "ld": {
+    "site": "Hashiwokakero, japońska łamigłówka z mostami, do grania za darmo w przeglądarce.",
+    "game": "Połącz wyspy mostami tak, aby każda wyspa miała tyle mostów, ile wskazuje jej liczba. Łamigłówka dnia z rankingiem, pięć poziomów trudności, pixel art, a każda łamigłówka ma dokładnie jedno rozwiązanie."
+  }
+}
