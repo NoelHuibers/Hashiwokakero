@@ -28,8 +28,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-# The server binary and the site (JS/WASM/CSS and public assets)
-COPY --from=builder /app/target/release/hashi /app/
+# The server binary, the hashes of the JS/WASM/CSS file names (read next to the binary) and the
+# site (JS/WASM/CSS and public assets)
+COPY --from=builder /app/target/release/hashi /app/target/release/hash.txt /app/
 COPY --from=builder /app/target/site /app/site
 
 ENV RUST_LOG="info"
@@ -37,6 +38,7 @@ ENV LEPTOS_OUTPUT_NAME="hashi"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
 ENV LEPTOS_SITE_ROOT="site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"
+ENV LEPTOS_HASH_FILES="true"
 ENV LEPTOS_ENV="PROD"
 EXPOSE 8080
 

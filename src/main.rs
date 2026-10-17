@@ -3,6 +3,8 @@
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    use axum::extract::Request;
+    use axum::middleware::{self, Next};
     use axum::Router;
     use hashi::app::{App, shell};
     use leptos::prelude::*;
@@ -14,6 +16,7 @@ async fn main() {
     let leptos_options = conf.leptos_options;
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(App);
+    let hash_files = leptos_options.hash_files;
 
     let app = Router::new()
         .leptos_routes(&leptos_options, routes, {
@@ -21,6 +24,9 @@ async fn main() {
             move || shell(leptos_options.clone())
         })
         .fallback(leptos_axum::file_and_error_handler(shell))
+        .layer(middleware::from_fn(move |req: Request, next: Next| async move {
+            cache_control(hash_files, req, next).await
+        }))
         .layer(CompressionLayer::new())
         .with_state(leptos_options);
 
@@ -32,6 +38,29 @@ async fn main() {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .expect("server error");
+}
+
+/// Browsers kept an old stylesheet after a deploy because its URL never changed and no cache
+/// headers were sent. With hashed file names everything under /pkg/ can be cached forever, since
+/// a new build gets new names; everything else is revalidated on every visit.
+#[cfg(feature = "ssr")]
+async fn cache_control(
+    hash_files: bool,
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    use axum::http::{HeaderValue, header::CACHE_CONTROL};
+    let immutable = hash_files && req.uri().path().starts_with("/pkg/");
+    let mut res = next.run(req).await;
+    let value = if immutable {
+        "public, max-age=31536000, immutable"
+    } else {
+        "no-cache"
+    };
+    res.headers_mut()
+        .entry(CACHE_CONTROL)
+        .or_insert(HeaderValue::from_static(value));
+    res
 }
 
 /// fly.io stops machines with SIGINT/SIGTERM, which a container's PID 1 ignores by default.
