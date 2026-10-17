@@ -1,0 +1,44 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - feat/frontend
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test & lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Installs the toolchain from rust-toolchain.toml (stable + wasm32 target, rustfmt, clippy)
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Test backend crates
+        run: cargo test -p common -p backend -p sat_solver
+      - name: Clippy (server)
+        run: cargo clippy --no-default-features --features ssr -p hashi
+      - name: Clippy (client)
+        run: cargo clippy --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -p hashi
+
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-leptos
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y cargo-leptos@0.3.11
+      - name: Build
+        run: cargo leptos build --release

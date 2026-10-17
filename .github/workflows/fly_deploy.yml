@@ -9,9 +9,10 @@ jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
+    concurrency: deploy-group
     steps:
-      - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@1.5
       - name: Deploy to fly
         id: deployment
         run: |
