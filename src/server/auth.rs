@@ -60,6 +60,10 @@ fn hash_token(token: &str) -> String {
 /// The session token from the request's cookie header.
 async fn request_token() -> Option<String> {
     let headers: HeaderMap = leptos_axum::extract().await.ok()?;
+    token_from_headers(&headers)
+}
+
+fn token_from_headers(headers: &HeaderMap) -> Option<String> {
     headers
         .get_all(header::COOKIE)
         .iter()
@@ -110,15 +114,27 @@ pub async fn user_by_id(conn: &Connection, id: i64) -> Result<Option<User>, Serv
 
 /// The signed in user (or guest) of this request.
 pub async fn current_user(conn: &Connection) -> Result<Option<User>, ServerFnError> {
-    let Some(token) = request_token().await else {
-        return Ok(None);
-    };
+    match request_token().await {
+        Some(token) => user_by_token(conn, &token).await,
+        None => Ok(None),
+    }
+}
+
+/// The signed in user, for plain axum handlers outside of Leptos.
+pub async fn user_from_headers(conn: &Connection, headers: &HeaderMap) -> Result<Option<User>, ServerFnError> {
+    match token_from_headers(headers) {
+        Some(token) => user_by_token(conn, &token).await,
+        None => Ok(None),
+    }
+}
+
+async fn user_by_token(conn: &Connection, token: &str) -> Result<Option<User>, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT u.id, u.username, u.name, u.created_at FROM sessions s
              JOIN users u ON u.id = s.user_id
              WHERE s.token_hash = ?1 AND s.expires_at > ?2",
-            params![hash_token(&token), now_ms()],
+            params![hash_token(token), now_ms()],
         )
         .await
         .map_err(db_err)?;

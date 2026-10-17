@@ -1,8 +1,9 @@
-//! Server only code: database, users and the daily puzzle.
+//! Server only code: database, users, the daily puzzle and the SAT Dojo.
 
 pub mod auth;
 pub mod daily;
 pub mod db;
+pub mod dojo;
 
 use leptos::prelude::ServerFnError;
 

@@ -1,6 +1,7 @@
 pub mod account;
 pub mod create;
 pub mod daily;
+pub mod dojo;
 pub mod lab;
 pub mod legal;
 pub mod play;

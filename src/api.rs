@@ -5,9 +5,11 @@ use common::{GenerateParams, GeneratedPuzzle, Puzzle, SolveReport, SolverConfig}
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
-use crate::model::{AllTimeEntry, DailyInfo, Leaderboard, SubmitResult, UserInfo, UserStats};
+use crate::model::{
+    AllTimeEntry, DailyInfo, DojoBoard, DojoMe, DojoSubmission, Leaderboard, SubmitResult, UserInfo, UserStats,
+};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, daily, db, run_blocking};
+use crate::server::{auth, daily, db, dojo, run_blocking};
 
 /// Upper bound for a single solver run, whatever the client asks for.
 #[cfg(feature = "ssr")]
@@ -172,4 +174,30 @@ pub async fn all_time_leaderboard() -> Result<Vec<AllTimeEntry>, ServerFnError> 
 #[server(input = Json)]
 pub async fn archived_daily(day: i64) -> Result<Option<Puzzle>, ServerFnError> {
     daily::archived(&db::conn()?, day).await
+}
+
+/* ------------------------------------------------------------------ */
+/*  SAT Dojo                                                           */
+/* ------------------------------------------------------------------ */
+
+/// The leaderboard of the current season.
+#[server(input = Json)]
+pub async fn load_dojo_board() -> Result<DojoBoard, ServerFnError> {
+    dojo::board(&db::conn()?).await
+}
+
+/// One submission with its score, `None` if there is no such submission.
+#[server(input = Json)]
+pub async fn load_dojo_submission(id: i64) -> Result<Option<DojoSubmission>, ServerFnError> {
+    let conn = db::conn()?;
+    let me = auth::current_user(&conn).await?.map(|u| u.id);
+    dojo::submission(&conn, id, me).await
+}
+
+/// The current user's submissions and how many they can still make today.
+#[server(input = Json)]
+pub async fn load_dojo_me() -> Result<DojoMe, ServerFnError> {
+    let conn = db::conn()?;
+    let user = auth::current_user(&conn).await?;
+    dojo::me(&conn, user.as_ref()).await
 }

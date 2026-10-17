@@ -19,3 +19,18 @@ jobs:
           flyctl deploy --remote-only | tail -n 1 >> $GITHUB_STEP_SUMMARY
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  # The SAT Dojo worker (dojo/fly.toml), a separate app that only runs while evaluating
+  deploy-dojo:
+    name: Deploy dojo worker
+    runs-on: ubuntu-latest
+    concurrency: deploy-dojo
+    steps:
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@1.5
+      - name: Deploy to fly
+        run: |
+          flyctl deploy . --config dojo/fly.toml --dockerfile dojo/Dockerfile --remote-only --no-public-ips | tail -n 1 >> $GITHUB_STEP_SUMMARY
+        env:
+          # A deploy token for hashi-dojo only
+          FLY_API_TOKEN: ${{ secrets.FLY_DOJO_API_TOKEN }}

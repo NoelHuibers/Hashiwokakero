@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "SAT Dojo · tempat latihan solver SAT · Hashi",
+    "description": "Kirim solver SAT-mu dalam WebAssembly dan panjat papan peringkat: dinilai pada formula baru tersembunyi dengan fuel deterministik, bukan detik. Gratis, terbuka."
+  },
+  "title": "SAT Dojo",
+  "intro": "Tempat latihan untuk solver SAT. Kompilasi solvermu ke WebAssembly, kirimkan, dan solver itu dinilai pada set tersembunyi berisi formula baru: teka-teki Hashi, jebakan paritas, 3-SAT acak, merpati, dan ratu.",
+  "stats": {
+    "season": "Musim {{ season }}",
+    "formulas": "Formula: {{ count }}",
+    "budget": "{{ budget }} Gfuel per formula",
+    "queued": "Dalam antrean: {{ count }}"
+  },
+  "cta": {
+    "submit": "Kirim solver",
+    "starter": "Paket pemula",
+    "dev_set": "Unduh set dev"
+  },
+  "board": {
+    "title": "Papan peringkat",
+    "solver": "Solver",
+    "solved": "Terpecahkan",
+    "par2": "PAR-2",
+    "families": "Keluarga",
+    "empty": "Belum ada solver yang masuk dojo. Jadilah yang pertama!",
+    "house": "bawaan",
+    "par2_hint": "Rata-rata fuel per formula dalam miliar, formula yang tak terpecahkan dihitung dua kali anggaran. Makin rendah makin baik."
+  },
+  "how": {
+    "title": "Cara kerjanya",
+    "build_title": "Bangun",
+    "build": "Bahasa apa pun yang bisa dikompilasi ke WASI preview 1 bisa dipakai: Rust, C dan C++ dengan wasi-sdk, Zig, Go. Baca DIMACS dari stdin dan jawab seperti di kompetisi SAT.",
+    "train_title": "Latihan",
+    "train": "Nilai solvermu secara lokal pada set dev publik dengan alat dojo. Alat ini berjalan persis seperti papan peringkat, jadi kamu tahu skormu sebelum mengirim.",
+    "submit_title": "Kirim",
+    "submit": "Unggah file .wasm. File itu dijalankan pada set tersembunyi musim ini, di mesin kami sendiri.",
+    "climb_title": "Panjat",
+    "climb": "PAR-2 terendah menang: rata-rata fuel per formula, dengan formula yang tak terpecahkan dihitung dua kali anggaran."
+  },
+  "family": {
+    "title": "Formulanya",
+    "hashi": "Hashi",
+    "hashi_text": "Teka-teki Hashiwokakero dari 10×10 sampai 28×28 sebagai CNF, tanpa aturan keterhubungan. Selalu dapat dipenuhi.",
+    "hashi_parity": "Hashi paritas",
+    "hashi_parity_text": "Teka-teki dengan satu angka diubah sehingga jumlah angkanya ganjil. Tidak dapat dipenuhi, karena setiap jembatan menambah dua. Mudah dilihat, sulit dibuktikan dengan resolusi.",
+    "random_3sat": "3-SAT acak",
+    "random_3sat_text": "3-SAT acak seragam di titik transisi fase, 4,26 klausa per variabel, sekitar setengahnya dapat dipenuhi.",
+    "pigeonhole": "Sarang merpati",
+    "pigeonhole_text": "n+1 merpati di n lubang: soal klasik yang butuh bukti resolusi yang panjangnya eksponensial. Ditambah beberapa yang memang muat.",
+    "queens": "Ratu",
+    "queens_text": "N ratu di papan hingga 48×48 dengan beberapa petak terlarang."
+  },
+  "fair": {
+    "title": "Main adil",
+    "fuel_title": "Fuel, bukan detik",
+    "fuel": "Setiap instruksi WebAssembly yang dieksekusi memakan satu unit fuel, operasi memori massal satu per byte. Jam dan angka acak diberi seed tetap, jadi solver mendapat skor yang sama di setiap mesin, setiap kali.",
+    "hidden_title": "Formula baru yang tersembunyi",
+    "hidden": "Set uji berasal dari seed rahasia yang berganti setiap musim, dan setiap formula diacak: variabel diganti nama dan dinegasikan, klausa dikocok. Hasil hanya ditampilkan per keluarga, tidak pernah per formula.",
+    "checked_title": "Setiap jawaban diperiksa",
+    "checked": "Model diverifikasi terhadap formulanya. UNSAT hanya dihitung untuk formula yang diketahui tidak dapat dipenuhi. Satu jawaban salah saja mendiskualifikasi kiriman, jadi menebak tidak pernah menguntungkan.",
+    "sandbox_title": "Sandbox tertutup",
+    "sandbox": "Tanpa file, tanpa jaringan, tanpa variabel lingkungan. Memori dan output dibatasi, dan kiriman dijalankan di mesin terpisah yang tidak menyimpan data apa pun.",
+    "accounts_title": "Satu akun, entri terbaik",
+    "accounts": "Akun terdaftar bisa mengirim tiga kali sehari. File yang identik ditolak dan hanya kiriman terbaikmu yang masuk peringkat.",
+    "seasons_title": "Musim",
+    "seasons": "Musim baru membawa set tersembunyi baru dan semua kiriman dievaluasi ulang."
+  },
+  "science": {
+    "title": "Untuk peneliti",
+    "text": "Fuel bersifat deterministik, jadi hasilnya bisa direproduksi dan dibandingkan antarmakalah: sebutkan musim dan seed dev-nya. Papan peringkat tersedia sebagai JSON di /dojo/board.json, dan harness-nya sumber terbuka."
+  },
+  "submit": {
+    "title": "Masuki dojo",
+    "sign_in": "Untuk mengirim, kamu butuh akun dengan nama pengguna, tamu tidak bisa mengirim.",
+    "create_account": "Buat akun",
+    "name": "Nama solvermu",
+    "description": "Deskripsi (opsional)",
+    "description_hint": "Bagaimana cara kerjanya? Ide apa saja yang kamu coba?",
+    "source": "Tautan ke kode sumber (opsional)",
+    "file": "File WebAssembly (.wasm, WASI preview 1)",
+    "button": "Kirim",
+    "left": "Sisa kiriman hari ini: {{ count }}",
+    "none_left": "Kiriman hari ini sudah habis, kembali lagi besok.",
+    "errors": {
+      "sign_in": "Masuk dulu dengan akun terdaftar.",
+      "name": "Beri solvermu nama maksimal 40 karakter.",
+      "description": "Deskripsi maksimal 600 karakter.",
+      "url": "Tautan sumber harus berupa alamat https://.",
+      "size": "File terlalu besar, batasnya 8 MiB.",
+      "not_wasm": "Itu bukan file WebAssembly.",
+      "duplicate": "File yang persis sama sudah pernah dikirim.",
+      "limit": "Kamu sudah mengirim tiga kali hari ini.",
+      "server": "Terjadi kesalahan di pihak kami, coba lagi."
+    }
+  },
+  "mine": {
+    "title": "Kirimanmu",
+    "empty": "Belum ada yang dikirim."
+  },
+  "state": {
+    "queued": "antre",
+    "running": "berjalan",
+    "done": "selesai",
+    "rejected": "ditolak",
+    "failed": "gagal",
+    "disqualified": "didiskualifikasi"
+  },
+  "detail": {
+    "meta_title": "{{ name }} · SAT Dojo",
+    "by": "oleh {{ author }}",
+    "submitted": "Dikirim {{ date }}",
+    "size": "Ukuran",
+    "source": "Kode sumber",
+    "queued": "Menunggu worker…",
+    "running": "Mengevaluasi: {{ done }} dari {{ total }} formula",
+    "unranked": "Tidak masuk peringkat, pembuatnya punya kiriman yang lebih baik.",
+    "solved": "Terpecahkan",
+    "fuel": "Fuel formula yang terpecahkan",
+    "family": "Keluarga",
+    "wrong": "Jawaban salah: {{ count }}. Kiriman ini didiskualifikasi; periksa di set dev dengan dojo run.",
+    "failed": "Evaluasi gagal di pihak kami. Kami akan mencoba lagi.",
+    "back": "Kembali ke papan peringkat",
+    "not_found": "Kiriman itu tidak ada.",
+    "season": "Musim {{ season }}",
+    "rank_label": "Peringkat"
+  },
+  "rejection": {
+    "title": "Worker menolak file ini",
+    "too_large": "File lebih besar dari 8 MiB.",
+    "invalid": "Bukan modul WebAssembly yang valid untuk dojo: {{ detail }}",
+    "import": "File ini mengimpor {{ detail }}, padahal hanya wasi_snapshot_preview1 yang tersedia.",
+    "no_start": "Tidak ada fungsi _start. Bangun program (biner), bukan pustaka."
+  },
+  "lab_banner": {
+    "title": "Baru: SAT Dojo",
+    "text": "Yakin solvermu mengalahkan solver kami? Kirim dan panjat papan peringkat.",
+    "button": "Ke dojo"
+  }
+}

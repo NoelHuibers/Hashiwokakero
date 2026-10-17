@@ -56,6 +56,39 @@ CREATE TABLE IF NOT EXISTS attempts (
     PRIMARY KEY (user_id, day)
 );
 CREATE INDEX IF NOT EXISTS attempts_ranking ON attempts (day, time_ms);
+"#, r#"
+-- SAT Dojo submissions, see server/dojo.rs
+CREATE TABLE IF NOT EXISTS dojo_submissions (
+    id          INTEGER PRIMARY KEY,
+    -- NULL for house entries (our own solvers)
+    user_id     INTEGER,
+    house       INTEGER NOT NULL DEFAULT 0,
+    name        TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    source_url  TEXT,
+    wasm        BLOB NOT NULL,
+    sha256      TEXT NOT NULL UNIQUE,
+    size        INTEGER NOT NULL,
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL,
+    -- queued | running | done | rejected | failed
+    state       TEXT NOT NULL,
+    -- the season of the hidden set the result belongs to
+    season      INTEGER NOT NULL,
+    attempts    INTEGER NOT NULL DEFAULT 0,
+    progress    INTEGER NOT NULL DEFAULT 0,
+    total       INTEGER NOT NULL DEFAULT 0,
+    -- dojo::Score as JSON, and its numbers for sorting
+    score       TEXT,
+    par2        REAL,
+    solved      INTEGER,
+    wrong       INTEGER NOT NULL DEFAULT 0,
+    -- dojo::Rejection as JSON
+    error       TEXT
+);
+CREATE INDEX IF NOT EXISTS dojo_board ON dojo_submissions (season, state, par2);
+CREATE INDEX IF NOT EXISTS dojo_user ON dojo_submissions (user_id, created_at);
+CREATE INDEX IF NOT EXISTS dojo_queue ON dojo_submissions (state, created_at);
 "#];
 
 pub async fn init() -> Result<(), String> {

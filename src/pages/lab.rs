@@ -4,6 +4,7 @@ use common::{
 };
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos_router::components::A;
 
 use crate::api::{generate_puzzle, solve_puzzle};
 use crate::components::board::{BoardMode, BoardView};
@@ -72,6 +73,7 @@ fn fmt_ms(ms: f64) -> String {
 #[component]
 pub fn LabPage() -> impl IntoView {
     let i18n = use_i18n();
+    let dojo = crate::components::layout::use_localized("/dojo");
     let game = expect_context::<Game>();
     let editor = expect_context::<Editor>();
 
@@ -218,6 +220,17 @@ pub fn LabPage() -> impl IntoView {
                 </p>
             </div>
 
+            <A
+                href=dojo
+                attr:class="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-primary/40 bg-accent px-4 py-3 transition-colors hover:bg-accent/70"
+            >
+                <span class="hanko grid size-10 shrink-0 rotate-[-6deg] place-items-center rounded-md font-pixel text-xl">"道"</span>
+                <span class="min-w-0 flex-1">
+                    <span class="block font-bold">{t!(i18n, dojo.lab_banner.title)}</span>
+                    <span class="block text-sm text-muted-foreground">{t!(i18n, dojo.lab_banner.text)}</span>
+                </span>
+                <span class="text-sm font-semibold text-primary">{t!(i18n, dojo.lab_banner.button)} " →"</span>
+            </A>
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
                 <aside class="flex flex-col gap-4">
                     <Card class="gap-4">

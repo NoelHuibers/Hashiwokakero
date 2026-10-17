@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "SAT 도장 · SAT 솔버 체육관 · Hashi",
+    "description": "SAT 솔버를 WebAssembly로 제출하고 리더보드에 도전하세요. 초 대신 결정적인 연료로, 비공개 새 논리식에서 채점해요. 무료, 오픈 소스, 재현 가능."
+  },
+  "title": "SAT 도장",
+  "intro": "SAT 솔버를 위한 체육관이에요. 솔버를 WebAssembly로 컴파일해 제출하면 비공개 새 논리식 세트로 채점돼요. 하시 퍼즐, 패리티 함정, 무작위 3-SAT, 비둘기집, 퀸.",
+  "stats": {
+    "season": "시즌 {{ season }}",
+    "formulas": "논리식: {{ count }}개",
+    "budget": "논리식당 {{ budget }} Gfuel",
+    "queued": "대기열: {{ count }}개"
+  },
+  "cta": {
+    "submit": "솔버 제출",
+    "starter": "스타터 키트",
+    "dev_set": "개발 세트 다운로드"
+  },
+  "board": {
+    "title": "리더보드",
+    "solver": "솔버",
+    "solved": "해결",
+    "par2": "PAR-2",
+    "families": "유형",
+    "empty": "아직 도장에 들어온 솔버가 없어요. 첫 번째가 되어 보세요!",
+    "house": "공식",
+    "par2_hint": "논리식당 평균 연료(10억 단위)이며, 풀지 못한 논리식은 예산의 두 배로 계산해요. 낮을수록 좋아요."
+  },
+  "how": {
+    "title": "진행 방식",
+    "build_title": "만들기",
+    "build": "WASI preview 1로 컴파일되는 언어라면 무엇이든 돼요: Rust, wasi-sdk를 쓴 C와 C++, Zig, Go. 표준 입력에서 DIMACS를 읽고 SAT 경진대회와 같은 형식으로 답하세요.",
+    "train_title": "연습하기",
+    "train": "dojo 도구로 공개 개발 세트에서 솔버를 직접 채점해 보세요. 리더보드와 똑같이 동작하므로 제출 전에 점수를 알 수 있어요.",
+    "submit_title": "제출하기",
+    "submit": ".wasm 파일을 올리세요. 현재 시즌의 비공개 세트로 저희 서버에서 실행돼요.",
+    "climb_title": "오르기",
+    "climb": "PAR-2가 가장 낮은 솔버가 이겨요. 논리식당 평균 연료이며, 풀지 못한 논리식은 예산의 두 배로 계산해요."
+  },
+  "family": {
+    "title": "논리식",
+    "hashi": "하시",
+    "hashi_text": "10×10부터 28×28까지의 하시 퍼즐을 연결성 규칙 없이 CNF로 바꾼 것이에요. 항상 충족 가능해요.",
+    "hashi_parity": "하시 패리티",
+    "hashi_parity_text": "숫자 하나를 바꿔 합이 홀수가 되게 한 퍼즐이에요. 다리는 항상 2씩 더하므로 충족 불가능해요. 보기엔 쉽지만 도출 원리(resolution)로 증명하기는 어려워요.",
+    "random_3sat": "무작위 3-SAT",
+    "random_3sat_text": "상전이 지점(변수당 절 4.26개)의 균일 무작위 3-SAT로, 약 절반이 충족 가능해요.",
+    "pigeonhole": "비둘기집",
+    "pigeonhole_text": "n개의 구멍에 n+1마리의 비둘기: 지수적으로 긴 도출 증명이 필요한 고전 문제예요. 딱 들어맞는 경우도 몇 개 섞었어요.",
+    "queens": "퀸",
+    "queens_text": "최대 48×48 판에서 몇몇 칸을 금지한 N퀸 문제예요."
+  },
+  "fair": {
+    "title": "공정한 경쟁",
+    "fuel_title": "초가 아닌 연료",
+    "fuel": "실행된 WebAssembly 명령어 하나당 연료 1단위, 벌크 메모리 연산은 바이트당 1단위가 들어요. 시계와 난수는 시드가 고정되어 있어, 솔버는 어느 기기에서든 언제나 같은 점수를 받아요.",
+    "hidden_title": "비공개 새 논리식",
+    "hidden": "테스트 세트는 시즌마다 바뀌는 비밀 시드에서 만들어지고, 모든 논리식은 뒤섞여요. 변수 이름 변경과 부정, 절 순서 섞기. 결과는 유형별로만 보여 주고 논리식별로는 절대 공개하지 않아요.",
+    "checked_title": "모든 답을 검증",
+    "checked": "모델은 논리식에 대해 검증돼요. UNSAT은 충족 불가능하다고 알려진 논리식에서만 인정돼요. 오답이 하나라도 있으면 실격이므로 찍기는 절대 통하지 않아요.",
+    "sandbox_title": "밀폐된 샌드박스",
+    "sandbox": "파일도, 네트워크도, 환경 변수도 없어요. 메모리와 출력은 제한되고, 제출물은 데이터가 전혀 없는 별도 서버에서 실행돼요.",
+    "accounts_title": "계정 하나, 최고 기록 하나",
+    "accounts": "등록된 계정은 하루에 세 번 제출할 수 있어요. 똑같은 파일은 거부되고, 가장 좋은 제출만 순위에 올라요.",
+    "seasons_title": "시즌",
+    "seasons": "새 시즌이 시작되면 새 비공개 세트가 나오고 모든 제출물을 다시 평가해요."
+  },
+  "science": {
+    "title": "연구자를 위해",
+    "text": "연료는 결정적이라 결과를 재현할 수 있고 논문끼리 비교할 수 있어요. 시즌과 개발 시드를 밝혀 주세요. 리더보드는 /dojo/board.json에서 JSON으로 받을 수 있고, 평가 하네스는 오픈 소스예요."
+  },
+  "submit": {
+    "title": "도장에 입문하기",
+    "sign_in": "제출하려면 사용자 이름이 있는 계정이 필요해요. 게스트는 제출할 수 없어요.",
+    "create_account": "계정 만들기",
+    "name": "솔버 이름",
+    "description": "설명(선택)",
+    "description_hint": "어떻게 동작하나요? 어떤 아이디어를 시도했나요?",
+    "source": "소스 코드 링크(선택)",
+    "file": "WebAssembly 파일(.wasm, WASI preview 1)",
+    "button": "제출",
+    "left": "오늘 남은 제출 횟수: {{ count }}",
+    "none_left": "오늘은 더 제출할 수 없어요. 내일 다시 오세요.",
+    "errors": {
+      "sign_in": "먼저 등록된 계정으로 로그인하세요.",
+      "name": "솔버 이름을 40자 이내로 지어 주세요.",
+      "description": "설명은 최대 600자까지 쓸 수 있어요.",
+      "url": "소스 링크는 https:// 주소여야 해요.",
+      "size": "파일이 너무 커요. 최대 8 MiB까지 가능해요.",
+      "not_wasm": "WebAssembly 파일이 아니에요.",
+      "duplicate": "똑같은 파일이 이미 제출되었어요.",
+      "limit": "오늘은 이미 세 번 제출했어요.",
+      "server": "저희 쪽에 문제가 생겼어요. 다시 시도해 주세요."
+    }
+  },
+  "mine": {
+    "title": "내 제출",
+    "empty": "아직 제출한 것이 없어요."
+  },
+  "state": {
+    "queued": "대기 중",
+    "running": "실행 중",
+    "done": "완료",
+    "rejected": "거부됨",
+    "failed": "실패",
+    "disqualified": "실격"
+  },
+  "detail": {
+    "meta_title": "{{ name }} · SAT 도장",
+    "by": "제작: {{ author }}",
+    "submitted": "제출일: {{ date }}",
+    "size": "크기",
+    "source": "소스 코드",
+    "queued": "워커를 기다리는 중…",
+    "running": "평가 중: 논리식 {{ total }}개 중 {{ done }}개",
+    "unranked": "순위 없음: 제작자에게 더 좋은 제출이 있어요.",
+    "solved": "해결",
+    "fuel": "푼 논리식의 연료",
+    "family": "유형",
+    "wrong": "오답: {{ count }}개. 이 제출은 실격이에요. dojo run으로 개발 세트에서 확인해 보세요.",
+    "failed": "저희 쪽에서 평가가 실패했어요. 다시 시도할게요.",
+    "back": "리더보드로 돌아가기",
+    "not_found": "그런 제출은 없어요.",
+    "season": "시즌 {{ season }}",
+    "rank_label": "순위"
+  },
+  "rejection": {
+    "title": "워커가 이 파일을 거부했어요",
+    "too_large": "파일이 8 MiB보다 커요.",
+    "invalid": "도장에서 쓸 수 있는 올바른 WebAssembly 모듈이 아니에요: {{ detail }}",
+    "import": "{{ detail }}을(를) 가져오는데, 사용할 수 있는 것은 wasi_snapshot_preview1뿐이에요.",
+    "no_start": "_start 함수가 없어요. 라이브러리가 아니라 프로그램(실행 파일)으로 빌드하세요."
+  },
+  "lab_banner": {
+    "title": "새 소식: SAT 도장",
+    "text": "우리 솔버보다 빠를 자신 있나요? 제출하고 리더보드를 올라 보세요.",
+    "button": "도장으로"
+  }
+}
