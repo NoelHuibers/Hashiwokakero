@@ -5,18 +5,31 @@ on:
     branches:
       - main
 
+# One run per branch at a time. A new push to a pull request cancels its older run. On main a
+# run waits for the previous one (deploys included), so an older commit never deploys after a
+# newer one; a newer push replaces a waiting run, which is fine, it deploys a newer main.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   test:
     name: Test & lint
-    runs-on: ubuntu-latest
+    # Pinned: the dojo binary built here runs on Debian trixie (dojo/Dockerfile.prebuilt), it
+    # must not need a newer glibc than trixie has
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       # Installs the toolchain from rust-toolchain.toml (stable + wasm32 target, rustfmt, clippy)
       - run: rustup toolchain install
+      # Only main saves its cache, pull requests start from it. Caches of pull requests could only
+      # be used by the same pull request and push main's out of the 10 GB limit.
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       # Lints first, they fail fastest. The lint levels live in Cargo.toml ([workspace.lints]);
       # -D warnings makes every warning an error, in every crate, target and feature set.
       - name: Formatting
@@ -27,8 +40,6 @@ jobs:
         run: cargo clippy -p common -p sat_solver -p backend -p dojo -p house --all-targets --features dojo/worker -- -D warnings
       - name: Clippy (website, server)
         run: cargo clippy -p hashi --all-targets --no-default-features --features ssr -- -D warnings
-      - name: Clippy (website, browser)
-        run: cargo clippy -p hashi --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -- -D warnings
       - name: Clippy (starter kit)
         run: cargo clippy --manifest-path dojo/starter/Cargo.toml --target wasm32-wasip1 -- -D warnings
       - name: Test backend crates
@@ -37,10 +48,38 @@ jobs:
         run: cargo test --release -p dojo --features worker
       - name: Test the website's server code
         run: cargo test --no-default-features --features ssr -p hashi --lib
+      # The worker for the deploy below, nearly free here: the release tests above compiled
+      # all of its dependencies already
+      - name: Build the dojo worker
+        if: github.event_name == 'push'
+        run: |
+          cargo build --release -p dojo --features worker
+          mkdir -p dist && cp target/release/dojo dist/
+          tar -cf dojo.tar dist
+      - if: github.event_name == 'push'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dojo
+          path: dojo.tar
+          retention-days: 7
+
+  # A job of its own, it runs next to the server lints instead of after them
+  lint-browser:
+    name: Lint (browser)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Clippy (website, browser)
+        run: cargo clippy -p hashi --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -- -D warnings
 
   build:
     name: Build site
-    runs-on: ubuntu-latest
+    # Pinned, see the test job: this server binary runs on Debian trixie (Dockerfile.prebuilt)
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -51,9 +90,72 @@ jobs:
       - run: npm run fonts
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install cargo-leptos
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall -y cargo-leptos@0.3.11
       - name: Build
         run: cargo leptos build --release
+      # The server binary, the hashes of the JS/WASM/CSS file names (read next to the binary) and
+      # the site, for the deploy below. A tarball keeps the binary executable.
+      - name: Package
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p dist
+          cp target/release/hashi target/release/hash.txt dist/
+          cp -r target/site dist/site
+          tar -cf site.tar dist
+      - if: github.event_name == 'push'
+        uses: actions/upload-artifact@v7
+        with:
+          name: site
+          path: site.tar
+          retention-days: 7
+
+  # Deploys ship the binaries built above in a slim image, built here and pushed to Fly. Fly's
+  # remote builder compiled everything again from scratch, 15 to 50 minutes per deploy, and ran
+  # out of memory or hit its deadline when the site and the worker built at the same time.
+  deploy:
+    name: Deploy site
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, lint-browser, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+      - run: tar -xf site.tar
+      - uses: superfly/flyctl-actions/setup-flyctl@1.6
+      - name: Deploy to fly
+        # pipefail: a failed deploy must fail the job, not just print its last line
+        run: |
+          set -o pipefail
+          flyctl deploy --local-only --dockerfile Dockerfile.prebuilt | tail -n 1 >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  # The SAT Dojo worker (dojo/fly.toml), a separate app that only runs while evaluating
+  deploy-dojo:
+    name: Deploy dojo worker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, lint-browser, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: dojo
+      - run: tar -xf dojo.tar
+      - uses: superfly/flyctl-actions/setup-flyctl@1.6
+      - name: Deploy to fly
+        run: |
+          set -o pipefail
+          flyctl deploy . --config dojo/fly.toml --dockerfile dojo/Dockerfile.prebuilt --local-only --no-public-ips | tail -n 1 >> "$GITHUB_STEP_SUMMARY"
+        env:
+          # A deploy token for hashi-dojo only
+          FLY_API_TOKEN: ${{ secrets.FLY_DOJO_API_TOKEN }}

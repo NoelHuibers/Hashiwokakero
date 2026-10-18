@@ -39,7 +39,7 @@ A release build: `cargo leptos build --release`, the server binary is `target/re
 
 ## Deployment
 
-Pushes to `main` deploy to [fly.io](https://fly.io) with the multi-stage `Dockerfile` (Node 26 for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime). Dependabot keeps Cargo, npm, Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request.
+Pushes to `main` deploy to [fly.io](https://fly.io) once CI passes: CI builds the site and the dojo worker with its warm cache and ships them in slim Debian trixie images (`Dockerfile.prebuilt`, `dojo/Dockerfile.prebuilt`), built on the runner. The multi-stage `Dockerfile` (Node 26 for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime) builds everything from source, for a manual `fly deploy` or a local image. Dependabot keeps Cargo, npm, Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request.
 
 ## SAT Dojo
 
