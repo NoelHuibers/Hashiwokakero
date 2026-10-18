@@ -58,17 +58,19 @@ pub fn og_locale(locale: Locale) -> &'static str {
     }
 }
 
-/// Google Fonts family for scripts Zen Maru Gothic doesn't cover. It goes first in the font
-/// stack (see `--app-font` in tailwind.css), Zen Maru Gothic covers Latin, Cyrillic,
-/// Vietnamese and Japanese.
+/// Stylesheet in /fonts/ (see scripts/fonts.mjs) for a script Murecho doesn't cover.
+///
+/// Its font goes first in the font stacks (see `--app-font` in tailwind.css). Murecho covers
+/// Latin, Cyrillic, Greek and Japanese, but not the Vietnamese diacritics.
 pub fn script_font(locale: Locale) -> Option<&'static str> {
     match locale {
-        Locale::ko => Some("Noto+Sans+KR:wght@400;500;700;900"),
-        Locale::zh => Some("Noto+Sans+SC:wght@400;500;700;900"),
-        Locale::zh_Hant => Some("Noto+Sans+TC:wght@400;500;700;900"),
-        Locale::ar => Some("Baloo+Bhaijaan+2:wght@400;500;700;800"),
-        Locale::hi => Some("Baloo+2:wght@400;500;700;800"),
-        Locale::th => Some("Mali:wght@400;500;700"),
+        Locale::ko => Some("noto-sans-kr"),
+        Locale::zh => Some("noto-sans-sc"),
+        Locale::zh_Hant => Some("noto-sans-tc"),
+        Locale::ar => Some("noto-sans-arabic"),
+        Locale::hi => Some("noto-sans-devanagari"),
+        Locale::th => Some("noto-sans-thai"),
+        Locale::vi => Some("be-vietnam-pro"),
         _ => None,
     }
 }

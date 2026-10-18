@@ -90,7 +90,7 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Schriftarten",
         &[
-            "Schriftarten werden von Google Fonts (Google Ireland Limited) geladen, dabei wird deine IP-Adresse an Google übermittelt. [Prüfen: Schriften selbst hosten, dann entfällt dieser Abschnitt.]",
+            "Alle Schriftarten liegen auf unserem eigenen Server. Es werden keine Daten an Google Fonts oder andere Drittanbieter übermittelt.",
         ],
     ),
     (
@@ -136,7 +136,9 @@ const PRIVACY_EN: &[Section] = &[
     ),
     (
         "Fonts",
-        &["Fonts are loaded from Google Fonts, which transmits your IP address to Google."],
+        &[
+            "All fonts are served from our own server, nothing is sent to Google Fonts or any other third party.",
+        ],
     ),
     (
         "Your rights",
