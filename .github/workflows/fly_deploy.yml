@@ -5,11 +5,17 @@ on:
   push:
     branches:
       - main
+# One run at a time, the site and the dojo worker included: both build on the same Fly remote
+# builder, which runs out of memory and hits its deadline building two images at once. Per-job
+# groups weren't enough, the worker of one run overlapped the site of the next. A newer push
+# replaces a waiting run, which is fine, it deploys a newer main.
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: false
 jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
-    concurrency: deploy-group
     steps:
       - uses: actions/checkout@v7
       - uses: superfly/flyctl-actions/setup-flyctl@1.6
@@ -25,11 +31,9 @@ jobs:
   # The SAT Dojo worker (dojo/fly.toml), a separate app that only runs while evaluating
   deploy-dojo:
     name: Deploy dojo worker
-    # After the site: both build on the same Fly remote builder, which runs out of memory
-    # building both at once
+    # After the site, see concurrency above
     needs: deploy
     runs-on: ubuntu-latest
-    concurrency: deploy-dojo
     steps:
       - uses: actions/checkout@v7
       - uses: superfly/flyctl-actions/setup-flyctl@1.6
