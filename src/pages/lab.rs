@@ -9,6 +9,9 @@ use leptos_router::components::A;
 use crate::api::{generate_puzzle, solve_puzzle};
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::leaderboard::HIGHLIGHT_ROW;
+
+/// On phones the time is the last visible column (the counters are hidden), it ends the pill.
+const PHONE_END: &str = "max-sm:[&>td:nth-child(3)]:rounded-e-lg";
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
@@ -412,12 +415,12 @@ pub fn LabPage() -> impl IntoView {
                                 <table class="w-full text-sm">
                                     <thead>
                                         <tr class="border-b text-start text-xs uppercase tracking-wider text-muted-foreground">
-                                            <th class="py-2 pe-3 font-semibold">{t!(i18n, lab.table.config)}</th>
+                                            <th class="py-2 ps-2 pe-3 font-semibold">{t!(i18n, lab.table.config)}</th>
                                             <th class="py-2 pe-3 font-semibold">{t!(i18n, lab.table.result)}</th>
-                                            <th class="py-2 text-end font-semibold sm:w-[34%] sm:pe-3 sm:text-start">{t!(i18n, common.game.time)}</th>
+                                            <th class="py-2 pe-2 text-end font-semibold sm:w-[34%] sm:pe-3 sm:text-start">{t!(i18n, common.game.time)}</th>
                                             <th class="hidden py-2 pe-3 text-end font-semibold sm:table-cell">{t!(i18n, lab.table.decisions)}</th>
                                             <th class="hidden py-2 pe-3 text-end font-semibold sm:table-cell">{t!(i18n, lab.table.restarts)}</th>
-                                            <th class="hidden py-2 text-end font-semibold sm:table-cell">{t!(i18n, lab.table.calls)}</th>
+                                            <th class="hidden py-2 pe-2 text-end font-semibold sm:table-cell">{t!(i18n, lab.table.calls)}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -492,8 +495,11 @@ pub fn LabPage() -> impl IntoView {
                                                         parts.join(" · ")
                                                     };
                                                     view! {
-                                                        <tr class=format!("border-b last:border-0 {}", if is_fastest { HIGHLIGHT_ROW } else { "" })>
-                                                            <td class="py-2.5 pe-3">
+                                                        <tr class=format!(
+                                                            "border-b last:border-0 {}",
+                                                            if is_fastest { format!("{HIGHLIGHT_ROW} {PHONE_END}") } else { String::new() },
+                                                        )>
+                                                            <td class="py-2.5 ps-2 pe-3">
                                                                 <span class="font-medium">{config_name(i18n.get_locale(), &config)}</span>
                                                                 {is_fastest
                                                                     .then(|| {
@@ -512,7 +518,7 @@ pub fn LabPage() -> impl IntoView {
                                                                     })}
                                                             </td>
                                                             <td class="py-2.5 pe-3">{result}</td>
-                                                            <td class="py-2.5 sm:pe-3">
+                                                            <td class="py-2.5 pe-2 sm:pe-3">
                                                                 <div class="flex items-center justify-end gap-2 sm:justify-start">
                                                                     <div class="hidden h-3 flex-1 overflow-hidden rounded-sm bg-muted sm:block">
                                                                         <div
@@ -527,7 +533,7 @@ pub fn LabPage() -> impl IntoView {
                                                             </td>
                                                             <td class="hidden py-2.5 pe-3 text-end font-pixel tabular-nums sm:table-cell">{decisions}</td>
                                                             <td class="hidden py-2.5 pe-3 text-end font-pixel tabular-nums sm:table-cell">{restarts}</td>
-                                                            <td class="hidden py-2.5 text-end font-pixel tabular-nums sm:table-cell">{calls}</td>
+                                                            <td class="hidden py-2.5 pe-2 text-end font-pixel tabular-nums sm:table-cell">{calls}</td>
                                                         </tr>
                                                     }
                                                 })

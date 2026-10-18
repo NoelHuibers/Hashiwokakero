@@ -1,4 +1,5 @@
 pub mod account;
+pub mod admin;
 pub mod create;
 pub mod daily;
 pub mod dojo;

@@ -39,6 +39,7 @@ impl User {
             name: self.name.clone(),
             guest: self.username.is_none(),
             created_at: self.created_at,
+            admin: super::admin::is_admin(self),
         }
     }
 }
