@@ -15,7 +15,8 @@
     "toggle": "Attiva/disattiva tema scuro",
     "to_day": "Passa al giorno 昼",
     "to_night": "Passa alla notte 夜",
-    "night": "Modalità notte"
+    "day": "Giorno",
+    "night": "Notte"
   },
   "footer": {
     "tagline": "<em>costruisci ponti</em>. Risolto dal SAT, giocato da te.",

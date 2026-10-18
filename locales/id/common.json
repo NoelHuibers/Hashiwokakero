@@ -15,7 +15,8 @@
     "toggle": "Ganti mode gelap",
     "to_day": "Ganti ke siang 昼",
     "to_night": "Ganti ke malam 夜",
-    "night": "Mode malam"
+    "day": "Siang",
+    "night": "Malam"
   },
   "footer": {
     "tagline": "<em>bangun jembatan</em>. Dipecahkan oleh SAT, dimainkan olehmu.",

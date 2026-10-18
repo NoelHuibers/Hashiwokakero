@@ -15,7 +15,8 @@
     "toggle": "Dunkelmodus umschalten",
     "to_day": "Zum Tag wechseln 昼",
     "to_night": "Zur Nacht wechseln 夜",
-    "night": "Nachtmodus"
+    "day": "Tag",
+    "night": "Nacht"
   },
   "footer": {
     "tagline": "<em>Bau Brücken</em>. Vom SAT-Solver gelöst, von dir gespielt.",

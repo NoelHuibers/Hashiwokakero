@@ -15,7 +15,8 @@
     "toggle": "Karanlık modu aç/kapat",
     "to_day": "Gündüze geç 昼",
     "to_night": "Geceye geç 夜",
-    "night": "Gece modu"
+    "day": "Gündüz",
+    "night": "Gece"
   },
   "footer": {
     "tagline": "<em>köprüleri kur</em>. SAT çözer, sen oynarsın.",

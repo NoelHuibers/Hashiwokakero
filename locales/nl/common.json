@@ -15,7 +15,8 @@
     "toggle": "Donkere modus aan/uit",
     "to_day": "Naar dag 昼",
     "to_night": "Naar nacht 夜",
-    "night": "Nachtmodus"
+    "day": "Dag",
+    "night": "Nacht"
   },
   "footer": {
     "tagline": "<em>bouw bruggen</em>. Opgelost door SAT, gespeeld door jou.",

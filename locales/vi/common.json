@@ -15,7 +15,8 @@
     "toggle": "Bật/tắt chế độ tối",
     "to_day": "Chuyển sang ngày 昼",
     "to_night": "Chuyển sang đêm 夜",
-    "night": "Chế độ ban đêm"
+    "day": "Ngày",
+    "night": "Đêm"
   },
   "footer": {
     "tagline": "<em>hãy xây cầu</em>. SAT giải đố, bạn chơi.",

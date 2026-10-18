@@ -15,7 +15,8 @@
     "toggle": "Cambiar modo oscuro",
     "to_day": "Cambiar a día 昼",
     "to_night": "Cambiar a noche 夜",
-    "night": "Modo noche"
+    "day": "Día",
+    "night": "Noche"
   },
   "footer": {
     "tagline": "<em>construye puentes</em>. Resuelto por SAT, jugado por ti.",

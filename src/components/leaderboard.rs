@@ -42,7 +42,8 @@ pub fn RankCell(rank: i64) -> impl IntoView {
 pub const HIGHLIGHT_ROW: &str =
     "[&>td]:bg-accent [&>td:first-child]:rounded-s-lg [&>td:last-child]:rounded-e-lg";
 
-/// The same inner padding on every row, so a highlighted one doesn't shift its contents.
+/// The same inner padding on every row, so a highlighted one doesn't shift its contents. Pull
+/// the table out by as much (`-mx-2`) to keep its contents flush with the card's.
 pub const ROW_INSET: &str = "[&>*:first-child]:ps-2 [&>*:last-child]:pe-2";
 
 #[component]
@@ -60,9 +61,9 @@ fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
             <td class="max-w-0 py-2 pe-2">
                 <div class="flex items-center gap-2">
                     <span class="min-w-0 truncate font-medium">{entry.name}</span>
-                    {me.then(|| view! { <Badge variant=BadgeVariant::Default size=crate::components::ui::badge::BadgeSize::Sm class="hidden shrink-0 @sm:inline-flex">{t!(i18n, common.ranking.you)}</Badge> })}
-                    // Only where the table is wide enough (a container query, the board sits in narrow
-                    // cards too): the name has priority
+                    {me.then(|| view! { <Badge variant=BadgeVariant::Default size=crate::components::ui::badge::BadgeSize::Sm class="shrink-0">{t!(i18n, common.ranking.you)}</Badge> })}
+                    // The guest label only where the table is wide enough (a container query, the board
+                    // sits in narrow cards too): the name has priority
                     {entry.guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}
                 </div>
             </td>
@@ -99,8 +100,9 @@ pub fn LeaderboardTable(
         .into_any();
     }
     view! {
-        // A size container for the @sm: variants: tables themselves can't be one
-        <div class="@container">
+        // A size container for the @sm: variants (tables themselves can't be one), pulled out by
+        // the row inset
+        <div class="@container -mx-2">
             <table class="w-full table-fixed text-sm">
                 <colgroup>
                     // The first and last columns hold the row inset (ROW_INSET) too

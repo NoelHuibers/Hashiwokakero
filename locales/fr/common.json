@@ -15,7 +15,8 @@
     "toggle": "Basculer le mode sombre",
     "to_day": "Passer au jour 昼",
     "to_night": "Passer à la nuit 夜",
-    "night": "Mode nuit"
+    "day": "Jour",
+    "night": "Nuit"
   },
   "footer": {
     "tagline": "<em>construis des ponts</em>. Résolu par SAT, joué par toi.",

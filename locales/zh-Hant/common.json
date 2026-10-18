@@ -15,7 +15,8 @@
     "toggle": "切換深色模式",
     "to_day": "切換到白天 昼",
     "to_night": "切換到夜晚 夜",
-    "night": "夜間模式"
+    "day": "白天",
+    "night": "夜晚"
   },
   "footer": {
     "tagline": "<em>把橋搭起來</em>。SAT 負責解，你負責玩。",
