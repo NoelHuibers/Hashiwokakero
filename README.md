@@ -132,6 +132,10 @@ cargo test -p common -p backend -p sat_solver
 cargo test --release -p backend -- --ignored --nocapture
 # Criterion benchmarks (encoding, solving with all solvers, generating), in backend/
 cargo bench
+# Line coverage of the tests CI runs (cargo binstall cargo-llvm-cov first), report in
+# target/llvm-cov/html/index.html. CI fails when it drops more than a percentage point below
+# scripts/coverage-baseline.json, `npm run coverage -- --update` stores new numbers there.
+npm run coverage
 ```
 
 See [Evaluation](hashi_report.pdf)

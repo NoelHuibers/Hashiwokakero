@@ -76,6 +76,42 @@ jobs:
       - name: Clippy (website, browser)
         run: cargo clippy -p hashi --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -- -D warnings
 
+  # Line coverage of the tests the test job runs, in a job of its own: the instrumented build
+  # runs next to the other jobs instead of after them, and the plain tests stay as fast as they
+  # were. scripts/coverage.mjs fails it when coverage drops more than a percentage point below
+  # scripts/coverage-baseline.json.
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-24.04
+    # The runtime of a few solver tests depends on HashMap order, instrumented they can take
+    # minutes, but never this long
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov@0.9.1
+      # Only runs the script, no packages
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      # Writes the per-crate and per-file tables to the job summary
+      - name: Tests with coverage
+        run: node scripts/coverage.mjs
+      # Also when the baseline check failed, the report shows which lines lost their tests
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: |
+            target/llvm-cov/html
+            target/llvm-cov/lcov.info
+          retention-days: 14
+
   build:
     name: Build site
     # Pinned, see the test job: this server binary runs on Debian trixie (Dockerfile.prebuilt)
