@@ -12,7 +12,10 @@
     "fastest": "Tercepat",
     "average": "Rata-rata",
     "week": "Minggu ini",
-    "best_streak_short": "Beruntun"
+    "best_streak_short": "Beruntun",
+    "month": "Bulan ini",
+    "points": "Poin",
+    "medals": "Medali"
   },
   "last_weeks": "Lima minggu terakhir",
   "calendar_rank": "peringkat {{ rank }}",

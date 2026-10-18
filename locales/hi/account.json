@@ -12,7 +12,10 @@
     "fastest": "सबसे तेज़",
     "average": "औसत",
     "week": "इस हफ़्ते",
-    "best_streak_short": "स्ट्रीक"
+    "best_streak_short": "स्ट्रीक",
+    "month": "इस महीने",
+    "points": "अंक",
+    "medals": "मेडल"
   },
   "last_weeks": "पिछले पाँच हफ़्ते",
   "calendar_rank": "रैंक {{ rank }}",

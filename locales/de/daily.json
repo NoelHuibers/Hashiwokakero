@@ -25,7 +25,8 @@
     "ranking": "Platzierung wird ermittelt…",
     "more": "Mehr Rätsel im Übungsmodus →",
     "on_board": "Du stehst als <b>{{ name }}</b> in der Rangliste.",
-    "claim": "Sichere dir deinen Namen und behalte deine Serie auf jedem Gerät →"
+    "claim": "Sichere dir deinen Namen und behalte deine Serie auf jedem Gerät →",
+    "points": "+{{ points }} Punkte im Monatsrennen"
   },
   "ranking": {
     "title": "Rangliste von heute",

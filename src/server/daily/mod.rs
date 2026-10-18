@@ -1,13 +1,17 @@
 //! The daily puzzle: one per UTC day, the same for everyone, timed by the server.
 
 mod attempt;
+mod fame;
 mod leaderboard;
+mod stamps;
 mod stats;
 #[cfg(test)]
 mod tests;
 
 pub use attempt::{attempt, check, finishers, hint, info, locked, reveal, set_flag, start, submit};
-pub use leaderboard::{all_time, leaderboard};
+pub use fame::{hall_of_fame, month_board};
+pub use leaderboard::leaderboard;
+pub use stamps::{start_syncing as start_stamp_sync, sync as sync_stamps};
 pub use stats::stats;
 
 use common::{Difficulty, GenerateParams, Puzzle};

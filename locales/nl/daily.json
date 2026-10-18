@@ -25,7 +25,8 @@
     "ranking": "Plek bepalen…",
     "more": "Meer puzzels in de oefenmodus →",
     "on_board": "Je staat in de ranglijst als <b>{{ name }}</b>.",
-    "claim": "Claim je naam en houd je reeks op elk apparaat →"
+    "claim": "Claim je naam en houd je reeks op elk apparaat →",
+    "points": "+{{ points }} punten in de maandrace"
   },
   "ranking": {
     "title": "Ranking van vandaag",

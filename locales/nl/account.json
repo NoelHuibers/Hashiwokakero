@@ -12,7 +12,10 @@
     "fastest": "Snelste",
     "average": "Gemiddeld",
     "week": "Deze week",
-    "best_streak_short": "Reeks"
+    "best_streak_short": "Reeks",
+    "month": "Deze maand",
+    "points": "Punten",
+    "medals": "Medailles"
   },
   "last_weeks": "Laatste vijf weken",
   "calendar_rank": "plek {{ rank }}",

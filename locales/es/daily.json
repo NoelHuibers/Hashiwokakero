@@ -25,7 +25,8 @@
     "ranking": "Clasificando…",
     "more": "Más puzles en el modo práctica →",
     "on_board": "Estás en la clasificación como <b>{{ name }}</b>.",
-    "claim": "Reserva tu nombre para mantener tu racha en todos tus dispositivos →"
+    "claim": "Reserva tu nombre para mantener tu racha en todos tus dispositivos →",
+    "points": "+{{ points }} puntos en la carrera del mes"
   },
   "ranking": {
     "title": "Clasificación de hoy",

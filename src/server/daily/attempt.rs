@@ -5,6 +5,7 @@ use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 use sha2::{Digest, Sha256};
 
+use super::stamps::sync;
 use super::{from_json, get_or_create, json, load, today};
 use crate::model::{
     ApiError, AttemptInfo, DailyInfo, Flag, MoveEvent, SubmitResult, canonical, daily_difficulty,
@@ -73,6 +74,10 @@ pub async fn info(
         Some(_) => Some(get_or_create(conn, day).await?.puzzle),
         None => None,
     };
+    let stamps = match user {
+        Some(user) => sync(conn, user, true).await?.1,
+        None => Vec::new(),
+    };
     Ok(DailyInfo {
         day,
         difficulty: daily_difficulty(day),
@@ -80,6 +85,7 @@ pub async fn info(
         attempt,
         server_now: now_ms(),
         finishers: finishers(conn, day).await?,
+        stamps,
     })
 }
 
@@ -274,6 +280,7 @@ pub async fn submit(
         },
         finishers: finishers(conn, day).await?,
         flag,
+        stamps: sync(conn, user, true).await?.1,
     })
 }
 
@@ -314,5 +321,7 @@ pub async fn set_flag(
         )
         .await
         .map_err(db_err)?;
+    // A stamp the result earned goes with it
+    sync(conn, user, false).await?;
     Ok(changed > 0)
 }

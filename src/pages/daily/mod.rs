@@ -14,6 +14,7 @@ use leptos::task::spawn_local;
 use crate::api::{daily_check, daily_hint, daily_reveal, submit_daily};
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
+use crate::components::stamps::announce;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::progress::Progress;
@@ -146,6 +147,7 @@ pub fn DailyPage() -> impl IntoView {
                         a.finished_at = Some(end);
                         a.time_ms = Some(result.time_ms);
                     });
+                    announce(&result.stamps);
                     daily.result.set(Some(result));
                     daily.refresh_ranking();
                 }

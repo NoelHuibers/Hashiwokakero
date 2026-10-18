@@ -25,7 +25,8 @@
     "ranking": "Menghitung peringkat…",
     "more": "Teka-teki lain di mode latihan →",
     "on_board": "Kamu ada di papan peringkat sebagai <b>{{ name }}</b>.",
-    "claim": "Klaim namamu agar rentetanmu tersimpan di semua perangkat →"
+    "claim": "Klaim namamu agar rentetanmu tersimpan di semua perangkat →",
+    "points": "+{{ points }} poin di balapan bulanan"
   },
   "ranking": {
     "title": "Peringkat hari ini",

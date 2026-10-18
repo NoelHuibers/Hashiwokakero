@@ -1,20 +1,22 @@
-//! The ranks page: the daily leaderboard of any day and the hall of fame.
+//! The ranks page: the daily leaderboard of any day, the monthly race and the hall of fame.
 
 pub mod daily_board;
 pub mod hall_of_fame;
+pub mod month;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::{all_time_leaderboard, daily_leaderboard};
+use crate::api::{daily_leaderboard, load_hall_of_fame};
 use crate::i18n::{t, t_string, use_i18n};
 use crate::lang::error_text;
-use crate::model::{AllTimeEntry, Leaderboard};
+use crate::model::{HallOfFame as Fame, Leaderboard};
 use crate::seo::PageMeta;
 use crate::state::{ToastKind, toast};
 
 use daily_board::DailyBoard;
 use hall_of_fame::HallOfFame;
+use month::MonthRace;
 
 #[component]
 pub fn RanksPage() -> impl IntoView {
@@ -23,7 +25,7 @@ pub fn RanksPage() -> impl IntoView {
     let day = RwSignal::new(None::<i64>);
     let today = RwSignal::new(None::<i64>);
     let board = RwSignal::new(None::<Leaderboard>);
-    let all_time = RwSignal::new(None::<Vec<AllTimeEntry>>);
+    let fame = RwSignal::new(None::<Fame>);
     let loading = RwSignal::new(false);
 
     // Fetch whenever the selected day changes (browser only)
@@ -46,8 +48,8 @@ pub fn RanksPage() -> impl IntoView {
     Effect::new(move |first: Option<()>| {
         if first.is_none() {
             spawn_local(async move {
-                if let Ok(list) = all_time_leaderboard().await {
-                    all_time.set(Some(list));
+                if let Ok(f) = load_hall_of_fame().await {
+                    fame.set(Some(f));
                 }
             });
         }
@@ -69,8 +71,11 @@ pub fn RanksPage() -> impl IntoView {
             </div>
 
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-                <DailyBoard day=day today=today board=board loading=loading />
-                <HallOfFame all_time=all_time />
+                <div class="flex min-w-0 flex-col gap-6">
+                    <DailyBoard day=day today=today board=board loading=loading />
+                    <MonthRace />
+                </div>
+                <HallOfFame fame=fame />
             </div>
         </section>
     }

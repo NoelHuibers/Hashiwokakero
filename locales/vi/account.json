@@ -12,7 +12,10 @@
     "fastest": "Nhanh nhất",
     "average": "Trung bình",
     "week": "Tuần này",
-    "best_streak_short": "Chuỗi"
+    "best_streak_short": "Chuỗi",
+    "month": "Tháng này",
+    "points": "Điểm",
+    "medals": "Huy chương"
   },
   "last_weeks": "Năm tuần qua",
   "calendar_rank": "hạng {{ rank }}",

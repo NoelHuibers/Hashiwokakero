@@ -12,7 +12,10 @@
     "fastest": "Fastest",
     "average": "Average",
     "week": "This week",
-    "best_streak_short": "Streak"
+    "best_streak_short": "Streak",
+    "month": "This month",
+    "points": "Points",
+    "medals": "Medals"
   },
   "last_weeks": "Last five weeks",
   "calendar_rank": "rank {{ rank }}",

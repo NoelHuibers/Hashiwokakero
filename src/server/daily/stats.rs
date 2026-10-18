@@ -1,10 +1,13 @@
-//! A player's daily statistics: solved days, streaks, times and recent results.
+//! A player's daily statistics: solved days, streaks, times, recent results, medals, the
+//! monthly race and the stamp book.
 
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 
+use super::fame::month_points;
+use super::stamps::sync;
 use super::today;
-use crate::model::{DayResult, UserStats, streaks};
+use crate::model::{DayResult, UserStats, month_of, streaks};
 use crate::server::count;
 use crate::server::db::db_err;
 
@@ -66,6 +69,18 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
         })
         .collect();
 
+    // Medals only count once the day is over
+    let medals = |place| {
+        count(
+            finished
+                .iter()
+                .filter(|f| f.0 < today && f.2 == place)
+                .count(),
+        )
+    };
+    let month = month_points(conn, month_of(today)).await?;
+    let month_place = month.iter().position(|p| p.0 == user);
+
     Ok(UserStats {
         solved: count(days.len()),
         current_streak,
@@ -73,5 +88,11 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
         best_time_ms,
         average_time_ms,
         recent,
+        gold: medals(1),
+        silver: medals(2),
+        bronze: medals(3),
+        month_rank: month_place.map(|i| count(i + 1)),
+        month_points: month_place.map_or(0, |i| month[i].1),
+        stamps: sync(conn, user, false).await?.0,
     })
 }

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Ranking dnia · Hashi, łamigłówka z mostami",
-    "description": "Najszybsi dziś gracze Hashiwokakero, ranking każdej wcześniejszej łamigłówki dnia i galeria sław z najwięcej rozwiązanymi dniami i najdłuższymi seriami."
+    "description": "Najszybsi dziś gracze Hashiwokakero, ranking każdej wcześniejszej łamigłówki dnia, wyścig miesiąca i galeria sław z najwięcej rozwiązanymi dniami, medalami i najdłuższymi seriami."
   },
   "title": "Ranking",
   "intro": "Każdego dnia wszyscy grają ten sam most. Wygrywa najlepszy czas, podpowiedzi i sprawdzenia go wydłużają, odkryte rozwiązania się nie liczą.",
@@ -15,8 +15,36 @@
   "no_puzzle": "Tego dnia nikt nie grał, więc nie ma łamigłówki.",
   "fame": {
     "title": "Galeria sław",
-    "text": "Najwięcej rozwiązanych łamigłówek dnia i najdłuższa seria dni z rzędu.",
+    "text": "Najlepsi gracze łamigłówek dnia wszech czasów.",
     "empty": "Nie rozwiązano jeszcze żadnej łamigłówki dnia.",
-    "player": "Gracz"
+    "player": "Gracz",
+    "solved": "Rozwiązane",
+    "medals": "Medale",
+    "streaks": "Serie",
+    "medals_text": "金 złoto, 銀 srebro i 銅 brąz dla trzech najszybszych w łamigłówce dnia, liczone po zakończeniu dnia.",
+    "now": "Teraz",
+    "best": "Najlepsza"
+  },
+  "month": {
+    "title": "Wyścig miesiąca",
+    "text": "10 punktów za każdą rozwiązaną łamigłówkę dnia i do 10 więcej, im więcej graczy wyprzedzisz. Co miesiąc od nowa.",
+    "points": "Punkty",
+    "empty": "W tym miesiącu nikt nie ma jeszcze punktów. Rozwiąż dzisiejszą łamigłówkę dnia i bądź pierwszy!",
+    "players": "W wyścigu: {{ count }}",
+    "label": "{{ month }} {{ year }}",
+    "names": {
+      "jan": "Styczeń",
+      "feb": "Luty",
+      "mar": "Marzec",
+      "apr": "Kwiecień",
+      "may": "Maj",
+      "jun": "Czerwiec",
+      "jul": "Lipiec",
+      "aug": "Sierpień",
+      "sep": "Wrzesień",
+      "oct": "Październik",
+      "nov": "Listopad",
+      "dec": "Grudzień"
+    }
   }
 }

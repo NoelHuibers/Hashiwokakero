@@ -1,9 +1,9 @@
-//! Translated names: dates, difficulties, solver settings and server errors.
+//! Translated names: dates, difficulties, stamps, solver settings and server errors.
 
 use leptos::prelude::ServerFnError;
 
 use crate::i18n::{Locale, td_string};
-use crate::model::ApiError;
+use crate::model::{ApiError, Stamp, month_civil};
 
 fn weekday_name(locale: Locale, weekday: usize) -> &'static str {
     match weekday {
@@ -57,6 +57,74 @@ pub fn date_short(locale: Locale, day: i64) -> String {
         month = month_name(locale, month),
         year
     )
+}
+
+/// "October 2026", a month of the monthly race (see `model::month_of`).
+pub fn month_long(locale: Locale, month: i64) -> String {
+    let (year, m) = month_civil(month);
+    let name = match m {
+        1 => td_string!(locale, ranks.month.names.jan),
+        2 => td_string!(locale, ranks.month.names.feb),
+        3 => td_string!(locale, ranks.month.names.mar),
+        4 => td_string!(locale, ranks.month.names.apr),
+        5 => td_string!(locale, ranks.month.names.may),
+        6 => td_string!(locale, ranks.month.names.jun),
+        7 => td_string!(locale, ranks.month.names.jul),
+        8 => td_string!(locale, ranks.month.names.aug),
+        9 => td_string!(locale, ranks.month.names.sep),
+        10 => td_string!(locale, ranks.month.names.oct),
+        11 => td_string!(locale, ranks.month.names.nov),
+        _ => td_string!(locale, ranks.month.names.dec),
+    };
+    td_string!(locale, ranks.month.label, month = name, year)
+}
+
+/// Name of a stamp, e.g. "Early bird".
+pub fn stamp_name(locale: Locale, stamp: Stamp) -> &'static str {
+    match stamp {
+        Stamp::First => td_string!(locale, stamps.names.first),
+        Stamp::Solved10 => td_string!(locale, stamps.names.solved_10),
+        Stamp::Solved50 => td_string!(locale, stamps.names.solved_50),
+        Stamp::Solved100 => td_string!(locale, stamps.names.solved_100),
+        Stamp::Solved365 => td_string!(locale, stamps.names.solved_365),
+        Stamp::Streak7 => td_string!(locale, stamps.names.streak_7),
+        Stamp::Streak30 => td_string!(locale, stamps.names.streak_30),
+        Stamp::Streak100 => td_string!(locale, stamps.names.streak_100),
+        Stamp::FullWeek => td_string!(locale, stamps.names.full_week),
+        Stamp::Oni => td_string!(locale, stamps.names.oni),
+        Stamp::Clean => td_string!(locale, stamps.names.clean),
+        Stamp::EarlyBird => td_string!(locale, stamps.names.early_bird),
+        Stamp::Swift => td_string!(locale, stamps.names.swift),
+        Stamp::Podium => td_string!(locale, stamps.names.podium),
+        Stamp::Gold => td_string!(locale, stamps.names.gold),
+        Stamp::Gold10 => td_string!(locale, stamps.names.gold_10),
+        Stamp::Champion => td_string!(locale, stamps.names.champion),
+        Stamp::Dojo => td_string!(locale, stamps.names.dojo),
+    }
+}
+
+/// How to earn a stamp.
+pub fn stamp_text(locale: Locale, stamp: Stamp) -> &'static str {
+    match stamp {
+        Stamp::First => td_string!(locale, stamps.texts.first),
+        Stamp::Solved10 => td_string!(locale, stamps.texts.solved_10),
+        Stamp::Solved50 => td_string!(locale, stamps.texts.solved_50),
+        Stamp::Solved100 => td_string!(locale, stamps.texts.solved_100),
+        Stamp::Solved365 => td_string!(locale, stamps.texts.solved_365),
+        Stamp::Streak7 => td_string!(locale, stamps.texts.streak_7),
+        Stamp::Streak30 => td_string!(locale, stamps.texts.streak_30),
+        Stamp::Streak100 => td_string!(locale, stamps.texts.streak_100),
+        Stamp::FullWeek => td_string!(locale, stamps.texts.full_week),
+        Stamp::Oni => td_string!(locale, stamps.texts.oni),
+        Stamp::Clean => td_string!(locale, stamps.texts.clean),
+        Stamp::EarlyBird => td_string!(locale, stamps.texts.early_bird),
+        Stamp::Swift => td_string!(locale, stamps.texts.swift),
+        Stamp::Podium => td_string!(locale, stamps.texts.podium),
+        Stamp::Gold => td_string!(locale, stamps.texts.gold),
+        Stamp::Gold10 => td_string!(locale, stamps.texts.gold_10),
+        Stamp::Champion => td_string!(locale, stamps.texts.champion),
+        Stamp::Dojo => td_string!(locale, stamps.texts.dojo),
+    }
 }
 
 /// Name of a difficulty, e.g. "Hard" / "Schwer".

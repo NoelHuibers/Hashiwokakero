@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Dagelijkse ranglijst · Hashi, de bruggenpuzzel",
-    "description": "De snelste Hashiwokakero-puzzelaars van vandaag, de ranglijst van elke eerdere dagpuzzel en de eregalerij met de meeste dagpuzzels en de langste reeksen."
+    "description": "De snelste Hashiwokakero-puzzelaars van vandaag, de ranglijst van elke eerdere dagpuzzel, de maandrace en de eregalerij met de meeste dagpuzzels, medailles en de langste reeksen."
   },
   "title": "Ranglijst",
   "intro": "Iedereen speelt elke dag dezelfde brug. De snelste tijd wint, hints en controles tellen erbij op, getoonde oplossingen tellen niet mee.",
@@ -15,8 +15,36 @@
   "no_puzzle": "Niemand speelde die dag, dus er is geen puzzel.",
   "fame": {
     "title": "Eregalerij",
-    "text": "De meeste opgeloste dagpuzzels, en de langste reeks dagen op rij.",
+    "text": "De beste dagpuzzelaars aller tijden.",
     "empty": "Nog geen dagpuzzels opgelost.",
-    "player": "Speler"
+    "player": "Speler",
+    "solved": "Opgelost",
+    "medals": "Medailles",
+    "streaks": "Reeksen",
+    "medals_text": "金 goud, 銀 zilver en 銅 brons voor de drie snelsten van een dagpuzzel, geteld zodra de dag voorbij is.",
+    "now": "Nu",
+    "best": "Record"
+  },
+  "month": {
+    "title": "Maandrace",
+    "text": "10 punten voor elke dagpuzzel die je oplost, en tot 10 extra naarmate je meer spelers verslaat. Begint elke maand opnieuw.",
+    "points": "Punten",
+    "empty": "Nog niemand heeft punten deze maand. Los de dagpuzzel van vandaag op en wees de eerste!",
+    "players": "In de race: {{ count }}",
+    "label": "{{ month }} {{ year }}",
+    "names": {
+      "jan": "Januari",
+      "feb": "Februari",
+      "mar": "Maart",
+      "apr": "April",
+      "may": "Mei",
+      "jun": "Juni",
+      "jul": "Juli",
+      "aug": "Augustus",
+      "sep": "September",
+      "oct": "Oktober",
+      "nov": "November",
+      "dec": "December"
+    }
   }
 }

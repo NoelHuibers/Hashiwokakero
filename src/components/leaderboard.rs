@@ -1,10 +1,11 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
 
-use super::ui::badge::{Badge, BadgeVariant};
+use super::stamps::StampBadge;
+use super::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
-use crate::model::{LeaderboardEntry, format_duration};
+use crate::model::{LeaderboardEntry, Stamp, format_duration};
 use crate::state::Auth;
 
 /// 🥇🥈🥉 as pixel-ish kanji medals: 金 gold, 銀 silver, 銅 bronze.
@@ -35,6 +36,28 @@ pub fn RankCell(rank: i64) -> impl IntoView {
     }
 }
 
+/// A player in a leaderboard: name, most impressive stamp, "you" and guest labels.
+///
+/// The guest label only shows where the table is wide enough (a container query on an
+/// `@container` around the table, boards sit in narrow cards too): the name has priority.
+#[component]
+pub fn PlayerName(
+    name: String,
+    guest: bool,
+    stamp: Option<Stamp>,
+    #[prop(optional)] me: bool,
+) -> impl IntoView {
+    let i18n = use_i18n();
+    view! {
+        <div class="flex items-center gap-2">
+            <span class="min-w-0 truncate font-medium">{name}</span>
+            {stamp.map(|stamp| view! { <StampBadge stamp=stamp /> })}
+            {me.then(|| view! { <Badge variant=BadgeVariant::Default size=BadgeSize::Sm class="shrink-0">{t!(i18n, common.ranking.you)}</Badge> })}
+            {guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}
+        </div>
+    }
+}
+
 /// A highlighted table row: your own result, the fastest solver.
 ///
 /// A rounded pill, since a `<tr>` itself can't have rounded corners. Only colours, so the row
@@ -59,13 +82,7 @@ fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
                 <RankCell rank=entry.rank />
             </td>
             <td class="max-w-0 py-2 pe-2">
-                <div class="flex items-center gap-2">
-                    <span class="min-w-0 truncate font-medium">{entry.name}</span>
-                    {me.then(|| view! { <Badge variant=BadgeVariant::Default size=crate::components::ui::badge::BadgeSize::Sm class="shrink-0">{t!(i18n, common.ranking.you)}</Badge> })}
-                    // The guest label only where the table is wide enough (a container query, the board
-                    // sits in narrow cards too): the name has priority
-                    {entry.guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}
-                </div>
+                <PlayerName name=entry.name guest=entry.guest stamp=entry.stamp me=me />
             </td>
             <td class="py-2 pe-2 text-end text-xs text-muted-foreground" title=move || t_string!(i18n, common.ranking.penalties)>
                 {(penalties > 0).then(|| format!("{}h {}c", entry.hints, entry.checks))}

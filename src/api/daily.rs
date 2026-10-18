@@ -4,7 +4,7 @@ use common::Puzzle;
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
-use crate::model::{AllTimeEntry, DailyInfo, Leaderboard, MoveEvent, SubmitResult};
+use crate::model::{DailyInfo, HallOfFame, Leaderboard, MonthBoard, MoveEvent, SubmitResult};
 #[cfg(feature = "ssr")]
 use crate::server::{auth, daily, db};
 
@@ -76,9 +76,18 @@ pub async fn daily_leaderboard(day: Option<i64>) -> Result<Leaderboard, ServerFn
     daily::leaderboard(&conn, day, me).await
 }
 
+/// The all time rankings: most solved, most medals, longest streaks.
 #[server(input = Json)]
-pub async fn all_time_leaderboard() -> Result<Vec<AllTimeEntry>, ServerFnError> {
-    daily::all_time(&db::conn()?).await
+pub async fn load_hall_of_fame() -> Result<HallOfFame, ServerFnError> {
+    daily::hall_of_fame(&db::conn()?).await
+}
+
+/// The points race of a month (see `model::month_of`), the running one if `month` is `None`.
+#[server(input = Json)]
+pub async fn month_leaderboard(month: Option<i64>) -> Result<MonthBoard, ServerFnError> {
+    let conn = db::conn()?;
+    let me = auth::current_user(&conn).await?.map(|u| u.id);
+    daily::month_board(&conn, month, me).await
 }
 
 /// An earlier daily, to play it in practice mode.

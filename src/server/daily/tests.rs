@@ -2,8 +2,11 @@
 
 use common::Board;
 
+use super::stamps::sync_recent;
 use super::*;
-use crate::model::{CHECK_PENALTY_MS, Flag, HINT_PENALTY_MS, LAUNCH_DAY, MoveEvent};
+use crate::model::{
+    CHECK_PENALTY_MS, Flag, HINT_PENALTY_MS, LAUNCH_DAY, MoveEvent, Stamp, month_days, month_of,
+};
 use crate::server::db;
 
 /// A fresh database file, removed again when dropped.
@@ -359,7 +362,7 @@ async fn revealed_runs_are_not_ranked() {
 }
 
 #[tokio::test]
-async fn stats_and_all_time() {
+async fn stats_and_hall_of_fame() {
     let (_db, conn) = test_db().await;
     let a = user(&conn, "alice", Some("alice")).await;
     let b = user(&conn, "bob", Some("bob")).await;
@@ -386,10 +389,129 @@ async fn stats_and_all_time() {
     assert_eq!((yesterday.time_ms, yesterday.rank), (Some(70_000), Some(2)));
     assert_eq!(s.recent.last().unwrap().day, today);
 
-    let all = all_time(&conn).await.unwrap();
+    // Bob won yesterday, alice was second; the days before alice played alone
+    assert_eq!((s.gold, s.silver, s.bronze), (2, 1, 0));
+
+    let fame = hall_of_fame(&conn).await.unwrap();
+    let all = &fame.solved;
     assert_eq!(all[0].name, "alice");
     assert_eq!((all[0].solved, all[0].best_streak), (3, 3));
     assert_eq!((all[1].solved, all[1].best_streak), (1, 1));
+    // Alice's two golds beat bob's one
+    let medals: Vec<_> = fame
+        .medals
+        .iter()
+        .map(|e| (e.name.as_str(), e.gold, e.silver))
+        .collect();
+    assert_eq!(medals, [("alice", 2, 1), ("bob", 1, 0)]);
+    assert_eq!(fame.streaks[0].name, "alice");
+    assert_eq!(fame.streaks[0].current_streak, 3);
+}
+
+/// A finished, ranked daily: started at 0, finished at `time`.
+async fn finish(conn: &Connection, user: i64, day: i64, time: i64) {
+    conn.execute(
+        "INSERT INTO attempts (user_id, day, started_at, finished_at, time_ms) VALUES (?1, ?2, 0, ?3, ?3)",
+        params![user, day, time],
+    )
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
+async fn month_board_counts_points() {
+    let (_db, conn) = test_db().await;
+    let a = user(&conn, "alice", Some("alice")).await;
+    let b = user(&conn, "bob", Some("bob")).await;
+    let c = user(&conn, "Calm Heron 7", None).await;
+    let month = month_of(today());
+    let (first, _) = month_days(month);
+    // Day 1: alice, bob, carol; day 2: bob alone; last month: carol alone
+    finish(&conn, a, first, 50_000).await;
+    finish(&conn, b, first, 60_000).await;
+    finish(&conn, c, first, 70_000).await;
+    finish(&conn, b, first + 1, 80_000).await;
+    finish(&conn, c, first - 1, 80_000).await;
+
+    let board = month_board(&conn, None, Some(c)).await.unwrap();
+    assert_eq!(board.month, month);
+    let rows: Vec<_> = board
+        .entries
+        .iter()
+        .map(|e| (e.name.as_str(), e.points, e.solved))
+        .collect();
+    // bob 15 + 20, alice 20, carol 10
+    assert_eq!(
+        rows,
+        [("bob", 35, 2), ("alice", 20, 1), ("Calm Heron 7", 10, 1)]
+    );
+    assert!(board.entries[2].guest);
+    assert_eq!(board.me.as_ref().map(|m| m.rank), Some(3));
+    assert_eq!(board.players, 3);
+
+    // Last month carol played alone (if there was a last month), earlier ones are clamped to
+    // the launch
+    if month > month_of(LAUNCH_DAY) {
+        let last = month_board(&conn, Some(month - 1), None).await.unwrap();
+        assert_eq!(last.entries.len(), 1);
+        assert_eq!(last.entries[0].user_id, c);
+    }
+    assert_eq!(
+        month_board(&conn, Some(0), None).await.unwrap().month,
+        month_of(LAUNCH_DAY)
+    );
+    // The future is the running month
+    assert_eq!(
+        month_board(&conn, Some(month + 5), None)
+            .await
+            .unwrap()
+            .month,
+        month
+    );
+}
+
+#[tokio::test]
+async fn stamps_are_earned_kept_and_taken_back() {
+    let (_db, conn) = test_db().await;
+    let a = user(&conn, "alice", Some("alice")).await;
+    let b = user(&conn, "bob", Some("bob")).await;
+    let yesterday = today() - 1;
+    finish(&conn, a, yesterday, 50_000).await;
+    finish(&conn, b, yesterday, 60_000).await;
+
+    let (book, new) = sync_stamps(&conn, a, true).await.unwrap();
+    assert_eq!(book.len(), Stamp::ALL.len());
+    for stamp in [Stamp::First, Stamp::Gold, Stamp::Podium, Stamp::EarlyBird] {
+        assert!(new.contains(&stamp), "{stamp:?}");
+    }
+    let gold = book.iter().find(|p| p.stamp == Stamp::Gold).unwrap();
+    assert!(gold.earned_at.is_some());
+    // Nothing new the second time
+    assert_eq!(sync_stamps(&conn, a, true).await.unwrap().1, []);
+
+    // On the leaderboard with the most impressive one (on the 1st alice also won last month)
+    let lb = leaderboard(&conn, yesterday, None).await.unwrap();
+    assert!(matches!(
+        lb.entries[0].stamp,
+        Some(Stamp::Gold | Stamp::Champion)
+    ));
+    assert_eq!(lb.entries[1].stamp, None);
+
+    // A review takes the result off the board, and its stamps with it; bob moves up
+    set_flag(&conn, a, yesterday, Some(Flag::Review))
+        .await
+        .unwrap();
+    let (book, _) = sync_stamps(&conn, a, true).await.unwrap();
+    assert!(book.iter().all(|p| p.earned_at.is_none()));
+    // Synced in the background first: bob still hears about it on his next visit
+    assert_eq!(sync_recent(&conn).await.unwrap(), 1);
+    assert!(
+        sync_stamps(&conn, b, true)
+            .await
+            .unwrap()
+            .1
+            .contains(&Stamp::Gold)
+    );
 }
 
 #[tokio::test]

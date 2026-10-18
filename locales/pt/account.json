@@ -12,7 +12,10 @@
     "fastest": "Mais rápido",
     "average": "Média",
     "week": "Esta semana",
-    "best_streak_short": "Sequência"
+    "best_streak_short": "Sequência",
+    "month": "Este mês",
+    "points": "Pontos",
+    "medals": "Medalhas"
   },
   "last_weeks": "Últimas cinco semanas",
   "calendar_rank": "posição {{ rank }}",

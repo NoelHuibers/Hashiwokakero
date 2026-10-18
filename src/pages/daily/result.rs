@@ -9,7 +9,7 @@ use crate::components::share::ShareBar;
 use crate::components::ui::card::Card;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{difficulty_name, localized};
-use crate::model::{Flag, WEEKDAY_KANJI, daily_number, format_duration, weekday};
+use crate::model::{Flag, WEEKDAY_KANJI, daily_number, format_duration, points, weekday};
 use crate::state::{Auth, Status};
 
 use super::state::Daily;
@@ -55,6 +55,20 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
         )
     };
     let revealed = move || daily.game.status.get() == Status::Revealed;
+    // (rank, finishers): from the submit, later from the ranking, which keeps up with the others
+    let place = move || {
+        daily
+            .result
+            .get()
+            .map(|r| (r.rank, r.finishers))
+            .filter(|&(rank, _)| rank > 0)
+            .or_else(|| {
+                daily.ranking.with(|lb| {
+                    lb.as_ref()
+                        .and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))
+                })
+            })
+    };
     view! {
         <Card class="items-center gap-3 overflow-hidden px-6 text-center">
             {move || {
@@ -92,25 +106,23 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
                                 })
                         }}
                         <p class="text-sm text-muted-foreground">
-                            {move || {
-                                let rank = daily
-                                    .result
-                                    .get()
-                                    .map(|r| (r.rank, r.finishers))
-                                    .or_else(|| {
-                                        daily
-                                            .ranking
-                                            .with(|lb| {
-                                                lb.as_ref().and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))
-                                            })
-                                    });
-                                match (daily.flag(), rank) {
-                                    (Some(_), _) => t_string!(i18n, daily.flag.title).to_string(),
-                                    (None, Some((rank, total))) => t_string!(i18n, daily.result.rank, rank, total),
-                                    (None, None) => t_string!(i18n, daily.result.ranking).to_string(),
-                                }
+                            {move || match (daily.flag(), place()) {
+                                (Some(_), _) => t_string!(i18n, daily.flag.title).to_string(),
+                                (None, Some((rank, total))) => t_string!(i18n, daily.result.rank, rank, total),
+                                (None, None) => t_string!(i18n, daily.result.ranking).to_string(),
                             }}
                         </p>
+                        {move || {
+                            place()
+                                .filter(|_| daily.flag().is_none())
+                                .map(|(rank, total)| {
+                                    view! {
+                                        <p class="font-pixel text-sm text-primary">
+                                            {t_string!(i18n, daily.result.points, points = points(rank, total))} " 点"
+                                        </p>
+                                    }
+                                })
+                        }}
                     }
                         .into_any()
                 }

@@ -12,7 +12,10 @@
     "fastest": "Рекорд",
     "average": "У середньому",
     "week": "За тиждень",
-    "best_streak_short": "Серія"
+    "best_streak_short": "Серія",
+    "month": "За місяць",
+    "points": "Бали",
+    "medals": "Медалі"
   },
   "last_weeks": "Останні п’ять тижнів",
   "calendar_rank": "місце {{ rank }}",

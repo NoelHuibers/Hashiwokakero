@@ -5,6 +5,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::{daily_leaderboard, daily_today};
+use crate::components::stamps::announce;
 use crate::lang::error_text;
 use crate::model::{
     DailyInfo, Flag, Leaderboard, MoveEvent, SubmitResult, daily_difficulty, date_string,
@@ -116,6 +117,7 @@ impl Daily {
 
     pub(super) fn apply(&self, info: DailyInfo) {
         self.skew.set(info.server_now - browser_now());
+        announce(&info.stamps);
         if let Some(puzzle) = &info.puzzle {
             let loaded = self.game.status.get_untracked() != Status::Empty
                 && self.game.board.with_untracked(|b| b.puzzle == *puzzle);

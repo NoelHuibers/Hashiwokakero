@@ -8,6 +8,7 @@ use leptos::task::spawn_local;
 use leptos_meta::{Meta, Title};
 
 use crate::api::{logout, my_stats};
+use crate::components::stamps::StampBook;
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
@@ -108,6 +109,17 @@ pub fn AccountPage() -> impl IntoView {
                                             jp="週"
                                             value=s.recent.iter().rev().take(7).filter(|d| d.time_ms.is_some()).count().to_string()
                                         />
+                                        <StatTile
+                                            label=t_string!(i18n, account.stats.month).to_string()
+                                            jp="月"
+                                            value=s.month_rank.map_or_else(|| "–".into(), |r| format!("#{r}"))
+                                        />
+                                        <StatTile label=t_string!(i18n, account.stats.points).to_string() jp="点" value=s.month_points.to_string() />
+                                        <StatTile
+                                            label=t_string!(i18n, account.stats.medals).to_string()
+                                            jp="金銀銅"
+                                            value=format!("{}·{}·{}", s.gold, s.silver, s.bronze)
+                                        />
                                     </div>
                                     <div class="flex flex-col gap-2">
                                         <p class="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -129,6 +141,27 @@ pub fn AccountPage() -> impl IntoView {
                         }}
                     </CardContent>
                 </Card>
+
+                {move || {
+                    stats
+                        .get()
+                        .filter(|s| !s.stamps.is_empty())
+                        .map(|s| {
+                            view! {
+                                <Card class="gap-4 md:order-last md:col-span-2">
+                                    <CardHeader>
+                                        <CardTitle class="flex items-baseline gap-2 text-xl">
+                                            {t!(i18n, stamps.title)} <span class="font-pixel text-sm text-primary">"判子帳"</span>
+                                        </CardTitle>
+                                        <CardDescription>{t!(i18n, stamps.intro)}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <StampBook book=s.stamps />
+                                    </CardContent>
+                                </Card>
+                            }
+                        })
+                }}
 
                 <Card class="gap-4 self-start">
                     <Show

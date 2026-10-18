@@ -12,7 +12,10 @@
     "fastest": "最速",
     "average": "平均",
     "week": "今週",
-    "best_streak_short": "連続"
+    "best_streak_short": "連続",
+    "month": "今月",
+    "points": "ポイント",
+    "medals": "メダル"
   },
   "last_weeks": "最近の5週間",
   "calendar_rank": "{{ rank }}位",

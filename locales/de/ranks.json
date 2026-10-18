@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Tages-Rangliste · Hashi, das Brückenrätsel",
-    "description": "Die schnellsten Hashiwokakero-Löser von heute, die Rangliste jedes vergangenen Tagesrätsels und die Ruhmeshalle mit den meisten Lösungen und längsten Serien."
+    "description": "Die schnellsten Hashiwokakero-Löser von heute, die Rangliste jedes vergangenen Tagesrätsels, das Monatsrennen und die Ruhmeshalle mit den meisten Lösungen, Medaillen und längsten Serien."
   },
   "title": "Rangliste",
   "intro": "Alle spielen jeden Tag dieselbe Brücke. Die schnellste Zeit gewinnt, Tipps und Prüfungen werden aufgeschlagen, aufgedeckte Lösungen zählen nicht.",
@@ -15,8 +15,36 @@
   "no_puzzle": "An diesem Tag hat niemand gespielt, darum gibt es kein Rätsel.",
   "fame": {
     "title": "Ruhmeshalle",
-    "text": "Die meisten gelösten Tagesrätsel und die längste Serie an Tagen am Stück.",
+    "text": "Die besten Tagesrätsel-Spieler aller Zeiten.",
     "empty": "Noch keine Tagesrätsel gelöst.",
-    "player": "Spieler"
+    "player": "Spieler",
+    "solved": "Gelöst",
+    "medals": "Medaillen",
+    "streaks": "Serien",
+    "medals_text": "金 Gold, 銀 Silber und 銅 Bronze für die drei Schnellsten eines Tagesrätsels, gezählt, sobald der Tag vorbei ist.",
+    "now": "Aktuell",
+    "best": "Rekord"
+  },
+  "month": {
+    "title": "Monatsrennen",
+    "text": "10 Punkte für jedes gelöste Tagesrätsel und bis zu 10 weitere, je mehr Spieler du schlägst. Beginnt jeden Monat von vorn.",
+    "points": "Punkte",
+    "empty": "Diesen Monat hat noch niemand Punkte. Löse das heutige Tagesrätsel und sei der Erste!",
+    "players": "Im Rennen: {{ count }}",
+    "label": "{{ month }} {{ year }}",
+    "names": {
+      "jan": "Januar",
+      "feb": "Februar",
+      "mar": "März",
+      "apr": "April",
+      "may": "Mai",
+      "jun": "Juni",
+      "jul": "Juli",
+      "aug": "August",
+      "sep": "September",
+      "oct": "Oktober",
+      "nov": "November",
+      "dec": "Dezember"
+    }
   }
 }

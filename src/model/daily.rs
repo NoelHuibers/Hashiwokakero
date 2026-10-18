@@ -4,6 +4,7 @@ use common::{Difficulty, Puzzle};
 use serde::{Deserialize, Serialize};
 
 use super::moves::Flag;
+use super::stamps::{Stamp, StampProgress};
 
 /// Added to the time of a daily run for every hint.
 pub const HINT_PENALTY_MS: i64 = 30_000;
@@ -61,6 +62,9 @@ pub struct DailyInfo {
     pub server_now: i64,
     /// Players who finished this daily (ranked).
     pub finishers: i64,
+    /// Stamps the player earned since the last visit (yesterday's medal, say), to announce.
+    #[serde(default)]
+    pub stamps: Vec<Stamp>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -71,6 +75,9 @@ pub struct SubmitResult {
     pub finishers: i64,
     #[serde(default)]
     pub flag: Option<Flag>,
+    /// Stamps earned with this result, to announce.
+    #[serde(default)]
+    pub stamps: Vec<Stamp>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -82,6 +89,9 @@ pub struct LeaderboardEntry {
     pub time_ms: i64,
     pub hints: i64,
     pub checks: i64,
+    /// The player's most impressive stamp.
+    #[serde(default)]
+    pub stamp: Option<Stamp>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -92,16 +102,6 @@ pub struct Leaderboard {
     /// The current user's entry, also when it isn't in `entries`.
     pub me: Option<LeaderboardEntry>,
     pub finishers: i64,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AllTimeEntry {
-    pub rank: i64,
-    pub user_id: i64,
-    pub name: String,
-    pub guest: bool,
-    pub solved: i64,
-    pub best_streak: i64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -121,4 +121,13 @@ pub struct UserStats {
     pub average_time_ms: Option<i64>,
     /// Finished dailies of the last weeks, oldest first.
     pub recent: Vec<DayResult>,
+    /// Medals of days that are over.
+    pub gold: i64,
+    pub silver: i64,
+    pub bronze: i64,
+    /// Place and points on this month's board, `None` without points this month.
+    pub month_rank: Option<i64>,
+    pub month_points: i64,
+    /// Every stamp and how far along the player is.
+    pub stamps: Vec<StampProgress>,
 }

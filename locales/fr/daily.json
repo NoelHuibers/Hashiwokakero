@@ -25,7 +25,8 @@
     "ranking": "Classement…",
     "more": "Plus de grilles en jeu libre →",
     "on_board": "Tu es au classement sous le nom <b>{{ name }}</b>.",
-    "claim": "Réserve ton pseudo pour garder ta série sur tous tes appareils →"
+    "claim": "Réserve ton pseudo pour garder ta série sur tous tes appareils →",
+    "points": "+{{ points }} points dans la course du mois"
   },
   "ranking": {
     "title": "Classement du jour",

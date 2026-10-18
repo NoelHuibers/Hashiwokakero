@@ -12,7 +12,10 @@
     "fastest": "En hızlı",
     "average": "Ortalama",
     "week": "Bu hafta",
-    "best_streak_short": "Seri"
+    "best_streak_short": "Seri",
+    "month": "Bu ay",
+    "points": "Puan",
+    "medals": "Madalya"
   },
   "last_weeks": "Son beş hafta",
   "calendar_rank": "sıra: {{ rank }}",

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Classifica del giorno · Hashi, il rompicapo dei ponti",
-    "description": "I solutori di Hashiwokakero più veloci di oggi, la classifica di ogni sfida passata e l’albo d’oro delle sfide più risolte e delle serie più lunghe."
+    "description": "I solutori di Hashiwokakero più veloci di oggi, la classifica di ogni sfida passata, la gara del mese e l’albo d’oro delle sfide più risolte, delle medaglie e delle serie più lunghe."
   },
   "title": "Classifica",
   "intro": "Ogni giorno tutti giocano lo stesso ponte. Vince il tempo migliore, indizi e verifiche si sommano, le soluzioni rivelate non contano.",
@@ -15,8 +15,36 @@
   "no_puzzle": "Quel giorno non ha giocato nessuno, quindi non c’è nessun puzzle.",
   "fame": {
     "title": "Albo d’oro",
-    "text": "Più sfide risolte e la serie più lunga di giorni consecutivi.",
+    "text": "I migliori giocatori delle sfide del giorno di tutti i tempi.",
     "empty": "Ancora nessuna sfida risolta.",
-    "player": "Giocatore"
+    "player": "Giocatore",
+    "solved": "Risolte",
+    "medals": "Medaglie",
+    "streaks": "Serie",
+    "medals_text": "金 oro, 銀 argento e 銅 bronzo ai tre più veloci di una sfida, contati a giornata conclusa.",
+    "now": "Attuale",
+    "best": "Record"
+  },
+  "month": {
+    "title": "Gara del mese",
+    "text": "10 punti per ogni sfida risolta, e fino a 10 in più quanti più giocatori batti. Si riparte ogni mese.",
+    "points": "Punti",
+    "empty": "Ancora nessuno ha punti questo mese. Risolvi la sfida di oggi e sii il primo!",
+    "players": "In gara: {{ count }}",
+    "label": "{{ month }} {{ year }}",
+    "names": {
+      "jan": "Gennaio",
+      "feb": "Febbraio",
+      "mar": "Marzo",
+      "apr": "Aprile",
+      "may": "Maggio",
+      "jun": "Giugno",
+      "jul": "Luglio",
+      "aug": "Agosto",
+      "sep": "Settembre",
+      "oct": "Ottobre",
+      "nov": "Novembre",
+      "dec": "Dicembre"
+    }
   }
 }

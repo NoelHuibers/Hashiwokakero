@@ -25,7 +25,8 @@
     "ranking": "Đang xếp hạng…",
     "more": "Thêm câu đố ở chế độ luyện tập →",
     "on_board": "Bạn đã lên bảng với tên <b>{{ name }}</b>.",
-    "claim": "Giữ tên của bạn để lưu chuỗi ngày trên mọi thiết bị →"
+    "claim": "Giữ tên của bạn để lưu chuỗi ngày trên mọi thiết bị →",
+    "points": "+{{ points }} điểm trong cuộc đua hằng tháng"
   },
   "ranking": {
     "title": "Xếp hạng hôm nay",
