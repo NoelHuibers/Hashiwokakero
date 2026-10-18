@@ -15,7 +15,8 @@
     "toggle": "Przełącz tryb ciemny",
     "to_day": "Przełącz na dzień 昼",
     "to_night": "Przełącz na noc 夜",
-    "night": "Tryb nocny"
+    "day": "Dzień",
+    "night": "Noc"
   },
   "footer": {
     "tagline": "<em>buduj mosty</em>. Rozwiązane przez SAT, rozgrywane przez ciebie.",

@@ -15,7 +15,8 @@
     "toggle": "다크 모드 전환",
     "to_day": "낮 모드로 전환 昼",
     "to_night": "밤 모드로 전환 夜",
-    "night": "야간 모드"
+    "day": "낮",
+    "night": "밤"
   },
   "footer": {
     "tagline": "<em>다리를 놓아라</em>. SAT가 풀고, 당신이 즐겨요.",

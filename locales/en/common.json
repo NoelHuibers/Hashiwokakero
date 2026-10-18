@@ -15,7 +15,8 @@
     "toggle": "Toggle dark mode",
     "to_day": "Switch to day 昼",
     "to_night": "Switch to night 夜",
-    "night": "Night mode"
+    "day": "Day",
+    "night": "Night"
   },
   "footer": {
     "tagline": "<em>build bridges</em>. Solved by SAT, played by you.",

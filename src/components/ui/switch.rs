@@ -21,6 +21,9 @@ pub fn Switch(
     aria_label: Signal<String>,
     #[prop(into, optional)] disabled: Signal<bool>,
     #[prop(into, optional)] class: String,
+    /// A glyph shown on the knob, e.g. 昼/夜.
+    #[prop(into, optional)]
+    thumb: Option<Signal<&'static str>>,
 ) -> impl IntoView {
     let state = move || {
         if checked.get() {
@@ -50,8 +53,10 @@ pub fn Switch(
         >
             <span
                 data-state=state
-                class="block rounded-full ring-0 shadow-lg transition-transform pointer-events-none size-5 bg-background data-[state=checked]:translate-x-5 rtl:data-[state=checked]:-translate-x-5 data-[state=unchecked]:translate-x-0"
-            />
+                class="grid place-items-center rounded-full ring-0 shadow-lg transition-transform pointer-events-none size-5 bg-background font-pixel text-[11px] leading-none text-foreground data-[state=checked]:translate-x-5 rtl:data-[state=checked]:-translate-x-5 data-[state=unchecked]:translate-x-0"
+            >
+                {move || thumb.map(|t| t.get())}
+            </span>
         </button>
     }
 }
