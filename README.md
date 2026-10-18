@@ -27,11 +27,13 @@ Requirements: Rust stable (installed automatically via `rust-toolchain.toml`, in
 
 ```sh
 cargo install --locked cargo-leptos   # or: cargo binstall cargo-leptos
-npm ci                                # tw-animate-css for the Tailwind build
+npm ci                                # Tailwind, tw-animate-css and the fonts (public/fonts)
 cargo leptos watch                    # http://127.0.0.1:3000
 ```
 
 cargo-leptos runs the Tailwind CLI from `node_modules` (so its version is the one in `package.json`) and installs the wasm-bindgen CLI matching `Cargo.lock` by itself.
+
+The fonts are self-hosted, no request goes to Google Fonts: `npm ci` runs `scripts/fonts.mjs`, which copies the woff2 files of the `@fontsource` packages to `public/fonts` and writes their `@font-face` rules (`npm run fonts` does it again).
 
 A release build: `cargo leptos build --release`, the server binary is `target/release/hashi` and serves `target/site`.
 

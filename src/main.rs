@@ -9,7 +9,8 @@ async fn main() {
     use hashi::app::{App, shell};
     use leptos::prelude::*;
     use leptos_axum::{LeptosRoutes, generate_route_list};
-    use tower_http::compression::CompressionLayer;
+    use tower_http::compression::predicate::{NotForContentType, Predicate};
+    use tower_http::compression::{CompressionLayer, DefaultPredicate};
 
     if let Err(e) = hashi::server::db::init().await {
         eprintln!("{e}");
@@ -80,7 +81,12 @@ async fn main() {
                     cache_control(hash_files, req, next).await
                 },
             ))
-            .layer(CompressionLayer::new())
+            // woff2 is compressed already
+            .layer(
+                CompressionLayer::new().compress_when(
+                    DefaultPredicate::new().and(NotForContentType::const_new("font/")),
+                ),
+            )
             .with_state(leptos_options);
 
     let listener = tokio::net::TcpListener::bind(&addr)
@@ -95,7 +101,8 @@ async fn main() {
 
 /// Browsers kept an old stylesheet after a deploy because its URL never changed and no cache
 /// headers were sent. With hashed file names everything under /pkg/ can be cached forever, since
-/// a new build gets new names; everything else is revalidated on every visit.
+/// a new build gets new names; everything else is revalidated on every visit. The font files
+/// always have a content hash in their names (scripts/fonts.mjs).
 #[cfg(feature = "ssr")]
 async fn cache_control(
     hash_files: bool,
@@ -103,7 +110,12 @@ async fn cache_control(
     next: axum::middleware::Next,
 ) -> axum::response::Response {
     use axum::http::{HeaderValue, header::CACHE_CONTROL};
-    let immutable = hash_files && req.uri().path().starts_with("/pkg/");
+    let path = req.uri().path();
+    let immutable = (hash_files && path.starts_with("/pkg/"))
+        || (path.starts_with("/fonts/")
+            && std::path::Path::new(path)
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("woff2")));
     let mut res = next.run(req).await;
     let value = if immutable {
         "public, max-age=31536000, immutable"

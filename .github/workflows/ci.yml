@@ -48,6 +48,7 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm run fonts
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
       - name: Install cargo-leptos

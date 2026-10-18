@@ -12,9 +12,11 @@
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* Zen Maru Gothic covers Latin, Cyrillic, Vietnamese and Japanese; other scripts put their
-     own font first (loaded by ScriptFont in app.rs) */
-  --app-font: "Zen Maru Gothic", ui-rounded, system-ui, sans-serif;
+  /* Self-hosted (scripts/fonts.mjs). Murecho covers Latin, Cyrillic, Greek and Japanese; other
+     scripts put their own font first (loaded by ScriptFont in app.rs). Headings are in Kaisei
+     Decol, a decorated mincho, like a title cut into a woodblock. */
+  --app-font: "Murecho Variable", system-ui, sans-serif;
+  --display-font: "Kaisei Decol", "Murecho Variable", serif;
   --radius: 0.75rem;
 
   --background: #f4ecdd; /* kinari 生成り */
@@ -80,12 +82,18 @@
   --wave-line: rgb(31 78 121 / 0.09);
 }
 
-html[lang="ko"] { --app-font: "Noto Sans KR", "Zen Maru Gothic", system-ui, sans-serif; }
-html[lang="zh"] { --app-font: "Noto Sans SC", "Zen Maru Gothic", system-ui, sans-serif; }
-html[lang="zh-Hant"] { --app-font: "Noto Sans TC", "Zen Maru Gothic", system-ui, sans-serif; }
-html[lang="ar"] { --app-font: "Baloo Bhaijaan 2", "Zen Maru Gothic", system-ui, sans-serif; }
-html[lang="hi"] { --app-font: "Baloo 2", "Zen Maru Gothic", system-ui, sans-serif; }
-html[lang="th"] { --app-font: "Mali", "Zen Maru Gothic", system-ui, sans-serif; }
+html[lang="ko"] { --app-font: "Noto Sans KR Variable", "Murecho Variable", system-ui, sans-serif; }
+html[lang="zh"] { --app-font: "Noto Sans SC Variable", "Murecho Variable", system-ui, sans-serif; }
+html[lang="zh-Hant"] { --app-font: "Noto Sans TC Variable", "Murecho Variable", system-ui, sans-serif; }
+html[lang="ar"] { --app-font: "Noto Sans Arabic Variable", "Murecho Variable", system-ui, sans-serif; }
+html[lang="hi"] { --app-font: "Noto Sans Devanagari Variable", "Murecho Variable", system-ui, sans-serif; }
+html[lang="th"] { --app-font: "Noto Sans Thai Variable", "Murecho Variable", system-ui, sans-serif; }
+html[lang="vi"] { --app-font: "Be Vietnam Pro", "Murecho Variable", system-ui, sans-serif; }
+/* Their headings too: Kaisei Decol would draw Chinese with Japanese glyph shapes and lacks the
+   other scripts, a serif Latin next to a sans Hangul or Thai looks patched together */
+html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [lang="th"], [lang="vi"]) {
+  --display-font: var(--app-font);
+}
 
 .dark {
   --background: #101827;
@@ -211,6 +219,14 @@ html[lang="th"] { --app-font: "Mali", "Zen Maru Gothic", system-ui, sans-serif; 
       radial-gradient(circle at 70% 60%, var(--washi-fiber) 0 1px, transparent 1.5px),
       radial-gradient(circle at 40% 85%, var(--washi-fiber) 0 1.2px, transparent 1.7px);
     background-size: 23px 29px, 31px 37px, 41px 43px;
+  }
+
+  /* Headings and the small bold capitals (DAILY, PRACTICE, dates above titles) */
+  h1,
+  h2,
+  h3,
+  .uppercase.font-bold {
+    font-family: var(--display-font);
   }
 
   button:not(:disabled),
