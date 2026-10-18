@@ -1,0 +1,380 @@
+//! Tests of the SAT Dojo against a fresh database file.
+
+use dojo::{Answer, DEFAULT_BUDGET, Family, Outcome, Rejection, Report, RunResult, Score};
+use libsql::{Connection, params};
+
+use super::*;
+use crate::model::DojoState;
+use crate::server::auth::User;
+use crate::server::{db, now_ms};
+
+async fn test_db(name: &str) -> Connection {
+    let path = std::env::temp_dir().join(format!("hashi-dojo-{name}-{}.db", std::process::id()));
+    let _ = std::fs::remove_file(&path);
+    let db = db::open_local(path.to_str().unwrap()).await.unwrap();
+    let conn = db.connect().unwrap();
+    db::migrate(&conn).await.unwrap();
+    conn
+}
+
+async fn user(conn: &Connection, name: &str, registered: bool) -> User {
+    conn.execute(
+        "INSERT INTO users (username, name, created_at) VALUES (?1, ?2, 0)",
+        params![registered.then(|| name.to_string()), name.to_string()],
+    )
+    .await
+    .unwrap();
+    User {
+        id: conn.last_insert_rowid(),
+        username: registered.then(|| name.into()),
+        name: name.into(),
+        created_at: 0,
+    }
+}
+
+/// A tiny valid module; `extra` (below 128) sets its memory size, so the code differs.
+fn module(extra: u8) -> Vec<u8> {
+    vec![0, b'a', b's', b'm', 1, 0, 0, 0, 5, 3, 1, 0, extra]
+}
+
+fn form(name: &str, extra: u8) -> Form {
+    Form {
+        name: name.into(),
+        wasm: module(extra),
+        ..Default::default()
+    }
+}
+
+/// Fuel per formula: `base` billions, a little more for each formula.
+fn fingerprint(base: f64) -> Vec<u64> {
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "test values are small and positive"
+    )]
+    (0..20)
+        .map(|i| ((base + f64::from(i) * 0.1) * 1e9) as u64)
+        .collect()
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "test PAR-2 values are small and positive"
+)]
+fn score(par2: f64, wrong: u32) -> Score {
+    let results = [RunResult {
+        name: "x".into(),
+        family: Family::Hashi,
+        expected: Answer::Sat,
+        outcome: if wrong > 0 {
+            Outcome::Wrong
+        } else {
+            Outcome::Solved(Answer::Sat)
+        },
+        fuel: (par2 * 1e9) as u64,
+        wall_ms: 1,
+    }];
+    Score::from_results(&results, DEFAULT_BUDGET)
+}
+
+#[tokio::test]
+async fn submissions_and_leaderboard() {
+    let conn = test_db("board").await;
+    let alice = user(&conn, "alice", true).await;
+    let guest = user(&conn, "Guest 1", false).await;
+    let season = season();
+
+    assert_eq!(
+        submit(&conn, Some(&guest), form("x", 0)).await,
+        Err(SubmitError::SignIn)
+    );
+    assert_eq!(
+        submit(&conn, Some(&alice), form("", 0)).await,
+        Err(SubmitError::Name)
+    );
+    let bad_url = Form {
+        source_url: "http://x".into(),
+        ..form("x", 0)
+    };
+    assert_eq!(
+        submit(&conn, Some(&alice), bad_url).await,
+        Err(SubmitError::Url)
+    );
+    let not_wasm = Form {
+        wasm: b"hello".to_vec(),
+        ..form("x", 0)
+    };
+    assert_eq!(
+        submit(&conn, Some(&alice), not_wasm).await,
+        Err(SubmitError::NotWasm)
+    );
+
+    let a1 = submit(&conn, Some(&alice), form("first", 1)).await.unwrap();
+    assert_eq!(
+        submit(&conn, Some(&alice), form("again", 1)).await,
+        Err(SubmitError::Duplicate)
+    );
+    let a2 = submit(&conn, Some(&alice), form("second", 2))
+        .await
+        .unwrap();
+    let a3 = submit(&conn, Some(&alice), form("third", 3)).await.unwrap();
+    assert_eq!(
+        submit(&conn, Some(&alice), form("fourth", 4)).await,
+        Err(SubmitError::Limit)
+    );
+    let house = submit(&conn, None, form("Hashi CDCL", 5)).await.unwrap();
+
+    apply(
+        &conn,
+        &Report::Progress {
+            id: a1,
+            season,
+            done: 3,
+            total: 34,
+        },
+    )
+    .await
+    .unwrap();
+    let s = submission(&conn, a1, Some(alice.id))
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (s.state, s.progress, s.total, s.mine),
+        (DojoState::Running, 3, 34, true)
+    );
+
+    apply(
+        &conn,
+        &Report::Finished {
+            id: a1,
+            season,
+            score: score(2.0, 0),
+            fingerprint: vec![],
+        },
+    )
+    .await
+    .unwrap();
+    apply(
+        &conn,
+        &Report::Finished {
+            id: a2,
+            season,
+            score: score(1.0, 0),
+            fingerprint: vec![],
+        },
+    )
+    .await
+    .unwrap();
+    apply(
+        &conn,
+        &Report::Finished {
+            id: a3,
+            season,
+            score: score(0.5, 1),
+            fingerprint: vec![],
+        },
+    )
+    .await
+    .unwrap();
+    apply(
+        &conn,
+        &Report::Finished {
+            id: house,
+            season,
+            score: score(1.5, 0),
+            fingerprint: vec![],
+        },
+    )
+    .await
+    .unwrap();
+    // Stale seasons are ignored
+    apply(
+        &conn,
+        &Report::Finished {
+            id: a1,
+            season: season + 1,
+            score: score(0.1, 0),
+            fingerprint: vec![],
+        },
+    )
+    .await
+    .unwrap();
+
+    let board = board(&conn).await.unwrap();
+    let names: Vec<_> = board
+        .entries
+        .iter()
+        .map(|e| (e.rank, e.name.as_str()))
+        .collect();
+    // Alice's best (the wrong one is disqualified), then the house entry
+    assert_eq!(names, [(1, "second"), (2, "Hashi CDCL")]);
+    assert_eq!(
+        submission(&conn, a2, None).await.unwrap().unwrap().rank,
+        Some(1)
+    );
+    assert_eq!(
+        submission(&conn, a1, None).await.unwrap().unwrap().rank,
+        None
+    );
+
+    let me = me(&conn, Some(&alice)).await.unwrap();
+    assert_eq!(
+        (me.registered, me.left_today, me.submissions.len()),
+        (true, 0, 3)
+    );
+
+    apply(
+        &conn,
+        &Report::Rejected {
+            id: house,
+            season,
+            reason: Rejection::NoStart,
+        },
+    )
+    .await
+    .unwrap();
+    let s = submission(&conn, house, None).await.unwrap().unwrap();
+    assert_eq!(
+        (s.state, s.rejection),
+        (DojoState::Rejected, Some(Rejection::NoStart))
+    );
+}
+
+#[tokio::test]
+async fn copies_and_throwaway_accounts() {
+    let conn = test_db("copies").await;
+    let alice = user(&conn, "alice2", true).await;
+    let bob = user(&conn, "bob2", true).await;
+    let season = season();
+
+    // The same code with a custom section added (a renamed copy) is the same code
+    let original = submit(&conn, Some(&alice), form("original", 40))
+        .await
+        .unwrap();
+    let mut padded = module(40);
+    padded.extend_from_slice(&[0, 4, 3, b'p', b'a', b'd']);
+    let copy = Form {
+        wasm: padded,
+        ..form("mine now", 40)
+    };
+    assert_eq!(
+        submit(&conn, Some(&bob), copy).await,
+        Err(SubmitError::Duplicate)
+    );
+
+    // A changed copy behaves the same: only the earlier one is ranked
+    let near = submit(&conn, Some(&bob), form("tweaked", 41))
+        .await
+        .unwrap();
+    let other = submit(&conn, Some(&bob), form("really different", 42))
+        .await
+        .unwrap();
+    for (id, fp) in [
+        (near, fingerprint(1.005)),
+        (original, fingerprint(1.0)),
+        (other, fingerprint(3.0)),
+    ] {
+        apply(
+            &conn,
+            &Report::Finished {
+                id,
+                season,
+                score: score(1.0, 0),
+                fingerprint: fp,
+            },
+        )
+        .await
+        .unwrap();
+    }
+    let s = submission(&conn, near, None).await.unwrap().unwrap();
+    assert_eq!((s.similar_to, s.rank), (Some(original), None));
+    assert_eq!(
+        submission(&conn, original, None)
+            .await
+            .unwrap()
+            .unwrap()
+            .similar_to,
+        None
+    );
+    assert_eq!(
+        submission(&conn, other, None)
+            .await
+            .unwrap()
+            .unwrap()
+            .similar_to,
+        None
+    );
+    assert!(dojo::similar(&fingerprint(1.0), &fingerprint(1.01)));
+    assert!(!dojo::similar(&fingerprint(1.0), &fingerprint(1.2)));
+
+    // A new account waits a day
+    let fresh = User {
+        created_at: now_ms(),
+        ..user(&conn, "fresh", true).await
+    };
+    assert_eq!(
+        submit(&conn, Some(&fresh), form("x", 50)).await,
+        Err(SubmitError::AccountAge)
+    );
+
+    // Three a day per network, whatever the account
+    let carol = user(&conn, "carol", true).await;
+    let dave = user(&conn, "dave", true).await;
+    let net = |name: &str, extra| Form {
+        network: Some("network-1".into()),
+        ..form(name, extra)
+    };
+    submit(&conn, Some(&carol), net("c1", 60)).await.unwrap();
+    submit(&conn, Some(&carol), net("c2", 61)).await.unwrap();
+    submit(&conn, Some(&dave), net("d1", 62)).await.unwrap();
+    assert_eq!(
+        submit(&conn, Some(&dave), net("d2", 63)).await,
+        Err(SubmitError::NetworkLimit)
+    );
+    // ...but other networks are fine
+    let elsewhere = Form {
+        network: Some("network-2".into()),
+        ..form("d3", 64)
+    };
+    submit(&conn, Some(&dave), elsewhere).await.unwrap();
+}
+
+#[test]
+fn code_hash_ignores_custom_sections() {
+    let mut named = module(7);
+    named.extend_from_slice(&[0, 5, 4, b'n', b'a', b'm', b'e']);
+    assert_eq!(code_hash(&module(7)), code_hash(&named));
+    assert_ne!(code_hash(&module(7)), code_hash(&module(8)));
+    assert_eq!(code_hash(b"not wasm"), None);
+}
+
+#[tokio::test]
+async fn stale_runs_are_retried() {
+    let conn = test_db("stale").await;
+    let alice = user(&conn, "bob", true).await;
+    let id = submit(&conn, Some(&alice), form("x", 9)).await.unwrap();
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'running', attempts = 1, updated_at = 0 WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    housekeeping(&conn).await.unwrap();
+    assert_eq!(
+        submission(&conn, id, None).await.unwrap().unwrap().state,
+        DojoState::Queued
+    );
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'running', attempts = 3, updated_at = 0 WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    housekeeping(&conn).await.unwrap();
+    assert_eq!(
+        submission(&conn, id, None).await.unwrap().unwrap().state,
+        DojoState::Failed
+    );
+}

@@ -11,7 +11,10 @@ The frontend is [Leptos](https://leptos.dev) 0.8 (SSR + hydration) with Tailwind
 
 ## Folder Structure
 
-- **src**: The Leptos web app (`app.rs` routes, `pages/`, `components/` incl. the board and rust-ui components, `state.rs` client state, `api.rs` server functions).
+- **src**: The Leptos web app, a folder per area with a `mod.rs` that re-exports what the rest of the app uses:
+  - `app.rs` the routes, `pages/<page>/` one folder per page (its cards and widgets as files), `components/` shared components (the board, layout, leaderboards, rust-ui in `ui/`)
+  - `state/` client state (game, settings, toasts, solver calls), `api/` server functions per area, `model/` types shared by server and browser
+  - `server/` server only code: database, accounts, the daily (`server/daily/`) and the SAT Dojo (`server/dojo/`)
 - **style**: `tailwind.css`, the Tailwind v4 entry point and the theme (day 昼 / night 夜).
 - **public**: Static assets (favicon).
 - **common**: Types shared by the frontend and the backend: puzzle, board geometry and validation, solver/generator options and results.

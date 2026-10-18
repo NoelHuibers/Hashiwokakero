@@ -1,0 +1,299 @@
+//! The game being played: puzzle, bridges, undo and redo, saved in the browser.
+
+use common::{Board, Difficulty, GenerateParams, Puzzle, SolveReport};
+use leptos::prelude::*;
+use serde::{Deserialize, Serialize};
+
+use super::browser::{load, store};
+use crate::i18n::{Locale, td_string};
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Source {
+    Generated(GenerateParams),
+    Daily {
+        date: String,
+        params: GenerateParams,
+    },
+    Custom,
+    Imported(String),
+}
+
+impl Source {
+    pub fn title(&self, locale: Locale) -> String {
+        match self {
+            Self::Generated(p) => format!(
+                "{} {}×{}",
+                crate::lang::difficulty_name(locale, p.difficulty),
+                p.width,
+                p.height
+            ),
+            Self::Daily { date, .. } => td_string!(locale, common.source.daily, date),
+            Self::Custom => td_string!(locale, common.source.custom).to_string(),
+            Self::Imported(name) => td_string!(locale, common.source.imported, name),
+        }
+    }
+
+    pub fn difficulty(&self) -> Option<Difficulty> {
+        match self {
+            Self::Generated(p) | Self::Daily { params: p, .. } => Some(p.difficulty),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Status {
+    /// Nothing loaded yet.
+    Empty,
+    Playing,
+    /// Solved by the player.
+    Won,
+    /// The SAT solver showed the solution.
+    Revealed,
+}
+
+#[derive(Serialize, Deserialize)]
+struct SavedGame {
+    puzzle: Puzzle,
+    bridges: Vec<u8>,
+    solution: Option<Vec<u8>>,
+    unique: Option<bool>,
+    source: Source,
+    status: Status,
+    elapsed: u32,
+    moves: u32,
+    hints: u32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Game {
+    pub board: RwSignal<Board>,
+    pub bridges: RwSignal<Vec<u8>>,
+    pub undo_stack: RwSignal<Vec<Vec<u8>>>,
+    pub redo_stack: RwSignal<Vec<Vec<u8>>>,
+    /// Solution from the generator or the SAT solver.
+    pub solution: RwSignal<Option<Vec<u8>>>,
+    pub unique: RwSignal<Option<bool>>,
+    pub source: RwSignal<Source>,
+    pub status: RwSignal<Status>,
+    pub elapsed: RwSignal<u32>,
+    pub moves: RwSignal<u32>,
+    pub hints: RwSignal<u32>,
+    pub wrong: RwSignal<Vec<usize>>,
+    pub hint: RwSignal<Option<usize>>,
+    pub loading: RwSignal<bool>,
+    /// Incremented for every new puzzle, so late async results can be dropped.
+    pub epoch: RwSignal<u32>,
+    /// Solver stats of the last run on this puzzle.
+    pub report: RwSignal<Option<SolveReport>>,
+    pub solving: RwSignal<bool>,
+    restored: StoredValue<bool>,
+    /// Local storage key of the saved game.
+    key: &'static str,
+}
+
+impl Game {
+    pub fn new(key: &'static str) -> Self {
+        let board = Board::new(Puzzle::empty(7, 7));
+        Self {
+            bridges: RwSignal::new(board.empty_bridges()),
+            board: RwSignal::new(board),
+            undo_stack: RwSignal::new(vec![]),
+            redo_stack: RwSignal::new(vec![]),
+            solution: RwSignal::new(None),
+            unique: RwSignal::new(None),
+            source: RwSignal::new(Source::Custom),
+            status: RwSignal::new(Status::Empty),
+            elapsed: RwSignal::new(0),
+            moves: RwSignal::new(0),
+            hints: RwSignal::new(0),
+            wrong: RwSignal::new(vec![]),
+            hint: RwSignal::new(None),
+            loading: RwSignal::new(false),
+            epoch: RwSignal::new(0),
+            report: RwSignal::new(None),
+            solving: RwSignal::new(false),
+            restored: StoredValue::new(false),
+            key,
+        }
+    }
+
+    /// Restores the saved game once (browser only). Returns whether a game is loaded.
+    pub fn ensure_restored(&self) -> bool {
+        if !self.restored.get_value() {
+            self.restored.set_value(true);
+            self.restore();
+        }
+        self.status.get_untracked() != Status::Empty
+    }
+
+    pub fn set_puzzle(
+        &self,
+        puzzle: Puzzle,
+        solution: Option<Vec<u8>>,
+        unique: Option<bool>,
+        source: Source,
+    ) {
+        let board = Board::new(puzzle);
+        let solution = solution.filter(|s| s.len() == board.edges.len());
+        self.bridges.set(board.empty_bridges());
+        self.board.set(board);
+        self.solution.set(solution);
+        self.unique.set(unique);
+        self.source.set(source);
+        self.status.set(Status::Playing);
+        self.elapsed.set(0);
+        self.moves.set(0);
+        self.hints.set(0);
+        self.undo_stack.set(vec![]);
+        self.redo_stack.set(vec![]);
+        self.wrong.set(vec![]);
+        self.hint.set(None);
+        self.report.set(None);
+        self.epoch.update(|e| *e += 1);
+    }
+
+    pub fn is_playing(&self) -> bool {
+        self.status.get_untracked() == Status::Playing
+    }
+
+    /// Applies bridge changes as one undoable step.
+    pub fn set_edges(&self, changes: &[(usize, u8)]) {
+        let before = self.bridges.get_untracked();
+        if changes.iter().all(|&(e, v)| before.get(e) == Some(&v)) {
+            return;
+        }
+        self.undo_stack.update(|u| {
+            u.push(before);
+            if u.len() > 500 {
+                u.remove(0);
+            }
+        });
+        self.redo_stack.update(Vec::clear);
+        self.bridges.update(|b| {
+            for &(e, v) in changes {
+                if let Some(slot) = b.get_mut(e) {
+                    *slot = v;
+                }
+            }
+        });
+        self.wrong.set(vec![]);
+    }
+
+    /// Adds (+1) or removes (-1) a bridge, cycling between 0, 1 and 2.
+    pub fn cycle(&self, edge: usize, delta: i8) {
+        if !self.is_playing() {
+            return;
+        }
+        let current = self
+            .bridges
+            .with_untracked(|b| b.get(edge).copied().unwrap_or(0));
+        let next = (current.cast_signed() + delta)
+            .rem_euclid(3)
+            .cast_unsigned();
+        self.set_edges(&[(edge, next)]);
+        self.moves.update(|m| *m += 1);
+        self.hint.set(None);
+    }
+
+    pub fn undo(&self) {
+        if !self.is_playing() {
+            return;
+        }
+        if let Some(prev) = self.undo_stack.try_update(Vec::pop).flatten() {
+            let current = self.bridges.get_untracked();
+            self.redo_stack.update(|r| r.push(current));
+            self.bridges.set(prev);
+            self.wrong.set(vec![]);
+        }
+    }
+
+    pub fn redo(&self) {
+        if !self.is_playing() {
+            return;
+        }
+        if let Some(next) = self.redo_stack.try_update(Vec::pop).flatten() {
+            let current = self.bridges.get_untracked();
+            self.undo_stack.update(|u| u.push(current));
+            self.bridges.set(next);
+            self.wrong.set(vec![]);
+        }
+    }
+
+    /// Removes all bridges and starts over.
+    pub fn restart(&self) {
+        let empty = self.board.with_untracked(Board::empty_bridges);
+        if self.status.get_untracked() == Status::Playing {
+            let changes: Vec<(usize, u8)> = (0..empty.len()).map(|e| (e, 0)).collect();
+            self.set_edges(&changes);
+        } else {
+            self.undo_stack.set(vec![]);
+            self.redo_stack.set(vec![]);
+            self.bridges.set(empty);
+            self.status.set(Status::Playing);
+            self.elapsed.set(0);
+            self.moves.set(0);
+            self.hints.set(0);
+        }
+        self.hint.set(None);
+    }
+
+    pub fn puzzle(&self) -> Puzzle {
+        self.board.with_untracked(|b| b.puzzle.clone())
+    }
+
+    pub(super) fn save(&self) {
+        if self.status.get() == Status::Empty {
+            return;
+        }
+        let saved = SavedGame {
+            puzzle: self.board.with(|b| b.puzzle.clone()),
+            bridges: self.bridges.get(),
+            solution: self.solution.get(),
+            unique: self.unique.get(),
+            source: self.source.get(),
+            status: self.status.get(),
+            elapsed: self.elapsed.get(),
+            moves: self.moves.get(),
+            hints: self.hints.get(),
+        };
+        store(self.key, &saved);
+    }
+
+    /// Restores the last game from local storage.
+    fn restore(&self) -> bool {
+        let Some(saved) = load::<SavedGame>(self.key) else {
+            return false;
+        };
+        let board = Board::new(saved.puzzle);
+        if saved.bridges.len() != board.edges.len() || board.puzzle.islands.is_empty() {
+            return false;
+        }
+        self.set_puzzle(board.puzzle, saved.solution, saved.unique, saved.source);
+        self.bridges.set(saved.bridges);
+        self.status.set(saved.status);
+        self.elapsed.set(saved.elapsed);
+        self.moves.set(saved.moves);
+        self.hints.set(saved.hints);
+        true
+    }
+}
+
+impl Game {
+    /// Restores the saved bridges if they belong to `puzzle` (daily progress of today).
+    pub fn restore_progress(&self, puzzle: &Puzzle) -> bool {
+        let Some(saved) = load::<SavedGame>(self.key) else {
+            return false;
+        };
+        if saved.puzzle != *puzzle || saved.bridges.len() != self.bridges.with_untracked(Vec::len) {
+            return false;
+        }
+        self.bridges.set(saved.bridges);
+        self.moves.set(saved.moves);
+        true
+    }
+}
+
+/// The daily puzzle, separate from the practice game so neither overwrites the other.
+#[derive(Clone, Copy, Debug)]
+pub struct DailyGame(pub Game);
