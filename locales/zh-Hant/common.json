@@ -62,7 +62,8 @@
     "not_solved": "這還不是正確解答喔。",
     "wrong_puzzle": "這些橋不屬於這道謎題。",
     "already_finished": "你已經完成過這道每日謎題了。",
-    "daily_locked": "這是今天的每日謎題：等你自己完成後，求解器才會幫忙。"
+    "daily_locked": "這是今天的每日謎題：等你自己完成後，求解器才會幫忙。",
+    "forbidden": "僅限管理員。"
   },
   "solver": {
     "title": "SAT 求解器",

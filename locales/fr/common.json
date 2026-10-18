@@ -62,7 +62,8 @@
     "not_solved": "Ce n’est pas encore une solution.",
     "wrong_puzzle": "Ces ponts n’appartiennent pas à cette grille.",
     "already_finished": "Tu as déjà terminé ce défi du jour.",
-    "daily_locked": "C’est le défi du jour : les solveurs t’aideront une fois que tu l’auras terminé toi-même."
+    "daily_locked": "C’est le défi du jour : les solveurs t’aideront une fois que tu l’auras terminé toi-même.",
+    "forbidden": "Réservé aux admins."
   },
   "solver": {
     "title": "Solveur SAT",

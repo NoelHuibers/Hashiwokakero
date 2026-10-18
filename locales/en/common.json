@@ -62,7 +62,8 @@
     "not_solved": "That isn't a solution yet.",
     "wrong_puzzle": "These bridges don't belong to this puzzle.",
     "already_finished": "You already finished this daily.",
-    "daily_locked": "That's today's daily: the solvers will help with it once you've finished it yourself."
+    "daily_locked": "That's today's daily: the solvers will help with it once you've finished it yourself.",
+    "forbidden": "That's only for admins."
   },
   "solver": {
     "title": "SAT Solver",

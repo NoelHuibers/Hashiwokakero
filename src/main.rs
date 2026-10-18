@@ -56,6 +56,12 @@ async fn main() {
                 axum::routing::post(hashi::server::admin::flag),
             )
             .route(
+                "/admin/house",
+                axum::routing::post(hashi::server::admin::house_form).layer(
+                    axum::extract::DefaultBodyLimit::max(dojo::MAX_WASM_BYTES + 64 * 1024),
+                ),
+            )
+            .route(
                 "/dojo/board.json",
                 axum::routing::get(hashi::server::dojo::board_json),
             )

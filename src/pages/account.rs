@@ -326,7 +326,21 @@ pub fn AccountPage() -> impl IntoView {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent class="flex flex-col gap-2">
+                            {move || {
+                                auth.user
+                                    .with(|u| u.as_ref().is_some_and(|u| u.admin))
+                                    .then(|| {
+                                        view! {
+                                            <a
+                                                href="/admin"
+                                                class="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground"
+                                            >
+                                                "管理 · Admin dashboard"
+                                            </a>
+                                        }
+                                    })
+                            }}
                             <Button variant=ButtonVariant::Outline class="w-full" on:click=sign_out>
                                 {t!(i18n, account.sign_out)}
                             </Button>

@@ -62,7 +62,8 @@
     "not_solved": "Isso ainda não é uma solução.",
     "wrong_puzzle": "Estas pontes não pertencem a este puzzle.",
     "already_finished": "Você já terminou este desafio diário.",
-    "daily_locked": "Esse é o desafio diário de hoje: os solvers vão ajudar depois que você terminar sozinho."
+    "daily_locked": "Esse é o desafio diário de hoje: os solvers vão ajudar depois que você terminar sozinho.",
+    "forbidden": "Só para administradores."
   },
   "solver": {
     "title": "Solver SAT",
