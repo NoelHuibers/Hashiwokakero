@@ -109,6 +109,17 @@ ALTER TABLE dojo_submissions ADD COLUMN job_token TEXT;
 CREATE INDEX IF NOT EXISTS dojo_code ON dojo_submissions (code_hash);
 CREATE INDEX IF NOT EXISTS dojo_network ON dojo_submissions (ip_hash, created_at);
 ",
+    "
+-- The stamp book: when a player earned each stamp, see server/daily/stamps.rs
+CREATE TABLE IF NOT EXISTS stamps (
+    user_id   INTEGER NOT NULL,
+    stamp     TEXT NOT NULL,
+    earned_at INTEGER NOT NULL,
+    -- the player was told (a toast on the daily page)
+    announced INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, stamp)
+);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

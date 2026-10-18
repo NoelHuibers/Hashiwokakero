@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Papan peringkat harian · Hashi, teka-teki jembatan",
-    "description": "Pemain Hashiwokakero tercepat hari ini, peringkat setiap teka-teki harian sebelumnya, dan hall of fame dengan teka-teki terbanyak dan rentetan terpanjang."
+    "description": "Pemain Hashiwokakero tercepat hari ini, peringkat setiap teka-teki harian sebelumnya, balapan bulanan, dan hall of fame dengan teka-teki terbanyak, medali terbanyak, dan rentetan terpanjang."
   },
   "title": "Papan peringkat",
   "intro": "Semua orang memainkan jembatan yang sama setiap hari. Waktu tercepat menang, petunjuk dan cek menambah waktu, solusi yang dibuka tidak dihitung.",
@@ -15,8 +15,36 @@
   "no_puzzle": "Tidak ada yang bermain hari itu, jadi tidak ada teka-teki.",
   "fame": {
     "title": "Hall of fame",
-    "text": "Teka-teki harian terbanyak yang diselesaikan, dan rentetan hari berturut-turut terpanjang.",
+    "text": "Pemain harian terbaik sepanjang masa.",
     "empty": "Belum ada teka-teki harian yang diselesaikan.",
-    "player": "Pemain"
+    "player": "Pemain",
+    "solved": "Selesai",
+    "medals": "Medali",
+    "streaks": "Rentetan",
+    "medals_text": "金 emas, 銀 perak, dan 銅 perunggu untuk tiga tercepat di setiap teka-teki harian, dihitung setelah harinya berakhir.",
+    "now": "Sekarang",
+    "best": "Terbaik"
+  },
+  "month": {
+    "title": "Balapan bulanan",
+    "text": "10 poin untuk setiap teka-teki harian yang kamu selesaikan, dan hingga 10 poin lagi makin banyak pemain yang kamu kalahkan. Dimulai ulang setiap bulan.",
+    "points": "Poin",
+    "empty": "Belum ada yang punya poin bulan ini. Selesaikan teka-teki harian hari ini dan jadilah yang pertama!",
+    "players": "Ikut balapan: {{ count }}",
+    "label": "{{ month }} {{ year }}",
+    "names": {
+      "jan": "Januari",
+      "feb": "Februari",
+      "mar": "Maret",
+      "apr": "April",
+      "may": "Mei",
+      "jun": "Juni",
+      "jul": "Juli",
+      "aug": "Agustus",
+      "sep": "September",
+      "oct": "Oktober",
+      "nov": "November",
+      "dec": "Desember"
+    }
   }
 }

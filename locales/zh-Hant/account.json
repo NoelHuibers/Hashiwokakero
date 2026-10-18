@@ -12,7 +12,10 @@
     "fastest": "最快",
     "average": "平均",
     "week": "本週",
-    "best_streak_short": "連勝"
+    "best_streak_short": "連勝",
+    "month": "本月",
+    "points": "積分",
+    "medals": "獎牌"
   },
   "last_weeks": "最近五週",
   "calendar_rank": "第 {{ rank }} 名",

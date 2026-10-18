@@ -347,14 +347,17 @@ pub async fn login(
 }
 
 async fn merge_guest(conn: &Connection, guest: i64, user: i64) -> Result<(), ServerFnError> {
-    conn.execute(
+    for sql in [
         "UPDATE OR IGNORE attempts SET user_id = ?1 WHERE user_id = ?2",
-        params![user, guest],
-    )
-    .await
-    .map_err(db_err)?;
+        "UPDATE OR IGNORE stamps SET user_id = ?1 WHERE user_id = ?2",
+    ] {
+        conn.execute(sql, params![user, guest])
+            .await
+            .map_err(db_err)?;
+    }
     for sql in [
         "DELETE FROM attempts WHERE user_id = ?1",
+        "DELETE FROM stamps WHERE user_id = ?1",
         "DELETE FROM sessions WHERE user_id = ?1",
         "DELETE FROM users WHERE id = ?1 AND username IS NULL",
     ] {

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Ranking diário · Hashi, o puzzle das pontes",
-    "description": "Os jogadores mais rápidos de Hashiwokakero hoje, o ranking de cada desafio diário anterior e o hall da fama com mais diários resolvidos e maiores sequências."
+    "description": "Os jogadores mais rápidos de Hashiwokakero hoje, o ranking de cada desafio diário anterior, a corrida do mês e o hall da fama com mais diários resolvidos, medalhas e maiores sequências."
   },
   "title": "Ranking",
   "intro": "Todo mundo joga a mesma ponte a cada dia. Vence o tempo mais rápido, dicas e verificações somam tempo, e soluções reveladas não contam.",
@@ -15,8 +15,36 @@
   "no_puzzle": "Ninguém jogou nesse dia, então não há puzzle.",
   "fame": {
     "title": "Hall da fama",
-    "text": "Mais desafios diários resolvidos e a maior sequência de dias seguidos.",
+    "text": "Os melhores jogadores dos desafios diários de todos os tempos.",
     "empty": "Nenhum desafio diário resolvido ainda.",
-    "player": "Jogador"
+    "player": "Jogador",
+    "solved": "Resolvidos",
+    "medals": "Medalhas",
+    "streaks": "Sequências",
+    "medals_text": "金 ouro, 銀 prata e 銅 bronze para os três mais rápidos de um diário, contados quando o dia termina.",
+    "now": "Atual",
+    "best": "Recorde"
+  },
+  "month": {
+    "title": "Corrida do mês",
+    "text": "10 pontos por cada diário resolvido, e até 10 a mais quanto mais jogadores você superar. Recomeça todo mês.",
+    "points": "Pontos",
+    "empty": "Ninguém tem pontos neste mês ainda. Resolva o desafio de hoje e seja o primeiro!",
+    "players": "Na corrida: {{ count }}",
+    "label": "{{ month }} de {{ year }}",
+    "names": {
+      "jan": "Janeiro",
+      "feb": "Fevereiro",
+      "mar": "Março",
+      "apr": "Abril",
+      "may": "Maio",
+      "jun": "Junho",
+      "jul": "Julho",
+      "aug": "Agosto",
+      "sep": "Setembro",
+      "oct": "Outubro",
+      "nov": "Novembro",
+      "dec": "Dezembro"
+    }
   }
 }

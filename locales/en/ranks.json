@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Daily leaderboard · Hashi, the bridges puzzle",
-    "description": "Today's fastest Hashiwokakero solvers, the ranking of every past daily puzzle, and the hall of fame of the most solved dailies and longest streaks."
+    "description": "Today's fastest Hashiwokakero solvers, the ranking of every past daily puzzle, the monthly race, and the hall of fame of the most solved dailies, medals and longest streaks."
   },
   "title": "Leaderboard",
   "intro": "Everyone plays the same bridge each day. Fastest time wins, hints and checks add to it, revealed solutions don't count.",
@@ -15,8 +15,36 @@
   "no_puzzle": "Nobody played that day, so there is no puzzle.",
   "fame": {
     "title": "Hall of fame",
-    "text": "Most dailies solved, and the longest streak of days in a row.",
+    "text": "The best daily players of all time.",
     "empty": "No dailies solved yet.",
-    "player": "Player"
+    "player": "Player",
+    "solved": "Solved",
+    "medals": "Medals",
+    "streaks": "Streaks",
+    "medals_text": "金 gold, 銀 silver and 銅 bronze for the three fastest of a daily, counted once the day is over.",
+    "now": "Now",
+    "best": "Best"
+  },
+  "month": {
+    "title": "Monthly race",
+    "text": "10 points for every daily you solve, and up to 10 more the more players you beat. Starts again every month.",
+    "points": "Points",
+    "empty": "Nobody has points this month yet. Solve today's daily to be the first!",
+    "players": "In the race: {{ count }}",
+    "label": "{{ month }} {{ year }}",
+    "names": {
+      "jan": "January",
+      "feb": "February",
+      "mar": "March",
+      "apr": "April",
+      "may": "May",
+      "jun": "June",
+      "jul": "July",
+      "aug": "August",
+      "sep": "September",
+      "oct": "October",
+      "nov": "November",
+      "dec": "December"
+    }
   }
 }

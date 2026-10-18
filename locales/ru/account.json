@@ -12,7 +12,10 @@
     "fastest": "Рекорд",
     "average": "В среднем",
     "week": "За неделю",
-    "best_streak_short": "Серия"
+    "best_streak_short": "Серия",
+    "month": "За месяц",
+    "points": "Очки",
+    "medals": "Медали"
   },
   "last_weeks": "Последние пять недель",
   "calendar_rank": "место {{ rank }}",

@@ -25,7 +25,8 @@
     "ranking": "Sıralanıyor…",
     "more": "Pratik modunda daha fazla bulmaca →",
     "on_board": "Sıralamadaki adın: <b>{{ name }}</b>",
-    "claim": "Serini her cihazda korumak için adını sahiplen →"
+    "claim": "Serini her cihazda korumak için adını sahiplen →",
+    "points": "Aylık yarışta +{{ points }} puan"
   },
   "ranking": {
     "title": "Bugünün sıralaması",

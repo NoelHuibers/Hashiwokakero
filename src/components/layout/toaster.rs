@@ -1,0 +1,36 @@
+//! Toasts: short messages in a corner of the screen.
+
+use leptos::prelude::*;
+
+use crate::i18n::use_i18n;
+use crate::state::{ToastKind, Toasts};
+
+#[component]
+pub fn Toaster() -> impl IntoView {
+    let i18n = use_i18n();
+    let toasts = expect_context::<Toasts>();
+    view! {
+        <div class="pointer-events-none fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] end-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2 md:bottom-4">
+            <For
+                each=move || toasts.0.get()
+                key=|t| t.id
+                children=move |t| {
+                    let (mark, class) = match t.kind {
+                        ToastKind::Success => ("◎", "border-success/40 bg-success-light text-success-dark"),
+                        ToastKind::Error => ("✕", "border-destructive/40 bg-card text-destructive"),
+                        ToastKind::Info => ("◇", "border-border bg-card text-foreground"),
+                    };
+                    let text = t.text.clone();
+                    view! {
+                        <div class=format!(
+                            "pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2 {class}",
+                        )>
+                            <span class="font-pixel">{mark}</span>
+                            <span>{move || text(i18n.get_locale())}</span>
+                        </div>
+                    }
+                }
+            />
+        </div>
+    }
+}

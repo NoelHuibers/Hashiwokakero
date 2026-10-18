@@ -25,7 +25,8 @@
     "ranking": "Classifica…",
     "more": "Altri puzzle in modalità allenamento →",
     "on_board": "Sei in classifica come <b>{{ name }}</b>.",
-    "claim": "Registra il tuo nome per tenere la serie su ogni dispositivo →"
+    "claim": "Registra il tuo nome per tenere la serie su ogni dispositivo →",
+    "points": "+{{ points }} punti nella gara del mese"
   },
   "ranking": {
     "title": "Classifica di oggi",

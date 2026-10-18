@@ -25,7 +25,8 @@
     "ranking": "Liczę miejsce…",
     "more": "Więcej łamigłówek w trybie treningu →",
     "on_board": "Jesteś w rankingu jako <b>{{ name }}</b>.",
-    "claim": "Zarezerwuj swoją nazwę, by mieć serię na każdym urządzeniu →"
+    "claim": "Zarezerwuj swoją nazwę, by mieć serię na każdym urządzeniu →",
+    "points": "+{{ points }} pkt w wyścigu miesiąca"
   },
   "ranking": {
     "title": "Dzisiejszy ranking",

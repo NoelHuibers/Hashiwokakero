@@ -12,7 +12,10 @@
     "fastest": "الأسرع",
     "average": "المتوسط",
     "week": "هذا الأسبوع",
-    "best_streak_short": "السلسلة"
+    "best_streak_short": "السلسلة",
+    "month": "هذا الشهر",
+    "points": "النقاط",
+    "medals": "الميداليات"
   },
   "last_weeks": "آخر خمسة أسابيع",
   "calendar_rank": "المركز {{ rank }}",

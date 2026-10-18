@@ -25,7 +25,8 @@
     "ranking": "Classificando…",
     "more": "Mais puzzles no modo treino →",
     "on_board": "Você está no ranking como <b>{{ name }}</b>.",
-    "claim": "Registre seu nome para manter sua sequência em qualquer dispositivo →"
+    "claim": "Registre seu nome para manter sua sequência em qualquer dispositivo →",
+    "points": "+{{ points }} pontos na corrida do mês"
   },
   "ranking": {
     "title": "Ranking de hoje",

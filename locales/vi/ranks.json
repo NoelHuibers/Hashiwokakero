@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Bảng xếp hạng hằng ngày · Hashi, câu đố nối cầu",
-    "description": "Những người giải Hashiwokakero nhanh nhất hôm nay, bảng xếp hạng của mọi câu đố ngày trước và bảng vinh danh: giải nhiều nhất và chuỗi ngày dài nhất."
+    "description": "Những người giải Hashiwokakero nhanh nhất hôm nay, bảng xếp hạng của mọi câu đố ngày trước, cuộc đua hằng tháng và bảng vinh danh: giải nhiều nhất, nhiều huy chương nhất và chuỗi ngày dài nhất."
   },
   "title": "Bảng xếp hạng",
   "intro": "Mỗi ngày mọi người chơi cùng một cây cầu. Thời gian nhanh nhất thắng, gợi ý và kiểm tra bị cộng giờ, lời giải được tiết lộ thì không tính.",
@@ -15,8 +15,36 @@
   "no_puzzle": "Hôm đó không ai chơi nên không có câu đố.",
   "fame": {
     "title": "Bảng vinh danh",
-    "text": "Giải nhiều câu đố mỗi ngày nhất, và chuỗi ngày liên tiếp dài nhất.",
+    "text": "Những người chơi hằng ngày giỏi nhất mọi thời đại.",
     "empty": "Chưa có câu đố ngày nào được giải.",
-    "player": "Người chơi"
+    "player": "Người chơi",
+    "solved": "Đã giải",
+    "medals": "Huy chương",
+    "streaks": "Chuỗi",
+    "medals_text": "金 vàng, 銀 bạc và 銅 đồng cho ba người nhanh nhất của mỗi câu đố ngày, được tính khi ngày đó kết thúc.",
+    "now": "Hiện tại",
+    "best": "Kỷ lục"
+  },
+  "month": {
+    "title": "Cuộc đua hằng tháng",
+    "text": "10 điểm cho mỗi câu đố ngày bạn giải, và thêm tối đa 10 điểm tùy số người chơi bạn vượt qua. Bắt đầu lại mỗi tháng.",
+    "points": "Điểm",
+    "empty": "Tháng này chưa ai có điểm. Hãy giải câu đố hôm nay để là người đầu tiên!",
+    "players": "Tham gia đua: {{ count }}",
+    "label": "{{ month }} năm {{ year }}",
+    "names": {
+      "jan": "Tháng 1",
+      "feb": "Tháng 2",
+      "mar": "Tháng 3",
+      "apr": "Tháng 4",
+      "may": "Tháng 5",
+      "jun": "Tháng 6",
+      "jul": "Tháng 7",
+      "aug": "Tháng 8",
+      "sep": "Tháng 9",
+      "oct": "Tháng 10",
+      "nov": "Tháng 11",
+      "dec": "Tháng 12"
+    }
   }
 }

@@ -25,7 +25,8 @@
     "ranking": "Ranking…",
     "more": "More puzzles in practice mode →",
     "on_board": "You're on the board as <b>{{ name }}</b>.",
-    "claim": "Claim your name to keep your streak on every device →"
+    "claim": "Claim your name to keep your streak on every device →",
+    "points": "+{{ points }} points in the monthly race"
   },
   "ranking": {
     "title": "Today's ranking",

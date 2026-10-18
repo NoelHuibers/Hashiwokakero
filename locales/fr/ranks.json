@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Classement du jour · Hashi, le casse-tête des ponts",
-    "description": "Les joueurs de Hashiwokakero les plus rapides du jour, le classement de chaque défi passé et le panthéon des défis les plus résolus et des plus longues séries."
+    "description": "Les joueurs de Hashiwokakero les plus rapides du jour, le classement de chaque défi passé, la course du mois et le panthéon des défis les plus résolus, des médailles et des plus longues séries."
   },
   "title": "Classement",
   "intro": "Chaque jour, tout le monde joue le même pont. Le meilleur temps gagne, les indices et vérifications s’y ajoutent, les solutions révélées ne comptent pas.",
@@ -15,8 +15,36 @@
   "no_puzzle": "Personne n’a joué ce jour-là, il n’y a donc pas de grille.",
   "fame": {
     "title": "Panthéon",
-    "text": "Le plus de défis résolus, et la plus longue série de jours d’affilée.",
+    "text": "Les meilleurs joueurs des défis du jour, de tous les temps.",
     "empty": "Aucun défi résolu pour l’instant.",
-    "player": "Joueur"
+    "player": "Joueur",
+    "solved": "Résolus",
+    "medals": "Médailles",
+    "streaks": "Séries",
+    "medals_text": "金 or, 銀 argent et 銅 bronze pour les trois plus rapides d’un défi, comptés une fois la journée terminée.",
+    "now": "En cours",
+    "best": "Record"
+  },
+  "month": {
+    "title": "Course du mois",
+    "text": "10 points pour chaque défi résolu, et jusqu’à 10 de plus selon le nombre de joueurs que tu bats. Repart de zéro chaque mois.",
+    "points": "Points",
+    "empty": "Personne n’a encore de points ce mois-ci. Résous le défi du jour pour être le premier !",
+    "players": "Dans la course : {{ count }}",
+    "label": "{{ month }} {{ year }}",
+    "names": {
+      "jan": "Janvier",
+      "feb": "Février",
+      "mar": "Mars",
+      "apr": "Avril",
+      "may": "Mai",
+      "jun": "Juin",
+      "jul": "Juillet",
+      "aug": "Août",
+      "sep": "Septembre",
+      "oct": "Octobre",
+      "nov": "Novembre",
+      "dec": "Décembre"
+    }
   }
 }

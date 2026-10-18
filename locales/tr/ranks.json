@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Günlük sıralama · Hashi, köprü bulmacası",
-    "description": "Bugünün en hızlı Hashiwokakero çözücüleri, geçmiş tüm günlük bulmacaların sıralaması ve en çok bulmaca çözenlerle en uzun serilerin şöhretler listesi."
+    "description": "Bugünün en hızlı Hashiwokakero çözücüleri, geçmiş tüm günlük bulmacaların sıralaması, aylık yarış ve en çok bulmaca çözenlerin, en çok madalya alanların ve en uzun serilerin şöhretler listesi."
   },
   "title": "Sıralama",
   "intro": "Herkes her gün aynı köprüyü oynar. En hızlı süre kazanır, ipuçları ve kontroller süreye eklenir, açılan çözümler sayılmaz.",
@@ -15,8 +15,36 @@
   "no_puzzle": "O gün kimse oynamadı, bu yüzden bulmaca yok.",
   "fame": {
     "title": "Şöhretler listesi",
-    "text": "En çok çözülen günlük bulmaca ve art arda en uzun gün serisi.",
+    "text": "Tüm zamanların en iyi günlük oyuncuları.",
     "empty": "Henüz çözülmüş günlük bulmaca yok.",
-    "player": "Oyuncu"
+    "player": "Oyuncu",
+    "solved": "Çözülen",
+    "medals": "Madalyalar",
+    "streaks": "Seriler",
+    "medals_text": "Bir günlük bulmacanın en hızlı üç oyuncusuna 金 altın, 銀 gümüş ve 銅 bronz; gün bitince sayılır.",
+    "now": "Şimdi",
+    "best": "En iyi"
+  },
+  "month": {
+    "title": "Aylık yarış",
+    "text": "Çözdüğün her günlük bulmaca için 10 puan, ne kadar çok oyuncuyu geçersen 10 puana kadar da ek puan. Her ay yeniden başlar.",
+    "points": "Puan",
+    "empty": "Bu ay henüz kimsenin puanı yok. İlk olmak için bugünün bulmacasını çöz!",
+    "players": "Yarışta: {{ count }}",
+    "label": "{{ month }} {{ year }}",
+    "names": {
+      "jan": "Ocak",
+      "feb": "Şubat",
+      "mar": "Mart",
+      "apr": "Nisan",
+      "may": "Mayıs",
+      "jun": "Haziran",
+      "jul": "Temmuz",
+      "aug": "Ağustos",
+      "sep": "Eylül",
+      "oct": "Ekim",
+      "nov": "Kasım",
+      "dec": "Aralık"
+    }
   }
 }

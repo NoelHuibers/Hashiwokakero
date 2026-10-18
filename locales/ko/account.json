@@ -12,7 +12,10 @@
     "fastest": "최고 기록",
     "average": "평균",
     "week": "이번 주",
-    "best_streak_short": "연속"
+    "best_streak_short": "연속",
+    "month": "이번 달",
+    "points": "포인트",
+    "medals": "메달"
   },
   "last_weeks": "최근 5주",
   "calendar_rank": "{{ rank }}위",
