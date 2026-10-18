@@ -57,13 +57,15 @@
     "hidden_title": "Geheime, frische Formeln",
     "hidden": "Das Test-Set entsteht aus einem geheimen Seed, der sich jede Saison ändert, und jede Formel wird verwürfelt: Variablen umbenannt und negiert, Klauseln gemischt. Ergebnisse gibt es nur pro Familie, nie pro Formel.",
     "checked_title": "Jede Antwort geprüft",
-    "checked": "Modelle werden gegen die Formel geprüft. UNSAT zählt nur bei Formeln, die bekanntermaßen unerfüllbar sind. Eine einzige falsche Antwort disqualifiziert die Einreichung, Raten lohnt sich also nie.",
+    "checked": "Modelle werden gegen die Formel geprüft. UNSAT zählt nur, wo wir einen Beweis haben: Schubfach und Hashi-Parität sind konstruktionsbedingt unerfüllbar, jedes andere UNSAT-Label kommt mit einem DRAT-Beweis, den unser eigener Checker verifiziert hat. Eine einzige falsche Antwort disqualifiziert die Einreichung, Raten lohnt sich also nie.",
     "sandbox_title": "Eine versiegelte Sandbox",
     "sandbox": "Keine Dateien, kein Netzwerk, keine Umgebungsvariablen. Speicher und Ausgabe sind begrenzt, und Einreichungen laufen auf einer separaten Maschine ohne Daten.",
     "accounts_title": "Ein Konto, bester Eintrag",
-    "accounts": "Registrierte Konten können dreimal am Tag einreichen. Identische Dateien werden abgelehnt, und nur deine beste Einreichung kommt in die Wertung.",
+    "accounts": "Konten müssen einen Tag alt sein, um einzureichen, und es gibt drei Einreichungen am Tag pro Konto und pro Netzwerk. Identischer Code wird abgelehnt, auch umbenannt oder aufgefüllt, und nur deine beste Einreichung kommt in die Wertung.",
     "seasons_title": "Saisons",
-    "seasons": "Eine neue Saison bringt ein neues geheimes Test-Set, und jede Einreichung wird neu bewertet."
+    "seasons": "Eine neue Saison bringt ein neues geheimes Test-Set, und jede Einreichung wird neu bewertet.",
+    "copies_title": "Keine Kopien",
+    "copies": "Die Punktzahlen sind exakt, also hinterlässt ein Solver einen Fingerabdruck: den Treibstoff, den er für jede einzelne Formel braucht. Eine Einreichung, die sich wie eine frühere einer anderen Person verhält, kommt nicht in die Wertung. Wer eine Kopie so weit ändert, dass sie dem entgeht, hat einen anderen Solver gebaut, und sie langsamer zu machen bringt sie nur hinter das Original."
   },
   "science": {
     "title": "Für Forschende",
@@ -90,7 +92,10 @@
       "not_wasm": "Das ist keine WebAssembly-Datei.",
       "duplicate": "Genau diese Datei wurde schon einmal eingereicht.",
       "limit": "Du hast heute schon dreimal eingereicht.",
-      "server": "Bei uns ist etwas schiefgelaufen, bitte versuch es noch einmal."
+      "server": "Bei uns ist etwas schiefgelaufen, bitte versuch es noch einmal.",
+      "account_age": "Neue Konten können nach einem Tag einreichen. Bis dahin teste deinen Solver lokal mit dojo run.",
+      "network_limit": "Drei Einreichungen am Tag pro Netzwerk, egal von welchem Konto sie kommen.",
+      "busy": "Die Warteschlange ist gerade voll, bitte versuch es in ein paar Minuten noch einmal."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Zurück zur Rangliste",
     "not_found": "Diese Einreichung gibt es nicht.",
     "season": "Saison {{ season }}",
-    "rank_label": "Rang"
+    "rank_label": "Rang",
+    "similar": "Dieser Solver verhält sich wie <a>Einreichung #{{ id }}</a> einer anderen Person, die zuerst da war. Nur das Original kommt in die Wertung."
   },
   "rejection": {
     "title": "Der Worker hat diese Datei abgelehnt",

@@ -61,7 +61,8 @@
     "not_started": "Prima inizia la sfida del giorno.",
     "not_solved": "Non è ancora una soluzione.",
     "wrong_puzzle": "Questi ponti non appartengono a questo puzzle.",
-    "already_finished": "Hai già completato questa sfida del giorno."
+    "already_finished": "Hai già completato questa sfida del giorno.",
+    "daily_locked": "Questa è la sfida del giorno di oggi: i solver ti aiuteranno dopo che l’avrai completata da solo."
   },
   "solver": {
     "title": "Solver SAT",

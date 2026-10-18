@@ -92,6 +92,23 @@ CREATE INDEX IF NOT EXISTS dojo_board ON dojo_submissions (season, state, par2);
 CREATE INDEX IF NOT EXISTS dojo_user ON dojo_submissions (user_id, created_at);
 CREATE INDEX IF NOT EXISTS dojo_queue ON dojo_submissions (state, created_at);
 ",
+    "
+-- Fair play: why a daily result isn't ranked, its move log, the (hashed) device that started it
+ALTER TABLE attempts ADD COLUMN flag TEXT;
+ALTER TABLE attempts ADD COLUMN log TEXT;
+ALTER TABLE attempts ADD COLUMN device TEXT;
+CREATE INDEX IF NOT EXISTS attempts_device ON attempts (day, device);
+-- Dojo: the code without custom sections, how it did per formula, the earlier submission it
+-- copies, and the (hashed, per day) network it came from
+ALTER TABLE dojo_submissions ADD COLUMN code_hash TEXT;
+ALTER TABLE dojo_submissions ADD COLUMN fingerprint TEXT;
+ALTER TABLE dojo_submissions ADD COLUMN similar_to INTEGER;
+ALTER TABLE dojo_submissions ADD COLUMN ip_hash TEXT;
+-- the token reports about the running evaluation have to carry
+ALTER TABLE dojo_submissions ADD COLUMN job_token TEXT;
+CREATE INDEX IF NOT EXISTS dojo_code ON dojo_submissions (code_hash);
+CREATE INDEX IF NOT EXISTS dojo_network ON dojo_submissions (ip_hash, created_at);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

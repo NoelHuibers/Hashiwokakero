@@ -61,7 +61,8 @@
     "not_started": "Hãy bắt đầu câu đố hôm nay trước.",
     "not_solved": "Đó chưa phải là lời giải.",
     "wrong_puzzle": "Những cây cầu này không thuộc câu đố này.",
-    "already_finished": "Bạn đã hoàn thành câu đố ngày này rồi."
+    "already_finished": "Bạn đã hoàn thành câu đố ngày này rồi.",
+    "daily_locked": "Đó là câu đố hôm nay: các bộ giải sẽ giúp bạn sau khi bạn tự hoàn thành nó."
   },
   "solver": {
     "title": "Bộ giải SAT",

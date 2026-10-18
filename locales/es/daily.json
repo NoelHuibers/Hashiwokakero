@@ -36,5 +36,13 @@
     "title": "Esta semana",
     "text": "Como los pasatiempos del periódico, los puentes se ponen más difíciles a medida que se acerca el domingo.",
     "next": "Próximo puente en"
+  },
+  "flag": {
+    "title": "Fuera de la clasificación de hoy",
+    "log": "No se pudieron comprobar tus movimientos, así que este resultado no entra en la clasificación. Ocurre cuando se jugó en una versión antigua de la página; recargarla antes de empezar ayuda.",
+    "too_fast": "Más rápido de lo que nadie puede colocar estos puentes, así que este resultado no entra en la clasificación.",
+    "pace": "Clics tan rápidos, una y otra vez, parecen de un programa, así que este resultado no entra en la clasificación.",
+    "second_account": "Este dispositivo ya abrió el reto diario de hoy con otra cuenta, así que este resultado no entra en la clasificación. Juega cada reto diario con una sola cuenta.",
+    "review": "Este resultado se retiró de la clasificación tras una revisión."
   }
 }

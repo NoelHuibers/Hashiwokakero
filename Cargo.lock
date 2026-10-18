@@ -1243,6 +1243,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.11.1",
+ "splr",
  "tokio",
  "wasmparser 0.240.0",
  "wasmtime",
@@ -1745,6 +1746,7 @@ dependencies = [
  "tw_merge",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasmparser 0.240.0",
  "web-sys",
 ]
 

@@ -36,5 +36,13 @@
     "title": "Esta semana",
     "text": "Como o puzzle do jornal, as pontes ficam mais difíceis até domingo.",
     "next": "Próxima ponte em"
+  },
+  "flag": {
+    "title": "Fora do ranking de hoje",
+    "log": "Não foi possível verificar suas jogadas, então este resultado não entra no ranking. Isso acontece quando a partida foi jogada em uma versão antiga da página; recarregar antes de começar ajuda.",
+    "too_fast": "Mais rápido do que qualquer pessoa consegue colocar essas pontes, então este resultado não entra no ranking.",
+    "pace": "Cliques tão rápidos, de novo e de novo, parecem coisa de programa, então este resultado não entra no ranking.",
+    "second_account": "Este dispositivo já abriu o desafio diário de hoje com outra conta, então este resultado não entra no ranking. Jogue cada desafio diário com uma única conta.",
+    "review": "Este resultado foi retirado do ranking após uma revisão."
   }
 }

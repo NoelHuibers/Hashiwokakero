@@ -57,13 +57,15 @@
     "hidden_title": "Ukryte, świeże formuły",
     "hidden": "Zbiór testowy pochodzi z tajnego ziarna, które zmienia się co sezon, a każda formuła jest przemieszana: zmienne przemianowane i zanegowane, klauzule przetasowane. Wyniki są pokazywane tylko dla rodzin, nigdy dla pojedynczych formuł.",
     "checked_title": "Każda odpowiedź sprawdzona",
-    "checked": "Modele są weryfikowane względem formuły. UNSAT liczy się tylko dla formuł, o których wiadomo, że są niespełnialne. Jedna błędna odpowiedź dyskwalifikuje zgłoszenie, więc zgadywanie się nie opłaca.",
+    "checked": "Modele są weryfikowane względem formuły. UNSAT liczy się tylko tam, gdzie mamy dowód: zasada szufladkowa i parzystość Hashi są niespełnialne z konstrukcji, a każda inna etykieta UNSAT ma dowód DRAT zweryfikowany przez nasz własny checker. Jedna błędna odpowiedź dyskwalifikuje zgłoszenie, więc zgadywanie się nie opłaca.",
     "sandbox_title": "Szczelna piaskownica",
     "sandbox": "Bez plików, bez sieci, bez zmiennych środowiskowych. Pamięć i wyjście są ograniczone, a zgłoszenia działają na osobnej maszynie, która nie przechowuje żadnych danych.",
     "accounts_title": "Jedno konto, najlepszy wynik",
-    "accounts": "Zarejestrowane konta mogą zgłaszać trzy razy dziennie. Identyczne pliki są odrzucane, a w rankingu liczy się tylko twoje najlepsze zgłoszenie.",
+    "accounts": "Konto musi mieć co najmniej dobę, by zgłaszać, a limit to trzy zgłoszenia dziennie na konto i na sieć. Identyczny kod jest odrzucany, nawet po zmianie nazwy lub dopełnieniu, a w rankingu liczy się tylko twoje najlepsze zgłoszenie.",
     "seasons_title": "Sezony",
-    "seasons": "Nowy sezon przynosi nowy ukryty zbiór, a każde zgłoszenie jest oceniane od nowa."
+    "seasons": "Nowy sezon przynosi nowy ukryty zbiór, a każde zgłoszenie jest oceniane od nowa.",
+    "copies_title": "Żadnych kopii",
+    "copies": "Wyniki są dokładne, więc solver zostawia odcisk palca: paliwo, które zużywa na każdej formule. Zgłoszenie, które zachowuje się jak wcześniejsze zgłoszenie innej osoby, nie trafia do rankingu. Zmiana kopii na tyle, by tego uniknąć, czyni z niej inny solver, a spowolnienie jej tylko spycha ją poniżej oryginału."
   },
   "science": {
     "title": "Dla badaczy",
@@ -90,7 +92,10 @@
       "not_wasm": "To nie jest plik WebAssembly.",
       "duplicate": "Dokładnie ten plik został już zgłoszony.",
       "limit": "Masz już dziś trzy zgłoszenia.",
-      "server": "Coś poszło nie tak po naszej stronie, spróbuj ponownie."
+      "server": "Coś poszło nie tak po naszej stronie, spróbuj ponownie.",
+      "account_age": "Nowe konta mogą zgłaszać po upływie doby. Do tego czasu testuj swój solver lokalnie za pomocą dojo run.",
+      "network_limit": "Trzy zgłoszenia dziennie na sieć, niezależnie od tego, z którego konta pochodzą.",
+      "busy": "Kolejka jest teraz pełna, spróbuj ponownie za kilka minut."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Wróć do rankingu",
     "not_found": "Nie ma takiego zgłoszenia.",
     "season": "Sezon {{ season }}",
-    "rank_label": "Miejsce"
+    "rank_label": "Miejsce",
+    "similar": "Ten solver zachowuje się jak <a>zgłoszenie #{{ id }}</a> innej osoby, które było pierwsze. W rankingu liczy się tylko oryginał."
   },
   "rejection": {
     "title": "Worker odrzucił ten plik",

@@ -61,7 +61,8 @@
     "not_started": "Starte zuerst das Tagesrätsel.",
     "not_solved": "Das ist noch keine Lösung.",
     "wrong_puzzle": "Diese Brücken gehören nicht zu diesem Rätsel.",
-    "already_finished": "Du hast dieses Tagesrätsel schon abgeschlossen."
+    "already_finished": "Du hast dieses Tagesrätsel schon abgeschlossen.",
+    "daily_locked": "Das ist das heutige Tagesrätsel: Die Solver helfen dabei erst, wenn du es selbst gelöst hast."
   },
   "solver": {
     "title": "SAT-Solver",

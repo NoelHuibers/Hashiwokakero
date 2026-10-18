@@ -36,5 +36,13 @@
     "title": "Ten tydzień",
     "text": "Jak w gazetowej łamigłówce, mosty robią się trudniejsze z każdym dniem aż do niedzieli.",
     "next": "Następny most za"
+  },
+  "flag": {
+    "title": "Poza dzisiejszym rankingiem",
+    "log": "Nie udało się sprawdzić twoich ruchów, więc ten wynik nie trafia do rankingu. Zdarza się to, gdy gra toczyła się w starej wersji strony; pomaga odświeżenie strony przed startem.",
+    "too_fast": "Szybciej, niż ktokolwiek jest w stanie położyć te mosty, więc ten wynik nie trafia do rankingu.",
+    "pace": "Tak szybkie kliknięcia, raz za razem, wyglądają na program, więc ten wynik nie trafia do rankingu.",
+    "second_account": "Na tym urządzeniu dzisiejsza łamigłówka dnia była już otwarta na innym koncie, więc ten wynik nie trafia do rankingu. Graj w każdą łamigłówkę dnia na jednym koncie.",
+    "review": "Ten wynik został usunięty z rankingu po weryfikacji."
   }
 }

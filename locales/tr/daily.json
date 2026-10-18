@@ -36,5 +36,13 @@
     "title": "Bu hafta",
     "text": "Gazete bulmacaları gibi, köprüler Pazar'a doğru zorlaşır.",
     "next": "Sonraki köprüye kalan"
+  },
+  "flag": {
+    "title": "Bugünkü sıralamada değil",
+    "log": "Hamlelerin kontrol edilemedi, bu yüzden bu sonuç sıralamaya girmiyor. Bu, oyun sayfanın eski bir sürümünde oynandığında olur; başlamadan önce sayfayı yenilemek işe yarar.",
+    "too_fast": "Bu köprüleri kimsenin kuramayacağı kadar hızlı, bu yüzden bu sonuç sıralamaya girmiyor.",
+    "pace": "Tekrar tekrar bu kadar hızlı tıklamalar bir programa benziyor, bu yüzden bu sonuç sıralamaya girmiyor.",
+    "second_account": "Bu cihaz bugünün günlük bulmacasını başka bir hesapla zaten açtı, bu yüzden bu sonuç sıralamaya girmiyor. Her günlük bulmacayı tek bir hesapla oyna.",
+    "review": "Bu sonuç bir incelemenin ardından sıralamadan kaldırıldı."
   }
 }

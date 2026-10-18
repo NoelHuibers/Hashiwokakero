@@ -77,7 +77,14 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Cookies und lokaler Speicher",
         &[
-            "Neben dem Sitzungs-Cookie merkt sich das Cookie „i18n_pref_locale“ deine Sprache. Im lokalen Speicher deines Browsers liegen das Farbschema und dein aktuelles Übungsspiel; diese Daten verlassen dein Gerät nicht. Alle sind technisch notwendig (§ 25 Abs. 2 TDDDG).",
+            "Neben dem Sitzungs-Cookie merkt sich das Cookie „i18n_pref_locale“ deine Sprache. Im lokalen Speicher deines Browsers liegen das Farbschema, die Toneinstellungen und dein aktuelles Spiel. Alle sind technisch notwendig (§ 25 Abs. 2 TDDDG).",
+        ],
+    ),
+    (
+        "Faires Spiel",
+        &[
+            "Damit die Rangliste fair bleibt, speichern wir zu jedem Tagesrätsel das Protokoll deiner Züge (welche Brücke wann gesetzt wurde). Dein Browser legt dafür eine zufällige Geräte-ID im lokalen Speicher ab; der Server speichert sie nur als Hash, der jeden Tag anders ist, und erkennt damit nur, ob dasselbe Gerät das Rätsel schon mit einem anderen Konto gestartet hat.",
+            "Bei Einsendungen im SAT Dojo speichern wir einen Hash deiner IP-Adresse, ebenfalls täglich anders und nicht umkehrbar, um die Zahl der Einsendungen pro Netz zu begrenzen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (Schutz vor Betrug).",
         ],
     ),
     (
@@ -118,7 +125,13 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Cookies and local storage",
         &[
-            "The cookie \"i18n_pref_locale\" remembers your language; your colour scheme and practice game stay in your browser's local storage. All of these are strictly necessary.",
+            "The cookie \"i18n_pref_locale\" remembers your language; your colour scheme, sound settings and current game stay in your browser's local storage. All of these are strictly necessary.",
+        ],
+    ),
+    (
+        "Fair play",
+        &[
+            "To keep the leaderboard fair we store the log of your moves for each daily (which bridge was set when). Your browser keeps a random device ID in local storage for this; the server stores it only as a hash that changes every day, and uses it only to see whether the same device already started the daily with another account. For SAT Dojo submissions we store a hash of your IP address, also different every day and not reversible, to limit submissions per network (Art. 6 (1) f GDPR, preventing fraud).",
         ],
     ),
     (

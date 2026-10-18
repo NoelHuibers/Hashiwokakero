@@ -10,8 +10,9 @@ use sha2::{Digest, Sha256};
 use super::db::db_err;
 use super::{count, now_ms, run_blocking};
 use crate::model::{
-    AllTimeEntry, ApiError, AttemptInfo, DailyInfo, DayResult, Leaderboard, LeaderboardEntry,
-    SubmitResult, UserStats, daily_difficulty, day_of, pick_hint, streaks, wrong_edges,
+    AllTimeEntry, ApiError, AttemptInfo, DailyInfo, DayResult, Flag, Leaderboard, LeaderboardEntry,
+    MoveEvent, SubmitResult, UserStats, canonical, daily_difficulty, day_of, pick_hint, streaks,
+    verify_log, wrong_edges,
 };
 
 /// Ranked entries shown on a daily leaderboard.
@@ -120,7 +121,7 @@ pub async fn attempt(
 ) -> Result<Option<AttemptInfo>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT started_at, finished_at, hints, checks, revealed, time_ms, bridges
+            "SELECT started_at, finished_at, hints, checks, revealed, time_ms, bridges, flag
              FROM attempts WHERE user_id = ?1 AND day = ?2",
             params![user, day],
         )
@@ -138,13 +139,17 @@ pub async fn attempt(
         revealed: row.get::<i64>(4).map_err(db_err)? != 0,
         time_ms: row.get(5).map_err(db_err)?,
         bridges: bridges.map(|b| from_json(&b)).transpose()?,
+        flag: row
+            .get::<Option<String>>(7)
+            .map_err(db_err)?
+            .and_then(|f| Flag::from_id(&f)),
     }))
 }
 
 pub async fn finishers(conn: &Connection, day: i64) -> Result<i64, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT COUNT(*) FROM attempts WHERE day = ?1 AND finished_at IS NOT NULL AND revealed = 0",
+            "SELECT COUNT(*) FROM attempts WHERE day = ?1 AND finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL",
             params![day],
         )
         .await
@@ -180,11 +185,41 @@ pub async fn info(
 }
 
 /// Starts the clock (once) and returns the puzzle.
-pub async fn start(conn: &Connection, user: i64, day: i64) -> Result<DailyInfo, ServerFnError> {
+///
+/// `device` is a random id the browser keeps: if the same device already started this daily
+/// with another account, the player has seen the puzzle, and this attempt isn't ranked.
+pub async fn start(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    device: Option<&str>,
+) -> Result<DailyInfo, ServerFnError> {
     get_or_create(conn, day).await?;
+    // Stored hashed per day, so devices can't be followed from one day to the next
+    let device = device
+        .filter(|d| (8..=64).contains(&d.len()))
+        .map(|d| super::hex(&Sha256::digest(format!("device:{day}:{d}").as_bytes())));
+    let seen = if let Some(device) = &device {
+        let mut rows = conn
+            .query(
+                "SELECT 1 FROM attempts WHERE day = ?1 AND device = ?2 AND user_id != ?3 LIMIT 1",
+                params![day, device.clone(), user],
+            )
+            .await
+            .map_err(db_err)?;
+        rows.next().await.map_err(db_err)?.is_some()
+    } else {
+        false
+    };
     conn.execute(
-        "INSERT OR IGNORE INTO attempts (user_id, day, started_at) VALUES (?1, ?2, ?3)",
-        params![user, day, now_ms()],
+        "INSERT OR IGNORE INTO attempts (user_id, day, started_at, device, flag) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            user,
+            day,
+            now_ms(),
+            device,
+            seen.then(|| Flag::SecondAccount.id())
+        ],
     )
     .await
     .map_err(db_err)?;
@@ -272,7 +307,7 @@ async fn rank(
     let mut rows = conn
         .query(
             "SELECT COUNT(*) + 1 FROM attempts
-             WHERE day = ?1 AND finished_at IS NOT NULL AND revealed = 0
+             WHERE day = ?1 AND finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL
                AND (time_ms < ?2 OR (time_ms = ?2 AND finished_at < ?3))",
             params![day, time_ms, finished_at],
         )
@@ -291,6 +326,7 @@ pub async fn submit(
     day: i64,
     bridges: Vec<u8>,
     moves: u32,
+    log: Vec<MoveEvent>,
 ) -> Result<SubmitResult, ServerFnError> {
     let attempt = running(conn, user, day).await?;
     let daily = get_or_create(conn, day).await?;
@@ -300,9 +336,22 @@ pub async fn submit(
         return Err(ApiError::NotSolved.into());
     }
     let finished_at = now_ms();
-    let time_ms = finished_at - attempt.started_at + attempt.penalty_ms();
+    let elapsed = finished_at - attempt.started_at;
+    let time_ms = elapsed + attempt.penalty_ms();
+    // A flag from the start (second account) stays, otherwise the move log decides
+    let flag = attempt.flag.or_else(|| {
+        verify_log(
+            &board,
+            &daily.solution,
+            &bridges,
+            &log,
+            elapsed,
+            attempt.hints,
+        )
+        .err()
+    });
     conn.execute(
-        "UPDATE attempts SET finished_at = ?3, time_ms = ?4, moves = ?5, bridges = ?6
+        "UPDATE attempts SET finished_at = ?3, time_ms = ?4, moves = ?5, bridges = ?6, log = ?7, flag = ?8
          WHERE user_id = ?1 AND day = ?2 AND finished_at IS NULL AND revealed = 0",
         params![
             user,
@@ -310,16 +359,63 @@ pub async fn submit(
             finished_at,
             time_ms,
             i64::from(moves),
-            json(&bridges)?
+            json(&bridges)?,
+            json(&log)?,
+            flag.map(Flag::id)
         ],
     )
     .await
     .map_err(db_err)?;
     Ok(SubmitResult {
         time_ms,
-        rank: rank(conn, day, time_ms, finished_at).await?,
+        rank: if flag.is_some() {
+            0
+        } else {
+            rank(conn, day, time_ms, finished_at).await?
+        },
         finishers: finishers(conn, day).await?,
+        flag,
     })
+}
+
+/// Whether `puzzle` is today's daily (however it is turned) and `user` hasn't finished it yet:
+/// our solvers don't help with it then.
+pub async fn locked(
+    conn: &Connection,
+    user: Option<i64>,
+    puzzle: &Puzzle,
+) -> Result<bool, ServerFnError> {
+    let day = today();
+    let Some(daily) = load(conn, day).await? else {
+        return Ok(false);
+    };
+    if canonical(puzzle) != canonical(&daily.puzzle) {
+        return Ok(false);
+    }
+    let done = match user {
+        Some(user) => attempt(conn, user, day)
+            .await?
+            .is_some_and(|a| a.finished() || a.revealed),
+        None => false,
+    };
+    Ok(!done)
+}
+
+/// Takes a result off the board after a review (`flag` `None` puts it back).
+pub async fn set_flag(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    flag: Option<Flag>,
+) -> Result<bool, ServerFnError> {
+    let changed = conn
+        .execute(
+            "UPDATE attempts SET flag = ?3 WHERE user_id = ?1 AND day = ?2",
+            params![user, day, flag.map(Flag::id)],
+        )
+        .await
+        .map_err(db_err)?;
+    Ok(changed > 0)
 }
 
 fn entry(row: &libsql::Row, rank: i64) -> Result<LeaderboardEntry, libsql::Error> {
@@ -346,7 +442,7 @@ pub async fn leaderboard(
         .query(
             &format!(
                 "SELECT {ENTRY_COLUMNS} FROM attempts a JOIN users u ON u.id = a.user_id
-                 WHERE a.day = ?1 AND a.finished_at IS NOT NULL AND a.revealed = 0
+                 WHERE a.day = ?1 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL
                  ORDER BY a.time_ms, a.finished_at LIMIT ?2"
             ),
             params![day, LEADERBOARD_SIZE],
@@ -364,7 +460,7 @@ pub async fn leaderboard(
             .query(
                 &format!(
                     "SELECT {ENTRY_COLUMNS} FROM attempts a JOIN users u ON u.id = a.user_id
-                     WHERE a.day = ?1 AND a.user_id = ?2 AND a.finished_at IS NOT NULL AND a.revealed = 0"
+                     WHERE a.day = ?1 AND a.user_id = ?2 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL"
                 ),
                 params![day, me],
             )
@@ -390,7 +486,7 @@ pub async fn leaderboard(
 async fn solved_days(conn: &Connection, user: i64) -> Result<Vec<i64>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT day FROM attempts WHERE user_id = ?1 AND finished_at IS NOT NULL AND revealed = 0 ORDER BY day",
+            "SELECT day FROM attempts WHERE user_id = ?1 AND finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL ORDER BY day",
             params![user],
         )
         .await
@@ -408,7 +504,7 @@ pub async fn all_time(conn: &Connection) -> Result<Vec<AllTimeEntry>, ServerFnEr
         .query(
             "SELECT a.user_id, u.name, u.username, COUNT(*) AS solved FROM attempts a
              JOIN users u ON u.id = a.user_id
-             WHERE a.finished_at IS NOT NULL AND a.revealed = 0
+             WHERE a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL
              GROUP BY a.user_id ORDER BY solved DESC, MIN(a.finished_at) LIMIT 20",
             (),
         )
@@ -434,7 +530,7 @@ pub async fn all_time(conn: &Connection) -> Result<Vec<AllTimeEntry>, ServerFnEr
         .query(
             &format!(
                 "SELECT user_id, day FROM attempts
-                 WHERE user_id IN ({}) AND finished_at IS NOT NULL AND revealed = 0
+                 WHERE user_id IN ({}) AND finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL
                  ORDER BY user_id, day",
                 ids.join(",")
             ),
@@ -466,10 +562,10 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
         .query(
             "SELECT a.day, a.time_ms, (
                 SELECT COUNT(*) + 1 FROM attempts b
-                WHERE b.day = a.day AND b.finished_at IS NOT NULL AND b.revealed = 0
+                WHERE b.day = a.day AND b.finished_at IS NOT NULL AND b.revealed = 0 AND b.flag IS NULL
                   AND (b.time_ms < a.time_ms OR (b.time_ms = a.time_ms AND b.finished_at < a.finished_at))
              ) FROM attempts a
-             WHERE a.user_id = ?1 AND a.finished_at IS NOT NULL AND a.revealed = 0",
+             WHERE a.user_id = ?1 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL",
             params![user],
         )
         .await
@@ -561,6 +657,33 @@ mod tests {
         conn.last_insert_rowid()
     }
 
+    /// A player's log for `solution`: one click per bridge, 1.5 s apart.
+    fn played(solution: &[u8]) -> Vec<MoveEvent> {
+        let mut log = Vec::new();
+        for (edge, &count) in solution.iter().enumerate() {
+            for c in 1..=count {
+                let t = u32::try_from(log.len() + 1).unwrap() * 1500;
+                log.push(MoveEvent {
+                    t,
+                    edge: u16::try_from(edge).unwrap(),
+                    count: c,
+                    tap: true,
+                });
+            }
+        }
+        log
+    }
+
+    /// Moves the start of an attempt `ms` into the past, as if the player had been at it.
+    async fn age(conn: &Connection, user: i64, day: i64, ms: i64) {
+        conn.execute(
+            "UPDATE attempts SET started_at = started_at - ?3 WHERE user_id = ?1 AND day = ?2",
+            params![user, day, ms],
+        )
+        .await
+        .unwrap();
+    }
+
     /// Monday dailies are Easy, quick to generate.
     const MONDAY: i64 = LAUNCH_DAY + 2;
 
@@ -584,11 +707,11 @@ mod tests {
         let id = user(&conn, "Sleepy Crane 12", None).await;
         let before = info(&conn, Some(id), MONDAY).await.unwrap();
         assert!(before.puzzle.is_none() && before.attempt.is_none());
-        let started = start(&conn, id, MONDAY).await.unwrap();
+        let started = start(&conn, id, MONDAY, None).await.unwrap();
         assert!(started.puzzle.is_some());
         let started_at = started.attempt.unwrap().started_at;
         // Starting again doesn't reset the clock
-        let again = start(&conn, id, MONDAY).await.unwrap();
+        let again = start(&conn, id, MONDAY, None).await.unwrap();
         assert_eq!(again.attempt.unwrap().started_at, started_at);
     }
 
@@ -602,19 +725,26 @@ mod tests {
 
         // Not started yet
         assert!(
-            submit(&conn, a, MONDAY, daily.solution.clone(), 10)
-                .await
-                .is_err()
+            submit(
+                &conn,
+                a,
+                MONDAY,
+                daily.solution.clone(),
+                10,
+                played(&daily.solution)
+            )
+            .await
+            .is_err()
         );
-        start(&conn, a, MONDAY).await.unwrap();
-        start(&conn, b, MONDAY).await.unwrap();
+        start(&conn, a, MONDAY, None).await.unwrap();
+        start(&conn, b, MONDAY, None).await.unwrap();
         // Wrong boards are rejected
         assert!(
-            submit(&conn, a, MONDAY, board.empty_bridges(), 1)
+            submit(&conn, a, MONDAY, board.empty_bridges(), 1, vec![])
                 .await
                 .is_err()
         );
-        assert!(submit(&conn, a, MONDAY, vec![1], 1).await.is_err());
+        assert!(submit(&conn, a, MONDAY, vec![1], 1, vec![]).await.is_err());
 
         // b asks for a hint and a check, a doesn't
         let given = hint(&conn, b, MONDAY, board.empty_bridges()).await.unwrap();
@@ -625,19 +755,43 @@ mod tests {
         wrong[extra] = daily.solution[extra] + 1;
         assert_eq!(check(&conn, b, MONDAY, wrong).await.unwrap(), vec![extra]);
 
-        let ra = submit(&conn, a, MONDAY, daily.solution.clone(), 20)
-            .await
-            .unwrap();
-        let rb = submit(&conn, b, MONDAY, daily.solution.clone(), 25)
-            .await
-            .unwrap();
+        // Ten minutes of playing
+        age(&conn, a, MONDAY, 600_000).await;
+        age(&conn, b, MONDAY, 600_000).await;
+        let ra = submit(
+            &conn,
+            a,
+            MONDAY,
+            daily.solution.clone(),
+            20,
+            played(&daily.solution),
+        )
+        .await
+        .unwrap();
+        let rb = submit(
+            &conn,
+            b,
+            MONDAY,
+            daily.solution.clone(),
+            25,
+            played(&daily.solution),
+        )
+        .await
+        .unwrap();
         assert!(rb.time_ms >= HINT_PENALTY_MS + CHECK_PENALTY_MS);
         assert_eq!((ra.rank, rb.rank, rb.finishers), (1, 2, 2));
         // Finished is final
         assert!(
-            submit(&conn, a, MONDAY, daily.solution.clone(), 20)
-                .await
-                .is_err()
+            submit(
+                &conn,
+                a,
+                MONDAY,
+                daily.solution.clone(),
+                20,
+                played(&daily.solution)
+            )
+            .await
+            .is_err()
         );
         assert!(hint(&conn, a, MONDAY, board.empty_bridges()).await.is_err());
 
@@ -649,12 +803,151 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn implausible_results_are_not_ranked() {
+        let (_db, conn) = test_db().await;
+        let bot = user(&conn, "bot", Some("bot")).await;
+        let fair = user(&conn, "fair", Some("fair")).await;
+        let daily = get_or_create(&conn, MONDAY).await.unwrap();
+        start(&conn, bot, MONDAY, Some("device-of-bot"))
+            .await
+            .unwrap();
+        start(&conn, fair, MONDAY, Some("device-of-fair"))
+            .await
+            .unwrap();
+        // Solved by a program: no log, or a perfect one in no time
+        let r = submit(&conn, bot, MONDAY, daily.solution.clone(), 1, vec![])
+            .await
+            .unwrap();
+        assert_eq!((r.rank, r.flag), (0, Some(Flag::Log)));
+        assert_eq!(finishers(&conn, MONDAY).await.unwrap(), 0);
+        age(&conn, fair, MONDAY, 600_000).await;
+        let r = submit(
+            &conn,
+            fair,
+            MONDAY,
+            daily.solution.clone(),
+            9,
+            played(&daily.solution),
+        )
+        .await
+        .unwrap();
+        assert_eq!((r.rank, r.flag), (1, None));
+        let board = leaderboard(&conn, MONDAY, None).await.unwrap();
+        assert_eq!(board.entries.len(), 1);
+        assert_eq!(board.entries[0].name, "fair");
+        // The flag shows up when the bot reloads
+        let attempt = attempt(&conn, bot, MONDAY).await.unwrap().unwrap();
+        assert_eq!(attempt.flag, Some(Flag::Log));
+        // A review can take a result off the board, and put it back
+        assert!(
+            set_flag(&conn, fair, MONDAY, Some(Flag::Review))
+                .await
+                .unwrap()
+        );
+        let board = leaderboard(&conn, MONDAY, None).await.unwrap();
+        assert_eq!(board.entries.len(), 0);
+        set_flag(&conn, fair, MONDAY, None).await.unwrap();
+        assert_eq!(
+            leaderboard(&conn, MONDAY, None)
+                .await
+                .unwrap()
+                .entries
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn a_second_account_on_the_same_device_is_not_ranked() {
+        let (_db, conn) = test_db().await;
+        let scout = user(&conn, "Scout Fox 1", None).await;
+        let main = user(&conn, "main", Some("main")).await;
+        let other = user(&conn, "other", Some("other")).await;
+        let daily = get_or_create(&conn, MONDAY).await.unwrap();
+        // The scout account looks at the puzzle, the main account plays it on the same device
+        start(&conn, scout, MONDAY, Some("shared-device-1"))
+            .await
+            .unwrap();
+        start(&conn, main, MONDAY, Some("shared-device-1"))
+            .await
+            .unwrap();
+        start(&conn, other, MONDAY, Some("own-device-22"))
+            .await
+            .unwrap();
+        age(&conn, main, MONDAY, 600_000).await;
+        age(&conn, other, MONDAY, 600_000).await;
+        let r = submit(
+            &conn,
+            main,
+            MONDAY,
+            daily.solution.clone(),
+            9,
+            played(&daily.solution),
+        )
+        .await
+        .unwrap();
+        assert_eq!(r.flag, Some(Flag::SecondAccount));
+        let r = submit(
+            &conn,
+            other,
+            MONDAY,
+            daily.solution.clone(),
+            9,
+            played(&daily.solution),
+        )
+        .await
+        .unwrap();
+        assert_eq!((r.rank, r.flag), (1, None));
+    }
+
+    #[tokio::test]
+    async fn solvers_refuse_the_live_daily() {
+        let (_db, conn) = test_db().await;
+        let player = user(&conn, "player", Some("player")).await;
+        let daily = get_or_create(&conn, today()).await.unwrap();
+        assert!(locked(&conn, None, &daily.puzzle).await.unwrap());
+        assert!(locked(&conn, Some(player), &daily.puzzle).await.unwrap());
+        // Mirrored, it's still the daily
+        let mirrored = Puzzle::new(
+            daily.puzzle.width,
+            daily.puzzle.height,
+            daily
+                .puzzle
+                .islands
+                .iter()
+                .map(|i| common::Island {
+                    pos: common::Pos::new(daily.puzzle.width - 1 - i.pos.x, i.pos.y),
+                    required: i.required,
+                })
+                .collect(),
+        );
+        assert!(locked(&conn, Some(player), &mirrored).await.unwrap());
+        // Another puzzle isn't locked, and the daily unlocks once you gave up or finished
+        assert!(
+            !locked(
+                &conn,
+                None,
+                &get_or_create(&conn, MONDAY).await.unwrap().puzzle
+            )
+            .await
+            .unwrap()
+        );
+        start(&conn, player, today(), None).await.unwrap();
+        reveal(&conn, player, today()).await.unwrap();
+        assert!(!locked(&conn, Some(player), &daily.puzzle).await.unwrap());
+    }
+
+    #[tokio::test]
     async fn revealed_runs_are_not_ranked() {
         let (_db, conn) = test_db().await;
         let id = user(&conn, "Quiet Owl 77", None).await;
-        start(&conn, id, MONDAY).await.unwrap();
+        start(&conn, id, MONDAY, None).await.unwrap();
         let solution = reveal(&conn, id, MONDAY).await.unwrap();
-        assert!(submit(&conn, id, MONDAY, solution, 5).await.is_err());
+        assert!(
+            submit(&conn, id, MONDAY, solution, 5, vec![])
+                .await
+                .is_err()
+        );
         let attempt = attempt(&conn, id, MONDAY).await.unwrap().unwrap();
         assert!(attempt.revealed && attempt.finished());
         assert_eq!(finishers(&conn, MONDAY).await.unwrap(), 0);

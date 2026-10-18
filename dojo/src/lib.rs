@@ -16,6 +16,8 @@ use serde::{Deserialize, Serialize};
 pub mod bench;
 #[cfg(feature = "bench")]
 pub mod cnf;
+#[cfg(feature = "bench")]
+pub mod drat;
 #[cfg(feature = "runner")]
 pub mod eval;
 #[cfg(feature = "bench")]
@@ -224,6 +226,58 @@ pub enum Rejection {
     NoStart,
 }
 
+/// One number per formula, in set order.
+///
+/// The fuel of a solved formula, otherwise a marker for what happened. Scores are
+/// deterministic, so two submissions with (nearly) the same fingerprint are (nearly) the same
+/// solver.
+pub fn fingerprint(results: &[RunResult]) -> Vec<u64> {
+    results
+        .iter()
+        .map(|r| match r.outcome {
+            Outcome::Solved(_) => r.fuel,
+            Outcome::Timeout => FINGERPRINT_TIMEOUT,
+            Outcome::Unknown | Outcome::Crashed => FINGERPRINT_GAVE_UP,
+            Outcome::Wrong => FINGERPRINT_WRONG,
+        })
+        .collect()
+}
+
+pub const FINGERPRINT_TIMEOUT: u64 = u64::MAX;
+pub const FINGERPRINT_GAVE_UP: u64 = u64::MAX - 1;
+pub const FINGERPRINT_WRONG: u64 = u64::MAX - 2;
+
+/// Whether `newer` looks like a copy of `older`.
+///
+/// That is: the same outcome on every formula and, on at least `MIN_SHARED` solved formulas,
+/// fuel within `TOLERANCE` of each other. Independent solvers never come that close; a copy
+/// changed just enough to escape this has to behave differently, and padding it with extra
+/// work only makes it rank below the original.
+pub fn similar(newer: &[u64], older: &[u64]) -> bool {
+    const TOLERANCE: f64 = 0.02;
+    const MIN_SHARED: usize = 8;
+    if newer.len() != older.len() || newer.is_empty() {
+        return false;
+    }
+    let mut shared = 0;
+    for (&a, &b) in newer.iter().zip(older) {
+        let solved_a = a < FINGERPRINT_WRONG;
+        let solved_b = b < FINGERPRINT_WRONG;
+        if solved_a != solved_b || (!solved_a && a != b) {
+            return false;
+        }
+        if solved_a {
+            #[expect(clippy::cast_precision_loss, reason = "fuel is far below 2^53")]
+            let (a, b) = (a as f64, b as f64);
+            if (a - b).abs() > TOLERANCE * a.max(b) {
+                return false;
+            }
+            shared += 1;
+        }
+    }
+    shared >= MIN_SHARED
+}
+
 /// Messages from the worker to the website about one evaluation.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -238,6 +292,10 @@ pub enum Report {
         id: i64,
         season: u32,
         score: Score,
+        /// How the solver did on each formula, see [`fingerprint`]. Kept private by the
+        /// website, it only compares submissions to find copies.
+        #[serde(default)]
+        fingerprint: Vec<u64>,
     },
     Rejected {
         id: i64,

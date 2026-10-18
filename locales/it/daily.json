@@ -36,5 +36,13 @@
     "title": "Questa settimana",
     "text": "Come i giochi sul giornale, i ponti diventano più difficili man mano che si avvicina la domenica.",
     "next": "Prossimo ponte tra"
+  },
+  "flag": {
+    "title": "Non nella classifica di oggi",
+    "log": "Non è stato possibile verificare le tue mosse, quindi questo risultato non entra in classifica. Succede quando si gioca con una vecchia versione della pagina; ricaricarla prima di iniziare aiuta.",
+    "too_fast": "Più veloce di quanto chiunque possa piazzare questi ponti, quindi questo risultato non entra in classifica.",
+    "pace": "Clic così veloci, uno dopo l’altro, sembrano un programma, quindi questo risultato non entra in classifica.",
+    "second_account": "Questo dispositivo ha già aperto la sfida del giorno con un altro account, quindi questo risultato non entra in classifica. Gioca ogni sfida del giorno con un solo account.",
+    "review": "Questo risultato è stato rimosso dalla classifica dopo una verifica."
   }
 }

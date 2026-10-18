@@ -61,7 +61,8 @@
     "not_started": "先にデイリーパズルを始めてください。",
     "not_solved": "まだ正解ではありません。",
     "wrong_puzzle": "この橋はこのパズルのものではありません。",
-    "already_finished": "このデイリーはもうクリア済みです。"
+    "already_finished": "このデイリーはもうクリア済みです。",
+    "daily_locked": "今日のデイリーです。ソルバーの助けは、自分でクリアした後で借りられます。"
   },
   "solver": {
     "title": "SATソルバー",
