@@ -35,24 +35,35 @@ pub fn RankCell(rank: i64) -> impl IntoView {
     }
 }
 
-/// A highlighted table row (your own result, the fastest solver): a rounded, padded pill, since
-/// a `<tr>` itself can't have rounded corners.
-pub const HIGHLIGHT_ROW: &str = "[&>td]:bg-accent [&>td:first-child]:rounded-s-lg [&>td:first-child]:ps-2 [&>td:last-child]:rounded-e-lg [&>td:last-child]:pe-2";
+/// A highlighted table row: your own result, the fastest solver.
+///
+/// A rounded pill, since a `<tr>` itself can't have rounded corners. Only colours, so the row
+/// stays aligned with the others; give every row of the table [`ROW_INSET`] for the padding.
+pub const HIGHLIGHT_ROW: &str =
+    "[&>td]:bg-accent [&>td:first-child]:rounded-s-lg [&>td:last-child]:rounded-e-lg";
+
+/// The same inner padding on every row, so a highlighted one doesn't shift its contents.
+pub const ROW_INSET: &str = "[&>*:first-child]:ps-2 [&>*:last-child]:pe-2";
 
 #[component]
 fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
     let i18n = use_i18n();
     let penalties = entry.hints + entry.checks;
     view! {
-        <tr class=format!("border-b last:border-0 {}", if me { HIGHLIGHT_ROW } else { "" })>
+        <tr class=format!(
+            "border-b last:border-0 {ROW_INSET} {}",
+            if me { HIGHLIGHT_ROW } else { "" },
+        )>
             <td class="py-2 pe-2">
                 <RankCell rank=entry.rank />
             </td>
             <td class="max-w-0 py-2 pe-2">
                 <div class="flex items-center gap-2">
-                    <span class="truncate font-medium">{entry.name}</span>
-                    {me.then(|| view! { <Badge variant=BadgeVariant::Default size=crate::components::ui::badge::BadgeSize::Sm>{t!(i18n, common.ranking.you)}</Badge> })}
-                    {entry.guest.then(|| view! { <span class="text-xs text-muted-foreground">{t!(i18n, common.ranking.guest)}</span> })}
+                    <span class="min-w-0 truncate font-medium">{entry.name}</span>
+                    {me.then(|| view! { <Badge variant=BadgeVariant::Default size=crate::components::ui::badge::BadgeSize::Sm class="hidden shrink-0 @sm:inline-flex">{t!(i18n, common.ranking.you)}</Badge> })}
+                    // Only where the table is wide enough (a container query, the board sits in narrow
+                    // cards too): the name has priority
+                    {entry.guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}
                 </div>
             </td>
             <td class="py-2 pe-2 text-end text-xs text-muted-foreground" title=move || t_string!(i18n, common.ranking.penalties)>
@@ -88,32 +99,36 @@ pub fn LeaderboardTable(
         .into_any();
     }
     view! {
-        <table class="w-full table-fixed text-sm">
-            <colgroup>
-                <col class="w-10" />
-                <col />
-                <col class="w-16" />
-                <col class="w-20" />
-            </colgroup>
-            <tbody>
-                {shown
-                    .into_iter()
-                    .map(|e| {
-                        let mine = Some(e.user_id) == my_id;
-                        view! { <Row entry=e me=mine /> }
-                    })
-                    .collect_view()}
-                {me_below
-                    .map(|m| {
-                        view! {
-                            <tr aria-hidden="true">
-                                <td colspan="4" class="py-0.5 text-center text-xs text-muted-foreground">"⋯"</td>
-                            </tr>
-                            <Row entry=m me=true />
-                        }
-                    })}
-            </tbody>
-        </table>
+        // A size container for the @sm: variants: tables themselves can't be one
+        <div class="@container">
+            <table class="w-full table-fixed text-sm">
+                <colgroup>
+                    // The first and last columns hold the row inset (ROW_INSET) too
+                    <col class="w-14" />
+                    <col />
+                    <col class="w-16" />
+                    <col class="w-22" />
+                </colgroup>
+                <tbody>
+                    {shown
+                        .into_iter()
+                        .map(|e| {
+                            let mine = Some(e.user_id) == my_id;
+                            view! { <Row entry=e me=mine /> }
+                        })
+                        .collect_view()}
+                    {me_below
+                        .map(|m| {
+                            view! {
+                                <tr aria-hidden="true">
+                                    <td colspan="4" class="py-0.5 text-center text-xs text-muted-foreground">"⋯"</td>
+                                </tr>
+                                <Row entry=m me=true />
+                            }
+                        })}
+                </tbody>
+            </table>
+        </div>
     }
     .into_any()
 }

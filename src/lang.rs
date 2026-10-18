@@ -231,6 +231,7 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::WrongPuzzle => td_string!(locale, common.errors.wrong_puzzle),
         ApiError::AlreadyFinished => td_string!(locale, common.errors.already_finished),
         ApiError::DailyLocked => td_string!(locale, common.errors.daily_locked),
+        ApiError::Forbidden => td_string!(locale, common.errors.forbidden),
     }
     .to_string()
 }

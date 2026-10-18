@@ -21,6 +21,9 @@ pub struct UserInfo {
     /// Guests play without an account, they can claim a username later.
     pub guest: bool,
     pub created_at: i64,
+    /// Can open the admin dashboard (`HASHI_ADMINS` on the server).
+    #[serde(default)]
+    pub admin: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -128,7 +131,7 @@ pub struct UserStats {
 /*  SAT Dojo                                                           */
 /* ------------------------------------------------------------------ */
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DojoState {
     /// Waiting for the worker.
     Queued,
@@ -248,7 +251,7 @@ pub struct MoveEvent {
 }
 
 /// Why a daily result isn't ranked. The player still sees their time.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Flag {
     /// The move log is missing or doesn't lead to the submitted board.
     Log,
@@ -379,6 +382,97 @@ pub fn canonical(puzzle: &Puzzle) -> (u8, u8, Vec<(u8, u8, u8)>) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Admin                                                              */
+/* ------------------------------------------------------------------ */
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdminOverview {
+    pub users: i64,
+    pub registered: i64,
+    /// Today, and its daily so far.
+    pub day: i64,
+    pub started: i64,
+    pub finished: i64,
+    pub flagged: i64,
+    pub dojo_pending: i64,
+    pub dojo_total: i64,
+}
+
+/// A move log in numbers, to spot programs at a glance.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LogSummary {
+    pub events: u32,
+    pub taps: u32,
+    /// From the first to the last change.
+    pub span_ms: u32,
+    /// Between two clicks on different bridges.
+    pub fastest_gap_ms: Option<u32>,
+    pub median_gap_ms: Option<u32>,
+}
+
+pub fn summarize_log(log: &[MoveEvent]) -> LogSummary {
+    let taps: Vec<&MoveEvent> = log.iter().filter(|e| e.tap).collect();
+    let mut gaps: Vec<u32> = taps
+        .windows(2)
+        .filter(|w| w[0].edge != w[1].edge)
+        .map(|w| w[1].t.saturating_sub(w[0].t))
+        .collect();
+    gaps.sort_unstable();
+    LogSummary {
+        events: u32::try_from(log.len()).unwrap_or(u32::MAX),
+        taps: u32::try_from(taps.len()).unwrap_or(u32::MAX),
+        span_ms: match (log.first(), log.last()) {
+            (Some(a), Some(b)) => b.t.saturating_sub(a.t),
+            _ => 0,
+        },
+        fastest_gap_ms: gaps.first().copied(),
+        median_gap_ms: gaps.get(gaps.len() / 2).copied(),
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdminAttempt {
+    pub user_id: i64,
+    pub name: String,
+    pub username: Option<String>,
+    pub started_at: i64,
+    pub finished_at: Option<i64>,
+    /// With penalties.
+    pub time_ms: Option<i64>,
+    pub hints: i64,
+    pub checks: i64,
+    pub moves: Option<i64>,
+    pub revealed: bool,
+    pub flag: Option<Flag>,
+    pub log: LogSummary,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdminSubmission {
+    pub id: i64,
+    pub name: String,
+    pub author: String,
+    pub house: bool,
+    pub state: DojoState,
+    pub season: u32,
+    pub solved: Option<u32>,
+    pub total: u32,
+    pub par2: Option<f64>,
+    pub wrong: u32,
+    pub similar_to: Option<i64>,
+    pub created_at: i64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SubmissionAction {
+    /// Evaluate again.
+    Requeue,
+    /// Not a copy after all: rank it.
+    ClearCopy,
+    Delete,
+}
+
+/* ------------------------------------------------------------------ */
 /*  Errors                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -402,10 +496,12 @@ pub enum ApiError {
     AlreadyFinished,
     /// Our solvers don't touch today's daily before you finished it.
     DailyLocked,
+    /// Only for admins.
+    Forbidden,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 15] = [
+    pub const ALL: [Self; 16] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -421,6 +517,7 @@ impl ApiError {
         Self::WrongPuzzle,
         Self::AlreadyFinished,
         Self::DailyLocked,
+        Self::Forbidden,
     ];
 
     pub fn code(self) -> &'static str {
@@ -440,6 +537,7 @@ impl ApiError {
             Self::WrongPuzzle => "wrong_puzzle",
             Self::AlreadyFinished => "already_finished",
             Self::DailyLocked => "daily_locked",
+            Self::Forbidden => "forbidden",
         }
     }
 
@@ -750,6 +848,25 @@ mod tests {
             verify_log(&board, &solution, &solution, &human, 7000, 0),
             Ok(())
         );
+    }
+
+    #[test]
+    fn log_summaries() {
+        let log = [
+            tap(1000, 0, 1),
+            tap(1500, 0, 2),
+            tap(1800, 1, 1),
+            MoveEvent {
+                tap: false,
+                ..tap(1900, 2, 1)
+            },
+            tap(4000, 3, 1),
+        ];
+        let s = summarize_log(&log);
+        assert_eq!((s.events, s.taps, s.span_ms), (5, 4, 3000));
+        // Gaps between different bridges: 300 (0→1) and 2200 (1→3)
+        assert_eq!((s.fastest_gap_ms, s.median_gap_ms), (Some(300), Some(2200)));
+        assert_eq!(summarize_log(&[]), LogSummary::default());
     }
 
     #[test]

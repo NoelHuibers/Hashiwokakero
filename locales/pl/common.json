@@ -62,7 +62,8 @@
     "not_solved": "To jeszcze nie jest rozwiązanie.",
     "wrong_puzzle": "Te mosty nie pasują do tej łamigłówki.",
     "already_finished": "Ta łamigłówka dnia jest już przez ciebie ukończona.",
-    "daily_locked": "To dzisiejsza łamigłówka dnia: solvery pomogą w niej dopiero po jej samodzielnym ukończeniu."
+    "daily_locked": "To dzisiejsza łamigłówka dnia: solvery pomogą w niej dopiero po jej samodzielnym ukończeniu.",
+    "forbidden": "Tylko dla administratorów."
   },
   "solver": {
     "title": "Solver SAT",

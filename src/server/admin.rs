@@ -1,17 +1,237 @@
-//! Reviewing daily results: `HASHI_ADMIN_TOKEN` as bearer token.
+//! The admin dashboard (`/admin`, for the usernames in `HASHI_ADMINS`) and the same tools for
+//! scripts (`HASHI_ADMIN_TOKEN` as bearer token):
 //!
 //! - `GET /admin/attempt?user=&day=` shows an attempt with its move log
 //! - `POST /admin/flag?user=&day=&flag=review` takes a result off the board, without `flag`
 //!   it goes back on
 
-use axum::extract::Query;
+use axum::extract::{Multipart, Query};
 use axum::http::{HeaderMap, StatusCode};
-use axum::response::{IntoResponse, Response};
-use libsql::params;
+use axum::response::{IntoResponse, Redirect, Response};
+use leptos::prelude::ServerFnError;
+use libsql::{Connection, params};
 use serde::Deserialize;
 
-use super::{daily, db};
-use crate::model::Flag;
+use super::auth::{self, User};
+use super::db::db_err;
+use super::{daily, db, dojo};
+use crate::model::{
+    AdminAttempt, AdminOverview, AdminSubmission, ApiError, DojoState, Flag, MoveEvent,
+    SubmissionAction, summarize_log,
+};
+
+/// Whether the user is an admin: a registered account whose username is in `HASHI_ADMINS`
+/// (comma separated, case doesn't matter).
+pub fn is_admin(user: &User) -> bool {
+    listed(&std::env::var("HASHI_ADMINS").unwrap_or_default(), user)
+}
+
+fn listed(admins: &str, user: &User) -> bool {
+    user.username.as_deref().is_some_and(|name| {
+        admins
+            .split(',')
+            .any(|a| !a.trim().is_empty() && a.trim().eq_ignore_ascii_case(name))
+    })
+}
+
+/// The signed in admin, or `Forbidden`.
+pub async fn require(conn: &Connection) -> Result<User, ServerFnError> {
+    match auth::current_user(conn).await? {
+        Some(user) if is_admin(&user) => Ok(user),
+        _ => Err(ApiError::Forbidden.fail()),
+    }
+}
+
+async fn count(conn: &Connection, sql: &str, day: i64) -> Result<i64, ServerFnError> {
+    let mut rows = conn.query(sql, params![day]).await.map_err(db_err)?;
+    match rows.next().await.map_err(db_err)? {
+        Some(row) => row.get(0).map_err(db_err),
+        None => Ok(0),
+    }
+}
+
+pub async fn overview(conn: &Connection) -> Result<AdminOverview, ServerFnError> {
+    let day = daily::today();
+    Ok(AdminOverview {
+        users: count(conn, "SELECT COUNT(*) FROM users WHERE ?1 = ?1", day).await?,
+        registered: count(
+            conn,
+            "SELECT COUNT(*) FROM users WHERE username IS NOT NULL AND ?1 = ?1",
+            day,
+        )
+        .await?,
+        day,
+        started: count(conn, "SELECT COUNT(*) FROM attempts WHERE day = ?1", day).await?,
+        finished: count(
+            conn,
+            "SELECT COUNT(*) FROM attempts WHERE day = ?1 AND finished_at IS NOT NULL AND revealed = 0",
+            day,
+        )
+        .await?,
+        flagged: count(
+            conn,
+            "SELECT COUNT(*) FROM attempts WHERE day = ?1 AND flag IS NOT NULL",
+            day,
+        )
+        .await?,
+        dojo_pending: count(
+            conn,
+            "SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running') AND ?1 = ?1",
+            day,
+        )
+        .await?,
+        dojo_total: count(conn, "SELECT COUNT(*) FROM dojo_submissions WHERE ?1 = ?1", day).await?,
+    })
+}
+
+/// Every attempt of a day, finished ones fastest first, with a summary of the move log.
+pub async fn attempts(conn: &Connection, day: i64) -> Result<Vec<AdminAttempt>, ServerFnError> {
+    let mut rows = conn
+        .query(
+            "SELECT a.user_id, u.name, u.username, a.started_at, a.finished_at, a.time_ms, a.hints,
+                    a.checks, a.moves, a.revealed, a.flag, a.log
+             FROM attempts a JOIN users u ON u.id = a.user_id
+             WHERE a.day = ?1
+             ORDER BY a.time_ms IS NULL, a.time_ms, a.started_at",
+            params![day],
+        )
+        .await
+        .map_err(db_err)?;
+    let mut out = Vec::new();
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        let log: Option<String> = row.get(11).map_err(db_err)?;
+        let log: Vec<MoveEvent> = log
+            .and_then(|l| serde_json::from_str(&l).ok())
+            .unwrap_or_default();
+        out.push(AdminAttempt {
+            user_id: row.get(0).map_err(db_err)?,
+            name: row.get(1).map_err(db_err)?,
+            username: row.get(2).map_err(db_err)?,
+            started_at: row.get(3).map_err(db_err)?,
+            finished_at: row.get(4).map_err(db_err)?,
+            time_ms: row.get(5).map_err(db_err)?,
+            hints: row.get(6).map_err(db_err)?,
+            checks: row.get(7).map_err(db_err)?,
+            moves: row.get(8).map_err(db_err)?,
+            revealed: row.get::<i64>(9).map_err(db_err)? != 0,
+            flag: row
+                .get::<Option<String>>(10)
+                .map_err(db_err)?
+                .and_then(|f| Flag::from_id(&f)),
+            log: summarize_log(&log),
+        });
+    }
+    Ok(out)
+}
+
+/// The full move log of an attempt.
+pub async fn log(conn: &Connection, user: i64, day: i64) -> Result<Vec<MoveEvent>, ServerFnError> {
+    let mut rows = conn
+        .query(
+            "SELECT log FROM attempts WHERE user_id = ?1 AND day = ?2",
+            params![user, day],
+        )
+        .await
+        .map_err(db_err)?;
+    let log: Option<String> = match rows.next().await.map_err(db_err)? {
+        Some(row) => row.get(0).map_err(db_err)?,
+        None => None,
+    };
+    Ok(log
+        .and_then(|l| serde_json::from_str(&l).ok())
+        .unwrap_or_default())
+}
+
+pub async fn submissions(conn: &Connection) -> Result<Vec<AdminSubmission>, ServerFnError> {
+    let mut rows = conn
+        .query(
+            "SELECT s.id, s.name, COALESCE(u.username, u.name, 'Hashi'), s.house, s.state, s.season,
+                    s.solved, s.total, s.par2, s.wrong, s.similar_to, s.created_at
+             FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id
+             ORDER BY s.created_at DESC LIMIT 200",
+            (),
+        )
+        .await
+        .map_err(db_err)?;
+    let mut out = Vec::new();
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        out.push(AdminSubmission {
+            id: row.get(0).map_err(db_err)?,
+            name: row.get(1).map_err(db_err)?,
+            author: row.get(2).map_err(db_err)?,
+            house: row.get::<i64>(3).map_err(db_err)? != 0,
+            state: DojoState::from_id(&row.get::<String>(4).map_err(db_err)?),
+            season: row.get(5).map_err(db_err)?,
+            solved: row.get(6).map_err(db_err)?,
+            total: row.get(7).map_err(db_err)?,
+            par2: row.get(8).map_err(db_err)?,
+            wrong: row.get(9).map_err(db_err)?,
+            similar_to: row.get(10).map_err(db_err)?,
+            created_at: row.get(11).map_err(db_err)?,
+        });
+    }
+    Ok(out)
+}
+
+pub async fn submission_action(
+    conn: &Connection,
+    id: i64,
+    action: SubmissionAction,
+) -> Result<(), ServerFnError> {
+    let sql = match action {
+        SubmissionAction::Requeue => {
+            "UPDATE dojo_submissions SET state = 'queued', progress = 0, attempts = 0, similar_to = NULL,
+                fingerprint = NULL WHERE id = ?1"
+        }
+        SubmissionAction::ClearCopy => "UPDATE dojo_submissions SET similar_to = NULL WHERE id = ?1",
+        SubmissionAction::Delete => "DELETE FROM dojo_submissions WHERE id = ?1",
+    };
+    conn.execute(sql, params![id]).await.map_err(db_err)?;
+    if action == SubmissionAction::Delete {
+        // Copies of it are originals now
+        conn.execute(
+            "UPDATE dojo_submissions SET similar_to = NULL WHERE similar_to = ?1",
+            params![id],
+        )
+        .await
+        .map_err(db_err)?;
+    }
+    if action == SubmissionAction::Requeue {
+        tokio::spawn(async {
+            let _ = dojo::dispatch().await;
+        });
+    }
+    Ok(())
+}
+
+/// `POST /admin/house`, a form on the dashboard: adds one of our own solvers to the Dojo.
+pub async fn house_form(headers: HeaderMap, mut multipart: Multipart) -> Response {
+    let mut form = dojo::Form::default();
+    while let Ok(Some(field)) = multipart.next_field().await {
+        match field.name().unwrap_or_default() {
+            "wasm" => form.wasm = field.bytes().await.map(|b| b.to_vec()).unwrap_or_default(),
+            "name" => form.name = field.text().await.unwrap_or_default(),
+            "description" => form.description = field.text().await.unwrap_or_default(),
+            _ => {}
+        }
+    }
+    form.source_url = format!("{}/tree/main/dojo/house", crate::seo::REPO_URL);
+    let Ok(conn) = db::conn() else {
+        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+    };
+    let admin = auth::user_from_headers(&conn, &headers)
+        .await
+        .ok()
+        .flatten()
+        .is_some_and(|u| is_admin(&u));
+    if !admin {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    match dojo::submit(&conn, None, form).await {
+        Ok(id) => Redirect::to(&format!("/admin?tab=dojo&added={id}")).into_response(),
+        Err(e) => Redirect::to(&format!("/admin?tab=dojo&error={}", e.code())).into_response(),
+    }
+}
 
 const TOKEN: &str = "HASHI_ADMIN_TOKEN";
 
@@ -83,5 +303,30 @@ pub async fn flag(headers: HeaderMap, Query(q): Query<AttemptQuery>) -> Response
         Ok(true) => StatusCode::NO_CONTENT.into_response(),
         Ok(false) => StatusCode::NOT_FOUND.into_response(),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn user(username: Option<&str>) -> User {
+        User {
+            id: 1,
+            username: username.map(String::from),
+            name: "x".into(),
+            created_at: 0,
+        }
+    }
+
+    #[test]
+    fn admins_by_username() {
+        assert!(listed("Noel", &user(Some("noel"))));
+        assert!(listed(" alice , Noel ", &user(Some("NOEL"))));
+        assert!(!listed("Noel", &user(Some("noelle"))));
+        // Guests have no username, an empty list has no admins
+        assert!(!listed("Noel", &user(None)));
+        assert!(!listed("", &user(Some(""))));
+        assert!(!listed(",", &user(Some("noel"))));
     }
 }

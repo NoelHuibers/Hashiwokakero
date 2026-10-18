@@ -8,6 +8,10 @@ primary_region = "ams"
 
 [build]
 
+# Usernames that can open the admin dashboard (comma separated)
+[env]
+  HASHI_ADMINS = "Noel"
+
 [http_service]
   internal_port = 8080
   force_https = true
