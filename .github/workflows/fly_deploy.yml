@@ -12,7 +12,7 @@ jobs:
     concurrency: deploy-group
     steps:
       - uses: actions/checkout@v7
-      - uses: superfly/flyctl-actions/setup-flyctl@1.5
+      - uses: superfly/flyctl-actions/setup-flyctl@1.6
       - name: Deploy to fly
         id: deployment
         # pipefail: a failed deploy must fail the job, not just print its last line
@@ -32,7 +32,7 @@ jobs:
     concurrency: deploy-dojo
     steps:
       - uses: actions/checkout@v7
-      - uses: superfly/flyctl-actions/setup-flyctl@1.5
+      - uses: superfly/flyctl-actions/setup-flyctl@1.6
       - name: Deploy to fly
         run: |
           set -o pipefail
