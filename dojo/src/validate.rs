@@ -34,7 +34,7 @@ pub fn validate(wasm: &[u8]) -> Result<(), Rejection> {
             }
             Payload::ImportSection(section) => {
                 has_imports = true;
-                for import in section {
+                for import in section.into_imports() {
                     let import = import.map_err(invalid)?;
                     if import.module != WASI {
                         return Err(Rejection::Import(format!(

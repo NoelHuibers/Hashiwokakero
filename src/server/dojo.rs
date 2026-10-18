@@ -319,6 +319,7 @@ pub fn code_hash(wasm: &[u8]) -> Option<String> {
         if let Some((id, range)) = payload.as_section()
             && id != 0
         {
+            let range = usize::try_from(range.start).ok()?..usize::try_from(range.end).ok()?;
             hasher.update([id]);
             hasher.update(wasm.get(range)?);
         }
