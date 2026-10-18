@@ -61,7 +61,8 @@
     "not_started": "请先开始每日谜题。",
     "not_solved": "这还不是正确答案哦。",
     "wrong_puzzle": "这些桥不属于这道谜题。",
-    "already_finished": "你已经完成过这道每日谜题了。"
+    "already_finished": "你已经完成过这道每日谜题了。",
+    "daily_locked": "这是今天的每日谜题：等你自己完成后，求解器才会帮忙。"
   },
   "solver": {
     "title": "SAT 求解器",

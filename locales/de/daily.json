@@ -36,5 +36,13 @@
     "title": "Diese Woche",
     "text": "Wie beim Zeitungsrätsel werden die Brücken bis Sonntag immer kniffliger.",
     "next": "Nächste Brücke in"
+  },
+  "flag": {
+    "title": "Nicht in der heutigen Rangliste",
+    "log": "Deine Züge konnten nicht geprüft werden, deshalb kommt dieses Ergebnis nicht in die Wertung. Das passiert, wenn in einer alten Version der Seite gespielt wurde; die Seite vor dem Start neu zu laden hilft.",
+    "too_fast": "Schneller, als irgendjemand diese Brücken setzen kann, deshalb kommt dieses Ergebnis nicht in die Wertung.",
+    "pace": "So schnelle Klicks, immer und immer wieder, sehen nach einem Programm aus, deshalb kommt dieses Ergebnis nicht in die Wertung.",
+    "second_account": "Auf diesem Gerät wurde das heutige Tagesrätsel schon mit einem anderen Konto geöffnet, deshalb kommt dieses Ergebnis nicht in die Wertung. Spiel jedes Tagesrätsel mit nur einem Konto.",
+    "review": "Dieses Ergebnis wurde nach einer Prüfung aus der Rangliste entfernt."
   }
 }

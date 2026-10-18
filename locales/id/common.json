@@ -61,7 +61,8 @@
     "not_started": "Mulai dulu teka-teki hariannya.",
     "not_solved": "Itu belum solusi.",
     "wrong_puzzle": "Jembatan ini bukan milik teka-teki ini.",
-    "already_finished": "Kamu sudah menyelesaikan teka-teki harian ini."
+    "already_finished": "Kamu sudah menyelesaikan teka-teki harian ini.",
+    "daily_locked": "Itu teka-teki harian hari ini: solver baru akan membantu setelah kamu menyelesaikannya sendiri."
   },
   "solver": {
     "title": "Solver SAT",

@@ -596,6 +596,18 @@ pub fn provide_state() {
 /*  Async actions                                                      */
 /* ------------------------------------------------------------------ */
 
+/// A random id this browser keeps, sent when a daily starts: a second account on the same device
+/// isn't ranked (the server only stores it hashed per day).
+pub fn device_id() -> String {
+    const KEY: &str = "hashi.device";
+    if let Some(id) = load::<String>(KEY).filter(|id| id.len() >= 16) {
+        return id;
+    }
+    let id = format!("{:016x}{:016x}", random_seed(), random_seed());
+    store(KEY, &id);
+    id
+}
+
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,

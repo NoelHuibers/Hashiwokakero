@@ -61,7 +61,8 @@
     "not_started": "먼저 데일리 퍼즐을 시작해 주세요.",
     "not_solved": "아직 정답이 아니에요.",
     "wrong_puzzle": "이 다리들은 이 퍼즐의 것이 아니에요.",
-    "already_finished": "이 데일리는 이미 완료했어요."
+    "already_finished": "이 데일리는 이미 완료했어요.",
+    "daily_locked": "오늘의 데일리예요. 솔버는 직접 완료한 뒤에 도와줄 수 있어요."
   },
   "solver": {
     "title": "SAT 솔버",

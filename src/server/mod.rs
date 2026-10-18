@@ -1,5 +1,6 @@
 //! Server only code: database, users, the daily puzzle and the SAT Dojo.
 
+pub mod admin;
 pub mod auth;
 pub mod daily;
 pub mod db;
@@ -17,6 +18,52 @@ pub fn hex(bytes: &[u8]) -> String {
             let _ = write!(out, "{b:02x}");
             out
         })
+}
+
+/// Whether the request carries `Authorization: Bearer <value of the env variable>`, compared in
+/// constant time. Always false when the variable isn't set.
+pub fn bearer_ok(headers: &axum::http::HeaderMap, env: &str) -> bool {
+    let Some(token) = std::env::var(env).ok().filter(|t| !t.is_empty()) else {
+        return false;
+    };
+    let expected = format!("Bearer {token}");
+    headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| {
+            v.len() == expected.len()
+                && v.bytes()
+                    .zip(expected.bytes())
+                    .fold(0, |acc, (a, b)| acc | (a ^ b))
+                    == 0
+        })
+}
+
+/// The client's address, as seen by the fly.io proxy (`None` locally).
+pub fn client_ip(headers: &axum::http::HeaderMap) -> Option<String> {
+    headers
+        .get("fly-client-ip")
+        .or_else(|| headers.get("x-forwarded-for"))
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.split(',').next())
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+/// An address made unrecognisable: hashed with a secret and the day, so it only says "the same
+/// network as another request today" and can't be traced back or followed across days.
+pub fn network_hash(ip: &str, day: i64) -> String {
+    use sha2::{Digest, Sha256};
+    let secret = std::env::var("HASHI_DAILY_SECRET").unwrap_or_else(|_| "hashi-daily".into());
+    // IPv6 clients get a whole /64, count that as one network
+    let network = if ip.contains(':') {
+        ip.split(':').take(4).collect::<Vec<_>>().join(":")
+    } else {
+        ip.to_string()
+    };
+    hex(&Sha256::digest(
+        format!("{secret}:network:{day}:{network}").as_bytes(),
+    ))
 }
 
 /// A count or length as stored in the database.

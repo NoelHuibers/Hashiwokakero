@@ -46,6 +46,15 @@ async fn main() {
                 "/dojo/report",
                 axum::routing::post(hashi::server::dojo::report_handler),
             )
+            // Reviewing daily results (see server/admin.rs)
+            .route(
+                "/admin/attempt",
+                axum::routing::get(hashi::server::admin::attempt),
+            )
+            .route(
+                "/admin/flag",
+                axum::routing::post(hashi::server::admin::flag),
+            )
             .route(
                 "/dojo/board.json",
                 axum::routing::get(hashi::server::dojo::board_json),

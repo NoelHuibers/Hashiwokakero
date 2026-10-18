@@ -1,19 +1,23 @@
 //! Benchmark sets, generated from a seed.
 //!
-//! Every answer is known for certain or backed by a model:
+//! Every answer is known for certain, backed by a model or by a checked proof:
 //!
 //! - Hashi: satisfiable, the generator's solution is a model.
 //! - Hashi parity: unsatisfiable, the island numbers add up to an odd number.
 //! - Pigeonhole: n+1 pigeons in n holes is unsatisfiable, n in n is not.
-//! - Queens and random 3-SAT: solved by splr beforehand, models are checked and UNSAT is
-//!   cross-checked by our CDCL where it is fast enough. Instances splr can't solve are skipped.
-//!   Should a label ever be wrong, a solver that finds a model still gets the point: models are
-//!   always checked, labels only decide about UNSAT answers.
+//! - Queens and random 3-SAT: solved by splr beforehand. SAT comes with a model, which is
+//!   checked. UNSAT must be proven: splr runs again writing a DRAT proof, which our own checker
+//!   ([`crate::drat`]) verifies. If the proof doesn't check out, a model found by our CDCL makes
+//!   the formula SAT, otherwise it is skipped, like instances splr can't solve.
+//!   Models are always checked anyway, labels only decide about UNSAT answers.
 //!
 //! The hidden test set uses a secret seed that changes every season, so its formulas can't be
 //! known in advance, and all formulas are scrambled (variables renamed and negated, clauses and
 //! literals shuffled) so a family can't be recognised by its layout.
 
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use backend::sat::{SatOutcome, solve_clauses};
@@ -21,6 +25,7 @@ use common::{Difficulty, GenerateParams, Puzzle, SolverConfig, SolverKind};
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
 use sha2::{Digest, Sha256};
+use splr::{Certificate, Config, SatSolverIF, SolveIF, Solver, SolverError};
 
 use crate::cnf::{Cnf, literals};
 use crate::{Answer, Family};
@@ -105,7 +110,7 @@ pub fn generate_with(seed: &str, spec: &[(Family, u32)]) -> Vec<Instance> {
         for _ in 0..threads.min(spec.len()) {
             scope.spawn(|| {
                 loop {
-                    let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    let index = next.fetch_add(1, Ordering::Relaxed);
                     let Some(&(family, size)) = spec.get(index) else {
                         break;
                     };
@@ -236,8 +241,9 @@ fn hashi(size: u32, rng: &mut StdRng, parity: bool) -> Option<Generated> {
     Some((Cnf::new(vars, encoding.clauses), Answer::Unsat, None))
 }
 
-/// Solved by splr (with its clause eliminator, which keeps it sound on our formulas). An UNSAT
-/// answer is cross-checked by our CDCL for a few seconds: if that finds a model, the model wins.
+/// Solved by splr (with its clause eliminator, which keeps it sound on our formulas). SAT needs a
+/// model that checks out, UNSAT a DRAT proof that does (see [`proven_unsat`]). Should splr's
+/// UNSAT not be provable, our CDCL gets a few seconds to find a model.
 fn label(cnf: &Cnf) -> Option<(Answer, Option<Vec<i32>>)> {
     let deadline = |secs| Some(Instant::now() + Duration::from_secs(secs));
     let checked = |model: Vec<bool>| {
@@ -250,6 +256,7 @@ fn label(cnf: &Cnf) -> Option<(Answer, Option<Vec<i32>>)> {
         .0
     {
         SatOutcome::Sat(model) => checked(model),
+        SatOutcome::Unsat if proven_unsat(cnf) => Some((Answer::Unsat, None)),
         SatOutcome::Unsat => {
             let cdcl = SolverConfig {
                 kind: SolverKind::Cdcl,
@@ -260,10 +267,72 @@ fn label(cnf: &Cnf) -> Option<(Answer, Option<Vec<i32>>)> {
                 .0
             {
                 SatOutcome::Sat(model) => checked(model),
-                SatOutcome::Unsat | SatOutcome::Timeout => Some((Answer::Unsat, None)),
+                SatOutcome::Unsat | SatOutcome::Timeout => None,
             }
         }
         SatOutcome::Timeout => None,
+    }
+}
+
+/// How long splr may take to write a proof, and the checker to check it.
+const PROOF_TIMEOUT: Duration = Duration::from_secs(120);
+
+/// Whether splr, run again with certification, proves the formula unsatisfiable with a DRAT
+/// proof that our checker accepts.
+fn proven_unsat(cnf: &Cnf) -> bool {
+    splr_proof(cnf).is_some_and(|proof| crate::drat::check(cnf, &proof, PROOF_TIMEOUT).is_ok())
+}
+
+/// A file that is removed when this goes out of scope (also on a panic).
+struct TempFile(PathBuf);
+
+impl Drop for TempFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+/// The DRAT proof (text) that splr writes when it finds the formula unsatisfiable; `None` if it
+/// doesn't (or fails). The proof goes through a temporary file, splr can only write to files.
+pub(crate) fn splr_proof(cnf: &Cnf) -> Option<Vec<u8>> {
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    let file = TempFile(std::env::temp_dir().join(format!(
+        "dojo-proof-{}-{}.drat",
+        std::process::id(),
+        NEXT.fetch_add(1, Ordering::Relaxed)
+    )));
+    // Like `backend::sat`: the clause eliminator stays on (the default), splr only has whole
+    // seconds as timeout
+    let config = Config {
+        quiet_mode: true,
+        use_certification: true,
+        io_pfile: file.0.clone(),
+        c_timeout: PROOF_TIMEOUT.as_secs_f64(),
+        ..Default::default()
+    };
+    // splr trips debug assertions on some formulas (debug builds only), see `backend::sat`
+    let unsat = catch_unwind(AssertUnwindSafe(|| {
+        match Solver::try_from((config, cnf.clauses.as_slice())) {
+            Ok(mut solver) => match solver.solve() {
+                Ok(Certificate::UNSAT)
+                | Err(SolverError::EmptyClause | SolverError::RootLevelConflict(_)) => {
+                    // Writes what is left of the proof and the final empty clause
+                    solver.save_certification();
+                    true
+                }
+                _ => false,
+            },
+            // A conflict while loading the clauses, splr writes no proof then: the checker
+            // accepts the (empty or partial) file only if unit propagation refutes the formula
+            Err(Ok(Certificate::UNSAT)) => true,
+            Err(_) => false,
+        }
+    }))
+    .unwrap_or(false);
+    if unsat {
+        std::fs::read(&file.0).ok()
+    } else {
+        None
     }
 }
 
@@ -296,7 +365,7 @@ fn random_3sat(n: u32, rng: &mut StdRng) -> Option<Generated> {
 }
 
 /// `holes + 1` pigeons in `holes` holes (unsatisfiable), or as many pigeons as holes.
-fn pigeonhole(holes: u32, satisfiable: bool) -> Generated {
+pub(crate) fn pigeonhole(holes: u32, satisfiable: bool) -> Generated {
     let pigeons = if satisfiable { holes } else { holes + 1 };
     let var = |p: u32, h: u32| {
         i32::try_from(p * holes + h + 1).expect("the size is a small variable count")

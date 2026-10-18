@@ -61,7 +61,8 @@
     "not_started": "Primero empieza el reto diario.",
     "not_solved": "Eso todavía no es una solución.",
     "wrong_puzzle": "Estos puentes no pertenecen a este puzle.",
-    "already_finished": "Ya has terminado este reto diario."
+    "already_finished": "Ya has terminado este reto diario.",
+    "daily_locked": "Ese es el reto diario de hoy: los solvers te ayudarán cuando lo hayas terminado tú."
   },
   "solver": {
     "title": "Solver SAT",

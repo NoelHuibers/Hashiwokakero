@@ -36,5 +36,13 @@
     "title": "Minggu ini",
     "text": "Seperti teka-teki di koran, jembatannya makin sulit menjelang hari Minggu.",
     "next": "Jembatan berikutnya dalam"
+  },
+  "flag": {
+    "title": "Tidak masuk papan peringkat hari ini",
+    "log": "Langkahmu tidak bisa diperiksa, jadi hasil ini tidak masuk peringkat. Ini terjadi kalau permainan dimainkan di versi lama halaman; memuat ulang halaman sebelum mulai akan membantu.",
+    "too_fast": "Tak ada orang yang bisa memasang jembatan ini secepat itu, jadi hasil ini tidak masuk peringkat.",
+    "pace": "Klik secepat ini, berulang-ulang, terlihat seperti program, jadi hasil ini tidak masuk peringkat.",
+    "second_account": "Perangkat ini sudah membuka teka-teki harian hari ini dengan akun lain, jadi hasil ini tidak masuk peringkat. Mainkan setiap teka-teki harian dengan satu akun saja.",
+    "review": "Hasil ini dihapus dari papan peringkat setelah ditinjau."
   }
 }

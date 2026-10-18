@@ -5,7 +5,8 @@
 //! When nothing happened for a while it exits, which stops the machine.
 //!
 //! Settings (environment):
-//! - `DOJO_TOKEN`: shared secret, required on every request in both directions
+//! - `DOJO_TOKEN`: shared secret the website uses to send jobs. Reports back carry the job's
+//!   own token instead, so the worker holds no key that could change other submissions
 //! - `APP_URL`: where reports go, e.g. `https://hashi.rs` (posted to `/dojo/report`)
 //! - `PORT` (8080), `DOJO_THREADS` (all cores), `DOJO_MEMORY_MB` (1024 per run)
 //! - `DOJO_IDLE_EXIT_SECS`: exit after this long without work (unset: never)
@@ -39,12 +40,15 @@ struct JobQuery {
     id: i64,
     season: u32,
     seed: String,
+    /// Reports about this job carry this token: valid for this one job only.
+    report_token: String,
 }
 
 struct Job {
     id: i64,
     season: u32,
     seed: String,
+    report_token: Arc<str>,
     wasm: Bytes,
 }
 
@@ -96,6 +100,7 @@ async fn submit(
         id: q.id,
         season: q.season,
         seed: q.seed,
+        report_token: q.report_token.into(),
         wasm,
     };
     match shared.jobs.send(job) {
@@ -109,16 +114,15 @@ async fn submit(
 struct Reporter {
     client: reqwest::Client,
     url: String,
-    token: Arc<str>,
 }
 
 impl Reporter {
-    async fn send(&self, report: &Report) {
+    async fn send(&self, report: &Report, token: &str) {
         for attempt in 0..6u32 {
             let sent = self
                 .client
                 .post(&self.url)
-                .bearer_auth(&*self.token)
+                .bearer_auth(token)
                 .json(report)
                 .timeout(Duration::from_secs(30))
                 .send()
@@ -162,10 +166,10 @@ fn evaluator(
     let cache = std::env::var("DOJO_CACHE_DIR")
         .ok()
         .map(std::path::PathBuf::from);
-    let send = |report: Report| runtime.block_on(reporter.send(&report));
-
     while let Some(job) = jobs.blocking_recv() {
         let (id, season) = (job.id, job.season);
+        let token = job.report_token.clone();
+        let send = |report: Report| runtime.block_on(reporter.send(&report, &token));
         let started = Instant::now();
         let set = sets
             .entry(job.seed.clone())
@@ -205,12 +209,19 @@ fn evaluator(
                             total,
                         };
                         let reporter = reporter.clone();
-                        runtime.spawn(async move { reporter.send(&report).await });
+                        let token = token.clone();
+                        runtime.spawn(async move { reporter.send(&report, &token).await });
                     }
                 });
                 if results.len() == set.len() {
                     let score = Score::from_results(&results, options.limits.fuel);
-                    Report::Finished { id, season, score }
+                    let fingerprint = crate::fingerprint(&results);
+                    Report::Finished {
+                        id,
+                        season,
+                        score,
+                        fingerprint,
+                    }
                 } else {
                     Report::Failed {
                         id,
@@ -305,7 +316,6 @@ pub fn serve() -> Result<(), String> {
         let reporter = Reporter {
             client: reqwest::Client::new(),
             url: format!("{}/dojo/report", app_url.trim_end_matches('/')),
-            token,
         };
         let handle = tokio::runtime::Handle::current();
         let evaluator_shared = shared.clone();

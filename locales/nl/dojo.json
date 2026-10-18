@@ -57,13 +57,15 @@
     "hidden_title": "Geheime, verse formules",
     "hidden": "De testset komt uit een geheime seed die elk seizoen verandert, en elke formule wordt door elkaar gehusseld: variabelen hernoemd en geïnverteerd, clausules geschud. Resultaten worden alleen per familie getoond, nooit per formule.",
     "checked_title": "Elk antwoord gecontroleerd",
-    "checked": "Modellen worden tegen de formule gecontroleerd. UNSAT telt alleen bij formules waarvan bekend is dat ze onvervulbaar zijn. Eén fout antwoord diskwalificeert de inzending, gokken loont dus nooit.",
+    "checked": "Modellen worden tegen de formule gecontroleerd. UNSAT telt alleen waar we een bewijs hebben: duiventil en Hashi-pariteit zijn per constructie onvervulbaar, elk ander UNSAT-label komt met een DRAT-bewijs dat onze eigen checker heeft geverifieerd. Eén fout antwoord diskwalificeert de inzending, gokken loont dus nooit.",
     "sandbox_title": "Een verzegelde sandbox",
     "sandbox": "Geen bestanden, geen netwerk, geen omgevingsvariabelen. Geheugen en uitvoer zijn begrensd, en inzendingen draaien op een aparte machine zonder gegevens.",
     "accounts_title": "Eén account, beste inzending",
-    "accounts": "Geregistreerde accounts kunnen drie keer per dag insturen. Identieke bestanden worden geweigerd en alleen je beste inzending komt in de ranglijst.",
+    "accounts": "Accounts moeten een dag oud zijn om in te sturen, en er zijn drie inzendingen per dag per account en per netwerk. Identieke code wordt geweigerd, ook hernoemd of opgevuld, en alleen je beste inzending komt in de ranglijst.",
     "seasons_title": "Seizoenen",
-    "seasons": "Een nieuw seizoen brengt een nieuwe geheime set en elke inzending wordt opnieuw beoordeeld."
+    "seasons": "Een nieuw seizoen brengt een nieuwe geheime set en elke inzending wordt opnieuw beoordeeld.",
+    "copies_title": "Geen kopieën",
+    "copies": "Scores zijn exact, dus een solver laat een vingerafdruk achter: de brandstof die hij op elke formule verbruikt. Een inzending die zich gedraagt als een eerdere van iemand anders komt niet in de ranglijst. Wie een kopie genoeg verandert om daaraan te ontsnappen, heeft een andere solver gemaakt, en hem trager maken zet hem alleen onder het origineel."
   },
   "science": {
     "title": "Voor onderzoekers",
@@ -90,7 +92,10 @@
       "not_wasm": "Dat is geen WebAssembly-bestand.",
       "duplicate": "Precies dit bestand is al eerder ingestuurd.",
       "limit": "Je hebt vandaag al drie keer ingestuurd.",
-      "server": "Er ging bij ons iets mis, probeer het opnieuw."
+      "server": "Er ging bij ons iets mis, probeer het opnieuw.",
+      "account_age": "Nieuwe accounts kunnen na een dag insturen. Test je solver tot dan lokaal met dojo run.",
+      "network_limit": "Drie inzendingen per dag per netwerk, ongeacht van welk account ze komen.",
+      "busy": "De wachtrij is nu vol, probeer het over een paar minuten opnieuw."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Terug naar de ranglijst",
     "not_found": "Deze inzending bestaat niet.",
     "season": "Seizoen {{ season }}",
-    "rank_label": "Plaats"
+    "rank_label": "Plaats",
+    "similar": "Deze solver gedraagt zich als <a>inzending #{{ id }}</a> van iemand anders, die er eerder was. Alleen het origineel komt in de ranglijst."
   },
   "rejection": {
     "title": "De worker heeft dit bestand geweigerd",

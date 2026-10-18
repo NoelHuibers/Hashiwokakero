@@ -180,6 +180,7 @@ impl Sandbox {
                 .memory_size(limits.memory_bytes)
                 .memories(1)
                 .tables(16)
+                .table_elements(1 << 20)
                 .instances(1)
                 .build(),
         };

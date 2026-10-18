@@ -61,7 +61,8 @@
     "not_started": "Önce günlük bulmacayı başlat.",
     "not_solved": "Bu henüz bir çözüm değil.",
     "wrong_puzzle": "Bu köprüler bu bulmacaya ait değil.",
-    "already_finished": "Bu günlük bulmacayı zaten bitirdin."
+    "already_finished": "Bu günlük bulmacayı zaten bitirdin.",
+    "daily_locked": "Bu bugünün günlük bulmacası: çözücüler, sen kendin bitirdikten sonra yardım eder."
   },
   "solver": {
     "title": "SAT çözücü",

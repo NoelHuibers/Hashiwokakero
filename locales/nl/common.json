@@ -61,7 +61,8 @@
     "not_started": "Start eerst de dagpuzzel.",
     "not_solved": "Dat is nog geen oplossing.",
     "wrong_puzzle": "Deze bruggen horen niet bij deze puzzel.",
-    "already_finished": "Je hebt deze dagpuzzel al afgerond."
+    "already_finished": "Je hebt deze dagpuzzel al afgerond.",
+    "daily_locked": "Dat is de dagpuzzel van vandaag: de solvers helpen pas als je hem zelf hebt afgerond."
   },
   "solver": {
     "title": "SAT-solver",

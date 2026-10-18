@@ -4,7 +4,8 @@
 //! queued submissions to the worker (`DOJO_URL`, which starts on demand), the worker reports
 //! progress and the score to `/dojo/report`. Runs that go quiet are queued again.
 //!
-//! Settings: `DOJO_URL` (worker, unset: nothing is evaluated), `DOJO_TOKEN` (shared secret),
+//! Settings: `DOJO_URL` (worker, unset: nothing is evaluated), `DOJO_TOKEN` (authenticates us
+//! to the worker; its reports carry a per-job token instead), `HASHI_ADMIN_TOKEN` (house entries),
 //! `DOJO_SECRET` (seed of the hidden sets), `DOJO_SEASON` (number of the current season; a
 //! new season re-evaluates every submission on a new hidden set).
 
@@ -27,6 +28,10 @@ use crate::model::{DojoBoard, DojoEntry, DojoMe, DojoRow, DojoState, DojoSubmiss
 
 /// Submissions per account and day (house entries don't count).
 pub const PER_DAY: u32 = 3;
+/// Accounts have to be this old to submit.
+const MIN_ACCOUNT_AGE_MS: i64 = MS_PER_DAY;
+/// Submissions waiting or running before new ones are refused.
+const MAX_PENDING: i64 = 40;
 const NAME_MAX: usize = 40;
 const DESCRIPTION_MAX: usize = 600;
 const URL_MAX: usize = 200;
@@ -70,6 +75,7 @@ async fn ranked(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, Server
             "SELECT s.id, s.name, COALESCE(u.username, u.name, 'Hashi'), s.house, s.score, s.created_at, s.user_id
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id
              WHERE s.state = 'done' AND s.season = ?1 AND s.wrong = 0 AND s.solved > 0
+               AND s.similar_to IS NULL
              ORDER BY s.par2 ASC, s.solved DESC, s.created_at ASC",
             params![season],
         )
@@ -135,7 +141,8 @@ pub async fn submission(
     let mut rows = conn
         .query(
             "SELECT s.id, s.name, s.description, s.source_url, COALESCE(u.username, u.name, 'Hashi'), s.house,
-                    s.created_at, s.state, s.season, s.progress, s.total, s.score, s.error, s.size, s.sha256, s.user_id
+                    s.created_at, s.state, s.season, s.progress, s.total, s.score, s.error, s.size, s.sha256, s.user_id,
+                    s.similar_to
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = ?1",
             params![id],
         )
@@ -169,6 +176,7 @@ pub async fn submission(
         rank,
         size: row.get(13).map_err(db_err)?,
         sha256: row.get(14).map_err(db_err)?,
+        similar_to: row.get(16).map_err(db_err)?,
         mine: user.is_some() && user == me,
     }))
 }
@@ -235,6 +243,12 @@ pub enum SubmitError {
     NotWasm,
     Duplicate,
     Limit,
+    /// The account was created less than a day ago.
+    AccountAge,
+    /// Enough submissions from this network today, whatever the account.
+    NetworkLimit,
+    /// The queue is full, try again later.
+    Busy,
     Server,
 }
 
@@ -249,6 +263,9 @@ impl SubmitError {
             Self::NotWasm => "not_wasm",
             Self::Duplicate => "duplicate",
             Self::Limit => "limit",
+            Self::AccountAge => "account_age",
+            Self::NetworkLimit => "network_limit",
+            Self::Busy => "busy",
             Self::Server => "server",
         }
     }
@@ -260,6 +277,8 @@ pub struct Form {
     pub description: String,
     pub source_url: String,
     pub wasm: Vec<u8>,
+    /// The hashed network the upload came from (`None` for house entries and local runs).
+    pub network: Option<String>,
 }
 
 impl Form {
@@ -291,6 +310,22 @@ impl Form {
     }
 }
 
+/// SHA-256 of the module without its custom sections (names, debug info, anything appended
+/// there): the same code renamed or padded hashes the same. `None` if it isn't WebAssembly.
+pub fn code_hash(wasm: &[u8]) -> Option<String> {
+    let mut hasher = Sha256::new();
+    for payload in wasmparser::Parser::new(0).parse_all(wasm) {
+        let payload = payload.ok()?;
+        if let Some((id, range)) = payload.as_section()
+            && id != 0
+        {
+            hasher.update([id]);
+            hasher.update(wasm.get(range)?);
+        }
+    }
+    Some(hex(&hasher.finalize()))
+}
+
 /// Stores a submission and queues it. `user` is `None` for house entries.
 pub async fn submit(
     conn: &Connection,
@@ -306,18 +341,54 @@ pub async fn submit(
         if user.username.is_none() {
             return Err(SubmitError::SignIn);
         }
+        // Throwaway accounts made to get around the limits have to wait a day
+        if user.created_at > now_ms() - MIN_ACCOUNT_AGE_MS {
+            return Err(SubmitError::AccountAge);
+        }
         let today = submitted_today(conn, user.id)
             .await
             .map_err(|_| SubmitError::Server)?;
         if today >= PER_DAY {
             return Err(SubmitError::Limit);
         }
+        if let Some(network) = &form.network {
+            let mut rows = conn
+                .query(
+                    "SELECT COUNT(*) FROM dojo_submissions WHERE ip_hash = ?1",
+                    params![network.clone()],
+                )
+                .await
+                .map_err(server)?;
+            let from_network: i64 = match rows.next().await.map_err(server)? {
+                Some(row) => row.get(0).map_err(server)?,
+                None => 0,
+            };
+            if from_network >= i64::from(PER_DAY) {
+                return Err(SubmitError::NetworkLimit);
+            }
+        }
+        let mut rows = conn
+            .query(
+                "SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running')",
+                (),
+            )
+            .await
+            .map_err(server)?;
+        let pending: i64 = match rows.next().await.map_err(server)? {
+            Some(row) => row.get(0).map_err(server)?,
+            None => 0,
+        };
+        if pending >= MAX_PENDING {
+            return Err(SubmitError::Busy);
+        }
     }
     let sha256 = hex(&Sha256::digest(&form.wasm));
+    // Renaming, padding or adding custom sections doesn't make a different solver
+    let code = code_hash(&form.wasm).ok_or(SubmitError::NotWasm)?;
     let mut rows = conn
         .query(
-            "SELECT 1 FROM dojo_submissions WHERE sha256 = ?1",
-            params![sha256.clone()],
+            "SELECT 1 FROM dojo_submissions WHERE sha256 = ?1 OR code_hash = ?2",
+            params![sha256.clone(), code.clone()],
         )
         .await
         .map_err(server)?;
@@ -328,8 +399,9 @@ pub async fn submit(
     let url = form.source_url.trim();
     conn.execute(
         "INSERT INTO dojo_submissions
-            (user_id, house, name, description, source_url, wasm, sha256, size, created_at, updated_at, state, season)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, 'queued', ?10)",
+            (user_id, house, name, description, source_url, wasm, sha256, size, created_at, updated_at, state, season,
+             code_hash, ip_hash)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, 'queued', ?10, ?11, ?12)",
         params![
             user.map(|u| u.id),
             i64::from(user.is_none()),
@@ -340,7 +412,9 @@ pub async fn submit(
             sha256,
             count(form.wasm.len()),
             now,
-            season()
+            season(),
+            code,
+            form.network.clone()
         ],
     )
     .await
@@ -402,6 +476,8 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             .await
             .map_err(|_| SubmitError::Server)?
             .ok_or(SubmitError::SignIn)?;
+        form.network = super::client_ip(&headers)
+            .map(|ip| super::network_hash(&ip, crate::model::day_of(now_ms())));
         submit(&conn, Some(&user), form).await
     }
     .await;
@@ -409,21 +485,6 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
         Ok(id) => Redirect::to(&format!("{prefix}/dojo/{id}")).into_response(),
         Err(e) => Redirect::to(&format!("{prefix}/dojo?error={}#submit", e.code())).into_response(),
     }
-}
-
-fn authorized(headers: &HeaderMap) -> bool {
-    let Some(token) = token() else { return false };
-    let expected = format!("Bearer {token}");
-    headers
-        .get(header::AUTHORIZATION)
-        .and_then(|v| v.to_str().ok())
-        .is_some_and(|v| {
-            v.len() == expected.len()
-                && v.bytes()
-                    .zip(expected.bytes())
-                    .fold(0, |acc, (a, b)| acc | (a ^ b))
-                    == 0
-        })
 }
 
 /// `GET /dojo/board.json`: the leaderboard for scripts and papers.
@@ -449,13 +510,15 @@ pub struct HouseQuery {
     description: String,
 }
 
-/// `POST /dojo/house?name=` with the token: adds one of our own solvers to the leaderboard.
+/// `POST /dojo/house?name=` with `HASHI_ADMIN_TOKEN`: adds one of our own solvers to the
+/// leaderboard.
 pub async fn house_handler(
     headers: HeaderMap,
     Query(q): Query<HouseQuery>,
     wasm: Bytes,
 ) -> Response {
-    if !authorized(&headers) {
+    // The admin token, not the worker's: nothing the worker holds can add entries
+    if !super::bearer_ok(&headers, "HASHI_ADMIN_TOKEN") {
         return StatusCode::UNAUTHORIZED.into_response();
     }
     let form = Form {
@@ -463,6 +526,7 @@ pub async fn house_handler(
         description: q.description,
         source_url: format!("{}/tree/main/dojo/house", crate::seo::REPO_URL),
         wasm: wasm.to_vec(),
+        network: None,
     };
     let Ok(conn) = db::conn() else {
         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
@@ -494,15 +558,32 @@ pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Err
             )
             .await?;
         }
-        Report::Finished { id, season, score } => {
+        Report::Finished {
+            id,
+            season,
+            score,
+            fingerprint,
+        } => {
             let json = serde_json::to_string(score).unwrap_or_default();
+            let fingerprint = serde_json::to_string(fingerprint).unwrap_or_default();
             conn.execute(
                 "UPDATE dojo_submissions SET state = 'done', progress = ?1, total = ?1, score = ?2, par2 = ?3,
-                    solved = ?4, wrong = ?5, error = NULL, updated_at = ?6
+                    solved = ?4, wrong = ?5, error = NULL, updated_at = ?6, fingerprint = ?9, similar_to = NULL
                  WHERE id = ?7 AND season = ?8",
-                params![score.total, json, score.par2, score.solved, score.wrong, now, *id, *season],
+                params![
+                    score.total,
+                    json,
+                    score.par2,
+                    score.solved,
+                    score.wrong,
+                    now,
+                    *id,
+                    *season,
+                    fingerprint
+                ],
             )
             .await?;
+            mark_copies(conn, *id).await?;
         }
         Report::Rejected { id, season, reason } => {
             let json = serde_json::to_string(reason).unwrap_or_default();
@@ -528,17 +609,93 @@ pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Err
     Ok(())
 }
 
+/// Compares a finished submission with everyone else's of the same season: of two that behave
+/// the same on every formula (see [`dojo::similar`]), only the earlier one is ranked.
+async fn mark_copies(conn: &Connection, id: i64) -> Result<(), libsql::Error> {
+    let mut rows = conn
+        .query(
+            "SELECT s.id, s.user_id, s.created_at, s.fingerprint, s.similar_to
+             FROM dojo_submissions s JOIN dojo_submissions me ON me.id = ?1
+             WHERE s.season = me.season AND s.state = 'done' AND s.fingerprint IS NOT NULL",
+            params![id],
+        )
+        .await?;
+    let mut all = Vec::new();
+    while let Some(row) = rows.next().await? {
+        let fingerprint: String = row.get(3)?;
+        all.push((
+            row.get::<i64>(0)?,
+            row.get::<Option<i64>>(1)?,
+            row.get::<i64>(2)?,
+            serde_json::from_str::<Vec<u64>>(&fingerprint).unwrap_or_default(),
+            row.get::<Option<i64>>(4)?,
+        ));
+    }
+    let Some(me) = all.iter().find(|s| s.0 == id).cloned() else {
+        return Ok(());
+    };
+    for other in all
+        .iter()
+        .filter(|o| o.0 != id && (o.1 != me.1 || o.1.is_none()))
+    {
+        if !dojo::similar(&me.3, &other.3) {
+            continue;
+        }
+        // The later one is the copy
+        let (copy, original) = if (me.2, me.0) > (other.2, other.0) {
+            (me.0, other.0)
+        } else {
+            (other.0, me.0)
+        };
+        conn.execute(
+            "UPDATE dojo_submissions SET similar_to = ?2 WHERE id = ?1 AND similar_to IS NULL",
+            params![copy, original],
+        )
+        .await?;
+    }
+    Ok(())
+}
+
 /// `POST /dojo/report` from the worker.
 pub async fn report_handler(
     headers: HeaderMap,
     axum::Json(report): axum::Json<Report>,
 ) -> StatusCode {
-    if !authorized(&headers) {
-        return StatusCode::UNAUTHORIZED;
-    }
     let Ok(conn) = db::conn() else {
         return StatusCode::SERVICE_UNAVAILABLE;
     };
+    // Only with the token of this very job: the worker holds no key to other submissions
+    let expected: Option<String> = match conn
+        .query(
+            "SELECT job_token FROM dojo_submissions WHERE id = ?1",
+            params![report.id()],
+        )
+        .await
+    {
+        Ok(mut rows) => match rows.next().await {
+            Ok(Some(row)) => row.get(0).ok().flatten(),
+            _ => None,
+        },
+        Err(_) => return StatusCode::SERVICE_UNAVAILABLE,
+    };
+    let given = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "));
+    let valid = match (expected, given) {
+        (Some(expected), Some(given)) => {
+            expected.len() == given.len()
+                && expected
+                    .bytes()
+                    .zip(given.bytes())
+                    .fold(0, |acc, (a, b)| acc | (a ^ b))
+                    == 0
+        }
+        _ => false,
+    };
+    if !valid {
+        return StatusCode::UNAUTHORIZED;
+    }
     match apply(&conn, &report).await {
         Ok(()) => StatusCode::NO_CONTENT,
         Err(e) => {
@@ -553,11 +710,30 @@ pub async fn report_handler(
 pub async fn housekeeping(conn: &Connection) -> Result<(), libsql::Error> {
     let now = now_ms();
     conn.execute(
-        "UPDATE dojo_submissions SET state = 'queued', season = ?1, progress = 0, updated_at = ?2, attempts = 0
+        "UPDATE dojo_submissions SET state = 'queued', season = ?1, progress = 0, updated_at = ?2, attempts = 0,
+            fingerprint = NULL, similar_to = NULL
          WHERE season != ?1 AND state IN ('done', 'queued', 'running')",
         params![season(), now],
     )
     .await?;
+    // Code hashes of submissions from before they existed
+    let mut rows = conn
+        .query(
+            "SELECT id, wasm FROM dojo_submissions WHERE code_hash IS NULL LIMIT 20",
+            (),
+        )
+        .await?;
+    let mut missing = Vec::new();
+    while let Some(row) = rows.next().await? {
+        missing.push((row.get::<i64>(0)?, row.get::<Vec<u8>>(1)?));
+    }
+    for (id, wasm) in missing {
+        conn.execute(
+            "UPDATE dojo_submissions SET code_hash = ?2 WHERE id = ?1",
+            params![id, code_hash(&wasm).unwrap_or_default()],
+        )
+        .await?;
+    }
     conn.execute(
         "UPDATE dojo_submissions SET state = CASE WHEN attempts >= ?1 THEN 'failed' ELSE 'queued' END, updated_at = ?2
          WHERE state = 'running' AND updated_at < ?3",
@@ -615,10 +791,20 @@ pub async fn dispatch() -> Result<(), String> {
         let wasm: Vec<u8> = row.get(0).map_err(|e| e.to_string())?;
         let season = row.get::<u32>(1).map_err(|e| e.to_string())?;
         let seed = test_seed(season);
+        // Reports about this job have to carry this token, it's good for nothing else
+        let mut bytes = [0u8; 32];
+        getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
+        let report_token = hex(&bytes);
+        conn.execute(
+            "UPDATE dojo_submissions SET job_token = ?2 WHERE id = ?1",
+            params![id, report_token.clone()],
+        )
+        .await
+        .map_err(|e| e.to_string())?;
         // The worker machine may have to start first
         let sent = client
             .post(format!(
-                "{}/jobs?id={id}&season={season}&seed={seed}",
+                "{}/jobs?id={id}&season={season}&seed={seed}&report_token={report_token}",
                 url.trim_end_matches('/')
             ))
             .bearer_auth(&token)
@@ -692,12 +878,29 @@ mod tests {
         }
     }
 
+    /// A tiny valid module; `extra` (below 128) sets its memory size, so the code differs.
+    fn module(extra: u8) -> Vec<u8> {
+        vec![0, b'a', b's', b'm', 1, 0, 0, 0, 5, 3, 1, 0, extra]
+    }
+
     fn form(name: &str, extra: u8) -> Form {
         Form {
             name: name.into(),
-            wasm: vec![0, b'a', b's', b'm', 1, 0, 0, 0, extra],
+            wasm: module(extra),
             ..Default::default()
         }
+    }
+
+    /// Fuel per formula: `base` billions, a little more for each formula.
+    fn fingerprint(base: f64) -> Vec<u64> {
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "test values are small and positive"
+        )]
+        (0..20)
+            .map(|i| ((base + f64::from(i) * 0.1) * 1e9) as u64)
+            .collect()
     }
 
     #[expect(
@@ -794,6 +997,7 @@ mod tests {
                 id: a1,
                 season,
                 score: score(2.0, 0),
+                fingerprint: vec![],
             },
         )
         .await
@@ -804,6 +1008,7 @@ mod tests {
                 id: a2,
                 season,
                 score: score(1.0, 0),
+                fingerprint: vec![],
             },
         )
         .await
@@ -814,6 +1019,7 @@ mod tests {
                 id: a3,
                 season,
                 score: score(0.5, 1),
+                fingerprint: vec![],
             },
         )
         .await
@@ -824,6 +1030,7 @@ mod tests {
                 id: house,
                 season,
                 score: score(1.5, 0),
+                fingerprint: vec![],
             },
         )
         .await
@@ -835,6 +1042,7 @@ mod tests {
                 id: a1,
                 season: season + 1,
                 score: score(0.1, 0),
+                fingerprint: vec![],
             },
         )
         .await
@@ -878,6 +1086,114 @@ mod tests {
             (s.state, s.rejection),
             (DojoState::Rejected, Some(Rejection::NoStart))
         );
+    }
+
+    #[tokio::test]
+    async fn copies_and_throwaway_accounts() {
+        let conn = test_db("copies").await;
+        let alice = user(&conn, "alice2", true).await;
+        let bob = user(&conn, "bob2", true).await;
+        let season = season();
+
+        // The same code with a custom section added (a renamed copy) is the same code
+        let original = submit(&conn, Some(&alice), form("original", 40))
+            .await
+            .unwrap();
+        let mut padded = module(40);
+        padded.extend_from_slice(&[0, 4, 3, b'p', b'a', b'd']);
+        let copy = Form {
+            wasm: padded,
+            ..form("mine now", 40)
+        };
+        assert_eq!(
+            submit(&conn, Some(&bob), copy).await,
+            Err(SubmitError::Duplicate)
+        );
+
+        // A changed copy behaves the same: only the earlier one is ranked
+        let near = submit(&conn, Some(&bob), form("tweaked", 41))
+            .await
+            .unwrap();
+        let other = submit(&conn, Some(&bob), form("really different", 42))
+            .await
+            .unwrap();
+        for (id, fp) in [
+            (near, fingerprint(1.005)),
+            (original, fingerprint(1.0)),
+            (other, fingerprint(3.0)),
+        ] {
+            apply(
+                &conn,
+                &Report::Finished {
+                    id,
+                    season,
+                    score: score(1.0, 0),
+                    fingerprint: fp,
+                },
+            )
+            .await
+            .unwrap();
+        }
+        let s = submission(&conn, near, None).await.unwrap().unwrap();
+        assert_eq!((s.similar_to, s.rank), (Some(original), None));
+        assert_eq!(
+            submission(&conn, original, None)
+                .await
+                .unwrap()
+                .unwrap()
+                .similar_to,
+            None
+        );
+        assert_eq!(
+            submission(&conn, other, None)
+                .await
+                .unwrap()
+                .unwrap()
+                .similar_to,
+            None
+        );
+        assert!(dojo::similar(&fingerprint(1.0), &fingerprint(1.01)));
+        assert!(!dojo::similar(&fingerprint(1.0), &fingerprint(1.2)));
+
+        // A new account waits a day
+        let fresh = User {
+            created_at: now_ms(),
+            ..user(&conn, "fresh", true).await
+        };
+        assert_eq!(
+            submit(&conn, Some(&fresh), form("x", 50)).await,
+            Err(SubmitError::AccountAge)
+        );
+
+        // Three a day per network, whatever the account
+        let carol = user(&conn, "carol", true).await;
+        let dave = user(&conn, "dave", true).await;
+        let net = |name: &str, extra| Form {
+            network: Some("network-1".into()),
+            ..form(name, extra)
+        };
+        submit(&conn, Some(&carol), net("c1", 60)).await.unwrap();
+        submit(&conn, Some(&carol), net("c2", 61)).await.unwrap();
+        submit(&conn, Some(&dave), net("d1", 62)).await.unwrap();
+        assert_eq!(
+            submit(&conn, Some(&dave), net("d2", 63)).await,
+            Err(SubmitError::NetworkLimit)
+        );
+        // ...but other networks are fine
+        let elsewhere = Form {
+            network: Some("network-2".into()),
+            ..form("d3", 64)
+        };
+        submit(&conn, Some(&dave), elsewhere).await.unwrap();
+    }
+
+    #[test]
+    fn code_hash_ignores_custom_sections() {
+        let mut named = module(7);
+        named.extend_from_slice(&[0, 5, 4, b'n', b'a', b'm', b'e']);
+        assert_eq!(code_hash(&module(7)), code_hash(&named));
+        assert_ne!(code_hash(&module(7)), code_hash(&module(8)));
+        assert_eq!(code_hash(b"not wasm"), None);
     }
 
     #[tokio::test]

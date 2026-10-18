@@ -21,12 +21,24 @@ use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name, error_text, localized};
 use crate::model::{
-    CHECK_PENALTY_MS, DailyInfo, HINT_PENALTY_MS, Leaderboard, MS_PER_DAY, SubmitResult,
-    WEEKDAY_KANJI, daily_difficulty, daily_number, date_string, format_duration, weekday,
+    CHECK_PENALTY_MS, DailyInfo, Flag, HINT_PENALTY_MS, Leaderboard, MS_PER_DAY, MoveEvent,
+    SubmitResult, WEEKDAY_KANJI, daily_difficulty, daily_number, date_string, format_duration,
+    weekday,
 };
 use crate::pages::play::{SeoIntro, islands_percent};
 use crate::seo::{PageMeta, site_ld};
-use crate::state::{Auth, DailyGame, Game, Source, Status, ToastKind, toast};
+use crate::state::{
+    Auth, DailyGame, Game, Source, Status, ToastKind, device_id, load, store, toast,
+};
+
+/// The move log of the running daily, kept in the browser so a reload doesn't lose it.
+const LOG_KEY: &str = "hashi.daily.log";
+
+#[derive(serde::Serialize, serde::Deserialize, Default)]
+struct SavedLog {
+    day: i64,
+    events: Vec<MoveEvent>,
+}
 
 fn params_for(day: i64) -> GenerateParams {
     let difficulty = daily_difficulty(day);
@@ -87,6 +99,30 @@ impl Daily {
                 .and_then(|i| i.attempt.as_ref())
                 .is_some_and(super::super::model::AttemptInfo::finished)
         })
+    }
+
+    /// Milliseconds since the start on the server clock, without penalties: the move log's time.
+    fn clock_ms(&self) -> u32 {
+        let now = self.server_now();
+        let started = self.info.with_untracked(|i| {
+            i.as_ref()
+                .and_then(|i| i.attempt.as_ref())
+                .map(|a| a.started_at)
+        });
+        started.map_or(0, |s| u32::try_from((now - s).max(0)).unwrap_or(u32::MAX))
+    }
+
+    /// Why the result isn't ranked, if it isn't.
+    fn flag(&self) -> Option<Flag> {
+        self.result
+            .with(|r| r.as_ref().and_then(|r| r.flag))
+            .or_else(|| {
+                self.info.with(|i| {
+                    i.as_ref()
+                        .and_then(|i| i.attempt.as_ref())
+                        .and_then(|a| a.flag)
+                })
+            })
     }
 
     /// Running time including penalties, or the final time.
@@ -204,7 +240,7 @@ fn Cover(daily: Daily) -> impl IntoView {
         }
         daily.busy.set(true);
         spawn_local(async move {
-            match start_daily().await {
+            match start_daily(Some(device_id())).await {
                 Ok(info) => {
                     daily.apply(info);
                     auth.refresh();
@@ -312,6 +348,25 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                         <Stamp kanji="完" class="size-20 text-5xl" />
                         <h2 class="text-2xl font-black">"見事！ " {t!(i18n, common.game.well_done)}</h2>
                         <p class="font-pixel text-3xl tabular-nums">{move || format_duration(daily.elapsed_ms())}</p>
+                        {move || {
+                            daily
+                                .flag()
+                                .map(|flag| {
+                                    let locale = i18n.get_locale();
+                                    let reason = match flag {
+                                        Flag::Log => td_string!(locale, daily.flag.log),
+                                        Flag::TooFast => td_string!(locale, daily.flag.too_fast),
+                                        Flag::Pace => td_string!(locale, daily.flag.pace),
+                                        Flag::SecondAccount => td_string!(locale, daily.flag.second_account),
+                                        Flag::Review => td_string!(locale, daily.flag.review),
+                                    };
+                                    view! {
+                                        <p class="rounded-md border border-warning/40 bg-warning-light px-3 py-2 text-start text-sm text-warning-dark">
+                                            {reason}
+                                        </p>
+                                    }
+                                })
+                        }}
                         <p class="text-sm text-muted-foreground">
                             {move || {
                                 let rank = daily
@@ -325,9 +380,10 @@ fn ResultCard(daily: Daily) -> impl IntoView {
                                                 lb.as_ref().and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))
                                             })
                                     });
-                                match rank {
-                                    Some((rank, total)) => t_string!(i18n, daily.result.rank, rank, total),
-                                    None => t_string!(i18n, daily.result.ranking).to_string(),
+                                match (daily.flag(), rank) {
+                                    (Some(_), _) => t_string!(i18n, daily.flag.title).to_string(),
+                                    (None, Some((rank, total))) => t_string!(i18n, daily.result.rank, rank, total),
+                                    (None, None) => t_string!(i18n, daily.result.ranking).to_string(),
                                 }
                             }}
                         </p>
@@ -494,6 +550,41 @@ pub fn DailyPage() -> impl IntoView {
         }
     });
 
+    // Every bridge change while the clock runs, for the server to check the result: a click
+    // changes one bridge and counts a move, hints, undo and restart don't
+    Effect::new(move |prev: Option<(Vec<u8>, u32)>| {
+        let bridges = game.bridges.get();
+        let moves = game.moves.get_untracked();
+        let Some(day) = daily.day() else {
+            return (bridges, moves);
+        };
+        let running = daily.started() && !daily.finished();
+        if let Some((before, moves_before)) = prev
+            && running
+            && before.len() == bridges.len()
+        {
+            let changed: Vec<usize> = (0..bridges.len())
+                .filter(|&e| before[e] != bridges[e])
+                .collect();
+            let tap = changed.len() == 1 && moves > moves_before;
+            let t = daily.clock_ms();
+            let mut saved = load::<SavedLog>(LOG_KEY)
+                .filter(|l| l.day == day)
+                .unwrap_or_default();
+            saved.day = day;
+            for edge in changed {
+                saved.events.push(MoveEvent {
+                    t,
+                    edge: u16::try_from(edge).unwrap_or(u16::MAX),
+                    count: bridges[edge],
+                    tap,
+                });
+            }
+            store(LOG_KEY, &saved);
+        }
+        (bridges, moves)
+    });
+
     // Submit as soon as the board is solved
     Effect::new(move |_| {
         if game.status.get() != Status::Won || daily.finished() {
@@ -504,7 +595,12 @@ pub fn DailyPage() -> impl IntoView {
         let moves = game.moves.get_untracked();
         daily.busy.set(true);
         spawn_local(async move {
-            match submit_daily(day, bridges, moves).await {
+            // Read here, after the last move was logged
+            let log = load::<SavedLog>(LOG_KEY)
+                .filter(|l| l.day == day)
+                .map(|l| l.events)
+                .unwrap_or_default();
+            match submit_daily(day, bridges, moves, log).await {
                 Ok(result) => {
                     let end = browser_now() + daily.skew.get_untracked();
                     daily.update_attempt(|a| {

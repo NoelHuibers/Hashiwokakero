@@ -36,5 +36,13 @@
     "title": "Tuần này",
     "text": "Như câu đố trên báo, cầu khó dần về cuối tuần, khó nhất vào Chủ Nhật.",
     "next": "Cầu tiếp theo sau"
+  },
+  "flag": {
+    "title": "Không có trên bảng xếp hạng hôm nay",
+    "log": "Không thể kiểm tra các nước đi của bạn nên kết quả này không được xếp hạng. Điều này xảy ra khi ván chơi diễn ra trên phiên bản cũ của trang; tải lại trang trước khi bắt đầu sẽ giúp ích.",
+    "too_fast": "Nhanh hơn mức bất kỳ ai có thể đặt những cây cầu này, nên kết quả này không được xếp hạng.",
+    "pace": "Những cú nhấp nhanh như vậy, lặp đi lặp lại, trông giống một chương trình, nên kết quả này không được xếp hạng.",
+    "second_account": "Thiết bị này đã mở câu đố hôm nay bằng một tài khoản khác, nên kết quả này không được xếp hạng. Hãy chơi mỗi câu đố hằng ngày bằng một tài khoản.",
+    "review": "Kết quả này đã bị gỡ khỏi bảng xếp hạng sau khi xem xét."
   }
 }

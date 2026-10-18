@@ -36,5 +36,13 @@
     "title": "This week",
     "text": "Like a newspaper puzzle, the bridges get harder towards Sunday.",
     "next": "Next bridge in"
+  },
+  "flag": {
+    "title": "Not on today's leaderboard",
+    "log": "Your moves couldn't be checked, so this result isn't ranked. This happens when the game was played in an old version of the page; reloading before you start helps.",
+    "too_fast": "Faster than anyone can place these bridges, so this result isn't ranked.",
+    "pace": "Clicks this fast, again and again, look like a program, so this result isn't ranked.",
+    "second_account": "This device already opened today's daily with another account, so this result isn't ranked. Play each daily with one account.",
+    "review": "This result was taken off the leaderboard after a review."
   }
 }

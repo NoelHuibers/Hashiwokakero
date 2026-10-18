@@ -36,5 +36,13 @@
     "title": "Deze week",
     "text": "Net als een krantenpuzzel worden de bruggen richting zondag steeds moeilijker.",
     "next": "Volgende brug over"
+  },
+  "flag": {
+    "title": "Niet in de ranglijst van vandaag",
+    "log": "Je zetten konden niet worden gecontroleerd, dus dit resultaat telt niet mee voor de ranglijst. Dat gebeurt als er in een oude versie van de pagina is gespeeld; de pagina herladen voordat je begint helpt.",
+    "too_fast": "Sneller dan iemand deze bruggen kan leggen, dus dit resultaat telt niet mee voor de ranglijst.",
+    "pace": "Zulke snelle klikken, keer op keer, lijken op een programma, dus dit resultaat telt niet mee voor de ranglijst.",
+    "second_account": "Op dit apparaat is de dagpuzzel van vandaag al met een ander account geopend, dus dit resultaat telt niet mee voor de ranglijst. Speel elke dagpuzzel met één account.",
+    "review": "Dit resultaat is na een controle uit de ranglijst gehaald."
   }
 }

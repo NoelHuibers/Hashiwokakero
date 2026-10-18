@@ -36,5 +36,13 @@
     "title": "Cette semaine",
     "text": "Comme les jeux du journal, les ponts deviennent plus durs à l’approche du dimanche.",
     "next": "Prochain pont dans"
+  },
+  "flag": {
+    "title": "Absent du classement du jour",
+    "log": "Tes coups n’ont pas pu être vérifiés, ce résultat n’est donc pas classé. Cela arrive quand la partie a été jouée dans une ancienne version de la page ; recharger la page avant de commencer aide.",
+    "too_fast": "Plus rapide que quiconque ne peut poser ces ponts, ce résultat n’est donc pas classé.",
+    "pace": "Des clics aussi rapides, encore et encore, ressemblent à un programme, ce résultat n’est donc pas classé.",
+    "second_account": "Cet appareil a déjà ouvert le défi du jour avec un autre compte, ce résultat n’est donc pas classé. Joue chaque défi du jour avec un seul compte.",
+    "review": "Ce résultat a été retiré du classement après vérification."
   }
 }

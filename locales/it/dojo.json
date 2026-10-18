@@ -57,13 +57,15 @@
     "hidden_title": "Formule segrete e nuove",
     "hidden": "Il test set nasce da un seed segreto che cambia ogni stagione, e ogni formula viene rimescolata: variabili rinominate e negate, clausole mischiate. I risultati sono mostrati solo per famiglia, mai per singola formula.",
     "checked_title": "Ogni risposta verificata",
-    "checked": "I modelli vengono verificati sulla formula. UNSAT conta solo per le formule note come insoddisfacibili. Una sola risposta sbagliata squalifica l’invio, quindi tirare a indovinare non paga mai.",
+    "checked": "I modelli vengono verificati sulla formula. UNSAT conta solo dove abbiamo una prova: Piccionaia e Hashi parità sono insoddisfacibili per costruzione, ogni altra etichetta UNSAT è accompagnata da una prova DRAT verificata dal nostro checker. Una sola risposta sbagliata squalifica l’invio, quindi tirare a indovinare non paga mai.",
     "sandbox_title": "Una sandbox sigillata",
     "sandbox": "Niente file, niente rete, niente variabili d’ambiente. Memoria e output sono limitati, e gli invii girano su una macchina separata che non contiene dati.",
     "accounts_title": "Un account, il miglior invio",
-    "accounts": "Gli account registrati possono inviare tre volte al giorno. I file identici vengono rifiutati e solo il tuo invio migliore entra in classifica.",
+    "accounts": "Per inviare, un account deve avere almeno un giorno, e ci sono tre invii al giorno per account e per rete. Il codice identico viene rifiutato, anche se rinominato o riempito con padding, e solo il tuo invio migliore entra in classifica.",
     "seasons_title": "Stagioni",
-    "seasons": "Una nuova stagione porta un nuovo insieme segreto e ogni invio viene rivalutato."
+    "seasons": "Una nuova stagione porta un nuovo insieme segreto e ogni invio viene rivalutato.",
+    "copies_title": "Niente copie",
+    "copies": "I punteggi sono esatti, quindi un solver lascia un’impronta: il carburante che usa su ogni formula. Un invio che si comporta come uno precedente di qualcun altro non entra in classifica. Modificare una copia abbastanza da sfuggire a questo controllo la rende un solver diverso, e renderla più lenta la mette solo sotto l’originale."
   },
   "science": {
     "title": "Per i ricercatori",
@@ -90,7 +92,10 @@
       "not_wasm": "Questo non è un file WebAssembly.",
       "duplicate": "Questo identico file è già stato inviato.",
       "limit": "Hai già inviato tre volte oggi.",
-      "server": "Qualcosa è andato storto da parte nostra, riprova."
+      "server": "Qualcosa è andato storto da parte nostra, riprova.",
+      "account_age": "I nuovi account possono inviare dopo un giorno. Fino ad allora, prova il tuo solver in locale con dojo run.",
+      "network_limit": "Tre invii al giorno per rete, da qualunque account provengano.",
+      "busy": "La coda è piena in questo momento, riprova tra qualche minuto."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Torna alla classifica",
     "not_found": "Questo invio non esiste.",
     "season": "Stagione {{ season }}",
-    "rank_label": "Posizione"
+    "rank_label": "Posizione",
+    "similar": "Questo solver si comporta come l’<a>invio n. {{ id }}</a> di qualcun altro, arrivato prima. Solo l’originale entra in classifica."
   },
   "rejection": {
     "title": "Il worker ha rifiutato questo file",

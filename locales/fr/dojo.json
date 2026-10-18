@@ -57,13 +57,15 @@
     "hidden_title": "Formules secrètes et inédites",
     "hidden": "Le jeu de test provient d’une graine secrète qui change à chaque saison, et chaque formule est brouillée : variables renommées et niées, clauses mélangées. Les résultats ne sont affichés que par famille, jamais par formule.",
     "checked_title": "Chaque réponse vérifiée",
-    "checked": "Les modèles sont vérifiés par rapport à la formule. UNSAT ne compte que pour les formules connues comme insatisfiables. Une seule mauvaise réponse disqualifie la soumission : deviner ne paie jamais.",
+    "checked": "Les modèles sont vérifiés par rapport à la formule. UNSAT ne compte que là où nous avons une preuve : les tiroirs et Hashi parité sont insatisfiables par construction, et toute autre étiquette UNSAT s’accompagne d’une preuve DRAT vérifiée par notre propre vérificateur. Une seule mauvaise réponse disqualifie la soumission : deviner ne paie jamais.",
     "sandbox_title": "Un bac à sable scellé",
     "sandbox": "Pas de fichiers, pas de réseau, pas de variables d’environnement. Mémoire et sortie sont plafonnées, et les soumissions tournent sur une machine séparée qui ne contient aucune donnée.",
     "accounts_title": "Un compte, une meilleure entrée",
-    "accounts": "Les comptes enregistrés peuvent soumettre trois fois par jour. Les fichiers identiques sont refusés et seule ta meilleure soumission est classée.",
+    "accounts": "Un compte doit avoir un jour pour soumettre, et chaque compte comme chaque réseau a droit à trois soumissions par jour. Un code identique est refusé, même renommé ou gonflé artificiellement, et seule ta meilleure soumission est classée.",
     "seasons_title": "Saisons",
-    "seasons": "Une nouvelle saison apporte un nouvel ensemble secret, et chaque soumission est réévaluée."
+    "seasons": "Une nouvelle saison apporte un nouvel ensemble secret, et chaque soumission est réévaluée.",
+    "copies_title": "Pas de copies",
+    "copies": "Les scores sont exacts, donc un solveur laisse une empreinte : le carburant qu’il consomme sur chaque formule. Une soumission qui se comporte comme une soumission antérieure de quelqu’un d’autre n’est pas classée. Modifier une copie assez pour y échapper en fait un autre solveur, et la ralentir ne fait que la placer sous l’original."
   },
   "science": {
     "title": "Pour les chercheurs",
@@ -90,7 +92,10 @@
       "not_wasm": "Ce n’est pas un fichier WebAssembly.",
       "duplicate": "Ce fichier exact a déjà été soumis.",
       "limit": "Tu as déjà soumis trois fois aujourd’hui.",
-      "server": "Un problème est survenu de notre côté, réessaie."
+      "server": "Un problème est survenu de notre côté, réessaie.",
+      "account_age": "Les nouveaux comptes peuvent soumettre au bout d’un jour. D’ici là, teste ton solveur en local avec dojo run.",
+      "network_limit": "Trois soumissions par jour et par réseau, quel que soit le compte d’où elles viennent.",
+      "busy": "La file d’attente est pleine pour le moment, réessaie dans quelques minutes."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Retour au classement",
     "not_found": "Cette soumission n’existe pas.",
     "season": "Saison {{ season }}",
-    "rank_label": "Rang"
+    "rank_label": "Rang",
+    "similar": "Ce solveur se comporte comme <a>la soumission n° {{ id }}</a> de quelqu’un d’autre, arrivée avant. Seul l’original est classé."
   },
   "rejection": {
     "title": "Le worker a refusé ce fichier",

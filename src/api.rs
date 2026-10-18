@@ -16,8 +16,8 @@ use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
 use crate::model::{
-    AllTimeEntry, DailyInfo, DojoBoard, DojoMe, DojoSubmission, Leaderboard, SubmitResult,
-    UserInfo, UserStats,
+    AllTimeEntry, DailyInfo, DojoBoard, DojoMe, DojoSubmission, Leaderboard, MoveEvent,
+    SubmitResult, UserInfo, UserStats,
 };
 #[cfg(feature = "ssr")]
 use crate::server::{auth, daily, db, dojo, run_blocking};
@@ -25,6 +25,18 @@ use crate::server::{auth, daily, db, dojo, run_blocking};
 /// Upper bound for a single solver run, whatever the client asks for.
 #[cfg(feature = "ssr")]
 const MAX_TIMEOUT_MS: u32 = 20_000;
+
+/// Refuses to solve today's daily for anyone who hasn't finished it: the leaderboard is about
+/// solving it yourself.
+#[cfg(feature = "ssr")]
+async fn not_the_daily(puzzle: &Puzzle) -> Result<(), ServerFnError> {
+    let conn = db::conn()?;
+    let user = auth::current_user(&conn).await?.map(|u| u.id);
+    if daily::locked(&conn, user, puzzle).await? {
+        return Err(crate::model::ApiError::DailyLocked.fail());
+    }
+    Ok(())
+}
 
 /// Deserializing skips `Puzzle::new`, which keeps the islands in reading order.
 #[cfg(feature = "ssr")]
@@ -51,6 +63,7 @@ pub async fn solve_puzzle(
     unique: bool,
 ) -> Result<SolveReport, ServerFnError> {
     let puzzle = normalized(puzzle);
+    not_the_daily(&puzzle).await?;
     let config = SolverConfig {
         timeout_ms: config.timeout_ms.clamp(100, MAX_TIMEOUT_MS),
         ..config
@@ -69,6 +82,7 @@ pub async fn solve_puzzle(
 #[server(input = Json)]
 pub async fn puzzle_cnf(puzzle: Puzzle) -> Result<String, ServerFnError> {
     let puzzle = normalized(puzzle);
+    not_the_daily(&puzzle).await?;
     run_blocking(move || backend::api::to_dimacs(&puzzle)).await
 }
 
@@ -126,10 +140,10 @@ pub async fn daily_today() -> Result<DailyInfo, ServerFnError> {
 
 /// Starts today's daily for the current user (a guest is created if needed).
 #[server(input = Json)]
-pub async fn start_daily() -> Result<DailyInfo, ServerFnError> {
+pub async fn start_daily(device: Option<String>) -> Result<DailyInfo, ServerFnError> {
     let conn = db::conn()?;
     let user = auth::ensure_user(&conn).await?;
-    daily::start(&conn, user.id, daily::today()).await
+    daily::start(&conn, user.id, daily::today(), device.as_deref()).await
 }
 
 #[cfg(feature = "ssr")]
@@ -167,9 +181,11 @@ pub async fn submit_daily(
     day: i64,
     bridges: Vec<u8>,
     moves: u32,
+    // Missing from pages loaded before move logs existed: then the result isn't ranked
+    #[server(default)] log: Vec<MoveEvent>,
 ) -> Result<SubmitResult, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    daily::submit(&conn, user.id, day, bridges, moves).await
+    daily::submit(&conn, user.id, day, bridges, moves, log).await
 }
 
 /// The ranking of a day, today if `day` is `None`.

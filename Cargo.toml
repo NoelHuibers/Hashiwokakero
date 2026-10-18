@@ -116,6 +116,8 @@ leptos_axum = { version = "0.8.10", optional = true }
 reqwest = { version = "0.12.28", default-features = false, features = ["rustls-tls"], optional = true }
 libsql = { version = "0.10.0", default-features = false, features = ["core", "remote", "tls"], optional = true }
 sha2 = { version = "0.11.1", optional = true }
+# Hashing the code of Dojo submissions without their custom sections
+wasmparser = { version = "0.240", optional = true }
 tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "signal", "sync"], optional = true }
 tower-http = { version = "0.7.1", features = ["compression-gzip", "compression-br"], optional = true }
 
@@ -134,6 +136,7 @@ ssr = [
   "dep:leptos_axum",
   "dep:libsql",
   "dep:reqwest",
+  "dep:wasmparser",
   "dep:sha2",
   "dep:tokio",
   "dep:tower-http",

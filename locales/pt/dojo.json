@@ -57,13 +57,15 @@
     "hidden_title": "Fórmulas ocultas e novas",
     "hidden": "O conjunto de teste vem de uma semente secreta que muda a cada temporada, e cada fórmula é embaralhada: variáveis renomeadas e negadas, cláusulas misturadas. Os resultados aparecem só por família, nunca por fórmula.",
     "checked_title": "Toda resposta verificada",
-    "checked": "Os modelos são verificados contra a fórmula. UNSAT só conta para fórmulas sabidamente insatisfatíveis. Uma única resposta errada desclassifica o envio, então chutar nunca compensa.",
+    "checked": "Os modelos são verificados contra a fórmula. UNSAT só conta onde temos uma prova: casa dos pombos e paridade Hashi são insatisfatíveis por construção, e todo outro rótulo UNSAT vem com uma prova DRAT verificada pelo nosso próprio verificador. Uma única resposta errada desclassifica o envio, então chutar nunca compensa.",
     "sandbox_title": "Uma sandbox selada",
     "sandbox": "Sem arquivos, sem rede, sem variáveis de ambiente. Memória e saída têm limite, e os envios rodam numa máquina separada que não guarda dados.",
     "accounts_title": "Uma conta, o melhor envio",
-    "accounts": "Contas registradas podem enviar três vezes por dia. Arquivos idênticos são recusados e só o seu melhor envio entra no ranking.",
+    "accounts": "As contas precisam ter um dia para enviar, e são três envios por dia por conta e por rede. Código idêntico é recusado, mesmo renomeado ou com enchimento, e só o seu melhor envio entra no ranking.",
     "seasons_title": "Temporadas",
-    "seasons": "Uma nova temporada traz um novo conjunto oculto, e todos os envios são avaliados de novo."
+    "seasons": "Uma nova temporada traz um novo conjunto oculto, e todos os envios são avaliados de novo.",
+    "copies_title": "Nada de cópias",
+    "copies": "As pontuações são exatas, então um solver deixa uma impressão digital: o combustível que ele gasta em cada fórmula. Um envio que se comporta como um anterior de outra pessoa não entra no ranking. Mudar uma cópia o bastante para escapar disso a torna um solver diferente, e deixá-la mais lenta só a coloca abaixo do original."
   },
   "science": {
     "title": "Para pesquisadores",
@@ -90,7 +92,10 @@
       "not_wasm": "Isso não é um arquivo WebAssembly.",
       "duplicate": "Este mesmo arquivo já foi enviado antes.",
       "limit": "Você já enviou três vezes hoje.",
-      "server": "Algo deu errado do nosso lado, tente de novo."
+      "server": "Algo deu errado do nosso lado, tente de novo.",
+      "account_age": "Contas novas podem enviar depois de um dia. Até lá, teste seu solver localmente com dojo run.",
+      "network_limit": "Três envios por dia por rede, seja de qual conta for.",
+      "busy": "A fila está cheia agora, tente de novo em alguns minutos."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Voltar ao ranking",
     "not_found": "Esse envio não existe.",
     "season": "Temporada {{ season }}",
-    "rank_label": "Posição"
+    "rank_label": "Posição",
+    "similar": "Este solver se comporta como o <a>envio #{{ id }}</a> de outra pessoa, que veio antes. Só o original entra no ranking."
   },
   "rejection": {
     "title": "O worker recusou este arquivo",

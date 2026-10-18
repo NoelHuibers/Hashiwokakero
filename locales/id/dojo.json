@@ -57,13 +57,15 @@
     "hidden_title": "Formula baru yang tersembunyi",
     "hidden": "Set uji berasal dari seed rahasia yang berganti setiap musim, dan setiap formula diacak: variabel diganti nama dan dinegasikan, klausa dikocok. Hasil hanya ditampilkan per keluarga, tidak pernah per formula.",
     "checked_title": "Setiap jawaban diperiksa",
-    "checked": "Model diverifikasi terhadap formulanya. UNSAT hanya dihitung untuk formula yang diketahui tidak dapat dipenuhi. Satu jawaban salah saja mendiskualifikasi kiriman, jadi menebak tidak pernah menguntungkan.",
+    "checked": "Model diverifikasi terhadap formulanya. UNSAT hanya dihitung jika kami punya buktinya: sarang merpati dan Hashi paritas tidak dapat dipenuhi berdasarkan konstruksinya, dan setiap label UNSAT lainnya disertai bukti DRAT yang diverifikasi oleh pemeriksa buatan kami sendiri. Satu jawaban salah saja mendiskualifikasi kiriman, jadi menebak tidak pernah menguntungkan.",
     "sandbox_title": "Sandbox tertutup",
     "sandbox": "Tanpa file, tanpa jaringan, tanpa variabel lingkungan. Memori dan output dibatasi, dan kiriman dijalankan di mesin terpisah yang tidak menyimpan data apa pun.",
     "accounts_title": "Satu akun, entri terbaik",
-    "accounts": "Akun terdaftar bisa mengirim tiga kali sehari. File yang identik ditolak dan hanya kiriman terbaikmu yang masuk peringkat.",
+    "accounts": "Akun harus berumur satu hari untuk mengirim, dan ada tiga kiriman per hari per akun dan per jaringan. Kode yang identik ditolak, meskipun diganti nama atau diberi padding, dan hanya kiriman terbaikmu yang masuk peringkat.",
     "seasons_title": "Musim",
-    "seasons": "Musim baru membawa set tersembunyi baru dan semua kiriman dievaluasi ulang."
+    "seasons": "Musim baru membawa set tersembunyi baru dan semua kiriman dievaluasi ulang.",
+    "copies_title": "Tanpa salinan",
+    "copies": "Skornya pasti, jadi setiap solver meninggalkan sidik jari: fuel yang dipakainya di setiap formula. Kiriman yang berperilaku seperti kiriman orang lain yang lebih awal tidak masuk peringkat. Mengubah salinan cukup jauh untuk lolos dari itu menjadikannya solver yang berbeda, dan membuatnya lebih lambat hanya menempatkannya di bawah yang asli."
   },
   "science": {
     "title": "Untuk peneliti",
@@ -90,7 +92,10 @@
       "not_wasm": "Itu bukan file WebAssembly.",
       "duplicate": "File yang persis sama sudah pernah dikirim.",
       "limit": "Kamu sudah mengirim tiga kali hari ini.",
-      "server": "Terjadi kesalahan di pihak kami, coba lagi."
+      "server": "Terjadi kesalahan di pihak kami, coba lagi.",
+      "account_age": "Akun baru bisa mengirim setelah satu hari. Sampai saat itu, uji solvermu secara lokal dengan dojo run.",
+      "network_limit": "Tiga kiriman per hari per jaringan, dari akun mana pun asalnya.",
+      "busy": "Antrean sedang penuh, coba lagi dalam beberapa menit."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Kembali ke papan peringkat",
     "not_found": "Kiriman itu tidak ada.",
     "season": "Musim {{ season }}",
-    "rank_label": "Peringkat"
+    "rank_label": "Peringkat",
+    "similar": "Solver ini berperilaku seperti <a>kiriman #{{ id }}</a> milik orang lain yang datang lebih dulu. Hanya yang asli yang masuk peringkat."
   },
   "rejection": {
     "title": "Worker menolak file ini",

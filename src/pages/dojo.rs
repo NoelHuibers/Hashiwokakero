@@ -337,6 +337,7 @@ fn FairPlay() -> impl IntoView {
                 {item("検", t!(i18n, dojo.fair.checked_title).into_any(), t!(i18n, dojo.fair.checked).into_any())}
                 {item("封", t!(i18n, dojo.fair.sandbox_title).into_any(), t!(i18n, dojo.fair.sandbox).into_any())}
                 {item("一", t!(i18n, dojo.fair.accounts_title).into_any(), t!(i18n, dojo.fair.accounts).into_any())}
+                {item("写", t!(i18n, dojo.fair.copies_title).into_any(), t!(i18n, dojo.fair.copies).into_any())}
                 {item("季", t!(i18n, dojo.fair.seasons_title).into_any(), t!(i18n, dojo.fair.seasons).into_any())}
             </CardContent>
         </Card>
@@ -353,6 +354,9 @@ fn submit_error(locale: Locale, code: &str) -> String {
         "not_wasm" => td_string!(locale, dojo.submit.errors.not_wasm),
         "duplicate" => td_string!(locale, dojo.submit.errors.duplicate),
         "limit" => td_string!(locale, dojo.submit.errors.limit),
+        "account_age" => td_string!(locale, dojo.submit.errors.account_age),
+        "network_limit" => td_string!(locale, dojo.submit.errors.network_limit),
+        "busy" => td_string!(locale, dojo.submit.errors.busy),
         _ => td_string!(locale, dojo.submit.errors.server),
     }
     .to_string()
@@ -659,8 +663,28 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
                 </tbody>
             </table>
         </div>
-        {(s.rank.is_none() && wrong == 0)
-            .then(|| view! { <p class="text-sm text-muted-foreground">{t!(i18n, dojo.detail.unranked)}</p> })}
+        {match s.similar_to {
+            Some(original) => {
+                let href = move || format!("{}/dojo/{original}", prefix(i18n.get_locale()));
+                view! {
+                    <p class="rounded-md border border-warning/40 bg-warning-light px-3 py-2 text-sm text-warning-dark">
+                        {t!(
+                            i18n,
+                            dojo.detail.similar,
+                            id = original,
+                            <a> = move |children: ChildrenFn| view! {
+                                <A href=href attr:class="font-semibold underline underline-offset-4">{children()}</A>
+                            }
+                        )}
+                    </p>
+                }
+                    .into_any()
+            }
+            None if s.rank.is_none() && wrong == 0 => {
+                view! { <p class="text-sm text-muted-foreground">{t!(i18n, dojo.detail.unranked)}</p> }.into_any()
+            }
+            None => ().into_any(),
+        }}
     }
 }
 

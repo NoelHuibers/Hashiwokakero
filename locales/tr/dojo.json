@@ -57,13 +57,15 @@
     "hidden_title": "Gizli, yeni formüller",
     "hidden": "Test seti her sezon değişen gizli bir tohumdan üretilir ve her formül karıştırılır: değişkenler yeniden adlandırılır ve olumsuzlanır, tümcelerin sırası karıştırılır. Sonuçlar formül bazında değil, yalnızca aile bazında gösterilir.",
     "checked_title": "Her cevap kontrol edilir",
-    "checked": "Modeller formüle karşı doğrulanır. UNSAT yalnızca sağlanamaz olduğu bilinen formüllerde geçerlidir. Tek bir yanlış cevap gönderimi diskalifiye eder, yani tahmin etmek asla işe yaramaz.",
+    "checked": "Modeller formüle karşı doğrulanır. UNSAT yalnızca bir kanıtımız olduğunda geçerlidir: güvercin yuvası ve Hashi parite yapıları gereği sağlanamazdır, diğer her UNSAT etiketi kendi denetleyicimizin doğruladığı bir DRAT kanıtıyla gelir. Tek bir yanlış cevap gönderimi diskalifiye eder, yani tahmin etmek asla işe yaramaz.",
     "sandbox_title": "Kapalı bir korumalı alan",
     "sandbox": "Dosya yok, ağ yok, ortam değişkeni yok. Bellek ve çıktı sınırlıdır ve gönderimler hiçbir veri tutmayan ayrı bir makinede çalışır.",
     "accounts_title": "Tek hesap, en iyi gönderim",
-    "accounts": "Kayıtlı hesaplar günde üç kez gönderim yapabilir. Aynı dosyalar reddedilir ve yalnızca en iyi gönderimin sıralamaya girer.",
+    "accounts": "Gönderim yapmak için hesapların en az bir günlük olması gerekir ve hesap başına ve ağ başına günde üç gönderim hakkı vardır. Aynı kod, yeniden adlandırılsa veya dolgu eklense bile reddedilir ve yalnızca en iyi gönderimin sıralamaya girer.",
     "seasons_title": "Sezonlar",
-    "seasons": "Yeni bir sezon yeni bir gizli set getirir ve tüm gönderimler yeniden değerlendirilir."
+    "seasons": "Yeni bir sezon yeni bir gizli set getirir ve tüm gönderimler yeniden değerlendirilir.",
+    "copies_title": "Kopya yok",
+    "copies": "Puanlar kesindir, bu yüzden bir çözücü parmak izi bırakır: her formülde harcadığı yakıt. Başka birinin daha önceki bir gönderimi gibi davranan bir gönderim sıralamaya girmez. Bir kopyayı bundan kurtulacak kadar değiştirmek onu farklı bir çözücü yapar, yavaşlatmak ise onu yalnızca orijinalin altına düşürür."
   },
   "science": {
     "title": "Araştırmacılar için",
@@ -90,7 +92,10 @@
       "not_wasm": "Bu bir WebAssembly dosyası değil.",
       "duplicate": "Bu dosyanın aynısı daha önce gönderildi.",
       "limit": "Bugün zaten üç kez gönderim yaptın.",
-      "server": "Bizim tarafımızda bir şeyler ters gitti, lütfen tekrar dene."
+      "server": "Bizim tarafımızda bir şeyler ters gitti, lütfen tekrar dene.",
+      "account_age": "Yeni hesaplar bir gün sonra gönderim yapabilir. O zamana kadar çözücünü dojo run ile yerelde test et.",
+      "network_limit": "Hangi hesaptan gelirse gelsin, ağ başına günde üç gönderim.",
+      "busy": "Kuyruk şu anda dolu, lütfen birkaç dakika sonra tekrar dene."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Sıralamaya dön",
     "not_found": "Böyle bir gönderim yok.",
     "season": "Sezon {{ season }}",
-    "rank_label": "Sıra"
+    "rank_label": "Sıra",
+    "similar": "Bu çözücü, başka birinin daha önce gelen <a>#{{ id }} numaralı gönderimi</a> gibi davranıyor. Yalnızca orijinal sıralamaya girer."
   },
   "rejection": {
     "title": "Worker bu dosyayı reddetti",

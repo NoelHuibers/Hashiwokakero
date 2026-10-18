@@ -57,13 +57,15 @@
     "hidden_title": "Hidden, fresh formulas",
     "hidden": "The test set comes from a secret seed that changes every season, and every formula is scrambled: variables renamed and negated, clauses shuffled. Results are shown per family only, never per formula.",
     "checked_title": "Every answer checked",
-    "checked": "Models are verified against the formula. UNSAT counts only for formulas known to be unsatisfiable. A single wrong answer disqualifies the submission, so guessing never pays.",
+    "checked": "Models are verified against the formula. UNSAT counts only where we have a proof: pigeonhole and Hashi parity are unsatisfiable by construction, every other UNSAT label comes with a DRAT proof our own checker verified. A single wrong answer disqualifies the submission, so guessing never pays.",
     "sandbox_title": "A sealed sandbox",
     "sandbox": "No files, no network, no environment. Memory and output are capped, and submissions run on a separate machine that holds no data.",
     "accounts_title": "One account, best entry",
-    "accounts": "Registered accounts can submit three times a day. Identical files are refused and only your best submission is ranked.",
+    "accounts": "Accounts have to be a day old to submit, and there are three submissions a day per account and per network. Identical code is refused, even renamed or padded, and only your best submission is ranked.",
     "seasons_title": "Seasons",
-    "seasons": "A new season brings a new hidden set and every submission is evaluated again."
+    "seasons": "A new season brings a new hidden set and every submission is evaluated again.",
+    "copies_title": "No copies",
+    "copies": "Scores are exact, so a solver leaves a fingerprint: the fuel it uses on every formula. A submission that behaves like an earlier one by someone else isn't ranked. Changing a copy enough to escape that makes it a different solver, and making it slower only puts it below the original."
   },
   "science": {
     "title": "For researchers",
@@ -90,7 +92,10 @@
       "not_wasm": "That is not a WebAssembly file.",
       "duplicate": "This exact file was submitted before.",
       "limit": "You already submitted three times today.",
-      "server": "Something went wrong on our side, please try again."
+      "server": "Something went wrong on our side, please try again.",
+      "account_age": "New accounts can submit after a day. Until then, test your solver locally with dojo run.",
+      "network_limit": "Three submissions a day per network, whichever account they come from.",
+      "busy": "The queue is full right now, please try again in a few minutes."
     }
   },
   "mine": {
@@ -122,7 +127,8 @@
     "back": "Back to the leaderboard",
     "not_found": "There is no such submission.",
     "season": "Season {{ season }}",
-    "rank_label": "Rank"
+    "rank_label": "Rank",
+    "similar": "This solver behaves like <a>submission #{{ id }}</a> by someone else, which came first. Only the original is ranked."
   },
   "rejection": {
     "title": "The worker refused this file",
