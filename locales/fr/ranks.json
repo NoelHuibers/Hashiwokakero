@@ -46,5 +46,13 @@
       "nov": "Novembre",
       "dec": "Décembre"
     }
+  },
+  "player": {
+    "title": "Joueur",
+    "record": "Palmarès",
+    "back": "Classement",
+    "not_found": "Ce joueur n'existe pas.",
+    "since": "Joue depuis le {{ date }}.",
+    "you": "C'est toi, vers ton compte"
   }
 }

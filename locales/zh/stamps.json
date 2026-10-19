@@ -4,6 +4,7 @@
   "collected": "已收集 {{ earned }} 枚印章，共 {{ total }} 枚。",
   "new": "新印章：{{ name }}！",
   "more": "还有 {{ count }} 枚新印章，去印章册看看吧。",
+  "share": "{{ percent }}% 的玩家",
   "names": {
     "first": "第一座桥",
     "solved_10": "每日 10 题",

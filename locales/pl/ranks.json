@@ -46,5 +46,13 @@
       "nov": "Listopad",
       "dec": "Grudzień"
     }
+  },
+  "player": {
+    "title": "Gracz",
+    "record": "Wyniki",
+    "back": "Ranking",
+    "not_found": "Nie ma takiego gracza.",
+    "since": "Gra od {{ date }}.",
+    "you": "To ty, przejdź do konta"
   }
 }

@@ -17,6 +17,7 @@
     "points": "Pontos",
     "medals": "Medalhas"
   },
+  "public_profile": "Seu perfil como os outros o veem",
   "last_weeks": "Últimas cinco semanas",
   "calendar_rank": "posição {{ rank }}",
   "not_solved": "não resolvido",

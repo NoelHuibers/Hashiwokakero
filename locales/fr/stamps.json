@@ -4,6 +4,7 @@
   "collected": "{{ earned }} tampons sur {{ total }} collectés.",
   "new": "Nouveau tampon : {{ name }} !",
   "more": "Et {{ count }} autres nouveaux tampons, va voir ton carnet.",
+  "share": "{{ percent }} % des joueurs",
   "names": {
     "first": "Premier pont",
     "solved_10": "10 défis",

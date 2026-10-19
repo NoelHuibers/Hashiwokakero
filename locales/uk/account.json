@@ -17,6 +17,7 @@
     "points": "Бали",
     "medals": "Медалі"
   },
+  "public_profile": "Твій профіль очима інших",
   "last_weeks": "Останні п’ять тижнів",
   "calendar_rank": "місце {{ rank }}",
   "not_solved": "не розв’язано",

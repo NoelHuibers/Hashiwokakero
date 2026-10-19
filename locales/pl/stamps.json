@@ -4,6 +4,7 @@
   "collected": "Zebrane pieczątki: {{ earned }} z {{ total }}.",
   "new": "Nowa pieczątka: {{ name }}!",
   "more": "Kolejne nowe pieczątki: {{ count }}. Zajrzyj do swojego albumu.",
+  "share": "{{ percent }}% graczy",
   "names": {
     "first": "Pierwszy most",
     "solved_10": "10 mostów dnia",

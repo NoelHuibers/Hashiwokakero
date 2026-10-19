@@ -4,6 +4,7 @@
   "collected": "{{ earned }} von {{ total }} Stempeln gesammelt.",
   "new": "Neuer Stempel: {{ name }}!",
   "more": "Und {{ count }} weitere neue Stempel, schau in dein Stempelheft.",
+  "share": "{{ percent }} % der Spieler",
   "names": {
     "first": "Erste Brücke",
     "solved_10": "10 Tagesrätsel",

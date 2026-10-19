@@ -4,6 +4,7 @@
   "collected": "{{ earned }} of {{ total }} stamps collected.",
   "new": "New stamp: {{ name }}!",
   "more": "And {{ count }} more new stamps, see your stamp book.",
+  "share": "{{ percent }}% of players",
   "names": {
     "first": "First bridge",
     "solved_10": "10 dailies",
