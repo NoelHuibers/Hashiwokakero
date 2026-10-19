@@ -8,6 +8,7 @@
   "scripts": {
     "postinstall": "node scripts/fonts.mjs",
     "fonts": "node scripts/fonts.mjs",
+    "coverage": "node scripts/coverage.mjs",
     "css": "tailwindcss -i style/tailwind.css -o target/site/pkg/hashi.css",
     "css:watch": "tailwindcss -i style/tailwind.css -o target/site/pkg/hashi.css --watch",
     "e2e": "playwright test -c e2e"
