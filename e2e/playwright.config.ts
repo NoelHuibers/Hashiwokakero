@@ -5,6 +5,10 @@ import { BASE_URL, VISUAL, VISUAL_URL } from './env';
 
 const CI = !!process.env.CI;
 const desktop = { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } };
+const html = ['html', { open: 'never', outputFolder: 'playwright-report' }] as const;
+// CI runs the tests in shards (--shard=1/2, E2E_BLOB=1): each writes a blob report, the E2E
+// report job merges them into one HTML report (playwright merge-reports)
+const report = process.env.E2E_BLOB ? (['blob', { outputDir: 'blob-report' }] as const) : html;
 
 export default defineConfig({
   testDir: './tests',
@@ -15,9 +19,7 @@ export default defineConfig({
   // One retry with a trace, to see what went wrong; flaky tests still show up in the report
   retries: CI ? 1 : 0,
   workers: CI ? 4 : undefined,
-  reporter: CI
-    ? [['github'], ['dot'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
-    : [['line'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  reporter: CI ? [['github'], ['dot'], report] : [['line'], report],
   // The first page of a worker compiles the WASM, which takes a while on a busy runner
   expect: {
     timeout: 10_000,
