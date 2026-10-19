@@ -401,7 +401,7 @@ fn responses() -> Responses {
                 unique: Some(true),
             },
             stats: SolveStats {
-                config: "splr".into(),
+                config: SolverConfig::splr().normalized(),
                 variables: 6,
                 clauses: 20,
                 encode_ms: 0.25,

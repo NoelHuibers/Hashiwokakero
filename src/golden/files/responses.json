@@ -426,7 +426,13 @@
       }
     },
     "stats": {
-      "config": "splr",
+      "config": {
+        "kind": "Splr",
+        "heuristic": "Vsids",
+        "restarts": "None",
+        "subsumption": false,
+        "timeout_ms": 10000
+      },
       "variables": 6,
       "clauses": 20,
       "encode_ms": 0.25,
