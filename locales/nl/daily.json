@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "De brug van vandaag",
-    "text": "De puzzel verschijnt zodra je op start drukt, de klok loopt op de server. Een hint kost 30 s, een controle 10 s, en wie de oplossing laat zien, komt niet in de ranking.",
+    "lead": "De puzzel verschijnt zodra je op start drukt, de klok loopt op de server.",
+    "unranked": "buiten de ranking",
     "start": "Start",
     "preparing": "Voorbereiden…",
     "playing_as": "Je speelt als {{ name }}",

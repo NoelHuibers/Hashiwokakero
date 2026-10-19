@@ -61,9 +61,11 @@ pub async fn submit_daily(
     moves: u32,
     // Missing from pages loaded before move logs existed: then the result isn't ranked
     #[server(default)] log: Vec<MoveEvent>,
+    // The browser's time zone, for the night owl and lunch break stamps (not stored)
+    #[server(default)] utc_offset: Option<i32>,
 ) -> Result<SubmitResult, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    daily::submit(&conn, user.id, day, bridges, moves, log).await
+    daily::submit(&conn, user.id, day, bridges, moves, log, utc_offset).await
 }
 
 /// The ranking of a day, today if `day` is `None`.

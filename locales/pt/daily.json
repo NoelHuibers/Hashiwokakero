@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "A ponte de hoje",
-    "text": "O puzzle aparece quando você aperta começar, e o relógio roda no servidor. Dicas somam 30 s, verificações 10 s, e revelar a solução tira você do ranking.",
+    "lead": "O puzzle aparece quando você aperta começar, e o relógio roda no servidor.",
+    "unranked": "fora do ranking",
     "start": "Começar",
     "preparing": "Preparando…",
     "playing_as": "Jogando como {{ name }}",

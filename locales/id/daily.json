@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "Jembatan hari ini",
-    "text": "Teka-teki muncul saat kamu menekan mulai, dan jam berjalan di server. Petunjuk menambah 30 dtk, cek 10 dtk, dan membuka solusi membuatmu tidak masuk peringkat.",
+    "lead": "Teka-teki muncul saat kamu menekan mulai, dan jam berjalan di server.",
+    "unranked": "tanpa peringkat",
     "start": "Mulai",
     "preparing": "Menyiapkan…",
     "playing_as": "Bermain sebagai {{ name }}",

@@ -8,8 +8,8 @@ use sha2::{Digest, Sha256};
 use super::stamps::sync;
 use super::{from_json, get_or_create, json, load, today};
 use crate::model::{
-    ApiError, AttemptInfo, DailyInfo, Flag, MoveEvent, SubmitResult, canonical, daily_difficulty,
-    pick_hint, verify_log, wrong_edges,
+    ApiError, AttemptInfo, DailyInfo, Daypart, Flag, MoveEvent, SubmitResult, canonical,
+    daily_difficulty, pick_hint, summarize, verify_log, wrong_edges,
 };
 use crate::server::db::db_err;
 use crate::server::now_ms;
@@ -224,7 +224,8 @@ pub(super) async fn rank(
     }
 }
 
-/// Verifies a finished board and records the time.
+/// Verifies a finished board and records the time. `utc_offset` is the player's time zone
+/// (minutes behind UTC, as the browser says), only the part of the day is kept, for stamps.
 pub async fn submit(
     conn: &Connection,
     user: i64,
@@ -232,6 +233,7 @@ pub async fn submit(
     bridges: Vec<u8>,
     moves: u32,
     log: Vec<MoveEvent>,
+    utc_offset: Option<i32>,
 ) -> Result<SubmitResult, ServerFnError> {
     let attempt = running(conn, user, day).await?;
     let daily = get_or_create(conn, day).await?;
@@ -255,8 +257,11 @@ pub async fn submit(
         )
         .err()
     });
+    let run = summarize(&board.puzzle, &bridges, &log);
+    let daypart = utc_offset.and_then(|offset| Daypart::at(finished_at, offset));
     conn.execute(
-        "UPDATE attempts SET finished_at = ?3, time_ms = ?4, moves = ?5, bridges = ?6, log = ?7, flag = ?8
+        "UPDATE attempts SET finished_at = ?3, time_ms = ?4, moves = ?5, bridges = ?6, log = ?7, flag = ?8,
+            run = ?9, daypart = ?10
          WHERE user_id = ?1 AND day = ?2 AND finished_at IS NULL AND revealed = 0",
         params![
             user,
@@ -266,7 +271,9 @@ pub async fn submit(
             i64::from(moves),
             json(&bridges)?,
             json(&log)?,
-            flag.map(Flag::id)
+            flag.map(Flag::id),
+            json(&run)?,
+            daypart.map(Daypart::id)
         ],
     )
     .await

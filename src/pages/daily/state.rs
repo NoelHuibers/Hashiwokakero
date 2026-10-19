@@ -41,6 +41,15 @@ pub(super) fn browser_now() -> i64 {
     js_sys::Date::now() as i64
 }
 
+/// Minutes the browser's clock is behind UTC (`getTimezoneOffset`), -120 in Berlin in summer.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "time zone offsets are a few hundred minutes"
+)]
+pub(super) fn browser_utc_offset() -> i32 {
+    js_sys::Date::new_0().get_timezone_offset() as i32
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Daily {
     pub(super) game: Game,

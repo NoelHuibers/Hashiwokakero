@@ -5,7 +5,7 @@ use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 
 use super::fame::month_points;
-use super::stamps::{holders, sync};
+use super::stamps::{holders, shown_stamp, sync};
 use super::today;
 use crate::model::{DayResult, PlayerProfile, UserStats, month_of, streaks};
 use crate::server::count;
@@ -100,6 +100,7 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
         month_points: month_place.map_or(0, |i| month[i].1),
         stamps,
         players,
+        shown: shown_stamp(conn, user).await?,
     })
 }
 

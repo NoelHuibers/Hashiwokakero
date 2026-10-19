@@ -37,7 +37,7 @@ pub fn RankCell(rank: i64) -> impl IntoView {
     }
 }
 
-/// A player in a leaderboard: name (a link to their profile), most impressive stamp, "you" and
+/// A player in a leaderboard: name (a link to their profile), the stamp they show, "you" and
 /// guest labels.
 ///
 /// The guest label only shows where the table is wide enough (a container query on an

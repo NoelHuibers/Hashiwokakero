@@ -14,7 +14,7 @@ use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_short, error_text};
-use crate::model::{MS_PER_DAY, PlayerProfile, top_stamp};
+use crate::model::{MS_PER_DAY, PlayerProfile};
 use crate::state::{Auth, ToastKind, toast};
 
 #[component]
@@ -29,12 +29,7 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
         created_at,
         stats,
     } = p;
-    let earned: Vec<_> = stats
-        .stamps
-        .iter()
-        .filter(|s| s.earned_at.is_some())
-        .map(|s| s.stamp)
-        .collect();
+    let shown = RwSignal::new(stats.shown);
     let initial = name
         .chars()
         .next()
@@ -61,7 +56,7 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
                 <p class="font-pixel text-sm text-primary">"選手 · senshu"</p>
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <h1 class="min-w-0 break-words text-3xl font-black">{name}</h1>
-                    {top_stamp(&earned).map(|stamp| view! { <StampBadge stamp=stamp /> })}
+                    {shown.get_untracked().map(|stamp| view! { <StampBadge stamp=stamp /> })}
                     {guest.then(|| view! { <Badge variant=BadgeVariant::Secondary>{t!(i18n, common.ranking.guest)}</Badge> })}
                 </div>
                 <p class="text-sm text-muted-foreground">
@@ -112,7 +107,7 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <StampBook book players />
+                                <StampBook book players shown />
                             </CardContent>
                         </Card>
                     }

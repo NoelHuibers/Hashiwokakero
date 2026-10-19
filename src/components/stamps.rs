@@ -1,20 +1,23 @@
 //! Hanko stamps: the small one next to a name on a leaderboard, and the stamp book.
 
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 
+use crate::api::show_stamp;
 use crate::i18n::{td_string, use_i18n};
-use crate::lang::{date_short, stamp_name, stamp_text};
+use crate::lang::{date_short, error_text, stamp_name, stamp_text};
 use crate::model::{MS_PER_DAY, Stamp, StampProgress, share_percent};
 use crate::state::{ToastKind, toast};
 
-/// A player's most impressive stamp, next to their name.
+/// The stamp a player chose to show next to their name, pressed in red ink so it doesn't
+/// compete with the medals.
 #[component]
 pub fn StampBadge(stamp: Stamp) -> impl IntoView {
     let i18n = use_i18n();
     let title = move || stamp_name(i18n.get_locale(), stamp);
     view! {
         <span
-            class="hanko inline-grid size-6 shrink-0 rotate-[-6deg] place-items-center rounded-[5px] font-pixel text-sm leading-none"
+            class="hanko-ink inline-grid size-5 shrink-0 rotate-[-8deg] place-items-center rounded-[4px] font-pixel text-xs leading-none"
             data-tooltip=title
             aria-label=title
         >
@@ -24,9 +27,15 @@ pub fn StampBadge(stamp: Stamp) -> impl IntoView {
 }
 
 /// One stamp of the stamp book, greyed out with a progress bar while it's still to get, and how
-/// many of the `players` have it.
+/// many of the `players` have it. A secret stamp shows a question mark until it's earned. With
+/// `pick` an earned stamp can be chosen to show next to the player's name (`shown`).
 #[component]
-fn StampTile(progress: StampProgress, players: i64) -> impl IntoView {
+fn StampTile(
+    progress: StampProgress,
+    players: i64,
+    shown: RwSignal<Option<Stamp>>,
+    pick: bool,
+) -> impl IntoView {
     let i18n = use_i18n();
     let StampProgress {
         stamp,
@@ -37,17 +46,63 @@ fn StampTile(progress: StampProgress, players: i64) -> impl IntoView {
     } = progress;
     let share = share_percent(holders, players);
     let earned = earned_at.is_some();
+    let hidden = stamp.secret() && !earned;
+    let name = move || {
+        let l = i18n.get_locale();
+        if hidden {
+            td_string!(l, stamps.secret.name)
+        } else {
+            stamp_name(l, stamp)
+        }
+    };
+    let text = move || {
+        let l = i18n.get_locale();
+        if hidden {
+            td_string!(l, stamps.secret.text)
+        } else {
+            stamp_text(l, stamp)
+        }
+    };
+    let is_shown = move || shown.get() == Some(stamp);
     view! {
         <li
-            class="flex flex-col items-center gap-1.5 rounded-lg border bg-background p-3 text-center"
+            class="relative flex flex-col items-center gap-1.5 rounded-lg border bg-background p-3 text-center"
+            class=("border-primary", is_shown)
+            class=("ring-1", is_shown)
+            class=("ring-primary", is_shown)
             class:opacity-60=!earned
-            data-tooltip=move || stamp_text(i18n.get_locale(), stamp)
+            data-tooltip=text
         >
+            {(pick && earned)
+                .then(|| {
+                    view! {
+                        <button
+                            type="button"
+                            class="absolute inset-0 z-10 cursor-pointer rounded-lg transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring"
+                            aria-label=name
+                            aria-pressed=move || is_shown().to_string()
+                            on:click=move |_| toggle(shown, stamp)
+                        ></button>
+                    }
+                })}
+            {move || {
+                is_shown()
+                    .then(|| {
+                        view! {
+                            <span
+                                class="absolute -end-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground shadow-sm"
+                                data-tooltip=move || td_string!(i18n.get_locale(), stamps.shown_label)
+                            >
+                                "✓"
+                            </span>
+                        }
+                    })
+            }}
             <span class=format!(
                 "relative grid size-12 place-items-center rounded-lg font-pixel text-2xl {}",
                 if earned { "hanko rotate-[-6deg]" } else { "border-2 border-dashed text-muted-foreground" },
             )>
-                {stamp.kanji()}
+                {if hidden { "?" } else { stamp.kanji() }}
                 {stamp
                     .tier()
                     .map(|n| {
@@ -58,7 +113,7 @@ fn StampTile(progress: StampProgress, players: i64) -> impl IntoView {
                         }
                     })}
             </span>
-            <span class="text-xs font-bold leading-tight">{move || stamp_name(i18n.get_locale(), stamp)}</span>
+            <span class="text-xs font-bold leading-tight">{name}</span>
             {match earned_at {
                 Some(at) => {
                     view! {
@@ -68,7 +123,7 @@ fn StampTile(progress: StampProgress, players: i64) -> impl IntoView {
                     }
                         .into_any()
                 }
-                None if target > 1 => {
+                None if target > 1 && !hidden => {
                     view! {
                         <span class="flex w-full flex-col gap-0.5">
                             <span class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -87,7 +142,7 @@ fn StampTile(progress: StampProgress, players: i64) -> impl IntoView {
                 None => {
                     view! {
                         <span class="text-[10px] leading-tight text-muted-foreground">
-                            {move || stamp_text(i18n.get_locale(), stamp)}
+                            {text}
                         </span>
                     }
                         .into_any()
@@ -105,10 +160,39 @@ fn StampTile(progress: StampProgress, players: i64) -> impl IntoView {
     }
 }
 
+/// Shows `stamp` next to the player's name, or no stamp if it's the one shown already.
+fn toggle(shown: RwSignal<Option<Stamp>>, stamp: Stamp) {
+    let before = shown.get_untracked();
+    let after = (before != Some(stamp)).then_some(stamp);
+    shown.set(after);
+    spawn_local(async move {
+        match show_stamp(after).await {
+            Ok(()) => toast(ToastKind::Success, move |l| match after {
+                Some(stamp) => format!(
+                    "{} {}",
+                    stamp.kanji(),
+                    td_string!(l, stamps.shown, name = stamp_name(l, stamp))
+                ),
+                None => td_string!(l, stamps.hidden).to_string(),
+            }),
+            Err(e) => {
+                shown.set(before);
+                toast(ToastKind::Error, move |l| error_text(l, &e));
+            }
+        }
+    });
+}
+
 /// Every stamp, earned or not. `players` counts everyone with a stamp, for the share of players
-/// who have each one.
+/// who have each one. `shown` is the stamp next to the player's name, which they can change with
+/// `pick` (their own book).
 #[component]
-pub fn StampBook(book: Vec<StampProgress>, players: i64) -> impl IntoView {
+pub fn StampBook(
+    book: Vec<StampProgress>,
+    players: i64,
+    shown: RwSignal<Option<Stamp>>,
+    #[prop(optional)] pick: bool,
+) -> impl IntoView {
     let i18n = use_i18n();
     let earned = book.iter().filter(|p| p.earned_at.is_some()).count();
     let total = book.len();
@@ -116,9 +200,14 @@ pub fn StampBook(book: Vec<StampProgress>, players: i64) -> impl IntoView {
         <div class="flex flex-col gap-3">
             <p class="text-sm text-muted-foreground">
                 {move || td_string!(i18n.get_locale(), stamps.collected, earned, total)}
+                {(pick && earned > 0)
+                    .then(|| view! { " " {move || td_string!(i18n.get_locale(), stamps.pick)} })}
             </p>
             <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                {book.into_iter().map(|p| view! { <StampTile progress=p players /> }).collect_view()}
+                {book
+                    .into_iter()
+                    .map(|p| view! { <StampTile progress=p players shown pick /> })
+                    .collect_view()}
             </ul>
         </div>
     }

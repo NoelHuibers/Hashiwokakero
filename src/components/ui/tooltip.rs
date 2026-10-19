@@ -109,7 +109,8 @@ pub fn Tooltips() -> impl IntoView {
             })
         };
         // Clicks close it, like the browser's. A tap on something that only has a tooltip (a
-        // stamp, a day of the calendar) shows it, buttons and links just do their thing.
+        // stamp, a day of the calendar) shows it, buttons and links (also around or inside the
+        // element with the tooltip) just do their thing.
         let press = {
             let state = state.clone();
             window_event_listener(leptos::ev::pointerdown, move |ev: PointerEvent| {
@@ -117,9 +118,9 @@ pub fn Tooltips() -> impl IntoView {
                 let tapped = (ev.pointer_type() == "touch")
                     .then(|| ev.target().and_then(|t| t.dyn_into::<Element>().ok()))
                     .flatten()
+                    .filter(|t| !is_interactive(t))
                     .as_ref()
-                    .and_then(trigger_of)
-                    .filter(|el| !is_interactive(el));
+                    .and_then(trigger_of);
                 let again = tapped.is_some() && tapped == state.borrow().trigger;
                 hide(&state, &root);
                 if let Some(el) = tapped.filter(|_| !again) {
@@ -247,11 +248,14 @@ fn trigger_of(el: &Element) -> Option<Element> {
     })
 }
 
+/// Whether `el` is (in) something a tap does something with.
 fn is_interactive(el: &Element) -> bool {
-    el.matches(
+    el.closest(
         "a[href], button, input, select, textarea, label, [role=button], [role=radio], [role=tab]",
     )
-    .unwrap_or(false)
+    .ok()
+    .flatten()
+    .is_some()
 }
 
 fn schedule(state: &Shared, el: Element, root: HtmlElement, text: HtmlElement, delay: Duration) {
