@@ -45,6 +45,11 @@ async fn pages_are_rendered_in_their_language() {
     }
     let html = text(browser.get("/ar").await).await;
     assert!(html.contains("dir=\"rtl\""));
+    // The font of the script, already in the page the server sends (hydration fails otherwise)
+    let html = text(browser.get("/ko/rules").await).await;
+    assert!(html.contains("/fonts/noto-sans-kr.css"));
+    let html = text(browser.get("/de/rules").await).await;
+    assert!(!html.contains("/fonts/noto-sans"));
 
     // The browser's language decides on pages without a language in the path
     let res = browser
