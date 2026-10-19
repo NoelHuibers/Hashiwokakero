@@ -7,6 +7,10 @@ import { DAILY_KEY, saved } from '../board';
 import { expectResult, solveDaily, startDaily } from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
 
+/** The first card of the ranks page, the monthly race below has the same buttons. */
+const todaysBoard = (page: Page) =>
+  page.locator('[data-name="Card"]').filter({ has: page.getByRole('button', { name: /Earlier/ }) }).first();
+
 test('a guest solves the daily and is on the leaderboard', async ({ page, context }) => {
   await visit(page, '/');
   await expect(page.getByText("No account needed, you'll play as a guest.")).toBeVisible();
@@ -18,8 +22,9 @@ test('a guest solves the daily and is on the leaderboard', async ({ page, contex
   expect(name).toMatch(/^\p{Lu}\p{Ll}+ \p{Lu}\p{Ll}+ \d+$/u);
   const time = (await card.locator('p.font-pixel.text-3xl').textContent())!;
 
-  // Today's ranking next to the board, with the penalties
-  const mine = (root: Locator) => root.locator('tr').filter({ hasText: name });
+  // Today's ranking next to the board, with the penalties. A row of the table, or a step of the
+  // ranks page's podium.
+  const mine = (root: Locator) => root.locator('tr, li.podium-step').filter({ hasText: name });
   await expect(mine(page.locator('aside'))).toContainText(/you/i);
   await expect(mine(page.locator('aside'))).toContainText(/\d+h 1c/);
   await expect(mine(page.locator('aside'))).toContainText(time);
@@ -41,11 +46,10 @@ test('a guest solves the daily and is on the leaderboard', async ({ page, contex
   await visit(other, '/');
   await finished(other);
 
-  // The ranks page has the same row in today's board, the first one
+  // The ranks page has them too, on today's board
   await visit(other, '/ranks');
-  const today = other.locator('main table').first();
-  await expect(mine(today)).toContainText(/you/i);
-  await expect(mine(today)).toContainText(time);
+  await expect(mine(todaysBoard(other))).toContainText(/you/i);
+  await expect(mine(todaysBoard(other))).toContainText(time);
   await other.close();
 });
 
@@ -77,7 +81,7 @@ test('sign up, sign out and in again, then the daily counts for the account', as
 
   // And the leaderboard has the name, without the guest label
   await visit(page, '/ranks');
-  const row = page.locator('main table').first().locator('tr').filter({ hasText: username });
+  const row = todaysBoard(page).locator('tr, li.podium-step').filter({ hasText: username });
   await expect(row).toContainText(/you/i);
   await expect(row).not.toContainText('guest');
 });

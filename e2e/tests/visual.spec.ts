@@ -83,7 +83,8 @@ test('ranks', async ({ page }) => {
   await visit(page, '/ranks');
   // The first card, the monthly race below has the same buttons
   const today = page.locator('[data-name="Card"]').filter({ has: page.getByRole('button', { name: /Earlier/ }) }).first();
-  await expect(today.locator('tr')).toHaveCount(2);
+  // The seeded two of today, on the podium
+  await expect(today.locator('li.podium-step')).toHaveCount(2);
   await expectPage(page, 'ranks', [
     // The weekday, number, date and difficulty of the day
     today.locator('span.hanko'),
