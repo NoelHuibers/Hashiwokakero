@@ -10,9 +10,13 @@ use libsql::{Builder, Connection, Database, params};
 
 use super::{count, now_ms};
 
+#[cfg(test)]
+mod tests;
+
 static DB: OnceLock<Database> = OnceLock::new();
 
-/// Schema versions, applied in order and recorded in `schema_migrations`.
+/// Schema versions, applied in order and recorded in `schema_migrations`. A new one also needs
+/// rows for its tables or columns in the migration test (`db/tests.rs`).
 const MIGRATIONS: &[&str] = &[
     r"
 CREATE TABLE IF NOT EXISTS users (
@@ -185,6 +189,11 @@ pub async fn open_local(path: &str) -> Result<Database, String> {
 }
 
 pub async fn migrate(conn: &Connection) -> Result<(), String> {
+    migrate_to(conn, MIGRATIONS.len()).await
+}
+
+/// Applies the first `version` migrations (those not applied yet), like an older server did.
+async fn migrate_to(conn: &Connection, version: usize) -> Result<(), String> {
     let err = |e: libsql::Error| format!("migration failed: {e}");
     conn.execute(
         "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)",
@@ -205,7 +214,7 @@ pub async fn migrate(conn: &Connection) -> Result<(), String> {
     };
     // A version that doesn't fit (never written by this code) skips everything, like before
     let applied = usize::try_from(current).unwrap_or(usize::MAX);
-    for (i, sql) in MIGRATIONS.iter().enumerate().skip(applied) {
+    for (i, sql) in MIGRATIONS.iter().enumerate().take(version).skip(applied) {
         conn.execute_batch(sql).await.map_err(err)?;
         conn.execute(
             "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
