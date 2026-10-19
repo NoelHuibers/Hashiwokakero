@@ -133,7 +133,7 @@ pub(super) fn DailyBoard(
                 </div>
             </CardHeader>
             <CardContent class="flex flex-col gap-4" class:opacity-60=move || loading.get()>
-                {move || board.get().map(|b| view! { <LeaderboardTable entries=b.entries me=b.me /> })}
+                {move || board.get().map(|b| view! { <LeaderboardTable entries=b.entries me=b.me podium=true /> })}
                 <Show when=move || { shown_day().zip(today.get()).is_some_and(|(d, t)| d < t) }>
                     <div class="flex items-center justify-between gap-3 rounded-lg border border-dashed p-3 text-sm">
                         <span class="text-muted-foreground">{t!(i18n, ranks.missed)}</span>
