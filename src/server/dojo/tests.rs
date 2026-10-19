@@ -350,6 +350,121 @@ fn code_hash_ignores_custom_sections() {
     assert_eq!(code_hash(b"not wasm"), None);
 }
 
+/// A small but complete submission (WASI import, `_start`, memory, code and data) with two
+/// custom sections, `producers` at the start and `name` at the end, like compilers write them.
+/// Made by hand, its bytes are in `wasm_sections` below.
+const FIXTURE: &[u8] = include_bytes!("../../golden/files/dojo.wasm");
+
+/// The sections of a module: (id, the whole section). Written by hand, so the test doesn't
+/// depend on wasmparser.
+fn wasm_sections(wasm: &[u8]) -> Vec<(u8, Vec<u8>)> {
+    let mut sections = Vec::new();
+    let mut at = 8;
+    while at < wasm.len() {
+        let start = at;
+        let id = wasm[at];
+        at += 1;
+        let (mut size, mut shift) = (0, 0);
+        loop {
+            let byte = wasm[at];
+            at += 1;
+            size |= usize::from(byte & 0x7f) << shift;
+            shift += 7;
+            if byte & 0x80 == 0 {
+                break;
+            }
+        }
+        at += size;
+        sections.push((id, wasm[start..at].to_vec()));
+    }
+    sections
+}
+
+fn wasm_module(sections: &[Vec<u8>]) -> Vec<u8> {
+    let mut wasm = FIXTURE[..8].to_vec();
+    for section in sections {
+        wasm.extend_from_slice(section);
+    }
+    wasm
+}
+
+/// A custom section with a name and content (both shorter than 128 bytes).
+fn custom_section(name: &str, content: &[u8]) -> Vec<u8> {
+    let size = u8::try_from(1 + name.len() + content.len()).unwrap();
+    let mut section = vec![0, size, u8::try_from(name.len()).unwrap()];
+    section.extend_from_slice(name.as_bytes());
+    section.extend_from_slice(content);
+    section
+}
+
+#[test]
+fn code_hashes_are_unchanged() {
+    const COPIES: &str = "the hash the Dojo uses to spot resubmitted copies changed: every \
+                          submission already in the database would look new, a copy of one \
+                          of them would be accepted again";
+    let expected = "5c165686b4b60e88bfacf31dffd5fad80c9a2f0292df6e1411cc149d0e6bd824";
+    assert_eq!(code_hash(FIXTURE).as_deref(), Some(expected), "{COPIES}");
+    // The sha256 column, of the whole file
+    assert_eq!(
+        hex(&Sha256::digest(FIXTURE)),
+        "d851c9e958c6ec1e81c184c88271583feab0b4fda483215f4251e6e8b23dc893",
+        "the SHA-256 of a submission changed (sha2): the sha256 column, which has to be \
+         unique, wouldn't match the stored ones"
+    );
+
+    let sections = wasm_sections(FIXTURE);
+    assert_eq!(
+        sections.iter().map(|s| s.0).collect::<Vec<_>>(),
+        [0, 1, 2, 3, 5, 7, 10, 11, 0],
+        "the fixture's sections"
+    );
+    let code: Vec<Vec<u8>> = sections
+        .iter()
+        .filter(|s| s.0 != 0)
+        .map(|s| s.1.clone())
+        .collect();
+    let mut renamed = sections.iter().map(|s| s.1.clone()).collect::<Vec<_>>();
+    *renamed.last_mut().unwrap() = custom_section("name", b"\0\x05\x04mine");
+    let mut padded = code.clone();
+    padded.insert(3, custom_section("padding", &[0; 40]));
+    padded.push(custom_section(".debug_info", b"\x01\x02\x03"));
+    // Without custom sections, renamed, padded: the same code
+    for (label, wasm) in [
+        ("stripped", wasm_module(&code)),
+        ("renamed", wasm_module(&renamed)),
+        ("padded", wasm_module(&padded)),
+    ] {
+        assert_eq!(
+            code_hash(&wasm).as_deref(),
+            Some(expected),
+            "{label}: custom sections must not count. {COPIES}"
+        );
+    }
+    // Other code is another submission: `i32.const 42` becomes `i32.const 43`
+    let mut other = FIXTURE.to_vec();
+    let at = other.windows(2).position(|w| w == [0x41, 0x2a]).unwrap();
+    other[at + 1] = 0x2b;
+    assert_ne!(code_hash(&other).as_deref(), Some(expected), "{COPIES}");
+}
+
+#[test]
+fn hidden_set_seeds_are_unchanged() {
+    // The worker generates a season's hidden set from this seed (and caches it by a hash of
+    // it): another seed is another set, mid-season the scores of earlier submissions wouldn't
+    // be comparable with new ones
+    assert_eq!(
+        [
+            test_seed_with("hashi-dojo-local", 1),
+            test_seed_with("another secret", 2)
+        ],
+        [
+            "bd369032b86123430d3ab641d2c7b087cfd96c2f53ec6afd392286ce6bc9afa2",
+            "ec9c9e6fabc42cb17da57c3d5c0fb4b6394c54b5bbb54be90be2ed15c1d2790d"
+        ],
+        "the seed of a season's hidden set changed"
+    );
+}
+
 #[tokio::test]
 async fn stale_runs_are_retried() {
     let conn = test_db("stale").await;
