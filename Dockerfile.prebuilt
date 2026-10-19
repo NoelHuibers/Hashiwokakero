@@ -1,4 +1,4 @@
-# The image the CI deploys: the binary and site built by its "Build site" job, unpacked to dist/
+# The image the CI deploys: the binary and site built by its "Build site" jobs, unpacked to dist/
 # (see .github/workflows/ci.yml). The same runtime as the last stage of Dockerfile, which builds
 # everything itself; keep the two in sync.
 FROM debian:trixie-slim

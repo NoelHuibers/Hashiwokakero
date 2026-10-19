@@ -151,12 +151,48 @@ jobs:
             target/llvm-cov/lcov.info
           retention-days: 14
 
+  # The release build, in two jobs side by side: the server here, the browser's WASM, JS and CSS
+  # in the next. In one `cargo leptos build --release` they ran one after the other (with
+  # hash-files cargo-leptos builds the server only after the site), 8 instead of about 5 minutes.
+  # The server only reads the hashes of the site's file names at runtime, from hash.txt next to
+  # its binary: the two halves are put together in dist/ by the jobs that use them.
   build:
     name: Build site
     needs: changes
     if: needs.changes.outputs.code == 'true'
     # Pinned: this server binary runs on Debian trixie (Dockerfile.prebuilt), it must not need a
     # newer glibc than trixie has
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Install cargo-leptos
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y cargo-leptos@0.3.11
+      - name: Build
+        run: cargo leptos build --release --cargo-locked --server-only
+      # The server binary, for the browser tests and the deploy below. A tarball keeps it
+      # executable.
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp target/release/hashi dist/
+          tar -cf server.tar dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: site-server
+          path: server.tar
+          # Pull requests only need it for the browser tests right after
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+
+  build-browser:
+    name: Build site (browser)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     outputs:
       playwright: ${{ steps.playwright.outputs.version }}
@@ -182,21 +218,18 @@ jobs:
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall -y cargo-leptos@0.3.11
       - name: Build
-        run: cargo leptos build --release --cargo-locked
-      # The server binary, the hashes of the JS/WASM/CSS file names (read next to the binary) and
-      # the site, for the browser tests and the deploy below. A tarball keeps the binary
-      # executable.
+        run: cargo leptos build --release --cargo-locked --frontend-only
+      # The hashes of the JS/WASM/CSS file names (read next to the server binary) and the site
       - name: Package
         run: |
           mkdir -p dist
-          cp target/release/hashi target/release/hash.txt dist/
+          cp target/release/hash.txt dist/
           cp -r target/site dist/site
-          tar -cf site.tar dist
+          tar -cf browser.tar dist
       - uses: actions/upload-artifact@v7
         with:
-          name: site
-          path: site.tar
-          # Pull requests only need it for the browser tests right after
+          name: site-browser
+          path: browser.tar
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
   # The browser tests (e2e/) on the release build above: every page in every language, the
@@ -205,7 +238,7 @@ jobs:
   # included); each starts its own servers on a freshly seeded database (e2e/global-setup.ts).
   e2e-shard:
     name: E2E shard ${{ matrix.shard }}/2
-    needs: build
+    needs: [build, build-browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -217,7 +250,7 @@ jobs:
     # fonts: the screenshots in e2e/tests/__screenshots__ are taken in it (pnpm run
     # e2e:update-snapshots), on another system they wouldn't match
     container:
-      image: mcr.microsoft.com/playwright:v${{ needs.build.outputs.playwright }}-noble
+      image: mcr.microsoft.com/playwright:v${{ needs.build-browser.outputs.playwright }}-noble
       options: --ipc=host
     steps:
       - uses: actions/checkout@v7
@@ -228,10 +261,12 @@ jobs:
           cache: pnpm
       # No fonts needed, the site in the artifact has them
       - run: pnpm install --frozen-lockfile --ignore-scripts
+      # The server and the browser's half of the build, together in dist/
       - uses: actions/download-artifact@v8
         with:
-          name: site
-      - run: tar -xf site.tar
+          pattern: site-*
+          merge-multiple: true
+      - run: tar -xf server.tar && tar -xf browser.tar
       - name: Browser tests
         run: pnpm run e2e --shard=${{ matrix.shard }}/2
         env:
@@ -322,15 +357,17 @@ jobs:
   # site. Dependabot's updates of its base image are tested here, before they deploy.
   docker:
     name: Docker image
-    needs: build
+    needs: [build, build-browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      # The server and the browser's half of the build, together in dist/
       - uses: actions/download-artifact@v8
         with:
-          name: site
-      - run: tar -xf site.tar
+          pattern: site-*
+          merge-multiple: true
+      - run: tar -xf server.tar && tar -xf browser.tar
       - run: scripts/docker-smoke.sh
 
   # Deploys ship the binaries built above in a slim image, built here and pushed to Fly. Fly's
@@ -339,15 +376,17 @@ jobs:
   deploy:
     name: Deploy site
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint-browser, coverage, build, e2e, docker]
+    needs: [test, lint-browser, coverage, build, build-browser, e2e, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+      # The server and the browser's half of the build, together in dist/
       - uses: actions/download-artifact@v8
         with:
-          name: site
-      - run: tar -xf site.tar
+          pattern: site-*
+          merge-multiple: true
+      - run: tar -xf server.tar && tar -xf browser.tar
       - uses: superfly/flyctl-actions/setup-flyctl@1.6
       - name: Deploy to fly
         # pipefail: a failed deploy must fail the job, not just print its last line
