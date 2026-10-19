@@ -1,7 +1,7 @@
 // Line coverage of the tests CI runs, held against a baseline so it can't quietly drop.
 //
-//   npm run coverage              run the tests with coverage, report, compare to the baseline
-//   npm run coverage -- --update  the same, then store the new numbers as the baseline
+//   pnpm run coverage             run the tests with coverage, report, compare to the baseline
+//   pnpm run coverage --update    the same, then store the new numbers as the baseline
 //
 // Needs cargo-llvm-cov (`cargo binstall cargo-llvm-cov`), it installs the llvm-tools-preview
 // component on first use. Reports land in target/llvm-cov/: html/index.html, lcov.info and
@@ -127,7 +127,7 @@ for (const name of Object.keys(baseline.crates)) {
   if (!(name in crates)) dropped.push(`${name} has no coverage data`);
 }
 
-const UPDATE = '`npm run coverage -- --update` and commit scripts/coverage-baseline.json';
+const UPDATE = '`pnpm run coverage --update` and commit scripts/coverage-baseline.json';
 let verdict;
 if (update) {
   verdict = 'Stored these numbers as the new baseline, commit scripts/coverage-baseline.json.';

@@ -1,6 +1,6 @@
 // Screenshots of a few pages, compared with the ones in __screenshots__: the only tests that see
 // a layout broken by a Tailwind update or a font that went missing. Run in the Playwright
-// container only (`npm run e2e:container`, `npm run e2e:update-snapshots` after a change on
+// container only (`pnpm run e2e:container`, `pnpm run e2e:update-snapshots` after a change on
 // purpose), the fonts and the rendering differ from one system to the next.
 //
 // Whatever changes from day to day is hidden (not masked: a mask is as wide as the text under

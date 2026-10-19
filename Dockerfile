@@ -1,10 +1,13 @@
 # syntax=docker/dockerfile:1
 
-# Tailwind v4 (the CLI and tw-animate-css) comes from npm, cargo-leptos runs node_modules/.bin/tailwindcss
+# Tailwind v4 (the CLI and tw-animate-css) and the fonts come from npm packages, installed with
+# pnpm; cargo-leptos runs node_modules/.bin/tailwindcss. The image has no corepack, npm installs
+# the pnpm version of packageManager in package.json.
 FROM node:26-trixie-slim AS css-deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN npm install -g --allow-scripts=pnpm "$(node -p "require('./package.json').packageManager")" \
+    && pnpm install --frozen-lockfile --ignore-scripts
 
 FROM rust:1.99-trixie AS builder
 

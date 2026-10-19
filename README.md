@@ -27,17 +27,17 @@ The frontend is [Leptos](https://leptos.dev) 0.8 (SSR + hydration) with Tailwind
 
 ## Running the web app
 
-Requirements: Rust stable (installed automatically via `rust-toolchain.toml`, incl. the `wasm32-unknown-unknown` target), Node.js 24+ (26 recommended, see `.node-version`) and [cargo-leptos](https://github.com/leptos-rs/cargo-leptos):
+Requirements: Rust stable (installed automatically via `rust-toolchain.toml`, incl. the `wasm32-unknown-unknown` target), Node.js 24+ (26 recommended, see `.node-version`) , [pnpm](https://pnpm.io) (the version in `packageManager` in `package.json`) and [cargo-leptos](https://github.com/leptos-rs/cargo-leptos):
 
 ```sh
 cargo install --locked cargo-leptos   # or: cargo binstall cargo-leptos
-npm ci                                # Tailwind, tw-animate-css and the fonts (public/fonts)
-cargo leptos watch                    # http://127.0.0.1:3000 (or npm run dev, see below)
+pnpm install                          # Tailwind, tw-animate-css and the fonts (public/fonts)
+cargo leptos watch                    # http://127.0.0.1:3000 (or pnpm run dev, see below)
 ```
 
 cargo-leptos runs the Tailwind CLI from `node_modules` (so its version is the one in `package.json`) and installs the wasm-bindgen CLI matching `Cargo.lock` by itself.
 
-The fonts are self-hosted, no request goes to Google Fonts: `npm ci` runs `scripts/fonts.mjs`, which copies the woff2 files of the `@fontsource` packages to `public/fonts` and writes their `@font-face` rules (`npm run fonts` does it again).
+The fonts are self-hosted, no request goes to Google Fonts: `pnpm install` runs `scripts/fonts.mjs`, which copies the woff2 files of the `@fontsource` packages to `public/fonts` and writes their `@font-face` rules (`pnpm run fonts` does it again).
 
 A release build: `cargo leptos build --release`, the server binary is `target/release/hashi` and serves `target/site`.
 
@@ -46,17 +46,17 @@ A release build: `cargo leptos build --release`, the server binary is `target/re
 The translations are the heaviest code to compile: `i18n/build.rs` generates one module from all of `locales/` (20 languages, about 7 MB of code), and the compiler works through it on one core. They live in a crate of their own, `hashi_i18n` (`i18n/`), which only compiles again when `locales/` changes, not with every edit of the website. A small edit then takes `cargo leptos build` (server and browser) 17 s instead of 25 s, a build of the website crate from scratch 36 s instead of 67 s when the translations are already built. To keep the rest in check:
 
 ```sh
-npm run dev                           # cargo leptos watch, 4 compiler jobs, at most 10 GB
-HASHI_LOCALES=en,ja npm run dev       # only English and Japanese translated, a lighter build
-npm run dev -- --hot-reload           # arguments go to cargo leptos watch
+pnpm run dev                          # cargo leptos watch, 4 compiler jobs, at most 10 GB
+HASHI_LOCALES=en,ja pnpm run dev      # only English and Japanese translated, a lighter build
+pnpm run dev --hot-reload             # arguments go to cargo leptos watch
 ```
 
-- `npm run dev` runs `cargo leptos watch` with `CARGO_BUILD_JOBS=4`, and, where `systemd-run` is there, in a systemd scope with `MemoryMax=10G` and no swap: a build that needs more fails (the compiler is killed) instead of pushing the desktop into swap. `CARGO_BUILD_JOBS` and `HASHI_DEV_MEMORY` (e.g. `14G`, or `infinity`) override them.
-- `HASHI_LOCALES` (comma separated, English is always in) works with every cargo command, also without `npm run dev`. The other languages stay in the language switcher and their URLs work, but they show English. Changing it rebuilds both crates. With `en`, `cargo leptos build` of both from scratch took 45 s instead of 61 s, a small edit 13 s and 1.3 GB instead of 17 s and 1.9 GB. Leave it unset for the tests (some check that every language is translated) and for anything you ship; CI, release and Docker builds never set it and build every language.
-- cargo-leptos compiles debug builds with `--cfg erase_components`, which keeps Leptos' view types small. A plain `cargo build --no-default-features --features ssr` doesn't: its server binary took the compiler over 10 GB, with any `HASHI_LOCALES`. Prefer `npm run dev`/`cargo leptos build` for running the site.
+- `pnpm run dev` runs `cargo leptos watch` with `CARGO_BUILD_JOBS=4`, and, where `systemd-run` is there, in a systemd scope with `MemoryMax=10G` and no swap: a build that needs more fails (the compiler is killed) instead of pushing the desktop into swap. `CARGO_BUILD_JOBS` and `HASHI_DEV_MEMORY` (e.g. `14G`, or `infinity`) override them.
+- `HASHI_LOCALES` (comma separated, English is always in) works with every cargo command, also without `pnpm run dev`. The other languages stay in the language switcher and their URLs work, but they show English. Changing it rebuilds both crates. With `en`, `cargo leptos build` of both from scratch took 45 s instead of 61 s, a small edit 13 s and 1.3 GB instead of 17 s and 1.9 GB. Leave it unset for the tests (some check that every language is translated) and for anything you ship; CI, release and Docker builds never set it and build every language.
+- cargo-leptos compiles debug builds with `--cfg erase_components`, which keeps Leptos' view types small. A plain `cargo build --no-default-features --features ssr` doesn't: its server binary took the compiler over 10 GB, with any `HASHI_LOCALES`. Prefer `pnpm run dev`/`cargo leptos build` for running the site.
 - Debug builds have only line tables for our crates and no debug info for dependencies (`[profile.dev]` in `Cargo.toml`): panics and backtraces still name file and line, and the compiler and the linker need less (a first debug build of the server: 2:50 instead of 3:11 minutes, 3.2 instead of 3.7 GB, 3.5 instead of 6.7 GB in `target/`). For a debugger session with variables: `CARGO_PROFILE_DEV_DEBUG=full`.
 
-`target/` grows with every build, and every worktree has its own. `npm run clean` lists what can go, with sizes, and deletes nothing; `npm run clean -- --yes` deletes it:
+`target/` grows with every build, and every worktree has its own. `pnpm run clean` lists what can go, with sizes, and deletes nothing; `pnpm run clean --yes` deletes it (`pnpm clean` without `run` is pnpm's own command):
 
 - huge fingerprint outputs (`target/*/.fingerprint/*/output-*` over 50 MB, `--min-output-mb`): the compiler's messages, replayed when a crate is fresh;
 - incremental caches except the newest of each crate and profile;
@@ -70,25 +70,25 @@ It only deletes inside target dirs that cargo made (with its `CACHEDIR.TAG`): th
 `e2e/` has [Playwright](https://playwright.dev) tests of the built site: every page in every language loads, hydrates and reacts without an error in the browser, the 404 page, and journeys through the site, each as a player of its own: practice from generating to the win screen (with the mouse, and by tapping on a phone), the daily as a guest and with a new account up to the leaderboard and the stamp book, signing in, deleting an account, the workshop, the lab, the contact form, the settings, the Dojo and the admin dashboard. The daily's solution comes from the server's database, the page never has it. Each run starts the server binary on port 3150 with a fresh database in `e2e/.run/`, seeded by `e2e/seed.ts` (players with a few weeks of dailies, signed in sessions, a Dojo entry, contact messages).
 
 ```sh
-npx playwright install chromium       # once, the browser
+pnpm exec playwright install chromium  # once, the browser
 cargo leptos build --release
-npm run e2e                           # npm run e2e -- --ui, or -g "practice" for some tests
+pnpm run e2e                          # pnpm run e2e --ui, or -g "practice" for some tests
 ```
 
-`E2E_BIN` and `E2E_SITE_ROOT` point it at another build (e.g. `target/debug/hashi`), `E2E_PORT` at another port. A failed run leaves a report with traces (`npx playwright show-report e2e/playwright-report`) and the server's log in `e2e/.run/server.log`.
+`E2E_BIN` and `E2E_SITE_ROOT` point it at another build (e.g. `target/debug/hashi`), `E2E_PORT` at another port. A failed run leaves a report with traces (`pnpm exec playwright show-report e2e/playwright-report`) and the server's log in `e2e/.run/server.log`.
 
-`e2e/tests/visual.spec.ts` compares a few pages with screenshots (`e2e/tests/__screenshots__/`): the home page, a practice board, the ranks, the rules in Japanese and Arabic, and a daily's result. They catch what breaks the layout without an error, like a Tailwind or font update. Screenshots only match where they were taken, so they are taken and compared in the official Playwright image of the version in `package-lock.json`, in CI and locally (podman or docker, the image is pulled on first use), with a server and database of their own on the next port:
+`e2e/tests/visual.spec.ts` compares a few pages with screenshots (`e2e/tests/__screenshots__/`): the home page, a practice board, the ranks, the rules in Japanese and Arabic, and a daily's result. They catch what breaks the layout without an error, like a Tailwind or font update. Screenshots only match where they were taken, so they are taken and compared in the official Playwright image of the version in `pnpm-lock.yaml`, in CI and locally (podman or docker, the image is pulled on first use), with a server and database of their own on the next port:
 
 ```sh
-npm run e2e:container                 # every test, the screenshots included
-npm run e2e:update-snapshots          # take the screenshots again, after a change on purpose
+pnpm run e2e:container                # every test, the screenshots included
+pnpm run e2e:update-snapshots         # take the screenshots again, after a change on purpose
 ```
 
-`npm run e2e` outside the container leaves them out. CI also builds the deploy image (`Dockerfile.prebuilt`) from its binary and site and checks that it serves the site (`scripts/docker-smoke.sh`).
+`pnpm run e2e` outside the container leaves them out. CI also builds the deploy image (`Dockerfile.prebuilt`) from its binary and site and checks that it serves the site (`scripts/docker-smoke.sh`).
 
 ## Deployment
 
-Pushes to `main` deploy to [fly.io](https://fly.io) once CI passes: CI builds the site and the dojo worker with its warm cache and ships them in slim Debian trixie images (`Dockerfile.prebuilt`, `dojo/Dockerfile.prebuilt`), built on the runner. The multi-stage `Dockerfile` (Node 26 for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime) builds everything from source, for a manual `fly deploy` or a local image. Dependabot keeps Cargo, npm, Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request and runs the browser tests on its release build.
+Pushes to `main` deploy to [fly.io](https://fly.io) once CI passes: CI builds the site and the dojo worker with its warm cache and ships them in slim Debian trixie images (`Dockerfile.prebuilt`, `dojo/Dockerfile.prebuilt`), built on the runner. The multi-stage `Dockerfile` (Node 26 and pnpm for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime) builds everything from source, for a manual `fly deploy` or a local image. Dependabot keeps Cargo, npm (pnpm-lock.yaml), Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request and runs the browser tests on its release build.
 
 ## SAT Dojo
 
@@ -167,8 +167,8 @@ cargo test --release -p backend -- --ignored --nocapture
 cargo bench
 # Line coverage of the tests CI runs (cargo binstall cargo-llvm-cov first), report in
 # target/llvm-cov/html/index.html. CI fails when it drops more than a percentage point below
-# scripts/coverage-baseline.json, `npm run coverage -- --update` stores new numbers there.
-npm run coverage
+# scripts/coverage-baseline.json, `pnpm run coverage --update` stores new numbers there.
+pnpm run coverage
 ```
 
 See [Evaluation](hashi_report.pdf)

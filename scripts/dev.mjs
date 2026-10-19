@@ -2,9 +2,9 @@
 // there (Linux with systemd), a memory limit for the whole build, so a big compile fails
 // instead of pushing the desktop into swap.
 //
-//   npm run dev                              http://127.0.0.1:3000
-//   HASHI_LOCALES=en,ja npm run dev          only these languages translated, a lighter build
-//   npm run dev -- --hot-reload              arguments go to `cargo leptos watch`
+//   pnpm run dev                             http://127.0.0.1:3000
+//   HASHI_LOCALES=en,ja pnpm run dev         only these languages translated, a lighter build
+//   pnpm run dev --hot-reload                arguments go to `cargo leptos watch`
 //
 // CARGO_BUILD_JOBS (default 4) and HASHI_DEV_MEMORY (default 10G, systemd's MemoryMax syntax,
 // "infinity" for none) override the limits. A first build of everything peaked at about 5 GB
@@ -20,7 +20,7 @@ const env = { ...process.env };
 env.CARGO_BUILD_JOBS ??= '4';
 const memory = env.HASHI_DEV_MEMORY ?? '10G';
 
-// rustup's default install dir, often not on the PATH of a shell npm starts
+// rustup's default install dir, often not on the PATH of a shell pnpm starts
 const cargoBin = path.join(env.CARGO_HOME ?? path.join(os.homedir(), '.cargo'), 'bin');
 if (fs.existsSync(cargoBin) && !(env.PATH ?? '').split(path.delimiter).includes(cargoBin)) {
   env.PATH = `${cargoBin}${path.delimiter}${env.PATH ?? ''}`;
