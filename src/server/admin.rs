@@ -1,4 +1,4 @@
-//! The admin dashboard (`/admin`, for the usernames in `HASHI_ADMINS`) and the same tools for
+//! The admin dashboard (`/admin`, for the accounts in `HASHI_ADMINS`) and the same tools for
 //! scripts (`HASHI_ADMIN_TOKEN` as bearer token):
 //!
 //! - `GET /admin/attempt?user=&day=` shows an attempt with its move log
@@ -20,21 +20,52 @@ use crate::model::{
     MoveEvent, NameKind, SubmissionAction, neutral_name, summarize_log,
 };
 
-/// Whether the user is an admin: a registered account whose username is in `HASHI_ADMINS`
-/// (comma separated, case doesn't matter).
+/// How `HASHI_ADMINS` (comma separated) lists an admin.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Listed {
+    /// By user id (`2`): the account is the admin, whatever its name.
+    Id,
+    /// By username, the older way (case doesn't matter). Such an admin keeps their name: freed, it
+    /// would make whoever registers it next an admin.
+    Name,
+}
+
+/// Whether the user is an admin: a registered account listed in `HASHI_ADMINS`.
 pub fn is_admin(user: &User) -> bool {
-    user.username.as_deref().is_some_and(admin_username)
+    listing(user).is_some()
 }
 
-/// Whether `HASHI_ADMINS` lists this username.
+/// How `HASHI_ADMINS` lists the user, `None` if they are no admin. Guests never are.
+pub fn listing(user: &User) -> Option<Listed> {
+    let username = user.username.as_deref()?;
+    listed(&admins(), user.id, username)
+}
+
+/// Whether `HASHI_ADMINS` lists this username (not an id).
 pub fn admin_username(name: &str) -> bool {
-    listed(&super::env_var("HASHI_ADMINS").unwrap_or_default(), name)
+    entries(&admins()).any(|a| a.parse::<i64>().is_err() && a.eq_ignore_ascii_case(name))
 }
 
-fn listed(admins: &str, name: &str) -> bool {
-    admins
-        .split(',')
-        .any(|a| !a.trim().is_empty() && a.trim().eq_ignore_ascii_case(name))
+fn admins() -> String {
+    super::env_var("HASHI_ADMINS").unwrap_or_default()
+}
+
+fn entries(admins: &str) -> impl Iterator<Item = &str> {
+    admins.split(',').map(str::trim).filter(|a| !a.is_empty())
+}
+
+/// An entry that is a number is an id, never a username: "123" doesn't make the player who
+/// registers the username 123 an admin.
+fn listed(admins: &str, id: i64, username: &str) -> Option<Listed> {
+    let mut by_name = false;
+    for entry in entries(admins) {
+        match entry.parse::<i64>() {
+            Ok(listed) if listed == id => return Some(Listed::Id),
+            Ok(_) => {}
+            Err(_) => by_name |= entry.eq_ignore_ascii_case(username),
+        }
+    }
+    by_name.then_some(Listed::Name)
 }
 
 /// The signed in admin, or `Forbidden`.
@@ -113,8 +144,8 @@ pub async fn flagged_names(conn: &Connection) -> Result<Vec<FlaggedName>, Server
         if name == neutral_name(id) {
             continue;
         }
-        let word = names::blocked(&name)
-            .or_else(|| names::reserved(&name).filter(|_| !admin_username(&username)));
+        let admin = listed(&admins(), id, &username).is_some();
+        let word = names::blocked(&name).or_else(|| names::reserved(&name).filter(|_| !admin));
         if let Some(word) = word {
             out.push(FlaggedName {
                 kind: NameKind::Player,
@@ -396,13 +427,25 @@ mod tests {
 
     #[test]
     fn admins_by_username() {
-        assert!(listed("Noel", "noel"));
-        assert!(listed(" alice , Noel ", "NOEL"));
-        assert!(!listed("Noel", "noelle"));
+        assert_eq!(listed("Noel", 7, "noel"), Some(Listed::Name));
+        assert_eq!(listed(" alice , Noel ", 7, "NOEL"), Some(Listed::Name));
+        assert_eq!(listed("Noel", 7, "noelle"), None);
         // An empty list has no admins, guests have no username
-        assert!(!listed("", ""));
-        assert!(!listed(",", "noel"));
+        assert_eq!(listed("", 7, ""), None);
+        assert_eq!(listed(",", 7, "noel"), None);
         assert!(is_admin(&user(Some("HTTP_admin"))));
         assert!(!is_admin(&user(None)));
+        assert!(admin_username("http_ADMIN"));
+    }
+
+    #[test]
+    fn admins_by_id() {
+        assert_eq!(listed("2", 2, "noel"), Some(Listed::Id));
+        assert_eq!(listed("Noel, 2", 2, "noel"), Some(Listed::Id));
+        assert_eq!(listed(" 5 ,2 ", 2, "anyone"), Some(Listed::Id));
+        assert_eq!(listed("2", 3, "noel"), None);
+        // A number is an id, never the username of that name
+        assert_eq!(listed("123", 7, "123"), None);
+        assert!(!admin_username("900001"));
     }
 }

@@ -191,8 +191,8 @@ pub fn AccountPage() -> impl IntoView {
                             </div>
                         </CardHeader>
                         <CardContent class="flex flex-col gap-2">
-                            // Admins keep their name, see `auth::change_username`
-                            {move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.admin)).then(|| view! { <ChangeUsername /> })}
+                            // Some admins keep their name, see `auth::change_username`
+                            {move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.name_locked)).then(|| view! { <ChangeUsername /> })}
                             {move || {
                                 auth.user
                                     .with(|u| u.as_ref().is_some_and(|u| u.admin))
