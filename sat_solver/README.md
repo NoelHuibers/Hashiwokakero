@@ -49,3 +49,4 @@ Supported heuristics are:
 ## Running the tests
 
 `cargo test --package sat_solver`
+Temporary.
