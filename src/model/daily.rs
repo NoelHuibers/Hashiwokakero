@@ -10,6 +10,8 @@ use super::stamps::{Stamp, StampProgress};
 pub const HINT_PENALTY_MS: i64 = 30_000;
 /// Added to the time of a daily run for every check.
 pub const CHECK_PENALTY_MS: i64 = 10_000;
+/// A username can be changed once in this many days.
+pub const RENAME_EVERY_DAYS: i64 = 30;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UserInfo {
@@ -21,6 +23,18 @@ pub struct UserInfo {
     /// Can open the admin dashboard (`HASHI_ADMINS` on the server).
     #[serde(default)]
     pub admin: bool,
+    /// When the username was last changed, `None`: never.
+    #[serde(default)]
+    pub renamed_at: Option<i64>,
+}
+
+impl UserInfo {
+    /// From when the username can be changed again, `None`: right away.
+    pub fn rename_from(&self, now: i64) -> Option<i64> {
+        self.renamed_at
+            .map(|at| at + RENAME_EVERY_DAYS * super::MS_PER_DAY)
+            .filter(|&from| from > now)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

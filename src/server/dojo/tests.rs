@@ -29,6 +29,7 @@ async fn user(conn: &Connection, name: &str, registered: bool) -> User {
         username: registered.then(|| name.into()),
         name: name.into(),
         created_at: 0,
+        renamed_at: None,
     }
 }
 

@@ -69,7 +69,8 @@
     "wrong_password": "Błędne hasło.",
     "email_invalid": "To nie wygląda na adres e-mail.",
     "message_invalid": "Napisz od 10 do 5000 znaków.",
-    "too_many_messages": "Na dziś wystarczy wiadomości, spróbuj ponownie jutro."
+    "too_many_messages": "Na dziś wystarczy wiadomości, spróbuj ponownie jutro.",
+    "rename_too_soon": "Niedawno zmieniono twoją nazwę użytkownika, spróbuj ponownie później."
   },
   "solver": {
     "title": "Solver SAT",

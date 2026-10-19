@@ -296,6 +296,7 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::EmailInvalid => td_string!(locale, common.errors.email_invalid),
         ApiError::MessageInvalid => td_string!(locale, common.errors.message_invalid),
         ApiError::TooManyMessages => td_string!(locale, common.errors.too_many_messages),
+        ApiError::RenameTooSoon => td_string!(locale, common.errors.rename_too_soon),
     }
     .to_string()
 }

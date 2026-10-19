@@ -33,6 +33,14 @@
   "name_hint": "Sonuçların sıralamada bu adla görünür.",
   "sign_out": "Çıkış yap",
   "no_dailies": "Henüz günlük bulmaca yok.",
+  "rename": {
+    "start": "Kullanıcı adını değiştir…",
+    "new_name": "Yeni kullanıcı adı",
+    "hint": "Önceki sonuçların yeni ada taşınır. Adını {{ days }} günde bir değiştirebilirsin.",
+    "button": "Kullanıcı adını değiştir",
+    "done": "Artık adın {{ name }}.",
+    "wait": "Kullanıcı adını {{ date }} tarihinden itibaren yeniden değiştirebilirsin."
+  },
   "delete": {
     "title": "Hesabı sil",
     "intro": "Adını, şifreni, mühürlerini ve Dojo gönderimlerini kalıcı olarak siler. Geçmiş sürelerin eski sıralamalarda isimsiz olarak kalır, böylece diğer oyuncular yerlerini korur.",

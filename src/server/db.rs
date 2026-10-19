@@ -156,6 +156,11 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 );
 CREATE INDEX IF NOT EXISTS contact_network ON contact_messages (ip_hash, created_at);
 ",
+    "
+-- When the player last changed their username, which they can do once a month, see
+-- server/auth.rs
+ALTER TABLE users ADD COLUMN renamed_at INTEGER;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

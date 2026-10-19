@@ -33,6 +33,14 @@
   "name_hint": "Tes résultats comptent au classement sous ce nom.",
   "sign_out": "Déconnexion",
   "no_dailies": "Aucun défi pour l’instant.",
+  "rename": {
+    "start": "Changer de pseudo…",
+    "new_name": "Nouveau pseudo",
+    "hint": "Tes résultats passés suivent le nouveau nom. Tu peux le changer une fois tous les {{ days }} jours.",
+    "button": "Changer de pseudo",
+    "done": "Tu t'appelles maintenant {{ name }}.",
+    "wait": "Tu pourras changer de pseudo à nouveau à partir du {{ date }}."
+  },
   "delete": {
     "title": "Supprimer le compte",
     "intro": "Supprime définitivement ton pseudo, ton mot de passe, tes tampons et tes soumissions au Dojo. Tes anciens temps restent sans nom dans les anciens classements, pour que les autres joueurs gardent leur place.",

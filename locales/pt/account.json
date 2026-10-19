@@ -33,6 +33,14 @@
   "name_hint": "Seus resultados aparecem no ranking com este nome.",
   "sign_out": "Sair",
   "no_dailies": "Nenhum desafio diário ainda.",
+  "rename": {
+    "start": "Mudar nome de usuário…",
+    "new_name": "Novo nome de usuário",
+    "hint": "Seus resultados anteriores passam para o novo nome. Você pode mudá-lo uma vez a cada {{ days }} dias.",
+    "button": "Mudar nome de usuário",
+    "done": "Agora você é {{ name }}.",
+    "wait": "Você poderá mudar seu nome de usuário de novo a partir de {{ date }}."
+  },
   "delete": {
     "title": "Excluir conta",
     "intro": "Exclui para sempre seu nome, sua senha, seus carimbos e seus envios ao Dojo. Seus tempos anteriores continuam nos rankings antigos sem nome, para que os outros jogadores mantenham suas posições.",

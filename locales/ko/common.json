@@ -69,7 +69,8 @@
     "wrong_password": "비밀번호가 틀렸어요.",
     "email_invalid": "이메일 주소가 아닌 것 같아요.",
     "message_invalid": "10자에서 5000자 사이로 써 주세요.",
-    "too_many_messages": "오늘은 메시지를 충분히 보냈어요. 내일 다시 시도해 주세요."
+    "too_many_messages": "오늘은 메시지를 충분히 보냈어요. 내일 다시 시도해 주세요.",
+    "rename_too_soon": "최근에 사용자 이름을 바꿨어요. 나중에 다시 시도해 주세요."
   },
   "solver": {
     "title": "SAT 솔버",

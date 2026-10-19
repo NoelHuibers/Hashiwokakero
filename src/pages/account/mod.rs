@@ -1,7 +1,8 @@
-//! The account page: the daily record, signing in and out, deleting the account.
+//! The account page: the daily record, signing in and out, renaming and deleting the account.
 
 pub mod auth_form;
 pub mod delete;
+pub mod rename;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -21,6 +22,7 @@ use crate::state::{Auth, ToastKind, toast};
 
 use auth_form::{AuthForm, Mode};
 use delete::DeleteAccount;
+use rename::ChangeUsername;
 
 #[component]
 pub fn AccountPage() -> impl IntoView {
@@ -189,6 +191,8 @@ pub fn AccountPage() -> impl IntoView {
                             </div>
                         </CardHeader>
                         <CardContent class="flex flex-col gap-2">
+                            // Admins keep their name, see `auth::change_username`
+                            {move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.admin)).then(|| view! { <ChangeUsername /> })}
                             {move || {
                                 auth.user
                                     .with(|u| u.as_ref().is_some_and(|u| u.admin))

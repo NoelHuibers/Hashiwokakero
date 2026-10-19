@@ -33,6 +33,14 @@
   "name_hint": "Unter diesem Namen erscheinen deine Ergebnisse in der Rangliste.",
   "sign_out": "Abmelden",
   "no_dailies": "Noch keine Tagesrätsel.",
+  "rename": {
+    "start": "Benutzernamen ändern …",
+    "new_name": "Neuer Benutzername",
+    "hint": "Deine bisherigen Ergebnisse ziehen mit um. Du kannst ihn alle {{ days }} Tage einmal ändern.",
+    "button": "Benutzernamen ändern",
+    "done": "Du heißt jetzt {{ name }}.",
+    "wait": "Du kannst deinen Benutzernamen ab dem {{ date }} wieder ändern."
+  },
   "delete": {
     "title": "Konto löschen",
     "intro": "Löscht deinen Namen, dein Passwort, deine Stempel und Dojo-Einsendungen endgültig. Deine bisherigen Zeiten bleiben ohne Namen in alten Ranglisten, damit die anderen ihre Plätze behalten.",

@@ -1,4 +1,4 @@
-// The account page: a wrong password, and deleting the account for good.
+// The account page: a wrong password, changing the username, and deleting the account for good.
 import { register, signInWith, signOut } from '../account';
 import { allow, expect, newUsername, test, visit } from '../fixtures';
 
@@ -50,4 +50,50 @@ test('delete the account, behind its password', async ({ page, problems }) => {
   await signInWith(page, username, PASSWORD);
   await expect(page.getByText('Wrong username or password.')).toBeVisible();
   allow(problems, /\/api\/login/, /status of 4\d\d|status of 5\d\d/);
+});
+
+test('change the username, then not again for a month', async ({ page, problems }) => {
+  const username = newUsername('old');
+  const renamed = newUsername('new');
+  await visit(page, '/account');
+  await register(page, username, PASSWORD);
+
+  // Cancel keeps the name
+  await page.getByRole('button', { name: 'Change username…' }).click();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.locator('#rename-username')).toHaveCount(0);
+
+  // The form starts with the current name, which is no change
+  await page.getByRole('button', { name: 'Change username…' }).click();
+  await expect(page.locator('#rename-username')).toHaveValue(username);
+  const save = page.getByRole('button', { name: 'Change username', exact: true });
+  await expect(save).toBeDisabled();
+  await expect(page.getByText('You can change it once every 30 days.', { exact: false })).toBeVisible();
+
+  await page.locator('#rename-username').fill(renamed);
+  await page.locator('#rename-password').fill('not-the-password');
+  await save.click();
+  await expect(page.getByText('Wrong password.')).toBeVisible();
+  allow(problems, /\/api\/change_username/, /status of 4\d\d|status of 5\d\d/);
+  await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
+
+  await page.locator('#rename-password').fill(PASSWORD);
+  await save.click();
+  await expect(page.getByText(`You're now ${renamed}.`)).toBeVisible();
+  await expect(page.getByRole('heading', { name: `こんにちは, ${renamed}` })).toBeVisible();
+  // Not again for a month, after a reload either
+  const wait = page.getByText(/^You can change your username again from \d+ \w+ \d{4}\.$/);
+  await expect(wait).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change username…' })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: `こんにちは, ${renamed}` })).toBeVisible();
+  await expect(wait).toBeVisible();
+
+  // The new name signs in, the old one doesn't
+  await signOut(page);
+  await signInWith(page, username, PASSWORD);
+  await expect(page.getByText('Wrong username or password.')).toBeVisible();
+  allow(problems, /\/api\/login/, /status of 4\d\d|status of 5\d\d/);
+  await signInWith(page, renamed, PASSWORD);
+  await expect(page.getByRole('heading', { name: `こんにちは, ${renamed}` })).toBeVisible();
 });

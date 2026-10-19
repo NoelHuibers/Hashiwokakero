@@ -2,7 +2,8 @@
 
 use super::*;
 use crate::api::{
-    CurrentUser, DeleteAccount, LoadPlayer, Login, Logout, MyStats, Register, ShowStamp, StartDaily,
+    ChangeUsername, CurrentUser, DeleteAccount, LoadPlayer, Login, Logout, MyStats, Register,
+    ShowStamp, StartDaily,
 };
 use crate::model::MS_PER_DAY;
 
@@ -299,6 +300,135 @@ async fn deleting_an_account() {
     );
     // The username is free again
     Browser::signed_up(&server, "leaving_leo").await;
+}
+
+fn rename(username: &str, password: &str) -> ChangeUsername {
+    ChangeUsername {
+        username: username.into(),
+        password: password.into(),
+    }
+}
+
+#[tokio::test]
+async fn changing_the_username_once_a_month() {
+    let server = Server::start().await;
+    let nobody = server.browser();
+    assert_eq!(
+        api_error(nobody.call(rename("nobody_new", PASSWORD)).await),
+        ApiError::SessionExpired
+    );
+    // Guests have no username, they get one by registering
+    let guest = server.browser();
+    guest.call(StartDaily { device: None }).await.unwrap();
+    assert_eq!(
+        api_error(guest.call(rename("guest_new", PASSWORD)).await),
+        ApiError::Forbidden
+    );
+
+    let browser = Browser::signed_up(&server, "renaming_rae").await;
+    let id = browser.call(CurrentUser {}).await.unwrap().unwrap().id;
+    let _ = Browser::signed_up(&server, "taken_tara").await;
+    for (username, password, error) in [
+        ("rae_new", "not my password", ApiError::WrongPassword),
+        ("x", PASSWORD, ApiError::UsernameInvalid),
+        ("with space", PASSWORD, ApiError::UsernameInvalid),
+        // Taken, whatever the case
+        ("TAKEN_TARA", PASSWORD, ApiError::UsernameTaken),
+    ] {
+        assert_eq!(
+            api_error(browser.call(rename(username, password)).await),
+            error,
+            "{username}"
+        );
+    }
+    // None of that counted as a change
+    let me = browser.call(CurrentUser {}).await.unwrap().unwrap();
+    assert_eq!((me.name.as_str(), me.renamed_at), ("renaming_rae", None));
+    // The same name again is no change either
+    let same = browser
+        .call(rename("renaming_rae", PASSWORD))
+        .await
+        .unwrap();
+    assert_eq!(same.renamed_at, None);
+
+    let renamed = browser
+        .call(rename("  Rae_Renamed ", PASSWORD))
+        .await
+        .unwrap();
+    assert_eq!((renamed.id, renamed.name.as_str()), (id, "Rae_Renamed"));
+    let at = renamed.renamed_at.unwrap();
+    assert_eq!(
+        renamed.rename_from(at),
+        Some(at + crate::model::RENAME_EVERY_DAYS * MS_PER_DAY)
+    );
+    assert_eq!(
+        renamed.rename_from(at + crate::model::RENAME_EVERY_DAYS * MS_PER_DAY),
+        None
+    );
+    // Everywhere the name shows, the new one, and the session stays
+    assert_eq!(
+        browser.call(CurrentUser {}).await.unwrap().unwrap().name,
+        "Rae_Renamed"
+    );
+    let profile = nobody.call(LoadPlayer { id }).await.unwrap().unwrap();
+    assert_eq!(profile.name, "Rae_Renamed");
+    // Signing in works with the new name only
+    let other = server.browser();
+    assert_eq!(
+        api_error(other.call(login("renaming_rae", PASSWORD)).await),
+        ApiError::WrongLogin
+    );
+    assert_eq!(
+        other.call(login("rae_renamed", PASSWORD)).await.unwrap().id,
+        id
+    );
+
+    // Not again so soon, even with the password, and not in another browser either
+    for b in [&browser, &other] {
+        assert_eq!(
+            api_error(b.call(rename("rae_again", PASSWORD)).await),
+            ApiError::RenameTooSoon
+        );
+    }
+    // A day short of the month is still too soon, a month later it works
+    let conn = conn().await;
+    let days_ago = |days: i64| {
+        let conn = &conn;
+        async move {
+            conn.execute(
+                "UPDATE users SET renamed_at = ?2 WHERE id = ?1",
+                params![id, crate::server::now_ms() - days * MS_PER_DAY],
+            )
+            .await
+            .unwrap();
+        }
+    };
+    days_ago(crate::model::RENAME_EVERY_DAYS - 1).await;
+    assert_eq!(
+        api_error(browser.call(rename("rae_again", PASSWORD)).await),
+        ApiError::RenameTooSoon
+    );
+    days_ago(crate::model::RENAME_EVERY_DAYS).await;
+    let again = browser.call(rename("rae_again", PASSWORD)).await.unwrap();
+    assert_eq!(again.name, "rae_again");
+    // The old names are free for others
+    Browser::signed_up(&server, "renaming_rae").await;
+    Browser::signed_up(&server, "rae_renamed").await;
+}
+
+/// `HASHI_ADMINS` lists usernames: an admin's old name, freed, would make its next owner an admin.
+#[tokio::test]
+async fn admins_keep_their_names() {
+    let server = Server::start().await;
+    let admin = Browser::admin(&server).await;
+    let name = admin.call(CurrentUser {}).await.unwrap().unwrap().name;
+    assert_eq!(
+        api_error(admin.call(rename("former_admin", PASSWORD)).await),
+        ApiError::Forbidden
+    );
+    let me = admin.call(CurrentUser {}).await.unwrap().unwrap();
+    assert!(me.admin);
+    assert_eq!(me.name, name);
 }
 
 #[tokio::test]
