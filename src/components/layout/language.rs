@@ -91,7 +91,12 @@ pub fn LanguagePicker() -> impl IntoView {
                                                     },
                                                 )
                                             }
-                                            on:click=move |_| open.set(false)
+                                            // English has no prefix, and <I18nRoute> sends an
+                                            // unprefixed path back to the remembered language
+                                            on:click=move |_| {
+                                                i18n.set_locale(l);
+                                                open.set(false);
+                                            }
                                         >
                                             <span class="truncate">{native_name(l)}</span>
                                             <span class="shrink-0 font-pixel text-[11px] uppercase opacity-70">{code(l)}</span>
