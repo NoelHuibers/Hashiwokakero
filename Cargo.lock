@@ -1771,11 +1771,11 @@ dependencies = [
  "console_error_panic_hook",
  "dojo",
  "getrandom 0.4.3",
+ "hashi_i18n",
  "js-sys",
  "leptos",
  "leptos_axum",
  "leptos_i18n",
- "leptos_i18n_build",
  "leptos_i18n_router",
  "leptos_meta",
  "leptos_router",
@@ -1795,6 +1795,15 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasmparser 0.262.0",
  "web-sys",
+]
+
+[[package]]
+name = "hashi_i18n"
+version = "0.1.0"
+dependencies = [
+ "leptos",
+ "leptos_i18n",
+ "leptos_i18n_build",
 ]
 
 [[package]]
@@ -2917,6 +2926,7 @@ dependencies = [
  "icu_provider_source",
  "leptos_i18n_codegen",
  "leptos_i18n_parser",
+ "prettyplease 0.2.37",
  "proc-macro2",
  "syn 2.0.119",
 ]

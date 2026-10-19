@@ -1,4 +1,5 @@
-//! Generates the `i18n` module from the translations in `locales/<lang>/<namespace>.json`.
+//! Generates the `i18n` module of this crate from the translations in
+//! `locales/<lang>/<namespace>.json` at the workspace root.
 //! English is the default and the reference: every key has to exist there, other languages
 //! fall back to it for keys they don't have yet (with a build warning).
 //!
@@ -23,6 +24,9 @@ pub const NAMESPACES: [&str; 11] = [
     "contact",
 ];
 
+/// At the workspace root, relative to this crate
+const LOCALES_DIR: &str = "../locales";
+
 fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-changed=Cargo.toml");
@@ -33,6 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Interpolation in plain strings (t_string!, td_string!), for attributes and toasts
         .interpolate_display(true);
     let mut cfg = Config::new(LOCALES[0])?
+        .locales_path(LOCALES_DIR)
         .add_locales(&LOCALES[1..])?
         .add_namespaces(NAMESPACES)?;
     let subset = std::env::var("HASHI_LOCALES")
@@ -82,7 +87,7 @@ fn wanted_locales(list: &str) -> Result<Vec<&'static str>, Box<dyn Error>> {
 fn stub_locales(out_dir: &Path, wanted: &[&str]) -> Result<PathBuf, Box<dyn Error>> {
     let manifest_dir =
         std::env::var_os("CARGO_MANIFEST_DIR").ok_or("CARGO_MANIFEST_DIR not set")?;
-    let source = Path::new(&manifest_dir).join("locales");
+    let source = Path::new(&manifest_dir).join(LOCALES_DIR);
     let target = out_dir.join("locales");
     for locale in LOCALES {
         let dir = target.join(locale);

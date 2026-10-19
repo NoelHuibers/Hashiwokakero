@@ -5,7 +5,7 @@ edition = "2024"
 license = "MIT"
 
 [workspace]
-members = ["backend", "common", "dojo", "dojo/house", "sat_solver"]
+members = ["backend", "common", "dojo", "dojo/house", "i18n", "sat_solver"]
 exclude = ["dojo/starter"]
 
 # As strict as is sensible: everything in clippy's pedantic and nursery groups, CI fails on any
@@ -54,7 +54,9 @@ dojo = { path = "./dojo" }
 leptos = "0.8.22"
 leptos_meta = "0.8.7"
 leptos_router = "0.8.17"
-# Translations, compile time checked (locales/<lang>/<namespace>.json, see build.rs)
+# Translations, compile time checked (locales/<lang>/<namespace>.json, generated into the
+# hashi_i18n crate by i18n/build.rs). leptos_i18n for its t!/td! macros and the Locale trait.
+hashi_i18n = { path = "./i18n" }
 leptos_i18n = "0.6.2"
 leptos_i18n_router = "0.6.2"
 leptos_ui = "0.3.22"
@@ -129,8 +131,7 @@ tower-http = { version = "0.7.1", features = ["compression-gzip", "compression-b
 [features]
 hydrate = [
   "leptos/hydrate",
-  "leptos_i18n/hydrate",
-  "leptos_i18n_build/hydrate",
+  "hashi_i18n/hydrate",
   "dep:console_error_panic_hook",
 ]
 ssr = [
@@ -149,9 +150,8 @@ ssr = [
   "leptos/ssr",
   "leptos_meta/ssr",
   "leptos_router/ssr",
-  "leptos_i18n/axum",
+  "hashi_i18n/ssr",
   "leptos_i18n_router/ssr",
-  "leptos_i18n_build/ssr",
 ]
 
 [dev-dependencies]
@@ -160,9 +160,6 @@ proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 # The HTTP tests (server/router/tests): a client that keeps cookies like a browser and uploads
 # forms. Without the gzip/brotli features it leaves responses compressed, so tests see that.
 reqwest = { version = "0.12.28", default-features = false, features = ["cookies", "multipart"] }
-
-[build-dependencies]
-leptos_i18n_build = "0.6.2"
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 [profile.wasm-release]

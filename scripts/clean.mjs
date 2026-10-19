@@ -11,8 +11,8 @@
 // What goes, in every profile dir of a target dir (target/debug, target/front/wasm-release, ...):
 // - fingerprint outputs (.fingerprint/*/output-*) of at least --min-output-mb (default 50 MB).
 //   They hold the compiler's messages, replayed when a crate is fresh. A lint that echoed the
-//   5 MB line of the generated i18n module made them tens of gigabytes. Without it a fresh crate
-//   shows no warnings until it compiles again, nothing rebuilds.
+//   generated i18n module, then a single 5 MB line, made them tens of gigabytes. Without it a
+//   fresh crate shows no warnings until it compiles again, nothing rebuilds.
 // - incremental caches (incremental/<crate>-<hash>) except the newest of each crate. The others
 //   belong to old builds, features or toolchains; a build that needs one compiles that crate
 //   from scratch once.
