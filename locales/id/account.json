@@ -33,6 +33,14 @@
   "name_hint": "Hasilmu tercatat di papan peringkat dengan nama ini.",
   "sign_out": "Keluar",
   "no_dailies": "Belum ada teka-teki harian.",
+  "rename": {
+    "start": "Ganti nama pengguna…",
+    "new_name": "Nama pengguna baru",
+    "hint": "Hasilmu sebelumnya ikut pindah ke nama baru. Kamu bisa menggantinya sekali setiap {{ days }} hari.",
+    "button": "Ganti nama pengguna",
+    "done": "Sekarang namamu {{ name }}.",
+    "wait": "Kamu bisa mengganti nama pengguna lagi mulai {{ date }}."
+  },
   "delete": {
     "title": "Hapus akun",
     "intro": "Menghapus nama, kata sandi, stempel, dan kiriman Dojo-mu untuk selamanya. Waktu-waktumu sebelumnya tetap ada di papan peringkat lama tanpa nama, supaya pemain lain tetap di posisinya.",

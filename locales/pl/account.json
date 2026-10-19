@@ -33,6 +33,14 @@
   "name_hint": "Pod tą nazwą twoje wyniki pojawią się w rankingu.",
   "sign_out": "Wyloguj się",
   "no_dailies": "Brak łamigłówek dnia.",
+  "rename": {
+    "start": "Zmień nazwę użytkownika…",
+    "new_name": "Nowa nazwa użytkownika",
+    "hint": "Twoje dotychczasowe wyniki przejdą na nową nazwę. Możesz ją zmienić raz na {{ days }} dni.",
+    "button": "Zmień nazwę użytkownika",
+    "done": "Teraz nazywasz się {{ name }}.",
+    "wait": "Nazwę użytkownika możesz znów zmienić od {{ date }}."
+  },
   "delete": {
     "title": "Usuń konto",
     "intro": "Na zawsze usuwa twoją nazwę, hasło, pieczątki i zgłoszenia do Dojo. Twoje dawne czasy zostają bez nazwy w starych rankingach, żeby pozostali gracze zachowali swoje miejsca.",

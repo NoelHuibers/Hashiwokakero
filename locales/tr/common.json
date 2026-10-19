@@ -69,7 +69,8 @@
     "wrong_password": "Şifre yanlış.",
     "email_invalid": "Bu bir e-posta adresine benzemiyor.",
     "message_invalid": "Lütfen 10 ile 5000 karakter arasında yaz.",
-    "too_many_messages": "Bugünlük bu kadar mesaj yeter, lütfen yarın tekrar dene."
+    "too_many_messages": "Bugünlük bu kadar mesaj yeter, lütfen yarın tekrar dene.",
+    "rename_too_soon": "Kullanıcı adını kısa süre önce değiştirdin, lütfen daha sonra tekrar dene."
   },
   "solver": {
     "title": "SAT çözücü",

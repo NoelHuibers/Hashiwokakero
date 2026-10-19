@@ -69,7 +69,8 @@
     "wrong_password": "Falsches Passwort.",
     "email_invalid": "Das sieht nicht nach einer E-Mail-Adresse aus.",
     "message_invalid": "Bitte schreib zwischen 10 und 5000 Zeichen.",
-    "too_many_messages": "Für heute sind es genug Nachrichten, bitte versuch es morgen wieder."
+    "too_many_messages": "Für heute sind es genug Nachrichten, bitte versuch es morgen wieder.",
+    "rename_too_soon": "Du hast deinen Benutzernamen erst vor Kurzem geändert, bitte versuch es später wieder."
   },
   "solver": {
     "title": "SAT-Solver",

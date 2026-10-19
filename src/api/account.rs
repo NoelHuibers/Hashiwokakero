@@ -1,5 +1,5 @@
-//! Accounts: the current user, registering, logging in and out, deleting, statistics, public
-//! profiles.
+//! Accounts: the current user, registering, logging in and out, renaming, deleting, statistics,
+//! public profiles.
 
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
@@ -27,6 +27,18 @@ pub async fn register(username: String, password: String) -> Result<UserInfo, Se
 pub async fn login(username: String, password: String) -> Result<UserInfo, ServerFnError> {
     let conn = db::conn()?;
     Ok(auth::login(&conn, username.trim(), password).await?.info())
+}
+
+/// Changes the username of the signed in account, behind its password and once a month.
+#[server(input = Json)]
+pub async fn change_username(
+    username: String,
+    password: String,
+) -> Result<UserInfo, ServerFnError> {
+    let conn = db::conn()?;
+    Ok(auth::change_username(&conn, username.trim(), password)
+        .await?
+        .info())
 }
 
 #[server(input = Json)]

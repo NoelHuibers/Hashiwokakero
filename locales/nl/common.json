@@ -69,7 +69,8 @@
     "wrong_password": "Verkeerd wachtwoord.",
     "email_invalid": "Dat lijkt geen e-mailadres.",
     "message_invalid": "Schrijf tussen de 10 en 5000 tekens.",
-    "too_many_messages": "Genoeg berichten voor vandaag, probeer het morgen opnieuw."
+    "too_many_messages": "Genoeg berichten voor vandaag, probeer het morgen opnieuw.",
+    "rename_too_soon": "Je hebt je gebruikersnaam pas gewijzigd, probeer het later opnieuw."
   },
   "solver": {
     "title": "SAT-solver",

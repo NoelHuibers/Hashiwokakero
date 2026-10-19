@@ -69,7 +69,8 @@
     "wrong_password": "密碼錯誤。",
     "email_invalid": "這看起來不像電子郵件地址。",
     "message_invalid": "請輸入 10 到 5000 個字元。",
-    "too_many_messages": "今天的訊息已經夠多了，請明天再試。"
+    "too_many_messages": "今天的訊息已經夠多了，請明天再試。",
+    "rename_too_soon": "你最近才更改過使用者名稱，請稍後再試。"
   },
   "solver": {
     "title": "SAT 求解器",

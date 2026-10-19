@@ -96,3 +96,4 @@ error WrongPassword wrong_password
 error EmailInvalid email_invalid
 error MessageInvalid message_invalid
 error TooManyMessages too_many_messages
+error RenameTooSoon rename_too_soon

@@ -27,10 +27,12 @@ pub enum ApiError {
     EmailInvalid,
     MessageInvalid,
     TooManyMessages,
+    /// The username was changed less than `RENAME_EVERY_DAYS` ago.
+    RenameTooSoon,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 20] = [
+    pub const ALL: [Self; 21] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -51,6 +53,7 @@ impl ApiError {
         Self::EmailInvalid,
         Self::MessageInvalid,
         Self::TooManyMessages,
+        Self::RenameTooSoon,
     ];
 
     pub fn code(self) -> &'static str {
@@ -75,6 +78,7 @@ impl ApiError {
             Self::EmailInvalid => "email_invalid",
             Self::MessageInvalid => "message_invalid",
             Self::TooManyMessages => "too_many_messages",
+            Self::RenameTooSoon => "rename_too_soon",
         }
     }
 

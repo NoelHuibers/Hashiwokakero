@@ -69,7 +69,8 @@
     "wrong_password": "Mot de passe incorrect.",
     "email_invalid": "Ça ne ressemble pas à une adresse e-mail.",
     "message_invalid": "Merci d’écrire entre 10 et 5000 caractères.",
-    "too_many_messages": "Ça fait assez de messages pour aujourd’hui, réessaie demain."
+    "too_many_messages": "Ça fait assez de messages pour aujourd’hui, réessaie demain.",
+    "rename_too_soon": "Tu as changé de pseudo récemment, réessaie plus tard."
   },
   "solver": {
     "title": "Solveur SAT",

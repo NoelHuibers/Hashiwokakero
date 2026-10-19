@@ -111,6 +111,9 @@ async fn write_rows(conn: &Connection, version: usize) {
         run("INSERT INTO contact_messages (name, email, message, created_at) VALUES ('', 'a@b.c', 'Hi', 1)")
             .await;
     }
+    if version >= 8 {
+        run("UPDATE users SET renamed_at = 500 WHERE id = 1").await;
+    }
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -122,7 +125,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        7,
+        8,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -140,9 +143,10 @@ async fn old_databases_migrate_with_their_data() {
             (
                 noel.username.as_deref(),
                 noel.name.as_str(),
-                noel.created_at
+                noel.created_at,
+                noel.renamed_at
             ),
-            (Some("noel"), "noel", 1000),
+            (Some("noel"), "noel", 1000, (version >= 8).then_some(500)),
             "{label}"
         );
         assert_eq!(user_by_id(conn, 2).await.unwrap().unwrap().username, None);

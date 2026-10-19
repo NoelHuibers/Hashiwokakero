@@ -86,7 +86,7 @@ const PRIVACY_DE: &[Section] = &[
         "Gastkonto und Konto",
         &[
             "Wenn du die Brücke des Tages startest, legen wir automatisch ein Gastkonto mit einem zufälligen Gastnamen an und setzen das Cookie „hashi_session“, damit deine Ergebnisse dir zugeordnet bleiben. Es enthält einen zufälligen Schlüssel, den wir nur als Hash speichern, und läuft ein Jahr nach deinem letzten Besuch ab, beim Abmelden sofort.",
-            "Bei einer Registrierung speichern wir zusätzlich deinen Benutzernamen und einen Argon2-Hash deines Passworts, nie das Passwort selbst. Meldest du dich an, nachdem du als Gast gespielt hast, übernehmen wir die Ergebnisse des Gastkontos in dein Konto. Fehlgeschlagene Anmeldungen zählen wir 15 Minuten lang im Arbeitsspeicher, um das Erraten von Passwörtern zu bremsen.",
+            "Bei einer Registrierung speichern wir zusätzlich deinen Benutzernamen und einen Argon2-Hash deines Passworts, nie das Passwort selbst. Meldest du dich an, nachdem du als Gast gespielt hast, übernehmen wir die Ergebnisse des Gastkontos in dein Konto. Änderst du deinen Benutzernamen, speichern wir den Zeitpunkt, denn er lässt sich nur alle 30 Tage ändern. Fehlgeschlagene Anmeldungen zählen wir 15 Minuten lang im Arbeitsspeicher, um das Erraten von Passwörtern zu bremsen.",
             "Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Spiels), für die Begrenzung der Anmeldeversuche Art. 6 Abs. 1 lit. f DSGVO (Schutz deines Kontos).",
         ],
     ),
@@ -185,7 +185,7 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Account, leaderboards and player profile",
         &[
-            "Starting the Bridge of the Day creates a guest account with a random guest name and the cookie \"hashi_session\", which holds a random key we only store as a hash and expires a year after your last visit or when you log out. Registered accounts add a username and an Argon2 password hash. Failed logins are counted in memory for 15 minutes to slow down password guessing.",
+            "Starting the Bridge of the Day creates a guest account with a random guest name and the cookie \"hashi_session\", which holds a random key we only store as a hash and expires a year after your last visit or when you log out. Registered accounts add a username and an Argon2 password hash. When you change your username we store the time, as it can only be changed every 30 days. Failed logins are counted in memory for 15 minutes to slow down password guessing.",
             "For each daily we store your start and finish time, time, moves, hints, checks and solved board. The daily is a public competition: your name, whether you are a guest, your times, hints, checks, medals, streaks, monthly points, your stamps with their dates and your player profile (the last 35 days with time and place) are public. Player profiles are hidden from search engines. If you don't want to appear publicly, play the practice puzzles (Art. 6 (1) b GDPR).",
         ],
     ),
