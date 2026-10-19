@@ -45,7 +45,8 @@
     "wrong_bridges": "Bruggen die niet bij de oplossing horen: {{ count }}",
     "unique": "Bewezen: de oplossing is uniek.",
     "not_unique": "Deze puzzel heeft meer dan één oplossing.",
-    "copied": "Resultaat gekopieerd naar het klembord."
+    "copied": "Resultaat gekopieerd naar het klembord.",
+    "copy_failed": "Kopiëren naar het klembord is niet gelukt."
   },
   "errors": {
     "unknown": "Er ging iets mis: {{ detail }}",

@@ -120,6 +120,8 @@ jobs:
     name: Build site
     # Pinned, see the test job: this server binary runs on Debian trixie (Dockerfile.prebuilt)
     runs-on: ubuntu-24.04
+    outputs:
+      playwright: ${{ steps.playwright.outputs.version }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -127,6 +129,9 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci --ignore-scripts
+      # The E2E job runs in the Playwright image of this version, see there
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
       - run: npm run fonts
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
@@ -155,12 +160,18 @@ jobs:
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
   # The browser tests (e2e/) on the release build above: every page in every language, the
-  # practice board. Nothing deploys without them.
+  # journeys through the site, and the screenshots. Nothing deploys without them.
   e2e:
     name: E2E
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    # The official image of the Playwright version in package-lock.json, with its browsers and
+    # fonts: the screenshots in e2e/tests/__screenshots__ are taken in it (npm run
+    # e2e:update-snapshots), on another system they wouldn't match
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.build.outputs.playwright }}-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -172,37 +183,39 @@ jobs:
         with:
           name: site
       - run: tar -xf site.tar
-      # The browser is cached per Playwright version, its system libraries come from apt. Like the
-      # Rust cache, only main saves it.
-      - id: playwright
-        run: echo "version=$(npx playwright --version | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
-      - id: browsers
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ steps.playwright.outputs.version }}-chromium
-      - run: npx playwright install --with-deps chromium
-      - if: github.ref == 'refs/heads/main' && steps.browsers.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v6
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ steps.playwright.outputs.version }}-chromium
       - name: Browser tests
         run: npm run e2e
         env:
           E2E_BIN: dist/hashi
           E2E_SITE_ROOT: dist/site
+          E2E_VISUAL: 1
       # Also when everything passed: a test that only passed on its retry is in it with a trace
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: e2e-report
-          # The report has the traces and screenshots of the failed tests, .run the server's log
+          # The report has the traces and screenshots of the failed tests (with the differences
+          # of the screenshots), .run the servers' logs
           path: |
             e2e/playwright-report
             e2e/.run/*.log
           include-hidden-files: true
           retention-days: 7
+
+  # The image the deploy ships, built from the same artifact and started: it has to serve the
+  # site. Dependabot's updates of its base image are tested here, before they deploy.
+  docker:
+    name: Docker image
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+      - run: tar -xf site.tar
+      - run: scripts/docker-smoke.sh
 
   # Deploys ship the binaries built above in a slim image, built here and pushed to Fly. Fly's
   # remote builder compiled everything again from scratch, 15 to 50 minutes per deploy, and ran
@@ -210,7 +223,7 @@ jobs:
   deploy:
     name: Deploy site
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint-browser, build, e2e]
+    needs: [test, lint-browser, build, e2e, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

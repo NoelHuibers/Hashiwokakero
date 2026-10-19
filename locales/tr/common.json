@@ -45,7 +45,8 @@
     "wrong_bridges": "Çözüme ait olmayan köprüler: {{ count }}",
     "unique": "Kanıtlandı: çözüm tek.",
     "not_unique": "Bu bulmacanın birden fazla çözümü var.",
-    "copied": "Sonuç panoya kopyalandı."
+    "copied": "Sonuç panoya kopyalandı.",
+    "copy_failed": "Panoya kopyalanamadı."
   },
   "errors": {
     "unknown": "Bir şeyler ters gitti: {{ detail }}",

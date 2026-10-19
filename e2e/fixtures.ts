@@ -7,11 +7,14 @@ import { player } from './seed';
 
 export { expect };
 
+/** The server of the running test's project, see `VISUAL_URL`. */
+const site = () => test.info().project.use.baseURL ?? BASE_URL;
+
 export const test = base.extend<{ problems: string[] }>({
   // Collected while the test runs and checked after it. A test that expects an error removes
   // it, see `allow`.
   problems: [
-    async ({ page }, use) => {
+    async ({ page, baseURL }, use) => {
       const problems: string[] = [];
       page.on('pageerror', (e) => problems.push(`page error: ${e.message}`));
       page.on('console', (m) => {
@@ -19,7 +22,7 @@ export const test = base.extend<{ problems: string[] }>({
       });
       // Pages are checked by `visit`, this catches what they load: scripts, styles, server functions
       page.on('response', (r) => {
-        if (r.url().startsWith(BASE_URL) && r.status() >= 400 && !r.request().isNavigationRequest()) {
+        if (r.url().startsWith(baseURL ?? BASE_URL) && r.status() >= 400 && !r.request().isNavigationRequest()) {
           problems.push(`${r.status()} ${r.request().method()} ${r.url()}`);
         }
       });
@@ -60,5 +63,14 @@ export async function hydrated(page: Page) {
 export async function signIn(context: BrowserContext, name: string) {
   const session = player(name).session;
   if (!session) throw new Error(`${name} has no seeded session`);
-  await context.addCookies([{ name: 'hashi_session', value: session, url: BASE_URL, httpOnly: true, sameSite: 'Lax' }]);
+  await context.addCookies([{ name: 'hashi_session', value: session, url: site(), httpOnly: true, sameSite: 'Lax' }]);
+}
+
+/**
+ * A username nobody has yet (3 to 20 letters, digits, _ and -), for the tests that create
+ * accounts: the tests share one database, and --repeat-each runs a test more than once.
+ */
+export function newUsername(prefix: string) {
+  const suffix = `${Date.now().toString(36)}${Math.floor(Math.random() * 36 ** 3).toString(36)}`;
+  return `${prefix}_${suffix}`.slice(0, 20);
 }

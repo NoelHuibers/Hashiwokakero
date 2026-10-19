@@ -45,7 +45,8 @@
     "wrong_bridges": "Brücken, die nicht zur Lösung gehören: {{ count }}",
     "unique": "Bewiesen: Die Lösung ist eindeutig.",
     "not_unique": "Dieses Rätsel hat mehr als eine Lösung.",
-    "copied": "Ergebnis in die Zwischenablage kopiert."
+    "copied": "Ergebnis in die Zwischenablage kopiert.",
+    "copy_failed": "Kopieren in die Zwischenablage hat nicht geklappt."
   },
   "errors": {
     "unknown": "Etwas ist schiefgelaufen: {{ detail }}",

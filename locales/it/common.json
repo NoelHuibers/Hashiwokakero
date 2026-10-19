@@ -45,7 +45,8 @@
     "wrong_bridges": "Ponti che non fanno parte della soluzione: {{ count }}",
     "unique": "Dimostrato: la soluzione è unica.",
     "not_unique": "Questo puzzle ha più di una soluzione.",
-    "copied": "Risultato copiato negli appunti."
+    "copied": "Risultato copiato negli appunti.",
+    "copy_failed": "Impossibile copiare negli appunti."
   },
   "errors": {
     "unknown": "Qualcosa è andato storto: {{ detail }}",

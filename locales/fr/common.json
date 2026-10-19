@@ -45,7 +45,8 @@
     "wrong_bridges": "Ponts qui ne font pas partie de la solution : {{ count }}",
     "unique": "Prouvé : la solution est unique.",
     "not_unique": "Cette grille a plus d’une solution.",
-    "copied": "Résultat copié dans le presse-papiers."
+    "copied": "Résultat copié dans le presse-papiers.",
+    "copy_failed": "Impossible de copier dans le presse-papiers."
   },
   "errors": {
     "unknown": "Un problème est survenu : {{ detail }}",

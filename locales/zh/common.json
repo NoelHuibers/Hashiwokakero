@@ -45,7 +45,8 @@
     "wrong_bridges": "不属于答案的桥：{{ count }} 座",
     "unique": "已证明：答案唯一。",
     "not_unique": "这道谜题不止一个解。",
-    "copied": "成绩已复制到剪贴板。"
+    "copied": "成绩已复制到剪贴板。",
+    "copy_failed": "无法复制到剪贴板。"
   },
   "errors": {
     "unknown": "出错了：{{ detail }}",

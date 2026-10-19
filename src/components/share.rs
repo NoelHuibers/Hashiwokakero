@@ -1,6 +1,7 @@
 //! Sharing a result: the phone's share sheet, `WhatsApp`, X, or the clipboard.
 
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
@@ -8,9 +9,18 @@ use crate::i18n::{t, td_string, use_i18n};
 use crate::state::{ToastKind, toast};
 
 fn copy(text: &str) {
-    let _ = window().navigator().clipboard().write_text(text);
-    toast(ToastKind::Success, |l| {
-        td_string!(l, common.toast.copied).to_string()
+    let written = window().navigator().clipboard().write_text(text);
+    // Rejected where the page may not write to the clipboard; it said "copied" anyway
+    spawn_local(async move {
+        if wasm_bindgen_futures::JsFuture::from(written).await.is_ok() {
+            toast(ToastKind::Success, |l| {
+                td_string!(l, common.toast.copied).to_string()
+            });
+        } else {
+            toast(ToastKind::Error, |l| {
+                td_string!(l, common.toast.copy_failed).to_string()
+            });
+        }
     });
 }
 
