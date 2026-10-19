@@ -14,8 +14,12 @@ fn score_of(json: Option<String>) -> Option<Score> {
     json.and_then(|s| serde_json::from_str(&s).ok())
 }
 
-/// The best submission of every author this season, ranked.
-async fn ranked(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, ServerFnError> {
+/// The best submission of every author this season, ranked, with the author's id (`None` for
+/// house entries).
+async fn ranked(
+    conn: &Connection,
+    season: u32,
+) -> Result<Vec<(DojoEntry, Option<i64>)>, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT s.id, s.name, COALESCE(u.username, u.name, 'Hashi'), s.house, s.score, s.created_at, s.user_id
@@ -40,7 +44,7 @@ async fn ranked(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, Server
         let Some(score) = score_of(row.get(4).map_err(db_err)?) else {
             continue;
         };
-        entries.push(DojoEntry {
+        let entry = DojoEntry {
             rank: u32::try_from(entries.len() + 1).unwrap_or(u32::MAX),
             id,
             name: row.get(1).map_err(db_err)?,
@@ -48,7 +52,8 @@ async fn ranked(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, Server
             house,
             score,
             created_at: row.get(5).map_err(db_err)?,
-        });
+        };
+        entries.push((entry, user.filter(|_| !house)));
         if entries.len() == BOARD_SIZE {
             break;
         }
@@ -56,9 +61,22 @@ async fn ranked(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, Server
     Ok(entries)
 }
 
+/// The place of a player's best solver on this season's board, if it made the board.
+pub async fn rank_of(conn: &Connection, user: i64) -> Result<Option<u32>, ServerFnError> {
+    Ok(ranked(conn, season())
+        .await?
+        .into_iter()
+        .find(|(_, author)| *author == Some(user))
+        .map(|(entry, _)| entry.rank))
+}
+
 pub async fn board(conn: &Connection) -> Result<DojoBoard, ServerFnError> {
     let season = season();
-    let entries = ranked(conn, season).await?;
+    let entries = ranked(conn, season)
+        .await?
+        .into_iter()
+        .map(|(entry, _)| entry)
+        .collect();
     let mut rows = conn
         .query(
             "SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running')",
@@ -101,8 +119,8 @@ pub async fn submission(
     let rank = ranked(conn, season)
         .await?
         .into_iter()
-        .find(|e| e.id == id)
-        .map(|e| e.rank);
+        .find(|(e, _)| e.id == id)
+        .map(|(e, _)| e.rank);
     let user: Option<i64> = row.get(15).map_err(db_err)?;
     let error: Option<String> = row.get(12).map_err(db_err)?;
     Ok(Some(DojoSubmission {

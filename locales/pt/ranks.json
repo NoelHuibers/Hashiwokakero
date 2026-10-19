@@ -46,5 +46,13 @@
       "nov": "Novembro",
       "dec": "Dezembro"
     }
+  },
+  "player": {
+    "title": "Jogador",
+    "record": "Histórico",
+    "back": "Ranking",
+    "not_found": "Esse jogador não existe.",
+    "since": "Joga desde {{ date }}.",
+    "you": "É você, ir para sua conta"
   }
 }

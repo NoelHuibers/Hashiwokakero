@@ -15,7 +15,7 @@ mod submit;
 mod tests;
 mod worker;
 
-pub use board::{board, me, submission};
+pub use board::{board, me, rank_of, submission};
 pub use submit::{
     Form, HouseQuery, SubmitError, board_json, code_hash, house_handler, submit, submit_handler,
 };

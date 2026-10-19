@@ -11,8 +11,8 @@ mod tests;
 pub use attempt::{attempt, check, finishers, hint, info, locked, reveal, set_flag, start, submit};
 pub use fame::{hall_of_fame, month_board};
 pub use leaderboard::leaderboard;
-pub use stamps::{start_syncing as start_stamp_sync, sync as sync_stamps};
-pub use stats::stats;
+pub use stamps::{show as show_stamp, start_syncing as start_stamp_sync, sync as sync_stamps};
+pub use stats::{profile, stats};
 
 use common::{Difficulty, GenerateParams, Puzzle};
 use leptos::prelude::ServerFnError;

@@ -1,9 +1,9 @@
-//! Accounts: the current user, registering, logging in and out, statistics.
+//! Accounts: the current user, registering, logging in and out, statistics, public profiles.
 
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
-use crate::model::{UserInfo, UserStats};
+use crate::model::{PlayerProfile, Stamp, UserInfo, UserStats};
 #[cfg(feature = "ssr")]
 use crate::server::{auth, daily, db};
 
@@ -41,4 +41,21 @@ pub async fn my_stats() -> Result<Option<UserStats>, ServerFnError> {
         Some(user) => Ok(Some(daily::stats(&conn, user.id).await?)),
         None => Ok(None),
     }
+}
+
+/// The public profile of any player, `None` if there is no such player. Not `player_profile`:
+/// its generated struct would clash with the model type.
+#[server(input = Json)]
+pub async fn load_player(id: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
+    daily::profile(&db::conn()?, id).await
+}
+
+/// Shows one of the current user's stamps next to their name on the leaderboards, or none.
+#[server(input = Json)]
+pub async fn show_stamp(stamp: Option<Stamp>) -> Result<(), ServerFnError> {
+    let conn = db::conn()?;
+    let user = auth::current_user(&conn)
+        .await?
+        .ok_or_else(|| crate::model::ApiError::SessionExpired.fail())?;
+    daily::show_stamp(&conn, user.id, stamp).await
 }

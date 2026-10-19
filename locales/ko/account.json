@@ -17,6 +17,7 @@
     "points": "포인트",
     "medals": "메달"
   },
+  "public_profile": "다른 사람에게 보이는 내 프로필",
   "last_weeks": "최근 5주",
   "calendar_rank": "{{ rank }}위",
   "not_solved": "미해결",

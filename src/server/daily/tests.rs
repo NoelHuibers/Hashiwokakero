@@ -5,7 +5,8 @@ use common::Board;
 use super::stamps::sync_recent;
 use super::*;
 use crate::model::{
-    CHECK_PENALTY_MS, Flag, HINT_PENALTY_MS, LAUNCH_DAY, MoveEvent, Stamp, month_days, month_of,
+    CHECK_PENALTY_MS, Flag, HINT_PENALTY_MS, LAUNCH_DAY, MS_PER_DAY, MoveEvent, Stamp, month_days,
+    month_of,
 };
 use crate::server::db;
 
@@ -132,7 +133,8 @@ async fn submit_validates_and_ranks() {
             MONDAY,
             daily.solution.clone(),
             10,
-            played(&daily.solution)
+            played(&daily.solution),
+            None
         )
         .await
         .is_err()
@@ -141,11 +143,15 @@ async fn submit_validates_and_ranks() {
     start(&conn, b, MONDAY, None).await.unwrap();
     // Wrong boards are rejected
     assert!(
-        submit(&conn, a, MONDAY, board.empty_bridges(), 1, vec![])
+        submit(&conn, a, MONDAY, board.empty_bridges(), 1, vec![], None)
             .await
             .is_err()
     );
-    assert!(submit(&conn, a, MONDAY, vec![1], 1, vec![]).await.is_err());
+    assert!(
+        submit(&conn, a, MONDAY, vec![1], 1, vec![], None)
+            .await
+            .is_err()
+    );
 
     // b asks for a hint and a check, a doesn't
     let given = hint(&conn, b, MONDAY, board.empty_bridges()).await.unwrap();
@@ -166,6 +172,7 @@ async fn submit_validates_and_ranks() {
         daily.solution.clone(),
         20,
         played(&daily.solution),
+        None,
     )
     .await
     .unwrap();
@@ -176,6 +183,7 @@ async fn submit_validates_and_ranks() {
         daily.solution.clone(),
         25,
         played(&daily.solution),
+        None,
     )
     .await
     .unwrap();
@@ -189,7 +197,8 @@ async fn submit_validates_and_ranks() {
             MONDAY,
             daily.solution.clone(),
             20,
-            played(&daily.solution)
+            played(&daily.solution),
+            None
         )
         .await
         .is_err()
@@ -216,7 +225,7 @@ async fn implausible_results_are_not_ranked() {
         .await
         .unwrap();
     // Solved by a program: no log, or a perfect one in no time
-    let r = submit(&conn, bot, MONDAY, daily.solution.clone(), 1, vec![])
+    let r = submit(&conn, bot, MONDAY, daily.solution.clone(), 1, vec![], None)
         .await
         .unwrap();
     assert_eq!((r.rank, r.flag), (0, Some(Flag::Log)));
@@ -229,6 +238,7 @@ async fn implausible_results_are_not_ranked() {
         daily.solution.clone(),
         9,
         played(&daily.solution),
+        None,
     )
     .await
     .unwrap();
@@ -284,6 +294,7 @@ async fn a_second_account_on_the_same_device_is_not_ranked() {
         daily.solution.clone(),
         9,
         played(&daily.solution),
+        None,
     )
     .await
     .unwrap();
@@ -295,6 +306,7 @@ async fn a_second_account_on_the_same_device_is_not_ranked() {
         daily.solution.clone(),
         9,
         played(&daily.solution),
+        None,
     )
     .await
     .unwrap();
@@ -323,12 +335,13 @@ async fn solvers_refuse_the_live_daily() {
             .collect(),
     );
     assert!(locked(&conn, Some(player), &mirrored).await.unwrap());
-    // Another puzzle isn't locked, and the daily unlocks once you gave up or finished
+    // Another puzzle isn't locked (not MONDAY: that can be today), and the daily unlocks once
+    // you gave up or finished
     assert!(
         !locked(
             &conn,
             None,
-            &get_or_create(&conn, MONDAY).await.unwrap().puzzle
+            &get_or_create(&conn, today() - 7).await.unwrap().puzzle
         )
         .await
         .unwrap()
@@ -345,7 +358,7 @@ async fn revealed_runs_are_not_ranked() {
     start(&conn, id, MONDAY, None).await.unwrap();
     let solution = reveal(&conn, id, MONDAY).await.unwrap();
     assert!(
-        submit(&conn, id, MONDAY, solution, 5, vec![])
+        submit(&conn, id, MONDAY, solution, 5, vec![], None)
             .await
             .is_err()
     );
@@ -489,13 +502,15 @@ async fn stamps_are_earned_kept_and_taken_back() {
     // Nothing new the second time
     assert_eq!(sync_stamps(&conn, a, true).await.unwrap().1, []);
 
-    // On the leaderboard with the most impressive one (on the 1st alice also won last month)
+    // No stamp on the leaderboard until alice picks one, and only one she has
     let lb = leaderboard(&conn, yesterday, None).await.unwrap();
-    assert!(matches!(
-        lb.entries[0].stamp,
-        Some(Stamp::Gold | Stamp::Champion)
-    ));
+    assert_eq!(lb.entries[0].stamp, None);
+    assert!(show_stamp(&conn, a, Some(Stamp::Sensei)).await.is_err());
+    show_stamp(&conn, a, Some(Stamp::Gold)).await.unwrap();
+    let lb = leaderboard(&conn, yesterday, None).await.unwrap();
+    assert_eq!(lb.entries[0].stamp, Some(Stamp::Gold));
     assert_eq!(lb.entries[1].stamp, None);
+    assert_eq!(stats(&conn, a).await.unwrap().shown, Some(Stamp::Gold));
 
     // A review takes the result off the board, and its stamps with it; bob moves up
     set_flag(&conn, a, yesterday, Some(Flag::Review))
@@ -503,6 +518,7 @@ async fn stamps_are_earned_kept_and_taken_back() {
         .unwrap();
     let (book, _) = sync_stamps(&conn, a, true).await.unwrap();
     assert!(book.iter().all(|p| p.earned_at.is_none()));
+    assert_eq!(stats(&conn, a).await.unwrap().shown, None);
     // Synced in the background first: bob still hears about it on his next visit
     assert_eq!(sync_recent(&conn).await.unwrap(), 1);
     assert!(
@@ -512,6 +528,129 @@ async fn stamps_are_earned_kept_and_taken_back() {
             .1
             .contains(&Stamp::Gold)
     );
+}
+
+#[tokio::test]
+async fn stamps_from_the_move_log_and_the_time_of_day() {
+    let (_db, conn) = test_db().await;
+    // A Monday that is over: places only count then
+    let day = MONDAY - 7;
+    let a = user(&conn, "alice", Some("alice")).await;
+    let b = user(&conn, "bob", Some("bob")).await;
+    let daily = get_or_create(&conn, day).await.unwrap();
+    for id in [a, b] {
+        start(&conn, id, day, None).await.unwrap();
+        age(&conn, id, day, 600_000).await;
+    }
+    // The time zone that makes it half past one at night for alice
+    let minute = now_ms().rem_euclid(MS_PER_DAY) / 60_000;
+    let offset = i32::try_from((minute - 90 + 840).rem_euclid(1440) - 840).unwrap();
+    let log = played(&daily.solution);
+    submit(
+        &conn,
+        a,
+        day,
+        daily.solution.clone(),
+        20,
+        log.clone(),
+        Some(offset),
+    )
+    .await
+    .unwrap();
+    // Bob takes his last bridge away and puts it back, a moment after alice
+    let mut wavering = log.clone();
+    let last = *log.last().unwrap();
+    wavering.push(MoveEvent {
+        t: last.t + 1500,
+        count: last.count - 1,
+        ..last
+    });
+    wavering.push(MoveEvent {
+        t: last.t + 3000,
+        ..last
+    });
+    submit(&conn, b, day, daily.solution.clone(), 22, wavering, None)
+        .await
+        .unwrap();
+    // Three tenths of a second behind her
+    conn.execute(
+        "UPDATE attempts SET time_ms = (SELECT time_ms + 300 FROM attempts WHERE user_id = ?1)
+         WHERE user_id = ?2",
+        params![a, b],
+    )
+    .await
+    .unwrap();
+
+    let earned = |book: &[crate::model::StampProgress], stamp| {
+        book.iter()
+            .any(|p| p.stamp == stamp && p.earned_at.is_some())
+    };
+    let (book, _) = sync_stamps(&conn, a, false).await.unwrap();
+    for stamp in [Stamp::NightOwl, Stamp::StoneBridge, Stamp::PhotoFinish] {
+        assert!(earned(&book, stamp), "{stamp:?}");
+    }
+    let (book, _) = sync_stamps(&conn, b, false).await.unwrap();
+    assert!(earned(&book, Stamp::PhotoFinish));
+    assert!(!earned(&book, Stamp::StoneBridge) && !earned(&book, Stamp::NightOwl));
+
+    // Only the part of the day is stored, not the time zone
+    let mut rows = conn
+        .query(
+            "SELECT daypart FROM attempts WHERE user_id = ?1",
+            params![a],
+        )
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<String>(0).unwrap(), "night");
+
+    // Dailies from before runs were kept get theirs worked out
+    conn.execute("UPDATE attempts SET run = NULL", ())
+        .await
+        .unwrap();
+    conn.execute("DELETE FROM stamps", ()).await.unwrap();
+    let (book, _) = sync_stamps(&conn, a, false).await.unwrap();
+    assert!(earned(&book, Stamp::StoneBridge));
+    let mut rows = conn
+        .query("SELECT COUNT(*) FROM attempts WHERE run IS NULL", ())
+        .await
+        .unwrap();
+    let missing: i64 = rows.next().await.unwrap().unwrap().get(0).unwrap();
+    // Bob's are worked out on his next sync
+    assert_eq!(missing, 1);
+}
+
+#[tokio::test]
+async fn profiles_show_stamps_and_how_many_have_them() {
+    let (_db, conn) = test_db().await;
+    let a = user(&conn, "alice", Some("alice")).await;
+    let b = user(&conn, "Calm Heron 7", None).await;
+    let yesterday = today() - 1;
+    finish(&conn, a, yesterday, 50_000).await;
+    finish(&conn, b, yesterday, 60_000).await;
+
+    assert_eq!(profile(&conn, a + b + 1).await.unwrap(), None);
+    let p = profile(&conn, b).await.unwrap().unwrap();
+    assert_eq!((p.name.as_str(), p.guest), ("Calm Heron 7", true));
+    assert_eq!(p.stats.solved, 1);
+    // Bob's profile synced his stamps, alice's aren't stored yet
+    assert_eq!(p.stats.players, 1);
+
+    let p = profile(&conn, a).await.unwrap().unwrap();
+    assert!(!p.guest);
+    assert_eq!(p.stats.players, 2);
+    let holders = |stamp| {
+        p.stats
+            .stamps
+            .iter()
+            .find(|s| s.stamp == stamp)
+            .unwrap()
+            .holders
+    };
+    // Both solved one, only alice won
+    assert_eq!(holders(Stamp::First), 2);
+    assert_eq!(holders(Stamp::Gold), 1);
+    assert_eq!(holders(Stamp::Solved10), 0);
 }
 
 #[tokio::test]

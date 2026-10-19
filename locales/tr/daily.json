@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "Günün köprüsü",
-    "text": "Bulmaca başlata bastığında görünür, saat sunucuda işler. İpuçları 30 sn, kontroller 10 sn ekler; çözümü açarsan sıralamaya girmezsin.",
+    "lead": "Bulmaca başlata bastığında görünür, saat sunucuda işler.",
+    "unranked": "sıralama dışı",
     "start": "Başla",
     "preparing": "Hazırlanıyor…",
     "playing_as": "Oyuncu: {{ name }}",

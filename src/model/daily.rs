@@ -89,7 +89,7 @@ pub struct LeaderboardEntry {
     pub time_ms: i64,
     pub hints: i64,
     pub checks: i64,
-    /// The player's most impressive stamp.
+    /// The stamp the player chose to show next to their name.
     #[serde(default)]
     pub stamp: Option<Stamp>,
 }
@@ -130,4 +130,20 @@ pub struct UserStats {
     pub month_points: i64,
     /// Every stamp and how far along the player is.
     pub stamps: Vec<StampProgress>,
+    /// Everyone with a stamp, for the share of players who have each one.
+    #[serde(default)]
+    pub players: i64,
+    /// The stamp shown next to the player's name on the leaderboards.
+    #[serde(default)]
+    pub shown: Option<Stamp>,
+}
+
+/// What everybody can see of a player: their profile, linked from the leaderboards.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlayerProfile {
+    pub id: i64,
+    pub name: String,
+    pub guest: bool,
+    pub created_at: i64,
+    pub stats: UserStats,
 }

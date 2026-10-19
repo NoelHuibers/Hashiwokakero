@@ -1,24 +1,24 @@
 //! The account page: the daily record, signing in and out.
 
 pub mod auth_form;
-pub mod stats;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos_meta::{Meta, Title};
+use leptos_router::components::A;
 
 use crate::api::{logout, my_stats};
+use crate::components::record::Record;
 use crate::components::stamps::StampBook;
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{date_short, error_text};
-use crate::model::{UserStats, format_duration};
+use crate::lang::{date_short, error_text, prefix};
+use crate::model::UserStats;
 use crate::state::{Auth, ToastKind, toast};
 
 use auth_form::{AuthForm, Mode};
-use stats::{Calendar, StatTile};
 
 #[component]
 pub fn AccountPage() -> impl IntoView {
@@ -88,48 +88,7 @@ pub fn AccountPage() -> impl IntoView {
                     </CardHeader>
                     <CardContent class="flex flex-col gap-4">
                         {move || match stats.get() {
-                            Some(s) => {
-                                view! {
-                                    <div class="grid grid-cols-3 gap-2">
-                                        <StatTile label=t_string!(i18n, account.stats.solved).to_string() jp="解" value=s.solved.to_string() />
-                                        <StatTile label=t_string!(i18n, account.stats.streak).to_string() jp="連続" value=s.current_streak.to_string() />
-                                        <StatTile label=t_string!(i18n, account.stats.best).to_string() jp="最長" value=s.best_streak.to_string() />
-                                        <StatTile
-                                            label=t_string!(i18n, account.stats.fastest).to_string()
-                                            jp="最速"
-                                            value=s.best_time_ms.map_or_else(|| "–".into(), format_duration)
-                                        />
-                                        <StatTile
-                                            label=t_string!(i18n, account.stats.average).to_string()
-                                            jp="平均"
-                                            value=s.average_time_ms.map_or_else(|| "–".into(), format_duration)
-                                        />
-                                        <StatTile
-                                            label=t_string!(i18n, account.stats.week).to_string()
-                                            jp="週"
-                                            value=s.recent.iter().rev().take(7).filter(|d| d.time_ms.is_some()).count().to_string()
-                                        />
-                                        <StatTile
-                                            label=t_string!(i18n, account.stats.month).to_string()
-                                            jp="月"
-                                            value=s.month_rank.map_or_else(|| "–".into(), |r| format!("#{r}"))
-                                        />
-                                        <StatTile label=t_string!(i18n, account.stats.points).to_string() jp="点" value=s.month_points.to_string() />
-                                        <StatTile
-                                            label=t_string!(i18n, account.stats.medals).to_string()
-                                            jp="金銀銅"
-                                            value=format!("{}·{}·{}", s.gold, s.silver, s.bronze)
-                                        />
-                                    </div>
-                                    <div class="flex flex-col gap-2">
-                                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                                            {t!(i18n, account.last_weeks)}
-                                        </p>
-                                        <Calendar stats=s />
-                                    </div>
-                                }
-                                    .into_any()
-                            }
+                            Some(s) => view! { <Record stats=s /> }.into_any(),
                             None => {
                                 view! {
                                     <div class="seigaiha grid h-40 place-items-center rounded-lg border border-dashed text-sm text-muted-foreground">
@@ -139,6 +98,16 @@ pub fn AccountPage() -> impl IntoView {
                                     .into_any()
                             }
                         }}
+                        {move || {
+                            stats.with(Option::is_some).then(|| auth.user.with(|u| u.as_ref().map(|u| u.id))).flatten().map(|id| {
+                                let href = move || format!("{}/player/{id}", prefix(i18n.get_locale()));
+                                view! {
+                                    <A href=href attr:class="w-fit text-sm text-primary underline-offset-4 hover:underline">
+                                        {t!(i18n, account.public_profile)} " →"
+                                    </A>
+                                }
+                            })
+                        }}
                     </CardContent>
                 </Card>
 
@@ -147,6 +116,7 @@ pub fn AccountPage() -> impl IntoView {
                         .get()
                         .filter(|s| !s.stamps.is_empty())
                         .map(|s| {
+                            let shown = RwSignal::new(s.shown);
                             view! {
                                 <Card class="gap-4 md:order-last md:col-span-2">
                                     <CardHeader>
@@ -156,7 +126,7 @@ pub fn AccountPage() -> impl IntoView {
                                         <CardDescription>{t!(i18n, stamps.intro)}</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <StampBook book=s.stamps />
+                                        <StampBook book=s.stamps players=s.players shown pick=true />
                                     </CardContent>
                                 </Card>
                             }
