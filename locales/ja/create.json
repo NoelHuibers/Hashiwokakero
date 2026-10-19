@@ -32,5 +32,15 @@
   "not_unique": "解が複数あります。島を追加・変更してください。",
   "imported": "{{ name }}を読み込みました",
   "unreadable": "{{ name }}を読み込めませんでした",
-  "brush_label": "ブラシ"
+  "brush_label": "ブラシ",
+  "parse": {
+    "empty": "ファイルが空です",
+    "missing_size": "1行目に盤面のサイズがありません",
+    "invalid_size": "盤面のサイズ '{{ header }}' が正しくありません",
+    "too_small": "盤面は2×2以上にしてください",
+    "too_many_rows": "{{ expected }}行のはずが、それより多くあります",
+    "invalid_char": "{{ row }}行目に使えない文字 '{{ character }}' があります",
+    "row_width": "{{ row }}行目は{{ found }}列ですが、{{ expected }}列のはずです",
+    "row_count": "{{ expected }}行のはずが、{{ found }}行です"
+  }
 }

@@ -63,7 +63,7 @@ fn all_solvers_agree_on_inputs() {
             let stats = &report.stats;
             assert_eq!(stats.variables, 2 * board.edges.len());
             assert!(stats.sat_calls >= 1);
-            assert!(stats.config.starts_with(config.kind.label()));
+            assert!(stats.config.describe().starts_with(config.kind.label()));
             let Some(result) = summary(&report, &board, &label) else {
                 assert_eq!(config.kind, SolverKind::Dpll, "{label} timed out");
                 continue;
@@ -253,7 +253,7 @@ fn all_solver_options_work() {
                         panic!("{config:?}: {:?}", report.outcome);
                     };
                     assert!(board.check(&bridges).solved);
-                    assert_eq!(report.stats.config, config.normalized().describe());
+                    assert_eq!(report.stats.config, config.normalized());
                 }
             }
         }

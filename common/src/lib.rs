@@ -8,7 +8,7 @@ pub mod puzzle;
 
 pub use board::{Board, Check, Edge, Orientation};
 pub use config::*;
-pub use puzzle::{Island, Pos, Puzzle};
+pub use puzzle::{Island, ParseError, Pos, Puzzle};
 
 /// At most two bridges may connect the same pair of islands.
 pub const MAX_BRIDGES: u8 = 2;

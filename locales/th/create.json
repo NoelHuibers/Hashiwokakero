@@ -32,5 +32,15 @@
   "not_unique": "มีมากกว่าหนึ่งคำตอบ ลองเพิ่มหรือเปลี่ยนเกาะ",
   "imported": "นำเข้า {{ name }} แล้ว",
   "unreadable": "อ่าน {{ name }} ไม่ได้",
-  "brush_label": "แปรง"
+  "brush_label": "แปรง",
+  "parse": {
+    "empty": "ไฟล์ว่างเปล่า",
+    "missing_size": "บรรทัดแรกไม่มีขนาดตาราง",
+    "invalid_size": "ขนาดตารางไม่ถูกต้อง '{{ header }}'",
+    "too_small": "ตารางต้องมีขนาดอย่างน้อย 2×2",
+    "too_many_rows": "ควรมี {{ expected }} แถว แต่มีมากกว่านั้น",
+    "invalid_char": "อักขระ '{{ character }}' ในแถว {{ row }} ไม่ถูกต้อง",
+    "row_width": "แถว {{ row }} มี {{ found }} คอลัมน์ ควรมี {{ expected }}",
+    "row_count": "ควรมี {{ expected }} แถว แต่มี {{ found }}"
+  }
 }

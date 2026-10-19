@@ -62,6 +62,24 @@ async fn pages_are_rendered_in_their_language() {
     assert!(text(res).await.contains("<html lang=\"fr\""));
 }
 
+/// The header renders above the routes. It used to follow the browser's language on the server,
+/// so a first visit to /ja/rules from an English browser got an English header until hydration.
+#[tokio::test]
+async fn the_header_follows_the_language_of_the_path() {
+    let server = Server::start().await;
+    let mut headers = HeaderMap::new();
+    headers.insert(ACCEPT_LANGUAGE, "en-US,en;q=0.9".parse().unwrap());
+    let browser = server.browser_sending(headers);
+
+    let html = text(browser.get("/ja/rules").await).await;
+    assert!(html.contains(r#"aria-label="メインナビゲーション""#));
+    assert!(!html.contains("Main navigation"));
+    assert!(!html.contains(r#"aria-label="How to play""#));
+
+    let html = text(browser.get("/rules").await).await;
+    assert!(html.contains(r#"aria-label="Main navigation""#));
+}
+
 #[tokio::test]
 async fn unknown_paths_are_not_found() {
     let server = Server::start().await;

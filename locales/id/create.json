@@ -32,5 +32,15 @@
   "not_unique": "Lebih dari satu solusi, tambah atau ubah pulau.",
   "imported": "Diimpor: {{ name }}",
   "unreadable": "Tidak bisa membaca {{ name }}",
-  "brush_label": "Kuas"
+  "brush_label": "Kuas",
+  "parse": {
+    "empty": "Berkasnya kosong",
+    "missing_size": "Ukuran kisi tidak ada di baris pertama",
+    "invalid_size": "Ukuran kisi tidak valid '{{ header }}'",
+    "too_small": "Kisi minimal 2×2",
+    "too_many_rows": "Seharusnya {{ expected }} baris, ternyata lebih",
+    "invalid_char": "Karakter tidak valid '{{ character }}' di baris {{ row }}",
+    "row_width": "Baris {{ row }} punya {{ found }} kolom, seharusnya {{ expected }}",
+    "row_count": "Seharusnya {{ expected }} baris, ada {{ found }}"
+  }
 }

@@ -32,5 +32,15 @@
   "not_unique": "Más de una solución, añade o cambia islas.",
   "imported": "{{ name }} importado",
   "unreadable": "No se pudo leer {{ name }}",
-  "brush_label": "Pincel"
+  "brush_label": "Pincel",
+  "parse": {
+    "empty": "El archivo está vacío",
+    "missing_size": "Falta el tamaño de la cuadrícula en la primera línea",
+    "invalid_size": "Tamaño de cuadrícula no válido '{{ header }}'",
+    "too_small": "La cuadrícula debe ser de al menos 2×2",
+    "too_many_rows": "Se esperaban {{ expected }} filas y hay más",
+    "invalid_char": "Carácter no válido '{{ character }}' en la fila {{ row }}",
+    "row_width": "La fila {{ row }} tiene {{ found }} columnas en lugar de {{ expected }}",
+    "row_count": "Se esperaban {{ expected }} filas y hay {{ found }}"
+  }
 }

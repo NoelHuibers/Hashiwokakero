@@ -10,8 +10,8 @@ use super::ui::label::Label;
 use super::ui::select::SelectNative;
 use super::ui::switch::Switch;
 use super::ui::toggle_group::{ToggleGroup, ToggleGroupItem, ToggleGroupVariant};
-use crate::i18n::{t, t_string, use_i18n};
-use crate::lang::{restarts_name, solver_name};
+use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::lang::{config_name, heuristic_name, restarts_name, solver_name};
 use crate::state::Settings;
 
 const TIMEOUTS: [(u32, &str); 4] = [
@@ -86,7 +86,11 @@ pub fn SolverOptions() -> impl IntoView {
                                 view! { <option value="vsids">{t!(i18n, common.solver.splr_heuristic)}</option> }.into_any()
                             } else {
                                 hs.iter()
-                                    .map(|h| view! { <option value=h.id()>{h.label()}</option> })
+                                    .map(|&h| {
+                                        view! {
+                                            <option value=h.id()>{move || heuristic_name(i18n.get_locale(), h)}</option>
+                                        }
+                                    })
                                     .collect_view()
                                     .into_any()
                             }
@@ -194,6 +198,7 @@ pub fn SolverTerminal(
     #[prop(into)] report: Signal<Option<SolveReport>>,
     #[prop(into)] busy: Signal<bool>,
 ) -> impl IntoView {
+    let i18n = use_i18n();
     let settings = expect_context::<Settings>();
     let row = |key: &'static str, value: String| {
         view! {
@@ -215,47 +220,44 @@ pub fn SolverTerminal(
                 if busy.get() {
                     return view! {
                         <div class="text-[#8fd0ea]">
-                            "c encoding & solving" <span class="animate-pulse">"▌"</span>
+                            "c " {t!(i18n, common.solver.log.working)} <span class="animate-pulse">"▌"</span>
                         </div>
                     }
                         .into_any();
                 }
                 let Some(r) = report.get() else {
                     return view! {
-                        <div class="text-[#a89f8c]">"c waiting for a puzzle to solve…"</div>
+                        <div class="text-[#a89f8c]">"c " {t!(i18n, common.solver.log.waiting)}</div>
                     }
                         .into_any();
                 };
                 let s = r.stats;
+                let l = i18n.get_locale();
+                // The status words are the solver's DIMACS output (`s SATISFIABLE`), the notes ours
                 let (status, color) = match &r.outcome {
                     SolveOutcome::Solved { unique: Some(true), .. } => {
-                        ("SATISFIABLE · unique ✓".to_string(), "text-[#a3d672]")
+                        (format!("SATISFIABLE · {} ✓", td_string!(l, common.solver.log.unique)), "text-[#a3d672]")
                     }
                     SolveOutcome::Solved { unique: Some(false), .. } => {
-                        ("SATISFIABLE · not unique".to_string(), "text-[#f2b830]")
+                        (format!("SATISFIABLE · {}", td_string!(l, common.solver.log.not_unique)), "text-[#f2b830]")
                     }
                     SolveOutcome::Solved { .. } => ("SATISFIABLE".to_string(), "text-[#a3d672]"),
                     SolveOutcome::Unsatisfiable => ("UNSATISFIABLE".to_string(), "text-[#f2715a]"),
-                    SolveOutcome::Timeout => ("UNKNOWN · timeout".to_string(), "text-[#f2715a]"),
+                    SolveOutcome::Timeout => {
+                        (format!("UNKNOWN · {}", td_string!(l, common.solver.log.timeout)), "text-[#f2715a]")
+                    }
                 };
                 view! {
                     <div>
-                        {row("config", s.config.clone())}
-                        {row("variables", fmt_int(s.variables))}
-                        {row("clauses", fmt_int(s.clauses))}
-                        {row("encode", fmt_ms(s.encode_ms))}
-                        {row("solve", fmt_ms(s.solve_ms))}
-                        {s.decisions.map(|d| row("decisions", fmt_int(d)))}
-                        {s.restarts.map(|d| row("restarts", fmt_int(d)))}
-                        {row(
-                            "sat calls",
-                            format!(
-                                "{} ({} cut{})",
-                                s.sat_calls,
-                                s.connectivity_cuts,
-                                if s.connectivity_cuts == 1 { "" } else { "s" },
-                            ),
-                        )}
+                        {row(td_string!(l, common.solver.log.config), config_name(l, &s.config))}
+                        {row(td_string!(l, common.solver.log.variables), fmt_int(s.variables))}
+                        {row(td_string!(l, common.solver.log.clauses), fmt_int(s.clauses))}
+                        {row(td_string!(l, common.solver.log.encode), fmt_ms(s.encode_ms))}
+                        {row(td_string!(l, common.solver.log.solve), fmt_ms(s.solve_ms))}
+                        {s.decisions.map(|d| row(td_string!(l, common.solver.log.decisions), fmt_int(d)))}
+                        {s.restarts.map(|d| row(td_string!(l, common.solver.log.restarts), fmt_int(d)))}
+                        {row(td_string!(l, common.solver.log.sat_calls), s.sat_calls.to_string())}
+                        {row(td_string!(l, common.solver.log.cuts), s.connectivity_cuts.to_string())}
                         <div class=format!("mt-1 {color}")>"s " {status}</div>
                     </div>
                 }

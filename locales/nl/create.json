@@ -32,5 +32,15 @@
   "not_unique": "Meer dan één oplossing, voeg eilanden toe of pas ze aan.",
   "imported": "{{ name }} geïmporteerd",
   "unreadable": "Kon {{ name }} niet lezen",
-  "brush_label": "Penseel"
+  "brush_label": "Penseel",
+  "parse": {
+    "empty": "Het bestand is leeg",
+    "missing_size": "De roostergrootte ontbreekt op de eerste regel",
+    "invalid_size": "Ongeldige roostergrootte '{{ header }}'",
+    "too_small": "Het rooster moet minstens 2×2 zijn",
+    "too_many_rows": "{{ expected }} rijen verwacht, maar er zijn er meer",
+    "invalid_char": "Ongeldig teken '{{ character }}' in rij {{ row }}",
+    "row_width": "Rij {{ row }} heeft {{ found }} kolommen in plaats van {{ expected }}",
+    "row_count": "{{ expected }} rijen verwacht, {{ found }} gevonden"
+  }
 }

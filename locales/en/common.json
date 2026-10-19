@@ -78,6 +78,8 @@
     "own_dpll": "Own DPLL",
     "heuristic": "Branching heuristic",
     "splr_heuristic": "splr's own (EVSIDS)",
+    "heuristic_arbitrary": "Arbitrary",
+    "heuristic_custom": "Custom",
     "restarts": "Restarts",
     "restarts_none": "No restarts",
     "restarts_fixed": "Fixed interval",
@@ -87,7 +89,23 @@
     "subsumption_short": "subsumption",
     "subsumption_hint": "Eliminate subsumed clauses before solving",
     "preprocess": "preprocess",
-    "timeout": "Timeout"
+    "timeout": "Timeout",
+    "log": {
+      "waiting": "waiting for a puzzle to solve…",
+      "working": "encoding & solving",
+      "unique": "unique",
+      "not_unique": "not unique",
+      "timeout": "timeout",
+      "config": "config",
+      "variables": "variables",
+      "clauses": "clauses",
+      "encode": "encode",
+      "solve": "solve",
+      "decisions": "decisions",
+      "restarts": "restarts",
+      "sat_calls": "sat calls",
+      "cuts": "connectivity cuts"
+    }
   },
   "ranking": {
     "you": "you",

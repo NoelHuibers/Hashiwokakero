@@ -94,15 +94,21 @@ pub fn localized(locale: Locale, path: &str) -> String {
     }
 }
 
+/// The language prefix of `path`: `/de/rules` -> German, `/rules` -> none.
+pub fn path_locale(path: &str) -> Option<Locale> {
+    let rest = path.trim_start_matches('/');
+    let first = rest.split_once('/').map_or(rest, |(first, _)| first);
+    Locale::get_all()
+        .iter()
+        .copied()
+        .find(|l| *l != Locale::default() && l.as_str() == first)
+}
+
 /// `path` without its language prefix: `/de/rules` -> `/rules`.
 pub fn unlocalized(path: &str) -> String {
-    let rest = path.trim_start_matches('/');
-    let (first, tail) = rest.split_once('/').unwrap_or((rest, ""));
-    if Locale::get_all()
-        .iter()
-        .any(|l| *l != Locale::default() && l.as_str() == first)
-    {
-        format!("/{tail}")
+    if path_locale(path).is_some() {
+        let rest = path.trim_start_matches('/');
+        format!("/{}", rest.split_once('/').map_or("", |(_, tail)| tail))
     } else {
         path.to_string()
     }
@@ -122,6 +128,10 @@ mod tests {
         assert_eq!(unlocalized("/de"), "/");
         assert_eq!(unlocalized("/rules"), "/rules");
         assert_eq!(unlocalized("/"), "/");
+        assert_eq!(path_locale("/zh-Hant/rules"), Some(Locale::zh_Hant));
+        assert_eq!(path_locale("/de"), Some(Locale::de));
+        assert_eq!(path_locale("/rules"), None);
+        assert_eq!(path_locale("/"), None);
     }
 
     #[test]
@@ -130,6 +140,60 @@ mod tests {
             assert_ne!(native_name(*l), "");
             assert!(og_locale(*l).contains('_'));
         }
+    }
+
+    /// Import errors used to be English in every language.
+    #[test]
+    fn parse_errors_are_translated() {
+        use common::ParseError as E;
+        let errors = [
+            E::Empty,
+            E::MissingSize,
+            E::InvalidSize("x 2".into()),
+            E::TooSmall,
+            E::TooManyRows { expected: 7 },
+            E::InvalidChar { char: 'x', row: 3 },
+            E::RowWidth {
+                row: 2,
+                found: 5,
+                expected: 4,
+            },
+            E::RowCount {
+                expected: 7,
+                found: 6,
+            },
+        ];
+        for e in &errors {
+            let english = parse_error_text(Locale::en, e);
+            assert_eq!(english, e.to_string());
+            for l in Locale::get_all().iter().filter(|l| **l != Locale::en) {
+                let text = parse_error_text(*l, e);
+                assert_ne!(text, english, "{l:?}: {e:?}");
+                assert!(!text.contains("{{"), "{l:?}: {text}");
+            }
+        }
+        assert_eq!(
+            parse_error_text(Locale::de, &E::InvalidChar { char: 'x', row: 3 }),
+            "Ungültiges Zeichen 'x' in Zeile 3"
+        );
+    }
+
+    /// "Arbitrary" and "Custom" used to stay English in the solver settings and the lab.
+    #[test]
+    fn heuristics_are_translated() {
+        use common::{Heuristic, SolverConfig, SolverKind};
+        for h in [Heuristic::Arbitrary, Heuristic::Custom] {
+            for l in Locale::get_all().iter().filter(|l| **l != Locale::en) {
+                assert_ne!(heuristic_name(*l, h), h.label(), "{l:?}: {h:?}");
+            }
+        }
+        assert_eq!(heuristic_name(Locale::de, Heuristic::Vsids), "VSIDS");
+        let config = SolverConfig {
+            kind: SolverKind::Dpll,
+            heuristic: Heuristic::Arbitrary,
+            ..SolverConfig::default()
+        };
+        assert!(config_name(Locale::de, &config).ends_with("Beliebig"));
     }
 
     /// Every string of a namespace, as `key.path -> text`.

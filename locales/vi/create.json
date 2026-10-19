@@ -32,5 +32,15 @@
   "not_unique": "Có nhiều hơn một lời giải, hãy thêm hoặc sửa đảo.",
   "imported": "Đã nhập {{ name }}",
   "unreadable": "Không đọc được {{ name }}",
-  "brush_label": "Cọ"
+  "brush_label": "Cọ",
+  "parse": {
+    "empty": "Tệp trống",
+    "missing_size": "Thiếu kích thước lưới ở dòng đầu tiên",
+    "invalid_size": "Kích thước lưới không hợp lệ '{{ header }}'",
+    "too_small": "Lưới phải ít nhất 2×2",
+    "too_many_rows": "Cần {{ expected }} hàng nhưng có nhiều hơn",
+    "invalid_char": "Ký tự không hợp lệ '{{ character }}' ở hàng {{ row }}",
+    "row_width": "Hàng {{ row }} có {{ found }} cột, cần {{ expected }}",
+    "row_count": "Cần {{ expected }} hàng nhưng có {{ found }}"
+  }
 }

@@ -32,5 +32,15 @@
   "not_unique": "Mehr als eine Lösung – füge Inseln hinzu oder ändere sie.",
   "imported": "{{ name }} importiert",
   "unreadable": "{{ name }} konnte nicht gelesen werden",
-  "brush_label": "Pinsel"
+  "brush_label": "Pinsel",
+  "parse": {
+    "empty": "Die Datei ist leer",
+    "missing_size": "In der ersten Zeile fehlt die Gittergröße",
+    "invalid_size": "Ungültige Gittergröße '{{ header }}'",
+    "too_small": "Das Gitter muss mindestens 2×2 groß sein",
+    "too_many_rows": "{{ expected }} Zeilen erwartet, aber mehr gefunden",
+    "invalid_char": "Ungültiges Zeichen '{{ character }}' in Zeile {{ row }}",
+    "row_width": "Zeile {{ row }} hat {{ found }} Spalten statt {{ expected }}",
+    "row_count": "{{ expected }} Zeilen erwartet, {{ found }} gefunden"
+  }
 }

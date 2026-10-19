@@ -78,6 +78,8 @@
     "own_dpll": "自製 DPLL",
     "heuristic": "分支啟發法",
     "splr_heuristic": "splr 內建（EVSIDS）",
+    "heuristic_arbitrary": "任意",
+    "heuristic_custom": "自訂",
     "restarts": "重新啟動",
     "restarts_none": "不重新啟動",
     "restarts_fixed": "固定間隔",
@@ -87,7 +89,23 @@
     "subsumption_short": "包含消去",
     "subsumption_hint": "求解前先消去被包含的子句",
     "preprocess": "前處理",
-    "timeout": "逾時"
+    "timeout": "逾時",
+    "log": {
+      "waiting": "等待要求解的謎題…",
+      "working": "正在編碼並求解",
+      "unique": "唯一",
+      "not_unique": "不唯一",
+      "timeout": "逾時",
+      "config": "設定",
+      "variables": "變數",
+      "clauses": "子句",
+      "encode": "編碼",
+      "solve": "求解",
+      "decisions": "決策數",
+      "restarts": "重啟數",
+      "sat_calls": "SAT 呼叫",
+      "cuts": "連通性割"
+    }
   },
   "ranking": {
     "you": "你",

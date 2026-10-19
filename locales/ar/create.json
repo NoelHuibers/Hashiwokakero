@@ -32,5 +32,15 @@
   "not_unique": "أكثر من حل، أضف جزرًا أو غيّرها.",
   "imported": "تم استيراد {{ name }}",
   "unreadable": "تعذّرت قراءة {{ name }}",
-  "brush_label": "الفرشاة"
+  "brush_label": "الفرشاة",
+  "parse": {
+    "empty": "الملف فارغ",
+    "missing_size": "حجم الشبكة مفقود في السطر الأول",
+    "invalid_size": "حجم شبكة غير صالح '{{ header }}'",
+    "too_small": "يجب ألا تقل الشبكة عن 2×2",
+    "too_many_rows": "عدد الصفوف أكثر من المتوقع ({{ expected }})",
+    "invalid_char": "حرف غير صالح '{{ character }}' في الصف {{ row }}",
+    "row_width": "عدد أعمدة الصف {{ row }} هو {{ found }}، والمتوقع {{ expected }}",
+    "row_count": "عدد الصفوف {{ found }}، والمتوقع {{ expected }}"
+  }
 }
