@@ -17,6 +17,8 @@ pub struct Options {
     pub threads: usize,
     /// Pass the solver's stderr through (for local runs).
     pub stderr: bool,
+    /// The seed of the set, which the random numbers of every run depend on (see [`rng_seed`]).
+    pub set_seed: String,
 }
 
 impl Default for Options {
@@ -25,13 +27,17 @@ impl Default for Options {
             limits: Limits::default(),
             threads: std::thread::available_parallelism().map_or(1, std::num::NonZero::get),
             stderr: false,
+            set_seed: crate::DEV_SEED.to_string(),
         }
     }
 }
 
-/// The seed for an instance's random numbers.
-fn seed(instance: &Instance) -> u64 {
-    let digest = Sha256::digest(instance.name.as_bytes());
+/// The seed of the random numbers (`random_get`) of a run.
+///
+/// From the set's seed and the formula's name, so the same name gets other random numbers in
+/// every season and in the dev and hidden sets, and still the same ones on every run.
+pub fn rng_seed(set_seed: &str, instance: &str) -> u64 {
+    let digest = Sha256::digest(format!("{set_seed}/{instance}").as_bytes());
     u64::from_le_bytes(digest[..8].try_into().unwrap_or_default())
 }
 
@@ -47,7 +53,7 @@ pub fn run_one(
     let run = sandbox.run(
         solver,
         &input,
-        seed(instance),
+        rng_seed(&options.set_seed, &instance.name),
         &options.limits,
         options.stderr,
     );
@@ -99,4 +105,28 @@ pub fn evaluate(
         .into_iter()
         .flatten()
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Changing these changes the random numbers of every run, so the score of every solver that
+    /// uses them: bump `RULES_VERSION` with it.
+    #[test]
+    fn rng_seeds_depend_on_the_set() {
+        assert_eq!(
+            rng_seed("hashi-dojo-dev-1", "queens-01"),
+            9_993_982_788_544_393_026
+        );
+        assert_ne!(
+            rng_seed("hashi-dojo-dev-1", "queens-01"),
+            rng_seed("another seed", "queens-01")
+        );
+        assert_ne!(
+            rng_seed("hashi-dojo-dev-1", "queens-01"),
+            rng_seed("hashi-dojo-dev-1", "queens-02")
+        );
+        assert_eq!(Options::default().set_seed, crate::DEV_SEED);
+    }
 }

@@ -34,6 +34,56 @@ impl Cnf {
         out
     }
 
+    /// Reads DIMACS CNF, as [`Cnf::dimacs`] writes it: comments, the `p cnf` line, clauses ended
+    /// by 0. The header's numbers have to match the clauses.
+    pub fn parse(text: &str) -> Result<Self, String> {
+        let mut header = None;
+        let mut clauses = Vec::new();
+        let mut clause = Vec::new();
+        for line in text.lines().map(str::trim) {
+            if line.is_empty() || line.starts_with('c') {
+                continue;
+            }
+            if let Some(rest) = line.strip_prefix("p cnf ") {
+                let numbers: Vec<usize> = rest
+                    .split_whitespace()
+                    .map(str::parse)
+                    .collect::<Result<_, _>>()
+                    .map_err(|_| format!("bad header: {line}"))?;
+                let &[vars, count] = numbers.as_slice() else {
+                    return Err(format!("bad header: {line}"));
+                };
+                let vars = u32::try_from(vars).map_err(|_| "too many variables".to_string())?;
+                header = Some((vars, count));
+                continue;
+            }
+            let (vars, _) = header.ok_or("clauses before the p cnf line")?;
+            for token in line.split_whitespace() {
+                let lit: i32 = token
+                    .parse()
+                    .map_err(|_| format!("not a literal: {token}"))?;
+                if lit == 0 {
+                    clauses.push(std::mem::take(&mut clause));
+                } else if lit.unsigned_abs() > vars {
+                    return Err(format!("literal {lit} beyond {vars} variables"));
+                } else {
+                    clause.push(lit);
+                }
+            }
+        }
+        let (vars, count) = header.ok_or("no p cnf line")?;
+        if !clause.is_empty() {
+            return Err("the last clause isn't ended by 0".into());
+        }
+        if clauses.len() != count {
+            return Err(format!(
+                "{} clauses, the header says {count}",
+                clauses.len()
+            ));
+        }
+        Ok(Self::new(vars, clauses))
+    }
+
     /// Whether the literals (a full or partial assignment) satisfy every clause.
     /// `None` if they assign a variable both ways or name one that doesn't exist.
     pub fn check(&self, literals: &[i32]) -> Option<bool> {
@@ -126,5 +176,28 @@ mod tests {
             .collect();
         assert_eq!(scrambled.check(&model), Some(true));
         assert!(scrambled.dimacs("x").starts_with("c x\np cnf 3 3\n"));
+    }
+
+    #[test]
+    fn dimacs_round_trip() {
+        let cnf = Cnf::new(3, vec![vec![1, -2], vec![2, 3], vec![-1, -3], vec![]]);
+        assert_eq!(Cnf::parse(&cnf.dimacs("two\nlines")), Ok(cnf));
+        // Clauses can span lines
+        assert_eq!(
+            Cnf::parse("p cnf 2 1\n1\n-2 0\n"),
+            Ok(Cnf::new(2, vec![vec![1, -2]]))
+        );
+        for bad in [
+            "",
+            "1 0\np cnf 1 1\n",
+            "p cnf 1\n",
+            "p cnf x 1\n",
+            "p cnf 1 1\n2 0\n",
+            "p cnf 1 1\n1\n",
+            "p cnf 1 2\n1 0\n",
+            "p cnf 1 1\na 0\n",
+        ] {
+            assert!(Cnf::parse(bad).is_err(), "{bad:?}");
+        }
     }
 }

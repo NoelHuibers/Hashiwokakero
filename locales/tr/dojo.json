@@ -9,12 +9,14 @@
     "season": "Sezon {{ season }}",
     "formulas": "Formül: {{ count }}",
     "budget": "Formül başına {{ budget }} Gfuel",
-    "queued": "Sırada: {{ count }}"
+    "queued": "Sırada: {{ count }}",
+    "commitment": "Taahhüt {{ hash }}"
   },
   "cta": {
     "submit": "Çözücü gönder",
     "starter": "Başlangıç kiti",
-    "dev_set": "Geliştirme setini indir"
+    "dev_set": "Geliştirme setini indir",
+    "seasons": "Sezon arşivi"
   },
   "board": {
     "title": "Sıralama",
@@ -25,6 +27,32 @@
     "empty": "Henüz hiçbir çözücü dojoya girmedi. İlk sen ol!",
     "house": "resmî",
     "par2_hint": "Formül başına milyar cinsinden ortalama yakıt; çözülemeyen formüller bütçenin iki katı sayılır. Düşük olan daha iyidir."
+  },
+  "seasons": {
+    "meta_title": "Sezon arşivi · SAT Dojo",
+    "meta_description": "SAT Dojo'nun biten her sezonu: son sıralama, açıklanan tohum, gizli küme ve formül başına her sonuç; indirip doğrulamaya hazır.",
+    "title": "Sezon arşivi",
+    "intro": "Bir sezon bittiğinde sıralaması dondurulur ve her şey yayımlanır: gizli kümenin tohumu, kümenin kendisi ve her çözücünün her formüldeki sonucu.",
+    "current": "Sezon {{ season }} · sürüyor",
+    "past": "Sezon {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "{{ date }} tarihinden beri",
+    "versions": "Üreteç v{{ generator }} · kurallar v{{ rules }}",
+    "entries": "Değerlendirilen çözücü: {{ count }}",
+    "commitment": "Taahhüt (tohumun SHA-256 değeri)",
+    "seed": "Tohum",
+    "sealed": "Tohum sezon bitene kadar gizli kalır, sonra burada açıklanır.",
+    "set": "Gizli küme ({{ size }} MB)",
+    "no_set": "Bu sezon için küme arşivlenmedi; tohumdan yeniden üretin.",
+    "csv": "Formül başına sonuçlar (CSV)",
+    "json": "Formül başına sonuçlar (JSON)",
+    "board": "Son sıralama",
+    "empty_board": "Bu sezon hiçbir çözücü sıralamaya girmedi.",
+    "none": "Henüz hiçbir sezon bitmedi. Arşiv, {{ season }}. sezon bittiğinde başlar.",
+    "deleted": "silinmiş hesap",
+    "verify_title": "Nasıl doğrulanır",
+    "verify": "Açıklanan tohumun SHA-256 değeri, başta yayımlanan taahhütle aynı olmalıdır. Aynı üreteç sürümüyle dojo export kümeyi tohumdan yeniden üretir; arşivlenen küme her zaman geçerli kalır ve dojo run --set herhangi bir çözücüyü onun üzerinde, sıralamanın yaptığı gibi puanlar.",
+    "back": "Dojo'ya dön"
   },
   "how": {
     "title": "Nasıl çalışır",
@@ -55,7 +83,7 @@
     "fuel_title": "Saniye değil, yakıt",
     "fuel": "Çalıştırılan her WebAssembly komutu bir birim yakıt harcar, toplu bellek işlemleri bayt başına bir birim. Saatler ve rastgele sayılar sabit tohumludur, böylece bir çözücü her makinede, her seferinde aynı puanı alır.",
     "hidden_title": "Gizli, yeni formüller",
-    "hidden": "Test seti her sezon değişen gizli bir tohumdan üretilir ve her formül karıştırılır: değişkenler yeniden adlandırılır ve olumsuzlanır, tümcelerin sırası karıştırılır. Sonuçlar formül bazında değil, yalnızca aile bazında gösterilir.",
+    "hidden": "Test kümesi her sezon değişen gizli bir tohumdan üretilir ve her formül karıştırılır: değişkenler yeniden adlandırılıp olumsuzlanır, cümleler karıştırılır. Sezon sürerken sonuçlar yalnızca aile bazında gösterilir, asla formül bazında değil.",
     "checked_title": "Her cevap kontrol edilir",
     "checked": "Modeller formüle karşı doğrulanır. UNSAT yalnızca bir kanıtımız olduğunda geçerlidir: güvercin yuvası ve Hashi parite yapıları gereği sağlanamazdır, diğer her UNSAT etiketi kendi denetleyicimizin doğruladığı bir DRAT kanıtıyla gelir. Tek bir yanlış cevap gönderimi diskalifiye eder, yani tahmin etmek asla işe yaramaz.",
     "sandbox_title": "Kapalı bir korumalı alan",
@@ -63,9 +91,11 @@
     "accounts_title": "Tek hesap, en iyi gönderim",
     "accounts": "Gönderim yapmak için hesapların en az bir günlük olması gerekir ve hesap başına ve ağ başına günde üç gönderim hakkı vardır. Aynı kod, yeniden adlandırılsa veya dolgu eklense bile reddedilir ve yalnızca en iyi gönderimin sıralamaya girer.",
     "seasons_title": "Sezonlar",
-    "seasons": "Yeni bir sezon yeni bir gizli set getirir ve tüm gönderimler yeniden değerlendirilir.",
+    "seasons": "Yeni sezon yeni bir gizli küme getirir ve her gönderim yeniden değerlendirilir. Biten sezon arşivlenir: son sıralaması, kümesi ve formül başına her sonuç yayımlanır.",
     "copies_title": "Kopya yok",
-    "copies": "Puanlar kesindir, bu yüzden bir çözücü parmak izi bırakır: her formülde harcadığı yakıt. Başka birinin daha önceki bir gönderimi gibi davranan bir gönderim sıralamaya girmez. Bir kopyayı bundan kurtulacak kadar değiştirmek onu farklı bir çözücü yapar, yavaşlatmak ise onu yalnızca orijinalin altına düşürür."
+    "copies": "Puanlar kesindir, bu yüzden bir çözücü parmak izi bırakır: her formülde harcadığı yakıt. Başka birinin daha önceki bir gönderimi gibi davranan bir gönderim sıralamaya girmez. Bir kopyayı bundan kurtulacak kadar değiştirmek onu farklı bir çözücü yapar, yavaşlatmak ise onu yalnızca orijinalin altına düşürür.",
+    "commit_title": "Önceden mühürlü",
+    "commit": "Bir sezonun başında gizli tohumunun SHA-256 değerini yayımlarız. Sezon bitince tohum açıklanır; böylece herkes kümenin önceden belirlendiğini doğrulayabilir ve onu dojo export --seed ile yeniden üretebilir."
   },
   "science": {
     "title": "Araştırmacılar için",

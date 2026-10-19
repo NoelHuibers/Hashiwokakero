@@ -9,12 +9,14 @@
     "season": "Temporada {{ season }}",
     "formulas": "Fórmulas: {{ count }}",
     "budget": "{{ budget }} Gfuel por fórmula",
-    "queued": "En cola: {{ count }}"
+    "queued": "En cola: {{ count }}",
+    "commitment": "Compromiso {{ hash }}"
   },
   "cta": {
     "submit": "Enviar un solver",
     "starter": "Kit de inicio",
-    "dev_set": "Descargar el conjunto de desarrollo"
+    "dev_set": "Descargar el conjunto de desarrollo",
+    "seasons": "Archivo de temporadas"
   },
   "board": {
     "title": "Clasificación",
@@ -25,6 +27,32 @@
     "empty": "Ningún solver ha entrado aún en el dojo. ¡Sé el primero!",
     "house": "de la casa",
     "par2_hint": "Combustible medio por fórmula en miles de millones; las fórmulas sin resolver cuentan el doble del presupuesto. Cuanto menos, mejor."
+  },
+  "seasons": {
+    "meta_title": "Archivo de temporadas · SAT Dojo",
+    "meta_description": "Cada temporada terminada del SAT Dojo: la clasificación final, la semilla revelada, el conjunto oculto y cada resultado por fórmula, listos para descargar y comprobar.",
+    "title": "Archivo de temporadas",
+    "intro": "Cuando termina una temporada, su clasificación se congela y se publica todo: la semilla del conjunto oculto, el propio conjunto y el resultado de cada solver en cada fórmula.",
+    "current": "Temporada {{ season }} · en curso",
+    "past": "Temporada {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "desde el {{ date }}",
+    "versions": "Generador v{{ generator }} · reglas v{{ rules }}",
+    "entries": "Solvers evaluados: {{ count }}",
+    "commitment": "Compromiso (SHA-256 de la semilla)",
+    "seed": "Semilla",
+    "sealed": "La semilla sigue siendo secreta hasta que acabe la temporada; entonces se revela aquí.",
+    "set": "Conjunto oculto ({{ size }} MB)",
+    "no_set": "No se archivó ningún conjunto en esta temporada; regenéralo a partir de la semilla.",
+    "csv": "Resultados por fórmula (CSV)",
+    "json": "Resultados por fórmula (JSON)",
+    "board": "Clasificación final",
+    "empty_board": "Ningún solver entró en la clasificación esta temporada.",
+    "none": "Aún no ha terminado ninguna temporada. El archivo empieza cuando acabe la temporada {{ season }}.",
+    "deleted": "cuenta eliminada",
+    "verify_title": "Cómo comprobarlo",
+    "verify": "El SHA-256 de la semilla revelada tiene que coincidir con el compromiso publicado al principio. Con la misma versión del generador, dojo export regenera el conjunto a partir de la semilla; el conjunto archivado sigue siendo válido para siempre, y dojo run --set puntúa cualquier solver en él exactamente como lo hizo la clasificación.",
+    "back": "Volver al dojo"
   },
   "how": {
     "title": "Cómo funciona",
@@ -55,7 +83,7 @@
     "fuel_title": "Combustible, no segundos",
     "fuel": "Cada instrucción WebAssembly ejecutada cuesta una unidad de combustible; las operaciones de memoria en bloque, una por byte. Los relojes y los números aleatorios tienen semilla fija, así que un solver obtiene la misma puntuación en cualquier máquina, siempre.",
     "hidden_title": "Fórmulas secretas y nuevas",
-    "hidden": "El conjunto de prueba sale de una semilla secreta que cambia cada temporada, y cada fórmula se desordena: variables renombradas y negadas, cláusulas barajadas. Los resultados se muestran solo por familia, nunca por fórmula.",
+    "hidden": "El conjunto de prueba sale de una semilla secreta que cambia cada temporada, y cada fórmula se desordena: variables renombradas y negadas, cláusulas barajadas. Mientras dura una temporada, los resultados se muestran solo por familia, nunca por fórmula.",
     "checked_title": "Cada respuesta, verificada",
     "checked": "Los modelos se verifican contra la fórmula. UNSAT solo cuenta donde tenemos una prueba: Palomar y Hashi paridad son insatisfacibles por construcción, y cualquier otra etiqueta UNSAT viene con una prueba DRAT verificada por nuestro propio comprobador. Una sola respuesta incorrecta descalifica el envío, así que adivinar nunca compensa.",
     "sandbox_title": "Un sandbox sellado",
@@ -63,9 +91,11 @@
     "accounts_title": "Una cuenta, la mejor entrada",
     "accounts": "Las cuentas necesitan un día de antigüedad para enviar, y hay tres envíos al día por cuenta y por red. El código idéntico se rechaza, aunque se renombre o se rellene, y solo tu mejor envío entra en la clasificación.",
     "seasons_title": "Temporadas",
-    "seasons": "Una nueva temporada trae un nuevo conjunto secreto y todos los envíos se vuelven a evaluar.",
+    "seasons": "Una temporada nueva trae un conjunto oculto nuevo y todos los envíos se evalúan otra vez. La temporada terminada se archiva: se publican su clasificación final, su conjunto y cada resultado por fórmula.",
     "copies_title": "Nada de copias",
-    "copies": "Las puntuaciones son exactas, así que un solver deja una huella: el combustible que gasta en cada fórmula. Un envío que se comporta como uno anterior de otra persona no entra en la clasificación. Cambiar una copia lo suficiente para evitarlo la convierte en otro solver, y hacerla más lenta solo la deja por debajo del original."
+    "copies": "Las puntuaciones son exactas, así que un solver deja una huella: el combustible que gasta en cada fórmula. Un envío que se comporta como uno anterior de otra persona no entra en la clasificación. Cambiar una copia lo suficiente para evitarlo la convierte en otro solver, y hacerla más lenta solo la deja por debajo del original.",
+    "commit_title": "Sellado de antemano",
+    "commit": "Al empezar una temporada publicamos el SHA-256 de su semilla secreta. Al terminar se revela la semilla, así cualquiera puede comprobar que el conjunto estaba fijado de antemano y regenerarlo con dojo export --seed."
   },
   "science": {
     "title": "Para investigadores",
