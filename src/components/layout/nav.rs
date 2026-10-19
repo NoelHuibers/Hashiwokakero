@@ -45,6 +45,8 @@ fn is_active(href: &str, path: &str) -> bool {
         "/" => path == "/",
         // The dojo belongs to the lab
         "/lab" => path.starts_with("/lab") || path.starts_with("/dojo"),
+        // Profiles are opened from the leaderboards
+        "/ranks" => path.starts_with("/ranks") || path.starts_with("/player"),
         _ => path.starts_with(href),
     }
 }

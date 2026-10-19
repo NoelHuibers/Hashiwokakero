@@ -130,4 +130,17 @@ pub struct UserStats {
     pub month_points: i64,
     /// Every stamp and how far along the player is.
     pub stamps: Vec<StampProgress>,
+    /// Everyone with a stamp, for the share of players who have each one.
+    #[serde(default)]
+    pub players: i64,
+}
+
+/// What everybody can see of a player: their profile, linked from the leaderboards.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PlayerProfile {
+    pub id: i64,
+    pub name: String,
+    pub guest: bool,
+    pub created_at: i64,
+    pub stats: UserStats,
 }

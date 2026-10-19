@@ -46,5 +46,13 @@
       "nov": "Kasım",
       "dec": "Aralık"
     }
+  },
+  "player": {
+    "title": "Oyuncu",
+    "record": "Sonuçlar",
+    "back": "Sıralama",
+    "not_found": "Böyle bir oyuncu yok.",
+    "since": "{{ date }} tarihinden beri oynuyor.",
+    "you": "Bu sensin, hesabına git"
   }
 }

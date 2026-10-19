@@ -1,13 +1,13 @@
 //! A player's daily statistics: solved days, streaks, times, recent results, medals, the
-//! monthly race and the stamp book.
+//! monthly race and the stamp book. Also on their public profile.
 
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 
 use super::fame::month_points;
-use super::stamps::sync;
+use super::stamps::{holders, sync};
 use super::today;
-use crate::model::{DayResult, UserStats, month_of, streaks};
+use crate::model::{DayResult, PlayerProfile, UserStats, month_of, streaks};
 use crate::server::count;
 use crate::server::db::db_err;
 
@@ -80,6 +80,11 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
     };
     let month = month_points(conn, month_of(today)).await?;
     let month_place = month.iter().position(|p| p.0 == user);
+    let mut stamps = sync(conn, user, false).await?.0;
+    let (holders, players) = holders(conn).await?;
+    for p in &mut stamps {
+        p.holders = holders.get(&p.stamp).copied().unwrap_or_default();
+    }
 
     Ok(UserStats {
         solved: count(days.len()),
@@ -93,6 +98,31 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
         bronze: medals(3),
         month_rank: month_place.map(|i| count(i + 1)),
         month_points: month_place.map_or(0, |i| month[i].1),
-        stamps: sync(conn, user, false).await?.0,
+        stamps,
+        players,
     })
+}
+
+/// The public profile of a player, `None` if there is no such player.
+pub async fn profile(conn: &Connection, user: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
+    let mut rows = conn
+        .query(
+            "SELECT name, username IS NULL, created_at FROM users WHERE id = ?1",
+            params![user],
+        )
+        .await
+        .map_err(db_err)?;
+    let Some(row) = rows.next().await.map_err(db_err)? else {
+        return Ok(None);
+    };
+    let name: String = row.get(0).map_err(db_err)?;
+    let guest: i64 = row.get(1).map_err(db_err)?;
+    let created_at: i64 = row.get(2).map_err(db_err)?;
+    Ok(Some(PlayerProfile {
+        id: user,
+        name,
+        guest: guest != 0,
+        created_at,
+        stats: stats(conn, user).await?,
+    }))
 }

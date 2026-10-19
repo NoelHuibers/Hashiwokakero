@@ -17,6 +17,7 @@
     "points": "ポイント",
     "medals": "メダル"
   },
+  "public_profile": "ほかの人から見たあなたのプロフィール",
   "last_weeks": "最近の5週間",
   "calendar_rank": "{{ rank }}位",
   "not_solved": "未クリア",

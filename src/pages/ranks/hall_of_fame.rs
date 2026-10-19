@@ -123,7 +123,7 @@ fn Ranking(list: Vec<AllTimeEntry>, tab: Tab) -> impl IntoView {
                             <tr class="border-b last:border-0">
                                 <td class="py-2 pe-2"><RankCell rank=e.rank /></td>
                                 <td class="max-w-0 py-2 pe-2">
-                                    <PlayerName name=e.name guest=e.guest stamp=e.stamp />
+                                    <PlayerName user_id=e.user_id name=e.name guest=e.guest stamp=e.stamp />
                                 </td>
                                 {numbers}
                             </tr>

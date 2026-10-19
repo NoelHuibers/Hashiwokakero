@@ -17,6 +17,7 @@
     "points": "अंक",
     "medals": "मेडल"
   },
+  "public_profile": "आपकी प्रोफ़ाइल, जैसी दूसरों को दिखती है",
   "last_weeks": "पिछले पाँच हफ़्ते",
   "calendar_rank": "रैंक {{ rank }}",
   "not_solved": "हल नहीं हुआ",

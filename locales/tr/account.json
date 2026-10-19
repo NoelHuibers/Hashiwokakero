@@ -17,6 +17,7 @@
     "points": "Puan",
     "medals": "Madalya"
   },
+  "public_profile": "Profilin, başkalarının gördüğü gibi",
   "last_weeks": "Son beş hafta",
   "calendar_rank": "sıra: {{ rank }}",
   "not_solved": "çözülmedi",

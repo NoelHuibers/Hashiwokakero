@@ -17,6 +17,7 @@
     "points": "Очки",
     "medals": "Медали"
   },
+  "public_profile": "Твой профиль глазами других",
   "last_weeks": "Последние пять недель",
   "calendar_rank": "место {{ rank }}",
   "not_solved": "не решено",

@@ -4,7 +4,7 @@ use leptos::prelude::*;
 
 use crate::i18n::{td_string, use_i18n};
 use crate::lang::{date_short, stamp_name, stamp_text};
-use crate::model::{MS_PER_DAY, Stamp, StampProgress};
+use crate::model::{MS_PER_DAY, Stamp, StampProgress, share_percent};
 use crate::state::{ToastKind, toast};
 
 /// A player's most impressive stamp, next to their name.
@@ -23,16 +23,19 @@ pub fn StampBadge(stamp: Stamp) -> impl IntoView {
     }
 }
 
-/// One stamp of the stamp book, greyed out with a progress bar while it's still to get.
+/// One stamp of the stamp book, greyed out with a progress bar while it's still to get, and how
+/// many of the `players` have it.
 #[component]
-fn StampTile(progress: StampProgress) -> impl IntoView {
+fn StampTile(progress: StampProgress, players: i64) -> impl IntoView {
     let i18n = use_i18n();
     let StampProgress {
         stamp,
         earned_at,
         progress,
         target,
+        holders,
     } = progress;
+    let share = share_percent(holders, players);
     let earned = earned_at.is_some();
     view! {
         <li
@@ -90,13 +93,22 @@ fn StampTile(progress: StampProgress) -> impl IntoView {
                         .into_any()
                 }
             }}
+            {share
+                .map(|percent| {
+                    view! {
+                        <span class="mt-auto text-[10px] leading-tight text-muted-foreground/80">
+                            {move || td_string!(i18n.get_locale(), stamps.share, percent = percent.clone())}
+                        </span>
+                    }
+                })}
         </li>
     }
 }
 
-/// Every stamp, earned or not.
+/// Every stamp, earned or not. `players` counts everyone with a stamp, for the share of players
+/// who have each one.
 #[component]
-pub fn StampBook(book: Vec<StampProgress>) -> impl IntoView {
+pub fn StampBook(book: Vec<StampProgress>, players: i64) -> impl IntoView {
     let i18n = use_i18n();
     let earned = book.iter().filter(|p| p.earned_at.is_some()).count();
     let total = book.len();
@@ -106,7 +118,7 @@ pub fn StampBook(book: Vec<StampProgress>) -> impl IntoView {
                 {move || td_string!(i18n.get_locale(), stamps.collected, earned, total)}
             </p>
             <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-                {book.into_iter().map(|p| view! { <StampTile progress=p /> }).collect_view()}
+                {book.into_iter().map(|p| view! { <StampTile progress=p players /> }).collect_view()}
             </ul>
         </div>
     }
