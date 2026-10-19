@@ -172,6 +172,16 @@ lto = true
 codegen-units = 1
 panic = "abort"
 
+# Debug info costs the compiler and linker memory and time, and the target dir gigabytes. Our
+# crates keep the line tables: panics and backtraces still name file and line. Dependencies get
+# none, their frames in a backtrace still have function names. The test profile inherits both.
+# For a debugger session with variables: CARGO_PROFILE_DEV_DEBUG=full (our crates) for that build.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
 # The solvers are slow without optimizations, even during development
 [profile.dev.package.sat_solver]
 opt-level = 3

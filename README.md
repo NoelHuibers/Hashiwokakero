@@ -32,7 +32,7 @@ Requirements: Rust stable (installed automatically via `rust-toolchain.toml`, in
 ```sh
 cargo install --locked cargo-leptos   # or: cargo binstall cargo-leptos
 npm ci                                # Tailwind, tw-animate-css and the fonts (public/fonts)
-cargo leptos watch                    # http://127.0.0.1:3000
+cargo leptos watch                    # http://127.0.0.1:3000 (or npm run dev, see below)
 ```
 
 cargo-leptos runs the Tailwind CLI from `node_modules` (so its version is the one in `package.json`) and installs the wasm-bindgen CLI matching `Cargo.lock` by itself.
@@ -40,6 +40,30 @@ cargo-leptos runs the Tailwind CLI from `node_modules` (so its version is the on
 The fonts are self-hosted, no request goes to Google Fonts: `npm ci` runs `scripts/fonts.mjs`, which copies the woff2 files of the `@fontsource` packages to `public/fonts` and writes their `@font-face` rules (`npm run fonts` does it again).
 
 A release build: `cargo leptos build --release`, the server binary is `target/release/hashi` and serves `target/site`.
+
+### Lighter local builds
+
+The website crate is heavy to compile, mostly because of the translations: build.rs generates one module from all of `locales/` (20 languages, about 7 MB of code), and the compiler works through it on one core. To keep that in check:
+
+```sh
+npm run dev                           # cargo leptos watch, 4 compiler jobs, at most 10 GB
+HASHI_LOCALES=en,ja npm run dev       # only English and Japanese translated, a lighter build
+npm run dev -- --hot-reload           # arguments go to cargo leptos watch
+```
+
+- `npm run dev` runs `cargo leptos watch` with `CARGO_BUILD_JOBS=4`, and, where `systemd-run` is there, in a systemd scope with `MemoryMax=10G` and no swap: a build that needs more fails (the compiler is killed) instead of pushing the desktop into swap. `CARGO_BUILD_JOBS` and `HASHI_DEV_MEMORY` (e.g. `14G`, or `infinity`) override them.
+- `HASHI_LOCALES` (comma separated, English is always in) works with every cargo command, also without `npm run dev`. The other languages stay in the language switcher and their URLs work, but they show English. Changing it rebuilds the crate. Compiling the crate from scratch (the server side) took 27 s and 2.1 GB with `en` or `en,ja` instead of 58 s and 3.2 GB, a small edit 5 s and 1.6 GB instead of 9 s and 2.7 GB. Leave it unset for the tests (some check that every language is translated) and for anything you ship; CI, release and Docker builds never set it and build every language.
+- cargo-leptos compiles debug builds with `--cfg erase_components`, which keeps Leptos' view types small. A plain `cargo build --no-default-features --features ssr` doesn't: its server binary took the compiler over 10 GB, with any `HASHI_LOCALES`. Prefer `npm run dev`/`cargo leptos build` for running the site.
+- Debug builds have only line tables for our crates and no debug info for dependencies (`[profile.dev]` in `Cargo.toml`): panics and backtraces still name file and line, and the compiler and the linker need less (a first debug build of the server: 2:50 instead of 3:11 minutes, 3.2 instead of 3.7 GB, 3.5 instead of 6.7 GB in `target/`). For a debugger session with variables: `CARGO_PROFILE_DEV_DEBUG=full`.
+
+`target/` grows with every build, and every worktree has its own. `npm run clean` lists what can go, with sizes, and deletes nothing; `npm run clean -- --yes` deletes it:
+
+- huge fingerprint outputs (`target/*/.fingerprint/*/output-*` over 50 MB, `--min-output-mb`): the compiler's messages, replayed when a crate is fresh;
+- incremental caches except the newest of each crate and profile;
+- artifacts in `target/*/deps` neither written nor read for 30 days (`--days`), like cargo-sweep;
+- with `--worktrees`, git worktrees whose branch is merged into origin/main, with their target dirs. Never one with uncommitted or untracked changes, and never one without commits of its own.
+
+It only deletes inside target dirs that cargo made (with its `CACHEDIR.TAG`): this checkout's (or `CARGO_TARGET_DIR`), or the ones given with `--target DIR`. Cargo rebuilds whatever it needs again.
 
 ### Browser tests
 
