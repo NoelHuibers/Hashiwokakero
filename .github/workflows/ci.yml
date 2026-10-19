@@ -87,9 +87,8 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-24.04
-    # The runtime of a few solver tests depends on HashMap order, instrumented they can take
-    # minutes, but never this long
-    timeout-minutes: 45
+    # A stuck test shouldn't hold the job for the default six hours
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - run: rustup toolchain install

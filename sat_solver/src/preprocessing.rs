@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use crate::hash::HashSet;
 
 pub(crate) fn delete_subsumed_clauses(clauses: &mut Vec<Vec<i32>>) {
     let clause_sets: Vec<HashSet<i32>> = clauses

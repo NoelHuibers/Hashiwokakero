@@ -1,13 +1,10 @@
 use crate::{
     cli::Heuristic,
+    hash::{self, HashMap, HashSet},
     heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids_dpll},
     profiling,
 };
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    fmt,
-    time::Instant,
-};
+use std::{collections::VecDeque, fmt, time::Instant};
 
 // Absolute value of a literal. This used to be u16, which silently merged variables above 65535.
 type Atom = u32;
@@ -120,17 +117,17 @@ impl DPLL {
     ) -> Self {
         profiling::start("DPLL::new");
         let mut dpll = Self {
-            clauses: HashMap::with_capacity(clause_count),
+            clauses: hash::map(clause_count),
             heuristic,
             history: Vec::new(),
             history_enabled: false,
-            lit_val: HashMap::with_capacity(lit_count),
+            lit_val: hash::map(lit_count),
             min_depth: if show_depth { usize::MAX } else { 0 },
-            neg_occ: HashMap::with_capacity(lit_count),
-            pos_occ: HashMap::with_capacity(lit_count),
+            neg_occ: hash::map(lit_count),
+            pos_occ: hash::map(lit_count),
             unit_queue: VecDeque::new(),
-            free_lits: HashSet::with_capacity(lit_count),
-            unsat_clauses: HashSet::with_capacity(clause_count),
+            free_lits: hash::set(lit_count),
+            unsat_clauses: hash::set(clause_count),
             show_depth,
             decisions: 0,
             deadline: None,
@@ -704,7 +701,7 @@ fn should_elim_pure_lit() {
 }
 
 #[test]
-#[ignore = "runtime varies from seconds to many minutes, the arbitrary heuristic branches in HashMap order"]
+#[ignore = "over five minutes: the arbitrary heuristic is a poor fit for ssa7552-038"]
 fn bug_jan_2nd_should_be_sat() {
     let (mut input, mut v_c, mut c_c) =
         crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();

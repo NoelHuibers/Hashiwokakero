@@ -1,6 +1,7 @@
 pub mod cdcl;
 pub mod cli;
 pub mod dpll;
+mod hash;
 pub mod heuristics;
 pub mod logger;
 pub mod parse;

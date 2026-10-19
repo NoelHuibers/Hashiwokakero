@@ -4,15 +4,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub mod cdcl;
-pub mod cli;
-pub mod dpll;
-mod heuristics;
-pub mod logger;
-pub mod parse;
-pub mod preprocessing;
-pub mod profiling;
-pub mod randomrestarts;
+// The library's modules, not a copy of them: compiled (and tested) once
+use sat_solver::{cdcl, cli, dpll, parse, profiling};
 
 fn main() {
     let arguments = cli::cli();

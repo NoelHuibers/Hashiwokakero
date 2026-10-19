@@ -260,9 +260,10 @@ fn all_solver_options_work() {
     }
 }
 
-/// Every CDCL mode the web app offers, on every input, a few times: the solver used to
-/// return models violating the formula after subsumption (a conflict caused directly by a
-/// decision was ignored). `HashMap` iteration order makes such bugs nondeterministic.
+/// Every CDCL mode the web app offers, on every input: the solver used to return models
+/// violating the formula after subsumption (a conflict caused directly by a decision was
+/// ignored). That showed up in some runs only, until runs became deterministic (see
+/// `sat_solver/src/hash.rs`); `tests/props.rs` tries many formulas instead.
 #[test]
 fn cdcl_modes_agree_with_splr_on_inputs() {
     let restarts = ["none", "fixed", "geometric", "luby"].map(|id| Restarts::from_id(id).unwrap());
@@ -285,12 +286,10 @@ fn cdcl_modes_agree_with_splr_on_inputs() {
                     subsumption,
                     timeout_ms: 10_000,
                 };
-                for _ in 0..3 {
-                    let report = api::solve(&puzzle, &config)
-                        .unwrap_or_else(|e| panic!("{label} {}: {e}", config.describe()));
-                    let got = summary(&report, &board, &label);
-                    assert_eq!(got, expected, "{label} {}", config.describe());
-                }
+                let report = api::solve(&puzzle, &config)
+                    .unwrap_or_else(|e| panic!("{label} {}: {e}", config.describe()));
+                let got = summary(&report, &board, &label);
+                assert_eq!(got, expected, "{label} {}", config.describe());
             }
         }
     }
