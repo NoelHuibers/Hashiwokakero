@@ -56,6 +56,22 @@ pnpm run dev --hot-reload             # arguments go to cargo leptos watch
 - cargo-leptos compiles debug builds with `--cfg erase_components`, which keeps Leptos' view types small. A plain `cargo build --no-default-features --features ssr` doesn't: its server binary took the compiler over 10 GB, with any `HASHI_LOCALES`. Prefer `pnpm run dev`/`cargo leptos build` for running the site.
 - Debug builds have only line tables for our crates and no debug info for dependencies (`[profile.dev]` in `Cargo.toml`): panics and backtraces still name file and line, and the compiler and the linker need less (a first debug build of the server: 2:50 instead of 3:11 minutes, 3.2 instead of 3.7 GB, 3.5 instead of 6.7 GB in `target/`). For a debugger session with variables: `CARGO_PROFILE_DEV_DEBUG=full`.
 
+Every checkout and git worktree has its own `target/`, so each compiles all dependencies again. [sccache](https://github.com/mozilla/sccache) shares them: it caches the compiler's output per crate, and a checkout that needs a dependency another one already compiled (same version, features, profile and flags) copies it from the cache. It's opt-in, for your user, not set in the repository (CI caches its own way):
+
+```sh
+cargo binstall -y sccache             # or cargo install sccache
+```
+
+```toml
+# ~/.cargo/config.toml: every cargo command, in every checkout
+[build]
+rustc-wrapper = "sccache"
+```
+
+`RUSTC_WRAPPER=sccache` in the shell's profile does the same. `RUSTC_WRAPPER= cargo …` (empty) turns it off for one command, and switching it on or off doesn't rebuild anything already in a `target/`. In a fresh target dir with a warm cache, `cargo check -p hashi --no-default-features --features ssr` took 55 s instead of 118 s, `cargo build -p backend` 3.2 s instead of 9.6 s, the same from another checkout. The first build that fills the cache is about as fast as one without it (126 s). It can't cache our own crates (incremental builds), proc macros, or running build scripts, so the website crate and the translations still compile as before; it pays off for the first build of a new worktree, after `cargo clean`, and after a toolchain update (only the first checkout compiles the dependencies again). `sccache --show-stats` shows the hits.
+
+The cache lives in `~/.cache/sccache` (`SCCACHE_DIR` moves it) and holds at most 10 GB by default, evicting the least recently used entries; `SCCACHE_CACHE_SIZE=20G` (in the environment of the first cargo command, which starts sccache's server) changes the limit. Each profile, target (server, browser, tests, coverage) and flag set has entries of its own, a check of the server's dependencies alone took 250 MB. `sccache --stop-server` stops the server, it also stops on its own after 10 idle minutes.
+
 `target/` grows with every build, and every worktree has its own. `pnpm run clean` lists what can go, with sizes, and deletes nothing; `pnpm run clean --yes` deletes it (`pnpm clean` without `run` is pnpm's own command):
 
 - huge fingerprint outputs (`target/*/.fingerprint/*/output-*` over 50 MB, `--min-output-mb`): the compiler's messages, replayed when a crate is fresh;
