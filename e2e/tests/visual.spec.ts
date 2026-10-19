@@ -69,13 +69,19 @@ test('home, the daily before the start', async ({ page }) => {
 });
 
 test('practice, a board in play', async ({ page }) => {
-  // The clock stands still, it would tick in the corner
+  // The clock stands still, it would tick in the corner (a timer of one second on the seeded
+  // 00:00). Paused before the page loads: the page starts with it paused and its timer never
+  // fires, however long loading takes. Paused after the visit, the second between install and
+  // pauseAt could be gone on a busy runner ("Cannot fast-forward to the past"), or the timer
+  // could tick first.
   await page.clock.install({ time: new Date('2026-10-19T09:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-10-19T09:00:01Z'));
   const bridges = LADDER_SOLUTION.map((b, e) => (e === ladderRow(3) || e === ladderRow(4) ? 0 : b));
   await seedGame(page, PRACTICE_KEY, { puzzle: LADDER, bridges, solution: LADDER_SOLUTION, status: 'Playing', moves: 7, hints: 0 });
   await visit(page, '/practice');
-  await page.clock.pauseAt(new Date('2026-10-19T09:00:01Z'));
   await expect(page.getByText('6 / 10')).toBeVisible();
+  // Checked on its own: a digit more or less is within the screenshot's tolerance
+  await expect(page.getByText('00:00', { exact: true })).toBeVisible();
   await expectPage(page, 'practice');
 });
 
