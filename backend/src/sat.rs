@@ -74,8 +74,9 @@ pub fn solve_clauses(
         .max(num_vars);
 
     let (outcome, stats) = match config.kind {
-        // splr 0.19 trips debug assertions in its eliminator on some formulas (debug builds
-        // only), fall back to our CDCL then
+        // splr 0.19 trips debug assertions in its eliminator on some formulas, fall back to our
+        // CDCL then. Only where they are on: the workspace turns them off for splr in debug
+        // builds too (Cargo.toml), so tests see the models production sees.
         SolverKind::Splr => {
             if let Ok(result) = catch_unwind(AssertUnwindSafe(|| solve_splr(clauses, deadline))) {
                 result?

@@ -176,6 +176,10 @@ opt-level = 3
 
 [profile.dev.package.splr]
 opt-level = 3
+# splr 0.19 trips its own debug assertions on some of our formulas (`backend::sat` then falls back
+# to our CDCL, which finds other models). Without them tests run the splr that production runs, so
+# debug and release builds generate the same puzzles.
+debug-assertions = false
 
 # The HTTP tests (server/router/tests) render every page. With debug info, compiling that took
 # the compiler over 10 GB of memory, without it under 6 GB. Failed asserts still say where.
