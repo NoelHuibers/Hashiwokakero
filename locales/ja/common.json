@@ -78,6 +78,8 @@
     "own_dpll": "自作DPLL",
     "heuristic": "分岐ヒューリスティック",
     "splr_heuristic": "splr独自（EVSIDS）",
+    "heuristic_arbitrary": "任意",
+    "heuristic_custom": "独自",
     "restarts": "リスタート",
     "restarts_none": "リスタートなし",
     "restarts_fixed": "固定間隔",
@@ -87,7 +89,23 @@
     "subsumption_short": "包含除去",
     "subsumption_hint": "解く前に包含される節を除去する",
     "preprocess": "前処理",
-    "timeout": "制限時間"
+    "timeout": "制限時間",
+    "log": {
+      "waiting": "解くパズルを待っています…",
+      "working": "エンコードして求解中",
+      "unique": "唯一解",
+      "not_unique": "解が複数",
+      "timeout": "時間切れ",
+      "config": "設定",
+      "variables": "変数",
+      "clauses": "節",
+      "encode": "エンコード",
+      "solve": "求解",
+      "decisions": "決定数",
+      "restarts": "リスタート",
+      "sat_calls": "SAT呼出",
+      "cuts": "連結性カット"
+    }
   },
   "ranking": {
     "you": "あなた",

@@ -32,5 +32,15 @@
   "not_unique": "Plus d’une solution, ajoute ou modifie des îles.",
   "imported": "{{ name }} importé",
   "unreadable": "Impossible de lire {{ name }}",
-  "brush_label": "Pinceau"
+  "brush_label": "Pinceau",
+  "parse": {
+    "empty": "Le fichier est vide",
+    "missing_size": "Il manque la taille de la grille sur la première ligne",
+    "invalid_size": "Taille de grille invalide '{{ header }}'",
+    "too_small": "La grille doit faire au moins 2×2",
+    "too_many_rows": "{{ expected }} lignes attendues, il y en a plus",
+    "invalid_char": "Caractère invalide '{{ character }}' à la ligne {{ row }}",
+    "row_width": "La ligne {{ row }} a {{ found }} colonnes au lieu de {{ expected }}",
+    "row_count": "{{ expected }} lignes attendues, {{ found }} trouvées"
+  }
 }

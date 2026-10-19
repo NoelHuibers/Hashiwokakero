@@ -78,6 +78,8 @@
     "own_dpll": "Kendi DPLL",
     "heuristic": "Dallanma sezgiseli",
     "splr_heuristic": "splr'nin kendisi (EVSIDS)",
+    "heuristic_arbitrary": "Keyfi",
+    "heuristic_custom": "Özel",
     "restarts": "Yeniden başlatma",
     "restarts_none": "Yeniden başlatma yok",
     "restarts_fixed": "Sabit aralık",
@@ -87,7 +89,23 @@
     "subsumption_short": "kapsama",
     "subsumption_hint": "Çözmeden önce kapsanan tümceleri ele",
     "preprocess": "ön işleme",
-    "timeout": "Zaman aşımı"
+    "timeout": "Zaman aşımı",
+    "log": {
+      "waiting": "çözülecek bir bulmaca bekleniyor…",
+      "working": "kodlanıyor ve çözülüyor",
+      "unique": "tek",
+      "not_unique": "tek değil",
+      "timeout": "zaman aşımı",
+      "config": "yapılandırma",
+      "variables": "değişkenler",
+      "clauses": "tümceler",
+      "encode": "kodlama",
+      "solve": "çözme",
+      "decisions": "kararlar",
+      "restarts": "yeniden başlatmalar",
+      "sat_calls": "SAT çağrıları",
+      "cuts": "bağlılık kesmeleri"
+    }
   },
   "ranking": {
     "you": "sen",

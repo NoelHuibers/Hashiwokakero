@@ -32,5 +32,15 @@
   "not_unique": "Решений больше одного, добавь или измени острова.",
   "imported": "Импортировано: {{ name }}",
   "unreadable": "Не удалось прочитать {{ name }}",
-  "brush_label": "Кисть"
+  "brush_label": "Кисть",
+  "parse": {
+    "empty": "Файл пуст",
+    "missing_size": "В первой строке не указан размер поля",
+    "invalid_size": "Неверный размер поля '{{ header }}'",
+    "too_small": "Поле должно быть не меньше 2×2",
+    "too_many_rows": "Слишком много строк, ожидалось: {{ expected }}",
+    "invalid_char": "Недопустимый символ '{{ character }}' в строке {{ row }}",
+    "row_width": "Строка {{ row }}: столбцов {{ found }}, ожидалось {{ expected }}",
+    "row_count": "Строк: {{ found }}, ожидалось {{ expected }}"
+  }
 }

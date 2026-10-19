@@ -78,6 +78,8 @@
     "own_dpll": "Eigen DPLL",
     "heuristic": "Vertakkingsheuristiek",
     "splr_heuristic": "Die van splr (EVSIDS)",
+    "heuristic_arbitrary": "Willekeurig",
+    "heuristic_custom": "Eigen",
     "restarts": "Herstarts",
     "restarts_none": "Geen herstarts",
     "restarts_fixed": "Vast interval",
@@ -87,7 +89,23 @@
     "subsumption_short": "subsumptie",
     "subsumption_hint": "Gesubsumeerde clausules vóór het oplossen verwijderen",
     "preprocess": "voorbewerking",
-    "timeout": "Tijdslimiet"
+    "timeout": "Tijdslimiet",
+    "log": {
+      "waiting": "wacht op een puzzel om op te lossen…",
+      "working": "coderen & oplossen",
+      "unique": "uniek",
+      "not_unique": "niet uniek",
+      "timeout": "tijdslimiet",
+      "config": "configuratie",
+      "variables": "variabelen",
+      "clauses": "clausules",
+      "encode": "coderen",
+      "solve": "oplossen",
+      "decisions": "beslissingen",
+      "restarts": "herstarts",
+      "sat_calls": "SAT-aanroepen",
+      "cuts": "samenhangsneden"
+    }
   },
   "ranking": {
     "you": "jij",

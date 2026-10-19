@@ -78,6 +78,8 @@
     "own_dpll": "DPLL tự viết",
     "heuristic": "Heuristic phân nhánh",
     "splr_heuristic": "mặc định của splr (EVSIDS)",
+    "heuristic_arbitrary": "Tùy ý",
+    "heuristic_custom": "Tùy chỉnh",
     "restarts": "Khởi động lại",
     "restarts_none": "Không khởi động lại",
     "restarts_fixed": "Chu kỳ cố định",
@@ -87,7 +89,23 @@
     "subsumption_short": "bao hàm",
     "subsumption_hint": "Loại bỏ các mệnh đề bị bao hàm trước khi giải",
     "preprocess": "tiền xử lý",
-    "timeout": "Giới hạn thời gian"
+    "timeout": "Giới hạn thời gian",
+    "log": {
+      "waiting": "đang chờ câu đố để giải…",
+      "working": "đang mã hóa & giải",
+      "unique": "duy nhất",
+      "not_unique": "không duy nhất",
+      "timeout": "hết giờ",
+      "config": "cấu hình",
+      "variables": "biến",
+      "clauses": "mệnh đề",
+      "encode": "mã hóa",
+      "solve": "giải",
+      "decisions": "quyết định",
+      "restarts": "khởi động lại",
+      "sat_calls": "lần gọi SAT",
+      "cuts": "lát cắt liên thông"
+    }
   },
   "ranking": {
     "you": "bạn",

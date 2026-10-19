@@ -32,5 +32,15 @@
   "not_unique": "Più di una soluzione, aggiungi o modifica le isole.",
   "imported": "Importato {{ name }}",
   "unreadable": "Impossibile leggere {{ name }}",
-  "brush_label": "Pennello"
+  "brush_label": "Pennello",
+  "parse": {
+    "empty": "Il file è vuoto",
+    "missing_size": "Manca la dimensione della griglia nella prima riga",
+    "invalid_size": "Dimensione della griglia non valida '{{ header }}'",
+    "too_small": "La griglia deve essere almeno 2×2",
+    "too_many_rows": "Attese {{ expected }} righe, ce ne sono di più",
+    "invalid_char": "Carattere non valido '{{ character }}' nella riga {{ row }}",
+    "row_width": "La riga {{ row }} ha {{ found }} colonne invece di {{ expected }}",
+    "row_count": "Attese {{ expected }} righe, trovate {{ found }}"
+  }
 }

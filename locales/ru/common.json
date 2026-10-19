@@ -78,6 +78,8 @@
     "own_dpll": "Свой DPLL",
     "heuristic": "Эвристика ветвления",
     "splr_heuristic": "встроенная в splr (EVSIDS)",
+    "heuristic_arbitrary": "Произвольная",
+    "heuristic_custom": "Своя",
     "restarts": "Перезапуски",
     "restarts_none": "Без перезапусков",
     "restarts_fixed": "Фиксированный интервал",
@@ -87,7 +89,23 @@
     "subsumption_short": "поглощение",
     "subsumption_hint": "Удалять поглощённые дизъюнкты перед решением",
     "preprocess": "предобработка",
-    "timeout": "Тайм-аут"
+    "timeout": "Тайм-аут",
+    "log": {
+      "waiting": "жду головоломку для решения…",
+      "working": "кодирование и решение",
+      "unique": "единственное",
+      "not_unique": "не единственное",
+      "timeout": "тайм-аут",
+      "config": "конфигурация",
+      "variables": "переменные",
+      "clauses": "дизъюнкты",
+      "encode": "кодирование",
+      "solve": "решение",
+      "decisions": "ветвления",
+      "restarts": "перезапуски",
+      "sat_calls": "вызовы SAT",
+      "cuts": "разрезы связности"
+    }
   },
   "ranking": {
     "you": "ты",
