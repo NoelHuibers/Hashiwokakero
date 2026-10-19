@@ -65,7 +65,6 @@ pub fn App() -> impl IntoView {
         <I18nContextProvider>
         // Title, description and social tags are set per page, see seo::PageMeta
         <Meta name="theme-color" content="#cf3a24" />
-        <ScriptFont />
 
         <Router>
             <div class="flex min-h-screen flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
@@ -73,7 +72,7 @@ pub fn App() -> impl IntoView {
                 <main class="flex-1">
                     <Routes fallback=|| view! { <NotFound /> }>
                         // Every page in every language: /rules, /de/rules, /ja/rules, ...
-                        <I18nRoute<Locale, _, _> view=Outlet>
+                        <I18nRoute<Locale, _, _> view=Localized>
                             <Route path=path!("") view=DailyPage />
                             <Route path=path!("/practice") view=PlayPage />
                             <Route path=path!("/ranks") view=RanksPage />
@@ -98,6 +97,18 @@ pub fn App() -> impl IntoView {
             <Tooltips />
         </Router>
         </I18nContextProvider>
+    }
+}
+
+/// The pages of a language. On the server only the route knows the language of the URL, above
+/// it the language is still the browser's (cookie or Accept-Language), while the browser starts
+/// with the URL's. Whatever renders elements depending on the language goes in here, or the
+/// server leaves them out and hydration fails (it did for the script fonts).
+#[component]
+fn Localized() -> impl IntoView {
+    view! {
+        <ScriptFont />
+        <Outlet />
     }
 }
 

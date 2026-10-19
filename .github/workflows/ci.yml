@@ -99,19 +99,69 @@ jobs:
       - name: Build
         run: cargo leptos build --release
       # The server binary, the hashes of the JS/WASM/CSS file names (read next to the binary) and
-      # the site, for the deploy below. A tarball keeps the binary executable.
+      # the site, for the browser tests and the deploy below. A tarball keeps the binary
+      # executable.
       - name: Package
-        if: github.event_name == 'push'
         run: |
           mkdir -p dist
           cp target/release/hashi target/release/hash.txt dist/
           cp -r target/site dist/site
           tar -cf site.tar dist
-      - if: github.event_name == 'push'
-        uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7
         with:
           name: site
           path: site.tar
+          # Pull requests only need it for the browser tests right after
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+
+  # The browser tests (e2e/) on the release build above: every page in every language, the
+  # practice board. Nothing deploys without them.
+  e2e:
+    name: E2E
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+      - run: tar -xf site.tar
+      # The browser is cached per Playwright version, its system libraries come from apt. Like the
+      # Rust cache, only main saves it.
+      - id: playwright
+        run: echo "version=$(npx playwright --version | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
+      - id: browsers
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ steps.playwright.outputs.version }}-chromium
+      - run: npx playwright install --with-deps chromium
+      - if: github.ref == 'refs/heads/main' && steps.browsers.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ steps.playwright.outputs.version }}-chromium
+      - name: Browser tests
+        run: npm run e2e
+        env:
+          E2E_BIN: dist/hashi
+          E2E_SITE_ROOT: dist/site
+      # Also when everything passed: a test that only passed on its retry is in it with a trace
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          # The report has the traces and screenshots of the failed tests, .run the server's log
+          path: |
+            e2e/playwright-report
+            e2e/.run/*.log
+          include-hidden-files: true
           retention-days: 7
 
   # Deploys ship the binaries built above in a slim image, built here and pushed to Fly. Fly's
@@ -120,7 +170,7 @@ jobs:
   deploy:
     name: Deploy site
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint-browser, build]
+    needs: [test, lint-browser, build, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

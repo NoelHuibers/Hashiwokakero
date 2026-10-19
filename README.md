@@ -22,6 +22,7 @@ The frontend is [Leptos](https://leptos.dev) 0.8 (SSR + hydration) with Tailwind
 - **sat_solver**: Our own DPLL/CDCL SAT solver from the SAT solving lab.
 - **dojo**: The SAT Dojo: benchmark sets, the WebAssembly sandbox and the worker that scores submitted solvers. `dojo/house` builds our own solvers as entries, `dojo/starter` is a small solver to start from.
 - **locales**: The translations, one folder per language with a JSON file per page.
+- **e2e**: Browser tests of the built site (Playwright), see [Browser tests](#browser-tests).
 - **solutions**: The .cnf and solution .txt files for all initial test problems.
 
 ## Running the web app
@@ -40,9 +41,21 @@ The fonts are self-hosted, no request goes to Google Fonts: `npm ci` runs `scrip
 
 A release build: `cargo leptos build --release`, the server binary is `target/release/hashi` and serves `target/site`.
 
+### Browser tests
+
+`e2e/` has [Playwright](https://playwright.dev) tests of the built site: every page in every language loads, hydrates and reacts without an error in the browser, the 404 page, and building a bridge on a generated practice puzzle. Each run starts the server binary on port 3150 with a fresh database in `e2e/.run/`, seeded by `e2e/seed.ts` (players with a few weeks of dailies, signed in sessions, a Dojo entry).
+
+```sh
+npx playwright install chromium       # once, the browser
+cargo leptos build --release
+npm run e2e                           # npm run e2e -- --ui, or -g "practice" for some tests
+```
+
+`E2E_BIN` and `E2E_SITE_ROOT` point it at another build (e.g. `target/debug/hashi`), `E2E_PORT` at another port. A failed run leaves a report with traces (`npx playwright show-report e2e/playwright-report`) and the server's log in `e2e/.run/server.log`.
+
 ## Deployment
 
-Pushes to `main` deploy to [fly.io](https://fly.io) once CI passes: CI builds the site and the dojo worker with its warm cache and ships them in slim Debian trixie images (`Dockerfile.prebuilt`, `dojo/Dockerfile.prebuilt`), built on the runner. The multi-stage `Dockerfile` (Node 26 for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime) builds everything from source, for a manual `fly deploy` or a local image. Dependabot keeps Cargo, npm, Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request.
+Pushes to `main` deploy to [fly.io](https://fly.io) once CI passes: CI builds the site and the dojo worker with its warm cache and ships them in slim Debian trixie images (`Dockerfile.prebuilt`, `dojo/Dockerfile.prebuilt`), built on the runner. The multi-stage `Dockerfile` (Node 26 for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime) builds everything from source, for a manual `fly deploy` or a local image. Dependabot keeps Cargo, npm, Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request and runs the browser tests on its release build.
 
 ## SAT Dojo
 

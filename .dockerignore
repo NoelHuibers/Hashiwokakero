@@ -4,3 +4,4 @@ node_modules
 backend/output
 *.pdf
 public/fonts
+e2e
