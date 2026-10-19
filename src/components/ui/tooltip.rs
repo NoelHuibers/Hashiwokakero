@@ -21,6 +21,10 @@ use web_sys::{Element, FocusEvent, HtmlElement, KeyboardEvent, PointerEvent};
 
 const SELECTOR: &str = "[data-tooltip]";
 const ID: &str = "tooltip";
+/// No `duration-*` here: without a `transition-property` that makes every property a transition,
+/// `left`/`top` too, and the tooltip would slide over from the corner it was put in before
+/// `place`. `animate-in` already lasts 150ms.
+const CLASS: &str = "group pixel-shadow pointer-events-none fixed top-0 left-0 z-[70] w-max max-w-[min(18rem,calc(100vw-1rem))] bg-foreground px-2.5 py-1.5 text-center text-xs leading-snug font-medium text-balance wrap-anywhere text-background animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1 motion-reduce:animate-none";
 /// Resting on an element this long shows its tooltip...
 const DELAY: Duration = Duration::from_millis(400);
 /// ...but right after one closed, the next one opens at once, for skimming along a row
@@ -224,7 +228,7 @@ pub fn Tooltips() -> impl IntoView {
             role="tooltip"
             hidden=true
             data-side="top"
-            class="group pixel-shadow pointer-events-none fixed top-0 left-0 z-[70] w-max max-w-[min(18rem,calc(100vw-1rem))] bg-foreground px-2.5 py-1.5 text-center text-xs leading-snug font-medium text-balance wrap-anywhere text-background animate-in fade-in-0 zoom-in-95 duration-150 data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1 motion-reduce:animate-none"
+            class=CLASS
         >
             <span node_ref=text></span>
             // A stepped pixel triangle, pointing at the trigger
@@ -365,5 +369,24 @@ fn hide(state: &Shared, root: &HtmlElement) {
 fn undescribe(state: &Shared, el: &Element) {
     if std::mem::take(&mut state.borrow_mut().described) {
         let _ = el.remove_attribute("aria-describedby");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CLASS;
+
+    /// It appears where it belongs, it doesn't glide there from the top left.
+    #[test]
+    fn position_is_not_animated() {
+        for class in CLASS.split_whitespace() {
+            let utility = class.rsplit(':').next().unwrap_or(class);
+            assert!(
+                !utility.starts_with("duration-")
+                    && !utility.starts_with("transition")
+                    && !utility.starts_with("ease-"),
+                "{class} would animate the tooltip's position",
+            );
+        }
     }
 }
