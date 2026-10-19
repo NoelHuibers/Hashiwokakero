@@ -15,6 +15,11 @@
 //!    if it leads to a contradiction (one step of lookahead).
 //!
 //! All techniques are sound, so a puzzle solved completely by this solver has a unique solution.
+//!
+//! Both functions also report their work (see [`Analysis::work`]): the generator's budget counts
+//! it instead of the time, so its puzzles don't depend on the speed of the machine.
+
+use std::cell::Cell;
 
 use common::Board;
 
@@ -37,6 +42,8 @@ pub struct Analysis {
     pub solved: bool,
     /// Edges the solver couldn't decide.
     pub undecided: Vec<usize>,
+    /// Work spent, about proportional to the time: one unit per island or edge looked at.
+    pub work: u64,
 }
 
 impl Analysis {
@@ -91,14 +98,13 @@ struct Contradiction;
 struct Solver<'a> {
     board: &'a Board,
     required: Vec<u8>,
+    /// See [`Analysis::work`].
+    work: Cell<u64>,
 }
 
 /// Analyzes a puzzle. `max_trial_steps` bounds the work spent on trial and error.
 pub fn analyze(board: &Board, max_trial_steps: u32) -> Analysis {
-    let solver = Solver {
-        board,
-        required: board.puzzle.islands.iter().map(|i| i.required).collect(),
-    };
+    let solver = Solver::new(board);
     let edges = board.edges.len();
     let mut analysis = Analysis {
         edges,
@@ -109,6 +115,7 @@ pub fn analyze(board: &Board, max_trial_steps: u32) -> Analysis {
         analysis.basic_rounds = rounds;
     } else {
         analysis.undecided = (0..edges).collect();
+        analysis.work = solver.work.get();
         return analysis;
     }
     analysis.basic_fraction = state.decided_fraction();
@@ -137,6 +144,7 @@ pub fn analyze(board: &Board, max_trial_steps: u32) -> Analysis {
     }
     analysis.decided_fraction = state.decided_fraction();
     analysis.undecided = (0..edges).filter(|&e| state.lo[e] < state.hi[e]).collect();
+    analysis.work = solver.work.get();
     analysis
 }
 
@@ -156,19 +164,35 @@ pub enum Uniqueness {
 /// Much faster than the SAT solver on the small, almost unique puzzles of the generator, but
 /// gives up after `node_limit` search nodes.
 pub fn other_solution(board: &Board, known: &[u8], node_limit: u32) -> Uniqueness {
-    let solver = Solver {
-        board,
-        required: board.puzzle.islands.iter().map(|i| i.required).collect(),
-    };
+    other_solution_with_work(board, known, node_limit).0
+}
+
+/// [`other_solution`] and the work it took, see [`Analysis::work`].
+pub fn other_solution_with_work(board: &Board, known: &[u8], node_limit: u32) -> (Uniqueness, u64) {
+    let solver = Solver::new(board);
     let mut nodes = 0;
-    match solver.search(solver.initial(), known, &mut nodes, node_limit) {
+    let uniqueness = match solver.search(solver.initial(), known, &mut nodes, node_limit) {
         Some(Ok(other)) => Uniqueness::Other(other),
         Some(Err(())) => Uniqueness::Unknown,
         None => Uniqueness::Unique,
-    }
+    };
+    (uniqueness, solver.work.get())
 }
 
-impl Solver<'_> {
+impl<'a> Solver<'a> {
+    fn new(board: &'a Board) -> Self {
+        Self {
+            board,
+            required: board.puzzle.islands.iter().map(|i| i.required).collect(),
+            work: Cell::new(0),
+        }
+    }
+
+    fn charge(&self, units: usize) {
+        self.work
+            .set(self.work.get() + u64::try_from(units).unwrap_or(u64::MAX));
+    }
+
     /// Depth first search for a solution other than `known`: `None` if there is none,
     /// `Some(Err)` if the node limit was hit.
     fn search(
@@ -195,6 +219,7 @@ impl Solver<'_> {
         let mut values = (s.lo[e]..=s.hi[e]).collect::<Vec<_>>();
         values.sort_by_key(|&v| v == known[e]);
         for v in values {
+            self.charge(s.lo.len());
             let mut t = s.clone();
             if self.set_lo(&mut t, e, v).is_err() || self.set_hi(&mut t, e, v).is_err() {
                 continue;
@@ -278,6 +303,7 @@ impl Solver<'_> {
             }
             for i in wave {
                 let incident = &board.incident[i];
+                self.charge(1 + incident.len());
                 let r = i32::from(self.required[i]);
                 let sum_lo: i32 = incident.iter().map(|&e| i32::from(s.lo[e])).sum();
                 let sum_hi: i32 = incident.iter().map(|&e| i32::from(s.hi[e])).sum();
@@ -311,6 +337,7 @@ impl Solver<'_> {
     fn components(&self, s: &State) -> (Vec<usize>, usize) {
         let board = self.board;
         let n = self.required.len();
+        self.charge(n + board.edges.len());
         let mut comp = vec![usize::MAX; n];
         let mut count = 0;
         let mut stack = Vec::new();
@@ -346,6 +373,8 @@ impl Solver<'_> {
         if count <= 1 {
             return Ok(false);
         }
+        // The loops below look at every island once and every edge twice
+        self.charge(n + 2 * board.edges.len());
         // Bridges still missing and size of every component
         let mut need = vec![0i32; count];
         let mut size = vec![0usize; count];
@@ -423,6 +452,7 @@ impl Solver<'_> {
             let (lo, hi) = (s.lo[e], s.hi[e]);
             let possible = (lo..=hi)
                 .filter(|&v| {
+                    self.charge(s.lo.len());
                     let mut t = s.clone();
                     self.set_lo(&mut t, e, v).is_ok()
                         && self.set_hi(&mut t, e, v).is_ok()

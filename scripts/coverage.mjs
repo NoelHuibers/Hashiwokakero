@@ -8,8 +8,8 @@
 // summary.md (also appended to the job summary in CI). CARGO_BUILD_JOBS limits the build jobs.
 //
 // Fails when the total or a crate drops more than TOLERANCE percentage points below the
-// baseline (scripts/coverage-baseline.json). The tolerance absorbs the noise of the generator's
-// time budgets, a real drop is usually a new file or feature without tests.
+// baseline (scripts/coverage-baseline.json). The tolerance absorbs small noise, a real drop is
+// usually a new file or feature without tests.
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -28,10 +28,7 @@ const update = process.argv.includes('--update');
 // cargo-llvm-cov reports one profile at a time, and the dojo's tests are fast in debug too
 // (CI only tests it in release to share the build with the worker binary it deploys).
 const RUNS = [
-  // One test at a time: instrumented and in parallel, the generator's tests get slow enough to
-  // hit its time budgets, and then test_generator's determinism check fails. One at a time they
-  // pass, these crates take half a minute.
-  ['-p', 'common', '-p', 'backend', '--', '--test-threads=1'],
+  ['-p', 'common', '-p', 'backend'],
   // Only the library: the `sat` binary declares the same modules again, its unit tests are the
   // library's a second time
   ['-p', 'sat_solver', '--lib'],
