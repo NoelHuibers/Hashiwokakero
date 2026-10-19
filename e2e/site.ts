@@ -1,5 +1,5 @@
 // What the tests cover, read from the code so new pages and languages are tested without
-// touching the tests: the routes of src/app.rs and the languages of build.rs.
+// touching the tests: the routes of src/app.rs and the languages of i18n/build.rs.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -10,8 +10,8 @@ const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 
 /** BCP 47 tags, the first is the default and has no URL prefix. */
 export const LOCALES: string[] = (() => {
-  const list = source('build.rs').match(/LOCALES: \[&str; \d+\] = \[([^\]]*)\]/);
-  if (!list) throw new Error('LOCALES not found in build.rs');
+  const list = source('i18n/build.rs').match(/LOCALES: \[&str; \d+\] = \[([^\]]*)\]/);
+  if (!list) throw new Error('LOCALES not found in i18n/build.rs');
   return [...list[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
 })();
 export const DEFAULT_LOCALE = LOCALES[0];

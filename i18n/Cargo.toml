@@ -1,0 +1,23 @@
+[package]
+name = "hashi_i18n"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+# The generated I18nContextProvider is a #[component], whose expansion names `leptos`
+leptos = "0.8.22"
+leptos_i18n = "0.6.2"
+
+[features]
+hydrate = ["leptos/hydrate", "leptos_i18n/hydrate", "leptos_i18n_build/hydrate"]
+ssr = ["leptos/ssr", "leptos_i18n/axum", "leptos_i18n_build/ssr"]
+
+[build-dependencies]
+# pretty_print: the generated module over many lines instead of one 7 MB line. Clippy spent over
+# 6 minutes on the single line, 13 seconds on the formatted code, and rustc is faster on it too.
+leptos_i18n_build = { version = "0.6.2", features = ["pretty_print"] }
