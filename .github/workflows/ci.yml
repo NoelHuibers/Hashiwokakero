@@ -46,7 +46,9 @@ jobs:
         run: cargo test -p common -p backend -p sat_solver
       - name: Test the SAT Dojo (sandbox, scoring, worker)
         run: cargo test --release -p dojo --features worker
-      - name: Test the website's server code
+      # Also drives the real router over HTTP (src/server/router/tests): server functions,
+      # cookies, the Dojo and admin routes, caching and compression
+      - name: Test the website's server code and HTTP routes
         run: cargo test --no-default-features --features ssr -p hashi --lib
       # The worker for the deploy below, nearly free here: the release tests above compiled
       # all of its dependencies already

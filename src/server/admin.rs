@@ -23,7 +23,7 @@ use crate::model::{
 /// Whether the user is an admin: a registered account whose username is in `HASHI_ADMINS`
 /// (comma separated, case doesn't matter).
 pub fn is_admin(user: &User) -> bool {
-    listed(&std::env::var("HASHI_ADMINS").unwrap_or_default(), user)
+    listed(&super::env_var("HASHI_ADMINS").unwrap_or_default(), user)
 }
 
 fn listed(admins: &str, user: &User) -> bool {

@@ -147,6 +147,11 @@ pub async fn init() -> Result<(), String> {
             .await
             .map_err(|e| format!("could not connect to Turso: {e}"))?
     };
+    install(db).await
+}
+
+/// Migrates `db` and makes it the database of every request. The HTTP tests bring their own.
+pub async fn install(db: Database) -> Result<(), String> {
     migrate(&db.connect().map_err(|e| e.to_string())?).await?;
     DB.set(db)
         .map_err(|_| "database initialized twice".to_string())
