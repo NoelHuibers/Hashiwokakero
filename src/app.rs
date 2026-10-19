@@ -59,6 +59,8 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 pub fn App() -> impl IntoView {
     provide_meta_context();
     provide_state();
+    #[cfg(feature = "ssr")]
+    provide_server_i18n();
 
     view! {
         // Sets <html lang dir>, remembers the language in a cookie, reads Accept-Language on the server
@@ -99,6 +101,32 @@ pub fn App() -> impl IntoView {
         </Router>
         </I18nContextProvider>
     }
+}
+
+/// The language context of a page on the server, made here instead of by `<I18nContextProvider>`
+/// (which uses a context that is there already, and makes the same one otherwise).
+///
+/// `leptos_i18n` 0.6.2 (`init_context_inner`) starts an `Effect::new_isomorphic` with it that
+/// copies the language into the cookie signal. On the server that effect is a tokio task of its own,
+/// and `reactive_graph` 0.2.16 doesn't stop it when the page's owner is cleaned up at the end of
+/// the response: on another worker thread it could run just then, read the language signal
+/// that was dropped with `.get()` and panic ("Tried to access a reactive value that has
+/// already been disposed", a few percent of all pages). Upstream fixed the same race for
+/// `AsyncDerived` only (leptos-rs/leptos#4948, #4951, not released yet), not for effects.
+///
+/// So the owner of the context is paused right after making it: a paused effect skips its runs.
+/// The cookie it set on the server only reached the response when the task happened to run
+/// before the headers went out; the browser makes a context of its own, whose effect writes the
+/// cookie. Pausing after making it, not before, keeps the cookie's first run, which repeats the
+/// cookie the browser sent in the response.
+#[cfg(feature = "ssr")]
+fn provide_server_i18n() {
+    let owner = Owner::new();
+    let i18n = owner.with(leptos_i18n::context::init_i18n_context::<Locale>);
+    owner.pause();
+    provide_context(i18n);
+    // The context's signals live as long as its owner: as long as the page
+    on_cleanup(move || drop(owner));
 }
 
 /// The pages of a language. On the server only the route knows the language of the URL; above it
