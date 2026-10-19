@@ -1,7 +1,7 @@
-// The test data: players with the dailies of the last weeks, signed in sessions and a Dojo
-// entry. Written into the schema the server created, before the server that the tests use
-// starts, so its startup jobs (the stamp sync) already see it. Deterministic: the same random
-// sequence every run, relative to today.
+// The test data: players with the dailies of the last weeks, signed in sessions, a Dojo entry
+// and contact messages. Written into the schema the server created, before the server that the
+// tests use starts, so its startup jobs (the stamp sync) already see it. Deterministic: the same
+// random sequence every run, relative to today.
 import { createHash } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -32,6 +32,18 @@ export const PLAYERS: Player[] = [
   { id: 7, name: 'Quiet Crane 5', username: null, pace: 2.0 },
   // In HASHI_ADMINS (server.ts)
   { id: 8, name: 'admin', username: 'admin', pace: 1.4, session: sessionFor('admin') },
+  // Uploads to the Dojo (dojo.spec.ts), a test of its own: what it changes doesn't reach the
+  // others. Not in the dailies.
+  { id: 9, name: 'kenji', username: 'kenji', pace: 0, session: sessionFor('kenji') },
+];
+
+/** Players without dailies. */
+const NOT_PLAYING = new Set(['kenji']);
+
+/** In the admin dashboard's messages. */
+export const CONTACT_MESSAGES = [
+  { name: 'Mirai', email: 'mirai@example.com', message: 'Could the daily have a 5×5 for beginners?' },
+  { name: '', email: '', message: 'The koto music is lovely, thank you for it.' },
 ];
 
 export const player = (name: string) => {
@@ -74,6 +86,7 @@ export function seed(dbPath: string) {
   );
   for (let day = today - HISTORY; day < today; day++) {
     PLAYERS.forEach((p, i) => {
+      if (NOT_PLAYING.has(p.name)) return;
       if (random() >= (i < 3 ? 0.9 : 0.55)) return;
       const time = Math.round((60_000 + random() * 140_000) * p.pace);
       const finished = day * MS_PER_DAY + Math.floor(random() * 80_000_000);
@@ -110,6 +123,14 @@ export function seed(dbPath: string) {
     score.solved,
     sha256('plain-dpll-code'),
   );
+  CONTACT_MESSAGES.forEach((m, i) => {
+    db.prepare('INSERT INTO contact_messages (name, email, message, created_at) VALUES (?, ?, ?, ?)').run(
+      m.name,
+      m.email,
+      m.message,
+      Date.now() - (i + 1) * 3_600_000,
+    );
+  });
   db.exec('COMMIT');
   db.close();
 }
