@@ -11,7 +11,9 @@
     "coverage": "node scripts/coverage.mjs",
     "css": "tailwindcss -i style/tailwind.css -o target/site/pkg/hashi.css",
     "css:watch": "tailwindcss -i style/tailwind.css -o target/site/pkg/hashi.css --watch",
-    "e2e": "playwright test -c e2e"
+    "e2e": "playwright test -c e2e",
+    "e2e:container": "node scripts/e2e-container.mjs",
+    "e2e:update-snapshots": "node scripts/e2e-container.mjs --project visual --update-snapshots"
   },
   "devDependencies": {
     "@fontsource-variable/murecho": "^5.3.1",

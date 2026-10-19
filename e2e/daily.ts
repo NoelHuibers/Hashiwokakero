@@ -5,10 +5,11 @@ import { DatabaseSync } from 'node:sqlite';
 import { expect, type Page, test } from '@playwright/test';
 
 import { addBridge, DAILY_KEY, missing, type Puzzle, saved } from './board';
-import { DB_PATH } from './env';
+import { DB_PATH, VISUAL_DB_PATH } from './env';
 
-/** The database of the tests' server. */
-const database = (options: { readOnly?: boolean } = {}) => new DatabaseSync(DB_PATH, { ...options, timeout: 5_000 });
+/** The database of the running test's server, see `VISUAL_URL`. */
+const database = (options: { readOnly?: boolean } = {}) =>
+  new DatabaseSync(test.info().project.name === 'visual' ? VISUAL_DB_PATH : DB_PATH, { ...options, timeout: 5_000 });
 
 /** The solution of today's daily, once it was started (`get_or_create` in src/server/daily). */
 export function dailySolution(puzzle: Puzzle): number[] {
@@ -84,3 +85,15 @@ export async function expectResult(page: Page) {
   return card;
 }
 
+/**
+ * Takes a player's daily results off the boards again: what a test that played changed for the
+ * next one, or for its own retry.
+ */
+export function deleteResults(username: string) {
+  const db = database();
+  try {
+    db.prepare('DELETE FROM attempts WHERE user_id IN (SELECT id FROM users WHERE username = ?)').run(username);
+  } finally {
+    db.close();
+  }
+}
