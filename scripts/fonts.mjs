@@ -5,7 +5,7 @@
 // script that Murecho and Kaisei Decol don't cover, linked by ScriptFont in app.rs.
 // The files are split by unicode-range, a browser only downloads the slices a page uses.
 //
-// Runs after `npm ci` (postinstall) and in the Dockerfile. public/fonts is not committed.
+// Runs after `pnpm install` (postinstall) and in the Dockerfile. public/fonts is not committed.
 
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';

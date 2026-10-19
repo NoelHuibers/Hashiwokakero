@@ -1,4 +1,4 @@
-// Browser tests of the built site, see the README. `npm run e2e` from the repository root.
+// Browser tests of the built site, see the README. `pnpm run e2e` from the repository root.
 import { defineConfig, devices } from '@playwright/test';
 
 import { BASE_URL, VISUAL, VISUAL_URL } from './env';

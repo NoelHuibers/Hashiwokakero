@@ -10,7 +10,7 @@ export const PORT = Number(process.env.E2E_PORT ?? 3150);
 export const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 // The screenshot tests (`visual` project), only where their screenshots were taken: in the
-// Playwright container (`npm run e2e:container`, the CI job). Their own server and database on
+// Playwright container (`pnpm run e2e:container`, the CI job). Their own server and database on
 // the next port, so the journeys running next to them don't change the pages they take.
 export const VISUAL = !!process.env.E2E_VISUAL;
 export const VISUAL_PORT = PORT + 1;

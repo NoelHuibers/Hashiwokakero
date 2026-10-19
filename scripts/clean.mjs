@@ -1,12 +1,12 @@
 // Frees disk space in cargo's target dirs, without touching anything a build still needs to be
 // fast: by default it only lists what it would delete, with sizes.
 //
-//   npm run clean                         dry run: list what would go
-//   npm run clean -- --yes                delete it
-//   npm run clean -- --days 14            deps artifacts unused for 14 days (default 30)
-//   npm run clean -- --target ~/other     another target dir (repeatable) instead of ./target
-//   npm run clean -- --verbose            every incremental dir and deps file, not only sums
-//   npm run clean -- --worktrees          also worktrees whose branch is merged into origin/main
+//   pnpm run clean                        dry run: list what would go
+//   pnpm run clean --yes                  delete it
+//   pnpm run clean --days 14              deps artifacts unused for 14 days (default 30)
+//   pnpm run clean --target ~/other       another target dir (repeatable) instead of ./target
+//   pnpm run clean --verbose              every incremental dir and deps file, not only sums
+//   pnpm run clean --worktrees            also worktrees whose branch is merged into origin/main
 //
 // What goes, in every profile dir of a target dir (target/debug, target/front/wasm-release, ...):
 // - fingerprint outputs (.fingerprint/*/output-*) of at least --min-output-mb (default 50 MB).
@@ -34,7 +34,7 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 
 const usage =
-  'usage: npm run clean -- [--yes] [--days N] [--min-output-mb N] [--target DIR]... ' +
+  'usage: pnpm run clean [--yes] [--days N] [--min-output-mb N] [--target DIR]... ' +
   '[--worktrees] [--verbose]';
 const opts = {
   yes: false,

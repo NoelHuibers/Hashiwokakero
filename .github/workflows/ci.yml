@@ -116,15 +116,17 @@ jobs:
       playwright: ${{ steps.playwright.outputs.version }}
     steps:
       - uses: actions/checkout@v7
+      # The pnpm version of packageManager in package.json
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
-          cache: npm
-      - run: npm ci --ignore-scripts
+          cache: pnpm
+      # Its postinstall writes the fonts to public/fonts (scripts/fonts.mjs)
+      - run: pnpm install --frozen-lockfile
       # The E2E job runs in the Playwright image of this version, see there
       - id: playwright
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - run: npm run fonts
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
@@ -158,25 +160,27 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    # The official image of the Playwright version in package-lock.json, with its browsers and
-    # fonts: the screenshots in e2e/tests/__screenshots__ are taken in it (npm run
+    # The official image of the Playwright version in pnpm-lock.yaml, with its browsers and
+    # fonts: the screenshots in e2e/tests/__screenshots__ are taken in it (pnpm run
     # e2e:update-snapshots), on another system they wouldn't match
     container:
       image: mcr.microsoft.com/playwright:v${{ needs.build.outputs.playwright }}-noble
       options: --ipc=host
     steps:
       - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
-          cache: npm
-      - run: npm ci --ignore-scripts
+          cache: pnpm
+      # No fonts needed, the site in the artifact has them
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - uses: actions/download-artifact@v8
         with:
           name: site
       - run: tar -xf site.tar
       - name: Browser tests
-        run: npm run e2e
+        run: pnpm run e2e
         env:
           E2E_BIN: dist/hashi
           E2E_SITE_ROOT: dist/site

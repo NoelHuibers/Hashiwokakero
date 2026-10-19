@@ -1,0 +1,6 @@
+# pnpm 12 refuses to install while dependency build scripts are neither
+# allowed nor denied. @parcel/watcher (the Tailwind CLI's --watch) ships
+# prebuilt binaries as optional dependencies, its install script only builds
+# from source when asked to.
+allowBuilds:
+  '@parcel/watcher': false
