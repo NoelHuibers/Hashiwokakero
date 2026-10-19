@@ -154,6 +154,11 @@ ssr = [
   "leptos_i18n_build/ssr",
 ]
 
+[dev-dependencies]
+# The HTTP tests (server/router/tests): a client that keeps cookies like a browser and uploads
+# forms. Without the gzip/brotli features it leaves responses compressed, so tests see that.
+reqwest = { version = "0.12.28", default-features = false, features = ["cookies", "multipart"] }
+
 [build-dependencies]
 leptos_i18n_build = "0.6.2"
 
@@ -172,6 +177,11 @@ opt-level = 3
 [profile.dev.package.splr]
 opt-level = 3
 
+# The HTTP tests (server/router/tests) render every page. With debug info, compiling that took
+# the compiler over 10 GB of memory, without it under 6 GB. Failed asserts still say where.
+[profile.test.package.hashi]
+debug = false
+
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name
 output-name = "hashi"
@@ -181,7 +191,7 @@ site-root = "target/site"
 site-pkg-dir = "pkg"
 # Content hashes in the JS/WASM/CSS file names (hashi.<hash>.css), listed in hash.txt next to the
 # server binary. Every deploy gets new URLs, so browsers never keep a stale stylesheet, and the
-# server can send them with long-lived cache headers (see main.rs).
+# server can send them with long-lived cache headers (see server/router).
 hash-files = true
 # Tailwind v4 entry point, configured in CSS. It imports tw-animate-css from node_modules (npm ci).
 tailwind-input-file = "style/tailwind.css"

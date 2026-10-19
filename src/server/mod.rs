@@ -6,10 +6,23 @@ pub mod contact;
 pub mod daily;
 pub mod db;
 pub mod dojo;
+mod router;
+
+pub use router::router;
 
 use std::fmt::Write as _;
 
 use leptos::prelude::ServerFnError;
+
+/// An environment variable. The HTTP tests can't set real ones: `set_var` is `unsafe` (other
+/// tests run in the same process at the same time), so they bring their own settings.
+pub fn env_var(name: &str) -> Option<String> {
+    #[cfg(test)]
+    if let Some(value) = router::tests::env_var(name) {
+        return Some(value.to_string());
+    }
+    std::env::var(name).ok()
+}
 
 /// Lowercase hex digits of some bytes.
 pub fn hex(bytes: &[u8]) -> String {
@@ -24,7 +37,7 @@ pub fn hex(bytes: &[u8]) -> String {
 /// Whether the request carries `Authorization: Bearer <value of the env variable>`, compared in
 /// constant time. Always false when the variable isn't set.
 pub fn bearer_ok(headers: &axum::http::HeaderMap, env: &str) -> bool {
-    let Some(token) = std::env::var(env).ok().filter(|t| !t.is_empty()) else {
+    let Some(token) = env_var(env).filter(|t| !t.is_empty()) else {
         return false;
     };
     let expected = format!("Bearer {token}");

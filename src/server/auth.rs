@@ -15,6 +15,7 @@ use std::sync::Mutex;
 use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash};
 use axum::http::{HeaderMap, HeaderValue, header};
+use leptos::config::{Env, LeptosOptions};
 use leptos::prelude::*;
 use libsql::{Connection, params};
 use sha2::{Digest, Sha256};
@@ -80,7 +81,8 @@ fn token_from_headers(headers: &HeaderMap) -> Option<String> {
 }
 
 fn set_cookie(value: &str, max_age_s: i64) {
-    let secure = std::env::var("LEPTOS_ENV").is_ok_and(|e| e.eq_ignore_ascii_case("prod"));
+    // LEPTOS_ENV=PROD, as the router's settings say. Local development has no HTTPS.
+    let secure = use_context::<LeptosOptions>().is_some_and(|o| o.env == Env::PROD);
     let cookie = format!(
         "{COOKIE}={value}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age_s}{}",
         if secure { "; Secure" } else { "" }
