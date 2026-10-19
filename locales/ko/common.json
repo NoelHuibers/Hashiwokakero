@@ -45,7 +45,8 @@
     "wrong_bridges": "정답에 없는 다리: {{ count }}개",
     "unique": "증명 완료: 해답은 하나뿐이에요.",
     "not_unique": "이 퍼즐은 해답이 여러 개예요.",
-    "copied": "결과를 클립보드에 복사했어요."
+    "copied": "결과를 클립보드에 복사했어요.",
+    "copy_failed": "클립보드에 복사하지 못했어요."
   },
   "errors": {
     "unknown": "문제가 생겼어요: {{ detail }}",

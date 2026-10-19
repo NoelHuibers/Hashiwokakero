@@ -45,7 +45,8 @@
     "wrong_bridges": "Jembatan yang bukan bagian dari solusi: {{ count }}",
     "unique": "Terbukti: solusinya unik.",
     "not_unique": "Teka-teki ini punya lebih dari satu solusi.",
-    "copied": "Hasil disalin ke papan klip."
+    "copied": "Hasil disalin ke papan klip.",
+    "copy_failed": "Gagal menyalin ke papan klip."
   },
   "errors": {
     "unknown": "Terjadi kesalahan: {{ detail }}",

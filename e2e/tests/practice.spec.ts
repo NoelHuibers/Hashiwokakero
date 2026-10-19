@@ -196,3 +196,21 @@ test.describe('on a phone, the last tap', () => {
   });
 });
 
+test.describe('copying the result', () => {
+  test('without the permission says so', async ({ page }) => {
+    await seedGame(page, PRACTICE_KEY, wonLadder);
+    await visit(page, '/practice');
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByText("Couldn't copy to the clipboard.")).toBeVisible();
+    await expect(page.getByText('Result copied to the clipboard.')).toHaveCount(0);
+  });
+
+  test('with the permission copies it', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await seedGame(page, PRACTICE_KEY, wonLadder);
+    await visit(page, '/practice');
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByText('Result copied to the clipboard.')).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^🌉 Hashi · Your own puzzle ·/);
+  });
+});

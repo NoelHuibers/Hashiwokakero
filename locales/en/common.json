@@ -45,7 +45,8 @@
     "wrong_bridges": "Bridges that are not part of the solution: {{ count }}",
     "unique": "Proven: the solution is unique.",
     "not_unique": "This puzzle has more than one solution.",
-    "copied": "Result copied to the clipboard."
+    "copied": "Result copied to the clipboard.",
+    "copy_failed": "Couldn't copy to the clipboard."
   },
   "errors": {
     "unknown": "Something went wrong: {{ detail }}",
