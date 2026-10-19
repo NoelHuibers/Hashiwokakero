@@ -4,7 +4,10 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::month_leaderboard;
-use crate::components::leaderboard::{HIGHLIGHT_ROW, PlayerName, ROW_INSET, RankCell};
+use crate::components::leaderboard::{
+    HIGHLIGHT_ROW, Place, PlaceDetail, PlayerName, Podium, RANK_TABLE, ROW_INSET, RankCell,
+    split_podium,
+};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, use_i18n};
@@ -15,7 +18,7 @@ use crate::state::{ToastKind, toast};
 #[component]
 fn Row(entry: MonthEntry, me: bool) -> impl IntoView {
     view! {
-        <tr class=format!("border-b last:border-0 {ROW_INSET} {}", if me { HIGHLIGHT_ROW } else { "" })>
+        <tr class=format!("{ROW_INSET} {}", if me { HIGHLIGHT_ROW } else { "" })>
             <td class="py-2 pe-2">
                 <RankCell rank=entry.rank />
             </td>
@@ -23,7 +26,7 @@ fn Row(entry: MonthEntry, me: bool) -> impl IntoView {
                 <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me />
             </td>
             <td class="py-2 text-end font-pixel tabular-nums text-muted-foreground">{entry.solved}</td>
-            <td class="py-2 text-end font-pixel text-base tabular-nums">{entry.points}</td>
+            <td class="py-2 text-end font-pixel text-base tabular-nums" class:text-primary=me>{entry.points}</td>
         </tr>
     }
 }
@@ -109,10 +112,24 @@ pub(super) fn MonthRace() -> impl IntoView {
                     Some(b) => {
                         let me = b.me.as_ref().map(|m| m.user_id);
                         let outside = b.me.clone().filter(|m| !b.entries.iter().any(|e| e.user_id == m.user_id));
-                        view! {
+                        let (top, rest) = split_podium(b.entries, true);
+                        let places: Vec<Place> = top
+                            .into_iter()
+                            .map(|e| Place {
+                                rank: e.rank,
+                                me: Some(e.user_id) == me,
+                                user_id: e.user_id,
+                                value: e.points.to_string(),
+                                detail: PlaceDetail::Solved(e.solved),
+                                name: e.name,
+                                guest: e.guest,
+                                stamp: e.stamp,
+                            })
+                            .collect();
+                        let table = (!rest.is_empty() || outside.is_some()).then(|| view! {
                             // A size container for PlayerName, pulled out by the row inset
                             <div class="@container -mx-2">
-                            <table class="w-full table-fixed text-sm">
+                            <table class=format!("{RANK_TABLE} w-full table-fixed text-sm")>
                                 <colgroup>
                                     // The first and last columns hold the row inset (ROW_INSET) too
                                     <col class="w-14" />
@@ -121,7 +138,7 @@ pub(super) fn MonthRace() -> impl IntoView {
                                     <col class="w-20" />
                                 </colgroup>
                                 <thead>
-                                    <tr class=format!("border-b text-start text-[10px] uppercase tracking-wider text-muted-foreground {ROW_INSET}")>
+                                    <tr class=format!("text-start text-[10px] uppercase tracking-wider text-muted-foreground {ROW_INSET}")>
                                         <th></th>
                                         <th class="py-1.5 text-start font-semibold">{t!(i18n, ranks.fame.player)}</th>
                                         <th class="py-1.5 text-end font-semibold">{t!(i18n, account.stats.solved)}</th>
@@ -129,8 +146,7 @@ pub(super) fn MonthRace() -> impl IntoView {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {b
-                                        .entries
+                                    {rest
                                         .into_iter()
                                         .map(|e| {
                                             let mine = Some(e.user_id) == me;
@@ -148,6 +164,12 @@ pub(super) fn MonthRace() -> impl IntoView {
                                         })}
                                 </tbody>
                             </table>
+                            </div>
+                        });
+                        view! {
+                            <div class="flex flex-col gap-3">
+                                <Podium places=places />
+                                {table}
                             </div>
                             <p class="mt-2 text-xs text-muted-foreground">
                                 {move || t_string!(i18n, ranks.month.players, count = b.players)}
