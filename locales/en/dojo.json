@@ -9,12 +9,14 @@
     "season": "Season {{ season }}",
     "formulas": "Formulas: {{ count }}",
     "budget": "{{ budget }} Gfuel per formula",
-    "queued": "In the queue: {{ count }}"
+    "queued": "In the queue: {{ count }}",
+    "commitment": "Commitment {{ hash }}"
   },
   "cta": {
     "submit": "Submit a solver",
     "starter": "Starter kit",
-    "dev_set": "Download the dev set"
+    "dev_set": "Download the dev set",
+    "seasons": "Season archive"
   },
   "board": {
     "title": "Leaderboard",
@@ -25,6 +27,32 @@
     "empty": "No solver has entered the dojo yet. Be the first!",
     "house": "house",
     "par2_hint": "Mean fuel per formula in billions, unsolved formulas count twice the budget. Lower is better."
+  },
+  "seasons": {
+    "meta_title": "Season archive · SAT Dojo",
+    "meta_description": "Every finished season of the SAT Dojo: the final leaderboard, the revealed seed, the hidden set and every result per formula, ready to download and check.",
+    "title": "Season archive",
+    "intro": "When a season ends, its leaderboard is frozen and everything is published: the seed of the hidden set, the set itself and the result of every solver on every formula.",
+    "current": "Season {{ season }} · running",
+    "past": "Season {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "since {{ date }}",
+    "versions": "Generator v{{ generator }} · rules v{{ rules }}",
+    "entries": "Solvers evaluated: {{ count }}",
+    "commitment": "Commitment (SHA-256 of the seed)",
+    "seed": "Seed",
+    "sealed": "The seed stays secret until the season ends, then it is revealed here.",
+    "set": "Hidden set ({{ size }} MB)",
+    "no_set": "No set was archived for this season; regenerate it from the seed.",
+    "csv": "Results per formula (CSV)",
+    "json": "Results per formula (JSON)",
+    "board": "Final leaderboard",
+    "empty_board": "No solver was ranked this season.",
+    "none": "No season has ended yet. The archive starts when season {{ season }} is over.",
+    "deleted": "deleted account",
+    "verify_title": "How to verify",
+    "verify": "The SHA-256 of the revealed seed has to match the commitment published at the start. With the same generator version, dojo export regenerates the set from the seed; the archived set stays valid for good, and dojo run --set scores any solver on it exactly like the leaderboard did.",
+    "back": "Back to the dojo"
   },
   "how": {
     "title": "How it works",
@@ -55,7 +83,7 @@
     "fuel_title": "Fuel, not seconds",
     "fuel": "Every executed WebAssembly instruction costs one unit of fuel, bulk memory operations one per byte. Clocks and random numbers are seeded, so a solver gets the same score on every machine, every time.",
     "hidden_title": "Hidden, fresh formulas",
-    "hidden": "The test set comes from a secret seed that changes every season, and every formula is scrambled: variables renamed and negated, clauses shuffled. Results are shown per family only, never per formula.",
+    "hidden": "The test set comes from a secret seed that changes every season, and every formula is scrambled: variables renamed and negated, clauses shuffled. While a season runs, results are shown per family only, never per formula.",
     "checked_title": "Every answer checked",
     "checked": "Models are verified against the formula. UNSAT counts only where we have a proof: pigeonhole and Hashi parity are unsatisfiable by construction, every other UNSAT label comes with a DRAT proof our own checker verified. A single wrong answer disqualifies the submission, so guessing never pays.",
     "sandbox_title": "A sealed sandbox",
@@ -63,9 +91,11 @@
     "accounts_title": "One account, best entry",
     "accounts": "Accounts have to be a day old to submit, and there are three submissions a day per account and per network. Identical code is refused, even renamed or padded, and only your best submission is ranked.",
     "seasons_title": "Seasons",
-    "seasons": "A new season brings a new hidden set and every submission is evaluated again.",
+    "seasons": "A new season brings a new hidden set and every submission is evaluated again. The finished season is archived: its final leaderboard, its set and every result per formula are published.",
     "copies_title": "No copies",
-    "copies": "Scores are exact, so a solver leaves a fingerprint: the fuel it uses on every formula. A submission that behaves like an earlier one by someone else isn't ranked. Changing a copy enough to escape that makes it a different solver, and making it slower only puts it below the original."
+    "copies": "Scores are exact, so a solver leaves a fingerprint: the fuel it uses on every formula. A submission that behaves like an earlier one by someone else isn't ranked. Changing a copy enough to escape that makes it a different solver, and making it slower only puts it below the original.",
+    "commit_title": "Sealed in advance",
+    "commit": "At the start of a season we publish the SHA-256 of its secret seed. When the season is over the seed is revealed, so anyone can check that the set was fixed beforehand and regenerate it with dojo export --seed."
   },
   "science": {
     "title": "For researchers",

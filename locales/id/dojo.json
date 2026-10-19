@@ -9,12 +9,14 @@
     "season": "Musim {{ season }}",
     "formulas": "Formula: {{ count }}",
     "budget": "{{ budget }} Gfuel per formula",
-    "queued": "Dalam antrean: {{ count }}"
+    "queued": "Dalam antrean: {{ count }}",
+    "commitment": "Komitmen {{ hash }}"
   },
   "cta": {
     "submit": "Kirim solver",
     "starter": "Paket pemula",
-    "dev_set": "Unduh set dev"
+    "dev_set": "Unduh set dev",
+    "seasons": "Arsip musim"
   },
   "board": {
     "title": "Papan peringkat",
@@ -25,6 +27,32 @@
     "empty": "Belum ada solver yang masuk dojo. Jadilah yang pertama!",
     "house": "bawaan",
     "par2_hint": "Rata-rata fuel per formula dalam miliar, formula yang tak terpecahkan dihitung dua kali anggaran. Makin rendah makin baik."
+  },
+  "seasons": {
+    "meta_title": "Arsip musim · SAT Dojo",
+    "meta_description": "Setiap musim SAT Dojo yang telah selesai: papan peringkat akhir, seed yang diungkap, set tersembunyi, dan setiap hasil per formula, siap diunduh dan diperiksa.",
+    "title": "Arsip musim",
+    "intro": "Saat musim berakhir, papan peringkatnya dibekukan dan semuanya dipublikasikan: seed set tersembunyi, set itu sendiri, dan hasil setiap solver pada setiap formula.",
+    "current": "Musim {{ season }} · berjalan",
+    "past": "Musim {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "sejak {{ date }}",
+    "versions": "Generator v{{ generator }} · aturan v{{ rules }}",
+    "entries": "Solver yang dinilai: {{ count }}",
+    "commitment": "Komitmen (SHA-256 dari seed)",
+    "seed": "Seed",
+    "sealed": "Seed tetap rahasia sampai musim berakhir, lalu diungkap di sini.",
+    "set": "Set tersembunyi ({{ size }} MB)",
+    "no_set": "Tidak ada set yang diarsipkan untuk musim ini; buat ulang dari seed.",
+    "csv": "Hasil per formula (CSV)",
+    "json": "Hasil per formula (JSON)",
+    "board": "Papan peringkat akhir",
+    "empty_board": "Tidak ada solver yang masuk peringkat musim ini.",
+    "none": "Belum ada musim yang selesai. Arsip dimulai saat musim {{ season }} berakhir.",
+    "deleted": "akun dihapus",
+    "verify_title": "Cara memeriksa",
+    "verify": "SHA-256 dari seed yang diungkap harus sama dengan komitmen yang dipublikasikan di awal. Dengan versi generator yang sama, dojo export membuat ulang set dari seed; set yang diarsipkan tetap berlaku selamanya, dan dojo run --set menilai solver apa pun di atasnya persis seperti papan peringkat.",
+    "back": "Kembali ke dojo"
   },
   "how": {
     "title": "Cara kerjanya",
@@ -55,7 +83,7 @@
     "fuel_title": "Fuel, bukan detik",
     "fuel": "Setiap instruksi WebAssembly yang dieksekusi memakan satu unit fuel, operasi memori massal satu per byte. Jam dan angka acak diberi seed tetap, jadi solver mendapat skor yang sama di setiap mesin, setiap kali.",
     "hidden_title": "Formula baru yang tersembunyi",
-    "hidden": "Set uji berasal dari seed rahasia yang berganti setiap musim, dan setiap formula diacak: variabel diganti nama dan dinegasikan, klausa dikocok. Hasil hanya ditampilkan per keluarga, tidak pernah per formula.",
+    "hidden": "Set uji berasal dari seed rahasia yang berganti setiap musim, dan setiap formula diacak: variabel diganti nama dan dinegasikan, klausa dikocok. Selama musim berjalan, hasil hanya ditampilkan per keluarga, tidak pernah per formula.",
     "checked_title": "Setiap jawaban diperiksa",
     "checked": "Model diverifikasi terhadap formulanya. UNSAT hanya dihitung jika kami punya buktinya: sarang merpati dan Hashi paritas tidak dapat dipenuhi berdasarkan konstruksinya, dan setiap label UNSAT lainnya disertai bukti DRAT yang diverifikasi oleh pemeriksa buatan kami sendiri. Satu jawaban salah saja mendiskualifikasi kiriman, jadi menebak tidak pernah menguntungkan.",
     "sandbox_title": "Sandbox tertutup",
@@ -63,9 +91,11 @@
     "accounts_title": "Satu akun, entri terbaik",
     "accounts": "Akun harus berumur satu hari untuk mengirim, dan ada tiga kiriman per hari per akun dan per jaringan. Kode yang identik ditolak, meskipun diganti nama atau diberi padding, dan hanya kiriman terbaikmu yang masuk peringkat.",
     "seasons_title": "Musim",
-    "seasons": "Musim baru membawa set tersembunyi baru dan semua kiriman dievaluasi ulang.",
+    "seasons": "Musim baru membawa set tersembunyi baru dan setiap kiriman dinilai ulang. Musim yang selesai diarsipkan: papan peringkat akhir, setnya, dan setiap hasil per formula dipublikasikan.",
     "copies_title": "Tanpa salinan",
-    "copies": "Skornya pasti, jadi setiap solver meninggalkan sidik jari: fuel yang dipakainya di setiap formula. Kiriman yang berperilaku seperti kiriman orang lain yang lebih awal tidak masuk peringkat. Mengubah salinan cukup jauh untuk lolos dari itu menjadikannya solver yang berbeda, dan membuatnya lebih lambat hanya menempatkannya di bawah yang asli."
+    "copies": "Skornya pasti, jadi setiap solver meninggalkan sidik jari: fuel yang dipakainya di setiap formula. Kiriman yang berperilaku seperti kiriman orang lain yang lebih awal tidak masuk peringkat. Mengubah salinan cukup jauh untuk lolos dari itu menjadikannya solver yang berbeda, dan membuatnya lebih lambat hanya menempatkannya di bawah yang asli.",
+    "commit_title": "Disegel sejak awal",
+    "commit": "Di awal musim kami memublikasikan SHA-256 dari seed rahasianya. Setelah musim berakhir, seed diungkap, sehingga siapa pun bisa memeriksa bahwa set sudah ditetapkan sebelumnya dan membuatnya ulang dengan dojo export --seed."
   },
   "science": {
     "title": "Untuk peneliti",

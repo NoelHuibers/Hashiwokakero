@@ -9,12 +9,14 @@
     "season": "Mùa {{ season }}",
     "formulas": "Công thức: {{ count }}",
     "budget": "{{ budget }} Gfuel mỗi công thức",
-    "queued": "Đang chờ: {{ count }}"
+    "queued": "Đang chờ: {{ count }}",
+    "commitment": "Cam kết {{ hash }}"
   },
   "cta": {
     "submit": "Gửi bộ giải",
     "starter": "Bộ khởi đầu",
-    "dev_set": "Tải tập dev"
+    "dev_set": "Tải tập dev",
+    "seasons": "Kho lưu trữ mùa giải"
   },
   "board": {
     "title": "Bảng xếp hạng",
@@ -25,6 +27,32 @@
     "empty": "Chưa có bộ giải nào vào dojo. Hãy là người đầu tiên!",
     "house": "chính thức",
     "par2_hint": "Fuel trung bình mỗi công thức, tính bằng tỷ; công thức chưa giải được tính gấp đôi ngân sách. Càng thấp càng tốt."
+  },
+  "seasons": {
+    "meta_title": "Kho lưu trữ mùa giải · SAT Dojo",
+    "meta_description": "Mọi mùa giải đã kết thúc của SAT Dojo: bảng xếp hạng cuối cùng, seed đã tiết lộ, bộ ẩn và từng kết quả theo công thức, sẵn sàng để tải về và kiểm tra.",
+    "title": "Kho lưu trữ mùa giải",
+    "intro": "Khi một mùa kết thúc, bảng xếp hạng được đóng băng và mọi thứ được công bố: seed của bộ ẩn, chính bộ đó và kết quả của từng bộ giải trên từng công thức.",
+    "current": "Mùa {{ season }} · đang diễn ra",
+    "past": "Mùa {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "từ {{ date }}",
+    "versions": "Bộ sinh v{{ generator }} · luật v{{ rules }}",
+    "entries": "Số bộ giải đã chấm: {{ count }}",
+    "commitment": "Cam kết (SHA-256 của seed)",
+    "seed": "Seed",
+    "sealed": "Seed được giữ bí mật đến khi mùa kết thúc, sau đó sẽ được tiết lộ tại đây.",
+    "set": "Bộ ẩn ({{ size }} MB)",
+    "no_set": "Mùa này không có bộ nào được lưu trữ; hãy tạo lại từ seed.",
+    "csv": "Kết quả theo công thức (CSV)",
+    "json": "Kết quả theo công thức (JSON)",
+    "board": "Bảng xếp hạng cuối cùng",
+    "empty_board": "Mùa này không có bộ giải nào được xếp hạng.",
+    "none": "Chưa có mùa nào kết thúc. Kho lưu trữ bắt đầu khi mùa {{ season }} kết thúc.",
+    "deleted": "tài khoản đã xóa",
+    "verify_title": "Cách kiểm tra",
+    "verify": "SHA-256 của seed đã tiết lộ phải khớp với cam kết công bố lúc đầu. Với cùng phiên bản bộ sinh, dojo export tạo lại bộ công thức từ seed; bộ đã lưu trữ luôn còn hiệu lực, và dojo run --set chấm bất kỳ bộ giải nào trên đó đúng như bảng xếp hạng đã làm.",
+    "back": "Quay lại dojo"
   },
   "how": {
     "title": "Cách hoạt động",
@@ -55,7 +83,7 @@
     "fuel_title": "Fuel, không phải giây",
     "fuel": "Mỗi lệnh WebAssembly được thực thi tốn một đơn vị fuel, thao tác bộ nhớ khối tốn một đơn vị mỗi byte. Đồng hồ và số ngẫu nhiên đều có seed cố định, nên một bộ giải luôn đạt cùng điểm trên mọi máy, mọi lần chạy.",
     "hidden_title": "Công thức ẩn và mới",
-    "hidden": "Tập kiểm thử sinh từ một seed bí mật thay đổi mỗi mùa, và mọi công thức đều bị xáo trộn: biến được đổi tên và phủ định, mệnh đề bị trộn thứ tự. Kết quả chỉ hiện theo từng họ, không bao giờ theo từng công thức.",
+    "hidden": "Bộ kiểm tra được tạo từ một seed bí mật thay đổi mỗi mùa, và mọi công thức đều bị xáo trộn: biến được đổi tên và phủ định, mệnh đề bị trộn lẫn. Khi mùa giải đang diễn ra, kết quả chỉ hiển thị theo họ, không bao giờ theo từng công thức.",
     "checked_title": "Mọi câu trả lời đều được kiểm tra",
     "checked": "Mô hình được kiểm chứng với công thức. UNSAT chỉ được tính khi chúng tôi có chứng minh: chuồng bồ câu và Hashi chẵn lẻ không thỏa mãn được ngay từ cách xây dựng, mọi nhãn UNSAT khác đều kèm một chứng minh DRAT đã được bộ kiểm tra của chính chúng tôi xác minh. Chỉ một câu trả lời sai là bài gửi bị loại, nên đoán mò không bao giờ có lợi.",
     "sandbox_title": "Hộp cát kín",
@@ -63,9 +91,11 @@
     "accounts_title": "Một tài khoản, bài tốt nhất",
     "accounts": "Tài khoản phải được tạo ít nhất một ngày mới được gửi bài, và mỗi tài khoản cũng như mỗi mạng được gửi ba bài mỗi ngày. Mã giống hệt bị từ chối, kể cả khi đổi tên hay chèn thêm phần đệm, và chỉ bài gửi tốt nhất của bạn được xếp hạng.",
     "seasons_title": "Các mùa",
-    "seasons": "Mùa mới mang đến tập ẩn mới và mọi bài gửi được chấm lại.",
+    "seasons": "Mùa mới mang đến một bộ ẩn mới và mọi bài nộp được chấm lại. Mùa đã kết thúc được lưu trữ: bảng xếp hạng cuối cùng, bộ công thức và từng kết quả theo công thức đều được công bố.",
     "copies_title": "Không sao chép",
-    "copies": "Điểm số là chính xác, nên một bộ giải để lại dấu vân tay: lượng fuel nó dùng trên từng công thức. Bài gửi hoạt động giống một bài gửi trước đó của người khác sẽ không được xếp hạng. Sửa một bản sao đủ nhiều để thoát khỏi điều đó thì nó đã là một bộ giải khác, còn làm nó chậm đi chỉ đẩy nó xuống dưới bản gốc."
+    "copies": "Điểm số là chính xác, nên một bộ giải để lại dấu vân tay: lượng fuel nó dùng trên từng công thức. Bài gửi hoạt động giống một bài gửi trước đó của người khác sẽ không được xếp hạng. Sửa một bản sao đủ nhiều để thoát khỏi điều đó thì nó đã là một bộ giải khác, còn làm nó chậm đi chỉ đẩy nó xuống dưới bản gốc.",
+    "commit_title": "Niêm phong từ trước",
+    "commit": "Đầu mỗi mùa, chúng tôi công bố SHA-256 của seed bí mật. Khi mùa kết thúc, seed được tiết lộ, nên ai cũng có thể kiểm tra rằng bộ công thức đã được cố định từ trước và tạo lại nó bằng dojo export --seed."
   },
   "science": {
     "title": "Cho nhà nghiên cứu",

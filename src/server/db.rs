@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS attempts (
 CREATE INDEX IF NOT EXISTS attempts_ranking ON attempts (day, time_ms);
 ",
     r"
--- SAT Dojo submissions, see server/dojo.rs
+-- SAT Dojo submissions, see server/dojo/
 CREATE TABLE IF NOT EXISTS dojo_submissions (
     id          INTEGER PRIMARY KEY,
     -- NULL for house entries (our own solvers)
@@ -160,6 +160,63 @@ CREATE INDEX IF NOT EXISTS contact_network ON contact_messages (ip_hash, created
 -- When the player last changed their username, which they can do once a month, see
 -- server/auth.rs
 ALTER TABLE users ADD COLUMN renamed_at INTEGER;
+",
+    "
+-- Dojo seasons, see server/dojo/seasons.rs. A result's rules version (dojo::RULES_VERSION, NULL:
+-- from before versions) and its run of every formula (dojo::InstanceResult as JSON), private
+-- until the season is archived
+ALTER TABLE dojo_submissions ADD COLUMN rules_version INTEGER;
+ALTER TABLE dojo_submissions ADD COLUMN results TEXT;
+
+-- Every season: the commitment to its hidden set's seed from the start, the seed itself once
+-- it is over
+CREATE TABLE IF NOT EXISTS dojo_seasons (
+    season            INTEGER PRIMARY KEY,
+    started_at        INTEGER NOT NULL,
+    -- NULL while it runs
+    ended_at          INTEGER,
+    -- SHA-256 (hex) of the seed
+    commitment        TEXT NOT NULL,
+    -- revealed when the season is over
+    seed              TEXT,
+    -- dojo::GENERATOR_VERSION and dojo::RULES_VERSION the last deploy of the season ran
+    generator_version INTEGER NOT NULL,
+    rules_version     INTEGER NOT NULL
+);
+
+-- The hidden set a season was evaluated on, as the worker sent it (a .tar.gz, see
+-- dojo::archive). Only published once the season is over
+CREATE TABLE IF NOT EXISTS dojo_season_sets (
+    season            INTEGER PRIMARY KEY,
+    generator_version INTEGER NOT NULL,
+    archive           BLOB NOT NULL,
+    sha256            TEXT NOT NULL,
+    created_at        INTEGER NOT NULL
+);
+
+-- The final results of a season, frozen when the next one starts. user_id, name and source_url
+-- go when the author deletes their account, the numbers stay
+CREATE TABLE IF NOT EXISTS dojo_archive (
+    season        INTEGER NOT NULL,
+    submission_id INTEGER NOT NULL,
+    -- NULL for house entries and deleted accounts
+    user_id       INTEGER,
+    house         INTEGER NOT NULL,
+    name          TEXT NOT NULL,
+    source_url    TEXT,
+    created_at    INTEGER NOT NULL,
+    par2          REAL,
+    solved        INTEGER,
+    wrong         INTEGER NOT NULL DEFAULT 0,
+    score         TEXT,
+    fingerprint   TEXT,
+    results       TEXT,
+    rules_version INTEGER,
+    -- the place on the final leaderboard, NULL: not ranked
+    rank          INTEGER,
+    PRIMARY KEY (season, submission_id)
+);
+CREATE INDEX IF NOT EXISTS dojo_archive_user ON dojo_archive (user_id);
 ",
 ];
 

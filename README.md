@@ -114,9 +114,12 @@ At [hashi.rs/dojo](https://hashi.rs/dojo) anyone can submit a SAT solver compile
 cargo build -p house --release --target wasm32-wasip1           # our own solvers as .wasm
 cargo run -p dojo --release --features worker -- run target/wasm32-wasip1/release/splr.wasm
 cargo run -p dojo --release --features bench -- export dev-set/  # the public dev set as .cnf files
+cargo run -p dojo --release --features worker -- run splr.wasm --set dojo-season-1.tar.gz  # an archived season
 ```
 
-The website stores submissions and sends them to the worker (`dojo serve`, its own Fly app in `dojo/fly.toml`), which starts on demand, evaluates and reports back. See `src/server/dojo.rs` and `dojo/src/worker.rs` for the settings.
+The website stores submissions and sends them to the worker (`dojo serve`, its own Fly app in `dojo/fly.toml`), which starts on demand, evaluates and reports back. See `src/server/dojo/` (`mod.rs` for the settings) and `dojo/src/worker.rs`.
+
+Seasons are archived like the SAT Competition publishes its results ([hashi.rs/dojo/seasons](https://hashi.rs/dojo/seasons), `src/server/dojo/seasons.rs`): a season starts with a commitment to the seed of its hidden set, `sha256(seed)`. When `DOJO_SEASON` moves on, the final results are frozen and the seed is revealed, and the set the worker evaluated on (it sends it along with a job, `dojo/src/archive.rs`) is published as `/dojo/seasons/<n>/set.tar.gz`, with the result of every solver on every formula as `results.csv` and `results.json`. `dojo::RULES_VERSION` is bumped whenever judging, fuel or the sets change within a season: every stored result keeps the version it was computed with, and the site evaluates older ones again. `dojo::GENERATOR_VERSION` (bumped with any change to the sets) keys the worker's cache of generated sets.
 
 ## Backend CLI
 

@@ -3,10 +3,10 @@
 use std::time::Duration;
 
 use axum::http::{HeaderMap, StatusCode, header};
-use dojo::{Rejection, Report};
+use dojo::{RULES_VERSION, Rejection, Report};
 use libsql::{Connection, params};
 
-use super::{MAX_ATTEMPTS, MAX_RUNNING, STALE_MS, code_hash, season, test_seed, token};
+use super::{MAX_ATTEMPTS, MAX_RUNNING, STALE_MS, code_hash, season, seasons, test_seed, token};
 use crate::server::db;
 use crate::server::{hex, now_ms};
 
@@ -32,12 +32,16 @@ pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Err
             season,
             score,
             fingerprint,
+            results,
+            rules_version,
         } => {
             let json = serde_json::to_string(score).unwrap_or_default();
             let fingerprint = serde_json::to_string(fingerprint).unwrap_or_default();
+            let results = serde_json::to_string(results).unwrap_or_default();
             conn.execute(
                 "UPDATE dojo_submissions SET state = 'done', progress = ?1, total = ?1, score = ?2, par2 = ?3,
-                    solved = ?4, wrong = ?5, error = NULL, updated_at = ?6, fingerprint = ?9, similar_to = NULL
+                    solved = ?4, wrong = ?5, error = NULL, updated_at = ?6, fingerprint = ?9, similar_to = NULL,
+                    results = ?10, rules_version = ?11
                  WHERE id = ?7 AND season = ?8",
                 params![
                     score.total,
@@ -48,7 +52,9 @@ pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Err
                     now,
                     *id,
                     *season,
-                    fingerprint
+                    fingerprint,
+                    results,
+                    *rules_version
                 ],
             )
             .await?;
@@ -125,27 +131,25 @@ async fn mark_copies(conn: &Connection, id: i64) -> Result<(), libsql::Error> {
     Ok(())
 }
 
-/// `POST /dojo/report` from the worker.
-pub async fn report_handler(
-    headers: HeaderMap,
-    axum::Json(report): axum::Json<Report>,
-) -> StatusCode {
-    let Ok(conn) = db::conn() else {
-        return StatusCode::SERVICE_UNAVAILABLE;
-    };
-    // Only with the token of this very job: the worker holds no key to other submissions
-    let expected: Option<String> = match conn
+/// Whether the request carries the token of the job of submission `id`: the worker holds no key
+/// to other submissions. `Some` with the submission's season when it does.
+pub(super) async fn job_authorized(
+    conn: &Connection,
+    id: i64,
+    headers: &HeaderMap,
+) -> Result<Option<u32>, StatusCode> {
+    let (expected, season): (Option<String>, u32) = match conn
         .query(
-            "SELECT job_token FROM dojo_submissions WHERE id = ?1",
-            params![report.id()],
+            "SELECT job_token, season FROM dojo_submissions WHERE id = ?1",
+            params![id],
         )
         .await
     {
         Ok(mut rows) => match rows.next().await {
-            Ok(Some(row)) => row.get(0).ok().flatten(),
-            _ => None,
+            Ok(Some(row)) => (row.get(0).ok().flatten(), row.get(1).unwrap_or_default()),
+            _ => (None, 0),
         },
-        Err(_) => return StatusCode::SERVICE_UNAVAILABLE,
+        Err(_) => return Err(StatusCode::SERVICE_UNAVAILABLE),
     };
     let given = headers
         .get(header::AUTHORIZATION)
@@ -162,8 +166,21 @@ pub async fn report_handler(
         }
         _ => false,
     };
-    if !valid {
-        return StatusCode::UNAUTHORIZED;
+    Ok(valid.then_some(season))
+}
+
+/// `POST /dojo/report` from the worker.
+pub async fn report_handler(
+    headers: HeaderMap,
+    axum::Json(report): axum::Json<Report>,
+) -> StatusCode {
+    let Ok(conn) = db::conn() else {
+        return StatusCode::SERVICE_UNAVAILABLE;
+    };
+    match job_authorized(&conn, report.id(), &headers).await {
+        Ok(Some(_)) => {}
+        Ok(None) => return StatusCode::UNAUTHORIZED,
+        Err(status) => return status,
     }
     match apply(&conn, &report).await {
         Ok(()) => StatusCode::NO_CONTENT,
@@ -174,63 +191,83 @@ pub async fn report_handler(
     }
 }
 
-/// Housekeeping before sending work: a new season re-evaluates everything, evaluations that
-/// went quiet are queued again (or given up after a few attempts).
-pub async fn housekeeping(conn: &Connection) -> Result<(), libsql::Error> {
+/// Housekeeping before sending work.
+///
+/// A new season freezes the old one and re-evaluates everything (see [`seasons`]), so do newer
+/// rules, evaluations that went quiet are queued again (or given up after a few attempts).
+pub async fn housekeeping(conn: &Connection) -> Result<(), String> {
+    housekeeping_at(conn, season()).await
+}
+
+/// [`housekeeping`] with `current` as the current season.
+pub(super) async fn housekeeping_at(conn: &Connection, current: u32) -> Result<(), String> {
+    let err = |e: libsql::Error| e.to_string();
     let now = now_ms();
+    seasons::freeze_past(conn, current, now).await?;
+    // Later seasons (DOJO_SEASON went back): evaluated again, nothing archived or revealed
     conn.execute(
         "UPDATE dojo_submissions SET state = 'queued', season = ?1, progress = 0, updated_at = ?2, attempts = 0,
-            fingerprint = NULL, similar_to = NULL
+            fingerprint = NULL, similar_to = NULL, results = NULL
          WHERE season != ?1 AND state IN ('done', 'queued', 'running')",
-        params![season(), now],
+        params![current, now],
     )
-    .await?;
+    .await
+    .map_err(err)?;
+    seasons::open(conn, current, now).await?;
+    seasons::requeue_old_rules(conn, current, now).await?;
     // Code hashes of submissions from before they existed
     let mut rows = conn
         .query(
             "SELECT id, wasm FROM dojo_submissions WHERE code_hash IS NULL LIMIT 20",
             (),
         )
-        .await?;
+        .await
+        .map_err(err)?;
     let mut missing = Vec::new();
-    while let Some(row) = rows.next().await? {
-        missing.push((row.get::<i64>(0)?, row.get::<Vec<u8>>(1)?));
+    while let Some(row) = rows.next().await.map_err(err)? {
+        missing.push((
+            row.get::<i64>(0).map_err(err)?,
+            row.get::<Vec<u8>>(1).map_err(err)?,
+        ));
     }
     for (id, wasm) in missing {
         conn.execute(
             "UPDATE dojo_submissions SET code_hash = ?2 WHERE id = ?1",
             params![id, code_hash(&wasm).unwrap_or_default()],
         )
-        .await?;
+        .await
+        .map_err(err)?;
     }
     conn.execute(
         "UPDATE dojo_submissions SET state = CASE WHEN attempts >= ?1 THEN 'failed' ELSE 'queued' END, updated_at = ?2
          WHERE state = 'running' AND updated_at < ?3",
         params![MAX_ATTEMPTS, now, now - STALE_MS],
     )
-    .await?;
+    .await
+    .map_err(err)?;
     Ok(())
 }
 
-/// Sends queued submissions to the worker.
+/// Housekeeping, then sends queued submissions to the worker if there is one. Without one
+/// seasons are still frozen and opened on time.
 pub async fn dispatch() -> Result<(), String> {
     static BUSY: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-    let (Some(url), Some(token)) = (
-        std::env::var("DOJO_URL").ok().filter(|u| !u.is_empty()),
-        token(),
-    ) else {
-        return Ok(());
-    };
     let Ok(_guard) = BUSY.try_lock() else {
         return Ok(());
     };
     let conn = db::conn().map_err(|e| e.to_string())?;
-    dispatch_to(&conn, &url, &token).await
+    match (
+        std::env::var("DOJO_URL").ok().filter(|u| !u.is_empty()),
+        token(),
+    ) {
+        (Some(url), Some(token)) => dispatch_to(&conn, &url, &token).await,
+        _ => housekeeping(&conn).await,
+    }
 }
 
 /// [`dispatch`] to the worker at `url`, authenticated with `token`.
 pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Result<(), String> {
-    housekeeping(conn).await.map_err(|e| e.to_string())?;
+    housekeeping(conn).await?;
     let client = reqwest::Client::new();
     loop {
         let mut rows = conn
@@ -265,6 +302,12 @@ pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Re
         let wasm: Vec<u8> = row.get(0).map_err(|e| e.to_string())?;
         let season = row.get::<u32>(1).map_err(|e| e.to_string())?;
         let seed = test_seed(season);
+        // The set of this season, unless the site has it from this generator already
+        let export = if seasons::wants_set(conn, season).await? {
+            "&export=1"
+        } else {
+            ""
+        };
         // Reports about this job have to carry this token, it's good for nothing else
         let mut bytes = [0u8; 32];
         getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
@@ -278,7 +321,7 @@ pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Re
         // The worker machine may have to start first
         let sent = client
             .post(format!(
-                "{}/jobs?id={id}&season={season}&seed={seed}&report_token={report_token}",
+                "{}/jobs?id={id}&season={season}&seed={seed}&report_token={report_token}&rules={RULES_VERSION}{export}",
                 url.trim_end_matches('/')
             ))
             .bearer_auth(token)
