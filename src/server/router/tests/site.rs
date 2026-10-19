@@ -20,6 +20,8 @@ async fn pages_are_rendered_in_their_language() {
         ("/de/rules", "de"),
         ("/ja/ranks", "ja"),
         ("/zh-Hant/dojo", "zh-Hant"),
+        ("/kontakt", "en"),
+        ("/de/kontakt", "de"),
     ] {
         let res = browser.get(path).await;
         assert_status(&res, StatusCode::OK);

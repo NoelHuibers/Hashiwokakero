@@ -11,6 +11,7 @@
 
 mod accounts;
 mod admin;
+mod contact;
 mod dojo;
 mod playing;
 mod site;
@@ -31,7 +32,7 @@ use serde::de::DeserializeOwned;
 use tokio::sync::{Mutex, MutexGuard, OnceCell};
 
 use crate::model::ApiError;
-use crate::server::{daily, db};
+use crate::server::{auth, daily, db};
 
 /// The username of the admin, see [`env_var`].
 const ADMIN: &str = "http_admin";
@@ -156,6 +157,13 @@ impl Server {
     fn sending_cookie(&self, cookie: &str) -> Browser {
         let mut headers = HeaderMap::new();
         headers.insert(COOKIE, cookie.parse().unwrap());
+        self.browser_sending(headers)
+    }
+
+    /// A browser behind the fly.io proxy, which says where requests come from.
+    fn browser_from(&self, ip: &str) -> Browser {
+        let mut headers = HeaderMap::new();
+        headers.insert("fly-client-ip", ip.parse().unwrap());
         self.browser_sending(headers)
     }
 
