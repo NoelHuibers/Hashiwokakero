@@ -32,5 +32,17 @@
   "signed_out": "Signed out.",
   "name_hint": "Your results count on the leaderboard under this name.",
   "sign_out": "Sign out",
-  "no_dailies": "No dailies yet."
+  "no_dailies": "No dailies yet.",
+  "delete": {
+    "title": "Delete account",
+    "intro": "Deletes your name, password, stamps and Dojo submissions for good. Your past times stay on old leaderboards without a name, so the other players keep their places.",
+    "intro_guest": "Deletes this guest and its stamps for good. Past times stay on old leaderboards without a name, so the other players keep their places.",
+    "start": "Delete account…",
+    "start_guest": "Delete guest…",
+    "confirm": "This can't be undone. Enter your password to confirm.",
+    "confirm_guest": "This can't be undone.",
+    "button": "Delete for good",
+    "cancel": "Cancel",
+    "done": "Your account is deleted."
+  }
 }

@@ -5,11 +5,13 @@ use leptos_router::components::{Outlet, Route, Router, Routes};
 use leptos_router::path;
 
 use crate::components::layout::{Footer, Header, MobileNav, Toaster};
+use crate::components::ui::tooltip::Tooltips;
 use crate::i18n::{I18nContextProvider, Locale, use_i18n};
 use crate::lang::script_font;
 use crate::pages::NotFound;
 use crate::pages::account::AccountPage;
 use crate::pages::admin::AdminPage;
+use crate::pages::contact::ContactPage;
 use crate::pages::create::CreatePage;
 use crate::pages::daily::DailyPage;
 use crate::pages::dojo::{DojoPage, DojoSubmissionPage};
@@ -84,6 +86,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/rules") view=RulesPage />
                             <Route path=path!("/impressum") view=ImpressumPage />
                             <Route path=path!("/datenschutz") view=PrivacyPage />
+                            <Route path=path!("/kontakt") view=ContactPage />
                         </I18nRoute<Locale, _, _>>
                     </Routes>
                 </main>
@@ -91,6 +94,7 @@ pub fn App() -> impl IntoView {
             </div>
             <MobileNav />
             <Toaster />
+            <Tooltips />
         </Router>
         </I18nContextProvider>
     }

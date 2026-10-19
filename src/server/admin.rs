@@ -53,7 +53,12 @@ async fn count(conn: &Connection, sql: &str, day: i64) -> Result<i64, ServerFnEr
 pub async fn overview(conn: &Connection) -> Result<AdminOverview, ServerFnError> {
     let day = daily::today();
     Ok(AdminOverview {
-        users: count(conn, "SELECT COUNT(*) FROM users WHERE ?1 = ?1", day).await?,
+        users: count(
+            conn,
+            "SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND ?1 = ?1",
+            day,
+        )
+        .await?,
         registered: count(
             conn,
             "SELECT COUNT(*) FROM users WHERE username IS NOT NULL AND ?1 = ?1",
@@ -81,6 +86,7 @@ pub async fn overview(conn: &Connection) -> Result<AdminOverview, ServerFnError>
         )
         .await?,
         dojo_total: count(conn, "SELECT COUNT(*) FROM dojo_submissions WHERE ?1 = ?1", day).await?,
+        messages: count(conn, "SELECT COUNT(*) FROM contact_messages WHERE ?1 = ?1", day).await?,
     })
 }
 

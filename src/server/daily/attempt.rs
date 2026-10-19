@@ -3,7 +3,6 @@
 use common::{Board, Puzzle};
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
-use sha2::{Digest, Sha256};
 
 use super::stamps::sync;
 use super::{from_json, get_or_create, json, load, today};
@@ -100,10 +99,11 @@ pub async fn start(
     device: Option<&str>,
 ) -> Result<DailyInfo, ServerFnError> {
     get_or_create(conn, day).await?;
-    // Stored hashed per day, so devices can't be followed from one day to the next
+    // Stored hashed with the secret and the day, so devices can't be followed from one day to the
+    // next, not even by someone who knows a device's id
     let device = device
         .filter(|d| (8..=64).contains(&d.len()))
-        .map(|d| crate::server::hex(&Sha256::digest(format!("device:{day}:{d}").as_bytes())));
+        .map(|d| crate::server::keyed_hash("device", day, d));
     let seen = if let Some(device) = &device {
         let mut rows = conn
             .query(

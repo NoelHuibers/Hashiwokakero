@@ -64,7 +64,11 @@
     "wrong_puzzle": "These bridges don't belong to this puzzle.",
     "already_finished": "You already finished this daily.",
     "daily_locked": "That's today's daily: the solvers will help with it once you've finished it yourself.",
-    "forbidden": "That's only for admins."
+    "forbidden": "That's only for admins.",
+    "wrong_password": "Wrong password.",
+    "email_invalid": "That doesn't look like an email address.",
+    "message_invalid": "Please write between 10 and 5000 characters.",
+    "too_many_messages": "That's enough messages for today, please try again tomorrow."
   },
   "solver": {
     "title": "SAT Solver",
@@ -90,7 +94,8 @@
     "guest": "guest",
     "guest_name": "Guest",
     "penalties": "hints · checks",
-    "empty": "Nobody has crossed yet. Be the first!"
+    "empty": "Nobody has crossed yet. Be the first!",
+    "deleted": "deleted player"
   },
   "board": {
     "label": "Hashiwokakero board",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Legal notice",
     "privacy": "Privacy",
-    "english": "English version"
+    "english": "English version",
+    "contact": "Contact"
   },
   "audio": {
     "sound": "Sound effects",

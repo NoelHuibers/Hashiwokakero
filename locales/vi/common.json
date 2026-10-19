@@ -64,7 +64,11 @@
     "wrong_puzzle": "Những cây cầu này không thuộc câu đố này.",
     "already_finished": "Bạn đã hoàn thành câu đố ngày này rồi.",
     "daily_locked": "Đó là câu đố hôm nay: các bộ giải sẽ giúp bạn sau khi bạn tự hoàn thành nó.",
-    "forbidden": "Chỉ dành cho quản trị viên."
+    "forbidden": "Chỉ dành cho quản trị viên.",
+    "wrong_password": "Sai mật khẩu.",
+    "email_invalid": "Đây có vẻ không phải là địa chỉ email.",
+    "message_invalid": "Vui lòng viết từ 10 đến 5000 ký tự.",
+    "too_many_messages": "Hôm nay bạn đã gửi đủ tin nhắn rồi, vui lòng thử lại vào ngày mai."
   },
   "solver": {
     "title": "Bộ giải SAT",
@@ -90,7 +94,8 @@
     "guest": "khách",
     "guest_name": "Khách",
     "penalties": "gợi ý · kiểm tra",
-    "empty": "Chưa ai qua cầu. Hãy là người đầu tiên!"
+    "empty": "Chưa ai qua cầu. Hãy là người đầu tiên!",
+    "deleted": "người chơi đã bị xóa"
   },
   "board": {
     "label": "Bàn chơi Hashiwokakero",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Thông tin pháp lý",
     "privacy": "Quyền riêng tư",
-    "english": "Bản tiếng Anh"
+    "english": "Bản tiếng Anh",
+    "contact": "Liên hệ"
   },
   "audio": {
     "sound": "Hiệu ứng âm thanh",

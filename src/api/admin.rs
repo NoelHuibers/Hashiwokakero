@@ -4,10 +4,10 @@ use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
 use crate::model::{
-    AdminAttempt, AdminOverview, AdminSubmission, Flag, MoveEvent, SubmissionAction,
+    AdminAttempt, AdminOverview, AdminSubmission, ContactMessage, Flag, MoveEvent, SubmissionAction,
 };
 #[cfg(feature = "ssr")]
-use crate::server::{admin, daily, db};
+use crate::server::{admin, contact, daily, db};
 
 #[server(input = Json)]
 pub async fn load_admin_overview() -> Result<AdminOverview, ServerFnError> {
@@ -55,4 +55,20 @@ pub async fn update_admin_submission(
     let conn = db::conn()?;
     admin::require(&conn).await?;
     admin::submission_action(&conn, id, action).await
+}
+
+/// Messages from the contact form, newest first.
+#[server(input = Json)]
+pub async fn admin_messages() -> Result<Vec<ContactMessage>, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    contact::list(&conn).await
+}
+
+/// Deletes a contact message once it is answered.
+#[server(input = Json)]
+pub async fn delete_admin_message(id: i64) -> Result<(), ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    contact::delete(&conn, id).await
 }

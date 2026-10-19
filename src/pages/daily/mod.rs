@@ -11,7 +11,7 @@ use std::time::Duration;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::{daily_check, daily_hint, daily_reveal, submit_daily};
+use crate::api::{daily_check, daily_hint, daily_reveal, daily_today, submit_daily};
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
 use crate::components::stamps::announce;
@@ -21,8 +21,8 @@ use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name, error_text};
 use crate::model::{
-    CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, MoveEvent, WEEKDAY_KANJI, daily_number,
-    format_duration, weekday,
+    AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, MoveEvent, WEEKDAY_KANJI,
+    daily_number, format_duration, weekday,
 };
 use crate::pages::play::{SeoIntro, islands_percent};
 use crate::seo::{PageMeta, site_ld};
@@ -62,6 +62,7 @@ pub fn DailyPage() -> impl IntoView {
         result: RwSignal::new(None),
         ranking: RwSignal::new(None),
         busy: RwSignal::new(false),
+        refreshing: StoredValue::new(false),
     };
 
     // Load today's daily and keep a clock running (browser only)
@@ -77,6 +78,17 @@ pub fn DailyPage() -> impl IntoView {
         ) {
             on_cleanup(move || handle.clear());
         }
+        // Back from another tab or window, which may have started or finished the daily
+        let focus = window_event_listener(leptos::ev::focus, move |_| daily.refresh());
+        let visible = window_event_listener_untyped("visibilitychange", move |_| {
+            if document().visibility_state() == web_sys::VisibilityState::Visible {
+                daily.refresh();
+            }
+        });
+        on_cleanup(move || {
+            focus.remove();
+            visible.remove();
+        });
     });
 
     // A new day started while the page was open
@@ -153,7 +165,7 @@ pub fn DailyPage() -> impl IntoView {
                 }
                 Err(e) => {
                     toast(ToastKind::Error, move |l| error_text(l, &e));
-                    game.status.set(Status::Playing);
+                    daily.submit_failed(daily_today().await.ok());
                 }
             }
             daily.busy.set(false);
@@ -319,7 +331,7 @@ pub fn DailyPage() -> impl IntoView {
                                 value=Signal::derive(move || {
                                     let p = daily
                                         .info
-                                        .with(|i| i.as_ref().and_then(|i| i.attempt.as_ref()).map(super::super::model::AttemptInfo::penalty_ms))
+                                        .with(|i| i.as_ref().and_then(|i| i.attempt.as_ref()).map(AttemptInfo::penalty_ms))
                                         .unwrap_or(0);
                                     format!("+{}s", p / 1000)
                                 })
@@ -407,7 +419,7 @@ pub fn DailyPage() -> impl IntoView {
                                 <Button
                                     variant=ButtonVariant::Secondary
                                     attr:disabled=move || !playing.get()
-                                    attr:title=format!("+{} s", CHECK_PENALTY_MS / 1000)
+                                    attr:data-tooltip=format!("+{} s", CHECK_PENALTY_MS / 1000)
                                     on:click=check
                                 >
                                     {t!(i18n, common.game.check)} <span class="hidden sm:inline">" 確認"</span> <span class="text-xs opacity-70">"+10s"</span>
@@ -415,7 +427,7 @@ pub fn DailyPage() -> impl IntoView {
                                 <Button
                                     variant=ButtonVariant::Secondary
                                     attr:disabled=move || !playing.get()
-                                    attr:title=format!("+{} s", HINT_PENALTY_MS / 1000)
+                                    attr:data-tooltip=format!("+{} s", HINT_PENALTY_MS / 1000)
                                     on:click=hint
                                 >
                                     {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70">"+30s"</span>

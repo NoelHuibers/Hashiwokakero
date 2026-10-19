@@ -55,7 +55,7 @@ pub fn ThemeToggle() -> impl IntoView {
     view! {
         <button
             class="hidden size-10 shrink-0 place-items-center rounded-lg border bg-card text-lg transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:grid"
-            title=move || {
+            data-tooltip=move || {
                 if settings.dark.get() {
                     t_string!(i18n, common.theme.to_day)
                 } else {
@@ -79,7 +79,7 @@ pub fn HelpButton() -> impl IntoView {
         <A
             href=rules
             attr:class="grid size-10 shrink-0 place-items-center rounded-lg border bg-card font-pixel text-lg leading-none transition-transform hover:-translate-y-0.5"
-            attr:title=move || t_string!(i18n, common.footer.how_to_play)
+            attr:data-tooltip=move || t_string!(i18n, common.footer.how_to_play)
             attr:aria-label=move || t_string!(i18n, common.footer.how_to_play)
         >
             "?"

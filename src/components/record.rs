@@ -49,7 +49,7 @@ fn Calendar(stats: UserStats) -> impl IntoView {
                     view! {
                         <div
                             class=format!("aspect-square rounded-[3px] border border-black/5 {class}")
-                            title=title
+                            data-tooltip=title
                             data-date=date_string(d.day)
                         ></div>
                     }

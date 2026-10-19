@@ -13,8 +13,9 @@ pub const LOCALES: [&str; 20] = [
     "ja", "ko", "zh", "zh-Hant",
 ];
 
-pub const NAMESPACES: [&str; 10] = [
+pub const NAMESPACES: [&str; 11] = [
     "common", "daily", "practice", "ranks", "account", "create", "lab", "rules", "dojo", "stamps",
+    "contact",
 ];
 
 fn main() -> Result<(), Box<dyn Error>> {

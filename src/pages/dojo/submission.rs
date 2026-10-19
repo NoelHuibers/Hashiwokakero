@@ -58,7 +58,7 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
         <div class="grid grid-cols-3 gap-3">
             <div class="rounded-lg border bg-card px-3 py-2">
                 <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t!(i18n, dojo.board.par2)}</p>
-                <p class="font-pixel text-2xl tabular-nums" title=move || format!("{}: {:.1} G", t_string!(i18n, dojo.detail.fuel), score.fuel.max(0.0))>
+                <p class="font-pixel text-2xl tabular-nums" data-tooltip=move || format!("{}: {:.1} G", t_string!(i18n, dojo.detail.fuel), score.fuel.max(0.0))>
                     {par2(&score)}
                 </p>
             </div>
@@ -202,7 +202,7 @@ pub fn DojoSubmissionPage() -> impl IntoView {
                                 <span>{t!(i18n, dojo.detail.by, author = s.author.clone())}</span>
                                 <span>{t!(i18n, dojo.detail.submitted, date)}</span>
                                 <span>{t!(i18n, dojo.detail.season, season = s.season)}</span>
-                                <span class="font-pixel" title=s.sha256.clone()>
+                                <span class="font-pixel" data-tooltip=s.sha256.clone()>
                                     {format!("{:.0} KiB · {}", kib(s.size), &s.sha256[..s.sha256.len().min(12)])}
                                 </span>
                             </p>

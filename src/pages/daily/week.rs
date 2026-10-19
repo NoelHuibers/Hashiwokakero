@@ -44,7 +44,7 @@ pub(super) fn WeekCard(daily: Daily) -> impl IntoView {
                                 <div
                                     class="flex flex-col items-center rounded-md border py-1.5"
                                     class=(["border-primary", "bg-primary", "text-primary-foreground"], is_today)
-                                    title=move || difficulty_name(i18n.get_locale(), d)
+                                    data-tooltip=move || difficulty_name(i18n.get_locale(), d)
                                 >
                                     <span class="font-pixel text-base leading-none">{WEEKDAY_KANJI[wd]}</span>
                                     <span class="mt-1 font-pixel text-[11px] opacity-80">{d.kanji()}</span>

@@ -27,7 +27,7 @@ fn FamilyChips(score: Score) -> impl IntoView {
                     view! {
                         <span
                             class="relative grid size-7 place-items-center overflow-hidden rounded-sm border bg-muted font-pixel text-xs"
-                            title=title
+                            data-tooltip=title
                         >
                             <span
                                 class="absolute inset-x-0 bottom-0 bg-primary/70"

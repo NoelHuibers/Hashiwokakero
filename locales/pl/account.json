@@ -32,5 +32,17 @@
   "signed_out": "Wylogowano.",
   "name_hint": "Pod tą nazwą twoje wyniki pojawią się w rankingu.",
   "sign_out": "Wyloguj się",
-  "no_dailies": "Brak łamigłówek dnia."
+  "no_dailies": "Brak łamigłówek dnia.",
+  "delete": {
+    "title": "Usuń konto",
+    "intro": "Na zawsze usuwa twoją nazwę, hasło, pieczątki i zgłoszenia do Dojo. Twoje dawne czasy zostają bez nazwy w starych rankingach, żeby pozostali gracze zachowali swoje miejsca.",
+    "intro_guest": "Na zawsze usuwa tego gościa i jego pieczątki. Dawne czasy zostają bez nazwy w starych rankingach, żeby pozostali gracze zachowali swoje miejsca.",
+    "start": "Usuń konto…",
+    "start_guest": "Usuń gościa…",
+    "confirm": "Tego nie da się cofnąć. Wpisz hasło, aby potwierdzić.",
+    "confirm_guest": "Tego nie da się cofnąć.",
+    "button": "Usuń na zawsze",
+    "cancel": "Anuluj",
+    "done": "Twoje konto zostało usunięte."
+  }
 }

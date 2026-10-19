@@ -32,5 +32,17 @@
   "signed_out": "Uitgelogd.",
   "name_hint": "Onder deze naam tellen je resultaten mee in de ranglijst.",
   "sign_out": "Uitloggen",
-  "no_dailies": "Nog geen dagpuzzels."
+  "no_dailies": "Nog geen dagpuzzels.",
+  "delete": {
+    "title": "Account verwijderen",
+    "intro": "Verwijdert je naam, wachtwoord, stempels en Dojo-inzendingen voorgoed. Je eerdere tijden blijven zonder naam in oude ranglijsten staan, zodat de andere spelers hun plek houden.",
+    "intro_guest": "Verwijdert deze gast en zijn stempels voorgoed. Eerdere tijden blijven zonder naam in oude ranglijsten staan, zodat de andere spelers hun plek houden.",
+    "start": "Account verwijderen…",
+    "start_guest": "Gast verwijderen…",
+    "confirm": "Dit kan niet ongedaan worden gemaakt. Voer je wachtwoord in om te bevestigen.",
+    "confirm_guest": "Dit kan niet ongedaan worden gemaakt.",
+    "button": "Voorgoed verwijderen",
+    "cancel": "Annuleren",
+    "done": "Je account is verwijderd."
+  }
 }

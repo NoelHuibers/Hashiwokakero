@@ -32,5 +32,17 @@
   "signed_out": "Çıkış yapıldı.",
   "name_hint": "Sonuçların sıralamada bu adla görünür.",
   "sign_out": "Çıkış yap",
-  "no_dailies": "Henüz günlük bulmaca yok."
+  "no_dailies": "Henüz günlük bulmaca yok.",
+  "delete": {
+    "title": "Hesabı sil",
+    "intro": "Adını, şifreni, mühürlerini ve Dojo gönderimlerini kalıcı olarak siler. Geçmiş sürelerin eski sıralamalarda isimsiz olarak kalır, böylece diğer oyuncular yerlerini korur.",
+    "intro_guest": "Bu misafiri ve mühürlerini kalıcı olarak siler. Geçmiş süreler eski sıralamalarda isimsiz olarak kalır, böylece diğer oyuncular yerlerini korur.",
+    "start": "Hesabı sil…",
+    "start_guest": "Misafiri sil…",
+    "confirm": "Bu geri alınamaz. Onaylamak için şifreni gir.",
+    "confirm_guest": "Bu geri alınamaz.",
+    "button": "Kalıcı olarak sil",
+    "cancel": "İptal",
+    "done": "Hesabın silindi."
+  }
 }

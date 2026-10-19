@@ -64,7 +64,11 @@
     "wrong_puzzle": "Estos puentes no pertenecen a este puzle.",
     "already_finished": "Ya has terminado este reto diario.",
     "daily_locked": "Ese es el reto diario de hoy: los solvers te ayudarán cuando lo hayas terminado tú.",
-    "forbidden": "Solo para administradores."
+    "forbidden": "Solo para administradores.",
+    "wrong_password": "Contraseña incorrecta.",
+    "email_invalid": "Eso no parece una dirección de correo electrónico.",
+    "message_invalid": "Escribe entre 10 y 5000 caracteres, por favor.",
+    "too_many_messages": "Ya son suficientes mensajes por hoy, inténtalo de nuevo mañana."
   },
   "solver": {
     "title": "Solver SAT",
@@ -90,7 +94,8 @@
     "guest": "invitado",
     "guest_name": "Invitado",
     "penalties": "pistas · comprobaciones",
-    "empty": "Nadie ha cruzado todavía. ¡Abre tú el camino!"
+    "empty": "Nadie ha cruzado todavía. ¡Abre tú el camino!",
+    "deleted": "jugador eliminado"
   },
   "board": {
     "label": "Tablero de Hashiwokakero",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Aviso legal",
     "privacy": "Privacidad",
-    "english": "Versión en inglés"
+    "english": "Versión en inglés",
+    "contact": "Contacto"
   },
   "audio": {
     "sound": "Efectos de sonido",

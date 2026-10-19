@@ -64,7 +64,11 @@
     "wrong_puzzle": "Bu köprüler bu bulmacaya ait değil.",
     "already_finished": "Bu günlük bulmacayı zaten bitirdin.",
     "daily_locked": "Bu bugünün günlük bulmacası: çözücüler, sen kendin bitirdikten sonra yardım eder.",
-    "forbidden": "Bu yalnızca yöneticiler için."
+    "forbidden": "Bu yalnızca yöneticiler için.",
+    "wrong_password": "Şifre yanlış.",
+    "email_invalid": "Bu bir e-posta adresine benzemiyor.",
+    "message_invalid": "Lütfen 10 ile 5000 karakter arasında yaz.",
+    "too_many_messages": "Bugünlük bu kadar mesaj yeter, lütfen yarın tekrar dene."
   },
   "solver": {
     "title": "SAT çözücü",
@@ -90,7 +94,8 @@
     "guest": "misafir",
     "guest_name": "Misafir",
     "penalties": "ipucu · kontrol",
-    "empty": "Henüz kimse karşıya geçmedi. İlk sen ol!"
+    "empty": "Henüz kimse karşıya geçmedi. İlk sen ol!",
+    "deleted": "silinmiş oyuncu"
   },
   "board": {
     "label": "Hashiwokakero tahtası",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Künye",
     "privacy": "Gizlilik",
-    "english": "İngilizce sürüm"
+    "english": "İngilizce sürüm",
+    "contact": "İletişim"
   },
   "audio": {
     "sound": "Ses efektleri",
