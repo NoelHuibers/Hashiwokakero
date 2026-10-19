@@ -430,19 +430,24 @@ async fn check_password(
     if !login_allowed(&key) {
         return Err(ApiError::TooManyAttempts.into());
     }
-    let mut rows = conn
-        .query(
-            "SELECT id, username, name, created_at, renamed_at, password_hash FROM users WHERE username = ?1",
-            params![username],
-        )
-        .await
-        .map_err(db_err)?;
-    let found = match rows.next().await.map_err(db_err)? {
-        Some(row) => Some((
-            row_to_user(&row).map_err(db_err)?,
-            row.get::<Option<String>>(5).map_err(db_err)?,
-        )),
-        None => None,
+    // The query ends before the hash is checked, which can take seconds on a busy server: an
+    // unfinished query keeps a read open, on a local file in rollback journal mode one that
+    // blocks every write (see `signing_in_holds_no_lock_while_the_password_is_checked`)
+    let found = {
+        let mut rows = conn
+            .query(
+                "SELECT id, username, name, created_at, renamed_at, password_hash FROM users WHERE username = ?1",
+                params![username],
+            )
+            .await
+            .map_err(db_err)?;
+        match rows.next().await.map_err(db_err)? {
+            Some(row) => Some((
+                row_to_user(&row).map_err(db_err)?,
+                row.get::<Option<String>>(5).map_err(db_err)?,
+            )),
+            None => None,
+        }
     };
     let valid = match &found {
         Some((_, Some(hash))) => verify_password(password, hash.clone()).await?,
@@ -679,6 +684,86 @@ mod tests {
         );
         // A new salt every time
         assert_ne!(hash, hash_password("correct horse".into()).await.unwrap());
+    }
+
+    /// Signing in while another request writes. The password hash is checked on the blocking
+    /// threads, where it can wait its turn behind puzzle generators and solvers for seconds. It
+    /// did that with its query still open, which on a local file kept a read lock: the other
+    /// request's write couldn't commit and failed with "database is locked" after the busy
+    /// timeout (two sign ins of the browser tests did). The file is in SQLite's default rollback
+    /// journal mode here, where any lock held shows up as a write that fails.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn signing_in_holds_no_lock_while_the_password_is_checked() {
+        use std::time::{Duration, Instant};
+
+        use crate::server::db;
+
+        let path = std::env::temp_dir().join(format!("hashi-sign-in-{}.db", std::process::id()));
+        db::remove_local(&path);
+        let database = libsql::Builder::new_local(path.to_str().unwrap())
+            .build()
+            .await
+            .unwrap();
+        let signing_in = db::connect(&database).unwrap();
+        let other = db::connect(&database).unwrap();
+        db::migrate(&other).await.unwrap();
+        let mut rows = other.query("PRAGMA journal_mode", ()).await.unwrap();
+        let mode: String = rows.next().await.unwrap().unwrap().get(0).unwrap();
+        assert_eq!(mode, "delete");
+        drop(rows);
+        other
+            .execute(
+                "INSERT INTO users (username, name, password_hash, created_at) VALUES ('lockless', 'lockless', ?1, 1)",
+                params![STORED_HASH],
+            )
+            .await
+            .unwrap();
+
+        // Both blocking permits taken, like by two puzzles being generated
+        let (started_tx, mut started) = tokio::sync::mpsc::unbounded_channel();
+        let mut releases = Vec::new();
+        for _ in 0..2 {
+            let (release, wait) = std::sync::mpsc::channel::<()>();
+            releases.push(release);
+            let started_tx = started_tx.clone();
+            tokio::spawn(run_blocking(move || {
+                started_tx.send(()).unwrap();
+                let _ = wait.recv();
+                Ok(())
+            }));
+        }
+        for _ in 0..2 {
+            started.recv().await.unwrap();
+        }
+        let sign_in = tokio::spawn(async move {
+            check_password(&signing_in, "lockless", "correct horse".into())
+                .await
+                .map(|user| user.map(|u| u.id))
+        });
+        // The query takes a moment, then the hash waits for a permit
+        tokio::time::sleep(Duration::from_millis(300)).await;
+
+        let writing = Instant::now();
+        let wrote = other
+            .execute(
+                "INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES ('ab', 1, 1, 2)",
+                (),
+            )
+            .await;
+        let waited = writing.elapsed();
+        drop(releases);
+        assert!(
+            wrote.is_ok(),
+            "a write while someone signs in: {:?}",
+            wrote.err()
+        );
+        assert!(
+            waited < Duration::from_secs(1),
+            "the write waited for the sign in: {waited:?}"
+        );
+        assert_eq!(sign_in.await.unwrap().unwrap(), Some(1));
+        drop((other, database));
+        db::remove_local(&path);
     }
 
     #[test]
