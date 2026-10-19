@@ -37,12 +37,19 @@ pub fn parse_input(filename: &str) -> io::Result<GameBoard> {
 
     let input = fs::read_to_string(filename)?;
     let lines: Vec<&str> = input.lines().collect();
+    // An empty file used to panic here
+    let Some((header, rows_text)) = lines.split_first() else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "The file is empty",
+        ));
+    };
 
-    let (rows, cols) = parse_rows_and_cols(lines[0])?;
+    let (rows, cols) = parse_rows_and_cols(header)?;
 
-    check_game_board_format(&lines[1..], rows, cols)?;
+    check_game_board_format(rows_text, rows, cols)?;
 
-    let islands = parse_islands(&lines[1..])?;
+    let islands = parse_islands(rows_text)?;
     let mut game_board = GameBoard {
         rows,
         cols,
@@ -110,7 +117,13 @@ fn parse_u8(s: &str, error_message: &str) -> io::Result<u8> {
 fn parse_islands(lines: &[&str]) -> io::Result<Vec<Island>> {
     let mut islands = Vec::new();
 
-    for (y, line) in lines.iter().enumerate() {
+    // Blank lines don't count as rows, as in `check_game_board_format`. Counting them put
+    // islands below the grid (or panicked after 255 of them).
+    for (y, line) in lines
+        .iter()
+        .filter(|line| !line.trim().is_empty())
+        .enumerate()
+    {
         for (x, ch) in line.chars().enumerate() {
             if ch != '.' {
                 let connections = parse_u8(&ch.to_string(), "Invalid island connection count")?;
