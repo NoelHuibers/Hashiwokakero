@@ -17,6 +17,7 @@
 
 use std::collections::HashMap;
 use std::fmt::Write as _;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -137,35 +138,47 @@ impl Reporter {
     }
 }
 
+/// The evaluator's settings from the environment (see the top of this file).
+#[derive(Debug, Default)]
+struct Settings {
+    threads: Option<usize>,
+    memory_mb: Option<usize>,
+    cache: Option<PathBuf>,
+}
+
+impl Settings {
+    fn from_env() -> Self {
+        let var = |name| std::env::var(name).ok();
+        Self {
+            threads: var("DOJO_THREADS").and_then(|t| t.parse().ok()),
+            memory_mb: var("DOJO_MEMORY_MB").and_then(|t| t.parse().ok()),
+            cache: var("DOJO_CACHE_DIR").map(PathBuf::from),
+        }
+    }
+}
+
 /// Evaluates jobs one after another on a blocking thread (each one uses every core).
 fn evaluator(
     mut jobs: mpsc::UnboundedReceiver<Job>,
     reporter: &Reporter,
     shared: &Shared,
     runtime: &tokio::runtime::Handle,
+    settings: &Settings,
 ) {
     let sandbox = match Sandbox::new() {
         Ok(s) => s,
         Err(e) => panic!("no sandbox: {e}"),
     };
     let mut options = Options::default();
-    if let Some(threads) = std::env::var("DOJO_THREADS")
-        .ok()
-        .and_then(|t| t.parse().ok())
-    {
+    if let Some(threads) = settings.threads {
         options.threads = threads;
     }
-    if let Some(mb) = std::env::var("DOJO_MEMORY_MB")
-        .ok()
-        .and_then(|t| t.parse::<usize>().ok())
-    {
+    if let Some(mb) = settings.memory_mb {
         options.limits.memory_bytes = mb << 20;
     }
     // Sets by seed: every submission of a season gets the same one
     let mut sets: HashMap<String, Arc<Vec<Instance>>> = HashMap::new();
-    let cache = std::env::var("DOJO_CACHE_DIR")
-        .ok()
-        .map(std::path::PathBuf::from);
+    let cache = settings.cache.as_deref();
     while let Some(job) = jobs.blocking_recv() {
         let (id, season) = (job.id, job.season);
         let token = job.report_token.clone();
@@ -173,7 +186,7 @@ fn evaluator(
         let started = Instant::now();
         let set = sets
             .entry(job.seed.clone())
-            .or_insert_with(|| Arc::new(load_or_generate(cache.as_deref(), &job.seed)))
+            .or_insert_with(|| Arc::new(load_or_generate(cache, &job.seed)))
             .clone();
         if sets.len() > 3 {
             sets.retain(|seed, _| *seed == job.seed);
@@ -320,7 +333,10 @@ pub fn serve() -> Result<(), String> {
         };
         let handle = tokio::runtime::Handle::current();
         let evaluator_shared = shared.clone();
-        std::thread::spawn(move || evaluator(rx, &reporter, &evaluator_shared, &handle));
+        let settings = Settings::from_env();
+        std::thread::spawn(move || {
+            evaluator(rx, &reporter, &evaluator_shared, &handle, &settings);
+        });
 
         if let Some(idle) = idle_exit {
             let shared = shared.clone();
@@ -336,17 +352,23 @@ pub fn serve() -> Result<(), String> {
             });
         }
 
-        let app = Router::new()
-            .route("/health", get(|| async { "ok" }))
-            .route("/jobs", post(submit))
-            .layer(DefaultBodyLimit::max(MAX_WASM_BYTES + 4096))
-            .with_state(shared);
         let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}"))
             .await
             .map_err(|e| e.to_string())?;
         eprintln!("dojo worker on :{port}, reporting to {app_url}");
-        axum::serve(listener, app).await.map_err(|e| e.to_string())
+        axum::serve(listener, app(shared))
+            .await
+            .map_err(|e| e.to_string())
     })
+}
+
+/// The worker's HTTP routes.
+fn app(shared: Shared) -> Router {
+    Router::new()
+        .route("/health", get(|| async { "ok" }))
+        .route("/jobs", post(submit))
+        .layer(DefaultBodyLimit::max(MAX_WASM_BYTES + 4096))
+        .with_state(shared)
 }
 
 #[cfg(test)]
@@ -387,6 +409,156 @@ mod tests {
         );
         assert_eq!(set[1].witness, Some(vec![1]), "{CACHE}");
         assert_eq!(serde_json::to_string(&set).unwrap(), cached, "{CACHE}");
+    }
+
+    /// A set of tiny formulas for `seed` in a fresh cache directory: generating a real one
+    /// takes minutes. Even ones are unsatisfiable.
+    fn cached_set(seed: &str) -> PathBuf {
+        use crate::cnf::Cnf;
+        use crate::{Answer, Family};
+        let dir = std::env::temp_dir().join(format!("dojo-worker-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let set: Vec<Instance> = bench::SPEC
+            .iter()
+            .enumerate()
+            .map(|(i, &(family, _))| {
+                let unsat = i % 2 == 0;
+                Instance {
+                    name: format!("{}-{i:02}", family.id()),
+                    family,
+                    expected: if unsat { Answer::Unsat } else { Answer::Sat },
+                    cnf: if unsat {
+                        Cnf::new(1, vec![vec![1], vec![-1]])
+                    } else {
+                        Cnf::new(1, vec![vec![1]])
+                    },
+                    witness: (!unsat).then(|| vec![1]),
+                }
+            })
+            .collect();
+        assert!(set.iter().any(|i| i.family == Family::Queens));
+        std::fs::write(
+            dir.join(cache_name(seed)),
+            serde_json::to_vec(&set).unwrap(),
+        )
+        .unwrap();
+        dir
+    }
+
+    /// The whole worker against a stub website: it checks the token and the module, answers
+    /// at once, evaluates in the background and posts its reports with the job's token.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn evaluates_jobs_and_reports_back() {
+        // The website, keeping the reports it gets
+        let (sent, mut reports) = mpsc::unbounded_channel::<(Option<String>, Report)>();
+        let site = Router::new().route(
+            "/dojo/report",
+            post(
+                move |headers: HeaderMap, axum::Json(report): axum::Json<Report>| {
+                    let auth = headers
+                        .get(header::AUTHORIZATION)
+                        .and_then(|v| v.to_str().ok())
+                        .map(str::to_string);
+                    sent.send((auth, report)).unwrap();
+                    async { StatusCode::NO_CONTENT }
+                },
+            ),
+        );
+        let site_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let site_url = format!("http://{}/dojo/report", site_listener.local_addr().unwrap());
+        tokio::spawn(async move { axum::serve(site_listener, site).await.unwrap() });
+
+        let cache = cached_set("worker-test");
+        let (jobs, rx) = mpsc::unbounded_channel();
+        let shared = Shared {
+            token: "secret".into(),
+            jobs,
+            pending: Arc::new(AtomicUsize::new(0)),
+            active: Arc::new(AtomicU64::new(0)),
+        };
+        let reporter = Reporter {
+            client: reqwest::Client::new(),
+            url: site_url,
+        };
+        let settings = Settings {
+            threads: Some(2),
+            memory_mb: Some(64),
+            cache: Some(cache.clone()),
+        };
+        let (handle, evaluator_shared) = (tokio::runtime::Handle::current(), shared.clone());
+        std::thread::spawn(move || {
+            evaluator(rx, &reporter, &evaluator_shared, &handle, &settings);
+        });
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        tokio::spawn(async move { axum::serve(listener, app(shared)).await.unwrap() });
+
+        let client = reqwest::Client::new();
+        let health = client.get(format!("{url}/health")).send().await.unwrap();
+        assert_eq!(health.text().await.unwrap(), "ok");
+        let job = format!("{url}/jobs?id=7&season=2&seed=worker-test&report_token=job-token");
+        let post =
+            |token: &str, wasm: Vec<u8>| client.post(&job).bearer_auth(token).body(wasm).send();
+
+        // Answers UNSAT to everything: right on the even formulas, wrong on the others
+        let unsat = wat::parse_str(
+            r#"(module
+                (import "wasi_snapshot_preview1" "fd_write" (func $write (param i32 i32 i32 i32) (result i32)))
+                (memory (export "memory") 1)
+                (data (i32.const 100) "s UNSATISFIABLE\n")
+                (data (i32.const 0) "\64\00\00\00\10\00\00\00")
+                (func (export "_start") (drop (call $write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 8)))))"#,
+        )
+        .unwrap();
+        let wrong_token = post("guess", unsat.clone()).await.unwrap();
+        assert_eq!(wrong_token.status(), StatusCode::UNAUTHORIZED);
+        let not_wasm = post("secret", b"\0asm junk".to_vec()).await.unwrap();
+        assert_eq!(not_wasm.status(), StatusCode::UNPROCESSABLE_ENTITY);
+        assert!(matches!(
+            not_wasm.json::<crate::Rejection>().await.unwrap(),
+            crate::Rejection::Invalid(_)
+        ));
+        assert_eq!(
+            post("secret", unsat).await.unwrap().status(),
+            StatusCode::ACCEPTED
+        );
+
+        let mut next = async || {
+            tokio::time::timeout(Duration::from_secs(120), reports.recv())
+                .await
+                .expect("a report in time")
+                .expect("the website is up")
+        };
+        let total = crate::count(bench::SPEC.len());
+        assert_eq!(
+            next().await,
+            (
+                Some("Bearer job-token".into()),
+                Report::Progress {
+                    id: 7,
+                    season: 2,
+                    done: 0,
+                    total
+                }
+            )
+        );
+        let (auth, report) = next().await;
+        assert_eq!(auth.as_deref(), Some("Bearer job-token"));
+        let Report::Finished {
+            id: 7,
+            season: 2,
+            score,
+            fingerprint,
+        } = report
+        else {
+            panic!("{report:?}");
+        };
+        assert_eq!(
+            (score.solved, score.wrong, score.total),
+            (total / 2, total / 2, total)
+        );
+        assert_eq!(fingerprint.len(), bench::SPEC.len());
+        std::fs::remove_dir_all(cache).unwrap();
     }
 
     #[test]
