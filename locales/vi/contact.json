@@ -1,0 +1,17 @@
+{
+  "title": "Liên hệ",
+  "description": "Có câu hỏi, ý tưởng hay phát hiện lỗi trong Hashi? Hãy viết cho chúng tôi.",
+  "intro": "Một câu hỏi, một ý tưởng, một lỗi hay điều gì đó về dữ liệu của bạn? Hãy viết cho chúng tôi, chúng tôi sẽ trả lời sớm nhất có thể.",
+  "name": "Tên",
+  "email": "Email",
+  "optional": "không bắt buộc",
+  "email_hint": "Chỉ khi bạn muốn nhận phản hồi.",
+  "message": "Tin nhắn",
+  "send": "Gửi",
+  "sending": "Đang gửi…",
+  "sent_title": "Cảm ơn bạn!",
+  "sent": "Tin nhắn của bạn đã đến nơi. Nếu bạn để lại địa chỉ email, chúng tôi sẽ trả lời qua đó.",
+  "another": "Viết tin nhắn khác",
+  "privacy": "Chúng tôi chỉ dùng tin nhắn của bạn để trả lời và sẽ xóa nó chậm nhất sau sáu tháng. Xem thêm trong <a>chính sách quyền riêng tư</a>.",
+  "by_mail": "Bạn thích gửi email hơn?"
+}

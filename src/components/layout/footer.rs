@@ -14,6 +14,7 @@ pub fn Footer() -> impl IntoView {
     let impressum = use_localized("/impressum");
     let dojo = use_localized("/dojo");
     let privacy = use_localized("/datenschutz");
+    let contact = use_localized("/kontakt");
     let author = move || {
         view! {
             <a
@@ -70,6 +71,10 @@ pub fn Footer() -> impl IntoView {
                     <span aria-hidden="true">"·"</span>
                     <A href=privacy attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
                         {t!(i18n, common.legal.privacy)}
+                    </A>
+                    <span aria-hidden="true">"·"</span>
+                    <A href=contact attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
+                        {t!(i18n, common.legal.contact)}
                     </A>
                 </p>
             </div>

@@ -1,4 +1,4 @@
-//! The admin dashboard: overview, attempts of a day and Dojo submissions.
+//! The admin dashboard: overview, attempts of a day, Dojo submissions and contact messages.
 
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +16,8 @@ pub struct AdminOverview {
     pub flagged: i64,
     pub dojo_pending: i64,
     pub dojo_total: i64,
+    /// Contact messages waiting to be answered (and deleted).
+    pub messages: i64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -58,4 +60,17 @@ pub enum SubmissionAction {
     /// Not a copy after all: rank it.
     ClearCopy,
     Delete,
+}
+
+/// A message from the contact form.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContactMessage {
+    pub id: i64,
+    /// Empty if not given.
+    pub name: String,
+    pub email: String,
+    pub message: String,
+    pub created_at: i64,
+    /// Whether it was mailed to us.
+    pub mailed: bool,
 }

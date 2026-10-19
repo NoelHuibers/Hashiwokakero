@@ -11,6 +11,7 @@ async fn main() {
     }
     hashi::server::dojo::start_dispatcher();
     hashi::server::daily::start_stamp_sync();
+    hashi::server::auth::start_cleanup();
 
     // Reads the cargo-leptos settings (Cargo.toml) or the LEPTOS_* environment variables
     let conf = get_configuration(None).expect("invalid Leptos configuration");

@@ -38,7 +38,7 @@ pub fn RankCell(rank: i64) -> impl IntoView {
 }
 
 /// A player in a leaderboard: name (a link to their profile), the stamp they show, "you" and
-/// guest labels.
+/// guest labels. Deleted players have no name and no profile, their times stay ranked.
 ///
 /// The guest label only shows where the table is wide enough (a container query on an
 /// `@container` around the table, boards sit in narrow cards too): the name has priority.
@@ -51,6 +51,14 @@ pub fn PlayerName(
     #[prop(optional)] me: bool,
 ) -> impl IntoView {
     let i18n = use_i18n();
+    if name.is_empty() {
+        return view! {
+            <div class="flex items-center gap-2">
+                <span class="min-w-0 truncate italic text-muted-foreground">{t!(i18n, common.ranking.deleted)}</span>
+            </div>
+        }
+        .into_any();
+    }
     let href = move || format!("{}/player/{user_id}", prefix(i18n.get_locale()));
     view! {
         <div class="flex items-center gap-2">
@@ -62,6 +70,7 @@ pub fn PlayerName(
             {guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}
         </div>
     }
+    .into_any()
 }
 
 /// A highlighted table row: your own result, the fastest solver.

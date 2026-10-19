@@ -32,5 +32,17 @@
   "signed_out": "Sesión cerrada.",
   "name_hint": "Tus resultados cuentan en la clasificación con este nombre.",
   "sign_out": "Cerrar sesión",
-  "no_dailies": "Aún no hay retos."
+  "no_dailies": "Aún no hay retos.",
+  "delete": {
+    "title": "Eliminar cuenta",
+    "intro": "Elimina para siempre tu nombre, tu contraseña, tus sellos y tus envíos al Dojo. Tus tiempos anteriores se quedan sin nombre en las clasificaciones antiguas, para que los demás jugadores conserven su puesto.",
+    "intro_guest": "Elimina para siempre a este invitado y sus sellos. Los tiempos anteriores se quedan sin nombre en las clasificaciones antiguas, para que los demás jugadores conserven su puesto.",
+    "start": "Eliminar cuenta…",
+    "start_guest": "Eliminar invitado…",
+    "confirm": "Esto no se puede deshacer. Escribe tu contraseña para confirmar.",
+    "confirm_guest": "Esto no se puede deshacer.",
+    "button": "Eliminar para siempre",
+    "cancel": "Cancelar",
+    "done": "Tu cuenta se ha eliminado."
+  }
 }

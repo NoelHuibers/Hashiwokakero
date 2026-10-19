@@ -64,7 +64,11 @@
     "wrong_puzzle": "這些橋不屬於這道謎題。",
     "already_finished": "你已經完成過這道每日謎題了。",
     "daily_locked": "這是今天的每日謎題：等你自己完成後，求解器才會幫忙。",
-    "forbidden": "僅限管理員。"
+    "forbidden": "僅限管理員。",
+    "wrong_password": "密碼錯誤。",
+    "email_invalid": "這看起來不像電子郵件地址。",
+    "message_invalid": "請輸入 10 到 5000 個字元。",
+    "too_many_messages": "今天的訊息已經夠多了，請明天再試。"
   },
   "solver": {
     "title": "SAT 求解器",
@@ -90,7 +94,8 @@
     "guest": "訪客",
     "guest_name": "訪客",
     "penalties": "提示 · 檢查",
-    "empty": "還沒有人過橋，快來當第一個！"
+    "empty": "還沒有人過橋，快來當第一個！",
+    "deleted": "已刪除的玩家"
   },
   "board": {
     "label": "數橋（Hashiwokakero）盤面",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "法律聲明",
     "privacy": "隱私權政策",
-    "english": "英文版"
+    "english": "英文版",
+    "contact": "聯絡我們"
   },
   "audio": {
     "sound": "音效",

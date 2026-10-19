@@ -1,0 +1,17 @@
+{
+  "title": "Kontakt",
+  "description": "Pytania, pomysły albo błąd w Hashi? Napisz do nas.",
+  "intro": "Pytanie, pomysł, błąd albo coś w sprawie twoich danych? Napisz do nas, odpowiemy najszybciej, jak się da.",
+  "name": "Imię",
+  "email": "E-mail",
+  "optional": "opcjonalnie",
+  "email_hint": "Tylko jeśli chcesz dostać odpowiedź.",
+  "message": "Wiadomość",
+  "send": "Wyślij",
+  "sending": "Wysyłanie…",
+  "sent_title": "Dziękujemy!",
+  "sent": "Twoja wiadomość dotarła. Jeśli podano adres e-mail, odpowiemy na niego.",
+  "another": "Napisz kolejną wiadomość",
+  "privacy": "Używamy twojej wiadomości tylko po to, by na nią odpowiedzieć, i usuwamy ją najpóźniej po sześciu miesiącach. Więcej w <a>polityce prywatności</a>.",
+  "by_mail": "Wolisz e-mail?"
+}

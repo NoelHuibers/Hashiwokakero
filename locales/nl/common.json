@@ -64,7 +64,11 @@
     "wrong_puzzle": "Deze bruggen horen niet bij deze puzzel.",
     "already_finished": "Je hebt deze dagpuzzel al afgerond.",
     "daily_locked": "Dat is de dagpuzzel van vandaag: de solvers helpen pas als je hem zelf hebt afgerond.",
-    "forbidden": "Alleen voor beheerders."
+    "forbidden": "Alleen voor beheerders.",
+    "wrong_password": "Verkeerd wachtwoord.",
+    "email_invalid": "Dat lijkt geen e-mailadres.",
+    "message_invalid": "Schrijf tussen de 10 en 5000 tekens.",
+    "too_many_messages": "Genoeg berichten voor vandaag, probeer het morgen opnieuw."
   },
   "solver": {
     "title": "SAT-solver",
@@ -90,7 +94,8 @@
     "guest": "gast",
     "guest_name": "Gast",
     "penalties": "hints · controles",
-    "empty": "Nog niemand is overgestoken. Wees de eerste!"
+    "empty": "Nog niemand is overgestoken. Wees de eerste!",
+    "deleted": "verwijderde speler"
   },
   "board": {
     "label": "Hashiwokakero-speelbord",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Colofon",
     "privacy": "Privacy",
-    "english": "Engelse versie"
+    "english": "Engelse versie",
+    "contact": "Contact"
   },
   "audio": {
     "sound": "Geluidseffecten",

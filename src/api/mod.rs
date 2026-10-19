@@ -13,12 +13,14 @@
 
 mod account;
 mod admin;
+mod contact;
 mod daily;
 mod dojo;
 mod puzzle;
 
 pub use account::*;
 pub use admin::*;
+pub use contact::*;
 pub use daily::*;
 pub use dojo::*;
 pub use puzzle::*;

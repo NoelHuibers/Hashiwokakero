@@ -32,5 +32,17 @@
   "signed_out": "Déconnecté.",
   "name_hint": "Tes résultats comptent au classement sous ce nom.",
   "sign_out": "Déconnexion",
-  "no_dailies": "Aucun défi pour l’instant."
+  "no_dailies": "Aucun défi pour l’instant.",
+  "delete": {
+    "title": "Supprimer le compte",
+    "intro": "Supprime définitivement ton pseudo, ton mot de passe, tes tampons et tes soumissions au Dojo. Tes anciens temps restent sans nom dans les anciens classements, pour que les autres joueurs gardent leur place.",
+    "intro_guest": "Supprime définitivement cet invité et ses tampons. Ses anciens temps restent sans nom dans les anciens classements, pour que les autres joueurs gardent leur place.",
+    "start": "Supprimer le compte…",
+    "start_guest": "Supprimer l’invité…",
+    "confirm": "C’est irréversible. Saisis ton mot de passe pour confirmer.",
+    "confirm_guest": "C’est irréversible.",
+    "button": "Supprimer définitivement",
+    "cancel": "Annuler",
+    "done": "Ton compte est supprimé."
+  }
 }

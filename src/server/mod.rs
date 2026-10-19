@@ -2,6 +2,7 @@
 
 pub mod admin;
 pub mod auth;
+pub mod contact;
 pub mod daily;
 pub mod db;
 pub mod dojo;
@@ -66,16 +67,22 @@ pub fn client_ip(headers: &axum::http::HeaderMap) -> Option<String> {
 /// An address made unrecognisable: hashed with a secret and the day, so it only says "the same
 /// network as another request today" and can't be traced back or followed across days.
 pub fn network_hash(ip: &str, day: i64) -> String {
-    use sha2::{Digest, Sha256};
-    let secret = std::env::var("HASHI_DAILY_SECRET").unwrap_or_else(|_| "hashi-daily".into());
     // IPv6 clients get a whole /64, count that as one network
     let network = if ip.contains(':') {
         ip.split(':').take(4).collect::<Vec<_>>().join(":")
     } else {
         ip.to_string()
     };
+    keyed_hash("network", day, &network)
+}
+
+/// SHA-256 of a value with the server's secret and the day: equal values match on the same day,
+/// but without the secret nobody can guess the value or link two days.
+pub fn keyed_hash(kind: &str, day: i64, value: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let secret = std::env::var("HASHI_DAILY_SECRET").unwrap_or_else(|_| "hashi-daily".into());
     hex(&Sha256::digest(
-        format!("{secret}:network:{day}:{network}").as_bytes(),
+        format!("{secret}:{kind}:{day}:{value}").as_bytes(),
     ))
 }
 
