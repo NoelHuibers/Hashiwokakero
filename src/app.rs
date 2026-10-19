@@ -5,6 +5,7 @@ use leptos_router::components::{Outlet, Route, Router, Routes};
 use leptos_router::path;
 
 use crate::components::layout::{Footer, Header, MobileNav, Toaster};
+use crate::components::ui::tooltip::Tooltips;
 use crate::i18n::{I18nContextProvider, Locale, use_i18n};
 use crate::lang::script_font;
 use crate::pages::NotFound;
@@ -92,6 +93,7 @@ pub fn App() -> impl IntoView {
             </div>
             <MobileNav />
             <Toaster />
+            <Tooltips />
         </Router>
         </I18nContextProvider>
     }

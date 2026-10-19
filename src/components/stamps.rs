@@ -18,7 +18,7 @@ pub fn StampBadge(stamp: Stamp) -> impl IntoView {
     view! {
         <span
             class="hanko-ink inline-grid size-5 shrink-0 rotate-[-8deg] place-items-center rounded-[4px] font-pixel text-xs leading-none"
-            title=title
+            data-tooltip=title
             aria-label=title
         >
             {stamp.kanji()}
@@ -71,7 +71,7 @@ fn StampTile(
             class=("ring-1", is_shown)
             class=("ring-primary", is_shown)
             class:opacity-60=!earned
-            title=text
+            data-tooltip=text
         >
             {(pick && earned)
                 .then(|| {
@@ -91,7 +91,7 @@ fn StampTile(
                         view! {
                             <span
                                 class="absolute -end-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground shadow-sm"
-                                title=move || td_string!(i18n.get_locale(), stamps.shown_label)
+                                data-tooltip=move || td_string!(i18n.get_locale(), stamps.shown_label)
                             >
                                 "✓"
                             </span>

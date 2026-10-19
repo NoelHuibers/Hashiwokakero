@@ -90,7 +90,7 @@ fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
             <td class="max-w-0 py-2 pe-2">
                 <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me />
             </td>
-            <td class="py-2 pe-2 text-end text-xs text-muted-foreground" title=move || t_string!(i18n, common.ranking.penalties)>
+            <td class="py-2 pe-2 text-end text-xs text-muted-foreground" data-tooltip=move || t_string!(i18n, common.ranking.penalties)>
                 {(penalties > 0).then(|| format!("{}h {}c", entry.hints, entry.checks))}
             </td>
             <td class="py-2 text-end font-pixel tabular-nums">{format_duration(entry.time_ms)}</td>
@@ -168,7 +168,7 @@ pub fn AccountButton() -> impl IntoView {
         <A
             href=to
             attr:class="flex h-10 shrink-0 items-center gap-2 rounded-lg border bg-card px-2 transition-transform hover:-translate-y-0.5"
-            attr:title=move || t_string!(i18n, common.account)
+            attr:data-tooltip=move || t_string!(i18n, common.account)
         >
             {move || match auth.user.get() {
                 Some(user) => {

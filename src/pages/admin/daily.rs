@@ -262,7 +262,7 @@ fn AttemptRow(
             </td>
             <td class="py-2 pe-3 text-end font-pixel tabular-nums">{a.time_ms.map(format_duration).unwrap_or_default()}</td>
             <td class="py-2 pe-3 text-end tabular-nums">{format!("{} · {}", a.hints, a.checks)}</td>
-            <td class="py-2 pe-3 text-end tabular-nums" title=format!("{} changes in the log, over {}", a.log.events, seconds(a.log.span_ms))>
+            <td class="py-2 pe-3 text-end tabular-nums" data-tooltip=format!("{} changes in the log, over {}", a.log.events, seconds(a.log.span_ms))>
                 {a.log.taps}
             </td>
             <td class="py-2 pe-3 text-end tabular-nums">

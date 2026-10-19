@@ -142,7 +142,7 @@ pub fn ToggleGroupItem(
             class=merged_class
             role="radio"
             tabindex="-1"
-            title=move || title.get()
+            data-tooltip=move || title.get()
             data-state=move || if pressed.get() { "on" } else { "off" }
         >
             {children()}

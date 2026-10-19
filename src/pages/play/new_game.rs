@@ -42,7 +42,7 @@ fn DifficultyPicker() -> impl IntoView {
                                     },
                                 )
                             }
-                            title=move || format!("{} · {w}×{h}", difficulty_name(i18n.get_locale(), d))
+                            data-tooltip=move || format!("{} · {w}×{h}", difficulty_name(i18n.get_locale(), d))
                             on:click=move |_| settings.difficulty.set(d)
                         >
                             <span class="font-pixel text-lg leading-none">{d.kanji()}</span>

@@ -27,7 +27,8 @@ pub(super) fn BrushPalette(brush: RwSignal<Option<u8>>) -> impl IntoView {
                         <button
                             type="button"
                             role="radio"
-                            title=title
+                            data-tooltip=title
+                            aria-label=title
                             aria-checked=move || (brush.get() == b).to_string()
                             class=move || {
                                 format!(
