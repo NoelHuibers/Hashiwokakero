@@ -43,9 +43,21 @@ pub fn parse(input_file: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseErr
         .next()
         .ok_or_else(|| ParseError::InvalidInput("Missing 'p' line".to_string()))?;
     let meta_info = p_line.split_whitespace().collect::<Vec<&str>>();
-    let var_count = meta_info[2].parse()?;
-    let clause_count = meta_info[3].parse()?;
-    let mut clauses = Vec::with_capacity(clause_count);
+    // Anything else used to panic on a short line
+    let [_, _, vars, count] = meta_info[..] else {
+        return Err(ParseError::InvalidInput(format!(
+            "Invalid problem line '{p_line}'"
+        )));
+    };
+    if meta_info[..2] != ["p", "cnf"] {
+        return Err(ParseError::InvalidInput(format!(
+            "Invalid problem line '{p_line}'"
+        )));
+    }
+    let var_count = vars.parse()?;
+    let clause_count: usize = count.parse()?;
+    // The header can claim any number, the clauses that follow are what counts
+    let mut clauses = Vec::with_capacity(clause_count.min(1 << 16));
 
     // Handle clauses
     let mut clause = Vec::new();
@@ -66,4 +78,45 @@ pub fn parse(input_file: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseErr
 
     profiling::end("parse");
     Ok((clauses, var_count, clause_count))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse_text(name: &str, text: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseError> {
+        let path =
+            std::env::temp_dir().join(format!("sat-parse-{}-{name}.cnf", std::process::id()));
+        fs::write(&path, text).unwrap();
+        let result = parse(path.to_str().unwrap());
+        fs::remove_file(&path).unwrap();
+        result
+    }
+
+    #[test]
+    fn reads_clauses() {
+        let (clauses, vars, count) = parse_text("ok", "c x\np cnf 3 2\n1 -2\n 0 3 0\n").unwrap();
+        assert_eq!((clauses, vars, count), (vec![vec![1, -2], vec![3]], 3, 2));
+    }
+
+    /// Found by the property tests (tests/props.rs): these panicked.
+    #[test]
+    fn bad_headers_are_errors() {
+        for (name, text) in [
+            ("short", "p\n"),
+            ("no-counts", "p cnf\n1 0\n"),
+            ("one-count", "c\np cnf 3\n"),
+            ("long", "p cnf 1 1 1\n1 0\n"),
+            ("not-cnf", "p dnf 1 1\n1 0\n"),
+        ] {
+            assert!(
+                matches!(parse_text(name, text), Err(ParseError::InvalidInput(_))),
+                "{name}"
+            );
+        }
+        // Allocated room for that many clauses up front
+        let (clauses, _, count) =
+            parse_text("huge", "p cnf 1 18446744073709551615\n1 0\n").unwrap();
+        assert_eq!((clauses.len(), count), (1, usize::MAX));
+    }
 }

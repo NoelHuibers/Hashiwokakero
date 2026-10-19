@@ -155,6 +155,8 @@ ssr = [
 ]
 
 [dev-dependencies]
+# Property tests of the models and the client state (model/tests.rs, state/game.rs)
+proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 # The HTTP tests (server/router/tests): a client that keeps cookies like a browser and uploads
 # forms. Without the gzip/brotli features it leaves responses compressed, so tests see that.
 reqwest = { version = "0.12.28", default-features = false, features = ["cookies", "multipart"] }

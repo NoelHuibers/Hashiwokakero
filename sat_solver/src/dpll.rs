@@ -137,6 +137,12 @@ impl DPLL {
             dpll.has_empty_clause = true;
             input.retain(|c| !c.is_empty());
         }
+        // A literal twice in a clause was counted twice as unassigned: such a clause never
+        // became unit, a conflict on it went unnoticed and the search ended in a panic
+        for clause in &mut input {
+            let mut seen = hash::set(clause.len());
+            clause.retain(|&l| seen.insert(l));
+        }
         // * read formula
         // Using iterators where possible for better performance
         input.into_iter().enumerate().for_each(|(c, vars)| {
@@ -665,6 +671,36 @@ fn should_solve_unsat() {
     if let Ok(DIMACSOutput::Sat(_)) = res {
         panic!("Was SAT but expected UNSAT.")
     }
+}
+
+/// Found by the property tests (tests/props.rs): repeated literals made the solver panic.
+#[test]
+fn repeated_literals_count_once() {
+    let solve =
+        |clauses: Vec<Vec<i32>>| DPLL::new(clauses, 2, 2, Heuristic::Arbitrary, false).solve();
+    assert!(matches!(
+        solve(vec![vec![1, 1], vec![-1, -1]]),
+        Ok(DIMACSOutput::Unsat)
+    ));
+    assert!(matches!(
+        solve(vec![vec![1, 2, 1], vec![-1], vec![-2, -2]]),
+        Ok(DIMACSOutput::Unsat)
+    ));
+    let Ok(DIMACSOutput::Sat(model)) = solve(vec![vec![2, 2], vec![-1, 2, -1]]) else {
+        panic!("Expected SAT");
+    };
+    assert!(model.contains(&2));
+}
+
+/// Found by the property tests (backend/tests/props.rs): the custom heuristic found no
+/// variable to branch on when the free ones only occur negated, and DPLL panicked.
+#[test]
+fn custom_heuristic_branches_on_negated_variables() {
+    let res = DPLL::new(vec![vec![-2, -1]], 2, 1, Heuristic::Custom, false).solve();
+    let Ok(DIMACSOutput::Sat(model)) = res else {
+        panic!("Expected SAT, got {res:?}");
+    };
+    assert!(model.contains(&-1) || model.contains(&-2));
 }
 
 #[test]

@@ -231,6 +231,11 @@ pub(crate) fn custom(
         .iter()
         .min_by(|a, b| a.1.cmp(b.1))
         .map_or(&0, |(var, _)| var);
+    // Only variables free in their positive form are counted: without this a formula whose
+    // free variables all occur negated made DPLL branch on variable 0 and panic
+    if min_var == 0 {
+        return (*free_lits.iter().next().unwrap(), true);
+    }
     let val = true; // Default assignment
     (min_var, val)
 }

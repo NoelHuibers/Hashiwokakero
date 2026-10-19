@@ -166,6 +166,12 @@ impl CDCL {
             cdcl.has_empty_clause = true;
             input.retain(|c| !c.is_empty());
         }
+        // A literal twice in a clause could be both of its watched literals, so the clause
+        // lost track of its other literals and the search crashed (found by tests/props.rs)
+        for clause in &mut input {
+            let mut seen = hash::set(clause.len());
+            clause.retain(|&l| seen.insert(l));
+        }
         if subsumed_clauses {
             delete_subsumed_clauses(&mut input);
         }
@@ -1746,6 +1752,26 @@ fn testunsat() {
         println!("{vars:?}");
         panic!("Was SAT but expected UNSAT.")
     }
+}
+
+/// Found by the property tests (tests/props.rs): repeated literals crashed the solver.
+#[test]
+fn repeated_literals_count_once() {
+    let res = CDCL::new(
+        vec![vec![-1, -1], vec![1, 2, 1], vec![-2]],
+        2,
+        3,
+        Heuristic::Arbitrary,
+        false,
+        None,
+        false,
+        None,
+        1,
+        1,
+        None,
+    )
+    .solve();
+    assert!(matches!(res, Ok(DIMACSOutput::Unsat)), "{res:?}");
 }
 
 #[test]
