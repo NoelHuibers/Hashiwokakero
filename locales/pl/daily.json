@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "Dzisiejszy most",
-    "text": "Łamigłówka pojawi się po naciśnięciu Start, zegar działa na serwerze. Podpowiedź to +30 s, sprawdzenie +10 s, a odkrycie rozwiązania wyklucza cię z rankingu.",
+    "lead": "Łamigłówka pojawi się po naciśnięciu Start, zegar działa na serwerze.",
+    "unranked": "poza rankingiem",
     "start": "Start",
     "preparing": "Przygotowuję…",
     "playing_as": "Grasz jako {{ name }}",

@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "Le pont du jour",
-    "text": "La grille apparaît quand tu appuies sur Commencer, le chrono tourne sur le serveur. Un indice ajoute 30 s, une vérification 10 s, et révéler la solution te retire du classement.",
+    "lead": "La grille apparaît quand tu appuies sur Commencer, le chrono tourne sur le serveur.",
+    "unranked": "hors classement",
     "start": "Commencer",
     "preparing": "Préparation…",
     "playing_as": "Tu joues en tant que {{ name }}",

@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "Cây cầu hôm nay",
-    "text": "Câu đố sẽ hiện ra khi bạn bấm Bắt đầu, đồng hồ chạy trên máy chủ. Mỗi gợi ý cộng 30 giây, mỗi lần kiểm tra cộng 10 giây, xem lời giải thì không được xếp hạng.",
+    "lead": "Câu đố sẽ hiện ra khi bạn bấm Bắt đầu, đồng hồ chạy trên máy chủ.",
+    "unranked": "không xếp hạng",
     "start": "Bắt đầu",
     "preparing": "Đang chuẩn bị…",
     "playing_as": "Đang chơi với tên {{ name }}",

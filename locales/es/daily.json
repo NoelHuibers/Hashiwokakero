@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "El puente de hoy",
-    "text": "El puzle aparece al pulsar Empezar, el reloj corre en el servidor. Cada pista suma 30 s, cada comprobación 10 s, y revelar la solución te deja fuera de la clasificación.",
+    "lead": "El puzle aparece al pulsar Empezar, el reloj corre en el servidor.",
+    "unranked": "sin clasificar",
     "start": "Empezar",
     "preparing": "Preparando…",
     "playing_as": "Juegas como {{ name }}",

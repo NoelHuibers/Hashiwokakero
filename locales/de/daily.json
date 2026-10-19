@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "Die Brücke von heute",
-    "text": "Das Rätsel erscheint, sobald du auf Start drückst, die Uhr läuft auf dem Server. Tipps kosten 30 s, Prüfungen 10 s, wer sich die Lösung zeigen lässt, kommt nicht in die Wertung.",
+    "lead": "Das Rätsel erscheint, sobald du auf Start drückst, die Uhr läuft auf dem Server.",
+    "unranked": "ohne Wertung",
     "start": "Start",
     "preparing": "Wird vorbereitet…",
     "playing_as": "Du spielst als {{ name }}",
