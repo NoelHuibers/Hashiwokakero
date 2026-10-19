@@ -129,54 +129,92 @@ async fn scalar(
 }
 
 fn env(name: &str) -> Option<String> {
-    std::env::var(name).ok().filter(|v| !v.is_empty())
+    std::env::var(name).ok()
 }
 
 /// Mails a message to `CONTACT_TO`, with the sender as Reply-To. `Ok(false)`: SMTP isn't set up.
 async fn mail(id: i64, name: &str, email: &str, message: &str) -> Result<bool, String> {
-    let (Some(host), Some(username), Some(password), Some(to)) = (
-        env("SMTP_HOST"),
-        env("SMTP_USERNAME"),
-        env("SMTP_PASSWORD"),
-        env("CONTACT_TO"),
-    ) else {
+    let Some(smtp) = Smtp::from_vars(env)? else {
         return Ok(false);
     };
-    let port = env("SMTP_PORT").and_then(|p| p.parse().ok()).unwrap_or(587);
-    let from = env("SMTP_FROM").unwrap_or_else(|| username.clone());
-    let from: Mailbox = format!("Hashi <{from}>")
-        .parse()
-        .map_err(|e| format!("SMTP_FROM: {e}"))?;
-    let to: Mailbox = to.parse().map_err(|e| format!("CONTACT_TO: {e}"))?;
-
-    let sender = if name.is_empty() { "anonym" } else { name };
-    let mut builder = Message::builder()
-        .from(from)
-        .to(to)
-        .subject(format!("Hashi: Nachricht von {sender} (#{id})"))
-        .header(ContentType::TEXT_PLAIN);
-    if let Ok(address) = email.parse::<Address>() {
-        let name = (!name.is_empty()).then(|| name.to_string());
-        builder = builder.reply_to(Mailbox::new(name, address));
-    }
-    let body = format!(
-        "Nachricht #{id} über das Kontaktformular von hashi.rs\n\nName: {}\nE-Mail: {}\n\n{message}\n",
-        if name.is_empty() { "-" } else { name },
-        if email.is_empty() { "-" } else { email },
-    );
-    let mail = builder.body(body).map_err(|e| e.to_string())?;
-
-    let transport = if port == 465 {
-        AsyncSmtpTransport::<Tokio1Executor>::relay(&host)
-    } else {
-        AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&host)
-    }
-    .map_err(|e| e.to_string())?
-    .port(port)
-    .credentials(Credentials::new(username, password))
-    .build();
-    transport.send(mail).await.map_err(|e| e.to_string())?;
+    smtp.send(smtp.compose(id, name, email, message)?).await?;
     Ok(true)
+}
+
+/// The SMTP settings (see the top of this file).
+#[derive(Debug)]
+struct Smtp {
+    host: String,
+    port: u16,
+    username: String,
+    password: String,
+    from: Mailbox,
+    to: Mailbox,
+}
+
+impl Smtp {
+    /// The settings from `var` (the environment), `None` if they are incomplete.
+    fn from_vars(var: impl Fn(&str) -> Option<String>) -> Result<Option<Self>, String> {
+        let var = |name: &str| var(name).filter(|v| !v.is_empty());
+        let (Some(host), Some(username), Some(password), Some(to)) = (
+            var("SMTP_HOST"),
+            var("SMTP_USERNAME"),
+            var("SMTP_PASSWORD"),
+            var("CONTACT_TO"),
+        ) else {
+            return Ok(None);
+        };
+        let port = var("SMTP_PORT").and_then(|p| p.parse().ok()).unwrap_or(587);
+        let from = var("SMTP_FROM").unwrap_or_else(|| username.clone());
+        let from = format!("Hashi <{from}>")
+            .parse()
+            .map_err(|e| format!("SMTP_FROM: {e}"))?;
+        let to = to.parse().map_err(|e| format!("CONTACT_TO: {e}"))?;
+        Ok(Some(Self {
+            host,
+            port,
+            username,
+            password,
+            from,
+            to,
+        }))
+    }
+
+    fn compose(&self, id: i64, name: &str, email: &str, message: &str) -> Result<Message, String> {
+        let sender = if name.is_empty() { "anonym" } else { name };
+        let mut builder = Message::builder()
+            .from(self.from.clone())
+            .to(self.to.clone())
+            .subject(format!("Hashi: Nachricht von {sender} (#{id})"))
+            .header(ContentType::TEXT_PLAIN);
+        if let Ok(address) = email.parse::<Address>() {
+            let name = (!name.is_empty()).then(|| name.to_string());
+            builder = builder.reply_to(Mailbox::new(name, address));
+        }
+        let body = format!(
+            "Nachricht #{id} über das Kontaktformular von hashi.rs\n\nName: {}\nE-Mail: {}\n\n{message}\n",
+            if name.is_empty() { "-" } else { name },
+            if email.is_empty() { "-" } else { email },
+        );
+        builder.body(body).map_err(|e| e.to_string())
+    }
+
+    async fn send(&self, mail: Message) -> Result<(), String> {
+        let transport = if self.port == 465 {
+            AsyncSmtpTransport::<Tokio1Executor>::relay(&self.host)
+        } else {
+            AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&self.host)
+        }
+        .map_err(|e| e.to_string())?
+        .port(self.port)
+        .credentials(Credentials::new(
+            self.username.clone(),
+            self.password.clone(),
+        ))
+        .build();
+        transport.send(mail).await.map_err(|e| e.to_string())?;
+        Ok(())
+    }
 }
 
 /// Every stored message, newest first.
@@ -219,4 +257,97 @@ pub async fn delete_old(conn: &Connection) -> Result<(), ServerFnError> {
     .await
     .map_err(db_err)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::*;
+
+    fn smtp(vars: &[(&str, &str)]) -> Result<Option<Smtp>, String> {
+        let vars: HashMap<String, String> = vars
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+            .collect();
+        Smtp::from_vars(|name| vars.get(name).cloned())
+    }
+
+    const SETTINGS: [(&str, &str); 4] = [
+        ("SMTP_HOST", "smtp.example.org"),
+        ("SMTP_USERNAME", "hello@hashi.rs"),
+        ("SMTP_PASSWORD", "token"),
+        ("CONTACT_TO", "admin@hashi.rs"),
+    ];
+
+    /// Without all four settings messages are only stored; with them, the defaults fill in.
+    #[test]
+    fn settings_come_from_the_environment() {
+        assert!(smtp(&[]).unwrap().is_none());
+        assert!(smtp(&SETTINGS[..3]).unwrap().is_none());
+        let mut empty = SETTINGS;
+        empty[2].1 = "";
+        assert!(smtp(&empty).unwrap().is_none());
+
+        let s = smtp(&SETTINGS).unwrap().unwrap();
+        assert_eq!((s.host.as_str(), s.port), ("smtp.example.org", 587));
+        assert_eq!(s.from.to_string(), "Hashi <hello@hashi.rs>");
+        assert_eq!(s.to.to_string(), "admin@hashi.rs");
+
+        let mut more = SETTINGS.to_vec();
+        more.extend([("SMTP_PORT", "465"), ("SMTP_FROM", "kontakt@hashi.rs")]);
+        let s = smtp(&more).unwrap().unwrap();
+        assert_eq!(s.port, 465);
+        assert_eq!(s.from.to_string(), "Hashi <kontakt@hashi.rs>");
+
+        let mut bad = SETTINGS;
+        bad[3].1 = "not an address";
+        assert!(smtp(&bad).unwrap_err().starts_with("CONTACT_TO: "));
+        let mut bad = SETTINGS.to_vec();
+        bad.push(("SMTP_FROM", "nope"));
+        assert!(smtp(&bad).unwrap_err().starts_with("SMTP_FROM: "));
+    }
+
+    /// The mail names the sender, answers go to them, and the message is in it.
+    #[test]
+    fn mails_say_who_wrote() {
+        let s = smtp(&SETTINGS).unwrap().unwrap();
+        // Header lines end in CRLF, the body is ours
+        let text = |mail: Message| {
+            String::from_utf8(mail.formatted())
+                .unwrap()
+                .replace("\r\n", "\n")
+        };
+
+        let mail = text(
+            s.compose(7, "Alice", "alice@example.org", "The bridges are lovely")
+                .unwrap(),
+        );
+        assert!(mail.contains("From: Hashi <hello@hashi.rs>\n"), "{mail}");
+        assert!(mail.contains("To: admin@hashi.rs\n"), "{mail}");
+        assert!(
+            mail.contains("Subject: Hashi: Nachricht von Alice (#7)\n"),
+            "{mail}"
+        );
+        assert!(
+            mail.contains("Reply-To: Alice <alice@example.org>\n"),
+            "{mail}"
+        );
+        assert!(
+            mail.contains("Name: Alice\nE-Mail: alice@example.org"),
+            "{mail}"
+        );
+        assert!(mail.contains("The bridges are lovely"), "{mail}");
+
+        // Anonymous, and an address that doesn't parse gets no Reply-To
+        let mail = text(s.compose(8, "", "", "No name given here").unwrap());
+        assert!(
+            mail.contains("Subject: Hashi: Nachricht von anonym (#8)"),
+            "{mail}"
+        );
+        assert!(mail.contains("Name: -\nE-Mail: -"), "{mail}");
+        assert!(!mail.contains("Reply-To"), "{mail}");
+        let mail = text(s.compose(9, "", "bob@example.org", "Hello there!").unwrap());
+        assert!(mail.contains("Reply-To: bob@example.org\n"), "{mail}");
+    }
 }
