@@ -5,7 +5,7 @@
 use dojo::{Family, FamilyScore, Score};
 use libsql::{Connection, params};
 
-use super::{MIGRATIONS, migrate, migrate_to, open_local};
+use super::{MIGRATIONS, connect, migrate, migrate_to, open_local};
 use crate::golden::puzzle;
 use crate::model::{DojoState, Flag, Stamp};
 use crate::server::auth::user_by_id;
@@ -227,4 +227,39 @@ async fn old_databases_migrate_with_their_data() {
             versions
         );
     }
+}
+
+/// Two requests writing at the same moment: the second waits for the first instead of failing with
+/// "database is locked" (it did, the browser tests' parallel players got errors). Local queries
+/// block their thread while they wait, the first one commits on another.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_write_waits_for_another_one() {
+    let path = std::env::temp_dir().join(format!("hashi-busy-{}.db", std::process::id()));
+    let _ = std::fs::remove_file(&path);
+    let database = open_local(path.to_str().unwrap()).await.unwrap();
+    let first = connect(&database).unwrap();
+    let second = connect(&database).unwrap();
+    migrate(&first).await.unwrap();
+    first.execute("BEGIN IMMEDIATE", ()).await.unwrap();
+    first
+        .execute(
+            "INSERT INTO users (username, name, created_at) VALUES ('first', 'first', 1)",
+            (),
+        )
+        .await
+        .unwrap();
+    let commit = tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        first.execute("COMMIT", ()).await.unwrap();
+    });
+    second
+        .execute(
+            "INSERT INTO users (username, name, created_at) VALUES ('second', 'second', 2)",
+            (),
+        )
+        .await
+        .unwrap();
+    commit.await.unwrap();
+    assert_eq!(count(&second, "SELECT COUNT(*) FROM users").await, 2);
+    let _ = std::fs::remove_file(&path);
 }

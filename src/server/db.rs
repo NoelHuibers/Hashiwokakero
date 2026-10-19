@@ -4,6 +4,7 @@
 //! - otherwise `HASHI_DB_PATH` (default `hashi.db`): local file
 
 use std::sync::OnceLock;
+use std::time::Duration;
 
 use leptos::prelude::ServerFnError;
 use libsql::{Builder, Connection, Database, params};
@@ -228,10 +229,24 @@ async fn migrate_to(conn: &Connection, version: usize) -> Result<(), String> {
 
 /// A connection for the current request.
 pub fn conn() -> Result<Connection, ServerFnError> {
-    DB.get()
-        .ok_or_else(|| crate::model::ApiError::Internal.fail())?
-        .connect()
-        .map_err(db_err)
+    connect(
+        DB.get()
+            .ok_or_else(|| crate::model::ApiError::Internal.fail())?,
+    )
+}
+
+/// How long a write waits for another one to finish.
+const BUSY_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// A new connection to `db`, which waits for other writes to finish.
+///
+/// A local file is locked by every write: without a busy timeout a second request writing at the
+/// same moment failed at once with "database is locked" (Turso queues writes itself, there the
+/// timeout does nothing).
+pub fn connect(db: &Database) -> Result<Connection, ServerFnError> {
+    let conn = db.connect().map_err(db_err)?;
+    conn.busy_timeout(BUSY_TIMEOUT).map_err(db_err)?;
+    Ok(conn)
 }
 
 #[expect(
