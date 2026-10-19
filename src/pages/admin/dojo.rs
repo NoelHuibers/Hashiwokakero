@@ -10,7 +10,7 @@ use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::model::{AdminSubmission, DojoState, SubmissionAction, date_string};
 
-use super::error;
+use super::{SECTION, error, phone_stat};
 
 #[component]
 pub(super) fn DojoAdmin(on_change: Callback<()>) -> impl IntoView {
@@ -55,19 +55,24 @@ pub(super) fn DojoAdmin(on_change: Callback<()>) -> impl IntoView {
             _ => None,
         })
     };
+    let rows = move || list.get().unwrap_or_default();
+    let on_action = Callback::new(move |(id, action)| act(id, action));
+    // Inputs at 16px on phones, or iOS zooms in on focus
+    let input =
+        "h-10 w-full min-w-0 rounded-md border bg-transparent px-3 text-base sm:h-9 sm:text-sm";
     view! {
-        <Card class="gap-4">
-            <CardHeader>
+        <Card class=SECTION>
+            <CardHeader class="max-sm:px-0">
                 <CardTitle class="text-xl">"SAT Dojo submissions"</CardTitle>
                 <CardDescription>
                     "Re-evaluate runs a submission again on the current hidden set. \"Not a copy\" ranks a submission marked as behaving like an earlier one. Delete removes it for good."
                 </CardDescription>
             </CardHeader>
-            <CardContent class="flex flex-col gap-4">
+            <CardContent class="flex flex-col gap-4 max-sm:px-0">
                 {move || message().map(|m| view! { <p class="rounded-md bg-accent px-3 py-2 text-sm">{m}</p> })}
-                <div class="overflow-x-auto">
-                    {move || if loaded.get() {
-                        view! {
+                {move || if loaded.get() {
+                    view! {
+                        <div class="overflow-x-auto max-md:hidden">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b text-xs uppercase tracking-wider text-muted-foreground">
@@ -83,42 +88,41 @@ pub(super) fn DojoAdmin(on_change: Callback<()>) -> impl IntoView {
                                 <tbody>
                                     // Keyed: each row's buttons belong to that submission, also after
                                     // rows above it are deleted
-                                    <For
-                                        each=move || list.get().unwrap_or_default()
-                                        key=|s| (s.id, s.state, s.similar_to, s.solved, s.wrong)
-                                        let:s
-                                    >
-                                        <SubmissionRow s on_action=Callback::new(move |(id, action)| act(id, action)) />
+                                    <For each=rows key=|s| (s.id, s.state, s.similar_to, s.solved, s.wrong) let:s>
+                                        <SubmissionRow s on_action />
                                     </For>
                                 </tbody>
                             </table>
-                        }
-                        .into_any()
-                    } else {
-                        view! { <p class="text-muted-foreground">"Loading…"</p> }.into_any()
-                    }}
-                </div>
-                <form action="/admin/house" method="post" enctype="multipart/form-data" class="flex flex-wrap items-end gap-3 border-t pt-4">
-                    <label class="flex flex-col gap-1 text-sm font-medium">
-                        "Add a house entry"
-                        <input name="name" required maxlength="40" placeholder="Hashi CDCL" class="h-9 rounded-md border bg-transparent px-3" />
-                    </label>
-                    <input name="description" maxlength="600" placeholder="Description" class="h-9 flex-1 rounded-md border bg-transparent px-3" />
-                    <input name="wasm" type="file" accept=".wasm" required class="text-sm" />
-                    <Button attr:r#type="submit" size=ButtonSize::Sm>"Add"</Button>
+                        </div>
+                        <ul class="flex flex-col gap-2 md:hidden">
+                            <For each=rows key=|s| (s.id, s.state, s.similar_to, s.solved, s.wrong) let:s>
+                                <SubmissionCard s on_action />
+                            </For>
+                        </ul>
+                    }
+                    .into_any()
+                } else {
+                    view! { <p class="text-muted-foreground">"Loading…"</p> }.into_any()
+                }}
+                <form
+                    action="/admin/house"
+                    method="post"
+                    enctype="multipart/form-data"
+                    class="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-end"
+                >
+                    <p class="text-sm font-medium sm:basis-full">"Add a house entry"</p>
+                    <input name="name" required maxlength="40" placeholder="Name, e.g. Hashi CDCL" aria-label="Name" class=format!("{input} sm:w-48") />
+                    <input name="description" maxlength="600" placeholder="Description" aria-label="Description" class=format!("{input} sm:flex-1") />
+                    <input name="wasm" type="file" accept=".wasm" required aria-label="Solver (.wasm)" class="max-w-full text-sm file:me-3 file:rounded-md file:border file:bg-card file:px-3 file:py-1.5 file:text-sm file:font-medium" />
+                    <Button attr:r#type="submit" class="max-sm:h-10 max-sm:w-full">"Add"</Button>
                 </form>
             </CardContent>
         </Card>
     }
 }
 
-#[component]
-fn SubmissionRow(
-    s: AdminSubmission,
-    on_action: Callback<(i64, SubmissionAction)>,
-) -> impl IntoView {
-    let id = s.id;
-    let state = match s.state {
+fn state_badge(s: &AdminSubmission) -> AnyView {
+    match s.state {
         _ if s.wrong > 0 => {
             view! { <Badge variant=BadgeVariant::Destructive>"disqualified"</Badge> }.into_any()
         }
@@ -135,8 +139,39 @@ fn SubmissionRow(
         DojoState::Failed => {
             view! { <Badge variant=BadgeVariant::Destructive>"failed"</Badge> }.into_any()
         }
-    };
-    let copy = s.similar_to;
+    }
+}
+
+fn solved(s: &AdminSubmission) -> String {
+    s.solved
+        .map_or_else(|| "–".into(), |n| format!("{n}/{}", s.total))
+}
+
+fn par2(s: &AdminSubmission) -> String {
+    s.par2.map_or_else(|| "–".into(), |p| format!("{p:.3}"))
+}
+
+/// Re-evaluate, "Not a copy" for one marked as a copy, Delete; `class` sizes them.
+fn actions(
+    s: &AdminSubmission,
+    on_action: Callback<(i64, SubmissionAction)>,
+    size: ButtonSize,
+    class: &'static str,
+) -> impl IntoView + use<> {
+    let id = s.id;
+    view! {
+        <Button variant=ButtonVariant::Outline size class=class on:click=move |_| on_action.run((id, SubmissionAction::Requeue))>"Re-evaluate"</Button>
+        {s.similar_to.map(|_| view! { <Button variant=ButtonVariant::Outline size class=class on:click=move |_| on_action.run((id, SubmissionAction::ClearCopy))>"Not a copy"</Button> })}
+        <Button variant=ButtonVariant::Destructive size class=class on:click=move |_| on_action.run((id, SubmissionAction::Delete))>"Delete"</Button>
+    }
+}
+
+#[component]
+fn SubmissionRow(
+    s: AdminSubmission,
+    on_action: Callback<(i64, SubmissionAction)>,
+) -> impl IntoView {
+    let id = s.id;
     view! {
         <tr class="border-b last:border-0">
             <td class="py-2 pe-3 font-pixel">{id}</td>
@@ -146,19 +181,48 @@ fn SubmissionRow(
                 <span class="block text-xs text-muted-foreground">{s.author.clone()}</span>
             </td>
             <td class="py-2 pe-3">
-                {state}
-                {copy.map(|c| view! { <span class="ms-2 text-xs text-warning-dark">{format!("copy of #{c}")}</span> })}
+                {state_badge(&s)}
+                {s.similar_to.map(|c| view! { <span class="ms-2 text-xs text-warning-dark">{format!("copy of #{c}")}</span> })}
             </td>
             <td class="py-2 pe-3 text-end tabular-nums">{s.solved.map(|n| format!("{n}/{}", s.total)).unwrap_or_default()}</td>
             <td class="py-2 pe-3 text-end font-pixel tabular-nums">{s.par2.map(|p| format!("{p:.3}")).unwrap_or_default()}</td>
             <td class="py-2 pe-3 text-xs">{date_string(crate::model::day_of(s.created_at))}" · season "{s.season}</td>
             <td class="py-2">
-                <div class="flex justify-end gap-1">
-                    <Button variant=ButtonVariant::Outline size=ButtonSize::Sm on:click=move |_| on_action.run((id, SubmissionAction::Requeue))>"Re-evaluate"</Button>
-                    {copy.map(|_| view! { <Button variant=ButtonVariant::Outline size=ButtonSize::Sm on:click=move |_| on_action.run((id, SubmissionAction::ClearCopy))>"Not a copy"</Button> })}
-                    <Button variant=ButtonVariant::Destructive size=ButtonSize::Sm on:click=move |_| on_action.run((id, SubmissionAction::Delete))>"Delete"</Button>
-                </div>
+                <div class="flex justify-end gap-1">{actions(&s, on_action, ButtonSize::Sm, "")}</div>
             </td>
         </tr>
+    }
+}
+
+/// A submission on a phone: the solver and its state, its numbers, the buttons.
+#[component]
+fn SubmissionCard(
+    s: AdminSubmission,
+    on_action: Callback<(i64, SubmissionAction)>,
+) -> impl IntoView {
+    let id = s.id;
+    view! {
+        <li class="rounded-lg border bg-card p-3" class:border-warning=s.similar_to.is_some()>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="truncate">
+                        <span class="me-1.5 font-pixel text-muted-foreground">"#"{id}</span>
+                        <a href=format!("/dojo/{id}") class="font-medium hover:underline">{s.name.clone()}</a>
+                    </p>
+                    <p class="truncate text-xs text-muted-foreground">{s.author.clone()}" · season "{s.season}</p>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                    {state_badge(&s)}
+                    {s.house.then(|| view! { <Badge variant=BadgeVariant::Secondary size=BadgeSize::Sm>"house"</Badge> })}
+                </div>
+            </div>
+            {s.similar_to.map(|c| view! { <p class="mt-2 text-xs font-medium text-warning-dark">{format!("Behaves like #{c}: not ranked")}</p> })}
+            <dl class="mt-3 grid grid-cols-3 gap-2 border-t pt-3">
+                {phone_stat("Solved", solved(&s), "")}
+                {phone_stat("PAR-2", par2(&s), "font-pixel")}
+                {phone_stat("Submitted", date_string(crate::model::day_of(s.created_at)), "")}
+            </dl>
+            <div class="mt-3 flex flex-wrap gap-2">{actions(&s, on_action, ButtonSize::Default, "flex-auto")}</div>
+        </li>
     }
 }

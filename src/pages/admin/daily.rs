@@ -9,7 +9,7 @@ use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::model::{AdminAttempt, Flag, MoveEvent, date_string, format_duration};
 
-use super::error;
+use super::{SECTION, error, phone_stat};
 
 /// Clicks on different bridges closer together than this are worth a look.
 const SUSPICIOUS_GAP_MS: u32 = 120;
@@ -96,57 +96,79 @@ pub(super) fn DailyAdmin(on_change: Callback<()>) -> impl IntoView {
             }
         });
     };
+    let summary = move || {
+        attempts.with(|l| {
+            l.as_ref().filter(|l| !l.is_empty()).map(|l| {
+                let ranked = l.iter().filter(|a| a.flag.is_none() && finished(a)).count();
+                let check = l.iter().filter(|a| suspicious(a)).count();
+                format!(
+                    "{} {} · {ranked} ranked · {check} to check",
+                    l.len(),
+                    if l.len() == 1 { "attempt" } else { "attempts" },
+                )
+            })
+        })
+    };
+    let rows = move || attempts.get().unwrap_or_default();
     view! {
-        <Card class="gap-4">
-            <CardHeader>
-                <CardTitle class="flex flex-wrap items-center gap-3 text-xl">
-                    "Daily review"
-                    <span class="flex items-center gap-1">
-                        <Button variant=ButtonVariant::Outline size=ButtonSize::Sm on:click=move |_| step(-1)>"←"</Button>
-                        <span class="font-pixel text-base">{move || shown.get().map(date_string).unwrap_or_default()}</span>
-                        <Button variant=ButtonVariant::Outline size=ButtonSize::Sm on:click=move |_| step(1)>"→"</Button>
-                        <Button variant=ButtonVariant::Ghost size=ButtonSize::Sm on:click=move |_| day.set(None)>"Today"</Button>
-                    </span>
-                </CardTitle>
+        <Card class=SECTION>
+            <CardHeader class="max-sm:px-0">
+                <CardTitle class="text-xl">"Daily review"</CardTitle>
                 <CardDescription>
-                    "Every attempt of the day, fastest first. Rows in yellow are flagged or have clicks under "
-                    {SUSPICIOUS_GAP_MS} " ms apart: open the log and judge. Taking a result off the board hides it from all rankings and streaks; putting it back undoes that."
+                    "Fastest first. Yellow rows are flagged or have clicks under " {SUSPICIOUS_GAP_MS}
+                    " ms apart: open the log and judge. Taking a result off the board hides it from all rankings and streaks; putting it back undoes that."
                 </CardDescription>
             </CardHeader>
-            <CardContent class="overflow-x-auto">
+            <CardContent class="flex flex-col gap-3 max-sm:px-0">
+                <div class="flex items-center gap-2">
+                    <div class="flex h-10 items-center rounded-lg border bg-card max-sm:flex-1">
+                        <button type="button" aria-label="Previous day" class="h-full rounded-s-lg px-3 hover:bg-accent" on:click=move |_| step(-1)>"←"</button>
+                        <span class="flex-1 px-3 text-center font-pixel text-base tabular-nums">
+                            {move || shown.get().map(date_string).unwrap_or_default()}
+                        </span>
+                        <button type="button" aria-label="Next day" class="h-full rounded-e-lg px-3 hover:bg-accent" on:click=move |_| step(1)>"→"</button>
+                    </div>
+                    <Button
+                        variant=ButtonVariant::Outline
+                        class="h-10"
+                        attr:disabled=move || day.get().is_none()
+                        on:click=move |_| day.set(None)
+                    >
+                        "Today"
+                    </Button>
+                </div>
+                {move || summary().map(|s| view! { <p class="text-sm text-muted-foreground">{s}</p> })}
                 {move || match state.get() {
                     None => view! { <p class="text-muted-foreground">"Loading…"</p> }.into_any(),
                     Some(true) => view! { <p class="text-muted-foreground">"Nobody played this day."</p> }.into_any(),
                     Some(false) => view! {
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="border-b text-start text-xs uppercase tracking-wider text-muted-foreground">
-                                    <th class="py-2 pe-3 text-start">"Player"</th>
-                                    <th class="py-2 pe-3 text-end">"Time"</th>
-                                    <th class="py-2 pe-3 text-end">"Hints · checks"</th>
-                                    <th class="py-2 pe-3 text-end">"Clicks"</th>
-                                    <th class="py-2 pe-3 text-end">"Fastest · median gap"</th>
-                                    <th class="py-2 pe-3 text-start">"Status"</th>
-                                    <th class="py-2 text-end">"Actions"</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                // Keyed by the row's state too: a changed row is built anew, so
-                                // its buttons never keep handlers from another state or row
-                                <For
-                                    each=move || attempts.get().unwrap_or_default()
-                                    key=|a| (a.user_id, a.flag, a.revealed, a.finished_at)
-                                    let:a
-                                >
-                                    <AttemptRow
-                                        a
-                                        open_log
-                                        on_toggle=Callback::new(toggle)
-                                        on_log=Callback::new(show_log)
-                                    />
-                                </For>
-                            </tbody>
-                        </table>
+                        <div class="overflow-x-auto max-md:hidden">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b text-start text-xs uppercase tracking-wider text-muted-foreground">
+                                        <th class="py-2 pe-3 text-start">"Player"</th>
+                                        <th class="py-2 pe-3 text-end">"Time"</th>
+                                        <th class="py-2 pe-3 text-end">"Hints · checks"</th>
+                                        <th class="py-2 pe-3 text-end">"Clicks"</th>
+                                        <th class="py-2 pe-3 text-end">"Fastest · median gap"</th>
+                                        <th class="py-2 pe-3 text-start">"Status"</th>
+                                        <th class="py-2 text-end">"Actions"</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    // Keyed by the row's state too: a changed row is built anew, so
+                                    // its buttons never keep handlers from another state or row
+                                    <For each=rows key=|a| (a.user_id, a.flag, a.revealed, a.finished_at) let:a>
+                                        <AttemptRow a open_log on_toggle=Callback::new(toggle) on_log=Callback::new(show_log) />
+                                    </For>
+                                </tbody>
+                            </table>
+                        </div>
+                        <ul class="flex flex-col gap-2 md:hidden">
+                            <For each=rows key=|a| (a.user_id, a.flag, a.revealed, a.finished_at) let:a>
+                                <AttemptCard a open_log on_toggle=Callback::new(toggle) on_log=Callback::new(show_log) />
+                            </For>
+                        </ul>
                     }
                     .into_any(),
                 }}
@@ -155,18 +177,17 @@ pub(super) fn DailyAdmin(on_change: Callback<()>) -> impl IntoView {
     }
 }
 
-#[component]
-fn AttemptRow(
-    a: AdminAttempt,
-    open_log: RwSignal<Option<(i64, Vec<MoveEvent>)>>,
-    on_toggle: Callback<i64>,
-    on_log: Callback<i64>,
-) -> impl IntoView {
-    let user = a.user_id;
-    let finished = a.finished_at.is_some() && !a.revealed;
-    let suspicious =
-        a.flag.is_some() || a.log.fastest_gap_ms.is_some_and(|g| g < SUSPICIOUS_GAP_MS);
-    let status = match (a.flag, a.revealed, a.finished_at) {
+/// Finished without giving up: a result that counts, unless taken off.
+fn finished(a: &AdminAttempt) -> bool {
+    a.finished_at.is_some() && !a.revealed
+}
+
+fn suspicious(a: &AdminAttempt) -> bool {
+    a.flag.is_some() || a.log.fastest_gap_ms.is_some_and(|g| g < SUSPICIOUS_GAP_MS)
+}
+
+fn status_badge(a: &AdminAttempt) -> AnyView {
+    match (a.flag, a.revealed, a.finished_at) {
         (Some(f), _, _) => {
             view! { <Badge variant=BadgeVariant::Warning>{flag_name(f)}</Badge> }.into_any()
         }
@@ -179,21 +200,65 @@ fn AttemptRow(
         (None, false, None) => {
             view! { <Badge variant=BadgeVariant::Secondary>"playing"</Badge> }.into_any()
         }
-    };
-    let action = if a.flag.is_some() {
+    }
+}
+
+/// Taking a result off the board, or putting it back.
+fn board_action(a: &AdminAttempt) -> Option<(&'static str, ButtonVariant)> {
+    if a.flag.is_some() {
         Some(("Put back", ButtonVariant::Outline))
-    } else if finished {
+    } else if finished(a) {
         Some(("Take off", ButtonVariant::Destructive))
     } else {
         None
-    };
+    }
+}
+
+fn gap(ms: Option<u32>) -> String {
+    ms.map_or_else(|| "–".into(), |g| format!("{g} ms"))
+}
+
+fn account(a: &AdminAttempt) -> String {
+    let user = a.user_id;
+    a.username
+        .as_ref()
+        .map_or_else(|| format!("guest #{user}"), |u| format!("@{u} · #{user}"))
+}
+
+fn log_open(
+    open_log: RwSignal<Option<(i64, Vec<MoveEvent>)>>,
+    user: i64,
+) -> impl Fn() -> bool + Copy {
+    move || open_log.with(|l| l.as_ref().is_some_and(|(u, _)| *u == user))
+}
+
+fn open_log_view(
+    open_log: RwSignal<Option<(i64, Vec<MoveEvent>)>>,
+    user: i64,
+) -> impl Fn() -> Option<AnyView> {
+    move || {
+        open_log.with(|l| {
+            l.as_ref()
+                .filter(|(u, _)| *u == user)
+                .map(|(_, log)| view! { <LogView log=log.clone() /> }.into_any())
+        })
+    }
+}
+
+#[component]
+fn AttemptRow(
+    a: AdminAttempt,
+    open_log: RwSignal<Option<(i64, Vec<MoveEvent>)>>,
+    on_toggle: Callback<i64>,
+    on_log: Callback<i64>,
+) -> impl IntoView {
+    let user = a.user_id;
+    let is_open = log_open(open_log, user);
     view! {
-        <tr class="border-b last:border-0" class:bg-warning-light=suspicious>
+        <tr class="border-b last:border-0" class:bg-warning-light=suspicious(&a)>
             <td class="py-2 pe-3">
                 <span class="font-medium">{a.name.clone()}</span>
-                <span class="block text-xs text-muted-foreground">
-                    {a.username.clone().map_or_else(|| format!("guest #{user}"), |u| format!("@{u} · #{user}"))}
-                </span>
+                <span class="block text-xs text-muted-foreground">{account(&a)}</span>
             </td>
             <td class="py-2 pe-3 text-end font-pixel tabular-nums">{a.time_ms.map(format_duration).unwrap_or_default()}</td>
             <td class="py-2 pe-3 text-end tabular-nums">{format!("{} · {}", a.hints, a.checks)}</td>
@@ -201,17 +266,15 @@ fn AttemptRow(
                 {a.log.taps}
             </td>
             <td class="py-2 pe-3 text-end tabular-nums">
-                {format!(
-                    "{} · {}",
-                    a.log.fastest_gap_ms.map_or_else(|| "–".into(), |g| format!("{g} ms")),
-                    a.log.median_gap_ms.map_or_else(|| "–".into(), |g| format!("{g} ms")),
-                )}
+                {format!("{} · {}", gap(a.log.fastest_gap_ms), gap(a.log.median_gap_ms))}
             </td>
-            <td class="py-2 pe-3">{status}</td>
+            <td class="py-2 pe-3">{status_badge(&a)}</td>
             <td class="py-2">
                 <div class="flex justify-end gap-1">
-                    <Button variant=ButtonVariant::Ghost size=ButtonSize::Sm on:click=move |_| on_log.run(user)>"Log"</Button>
-                    {action
+                    <Button variant=ButtonVariant::Ghost size=ButtonSize::Sm on:click=move |_| on_log.run(user)>
+                        {move || if is_open() { "Hide log" } else { "Log" }}
+                    </Button>
+                    {board_action(&a)
                         .map(|(label, variant)| {
                             view! {
                                 <Button variant size=ButtonSize::Sm on:click=move |_| on_toggle.run(user)>{label}</Button>
@@ -221,18 +284,72 @@ fn AttemptRow(
             </td>
         </tr>
         {move || {
-            open_log.with(|l| {
-                l.as_ref().filter(|(u, _)| *u == user).map(|(_, log)| {
+            open_log_view(open_log, user)()
+                .map(|log| {
                     view! {
                         <tr>
-                            <td colspan="7" class="pb-3">
-                                <LogView log=log.clone() />
-                            </td>
+                            <td colspan="7" class="pb-3">{log}</td>
                         </tr>
                     }
                 })
-            })
         }}
+    }
+}
+
+/// An attempt on a phone: who and how it stands, the numbers, the click gaps that make it
+/// suspicious or not, then the buttons, with the log opening inside the card.
+#[component]
+fn AttemptCard(
+    a: AdminAttempt,
+    open_log: RwSignal<Option<(i64, Vec<MoveEvent>)>>,
+    on_toggle: Callback<i64>,
+    on_log: Callback<i64>,
+) -> impl IntoView {
+    let user = a.user_id;
+    let is_open = log_open(open_log, user);
+    let suspicious = suspicious(&a);
+    let fastest = if a.log.fastest_gap_ms.is_some_and(|g| g < SUSPICIOUS_GAP_MS) {
+        "font-semibold text-warning-dark"
+    } else {
+        "font-semibold text-foreground"
+    };
+    let gaps = if a.log.fastest_gap_ms.is_some() {
+        view! {
+            "Click gaps: fastest "
+            <span class=fastest>{gap(a.log.fastest_gap_ms)}</span>
+            " · median " {gap(a.log.median_gap_ms)}
+        }
+        .into_any()
+    } else {
+        view! { "No click gaps logged" }.into_any()
+    };
+    view! {
+        <li class="rounded-lg border bg-card p-3" class:border-warning=suspicious class:bg-warning-light=suspicious>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="truncate font-medium">{a.name.clone()}</p>
+                    <p class="truncate text-xs text-muted-foreground">{account(&a)}</p>
+                </div>
+                <div class="shrink-0">{status_badge(&a)}</div>
+            </div>
+            <dl class="mt-3 grid grid-cols-4 gap-2 border-t pt-3">
+                {phone_stat("Time", a.time_ms.map_or_else(|| "–".into(), format_duration), "font-pixel")}
+                {phone_stat("Hints", a.hints.to_string(), "")}
+                {phone_stat("Checks", a.checks.to_string(), "")}
+                {phone_stat("Clicks", a.log.taps.to_string(), "")}
+            </dl>
+            <p class="mt-2 text-xs text-muted-foreground">{gaps}</p>
+            <div class="mt-3 flex gap-2">
+                <Button variant=ButtonVariant::Outline class="flex-1" on:click=move |_| on_log.run(user)>
+                    {move || if is_open() { "Hide log" } else { "Show log" }}
+                </Button>
+                {board_action(&a)
+                    .map(|(label, variant)| {
+                        view! { <Button variant class="flex-1" on:click=move |_| on_toggle.run(user)>{label}</Button> }
+                    })}
+            </div>
+            {move || open_log_view(open_log, user)().map(|log| view! { <div class="mt-3">{log}</div> })}
+        </li>
     }
 }
 
@@ -257,7 +374,7 @@ fn LogView(log: Vec<MoveEvent>) -> impl IntoView {
         })
         .collect();
     view! {
-        <div dir="ltr" class="terminal max-h-80 overflow-y-auto rounded-md px-3 py-2 font-pixel text-[12px] leading-relaxed">
+        <div dir="ltr" class="terminal max-h-80 overflow-auto whitespace-pre rounded-md px-3 py-2 font-pixel text-[12px] leading-relaxed">
             {rows
                 .into_iter()
                 .map(|(e, gap)| {
