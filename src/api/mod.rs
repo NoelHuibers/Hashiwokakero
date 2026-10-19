@@ -13,6 +13,7 @@
 
 mod account;
 mod admin;
+mod client;
 mod contact;
 mod daily;
 mod dojo;
@@ -20,6 +21,7 @@ mod puzzle;
 
 pub use account::*;
 pub use admin::*;
+pub use client::{BUILD_HEADER, HashiClient, is_outdated};
 pub use contact::*;
 pub use daily::*;
 pub use dojo::*;
@@ -58,5 +60,32 @@ mod tests {
         paths.sort_unstable();
         paths.dedup();
         assert_eq!(paths.len(), count, "server functions with the same name");
+    }
+
+    /// Every server function goes through `HashiClient`, which notes the server's build: with
+    /// the default client a call of an outdated tab would show its raw error again.
+    #[test]
+    fn server_functions_use_the_hashi_client() {
+        let sources = [
+            include_str!("account.rs"),
+            include_str!("admin.rs"),
+            include_str!("contact.rs"),
+            include_str!("daily.rs"),
+            include_str!("dojo.rs"),
+            include_str!("puzzle.rs"),
+        ];
+        let attributes: Vec<_> = sources
+            .iter()
+            .flat_map(|s| s.lines())
+            .filter(|line| line.starts_with("#[server"))
+            .collect();
+        for attribute in &attributes {
+            assert!(attribute.contains("client = HashiClient"), "{attribute}");
+        }
+        // No server function in another file
+        let registered = inventory::iter::<ServerFnTraitObj<Request<Body>, Response<Body>>>
+            .into_iter()
+            .count();
+        assert_eq!(attributes.len(), registered);
     }
 }

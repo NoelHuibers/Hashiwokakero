@@ -13,6 +13,7 @@ use tower_http::compression::predicate::{NotForContentType, Predicate};
 use tower_http::compression::{CompressionLayer, DefaultPredicate};
 
 use super::{admin, dojo};
+use crate::api::BUILD_HEADER;
 use crate::app::App;
 
 #[cfg(test)]
@@ -30,6 +31,7 @@ pub fn router<V: IntoView + 'static>(
 ) -> Router {
     let routes = generate_route_list(App);
     let hash_files = leptos_options.hash_files;
+    let build = build_id(&leptos_options).and_then(|b| HeaderValue::from_str(&b).ok());
     Router::new()
         .route(
             "/sitemap.xml",
@@ -70,11 +72,53 @@ pub fn router<V: IntoView + 'static>(
         .layer(middleware::from_fn(move |req: Request, next: Next| async move {
             cache_control(hash_files, req, next).await
         }))
+        .layer(middleware::from_fn(move |req: Request, next: Next| {
+            let build = build.clone();
+            async move {
+                let mut res = next.run(req).await;
+                if let Some(build) = build {
+                    res.headers_mut().insert(BUILD_HEADER, build);
+                }
+                res
+            }
+        }))
         // woff2 is compressed already
         .layer(CompressionLayer::new().compress_when(
             DefaultPredicate::new().and(NotForContentType::const_new("font/")),
         ))
         .with_state(leptos_options)
+}
+
+/// The build of the site the server runs: the hash of its WASM.
+///
+/// From the hash.txt that cargo-leptos writes next to the server binary (read there, as leptos
+/// reads it for the file names). Every response names it (`x-hashi-build`) and so does every page
+/// (`<meta name="hashi-build">`, `app::shell`): a tab whose page names another build than a
+/// failed call's answer runs an outdated version (see `api::client`).
+///
+/// The content hash, not a commit: CI builds the server binary and the WASM in separate jobs,
+/// and the server reads the hash.txt of the browser's job, so the two always agree; a deploy
+/// that doesn't change the WASM keeps the build, and its open tabs are still up to date.
+/// Compiled into nothing, so no commit makes cargo rebuild the crate. `None` without hashed
+/// file names (`cargo leptos watch` has them too) or without hash.txt: then nothing is compared.
+pub fn build_id(options: &LeptosOptions) -> Option<String> {
+    if !options.hash_files {
+        return None;
+    }
+    let path = std::env::current_exe()
+        .ok()?
+        .parent()?
+        .join(&*options.hash_file);
+    wasm_hash(&std::fs::read_to_string(path).ok()?).map(str::to_owned)
+}
+
+/// The `wasm: <hash>` line of hash.txt.
+fn wasm_hash(hashes: &str) -> Option<&str> {
+    hashes
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("wasm:"))
+        .map(str::trim)
+        .filter(|hash| !hash.is_empty())
 }
 
 /// Browsers kept an old stylesheet after a deploy because its URL never changed and no cache

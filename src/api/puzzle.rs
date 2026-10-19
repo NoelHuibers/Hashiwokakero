@@ -4,6 +4,8 @@ use common::{GenerateParams, GeneratedPuzzle, Puzzle, SolveReport, SolverConfig}
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
+use super::HashiClient;
+
 #[cfg(feature = "ssr")]
 use crate::server::{auth, daily, db, run_blocking};
 
@@ -30,14 +32,14 @@ fn normalized(puzzle: Puzzle) -> Puzzle {
 }
 
 /// Generates a new puzzle with a unique solution.
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn generate_puzzle(params: GenerateParams) -> Result<GeneratedPuzzle, ServerFnError> {
     run_blocking(move || Ok(backend::api::generate(&params))).await
 }
 
 /// Encodes the puzzle as CNF and solves it with the chosen SAT solver.
 /// With `unique` the solver additionally checks whether the solution is the only one.
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn solve_puzzle(
     puzzle: Puzzle,
     config: SolverConfig,
@@ -60,7 +62,7 @@ pub async fn solve_puzzle(
 }
 
 /// The CNF encoding of the puzzle in DIMACS format.
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn puzzle_cnf(puzzle: Puzzle) -> Result<String, ServerFnError> {
     let puzzle = normalized(puzzle);
     not_the_daily(&puzzle).await?;

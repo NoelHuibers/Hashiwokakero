@@ -35,6 +35,9 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
                 <meta name="author" content="Noel Huibers" />
                 <meta name="color-scheme" content="light dark" />
+                // The build of this page's WASM, for the tab to compare with the server's
+                // (`api::client`)
+                <meta name="hashi-build" content=page_build(&options) />
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
                 <link rel="icon" href="/favicon.ico" sizes="32x32" />
                 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -53,6 +56,18 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
             </body>
         </html>
     }
+}
+
+/// See `server::build_id`.
+#[cfg(feature = "ssr")]
+fn page_build(options: &LeptosOptions) -> Option<String> {
+    crate::server::build_id(options)
+}
+
+/// The shell is only rendered on the server.
+#[cfg(not(feature = "ssr"))]
+fn page_build(_: &LeptosOptions) -> Option<String> {
+    None
 }
 
 #[component]
