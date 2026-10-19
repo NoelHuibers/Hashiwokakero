@@ -22,6 +22,8 @@ use crate::server::{count, hex, now_ms};
 pub enum SubmitError {
     SignIn,
     Name,
+    /// A word of the list of names that aren't welcome (`server/blocked_names.txt`).
+    NameNotAllowed,
     Description,
     Url,
     Size,
@@ -42,6 +44,7 @@ impl SubmitError {
         match self {
             Self::SignIn => "sign_in",
             Self::Name => "name",
+            Self::NameNotAllowed => "name_not_allowed",
             Self::Description => "description",
             Self::Url => "url",
             Self::Size => "size",
@@ -72,6 +75,9 @@ impl Form {
         if name.is_empty() || name.chars().count() > NAME_MAX || name.chars().any(char::is_control)
         {
             return Err(SubmitError::Name);
+        }
+        if crate::server::names::blocked(name).is_some() {
+            return Err(SubmitError::NameNotAllowed);
         }
         if self.description.chars().count() > DESCRIPTION_MAX {
             return Err(SubmitError::Description);

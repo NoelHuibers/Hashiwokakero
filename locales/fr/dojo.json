@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Connecte-toi d’abord avec un compte enregistré.",
       "name": "Donne à ton solveur un nom de 40 caractères au plus.",
+      "name_not_allowed": "Ce nom n'est pas autorisé ici, choisis-en un autre.",
       "description": "La description peut faire au plus 600 caractères.",
       "url": "Le lien vers le code source doit être une adresse https://.",
       "size": "Le fichier est trop volumineux, la limite est de 8 Mio.",

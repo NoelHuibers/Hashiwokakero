@@ -1,0 +1,281 @@
+# Words that aren't welcome in names on the boards, see names.rs. One per line:
+#
+#   * word   anywhere in a word of the name: "MotherFucker", "f_u_c_k", "fuuuuck"
+#   = word   only as a word of its own (or with -s/-es): "Big_Ass", "ass99", but not "classic"
+#   ! word   usernames only, as a word of its own: names that look official
+#   ^ word   usernames only, as the whole name
+#
+# Upper and lower case, accents, digits for letters (sh1t) and separators don't matter, the
+# names are folded before matching. Short words that hide inside innocent ones (cunt in
+# Scunthorpe, rapist in therapist, penis in Penistone, puta in computadora) belong under "=",
+# names.rs tests a list of innocent names that has to pass.
+
+# English
+* fuck
+* bitch
+* whore
+* asshole
+* dickhead
+* cocksucker
+* bullshit
+* shithead
+* dumbass
+* nigger
+* nigga
+* faggot
+* wanker
+* bollocks
+* dildo
+* jizz
+* pornhub
+* pedophile
+* paedophile
+* hitler
+* siegheil
+* bastard
+* killyourself
+= ass
+= arse
+= anal
+= shit
+= shitty
+= cunt
+= dick
+= cock
+= pussy
+= slut
+= twat
+= tits
+= titties
+= boobs
+= cum
+= rape
+= raped
+= rapist
+= penis
+= vagina
+= porn
+= porno
+= fag
+= nazi
+= kkk
+= pedo
+= paedo
+= kys
+= retard
+= retarded
+= wank
+
+# German
+* scheisse
+* arschloch
+* fotze
+* votze
+* wichser
+* hurensohn
+* schlampe
+* missgeburt
+* pimmel
+* ficker
+* fickdich
+* kanake
+= arsch
+= fick
+= ficken
+= nutte
+= nutten
+= neger
+= spast
+= spasti
+= kacke
+= schwanz
+= hure
+
+# Spanish
+* mierda
+* cabron
+* pendejo
+* gilipollas
+* maricon
+* chingada
+* culero
+* hijodeputa
+* putamadre
+= puta
+= puto
+= joder
+= polla
+= verga
+= chingar
+
+# French
+* connard
+* connasse
+* salope
+* encule
+* putain
+* niquetamere
+* batard
+= merde
+= pute
+= nique
+= couille
+= fdp
+
+# Italian
+* cazzo
+* vaffanculo
+* stronzo
+* stronza
+* puttana
+* minchia
+* frocio
+* porcodio
+* diocane
+* coglione
+= figa
+= merda
+
+# Dutch
+* kankerlijer
+* klootzak
+* godverdomme
+= kanker
+= tering
+= kut
+= hoer
+= mongool
+= flikker
+
+# Polish
+* kurwa
+* skurwysyn
+* chuj
+* pierdol
+* jebac
+* jebany
+* pizda
+= cipa
+
+# Portuguese
+* caralho
+* buceta
+* arrombado
+* filhodaputa
+* fodase
+* cuzao
+= porra
+= viado
+
+# Russian and Ukrainian, transliterated and in Cyrillic
+* blyat
+* blyad
+* pizdec
+* pizdets
+* mudak
+* khuy
+* хуй
+* пизд
+* блять
+* блядь
+* ебать
+* ебал
+* мудак
+* пидор
+* пидар
+= ebat
+
+# Turkish
+* orospu
+* siktir
+* aminakoyim
+* pezevenk
+= amk
+= yarrak
+= gavat
+= ibne
+
+# Indonesian
+* kontol
+* ngentot
+* bangsat
+* pukimak
+* jancok
+* jancuk
+= memek
+
+# Hindi, transliterated
+* chutiya
+* chutiye
+* madarchod
+* behenchod
+* bhenchod
+* bhosdike
+= gandu
+
+# Japanese
+* kichigai
+* 死ね
+* ちんこ
+* まんこ
+* きちがい
+= chinko
+= manko
+
+# Korean
+* ssibal
+* byeongsin
+* byungsin
+* gaesaekki
+* gaesaeki
+* 씨발
+* 시발
+* 병신
+* 개새끼
+= sibal
+= shibal
+
+# Chinese
+* caonima
+* tamade
+* 操你妈
+* 草泥马
+* 傻逼
+* 他妈的
+* 鸡巴
+= shabi
+
+# Arabic
+* sharmouta
+* sharmuta
+* kosomak
+* kossomak
+* شرموط
+
+# Thai
+* ควย
+
+# Looking official
+! admin
+! admins
+! administrator
+! moderator
+! moderators
+! mod
+! mods
+! staff
+! official
+! support
+! sysop
+! webmaster
+^ hashi
+^ hashirs
+^ hashiwokakero
+^ root
+^ system
+^ deleted
+^ anonymous
+^ guest
+^ null
+^ undefined
+^ player

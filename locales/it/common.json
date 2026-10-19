@@ -70,7 +70,8 @@
     "email_invalid": "Questo non sembra un indirizzo email.",
     "message_invalid": "Scrivi tra 10 e 5000 caratteri, per favore.",
     "too_many_messages": "Per oggi hai inviato abbastanza messaggi, riprova domani.",
-    "rename_too_soon": "Hai cambiato nome utente di recente, riprova più tardi."
+    "rename_too_soon": "Hai cambiato nome utente di recente, riprova più tardi.",
+    "username_not_allowed": "Questo nome non è consentito qui, scegline un altro."
   },
   "solver": {
     "title": "Solver SAT",

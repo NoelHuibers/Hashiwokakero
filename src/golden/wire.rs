@@ -340,6 +340,7 @@ fn responses() -> Responses {
             dojo_pending: 2,
             dojo_total: 30,
             messages: 3,
+            names: 1,
         },
         admin_attempt: AdminAttempt {
             user_id: 7,

@@ -21,6 +21,7 @@ use libsql::{Connection, params};
 use sha2::{Digest, Sha256};
 
 use super::db::db_err;
+use super::names;
 use super::{hex, now_ms, run_blocking};
 use crate::model::{ApiError, MS_PER_DAY, RENAME_EVERY_DAYS, UserInfo};
 
@@ -218,16 +219,22 @@ pub async fn ensure_user(conn: &Connection) -> Result<User, ServerFnError> {
     })
 }
 
+/// 3 to 20 letters, digits, `_` and `-`, none of the words the boards don't want, and nothing
+/// that looks official, except for the admins (see `server/names.rs`).
 pub fn validate_username(username: &str) -> Result<(), ServerFnError> {
     let ok_len = (3..=20).contains(&username.chars().count());
     let ok_chars = username
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
-    if ok_len && ok_chars {
-        Ok(())
-    } else {
-        Err(ApiError::UsernameInvalid.into())
+    if !(ok_len && ok_chars) {
+        return Err(ApiError::UsernameInvalid.into());
     }
+    if names::blocked(username).is_some()
+        || (names::reserved(username).is_some() && !super::admin::admin_username(username))
+    {
+        return Err(ApiError::UsernameNotAllowed.into());
+    }
+    Ok(())
 }
 
 pub fn validate_password(password: &str) -> Result<(), ServerFnError> {

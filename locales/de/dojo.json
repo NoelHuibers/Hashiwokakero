@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Bitte melde dich zuerst mit einem registrierten Konto an.",
       "name": "Gib deinem Solver einen Namen mit höchstens 40 Zeichen.",
+      "name_not_allowed": "Dieser Name ist hier nicht erlaubt, bitte wähl einen anderen.",
       "description": "Die Beschreibung darf höchstens 600 Zeichen lang sein.",
       "url": "Der Quellcode-Link muss eine https://-Adresse sein.",
       "size": "Die Datei ist zu groß, das Limit liegt bei 8 MiB.",

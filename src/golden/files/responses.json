@@ -330,7 +330,8 @@
     "flagged": 1,
     "dojo_pending": 2,
     "dojo_total": 30,
-    "messages": 3
+    "messages": 3,
+    "names": 1
   },
   "admin_attempt": {
     "user_id": 7,

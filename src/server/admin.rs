@@ -14,24 +14,27 @@ use serde::Deserialize;
 
 use super::auth::{self, User};
 use super::db::db_err;
-use super::{daily, db, dojo};
+use super::{daily, db, dojo, names};
 use crate::model::{
-    AdminAttempt, AdminOverview, AdminSubmission, ApiError, DojoState, Flag, MoveEvent,
-    SubmissionAction, summarize_log,
+    AdminAttempt, AdminOverview, AdminSubmission, ApiError, DojoState, Flag, FlaggedName,
+    MoveEvent, NameKind, SubmissionAction, neutral_name, summarize_log,
 };
 
 /// Whether the user is an admin: a registered account whose username is in `HASHI_ADMINS`
 /// (comma separated, case doesn't matter).
 pub fn is_admin(user: &User) -> bool {
-    listed(&super::env_var("HASHI_ADMINS").unwrap_or_default(), user)
+    user.username.as_deref().is_some_and(admin_username)
 }
 
-fn listed(admins: &str, user: &User) -> bool {
-    user.username.as_deref().is_some_and(|name| {
-        admins
-            .split(',')
-            .any(|a| !a.trim().is_empty() && a.trim().eq_ignore_ascii_case(name))
-    })
+/// Whether `HASHI_ADMINS` lists this username.
+pub fn admin_username(name: &str) -> bool {
+    listed(&super::env_var("HASHI_ADMINS").unwrap_or_default(), name)
+}
+
+fn listed(admins: &str, name: &str) -> bool {
+    admins
+        .split(',')
+        .any(|a| !a.trim().is_empty() && a.trim().eq_ignore_ascii_case(name))
 }
 
 /// The signed in admin, or `Forbidden`.
@@ -87,7 +90,72 @@ pub async fn overview(conn: &Connection) -> Result<AdminOverview, ServerFnError>
         .await?,
         dojo_total: count(conn, "SELECT COUNT(*) FROM dojo_submissions WHERE ?1 = ?1", day).await?,
         messages: count(conn, "SELECT COUNT(*) FROM contact_messages WHERE ?1 = ?1", day).await?,
+        names: super::count(flagged_names(conn).await?.len()),
     })
+}
+
+/// Names of players and Dojo solvers the list of blocked names flags. Guests have generated
+/// names, players renamed by an admin a neutral one.
+pub async fn flagged_names(conn: &Connection) -> Result<Vec<FlaggedName>, ServerFnError> {
+    let mut out = Vec::new();
+    let mut rows = conn
+        .query(
+            "SELECT id, name, username FROM users
+             WHERE username IS NOT NULL AND deleted_at IS NULL ORDER BY id",
+            (),
+        )
+        .await
+        .map_err(db_err)?;
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        let id: i64 = row.get(0).map_err(db_err)?;
+        let name: String = row.get(1).map_err(db_err)?;
+        let username: String = row.get(2).map_err(db_err)?;
+        if name == neutral_name(id) {
+            continue;
+        }
+        let word = names::blocked(&name)
+            .or_else(|| names::reserved(&name).filter(|_| !admin_username(&username)));
+        if let Some(word) = word {
+            out.push(FlaggedName {
+                kind: NameKind::Player,
+                id,
+                name,
+                word: word.into(),
+            });
+        }
+    }
+    let mut rows = conn
+        .query("SELECT id, name FROM dojo_submissions ORDER BY id", ())
+        .await
+        .map_err(db_err)?;
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        let name: String = row.get(1).map_err(db_err)?;
+        if let Some(word) = names::blocked(&name) {
+            out.push(FlaggedName {
+                kind: NameKind::Solver,
+                id: row.get(0).map_err(db_err)?,
+                name,
+                word: word.into(),
+            });
+        }
+    }
+    Ok(out)
+}
+
+/// Gives a player the neutral name, on every board. `None` if there is no such player.
+///
+/// The username stays, so they can still sign in, and they can choose a new name right away (it
+/// doesn't count as their monthly change).
+pub async fn rename_player(conn: &Connection, user: i64) -> Result<Option<String>, ServerFnError> {
+    let name = neutral_name(user);
+    let changed = conn
+        .execute(
+            "UPDATE users SET name = ?2, renamed_at = NULL WHERE id = ?1 AND deleted_at IS NULL",
+            params![user, name.clone()],
+        )
+        .await
+        .map_err(db_err)?;
+    Ok((changed != 0).then_some(name))
 }
 
 /// Every attempt of a day, finished ones fastest first, with a summary of the move log.
@@ -151,7 +219,7 @@ pub async fn log(conn: &Connection, user: i64, day: i64) -> Result<Vec<MoveEvent
 pub async fn submissions(conn: &Connection) -> Result<Vec<AdminSubmission>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT s.id, s.name, COALESCE(u.username, u.name, 'Hashi'), s.house, s.state, s.season,
+            "SELECT s.id, s.name, COALESCE(u.name, 'Hashi'), s.house, s.state, s.season,
                     s.solved, s.total, s.par2, s.wrong, s.similar_to, s.created_at
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id
              ORDER BY s.created_at DESC LIMIT 200",
@@ -328,12 +396,13 @@ mod tests {
 
     #[test]
     fn admins_by_username() {
-        assert!(listed("Noel", &user(Some("noel"))));
-        assert!(listed(" alice , Noel ", &user(Some("NOEL"))));
-        assert!(!listed("Noel", &user(Some("noelle"))));
-        // Guests have no username, an empty list has no admins
-        assert!(!listed("Noel", &user(None)));
-        assert!(!listed("", &user(Some(""))));
-        assert!(!listed(",", &user(Some("noel"))));
+        assert!(listed("Noel", "noel"));
+        assert!(listed(" alice , Noel ", "NOEL"));
+        assert!(!listed("Noel", "noelle"));
+        // An empty list has no admins, guests have no username
+        assert!(!listed("", ""));
+        assert!(!listed(",", "noel"));
+        assert!(is_admin(&user(Some("HTTP_admin"))));
+        assert!(!is_admin(&user(None)));
     }
 }

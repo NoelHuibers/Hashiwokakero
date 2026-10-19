@@ -6,6 +6,7 @@ pub mod contact;
 pub mod daily;
 pub mod db;
 pub mod dojo;
+pub mod names;
 mod router;
 
 pub use router::router;

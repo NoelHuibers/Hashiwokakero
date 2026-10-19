@@ -70,7 +70,8 @@
     "email_invalid": "Ça ne ressemble pas à une adresse e-mail.",
     "message_invalid": "Merci d’écrire entre 10 et 5000 caractères.",
     "too_many_messages": "Ça fait assez de messages pour aujourd’hui, réessaie demain.",
-    "rename_too_soon": "Tu as changé de pseudo récemment, réessaie plus tard."
+    "rename_too_soon": "Tu as changé de pseudo récemment, réessaie plus tard.",
+    "username_not_allowed": "Ce nom n'est pas autorisé ici, choisis-en un autre."
   },
   "solver": {
     "title": "Solveur SAT",

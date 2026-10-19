@@ -22,7 +22,7 @@ async fn ranked(
 ) -> Result<Vec<(DojoEntry, Option<i64>)>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT s.id, s.name, COALESCE(u.username, u.name, 'Hashi'), s.house, s.score, s.created_at, s.user_id
+            "SELECT s.id, s.name, COALESCE(u.name, 'Hashi'), s.house, s.score, s.created_at, s.user_id
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id
              WHERE s.state = 'done' AND s.season = ?1 AND s.wrong = 0 AND s.solved > 0
                AND s.similar_to IS NULL
@@ -104,7 +104,7 @@ pub async fn submission(
 ) -> Result<Option<DojoSubmission>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT s.id, s.name, s.description, s.source_url, COALESCE(u.username, u.name, 'Hashi'), s.house,
+            "SELECT s.id, s.name, s.description, s.source_url, COALESCE(u.name, 'Hashi'), s.house,
                     s.created_at, s.state, s.season, s.progress, s.total, s.score, s.error, s.size, s.sha256, s.user_id,
                     s.similar_to
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = ?1",
