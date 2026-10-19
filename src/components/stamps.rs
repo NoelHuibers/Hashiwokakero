@@ -15,7 +15,7 @@ pub fn StampBadge(stamp: Stamp) -> impl IntoView {
     view! {
         <span
             class="hanko inline-grid size-6 shrink-0 rotate-[-6deg] place-items-center rounded-[5px] font-pixel text-sm leading-none"
-            title=title
+            data-tooltip=title
             aria-label=title
         >
             {stamp.kanji()}
@@ -38,7 +38,7 @@ fn StampTile(progress: StampProgress) -> impl IntoView {
         <li
             class="flex flex-col items-center gap-1.5 rounded-lg border bg-background p-3 text-center"
             class:opacity-60=!earned
-            title=move || stamp_text(i18n.get_locale(), stamp)
+            data-tooltip=move || stamp_text(i18n.get_locale(), stamp)
         >
             <span class=format!(
                 "relative grid size-12 place-items-center rounded-lg font-pixel text-2xl {}",

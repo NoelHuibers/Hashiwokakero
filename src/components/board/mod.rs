@@ -535,7 +535,7 @@ pub fn BoardView(
                     <button
                         type="button"
                         class="grid h-9 w-10 place-items-center font-pixel text-lg disabled:opacity-40"
-                        title=move || t_string!(i18n, common.board.zoom_out)
+                        data-tooltip=move || t_string!(i18n, common.board.zoom_out)
                         aria-label=move || t_string!(i18n, common.board.zoom_out)
                         disabled=move || !zoomed()
                         on:click=move |_| zoom_step(1.0 / ZOOM_STEP)
@@ -545,7 +545,7 @@ pub fn BoardView(
                     <button
                         type="button"
                         class="h-9 min-w-14 border-x px-2 font-pixel text-xs tabular-nums disabled:opacity-60"
-                        title=move || t_string!(i18n, common.board.fit)
+                        data-tooltip=move || t_string!(i18n, common.board.fit)
                         aria-label=move || t_string!(i18n, common.board.fit)
                         disabled=move || !zoomed()
                         on:click=move |_| scale.set(1.0)
@@ -555,7 +555,7 @@ pub fn BoardView(
                     <button
                         type="button"
                         class="grid h-9 w-10 place-items-center font-pixel text-lg disabled:opacity-40"
-                        title=move || t_string!(i18n, common.board.zoom)
+                        data-tooltip=move || t_string!(i18n, common.board.zoom)
                         aria-label=move || t_string!(i18n, common.board.zoom)
                         disabled=at_max
                         on:click=move |_| zoom_step(ZOOM_STEP)

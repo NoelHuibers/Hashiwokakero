@@ -51,7 +51,7 @@ pub fn LanguagePicker() -> impl IntoView {
                 aria-haspopup="true"
                 aria-expanded=move || open.get().to_string()
                 aria-label=move || t_string!(i18n, common.language)
-                title=move || t_string!(i18n, common.language)
+                data-tooltip=move || t_string!(i18n, common.language)
                 on:click=move |_| open.update(|o| *o = !*o)
             >
                 <span class="flex items-center gap-1" aria-hidden="true">

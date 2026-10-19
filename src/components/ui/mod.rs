@@ -1,7 +1,8 @@
 //! shadcn/ui components for Leptos from rust-ui (<https://rust-ui.com>, MIT licensed).
 //!
 //! They are copied into the project like shadcn intends (`ui add <component>`), so they can be
-//! adapted freely. `switch.rs` and `select.rs` were changed to be controlled by signals.
+//! adapted freely. `switch.rs` and `select.rs` were changed to be controlled by signals, `tooltip.rs` only keeps
+//! the look of rust-ui's tooltip (see there why).
 
 pub mod alert;
 pub mod badge;
@@ -16,3 +17,4 @@ pub mod separator;
 pub mod switch;
 pub mod tabs;
 pub mod toggle_group;
+pub mod tooltip;

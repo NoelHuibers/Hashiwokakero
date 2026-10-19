@@ -105,7 +105,7 @@ pub(super) fn Results(runs: RwSignal<Vec<(SolverConfig, RunState)>>) -> impl Int
                                                 }
                                                 RunState::Failed(e) => {
                                                     view! {
-                                                        <Badge variant=BadgeVariant::Destructive attr:title=e.clone()>
+                                                        <Badge variant=BadgeVariant::Destructive attr:data-tooltip=e.clone()>
                                                             {t!(i18n, lab.badge.error)}
                                                         </Badge>
                                                     }

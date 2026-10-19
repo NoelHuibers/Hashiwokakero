@@ -214,7 +214,8 @@ pub fn LabPage() -> impl IntoView {
                                                     variant=ButtonVariant::Outline
                                                     size=ButtonSize::Sm
                                                     class="w-full font-pixel"
-                                                    attr:title=move || difficulty_name(i18n.get_locale(), d)
+                                                    attr:data-tooltip=move || difficulty_name(i18n.get_locale(), d)
+                                                    attr:aria-label=move || difficulty_name(i18n.get_locale(), d)
                                                     attr:disabled=move || running.get()
                                                     on:click=move |_| generate(d)
                                                 >

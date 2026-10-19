@@ -407,7 +407,7 @@ pub fn DailyPage() -> impl IntoView {
                                 <Button
                                     variant=ButtonVariant::Secondary
                                     attr:disabled=move || !playing.get()
-                                    attr:title=format!("+{} s", CHECK_PENALTY_MS / 1000)
+                                    attr:data-tooltip=format!("+{} s", CHECK_PENALTY_MS / 1000)
                                     on:click=check
                                 >
                                     {t!(i18n, common.game.check)} <span class="hidden sm:inline">" 確認"</span> <span class="text-xs opacity-70">"+10s"</span>
@@ -415,7 +415,7 @@ pub fn DailyPage() -> impl IntoView {
                                 <Button
                                     variant=ButtonVariant::Secondary
                                     attr:disabled=move || !playing.get()
-                                    attr:title=format!("+{} s", HINT_PENALTY_MS / 1000)
+                                    attr:data-tooltip=format!("+{} s", HINT_PENALTY_MS / 1000)
                                     on:click=hint
                                 >
                                     {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70">"+30s"</span>

@@ -66,7 +66,7 @@ pub fn SettingsButton() -> impl IntoView {
                 aria-haspopup="true"
                 aria-expanded=move || open.get().to_string()
                 aria-label=move || t_string!(i18n, common.settings)
-                title=move || t_string!(i18n, common.settings)
+                data-tooltip=move || t_string!(i18n, common.settings)
                 on:click=move |_| open.update(|o| *o = !*o)
             >
                 <svg viewBox="0 0 24 24" class="size-5 sm:hidden" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
