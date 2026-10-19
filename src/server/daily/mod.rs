@@ -31,8 +31,24 @@ pub fn today() -> i64 {
 /// open source generator.
 fn seed(day: i64) -> u64 {
     let secret = std::env::var("HASHI_DAILY_SECRET").unwrap_or_else(|_| "hashi-daily".into());
+    seed_with(&secret, day)
+}
+
+fn seed_with(secret: &str, day: i64) -> u64 {
     let digest = Sha256::digest(format!("{secret}:{day}").as_bytes());
     u64::from_le_bytes(digest[..8].try_into().expect("8 bytes"))
+}
+
+/// What the generator gets for the daily of `day`.
+fn params(day: i64, seed: u64) -> GenerateParams {
+    let difficulty = daily_difficulty(day);
+    let (width, height) = difficulty.size();
+    GenerateParams {
+        width,
+        height,
+        difficulty,
+        seed,
+    }
 }
 
 #[derive(Debug)]
@@ -82,14 +98,8 @@ pub async fn get_or_create(conn: &Connection, day: i64) -> Result<Daily, ServerF
     if let Some(daily) = load(conn, day).await? {
         return Ok(daily);
     }
-    let difficulty = daily_difficulty(day);
-    let (width, height) = difficulty.size();
-    let params = GenerateParams {
-        width,
-        height,
-        difficulty,
-        seed: seed(day),
-    };
+    let params = params(day, seed(day));
+    let difficulty = params.difficulty;
     let generated = run_blocking(move || Ok(backend::api::generate(&params))).await?;
     // Another server may have been faster, then its puzzle wins
     conn.execute(

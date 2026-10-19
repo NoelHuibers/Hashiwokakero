@@ -242,19 +242,20 @@ fn evaluator(
     }
 }
 
+/// The name of the cached set of `seed`. It must not reveal the seed.
+fn cache_name(seed: &str) -> String {
+    use sha2::Digest;
+    let digest = sha2::Sha256::digest(format!("file:{seed}").as_bytes());
+    let hex = digest.iter().take(12).fold(String::new(), |mut hex, b| {
+        let _ = write!(hex, "{b:02x}");
+        hex
+    });
+    format!("set-{hex}.json")
+}
+
 /// The set for `seed`, from the cache directory if it was generated before.
 fn load_or_generate(cache: Option<&std::path::Path>, seed: &str) -> Vec<Instance> {
-    // The file name must not reveal the seed
-    let name = {
-        use sha2::Digest;
-        let digest = sha2::Sha256::digest(format!("file:{seed}").as_bytes());
-        let hex = digest.iter().take(12).fold(String::new(), |mut hex, b| {
-            let _ = write!(hex, "{b:02x}");
-            hex
-        });
-        format!("set-{hex}.json")
-    };
-    let path = cache.map(|dir| dir.join(&name));
+    let path = cache.map(|dir| dir.join(cache_name(seed)));
     if let Some(set) = path
         .as_ref()
         .and_then(|p| std::fs::read(p).ok())
@@ -360,6 +361,32 @@ mod tests {
         assert!(authorized(&headers, "secret"));
         assert!(!authorized(&headers, "secreT"));
         assert!(!authorized(&headers, "secret2"));
+    }
+
+    /// Generating a hidden set takes minutes, workers keep them on a volume. A new name or
+    /// format makes every worker generate its sets again.
+    #[test]
+    fn cached_sets_still_load() {
+        const CACHE: &str = "the cached sets on the worker's volume wouldn't be found or \
+                             wouldn't load any more: every set would be generated again";
+        assert_eq!(
+            cache_name("golden"),
+            "set-a299d0a4e31b62db7a22656b.json",
+            "{CACHE}"
+        );
+        let cached = r#"[{"name":"pigeonhole-01","family":"Pigeonhole","expected":"Unsat","cnf":{"vars":2,"clauses":[[1],[2],[-1,-2]]},"witness":null},{"name":"queens-01","family":"Queens","expected":"Sat","cnf":{"vars":1,"clauses":[[1]]},"witness":[1]}]"#;
+        let set: Vec<Instance> = serde_json::from_str(cached).expect(CACHE);
+        assert_eq!(
+            (set[0].family, set[0].expected, &set[0].cnf.clauses[2]),
+            (
+                crate::Family::Pigeonhole,
+                crate::Answer::Unsat,
+                &vec![-1, -2]
+            ),
+            "{CACHE}"
+        );
+        assert_eq!(set[1].witness, Some(vec![1]), "{CACHE}");
+        assert_eq!(serde_json::to_string(&set).unwrap(), cached, "{CACHE}");
     }
 
     #[test]
