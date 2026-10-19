@@ -16,10 +16,9 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # The lints, and the doctests. Every other test runs once, in the coverage job below.
   test:
     name: Test & lint
-    # Pinned: the dojo binary built here runs on Debian trixie (dojo/Dockerfile.prebuilt), it
-    # must not need a newer glibc than trixie has
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -44,28 +43,11 @@ jobs:
         run: cargo clippy --locked -p hashi --all-targets --no-default-features --features ssr -- -D warnings
       - name: Clippy (starter kit)
         run: cargo clippy --locked --manifest-path dojo/starter/Cargo.toml --target wasm32-wasip1 -- -D warnings
-      - name: Test backend crates
-        run: cargo test --locked -p common -p backend -p sat_solver
-      - name: Test the SAT Dojo (sandbox, scoring, worker)
-        run: cargo test --locked --release -p dojo --features worker
-      # Also drives the real router over HTTP (src/server/router/tests): server functions,
-      # cookies, the Dojo and admin routes, caching and compression
-      - name: Test the website's server code and HTTP routes
-        run: cargo test --locked --no-default-features --features ssr -p hashi --lib
-      # The worker for the deploy below, nearly free here: the release tests above compiled
-      # all of its dependencies already
-      - name: Build the dojo worker
-        if: github.event_name == 'push'
-        run: |
-          cargo build --locked --release -p dojo --features worker
-          mkdir -p dist && cp target/release/dojo dist/
-          tar -cf dojo.tar dist
-      - if: github.event_name == 'push'
-        uses: actions/upload-artifact@v7
-        with:
-          name: dojo
-          path: dojo.tar
-          retention-days: 7
+      # cargo-llvm-cov runs doctests only on nightly (--doctests), so they run here, without
+      # coverage. The crates have none yet (their code blocks are `text`), this step keeps the
+      # first one from going untested. Not the website: it only runs its library's unit tests.
+      - name: Doctests
+        run: cargo test --locked --doc -p common -p backend -p sat_solver -p dojo --features dojo/worker
 
   # A job of its own, it runs next to the server lints instead of after them
   lint-browser:
@@ -80,10 +62,10 @@ jobs:
       - name: Clippy (website, browser)
         run: cargo clippy --locked -p hashi --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -- -D warnings
 
-  # Line coverage of the tests the test job runs, in a job of its own: the instrumented build
-  # runs next to the other jobs instead of after them, and the plain tests stay as fast as they
-  # were. scripts/coverage.mjs fails it when coverage drops more than a percentage point below
-  # scripts/coverage-baseline.json.
+  # The unit, integration and HTTP tests (scripts/coverage.mjs), run once: instrumented for line
+  # coverage, in debug, with the packages and features they always had. The script fails the job
+  # when a test fails, or when coverage drops more than a percentage point below
+  # scripts/coverage-baseline.json. The deploys wait for it.
   coverage:
     name: Coverage
     runs-on: ubuntu-24.04
@@ -117,7 +99,8 @@ jobs:
 
   build:
     name: Build site
-    # Pinned, see the test job: this server binary runs on Debian trixie (Dockerfile.prebuilt)
+    # Pinned: this server binary runs on Debian trixie (Dockerfile.prebuilt), it must not need a
+    # newer glibc than trixie has
     runs-on: ubuntu-24.04
     outputs:
       playwright: ${{ steps.playwright.outputs.version }}
@@ -222,7 +205,7 @@ jobs:
   deploy:
     name: Deploy site
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint-browser, build, e2e, docker]
+    needs: [test, lint-browser, coverage, build, e2e, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -240,11 +223,36 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
-  # The SAT Dojo worker (dojo/fly.toml), a separate app that only runs while evaluating
+  # The SAT Dojo worker (dojo/fly.toml) for the deploy below, only built for it: next to the
+  # checks, it is ready when they pass
+  build-dojo:
+    name: Build dojo worker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Pinned: the worker runs on Debian trixie (dojo/Dockerfile.prebuilt), it must not need a
+    # newer glibc than trixie has
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install
+      # Runs on main only, so it always saves its cache
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: |
+          cargo build --locked --release -p dojo --features worker
+          mkdir -p dist && cp target/release/dojo dist/
+          tar -cf dojo.tar dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dojo
+          path: dojo.tar
+          retention-days: 7
+
+  # The worker, a separate app that only runs while evaluating
   deploy-dojo:
     name: Deploy dojo worker
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint-browser, build]
+    needs: [test, lint-browser, coverage, build, build-dojo]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
