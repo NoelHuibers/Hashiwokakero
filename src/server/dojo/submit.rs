@@ -5,7 +5,7 @@ use axum::extract::{Multipart, Query};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Redirect, Response};
 use dojo::MAX_WASM_BYTES;
-use libsql::{Connection, params};
+use libsql::{Connection, TransactionBehavior, params};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -129,6 +129,11 @@ pub async fn submit(
         eprintln!("dojo submit: {e}");
         SubmitError::Server
     };
+    // Quotas, duplicate detection and insertion share one write transaction across replicas.
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(server)?;
     if let Some(user) = user {
         if user.username.is_none() {
             return Err(SubmitError::SignIn);
@@ -137,14 +142,14 @@ pub async fn submit(
         if user.created_at > now_ms() - MIN_ACCOUNT_AGE_MS {
             return Err(SubmitError::AccountAge);
         }
-        let today = submitted_today(conn, user.id)
+        let today = submitted_today(&tx, user.id)
             .await
             .map_err(|_| SubmitError::Server)?;
         if today >= PER_DAY {
             return Err(SubmitError::Limit);
         }
         if let Some(network) = &form.network {
-            let mut rows = conn
+            let mut rows = tx
                 .query(
                     "SELECT COUNT(*) FROM dojo_submissions WHERE ip_hash = ?1",
                     params![network.clone()],
@@ -159,7 +164,7 @@ pub async fn submit(
                 return Err(SubmitError::NetworkLimit);
             }
         }
-        let mut rows = conn
+        let mut rows = tx
             .query(
                 "SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running')",
                 (),
@@ -177,7 +182,7 @@ pub async fn submit(
     let sha256 = hex(&Sha256::digest(&form.wasm));
     // Renaming, padding or adding custom sections doesn't make a different solver
     let code = code_hash(&form.wasm).ok_or(SubmitError::NotWasm)?;
-    let mut rows = conn
+    let mut rows = tx
         .query(
             "SELECT 1 FROM dojo_submissions WHERE sha256 = ?1 OR code_hash = ?2",
             params![sha256.clone(), code.clone()],
@@ -189,11 +194,11 @@ pub async fn submit(
     }
     let now = now_ms();
     let url = form.source_url.trim();
-    conn.execute(
+    tx.execute(
         "INSERT INTO dojo_submissions
             (user_id, house, name, description, source_url, wasm, sha256, size, created_at, updated_at, state, season,
-             code_hash, ip_hash)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, 'queued', ?10, ?11, ?12)",
+             code_hash, ip_hash, evaluation_version)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, 'queued', ?10, ?11, ?12, ?13)",
         params![
             user.map(|u| u.id),
             i64::from(user.is_none()),
@@ -206,12 +211,14 @@ pub async fn submit(
             now,
             season(),
             code,
-            form.network.clone()
+            form.network.clone(),
+            dojo::EVALUATION_VERSION
         ],
     )
     .await
     .map_err(server)?;
-    let id = conn.last_insert_rowid();
+    let id = tx.last_insert_rowid();
+    tx.commit().await.map_err(server)?;
     // Don't wait for the next round of the dispatcher
     tokio::spawn(async {
         let _ = dispatch().await;
@@ -287,7 +294,10 @@ pub async fn board_json() -> Response {
     };
     match board {
         Ok(board) => (
-            [(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")],
+            [
+                (header::ACCESS_CONTROL_ALLOW_ORIGIN.as_str(), "*"),
+                ("x-dojo-evaluation-version", dojo::EVALUATION_VERSION),
+            ],
             axum::Json(board),
         )
             .into_response(),

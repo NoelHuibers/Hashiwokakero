@@ -231,17 +231,18 @@ async fn submissions_and_leaderboard() {
         (true, 0, 3)
     );
 
+    let rejected = submit(&conn, None, form("rejected", 8)).await.unwrap();
     apply(
         &conn,
         &Report::Rejected {
-            id: house,
+            id: rejected,
             season,
             reason: Rejection::NoStart,
         },
     )
     .await
     .unwrap();
-    let s = submission(&conn, house, None).await.unwrap().unwrap();
+    let s = submission(&conn, rejected, None).await.unwrap().unwrap();
     assert_eq!(
         (s.state, s.rejection),
         (DojoState::Rejected, Some(Rejection::NoStart))
@@ -639,4 +640,153 @@ async fn queued_submissions_go_to_the_worker() {
         .unwrap_err();
     assert!(err.starts_with("worker unreachable"), "{err}");
     assert_eq!(state_and_token(&conn, a3).await.0, "queued");
+}
+
+#[tokio::test]
+async fn callbacks_cannot_change_a_completed_or_replaced_evaluation() {
+    let conn = test_db("callback-lifecycle").await;
+    let id = submit(&conn, None, form("callback", 61)).await.unwrap();
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'running', job_token = 'first' WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    let finished = Report::Finished {
+        id,
+        season: season(),
+        score: score(1.0, 0),
+        fingerprint: vec![],
+    };
+    assert!(
+        worker::apply_for_job(&conn, &finished, Some("first"))
+            .await
+            .unwrap()
+    );
+    let failed = Report::Failed {
+        id,
+        season: season(),
+        message: "late failure".into(),
+    };
+    assert!(
+        !worker::apply_for_job(&conn, &failed, Some("first"))
+            .await
+            .unwrap()
+    );
+    assert_eq!(
+        submission(&conn, id, None).await.unwrap().unwrap().state,
+        DojoState::Done
+    );
+    crate::server::admin::submission_action(&conn, id, crate::model::SubmissionAction::Requeue)
+        .await
+        .unwrap();
+    assert!(
+        !worker::apply_for_job(&conn, &finished, Some("first"))
+            .await
+            .unwrap()
+    );
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'running', job_token = 'replacement' WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    assert!(
+        !worker::apply_for_job(&conn, &finished, Some("first"))
+            .await
+            .unwrap()
+    );
+    assert!(
+        worker::apply_for_job(&conn, &finished, Some("replacement"))
+            .await
+            .unwrap()
+    );
+    let mut rows = conn
+        .query(
+            "SELECT job_token FROM dojo_submissions WHERE id = ?1",
+            params![id],
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        rows.next()
+            .await
+            .unwrap()
+            .unwrap()
+            .get::<Option<String>>(0)
+            .unwrap(),
+        None
+    );
+}
+
+#[tokio::test]
+async fn a_callback_before_acceptance_is_not_overwritten_by_dispatch() {
+    use axum::{Router, extract::Query, routing::post};
+    use std::collections::HashMap;
+    let conn = test_db("fast-callback").await;
+    let id = submit(&conn, None, form("fast", 62)).await.unwrap();
+    let callback_conn = conn.clone();
+    let worker = Router::new().route(
+        "/jobs",
+        post(move |Query(q): Query<HashMap<String, String>>| {
+            let conn = callback_conn.clone();
+            async move {
+                let report = Report::Finished {
+                    id,
+                    season: season(),
+                    score: score(0.5, 0),
+                    fingerprint: vec![],
+                };
+                assert_eq!(q["evaluation_version"], ::dojo::EVALUATION_VERSION);
+                assert!(
+                    worker::apply_for_job(&conn, &report, Some(&q["report_token"]))
+                        .await
+                        .unwrap()
+                );
+                axum::http::StatusCode::ACCEPTED
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+        axum::serve(listener, worker).await.unwrap();
+    });
+    worker::dispatch_to(&conn, &url, "test-token")
+        .await
+        .unwrap();
+    assert_eq!(
+        submission(&conn, id, None).await.unwrap().unwrap().state,
+        DojoState::Done
+    );
+    server.abort();
+}
+
+#[tokio::test]
+async fn old_evaluator_scores_are_hidden_and_requeued() {
+    let conn = test_db("evaluator-version").await;
+    let id = submit(&conn, None, form("versioned", 63)).await.unwrap();
+    apply(
+        &conn,
+        &Report::Finished {
+            id,
+            season: season(),
+            score: score(1.0, 0),
+            fingerprint: vec![],
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(board(&conn).await.unwrap().entries.len(), 1);
+    conn.execute(
+        "UPDATE dojo_submissions SET evaluation_version = 'old' WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    assert_eq!(board(&conn).await.unwrap().entries, []);
+    housekeeping(&conn).await.unwrap();
+    let entry = submission(&conn, id, None).await.unwrap().unwrap();
+    assert_eq!(entry.state, DojoState::Queued);
+    assert_eq!(entry.score, None);
 }

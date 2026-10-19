@@ -127,7 +127,11 @@
     "zoom_hint": "Glisse pour te déplacer, touche pour construire",
     "cells_small": "Cases trop petites ?",
     "pinch": "Pincez pour zoomer",
-    "zoom_out": "Dézoomer"
+    "zoom_out": "Dézoomer",
+    "keyboard_play": "←/→ sélectionne un pont. Entrée/Espace : +1 ; Maj+Entrée : −1. Les îles indiquent leurs coordonnées et les ponts actuels/requis.",
+    "keyboard_edit": "Les flèches déplacent la sélection. 1–8 place une île ; 0/Suppr la retire.",
+    "edge": "Pont {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Case ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Perdu en mer",

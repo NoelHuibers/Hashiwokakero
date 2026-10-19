@@ -84,6 +84,7 @@ pub fn CreatePage() -> impl IntoView {
                 unique,
                 editor.report,
                 editor.solving,
+                editor.epoch,
             )
             .await;
             // Ignore the result if the puzzle was edited meanwhile
@@ -118,16 +119,22 @@ pub fn CreatePage() -> impl IntoView {
             difficulty,
             seed: random_seed(),
         };
+        let epoch = editor.epoch.get_untracked();
         generating.set(true);
         spawn_local(async move {
-            match generate_puzzle(params).await {
+            let result = generate_puzzle(params).await;
+            if editor.epoch.try_get_untracked() != Some(epoch) {
+                generating.try_set(false);
+                return;
+            }
+            match result {
                 Ok(g) => {
                     editor.edit(|p| *p = g.puzzle);
                     editor.solution.set(None);
                 }
                 Err(e) => error_toast(e),
             }
-            generating.set(false);
+            generating.try_set(false);
         });
     };
 

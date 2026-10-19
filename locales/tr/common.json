@@ -127,7 +127,11 @@
     "zoom_hint": "Gezinmek için kaydır, köprü kurmak için dokun",
     "cells_small": "Hücreler çok mu küçük?",
     "pinch": "Yakınlaştırmak için iki parmak",
-    "zoom_out": "Uzaklaştır"
+    "zoom_out": "Uzaklaştır",
+    "keyboard_play": "←/→ köprü seçer. Enter/Boşluk: +1; Shift+Enter: −1. Adalar koordinatları ve mevcut/gereken köprüleri gösterir.",
+    "keyboard_edit": "Ok tuşları hücre seçer. 1–8 ada yerleştirir; 0/Delete siler.",
+    "edge": "Köprü {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Hücre ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Denizde kayboldun",

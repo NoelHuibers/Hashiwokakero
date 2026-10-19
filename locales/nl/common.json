@@ -127,7 +127,11 @@
     "zoom_hint": "Veeg om te bewegen, tik om te bouwen",
     "cells_small": "Vakjes te klein?",
     "pinch": "Knijp om te zoomen",
-    "zoom_out": "Uitzoomen"
+    "zoom_out": "Uitzoomen",
+    "keyboard_play": "←/→ kiest een brug. Enter/Spatie: +1; Shift+Enter: −1. Eilanden tonen coördinaten en aanwezige/vereiste bruggen.",
+    "keyboard_edit": "Pijltjestoetsen kiezen een vak. 1–8 plaatst een eiland; 0/Delete wist het.",
+    "edge": "Brug {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Vak ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Verdwaald op zee",

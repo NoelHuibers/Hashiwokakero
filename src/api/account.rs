@@ -66,7 +66,7 @@ pub async fn my_stats() -> Result<Option<UserStats>, ServerFnError> {
 /// its generated struct would clash with the model type.
 #[server(input = Json)]
 pub async fn load_player(id: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
-    daily::profile(&db::conn()?, id).await
+    daily::cached_profile(id).await
 }
 
 /// Shows one of the current user's stamps next to their name on the leaderboards, or none.

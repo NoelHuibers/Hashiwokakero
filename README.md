@@ -193,6 +193,8 @@ See [Evaluation](hashi_report.pdf)
 
 See [Clauses](Clauses.md)
 
+See [repository review fixes and deployment requirements](docs/repository-review.md).
+
 ## License
 
 [MIT](LICENSE) © Noel Huibers

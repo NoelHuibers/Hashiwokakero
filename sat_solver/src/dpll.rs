@@ -253,6 +253,8 @@ impl DPLL {
                 profiling::end("DPLL::solve");
                 return Ok(DIMACSOutput::Timeout);
             }
+            // Root propagation may already have assigned one of the original pure literals.
+            pure_lits.retain(|l| self.lit_val[&as_atom(*l)].is_free);
             // * choose literal var
             let (var, val, forced) = if pure_lits.is_empty() {
                 self.history_enabled = true;
@@ -262,14 +264,14 @@ impl DPLL {
             } else {
                 let lit = pure_lits.pop().unwrap();
                 // As the lit occurs only in one polarity it doesn't make sense to try both assignments
-                (lit, lit.is_positive(), true)
+                (lit, true, true)
             };
             // * set value var
-            self.set_var(forced, val, var);
+            let mut decision_conflict = self.set_var(forced, val, var);
 
             // * unit propagation
             loop {
-                let conflict = self.unit_prop();
+                let conflict = std::mem::take(&mut decision_conflict) || self.unit_prop();
                 if !conflict {
                     break;
                 }
@@ -280,8 +282,9 @@ impl DPLL {
                     return Ok(DIMACSOutput::Timeout);
                 }
                 // * if conflict detected
-                let unsat = self.backtrack();
-                if unsat {
+                if let Some(conflict) = self.backtrack() {
+                    decision_conflict = conflict;
+                } else {
                     profiling::end("DPLL::solve");
                     return Ok(DIMACSOutput::Unsat);
                 }
@@ -323,13 +326,13 @@ impl DPLL {
                 };
                 as_lit(*literal) * sign
             })
-            .filter(|p| !self.lit_val.contains_key(&as_atom(*p)))
+            .filter(|p| self.lit_val[&as_atom(*p)].is_free)
             .collect::<Vec<BVar>>();
         profiling::end("get_pure_lits");
         result
     }
 
-    fn backtrack(&mut self) -> bool {
+    fn backtrack(&mut self) -> Option<bool> {
         profiling::start("backtrack");
         let mut last_step = self.history.pop();
         while last_step.as_ref().is_some_and(|step| step.forced) {
@@ -342,15 +345,15 @@ impl DPLL {
         }
         if last_step.is_none() {
             profiling::end("backtrack");
-            return true;
+            return None;
         }
         let var = last_step.as_ref().unwrap().var;
         let val = last_step.unwrap().val;
         self.unset_var(var);
         self.unit_queue.clear();
-        self.set_var(true, !val, var);
+        let conflict = self.set_var(true, !val, var);
         profiling::end("backtrack");
-        false
+        Some(conflict)
     }
 
     // TODO: @Laura hier können die Heuristiken rein. Gerne auch mit enum flag welche an/aus sind.
@@ -389,11 +392,15 @@ impl DPLL {
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar) -> bool {
         profiling::start("set var");
+        let mut conflict = false;
+        let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
+        if !lit.is_free {
+            profiling::end("set var");
+            return lit.val != (val == var.is_positive());
+        }
         if self.history_enabled {
             self.history.push(Assignment { var, val, forced });
         }
-        let mut conflict = false;
-        let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
         lit.is_free = false;
         // Just for heuristics
         self.free_lits.remove(&var);
@@ -750,5 +757,34 @@ fn bug_jan_2nd_should_be_sat() {
     let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
     if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
+    }
+}
+
+#[test]
+fn repeated_literals_and_tautologies_preserve_sat_models() {
+    let formula = vec![vec![4, -3, -1, -3], vec![-4], vec![1], vec![-2, 3]];
+    for heuristic in [
+        Heuristic::Arbitrary,
+        Heuristic::VSIDS,
+        Heuristic::DLIS,
+        Heuristic::DLCS,
+        Heuristic::MOM,
+        Heuristic::Boehm,
+        Heuristic::JeroslawWang,
+        Heuristic::Custom,
+    ] {
+        let label = format!("{heuristic:?}");
+        let mut input = formula.clone();
+        input.push(vec![2, -2, 2]);
+        let result = DPLL::new(input.clone(), 4, input.len(), heuristic, false)
+            .solve()
+            .unwrap();
+        let DIMACSOutput::Sat(model) = result else {
+            panic!("{label}: {result:?}");
+        };
+        assert!(
+            input.iter().all(|c| c.iter().any(|l| model.contains(l))),
+            "{label}: {model:?}"
+        );
     }
 }

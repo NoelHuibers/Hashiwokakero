@@ -15,7 +15,10 @@ port=${SMOKE_PORT:-8080}
 url=http://127.0.0.1:$port
 
 $engine build --file Dockerfile.prebuilt --tag $image .
-container=$($engine run --detach --publish 127.0.0.1:$port:8080 $image)
+# Published test-only seeds: production startup enforces explicit configuration.
+container=$($engine run --detach --publish 127.0.0.1:$port:8080 \
+  --env HASHI_DAILY_SECRET=smoke-test-only-daily-secret-00000000 \
+  --env DOJO_SECRET=smoke-test-only-dojo-secret-000000000 $image)
 finish() {
   status=$?
   if [ $status -ne 0 ]; then

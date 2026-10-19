@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 use leptos::prelude::ServerFnError;
-use libsql::{Builder, Connection, Database, params};
+use libsql::{Builder, Connection, Database, TransactionBehavior, params};
 
 use super::{count, now_ms};
 
@@ -161,6 +161,14 @@ CREATE INDEX IF NOT EXISTS contact_network ON contact_messages (ip_hash, created
 -- server/auth.rs
 ALTER TABLE users ADD COLUMN renamed_at INTEGER;
 ",
+    "
+-- Results of another evaluator are requeued, never compared to current scores.
+ALTER TABLE dojo_submissions ADD COLUMN evaluation_version TEXT NOT NULL DEFAULT '';
+CREATE INDEX IF NOT EXISTS attempts_user_ranked ON attempts (user_id, day, time_ms)
+    WHERE finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL;
+CREATE INDEX IF NOT EXISTS attempts_day_ranked ON attempts (day, time_ms, finished_at)
+    WHERE finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL;
+",
 ];
 
 pub async fn init() -> Result<(), String> {
@@ -232,7 +240,13 @@ async fn migrate_to(conn: &Connection, version: usize) -> Result<(), String> {
     )
     .await
     .map_err(err)?;
-    let mut rows = conn
+    // Take the write lock before reading the version. Two starting replicas must not both
+    // decide to apply the same ALTER TABLE; the schema and its record commit together.
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(err)?;
+    let mut rows = tx
         .query(
             "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
             (),
@@ -246,15 +260,15 @@ async fn migrate_to(conn: &Connection, version: usize) -> Result<(), String> {
     // A version that doesn't fit (never written by this code) skips everything, like before
     let applied = usize::try_from(current).unwrap_or(usize::MAX);
     for (i, sql) in MIGRATIONS.iter().enumerate().take(version).skip(applied) {
-        conn.execute_batch(sql).await.map_err(err)?;
-        conn.execute(
+        tx.execute_batch(sql).await.map_err(err)?;
+        tx.execute(
             "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
             params![count(i + 1), now_ms()],
         )
         .await
         .map_err(err)?;
     }
-    Ok(())
+    tx.commit().await.map_err(err)
 }
 
 /// Removes a local database file of the tests and its WAL files: a fresh file next to an old

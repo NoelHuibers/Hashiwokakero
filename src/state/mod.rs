@@ -52,7 +52,7 @@ pub fn provide_state() {
         if first.is_some() {
             return;
         }
-        if let Some(puzzle) = load::<Puzzle>(EDITOR_KEY) {
+        if let Some(puzzle) = load::<Puzzle>(EDITOR_KEY).filter(|p| p.validate().is_ok()) {
             editor.puzzle.set(puzzle);
         }
         if let Some(config) = load::<SolverConfig>(SOLVER_KEY) {

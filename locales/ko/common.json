@@ -127,7 +127,11 @@
     "zoom_hint": "스와이프로 이동, 탭으로 다리 놓기",
     "cells_small": "칸이 너무 작나요?",
     "pinch": "두 손가락으로 확대",
-    "zoom_out": "축소"
+    "zoom_out": "축소",
+    "keyboard_play": "←/→로 다리를 선택합니다. Enter/Space: +1, Shift+Enter: −1. 섬에는 좌표와 현재/필요한 다리 수가 표시됩니다.",
+    "keyboard_edit": "화살표로 칸을 선택합니다. 1–8로 섬을 놓고 0/Delete로 지웁니다.",
+    "edge": "다리 {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "칸 ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "바다에서 길을 잃었어요",

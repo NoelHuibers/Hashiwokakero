@@ -112,8 +112,8 @@ export function seed(dbPath: string) {
   const created = (today - 10) * MS_PER_DAY;
   db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
-       state, season, progress, total, score, par2, solved, wrong, code_hash)
-     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', 1, 34, 34, ?, ?, ?, 0, ?)`,
+       state, season, progress, total, score, par2, solved, wrong, code_hash, evaluation_version)
+     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', 1, 34, 34, ?, ?, ?, 0, ?, ?)`,
   ).run(
     DOJO_SUBMISSION,
     new Uint8Array([0]),
@@ -124,6 +124,7 @@ export function seed(dbPath: string) {
     score.par2,
     score.solved,
     sha256('plain-dpll-code'),
+    'gen2-wasmtime49.0.3-async-fuel2',
   );
   CONTACT_MESSAGES.forEach((m, i) => {
     db.prepare('INSERT INTO contact_messages (name, email, message, created_at) VALUES (?, ?, ?, ?)').run(

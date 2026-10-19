@@ -5,7 +5,7 @@ use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 
 use super::fame::month_points;
-use super::stamps::{holders, shown_stamp, sync};
+use super::stamps::{book, holders, shown_stamp};
 use super::today;
 use crate::model::{DayResult, PlayerProfile, UserStats, month_of, streaks};
 use crate::server::count;
@@ -80,7 +80,7 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
     };
     let month = month_points(conn, month_of(today)).await?;
     let month_place = month.iter().position(|p| p.0 == user);
-    let mut stamps = sync(conn, user, false).await?.0;
+    let mut stamps = book(conn, user).await?;
     let (holders, players) = holders(conn).await?;
     for p in &mut stamps {
         p.holders = holders.get(&p.stamp).copied().unwrap_or_default();
@@ -125,5 +125,76 @@ pub async fn profile(conn: &Connection, user: i64) -> Result<Option<PlayerProfil
         guest: guest != 0,
         created_at,
         stats: stats(conn, user).await?,
+    }))
+}
+
+// Only the installed HTTP database uses this cache. Domain helpers above also serve independent
+// databases in tests and deliberately do not share entries between those databases.
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+use std::time::{Duration, Instant};
+
+#[derive(Default)]
+struct Profiles {
+    generation: u64,
+    entries: HashMap<i64, (Instant, UserStats)>,
+}
+
+static PROFILES: LazyLock<Mutex<Profiles>> = LazyLock::new(|| Mutex::new(Profiles::default()));
+
+pub(crate) fn invalidate() {
+    let mut cache = PROFILES
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    cache.generation = cache.generation.wrapping_add(1);
+    cache.entries.clear();
+}
+
+/// Bounded snapshots of public aggregates. A mutation invalidates them; the TTL also refreshes
+/// other replicas' writes and changes of day. No user-controlled collection can grow without limit.
+pub async fn cached_profile(user: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
+    let conn = crate::server::db::conn()?;
+    // Always revalidate identity and deletion, including writes on another replica. Only the
+    // aggregates are cached; deletion must not keep a public identity alive for the TTL.
+    let mut rows = conn.query(
+        "SELECT name, username IS NULL, created_at FROM users WHERE id = ?1 AND deleted_at IS NULL",
+        params![user],
+    ).await.map_err(db_err)?;
+    let Some(row) = rows.next().await.map_err(db_err)? else {
+        return Ok(None);
+    };
+    let name: String = row.get(0).map_err(db_err)?;
+    let guest = row.get::<i64>(1).map_err(db_err)? != 0;
+    let created_at = row.get(2).map_err(db_err)?;
+    let (generation, cached) = {
+        let mut cache = PROFILES
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        cache
+            .entries
+            .retain(|_, (at, _)| at.elapsed() < Duration::from_secs(30));
+        (
+            cache.generation,
+            cache.entries.get(&user).map(|(_, stats)| stats.clone()),
+        )
+    };
+    let stats = if let Some(stats) = cached {
+        stats
+    } else {
+        let stats = stats(&conn, user).await?;
+        let mut cache = PROFILES
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if cache.generation == generation && cache.entries.len() < 512 {
+            cache.entries.insert(user, (Instant::now(), stats.clone()));
+        }
+        stats
+    };
+    Ok(Some(PlayerProfile {
+        id: user,
+        name,
+        guest,
+        created_at,
+        stats,
     }))
 }

@@ -54,6 +54,38 @@ fn entries(admins: &str) -> impl Iterator<Item = &str> {
     admins.split(',').map(str::trim).filter(|a| !a.is_empty())
 }
 
+/// Grants must name existing registered accounts before the server starts accepting signups.
+/// In particular, a configured future numeric id must never be awarded to whoever signs up next.
+pub async fn validate_assignments(conn: &Connection) -> Result<(), String> {
+    validate_list(conn, &admins()).await
+}
+
+async fn validate_list(conn: &Connection, admins: &str) -> Result<(), String> {
+    for entry in entries(admins) {
+        let (sql, value) = if let Ok(id) = entry.parse::<i64>() {
+            (
+                "SELECT 1 FROM users WHERE id = ?1 AND username IS NOT NULL AND deleted_at IS NULL",
+                libsql::Value::Integer(id),
+            )
+        } else {
+            (
+                "SELECT 1 FROM users WHERE username = ?1 AND deleted_at IS NULL",
+                libsql::Value::Text(entry.into()),
+            )
+        };
+        let mut rows = conn
+            .query(sql, params![value])
+            .await
+            .map_err(|e| e.to_string())?;
+        if rows.next().await.map_err(|e| e.to_string())?.is_none() {
+            return Err(format!(
+                "HASHI_ADMINS entry {entry:?} is not an existing registered account; provision the account before assigning its id"
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// An entry that is a number is an id, never a username: "123" doesn't make the player who
 /// registers the username 123 an admin.
 fn listed(admins: &str, id: i64, username: &str) -> Option<Listed> {
@@ -186,6 +218,7 @@ pub async fn rename_player(conn: &Connection, user: i64) -> Result<Option<String
         )
         .await
         .map_err(db_err)?;
+    daily::invalidate_profiles();
     Ok((changed != 0).then_some(name))
 }
 
@@ -285,7 +318,7 @@ pub async fn submission_action(
 ) -> Result<(), ServerFnError> {
     let sql = match action {
         SubmissionAction::Requeue => {
-            "UPDATE dojo_submissions SET state = 'queued', progress = 0, attempts = 0, similar_to = NULL,
+            "UPDATE dojo_submissions SET state = 'queued', job_token = NULL, progress = 0, attempts = 0, similar_to = NULL,
                 fingerprint = NULL WHERE id = ?1"
         }
         SubmissionAction::ClearCopy => "UPDATE dojo_submissions SET similar_to = NULL WHERE id = ?1",
@@ -447,5 +480,32 @@ mod tests {
         // A number is an id, never the username of that name
         assert_eq!(listed("123", 7, "123"), None);
         assert!(!admin_username("900001"));
+    }
+}
+
+#[cfg(test)]
+mod assignment_tests {
+    use super::*;
+    #[tokio::test]
+    async fn grants_cannot_preclaim_unregistered_or_deleted_accounts() {
+        let db = db::open_local(":memory:").await.unwrap();
+        let conn = db.connect().unwrap();
+        db::migrate(&conn).await.unwrap();
+        assert!(validate_list(&conn, "2").await.is_err());
+        assert!(validate_list(&conn, "owner").await.is_err());
+        conn.execute(
+            "INSERT INTO users (id, name, created_at) VALUES (2, 'guest', 0)",
+            (),
+        )
+        .await
+        .unwrap();
+        assert!(validate_list(&conn, "2").await.is_err());
+        conn.execute("UPDATE users SET username = 'owner' WHERE id = 2", ())
+            .await
+            .unwrap();
+        assert!(validate_list(&conn, "2, OWNER").await.is_ok());
+        auth::erase(&conn, 2).await.unwrap();
+        assert!(validate_list(&conn, "2").await.is_err());
+        assert!(validate_list(&conn, "owner").await.is_err());
     }
 }

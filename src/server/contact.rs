@@ -16,7 +16,7 @@ use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Address, AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 use libsql::params::IntoParams;
-use libsql::{Connection, params};
+use libsql::{Connection, TransactionBehavior, params};
 
 use super::db::db_err;
 use super::{client_ip, network_hash, now_ms};
@@ -64,15 +64,19 @@ pub async fn send(
         .as_ref()
         .and_then(client_ip)
         .map(|ip| network_hash(&ip, now.div_euclid(MS_PER_DAY)));
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
     let since = now - MS_PER_DAY;
     let from_network = scalar(
-        conn,
+        &tx,
         "SELECT COUNT(*) FROM contact_messages WHERE created_at > ?1 AND ip_hash = ?2",
         params![since, ip_hash.clone()],
     )
     .await?;
     let from_all = scalar(
-        conn,
+        &tx,
         "SELECT COUNT(*) FROM contact_messages WHERE created_at > ?1",
         params![since],
     )
@@ -81,14 +85,15 @@ pub async fn send(
         return Err(ApiError::TooManyMessages.into());
     }
 
-    conn.execute(
+    tx.execute(
         "INSERT INTO contact_messages (name, email, message, created_at, ip_hash)
          VALUES (?1, ?2, ?3, ?4, ?5)",
         params![name.clone(), email.clone(), message.clone(), now, ip_hash],
     )
     .await
     .map_err(db_err)?;
-    let id = conn.last_insert_rowid();
+    let id = tx.last_insert_rowid();
+    tx.commit().await.map_err(db_err)?;
 
     // The player doesn't wait for the mail server, the message is safe in the database
     tokio::spawn(async move {
@@ -219,11 +224,19 @@ impl Smtp {
 
 /// Every stored message, newest first.
 pub async fn list(conn: &Connection) -> Result<Vec<ContactMessage>, ServerFnError> {
+    page(conn, None).await
+}
+
+/// Keyset pagination stays stable while newer messages arrive or earlier ones are deleted.
+pub async fn page(
+    conn: &Connection,
+    before: Option<i64>,
+) -> Result<Vec<ContactMessage>, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT id, name, email, message, created_at, mailed_at IS NOT NULL
-             FROM contact_messages ORDER BY created_at DESC",
-            (),
+             FROM contact_messages WHERE (?1 IS NULL OR id < ?1) ORDER BY id DESC LIMIT 100",
+            params![before],
         )
         .await
         .map_err(db_err)?;

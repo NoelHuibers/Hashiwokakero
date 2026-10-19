@@ -14,7 +14,7 @@ export interface Server {
   stop(): Promise<void>;
 }
 
-export async function startServer(logName: string, { port = PORT, dbPath = DB_PATH } = {}): Promise<Server> {
+export async function startServer(logName: string, { port = PORT, dbPath = DB_PATH, admins = ADMINS } = {}): Promise<Server> {
   const url = `http://127.0.0.1:${port}`;
   const answers = () => fetch(`${url}/favicon.svg`).then((r) => r.ok, () => false);
   if (!existsSync(SERVER_BIN)) {
@@ -29,13 +29,15 @@ export async function startServer(logName: string, { port = PORT, dbPath = DB_PA
     stdio: ['ignore', out, out],
     env: {
       ...process.env,
+      LEPTOS_ENV: 'DEV',
+      HASHI_RATE_LIMITS: 'off',
       LEPTOS_HASH_FILES: 'true',
       LEPTOS_SITE_ADDR: `127.0.0.1:${port}`,
       LEPTOS_SITE_ROOT: SITE_ROOT,
       LEPTOS_OUTPUT_NAME: 'hashi',
       LEPTOS_SITE_PKG_DIR: 'pkg',
       HASHI_DB_PATH: dbPath,
-      HASHI_ADMINS: ADMINS,
+      HASHI_ADMINS: admins,
       // Never a remote database or worker, whatever the shell has set
       TURSO_DATABASE_URL: '',
       DOJO_URL: '',

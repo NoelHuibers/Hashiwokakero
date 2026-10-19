@@ -16,7 +16,7 @@ use crate::server::dojo::submission;
 struct TestDb {
     path: std::path::PathBuf,
     conn: Connection,
-    _database: libsql::Database,
+    database: libsql::Database,
 }
 
 impl Drop for TestDb {
@@ -34,7 +34,7 @@ async fn test_db(version: usize) -> TestDb {
     TestDb {
         path,
         conn,
-        _database: database,
+        database,
     }
 }
 
@@ -111,6 +111,14 @@ async fn write_rows(conn: &Connection, version: usize) {
         run("INSERT INTO contact_messages (name, email, message, created_at) VALUES ('', 'a@b.c', 'Hi', 1)")
             .await;
     }
+    if version >= 9 {
+        conn.execute(
+            "UPDATE dojo_submissions SET evaluation_version = ?1",
+            params![dojo::EVALUATION_VERSION],
+        )
+        .await
+        .unwrap();
+    }
     if version >= 8 {
         run("UPDATE users SET renamed_at = 500 WHERE id = 1").await;
     }
@@ -122,10 +130,10 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 }
 
 #[tokio::test]
-async fn old_databases_migrate_with_their_data() {
+async fn olddatabases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        8,
+        9,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -318,4 +326,58 @@ async fn a_read_in_progress_doesnt_hold_up_a_write() {
     assert_eq!(count(&reader, "SELECT COUNT(*) FROM sessions").await, 1);
     drop((reader, writer, database));
     remove_local(&path);
+}
+
+#[tokio::test]
+async fn failed_migration_rolls_back_schema_and_version_and_can_retry() {
+    let db = test_db(100).await;
+    migrate_to(&db.conn, 2).await.unwrap();
+    write_rows(&db.conn, 2).await;
+    db.conn
+        .execute_batch(
+            "CREATE TRIGGER interrupt_migration BEFORE INSERT ON schema_migrations
+        WHEN NEW.version = 3 BEGIN SELECT RAISE(ABORT, 'injected failure'); END;",
+        )
+        .await
+        .unwrap();
+    assert!(
+        migrate(&db.conn)
+            .await
+            .unwrap_err()
+            .contains("injected failure")
+    );
+    assert_eq!(
+        count(&db.conn, "SELECT MAX(version) FROM schema_migrations").await,
+        2
+    );
+    assert!(
+        db.conn
+            .query("SELECT flag FROM attempts", ())
+            .await
+            .is_err()
+    );
+    db.conn
+        .execute("DROP TRIGGER interrupt_migration", ())
+        .await
+        .unwrap();
+    migrate(&db.conn).await.unwrap();
+    assert_eq!(count(&db.conn, "SELECT COUNT(*) FROM users").await, 2);
+    assert_eq!(
+        count(&db.conn, "SELECT COUNT(*) FROM schema_migrations").await,
+        i64::try_from(MIGRATIONS.len()).unwrap()
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn starting_replicas_serialize_migrations() {
+    let db = test_db(101).await;
+    let first = connect(&db.database).unwrap();
+    let second = connect(&db.database).unwrap();
+    let (a, b) = tokio::join!(migrate(&first), migrate(&second));
+    a.unwrap();
+    b.unwrap();
+    assert_eq!(
+        count(&first, "SELECT COUNT(*) FROM schema_migrations").await,
+        i64::try_from(MIGRATIONS.len()).unwrap()
+    );
 }

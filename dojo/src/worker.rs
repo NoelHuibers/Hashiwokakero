@@ -34,7 +34,7 @@ use tokio::sync::mpsc;
 use crate::bench::{self, Instance};
 use crate::eval::{Options, evaluate};
 use crate::sandbox::Sandbox;
-use crate::{MAX_WASM_BYTES, Report, Score};
+use crate::{EVALUATION_VERSION, MAX_WASM_BYTES, Report, Score, WorkerReport};
 
 #[derive(Deserialize)]
 struct JobQuery {
@@ -43,6 +43,8 @@ struct JobQuery {
     seed: String,
     /// Reports about this job carry this token: valid for this one job only.
     report_token: String,
+    #[serde(default)]
+    evaluation_version: String,
 }
 
 struct Job {
@@ -92,11 +94,22 @@ async fn submit(
     if !authorized(&headers, &shared.token) {
         return StatusCode::UNAUTHORIZED.into_response();
     }
+    if q.evaluation_version != EVALUATION_VERSION {
+        return (StatusCode::CONFLICT, "incompatible evaluator version").into_response();
+    }
     shared.active.store(now_secs(), Ordering::Relaxed);
     if let Err(reason) = crate::validate::validate(&wasm) {
         return (StatusCode::UNPROCESSABLE_ENTITY, axum::Json(reason)).into_response();
     }
-    shared.pending.fetch_add(1, Ordering::Relaxed);
+    if shared
+        .pending
+        .try_update(Ordering::Relaxed, Ordering::Relaxed, |n| {
+            (n < 2).then_some(n + 1)
+        })
+        .is_err()
+    {
+        return StatusCode::TOO_MANY_REQUESTS.into_response();
+    }
     let job = Job {
         id: q.id,
         season: q.season,
@@ -104,9 +117,11 @@ async fn submit(
         report_token: q.report_token.into(),
         wasm,
     };
-    match shared.jobs.send(job) {
-        Ok(()) => StatusCode::ACCEPTED.into_response(),
-        Err(_) => StatusCode::SERVICE_UNAVAILABLE.into_response(),
+    if shared.jobs.send(job).is_ok() {
+        StatusCode::ACCEPTED.into_response()
+    } else {
+        shared.pending.fetch_sub(1, Ordering::Relaxed);
+        StatusCode::SERVICE_UNAVAILABLE.into_response()
     }
 }
 
@@ -124,12 +139,23 @@ impl Reporter {
                 .client
                 .post(&self.url)
                 .bearer_auth(token)
-                .json(report)
+                .json(&WorkerReport {
+                    evaluation_version: EVALUATION_VERSION.into(),
+                    report: report.clone(),
+                })
                 .timeout(Duration::from_secs(30))
                 .send()
                 .await;
             match sent {
                 Ok(r) if r.status().is_success() => return,
+                // A finished or requeued evaluation invalidates its token. Retrying a late
+                // progress callback cannot make it current again.
+                Ok(r)
+                    if r.status() == StatusCode::UNAUTHORIZED
+                        || r.status() == StatusCode::CONFLICT =>
+                {
+                    return;
+                }
                 Ok(r) => eprintln!("report for #{} refused: {}", report.id(), r.status()),
                 Err(e) => eprintln!("report for #{} failed: {e}", report.id()),
             }
@@ -260,7 +286,7 @@ fn evaluator(
 /// The name of the cached set of `seed`. It must not reveal the seed.
 fn cache_name(seed: &str) -> String {
     use sha2::Digest;
-    let digest = sha2::Sha256::digest(format!("file:{seed}").as_bytes());
+    let digest = sha2::Sha256::digest(format!("file:{EVALUATION_VERSION}:{seed}").as_bytes());
     let hex = digest.iter().take(12).fold(String::new(), |mut hex, b| {
         let _ = write!(hex, "{b:02x}");
         hex
@@ -314,6 +340,9 @@ pub fn serve() -> Result<(), String> {
     let token: Arc<str> = std::env::var("DOJO_TOKEN")
         .map_err(|_| "DOJO_TOKEN is not set")?
         .into();
+    if token.trim().len() < 32 {
+        return Err("DOJO_TOKEN must contain at least 32 characters".into());
+    }
     let app_url = std::env::var("APP_URL").unwrap_or_else(|_| "http://127.0.0.1:3000".into());
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".into());
     let idle_exit = std::env::var("DOJO_IDLE_EXIT_SECS")
@@ -395,7 +424,7 @@ mod tests {
                              wouldn't load any more: every set would be generated again";
         assert_eq!(
             cache_name("golden"),
-            "set-a299d0a4e31b62db7a22656b.json",
+            "set-7e38cd301c2e58c07d289f0c.json",
             "{CACHE}"
         );
         let cached = r#"[{"name":"pigeonhole-01","family":"Pigeonhole","expected":"Unsat","cnf":{"vars":2,"clauses":[[1],[2],[-1,-2]]},"witness":null},{"name":"queens-01","family":"Queens","expected":"Sat","cnf":{"vars":1,"clauses":[[1]]},"witness":[1]}]"#;
@@ -456,7 +485,9 @@ mod tests {
         let site = Router::new().route(
             "/dojo/report",
             post(
-                move |headers: HeaderMap, axum::Json(report): axum::Json<Report>| {
+                move |headers: HeaderMap, axum::Json(envelope): axum::Json<WorkerReport>| {
+                    assert_eq!(envelope.evaluation_version, EVALUATION_VERSION);
+                    let report = envelope.report;
                     let auth = headers
                         .get(header::AUTHORIZATION)
                         .and_then(|v| v.to_str().ok())
@@ -508,7 +539,9 @@ mod tests {
         let client = reqwest::Client::new();
         let health = client.get(format!("{url}/health")).send().await.unwrap();
         assert_eq!(health.text().await.unwrap(), "ok");
-        let job = format!("{url}/jobs?id=7&season=2&seed=worker-test&report_token=job-token");
+        let job = format!(
+            "{url}/jobs?id=7&season=2&seed=worker-test&report_token=job-token&evaluation_version={EVALUATION_VERSION}"
+        );
         let post =
             |token: &str, wasm: Vec<u8>| client.post(&job).bearer_auth(token).body(wasm).send();
 

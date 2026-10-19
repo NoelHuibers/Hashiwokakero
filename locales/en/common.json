@@ -127,7 +127,11 @@
     "zoom_hint": "Swipe to move around, tap to build",
     "cells_small": "Cells too small?",
     "pinch": "Pinch to zoom",
-    "zoom_out": "Zoom out"
+    "zoom_out": "Zoom out",
+    "keyboard_play": "←/→ select a bridge. Enter/Space: +1; Shift+Enter: −1. Islands show coordinates and current/required bridges.",
+    "keyboard_edit": "Arrow keys move between cells. 1–8 sets an island; 0/Delete clears it.",
+    "edge": "Bridge {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Cell ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Lost at sea",

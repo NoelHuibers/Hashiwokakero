@@ -37,7 +37,7 @@ wat = "1"
 [features]
 default = []
 bench = ["dep:backend", "dep:common", "dep:rand", "dep:sha2", "dep:splr"]
-runner = ["bench", "dep:wasmtime", "dep:wasmtime-wasi", "dep:wasmparser"]
+runner = ["bench", "dep:wasmtime", "dep:wasmtime-wasi", "dep:wasmparser", "dep:tokio"]
 worker = ["runner", "dep:anyhow", "dep:axum", "dep:reqwest", "dep:serde_json", "dep:tokio"]
 
 # `export` needs `bench`, `run` needs `runner`, `serve` needs `worker`

@@ -169,6 +169,7 @@ async fn reports_need_the_token_of_their_job() {
         .unwrap();
     let id: i64 = res.text().await.unwrap().parse().unwrap();
     let report = serde_json::json!({
+        "evaluation_version": ::dojo::EVALUATION_VERSION,
         "type": "progress",
         "id": id,
         "season": season(),
@@ -198,7 +199,7 @@ async fn reports_need_the_token_of_their_job() {
     conn()
         .await
         .execute(
-            "UPDATE dojo_submissions SET job_token = ?2 WHERE id = ?1",
+            "UPDATE dojo_submissions SET job_token = ?2, state = 'running' WHERE id = ?1",
             params![id, job_token.clone()],
         )
         .await

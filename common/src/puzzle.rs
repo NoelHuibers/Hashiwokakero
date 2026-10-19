@@ -32,6 +32,42 @@ pub struct Puzzle {
 }
 
 impl Puzzle {
+    /// Checks the invariants needed by geometry and encoding. Empty editor boards are valid;
+    /// a solver additionally requires at least one island.
+    pub fn validate(&self) -> Result<(), String> {
+        for (name, size) in [("width", self.width), ("height", self.height)] {
+            if !(2..=crate::MAX_SIZE).contains(&size) {
+                return Err(format!(
+                    "The {name} must be between 2 and {}, got {size}",
+                    crate::MAX_SIZE
+                ));
+            }
+        }
+        for island in &self.islands {
+            let (x, y) = (island.pos.x, island.pos.y);
+            if x >= self.width || y >= self.height {
+                return Err(format!("The island at ({x},{y}) is outside of the grid"));
+            }
+            if !(1..=8).contains(&island.required) {
+                return Err(format!(
+                    "The island at ({x},{y}) has the number {}, allowed are 1 to 8",
+                    island.required
+                ));
+            }
+        }
+        for pair in self.islands.windows(2) {
+            let (a, b) = (pair[0].pos, pair[1].pos);
+            if (a.y, a.x) >= (b.y, b.x) {
+                return Err(if a == b {
+                    format!("Two islands at ({},{})", a.x, a.y)
+                } else {
+                    "The islands must be sorted row by row".into()
+                });
+            }
+        }
+        Ok(())
+    }
+
     pub fn new(width: u8, height: u8, mut islands: Vec<Island>) -> Self {
         islands.sort_by_key(|i| (i.pos.y, i.pos.x));
         Self {
@@ -137,6 +173,9 @@ impl Puzzle {
             Some(c) => c.map_err(|_| invalid_size())?,
             None => rows,
         };
+        if sizes.next().is_some() || rows > crate::MAX_SIZE || cols > crate::MAX_SIZE {
+            return Err(invalid_size());
+        }
         if rows < 2 || cols < 2 {
             return Err(ParseError::TooSmall);
         }
@@ -315,5 +354,32 @@ mod tests {
         puzzle.set(Pos::new(2, 0), 0);
         assert_eq!(puzzle.islands.len(), 2);
         assert_eq!(puzzle.island_at(Pos::new(3, 3)), Some(1));
+    }
+}
+
+#[cfg(test)]
+mod validation_tests {
+    use super::*;
+    #[test]
+    fn validation_covers_wire_and_storage_invariants() {
+        let p = Puzzle::parse_txt("2 2\n11\n..\n").unwrap();
+        assert!(p.validate().is_ok());
+        let mut invalid = p.clone();
+        invalid.width = 0;
+        assert!(invalid.validate().is_err());
+        invalid = p.clone();
+        invalid.islands[0].pos.x = 255;
+        assert!(invalid.validate().is_err());
+        invalid = p.clone();
+        invalid.islands[0].required = 9;
+        assert!(invalid.validate().is_err());
+        invalid = p.clone();
+        invalid.islands.reverse();
+        assert!(invalid.validate().is_err());
+        invalid = p;
+        invalid.islands.push(invalid.islands[1].clone());
+        assert!(invalid.validate().is_err());
+        assert!(Puzzle::parse_txt("2 2 9\n11\n..\n").is_err());
+        assert!(Puzzle::parse_txt("255 255\n").is_err());
     }
 }

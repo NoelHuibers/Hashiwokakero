@@ -127,7 +127,11 @@
     "zoom_hint": "滑動來移動畫面，點一下來搭橋",
     "cells_small": "格子太小？",
     "pinch": "雙指縮放",
-    "zoom_out": "縮小"
+    "zoom_out": "縮小",
+    "keyboard_play": "←/→選擇橋。Enter/空格：+1；Shift+Enter：−1。島嶼顯示座標和目前/所需的橋數。",
+    "keyboard_edit": "方向鍵選擇格子。1–8放置島嶼；0/Delete清除。",
+    "edge": "橋 {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "格子 ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "在海上迷路了",

@@ -30,8 +30,8 @@ impl Default for Options {
 }
 
 /// The seed for an instance's random numbers.
-fn seed(instance: &Instance) -> u64 {
-    let digest = Sha256::digest(instance.name.as_bytes());
+fn seed(input: &str) -> u64 {
+    let digest = Sha256::digest(input.as_bytes());
     u64::from_le_bytes(digest[..8].try_into().unwrap_or_default())
 }
 
@@ -41,13 +41,13 @@ pub fn run_one(
     instance: &Instance,
     options: &Options,
 ) -> RunResult {
-    let input = instance
-        .cnf
-        .dimacs(&format!("{} from the Hashi SAT Dojo", instance.name));
+    // No family, label or public index reaches a submission, including through its random
+    // stream. Names remain only in the host-side report.
+    let input = instance.cnf.dimacs("");
     let run = sandbox.run(
         solver,
         &input,
-        seed(instance),
+        seed(&input),
         &options.limits,
         options.stderr,
     );

@@ -25,9 +25,9 @@ async fn ranked(
             "SELECT s.id, s.name, COALESCE(u.name, 'Hashi'), s.house, s.score, s.created_at, s.user_id
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id
              WHERE s.state = 'done' AND s.season = ?1 AND s.wrong = 0 AND s.solved > 0
-               AND s.similar_to IS NULL
+               AND s.similar_to IS NULL AND s.evaluation_version = ?2
              ORDER BY s.par2 ASC, s.solved DESC, s.created_at ASC",
-            params![season],
+            params![season, dojo::EVALUATION_VERSION],
         )
         .await
         .map_err(db_err)?;

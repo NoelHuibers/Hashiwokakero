@@ -153,6 +153,13 @@ impl Board {
             i
         }
 
+        if bridges.len() != self.edges.len() || bridges.iter().any(|&b| b > MAX_BRIDGES) {
+            return Check {
+                degrees: vec![0; self.puzzle.islands.len()],
+                components: self.puzzle.islands.len(),
+                ..Check::default()
+            };
+        }
         let n = self.puzzle.islands.len();
         let mut degrees = vec![0u8; n];
         let mut crossing = Vec::new();
@@ -255,5 +262,20 @@ mod tests {
         assert!(check.complete);
         assert_eq!(check.components, 2);
         assert!(!check.solved);
+    }
+}
+
+#[cfg(test)]
+mod malformed_tests {
+    use super::*;
+    #[test]
+    fn malformed_bridge_lengths_are_never_solutions_or_panics() {
+        let board = Board::new(Puzzle::parse_txt("3 3\n1.1\n...\n...\n").unwrap());
+        assert!(board.check(&[1]).solved);
+        for bridges in [vec![], vec![1, 0], vec![3]] {
+            assert!(!board.check(&bridges).solved);
+        }
+        let crossing = Board::new(Puzzle::parse_txt("3 3\n.1.\n1.1\n.1.\n").unwrap());
+        assert!(!crossing.check(&[1]).solved);
     }
 }

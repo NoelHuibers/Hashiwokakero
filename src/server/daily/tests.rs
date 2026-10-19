@@ -14,7 +14,7 @@ use crate::server::db;
 struct TestDb {
     path: std::path::PathBuf,
     /// Kept open for as long as the test runs.
-    _database: libsql::Database,
+    database: libsql::Database,
 }
 
 impl Drop for TestDb {
@@ -35,13 +35,7 @@ async fn test_db() -> (TestDb, Connection) {
     db::migrate(&conn).await.unwrap();
     // Running the migrations again is a no-op
     db::migrate(&conn).await.unwrap();
-    (
-        TestDb {
-            path,
-            _database: database,
-        },
-        conn,
-    )
+    (TestDb { path, database }, conn)
 }
 
 fn rand_suffix() -> i64 {
@@ -633,9 +627,11 @@ async fn profiles_show_stamps_and_how_many_have_them() {
     let p = profile(&conn, b).await.unwrap().unwrap();
     assert_eq!((p.name.as_str(), p.guest), ("Calm Heron 7", true));
     assert_eq!(p.stats.solved, 1);
-    // Bob's profile synced his stamps, alice's aren't stored yet
-    assert_eq!(p.stats.players, 1);
-
+    // Public reads are side-effect free. Awards are reconciled explicitly or in the background.
+    assert_eq!(p.stats.players, 0);
+    sync_stamps(&conn, b, false).await.unwrap();
+    assert_eq!(profile(&conn, b).await.unwrap().unwrap().stats.players, 1);
+    sync_stamps(&conn, a, false).await.unwrap();
     let p = profile(&conn, a).await.unwrap().unwrap();
     assert!(!p.guest);
     assert_eq!(p.stats.players, 2);
@@ -742,7 +738,7 @@ async fn deleting_keeps_the_rankings_but_nothing_personal() {
         0
     );
 
-    // Without a ranked time nothing is left at all
+    // Keep only an anonymous tombstone even without ranked times: ids must not be reused.
     let c = user(&conn, "carol", Some("carol")).await;
     conn.execute(
         "INSERT INTO attempts (user_id, day, started_at) VALUES (?1, ?2, 0)",
@@ -752,12 +748,12 @@ async fn deleting_keeps_the_rankings_but_nothing_personal() {
     .unwrap();
     erase(&conn, c).await.unwrap();
     let mut rows = conn
-        .query("SELECT COUNT(*) FROM users WHERE id = ?1", params![c])
+        .query("SELECT COUNT(*) FROM users WHERE id = ?1 AND deleted_at IS NOT NULL AND username IS NULL AND name = ''", params![c])
         .await
         .unwrap();
     assert_eq!(
         rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap(),
-        0
+        1
     );
 }
 
@@ -794,16 +790,19 @@ async fn guests_nobody_can_reach_are_cleaned_up() {
         kept.push(row.get::<i64>(0).unwrap());
     }
     assert_eq!(kept, [active, member]);
-    // The guest with a ranked time stays as a nameless player, the other one is gone
+    // Neither id can transfer a configured numeric grant to a later account.
     let mut rows = conn
-        .query("SELECT id FROM users WHERE deleted_at IS NOT NULL", ())
+        .query(
+            "SELECT id FROM users WHERE deleted_at IS NOT NULL ORDER BY id",
+            (),
+        )
         .await
         .unwrap();
-    assert_eq!(
-        rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap(),
-        gone
-    );
-    assert!(rows.next().await.unwrap().is_none());
+    let mut erased = Vec::new();
+    while let Some(row) = rows.next().await.unwrap() {
+        erased.push(row.get::<i64>(0).unwrap());
+    }
+    assert_eq!(erased, [gone, expired]);
 }
 
 #[tokio::test]
@@ -900,4 +899,75 @@ fn daily_puzzle_of_a_day_is_unchanged() {
 1.2..2.
 solution 20221211011";
     assert_eq!(actual, expected, "{DAILIES_CHANGE}\n\nactual:\n{actual}");
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn checks_and_submission_share_one_penalty_snapshot() {
+    let (db, conn) = test_db().await;
+    let id = user(&conn, "racer", Some("racer")).await;
+    let info = start(&conn, id, MONDAY, None).await.unwrap();
+    let puzzle = info.puzzle.unwrap();
+    let daily = get_or_create(&conn, MONDAY).await.unwrap();
+    age(&conn, id, MONDAY, 60_000).await;
+    let first = db::connect(&db.database).unwrap();
+    let second = db::connect(&db.database).unwrap();
+    let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(2));
+    let gate = barrier.clone();
+    let solution = daily.solution.clone();
+    let submitter = tokio::spawn(async move {
+        gate.wait().await;
+        submit(
+            &first,
+            id,
+            MONDAY,
+            solution.clone(),
+            10,
+            played(&solution),
+            None,
+        )
+        .await
+    });
+    let checker = tokio::spawn(async move {
+        barrier.wait().await;
+        check(&second, id, MONDAY, Board::new(puzzle).empty_bridges()).await
+    });
+    submitter.await.unwrap().unwrap();
+    let outcome = checker.await.unwrap();
+    let saved = attempt(&conn, id, MONDAY).await.unwrap().unwrap();
+    assert_eq!(saved.checks, i64::from(outcome.is_ok()));
+    assert_eq!(
+        saved.time_ms,
+        Some(saved.finished_at.unwrap() - saved.started_at + saved.penalty_ms())
+    );
+    if let Err(e) = outcome {
+        assert_eq!(
+            ApiError::from_message(&e.to_string()),
+            Some(ApiError::AlreadyFinished)
+        );
+    }
+}
+
+#[tokio::test]
+async fn erased_accounts_never_donate_their_numeric_identity() {
+    let (_db, conn) = test_db().await;
+    let old = user(&conn, "old_admin", Some("old_admin")).await;
+    crate::server::auth::erase(&conn, old).await.unwrap();
+    let new = user(&conn, "replacement", Some("replacement")).await;
+    assert!(new > old);
+    assert!(profile(&conn, old).await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn contact_history_is_bounded_and_can_be_paged_without_duplicates() {
+    let (_db, conn) = test_db().await;
+    for i in 0..105 {
+        conn.execute("INSERT INTO contact_messages (name, email, message, created_at) VALUES ('', '', 'message', ?1)", params![i]).await.unwrap();
+    }
+    let first = crate::server::contact::page(&conn, None).await.unwrap();
+    assert_eq!(first.len(), 100);
+    let second = crate::server::contact::page(&conn, Some(first.last().unwrap().id))
+        .await
+        .unwrap();
+    assert_eq!(second.len(), 5);
+    assert!(second.iter().all(|m| m.id < first.last().unwrap().id));
 }

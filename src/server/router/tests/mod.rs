@@ -46,6 +46,7 @@ const PASSWORD: &str = "correct horse";
 pub(in crate::server) fn env_var(name: &str) -> Option<&'static str> {
     match name {
         "HASHI_ADMINS" => Some("http_admin, 900001"),
+        "FLY_APP_NAME" => Some("hashi-http-tests"),
         "HASHI_ADMIN_TOKEN" => Some(ADMIN_TOKEN),
         _ => None,
     }
@@ -279,21 +280,20 @@ impl Browser {
     async fn admin(server: &Server) -> Self {
         let browser = server.browser();
         let username = ADMIN.to_uppercase();
-        let signed_up = browser
-            .call(crate::api::Register {
-                username: username.clone(),
+        // Admin grants are provisioned out of band. Public registration cannot claim an
+        // allowlisted legacy name, including after its previous owner deleted the account.
+        let hash = auth::test_password_hash(PASSWORD);
+        conn().await.execute(
+            "INSERT OR IGNORE INTO users (username, name, password_hash, created_at) VALUES (?1, ?1, ?2, 0)",
+            params![username.clone(), hash],
+        ).await.unwrap();
+        browser
+            .call(crate::api::Login {
+                username,
                 password: PASSWORD.into(),
             })
-            .await;
-        if signed_up.is_err() {
-            browser
-                .call(crate::api::Login {
-                    username,
-                    password: PASSWORD.into(),
-                })
-                .await
-                .unwrap();
-        }
+            .await
+            .unwrap();
         browser
     }
 }

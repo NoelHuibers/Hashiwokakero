@@ -127,7 +127,11 @@
     "zoom_hint": "Desliza para moverte, toca para construir",
     "cells_small": "¿Casillas muy pequeñas?",
     "pinch": "Pellizca para hacer zoom",
-    "zoom_out": "Alejar"
+    "zoom_out": "Alejar",
+    "keyboard_play": "←/→ selecciona un puente. Intro/Espacio: +1; Mayús+Intro: −1. Las islas muestran coordenadas y puentes actuales/necesarios.",
+    "keyboard_edit": "Las flechas cambian de casilla. 1–8 coloca una isla; 0/Supr la borra.",
+    "edge": "Puente {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Casilla ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Perdido en el mar",

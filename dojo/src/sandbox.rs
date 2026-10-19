@@ -102,6 +102,7 @@ pub struct Solver {
 pub struct Sandbox {
     engine: Engine,
     linker: Arc<Linker<State>>,
+    runtime: tokio::runtime::Runtime,
 }
 
 impl std::fmt::Debug for Sandbox {
@@ -126,7 +127,12 @@ impl Sandbox {
         let engine = Engine::new(&config).map_err(|e| e.to_string())?;
 
         let mut linker: Linker<State> = Linker::new(&engine);
-        p1::add_to_linker_sync(&mut linker, |s| &mut s.wasi).map_err(|e| e.to_string())?;
+        p1::add_to_linker_async(&mut linker, |s| &mut s.wasi).map_err(|e| e.to_string())?;
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(1)
+            .enable_time()
+            .build()
+            .map_err(|e| e.to_string())?;
 
         // The wall clock limit: interrupts stores whose deadline (in ticks) has passed
         let ticker = engine.weak();
@@ -141,6 +147,7 @@ impl Sandbox {
         Ok(Self {
             engine,
             linker: Arc::new(linker),
+            runtime,
         })
     }
 
@@ -192,17 +199,26 @@ impl Sandbox {
         store.epoch_deadline_trap();
 
         let started = Instant::now();
-        let result = self
-            .linker
-            .instantiate(&mut store, &solver.module)
-            .and_then(|instance| instance.get_typed_func::<(), ()>(&mut store, "_start"))
-            .and_then(|start| start.call(&mut store, ()));
+        // Epochs interrupt running Wasm, but cannot wake a host call such as poll_oneoff.
+        // Async WASI yields those calls, so dropping the timed-out future cancels them too.
+        let result = self.runtime.block_on(async {
+            tokio::time::timeout(limits.wall, async {
+                let instance = self
+                    .linker
+                    .instantiate_async(&mut store, &solver.module)
+                    .await?;
+                let start = instance.get_typed_func::<(), ()>(&mut store, "_start")?;
+                start.call_async(&mut store, ()).await
+            })
+            .await
+        });
         let wall = started.elapsed();
         let fuel = limits.fuel - store.get_fuel().unwrap_or(0);
         let end = match result {
-            Ok(()) => End::Exited,
-            Err(e) if e.downcast_ref::<I32Exit>().is_some() => End::Exited,
-            Err(e) => match e.downcast_ref::<Trap>() {
+            Err(_) => End::WallClock,
+            Ok(Ok(())) => End::Exited,
+            Ok(Err(e)) if e.downcast_ref::<I32Exit>().is_some() => End::Exited,
+            Ok(Err(e)) => match e.downcast_ref::<Trap>() {
                 Some(Trap::OutOfFuel) => End::OutOfFuel,
                 Some(Trap::Interrupt) => End::WallClock,
                 _ => End::Crashed(format!("{e:#}")),
@@ -330,5 +346,29 @@ mod tests {
         };
         // A failed grow returns -1, the program goes on
         assert_eq!(sandbox.run(&greedy, "", 1, &small, false).end, End::Exited);
+    }
+
+    #[test]
+    fn blocking_host_calls_obey_the_wall_deadline() {
+        let sandbox = Sandbox::new().unwrap();
+        let wasm = wat::parse_str(r#"(module
+            (import "wasi_snapshot_preview1" "poll_oneoff" (func $poll (param i32 i32 i32 i32) (result i32)))
+            (memory (export "memory") 1)
+            (func (export "_start")
+                (i32.store (i32.const 16) (i32.const 1))
+                (i64.store (i32.const 24) (i64.const 5000000000))
+                (drop (call $poll (i32.const 0) (i32.const 128) (i32.const 1) (i32.const 256)))))"#).unwrap();
+        let solver = sandbox.load(&wasm).unwrap();
+        let limits = Limits {
+            wall: Duration::from_millis(50),
+            ..Limits::default()
+        };
+        let run = sandbox.run(&solver, "", 1, &limits, false);
+        assert_eq!(run.end, End::WallClock);
+        assert!(
+            run.wall < Duration::from_secs(2),
+            "host sleep escaped the deadline: {:?}",
+            run.wall
+        );
     }
 }

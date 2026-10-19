@@ -42,6 +42,19 @@ pub const MAX_WASM_BYTES: usize = 8 << 20;
 /// Formulas in a set (see `bench::SPEC`).
 pub const SET_SIZE: u32 = 34;
 
+/// Bump whenever generation, execution, metering or scoring changes. Scores and cached sets
+/// from different evaluators must never share a leaderboard, even within the same season.
+pub const EVALUATION_VERSION: &str =
+    concat!("gen2-wasmtime", env!("DOJO_ENGINE_VERSION"), "-async-fuel2");
+
+/// The HTTP protocol binds a report to the evaluator as well as its per-job credential.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkerReport {
+    pub evaluation_version: String,
+    #[serde(flatten)]
+    pub report: Report,
+}
+
 /// The public development set, the same for everyone and downloadable.
 pub const DEV_SEED: &str = "hashi-dojo-dev-1";
 

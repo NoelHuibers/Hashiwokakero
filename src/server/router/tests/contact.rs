@@ -48,7 +48,7 @@ async fn messages_reach_the_admins() {
         .unwrap();
 
     assert_eq!(
-        api_error(visitor.call(AdminMessages {}).await),
+        api_error(visitor.call(AdminMessages { before: None }).await),
         ApiError::Forbidden
     );
     assert_eq!(
@@ -56,7 +56,7 @@ async fn messages_reach_the_admins() {
         ApiError::Forbidden
     );
     let admin = Browser::admin(&server).await;
-    let messages = admin.call(AdminMessages {}).await.unwrap();
+    let messages = admin.call(AdminMessages { before: None }).await.unwrap();
     let sent = messages.iter().find(|m| m.message == text).unwrap();
     assert_eq!((&*sent.name, &*sent.email), ("Kim", "kim@example.com"));
     assert!(!sent.mailed);
@@ -73,7 +73,7 @@ async fn messages_reach_the_admins() {
         .call(DeleteAdminMessage { id: sent.id })
         .await
         .unwrap();
-    let messages = admin.call(AdminMessages {}).await.unwrap();
+    let messages = admin.call(AdminMessages { before: None }).await.unwrap();
     assert!(messages.iter().all(|m| m.id != sent.id));
 }
 

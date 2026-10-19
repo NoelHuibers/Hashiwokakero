@@ -127,7 +127,11 @@
     "zoom_hint": "Vuốt để di chuyển, chạm để xây cầu",
     "cells_small": "Ô quá nhỏ?",
     "pinch": "Chụm hai ngón để thu phóng",
-    "zoom_out": "Thu nhỏ"
+    "zoom_out": "Thu nhỏ",
+    "keyboard_play": "←/→ chọn cầu. Enter/Space: +1; Shift+Enter: −1. Đảo hiển thị tọa độ và số cầu hiện có/cần thiết.",
+    "keyboard_edit": "Phím mũi tên chọn ô. 1–8 đặt đảo; 0/Delete xóa đảo.",
+    "edge": "Cầu {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Ô ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Lạc giữa biển khơi",

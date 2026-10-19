@@ -25,8 +25,10 @@ async fn not_the_daily(puzzle: &Puzzle) -> Result<(), ServerFnError> {
 
 /// Deserializing skips `Puzzle::new`, which keeps the islands in reading order.
 #[cfg(feature = "ssr")]
-fn normalized(puzzle: Puzzle) -> Puzzle {
-    Puzzle::new(puzzle.width, puzzle.height, puzzle.islands)
+fn normalized(puzzle: Puzzle) -> Result<Puzzle, ServerFnError> {
+    let puzzle = Puzzle::new(puzzle.width, puzzle.height, puzzle.islands);
+    backend::api::validate(&puzzle).map_err(|_| crate::model::ApiError::WrongPuzzle.fail())?;
+    Ok(puzzle)
 }
 
 /// Generates a new puzzle with a unique solution.
@@ -43,7 +45,7 @@ pub async fn solve_puzzle(
     config: SolverConfig,
     unique: bool,
 ) -> Result<SolveReport, ServerFnError> {
-    let puzzle = normalized(puzzle);
+    let puzzle = normalized(puzzle)?;
     not_the_daily(&puzzle).await?;
     let config = SolverConfig {
         timeout_ms: config.timeout_ms.clamp(100, MAX_TIMEOUT_MS),
@@ -62,7 +64,7 @@ pub async fn solve_puzzle(
 /// The CNF encoding of the puzzle in DIMACS format.
 #[server(input = Json)]
 pub async fn puzzle_cnf(puzzle: Puzzle) -> Result<String, ServerFnError> {
-    let puzzle = normalized(puzzle);
+    let puzzle = normalized(puzzle)?;
     not_the_daily(&puzzle).await?;
     run_blocking(move || backend::api::to_dimacs(&puzzle)).await
 }

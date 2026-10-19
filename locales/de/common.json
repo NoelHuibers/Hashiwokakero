@@ -127,7 +127,11 @@
     "zoom_hint": "Wischen zum Verschieben, tippen zum Bauen",
     "cells_small": "Felder zu klein?",
     "pinch": "Mit zwei Fingern zoomen",
-    "zoom_out": "Verkleinern"
+    "zoom_out": "Verkleinern",
+    "keyboard_play": "←/→ wählt eine Brücke. Enter/Leertaste: +1; Shift+Enter: −1. Inseln zeigen Koordinaten und vorhandene/benötigte Brücken.",
+    "keyboard_edit": "Pfeiltasten wechseln das Feld. 1–8 setzt eine Insel; 0/Entf entfernt sie.",
+    "edge": "Brücke {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Feld ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Verschollen auf See",

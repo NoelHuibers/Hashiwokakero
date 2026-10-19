@@ -127,7 +127,11 @@
     "zoom_hint": "スワイプで移動、タップで橋をかける",
     "cells_small": "マスが小さすぎる？",
     "pinch": "2本指でズーム",
-    "zoom_out": "縮小"
+    "zoom_out": "縮小",
+    "keyboard_play": "←/→で橋を選択。Enter/Spaceで+1、Shift+Enterで−1。島には座標と現在/必要な橋の数を表示します。",
+    "keyboard_edit": "矢印キーでマスを移動。1〜8で島を配置し、0/Deleteで消します。",
+    "edge": "橋 {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "マス ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "海で迷子",

@@ -16,9 +16,14 @@ pub fn new_puzzle(game: Game, params: GenerateParams, source: Source) {
     if game.loading.get_untracked() {
         return;
     }
+    let epoch = game.epoch.get_untracked();
     game.loading.set(true);
     spawn_local(async move {
-        match generate_puzzle(params).await {
+        let generated = generate_puzzle(params).await;
+        if game.epoch.try_get_untracked() != Some(epoch) {
+            return;
+        }
+        match generated {
             Ok(generated) => game.set_puzzle(
                 generated.puzzle,
                 Some(generated.solution),
@@ -38,9 +43,16 @@ pub async fn run_solver(
     unique: bool,
     report: RwSignal<Option<SolveReport>>,
     busy: RwSignal<bool>,
+    epoch: RwSignal<u32>,
 ) -> Option<Vec<u8>> {
+    let request = epoch.get_untracked();
     busy.set(true);
     let result = solve_puzzle(puzzle, config, unique).await;
+    // Do this before touching report, busy or toasts. The caller's check after this function
+    // returned was too late to stop an old result overwriting a replacement puzzle.
+    if !current_request(epoch, request) {
+        return None;
+    }
     busy.set(false);
     match result {
         Ok(r) => {
@@ -77,9 +89,10 @@ async fn game_solver(game: &Game, settings: Settings, unique: bool) -> Option<Ve
         unique,
         game.report,
         game.solving,
+        game.epoch,
     )
     .await;
-    if game.epoch.get_untracked() != epoch {
+    if game.epoch.try_get_untracked() != Some(epoch) {
         return None;
     }
     if let Some(SolveOutcome::Solved {
@@ -113,7 +126,7 @@ pub fn hint(game: Game, settings: Settings) {
         let Some(solution) = ensure_solution(&game, settings).await else {
             return;
         };
-        if game.epoch.get_untracked() != epoch || !game.is_playing() {
+        if game.epoch.try_get_untracked() != Some(epoch) || !game.is_playing() {
             return;
         }
         let current = game.bridges.get_untracked();
@@ -149,7 +162,7 @@ pub fn check(game: Game, settings: Settings) {
         let Some(solution) = ensure_solution(&game, settings).await else {
             return;
         };
-        if game.epoch.get_untracked() != epoch {
+        if game.epoch.try_get_untracked() != Some(epoch) {
             return;
         }
         let wrong = game
@@ -178,7 +191,7 @@ pub fn reveal(game: Game, settings: Settings) {
         let Some(solution) = game_solver(&game, settings, false).await else {
             return;
         };
-        if game.epoch.get_untracked() != epoch {
+        if game.epoch.try_get_untracked() != Some(epoch) {
             return;
         }
         if game.status.get_untracked() == Status::Playing {
@@ -201,7 +214,7 @@ pub fn reveal(game: Game, settings: Settings) {
             let value = solution[edge];
             set_timeout(
                 move || {
-                    if game.epoch.get_untracked() == epoch {
+                    if game.epoch.try_get_untracked() == Some(epoch) {
                         game.bridges.update(|b| b[edge] = value);
                     }
                 },
@@ -226,4 +239,25 @@ pub fn check_unique(game: Game, settings: Settings) {
             }
         }
     });
+}
+
+fn current_request(epoch: RwSignal<u32>, request: u32) -> bool {
+    epoch.try_get_untracked() == Some(request)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn obsolete_or_disposed_requests_cannot_publish() {
+        Owner::new().with(|| {
+            let epoch = RwSignal::new(0);
+            assert!(current_request(epoch, 0));
+            epoch.set(1);
+            assert!(!current_request(epoch, 0));
+            assert!(current_request(epoch, 1));
+            epoch.dispose();
+            assert!(!current_request(epoch, 1));
+        });
+    }
 }
