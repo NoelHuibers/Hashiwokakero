@@ -43,7 +43,7 @@ A release build: `cargo leptos build --release`, the server binary is `target/re
 
 ### Browser tests
 
-`e2e/` has [Playwright](https://playwright.dev) tests of the built site: every page in every language loads, hydrates and reacts without an error in the browser, the 404 page, and building a bridge on a generated practice puzzle. Each run starts the server binary on port 3150 with a fresh database in `e2e/.run/`, seeded by `e2e/seed.ts` (players with a few weeks of dailies, signed in sessions, a Dojo entry).
+`e2e/` has [Playwright](https://playwright.dev) tests of the built site: every page in every language loads, hydrates and reacts without an error in the browser, the 404 page, and journeys through the site, each as a player of its own: practice from generating to the win screen (with the mouse, and by tapping on a phone), the daily as a guest and with a new account up to the leaderboard and the stamp book, signing in, deleting an account, the workshop, the lab, the contact form, the settings, the Dojo and the admin dashboard. The daily's solution comes from the server's database, the page never has it. Each run starts the server binary on port 3150 with a fresh database in `e2e/.run/`, seeded by `e2e/seed.ts` (players with a few weeks of dailies, signed in sessions, a Dojo entry, contact messages).
 
 ```sh
 npx playwright install chromium       # once, the browser
@@ -52,6 +52,15 @@ npm run e2e                           # npm run e2e -- --ui, or -g "practice" fo
 ```
 
 `E2E_BIN` and `E2E_SITE_ROOT` point it at another build (e.g. `target/debug/hashi`), `E2E_PORT` at another port. A failed run leaves a report with traces (`npx playwright show-report e2e/playwright-report`) and the server's log in `e2e/.run/server.log`.
+
+`e2e/tests/visual.spec.ts` compares a few pages with screenshots (`e2e/tests/__screenshots__/`): the home page, a practice board, the ranks, the rules in Japanese and Arabic, and a daily's result. They catch what breaks the layout without an error, like a Tailwind or font update. Screenshots only match where they were taken, so they are taken and compared in the official Playwright image of the version in `package-lock.json`, in CI and locally (podman or docker, the image is pulled on first use), with a server and database of their own on the next port:
+
+```sh
+npm run e2e:container                 # every test, the screenshots included
+npm run e2e:update-snapshots          # take the screenshots again, after a change on purpose
+```
+
+`npm run e2e` outside the container leaves them out. CI also builds the deploy image (`Dockerfile.prebuilt`) from its binary and site and checks that it serves the site (`scripts/docker-smoke.sh`).
 
 ## Deployment
 
