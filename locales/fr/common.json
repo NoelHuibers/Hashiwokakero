@@ -46,10 +46,12 @@
     "unique": "Prouvé : la solution est unique.",
     "not_unique": "Cette grille a plus d’une solution.",
     "copied": "Résultat copié dans le presse-papiers.",
-    "copy_failed": "Impossible de copier dans le presse-papiers."
+    "copy_failed": "Impossible de copier dans le presse-papiers.",
+    "reload": "Recharger"
   },
   "errors": {
     "unknown": "Un problème est survenu : {{ detail }}",
+    "outdated": "Hashi a été mis à jour. Recharge la page pour continuer.",
     "database": "La base de données n’a pas répondu, réessaie.",
     "internal": "Un problème est survenu sur le serveur, réessaie.",
     "archive_only_past": "Seuls les défis des jours passés peuvent être rejoués.",

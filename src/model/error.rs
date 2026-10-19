@@ -96,6 +96,16 @@ impl ApiError {
     }
 }
 
+/// Whether a server function got a web page back instead of its answer.
+///
+/// The server answers paths it doesn't know with its 404 page, so the tab runs the WASM of an
+/// older version of the site that calls a server function the new one doesn't have; reloading
+/// the page fixes it.
+pub fn is_outdated_client(message: &str) -> bool {
+    let message = message.to_ascii_lowercase();
+    message.contains("<!doctype") || message.contains("<html")
+}
+
 #[cfg(feature = "ssr")]
 impl From<ApiError> for leptos::prelude::ServerFnError {
     fn from(e: ApiError) -> Self {
@@ -122,5 +132,23 @@ mod tests {
             assert_eq!(ApiError::from_message(&message), Some(e));
         }
         assert_eq!(ApiError::from_message("something else"), None);
+    }
+
+    #[test]
+    fn web_pages_mean_an_outdated_client() {
+        for message in [
+            "error deserializing server function results: Invalid format: missing delimiter in \"<!DOCTYPE html><html lang=\\\"en\\\">\"",
+            "Unknown error type: <!doctype html>",
+            "<html><body>404</body></html>",
+        ] {
+            assert!(is_outdated_client(message), "{message}");
+        }
+        for message in [
+            "error running server function: E:database",
+            "error reaching server to call server function: TypeError: Failed to fetch",
+            "a < b",
+        ] {
+            assert!(!is_outdated_client(message), "{message}");
+        }
     }
 }

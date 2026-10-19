@@ -2,7 +2,7 @@
 
 use leptos::prelude::*;
 
-use crate::i18n::use_i18n;
+use crate::i18n::{t, use_i18n};
 use crate::state::{ToastKind, Toasts};
 
 #[component]
@@ -21,12 +21,27 @@ pub fn Toaster() -> impl IntoView {
                         ToastKind::Info => ("◇", "border-border bg-card text-foreground"),
                     };
                     let text = t.text.clone();
+                    // A button, not an automatic reload: that would throw away a board in progress
+                    let reload = t.reload.then(|| {
+                        view! {
+                            <button
+                                type="button"
+                                class="shrink-0 cursor-pointer rounded-md border border-current px-2 py-0.5 font-medium hover:bg-destructive/10"
+                                on:click=|_| {
+                                    _ = window().location().reload();
+                                }
+                            >
+                                {t!(i18n, common.toast.reload)}
+                            </button>
+                        }
+                    });
                     view! {
                         <div class=format!(
                             "pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2 {class}",
                         )>
                             <span class="font-pixel">{mark}</span>
-                            <span>{move || text(i18n.get_locale())}</span>
+                            <span class="flex-1">{move || text(i18n.get_locale())}</span>
+                            {reload}
                         </div>
                     }
                 }

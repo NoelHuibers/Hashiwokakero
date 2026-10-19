@@ -46,10 +46,12 @@
     "unique": "Bewiesen: Die Lösung ist eindeutig.",
     "not_unique": "Dieses Rätsel hat mehr als eine Lösung.",
     "copied": "Ergebnis in die Zwischenablage kopiert.",
-    "copy_failed": "Kopieren in die Zwischenablage hat nicht geklappt."
+    "copy_failed": "Kopieren in die Zwischenablage hat nicht geklappt.",
+    "reload": "Neu laden"
   },
   "errors": {
     "unknown": "Etwas ist schiefgelaufen: {{ detail }}",
+    "outdated": "Hashi wurde aktualisiert. Lade die Seite neu, um weiterzumachen.",
     "database": "Die Datenbank antwortet nicht, bitte versuch es noch einmal.",
     "internal": "Auf dem Server ist etwas schiefgelaufen, bitte versuch es noch einmal.",
     "archive_only_past": "Nur frühere Tagesrätsel können geübt werden.",

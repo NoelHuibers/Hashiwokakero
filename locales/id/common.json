@@ -46,10 +46,12 @@
     "unique": "Terbukti: solusinya unik.",
     "not_unique": "Teka-teki ini punya lebih dari satu solusi.",
     "copied": "Hasil disalin ke papan klip.",
-    "copy_failed": "Gagal menyalin ke papan klip."
+    "copy_failed": "Gagal menyalin ke papan klip.",
+    "reload": "Muat ulang"
   },
   "errors": {
     "unknown": "Terjadi kesalahan: {{ detail }}",
+    "outdated": "Hashi telah diperbarui. Muat ulang halaman untuk melanjutkan.",
     "database": "Database tidak merespons, coba lagi.",
     "internal": "Terjadi kesalahan di server, coba lagi.",
     "archive_only_past": "Hanya teka-teki harian sebelumnya yang bisa dilatih.",

@@ -20,7 +20,7 @@ pub use editor::Editor;
 pub use game::{DailyGame, Game, Source, Status};
 pub use settings::Settings;
 pub use solver::{check, check_unique, hint, new_puzzle, reveal, run_solver};
-pub use toasts::{Toast, ToastKind, ToastText, Toasts, toast};
+pub use toasts::{Toast, ToastKind, ToastText, Toasts, error_toast, toast};
 
 const GAME_KEY: &str = "hashi.game.v2";
 const DAILY_KEY: &str = "hashi.daily.v1";

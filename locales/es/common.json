@@ -46,10 +46,12 @@
     "unique": "Demostrado: la solución es única.",
     "not_unique": "Este puzle tiene más de una solución.",
     "copied": "Resultado copiado al portapapeles.",
-    "copy_failed": "No se pudo copiar al portapapeles."
+    "copy_failed": "No se pudo copiar al portapapeles.",
+    "reload": "Recargar"
   },
   "errors": {
     "unknown": "Algo salió mal: {{ detail }}",
+    "outdated": "Hashi se ha actualizado. Recarga la página para continuar.",
     "database": "La base de datos no respondió, inténtalo de nuevo.",
     "internal": "Algo salió mal en el servidor, inténtalo de nuevo.",
     "archive_only_past": "Solo se pueden practicar retos de días anteriores.",

@@ -9,10 +9,9 @@ use leptos::task::spawn_local;
 
 use crate::api::{daily_leaderboard, load_hall_of_fame};
 use crate::i18n::{t, t_string, use_i18n};
-use crate::lang::error_text;
 use crate::model::{HallOfFame as Fame, Leaderboard};
 use crate::seo::PageMeta;
-use crate::state::{ToastKind, toast};
+use crate::state::error_toast;
 
 use daily_board::DailyBoard;
 use hall_of_fame::HallOfFame;
@@ -40,7 +39,7 @@ pub fn RanksPage() -> impl IntoView {
                     }
                     board.set(Some(lb));
                 }
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
             loading.set(false);
         });

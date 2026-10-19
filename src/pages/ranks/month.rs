@@ -11,9 +11,9 @@ use crate::components::leaderboard::{
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, use_i18n};
-use crate::lang::{error_text, month_long};
+use crate::lang::month_long;
 use crate::model::{LAUNCH_DAY, MonthBoard, MonthEntry, month_of};
-use crate::state::{ToastKind, toast};
+use crate::state::error_toast;
 
 #[component]
 fn Row(entry: MonthEntry, me: bool) -> impl IntoView {
@@ -52,7 +52,7 @@ pub(super) fn MonthRace() -> impl IntoView {
                     }
                     board.set(Some(b));
                 }
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
             loading.set(false);
         });
