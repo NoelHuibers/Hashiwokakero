@@ -2,7 +2,8 @@
 // handling in the WASM), and a whole game up to the win screen, saved in the browser.
 import type { Page } from '@playwright/test';
 
-import { addBridge, board, build, PRACTICE_KEY, type Puzzle, saved } from '../board';
+import { addBridge, board, boardPoint, build, PRACTICE_KEY, type Puzzle, saved, seedGame, toBoard } from '../board';
+import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
 import { expect, test, visit } from '../fixtures';
 
 const bridges = (page: Page) => board(page).locator('g.bridge:not(.ghost)');
@@ -148,6 +149,50 @@ test.describe('on a phone', () => {
     await build(page, PRACTICE_KEY, game.puzzle, game.solution!, true);
     await expect(wonHeading(page)).toBeVisible();
     await expect(board(page).locator('g.island:not(.done)')).toHaveCount(0);
+  });
+});
+
+/** The ladder, solved: the win screen shows as soon as the page loads. */
+const wonLadder = { puzzle: LADDER, bridges: LADDER_SOLUTION, solution: LADDER_SOLUTION, status: 'Won', moves: 9, hints: 0 } as const;
+
+test.describe('on a phone, the last tap', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  // The browser sends a click after a tap, and the tap that solved the puzzle brought up the win
+  // screen under the finger: its buttons got the click
+  test("doesn't press the win screen's buttons", async ({ page, context }) => {
+    // Where the win screen's first button is, on the board
+    await seedGame(page, PRACTICE_KEY, wonLadder);
+    await visit(page, '/practice');
+    const next = page.getByRole('button', { name: /^Next puzzle/ });
+    const box = (await next.boundingBox())!;
+    const target = await toBoard(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+    const row = Math.floor(target.y / 16);
+    const column = Math.floor(target.x / 16);
+    expect(row, 'the button lies over a row of the ladder').toBeGreaterThanOrEqual(1);
+    expect(row).toBeLessThanOrEqual(5);
+    expect(column, 'and over its water').toBeGreaterThanOrEqual(1);
+    expect(column).toBeLessThanOrEqual(5);
+
+    // The same ladder without that row's bridge, built there with a tap
+    const playing = await context.newPage();
+    const bridges = LADDER_SOLUTION.map((b, e) => (e === ladderRow(row) ? 0 : b));
+    await seedGame(playing, PRACTICE_KEY, { ...wonLadder, bridges, status: 'Playing', moves: 8 });
+    await visit(playing, '/practice');
+    await playing.evaluate(() => {
+      const w = window as unknown as { clicked: string[] };
+      w.clicked = [];
+      document.addEventListener('click', (e) => w.clicked.push((e.target as Element).closest('button')?.textContent ?? ''), true);
+    });
+    const point = await boardPoint(playing, target.x, target.y);
+    await playing.touchscreen.tap(point.x, point.y);
+    await expect(wonHeading(playing)).toBeVisible();
+    // Taps are handled in order: once this one is through, a click of the first would be too
+    await playing.touchscreen.tap(10, 300);
+    expect(await playing.evaluate(() => (window as unknown as { clicked: string[] }).clicked.filter(Boolean))).toEqual([]);
+    await expect(wonHeading(playing)).toBeVisible();
+    expect((await saved(playing, PRACTICE_KEY)).status).toBe('Won');
+    await playing.close();
   });
 });
 

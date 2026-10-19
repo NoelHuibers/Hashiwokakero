@@ -504,6 +504,10 @@ pub fn BoardView(
                 });
             }
             on:pointerleave=on_leave
+            // Taps are handled as pointer events above. The click a browser sends after a tap
+            // would land on whatever the tap brought up under the finger: the last bridge of a
+            // puzzle pressed the win screen's buttons.
+            on:touchend=|ev| ev.prevent_default()
             on:contextmenu=|ev| ev.prevent_default()
         >
             <BoardDefs />
