@@ -7,6 +7,8 @@
   },
   "scripts": {
     "postinstall": "node scripts/fonts.mjs",
+    "dev": "node scripts/dev.mjs",
+    "clean": "node scripts/clean.mjs",
     "fonts": "node scripts/fonts.mjs",
     "coverage": "node scripts/coverage.mjs",
     "css": "tailwindcss -i style/tailwind.css -o target/site/pkg/hashi.css",
