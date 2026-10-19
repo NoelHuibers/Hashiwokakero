@@ -157,11 +157,13 @@ impl Settings {
     }
 }
 
-/// Evaluates jobs one after another on a blocking thread (each one uses every core).
+/// Evaluates jobs one after another on a blocking thread (each one uses every core). It holds
+/// no sender of `jobs`, so it returns once the server that queues them is gone.
 fn evaluator(
     mut jobs: mpsc::UnboundedReceiver<Job>,
     reporter: &Reporter,
-    shared: &Shared,
+    pending: &AtomicUsize,
+    active: &AtomicU64,
     runtime: &tokio::runtime::Handle,
     settings: &Settings,
 ) {
@@ -250,8 +252,8 @@ fn evaluator(
             started.elapsed()
         );
         send(report);
-        shared.pending.fetch_sub(1, Ordering::Relaxed);
-        shared.active.store(now_secs(), Ordering::Relaxed);
+        pending.fetch_sub(1, Ordering::Relaxed);
+        active.store(now_secs(), Ordering::Relaxed);
     }
 }
 
@@ -332,10 +334,10 @@ pub fn serve() -> Result<(), String> {
             url: format!("{}/dojo/report", app_url.trim_end_matches('/')),
         };
         let handle = tokio::runtime::Handle::current();
-        let evaluator_shared = shared.clone();
+        let (pending, active) = (shared.pending.clone(), shared.active.clone());
         let settings = Settings::from_env();
         std::thread::spawn(move || {
-            evaluator(rx, &reporter, &evaluator_shared, &handle, &settings);
+            evaluator(rx, &reporter, &pending, &active, &handle, &settings);
         });
 
         if let Some(idle) = idle_exit {
@@ -485,13 +487,23 @@ mod tests {
             memory_mb: Some(64),
             cache: Some(cache.clone()),
         };
-        let (handle, evaluator_shared) = (tokio::runtime::Handle::current(), shared.clone());
-        std::thread::spawn(move || {
-            evaluator(rx, &reporter, &evaluator_shared, &handle, &settings);
+        let handle = tokio::runtime::Handle::current();
+        let (pending, active) = (shared.pending.clone(), shared.active.clone());
+        let evaluating = tokio::task::spawn_blocking({
+            let pending = pending.clone();
+            move || evaluator(rx, &reporter, &pending, &active, &handle, &settings)
         });
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
-        tokio::spawn(async move { axum::serve(listener, app(shared)).await.unwrap() });
+        let (stop, stopped) = tokio::sync::oneshot::channel::<()>();
+        let server = tokio::spawn(async move {
+            axum::serve(listener, app(shared))
+                .with_graceful_shutdown(async {
+                    stopped.await.ok();
+                })
+                .await
+                .unwrap();
+        });
 
         let client = reqwest::Client::new();
         let health = client.get(format!("{url}/health")).send().await.unwrap();
@@ -558,6 +570,19 @@ mod tests {
             (total / 2, total / 2, total)
         );
         assert_eq!(fingerprint.len(), bench::SPEC.len());
+
+        // The website got the last report before the worker got its answer. Stopping the server
+        // drops the last job sender: the evaluator gets that answer, finishes the job and returns.
+        // Without waiting for it the test could end while the evaluator is still in its loop, and
+        // the coverage of the loop, counted when it goes round, would come out as zero.
+        drop(client);
+        stop.send(()).unwrap();
+        server.await.unwrap();
+        tokio::time::timeout(Duration::from_secs(60), evaluating)
+            .await
+            .expect("the evaluator stops when the server does")
+            .unwrap();
+        assert_eq!(pending.load(Ordering::Relaxed), 0);
         std::fs::remove_dir_all(cache).unwrap();
     }
 
