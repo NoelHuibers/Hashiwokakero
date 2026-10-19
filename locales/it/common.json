@@ -64,7 +64,11 @@
     "wrong_puzzle": "Questi ponti non appartengono a questo puzzle.",
     "already_finished": "Hai già completato questa sfida del giorno.",
     "daily_locked": "Questa è la sfida del giorno di oggi: i solver ti aiuteranno dopo che l’avrai completata da solo.",
-    "forbidden": "Solo per gli admin."
+    "forbidden": "Solo per gli admin.",
+    "wrong_password": "Password errata.",
+    "email_invalid": "Questo non sembra un indirizzo email.",
+    "message_invalid": "Scrivi tra 10 e 5000 caratteri, per favore.",
+    "too_many_messages": "Per oggi hai inviato abbastanza messaggi, riprova domani."
   },
   "solver": {
     "title": "Solver SAT",
@@ -90,7 +94,8 @@
     "guest": "ospite",
     "guest_name": "Ospite",
     "penalties": "indizi · verifiche",
-    "empty": "Nessuno ha ancora attraversato. Tocca a te aprire la strada!"
+    "empty": "Nessuno ha ancora attraversato. Tocca a te aprire la strada!",
+    "deleted": "giocatore eliminato"
   },
   "board": {
     "label": "Griglia di Hashiwokakero",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Note legali",
     "privacy": "Privacy",
-    "english": "Versione inglese"
+    "english": "Versione inglese",
+    "contact": "Contatti"
   },
   "audio": {
     "sound": "Effetti sonori",

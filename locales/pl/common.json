@@ -64,7 +64,11 @@
     "wrong_puzzle": "Te mosty nie pasują do tej łamigłówki.",
     "already_finished": "Ta łamigłówka dnia jest już przez ciebie ukończona.",
     "daily_locked": "To dzisiejsza łamigłówka dnia: solvery pomogą w niej dopiero po jej samodzielnym ukończeniu.",
-    "forbidden": "Tylko dla administratorów."
+    "forbidden": "Tylko dla administratorów.",
+    "wrong_password": "Błędne hasło.",
+    "email_invalid": "To nie wygląda na adres e-mail.",
+    "message_invalid": "Napisz od 10 do 5000 znaków.",
+    "too_many_messages": "Na dziś wystarczy wiadomości, spróbuj ponownie jutro."
   },
   "solver": {
     "title": "Solver SAT",
@@ -90,7 +94,8 @@
     "guest": "gość",
     "guest_name": "Gość",
     "penalties": "podpowiedzi · sprawdzenia",
-    "empty": "Nikt jeszcze nie przeszedł na drugi brzeg. Przetrzyj szlak!"
+    "empty": "Nikt jeszcze nie przeszedł na drugi brzeg. Przetrzyj szlak!",
+    "deleted": "usunięty gracz"
   },
   "board": {
     "label": "Plansza Hashiwokakero",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Nota prawna",
     "privacy": "Prywatność",
-    "english": "Wersja angielska"
+    "english": "Wersja angielska",
+    "contact": "Kontakt"
   },
   "audio": {
     "sound": "Efekty dźwiękowe",

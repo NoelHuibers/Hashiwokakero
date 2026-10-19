@@ -1,0 +1,17 @@
+{
+  "title": "Contato",
+  "description": "Dúvidas, ideias ou um bug no Hashi? Escreva para a gente.",
+  "intro": "Uma dúvida, uma ideia, um bug ou algo sobre seus dados? Escreva para a gente, responderemos assim que pudermos.",
+  "name": "Nome",
+  "email": "E-mail",
+  "optional": "opcional",
+  "email_hint": "Só se você quiser uma resposta.",
+  "message": "Mensagem",
+  "send": "Enviar",
+  "sending": "Enviando…",
+  "sent_title": "Obrigado!",
+  "sent": "Sua mensagem chegou. Se você deixou um endereço de e-mail, responderemos por lá.",
+  "another": "Escrever outra mensagem",
+  "privacy": "Usamos sua mensagem só para respondê-la e a apagamos em no máximo seis meses. Mais detalhes na <a>política de privacidade</a>.",
+  "by_mail": "Prefere e-mail?"
+}

@@ -64,7 +64,11 @@
     "wrong_puzzle": "这些桥不属于这道谜题。",
     "already_finished": "你已经完成过这道每日谜题了。",
     "daily_locked": "这是今天的每日谜题：等你自己完成后，求解器才会帮忙。",
-    "forbidden": "仅限管理员。"
+    "forbidden": "仅限管理员。",
+    "wrong_password": "密码错误。",
+    "email_invalid": "这看起来不像邮箱地址。",
+    "message_invalid": "请写 10 到 5000 个字符。",
+    "too_many_messages": "今天的消息已经够多了，请明天再试。"
   },
   "solver": {
     "title": "SAT 求解器",
@@ -90,7 +94,8 @@
     "guest": "游客",
     "guest_name": "游客",
     "penalties": "提示 · 检查",
-    "empty": "还没有人过桥，来当第一个吧！"
+    "empty": "还没有人过桥，来当第一个吧！",
+    "deleted": "已删除的玩家"
   },
   "board": {
     "label": "数桥（Hashiwokakero）棋盘",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "法律声明",
     "privacy": "隐私政策",
-    "english": "英文版"
+    "english": "英文版",
+    "contact": "联系我们"
   },
   "audio": {
     "sound": "音效",

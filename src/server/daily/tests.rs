@@ -335,13 +335,13 @@ async fn solvers_refuse_the_live_daily() {
             .collect(),
     );
     assert!(locked(&conn, Some(player), &mirrored).await.unwrap());
-    // Another puzzle isn't locked (not MONDAY: that can be today), and the daily unlocks once
-    // you gave up or finished
+    // Another puzzle isn't locked (a Monday that's surely over, MONDAY itself is today once a
+    // week), and the daily unlocks once you gave up or finished
     assert!(
         !locked(
             &conn,
             None,
-            &get_or_create(&conn, today() - 7).await.unwrap().puzzle
+            &get_or_create(&conn, MONDAY - 7).await.unwrap().puzzle
         )
         .await
         .unwrap()
@@ -662,4 +662,191 @@ async fn archive_only_has_earlier_days() {
     if MONDAY < today() {
         assert!(archived(&conn, MONDAY).await.unwrap().is_some());
     }
+}
+
+#[tokio::test]
+async fn deleting_keeps_the_rankings_but_nothing_personal() {
+    use crate::server::auth::erase;
+    let (_db, conn) = test_db().await;
+    let a = user(&conn, "alice", Some("alice")).await;
+    let b = user(&conn, "bob", Some("bob")).await;
+    let today = today();
+    finish(&conn, a, today - 2, 80_000).await;
+    finish(&conn, a, today - 1, 70_000).await;
+    finish(&conn, b, today - 1, 60_000).await;
+    // Bob's personal bits: a move log and device, a flagged and an unfinished daily, a session,
+    // a stamp, a Dojo submission
+    conn.execute(
+        "UPDATE attempts SET log = '[]', device = 'd', bridges = '[]' WHERE user_id = ?1",
+        params![b],
+    )
+    .await
+    .unwrap();
+    for sql in [
+        "INSERT INTO attempts (user_id, day, started_at, finished_at, time_ms, flag) VALUES (?1, ?2 - 2, 0, 1, 1, 'pace')",
+        "INSERT INTO attempts (user_id, day, started_at) VALUES (?1, ?2, 0)",
+        "INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES ('t', ?1, 0, ?2 * 86400000)",
+        "INSERT INTO stamps (user_id, stamp, earned_at) VALUES (?1, 'first', ?2)",
+        "INSERT INTO dojo_submissions (user_id, name, wasm, sha256, size, created_at, updated_at, state, season)
+         VALUES (?1, 'x', x'00', 'h', 1, ?2, 0, 'done', 1)",
+    ] {
+        conn.execute(sql, params![b, today]).await.unwrap();
+    }
+    let before = hall_of_fame(&conn).await.unwrap();
+
+    erase(&conn, b).await.unwrap();
+
+    // Alice keeps her silver from yesterday, bob's gold stays with a nameless player
+    let after = hall_of_fame(&conn).await.unwrap();
+    let medals = |f: &crate::model::HallOfFame| {
+        f.medals
+            .iter()
+            .map(|e| (e.user_id, e.gold, e.silver))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(medals(&after), medals(&before));
+    let bob = after.solved.iter().find(|e| e.user_id == b).unwrap();
+    assert_eq!((bob.name.as_str(), bob.solved), ("", 1));
+    assert!(profile(&conn, b).await.unwrap().is_none());
+    assert!(profile(&conn, a).await.unwrap().is_some());
+
+    let left = |sql: &'static str| {
+        let conn = conn.clone();
+        async move {
+            let mut rows = conn.query(sql, params![b]).await.unwrap();
+            rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap()
+        }
+    };
+    assert_eq!(
+        left("SELECT COUNT(*) FROM attempts WHERE user_id = ?1").await,
+        1
+    );
+    assert_eq!(
+        left("SELECT COUNT(*) FROM attempts WHERE user_id = ?1 AND (log IS NOT NULL OR device IS NOT NULL OR bridges IS NOT NULL)").await,
+        0
+    );
+    for table in ["sessions", "stamps", "dojo_submissions"] {
+        let sql = format!("SELECT COUNT(*) FROM {table} WHERE user_id = ?1");
+        let mut rows = conn.query(&sql, params![b]).await.unwrap();
+        let n: i64 = rows.next().await.unwrap().unwrap().get(0).unwrap();
+        assert_eq!(n, 0, "{table}");
+    }
+    assert_eq!(
+        left("SELECT COUNT(*) FROM users WHERE id = ?1 AND username IS NULL AND password_hash IS NULL AND name = '' AND deleted_at IS NOT NULL").await,
+        1
+    );
+    // Nameless players don't get stamps back
+    sync_recent(&conn).await.unwrap();
+    assert_eq!(
+        left("SELECT COUNT(*) FROM stamps WHERE user_id = ?1").await,
+        0
+    );
+
+    // Without a ranked time nothing is left at all
+    let c = user(&conn, "carol", Some("carol")).await;
+    conn.execute(
+        "INSERT INTO attempts (user_id, day, started_at) VALUES (?1, ?2, 0)",
+        params![c, today],
+    )
+    .await
+    .unwrap();
+    erase(&conn, c).await.unwrap();
+    let mut rows = conn
+        .query("SELECT COUNT(*) FROM users WHERE id = ?1", params![c])
+        .await
+        .unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap(),
+        0
+    );
+}
+
+#[tokio::test]
+async fn guests_nobody_can_reach_are_cleaned_up() {
+    use crate::server::auth::cleanup_guests;
+    let (_db, conn) = test_db().await;
+    let now = now_ms();
+    let gone = user(&conn, "Sleepy Crane 10", None).await;
+    let expired = user(&conn, "Brave Koi 11", None).await;
+    let active = user(&conn, "Quiet Owl 12", None).await;
+    let member = user(&conn, "dana", Some("dana")).await;
+    finish(&conn, gone, today() - 1, 50_000).await;
+    for (u, expires) in [(expired, now - 1000), (active, now + MS_PER_DAY)] {
+        conn.execute(
+            "INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?1, ?2, 0, ?3)",
+            params![format!("t{u}"), u, expires],
+        )
+        .await
+        .unwrap();
+    }
+    assert_eq!(cleanup_guests(&conn).await.unwrap(), 2);
+    // Runs again without touching the nameless ones
+    assert_eq!(cleanup_guests(&conn).await.unwrap(), 0);
+    let mut rows = conn
+        .query(
+            "SELECT id, name FROM users WHERE deleted_at IS NULL ORDER BY id",
+            (),
+        )
+        .await
+        .unwrap();
+    let mut kept = Vec::new();
+    while let Some(row) = rows.next().await.unwrap() {
+        kept.push(row.get::<i64>(0).unwrap());
+    }
+    assert_eq!(kept, [active, member]);
+    // The guest with a ranked time stays as a nameless player, the other one is gone
+    let mut rows = conn
+        .query("SELECT id FROM users WHERE deleted_at IS NOT NULL", ())
+        .await
+        .unwrap();
+    assert_eq!(
+        rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap(),
+        gone
+    );
+    assert!(rows.next().await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn contact_messages_are_checked_stored_and_expire() {
+    use crate::server::contact;
+    let (_db, conn) = test_db().await;
+    let message = "Hello, I found a bug in the editor.";
+    let code = |r: Result<(), ServerFnError>| ApiError::from_message(&r.unwrap_err().to_string());
+    assert_eq!(
+        code(contact::send(&conn, "", "not an address", message, "").await),
+        Some(ApiError::EmailInvalid)
+    );
+    assert_eq!(
+        code(contact::send(&conn, "", "", "too short", "").await),
+        Some(ApiError::MessageInvalid)
+    );
+    // Bots that fill in the hidden field are thanked, but nothing is kept
+    contact::send(&conn, "Bot", "", message, "https://spam.example")
+        .await
+        .unwrap();
+    assert_eq!(contact::list(&conn).await.unwrap(), []);
+
+    contact::send(&conn, " Ann\n", "ann@example.com", message, "")
+        .await
+        .unwrap();
+    let list = contact::list(&conn).await.unwrap();
+    assert_eq!(list.len(), 1);
+    assert_eq!(
+        (
+            list[0].name.as_str(),
+            list[0].email.as_str(),
+            list[0].message.as_str()
+        ),
+        ("Ann", "ann@example.com", message)
+    );
+
+    // Half a year later it's gone
+    conn.execute(
+        "UPDATE contact_messages SET created_at = created_at - 181 * ?1",
+        params![MS_PER_DAY],
+    )
+    .await
+    .unwrap();
+    contact::delete_old(&conn).await.unwrap();
+    assert_eq!(contact::list(&conn).await.unwrap(), []);
 }

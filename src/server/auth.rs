@@ -3,6 +3,11 @@
 //! Everyone who starts a daily puzzle gets a user: a guest with a generated name, identified by
 //! a session cookie. Registering gives that same user a username and password, so results and
 //! streaks carry over. The cookie holds a random token, the database only its SHA-256.
+//!
+//! Sessions last a year and are renewed while the player keeps coming back. A guest without a
+//! valid session can never get back in, so guests are deleted a year after their last visit
+//! ([`start_cleanup`]). Deleting keeps the ranked times without a name ([`erase`]), so old
+//! rankings and everyone else's medals stay as they were.
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -20,6 +25,8 @@ use crate::model::{ApiError, MS_PER_DAY, UserInfo};
 
 const COOKIE: &str = "hashi_session";
 const SESSION_DAYS: i64 = 365;
+/// A session is renewed (and its cookie sent again) once it is this old, so at most once a day.
+const RENEW_AFTER_MS: i64 = MS_PER_DAY;
 /// Failed logins per username within the window before further attempts are refused.
 const MAX_FAILED_LOGINS: u32 = 8;
 const LOGIN_WINDOW_MS: i64 = 15 * 60 * 1000;
@@ -109,12 +116,26 @@ pub async fn user_by_id(conn: &Connection, id: i64) -> Result<Option<User>, Serv
     }
 }
 
-/// The signed in user (or guest) of this request.
+/// The signed in user (or guest) of this request. Renews the session, at most once a day.
 pub async fn current_user(conn: &Connection) -> Result<Option<User>, ServerFnError> {
-    match request_token().await {
-        Some(token) => user_by_token(conn, &token).await,
-        None => Ok(None),
+    let Some(token) = request_token().await else {
+        return Ok(None);
+    };
+    let Some((user, expires_at)) = user_by_token(conn, &token).await? else {
+        return Ok(None);
+    };
+    let now = now_ms();
+    let renewed = now + SESSION_DAYS * MS_PER_DAY;
+    if renewed - expires_at >= RENEW_AFTER_MS {
+        conn.execute(
+            "UPDATE sessions SET expires_at = ?1 WHERE token_hash = ?2",
+            params![renewed, hash_token(&token)],
+        )
+        .await
+        .map_err(db_err)?;
+        set_cookie(&token, SESSION_DAYS * 24 * 3600);
     }
+    Ok(Some(user))
 }
 
 /// The signed in user, for plain axum handlers outside of Leptos.
@@ -123,15 +144,19 @@ pub async fn user_from_headers(
     headers: &HeaderMap,
 ) -> Result<Option<User>, ServerFnError> {
     match token_from_headers(headers) {
-        Some(token) => user_by_token(conn, &token).await,
+        Some(token) => Ok(user_by_token(conn, &token).await?.map(|(user, _)| user)),
         None => Ok(None),
     }
 }
 
-async fn user_by_token(conn: &Connection, token: &str) -> Result<Option<User>, ServerFnError> {
+/// The user of a session and when the session expires.
+async fn user_by_token(
+    conn: &Connection,
+    token: &str,
+) -> Result<Option<(User, i64)>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT u.id, u.username, u.name, u.created_at FROM sessions s
+            "SELECT u.id, u.username, u.name, u.created_at, s.expires_at FROM sessions s
              JOIN users u ON u.id = s.user_id
              WHERE s.token_hash = ?1 AND s.expires_at > ?2",
             params![hash_token(token), now_ms()],
@@ -139,7 +164,10 @@ async fn user_by_token(conn: &Connection, token: &str) -> Result<Option<User>, S
         .await
         .map_err(db_err)?;
     match rows.next().await.map_err(db_err)? {
-        Some(row) => Ok(Some(row_to_user(&row).map_err(db_err)?)),
+        Some(row) => Ok(Some((
+            row_to_user(&row).map_err(db_err)?,
+            row.get(4).map_err(db_err)?,
+        ))),
         None => Ok(None),
     }
 }
@@ -304,6 +332,31 @@ pub async fn login(
     username: &str,
     password: String,
 ) -> Result<User, ServerFnError> {
+    let Some(user) = check_password(conn, username, password).await? else {
+        return Err(ApiError::WrongLogin.into());
+    };
+
+    if let Some(guest) = current_user(conn).await?.filter(|u| u.username.is_none()) {
+        merge_guest(conn, guest.id, user.id).await?;
+    }
+    if let Some(token) = request_token().await {
+        conn.execute(
+            "DELETE FROM sessions WHERE token_hash = ?1",
+            params![hash_token(&token)],
+        )
+        .await
+        .map_err(db_err)?;
+    }
+    create_session(conn, user.id).await?;
+    Ok(user)
+}
+
+/// The account if the password is right, counting failed attempts per username.
+async fn check_password(
+    conn: &Connection,
+    username: &str,
+    password: String,
+) -> Result<Option<User>, ServerFnError> {
     let key = username.to_lowercase();
     if !login_allowed(&key) {
         return Err(ApiError::TooManyAttempts.into());
@@ -326,24 +379,10 @@ pub async fn login(
         Some((_, Some(hash))) => verify_password(password, hash.clone()).await?,
         _ => false,
     };
-    let Some((user, _)) = found.filter(|_| valid) else {
+    if !valid {
         record_failed_login(&key);
-        return Err(ApiError::WrongLogin.into());
-    };
-
-    if let Some(guest) = current_user(conn).await?.filter(|u| u.username.is_none()) {
-        merge_guest(conn, guest.id, user.id).await?;
     }
-    if let Some(token) = request_token().await {
-        conn.execute(
-            "DELETE FROM sessions WHERE token_hash = ?1",
-            params![hash_token(&token)],
-        )
-        .await
-        .map_err(db_err)?;
-    }
-    create_session(conn, user.id).await?;
-    Ok(user)
+    Ok(found.filter(|_| valid).map(|(user, _)| user))
 }
 
 async fn merge_guest(conn: &Connection, guest: i64, user: i64) -> Result<(), ServerFnError> {
@@ -377,6 +416,109 @@ pub async fn logout(conn: &Connection) -> Result<(), ServerFnError> {
     }
     set_cookie("", 0);
     Ok(())
+}
+
+/// Deletes the current account (a registered one needs its password) and signs out.
+pub async fn delete_account(
+    conn: &Connection,
+    password: Option<String>,
+) -> Result<(), ServerFnError> {
+    let user = current_user(conn)
+        .await?
+        .ok_or_else(|| ApiError::SessionExpired.fail())?;
+    if let Some(username) = &user.username {
+        let password = password.unwrap_or_default();
+        if check_password(conn, username, password).await?.is_none() {
+            return Err(ApiError::WrongPassword.into());
+        }
+    }
+    erase(conn, user.id).await?;
+    set_cookie("", 0);
+    Ok(())
+}
+
+/// Deletes everything personal of a user.
+///
+/// That is name, password, sessions, stamps, Dojo submissions, and of the daily results the
+/// boards, move logs, devices and unranked attempts. What stays are
+/// the ranked times and penalties, under a user without a name (`deleted_at`), so the rankings of
+/// old days and the medals of everyone else don't change. A user without ranked times goes
+/// completely.
+pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
+    let tx = conn.transaction().await.map_err(db_err)?;
+    for sql in [
+        "DELETE FROM sessions WHERE user_id = ?1",
+        "DELETE FROM stamps WHERE user_id = ?1",
+        // Later copies of a deleted submission are no copies any more
+        "UPDATE dojo_submissions SET similar_to = NULL
+         WHERE similar_to IN (SELECT id FROM dojo_submissions WHERE user_id = ?1)",
+        "DELETE FROM dojo_submissions WHERE user_id = ?1",
+        "DELETE FROM attempts
+         WHERE user_id = ?1 AND (finished_at IS NULL OR revealed != 0 OR flag IS NOT NULL)",
+        "UPDATE attempts SET bridges = NULL, log = NULL, device = NULL, run = NULL, daypart = NULL
+         WHERE user_id = ?1",
+        "DELETE FROM users WHERE id = ?1 AND NOT EXISTS (SELECT 1 FROM attempts WHERE user_id = ?1)",
+    ] {
+        tx.execute(sql, params![user]).await.map_err(db_err)?;
+    }
+    tx.execute(
+        "UPDATE users SET username = NULL, name = '', password_hash = NULL, stamp = NULL,
+            deleted_at = ?2
+         WHERE id = ?1",
+        params![user, now_ms()],
+    )
+    .await
+    .map_err(db_err)?;
+    tx.commit().await.map_err(db_err)
+}
+
+/// Deletes the guests nobody can sign in to any more: their last session expired (a year after
+/// their last visit) or is gone. Returns how many.
+pub async fn cleanup_guests(conn: &Connection) -> Result<usize, ServerFnError> {
+    let now = now_ms();
+    conn.execute("DELETE FROM sessions WHERE expires_at < ?1", params![now])
+        .await
+        .map_err(db_err)?;
+    let mut rows = conn
+        .query(
+            "SELECT id FROM users u
+             WHERE username IS NULL AND deleted_at IS NULL AND created_at < ?1
+               AND NOT EXISTS (SELECT 1 FROM sessions s WHERE s.user_id = u.id)",
+            // A day of slack for a guest whose session is just being created
+            params![now - MS_PER_DAY],
+        )
+        .await
+        .map_err(db_err)?;
+    let mut guests = Vec::new();
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        guests.push(row.get::<i64>(0).map_err(db_err)?);
+    }
+    for &guest in &guests {
+        erase(conn, guest).await?;
+    }
+    Ok(guests.len())
+}
+
+/// Deletes abandoned guests and old contact messages now and then every few hours.
+pub fn start_cleanup() {
+    tokio::spawn(async {
+        loop {
+            match super::db::conn() {
+                Ok(conn) => {
+                    match cleanup_guests(&conn).await {
+                        Ok(0) => {}
+                        Ok(n) => println!("cleanup: deleted {n} abandoned guests"),
+                        Err(e) => eprintln!("cleanup: {e}"),
+                    }
+                    if let Err(e) = super::contact::delete_old(&conn).await {
+                        eprintln!("cleanup: {e}");
+                    }
+                }
+                Err(e) => eprintln!("cleanup: {e}"),
+            }
+            tokio::time::sleep(std::time::Duration::from_hours(6)).await;
+        }
+    });
 }
 
 /// "Sleepy Tanuki 27"

@@ -64,7 +64,11 @@
     "wrong_puzzle": "Jembatan ini bukan milik teka-teki ini.",
     "already_finished": "Kamu sudah menyelesaikan teka-teki harian ini.",
     "daily_locked": "Itu teka-teki harian hari ini: solver baru akan membantu setelah kamu menyelesaikannya sendiri.",
-    "forbidden": "Hanya untuk admin."
+    "forbidden": "Hanya untuk admin.",
+    "wrong_password": "Kata sandi salah.",
+    "email_invalid": "Itu sepertinya bukan alamat email.",
+    "message_invalid": "Tulis antara 10 sampai 5000 karakter, ya.",
+    "too_many_messages": "Sudah cukup banyak pesan untuk hari ini, coba lagi besok, ya."
   },
   "solver": {
     "title": "Solver SAT",
@@ -90,7 +94,8 @@
     "guest": "tamu",
     "guest_name": "Tamu",
     "penalties": "petunjuk · cek",
-    "empty": "Belum ada yang menyeberang. Jadilah yang pertama!"
+    "empty": "Belum ada yang menyeberang. Jadilah yang pertama!",
+    "deleted": "pemain yang dihapus"
   },
   "board": {
     "label": "Papan Hashiwokakero",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Info legal",
     "privacy": "Privasi",
-    "english": "Versi bahasa Inggris"
+    "english": "Versi bahasa Inggris",
+    "contact": "Kontak"
   },
   "audio": {
     "sound": "Efek suara",

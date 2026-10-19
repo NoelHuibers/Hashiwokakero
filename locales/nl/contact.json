@@ -1,0 +1,17 @@
+{
+  "title": "Contact",
+  "description": "Vragen, ideeën of een bug in Hashi? Schrijf ons.",
+  "intro": "Een vraag, een idee, een bug of iets over je gegevens? Schrijf ons, we reageren zo snel mogelijk.",
+  "name": "Naam",
+  "email": "E-mail",
+  "optional": "optioneel",
+  "email_hint": "Alleen als je een antwoord wilt.",
+  "message": "Bericht",
+  "send": "Versturen",
+  "sending": "Bezig met versturen…",
+  "sent_title": "Bedankt!",
+  "sent": "Je bericht is aangekomen. Als je een e-mailadres hebt opgegeven, antwoorden we daar.",
+  "another": "Nog een bericht schrijven",
+  "privacy": "We gebruiken je bericht alleen om het te beantwoorden en verwijderen het uiterlijk na zes maanden. Meer in de <a>privacyverklaring</a>.",
+  "by_mail": "Liever per e-mail?"
+}

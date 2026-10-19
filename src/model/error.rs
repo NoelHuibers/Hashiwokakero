@@ -22,10 +22,15 @@ pub enum ApiError {
     DailyLocked,
     /// Only for admins.
     Forbidden,
+    /// Deleting an account needs its password.
+    WrongPassword,
+    EmailInvalid,
+    MessageInvalid,
+    TooManyMessages,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 20] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -42,6 +47,10 @@ impl ApiError {
         Self::AlreadyFinished,
         Self::DailyLocked,
         Self::Forbidden,
+        Self::WrongPassword,
+        Self::EmailInvalid,
+        Self::MessageInvalid,
+        Self::TooManyMessages,
     ];
 
     pub fn code(self) -> &'static str {
@@ -62,6 +71,10 @@ impl ApiError {
             Self::AlreadyFinished => "already_finished",
             Self::DailyLocked => "daily_locked",
             Self::Forbidden => "forbidden",
+            Self::WrongPassword => "wrong_password",
+            Self::EmailInvalid => "email_invalid",
+            Self::MessageInvalid => "message_invalid",
+            Self::TooManyMessages => "too_many_messages",
         }
     }
 
