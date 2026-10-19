@@ -120,6 +120,17 @@ CREATE TABLE IF NOT EXISTS stamps (
     PRIMARY KEY (user_id, stamp)
 );
 ",
+    "
+-- More stamps: what the move log of a finished daily says (model::Run as JSON, worked out once),
+-- and whether it was finished at night or over lunch in the player's own time (the time zone
+-- itself isn't kept)
+ALTER TABLE attempts ADD COLUMN run TEXT;
+ALTER TABLE attempts ADD COLUMN daypart TEXT;
+",
+    "
+-- The stamp a player chose to show next to their name on the leaderboards (NULL: none)
+ALTER TABLE users ADD COLUMN stamp TEXT;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

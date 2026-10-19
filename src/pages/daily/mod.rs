@@ -31,7 +31,7 @@ use crate::state::{DailyGame, Status, ToastKind, load, store, toast};
 use cover::Cover;
 use ranking::RankingCard;
 use result::ResultCard;
-use state::{Daily, LOG_KEY, SavedLog, browser_now};
+use state::{Daily, LOG_KEY, SavedLog, browser_now, browser_utc_offset};
 use week::WeekCard;
 
 #[component]
@@ -140,7 +140,7 @@ pub fn DailyPage() -> impl IntoView {
                 .filter(|l| l.day == day)
                 .map(|l| l.events)
                 .unwrap_or_default();
-            match submit_daily(day, bridges, moves, log).await {
+            match submit_daily(day, bridges, moves, log, Some(browser_utc_offset())).await {
                 Ok(result) => {
                     let end = browser_now() + daily.skew.get_untracked();
                     daily.update_attempt(|a| {

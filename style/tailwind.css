@@ -285,6 +285,12 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
     inset 0 0 0 5px var(--primary-foreground);
 }
 
+/* A hanko pressed in red ink: the stamp a player shows next to their name */
+.hanko-ink {
+  color: var(--primary);
+  box-shadow: inset 0 0 0 1.5px var(--primary);
+}
+
 .vertical-jp {
   writing-mode: vertical-rl;
   text-orientation: upright;

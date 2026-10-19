@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 
-use super::stamps::top_stamps;
+use super::stamps::shown_stamps;
 use super::today;
 use crate::model::{
     AllTimeEntry, HallOfFame, LAUNCH_DAY, MonthBoard, MonthEntry, month_days, month_of, points,
@@ -17,15 +17,16 @@ use crate::server::db::db_err;
 const BOARD_SIZE: usize = 20;
 
 /// Every ranked finish with its place among the day's ranked finishers (faster times first,
-/// earlier finishes break ties, like `daily::rank`), the number of them, and whether it was the
-/// first of the day to finish. `filter` picks the attempts before ranking, it has to keep whole
-/// days.
+/// earlier finishes break ties, like `daily::rank`), the number of them, whether it was the
+/// first of the day to finish, the time and the start. `filter` picks the attempts before
+/// ranking, it has to keep whole days.
 pub(super) fn placed(filter: &str) -> String {
     format!(
         "SELECT a.user_id, a.day, a.hints, a.checks, a.finished_at,
             ROW_NUMBER() OVER (PARTITION BY a.day ORDER BY a.time_ms, a.finished_at) AS place,
             COUNT(*) OVER (PARTITION BY a.day) AS finishers,
-            a.finished_at = MIN(a.finished_at) OVER (PARTITION BY a.day) AS first_finish
+            a.finished_at = MIN(a.finished_at) OVER (PARTITION BY a.day) AS first_finish,
+            a.time_ms, a.started_at
          FROM attempts a
          WHERE a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL AND ({filter})"
     )
@@ -113,7 +114,7 @@ pub async fn hall_of_fame(conn: &Connection) -> Result<HallOfFame, ServerFnError
         .flatten()
         .map(|e| e.user_id)
         .collect();
-    let stamps = top_stamps(conn, &ids).await?;
+    let stamps = shown_stamps(conn, &ids).await?;
     for e in fame
         .solved
         .iter_mut()
@@ -180,7 +181,7 @@ pub async fn month_board(
         .map(|i| list[i].0)
         .collect();
     let names = names(conn, &ids).await?;
-    let stamps = top_stamps(conn, &ids).await?;
+    let stamps = shown_stamps(conn, &ids).await?;
     let entry = |i: usize| {
         let (user, points, solved, _) = list[i];
         let (name, guest) = names.get(&user).cloned().unwrap_or_default();
