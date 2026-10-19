@@ -323,17 +323,18 @@ pub(crate) fn splr_proof(cnf: &Cnf) -> Option<Vec<u8>> {
                 _ => false,
             },
             // A conflict while loading the clauses, splr writes no proof then: the checker
-            // accepts the (empty or partial) file only if unit propagation refutes the formula
-            Err(Ok(Certificate::UNSAT)) => true,
+            // accepts the (empty or partial) file only if unit propagation refutes the formula.
+            // splr reports most of these as errors (found by tests/props.rs).
+            Err(
+                Ok(Certificate::UNSAT)
+                | Err(SolverError::EmptyClause | SolverError::RootLevelConflict(_)),
+            ) => true,
             Err(_) => false,
         }
     }))
     .unwrap_or(false);
-    if unsat {
-        std::fs::read(&file.0).ok()
-    } else {
-        None
-    }
+    // No file is an empty proof
+    unsat.then(|| std::fs::read(&file.0).unwrap_or_default())
 }
 
 /// `n` variables, 4.26·n clauses of three distinct variables: about half are satisfiable.

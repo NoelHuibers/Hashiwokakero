@@ -744,6 +744,22 @@ mod tests {
         );
     }
 
+    /// Found by the property tests (tests/props.rs): splr refutes these while loading them and
+    /// reports an error, which counted as "no proof" though unit propagation alone refutes them.
+    #[test]
+    fn formulas_splr_refutes_on_loading_are_proven() {
+        for clauses in [
+            vec![vec![1], vec![-1]],
+            vec![vec![1, 1, 1], vec![-1, -1, -1], vec![2, 3]],
+        ] {
+            let cnf = Cnf::new(3, clauses);
+            let proof = crate::bench::splr_proof(&cnf).expect("unsatisfiable");
+            assert_eq!(check(&cnf, &proof, BUDGET), Ok(()));
+        }
+        // Satisfiable ones still have none
+        assert_eq!(crate::bench::splr_proof(&Cnf::new(1, vec![vec![1, 1]])), None);
+    }
+
     /// A proof splr writes for PHP(5,4), checked, and broken versions of it rejected.
     #[test]
     fn splr_proofs_are_checked() {

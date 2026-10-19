@@ -22,6 +22,10 @@ pub mod drat;
 pub mod eval;
 #[cfg(feature = "bench")]
 pub mod output;
+// In a tests/ directory, so coverage doesn't count the tests themselves
+#[cfg(all(test, feature = "bench"))]
+#[path = "tests/props.rs"]
+mod props;
 #[cfg(feature = "runner")]
 pub mod sandbox;
 #[cfg(feature = "runner")]
