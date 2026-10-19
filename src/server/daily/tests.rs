@@ -19,7 +19,7 @@ struct TestDb {
 
 impl Drop for TestDb {
     fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.path);
+        db::remove_local(&self.path);
     }
 }
 

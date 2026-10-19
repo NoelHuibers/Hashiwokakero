@@ -5,7 +5,7 @@
 use dojo::{Family, FamilyScore, Score};
 use libsql::{Connection, params};
 
-use super::{MIGRATIONS, connect, migrate, migrate_to, open_local};
+use super::{MIGRATIONS, connect, migrate, migrate_to, open_local, remove_local};
 use crate::golden::puzzle;
 use crate::model::{DojoState, Flag, Stamp};
 use crate::server::auth::user_by_id;
@@ -21,14 +21,14 @@ struct TestDb {
 
 impl Drop for TestDb {
     fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.path);
+        remove_local(&self.path);
     }
 }
 
 async fn test_db(version: usize) -> TestDb {
     let path =
         std::env::temp_dir().join(format!("hashi-migrate-{version}-{}.db", std::process::id()));
-    let _ = std::fs::remove_file(&path);
+    remove_local(&path);
     let database = open_local(path.to_str().unwrap()).await.unwrap();
     let conn = database.connect().unwrap();
     TestDb {
@@ -239,7 +239,7 @@ async fn old_databases_migrate_with_their_data() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_write_waits_for_another_one() {
     let path = std::env::temp_dir().join(format!("hashi-busy-{}.db", std::process::id()));
-    let _ = std::fs::remove_file(&path);
+    remove_local(&path);
     let database = open_local(path.to_str().unwrap()).await.unwrap();
     let first = connect(&database).unwrap();
     let second = connect(&database).unwrap();
@@ -265,5 +265,57 @@ async fn a_write_waits_for_another_one() {
         .unwrap();
     commit.await.unwrap();
     assert_eq!(count(&second, "SELECT COUNT(*) FROM users").await, 2);
-    let _ = std::fs::remove_file(&path);
+    remove_local(&path);
+}
+
+/// A request still reading (its query's statement not run to the end) while another one writes.
+/// In SQLite's default rollback journal mode the open read kept a lock on the file, the write
+/// couldn't commit until the read was over and failed with "database is locked" after the busy
+/// timeout (the browser tests' sign ins did that: they kept their query open while the password
+/// hash was checked). Local files are in WAL mode, there a read never holds up a write.
+#[tokio::test]
+async fn a_read_in_progress_doesnt_hold_up_a_write() {
+    let path = std::env::temp_dir().join(format!("hashi-wal-{}.db", std::process::id()));
+    remove_local(&path);
+    let database = open_local(path.to_str().unwrap()).await.unwrap();
+    let reader = connect(&database).unwrap();
+    let writer = connect(&database).unwrap();
+    migrate(&reader).await.unwrap();
+    let mut rows = writer.query("PRAGMA journal_mode", ()).await.unwrap();
+    let mode: String = rows.next().await.unwrap().unwrap().get(0).unwrap();
+    assert_eq!(mode, "wal");
+    drop(rows);
+    writer
+        .execute_batch(
+            "INSERT INTO users (username, name, created_at) VALUES ('first', 'first', 1);
+             INSERT INTO users (username, name, created_at) VALUES ('second', 'second', 2);",
+        )
+        .await
+        .unwrap();
+
+    // One row read, the statement goes on
+    let mut rows = reader
+        .query("SELECT id FROM users ORDER BY id", ())
+        .await
+        .unwrap();
+    assert!(rows.next().await.unwrap().is_some());
+    let started = std::time::Instant::now();
+    writer
+        .execute(
+            "INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES ('ab', 1, 1, 2)",
+            (),
+        )
+        .await
+        .unwrap_or_else(|e| panic!("a write behind a read in progress: {e}"));
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(1),
+        "the write waited for the read: {:?}",
+        started.elapsed()
+    );
+    // The read goes on where it was, then sees the write
+    assert!(rows.next().await.unwrap().is_some());
+    drop(rows);
+    assert_eq!(count(&reader, "SELECT COUNT(*) FROM sessions").await, 1);
+    drop((reader, writer, database));
+    remove_local(&path);
 }
