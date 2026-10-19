@@ -14,20 +14,26 @@ const layout = (page: Page) =>
     .locator('g.island')
     .evaluateAll((islands) => islands.map((g) => `${g.getAttribute('transform')}:${g.textContent}`).join(' '));
 
-/** The middle of the water between an island and its right neighbour, in page coordinates. */
+/**
+ * The middle of the water between an island and its right neighbour, in the viewport
+ * coordinates the mouse and touchscreen take. Computed from the islands' cells: their boxes
+ * also hold the trees and gates on them, and were off centre.
+ */
 async function gap(page: Page) {
   await board(page).scrollIntoViewIfNeeded();
   const point = await board(page)
     .locator('g.island')
     .evaluateAll((islands) => {
-      const rects = islands.map((g) => g.getBoundingClientRect());
-      for (const a of rects) {
-        const right = rects
-          .filter((b) => Math.abs(b.y - a.y) < 2 && b.x > a.x)
-          .sort((p, q) => p.x - q.x)[0];
+      const svg = (islands[0] as SVGGElement).ownerSVGElement!;
+      const toPage = svg.getScreenCTM()!;
+      // translate(x,y) in board units, 16 per cell
+      const cells = islands.map((g) => g.getAttribute('transform')!.match(/-?[\d.]+/g)!.map(Number));
+      for (const [x, y] of cells) {
+        const right = cells.filter(([bx, by]) => by === y && bx > x).sort((p, q) => p[0] - q[0])[0];
         // At least one empty cell between them, so the point is on water and not an island
-        if (right && right.x - (a.x + a.width) > a.width / 2) {
-          return { x: (a.x + a.width + right.x) / 2, y: a.y + a.height / 2 };
+        if (right && right[0] - x >= 32) {
+          const p = new DOMPoint((x + right[0]) / 2 + 8, y + 8).matrixTransform(toPage);
+          return { x: p.x, y: p.y };
         }
       }
       return null;

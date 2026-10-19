@@ -152,7 +152,8 @@ jobs:
         env:
           E2E_BIN: dist/hashi
           E2E_SITE_ROOT: dist/site
-      - if: failure()
+      # Also when everything passed: a test that only passed on its retry is in it with a trace
+      - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: e2e-report
