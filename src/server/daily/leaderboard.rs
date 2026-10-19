@@ -5,7 +5,7 @@ use libsql::{Connection, params};
 
 use super::attempt::rank;
 use super::finishers;
-use super::stamps::top_stamps;
+use super::stamps::shown_stamps;
 use crate::model::{Leaderboard, LeaderboardEntry, daily_difficulty};
 use crate::server::count;
 use crate::server::db::db_err;
@@ -71,7 +71,7 @@ pub async fn leaderboard(
     }
 
     let ids: Vec<i64> = entries.iter().chain(&mine).map(|e| e.user_id).collect();
-    let stamps = top_stamps(conn, &ids).await?;
+    let stamps = shown_stamps(conn, &ids).await?;
     for e in entries.iter_mut().chain(&mut mine) {
         e.stamp = stamps.get(&e.user_id).copied();
     }

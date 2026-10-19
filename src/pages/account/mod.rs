@@ -116,6 +116,7 @@ pub fn AccountPage() -> impl IntoView {
                         .get()
                         .filter(|s| !s.stamps.is_empty())
                         .map(|s| {
+                            let shown = RwSignal::new(s.shown);
                             view! {
                                 <Card class="gap-4 md:order-last md:col-span-2">
                                     <CardHeader>
@@ -125,7 +126,7 @@ pub fn AccountPage() -> impl IntoView {
                                         <CardDescription>{t!(i18n, stamps.intro)}</CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <StampBook book=s.stamps players=s.players />
+                                        <StampBook book=s.stamps players=s.players shown pick=true />
                                     </CardContent>
                                 </Card>
                             }

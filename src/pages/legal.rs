@@ -88,6 +88,13 @@ const PRIVACY_DE: &[Section] = &[
         ],
     ),
     (
+        "Stempel",
+        &[
+            "Für die Stempel im Stempelheft werten wir deine Ergebnisse und das Protokoll deiner Züge aus, etwa deine Zeit, deinen Platz oder ob du eine Brücke wieder weggenommen hast. Deine Stempel sind auf deinem Spielerprofil und in den Ranglisten öffentlich sichtbar.",
+            "Für die Stempel zur Tageszeit schickt dein Browser beim Lösen eines Tagesrätsels seine Zeitzone mit. Wir speichern die Zeitzone nicht, sondern nur, ob du nachts (0–4 Uhr) oder mittags (12–14 Uhr) deiner Ortszeit fertig geworden bist. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Spiels).",
+        ],
+    ),
+    (
         "Schriftarten",
         &[
             "Alle Schriftarten liegen auf unserem eigenen Server. Es werden keine Daten an Google Fonts oder andere Drittanbieter übermittelt.",
@@ -132,6 +139,12 @@ const PRIVACY_EN: &[Section] = &[
         "Fair play",
         &[
             "To keep the leaderboard fair we store the log of your moves for each daily (which bridge was set when). Your browser keeps a random device ID in local storage for this; the server stores it only as a hash that changes every day, and uses it only to see whether the same device already started the daily with another account. For SAT Dojo submissions we store a hash of your IP address, also different every day and not reversible, to limit submissions per network (Art. 6 (1) f GDPR, preventing fraud).",
+        ],
+    ),
+    (
+        "Stamps",
+        &[
+            "For the stamps in the stamp book we look at your results and your move log, such as your time, your place or whether you took a bridge away again. Your stamps are public on your player profile and on the leaderboards. For the time-of-day stamps your browser sends its time zone when you finish a daily; we don't store the time zone, only whether you finished at night (midnight to 4 am) or over lunch (noon to 2 pm) in your local time (Art. 6 (1) b GDPR).",
         ],
     ),
     (

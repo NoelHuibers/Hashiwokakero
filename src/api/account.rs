@@ -3,7 +3,7 @@
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
-use crate::model::{PlayerProfile, UserInfo, UserStats};
+use crate::model::{PlayerProfile, Stamp, UserInfo, UserStats};
 #[cfg(feature = "ssr")]
 use crate::server::{auth, daily, db};
 
@@ -48,4 +48,14 @@ pub async fn my_stats() -> Result<Option<UserStats>, ServerFnError> {
 #[server(input = Json)]
 pub async fn load_player(id: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
     daily::profile(&db::conn()?, id).await
+}
+
+/// Shows one of the current user's stamps next to their name on the leaderboards, or none.
+#[server(input = Json)]
+pub async fn show_stamp(stamp: Option<Stamp>) -> Result<(), ServerFnError> {
+    let conn = db::conn()?;
+    let user = auth::current_user(&conn)
+        .await?
+        .ok_or_else(|| crate::model::ApiError::SessionExpired.fail())?;
+    daily::show_stamp(&conn, user.id, stamp).await
 }

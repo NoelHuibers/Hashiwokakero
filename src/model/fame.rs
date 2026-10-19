@@ -17,7 +17,7 @@ pub struct AllTimeEntry {
     pub bronze: i64,
     pub best_streak: i64,
     pub current_streak: i64,
-    /// The player's most impressive stamp.
+    /// The stamp the player chose to show next to their name.
     pub stamp: Option<Stamp>,
 }
 
