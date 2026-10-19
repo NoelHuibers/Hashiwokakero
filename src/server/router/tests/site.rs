@@ -105,6 +105,13 @@ async fn hashed_files_are_cached_for_good() {
         assert_status(&res, StatusCode::OK);
         assert_eq!(res.headers()[CACHE_CONTROL], cache, "{path}");
     }
+    // A hashed name that isn't there (a page from another deploy, say): a browser would keep
+    // the error for a year
+    for path in ["/pkg/hashi.fedcba98.js", "/fonts/murecho.fedcba98.woff2"] {
+        let res = browser.get(path).await;
+        assert_status(&res, StatusCode::NOT_FOUND);
+        assert_eq!(res.headers()[CACHE_CONTROL], "no-cache", "{path}");
+    }
     let called = browser.call_with_headers(crate::api::CurrentUser {}).await;
     called.result.unwrap();
     assert_eq!(called.headers[CACHE_CONTROL], "no-cache");
