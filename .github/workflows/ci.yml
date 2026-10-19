@@ -237,7 +237,9 @@ jobs:
   # shards that run side by side (fullyParallel: by test, not by file, the screenshot tests
   # included); each starts its own servers on a freshly seeded database (e2e/global-setup.ts).
   e2e-shard:
-    name: E2E shard ${{ matrix.shard }}/2
+    # GitHub adds the shard to the name, E2E shard (1) and (2); never just E2E, the required
+    # check below
+    name: E2E shard
     needs: [build, build-browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 20

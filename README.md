@@ -104,7 +104,7 @@ pnpm run e2e:update-snapshots         # take the screenshots again, after a chan
 
 ## Deployment
 
-Pushes to `main` deploy to [fly.io](https://fly.io) once CI passes: CI builds the site and the dojo worker with its warm cache and ships them in slim Debian trixie images (`Dockerfile.prebuilt`, `dojo/Dockerfile.prebuilt`), built on the runner. The multi-stage `Dockerfile` (Node 26 and pnpm for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime) builds everything from source, for a manual `fly deploy` or a local image. Dependabot keeps Cargo, npm (pnpm-lock.yaml), Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request and runs the browser tests on its release build.
+Pushes to `main` deploy to [fly.io](https://fly.io) once CI passes: CI builds the site and the dojo worker with its warm cache and ships them in slim Debian trixie images (`Dockerfile.prebuilt`, `dojo/Dockerfile.prebuilt`), built on the runner. The multi-stage `Dockerfile` (Node 26 and pnpm for the npm packages, Rust 1.99 + cargo-leptos for the build, Debian trixie slim at runtime) builds everything from source, for a manual `fly deploy` or a local image. Dependabot keeps Cargo, npm (pnpm-lock.yaml), Docker and GitHub Actions dependencies up to date, CI tests and lints every pull request and runs the browser tests on its release build, in two shards side by side (one HTML report, the `e2e-report` artifact). A pull request that only changes docs (`*.md`, `*.pdf`, `LICENSE` files) skips the lints, tests and builds; their checks show as skipped, which counts as passed.
 
 ## SAT Dojo
 
