@@ -323,12 +323,18 @@ async fn solvers_refuse_the_live_daily() {
             .collect(),
     );
     assert!(locked(&conn, Some(player), &mirrored).await.unwrap());
-    // Another puzzle isn't locked, and the daily unlocks once you gave up or finished
+    // Another puzzle isn't locked (a Monday, quick to generate, but not today's), and the daily
+    // unlocks once you gave up or finished
+    let other = if today() == MONDAY {
+        MONDAY + 7
+    } else {
+        MONDAY
+    };
     assert!(
         !locked(
             &conn,
             None,
-            &get_or_create(&conn, MONDAY).await.unwrap().puzzle
+            &get_or_create(&conn, other).await.unwrap().puzzle
         )
         .await
         .unwrap()
