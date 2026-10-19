@@ -22,7 +22,9 @@ async fn main() {
         .join("fonts/fonts.css")
         .exists()
     {
-        eprintln!("warning: the fonts are missing, run `npm ci` (or `npm run fonts`) and rebuild");
+        eprintln!(
+            "warning: the fonts are missing, run `pnpm install` (or `pnpm run fonts`) and rebuild"
+        );
     }
 
     // The routes live in the library (server/router), where the tests drive them

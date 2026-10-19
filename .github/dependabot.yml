@@ -20,6 +20,7 @@ updates:
           - minor
           - patch
 
+  # Reads and updates pnpm-lock.yaml
   - package-ecosystem: npm
     directory: /
     schedule:

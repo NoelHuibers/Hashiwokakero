@@ -209,7 +209,7 @@ site-pkg-dir = "pkg"
 # server binary. Every deploy gets new URLs, so browsers never keep a stale stylesheet, and the
 # server can send them with long-lived cache headers (see server/router).
 hash-files = true
-# Tailwind v4 entry point, configured in CSS. It imports tw-animate-css from node_modules (npm ci).
+# Tailwind v4 entry point, configured in CSS. It imports tw-animate-css from node_modules (pnpm install).
 tailwind-input-file = "style/tailwind.css"
 # Rebuild when translations change
 watch-additional-files = ["locales"]

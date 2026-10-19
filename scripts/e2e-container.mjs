@@ -2,9 +2,9 @@
 // only place the screenshots of e2e/tests/visual.spec.ts match, fonts and rendering differ
 // from one system to the next.
 //
-//   npm run e2e:container                      every test, the screenshots included
-//   npm run e2e:container -- -g "practice"     arguments go to `playwright test`
-//   npm run e2e:update-snapshots               take the screenshots again, after a change on purpose
+//   pnpm run e2e:container                     every test, the screenshots included
+//   pnpm run e2e:container -g "practice"        arguments go to `playwright test`
+//   pnpm run e2e:update-snapshots              take the screenshots again, after a change on purpose
 //
 // Needs podman or docker, and the build the tests run on (`cargo leptos build --release`, or
 // E2E_BIN and E2E_SITE_ROOT, see the README). The image's tag is the version of @playwright/test
@@ -61,8 +61,8 @@ const args = [
   '/work',
   ...Object.entries(env).flatMap(([k, v]) => (v === undefined ? [] : ['-e', `${k}=${v}`])),
   image,
-  'npx',
-  'playwright',
+  // The image has no pnpm, the bin pnpm links runs with the image's node
+  'node_modules/.bin/playwright',
   'test',
   '-c',
   'e2e',
