@@ -21,6 +21,7 @@ use libsql::{Connection, params};
 use sha2::{Digest, Sha256};
 
 use super::db::db_err;
+use super::names;
 use super::{hex, now_ms, run_blocking};
 use crate::model::{ApiError, MS_PER_DAY, RENAME_EVERY_DAYS, UserInfo};
 
@@ -49,6 +50,7 @@ impl User {
             guest: self.username.is_none(),
             created_at: self.created_at,
             admin: super::admin::is_admin(self),
+            name_locked: super::admin::listing(self) == Some(super::admin::Listed::Name),
             renamed_at: self.renamed_at,
         }
     }
@@ -218,16 +220,20 @@ pub async fn ensure_user(conn: &Connection) -> Result<User, ServerFnError> {
     })
 }
 
-pub fn validate_username(username: &str) -> Result<(), ServerFnError> {
+/// 3 to 20 letters, digits, `_` and `-`, none of the words the boards don't want, and nothing
+/// that looks official unless `official` (admins, see `server/names.rs`).
+pub fn validate_username(username: &str, official: bool) -> Result<(), ServerFnError> {
     let ok_len = (3..=20).contains(&username.chars().count());
     let ok_chars = username
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
-    if ok_len && ok_chars {
-        Ok(())
-    } else {
-        Err(ApiError::UsernameInvalid.into())
+    if !(ok_len && ok_chars) {
+        return Err(ApiError::UsernameInvalid.into());
     }
+    if names::blocked(username).is_some() || (names::reserved(username).is_some() && !official) {
+        return Err(ApiError::UsernameNotAllowed.into());
+    }
+    Ok(())
 }
 
 pub fn validate_password(password: &str) -> Result<(), ServerFnError> {
@@ -264,7 +270,7 @@ pub async fn register(
     username: &str,
     password: String,
 ) -> Result<User, ServerFnError> {
-    validate_username(username)?;
+    validate_username(username, super::admin::admin_username(username))?;
     validate_password(&password)?;
     let hash = hash_password(password).await?;
     let current = current_user(conn).await?;
@@ -309,8 +315,8 @@ pub async fn register(
 /// The username is also the name on the leaderboards, old ones included, so it can only change
 /// once in [`RENAME_EVERY_DAYS`]: names on the boards don't keep changing under the players.
 ///
-/// Admins keep their names: `HASHI_ADMINS` lists usernames, a freed one would make whoever
-/// registers it next an admin.
+/// Admins listed by username in `HASHI_ADMINS` keep their names: freed, one would make whoever
+/// registers it next an admin. Listed by id, they rename like everyone else.
 pub async fn change_username(
     conn: &Connection,
     username: &str,
@@ -322,11 +328,12 @@ pub async fn change_username(
     let Some(current) = user.username.clone() else {
         return Err(ApiError::Forbidden.into());
     };
-    validate_username(username)?;
+    let admin = super::admin::listing(&user);
+    validate_username(username, admin.is_some())?;
     if username == current {
         return Ok(user);
     }
-    if super::admin::is_admin(&user) {
+    if admin == Some(super::admin::Listed::Name) {
         return Err(ApiError::Forbidden.into());
     }
     let now = now_ms();
@@ -610,12 +617,12 @@ mod tests {
 
     #[test]
     fn usernames() {
-        assert!(validate_username("noel").is_ok());
-        assert!(validate_username("Bridge_Builder-99").is_ok());
-        assert!(validate_username("ab").is_err());
-        assert!(validate_username("has space").is_err());
-        assert!(validate_username("ünïcode").is_err());
-        assert!(validate_username(&"x".repeat(21)).is_err());
+        assert!(validate_username("noel", false).is_ok());
+        assert!(validate_username("Bridge_Builder-99", false).is_ok());
+        assert!(validate_username("ab", false).is_err());
+        assert!(validate_username("has space", false).is_err());
+        assert!(validate_username("ünïcode", false).is_err());
+        assert!(validate_username(&"x".repeat(21), false).is_err());
     }
 
     #[test]

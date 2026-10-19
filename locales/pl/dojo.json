@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Najpierw zaloguj się na zarejestrowane konto.",
       "name": "Nadaj solverowi nazwę o długości do 40 znaków.",
+      "name_not_allowed": "Ta nazwa nie jest tu dozwolona, wybierz inną.",
       "description": "Opis może mieć najwyżej 600 znaków.",
       "url": "Link do kodu źródłowego musi być adresem https://.",
       "size": "Plik jest za duży, limit to 8 MiB.",

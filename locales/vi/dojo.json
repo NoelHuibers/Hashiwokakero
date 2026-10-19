@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Vui lòng đăng nhập bằng tài khoản đã đăng ký trước.",
       "name": "Hãy đặt tên cho bộ giải, tối đa 40 ký tự.",
+      "name_not_allowed": "Tên này không được phép dùng ở đây, vui lòng chọn tên khác.",
       "description": "Mô tả chỉ được tối đa 600 ký tự.",
       "url": "Liên kết mã nguồn phải là địa chỉ https://.",
       "size": "Tệp quá lớn, giới hạn là 8 MiB.",

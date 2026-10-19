@@ -19,6 +19,7 @@ fn submit_error(locale: Locale, code: &str) -> String {
     match code {
         "sign_in" => td_string!(locale, dojo.submit.errors.sign_in),
         "name" => td_string!(locale, dojo.submit.errors.name),
+        "name_not_allowed" => td_string!(locale, dojo.submit.errors.name_not_allowed),
         "description" => td_string!(locale, dojo.submit.errors.description),
         "url" => td_string!(locale, dojo.submit.errors.url),
         "size" => td_string!(locale, dojo.submit.errors.size),

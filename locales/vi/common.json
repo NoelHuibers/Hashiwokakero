@@ -70,7 +70,8 @@
     "email_invalid": "Đây có vẻ không phải là địa chỉ email.",
     "message_invalid": "Vui lòng viết từ 10 đến 5000 ký tự.",
     "too_many_messages": "Hôm nay bạn đã gửi đủ tin nhắn rồi, vui lòng thử lại vào ngày mai.",
-    "rename_too_soon": "Bạn vừa đổi tên người dùng gần đây, vui lòng thử lại sau."
+    "rename_too_soon": "Bạn vừa đổi tên người dùng gần đây, vui lòng thử lại sau.",
+    "username_not_allowed": "Tên này không được phép dùng ở đây, vui lòng chọn tên khác."
   },
   "solver": {
     "title": "Bộ giải SAT",

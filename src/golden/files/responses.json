@@ -5,7 +5,8 @@
     "guest": false,
     "created_at": 1750000000000,
     "admin": true,
-    "renamed_at": 1755000000000
+    "renamed_at": 1755000000000,
+    "name_locked": false
   },
   "daily": {
     "day": 20381,
@@ -330,7 +331,8 @@
     "flagged": 1,
     "dojo_pending": 2,
     "dojo_total": 30,
-    "messages": 3
+    "messages": 3,
+    "names": 1
   },
   "admin_attempt": {
     "user_id": 7,

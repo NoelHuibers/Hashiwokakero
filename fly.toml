@@ -8,9 +8,10 @@ primary_region = "ams"
 
 [build]
 
-# Usernames that can open the admin dashboard (comma separated)
+# Accounts that can open the admin dashboard, comma separated: user ids (2 is Noel), or usernames
+# (who then can't change them, see server/admin.rs)
 [env]
-  HASHI_ADMINS = "Noel"
+  HASHI_ADMINS = "2"
 
 [http_service]
   internal_port = 8080

@@ -1,5 +1,5 @@
 // The account page: a wrong password, changing the username, and deleting the account for good.
-import { register, signInWith, signOut } from '../account';
+import { fillAuthForm, register, signInWith, signOut } from '../account';
 import { allow, expect, newUsername, test, visit } from '../fixtures';
 
 const PASSWORD = 'eight-planks-wide';
@@ -96,4 +96,17 @@ test('change the username, then not again for a month', async ({ page, problems 
   allow(problems, /\/api\/login/, /status of 4\d\d|status of 5\d\d/);
   await signInWith(page, renamed, PASSWORD);
   await expect(page.getByRole('heading', { name: `こんにちは, ${renamed}` })).toBeVisible();
+});
+
+test('a name the boards do not want is refused, in the player\'s language', async ({ page, problems }) => {
+  await visit(page, '/account');
+  await fillAuthForm(page, 'Big_Ass_Bridges', PASSWORD);
+  await page.getByRole('button', { name: /^Create account 登録/ }).click();
+  await expect(page.getByText("This name isn't allowed here, please choose another one.")).toBeVisible();
+  allow(problems, /\/api\/register/, /status of 4\d\d|status of 5\d\d/);
+  await expect(page.getByRole('heading', { name: 'Your account' })).toBeVisible();
+
+  // Another one goes through
+  const username = newUsername('clean');
+  await register(page, username, PASSWORD);
 });

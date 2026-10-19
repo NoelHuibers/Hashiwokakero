@@ -1,4 +1,4 @@
-//! The admin dashboard (`/admin`, for the usernames in `HASHI_ADMINS`) and the same tools for
+//! The admin dashboard (`/admin`, for the accounts in `HASHI_ADMINS`) and the same tools for
 //! scripts (`HASHI_ADMIN_TOKEN` as bearer token):
 //!
 //! - `GET /admin/attempt?user=&day=` shows an attempt with its move log
@@ -14,24 +14,58 @@ use serde::Deserialize;
 
 use super::auth::{self, User};
 use super::db::db_err;
-use super::{daily, db, dojo};
+use super::{daily, db, dojo, names};
 use crate::model::{
-    AdminAttempt, AdminOverview, AdminSubmission, ApiError, DojoState, Flag, MoveEvent,
-    SubmissionAction, summarize_log,
+    AdminAttempt, AdminOverview, AdminSubmission, ApiError, DojoState, Flag, FlaggedName,
+    MoveEvent, NameKind, SubmissionAction, neutral_name, summarize_log,
 };
 
-/// Whether the user is an admin: a registered account whose username is in `HASHI_ADMINS`
-/// (comma separated, case doesn't matter).
-pub fn is_admin(user: &User) -> bool {
-    listed(&super::env_var("HASHI_ADMINS").unwrap_or_default(), user)
+/// How `HASHI_ADMINS` (comma separated) lists an admin.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Listed {
+    /// By user id (`2`): the account is the admin, whatever its name.
+    Id,
+    /// By username, the older way (case doesn't matter). Such an admin keeps their name: freed, it
+    /// would make whoever registers it next an admin.
+    Name,
 }
 
-fn listed(admins: &str, user: &User) -> bool {
-    user.username.as_deref().is_some_and(|name| {
-        admins
-            .split(',')
-            .any(|a| !a.trim().is_empty() && a.trim().eq_ignore_ascii_case(name))
-    })
+/// Whether the user is an admin: a registered account listed in `HASHI_ADMINS`.
+pub fn is_admin(user: &User) -> bool {
+    listing(user).is_some()
+}
+
+/// How `HASHI_ADMINS` lists the user, `None` if they are no admin. Guests never are.
+pub fn listing(user: &User) -> Option<Listed> {
+    let username = user.username.as_deref()?;
+    listed(&admins(), user.id, username)
+}
+
+/// Whether `HASHI_ADMINS` lists this username (not an id).
+pub fn admin_username(name: &str) -> bool {
+    entries(&admins()).any(|a| a.parse::<i64>().is_err() && a.eq_ignore_ascii_case(name))
+}
+
+fn admins() -> String {
+    super::env_var("HASHI_ADMINS").unwrap_or_default()
+}
+
+fn entries(admins: &str) -> impl Iterator<Item = &str> {
+    admins.split(',').map(str::trim).filter(|a| !a.is_empty())
+}
+
+/// An entry that is a number is an id, never a username: "123" doesn't make the player who
+/// registers the username 123 an admin.
+fn listed(admins: &str, id: i64, username: &str) -> Option<Listed> {
+    let mut by_name = false;
+    for entry in entries(admins) {
+        match entry.parse::<i64>() {
+            Ok(listed) if listed == id => return Some(Listed::Id),
+            Ok(_) => {}
+            Err(_) => by_name |= entry.eq_ignore_ascii_case(username),
+        }
+    }
+    by_name.then_some(Listed::Name)
 }
 
 /// The signed in admin, or `Forbidden`.
@@ -87,7 +121,72 @@ pub async fn overview(conn: &Connection) -> Result<AdminOverview, ServerFnError>
         .await?,
         dojo_total: count(conn, "SELECT COUNT(*) FROM dojo_submissions WHERE ?1 = ?1", day).await?,
         messages: count(conn, "SELECT COUNT(*) FROM contact_messages WHERE ?1 = ?1", day).await?,
+        names: super::count(flagged_names(conn).await?.len()),
     })
+}
+
+/// Names of players and Dojo solvers the list of blocked names flags. Guests have generated
+/// names, players renamed by an admin a neutral one.
+pub async fn flagged_names(conn: &Connection) -> Result<Vec<FlaggedName>, ServerFnError> {
+    let mut out = Vec::new();
+    let mut rows = conn
+        .query(
+            "SELECT id, name, username FROM users
+             WHERE username IS NOT NULL AND deleted_at IS NULL ORDER BY id",
+            (),
+        )
+        .await
+        .map_err(db_err)?;
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        let id: i64 = row.get(0).map_err(db_err)?;
+        let name: String = row.get(1).map_err(db_err)?;
+        let username: String = row.get(2).map_err(db_err)?;
+        if name == neutral_name(id) {
+            continue;
+        }
+        let admin = listed(&admins(), id, &username).is_some();
+        let word = names::blocked(&name).or_else(|| names::reserved(&name).filter(|_| !admin));
+        if let Some(word) = word {
+            out.push(FlaggedName {
+                kind: NameKind::Player,
+                id,
+                name,
+                word: word.into(),
+            });
+        }
+    }
+    let mut rows = conn
+        .query("SELECT id, name FROM dojo_submissions ORDER BY id", ())
+        .await
+        .map_err(db_err)?;
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        let name: String = row.get(1).map_err(db_err)?;
+        if let Some(word) = names::blocked(&name) {
+            out.push(FlaggedName {
+                kind: NameKind::Solver,
+                id: row.get(0).map_err(db_err)?,
+                name,
+                word: word.into(),
+            });
+        }
+    }
+    Ok(out)
+}
+
+/// Gives a player the neutral name, on every board. `None` if there is no such player.
+///
+/// The username stays, so they can still sign in, and they can choose a new name right away (it
+/// doesn't count as their monthly change).
+pub async fn rename_player(conn: &Connection, user: i64) -> Result<Option<String>, ServerFnError> {
+    let name = neutral_name(user);
+    let changed = conn
+        .execute(
+            "UPDATE users SET name = ?2, renamed_at = NULL WHERE id = ?1 AND deleted_at IS NULL",
+            params![user, name.clone()],
+        )
+        .await
+        .map_err(db_err)?;
+    Ok((changed != 0).then_some(name))
 }
 
 /// Every attempt of a day, finished ones fastest first, with a summary of the move log.
@@ -151,7 +250,7 @@ pub async fn log(conn: &Connection, user: i64, day: i64) -> Result<Vec<MoveEvent
 pub async fn submissions(conn: &Connection) -> Result<Vec<AdminSubmission>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT s.id, s.name, COALESCE(u.username, u.name, 'Hashi'), s.house, s.state, s.season,
+            "SELECT s.id, s.name, COALESCE(u.name, 'Hashi'), s.house, s.state, s.season,
                     s.solved, s.total, s.par2, s.wrong, s.similar_to, s.created_at
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id
              ORDER BY s.created_at DESC LIMIT 200",
@@ -328,12 +427,25 @@ mod tests {
 
     #[test]
     fn admins_by_username() {
-        assert!(listed("Noel", &user(Some("noel"))));
-        assert!(listed(" alice , Noel ", &user(Some("NOEL"))));
-        assert!(!listed("Noel", &user(Some("noelle"))));
-        // Guests have no username, an empty list has no admins
-        assert!(!listed("Noel", &user(None)));
-        assert!(!listed("", &user(Some(""))));
-        assert!(!listed(",", &user(Some("noel"))));
+        assert_eq!(listed("Noel", 7, "noel"), Some(Listed::Name));
+        assert_eq!(listed(" alice , Noel ", 7, "NOEL"), Some(Listed::Name));
+        assert_eq!(listed("Noel", 7, "noelle"), None);
+        // An empty list has no admins, guests have no username
+        assert_eq!(listed("", 7, ""), None);
+        assert_eq!(listed(",", 7, "noel"), None);
+        assert!(is_admin(&user(Some("HTTP_admin"))));
+        assert!(!is_admin(&user(None)));
+        assert!(admin_username("http_ADMIN"));
+    }
+
+    #[test]
+    fn admins_by_id() {
+        assert_eq!(listed("2", 2, "noel"), Some(Listed::Id));
+        assert_eq!(listed("Noel, 2", 2, "noel"), Some(Listed::Id));
+        assert_eq!(listed(" 5 ,2 ", 2, "anyone"), Some(Listed::Id));
+        assert_eq!(listed("2", 3, "noel"), None);
+        // A number is an id, never the username of that name
+        assert_eq!(listed("123", 7, "123"), None);
+        assert!(!admin_username("900001"));
     }
 }

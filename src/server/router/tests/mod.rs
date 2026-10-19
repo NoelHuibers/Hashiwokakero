@@ -34,8 +34,10 @@ use tokio::sync::{Mutex, MutexGuard, OnceCell};
 use crate::model::ApiError;
 use crate::server::{auth, daily, db};
 
-/// The username of the admin, see [`env_var`].
+/// The admin listed by username, see [`env_var`].
 const ADMIN: &str = "http_admin";
+/// The admin listed by user id, see `accounts::admins_by_id_change_their_names`.
+const ADMIN_ID: i64 = 900_001;
 /// `HASHI_ADMIN_TOKEN` of the tests.
 const ADMIN_TOKEN: &str = "admin-token-for-tests";
 const PASSWORD: &str = "correct horse";
@@ -43,7 +45,7 @@ const PASSWORD: &str = "correct horse";
 /// The settings the tests run with, instead of environment variables (see `server::env_var`).
 pub(in crate::server) fn env_var(name: &str) -> Option<&'static str> {
     match name {
-        "HASHI_ADMINS" => Some(ADMIN),
+        "HASHI_ADMINS" => Some("http_admin, 900001"),
         "HASHI_ADMIN_TOKEN" => Some(ADMIN_TOKEN),
         _ => None,
     }

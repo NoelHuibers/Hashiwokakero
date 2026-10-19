@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Masuk dulu dengan akun terdaftar.",
       "name": "Beri solvermu nama maksimal 40 karakter.",
+      "name_not_allowed": "Nama ini tidak diizinkan di sini, pilih nama lain, ya.",
       "description": "Deskripsi maksimal 600 karakter.",
       "url": "Tautan sumber harus berupa alamat https://.",
       "size": "File terlalu besar, batasnya 8 MiB.",

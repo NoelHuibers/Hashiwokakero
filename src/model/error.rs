@@ -29,10 +29,12 @@ pub enum ApiError {
     TooManyMessages,
     /// The username was changed less than `RENAME_EVERY_DAYS` ago.
     RenameTooSoon,
+    /// A word of the list of names that aren't welcome (`server/blocked_names.txt`).
+    UsernameNotAllowed,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 21] = [
+    pub const ALL: [Self; 22] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -54,6 +56,7 @@ impl ApiError {
         Self::MessageInvalid,
         Self::TooManyMessages,
         Self::RenameTooSoon,
+        Self::UsernameNotAllowed,
     ];
 
     pub fn code(self) -> &'static str {
@@ -79,6 +82,7 @@ impl ApiError {
             Self::MessageInvalid => "message_invalid",
             Self::TooManyMessages => "too_many_messages",
             Self::RenameTooSoon => "rename_too_soon",
+            Self::UsernameNotAllowed => "username_not_allowed",
         }
     }
 

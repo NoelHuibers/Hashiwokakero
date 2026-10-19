@@ -4,7 +4,8 @@ use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
 use crate::model::{
-    AdminAttempt, AdminOverview, AdminSubmission, ContactMessage, Flag, MoveEvent, SubmissionAction,
+    AdminAttempt, AdminOverview, AdminSubmission, ContactMessage, Flag, FlaggedName, MoveEvent,
+    SubmissionAction,
 };
 #[cfg(feature = "ssr")]
 use crate::server::{admin, contact, daily, db};
@@ -71,4 +72,20 @@ pub async fn delete_admin_message(id: i64) -> Result<(), ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
     contact::delete(&conn, id).await
+}
+
+/// Names on the boards the list of blocked names flags.
+#[server(input = Json)]
+pub async fn admin_names() -> Result<Vec<FlaggedName>, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    admin::flagged_names(&conn).await
+}
+
+/// Gives a player a neutral name ("Player 17"), `None` if there is no such player.
+#[server(input = Json)]
+pub async fn admin_rename_player(id: i64) -> Result<Option<String>, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    admin::rename_player(&conn, id).await
 }

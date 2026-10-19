@@ -94,6 +94,11 @@ async fn submissions_and_leaderboard() {
         submit(&conn, Some(&alice), form("", 0)).await,
         Err(SubmitError::Name)
     );
+    // Solver names are on the board too
+    assert_eq!(
+        submit(&conn, Some(&alice), form("Fuck_SAT", 0)).await,
+        Err(SubmitError::NameNotAllowed)
+    );
     let bad_url = Form {
         source_url: "http://x".into(),
         ..form("x", 0)
