@@ -24,9 +24,10 @@ const root = path.resolve(import.meta.dirname, '..');
 const baselineFile = path.join(root, 'scripts/coverage-baseline.json');
 const update = process.argv.includes('--update');
 
-// The same tests as the test job in .github/workflows/ci.yml, all in one (debug) profile:
-// cargo-llvm-cov reports one profile at a time, and the dojo's tests are fast in debug too
-// (CI only tests it in release to share the build with the worker binary it deploys).
+// The tests CI runs, it runs them only here (the coverage job in .github/workflows/ci.yml, the
+// test job only lints and runs the doctests, which cargo-llvm-cov covers on nightly only). All in
+// one (debug) profile: cargo-llvm-cov reports one profile at a time, and the dojo's tests are
+// fast in debug too, its sandbox counts fuel, not time.
 const RUNS = [
   ['-p', 'common', '-p', 'backend', '-p', 'sat_solver'],
   ['-p', 'dojo', '--features', 'worker'],
@@ -67,7 +68,7 @@ const out = path.join(metadata.target_directory, 'llvm-cov');
 // --workspace, by default it only covers the root package.
 cargo('llvm-cov', 'clean', '--workspace');
 for (const run of RUNS) {
-  // --locked: the versions in Cargo.lock, like the test job
+  // --locked: the versions in Cargo.lock, like every build in CI
   cargo('llvm-cov', '--no-report', '--locked', ...run);
 }
 fs.mkdirSync(out, { recursive: true });
