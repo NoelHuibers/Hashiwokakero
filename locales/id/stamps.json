@@ -4,6 +4,7 @@
   "collected": "{{ earned }} dari {{ total }} stempel terkumpul.",
   "new": "Stempel baru: {{ name }}!",
   "more": "Dan {{ count }} stempel baru lainnya, lihat buku stempelmu.",
+  "share": "{{ percent }}% pemain",
   "names": {
     "first": "Jembatan pertama",
     "solved_10": "10 harian",

@@ -4,6 +4,7 @@
   "collected": "Đã sưu tầm {{ earned }} trên {{ total }} con dấu.",
   "new": "Con dấu mới: {{ name }}!",
   "more": "Và thêm {{ count }} con dấu mới, hãy xem sổ con dấu của bạn.",
+  "share": "{{ percent }}% người chơi",
   "names": {
     "first": "Cây cầu đầu tiên",
     "solved_10": "10 câu đố ngày",

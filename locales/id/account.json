@@ -17,6 +17,7 @@
     "points": "Poin",
     "medals": "Medali"
   },
+  "public_profile": "Profilmu seperti yang dilihat orang lain",
   "last_weeks": "Lima minggu terakhir",
   "calendar_rank": "peringkat {{ rank }}",
   "not_solved": "belum selesai",

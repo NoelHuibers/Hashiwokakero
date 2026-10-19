@@ -17,6 +17,7 @@
     "points": "النقاط",
     "medals": "الميداليات"
   },
+  "public_profile": "ملفك الشخصي كما يراه الآخرون",
   "last_weeks": "آخر خمسة أسابيع",
   "calendar_rank": "المركز {{ rank }}",
   "not_solved": "لم يُحل",

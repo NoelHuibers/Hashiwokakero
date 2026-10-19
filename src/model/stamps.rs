@@ -168,6 +168,9 @@ pub struct StampProgress {
     pub earned_at: Option<i64>,
     pub progress: i64,
     pub target: i64,
+    /// Players who have it, see [`share_percent`].
+    #[serde(default)]
+    pub holders: i64,
 }
 
 impl Record {
@@ -251,6 +254,22 @@ fn best_week(solves: &[Solve]) -> i64 {
         best = best.max(run);
     }
     best
+}
+
+/// The share of players who have a stamp, as a whole percent: `"12"`, `"<1"` when only a few do.
+/// `None` without players.
+pub fn share_percent(holders: i64, players: i64) -> Option<String> {
+    if players <= 0 {
+        return None;
+    }
+    let holders = holders.clamp(0, players);
+    // Rounded to the nearest percent
+    let percent = (holders * 200 + players) / (players * 2);
+    Some(if percent == 0 && holders > 0 {
+        "<1".into()
+    } else {
+        percent.to_string()
+    })
 }
 
 /// The most impressive of some stamps, for a name on a leaderboard.
@@ -337,6 +356,16 @@ mod tests {
             ..Record::default()
         };
         assert!(!small.earned(day + 1).contains(&Stamp::Swift));
+    }
+
+    #[test]
+    fn shares_of_players() {
+        assert_eq!(share_percent(1, 0), None);
+        assert_eq!(share_percent(0, 7).as_deref(), Some("0"));
+        assert_eq!(share_percent(1, 3).as_deref(), Some("33"));
+        assert_eq!(share_percent(1, 8).as_deref(), Some("13"));
+        assert_eq!(share_percent(1, 500).as_deref(), Some("<1"));
+        assert_eq!(share_percent(5, 5).as_deref(), Some("100"));
     }
 
     #[test]

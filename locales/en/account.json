@@ -17,6 +17,7 @@
     "points": "Points",
     "medals": "Medals"
   },
+  "public_profile": "Your profile as others see it",
   "last_weeks": "Last five weeks",
   "calendar_rank": "rank {{ rank }}",
   "not_solved": "not solved",

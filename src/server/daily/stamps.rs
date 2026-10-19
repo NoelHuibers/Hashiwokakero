@@ -147,9 +147,34 @@ pub async fn sync(
             earned_at: stored.get(&stamp).map(|&(at, _)| at),
             progress,
             target,
+            holders: 0,
         })
         .collect();
     Ok((book, new))
+}
+
+/// How many players have each stamp, and how many have any (everyone who solved a daily or got
+/// onto the Dojo board).
+pub(super) async fn holders(
+    conn: &Connection,
+) -> Result<(HashMap<Stamp, i64>, i64), ServerFnError> {
+    let mut rows = conn
+        .query(
+            "SELECT stamp, COUNT(*), (SELECT COUNT(DISTINCT user_id) FROM stamps) FROM stamps GROUP BY stamp",
+            (),
+        )
+        .await
+        .map_err(db_err)?;
+    let mut holders = HashMap::new();
+    let mut players = 0;
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        let id: String = row.get(0).map_err(db_err)?;
+        if let Some(stamp) = Stamp::from_id(&id) {
+            holders.insert(stamp, row.get(1).map_err(db_err)?);
+        }
+        players = row.get(2).map_err(db_err)?;
+    }
+    Ok((holders, players))
 }
 
 /// Syncs the players who finished a daily in the last days, or who have no stamps yet (from

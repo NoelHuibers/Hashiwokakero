@@ -17,6 +17,7 @@
     "points": "积分",
     "medals": "奖牌"
   },
+  "public_profile": "别人看到的你的主页",
   "last_weeks": "最近五周",
   "calendar_rank": "第 {{ rank }} 名",
   "not_solved": "未解出",

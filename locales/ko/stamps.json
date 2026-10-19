@@ -4,6 +4,7 @@
   "collected": "도장 {{ total }}개 중 {{ earned }}개를 모았어요.",
   "new": "새 도장: {{ name }}!",
   "more": "새 도장이 {{ count }}개 더 있어요. 도장 수첩을 확인해 보세요.",
+  "share": "플레이어의 {{ percent }}%",
   "names": {
     "first": "첫 다리",
     "solved_10": "데일리 10회",

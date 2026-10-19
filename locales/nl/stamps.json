@@ -4,6 +4,7 @@
   "collected": "{{ earned }} van {{ total }} stempels verzameld.",
   "new": "Nieuwe stempel: {{ name }}!",
   "more": "En nog {{ count }} nieuwe stempels, kijk in je stempelboekje.",
+  "share": "{{ percent }}% van de spelers",
   "names": {
     "first": "Eerste brug",
     "solved_10": "10 dagpuzzels",
