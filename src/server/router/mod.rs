@@ -60,6 +60,15 @@ pub fn router<V: IntoView + 'static>(
             )),
         )
         .route("/dojo/board.json", get(dojo::board_json))
+        // Seasons: the sets the worker evaluated on, the archive (see server/dojo/seasons.rs)
+        .route(
+            "/dojo/set",
+            post(dojo::set_handler).layer(DefaultBodyLimit::max(dojo::MAX_SET_BYTES)),
+        )
+        .route("/dojo/seasons.json", get(dojo::seasons_json))
+        .route("/dojo/seasons/{season}/set.tar.gz", get(dojo::set_download))
+        .route("/dojo/seasons/{season}/results.csv", get(dojo::results_csv))
+        .route("/dojo/seasons/{season}/results.json", get(dojo::results_json))
         .route(
             "/dojo/house",
             post(dojo::house_handler).layer(DefaultBodyLimit::max(::dojo::MAX_WASM_BYTES)),

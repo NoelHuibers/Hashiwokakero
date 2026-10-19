@@ -1,6 +1,6 @@
 //! Reading the SAT Dojo: the leaderboard, a submission and the player's own submissions.
 
-use dojo::{DEFAULT_BUDGET, Score};
+use dojo::{DEFAULT_BUDGET, GENERATOR_VERSION, RULES_VERSION, Score};
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 
@@ -16,7 +16,7 @@ fn score_of(json: Option<String>) -> Option<Score> {
 
 /// The best submission of every author this season, ranked, with the author's id (`None` for
 /// house entries).
-async fn ranked(
+pub(super) async fn ranked(
     conn: &Connection,
     season: u32,
 ) -> Result<Vec<(DojoEntry, Option<i64>)>, ServerFnError> {
@@ -94,6 +94,9 @@ pub async fn board(conn: &Connection) -> Result<DojoBoard, ServerFnError> {
         budget: DEFAULT_BUDGET,
         entries,
         queued,
+        commitment: super::seasons::commitment_of(conn, season).await?,
+        generator_version: GENERATOR_VERSION,
+        rules_version: RULES_VERSION,
     })
 }
 

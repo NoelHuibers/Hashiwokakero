@@ -244,7 +244,10 @@
         "created_at": 1760000000000
       }
     ],
-    "queued": 2
+    "queued": 2,
+    "commitment": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
+    "generator_version": 1,
+    "rules_version": 1
   },
   "dojo_submission": {
     "id": 12,
@@ -319,6 +322,67 @@
         "state": "Queued",
         "created_at": 1760000000000,
         "score": null
+      }
+    ]
+  },
+  "dojo_seasons": {
+    "current": {
+      "season": 2,
+      "started_at": 1760000000000,
+      "ended_at": null,
+      "commitment": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
+      "seed": null,
+      "generator_version": 1,
+      "rules_version": 1,
+      "set_size": null,
+      "set_sha256": null,
+      "entries": 0,
+      "board": []
+    },
+    "past": [
+      {
+        "season": 1,
+        "started_at": 1750000000000,
+        "ended_at": 1760000000000,
+        "commitment": "abababababababababababababababababababababababababababababababab",
+        "seed": "5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e",
+        "generator_version": 1,
+        "rules_version": 1,
+        "set_size": 1400000,
+        "set_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "entries": 4,
+        "board": [
+          {
+            "rank": 1,
+            "id": 12,
+            "name": "",
+            "author": "",
+            "house": false,
+            "score": {
+              "par2": 2.5,
+              "solved": 30,
+              "total": 34,
+              "wrong": 0,
+              "budget": 10000000000,
+              "fuel": 12.125,
+              "families": [
+                {
+                  "family": "Hashi",
+                  "solved": 8,
+                  "total": 8,
+                  "par2": 0.75
+                },
+                {
+                  "family": "Queens",
+                  "solved": 4,
+                  "total": 5,
+                  "par2": 4.0
+                }
+              ]
+            },
+            "created_at": 1755000000000
+          }
+        ]
       }
     ]
   },

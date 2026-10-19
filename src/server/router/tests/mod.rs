@@ -42,12 +42,16 @@ const ADMIN_ID: i64 = 900_001;
 /// `HASHI_ADMIN_TOKEN` of the tests.
 const ADMIN_TOKEN: &str = "admin-token-for-tests";
 const PASSWORD: &str = "correct horse";
+/// `DOJO_SEASON` of the tests.
+const CURRENT_SEASON: &str = "2";
 
 /// The settings the tests run with, instead of environment variables (see `server::env_var`).
 pub(in crate::server) fn env_var(name: &str) -> Option<&'static str> {
     match name {
         "HASHI_ADMINS" => Some("http_admin, 900001"),
         "HASHI_ADMIN_TOKEN" => Some(ADMIN_TOKEN),
+        // Not the first season, so there is a finished one to archive (see `dojo::seasons`)
+        "DOJO_SEASON" => Some(CURRENT_SEASON),
         _ => None,
     }
 }

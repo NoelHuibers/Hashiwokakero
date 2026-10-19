@@ -4,7 +4,7 @@ use common::{
     Difficulty, GenerateParams, GeneratedPuzzle, Heuristic, Island, Pos, Puzzle, Restarts,
     SolveOutcome, SolveReport, SolveStats, SolverConfig, SolverKind,
 };
-use dojo::{Answer, Family, FamilyScore, Rejection, Report, Score};
+use dojo::{Answer, Family, FamilyScore, InstanceResult, Outcome, Rejection, Report, Score};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -12,9 +12,9 @@ use super::{check, check_json};
 use crate::model::{
     AdminAttempt, AdminOverview, AdminSubmission, AllTimeEntry, ApiError, AttemptInfo,
     ContactMessage, DailyInfo, DayResult, Daypart, DojoBoard, DojoEntry, DojoMe, DojoRow,
-    DojoState, DojoSubmission, Flag, HallOfFame, Leaderboard, LeaderboardEntry, LogSummary,
-    MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress, SubmissionAction,
-    SubmitResult, UserInfo, UserStats,
+    DojoSeason, DojoSeasons, DojoState, DojoSubmission, Flag, HallOfFame, Leaderboard,
+    LeaderboardEntry, LogSummary, MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp,
+    StampProgress, SubmissionAction, SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -206,6 +206,7 @@ struct Responses {
     dojo_submission: DojoSubmission,
     dojo_rejected: DojoSubmission,
     dojo_me: DojoMe,
+    dojo_seasons: DojoSeasons,
     admin_overview: AdminOverview,
     admin_attempt: AdminAttempt,
     admin_submission: AdminSubmission,
@@ -308,6 +309,9 @@ fn responses() -> Responses {
                 created_at: 1_760_000_000_000,
             }],
             queued: 2,
+            commitment: "c0".repeat(32),
+            generator_version: 1,
+            rules_version: 1,
         },
         dojo_submission: dojo_submission(),
         dojo_rejected: DojoSubmission {
@@ -329,6 +333,42 @@ fn responses() -> Responses {
                 state: DojoState::Queued,
                 created_at: 1_760_000_000_000,
                 score: None,
+            }],
+        },
+        dojo_seasons: DojoSeasons {
+            current: DojoSeason {
+                season: 2,
+                started_at: Some(1_760_000_000_000),
+                ended_at: None,
+                commitment: "c0".repeat(32),
+                seed: None,
+                generator_version: 1,
+                rules_version: 1,
+                set_size: None,
+                set_sha256: None,
+                entries: 0,
+                board: Vec::new(),
+            },
+            past: vec![DojoSeason {
+                season: 1,
+                started_at: Some(1_750_000_000_000),
+                ended_at: Some(1_760_000_000_000),
+                commitment: "ab".repeat(32),
+                seed: Some("5e".repeat(32)),
+                generator_version: 1,
+                rules_version: 1,
+                set_size: Some(1_400_000),
+                set_sha256: Some("cd".repeat(32)),
+                entries: 4,
+                board: vec![DojoEntry {
+                    rank: 1,
+                    id: 12,
+                    name: String::new(),
+                    author: String::new(),
+                    house: false,
+                    score: score(),
+                    created_at: 1_755_000_000_000,
+                }],
             }],
         },
         admin_overview: AdminOverview {
@@ -453,6 +493,15 @@ fn responses_without_later_fields_load() {
     )
     .unwrap();
     assert_eq!(attempt.flag, None, "{RESPONSES}");
+    let board: DojoBoard = serde_json::from_str(
+        r#"{"season":1,"formulas":34,"budget":10000000000,"entries":[],"queued":0}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        (board.commitment.as_str(), board.rules_version),
+        ("", 0),
+        "{RESPONSES}"
+    );
     let submit: SubmitResult =
         serde_json::from_str(r#"{"time_ms":1,"rank":1,"finishers":1}"#).unwrap();
     assert!(
@@ -519,6 +568,7 @@ fn stored_formats() {
             "dojo_submissions.fingerprint",
             &vec![1_000_000_000u64, u64::MAX, u64::MAX - 1, u64::MAX - 2],
         ),
+        line("dojo_submissions.results", &instance_results()),
         line("dojo_submissions.error", &Rejection::TooLarge),
         line("dojo_submissions.error", &Rejection::Invalid("bad".into())),
         line("dojo_submissions.error", &Rejection::Import("env.f".into())),
@@ -547,6 +597,43 @@ fn stored_formats() {
     check("stored.txt", &lines.join("\n"), STORED);
 }
 
+/// One formula of every outcome.
+fn instance_results() -> Vec<InstanceResult> {
+    [
+        (
+            Family::Hashi,
+            Answer::Sat,
+            Outcome::Solved(Answer::Sat),
+            1_000,
+        ),
+        (
+            Family::Pigeonhole,
+            Answer::Unsat,
+            Outcome::Solved(Answer::Unsat),
+            2_000,
+        ),
+        (
+            Family::Random3Sat,
+            Answer::Sat,
+            Outcome::Timeout,
+            10_000_000_000,
+        ),
+        (Family::Queens, Answer::Sat, Outcome::Unknown, 3),
+        (Family::HashiParity, Answer::Unsat, Outcome::Crashed, 4),
+        (Family::Hashi, Answer::Sat, Outcome::Wrong, 5),
+    ]
+    .into_iter()
+    .enumerate()
+    .map(|(i, (family, expected, outcome, fuel))| InstanceResult {
+        name: format!("{}-{:02}", family.id(), i + 1),
+        family,
+        expected,
+        outcome,
+        fuel,
+    })
+    .collect()
+}
+
 #[test]
 fn worker_reports() {
     let reports = [
@@ -561,6 +648,8 @@ fn worker_reports() {
             season: 1,
             score: score(),
             fingerprint: vec![1_000, u64::MAX],
+            results: instance_results(),
+            rules_version: 1,
         },
         Report::Rejected {
             id: 12,
@@ -586,13 +675,13 @@ fn worker_reports() {
         })
         .collect();
     check("worker.txt", &lines.join("\n"), WORKER);
-    // Workers from before fingerprints existed
-    let old: Report = serde_json::from_str(
-        &lines[1].replace(r#","fingerprint":[1000,18446744073709551615]"#, ""),
-    )
-    .unwrap();
+    // Workers from before fingerprints, per-formula results and rules versions existed
+    let finished = &lines[1];
+    let old = &finished[..finished.find(r#","fingerprint""#).unwrap()];
+    let old: Report = serde_json::from_str(&format!("{old}}}")).unwrap();
     assert!(
-        matches!(old, Report::Finished { fingerprint, .. } if fingerprint.is_empty()),
+        matches!(old, Report::Finished { fingerprint, results, rules_version: 0, .. }
+            if fingerprint.is_empty() && results.is_empty()),
         "{WORKER}"
     );
     // The worker answers a rejected upload with the reason as JSON (see `server::dojo::worker`)

@@ -1,4 +1,4 @@
-use clap::{Arg, ArgAction, command};
+use clap::{Arg, ArgAction, command, value_parser};
 
 #[derive(Debug)]
 #[expect(
@@ -54,6 +54,7 @@ where
             Arg::new("solver")
                 .help("Specify the solver to use: CDCL or DPLL")
                 .required(true)
+                .value_parser(["dpll", "cdcl"])
                 .index(1),
         )
         .arg(
@@ -86,12 +87,14 @@ where
                 .help("Argument for k-bounded learning")
                 .long("k")
                 .short('k')
+                .value_parser(value_parser!(usize))
                 .default_value("10")
         ).arg(
             Arg::new("m")
                 .help("Argument for m-size relevance based learning")
                 .long("m")
                 .short('m')
+                .value_parser(value_parser!(usize))
                 .default_value("10")
         )
         .arg(
@@ -111,6 +114,7 @@ where
                 .help("Specify the conflict threshold for a restart")
                 .long("restarts_threshold")
                 .short('r')
+                .value_parser(value_parser!(u32))
         ).arg(Arg::new("luby")
                 .help("Use luby sequence for restarts")
                 .long("luby")
@@ -120,88 +124,59 @@ where
             Arg::new("restart_factor")
                 .help("Specify the factor for restarts in percent")
                 .long("restart_factor")
-                .short('F'))
+                .short('F')
+                .value_parser(value_parser!(u32)))
             .arg(Arg::new("DRUP")
                 .help("Output in DRUP format")
                 .long("DRUP")
                 .short('D')
+                .requires("output")
                 .action(ArgAction::SetTrue))
             .arg(Arg::new("timeout")
                 .help("Give up after this many seconds (prints UNKNOWN)")
                 .long("timeout")
-                .short('t'))
+                .short('t')
+                .value_parser(seconds))
         .get_matches_from(args);
 
-    let solver = match arguments.get_one::<String>("solver") {
-        Some(solver) => solver.clone(),
-        None => panic!("Solver is required"),
-    };
-
-    let inputpath = match arguments.get_one::<String>("input") {
-        Some(path) => path.clone(),
-        None => panic!("Input is required"),
-    };
-
+    // Required or with a default, clap made sure they are there
+    let solver = arguments
+        .get_one::<String>("solver")
+        .cloned()
+        .unwrap_or_default();
+    let inputpath = arguments
+        .get_one::<String>("input")
+        .cloned()
+        .unwrap_or_default();
     let outputpath = arguments.get_one::<String>("output").cloned();
 
-    let heuristic = if let Some(heuristic) = arguments.get_one::<String>("heuristic") {
-        match heuristic.as_str() {
-            "arbitrary" => Heuristic::Arbitrary,
-            "dlis" => Heuristic::DLIS,
-            "dlcs" => Heuristic::DLCS,
-            "mom" => Heuristic::MOM,
-            "boehm" => Heuristic::Boehm,
-            "jeroslaw_wang" => Heuristic::JeroslawWang,
-            "vsids" => Heuristic::VSIDS,
-            "custom" => Heuristic::Custom,
-            _ => {
-                println!("Heuristic not found using arbitrary");
-                Heuristic::Arbitrary
-            }
+    let heuristic = match arguments
+        .get_one::<String>("heuristic")
+        .map_or("arbitrary", String::as_str)
+    {
+        "arbitrary" => Heuristic::Arbitrary,
+        "dlis" => Heuristic::DLIS,
+        "dlcs" => Heuristic::DLCS,
+        "mom" => Heuristic::MOM,
+        "boehm" => Heuristic::Boehm,
+        "jeroslaw_wang" => Heuristic::JeroslawWang,
+        "vsids" => Heuristic::VSIDS,
+        "custom" => Heuristic::Custom,
+        _ => {
+            // Not on stdout, that's where the result goes
+            eprintln!("Heuristic not found using arbitrary");
+            Heuristic::Arbitrary
         }
-    } else {
-        println!("No heuristic specified, using arbitrary");
-        Heuristic::Arbitrary
     };
 
-    let k = match arguments.get_one::<String>("k") {
-        Some(k) => k
-            .parse::<usize>()
-            .unwrap_or_else(|e| panic!("K must be a number: {e}")),
-        None => panic!("K is required"),
-    };
-
-    let m = match arguments.get_one::<String>("m") {
-        Some(m) => m
-            .parse::<usize>()
-            .unwrap_or_else(|e| panic!("M must be a number: {e}")),
-        None => panic!("M is required"),
-    };
-
-    let threshold = arguments
-        .get_one::<String>("restarts_threshold")
-        .map(|threshold| {
-            threshold
-                .parse::<u32>()
-                .unwrap_or_else(|e| panic!("Threshold must be a number: {e}"))
-        });
-
+    // The value parsers above checked the numbers
+    let k = arguments.get_one::<usize>("k").copied().unwrap_or(10);
+    let m = arguments.get_one::<usize>("m").copied().unwrap_or(10);
+    let threshold = arguments.get_one::<u32>("restarts_threshold").copied();
     let luby = arguments.get_flag("luby");
-
-    let factor = arguments.get_one::<String>("restart_factor").map(|factor| {
-        factor
-            .parse::<u32>()
-            .unwrap_or_else(|e| panic!("Factor must be a number: {e}"))
-    });
-
+    let factor = arguments.get_one::<u32>("restart_factor").copied();
     let drup = arguments.get_flag("DRUP");
-
-    let timeout = arguments
-        .get_one::<String>("timeout")
-        .map(|t| match t.parse::<f64>() {
-            Ok(t) if t >= 0.0 => t,
-            _ => panic!("Timeout must be a non-negative number of seconds"),
-        });
+    let timeout = arguments.get_one::<f64>("timeout").copied();
 
     CliArgs {
         solver,
@@ -218,6 +193,14 @@ where
         factor,
         drup,
         timeout,
+    }
+}
+
+/// A time limit for `--timeout`.
+fn seconds(arg: &str) -> Result<f64, String> {
+    match arg.parse::<f64>() {
+        Ok(t) if t >= 0.0 => Ok(t),
+        _ => Err("must be a non-negative number of seconds".into()),
     }
 }
 

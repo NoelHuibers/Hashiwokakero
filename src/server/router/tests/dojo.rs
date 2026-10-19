@@ -4,7 +4,7 @@
 use reqwest::multipart::{Form, Part};
 
 use super::*;
-use crate::api::{LoadDojoBoard, LoadDojoMe, LoadDojoSubmission, StartDaily};
+use crate::api::{LoadDojoBoard, LoadDojoMe, LoadDojoSeasons, LoadDojoSubmission, StartDaily};
 use crate::model::DojoState;
 use crate::server::dojo::season;
 
@@ -235,7 +235,16 @@ async fn the_board_for_scripts() {
     assert_eq!(res.headers()["access-control-allow-origin"], "*");
     assert_eq!(res.headers()[CONTENT_TYPE], "application/json");
     let json: serde_json::Value = serde_json::from_slice(&res.bytes().await.unwrap()).unwrap();
-    for key in ["season", "formulas", "budget", "entries", "queued"] {
+    for key in [
+        "season",
+        "formulas",
+        "budget",
+        "entries",
+        "queued",
+        "commitment",
+        "generator_version",
+        "rules_version",
+    ] {
         assert!(json.get(key).is_some(), "{key} missing in {json}");
     }
     assert_eq!(json["season"], season());
@@ -243,4 +252,206 @@ async fn the_board_for_scripts() {
     // The same as the page gets
     let board = browser.call(LoadDojoBoard {}).await.unwrap();
     assert_eq!(serde_json::to_value(&board).unwrap(), json);
+}
+
+/// A finished season (the one before the tests' current season), as the archive keeps it: the
+/// season, its set, two archived entries. The current season's row has a seed that must never
+/// be shown.
+async fn archive_a_season(conn: &Connection) -> Vec<u8> {
+    let current = season();
+    let past = current - 1;
+    let set = vec![0x1f, 0x8b, 8, 0, 1, 2, 3];
+    let results = serde_json::json!([
+        {"name": "hashi-01", "family": "Hashi", "expected": "Sat", "outcome": {"Solved": "Sat"}, "fuel": 1234},
+        {"name": "pigeonhole-01", "family": "Pigeonhole", "expected": "Unsat", "outcome": "Timeout", "fuel": 10_000_000_000_u64}
+    ])
+    .to_string();
+    let score = serde_json::json!({"par2": 10.0, "solved": 1, "total": 2, "wrong": 0, "budget": 10_000_000_000_u64,
+        "fuel": 0.0, "families": []})
+    .to_string();
+    for sql in [
+        "INSERT OR REPLACE INTO dojo_seasons (season, started_at, ended_at, commitment, seed, generator_version, rules_version)
+         VALUES (?1, 1000, 2000, 'archived-commitment', 'archived-seed', 1, 1)",
+        "INSERT OR REPLACE INTO dojo_seasons (season, started_at, ended_at, commitment, seed, generator_version, rules_version)
+         VALUES (?1 + 1, 2000, NULL, 'current-commitment', 'must-not-leak', 1, 1)",
+        "INSERT OR REPLACE INTO dojo_archive (season, submission_id, user_id, house, name, created_at, par2, solved, wrong, score, results, rules_version, rank)
+         VALUES (?1, 9001, NULL, 1, 'Archived house', 1000, 10.0, 1, 0, ?3, ?4, 1, 1)",
+        "INSERT OR REPLACE INTO dojo_archive (season, submission_id, user_id, house, name, created_at, par2, solved, wrong, score, results, rules_version, rank)
+         VALUES (?1, 9002, NULL, 0, 'Wrong one', 1000, 20.0, 1, 1, ?3, ?4, 1, NULL)",
+        "INSERT OR REPLACE INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?1, 1, ?2, 'sha', 2000)",
+        "INSERT OR REPLACE INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?1 + 1, 1, ?2, 'sha', 2000)",
+    ] {
+        conn.execute(sql, params![past, set.clone(), score.clone(), results.clone()])
+            .await
+            .unwrap();
+    }
+    set
+}
+
+#[tokio::test]
+async fn the_season_archive() {
+    let server = Server::start().await;
+    let browser = server.browser();
+    let conn = conn().await;
+    let set = archive_a_season(&conn).await;
+    let (current, past) = (season(), season() - 1);
+
+    let res = browser.get("/dojo/seasons.json").await;
+    assert_status(&res, StatusCode::OK);
+    assert_eq!(res.headers()["access-control-allow-origin"], "*");
+    let json: serde_json::Value = serde_json::from_slice(&res.bytes().await.unwrap()).unwrap();
+    assert_eq!(json["current"]["season"], current);
+    assert_eq!(json["current"]["commitment"], "current-commitment");
+    assert_eq!(json["current"]["seed"], serde_json::Value::Null);
+    assert_eq!(json["current"]["set_size"], serde_json::Value::Null);
+    assert_eq!(json["past"][0]["season"], past);
+    assert_eq!(json["past"][0]["seed"], "archived-seed");
+    assert_eq!(json["past"][0]["set_size"], set.len());
+    assert_eq!(json["past"][0]["entries"], 2);
+    // Only the ranked entry is on the final board
+    assert_eq!(json["past"][0]["board"][0]["name"], "Archived house");
+    assert_eq!(json["past"][0]["board"][0]["author"], "Hashi");
+    assert_eq!(json["past"][0]["board"].as_array().unwrap().len(), 1);
+    assert!(!json.to_string().contains("must-not-leak"));
+    // The same as the page gets
+    let seasons = browser.call(LoadDojoSeasons {}).await.unwrap();
+    assert_eq!(serde_json::to_value(&seasons).unwrap(), json);
+    // The board shows the current season's commitment
+    let board = browser.call(LoadDojoBoard {}).await.unwrap();
+    assert_eq!(board.commitment, "current-commitment");
+
+    let res = browser
+        .get(&format!("/dojo/seasons/{past}/set.tar.gz"))
+        .await;
+    assert_status(&res, StatusCode::OK);
+    assert_eq!(res.headers()[CONTENT_TYPE], "application/gzip");
+    assert_eq!(
+        res.headers()["content-disposition"],
+        format!("attachment; filename=\"dojo-season-{past}.tar.gz\"").as_str()
+    );
+    assert_eq!(res.bytes().await.unwrap().to_vec(), set);
+
+    let res = browser
+        .get(&format!("/dojo/seasons/{past}/results.csv"))
+        .await;
+    assert_status(&res, StatusCode::OK);
+    assert_eq!(res.headers()[CONTENT_TYPE], "text/csv; charset=utf-8");
+    let csv = res.text().await.unwrap();
+    let lines: Vec<&str> = csv.lines().collect();
+    assert_eq!(
+        lines,
+        [
+            "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel",
+            &*format!("{past},9001,Archived house,Hashi,1,1,1,hashi-01,hashi,SAT,solved,1234"),
+            &*format!(
+                "{past},9001,Archived house,Hashi,1,1,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000"
+            ),
+            &*format!("{past},9002,Wrong one,,0,,1,hashi-01,hashi,SAT,solved,1234"),
+            &*format!(
+                "{past},9002,Wrong one,,0,,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000"
+            ),
+        ]
+    );
+
+    let res = browser
+        .get(&format!("/dojo/seasons/{past}/results.json"))
+        .await;
+    assert_status(&res, StatusCode::OK);
+    let json: serde_json::Value = serde_json::from_slice(&res.bytes().await.unwrap()).unwrap();
+    assert_eq!(json["seed"], "archived-seed");
+    assert_eq!(json["commitment"], "archived-commitment");
+    assert_eq!(json["entries"][0]["rank"], 1);
+    assert_eq!(json["entries"][1]["rank"], serde_json::Value::Null);
+    assert_eq!(json["entries"][0]["results"][0]["fuel"], 1234);
+
+    // Nothing of the current season, later ones or seasons that don't exist
+    for path in [
+        format!("/dojo/seasons/{current}/set.tar.gz"),
+        format!("/dojo/seasons/{current}/results.csv"),
+        format!("/dojo/seasons/{current}/results.json"),
+        format!("/dojo/seasons/{}/results.json", current + 5),
+        "/dojo/seasons/0/set.tar.gz".to_string(),
+    ] {
+        assert_status(&browser.get(&path).await, StatusCode::NOT_FOUND);
+    }
+    assert_status(
+        &browser.get("/dojo/seasons/first/results.csv").await,
+        StatusCode::BAD_REQUEST,
+    );
+    // The page itself
+    assert_status(&browser.get("/dojo/seasons").await, StatusCode::OK);
+    assert_status(&browser.get("/ja/dojo/seasons").await, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn sets_need_the_token_of_their_job() {
+    let server = Server::start().await;
+    let worker = server.browser();
+    let res = worker
+        .post("/dojo/house?name=Exported")
+        .bearer_auth(ADMIN_TOKEN)
+        .body(module(60))
+        .send()
+        .await
+        .unwrap();
+    let id: i64 = res.text().await.unwrap().parse().unwrap();
+    let conn = conn().await;
+    conn.execute(
+        "UPDATE dojo_submissions SET job_token = 'set-token' WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    conn.execute(
+        "DELETE FROM dojo_season_sets WHERE season = ?1",
+        params![season()],
+    )
+    .await
+    .unwrap();
+    let url = format!(
+        "/dojo/set?id={id}&season={}&generator={}",
+        season(),
+        ::dojo::GENERATOR_VERSION
+    );
+    let gz = vec![0x1f, 0x8b, 8, 0, 42];
+    let send = |token: &str, body: Vec<u8>| worker.post(&url).bearer_auth(token).body(body).send();
+    assert_status(
+        &send("wrong", gz.clone()).await.unwrap(),
+        StatusCode::UNAUTHORIZED,
+    );
+    assert_status(
+        &send(ADMIN_TOKEN, gz.clone()).await.unwrap(),
+        StatusCode::UNAUTHORIZED,
+    );
+    assert_status(
+        &send("set-token", b"plain".to_vec()).await.unwrap(),
+        StatusCode::UNPROCESSABLE_ENTITY,
+    );
+    assert_status(
+        &send("set-token", vec![0; crate::server::dojo::MAX_SET_BYTES + 1])
+            .await
+            .unwrap(),
+        StatusCode::PAYLOAD_TOO_LARGE,
+    );
+    assert_status(
+        &send("set-token", gz.clone()).await.unwrap(),
+        StatusCode::NO_CONTENT,
+    );
+    let mut rows = conn
+        .query(
+            "SELECT archive, generator_version FROM dojo_season_sets WHERE season = ?1",
+            params![season()],
+        )
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    assert_eq!(row.get::<Vec<u8>>(0).unwrap(), gz);
+    assert_eq!(row.get::<u32>(1).unwrap(), ::dojo::GENERATOR_VERSION);
+    // Not served while the season runs
+    assert_status(
+        &worker
+            .get(&format!("/dojo/seasons/{}/set.tar.gz", season()))
+            .await,
+        StatusCode::NOT_FOUND,
+    );
 }

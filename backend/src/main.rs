@@ -1,3 +1,5 @@
+use std::process::ExitCode;
+
 use backend::modes::{encode_mode, esr_mode, generate_mode, solve_mode};
 use clap::{Arg, ArgAction, command, value_parser};
 use common::{Difficulty, GenerateParams, Heuristic, Restarts, SolverConfig, SolverKind};
@@ -5,7 +7,7 @@ use common::{Difficulty, GenerateParams, Heuristic, Restarts, SolverConfig, Solv
 // Examples (from the repository root):
 //   cargo run -p backend -- -m esr -i backend/input/test1.txt -s cdcl -H vsids -r luby
 //   cargo run -p backend -- -m generate -d hard --seed 42
-fn main() {
+fn main() -> ExitCode {
     let matches = command!()
         .arg(
             Arg::new("mode")
@@ -117,31 +119,21 @@ fn main() {
     let output_file = matches.get_one::<String>("output").cloned();
     let config = match solver_config(&matches) {
         Ok(config) => config,
-        Err(err) => {
-            eprintln!("Error: {err}");
-            std::process::exit(2);
-        }
+        Err(err) => return usage_error(&err),
     };
 
-    let needs_input = |f: fn(&str)| match &input_file {
-        Some(input) => f(input),
-        None => eprintln!("Error: mode '{mode}' needs an input file (-i)"),
-    };
-    match mode.as_str() {
-        "encode" => needs_input(encode_mode),
-        "solve" => match input_file {
-            Some(input) => solve_mode(&input, output_file, config),
-            None => eprintln!("Error: mode 'solve' needs a CNF file (-i)"),
-        },
-        "encodesolvereconstruct" | "esr" => match input_file {
-            Some(input) => esr_mode(&input, output_file, config),
-            None => eprintln!("Error: mode 'esr' needs an input file (-i)"),
-        },
-        "generate" => {
+    let result = match (mode.as_str(), input_file) {
+        ("encode", Some(input)) => encode_mode(&input),
+        ("solve", Some(input)) => solve_mode(&input, output_file, config),
+        ("encodesolvereconstruct" | "esr", Some(input)) => esr_mode(&input, output_file, config),
+        ("encode" | "encodesolvereconstruct" | "esr", None) => {
+            return usage_error(&format!("mode '{mode}' needs an input file (-i)"));
+        }
+        ("solve", None) => return usage_error("mode 'solve' needs a CNF file (-i)"),
+        ("generate", _) => {
             let difficulty = matches.get_one::<String>("difficulty").unwrap();
             let Some(difficulty) = Difficulty::from_id(&difficulty.to_lowercase()) else {
-                eprintln!("Error: unknown difficulty '{difficulty}'");
-                std::process::exit(2);
+                return usage_error(&format!("unknown difficulty '{difficulty}'"));
             };
             let (w, h) = difficulty.size();
             // The generator clamps the size to MIN_SIZE..=MAX_SIZE
@@ -159,10 +151,23 @@ fn main() {
                     .copied()
                     .unwrap_or_else(rand::random),
             };
-            generate_mode(params, output_file);
+            generate_mode(params, output_file)
         }
-        _ => eprintln!("Error: Use 'encode', 'solve', 'esr' or 'generate' as mode"),
+        _ => return usage_error("Use 'encode', 'solve', 'esr' or 'generate' as mode"),
+    };
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(err) => {
+            eprintln!("Error: {err}");
+            ExitCode::FAILURE
+        }
     }
+}
+
+/// Wrong arguments exit with 2, like the ones clap rejects.
+fn usage_error(err: &str) -> ExitCode {
+    eprintln!("Error: {err}");
+    ExitCode::from(2)
 }
 
 fn solver_config(matches: &clap::ArgMatches) -> Result<SolverConfig, String> {

@@ -42,3 +42,18 @@ fn test_integration() {
         print!("{res}");
     }
 }
+
+/// Solver answers without a model give a message instead of a drawing.
+#[test]
+fn reconstruct_explains_answers_without_a_model() {
+    let game_board = parse_input("./input/test1.txt").unwrap();
+    let (_, var_map) = generate(&game_board);
+    assert_eq!(
+        reconstruct::reconstruct_puzzle("UNSAT", &var_map, &game_board),
+        "Problem is UNSAT"
+    );
+    assert_eq!(
+        reconstruct::reconstruct_puzzle("SAT\n", &var_map, &game_board),
+        "Problem had no variables"
+    );
+}

@@ -1267,6 +1267,7 @@ dependencies = [
  "axum",
  "backend",
  "common",
+ "flate2",
  "proptest",
  "rand 0.10.3",
  "reqwest",
@@ -1274,6 +1275,7 @@ dependencies = [
  "serde_json",
  "sha2 0.11.1",
  "splr",
+ "tar",
  "tokio",
  "wasmparser 0.262.0",
  "wasmtime",
@@ -4519,6 +4521,7 @@ dependencies = [
  "clap",
  "flame",
  "proptest",
+ "tempfile",
 ]
 
 [[package]]
