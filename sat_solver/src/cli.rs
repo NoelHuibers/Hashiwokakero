@@ -38,6 +38,15 @@ pub enum Heuristic {
 }
 
 pub fn cli() -> CliArgs {
+    cli_from(std::env::args_os())
+}
+
+/// [`cli`] on the given arguments, the program name first.
+pub fn cli_from<I, T>(args: I) -> CliArgs
+where
+    I: IntoIterator<Item = T>,
+    T: Into<std::ffi::OsString> + Clone,
+{
     let arguments = command!("Sat Solver")
         .version("1.0")
         .about("Solves SAT problems using DPLL or CDCL. Give the solver as first argument, the input file as second argument.")
@@ -121,7 +130,7 @@ pub fn cli() -> CliArgs {
                 .help("Give up after this many seconds (prints UNKNOWN)")
                 .long("timeout")
                 .short('t'))
-        .get_matches();
+        .get_matches_from(args);
 
     let solver = match arguments.get_one::<String>("solver") {
         Some(solver) => solver.clone(),
@@ -209,5 +218,51 @@ pub fn cli() -> CliArgs {
         factor,
         drup,
         timeout,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reads_the_command_line() {
+        let args = cli_from(["sat", "dpll", "in.cnf"]);
+        assert_eq!(
+            (args.solver.as_str(), args.inputpath.as_str()),
+            ("dpll", "in.cnf")
+        );
+        assert!(matches!(args.heuristic, Heuristic::Arbitrary));
+        assert_eq!((args.k, args.m, args.outputpath), (10, 10, None));
+        assert!(!args.depth && !args.luby && !args.drup && !args.subsumed_clauses);
+        assert_eq!(
+            (args.threshold, args.factor, args.timeout),
+            (None, None, None)
+        );
+
+        let args = cli_from([
+            "sat", "cdcl", "in.cnf", "out.txt", "-H", "vsids", "-d", "-k", "3", "-m", "4", "-s",
+            "-r", "50", "-l", "-F", "150", "-D", "-t", "2.5",
+        ]);
+        assert_eq!(args.outputpath.as_deref(), Some("out.txt"));
+        assert!(matches!(args.heuristic, Heuristic::VSIDS));
+        assert_eq!((args.k, args.m), (3, 4));
+        assert!(args.depth && args.luby && args.drup && args.subsumed_clauses);
+        assert_eq!(
+            (args.threshold, args.factor, args.timeout),
+            (Some(50), Some(150), Some(2.5))
+        );
+        for (name, heuristic) in [
+            ("dlis", Heuristic::DLIS),
+            ("dlcs", Heuristic::DLCS),
+            ("mom", Heuristic::MOM),
+            ("boehm", Heuristic::Boehm),
+            ("jeroslaw_wang", Heuristic::JeroslawWang),
+            ("custom", Heuristic::Custom),
+            ("nonsense", Heuristic::Arbitrary),
+        ] {
+            let args = cli_from(["sat", "dpll", "x.cnf", "--heuristic", name]);
+            assert_eq!(format!("{:?}", args.heuristic), format!("{heuristic:?}"));
+        }
     }
 }

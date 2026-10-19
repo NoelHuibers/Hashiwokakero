@@ -1,5 +1,5 @@
 use std::{
-    collections::{BinaryHeap, HashMap, HashSet, VecDeque},
+    collections::{BinaryHeap, VecDeque},
     fs::File,
     io::Write,
     time::Instant,
@@ -9,6 +9,7 @@ use std::{
 use crate::{
     cli::Heuristic,
     dpll::{DIMACSOutput, Error},
+    hash::{self, HashMap, HashSet},
     logger::log_clause,
     preprocessing::delete_subsumed_clauses,
     randomrestarts::luby_sequence,
@@ -130,21 +131,21 @@ impl CDCL {
         let mut cdcl = Self {
             branch_depth: 0,
             branch_counter: 0,
-            clauses: HashMap::with_capacity(clause_count),
-            clause_db: HashMap::with_capacity(mx_clauses),
-            free_lits: HashSet::with_capacity(lit_count),
+            clauses: hash::map(clause_count),
+            clause_db: hash::map(mx_clauses),
+            free_lits: hash::set(lit_count),
             heuristic,
             history: Vec::new(),
             history_enabled: false,
             learned_size: clause_count,
-            lit_val: HashMap::with_capacity(lit_count),
-            pos_watched_occ: HashMap::with_capacity(clause_count * 2),
-            pos_occ: HashSet::with_capacity(lit_count),
-            neg_occ: HashSet::with_capacity(lit_count),
+            lit_val: hash::map(lit_count),
+            pos_watched_occ: hash::map(clause_count * 2),
+            pos_occ: hash::set(lit_count),
+            neg_occ: hash::set(lit_count),
             unit_queue: VecDeque::new(),
-            literals_at_current_depth: HashSet::with_capacity(lit_count),
-            reason_for: HashMap::with_capacity(clause_count / 2),
-            vsids_counters: HashMap::with_capacity(lit_count),
+            literals_at_current_depth: hash::set(lit_count),
+            reason_for: hash::map(clause_count / 2),
+            vsids_counters: hash::map(lit_count),
             vsids_prio_queue: BinaryHeap::new(),
             restart: Restart {
                 count: 0,
@@ -164,6 +165,12 @@ impl CDCL {
         if input.iter().any(Vec::is_empty) {
             cdcl.has_empty_clause = true;
             input.retain(|c| !c.is_empty());
+        }
+        // A literal twice in a clause could be both of its watched literals, so the clause
+        // lost track of its other literals and the search crashed (found by tests/props.rs)
+        for clause in &mut input {
+            let mut seen = hash::set(clause.len());
+            clause.retain(|&l| seen.insert(l));
         }
         if subsumed_clauses {
             delete_subsumed_clauses(&mut input);
@@ -401,7 +408,7 @@ impl CDCL {
                 .and_modify(|vars| {
                     vars.insert(var);
                 })
-                .or_insert_with(|| HashSet::from([var]));
+                .or_insert_with(|| HashSet::from_iter([var]));
         }
         lit.decision_level = self.branch_depth;
         self.literals_at_current_depth.insert(as_atom(var));
@@ -1747,44 +1754,63 @@ fn testunsat() {
     }
 }
 
+/// Found by the property tests (tests/props.rs): repeated literals crashed the solver.
+#[test]
+fn repeated_literals_count_once() {
+    let res = CDCL::new(
+        vec![vec![-1, -1], vec![1, 2, 1], vec![-2]],
+        2,
+        3,
+        Heuristic::Arbitrary,
+        false,
+        None,
+        false,
+        None,
+        1,
+        1,
+        None,
+    )
+    .solve();
+    assert!(matches!(res, Ok(DIMACSOutput::Unsat)), "{res:?}");
+}
+
 #[test]
 fn should_return_valid_models_hashi_oct_2026() {
     // Conflicts caused directly by a decision used to be ignored, so the solver could continue
-    // past a falsified clause and report a model violating the formula (nondeterministically,
-    // depending on HashMap iteration order).
+    // past a falsified clause and report a model violating the formula. That happened on some
+    // runs only, in HashMap order; runs are the same every time now (see hash.rs), and
+    // tests/props.rs tries many formulas instead.
     let (input, v_c, c_c) =
         crate::parse::parse("./src/inputs/sat/hashi_test20_subsumed.cnf").unwrap();
     for subsumption in [false, true] {
-        for _ in 0..25 {
-            let res = CDCL::new(
-                input.clone(),
-                v_c,
-                c_c,
-                Heuristic::VSIDS,
-                subsumption,
-                Some(32),
-                true,
-                None,
-                10,
-                10,
-                None,
-            )
-            .solve();
-            let Ok(DIMACSOutput::Sat(model)) = res else {
-                panic!("Expected SAT");
-            };
-            let mut values = vec![false; v_c + 1];
-            for lit in model.into_iter().filter(|&l| l != 0) {
-                values[lit.unsigned_abs() as usize] = lit > 0;
-            }
-            for clause in &input {
-                assert!(
-                    clause
-                        .iter()
-                        .any(|&l| values[l.unsigned_abs() as usize] == (l > 0)),
-                    "model violates {clause:?}"
-                );
-            }
+        let res = CDCL::new(
+            input.clone(),
+            v_c,
+            c_c,
+            Heuristic::VSIDS,
+            subsumption,
+            Some(32),
+            true,
+            None,
+            10,
+            10,
+            None,
+        )
+        .solve();
+        let Ok(DIMACSOutput::Sat(model)) = res else {
+            panic!("Expected SAT");
+        };
+        let mut values = vec![false; v_c + 1];
+        for lit in model.into_iter().filter(|&l| l != 0) {
+            values[lit.unsigned_abs() as usize] = lit > 0;
+        }
+        for clause in &input {
+            assert!(
+                clause
+                    .iter()
+                    .any(|&l| values[l.unsigned_abs() as usize] == (l > 0)),
+                "model violates {clause:?}"
+            );
         }
     }
 }

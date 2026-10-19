@@ -300,3 +300,77 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
     }
     .to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use leptos_i18n::Locale as _;
+
+    use super::*;
+    use crate::model::{LAUNCH_DAY, month_of};
+
+    /// A filled-in text: not empty and without a `{{ variable }}` left over.
+    fn filled(text: &str) -> bool {
+        !text.trim().is_empty() && !text.contains("{{") && !text.contains("}}")
+    }
+
+    /// Every name and message exists in every language, with its variables filled in.
+    #[test]
+    fn every_name_is_translated() {
+        for &l in Locale::get_all() {
+            for stamp in Stamp::ALL {
+                assert!(filled(stamp_name(l, stamp)), "{l:?} {stamp:?}");
+                assert!(filled(stamp_text(l, stamp)), "{l:?} {stamp:?}");
+            }
+            for code in ApiError::ALL {
+                let text = error_text(l, &ServerFnError::from(code));
+                assert!(filled(&text), "{l:?} {code:?}: {text}");
+            }
+            let unknown = error_text(l, &ServerFnError::new("the database is on fire"));
+            assert!(
+                unknown.contains("the database is on fire"),
+                "{l:?}: {unknown}"
+            );
+            for d in common::Difficulty::ALL {
+                assert!(filled(&difficulty_name(l, d)), "{l:?} {d:?}");
+            }
+            for kind in common::SolverKind::ALL {
+                for h in kind.heuristics() {
+                    for restarts in ["none", "fixed", "geometric", "luby"] {
+                        let config = common::SolverConfig {
+                            kind,
+                            heuristic: *h,
+                            restarts: common::Restarts::from_id(restarts).unwrap(),
+                            subsumption: kind.supports_subsumption(),
+                            ..common::SolverConfig::default()
+                        };
+                        assert!(filled(&config_name(l, &config)), "{l:?} {config:?}");
+                    }
+                }
+            }
+        }
+    }
+
+    /// Dates and months name the day, the month and the year, in every language and month.
+    #[test]
+    fn dates_are_filled_in() {
+        for &l in Locale::get_all() {
+            let mut months = std::collections::BTreeSet::new();
+            for day in (LAUNCH_DAY..LAUNCH_DAY + 366).step_by(9) {
+                let (year, _, d) = crate::model::civil(day);
+                for text in [date_long(l, day), date_short(l, day)] {
+                    assert!(filled(&text), "{l:?} {day}: {text}");
+                    assert!(text.contains(&year.to_string()), "{l:?}: {text}");
+                    assert!(text.contains(&d.to_string()), "{l:?}: {text}");
+                }
+                let month = month_long(l, month_of(day));
+                assert!(
+                    filled(&month) && month.contains(&year.to_string()),
+                    "{l:?}: {month}"
+                );
+                months.insert(month);
+            }
+            // Twelve different month names (and the 13th month is next year's)
+            assert_eq!(months.len(), 13, "{l:?}: {months:?}");
+        }
+    }
+}

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use crate::hash::{HashMap, HashSet};
 
 use crate::dpll::Literal;
 
@@ -16,7 +16,7 @@ pub(crate) fn dlis(
     unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
     // Create a map to count the occurrences of each variable in unsatisfied clauses
-    let mut var_occurrences: HashMap<i32, usize> = HashMap::new();
+    let mut var_occurrences: HashMap<i32, usize> = HashMap::default();
 
     // Iterate over all unsatisfied clauses
     for (clause, _) in unsat_clauses {
@@ -57,7 +57,7 @@ pub(crate) fn dlcs(
     _lit_val: &HashMap<u32, Literal>,
     unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
-    let mut var_occurrences: HashMap<i32, usize> = HashMap::new();
+    let mut var_occurrences: HashMap<i32, usize> = HashMap::default();
 
     for (clause, _) in unsat_clauses {
         for &var in clause {
@@ -93,7 +93,7 @@ pub(crate) fn mom(
         .map(|(_, size)| *size)
         .min()
         .unwrap_or(0);
-    let mut var_occurrences: HashMap<i32, usize> = HashMap::new();
+    let mut var_occurrences: HashMap<i32, usize> = HashMap::default();
 
     for (clause, size) in unsat_clauses {
         if *size == min_clause_size {
@@ -130,7 +130,7 @@ pub(crate) fn boehm(
         .map(|(_, size)| *size)
         .min()
         .unwrap_or(0);
-    let mut var_occurrences: HashMap<i32, usize> = HashMap::new();
+    let mut var_occurrences: HashMap<i32, usize> = HashMap::default();
 
     for (clause, size) in unsat_clauses {
         if *size == min_clause_size {
@@ -162,7 +162,7 @@ pub(crate) fn jeroslaw_wang(
     _lit_val: &HashMap<u32, Literal>,
     unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
-    let mut scores: HashMap<i32, f64> = HashMap::new();
+    let mut scores: HashMap<i32, f64> = HashMap::default();
 
     for (clause, size) in unsat_clauses {
         let score = 2f64.powf(-f64::from(*size));
@@ -190,7 +190,7 @@ pub(crate) fn vsids_dpll(
     free_lits: &HashSet<i32>,
     unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
-    let mut scores: HashMap<i32, f64> = HashMap::new();
+    let mut scores: HashMap<i32, f64> = HashMap::default();
 
     for (clause, _) in unsat_clauses {
         for &var in clause {
@@ -217,7 +217,7 @@ pub(crate) fn custom(
     free_lits: &HashSet<i32>,
     unsat_clauses: &HashSet<(Vec<i32>, u32)>,
 ) -> (i32, bool) {
-    let mut scores: HashMap<i32, usize> = HashMap::new();
+    let mut scores: HashMap<i32, usize> = HashMap::default();
 
     for (clause, _) in unsat_clauses {
         for &var in clause {
@@ -231,6 +231,11 @@ pub(crate) fn custom(
         .iter()
         .min_by(|a, b| a.1.cmp(b.1))
         .map_or(&0, |(var, _)| var);
+    // Only variables free in their positive form are counted: without this a formula whose
+    // free variables all occur negated made DPLL branch on variable 0 and panic
+    if min_var == 0 {
+        return (*free_lits.iter().next().unwrap(), true);
+    }
     let val = true; // Default assignment
     (min_var, val)
 }

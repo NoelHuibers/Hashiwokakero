@@ -28,10 +28,7 @@ const update = process.argv.includes('--update');
 // cargo-llvm-cov reports one profile at a time, and the dojo's tests are fast in debug too
 // (CI only tests it in release to share the build with the worker binary it deploys).
 const RUNS = [
-  ['-p', 'common', '-p', 'backend'],
-  // Only the library: the `sat` binary declares the same modules again, its unit tests are the
-  // library's a second time
-  ['-p', 'sat_solver', '--lib'],
+  ['-p', 'common', '-p', 'backend', '-p', 'sat_solver'],
   ['-p', 'dojo', '--features', 'worker'],
   ['-p', 'hashi', '--lib', '--no-default-features', '--features', 'ssr'],
 ];

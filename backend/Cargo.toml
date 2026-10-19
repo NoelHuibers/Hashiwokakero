@@ -17,6 +17,8 @@ common = { path = "../common" }
 
 [dev-dependencies]
 criterion = "0.8.2"
+# Property tests (tests/props.rs): random puzzles and formulas against a brute-force search
+proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 tempfile = "3.27.0"
 
 [[bench]]

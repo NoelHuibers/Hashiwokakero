@@ -494,3 +494,144 @@ async fn stale_runs_are_retried() {
         DojoState::Failed
     );
 }
+
+/// What the stub worker of [`stub_worker`] was sent.
+#[derive(Debug)]
+struct SentJob {
+    query: std::collections::HashMap<String, String>,
+    auth: Option<String>,
+    wasm: Vec<u8>,
+}
+
+type SentJobs = std::sync::Arc<std::sync::Mutex<Vec<SentJob>>>;
+
+/// A worker on a free port that answers every job with `status` (a rejection with 422) and
+/// keeps what it was sent. Returns its URL.
+async fn stub_worker(status: axum::http::StatusCode) -> (String, SentJobs) {
+    use axum::extract::{Query, State};
+    use axum::http::HeaderMap;
+    use axum::response::IntoResponse;
+
+    async fn job(
+        State((status, jobs)): State<(axum::http::StatusCode, SentJobs)>,
+        Query(query): Query<std::collections::HashMap<String, String>>,
+        headers: HeaderMap,
+        wasm: axum::body::Bytes,
+    ) -> axum::response::Response {
+        let auth = headers
+            .get(axum::http::header::AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
+        jobs.lock().unwrap().push(SentJob {
+            query,
+            auth,
+            wasm: wasm.to_vec(),
+        });
+        if status == axum::http::StatusCode::UNPROCESSABLE_ENTITY {
+            (status, axum::Json(Rejection::Import("env.f".into()))).into_response()
+        } else {
+            status.into_response()
+        }
+    }
+
+    let jobs = SentJobs::default();
+    let app = axum::Router::new()
+        .route("/jobs", axum::routing::post(job))
+        .with_state((status, jobs.clone()));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/", listener.local_addr().unwrap());
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    (url, jobs)
+}
+
+async fn state_and_token(conn: &Connection, id: i64) -> (String, Option<String>, i64) {
+    let mut rows = conn
+        .query(
+            "SELECT state, job_token, attempts FROM dojo_submissions WHERE id = ?1",
+            params![id],
+        )
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    (
+        row.get(0).unwrap(),
+        row.get(1).unwrap(),
+        row.get(2).unwrap(),
+    )
+}
+
+/// The dispatcher against stub workers: what it sends, how many at a time, and what becomes of
+/// a submission when the worker takes it, rejects it, fails or can't be reached.
+#[tokio::test]
+async fn queued_submissions_go_to_the_worker() {
+    use axum::http::StatusCode;
+
+    let conn = test_db("dispatch").await;
+    let alice = user(&conn, "alice", true).await;
+    let a1 = submit(&conn, Some(&alice), form("first", 1)).await.unwrap();
+    let a2 = submit(&conn, Some(&alice), form("second", 2))
+        .await
+        .unwrap();
+    let house = submit(&conn, None, form("Hashi CDCL", 3)).await.unwrap();
+
+    // House entries first, then by age, at most MAX_RUNNING at a time
+    let (url, jobs) = stub_worker(StatusCode::ACCEPTED).await;
+    worker::dispatch_to(&conn, &url, "secret").await.unwrap();
+    let sent = std::mem::take(&mut *jobs.lock().unwrap());
+    let ids: Vec<i64> = sent
+        .iter()
+        .map(|j| j.query["id"].parse().unwrap())
+        .collect();
+    assert_eq!(ids, [house, a1]);
+    for job in &sent {
+        let id: i64 = job.query["id"].parse().unwrap();
+        assert_eq!(job.auth.as_deref(), Some("Bearer secret"));
+        assert_eq!(job.query["season"], season().to_string());
+        assert_eq!(job.query["seed"], test_seed(season()));
+        assert_eq!(job.wasm, module(if id == house { 3 } else { 1 }));
+        // Reports about the job need the token it was sent with
+        let (state, token, attempts) = state_and_token(&conn, id).await;
+        assert_eq!(
+            (state.as_str(), token.as_ref(), attempts),
+            ("running", Some(&job.query["report_token"]), 1)
+        );
+    }
+    assert_eq!(state_and_token(&conn, a2).await.0, "queued");
+    // Both slots taken: nothing more goes out
+    worker::dispatch_to(&conn, &url, "secret").await.unwrap();
+    assert!(jobs.lock().unwrap().is_empty());
+
+    // A module the worker can't run is rejected with its reason
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'done' WHERE id IN (?1, ?2)",
+        params![a1, house],
+    )
+    .await
+    .unwrap();
+    let (url, jobs) = stub_worker(StatusCode::UNPROCESSABLE_ENTITY).await;
+    worker::dispatch_to(&conn, &url, "secret").await.unwrap();
+    assert_eq!(jobs.lock().unwrap().len(), 1);
+    let s = submission(&conn, a2, None).await.unwrap().unwrap();
+    assert_eq!(
+        (s.state, s.rejection),
+        (DojoState::Rejected, Some(Rejection::Import("env.f".into())))
+    );
+
+    // A failing or missing worker leaves the submission queued for the next round
+    let a3 = submit(&conn, Some(&alice), form("third", 4)).await.unwrap();
+    let (url, _) = stub_worker(StatusCode::INTERNAL_SERVER_ERROR).await;
+    assert_eq!(
+        worker::dispatch_to(&conn, &url, "secret").await,
+        Err("worker answered 500 Internal Server Error".into())
+    );
+    assert_eq!(state_and_token(&conn, a3).await.0, "queued");
+    let closed = {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        format!("http://{}", listener.local_addr().unwrap())
+    };
+    let err = worker::dispatch_to(&conn, &closed, "secret")
+        .await
+        .unwrap_err();
+    assert!(err.starts_with("worker unreachable"), "{err}");
+    assert_eq!(state_and_token(&conn, a3).await.0, "queued");
+}

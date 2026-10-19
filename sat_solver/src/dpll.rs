@@ -1,13 +1,10 @@
 use crate::{
     cli::Heuristic,
+    hash::{self, HashMap, HashSet},
     heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids_dpll},
     profiling,
 };
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    fmt,
-    time::Instant,
-};
+use std::{collections::VecDeque, fmt, time::Instant};
 
 // Absolute value of a literal. This used to be u16, which silently merged variables above 65535.
 type Atom = u32;
@@ -120,17 +117,17 @@ impl DPLL {
     ) -> Self {
         profiling::start("DPLL::new");
         let mut dpll = Self {
-            clauses: HashMap::with_capacity(clause_count),
+            clauses: hash::map(clause_count),
             heuristic,
             history: Vec::new(),
             history_enabled: false,
-            lit_val: HashMap::with_capacity(lit_count),
+            lit_val: hash::map(lit_count),
             min_depth: if show_depth { usize::MAX } else { 0 },
-            neg_occ: HashMap::with_capacity(lit_count),
-            pos_occ: HashMap::with_capacity(lit_count),
+            neg_occ: hash::map(lit_count),
+            pos_occ: hash::map(lit_count),
             unit_queue: VecDeque::new(),
-            free_lits: HashSet::with_capacity(lit_count),
-            unsat_clauses: HashSet::with_capacity(clause_count),
+            free_lits: hash::set(lit_count),
+            unsat_clauses: hash::set(clause_count),
             show_depth,
             decisions: 0,
             deadline: None,
@@ -139,6 +136,12 @@ impl DPLL {
         if input.iter().any(Vec::is_empty) {
             dpll.has_empty_clause = true;
             input.retain(|c| !c.is_empty());
+        }
+        // A literal twice in a clause was counted twice as unassigned: such a clause never
+        // became unit, a conflict on it went unnoticed and the search ended in a panic
+        for clause in &mut input {
+            let mut seen = hash::set(clause.len());
+            clause.retain(|&l| seen.insert(l));
         }
         // * read formula
         // Using iterators where possible for better performance
@@ -670,6 +673,36 @@ fn should_solve_unsat() {
     }
 }
 
+/// Found by the property tests (tests/props.rs): repeated literals made the solver panic.
+#[test]
+fn repeated_literals_count_once() {
+    let solve =
+        |clauses: Vec<Vec<i32>>| DPLL::new(clauses, 2, 2, Heuristic::Arbitrary, false).solve();
+    assert!(matches!(
+        solve(vec![vec![1, 1], vec![-1, -1]]),
+        Ok(DIMACSOutput::Unsat)
+    ));
+    assert!(matches!(
+        solve(vec![vec![1, 2, 1], vec![-1], vec![-2, -2]]),
+        Ok(DIMACSOutput::Unsat)
+    ));
+    let Ok(DIMACSOutput::Sat(model)) = solve(vec![vec![2, 2], vec![-1, 2, -1]]) else {
+        panic!("Expected SAT");
+    };
+    assert!(model.contains(&2));
+}
+
+/// Found by the property tests (backend/tests/props.rs): the custom heuristic found no
+/// variable to branch on when the free ones only occur negated, and DPLL panicked.
+#[test]
+fn custom_heuristic_branches_on_negated_variables() {
+    let res = DPLL::new(vec![vec![-2, -1]], 2, 1, Heuristic::Custom, false).solve();
+    let Ok(DIMACSOutput::Sat(model)) = res else {
+        panic!("Expected SAT, got {res:?}");
+    };
+    assert!(model.contains(&-1) || model.contains(&-2));
+}
+
 #[test]
 fn should_parse_and_solve_sat() {
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/aim-50-1_6-yes1-1.cnf").unwrap();
@@ -704,7 +737,7 @@ fn should_elim_pure_lit() {
 }
 
 #[test]
-#[ignore = "runtime varies from seconds to many minutes, the arbitrary heuristic branches in HashMap order"]
+#[ignore = "over five minutes: the arbitrary heuristic is a poor fit for ssa7552-038"]
 fn bug_jan_2nd_should_be_sat() {
     let (mut input, mut v_c, mut c_c) =
         crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();

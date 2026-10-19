@@ -225,7 +225,12 @@ pub async fn dispatch() -> Result<(), String> {
         return Ok(());
     };
     let conn = db::conn().map_err(|e| e.to_string())?;
-    housekeeping(&conn).await.map_err(|e| e.to_string())?;
+    dispatch_to(&conn, &url, &token).await
+}
+
+/// [`dispatch`] to the worker at `url`, authenticated with `token`.
+pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Result<(), String> {
+    housekeeping(conn).await.map_err(|e| e.to_string())?;
     let client = reqwest::Client::new();
     loop {
         let mut rows = conn
@@ -276,7 +281,7 @@ pub async fn dispatch() -> Result<(), String> {
                 "{}/jobs?id={id}&season={season}&seed={seed}&report_token={report_token}",
                 url.trim_end_matches('/')
             ))
-            .bearer_auth(&token)
+            .bearer_auth(token)
             .body(wasm)
             .timeout(Duration::from_secs(120))
             .send()
@@ -295,7 +300,7 @@ pub async fn dispatch() -> Result<(), String> {
                 let body = r.bytes().await.unwrap_or_default();
                 let reason =
                     serde_json::from_slice(&body).unwrap_or(Rejection::Invalid(String::new()));
-                apply(&conn, &Report::Rejected { id, season, reason })
+                apply(conn, &Report::Rejected { id, season, reason })
                     .await
                     .map_err(|e| e.to_string())?;
             }

@@ -30,6 +30,8 @@ serde_json = { version = "1.0.154", optional = true }
 tokio = { version = "1", optional = true, features = ["rt-multi-thread", "macros", "sync", "time", "signal"] }
 
 [dev-dependencies]
+# Property tests of the DRAT checker and the answer parser (src/tests/props.rs)
+proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 wat = "1"
 
 [features]

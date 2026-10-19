@@ -88,7 +88,7 @@ fn test_solve_with_restart_threshold() {
 
 #[test]
 fn test_solver_uses_luby_sequence_for_restarts() {
-    // The branching order depends on HashMap iteration, so the number of conflicts varies between runs.
+    // The number of conflicts depends on the branching order (the same on every run, see hash.rs).
     // A low threshold on an instance with plenty of conflicts makes sure a restart happens every time.
     let (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
     let base_conflict_threshold = Some(1);

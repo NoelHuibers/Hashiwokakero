@@ -301,8 +301,144 @@ pub struct DailyGame(pub Game);
 #[cfg(test)]
 mod tests {
     use common::Difficulty;
+    use proptest::prelude::*;
+    use proptest::test_runner::{RngSeed, contextualize_config};
 
     use super::*;
+
+    /// The same cases on every run, so CI never fails at random. `PROPTEST_RNG_SEED` (other
+    /// cases) and `PROPTEST_CASES` (more of them) search further.
+    fn config(cases: u32) -> ProptestConfig {
+        contextualize_config(ProptestConfig {
+            cases,
+            rng_seed: RngSeed::Fixed(0x4a5e),
+            failure_persistence: None,
+            ..ProptestConfig::default()
+        })
+    }
+
+    /// A game being played on a row of islands with `n` bridges between them.
+    fn playing(n: usize) -> Game {
+        let width = u8::try_from(n + 1).unwrap();
+        let mut puzzle = Puzzle::empty(width, 1);
+        for x in 0..width {
+            puzzle.set(common::Pos::new(x, 0), 2);
+        }
+        let game = Game::new("test.game");
+        game.set_puzzle(puzzle, None, None, Source::Custom);
+        assert_eq!(game.board.with_untracked(|b| b.edges.len()), n);
+        game
+    }
+
+    proptest! {
+        #![proptest_config(config(128))]
+
+        /// Undo steps back through every click in reverse, redo replays them, a new click
+        /// after undoing drops what could be redone, and a restart is one undoable step.
+        #[test]
+        fn undo_and_redo_retrace_the_moves(
+            n in 1..8usize,
+            clicks in prop::collection::vec((0..8usize, prop::bool::ANY), 1..40),
+            back in 0..45usize,
+            new_click in 0..8usize,
+        ) {
+            Owner::new().with(|| {
+                let game = playing(n);
+                let mut states = vec![game.bridges.get_untracked()];
+                for &(edge, add) in &clicks {
+                    game.cycle(edge % n, if add { 1 } else { -1 });
+                    let bridges = game.bridges.get_untracked();
+                    prop_assert!(bridges.len() == n && bridges.iter().all(|&b| b <= 2));
+                    // Every click changes its bridge
+                    prop_assert_ne!(states.last(), Some(&bridges));
+                    states.push(bridges);
+                }
+                prop_assert_eq!(game.moves.get_untracked() as usize, clicks.len());
+                let back = back.min(clicks.len() + 2);
+                for _ in 0..back {
+                    game.undo();
+                }
+                let at = clicks.len().saturating_sub(back);
+                prop_assert_eq!(&game.bridges.get_untracked(), &states[at]);
+                for _ in 0..back {
+                    game.redo();
+                }
+                prop_assert_eq!(&game.bridges.get_untracked(), states.last().unwrap());
+
+                // A click after undoing starts a new branch: nothing to redo
+                game.undo();
+                game.cycle(new_click % n, 1);
+                let branch = game.bridges.get_untracked();
+                game.redo();
+                prop_assert_eq!(&game.bridges.get_untracked(), &branch);
+                prop_assert!(game.redo_stack.with_untracked(Vec::is_empty));
+
+                game.restart();
+                prop_assert_eq!(game.bridges.get_untracked(), vec![0; n]);
+                // (Restarting an empty board changes nothing, so it isn't a step)
+                if branch.iter().any(|&b| b > 0) {
+                    game.undo();
+                    prop_assert_eq!(game.bridges.get_untracked(), branch);
+                }
+                Ok(())
+            })?;
+        }
+    }
+
+    /// The title above the board names where the puzzle came from, in the player's language.
+    #[test]
+    fn sources_have_titles() {
+        use crate::i18n::Locale;
+        let params = GenerateParams {
+            width: 10,
+            height: 7,
+            difficulty: Difficulty::Hard,
+            seed: 1,
+        };
+        let daily = Source::Daily {
+            date: "Mon 19 Oct 2026".into(),
+            params,
+        };
+        assert_eq!(Source::Generated(params).title(Locale::en), "Hard 10×7");
+        assert!(daily.title(Locale::en).contains("Mon 19 Oct 2026"));
+        assert!(
+            Source::Imported("x.txt".into())
+                .title(Locale::de)
+                .contains("x.txt")
+        );
+        assert_ne!(Source::Custom.title(Locale::ja), "");
+        assert_eq!(daily.difficulty(), Some(Difficulty::Hard));
+        assert_eq!(Source::Custom.difficulty(), None);
+    }
+
+    /// Only the last 500 steps can be undone, and a finished game takes no more clicks.
+    #[test]
+    fn undo_history_is_bounded() {
+        Owner::new().with(|| {
+            let game = playing(1);
+            for _ in 0..600 {
+                game.cycle(0, 1);
+            }
+            assert_eq!(game.undo_stack.with_untracked(Vec::len), 500);
+            game.set_edges(&[(0, game.bridges.get_untracked()[0])]);
+            assert_eq!(
+                game.undo_stack.with_untracked(Vec::len),
+                500,
+                "no change, no step"
+            );
+            game.status.set(Status::Won);
+            let before = game.bridges.get_untracked();
+            game.cycle(0, 1);
+            game.undo();
+            assert_eq!(game.bridges.get_untracked(), before);
+            // Restarting a finished game starts it over without history
+            game.restart();
+            assert_eq!(game.status.get_untracked(), Status::Playing);
+            assert_eq!(game.bridges.get_untracked(), vec![0]);
+            assert!(game.undo_stack.with_untracked(Vec::is_empty));
+            assert_eq!(game.moves.get_untracked(), 0);
+        });
+    }
 
     /// The saved game (`hashi.game.v2`, `hashi.daily.v1`) of every browser. A different format
     /// loses the game in progress of everyone after a deploy.
