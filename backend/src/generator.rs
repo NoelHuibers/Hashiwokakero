@@ -117,19 +117,25 @@ const MAX_BUDGET_MS: u64 = 4_000;
 const WORK_PER_MS: u64 = 250_000;
 /// Work charged for every clause handed to the SAT solver (per call).
 const SAT_WORK_PER_CLAUSE: u64 = 200;
-/// Safety net against pathological inputs: no new candidate, repair or tuning step after this
-/// long. The budgets end the search long before, unless the machine is many times slower than
-/// it should be.
-const SAFETY_LIMIT: Duration = Duration::from_secs(30);
-/// Time limit of one SAT check, also only a safety net: the checks take milliseconds. It must
-/// stay long: splr stops its clause eliminator after a tenth of the time limit (wall clock), and
-/// the model it then finds decides how a puzzle gets repaired. With the 1 to 2 s limit this
-/// used to be, a slow or busy machine could get other puzzles.
-const SAT_SAFETY_LIMIT: Duration = Duration::from_secs(10);
+/// Safety net for the wall time of one [`generate`] call: no new candidate, repair or tuning
+/// step after this long, and SAT checks get only what is left of it. The server generates on a
+/// single shared CPU, every other request waits meanwhile: twice the old time cap
+/// ([`MAX_BUDGET_MS`]) leaves room for a CPU 2x slower than the one [`WORK_PER_MS`] was measured
+/// on before large grids get cut short (and then depend on the machine, as they used to).
+///
+/// The default sizes stay far inside it: they need at most 1.4 s of work (Oni 24x24, the most
+/// of 40 seeds per difficulty), 5.5 s on a 4x slower CPU, so they never reach it and their
+/// puzzles don't depend on the machine (see the test `default_sizes_stay_inside_the_safety_limit`).
+const SAFETY_LIMIT: Duration = Duration::from_millis(2 * MAX_BUDGET_MS);
+/// How much slower than the measuring CPU a machine may be before the default sizes could reach
+/// [`SAFETY_LIMIT`].
+#[cfg(test)]
+const SLOWDOWN: u64 = 4;
 
 /// What is left of the work budget of one [`generate`] call.
 struct Budget {
     left: u64,
+    spent: u64,
     safety: Instant,
 }
 
@@ -137,12 +143,14 @@ impl Budget {
     fn new(budget_ms: u64, start: Instant) -> Self {
         Self {
             left: budget_ms.saturating_mul(WORK_PER_MS),
+            spent: 0,
             safety: start + SAFETY_LIMIT,
         }
     }
 
     fn spend(&mut self, work: u64) {
         self.left = self.left.saturating_sub(work);
+        self.spent = self.spent.saturating_add(work);
     }
 
     /// Whether the budget is used up (or the safety limit passed).
@@ -164,6 +172,11 @@ fn sat_solver() -> SolverConfig {
 }
 
 pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
+    generate_counted(params).0
+}
+
+/// [`generate`] and the work it spent.
+fn generate_counted(params: &GenerateParams) -> (GeneratedPuzzle, u64) {
     let start = Instant::now();
     let params = GenerateParams {
         width: params.width.clamp(MIN_SIZE, MAX_SIZE),
@@ -250,14 +263,15 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
         // Not even a non-unique puzzle (tiny grids): fall back to the smallest valid puzzle
         (None, None) => trivial(&params),
     };
-    GeneratedPuzzle {
+    let generated = GeneratedPuzzle {
         puzzle: candidate.puzzle,
         solution: candidate.solution,
         params,
         unique: candidate.unique,
         attempts,
         generate_ms: start.elapsed().as_secs_f64() * 1000.0,
-    }
+    };
+    (generated, budget.spent)
 }
 
 fn distance(score: f64, (lo, hi): (f64, f64)) -> f64 {
@@ -432,9 +446,15 @@ pub const MAX_TRIALS: u32 = 10_000;
 const SEARCH_NODES: u32 = 2_000;
 
 /// Another solution according to the SAT solver (with the lazy connectivity loop). `None` if it
-/// failed or ran into its safety time limit.
+/// failed or ran past the safety limit.
+///
+/// Its time limit is what is left of [`SAFETY_LIMIT`], so a SAT check can't extend it. splr
+/// stops its clause eliminator after a tenth of its time limit (wall clock), and the model it
+/// then finds decides how a puzzle gets repaired: with the 1 to 2 s limit checks used to get,
+/// a slow or busy machine could get other puzzles. The default sizes always have seconds left
+/// (see [`SAFETY_LIMIT`]), which gives the eliminator at least a few hundred milliseconds.
 fn sat_other_solution(puzzle: &Puzzle, solution: &[u8], budget: &mut Budget) -> Option<Search> {
-    let deadline = Instant::now() + SAT_SAFETY_LIMIT;
+    let deadline = budget.safety;
     let (search, clauses) = other_solution(puzzle, solution, &sat_solver(), Some(deadline)).ok()?;
     budget.spend(clauses.saturating_mul(SAT_WORK_PER_CLAUSE));
     Some(search)
@@ -1048,6 +1068,57 @@ fn pick_weighted_index<T>(rng: &mut StdRng, items: &[(T, f64)]) -> Option<usize>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The default sizes (and the sizes the tests use) need far less work than the safety limit
+    /// allows, even on a CPU [`SLOWDOWN`] times slower than the one the work was measured on:
+    /// there the budget ends their search, never the clock.
+    #[test]
+    fn default_sizes_stay_inside_the_safety_limit() {
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "the safety limit is a few seconds"
+        )]
+        let limit = WORK_PER_MS * SAFETY_LIMIT.as_millis() as u64 / SLOWDOWN;
+        let mut cases = Vec::new();
+        for difficulty in Difficulty::ALL {
+            let (width, height) = difficulty.size();
+            // Oni takes seconds in a debug build: only seed 2, which needs the most work of the
+            // first three (0.62 of the limit, 40 seeds needed at most 0.69)
+            let seeds = if difficulty == Difficulty::Oni {
+                2..=2
+            } else {
+                1..=3
+            };
+            for seed in seeds {
+                cases.push(GenerateParams {
+                    width,
+                    height,
+                    difficulty,
+                    seed,
+                });
+            }
+        }
+        for (difficulty, size) in [
+            (Difficulty::Expert, 12),
+            (Difficulty::Oni, 12),
+            (Difficulty::Medium, 16),
+        ] {
+            cases.push(GenerateParams {
+                width: size,
+                height: size,
+                difficulty,
+                seed: 1,
+            });
+        }
+        for params in cases {
+            let (_, work) = generate_counted(&params);
+            assert!(
+                work < limit,
+                "{params:?}: {work} units of work, a {SLOWDOWN}x slower CPU needs more than \
+                 the safety limit for that, its puzzle would depend on the machine"
+            );
+        }
+    }
 
     #[test]
     fn grid_puzzle_matches_solution() {
