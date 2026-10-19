@@ -18,7 +18,10 @@
 //!    uniqueness is confirmed by the SAT solver (with the lazy connectivity loop).
 //!
 //! Everything is driven by a seeded RNG and fixed work limits, so the same [`GenerateParams`]
-//! give the same puzzle. Wall-clock limits only exist as a safety net.
+//! give the same puzzle on every machine, however fast or busy it is. The budget that ends the
+//! search counts work, not time (see [`Budget`]): a time budget made the puzzle of a seed depend
+//! on the load of the machine. Wall-clock limits only exist as a safety net, far beyond what the
+//! budget allows.
 
 use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
@@ -48,7 +51,9 @@ struct Profile {
     score: (f64, f64),
     /// Candidates to try at most (each with several repairs).
     candidates: u32,
-    /// Safety net in milliseconds, only reached on pathological inputs.
+    /// Work budget, in milliseconds of a laptop CPU (see [`WORK_PER_MS`]). Once it is spent,
+    /// the best puzzle so far is taken. Only large grids get there, the default sizes finish
+    /// all their candidates well within it.
     budget_ms: u64,
 }
 
@@ -102,8 +107,57 @@ fn profile(difficulty: Difficulty) -> Profile {
     }
 }
 
-/// Upper bound of the safety time limit for large grids.
+/// Upper bound of the work budget for large grids.
 const MAX_BUDGET_MS: u64 = 4_000;
+
+/// Work units per millisecond of a laptop CPU from 2026 (Intel Core Ultra X7): the deduction
+/// solver's work (see [`Analysis::work`]) and [`SAT_WORK_PER_CLAUSE`]. Measured on generations
+/// that ran without a budget, so the work budget ends the search about where the time budget it
+/// replaced did on that machine. Changing these numbers changes the puzzles of large grids.
+const WORK_PER_MS: u64 = 250_000;
+/// Work charged for every clause handed to the SAT solver (per call).
+const SAT_WORK_PER_CLAUSE: u64 = 200;
+/// Safety net for the wall time of one [`generate`] call: no new candidate, repair or tuning
+/// step after this long, and SAT checks get only what is left of it. The server generates on a
+/// single shared CPU, every other request waits meanwhile: twice the old time cap
+/// ([`MAX_BUDGET_MS`]) leaves room for a CPU 2x slower than the one [`WORK_PER_MS`] was measured
+/// on before large grids get cut short (and then depend on the machine, as they used to).
+///
+/// The default sizes stay far inside it: they need at most 1.4 s of work (Oni 24x24, the most
+/// of 40 seeds per difficulty), 5.5 s on a 4x slower CPU, so they never reach it and their
+/// puzzles don't depend on the machine (see the test `default_sizes_stay_inside_the_safety_limit`).
+const SAFETY_LIMIT: Duration = Duration::from_millis(2 * MAX_BUDGET_MS);
+/// How much slower than the measuring CPU a machine may be before the default sizes could reach
+/// [`SAFETY_LIMIT`].
+#[cfg(test)]
+const SLOWDOWN: u64 = 4;
+
+/// What is left of the work budget of one [`generate`] call.
+struct Budget {
+    left: u64,
+    spent: u64,
+    safety: Instant,
+}
+
+impl Budget {
+    fn new(budget_ms: u64, start: Instant, safety: Duration) -> Self {
+        Self {
+            left: budget_ms.saturating_mul(WORK_PER_MS),
+            spent: 0,
+            safety: start + safety,
+        }
+    }
+
+    fn spend(&mut self, work: u64) {
+        self.left = self.left.saturating_sub(work);
+        self.spent = self.spent.saturating_add(work);
+    }
+
+    /// Whether the budget is used up (or the safety limit passed).
+    fn exhausted(&self) -> bool {
+        self.left == 0 || Instant::now() >= self.safety
+    }
+}
 
 /// The range of [`Analysis::score`] the generator aims for.
 pub fn score_range(difficulty: Difficulty) -> (f64, f64) {
@@ -114,13 +168,20 @@ pub fn score_range(difficulty: Difficulty) -> (f64, f64) {
 /// puzzles and deterministic (when the backtracking search gives up while repairing, the other
 /// solution found by the SAT solver decides how the puzzle is repaired).
 fn sat_solver() -> SolverConfig {
-    SolverConfig {
-        timeout_ms: 2_000,
-        ..SolverConfig::splr()
-    }
+    SolverConfig::splr()
 }
 
 pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
+    generate_counted(params).0
+}
+
+/// [`generate`] and the work it spent.
+fn generate_counted(params: &GenerateParams) -> (GeneratedPuzzle, u64) {
+    generate_with(params, SAFETY_LIMIT)
+}
+
+/// [`generate_counted`] with another safety limit.
+fn generate_with(params: &GenerateParams, safety: Duration) -> (GeneratedPuzzle, u64) {
     let start = Instant::now();
     let params = GenerateParams {
         width: params.width.clamp(MIN_SIZE, MAX_SIZE),
@@ -129,8 +190,7 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
     };
     let mut profile = profile(params.difficulty);
     // Candidates get more expensive on grids larger than the default size of the difficulty:
-    // try fewer of them and allow more time (the time limit is only a safety net, hitting it
-    // makes the result depend on the speed of the machine)
+    // try fewer of them and allow more work
     let (dw, dh) = params.difficulty.size();
     let scale =
         (f64::from(params.width) * f64::from(params.height)) / (f64::from(dw) * f64::from(dh));
@@ -151,7 +211,7 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
         let budget_ms = (profile.budget_ms as f64 * scale.sqrt()) as u64;
         profile.budget_ms = budget_ms.min(MAX_BUDGET_MS);
     }
-    let deadline = start + Duration::from_millis(profile.budget_ms);
+    let mut budget = Budget::new(profile.budget_ms, start, safety);
     // Mix the parameters into the seed, so e.g. sizes don't share the same random stream
     let seed = params.seed
         ^ u64::from(params.width) << 56
@@ -163,7 +223,7 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
     let mut attempts = 0;
     let mut fallback: Option<Candidate> = None;
     for round in 0..profile.candidates * 2 {
-        if Instant::now() >= deadline && (best.is_some() || fallback.is_some()) {
+        if budget.exhausted() && (best.is_some() || fallback.is_some()) {
             break;
         }
         // Second half, only if nothing unique was found: fewer cycles, which makes unique
@@ -176,7 +236,7 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
             p.cycles /= 3.0;
         }
         attempts += 1;
-        let Some(candidate) = make_candidate(&params, &p, &mut rng, deadline) else {
+        let Some(candidate) = make_candidate(&params, &p, &mut rng, &mut budget) else {
             continue;
         };
         attempts += candidate.repairs;
@@ -189,12 +249,7 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
         let distance = distance(candidate.analysis.score(), p.score);
         if best.as_ref().is_none_or(|(d, _)| distance < *d) {
             // The search already showed uniqueness, the SAT solver has to confirm it
-            match sat_other_solution(
-                &candidate.puzzle,
-                &candidate.solution,
-                &sat_solver(),
-                deadline,
-            ) {
+            match sat_other_solution(&candidate.puzzle, &candidate.solution, &mut budget) {
                 Some(Search::Unsat) => best = Some((distance, candidate)),
                 Some(Search::Found(_)) => {
                     debug_assert!(false, "search and SAT solver disagree on uniqueness");
@@ -213,14 +268,15 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
         // Not even a non-unique puzzle (tiny grids): fall back to the smallest valid puzzle
         (None, None) => trivial(&params),
     };
-    GeneratedPuzzle {
+    let generated = GeneratedPuzzle {
         puzzle: candidate.puzzle,
         solution: candidate.solution,
         params,
         unique: candidate.unique,
         attempts,
         generate_ms: start.elapsed().as_secs_f64() * 1000.0,
-    }
+    };
+    (generated, budget.spent)
 }
 
 fn distance(score: f64, (lo, hi): (f64, f64)) -> f64 {
@@ -245,7 +301,7 @@ fn make_candidate(
     params: &GenerateParams,
     p: &Profile,
     rng: &mut StdRng,
-    deadline: Instant,
+    budget: &mut Budget,
 ) -> Option<Candidate> {
     let mut grid = Grid::new(params.width, params.height);
     #[expect(
@@ -267,20 +323,21 @@ fn make_candidate(
     let mut repairs = 0;
     loop {
         let (puzzle, board, solution) = grid.puzzle();
-        let other = match deduce::other_solution(&board, &solution, SEARCH_NODES) {
+        let (uniqueness, work) = deduce::other_solution_with_work(&board, &solution, SEARCH_NODES);
+        budget.spend(work);
+        let other = match uniqueness {
             Uniqueness::Unique => None,
             Uniqueness::Other(other) => Some(other),
             // The search gave up, ask the SAT solver
-            Uniqueness::Unknown => {
-                match sat_other_solution(&puzzle, &solution, &sat_solver(), deadline) {
-                    Some(Search::Unsat) => None,
-                    Some(Search::Found(other)) => Some(other),
-                    _ => return None,
-                }
-            }
+            Uniqueness::Unknown => match sat_other_solution(&puzzle, &solution, budget) {
+                Some(Search::Unsat) => None,
+                Some(Search::Found(other)) => Some(other),
+                _ => return None,
+            },
         };
         let Some(other) = other else {
             let analysis = deduce::analyze(&board, MAX_TRIALS);
+            budget.spend(analysis.work);
             let mut candidate = Candidate {
                 puzzle,
                 solution,
@@ -288,11 +345,11 @@ fn make_candidate(
                 repairs,
                 analysis,
             };
-            tune(&mut grid, &mut candidate, rng, p, deadline);
+            tune(&mut grid, &mut candidate, rng, p, budget);
             return Some(candidate);
         };
         if repairs >= max_repairs
-            || Instant::now() >= deadline
+            || budget.exhausted()
             || !grid.repair(rng, &board, &solution, &other, p)
         {
             return Some(Candidate {
@@ -315,12 +372,12 @@ fn tune(
     candidate: &mut Candidate,
     rng: &mut StdRng,
     p: &Profile,
-    deadline: Instant,
+    budget: &mut Budget,
 ) {
     let mut harden_steps = 0;
     for _ in 0..TUNE_STEPS {
         let current = distance(candidate.analysis.score(), p.score);
-        if current == 0.0 || Instant::now() >= deadline {
+        if current == 0.0 || budget.exhausted() {
             return;
         }
         let too_hard = candidate.analysis.score() > p.score.1;
@@ -345,7 +402,10 @@ fn tune(
         let mut unique = None;
         for _ in 0..TUNE_REPAIRS {
             let (puzzle, board, solution) = changed.puzzle();
-            match deduce::other_solution(&board, &solution, SEARCH_NODES) {
+            let (uniqueness, work) =
+                deduce::other_solution_with_work(&board, &solution, SEARCH_NODES);
+            budget.spend(work);
+            match uniqueness {
                 Uniqueness::Unique => {
                     unique = Some((puzzle, board, solution));
                     break;
@@ -362,6 +422,7 @@ fn tune(
             continue;
         };
         let analysis = deduce::analyze(&board, MAX_TRIALS);
+        budget.spend(analysis.work);
         if distance(analysis.score(), p.score) < current {
             *grid = changed;
             *candidate = Candidate {
@@ -389,17 +450,19 @@ pub const MAX_TRIALS: u32 = 10_000;
 /// Node limit of the backtracking search used to check uniqueness while repairing.
 const SEARCH_NODES: u32 = 2_000;
 
-/// Another solution according to the SAT solver (with the lazy connectivity loop).
-fn sat_other_solution(
-    puzzle: &Puzzle,
-    solution: &[u8],
-    config: &SolverConfig,
-    deadline: Instant,
-) -> Option<Search> {
-    let check_deadline = deadline
-        .max(Instant::now() + Duration::from_millis(200))
-        .min(Instant::now() + Duration::from_millis(2_000));
-    other_solution(puzzle, solution, config, Some(check_deadline)).ok()
+/// Another solution according to the SAT solver (with the lazy connectivity loop). `None` if it
+/// failed or ran past the safety limit.
+///
+/// Its time limit is what is left of [`SAFETY_LIMIT`], so a SAT check can't extend it. splr
+/// stops its clause eliminator after a tenth of its time limit (wall clock), and the model it
+/// then finds decides how a puzzle gets repaired: with the 1 to 2 s limit checks used to get,
+/// a slow or busy machine could get other puzzles. The default sizes always have seconds left
+/// (see [`SAFETY_LIMIT`]), which gives the eliminator at least a few hundred milliseconds.
+fn sat_other_solution(puzzle: &Puzzle, solution: &[u8], budget: &mut Budget) -> Option<Search> {
+    let deadline = budget.safety;
+    let (search, clauses) = other_solution(puzzle, solution, &sat_solver(), Some(deadline)).ok()?;
+    budget.spend(clauses.saturating_mul(SAT_WORK_PER_CLAUSE));
+    Some(search)
 }
 
 /// Two islands with a single bridge: always valid and unique.
@@ -1010,6 +1073,99 @@ fn pick_weighted_index<T>(rng: &mut StdRng, items: &[(T, f64)]) -> Option<usize>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The work budget counts work, not time: on a machine busy with other things (tests in
+    /// parallel, coverage instrumentation) the same parameters give the same puzzle. With the
+    /// time budget it had, this failed: the busy run stopped earlier and took another candidate.
+    /// Without the safety limit here, it is the one thing that may (deliberately) stop a
+    /// generation on a machine that is too slow, and this test makes the machine very slow.
+    #[test]
+    fn busy_machine_gets_the_same_puzzle() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        // Takes about half of its old time budget in a debug build
+        let params = GenerateParams {
+            width: 16,
+            height: 16,
+            difficulty: Difficulty::Medium,
+            seed: 1,
+        };
+        let no_limit = Duration::from_secs(3_600);
+        let calm = generate_with(&params, no_limit).0;
+        let stop = AtomicBool::new(false);
+        // Many more busy threads than cores, the generator gets a small share of a core
+        let threads = std::thread::available_parallelism().map_or(4, std::num::NonZero::get) * 12;
+        let busy = std::thread::scope(|scope| {
+            for _ in 0..threads {
+                scope.spawn(|| {
+                    while !stop.load(Ordering::Relaxed) {
+                        std::hint::spin_loop();
+                    }
+                });
+            }
+            let busy = generate_with(&params, no_limit).0;
+            stop.store(true, Ordering::Relaxed);
+            busy
+        });
+        assert_eq!(
+            (calm.puzzle, calm.solution),
+            (busy.puzzle, busy.solution),
+            "another puzzle on a busy machine ({:.0} ms instead of {:.0} ms)",
+            busy.generate_ms,
+            calm.generate_ms
+        );
+    }
+
+    /// The default sizes (and the sizes the tests use) need far less work than the safety limit
+    /// allows, even on a CPU [`SLOWDOWN`] times slower than the one the work was measured on:
+    /// there the budget ends their search, never the clock.
+    #[test]
+    fn default_sizes_stay_inside_the_safety_limit() {
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "the safety limit is a few seconds"
+        )]
+        let limit = WORK_PER_MS * SAFETY_LIMIT.as_millis() as u64 / SLOWDOWN;
+        let mut cases = Vec::new();
+        for difficulty in Difficulty::ALL {
+            let (width, height) = difficulty.size();
+            // Oni takes seconds in a debug build: only seed 2, which needs the most work of the
+            // first three (0.62 of the limit, 40 seeds needed at most 0.69)
+            let seeds = if difficulty == Difficulty::Oni {
+                2..=2
+            } else {
+                1..=3
+            };
+            for seed in seeds {
+                cases.push(GenerateParams {
+                    width,
+                    height,
+                    difficulty,
+                    seed,
+                });
+            }
+        }
+        for (difficulty, size) in [
+            (Difficulty::Expert, 12),
+            (Difficulty::Oni, 12),
+            (Difficulty::Medium, 16),
+        ] {
+            cases.push(GenerateParams {
+                width: size,
+                height: size,
+                difficulty,
+                seed: 1,
+            });
+        }
+        for params in cases {
+            let (_, work) = generate_counted(&params);
+            assert!(
+                work < limit,
+                "{params:?}: {work} units of work, a {SLOWDOWN}x slower CPU needs more than \
+                 the safety limit for that, its puzzle would depend on the machine"
+            );
+        }
+    }
 
     #[test]
     fn grid_puzzle_matches_solution() {

@@ -297,3 +297,60 @@ impl Game {
 /// The daily puzzle, separate from the practice game so neither overwrites the other.
 #[derive(Clone, Copy, Debug)]
 pub struct DailyGame(pub Game);
+
+#[cfg(test)]
+mod tests {
+    use common::Difficulty;
+
+    use super::*;
+
+    /// The saved game (`hashi.game.v2`, `hashi.daily.v1`) of every browser. A different format
+    /// loses the game in progress of everyone after a deploy.
+    #[test]
+    fn saved_games_still_load() {
+        let params = GenerateParams {
+            width: 3,
+            height: 3,
+            difficulty: Difficulty::Hard,
+            seed: 42,
+        };
+        let saved = |source, status| SavedGame {
+            puzzle: crate::golden::puzzle(),
+            bridges: vec![2, 0],
+            solution: Some(vec![2, 1]),
+            unique: Some(true),
+            source,
+            status,
+            elapsed: 61,
+            moves: 4,
+            hints: 1,
+        };
+        let games = [
+            saved(Source::Generated(params), Status::Playing),
+            saved(
+                Source::Daily {
+                    date: "Mon 19 Oct 2026".into(),
+                    params,
+                },
+                Status::Won,
+            ),
+            saved(Source::Custom, Status::Revealed),
+            saved(Source::Imported("test1.txt".into()), Status::Empty),
+        ];
+        let lines: Vec<String> = games
+            .iter()
+            .map(|game| {
+                let json = serde_json::to_string(game).unwrap();
+                let loaded: SavedGame = serde_json::from_str(&json).unwrap();
+                assert_eq!(serde_json::to_string(&loaded).unwrap(), json);
+                json
+            })
+            .collect();
+        crate::golden::check(
+            "saved_games.txt",
+            &lines.join("\n"),
+            "the games saved in the browsers wouldn't load any more: everybody loses the puzzle \
+             they are playing",
+        );
+    }
+}

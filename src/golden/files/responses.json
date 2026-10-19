@@ -1,0 +1,528 @@
+{
+  "user": {
+    "id": 7,
+    "name": "noel",
+    "guest": false,
+    "created_at": 1750000000000,
+    "admin": true
+  },
+  "daily": {
+    "day": 20381,
+    "difficulty": "Hard",
+    "puzzle": {
+      "width": 3,
+      "height": 3,
+      "islands": [
+        {
+          "pos": {
+            "x": 0,
+            "y": 0
+          },
+          "required": 2
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 0
+          },
+          "required": 3
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 2
+          },
+          "required": 1
+        }
+      ]
+    },
+    "attempt": {
+      "started_at": 1760000000000,
+      "finished_at": 1760000095000,
+      "hints": 1,
+      "checks": 2,
+      "revealed": false,
+      "time_ms": 145000,
+      "bridges": [
+        2,
+        1
+      ],
+      "flag": "Pace"
+    },
+    "server_now": 1760000100000,
+    "finishers": 17,
+    "stamps": [
+      "Gold",
+      "Streak7"
+    ]
+  },
+  "daily_before_start": {
+    "day": 20381,
+    "difficulty": "Oni",
+    "puzzle": null,
+    "attempt": null,
+    "server_now": 1760000100000,
+    "finishers": 0,
+    "stamps": []
+  },
+  "submit": {
+    "time_ms": 145000,
+    "rank": 0,
+    "finishers": 17,
+    "flag": "TooFast",
+    "stamps": [
+      "First"
+    ]
+  },
+  "leaderboard": {
+    "day": 20381,
+    "difficulty": "Hard",
+    "entries": [
+      {
+        "rank": 1,
+        "user_id": 7,
+        "name": "noel",
+        "guest": false,
+        "time_ms": 95000,
+        "hints": 1,
+        "checks": 0,
+        "stamp": "Gold10"
+      }
+    ],
+    "me": {
+      "rank": 5,
+      "user_id": 7,
+      "name": "noel",
+      "guest": false,
+      "time_ms": 95000,
+      "hints": 1,
+      "checks": 0,
+      "stamp": null
+    },
+    "finishers": 17
+  },
+  "month": {
+    "month": 24321,
+    "entries": [
+      {
+        "rank": 2,
+        "user_id": 7,
+        "name": "noel",
+        "guest": false,
+        "points": 37,
+        "solved": 2,
+        "stamp": "Gold"
+      }
+    ],
+    "me": {
+      "rank": 2,
+      "user_id": 7,
+      "name": "noel",
+      "guest": false,
+      "points": 37,
+      "solved": 2,
+      "stamp": "Gold"
+    },
+    "players": 33
+  },
+  "fame": {
+    "solved": [
+      {
+        "rank": 1,
+        "user_id": 3,
+        "name": "Brave Heron 42",
+        "guest": true,
+        "solved": 120,
+        "gold": 9,
+        "silver": 4,
+        "bronze": 2,
+        "best_streak": 30,
+        "current_streak": 5,
+        "stamp": null
+      }
+    ],
+    "medals": [
+      {
+        "rank": 1,
+        "user_id": 3,
+        "name": "Brave Heron 42",
+        "guest": true,
+        "solved": 120,
+        "gold": 9,
+        "silver": 4,
+        "bronze": 2,
+        "best_streak": 30,
+        "current_streak": 5,
+        "stamp": null
+      }
+    ],
+    "streaks": []
+  },
+  "profile": {
+    "id": 7,
+    "name": "noel",
+    "guest": false,
+    "created_at": 1750000000000,
+    "stats": {
+      "solved": 42,
+      "current_streak": 3,
+      "best_streak": 12,
+      "best_time_ms": 61000,
+      "average_time_ms": 180500,
+      "recent": [
+        {
+          "day": 20380,
+          "time_ms": 61000,
+          "rank": 1
+        },
+        {
+          "day": 20381,
+          "time_ms": null,
+          "rank": null
+        }
+      ],
+      "gold": 2,
+      "silver": 1,
+      "bronze": 0,
+      "month_rank": 4,
+      "month_points": 55,
+      "stamps": [
+        {
+          "stamp": "First",
+          "earned_at": 1760000000000,
+          "progress": 1,
+          "target": 1,
+          "holders": 12
+        },
+        {
+          "stamp": "Streak7",
+          "earned_at": null,
+          "progress": 3,
+          "target": 7,
+          "holders": 0
+        }
+      ],
+      "players": 80,
+      "shown": "Oni"
+    }
+  },
+  "dojo_board": {
+    "season": 1,
+    "formulas": 34,
+    "budget": 10000000000,
+    "entries": [
+      {
+        "rank": 1,
+        "id": 12,
+        "name": "minisat-ish",
+        "author": "noel",
+        "house": false,
+        "score": {
+          "par2": 2.5,
+          "solved": 30,
+          "total": 34,
+          "wrong": 0,
+          "budget": 10000000000,
+          "fuel": 12.125,
+          "families": [
+            {
+              "family": "Hashi",
+              "solved": 8,
+              "total": 8,
+              "par2": 0.75
+            },
+            {
+              "family": "Queens",
+              "solved": 4,
+              "total": 5,
+              "par2": 4.0
+            }
+          ]
+        },
+        "created_at": 1760000000000
+      }
+    ],
+    "queued": 2
+  },
+  "dojo_submission": {
+    "id": 12,
+    "name": "minisat-ish",
+    "description": "CDCL with VSIDS",
+    "source_url": "https://github.com/someone/solver",
+    "author": "noel",
+    "house": false,
+    "created_at": 1760000000000,
+    "state": "Done",
+    "season": 1,
+    "progress": 34,
+    "total": 34,
+    "score": {
+      "par2": 2.5,
+      "solved": 30,
+      "total": 34,
+      "wrong": 0,
+      "budget": 10000000000,
+      "fuel": 12.125,
+      "families": [
+        {
+          "family": "Hashi",
+          "solved": 8,
+          "total": 8,
+          "par2": 0.75
+        },
+        {
+          "family": "Queens",
+          "solved": 4,
+          "total": 5,
+          "par2": 4.0
+        }
+      ]
+    },
+    "rejection": null,
+    "rank": 3,
+    "similar_to": 9,
+    "size": 123456,
+    "sha256": "abababababababababababababababababababababababababababababababab",
+    "mine": true
+  },
+  "dojo_rejected": {
+    "id": 12,
+    "name": "minisat-ish",
+    "description": "CDCL with VSIDS",
+    "source_url": null,
+    "author": "noel",
+    "house": false,
+    "created_at": 1760000000000,
+    "state": "Rejected",
+    "season": 1,
+    "progress": 34,
+    "total": 34,
+    "score": null,
+    "rejection": {
+      "Import": "env.f"
+    },
+    "rank": null,
+    "similar_to": null,
+    "size": 123456,
+    "sha256": "abababababababababababababababababababababababababababababababab",
+    "mine": false
+  },
+  "dojo_me": {
+    "registered": true,
+    "left_today": 2,
+    "submissions": [
+      {
+        "id": 12,
+        "name": "minisat-ish",
+        "state": "Queued",
+        "created_at": 1760000000000,
+        "score": null
+      }
+    ]
+  },
+  "admin_overview": {
+    "users": 100,
+    "registered": 40,
+    "day": 20381,
+    "started": 20,
+    "finished": 17,
+    "flagged": 1,
+    "dojo_pending": 2,
+    "dojo_total": 30,
+    "messages": 3
+  },
+  "admin_attempt": {
+    "user_id": 7,
+    "name": "noel",
+    "username": "noel",
+    "started_at": 1760000000000,
+    "finished_at": 1760000095000,
+    "time_ms": 145000,
+    "hints": 1,
+    "checks": 2,
+    "moves": 40,
+    "revealed": false,
+    "flag": "Review",
+    "log": {
+      "events": 40,
+      "taps": 38,
+      "span_ms": 90000,
+      "fastest_gap_ms": 120,
+      "median_gap_ms": 900
+    }
+  },
+  "admin_submission": {
+    "id": 12,
+    "name": "minisat-ish",
+    "author": "noel",
+    "house": false,
+    "state": "Running",
+    "season": 1,
+    "solved": 30,
+    "total": 34,
+    "par2": 2.5,
+    "wrong": 0,
+    "similar_to": null,
+    "created_at": 1760000000000
+  },
+  "admin_message": {
+    "id": 1,
+    "name": "",
+    "email": "someone@example.com",
+    "message": "Hallo! \"Brücken\" <3",
+    "created_at": 1760000000000,
+    "mailed": false
+  },
+  "generated": {
+    "puzzle": {
+      "width": 3,
+      "height": 3,
+      "islands": [
+        {
+          "pos": {
+            "x": 0,
+            "y": 0
+          },
+          "required": 2
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 0
+          },
+          "required": 3
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 2
+          },
+          "required": 1
+        }
+      ]
+    },
+    "solution": [
+      2,
+      1
+    ],
+    "params": {
+      "width": 3,
+      "height": 3,
+      "difficulty": "Easy",
+      "seed": 18446744073709551615
+    },
+    "unique": true,
+    "attempts": 3,
+    "generate_ms": 1.5
+  },
+  "solved": {
+    "outcome": {
+      "Solved": {
+        "bridges": [
+          2,
+          1
+        ],
+        "unique": true
+      }
+    },
+    "stats": {
+      "config": {
+        "kind": "Splr",
+        "heuristic": "Vsids",
+        "restarts": "None",
+        "subsumption": false,
+        "timeout_ms": 10000
+      },
+      "variables": 6,
+      "clauses": 20,
+      "encode_ms": 0.25,
+      "solve_ms": 0.5,
+      "decisions": 3,
+      "restarts": null,
+      "sat_calls": 2,
+      "connectivity_cuts": 1
+    }
+  },
+  "unsatisfiable": "Unsatisfiable",
+  "timeout": "Timeout",
+  "stamps": [
+    "First",
+    "Solved10",
+    "Solved50",
+    "Solved100",
+    "Solved365",
+    "Bridges1000",
+    "Bridges10000",
+    "Islands1000",
+    "Streak7",
+    "Streak30",
+    "Streak100",
+    "FullWeek",
+    "FullMoon",
+    "FourSeasons",
+    "Oni",
+    "Clean",
+    "StoneBridge",
+    "Storm",
+    "Phoenix",
+    "Tortoise",
+    "Metronome",
+    "EarlyBird",
+    "ZeroHour",
+    "OnTheBrink",
+    "NightOwl",
+    "LunchBreak",
+    "Swift",
+    "Podium",
+    "Rainbow",
+    "PhotoFinish",
+    "Gold",
+    "HatTrick",
+    "Gold10",
+    "Champion",
+    "NewYear",
+    "Tanabata",
+    "Anniversary",
+    "Dojo",
+    "BlackBelt",
+    "Sensei",
+    "Collector",
+    "SecondThoughts",
+    "Palindrome",
+    "LanterneRouge",
+    "LeapDay"
+  ],
+  "flags": [
+    "Log",
+    "TooFast",
+    "Pace",
+    "SecondAccount",
+    "Review"
+  ],
+  "difficulties": [
+    "Easy",
+    "Medium",
+    "Hard",
+    "Expert",
+    "Oni"
+  ],
+  "dojo_states": [
+    "Queued",
+    "Running",
+    "Done",
+    "Rejected",
+    "Failed"
+  ],
+  "families": [
+    "Hashi",
+    "HashiParity",
+    "Random3Sat",
+    "Pigeonhole",
+    "Queens"
+  ],
+  "submission_actions": [
+    "Requeue",
+    "ClearCopy",
+    "Delete"
+  ]
+}

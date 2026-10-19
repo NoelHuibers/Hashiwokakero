@@ -150,6 +150,8 @@ pub(crate) struct Session {
     solve_time: Duration,
     sat_stats: SatStats,
     sat_calls: u32,
+    /// Clauses handed to the SAT solver, summed over its calls.
+    solved_clauses: u64,
     cuts: u32,
 }
 
@@ -169,6 +171,7 @@ impl Session {
             solve_time: Duration::ZERO,
             sat_stats: SatStats::default(),
             sat_calls: 0,
+            solved_clauses: 0,
             cuts: 0,
         }
     }
@@ -186,6 +189,7 @@ impl Session {
             let (outcome, stats) =
                 sat::solve_clauses(&self.clauses, self.num_vars, &self.config, self.deadline)?;
             self.sat_calls += 1;
+            self.solved_clauses += u64::try_from(self.clauses.len()).unwrap_or(u64::MAX);
             self.sat_stats.add(stats);
             let model = match outcome {
                 SatOutcome::Sat(model) => model,
@@ -230,14 +234,16 @@ impl Session {
     }
 }
 
-/// Searches a solution other than `known` (which must be a solution of `puzzle`).
+/// Searches a solution other than `known` (which must be a solution of `puzzle`). Also returns
+/// the clauses handed to the SAT solver over all its calls, the generator counts them as work.
 pub(crate) fn other_solution(
     puzzle: &Puzzle,
     known: &[u8],
     config: &SolverConfig,
     deadline: Option<Instant>,
-) -> Result<Search, String> {
+) -> Result<(Search, u64), String> {
     let mut session = Session::new(puzzle, &config.normalized(), deadline);
     session.block(known);
-    session.find()
+    let search = session.find()?;
+    Ok((search, session.solved_clauses))
 }

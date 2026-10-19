@@ -52,8 +52,13 @@ pub fn season() -> u32 {
 /// The secret seed of a season's hidden set.
 pub fn test_seed(season: u32) -> String {
     let secret = std::env::var("DOJO_SECRET").unwrap_or_else(|_| "hashi-dojo-local".into());
-    let digest = Sha256::digest(format!("{secret}:season:{season}").as_bytes());
-    hex(&digest)
+    test_seed_with(&secret, season)
+}
+
+fn test_seed_with(secret: &str, season: u32) -> String {
+    hex(&Sha256::digest(
+        format!("{secret}:season:{season}").as_bytes(),
+    ))
 }
 
 fn token() -> Option<String> {

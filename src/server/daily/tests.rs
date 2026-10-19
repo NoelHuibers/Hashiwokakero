@@ -850,3 +850,54 @@ async fn contact_messages_are_checked_stored_and_expire() {
     contact::delete_old(&conn).await.unwrap();
     assert_eq!(contact::list(&conn).await.unwrap(), []);
 }
+
+/// What changing the daily's derivation (or sha2, or the generator) would do.
+const DAILIES_CHANGE: &str = "the dailies not generated yet get other puzzles. Stored dailies \
+                              stay (they are generated once and kept), but the seed must stay a \
+                              secret function of the day, or upcoming dailies could be generated \
+                              in advance";
+
+#[test]
+fn daily_seeds_are_unchanged() {
+    // SHA-256 of "<secret>:<day>", the first 8 bytes little endian
+    assert_eq!(
+        [
+            seed_with("hashi-daily", LAUNCH_DAY),
+            seed_with("another secret", 20_745)
+        ],
+        [15_878_984_539_695_726_903, 12_953_186_420_028_709_165],
+        "{DAILIES_CHANGE}"
+    );
+    assert_ne!(
+        seed_with("a", 1),
+        seed_with("b", 1),
+        "the secret must matter"
+    );
+    assert_ne!(
+        seed_with("a", 1),
+        seed_with("a", 2),
+        "every day has its own seed"
+    );
+}
+
+#[test]
+fn daily_puzzle_of_a_day_is_unchanged() {
+    // Monday 19 October 2026, an easy one
+    let day = 20_745;
+    let params = params(day, seed_with("golden", day));
+    assert_eq!(params.difficulty, Difficulty::Easy);
+    let generated = backend::api::generate(&params);
+    let solution: String = generated.solution.iter().map(u8::to_string).collect();
+    let actual = format!("{}solution {solution}", generated.puzzle.to_txt());
+    let expected = "\
+7 7
+.......
+2.6..3.
+.......
+...2.4.
+..3.1..
+.......
+1.2..2.
+solution 20221211011";
+    assert_eq!(actual, expected, "{DAILIES_CHANGE}\n\nactual:\n{actual}");
+}

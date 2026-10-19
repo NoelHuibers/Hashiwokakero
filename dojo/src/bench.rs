@@ -490,4 +490,52 @@ mod tests {
         assert!(set.iter().zip(&again).all(|(a, b)| a.cnf == b.cnf));
         assert_ne!(generate_with("other", &spec[..1])[0].cnf, set[0].cnf);
     }
+
+    /// The formulas of a seed, checked in as digests. Workers generate a season's hidden set
+    /// from its seed when they don't have it cached (a new volume, a cleared cache), so the
+    /// same seed has to give the same formulas with every version of the worker.
+    #[test]
+    fn sets_are_unchanged() {
+        const SETS_CHANGE: &str = "the same seed gives other formulas now (rand, splr, sha2, \
+                                   the generator or the families changed): a worker without \
+                                   the set cached would evaluate new submissions on another \
+                                   hidden set than the earlier ones of the season. Only change \
+                                   it together with a new season (DOJO_SEASON).";
+        let mut rng = rng_for("golden", 3, 1);
+        assert_eq!(
+            rng.random::<u64>(),
+            14_952_121_534_598_797_468,
+            "{SETS_CHANGE}"
+        );
+        let spec = [
+            (Family::Hashi, 7),
+            (Family::HashiParity, 5),
+            (Family::Random3Sat, 20),
+            (Family::Pigeonhole, 4),
+            (Family::Queens, 8),
+        ];
+        let digests: Vec<String> = generate_with("golden", &spec)
+            .iter()
+            .map(|i| {
+                let digest = Sha256::new()
+                    .chain_update(i.family.id())
+                    .chain_update(format!("{:?} {:?}", i.expected, i.witness))
+                    .chain_update(i.cnf.dimacs(""))
+                    .finalize();
+                let first = u64::from_be_bytes(digest[..8].try_into().unwrap());
+                format!("{} {first:016x}", i.name)
+            })
+            .collect();
+        assert_eq!(
+            digests,
+            [
+                "hashi-01 cc0dba5ae2ccc1ce",
+                "hashi-parity-01 27ec251a8ceb744b",
+                "random-3sat-01 a285979ad78b96b7",
+                "pigeonhole-01 20cb5b50acf516fe",
+                "queens-01 a73ac8eebddbb055",
+            ],
+            "{SETS_CHANGE}"
+        );
+    }
 }

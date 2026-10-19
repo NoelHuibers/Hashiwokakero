@@ -32,30 +32,32 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       # Lints first, they fail fastest. The lint levels live in Cargo.toml ([workspace.lints]);
       # -D warnings makes every warning an error, in every crate, target and feature set.
+      # --locked everywhere: CI builds and tests exactly the versions in Cargo.lock, a dependency
+      # update only arrives through a change of it (Dependabot's pull requests).
       - name: Formatting
         run: |
           cargo fmt --all --check
           cargo fmt --manifest-path dojo/starter/Cargo.toml --check
       - name: Clippy (library crates, dojo worker, tests)
-        run: cargo clippy -p common -p sat_solver -p backend -p dojo -p house --all-targets --features dojo/worker -- -D warnings
+        run: cargo clippy --locked -p common -p sat_solver -p backend -p dojo -p house --all-targets --features dojo/worker -- -D warnings
       - name: Clippy (website, server)
-        run: cargo clippy -p hashi --all-targets --no-default-features --features ssr -- -D warnings
+        run: cargo clippy --locked -p hashi --all-targets --no-default-features --features ssr -- -D warnings
       - name: Clippy (starter kit)
-        run: cargo clippy --manifest-path dojo/starter/Cargo.toml --target wasm32-wasip1 -- -D warnings
+        run: cargo clippy --locked --manifest-path dojo/starter/Cargo.toml --target wasm32-wasip1 -- -D warnings
       - name: Test backend crates
-        run: cargo test -p common -p backend -p sat_solver
+        run: cargo test --locked -p common -p backend -p sat_solver
       - name: Test the SAT Dojo (sandbox, scoring, worker)
-        run: cargo test --release -p dojo --features worker
+        run: cargo test --locked --release -p dojo --features worker
       # Also drives the real router over HTTP (src/server/router/tests): server functions,
       # cookies, the Dojo and admin routes, caching and compression
       - name: Test the website's server code and HTTP routes
-        run: cargo test --no-default-features --features ssr -p hashi --lib
+        run: cargo test --locked --no-default-features --features ssr -p hashi --lib
       # The worker for the deploy below, nearly free here: the release tests above compiled
       # all of its dependencies already
       - name: Build the dojo worker
         if: github.event_name == 'push'
         run: |
-          cargo build --release -p dojo --features worker
+          cargo build --locked --release -p dojo --features worker
           mkdir -p dist && cp target/release/dojo dist/
           tar -cf dojo.tar dist
       - if: github.event_name == 'push'
@@ -76,7 +78,7 @@ jobs:
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Clippy (website, browser)
-        run: cargo clippy -p hashi --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -- -D warnings
+        run: cargo clippy --locked -p hashi --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -- -D warnings
 
   # Line coverage of the tests the test job runs, in a job of its own: the instrumented build
   # runs next to the other jobs instead of after them, and the plain tests stay as fast as they
@@ -135,7 +137,7 @@ jobs:
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall -y cargo-leptos@0.3.11
       - name: Build
-        run: cargo leptos build --release
+        run: cargo leptos build --release --cargo-locked
       # The server binary, the hashes of the JS/WASM/CSS file names (read next to the binary) and
       # the site, for the browser tests and the deploy below. A tarball keeps the binary
       # executable.

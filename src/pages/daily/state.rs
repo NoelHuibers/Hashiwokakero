@@ -252,6 +252,38 @@ mod tests {
         Puzzle::new(3, 1, vec![island(0), island(2)])
     }
 
+    /// The move log of a running daily in the browser (`hashi.daily.log`): a different format
+    /// loses the log, and a daily submitted without it isn't ranked.
+    #[test]
+    fn saved_logs_still_load() {
+        let saved = SavedLog {
+            day: 20_745,
+            events: vec![
+                MoveEvent {
+                    t: 0,
+                    edge: 0,
+                    count: 1,
+                    tap: true,
+                },
+                MoveEvent {
+                    t: 1_250,
+                    edge: 0,
+                    count: 2,
+                    tap: false,
+                },
+            ],
+        };
+        let json = serde_json::to_string(&saved).unwrap();
+        crate::golden::check(
+            "saved_log.txt",
+            &json,
+            "the move logs saved in the browsers wouldn't load any more: running dailies lose \
+             their log and aren't ranked",
+        );
+        let loaded: SavedLog = serde_json::from_str(&json).unwrap();
+        assert_eq!((loaded.day, loaded.events), (saved.day, saved.events));
+    }
+
     /// Runs `test` on the daily page of a fresh tab (signals need an owner).
     fn tab(test: impl FnOnce(&Daily)) {
         Owner::new().with(|| test(&daily()));
