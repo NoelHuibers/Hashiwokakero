@@ -3,25 +3,58 @@
 use leptos::prelude::*;
 use serde::{Serialize, de::DeserializeOwned};
 
-fn storage() -> Option<web_sys::Storage> {
-    window().local_storage().ok().flatten()
+/// The browser's local storage.
+#[cfg(not(test))]
+mod storage {
+    use leptos::prelude::window;
+
+    fn storage() -> Option<web_sys::Storage> {
+        window().local_storage().ok().flatten()
+    }
+
+    pub(super) fn get(key: &str) -> Option<String> {
+        storage()?.get_item(key).ok()?
+    }
+
+    pub(super) fn set(key: &str, value: &str) {
+        if let Some(s) = storage() {
+            let _ = s.set_item(key, value);
+        }
+    }
+}
+
+/// The unit tests run natively, without a browser: each test thread gets a local storage of its
+/// own, so what the client saves and restores can be tested.
+#[cfg(test)]
+pub(crate) mod storage {
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+
+    thread_local! {
+        static ITEMS: RefCell<HashMap<String, String>> = RefCell::default();
+    }
+
+    pub(crate) fn get(key: &str) -> Option<String> {
+        ITEMS.with_borrow(|items| items.get(key).cloned())
+    }
+
+    pub(crate) fn set(key: &str, value: &str) {
+        ITEMS.with_borrow_mut(|items| items.insert(key.to_string(), value.to_string()));
+    }
 }
 
 pub fn load<T: DeserializeOwned>(key: &str) -> Option<T> {
-    let raw = storage()?.get_item(key).ok()??;
-    serde_json::from_str(&raw).ok()
+    serde_json::from_str(&storage::get(key)?).ok()
 }
 
 pub fn store<T: Serialize>(key: &str, value: &T) {
-    if let (Some(s), Ok(json)) = (storage(), serde_json::to_string(value)) {
-        let _ = s.set_item(key, &json);
+    if let Ok(json) = serde_json::to_string(value) {
+        storage::set(key, &json);
     }
 }
 
 pub(super) fn store_raw(key: &str, value: &str) {
-    if let Some(s) = storage() {
-        let _ = s.set_item(key, value);
-    }
+    storage::set(key, value);
 }
 
 /// A random id this browser keeps, sent when a daily starts: a second account on the same device
@@ -76,5 +109,38 @@ pub fn format_time(seconds: u32) -> String {
         format!("{h}:{m:02}:{s:02}")
     } else {
         format!("{m:02}:{s:02}")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn times_show_hours_only_when_there_are_some() {
+        assert_eq!(format_time(0), "00:00");
+        assert_eq!(format_time(61), "01:01");
+        assert_eq!(format_time(3599), "59:59");
+        assert_eq!(format_time(3600), "1:00:00");
+        assert_eq!(format_time(36_000 + 62), "10:01:02");
+    }
+
+    #[test]
+    fn stored_values_load_back() {
+        store("test.value", &vec![1, 2, 3]);
+        assert_eq!(load::<Vec<u8>>("test.value"), Some(vec![1, 2, 3]));
+        // Of another type, missing or not JSON: nothing
+        assert_eq!(load::<String>("test.value"), None);
+        assert_eq!(load::<Vec<u8>>("test.missing"), None);
+        store_raw("test.raw", "dark");
+        assert_eq!(load::<String>("test.raw"), None);
+        assert_eq!(storage::get("test.raw").as_deref(), Some("dark"));
+    }
+
+    /// The device id is made once, then the kept one is sent with every daily.
+    #[test]
+    fn a_kept_device_id_is_reused() {
+        store("hashi.device", &"0123456789abcdef0123");
+        assert_eq!(device_id(), "0123456789abcdef0123");
     }
 }
