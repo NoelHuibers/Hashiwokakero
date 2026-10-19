@@ -572,6 +572,58 @@ mod tests {
         assert_ne!(hash_token(&token), token);
     }
 
+    /// A hash as `register` stored it, made with argon2 0.6.0 and its defaults.
+    const STORED_HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$8C0eovpPoTDFAHE5YNGFOw$zACBMxyBbkdhJXVVpw8lwGNZiK7KA0NYK7ItMmvyUIg";
+
+    #[tokio::test]
+    async fn stored_password_hashes_still_verify() {
+        assert!(
+            verify_password("correct horse".into(), STORED_HASH.into())
+                .await
+                .unwrap(),
+            "a password hash in the database doesn't verify any more: nobody could sign in"
+        );
+        assert!(
+            !verify_password("correct hose".into(), STORED_HASH.into())
+                .await
+                .unwrap(),
+            "a wrong password verifies: anybody could sign in to any account"
+        );
+    }
+
+    #[tokio::test]
+    async fn new_password_hashes_keep_their_parameters() {
+        let hash = hash_password("correct horse".into()).await.unwrap();
+        let parsed = PasswordHash::new(&hash).unwrap();
+        // Argon2id with 19 MiB, 2 passes and one lane, a 16 byte salt and a 32 byte hash. A new
+        // default of argon2 would show up here: weaker parameters weaken new accounts, stronger
+        // ones cost the single shared CPU more on every sign in
+        assert_eq!(
+            hash.split('$').take(4).collect::<Vec<_>>(),
+            ["", "argon2id", "v=19", "m=19456,t=2,p=1"],
+            "{hash}: other argon2 parameters for new passwords"
+        );
+        assert_eq!(parsed.salt.map(|s| s.len()), Some(16), "{hash}");
+        assert_eq!(parsed.hash.map(|h| h.len()), Some(32), "{hash}");
+        assert!(
+            verify_password("correct horse".into(), hash.clone())
+                .await
+                .unwrap()
+        );
+        // A new salt every time
+        assert_ne!(hash, hash_password("correct horse".into()).await.unwrap());
+    }
+
+    #[test]
+    fn session_tokens_hash_the_same() {
+        // Sessions are looked up by this hash of the cookie: another one signs everybody out
+        assert_eq!(
+            hash_token("0123456789abcdef"),
+            "9f9f5111f7b27a781f1f1ddde5ebc2dd2b796bfc7365c9c28b548e564176929f",
+            "the hash of session tokens changed: every session would end"
+        );
+    }
+
     #[test]
     fn guest_names_look_nice() {
         let name = guest_name();
