@@ -3,7 +3,7 @@
 use leptos::prelude::ServerFnError;
 
 use crate::i18n::{Locale, td_string};
-use crate::model::{ApiError, Stamp, month_civil};
+use crate::model::{ApiError, Stamp, is_outdated_client, month_civil};
 
 fn weekday_name(locale: Locale, weekday: usize) -> &'static str {
     match weekday {
@@ -266,14 +266,32 @@ pub fn parse_error_text(locale: Locale, error: &common::ParseError) -> String {
     }
 }
 
+/// The last part of an error message the server didn't give a code (a network error, say), short
+/// enough for a toast. `None` for markup or an empty message: no response body ends up on the page.
+fn error_detail(message: &str) -> Option<String> {
+    const MAX_CHARS: usize = 100;
+    let detail = message.rsplit_once(": ").map_or(message, |(_, d)| d).trim();
+    if detail.is_empty() || detail.contains('<') {
+        return None;
+    }
+    if detail.chars().count() <= MAX_CHARS {
+        return Some(detail.to_string());
+    }
+    let short: String = detail.chars().take(MAX_CHARS).collect();
+    Some(format!("{}…", short.trim_end()))
+}
+
 /// A server error for players, in their language.
 pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
     let message = error.to_string();
+    if is_outdated_client(&message) {
+        return td_string!(locale, common.errors.outdated).to_string();
+    }
     let Some(code) = ApiError::from_message(&message) else {
-        let detail = message
-            .rsplit_once(": ")
-            .map_or(message.as_str(), |(_, d)| d);
-        return td_string!(locale, common.errors.unknown, detail);
+        return match error_detail(&message) {
+            Some(detail) => td_string!(locale, common.errors.unknown, detail),
+            None => td_string!(locale, common.errors.internal).to_string(),
+        };
     };
     match code {
         ApiError::Database => td_string!(locale, common.errors.database),
@@ -348,6 +366,69 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+
+    /// The error the client makes of a response body that isn't a server function error (see
+    /// `FromServerFnError::de`), e.g. the 404 page.
+    fn from_body(body: &str) -> ServerFnError {
+        use leptos::server_fn::Bytes;
+        use leptos::server_fn::error::FromServerFnError;
+        ServerFnError::de(Bytes::from(body.to_string()))
+    }
+
+    /// A tab of an older build calls a server function the server no longer has and gets the
+    /// 404 page back: players are told to reload, not shown the page's HTML.
+    #[test]
+    fn web_pages_ask_for_a_reload() {
+        let page = r#"<!DOCTYPE html><html lang="en"><head><title>Hashi | Not found</title><style>body { color: red }</style></head><body></body></html>"#;
+        for body in [
+            page,
+            &page.replace('|', "-"),
+            "<html><body>Not found</body></html>",
+        ] {
+            for &l in Locale::get_all() {
+                let text = error_text(l, &from_body(body));
+                assert_eq!(text, td_string!(l, common.errors.outdated), "{l:?}");
+                assert!(filled(&text) && !text.contains('<'), "{l:?}: {text}");
+            }
+        }
+    }
+
+    /// The server's codes still have their own messages, however the client wraps them.
+    #[test]
+    fn error_codes_keep_their_messages() {
+        let l = Locale::en;
+        for code in ApiError::ALL {
+            let sent = from_body(&format!("ServerError|E:{}", code.code()));
+            assert_eq!(
+                error_text(l, &sent),
+                error_text(l, &ServerFnError::from(code))
+            );
+        }
+        assert_eq!(
+            error_text(l, &ServerFnError::from(ApiError::SessionExpired)),
+            td_string!(l, common.errors.session_expired)
+        );
+    }
+
+    /// Other errors show their last part, short and without markup.
+    #[test]
+    fn unknown_errors_are_short_and_plain() {
+        let l = Locale::en;
+        let offline = ServerFnError::Request("TypeError: Failed to fetch".into());
+        assert_eq!(
+            error_text(l, &offline),
+            td_string!(l, common.errors.unknown, detail = "Failed to fetch")
+        );
+        let long = error_text(l, &ServerFnError::new("x".repeat(5000)));
+        assert!(long.chars().count() < 150 && long.ends_with('…'), "{long}");
+        for body in ["Bad gateway: <b>upstream</b> down", "Response|"] {
+            assert_eq!(
+                error_text(l, &from_body(body)),
+                td_string!(l, common.errors.internal),
+                "{body}"
+            );
         }
     }
 

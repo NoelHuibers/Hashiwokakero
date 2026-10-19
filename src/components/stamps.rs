@@ -5,9 +5,9 @@ use leptos::task::spawn_local;
 
 use crate::api::show_stamp;
 use crate::i18n::{td_string, use_i18n};
-use crate::lang::{date_short, error_text, stamp_name, stamp_text};
+use crate::lang::{date_short, stamp_name, stamp_text};
 use crate::model::{MS_PER_DAY, Stamp, StampProgress, share_percent};
-use crate::state::{ToastKind, toast};
+use crate::state::{ToastKind, error_toast, toast};
 
 /// The stamp a player chose to show next to their name, pressed in red ink so it doesn't
 /// compete with the medals.
@@ -177,7 +177,7 @@ fn toggle(shown: RwSignal<Option<Stamp>>, stamp: Stamp) {
             }),
             Err(e) => {
                 shown.set(before);
-                toast(ToastKind::Error, move |l| error_text(l, &e));
+                error_toast(e);
             }
         }
     });

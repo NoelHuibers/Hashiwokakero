@@ -19,14 +19,14 @@ use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{date_long, difficulty_name, error_text};
+use crate::lang::{date_long, difficulty_name};
 use crate::model::{
     AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, MoveEvent, WEEKDAY_KANJI,
     daily_number, format_duration, weekday,
 };
 use crate::pages::play::{SeoIntro, islands_percent};
 use crate::seo::{PageMeta, site_ld};
-use crate::state::{DailyGame, Status, ToastKind, load, store, toast};
+use crate::state::{DailyGame, Status, ToastKind, error_toast, load, store, toast};
 
 use cover::Cover;
 use ranking::RankingCard;
@@ -164,7 +164,7 @@ pub fn DailyPage() -> impl IntoView {
                     daily.refresh_ranking();
                 }
                 Err(e) => {
-                    toast(ToastKind::Error, move |l| error_text(l, &e));
+                    error_toast(e);
                     daily.submit_failed(daily_today().await.ok());
                 }
             }
@@ -194,7 +194,7 @@ pub fn DailyPage() -> impl IntoView {
                 Ok(None) => toast(ToastKind::Info, |l| {
                     td_string!(l, common.toast.nothing_to_hint).to_string()
                 }),
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
         });
     };
@@ -220,7 +220,7 @@ pub fn DailyPage() -> impl IntoView {
                         set_timeout(move || game.wrong.set(vec![]), Duration::from_millis(2400));
                     }
                 }
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
         });
     };
@@ -251,7 +251,7 @@ pub fn DailyPage() -> impl IntoView {
                         );
                     }
                 }
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
         });
     };

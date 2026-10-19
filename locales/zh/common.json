@@ -46,10 +46,12 @@
     "unique": "已证明：答案唯一。",
     "not_unique": "这道谜题不止一个解。",
     "copied": "成绩已复制到剪贴板。",
-    "copy_failed": "无法复制到剪贴板。"
+    "copy_failed": "无法复制到剪贴板。",
+    "reload": "刷新"
   },
   "errors": {
     "unknown": "出错了：{{ detail }}",
+    "outdated": "Hashi 已更新，请刷新页面以继续。",
     "database": "数据库没有响应，请重试。",
     "internal": "服务器出了点问题，请重试。",
     "archive_only_past": "只能练习以前的每日谜题。",

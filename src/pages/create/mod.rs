@@ -19,9 +19,11 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::label::Label;
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{difficulty_name, error_text, parse_error_text};
+use crate::lang::{difficulty_name, parse_error_text};
 use crate::seo::PageMeta;
-use crate::state::{self, Editor, Game, Settings, Source, ToastKind, download, random_seed, toast};
+use crate::state::{
+    self, Editor, Game, Settings, Source, ToastKind, download, error_toast, random_seed, toast,
+};
 
 use brush::BrushPalette;
 use size_input::SizeInput;
@@ -123,7 +125,7 @@ pub fn CreatePage() -> impl IntoView {
                     editor.edit(|p| *p = g.puzzle);
                     editor.solution.set(None);
                 }
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
             generating.set(false);
         });

@@ -14,10 +14,9 @@ use leptos_meta::Meta;
 use leptos_router::hooks::use_query_map;
 
 use crate::api::load_admin_overview;
-use crate::lang::error_text;
 use crate::model::AdminOverview;
 use crate::pages::NotFound;
-use crate::state::{Auth, ToastKind, toast};
+use crate::state::{Auth, error_toast};
 
 use self::daily::DailyAdmin;
 use self::dojo::DojoAdmin;
@@ -26,7 +25,7 @@ use self::names::NamesAdmin;
 
 fn error(e: &ServerFnError) {
     let e = e.clone();
-    toast(ToastKind::Error, move |l| error_text(l, &e));
+    error_toast(e);
 }
 
 #[component]

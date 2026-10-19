@@ -46,10 +46,12 @@
     "unique": "Provado: a solução é única.",
     "not_unique": "Este puzzle tem mais de uma solução.",
     "copied": "Resultado copiado para a área de transferência.",
-    "copy_failed": "Não foi possível copiar para a área de transferência."
+    "copy_failed": "Não foi possível copiar para a área de transferência.",
+    "reload": "Recarregar"
   },
   "errors": {
     "unknown": "Algo deu errado: {{ detail }}",
+    "outdated": "O Hashi foi atualizado. Recarregue a página para continuar.",
     "database": "O banco de dados não respondeu, tente de novo.",
     "internal": "Algo deu errado no servidor, tente de novo.",
     "archive_only_past": "Só dá para treinar desafios diários anteriores.",

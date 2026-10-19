@@ -2,7 +2,7 @@
 // lines between the rows step aside for).
 import type { Locator, Page } from '@playwright/test';
 
-import { expect, signIn, test, visit } from '../fixtures';
+import { allow, expect, hydrated, signIn, test, visit } from '../fixtures';
 
 /** The podium of the daily board some days ago (the seed has no results of today). */
 async function daysAgo(page: Page, days: number) {
@@ -83,4 +83,26 @@ test('on the podium your step is marked', async ({ page, context }) => {
   await expect(mine).toHaveAttribute('data-place', '2');
   await expect(mine).toContainText('aiko');
   await expect(mine).toContainText('you');
+});
+
+test('a tab of an older version is asked to reload, not shown the 404 page', async ({ page, problems }) => {
+  // An older WASM calls server functions the new server doesn't have, the server answers with
+  // its 404 page: like here, where the leaderboard's call goes to a path the server never had
+  await page.route('**/api/daily_leaderboard', (route) =>
+    route.continue({ url: route.request().url().replace(/daily_leaderboard$/, 'daily_leaderboard_old') }),
+  );
+  await visit(page, '/ranks');
+  const toast = page.getByText('Hashi has been updated. Reload the page to continue.');
+  await expect(toast).toHaveCount(1);
+  await expect(page.getByText('<!DOCTYPE')).toHaveCount(0);
+  await expect(page.getByText('Something went wrong')).toHaveCount(0);
+  allow(problems, /^404 POST .*\/api\/daily_leaderboard/, /console error: Failed to load resource.*404/);
+
+  // Its button reloads the page, which then loads the leaderboard
+  await page.unroute('**/api/daily_leaderboard');
+  const leaderboard = page.waitForResponse((r) => r.url().endsWith('/api/daily_leaderboard') && r.ok());
+  await page.getByRole('button', { name: 'Reload' }).click();
+  await leaderboard;
+  await hydrated(page);
+  await expect(toast).toHaveCount(0);
 });

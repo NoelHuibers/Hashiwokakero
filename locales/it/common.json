@@ -46,10 +46,12 @@
     "unique": "Dimostrato: la soluzione è unica.",
     "not_unique": "Questo puzzle ha più di una soluzione.",
     "copied": "Risultato copiato negli appunti.",
-    "copy_failed": "Impossibile copiare negli appunti."
+    "copy_failed": "Impossibile copiare negli appunti.",
+    "reload": "Ricarica"
   },
   "errors": {
     "unknown": "Qualcosa è andato storto: {{ detail }}",
+    "outdated": "Hashi è stato aggiornato. Ricarica la pagina per continuare.",
     "database": "Il database non ha risposto, riprova.",
     "internal": "Qualcosa è andato storto sul server, riprova.",
     "archive_only_past": "Puoi allenarti solo con le sfide dei giorni passati.",

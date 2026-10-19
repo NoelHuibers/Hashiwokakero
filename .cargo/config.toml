@@ -1,0 +1,7 @@
+# Server functions answer at /api/<name>, without the hash leptos adds by default. The hash
+# comes from the build directory and the module path, so it changed with every move of a
+# function or of the build (Fly built in /app, CI in /home/runner/work/...), and a tab still
+# running the old WASM got the 404 page back from every call. Names must be unique across the
+# crate now, a duplicate panics when the server starts.
+[env]
+DISABLE_SERVER_FN_HASH = "1"

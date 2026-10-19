@@ -6,12 +6,11 @@ use leptos::task::spawn_local;
 
 use crate::api::{daily_leaderboard, daily_today};
 use crate::components::stamps::announce;
-use crate::lang::error_text;
 use crate::model::{
     AttemptInfo, DailyInfo, Flag, Leaderboard, MoveEvent, SubmitResult, daily_difficulty,
     date_string,
 };
-use crate::state::{Game, Source, Status, ToastKind, toast};
+use crate::state::{Game, Source, Status, error_toast};
 
 /// The move log of the running daily, kept in the browser so a reload doesn't lose it.
 pub(super) const LOG_KEY: &str = "hashi.daily.log";
@@ -222,7 +221,7 @@ impl Daily {
         spawn_local(async move {
             match daily_today().await {
                 Ok(info) => this.apply(info),
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
         });
         self.refresh_ranking();

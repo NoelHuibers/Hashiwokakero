@@ -46,10 +46,12 @@
     "unique": "Đã chứng minh: lời giải là duy nhất.",
     "not_unique": "Câu đố này có nhiều hơn một lời giải.",
     "copied": "Đã sao chép kết quả vào bộ nhớ tạm.",
-    "copy_failed": "Không sao chép được vào bộ nhớ tạm."
+    "copy_failed": "Không sao chép được vào bộ nhớ tạm.",
+    "reload": "Tải lại"
   },
   "errors": {
     "unknown": "Đã xảy ra lỗi: {{ detail }}",
+    "outdated": "Hashi đã được cập nhật. Vui lòng tải lại trang để tiếp tục.",
     "database": "Cơ sở dữ liệu không phản hồi, vui lòng thử lại.",
     "internal": "Máy chủ gặp sự cố, vui lòng thử lại.",
     "archive_only_past": "Chỉ có thể luyện các câu đố của những ngày trước.",
