@@ -757,7 +757,10 @@ mod tests {
             assert_eq!(check(&cnf, &proof, BUDGET), Ok(()));
         }
         // Satisfiable ones still have none
-        assert_eq!(crate::bench::splr_proof(&Cnf::new(1, vec![vec![1, 1]])), None);
+        assert_eq!(
+            crate::bench::splr_proof(&Cnf::new(1, vec![vec![1, 1]])),
+            None
+        );
     }
 
     /// A proof splr writes for PHP(5,4), checked, and broken versions of it rejected.
