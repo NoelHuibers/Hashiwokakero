@@ -3,16 +3,13 @@
 use common::{SolveOutcome, SolverConfig};
 use leptos::prelude::*;
 
-use crate::components::leaderboard::HIGHLIGHT_ROW;
+use crate::components::leaderboard::{HIGHLIGHT_ROW, RANK_TABLE};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, use_i18n};
 use crate::lang::config_name;
 
 use super::RunState;
-
-/// On phones the time is the last visible column (the counters are hidden), it ends the pill.
-const PHONE_END: &str = "max-sm:[&>td:nth-child(3)]:rounded-e-lg";
 
 fn fmt_ms(ms: f64) -> String {
     if ms < 1000.0 {
@@ -72,9 +69,9 @@ pub(super) fn Results(runs: RwSignal<Vec<(SolverConfig, RunState)>>) -> impl Int
                     }
                 >
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                        <table class=format!("{RANK_TABLE} w-full text-sm")>
                             <thead>
-                                <tr class="border-b text-start text-xs uppercase tracking-wider text-muted-foreground">
+                                <tr class="text-start text-xs uppercase tracking-wider text-muted-foreground">
                                     <th class="py-2 ps-2 pe-3 font-semibold">{t!(i18n, lab.table.config)}</th>
                                     <th class="py-2 pe-3 font-semibold">{t!(i18n, lab.table.result)}</th>
                                     <th class="py-2 pe-2 text-end font-semibold sm:w-[34%] sm:pe-3 sm:text-start">{t!(i18n, common.game.time)}</th>
@@ -155,10 +152,7 @@ pub(super) fn Results(runs: RwSignal<Vec<(SolverConfig, RunState)>>) -> impl Int
                                                 parts.join(" · ")
                                             };
                                             view! {
-                                                <tr class=format!(
-                                                    "border-b last:border-0 {}",
-                                                    if is_fastest { format!("{HIGHLIGHT_ROW} {PHONE_END}") } else { String::new() },
-                                                )>
+                                                <tr class={if is_fastest { HIGHLIGHT_ROW } else { "" }}>
                                                     <td class="py-2.5 ps-2 pe-3">
                                                         <span class="font-medium">{config_name(i18n.get_locale(), &config)}</span>
                                                         {is_fastest
@@ -178,7 +172,9 @@ pub(super) fn Results(runs: RwSignal<Vec<(SolverConfig, RunState)>>) -> impl Int
                                                             })}
                                                     </td>
                                                     <td class="py-2.5 pe-3">{result}</td>
-                                                    <td class="py-2.5 pe-2 sm:pe-3">
+                                                    // On phones the time is the last visible column (the counters
+                                                    // are hidden), it ends the outline
+                                                    <td class="rank-end-phone py-2.5 pe-2 sm:pe-3">
                                                         <div class="flex items-center justify-end gap-2 sm:justify-start">
                                                             <div class="hidden h-3 flex-1 overflow-hidden rounded-sm bg-muted sm:block">
                                                                 <div

@@ -291,6 +291,69 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
   box-shadow: inset 0 0 0 1.5px var(--primary);
 }
 
+/* Ranking tables: a hairline under every row, and the marked row (your own result, the fastest
+   run) pressed like a hanko, a rounded 朱 outline the neighbouring lines step aside for.
+   Separate borders, collapsed ones can't be rounded. Every row reserves the outline's width at
+   its ends, so the marked one doesn't shift its contents. */
+.rank-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.rank-table :is(th, td) {
+  border-bottom: 1px solid var(--border);
+}
+.rank-table tr > :first-child {
+  border-inline-start: 1.5px solid transparent;
+}
+.rank-table tr > :last-child {
+  border-inline-end: 1.5px solid transparent;
+}
+.rank-table tbody > tr:last-child > td,
+.rank-table tr:has(+ .rank-mark) > :is(th, td),
+.rank-table:has(tbody > .rank-mark:first-child) thead th {
+  border-bottom-color: transparent;
+}
+.rank-table tbody > tr.rank-mark > td {
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  border-block: 1.5px solid var(--primary);
+}
+.rank-table tbody > tr.rank-mark > td:first-child {
+  border-inline-start-color: var(--primary);
+  border-start-start-radius: var(--radius-lg);
+  border-end-start-radius: var(--radius-lg);
+}
+.rank-table tbody > tr.rank-mark > td:last-child,
+.rank-table tbody > tr.rank-mark > td.rank-end-phone {
+  border-inline-end: 1.5px solid var(--primary);
+  border-start-end-radius: var(--radius-lg);
+  border-end-end-radius: var(--radius-lg);
+}
+/* On wider screens the columns after a .rank-end-phone cell show, it isn't the end then */
+@media (width >= 40rem) {
+  .rank-table tbody > tr.rank-mark > td.rank-end-phone:not(:last-child) {
+    border-inline-end: 0;
+    border-radius: 0;
+  }
+}
+/* Lifted a little off the card (ignored where rows can't have a shadow) */
+.rank-table .rank-mark {
+  box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--primary) 70%, transparent);
+}
+
+/* The top three of a ranking, 2 · 1 · 3. The marked step is pressed like a hanko too. */
+.podium-step {
+  background: var(--muted);
+}
+.podium-step[data-place="1"] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--px-gold) 12%, var(--muted)), var(--muted));
+}
+.podium-step.rank-mark {
+  background: color-mix(in srgb, var(--primary) 9%, var(--muted));
+  box-shadow:
+    inset 0 0 0 1.5px var(--primary),
+    0 8px 18px -12px color-mix(in srgb, var(--primary) 70%, transparent);
+}
+
 .vertical-jp {
   writing-mode: vertical-rl;
   text-orientation: upright;
