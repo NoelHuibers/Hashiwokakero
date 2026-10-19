@@ -6,7 +6,7 @@
 #   scripts/docker-smoke.sh                 with docker
 #   DOCKER=podman scripts/docker-smoke.sh   with podman
 #
-# dist/ holds hashi, hash.txt and site/, see the "Package" step of the build job.
+# dist/ holds hashi, hash.txt and site/, see the "Package" steps of the build jobs.
 set -euo pipefail
 
 engine=${DOCKER:-docker}

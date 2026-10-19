@@ -16,9 +16,49 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Whether a pull request changes more than docs. A docs-only one (*.md, *.pdf, LICENSE files)
+  # skips the lints, tests and builds below. Skipped jobs count as passed checks, so the required
+  # ones still report; filtering the whole workflow out (paths-ignore) would leave them pending.
+  # Pushes to main always run everything, the deploys depend on it. When this job fails, the
+  # jobs that wait for it are skipped too, and pass: the E2E job below fails then instead.
+  changes:
+    name: Changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      # The merge commit of the pull request and its parents
+      - if: github.event_name == 'pull_request'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          # Whole paths, anywhere in the tree. Nothing the builds or tests read matches.
+          DOCS: '([^/]+/)*([^/]+\.(md|pdf)|LICENSE)'
+        run: |
+          if [ "$EVENT" != pull_request ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Against the first parent, main's head: what merging the pull request changes
+          files=$(git diff --no-renames --name-only HEAD^1 HEAD)
+          printf '%s\n' "$files"
+          # Code, unless every changed file is a doc (and some file changed at all)
+          if [ -z "$files" ] || printf '%s\n' "$files" | grep -qvxE "$DOCS"; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Only docs changed, the lints, tests and builds are skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   # The lints, and the doctests. Every other test runs once, in the coverage job below.
   test:
     name: Test & lint
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     # No debug info in the doctests' build: a smaller cache and faster linking. Failed asserts
     # and panics still say where.
@@ -57,6 +97,8 @@ jobs:
   # A job of its own, it runs next to the server lints instead of after them
   lint-browser:
     name: Lint (browser)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -73,6 +115,8 @@ jobs:
   # scripts/coverage-baseline.json. The deploys wait for it.
   coverage:
     name: Coverage
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     # A stuck test shouldn't hold the job for the default six hours
     timeout-minutes: 30
@@ -107,10 +151,48 @@ jobs:
             target/llvm-cov/lcov.info
           retention-days: 14
 
+  # The release build, in two jobs side by side: the server here, the browser's WASM, JS and CSS
+  # in the next. In one `cargo leptos build --release` they ran one after the other (with
+  # hash-files cargo-leptos builds the server only after the site), 8 instead of about 5 minutes.
+  # The server only reads the hashes of the site's file names at runtime, from hash.txt next to
+  # its binary: the two halves are put together in dist/ by the jobs that use them.
   build:
     name: Build site
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     # Pinned: this server binary runs on Debian trixie (Dockerfile.prebuilt), it must not need a
     # newer glibc than trixie has
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Install cargo-leptos
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y cargo-leptos@0.3.11
+      - name: Build
+        run: cargo leptos build --release --cargo-locked --server-only
+      # The server binary, for the browser tests and the deploy below. A tarball keeps it
+      # executable.
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp target/release/hashi dist/
+          tar -cf server.tar dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: site-server
+          path: server.tar
+          # Pull requests only need it for the browser tests right after
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+
+  build-browser:
+    name: Build site (browser)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     outputs:
       playwright: ${{ steps.playwright.outputs.version }}
@@ -136,35 +218,41 @@ jobs:
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall -y cargo-leptos@0.3.11
       - name: Build
-        run: cargo leptos build --release --cargo-locked
-      # The server binary, the hashes of the JS/WASM/CSS file names (read next to the binary) and
-      # the site, for the browser tests and the deploy below. A tarball keeps the binary
-      # executable.
+        run: cargo leptos build --release --cargo-locked --frontend-only
+      # The hashes of the JS/WASM/CSS file names (read next to the server binary) and the site
       - name: Package
         run: |
           mkdir -p dist
-          cp target/release/hashi target/release/hash.txt dist/
+          cp target/release/hash.txt dist/
           cp -r target/site dist/site
-          tar -cf site.tar dist
+          tar -cf browser.tar dist
       - uses: actions/upload-artifact@v7
         with:
-          name: site
-          path: site.tar
-          # Pull requests only need it for the browser tests right after
+          name: site-browser
+          path: browser.tar
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
   # The browser tests (e2e/) on the release build above: every page in every language, the
-  # journeys through the site, and the screenshots. Nothing deploys without them.
-  e2e:
-    name: E2E
-    needs: build
+  # journeys through the site, and the screenshots. Nothing deploys without them. Split in two
+  # shards that run side by side (fullyParallel: by test, not by file, the screenshot tests
+  # included); each starts its own servers on a freshly seeded database (e2e/global-setup.ts).
+  e2e-shard:
+    # GitHub adds the shard to the name, E2E shard (1) and (2); never just E2E, the required
+    # check below
+    name: E2E shard
+    needs: [build, build-browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    strategy:
+      # The other shard finishes, the report has every failure
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     # The official image of the Playwright version in pnpm-lock.yaml, with its browsers and
     # fonts: the screenshots in e2e/tests/__screenshots__ are taken in it (pnpm run
     # e2e:update-snapshots), on another system they wouldn't match
     container:
-      image: mcr.microsoft.com/playwright:v${{ needs.build.outputs.playwright }}-noble
+      image: mcr.microsoft.com/playwright:v${{ needs.build-browser.outputs.playwright }}-noble
       options: --ipc=host
     steps:
       - uses: actions/checkout@v7
@@ -175,26 +263,95 @@ jobs:
           cache: pnpm
       # No fonts needed, the site in the artifact has them
       - run: pnpm install --frozen-lockfile --ignore-scripts
+      # The server and the browser's half of the build, together in dist/
       - uses: actions/download-artifact@v8
         with:
-          name: site
-      - run: tar -xf site.tar
+          pattern: site-*
+          merge-multiple: true
+      - run: tar -xf server.tar && tar -xf browser.tar
       - name: Browser tests
-        run: pnpm run e2e
+        run: pnpm run e2e --shard=${{ matrix.shard }}/2
         env:
           E2E_BIN: dist/hashi
           E2E_SITE_ROOT: dist/site
           E2E_VISUAL: 1
+          # A blob report instead of the HTML one, merged in the E2E report job
+          E2E_BLOB: 1
       # Also when everything passed: a test that only passed on its retry is in it with a trace
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-shard-${{ matrix.shard }}
+          path: |
+            e2e/blob-report
+            e2e/.run/*.log
+          include-hidden-files: true
+          retention-days: 1
+
+  # The required check: passes when both shards passed, or when they were skipped on purpose (a
+  # docs-only pull request). always(): a failed shard must fail it, not skip it (a skipped
+  # check counts as passed).
+  e2e:
+    name: E2E
+    if: always()
+    needs: [changes, e2e-shard]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          CHANGES: ${{ needs.changes.result }}
+          CODE: ${{ needs.changes.outputs.code }}
+          SHARDS: ${{ needs.e2e-shard.result }}
+        run: |
+          echo "changes: $CHANGES, code changed: $CODE, shards: $SHARDS"
+          if [ "$CHANGES" != success ]; then
+            echo "::error::The changes job didn't succeed, the checks that wait for it were skipped"
+            exit 1
+          fi
+          if [ "$CODE" = true ] && [ "$SHARDS" != success ]; then
+            echo "::error::The E2E shards didn't pass ($SHARDS)"
+            exit 1
+          fi
+
+  # One HTML report from the shards' blob reports, next to the servers' logs of each shard
+  e2e-report:
+    name: E2E report
+    if: ${{ !cancelled() && needs.e2e-shard.result != 'skipped' }}
+    needs: e2e-shard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: e2e-shard-*
+          path: shards
+      - name: Merge the reports
+        run: |
+          mkdir -p blobs e2e/.run
+          for dir in shards/e2e-shard-*; do
+            cp "$dir"/blob-report/*.zip blobs/
+            if [ -d "$dir/.run" ]; then mv "$dir/.run" "e2e/.run/shard-${dir##*-}"; fi
+          done
+          pnpm exec playwright merge-reports --reporter html blobs
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: e2e/playwright-report
+          PLAYWRIGHT_HTML_OPEN: never
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: e2e-report
           # The report has the traces and screenshots of the failed tests (with the differences
-          # of the screenshots), .run the servers' logs
+          # of the screenshots), .run/shard-* the servers' logs
           path: |
             e2e/playwright-report
-            e2e/.run/*.log
+            e2e/.run/*/*.log
           include-hidden-files: true
           retention-days: 7
 
@@ -202,15 +359,17 @@ jobs:
   # site. Dependabot's updates of its base image are tested here, before they deploy.
   docker:
     name: Docker image
-    needs: build
+    needs: [build, build-browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      # The server and the browser's half of the build, together in dist/
       - uses: actions/download-artifact@v8
         with:
-          name: site
-      - run: tar -xf site.tar
+          pattern: site-*
+          merge-multiple: true
+      - run: tar -xf server.tar && tar -xf browser.tar
       - run: scripts/docker-smoke.sh
 
   # Deploys ship the binaries built above in a slim image, built here and pushed to Fly. Fly's
@@ -219,15 +378,17 @@ jobs:
   deploy:
     name: Deploy site
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint-browser, coverage, build, e2e, docker]
+    needs: [test, lint-browser, coverage, build, build-browser, e2e, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+      # The server and the browser's half of the build, together in dist/
       - uses: actions/download-artifact@v8
         with:
-          name: site
-      - run: tar -xf site.tar
+          pattern: site-*
+          merge-multiple: true
+      - run: tar -xf server.tar && tar -xf browser.tar
       - uses: superfly/flyctl-actions/setup-flyctl@1.6
       - name: Deploy to fly
         # pipefail: a failed deploy must fail the job, not just print its last line
