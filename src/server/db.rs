@@ -182,16 +182,41 @@ pub async fn init() -> Result<(), String> {
 
 /// Migrates `db` and makes it the database of every request. The HTTP tests bring their own.
 pub async fn install(db: Database) -> Result<(), String> {
-    migrate(&db.connect().map_err(|e| e.to_string())?).await?;
+    migrate(&connect(&db).map_err(|e| e.to_string())?).await?;
     DB.set(db)
         .map_err(|_| "database initialized twice".to_string())
 }
 
+/// A local SQLite file, switched to WAL mode (it stays in it, the mode is kept in the file).
+///
+/// In SQLite's default rollback journal mode a read in progress blocks every write from
+/// committing, and a write about to commit blocks every new read: requests waited for each
+/// other, and on a busy server long enough to fail with "database is locked". In WAL mode reads
+/// and writes don't wait for each other, only writes for another write, which never takes long
+/// (no transaction waits for anything but the database). The writes go to `<path>-wal` first,
+/// with `<path>-shm` as its index: a copy of the database needs all three files, or the server
+/// stopped first (the last connection writes everything back and removes them).
+///
+/// Turso isn't a local file, it has a storage of its own and no journal mode to set.
 pub async fn open_local(path: &str) -> Result<Database, String> {
-    Builder::new_local(path)
-        .build()
+    let err = |e: libsql::Error| format!("could not open {path}: {e}");
+    let db = Builder::new_local(path).build().await.map_err(err)?;
+    let conn = db.connect().map_err(err)?;
+    // Switching waits for other processes on the file, like the browser tests' reads
+    conn.busy_timeout(BUSY_TIMEOUT).map_err(err)?;
+    let mut rows = conn
+        .query("PRAGMA journal_mode = WAL", ())
         .await
-        .map_err(|e| format!("could not open {path}: {e}"))
+        .map_err(err)?;
+    let mode = match rows.next().await.map_err(err)? {
+        Some(row) => row.get::<String>(0).map_err(err)?,
+        None => String::new(),
+    };
+    if !mode.eq_ignore_ascii_case("wal") {
+        // In memory, or a file system without shared memory
+        eprintln!("database: {path} stays in journal mode {mode}, WAL isn't available there");
+    }
+    Ok(db)
 }
 
 pub async fn migrate(conn: &Connection) -> Result<(), String> {
@@ -232,6 +257,17 @@ async fn migrate_to(conn: &Connection, version: usize) -> Result<(), String> {
     Ok(())
 }
 
+/// Removes a local database file of the tests and its WAL files: a fresh file next to an old
+/// `-wal` would get the old one's writes.
+#[cfg(test)]
+pub fn remove_local(path: &std::path::Path) {
+    for suffix in ["", "-wal", "-shm"] {
+        let mut file = path.as_os_str().to_owned();
+        file.push(suffix);
+        let _ = std::fs::remove_file(file);
+    }
+}
+
 /// A connection for the current request.
 pub fn conn() -> Result<Connection, ServerFnError> {
     connect(
@@ -247,7 +283,11 @@ const BUSY_TIMEOUT: Duration = Duration::from_secs(5);
 ///
 /// A local file is locked by every write: without a busy timeout a second request writing at the
 /// same moment failed at once with "database is locked" (Turso queues writes itself, there the
-/// timeout does nothing).
+/// timeout does nothing). Reads don't wait for writes, the file is in WAL mode ([`open_local`]).
+///
+/// SQLite doesn't wait where waiting could deadlock: a transaction that read first and then
+/// writes fails at once if another write is in progress. A transaction that writes has to begin
+/// with its write, or with `TransactionBehavior::Immediate`.
 pub fn connect(db: &Database) -> Result<Connection, ServerFnError> {
     let conn = db.connect().map_err(db_err)?;
     conn.busy_timeout(BUSY_TIMEOUT).map_err(db_err)?;

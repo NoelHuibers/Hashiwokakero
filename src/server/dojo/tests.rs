@@ -10,7 +10,7 @@ use crate::server::{db, now_ms};
 
 async fn test_db(name: &str) -> Connection {
     let path = std::env::temp_dir().join(format!("hashi-dojo-{name}-{}.db", std::process::id()));
-    let _ = std::fs::remove_file(&path);
+    db::remove_local(&path);
     let db = db::open_local(path.to_str().unwrap()).await.unwrap();
     let conn = db.connect().unwrap();
     db::migrate(&conn).await.unwrap();
