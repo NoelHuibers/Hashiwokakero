@@ -125,3 +125,27 @@ fn test_parse_input_blank_lines() {
         assert_eq!(islands, [(0, 0), (1, 1)], "{blank} blank lines");
     }
 }
+
+#[test]
+fn malformed_files_are_explained() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    for (name, text, message) in [
+        ("p.cnf", "2 2\n1.\n.1\n", "Only .txt files are allowed."),
+        ("p", "2 2\n1.\n.1\n", "Only .txt files are allowed."),
+        (
+            "cols.txt",
+            "3 x\n...\n...\n...\n",
+            "Invalid number of columns",
+        ),
+        (
+            "row.txt",
+            "3 3\n1.1\n....\n1.1\n",
+            "incorrect number of columns in row 2 (expected 3, found 4)",
+        ),
+    ] {
+        let path = dir.path().join(name);
+        std::fs::write(&path, text).expect("Failed to write test file.");
+        let err = parse_input(path.to_str().unwrap()).unwrap_err();
+        assert!(err.to_string().contains(message), "{name}: {err}");
+    }
+}
