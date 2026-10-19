@@ -78,6 +78,8 @@
     "own_dpll": "자체 DPLL",
     "heuristic": "분기 휴리스틱",
     "splr_heuristic": "splr 기본 (EVSIDS)",
+    "heuristic_arbitrary": "임의",
+    "heuristic_custom": "사용자 정의",
     "restarts": "재시작",
     "restarts_none": "재시작 없음",
     "restarts_fixed": "고정 간격",
@@ -87,7 +89,23 @@
     "subsumption_short": "포섭 제거",
     "subsumption_hint": "풀기 전에 포섭된 절을 제거해요",
     "preprocess": "전처리",
-    "timeout": "제한 시간"
+    "timeout": "제한 시간",
+    "log": {
+      "waiting": "풀 퍼즐을 기다리는 중…",
+      "working": "인코딩 및 풀이 중",
+      "unique": "유일해",
+      "not_unique": "해가 여러 개",
+      "timeout": "시간 초과",
+      "config": "설정",
+      "variables": "변수",
+      "clauses": "절",
+      "encode": "인코딩",
+      "solve": "풀이",
+      "decisions": "결정",
+      "restarts": "재시작",
+      "sat_calls": "SAT 호출",
+      "cuts": "연결성 컷"
+    }
   },
   "ranking": {
     "you": "나",

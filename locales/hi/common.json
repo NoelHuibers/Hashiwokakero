@@ -78,6 +78,8 @@
     "own_dpll": "अपना DPLL",
     "heuristic": "ब्रांचिंग ह्यूरिस्टिक",
     "splr_heuristic": "splr का अपना (EVSIDS)",
+    "heuristic_arbitrary": "मनमाना",
+    "heuristic_custom": "कस्टम",
     "restarts": "रीस्टार्ट",
     "restarts_none": "कोई रीस्टार्ट नहीं",
     "restarts_fixed": "निश्चित अंतराल",
@@ -87,7 +89,23 @@
     "subsumption_short": "सबज़म्प्शन",
     "subsumption_hint": "हल करने से पहले सबज़्यूम्ड क्लॉज़ हटाएँ",
     "preprocess": "प्रीप्रोसेस",
-    "timeout": "टाइमआउट"
+    "timeout": "टाइमआउट",
+    "log": {
+      "waiting": "हल करने के लिए पहेली का इंतज़ार…",
+      "working": "एनकोडिंग और हल",
+      "unique": "अद्वितीय",
+      "not_unique": "अद्वितीय नहीं",
+      "timeout": "टाइमआउट",
+      "config": "कॉन्फ़िगरेशन",
+      "variables": "वेरिएबल",
+      "clauses": "क्लॉज़",
+      "encode": "एनकोड",
+      "solve": "हल",
+      "decisions": "निर्णय",
+      "restarts": "रीस्टार्ट",
+      "sat_calls": "SAT कॉल",
+      "cuts": "जुड़ाव कट"
+    }
   },
   "ranking": {
     "you": "आप",

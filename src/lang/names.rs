@@ -1,4 +1,4 @@
-//! Translated names: dates, difficulties, stamps, solver settings and server errors.
+//! Translated names: dates, difficulties, stamps, solver settings, file and server errors.
 
 use leptos::prelude::ServerFnError;
 
@@ -203,6 +203,16 @@ pub fn solver_name(locale: Locale, kind: common::SolverKind) -> String {
     }
 }
 
+/// Name of a branching heuristic; most are named after their authors and stay as they are.
+pub fn heuristic_name(locale: Locale, heuristic: common::Heuristic) -> String {
+    use common::Heuristic as H;
+    match heuristic {
+        H::Arbitrary => td_string!(locale, common.solver.heuristic_arbitrary).to_string(),
+        H::Custom => td_string!(locale, common.solver.heuristic_custom).to_string(),
+        h => h.label().to_string(),
+    }
+}
+
 pub fn restarts_name(locale: Locale, restarts: common::Restarts) -> String {
     use common::Restarts as R;
     match restarts {
@@ -218,7 +228,7 @@ pub fn restarts_name(locale: Locale, restarts: common::Restarts) -> String {
 pub fn config_name(locale: Locale, config: &common::SolverConfig) -> String {
     let mut parts = vec![solver_name(locale, config.kind)];
     if !config.kind.heuristics().is_empty() {
-        parts.push(config.heuristic.label().to_string());
+        parts.push(heuristic_name(locale, config.heuristic));
     }
     if config.kind.supports_restarts() {
         parts.push(restarts_name(locale, config.restarts));
@@ -227,6 +237,33 @@ pub fn config_name(locale: Locale, config: &common::SolverConfig) -> String {
         parts.push(td_string!(locale, common.solver.subsumption_short).to_string());
     }
     parts.join(" · ")
+}
+
+/// Why an imported puzzle file couldn't be read, in the player's language.
+pub fn parse_error_text(locale: Locale, error: &common::ParseError) -> String {
+    use common::ParseError as E;
+    match error {
+        E::Empty => td_string!(locale, create.parse.empty).to_string(),
+        E::MissingSize => td_string!(locale, create.parse.missing_size).to_string(),
+        E::InvalidSize(header) => td_string!(locale, create.parse.invalid_size, header),
+        E::TooSmall => td_string!(locale, create.parse.too_small).to_string(),
+        E::TooManyRows { expected } => {
+            td_string!(locale, create.parse.too_many_rows, expected)
+        }
+        E::InvalidChar { char, row } => {
+            td_string!(locale, create.parse.invalid_char, character = char, row)
+        }
+        E::RowWidth {
+            row,
+            found,
+            expected,
+        } => {
+            td_string!(locale, create.parse.row_width, row, found, expected)
+        }
+        E::RowCount { expected, found } => {
+            td_string!(locale, create.parse.row_count, expected, found)
+        }
+    }
 }
 
 /// A server error for players, in their language.

@@ -233,7 +233,8 @@ impl SolverConfig {
 /// Numbers about one solver run, shown in the solver panel.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct SolveStats {
-    pub config: String,
+    /// Normalized, see [`SolverConfig::normalized`].
+    pub config: SolverConfig,
     pub variables: usize,
     pub clauses: usize,
     pub encode_ms: f64,

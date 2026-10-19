@@ -32,5 +32,15 @@
   "not_unique": "Birden fazla çözüm var, ada ekle veya değiştir.",
   "imported": "İçe aktarıldı: {{ name }}",
   "unreadable": "Okunamadı: {{ name }}",
-  "brush_label": "Fırça"
+  "brush_label": "Fırça",
+  "parse": {
+    "empty": "Dosya boş",
+    "missing_size": "İlk satırda ızgara boyutu eksik",
+    "invalid_size": "Geçersiz ızgara boyutu '{{ header }}'",
+    "too_small": "Izgara en az 2×2 olmalı",
+    "too_many_rows": "{{ expected }} satır bekleniyordu, daha fazlası var",
+    "invalid_char": "{{ row }}. satırda geçersiz karakter '{{ character }}'",
+    "row_width": "{{ row }}. satırda {{ found }} sütun var, {{ expected }} bekleniyordu",
+    "row_count": "{{ expected }} satır bekleniyordu, {{ found }} bulundu"
+  }
 }

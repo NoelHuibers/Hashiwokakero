@@ -19,7 +19,7 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::label::Label;
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{difficulty_name, error_text};
+use crate::lang::{difficulty_name, error_text, parse_error_text};
 use crate::seo::PageMeta;
 use crate::state::{self, Editor, Game, Settings, Source, ToastKind, download, random_seed, toast};
 
@@ -152,7 +152,9 @@ pub fn CreatePage() -> impl IntoView {
                         td_string!(l, create.imported, name = name.clone())
                     });
                 }
-                Some(Err(e)) => toast(ToastKind::Error, move |_| format!("{name}: {e}")),
+                Some(Err(e)) => toast(ToastKind::Error, move |l| {
+                    format!("{name}: {}", parse_error_text(l, &e))
+                }),
                 None => toast(ToastKind::Error, move |l| {
                     td_string!(l, create.unreadable, name = name.clone())
                 }),

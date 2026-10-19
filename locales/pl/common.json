@@ -78,6 +78,8 @@
     "own_dpll": "Własny DPLL",
     "heuristic": "Heurystyka rozgałęziania",
     "splr_heuristic": "Własna heurystyka splr (EVSIDS)",
+    "heuristic_arbitrary": "Dowolna",
+    "heuristic_custom": "Własna",
     "restarts": "Restarty",
     "restarts_none": "Bez restartów",
     "restarts_fixed": "Stały interwał",
@@ -87,7 +89,23 @@
     "subsumption_short": "subsumpcja",
     "subsumption_hint": "Usuń pochłonięte klauzule przed rozwiązywaniem",
     "preprocess": "preprocessing",
-    "timeout": "Limit czasu"
+    "timeout": "Limit czasu",
+    "log": {
+      "waiting": "czekam na łamigłówkę do rozwiązania…",
+      "working": "kodowanie i rozwiązywanie",
+      "unique": "jednoznaczne",
+      "not_unique": "niejednoznaczne",
+      "timeout": "limit czasu",
+      "config": "konfiguracja",
+      "variables": "zmienne",
+      "clauses": "klauzule",
+      "encode": "kodowanie",
+      "solve": "rozwiązywanie",
+      "decisions": "decyzje",
+      "restarts": "restarty",
+      "sat_calls": "wywołania SAT",
+      "cuts": "cięcia spójności"
+    }
   },
   "ranking": {
     "you": "ty",

@@ -67,6 +67,7 @@ pub fn App() -> impl IntoView {
         <Meta name="theme-color" content="#cf3a24" />
 
         <Router>
+            <LocaleFromPath />
             <div class="flex min-h-screen flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
                 <Header />
                 <main class="flex-1">
@@ -100,15 +101,31 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// The pages of a language. On the server only the route knows the language of the URL, above
-/// it the language is still the browser's (cookie or Accept-Language), while the browser starts
-/// with the URL's. Whatever renders elements depending on the language goes in here, or the
-/// server leaves them out and hydration fails (it did for the script fonts).
+/// The pages of a language. On the server only the route knows the language of the URL; above it
+/// the language is the browser's (cookie or Accept-Language) until `LocaleFromPath` sets it,
+/// while the browser starts with the URL's. Whatever renders elements depending on the language
+/// goes in here, or the server leaves them out and hydration fails (it did for the script fonts).
 #[component]
 fn Localized() -> impl IntoView {
     view! {
         <ScriptFont />
         <Outlet />
+    }
+}
+
+/// The header renders before `<I18nRoute>` takes the language from the URL. On the server it would
+/// otherwise follow the cookie or Accept-Language, so a first visit to /ja/rules from an English
+/// browser got an English header until hydration.
+#[component]
+fn LocaleFromPath() -> impl IntoView {
+    let i18n = use_i18n();
+    let path = leptos_router::hooks::use_location()
+        .pathname
+        .get_untracked();
+    if let Some(locale) = crate::lang::path_locale(&path)
+        && locale != i18n.get_locale_untracked()
+    {
+        i18n.set_locale(locale);
     }
 }
 

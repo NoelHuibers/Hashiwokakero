@@ -32,5 +32,15 @@
   "not_unique": "Więcej niż jedno rozwiązanie, dodaj lub zmień wyspy.",
   "imported": "Zaimportowano {{ name }}",
   "unreadable": "Nie udało się odczytać {{ name }}",
-  "brush_label": "Pędzel"
+  "brush_label": "Pędzel",
+  "parse": {
+    "empty": "Plik jest pusty",
+    "missing_size": "W pierwszym wierszu brakuje rozmiaru planszy",
+    "invalid_size": "Nieprawidłowy rozmiar planszy '{{ header }}'",
+    "too_small": "Plansza musi mieć co najmniej 2×2",
+    "too_many_rows": "Za dużo wierszy, oczekiwano: {{ expected }}",
+    "invalid_char": "Nieprawidłowy znak '{{ character }}' w wierszu {{ row }}",
+    "row_width": "Wiersz {{ row }}: liczba kolumn {{ found }}, oczekiwano {{ expected }}",
+    "row_count": "Liczba wierszy: {{ found }}, oczekiwano {{ expected }}"
+  }
 }

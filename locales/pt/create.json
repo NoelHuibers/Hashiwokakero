@@ -32,5 +32,15 @@
   "not_unique": "Mais de uma solução, adicione ou altere ilhas.",
   "imported": "Importado: {{ name }}",
   "unreadable": "Não foi possível ler {{ name }}",
-  "brush_label": "Pincel"
+  "brush_label": "Pincel",
+  "parse": {
+    "empty": "O arquivo está vazio",
+    "missing_size": "Falta o tamanho da grade na primeira linha",
+    "invalid_size": "Tamanho de grade inválido '{{ header }}'",
+    "too_small": "A grade precisa ter pelo menos 2×2",
+    "too_many_rows": "Esperadas {{ expected }} linhas, mas há mais",
+    "invalid_char": "Caractere inválido '{{ character }}' na linha {{ row }}",
+    "row_width": "A linha {{ row }} tem {{ found }} colunas em vez de {{ expected }}",
+    "row_count": "Esperadas {{ expected }} linhas, encontradas {{ found }}"
+  }
 }

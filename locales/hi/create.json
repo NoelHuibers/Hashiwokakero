@@ -32,5 +32,15 @@
   "not_unique": "एक से ज़्यादा हल, द्वीप जोड़ें या बदलें।",
   "imported": "{{ name }} आयात हुआ",
   "unreadable": "{{ name }} पढ़ा नहीं जा सका",
-  "brush_label": "ब्रश"
+  "brush_label": "ब्रश",
+  "parse": {
+    "empty": "फ़ाइल खाली है",
+    "missing_size": "पहली पंक्ति में ग्रिड का आकार नहीं है",
+    "invalid_size": "ग्रिड का आकार '{{ header }}' अमान्य है",
+    "too_small": "ग्रिड कम से कम 2×2 होना चाहिए",
+    "too_many_rows": "{{ expected }} पंक्तियाँ अपेक्षित थीं, ज़्यादा मिलीं",
+    "invalid_char": "पंक्ति {{ row }} में अमान्य अक्षर '{{ character }}'",
+    "row_width": "पंक्ति {{ row }} में {{ found }} कॉलम हैं, {{ expected }} अपेक्षित थे",
+    "row_count": "{{ expected }} पंक्तियाँ अपेक्षित थीं, {{ found }} मिलीं"
+  }
 }

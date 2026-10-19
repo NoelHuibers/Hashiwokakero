@@ -78,6 +78,8 @@
     "own_dpll": "Nostro DPLL",
     "heuristic": "Euristica di branching",
     "splr_heuristic": "Quella di splr (EVSIDS)",
+    "heuristic_arbitrary": "Arbitraria",
+    "heuristic_custom": "Personalizzata",
     "restarts": "Riavvii",
     "restarts_none": "Nessun riavvio",
     "restarts_fixed": "Intervallo fisso",
@@ -87,7 +89,23 @@
     "subsumption_short": "sussunzione",
     "subsumption_hint": "Elimina le clausole sussunte prima di risolvere",
     "preprocess": "pre-elaborazione",
-    "timeout": "Tempo limite"
+    "timeout": "Tempo limite",
+    "log": {
+      "waiting": "in attesa di un puzzle da risolvere…",
+      "working": "codifica e risoluzione",
+      "unique": "unica",
+      "not_unique": "non unica",
+      "timeout": "tempo scaduto",
+      "config": "configurazione",
+      "variables": "variabili",
+      "clauses": "clausole",
+      "encode": "codifica",
+      "solve": "risoluzione",
+      "decisions": "decisioni",
+      "restarts": "riavvii",
+      "sat_calls": "chiamate SAT",
+      "cuts": "tagli di connettività"
+    }
   },
   "ranking": {
     "you": "tu",

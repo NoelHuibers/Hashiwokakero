@@ -78,6 +78,8 @@
     "own_dpll": "Власний DPLL",
     "heuristic": "Евристика розгалуження",
     "splr_heuristic": "вбудована в splr (EVSIDS)",
+    "heuristic_arbitrary": "Довільна",
+    "heuristic_custom": "Власна",
     "restarts": "Перезапуски",
     "restarts_none": "Без перезапусків",
     "restarts_fixed": "Фіксований інтервал",
@@ -87,7 +89,23 @@
     "subsumption_short": "поглинання",
     "subsumption_hint": "Вилучати поглинуті диз’юнкти перед розв’язанням",
     "preprocess": "передобробка",
-    "timeout": "Тайм-аут"
+    "timeout": "Тайм-аут",
+    "log": {
+      "waiting": "чекаю на головоломку для розв’язання…",
+      "working": "кодування й розв’язання",
+      "unique": "єдиний",
+      "not_unique": "не єдиний",
+      "timeout": "тайм-аут",
+      "config": "конфігурація",
+      "variables": "змінні",
+      "clauses": "диз’юнкти",
+      "encode": "кодування",
+      "solve": "розв’язання",
+      "decisions": "розгалуження",
+      "restarts": "перезапуски",
+      "sat_calls": "виклики SAT",
+      "cuts": "розрізи зв’язності"
+    }
   },
   "ranking": {
     "you": "ти",

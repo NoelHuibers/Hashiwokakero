@@ -32,5 +32,15 @@
   "not_unique": "不只一個解，請新增或修改小島。",
   "imported": "已匯入 {{ name }}",
   "unreadable": "無法讀取 {{ name }}",
-  "brush_label": "筆刷"
+  "brush_label": "筆刷",
+  "parse": {
+    "empty": "檔案是空的",
+    "missing_size": "第一行缺少格子尺寸",
+    "invalid_size": "格子尺寸「{{ header }}」無效",
+    "too_small": "格子至少要 2×2",
+    "too_many_rows": "應有 {{ expected }} 列，實際更多",
+    "invalid_char": "第 {{ row }} 列有無效字元「{{ character }}」",
+    "row_width": "第 {{ row }} 列有 {{ found }} 欄，應為 {{ expected }} 欄",
+    "row_count": "應有 {{ expected }} 列，實際 {{ found }} 列"
+  }
 }

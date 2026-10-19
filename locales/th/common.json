@@ -78,6 +78,8 @@
     "own_dpll": "DPLL ของเรา",
     "heuristic": "ฮิวริสติกการแตกกิ่ง",
     "splr_heuristic": "ของ splr เอง (EVSIDS)",
+    "heuristic_arbitrary": "ตามอำเภอใจ",
+    "heuristic_custom": "กำหนดเอง",
     "restarts": "การรีสตาร์ต",
     "restarts_none": "ไม่รีสตาร์ต",
     "restarts_fixed": "ช่วงคงที่",
@@ -87,7 +89,23 @@
     "subsumption_short": "ซับซัมชัน",
     "subsumption_hint": "ตัดอนุประโยค (clause) ที่ถูกครอบคลุมออกก่อนแก้",
     "preprocess": "ประมวลผลล่วงหน้า",
-    "timeout": "เวลาจำกัด"
+    "timeout": "เวลาจำกัด",
+    "log": {
+      "waiting": "กำลังรอปริศนาให้แก้…",
+      "working": "กำลังเข้ารหัสและแก้",
+      "unique": "คำตอบเดียว",
+      "not_unique": "มีหลายคำตอบ",
+      "timeout": "หมดเวลา",
+      "config": "การตั้งค่า",
+      "variables": "ตัวแปร",
+      "clauses": "อนุประโยค",
+      "encode": "เข้ารหัส",
+      "solve": "แก้",
+      "decisions": "การตัดสินใจ",
+      "restarts": "การรีสตาร์ต",
+      "sat_calls": "การเรียก SAT",
+      "cuts": "การตัดเพื่อการเชื่อมต่อ"
+    }
   },
   "ranking": {
     "you": "คุณ",

@@ -32,5 +32,15 @@
   "not_unique": "More than one solution, add or change islands.",
   "imported": "Imported {{ name }}",
   "unreadable": "Could not read {{ name }}",
-  "brush_label": "Brush"
+  "brush_label": "Brush",
+  "parse": {
+    "empty": "The file is empty",
+    "missing_size": "Missing grid size in the first line",
+    "invalid_size": "Invalid grid size '{{ header }}'",
+    "too_small": "The grid must be at least 2×2",
+    "too_many_rows": "Expected {{ expected }} rows, found more",
+    "invalid_char": "Invalid character '{{ character }}' in row {{ row }}",
+    "row_width": "Row {{ row }} has {{ found }} columns, expected {{ expected }}",
+    "row_count": "Expected {{ expected }} rows, found {{ found }}"
+  }
 }

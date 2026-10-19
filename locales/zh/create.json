@@ -32,5 +32,15 @@
   "not_unique": "不止一个解，请添加或修改小岛。",
   "imported": "已导入 {{ name }}",
   "unreadable": "无法读取 {{ name }}",
-  "brush_label": "画笔"
+  "brush_label": "画笔",
+  "parse": {
+    "empty": "文件是空的",
+    "missing_size": "第一行缺少网格尺寸",
+    "invalid_size": "网格尺寸“{{ header }}”无效",
+    "too_small": "网格至少要 2×2",
+    "too_many_rows": "应有 {{ expected }} 行，实际更多",
+    "invalid_char": "第 {{ row }} 行有无效字符“{{ character }}”",
+    "row_width": "第 {{ row }} 行有 {{ found }} 列，应为 {{ expected }} 列",
+    "row_count": "应有 {{ expected }} 行，实际 {{ found }} 行"
+  }
 }

@@ -78,6 +78,8 @@
     "own_dpll": "DPLL kami",
     "heuristic": "Heuristik percabangan",
     "splr_heuristic": "Bawaan splr (EVSIDS)",
+    "heuristic_arbitrary": "Sembarang",
+    "heuristic_custom": "Kustom",
     "restarts": "Restart",
     "restarts_none": "Tanpa restart",
     "restarts_fixed": "Interval tetap",
@@ -87,7 +89,23 @@
     "subsumption_short": "subsumsi",
     "subsumption_hint": "Hapus klausa yang tersubsumsi sebelum memecahkan",
     "preprocess": "praproses",
-    "timeout": "Batas waktu"
+    "timeout": "Batas waktu",
+    "log": {
+      "waiting": "menunggu teka-teki untuk dipecahkan…",
+      "working": "mengodekan & memecahkan",
+      "unique": "unik",
+      "not_unique": "tidak unik",
+      "timeout": "waktu habis",
+      "config": "konfigurasi",
+      "variables": "variabel",
+      "clauses": "klausa",
+      "encode": "pengodean",
+      "solve": "pemecahan",
+      "decisions": "keputusan",
+      "restarts": "mulai ulang",
+      "sat_calls": "panggilan SAT",
+      "cuts": "potongan keterhubungan"
+    }
   },
   "ranking": {
     "you": "kamu",

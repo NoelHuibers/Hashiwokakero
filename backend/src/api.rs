@@ -221,7 +221,7 @@ impl Session {
 
     pub(crate) fn stats(&self) -> SolveStats {
         SolveStats {
-            config: self.config.describe(),
+            config: self.config,
             variables: self.num_vars,
             clauses: self.static_clauses,
             encode_ms: self.encode_time.as_secs_f64() * 1000.0,

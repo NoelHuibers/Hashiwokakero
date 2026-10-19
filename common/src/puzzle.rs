@@ -124,45 +124,52 @@ impl Puzzle {
     /// .....
     /// 1.4.2
     /// ```
-    pub fn parse_txt(input: &str) -> Result<Self, String> {
+    pub fn parse_txt(input: &str) -> Result<Self, ParseError> {
         let mut lines = input.lines().map(str::trim).filter(|l| !l.is_empty());
-        let header = lines.next().ok_or("The file is empty")?;
+        let header = lines.next().ok_or(ParseError::Empty)?;
+        let invalid_size = || ParseError::InvalidSize(header.to_string());
         let mut sizes = header.split_whitespace().map(str::parse::<u8>);
         let rows = sizes
             .next()
-            .ok_or("Missing grid size in the first line")?
-            .map_err(|_| format!("Invalid grid size '{header}'"))?;
+            .ok_or(ParseError::MissingSize)?
+            .map_err(|_| invalid_size())?;
         let cols = match sizes.next() {
-            Some(c) => c.map_err(|_| format!("Invalid grid size '{header}'"))?,
+            Some(c) => c.map_err(|_| invalid_size())?,
             None => rows,
         };
         if rows < 2 || cols < 2 {
-            return Err("The grid must be at least 2×2".into());
+            return Err(ParseError::TooSmall);
         }
         let mut grid = Vec::with_capacity(rows as usize);
         for (y, line) in lines.enumerate() {
             if y >= rows as usize {
-                return Err(format!("Expected {rows} rows, found more"));
+                return Err(ParseError::TooManyRows { expected: rows });
             }
             let row = line
                 .chars()
                 .map(|c| match c {
                     '.' | '0' => Ok(0),
                     '1'..='8' => Ok(c as u8 - b'0'),
-                    _ => Err(format!("Invalid character '{c}' in row {}", y + 1)),
+                    _ => Err(ParseError::InvalidChar {
+                        char: c,
+                        row: y + 1,
+                    }),
                 })
-                .collect::<Result<Vec<u8>, String>>()?;
+                .collect::<Result<Vec<u8>, ParseError>>()?;
             if row.len() != cols as usize {
-                return Err(format!(
-                    "Row {} has {} columns, expected {cols}",
-                    y + 1,
-                    row.len()
-                ));
+                return Err(ParseError::RowWidth {
+                    row: y + 1,
+                    found: row.len(),
+                    expected: cols,
+                });
             }
             grid.push(row);
         }
         if grid.len() != rows as usize {
-            return Err(format!("Expected {rows} rows, found {}", grid.len()));
+            return Err(ParseError::RowCount {
+                expected: rows,
+                found: grid.len(),
+            });
         }
         Ok(Self::from_grid(&grid))
     }
@@ -177,6 +184,62 @@ impl Puzzle {
             out.push('\n');
         }
         out
+    }
+}
+
+/// Why [`Puzzle::parse_txt`] rejected a file. Rows are counted from 1.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ParseError {
+    Empty,
+    MissingSize,
+    InvalidSize(String),
+    TooSmall,
+    TooManyRows {
+        expected: u8,
+    },
+    InvalidChar {
+        char: char,
+        row: usize,
+    },
+    RowWidth {
+        row: usize,
+        found: usize,
+        expected: u8,
+    },
+    RowCount {
+        expected: u8,
+        found: usize,
+    },
+}
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Empty => write!(f, "The file is empty"),
+            Self::MissingSize => write!(f, "Missing grid size in the first line"),
+            Self::InvalidSize(header) => write!(f, "Invalid grid size '{header}'"),
+            Self::TooSmall => write!(f, "The grid must be at least 2×2"),
+            Self::TooManyRows { expected } => write!(f, "Expected {expected} rows, found more"),
+            Self::InvalidChar { char, row } => write!(f, "Invalid character '{char}' in row {row}"),
+            Self::RowWidth {
+                row,
+                found,
+                expected,
+            } => {
+                write!(f, "Row {row} has {found} columns, expected {expected}")
+            }
+            Self::RowCount { expected, found } => {
+                write!(f, "Expected {expected} rows, found {found}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for ParseError {}
+
+impl From<ParseError> for String {
+    fn from(e: ParseError) -> Self {
+        e.to_string()
     }
 }
 
@@ -202,10 +265,44 @@ mod tests {
 
     #[test]
     fn rejects_bad_input() {
-        assert!(Puzzle::parse_txt("").is_err());
-        assert!(Puzzle::parse_txt("2 2\n1.\n").is_err());
-        assert!(Puzzle::parse_txt("2 2\n19\n..\n").is_err());
-        assert!(Puzzle::parse_txt("2 2\n1..\n..\n").is_err());
+        let err = |txt| Puzzle::parse_txt(txt).unwrap_err();
+        assert_eq!(err(""), ParseError::Empty);
+        assert_eq!(err("x 2\n"), ParseError::InvalidSize("x 2".into()));
+        assert_eq!(err("2 y\n"), ParseError::InvalidSize("2 y".into()));
+        assert_eq!(err("1 1\n1\n"), ParseError::TooSmall);
+        assert_eq!(
+            err("2 2\n1.\n"),
+            ParseError::RowCount {
+                expected: 2,
+                found: 1
+            }
+        );
+        assert_eq!(
+            err("2 2\n1.\n..\n.1\n"),
+            ParseError::TooManyRows { expected: 2 }
+        );
+        assert_eq!(
+            err("2 2\n19\n..\n"),
+            ParseError::InvalidChar { char: '9', row: 1 }
+        );
+        assert_eq!(
+            err("2 2\n..\n1..\n"),
+            ParseError::RowWidth {
+                row: 2,
+                found: 3,
+                expected: 2
+            }
+        );
+    }
+
+    /// The command line tool prints these.
+    #[test]
+    fn parse_errors_in_english() {
+        assert_eq!(
+            ParseError::InvalidChar { char: 'x', row: 3 }.to_string(),
+            "Invalid character 'x' in row 3"
+        );
+        assert_eq!(String::from(ParseError::Empty), "The file is empty");
     }
 
     #[test]

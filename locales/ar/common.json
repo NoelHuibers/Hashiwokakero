@@ -78,6 +78,8 @@
     "own_dpll": "DPLL خاص بنا",
     "heuristic": "استدلال التفرّع",
     "splr_heuristic": "الخاص بـ splr (EVSIDS)",
+    "heuristic_arbitrary": "عشوائي",
+    "heuristic_custom": "مخصّص",
     "restarts": "إعادة البدء",
     "restarts_none": "بلا إعادة بدء",
     "restarts_fixed": "فاصل ثابت",
@@ -87,7 +89,23 @@
     "subsumption_short": "احتواء",
     "subsumption_hint": "حذف البنود المحتواة قبل الحل",
     "preprocess": "معالجة مسبقة",
-    "timeout": "المهلة"
+    "timeout": "المهلة",
+    "log": {
+      "waiting": "في انتظار لغز لحلّه…",
+      "working": "الترميز والحل",
+      "unique": "وحيد",
+      "not_unique": "غير وحيد",
+      "timeout": "انتهت المهلة",
+      "config": "الإعداد",
+      "variables": "المتغيرات",
+      "clauses": "البنود",
+      "encode": "الترميز",
+      "solve": "الحل",
+      "decisions": "القرارات",
+      "restarts": "إعادات البدء",
+      "sat_calls": "استدعاءات SAT",
+      "cuts": "قطوع الاتصال"
+    }
   },
   "ranking": {
     "you": "أنت",

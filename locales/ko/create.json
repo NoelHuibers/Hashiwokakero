@@ -32,5 +32,15 @@
   "not_unique": "해답이 여러 개예요. 섬을 추가하거나 바꿔 보세요.",
   "imported": "{{ name }} 가져옴",
   "unreadable": "{{ name }}을(를) 읽을 수 없어요",
-  "brush_label": "브러시"
+  "brush_label": "브러시",
+  "parse": {
+    "empty": "파일이 비어 있어요",
+    "missing_size": "첫 줄에 격자 크기가 없어요",
+    "invalid_size": "격자 크기 '{{ header }}'가 올바르지 않아요",
+    "too_small": "격자는 2×2 이상이어야 해요",
+    "too_many_rows": "{{ expected }}행이어야 하는데 더 많아요",
+    "invalid_char": "{{ row }}행에 잘못된 문자 '{{ character }}'가 있어요",
+    "row_width": "{{ row }}행은 {{ found }}열인데 {{ expected }}열이어야 해요",
+    "row_count": "{{ expected }}행이어야 하는데 {{ found }}행이에요"
+  }
 }

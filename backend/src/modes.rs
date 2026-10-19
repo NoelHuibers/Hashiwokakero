@@ -81,7 +81,7 @@ pub fn esr_mode(input_file: &str, output_file: Option<String>, config: SolverCon
     let s = &report.stats;
     eprintln!(
         "{} | {} variables, {} clauses | encode {:.2} ms, solve {:.2} ms | {} SAT calls, {} connectivity cuts{}{}",
-        s.config,
+        s.config.describe(),
         s.variables,
         s.clauses,
         s.encode_ms,
