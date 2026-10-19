@@ -20,6 +20,11 @@ jobs:
   test:
     name: Test & lint
     runs-on: ubuntu-24.04
+    # No debug info in the doctests' build: a smaller cache and faster linking. Failed asserts
+    # and panics still say where.
+    env:
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
     steps:
       - uses: actions/checkout@v7
       # Installs the toolchain from rust-toolchain.toml (stable + wasm32 target, rustfmt, clippy)
@@ -71,6 +76,11 @@ jobs:
     runs-on: ubuntu-24.04
     # A stuck test shouldn't hold the job for the default six hours
     timeout-minutes: 30
+    # No debug info: a smaller cache and faster linking. Coverage doesn't need it, the
+    # instrumentation brings its own mapping to the source lines.
+    env:
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
     steps:
       - uses: actions/checkout@v7
       - run: rustup toolchain install
