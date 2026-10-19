@@ -22,7 +22,7 @@ RUN node scripts/fonts.mjs
 # Installs the toolchain from rust-toolchain.toml (stable + wasm32-unknown-unknown)
 RUN rustup toolchain install
 
-RUN cargo leptos build --release -vv
+RUN cargo leptos build --release --cargo-locked -vv
 
 FROM debian:trixie-slim AS runner
 RUN apt-get update \

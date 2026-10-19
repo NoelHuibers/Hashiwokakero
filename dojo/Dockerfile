@@ -6,7 +6,7 @@ FROM rust:1.99-trixie AS builder
 WORKDIR /app
 COPY . .
 RUN rustup toolchain install
-RUN cargo build -p dojo --features worker --release
+RUN cargo build --locked -p dojo --features worker --release
 
 FROM debian:trixie-slim
 RUN apt-get update \

@@ -70,7 +70,8 @@ const out = path.join(metadata.target_directory, 'llvm-cov');
 // --workspace, by default it only covers the root package.
 cargo('llvm-cov', 'clean', '--workspace');
 for (const run of RUNS) {
-  cargo('llvm-cov', '--no-report', ...run);
+  // --locked: the versions in Cargo.lock, like the test job
+  cargo('llvm-cov', '--no-report', '--locked', ...run);
 }
 fs.mkdirSync(out, { recursive: true });
 const summaryJson = path.join(out, 'summary.json');
