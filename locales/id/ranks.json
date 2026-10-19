@@ -46,5 +46,13 @@
       "nov": "November",
       "dec": "Desember"
     }
+  },
+  "player": {
+    "title": "Pemain",
+    "record": "Catatan",
+    "back": "Papan peringkat",
+    "not_found": "Pemain ini tidak ada.",
+    "since": "Bermain sejak {{ date }}.",
+    "you": "Itu kamu, ke akunmu"
   }
 }

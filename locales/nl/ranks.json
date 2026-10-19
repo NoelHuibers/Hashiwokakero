@@ -46,5 +46,13 @@
       "nov": "November",
       "dec": "December"
     }
+  },
+  "player": {
+    "title": "Speler",
+    "record": "Resultaten",
+    "back": "Ranglijst",
+    "not_found": "Deze speler bestaat niet.",
+    "since": "Speelt sinds {{ date }}.",
+    "you": "Dat ben jij, naar je account"
   }
 }

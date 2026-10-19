@@ -4,6 +4,7 @@
   "collected": "{{ total }} mühürden {{ earned }} tanesi toplandı.",
   "new": "Yeni mühür: {{ name }}!",
   "more": "Ve {{ count }} yeni mühür daha, mühür defterine bak.",
+  "share": "Oyuncu oranı: %{{ percent }}",
   "names": {
     "first": "İlk köprü",
     "solved_10": "10 bulmaca",

@@ -515,6 +515,39 @@ async fn stamps_are_earned_kept_and_taken_back() {
 }
 
 #[tokio::test]
+async fn profiles_show_stamps_and_how_many_have_them() {
+    let (_db, conn) = test_db().await;
+    let a = user(&conn, "alice", Some("alice")).await;
+    let b = user(&conn, "Calm Heron 7", None).await;
+    let yesterday = today() - 1;
+    finish(&conn, a, yesterday, 50_000).await;
+    finish(&conn, b, yesterday, 60_000).await;
+
+    assert_eq!(profile(&conn, a + b + 1).await.unwrap(), None);
+    let p = profile(&conn, b).await.unwrap().unwrap();
+    assert_eq!((p.name.as_str(), p.guest), ("Calm Heron 7", true));
+    assert_eq!(p.stats.solved, 1);
+    // Bob's profile synced his stamps, alice's aren't stored yet
+    assert_eq!(p.stats.players, 1);
+
+    let p = profile(&conn, a).await.unwrap().unwrap();
+    assert!(!p.guest);
+    assert_eq!(p.stats.players, 2);
+    let holders = |stamp| {
+        p.stats
+            .stamps
+            .iter()
+            .find(|s| s.stamp == stamp)
+            .unwrap()
+            .holders
+    };
+    // Both solved one, only alice won
+    assert_eq!(holders(Stamp::First), 2);
+    assert_eq!(holders(Stamp::Gold), 1);
+    assert_eq!(holders(Stamp::Solved10), 0);
+}
+
+#[tokio::test]
 async fn archive_only_has_earlier_days() {
     let (_db, conn) = test_db().await;
     assert!(archived(&conn, today()).await.is_err());

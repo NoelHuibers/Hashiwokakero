@@ -46,5 +46,13 @@
       "nov": "Tháng 11",
       "dec": "Tháng 12"
     }
+  },
+  "player": {
+    "title": "Người chơi",
+    "record": "Thành tích",
+    "back": "Bảng xếp hạng",
+    "not_found": "Không có người chơi này.",
+    "since": "Chơi từ {{ date }}.",
+    "you": "Đây là bạn, đến tài khoản"
   }
 }

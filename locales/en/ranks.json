@@ -46,5 +46,13 @@
       "nov": "November",
       "dec": "December"
     }
+  },
+  "player": {
+    "title": "Player",
+    "record": "Daily record",
+    "back": "Leaderboard",
+    "not_found": "There is no such player.",
+    "since": "Playing since {{ date }}.",
+    "you": "That's you, to your account"
   }
 }

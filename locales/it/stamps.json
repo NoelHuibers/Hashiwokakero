@@ -4,6 +4,7 @@
   "collected": "{{ earned }} timbri su {{ total }} raccolti.",
   "new": "Nuovo timbro: {{ name }}!",
   "more": "E altri {{ count }} timbri nuovi, guarda il tuo libretto.",
+  "share": "{{ percent }}% dei giocatori",
   "names": {
     "first": "Primo ponte",
     "solved_10": "10 sfide",

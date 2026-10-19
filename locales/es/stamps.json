@@ -4,6 +4,7 @@
   "collected": "{{ earned }} de {{ total }} sellos conseguidos.",
   "new": "¡Nuevo sello: {{ name }}!",
   "more": "Y {{ count }} sellos nuevos más, mira tu cuaderno de sellos.",
+  "share": "{{ percent }} % de los jugadores",
   "names": {
     "first": "Primer puente",
     "solved_10": "10 retos",

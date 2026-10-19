@@ -5,6 +5,7 @@ use super::stamps::StampBadge;
 use super::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
+use crate::lang::prefix;
 use crate::model::{LeaderboardEntry, Stamp, format_duration};
 use crate::state::Auth;
 
@@ -36,21 +37,26 @@ pub fn RankCell(rank: i64) -> impl IntoView {
     }
 }
 
-/// A player in a leaderboard: name, most impressive stamp, "you" and guest labels.
+/// A player in a leaderboard: name (a link to their profile), most impressive stamp, "you" and
+/// guest labels.
 ///
 /// The guest label only shows where the table is wide enough (a container query on an
 /// `@container` around the table, boards sit in narrow cards too): the name has priority.
 #[component]
 pub fn PlayerName(
+    user_id: i64,
     name: String,
     guest: bool,
     stamp: Option<Stamp>,
     #[prop(optional)] me: bool,
 ) -> impl IntoView {
     let i18n = use_i18n();
+    let href = move || format!("{}/player/{user_id}", prefix(i18n.get_locale()));
     view! {
         <div class="flex items-center gap-2">
-            <span class="min-w-0 truncate font-medium">{name}</span>
+            <A href=href attr:class="min-w-0 truncate font-medium underline-offset-4 hover:text-primary hover:underline">
+                {name}
+            </A>
             {stamp.map(|stamp| view! { <StampBadge stamp=stamp /> })}
             {me.then(|| view! { <Badge variant=BadgeVariant::Default size=BadgeSize::Sm class="shrink-0">{t!(i18n, common.ranking.you)}</Badge> })}
             {guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}
@@ -82,7 +88,7 @@ fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
                 <RankCell rank=entry.rank />
             </td>
             <td class="max-w-0 py-2 pe-2">
-                <PlayerName name=entry.name guest=entry.guest stamp=entry.stamp me=me />
+                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me />
             </td>
             <td class="py-2 pe-2 text-end text-xs text-muted-foreground" title=move || t_string!(i18n, common.ranking.penalties)>
                 {(penalties > 0).then(|| format!("{}h {}c", entry.hints, entry.checks))}

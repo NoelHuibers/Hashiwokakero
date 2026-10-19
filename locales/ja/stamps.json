@@ -4,6 +4,7 @@
   "collected": "はんこ {{ total }}個中 {{ earned }}個を集めました。",
   "new": "新しいはんこ：{{ name }}！",
   "more": "ほかにも新しいはんこが {{ count }}個。はんこ帳を見てみよう。",
+  "share": "プレイヤーの{{ percent }}%",
   "names": {
     "first": "はじめての橋",
     "solved_10": "デイリー10回",

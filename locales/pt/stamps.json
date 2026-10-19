@@ -4,6 +4,7 @@
   "collected": "{{ earned }} de {{ total }} carimbos coletados.",
   "new": "Novo carimbo: {{ name }}!",
   "more": "E mais {{ count }} carimbos novos, veja seu caderno de carimbos.",
+  "share": "{{ percent }}% dos jogadores",
   "names": {
     "first": "Primeira ponte",
     "solved_10": "10 diários",

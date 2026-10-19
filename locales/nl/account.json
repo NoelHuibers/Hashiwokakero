@@ -17,6 +17,7 @@
     "points": "Punten",
     "medals": "Medailles"
   },
+  "public_profile": "Je profiel zoals anderen het zien",
   "last_weeks": "Laatste vijf weken",
   "calendar_rank": "plek {{ rank }}",
   "not_solved": "niet opgelost",

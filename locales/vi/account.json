@@ -17,6 +17,7 @@
     "points": "Điểm",
     "medals": "Huy chương"
   },
+  "public_profile": "Hồ sơ của bạn như người khác thấy",
   "last_weeks": "Năm tuần qua",
   "calendar_rank": "hạng {{ rank }}",
   "not_solved": "chưa giải",

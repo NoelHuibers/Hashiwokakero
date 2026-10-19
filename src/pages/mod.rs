@@ -6,6 +6,7 @@ pub mod dojo;
 pub mod lab;
 pub mod legal;
 pub mod play;
+pub mod player;
 pub mod ranks;
 pub mod rules;
 
