@@ -1,0 +1,17 @@
+{
+  "title": "Kontak",
+  "description": "Punya pertanyaan, ide, atau menemukan bug di Hashi? Tulis ke kami.",
+  "intro": "Ada pertanyaan, ide, bug, atau hal tentang datamu? Tulis ke kami, kami akan membalas secepatnya.",
+  "name": "Nama",
+  "email": "Email",
+  "optional": "opsional",
+  "email_hint": "Hanya kalau kamu ingin dibalas.",
+  "message": "Pesan",
+  "send": "Kirim",
+  "sending": "Mengirim…",
+  "sent_title": "Terima kasih!",
+  "sent": "Pesanmu sudah sampai. Kalau kamu mencantumkan alamat email, kami akan membalas ke sana.",
+  "another": "Tulis pesan lain",
+  "privacy": "Kami hanya memakai pesanmu untuk membalasnya dan menghapusnya paling lambat setelah enam bulan. Selengkapnya di <a>kebijakan privasi</a>.",
+  "by_mail": "Lebih suka lewat email?"
+}

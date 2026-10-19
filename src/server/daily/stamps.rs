@@ -259,7 +259,8 @@ pub(super) async fn sync_recent(conn: &Connection) -> Result<usize, ServerFnErro
         .query(
             "SELECT DISTINCT user_id FROM attempts a
              WHERE a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL
-               AND (a.day >= ?1 - 2 OR NOT EXISTS (SELECT 1 FROM stamps s WHERE s.user_id = a.user_id))",
+               AND (a.day >= ?1 - 2 OR NOT EXISTS (SELECT 1 FROM stamps s WHERE s.user_id = a.user_id))
+               AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = a.user_id AND u.deleted_at IS NOT NULL)",
             params![today()],
         )
         .await

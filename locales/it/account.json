@@ -32,5 +32,17 @@
   "signed_out": "Disconnessione effettuata.",
   "name_hint": "I tuoi risultati compaiono in classifica con questo nome.",
   "sign_out": "Esci",
-  "no_dailies": "Ancora nessuna sfida."
+  "no_dailies": "Ancora nessuna sfida.",
+  "delete": {
+    "title": "Elimina account",
+    "intro": "Elimina per sempre il tuo nome, la password, i timbri e gli invii al Dojo. I tuoi tempi passati restano senza nome nelle vecchie classifiche, così gli altri giocatori mantengono la loro posizione.",
+    "intro_guest": "Elimina per sempre questo ospite e i suoi timbri. I tempi passati restano senza nome nelle vecchie classifiche, così gli altri giocatori mantengono la loro posizione.",
+    "start": "Elimina account…",
+    "start_guest": "Elimina ospite…",
+    "confirm": "Non si può annullare. Inserisci la password per confermare.",
+    "confirm_guest": "Non si può annullare.",
+    "button": "Elimina per sempre",
+    "cancel": "Annulla",
+    "done": "Il tuo account è stato eliminato."
+  }
 }

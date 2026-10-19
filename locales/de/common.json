@@ -64,7 +64,11 @@
     "wrong_puzzle": "Diese Brücken gehören nicht zu diesem Rätsel.",
     "already_finished": "Du hast dieses Tagesrätsel schon abgeschlossen.",
     "daily_locked": "Das ist das heutige Tagesrätsel: Die Solver helfen dabei erst, wenn du es selbst gelöst hast.",
-    "forbidden": "Das ist nur für Admins."
+    "forbidden": "Das ist nur für Admins.",
+    "wrong_password": "Falsches Passwort.",
+    "email_invalid": "Das sieht nicht nach einer E-Mail-Adresse aus.",
+    "message_invalid": "Bitte schreib zwischen 10 und 5000 Zeichen.",
+    "too_many_messages": "Für heute sind es genug Nachrichten, bitte versuch es morgen wieder."
   },
   "solver": {
     "title": "SAT-Solver",
@@ -90,7 +94,8 @@
     "guest": "Gast",
     "guest_name": "Gast",
     "penalties": "Tipps · Prüfungen",
-    "empty": "Noch hat niemand die Brücke überquert. Mach den Anfang!"
+    "empty": "Noch hat niemand die Brücke überquert. Mach den Anfang!",
+    "deleted": "gelöschter Spieler"
   },
   "board": {
     "label": "Hashiwokakero-Spielfeld",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Impressum",
     "privacy": "Datenschutz",
-    "english": "English version"
+    "english": "English version",
+    "contact": "Kontakt"
   },
   "audio": {
     "sound": "Soundeffekte",

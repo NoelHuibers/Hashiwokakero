@@ -108,7 +108,7 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
 pub async fn profile(conn: &Connection, user: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT name, username IS NULL, created_at FROM users WHERE id = ?1",
+            "SELECT name, username IS NULL, created_at FROM users WHERE id = ?1 AND deleted_at IS NULL",
             params![user],
         )
         .await

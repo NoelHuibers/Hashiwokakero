@@ -64,7 +64,11 @@
     "wrong_puzzle": "Ces ponts n’appartiennent pas à cette grille.",
     "already_finished": "Tu as déjà terminé ce défi du jour.",
     "daily_locked": "C’est le défi du jour : les solveurs t’aideront une fois que tu l’auras terminé toi-même.",
-    "forbidden": "Réservé aux admins."
+    "forbidden": "Réservé aux admins.",
+    "wrong_password": "Mot de passe incorrect.",
+    "email_invalid": "Ça ne ressemble pas à une adresse e-mail.",
+    "message_invalid": "Merci d’écrire entre 10 et 5000 caractères.",
+    "too_many_messages": "Ça fait assez de messages pour aujourd’hui, réessaie demain."
   },
   "solver": {
     "title": "Solveur SAT",
@@ -90,7 +94,8 @@
     "guest": "invité",
     "guest_name": "Invité",
     "penalties": "indices · vérifications",
-    "empty": "Personne n’a encore traversé. À toi d’ouvrir la voie !"
+    "empty": "Personne n’a encore traversé. À toi d’ouvrir la voie !",
+    "deleted": "joueur supprimé"
   },
   "board": {
     "label": "Grille de Hashiwokakero",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "Mentions légales",
     "privacy": "Confidentialité",
-    "english": "Version anglaise"
+    "english": "Version anglaise",
+    "contact": "Contact"
   },
   "audio": {
     "sound": "Effets sonores",

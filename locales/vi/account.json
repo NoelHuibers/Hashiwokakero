@@ -32,5 +32,17 @@
   "signed_out": "Đã đăng xuất.",
   "name_hint": "Kết quả của bạn sẽ hiện trên bảng xếp hạng với tên này.",
   "sign_out": "Đăng xuất",
-  "no_dailies": "Chưa có câu đố ngày nào."
+  "no_dailies": "Chưa có câu đố ngày nào.",
+  "delete": {
+    "title": "Xóa tài khoản",
+    "intro": "Xóa vĩnh viễn tên, mật khẩu, con dấu và các bài gửi Dojo của bạn. Thời gian cũ của bạn vẫn nằm trên các bảng xếp hạng cũ nhưng không có tên, để những người chơi khác giữ nguyên thứ hạng.",
+    "intro_guest": "Xóa vĩnh viễn khách này cùng các con dấu của khách. Thời gian cũ vẫn nằm trên các bảng xếp hạng cũ nhưng không có tên, để những người chơi khác giữ nguyên thứ hạng.",
+    "start": "Xóa tài khoản…",
+    "start_guest": "Xóa khách…",
+    "confirm": "Không thể hoàn tác. Hãy nhập mật khẩu để xác nhận.",
+    "confirm_guest": "Không thể hoàn tác.",
+    "button": "Xóa vĩnh viễn",
+    "cancel": "Hủy",
+    "done": "Tài khoản của bạn đã bị xóa."
+  }
 }

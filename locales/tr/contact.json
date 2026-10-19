@@ -1,0 +1,17 @@
+{
+  "title": "İletişim",
+  "description": "Hashi hakkında bir soru, fikir ya da hata mı var? Bize yaz.",
+  "intro": "Bir soru, bir fikir, bir hata ya da verilerinle ilgili bir konu mu var? Bize yaz, en kısa sürede sana döneriz.",
+  "name": "Ad",
+  "email": "E-posta",
+  "optional": "isteğe bağlı",
+  "email_hint": "Sadece yanıt istiyorsan.",
+  "message": "Mesaj",
+  "send": "Gönder",
+  "sending": "Gönderiliyor…",
+  "sent_title": "Teşekkürler!",
+  "sent": "Mesajın ulaştı. Bir e-posta adresi bıraktıysan o adrese yanıt vereceğiz.",
+  "another": "Başka bir mesaj yaz",
+  "privacy": "Mesajını yalnızca yanıtlamak için kullanır ve en geç altı ay sonra sileriz. Daha fazlası <a>gizlilik politikasında</a>.",
+  "by_mail": "E-postayı mı tercih edersin?"
+}

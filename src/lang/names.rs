@@ -255,6 +255,10 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::AlreadyFinished => td_string!(locale, common.errors.already_finished),
         ApiError::DailyLocked => td_string!(locale, common.errors.daily_locked),
         ApiError::Forbidden => td_string!(locale, common.errors.forbidden),
+        ApiError::WrongPassword => td_string!(locale, common.errors.wrong_password),
+        ApiError::EmailInvalid => td_string!(locale, common.errors.email_invalid),
+        ApiError::MessageInvalid => td_string!(locale, common.errors.message_invalid),
+        ApiError::TooManyMessages => td_string!(locale, common.errors.too_many_messages),
     }
     .to_string()
 }

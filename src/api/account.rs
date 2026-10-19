@@ -1,4 +1,5 @@
-//! Accounts: the current user, registering, logging in and out, statistics, public profiles.
+//! Accounts: the current user, registering, logging in and out, deleting, statistics, public
+//! profiles.
 
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
@@ -31,6 +32,12 @@ pub async fn login(username: String, password: String) -> Result<UserInfo, Serve
 #[server(input = Json)]
 pub async fn logout() -> Result<(), ServerFnError> {
     auth::logout(&db::conn()?).await
+}
+
+/// Deletes the current account and signs out. A registered account needs its password.
+#[server(input = Json)]
+pub async fn delete_account(password: Option<String>) -> Result<(), ServerFnError> {
+    auth::delete_account(&db::conn()?, password).await
 }
 
 /// Statistics of the current user, `None` without a session.

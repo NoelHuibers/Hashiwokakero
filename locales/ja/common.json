@@ -64,7 +64,11 @@
     "wrong_puzzle": "この橋はこのパズルのものではありません。",
     "already_finished": "このデイリーはもうクリア済みです。",
     "daily_locked": "今日のデイリーです。ソルバーの助けは、自分でクリアした後で借りられます。",
-    "forbidden": "管理者専用です。"
+    "forbidden": "管理者専用です。",
+    "wrong_password": "パスワードが違います。",
+    "email_invalid": "メールアドレスではないようです。",
+    "message_invalid": "10〜5000文字で書いてください。",
+    "too_many_messages": "今日送れるメッセージの上限に達しました。また明日お試しください。"
   },
   "solver": {
     "title": "SATソルバー",
@@ -90,7 +94,8 @@
     "guest": "ゲスト",
     "guest_name": "ゲスト",
     "penalties": "ヒント · チェック",
-    "empty": "まだ誰も渡っていません。一番乗りを目指そう！"
+    "empty": "まだ誰も渡っていません。一番乗りを目指そう！",
+    "deleted": "削除されたプレイヤー"
   },
   "board": {
     "label": "橋をかけろの盤面",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "運営者情報",
     "privacy": "プライバシー",
-    "english": "英語版"
+    "english": "英語版",
+    "contact": "お問い合わせ"
   },
   "audio": {
     "sound": "効果音",

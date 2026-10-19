@@ -1,8 +1,11 @@
-//! The admin dashboard: today at a glance, reviewing daily results and running the Dojo. Only for
-//! the usernames in `HASHI_ADMINS`; everyone else sees the usual "not found". English only.
+//! The admin dashboard: today at a glance, daily reviews, the Dojo and contact messages.
+//!
+//! Only for the usernames in `HASHI_ADMINS`; everyone else sees the usual "not found". English
+//! only.
 
 pub mod daily;
 pub mod dojo;
+pub mod messages;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -17,6 +20,7 @@ use crate::state::{Auth, ToastKind, toast};
 
 use self::daily::DailyAdmin;
 use self::dojo::DojoAdmin;
+use self::messages::MessagesAdmin;
 
 fn error(e: &ServerFnError) {
     let e = e.clone();
@@ -50,13 +54,11 @@ pub fn AdminPage() -> impl IntoView {
 #[component]
 fn Dashboard() -> impl IntoView {
     let query = use_query_map();
-    let tab = RwSignal::new(
-        if query.with_untracked(|q| q.get("tab").as_deref() == Some("dojo")) {
-            "dojo"
-        } else {
-            "daily"
-        },
-    );
+    let tab = RwSignal::new(match query.with_untracked(|q| q.get("tab")).as_deref() {
+        Some("dojo") => "dojo",
+        Some("messages") => "messages",
+        _ => "daily",
+    });
     let overview = RwSignal::new(None::<AdminOverview>);
     let load_overview = move || {
         spawn_local(async move {
@@ -100,12 +102,14 @@ fn Dashboard() -> impl IntoView {
                 <h1 class="text-3xl font-black">"Admin"</h1>
             </div>
             <Overview overview />
-            <div role="tablist" class="grid grid-cols-2 gap-1 rounded-lg border bg-muted/60 p-1 sm:inline-grid sm:w-fit">
+            <div role="tablist" class="grid grid-cols-3 gap-1 rounded-lg border bg-muted/60 p-1 sm:inline-grid sm:w-fit">
                 {tab_button("daily", "Daily review", |o| o.flagged)}
                 {tab_button("dojo", "SAT Dojo", |o| o.dojo_pending)}
+                {tab_button("messages", "Messages", |o| o.messages)}
             </div>
             {move || match tab.get() {
                 "dojo" => view! { <DojoAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
+                "messages" => view! { <MessagesAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
                 _ => view! { <DailyAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
             }}
         </section>

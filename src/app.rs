@@ -11,6 +11,7 @@ use crate::lang::script_font;
 use crate::pages::NotFound;
 use crate::pages::account::AccountPage;
 use crate::pages::admin::AdminPage;
+use crate::pages::contact::ContactPage;
 use crate::pages::create::CreatePage;
 use crate::pages::daily::DailyPage;
 use crate::pages::dojo::{DojoPage, DojoSubmissionPage};
@@ -86,6 +87,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/rules") view=RulesPage />
                             <Route path=path!("/impressum") view=ImpressumPage />
                             <Route path=path!("/datenschutz") view=PrivacyPage />
+                            <Route path=path!("/kontakt") view=ContactPage />
                         </I18nRoute<Locale, _, _>>
                     </Routes>
                 </main>

@@ -131,6 +131,26 @@ ALTER TABLE attempts ADD COLUMN daypart TEXT;
 -- The stamp a player chose to show next to their name on the leaderboards (NULL: none)
 ALTER TABLE users ADD COLUMN stamp TEXT;
 ",
+    "
+-- Deleted accounts (by the player, or guests nobody can sign in to any more): everything
+-- personal goes, the ranked times stay without a name, so old rankings and everyone else's medals
+-- don't change. See server/auth.rs
+ALTER TABLE users ADD COLUMN deleted_at INTEGER;
+
+-- Messages from the contact form, also mailed to us, see server/contact.rs
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id         INTEGER PRIMARY KEY,
+    name       TEXT NOT NULL,
+    email      TEXT NOT NULL,
+    message    TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    -- the (hashed, per day) network it came from, to limit messages per network
+    ip_hash    TEXT,
+    -- when the mail went out, NULL: not sent (no SMTP configured, or it failed)
+    mailed_at  INTEGER
+);
+CREATE INDEX IF NOT EXISTS contact_network ON contact_messages (ip_hash, created_at);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

@@ -32,5 +32,17 @@
   "signed_out": "Kamu sudah keluar.",
   "name_hint": "Hasilmu tercatat di papan peringkat dengan nama ini.",
   "sign_out": "Keluar",
-  "no_dailies": "Belum ada teka-teki harian."
+  "no_dailies": "Belum ada teka-teki harian.",
+  "delete": {
+    "title": "Hapus akun",
+    "intro": "Menghapus nama, kata sandi, stempel, dan kiriman Dojo-mu untuk selamanya. Waktu-waktumu sebelumnya tetap ada di papan peringkat lama tanpa nama, supaya pemain lain tetap di posisinya.",
+    "intro_guest": "Menghapus tamu ini beserta stempelnya untuk selamanya. Waktu sebelumnya tetap ada di papan peringkat lama tanpa nama, supaya pemain lain tetap di posisinya.",
+    "start": "Hapus akun…",
+    "start_guest": "Hapus tamu…",
+    "confirm": "Ini tidak bisa dibatalkan. Masukkan kata sandimu untuk konfirmasi.",
+    "confirm_guest": "Ini tidak bisa dibatalkan.",
+    "button": "Hapus selamanya",
+    "cancel": "Batal",
+    "done": "Akunmu sudah dihapus."
+  }
 }

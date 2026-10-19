@@ -1,6 +1,7 @@
-//! The account page: the daily record, signing in and out.
+//! The account page: the daily record, signing in and out, deleting the account.
 
 pub mod auth_form;
+pub mod delete;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -19,6 +20,7 @@ use crate::model::UserStats;
 use crate::state::{Auth, ToastKind, toast};
 
 use auth_form::{AuthForm, Mode};
+use delete::DeleteAccount;
 
 #[component]
 pub fn AccountPage() -> impl IntoView {
@@ -207,6 +209,8 @@ pub fn AccountPage() -> impl IntoView {
                         </CardContent>
                     </Show>
                 </Card>
+
+                {move || auth.user.with(Option::is_some).then(|| view! { <DeleteAccount stats /> })}
             </div>
         </section>
     }

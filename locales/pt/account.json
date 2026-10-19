@@ -32,5 +32,17 @@
   "signed_out": "Você saiu da conta.",
   "name_hint": "Seus resultados aparecem no ranking com este nome.",
   "sign_out": "Sair",
-  "no_dailies": "Nenhum desafio diário ainda."
+  "no_dailies": "Nenhum desafio diário ainda.",
+  "delete": {
+    "title": "Excluir conta",
+    "intro": "Exclui para sempre seu nome, sua senha, seus carimbos e seus envios ao Dojo. Seus tempos anteriores continuam nos rankings antigos sem nome, para que os outros jogadores mantenham suas posições.",
+    "intro_guest": "Exclui para sempre este convidado e seus carimbos. Os tempos anteriores continuam nos rankings antigos sem nome, para que os outros jogadores mantenham suas posições.",
+    "start": "Excluir conta…",
+    "start_guest": "Excluir convidado…",
+    "confirm": "Isso não pode ser desfeito. Digite sua senha para confirmar.",
+    "confirm_guest": "Isso não pode ser desfeito.",
+    "button": "Excluir para sempre",
+    "cancel": "Cancelar",
+    "done": "Sua conta foi excluída."
+  }
 }

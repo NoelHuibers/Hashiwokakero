@@ -64,7 +64,11 @@
     "wrong_puzzle": "이 다리들은 이 퍼즐의 것이 아니에요.",
     "already_finished": "이 데일리는 이미 완료했어요.",
     "daily_locked": "오늘의 데일리예요. 솔버는 직접 완료한 뒤에 도와줄 수 있어요.",
-    "forbidden": "관리자 전용입니다."
+    "forbidden": "관리자 전용입니다.",
+    "wrong_password": "비밀번호가 틀렸어요.",
+    "email_invalid": "이메일 주소가 아닌 것 같아요.",
+    "message_invalid": "10자에서 5000자 사이로 써 주세요.",
+    "too_many_messages": "오늘은 메시지를 충분히 보냈어요. 내일 다시 시도해 주세요."
   },
   "solver": {
     "title": "SAT 솔버",
@@ -90,7 +94,8 @@
     "guest": "게스트",
     "guest_name": "게스트",
     "penalties": "힌트 · 확인",
-    "empty": "아직 아무도 건너지 않았어요. 첫 번째가 되어 보세요!"
+    "empty": "아직 아무도 건너지 않았어요. 첫 번째가 되어 보세요!",
+    "deleted": "삭제된 플레이어"
   },
   "board": {
     "label": "하시 퍼즐 보드",
@@ -162,7 +167,8 @@
   "legal": {
     "imprint": "법적 고지",
     "privacy": "개인정보 처리방침",
-    "english": "영어 버전"
+    "english": "영어 버전",
+    "contact": "문의"
   },
   "audio": {
     "sound": "효과음",

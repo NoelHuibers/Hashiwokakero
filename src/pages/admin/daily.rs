@@ -257,7 +257,7 @@ fn AttemptRow(
     view! {
         <tr class="border-b last:border-0" class:bg-warning-light=suspicious(&a)>
             <td class="py-2 pe-3">
-                <span class="font-medium">{a.name.clone()}</span>
+                <span class="font-medium">{if a.name.is_empty() { "(deleted)".to_string() } else { a.name.clone() }}</span>
                 <span class="block text-xs text-muted-foreground">{account(&a)}</span>
             </td>
             <td class="py-2 pe-3 text-end font-pixel tabular-nums">{a.time_ms.map(format_duration).unwrap_or_default()}</td>
@@ -327,7 +327,7 @@ fn AttemptCard(
         <li class="rounded-lg border bg-card p-3" class:border-warning=suspicious class:bg-warning-light=suspicious>
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                    <p class="truncate font-medium">{a.name.clone()}</p>
+                    <p class="truncate font-medium">{if a.name.is_empty() { "(deleted)".to_string() } else { a.name.clone() }}</p>
                     <p class="truncate text-xs text-muted-foreground">{account(&a)}</p>
                 </div>
                 <div class="shrink-0">{status_badge(&a)}</div>

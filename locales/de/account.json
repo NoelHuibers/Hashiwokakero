@@ -32,5 +32,17 @@
   "signed_out": "Abgemeldet.",
   "name_hint": "Unter diesem Namen erscheinen deine Ergebnisse in der Rangliste.",
   "sign_out": "Abmelden",
-  "no_dailies": "Noch keine Tagesrätsel."
+  "no_dailies": "Noch keine Tagesrätsel.",
+  "delete": {
+    "title": "Konto löschen",
+    "intro": "Löscht deinen Namen, dein Passwort, deine Stempel und Dojo-Einsendungen endgültig. Deine bisherigen Zeiten bleiben ohne Namen in alten Ranglisten, damit die anderen ihre Plätze behalten.",
+    "intro_guest": "Löscht diesen Gast und seine Stempel endgültig. Bisherige Zeiten bleiben ohne Namen in alten Ranglisten, damit die anderen ihre Plätze behalten.",
+    "start": "Konto löschen …",
+    "start_guest": "Gast löschen …",
+    "confirm": "Das lässt sich nicht rückgängig machen. Gib zur Bestätigung dein Passwort ein.",
+    "confirm_guest": "Das lässt sich nicht rückgängig machen.",
+    "button": "Endgültig löschen",
+    "cancel": "Abbrechen",
+    "done": "Dein Konto ist gelöscht."
+  }
 }
