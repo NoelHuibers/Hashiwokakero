@@ -29,3 +29,8 @@ test('the contact form checks the message and sends it', async ({ page, problems
   await page.getByRole('button', { name: 'Write another message' }).click();
   await expect(message).toHaveValue('');
 });
+
+// Temporary: a failing test, to see the E2E check fail
+test('temporary failure', () => {
+  expect(1).toBe(2);
+});
