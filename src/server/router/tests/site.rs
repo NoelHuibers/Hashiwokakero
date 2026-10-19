@@ -189,3 +189,78 @@ async fn text_is_compressed_fonts_are_not() {
     let plain = text(browser.get("/rules").await).await;
     assert!(zipped.len() < plain.len() / 2);
 }
+
+/// Records the panics of every thread while it lives, then puts the previous hook back. The panic
+/// hook is global: the messages of other tests' panics land here too, so look for the one you mean.
+struct Panics {
+    seen: Arc<std::sync::Mutex<Vec<String>>>,
+    previous: Arc<dyn Fn(&std::panic::PanicHookInfo<'_>) + Send + Sync>,
+}
+
+impl Panics {
+    fn record() -> Self {
+        let seen = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let previous: Arc<dyn Fn(&std::panic::PanicHookInfo<'_>) + Send + Sync> =
+            std::panic::take_hook().into();
+        std::panic::set_hook(Box::new({
+            let seen = Arc::clone(&seen);
+            let previous = Arc::clone(&previous);
+            move |info| {
+                seen.lock().unwrap().push(info.to_string());
+                previous(info);
+            }
+        }));
+        Self { seen, previous }
+    }
+
+    fn matching(&self, text: &str) -> Vec<String> {
+        let seen = self.seen.lock().unwrap();
+        seen.iter().filter(|m| m.contains(text)).cloned().collect()
+    }
+}
+
+impl Drop for Panics {
+    fn drop(&mut self) {
+        // A failed test unwinds through here, and the hook can't be changed then
+        if !std::thread::panicking() {
+            let previous = Arc::clone(&self.previous);
+            std::panic::set_hook(Box::new(move |info| previous(info)));
+        }
+    }
+}
+
+/// `leptos_i18n`'s context runs an effect on the server, in a task of its own, that copied the
+/// language into the cookie. On a multi-threaded runtime that task could still run while the
+/// request ended and its signals were dropped, and panicked with "Tried to access a reactive
+/// value that has already been disposed" (a few percent of all pages). Many pages at once, on
+/// several threads like the real server, and not one of those panics.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn pages_do_not_touch_disposed_signals() {
+    let server = Server::start().await;
+    let panics = Panics::record();
+    let mut clients = tokio::task::JoinSet::new();
+    for _ in 0..8 {
+        let browser = server.browser();
+        clients.spawn(async move {
+            for _ in 0..25 {
+                for path in ["/", "/ja/rules", "/de/kontakt", "/no-such-page"] {
+                    let res = browser.get(path).await;
+                    assert!(res.status().is_success() || res.status() == StatusCode::NOT_FOUND);
+                    res.bytes().await.unwrap();
+                }
+            }
+        });
+    }
+    while let Some(client) = clients.join_next().await {
+        client.unwrap();
+    }
+    // The tasks of the last pages may still run
+    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    let disposed = panics.matching("disposed");
+    assert!(
+        disposed.is_empty(),
+        "{} panics, the first: {}",
+        disposed.len(),
+        disposed[0]
+    );
+}
