@@ -26,6 +26,9 @@ pub struct UserInfo {
     /// When the username was last changed, `None`: never.
     #[serde(default)]
     pub renamed_at: Option<i64>,
+    /// An admin listed by username in `HASHI_ADMINS`, who can't change it.
+    #[serde(default)]
+    pub name_locked: bool,
 }
 
 impl UserInfo {

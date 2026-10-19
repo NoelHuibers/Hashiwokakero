@@ -433,19 +433,67 @@ async fn changing_the_username_once_a_month() {
     Browser::signed_up(&server, "rae_renamed").await;
 }
 
-/// `HASHI_ADMINS` lists usernames: an admin's old name, freed, would make its next owner an admin.
+/// An admin listed by username in `HASHI_ADMINS` keeps it: freed, it would make its next owner an
+/// admin.
 #[tokio::test]
-async fn admins_keep_their_names() {
+async fn admins_by_name_keep_their_names() {
     let server = Server::start().await;
     let admin = Browser::admin(&server).await;
-    let name = admin.call(CurrentUser {}).await.unwrap().unwrap().name;
+    let me = admin.call(CurrentUser {}).await.unwrap().unwrap();
+    assert!(me.admin && me.name_locked);
     assert_eq!(
         api_error(admin.call(rename("someone_else", PASSWORD)).await),
         ApiError::Forbidden
     );
+    let after = admin.call(CurrentUser {}).await.unwrap().unwrap();
+    assert!(after.admin);
+    assert_eq!(after.name, me.name);
+}
+
+/// Listed by user id, the account is the admin whatever it is called: it renames like everyone
+/// else, may look official, and its old name makes nobody an admin.
+#[tokio::test]
+async fn admins_by_id_change_their_names() {
+    let server = Server::start().await;
+    let admin = Browser::signed_up(&server, "ivy_by_id").await;
+    assert!(!admin.call(CurrentUser {}).await.unwrap().unwrap().admin);
+    // Make the account the one HASHI_ADMINS lists by id
+    let conn = conn().await;
+    let id = user_id(&conn, "ivy_by_id").await;
+    for sql in [
+        "UPDATE users SET id = ?2 WHERE id = ?1",
+        "UPDATE sessions SET user_id = ?2 WHERE user_id = ?1",
+    ] {
+        conn.execute(sql, params![id, ADMIN_ID]).await.unwrap();
+    }
     let me = admin.call(CurrentUser {}).await.unwrap().unwrap();
-    assert!(me.admin);
-    assert_eq!(me.name, name);
+    assert_eq!((me.id, me.admin, me.name_locked), (ADMIN_ID, true, false));
+
+    let renamed = admin.call(rename("ivy_renamed", PASSWORD)).await.unwrap();
+    assert_eq!(renamed.name, "ivy_renamed");
+    assert!(renamed.admin);
+    // The old name is free, and makes nobody an admin
+    let other = Browser::signed_up(&server, "ivy_by_id").await;
+    assert!(!other.call(CurrentUser {}).await.unwrap().unwrap().admin);
+    // The month applies to admins too; after it, an official looking name is fine for them
+    assert_eq!(
+        api_error(admin.call(rename("ivy_official", PASSWORD)).await),
+        ApiError::RenameTooSoon
+    );
+    conn.execute(
+        "UPDATE users SET renamed_at = 1 WHERE id = ?1",
+        params![ADMIN_ID],
+    )
+    .await
+    .unwrap();
+    let official = admin.call(rename("ivy_official", PASSWORD)).await.unwrap();
+    assert!(official.admin);
+    assert_eq!(official.name, "ivy_official");
+    // Others still can't look official
+    assert_eq!(
+        api_error(other.call(rename("ivy_official_2", PASSWORD)).await),
+        ApiError::UsernameNotAllowed
+    );
 }
 
 #[tokio::test]

@@ -5,7 +5,8 @@
     "guest": false,
     "created_at": 1750000000000,
     "admin": true,
-    "renamed_at": 1755000000000
+    "renamed_at": 1755000000000,
+    "name_locked": false
   },
   "daily": {
     "day": 20381,

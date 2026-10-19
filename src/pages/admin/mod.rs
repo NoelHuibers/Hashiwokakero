@@ -1,6 +1,6 @@
 //! The admin dashboard: today at a glance, daily reviews, the Dojo, names and contact messages.
 //!
-//! Only for the usernames in `HASHI_ADMINS`; everyone else sees the usual "not found". English
+//! Only for the accounts in `HASHI_ADMINS`; everyone else sees the usual "not found". English
 //! only.
 
 pub mod daily;
