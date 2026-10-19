@@ -140,11 +140,11 @@ struct Budget {
 }
 
 impl Budget {
-    fn new(budget_ms: u64, start: Instant) -> Self {
+    fn new(budget_ms: u64, start: Instant, safety: Duration) -> Self {
         Self {
             left: budget_ms.saturating_mul(WORK_PER_MS),
             spent: 0,
-            safety: start + SAFETY_LIMIT,
+            safety: start + safety,
         }
     }
 
@@ -177,6 +177,11 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
 
 /// [`generate`] and the work it spent.
 fn generate_counted(params: &GenerateParams) -> (GeneratedPuzzle, u64) {
+    generate_with(params, SAFETY_LIMIT)
+}
+
+/// [`generate_counted`] with another safety limit.
+fn generate_with(params: &GenerateParams, safety: Duration) -> (GeneratedPuzzle, u64) {
     let start = Instant::now();
     let params = GenerateParams {
         width: params.width.clamp(MIN_SIZE, MAX_SIZE),
@@ -206,7 +211,7 @@ fn generate_counted(params: &GenerateParams) -> (GeneratedPuzzle, u64) {
         let budget_ms = (profile.budget_ms as f64 * scale.sqrt()) as u64;
         profile.budget_ms = budget_ms.min(MAX_BUDGET_MS);
     }
-    let mut budget = Budget::new(profile.budget_ms, start);
+    let mut budget = Budget::new(profile.budget_ms, start, safety);
     // Mix the parameters into the seed, so e.g. sizes don't share the same random stream
     let seed = params.seed
         ^ u64::from(params.width) << 56
@@ -1068,6 +1073,48 @@ fn pick_weighted_index<T>(rng: &mut StdRng, items: &[(T, f64)]) -> Option<usize>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The work budget counts work, not time: on a machine busy with other things (tests in
+    /// parallel, coverage instrumentation) the same parameters give the same puzzle. With the
+    /// time budget it had, this failed: the busy run stopped earlier and took another candidate.
+    /// Without the safety limit here, it is the one thing that may (deliberately) stop a
+    /// generation on a machine that is too slow, and this test makes the machine very slow.
+    #[test]
+    fn busy_machine_gets_the_same_puzzle() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        // Takes about half of its old time budget in a debug build
+        let params = GenerateParams {
+            width: 16,
+            height: 16,
+            difficulty: Difficulty::Medium,
+            seed: 1,
+        };
+        let no_limit = Duration::from_secs(3_600);
+        let calm = generate_with(&params, no_limit).0;
+        let stop = AtomicBool::new(false);
+        // Many more busy threads than cores, the generator gets a small share of a core
+        let threads = std::thread::available_parallelism().map_or(4, std::num::NonZero::get) * 12;
+        let busy = std::thread::scope(|scope| {
+            for _ in 0..threads {
+                scope.spawn(|| {
+                    while !stop.load(Ordering::Relaxed) {
+                        std::hint::spin_loop();
+                    }
+                });
+            }
+            let busy = generate_with(&params, no_limit).0;
+            stop.store(true, Ordering::Relaxed);
+            busy
+        });
+        assert_eq!(
+            (calm.puzzle, calm.solution),
+            (busy.puzzle, busy.solution),
+            "another puzzle on a busy machine ({:.0} ms instead of {:.0} ms)",
+            busy.generate_ms,
+            calm.generate_ms
+        );
+    }
 
     /// The default sizes (and the sizes the tests use) need far less work than the safety limit
     /// allows, even on a CPU [`SLOWDOWN`] times slower than the one the work was measured on:
