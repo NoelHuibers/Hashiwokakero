@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "Today's bridge",
-    "text": "The puzzle appears when you press start, the clock runs on the server. Hints add 30 s, checks 10 s, revealing the solution leaves you unranked.",
+    "lead": "The puzzle appears when you press start, the clock runs on the server.",
+    "unranked": "unranked",
     "start": "Start",
     "preparing": "Preparing…",
     "playing_as": "Playing as {{ name }}",

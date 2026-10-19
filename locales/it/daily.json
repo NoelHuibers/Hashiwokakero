@@ -11,7 +11,8 @@
   "share_rank": "🏅 #{{ rank }} / {{ total }}",
   "cover": {
     "title": "Il ponte di oggi",
-    "text": "Il puzzle appare quando premi Inizia, il cronometro gira sul server. Ogni indizio aggiunge 30 s, ogni verifica 10 s, e rivelare la soluzione ti esclude dalla classifica.",
+    "lead": "Il puzzle appare quando premi Inizia, il cronometro gira sul server.",
+    "unranked": "fuori classifica",
     "start": "Inizia",
     "preparing": "Preparazione…",
     "playing_as": "Giochi come {{ name }}",

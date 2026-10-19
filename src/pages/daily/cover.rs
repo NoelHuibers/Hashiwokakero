@@ -44,9 +44,26 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
             daily.busy.set(false);
         });
     };
+    // A penalty as a small tag: what you do and what it costs.
+    let rule = |label: String, cost: String, strong: bool| {
+        view! {
+            <li class="inline-flex items-center gap-1.5 rounded-full border bg-background/60 py-1 ps-2.5 pe-2 text-xs">
+                <span class="text-muted-foreground">{label}</span>
+                // dir keeps "+30s" from turning into "30s+" in right-to-left languages
+                <span
+                    class=if strong { "font-bold text-primary" } else { "font-pixel tabular-nums text-foreground" }
+                    dir=(!strong).then_some("ltr")
+                >
+                    {cost}
+                </span>
+            </li>
+        }
+    };
     view! {
-        <div class="relative">
-            <div class="opacity-60 blur-[2px]">
+        // Board and card share one grid cell, so a card taller than the board
+        // (narrow screens) grows the cell instead of spilling over what follows.
+        <div class="grid place-items-center">
+            <div class="col-start-1 row-start-1 w-full opacity-50 blur-[3px]" aria-hidden="true">
                 <BoardView
                     board=board
                     bridges=Signal::derive(move || board.with(Board::empty_bridges))
@@ -54,30 +71,47 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
                     framed=true
                 />
             </div>
-            <div class="absolute inset-0 grid place-items-center p-4">
-                <Card class="w-full max-w-sm items-center gap-3 px-6 text-center shadow-2xl">
-                    <span class="hanko grid size-16 rotate-[-6deg] place-items-center rounded-lg font-pixel text-4xl">
-                        "橋"
-                    </span>
-                    <h2 class="text-2xl font-black">{t!(i18n, daily.cover.title)} " 今日の橋"</h2>
-                    <p class="text-sm text-muted-foreground">
-                        {t!(i18n, daily.cover.text)}
-                    </p>
-                    <Button
-                        size=ButtonSize::Lg
-                        class="w-full text-base"
-                        attr:disabled=move || daily.busy.get() || daily.info.with(Option::is_none)
-                        on:click=start
-                    >
-                        {move || if daily.busy.get() { t_string!(i18n, daily.cover.preparing).to_string() } else { format!("{} 始め", t_string!(i18n, daily.cover.start)) }}
-                    </Button>
-                    <p class="text-xs text-muted-foreground">
-                        {move || match auth.user.get() {
-                            Some(u) if !u.guest => t_string!(i18n, daily.cover.playing_as, name = u.name),
-                            Some(u) => t_string!(i18n, daily.cover.playing_as_guest, name = u.name),
-                            None => t_string!(i18n, daily.cover.no_account).to_string(),
-                        }}
-                    </p>
+            <div class="relative col-start-1 row-start-1 grid w-full place-items-center p-4 sm:p-8">
+                <Card class="w-full max-w-sm gap-4 border-border/80 bg-card/90 px-5 py-5 shadow-2xl backdrop-blur-md sm:gap-5 sm:px-6 sm:py-6">
+                    <div class="flex items-center gap-3">
+                        <span class="hanko grid size-11 shrink-0 rotate-[-6deg] place-items-center rounded-lg font-pixel text-2xl">
+                            "橋"
+                        </span>
+                        <div class="min-w-0">
+                            <p class="font-pixel text-xs tracking-[0.3em] text-primary">"今日の橋"</p>
+                            <h2 class="text-xl font-black leading-tight sm:text-2xl">{t!(i18n, daily.cover.title)}</h2>
+                        </div>
+                    </div>
+                    <p class="text-sm leading-relaxed text-muted-foreground">{t!(i18n, daily.cover.lead)}</p>
+                    <ul class="flex flex-wrap gap-1.5">
+                        {rule(t_string!(i18n, common.game.hint).to_string(), "+30s".into(), false)}
+                        {rule(t_string!(i18n, common.game.check).to_string(), "+10s".into(), false)}
+                        {rule(t_string!(i18n, daily.give_up).to_string(), t_string!(i18n, daily.cover.unranked).to_string(), true)}
+                    </ul>
+                    <div class="flex flex-col gap-2.5">
+                        <Button
+                            size=ButtonSize::Lg
+                            class="h-12 w-full text-base font-bold shadow-lg shadow-primary/25"
+                            attr:disabled=move || daily.busy.get() || daily.info.with(Option::is_none)
+                            on:click=start
+                        >
+                            {move || if daily.busy.get() {
+                                t_string!(i18n, daily.cover.preparing).to_string()
+                            } else {
+                                format!("{} 始め", t_string!(i18n, daily.cover.start))
+                            }}
+                            <svg viewBox="0 0 24 24" class="size-4 rtl:-scale-x-100" fill="currentColor" aria-hidden="true">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        </Button>
+                        <p class="text-center text-xs text-muted-foreground">
+                            {move || match auth.user.get() {
+                                Some(u) if !u.guest => t_string!(i18n, daily.cover.playing_as, name = u.name),
+                                Some(u) => t_string!(i18n, daily.cover.playing_as_guest, name = u.name),
+                                None => t_string!(i18n, daily.cover.no_account).to_string(),
+                            }}
+                        </p>
+                    </div>
                 </Card>
             </div>
         </div>
