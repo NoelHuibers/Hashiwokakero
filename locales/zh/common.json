@@ -70,7 +70,8 @@
     "email_invalid": "这看起来不像邮箱地址。",
     "message_invalid": "请写 10 到 5000 个字符。",
     "too_many_messages": "今天的消息已经够多了，请明天再试。",
-    "rename_too_soon": "你最近刚更改过用户名，请稍后再试。"
+    "rename_too_soon": "你最近刚更改过用户名，请稍后再试。",
+    "username_not_allowed": "这个名字不能在这里使用，请换一个。"
   },
   "solver": {
     "title": "SAT 求解器",

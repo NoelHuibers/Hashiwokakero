@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Please sign in with a registered account first.",
       "name": "Give your solver a name of up to 40 characters.",
+      "name_not_allowed": "This name isn't allowed here, please choose another one.",
       "description": "The description can be at most 600 characters long.",
       "url": "The source link has to be an https:// address.",
       "size": "The file is too large, the limit is 8 MiB.",

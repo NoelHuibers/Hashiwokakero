@@ -142,6 +142,21 @@ async fn sign_up_errors_reach_the_client() {
             error
         );
     }
+    // Words the boards don't want, and names that look official
+    for username in [
+        "Shit_Happens",
+        "BigAss",
+        "f_u_c_k",
+        "Hashi_Admin",
+        "moderator",
+        "Player_7",
+    ] {
+        assert_eq!(
+            api_error(browser.call(register(username, PASSWORD)).await),
+            ApiError::UsernameNotAllowed,
+            "{username}"
+        );
+    }
     browser.call(register("taken_tom", PASSWORD)).await.unwrap();
     let other = server.browser();
     assert_eq!(
@@ -334,6 +349,8 @@ async fn changing_the_username_once_a_month() {
         ("with space", PASSWORD, ApiError::UsernameInvalid),
         // Taken, whatever the case
         ("TAKEN_TARA", PASSWORD, ApiError::UsernameTaken),
+        ("Rae_the_Cunt", PASSWORD, ApiError::UsernameNotAllowed),
+        ("rae_official", PASSWORD, ApiError::UsernameNotAllowed),
     ] {
         assert_eq!(
             api_error(browser.call(rename(username, password)).await),
@@ -423,7 +440,7 @@ async fn admins_keep_their_names() {
     let admin = Browser::admin(&server).await;
     let name = admin.call(CurrentUser {}).await.unwrap().unwrap().name;
     assert_eq!(
-        api_error(admin.call(rename("former_admin", PASSWORD)).await),
+        api_error(admin.call(rename("someone_else", PASSWORD)).await),
         ApiError::Forbidden
     );
     let me = admin.call(CurrentUser {}).await.unwrap().unwrap();

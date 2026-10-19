@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Prima accedi con un account registrato.",
       "name": "Dai al tuo solver un nome di massimo 40 caratteri.",
+      "name_not_allowed": "Questo nome non è consentito qui, scegline un altro.",
       "description": "La descrizione può avere al massimo 600 caratteri.",
       "url": "Il link al sorgente deve essere un indirizzo https://.",
       "size": "Il file è troppo grande, il limite è 8 MiB.",

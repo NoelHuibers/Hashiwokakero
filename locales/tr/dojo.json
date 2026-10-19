@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Lütfen önce kayıtlı bir hesapla giriş yap.",
       "name": "Çözücüne en fazla 40 karakterlik bir ad ver.",
+      "name_not_allowed": "Bu isme burada izin verilmiyor, lütfen başka bir isim seç.",
       "description": "Açıklama en fazla 600 karakter olabilir.",
       "url": "Kaynak bağlantısı bir https:// adresi olmalı.",
       "size": "Dosya çok büyük, sınır 8 MiB.",

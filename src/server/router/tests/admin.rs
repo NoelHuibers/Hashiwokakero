@@ -4,10 +4,11 @@ use reqwest::multipart::{Form, Part};
 
 use super::*;
 use crate::api::{
-    AdminAttempts, AdminFlag, AdminLog, AdminSubmissions, CurrentUser, LoadAdminOverview,
-    StartDaily, UpdateAdminSubmission,
+    AdminAttempts, AdminFlag, AdminLog, AdminNames, AdminRenamePlayer, AdminSubmissions,
+    ChangeUsername, CurrentUser, LoadAdminOverview, LoadPlayer, Login, StartDaily,
+    UpdateAdminSubmission,
 };
-use crate::model::{Flag, SubmissionAction};
+use crate::model::{Flag, FlaggedName, NameKind, SubmissionAction};
 
 /// A module the Dojo accepts, made different by `extra`.
 fn module(extra: u8) -> Vec<u8> {
@@ -55,6 +56,14 @@ async fn the_dashboard_is_for_admins_only() {
         );
         assert_eq!(
             api_error(browser.call(AdminSubmissions {}).await),
+            ApiError::Forbidden
+        );
+        assert_eq!(
+            api_error(browser.call(AdminNames {}).await),
+            ApiError::Forbidden
+        );
+        assert_eq!(
+            api_error(browser.call(AdminRenamePlayer { id: 1 }).await),
             ApiError::Forbidden
         );
         assert_eq!(
@@ -231,4 +240,83 @@ async fn scripts_need_the_admin_token() {
     assert_eq!(json["flag"], "review");
     // Without a flag the result goes back on the board
     assert_status(&post(flag).await.unwrap(), StatusCode::NO_CONTENT);
+}
+
+/// A name chosen before its word was on the list shows up on the dashboard, and renaming it gives
+/// the player a neutral name everywhere, without locking them out.
+#[tokio::test]
+async fn admins_rename_players_with_names_the_list_flags() {
+    let server = Server::start().await;
+    let player = Browser::signed_up(&server, "flagged_fred").await;
+    let conn = conn().await;
+    let id = user_id(&conn, "flagged_fred").await;
+    // As if the name had been allowed when it was chosen
+    conn.execute(
+        "UPDATE users SET username = 'Fred_Fuckface', name = 'Fred_Fuckface' WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+
+    let admin = Browser::admin(&server).await;
+    let flagged = admin.call(AdminNames {}).await.unwrap();
+    let fred = FlaggedName {
+        kind: NameKind::Player,
+        id,
+        name: "Fred_Fuckface".into(),
+        word: "fuck".into(),
+    };
+    assert!(flagged.contains(&fred), "{flagged:?}");
+    // Admins may look official, the test admin's name has "admin" in it
+    assert!(
+        flagged.iter().all(|f| !f.name.eq_ignore_ascii_case(ADMIN)),
+        "{flagged:?}"
+    );
+    assert!(admin.call(LoadAdminOverview {}).await.unwrap().names >= 1);
+
+    let renamed = admin.call(AdminRenamePlayer { id }).await.unwrap();
+    assert_eq!(renamed.as_deref(), Some(format!("Player {id}").as_str()));
+    assert_eq!(
+        admin.call(AdminRenamePlayer { id: 999_999 }).await.unwrap(),
+        None
+    );
+    assert!(!admin.call(AdminNames {}).await.unwrap().contains(&fred));
+    let profile = server
+        .browser()
+        .call(LoadPlayer { id })
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(profile.name, format!("Player {id}"));
+
+    // Fred is still signed in, and signs in with the old username
+    let me = player.call(CurrentUser {}).await.unwrap().unwrap();
+    assert_eq!(
+        (me.id, me.name.as_str()),
+        (id, format!("Player {id}").as_str())
+    );
+    let other = server.browser();
+    let login = Login {
+        username: "fred_fuckface".into(),
+        password: PASSWORD.into(),
+    };
+    assert_eq!(other.call(login).await.unwrap().id, id);
+    // A new name right away, even after a recent change of his own, but not the old one again
+    conn.execute(
+        "UPDATE users SET renamed_at = ?2 WHERE id = ?1",
+        params![id, crate::server::now_ms()],
+    )
+    .await
+    .unwrap();
+    admin.call(AdminRenamePlayer { id }).await.unwrap();
+    let rename = |username: &str| ChangeUsername {
+        username: username.into(),
+        password: PASSWORD.into(),
+    };
+    assert_eq!(
+        api_error(player.call(rename("Fred_Fuckface")).await),
+        ApiError::UsernameNotAllowed
+    );
+    let fixed = player.call(rename("friendly_fred")).await.unwrap();
+    assert_eq!(fixed.name, "friendly_fred");
 }

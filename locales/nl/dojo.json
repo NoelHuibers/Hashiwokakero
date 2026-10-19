@@ -86,6 +86,7 @@
     "errors": {
       "sign_in": "Log eerst in met een geregistreerd account.",
       "name": "Geef je solver een naam van hoogstens 40 tekens.",
+      "name_not_allowed": "Deze naam is hier niet toegestaan, kies een andere.",
       "description": "De beschrijving mag hoogstens 600 tekens lang zijn.",
       "url": "De broncodelink moet een https://-adres zijn.",
       "size": "Het bestand is te groot, de limiet is 8 MiB.",

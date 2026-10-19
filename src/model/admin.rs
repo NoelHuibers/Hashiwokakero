@@ -1,4 +1,5 @@
-//! The admin dashboard: overview, attempts of a day, Dojo submissions and contact messages.
+//! The admin dashboard: overview, attempts of a day, Dojo submissions, names and contact
+//! messages.
 
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +19,33 @@ pub struct AdminOverview {
     pub dojo_total: i64,
     /// Contact messages waiting to be answered (and deleted).
     pub messages: i64,
+    /// Names on the boards the list of blocked names flags, see [`FlaggedName`].
+    #[serde(default)]
+    pub names: i64,
+}
+
+/// A name on the boards that the list of blocked names flags: chosen before a word was on the
+/// list, or (players) one that looks official.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FlaggedName {
+    pub kind: NameKind,
+    /// The user or the Dojo submission.
+    pub id: i64,
+    pub name: String,
+    /// The entry of the list it matches.
+    pub word: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum NameKind {
+    Player,
+    Solver,
+}
+
+/// The name an admin gives a player whose name isn't welcome. They can choose another one right
+/// away, it's no username (it has a space), so it signs nobody in.
+pub fn neutral_name(user: i64) -> String {
+    format!("Player {user}")
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
