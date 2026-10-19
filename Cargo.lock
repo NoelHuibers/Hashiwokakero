@@ -4520,6 +4520,7 @@ dependencies = [
  "clap",
  "flame",
  "proptest",
+ "tempfile",
 ]
 
 [[package]]

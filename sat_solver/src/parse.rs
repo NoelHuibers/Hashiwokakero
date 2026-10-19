@@ -1,4 +1,5 @@
 use crate::profiling;
+use std::fmt;
 use std::fs;
 use std::num::ParseIntError;
 use std::path::Path;
@@ -21,6 +22,18 @@ impl From<ParseIntError> for ParseError {
         Self::Parse(err)
     }
 }
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(err) => write!(f, "{err}"),
+            Self::Parse(err) => write!(f, "Invalid number: {err}"),
+            Self::InvalidInput(message) => write!(f, "{message}"),
+        }
+    }
+}
+
+impl std::error::Error for ParseError {}
 
 // Due to clauses being able to span over multiple lines (see Zulip), it's not possible to parallelize the parsing.
 pub fn parse(input_file: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseError> {

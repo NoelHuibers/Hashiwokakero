@@ -29,3 +29,5 @@ workspace = true
 [dev-dependencies]
 # Property tests (tests/props.rs): the solvers against trying every assignment
 proptest = { version = "1.12.0", default-features = false, features = ["std"] }
+# CLI tests (tests/cli.rs): their files
+tempfile = "3.27.0"

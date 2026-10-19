@@ -91,7 +91,7 @@ cargo leptos build --release
 pnpm run e2e                          # pnpm run e2e --ui, or -g "practice" for some tests
 ```
 
-`E2E_BIN` and `E2E_SITE_ROOT` point it at another build (e.g. `target/debug/hashi`), `E2E_PORT` at another port. A failed run leaves a report with traces (`pnpm exec playwright show-report e2e/playwright-report`) and the server's log in `e2e/.run/server.log`.
+`E2E_BIN` and `E2E_SITE_ROOT` point it at another build (e.g. `target/debug/hashi`), `E2E_PORT` at another port. A failed run leaves a report with traces (`pnpm exec playwright show-report e2e/playwright-report`) and the server's log in `e2e/.run/server.log`. A run also fails when a server panicked, even if every test passed (a panic in one of its background tasks leaves the page as it was); the end of the run lists the panics from its logs.
 
 `e2e/tests/visual.spec.ts` compares a few pages with screenshots (`e2e/tests/__screenshots__/`): the home page, a practice board, the ranks, the rules in Japanese and Arabic, and a daily's result. They catch what breaks the layout without an error, like a Tailwind or font update. Screenshots only match where they were taken, so they are taken and compared in the official Playwright image of the version in `pnpm-lock.yaml`, in CI and locally (podman or docker, the image is pulled on first use), with a server and database of their own on the next port:
 
