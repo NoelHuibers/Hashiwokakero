@@ -22,7 +22,7 @@ use sha2::{Digest, Sha256};
 
 use super::db::db_err;
 use super::{hex, now_ms, run_blocking};
-use crate::model::{ApiError, MS_PER_DAY, UserInfo};
+use crate::model::{ApiError, MS_PER_DAY, RENAME_EVERY_DAYS, UserInfo};
 
 const COOKIE: &str = "hashi_session";
 const SESSION_DAYS: i64 = 365;
@@ -38,6 +38,7 @@ pub struct User {
     pub username: Option<String>,
     pub name: String,
     pub created_at: i64,
+    pub renamed_at: Option<i64>,
 }
 
 impl User {
@@ -48,6 +49,7 @@ impl User {
             guest: self.username.is_none(),
             created_at: self.created_at,
             admin: super::admin::is_admin(self),
+            renamed_at: self.renamed_at,
         }
     }
 }
@@ -101,13 +103,14 @@ fn row_to_user(row: &libsql::Row) -> Result<User, libsql::Error> {
         username: row.get(1)?,
         name: row.get(2)?,
         created_at: row.get(3)?,
+        renamed_at: row.get(4)?,
     })
 }
 
 pub async fn user_by_id(conn: &Connection, id: i64) -> Result<Option<User>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT id, username, name, created_at FROM users WHERE id = ?1",
+            "SELECT id, username, name, created_at, renamed_at FROM users WHERE id = ?1",
             params![id],
         )
         .await
@@ -158,7 +161,7 @@ async fn user_by_token(
 ) -> Result<Option<(User, i64)>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT u.id, u.username, u.name, u.created_at, s.expires_at FROM sessions s
+            "SELECT u.id, u.username, u.name, u.created_at, u.renamed_at, s.expires_at FROM sessions s
              JOIN users u ON u.id = s.user_id
              WHERE s.token_hash = ?1 AND s.expires_at > ?2",
             params![hash_token(token), now_ms()],
@@ -168,7 +171,7 @@ async fn user_by_token(
     match rows.next().await.map_err(db_err)? {
         Some(row) => Ok(Some((
             row_to_user(&row).map_err(db_err)?,
-            row.get(4).map_err(db_err)?,
+            row.get(5).map_err(db_err)?,
         ))),
         None => Ok(None),
     }
@@ -211,6 +214,7 @@ pub async fn ensure_user(conn: &Connection) -> Result<User, ServerFnError> {
         username: None,
         name,
         created_at: now,
+        renamed_at: None,
     })
 }
 
@@ -300,6 +304,62 @@ pub async fn register(
         .ok_or_else(|| ApiError::Internal.fail())
 }
 
+/// Gives the signed in account another username, behind its password.
+///
+/// The username is also the name on the leaderboards, old ones included, so it can only change
+/// once in [`RENAME_EVERY_DAYS`]: names on the boards don't keep changing under the players.
+///
+/// Admins keep their names: `HASHI_ADMINS` lists usernames, a freed one would make whoever
+/// registers it next an admin.
+pub async fn change_username(
+    conn: &Connection,
+    username: &str,
+    password: String,
+) -> Result<User, ServerFnError> {
+    let user = current_user(conn)
+        .await?
+        .ok_or_else(|| ApiError::SessionExpired.fail())?;
+    let Some(current) = user.username.clone() else {
+        return Err(ApiError::Forbidden.into());
+    };
+    validate_username(username)?;
+    if username == current {
+        return Ok(user);
+    }
+    if super::admin::is_admin(&user) {
+        return Err(ApiError::Forbidden.into());
+    }
+    let now = now_ms();
+    let earliest = now - RENAME_EVERY_DAYS * MS_PER_DAY;
+    if user.renamed_at.is_some_and(|at| at > earliest) {
+        return Err(ApiError::RenameTooSoon.into());
+    }
+    if check_password(conn, &current, password).await?.is_none() {
+        return Err(ApiError::WrongPassword.into());
+    }
+    // The condition again, for two renames at the same moment
+    let changed = conn
+        .execute(
+            "UPDATE users SET username = ?1, name = ?1, renamed_at = ?2
+             WHERE id = ?3 AND username IS NOT NULL AND (renamed_at IS NULL OR renamed_at <= ?4)",
+            params![username, now, user.id, earliest],
+        )
+        .await
+        .map_err(|e| {
+            if e.to_string().contains("UNIQUE") {
+                ApiError::UsernameTaken.fail()
+            } else {
+                db_err(e)
+            }
+        })?;
+    if changed == 0 {
+        return Err(ApiError::RenameTooSoon.into());
+    }
+    user_by_id(conn, user.id)
+        .await?
+        .ok_or_else(|| ApiError::Internal.fail())
+}
+
 static FAILED_LOGINS: Mutex<Option<HashMap<String, (u32, i64)>>> = Mutex::new(None);
 
 fn login_allowed(username: &str) -> bool {
@@ -365,7 +425,7 @@ async fn check_password(
     }
     let mut rows = conn
         .query(
-            "SELECT id, username, name, created_at, password_hash FROM users WHERE username = ?1",
+            "SELECT id, username, name, created_at, renamed_at, password_hash FROM users WHERE username = ?1",
             params![username],
         )
         .await
@@ -373,7 +433,7 @@ async fn check_password(
     let found = match rows.next().await.map_err(db_err)? {
         Some(row) => Some((
             row_to_user(&row).map_err(db_err)?,
-            row.get::<Option<String>>(4).map_err(db_err)?,
+            row.get::<Option<String>>(5).map_err(db_err)?,
         )),
         None => None,
     };
@@ -465,7 +525,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     }
     tx.execute(
         "UPDATE users SET username = NULL, name = '', password_hash = NULL, stamp = NULL,
-            deleted_at = ?2
+            renamed_at = NULL, deleted_at = ?2
          WHERE id = ?1",
         params![user, now_ms()],
     )

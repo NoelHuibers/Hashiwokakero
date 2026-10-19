@@ -33,6 +33,14 @@
   "name_hint": "I tuoi risultati compaiono in classifica con questo nome.",
   "sign_out": "Esci",
   "no_dailies": "Ancora nessuna sfida.",
+  "rename": {
+    "start": "Cambia nome utente…",
+    "new_name": "Nuovo nome utente",
+    "hint": "I tuoi risultati passati passano al nuovo nome. Puoi cambiarlo una volta ogni {{ days }} giorni.",
+    "button": "Cambia nome utente",
+    "done": "Ora ti chiami {{ name }}.",
+    "wait": "Potrai cambiare di nuovo il nome utente dal {{ date }}."
+  },
   "delete": {
     "title": "Elimina account",
     "intro": "Elimina per sempre il tuo nome, la password, i timbri e gli invii al Dojo. I tuoi tempi passati restano senza nome nelle vecchie classifiche, così gli altri giocatori mantengono la loro posizione.",

@@ -69,7 +69,8 @@
     "wrong_password": "Wrong password.",
     "email_invalid": "That doesn't look like an email address.",
     "message_invalid": "Please write between 10 and 5000 characters.",
-    "too_many_messages": "That's enough messages for today, please try again tomorrow."
+    "too_many_messages": "That's enough messages for today, please try again tomorrow.",
+    "rename_too_soon": "You changed your username recently, please try again later."
   },
   "solver": {
     "title": "SAT Solver",

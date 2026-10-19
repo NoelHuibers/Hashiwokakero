@@ -33,6 +33,14 @@
   "name_hint": "Your results count on the leaderboard under this name.",
   "sign_out": "Sign out",
   "no_dailies": "No dailies yet.",
+  "rename": {
+    "start": "Change username…",
+    "new_name": "New username",
+    "hint": "Your past results move to the new name. You can change it once every {{ days }} days.",
+    "button": "Change username",
+    "done": "You're now {{ name }}.",
+    "wait": "You can change your username again from {{ date }}."
+  },
   "delete": {
     "title": "Delete account",
     "intro": "Deletes your name, password, stamps and Dojo submissions for good. Your past times stay on old leaderboards without a name, so the other players keep their places.",

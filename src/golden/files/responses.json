@@ -4,7 +4,8 @@
     "name": "noel",
     "guest": false,
     "created_at": 1750000000000,
-    "admin": true
+    "admin": true,
+    "renamed_at": 1755000000000
   },
   "daily": {
     "day": 20381,

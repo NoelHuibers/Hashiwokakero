@@ -69,7 +69,8 @@
     "wrong_password": "Kata sandi salah.",
     "email_invalid": "Itu sepertinya bukan alamat email.",
     "message_invalid": "Tulis antara 10 sampai 5000 karakter, ya.",
-    "too_many_messages": "Sudah cukup banyak pesan untuk hari ini, coba lagi besok, ya."
+    "too_many_messages": "Sudah cukup banyak pesan untuk hari ini, coba lagi besok, ya.",
+    "rename_too_soon": "Kamu baru saja mengganti nama pengguna, coba lagi nanti, ya."
   },
   "solver": {
     "title": "Solver SAT",

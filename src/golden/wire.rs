@@ -241,6 +241,7 @@ fn responses() -> Responses {
             guest: false,
             created_at: 1_750_000_000_000,
             admin: true,
+            renamed_at: Some(1_755_000_000_000),
         },
         daily: DailyInfo {
             day: 20_381,

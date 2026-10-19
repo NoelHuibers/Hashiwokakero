@@ -33,6 +33,14 @@
   "name_hint": "Onder deze naam tellen je resultaten mee in de ranglijst.",
   "sign_out": "Uitloggen",
   "no_dailies": "Nog geen dagpuzzels.",
+  "rename": {
+    "start": "Gebruikersnaam wijzigen…",
+    "new_name": "Nieuwe gebruikersnaam",
+    "hint": "Je eerdere resultaten verhuizen mee naar de nieuwe naam. Je kunt hem eens per {{ days }} dagen wijzigen.",
+    "button": "Gebruikersnaam wijzigen",
+    "done": "Je heet nu {{ name }}.",
+    "wait": "Je kunt je gebruikersnaam vanaf {{ date }} weer wijzigen."
+  },
   "delete": {
     "title": "Account verwijderen",
     "intro": "Verwijdert je naam, wachtwoord, stempels en Dojo-inzendingen voorgoed. Je eerdere tijden blijven zonder naam in oude ranglijsten staan, zodat de andere spelers hun plek houden.",

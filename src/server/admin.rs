@@ -322,6 +322,7 @@ mod tests {
             username: username.map(String::from),
             name: "x".into(),
             created_at: 0,
+            renamed_at: None,
         }
     }
 

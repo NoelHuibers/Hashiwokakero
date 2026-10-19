@@ -33,6 +33,14 @@
   "name_hint": "Kết quả của bạn sẽ hiện trên bảng xếp hạng với tên này.",
   "sign_out": "Đăng xuất",
   "no_dailies": "Chưa có câu đố ngày nào.",
+  "rename": {
+    "start": "Đổi tên người dùng…",
+    "new_name": "Tên người dùng mới",
+    "hint": "Kết quả trước đây của bạn sẽ chuyển sang tên mới. Bạn có thể đổi tên {{ days }} ngày một lần.",
+    "button": "Đổi tên người dùng",
+    "done": "Giờ bạn là {{ name }}.",
+    "wait": "Bạn có thể đổi tên người dùng lại từ {{ date }}."
+  },
   "delete": {
     "title": "Xóa tài khoản",
     "intro": "Xóa vĩnh viễn tên, mật khẩu, con dấu và các bài gửi Dojo của bạn. Thời gian cũ của bạn vẫn nằm trên các bảng xếp hạng cũ nhưng không có tên, để những người chơi khác giữ nguyên thứ hạng.",
