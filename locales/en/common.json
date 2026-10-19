@@ -46,10 +46,12 @@
     "unique": "Proven: the solution is unique.",
     "not_unique": "This puzzle has more than one solution.",
     "copied": "Result copied to the clipboard.",
-    "copy_failed": "Couldn't copy to the clipboard."
+    "copy_failed": "Couldn't copy to the clipboard.",
+    "reload": "Reload"
   },
   "errors": {
     "unknown": "Something went wrong: {{ detail }}",
+    "outdated": "Hashi has been updated. Reload the page to continue.",
     "database": "The database didn't answer, please try again.",
     "internal": "Something went wrong on the server, please try again.",
     "archive_only_past": "Only earlier dailies can be practised.",

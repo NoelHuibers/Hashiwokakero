@@ -16,9 +16,9 @@ use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{date_short, error_text, prefix};
+use crate::lang::{date_short, prefix};
 use crate::model::UserStats;
-use crate::state::{Auth, ToastKind, toast};
+use crate::state::{Auth, ToastKind, error_toast, toast};
 
 use auth_form::{AuthForm, Mode};
 use delete::DeleteAccount;
@@ -50,7 +50,7 @@ pub fn AccountPage() -> impl IntoView {
                         format!("{} またね!", td_string!(l, account.signed_out))
                     });
                 }
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
         });
     };

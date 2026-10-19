@@ -8,7 +8,7 @@ use leptos::task::spawn_local;
 
 use super::game::{Game, Source, Status};
 use super::settings::Settings;
-use super::toasts::{ToastKind, toast};
+use super::toasts::{ToastKind, error_toast, toast};
 use crate::api::{generate_puzzle, solve_puzzle};
 use crate::i18n::td_string;
 
@@ -25,7 +25,7 @@ pub fn new_puzzle(game: Game, params: GenerateParams, source: Source) {
                 Some(generated.unique),
                 source,
             ),
-            Err(e) => toast(ToastKind::Error, move |l| crate::lang::error_text(l, &e)),
+            Err(e) => error_toast(e),
         }
         game.loading.set(false);
     });
@@ -63,7 +63,7 @@ pub async fn run_solver(
             solution
         }
         Err(e) => {
-            toast(ToastKind::Error, move |l| crate::lang::error_text(l, &e));
+            error_toast(e);
             None
         }
     }

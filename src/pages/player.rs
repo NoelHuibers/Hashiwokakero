@@ -13,9 +13,9 @@ use crate::components::stamps::{StampBadge, StampBook};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{date_short, error_text};
+use crate::lang::date_short;
 use crate::model::{MS_PER_DAY, PlayerProfile};
-use crate::state::{Auth, ToastKind, toast};
+use crate::state::{Auth, error_toast};
 
 #[component]
 fn Profile(p: PlayerProfile) -> impl IntoView {
@@ -135,7 +135,7 @@ pub fn PlayerPage() -> impl IntoView {
         spawn_local(async move {
             match load_player(id).await {
                 Ok(p) => profile.set(Some(p)),
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
         });
     });

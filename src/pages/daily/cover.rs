@@ -9,9 +9,8 @@ use crate::components::board::{BoardMode, BoardView};
 use crate::components::ui::button::{Button, ButtonSize};
 use crate::components::ui::card::Card;
 use crate::i18n::{t, t_string, use_i18n};
-use crate::lang::error_text;
 use crate::model::daily_difficulty;
-use crate::state::{Auth, ToastKind, device_id, toast};
+use crate::state::{Auth, device_id, error_toast};
 
 use super::state::Daily;
 
@@ -39,7 +38,7 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
                     daily.apply(info);
                     auth.refresh();
                 }
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
             daily.busy.set(false);
         });

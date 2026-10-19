@@ -11,9 +11,9 @@ use crate::components::leaderboard::LeaderboardTable;
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{date_long, difficulty_name, error_text};
+use crate::lang::{date_long, difficulty_name};
 use crate::model::{LAUNCH_DAY, Leaderboard, WEEKDAY_KANJI, daily_number, weekday};
-use crate::state::{Game, Source, ToastKind, toast};
+use crate::state::{Game, Source, ToastKind, error_toast, toast};
 
 /// The leaderboard of the selected day (`None` for today) with buttons to go back and forth.
 #[component]
@@ -57,7 +57,7 @@ pub(super) fn DailyBoard(
                 Ok(None) => toast(ToastKind::Info, |l| {
                     td_string!(l, ranks.no_puzzle).to_string()
                 }),
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
         });
     };

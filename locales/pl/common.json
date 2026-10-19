@@ -46,10 +46,12 @@
     "unique": "Udowodnione: rozwiązanie jest jednoznaczne.",
     "not_unique": "Ta łamigłówka ma więcej niż jedno rozwiązanie.",
     "copied": "Wynik skopiowany do schowka.",
-    "copy_failed": "Nie udało się skopiować do schowka."
+    "copy_failed": "Nie udało się skopiować do schowka.",
+    "reload": "Odśwież"
   },
   "errors": {
     "unknown": "Coś poszło nie tak: {{ detail }}",
+    "outdated": "Hashi został zaktualizowany. Odśwież stronę, aby kontynuować.",
     "database": "Baza danych nie odpowiada, spróbuj ponownie.",
     "internal": "Coś poszło nie tak na serwerze, spróbuj ponownie.",
     "archive_only_past": "Ćwiczyć można tylko wcześniejsze łamigłówki dnia.",

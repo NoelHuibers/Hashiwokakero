@@ -16,7 +16,7 @@ use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{config_name, difficulty_name, error_text};
 use crate::seo::PageMeta;
-use crate::state::{Editor, Game, ToastKind, random_seed, toast};
+use crate::state::{Editor, Game, ToastKind, error_toast, random_seed, toast};
 
 use presets::presets;
 use results::Results;
@@ -81,7 +81,7 @@ pub fn LabPage() -> impl IntoView {
         spawn_local(async move {
             match generate_puzzle(params).await {
                 Ok(g) => fresh.set(Some(g.puzzle)),
-                Err(e) => toast(ToastKind::Error, move |l| error_text(l, &e)),
+                Err(e) => error_toast(e),
             }
             running.set(false);
         });
