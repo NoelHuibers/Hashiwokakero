@@ -29,7 +29,9 @@ export const PLAYERS: Player[] = [
   { id: 4, name: 'Drowsy Otter 21', username: null, pace: 1.6, session: sessionFor('otter') },
   { id: 5, name: 'emre', username: 'emre', pace: 1.2 },
   { id: 6, name: 'fatima', username: 'fatima', pace: 1.1 },
-  { id: 7, name: 'Quiet Crane 5', username: null, pace: 2.0 },
+  // With a session, or the startup's cleanup of abandoned guests would delete it, some time
+  // after the tests started: a test seeing it or not depended on when
+  { id: 7, name: 'Quiet Crane 5', username: null, pace: 2.0, session: sessionFor('crane') },
   // In HASHI_ADMINS (server.ts)
   { id: 8, name: 'admin', username: 'admin', pace: 1.4, session: sessionFor('admin') },
   // Uploads to the Dojo (dojo.spec.ts), a test of its own: what it changes doesn't reach the
