@@ -9,6 +9,8 @@ mod fame;
 mod hints;
 mod moves;
 mod stamps;
+#[cfg(test)]
+mod tests;
 
 pub use admin::*;
 pub use calendar::*;
