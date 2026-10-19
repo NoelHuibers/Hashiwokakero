@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { ROOT } from './env';
-import { DOJO_SUBMISSION } from './seed';
+import { DOJO_SUBMISSION, player } from './seed';
 
 const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 
@@ -16,17 +16,21 @@ export const LOCALES: string[] = (() => {
 })();
 export const DEFAULT_LOCALE = LOCALES[0];
 
-/** A seeded value for every route parameter. */
-const PARAMS: Record<string, string> = { id: String(DOJO_SUBMISSION) };
+/** A seeded value for the parameters of every route that has some. */
+const PARAMS: Record<string, Record<string, number>> = {
+  '/dojo/:id': { id: DOJO_SUBMISSION },
+  '/player/:id': { id: player('aiko').id },
+};
 
 /** Every page of the router, parameters filled in: `/`, `/practice`, `/dojo/1`, ... */
-export const ROUTES: string[] = [...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\)/g)].map((m) =>
-  ('/' + m[1].replace(/^\//, '')).replace(/:(\w+)/g, (_, name: string) => {
-    const value = PARAMS[name];
-    if (value === undefined) throw new Error(`no seeded value for the route parameter :${name} (e2e/site.ts)`);
-    return value;
-  }),
-);
+export const ROUTES: string[] = [...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\)/g)].map((m) => {
+  const route = '/' + m[1].replace(/^\//, '');
+  return route.replace(/:(\w+)/g, (_, name: string) => {
+    const value = PARAMS[route]?.[name];
+    if (value === undefined) throw new Error(`no seeded value for :${name} of ${route} (e2e/site.ts)`);
+    return String(value);
+  });
+});
 if (ROUTES.length < 5) throw new Error('the routes in src/app.rs were not found');
 
 /** `path` in a language: `/rules` -> `/de/rules`, `/` -> `/de`. */

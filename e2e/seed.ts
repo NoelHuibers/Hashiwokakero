@@ -8,6 +8,8 @@ import { DatabaseSync } from 'node:sqlite';
 const MS_PER_DAY = 86_400_000;
 
 export interface Player {
+  /** The user id, for /player/:id. */
+  id: number;
   name: string;
   /** `null` for guests. */
   username: string | null;
@@ -21,15 +23,15 @@ export interface Player {
 const sessionFor = (name: string) => sha256(`hashi-e2e:${name}`);
 
 export const PLAYERS: Player[] = [
-  { name: 'aiko', username: 'aiko', pace: 1.0, session: sessionFor('aiko') },
-  { name: 'bram', username: 'bram', pace: 1.3 },
-  { name: 'chen', username: 'chen', pace: 0.9 },
-  { name: 'Drowsy Otter 21', username: null, pace: 1.6, session: sessionFor('otter') },
-  { name: 'emre', username: 'emre', pace: 1.2 },
-  { name: 'fatima', username: 'fatima', pace: 1.1 },
-  { name: 'Quiet Crane 5', username: null, pace: 2.0 },
+  { id: 1, name: 'aiko', username: 'aiko', pace: 1.0, session: sessionFor('aiko') },
+  { id: 2, name: 'bram', username: 'bram', pace: 1.3 },
+  { id: 3, name: 'chen', username: 'chen', pace: 0.9 },
+  { id: 4, name: 'Drowsy Otter 21', username: null, pace: 1.6, session: sessionFor('otter') },
+  { id: 5, name: 'emre', username: 'emre', pace: 1.2 },
+  { id: 6, name: 'fatima', username: 'fatima', pace: 1.1 },
+  { id: 7, name: 'Quiet Crane 5', username: null, pace: 2.0 },
   // In HASHI_ADMINS (server.ts)
-  { name: 'admin', username: 'admin', pace: 1.4, session: sessionFor('admin') },
+  { id: 8, name: 'admin', username: 'admin', pace: 1.4, session: sessionFor('admin') },
 ];
 
 export const player = (name: string) => {
@@ -49,20 +51,22 @@ export function seed(dbPath: string) {
   const today = Math.floor(Date.now() / MS_PER_DAY);
   const random = mulberry32(7);
   db.exec('BEGIN');
-  const ids = PLAYERS.map((p) => {
-    const row = db
-      .prepare('INSERT INTO users (username, name, created_at) VALUES (?, ?, ?) RETURNING id')
-      .get(p.username, p.name, (today - HISTORY - 20) * MS_PER_DAY) as { id: number };
+  for (const p of PLAYERS) {
+    db.prepare('INSERT INTO users (id, username, name, created_at) VALUES (?, ?, ?, ?)').run(
+      p.id,
+      p.username,
+      p.name,
+      (today - HISTORY - 20) * MS_PER_DAY,
+    );
     if (p.session) {
       db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(
         sha256(p.session),
-        row.id,
+        p.id,
         Date.now(),
         Date.now() + 365 * MS_PER_DAY,
       );
     }
-    return row.id;
-  });
+  }
 
   // The first three play nearly every day (streaks, medals), the others now and then
   const attempt = db.prepare(
@@ -75,12 +79,12 @@ export function seed(dbPath: string) {
       const finished = day * MS_PER_DAY + Math.floor(random() * 80_000_000);
       const hints = random() < 0.25 ? 1 : 0;
       const checks = random() < 0.33 ? 1 : 0;
-      attempt.run(ids[i], day, finished - time, finished, hints, checks, time);
+      attempt.run(p.id, day, finished - time, finished, hints, checks, time);
     });
   }
   // Today's board isn't empty, but the signed in players haven't played yet
-  attempt.run(ids[1], today, Date.now() - 120_000, Date.now() - 1_000, 0, 0, 119_000);
-  attempt.run(ids[2], today, Date.now() - 100_000, Date.now() - 2_000, 0, 1, 98_000);
+  attempt.run(player('bram').id, today, Date.now() - 120_000, Date.now() - 1_000, 0, 0, 119_000);
+  attempt.run(player('chen').id, today, Date.now() - 100_000, Date.now() - 2_000, 0, 1, 98_000);
 
   const families = [
     { family: 'Hashi', solved: 8, total: 8, par2: 0.4 },
