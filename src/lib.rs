@@ -37,4 +37,9 @@ pub use generated::i18n;
 pub fn hydrate() {
     console_error_panic_hook::set_once();
     leptos::mount::hydrate_body(app::App);
+    // Only reached when hydration didn't panic. The browser tests (e2e/) wait for this mark
+    // before they click anything.
+    if let Some(el) = leptos::prelude::document().document_element() {
+        let _ = el.set_attribute("data-hydrated", "");
+    }
 }
