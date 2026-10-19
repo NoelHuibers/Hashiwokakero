@@ -41,7 +41,7 @@ Supported heuristics are:
 | -r|--restarts_threshold |Specify the conflict threshold for a restart|
 | -l|--luby|Use luby sequence for restarts|
 | -F|--restart_factor |Specify the factor for restarts|
-| -D|--DRUP|Output in DRUP format|
+| -D|--DRUP|Log the learned and deleted clauses as a DRUP proof to `<output>.log` (needs the output file)|
 | -t|--timeout |Give up after this many seconds and print `UNKNOWN (timeout)`|
 | -h|--help|Print help|
 | -V|--version|Print version|

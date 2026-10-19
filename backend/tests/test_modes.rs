@@ -28,15 +28,17 @@ const UNSAT: &str = "3 3\n8.8\n...\n8.8\n";
 #[test]
 fn encode_writes_the_dimacs_next_to_the_puzzle() {
     let (dir, puzzle) = file("p.txt", PUZZLE);
-    modes::encode_mode(path(&puzzle));
+    modes::encode_mode(path(&puzzle)).unwrap();
     let expected = api::to_dimacs(&Puzzle::parse_txt(PUZZLE).unwrap()).unwrap();
     assert_eq!(read(dir.path().join("p.txt.cnf")), expected);
 
-    // Puzzles that can't be read or encoded give no file
+    // Puzzles that can't be read or encoded are errors and give no file
     let (dir, bad) = file("bad.txt", "2 2\n1x\n..\n");
-    modes::encode_mode(path(&bad));
+    assert!(modes::encode_mode(path(&bad)).is_err());
     assert!(!dir.path().join("bad.txt.cnf").exists());
-    modes::encode_mode(path(&dir.path().join("missing.txt")));
+    let missing = dir.path().join("missing.txt");
+    let err = modes::encode_mode(path(&missing)).unwrap_err();
+    assert!(err.starts_with(path(&missing)), "{err}");
     assert!(!dir.path().join("missing.txt.cnf").exists());
 }
 
@@ -49,7 +51,7 @@ fn solve_writes_the_model() {
             kind,
             ..SolverConfig::default()
         };
-        modes::solve_mode(path(&cnf), Some(path(&out).to_string()), config);
+        modes::solve_mode(path(&cnf), Some(path(&out).to_string()), config).unwrap();
         assert_eq!(read(&out), "SAT\n1 2 ", "{kind:?}");
         std::fs::remove_file(&out).unwrap();
     }
@@ -59,26 +61,31 @@ fn solve_writes_the_model() {
         path(&unsat),
         Some(path(&out).to_string()),
         SolverConfig::default(),
-    );
+    )
+    .unwrap();
     assert_eq!(read(&out), "UNSAT");
     // Only .txt output files, and errors in the input write nothing
     let other = dir.path().join("out.json");
-    modes::solve_mode(
+    let err = modes::solve_mode(
         path(&unsat),
         Some(path(&other).to_string()),
         SolverConfig::default(),
-    );
+    )
+    .unwrap_err();
+    assert!(err.contains("Only .txt files"), "{err}");
     assert!(!other.exists());
     let (dir, broken) = file("b.cnf", "1 2 0\n");
     let out = dir.path().join("out.txt");
-    modes::solve_mode(
+    let err = modes::solve_mode(
         path(&broken),
         Some(path(&out).to_string()),
         SolverConfig::default(),
-    );
+    )
+    .unwrap_err();
+    assert!(err.contains("Missing 'p cnf' line"), "{err}");
     assert!(!out.exists());
     // Without an output file the answer goes to stdout
-    modes::solve_mode(path(&cnf), None, SolverConfig::default());
+    modes::solve_mode(path(&cnf), None, SolverConfig::default()).unwrap();
     assert_eq!(
         solver::get_content(splr::Certificate::SAT(vec![1, -2])),
         "SAT\n1 -2 "
@@ -99,7 +106,8 @@ fn esr_draws_the_solution() {
         path(&puzzle),
         Some(path(&out).to_string()),
         SolverConfig::splr(),
-    );
+    )
+    .unwrap();
     let drawn = read(&out);
     assert!(drawn.ends_with("(unique solution)\n"), "{drawn}");
     assert_eq!(drawn.lines().count(), 6, "{drawn}");
@@ -111,7 +119,8 @@ fn esr_draws_the_solution() {
         path(&puzzle),
         Some(path(&out).to_string()),
         SolverConfig::default(),
-    );
+    )
+    .unwrap();
     assert!(read(&out).ends_with("(NOT unique, there are other solutions)\n"));
 
     let (dir, unsat) = file("u.txt", UNSAT);
@@ -120,18 +129,22 @@ fn esr_draws_the_solution() {
         path(&unsat),
         Some(path(&out).to_string()),
         SolverConfig::default(),
-    );
+    )
+    .unwrap();
     assert_eq!(read(&out), "Problem is UNSAT\n");
 
-    // A missing puzzle writes nothing
+    // A missing puzzle is an error and writes nothing
     let none = dir.path().join("none.txt");
-    modes::esr_mode(
-        path(&dir.path().join("missing.txt")),
-        Some(path(&none).to_string()),
-        SolverConfig::default(),
+    assert!(
+        modes::esr_mode(
+            path(&dir.path().join("missing.txt")),
+            Some(path(&none).to_string()),
+            SolverConfig::default(),
+        )
+        .is_err()
     );
     assert!(!none.exists());
-    modes::esr_mode(path(&puzzle), None, SolverConfig::default());
+    modes::esr_mode(path(&puzzle), None, SolverConfig::default()).unwrap();
 }
 
 #[test]
@@ -144,10 +157,14 @@ fn generate_writes_a_puzzle() {
     };
     let dir = tempfile::tempdir().unwrap();
     let out = dir.path().join("generated.txt");
-    modes::generate_mode(params, Some(path(&out).to_string()));
+    modes::generate_mode(params, Some(path(&out).to_string())).unwrap();
     assert_eq!(
         Puzzle::parse_txt(&read(&out)).unwrap(),
         api::generate(&params).puzzle
     );
-    modes::generate_mode(params, None);
+    modes::generate_mode(params, None).unwrap();
+    // Into a directory that doesn't exist
+    let err = modes::generate_mode(params, Some(path(&dir.path().join("no/p.txt")).to_string()))
+        .unwrap_err();
+    assert!(err.contains("no/p.txt"), "{err}");
 }
