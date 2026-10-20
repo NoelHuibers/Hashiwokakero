@@ -194,6 +194,12 @@
   "date_long": "{{ weekday }}, {{ day }} de {{ month }} de {{ year }}",
   "date_short": "{{ day }} de {{ month }} de {{ year }}",
   "og_image_alt": "Un puzle de Hashiwokakero resuelto en pixel art: islas numeradas unidas por puentes de madera y bermellón",
+  "og": {
+    "tagline": "El puzle japonés de puentes, en pixel art",
+    "free": "Gratis",
+    "daily": "Un puzle nuevo cada día",
+    "unique": "Una única solución"
+  },
   "ld": {
     "site": "Hashiwokakero, el puzle japonés de puentes, gratis en el navegador.",
     "game": "Une las islas con puentes para que cada isla tenga tantos puentes como indica su número. Un reto diario con clasificación, cinco dificultades, pixel art, y cada puzle tiene exactamente una solución."

@@ -194,6 +194,12 @@
   "date_long": "{{ weekday }}, ngày {{ day }} {{ month }} năm {{ year }}",
   "date_short": "{{ day }} {{ month }}, {{ year }}",
   "og_image_alt": "Một câu đố Hashiwokakero đã giải theo phong cách pixel art: các hòn đảo đánh số được nối bằng cầu gỗ và cầu đỏ son",
+  "og": {
+    "tagline": "Trò chơi nối cầu của Nhật Bản, phong cách pixel art",
+    "free": "Miễn phí",
+    "daily": "Mỗi ngày một câu đố mới",
+    "unique": "Đúng một lời giải"
+  },
   "ld": {
     "site": "Hashiwokakero, trò chơi nối cầu của Nhật Bản, chơi miễn phí trên trình duyệt.",
     "game": "Nối các hòn đảo bằng cầu sao cho số cầu của mỗi đảo đúng bằng con số ghi trên đảo. Câu đố mỗi ngày kèm bảng xếp hạng, năm mức độ khó, đồ họa pixel art, và mỗi câu đố có đúng một lời giải."

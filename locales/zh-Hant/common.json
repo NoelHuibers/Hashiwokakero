@@ -194,6 +194,12 @@
   "date_long": "{{ year }}年{{ month }}{{ day }}日（{{ weekday }}）",
   "date_short": "{{ year }}年{{ month }}{{ day }}日",
   "og_image_alt": "像素風格的已解數橋（Hashiwokakero）謎題：標有數字的小島以木橋和朱紅色的橋相連",
+  "og": {
+    "tagline": "來自日本的造橋謎題，像素畫風",
+    "free": "免費暢玩",
+    "daily": "每天一道新謎題",
+    "unique": "答案唯一"
+  },
   "ld": {
     "site": "數橋（Hashiwokakero），來自日本的造橋邏輯謎題，在瀏覽器上免費暢玩。",
     "game": "用橋把小島連起來，讓每座島的橋數等於島上的數字。每日謎題搭配排行榜，五種難度，像素畫風，每道題都只有唯一解。"

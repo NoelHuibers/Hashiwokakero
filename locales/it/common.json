@@ -194,6 +194,12 @@
   "date_long": "{{ weekday }} {{ day }} {{ month }} {{ year }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Un puzzle Hashiwokakero risolto in pixel art: isole numerate unite da ponti di legno e vermigli",
+  "og": {
+    "tagline": "Il rompicapo giapponese dei ponti, in pixel art",
+    "free": "Gratis",
+    "daily": "Un nuovo rompicapo ogni giorno",
+    "unique": "Una sola soluzione"
+  },
   "ld": {
     "site": "Hashiwokakero, il rompicapo giapponese dei ponti, da giocare gratis nel browser.",
     "game": "Collega le isole con dei ponti in modo che ogni isola abbia tanti ponti quanti ne indica il suo numero. Una sfida quotidiana con classifica, cinque livelli di difficoltà, pixel art, e ogni puzzle ha esattamente una soluzione."

@@ -194,6 +194,12 @@
   "date_long": "{{ day }} {{ month }} {{ year }} {{ weekday }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Piksel sanatıyla çözülmüş bir Hashiwokakero bulmacası: ahşap ve kırmızı köprülerle bağlanmış numaralı adalar",
+  "og": {
+    "tagline": "Japon köprü bulmacası, piksel sanatıyla",
+    "free": "Ücretsiz",
+    "daily": "Her gün yeni bir bulmaca",
+    "unique": "Tek bir çözüm"
+  },
   "ld": {
     "site": "Hashiwokakero, Japon köprü bulmacası, tarayıcıda ücretsiz oynanır.",
     "game": "Adaları köprülerle bağla; her adada, üzerindeki sayı kadar köprü olsun. Sıralamalı günlük bulmaca, beş zorluk seviyesi, piksel sanatı ve her bulmacanın tam olarak tek bir çözümü var."

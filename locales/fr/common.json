@@ -194,6 +194,12 @@
   "date_long": "{{ weekday }} {{ day }} {{ month }} {{ year }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Une grille de Hashiwokakero résolue en pixel art : des îles numérotées reliées par des ponts en bois et vermillon",
+  "og": {
+    "tagline": "Le casse-tête japonais des ponts, en pixel art",
+    "free": "Gratuit",
+    "daily": "Une nouvelle grille chaque jour",
+    "unique": "Une seule solution"
+  },
   "ld": {
     "site": "Hashiwokakero, le casse-tête japonais des ponts, jouable gratuitement dans le navigateur.",
     "game": "Relie les îles par des ponts pour que chaque île ait autant de ponts que son chiffre l’indique. Un défi quotidien avec classement, cinq niveaux de difficulté, du pixel art, et chaque grille a exactement une solution."

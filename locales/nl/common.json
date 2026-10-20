@@ -194,6 +194,12 @@
   "date_long": "{{ weekday }} {{ day }} {{ month }} {{ year }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Een opgeloste Hashiwokakero-puzzel in pixelart: genummerde eilanden verbonden door houten en vermiljoenrode bruggen",
+  "og": {
+    "tagline": "De Japanse bruggenpuzzel, in pixelart",
+    "free": "Gratis te spelen",
+    "daily": "Elke dag een nieuwe puzzel",
+    "unique": "Precies één oplossing"
+  },
   "ld": {
     "site": "Hashiwokakero, de Japanse bruggenpuzzel, gratis te spelen in je browser.",
     "game": "Verbind de eilanden met bruggen zodat elk eiland zoveel bruggen heeft als zijn getal aangeeft. Een dagpuzzel met ranglijst, vijf moeilijkheidsgraden, pixelart, en elke puzzel heeft precies één oplossing."
