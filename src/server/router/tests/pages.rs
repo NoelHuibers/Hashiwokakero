@@ -5,8 +5,9 @@
 //! hydrated. So the server sends every visitor the same page, the frame and whatever doesn't
 //! depend on data, with "Loading…" where the data goes; the browser tests (e2e/) cover what fills
 //! in. Except a player's page, rendered once the player is loaded, for the title and the preview
-//! of links to it. These tests make sure every route renders without panicking, in its language,
-//! with its title, headings, texts and links.
+//! of links to it, and the daily's header, which the server renders for its day. These tests make
+//! sure every route renders without panicking, in its language, with its title, headings, texts
+//! and links.
 
 use std::collections::BTreeSet;
 
@@ -706,6 +707,43 @@ fn meta(html: &str, key: &str) -> Option<String> {
         let end = start + html[start..].find('"')?;
         Some(unescape(&html[start..end]))
     })
+}
+
+/// The home page's heading is today's daily, from the server's clock, before the daily is
+/// loaded: search engines and link previews used to find no `<h1>` at all.
+#[tokio::test]
+async fn the_home_page_is_headed_by_todays_daily() {
+    use crate::lang::date_long;
+    use crate::model::{WEEKDAY_KANJI, daily_difficulty, daily_number, weekday};
+
+    let server = Server::start().await;
+    let browser = server.browser();
+    for l in [Locale::en, Locale::de, Locale::ja] {
+        let before = daily::today();
+        let html = browser.get(&localized(l, "/")).await.text().await.unwrap();
+        // At midnight the page may have been rendered on either day
+        let day = (before..=daily::today())
+            .find(|&day| {
+                heading(&html) == Some(td_string!(l, daily.title, number = daily_number(day)))
+            })
+            .unwrap_or_else(|| panic!("{l:?}: {:?}", heading(&html)));
+        let text = visible_text(&html);
+        let difficulty = daily_difficulty(day);
+        let (width, height) = difficulty.size();
+        for shown in [
+            date_long(l, day),
+            WEEKDAY_KANJI[weekday(day)].to_string(),
+            format!("{} {}", difficulty.kanji(), difficulty_name(l, difficulty)),
+            format!("{width}×{height}"),
+        ] {
+            assert!(text.contains(&shown), "{l:?}: {shown:?} in {text}");
+        }
+        // The title stays the same every day
+        assert_eq!(
+            title(&html).as_deref(),
+            Some(td_string!(l, daily.meta.title))
+        );
+    }
 }
 
 /// A link to a player's page shows their name and record where it's shared. The page stays
