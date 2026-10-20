@@ -782,6 +782,10 @@ pub(super) async fn dispatch_to(
     };
     let id: i64 = row.get(0).map_err(err)?;
     let cnf: Vec<u8> = row.get(1).map_err(err)?;
+    // Row retains the local statement too. Finish RETURNING before network I/O so
+    // other connections can see the claim and authenticate an immediate callback.
+    drop(row);
+    let _ = rows.next().await.map_err(err)?;
     drop(rows);
     let sent = client
         .post(format!(

@@ -104,6 +104,22 @@ fn verified(answer: Answer) -> Verdict {
     }
 }
 
+/// Keep the Python smoke's negative-auth and replay requests valid at the JSON boundary.
+#[test]
+fn packaged_smoke_callback_uses_worker_protocol() {
+    let report: BenchmarkReport = serde_json::from_str(include_str!(
+        "../../../scripts/fixtures/benchmark-report.json"
+    ))
+    .unwrap();
+    assert_eq!(report.id, 0);
+    assert_eq!(
+        report.verdict,
+        Verdict::Refused {
+            reason: Refusal::TooEasy
+        }
+    );
+}
+
 /// What the form takes and what it refuses, like solver submissions: accounts with a username
 /// and a day of age, three a day, no duplicates (also scrambled ones), a licence.
 #[tokio::test]
@@ -776,12 +792,19 @@ async fn a_verdict_before_acceptance_is_kept() {
     let id = benchmarks::submit(&conn, &ada, form("x", &formula(4)), None)
         .await
         .unwrap();
-    let callback = conn.clone();
+    let callback = conn.independent_connection().await;
     let app = axum::Router::new().route(
         "/benchmarks",
         axum::routing::post(move |Query(q): Query<HashMap<String, String>>| {
             let conn = callback.clone();
             async move {
+                // The callback uses another connection, as the real HTTP handler does.
+                // Its claim must already be committed before the worker accepts the job.
+                assert_eq!(state(&conn, id).await.0, "checking");
+                assert_eq!(
+                    token_and_attempts(&conn, id).await,
+                    (Some(q["report_token"].clone()), 1)
+                );
                 let report = BenchmarkReport {
                     id,
                     verdict: verified(Answer::Sat),
@@ -799,9 +822,13 @@ async fn a_verdict_before_acceptance_is_kept() {
     let url = format!("http://{}", listener.local_addr().unwrap());
     tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
     let client = reqwest::Client::new();
-    benchmarks::dispatch_to(&conn, &client, &url, "secret")
-        .await
-        .unwrap();
+    tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        benchmarks::dispatch_to(&conn, &client, &url, "secret"),
+    )
+    .await
+    .expect("a callback on another connection must complete before acceptance")
+    .unwrap();
     assert_eq!(state(&conn, id).await, ("verified".into(), None));
 
     let other = benchmarks::submit(&conn, &ada, form("x", &formula(5)), None)

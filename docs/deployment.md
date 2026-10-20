@@ -7,6 +7,10 @@ on `main`. [fly.toml](../fly.toml) and [dojo/fly.toml](../dojo/fly.toml) define 
 apps. CI uses the prebuilt Dockerfiles; the standard Dockerfiles build from source
 for manual deployments.
 
+Both CI deployments share the [packaged compatibility gate](packaged-compatibility.md),
+including site E2E/Docker checks and the packaged worker's real proof checkers. That
+document describes its coverage limits and the additional branch-protection check.
+
 Deploy the website and worker from the same revision. For separate manual
 deployments, update the worker first.
 

@@ -483,6 +483,15 @@ impl TestConn {
         migrate(&conn).await.unwrap();
         Self { conn, file }
     }
+
+    /// A separate SQLite connection: cloning `Connection` shares the original handle.
+    pub async fn independent_connection(&self) -> Connection {
+        open_local(self.file.as_str())
+            .await
+            .unwrap()
+            .connect()
+            .unwrap()
+    }
 }
 
 #[cfg(test)]

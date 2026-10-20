@@ -1266,13 +1266,17 @@ async fn a_callback_before_acceptance_is_not_overwritten_by_dispatch() {
     use std::collections::HashMap;
     let conn = test_db("fast-callback").await;
     let id = submit(&conn, None, form("fast", 62)).await.unwrap();
-    let callback_conn = conn.clone();
+    let callback_conn = conn.independent_connection().await;
     let worker = Router::new().route(
         "/jobs",
         post(move |Query(q): Query<HashMap<String, String>>| {
             let conn = callback_conn.clone();
             async move {
                 assert_eq!(q["rules"], RULES_VERSION.to_string());
+                assert_eq!(
+                    state_and_token(&conn, id).await,
+                    ("running".into(), Some(q["report_token"].clone()), 1)
+                );
                 let report = finished(id, season(), 1, 1, RULES_VERSION);
                 assert!(
                     worker::apply_for_job(&conn, &report, Some(&q["report_token"]))
@@ -1288,9 +1292,13 @@ async fn a_callback_before_acceptance_is_not_overwritten_by_dispatch() {
     let server = tokio::spawn(async move {
         axum::serve(listener, worker).await.unwrap();
     });
-    worker::dispatch_to(&conn, &url, "test-token")
-        .await
-        .unwrap();
+    tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        worker::dispatch_to(&conn, &url, "test-token"),
+    )
+    .await
+    .expect("a callback on another connection must complete before acceptance")
+    .unwrap();
     assert_eq!(
         submission(&conn, id, None).await.unwrap().unwrap().state,
         DojoState::Done
