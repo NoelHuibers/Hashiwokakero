@@ -218,6 +218,24 @@
     "text": "우리 솔버보다 빠를 자신 있나요? 제출하고 리더보드를 올라 보세요.",
     "button": "도장으로"
   },
+  "track": {
+    "sprint": "스프린트 부문",
+    "sprint_text": "생성된 중간 크기의 논리식, 식 하나에 약 0.5초예요.",
+    "soon": "곧 공개",
+    "industrial": {
+      "title": "산업 부문",
+      "intro": "지난 SAT Competition 메인 트랙의 실제 인스턴스예요. 하드웨어 검증과 유계 모델 검사, 암호, 스케줄링, 계획, 소프트웨어 검증 문제를 <a>Global Benchmark Database</a>에서 가져와요.",
+      "budget_title": "0.5초가 아니라 몇 분",
+      "budget": "식 하나에 스프린트 부문 예산의 약 200배, 실행 한 번에 최대 4 GB 메모리를 써요.",
+      "proofs_title": "검사되는 증명",
+      "proofs": "모든 UNSAT 답에는 스프린트 부문과 똑같이 검사되는 증명이 필요해요.",
+      "why_title": "두 번째 부문이 필요한 이유",
+      "why": "식 하나에 0.5초라면 MiniSat이 CaDiCaL과 Kissat을 이겨요. 두 솔버의 인프로세싱은 큰 산업 인스턴스에서야 효과를 내기 때문이에요. 몇 분이 주어지면 큰 솔버들이 실력을 보여 줄 수 있고, SAT Competition에 더 가까워져요.",
+      "fee_title": "소액의 참가비",
+      "fee": "참가에는 계산 비용을 충당하는 소액의 참가비가 들 예정이에요.",
+      "board_note": "<a>산업 부문</a>이 곧 공개돼요: SAT Competition의 실제 인스턴스, 식 하나에 몇 분."
+    }
+  },
   "community": {
     "meta_title": "벤치마크 가져오기 · SAT 도장",
     "meta_description": "SAT 도장의 커뮤니티 풀에 CNF 논리식을 제출하세요. 검증된 어려운 인스턴스는 이후 시즌의 비공개 세트에 들어가고 여러분의 이름과 함께 공개돼요.",

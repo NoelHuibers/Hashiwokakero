@@ -218,6 +218,24 @@
     "text": "¿Crees que tu solver gana al nuestro? Envíalo y escala en la clasificación.",
     "button": "Al dojo"
   },
+  "track": {
+    "sprint": "Modalidad Sprint",
+    "sprint_text": "Fórmulas generadas de tamaño modesto, alrededor de medio segundo por fórmula.",
+    "soon": "Pronto",
+    "industrial": {
+      "title": "Modalidad industrial",
+      "intro": "Instancias reales de los main tracks de ediciones pasadas de la SAT Competition: verificación de hardware y bounded model checking, criptografía, programación de tareas, planificación y verificación de software, obtenidas de la <a>Global Benchmark Database</a>.",
+      "budget_title": "Minutos, no medio segundo",
+      "budget": "Unas 200 veces el presupuesto del Sprint por fórmula, y hasta 4 GB de memoria por ejecución.",
+      "proofs_title": "Pruebas comprobadas",
+      "proofs": "Cada respuesta UNSAT necesita una prueba, comprobada como en el Sprint.",
+      "why_title": "Por qué una segunda modalidad",
+      "why": "Con medio segundo por fórmula, MiniSat gana a CaDiCaL y Kissat: su inprocessing solo compensa en instancias industriales grandes. Con minutos, los solvers grandes pueden mostrar lo que saben hacer, más cerca de la SAT Competition.",
+      "fee_title": "Una pequeña cuota de inscripción",
+      "fee": "Participar costará una pequeña cuota que cubre el cómputo.",
+      "board_note": "La <a>modalidad industrial</a> llega pronto: instancias reales de la SAT Competition, minutos por fórmula."
+    }
+  },
   "community": {
     "meta_title": "Trae tu propio benchmark · SAT Dojo",
     "meta_description": "Envía una fórmula CNF al pool de la comunidad del SAT Dojo. Las instancias verificadas y difíciles entran en los conjuntos secretos de temporadas posteriores y se publican con tu nombre.",

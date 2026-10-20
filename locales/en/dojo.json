@@ -218,6 +218,24 @@
     "text": "Think your solver beats ours? Submit it and climb the leaderboard.",
     "button": "To the dojo"
   },
+  "track": {
+    "sprint": "Sprint track",
+    "sprint_text": "Generated formulas of modest size, about half a second per formula.",
+    "soon": "Soon",
+    "industrial": {
+      "title": "Industrial track",
+      "intro": "Real instances from past SAT Competition main tracks: hardware verification and bounded model checking, cryptography, scheduling, planning and software verification, fetched from the <a>Global Benchmark Database</a>.",
+      "budget_title": "Minutes, not half a second",
+      "budget": "About 200 times the Sprint budget per formula, and up to 4 GB of memory per run.",
+      "proofs_title": "Proofs checked",
+      "proofs": "Every UNSAT answer needs a proof, checked as in the Sprint.",
+      "why_title": "Why a second track",
+      "why": "With half a second per formula, MiniSat beats CaDiCaL and Kissat: their inprocessing only pays off on large industrial instances. Given minutes, the big solvers can show what they do, closer to the SAT Competition.",
+      "fee_title": "A small entry fee",
+      "fee": "Entry will cost a small fee that covers the compute.",
+      "board_note": "The <a>Industrial track</a> is coming soon: real SAT Competition instances, minutes per formula."
+    }
+  },
   "community": {
     "meta_title": "Bring your own benchmark · SAT Dojo",
     "meta_description": "Submit a CNF formula to the SAT Dojo's community pool. Verified, hard instances join the hidden sets of later seasons and are published with your name.",

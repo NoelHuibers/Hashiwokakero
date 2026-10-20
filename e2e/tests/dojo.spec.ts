@@ -27,6 +27,32 @@ test('the guide and the leaderboard with its entry', async ({ page }) => {
   await expect(page.getByText('Unit propagation and nothing else.')).toBeVisible();
 });
 
+test('the Sprint track, and the Industrial track coming soon', async ({ page, context }) => {
+  // Signed in, so the page has the submit form
+  await signIn(context, 'kenji');
+  await visit(page, '/dojo');
+  await expect(page.getByText('Generated formulas of modest size, about half a second per formula.')).toBeVisible();
+  const board = page.locator('#leaderboard');
+  await expect(board.getByTestId('sprint-track')).toHaveText('Sprint track');
+
+  const industrial = page.getByTestId('industrial-track');
+  await expect(industrial.getByRole('heading', { name: /^Industrial track/ })).toBeVisible();
+  await expect(industrial.getByTestId('industrial-soon')).toHaveText('Soon');
+  await expect(industrial).toContainText('About 200 times the Sprint budget per formula');
+  await expect(industrial).toContainText('Entry will cost a small fee that covers the compute.');
+  // Nothing to enter yet: no form, field or button, and the only link is the citation
+  await expect(industrial.locator('form, input, textarea, select, button')).toHaveCount(0);
+  await expect(industrial.getByRole('link')).toHaveAttribute('href', 'https://benchmark-database.de');
+  // The only form on the page enters the Sprint
+  await expect(page.locator('form')).toHaveCount(1);
+  await expect(page.locator('form')).toHaveAttribute('action', '/dojo/submit');
+
+  // The leaderboard's note leads to the announcement
+  await board.getByRole('link', { name: 'Industrial track' }).click();
+  await expect(page).toHaveURL(/\/dojo#industrial$/);
+  await expect(industrial).toBeInViewport();
+});
+
 test('an upload that is no WebAssembly is refused', async ({ page, context }) => {
   await signIn(context, 'kenji');
   await visit(page, '/dojo');

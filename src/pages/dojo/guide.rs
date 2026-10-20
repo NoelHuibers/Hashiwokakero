@@ -10,6 +10,7 @@ use crate::i18n::{t, use_i18n};
 use crate::model::DojoBoard;
 
 use super::names::{family_kanji, family_name, family_text};
+use super::tracks::SprintBadge;
 
 /// What the Dojo's proof rules follow: an UNSAT answer needs a proof a verified checker accepts.
 const SAT_COMPETITION_RULES: &str = "https://satcompetition.github.io/2026/rules.html";
@@ -68,6 +69,7 @@ pub(super) fn HowItWorks() -> impl IntoView {
         <section class="flex flex-col gap-4">
             <h2 class="flex items-baseline gap-2 text-2xl font-black">
                 {t!(i18n, dojo.how.title)} " " <span class="font-pixel text-sm text-primary">"稽古 · keiko"</span>
+                <SprintBadge />
             </h2>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Step number="一" title=t!(i18n, dojo.how.build_title).into_any()>
@@ -235,7 +237,7 @@ pub(super) fn FairPlay() -> impl IntoView {
 }
 
 /// A link in a guide text.
-fn cite(href: &'static str) -> impl Fn(ChildrenFn) -> AnyView + Copy {
+pub(super) fn cite(href: &'static str) -> impl Fn(ChildrenFn) -> AnyView + Copy {
     move |children: ChildrenFn| {
         view! {
             <a href=href target="_blank" rel="noopener" class="text-primary underline underline-offset-4">
