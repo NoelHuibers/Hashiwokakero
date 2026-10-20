@@ -47,6 +47,11 @@ workspace = true
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+# Manual SQL timing/equivalence diagnostic; never part of the unit-test workload.
+[[example]]
+name = "stamp_record_query"
+required-features = ["ssr"]
+
 [dependencies]
 common = { path = "./common" }
 # The SAT Dojo: only its result types here, the worker runs submissions

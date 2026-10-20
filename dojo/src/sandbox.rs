@@ -528,6 +528,32 @@ mod tests {
         }
     }
 
+    /// A module can pass our byte/operator limits and Wasm validation but exceed the
+    /// compiler's jump-table limit. Return a submission rejection and keep serving runs.
+    #[test]
+    fn compiler_limits_reject_submissions_without_poisoning_the_sandbox() {
+        let sandbox = Sandbox::new().unwrap();
+        let targets = "0 ".repeat(65_521);
+        let wasm = wat::parse_str(format!(
+            r#"(module {WASI}
+                (func (export "_start")
+                    (block (br_table {targets} 0 (i32.const 0)))))"#
+        ))
+        .unwrap();
+        validate(&wasm).expect("within the application's upload and validation limits");
+        let rejection = sandbox.load(&wasm).unwrap_err();
+        assert!(
+            matches!(&rejection, Rejection::Invalid(message)
+                if message.contains("br_table") && message.contains("implementation limit")),
+            "{rejection:?}"
+        );
+
+        let print = "(drop (call $write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 8)))";
+        let run = sandbox.run(&solver(&sandbox, print), "", 1, &limits(1_000), false, None);
+        assert_eq!(run.end, End::Exited);
+        assert_eq!(run.stdout, "s UNSATISFIABLE\n");
+    }
+
     #[test]
     fn answers_and_meters() {
         let sandbox = Sandbox::new().unwrap();
