@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use axum::extract::{ConnectInfo, Request};
+use axum::extract::Request;
 use axum::http::StatusCode;
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
@@ -112,27 +112,30 @@ pub async fn admission(req: Request, next: Next) -> Response {
         // before the per-account quotas can be checked
         || req.uri().path() == "/dojo/benchmarks/submit";
     if expensive {
-        let ip = super::client_ip(req.headers()).or_else(|| {
-            req.extensions()
-                .get::<ConnectInfo<std::net::SocketAddr>>()
-                .map(|peer| peer.0.ip().to_string())
-        });
-        if let Some(ip) = ip {
-            let key =
-                super::network_hash(&ip, super::now_ms().div_euclid(crate::model::MS_PER_DAY));
-            let allowed = RATES
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .get_or_insert_with(Rates::default)
-                .admit(key, auth, Instant::now());
-            if !allowed {
-                return (
-                    StatusCode::TOO_MANY_REQUESTS,
-                    [("retry-after", "60")],
-                    "E:too_many_attempts",
-                )
-                    .into_response();
+        let key = req
+            .extensions()
+            .get::<super::ClientIdentity>()
+            .ok_or("Client identity middleware missing")
+            .and_then(|client| {
+                client.network_hash(super::now_ms().div_euclid(crate::model::MS_PER_DAY))
+            });
+        match key {
+            Ok(key) => {
+                let allowed = RATES
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .get_or_insert_with(Rates::default)
+                    .admit(key, auth, Instant::now());
+                if !allowed {
+                    return (
+                        StatusCode::TOO_MANY_REQUESTS,
+                        [("retry-after", "60")],
+                        "E:too_many_attempts",
+                    )
+                        .into_response();
+                }
             }
+            Err(_) => return StatusCode::SERVICE_UNAVAILABLE.into_response(),
         }
     }
     next.run(req).await

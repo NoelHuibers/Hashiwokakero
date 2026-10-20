@@ -20,6 +20,7 @@ use std::io::Read as _;
 use std::sync::OnceLock;
 use std::time::Duration;
 
+use axum::Extension;
 use axum::extract::Multipart;
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Redirect, Response};
@@ -377,7 +378,11 @@ async fn submit_inner(
 
 /// `POST /dojo/benchmarks/submit`, a multipart form (works without JavaScript). Redirects back to the
 /// page, with the new benchmark or an error code.
-pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Response {
+pub async fn submit_handler(
+    Extension(client): Extension<crate::server::ClientIdentity>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> Response {
     let Ok(admission) = IMPORT_REQUESTS.try_acquire() else {
         return Redirect::to("/dojo/benchmarks?error=busy#submit").into_response();
     };
@@ -436,6 +441,11 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             .map_err(|_| BenchmarkError::Server)?
             .ok_or(BenchmarkError::SignIn)?;
         validate(&user, &form)?;
+        form.network = Some(
+            client
+                .network_hash(crate::model::day_of(now_ms()))
+                .map_err(|_| BenchmarkError::Server)?,
+        );
         let hash = match (form.formula.is_empty(), gbd.is_empty()) {
             (false, true) => None,
             (true, false) => {
@@ -445,8 +455,6 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             }
             _ => return Err(BenchmarkError::Source),
         };
-        form.network = crate::server::client_ip(&headers)
-            .map(|ip| crate::server::network_hash(&ip, crate::model::day_of(now_ms())));
         submit_inner(&conn, &user, form, hash, Some(admission)).await
     }
     .await;

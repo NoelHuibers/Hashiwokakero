@@ -55,16 +55,49 @@ pub fn bearer_ok(headers: &axum::http::HeaderMap, env: &str) -> bool {
         })
 }
 
-/// The client's address, as seen by the fly.io proxy (`None` locally).
-pub fn client_ip(headers: &axum::http::HeaderMap) -> Option<String> {
-    // Fly's proxy supplies this header. Arbitrary Forwarded/X-Forwarded-For headers from a
-    // direct client are not evidence of its address. Other deployments use the socket peer.
-    env_var("FLY_APP_NAME")?;
-    headers
-        .get("fly-client-ip")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.parse::<std::net::IpAddr>().ok())
-        .map(|ip| ip.to_string())
+/// Trusted transport identity resolved once, before admission and handler extraction.
+///
+/// A missing identity is explicit: it must never become a shared fictional network or a
+/// nullable network hash on an HTTP write protected by a network quota.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ClientIdentity(Option<std::net::IpAddr>);
+
+impl ClientIdentity {
+    fn resolve(
+        headers: &axum::http::HeaderMap,
+        peer: Option<std::net::SocketAddr>,
+        fly: bool,
+    ) -> Self {
+        // Preserve the deployment's Fly trust contract: only Fly supplies fly-client-ip.
+        // Direct deployments ignore every forwarding header, including fly-client-ip.
+        let forwarded = fly
+            .then(|| headers.get("fly-client-ip"))
+            .flatten()
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.parse().ok());
+        Self(forwarded.or_else(|| peer.map(|peer| peer.ip())))
+    }
+
+    pub(super) fn network_hash(self, day: i64) -> Result<String, &'static str> {
+        self.0
+            .map(|ip| network_hash(&ip.to_string(), day))
+            .ok_or("Client address unavailable")
+    }
+}
+
+/// Runs outside admission, so Axum handlers and Leptos' request Parts share this extension.
+async fn identify_client(
+    mut req: axum::extract::Request,
+    next: axum::middleware::Next,
+    fly: bool,
+) -> axum::response::Response {
+    let peer = req
+        .extensions()
+        .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
+        .map(|peer| peer.0);
+    let client = ClientIdentity::resolve(req.headers(), peer, fly);
+    req.extensions_mut().insert(client);
+    next.run(req).await
 }
 
 /// An address made unrecognisable: hashed with a secret and the day, so it only says "the same
@@ -187,9 +220,35 @@ mod configuration_tests {
         );
     }
     #[test]
-    fn arbitrary_forwarding_headers_are_not_trusted() {
+    fn transport_identity_respects_the_deployment_trust_boundary() {
         let mut headers = axum::http::HeaderMap::new();
-        headers.insert("x-forwarded-for", "192.0.2.1".parse().unwrap());
-        assert_eq!(client_ip(&headers), None);
+        headers.insert("forwarded", "for=192.0.2.1".parse().unwrap());
+        headers.insert("x-forwarded-for", "192.0.2.2".parse().unwrap());
+        headers.insert("fly-client-ip", "192.0.2.3".parse().unwrap());
+        let peer = "198.51.100.1:1234".parse().unwrap();
+        assert_eq!(
+            ClientIdentity::resolve(&headers, Some(peer), false).0,
+            Some(peer.ip())
+        );
+        assert_eq!(ClientIdentity::resolve(&headers, None, false).0, None);
+        assert_eq!(
+            ClientIdentity::resolve(&headers, Some(peer), true).0,
+            Some("192.0.2.3".parse().unwrap())
+        );
+        for value in [None, Some("invalid"), Some("192.0.2.3, 192.0.2.4")] {
+            headers.remove("fly-client-ip");
+            if let Some(value) = value {
+                headers.insert("fly-client-ip", value.parse().unwrap());
+            }
+            assert_eq!(
+                ClientIdentity::resolve(&headers, Some(peer), true).0,
+                Some(peer.ip())
+            );
+            assert!(
+                ClientIdentity::resolve(&headers, None, true)
+                    .network_hash(1)
+                    .is_err()
+            );
+        }
     }
 }

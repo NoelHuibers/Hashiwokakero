@@ -132,6 +132,7 @@ async fn conn() -> Connection {
 /// refuses concurrent writes from separate connections instead of waiting.
 struct Server {
     url: String,
+    fly: bool,
     _turn: MutexGuard<'static, ()>,
 }
 
@@ -142,6 +143,18 @@ impl Server {
 
     /// With changed settings, as cargo-leptos or the LEPTOS_* variables would make them.
     async fn with(change: impl FnOnce(&mut LeptosOptions)) -> Self {
+        Self::with_transport(change, true, true).await
+    }
+
+    async fn direct(connect_info: bool) -> Self {
+        Self::with_transport(|_| {}, false, connect_info).await
+    }
+
+    async fn with_transport(
+        change: impl FnOnce(&mut LeptosOptions),
+        fly: bool,
+        connect_info: bool,
+    ) -> Self {
         static TURN: Mutex<()> = Mutex::const_new(());
         let turn = TURN.lock().await;
         let site = setup().await;
@@ -157,9 +170,23 @@ impl Server {
         change(&mut options);
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
-        let app = super::router(options, crate::app::shell);
-        tokio::spawn(async move { axum::serve(listener, app.into_make_service()).await });
-        Self { url, _turn: turn }
+        let app = super::router_with_client_source(options, crate::app::shell, fly);
+        tokio::spawn(async move {
+            if connect_info {
+                axum::serve(
+                    listener,
+                    app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+                )
+                .await
+            } else {
+                axum::serve(listener, app.into_make_service()).await
+            }
+        });
+        Self {
+            url,
+            fly,
+            _turn: turn,
+        }
     }
 
     /// A new browser, without cookies.
@@ -182,9 +209,23 @@ impl Server {
     }
 
     fn browser_sending(&self, headers: HeaderMap) -> Browser {
+        self.browser_at(headers, None)
+    }
+
+    fn browser_at(&self, mut headers: HeaderMap, peer: Option<std::net::IpAddr>) -> Browser {
+        // Default HTTP journeys model independent Fly clients. Direct-deployment regressions
+        // instead bind real loopback peers, and tests without ConnectInfo remain explicit.
+        if self.fly && !headers.contains_key("fly-client-ip") {
+            static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(1);
+            let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let ip =
+                std::net::Ipv4Addr::from(u32::from(std::net::Ipv4Addr::new(198, 18, 0, 0)) + n);
+            headers.insert("fly-client-ip", ip.to_string().parse().unwrap());
+        }
         let jar = Arc::new(reqwest::cookie::Jar::default());
         let http = reqwest::Client::builder()
             .default_headers(headers)
+            .local_address(peer)
             .cookie_provider(jar.clone())
             // Redirects are part of what is tested
             .redirect(reqwest::redirect::Policy::none())

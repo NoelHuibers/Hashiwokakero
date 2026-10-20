@@ -780,3 +780,142 @@ async fn benchmark_uploads_share_the_network_budget() {
     assert_status(&res, StatusCode::TOO_MANY_REQUESTS);
     assert_eq!(res.headers()["retry-after"], "60");
 }
+
+/// Both multipart handlers consume the same transport identity as the Leptos contact API.
+/// Account changes and forged proxy/payload addresses cannot reset their network budgets.
+#[tokio::test]
+async fn direct_uploads_enforce_cross_account_network_quotas() {
+    let server = Server::direct(true).await;
+    let conn = conn().await;
+    let mut browsers = Vec::new();
+    for (name, peer, fake) in [
+        ("direct_writer", "127.0.0.90", "192.0.2.90"),
+        ("direct_blocked", "127.0.0.90", "192.0.2.91"),
+        ("direct_other", "127.0.0.91", "192.0.2.90"),
+    ] {
+        let mut headers = HeaderMap::new();
+        headers.insert("fly-client-ip", fake.parse().unwrap());
+        headers.insert("x-forwarded-for", fake.parse().unwrap());
+        headers.insert("forwarded", format!("for={fake}").parse().unwrap());
+        let browser = server.browser_at(headers, Some(peer.parse().unwrap()));
+        browser
+            .call(crate::api::Register {
+                username: name.into(),
+                password: PASSWORD.into(),
+            })
+            .await
+            .unwrap();
+        conn.execute(
+            "UPDATE users SET created_at = 0 WHERE username = ?1",
+            params![name],
+        )
+        .await
+        .unwrap();
+        browsers.push(browser);
+    }
+    let formula = |n| {
+        use std::fmt::Write as _;
+        let mut text = format!("p cnf {n} {n}\n");
+        for v in 1..=n {
+            let _ = writeln!(text, "{v} 0");
+        }
+        text
+    };
+    for n in 0..3 {
+        let location = submit(
+            &browsers[0],
+            upload("Direct solver", module(90 + n)).text("network", format!("forged-{n}")),
+        )
+        .await;
+        assert!(location.starts_with("/dojo/"), "{location}");
+        assert!(!location.contains("error="), "{location}");
+        let location = submit_benchmark(
+            &browsers[0],
+            benchmark("direct", &formula(20 + n)).text("network", format!("forged-{n}")),
+        )
+        .await;
+        assert!(
+            location.starts_with("/dojo/benchmarks?submitted="),
+            "{location}"
+        );
+    }
+    assert_eq!(
+        submit(&browsers[1], upload("Bypass", module(93))).await,
+        "/dojo?error=network_limit#submit"
+    );
+    assert_eq!(
+        submit_benchmark(&browsers[1], benchmark("direct", &formula(23))).await,
+        "/dojo/benchmarks?error=network_limit#submit"
+    );
+    // A fresh peer keeps its own budget even when it claims the first peer's proxy address.
+    assert!(
+        !submit(&browsers[2], upload("Other peer", module(93)))
+            .await
+            .contains("error=")
+    );
+    assert!(
+        submit_benchmark(&browsers[2], benchmark("direct", &formula(23)))
+            .await
+            .starts_with("/dojo/benchmarks?submitted=")
+    );
+    // The per-account quota still applies, independently of the transport budget.
+    assert_eq!(
+        submit(&browsers[0], upload("Account limit", module(94))).await,
+        "/dojo?error=limit#submit"
+    );
+    assert_eq!(
+        submit_benchmark(&browsers[0], benchmark("direct", &formula(24))).await,
+        "/dojo/benchmarks?error=limit#submit"
+    );
+    let day = daily::today();
+    for table in ["dojo_submissions", "dojo_benchmarks"] {
+        let mut rows = conn.query(&format!("SELECT ip_hash, COUNT(*) FROM {table} WHERE ip_hash IN (?1, ?2) GROUP BY ip_hash"),
+            params![crate::server::network_hash("127.0.0.90", day), crate::server::network_hash("127.0.0.91", day)]).await.unwrap();
+        let mut counts = std::collections::HashMap::new();
+        while let Some(row) = rows.next().await.unwrap() {
+            counts.insert(row.get::<String>(0).unwrap(), row.get::<i64>(1).unwrap());
+        }
+        assert_eq!(counts.len(), 2, "{table}");
+        assert_eq!(
+            counts[&crate::server::network_hash("127.0.0.90", day)],
+            3,
+            "{table}"
+        );
+        assert_eq!(
+            counts[&crate::server::network_hash("127.0.0.91", day)],
+            1,
+            "{table}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn direct_upload_admission_uses_the_same_peer_and_ignores_spoofed_headers() {
+    let server = Server::direct(true).await;
+    let browser = server.browser_at(HeaderMap::new(), Some("127.0.0.92".parse().unwrap()));
+    for n in 0..33 {
+        let fake = format!("192.0.2.{}", n + 1);
+        let res = browser
+            .post("/dojo/benchmarks/submit")
+            .header("fly-client-ip", &fake)
+            .header("x-forwarded-for", &fake)
+            .header("forwarded", format!("for={fake}"))
+            .body("not a form")
+            .send()
+            .await
+            .unwrap();
+        if n < 32 {
+            assert_ne!(res.status(), StatusCode::TOO_MANY_REQUESTS);
+        } else {
+            assert_status(&res, StatusCode::TOO_MANY_REQUESTS);
+        }
+    }
+    let res = server
+        .browser_at(HeaderMap::new(), Some("127.0.0.93".parse().unwrap()))
+        .post("/dojo/benchmarks/submit")
+        .body("not a form")
+        .send()
+        .await
+        .unwrap();
+    assert_ne!(res.status(), StatusCode::TOO_MANY_REQUESTS);
+}
