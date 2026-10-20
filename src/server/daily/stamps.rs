@@ -39,6 +39,7 @@ async fn backfill_runs(conn: &Connection, user: i64) -> Result<(), ServerFnError
         };
         runs.push((day, summarize(&puzzle, &bridges, &log)));
     }
+    let changed = !runs.is_empty();
     for (day, run) in runs {
         conn.execute(
             "UPDATE attempts SET run = ?3 WHERE user_id = ?1 AND day = ?2",
@@ -47,12 +48,14 @@ async fn backfill_runs(conn: &Connection, user: i64) -> Result<(), ServerFnError
         .await
         .map_err(db_err)?;
     }
+    if changed {
+        super::stats::invalidate();
+    }
     Ok(())
 }
 
 /// Everything the stamps of a player depend on. `kept` are the stored stamps that stay.
 async fn record(conn: &Connection, user: i64, kept: Vec<Stamp>) -> Result<Record, ServerFnError> {
-    backfill_runs(conn, user).await?;
     // The gaps to the times just above and below, before only the player's rows are left
     let mut rows = conn
         .query(
@@ -170,10 +173,12 @@ pub async fn sync(
     user: i64,
     announce: bool,
 ) -> Result<(Vec<StampProgress>, Vec<Stamp>), ServerFnError> {
+    backfill_runs(conn, user).await?;
     let mut stored = stored(conn, user).await?;
     let kept = stored.keys().copied().filter(|s| s.sticky()).collect();
     let progress = record(conn, user, kept).await?.progress(today());
     let now = now_ms();
+    let mut changed = false;
     for &(stamp, done, target) in &progress {
         let earned = done >= target;
         match (earned, stored.contains_key(&stamp)) {
@@ -185,6 +190,7 @@ pub async fn sync(
                 .await
                 .map_err(db_err)?;
                 stored.insert(stamp, (now, false));
+                changed = true;
             }
             (false, true) => {
                 conn.execute(
@@ -194,6 +200,7 @@ pub async fn sync(
                 .await
                 .map_err(db_err)?;
                 stored.remove(&stamp);
+                changed = true;
             }
             _ => {}
         }
@@ -224,7 +231,32 @@ pub async fn sync(
             holders: 0,
         })
         .collect();
+    if changed {
+        super::stats::invalidate();
+    }
     Ok((book, new))
+}
+
+/// Reading a profile never awards/removes stamps or backfills historical rows. Reconciliation
+/// belongs to attempt changes and the background worker, rather than arbitrary visitors.
+pub(super) async fn book(
+    conn: &Connection,
+    user: i64,
+) -> Result<Vec<StampProgress>, ServerFnError> {
+    let stored = stored(conn, user).await?;
+    let kept = stored.keys().copied().filter(|s| s.sticky()).collect();
+    Ok(record(conn, user, kept)
+        .await?
+        .progress(today())
+        .into_iter()
+        .map(|(stamp, progress, target)| StampProgress {
+            stamp,
+            progress,
+            target,
+            earned_at: stored.get(&stamp).map(|&(at, _)| at),
+            holders: 0,
+        })
+        .collect())
 }
 
 /// How many players have each stamp, and how many have any (everyone who solved a daily or got
@@ -260,7 +292,9 @@ pub(super) async fn sync_recent(conn: &Connection) -> Result<usize, ServerFnErro
             "SELECT DISTINCT user_id FROM attempts a
              WHERE a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL
                AND (a.day >= ?1 - 2 OR NOT EXISTS (SELECT 1 FROM stamps s WHERE s.user_id = a.user_id))
-               AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = a.user_id AND u.deleted_at IS NOT NULL)",
+               AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = a.user_id AND u.deleted_at IS NOT NULL)
+             UNION SELECT d.user_id FROM dojo_submissions d JOIN users u ON u.id = d.user_id
+             WHERE d.state = 'done' AND u.deleted_at IS NULL",
             params![today()],
         )
         .await
@@ -347,5 +381,6 @@ pub async fn show(conn: &Connection, user: i64, stamp: Option<Stamp>) -> Result<
     )
     .await
     .map_err(db_err)?;
+    super::stats::invalidate();
     Ok(())
 }

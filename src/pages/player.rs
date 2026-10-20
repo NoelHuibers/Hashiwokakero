@@ -134,8 +134,17 @@ pub fn PlayerPage() -> impl IntoView {
         };
         profile.set(None);
         spawn_local(async move {
-            match load_player(id).await {
-                Ok(p) => profile.set(Some(p)),
+            let result = load_player(id).await;
+            let current = params
+                .try_with_untracked(|map| map.get("id").and_then(|v| v.parse::<i64>().ok()))
+                .flatten();
+            if current != Some(id) {
+                return;
+            }
+            match result {
+                Ok(p) => {
+                    profile.try_set(Some(p));
+                }
                 Err(e) => error_toast(e),
             }
         });

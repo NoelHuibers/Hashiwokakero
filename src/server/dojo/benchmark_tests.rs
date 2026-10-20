@@ -678,3 +678,133 @@ async fn seasons_draw_from_the_pool() {
         .unwrap();
     assert_eq!(state(&conn, kept).await.0, "rejected");
 }
+
+async fn token_and_attempts(conn: &Connection, id: i64) -> (Option<String>, i64) {
+    let mut rows = conn
+        .query(
+            "SELECT job_token, attempts FROM dojo_benchmarks WHERE id = ?1",
+            params![id],
+        )
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    (row.get(0).unwrap(), row.get(1).unwrap())
+}
+
+/// Verdicts of a check that is over (decided, requeued, or sent again with another token)
+/// change nothing: the token is compared in the same statement that writes. Requeues and
+/// failures take the token away.
+#[tokio::test]
+async fn verdicts_cannot_change_a_decided_or_replaced_check() {
+    let conn = test_db("verdict-lifecycle").await;
+    let ada = user(&conn, "ada", true, 0).await;
+    let id = benchmarks::submit(&conn, &ada, form("x", &formula(3)), None)
+        .await
+        .unwrap();
+    let at_worker = |token: &'static str| {
+        let conn = conn.clone();
+        async move {
+            conn.execute(
+                "UPDATE dojo_benchmarks SET state = 'checking', job_token = ?2 WHERE id = ?1",
+                params![id, token],
+            )
+            .await
+            .unwrap();
+        }
+    };
+    let report = |verdict| BenchmarkReport { id, verdict };
+    let failed = || {
+        report(Verdict::Failed {
+            message: "x".into(),
+        })
+    };
+    at_worker("first").await;
+    assert!(
+        !benchmarks::apply_for_check(&conn, &report(verified(Answer::Sat)), Some("other"))
+            .await
+            .unwrap()
+    );
+    assert!(
+        benchmarks::apply_for_check(&conn, &failed(), Some("first"))
+            .await
+            .unwrap()
+    );
+    assert_eq!(state(&conn, id).await.0, "queued");
+    assert_eq!(token_and_attempts(&conn, id).await.0, None);
+    // Sent again: the first check's late verdict is refused
+    at_worker("second").await;
+    assert!(
+        !benchmarks::apply_for_check(&conn, &report(verified(Answer::Sat)), Some("first"))
+            .await
+            .unwrap()
+    );
+    assert!(
+        benchmarks::apply_for_check(&conn, &report(verified(Answer::Sat)), Some("second"))
+            .await
+            .unwrap()
+    );
+    assert_eq!(state(&conn, id).await, ("verified".into(), None));
+    assert!(
+        !benchmarks::apply_for_check(&conn, &failed(), Some("second"))
+            .await
+            .unwrap()
+    );
+    // A moderator's requeue takes the token away too
+    at_worker("third").await;
+    benchmark_action(&conn, id, BenchmarkAction::Requeue)
+        .await
+        .unwrap();
+    assert_eq!(token_and_attempts(&conn, id).await, (None, 0));
+}
+
+/// The check is claimed before it is sent: a worker that reports its verdict before it even
+/// answered keeps it. A worker that doesn't take the check gives it back without using up an
+/// attempt.
+#[tokio::test]
+async fn a_verdict_before_acceptance_is_kept() {
+    use axum::extract::Query;
+    use std::collections::HashMap;
+    let conn = test_db("fast-verdict").await;
+    let ada = user(&conn, "ada", true, 0).await;
+    let id = benchmarks::submit(&conn, &ada, form("x", &formula(4)), None)
+        .await
+        .unwrap();
+    let callback = conn.clone();
+    let app = axum::Router::new().route(
+        "/benchmarks",
+        axum::routing::post(move |Query(q): Query<HashMap<String, String>>| {
+            let conn = callback.clone();
+            async move {
+                let report = BenchmarkReport {
+                    id,
+                    verdict: verified(Answer::Sat),
+                };
+                assert!(
+                    benchmarks::apply_for_check(&conn, &report, Some(&q["report_token"]))
+                        .await
+                        .unwrap()
+                );
+                StatusCode::ACCEPTED
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let client = reqwest::Client::new();
+    benchmarks::dispatch_to(&conn, &client, &url, "secret")
+        .await
+        .unwrap();
+    assert_eq!(state(&conn, id).await, ("verified".into(), None));
+
+    let other = benchmarks::submit(&conn, &ada, form("x", &formula(5)), None)
+        .await
+        .unwrap();
+    assert!(
+        benchmarks::dispatch_to(&conn, &client, "http://127.0.0.1:1", "secret")
+            .await
+            .is_err()
+    );
+    assert_eq!(state(&conn, other).await.0, "queued");
+    assert_eq!(token_and_attempts(&conn, other).await, (None, 0));
+}

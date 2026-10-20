@@ -76,10 +76,12 @@ pub async fn update_admin_benchmark(id: i64, action: BenchmarkAction) -> Result<
 
 /// Messages from the contact form, newest first.
 #[server(input = Json, client = HashiClient)]
-pub async fn admin_messages() -> Result<Vec<ContactMessage>, ServerFnError> {
+pub async fn admin_messages(
+    #[server(default)] before: Option<i64>,
+) -> Result<Vec<ContactMessage>, ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
-    contact::list(&conn).await
+    contact::page(&conn, before).await
 }
 
 /// Deletes a contact message once it is answered.

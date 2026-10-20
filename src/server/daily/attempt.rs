@@ -2,7 +2,7 @@
 
 use common::{Board, Puzzle};
 use leptos::prelude::ServerFnError;
-use libsql::{Connection, params};
+use libsql::{Connection, TransactionBehavior, params};
 
 use super::stamps::sync;
 use super::{from_json, get_or_create, json, load, today};
@@ -104,27 +104,12 @@ pub async fn start(
     let device = device
         .filter(|d| (8..=64).contains(&d.len()))
         .map(|d| crate::server::keyed_hash("device", day, d));
-    let seen = if let Some(device) = &device {
-        let mut rows = conn
-            .query(
-                "SELECT 1 FROM attempts WHERE day = ?1 AND device = ?2 AND user_id != ?3 LIMIT 1",
-                params![day, device.clone(), user],
-            )
-            .await
-            .map_err(db_err)?;
-        rows.next().await.map_err(db_err)?.is_some()
-    } else {
-        false
-    };
     conn.execute(
-        "INSERT OR IGNORE INTO attempts (user_id, day, started_at, device, flag) VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![
-            user,
-            day,
-            now_ms(),
-            device,
-            seen.then(|| Flag::SecondAccount.id())
-        ],
+        "INSERT OR IGNORE INTO attempts (user_id, day, started_at, device, flag)
+         SELECT ?1, ?2, ?3, ?4, CASE WHEN ?4 IS NOT NULL AND EXISTS (
+             SELECT 1 FROM attempts WHERE day = ?2 AND device = ?4 AND user_id != ?1
+         ) THEN ?5 ELSE NULL END",
+        params![user, day, now_ms(), device, Flag::SecondAccount.id()],
     )
     .await
     .map_err(db_err)?;
@@ -154,19 +139,24 @@ pub async fn hint(
     day: i64,
     bridges: Vec<u8>,
 ) -> Result<Option<(usize, u8)>, ServerFnError> {
-    running(conn, user, day).await?;
-    let daily = get_or_create(conn, day).await?;
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    running(&tx, user, day).await?;
+    let daily = get_or_create(&tx, day).await?;
     let board = Board::new(daily.puzzle);
     check_bridges(&board, &bridges)?;
     let hint = pick_hint(&board, &bridges, &daily.solution);
     if hint.is_some() {
-        conn.execute(
+        tx.execute(
             "UPDATE attempts SET hints = hints + 1 WHERE user_id = ?1 AND day = ?2",
             params![user, day],
         )
         .await
         .map_err(db_err)?;
     }
+    tx.commit().await.map_err(db_err)?;
     Ok(hint)
 }
 
@@ -177,28 +167,38 @@ pub async fn check(
     day: i64,
     bridges: Vec<u8>,
 ) -> Result<Vec<usize>, ServerFnError> {
-    running(conn, user, day).await?;
-    let daily = get_or_create(conn, day).await?;
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    running(&tx, user, day).await?;
+    let daily = get_or_create(&tx, day).await?;
     check_bridges(&Board::new(daily.puzzle), &bridges)?;
-    conn.execute(
+    tx.execute(
         "UPDATE attempts SET checks = checks + 1 WHERE user_id = ?1 AND day = ?2",
         params![user, day],
     )
     .await
     .map_err(db_err)?;
+    tx.commit().await.map_err(db_err)?;
     Ok(wrong_edges(&bridges, &daily.solution))
 }
 
 /// Gives up: the solution, the attempt won't be ranked.
 pub async fn reveal(conn: &Connection, user: i64, day: i64) -> Result<Vec<u8>, ServerFnError> {
-    running(conn, user, day).await?;
-    let daily = get_or_create(conn, day).await?;
-    conn.execute(
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    running(&tx, user, day).await?;
+    let daily = get_or_create(&tx, day).await?;
+    tx.execute(
         "UPDATE attempts SET revealed = 1, bridges = ?3 WHERE user_id = ?1 AND day = ?2",
         params![user, day, json(&daily.solution)?],
     )
     .await
     .map_err(db_err)?;
+    tx.commit().await.map_err(db_err)?;
     Ok(daily.solution)
 }
 
@@ -235,8 +235,12 @@ pub async fn submit(
     log: Vec<MoveEvent>,
     utc_offset: Option<i32>,
 ) -> Result<SubmitResult, ServerFnError> {
-    let attempt = running(conn, user, day).await?;
-    let daily = get_or_create(conn, day).await?;
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    let attempt = running(&tx, user, day).await?;
+    let daily = get_or_create(&tx, day).await?;
     let board = Board::new(daily.puzzle);
     check_bridges(&board, &bridges)?;
     if !board.check(&bridges).solved {
@@ -259,7 +263,7 @@ pub async fn submit(
     });
     let run = summarize(&board.puzzle, &bridges, &log);
     let daypart = utc_offset.and_then(|offset| Daypart::at(finished_at, offset));
-    conn.execute(
+    let changed = tx.execute(
         "UPDATE attempts SET finished_at = ?3, time_ms = ?4, moves = ?5, bridges = ?6, log = ?7, flag = ?8,
             run = ?9, daypart = ?10
          WHERE user_id = ?1 AND day = ?2 AND finished_at IS NULL AND revealed = 0",
@@ -278,6 +282,11 @@ pub async fn submit(
     )
     .await
     .map_err(db_err)?;
+    if changed != 1 {
+        return Err(ApiError::AlreadyFinished.into());
+    }
+    tx.commit().await.map_err(db_err)?;
+    super::stats::invalidate();
     Ok(SubmitResult {
         time_ms,
         rank: if flag.is_some() {
@@ -333,6 +342,7 @@ pub async fn set_flag(
         )
         .await
         .map_err(db_err)?;
+    super::stats::invalidate();
     // A stamp the result earned goes with it
     sync(conn, user, false).await?;
     Ok(changed > 0)

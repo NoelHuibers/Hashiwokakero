@@ -19,6 +19,9 @@ use dojo::proof::{TempDir, Tools};
 use dojo::{Answer, Family, RULES_VERSION};
 
 /// A fresh directory under cargo's temporary directory for tests, removed at the end.
+/// The worker's token: it refuses one shorter than 32 characters
+const TOKEN: &str = "test-token-of-at-least-32-characters";
+
 fn scratch(name: &str) -> TempDir {
     TempDir::new(Path::new(env!("CARGO_TARGET_TMPDIR")), name).expect("a scratch directory")
 }
@@ -231,6 +234,13 @@ fn usage_and_bad_arguments() {
     let out = dojo(d)
         .arg("serve")
         .env("DOJO_TOKEN", "secret")
+        .output()
+        .unwrap();
+    assert!(!out.status.success());
+    assert!(stderr(&out).contains("DOJO_TOKEN must contain at least 32 characters"));
+    let out = dojo(d)
+        .arg("serve")
+        .env("DOJO_TOKEN", TOKEN)
         .env_remove("DOJO_CHECKER")
         .env_remove("DOJO_DRAT_TRIM")
         .env_remove("DOJO_CAKE_LPR")
@@ -793,7 +803,7 @@ fn serve_verifies_benchmarks_and_exits_when_idle() {
     let mut worker = Worker(
         dojo(d)
             .arg("serve")
-            .env("DOJO_TOKEN", "secret")
+            .env("DOJO_TOKEN", TOKEN)
             .env("APP_URL", format!("http://127.0.0.1:{site}/"))
             .env("PORT", port.to_string())
             .env("DOJO_IDLE_EXIT_SECS", "0")
@@ -824,21 +834,18 @@ fn serve_verifies_benchmarks_and_exits_when_idle() {
     };
     assert_eq!(health, (200, "ok".into()));
     let pool = format!("/pools/{}", "a".repeat(64));
-    assert_eq!(http(port, "GET", &pool, "secret", b"").unwrap().0, 404);
+    assert_eq!(http(port, "GET", &pool, TOKEN, b"").unwrap().0, 404);
     assert_eq!(http(port, "GET", &pool, "guess", b"").unwrap().0, 401);
     let job = format!(
         "/jobs?id=1&season=1&seed=s&report_token=t&rules={}",
         RULES_VERSION + 1
     );
-    assert_eq!(http(port, "POST", &job, "secret", b"\0asm").unwrap().0, 409);
+    assert_eq!(http(port, "POST", &job, TOKEN, b"\0asm").unwrap().0, 409);
 
     // MiniSat solves this one at once: too easy for a hidden set
     let check = format!("/benchmarks?id=5&report_token=check-5&rules={RULES_VERSION}");
     let formula = b"p cnf 2 2\n1 2 0\n-1 0\n";
-    assert_eq!(
-        http(port, "POST", &check, "secret", formula).unwrap().0,
-        202
-    );
+    assert_eq!(http(port, "POST", &check, TOKEN, formula).unwrap().0, 202);
     let (line, auth, body) = reports
         .recv_timeout(Duration::from_secs(120))
         .expect("a verdict in time");

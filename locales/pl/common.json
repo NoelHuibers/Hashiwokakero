@@ -128,7 +128,11 @@
     "zoom_hint": "Przesuń palcem, by się poruszać, stuknij, by budować",
     "cells_small": "Za małe pola?",
     "pinch": "Uszczypnij, aby powiększyć",
-    "zoom_out": "Pomniejsz"
+    "zoom_out": "Pomniejsz",
+    "keyboard_play": "←/→ wybiera most. Enter/Spacja: +1; Shift+Enter: −1. Wyspy pokazują współrzędne oraz obecne/wymagane mosty.",
+    "keyboard_edit": "Strzałki wybierają pole. 1–8 ustawia wyspę; 0/Delete ją usuwa.",
+    "edge": "Most {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Pole ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Zagubieni na morzu",

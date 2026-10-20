@@ -27,7 +27,7 @@ use dojo::community::{
 };
 use leptos::prelude::ServerFnError;
 use libsql::params::IntoParams;
-use libsql::{Connection, params};
+use libsql::{Connection, TransactionBehavior, params};
 
 use super::{DESCRIPTION_MAX, MAX_ATTEMPTS, MIN_ACCOUNT_AGE_MS, PER_DAY, STALE_MS, test_seed};
 use crate::model::{
@@ -225,38 +225,6 @@ pub(super) async fn submit(
     if !form.license {
         return Err(BenchmarkError::License);
     }
-    let today = one(
-        conn,
-        "SELECT COUNT(*) FROM dojo_benchmarks WHERE user_id = ?1 AND created_at > ?2",
-        params![user.id, now_ms() - MS_PER_DAY],
-    )
-    .await
-    .map_err(server)?;
-    if today >= i64::from(PER_DAY) {
-        return Err(BenchmarkError::Limit);
-    }
-    if let Some(network) = &form.network {
-        let from_network = one(
-            conn,
-            "SELECT COUNT(*) FROM dojo_benchmarks WHERE ip_hash = ?1",
-            params![network.clone()],
-        )
-        .await
-        .map_err(server)?;
-        if from_network >= i64::from(PER_DAY) {
-            return Err(BenchmarkError::NetworkLimit);
-        }
-    }
-    let queued = one(
-        conn,
-        "SELECT COUNT(*) FROM dojo_benchmarks WHERE state IN ('queued', 'checking') AND ?1 = ?1",
-        params![0],
-    )
-    .await
-    .map_err(server)?;
-    if queued >= MAX_QUEUED {
-        return Err(BenchmarkError::Busy);
-    }
     let text = decompress(&form.formula)?;
     let formula = Formula::parse(&text).map_err(|e| match e {
         FormulaError::TooLarge => BenchmarkError::TooLarge,
@@ -267,8 +235,45 @@ pub(super) async fn submit(
         return Err(BenchmarkError::Gbd);
     }
     let shape = community::shape_hash(&formula);
+    // Quotas, duplicates and the insert in one write transaction, across replicas too
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(server)?;
+    let today = one(
+        &tx,
+        "SELECT COUNT(*) FROM dojo_benchmarks WHERE user_id = ?1 AND created_at > ?2",
+        params![user.id, now_ms() - MS_PER_DAY],
+    )
+    .await
+    .map_err(server)?;
+    if today >= i64::from(PER_DAY) {
+        return Err(BenchmarkError::Limit);
+    }
+    if let Some(network) = &form.network {
+        let from_network = one(
+            &tx,
+            "SELECT COUNT(*) FROM dojo_benchmarks WHERE ip_hash = ?1",
+            params![network.clone()],
+        )
+        .await
+        .map_err(server)?;
+        if from_network >= i64::from(PER_DAY) {
+            return Err(BenchmarkError::NetworkLimit);
+        }
+    }
+    let queued = one(
+        &tx,
+        "SELECT COUNT(*) FROM dojo_benchmarks WHERE state IN ('queued', 'checking') AND ?1 = ?1",
+        params![0],
+    )
+    .await
+    .map_err(server)?;
+    if queued >= MAX_QUEUED {
+        return Err(BenchmarkError::Busy);
+    }
     let known = one(
-        conn,
+        &tx,
         "SELECT COUNT(*) FROM dojo_benchmarks WHERE hash = ?1 OR shape = ?2",
         params![hash.clone(), shape.clone()],
     )
@@ -278,7 +283,7 @@ pub(super) async fn submit(
         return Err(BenchmarkError::Duplicate);
     }
     let now = now_ms();
-    conn.execute(
+    tx.execute(
         "INSERT INTO dojo_benchmarks (user_id, family, description, claimed, from_gbd, cnf, hash, shape, vars,
             clauses, ip_hash, state, license, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'queued', ?12, ?13, ?13)",
@@ -300,7 +305,8 @@ pub(super) async fn submit(
     )
     .await
     .map_err(server)?;
-    let id = conn.last_insert_rowid();
+    let id = tx.last_insert_rowid();
+    tx.commit().await.map_err(server)?;
     tokio::spawn(async {
         let _ = super::dispatch().await;
     });
@@ -526,13 +532,25 @@ pub async fn page(conn: &Connection, user: Option<&User>) -> Result<DojoBenchmar
     })
 }
 
-/// Applies the worker's verdict on a benchmark being checked.
+/// Applies the worker's verdict on a benchmark being checked, whatever its token.
+#[cfg(test)]
 pub(super) async fn apply(
     conn: &Connection,
     report: &BenchmarkReport,
 ) -> Result<(), libsql::Error> {
+    apply_for_check(conn, report, None).await.map(|_| ())
+}
+
+/// [`apply`] for the check with `token`, compared in the same statement that writes: a check
+/// requeued or sent again between authorization and this write keeps its own verdict. Whether
+/// the verdict was taken.
+pub(super) async fn apply_for_check(
+    conn: &Connection,
+    report: &BenchmarkReport,
+    token: Option<&str>,
+) -> Result<bool, libsql::Error> {
     let now = now_ms();
-    match &report.verdict {
+    let changed = match &report.verdict {
         Verdict::Verified {
             answer,
             model,
@@ -544,7 +562,7 @@ pub(super) async fn apply(
                     state = CASE WHEN claimed IS NOT NULL AND claimed != ?2 THEN 'refused' ELSE 'verified' END,
                     reason = CASE WHEN claimed IS NOT NULL AND claimed != ?2 THEN 'wrong_claim' ELSE NULL END,
                     answer = ?2, model = ?3, solve_ms = ?4, job_token = NULL, updated_at = ?5
-                 WHERE id = ?1 AND state = 'checking'",
+                 WHERE id = ?1 AND state = 'checking' AND (?6 IS NULL OR job_token = ?6)",
                 params![
                     report.id,
                     answer.id(),
@@ -552,31 +570,33 @@ pub(super) async fn apply(
                         .as_ref()
                         .map(|m| serde_json::to_string(m).unwrap_or_default()),
                     i64::try_from(*solve_ms).unwrap_or(i64::MAX),
-                    now
+                    now,
+                    token
                 ],
             )
-            .await?;
+            .await?
         }
         Verdict::Refused { reason } => {
             conn.execute(
                 "UPDATE dojo_benchmarks SET state = 'refused', reason = ?2, job_token = NULL, updated_at = ?3
-                 WHERE id = ?1 AND state = 'checking'",
-                params![report.id, reason.id(), now],
+                 WHERE id = ?1 AND state = 'checking' AND (?4 IS NULL OR job_token = ?4)",
+                params![report.id, reason.id(), now, token],
             )
-            .await?;
+            .await?
         }
         Verdict::Failed { message } => {
             eprintln!("dojo benchmark #{}: worker failed: {message}", report.id);
             conn.execute(
                 "UPDATE dojo_benchmarks SET state = CASE WHEN attempts >= ?2 THEN 'refused' ELSE 'queued' END,
-                    reason = CASE WHEN attempts >= ?2 THEN 'failed' ELSE NULL END, updated_at = ?3
-                 WHERE id = ?1 AND state = 'checking'",
-                params![report.id, MAX_ATTEMPTS, now],
+                    reason = CASE WHEN attempts >= ?2 THEN 'failed' ELSE NULL END, job_token = NULL,
+                    updated_at = ?3
+                 WHERE id = ?1 AND state = 'checking' AND (?4 IS NULL OR job_token = ?4)",
+                params![report.id, MAX_ATTEMPTS, now, token],
             )
-            .await?;
+            .await?
         }
-    }
-    Ok(())
+    };
+    Ok(changed > 0)
 }
 
 /// Whether the request carries the token of the check of benchmark `id`.
@@ -628,8 +648,14 @@ pub async fn report_handler(
         Ok(false) => return StatusCode::UNAUTHORIZED,
         Err(status) => return status,
     }
-    match apply(&conn, &report).await {
-        Ok(()) => StatusCode::NO_CONTENT,
+    let given = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "));
+    match apply_for_check(&conn, &report, given).await {
+        Ok(true) => StatusCode::NO_CONTENT,
+        // Not at the worker any more (requeued, sent again, decided): the worker stops retrying
+        Ok(false) => StatusCode::CONFLICT,
         Err(e) => {
             eprintln!("dojo benchmark report: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
@@ -641,7 +667,8 @@ pub async fn report_handler(
 pub(super) async fn housekeeping(conn: &Connection, now: i64) -> Result<(), String> {
     conn.execute(
         "UPDATE dojo_benchmarks SET state = CASE WHEN attempts >= ?1 THEN 'refused' ELSE 'queued' END,
-            reason = CASE WHEN attempts >= ?1 THEN 'failed' ELSE NULL END, updated_at = ?2
+            reason = CASE WHEN attempts >= ?1 THEN 'failed' ELSE NULL END, job_token = NULL,
+            updated_at = ?2
          WHERE state = 'checking' AND updated_at < ?3",
         params![MAX_ATTEMPTS, now, now - STALE_MS],
     )
@@ -658,20 +685,19 @@ pub(super) async fn dispatch_to(
     token: &str,
 ) -> Result<(), String> {
     let err = |e: libsql::Error| e.to_string();
-    let checking = one(
-        conn,
-        "SELECT COUNT(*) FROM dojo_benchmarks WHERE state = 'checking' AND ?1 = ?1",
-        params![0],
-    )
-    .await
-    .map_err(err)?;
-    if checking > 0 {
-        return Ok(());
-    }
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
+    let report_token = hex(&bytes);
+    // One statement claims the next one if none is at the worker, before it is sent: a verdict
+    // can't come before the claim, and replicas can't both send one
     let mut rows = conn
         .query(
-            "SELECT id, cnf FROM dojo_benchmarks WHERE state = 'queued' ORDER BY created_at, id LIMIT 1",
-            (),
+            "UPDATE dojo_benchmarks SET state = 'checking', job_token = ?1, attempts = attempts + 1,
+                updated_at = ?2
+             WHERE id = (SELECT id FROM dojo_benchmarks WHERE state = 'queued' ORDER BY created_at, id LIMIT 1)
+               AND NOT EXISTS (SELECT 1 FROM dojo_benchmarks WHERE state = 'checking')
+             RETURNING id, cnf",
+            params![report_token.clone(), now_ms()],
         )
         .await
         .map_err(err)?;
@@ -681,15 +707,6 @@ pub(super) async fn dispatch_to(
     let id: i64 = row.get(0).map_err(err)?;
     let cnf: Vec<u8> = row.get(1).map_err(err)?;
     drop(rows);
-    let mut bytes = [0u8; 32];
-    getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
-    let report_token = hex(&bytes);
-    conn.execute(
-        "UPDATE dojo_benchmarks SET job_token = ?2 WHERE id = ?1",
-        params![id, report_token.clone()],
-    )
-    .await
-    .map_err(err)?;
     let sent = client
         .post(format!(
             "{}/benchmarks?id={id}&report_token={report_token}&rules={}",
@@ -701,19 +718,21 @@ pub(super) async fn dispatch_to(
         .timeout(Duration::from_secs(120))
         .send()
         .await;
-    match sent {
-        Ok(r) if r.status() == StatusCode::ACCEPTED => {
-            conn.execute(
-                "UPDATE dojo_benchmarks SET state = 'checking', attempts = attempts + 1, updated_at = ?2 WHERE id = ?1",
-                params![id, now_ms()],
-            )
-            .await
-            .map_err(err)?;
-            Ok(())
-        }
-        Ok(r) => Err(format!("worker answered {} to a benchmark", r.status())),
-        Err(e) => Err(format!("worker unreachable: {e}")),
-    }
+    let failed = match sent {
+        // The verdict may be in already: nothing to change
+        Ok(r) if r.status() == StatusCode::ACCEPTED => return Ok(()),
+        Ok(r) => format!("worker answered {} to a benchmark", r.status()),
+        Err(e) => format!("worker unreachable: {e}"),
+    };
+    // Never at the worker: queued again without using up an attempt
+    conn.execute(
+        "UPDATE dojo_benchmarks SET state = 'queued', job_token = NULL, attempts = attempts - 1, updated_at = ?3
+         WHERE id = ?1 AND state = 'checking' AND job_token = ?2",
+        params![id, report_token, now_ms()],
+    )
+    .await
+    .map_err(err)?;
+    Err(failed)
 }
 
 /// Draws the benchmarks of a season that just started from the pool, once: every benchmark
@@ -930,12 +949,13 @@ pub async fn admin_action(
              WHERE id = ?1 AND state IN ('verified', 'rejected') AND answer IS NOT NULL"
         }
         BenchmarkAction::Reject => {
-            "UPDATE dojo_benchmarks SET state = 'rejected', reason = 'moderation', accepted_at = NULL, updated_at = ?2
+            "UPDATE dojo_benchmarks SET state = 'rejected', reason = 'moderation', accepted_at = NULL,
+                job_token = NULL, updated_at = ?2
              WHERE id = ?1"
         }
         BenchmarkAction::Requeue => {
             "UPDATE dojo_benchmarks SET state = 'queued', reason = NULL, attempts = 0, accepted_at = NULL,
-                updated_at = ?2 WHERE id = ?1"
+                job_token = NULL, updated_at = ?2 WHERE id = ?1"
         }
         BenchmarkAction::Delete => {
             "DELETE FROM dojo_benchmarks WHERE id = ?1 AND ?2 = ?2

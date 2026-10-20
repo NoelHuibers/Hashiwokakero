@@ -86,6 +86,7 @@ pub fn router<V: IntoView + 'static>(
             move || shell(leptos_options.clone())
         })
         .fallback(leptos_axum::file_and_error_handler(shell))
+        .layer(middleware::from_fn(super::limits::admission))
         .layer(middleware::from_fn(move |req: Request, next: Next| async move {
             cache_control(hash_files, req, next).await
         }))

@@ -266,7 +266,7 @@ async fn reports_need_the_token_of_their_job() {
     conn()
         .await
         .execute(
-            "UPDATE dojo_submissions SET job_token = ?2 WHERE id = ?1",
+            "UPDATE dojo_submissions SET job_token = ?2, state = 'running' WHERE id = ?1",
             params![id, job_token.clone()],
         )
         .await
@@ -749,4 +749,25 @@ async fn community_benchmarks() {
     let page = browser.call(LoadDojoBenchmarks {}).await.unwrap();
     assert_eq!(page.mine[0].state, BenchmarkState::Verified);
     assert_eq!(page.mine[0].answer, Some(::dojo::Answer::Sat));
+}
+
+/// Benchmark uploads download from the GBD and parse before any per-account quota applies, so
+/// they come out of the network's request budget first.
+#[tokio::test]
+async fn benchmark_uploads_share_the_network_budget() {
+    let server = Server::start().await;
+    let browser = server.browser_from("203.0.113.59");
+    let send = || {
+        browser
+            .post("/dojo/benchmarks/submit")
+            .body("not a form")
+            .send()
+    };
+    for _ in 0..32 {
+        let res = send().await.unwrap();
+        assert_ne!(res.status(), StatusCode::TOO_MANY_REQUESTS);
+    }
+    let res = send().await.unwrap();
+    assert_status(&res, StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(res.headers()["retry-after"], "60");
 }

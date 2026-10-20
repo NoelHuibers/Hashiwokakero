@@ -258,17 +258,18 @@ async fn submissions_and_leaderboard() {
         [(1, "second".to_string()), (2, "Hashi CDCL".to_string())]
     );
 
+    let rejected = submit(&conn, None, form("rejected", 8)).await.unwrap();
     apply(
         &conn,
         &Report::Rejected {
-            id: house,
+            id: rejected,
             season,
             reason: Rejection::NoStart,
         },
     )
     .await
     .unwrap();
-    let s = submission(&conn, house, None).await.unwrap().unwrap();
+    let s = submission(&conn, rejected, None).await.unwrap().unwrap();
     assert_eq!(
         (s.state, s.rejection),
         (DojoState::Rejected, Some(Rejection::NoStart))
@@ -678,7 +679,8 @@ async fn queued_submissions_go_to_the_worker() {
         .await
         .unwrap_err();
     assert!(err.starts_with("worker unreachable"), "{err}");
-    assert_eq!(state_and_token(&conn, a3).await.0, "queued");
+    // Without a used up attempt or a token a late report could still use
+    assert_eq!(state_and_token(&conn, a3).await, ("queued".into(), None, 0));
 }
 
 /// A finished evaluation with a result per formula: `solved` of `total` formulas solved with
@@ -1195,6 +1197,105 @@ async fn sets_come_with_the_jobs_token() {
     );
     // The new season wants its own
     assert!(seasons::wants_set(&conn, current + 1).await.unwrap());
+}
+
+/// Reports of an evaluation that is over (finished, requeued, or replaced by another job) change
+/// nothing: the token is checked in the same statement that writes.
+#[tokio::test]
+async fn callbacks_cannot_change_a_completed_or_replaced_evaluation() {
+    let conn = test_db("callback-lifecycle").await;
+    let id = submit(&conn, None, form("callback", 61)).await.unwrap();
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'running', job_token = 'first' WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    let done = finished(id, season(), 1, 1, RULES_VERSION);
+    assert!(
+        worker::apply_for_job(&conn, &done, Some("first"))
+            .await
+            .unwrap()
+    );
+    let failed = Report::Failed {
+        id,
+        season: season(),
+        message: "late failure".into(),
+    };
+    assert!(
+        !worker::apply_for_job(&conn, &failed, Some("first"))
+            .await
+            .unwrap()
+    );
+    assert_eq!(
+        submission(&conn, id, None).await.unwrap().unwrap().state,
+        DojoState::Done
+    );
+    crate::server::admin::submission_action(&conn, id, crate::model::SubmissionAction::Requeue)
+        .await
+        .unwrap();
+    assert!(
+        !worker::apply_for_job(&conn, &done, Some("first"))
+            .await
+            .unwrap()
+    );
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'running', job_token = 'replacement' WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    assert!(
+        !worker::apply_for_job(&conn, &done, Some("first"))
+            .await
+            .unwrap()
+    );
+    assert!(
+        worker::apply_for_job(&conn, &done, Some("replacement"))
+            .await
+            .unwrap()
+    );
+    assert_eq!(state_and_token(&conn, id).await.1, None);
+}
+
+/// A worker that reports back before it even answered the job: the dispatcher claimed the
+/// submission before sending it, so taking the job doesn't overwrite the result.
+#[tokio::test]
+async fn a_callback_before_acceptance_is_not_overwritten_by_dispatch() {
+    use axum::{Router, extract::Query, routing::post};
+    use std::collections::HashMap;
+    let conn = test_db("fast-callback").await;
+    let id = submit(&conn, None, form("fast", 62)).await.unwrap();
+    let callback_conn = conn.clone();
+    let worker = Router::new().route(
+        "/jobs",
+        post(move |Query(q): Query<HashMap<String, String>>| {
+            let conn = callback_conn.clone();
+            async move {
+                assert_eq!(q["rules"], RULES_VERSION.to_string());
+                let report = finished(id, season(), 1, 1, RULES_VERSION);
+                assert!(
+                    worker::apply_for_job(&conn, &report, Some(&q["report_token"]))
+                        .await
+                        .unwrap()
+                );
+                axum::http::StatusCode::ACCEPTED
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move {
+        axum::serve(listener, worker).await.unwrap();
+    });
+    worker::dispatch_to(&conn, &url, "test-token")
+        .await
+        .unwrap();
+    assert_eq!(
+        submission(&conn, id, None).await.unwrap().unwrap().state,
+        DojoState::Done
+    );
+    server.abort();
 }
 
 /// A finished evaluation with these results: per formula its family, answer and the fuel if

@@ -33,7 +33,6 @@ use wasmtime::{
 use wasmtime_wasi::p1::wasi_snapshot_preview1::{self as wasi, WasiSnapshotPreview1 as _};
 use wasmtime_wasi::p1::{self, WasiP1Ctx};
 use wasmtime_wasi::p2::pipe::{MemoryInputPipe, MemoryOutputPipe};
-use wasmtime_wasi::runtime::in_tokio;
 use wasmtime_wasi::{FsPerms, HostMonotonicClock, HostWallClock, I32Exit, WasiCtxBuilder};
 use wiggle::GuestMemory;
 
@@ -126,20 +125,19 @@ struct State {
     proof_too_large: bool,
 }
 
-/// The guest's memory as wiggle sees it, and the WASI state: to call wasmtime's own
-/// implementation of a WASI function from ours.
-fn with_wasi<R>(
-    caller: &mut Caller<'_, State>,
-    f: impl FnOnce(&mut WasiP1Ctx, &mut GuestMemory<'_>) -> wasmtime::Result<R>,
-) -> wasmtime::Result<R> {
-    let Some(Extern::Memory(memory)) = caller.get_export("memory") else {
-        return Err(wasmtime::Error::msg("missing required memory export"));
-    };
-    // What wasmtime's own glue does: without it the call may copy no bytes at all (ENOMEM)
-    let fuel = caller.as_context_mut().hostcall_fuel();
-    let (bytes, state) = memory.data_and_store_mut(caller);
-    state.wasi.set_hostcall_fuel(fuel);
-    f(&mut state.wasi, &mut GuestMemory::Unshared(bytes))
+/// Calls wasmtime's own (async) implementation of WASI function `$f` from ours, with the
+/// guest's memory as wiggle sees it.
+macro_rules! call_wasi {
+    ($caller:ident, $f:ident($($arg:expr),*)) => {{
+        let Some(Extern::Memory(memory)) = $caller.get_export("memory") else {
+            return Err(wasmtime::Error::msg("missing required memory export"));
+        };
+        // What wasmtime's own glue does: without it the call may copy no bytes at all (ENOMEM)
+        let fuel = $caller.as_context_mut().hostcall_fuel();
+        let (bytes, state) = memory.data_and_store_mut(&mut $caller);
+        state.wasi.set_hostcall_fuel(fuel);
+        wasi::$f(&mut state.wasi, &mut GuestMemory::Unshared(bytes), $($arg),*).await
+    }};
 }
 
 /// `len` bytes of guest memory at `ptr`, if they are there.
@@ -190,67 +188,72 @@ fn allow_write(state: &mut State, fd: i32, len: u64, end: u64) -> bool {
 fn guard_files(linker: &mut Linker<State>) -> wasmtime::Result<()> {
     const M: &str = "wasi_snapshot_preview1";
     linker.allow_shadowing(true);
-    linker.func_wrap(
+    linker.func_wrap_async(
         M,
         "fd_write",
-        |mut caller: Caller<'_, State>, fd: i32, iovs: i32, n: i32, out: i32| {
-            let len = first_iovec_len(&mut caller, iovs, n);
-            if !allow_write(caller.data_mut(), fd, len, 0) {
-                return Ok(ERRNO_FBIG);
-            }
-            with_wasi(&mut caller, |ctx, mem| {
-                in_tokio(wasi::fd_write(ctx, mem, fd, iovs, n, out))
+        |mut caller: Caller<'_, State>, (fd, iovs, n, out): (i32, i32, i32, i32)| {
+            Box::new(async move {
+                let len = first_iovec_len(&mut caller, iovs, n);
+                if !allow_write(caller.data_mut(), fd, len, 0) {
+                    return Ok(ERRNO_FBIG);
+                }
+                call_wasi!(caller, fd_write(fd, iovs, n, out))
             })
         },
     )?;
-    linker.func_wrap(
+    linker.func_wrap_async(
         M,
         "fd_pwrite",
-        |mut caller: Caller<'_, State>, fd: i32, iovs: i32, n: i32, offset: i64, out: i32| {
-            let len = first_iovec_len(&mut caller, iovs, n);
-            let end = offset.cast_unsigned().saturating_add(len);
-            if !allow_write(caller.data_mut(), fd, len, end) {
-                return Ok(ERRNO_FBIG);
-            }
-            with_wasi(&mut caller, |ctx, mem| {
-                in_tokio(wasi::fd_pwrite(ctx, mem, fd, iovs, n, offset, out))
+        |mut caller: Caller<'_, State>, (fd, iovs, n, offset, out): (i32, i32, i32, i64, i32)| {
+            Box::new(async move {
+                let len = first_iovec_len(&mut caller, iovs, n);
+                let end = offset.cast_unsigned().saturating_add(len);
+                if !allow_write(caller.data_mut(), fd, len, end) {
+                    return Ok(ERRNO_FBIG);
+                }
+                call_wasi!(caller, fd_pwrite(fd, iovs, n, offset, out))
             })
         },
     )?;
-    linker.func_wrap(
+    linker.func_wrap_async(
         M,
         "fd_filestat_set_size",
-        |mut caller: Caller<'_, State>, fd: i32, size: i64| {
-            if !allow_write(caller.data_mut(), fd, 0, size.cast_unsigned()) {
-                return Ok(ERRNO_FBIG);
-            }
-            with_wasi(&mut caller, |ctx, mem| {
-                in_tokio(wasi::fd_filestat_set_size(ctx, mem, fd, size))
+        |mut caller: Caller<'_, State>, (fd, size): (i32, i64)| {
+            Box::new(async move {
+                if !allow_write(caller.data_mut(), fd, 0, size.cast_unsigned()) {
+                    return Ok(ERRNO_FBIG);
+                }
+                call_wasi!(caller, fd_filestat_set_size(fd, size))
             })
         },
     )?;
-    linker.func_wrap(
+    linker.func_wrap_async(
         M,
         "path_open",
         |mut caller: Caller<'_, State>,
-         dir: i32,
-         flags: i32,
-         path: i32,
-         len: i32,
-         oflags: i32,
-         base: i64,
-         inheriting: i64,
-         fdflags: i32,
-         out: i32| {
-            let name = guest_bytes(&mut caller, path, len).unwrap_or_default();
-            let name = name.strip_prefix(b"./").unwrap_or(&name);
-            if name != PROOF_FILE.as_bytes() {
-                return Ok(ERRNO_ACCES);
-            }
-            with_wasi(&mut caller, |ctx, mem| {
-                in_tokio(wasi::path_open(
-                    ctx, mem, dir, flags, path, len, oflags, base, inheriting, fdflags, out,
-                ))
+         (dir, flags, path, len, oflags, base, inheriting, fdflags, out): (
+            i32,
+            i32,
+            i32,
+            i32,
+            i32,
+            i64,
+            i64,
+            i32,
+            i32,
+        )| {
+            Box::new(async move {
+                let name = guest_bytes(&mut caller, path, len).unwrap_or_default();
+                let name = name.strip_prefix(b"./").unwrap_or(&name);
+                if name != PROOF_FILE.as_bytes() {
+                    return Ok(ERRNO_ACCES);
+                }
+                call_wasi!(
+                    caller,
+                    path_open(
+                        dir, flags, path, len, oflags, base, inheriting, fdflags, out
+                    )
+                )
             })
         },
     )?;
@@ -285,6 +288,7 @@ pub struct Solver {
 pub struct Sandbox {
     engine: Engine,
     linker: Arc<Linker<State>>,
+    runtime: tokio::runtime::Runtime,
 }
 
 impl std::fmt::Debug for Sandbox {
@@ -317,8 +321,13 @@ impl Sandbox {
         let engine = Engine::new(&config).map_err(|e| e.to_string())?;
 
         let mut linker: Linker<State> = Linker::new(&engine);
-        p1::add_to_linker_sync(&mut linker, |s| &mut s.wasi).map_err(|e| e.to_string())?;
+        p1::add_to_linker_async(&mut linker, |s| &mut s.wasi).map_err(|e| e.to_string())?;
         guard_files(&mut linker).map_err(|e| e.to_string())?;
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(1)
+            .enable_time()
+            .build()
+            .map_err(|e| e.to_string())?;
 
         // The wall clock limit: interrupts stores whose deadline (in ticks) has passed
         let ticker = engine.weak();
@@ -333,6 +342,7 @@ impl Sandbox {
         Ok(Self {
             engine,
             linker: Arc::new(linker),
+            runtime,
         })
     }
 
@@ -402,17 +412,26 @@ impl Sandbox {
         store.epoch_deadline_trap();
 
         let started = Instant::now();
-        let result = self
-            .linker
-            .instantiate(&mut store, &solver.module)
-            .and_then(|instance| instance.get_typed_func::<(), ()>(&mut store, "_start"))
-            .and_then(|start| start.call(&mut store, ()));
+        // Epochs interrupt running Wasm, but cannot wake a host call such as poll_oneoff.
+        // Async WASI yields those calls, so dropping the timed-out future cancels them too.
+        let result = self.runtime.block_on(async {
+            tokio::time::timeout(limits.wall, async {
+                let instance = self
+                    .linker
+                    .instantiate_async(&mut store, &solver.module)
+                    .await?;
+                let start = instance.get_typed_func::<(), ()>(&mut store, "_start")?;
+                start.call_async(&mut store, ()).await
+            })
+            .await
+        });
         let wall = started.elapsed();
         let fuel = limits.fuel - store.get_fuel().unwrap_or(0);
         let end = match result {
-            Ok(()) => End::Exited,
-            Err(e) if e.downcast_ref::<I32Exit>().is_some() => End::Exited,
-            Err(e) => match e.downcast_ref::<Trap>() {
+            Err(_) => End::WallClock,
+            Ok(Ok(())) => End::Exited,
+            Ok(Err(e)) if e.downcast_ref::<I32Exit>().is_some() => End::Exited,
+            Ok(Err(e)) => match e.downcast_ref::<Trap>() {
                 Some(Trap::OutOfFuel) => End::OutOfFuel,
                 Some(Trap::Interrupt) => End::WallClock,
                 _ => End::Crashed(format!("{e:#}")),
@@ -758,5 +777,29 @@ mod tests {
         // Truncated to ten bytes, then sixteen written at the start
         assert_eq!(proof.map(|p| p.len()), Some(16));
         assert!(run.proof_too_large);
+    }
+
+    #[test]
+    fn blocking_host_calls_obey_the_wall_deadline() {
+        let sandbox = Sandbox::new().unwrap();
+        let wasm = wat::parse_str(r#"(module
+            (import "wasi_snapshot_preview1" "poll_oneoff" (func $poll (param i32 i32 i32 i32) (result i32)))
+            (memory (export "memory") 1)
+            (func (export "_start")
+                (i32.store (i32.const 16) (i32.const 1))
+                (i64.store (i32.const 24) (i64.const 5000000000))
+                (drop (call $poll (i32.const 0) (i32.const 128) (i32.const 1) (i32.const 256)))))"#).unwrap();
+        let solver = sandbox.load(&wasm).unwrap();
+        let limits = Limits {
+            wall: Duration::from_millis(50),
+            ..Limits::default()
+        };
+        let run = sandbox.run(&solver, "", 1, &limits, false, None);
+        assert_eq!(run.end, End::WallClock);
+        assert!(
+            run.wall < Duration::from_secs(2),
+            "host sleep escaped the deadline: {:?}",
+            run.wall
+        );
     }
 }

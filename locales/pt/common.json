@@ -128,7 +128,11 @@
     "zoom_hint": "Deslize para mover, toque para construir",
     "cells_small": "Células pequenas demais?",
     "pinch": "Pince para dar zoom",
-    "zoom_out": "Diminuir zoom"
+    "zoom_out": "Diminuir zoom",
+    "keyboard_play": "←/→ seleciona uma ponte. Enter/Espaço: +1; Shift+Enter: −1. As ilhas mostram coordenadas e pontes atuais/necessárias.",
+    "keyboard_edit": "As setas mudam de célula. 1–8 coloca uma ilha; 0/Delete apaga-a.",
+    "edge": "Ponte {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Célula ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Perdido no mar",

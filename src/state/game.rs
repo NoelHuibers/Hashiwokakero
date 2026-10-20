@@ -135,7 +135,7 @@ impl Game {
         source: Source,
     ) {
         let board = Board::new(puzzle);
-        let solution = solution.filter(|s| s.len() == board.edges.len());
+        let solution = solution.filter(|s| s.len() == board.edges.len() && board.check(s).solved);
         self.bridges.set(board.empty_bridges());
         self.board.set(board);
         self.solution.set(solution);
@@ -150,6 +150,8 @@ impl Game {
         self.wrong.set(vec![]);
         self.hint.set(None);
         self.report.set(None);
+        self.solving.set(false);
+        self.loading.set(false);
         self.epoch.update(|e| *e += 1);
     }
 
@@ -265,6 +267,9 @@ impl Game {
         let Some(saved) = load::<SavedGame>(self.key) else {
             return false;
         };
+        if saved.puzzle.validate().is_err() || saved.bridges.iter().any(|&b| b > 2) {
+            return false;
+        }
         let board = Board::new(saved.puzzle);
         if saved.bridges.len() != board.edges.len() || board.puzzle.islands.is_empty() {
             return false;
@@ -285,7 +290,10 @@ impl Game {
         let Some(saved) = load::<SavedGame>(self.key) else {
             return false;
         };
-        if saved.puzzle != *puzzle || saved.bridges.len() != self.bridges.with_untracked(Vec::len) {
+        if saved.puzzle != *puzzle
+            || saved.bridges.len() != self.bridges.with_untracked(Vec::len)
+            || saved.bridges.iter().any(|&b| b > 2)
+        {
             return false;
         }
         self.bridges.set(saved.bridges);

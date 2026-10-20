@@ -78,6 +78,11 @@ pub fn BoardView(
     let hover_cell = RwSignal::new(None::<Pos>);
     let preview_edge = RwSignal::new(None::<usize>);
     let selected = RwSignal::new(None::<usize>);
+    let keyboard_edge = RwSignal::new(0usize);
+    let keyboard_focus = RwSignal::new(false);
+    // Whether the board was pressed since it last had focus: focus from a click or tap isn't
+    // keyboard use
+    let pressed = StoredValue::new(false);
     let blocked = RwSignal::new(None::<(f64, f64, u32)>);
     let drag = StoredValue::new(None::<Drag>);
     let touches = StoredValue::new(Touches::default());
@@ -91,6 +96,7 @@ pub fn BoardView(
         hover_edge.set(None);
         preview_edge.set(None);
         selected.set(None);
+        keyboard_edge.set(0);
         drag.set_value(None);
         scale.set(1.0);
     });
@@ -237,6 +243,7 @@ pub fn BoardView(
         if mode == BoardMode::View {
             return;
         }
+        pressed.set_value(true);
         let touch = ev.pointer_type() == "touch";
         if touch {
             let (x, y) = (f64::from(ev.client_x()), f64::from(ev.client_y()));
@@ -426,6 +433,19 @@ pub fn BoardView(
     if mode == BoardMode::Edit {
         Effect::new(move |_| {
             let handle = window_event_listener(leptos::ev::keydown, move |ev| {
+                if ev.ctrl_key() || ev.meta_key() || ev.alt_key() {
+                    return;
+                }
+                let input = ev
+                    .target()
+                    .and_then(|t| wasm_bindgen::JsCast::dyn_into::<web_sys::Element>(t).ok())
+                    .is_some_and(|el| {
+                        matches!(el.tag_name().as_str(), "INPUT" | "TEXTAREA" | "SELECT")
+                            || el.has_attribute("contenteditable")
+                    });
+                if input {
+                    return;
+                }
                 let (Some(cb), Some(pos)) = (on_cell, hover_cell.get_untracked()) else {
                     return;
                 };
@@ -444,6 +464,114 @@ pub fn BoardView(
             on_cleanup(move || handle.remove());
         });
     }
+
+    let keyboard_help = move || match mode {
+        BoardMode::Play => t_string!(i18n, common.board.keyboard_play).to_string(),
+        BoardMode::Edit => t_string!(i18n, common.board.keyboard_edit).to_string(),
+        BoardMode::View => String::new(),
+    };
+    let description = move || {
+        if mode == BoardMode::Edit {
+            let pos = hover_cell.get().unwrap_or(Pos::new(0, 0));
+            let number = board.with(|b| {
+                b.puzzle
+                    .island_at(pos)
+                    .map_or(0, |i| b.puzzle.islands[i].required)
+            });
+            return t_string!(
+                i18n,
+                common.board.cell,
+                x = pos.x + 1,
+                y = pos.y + 1,
+                number
+            );
+        }
+        board.with(|b| {
+            let e = keyboard_edge.get();
+            let Some(edge) = b.edges.get(e) else {
+                return String::new();
+            };
+            let endpoint = |i: usize| {
+                let island = &b.puzzle.islands[i];
+                let degree = degrees.with(|d| d[i]);
+                format!(
+                    "({}, {}): {degree}/{}",
+                    island.pos.x + 1,
+                    island.pos.y + 1,
+                    island.required
+                )
+            };
+            let count = bridges.with(|v| v.get(e).copied().unwrap_or(0));
+            t_string!(
+                i18n,
+                common.board.edge,
+                a = endpoint(edge.a),
+                b = endpoint(edge.b),
+                count
+            )
+        })
+    };
+    let on_key = move |ev: web_sys::KeyboardEvent| {
+        if ev.ctrl_key() || ev.meta_key() || ev.alt_key() || mode == BoardMode::View {
+            return;
+        }
+        let key = ev.key();
+        if mode == BoardMode::Edit {
+            let (Some(cb), pos) = (
+                on_cell,
+                hover_cell.get_untracked().unwrap_or(Pos::new(0, 0)),
+            ) else {
+                return;
+            };
+            let size = board.with_untracked(|b| (b.puzzle.width, b.puzzle.height));
+            if let Some(next) = keyboard_cell(pos, &key, size) {
+                hover_cell.set(Some(next));
+            } else {
+                let action = match key.as_str() {
+                    k if k.len() == 1 && (b'0'..=b'8').contains(&k.as_bytes()[0]) => {
+                        CellAction::Set(key.as_bytes()[0] - b'0')
+                    }
+                    "Backspace" | "Delete" | " " => CellAction::Set(0),
+                    "+" | "=" | "Enter" => CellAction::Increment,
+                    "-" => CellAction::Decrement,
+                    _ => return,
+                };
+                cb.run((pos, action));
+            }
+        } else {
+            let count = board.with_untracked(|b| b.edges.len());
+            if count == 0 {
+                return;
+            }
+            let current = keyboard_edge.get_untracked().min(count - 1);
+            let next = match key.as_str() {
+                "ArrowRight" | "ArrowDown" => (current + 1) % count,
+                "ArrowLeft" | "ArrowUp" => (current + count - 1) % count,
+                "Home" => 0,
+                "End" => count - 1,
+                "Enter" | " " | "+" | "=" => {
+                    cycle(
+                        current,
+                        if key == "Enter" && ev.shift_key() {
+                            -1
+                        } else {
+                            1
+                        },
+                    );
+                    current
+                }
+                "Backspace" | "Delete" | "-" => {
+                    cycle(current, -1);
+                    current
+                }
+                _ => return,
+            };
+            keyboard_edge.set(next);
+        }
+        keyboard_focus.set(true);
+        ev.prevent_default();
+        ev.stop_propagation();
+    };
 
     let frame = if framed { 14 } else { 0 };
     // Big boards get small cells on phones: pinch, or use + and −, to zoom in
@@ -489,8 +617,24 @@ pub fn BoardView(
                 format!("{} {} {w} {h}", -PAD, -PAD)
             }
             xmlns="http://www.w3.org/2000/svg"
-            role="img"
+            role=if mode == BoardMode::View { "img" } else { "group" }
+            tabindex=(mode != BoardMode::View).then_some(0)
             aria-label=move || t_string!(i18n, common.board.label)
+            aria-description=keyboard_help
+            on:keydown=on_key
+            on:focus=move |_| {
+                // Focus from a click isn't keyboard use: no highlight, and the click's own
+                // handlers (drag preview, selected island) stay as they are
+                let keyboard = !pressed.get_value();
+                keyboard_focus.set(keyboard);
+                if keyboard && mode == BoardMode::Edit && hover_cell.get_untracked().is_none() {
+                    hover_cell.set(Some(Pos::new(0, 0)));
+                }
+            }
+            on:blur=move |_| {
+                keyboard_focus.set(false);
+                pressed.set_value(false);
+            }
             on:pointerdown=on_down
             on:pointermove=on_move
             on:pointerup=on_up
@@ -527,9 +671,25 @@ pub fn BoardView(
             </g>
             <HoverCell hover_cell mode />
             <BlockedMark blocked />
+            {move || (keyboard_focus.get() && mode == BoardMode::Play).then(|| {
+                board.with(|b| b.edges.get(keyboard_edge.get()).map(|edge| {
+                    let a = b.puzzle.islands[edge.a].pos;
+                    let z = b.puzzle.islands[edge.b].pos;
+                    view! { <line aria-hidden="true" pointer-events="none"
+                        x1=i32::from(a.x)*CELL+CELL/2 y1=i32::from(a.y)*CELL+CELL/2
+                        x2=i32::from(z.x)*CELL+CELL/2 y2=i32::from(z.y)*CELL+CELL/2
+                        stroke="var(--primary)" stroke-width="6" stroke-opacity="0.4" /> }
+                }))
+            })}
         </svg>
         </div>
         </div>
+        <Show when=move || mode != BoardMode::View>
+            <p class="sr-only">{keyboard_help}</p>
+            <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                {move || if keyboard_focus.get() { description() } else { String::new() }}
+            </p>
+        </Show>
         <Show when=can_zoom>
             <div class="mt-2 flex items-center justify-end gap-2">
                 <span class="me-auto text-xs text-muted-foreground md:hidden">
@@ -570,5 +730,49 @@ pub fn BoardView(
             </div>
         </Show>
         </div>
+    }
+}
+
+/// Arrow navigation never leaves the editor grid, including at its four corners.
+fn keyboard_cell(pos: Pos, key: &str, (width, height): (u8, u8)) -> Option<Pos> {
+    let mut next = pos;
+    match key {
+        "ArrowLeft" => next.x = pos.x.saturating_sub(1),
+        "ArrowRight" => next.x = pos.x.saturating_add(1).min(width.saturating_sub(1)),
+        "ArrowUp" => next.y = pos.y.saturating_sub(1),
+        "ArrowDown" => next.y = pos.y.saturating_add(1).min(height.saturating_sub(1)),
+        "Home" => next = Pos::new(0, 0),
+        "End" => next = Pos::new(width.saturating_sub(1), height.saturating_sub(1)),
+        _ => return None,
+    }
+    Some(next)
+}
+
+#[cfg(test)]
+mod keyboard_tests {
+    use super::*;
+    #[test]
+    fn arrows_and_grid_endpoints_stay_in_bounds() {
+        assert_eq!(
+            keyboard_cell(Pos::new(0, 0), "ArrowLeft", (3, 4)),
+            Some(Pos::new(0, 0))
+        );
+        assert_eq!(
+            keyboard_cell(Pos::new(2, 3), "ArrowRight", (3, 4)),
+            Some(Pos::new(2, 3))
+        );
+        assert_eq!(
+            keyboard_cell(Pos::new(1, 1), "ArrowDown", (3, 4)),
+            Some(Pos::new(1, 2))
+        );
+        assert_eq!(
+            keyboard_cell(Pos::new(1, 1), "Home", (3, 4)),
+            Some(Pos::new(0, 0))
+        );
+        assert_eq!(
+            keyboard_cell(Pos::new(1, 1), "End", (3, 4)),
+            Some(Pos::new(2, 3))
+        );
+        assert_eq!(keyboard_cell(Pos::new(1, 1), "1", (3, 4)), None);
     }
 }

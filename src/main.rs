@@ -5,7 +5,19 @@
 async fn main() {
     use leptos::prelude::*;
 
+    if let Err(e) = hashi::server::validate_configuration() {
+        eprintln!("{e}");
+        std::process::exit(1);
+    }
     if let Err(e) = hashi::server::db::init().await {
+        eprintln!("{e}");
+        std::process::exit(1);
+    }
+    let admins = match hashi::server::db::conn() {
+        Ok(conn) => hashi::server::admin::validate_assignments(&conn).await,
+        Err(e) => Err(e.to_string()),
+    };
+    if let Err(e) = admins {
         eprintln!("{e}");
         std::process::exit(1);
     }
@@ -34,10 +46,13 @@ async fn main() {
         .await
         .expect("could not bind the server address");
     println!("listening on http://{addr}");
-    axum::serve(listener, app.into_make_service())
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .expect("server error");
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await
+    .expect("server error");
 }
 
 /// fly.io stops machines with SIGINT/SIGTERM, which a container's PID 1 ignores by default.

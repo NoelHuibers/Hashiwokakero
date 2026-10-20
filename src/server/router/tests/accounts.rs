@@ -524,3 +524,22 @@ async fn abandoned_guests_are_signed_out_for_good() {
     let guest = browser.call(CurrentUser {}).await.unwrap().unwrap();
     assert!(guest.guest && guest.created_at > 1);
 }
+
+#[tokio::test]
+async fn public_registration_cannot_claim_an_admin_name() {
+    let server = Server::start().await;
+    let attacker = server.browser();
+    let attempt = attacker
+        .call(Register {
+            username: ADMIN.into(),
+            password: PASSWORD.into(),
+        })
+        .await;
+    assert_eq!(api_error(attempt), ApiError::UsernameTaken);
+    let ordinary = Browser::signed_up(&server, "mallory_claim").await;
+    assert_eq!(
+        api_error(ordinary.call(rename(ADMIN, PASSWORD)).await),
+        ApiError::UsernameTaken
+    );
+    assert!(!ordinary.call(CurrentUser {}).await.unwrap().unwrap().admin);
+}

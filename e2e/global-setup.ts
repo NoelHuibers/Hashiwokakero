@@ -9,7 +9,7 @@ import { startServer } from './server';
 
 async function seededServer(name: string, options: { port?: number; dbPath: string }) {
   // A first start only creates the schema, the seed goes into it
-  await (await startServer(`${name}-schema.log`, options)).stop();
+  await (await startServer(`${name}-schema.log`, { ...options, admins: '' })).stop();
   seed(options.dbPath);
   return startServer(`${name}.log`, options);
 }

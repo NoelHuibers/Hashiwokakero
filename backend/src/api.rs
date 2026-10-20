@@ -10,8 +10,8 @@
 use std::time::{Duration, Instant};
 
 use common::{
-    Board, GenerateParams, GeneratedPuzzle, MAX_SIZE, MIN_SIZE, Puzzle, SolveOutcome, SolveReport,
-    SolveStats, SolverConfig,
+    Board, GenerateParams, GeneratedPuzzle, Puzzle, SolveOutcome, SolveReport, SolveStats,
+    SolverConfig,
 };
 
 use crate::encoding::{self, Encoding};
@@ -85,41 +85,13 @@ pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
 
 /// Checks that the puzzle can be encoded.
 ///
-/// That is: size within `MIN_SIZE..=MAX_SIZE`, at least one island, numbers within 1..=8,
+/// That is: size within `2..=MAX_SIZE`, at least one island, numbers within 1..=8,
 /// islands inside the grid, sorted in reading order and on distinct cells (as produced by
 /// [`Puzzle::new`]).
 pub fn validate(puzzle: &Puzzle) -> Result<(), String> {
-    for (name, size) in [("width", puzzle.width), ("height", puzzle.height)] {
-        if !(MIN_SIZE..=MAX_SIZE).contains(&size) {
-            return Err(format!(
-                "The {name} must be between {MIN_SIZE} and {MAX_SIZE}, got {size}"
-            ));
-        }
-    }
+    puzzle.validate()?;
     if puzzle.islands.is_empty() {
         return Err("The puzzle has no islands".into());
-    }
-    for island in &puzzle.islands {
-        let (x, y) = (island.pos.x, island.pos.y);
-        if x >= puzzle.width || y >= puzzle.height {
-            return Err(format!("The island at ({x},{y}) is outside of the grid"));
-        }
-        if !(1..=8).contains(&island.required) {
-            return Err(format!(
-                "The island at ({x},{y}) has the number {}, allowed are 1 to 8",
-                island.required
-            ));
-        }
-    }
-    for pair in puzzle.islands.windows(2) {
-        let (a, b) = (pair[0].pos, pair[1].pos);
-        if (a.y, a.x) >= (b.y, b.x) {
-            return Err(if a == b {
-                format!("Two islands at ({},{})", a.x, a.y)
-            } else {
-                "The islands must be sorted row by row".into()
-            });
-        }
     }
     Ok(())
 }

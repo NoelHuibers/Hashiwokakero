@@ -17,12 +17,12 @@ use argon2::password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash}
 use axum::http::{HeaderMap, HeaderValue, header};
 use leptos::config::{Env, LeptosOptions};
 use leptos::prelude::*;
-use libsql::{Connection, params};
+use libsql::{Connection, TransactionBehavior, params};
 use sha2::{Digest, Sha256};
 
 use super::db::db_err;
 use super::names;
-use super::{hex, now_ms, run_blocking};
+use super::{hex, now_ms, run_auth_blocking};
 use crate::model::{ApiError, MS_PER_DAY, RENAME_EVERY_DAYS, UserInfo};
 
 const COOKIE: &str = "hashi_session";
@@ -246,7 +246,7 @@ pub fn validate_password(password: &str) -> Result<(), ServerFnError> {
 }
 
 async fn hash_password(password: String) -> Result<String, ServerFnError> {
-    run_blocking(move || {
+    run_auth_blocking(move || {
         Argon2::default()
             .hash_password(password.as_bytes())
             .map(|h| h.to_string())
@@ -256,7 +256,7 @@ async fn hash_password(password: String) -> Result<String, ServerFnError> {
 }
 
 async fn verify_password(password: String, hash: String) -> Result<bool, ServerFnError> {
-    run_blocking(move || {
+    run_auth_blocking(move || {
         let parsed = PasswordHash::new(&hash).map_err(|e| e.to_string())?;
         Ok(Argon2::default()
             .verify_password(password.as_bytes(), &parsed)
@@ -271,7 +271,11 @@ pub async fn register(
     username: &str,
     password: String,
 ) -> Result<User, ServerFnError> {
-    validate_username(username, super::admin::admin_username(username))?;
+    // Legacy admin names may be used by their existing owner, never claimed by a new account.
+    if super::admin::admin_username(username) {
+        return Err(ApiError::UsernameTaken.into());
+    }
+    validate_username(username, false)?;
     validate_password(&password)?;
     let hash = hash_password(password).await?;
     let current = current_user(conn).await?;
@@ -306,6 +310,7 @@ pub async fn register(
             id
         }
     };
+    super::daily::invalidate_profiles();
     user_by_id(conn, id)
         .await?
         .ok_or_else(|| ApiError::Internal.fail())
@@ -330,6 +335,14 @@ pub async fn change_username(
         return Err(ApiError::Forbidden.into());
     };
     let admin = super::admin::listing(&user);
+    if super::admin::admin_username(username)
+        && !user
+            .username
+            .as_deref()
+            .is_some_and(|name| name.eq_ignore_ascii_case(username))
+    {
+        return Err(ApiError::UsernameTaken.into());
+    }
     validate_username(username, admin.is_some())?;
     if username == current {
         return Ok(user);
@@ -363,6 +376,7 @@ pub async fn change_username(
     if changed == 0 {
         return Err(ApiError::RenameTooSoon.into());
     }
+    super::daily::invalidate_profiles();
     user_by_id(conn, user.id)
         .await?
         .ok_or_else(|| ApiError::Internal.fail())
@@ -466,11 +480,15 @@ async fn check_password(
 }
 
 async fn merge_guest(conn: &Connection, guest: i64, user: i64) -> Result<(), ServerFnError> {
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
     for sql in [
         "UPDATE OR IGNORE attempts SET user_id = ?1 WHERE user_id = ?2",
         "UPDATE OR IGNORE stamps SET user_id = ?1 WHERE user_id = ?2",
     ] {
-        conn.execute(sql, params![user, guest])
+        tx.execute(sql, params![user, guest])
             .await
             .map_err(db_err)?;
     }
@@ -480,8 +498,10 @@ async fn merge_guest(conn: &Connection, guest: i64, user: i64) -> Result<(), Ser
         "DELETE FROM sessions WHERE user_id = ?1",
         "DELETE FROM users WHERE id = ?1 AND username IS NULL",
     ] {
-        conn.execute(sql, params![guest]).await.map_err(db_err)?;
+        tx.execute(sql, params![guest]).await.map_err(db_err)?;
     }
+    tx.commit().await.map_err(db_err)?;
+    super::daily::invalidate_profiles();
     Ok(())
 }
 
@@ -522,9 +542,10 @@ pub async fn delete_account(
 /// That is name, password, sessions, stamps, Dojo submissions, and of the daily results the
 /// boards, move logs, devices and unranked attempts. What stays are
 /// the ranked times and penalties, under a user without a name (`deleted_at`), so the rankings of
-/// old days and the medals of everyone else don't change. A user without ranked times goes
-/// completely. Archived Dojo seasons keep the numbers of the user's solvers, without their
-/// names, links or a way back to the user.
+/// old days and the medals of everyone else don't change. A user without ranked times remains
+/// as an anonymous tombstone, so numeric admin grants can never transfer to a reused id.
+/// Archived Dojo seasons keep the numbers of the user's solvers, without their names, links or
+/// a way back to the user.
 pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     let tx = conn.transaction().await.map_err(db_err)?;
     for sql in [
@@ -543,7 +564,6 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
          WHERE user_id = ?1 AND (finished_at IS NULL OR revealed != 0 OR flag IS NOT NULL)",
         "UPDATE attempts SET bridges = NULL, log = NULL, device = NULL, run = NULL, daypart = NULL
          WHERE user_id = ?1",
-        "DELETE FROM users WHERE id = ?1 AND NOT EXISTS (SELECT 1 FROM attempts WHERE user_id = ?1)",
     ] {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
     }
@@ -555,7 +575,9 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     )
     .await
     .map_err(db_err)?;
-    tx.commit().await.map_err(db_err)
+    tx.commit().await.map_err(db_err)?;
+    super::daily::invalidate_profiles();
+    Ok(())
 }
 
 /// Deletes the guests nobody can sign in to any more: their last session expired (a year after
@@ -629,6 +651,14 @@ pub fn guest_name() -> String {
 }
 
 #[cfg(test)]
+pub(super) fn test_password_hash(password: &str) -> String {
+    Argon2::default()
+        .hash_password(password.as_bytes())
+        .unwrap()
+        .to_string()
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -699,7 +729,7 @@ mod tests {
     }
 
     /// Signing in while another request writes. The password hash is checked on the blocking
-    /// threads, where it can wait its turn behind puzzle generators and solvers for seconds. It
+    /// threads, where it can wait its turn behind other password checks for seconds. It
     /// did that with its query still open, which on a local file kept a read lock: the other
     /// request's write couldn't commit and failed with "database is locked" after the busy
     /// timeout (two sign ins of the browser tests did). The file is in SQLite's default rollback
@@ -730,14 +760,14 @@ mod tests {
             .await
             .unwrap();
 
-        // Both blocking permits taken, like by two puzzles being generated
+        // Both password permits taken, like by two concurrent sign-ins
         let (started_tx, mut started) = tokio::sync::mpsc::unbounded_channel();
         let mut releases = Vec::new();
         for _ in 0..2 {
             let (release, wait) = std::sync::mpsc::channel::<()>();
             releases.push(release);
             let started_tx = started_tx.clone();
-            tokio::spawn(run_blocking(move || {
+            tokio::spawn(run_auth_blocking(move || {
                 started_tx.send(()).unwrap();
                 let _ = wait.recv();
                 Ok(())

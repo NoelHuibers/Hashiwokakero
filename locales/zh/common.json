@@ -128,7 +128,11 @@
     "zoom_hint": "滑动移动视图，点按搭桥",
     "cells_small": "格子太小？",
     "pinch": "双指缩放",
-    "zoom_out": "缩小"
+    "zoom_out": "缩小",
+    "keyboard_play": "←/→选择桥。Enter/空格：+1；Shift+Enter：−1。岛屿显示坐标和当前/所需的桥数。",
+    "keyboard_edit": "方向键选择格子。1–8放置岛屿；0/Delete清除。",
+    "edge": "桥 {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "格子 ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "迷失在海上",
