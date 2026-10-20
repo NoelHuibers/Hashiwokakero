@@ -1,0 +1,83 @@
+diff --git a/src/application.c b/src/application.c
+index 21cfa76..d5c08b2 100644
+--- a/src/application.c
++++ b/src/application.c
+@@ -16,6 +16,14 @@
+ #include <string.h>
+ #include <unistd.h>
+ 
++#ifdef __wasi__
++// WASI has no signals: '--time' is accepted but sets no alarm
++static unsigned alarm (unsigned seconds) {
++  (void) seconds;
++  return 0;
++}
++#endif
++
+ #define SOLVER_NAME "Kissat SAT Solver"
+ 
+ typedef struct application application;
+@@ -565,7 +573,7 @@ static bool parse_options (application *application, int argc,
+       if (!strcmp (input_path, arg))
+         ERROR ("will not read and write '%s' at the same time", input_path);
+ #ifdef KISSAT_HAS_COMPRESSION
+-      {
++      if (strcmp (input_path, "-")) {
+         char *real_input_path = realpath (input_path, 0);
+         if (real_input_path) {
+           char *real_arg_path = realpath (arg, 0);
+@@ -600,7 +608,8 @@ static bool parse_options (application *application, int argc,
+              application->input_path, arg);
+ #endif
+     } else {
+-      if (!kissat_file_readable (arg))
++      // '-' reads '<stdin>' and still lets a proof file follow
++      if (strcmp (arg, "-") && !kissat_file_readable (arg))
+         ERROR ("can not read '%s'", arg);
+       application->input_path = arg;
+     }
+@@ -631,7 +640,7 @@ static bool parse_input (application *application) {
+   uint64_t lineno;
+   file file;
+   const char *path = application->input_path;
+-  if (!path)
++  if (!path || !strcmp (path, "-"))
+     kissat_read_already_open_file (&file, stdin, "<stdin>");
+   else if (!kissat_open_to_read_file (&file, path))
+     ERROR ("failed to open '%s' for reading", path);
+diff --git a/src/congruence.c b/src/congruence.c
+index 98bc29c..f52a247 100644
+--- a/src/congruence.c
++++ b/src/congruence.c
+@@ -390,7 +390,12 @@ static size_t reduce_hash (unsigned hash, size_t size, size_t size2) {
+   return res;
+ }
+ 
++#if SIZE_MAX > 0xffffffff
+ #define MAX_HASH_TABLE_SIZE ((size_t) 1 << 32)
++#else
++// wasm32 (WASI): '(size_t) 1 << 32' is 0, which left the table empty
++#define MAX_HASH_TABLE_SIZE ((size_t) 1 << 31)
++#endif
+ 
+ static bool closure_hash_table_is_full (closure *closure) {
+   if (closure->hash.size == MAX_HASH_TABLE_SIZE)
+diff --git a/src/resources.c b/src/resources.c
+index 31c0378..b6bd113 100644
+--- a/src/resources.c
++++ b/src/resources.c
+@@ -33,10 +33,14 @@ double kissat_process_time (void) {
+ }
+ 
+ uint64_t kissat_maximum_resident_set_size (void) {
++#ifdef __wasi__
++  return 0; // WASI has no 'ru_maxrss'
++#else
+   struct rusage u;
+   if (getrusage (RUSAGE_SELF, &u))
+     return 0;
+   return ((uint64_t) u.ru_maxrss) << 10;
++#endif
+ }
+ 
+ #ifdef __APPLE__

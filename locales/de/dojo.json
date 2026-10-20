@@ -202,7 +202,7 @@
     "intro": "Wie die SAT Competition nimmt das Dojo Benchmarks von seinen Teilnehmern. Reich eine Formel ein, die dir wichtig ist: Lässt sich ihre Antwort sicher klären, ist sie nicht zu leicht und nimmt sie ein Moderator an, kommt sie in den Pool. Das geheime Set jeder Saison zieht ein paar davon, und sie werden mit deinem Namen veröffentlicht, wenn die Saison endet.",
     "rules_title": "Was hineinkommt",
     "rule_answer": "Eine sichere Antwort: splr findet innerhalb einer Minute ein Modell, das wir prüfen, oder beweist die Formel unerfüllbar, mit einem Beweis, den der verifizierte Prüfer annimmt.",
-    "rule_easy": "Nicht zu leicht: Ein einfacher DPLL-Solver darf sie nicht innerhalb einer Sekunde lösen.",
+    "rule_easy": "Nicht zu leicht, wie bei der SAT Competition: MiniSat darf sie nicht mit einem Zehntel des Treibstoffs lösen, den ein Solver pro Formel bekommt.",
     "rule_size": "Höchstens 2 MB DIMACS, 200.000 Variablen und eine Million Klauseln. Duplikate werden abgelehnt, auch umbenannte oder gemischte.",
     "rule_draw": "Jede Saison zieht bis zu {{ count }}: höchstens zwei pro Autor und zwei pro Familie, seltene Autoren und Familien zuerst, gleich viele SAT wie UNSAT. Die Ziehung ist mit dem geheimen Seed der Saison geseedet und steht ab Saisonbeginn fest.",
     "rule_license": "Du lizenzierst die Formel unter <a>CC BY 4.0</a>, damit sie mit dem Set der Saison veröffentlicht werden kann.",
@@ -243,7 +243,7 @@
     "reason": {
       "invalid": "Keine gültige DIMACS-CNF-Formel.",
       "too_large": "Zu groß.",
-      "too_easy": "Zu leicht: Ein einfacher DPLL-Solver löst sie innerhalb einer Sekunde.",
+      "too_easy": "Zu leicht: MiniSat löst sie mit einem Zehntel des Treibstoffs, den ein Solver pro Formel bekommt.",
       "no_answer": "Ihre Antwort ließ sich nicht innerhalb einer Minute sicher klären.",
       "wrong_claim": "Ihre Antwort ist nicht die, die du erwartet hast.",
       "failed": "Die Prüfung ist bei uns wiederholt fehlgeschlagen.",

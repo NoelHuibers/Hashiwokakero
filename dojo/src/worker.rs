@@ -311,8 +311,10 @@ async fn check_benchmark(
     )
 }
 
-/// The verdict on a community benchmark (see [`bench::verify_benchmark`]).
-fn verify(dimacs: &[u8]) -> Verdict {
+/// The verdict on a community benchmark (see [`bench::verify_benchmark`]): too easy if
+/// `MiniSat` solves it in `sandbox` (with `memory_bytes` like every run, see
+/// [`crate::reference::too_easy`]).
+fn verify(sandbox: &Sandbox, memory_bytes: usize, dimacs: &[u8]) -> Verdict {
     use crate::community::{Formula, FormulaError, Refusal};
     let text = String::from_utf8_lossy(dimacs);
     let formula = match Formula::parse(&text) {
@@ -334,7 +336,12 @@ fn verify(dimacs: &[u8]) -> Verdict {
         }
     };
     let cnf = crate::cnf::Cnf::new(formula.vars, formula.clauses);
-    std::panic::catch_unwind(|| bench::verify_benchmark(&cnf)).unwrap_or_else(|_| Verdict::Failed {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        bench::verify_benchmark(&cnf, |cnf| {
+            crate::reference::too_easy(sandbox, cnf, memory_bytes)
+        })
+    }))
+    .unwrap_or_else(|_| Verdict::Failed {
         message: "the verification panicked".into(),
     })
 }
@@ -508,7 +515,7 @@ fn evaluator(
                 let started = Instant::now();
                 let report = BenchmarkReport {
                     id: check.id,
-                    verdict: verify(&check.dimacs),
+                    verdict: verify(&sandbox, options.limits.memory_bytes, &check.dimacs),
                 };
                 eprintln!(
                     "benchmark #{}: {:?} in {:.1?}",

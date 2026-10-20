@@ -202,7 +202,7 @@
     "intro": "Like the SAT Competition, the Dojo takes benchmarks from its participants. Submit a formula you care about: if its answer can be settled for certain, it isn't too easy and a moderator accepts it, it joins the pool. Every season's hidden set draws a few from the pool, and they are published with your name when the season ends.",
     "rules_title": "What makes it in",
     "rule_answer": "A certain answer: within a minute, splr finds a model we check, or proves the formula unsatisfiable with a proof the verified checker accepts.",
-    "rule_easy": "Not too easy: a plain DPLL solver must not settle it within a second.",
+    "rule_easy": "Not too easy, like in the SAT Competition: MiniSat must not solve it with a tenth of the fuel a solver gets per formula.",
     "rule_size": "At most 2 MB of DIMACS, 200,000 variables and a million clauses. Duplicates are refused, also renamed or shuffled ones.",
     "rule_draw": "Each season draws up to {{ count }}: at most two per author and two per family, rare authors and families first, as many SAT as UNSAT. The draw is seeded with the season's secret seed and fixed when the season starts.",
     "rule_license": "You license the formula under <a>CC BY 4.0</a>, so it can be published with the season's set.",
@@ -243,7 +243,7 @@
     "reason": {
       "invalid": "Not a valid DIMACS CNF formula.",
       "too_large": "Too large.",
-      "too_easy": "Too easy: a plain DPLL solver settles it within a second.",
+      "too_easy": "Too easy: MiniSat solves it with a tenth of the fuel a solver gets per formula.",
       "no_answer": "Its answer couldn't be settled for certain within a minute.",
       "wrong_claim": "Its answer isn't the one you expected.",
       "failed": "Verification kept failing on our side.",

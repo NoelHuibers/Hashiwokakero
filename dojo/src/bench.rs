@@ -251,21 +251,12 @@ pub fn community(seed: &str, pool: &[PoolInstance]) -> Vec<Instance> {
 
 /// The worker's check of a community benchmark.
 ///
-/// Refused if a plain DPLL solver settles it within [`crate::community::EASY_SECS`] (too
-/// easy, like the SAT Competition's "`MiniSat` solves it in a minute"), verified if splr finds a
-/// model that checks out or proves it unsatisfiable with a proof the labelling checker accepts
-/// (see [`label`]), refused otherwise.
-pub fn verify_benchmark(cnf: &Cnf) -> Verdict {
-    // The house DPLL entry's solver
-    let dpll = SolverConfig {
-        kind: SolverKind::Dpll,
-        ..Default::default()
-    }
-    .normalized();
-    let easy = Instant::now() + Duration::from_secs(crate::community::EASY_SECS);
-    if let Ok((outcome, _)) = solve_clauses(&cnf.clauses, cnf.vars as usize, &dpll, Some(easy))
-        && !matches!(outcome, SatOutcome::Timeout)
-    {
+/// Refused if `too_easy` says so (the worker asks `MiniSat` in the sandbox, see
+/// `reference::too_easy`, like the SAT Competition's "`MiniSat` solves it within a minute"),
+/// verified if splr finds a model that checks out or proves it unsatisfiable with a proof the
+/// labelling checker accepts (see [`label`]), refused otherwise.
+pub fn verify_benchmark(cnf: &Cnf, too_easy: impl FnOnce(&Cnf) -> bool) -> Verdict {
+    if too_easy(cnf) {
         return Verdict::Refused {
             reason: Refusal::TooEasy,
         };
@@ -826,20 +817,20 @@ pub(crate) mod tests {
         assert!(community("season", &broken).is_empty());
     }
 
-    /// The "interesting" filter: what plain DPLL settles at once is too easy; otherwise splr
-    /// settles it with a checked model or proof.
+    /// The "interesting" filter decides first (the worker asks `MiniSat`, see
+    /// `reference::too_easy`); then splr settles it with a checked model or proof.
     #[test]
     fn benchmarks_are_verified() {
         let easy = Cnf::new(2, vec![vec![1, 2], vec![-1]]);
         assert_eq!(
-            verify_benchmark(&easy),
+            verify_benchmark(&easy, |cnf| cnf.vars == 2),
             Verdict::Refused {
                 reason: Refusal::TooEasy
             }
         );
         let spec = [unsat(Family::Factoring, 22), sat(Family::Factoring, 22)];
         for instance in generate_with("verify", &spec) {
-            match verify_benchmark(&instance.cnf) {
+            match verify_benchmark(&instance.cnf, |_| false) {
                 Verdict::Verified { answer, model, .. } => {
                     assert_eq!(answer, instance.expected);
                     assert_eq!(model.is_some(), answer == Answer::Sat);

@@ -353,7 +353,8 @@ pub enum Refusal {
     /// Not a formula (see [`FormulaError`]).
     Invalid(String),
     TooLarge,
-    /// A plain DPLL solver settles it within [`EASY_SECS`].
+    /// `MiniSat` solves it in the sandbox with a tenth of an entry's fuel (the worker's
+    /// `reference::EASY_FUEL`), like the SAT Competition's "`MiniSat` solves it within a minute".
     TooEasy,
     /// Neither a model nor a proof the checker accepts within the time the labelling gets.
     NoAnswer,
@@ -370,10 +371,6 @@ impl Refusal {
         }
     }
 }
-
-/// How long the plain DPLL solver of the "interesting" filter gets (natively, about as much work
-/// as the Dojo's fuel budget).
-pub const EASY_SECS: u64 = 1;
 
 /// The worker's verdict on a benchmark.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

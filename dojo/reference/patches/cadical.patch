@@ -1,0 +1,283 @@
+diff --git a/src/cadical.cpp b/src/cadical.cpp
+index 413fe9c..02008d2 100644
+--- a/src/cadical.cpp
++++ b/src/cadical.cpp
+@@ -25,7 +25,7 @@ class App : public Handler, public Terminator {
+ 
+   Solver *solver; // Global solver.
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   // Command line options.
+   //
+   int time_limit; // '-t <sec>'
+@@ -116,7 +116,7 @@ void App::print_usage (bool all) {
+ "  -q             be quiet\n"
+ #endif
+ "\n"
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+ "  -t <sec>       set wall clock time limit\n"
+ #endif
+ 
+@@ -133,7 +133,7 @@ void App::print_usage (bool all) {
+ "  -v             increase verbosity (see also '--verbose' below)\n"
+ "  -q             be quiet (same as '--quiet')\n"
+ #endif
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+ "  -t <sec>       set wall clock time limit\n"
+ #endif
+ "\n"
+@@ -503,7 +503,7 @@ int App::main (int argc, char **argv) {
+       else
+         decision_limit_specified = argv[i];
+     }
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+     else if (!strcmp (argv[i], "-t")) {
+       if (++i == argc)
+         APPERR ("argument to '-t' missing");
+@@ -607,6 +607,11 @@ int App::main (int argc, char **argv) {
+   // TODO: add proper forking, waiting, signal catching & propagating ...
+   //
+   FILE *less_pipe;
++#ifdef __wasi__
++  if (less)
++    APPERR ("'--less' is not supported on WASI");
++  less_pipe = 0;
++#else
+   if (less) {
+     assert (isatty (1));
+     less_pipe = popen ("less -r", "w");
+@@ -615,6 +620,7 @@ int App::main (int argc, char **argv) {
+     dup2 (fileno (less_pipe), 1);
+   } else
+     less_pipe = 0;
++#endif
+ 
+   /*----------------------------------------------------------------------*/
+ 
+@@ -636,7 +642,7 @@ int App::main (int argc, char **argv) {
+   }
+ #endif
+   if (preprocessing > 0 || localsearch > 0 ||
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+       time_limit >= 0 ||
+ #endif
+       conflict_limit >= 0 || decision_limit >= 0) {
+@@ -653,7 +659,7 @@ int App::main (int argc, char **argv) {
+           localsearch, localsearch_specified);
+       solver->limit ("localsearch", localsearch);
+     }
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+     if (time_limit >= 0) {
+       solver->message (
+           "setting time limit to %d seconds real time (due to '-t %s')",
+@@ -928,11 +934,13 @@ int App::main (int argc, char **argv) {
+            "c automated reasoning. 🚧 🚧 🚧\n",
+            write_result_file);
+ #endif
++#ifndef __wasi__
+   if (less_pipe) {
+     close (1);
+     pclose (less_pipe);
+   }
+-#ifndef _WIN32
++#endif
++#if !defined(_WIN32) && !defined(__wasi__)
+   if (time_limit > 0)
+     alarm (0);
+ #endif
+@@ -956,7 +964,7 @@ void App::init () {
+ 
+   assert (!solver);
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   time_limit = -1;
+ #endif
+   force_strict_parsing = 1;
+diff --git a/src/file.cpp b/src/file.cpp
+index 7f8a82d..f11d9fb 100644
+--- a/src/file.cpp
++++ b/src/file.cpp
+@@ -14,7 +14,7 @@ extern "C" {
+ #include <unistd.h>
+ }
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+ 
+ extern "C" {
+ #include <sys/wait.h>
+@@ -247,7 +247,12 @@ FILE *File::open_pipe (Internal *internal, const char *fmt,
+   size_t cmd_size = strlen (fmt) + strlen (path);
+   char *cmd = new char[cmd_size];
+   snprintf (cmd, cmd_size, fmt, path);
++#ifdef __wasi__
++  (void) mode;
++  FILE *res = 0;
++#else
+   FILE *res = popen (cmd, mode);
++#endif
+   delete[] cmd;
+   return res;
+ }
+@@ -266,7 +271,7 @@ FILE *File::read_pipe (Internal *internal, const char *fmt, const int *sig,
+   return open_pipe (internal, fmt, path, "r");
+ }
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+ 
+ #if defined(__APPLE__) || defined(__MACH__)
+ static std::mutex compressed_file_writing_mutex;
+@@ -401,7 +406,7 @@ File *File::read (Internal *internal, const char *path) {
+ File *File::write (Internal *internal, const char *path) {
+   FILE *file;
+   int close_output = 3, child_pid = 0;
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   if (has_suffix (path, ".xz"))
+     file = write_pipe (internal, "xz -c", path, child_pid);
+   else if (has_suffix (path, ".bz2"))
+@@ -440,9 +445,11 @@ void File::close (bool print) {
+   if (close_file == 2) {
+     if (print)
+       MSG ("closing input pipe to read '%s'", name ());
++#ifndef __wasi__
+     pclose (file);
++#endif
+   }
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   if (close_file == 3) {
+     if (print)
+       MSG ("closing output pipe to write '%s'", name ());
+diff --git a/src/random.cpp b/src/random.cpp
+index 9903230..a59ae08 100644
+--- a/src/random.cpp
++++ b/src/random.cpp
+@@ -78,7 +78,7 @@ static uint64_t hash_machine_identifier () {
+ // work.  As an additional measure to increase the possibility to get
+ // different seeds we are now also using network addresses (explicitly).
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+ 
+ extern "C" {
+ #include <ifaddrs.h>
+@@ -102,7 +102,7 @@ static uint64_t hash_network_addresses () {
+   // you really need to run 'mobical' on a Windows cluster where each node
+   // has identical IP addresses.
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   struct ifaddrs *addrs;
+   if (!getifaddrs (&addrs)) {
+     for (struct ifaddrs *addr = addrs; addr; addr = addr->ifa_next) {
+diff --git a/src/resources.cpp b/src/resources.cpp
+index 5dbed63..dd7eabf 100644
+--- a/src/resources.cpp
++++ b/src/resources.cpp
+@@ -127,6 +127,9 @@ uint64_t maximum_resident_set_size () {
+ // This seems to work on Linux (man page says since Linux 2.6.32).
+ 
+ uint64_t maximum_resident_set_size () {
++#ifdef __wasi__
++  return 0; // WASI has no 'ru_maxrss'
++#else
+   struct rusage u;
+   if (getrusage (RUSAGE_SELF, &u))
+     return 0;
+@@ -135,6 +138,7 @@ uint64_t maximum_resident_set_size () {
+ #else
+   return ((uint64_t) u.ru_maxrss);
+ #endif
++#endif
+ }
+ 
+ // Unfortunately 'getrusage' on Linux does not support current resident set
+diff --git a/src/signal.cpp b/src/signal.cpp
+index 984ce7f..b1f989c 100644
+--- a/src/signal.cpp
++++ b/src/signal.cpp
+@@ -23,7 +23,7 @@ static volatile sig_atomic_t signal_value = 0;
+ static volatile bool caught_signal = false;
+ static Handler *signal_handler;
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+ 
+ static volatile bool caught_alarm = false;
+ static volatile bool alarm_set = false;
+@@ -43,7 +43,7 @@ void Handler::catch_alarm () { catch_signal (SIGALRM); }
+ SIGNALS
+ #undef SIGNAL
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+ 
+ static void (*SIGALRM_handler) (int);
+ 
+@@ -66,7 +66,7 @@ void Signal::reset () {
+   SIG##_handler = 0;
+   SIGNALS
+ #undef SIGNAL
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   reset_alarm ();
+ #endif
+   caught_signal = false;
+@@ -79,7 +79,7 @@ const char *Signal::name (int sig) {
+     return #SIG;
+   SIGNALS
+ #undef SIGNAL
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   if (sig == SIGALRM)
+     return "SIGALRM";
+ #endif
+@@ -87,7 +87,7 @@ const char *Signal::name (int sig) {
+ }
+ 
+ static void catch_signal (int sig) {
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   if (sig == SIGALRM && absolute_real_time () >= alarm_time) {
+     if (!caught_alarm) {
+       caught_alarm = true;
+@@ -123,7 +123,7 @@ void Signal::set (Handler *h) {
+ #undef SIGNAL
+ }
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+ 
+ void Signal::alarm (int seconds) {
+   assert (seconds >= 0);
+diff --git a/src/signal.hpp b/src/signal.hpp
+index d343ef4..4631c92 100644
+--- a/src/signal.hpp
++++ b/src/signal.hpp
+@@ -10,7 +10,7 @@ public:
+   Handler () {}
+   virtual ~Handler () {}
+   virtual void catch_signal (int sig) = 0;
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   virtual void catch_alarm ();
+ #endif
+ };
+@@ -20,7 +20,7 @@ class Signal {
+ public:
+   static void set (Handler *);
+   static void reset ();
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(__wasi__)
+   static void alarm (int seconds);
+   static void reset_alarm ();
+ #endif

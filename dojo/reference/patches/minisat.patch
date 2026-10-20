@@ -1,0 +1,203 @@
+diff --git a/minisat/core/Solver.cc b/minisat/core/Solver.cc
+index 0b4f77a..c62ed86 100644
+--- a/minisat/core/Solver.cc
++++ b/minisat/core/Solver.cc
+@@ -101,6 +101,7 @@ Solver::Solver() :
+   , conflict_budget    (-1)
+   , propagation_budget (-1)
+   , asynch_interrupt   (false)
++  , drat               (NULL)
+ {}
+ 
+ 
+@@ -165,6 +166,8 @@ bool Solver::addClause_(vec<Lit>& ps)
+         else if (value(ps[i]) != l_False && ps[i] != p)
+             ps[j++] = p = ps[i];
+     ps.shrink(i - j);
++    // Without its false literals the clause follows by unit propagation
++    if (i != j) dratAdd(ps);
+ 
+     if (ps.size() == 0)
+         return ok = false;
+@@ -211,6 +214,8 @@ void Solver::detachClause(CRef cr, bool strict){
+ 
+ void Solver::removeClause(CRef cr) {
+     Clause& c = ca[cr];
++    // Reasons stay in the proof: checkers may still need them for top-level units
++    if (!locked(c)) dratDelete(c);
+     detachClause(cr);
+     // Don't leave pointers to free'd memory!
+     if (locked(c)) vardata[var(c[0])].reason = CRef_Undef;
+@@ -608,6 +613,12 @@ void Solver::removeSatisfied(vec<CRef>& cs)
+         else{
+             // Trim clause:
+             assert(value(c[0]) == l_Undef && value(c[1]) == l_Undef);
++            if (drat != NULL){
++                vec<Lit> trimmed;
++                for (int k = 0; k < c.size(); k++)
++                    if (value(c[k]) != l_False) trimmed.push(c[k]);
++                if (trimmed.size() < c.size()){ dratAdd(trimmed); dratDelete(c); }
++            }
+             for (int k = 2; k < c.size(); k++)
+                 if (value(c[k]) == l_False){
+                     c[k--] = c[c.size()-1];
+@@ -716,6 +727,7 @@ lbool Solver::search(int nof_conflicts)
+ 
+             learnt_clause.clear();
+             analyze(confl, learnt_clause, backtrack_level);
++            dratAdd(learnt_clause);
+             cancelUntil(backtrack_level);
+ 
+             if (learnt_clause.size() == 1){
+diff --git a/minisat/core/Solver.h b/minisat/core/Solver.h
+index 09367f9..729c226 100644
+--- a/minisat/core/Solver.h
++++ b/minisat/core/Solver.h
+@@ -75,6 +75,20 @@ public:
+     TrailIterator  trailBegin()   const;
+     TrailIterator  trailEnd  ()   const;
+ 
++    // DRAT proof: learnt, strengthened and deleted clauses are written to 'drat' in the binary
++    // format when it is set.
++    FILE*   drat;
++    template<class Lits> void dratAdd   (const Lits& c) { dratWrite('a', c); }
++    template<class Lits> void dratDelete(const Lits& c) { dratWrite('d', c); }
++    template<class Lits> void dratWrite (int kind, const Lits& c) {
++        if (drat == NULL) return;
++        putc(kind, drat);
++        for (int i = 0; i < c.size(); i++){
++            unsigned u = 2 * (var(c[i]) + 1) + sign(c[i]);
++            for (; u > 127; u >>= 7) putc(128 | (u & 127), drat);
++            putc(u, drat); }
++        putc(0, drat); }
++
+     void    toDimacs     (FILE* f, const vec<Lit>& assumps);            // Write CNF to file in DIMACS-format.
+     void    toDimacs     (const char *file, const vec<Lit>& assumps);
+     void    toDimacs     (FILE* f, Clause& c, vec<Var>& map, Var& max);
+diff --git a/minisat/core/SolverTypes.h b/minisat/core/SolverTypes.h
+index 89986d1..dea1892 100644
+--- a/minisat/core/SolverTypes.h
++++ b/minisat/core/SolverTypes.h
+@@ -51,8 +51,9 @@ typedef int Var;
+ struct Lit {
+     int     x;
+ 
+-    // Use this as a constructor:
+-    friend Lit mkLit(Var var, bool sign = false);
++    // Use this as a constructor (the default argument is on the definition below: current
++    // compilers reject it on a friend declaration):
++    friend Lit mkLit(Var var, bool sign);
+ 
+     bool operator == (Lit p) const { return x == p.x; }
+     bool operator != (Lit p) const { return x != p.x; }
+@@ -60,7 +61,7 @@ struct Lit {
+ };
+ 
+ 
+-inline  Lit  mkLit     (Var var, bool sign) { Lit p; p.x = var + var + (int)sign; return p; }
++inline  Lit  mkLit     (Var var, bool sign = false) { Lit p; p.x = var + var + (int)sign; return p; }
+ inline  Lit  operator ~(Lit p)              { Lit q; q.x = p.x ^ 1; return q; }
+ inline  Lit  operator ^(Lit p, bool b)      { Lit q; q.x = p.x ^ (unsigned int)b; return q; }
+ inline  bool sign      (Lit p)              { return p.x & 1; }
+diff --git a/minisat/mtl/Alloc.h b/minisat/mtl/Alloc.h
+index ccada7d..cd6280d 100644
+--- a/minisat/mtl/Alloc.h
++++ b/minisat/mtl/Alloc.h
+@@ -97,7 +97,7 @@ void RegionAllocator<T>::capacity(uint32_t min_cap)
+         cap += delta;
+ 
+         if (cap <= prev_cap)
+-            throw OutOfMemoryException();
++            MINISAT_OUT_OF_MEMORY();
+     }
+     // printf(" .. (%p) cap = %u\n", this, cap);
+ 
+@@ -119,7 +119,7 @@ RegionAllocator<T>::alloc(int size)
+     
+     // Handle overflow:
+     if (sz < prev_sz)
+-        throw OutOfMemoryException();
++        MINISAT_OUT_OF_MEMORY();
+ 
+     return prev_sz;
+ }
+diff --git a/minisat/mtl/Vec.h b/minisat/mtl/Vec.h
+index 5c188ff..7b208fe 100644
+--- a/minisat/mtl/Vec.h
++++ b/minisat/mtl/Vec.h
+@@ -101,7 +101,7 @@ void vec<T,_Size>::capacity(Size min_cap) {
+     const Size size_max = std::numeric_limits<Size>::max();
+     if ( ((size_max <= std::numeric_limits<int>::max()) && (add > size_max - cap))
+     ||   (((data = (T*)::realloc(data, (cap += add) * sizeof(T))) == NULL) && errno == ENOMEM) )
+-        throw OutOfMemoryException();
++        MINISAT_OUT_OF_MEMORY();
+  }
+ 
+ 
+diff --git a/minisat/mtl/XAlloc.h b/minisat/mtl/XAlloc.h
+index 1da1760..a2b928f 100644
+--- a/minisat/mtl/XAlloc.h
++++ b/minisat/mtl/XAlloc.h
+@@ -30,11 +30,17 @@ namespace Minisat {
+ // Simple layer on top of malloc/realloc to catch out-of-memory situtaions and provide some typing:
+ 
+ class OutOfMemoryException{};
++#ifdef __wasi__
++// WASI builds have no exceptions: running out of memory ends the solver
++#define MINISAT_OUT_OF_MEMORY() abort()
++#else
++#define MINISAT_OUT_OF_MEMORY() throw OutOfMemoryException()
++#endif
+ static inline void* xrealloc(void *ptr, size_t size)
+ {
+     void* mem = realloc(ptr, size);
+     if (mem == NULL && errno == ENOMEM){
+-        throw OutOfMemoryException();
++        MINISAT_OUT_OF_MEMORY();
+     }else
+         return mem;
+ }
+diff --git a/minisat/simp/SimpSolver.cc b/minisat/simp/SimpSolver.cc
+index 0a5bed8..2f9c511 100644
+--- a/minisat/simp/SimpSolver.cc
++++ b/minisat/simp/SimpSolver.cc
+@@ -210,6 +210,15 @@ bool SimpSolver::strengthenClause(CRef cr, Lit l)
+     // if (!find(subsumption_queue, &c))
+     subsumption_queue.insert(cr);
+ 
++    if (drat != NULL){
++        vec<Lit> stronger;
++        for (int i = 0; i < c.size(); i++)
++            if (c[i] != l) stronger.push(c[i]);
++        dratAdd(stronger);
++        // A binary clause is deleted by 'removeClause' below
++        if (c.size() > 2) dratDelete(c);
++    }
++
+     if (c.size() == 2){
+         removeClause(cr);
+         c.strengthen(l);
+@@ -522,6 +531,15 @@ bool SimpSolver::eliminateVar(Var v)
+         mkElimClause(elimclauses, ~mkLit(v));
+     }
+ 
++    // The resolvents go into the proof before the clauses they come from leave it
++    if (drat != NULL){
++        vec<Lit> resolvent;
++        for (int i = 0; i < pos.size(); i++)
++            for (int j = 0; j < neg.size(); j++)
++                if (merge(ca[pos[i]], ca[neg[j]], v, resolvent))
++                    dratAdd(resolvent);
++    }
++
+     for (int i = 0; i < cls.size(); i++)
+         removeClause(cls[i]); 
+ 
+@@ -565,6 +583,7 @@ bool SimpSolver::substitute(Var v, Lit x)
+             subst_clause.push(var(p) == v ? x ^ sign(p) : p);
+         }
+ 
++        dratAdd(subst_clause);
+         removeClause(cls[i]);
+ 
+         if (!addClause_(subst_clause))

@@ -11,7 +11,8 @@
 //!   and community benchmarks ([`community`]: their hashes and the draw from the pool)
 //! - `bench`: benchmark generation ([`bench`]), answer checking ([`output`]) and proof checking
 //!   ([`proof`], [`drat`])
-//! - `runner`: checking ([`validate`]), the sandbox ([`sandbox`]) and evaluating a set ([`eval`])
+//! - `runner`: checking ([`validate`]), the sandbox ([`sandbox`]), evaluating a set ([`eval`])
+//!   and the reference solvers `MiniSat`, `CaDiCaL` and Kissat ([`reference`])
 //! - `worker`: the HTTP service that evaluates submissions for the website ([`worker`])
 
 use serde::{Deserialize, Serialize};
@@ -42,6 +43,8 @@ mod proof_tests;
 #[cfg(all(test, feature = "bench"))]
 #[path = "tests/props.rs"]
 mod props;
+#[cfg(feature = "runner")]
+pub mod reference;
 #[cfg(feature = "runner")]
 pub mod sandbox;
 #[cfg(feature = "runner")]
