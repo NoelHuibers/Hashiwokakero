@@ -823,6 +823,21 @@ async fn seasons_are_archived_when_the_next_one_starts() {
     assert_eq!((past.entries, past.board.len()), (3, 3));
     assert_eq!(past.board[0].name, "alice's");
     assert_eq!(past.set_size, None);
+    // The revealed seed reveals the held-out family too, never the running season's
+    let mystery = dojo::mystery_family(&test_seed(first));
+    assert!(mystery.reserve());
+    assert_eq!(past.mystery, Some(mystery));
+    assert_eq!(archived_season.mystery, Some(mystery));
+    assert_eq!(s.current.mystery, None);
+
+    // Sets from before held-out families had none
+    conn.execute(
+        "UPDATE dojo_seasons SET generator_version = 1 WHERE season = ?1",
+        params![first],
+    )
+    .await
+    .unwrap();
+    assert_eq!(seasons(&conn, second).await.unwrap().past[0].mystery, None);
 
     // Again, also with a result for the old season coming in late: nothing changes
     let ended = past.ended_at;
@@ -1033,6 +1048,7 @@ fn results_as_csv() {
         rules_version: 1,
         budget: DEFAULT_BUDGET,
         set_sha256: None,
+        mystery: None,
         entries: vec![
             entry(
                 1,

@@ -1,10 +1,13 @@
 //! Benchmark sets, generated from a seed.
 //!
-//! Every answer is known for certain, backed by a model or by a checked proof:
+//! Every answer is known for certain, backed by a model, a construction argument or a checked
+//! proof:
 //!
 //! - Hashi: satisfiable, the generator's solution is a model.
 //! - Hashi parity: unsatisfiable, the island numbers add up to an odd number.
 //! - Pigeonhole: n+1 pigeons in n holes is unsatisfiable, n in n is not.
+//! - Factoring, miters, colouring, Tseitin, quasigroups and Hamiltonian cycles: see
+//!   [`crate::families`], a planted model or a mathematical reason.
 //! - Queens and random 3-SAT: solved by splr beforehand. SAT comes with a model, which is
 //!   checked. UNSAT must be proven: splr runs again writing a DRAT proof, which drat-trim and
 //!   `cake_lpr` verify when they are installed (like on the leaderboard), our own checker
@@ -12,9 +15,12 @@
 //!   the formula SAT, otherwise it is skipped, like instances splr can't solve.
 //!   Models are always checked anyway, labels only decide about UNSAT answers.
 //!
-//! The hidden test set uses a secret seed that changes every season, so its formulas can't be
-//! known in advance, and all formulas are scrambled (variables renamed and negated, clauses and
-//! literals shuffled) so a family can't be recognised by its layout.
+//! The development set ([`DEV_SPEC`]) is public. A season's hidden set ([`hidden_spec`]) uses a
+//! secret seed, so its formulas can't be known in advance; it has larger sizes than the dev set
+//! and one held-out family that no dev set has, so a solver tuned to the dev set has to
+//! generalise. All formulas are scrambled (variables renamed and negated, clauses and literals
+//! shuffled) so a family can't be recognised by its layout, and solvers read them without a
+//! name (see `eval::HEADER`).
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
@@ -42,43 +48,139 @@ pub struct Instance {
     pub witness: Option<Vec<i32>>,
 }
 
-/// What to generate, in order. The numbers are sizes, see [`generate_one`].
-pub const SPEC: &[(Family, u32)] = &[
-    (Family::Hashi, 10),
-    (Family::Hashi, 12),
-    (Family::Hashi, 14),
-    (Family::Hashi, 16),
-    (Family::Hashi, 18),
-    (Family::Hashi, 20),
-    (Family::Hashi, 24),
-    (Family::Hashi, 28),
-    (Family::HashiParity, 5),
-    (Family::HashiParity, 6),
-    (Family::HashiParity, 7),
-    (Family::HashiParity, 8),
-    (Family::HashiParity, 9),
-    (Family::HashiParity, 10),
-    (Family::Random3Sat, 100),
-    (Family::Random3Sat, 125),
-    (Family::Random3Sat, 150),
-    (Family::Random3Sat, 175),
-    (Family::Random3Sat, 200),
-    (Family::Random3Sat, 225),
-    (Family::Random3Sat, 250),
-    (Family::Random3Sat, 275),
-    (Family::Random3Sat, 300),
-    (Family::Random3Sat, 325),
-    (Family::Pigeonhole, 6),
-    (Family::Pigeonhole, 7),
-    (Family::Pigeonhole, 8),
-    (Family::Pigeonhole, 9),
-    (Family::Pigeonhole, 20),
-    (Family::Queens, 8),
-    (Family::Queens, 16),
-    (Family::Queens, 24),
-    (Family::Queens, 32),
-    (Family::Queens, 48),
+/// One formula to generate: its family, a size (what it means depends on the family, see
+/// [`generate_one`]) and the answer it should have (`None`: whatever comes out).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Spec {
+    pub family: Family,
+    pub size: u32,
+    pub want: Option<Answer>,
+}
+
+const fn sat(family: Family, size: u32) -> Spec {
+    Spec {
+        family,
+        size,
+        want: Some(Answer::Sat),
+    }
+}
+
+const fn unsat(family: Family, size: u32) -> Spec {
+    Spec {
+        family,
+        size,
+        want: Some(Answer::Unsat),
+    }
+}
+
+#[cfg(test)]
+const fn any(family: Family, size: u32) -> Spec {
+    Spec {
+        family,
+        size,
+        want: None,
+    }
+}
+
+/// The development set: every family of [`Family::DEV`], close to as many SAT as UNSAT
+/// formulas, sizes from easy for any solver to out of reach for a simple DPLL.
+pub const DEV_SPEC: &[Spec] = &[
+    sat(Family::Hashi, 12),
+    sat(Family::Hashi, 16),
+    sat(Family::Hashi, 20),
+    sat(Family::Hashi, 24),
+    unsat(Family::HashiParity, 8),
+    unsat(Family::HashiParity, 12),
+    unsat(Family::HashiParity, 16),
+    unsat(Family::HashiParity, 20),
+    sat(Family::Random3Sat, 150),
+    unsat(Family::Random3Sat, 150),
+    sat(Family::Random3Sat, 200),
+    unsat(Family::Random3Sat, 200),
+    unsat(Family::Pigeonhole, 6),
+    unsat(Family::Pigeonhole, 7),
+    unsat(Family::Pigeonhole, 8),
+    sat(Family::Pigeonhole, 20),
+    sat(Family::Queens, 16),
+    sat(Family::Queens, 32),
+    sat(Family::Queens, 48),
+    sat(Family::Factoring, 16),
+    unsat(Family::Factoring, 18),
+    sat(Family::Factoring, 20),
+    unsat(Family::Factoring, 22),
+    sat(Family::Factoring, 24),
+    unsat(Family::Factoring, 24),
+    unsat(Family::Miter, 4),
+    sat(Family::Miter, 6),
+    unsat(Family::Miter, 5),
+    sat(Family::Miter, 7),
+    unsat(Family::Miter, 6),
+    sat(Family::Coloring, 80),
+    unsat(Family::Coloring, 120),
+    sat(Family::Coloring, 120),
+    unsat(Family::Coloring, 200),
+    sat(Family::Coloring, 140),
+    unsat(Family::Coloring, 240),
 ];
+
+/// What a hidden set has beyond the dev set's sizes: one larger formula of every dev family.
+pub const BEYOND: &[Spec] = &[
+    sat(Family::Hashi, 28),
+    unsat(Family::HashiParity, 24),
+    unsat(Family::Random3Sat, 225),
+    unsat(Family::Pigeonhole, 9),
+    sat(Family::Queens, 64),
+    unsat(Family::Factoring, 26),
+    sat(Family::Miter, 8),
+    sat(Family::Coloring, 160),
+];
+
+const TSEITIN: &[Spec] = &[
+    sat(Family::Tseitin, 400),
+    unsat(Family::Tseitin, 16),
+    unsat(Family::Tseitin, 20),
+    unsat(Family::Tseitin, 22),
+];
+
+const QUASIGROUP: &[Spec] = &[
+    sat(Family::Quasigroup, 20),
+    sat(Family::Quasigroup, 25),
+    sat(Family::Quasigroup, 28),
+    sat(Family::Quasigroup, 30),
+];
+
+const HAMILTONIAN: &[Spec] = &[
+    sat(Family::Hamiltonian, 30),
+    unsat(Family::Hamiltonian, 24),
+    sat(Family::Hamiltonian, 40),
+    unsat(Family::Hamiltonian, 28),
+];
+
+/// The formulas of a held-out family in a hidden set.
+pub fn mystery_spec(family: Family) -> &'static [Spec] {
+    match family {
+        Family::Tseitin => TSEITIN,
+        Family::Quasigroup => QUASIGROUP,
+        Family::Hamiltonian => HAMILTONIAN,
+        _ => &[],
+    }
+}
+
+/// A season's hidden set: the dev families at the dev set's sizes and [`BEYOND`] them, then the
+/// formulas of the mystery family that the seed picks (see [`crate::mystery_family`]).
+pub fn hidden_spec(seed: &str) -> Vec<Spec> {
+    Family::DEV
+        .into_iter()
+        .flat_map(|family| {
+            DEV_SPEC
+                .iter()
+                .chain(BEYOND)
+                .filter(move |s| s.family == family)
+                .copied()
+        })
+        .chain(mystery_spec(crate::mystery_family(seed)).iter().copied())
+        .collect()
+}
 
 /// The random generator for one instance: same seed and index, same instance.
 fn rng_for(seed: &str, index: usize, attempt: u32) -> StdRng {
@@ -86,21 +188,26 @@ fn rng_for(seed: &str, index: usize, attempt: u32) -> StdRng {
     StdRng::from_seed(digest.into())
 }
 
-/// The whole set for `seed`, see [`SPEC`].
+/// The development set's formulas for `seed` (see [`DEV_SPEC`]), any seed but a season's.
 pub fn generate(seed: &str) -> Vec<Instance> {
-    generate_with(seed, SPEC)
+    generate_with(seed, DEV_SPEC)
+}
+
+/// The hidden set of a season with this seed (see [`hidden_spec`]).
+pub fn generate_hidden(seed: &str) -> Vec<Instance> {
+    generate_with(seed, &hidden_spec(seed))
 }
 
 /// Instances are independent (each has its own random generator), so they are generated in
 /// parallel.
-pub fn generate_with(seed: &str, spec: &[(Family, u32)]) -> Vec<Instance> {
+pub fn generate_with(seed: &str, spec: &[Spec]) -> Vec<Instance> {
     let mut counters = std::collections::HashMap::new();
     let names: Vec<String> = spec
         .iter()
-        .map(|&(family, _)| {
-            let n = counters.entry(family).or_insert(0u32);
+        .map(|s| {
+            let n = counters.entry(s.family).or_insert(0u32);
             *n += 1;
-            format!("{}-{:02}", family.id(), n)
+            format!("{}-{:02}", s.family.id(), n)
         })
         .collect();
     let threads = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
@@ -112,11 +219,10 @@ pub fn generate_with(seed: &str, spec: &[(Family, u32)]) -> Vec<Instance> {
             scope.spawn(|| {
                 loop {
                     let index = next.fetch_add(1, Ordering::Relaxed);
-                    let Some(&(family, size)) = spec.get(index) else {
+                    let Some(&one) = spec.get(index) else {
                         break;
                     };
-                    let instance =
-                        generate_instance(seed, index, names[index].clone(), family, size);
+                    let instance = generate_instance(seed, index, names[index].clone(), one);
                     *slots[index]
                         .lock()
                         .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(instance);
@@ -133,17 +239,17 @@ pub fn generate_with(seed: &str, spec: &[(Family, u32)]) -> Vec<Instance> {
         .collect()
 }
 
-fn generate_instance(
-    seed: &str,
-    index: usize,
-    name: String,
-    family: Family,
-    size: u32,
-) -> Instance {
+fn generate_instance(seed: &str, index: usize, name: String, spec: Spec) -> Instance {
+    assert!(
+        spec.family != Family::Mystery,
+        "the mystery family stands for another one"
+    );
     let mut attempt = 0;
     loop {
         let mut rng = rng_for(seed, index, attempt);
-        if let Some((cnf, expected, witness)) = generate_one(family, size, &mut rng) {
+        if let Some((cnf, expected, witness)) = generate_one(spec, &mut rng)
+            && spec.want.is_none_or(|want| want == expected)
+        {
             let (cnf, map) = cnf.scramble(&mut rng);
             let witness = witness.map(|w| {
                 w.iter()
@@ -155,7 +261,7 @@ fn generate_instance(
             });
             return Instance {
                 name,
-                family,
+                family: spec.family,
                 expected,
                 cnf,
                 witness,
@@ -165,17 +271,46 @@ fn generate_instance(
     }
 }
 
-type Generated = (Cnf, Answer, Option<Vec<i32>>);
+pub type Generated = (Cnf, Answer, Option<Vec<i32>>);
 
-/// One formula; `None` to try again with another random draw.
-pub fn generate_one(family: Family, size: u32, rng: &mut StdRng) -> Option<Generated> {
-    match family {
+/// One formula; `None` to try again with another random draw. Sizes:
+///
+/// - Hashi, Hashi parity: width and height of the puzzle
+/// - random 3-SAT: variables
+/// - pigeonhole: holes (for SAT as many pigeons, otherwise one more; without a wanted answer
+///   holes up to 11 get one more)
+/// - queens: the board's width
+/// - factoring: bits of the number, miter: bits of the multipliers' operands
+/// - colouring, Tseitin, Hamiltonian: vertices; quasigroup: the square's order
+///
+/// Families whose answer comes out of a solver (random 3-SAT, queens) may give another answer
+/// than `spec.want`, the caller draws again then.
+pub fn generate_one(spec: Spec, rng: &mut StdRng) -> Option<Generated> {
+    use crate::families::{coloring, factoring, hamiltonian, miter, quasigroup, tseitin};
+    let size = spec.size;
+    let want = spec.want.unwrap_or_else(|| {
+        if rng.random_bool(0.5) {
+            Answer::Sat
+        } else {
+            Answer::Unsat
+        }
+    });
+    match spec.family {
         Family::Hashi => hashi(size, rng, false),
         Family::HashiParity => hashi(size, rng, true),
         Family::Random3Sat => random_3sat(size, rng),
-        // Up to 11 holes one pigeon too many, bigger ones fit
-        Family::Pigeonhole => Some(pigeonhole(size, size >= 12)),
+        Family::Pigeonhole => Some(pigeonhole(
+            size,
+            spec.want.map_or(size >= 12, |w| w == Answer::Sat),
+        )),
         Family::Queens => queens(size, rng),
+        Family::Factoring => factoring::generate(size, want, rng),
+        Family::Miter => miter::generate(size, want, rng),
+        Family::Coloring => coloring::generate(size, want, rng),
+        Family::Tseitin => tseitin::generate(size, want, rng),
+        Family::Quasigroup => quasigroup::generate(size, rng),
+        Family::Hamiltonian => hamiltonian::generate(size, want, rng),
+        Family::Mystery => None,
     }
 }
 
@@ -444,50 +579,121 @@ fn queens(n: u32, rng: &mut StdRng) -> Option<Generated> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
+    /// Checks a label with splr: SAT if it finds a model, UNSAT only with a DRAT proof that the
+    /// labelling checker accepts.
+    pub(crate) fn assert_label(cnf: &Cnf, expected: Answer, what: &str) {
+        let outcome = solve_clauses(&cnf.clauses, cnf.vars as usize, &SolverConfig::splr(), None)
+            .unwrap()
+            .0;
+        match outcome {
+            SatOutcome::Sat(model) => {
+                assert_eq!(cnf.check(&literals(&model)), Some(true), "{what}");
+                assert_eq!(expected, Answer::Sat, "{what}: splr found a model");
+            }
+            SatOutcome::Unsat => {
+                assert_eq!(expected, Answer::Unsat, "{what}: splr says UNSAT");
+                assert!(proven_unsat(cnf), "{what}: no checked proof");
+            }
+            SatOutcome::Timeout => panic!("{what}: splr timed out"),
+        }
+    }
+
     #[test]
-    fn spec_size() {
-        assert_eq!(SPEC.len(), crate::SET_SIZE as usize);
+    fn spec_sizes() {
+        assert_eq!(DEV_SPEC.len(), crate::DEV_SET_SIZE as usize);
+        for family in Family::RESERVE {
+            let spec = hidden_spec(&format!("seed for {}", family.id()));
+            assert_eq!(spec.len(), crate::SET_SIZE as usize);
+            assert_eq!(mystery_spec(family).len(), 4);
+        }
+        let none: &[Spec] = &[];
+        assert_eq!(mystery_spec(Family::Hashi), none);
+        // Every dev family, nothing else, in the dev set
+        let families: std::collections::BTreeSet<Family> =
+            DEV_SPEC.iter().map(|s| s.family).collect();
+        assert_eq!(families.into_iter().collect::<Vec<_>>(), Family::DEV);
+        let wants = |answer| DEV_SPEC.iter().filter(|s| s.want == Some(answer)).count();
+        // As many SAT as UNSAT formulas
+        assert_eq!(wants(Answer::Sat), wants(Answer::Unsat));
+        assert!(DEV_SPEC.iter().all(|s| s.want.is_some()));
+    }
+
+    /// The hidden set holds the dev families at the dev sizes and beyond, plus one held-out
+    /// family that the seed picks, which the dev set never has.
+    #[test]
+    fn hidden_sets_hold_a_mystery_family() {
+        let mut mysteries = std::collections::BTreeSet::new();
+        for i in 0..40 {
+            let seed = format!("season seed {i}");
+            let spec = hidden_spec(&seed);
+            let mystery = crate::mystery_family(&seed);
+            assert!(mystery.reserve());
+            mysteries.insert(mystery);
+            let held_out: Vec<&Spec> = spec.iter().filter(|s| s.family.reserve()).collect();
+            assert_eq!(held_out.len(), 4);
+            assert!(held_out.iter().all(|s| s.family == mystery));
+            assert!(!DEV_SPEC.iter().any(|s| s.family.reserve()));
+            for family in Family::DEV {
+                assert!(spec.iter().any(|s| s.family == family), "{family:?}");
+            }
+            assert_eq!(spec.len(), DEV_SPEC.len() + BEYOND.len() + 4);
+        }
+        // Each formula beyond the dev set is larger than any of the dev set's of its family and
+        // answer (colourings with a Mycielski graph are easier than planted ones of their size)
+        for beyond in BEYOND {
+            let largest = DEV_SPEC
+                .iter()
+                .filter(|s| s.family == beyond.family && s.want == beyond.want)
+                .map(|s| s.size)
+                .max()
+                .unwrap_or_default();
+            assert!(beyond.size > largest, "{beyond:?}");
+        }
+        assert_eq!(BEYOND.len(), Family::DEV.len());
+        // Every held-out family gets its turn
+        assert_eq!(mysteries.len(), Family::RESERVE.len());
+        assert_eq!(crate::mystery_family("x"), crate::mystery_family("x"));
     }
 
     #[test]
     fn small_set_is_labelled_correctly() {
         let spec = [
-            (Family::Hashi, 7),
-            (Family::HashiParity, 5),
-            (Family::Random3Sat, 40),
-            (Family::Pigeonhole, 4),
-            (Family::Pigeonhole, 12),
-            (Family::Queens, 8),
+            sat(Family::Hashi, 7),
+            unsat(Family::HashiParity, 5),
+            sat(Family::Random3Sat, 40),
+            unsat(Family::Random3Sat, 40),
+            unsat(Family::Pigeonhole, 4),
+            any(Family::Pigeonhole, 12),
+            any(Family::Queens, 8),
+            sat(Family::Factoring, 10),
+            unsat(Family::Factoring, 10),
+            unsat(Family::Miter, 3),
+            sat(Family::Miter, 3),
+            sat(Family::Coloring, 30),
+            unsat(Family::Coloring, 30),
+            sat(Family::Tseitin, 8),
+            unsat(Family::Tseitin, 8),
+            sat(Family::Quasigroup, 6),
+            sat(Family::Hamiltonian, 8),
+            unsat(Family::Hamiltonian, 8),
         ];
         let set = generate_with("test", &spec);
         assert_eq!(set.len(), spec.len());
-        for instance in &set {
+        for (instance, spec) in set.iter().zip(&spec) {
+            assert_eq!(instance.family, spec.family);
+            assert!(spec.want.is_none_or(|w| w == instance.expected));
+            assert_eq!(instance.witness.is_some(), instance.expected == Answer::Sat);
             if let Some(w) = &instance.witness {
                 assert_eq!(instance.cnf.check(w), Some(true), "{}", instance.name);
-                assert_eq!(instance.expected, Answer::Sat);
             }
-            // Cross-check every label with splr
-            let outcome = solve_clauses(
-                &instance.cnf.clauses,
-                instance.cnf.vars as usize,
-                &SolverConfig::splr(),
-                None,
-            )
-            .unwrap()
-            .0;
-            let answer = if matches!(outcome, SatOutcome::Sat(_)) {
-                Answer::Sat
-            } else {
-                Answer::Unsat
-            };
-            assert_eq!(answer, instance.expected, "{}", instance.name);
+            // Cross-check every label with splr, and its proofs
+            assert_label(&instance.cnf, instance.expected, &instance.name);
         }
-        assert_eq!(set[1].expected, Answer::Unsat);
-        assert_eq!(set[3].expected, Answer::Unsat);
-        assert_eq!(set[4].expected, Answer::Sat);
+        assert_eq!(set[4].expected, Answer::Unsat);
+        assert_eq!(set[5].expected, Answer::Sat);
         // Same seed, same formulas
         let again = generate_with("test", &spec);
         assert!(set.iter().zip(&again).all(|(a, b)| a.cnf == b.cnf));
@@ -502,8 +708,8 @@ mod tests {
         const SETS_CHANGE: &str = "the same seed gives other formulas now (rand, splr, sha2, \
                                    the generator or the families changed): a worker without \
                                    the set cached would evaluate new submissions on another \
-                                   hidden set than the earlier ones of the season. Only change \
-                                   it together with a new season (DOJO_SEASON).";
+                                   hidden set than the earlier ones of the season. Bump \
+                                   GENERATOR_VERSION and RULES_VERSION with it.";
         let mut rng = rng_for("golden", 3, 1);
         assert_eq!(
             rng.random::<u64>(),
@@ -511,11 +717,22 @@ mod tests {
             "{SETS_CHANGE}"
         );
         let spec = [
-            (Family::Hashi, 7),
-            (Family::HashiParity, 5),
-            (Family::Random3Sat, 20),
-            (Family::Pigeonhole, 4),
-            (Family::Queens, 8),
+            sat(Family::Hashi, 7),
+            unsat(Family::HashiParity, 5),
+            any(Family::Random3Sat, 20),
+            unsat(Family::Pigeonhole, 4),
+            any(Family::Queens, 8),
+            sat(Family::Factoring, 12),
+            unsat(Family::Factoring, 12),
+            sat(Family::Miter, 4),
+            unsat(Family::Miter, 4),
+            sat(Family::Coloring, 30),
+            unsat(Family::Coloring, 30),
+            sat(Family::Tseitin, 10),
+            unsat(Family::Tseitin, 10),
+            sat(Family::Quasigroup, 8),
+            sat(Family::Hamiltonian, 10),
+            unsat(Family::Hamiltonian, 10),
         ];
         let digests: Vec<String> = generate_with("golden", &spec)
             .iter()
@@ -534,10 +751,26 @@ mod tests {
             [
                 "hashi-01 cc0dba5ae2ccc1ce",
                 "hashi-parity-01 27ec251a8ceb744b",
-                "random-3sat-01 a285979ad78b96b7",
+                "random-3sat-01 00f005fc63ee3235",
                 "pigeonhole-01 20cb5b50acf516fe",
-                "queens-01 a73ac8eebddbb055",
+                "queens-01 c50d33316a0e0e32",
+                "factoring-01 bed852b6710c5ef7",
+                "factoring-02 21af9886b01b435a",
+                "miter-01 e241be0f89d49f51",
+                "miter-02 892dc275d1310581",
+                "coloring-01 ea5dc9de5d443a4a",
+                "coloring-02 a549083e26a45424",
+                "tseitin-01 db32d375fbc93dd3",
+                "tseitin-02 dea0f305f461e2ca",
+                "quasigroup-01 fe07cd9748f8e6d0",
+                "hamiltonian-01 706b3fdcc7bb368d",
+                "hamiltonian-02 e01937be30e7af1d",
             ],
+            "{SETS_CHANGE}"
+        );
+        assert_eq!(
+            crate::mystery_family("golden"),
+            Family::Quasigroup,
             "{SETS_CHANGE}"
         );
     }

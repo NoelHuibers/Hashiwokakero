@@ -14,6 +14,13 @@ pub fn family_name(locale: Locale, family: Family) -> String {
         Family::Random3Sat => td_string!(locale, dojo.family.random_3sat),
         Family::Pigeonhole => td_string!(locale, dojo.family.pigeonhole),
         Family::Queens => td_string!(locale, dojo.family.queens),
+        Family::Factoring => td_string!(locale, dojo.family.factoring),
+        Family::Miter => td_string!(locale, dojo.family.miter),
+        Family::Coloring => td_string!(locale, dojo.family.coloring),
+        Family::Tseitin => td_string!(locale, dojo.family.tseitin),
+        Family::Quasigroup => td_string!(locale, dojo.family.quasigroup),
+        Family::Hamiltonian => td_string!(locale, dojo.family.hamiltonian),
+        Family::Mystery => td_string!(locale, dojo.family.mystery),
     }
     .to_string()
 }
@@ -25,6 +32,13 @@ pub(super) fn family_text(locale: Locale, family: Family) -> String {
         Family::Random3Sat => td_string!(locale, dojo.family.random_3sat_text),
         Family::Pigeonhole => td_string!(locale, dojo.family.pigeonhole_text),
         Family::Queens => td_string!(locale, dojo.family.queens_text),
+        Family::Factoring => td_string!(locale, dojo.family.factoring_text),
+        Family::Miter => td_string!(locale, dojo.family.miter_text),
+        Family::Coloring => td_string!(locale, dojo.family.coloring_text),
+        Family::Tseitin => td_string!(locale, dojo.family.tseitin_text),
+        Family::Quasigroup => td_string!(locale, dojo.family.quasigroup_text),
+        Family::Hamiltonian => td_string!(locale, dojo.family.hamiltonian_text),
+        Family::Mystery => td_string!(locale, dojo.family.mystery_text),
     }
     .to_string()
 }
@@ -36,6 +50,13 @@ pub(super) fn family_kanji(family: Family) -> &'static str {
         Family::Random3Sat => "乱",
         Family::Pigeonhole => "鳩",
         Family::Queens => "女",
+        Family::Factoring => "因",
+        Family::Miter => "回",
+        Family::Coloring => "色",
+        Family::Tseitin => "奇",
+        Family::Quasigroup => "方",
+        Family::Hamiltonian => "巡",
+        Family::Mystery => "謎",
     }
 }
 

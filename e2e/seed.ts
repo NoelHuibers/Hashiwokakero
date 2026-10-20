@@ -108,20 +108,25 @@ export function seed(dbPath: string) {
   attempt.run(player('bram').id, today, Date.now() - 120_000, Date.now() - 1_000, 0, 0, 119_000);
   attempt.run(player('chen').id, today, Date.now() - 100_000, Date.now() - 2_000, 0, 1, 98_000);
 
+  // A hidden set: the dev families at larger sizes too, and the held-out one as the mystery family
   const families = [
-    { family: 'Hashi', solved: 8, total: 8, par2: 0.4 },
-    { family: 'HashiParity', solved: 4, total: 6, par2: 7.1 },
-    { family: 'Random3Sat', solved: 7, total: 8, par2: 3.2 },
-    { family: 'Pigeonhole', solved: 4, total: 6, par2: 7.5 },
-    { family: 'Queens', solved: 6, total: 6, par2: 0.9 },
+    { family: 'Hashi', solved: 5, total: 5, par2: 0.4 },
+    { family: 'HashiParity', solved: 4, total: 5, par2: 4.1 },
+    { family: 'Random3Sat', solved: 4, total: 5, par2: 4.2 },
+    { family: 'Pigeonhole', solved: 2, total: 5, par2: 12.5 },
+    { family: 'Queens', solved: 3, total: 4, par2: 5.9 },
+    { family: 'Factoring', solved: 5, total: 7, par2: 6.3 },
+    { family: 'Miter', solved: 4, total: 6, par2: 7.4 },
+    { family: 'Coloring', solved: 5, total: 7, par2: 6.0 },
+    { family: 'Mystery', solved: 3, total: 4, par2: 5.2 },
   ];
-  const score = { par2: 3.6, solved: 29, total: 34, wrong: 0, budget: 10_000_000_000, fuel: 41.2, families };
+  const score = { par2: 5.9, solved: 35, total: 48, wrong: 0, budget: 10_000_000_000, fuel: 61.2, families };
   const created = (today - 10) * MS_PER_DAY;
   // rules_version is dojo::RULES_VERSION: with an older one the site evaluates it again
   db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
        state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version)
-     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 34, 34, ?, ?, ?, 0, ?, 2)`,
+     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 3)`,
   ).run(
     DOJO_SUBMISSION,
     new Uint8Array([0]),
@@ -134,14 +139,15 @@ export function seed(dbPath: string) {
     score.solved,
     sha256('plain-dpll-code'),
   );
-  // The season before, archived: its revealed seed, its set and the house entry's final result
+  // The season before, archived: its revealed seed (which reveals its mystery family), its set and
+  // the house entry's final result
   const archived = DOJO_SEASON - 1;
   db.prepare(
     `INSERT INTO dojo_seasons (season, started_at, ended_at, commitment, seed, generator_version, rules_version)
-     VALUES (?, ?, ?, ?, ?, 1, 1)`,
+     VALUES (?, ?, ?, ?, ?, 2, 3)`,
   ).run(archived, (today - 40) * MS_PER_DAY, (today - 12) * MS_PER_DAY, ARCHIVED_COMMITMENT, ARCHIVED_SEED);
   db.prepare(
-    'INSERT INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?, 1, ?, ?, ?)',
+    'INSERT INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?, 2, ?, ?, ?)',
   ).run(archived, new Uint8Array([0x1f, 0x8b, 8, 0]), sha256('set'), (today - 12) * MS_PER_DAY);
   const results = [
     { name: 'hashi-01', family: 'Hashi', expected: 'Sat', outcome: { Solved: 'Sat' }, fuel: 1_200_000 },
@@ -150,7 +156,7 @@ export function seed(dbPath: string) {
   db.prepare(
     `INSERT INTO dojo_archive (season, submission_id, user_id, house, name, created_at, par2, solved, wrong, score, results,
        rules_version, rank)
-     VALUES (?, ?, NULL, 1, 'Plain DPLL', ?, ?, ?, 0, ?, ?, 1, 1)`,
+     VALUES (?, ?, NULL, 1, 'Plain DPLL', ?, ?, ?, 0, ?, ?, 3, 1)`,
   ).run(
     archived,
     DOJO_SUBMISSION,

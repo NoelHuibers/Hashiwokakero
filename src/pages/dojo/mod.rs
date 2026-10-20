@@ -26,8 +26,11 @@ pub use submission::DojoSubmissionPage;
 use submit::SubmitCard;
 
 const STARTER_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero/tree/main/dojo/starter";
-/// The dev set, `dojo export dojo-dev-1/` packed by hand and committed in `public/`.
-pub const DEV_SET_URL: &str = "/dojo-dev-1.tar.gz";
+/// The dev set as `dojo export public/dojo-dev-2.tar.gz` writes it, committed in `public/`.
+///
+/// Regenerate it (and bump the name, so no cache keeps the old one) whenever
+/// `dojo::GENERATOR_VERSION` or `dojo::DEV_SEED` changes.
+pub const DEV_SET_URL: &str = "/dojo-dev-2.tar.gz";
 
 #[component]
 pub fn DojoPage() -> impl IntoView {

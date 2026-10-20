@@ -343,6 +343,7 @@
       "set_size": null,
       "set_sha256": null,
       "entries": 0,
+      "mystery": null,
       "board": []
     },
     "past": [
@@ -357,6 +358,7 @@
         "set_size": 1400000,
         "set_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
         "entries": 4,
+        "mystery": "Tseitin",
         "board": [
           {
             "rank": 1,
@@ -594,7 +596,14 @@
     "HashiParity",
     "Random3Sat",
     "Pigeonhole",
-    "Queens"
+    "Queens",
+    "Factoring",
+    "Miter",
+    "Coloring",
+    "Tseitin",
+    "Quasigroup",
+    "Hamiltonian",
+    "Mystery"
   ],
   "submission_actions": [
     "Requeue",

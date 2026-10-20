@@ -15,7 +15,7 @@ use crate::model::{DojoEntry, DojoSeason, DojoSeasons, day_of};
 use crate::seo::PageMeta;
 
 use super::guide::Code;
-use super::names::par2;
+use super::names::{family_kanji, family_name, family_text, par2};
 
 /// A file size in MB, for display.
 #[expect(
@@ -135,6 +135,25 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
         }
     });
     let no_set = season.set_size.is_none();
+    // The held-out family, a secret until now
+    let mystery = season.mystery.map(|f| {
+        view! {
+            <div class="flex gap-3" data-testid="mystery-family">
+                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-secondary font-pixel text-lg">
+                    {family_kanji(f)}
+                </span>
+                <div class="text-sm">
+                    <p class="font-bold">
+                        {move || {
+                            let locale = i18n.get_locale();
+                            td_string!(locale, dojo.seasons.mystery, family = family_name(locale, f))
+                        }}
+                    </p>
+                    <p class="text-muted-foreground">{move || family_text(i18n.get_locale(), f)}</p>
+                </div>
+            </div>
+        }
+    });
     view! {
         <Card class="gap-4" attr:id=format!("season-{n}")>
             <CardHeader>
@@ -152,6 +171,7 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
                     <Hash label=t!(i18n, dojo.seasons.commitment).into_any() value=season.commitment.clone() />
                     <Hash label=t!(i18n, dojo.seasons.seed).into_any() value=season.seed.clone().unwrap_or_default() />
                 </div>
+                {mystery}
                 <div class="flex flex-wrap gap-2">
                     {set}
                     <a href=format!("/dojo/seasons/{n}/results.csv") download class=link>
@@ -250,7 +270,7 @@ pub fn DojoSeasonsPage() -> impl IntoView {
                 <CardContent class="flex flex-col gap-3 text-sm text-muted-foreground">
                     <p>{t!(i18n, dojo.seasons.verify)}</p>
                     <Code>
-                        "$ printf %s <seed> | sha256sum        # = commitment\n$ dojo export regenerated/ --seed <seed>\n$ dojo run my-solver.wasm --set dojo-season-<n>.tar.gz"
+                        "$ printf %s <seed> | sha256sum        # = commitment\n$ dojo export regenerated/ --seed <seed> --hidden\n$ dojo run my-solver.wasm --set dojo-season-<n>.tar.gz"
                     </Code>
                     <p class="flex flex-wrap gap-x-4 gap-y-1">
                         <a class="text-primary underline underline-offset-4" href="/dojo/seasons.json">"/dojo/seasons.json"</a>

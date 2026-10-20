@@ -11,6 +11,12 @@ use super::names::{family_kanji, family_name, family_text};
 /// What the Dojo's proof rules follow: an UNSAT answer needs a proof a verified checker accepts.
 const SAT_COMPETITION_RULES: &str = "https://satcompetition.github.io/2026/rules.html";
 
+/// The SAT Competition 2026 results talk, where the organisers raised memorisation versus
+/// generalisation (an AI-generated solver with family-specific sub-solvers): why hidden sets
+/// have a held-out family.
+const SAT_COMPETITION_2026_SLIDES: &str =
+    "https://satcompetition.github.io/2026/downloads/satcomp26slides.pdf";
+
 #[component]
 pub(super) fn Code(children: Children) -> impl IntoView {
     view! {
@@ -54,7 +60,7 @@ pub(super) fn HowItWorks() -> impl IntoView {
                 </Step>
                 <Step number="二" title=t!(i18n, dojo.how.train_title).into_any()>
                     <p>{t!(i18n, dojo.how.train)}</p>
-                    <Code>"$ cargo install --git https://github.com/\n    NoelHuibers/Hashiwokakero dojo --features worker\n$ dojo run my-solver.wasm\n\nsolved 26/34  PAR-2 4.855 Gfuel"</Code>
+                    <Code>"$ cargo install --git https://github.com/\n    NoelHuibers/Hashiwokakero dojo --features worker\n$ dojo run my-solver.wasm\n\nsolved 33/36  PAR-2 2.658 Gfuel"</Code>
                 </Step>
                 <Step number="三" title=t!(i18n, dojo.how.submit_title).into_any()>
                     <p>{t!(i18n, dojo.how.submit)}</p>
@@ -76,8 +82,10 @@ pub(super) fn Families() -> impl IntoView {
                 <CardTitle class="text-xl">{t!(i18n, dojo.family.title)}</CardTitle>
             </CardHeader>
             <CardContent class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {Family::ALL
+                // The dev families, and the held-out one that only hidden sets have
+                {Family::DEV
                     .into_iter()
+                    .chain([Family::Mystery])
                     .map(|f| {
                         view! {
                             <div class="flex gap-3">
@@ -131,6 +139,20 @@ pub(super) fn FairPlay() -> impl IntoView {
                         dojo.fair.checked,
                         <a> = |children: ChildrenFn| view! {
                             <a href=SAT_COMPETITION_RULES target="_blank" rel="noopener" class="text-primary underline underline-offset-4">
+                                {children()}
+                            </a>
+                        }
+                    )
+                        .into_any(),
+                )}
+                {item(
+                    "謎",
+                    t!(i18n, dojo.fair.heldout_title).into_any(),
+                    t!(
+                        i18n,
+                        dojo.fair.heldout,
+                        <a> = |children: ChildrenFn| view! {
+                            <a href=SAT_COMPETITION_2026_SLIDES target="_blank" rel="noopener" class="text-primary underline underline-offset-4">
                                 {children()}
                             </a>
                         }

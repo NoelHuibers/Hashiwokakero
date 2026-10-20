@@ -4,7 +4,7 @@
     "description": "Zgłoś swój solver SAT jako WebAssembly i wspinaj się w rankingu: ocena na ukrytych, świeżych formułach, deterministyczne paliwo zamiast sekund. Open source."
   },
   "title": "SAT Dojo",
-  "intro": "Siłownia dla solverów SAT. Skompiluj swój do WebAssembly, zgłoś go, a zostanie oceniony na ukrytym zbiorze świeżych formuł: łamigłówki Hashi, pułapki parzystości, losowe 3-SAT, gołębie i hetmany.",
+  "intro": "Siłownia dla solverów SAT. Skompiluj swój do WebAssembly, zgłoś go, a zostanie oceniony na ukrytym zbiorze świeżych formuł: łamigłówki Hashi, pułapki parzystości, losowe 3-SAT, gołębie, hetmany, faktoryzacja, mitery układów mnożących, kolorowanie grafów i jedna tajemnicza rodzina.",
   "stats": {
     "season": "Sezon {{ season }}",
     "formulas": "Formuły: {{ count }}",
@@ -41,6 +41,7 @@
     "entries": "Ocenione solvery: {{ count }}",
     "commitment": "Zobowiązanie (SHA-256 ziarna)",
     "seed": "Ziarno",
+    "mystery": "Tajemnicza rodzina: {{ family }}",
     "sealed": "Ziarno pozostaje tajne do końca sezonu, potem zostanie tu ujawnione.",
     "set": "Ukryty zestaw ({{ size }} MB)",
     "no_set": "W tym sezonie nie zarchiwizowano zestawu; odtwórz go z ziarna.",
@@ -69,7 +70,7 @@
   "family": {
     "title": "Formuły",
     "hashi": "Hashi",
-    "hashi_text": "Łamigłówki Hashiwokakero od 10×10 do 28×28 jako CNF, bez reguły spójności. Zawsze spełnialne.",
+    "hashi_text": "Łamigłówki Hashiwokakero od 12×12 do 28×28 jako CNF, bez reguły spójności. Zawsze spełnialne.",
     "hashi_parity": "Parzystość Hashi",
     "hashi_parity_text": "Łamigłówki z jedną zmienioną liczbą, tak że suma liczb jest nieparzysta. Niespełnialne, bo każdy most dodaje dwa. Łatwo to zauważyć, trudno udowodnić rezolucją.",
     "random_3sat": "Losowe 3-SAT",
@@ -77,7 +78,21 @@
     "pigeonhole": "Zasada szufladkowa",
     "pigeonhole_text": "n+1 gołębi w n przegródkach: klasyk wymagający wykładniczo długich dowodów rezolucyjnych. Do tego kilka instancji, w których wszystkie się mieszczą.",
     "queens": "Hetmany",
-    "queens_text": "N hetmanów na planszach do 48×48 z kilkoma zakazanymi polami."
+    "queens_text": "N hetmanów na planszach do 64×64 z kilkoma zakazanymi polami.",
+    "factoring": "Faktoryzacja",
+    "factoring_text": "Układ mnożący z wyjściem ustalonym na liczbę od 16 do 26 bitów: spełnialny, gdy jest ona iloczynem dwóch liczb pierwszych, niespełnialny, gdy jest pierwsza. Kryptografia w miniaturze.",
+    "miter": "Mitery",
+    "miter_text": "Dwa inaczej połączone układy mnożące i pytanie o wejście, na którym się różnią: niespełnialne, gdy oba są poprawne, spełnialne, gdy jeden ukrywa rzadko wyzwalany błąd. Weryfikacja sprzętu w miniaturze.",
+    "coloring": "Kolorowanie grafów",
+    "coloring_text": "Cztery kolory dla grafów losowych blisko progu: jedne z zaszczepionym kolorowaniem, inne zawierające graf Mycielskiego, który wymaga pięciu.",
+    "tseitin": "Formuły Tseitina",
+    "tseitin_text": "Więzy parzystości na krawędziach losowego grafu regularnego, niespełnialne, gdy ładunki sumują się do liczby nieparzystej. Wykładniczo trudne dla rezolucji.",
+    "quasigroup": "Quasigrupy",
+    "quasigroup_text": "Kwadraty łacińskie z opróżnionymi 42% pól, do uzupełnienia. Zawsze spełnialne i najtrudniejsze przy mniej więcej takim odsetku dziur.",
+    "hamiltonian": "Cykle Hamiltona",
+    "hamiltonian_text": "Cykl przez każdy wierzchołek grafu dwudzielnego: zaszczepiony albo niemożliwy, bo obie strony mają różną liczbę wierzchołków.",
+    "mystery": "Tajemnicza rodzina",
+    "mystery_text": "Każdy ukryty zbiór ma jeszcze jedną rodzinę, której nie ma zbiór deweloperski, losowaną z rezerwy przez ziarno sezonu. Liczy się jak pozostałe, widnieje jako tajemnicza rodzina i zostaje ujawniona w archiwum po końcu sezonu."
   },
   "fair": {
     "title": "Uczciwa gra",
@@ -85,6 +100,8 @@
     "fuel": "Każda wykonana instrukcja WebAssembly kosztuje jedną jednostkę paliwa, masowe operacje na pamięci jedną na bajt. Zegary i liczby losowe mają stałe ziarno, więc solver dostaje ten sam wynik na każdej maszynie, za każdym razem.",
     "hidden_title": "Ukryte, świeże formuły",
     "hidden": "Zestaw testowy powstaje z tajnego ziarna, które zmienia się co sezon, a każda formuła jest przemieszana: zmienne przemianowane i zanegowane, klauzule potasowane. Dopóki sezon trwa, wyniki są pokazywane tylko dla rodzin, nigdy dla pojedynczych formuł.",
+    "heldout_title": "Uogólniaj, nie zapamiętuj",
+    "heldout": "W 2026 roku solver wygenerowany przez AI, z ponad setką podsolverów dla konkretnych rodzin, pokonał wszystkie solvery main tracku na spełnialnych instancjach <a>SAT Competition</a>, a organizatorzy nazwali zapamiętywanie kontra uogólnianie otwartym problemem. Dlatego ukryty zbiór wychodzi poza deweloperski: większe formuły i jedna rodzina, na której twój solver nigdy nie trenował.",
     "checked_title": "Każda odpowiedź sprawdzona",
     "checked": "Modele są weryfikowane względem formuły, a każda odpowiedź UNSAT wymaga dowodu, sprawdzanego jak w main tracku <a>SAT Competition</a>: drat-trim zamienia go na LRAT, a ostatnie słowo ma cake_lpr, weryfikator udowodniony jako poprawny w HOL4 i skompilowany przez CakeML. Nasze własne etykiety są udowodnione tak samo. Błędny model lub odrzucony dowód dyskwalifikuje zgłoszenie, więc zgadywanie nigdy się nie opłaca.",
     "sandbox_title": "Szczelna piaskownica",

@@ -9,13 +9,18 @@ test('the guide and the leaderboard with its entry', async ({ page }) => {
   for (const heading of ['How it works', 'The formulas', 'Fair play']) {
     await expect(page.getByText(new RegExp(`^${heading}`)).first()).toBeVisible();
   }
+  // The dev families and the held-out one, and why
+  for (const family of ['Factoring', 'Miters', 'Graph coloring', 'Mystery family']) {
+    await expect(page.getByRole('heading', { name: family, exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole('heading', { name: "Generalize, don't memorize" })).toBeVisible();
   await expect(page.getByText(`Season ${DOJO_SEASON}`, { exact: false }).first()).toBeVisible();
   // Guests are asked for an account first
   await expect(page.getByText("Submitting needs an account with a username, guests can't submit.")).toBeVisible();
 
   const entry = page.getByRole('link', { name: 'Plain DPLL' });
   await expect(entry).toBeVisible();
-  await expect(page.locator('tr').filter({ has: entry })).toContainText('29/34');
+  await expect(page.locator('tr').filter({ has: entry })).toContainText('35/48');
   await entry.click();
   await expect(page).toHaveURL(new RegExp(`/dojo/${DOJO_SUBMISSION}$`));
   await expect(page.getByRole('heading', { name: 'Plain DPLL' })).toBeVisible();
@@ -53,8 +58,10 @@ test('the season archive with its seed, set and results', async ({ page, request
   const archived = page.locator(`#season-${DOJO_SEASON - 1}`);
   await expect(archived).toContainText(ARCHIVED_COMMITMENT);
   await expect(archived).toContainText(ARCHIVED_SEED);
+  // The seed reveals the held-out family
+  await expect(archived.getByTestId('mystery-family')).toContainText('Mystery family: Quasigroups');
   await expect(archived.getByRole('link', { name: 'Plain DPLL' })).toBeVisible();
-  await expect(archived.locator('tr').filter({ hasText: 'Plain DPLL' })).toContainText('29/34');
+  await expect(archived.locator('tr').filter({ hasText: 'Plain DPLL' })).toContainText('35/48');
   for (const [name, path] of [
     [/^Hidden set/, 'set.tar.gz'],
     ['Results per formula (CSV)', 'results.csv'],
@@ -70,7 +77,7 @@ test('the season archive with its seed, set and results', async ({ page, request
   const csv = await request.get(`/dojo/seasons/${DOJO_SEASON - 1}/results.csv`);
   expect(csv.status()).toBe(200);
   expect((await csv.text()).split('\n')[1]).toBe(
-    `${DOJO_SEASON - 1},${DOJO_SUBMISSION},Plain DPLL,Hashi,1,1,1,hashi-01,hashi,SAT,solved,1200000`,
+    `${DOJO_SEASON - 1},${DOJO_SUBMISSION},Plain DPLL,Hashi,1,1,3,hashi-01,hashi,SAT,solved,1200000`,
   );
   // Nothing of the running season
   expect((await request.get(`/dojo/seasons/${DOJO_SEASON}/results.csv`)).status()).toBe(404);

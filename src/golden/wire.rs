@@ -350,6 +350,7 @@ fn responses() -> Responses {
                 set_size: None,
                 set_sha256: None,
                 entries: 0,
+                mystery: None,
                 board: Vec::new(),
             },
             past: vec![DojoSeason {
@@ -363,6 +364,7 @@ fn responses() -> Responses {
                 set_size: Some(1_400_000),
                 set_sha256: Some("cd".repeat(32)),
                 entries: 4,
+                mystery: Some(Family::Tseitin),
                 board: vec![DojoEntry {
                     rank: 1,
                     id: 12,
@@ -470,7 +472,7 @@ fn responses() -> Responses {
             DojoState::Rejected,
             DojoState::Failed,
         ],
-        families: Family::ALL.to_vec(),
+        families: Family::ALL.into_iter().chain([Family::Mystery]).collect(),
         submission_actions: vec![
             SubmissionAction::Requeue,
             SubmissionAction::ClearCopy,
@@ -718,7 +720,12 @@ fn stored_ids() {
         ]
         .map(|s| format!("dojo_state {:?} {}", s, s.id())),
     );
-    lines.extend(Family::ALL.map(|f| format!("family {:?} {}", f, f.id())));
+    lines.extend(
+        Family::ALL
+            .into_iter()
+            .chain([Family::Mystery])
+            .map(|f| format!("family {:?} {}", f, f.id())),
+    );
     lines.extend(SolverKind::ALL.map(|k| format!("solver {:?} {}", k, k.id())));
     lines.extend(Heuristic::ALL.map(|h| format!("heuristic {:?} {}", h, h.id())));
     lines.extend(ApiError::ALL.map(|e| format!("error {:?} {}", e, e.code())));

@@ -7,12 +7,13 @@ description = "The SAT Dojo: benchmark sets, a sandbox for WASI SAT solvers and 
 
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
+# Picks the mystery family of a hidden set from its seed (the website does too)
+sha2 = "0.11.1"
 
 # Benchmark generation and answer checking (`bench`)
 backend = { path = "../backend", optional = true }
 common = { path = "../common", optional = true }
 rand = { version = "0.10.3", optional = true }
-sha2 = { version = "0.11.1", optional = true }
 # Writes the DRAT proofs that back UNSAT labels (the same version as the backend)
 splr = { version = "0.19.0", optional = true }
 # Archived sets as .tar.gz (`archive`), pure Rust
@@ -43,7 +44,7 @@ wat = "1"
 
 [features]
 default = []
-bench = ["dep:backend", "dep:common", "dep:flate2", "dep:rand", "dep:sha2", "dep:splr", "dep:tar"]
+bench = ["dep:backend", "dep:common", "dep:flate2", "dep:rand", "dep:splr", "dep:tar"]
 runner = ["bench", "dep:wasmtime", "dep:wasmtime-wasi", "dep:wasmparser", "dep:wiggle"]
 worker = ["runner", "dep:anyhow", "dep:axum", "dep:reqwest", "dep:serde_json", "dep:tokio"]
 
@@ -57,4 +58,4 @@ workspace = true
 
 [[example]]
 name = "gen_time"
-required-features = ["bench"]
+required-features = ["runner"]

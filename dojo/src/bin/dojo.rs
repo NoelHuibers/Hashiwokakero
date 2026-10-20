@@ -1,17 +1,18 @@
 //! The SAT Dojo command line.
 //!
 //! ```text
-//! dojo run <solver.wasm> [--seed S | --set SET.tar.gz] [--budget FUEL] [--threads N]
+//! dojo run <solver.wasm> [--seed S [--hidden] | --set SET.tar.gz] [--budget FUEL] [--threads N]
 //!          [--family F] [--stderr] [--checker verified|builtin] [--proofs DIR]
 //!     Scores a solver on the development set, exactly like the leaderboard does. --seed takes
-//!     another set's seed (a past season's, revealed on hashi.rs/dojo/seasons), --set an
-//!     archived set as downloaded from there. UNSAT proofs are checked with drat-trim and
+//!     another seed, with --hidden for a hidden set like a season's (a past season's seed is
+//!     revealed on hashi.rs/dojo/seasons), --set an archived set as downloaded from there. UNSAT proofs are checked with drat-trim and
 //!     cake_lpr when they are installed (DOJO_DRAT_TRIM and DOJO_CAKE_LPR, or the PATH), like
 //!     on the leaderboard, with the built-in checker otherwise; --checker insists on one.
 //!     --proofs keeps the proof files there (a directory per run) instead of a temp directory.
-//! dojo export <dir | file.tar.gz> [--seed S] [--season N]
+//! dojo export <dir | file.tar.gz> [--seed S] [--hidden] [--season N]
 //!     Writes the set as DIMACS files, with the expected answers in answers.txt and models in
-//!     witnesses.txt; into a directory, or a tarball like the season archive's.
+//!     witnesses.txt; into a directory, or a tarball like the season archive's. A season's set
+//!     (--season) is a hidden one.
 //! dojo serve
 //!     The worker service for hashi.rs (see dojo::worker for its settings).
 //! ```
@@ -38,7 +39,12 @@ fn flag(args: &[String], name: &str) -> Option<String> {
         .cloned()
 }
 
-/// The set the arguments ask for (`--seed`, `--set`, `--family`), with its seed.
+/// Whether the arguments ask for a hidden set rather than a dev set.
+fn hidden(args: &[String]) -> bool {
+    args.iter().any(|a| a == "--hidden" || a == "--season")
+}
+
+/// The set the arguments ask for (`--seed`, `--hidden`, `--set`, `--family`), with its seed.
 fn set(args: &[String]) -> Result<(String, Vec<Instance>), String> {
     let started = Instant::now();
     let (seed, mut set) = if let Some(path) = flag(args, "--set") {
@@ -47,7 +53,11 @@ fn set(args: &[String]) -> Result<(String, Vec<Instance>), String> {
         (info.seed, set)
     } else {
         let seed = flag(args, "--seed").unwrap_or_else(|| DEV_SEED.to_string());
-        let set = bench::generate(&seed);
+        let set = if hidden(args) {
+            bench::generate_hidden(&seed)
+        } else {
+            bench::generate(&seed)
+        };
         (seed, set)
     };
     if let Some(family) = flag(args, "--family") {
@@ -175,7 +185,10 @@ fn export(args: &[String]) -> Result<(), String> {
         .map(|s| s.parse().map_err(|_| "--season takes a number"))
         .transpose()?;
     let (seed, set) = set(args)?;
-    let info = SetInfo::new(&seed, season);
+    let info = SetInfo {
+        hidden: hidden(args),
+        ..SetInfo::new(&seed, season)
+    };
     if path.to_string_lossy().ends_with(".tar.gz") {
         archive::save(&path, &archive::write_tar_gz(&set, &info))?;
     } else {

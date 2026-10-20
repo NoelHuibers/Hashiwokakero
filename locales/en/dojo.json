@@ -4,7 +4,7 @@
     "description": "Submit your SAT solver as WebAssembly and climb the leaderboard: scored on hidden, fresh formulas with deterministic fuel instead of seconds. Free, open source, reproducible."
   },
   "title": "SAT Dojo",
-  "intro": "A gym for SAT solvers. Compile yours to WebAssembly, submit it, and it is scored on a hidden set of fresh formulas: Hashi puzzles, parity traps, random 3-SAT, pigeons and queens.",
+  "intro": "A gym for SAT solvers. Compile yours to WebAssembly, submit it, and it is scored on a hidden set of fresh formulas: Hashi puzzles, parity traps, random 3-SAT, pigeons, queens, factoring, multiplier miters, graph coloring and one mystery family.",
   "stats": {
     "season": "Season {{ season }}",
     "formulas": "Formulas: {{ count }}",
@@ -41,6 +41,7 @@
     "entries": "Solvers evaluated: {{ count }}",
     "commitment": "Commitment (SHA-256 of the seed)",
     "seed": "Seed",
+    "mystery": "Mystery family: {{ family }}",
     "sealed": "The seed stays secret until the season ends, then it is revealed here.",
     "set": "Hidden set ({{ size }} MB)",
     "no_set": "No set was archived for this season; regenerate it from the seed.",
@@ -69,7 +70,7 @@
   "family": {
     "title": "The formulas",
     "hashi": "Hashi",
-    "hashi_text": "Hashiwokakero puzzles from 10×10 to 28×28 as CNF, without the connectivity rule. Always satisfiable.",
+    "hashi_text": "Hashiwokakero puzzles from 12×12 to 28×28 as CNF, without the connectivity rule. Always satisfiable.",
     "hashi_parity": "Hashi parity",
     "hashi_parity_text": "Puzzles with one number changed so the numbers add up to an odd sum. Unsatisfiable, since every bridge adds two. Easy to see, hard to prove by resolution.",
     "random_3sat": "Random 3-SAT",
@@ -77,7 +78,21 @@
     "pigeonhole": "Pigeonhole",
     "pigeonhole_text": "n+1 pigeons in n holes: the classic that needs exponentially long resolution proofs. Plus a few that do fit.",
     "queens": "Queens",
-    "queens_text": "N queens on boards up to 48×48 with a few forbidden squares."
+    "queens_text": "N queens on boards up to 64×64 with a few forbidden squares.",
+    "factoring": "Factoring",
+    "factoring_text": "A multiplier circuit with its output fixed to a number of 16 to 26 bits: satisfiable when it is the product of two primes, unsatisfiable when it is a prime. Cryptography in miniature.",
+    "miter": "Miters",
+    "miter_text": "Two multipliers wired differently, asked for an input on which they disagree: unsatisfiable when both are correct, satisfiable when one hides a rarely triggered bug. Hardware verification in miniature.",
+    "coloring": "Graph coloring",
+    "coloring_text": "Four colors for random graphs near the threshold: some with a planted coloring, some containing a Mycielski graph that needs five.",
+    "tseitin": "Tseitin formulas",
+    "tseitin_text": "Parity constraints on the edges of a random regular graph, unsatisfiable when the charges add up to an odd number. Exponentially hard for resolution.",
+    "quasigroup": "Quasigroups",
+    "quasigroup_text": "Latin squares with 42% of their cells emptied, to be completed. Always satisfiable, and hardest around that share of holes.",
+    "hamiltonian": "Hamiltonian cycles",
+    "hamiltonian_text": "A cycle through every vertex of a bipartite graph: planted, or impossible because the two sides differ in size.",
+    "mystery": "Mystery family",
+    "mystery_text": "Every hidden set has one more family that the dev set doesn't have, drawn from a reserve by the season's seed. It counts like the others, shows up as the mystery family and is revealed in the archive when the season ends."
   },
   "fair": {
     "title": "Fair play",
@@ -85,6 +100,8 @@
     "fuel": "Every executed WebAssembly instruction costs one unit of fuel, bulk memory operations one per byte. Clocks and random numbers are seeded, so a solver gets the same score on every machine, every time.",
     "hidden_title": "Hidden, fresh formulas",
     "hidden": "The test set comes from a secret seed that changes every season, and every formula is scrambled: variables renamed and negated, clauses shuffled. While a season runs, results are shown per family only, never per formula.",
+    "heldout_title": "Generalize, don't memorize",
+    "heldout": "In 2026 an AI-generated solver with more than a hundred family-specific sub-solvers beat every main-track solver on the satisfiable instances of the <a>SAT Competition</a>, and the organizers called memorization versus generalization an open problem. So the hidden set goes beyond the dev set: larger formulas, and one family your solver has never trained on.",
     "checked_title": "Every answer checked",
     "checked": "Models are verified against the formula, and every UNSAT answer needs a proof, checked like in the main track of the <a>SAT Competition</a>: drat-trim turns it into LRAT and cake_lpr, a checker proven correct in HOL4 and compiled by CakeML, has the last word. Our own labels are proven the same way. A wrong model or a rejected proof disqualifies the submission, so guessing never pays.",
     "sandbox_title": "A sealed sandbox",

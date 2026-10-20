@@ -4,7 +4,7 @@
     "description": "Soumets ton solveur SAT en WebAssembly et grimpe au classement : formules secrètes et inédites, carburant déterministe au lieu de secondes. Reproductible."
   },
   "title": "SAT Dojo",
-  "intro": "Une salle de sport pour solveurs SAT. Compile le tien en WebAssembly, soumets-le, et il est évalué sur un ensemble secret de formules inédites : grilles de Hashi, pièges de parité, 3-SAT aléatoire, pigeons et dames.",
+  "intro": "Une salle de sport pour solveurs SAT. Compile le tien en WebAssembly, soumets-le, et il est évalué sur un ensemble secret de formules inédites : grilles de Hashi, pièges de parité, 3-SAT aléatoire, pigeons, dames, factorisation, miters de multiplieurs, coloration de graphes et une famille mystère.",
   "stats": {
     "season": "Saison {{ season }}",
     "formulas": "Formules : {{ count }}",
@@ -41,6 +41,7 @@
     "entries": "Solveurs évalués : {{ count }}",
     "commitment": "Engagement (SHA-256 de la graine)",
     "seed": "Graine",
+    "mystery": "Famille mystère : {{ family }}",
     "sealed": "La graine reste secrète jusqu'à la fin de la saison, puis elle est révélée ici.",
     "set": "Jeu caché ({{ size }} Mo)",
     "no_set": "Aucun jeu n'a été archivé pour cette saison ; régénérez-le à partir de la graine.",
@@ -69,7 +70,7 @@
   "family": {
     "title": "Les formules",
     "hashi": "Hashi",
-    "hashi_text": "Des grilles de Hashiwokakero de 10×10 à 28×28 en CNF, sans la règle de connexité. Toujours satisfiables.",
+    "hashi_text": "Des grilles de Hashiwokakero de 12×12 à 28×28 en CNF, sans la règle de connexité. Toujours satisfiables.",
     "hashi_parity": "Hashi parité",
     "hashi_parity_text": "Des grilles dont un chiffre a été modifié pour que la somme soit impaire. Insatisfiables, puisque chaque pont ajoute deux. Facile à voir, difficile à prouver par résolution.",
     "random_3sat": "3-SAT aléatoire",
@@ -77,7 +78,21 @@
     "pigeonhole": "Tiroirs",
     "pigeonhole_text": "n+1 pigeons dans n trous : le classique qui exige des preuves par résolution de longueur exponentielle. Plus quelques-unes où ça rentre.",
     "queens": "Dames",
-    "queens_text": "N dames sur des échiquiers jusqu’à 48×48, avec quelques cases interdites."
+    "queens_text": "N dames sur des échiquiers jusqu’à 64×64, avec quelques cases interdites.",
+    "factoring": "Factorisation",
+    "factoring_text": "Un circuit multiplieur dont la sortie est fixée à un nombre de 16 à 26 bits : satisfiable s’il est le produit de deux nombres premiers, insatisfiable s’il est premier. La cryptographie en miniature.",
+    "miter": "Miters",
+    "miter_text": "Deux multiplieurs câblés différemment, et l’on cherche une entrée où ils divergent : insatisfiable quand les deux sont justes, satisfiable quand l’un cache un bogue rarement déclenché. La vérification de matériel en miniature.",
+    "coloring": "Coloration de graphes",
+    "coloring_text": "Quatre couleurs pour des graphes aléatoires proches du seuil : certains avec une coloration plantée, d’autres contenant un graphe de Mycielski qui en exige cinq.",
+    "tseitin": "Formules de Tseitin",
+    "tseitin_text": "Des contraintes de parité sur les arêtes d’un graphe régulier aléatoire, insatisfiables quand la somme des charges est impaire. Exponentiellement difficiles pour la résolution.",
+    "quasigroup": "Quasigroupes",
+    "quasigroup_text": "Des carrés latins dont 42 % des cases ont été vidées, à compléter. Toujours satisfiables, et les plus difficiles autour de cette proportion de trous.",
+    "hamiltonian": "Cycles hamiltoniens",
+    "hamiltonian_text": "Un cycle passant par chaque sommet d’un graphe biparti : planté, ou impossible parce que les deux côtés n’ont pas la même taille.",
+    "mystery": "Famille mystère",
+    "mystery_text": "Chaque ensemble secret contient une famille de plus que l’ensemble de dev n’a pas, tirée d’une réserve par la graine de la saison. Elle compte comme les autres, apparaît comme famille mystère et est révélée dans les archives à la fin de la saison."
   },
   "fair": {
     "title": "Fair-play",
@@ -85,6 +100,8 @@
     "fuel": "Chaque instruction WebAssembly exécutée coûte une unité de carburant, les opérations mémoire en bloc une par octet. Horloges et nombres aléatoires ont une graine fixe : un solveur obtient le même score sur chaque machine, à chaque fois.",
     "hidden_title": "Formules secrètes et inédites",
     "hidden": "Le jeu de test vient d'une graine secrète qui change à chaque saison, et chaque formule est brouillée : variables renommées et niées, clauses mélangées. Tant qu'une saison dure, les résultats ne sont affichés que par famille, jamais par formule.",
+    "heldout_title": "Généraliser, pas mémoriser",
+    "heldout": "En 2026, un solveur généré par IA, doté de plus d’une centaine de sous-solveurs spécifiques à des familles, a battu tous les solveurs du main track sur les instances satisfiables de la <a>SAT Competition</a>, et les organisateurs ont qualifié la mémorisation face à la généralisation de problème ouvert. L’ensemble secret va donc au-delà de l’ensemble de dev : des formules plus grandes, et une famille sur laquelle ton solveur ne s’est jamais entraîné.",
     "checked_title": "Chaque réponse vérifiée",
     "checked": "Les modèles sont vérifiés par rapport à la formule, et chaque réponse UNSAT exige une preuve, vérifiée comme dans le main track de la <a>SAT Competition</a> : drat-trim la convertit en LRAT, et cake_lpr, un vérificateur prouvé correct en HOL4 et compilé par CakeML, a le dernier mot. Nos propres étiquettes sont prouvées de la même façon. Un modèle faux ou une preuve rejetée disqualifie la soumission : deviner ne paie jamais.",
     "sandbox_title": "Un bac à sable scellé",
