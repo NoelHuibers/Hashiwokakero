@@ -80,6 +80,9 @@ pub fn BoardView(
     let selected = RwSignal::new(None::<usize>);
     let keyboard_edge = RwSignal::new(0usize);
     let keyboard_focus = RwSignal::new(false);
+    // Whether the board was pressed since it last had focus: focus from a click or tap isn't
+    // keyboard use
+    let pressed = StoredValue::new(false);
     let blocked = RwSignal::new(None::<(f64, f64, u32)>);
     let drag = StoredValue::new(None::<Drag>);
     let touches = StoredValue::new(Touches::default());
@@ -240,6 +243,7 @@ pub fn BoardView(
         if mode == BoardMode::View {
             return;
         }
+        pressed.set_value(true);
         let touch = ev.pointer_type() == "touch";
         if touch {
             let (x, y) = (f64::from(ev.client_x()), f64::from(ev.client_y()));
@@ -563,8 +567,8 @@ pub fn BoardView(
                 _ => return,
             };
             keyboard_edge.set(next);
-            preview_edge.set(Some(next));
         }
+        keyboard_focus.set(true);
         ev.prevent_default();
         ev.stop_propagation();
     };
@@ -619,13 +623,18 @@ pub fn BoardView(
             aria-description=keyboard_help
             on:keydown=on_key
             on:focus=move |_| {
-                keyboard_focus.set(true);
-                if mode == BoardMode::Edit { hover_cell.set(Some(Pos::new(0, 0))); }
-                if mode == BoardMode::Play && board.with_untracked(|b| !b.edges.is_empty()) {
-                    preview_edge.set(Some(keyboard_edge.get_untracked()));
+                // Focus from a click isn't keyboard use: no highlight, and the click's own
+                // handlers (drag preview, selected island) stay as they are
+                let keyboard = !pressed.get_value();
+                keyboard_focus.set(keyboard);
+                if keyboard && mode == BoardMode::Edit && hover_cell.get_untracked().is_none() {
+                    hover_cell.set(Some(Pos::new(0, 0)));
                 }
             }
-            on:blur=move |_| { keyboard_focus.set(false); preview_edge.set(None); }
+            on:blur=move |_| {
+                keyboard_focus.set(false);
+                pressed.set_value(false);
+            }
             on:pointerdown=on_down
             on:pointermove=on_move
             on:pointerup=on_up
