@@ -46,6 +46,14 @@ fn formula(n: i32) -> String {
     text
 }
 
+pub(super) fn compress(bytes: &[u8]) -> Vec<u8> {
+    use std::io::Write as _;
+    let mut writer =
+        lzma_rust2::XzWriter::new(Vec::new(), lzma_rust2::XzOptions::with_preset(0)).unwrap();
+    writer.write_all(bytes).unwrap();
+    writer.finish().unwrap()
+}
+
 fn form(family: &str, text: &str) -> BenchmarkForm {
     BenchmarkForm {
         family: family.into(),
@@ -186,8 +194,7 @@ async fn submissions_are_checked() {
         Err(BenchmarkError::Duplicate)
     );
     // xz-compressed, like GBD's files
-    let mut xz = Vec::new();
-    lzma_rs::xz_compress(&mut formula(3).as_bytes(), &mut xz).unwrap();
+    let xz = compress(formula(3).as_bytes());
     let packed = BenchmarkForm {
         formula: xz,
         ..form("x", "")

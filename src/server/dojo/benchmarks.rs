@@ -16,6 +16,8 @@
 //!   draw (`PUT {DOJO_URL}/pools/<digest>`) before the season's first job.
 //! - Authors are credited in the guide, on this page and in the season archive.
 
+use std::io::Read as _;
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use axum::extract::Multipart;
@@ -28,6 +30,7 @@ use dojo::community::{
 use leptos::prelude::ServerFnError;
 use libsql::params::IntoParams;
 use libsql::{Connection, TransactionBehavior, params};
+use tokio::sync::{Semaphore, SemaphorePermit};
 
 use super::{DESCRIPTION_MAX, MAX_ATTEMPTS, MIN_ACCOUNT_AGE_MS, PER_DAY, STALE_MS, test_seed};
 use crate::model::{
@@ -43,6 +46,10 @@ const MAX_QUEUED: i64 = 40;
 const FAMILY_MAX: usize = 40;
 /// Largest download from GBD (xz-compressed).
 const MAX_DOWNLOAD: usize = 16 << 20;
+/// Decoder dictionary plus overhead; checked before allocating it.
+const DECODER_MEMORY_KIB: u32 = 32 << 10;
+/// Bound buffered uploads/downloads as well as the separate blocking CPU pool.
+static IMPORT_REQUESTS: Semaphore = Semaphore::const_new(4);
 
 /// Why a benchmark was refused, as a code for the page (see `dojo.community.errors` in locales).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -118,27 +125,26 @@ pub(super) fn gbd_hash_ok(hash: &str) -> bool {
 /// xz-compressed (like GBD's files) or plain, at most [`community::MAX_BYTES`] of text.
 fn decompress(bytes: &[u8]) -> Result<String, BenchmarkError> {
     const XZ: &[u8] = &[0xfd, b'7', b'z', b'X', b'Z', 0];
+    if bytes.len() > MAX_DOWNLOAD {
+        return Err(BenchmarkError::TooLarge);
+    }
     let text = if bytes.starts_with(XZ) {
-        /// Fails once more than the limit comes out.
-        struct Capped(Vec<u8>);
-        impl std::io::Write for Capped {
-            fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-                if self.0.len() + buf.len() > community::MAX_BYTES {
-                    return Err(std::io::Error::other("too large"));
+        let decoder = lzma_rust2::XzReader::new_mem_limit(bytes, true, DECODER_MEMORY_KIB);
+        let mut out = Vec::new();
+        decoder
+            .take(community::MAX_BYTES as u64 + 1)
+            .read_to_end(&mut out)
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::OutOfMemory {
+                    BenchmarkError::TooLarge
+                } else {
+                    BenchmarkError::Invalid
                 }
-                self.0.extend_from_slice(buf);
-                Ok(buf.len())
-            }
-            fn flush(&mut self) -> std::io::Result<()> {
-                Ok(())
-            }
+            })?;
+        if out.len() > community::MAX_BYTES {
+            return Err(BenchmarkError::TooLarge);
         }
-        let mut out = Capped(Vec::new());
-        match lzma_rs::xz_decompress(&mut std::io::Cursor::new(bytes), &mut out) {
-            Ok(()) => out.0,
-            Err(lzma_rs::error::Error::IoError(_)) => return Err(BenchmarkError::TooLarge),
-            Err(_) => return Err(BenchmarkError::Invalid),
-        }
+        out
     } else {
         if bytes.len() > community::MAX_BYTES {
             return Err(BenchmarkError::TooLarge);
@@ -155,11 +161,13 @@ fn gbd_url() -> String {
 
 /// The file the GBD at `base` has under `hash` (xz-compressed).
 pub(super) async fn fetch_gbd(base: &str, hash: &str) -> Result<Vec<u8>, BenchmarkError> {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
     if !gbd_hash_ok(hash) {
         return Err(BenchmarkError::Gbd);
     }
     let url = format!("{}/file/{}", base.trim_end_matches('/'), hash);
-    let response = reqwest::Client::new()
+    let mut response = CLIENT
+        .get_or_init(reqwest::Client::new)
         .get(url)
         .timeout(Duration::from_secs(60))
         .send()
@@ -174,11 +182,14 @@ pub(super) async fn fetch_gbd(base: &str, hash: &str) -> Result<Vec<u8>, Benchma
     {
         return Err(BenchmarkError::TooLarge);
     }
-    let bytes = response.bytes().await.map_err(|_| BenchmarkError::Gbd)?;
-    if bytes.len() > MAX_DOWNLOAD {
-        return Err(BenchmarkError::TooLarge);
+    let mut bytes = Vec::new();
+    while let Some(chunk) = response.chunk().await.map_err(|_| BenchmarkError::Gbd)? {
+        if chunk.len() > MAX_DOWNLOAD - bytes.len() {
+            return Err(BenchmarkError::TooLarge);
+        }
+        bytes.extend_from_slice(&chunk);
     }
-    Ok(bytes.to_vec())
+    Ok(bytes)
 }
 
 async fn one(conn: &Connection, sql: &str, args: impl IntoParams) -> Result<i64, libsql::Error> {
@@ -189,18 +200,8 @@ async fn one(conn: &Connection, sql: &str, args: impl IntoParams) -> Result<i64,
     }
 }
 
-/// Stores a benchmark and queues it for verification. `gbd`: the hash it was fetched under,
-/// which it has to have.
-pub(super) async fn submit(
-    conn: &Connection,
-    user: &User,
-    form: BenchmarkForm,
-    gbd: Option<&str>,
-) -> Result<i64, BenchmarkError> {
-    let server = |e: libsql::Error| {
-        eprintln!("dojo benchmark: {e}");
-        BenchmarkError::Server
-    };
+/// Validate cheap account and metadata checks before downloading or decoding anything.
+fn validate(user: &User, form: &BenchmarkForm) -> Result<(), BenchmarkError> {
     if user.username.is_none() {
         return Err(BenchmarkError::SignIn);
     }
@@ -225,7 +226,19 @@ pub(super) async fn submit(
     if !form.license {
         return Err(BenchmarkError::License);
     }
-    let text = decompress(&form.formula)?;
+    Ok(())
+}
+
+struct Prepared {
+    cnf: Vec<u8>,
+    hash: String,
+    shape: String,
+    vars: u32,
+    clauses: i64,
+}
+
+fn prepare(bytes: &[u8], gbd: Option<&str>) -> Result<Prepared, BenchmarkError> {
+    let text = decompress(bytes)?;
     let formula = Formula::parse(&text).map_err(|e| match e {
         FormulaError::TooLarge => BenchmarkError::TooLarge,
         FormulaError::Invalid(_) | FormulaError::Empty => BenchmarkError::Invalid,
@@ -234,7 +247,56 @@ pub(super) async fn submit(
     if gbd.is_some_and(|wanted| !wanted.eq_ignore_ascii_case(&hash)) {
         return Err(BenchmarkError::Gbd);
     }
-    let shape = community::shape_hash(&formula);
+    Ok(Prepared {
+        cnf: formula.dimacs().into_bytes(),
+        hash,
+        shape: community::shape_hash(&formula),
+        vars: formula.vars,
+        clauses: crate::server::count(formula.clauses.len()),
+    })
+}
+
+#[cfg(test)]
+pub(super) async fn submit(
+    conn: &Connection,
+    user: &User,
+    form: BenchmarkForm,
+    gbd: Option<&str>,
+) -> Result<i64, BenchmarkError> {
+    submit_inner(conn, user, form, gbd, None).await
+}
+
+/// Stores a benchmark and queues it for verification. `gbd` must match its computed hash.
+async fn submit_inner(
+    conn: &Connection,
+    user: &User,
+    mut form: BenchmarkForm,
+    gbd: Option<&str>,
+    admission: Option<SemaphorePermit<'static>>,
+) -> Result<i64, BenchmarkError> {
+    validate(user, &form)?;
+    let bytes = std::mem::take(&mut form.formula);
+    let gbd = gbd.map(str::to_owned);
+    let Prepared {
+        cnf,
+        hash,
+        shape,
+        vars,
+        clauses,
+    } = crate::server::limits::IMPORTS
+        .run(move || {
+            // Retain admission until actual computation ends, even if the request is cancelled.
+            let _admission = admission;
+            Ok(prepare(&bytes, gbd.as_deref()))
+        })
+        .await
+        .map_err(|_| BenchmarkError::Busy)??;
+    let family = form.family.trim().to_lowercase();
+    let description = form.description.trim();
+    let server = |e: libsql::Error| {
+        eprintln!("dojo benchmark: {e}");
+        BenchmarkError::Server
+    };
     // Quotas, duplicates and the insert in one write transaction, across replicas too
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -293,11 +355,11 @@ pub(super) async fn submit(
             description.to_string(),
             form.claimed.map(Answer::id),
             i64::from(form.from_gbd),
-            formula.dimacs().into_bytes(),
+            cnf,
             hash,
             shape,
-            formula.vars,
-            crate::server::count(formula.clauses.len()),
+            vars,
+            clauses,
             form.network.clone(),
             community::LICENSE,
             now
@@ -316,44 +378,53 @@ pub(super) async fn submit(
 /// `POST /dojo/benchmarks/submit`, a multipart form (works without JavaScript). Redirects back to the
 /// page, with the new benchmark or an error code.
 pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Response {
+    let Ok(admission) = IMPORT_REQUESTS.try_acquire() else {
+        return Redirect::to("/dojo/benchmarks?error=busy#submit").into_response();
+    };
     let mut form = BenchmarkForm::default();
     let mut gbd = String::new();
     let mut prefix = String::new();
     let mut too_large = false;
-    loop {
-        let field = match multipart.next_field().await {
-            Ok(Some(field)) => field,
-            Ok(None) => break,
-            Err(_) => {
-                too_large = true;
-                break;
+    let parsed = tokio::time::timeout(Duration::from_secs(60), async {
+        loop {
+            let field = match multipart.next_field().await {
+                Ok(Some(field)) => field,
+                Ok(None) => break,
+                Err(_) => {
+                    too_large = true;
+                    break;
+                }
+            };
+            let name = field.name().unwrap_or_default().to_string();
+            if name == "cnf" {
+                match field.bytes().await {
+                    Ok(bytes) => form.formula = bytes.to_vec(),
+                    Err(_) => too_large = true,
+                }
+                continue;
             }
-        };
-        let name = field.name().unwrap_or_default().to_string();
-        if name == "cnf" {
-            match field.bytes().await {
-                Ok(bytes) => form.formula = bytes.to_vec(),
-                Err(_) => too_large = true,
+            let text = field.text().await.unwrap_or_default();
+            match name.as_str() {
+                "family" => form.family = text,
+                "description" => form.description = text,
+                "gbd" => gbd = text.trim().to_lowercase(),
+                "claimed" => form.claimed = Answer::from_id(&text),
+                "license" => form.license = !text.is_empty(),
+                "prefix"
+                    if text.len() <= 8
+                        && text
+                            .chars()
+                            .all(|c| c == '/' || c == '-' || c.is_ascii_alphabetic()) =>
+                {
+                    prefix = text;
+                }
+                _ => {}
             }
-            continue;
         }
-        let text = field.text().await.unwrap_or_default();
-        match name.as_str() {
-            "family" => form.family = text,
-            "description" => form.description = text,
-            "gbd" => gbd = text.trim().to_lowercase(),
-            "claimed" => form.claimed = Answer::from_id(&text),
-            "license" => form.license = !text.is_empty(),
-            "prefix"
-                if text.len() <= 8
-                    && text
-                        .chars()
-                        .all(|c| c == '/' || c == '-' || c.is_ascii_alphabetic()) =>
-            {
-                prefix = text;
-            }
-            _ => {}
-        }
+    })
+    .await;
+    if parsed.is_err() {
+        too_large = true;
     }
     let result = async {
         if too_large {
@@ -364,10 +435,7 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             .await
             .map_err(|_| BenchmarkError::Server)?
             .ok_or(BenchmarkError::SignIn)?;
-        // Checked before the download, which takes a while
-        if user.username.is_none() {
-            return Err(BenchmarkError::SignIn);
-        }
+        validate(&user, &form)?;
         let hash = match (form.formula.is_empty(), gbd.is_empty()) {
             (false, true) => None,
             (true, false) => {
@@ -379,7 +447,7 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
         };
         form.network = crate::server::client_ip(&headers)
             .map(|ip| crate::server::network_hash(&ip, crate::model::day_of(now_ms())));
-        submit(&conn, &user, form, hash).await
+        submit_inner(&conn, &user, form, hash, Some(admission)).await
     }
     .await;
     match result {
@@ -980,3 +1048,7 @@ pub async fn admin_action(
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "import_tests.rs"]
+mod import_tests;

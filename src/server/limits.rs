@@ -15,6 +15,7 @@ use tokio::sync::Semaphore;
 use crate::model::ApiError;
 
 pub(super) static PUZZLES: CpuPool = CpuPool::new(2, 16);
+pub(super) static IMPORTS: CpuPool = CpuPool::new(2, 16);
 pub(super) static AUTH: CpuPool = CpuPool::new(2, 8);
 
 pub(super) struct CpuPool {
