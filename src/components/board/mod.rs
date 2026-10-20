@@ -382,6 +382,9 @@ pub fn BoardView(
     };
 
     let on_up = move |ev: PointerEvent| {
+        if mode == BoardMode::View {
+            return;
+        }
         if ev.pointer_type() == "touch" {
             let mut tap = None;
             touches.update_value(|t| {
@@ -606,6 +609,7 @@ pub fn BoardView(
         <svg
             node_ref=svg_ref
             class="board-svg w-full"
+            class:board-interactive=mode != BoardMode::View
             class:rounded-xl=framed
             class:cursor-crosshair=mode == BoardMode::Edit
             style=move || {
@@ -651,8 +655,16 @@ pub fn BoardView(
             // Taps are handled as pointer events above. The click a browser sends after a tap
             // would land on whatever the tap brought up under the finger: the last bridge of a
             // puzzle pressed the win screen's buttons.
-            on:touchend=|ev| ev.prevent_default()
-            on:contextmenu=|ev| ev.prevent_default()
+            on:touchend=move |ev| {
+                if mode != BoardMode::View {
+                    ev.prevent_default();
+                }
+            }
+            on:contextmenu=move |ev| {
+                if mode != BoardMode::View {
+                    ev.prevent_default();
+                }
+            }
         >
             <BoardDefs />
             {move || {
@@ -774,5 +786,41 @@ mod keyboard_tests {
             Some(Pos::new(2, 3))
         );
         assert_eq!(keyboard_cell(Pos::new(1, 1), "1", (3, 4)), None);
+    }
+}
+
+#[cfg(all(test, feature = "ssr"))]
+mod accessibility_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn illustrations_and_interactive_boards_expose_their_gesture_modes() {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            for mode in [BoardMode::View, BoardMode::Play, BoardMode::Edit] {
+                let html = view! {
+                    <BoardView
+                        board=Signal::stored(Board::new(common::Puzzle::empty(3, 3)))
+                        bridges=Signal::stored(vec![])
+                        mode
+                    />
+                }
+                .to_html();
+                let svg = html
+                    .split("<svg ")
+                    .nth(1)
+                    .unwrap()
+                    .split('>')
+                    .next()
+                    .unwrap();
+                let interactive = mode != BoardMode::View;
+                assert_eq!(svg.contains("board-interactive"), interactive, "{svg}");
+                assert_eq!(svg.contains("tabindex=\"0\""), interactive, "{svg}");
+                let role = if interactive { "group" } else { "img" };
+                assert!(svg.contains(&format!("role=\"{role}\"")), "{svg}");
+            }
+        });
     }
 }

@@ -120,6 +120,49 @@ async fn the_header_follows_the_language_of_the_path() {
     assert!(html.contains(r#"aria-label="Main navigation""#));
 }
 
+/// CSS hides the logo's text on phones and the sign-in text below the desktop breakpoint.
+/// The server must send useful localized names before hydration too.
+#[tokio::test]
+async fn mobile_header_links_have_localized_names() {
+    use crate::i18n::{Locale, td_string};
+
+    let server = Server::start().await;
+    let browser = server.browser();
+    for (path, locale) in [
+        ("/rules", Locale::en),
+        ("/ja/rules", Locale::ja),
+        ("/ar/rules", Locale::ar),
+    ] {
+        let html = text(browser.get(path).await).await;
+        let header = html
+            .split("<header")
+            .nth(1)
+            .unwrap()
+            .split("</header>")
+            .next()
+            .unwrap();
+        let home = header
+            .split("<a ")
+            .nth(1)
+            .unwrap()
+            .split('>')
+            .next()
+            .unwrap();
+        let name = format!("Hashi · {}", td_string!(locale, common.nav.daily));
+        assert!(home.contains(&format!("aria-label=\"{name}\"")), "{home}");
+        let account = header
+            .split("<a ")
+            .map(|a| a.split('>').next().unwrap())
+            .find(|a| a.contains("/account\""))
+            .unwrap();
+        let name = td_string!(locale, common.sign_in);
+        assert!(
+            account.contains(&format!("aria-label=\"{name}\"")),
+            "{account}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn unknown_paths_are_not_found() {
     let server = Server::start().await;

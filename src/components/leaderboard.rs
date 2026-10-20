@@ -342,12 +342,17 @@ pub fn AccountButton() -> impl IntoView {
             href=to
             attr:class="flex h-10 shrink-0 items-center gap-2 rounded-lg border bg-card px-2 transition-transform hover:-translate-y-0.5"
             attr:data-tooltip=move || t_string!(i18n, common.account)
+            attr:aria-label=move || match auth.user.get() {
+                Some(user) => format!("{} · {}", t_string!(i18n, common.account),
+                    if user.guest { t_string!(i18n, common.ranking.guest_name).to_string() } else { user.name }),
+                None => t_string!(i18n, common.sign_in).to_string(),
+            }
         >
             {move || match auth.user.get() {
                 Some(user) => {
                     let initial = user.name.chars().next().unwrap_or('?').to_uppercase().to_string();
                     view! {
-                        <span class=format!(
+                        <span aria-hidden="true" class=format!(
                             "grid size-7 place-items-center rounded-md font-pixel text-sm {}",
                             if user.guest { "bg-secondary text-secondary-foreground" } else { "hanko" },
                         )>{initial}</span>
@@ -359,7 +364,7 @@ pub fn AccountButton() -> impl IntoView {
                 }
                 None => {
                     view! {
-                        <span class="grid size-7 place-items-center rounded-md bg-secondary font-pixel text-sm">"入"</span>
+                        <span aria-hidden="true" class="grid size-7 place-items-center rounded-md bg-secondary font-pixel text-sm">"入"</span>
                         <span class="hidden text-sm font-medium lg:inline">{t!(i18n, common.sign_in)}</span>
                     }
                         .into_any()

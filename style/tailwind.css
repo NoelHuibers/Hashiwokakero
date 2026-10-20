@@ -380,10 +380,15 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 
 .board-svg {
   shape-rendering: crispEdges;
-  touch-action: none;
+  touch-action: auto;
   user-select: none;
   -webkit-user-select: none;
   display: block;
+}
+
+/* Play/edit owns drag and pinch handling; illustrations keep native page gestures. */
+.board-svg.board-interactive {
+  touch-action: none;
 }
 
 .board-svg text {
@@ -599,7 +604,12 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .petal, .drift, .bob, .island.over, .bridge.pop, .terminal.busy {
+  .petal, .drift, .bob, .island.over, .island .sel,
+  .bridge.pop, .bridge.wrong, .bridge.hint, .blocked-x, .terminal.busy {
     animation: none !important;
   }
+
+  /* Keep feedback visible without flashing. */
+  .bridge.wrong { filter: brightness(1.3) drop-shadow(0 0 2px var(--px-shu)); }
+  .bridge.hint { filter: brightness(1.3) drop-shadow(0 0 2px var(--px-gold)); }
 }
