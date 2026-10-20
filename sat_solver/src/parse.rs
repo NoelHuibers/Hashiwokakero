@@ -97,13 +97,15 @@ pub fn parse(input_file: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseErr
 mod tests {
     use super::*;
 
+    /// `text` parsed from a file, which is removed again also when the parser panics.
     fn parse_text(name: &str, text: &str) -> Result<(Vec<Vec<i32>>, usize, usize), ParseError> {
-        let path =
-            std::env::temp_dir().join(format!("sat-parse-{}-{name}.cnf", std::process::id()));
-        fs::write(&path, text).unwrap();
-        let result = parse(path.to_str().unwrap());
-        fs::remove_file(&path).unwrap();
-        result
+        let file = tempfile::Builder::new()
+            .prefix(&format!("sat-parse-{name}-"))
+            .suffix(".cnf")
+            .tempfile()
+            .unwrap();
+        fs::write(file.path(), text).unwrap();
+        parse(file.path().to_str().unwrap())
     }
 
     #[test]

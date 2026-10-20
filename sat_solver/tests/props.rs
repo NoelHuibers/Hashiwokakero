@@ -178,9 +178,11 @@ proptest! {
             any::<String>(),
         ],
     ) {
-        let dir = std::env::temp_dir();
+        // Removed with the files in it, also when the parser panics
+        let dir = tempfile::tempdir().expect("temp dir");
         let path = |name: &str| {
-            dir.join(format!("sat-props-{}-{name}.cnf", std::process::id()))
+            dir.path()
+                .join(format!("{name}.cnf"))
                 .to_string_lossy()
                 .into_owned()
         };
@@ -195,13 +197,11 @@ proptest! {
         let written = path("written");
         std::fs::write(&written, text).expect("write");
         let parsed = sat_solver::parse::parse(&written);
-        std::fs::remove_file(&written).ok();
         let (read, read_vars, read_count) = parsed.map_err(|e| TestCaseError::fail(format!("{e:?}")))?;
         prop_assert_eq!((read, read_vars, read_count), (clauses.clone(), vars, clauses.len()));
 
         let file = path("garbage");
         std::fs::write(&file, garbage).expect("write");
         let _ = sat_solver::parse::parse(&file);
-        std::fs::remove_file(&file).ok();
     }
 }

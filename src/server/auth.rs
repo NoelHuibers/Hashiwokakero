@@ -704,9 +704,8 @@ mod tests {
 
         use crate::server::db;
 
-        let path = std::env::temp_dir().join(format!("hashi-sign-in-{}.db", std::process::id()));
-        db::remove_local(&path);
-        let database = libsql::Builder::new_local(path.to_str().unwrap())
+        let file = db::TempDb::new("sign-in");
+        let database = libsql::Builder::new_local(file.as_str())
             .build()
             .await
             .unwrap();
@@ -768,8 +767,6 @@ mod tests {
             "the write waited for the sign in: {waited:?}"
         );
         assert_eq!(sign_in.await.unwrap().unwrap(), Some(1));
-        drop((other, database));
-        db::remove_local(&path);
     }
 
     #[test]
