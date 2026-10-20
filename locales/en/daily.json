@@ -1,4 +1,5 @@
 {
+  "action_recover": "Press Hint or Check to recover an earlier action after signing in.",
   "action_pending": "Waiting for the server…",
   "action_retry": "The result is uncertain. Press the same action again to recover it without another penalty.",
   "action_storage": "Browser storage is required to retry this action safely. Enable it and try again.",

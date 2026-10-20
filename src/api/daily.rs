@@ -69,6 +69,39 @@ pub struct PaidReply {
     pub checks: i64,
 }
 
+/// An unresolved purchase saved before dispatch. Its original identity survives guest transfer.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct PaidIntent {
+    pub user: i64,
+    pub day: i64,
+    pub started_at: i64,
+    pub action: PaidAction,
+    pub bridges: Vec<u8>,
+    pub id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct PaidRecovery {
+    pub intent: PaidIntent,
+    pub reply: PaidReply,
+}
+
+/// Read-only: recover only an exact receipt now owned by this authenticated attempt. Missing
+/// receipts never become purchases, including after an unrelated identity switch or conflict.
+#[server(input = Json, client = HashiClient)]
+pub async fn daily_recover_actions(
+    day: i64,
+    started_at: i64,
+    intents: Vec<PaidIntent>,
+    expected_user: i64,
+) -> Result<Option<PaidRecovery>, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    if user.id != expected_user {
+        return Err(crate::model::ApiError::SessionExpired.into());
+    }
+    daily::recover_actions(&conn, user.id, day, started_at, &intents).await
+}
+
 /// Retries must reuse the same ID, action and bridges. A fresh ID expresses a fresh purchase.
 #[server(input = Json, client = HashiClient)]
 pub async fn daily_paid_action(

@@ -1,4 +1,5 @@
 {
+  "action_recover": "Pulsa Pista o Comprobar para recuperar una acción anterior después de iniciar sesión.",
   "action_pending": "Esperando al servidor…",
   "action_retry": "El resultado es incierto. Repite la misma acción para recuperarlo sin otra penalización.",
   "action_storage": "Se necesita el almacenamiento del navegador para reintentar esta acción de forma segura. Actívalo e inténtalo de nuevo.",

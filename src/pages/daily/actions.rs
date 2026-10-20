@@ -3,23 +3,12 @@
 
 use common::Puzzle;
 use leptos::prelude::*;
-use serde::{Deserialize, Serialize};
 
 use super::state::Daily;
-use crate::api::{PaidAction, PaidOutcome, PaidReply};
+use crate::api::{PaidAction, PaidIntent as Intent, PaidOutcome, PaidRecovery, PaidReply};
 use crate::state::Auth;
 
 const INTENT_KEY: &str = "hashi.daily.action";
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(super) struct Intent {
-    pub(super) user: i64,
-    day: i64,
-    started_at: i64,
-    pub action: PaidAction,
-    pub bridges: Vec<u8>,
-    pub id: String,
-}
 
 // Separate localStorage keys preserve every tab's unresolved intent: concurrent writes never
 // overwrite another intent, and closing a tab does not lose an ambiguous successful purchase.
@@ -112,6 +101,8 @@ fn save_intent(intent: &Intent) -> bool {
 pub(super) struct Actions {
     pub pending: RwSignal<bool>,
     pub intent: RwSignal<Option<Intent>>,
+    pub recovery: RwSignal<bool>,
+    checked_foreign: StoredValue<Vec<Intent>>,
     auth: Auth,
     scope: StoredValue<Option<(i64, i64, i64, u32)>>,
     version: RwSignal<u64>,
@@ -137,6 +128,8 @@ impl Actions {
         Self {
             pending: RwSignal::new(false),
             intent: RwSignal::new(None),
+            recovery: RwSignal::new(false),
+            checked_foreign: StoredValue::new(vec![]),
             auth,
             scope: StoredValue::new(None),
             version: RwSignal::new(0),
@@ -158,6 +151,7 @@ impl Actions {
             return;
         }
         self.scope.set_value(scope);
+        self.checked_foreign.set_value(vec![]);
         self.sequence.update(|s| *s += 1);
         self.pending.set(false);
         // An old UTC day cannot be played again from this page. Drop its browser intents;
@@ -170,20 +164,30 @@ impl Actions {
         self.restore_intent();
     }
 
+    pub(super) fn user(&self) -> Option<i64> {
+        self.auth.user.with_untracked(|u| u.as_ref().map(|u| u.id))
+    }
+
+    pub(super) fn refresh_revision(&self) -> u64 {
+        self.sequence.get_untracked()
+    }
+
     pub(super) fn locked(&self) -> bool {
-        self.pending.get() || self.intent.with(Option::is_some)
+        self.pending.get() || self.intent.with(Option::is_some) || self.recovery.get()
     }
 
     pub(super) fn can_start(&self, daily: &Daily, action: Option<PaidAction>) -> bool {
         !self.pending.get()
+            && (!self.recovery.get() || action.is_some())
             && !daily.busy.get()
             && daily.started()
             && !daily.finished()
             && (daily.game.status.get() == crate::state::Status::Playing
                 || (daily.game.status.get() == crate::state::Status::Won
-                    && self
-                        .intent
-                        .with(|i| i.as_ref().is_some_and(|i| Some(i.action) == action))))
+                    && (self.recovery.get() && action.is_some()
+                        || self
+                            .intent
+                            .with(|i| i.as_ref().is_some_and(|i| Some(i.action) == action)))))
             && self
                 .intent
                 .with(|intent| intent.as_ref().is_none_or(|i| Some(i.action) == action))
@@ -282,6 +286,49 @@ impl Actions {
                 (intent.user, intent.day, intent.started_at) == (u, d, s)
             })
         }));
+        self.recovery.set(!self.recovery_intents().is_empty());
+    }
+
+    /// Foreign intents are candidates only. They cannot be adopted or sent to the purchase
+    /// endpoint: only a read-only, authenticated server receipt can prove a real transfer.
+    pub(super) fn recovery_intents(&self) -> Vec<Intent> {
+        if let Some(intent) = self.intent.get_untracked() {
+            if self
+                .scope
+                .get_value()
+                .is_some_and(|(u, _, _, _)| intent.user != u)
+            {
+                return vec![intent];
+            }
+            return vec![];
+        }
+        let scope = self.scope.get_value();
+        saved_intents()
+            .into_iter()
+            .filter(|i| {
+                scope.is_some_and(|(u, d, s, _)| i.user != u && i.day == d && i.started_at == s)
+                    && !self
+                        .checked_foreign
+                        .with_value(|checked| checked.contains(i))
+            })
+            .collect()
+    }
+
+    pub(super) fn recovered(&self, recovery: Option<&PaidRecovery>, candidates: &[Intent]) {
+        if recovery.is_none() {
+            // A successful negative lookup unlocks this scope, but never deletes another
+            // account's durable intent or silently turns a recovery click into a purchase.
+            self.checked_foreign.update_value(|checked| {
+                if checked.len() + candidates.len() > 256 {
+                    checked.clear();
+                }
+                checked.extend_from_slice(candidates);
+            });
+        }
+        // Keep the original storage key until the outcome is actually consumed. Reloads and
+        // storage failures therefore remain read-only retries, even on the new account.
+        self.intent.set(recovery.map(|r| r.intent.clone()));
+        self.recovery.set(false);
     }
 
     pub(super) fn resolved(&self) {
@@ -364,6 +411,14 @@ impl Guard {
         {
             daily.game.bridges.update(|b| b[edge] = value);
         }
+    }
+
+    pub(super) fn user(&self) -> i64 {
+        self.user
+    }
+
+    pub(super) fn started_at(&self) -> i64 {
+        self.started_at
     }
 
     pub(super) fn day(&self) -> i64 {
@@ -662,6 +717,121 @@ mod tests {
             d.actions.sync(&d);
             assert!(d.actions.intent.get_untracked().is_none());
             assert!(!guard.current(&d));
+        });
+    }
+
+    #[test]
+    fn a_foreign_intent_needs_read_only_proof_and_unknown_recovery_stays_locked() {
+        tab(|d, auth| {
+            let first = d.actions.begin(&d, Some(PaidAction::Hint)).unwrap();
+            let intent = d
+                .actions
+                .purchase(&first, PaidAction::Hint, || "merged-lost-hint-01".into())
+                .unwrap();
+            auth.user.update(|u| u.as_mut().unwrap().id += 1);
+            let new_page = page(&d.game, auth);
+            assert!(new_page.actions.intent.get_untracked().is_none());
+            assert!(new_page.actions.recovery.get_untracked());
+            assert!(new_page.actions.locked());
+            new_page
+                .actions
+                .edit(&new_page, || new_page.game.cycle(0, 1));
+            assert_eq!(new_page.game.bridges.get_untracked(), [0]);
+            let lookup = new_page
+                .actions
+                .begin(&new_page, Some(PaidAction::Check))
+                .unwrap();
+            assert_eq!(
+                new_page.actions.recovery_intents(),
+                std::slice::from_ref(&intent)
+            );
+            // A failed lookup must not manufacture an intent for the new identity.
+            new_page.actions.finish(&lookup);
+            assert!(new_page.actions.recovery.get_untracked());
+            assert!(new_page.actions.locked());
+            let proven = PaidRecovery {
+                intent: intent.clone(),
+                reply: PaidReply {
+                    outcome: PaidOutcome::Hint(Some((0, 1))),
+                    hints: 1,
+                    checks: 0,
+                },
+            };
+            new_page
+                .actions
+                .recovered(Some(&proven), std::slice::from_ref(&intent));
+            assert_eq!(
+                new_page.actions.intent.get_untracked(),
+                Some(intent.clone())
+            );
+            assert!(
+                new_page
+                    .actions
+                    .begin(&new_page, Some(PaidAction::Check))
+                    .is_none()
+            );
+            new_page.game.status.set(Status::Won);
+            let retry = new_page
+                .actions
+                .begin(&new_page, Some(PaidAction::Hint))
+                .unwrap();
+            assert_eq!(
+                new_page
+                    .actions
+                    .purchase(&retry, PaidAction::Hint, || panic!(
+                        "no new ID after transfer"
+                    )),
+                Some(intent.clone())
+            );
+            assert_eq!(new_page.actions.recovery_intents(), [intent]);
+            assert!(retry.accept(&new_page, &[0], proven.reply).is_none());
+            assert_eq!(
+                new_page
+                    .info
+                    .get_untracked()
+                    .unwrap()
+                    .attempt
+                    .unwrap()
+                    .hints,
+                1
+            );
+            new_page.actions.resolved();
+            new_page.actions.finish(&retry);
+            assert!(!new_page.actions.locked());
+            assert_eq!(saved_intents(), Vec::<Intent>::new());
+        });
+    }
+
+    #[test]
+    fn absent_foreign_receipts_do_not_adopt_or_delete_another_accounts_intents() {
+        tab(|d, auth| {
+            let first = d.actions.begin(&d, Some(PaidAction::Check)).unwrap();
+            let intent = d
+                .actions
+                .purchase(&first, PaidAction::Check, || "unrelated-intent-01".into())
+                .unwrap();
+            auth.user.update(|u| u.as_mut().unwrap().id += 1);
+            let new_page = page(&d.game, auth);
+            let lookup = new_page
+                .actions
+                .begin(&new_page, Some(PaidAction::Hint))
+                .unwrap();
+            new_page
+                .actions
+                .recovered(None, std::slice::from_ref(&intent)); // authenticated lookup found no exact receipt
+            new_page.actions.finish(&lookup);
+            assert!(!new_page.actions.locked());
+            let next = new_page
+                .actions
+                .begin(&new_page, Some(PaidAction::Hint))
+                .unwrap();
+            assert_eq!(new_page.actions.recovery_intents(), Vec::<Intent>::new());
+            new_page.actions.finish(&next);
+            assert_eq!(saved_intents(), std::slice::from_ref(&intent));
+            assert_eq!(new_page.game.bridges.get_untracked(), [0]);
+            auth.user.update(|u| u.as_mut().unwrap().id -= 1);
+            let original = page(&d.game, auth);
+            assert_eq!(original.actions.intent.get_untracked(), Some(intent));
         });
     }
 

@@ -1,4 +1,5 @@
 {
+  "action_recover": "Nhấn Gợi ý hoặc Kiểm tra để khôi phục thao tác trước đó sau khi đăng nhập.",
   "action_pending": "Đang chờ máy chủ…",
   "action_retry": "Chưa rõ kết quả. Nhấn lại cùng thao tác để nhận kết quả mà không bị phạt thêm.",
   "action_storage": "Cần bộ nhớ trình duyệt để thử lại thao tác này an toàn. Hãy bật rồi thử lại.",

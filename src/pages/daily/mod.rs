@@ -13,7 +13,8 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::{
-    PaidAction, PaidOutcome, daily_paid_action, daily_reveal, daily_today, submit_daily,
+    PaidAction, PaidOutcome, daily_paid_action, daily_recover_actions, daily_reveal, daily_today,
+    submit_daily,
 };
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
@@ -57,9 +58,10 @@ fn Stat(
 pub fn DailyPage() -> impl IntoView {
     let i18n = use_i18n();
     let game = expect_context::<DailyGame>().0;
+    let auth = expect_context::<Auth>();
     let daily = Daily {
         game,
-        actions: actions::Actions::new(expect_context::<Auth>()),
+        actions: actions::Actions::new(auth),
         info: RwSignal::new(None),
         skew: RwSignal::new(0),
         now: RwSignal::new(0),
@@ -78,7 +80,6 @@ pub fn DailyPage() -> impl IntoView {
             return;
         }
         daily.now.set(browser_now());
-        daily.reload();
         if let Ok(handle) = set_interval_with_handle(
             move || daily.now.set(browser_now()),
             Duration::from_millis(100),
@@ -96,6 +97,15 @@ pub fn DailyPage() -> impl IntoView {
             focus.remove();
             visible.remove();
         });
+    });
+
+    // Wait for the known identity before fetching its attempt, and refetch after a local
+    // registration/sign-in refresh. An old request cannot install another identity's info.
+    Effect::new(move |_| {
+        if auth.loaded.get() {
+            auth.user.with(|u| u.as_ref().map(|u| u.id));
+            untrack(|| daily.reload());
+        }
     });
 
     // A new day started while the page was open
@@ -125,6 +135,9 @@ pub fn DailyPage() -> impl IntoView {
         let Some(day) = daily.day() else { return };
         let bridges = game.bridges.get_untracked();
         let moves = game.moves.get_untracked();
+        let Some(guard) = daily.actions.capture(&daily) else {
+            return;
+        };
         daily.busy.set(true);
         // Flush synchronously: effect scheduling must not decide whether the final move is in
         // the log. The observer can run afterward without appending it twice.
@@ -135,7 +148,12 @@ pub fn DailyPage() -> impl IntoView {
                 .filter(|l| l.day == day)
                 .map(|l| l.events)
                 .unwrap_or_default();
-            match submit_daily(day, bridges, moves, log, Some(browser_utc_offset())).await {
+            let response = submit_daily(day, bridges, moves, log, Some(browser_utc_offset())).await;
+            if !guard.current(&daily) {
+                daily.busy.try_set(false);
+                return;
+            }
+            match response {
                 Ok(result) => {
                     let end = browser_now() + daily.skew.get_untracked();
                     daily.update_attempt(|a| {
@@ -148,7 +166,12 @@ pub fn DailyPage() -> impl IntoView {
                 }
                 Err(e) => {
                     error_toast(e);
-                    daily.submit_failed(daily_today().await.ok());
+                    let info = daily_today().await.ok();
+                    if !guard.current(&daily) {
+                        daily.busy.try_set(false);
+                        return;
+                    }
+                    daily.submit_failed(info);
                 }
             }
             daily.busy.set(false);
@@ -159,28 +182,71 @@ pub fn DailyPage() -> impl IntoView {
         let Some(guard) = daily.actions.begin(&daily, Some(action)) else {
             return;
         };
-        let Some(intent) = daily.actions.purchase(&guard, action, || {
-            format!(
-                "{:016x}{:016x}",
-                crate::state::random_seed(),
-                crate::state::random_seed()
-            )
-        }) else {
-            daily.actions.finish(&guard);
-            toast(ToastKind::Error, |l| {
-                td_string!(l, daily.action_storage).to_string()
-            });
-            return;
-        };
         spawn_local(async move {
-            let reply = daily_paid_action(
-                guard.day(),
-                intent.bridges.clone(),
-                intent.action,
-                intent.id,
-                intent.user,
-            )
-            .await;
+            if !guard.current(&daily) {
+                daily.actions.finish(&guard);
+                return;
+            }
+            let candidates = daily.actions.recovery_intents();
+            let mut recovered_reply = None;
+            if !candidates.is_empty() {
+                let recovery = daily_recover_actions(
+                    guard.day(),
+                    guard.started_at(),
+                    candidates.clone(),
+                    guard.user(),
+                )
+                .await;
+                if !guard.current(&daily) {
+                    daily.actions.finish(&guard);
+                    return;
+                }
+                match recovery {
+                    Ok(recovery) => {
+                        daily.actions.recovered(recovery.as_ref(), &candidates);
+                        let Some(recovery) = recovery else {
+                            daily.actions.finish(&guard);
+                            return;
+                        };
+                        if recovery.intent.action != action {
+                            daily.actions.finish(&guard);
+                            return;
+                        }
+                        recovered_reply = Some(recovery.reply);
+                    }
+                    Err(e) => {
+                        // Unknown recovery stays locked; retrying cannot fall through to a charge.
+                        daily.actions.finish(&guard);
+                        error_toast(e);
+                        return;
+                    }
+                }
+            }
+            let Some(intent) = daily.actions.purchase(&guard, action, || {
+                format!(
+                    "{:016x}{:016x}",
+                    crate::state::random_seed(),
+                    crate::state::random_seed()
+                )
+            }) else {
+                daily.actions.finish(&guard);
+                toast(ToastKind::Error, |l| {
+                    td_string!(l, daily.action_storage).to_string()
+                });
+                return;
+            };
+            let reply = if let Some(reply) = recovered_reply {
+                Ok(reply)
+            } else {
+                daily_paid_action(
+                    guard.day(),
+                    intent.bridges.clone(),
+                    intent.action,
+                    intent.id.clone(),
+                    intent.user,
+                )
+                .await
+            };
             if !guard.current(&daily) {
                 daily.actions.finish(&guard);
                 return;
@@ -425,6 +491,8 @@ pub fn DailyPage() -> impl IntoView {
                         <div role="status" aria-live="polite" data-testid="daily-action-status" class="text-sm text-muted-foreground">
                             {move || if daily.actions.pending.get() {
                                 t_string!(i18n, daily.action_pending).to_string()
+                            } else if daily.actions.recovery.get() {
+                                t_string!(i18n, daily.action_recover).to_string()
                             } else if daily.actions.intent.with(Option::is_some) {
                                 t_string!(i18n, daily.action_retry).to_string()
                             } else { String::new() }}

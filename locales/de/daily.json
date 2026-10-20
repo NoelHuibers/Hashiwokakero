@@ -1,4 +1,5 @@
 {
+  "action_recover": "Drücke Tipp oder Prüfen, um nach der Anmeldung eine frühere Aktion wiederherzustellen.",
   "action_pending": "Warte auf den Server…",
   "action_retry": "Das Ergebnis ist ungewiss. Drücke dieselbe Aktion erneut, um es ohne weitere Strafe abzurufen.",
   "action_storage": "Browserspeicher ist erforderlich, um diese Aktion sicher zu wiederholen. Aktiviere ihn und versuche es erneut.",

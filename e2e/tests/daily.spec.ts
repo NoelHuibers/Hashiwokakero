@@ -330,3 +330,264 @@ test('unavailable intent storage prevents a charge and releases pending', async 
   await expect(page.getByText('+0s', { exact: true })).toBeVisible();
   expect(requests).toBe(0);
 });
+
+for (const action of ['Hint', 'Check'] as const) {
+  test(`a lost successful guest ${action} is recovered after login without a new purchase`, async ({ page }) => {
+    const username = newUsername('recover');
+    const password = 'recover-bridges-safely';
+    await visit(page, '/account');
+    await register(page, username, password);
+    await signOut(page);
+    await visit(page, '/');
+    await startDaily(page);
+    const before = (await saved(page, DAILY_KEY)).bridges;
+    let purchases = 0;
+    await page.route(paidPath, async (route) => {
+      purchases++;
+      const response = await route.fetch();
+      await route.fulfill({ response, contentType: 'application/json', body: 'null' });
+    });
+    await page.getByRole('button', { name: new RegExp(`^${action}`) }).click();
+    await expect(actionStatus(page)).toContainText('Press the same action again');
+    expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
+    await visit(page, '/account');
+    await signInWith(page, username, password);
+    await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
+    await visit(page, '/');
+    await expect(actionStatus(page)).toContainText('recover an earlier action after signing in');
+    await expect(page.getByRole('button', { name: /^Give up/ })).toBeDisabled();
+    // Recovering the other action first must never buy it. The proven original action is
+    // restored, and its next click only reads the same receipt again.
+    const other = action === 'Hint' ? 'Check' : 'Hint';
+    await page.getByRole('button', { name: new RegExp(`^${other}`) }).click();
+    await expect(actionStatus(page)).toContainText('Press the same action again');
+    await expect(page.getByRole('button', { name: new RegExp(`^${other}`) })).toBeDisabled();
+    await page.reload(); // original storage key remains recoverable after another reload
+    await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
+    await expect(actionStatus(page)).toContainText('recover an earlier action after signing in');
+    await page.getByRole('button', { name: new RegExp(`^${action}`) }).click();
+    await expect(actionStatus(page)).toBeEmpty();
+    expect(purchases).toBe(1);
+    await expect(page.getByText(action === 'Hint' ? '+30s' : '+10s', { exact: true })).toBeVisible();
+    if (action === 'Hint') expect((await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
+    expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')))).toEqual([]);
+  });
+}
+
+test('a conflicting account attempt never adopts a lost guest hint', async ({ page }) => {
+  const username = newUsername('conflict');
+  const password = 'conflicting-bridges';
+  await visit(page, '/account');
+  await register(page, username, password);
+  await visit(page, '/');
+  await startDaily(page); // target account already owns today's attempt
+  const before = (await saved(page, DAILY_KEY)).bridges;
+  await visit(page, '/account');
+  await signOut(page);
+  await visit(page, '/');
+  await startDaily(page);
+  let purchases = 0;
+  await page.route(paidPath, async (route) => {
+    purchases++;
+    const response = await route.fetch();
+    if (purchases === 1) await route.fulfill({ response, contentType: 'application/json', body: 'null' });
+    else await route.fulfill({ response });
+  });
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toContainText('Press the same action again');
+  await visit(page, '/account');
+  await signInWith(page, username, password);
+  await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
+  await visit(page, '/');
+  await expect(page.locator('svg.board-svg')).toBeVisible();
+  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
+  expect(purchases).toBe(1);
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toBeEmpty();
+  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  expect(purchases).toBe(2); // a new, intentional purchase for the target account
+});
+
+test('signing out and switching accounts preserves the former account intent without adoption', async ({ page }) => {
+  const first = newUsername('first');
+  const second = newUsername('second');
+  const password = 'separate-bridge-owners';
+  await visit(page, '/account');
+  await register(page, first, password);
+  await visit(page, '/');
+  await startDaily(page);
+  await page.route(paidPath, async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, contentType: 'application/json', body: 'null' });
+  });
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toContainText('Press the same action again');
+  await visit(page, '/account');
+  await signOut(page);
+  await register(page, second, password);
+  await visit(page, '/');
+  await startDaily(page);
+  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  await expect(actionStatus(page)).toBeEmpty();
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')).length)).toBe(1);
+  await visit(page, '/account');
+  await signOut(page);
+  await signInWith(page, first, password);
+  await expect(page.getByRole('heading', { name: `こんにちは, ${first}` })).toBeVisible();
+  await visit(page, '/');
+  await expect(actionStatus(page)).toContainText('Press the same action again');
+  await page.unroute(paidPath);
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toBeEmpty();
+  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+});
+
+test('an unknown transfer lookup blocks fresh purchases until recovery succeeds', async ({ page }) => {
+  const username = newUsername('lookup');
+  const password = 'unknown-receipt-outcome';
+  await visit(page, '/account');
+  await register(page, username, password);
+  await signOut(page);
+  await visit(page, '/');
+  await startDaily(page);
+  let purchases = 0;
+  await page.route(paidPath, async (route) => {
+    purchases++;
+    const response = await route.fetch();
+    await route.fulfill({ response, contentType: 'application/json', body: 'null' });
+  });
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toContainText('Press the same action again');
+  await visit(page, '/account');
+  await signInWith(page, username, password);
+  await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
+  await visit(page, '/');
+  let lookups = 0;
+  await page.route('**/api/daily_recover_actions', async (route) => {
+    lookups++;
+    if (lookups === 1) await route.fulfill({ contentType: 'application/json', body: '{"unknown":true}' });
+    else await route.continue();
+  });
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect.poll(() => lookups).toBe(1);
+  await expect(actionStatus(page)).toContainText('recover an earlier action after signing in');
+  await expect(page.getByRole('button', { name: /^Give up/ })).toBeDisabled();
+  expect(purchases).toBe(1);
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toBeEmpty();
+  expect(purchases).toBe(1);
+});
+
+test('a guest merge in another tab preserves a committed hint whose reply outlives the daily page', async ({ page, context, problems }) => {
+  const username = newUsername('tabmerge');
+  const password = 'cross-tab-bridge-receipt';
+  await visit(page, '/account');
+  await register(page, username, password);
+  await signOut(page);
+  await visit(page, '/');
+  await startDaily(page);
+  const before = (await saved(page, DAILY_KEY)).bridges;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  let committed = false;
+  let purchases = 0;
+  await page.route(paidPath, async (route) => {
+    purchases++;
+    const response = await route.fetch();
+    committed = true;
+    await held;
+    await route.fulfill({ response });
+  });
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect.poll(() => committed).toBe(true);
+  const other = await context.newPage();
+  other.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
+  try {
+    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await expect(page).toHaveURL(/\/practice/);
+    await visit(other, '/account');
+    await signInWith(other, username, password);
+    await expect(other.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
+  } finally {
+    release();
+    await other.close();
+  }
+  await page.waitForLoadState('networkidle');
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
+  await visit(page, '/'); // a fresh auth snapshot sees the shared cookie's new identity
+  await expect(actionStatus(page)).toContainText('recover an earlier action after signing in');
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toBeEmpty();
+  expect(purchases).toBe(1);
+  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+});
+
+test('a delayed quiet refresh cannot roll back a paid counter or touch a disposed daily', async ({ page }) => {
+  await visit(page, '/');
+  await startDaily(page);
+  for (const dispose of [false, true]) {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    let captured = false;
+    await page.route('**/api/daily_today', async (route) => {
+      const response = await route.fetch();
+      captured = true;
+      await held;
+      await route.fulfill({ response });
+    });
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await expect.poll(() => captured).toBe(true);
+    try {
+      if (dispose) {
+        await page.getByRole('link', { name: /Practice/ }).first().click();
+        await expect(page).toHaveURL(/\/practice/);
+      } else {
+        await page.getByRole('button', { name: /^Check/ }).click();
+        await expect(actionStatus(page)).toBeEmpty();
+        await expect(page.getByText('+10s', { exact: true })).toBeVisible();
+      }
+    } finally {
+      release();
+    }
+    await page.waitForLoadState('networkidle');
+    if (!dispose) await expect(page.getByText('+10s', { exact: true })).toBeVisible();
+    await page.unroute('**/api/daily_today');
+  }
+});
+
+test('a definitive missing transferred receipt ends recovery without purchasing on that click', async ({ page }) => {
+  const username = newUsername('nocharge');
+  const password = 'recover-without-purchase';
+  await visit(page, '/account');
+  await register(page, username, password);
+  await signOut(page);
+  await visit(page, '/');
+  await startDaily(page);
+  let purchases = 0;
+  await page.route(paidPath, async (route) => {
+    purchases++;
+    if (purchases === 1) {
+      // A failed transport before the server saw the original request leaves no receipt.
+      await route.fulfill({ contentType: 'application/json', body: 'null' });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toContainText('Press the same action again');
+  await visit(page, '/account');
+  await signInWith(page, username, password);
+  await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
+  await visit(page, '/');
+  await expect(actionStatus(page)).toContainText('recover an earlier action after signing in');
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toBeEmpty();
+  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  expect(purchases).toBe(1);
+  // Only the next, explicit purchase click can charge this account.
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toBeEmpty();
+  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  expect(purchases).toBe(2);
+});

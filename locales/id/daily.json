@@ -1,4 +1,5 @@
 {
+  "action_recover": "Tekan Petunjuk atau Cek untuk memulihkan tindakan sebelumnya setelah masuk.",
   "action_pending": "Menunggu server…",
   "action_retry": "Hasil belum pasti. Tekan tindakan yang sama lagi untuk mendapatkan hasilnya tanpa penalti tambahan.",
   "action_storage": "Penyimpanan browser diperlukan untuk mencoba ulang tindakan ini dengan aman. Aktifkan lalu coba lagi.",

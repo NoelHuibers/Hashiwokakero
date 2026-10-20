@@ -521,11 +521,44 @@ async fn check_password(
     Ok(found.filter(|_| valid).map(|(user, _)| user))
 }
 
-async fn merge_guest(conn: &Connection, guest: i64, user: i64) -> Result<(), ServerFnError> {
+pub(super) async fn merge_guest(
+    conn: &Connection,
+    guest: i64,
+    user: i64,
+) -> Result<(), ServerFnError> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .await
         .map_err(db_err)?;
+    // Registration can claim this identity while login is waiting for the write lock. Never
+    // transfer a registered account's attempt based on the earlier guest snapshot.
+    let still_guest = tx
+        .query(
+            "SELECT 1 FROM users WHERE id = ?1 AND username IS NULL AND deleted_at IS NULL",
+            params![guest],
+        )
+        .await
+        .map_err(db_err)?
+        .next()
+        .await
+        .map_err(db_err)?
+        .is_some();
+    if !still_guest {
+        tx.commit().await.map_err(db_err)?;
+        return Ok(());
+    }
+    // Annotate pre-provenance receipts using their actual owner, under the same lock as
+    // transfer. Existing provenance is preserved; conflicting attempts are never combined.
+    tx.execute(
+        "UPDATE attempts SET paid_actions = (
+            SELECT json_group_array(json_set(value, '$.origin_user',
+                COALESCE(json_extract(value, '$.origin_user'), ?1)))
+            FROM json_each(attempts.paid_actions)
+         ) WHERE user_id = ?1 AND paid_actions != '[]'",
+        params![guest],
+    )
+    .await
+    .map_err(db_err)?;
     for sql in [
         "UPDATE OR IGNORE attempts SET user_id = ?1 WHERE user_id = ?2",
         "UPDATE OR IGNORE stamps SET user_id = ?1 WHERE user_id = ?2",

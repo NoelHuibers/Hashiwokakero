@@ -192,10 +192,64 @@ const MAX_PAID_ACTIONS: usize = 256;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct PaidReceipt {
+    // Older receipts get their provenance from the actual owning guest inside merge_guest.
+    #[serde(default)]
+    origin_user: Option<i64>,
     id: String,
     action: crate::api::PaidAction,
     bridges: Vec<u8>,
     outcome: crate::api::PaidOutcome,
+}
+
+/// Reads an owned receipt and its counters together, without creating an attempt or charge.
+///
+/// The current owner, exact original user, attempt, ID, action and board must all agree;
+/// a coincidentally equal `started_at` on a conflicting attempt proves nothing.
+pub async fn recover_actions(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    started_at: i64,
+    intents: &[crate::api::PaidIntent],
+) -> Result<Option<crate::api::PaidRecovery>, ServerFnError> {
+    use crate::api::{PaidRecovery, PaidReply};
+    if intents.len() > MAX_PAID_ACTIONS
+        || intents.iter().any(|i| {
+            !(16..=64).contains(&i.id.len())
+                || i.bridges.len() > 2 * usize::from(common::MAX_SIZE).pow(2)
+        })
+    {
+        return Err(ApiError::WrongPuzzle.into());
+    }
+    let mut rows = conn.query(
+        "SELECT paid_actions, hints, checks FROM attempts WHERE user_id = ?1 AND day = ?2 AND started_at = ?3",
+        params![user, day, started_at],
+    ).await.map_err(db_err)?;
+    let Some(row) = rows.next().await.map_err(db_err)? else {
+        return Ok(None);
+    };
+    let receipts: Vec<PaidReceipt> = from_json(&row.get::<String>(0).map_err(db_err)?)?;
+    for intent in intents {
+        if intent.day != day || intent.started_at != started_at {
+            continue;
+        }
+        if let Some(receipt) = receipts.iter().find(|r| {
+            r.origin_user == Some(intent.user)
+                && r.id == intent.id
+                && r.action == intent.action
+                && r.bridges == intent.bridges
+        }) {
+            return Ok(Some(PaidRecovery {
+                intent: intent.clone(),
+                reply: PaidReply {
+                    outcome: receipt.outcome.clone(),
+                    hints: row.get(1).map_err(db_err)?,
+                    checks: row.get(2).map_err(db_err)?,
+                },
+            }));
+        }
+    }
+    Ok(None)
 }
 
 /// The receipt and the penalty are committed together under the same cross-connection lock as
@@ -267,6 +321,7 @@ pub async fn paid_action(
     let hints = current.hints + i64::from(matches!(&outcome, PaidOutcome::Hint(Some(_))));
     let checks = current.checks + i64::from(action == PaidAction::Check);
     receipts.push(PaidReceipt {
+        origin_user: Some(user),
         id: request_id.to_owned(),
         action,
         bridges,

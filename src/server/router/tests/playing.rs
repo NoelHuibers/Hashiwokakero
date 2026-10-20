@@ -383,3 +383,118 @@ async fn paid_actions_assert_the_displayed_player_without_trusting_its_identity(
     let own = second.call(purchase(other.id)).await.unwrap();
     assert_eq!((own.hints, own.checks), (1, 0));
 }
+
+#[tokio::test]
+async fn lost_paid_replies_recover_over_http_after_guest_login_but_never_switch_ownership() {
+    use crate::api::{
+        DailyPaidAction, DailyRecoverActions, Login, Logout, PaidAction, PaidIntent, Register,
+    };
+    let server = Server::start().await;
+    let account = Browser::signed_up(&server, "receipt_owner").await;
+    let owner = account.call(CurrentUser {}).await.unwrap().unwrap();
+    let guest = server.browser();
+    let info = guest.call(StartDaily { device: None }).await.unwrap();
+    let former = guest.call(CurrentUser {}).await.unwrap().unwrap();
+    let mut intents = vec![];
+    for (action, id) in [
+        (PaidAction::Hint, "http-lost-hint-0001"),
+        (PaidAction::Check, "http-lost-check-001"),
+    ] {
+        let intent = PaidIntent {
+            user: former.id,
+            day: info.day,
+            started_at: info.attempt.as_ref().unwrap().started_at,
+            action,
+            bridges: Board::new(info.puzzle.clone().unwrap()).empty_bridges(),
+            id: id.into(),
+        };
+        guest
+            .call(DailyPaidAction {
+                day: info.day,
+                bridges: intent.bridges.clone(),
+                action,
+                request_id: id.into(),
+                expected_user: former.id,
+            })
+            .await
+            .unwrap();
+        intents.push(intent);
+    }
+    guest
+        .call(Login {
+            username: owner.name,
+            password: PASSWORD.into(),
+        })
+        .await
+        .unwrap();
+    let recover = |expected_user, intents: Vec<PaidIntent>| DailyRecoverActions {
+        day: info.day,
+        started_at: info.attempt.as_ref().unwrap().started_at,
+        intents,
+        expected_user,
+    };
+    assert_eq!(
+        api_error(guest.call(recover(former.id, intents.clone())).await),
+        ApiError::SessionExpired
+    );
+    for intent in &intents {
+        let got = guest
+            .call(recover(owner.id, vec![intent.clone()]))
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(got.intent, *intent);
+        assert_eq!((got.reply.hints, got.reply.checks), (1, 1));
+        assert_eq!(
+            guest
+                .call(recover(owner.id, vec![intent.clone()]))
+                .await
+                .unwrap(),
+            Some(got)
+        );
+    }
+    let old_tab = server.sending_cookie(&format!("hashi_session={}", "ab".repeat(32)));
+    assert_eq!(
+        api_error(old_tab.call(recover(owner.id, intents.clone())).await),
+        ApiError::SessionExpired
+    );
+    guest.call(Logout {}).await.unwrap();
+    let unrelated = guest
+        .call(Register {
+            username: "receipt_unrelated".into(),
+            password: PASSWORD.into(),
+        })
+        .await
+        .unwrap();
+    assert!(
+        guest
+            .call(recover(unrelated.id, intents))
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert!(guest.call(DailyToday {}).await.unwrap().attempt.is_none());
+
+    // Registration claims the same numeric identity; the existing purchase endpoint still
+    // replays its saved intent and continues asserting that very identity.
+    let claiming = server.browser();
+    let started = claiming.call(StartDaily { device: None }).await.unwrap();
+    let original = claiming.call(CurrentUser {}).await.unwrap().unwrap();
+    let purchase = || DailyPaidAction {
+        day: started.day,
+        bridges: Board::new(started.puzzle.clone().unwrap()).empty_bridges(),
+        action: PaidAction::Check,
+        request_id: "same-user-register-01".into(),
+        expected_user: original.id,
+    };
+    let accepted = claiming.call(purchase()).await.unwrap();
+    let registered = claiming
+        .call(Register {
+            username: "receipt_claimed".into(),
+            password: PASSWORD.into(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(registered.id, original.id);
+    assert_eq!(claiming.call(purchase()).await.unwrap(), accepted);
+}

@@ -1,4 +1,5 @@
 {
+  "action_recover": "Naciśnij Podpowiedź lub Sprawdź, aby odzyskać wcześniejszą akcję po zalogowaniu.",
   "action_pending": "Oczekiwanie na serwer…",
   "action_retry": "Wynik jest niepewny. Powtórz tę samą czynność, aby go odzyskać bez kolejnej kary.",
   "action_storage": "Pamięć przeglądarki jest potrzebna do bezpiecznego ponowienia tej czynności. Włącz ją i spróbuj ponownie.",

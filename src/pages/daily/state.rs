@@ -80,6 +80,34 @@ pub struct Daily {
     pub(super) refreshing: StoredValue<bool>,
 }
 
+/// Quiet fetches may overlap a purchase, identity change, day change or page disposal.
+/// Compare the full captured info too: even a same-attempt counter update makes it stale.
+#[derive(Clone, Debug)]
+pub(super) struct RefreshGuard {
+    info: Option<DailyInfo>,
+    user: Option<i64>,
+    epoch: u32,
+    revision: u64,
+}
+
+impl RefreshGuard {
+    pub(super) fn new(daily: &Daily) -> Self {
+        Self {
+            info: daily.info.get_untracked(),
+            user: daily.actions.user(),
+            epoch: daily.game.epoch.get_untracked(),
+            revision: daily.actions.refresh_revision(),
+        }
+    }
+
+    pub(super) fn current(&self, daily: &Daily) -> bool {
+        daily.info.try_with_untracked(|i| *i == self.info) == Some(true)
+            && daily.game.epoch.try_get_untracked() == Some(self.epoch)
+            && daily.actions.user() == self.user
+            && daily.actions.refresh_revision() == self.revision
+    }
+}
+
 impl Daily {
     pub(super) fn server_now(&self) -> i64 {
         self.now.get() + self.skew.get()
@@ -231,11 +259,14 @@ impl Daily {
         }
         self.refreshing.set_value(true);
         let this = *self;
+        let guard = RefreshGuard::new(self);
         spawn_local(async move {
-            if let Ok(info) = daily_today().await {
+            if let Ok(info) = daily_today().await
+                && guard.current(&this)
+            {
                 this.apply(info);
             }
-            this.refreshing.set_value(false);
+            this.refreshing.try_set_value(false);
         });
     }
 
@@ -267,15 +298,20 @@ impl Daily {
         let ranking = self.ranking;
         spawn_local(async move {
             if let Ok(lb) = daily_leaderboard(None).await {
-                ranking.set(Some(lb));
+                ranking.try_set(Some(lb));
             }
         });
     }
 
     pub(super) fn reload(&self) {
         let this = *self;
+        let guard = RefreshGuard::new(self);
         spawn_local(async move {
-            match daily_today().await {
+            let response = daily_today().await;
+            if !guard.current(&this) {
+                return;
+            }
+            match response {
                 Ok(info) => this.apply(info),
                 Err(e) => error_toast(e),
             }
@@ -306,6 +342,32 @@ mod tests {
             required: 1,
         };
         Puzzle::new(3, 1, vec![island(0), island(2)])
+    }
+
+    #[test]
+    fn refresh_replies_reject_newer_counters_days_boards_and_disposed_owners() {
+        tab(|d| {
+            d.info.set(Some(info(false)));
+            let before = RefreshGuard::new(d);
+            assert!(before.current(d));
+            d.update_attempt(|a| a.hints = 2);
+            assert!(!before.current(d)); // old daily_today cannot roll back accepted penalties
+            let current = RefreshGuard::new(d);
+            d.info.update(|i| i.as_mut().unwrap().day += 1);
+            assert!(!current.current(d));
+            let current = RefreshGuard::new(d);
+            d.game.epoch.update(|e| *e += 1);
+            assert!(!current.current(d));
+        });
+        let owner = Owner::new();
+        let (d, guard) = owner.with(|| {
+            let d = daily();
+            let guard = RefreshGuard::new(&d);
+            (d, guard)
+        });
+        owner.cleanup();
+        assert!(!guard.current(&d));
+        d.refreshing.try_set_value(false); // completing a quiet fetch is also disposal-safe
     }
 
     #[test]
