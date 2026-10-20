@@ -1,0 +1,76 @@
+# Conditions of the timing runs (dojo/CALIBRATION.md), one block per solver, logged by the
+# timing script before and after. cpu3 is the core every run was pinned to; its frequency was
+# read between runs, idle (turbo was on, the governor powersave with EPP balance_performance).
+# "busy on cpu3" lists running threads on cpu3. The first two blocks used an older check that
+# listed a single-threaded background job by its lifetime average; its busy thread had been
+# moved off cpu3 (affinity 0-2,4-15) before these runs started, the later blocks confirm it.
+== minisat start 2026-10-20T11:16:49+02:00
+uptime:  11:16:49 up 20:26,  1 user,  load average: 1.44, 4.12, 6.57
+lock: pid 1552883 since 11:16:49 in /home/huibers/repos/Hashiwokakero: /home/huibers/dojo-plan/scratch-calibration/bin/time-chunk.sh minisat /home/huibers/dojo-plan/scratch-calibration/solvers/wasm/minisat.wasm /home/huibers/dojo-plan/scratch-calibration/solvers/native/minisat
+cpu3: 400072 kHz, governor powersave, epp balance_performance, no_turbo 0
+top: 101.7% gen_time;82.3% t3code;9.7% claude;4.8% Hyprland;4.8% t3code;
+busy on cpu3: gen_time 99.7%;
+== minisat end 2026-10-20T11:18:05+02:00 exit 0
+uptime:  11:18:05 up 20:27,  1 user,  load average: 1.94, 3.68, 6.22
+cpu3: 3737020 kHz
+busy on cpu3: gen_time 99.7%;
+== cadical start 2026-10-20T11:18:05+02:00
+uptime:  11:18:05 up 20:27,  1 user,  load average: 1.94, 3.68, 6.22
+lock: pid 1554439 since 11:18:05 in /home/huibers/repos/Hashiwokakero: /home/huibers/dojo-plan/scratch-calibration/bin/time-chunk.sh cadical /home/huibers/dojo-plan/scratch-calibration/solvers/wasm/cadical.wasm /home/huibers/dojo-plan/scratch-calibration/solvers/native/cadical
+cpu3: 400082 kHz, governor powersave, epp balance_performance, no_turbo 0
+top: 96.8% gen_time;4.8% Hyprland;4.8% t3code;4.8% top;0.0% systemd;
+busy on cpu3: gen_time 99.7%;
+== cadical end 2026-10-20T11:19:39+02:00 exit 0
+uptime:  11:19:39 up 20:29,  1 user,  load average: 2.25, 3.32, 5.85
+cpu3: 400118 kHz
+busy on cpu3: gen_time 99.7%;
+== kissat start 2026-10-20T11:19:59+02:00
+uptime:  11:19:59 up 20:29,  1 user,  load average: 1.89, 3.17, 5.74
+lock: pid 1556235 since 11:19:59 in /home/huibers/repos/Hashiwokakero: /home/huibers/dojo-plan/scratch-calibration/bin/time-chunk.sh kissat /home/huibers/dojo-plan/scratch-calibration/solvers/wasm/kissat.wasm /home/huibers/dojo-plan/scratch-calibration/solvers/native/kissat
+cpu3: 400000 kHz, governor powersave, epp balance_performance, no_turbo 0
+top: 96.9% gen_time;4.8% claude;0.0% systemd;0.0% kthreadd;0.0% pool_wo+;
+busy on cpu3: 
+== kissat end 2026-10-20T11:21:40+02:00 exit 0
+uptime:  11:21:40 up 20:31,  1 user,  load average: 2.05, 2.85, 5.36
+cpu3: 889836 kHz
+busy on cpu3: 
+== splr start 2026-10-20T11:21:50+02:00
+uptime:  11:21:50 up 20:31,  1 user,  load average: 1.89, 2.79, 5.31
+lock: pid 1557998 since 11:21:50 in /home/huibers/repos/Hashiwokakero: /home/huibers/dojo-plan/scratch-calibration/bin/time-chunk.sh splr /home/huibers/dojo-plan/scratch-calibration/solvers/wasm/splr.wasm /home/huibers/dojo-plan/scratch-calibration/solvers/native/splr
+cpu3: 400000 kHz, governor powersave, epp balance_performance, no_turbo 0
+top: 101.7% gen_time;82.3% claude;4.8% Hyprland;4.8% t3code;4.8% t3code;
+busy on cpu3: 
+== splr end 2026-10-20T11:25:25+02:00 exit 0
+uptime:  11:25:25 up 20:35,  1 user,  load average: 2.20, 2.49, 4.66
+cpu3: 400094 kHz
+busy on cpu3: 
+== cdcl start 2026-10-20T11:26:16+02:00
+uptime:  11:26:16 up 20:36,  1 user,  load average: 1.97, 2.41, 4.52
+lock: pid 1561577 since 11:26:16 in /home/huibers/repos/Hashiwokakero: /home/huibers/dojo-plan/scratch-calibration/bin/time-chunk.sh cdcl /home/huibers/dojo-plan/scratch-calibration/solvers/wasm/cdcl.wasm /home/huibers/dojo-plan/scratch-calibration/solvers/native/cdcl
+cpu3: 400000 kHz, governor powersave, epp balance_performance, no_turbo 0
+top: 101.6% gen_time;9.7% Hyprland;4.8% top;0.0% systemd;0.0% kthreadd;
+busy on cpu3: 
+== cdcl end 2026-10-20T11:33:54+02:00 exit 0
+uptime:  11:33:54 up 20:43,  1 user,  load average: 2.32, 2.24, 3.58
+cpu3: 797676 kHz
+busy on cpu3: 
+== dpll start 2026-10-20T11:34:14+02:00
+uptime:  11:34:14 up 20:44,  1 user,  load average: 1.95, 2.16, 3.53
+lock: pid 1565233 since 11:34:14 in /home/huibers/repos/Hashiwokakero: /home/huibers/dojo-plan/scratch-calibration/bin/time-chunk.sh dpll /home/huibers/dojo-plan/scratch-calibration/solvers/wasm/dpll.wasm /home/huibers/dojo-plan/scratch-calibration/solvers/native/dpll
+cpu3: 400000 kHz, governor powersave, epp balance_performance, no_turbo 0
+top: 101.7% gen_time;4.8% claude;4.8% top;0.0% systemd;0.0% kthreadd;
+busy on cpu3: 
+== dpll end 2026-10-20T11:43:46+02:00 exit 0
+uptime:  11:43:46 up 20:53,  1 user,  load average: 2.09, 2.12, 2.87
+cpu3: 886241 kHz
+busy on cpu3: 
+== starter start 2026-10-20T11:43:56+02:00
+uptime:  11:43:56 up 20:53,  1 user,  load average: 1.92, 2.08, 2.85
+lock: pid 1569446 since 11:43:56 in /home/huibers/repos/Hashiwokakero: /home/huibers/dojo-plan/scratch-calibration/bin/time-chunk.sh starter /home/huibers/dojo-plan/scratch-calibration/solvers/wasm/starter.wasm /home/huibers/dojo-plan/scratch-calibration/solvers/native/starter
+cpu3: 400000 kHz, governor powersave, epp balance_performance, no_turbo 0
+top: 101.9% gen_time;4.9% upowerd;4.9% Hyprland;4.9% top;0.0% systemd;
+busy on cpu3: 
+== starter end 2026-10-20T11:52:58+02:00 exit 0
+uptime:  11:52:58 up 21:02,  1 user,  load average: 2.05, 2.10, 2.52
+cpu3: 1684952 kHz
+busy on cpu3: 

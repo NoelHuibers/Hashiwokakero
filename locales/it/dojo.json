@@ -99,7 +99,9 @@
   "fair": {
     "title": "Fair play",
     "fuel_title": "Carburante, non secondi",
-    "fuel": "Ogni istruzione WebAssembly eseguita costa un’unità di carburante, le operazioni di memoria bulk una per byte. Orologi e numeri casuali hanno un seed fisso, quindi un solver ottiene lo stesso punteggio su ogni macchina, ogni volta.",
+    "fuel": "Il carburante conta le operazioni WebAssembly che un solver esegue, pesate come le paga un vero processore: load e store tre unità, variabili locali e costanti niente, tutto il resto una, memoria bulk una per byte. Orologi e numeri casuali hanno un seed fisso, quindi un solver ottiene lo stesso punteggio su ogni macchina, ogni volta.",
+    "calibrated_title": "Verificato col cronometro",
+    "calibrated": "Contare le istruzioni viene criticato perché un accesso alla memoria può costare molto più di un’addizione. Così abbiamo misurato: sette solver, tra cui MiniSat, CaDiCaL e Kissat, su 180 formule, in nativo e nella sandbox. All’interno di ogni solver il carburante segue il tempo nativo con una correlazione di rango da 0,91 a 1,00, e ordina i solver quasi esattamente come il loro tempo di esecuzione. Pesare di più la memoria e per nulla le variabili locali prevede il tempo tra solver diversi circa un decimo meglio di un’unità per operazione. Metodo, dati e limiti: <a>CALIBRATION.md</a>.",
     "hidden_title": "Formule segrete e nuove",
     "hidden": "Il set di test nasce da un seme segreto che cambia ogni stagione, e ogni formula viene rimescolata: variabili rinominate e negate, clausole mescolate. Finché una stagione è in corso, i risultati sono mostrati solo per famiglia, mai per formula.",
     "heldout_title": "Generalizzare, non memorizzare",

@@ -99,7 +99,9 @@
   "fair": {
     "title": "Chơi đẹp",
     "fuel_title": "Fuel, không phải giây",
-    "fuel": "Mỗi lệnh WebAssembly được thực thi tốn một đơn vị fuel, thao tác bộ nhớ khối tốn một đơn vị mỗi byte. Đồng hồ và số ngẫu nhiên đều có seed cố định, nên một bộ giải luôn đạt cùng điểm trên mọi máy, mọi lần chạy.",
+    "fuel": "Fuel đếm các phép toán WebAssembly mà bộ giải thực thi, có trọng số theo cái giá một bộ xử lý thật phải trả: load và store ba đơn vị, biến cục bộ và hằng số không tốn gì, mọi thứ khác một, thao tác bộ nhớ khối một đơn vị mỗi byte. Đồng hồ và số ngẫu nhiên đều có seed cố định, nên bộ giải nhận cùng một điểm trên mọi máy, mọi lần.",
+    "calibrated_title": "Đã đối chiếu với đồng hồ",
+    "calibrated": "Việc đếm lệnh bị chỉ trích vì một lần truy cập bộ nhớ có thể tốn hơn nhiều so với một phép cộng. Vì vậy chúng tôi đã đo: bảy bộ giải, trong đó có MiniSat, CaDiCaL và Kissat, trên 180 công thức, chạy gốc và trong sandbox. Trong từng bộ giải, fuel bám theo thời gian chạy gốc với tương quan hạng từ 0,91 đến 1,00, và xếp hạng các bộ giải gần như y hệt thời gian chạy. Đặt trọng số cao hơn cho bộ nhớ và miễn phí cho biến cục bộ dự đoán thời gian giữa các bộ giải tốt hơn khoảng một phần mười so với một đơn vị cho mỗi phép toán. Phương pháp, dữ liệu và giới hạn: <a>CALIBRATION.md</a>.",
     "hidden_title": "Công thức ẩn và mới",
     "hidden": "Bộ kiểm tra được tạo từ một seed bí mật thay đổi mỗi mùa, và mọi công thức đều bị xáo trộn: biến được đổi tên và phủ định, mệnh đề bị trộn lẫn. Khi mùa giải đang diễn ra, kết quả chỉ hiển thị theo họ, không bao giờ theo từng công thức.",
     "heldout_title": "Khái quát hóa, đừng học thuộc",

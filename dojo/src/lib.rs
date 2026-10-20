@@ -21,6 +21,8 @@ use serde::{Deserialize, Serialize};
 pub mod archive;
 #[cfg(feature = "bench")]
 pub mod bench;
+#[cfg(feature = "runner")]
+pub mod calibrate;
 #[cfg(feature = "bench")]
 pub mod cnf;
 pub mod community;
@@ -30,6 +32,8 @@ pub mod drat;
 pub mod eval;
 #[cfg(feature = "bench")]
 pub mod families;
+#[cfg(feature = "runner")]
+pub mod fuel;
 #[cfg(feature = "bench")]
 pub mod lrat;
 #[cfg(feature = "bench")]
@@ -52,8 +56,22 @@ pub mod validate;
 #[cfg(feature = "worker")]
 pub mod worker;
 
-/// Fuel for one instance: about 10 billion WebAssembly instructions.
-pub const DEFAULT_BUDGET: u64 = 10_000_000_000;
+/// Fuel for one instance: 7 billion (see `fuel::MODEL` for what costs how much).
+///
+/// About as many runs finish within it as did within 10 billion instructions under the uniform
+/// cost model of rules version 3, about half a second of a native solver on the calibration
+/// machine.
+pub const DEFAULT_BUDGET: u64 = 7_000_000_000;
+
+/// The budget of a rules version: 10 billion up to version 3 (one unit per operator), then
+/// [`DEFAULT_BUDGET`]. Archived seasons keep the budget they were scored with.
+pub const fn budget_of(rules_version: u32) -> u64 {
+    if rules_version <= 3 {
+        10_000_000_000
+    } else {
+        DEFAULT_BUDGET
+    }
+}
 
 /// Largest accepted submission.
 pub const MAX_WASM_BYTES: usize = 8 << 20;
@@ -90,7 +108,9 @@ pub const GENERATOR_VERSION: u32 = 2;
 /// - 2: UNSAT needs a proof the checker accepts ([`Outcome::Unverified`] without one)
 /// - 3: new families and a held-out one in hidden sets ([`GENERATOR_VERSION`] 2), formulas
 ///   reach the solver without a comment that names them
-pub const RULES_VERSION: u32 = 3;
+/// - 4: the calibrated cost model (`fuel::MODEL`, dojo/CALIBRATION.md) instead of one unit per
+///   operator, and a budget of 7 instead of 10 billion
+pub const RULES_VERSION: u32 = 4;
 
 /// Kinds of formulas in a benchmark set.
 ///

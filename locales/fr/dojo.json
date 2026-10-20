@@ -99,7 +99,9 @@
   "fair": {
     "title": "Fair-play",
     "fuel_title": "Du carburant, pas des secondes",
-    "fuel": "Chaque instruction WebAssembly exécutée coûte une unité de carburant, les opérations mémoire en bloc une par octet. Horloges et nombres aléatoires ont une graine fixe : un solveur obtient le même score sur chaque machine, à chaque fois.",
+    "fuel": "Le carburant compte les opérations WebAssembly qu’un solveur exécute, pondérées comme un vrai processeur les paie : chargements et écritures en mémoire trois unités, variables locales et constantes rien, tout le reste une, opérations mémoire en bloc une par octet. Horloges et nombres aléatoires ont une graine fixe, donc un solveur obtient le même score sur chaque machine, à chaque fois.",
+    "calibrated_title": "Vérifié au chronomètre",
+    "calibrated": "On reproche au comptage d’instructions qu’un accès mémoire peut coûter bien plus qu’une addition. Nous avons donc mesuré : sept solveurs, dont MiniSat, CaDiCaL et Kissat, sur 180 formules, en natif et dans le bac à sable. Pour chaque solveur, le carburant suit le temps natif avec une corrélation de rang de 0,91 à 1,00, et il classe les solveurs presque exactement comme leur temps d’exécution. Pondérer davantage la mémoire et rendre les variables locales gratuites prédit le temps d’un solveur à l’autre environ un dixième mieux qu’une unité par opération. Méthode, données et limites : <a>CALIBRATION.md</a>.",
     "hidden_title": "Formules secrètes et inédites",
     "hidden": "Le jeu de test vient d'une graine secrète qui change à chaque saison, et chaque formule est brouillée : variables renommées et niées, clauses mélangées. Tant qu'une saison dure, les résultats ne sont affichés que par famille, jamais par formule.",
     "heldout_title": "Généraliser, pas mémoriser",

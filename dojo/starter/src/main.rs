@@ -10,8 +10,9 @@
 //! Build: `cargo build --release --target wasm32-wasip1`
 //! Score it locally: `dojo run target/wasm32-wasip1/release/dojo-starter.wasm`
 //!
-//! Scoring counts executed WebAssembly instructions ("fuel"), not seconds, so every
-//! instruction you save shows up in your score, on every machine the same.
+//! Scoring counts executed WebAssembly operators ("fuel": memory accesses 3, locals and
+//! constants 0, the rest 1), not seconds, so every operator you save shows up in your score,
+//! on every machine the same.
 
 use std::fs::File;
 use std::io::{BufWriter, Read, Write};

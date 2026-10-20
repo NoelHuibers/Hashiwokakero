@@ -99,7 +99,9 @@
   "fair": {
     "title": "Uczciwa gra",
     "fuel_title": "Paliwo, nie sekundy",
-    "fuel": "Każda wykonana instrukcja WebAssembly kosztuje jedną jednostkę paliwa, masowe operacje na pamięci jedną na bajt. Zegary i liczby losowe mają stałe ziarno, więc solver dostaje ten sam wynik na każdej maszynie, za każdym razem.",
+    "fuel": "Paliwo liczy operacje WebAssembly wykonane przez solver, ważone tak, jak płaci za nie prawdziwy procesor: odczyty i zapisy pamięci trzy jednostki, zmienne lokalne i stałe nic, wszystko inne jedną, masowe operacje na pamięci jedną na bajt. Zegary i liczby losowe mają stałe ziarno, więc solver dostaje ten sam wynik na każdej maszynie, za każdym razem.",
+    "calibrated_title": "Sprawdzone zegarem",
+    "calibrated": "Liczenie instrukcji krytykuje się za to, że dostęp do pamięci może kosztować znacznie więcej niż dodawanie. Zmierzyliśmy więc: siedem solverów, w tym MiniSat, CaDiCaL i Kissat, na 180 formułach, natywnie i w piaskownicy. W obrębie każdego solvera paliwo podąża za czasem natywnym z korelacją rang od 0,91 do 1,00 i porządkuje solvery niemal dokładnie tak jak ich czas działania. Większa waga pamięci i darmowe zmienne lokalne przewidują czas między solverami o około jedną dziesiątą lepiej niż jedna jednostka na operację. Metoda, dane i ograniczenia: <a>CALIBRATION.md</a>.",
     "hidden_title": "Ukryte, świeże formuły",
     "hidden": "Zestaw testowy powstaje z tajnego ziarna, które zmienia się co sezon, a każda formuła jest przemieszana: zmienne przemianowane i zanegowane, klauzule potasowane. Dopóki sezon trwa, wyniki są pokazywane tylko dla rodzin, nigdy dla pojedynczych formuł.",
     "heldout_title": "Uogólniaj, nie zapamiętuj",

@@ -99,7 +99,9 @@
   "fair": {
     "title": "Fair Play",
     "fuel_title": "Treibstoff statt Sekunden",
-    "fuel": "Jede ausgeführte WebAssembly-Instruktion kostet eine Einheit Treibstoff, Bulk-Memory-Operationen eine pro Byte. Uhren und Zufallszahlen sind fest geseedet, also bekommt ein Solver auf jeder Maschine jedes Mal dieselbe Punktzahl.",
+    "fuel": "Treibstoff zählt die WebAssembly-Operationen, die ein Solver ausführt, gewichtet wie ein echter Prozessor sie bezahlt: Laden und Speichern drei Einheiten, lokale Variablen und Konstanten nichts, alles andere eine, Bulk-Memory eine pro Byte. Uhren und Zufallszahlen sind fest geseedet, deshalb bekommt ein Solver auf jeder Maschine und bei jedem Lauf dieselbe Punktzahl.",
+    "calibrated_title": "Mit der Uhr nachgemessen",
+    "calibrated": "Am Zählen von Instruktionen wird kritisiert, dass ein Speicherzugriff viel mehr kosten kann als eine Addition. Also haben wir gemessen: sieben Solver, darunter MiniSat, CaDiCaL und Kissat, auf 180 Formeln, nativ und in der Sandbox. Innerhalb jedes Solvers folgt der Treibstoff der nativen Laufzeit mit einer Rangkorrelation von 0,91 bis 1,00, und er reiht die Solver fast genau so wie ihre Laufzeit. Speicherzugriffe stärker und lokale Variablen gar nicht zu gewichten sagt die Zeit über Solver hinweg etwa ein Zehntel besser voraus als eine Einheit pro Operation. Methode, Daten und Grenzen: <a>CALIBRATION.md</a>.",
     "hidden_title": "Geheime, frische Formeln",
     "hidden": "Das Test-Set entsteht aus einem geheimen Seed, der sich jede Saison ändert, und jede Formel wird verwürfelt: Variablen umbenannt und negiert, Klauseln gemischt. Solange eine Saison läuft, gibt es Ergebnisse nur pro Familie, nie pro Formel.",
     "heldout_title": "Verallgemeinern statt auswendig lernen",
