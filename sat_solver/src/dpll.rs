@@ -793,19 +793,32 @@ fn should_elim_pure_lit() {
 }
 
 #[test]
-#[ignore = "over five minutes: the arbitrary heuristic is a poor fit for ssa7552-038"]
-fn bug_jan_2nd_should_be_sat() {
-    let (mut input, mut v_c, mut c_c) =
-        crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
-    let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if matches!(res, Ok(DIMACSOutput::Unsat)) {
-        panic!("Was UNSAT but expected SAT.")
-    }
-
-    (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
-    let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if matches!(res, Ok(DIMACSOutput::Unsat)) {
-        panic!("Was UNSAT but expected SAT.")
+fn historical_sat_regressions_return_valid_models() {
+    // Arbitrary branching takes over five minutes on ssa7552-038. DLIS retains coverage of
+    // that formula in the normal suite; the smaller fixture still exercises Arbitrary.
+    for (file, heuristic) in [
+        ("ssa7552-038.cnf", Heuristic::DLIS),
+        ("uf50-06.cnf", Heuristic::Arbitrary),
+    ] {
+        let (input, v_c, c_c) = crate::parse::parse(&format!("./src/inputs/sat/{file}")).unwrap();
+        let result = DPLL::new(input.clone(), v_c, c_c, heuristic, false)
+            .with_deadline(Some(Instant::now() + std::time::Duration::from_secs(30)))
+            .solve();
+        let Ok(DIMACSOutput::Sat(model)) = result else {
+            panic!("{file}: expected SAT, got {result:?}");
+        };
+        // The model ends with the DIMACS terminator 0, which is not an assignment.
+        let assigned: HashSet<_> = model.into_iter().filter(|&lit| lit != 0).collect();
+        assert!(
+            assigned.iter().all(|lit| !assigned.contains(&-lit)),
+            "{file}: contradictory model"
+        );
+        assert!(
+            input
+                .iter()
+                .all(|clause| clause.iter().any(|lit| assigned.contains(lit))),
+            "{file}: model does not satisfy the input"
+        );
     }
 }
 

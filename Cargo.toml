@@ -186,7 +186,12 @@ debug = "line-tables-only"
 [profile.dev.package."*"]
 debug = false
 
-# The solvers are slow without optimizations, even during development
+# Generation, deduction and the solvers are slow without optimizations, even during
+# development. The default-size regression tests must also stay below the generator's wall
+# safety limit while checking its deterministic work budget, including under coverage.
+[profile.dev.package.backend]
+opt-level = 3
+
 [profile.dev.package.sat_solver]
 opt-level = 3
 
