@@ -129,6 +129,17 @@ async fn write_rows(conn: &Connection, version: usize) {
         ")
         .await;
     }
+    if version >= 10 {
+        // A community benchmark in the pool, drawn for season 1
+        run(r"
+            INSERT INTO dojo_benchmarks (id, user_id, family, description, cnf, hash, shape, vars, clauses, state,
+                answer, license, created_at, updated_at, accepted_at)
+                VALUES (1, 1, 'tiny', 'two clauses', X'70', 'h', 's', 1, 2, 'accepted', 'UNSAT', 'CC-BY-4.0', 1000, 2000, 2000);
+            INSERT INTO dojo_season_pool (season, position, benchmark_id) VALUES (1, 0, 1);
+            UPDATE dojo_seasons SET pool_digest = 'd';
+        ")
+        .await;
+    }
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -140,7 +151,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        9,
+        10,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -238,6 +249,15 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM dojo_archive WHERE rank = 1",
                 i64::from(version >= 9),
+            ),
+            // Seasons from before the pool have none
+            (
+                "SELECT COUNT(*) FROM dojo_seasons WHERE pool_digest IS NULL",
+                i64::from(version == 9),
+            ),
+            (
+                "SELECT COUNT(*) FROM dojo_benchmarks b JOIN dojo_season_pool p ON p.benchmark_id = b.id WHERE b.attempts = 0",
+                i64::from(version >= 10),
             ),
         ];
         for (sql, expected) in defaults {

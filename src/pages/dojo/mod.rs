@@ -1,5 +1,6 @@
 //! The SAT Dojo: a leaderboard for SAT solvers submitted as WebAssembly.
 
+pub mod benchmarks;
 pub mod guide;
 pub mod leaderboard;
 pub mod names;
@@ -18,6 +19,7 @@ use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::model::{DojoBoard, DojoMe};
 use crate::seo::{PageMeta, REPO_URL};
 
+pub use benchmarks::DojoBenchmarksPage;
 use guide::{FairPlay, Families, HowItWorks};
 use leaderboard::Leaderboard;
 pub use names::family_name;
@@ -126,7 +128,7 @@ pub fn DojoPage() -> impl IntoView {
             <Leaderboard board />
             <HowItWorks />
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Families />
+                <Families board />
                 <SubmitCard me />
             </div>
             <FairPlay />

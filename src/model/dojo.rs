@@ -71,6 +71,20 @@ pub struct DojoBoard {
     pub generator_version: u32,
     #[serde(default)]
     pub rules_version: u32,
+    /// The community pool that hidden sets draw from (see [`DojoBenchmarks`]).
+    #[serde(default)]
+    pub community: CommunitySummary,
+}
+
+/// The community pool in short, for the credits in the guide.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommunitySummary {
+    /// Accepted benchmarks.
+    pub benchmarks: u32,
+    /// Their authors, by how many they contributed (empty names: deleted accounts left out).
+    pub authors: Vec<String>,
+    /// How many a hidden set draws.
+    pub per_set: u32,
 }
 
 /// One season of the Dojo: its commitment, and once it is over its seed, set and final board.
@@ -97,6 +111,10 @@ pub struct DojoSeason {
     /// `None` while it runs and for sets from before held-out families.
     #[serde(default)]
     pub mystery: Option<dojo::Family>,
+    /// The community benchmarks drawn for its hidden set, with their authors; only once the
+    /// season is over.
+    #[serde(default)]
+    pub community: Vec<CommunityCredit>,
     /// The final leaderboard. An empty author: the account was deleted.
     pub board: Vec<DojoEntry>,
 }
@@ -149,4 +167,93 @@ pub struct DojoMe {
     pub registered: bool,
     pub left_today: u32,
     pub submissions: Vec<DojoRow>,
+}
+
+/// Where a community benchmark is: from upload to the pool.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BenchmarkState {
+    /// Waiting for the worker.
+    Queued,
+    /// The worker is settling its answer.
+    Checking,
+    /// Answer certain, hard enough: waits for a moderator.
+    Verified,
+    /// The worker didn't take it (see [`DojoBenchmark::reason`]).
+    Refused,
+    /// In the pool.
+    Accepted,
+    /// A moderator didn't take it.
+    Rejected,
+}
+
+impl BenchmarkState {
+    pub const ALL: [Self; 6] = [
+        Self::Queued,
+        Self::Checking,
+        Self::Verified,
+        Self::Refused,
+        Self::Accepted,
+        Self::Rejected,
+    ];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Queued => "queued",
+            Self::Checking => "checking",
+            Self::Verified => "verified",
+            Self::Refused => "refused",
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Self {
+        Self::ALL
+            .into_iter()
+            .find(|s| s.id() == id)
+            .unwrap_or(Self::Queued)
+    }
+}
+
+/// One of the player's own community benchmarks.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoBenchmark {
+    pub id: i64,
+    pub family: String,
+    pub description: String,
+    pub state: BenchmarkState,
+    /// Why it was refused or rejected: `dojo::community::Refusal::id`, `wrong_claim`, `failed`
+    /// or `moderation`.
+    pub reason: Option<String>,
+    pub answer: Option<dojo::Answer>,
+    pub vars: u32,
+    pub clauses: u32,
+    /// The GBD instance hash.
+    pub hash: String,
+    pub created_at: i64,
+}
+
+/// An accepted community benchmark and who contributed it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommunityCredit {
+    pub id: i64,
+    pub family: String,
+    /// Empty if the author deleted their account.
+    pub author: String,
+    pub answer: dojo::Answer,
+    pub vars: u32,
+    pub clauses: u32,
+    pub hash: String,
+}
+
+/// The page for community benchmarks: the player's own and the pool.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoBenchmarks {
+    /// Only registered accounts can submit.
+    pub registered: bool,
+    pub left_today: u32,
+    pub mine: Vec<DojoBenchmark>,
+    pub pool: Vec<CommunityCredit>,
+    /// How many a hidden set draws from the pool.
+    pub per_set: u32,
 }

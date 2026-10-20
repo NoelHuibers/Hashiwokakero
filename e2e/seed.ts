@@ -63,6 +63,8 @@ export const DOJO_SEASON = 2;
 /** The revealed seed of the archived season, and the commitment published at its start. */
 export const ARCHIVED_SEED = 'e2e-archived-seed';
 export const ARCHIVED_COMMITMENT = sha256(ARCHIVED_SEED);
+/** The family of the seeded community benchmark. */
+export const COMMUNITY_FAMILY = 'crypto-sha1';
 
 /** Days of dailies before today. */
 const HISTORY = 40;
@@ -166,6 +168,24 @@ export function seed(dbPath: string) {
     JSON.stringify(score),
     JSON.stringify(results),
   );
+  // A community benchmark by aiko, in the pool and drawn for the archived season (the running one
+  // draws it too when the server starts)
+  const benchmark = 'p cnf 1 2\n1 0\n-1 0\n';
+  db.prepare(
+    `INSERT INTO dojo_benchmarks (id, user_id, family, description, cnf, hash, shape, vars, clauses, state, answer,
+       license, created_at, updated_at, accepted_at)
+     VALUES (1, ?, ?, 'A tiny contradiction.', ?, ?, 'e2e-shape', 1, 2, 'accepted', 'UNSAT', 'CC-BY-4.0', ?, ?, ?)`,
+  ).run(
+    player('aiko').id,
+    COMMUNITY_FAMILY,
+    new TextEncoder().encode(benchmark),
+    createHash('md5').update('1 0 -1 0').digest('hex'),
+    created - 40 * MS_PER_DAY,
+    created - 40 * MS_PER_DAY,
+    created - 40 * MS_PER_DAY,
+  );
+  db.prepare('INSERT INTO dojo_season_pool (season, position, benchmark_id) VALUES (?, 0, 1)').run(archived);
+  db.prepare("UPDATE dojo_seasons SET pool_digest = 'e2e' WHERE season = ?").run(archived);
   CONTACT_MESSAGES.forEach((m, i) => {
     db.prepare('INSERT INTO contact_messages (name, email, message, created_at) VALUES (?, ?, ?, ?)').run(
       m.name,

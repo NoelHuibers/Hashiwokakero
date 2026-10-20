@@ -210,7 +210,7 @@
   },
   "dojo_board": {
     "season": 1,
-    "formulas": 34,
+    "formulas": 54,
     "budget": 10000000000,
     "entries": [
       {
@@ -250,7 +250,15 @@
     "queued": 2,
     "commitment": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
     "generator_version": 1,
-    "rules_version": 1
+    "rules_version": 1,
+    "community": {
+      "benchmarks": 3,
+      "authors": [
+        "noel",
+        "ada"
+      ],
+      "per_set": 6
+    }
   },
   "dojo_submission": {
     "id": 12,
@@ -344,6 +352,7 @@
       "set_sha256": null,
       "entries": 0,
       "mystery": null,
+      "community": [],
       "board": []
     },
     "past": [
@@ -359,6 +368,17 @@
         "set_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
         "entries": 4,
         "mystery": "Tseitin",
+        "community": [
+          {
+            "id": 3,
+            "family": "crypto-sha1",
+            "author": "",
+            "answer": "Unsat",
+            "vars": 1200,
+            "clauses": 5600,
+            "hash": "abababababababababababababababab"
+          }
+        ],
         "board": [
           {
             "rank": 1,
@@ -396,6 +416,36 @@
         ]
       }
     ]
+  },
+  "dojo_benchmarks": {
+    "registered": true,
+    "left_today": 2,
+    "mine": [
+      {
+        "id": 4,
+        "family": "scheduling",
+        "description": "job shop",
+        "state": "Refused",
+        "reason": "too_easy",
+        "answer": "Sat",
+        "vars": 300,
+        "clauses": 2000,
+        "hash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "created_at": 1760000000000
+      }
+    ],
+    "pool": [
+      {
+        "id": 3,
+        "family": "crypto-sha1",
+        "author": "ada",
+        "answer": "Unsat",
+        "vars": 1200,
+        "clauses": 5600,
+        "hash": "abababababababababababababababab"
+      }
+    ],
+    "per_set": 6
   },
   "admin_overview": {
     "users": 100,
@@ -450,6 +500,22 @@
     "message": "Hallo! \"Brücken\" <3",
     "created_at": 1760000000000,
     "mailed": false
+  },
+  "admin_benchmark": {
+    "id": 4,
+    "family": "scheduling",
+    "description": "job shop",
+    "author": "noel",
+    "state": "Verified",
+    "reason": null,
+    "claimed": "Sat",
+    "answer": "Sat",
+    "vars": 300,
+    "clauses": 2000,
+    "solve_ms": 1234,
+    "from_gbd": true,
+    "hash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+    "created_at": 1760000000000
   },
   "generated": {
     "puzzle": {
@@ -603,11 +669,26 @@
     "Tseitin",
     "Quasigroup",
     "Hamiltonian",
-    "Mystery"
+    "Mystery",
+    "Community"
   ],
   "submission_actions": [
     "Requeue",
     "ClearCopy",
+    "Delete"
+  ],
+  "benchmark_states": [
+    "Queued",
+    "Checking",
+    "Verified",
+    "Refused",
+    "Accepted",
+    "Rejected"
+  ],
+  "benchmark_actions": [
+    "Accept",
+    "Reject",
+    "Requeue",
     "Delete"
   ]
 }

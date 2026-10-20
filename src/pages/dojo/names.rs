@@ -21,6 +21,7 @@ pub fn family_name(locale: Locale, family: Family) -> String {
         Family::Quasigroup => td_string!(locale, dojo.family.quasigroup),
         Family::Hamiltonian => td_string!(locale, dojo.family.hamiltonian),
         Family::Mystery => td_string!(locale, dojo.family.mystery),
+        Family::Community => td_string!(locale, dojo.family.community),
     }
     .to_string()
 }
@@ -39,6 +40,7 @@ pub(super) fn family_text(locale: Locale, family: Family) -> String {
         Family::Quasigroup => td_string!(locale, dojo.family.quasigroup_text),
         Family::Hamiltonian => td_string!(locale, dojo.family.hamiltonian_text),
         Family::Mystery => td_string!(locale, dojo.family.mystery_text),
+        Family::Community => td_string!(locale, dojo.family.community_text),
     }
     .to_string()
 }
@@ -57,6 +59,7 @@ pub(super) fn family_kanji(family: Family) -> &'static str {
         Family::Quasigroup => "方",
         Family::Hamiltonian => "巡",
         Family::Mystery => "謎",
+        Family::Community => "衆",
     }
 }
 

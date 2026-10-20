@@ -9,6 +9,8 @@ description = "The SAT Dojo: benchmark sets, a sandbox for WASI SAT solvers and 
 serde = { version = "1.0.229", features = ["derive"] }
 # Picks the mystery family of a hidden set from its seed (the website does too)
 sha2 = "0.11.1"
+# The instance hash of the Global Benchmark Database, for community benchmarks
+md-5 = "0.11"
 
 # Benchmark generation and answer checking (`bench`)
 backend = { path = "../backend", optional = true }

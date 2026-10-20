@@ -71,7 +71,8 @@ A season's hidden set has 48: the same families from a secret seed, one larger f
 and one **mystery family** that the dev set doesn't have, picked by the seed from a reserve and
 revealed when the season ends. Tuning your solver to the dev set's families won't be enough, it
 has to generalise (the SAT Competition 2026 raised exactly that after an AI-built solver won with
-over a hundred family-specific sub-solvers).
+over a hundred family-specific sub-solvers). A few **community benchmarks** join it too: formulas
+players brought along (https://hashi.rs/dojo/benchmarks), drawn by the season's seed.
 
 ## Testing locally
 

@@ -8,6 +8,7 @@
 //! model and an UNSAT answer a DRAT or LRAT proof that a formally verified checker accepts.
 //!
 //! - always: the result types shared with the website ([`Family`], [`Score`], [`Report`], ...)
+//!   and community benchmarks ([`community`]: their hashes and the draw from the pool)
 //! - `bench`: benchmark generation ([`bench`]), answer checking ([`output`]) and proof checking
 //!   ([`proof`], [`drat`])
 //! - `runner`: checking ([`validate`]), the sandbox ([`sandbox`]) and evaluating a set ([`eval`])
@@ -21,6 +22,7 @@ pub mod archive;
 pub mod bench;
 #[cfg(feature = "bench")]
 pub mod cnf;
+pub mod community;
 #[cfg(feature = "bench")]
 pub mod drat;
 #[cfg(feature = "runner")]
@@ -127,6 +129,9 @@ pub enum Family {
     /// Stands for the season's held-out family in public scores, see [`mystery_family`]. No
     /// formula is of this family.
     Mystery,
+    /// Benchmarks from the community pool (see [`community`]), whatever family their authors
+    /// named.
+    Community,
 }
 
 impl Family {
@@ -174,6 +179,7 @@ impl Family {
             Self::Quasigroup => "quasigroup",
             Self::Hamiltonian => "hamiltonian",
             Self::Mystery => "mystery",
+            Self::Community => "community",
         }
     }
 
@@ -195,7 +201,7 @@ impl Family {
             Self::Tseitin => Some("tseitin-formulas"),
             Self::Quasigroup => Some("quasigroup-completion"),
             Self::Hamiltonian => Some("hamiltonian"),
-            Self::Mystery => None,
+            Self::Mystery | Self::Community => None,
         }
     }
 
@@ -393,7 +399,7 @@ impl Score {
         };
         let families = Family::DEV
             .into_iter()
-            .chain([Family::Mystery])
+            .chain([Family::Mystery, Family::Community])
             .filter_map(|family| {
                 let rs: Vec<&RunResult> = results.iter().filter(|r| public(r) == family).collect();
                 (!rs.is_empty()).then(|| FamilyScore {

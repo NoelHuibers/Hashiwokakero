@@ -14,6 +14,7 @@ use crate::lang::{date_short, prefix};
 use crate::model::{DojoEntry, DojoSeason, DojoSeasons, day_of};
 use crate::seo::PageMeta;
 
+use super::benchmarks::PoolList;
 use super::guide::Code;
 use super::names::{family_kanji, family_name, family_text, par2};
 
@@ -154,6 +155,16 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
             </div>
         }
     });
+    // The community benchmarks it drew, with their authors
+    let community = (!season.community.is_empty()).then(|| {
+        let pool = season.community.clone();
+        view! {
+            <div class="flex flex-col gap-1" data-testid="season-community">
+                <h3 class="font-bold">{t!(i18n, dojo.community.archive_title)}</h3>
+                <PoolList pool />
+            </div>
+        }
+    });
     view! {
         <Card class="gap-4" attr:id=format!("season-{n}")>
             <CardHeader>
@@ -172,6 +183,7 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
                     <Hash label=t!(i18n, dojo.seasons.seed).into_any() value=season.seed.clone().unwrap_or_default() />
                 </div>
                 {mystery}
+                {community}
                 <div class="flex flex-wrap gap-2">
                     {set}
                     <a href=format!("/dojo/seasons/{n}/results.csv") download class=link>

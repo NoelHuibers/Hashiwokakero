@@ -455,3 +455,131 @@ async fn sets_need_the_token_of_their_job() {
         StatusCode::NOT_FOUND,
     );
 }
+
+fn benchmark(family: &str, cnf: &str) -> Form {
+    Form::new()
+        .text("family", family.to_string())
+        .text("description", "unit clauses")
+        .text("claimed", "SAT")
+        .text("license", "1")
+        .part(
+            "cnf",
+            Part::bytes(cnf.as_bytes().to_vec()).file_name("f.cnf"),
+        )
+}
+
+async fn submit_benchmark(browser: &Browser, form: Form) -> String {
+    let res = browser
+        .post("/dojo/benchmarks/submit")
+        .multipart(form)
+        .send()
+        .await
+        .unwrap();
+    assert_status(&res, StatusCode::SEE_OTHER);
+    res.headers()["location"].to_str().unwrap().to_string()
+}
+
+/// Community benchmarks: the form checks who submits and what, the worker's verdict needs the
+/// check's token.
+#[tokio::test]
+async fn community_benchmarks() {
+    use crate::api::LoadDojoBenchmarks;
+    use crate::model::BenchmarkState;
+
+    let server = Server::start().await;
+    let nobody = server.browser();
+    assert_eq!(
+        submit_benchmark(&nobody, benchmark("x", "p cnf 1 1\n1 0\n")).await,
+        "/dojo/benchmarks?error=sign_in#submit"
+    );
+    let browser = Browser::signed_up(&server, "bench_bea").await;
+    assert_eq!(
+        submit_benchmark(&browser, benchmark("x", "p cnf 1 1\n1 0\n")).await,
+        "/dojo/benchmarks?error=account_age#submit"
+    );
+    let conn = conn().await;
+    let user = user_id(&conn, "bench_bea").await;
+    conn.execute(
+        "UPDATE users SET created_at = 0 WHERE id = ?1",
+        params![user],
+    )
+    .await
+    .unwrap();
+    // A file or a GBD hash, not both and not neither
+    let both = benchmark("x", "p cnf 1 1\n1 0\n").text("gbd", "a".repeat(32));
+    assert_eq!(
+        submit_benchmark(&browser, both).await,
+        "/dojo/benchmarks?error=source#submit"
+    );
+    let neither = Form::new().text("family", "x").text("license", "1");
+    assert_eq!(
+        submit_benchmark(&browser, neither).await,
+        "/dojo/benchmarks?error=source#submit"
+    );
+    let bad_hash = Form::new()
+        .text("family", "x")
+        .text("license", "1")
+        .text("gbd", "not-a-hash");
+    assert_eq!(
+        submit_benchmark(&browser, bad_hash).await,
+        "/dojo/benchmarks?error=gbd#submit"
+    );
+    let unlicensed = Form::new()
+        .text("family", "x")
+        .part("cnf", Part::bytes(b"p cnf 1 1\n1 0\n".to_vec()));
+    assert_eq!(
+        submit_benchmark(&browser, unlicensed).await,
+        "/dojo/benchmarks?error=license#submit"
+    );
+    let added = submit_benchmark(
+        &browser,
+        benchmark("units", "p cnf 2 2\n1 0\n2 0\n").text("prefix", "/de"),
+    )
+    .await;
+    let id: i64 = added
+        .strip_prefix("/de/dojo/benchmarks?submitted=")
+        .and_then(|rest| rest.strip_suffix("#mine"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    let page = browser.call(LoadDojoBenchmarks {}).await.unwrap();
+    assert_eq!(page.mine.len(), 1);
+    assert_eq!(
+        (page.mine[0].id, page.mine[0].state),
+        (id, BenchmarkState::Queued)
+    );
+    assert!(!nobody.call(LoadDojoBenchmarks {}).await.unwrap().registered);
+
+    // The verdict, with the check's token only
+    let report = serde_json::json!({
+        "id": id,
+        "verdict": {"type": "verified", "answer": "Sat", "model": [1, 2], "solve_ms": 10},
+    })
+    .to_string();
+    let send = |token: &str| {
+        nobody
+            .post("/dojo/benchmark-report")
+            .header(CONTENT_TYPE, "application/json")
+            .bearer_auth(token)
+            .body(report.clone())
+            .send()
+    };
+    assert_status(&send(ADMIN_TOKEN).await.unwrap(), StatusCode::UNAUTHORIZED);
+    conn.execute(
+        "UPDATE dojo_benchmarks SET job_token = ?2, state = 'checking' WHERE id = ?1",
+        params![id, "c".repeat(64)],
+    )
+    .await
+    .unwrap();
+    assert_status(
+        &send(&"d".repeat(64)).await.unwrap(),
+        StatusCode::UNAUTHORIZED,
+    );
+    assert_status(
+        &send(&"c".repeat(64)).await.unwrap(),
+        StatusCode::NO_CONTENT,
+    );
+    let page = browser.call(LoadDojoBenchmarks {}).await.unwrap();
+    assert_eq!(page.mine[0].state, BenchmarkState::Verified);
+    assert_eq!(page.mine[0].answer, Some(::dojo::Answer::Sat));
+}

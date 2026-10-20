@@ -88,15 +88,18 @@ pub async fn board(conn: &Connection) -> Result<DojoBoard, ServerFnError> {
         Some(row) => row.get(0).map_err(db_err)?,
         None => 0,
     };
+    // The generated formulas and the season's draw from the community pool
+    let drawn = super::benchmarks::drawn(conn, season).await?.len();
     Ok(DojoBoard {
         season,
-        formulas: dojo::SET_SIZE,
+        formulas: dojo::SET_SIZE + u32::try_from(drawn).unwrap_or(0),
         budget: DEFAULT_BUDGET,
         entries,
         queued,
         commitment: super::seasons::commitment_of(conn, season).await?,
         generator_version: GENERATOR_VERSION,
         rules_version: RULES_VERSION,
+        community: super::benchmarks::summary(conn).await?,
     })
 }
 

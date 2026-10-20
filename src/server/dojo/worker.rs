@@ -245,7 +245,7 @@ pub(super) async fn housekeeping_at(conn: &Connection, current: u32) -> Result<(
     )
     .await
     .map_err(err)?;
-    Ok(())
+    super::benchmarks::housekeeping(conn, now).await
 }
 
 /// Housekeeping, then sends queued submissions to the worker if there is one. Without one
@@ -265,10 +265,23 @@ pub async fn dispatch() -> Result<(), String> {
     }
 }
 
-/// [`dispatch`] to the worker at `url`, authenticated with `token`.
+/// [`dispatch`] to the worker at `url`, authenticated with `token`: submissions, then a
+/// community benchmark to verify.
 pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Result<(), String> {
     housekeeping(conn).await?;
     let client = reqwest::Client::new();
+    dispatch_submissions(conn, &client, url, token).await?;
+    super::benchmarks::dispatch_to(conn, &client, url, token).await
+}
+
+async fn dispatch_submissions(
+    conn: &Connection,
+    client: &reqwest::Client,
+    url: &str,
+    token: &str,
+) -> Result<(), String> {
+    // The draws from the community pool the worker has, by season
+    let mut pools: std::collections::HashMap<u32, String> = std::collections::HashMap::new();
     loop {
         let mut rows = conn
             .query(
@@ -302,6 +315,13 @@ pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Re
         let wasm: Vec<u8> = row.get(0).map_err(|e| e.to_string())?;
         let season = row.get::<u32>(1).map_err(|e| e.to_string())?;
         let seed = test_seed(season);
+        let pool = if let Some(digest) = pools.get(&season) {
+            digest.clone()
+        } else {
+            let digest = super::benchmarks::ensure_pool(conn, client, url, token, season).await?;
+            pools.insert(season, digest.clone());
+            digest
+        };
         // The set of this season, unless the site has it from this generator already
         let export = if seasons::wants_set(conn, season).await? {
             "&export=1"
@@ -321,7 +341,7 @@ pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Re
         // The worker machine may have to start first
         let sent = client
             .post(format!(
-                "{}/jobs?id={id}&season={season}&seed={seed}&report_token={report_token}&rules={RULES_VERSION}{export}",
+                "{}/jobs?id={id}&season={season}&seed={seed}&report_token={report_token}&rules={RULES_VERSION}{export}&pool={pool}",
                 url.trim_end_matches('/')
             ))
             .bearer_auth(token)
