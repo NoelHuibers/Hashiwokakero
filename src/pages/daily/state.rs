@@ -10,7 +10,7 @@ use crate::model::{
     AttemptInfo, DailyInfo, Flag, Leaderboard, MoveEvent, SubmitResult, daily_difficulty,
     date_string,
 };
-use crate::state::{Game, Source, Status, error_toast};
+use crate::state::{Game, Source, Status, error_toast, load, store};
 
 /// The move log of the running daily, kept in the browser so a reload doesn't lose it.
 pub(super) const LOG_KEY: &str = "hashi.daily.log";
@@ -19,6 +19,15 @@ pub(super) const LOG_KEY: &str = "hashi.daily.log";
 pub(super) struct SavedLog {
     pub(super) day: i64,
     pub(super) events: Vec<MoveEvent>,
+}
+
+/// The last observed board, including its identity so loading another puzzle never logs moves.
+#[derive(Clone, Debug)]
+pub(super) struct MoveSnapshot {
+    day: Option<i64>,
+    epoch: u32,
+    bridges: Vec<u8>,
+    moves: u32,
 }
 
 fn finished(info: &DailyInfo) -> bool {
@@ -65,6 +74,7 @@ pub struct Daily {
     pub(super) result: RwSignal<Option<SubmitResult>>,
     pub(super) ranking: RwSignal<Option<Leaderboard>>,
     pub(super) busy: RwSignal<bool>,
+    pub(super) logged: StoredValue<Option<MoveSnapshot>>,
     /// A quiet [`Self::refresh`] is on its way.
     pub(super) refreshing: StoredValue<bool>,
 }
@@ -100,6 +110,51 @@ impl Daily {
                 .map(|a| a.started_at)
         });
         started.map_or(0, |s| u32::try_from((now - s).max(0)).unwrap_or(u32::MAX))
+    }
+
+    /// Log bridge changes, whether called by the reactive observer or just before submitting.
+    /// Only the board and attempt are reactive dependencies; sampling the clock must not make
+    /// the 100 ms display timer read, serialize and rewrite the whole saved log.
+    pub(super) fn record_moves(&self) {
+        let current = MoveSnapshot {
+            day: self.info.with(|i| i.as_ref().map(|i| i.day)),
+            epoch: self.game.epoch.get(),
+            bridges: self.game.bridges.get(),
+            moves: self.game.moves.get_untracked(),
+        };
+        let previous = self.logged.get_value();
+        self.logged.set_value(Some(current.clone()));
+        let Some(before) = previous else { return };
+        let Some(day) = current.day else { return };
+        if before.day != current.day
+            || before.epoch != current.epoch
+            || before.bridges.len() != current.bridges.len()
+            || !self.started()
+            || self.finished()
+        {
+            return;
+        }
+        let changed: Vec<usize> = (0..current.bridges.len())
+            .filter(|&e| before.bridges[e] != current.bridges[e])
+            .collect();
+        if changed.is_empty() {
+            return;
+        }
+        let tap = changed.len() == 1 && current.moves > before.moves;
+        let t = untrack(|| self.clock_ms());
+        let mut saved = load::<SavedLog>(LOG_KEY)
+            .filter(|l| l.day == day)
+            .unwrap_or_default();
+        saved.day = day;
+        for edge in changed {
+            saved.events.push(MoveEvent {
+                t,
+                edge: u16::try_from(edge).unwrap_or(u16::MAX),
+                count: current.bridges[edge],
+                tap,
+            });
+        }
+        store(LOG_KEY, &saved);
     }
 
     /// Why the result isn't ranked, if it isn't.
@@ -252,6 +307,89 @@ mod tests {
         Puzzle::new(3, 1, vec![island(0), island(2)])
     }
 
+    #[test]
+    fn the_final_move_is_flushed_once_before_the_observer_runs() {
+        tab(|d| {
+            board(d, vec![0], Status::Playing);
+            d.info.set(Some(info(false)));
+            d.now.set(2_500);
+            d.record_moves();
+            d.game.cycle(0, 1);
+            d.game.status.set(Status::Won);
+            // Submit flushes first, the board observer runs afterward.
+            d.record_moves();
+            d.record_moves();
+            let saved = load::<SavedLog>(LOG_KEY).unwrap();
+            assert_eq!(saved.day, 100);
+            assert_eq!(
+                saved.events,
+                vec![MoveEvent {
+                    t: 1_500,
+                    edge: 0,
+                    count: 1,
+                    tap: true
+                }]
+            );
+            // Clock ticks and an attempt refresh cannot add events or rewrite their time.
+            d.now.set(10_000);
+            d.skew.set(500);
+            d.update_attempt(|a| a.checks += 1);
+            d.record_moves();
+            assert_eq!(load::<SavedLog>(LOG_KEY).unwrap().events, saved.events);
+        });
+    }
+
+    #[test]
+    fn undo_redo_and_clear_log_changes_without_counting_taps() {
+        tab(|d| {
+            board(d, vec![0], Status::Playing);
+            d.info.set(Some(info(false)));
+            d.now.set(2_000);
+            d.record_moves();
+            d.game.cycle(0, 1);
+            d.record_moves();
+            d.game.undo();
+            d.record_moves();
+            d.game.redo();
+            d.record_moves();
+            d.game.restart();
+            d.record_moves();
+            let events = load::<SavedLog>(LOG_KEY).unwrap().events;
+            assert_eq!(
+                events.iter().map(|e| e.count).collect::<Vec<_>>(),
+                [1, 0, 1, 0]
+            );
+            assert_eq!(
+                events.iter().map(|e| e.tap).collect::<Vec<_>>(),
+                [true, false, false, false]
+            );
+            assert_eq!(d.game.moves.get_untracked(), 1);
+        });
+    }
+
+    #[test]
+    fn loading_another_puzzle_or_day_cannot_create_move_events() {
+        tab(|d| {
+            board(d, vec![0], Status::Playing);
+            d.info.set(Some(info(false)));
+            d.record_moves();
+            // Same edge count, different epoch: loading/restoring bridges is not a move.
+            board(d, vec![1], Status::Playing);
+            d.record_moves();
+            assert!(load::<SavedLog>(LOG_KEY).is_none());
+            // Even reusing the same board across a day change is not a move.
+            d.info.update(|i| i.as_mut().unwrap().day += 1);
+            d.game.bridges.set(vec![0]);
+            d.record_moves();
+            assert!(load::<SavedLog>(LOG_KEY).is_none());
+            d.game.cycle(0, 1);
+            d.record_moves();
+            let saved = load::<SavedLog>(LOG_KEY).unwrap();
+            assert_eq!(saved.day, 101);
+            assert_eq!(saved.events.len(), 1);
+        });
+    }
+
     /// The move log of a running daily in the browser (`hashi.daily.log`): a different format
     /// loses the log, and a daily submitted without it isn't ranked.
     #[test]
@@ -299,6 +437,7 @@ mod tests {
             ranking: RwSignal::new(None),
             busy: RwSignal::new(false),
             refreshing: StoredValue::new(false),
+            logged: StoredValue::new(None),
         }
     }
 

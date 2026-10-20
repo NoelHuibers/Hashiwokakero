@@ -3,7 +3,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { register, signInWith, signOut } from '../account';
-import { DAILY_KEY, saved } from '../board';
+import { addBridge, DAILY_KEY, saved } from '../board';
 import { expectResult, solveDaily, startDaily } from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
 
@@ -84,4 +84,45 @@ test('sign up, sign out and in again, then the daily counts for the account', as
   const row = todaysBoard(page).locator('tr, li.podium-step').filter({ hasText: username });
   await expect(row).toContainText(/you/i);
   await expect(row).not.toContainText('guest');
+});
+
+test('the move log saves bridge changes and stays idle while the clock ticks', async ({ page }) => {
+  await page.clock.install();
+  await page.addInitScript(() => {
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'hashi.daily.log') {
+        const count = Number(sessionStorage.getItem('test.daily.log.writes') ?? '0');
+        set.call(sessionStorage, 'test.daily.log.writes', String(count + 1));
+      }
+      set.call(this, key, value);
+    };
+  });
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  const writes = () => page.evaluate(() => Number(sessionStorage.getItem('test.daily.log.writes') ?? '0'));
+  const log = () => page.evaluate(() => JSON.parse(localStorage.getItem('hashi.daily.log') ?? 'null'));
+  const first = solution.findIndex((b) => b > 0);
+  await addBridge(page, DAILY_KEY, puzzle, first);
+  await expect.poll(writes).toBe(1);
+  expect((await log()).events).toEqual([expect.objectContaining({ edge: first, count: 1, tap: true })]);
+
+  const timer = page.getByText('Time · 時間', { exact: true }).locator('..').locator('span').first();
+  const beforeTick = (await timer.textContent())!;
+  await page.clock.runFor(1_000);
+  await expect(timer).not.toHaveText(beforeTick);
+  expect(await writes()).toBe(1);
+  await page.getByRole('button', { name: /Undo/ }).click();
+  await expect.poll(writes).toBe(2);
+  expect((await log()).events.at(-1)).toMatchObject({ edge: first, count: 0, tap: false });
+  await page.getByRole('button', { name: /Redo/ }).click();
+  await expect.poll(writes).toBe(3);
+  expect((await log()).events.at(-1)).toMatchObject({ edge: first, count: 1, tap: false });
+  const before = await log();
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
+  await expect(page.locator('svg.board-svg g.island').first()).toBeVisible();
+  await page.clock.runFor(1_000);
+  expect(await writes()).toBe(3);
+  expect(await log()).toEqual(before);
 });
