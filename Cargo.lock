@@ -1767,6 +1767,7 @@ dependencies = [
 name = "hashi"
 version = "2.0.0"
 dependencies = [
+ "any_spawner",
  "argon2",
  "axum",
  "backend",

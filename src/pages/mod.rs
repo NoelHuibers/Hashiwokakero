@@ -21,6 +21,7 @@ use crate::api::puzzle_cnf;
 use crate::components::celebration::Stamp;
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
+use crate::seo::title_text;
 use crate::state::{download, error_toast};
 
 /// Downloads the DIMACS encoding of a puzzle.
@@ -44,7 +45,7 @@ pub fn NotFound() -> impl IntoView {
     let i18n = use_i18n();
     let home = use_localized("/");
     view! {
-        <Title text=move || format!("{} · Hashi", t_string!(i18n, common.not_found.title)) />
+        <Title text=title_text(move || format!("{} · Hashi", t_string!(i18n, common.not_found.title))) />
         <Meta name="robots" content="noindex" />
         <section class="mx-auto flex max-w-xl flex-col items-center gap-4 px-6 py-24 text-center">
             <Stamp kanji="迷" class="size-24 text-6xl" />

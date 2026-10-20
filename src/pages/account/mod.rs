@@ -18,6 +18,7 @@ use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_short, prefix};
 use crate::model::UserStats;
+use crate::seo::title_text;
 use crate::state::{Auth, ToastKind, error_toast, toast};
 
 use auth_form::{AuthForm, Mode};
@@ -58,7 +59,7 @@ pub fn AccountPage() -> impl IntoView {
     let registered = move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.guest));
 
     view! {
-        <Title text=move || format!("{} · Hashi", t_string!(i18n, account.title)) />
+        <Title text=title_text(move || format!("{} · Hashi", t_string!(i18n, account.title))) />
         <Meta name="robots" content="noindex" />
         <section class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
             <div class="mb-6">
