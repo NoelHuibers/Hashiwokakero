@@ -1029,6 +1029,8 @@ fn results_as_csv() {
         created_at: 0,
         rules_version: Some(1),
         score: None,
+        breakdown: None,
+        contribution: None,
         results,
     };
     let run = |name: &str, family, expected, outcome, fuel| InstanceResult {
@@ -1050,6 +1052,7 @@ fn results_as_csv() {
         set_sha256: None,
         mystery: None,
         community: Vec::new(),
+        vbs: None,
         entries: vec![
             entry(
                 1,
@@ -1181,4 +1184,150 @@ async fn sets_come_with_the_jobs_token() {
     );
     // The new season wants its own
     assert!(seasons::wants_set(&conn, current + 1).await.unwrap());
+}
+
+/// A finished evaluation with these results: per formula its family, answer and the fuel if
+/// solved.
+fn finished_with(id: i64, season: u32, results: &[(Family, Answer, Option<u64>)]) -> Report {
+    let results: Vec<InstanceResult> = results
+        .iter()
+        .enumerate()
+        .map(|(i, &(family, expected, fuel))| InstanceResult {
+            name: format!("f-{i:02}"),
+            family,
+            expected,
+            outcome: fuel.map_or(Outcome::Timeout, |_| Outcome::Solved(expected)),
+            fuel: fuel.unwrap_or(DEFAULT_BUDGET),
+        })
+        .collect();
+    let runs: Vec<RunResult> = results
+        .iter()
+        .map(|r| RunResult {
+            name: r.name.clone(),
+            family: r.family,
+            expected: r.expected,
+            outcome: r.outcome,
+            fuel: r.fuel,
+            wall_ms: 1,
+        })
+        .collect();
+    Report::Finished {
+        id,
+        season,
+        score: Score::from_results(&runs, DEFAULT_BUDGET),
+        fingerprint: dojo::fingerprint(&runs),
+        results,
+        rules_version: RULES_VERSION,
+    }
+}
+
+/// SAT/UNSAT/ALL, the VBS, contributions and the cactus plot: on the board, on a submission's
+/// page and in the archive, with the held-out family kept secret until then.
+#[tokio::test]
+async fn metrics_beyond_par2() {
+    use Answer::{Sat, Unsat};
+    use Family::{Hashi, HashiParity, Tseitin};
+    const G: u64 = 1_000_000_000;
+    let conn = test_db("metrics").await;
+    let alice = user(&conn, "alice", true).await;
+    let (first, second) = (season(), season() + 1);
+    housekeeping_at(&conn, first).await.unwrap();
+    let a = submit(&conn, Some(&alice), form("alice's", 1))
+        .await
+        .unwrap();
+    let worse = submit(&conn, Some(&alice), form("alice's worse", 2))
+        .await
+        .unwrap();
+    let house = submit(&conn, None, form("Hashi CDCL", 3)).await.unwrap();
+    // alice is fast on Hashi, the house entry alone proves the parity formulas
+    let set = |hashi: [Option<u64>; 2], parity: [Option<u64>; 2], tseitin: Option<u64>| {
+        [
+            (Hashi, Sat, hashi[0]),
+            (Hashi, Sat, hashi[1]),
+            (HashiParity, Unsat, parity[0]),
+            (HashiParity, Unsat, parity[1]),
+            (Tseitin, Unsat, tseitin),
+        ]
+    };
+    for (id, results) in [
+        (a, set([Some(G), Some(2 * G)], [None, None], Some(G))),
+        (worse, set([Some(3 * G), None], [None, None], None)),
+        (house, set([Some(4 * G), None], [Some(G), Some(G)], Some(G))),
+    ] {
+        apply(&conn, &finished_with(id, first, &results))
+            .await
+            .unwrap();
+    }
+
+    let b = board(&conn).await.unwrap();
+    let names: Vec<&str> = b.entries.iter().map(|e| e.name.as_str()).collect();
+    assert_eq!(names, ["Hashi CDCL", "alice's"]);
+    let portfolio = b.portfolio.clone().unwrap();
+    assert_eq!(portfolio.entries, 2);
+    // VBS: 1, 2, 1, 1, 1 billion
+    assert_eq!((portfolio.vbs.solved, portfolio.vbs.total), (5, 5));
+    assert!((portfolio.vbs.par2 - 1.2).abs() < 1e-9);
+    assert_eq!(portfolio.cactus.vbs, [G, G, G, G, 2 * G]);
+    assert_eq!(portfolio.cactus.formulas, 5);
+    assert_eq!(portfolio.cactus.curves[1].fuel, [G, G, 2 * G]);
+    assert_eq!(portfolio.cactus.curves[0].id, house);
+    // Without the house entry the parity formulas are lost: 2 × (14 − 1) billion over 5
+    let house_entry = b.entries[0].contribution.unwrap();
+    assert!((house_entry.marginal - 26.0 / 5.0).abs() < 1e-9);
+    assert_eq!(house_entry.sota, 3.0);
+    let alice_entry = b.entries[1].contribution.unwrap();
+    assert_eq!(alice_entry.sota, 2.0);
+    assert!((house_entry.relative + alice_entry.relative - 1.0).abs() < 1e-9);
+    // While the season runs the Tseitin formula is the mystery's, outside SAT and UNSAT
+    let split = b.entries[1].breakdown.clone().unwrap();
+    assert_eq!(split.held_out, 1);
+    let (sat, unsat) = (split.total.sat.unwrap(), split.total.unsat.unwrap());
+    assert_eq!(
+        (sat.solved, sat.total, unsat.solved, unsat.total),
+        (2, 2, 0, 2)
+    );
+    assert_eq!(split.total.all.solved, 3);
+    let mystery = split.families.last().unwrap();
+    assert_eq!(mystery.family, Family::Mystery);
+    assert_eq!(mystery.breakdown.sat, None);
+    assert!(!serde_json::to_string(&b).unwrap().contains("Tseitin"));
+
+    // Its page: the same numbers and the plot with its own curve
+    let page = submission(&conn, a, Some(alice.id)).await.unwrap().unwrap();
+    assert_eq!(page.contribution, b.entries[1].contribution);
+    assert_eq!(page.breakdown, b.entries[1].breakdown);
+    assert_eq!(page.portfolio, b.portfolio);
+    // Not ranked: no contribution, but its curve in the plot
+    let page = submission(&conn, worse, None).await.unwrap().unwrap();
+    assert_eq!(page.contribution, None);
+    let curves = page.portfolio.unwrap().cactus.curves;
+    assert_eq!(curves.len(), 3);
+    assert_eq!((curves[2].id, curves[2].fuel.clone()), (worse, vec![3 * G]));
+    assert_eq!(page.breakdown.unwrap().total.all.solved, 1);
+    // Nothing to plot before it is done
+    let waiting = submit(&conn, None, form("Hashi DPLL", 4)).await.unwrap();
+    let page = submission(&conn, waiting, None).await.unwrap().unwrap();
+    assert_eq!((page.portfolio, page.breakdown), (None, None));
+
+    // Archived: the same contributions, the family under its own name
+    housekeeping_at(&conn, second).await.unwrap();
+    let past = seasons(&conn, second).await.unwrap().past.remove(0);
+    assert_eq!(past.portfolio.unwrap().vbs, portfolio.vbs);
+    assert_eq!(past.board[0].contribution, b.entries[0].contribution);
+    let revealed = past.board[1].breakdown.clone().unwrap();
+    assert_eq!(revealed.held_out, 0);
+    assert_eq!(revealed.families.last().unwrap().family, Tseitin);
+    assert_eq!(revealed.total.unsat.unwrap().total, 3);
+    let json = archived(&conn, first, second).await.unwrap().unwrap();
+    assert_eq!(json.vbs, Some(portfolio.vbs));
+    let entry = |id| json.entries.iter().find(|e| e.id == id).unwrap();
+    assert_eq!(entry(house).contribution, b.entries[0].contribution);
+    // Not ranked: its breakdown, no contribution
+    assert_eq!(entry(worse).contribution, None);
+    assert_eq!(entry(worse).breakdown.as_ref().unwrap().total.all.solved, 1);
+    // Old scores in the board without the new fields still load
+    let old = r#"{"rank":1,"id":1,"name":"x","author":"y","house":false,"created_at":0,
+        "score":{"par2":1.0,"solved":1,"total":1,"wrong":0,"budget":10,"fuel":0.5,"families":[]}}"#;
+    let entry: crate::model::DojoEntry = serde_json::from_str(old).unwrap();
+    assert_eq!((entry.breakdown, entry.contribution), (None, None));
 }

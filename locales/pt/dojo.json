@@ -26,7 +26,22 @@
     "families": "Famílias",
     "empty": "Nenhum solver entrou no dojo ainda. Seja o primeiro!",
     "house": "da casa",
-    "par2_hint": "Combustível médio por fórmula, em bilhões; fórmulas não resolvidas contam o dobro do orçamento. Menor é melhor."
+    "par2_hint": "Combustível médio por fórmula, em bilhões; fórmulas não resolvidas contam o dobro do orçamento. Menor é melhor.",
+    "views": "Visões do ranking",
+    "view_ranking": "Ranking",
+    "view_contribution": "Contribuição",
+    "all": "TODAS",
+    "answers_hint": "Resolvidas e PAR-2 para fórmulas satisfatíveis e insatisfatíveis, como a SAT Competition as reporta. Enquanto uma temporada dura, a família misteriosa só conta em TODAS: as respostas dela a entregariam.",
+    "contribution_hint": "O que cada solver acrescenta aos outros: o melhor solver virtual pega o melhor resultado de qualquer solver do ranking em cada fórmula. O PAR-2 continua sendo o ranking oficial. Clique em uma coluna para ordenar.",
+    "marginal": "Marginal",
+    "relative": "Fatia",
+    "sota": "SOTA",
+    "shapley": "Shapley",
+    "marginal_tip": "Quanto o PAR-2 do melhor solver virtual sobe sem este solver",
+    "relative_tip": "Sparkle 2018: a fatia dele no log10(PAR-2 sem ÷ PAR-2 com) de todos os solvers",
+    "sota_tip": "Cada fórmula que ele resolve rende 1 ÷ o número de solvers que a resolvem",
+    "shapley_tip": "A parte justa dele no combustível que o campo inteiro economiza, em bilhões por fórmula",
+    "vbs_line": "Melhor solver virtual de {{ count }} solvers: {{ solved }}/{{ total }} resolvidas, PAR-2 {{ par2 }}"
   },
   "seasons": {
     "meta_title": "Arquivo de temporadas · SAT Dojo",
@@ -183,7 +198,13 @@
     "not_found": "Esse envio não existe.",
     "season": "Temporada {{ season }}",
     "rank_label": "Posição",
-    "similar": "Este solver se comporta como o <a>envio #{{ id }}</a> de outra pessoa, que veio antes. Só o original entra no ranking."
+    "similar": "Este solver se comporta como o <a>envio #{{ id }}</a> de outra pessoa, que veio antes. Só o original entra no ranking.",
+    "answers": "Por resposta",
+    "total": "Todas as famílias",
+    "par2_note": "Cada célula: fórmulas resolvidas, depois PAR-2 em bilhões de combustível.",
+    "held_out": "SAT e UNSAT deixam de fora as {{ count }} fórmulas da família misteriosa até o fim da temporada: as respostas delas entregariam a família.",
+    "contribution": "Contribuição para o campo",
+    "contribution_unranked": "As contribuições são calculadas apenas entre os solvers do ranking."
   },
   "rejection": {
     "title": "O worker recusou este arquivo",
@@ -267,5 +288,36 @@
       "license": "Aceite a licença, por favor.",
       "server": "Algo deu errado do nosso lado, tente de novo."
     }
+  },
+  "cactus": {
+    "title": "Gráfico de cacto",
+    "hint": "Cada linha é um solver, com as fórmulas resolvidas ordenadas por combustível: mais à direita significa mais resolvidas, mais abaixo significa menos combustível. Nada no gráfico diz qual fórmula é cada ponto.",
+    "x": "Fórmulas resolvidas",
+    "y": "Combustível por fórmula em escala logarítmica, arredondado para três dígitos; a linha do topo é o orçamento.",
+    "budget": "orçamento",
+    "vbs": "Melhor solver virtual",
+    "vbs_short": "VBS",
+    "solvers": "Solvers",
+    "aria": "Gráfico de cacto de {{ count }} solvers. O melhor solver virtual resolve {{ solved }} de {{ total }} fórmulas com {{ low }} a {{ high }} de combustível cada. As setas do teclado percorrem as curvas.",
+    "solved_at": "{{ count }} fórmulas resolvidas",
+    "reached": "{{ count }} de {{ total }} solvers chegaram até aqui",
+    "table": "Mostrar como tabela",
+    "fastest": "Mais rápido",
+    "median": "Mediana",
+    "slowest": "Mais lento"
+  },
+  "metrics": {
+    "title": "Além do PAR-2",
+    "intro": "O PAR-2 decide o ranking. Estas visões mostram o que ele esconde, do jeito que pesquisadores de SAT olham para resultados. Todas também estão em /dojo/board.json e no results.json do arquivo.",
+    "answers_title": "SAT, UNSAT e TODAS",
+    "answers": "Como na <a>SAT Competition</a>, cada pontuação é dividida por resposta: um solver de busca local pode brilhar em fórmulas satisfatíveis e nunca provar que uma é insatisfatível. Enquanto uma temporada dura, a família misteriosa fica fora de SAT e UNSAT, já que a proporção de fórmulas satisfatíveis dela a revelaria.",
+    "cactus_title": "Gráficos de cacto",
+    "cactus": "As fórmulas resolvidas por cada solver, ordenadas por combustível: o ponto k é a k-ésima fórmula mais rápida dele, então a curva mostra até onde ele chega com quanto combustível. Uma curva não diz qual fórmula é cada ponto, então o conjunto oculto continua secreto, e o combustível é arredondado para três dígitos para que um solver não consiga contrabandear o que lê. O melhor solver virtual (VBS) pega o melhor resultado de qualquer solver do ranking em cada fórmula: o estado da arte do campo.",
+    "marginal_title": "Contribuição marginal",
+    "marginal": "Quanto o VBS piora sem um solver: o PAR-2 dele sem o solver menos o PAR-2 com ele. Fatia é a medida pela qual a <a>Sparkle SAT Challenge 2018</a> fez o ranking: log10 do PAR-2 sem dividido pelo PAR-2 com, como fatia dos valores de todos os solvers. Um solver que só duplica outro não acrescenta nada, por mais rápido que seja.",
+    "sota_title": "Contribuição ao estado da arte",
+    "sota": "Da competição de prova de teoremas <a>CASC</a>: cada fórmula que um solver resolve rende a ele 1 dividido pelo número de solvers que a resolvem. A CASC tira a média sobre as fórmulas resolvidas; nós somamos, então resolver mais nunca diminui o valor, e as somas totalizam as fórmulas que o VBS resolve.",
+    "shapley_title": "Valor de Shapley",
+    "shapley": "Pontuações isoladas premiam quase-clones, contribuições marginais os punem. O valor de Shapley, da teoria dos jogos cooperativos, é justo com ambos: divide o combustível que o campo inteiro economiza em relação a não resolver nada pela contribuição marginal média de cada solver em todas as ordens de entrada (<a>Fréchette et al., AAAI 2016</a>). Nós o calculamos exatamente, em bilhões de combustível por fórmula; os valores somam o dobro do orçamento menos o PAR-2 do VBS."
   }
 }

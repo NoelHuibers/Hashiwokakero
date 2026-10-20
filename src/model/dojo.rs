@@ -50,6 +50,48 @@ pub struct DojoEntry {
     pub house: bool,
     pub score: dojo::Score,
     pub created_at: i64,
+    /// Solved and PAR-2 by answer, overall and per family; `None` without per-formula results.
+    #[serde(default)]
+    pub breakdown: Option<dojo::metrics::EntryBreakdown>,
+    /// What it adds to the other ranked entries (see [`DojoPortfolio`]), `None` when its results
+    /// aren't on the season's formulas.
+    #[serde(default)]
+    pub contribution: Option<dojo::metrics::Contribution>,
+}
+
+/// The ranked entries of a season as a portfolio: the virtual best solver (VBS), which takes
+/// the best result of any of them on every formula, and the cactus plot.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DojoPortfolio {
+    /// Entries in it: the ranked ones with per-formula results.
+    pub entries: u32,
+    pub vbs: dojo::metrics::Split,
+    pub cactus: DojoCactus,
+}
+
+/// A cactus plot: per solver the fuel of every formula it solved, sorted (see
+/// `dojo::metrics::curve`), so it shows how far a solver gets with how much fuel without telling
+/// which formula a point is.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoCactus {
+    /// Fuel per formula: the top of the plot.
+    pub budget: u64,
+    /// Formulas in the set: the right end.
+    pub formulas: u32,
+    /// The virtual best solver's curve.
+    pub vbs: Vec<u64>,
+    /// Every solver's, in board order.
+    pub curves: Vec<DojoCurve>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoCurve {
+    /// The submission.
+    pub id: i64,
+    pub name: String,
+    pub house: bool,
+    /// Fuel of every solved formula, ascending, rounded to three significant digits.
+    pub fuel: Vec<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -74,6 +116,9 @@ pub struct DojoBoard {
     /// The community pool that hidden sets draw from (see [`DojoBenchmarks`]).
     #[serde(default)]
     pub community: CommunitySummary,
+    /// The VBS and the cactus plot of the ranked entries, `None` while there are none.
+    #[serde(default)]
+    pub portfolio: Option<DojoPortfolio>,
 }
 
 /// The community pool in short, for the credits in the guide.
@@ -117,6 +162,9 @@ pub struct DojoSeason {
     pub community: Vec<CommunityCredit>,
     /// The final leaderboard. An empty author: the account was deleted.
     pub board: Vec<DojoEntry>,
+    /// The VBS and the cactus plot of the final leaderboard.
+    #[serde(default)]
+    pub portfolio: Option<DojoPortfolio>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -149,6 +197,15 @@ pub struct DojoSubmission {
     pub size: i64,
     pub sha256: String,
     pub mine: bool,
+    /// Solved and PAR-2 by answer, once it is done.
+    #[serde(default)]
+    pub breakdown: Option<dojo::metrics::EntryBreakdown>,
+    /// What it adds to the ranked entries, if it is one of them.
+    #[serde(default)]
+    pub contribution: Option<dojo::metrics::Contribution>,
+    /// The season's cactus plot, with this submission's curve in it even if it isn't ranked.
+    #[serde(default)]
+    pub portfolio: Option<DojoPortfolio>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

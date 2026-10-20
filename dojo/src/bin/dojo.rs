@@ -39,7 +39,7 @@ use dojo::proof::{CheckLimits, Checker, Tools};
 use dojo::sandbox::Sandbox;
 use dojo::{DEV_SEED, Family};
 #[cfg(feature = "runner")]
-use dojo::{Outcome, Score};
+use dojo::{Outcome, RunResult, Score};
 
 /// Every value of a flag that can be given more than once.
 #[cfg(feature = "runner")]
@@ -177,6 +177,17 @@ fn run(args: &[String]) -> Result<(), String> {
         score.par2,
         started.elapsed()
     );
+    // Split by answer, as the SAT Competition reports it
+    let published: Vec<_> = results.iter().map(RunResult::published).collect();
+    let split = dojo::metrics::breakdown(&published, options.limits.fuel, true).total;
+    for (label, part) in [("SAT", split.sat), ("UNSAT", split.unsat)] {
+        if let Some(part) = part.filter(|p| p.total > 0) {
+            println!(
+                "{label:<6} {}/{}  PAR-2 {:.3}",
+                part.solved, part.total, part.par2
+            );
+        }
+    }
     if score.unverified > 0 {
         println!(
             "{} UNSAT answers without an accepted proof count as unsolved: write a DRAT or LRAT \

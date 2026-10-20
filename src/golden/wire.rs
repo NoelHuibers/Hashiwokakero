@@ -4,6 +4,7 @@ use common::{
     Difficulty, GenerateParams, GeneratedPuzzle, Heuristic, Island, Pos, Puzzle, Restarts,
     SolveOutcome, SolveReport, SolveStats, SolverConfig, SolverKind,
 };
+use dojo::metrics::{Breakdown, Contribution, EntryBreakdown, FamilyBreakdown, Split};
 use dojo::{Answer, Family, FamilyScore, InstanceResult, Outcome, Rejection, Report, Score};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -13,9 +14,10 @@ use crate::model::{
     AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, AllTimeEntry, ApiError,
     AttemptInfo, BenchmarkAction, BenchmarkState, CommunityCredit, CommunitySummary,
     ContactMessage, DailyInfo, DayResult, Daypart, DojoBenchmark, DojoBenchmarks, DojoBoard,
-    DojoEntry, DojoMe, DojoRow, DojoSeason, DojoSeasons, DojoState, DojoSubmission, Flag,
-    HallOfFame, Leaderboard, LeaderboardEntry, LogSummary, MonthBoard, MonthEntry, MoveEvent,
-    PlayerProfile, Run, Stamp, StampProgress, SubmissionAction, SubmitResult, UserInfo, UserStats,
+    DojoCactus, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons,
+    DojoState, DojoSubmission, Flag, HallOfFame, Leaderboard, LeaderboardEntry, LogSummary,
+    MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress, SubmissionAction,
+    SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -172,6 +174,64 @@ fn user_stats() -> UserStats {
     }
 }
 
+fn breakdown() -> EntryBreakdown {
+    let split = |solved, total, par2| Split {
+        solved,
+        total,
+        par2,
+    };
+    EntryBreakdown {
+        total: Breakdown {
+            all: split(30, 34, 2.5),
+            sat: Some(split(16, 17, 1.25)),
+            unsat: Some(split(12, 13, 3.5)),
+            unverified: 1,
+        },
+        held_out: 4,
+        families: vec![FamilyBreakdown {
+            family: Family::Mystery,
+            breakdown: Breakdown {
+                all: split(2, 4, 5.0),
+                sat: None,
+                unsat: None,
+                unverified: 0,
+            },
+        }],
+    }
+}
+
+fn contribution() -> Contribution {
+    Contribution {
+        marginal: 0.5,
+        log_ratio: 0.125,
+        relative: 0.25,
+        sota: 3.5,
+        shapley: 1.75,
+    }
+}
+
+fn portfolio() -> DojoPortfolio {
+    DojoPortfolio {
+        entries: 2,
+        vbs: Split {
+            solved: 32,
+            total: 34,
+            par2: 1.5,
+        },
+        cactus: DojoCactus {
+            budget: 7_000_000_000,
+            formulas: 34,
+            vbs: vec![1_000, 25_000_000],
+            curves: vec![DojoCurve {
+                id: 12,
+                name: "minisat-ish".into(),
+                house: false,
+                fuel: vec![2_000, 25_000_000],
+            }],
+        },
+    }
+}
+
 fn dojo_submission() -> DojoSubmission {
     DojoSubmission {
         id: 12,
@@ -192,6 +252,9 @@ fn dojo_submission() -> DojoSubmission {
         size: 123_456,
         sha256: "ab".repeat(32),
         mine: true,
+        breakdown: Some(breakdown()),
+        contribution: Some(contribution()),
+        portfolio: Some(portfolio()),
     }
 }
 
@@ -315,6 +378,8 @@ fn responses() -> Responses {
                 house: false,
                 score: score(),
                 created_at: 1_760_000_000_000,
+                breakdown: Some(breakdown()),
+                contribution: Some(contribution()),
             }],
             queued: 2,
             commitment: "c0".repeat(32),
@@ -325,6 +390,7 @@ fn responses() -> Responses {
                 authors: vec!["noel".into(), "ada".into()],
                 per_set: 6,
             },
+            portfolio: Some(portfolio()),
         },
         dojo_submission: dojo_submission(),
         dojo_rejected: DojoSubmission {
@@ -335,6 +401,9 @@ fn responses() -> Responses {
             similar_to: None,
             source_url: None,
             mine: false,
+            breakdown: None,
+            contribution: None,
+            portfolio: None,
             ..dojo_submission()
         },
         dojo_me: DojoMe {
@@ -363,6 +432,7 @@ fn responses() -> Responses {
                 mystery: None,
                 community: Vec::new(),
                 board: Vec::new(),
+                portfolio: None,
             },
             past: vec![DojoSeason {
                 season: 1,
@@ -393,7 +463,10 @@ fn responses() -> Responses {
                     house: false,
                     score: score(),
                     created_at: 1_755_000_000_000,
+                    breakdown: None,
+                    contribution: None,
                 }],
+                portfolio: Some(portfolio()),
             }],
         },
         dojo_benchmarks: DojoBenchmarks {

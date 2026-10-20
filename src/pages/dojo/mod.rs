@@ -1,12 +1,14 @@
 //! The SAT Dojo: a leaderboard for SAT solvers submitted as WebAssembly.
 
 pub mod benchmarks;
+pub mod cactus;
 pub mod guide;
 pub mod leaderboard;
 pub mod names;
 pub mod seasons;
 pub mod submission;
 pub mod submit;
+pub mod views;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -20,7 +22,7 @@ use crate::model::{DojoBoard, DojoMe};
 use crate::seo::{PageMeta, REPO_URL};
 
 pub use benchmarks::DojoBenchmarksPage;
-use guide::{FairPlay, Families, HowItWorks};
+use guide::{FairPlay, Families, HowItWorks, Metrics};
 use leaderboard::Leaderboard;
 pub use names::family_name;
 pub use seasons::DojoSeasonsPage;
@@ -132,6 +134,7 @@ pub fn DojoPage() -> impl IntoView {
                 <SubmitCard me />
             </div>
             <FairPlay />
+            <Metrics />
             <Card class="gap-2">
                 <CardHeader>
                     <CardTitle class="text-xl">{t!(i18n, dojo.science.title)}</CardTitle>

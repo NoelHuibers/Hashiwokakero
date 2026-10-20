@@ -26,7 +26,22 @@
     "families": "Aileler",
     "empty": "Henüz hiçbir çözücü dojoya girmedi. İlk sen ol!",
     "house": "resmî",
-    "par2_hint": "Formül başına milyar cinsinden ortalama yakıt; çözülemeyen formüller bütçenin iki katı sayılır. Düşük olan daha iyidir."
+    "par2_hint": "Formül başına milyar cinsinden ortalama yakıt; çözülemeyen formüller bütçenin iki katı sayılır. Düşük olan daha iyidir.",
+    "views": "Sıralama görünümleri",
+    "view_ranking": "Sıralama",
+    "view_contribution": "Katkı",
+    "all": "TÜMÜ",
+    "answers_hint": "Sağlanabilir ve sağlanamaz formüller için çözülen ve PAR-2, SAT Competition'ın raporladığı gibi. Sezon sürerken gizemli aile yalnızca TÜMÜ'nde sayılır: cevapları onu ele verirdi.",
+    "contribution_hint": "Her çözücünün diğerlerine kattığı şey: sanal en iyi çözücü, her formülde sıralamadaki çözücülerin en iyi sonucunu alır. Resmî sıralama PAR-2 olarak kalır. Sıralamak için bir sütuna tıkla.",
+    "marginal": "Marjinal",
+    "relative": "Pay",
+    "sota": "SOTA",
+    "shapley": "Shapley",
+    "marginal_tip": "Bu çözücü olmadan sanal en iyi çözücünün PAR-2'si ne kadar artar",
+    "relative_tip": "Sparkle 2018: tüm çözücülerin log10(PAR-2 onsuz ÷ PAR-2 onunla) toplamındaki payı",
+    "sota_tip": "Çözdüğü her formül, 1 ÷ onu çözen çözücü sayısı kadar puan kazandırır",
+    "shapley_tip": "Tüm alanın tasarruf ettiği yakıttan adil payı, formül başına milyar cinsinden",
+    "vbs_line": "{{ count }} çözücünün sanal en iyi çözücüsü: {{ solved }}/{{ total }} çözüldü, PAR-2 {{ par2 }}"
   },
   "seasons": {
     "meta_title": "Sezon arşivi · SAT Dojo",
@@ -183,7 +198,13 @@
     "not_found": "Böyle bir gönderim yok.",
     "season": "Sezon {{ season }}",
     "rank_label": "Sıra",
-    "similar": "Bu çözücü, başka birinin daha önce gelen <a>#{{ id }} numaralı gönderimi</a> gibi davranıyor. Yalnızca orijinal sıralamaya girer."
+    "similar": "Bu çözücü, başka birinin daha önce gelen <a>#{{ id }} numaralı gönderimi</a> gibi davranıyor. Yalnızca orijinal sıralamaya girer.",
+    "answers": "Cevaba göre",
+    "total": "Tüm aileler",
+    "par2_note": "Her hücre: çözülen formüller, ardından milyar yakıt cinsinden PAR-2.",
+    "held_out": "SAT ve UNSAT, sezon bitene kadar gizemli ailenin {{ count }} formülünü dışarıda bırakır: cevapları aileyi ele verirdi.",
+    "contribution": "Alana katkı",
+    "contribution_unranked": "Katkılar yalnızca sıralamadaki çözücüler arasında hesaplanır."
   },
   "rejection": {
     "title": "Worker bu dosyayı reddetti",
@@ -267,5 +288,36 @@
       "license": "Lütfen lisansı kabul et.",
       "server": "Bizim tarafımızda bir şeyler ters gitti, lütfen tekrar dene."
     }
+  },
+  "cactus": {
+    "title": "Kaktüs grafiği",
+    "hint": "Her çizgi bir çözücüdür, çözdüğü formüller yakıta göre sıralanır: daha sağda daha çok çözülmüş, daha aşağıda daha az yakıt demektir. Bir noktanın hangi formül olduğunu hiçbir şey göstermez.",
+    "x": "Çözülen formüller",
+    "y": "Logaritmik ölçekte formül başına yakıt, üç anlamlı basamağa yuvarlanmış; en üstteki çizgi bütçedir.",
+    "budget": "bütçe",
+    "vbs": "Sanal en iyi çözücü",
+    "vbs_short": "VBS",
+    "solvers": "Çözücüler",
+    "aria": "{{ count }} çözücünün kaktüs grafiği. Sanal en iyi çözücü {{ total }} formülden {{ solved }} tanesini, her biri için {{ low }} ile {{ high }} arasında yakıtla çözer. Ok tuşları eğriler boyunca ilerletir.",
+    "solved_at": "{{ count }} formül çözüldü",
+    "reached": "{{ total }} çözücüden {{ count }} tanesi buraya kadar geldi",
+    "table": "Tablo olarak göster",
+    "fastest": "En hızlı",
+    "median": "Medyan",
+    "slowest": "En yavaş"
+  },
+  "metrics": {
+    "title": "PAR-2'nin ötesinde",
+    "intro": "Sıralamayı PAR-2 belirler. Bu görünümler, onun gizlediğini SAT araştırmacılarının sonuçlara baktığı şekilde gösterir. Hepsi /dojo/board.json dosyasında ve arşivin results.json dosyasında da var.",
+    "answers_title": "SAT, UNSAT ve TÜMÜ",
+    "answers": "<a>SAT Competition</a>'da olduğu gibi her puan cevaba göre ayrılır: yerel arama yapan bir çözücü sağlanabilir formüllerde parlayıp hiçbirinin sağlanamaz olduğunu kanıtlayamayabilir. Sezon sürerken gizemli aile SAT ve UNSAT'ın dışında kalır, çünkü sağlanabilir formüllerdeki payı onu ele verirdi.",
+    "cactus_title": "Kaktüs grafikleri",
+    "cactus": "Her çözücünün çözdüğü formüller yakıta göre sıralanır: k. nokta onun k. en hızlı formülüdür, yani eğri ne kadar yakıtla ne kadar ileri gittiğini gösterir. Bir eğri, bir noktanın hangi formül olduğu hakkında hiçbir şey söylemez; böylece gizli küme gizli kalır. Yakıt üç anlamlı basamağa yuvarlanır ki bir çözücü okuduklarını dışarı kaçıramasın. Sanal en iyi çözücü (VBS), her formülde sıralamadaki çözücülerin en iyi sonucunu alır: alanın en ileri durumu.",
+    "marginal_title": "Marjinal katkı",
+    "marginal": "Bir çözücü olmadan VBS'nin ne kadar kötüleştiği: çözücü olmadan PAR-2'si eksi onunla PAR-2'si. Pay, <a>Sparkle SAT Challenge 2018</a>'in sıralamada kullandığı ölçüdür: onsuz PAR-2'nin onunla PAR-2'ye oranının log10'u, tüm çözücülerin değerlerindeki payı olarak. Yalnızca başka birini kopyalayan bir çözücü, ne kadar hızlı olursa olsun hiçbir şey katmaz.",
+    "sota_title": "En ileri duruma (SOTA) katkı",
+    "sota": "Teorem ispatlama yarışması <a>CASC</a>'tan: bir çözücünün çözdüğü her formül ona 1 bölü o formülü çözen çözücü sayısı kadar kazandırır. CASC çözülen formüller üzerinden ortalama alır; biz toplarız, böylece daha çok çözmek bu değeri asla düşürmez ve toplamlar VBS'nin çözdüğü formül sayısına eşit olur.",
+    "shapley_title": "Shapley değeri",
+    "shapley": "Tek başına puanlar neredeyse-klonları ödüllendirir, marjinal katkılar onları cezalandırır. İşbirlikçi oyun teorisinden gelen Shapley değeri her ikisine de adildir: tüm alanın hiçbir şey çözmemeye göre tasarruf ettiği yakıtı, her çözücünün olası tüm katılım sıraları üzerinden ortalama marjinal katkısına göre böler (<a>Fréchette et al., AAAI 2016</a>). Onu tam olarak, formül başına milyar yakıt cinsinden hesaplarız; değerlerin toplamı bütçenin iki katı eksi VBS'nin PAR-2'sidir."
   }
 }

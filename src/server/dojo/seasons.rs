@@ -37,8 +37,9 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::board::ranked;
+use super::metrics::{self, results_of};
 use super::{season, test_seed};
-use crate::model::{DojoEntry, DojoSeason, DojoSeasons};
+use crate::model::{DojoEntry, DojoPortfolio, DojoSeason, DojoSeasons};
 use crate::server::db::{self, db_err};
 use crate::server::{hex, now_ms};
 
@@ -137,10 +138,10 @@ async fn freeze(conn: &Connection, season: u32, current: u32, now: i64) -> Resul
     )
     .await
     .map_err(err)?;
-    for (entry, _) in ranks {
+    for r in ranks {
         tx.execute(
             "UPDATE dojo_archive SET rank = ?3 WHERE season = ?1 AND submission_id = ?2",
-            params![season, entry.id, entry.rank],
+            params![season, r.entry.id, r.entry.rank],
         )
         .await
         .map_err(err)?;
@@ -325,18 +326,25 @@ async fn season_rows(
             mystery,
             community: Vec::new(),
             board: Vec::new(),
+            portfolio: None,
         });
     }
     Ok(seasons)
 }
 
-/// The final board of an archived season: its ranked entries, best first.
-async fn frozen_board(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, ServerFnError> {
+/// The final board of an archived season: its ranked entries, best first, with their metrics
+/// (every family under its own name now), and its portfolio. `budget`: fuel per formula of
+/// the rules it was scored with.
+async fn frozen_board(
+    conn: &Connection,
+    season: u32,
+    budget: u64,
+) -> Result<(Vec<DojoEntry>, Option<DojoPortfolio>), ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT a.rank, a.submission_id, a.name,
                 CASE WHEN a.house != 0 THEN 'Hashi' ELSE COALESCE(u.name, '') END,
-                a.house, a.score, a.created_at
+                a.house, a.score, a.created_at, a.results
              FROM dojo_archive a LEFT JOIN users u ON u.id = a.user_id
              WHERE a.season = ?1 AND a.rank IS NOT NULL ORDER BY a.rank",
             params![season],
@@ -348,7 +356,7 @@ async fn frozen_board(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, 
         let Some(score) = score_of(row.get(5).map_err(db_err)?) else {
             continue;
         };
-        board.push(DojoEntry {
+        let entry = DojoEntry {
             rank: row.get(0).map_err(db_err)?,
             id: row.get(1).map_err(db_err)?,
             name: row.get(2).map_err(db_err)?,
@@ -356,9 +364,17 @@ async fn frozen_board(conn: &Connection, season: u32) -> Result<Vec<DojoEntry>, 
             house: row.get::<i64>(4).map_err(db_err)? != 0,
             score,
             created_at: row.get(6).map_err(db_err)?,
-        });
+            breakdown: None,
+            contribution: None,
+        };
+        board.push((entry, results_of(row.get(7).map_err(db_err)?)));
     }
-    Ok(board)
+    let portfolio = metrics::apply(
+        board.iter_mut().map(|(e, rs)| (e, rs.as_slice())),
+        budget,
+        true,
+    );
+    Ok((board.into_iter().map(|(e, _)| e).collect(), portfolio))
 }
 
 /// The current season and every finished one, with their final boards.
@@ -380,6 +396,7 @@ pub async fn seasons(conn: &Connection, current: u32) -> Result<DojoSeasons, Ser
             mystery: None,
             community: Vec::new(),
             board: Vec::new(),
+            portfolio: None,
         });
     let mut past = season_rows(
         conn,
@@ -389,7 +406,8 @@ pub async fn seasons(conn: &Connection, current: u32) -> Result<DojoSeasons, Ser
     )
     .await?;
     for season in &mut past {
-        season.board = frozen_board(conn, season.season).await?;
+        let budget = dojo::budget_of(season.rules_version);
+        (season.board, season.portfolio) = frozen_board(conn, season.season, budget).await?;
         season.community = super::benchmarks::drawn(conn, season.season).await?;
     }
     Ok(DojoSeasons {
@@ -415,6 +433,9 @@ pub struct ArchivedSeason {
     pub mystery: Option<dojo::Family>,
     /// The community benchmarks of the hidden set and their authors (licensed CC BY 4.0).
     pub community: Vec<crate::model::CommunityCredit>,
+    /// The virtual best solver of the ranked entries: the best result of any of them on every
+    /// formula (see `dojo::metrics::Portfolio`).
+    pub vbs: Option<dojo::metrics::Split>,
     pub entries: Vec<ArchivedEntry>,
 }
 
@@ -432,6 +453,10 @@ pub struct ArchivedEntry {
     pub created_at: i64,
     pub rules_version: Option<u32>,
     pub score: Option<Score>,
+    /// Solved and PAR-2 by answer, overall and per family.
+    pub breakdown: Option<dojo::metrics::EntryBreakdown>,
+    /// What it added to the other ranked entries, `None` if it wasn't ranked.
+    pub contribution: Option<dojo::metrics::Contribution>,
     /// Every formula in set order, empty for results from before they were kept.
     pub results: Vec<InstanceResult>,
 }
@@ -478,10 +503,46 @@ pub async fn archived(
             created_at: row.get(6).map_err(db_err)?,
             rules_version: row.get(7).map_err(db_err)?,
             score: score_of(row.get(8).map_err(db_err)?),
-            results: results
-                .and_then(|r| serde_json::from_str(&r).ok())
-                .unwrap_or_default(),
+            breakdown: None,
+            contribution: None,
+            results: results_of(results),
         });
+    }
+    // The metrics as the archive page shows them: contributions among the final board
+    let budget = dojo::budget_of(info.rules_version);
+    let mut ranked: Vec<(DojoEntry, Vec<InstanceResult>)> = entries
+        .iter()
+        .filter(|e| e.rank.is_some())
+        .filter_map(|e| {
+            let score = e.score.clone()?;
+            Some((
+                DojoEntry {
+                    rank: e.rank.unwrap_or_default(),
+                    id: e.id,
+                    name: e.name.clone(),
+                    author: e.author.clone(),
+                    house: e.house,
+                    score,
+                    created_at: e.created_at,
+                    breakdown: None,
+                    contribution: None,
+                },
+                e.results.clone(),
+            ))
+        })
+        .collect();
+    let portfolio = metrics::apply(
+        ranked.iter_mut().map(|(e, rs)| (e, rs.as_slice())),
+        budget,
+        true,
+    );
+    for entry in &mut entries {
+        entry.breakdown = (!entry.results.is_empty())
+            .then(|| dojo::metrics::breakdown(&entry.results, budget, true));
+        entry.contribution = ranked
+            .iter()
+            .find(|(e, _)| e.id == entry.id)
+            .and_then(|(e, _)| e.contribution);
     }
     Ok(Some(ArchivedSeason {
         season: info.season,
@@ -491,10 +552,11 @@ pub async fn archived(
         seed: info.seed,
         generator_version: info.generator_version,
         rules_version: info.rules_version,
-        budget: dojo::budget_of(info.rules_version),
+        budget,
         set_sha256: info.set_sha256,
         mystery: info.mystery,
         community: super::benchmarks::drawn(conn, season).await?,
+        vbs: portfolio.map(|p| p.vbs),
         entries,
     }))
 }

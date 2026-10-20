@@ -26,7 +26,22 @@
     "families": "Rodziny",
     "empty": "Żaden solver nie wszedł jeszcze do dojo. Bądź pierwszy!",
     "house": "nasz",
-    "par2_hint": "Średnie paliwo na formułę w miliardach, nierozwiązane formuły liczą się jako podwójny budżet. Mniej znaczy lepiej."
+    "par2_hint": "Średnie paliwo na formułę w miliardach, nierozwiązane formuły liczą się jako podwójny budżet. Mniej znaczy lepiej.",
+    "views": "Widoki rankingu",
+    "view_ranking": "Ranking",
+    "view_contribution": "Wkład",
+    "all": "WSZYSTKIE",
+    "answers_hint": "Rozwiązane i PAR-2 dla formuł spełnialnych i niespełnialnych, tak jak podaje je SAT Competition. Dopóki sezon trwa, tajemnicza rodzina liczy się tylko w WSZYSTKIE: jej odpowiedzi by ją zdradziły.",
+    "contribution_hint": "Co każdy solver wnosi do pozostałych: wirtualny najlepszy solver bierze na każdej formule najlepszy wynik spośród solverów w rankingu. Oficjalnym rankingiem pozostaje PAR-2. Kliknij kolumnę, aby posortować.",
+    "marginal": "Marginalny",
+    "relative": "Udział",
+    "sota": "SOTA",
+    "shapley": "Shapley",
+    "marginal_tip": "O ile rośnie PAR-2 wirtualnego najlepszego solvera bez tego solvera",
+    "relative_tip": "Sparkle 2018: jego udział w log10(PAR-2 bez ÷ PAR-2 z) wszystkich solverów",
+    "sota_tip": "Każda rozwiązana formuła daje 1 ÷ liczba solverów, które ją rozwiązują",
+    "shapley_tip": "Jego sprawiedliwa część paliwa oszczędzanego przez całą stawkę, w miliardach na formułę",
+    "vbs_line": "Wirtualny najlepszy solver z {{ count }} solverów: rozwiązane {{ solved }}/{{ total }}, PAR-2 {{ par2 }}"
   },
   "seasons": {
     "meta_title": "Archiwum sezonów · SAT Dojo",
@@ -183,7 +198,13 @@
     "not_found": "Nie ma takiego zgłoszenia.",
     "season": "Sezon {{ season }}",
     "rank_label": "Miejsce",
-    "similar": "Ten solver zachowuje się jak <a>zgłoszenie #{{ id }}</a> innej osoby, które było pierwsze. W rankingu liczy się tylko oryginał."
+    "similar": "Ten solver zachowuje się jak <a>zgłoszenie #{{ id }}</a> innej osoby, które było pierwsze. W rankingu liczy się tylko oryginał.",
+    "answers": "Według odpowiedzi",
+    "total": "Wszystkie rodziny",
+    "par2_note": "Każda komórka: rozwiązane formuły, potem PAR-2 w miliardach paliwa.",
+    "held_out": "SAT i UNSAT pomijają formuły tajemniczej rodziny ({{ count }}) do końca sezonu: ich odpowiedzi zdradziłyby rodzinę.",
+    "contribution": "Wkład w stawkę",
+    "contribution_unranked": "Wkład jest liczony tylko między solverami w rankingu."
   },
   "rejection": {
     "title": "Worker odrzucił ten plik",
@@ -267,5 +288,36 @@
       "license": "Zaakceptuj licencję.",
       "server": "Coś poszło nie tak po naszej stronie, spróbuj ponownie."
     }
+  },
+  "cactus": {
+    "title": "Wykres kaktusowy",
+    "hint": "Każda linia to solver, a jego rozwiązane formuły są posortowane według paliwa: dalej w prawo znaczy więcej rozwiązanych, niżej znaczy mniej paliwa. Nic na wykresie nie zdradza, którą formułą jest dany punkt.",
+    "x": "Rozwiązane formuły",
+    "y": "Paliwo na formułę w skali logarytmicznej, zaokrąglone do trzech cyfr; górna linia to budżet.",
+    "budget": "budżet",
+    "vbs": "Wirtualny najlepszy solver",
+    "vbs_short": "VBS",
+    "solvers": "Solvery",
+    "aria": "Wykres kaktusowy {{ count }} solverów. Wirtualny najlepszy solver rozwiązuje {{ solved }} z {{ total }} formuł, zużywając od {{ low }} do {{ high }} paliwa na każdą. Klawisze strzałek przesuwają po krzywych.",
+    "solved_at": "Rozwiązane formuły: {{ count }}",
+    "reached": "Tak daleko doszło {{ count }} z {{ total }} solverów",
+    "table": "Pokaż jako tabelę",
+    "fastest": "Najszybszy",
+    "median": "Mediana",
+    "slowest": "Najwolniejszy"
+  },
+  "metrics": {
+    "title": "Poza PAR-2",
+    "intro": "PAR-2 decyduje o rankingu. Te widoki pokazują, co ukrywa, tak jak na wyniki patrzą badacze SAT. Wszystkie są też w /dojo/board.json i w pliku results.json w archiwum.",
+    "answers_title": "SAT, UNSAT i WSZYSTKIE",
+    "answers": "Jak w <a>SAT Competition</a> każdy wynik jest rozbity według odpowiedzi: solver lokalnego przeszukiwania może błyszczeć na formułach spełnialnych i nigdy nie udowodnić niespełnialności żadnej. Dopóki sezon trwa, tajemnicza rodzina nie wchodzi do SAT i UNSAT, bo jej odsetek formuł spełnialnych by ją zdradził.",
+    "cactus_title": "Wykresy kaktusowe",
+    "cactus": "Rozwiązane formuły każdego solvera posortowane według paliwa: punkt k to jego k-ta najszybsza formuła, więc krzywa pokazuje, jak daleko dochodzi przy jakim paliwie. Krzywa nic nie mówi o tym, którą formułą jest dany punkt, więc ukryty zbiór pozostaje tajny, a paliwo jest zaokrąglane do trzech cyfr, żeby solver nie mógł przemycić tego, co czyta. Wirtualny najlepszy solver (VBS) bierze na każdej formule najlepszy wynik spośród solverów w rankingu: to stan techniki całej stawki.",
+    "marginal_title": "Wkład marginalny",
+    "marginal": "O ile gorszy staje się VBS bez danego solvera: jego PAR-2 bez tego solvera minus PAR-2 z nim. Udział to miara, według której ustalała ranking <a>Sparkle SAT Challenge 2018</a>: log10 z PAR-2 bez podzielonego przez PAR-2 z, jako udział w wartościach wszystkich solverów. Solver, który tylko powiela inny, nic nie wnosi, choćby był najszybszy.",
+    "sota_title": "Wkład w stan techniki",
+    "sota": "Z konkursu automatycznego dowodzenia twierdzeń <a>CASC</a>: każda formuła rozwiązana przez solver daje mu 1 podzielone przez liczbę solverów, które ją rozwiązują. CASC uśrednia po rozwiązanych formułach; my sumujemy, więc rozwiązanie większej liczby nigdy nie obniża wyniku, a sumy dają łącznie liczbę formuł rozwiązywanych przez VBS.",
+    "shapley_title": "Wartość Shapleya",
+    "shapley": "Wyniki samodzielne nagradzają niemal klony, wkład marginalny je karze. Wartość Shapleya z kooperacyjnej teorii gier jest sprawiedliwa dla obu: dzieli paliwo, które cała stawka oszczędza w porównaniu z nierozwiązaniem niczego, według średniego wkładu marginalnego każdego solvera po wszystkich kolejnościach dołączania (<a>Fréchette et al., AAAI 2016</a>). Liczymy ją dokładnie, w miliardach paliwa na formułę; wartości sumują się do podwójnego budżetu minus PAR-2 VBS."
   }
 }

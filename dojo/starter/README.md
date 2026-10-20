@@ -61,6 +61,12 @@ Score = PAR-2: the mean fuel per formula, where unsolved formulas count twice th
 **A single wrong answer disqualifies the submission**: a wrong model, UNSAT on a satisfiable
 formula, or a rejected proof. So never guess UNSAT.
 
+PAR-2 alone decides the rank. The leaderboard also splits every score into SAT, UNSAT and ALL
+(`dojo run` prints the split too), draws a cactus plot of all solvers with the virtual best solver,
+and shows what your solver adds to the others: its marginal contribution, its state-of-the-art
+contribution and its Shapley value. A solver that is fast where everyone else is slow counts
+there, even if it ranks low.
+
 ## The formulas
 
 The public development set has 36 formulas, half of them satisfiable, in eight families: Hashi

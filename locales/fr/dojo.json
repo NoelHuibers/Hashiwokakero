@@ -26,7 +26,22 @@
     "families": "Familles",
     "empty": "Aucun solveur n’est encore entré dans le dojo. Sois le premier !",
     "house": "maison",
-    "par2_hint": "Carburant moyen par formule en milliards, une formule non résolue compte pour deux fois le budget. Plus c’est bas, mieux c’est."
+    "par2_hint": "Carburant moyen par formule en milliards, une formule non résolue compte pour deux fois le budget. Plus c’est bas, mieux c’est.",
+    "views": "Vues du classement",
+    "view_ranking": "Rang",
+    "view_contribution": "Contribution",
+    "all": "TOUT",
+    "answers_hint": "Résolues et PAR-2 pour les formules satisfiables et insatisfiables, comme les présente la SAT Competition. Tant qu’une saison dure, la famille mystère ne compte que dans TOUT : ses réponses la trahiraient.",
+    "contribution_hint": "Ce que chaque solveur apporte aux autres : le meilleur solveur virtuel prend, sur chaque formule, le meilleur résultat de tous les solveurs classés. PAR-2 reste le classement officiel. Clique sur une colonne pour trier.",
+    "marginal": "Marginale",
+    "relative": "Part",
+    "sota": "SOTA",
+    "shapley": "Shapley",
+    "marginal_tip": "De combien le PAR-2 du meilleur solveur virtuel augmente sans ce solveur",
+    "relative_tip": "Sparkle 2018 : sa part du total des log10(PAR-2 sans ÷ PAR-2 avec) de tous les solveurs",
+    "sota_tip": "Chaque formule qu’il résout lui rapporte 1 ÷ le nombre de solveurs qui la résolvent",
+    "shapley_tip": "Sa juste part du carburant économisé par l’ensemble du peloton, en milliards par formule",
+    "vbs_line": "Meilleur solveur virtuel de {{ count }} solveurs : {{ solved }}/{{ total }} résolues, PAR-2 {{ par2 }}"
   },
   "seasons": {
     "meta_title": "Archives des saisons · SAT Dojo",
@@ -183,7 +198,13 @@
     "not_found": "Cette soumission n’existe pas.",
     "season": "Saison {{ season }}",
     "rank_label": "Rang",
-    "similar": "Ce solveur se comporte comme <a>la soumission n° {{ id }}</a> de quelqu’un d’autre, arrivée avant. Seul l’original est classé."
+    "similar": "Ce solveur se comporte comme <a>la soumission n° {{ id }}</a> de quelqu’un d’autre, arrivée avant. Seul l’original est classé.",
+    "answers": "Par réponse",
+    "total": "Toutes les familles",
+    "par2_note": "Chaque cellule : formules résolues, puis PAR-2 en milliards de carburant.",
+    "held_out": "SAT et UNSAT excluent les {{ count }} formules de la famille mystère jusqu’à la fin de la saison : leurs réponses trahiraient la famille.",
+    "contribution": "Contribution au peloton",
+    "contribution_unranked": "Les contributions ne sont calculées qu’entre les solveurs classés."
   },
   "rejection": {
     "title": "Le worker a refusé ce fichier",
@@ -267,5 +288,36 @@
       "license": "Merci d’accepter la licence.",
       "server": "Un problème est survenu de notre côté, réessaie."
     }
+  },
+  "cactus": {
+    "title": "Graphique en cactus",
+    "hint": "Chaque ligne est un solveur, ses formules résolues triées par carburant : plus à droite signifie plus de formules résolues, plus bas, moins de carburant. Rien n’y indique quelle formule est un point.",
+    "x": "Formules résolues",
+    "y": "Carburant par formule sur une échelle logarithmique, arrondi à trois chiffres ; la ligne du haut est le budget.",
+    "budget": "budget",
+    "vbs": "Meilleur solveur virtuel",
+    "vbs_short": "VBS",
+    "solvers": "Solveurs",
+    "aria": "Graphique en cactus de {{ count }} solveurs. Le meilleur solveur virtuel résout {{ solved }} formules sur {{ total }} avec {{ low }} à {{ high }} de carburant chacune. Les flèches du clavier permettent de parcourir les courbes.",
+    "solved_at": "{{ count }} formules résolues",
+    "reached": "{{ count }} solveurs sur {{ total }} sont arrivés jusqu’ici",
+    "table": "Afficher sous forme de tableau",
+    "fastest": "Le plus rapide",
+    "median": "Médiane",
+    "slowest": "Le plus lent"
+  },
+  "metrics": {
+    "title": "Au-delà de PAR-2",
+    "intro": "PAR-2 décide du classement. Ces vues montrent ce qu’il cache, comme les chercheurs en SAT regardent les résultats. Toutes figurent aussi dans /dojo/board.json et dans le results.json des archives.",
+    "answers_title": "SAT, UNSAT et TOUT",
+    "answers": "Comme à la <a>SAT Competition</a>, chaque score est ventilé par réponse : un solveur de recherche locale peut briller sur les formules satisfiables sans jamais en prouver une insatisfiable. Tant qu’une saison dure, la famille mystère reste hors de SAT et UNSAT, car sa proportion de formules satisfiables la révélerait.",
+    "cactus_title": "Graphiques en cactus",
+    "cactus": "Les formules résolues de chaque solveur triées par carburant : le point k est sa k-ième formule la plus rapide, donc la courbe montre jusqu’où il va avec combien de carburant. Une courbe ne dit rien de la formule à laquelle correspond un point, elle garde donc l’ensemble secret secret, et le carburant est arrondi à trois chiffres pour qu’un solveur ne puisse pas faire sortir en douce ce qu’il lit. Le meilleur solveur virtuel (VBS) prend, sur chaque formule, le meilleur résultat de tous les solveurs classés : l’état de l’art du peloton.",
+    "marginal_title": "Contribution marginale",
+    "marginal": "De combien le VBS se dégrade sans un solveur : son PAR-2 sans le solveur moins son PAR-2 avec. La part est la mesure selon laquelle la <a>Sparkle SAT Challenge 2018</a> a classé : le log10 du PAR-2 sans divisé par le PAR-2 avec, en proportion des valeurs de tous les solveurs. Un solveur qui ne fait que dupliquer un autre n’apporte rien, aussi rapide soit-il.",
+    "sota_title": "Contribution à l’état de l’art",
+    "sota": "Issue de la compétition de démonstration automatique de théorèmes <a>CASC</a> : chaque formule qu’un solveur résout lui rapporte 1 divisé par le nombre de solveurs qui la résolvent. CASC fait la moyenne sur les formules résolues ; nous faisons la somme, donc résoudre davantage ne la fait jamais baisser, et les sommes totalisent les formules que résout le VBS.",
+    "shapley_title": "Valeur de Shapley",
+    "shapley": "Les scores individuels récompensent les quasi-clones, les contributions marginales les pénalisent. La valeur de Shapley, issue de la théorie des jeux coopératifs, est juste envers les deux : elle répartit le carburant que l’ensemble du peloton économise par rapport à ne rien résoudre selon la contribution marginale moyenne de chaque solveur sur tous les ordres d’arrivée (<a>Fréchette et al., AAAI 2016</a>). Nous la calculons exactement, en milliards de carburant par formule ; les valeurs totalisent deux fois le budget moins le PAR-2 du VBS."
   }
 }

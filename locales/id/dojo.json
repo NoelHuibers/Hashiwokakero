@@ -26,7 +26,22 @@
     "families": "Keluarga",
     "empty": "Belum ada solver yang masuk dojo. Jadilah yang pertama!",
     "house": "bawaan",
-    "par2_hint": "Rata-rata fuel per formula dalam miliar, formula yang tak terpecahkan dihitung dua kali anggaran. Makin rendah makin baik."
+    "par2_hint": "Rata-rata fuel per formula dalam miliar, formula yang tak terpecahkan dihitung dua kali anggaran. Makin rendah makin baik.",
+    "views": "Tampilan papan peringkat",
+    "view_ranking": "Peringkat",
+    "view_contribution": "Kontribusi",
+    "all": "SEMUA",
+    "answers_hint": "Terpecahkan dan PAR-2 untuk formula yang dapat dipenuhi dan yang tidak dapat dipenuhi, seperti yang dilaporkan SAT Competition. Selama musim berjalan, keluarga misteri hanya dihitung di SEMUA: jawabannya akan membocorkan identitasnya.",
+    "contribution_hint": "Apa yang ditambahkan tiap solver bagi yang lain: solver terbaik virtual mengambil hasil terbaik dari solver mana pun yang masuk peringkat di setiap formula. PAR-2 tetap menjadi peringkat resmi. Klik kolom untuk mengurutkan.",
+    "marginal": "Marjinal",
+    "relative": "Porsi",
+    "sota": "SOTA",
+    "shapley": "Shapley",
+    "marginal_tip": "Seberapa besar PAR-2 solver terbaik virtual naik tanpa solver ini",
+    "relative_tip": "Sparkle 2018: porsinya dari log10(PAR-2 tanpa ÷ PAR-2 dengan) semua solver",
+    "sota_tip": "Setiap formula yang dipecahkannya bernilai 1 ÷ jumlah solver yang memecahkannya",
+    "shapley_tip": "Bagian adilnya dari fuel yang dihemat seluruh peserta, dalam miliar per formula",
+    "vbs_line": "Solver terbaik virtual dari {{ count }} solver: {{ solved }}/{{ total }} terpecahkan, PAR-2 {{ par2 }}"
   },
   "seasons": {
     "meta_title": "Arsip musim · SAT Dojo",
@@ -183,7 +198,13 @@
     "not_found": "Kiriman itu tidak ada.",
     "season": "Musim {{ season }}",
     "rank_label": "Peringkat",
-    "similar": "Solver ini berperilaku seperti <a>kiriman #{{ id }}</a> milik orang lain yang datang lebih dulu. Hanya yang asli yang masuk peringkat."
+    "similar": "Solver ini berperilaku seperti <a>kiriman #{{ id }}</a> milik orang lain yang datang lebih dulu. Hanya yang asli yang masuk peringkat.",
+    "answers": "Menurut jawaban",
+    "total": "Semua keluarga",
+    "par2_note": "Setiap sel: formula terpecahkan, lalu PAR-2 dalam miliar fuel.",
+    "held_out": "SAT dan UNSAT tidak menyertakan {{ count }} formula dari keluarga misteri sampai musim berakhir: jawabannya akan membocorkan keluarga itu.",
+    "contribution": "Kontribusi bagi seluruh peserta",
+    "contribution_unranked": "Kontribusi hanya dihitung di antara solver yang masuk peringkat."
   },
   "rejection": {
     "title": "Worker menolak file ini",
@@ -267,5 +288,36 @@
       "license": "Harap setujui lisensinya.",
       "server": "Ada yang salah di pihak kami, silakan coba lagi."
     }
+  },
+  "cactus": {
+    "title": "Plot kaktus",
+    "hint": "Setiap garis adalah satu solver, dengan formula yang dipecahkannya diurutkan menurut fuel: makin ke kanan berarti makin banyak yang terpecahkan, makin rendah berarti makin sedikit fuel. Tidak ada yang menunjukkan formula mana yang diwakili suatu titik.",
+    "x": "Formula terpecahkan",
+    "y": "Fuel per formula pada skala logaritmik, dibulatkan ke tiga digit; garis teratas adalah anggaran.",
+    "budget": "anggaran",
+    "vbs": "Solver terbaik virtual",
+    "vbs_short": "VBS",
+    "solvers": "Daftar solver",
+    "aria": "Plot kaktus dari {{ count }} solver. Solver terbaik virtual memecahkan {{ solved }} dari {{ total }} formula dengan {{ low }} hingga {{ high }} fuel per formula. Gunakan tombol panah untuk bergerak di sepanjang kurva.",
+    "solved_at": "{{ count }} formula terpecahkan",
+    "reached": "{{ count }} dari {{ total }} solver sampai sejauh ini",
+    "table": "Tampilkan sebagai tabel",
+    "fastest": "Tercepat",
+    "median": "Nilai tengah",
+    "slowest": "Paling lambat"
+  },
+  "metrics": {
+    "title": "Melampaui PAR-2",
+    "intro": "PAR-2 menentukan peringkat. Tampilan ini menunjukkan apa yang disembunyikannya, dengan cara para peneliti SAT melihat hasil. Semuanya juga ada di /dojo/board.json dan di results.json arsip.",
+    "answers_title": "SAT, UNSAT, dan SEMUA",
+    "answers": "Seperti di <a>SAT Competition</a>, setiap skor dipisah menurut jawaban: solver local search bisa unggul pada formula yang dapat dipenuhi tetapi tak pernah membuktikan satu pun formula tidak dapat dipenuhi. Selama musim berjalan, keluarga misteri tidak dimasukkan ke SAT dan UNSAT, karena porsi formula yang dapat dipenuhi di dalamnya akan membocorkannya.",
+    "cactus_title": "Plot kaktus",
+    "cactus": "Formula yang dipecahkan tiap solver, diurutkan menurut fuel: titik k adalah formula tercepat ke-k, jadi kurvanya menunjukkan seberapa jauh solver itu sampai dengan berapa banyak fuel. Kurva tidak mengatakan apa pun tentang formula mana yang diwakili suatu titik, sehingga set tersembunyi tetap rahasia, dan fuel dibulatkan ke tiga digit agar solver tidak bisa menyelundupkan apa yang dibacanya. Solver terbaik virtual (VBS) mengambil hasil terbaik dari solver mana pun yang masuk peringkat di setiap formula: kemampuan terdepan seluruh peserta.",
+    "marginal_title": "Kontribusi marjinal",
+    "marginal": "Seberapa buruk VBS tanpa suatu solver: PAR-2-nya tanpa solver itu dikurangi PAR-2-nya dengan solver itu. Porsi adalah ukuran yang dipakai <a>Sparkle SAT Challenge 2018</a> untuk menentukan peringkat: log10 dari PAR-2 tanpa dibagi PAR-2 dengan, sebagai porsi dari nilai semua solver. Solver yang hanya menduplikasi solver lain tidak menambahkan apa-apa, secepat apa pun ia.",
+    "sota_title": "Kontribusi terdepan (state of the art)",
+    "sota": "Dari kompetisi pembuktian teorema <a>CASC</a>: setiap formula yang dipecahkan solver memberinya 1 dibagi jumlah solver yang memecahkannya. CASC merata-ratakan atas formula yang terpecahkan; kami menjumlahkannya, jadi memecahkan lebih banyak tidak pernah menurunkannya, dan jumlah semuanya sama dengan banyaknya formula yang dipecahkan VBS.",
+    "shapley_title": "Nilai Shapley",
+    "shapley": "Skor mandiri menguntungkan solver yang nyaris kembar, kontribusi marjinal menghukumnya. Nilai Shapley dari teori permainan kooperatif adil bagi keduanya: nilai ini membagi fuel yang dihemat seluruh peserta dibandingkan dengan tidak memecahkan apa pun, menurut rata-rata kontribusi marjinal tiap solver atas setiap urutan bergabung (<a>Fréchette et al., AAAI 2016</a>). Kami menghitungnya secara eksak, dalam miliar fuel per formula; jumlah nilainya sama dengan dua kali anggaran dikurangi PAR-2 VBS."
   }
 }

@@ -26,7 +26,22 @@
     "families": "Familien",
     "empty": "Noch hat kein Solver das Dojo betreten. Mach den Anfang!",
     "house": "hauseigen",
-    "par2_hint": "Mittlerer Treibstoff pro Formel in Milliarden, ungelöste Formeln zählen das doppelte Budget. Weniger ist besser."
+    "par2_hint": "Mittlerer Treibstoff pro Formel in Milliarden, ungelöste Formeln zählen das doppelte Budget. Weniger ist besser.",
+    "views": "Ansichten der Rangliste",
+    "view_ranking": "Rangfolge",
+    "view_contribution": "Beitrag",
+    "all": "ALLE",
+    "answers_hint": "Gelöst und PAR-2 für erfüllbare und unerfüllbare Formeln, so wie die SAT Competition sie ausweist. Solange eine Saison läuft, zählt die geheime Familie nur bei ALLE: Ihre Antworten würden sie verraten.",
+    "contribution_hint": "Was jeder Solver zu den anderen beiträgt: Der virtuell beste Solver nimmt auf jeder Formel das beste Ergebnis aller gewerteten Solver. PAR-2 bleibt die offizielle Wertung. Klick auf eine Spalte, um zu sortieren.",
+    "marginal": "Marginal",
+    "relative": "Anteil",
+    "sota": "SOTA",
+    "shapley": "Shapley",
+    "marginal_tip": "Wie stark der PAR-2 des virtuell besten Solvers ohne diesen Solver steigt",
+    "relative_tip": "Sparkle 2018: sein Anteil an log10(PAR-2 ohne ÷ PAR-2 mit) über alle Solver",
+    "sota_tip": "Jede Formel, die er löst, bringt 1 ÷ die Zahl der Solver, die sie lösen",
+    "shapley_tip": "Sein fairer Anteil am Treibstoff, den das ganze Feld spart, in Milliarden pro Formel",
+    "vbs_line": "Virtuell bester Solver aus {{ count }} Solvern: {{ solved }}/{{ total }} gelöst, PAR-2 {{ par2 }}"
   },
   "seasons": {
     "meta_title": "Saisonarchiv · SAT Dojo",
@@ -183,7 +198,13 @@
     "not_found": "Diese Einreichung gibt es nicht.",
     "season": "Saison {{ season }}",
     "rank_label": "Rang",
-    "similar": "Dieser Solver verhält sich wie <a>Einreichung #{{ id }}</a> einer anderen Person, die zuerst da war. Nur das Original kommt in die Wertung."
+    "similar": "Dieser Solver verhält sich wie <a>Einreichung #{{ id }}</a> einer anderen Person, die zuerst da war. Nur das Original kommt in die Wertung.",
+    "answers": "Nach Antwort",
+    "total": "Alle Familien",
+    "par2_note": "Jede Zelle: gelöste Formeln, dann PAR-2 in Milliarden Treibstoff.",
+    "held_out": "SAT und UNSAT lassen die {{ count }} Formeln der geheimen Familie bis zum Saisonende weg: Ihre Antworten würden die Familie verraten.",
+    "contribution": "Beitrag zum Feld",
+    "contribution_unranked": "Beiträge werden nur unter den gewerteten Solvern berechnet."
   },
   "rejection": {
     "title": "Der Worker hat diese Datei abgelehnt",
@@ -267,5 +288,36 @@
       "license": "Bitte stimm der Lizenz zu.",
       "server": "Bei uns ist etwas schiefgegangen, bitte versuch es noch einmal."
     }
+  },
+  "cactus": {
+    "title": "Kaktus-Plot",
+    "hint": "Jede Linie ist ein Solver, seine gelösten Formeln nach Treibstoff sortiert: weiter rechts heißt mehr gelöst, weiter unten weniger Treibstoff. Welche Formel ein Punkt ist, verrät der Plot nicht.",
+    "x": "Gelöste Formeln",
+    "y": "Treibstoff pro Formel auf logarithmischer Skala, auf drei Stellen gerundet; die oberste Linie ist das Budget.",
+    "budget": "Budget",
+    "vbs": "Virtuell bester Solver",
+    "vbs_short": "VBS",
+    "solvers": "Solver",
+    "aria": "Kaktus-Plot von {{ count }} Solvern. Der virtuell beste Solver löst {{ solved }} von {{ total }} Formeln mit je {{ low }} bis {{ high }} Treibstoff. Mit den Pfeiltasten bewegst du dich entlang der Kurven.",
+    "solved_at": "{{ count }} Formeln gelöst",
+    "reached": "{{ count }} von {{ total }} Solvern sind so weit gekommen",
+    "table": "Als Tabelle anzeigen",
+    "fastest": "Schnellster",
+    "median": "Median",
+    "slowest": "Langsamster"
+  },
+  "metrics": {
+    "title": "Mehr als PAR-2",
+    "intro": "PAR-2 entscheidet die Rangliste. Diese Ansichten zeigen, was es verbirgt, so wie SAT-Forschende auf Ergebnisse schauen. Alle stehen auch in /dojo/board.json und in der results.json des Archivs.",
+    "answers_title": "SAT, UNSAT und ALLE",
+    "answers": "Wie bei der <a>SAT Competition</a> wird jede Punktzahl nach Antwort aufgeteilt: Ein Solver mit lokaler Suche kann auf erfüllbaren Formeln glänzen und nie eine als unerfüllbar beweisen. Solange eine Saison läuft, bleibt die geheime Familie aus SAT und UNSAT heraus, denn ihr Anteil erfüllbarer Formeln würde sie verraten.",
+    "cactus_title": "Kaktus-Plots",
+    "cactus": "Die gelösten Formeln jedes Solvers, nach Treibstoff sortiert: Punkt k ist seine k-schnellste Formel, also zeigt die Kurve, wie weit er mit wie viel Treibstoff kommt. Eine Kurve sagt nichts darüber, welche Formel ein Punkt ist, deshalb bleibt das geheime Set geheim, und der Treibstoff ist auf drei Stellen gerundet, damit ein Solver nicht herausschmuggeln kann, was er liest. Der virtuell beste Solver (VBS) nimmt auf jeder Formel das beste Ergebnis aller gewerteten Solver: der Stand der Technik des Feldes.",
+    "marginal_title": "Marginaler Beitrag",
+    "marginal": "Wie viel schlechter der VBS ohne einen Solver wird: sein PAR-2 ohne den Solver minus mit ihm. Der Anteil ist das Maß, nach dem die <a>Sparkle SAT Challenge 2018</a> gewertet hat: log10 von PAR-2 ohne durch PAR-2 mit, als Anteil an den Werten aller Solver. Ein Solver, der nur einen anderen dupliziert, trägt nichts bei, egal wie schnell er ist.",
+    "sota_title": "Beitrag zum Stand der Technik",
+    "sota": "Aus dem Wettbewerb für automatisches Theorembeweisen <a>CASC</a>: Jede Formel, die ein Solver löst, bringt ihm 1 geteilt durch die Zahl der Solver, die sie lösen. CASC mittelt über die gelösten Formeln; wir summieren, so senkt mehr Lösen den Wert nie, und die Summen ergeben zusammen die Formeln, die der VBS löst.",
+    "shapley_title": "Shapley-Wert",
+    "shapley": "Einzelwertungen belohnen Beinahe-Klone, marginale Beiträge bestrafen sie. Der Shapley-Wert aus der kooperativen Spieltheorie ist zu beiden fair: Er verteilt den Treibstoff, den das ganze Feld gegenüber dem Lösen von nichts spart, nach dem mittleren marginalen Beitrag jedes Solvers über alle Beitrittsreihenfolgen (<a>Fréchette et al., AAAI 2016</a>). Wir berechnen ihn exakt, in Milliarden Treibstoff pro Formel; die Werte ergeben zusammen das doppelte Budget minus den PAR-2 des VBS."
   }
 }

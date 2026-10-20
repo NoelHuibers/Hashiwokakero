@@ -7,8 +7,10 @@
 //! doesn't depend on the machine or its load. Like in the SAT Competition, a SAT answer needs a
 //! model and an UNSAT answer a DRAT or LRAT proof that a formally verified checker accepts.
 //!
-//! - always: the result types shared with the website ([`Family`], [`Score`], [`Report`], ...)
-//!   and community benchmarks ([`community`]: their hashes and the draw from the pool)
+//! - always: the result types shared with the website ([`Family`], [`Score`], [`Report`], ...),
+//!   community benchmarks ([`community`]: their hashes and the draw from the pool) and the
+//!   metrics beyond PAR-2 ([`metrics`]: SAT/UNSAT/ALL, cactus plots, VBS and Shapley
+//!   contributions)
 //! - `bench`: benchmark generation ([`bench`]), answer checking ([`output`]) and proof checking
 //!   ([`proof`], [`drat`])
 //! - `runner`: checking ([`validate`]), the sandbox ([`sandbox`]), evaluating a set ([`eval`])
@@ -36,6 +38,7 @@ pub mod families;
 pub mod fuel;
 #[cfg(feature = "bench")]
 pub mod lrat;
+pub mod metrics;
 #[cfg(feature = "bench")]
 pub mod output;
 #[cfg(feature = "bench")]

@@ -244,7 +244,50 @@
           ],
           "unverified": 1
         },
-        "created_at": 1760000000000
+        "created_at": 1760000000000,
+        "breakdown": {
+          "total": {
+            "all": {
+              "solved": 30,
+              "total": 34,
+              "par2": 2.5
+            },
+            "sat": {
+              "solved": 16,
+              "total": 17,
+              "par2": 1.25
+            },
+            "unsat": {
+              "solved": 12,
+              "total": 13,
+              "par2": 3.5
+            },
+            "unverified": 1
+          },
+          "held_out": 4,
+          "families": [
+            {
+              "family": "Mystery",
+              "breakdown": {
+                "all": {
+                  "solved": 2,
+                  "total": 4,
+                  "par2": 5.0
+                },
+                "sat": null,
+                "unsat": null,
+                "unverified": 0
+              }
+            }
+          ]
+        },
+        "contribution": {
+          "marginal": 0.5,
+          "log_ratio": 0.125,
+          "relative": 0.25,
+          "sota": 3.5,
+          "shapley": 1.75
+        }
       }
     ],
     "queued": 2,
@@ -258,6 +301,33 @@
         "ada"
       ],
       "per_set": 6
+    },
+    "portfolio": {
+      "entries": 2,
+      "vbs": {
+        "solved": 32,
+        "total": 34,
+        "par2": 1.5
+      },
+      "cactus": {
+        "budget": 7000000000,
+        "formulas": 34,
+        "vbs": [
+          1000,
+          25000000
+        ],
+        "curves": [
+          {
+            "id": 12,
+            "name": "minisat-ish",
+            "house": false,
+            "fuel": [
+              2000,
+              25000000
+            ]
+          }
+        ]
+      }
     }
   },
   "dojo_submission": {
@@ -302,7 +372,77 @@
     "similar_to": 9,
     "size": 123456,
     "sha256": "abababababababababababababababababababababababababababababababab",
-    "mine": true
+    "mine": true,
+    "breakdown": {
+      "total": {
+        "all": {
+          "solved": 30,
+          "total": 34,
+          "par2": 2.5
+        },
+        "sat": {
+          "solved": 16,
+          "total": 17,
+          "par2": 1.25
+        },
+        "unsat": {
+          "solved": 12,
+          "total": 13,
+          "par2": 3.5
+        },
+        "unverified": 1
+      },
+      "held_out": 4,
+      "families": [
+        {
+          "family": "Mystery",
+          "breakdown": {
+            "all": {
+              "solved": 2,
+              "total": 4,
+              "par2": 5.0
+            },
+            "sat": null,
+            "unsat": null,
+            "unverified": 0
+          }
+        }
+      ]
+    },
+    "contribution": {
+      "marginal": 0.5,
+      "log_ratio": 0.125,
+      "relative": 0.25,
+      "sota": 3.5,
+      "shapley": 1.75
+    },
+    "portfolio": {
+      "entries": 2,
+      "vbs": {
+        "solved": 32,
+        "total": 34,
+        "par2": 1.5
+      },
+      "cactus": {
+        "budget": 7000000000,
+        "formulas": 34,
+        "vbs": [
+          1000,
+          25000000
+        ],
+        "curves": [
+          {
+            "id": 12,
+            "name": "minisat-ish",
+            "house": false,
+            "fuel": [
+              2000,
+              25000000
+            ]
+          }
+        ]
+      }
+    }
   },
   "dojo_rejected": {
     "id": 12,
@@ -324,7 +464,10 @@
     "similar_to": null,
     "size": 123456,
     "sha256": "abababababababababababababababababababababababababababababababab",
-    "mine": false
+    "mine": false,
+    "breakdown": null,
+    "contribution": null,
+    "portfolio": null
   },
   "dojo_me": {
     "registered": true,
@@ -353,7 +496,8 @@
       "entries": 0,
       "mystery": null,
       "community": [],
-      "board": []
+      "board": [],
+      "portfolio": null
     },
     "past": [
       {
@@ -411,9 +555,38 @@
               ],
               "unverified": 1
             },
-            "created_at": 1755000000000
+            "created_at": 1755000000000,
+            "breakdown": null,
+            "contribution": null
           }
-        ]
+        ],
+        "portfolio": {
+          "entries": 2,
+          "vbs": {
+            "solved": 32,
+            "total": 34,
+            "par2": 1.5
+          },
+          "cactus": {
+            "budget": 7000000000,
+            "formulas": 34,
+            "vbs": [
+              1000,
+              25000000
+            ],
+            "curves": [
+              {
+                "id": 12,
+                "name": "minisat-ish",
+                "house": false,
+                "fuel": [
+                  2000,
+                  25000000
+                ]
+              }
+            ]
+          }
+        }
       }
     ]
   },

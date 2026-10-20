@@ -26,7 +26,22 @@
     "families": "Families",
     "empty": "Nog geen enkele solver heeft de dojo betreden. Wees de eerste!",
     "house": "eigen",
-    "par2_hint": "Gemiddelde brandstof per formule in miljarden, onopgeloste formules tellen voor twee keer het budget. Lager is beter."
+    "par2_hint": "Gemiddelde brandstof per formule in miljarden, onopgeloste formules tellen voor twee keer het budget. Lager is beter.",
+    "views": "Weergaven van de ranglijst",
+    "view_ranking": "Ranglijst",
+    "view_contribution": "Bijdrage",
+    "all": "ALLE",
+    "answers_hint": "Opgelost en PAR-2 voor vervulbare en onvervulbare formules, zoals de SAT Competition ze rapporteert. Zolang een seizoen loopt, telt de mysteriefamilie alleen mee in ALLE: haar antwoorden zouden haar verraden.",
+    "contribution_hint": "Wat elke solver toevoegt aan de andere: de virtuele beste solver neemt op elke formule het beste resultaat van alle solvers in de ranglijst. PAR-2 blijft de officiële ranglijst. Klik op een kolom om te sorteren.",
+    "marginal": "Marginaal",
+    "relative": "Aandeel",
+    "sota": "SOTA",
+    "shapley": "Shapley",
+    "marginal_tip": "Hoeveel de PAR-2 van de virtuele beste solver stijgt zonder deze solver",
+    "relative_tip": "Sparkle 2018: zijn aandeel in de log10(PAR-2 zonder ÷ PAR-2 met) van alle solvers",
+    "sota_tip": "Elke formule die hij oplost levert 1 ÷ het aantal solvers op dat haar oplost",
+    "shapley_tip": "Zijn eerlijke deel van de brandstof die het hele veld bespaart, in miljarden per formule",
+    "vbs_line": "Virtuele beste solver van {{ count }} solvers: {{ solved }}/{{ total }} opgelost, PAR-2 {{ par2 }}"
   },
   "seasons": {
     "meta_title": "Seizoensarchief · SAT Dojo",
@@ -183,7 +198,13 @@
     "not_found": "Deze inzending bestaat niet.",
     "season": "Seizoen {{ season }}",
     "rank_label": "Plaats",
-    "similar": "Deze solver gedraagt zich als <a>inzending #{{ id }}</a> van iemand anders, die er eerder was. Alleen het origineel komt in de ranglijst."
+    "similar": "Deze solver gedraagt zich als <a>inzending #{{ id }}</a> van iemand anders, die er eerder was. Alleen het origineel komt in de ranglijst.",
+    "answers": "Per antwoord",
+    "total": "Alle families",
+    "par2_note": "Elke cel: opgeloste formules, dan PAR-2 in miljarden brandstof.",
+    "held_out": "SAT en UNSAT laten de {{ count }} formules van de mysteriefamilie weg tot het seizoen afloopt: hun antwoorden zouden de familie verraden.",
+    "contribution": "Bijdrage aan het veld",
+    "contribution_unranked": "Bijdragen worden alleen berekend tussen de solvers in de ranglijst."
   },
   "rejection": {
     "title": "De worker heeft dit bestand geweigerd",
@@ -267,5 +288,36 @@
       "license": "Ga akkoord met de licentie, alsjeblieft.",
       "server": "Er ging bij ons iets mis, probeer het opnieuw."
     }
+  },
+  "cactus": {
+    "title": "Cactusplot",
+    "hint": "Elke lijn is een solver, met zijn opgeloste formules gesorteerd op brandstof: verder naar rechts betekent meer opgelost, lager betekent minder brandstof. Niets in de plot verraadt welke formule een punt is.",
+    "x": "Opgeloste formules",
+    "y": "Brandstof per formule op een logaritmische schaal, afgerond op drie cijfers; de bovenste lijn is het budget.",
+    "budget": "budget",
+    "vbs": "Virtuele beste solver",
+    "vbs_short": "VBS",
+    "solvers": "Solvers",
+    "aria": "Cactusplot van {{ count }} solvers. De virtuele beste solver lost {{ solved }} van {{ total }} formules op met elk {{ low }} tot {{ high }} brandstof. Met de pijltjestoetsen beweeg je langs de curves.",
+    "solved_at": "{{ count }} formules opgelost",
+    "reached": "{{ count }} van {{ total }} solvers kwamen zo ver",
+    "table": "Als tabel tonen",
+    "fastest": "Snelste",
+    "median": "Mediaan",
+    "slowest": "Traagste"
+  },
+  "metrics": {
+    "title": "Voorbij PAR-2",
+    "intro": "PAR-2 bepaalt de ranglijst. Deze weergaven tonen wat het verbergt, zoals SAT-onderzoekers naar resultaten kijken. Ze staan allemaal ook in /dojo/board.json en in results.json van het archief.",
+    "answers_title": "SAT, UNSAT en ALLE",
+    "answers": "Net als in de <a>SAT Competition</a> wordt elke score per antwoord uitgesplitst: een local-search-solver kan uitblinken op vervulbare formules en er nooit één als onvervulbaar bewijzen. Zolang een seizoen loopt, blijft de mysteriefamilie buiten SAT en UNSAT, omdat haar aandeel vervulbare formules haar zou verraden.",
+    "cactus_title": "Cactusplots",
+    "cactus": "De opgeloste formules van elke solver, gesorteerd op brandstof: punt k is zijn k-de snelste formule, dus de curve laat zien hoe ver hij komt met hoeveel brandstof. Een curve zegt niets over welke formule een punt is, dus de geheime set blijft geheim, en brandstof wordt afgerond op drie cijfers zodat een solver niet naar buiten kan smokkelen wat hij leest. De virtuele beste solver (VBS) neemt op elke formule het beste resultaat van alle solvers in de ranglijst: de stand van de techniek van het veld.",
+    "marginal_title": "Marginale bijdrage",
+    "marginal": "Hoeveel slechter de VBS wordt zonder een solver: zijn PAR-2 zonder de solver min die met de solver. Aandeel is de maat waarop de <a>Sparkle SAT Challenge 2018</a> rangschikte: log10 van PAR-2 zonder gedeeld door PAR-2 met, als aandeel van de waarden van alle solvers. Een solver die alleen een andere dupliceert voegt niets toe, hoe snel hij ook is.",
+    "sota_title": "Bijdrage aan de stand van de techniek",
+    "sota": "Uit de wedstrijd in automatisch stellingen bewijzen <a>CASC</a>: elke formule die een solver oplost levert hem 1 gedeeld door het aantal solvers op dat haar oplost. CASC middelt over de opgeloste formules; wij tellen op, zodat meer oplossen de waarde nooit verlaagt, en de sommen tellen op tot het aantal formules dat de VBS oplost.",
+    "shapley_title": "Shapley-waarde",
+    "shapley": "Losse scores belonen bijna-klonen, marginale bijdragen straffen ze af. De Shapley-waarde uit de coöperatieve speltheorie is eerlijk voor beide: ze verdeelt de brandstof die het hele veld bespaart ten opzichte van niets oplossen naar de gemiddelde marginale bijdrage van elke solver over elke volgorde van toetreden (<a>Fréchette et al., AAAI 2016</a>). Wij berekenen haar exact, in miljarden brandstof per formule; de waarden tellen op tot twee keer het budget min de PAR-2 van de VBS."
   }
 }

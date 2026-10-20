@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 
+use dojo::metrics::{Breakdown, Contribution, EntryBreakdown, Split};
 use dojo::{Rejection, Score};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -18,6 +19,7 @@ use crate::lang::{date_short, prefix};
 use crate::model::{DojoState, DojoSubmission, day_of};
 use crate::seo::PageMeta;
 
+use super::cactus::Cactus;
 use super::names::{StateBadge, family_kanji, family_name, par2};
 
 /// A file size in KiB, for display.
@@ -39,6 +41,94 @@ fn rejection_text(locale: Locale, rejection: &Rejection) -> String {
             td_string!(locale, dojo.rejection.import, detail = detail.clone())
         }
         Rejection::NoStart => td_string!(locale, dojo.rejection.no_start).to_string(),
+    }
+}
+
+/// Solved and PAR-2 by answer: the whole set, then every family.
+#[component]
+fn AnswersTable(breakdown: EntryBreakdown) -> impl IntoView {
+    let i18n = use_i18n();
+    let cells = |split: Option<Split>| {
+        let solved = split.map_or_else(|| "—".to_string(), |s| format!("{}/{}", s.solved, s.total));
+        let par2 = split.map_or_else(|| "—".to_string(), |s| format!("{:.3}", s.par2));
+        view! {
+            <td class="py-2 ps-3 text-end font-pixel tabular-nums">{solved}</td>
+            <td class="py-2 ps-2 text-end font-pixel tabular-nums text-muted-foreground">{par2}</td>
+        }
+    };
+    let row = move |label: AnyView, b: &Breakdown, strong: bool| {
+        view! {
+            <tr class=if strong { "border-b font-semibold" } else { "border-b last:border-0" }>
+                <td class="py-2 pe-3">{label}</td>
+                {cells(b.sat)}
+                {cells(b.unsat)}
+                {cells(Some(b.all))}
+            </tr>
+        }
+    };
+    let held_out = breakdown.held_out;
+    view! {
+        <div class="flex flex-col gap-2" data-testid="answers">
+            <h2 class="font-bold">{t!(i18n, dojo.detail.answers)}</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b text-xs uppercase tracking-wider text-muted-foreground">
+                            <th class="py-2 pe-3 text-start font-semibold">{t!(i18n, dojo.detail.family)}</th>
+                            <th colspan="2" class="py-2 ps-3 text-end font-semibold">"SAT"</th>
+                            <th colspan="2" class="py-2 ps-3 text-end font-semibold">"UNSAT"</th>
+                            <th colspan="2" class="py-2 ps-3 text-end font-semibold">{t!(i18n, dojo.board.all)}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {row(t!(i18n, dojo.detail.total).into_any(), &breakdown.total, true)}
+                        {breakdown
+                            .families
+                            .iter()
+                            .map(|f| {
+                                let family = f.family;
+                                let label = view! {
+                                    <span class="font-pixel text-primary">{family_kanji(family)}</span>
+                                    " "
+                                    {move || family_name(i18n.get_locale(), family)}
+                                }
+                                    .into_any();
+                                row(label, &f.breakdown, false)
+                            })
+                            .collect_view()}
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-xs text-muted-foreground">{t!(i18n, dojo.detail.par2_note)}</p>
+            {(held_out > 0)
+                .then(|| view! { <p class="text-xs text-muted-foreground">{t!(i18n, dojo.detail.held_out, count = held_out)}</p> })}
+        </div>
+    }
+}
+
+/// What the solver adds to the ranked ones, the four measures side by side.
+#[component]
+fn ContributionTiles(contribution: Contribution) -> impl IntoView {
+    let i18n = use_i18n();
+    let tile = |label: AnyView, value: String, tip: String| {
+        view! {
+            <div class="rounded-lg border bg-card px-3 py-2" data-tooltip=tip>
+                <p class="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+                <p class="font-pixel text-xl">{value}</p>
+            </div>
+        }
+    };
+    let c = contribution;
+    view! {
+        <div class="flex flex-col gap-2" data-testid="contribution">
+            <h2 class="font-bold">{t!(i18n, dojo.detail.contribution)}</h2>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {tile(t!(i18n, dojo.board.marginal).into_any(), format!("{:.3}", c.marginal), t_string!(i18n, dojo.board.marginal_tip).to_string())}
+                {tile(t!(i18n, dojo.board.relative).into_any(), format!("{:.1}%", c.relative * 100.0), t_string!(i18n, dojo.board.relative_tip).to_string())}
+                {tile(t!(i18n, dojo.board.sota).into_any(), format!("{:.2}", c.sota), t_string!(i18n, dojo.board.sota_tip).to_string())}
+                {tile(t!(i18n, dojo.board.shapley).into_any(), format!("{:.3}", c.shapley), t_string!(i18n, dojo.board.shapley_tip).to_string())}
+            </div>
+        </div>
     }
 }
 
@@ -123,6 +213,12 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
                 </tbody>
             </table>
         </div>
+        {s.breakdown.clone().map(|b| view! { <AnswersTable breakdown=b /> })}
+        {match s.contribution {
+            Some(c) => view! { <ContributionTiles contribution=c /> }.into_any(),
+            None => view! { <p class="text-sm text-muted-foreground">{t!(i18n, dojo.detail.contribution_unranked)}</p> }.into_any(),
+        }}
+        {s.portfolio.clone().map(|p| view! { <Cactus cactus=p.cactus highlight=Some(s.id) /> })}
         {match s.similar_to {
             Some(original) => {
                 let href = move || format!("{}/dojo/{original}", prefix(i18n.get_locale()));
