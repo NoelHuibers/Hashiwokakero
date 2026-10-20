@@ -7,8 +7,13 @@
 //! finger. So this keeps its look (ink on paper, a small arrow) with another mechanism: a single
 //! `role="tooltip"` element, fixed above or below whatever is hovered or focused.
 //!
-//! ```ignore
-//! view! { <button data-tooltip="Zoom in" aria-label="Zoom in">"＋"</button> }
+//! ```rust
+//! use leptos::prelude::*;
+//!
+//! let button = view! { <button data-tooltip="Zoom in" aria-label="Zoom in">"＋"</button> };
+//! let html = button.to_html();
+//! assert!(html.contains(r#"data-tooltip="Zoom in""#));
+//! assert!(html.contains(r#"aria-label="Zoom in""#));
 //! ```
 
 use std::cell::RefCell;
