@@ -24,9 +24,14 @@ fn unsat_formulas() -> Vec<(String, Cnf)> {
         let mut found = 0;
         for attempt in 0..40u64 {
             let mut rng = StdRng::seed_from_u64(attempt * 7 + i as u64);
-            if let Some((cnf, crate::Answer::Unsat, _)) =
-                crate::bench::generate_one(family, size, &mut rng)
-            {
+            if let Some((cnf, crate::Answer::Unsat, _)) = crate::bench::generate_one(
+                crate::bench::Spec {
+                    family,
+                    size,
+                    want: None,
+                },
+                &mut rng,
+            ) {
                 formulas.push((format!("{}-{attempt}", family.id()), cnf));
                 found += 1;
                 if found == 2 {

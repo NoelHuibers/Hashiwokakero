@@ -4,7 +4,7 @@
     "description": "Envía tu solver SAT en WebAssembly y escala en la clasificación: fórmulas secretas y nuevas, combustible determinista en vez de segundos. Libre y reproducible."
   },
   "title": "SAT Dojo",
-  "intro": "Un gimnasio para solvers SAT. Compila el tuyo a WebAssembly, envíalo y se evaluará con un conjunto secreto de fórmulas nuevas: puzles Hashi, trampas de paridad, 3-SAT aleatorio, palomas y reinas.",
+  "intro": "Un gimnasio para solvers SAT. Compila el tuyo a WebAssembly, envíalo y se evaluará con un conjunto secreto de fórmulas nuevas: puzles Hashi, trampas de paridad, 3-SAT aleatorio, palomas, reinas, factorización, miters de multiplicadores, coloreado de grafos y una familia misteriosa.",
   "stats": {
     "season": "Temporada {{ season }}",
     "formulas": "Fórmulas: {{ count }}",
@@ -41,6 +41,7 @@
     "entries": "Solvers evaluados: {{ count }}",
     "commitment": "Compromiso (SHA-256 de la semilla)",
     "seed": "Semilla",
+    "mystery": "Familia misteriosa: {{ family }}",
     "sealed": "La semilla sigue siendo secreta hasta que acabe la temporada; entonces se revela aquí.",
     "set": "Conjunto oculto ({{ size }} MB)",
     "no_set": "No se archivó ningún conjunto en esta temporada; regenéralo a partir de la semilla.",
@@ -69,7 +70,7 @@
   "family": {
     "title": "Las fórmulas",
     "hashi": "Hashi",
-    "hashi_text": "Puzles Hashiwokakero de 10×10 a 28×28 en CNF, sin la regla de conectividad. Siempre satisfacibles.",
+    "hashi_text": "Puzles Hashiwokakero de 12×12 a 28×28 en CNF, sin la regla de conectividad. Siempre satisfacibles.",
     "hashi_parity": "Hashi paridad",
     "hashi_parity_text": "Puzles con un número cambiado para que la suma sea impar. Insatisfacibles, porque cada puente suma dos. Fácil de ver, difícil de demostrar por resolución.",
     "random_3sat": "3-SAT aleatorio",
@@ -77,7 +78,21 @@
     "pigeonhole": "Palomar",
     "pigeonhole_text": "n+1 palomas en n agujeros: el clásico que exige demostraciones por resolución de longitud exponencial. Y algunas en las que sí caben.",
     "queens": "Reinas",
-    "queens_text": "N reinas en tableros de hasta 48×48 con algunas casillas prohibidas."
+    "queens_text": "N reinas en tableros de hasta 64×64 con algunas casillas prohibidas.",
+    "factoring": "Factorización",
+    "factoring_text": "Un circuito multiplicador con la salida fijada a un número de 16 a 26 bits: satisfacible si es producto de dos primos, insatisfacible si es primo. Criptografía en miniatura.",
+    "miter": "Miters",
+    "miter_text": "Dos multiplicadores cableados de forma distinta, buscando una entrada en la que discrepen: insatisfacible si ambos son correctos, satisfacible si uno esconde un fallo que rara vez se activa. Verificación de hardware en miniatura.",
+    "coloring": "Coloreado de grafos",
+    "coloring_text": "Cuatro colores para grafos aleatorios cerca del umbral: unos con un coloreado plantado, otros que contienen un grafo de Mycielski que necesita cinco.",
+    "tseitin": "Fórmulas de Tseitin",
+    "tseitin_text": "Restricciones de paridad sobre las aristas de un grafo regular aleatorio, insatisfacibles cuando las cargas suman un número impar. Exponencialmente difíciles para la resolución.",
+    "quasigroup": "Cuasigrupos",
+    "quasigroup_text": "Cuadrados latinos con el 42 % de las casillas vaciadas, para completar. Siempre satisfacibles, y más difíciles alrededor de esa proporción de huecos.",
+    "hamiltonian": "Ciclos hamiltonianos",
+    "hamiltonian_text": "Un ciclo que pasa por todos los vértices de un grafo bipartito: plantado, o imposible porque los dos lados tienen distinto tamaño.",
+    "mystery": "Familia misteriosa",
+    "mystery_text": "Cada conjunto secreto tiene una familia más que el conjunto de desarrollo no tiene, elegida de una reserva por la semilla de la temporada. Cuenta como las demás, aparece como familia misteriosa y se revela en el archivo cuando termina la temporada."
   },
   "fair": {
     "title": "Juego limpio",
@@ -85,6 +100,8 @@
     "fuel": "Cada instrucción WebAssembly ejecutada cuesta una unidad de combustible; las operaciones de memoria en bloque, una por byte. Los relojes y los números aleatorios tienen semilla fija, así que un solver obtiene la misma puntuación en cualquier máquina, siempre.",
     "hidden_title": "Fórmulas secretas y nuevas",
     "hidden": "El conjunto de prueba sale de una semilla secreta que cambia cada temporada, y cada fórmula se desordena: variables renombradas y negadas, cláusulas barajadas. Mientras dura una temporada, los resultados se muestran solo por familia, nunca por fórmula.",
+    "heldout_title": "Generalizar, no memorizar",
+    "heldout": "En 2026, un solver generado por IA con más de cien subsolvers específicos por familia superó a todos los solvers del main track en las instancias satisfacibles de la <a>SAT Competition</a>, y los organizadores calificaron la memorización frente a la generalización de problema abierto. Por eso el conjunto secreto va más allá del de desarrollo: fórmulas más grandes y una familia con la que tu solver nunca ha entrenado.",
     "checked_title": "Cada respuesta, verificada",
     "checked": "Los modelos se verifican contra la fórmula, y cada respuesta UNSAT necesita una prueba, comprobada como en el main track de la <a>SAT Competition</a>: drat-trim la convierte en LRAT y cake_lpr, un verificador demostrado correcto en HOL4 y compilado por CakeML, tiene la última palabra. Nuestras propias etiquetas se demuestran igual. Un modelo erróneo o una prueba rechazada descalifica el envío, así que adivinar nunca compensa.",
     "sandbox_title": "Un sandbox sellado",

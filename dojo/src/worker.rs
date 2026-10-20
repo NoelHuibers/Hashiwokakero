@@ -381,19 +381,19 @@ fn cache_name_for(seed: &str, generator: u32) -> String {
     format!("set-{hex}.json")
 }
 
-/// The set for `seed`, from the cache directory if it was generated before.
+/// The hidden set for `seed`, from the cache directory if it was generated before.
 fn load_or_generate(cache: Option<&std::path::Path>, seed: &str) -> Vec<Instance> {
     let path = cache.map(|dir| dir.join(cache_name(seed)));
     if let Some(set) = path
         .as_ref()
         .and_then(|p| std::fs::read(p).ok())
         .and_then(|bytes| serde_json::from_slice::<Vec<Instance>>(&bytes).ok())
-        .filter(|set| set.len() == bench::SPEC.len())
+        .filter(|set| set.len() == bench::hidden_spec(seed).len())
     {
         return set;
     }
     let started = Instant::now();
-    let set = bench::generate(seed);
+    let set = bench::generate_hidden(seed);
     eprintln!(
         "generated a set of {} in {:.1?}",
         set.len(),
@@ -547,10 +547,11 @@ mod tests {
         use crate::{Answer, Family};
         let dir = std::env::temp_dir().join(format!("dojo-worker-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let set: Vec<Instance> = bench::SPEC
+        let set: Vec<Instance> = bench::hidden_spec(seed)
             .iter()
             .enumerate()
-            .map(|(i, &(family, _))| {
+            .map(|(i, spec)| {
+                let family = spec.family;
                 let unsat = i % 2 == 0;
                 Instance {
                     name: format!("{}-{i:02}", family.id()),
@@ -693,7 +694,7 @@ mod tests {
                 .expect("a report in time")
                 .expect("the website is up")
         };
-        let total = crate::count(bench::SPEC.len());
+        let total = crate::SET_SIZE;
         assert_eq!(
             next().await,
             (
@@ -718,7 +719,7 @@ mod tests {
         );
         let (info, archived) = crate::archive::read_tar_gz(&archive).unwrap();
         assert_eq!(info, crate::archive::SetInfo::new("worker-test", Some(2)));
-        assert_eq!(archived.len(), bench::SPEC.len());
+        assert_eq!(archived.len(), total as usize);
         let (auth, report) = next().await;
         assert_eq!(auth.as_deref(), Some("Bearer job-token"));
         let Report::Finished {
@@ -736,7 +737,7 @@ mod tests {
             (score.solved, score.wrong, score.unverified, score.total),
             (total / 2, total / 2, 0, total)
         );
-        assert_eq!(fingerprint.len(), bench::SPEC.len());
+        assert_eq!(fingerprint.len(), total as usize);
         assert_eq!(rules_version, RULES_VERSION);
         // Every formula in set order: right on the even ones, wrong on the others
         assert_eq!(

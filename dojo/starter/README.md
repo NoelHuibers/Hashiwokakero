@@ -58,6 +58,21 @@ Score = PAR-2: the mean fuel per formula, where unsolved formulas count twice th
 **A single wrong answer disqualifies the submission**: a wrong model, UNSAT on a satisfiable
 formula, or a rejected proof. So never guess UNSAT.
 
+## The formulas
+
+The public development set has 36 formulas, half of them satisfiable, in eight families: Hashi
+puzzles, Hashi parity (unsatisfiable by a parity argument), random 3-SAT, pigeonhole, queens,
+factoring (a multiplier circuit whose output is a semiprime or a prime), miters (two different
+multipliers that agree, or one with a rare bug) and graph colouring (planted colourings, or
+Mycielski graphs that need one colour more). Every formula is scrambled and reaches your solver
+without a name, under the same `c` line.
+
+A season's hidden set has 48: the same families from a secret seed, one larger formula of each,
+and one **mystery family** that the dev set doesn't have, picked by the seed from a reserve and
+revealed when the season ends. Tuning your solver to the dev set's families won't be enough, it
+has to generalise (the SAT Competition 2026 raised exactly that after an AI-built solver won with
+over a hundred family-specific sub-solvers).
+
 ## Testing locally
 
 The `dojo` tool runs your solver exactly like the leaderboard, on the public development set:
@@ -67,6 +82,7 @@ cargo install --git https://github.com/NoelHuibers/Hashiwokakero dojo --features
 dojo run target/wasm32-wasip1/release/dojo-starter.wasm          # all families
 dojo run my.wasm --family pigeonhole --stderr                      # one family, with your logs
 dojo export dev-set/                                               # the formulas as .cnf files
+dojo run my.wasm --hidden --seed practice                          # a hidden-style set
 dojo run my.wasm --set dojo-season-1.tar.gz                        # a past season's hidden set
 ```
 

@@ -4,7 +4,7 @@
     "description": "Stuur je SAT-solver in als WebAssembly en klim op de ranglijst: geheime, verse formules, deterministische brandstof in plaats van seconden. Open source."
   },
   "title": "SAT Dojo",
-  "intro": "Een sportschool voor SAT-solvers. Compileer de jouwe naar WebAssembly, stuur hem in en hij wordt beoordeeld op een geheime set verse formules: Hashi-puzzels, pariteitsvallen, random 3-SAT, duiven en koninginnen.",
+  "intro": "Een sportschool voor SAT-solvers. Compileer de jouwe naar WebAssembly, stuur hem in en hij wordt beoordeeld op een geheime set verse formules: Hashi-puzzels, pariteitsvallen, random 3-SAT, duiven, koninginnen, factorisatie, miters van vermenigvuldigers, graafkleuring en één mysteriefamilie.",
   "stats": {
     "season": "Seizoen {{ season }}",
     "formulas": "Formules: {{ count }}",
@@ -41,6 +41,7 @@
     "entries": "Beoordeelde solvers: {{ count }}",
     "commitment": "Commitment (SHA-256 van de seed)",
     "seed": "Seed",
+    "mystery": "Mysteriefamilie: {{ family }}",
     "sealed": "De seed blijft geheim tot het seizoen afloopt en wordt dan hier onthuld.",
     "set": "Verborgen set ({{ size }} MB)",
     "no_set": "Voor dit seizoen is geen set gearchiveerd; maak hem opnieuw uit de seed.",
@@ -69,7 +70,7 @@
   "family": {
     "title": "De formules",
     "hashi": "Hashi",
-    "hashi_text": "Hashiwokakero-puzzels van 10×10 tot 28×28 als CNF, zonder de samenhangsregel. Altijd vervulbaar.",
+    "hashi_text": "Hashiwokakero-puzzels van 12×12 tot 28×28 als CNF, zonder de samenhangsregel. Altijd vervulbaar.",
     "hashi_parity": "Hashi-pariteit",
     "hashi_parity_text": "Puzzels waarin één getal is veranderd zodat de som oneven is. Onvervulbaar, want elke brug telt twee keer mee. Makkelijk te zien, moeilijk te bewijzen met resolutie.",
     "random_3sat": "Random 3-SAT",
@@ -77,7 +78,21 @@
     "pigeonhole": "Duiventil",
     "pigeonhole_text": "n+1 duiven in n hokjes: de klassieker die exponentieel lange resolutiebewijzen nodig heeft. Plus een paar waarbij het wel past.",
     "queens": "Koninginnen",
-    "queens_text": "N koninginnen op borden tot 48×48 met een paar verboden velden."
+    "queens_text": "N koninginnen op borden tot 64×64 met een paar verboden velden.",
+    "factoring": "Factorisatie",
+    "factoring_text": "Een vermenigvuldigingscircuit met de uitgang vastgezet op een getal van 16 tot 26 bits: vervulbaar als het het product van twee priemgetallen is, onvervulbaar als het priem is. Cryptografie in het klein.",
+    "miter": "Miters",
+    "miter_text": "Twee verschillend bedrade vermenigvuldigers, gevraagd naar een invoer waarop ze het oneens zijn: onvervulbaar als beide kloppen, vervulbaar als er in één een zelden geactiveerde bug zit. Hardwareverificatie in het klein.",
+    "coloring": "Graafkleuring",
+    "coloring_text": "Vier kleuren voor willekeurige grafen vlak bij de drempel: sommige met een geplante kleuring, andere met een Mycielski-graaf erin die er vijf nodig heeft.",
+    "tseitin": "Tseitin-formules",
+    "tseitin_text": "Pariteitsvoorwaarden op de kanten van een willekeurige reguliere graaf, onvervulbaar als de ladingen samen oneven zijn. Exponentieel moeilijk voor resolutie.",
+    "quasigroup": "Quasigroepen",
+    "quasigroup_text": "Latijnse vierkanten waarvan 42% van de vakjes is leeggemaakt, om aan te vullen. Altijd vervulbaar, en het moeilijkst rond dat aandeel gaten.",
+    "hamiltonian": "Hamiltoncycli",
+    "hamiltonian_text": "Een cyclus door elk knooppunt van een bipartiete graaf: geplant, of onmogelijk omdat de twee kanten verschillend groot zijn.",
+    "mystery": "Mysteriefamilie",
+    "mystery_text": "Elke geheime set heeft één familie meer die de devset niet heeft, door de seed van het seizoen uit een reserve getrokken. Ze telt mee zoals de andere, verschijnt als mysteriefamilie en wordt aan het eind van het seizoen in het archief onthuld."
   },
   "fair": {
     "title": "Fair play",
@@ -85,6 +100,8 @@
     "fuel": "Elke uitgevoerde WebAssembly-instructie kost één eenheid brandstof, bulk-geheugenoperaties één per byte. Klokken en willekeurige getallen hebben een vaste seed, dus een solver krijgt op elke machine telkens dezelfde score.",
     "hidden_title": "Geheime, verse formules",
     "hidden": "De testset komt uit een geheime seed die elk seizoen verandert, en elke formule wordt door elkaar gehusseld: variabelen hernoemd en genegeerd, clausules geschud. Zolang een seizoen loopt, zie je resultaten alleen per familie, nooit per formule.",
+    "heldout_title": "Generaliseren, niet uit het hoofd leren",
+    "heldout": "In 2026 versloeg een door AI gegenereerde solver met meer dan honderd familiespecifieke subsolvers elke main-track-solver op de vervulbare instanties van de <a>SAT Competition</a>, en de organisatoren noemden uit het hoofd leren tegenover generaliseren een open probleem. Daarom gaat de geheime set verder dan de devset: grotere formules en één familie waarop je solver nooit getraind heeft.",
     "checked_title": "Elk antwoord gecontroleerd",
     "checked": "Modellen worden tegen de formule gecontroleerd, en elk UNSAT-antwoord heeft een bewijs nodig, gecontroleerd zoals in de main track van de <a>SAT Competition</a>: drat-trim zet het om naar LRAT en cake_lpr, een in HOL4 correct bewezen checker die door CakeML gecompileerd is, heeft het laatste woord. Onze eigen labels zijn op dezelfde manier bewezen. Een fout model of een afgewezen bewijs diskwalificeert de inzending, dus gokken loont nooit.",
     "sandbox_title": "Een verzegelde sandbox",

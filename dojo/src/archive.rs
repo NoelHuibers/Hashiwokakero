@@ -27,6 +27,8 @@ pub struct SetInfo {
     /// The season whose hidden set it is, `None` for the dev set or any other seed.
     pub season: Option<u32>,
     pub generator_version: u32,
+    /// A hidden set (see `bench::generate_hidden`): every season's, or `dojo export --hidden`.
+    pub hidden: bool,
 }
 
 impl SetInfo {
@@ -36,6 +38,7 @@ impl SetInfo {
             seed: seed.to_string(),
             season,
             generator_version: GENERATOR_VERSION,
+            hidden: season.is_some(),
         }
     }
 
@@ -62,6 +65,7 @@ pub fn commitment(seed: &str) -> String {
 fn readme(set: &[Instance], info: &SetInfo) -> String {
     let what = match info.season {
         Some(season) => format!("The hidden set of season {season}"),
+        None if info.hidden => "A hidden set".into(),
         None => "A benchmark set".into(),
     };
     let mut text = format!("{what} of the Hashi SAT Dojo (https://hashi.rs/dojo).\n\n");
@@ -70,20 +74,52 @@ fn readme(set: &[Instance], info: &SetInfo) -> String {
     if let Some(season) = info.season {
         let _ = writeln!(text, "season: {season}");
     }
+    let _ = writeln!(text, "kind: {}", if info.hidden { "hidden" } else { "dev" });
     let _ = writeln!(text, "generator: {}", info.generator_version);
     let _ = writeln!(text, "formulas: {}", set.len());
     let _ = writeln!(text, "budget: {DEFAULT_BUDGET}");
+    if info.hidden && info.generator_version >= 2 {
+        let _ = writeln!(
+            text,
+            "mystery family: {}",
+            crate::mystery_family(&info.seed).id()
+        );
+    }
+    text.push_str(
+        "\nFamilies (formulas, SAT/UNSAT, the family in the Global Benchmark Database):\n",
+    );
+    for family in Family::ALL {
+        let of: Vec<&Instance> = set.iter().filter(|i| i.family == family).collect();
+        if of.is_empty() {
+            continue;
+        }
+        let sat = of.iter().filter(|i| i.expected == Answer::Sat).count();
+        let _ = writeln!(
+            text,
+            "    {:<14} {:>2}  {sat}/{}  {}",
+            family.id(),
+            of.len(),
+            of.len() - sat,
+            family.gbd().unwrap_or("-")
+        );
+    }
     let seed = &info.seed;
+    let hidden = if info.hidden { " --hidden" } else { "" };
+    let published = if info.season.is_some() {
+        ", published before the season started"
+    } else {
+        ""
+    };
     let _ = write!(
         text,
         "
 One DIMACS CNF file per formula. answers.txt has the expected answer of each, witnesses.txt a
 model of every satisfiable one. Every UNSAT label is backed by a proof or by construction.
 
-The commitment is the SHA-256 of the seed, published before the season started. Check it:
+The commitment is the SHA-256 of the seed{published}. Check it:
     printf %s {seed} | sha256sum
 Regenerate the formulas from the seed (with a dojo tool of the same generator version):
-    dojo export regenerated/ --seed {seed}
+    dojo export regenerated/ --seed {seed}{hidden}
 Score a solver on exactly these formulas, the way the leaderboard did:
     dojo run my-solver.wasm --set <this .tar.gz>
 "
@@ -199,6 +235,7 @@ pub fn read_tar_gz(bytes: &[u8]) -> Result<(SetInfo, Vec<Instance>), String> {
         generator_version: value("generator")
             .and_then(|s| s.parse().ok())
             .ok_or("no generator in README.txt")?,
+        hidden: value("kind") == Some("hidden") || value("season").is_some(),
     };
     let mut witnesses = std::collections::HashMap::new();
     for line in file("witnesses.txt")?.lines() {
@@ -307,24 +344,38 @@ mod tests {
         );
         let files = files(&set(), &info);
         let readme = String::from_utf8(files[0].1.clone()).unwrap();
+        let generator = format!("generator: {GENERATOR_VERSION}\n");
         for line in [
             "The hidden set of season 4 of the Hashi SAT Dojo",
             "seed: abc123\n",
             "commitment: 6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090\n",
             "season: 4\n",
-            "generator: 1\n",
+            generator.as_str(),
+            "kind: hidden\n",
             "formulas: 2\n",
+            "mystery family: ",
+            "    hashi           1  1/0  puzzle\n",
+            "    random-3sat     1  0/1  random\n",
             "printf %s abc123 | sha256sum",
-            "dojo export regenerated/ --seed abc123",
+            "dojo export regenerated/ --seed abc123 --hidden\n",
         ] {
             assert!(readme.contains(line), "{line} missing in\n{readme}");
         }
         assert_eq!(files[1].1, b"hashi-01 SAT\nrandom-3sat-01 UNSAT\n");
         assert_eq!(files[2].1, b"hashi-01 1 2 0\n");
 
-        // Without a season
+        // Without a season: a dev set, or a hidden one
         let (read, _) = read_tar_gz(&write_tar_gz(&set(), &SetInfo::new("dev", None))).unwrap();
-        assert_eq!(read.season, None);
+        assert_eq!((read.season, read.hidden), (None, false));
+        let hidden = SetInfo {
+            hidden: true,
+            ..SetInfo::new("h", None)
+        };
+        let (read, _) = read_tar_gz(&write_tar_gz(&set(), &hidden)).unwrap();
+        assert_eq!(read, hidden);
+        let readme = String::from_utf8(super::files(&set(), &hidden)[0].1.clone()).unwrap();
+        assert!(readme.starts_with("A hidden set of"));
+        assert!(readme.contains("--seed h --hidden\n"));
     }
 
     #[test]

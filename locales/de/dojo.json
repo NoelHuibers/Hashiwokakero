@@ -4,7 +4,7 @@
     "description": "Reich deinen SAT-Solver als WebAssembly ein und klettere in der Rangliste: geheime, frische Formeln, deterministischer Treibstoff statt Sekunden. Open Source."
   },
   "title": "SAT-Dojo",
-  "intro": "Ein Fitnessstudio für SAT-Solver. Kompilier deinen Solver zu WebAssembly, reich ihn ein, und er wird auf einem geheimen Satz frischer Formeln bewertet: Hashi-Rätsel, Paritätsfallen, zufälliges 3-SAT, Tauben und Damen.",
+  "intro": "Ein Fitnessstudio für SAT-Solver. Kompilier deinen Solver zu WebAssembly, reich ihn ein, und er wird auf einem geheimen Satz frischer Formeln bewertet: Hashi-Rätsel, Paritätsfallen, zufälliges 3-SAT, Tauben, Damen, Faktorisierung, Multiplizierer-Miter, Graphfärbung und eine geheime Familie.",
   "stats": {
     "season": "Saison {{ season }}",
     "formulas": "Formeln: {{ count }}",
@@ -41,6 +41,7 @@
     "entries": "Bewertete Solver: {{ count }}",
     "commitment": "Commitment (SHA-256 des Seeds)",
     "seed": "Seed",
+    "mystery": "Geheime Familie: {{ family }}",
     "sealed": "Der Seed bleibt bis zum Saisonende geheim und wird dann hier aufgedeckt.",
     "set": "Geheimes Set ({{ size }} MB)",
     "no_set": "Für diese Saison wurde kein Set archiviert; erzeuge es aus dem Seed neu.",
@@ -69,7 +70,7 @@
   "family": {
     "title": "Die Formeln",
     "hashi": "Hashi",
-    "hashi_text": "Hashiwokakero-Rätsel von 10×10 bis 28×28 als CNF, ohne die Zusammenhangsregel. Immer erfüllbar.",
+    "hashi_text": "Hashiwokakero-Rätsel von 12×12 bis 28×28 als CNF, ohne die Zusammenhangsregel. Immer erfüllbar.",
     "hashi_parity": "Hashi-Parität",
     "hashi_parity_text": "Rätsel, in denen eine Zahl geändert wurde, sodass die Summe ungerade ist. Unerfüllbar, denn jede Brücke zählt doppelt. Leicht zu sehen, schwer per Resolution zu beweisen.",
     "random_3sat": "Zufälliges 3-SAT",
@@ -77,7 +78,21 @@
     "pigeonhole": "Schubfach",
     "pigeonhole_text": "n+1 Tauben in n Löchern: der Klassiker, der exponentiell lange Resolutionsbeweise braucht. Dazu ein paar, bei denen es aufgeht.",
     "queens": "Damen",
-    "queens_text": "N Damen auf Brettern bis 48×48 mit ein paar verbotenen Feldern."
+    "queens_text": "N Damen auf Brettern bis 64×64 mit ein paar verbotenen Feldern.",
+    "factoring": "Faktorisierung",
+    "factoring_text": "Eine Multipliziererschaltung, deren Ausgang auf eine Zahl mit 16 bis 26 Bit festgelegt ist: erfüllbar, wenn sie das Produkt zweier Primzahlen ist, unerfüllbar, wenn sie prim ist. Kryptographie im Kleinen.",
+    "miter": "Miter",
+    "miter_text": "Zwei unterschiedlich verdrahtete Multiplizierer, gesucht ist eine Eingabe, bei der sie sich uneinig sind: unerfüllbar, wenn beide stimmen, erfüllbar, wenn einer einen selten ausgelösten Fehler versteckt. Hardwareverifikation im Kleinen.",
+    "coloring": "Graphfärbung",
+    "coloring_text": "Vier Farben für Zufallsgraphen nahe der Schwelle: manche mit eingepflanzter Färbung, manche mit einem Mycielski-Graphen darin, der fünf braucht.",
+    "tseitin": "Tseitin-Formeln",
+    "tseitin_text": "Paritätsbedingungen auf den Kanten eines zufälligen regulären Graphen, unerfüllbar, wenn die Ladungen eine ungerade Summe ergeben. Für Resolution exponentiell schwer.",
+    "quasigroup": "Quasigruppen",
+    "quasigroup_text": "Lateinische Quadrate, bei denen 42 % der Felder geleert wurden, zum Vervollständigen. Immer erfüllbar und um diesen Anteil an Lücken am schwersten.",
+    "hamiltonian": "Hamiltonkreise",
+    "hamiltonian_text": "Ein Kreis durch jeden Knoten eines bipartiten Graphen: eingepflanzt oder unmöglich, weil die beiden Seiten verschieden groß sind.",
+    "mystery": "Geheime Familie",
+    "mystery_text": "Jedes geheime Set enthält eine weitere Familie, die das Dev-Set nicht hat, vom Seed der Saison aus einer Reserve gezogen. Sie zählt wie die anderen, erscheint als geheime Familie und wird im Archiv enthüllt, wenn die Saison endet."
   },
   "fair": {
     "title": "Fair Play",
@@ -85,6 +100,8 @@
     "fuel": "Jede ausgeführte WebAssembly-Instruktion kostet eine Einheit Treibstoff, Bulk-Memory-Operationen eine pro Byte. Uhren und Zufallszahlen sind fest geseedet, also bekommt ein Solver auf jeder Maschine jedes Mal dieselbe Punktzahl.",
     "hidden_title": "Geheime, frische Formeln",
     "hidden": "Das Test-Set entsteht aus einem geheimen Seed, der sich jede Saison ändert, und jede Formel wird verwürfelt: Variablen umbenannt und negiert, Klauseln gemischt. Solange eine Saison läuft, gibt es Ergebnisse nur pro Familie, nie pro Formel.",
+    "heldout_title": "Verallgemeinern statt auswendig lernen",
+    "heldout": "2026 schlug ein KI-generierter Solver mit über hundert familienspezifischen Teil-Solvern jeden Main-Track-Solver auf den erfüllbaren Instanzen der <a>SAT Competition</a>, und die Veranstalter nannten Auswendiglernen gegen Verallgemeinern ein offenes Problem. Deshalb geht das geheime Set über das Dev-Set hinaus: größere Formeln und eine Familie, auf die dein Solver nie trainiert hat.",
     "checked_title": "Jede Antwort geprüft",
     "checked": "Modelle werden gegen die Formel geprüft, und jede UNSAT-Antwort braucht einen Beweis, geprüft wie im Main Track der <a>SAT Competition</a>: drat-trim macht daraus LRAT, und das letzte Wort hat cake_lpr, ein in HOL4 als korrekt bewiesener und von CakeML kompilierter Checker. Unsere eigenen Labels sind genauso bewiesen. Ein falsches Modell oder ein abgelehnter Beweis disqualifiziert die Einreichung, Raten lohnt sich also nie.",
     "sandbox_title": "Eine versiegelte Sandbox",

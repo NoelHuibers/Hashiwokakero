@@ -297,16 +297,23 @@ async fn season_rows(
     while let Some(row) = rows.next().await.map_err(db_err)? {
         let number: u32 = row.get(0).map_err(db_err)?;
         let over = number < current;
+        let seed = row
+            .get::<Option<String>>(4)
+            .map_err(db_err)?
+            .filter(|_| over);
+        let generator_version: u32 = row.get(5).map_err(db_err)?;
+        // Hidden sets have had a held-out family since generator 2
+        let mystery = seed
+            .as_deref()
+            .filter(|_| generator_version >= 2)
+            .map(dojo::mystery_family);
         seasons.push(DojoSeason {
             season: number,
             started_at: Some(row.get(1).map_err(db_err)?),
             ended_at: row.get::<Option<i64>>(2).map_err(db_err)?.filter(|_| over),
             commitment: row.get(3).map_err(db_err)?,
-            seed: row
-                .get::<Option<String>>(4)
-                .map_err(db_err)?
-                .filter(|_| over),
-            generator_version: row.get(5).map_err(db_err)?,
+            seed,
+            generator_version,
             rules_version: row.get(6).map_err(db_err)?,
             set_size: row.get::<Option<i64>>(7).map_err(db_err)?.filter(|_| over),
             set_sha256: row
@@ -314,6 +321,7 @@ async fn season_rows(
                 .map_err(db_err)?
                 .filter(|_| over),
             entries: row.get(9).map_err(db_err)?,
+            mystery,
             board: Vec::new(),
         });
     }
@@ -367,6 +375,7 @@ pub async fn seasons(conn: &Connection, current: u32) -> Result<DojoSeasons, Ser
             set_size: None,
             set_sha256: None,
             entries: 0,
+            mystery: None,
             board: Vec::new(),
         });
     let mut past = season_rows(
@@ -398,6 +407,8 @@ pub struct ArchivedSeason {
     /// Fuel per formula.
     pub budget: u64,
     pub set_sha256: Option<String>,
+    /// The held-out family of the hidden set (see `dojo::mystery_family`).
+    pub mystery: Option<dojo::Family>,
     pub entries: Vec<ArchivedEntry>,
 }
 
@@ -476,6 +487,7 @@ pub async fn archived(
         rules_version: info.rules_version,
         budget: DEFAULT_BUDGET,
         set_sha256: info.set_sha256,
+        mystery: info.mystery,
         entries,
     }))
 }

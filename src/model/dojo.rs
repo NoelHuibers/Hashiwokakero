@@ -93,6 +93,10 @@ pub struct DojoSeason {
     pub set_sha256: Option<String>,
     /// Finished submissions in the archive, ranked or not.
     pub entries: u32,
+    /// The held-out family of its hidden set, revealed with the seed (`dojo::mystery_family`),
+    /// `None` while it runs and for sets from before held-out families.
+    #[serde(default)]
+    pub mystery: Option<dojo::Family>,
     /// The final leaderboard. An empty author: the account was deleted.
     pub board: Vec<DojoEntry>,
 }

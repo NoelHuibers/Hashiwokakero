@@ -4,7 +4,7 @@
     "description": "SAT çözücünü WebAssembly olarak gönder ve sıralamada yüksel: saniye yerine deterministik yakıtla, gizli ve yeni formüllerde puanlanır. Ücretsiz, açık kaynak."
   },
   "title": "SAT Dojo",
-  "intro": "SAT çözücüleri için bir spor salonu. Çözücünü WebAssembly'ye derle, gönder; gizli ve yeni formüllerden oluşan bir sette puanlansın: Hashi bulmacaları, parite tuzakları, rastgele 3-SAT, güvercinler ve vezirler.",
+  "intro": "SAT çözücüleri için bir spor salonu. Çözücünü WebAssembly'ye derle, gönder; gizli ve yeni formüllerden oluşan bir sette puanlansın: Hashi bulmacaları, parite tuzakları, rastgele 3-SAT, güvercinler, vezirler, çarpanlara ayırma, çarpıcı miter'ları, graf boyama ve bir gizemli aile.",
   "stats": {
     "season": "Sezon {{ season }}",
     "formulas": "Formül: {{ count }}",
@@ -41,6 +41,7 @@
     "entries": "Değerlendirilen çözücü: {{ count }}",
     "commitment": "Taahhüt (tohumun SHA-256 değeri)",
     "seed": "Tohum",
+    "mystery": "Gizemli aile: {{ family }}",
     "sealed": "Tohum sezon bitene kadar gizli kalır, sonra burada açıklanır.",
     "set": "Gizli küme ({{ size }} MB)",
     "no_set": "Bu sezon için küme arşivlenmedi; tohumdan yeniden üretin.",
@@ -69,7 +70,7 @@
   "family": {
     "title": "Formüller",
     "hashi": "Hashi",
-    "hashi_text": "10×10'dan 28×28'e kadar Hashiwokakero bulmacaları CNF olarak, bağlantılılık kuralı olmadan. Her zaman sağlanabilir.",
+    "hashi_text": "12×12'dan 28×28'e kadar Hashiwokakero bulmacaları CNF olarak, bağlantılılık kuralı olmadan. Her zaman sağlanabilir.",
     "hashi_parity": "Hashi parite",
     "hashi_parity_text": "Bir sayısı değiştirilerek sayıların toplamı tek yapılmış bulmacalar. Her köprü toplama iki eklediği için sağlanamaz. Görmesi kolay, rezolüsyonla kanıtlaması zor.",
     "random_3sat": "Rastgele 3-SAT",
@@ -77,7 +78,21 @@
     "pigeonhole": "Güvercin yuvası",
     "pigeonhole_text": "n yuvada n+1 güvercin: üstel uzunlukta rezolüsyon kanıtları gerektiren klasik. Artı güvercinlerin sığdığı birkaç örnek.",
     "queens": "Vezirler",
-    "queens_text": "48×48'e kadar tahtalarda, birkaç yasak kareyle N vezir."
+    "queens_text": "64×64'e kadar tahtalarda, birkaç yasak kareyle N vezir.",
+    "factoring": "Çarpanlara ayırma",
+    "factoring_text": "Çıkışı 16 ile 26 bitlik bir sayıya sabitlenmiş bir çarpıcı devresi: sayı iki asalın çarpımıysa sağlanabilir, asalsa sağlanamaz. Minyatür kriptografi.",
+    "miter": "Miter'lar",
+    "miter_text": "Farklı bağlanmış iki çarpıcı ve uyuşmadıkları bir giriş aranıyor: ikisi de doğruysa sağlanamaz, biri nadiren tetiklenen bir hata saklıyorsa sağlanabilir. Minyatür donanım doğrulama.",
+    "coloring": "Graf boyama",
+    "coloring_text": "Eşiğe yakın rastgele graflar için dört renk: bazılarında yerleştirilmiş bir boyama var, bazıları beş renk gerektiren bir Mycielski grafı içeriyor.",
+    "tseitin": "Tseitin formülleri",
+    "tseitin_text": "Rastgele düzenli bir grafın kenarları üzerinde parite kısıtları; yükler toplamı tek olduğunda sağlanamaz. Rezolüsyon için üstel olarak zor.",
+    "quasigroup": "Yarıgruplar",
+    "quasigroup_text": "Hücrelerinin %42'si boşaltılmış, tamamlanacak Latin kareleri. Her zaman sağlanabilir ve bu boşluk oranı civarında en zorudur.",
+    "hamiltonian": "Hamilton döngüleri",
+    "hamiltonian_text": "İki parçalı bir grafın her köşesinden geçen bir döngü: yerleştirilmiş ya da iki taraf farklı büyüklükte olduğu için imkânsız.",
+    "mystery": "Gizemli aile",
+    "mystery_text": "Her gizli sette, geliştirme setinde olmayan bir aile daha vardır; sezonun tohumu onu bir yedek listeden seçer. Diğerleri gibi sayılır, gizemli aile olarak görünür ve sezon bitince arşivde açıklanır."
   },
   "fair": {
     "title": "Adil oyun",
@@ -85,6 +100,8 @@
     "fuel": "Çalıştırılan her WebAssembly komutu bir birim yakıt harcar, toplu bellek işlemleri bayt başına bir birim. Saatler ve rastgele sayılar sabit tohumludur, böylece bir çözücü her makinede, her seferinde aynı puanı alır.",
     "hidden_title": "Gizli, yeni formüller",
     "hidden": "Test kümesi her sezon değişen gizli bir tohumdan üretilir ve her formül karıştırılır: değişkenler yeniden adlandırılıp olumsuzlanır, cümleler karıştırılır. Sezon sürerken sonuçlar yalnızca aile bazında gösterilir, asla formül bazında değil.",
+    "heldout_title": "Ezberleme, genelle",
+    "heldout": "2026'da yüzden fazla aileye özgü alt çözücüsü olan yapay zekâ üretimi bir çözücü, <a>SAT Competition</a>'ın sağlanabilir örneklerinde main track'teki tüm çözücüleri geçti ve organizatörler ezberlemeye karşı genellemeyi açık bir sorun olarak nitelendirdi. Bu yüzden gizli set geliştirme setinin ötesine geçer: daha büyük formüller ve çözücünün hiç üzerinde çalışmadığı bir aile.",
     "checked_title": "Her cevap kontrol edilir",
     "checked": "Modeller formüle karşı doğrulanır ve her UNSAT cevabı, <a>SAT Competition</a>’ın ana kategorisindeki gibi denetlenen bir kanıt ister: drat-trim onu LRAT’e çevirir, son sözü ise doğruluğu HOL4’te kanıtlanmış ve CakeML ile derlenmiş bir denetleyici olan cake_lpr söyler. Kendi etiketlerimiz de aynı şekilde kanıtlanır. Yanlış bir model ya da reddedilen bir kanıt gönderimi diskalifiye eder, yani tahmin etmek asla işe yaramaz.",
     "sandbox_title": "Kapalı bir korumalı alan",

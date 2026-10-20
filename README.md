@@ -110,10 +110,13 @@ Pushes to `main` deploy to [fly.io](https://fly.io) once CI passes: CI builds th
 
 At [hashi.rs/dojo](https://hashi.rs/dojo) anyone can submit a SAT solver compiled to WebAssembly (WASI preview 1). Solvers read DIMACS on stdin, answer in the SAT competition format and are scored by *fuel*, the number of executed WebAssembly instructions, on a hidden set that changes every season. A run is fully deterministic: clocks and random numbers are seeded, so the same solver always gets the same score.
 
+The sets are generated from a seed with certain labels (`dojo/src/bench.rs`, the newer families in `dojo/src/families/`): a model, a construction argument or a verified proof backs every answer. The public dev set (`public/dojo-dev-2.tar.gz`, `dojo export`) has eight families, each mapped to a family of the [Global Benchmark Database](https://benchmark-database.de): Hashi, Hashi parity, random 3-SAT, pigeonhole, queens, factoring, multiplier miters and graph colouring. A season's hidden set (`dojo export --hidden --seed S`) adds larger sizes and one held-out family from a reserve (Tseitin formulas, quasigroups with holes, Hamiltonian cycles), picked by the seed and shown as "mystery" in public scores until the season is archived. Solvers read every formula under the same neutral comment.
+
 ```sh
 cargo build -p house --release --target wasm32-wasip1           # our own solvers as .wasm
 cargo run -p dojo --release --features worker -- run target/wasm32-wasip1/release/splr.wasm
 cargo run -p dojo --release --features bench -- export dev-set/  # the public dev set as .cnf files
+cargo run -p dojo --release --features runner --example gen_time -- coloring 120:sat --solvers splr.wasm  # tune sizes
 cargo run -p dojo --release --features worker -- run splr.wasm --set dojo-season-1.tar.gz  # an archived season
 ```
 

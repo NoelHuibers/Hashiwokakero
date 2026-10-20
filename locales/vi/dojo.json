@@ -4,7 +4,7 @@
     "description": "Gửi bộ giải SAT dạng WebAssembly và leo bảng xếp hạng: chấm trên các công thức mới, ẩn, bằng fuel tất định thay vì giây. Miễn phí, mã nguồn mở, tái lập được."
   },
   "title": "Dojo SAT",
-  "intro": "Phòng tập cho các bộ giải SAT. Biên dịch bộ giải của bạn sang WebAssembly, gửi lên, và nó được chấm điểm trên một tập ẩn gồm các công thức mới: câu đố Hashi, bẫy chẵn lẻ, 3-SAT ngẫu nhiên, chim bồ câu và quân hậu.",
+  "intro": "Phòng tập cho các bộ giải SAT. Biên dịch bộ giải của bạn sang WebAssembly, gửi lên, và nó được chấm điểm trên một tập ẩn gồm các công thức mới: câu đố Hashi, bẫy chẵn lẻ, 3-SAT ngẫu nhiên, chim bồ câu, quân hậu, phân tích thừa số, miter của mạch nhân, tô màu đồ thị và một họ bí ẩn.",
   "stats": {
     "season": "Mùa {{ season }}",
     "formulas": "Công thức: {{ count }}",
@@ -41,6 +41,7 @@
     "entries": "Số bộ giải đã chấm: {{ count }}",
     "commitment": "Cam kết (SHA-256 của seed)",
     "seed": "Seed",
+    "mystery": "Họ bí ẩn: {{ family }}",
     "sealed": "Seed được giữ bí mật đến khi mùa kết thúc, sau đó sẽ được tiết lộ tại đây.",
     "set": "Bộ ẩn ({{ size }} MB)",
     "no_set": "Mùa này không có bộ nào được lưu trữ; hãy tạo lại từ seed.",
@@ -69,7 +70,7 @@
   "family": {
     "title": "Các công thức",
     "hashi": "Hashi",
-    "hashi_text": "Câu đố Hashiwokakero từ 10×10 đến 28×28 dưới dạng CNF, bỏ quy tắc liên thông. Luôn thỏa mãn được.",
+    "hashi_text": "Câu đố Hashiwokakero từ 12×12 đến 28×28 dưới dạng CNF, bỏ quy tắc liên thông. Luôn thỏa mãn được.",
     "hashi_parity": "Hashi chẵn lẻ",
     "hashi_parity_text": "Câu đố bị đổi một con số để tổng các số là số lẻ. Không thỏa mãn được, vì mỗi cây cầu cộng thêm hai. Dễ thấy, nhưng khó chứng minh bằng phép hợp giải (resolution).",
     "random_3sat": "3-SAT ngẫu nhiên",
@@ -77,7 +78,21 @@
     "pigeonhole": "Chuồng bồ câu",
     "pigeonhole_text": "n+1 con bồ câu trong n cái chuồng: bài toán kinh điển cần chứng minh hợp giải dài theo hàm mũ. Thêm vài bài vừa đủ chỗ.",
     "queens": "Quân hậu",
-    "queens_text": "N quân hậu trên bàn cờ đến 48×48 với vài ô bị cấm."
+    "queens_text": "N quân hậu trên bàn cờ đến 64×64 với vài ô bị cấm.",
+    "factoring": "Phân tích thừa số",
+    "factoring_text": "Một mạch nhân có đầu ra được cố định là một số từ 16 đến 26 bit: thỏa mãn được nếu đó là tích của hai số nguyên tố, không thỏa mãn được nếu là số nguyên tố. Mật mã học thu nhỏ.",
+    "miter": "Miter",
+    "miter_text": "Hai mạch nhân đi dây khác nhau, cần tìm một đầu vào khiến chúng cho kết quả khác nhau: không thỏa mãn được nếu cả hai đều đúng, thỏa mãn được nếu một mạch giấu một lỗi hiếm khi kích hoạt. Kiểm chứng phần cứng thu nhỏ.",
+    "coloring": "Tô màu đồ thị",
+    "coloring_text": "Bốn màu cho đồ thị ngẫu nhiên gần ngưỡng: một số có cách tô màu được cài sẵn, một số chứa đồ thị Mycielski cần năm màu.",
+    "tseitin": "Công thức Tseitin",
+    "tseitin_text": "Ràng buộc chẵn lẻ trên các cạnh của một đồ thị chính quy ngẫu nhiên, không thỏa mãn được khi tổng điện tích là số lẻ. Khó theo hàm mũ đối với phép hợp giải.",
+    "quasigroup": "Tựa nhóm",
+    "quasigroup_text": "Hình vuông Latin bị xóa 42% số ô, cần điền lại cho đủ. Luôn thỏa mãn được, và khó nhất khi tỉ lệ ô trống quanh mức đó.",
+    "hamiltonian": "Chu trình Hamilton",
+    "hamiltonian_text": "Một chu trình đi qua mọi đỉnh của đồ thị hai phía: được cài sẵn, hoặc bất khả vì hai phía có kích thước khác nhau.",
+    "mystery": "Họ bí ẩn",
+    "mystery_text": "Mỗi tập ẩn có thêm một họ mà tập dev không có, do seed của mùa chọn từ một danh sách dự trữ. Họ này được tính điểm như các họ khác, hiển thị là họ bí ẩn và được tiết lộ trong kho lưu trữ khi mùa kết thúc."
   },
   "fair": {
     "title": "Chơi đẹp",
@@ -85,6 +100,8 @@
     "fuel": "Mỗi lệnh WebAssembly được thực thi tốn một đơn vị fuel, thao tác bộ nhớ khối tốn một đơn vị mỗi byte. Đồng hồ và số ngẫu nhiên đều có seed cố định, nên một bộ giải luôn đạt cùng điểm trên mọi máy, mọi lần chạy.",
     "hidden_title": "Công thức ẩn và mới",
     "hidden": "Bộ kiểm tra được tạo từ một seed bí mật thay đổi mỗi mùa, và mọi công thức đều bị xáo trộn: biến được đổi tên và phủ định, mệnh đề bị trộn lẫn. Khi mùa giải đang diễn ra, kết quả chỉ hiển thị theo họ, không bao giờ theo từng công thức.",
+    "heldout_title": "Khái quát hóa, đừng học thuộc",
+    "heldout": "Năm 2026, một bộ giải do AI tạo ra với hơn một trăm bộ giải con riêng cho từng họ đã vượt mọi bộ giải ở main track trên các bài thỏa mãn được của <a>SAT Competition</a>, và ban tổ chức gọi học thuộc so với khái quát hóa là một vấn đề mở. Vì vậy tập ẩn vượt ra ngoài tập dev: công thức lớn hơn, và một họ mà bộ giải của bạn chưa từng luyện tập.",
     "checked_title": "Mọi câu trả lời đều được kiểm tra",
     "checked": "Mô hình được kiểm chứng với công thức, và mọi câu trả lời UNSAT đều cần chứng minh, được kiểm tra như ở main track của <a>SAT Competition</a>: drat-trim chuyển nó sang LRAT, và lời phán quyết cuối cùng thuộc về cake_lpr, một trình kiểm tra đã được chứng minh đúng trong HOL4 và biên dịch bằng CakeML. Nhãn của chính chúng tôi cũng được chứng minh như vậy. Mô hình sai hoặc chứng minh bị từ chối sẽ khiến bài gửi bị loại, nên đoán mò không bao giờ có lợi.",
     "sandbox_title": "Hộp cát kín",
