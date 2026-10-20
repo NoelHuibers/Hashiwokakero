@@ -53,6 +53,8 @@
     "back": "Bảng xếp hạng",
     "not_found": "Không có người chơi này.",
     "since": "Chơi từ {{ date }}.",
-    "you": "Đây là bạn, đến tài khoản"
+    "you": "Đây là bạn, đến tài khoản",
+    "preview": "{{ name }} trên Hashi, câu đố Hashiwokakero mỗi ngày: thành tích và sổ con dấu.",
+    "preview_stats": "Câu đố ngày đã giải: {{ solved }} · Chuỗi dài nhất: {{ best }} · Huy chương: {{ medals }}"
   }
 }

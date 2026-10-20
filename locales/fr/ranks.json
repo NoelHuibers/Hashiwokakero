@@ -53,6 +53,8 @@
     "back": "Classement",
     "not_found": "Ce joueur n'existe pas.",
     "since": "Joue depuis le {{ date }}.",
-    "you": "C'est toi, vers ton compte"
+    "you": "C'est toi, vers ton compte",
+    "preview": "{{ name }} sur Hashi, le Hashiwokakero du jour : palmarès et carnet de tampons.",
+    "preview_stats": "Défis résolus : {{ solved }} · Meilleure série : {{ best }} · Médailles : {{ medals }}"
   }
 }

@@ -1,11 +1,12 @@
 //! Every page as the server renders it.
 //!
-//! No page waits for data on the server: the visitor (`Auth::refresh`), the daily, the boards,
-//! profiles, submissions and the admin's lists are all loaded in effects once the page is
+//! Pages don't wait for data on the server: the visitor (`Auth::refresh`), the daily, the
+//! boards, submissions and the admin's lists are all loaded in effects once the page is
 //! hydrated. So the server sends every visitor the same page, the frame and whatever doesn't
 //! depend on data, with "Loading…" where the data goes; the browser tests (e2e/) cover what fills
-//! in. These tests make sure every route renders without panicking, in its language, with its
-//! title, headings, texts and links.
+//! in. Except a player's page, rendered once the player is loaded, for the title and the preview
+//! of links to it. These tests make sure every route renders without panicking, in its language,
+//! with its title, headings, texts and links.
 
 use std::collections::BTreeSet;
 
@@ -18,7 +19,7 @@ use crate::i18n::{Locale, td_string};
 use crate::lang::{difficulty_name, localized, unlocalized};
 use crate::model::MoveEvent;
 use crate::pages::legal::CONTACT_EMAIL;
-use crate::seo::{SITE_URL, rules_faq};
+use crate::seo::{OG_IMAGE, SITE_URL, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
@@ -26,7 +27,8 @@ const PAGES: [(&str, &str); 16] = [
     ("/", "/"),
     ("/practice", "/practice"),
     ("/ranks", "/ranks"),
-    ("/player/{id}", "/player/1"),
+    // Nobody, user ids start at 1
+    ("/player/{id}", "/player/0"),
     ("/account", "/account"),
     ("/create", "/create"),
     ("/lab", "/lab"),
@@ -56,6 +58,8 @@ struct Expected {
     nav: Option<&'static str>,
     /// The page search engines know it by; private pages aren't indexed.
     canonical: Option<&'static str>,
+    /// 200 OK, unless the page shows something that isn't there.
+    status: StatusCode,
 }
 
 fn strings<const N: usize>(texts: [&str; N]) -> Vec<String> {
@@ -92,6 +96,7 @@ fn expected(route: &str, l: Locale) -> Expected {
             absent: strings([td_string!(l, daily.give_up)]),
             nav: Some("/"),
             canonical: Some("/"),
+            ..Expected::default()
         },
         "/practice" => Expected {
             title: Some(td_string!(l, practice.meta.title).into()),
@@ -134,9 +139,13 @@ fn expected(route: &str, l: Locale) -> Expected {
             ..Expected::default()
         },
         "/player/{id}" => Expected {
-            title: Some(hashi(td_string!(l, ranks.player.title))),
-            texts: strings([td_string!(l, ranks.player.back), loading]),
+            title: Some(hashi(td_string!(l, common.not_found.title))),
+            texts: strings([
+                td_string!(l, ranks.player.back),
+                td_string!(l, ranks.player.not_found),
+            ]),
             absent: strings([td_string!(l, ranks.player.record)]),
+            status: StatusCode::NOT_FOUND,
             // Profiles are opened from the leaderboards
             nav: Some("/ranks"),
             ..Expected::default()
@@ -241,6 +250,7 @@ fn expected(route: &str, l: Locale) -> Expected {
             absent: strings([td_string!(l, dojo.detail.not_found)]),
             nav: Some("/lab"),
             canonical: Some("/dojo"),
+            ..Expected::default()
         },
         // Decided in the browser once the session is known: the dashboard, or the "not found"
         // everyone else gets. Nothing gives it away before.
@@ -439,9 +449,9 @@ async fn every_page_is_rendered_on_the_server() {
         for (route, url) in PAGES {
             let path = localized(l, url);
             let res = browser.get(&path).await;
-            assert_status(&res, StatusCode::OK);
-            let html = res.text().await.unwrap();
             let expected = expected(route, l);
+            assert_status(&res, expected.status);
+            let html = res.text().await.unwrap();
 
             let lang = format!("<html lang=\"{}\" dir=\"", l.as_str());
             assert!(html.contains(&lang), "{path}: {}", &html[..200]);
@@ -664,15 +674,83 @@ async fn every_visitor_gets_the_same_page() {
     let nobody = server.browser();
     let profile = format!("/player/{id}");
     for (_, url) in PAGES {
-        let url = if url == "/player/1" { &profile } else { url };
+        let url = if url == "/player/0" { &profile } else { url };
         for l in [Locale::en, Locale::ar] {
             let path = localized(l, url);
             let page = without_nonces(&nobody.get(&path).await.text().await.unwrap());
-            assert!(!page.contains("seen_by_nobody"), "{path}");
+            // Only their public page names them, the same for everyone
+            assert_eq!(page.contains("seen_by_nobody"), url == profile, "{path}");
             for (who, visitor) in [("guest", &guest), ("player", &player), ("admin", &admin)] {
                 let seen = without_nonces(&visitor.get(&path).await.text().await.unwrap());
                 assert!(seen == page, "{path} differs for the {who}");
             }
         }
+    }
+}
+
+/// The text of the page's first `<h1>`.
+fn heading(html: &str) -> Option<String> {
+    let start = html.find("<h1")?;
+    let end = start + html[start..].find("</h1>")?;
+    Some(visible_text(&format!(
+        "<main>{}</h1></main>",
+        &html[start..end]
+    )))
+}
+
+/// The `content` of a `<meta>` by its `property` or `name`.
+fn meta(html: &str, key: &str) -> Option<String> {
+    ["property", "name"].iter().find_map(|attr| {
+        let tag = format!("<meta {attr}=\"{key}\" content=\"");
+        let start = html.find(&tag)? + tag.len();
+        let end = start + html[start..].find('"')?;
+        Some(unescape(&html[start..end]))
+    })
+}
+
+/// A link to a player's page shows their name and record where it's shared. The page stays
+/// out of search engines.
+#[tokio::test]
+async fn a_players_page_names_them_in_link_previews() {
+    let server = Server::start().await;
+    Browser::signed_up(&server, "shared_link").await;
+    let id = user_id(&conn().await, "shared_link").await;
+    let browser = server.browser();
+    for l in [Locale::en, Locale::de] {
+        let path = localized(l, &format!("/player/{id}"));
+        let res = browser.get(&path).await;
+        assert_status(&res, StatusCode::OK);
+        let html = res.text().await.unwrap();
+        let name = "shared_link · Hashi";
+        assert_eq!(title(&html).as_deref(), Some(name), "{path}");
+        assert_eq!(meta(&html, "og:title").as_deref(), Some(name), "{path}");
+        assert_eq!(
+            meta(&html, "twitter:title").as_deref(),
+            Some(name),
+            "{path}"
+        );
+        let description = format!(
+            "{} {}",
+            td_string!(l, ranks.player.preview, name = "shared_link"),
+            td_string!(l, account.no_dailies)
+        );
+        for key in ["description", "og:description", "twitter:description"] {
+            assert_eq!(meta(&html, key), Some(description.clone()), "{path}: {key}");
+        }
+        assert_eq!(meta(&html, "og:type").as_deref(), Some("profile"));
+        assert_eq!(meta(&html, "og:url"), Some(format!("{SITE_URL}{path}")));
+        assert_eq!(meta(&html, "og:image").as_deref(), Some(OG_IMAGE));
+        assert_eq!(
+            meta(&html, "twitter:card").as_deref(),
+            Some("summary_large_image")
+        );
+        assert_eq!(meta(&html, "robots").as_deref(), Some("noindex"));
+        assert!(!html.contains("rel=\"canonical\""), "{path}");
+        // And the page itself, without waiting for the browser
+        assert_eq!(heading(&html).as_deref(), Some("shared_link"), "{path}");
+        assert!(
+            visible_text(&html).contains(td_string!(l, ranks.player.record)),
+            "{path}"
+        );
     }
 }

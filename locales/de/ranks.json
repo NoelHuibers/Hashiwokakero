@@ -53,6 +53,8 @@
     "back": "Rangliste",
     "not_found": "Diesen Spieler gibt es nicht.",
     "since": "Spielt seit {{ date }}.",
-    "you": "Das bist du, zu deinem Konto"
+    "you": "Das bist du, zu deinem Konto",
+    "preview": "{{ name }} auf Hashi, dem täglichen Hashiwokakero-Rätsel: Bilanz und Stempelheft.",
+    "preview_stats": "Tagesrätsel gelöst: {{ solved }} · Beste Serie: {{ best }} · Medaillen: {{ medals }}"
   }
 }

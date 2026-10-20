@@ -53,6 +53,8 @@
     "back": "Leaderboard",
     "not_found": "There is no such player.",
     "since": "Playing since {{ date }}.",
-    "you": "That's you, to your account"
+    "you": "That's you, to your account",
+    "preview": "{{ name }} on Hashi, the daily Hashiwokakero puzzle: record and stamp book.",
+    "preview_stats": "Dailies solved: {{ solved }} · Best streak: {{ best }} · Medals: {{ medals }}"
   }
 }

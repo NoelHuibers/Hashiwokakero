@@ -53,6 +53,8 @@
     "back": "Clasificación",
     "not_found": "Este jugador no existe.",
     "since": "Juega desde el {{ date }}.",
-    "you": "Eres tú, ir a tu cuenta"
+    "you": "Eres tú, ir a tu cuenta",
+    "preview": "{{ name }} en Hashi, el Hashiwokakero diario: historial y cuaderno de sellos.",
+    "preview_stats": "Retos resueltos: {{ solved }} · Mejor racha: {{ best }} · Medallas: {{ medals }}"
   }
 }

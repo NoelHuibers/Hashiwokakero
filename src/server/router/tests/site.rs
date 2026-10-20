@@ -83,10 +83,10 @@ async fn pages_have_their_titles_in_their_language() {
         ),
         ("/de/kontakt", hashi(td_string!(Locale::de, contact.title))),
         ("/de/account", hashi(td_string!(Locale::de, account.title))),
-        // The player's name only arrives in the browser
+        // No such player (a player's name: `pages::a_players_page_names_them_in_link_previews`)
         (
-            "/es/player/1",
-            hashi(td_string!(Locale::es, ranks.player.title)),
+            "/es/player/0",
+            hashi(td_string!(Locale::es, common.not_found.title)),
         ),
         (
             "/no-such-page",

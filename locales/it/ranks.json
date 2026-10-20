@@ -53,6 +53,8 @@
     "back": "Classifica",
     "not_found": "Questo giocatore non esiste.",
     "since": "Gioca dal {{ date }}.",
-    "you": "Sei tu, vai al tuo account"
+    "you": "Sei tu, vai al tuo account",
+    "preview": "{{ name }} su Hashi, l’Hashiwokakero del giorno: risultati e libretto dei timbri.",
+    "preview_stats": "Sfide risolte: {{ solved }} · Serie migliore: {{ best }} · Medaglie: {{ medals }}"
   }
 }

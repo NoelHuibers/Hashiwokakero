@@ -53,6 +53,8 @@
     "back": "Papan peringkat",
     "not_found": "Pemain ini tidak ada.",
     "since": "Bermain sejak {{ date }}.",
-    "you": "Itu kamu, ke akunmu"
+    "you": "Itu kamu, ke akunmu",
+    "preview": "{{ name }} di Hashi, teka-teki Hashiwokakero harian: catatan dan buku stempel.",
+    "preview_stats": "Teka-teki harian selesai: {{ solved }} · Rekor beruntun: {{ best }} · Medali: {{ medals }}"
   }
 }

@@ -53,6 +53,8 @@
     "back": "Ranglijst",
     "not_found": "Deze speler bestaat niet.",
     "since": "Speelt sinds {{ date }}.",
-    "you": "Dat ben jij, naar je account"
+    "you": "Dat ben jij, naar je account",
+    "preview": "{{ name }} op Hashi, de dagelijkse Hashiwokakero-puzzel: resultaten en stempelboekje.",
+    "preview_stats": "Dagpuzzels opgelost: {{ solved }} · Beste reeks: {{ best }} · Medailles: {{ medals }}"
   }
 }

@@ -53,6 +53,8 @@
     "back": "Ranking",
     "not_found": "Esse jogador não existe.",
     "since": "Joga desde {{ date }}.",
-    "you": "É você, ir para sua conta"
+    "you": "É você, ir para sua conta",
+    "preview": "{{ name }} no Hashi, o Hashiwokakero diário: histórico e caderno de carimbos.",
+    "preview_stats": "Desafios resolvidos: {{ solved }} · Melhor sequência: {{ best }} · Medalhas: {{ medals }}"
   }
 }
