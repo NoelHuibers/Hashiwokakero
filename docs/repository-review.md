@@ -32,7 +32,9 @@ A season number alone is insufficient to identify comparable results.
 Migrations take a database write transaction before checking the current schema version. Schema
 changes and their migration records commit together; an interrupted migration rolls back and
 can be retried. Back up production data before a deployment that changes the schema, and test
-restoring that backup independently.
+restoring that backup independently. For local SQLite, use a consistent backup or stop the
+server before copying the database; copying only the main file while WAL writes are pending
+can miss committed data.
 
 ## Execution and request limits
 
@@ -44,7 +46,9 @@ fuel, memory, table, stdout, and wall-time budgets. The worker admits at most tw
 Public puzzle work and password hashing have separate bounded pools. A permit stays inside the
 blocking closure until the computation actually exits, including after HTTP cancellation.
 Waiting is bounded as well. Per-network request budgets precede expensive endpoints, and the
-network is a parsed IPv4 address or IPv6 /64, not a textual prefix.
+network is a parsed IPv4 address or IPv6 /64, not a textual prefix. These counters and CPU
+pools are per website process; persistent daily/upload quotas and worker claims are coordinated
+through the database.
 
 Only the Fly-supplied `fly-client-ip` header is trusted when running on Fly, following the
 [Fly request-header contract](https://docs.fly.io/networking/request-headers). Direct deployments

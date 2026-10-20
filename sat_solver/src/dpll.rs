@@ -788,3 +788,33 @@ fn repeated_literals_and_tautologies_preserve_sat_models() {
         );
     }
 }
+
+#[test]
+fn negative_pure_literals_and_decision_conflicts_keep_valid_models() {
+    for formula in [
+        vec![vec![-1, -2], vec![1, -2]],
+        vec![vec![-1, 2], vec![-1, -2], vec![1, 2]],
+    ] {
+        for heuristic in [
+            Heuristic::Arbitrary,
+            Heuristic::VSIDS,
+            Heuristic::DLIS,
+            Heuristic::DLCS,
+            Heuristic::MOM,
+            Heuristic::Boehm,
+            Heuristic::JeroslawWang,
+            Heuristic::Custom,
+        ] {
+            let result = DPLL::new(formula.clone(), 2, formula.len(), heuristic, false)
+                .solve()
+                .unwrap();
+            let DIMACSOutput::Sat(model) = result else {
+                panic!("expected a model: {result:?}")
+            };
+            assert!(
+                formula.iter().all(|c| c.iter().any(|l| model.contains(l))),
+                "{model:?} violates {formula:?}"
+            );
+        }
+    }
+}

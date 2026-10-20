@@ -546,7 +546,14 @@ pub fn BoardView(
                 "Home" => 0,
                 "End" => count - 1,
                 "Enter" | " " | "+" | "=" => {
-                    cycle(current, if ev.shift_key() { -1 } else { 1 });
+                    cycle(
+                        current,
+                        if key == "Enter" && ev.shift_key() {
+                            -1
+                        } else {
+                            1
+                        },
+                    );
                     current
                 }
                 "Backspace" | "Delete" | "-" => {

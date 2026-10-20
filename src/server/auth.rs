@@ -716,7 +716,7 @@ mod tests {
     }
 
     /// Signing in while another request writes. The password hash is checked on the blocking
-    /// threads, where it can wait its turn behind puzzle generators and solvers for seconds. It
+    /// threads, where it can wait its turn behind other password checks for seconds. It
     /// did that with its query still open, which on a local file kept a read lock: the other
     /// request's write couldn't commit and failed with "database is locked" after the busy
     /// timeout (two sign ins of the browser tests did). The file is in SQLite's default rollback
@@ -748,14 +748,14 @@ mod tests {
             .await
             .unwrap();
 
-        // Both blocking permits taken, like by two puzzles being generated
+        // Both password permits taken, like by two concurrent sign-ins
         let (started_tx, mut started) = tokio::sync::mpsc::unbounded_channel();
         let mut releases = Vec::new();
         for _ in 0..2 {
             let (release, wait) = std::sync::mpsc::channel::<()>();
             releases.push(release);
             let started_tx = started_tx.clone();
-            tokio::spawn(run_blocking(move || {
+            tokio::spawn(run_auth_blocking(move || {
                 started_tx.send(()).unwrap();
                 let _ = wait.recv();
                 Ok(())

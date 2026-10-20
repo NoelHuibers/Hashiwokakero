@@ -320,3 +320,32 @@ async fn puzzles_and_the_archive() {
     let error: ServerFnError = ServerFnError::de(res.bytes().await.unwrap());
     assert_eq!(ApiError::from_message(&error.to_string()), None);
 }
+
+/// Admission runs before decoding or spawning work, and equivalent IPv6 /64 spellings cannot
+/// get a fresh budget. An arbitrary forwarding header must not select another bucket.
+#[tokio::test]
+async fn expensive_requests_share_the_network_budget_before_parsing() {
+    let server = Server::start().await;
+    let browser = server.browser_from("2001:db8:aa11::1");
+    for n in 0..32 {
+        let response = browser
+            .post(GeneratePuzzle::PATH)
+            .header(CONTENT_TYPE, "application/json")
+            .header("x-forwarded-for", format!("198.51.100.{n}"))
+            .body("not JSON")
+            .send()
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::TOO_MANY_REQUESTS);
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+    let response = server
+        .browser_from("2001:0db8:aa11:0000::2")
+        .post(GeneratePuzzle::PATH)
+        .body("not JSON")
+        .send()
+        .await
+        .unwrap();
+    assert_status(&response, StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(response.headers()["retry-after"], "60");
+}

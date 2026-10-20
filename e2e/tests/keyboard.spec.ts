@@ -16,6 +16,10 @@ test('build and remove bridges with the keyboard and hear island degrees', async
   await expect(page.getByRole('status').filter({ hasText: /^Bridge / })).toContainText('1/2');
   await board(page).press('Shift+Enter');
   await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[0]).toBe(0);
+  await board(page).press('Shift+=');
+  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[0]).toBe(1);
+  await board(page).press('-');
+  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[0]).toBe(0);
   await board(page).press('ArrowRight');
   await board(page).press('Space');
   await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[1]).toBe(1);
