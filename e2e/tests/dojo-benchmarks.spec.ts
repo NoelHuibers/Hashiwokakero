@@ -27,8 +27,9 @@ test('a submitted benchmark waits for verification', async ({ page, context }) =
   await signIn(context, 'kenji');
   await visit(page, '/dojo/benchmarks');
   await expect(page.getByText(/^Benchmarks left today: \d+$/)).toBeVisible();
-  // A formula of its own every run: the database is shared and duplicates are refused
-  const vars = 2 + Math.floor(Math.random() * 1_000_000);
+  // A formula of its own every run: the database is shared and duplicates are refused. Below
+  // dojo::community::MAX_VARS (200,000), or it is refused as too large
+  const vars = 2 + Math.floor(Math.random() * 190_000);
   await page.getByLabel(/^DIMACS file/).setInputFiles({
     name: 'units.cnf',
     mimeType: 'text/plain',

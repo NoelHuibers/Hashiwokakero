@@ -80,6 +80,15 @@
 
   --washi-fiber: rgb(120 90 50 / 0.07);
   --wave-line: rgb(31 78 121 / 0.09);
+
+  /* Charts (the Dojo's cactus plot): an accent, an emphasised series and quiet context,
+     categorical slots 1 and 2 of the dataviz palette, validated against the card surface in both
+     modes (scripts/validate_palette.js: CVD ΔE 24.7 light / 26.8 dark) */
+  --chart-vbs: #2a78d6;
+  --chart-mark: #eb6834;
+  --chart-context: rgb(119 106 92 / 0.45);
+  --chart-grid: #ece2cf;
+  --chart-axis: #c9b998;
 }
 
 html[lang="ko"] { --app-font: "Noto Sans KR Variable", "Murecho Variable", system-ui, sans-serif; }
@@ -154,6 +163,12 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 
   --washi-fiber: rgb(200 220 255 / 0.035);
   --wave-line: rgb(169 205 242 / 0.06);
+
+  --chart-vbs: #3987e5;
+  --chart-mark: #d95926;
+  --chart-context: rgb(154 167 191 / 0.4);
+  --chart-grid: #22304a;
+  --chart-axis: #3a4c70;
 }
 
 @theme inline {

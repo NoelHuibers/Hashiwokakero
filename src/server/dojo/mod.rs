@@ -15,6 +15,7 @@
 mod benchmark_tests;
 mod benchmarks;
 mod board;
+mod metrics;
 mod seasons;
 mod submit;
 #[cfg(test)]

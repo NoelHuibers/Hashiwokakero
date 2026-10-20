@@ -26,7 +26,22 @@
     "families": "Families",
     "empty": "No solver has entered the dojo yet. Be the first!",
     "house": "house",
-    "par2_hint": "Mean fuel per formula in billions, unsolved formulas count twice the budget. Lower is better."
+    "par2_hint": "Mean fuel per formula in billions, unsolved formulas count twice the budget. Lower is better.",
+    "views": "Leaderboard views",
+    "view_ranking": "Ranking",
+    "view_contribution": "Contribution",
+    "all": "ALL",
+    "answers_hint": "Solved and PAR-2 for satisfiable and unsatisfiable formulas, as the SAT Competition reports them. While a season runs, the mystery family only counts in ALL: its answers would give it away.",
+    "contribution_hint": "What each solver adds to the others: the virtual best solver takes the best result of any ranked solver on every formula. PAR-2 stays the official ranking. Click a column to sort.",
+    "marginal": "Marginal",
+    "relative": "Share",
+    "sota": "SOTA",
+    "shapley": "Shapley",
+    "marginal_tip": "How much the virtual best solver's PAR-2 rises without this solver",
+    "relative_tip": "Sparkle 2018: its share of all solvers' log10(PAR-2 without ÷ PAR-2 with)",
+    "sota_tip": "Each formula it solves earns 1 ÷ the number of solvers that solve it",
+    "shapley_tip": "Its fair share of the fuel the whole field saves, in billions per formula",
+    "vbs_line": "Virtual best solver of {{ count }} solvers: {{ solved }}/{{ total }} solved, PAR-2 {{ par2 }}"
   },
   "seasons": {
     "meta_title": "Season archive · SAT Dojo",
@@ -183,7 +198,13 @@
     "not_found": "There is no such submission.",
     "season": "Season {{ season }}",
     "rank_label": "Rank",
-    "similar": "This solver behaves like <a>submission #{{ id }}</a> by someone else, which came first. Only the original is ranked."
+    "similar": "This solver behaves like <a>submission #{{ id }}</a> by someone else, which came first. Only the original is ranked.",
+    "answers": "By answer",
+    "total": "All families",
+    "par2_note": "Each cell: solved formulas, then PAR-2 in billions of fuel.",
+    "held_out": "SAT and UNSAT leave out the {{ count }} formulas of the mystery family until the season ends: their answers would give the family away.",
+    "contribution": "Contribution to the field",
+    "contribution_unranked": "Contributions are computed among the ranked solvers only."
   },
   "rejection": {
     "title": "The worker refused this file",
@@ -267,5 +288,36 @@
       "license": "Please agree to the licence.",
       "server": "Something went wrong on our side, please try again."
     }
+  },
+  "cactus": {
+    "title": "Cactus plot",
+    "hint": "Every line is a solver, its solved formulas sorted by fuel: further right means more solved, lower means less fuel. Nothing in it tells which formula a point is.",
+    "x": "Formulas solved",
+    "y": "Fuel per formula on a log scale, rounded to three digits; the top line is the budget.",
+    "budget": "budget",
+    "vbs": "Virtual best solver",
+    "vbs_short": "VBS",
+    "solvers": "Solvers",
+    "aria": "Cactus plot of {{ count }} solvers. The virtual best solver solves {{ solved }} of {{ total }} formulas with {{ low }} to {{ high }} fuel each. The arrow keys move along the curves.",
+    "solved_at": "{{ count }} formulas solved",
+    "reached": "{{ count }} of {{ total }} solvers got this far",
+    "table": "Show as a table",
+    "fastest": "Fastest",
+    "median": "Median",
+    "slowest": "Slowest"
+  },
+  "metrics": {
+    "title": "Beyond PAR-2",
+    "intro": "PAR-2 decides the ranking. These views show what it hides, the way SAT researchers look at results. All of them are also in /dojo/board.json and in the archive's results.json.",
+    "answers_title": "SAT, UNSAT and ALL",
+    "answers": "Like the <a>SAT Competition</a>, every score is split by answer: a local search solver can shine on satisfiable formulas and never prove one unsatisfiable. While a season runs, the mystery family stays out of SAT and UNSAT, since its share of satisfiable formulas would reveal it.",
+    "cactus_title": "Cactus plots",
+    "cactus": "Each solver's solved formulas sorted by fuel: point k is its k-th fastest formula, so the curve shows how far it gets with how much fuel. A curve says nothing about which formula a point is, so it keeps the hidden set secret, and fuel is rounded to three digits so a solver can't smuggle out what it reads. The virtual best solver (VBS) takes the best result of any ranked solver on every formula: the state of the art of the field.",
+    "marginal_title": "Marginal contribution",
+    "marginal": "How much worse the VBS gets without a solver: its PAR-2 without the solver minus with it. Share is the measure the <a>Sparkle SAT Challenge 2018</a> ranked by: log10 of PAR-2 without over PAR-2 with, as a share of all solvers' values. A solver that only duplicates another adds nothing, however fast it is.",
+    "sota_title": "State-of-the-art contribution",
+    "sota": "From the theorem proving competition <a>CASC</a>: each formula a solver solves earns it 1 divided by the number of solvers that solve it. CASC averages over the solved formulas; we sum, so solving more never lowers it, and the sums add up to the formulas the VBS solves.",
+    "shapley_title": "Shapley value",
+    "shapley": "Standalone scores reward near-clones, marginal contributions punish them. The Shapley value from cooperative game theory is fair to both: it splits the fuel the whole field saves over solving nothing by each solver's average marginal contribution over every order of joining (<a>Fréchette et al., AAAI 2016</a>). We compute it exactly, in billions of fuel per formula; the values add up to twice the budget minus the VBS's PAR-2."
   }
 }

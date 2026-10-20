@@ -54,7 +54,8 @@ export const player = (name: string) => {
   return p;
 };
 
-/** A finished house entry of the SAT Dojo, for /dojo/:id. */
+/** A finished house entry of the SAT Dojo, for /dojo/:id. A second one, `Plain CDCL`, ranks
+ * behind it. */
 export const DOJO_SUBMISSION = 1;
 
 /** The Dojo's current season (`DOJO_SEASON`), the one before is archived. */
@@ -124,13 +125,54 @@ export function seed(dbPath: string) {
   ];
   const score = { par2: 5.9, solved: 35, total: 48, wrong: 0, budget: 10_000_000_000, fuel: 61.2, families };
   const created = (today - 10) * MS_PER_DAY;
+  // Per formula, in set order, for the metrics beyond PAR-2 (private while the season runs). The
+  // held-out family is stored under its own name, Tseitin, and shown as the mystery's.
+  const labels: Record<string, string[]> = {
+    Hashi: ['Sat'],
+    HashiParity: ['Unsat'],
+    Random3Sat: ['Sat', 'Unsat'],
+    Pigeonhole: ['Unsat', 'Unsat', 'Sat'],
+    Queens: ['Sat'],
+    Factoring: ['Sat', 'Unsat'],
+    Miter: ['Unsat', 'Sat'],
+    Coloring: ['Sat', 'Unsat'],
+    Mystery: ['Unsat', 'Unsat', 'Sat', 'Unsat'],
+  };
+  const hiddenResults = (solved: (family: string, i: number) => number | null) =>
+    families.flatMap(({ family, total }) =>
+      Array.from({ length: total }, (_, i) => {
+        const expected = labels[family][i % labels[family].length];
+        const fuel = solved(family, i);
+        return {
+          name: `f-${family}-${i}`,
+          family: family === 'Mystery' ? 'Tseitin' : family,
+          expected,
+          outcome: fuel === null ? 'Timeout' : { Solved: expected },
+          fuel: fuel ?? 7_000_000_000,
+        };
+      }),
+    );
+  // Plain DPLL solves the first ones of every family, the CDCL below some others too
+  const dpllResults = hiddenResults((family, i) => {
+    const f = families.find((x) => x.family === family)!;
+    return i < f.solved ? 2_000_000 * (i + 1) * (family.length + 3) : null;
+  });
+  const cdclResults = hiddenResults((family, i) => {
+    const f = families.find((x) => x.family === family)!;
+    if (i === f.total - 1) return 900_000_000 + 50_000_000 * family.length;
+    return i < f.solved - 1 ? 9_000_000 * (i + 2) * family.length : null;
+  });
+  const cdclScore = { ...score, par2: 6.4, solved: 34, fuel: 70.5 };
   // rules_version is dojo::RULES_VERSION: with an older one the site evaluates it again
-  db.prepare(
+  const house = db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
-       state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version)
-     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 4)`,
-  ).run(
+       state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version, results)
+     VALUES (?, NULL, 1, ?, ?, ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 4, ?)`,
+  );
+  house.run(
     DOJO_SUBMISSION,
+    'Plain DPLL',
+    'Unit propagation and nothing else.',
     new Uint8Array([0]),
     sha256('plain-dpll'),
     created,
@@ -140,6 +182,22 @@ export function seed(dbPath: string) {
     score.par2,
     score.solved,
     sha256('plain-dpll-code'),
+    JSON.stringify(dpllResults),
+  );
+  house.run(
+    DOJO_SUBMISSION + 1,
+    'Plain CDCL',
+    'Clause learning, no restarts.',
+    new Uint8Array([1]),
+    sha256('plain-cdcl'),
+    created,
+    created,
+    DOJO_SEASON,
+    JSON.stringify(cdclScore),
+    cdclScore.par2,
+    cdclScore.solved,
+    sha256('plain-cdcl-code'),
+    JSON.stringify(cdclResults),
   );
   // The season before, archived: its revealed seed (which reveals its mystery family), its set and
   // the house entry's final result

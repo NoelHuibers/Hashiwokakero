@@ -312,6 +312,7 @@ async fn the_board_for_scripts() {
         "commitment",
         "generator_version",
         "rules_version",
+        "portfolio",
     ] {
         assert!(json.get(key).is_some(), "{key} missing in {json}");
     }
@@ -320,6 +321,86 @@ async fn the_board_for_scripts() {
     // The same as the page gets
     let board = browser.call(LoadDojoBoard {}).await.unwrap();
     assert_eq!(serde_json::to_value(&board).unwrap(), json);
+}
+
+/// The board for scripts with the metrics beyond PAR-2: two house entries with results, their
+/// breakdown, contributions and the cactus plot, the held-out family as the mystery.
+#[tokio::test]
+async fn the_board_with_its_metrics() {
+    let server = Server::start().await;
+    let browser = server.browser();
+    let conn = conn().await;
+    let result = |name: &str, family: &str, expected: &str, fuel: Option<u64>| {
+        serde_json::json!({
+            "name": name, "family": family, "expected": expected,
+            "outcome": match fuel { Some(_) => serde_json::json!({"Solved": expected}), None => "Timeout".into() },
+            "fuel": fuel.unwrap_or(::dojo::DEFAULT_BUDGET),
+        })
+    };
+    let score = serde_json::json!({"par2": 5.0, "solved": 2, "total": 3, "wrong": 0,
+        "budget": ::dojo::DEFAULT_BUDGET, "fuel": 0.1, "families": []})
+    .to_string();
+    for (id, name, par2, results) in [
+        (
+            9101,
+            "Metrics A",
+            5.0,
+            [Some(1_000_000), Some(2_000_000), None],
+        ),
+        (
+            9102,
+            "Metrics B",
+            6.0,
+            [Some(5_000_000), None, Some(3_000_000)],
+        ),
+    ] {
+        let results = serde_json::json!([
+            result("a", "Hashi", "Sat", results[0]),
+            result("b", "Pigeonhole", "Unsat", results[1]),
+            result("c", "Quasigroup", "Sat", results[2]),
+        ])
+        .to_string();
+        conn.execute(
+            "INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at,
+                updated_at, state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version, results)
+             VALUES (?1, NULL, 1, ?2, '', X'00', ?2, 1, 1, 1, 'done', ?3, 3, 3, ?4, ?5, 2, 0, ?2, ?6, ?7)",
+            params![id, name, season(), score.clone(), par2, ::dojo::RULES_VERSION, results],
+        )
+        .await
+        .unwrap();
+    }
+    let json: serde_json::Value =
+        serde_json::from_slice(&browser.get("/dojo/board.json").await.bytes().await.unwrap())
+            .unwrap();
+    let entries = json["entries"].as_array().unwrap();
+    let a = entries.iter().find(|e| e["name"] == "Metrics A").unwrap();
+    let b = entries.iter().find(|e| e["name"] == "Metrics B").unwrap();
+    // Each solved one formula the other didn't: SOTA 1.5 each
+    assert_eq!(a["contribution"]["sota"], 1.5);
+    assert_eq!(b["contribution"]["sota"], 1.5);
+    assert_eq!(a["breakdown"]["held_out"], 1);
+    assert_eq!(a["breakdown"]["total"]["sat"]["total"], 1);
+    assert_eq!(a["breakdown"]["families"][2]["family"], "Mystery");
+    assert!(
+        !json.to_string().contains("Quasigroup"),
+        "the held-out family leaked"
+    );
+    let portfolio = &json["portfolio"];
+    assert_eq!(portfolio["entries"], 2);
+    assert_eq!(portfolio["vbs"]["solved"], 3);
+    assert_eq!(
+        portfolio["cactus"]["vbs"],
+        serde_json::json!([1_000_000, 2_000_000, 3_000_000])
+    );
+    // The submission page has its plot too
+    let page = browser
+        .call(LoadDojoSubmission { id: 9102 })
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(page.contribution.is_some());
+    assert_eq!(page.portfolio.unwrap().cactus.curves.len(), 2);
+    assert_status(&browser.get("/dojo/9102").await, StatusCode::OK);
 }
 
 /// A finished season (the one before the tests' current season), as the archive keeps it: the
@@ -380,6 +461,12 @@ async fn the_season_archive() {
     assert_eq!(json["past"][0]["board"][0]["name"], "Archived house");
     assert_eq!(json["past"][0]["board"][0]["author"], "Hashi");
     assert_eq!(json["past"][0]["board"].as_array().unwrap().len(), 1);
+    // Its cactus plot: the entry's curve and the VBS, the same
+    let cactus = &json["past"][0]["portfolio"]["cactus"];
+    assert_eq!(cactus["vbs"], serde_json::json!([1230]));
+    assert_eq!(cactus["curves"][0]["fuel"], serde_json::json!([1230]));
+    assert_eq!(cactus["curves"][0]["name"], "Archived house");
+    assert_eq!(cactus["formulas"], 2);
     assert!(!json.to_string().contains("must-not-leak"));
     // The same as the page gets
     let seasons = browser.call(LoadDojoSeasons {}).await.unwrap();
@@ -431,6 +518,18 @@ async fn the_season_archive() {
     assert_eq!(json["entries"][0]["rank"], 1);
     assert_eq!(json["entries"][1]["rank"], serde_json::Value::Null);
     assert_eq!(json["entries"][0]["results"][0]["fuel"], 1234);
+    // The metrics beyond PAR-2: among the final board, which has the house entry only
+    assert_eq!(json["vbs"]["solved"], 1);
+    assert_eq!(json["vbs"]["total"], 2);
+    let ranked = &json["entries"][0];
+    assert_eq!(ranked["breakdown"]["total"]["sat"]["solved"], 1);
+    assert_eq!(ranked["breakdown"]["total"]["unsat"]["total"], 1);
+    assert_eq!(ranked["contribution"]["sota"], 1.0);
+    assert_eq!(ranked["contribution"]["relative"], 1.0);
+    let shapley = ranked["contribution"]["shapley"].as_f64().unwrap();
+    assert!((shapley - (2e10 - 1234.0) / 2.0 / 1e9).abs() < 1e-9);
+    assert_eq!(json["entries"][1]["contribution"], serde_json::Value::Null);
+    assert_eq!(json["entries"][1]["breakdown"]["total"]["all"]["solved"], 1);
 
     // Nothing of the current season, later ones or seasons that don't exist
     for path in [

@@ -20,6 +20,17 @@ const SAT_COMPETITION_RULES: &str = "https://satcompetition.github.io/2026/rules
 const SAT_COMPETITION_2026_SLIDES: &str =
     "https://satcompetition.github.io/2026/downloads/satcomp26slides.pdf";
 
+/// Fréchette, Kotthoff, Michalak, Rahwan, Hoos, Leyton-Brown: "Using the Shapley Value to
+/// Analyze Algorithm Portfolios", AAAI 2016.
+const SHAPLEY_PAPER: &str = "https://ojs.aaai.org/index.php/AAAI/article/view/10440";
+
+/// The Sparkle SAT Challenge 2018, whose live leaderboard ranked solvers by their relative
+/// marginal contribution to a portfolio.
+const SPARKLE: &str = "https://ada.liacs.nl/events/sparkle-sat-18/";
+
+/// CASC, the CADE ATP System Competition, which reports a state-of-the-art contribution.
+const CASC: &str = "https://tptp.org/CASC/";
+
 /// The calibration study of fuel against native time (method, data, the cost model).
 const CALIBRATION: &str =
     "https://github.com/NoelHuibers/Hashiwokakero/blob/main/dojo/CALIBRATION.md";
@@ -218,6 +229,66 @@ pub(super) fn FairPlay() -> impl IntoView {
                 {item("写", t!(i18n, dojo.fair.copies_title).into_any(), t!(i18n, dojo.fair.copies).into_any())}
                 {item("季", t!(i18n, dojo.fair.seasons_title).into_any(), t!(i18n, dojo.fair.seasons).into_any())}
                 {item("印", t!(i18n, dojo.fair.commit_title).into_any(), t!(i18n, dojo.fair.commit).into_any())}
+            </CardContent>
+        </Card>
+    }
+}
+
+/// A link in a guide text.
+fn cite(href: &'static str) -> impl Fn(ChildrenFn) -> AnyView + Copy {
+    move |children: ChildrenFn| {
+        view! {
+            <a href=href target="_blank" rel="noopener" class="text-primary underline underline-offset-4">
+                {children()}
+            </a>
+        }
+        .into_any()
+    }
+}
+
+/// The metrics beyond PAR-2: SAT/UNSAT/ALL, cactus plots and the contributions, with sources.
+#[component]
+pub(super) fn Metrics() -> impl IntoView {
+    let i18n = use_i18n();
+    let item = |kanji: &'static str, title: AnyView, text: AnyView| {
+        view! {
+            <div class="flex gap-3">
+                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-secondary font-pixel text-lg">{kanji}</span>
+                <div>
+                    <h3 class="font-bold">{title}</h3>
+                    <p class="text-sm text-muted-foreground">{text}</p>
+                </div>
+            </div>
+        }
+    };
+    view! {
+        <Card class="gap-4" attr:id="metrics">
+            <CardHeader>
+                <CardTitle class="flex items-baseline gap-2 text-xl">
+                    {t!(i18n, dojo.metrics.title)} " " <span class="font-pixel text-sm text-primary">"評 · hyō"</span>
+                </CardTitle>
+            </CardHeader>
+            <CardContent class="flex flex-col gap-5">
+                <p class="text-sm text-muted-foreground">{t!(i18n, dojo.metrics.intro)}</p>
+                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    {item(
+                        "答",
+                        t!(i18n, dojo.metrics.answers_title).into_any(),
+                        t!(i18n, dojo.metrics.answers, <a> = cite(SAT_COMPETITION_2026_SLIDES)).into_any(),
+                    )}
+                    {item("仙", t!(i18n, dojo.metrics.cactus_title).into_any(), t!(i18n, dojo.metrics.cactus).into_any())}
+                    {item(
+                        "差",
+                        t!(i18n, dojo.metrics.marginal_title).into_any(),
+                        t!(i18n, dojo.metrics.marginal, <a> = cite(SPARKLE)).into_any(),
+                    )}
+                    {item("先", t!(i18n, dojo.metrics.sota_title).into_any(), t!(i18n, dojo.metrics.sota, <a> = cite(CASC)).into_any())}
+                    {item(
+                        "分",
+                        t!(i18n, dojo.metrics.shapley_title).into_any(),
+                        t!(i18n, dojo.metrics.shapley, <a> = cite(SHAPLEY_PAPER)).into_any(),
+                    )}
+                </div>
             </CardContent>
         </Card>
     }

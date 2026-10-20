@@ -60,8 +60,15 @@ test('the season archive with its seed, set and results', async ({ page, request
   await expect(archived).toContainText(ARCHIVED_SEED);
   // The seed reveals the held-out family
   await expect(archived.getByTestId('mystery-family')).toContainText('Mystery family: Quasigroups');
-  await expect(archived.getByRole('link', { name: 'Plain DPLL' })).toBeVisible();
-  await expect(archived.locator('tr').filter({ hasText: 'Plain DPLL' })).toContainText('35/48');
+  const archivedEntry = archived.getByRole('link', { name: 'Plain DPLL' });
+  await expect(archivedEntry).toBeVisible();
+  // `has` is relative to the row, so a locator from the page
+  const dpllLink = page.getByRole('link', { name: 'Plain DPLL' });
+  await expect(archived.locator('tr').filter({ has: dpllLink })).toContainText('35/48');
+  // The same views and plot as the leaderboard, with every family under its own name
+  await expect(archived.getByTestId('cactus').locator('polyline[data-series="vbs"]')).toHaveCount(1);
+  await archived.getByRole('tab', { name: 'Contribution' }).click();
+  await expect(archived.locator('tr').filter({ has: dpllLink })).toContainText('100.0%');
   for (const [name, path] of [
     [/^Hidden set/, 'set.tar.gz'],
     ['Results per formula (CSV)', 'results.csv'],
@@ -81,4 +88,52 @@ test('the season archive with its seed, set and results', async ({ page, request
   );
   // Nothing of the running season
   expect((await request.get(`/dojo/seasons/${DOJO_SEASON}/results.csv`)).status()).toBe(404);
+});
+
+test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
+  await visit(page, '/dojo');
+  const board = page.locator('#leaderboard');
+  // Relative to the page: `has` looks inside the row
+  const dpll = page.getByRole('link', { name: 'Plain DPLL' });
+  const cdcl = page.getByRole('link', { name: 'Plain CDCL' });
+  await expect(board.getByRole('link', { name: 'Plain CDCL' })).toBeVisible();
+  // The official ranking first
+  await expect(board.getByRole('tab', { name: 'Ranking' })).toHaveAttribute('aria-selected', 'true');
+  await expect(board.locator('tbody tr').first()).toContainText('Plain DPLL');
+
+  // SAT/UNSAT: the mystery family's formulas stay out of the split while the season runs
+  await board.getByRole('tab', { name: 'SAT / UNSAT' }).click();
+  await expect(board.getByText(/the mystery family only counts in ALL/)).toBeVisible();
+  await expect(board.getByRole('columnheader', { name: /^UNSAT$/ })).toBeVisible();
+
+  // Contributions, sortable: each solves formulas the other doesn't
+  await board.getByRole('tab', { name: 'Contribution' }).click();
+  const shapley = board.getByRole('columnheader', { name: /Shapley/ });
+  await expect(shapley).toHaveAttribute('aria-sort', 'none');
+  await shapley.getByRole('button').click();
+  await expect(shapley).toHaveAttribute('aria-sort', 'descending');
+  await expect(board.locator('tr').filter({ has: dpll })).toContainText('%');
+  await expect(board.getByTestId('vbs')).toContainText('Virtual best solver of 2 solvers');
+
+  // The plot: a line per solver and the VBS, hovering a row highlights its line
+  const cactus = board.getByTestId('cactus');
+  await expect(cactus.locator('polyline[data-curve]')).toHaveCount(2);
+  await expect(cactus.locator('polyline[data-series="vbs"]')).toHaveCount(1);
+  await expect(cactus.getByRole('img')).toHaveAttribute('aria-label', /^Cactus plot of 2 solvers/);
+  await board.locator('tr').filter({ has: cdcl }).hover();
+  await expect(cactus.locator('polyline[data-series="highlight"]')).toHaveCount(1);
+  // The crosshair and its tooltip, by keyboard
+  await cactus.getByRole('img').focus();
+  await page.keyboard.press('End');
+  await expect(cactus.getByText(/formulas solved$/)).toBeVisible();
+  await cactus.getByText('Show as a table').click();
+  await expect(cactus.locator('tr').filter({ hasText: 'Virtual best solver' })).toBeVisible();
+
+  // The submission's page: its split, its contribution and its line in the plot
+  await dpll.click();
+  await expect(page).toHaveURL(new RegExp(`/dojo/${DOJO_SUBMISSION}$`));
+  await expect(page.getByTestId('answers')).toContainText('All families');
+  await expect(page.getByTestId('answers')).toContainText('Mystery family');
+  await expect(page.getByTestId('contribution')).toContainText('Shapley');
+  await expect(page.getByTestId('cactus').locator('polyline[data-series="highlight"]')).toHaveCount(1);
 });
