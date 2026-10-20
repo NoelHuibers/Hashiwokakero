@@ -1,4 +1,7 @@
 {
+  "action_pending": "Warte auf den Server…",
+  "action_retry": "Das Ergebnis ist ungewiss. Drücke dieselbe Aktion erneut, um es ohne weitere Strafe abzurufen.",
+  "action_storage": "Browserspeicher ist erforderlich, um diese Aktion sicher zu wiederholen. Aktiviere ihn und versuche es erneut.",
   "meta": {
     "title": "Hashi · Tägliches Hashiwokakero-Brückenrätsel, gratis",
     "description": "Jeden Tag ein neues Hashiwokakero-Rätsel (Brücken bauen), für alle gleich: süße japanische Pixel-Art, Rangliste und Serien, immer genau eine Lösung."

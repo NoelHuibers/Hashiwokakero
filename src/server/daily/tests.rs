@@ -664,7 +664,7 @@ async fn deleting_keeps_the_rankings_but_nothing_personal() {
     // Bob's personal bits: a move log and device, a flagged and an unfinished daily, a session,
     // a stamp, a Dojo submission
     conn.execute(
-        "UPDATE attempts SET log = '[]', device = 'd', bridges = '[]' WHERE user_id = ?1",
+        "UPDATE attempts SET log = '[]', device = 'd', bridges = '[]', paid_actions = '[{\"id\":\"personal-intent-id\"}]' WHERE user_id = ?1",
         params![b],
     )
     .await
@@ -709,7 +709,7 @@ async fn deleting_keeps_the_rankings_but_nothing_personal() {
         1
     );
     assert_eq!(
-        left("SELECT COUNT(*) FROM attempts WHERE user_id = ?1 AND (log IS NOT NULL OR device IS NOT NULL OR bridges IS NOT NULL)").await,
+        left("SELECT COUNT(*) FROM attempts WHERE user_id = ?1 AND (log IS NOT NULL OR device IS NOT NULL OR bridges IS NOT NULL OR paid_actions != '[]')").await,
         0
     );
     for table in ["sessions", "stamps", "dojo_submissions"] {
@@ -961,4 +961,300 @@ async fn contact_history_is_bounded_and_can_be_paged_without_duplicates() {
         .unwrap();
     assert_eq!(second.len(), 5);
     assert!(second.iter().all(|m| m.id < first.last().unwrap().id));
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn concurrent_paid_intents_charge_once_across_connections() {
+    use crate::api::PaidAction;
+    let (db, conn) = test_db().await;
+    let id = user(&conn, "paid racer", None).await;
+    let info = start(&conn, id, MONDAY, None).await.unwrap();
+    let empty = Board::new(info.puzzle.unwrap()).empty_bridges();
+    // Exercise both purchases, each with two independent requests starting together.
+    for (action, request) in [
+        (PaidAction::Hint, "concurrent-hint-001"),
+        (PaidAction::Check, "concurrent-check-01"),
+    ] {
+        let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(2));
+        let run = |conn: Connection| {
+            let gate = barrier.clone();
+            let bridges = empty.clone();
+            tokio::spawn(async move {
+                gate.wait().await;
+                paid_action(&conn, id, MONDAY, bridges, action, request)
+                    .await
+                    .unwrap()
+            })
+        };
+        let first = run(db::connect(&db.database).unwrap());
+        let second = run(db::connect(&db.database).unwrap());
+        assert_eq!(first.await.unwrap(), second.await.unwrap());
+    }
+    let attempt = attempt(&conn, id, MONDAY).await.unwrap().unwrap();
+    assert_eq!((attempt.hints, attempt.checks), (1, 1));
+}
+
+#[tokio::test]
+async fn a_lost_paid_reply_replays_but_different_intents_still_charge() {
+    use crate::api::{PaidAction, PaidOutcome};
+    let (_db, conn) = test_db().await;
+    let id = user(&conn, "retry player", None).await;
+    let info = start(&conn, id, MONDAY, None).await.unwrap();
+    let empty = Board::new(info.puzzle.unwrap()).empty_bridges();
+    let lost = paid_action(
+        &conn,
+        id,
+        MONDAY,
+        empty.clone(),
+        PaidAction::Hint,
+        "lost-hint-response-1",
+    )
+    .await
+    .unwrap();
+    assert!(matches!(lost.outcome, PaidOutcome::Hint(Some(_))));
+    // A different ID explicitly buys another hint, even on identical bridges.
+    let other = paid_action(
+        &conn,
+        id,
+        MONDAY,
+        empty.clone(),
+        PaidAction::Hint,
+        "new-hint-intent-002",
+    )
+    .await
+    .unwrap();
+    assert_eq!((other.hints, other.checks), (2, 0));
+    let recovered = paid_action(
+        &conn,
+        id,
+        MONDAY,
+        empty.clone(),
+        PaidAction::Hint,
+        "lost-hint-response-1",
+    )
+    .await
+    .unwrap();
+    assert_eq!(recovered.outcome, lost.outcome);
+    assert_eq!((recovered.hints, recovered.checks), (2, 0));
+    // Retry remains valid after finishing; it cannot buy a penalty after the time was saved.
+    let daily = get_or_create(&conn, MONDAY).await.unwrap();
+    age(&conn, id, MONDAY, 60_000).await;
+    submit(
+        &conn,
+        id,
+        MONDAY,
+        daily.solution.clone(),
+        10,
+        played(&daily.solution),
+        None,
+    )
+    .await
+    .unwrap();
+    let again = paid_action(
+        &conn,
+        id,
+        MONDAY,
+        empty.clone(),
+        PaidAction::Hint,
+        "lost-hint-response-1",
+    )
+    .await
+    .unwrap();
+    assert_eq!(again, recovered);
+    assert!(
+        paid_action(
+            &conn,
+            id,
+            MONDAY,
+            empty,
+            PaidAction::Hint,
+            "new-after-finish-001"
+        )
+        .await
+        .is_err()
+    );
+    let saved = attempt(&conn, id, MONDAY).await.unwrap().unwrap();
+    assert_eq!(saved.hints, 2);
+    assert_eq!(
+        saved.time_ms,
+        Some(saved.finished_at.unwrap() - saved.started_at + saved.penalty_ms())
+    );
+}
+
+#[tokio::test]
+async fn paid_receipts_are_bound_to_player_day_action_and_payload() {
+    use crate::api::PaidAction;
+    let (_db, conn) = test_db().await;
+    let a = user(&conn, "first payer", None).await;
+    let b = user(&conn, "second payer", None).await;
+    let info = start(&conn, a, MONDAY, None).await.unwrap();
+    start(&conn, b, MONDAY, None).await.unwrap();
+    let empty = Board::new(info.puzzle.unwrap()).empty_bridges();
+    let request = "ownership-intent-01";
+    paid_action(&conn, a, MONDAY, empty.clone(), PaidAction::Check, request)
+        .await
+        .unwrap();
+    assert!(
+        paid_action(&conn, a, MONDAY, empty.clone(), PaidAction::Hint, request)
+            .await
+            .is_err()
+    );
+    let mut changed = empty.clone();
+    changed[0] = 1;
+    assert!(
+        paid_action(&conn, a, MONDAY, changed, PaidAction::Check, request)
+            .await
+            .is_err()
+    );
+    assert!(
+        paid_action(
+            &conn,
+            a,
+            MONDAY + 1,
+            empty.clone(),
+            PaidAction::Check,
+            request
+        )
+        .await
+        .is_err()
+    );
+    let second = paid_action(&conn, b, MONDAY, empty, PaidAction::Check, request)
+        .await
+        .unwrap();
+    assert_eq!(second.checks, 1);
+    let first = attempt(&conn, a, MONDAY).await.unwrap().unwrap();
+    assert_eq!((first.hints, first.checks), (0, 1));
+}
+
+#[tokio::test]
+async fn paid_receipts_are_bounded_without_evicting_retry_safety() {
+    use crate::api::PaidAction;
+    let (_db, conn) = test_db().await;
+    let id = user(&conn, "bounded payer", None).await;
+    let info = start(&conn, id, MONDAY, None).await.unwrap();
+    let empty = Board::new(info.puzzle.unwrap()).empty_bridges();
+    for bad in [
+        String::new(),
+        "short".into(),
+        "x".repeat(65),
+        "invalid!intent-id-1".into(),
+    ] {
+        assert!(
+            paid_action(&conn, id, MONDAY, empty.clone(), PaidAction::Check, &bad)
+                .await
+                .is_err()
+        );
+    }
+    assert!(
+        paid_action(
+            &conn,
+            id,
+            MONDAY,
+            vec![3],
+            PaidAction::Check,
+            "invalid-board-id-01"
+        )
+        .await
+        .is_err()
+    );
+    assert_eq!(attempt(&conn, id, MONDAY).await.unwrap().unwrap().checks, 0);
+    for n in 0..256 {
+        paid_action(
+            &conn,
+            id,
+            MONDAY,
+            empty.clone(),
+            PaidAction::Check,
+            &format!("bounded-intent-{n:04}"),
+        )
+        .await
+        .unwrap();
+    }
+    let overflow = paid_action(
+        &conn,
+        id,
+        MONDAY,
+        empty.clone(),
+        PaidAction::Check,
+        "overflow-intent-001",
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(
+        ApiError::from_message(&overflow.to_string()),
+        Some(ApiError::TooManyAttempts)
+    );
+    let replay = paid_action(
+        &conn,
+        id,
+        MONDAY,
+        empty,
+        PaidAction::Check,
+        "bounded-intent-0000",
+    )
+    .await
+    .unwrap();
+    assert_eq!(replay.checks, 256);
+}
+
+#[tokio::test]
+async fn paid_noop_hints_replay_without_penalties_and_failed_writes_leave_no_receipt() {
+    use crate::api::{PaidAction, PaidOutcome};
+    let (_db, conn) = test_db().await;
+    let id = user(&conn, "no-op payer", None).await;
+    start(&conn, id, MONDAY, None).await.unwrap();
+    let daily = get_or_create(&conn, MONDAY).await.unwrap();
+    let request = "no-op-hint-intent-01";
+    let noop = paid_action(
+        &conn,
+        id,
+        MONDAY,
+        daily.solution.clone(),
+        PaidAction::Hint,
+        request,
+    )
+    .await
+    .unwrap();
+    assert_eq!(noop.outcome, PaidOutcome::Hint(None));
+    assert_eq!(noop.hints, 0);
+    assert_eq!(
+        paid_action(
+            &conn,
+            id,
+            MONDAY,
+            daily.solution.clone(),
+            PaidAction::Hint,
+            request
+        )
+        .await
+        .unwrap(),
+        noop
+    );
+    conn.execute_batch("CREATE TRIGGER fail_paid BEFORE UPDATE OF paid_actions ON attempts BEGIN SELECT RAISE(ABORT, 'injected receipt write failure'); END;").await.unwrap();
+    let empty = Board::new(daily.puzzle).empty_bridges();
+    assert!(
+        paid_action(
+            &conn,
+            id,
+            MONDAY,
+            empty.clone(),
+            PaidAction::Check,
+            "failed-write-id-001"
+        )
+        .await
+        .is_err()
+    );
+    assert_eq!(attempt(&conn, id, MONDAY).await.unwrap().unwrap().checks, 0);
+    conn.execute_batch("DROP TRIGGER fail_paid").await.unwrap();
+    let retry = paid_action(
+        &conn,
+        id,
+        MONDAY,
+        empty,
+        PaidAction::Check,
+        "failed-write-id-001",
+    )
+    .await
+    .unwrap();
+    assert_eq!(retry.checks, 1);
 }

@@ -1,4 +1,7 @@
 {
+  "action_pending": "Sunucu bekleniyor…",
+  "action_retry": "Sonuç belirsiz. Ek ceza almadan sonucu almak için aynı işlemi tekrar yapın.",
+  "action_storage": "Bu işlemi güvenle yeniden denemek için tarayıcı depolaması gereklidir. Etkinleştirip tekrar deneyin.",
   "meta": {
     "title": "Hashi · Günlük Hashiwokakero (Köprüler) bulmacası, ücretsiz",
     "description": "Her gün herkes için aynı yeni bir Hashiwokakero (Köprüler) bulmacası: sevimli Japon piksel sanatı, sıralama, seriler ve her bulmacanın tek bir çözümü var."

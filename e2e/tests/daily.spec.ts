@@ -3,7 +3,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { register, signInWith, signOut } from '../account';
-import { addBridge, DAILY_KEY, saved } from '../board';
+import { addBridge, DAILY_KEY, missing, saved } from '../board';
 import { expectResult, solveDaily, startDaily } from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
 
@@ -125,4 +125,208 @@ test('the move log saves bridge changes and stays idle while the clock ticks', a
   await page.clock.runFor(1_000);
   expect(await writes()).toBe(3);
   expect(await log()).toEqual(before);
+});
+
+const paidPath = '**/api/daily_paid_action';
+const actionStatus = (page: Page) => page.getByTestId('daily-action-status');
+
+// These use the real server, with only transport timing/failure controlled by the browser.
+// They require matching built WASM/server assets (the same prerequisite as the daily suite).
+test('a delayed paid action blocks double taps, keyboard edits and other actions immediately', async ({ page }) => {
+  await visit(page, '/');
+  await startDaily(page);
+  const before = await saved(page, DAILY_KEY);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  let requests = 0;
+  await page.route(paidPath, async (route) => {
+    requests++;
+    await held;
+    await route.continue();
+  });
+  const hint = page.getByRole('button', { name: /^Hint/ });
+  try {
+    // Two DOM clicks in one turn exercise the synchronous handler guard, before Leptos has
+    // rendered disabled attributes. A disabled flag rendered on the next frame is too late.
+    await hint.evaluate((button) => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
+    await expect.poll(() => requests).toBe(1);
+    await expect(actionStatus(page)).toHaveText('Waiting for the server…');
+    for (const name of [/^Hint/, /^Check/, /^Give up/, /Undo/, /Redo/, /^Clear/]) {
+      await expect(page.getByRole('button', { name })).toBeDisabled();
+    }
+    const board = page.locator('svg.board-svg').first();
+    await board.focus();
+    await board.press('Enter');
+    await board.press('ArrowRight');
+    await board.press('Space');
+    expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
+    expect((await saved(page, DAILY_KEY)).moves).toBe(before.moves);
+    expect(requests).toBe(1);
+  } finally {
+    release();
+  }
+  await expect(actionStatus(page)).toBeEmpty();
+  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  expect(requests).toBe(1);
+  await expect(hint).toBeEnabled();
+});
+
+for (const action of ['Hint', 'Check'] as const) {
+  test(`a lost successful ${action} reply survives reload and retry without another penalty`, async ({ page }) => {
+    await visit(page, '/');
+    await startDaily(page);
+    const bodies: Record<string, unknown>[] = [];
+    await page.route(paidPath, async (route) => {
+      bodies.push(route.request().postDataJSON());
+      const response = await route.fetch(); // the real server commits the charge
+      if (bodies.length === 1) {
+        // Simulate a reply that cannot be decoded after the server committed successfully.
+        await route.fulfill({ response, contentType: 'application/json', body: '{"lost":"reply"}' });
+      } else {
+        await route.fulfill({ response });
+      }
+    });
+    const button = page.getByRole('button', { name: new RegExp(`^${action}`) });
+    await button.click();
+    await expect(actionStatus(page)).toContainText('Press the same action again');
+    await expect(button).toBeEnabled(); // the failure clears pending
+    await expect(page.getByRole('button', { name: /^Give up/ })).toBeDisabled();
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
+    await expect(actionStatus(page)).toContainText('Press the same action again');
+    await button.click();
+    await expect(actionStatus(page)).toBeEmpty();
+    expect(bodies).toHaveLength(2);
+    expect(bodies[1]).toEqual(bodies[0]);
+    const penalty = action === 'Hint' ? '+30s' : '+10s';
+    await expect(page.getByText(penalty, { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')))).toEqual([]);
+  });
+}
+
+test('a failed paid request clears pending and retries the original intent', async ({ page }) => {
+  await visit(page, '/');
+  await startDaily(page);
+  const bodies: Record<string, unknown>[] = [];
+  await page.route(paidPath, async (route) => {
+    bodies.push(route.request().postDataJSON());
+    if (bodies.length === 1) {
+      // No server write this time. The UI cannot distinguish this from a lost success.
+      await route.fulfill({ contentType: 'application/json', body: 'null' });
+    } else {
+      await route.continue();
+    }
+  });
+  const check = page.getByRole('button', { name: /^Check/ });
+  await check.click();
+  await expect(actionStatus(page)).toContainText('Press the same action again');
+  await expect(check).toBeEnabled();
+  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  await check.click();
+  await expect(actionStatus(page)).toBeEmpty();
+  expect(bodies).toHaveLength(2);
+  expect(bodies[1]).toEqual(bodies[0]);
+  await expect(page.getByText('+10s', { exact: true })).toBeVisible();
+});
+
+test('a paid reply arriving after leaving the daily cannot mutate its persistent board', async ({ page }) => {
+  await visit(page, '/');
+  await startDaily(page);
+  const before = (await saved(page, DAILY_KEY)).bridges;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  let committed = false;
+  await page.route(paidPath, async (route) => {
+    const response = await route.fetch();
+    committed = true;
+    await held;
+    await route.fulfill({ response });
+  });
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect.poll(() => committed).toBe(true);
+  try {
+    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await expect(page).toHaveURL(/\/practice/);
+  } finally {
+    release();
+  }
+  await page.waitForLoadState('networkidle');
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
+  await page.getByRole('link', { name: /Daily/ }).first().click();
+  await expect(actionStatus(page)).toContainText('Press the same action again');
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toBeEmpty();
+  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+});
+
+
+test('a final paid hint flushes its move log and submits exactly once', async ({ page }) => {
+  await visit(page, '/');
+  const { solution } = await startDaily(page);
+  let submissions = 0;
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/submit_daily')) submissions++;
+  });
+  const hint = page.getByRole('button', { name: /^Hint/ });
+  while (missing((await saved(page, DAILY_KEY)).bridges, solution).length > 0) {
+    const before = (await saved(page, DAILY_KEY)).bridges;
+    await hint.click();
+    await expect.poll(async () => (await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
+  }
+  await expectResult(page);
+  expect(submissions).toBe(1);
+  const log = await page.evaluate(() => JSON.parse(localStorage.getItem('hashi.daily.log') ?? 'null'));
+  expect(log.events.length).toBeGreaterThan(0);
+  expect(log.events.every((event: { tap: boolean }) => !event.tap)).toBe(true);
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+});
+
+test('closing the tab after a lost success preserves the paid intent for the next tab', async ({ page, context, problems }) => {
+  await visit(page, '/');
+  await startDaily(page);
+  await page.route(paidPath, async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, contentType: 'application/json', body: 'null' });
+  });
+  await page.getByRole('button', { name: /^Hint/ }).click();
+  await expect(actionStatus(page)).toContainText('Press the same action again');
+  await page.close();
+  const next = await context.newPage();
+  next.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
+  next.on('console', (message) => {
+    if (message.type() === 'error') problems.push(`console error: ${message.text()}`);
+  });
+  try {
+    await visit(next, '/');
+    await expect(actionStatus(next)).toContainText('Press the same action again');
+    await next.getByRole('button', { name: /^Hint/ }).click();
+    await expect(actionStatus(next)).toBeEmpty();
+    await expect(next.getByText('+30s', { exact: true })).toBeVisible();
+  } finally {
+    await next.close();
+  }
+});
+
+test('unavailable intent storage prevents a charge and releases pending', async ({ page }) => {
+  await page.addInitScript(() => {
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key.startsWith('hashi.daily.action.')) throw new DOMException('test storage unavailable', 'QuotaExceededError');
+      set.call(this, key, value);
+    };
+  });
+  await visit(page, '/');
+  await startDaily(page);
+  let requests = 0;
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/daily_paid_action')) requests++;
+  });
+  const hint = page.getByRole('button', { name: /^Hint/ });
+  await hint.click();
+  await expect(page.getByText('Browser storage is required to retry this action safely. Enable it and try again.')).toBeVisible();
+  await expect(hint).toBeEnabled();
+  await expect(actionStatus(page)).toBeEmpty();
+  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  expect(requests).toBe(0);
 });

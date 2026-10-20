@@ -184,6 +184,106 @@ pub async fn check(
     Ok(wrong_edges(&bridges, &daily.solution))
 }
 
+/// A maximum of 256 distinct purchases per attempt. Receipts live with the attempt and are
+/// never evicted, even after finishing: an arbitrarily late retry cannot charge again. This
+/// bounds retained receipt count without an expiry window that could turn retries into charges.
+/// Account erasure clears them along with bridges/logs and revokes every session.
+const MAX_PAID_ACTIONS: usize = 256;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct PaidReceipt {
+    id: String,
+    action: crate::api::PaidAction,
+    bridges: Vec<u8>,
+    outcome: crate::api::PaidOutcome,
+}
+
+/// The receipt and the penalty are committed together under the same cross-connection lock as
+/// submission. Identity comes exclusively from the session, never from the request body.
+pub async fn paid_action(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+    action: crate::api::PaidAction,
+    request_id: &str,
+) -> Result<crate::api::PaidReply, ServerFnError> {
+    use crate::api::{PaidAction, PaidOutcome, PaidReply};
+
+    if !(16..=64).contains(&request_id.len())
+        || !request_id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+    {
+        return Err(ApiError::WrongPuzzle.into());
+    }
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    let current = attempt(&tx, user, day)
+        .await?
+        .ok_or_else(|| ApiError::NotStarted.fail())?;
+    let saved: String = tx
+        .query(
+            "SELECT paid_actions FROM attempts WHERE user_id = ?1 AND day = ?2",
+            params![user, day],
+        )
+        .await
+        .map_err(db_err)?
+        .next()
+        .await
+        .map_err(db_err)?
+        .ok_or_else(|| ApiError::NotStarted.fail())?
+        .get(0)
+        .map_err(db_err)?;
+    let mut receipts: Vec<PaidReceipt> = from_json(&saved)?;
+    // Replay before checking 'finished', so a lost reply can also be recovered after submission.
+    if let Some(receipt) = receipts.iter().find(|r| r.id == request_id) {
+        if receipt.action != action || receipt.bridges != bridges {
+            return Err(ApiError::WrongPuzzle.into());
+        }
+        let reply = PaidReply {
+            outcome: receipt.outcome.clone(),
+            hints: current.hints,
+            checks: current.checks,
+        };
+        tx.commit().await.map_err(db_err)?;
+        return Ok(reply);
+    }
+    if current.finished() {
+        return Err(ApiError::AlreadyFinished.into());
+    }
+    if receipts.len() >= MAX_PAID_ACTIONS {
+        return Err(ApiError::TooManyAttempts.into());
+    }
+    let daily = get_or_create(&tx, day).await?;
+    let board = Board::new(daily.puzzle);
+    check_bridges(&board, &bridges)?;
+    let outcome = match action {
+        PaidAction::Hint => PaidOutcome::Hint(pick_hint(&board, &bridges, &daily.solution)),
+        PaidAction::Check => PaidOutcome::Check(wrong_edges(&bridges, &daily.solution)),
+    };
+    let hints = current.hints + i64::from(matches!(&outcome, PaidOutcome::Hint(Some(_))));
+    let checks = current.checks + i64::from(action == PaidAction::Check);
+    receipts.push(PaidReceipt {
+        id: request_id.to_owned(),
+        action,
+        bridges,
+        outcome: outcome.clone(),
+    });
+    tx.execute(
+        "UPDATE attempts SET hints = ?3, checks = ?4, paid_actions = ?5 WHERE user_id = ?1 AND day = ?2",
+        params![user, day, hints, checks, json(&receipts)?],
+    ).await.map_err(db_err)?;
+    tx.commit().await.map_err(db_err)?;
+    Ok(PaidReply {
+        outcome,
+        hints,
+        checks,
+    })
+}
+
 /// Gives up: the solution, the attempt won't be ranked.
 pub async fn reveal(conn: &Connection, user: i64, day: i64) -> Result<Vec<u8>, ServerFnError> {
     let tx = conn

@@ -290,6 +290,11 @@ CREATE INDEX IF NOT EXISTS attempts_user_ranked ON attempts (user_id, day, time_
 CREATE INDEX IF NOT EXISTS attempts_day_ranked ON attempts (day, time_ms, finished_at)
     WHERE finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL;
 ",
+    "
+-- Bounded paid-action receipts belong to the attempt, including account deletion/guest cleanup.
+-- Never evict an accepted ID: replaying an old intent must never become a new charge.
+ALTER TABLE attempts ADD COLUMN paid_actions TEXT NOT NULL DEFAULT '[]';
+",
 ];
 
 pub async fn init() -> Result<(), String> {

@@ -65,6 +65,7 @@ pub(super) fn browser_utc_offset() -> i32 {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Daily {
+    pub(super) actions: super::actions::Actions,
     pub(super) game: Game,
     pub(super) info: RwSignal<Option<DailyInfo>>,
     /// Server clock minus client clock.
@@ -430,6 +431,10 @@ mod tests {
     fn daily() -> Daily {
         Daily {
             game: Game::new("test.daily"),
+            actions: super::super::actions::Actions::new(crate::state::Auth {
+                user: RwSignal::new(None),
+                loaded: RwSignal::new(true),
+            }),
             info: RwSignal::new(None),
             skew: RwSignal::new(0),
             now: RwSignal::new(0),

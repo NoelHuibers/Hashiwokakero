@@ -145,6 +145,9 @@ async fn write_rows(conn: &Connection, version: usize) {
         .await;
     }
     // 12 only added indexes
+    if version >= 13 {
+        run(r#"UPDATE attempts SET paid_actions = '[{"id":"saved-intent","action":"Check","bridges":[0,0],"outcome":{"Check":[]}}]' WHERE user_id = 2"#).await;
+    }
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -156,7 +159,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        12,
+        13,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -235,7 +238,22 @@ async fn old_databases_migrate_with_their_data() {
             );
         }
         // Columns that came later are empty for old rows
+        let receipts: String = conn
+            .query("SELECT paid_actions FROM attempts WHERE user_id = 2", ())
+            .await
+            .unwrap()
+            .next()
+            .await
+            .unwrap()
+            .unwrap()
+            .get(0)
+            .unwrap();
+        assert_eq!(receipts.contains("saved-intent"), version >= 13, "{label}");
         let defaults = [
+            (
+                "SELECT COUNT(*) FROM attempts WHERE paid_actions = '[]'",
+                if version >= 13 { 1 } else { 2 },
+            ),
             (
                 "SELECT COUNT(*) FROM users WHERE deleted_at IS NULL",
                 2 + i64::from(version >= 11),

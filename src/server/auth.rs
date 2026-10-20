@@ -604,7 +604,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         "UPDATE dojo_archive SET user_id = NULL, name = '', source_url = NULL WHERE user_id = ?1",
         "DELETE FROM attempts
          WHERE user_id = ?1 AND (finished_at IS NULL OR revealed != 0 OR flag IS NOT NULL)",
-        "UPDATE attempts SET bridges = NULL, log = NULL, device = NULL, run = NULL, daypart = NULL
+        "UPDATE attempts SET bridges = NULL, log = NULL, device = NULL, run = NULL, daypart = NULL, paid_actions = '[]'
          WHERE user_id = ?1",
     ] {
         tx.execute(sql, params![user]).await.map_err(db_err)?;

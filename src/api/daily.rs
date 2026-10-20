@@ -48,6 +48,46 @@ pub async fn daily_check(day: i64, bridges: Vec<u8>) -> Result<Vec<usize>, Serve
     daily::check(&conn, user.id, day, bridges).await
 }
 
+/// A paid action intent. The older hint/check endpoints keep their wire formats.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum PaidAction {
+    Hint,
+    Check,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum PaidOutcome {
+    Hint(Option<(usize, u8)>),
+    Check(Vec<usize>),
+}
+
+/// The original outcome and the current authoritative penalty counters, including on replay.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct PaidReply {
+    pub outcome: PaidOutcome,
+    pub hints: i64,
+    pub checks: i64,
+}
+
+/// Retries must reuse the same ID, action and bridges. A fresh ID expresses a fresh purchase.
+#[server(input = Json, client = HashiClient)]
+pub async fn daily_paid_action(
+    day: i64,
+    bridges: Vec<u8>,
+    action: PaidAction,
+    request_id: String,
+    expected_user: i64,
+) -> Result<PaidReply, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    // Cookies are shared across tabs. A sign-in elsewhere must not charge another player's
+    // attempt while this page still displays the previous identity. This is an assertion,
+    // never a substitute for the authenticated user.
+    if user.id != expected_user {
+        return Err(crate::model::ApiError::SessionExpired.into());
+    }
+    daily::paid_action(&conn, user.id, day, bridges, action, &request_id).await
+}
+
 /// The solution. The attempt is no longer ranked.
 #[server(input = Json, client = HashiClient)]
 pub async fn daily_reveal(day: i64) -> Result<Vec<u8>, ServerFnError> {

@@ -1,4 +1,7 @@
 {
+  "action_pending": "正在等待服务器…",
+  "action_retry": "结果尚不确定。再次执行同一操作即可获取结果，不会增加罚时。",
+  "action_storage": "安全重试此操作需要浏览器存储。请启用后重试。",
   "meta": {
     "title": "Hashi · 每日数桥逻辑谜题 · 免费在线玩",
     "description": "每天一道新的数桥（Hashiwokakero）谜题，人人同题：可爱的日式像素画风、排行榜和连胜，每题唯一解。"
