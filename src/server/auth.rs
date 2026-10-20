@@ -181,6 +181,14 @@ async fn user_by_token(
 }
 
 async fn create_session(conn: &Connection, user_id: i64) -> Result<(), ServerFnError> {
+    let token = insert_session(conn, user_id).await?;
+    set_cookie(&token, SESSION_DAYS * 24 * 3600);
+    Ok(())
+}
+
+/// Stores a session without publishing its cookie: a caller in a transaction must commit
+/// before the browser receives a token that depends on that transaction.
+async fn insert_session(conn: &Connection, user_id: i64) -> Result<String, ServerFnError> {
     let token = hex(&random_bytes::<32>());
     let now = now_ms();
     conn.execute(
@@ -193,8 +201,7 @@ async fn create_session(conn: &Connection, user_id: i64) -> Result<(), ServerFnE
     conn.execute("DELETE FROM sessions WHERE expires_at < ?1", params![now])
         .await
         .map_err(db_err)?;
-    set_cookie(&token, SESSION_DAYS * 24 * 3600);
-    Ok(())
+    Ok(token)
 }
 
 /// The current user, or a new guest with a session.
@@ -277,43 +284,78 @@ pub async fn register(
     }
     validate_username(username, false)?;
     validate_password(&password)?;
+    // Capture the guest before password work can yield to another registration. Never treat
+    // a revoked token as an anonymous signup: a competing upgrade must not create a second
+    // account or replace the successful response's cookie.
+    let current = match request_token().await {
+        Some(token) => {
+            let (user, _) = user_by_token(conn, &token)
+                .await?
+                .ok_or_else(|| ApiError::SessionExpired.fail())?;
+            Some((user, token))
+        }
+        None => None,
+    };
     let hash = hash_password(password).await?;
-    let current = current_user(conn).await?;
-    let result = match &current {
-        Some(user) if user.username.is_none() => {
-            conn.execute(
-                "UPDATE users SET username = ?1, name = ?1, password_hash = ?2 WHERE id = ?3",
-                params![username, hash, user.id],
-            )
-            .await
+    let (user, token) = register_hashed(conn, current, username, hash).await?;
+    set_cookie(&token, SESSION_DAYS * 24 * 3600);
+    super::daily::invalidate_profiles();
+    Ok(user)
+}
+
+/// Claims a captured guest, revokes its sessions and stores the replacement atomically.
+async fn register_hashed(
+    conn: &Connection,
+    current: Option<(User, String)>,
+    username: &str,
+    hash: String,
+) -> Result<(User, String), ServerFnError> {
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    let signup_error = |e: libsql::Error| {
+        if e.to_string().contains("UNIQUE") {
+            ApiError::UsernameTaken.fail()
+        } else {
+            db_err(e)
+        }
+    };
+    let id = match current {
+        Some((user, token)) if user.username.is_none() => {
+            let changed = tx
+                .execute(
+                    "UPDATE users SET username = ?1, name = ?1, password_hash = ?2
+                 WHERE id = ?3 AND username IS NULL AND deleted_at IS NULL AND banned_at IS NULL
+                   AND EXISTS (SELECT 1 FROM sessions WHERE token_hash = ?4
+                               AND user_id = ?3 AND expires_at > ?5)",
+                    params![username, hash, user.id, hash_token(&token), now_ms()],
+                )
+                .await
+                .map_err(signup_error)?;
+            if changed != 1 {
+                return Err(ApiError::SessionExpired.fail());
+            }
+            tx.execute("DELETE FROM sessions WHERE user_id = ?1", params![user.id])
+                .await
+                .map_err(db_err)?;
+            user.id
         }
         _ => {
-            conn.execute(
+            tx.execute(
                 "INSERT INTO users (username, name, password_hash, created_at) VALUES (?1, ?1, ?2, ?3)",
                 params![username, hash, now_ms()],
             )
-            .await
+            .await.map_err(signup_error)?;
+            tx.last_insert_rowid()
         }
     };
-    if let Err(e) = result {
-        return Err(if e.to_string().contains("UNIQUE") {
-            ApiError::UsernameTaken.into()
-        } else {
-            db_err(e)
-        });
-    }
-    let id = match current {
-        Some(user) if user.username.is_none() => user.id,
-        _ => {
-            let id = conn.last_insert_rowid();
-            create_session(conn, id).await?;
-            id
-        }
-    };
-    super::daily::invalidate_profiles();
-    user_by_id(conn, id)
+    let token = insert_session(&tx, id).await?;
+    let user = user_by_id(&tx, id)
         .await?
-        .ok_or_else(|| ApiError::Internal.fail())
+        .ok_or_else(|| ApiError::Internal.fail())?;
+    tx.commit().await.map_err(db_err)?;
+    Ok((user, token))
 }
 
 /// Gives the signed in account another username, behind its password.
@@ -688,6 +730,104 @@ mod tests {
 
     /// A hash as `register` stored it, made with argon2 0.6.0 and its defaults.
     const STORED_HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$8C0eovpPoTDFAHE5YNGFOw$zACBMxyBbkdhJXVVpw8lwGNZiK7KA0NYK7ItMmvyUIg";
+
+    /// Both requests observed the same guest before hashing. A barrier fixes that interleaving
+    /// without depending on HTTP scheduling or password-hash timing.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn competing_guest_registrations_have_one_winner() {
+        use std::sync::Arc;
+
+        use crate::server::db;
+
+        let file = db::TempDb::new("register-race");
+        let database = db::open_local(file.as_str()).await.unwrap();
+        let conn = db::connect(&database).unwrap();
+        db::migrate(&conn).await.unwrap();
+        conn.execute(
+            "INSERT INTO users (name, created_at) VALUES ('Guest', 1)",
+            (),
+        )
+        .await
+        .unwrap();
+        let guest_id = conn.last_insert_rowid();
+        let token = insert_session(&conn, guest_id).await.unwrap();
+        let guest = user_by_id(&conn, guest_id).await.unwrap().unwrap();
+        let other_hash = hash_password("different horse".into()).await.unwrap();
+        let barrier = Arc::new(tokio::sync::Barrier::new(3));
+        let mut requests = Vec::new();
+        for (name, password, hash) in [
+            ("first_claim", "correct horse", STORED_HASH.to_string()),
+            ("second_claim", "different horse", other_hash),
+        ] {
+            let conn = db::connect(&database).unwrap();
+            let captured = Some((guest.clone(), token.clone()));
+            let ready = barrier.clone();
+            requests.push(tokio::spawn(async move {
+                ready.wait().await;
+                (
+                    name,
+                    password,
+                    register_hashed(&conn, captured, name, hash).await,
+                )
+            }));
+        }
+        barrier.wait().await;
+        let mut winners = Vec::new();
+        let mut losers = Vec::new();
+        for request in requests {
+            let (name, password, result) = request.await.unwrap();
+            match result {
+                Ok((user, fresh)) => {
+                    assert_eq!(user.id, guest_id);
+                    assert_eq!(user.username.as_deref(), Some(name));
+                    winners.push((name, password, fresh));
+                }
+                Err(error) => {
+                    assert_eq!(
+                        ApiError::from_message(&error.to_string()),
+                        Some(ApiError::SessionExpired)
+                    );
+                    losers.push((name, password));
+                }
+            }
+        }
+        assert_eq!(winners.len(), 1);
+        assert_eq!(losers.len(), 1);
+        let (winner, password, fresh) = &winners[0];
+        assert!(
+            check_password(&conn, winner, (*password).into())
+                .await
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            check_password(&conn, winner, losers[0].1.into())
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            check_password(&conn, losers[0].0, losers[0].1.into())
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert!(user_by_token(&conn, &token).await.unwrap().is_none());
+        assert_eq!(
+            user_by_token(&conn, fresh).await.unwrap().unwrap().0.id,
+            guest_id
+        );
+        let mut rows = conn
+            .query(
+                "SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM sessions)",
+                (),
+            )
+            .await
+            .unwrap();
+        let row = rows.next().await.unwrap().unwrap();
+        assert_eq!(row.get::<i64>(0).unwrap(), 1);
+        assert_eq!(row.get::<i64>(1).unwrap(), 1);
+    }
 
     #[tokio::test]
     async fn stored_password_hashes_still_verify() {
