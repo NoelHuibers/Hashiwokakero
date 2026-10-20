@@ -50,5 +50,31 @@
     "pace": "Clic così veloci, uno dopo l’altro, sembrano un programma, quindi questo risultato non entra in classifica.",
     "second_account": "Questo dispositivo ha già aperto la sfida del giorno con un altro account, quindi questo risultato non entra in classifica. Gioca ogni sfida del giorno con un solo account.",
     "review": "Questo risultato è stato rimosso dalla classifica dopo una verifica."
+  },
+  "about": {
+    "kicker": "il gioco",
+    "title": "Hashiwokakero, il rompicapo dei ponti",
+    "intro": "Hashiwokakero (橋をかけろ, «costruisci ponti!»), detto anche <b>Ponti</b>, <b>Hashi</b> o Hashikake, è un rompicapo logico giapponese pubblicato da Nikoli. Qui ne giochi uno nuovo ogni giorno, gratis e senza account, e ogni puzzle ha esattamente una soluzione, quindi non devi mai tirare a indovinare.",
+    "how_title": "Come si gioca a Hashi",
+    "daily_title": "Come funziona il ponte del giorno",
+    "day_title": "Un puzzle al giorno",
+    "day": "Lo stesso per tutti, nuovo a mezzanotte UTC. Come i giochi sul giornale, diventa più difficile man mano che si avvicina la domenica.",
+    "clock_title": "Inizia quando vuoi",
+    "clock": "Il puzzle resta nascosto finché non premi Inizia. Solo allora parte il cronometro.",
+    "penalty_title": "Verifiche e indizi costano tempo",
+    "penalty": "Ogni verifica aggiunge {{ check }} al tuo tempo, ogni indizio {{ hint }}.",
+    "give_up_title": "Arrendersi",
+    "give_up": "Bloccato? Arrenditi per vedere la soluzione. Quella partita non va in classifica, ma domani arriva un nuovo puzzle.",
+    "tips_title": "Consigli per risolvere Hashiwokakero",
+    "tips_intro": "Tre deduzioni per cominciare. Ogni immagine mostra i ponti che impongono.",
+    "faq_title": "Domande frequenti",
+    "account_q": "Serve un account?",
+    "account_a": "No. Giochi subito come ospite e compari comunque in classifica. Registra un nome per tenere la tua serie su ogni dispositivo.",
+    "next_q": "Quando arriva un nuovo ponte del giorno?",
+    "next_a": "Ogni giorno a mezzanotte UTC, nello stesso istante in tutto il mondo. Un conto alla rovescia su questa pagina mostra quanto manca.",
+    "more_q": "Dove posso giocare di più?",
+    "more_a": "Nell’<practice>allenamento</practice>: puzzle illimitati in cinque dimensioni, da 7×7 a 24×24, con indizi quando vuoi. Oppure crea i tuoi puzzle nell’<workshop>officina</workshop>.",
+    "to_rules": "Regole di Hashiwokakero e consigli →",
+    "to_practice": "Allenamento: puzzle illimitati →"
   }
 }

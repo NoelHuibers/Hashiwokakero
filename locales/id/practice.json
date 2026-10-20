@@ -26,24 +26,5 @@
   "admire": "Kagumi",
   "revealed": "Dipecahkan oleh solver SAT.",
   "play_myself": "Main sendiri",
-  "new_puzzle": "Teka-teki baru",
-  "about": {
-    "kicker": "tentang permainan",
-    "title": "Hashiwokakero, teka-teki jembatan",
-    "what_title": "Apa itu Hashiwokakero?",
-    "what": "Hashiwokakero (橋をかけろ, “bangun jembatan!”) adalah teka-teki logika Jepang terbitan Nikoli, juga dikenal sebagai <b>Bridges</b> (Jembatan), <b>Hashi</b> atau Ai-Ki-Ai. Kisi berisi pulau bernomor harus dihubungkan dengan jembatan: setiap pulau mendapat jembatan tepat sebanyak angkanya, jembatan selalu lurus dan tidak pernah bersilangan, paling banyak dua jembatan menghubungkan pasangan pulau yang sama, dan pada akhirnya setiap pulau bisa dicapai dari pulau lainnya. Seperti Sudoku atau Nurikabe, tidak perlu berhitung, cukup deduksi.",
-    "how_title": "Cara bermain Jembatan online",
-    "how": "Pilih tingkat kesulitan dari Mudah (7×7) sampai Oni (24×24) lalu tekan Buat. Klik air di antara dua pulau untuk membangun jembatan, klik lagi untuk jembatan ganda, klik ketiga menghapusnya, atau cukup seret dari satu pulau ke pulau berikutnya. Pulau yang lengkap jadi hijau, yang kelebihan jadi merah. Buntu? Minta petunjuk, atau biarkan solver mengecek jembatanmu. Aturan lengkap dengan contoh ada di halaman <a>cara bermain</a>.",
-    "techniques_title": "Teknik memecahkan tanpa menebak",
-    "technique_double": "Pulau yang angkanya dua kali jumlah tetangganya punya jembatan ganda ke setiap tetangga: angka 8 di tengah, 6 di tepi, 4 di sudut.",
-    "technique_isolation": "Angka 1 tidak pernah terhubung ke 1 lain, dan dua angka 2 tidak pernah dihubungkan jembatan ganda, karena keduanya akan terputus dari sisanya.",
-    "technique_count": "Hitung yang masih kurang: jika sebuah pulau butuh 5 jembatan lagi ke tiga tetangga, setiap tetangga mendapat minimal satu.",
-    "technique_block": "Jembatan menghalangi garis yang dilintasinya, jadi satu jembatan bisa memaksa pulau di kedua sisinya terhubung lewat jalur lain.",
-    "technique_connect": "Semua harus terhubung pada akhirnya: kelompok yang hanya bisa mencapai sisanya lewat satu celah wajib memakai celah itu.",
-    "why_title": "Kenapa main Hashi di sini",
-    "why_unique": "Setiap teka-teki punya <b>tepat satu solusi</b>, dibuktikan solver SAT sebelum kamu melihatnya, jadi logika saja selalu cukup.",
-    "why_unlimited": "Teka-teki gratis tanpa batas dalam lima ukuran, dengan petunjuk dan cek dari solusi asli, bukan dari heuristik.",
-    "why_art": "Pixel art Jepang yang imut, tema siang dan malam, pintasan keyboard, urungkan dan ulangi, dan permainanmu tersimpan di browser.",
-    "why_workshop": "Buat teka-tekimu sendiri di <workshop>bengkel</workshop>, atau tonton solver SAT CDCL dan DPLL buatan kami berlomba di <lab>lab</lab>. Seluruh permainan ini bersumber terbuka dan ditulis dalam Rust."
-  }
+  "new_puzzle": "Teka-teki baru"
 }

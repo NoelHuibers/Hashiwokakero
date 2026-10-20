@@ -50,5 +50,31 @@
     "pace": "Clics tan rápidos, una y otra vez, parecen de un programa, así que este resultado no entra en la clasificación.",
     "second_account": "Este dispositivo ya abrió el reto diario de hoy con otra cuenta, así que este resultado no entra en la clasificación. Juega cada reto diario con una sola cuenta.",
     "review": "Este resultado se retiró de la clasificación tras una revisión."
+  },
+  "about": {
+    "kicker": "sobre el juego",
+    "title": "Hashiwokakero, el puzle de los puentes",
+    "intro": "Hashiwokakero (橋をかけろ, «¡construye puentes!»), también llamado <b>Puentes</b>, <b>Hashi</b> o Hashikake, es un puzle lógico japonés publicado por Nikoli. Aquí juegas uno nuevo cada día, gratis y sin cuenta, y cada puzle tiene exactamente una solución, así que nunca tienes que adivinar.",
+    "how_title": "Cómo jugar a Hashi",
+    "daily_title": "Cómo funciona el puzle diario",
+    "day_title": "Un puzle al día",
+    "day": "El mismo para todos, nuevo a medianoche UTC. Como los pasatiempos del periódico, se pone más difícil a medida que se acerca el domingo.",
+    "clock_title": "Empieza cuando quieras",
+    "clock": "El puzle está oculto hasta que pulsas Empezar. Solo entonces arranca el reloj.",
+    "penalty_title": "Comprobar y las pistas cuestan tiempo",
+    "penalty": "Cada comprobación suma {{ check }} a tu tiempo, cada pista {{ hint }}.",
+    "give_up_title": "Rendirse",
+    "give_up": "¿Atascado? Ríndete para ver la solución. Esa partida no entra en la clasificación, pero mañana llega un puzle nuevo.",
+    "tips_title": "Consejos para resolver Hashiwokakero",
+    "tips_intro": "Tres deducciones para empezar. Cada imagen muestra los puentes que obligan a poner.",
+    "faq_title": "Preguntas frecuentes",
+    "account_q": "¿Necesito una cuenta?",
+    "account_a": "No. Juegas como invitado desde el primer momento y apareces igualmente en la clasificación. Reserva un nombre para mantener tu racha en todos tus dispositivos.",
+    "next_q": "¿Cuándo hay un puzle diario nuevo?",
+    "next_a": "Cada día a medianoche UTC, en el mismo momento en todo el mundo. Una cuenta atrás en esta página muestra cuánto falta.",
+    "more_q": "¿Dónde puedo jugar más?",
+    "more_a": "En la <practice>práctica</practice>: puzles ilimitados en cinco tamaños, de 7×7 a 24×24, con pistas cuando quieras. O crea tus propios puzles en el <workshop>taller</workshop>.",
+    "to_rules": "Reglas de Hashiwokakero y consejos →",
+    "to_practice": "Práctica: puzles ilimitados →"
   }
 }

@@ -26,24 +26,5 @@
   "admire": "Ammira",
   "revealed": "Risolto dal solver SAT.",
   "play_myself": "Lo gioco io",
-  "new_puzzle": "Nuovo puzzle",
-  "about": {
-    "kicker": "il gioco",
-    "title": "Hashiwokakero, il rompicapo dei ponti",
-    "what_title": "Cos’è Hashiwokakero?",
-    "what": "Hashiwokakero (橋をかけろ, «costruisci ponti!») è un rompicapo logico giapponese pubblicato da Nikoli, conosciuto anche come <b>Ponti</b>, <b>Hashi</b> o Ai-Ki-Ai. Una griglia di isole numerate va collegata con dei ponti: ogni isola riceve esattamente tanti ponti quanto indica il suo numero, i ponti sono dritti e non si incrociano mai, al massimo due collegano la stessa coppia di isole, e alla fine ogni isola deve essere raggiungibile da tutte le altre. Come il Sudoku o il Nurikabe non richiede calcoli, solo deduzione.",
-    "how_title": "Come giocare a Ponti online",
-    "how": "Scegli una difficoltà da Facile (7×7) a Oni (24×24) e premi Genera. Clicca sull’acqua tra due isole per costruire un ponte, clicca di nuovo per un ponte doppio, un terzo clic li rimuove, oppure trascina semplicemente da un’isola alla successiva. Le isole completate diventano verdi, quelle con troppi ponti rosse. Bloccato? Chiedi un indizio o lascia che il solver verifichi i tuoi ponti. Le regole complete con un esempio risolto sono nella pagina <a>come si gioca</a>.",
-    "techniques_title": "Tecniche di risoluzione senza tirare a indovinare",
-    "technique_double": "Un’isola il cui numero è il doppio dei suoi vicini ha un ponte doppio verso ciascuno: un 8 in mare aperto, un 6 su un bordo, un 4 in un angolo.",
-    "technique_isolation": "Un 1 non si collega mai a un altro 1, e due 2 non sono mai uniti da un ponte doppio: resterebbero tagliati fuori dal resto.",
-    "technique_count": "Conta cosa manca ancora: se un’isola ha bisogno di altri 5 ponti verso tre vicini, ogni vicino ne riceve almeno uno.",
-    "technique_block": "I ponti bloccano le linee che attraversano, quindi un ponte piazzato può costringere le isole ai due lati a collegarsi altrove.",
-    "technique_connect": "Alla fine tutto deve essere collegato: un gruppo che può raggiungere il resto solo da un varco deve usarlo.",
-    "why_title": "Perché giocare a Hashi qui",
-    "why_unique": "Ogni puzzle ha <b>esattamente una soluzione</b>, dimostrata da un solver SAT prima che tu lo veda, quindi la logica basta sempre.",
-    "why_unlimited": "Puzzle gratis illimitati in cinque dimensioni, con indizi e verifiche che vengono dalla vera soluzione, non da euristiche.",
-    "why_art": "Pixel art giapponese tutta carina, un tema diurno e uno notturno, scorciatoie da tastiera, annulla e ripeti, e la partita viene salvata nel browser.",
-    "why_workshop": "Crea i tuoi puzzle nell’<workshop>officina</workshop>, o guarda i nostri solver SAT CDCL e DPLL sfidarsi nel <lab>laboratorio</lab>. Tutto il gioco è open source e scritto in Rust."
-  }
+  "new_puzzle": "Nuovo puzzle"
 }

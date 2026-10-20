@@ -26,24 +26,5 @@
   "admire": "Admirar",
   "revealed": "Resolvido pelo solver SAT.",
   "play_myself": "Quero jogar eu mesmo",
-  "new_puzzle": "Novo puzzle",
-  "about": {
-    "kicker": "sobre o jogo",
-    "title": "Hashiwokakero, o puzzle das pontes",
-    "what_title": "O que é Hashiwokakero?",
-    "what": "Hashiwokakero (橋をかけろ, “construa pontes!”) é um puzzle de lógica japonês publicado pela Nikoli, também conhecido como <b>Pontes</b>, <b>Hashi</b> ou Ai-Ki-Ai. Uma grade de ilhas numeradas deve ser ligada por pontes: cada ilha recebe exatamente tantas pontes quanto seu número, as pontes são retas e nunca se cruzam, no máximo duas ligam o mesmo par de ilhas e, no fim, é possível chegar a qualquer ilha a partir de qualquer outra. Como Sudoku ou Nurikabe, não exige contas, só dedução.",
-    "how_title": "Como jogar Pontes online",
-    "how": "Escolha uma dificuldade, de Fácil (7×7) a Oni (24×24), e aperte Gerar. Clique na água entre duas ilhas para construir uma ponte, clique de novo para uma ponte dupla, e um terceiro clique remove as duas; ou simplesmente arraste de uma ilha até a próxima. Ilhas completas ficam verdes, as que passaram do número ficam vermelhas. Travou? Peça uma dica ou deixe o solver verificar suas pontes. As regras completas com um exemplo resolvido estão na página <a>como jogar</a>.",
-    "techniques_title": "Técnicas de resolução sem chute",
-    "technique_double": "Uma ilha cujo número é o dobro de seus vizinhos tem ponte dupla para cada um deles: um 8 no meio, um 6 na borda, um 4 no canto.",
-    "technique_isolation": "Um 1 nunca se liga a outro 1, e dois 2 nunca são ligados por ponte dupla, pois isso os isolaria do resto.",
-    "technique_count": "Conte o que ainda falta: se uma ilha precisa de mais 5 pontes entre três vizinhos, cada vizinho recebe pelo menos uma.",
-    "technique_block": "Pontes bloqueiam as linhas que atravessam, então uma ponte colocada pode obrigar as ilhas dos dois lados a se ligar por outro caminho.",
-    "technique_connect": "Tudo precisa terminar conectado: um grupo que só alcança o resto por uma passagem tem que usá-la.",
-    "why_title": "Por que jogar Hashi aqui",
-    "why_unique": "Cada puzzle tem <b>exatamente uma solução</b>, provada por um solver SAT antes de você vê-lo, então a lógica sempre basta.",
-    "why_unlimited": "Puzzles grátis e ilimitados em cinco tamanhos, com dicas e verificações baseadas na solução real, não em heurísticas.",
-    "why_art": "Pixel art japonesa fofa, tema diurno e noturno, atalhos de teclado, desfazer e refazer, e seu jogo fica salvo no navegador.",
-    "why_workshop": "Crie seus próprios puzzles na <workshop>oficina</workshop> ou veja nossos solvers SAT CDCL e DPLL apostando corrida no <lab>laboratório</lab>. O jogo inteiro é de código aberto e escrito em Rust."
-  }
+  "new_puzzle": "Novo puzzle"
 }

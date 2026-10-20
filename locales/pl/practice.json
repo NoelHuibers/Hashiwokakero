@@ -26,24 +26,5 @@
   "admire": "Podziwiaj",
   "revealed": "Rozwiązane przez solver SAT.",
   "play_myself": "Zagram samodzielnie",
-  "new_puzzle": "Nowa łamigłówka",
-  "about": {
-    "kicker": "o grze",
-    "title": "Hashiwokakero, łamigłówka z mostami",
-    "what_title": "Czym jest Hashiwokakero?",
-    "what": "Hashiwokakero (橋をかけろ, „buduj mosty!”) to japońska łamigłówka logiczna wydawnictwa Nikoli, znana też jako <b>Mosty</b>, <b>Hashi</b> lub Ai-Ki-Ai. Ponumerowane wyspy na planszy trzeba połączyć mostami: każda wyspa ma dokładnie tyle mostów, ile wskazuje jej liczba, mosty biegną prosto i nigdy się nie krzyżują, tę samą parę wysp łączą najwyżej dwa, a na końcu z każdej wyspy da się dojść do każdej innej. Jak sudoku czy nurikabe nie wymaga liczenia, tylko logicznego myślenia.",
-    "how_title": "Jak grać w Mosty online",
-    "how": "Wybierz poziom trudności od Łatwego (7×7) do Oni (24×24) i naciśnij Generuj. Kliknij wodę między dwiema wyspami, by zbudować most, kliknij ponownie, by go podwoić, trzecie kliknięcie usuwa mosty, albo po prostu przeciągnij od jednej wyspy do następnej. Ukończone wyspy robią się zielone, przepełnione czerwone. Nie wiesz, co dalej? Poproś o podpowiedź albo pozwól solverowi sprawdzić twoje mosty. Pełne zasady z rozwiązanym przykładem znajdziesz na stronie <a>Jak grać</a>.",
-    "techniques_title": "Techniki rozwiązywania bez zgadywania",
-    "technique_double": "Wyspa, której liczba jest dwa razy większa niż liczba jej sąsiadów, ma podwójny most do każdego z nich: 8 na otwartej przestrzeni, 6 przy krawędzi, 4 w rogu.",
-    "technique_isolation": "Jedynka nigdy nie łączy się z inną jedynką, a dwie dwójki nigdy nie są połączone podwójnym mostem, bo odcięłoby je to od reszty.",
-    "technique_count": "Policz, czego jeszcze brakuje: jeśli wyspa potrzebuje jeszcze 5 mostów, a ma trzech sąsiadów, każdy z nich dostaje co najmniej jeden.",
-    "technique_block": "Mosty blokują linie, które przecinają, więc postawiony most może zmusić wyspy po obu stronach do połączenia się gdzie indziej.",
-    "technique_connect": "Na końcu wszystko musi być połączone: grupa, która może dotrzeć do reszty tylko przez jedną lukę, musi z niej skorzystać.",
-    "why_title": "Dlaczego warto grać w Hashi tutaj",
-    "why_unique": "Każda łamigłówka ma <b>dokładnie jedno rozwiązanie</b>, udowodnione przez solver SAT, zanim ją zobaczysz, więc sama logika zawsze wystarczy.",
-    "why_unlimited": "Nieograniczona liczba darmowych łamigłówek w pięciu rozmiarach, z podpowiedziami i sprawdzaniem opartymi na prawdziwym rozwiązaniu, a nie na heurystykach.",
-    "why_art": "Urocza japońska grafika pixel art, motyw dzienny i nocny, skróty klawiszowe, cofanie i ponawianie, a gra zapisuje się w przeglądarce.",
-    "why_workshop": "Twórz własne łamigłówki w <workshop>warsztacie</workshop> albo patrz, jak nasze własne solvery SAT CDCL i DPLL ścigają się w <lab>laboratorium</lab>. Cała gra jest open source i napisana w Rust."
-  }
+  "new_puzzle": "Nowa łamigłówka"
 }
