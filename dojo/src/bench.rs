@@ -6,8 +6,9 @@
 //! - Hashi parity: unsatisfiable, the island numbers add up to an odd number.
 //! - Pigeonhole: n+1 pigeons in n holes is unsatisfiable, n in n is not.
 //! - Queens and random 3-SAT: solved by splr beforehand. SAT comes with a model, which is
-//!   checked. UNSAT must be proven: splr runs again writing a DRAT proof, which our own checker
-//!   ([`crate::drat`]) verifies. If the proof doesn't check out, a model found by our CDCL makes
+//!   checked. UNSAT must be proven: splr runs again writing a DRAT proof, which drat-trim and
+//!   `cake_lpr` verify when they are installed (like on the leaderboard), our own checker
+//!   ([`crate::drat`]) otherwise. If the proof doesn't check out, a model found by our CDCL makes
 //!   the formula SAT, otherwise it is skipped, like instances splr can't solve.
 //!   Models are always checked anyway, labels only decide about UNSAT answers.
 //!
@@ -16,8 +17,8 @@
 //! literals shuffled) so a family can't be recognised by its layout.
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::path::PathBuf;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::path::Path;
+use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 use backend::sat::{SatOutcome, solve_clauses};
@@ -274,39 +275,40 @@ fn label(cnf: &Cnf) -> Option<(Answer, Option<Vec<i32>>)> {
     }
 }
 
-/// How long splr may take to write a proof, and the checker to check it.
+/// How long splr may take to write a proof.
 const PROOF_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// Whether splr, run again with certification, proves the formula unsatisfiable with a DRAT
-/// proof that our checker accepts.
+/// proof that the checker accepts (see [`crate::proof::labelling`]).
 fn proven_unsat(cnf: &Cnf) -> bool {
-    splr_proof(cnf).is_some_and(|proof| crate::drat::check(cnf, &proof, PROOF_TIMEOUT).is_ok())
-}
-
-/// A file that is removed when this goes out of scope (also on a panic).
-struct TempFile(PathBuf);
-
-impl Drop for TempFile {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
-    }
+    let Ok(dir) = crate::proof::TempDir::new(&std::env::temp_dir(), "dojo-label") else {
+        return false;
+    };
+    let path = dir.path().join(crate::proof::PROOF_FILE);
+    write_splr_proof(cnf, &path)
+        && crate::proof::labelling().check(cnf, &path, crate::proof::Format::Drat)
+            == crate::proof::Verdict::Verified
 }
 
 /// The DRAT proof (text) that splr writes when it finds the formula unsatisfiable; `None` if it
-/// doesn't (or fails). The proof goes through a temporary file, splr can only write to files.
+/// doesn't (or fails). For tests.
+#[cfg(test)]
 pub(crate) fn splr_proof(cnf: &Cnf) -> Option<Vec<u8>> {
-    static NEXT: AtomicU64 = AtomicU64::new(0);
-    let file = TempFile(std::env::temp_dir().join(format!(
-        "dojo-proof-{}-{}.drat",
-        std::process::id(),
-        NEXT.fetch_add(1, Ordering::Relaxed)
-    )));
+    let dir = crate::proof::TempDir::new(&std::env::temp_dir(), "dojo-splr").ok()?;
+    let path = dir.path().join("proof.drat");
+    write_splr_proof(cnf, &path).then(|| std::fs::read(&path).unwrap_or_default())
+}
+
+/// Runs splr with certification into the file `path` (splr can only write proofs to files):
+/// whether it found the formula unsatisfiable. The file is created even when splr writes
+/// nothing (an empty proof).
+pub(crate) fn write_splr_proof(cnf: &Cnf, path: &Path) -> bool {
     // Like `backend::sat`: the clause eliminator stays on (the default), splr only has whole
     // seconds as timeout
     let config = Config {
         quiet_mode: true,
         use_certification: true,
-        io_pfile: file.0.clone(),
+        io_pfile: path.to_path_buf(),
         c_timeout: PROOF_TIMEOUT.as_secs_f64(),
         ..Default::default()
     };
@@ -334,7 +336,7 @@ pub(crate) fn splr_proof(cnf: &Cnf) -> Option<Vec<u8>> {
     }))
     .unwrap_or(false);
     // No file is an empty proof
-    unsat.then(|| std::fs::read(&file.0).unwrap_or_default())
+    unsat && (path.exists() || std::fs::File::create(path).is_ok())
 }
 
 /// `n` variables, 4.26·n clauses of three distinct variables: about half are satisfiable.

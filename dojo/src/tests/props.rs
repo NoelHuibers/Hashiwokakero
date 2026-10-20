@@ -221,7 +221,7 @@ proptest! {
         ],
     ) {
         let claim = parse(&stdout);
-        let outcome = judge(&cnf, expected, &claim);
+        let outcome = judge(&cnf, expected, &claim, || crate::proof::Verdict::Verified);
         match &claim {
             Claim::Sat(lits) => prop_assert_eq!(
                 outcome == Outcome::Solved(Answer::Sat),

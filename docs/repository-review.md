@@ -23,8 +23,8 @@ Jobs carry the website's `dojo::RULES_VERSION` and the worker refuses jobs for o
 (the dispatcher queues them again without using up an attempt), and every result is stored
 with the rules it was computed with. The review fixes change what a solver sees (no formula
 names in its input) and how host calls end at the wall clock limit, so they raise
-`RULES_VERSION` to 2: after the deploy, housekeeping evaluates the current season's finished
-submissions again, nothing is archived. Bump it whenever a change makes the same solver score
+`RULES_VERSION` to 3 (2 brought UNSAT proofs): after the deploy, housekeeping evaluates the
+current season's finished submissions again, nothing is archived. Bump it whenever a change makes the same solver score
 differently, and `GENERATOR_VERSION` with it when the sets change (the worker's set cache is
 keyed by it).
 

@@ -12,12 +12,40 @@ ls target/wasm32-wasip1/release/dojo-starter.wasm
 
 ## Protocol
 
-- Input: a DIMACS CNF formula on **stdin**. There is no file system, network or environment.
+- Input: a DIMACS CNF formula on **stdin**. There is no network or environment, and no files
+  but the proof file below.
 - Output on **stdout**, as in the SAT competition:
   - `s SATISFIABLE` followed by the model on `v` lines, ending with `0`
-  - `s UNSATISFIABLE`
+  - `s UNSATISFIABLE`, backed by a proof (see below)
   - `s UNKNOWN` if you give up
 - Any language that compiles to WebAssembly with WASI preview 1 works: Rust, C/C++ (wasi-sdk), Zig, Go...
+
+### Proofs
+
+Like in the main track of the [SAT Competition](https://satcompetition.github.io/2026/rules.html),
+an UNSAT answer only counts with a proof. Your program gets a file path as its first argument
+(`/proof/proof.out`); write the proof there, in one of these formats:
+
+- **DRAT** (the default), text or binary (told apart automatically, like drat-trim does): each
+  line a clause that follows from the formula and the clauses before it, ending with `0`; `d` in
+  front deletes a clause. The last clause is the empty one, `0`.
+- **LRAT**, text or binary, with hints: print the line `c proof lrat` on stdout too.
+
+This starter writes DRAT: every time a branch fails it adds the clause "not all of these
+decisions", which follows by unit propagation (RUP). For the formula `(1 ∨ 2) (¬1 ∨ 2) (1 ∨ ¬2)
+(¬1 ∨ ¬2)`, deciding `1` and then `-1` both fail at once, so the proof is:
+
+```text
+-1 0
+1 0
+0
+```
+
+The leaderboard checks proofs like the competition: drat-trim turns DRAT into LRAT, and
+cake_lpr, a checker proven correct in HOL4 and compiled by CakeML, has to accept it. Writing the
+proof costs fuel like everything else, checking it doesn't. No proof, or more than 256 MiB of it,
+or one the checkers can't finish within 5 minutes and 1 GiB, counts as **unsolved**; a proof they
+reject counts as a **wrong answer**.
 
 ## Scoring
 
@@ -27,7 +55,8 @@ reproducible. Clocks and random numbers are deterministic too: `random_get` is s
 and set.
 
 Score = PAR-2: the mean fuel per formula, where unsolved formulas count twice the budget.
-**A single wrong answer disqualifies the submission**, so never guess UNSAT.
+**A single wrong answer disqualifies the submission**: a wrong model, UNSAT on a satisfiable
+formula, or a rejected proof. So never guess UNSAT.
 
 ## Testing locally
 
@@ -39,6 +68,17 @@ dojo run target/wasm32-wasip1/release/dojo-starter.wasm          # all families
 dojo run my.wasm --family pigeonhole --stderr                      # one family, with your logs
 dojo export dev-set/                                               # the formulas as .cnf files
 dojo run my.wasm --set dojo-season-1.tar.gz                        # a past season's hidden set
+```
+
+`dojo run` checks proofs with drat-trim and cake_lpr if they are on your `PATH` (or named by
+`DOJO_DRAT_TRIM` and `DOJO_CAKE_LPR`), exactly like the leaderboard, and with its built-in checker
+otherwise. The built-in one checks every lemma, so it may reject a proof with a wrong but unused
+lemma that drat-trim would skip. To install the two (needs a C compiler and curl):
+
+```sh
+git clone https://github.com/NoelHuibers/Hashiwokakero && Hashiwokakero/dojo/checkers/build.sh ~/.local/bin
+dojo run my.wasm --checker verified                                # fail if they're missing
+dojo run my.wasm --proofs proofs/                                  # keep every proof file
 ```
 
 Finished seasons are archived at https://hashi.rs/dojo/seasons: the seed of the hidden set (its

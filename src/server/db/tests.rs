@@ -54,7 +54,9 @@ fn score() -> Score {
             solved: 1,
             total: 1,
             par2: 1.25,
+            unverified: 0,
         }],
+        unverified: 0,
     }
 }
 

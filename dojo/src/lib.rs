@@ -1,12 +1,15 @@
 //! The SAT Dojo: a gym for SAT solvers.
 //!
 //! Submissions are WebAssembly programs (WASI preview 1) that read a DIMACS CNF formula on stdin
-//! and answer in the SAT competition format. Each one runs in a sandbox without file system or
-//! network, with a fixed budget of *fuel* (executed WebAssembly instructions) instead of a time
-//! limit, so a score is exactly reproducible and doesn't depend on the machine or its load.
+//! and answer in the SAT competition format. Each one runs in a sandbox without network and with
+//! a single writable file, the proof of an UNSAT answer, with a fixed budget of *fuel* (executed
+//! WebAssembly instructions) instead of a time limit, so a score is exactly reproducible and
+//! doesn't depend on the machine or its load. Like in the SAT Competition, a SAT answer needs a
+//! model and an UNSAT answer a DRAT or LRAT proof that a formally verified checker accepts.
 //!
 //! - always: the result types shared with the website ([`Family`], [`Score`], [`Report`], ...)
-//! - `bench`: benchmark generation ([`bench`]) and answer checking ([`output`])
+//! - `bench`: benchmark generation ([`bench`]), answer checking ([`output`]) and proof checking
+//!   ([`proof`], [`drat`])
 //! - `runner`: checking ([`validate`]), the sandbox ([`sandbox`]) and evaluating a set ([`eval`])
 //! - `worker`: the HTTP service that evaluates submissions for the website ([`worker`])
 
@@ -23,8 +26,15 @@ pub mod drat;
 #[cfg(feature = "runner")]
 pub mod eval;
 #[cfg(feature = "bench")]
+pub mod lrat;
+#[cfg(feature = "bench")]
 pub mod output;
+#[cfg(feature = "bench")]
+pub mod proof;
 // In a tests/ directory, so coverage doesn't count the tests themselves
+#[cfg(all(test, feature = "bench"))]
+#[path = "tests/proofs.rs"]
+mod proof_tests;
 #[cfg(all(test, feature = "bench"))]
 #[path = "tests/props.rs"]
 mod props;
@@ -57,14 +67,17 @@ pub const GENERATOR_VERSION: u32 = 1;
 /// The version of the rules a score is computed with.
 ///
 /// That is the sets ([`GENERATOR_VERSION`]), the judging of answers, fuel costs and limits, the
-/// seeds of clocks and random numbers. Bump it whenever a change makes the same solver score differently. Every result is stored with the
+/// seeds of clocks and random numbers, the checking of proofs. Bump it whenever a change makes the
+/// same solver score differently. Every result is stored with the
 /// version it was computed with; when the website runs a newer one, it evaluates every finished
 /// submission of the season again (same season, nothing archived), and the worker refuses jobs
 /// meant for another version than its own.
 ///
-/// 2: solvers get the formula without its name in a comment, and host calls like `poll_oneoff`
-/// end at the wall clock limit too.
-pub const RULES_VERSION: u32 = 2;
+/// - 1: the first rules
+/// - 2: UNSAT needs a proof the checker accepts ([`Outcome::Unverified`] without one)
+/// - 3: solvers get the formula without its name in a comment, and host calls like
+///   `poll_oneoff` end at the wall clock limit too
+pub const RULES_VERSION: u32 = 3;
 
 /// Kinds of formulas in a benchmark set.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -123,8 +136,13 @@ pub enum Outcome {
     Timeout,
     /// The solver trapped or ran out of memory.
     Crashed,
-    /// A wrong answer: UNSAT for a satisfiable formula or a model that doesn't satisfy it.
+    /// A wrong answer: UNSAT for a satisfiable formula, a model that doesn't satisfy it, or an
+    /// UNSAT proof the checker rejects.
     Wrong,
+    /// UNSAT without a proof the checker accepted: none was written, it was larger than the
+    /// limit, or checking it ran out of time or memory. Counts as unsolved, like in the SAT
+    /// Competition, but doesn't disqualify.
+    Unverified,
 }
 
 impl Outcome {
@@ -172,7 +190,8 @@ pub struct InstanceResult {
 }
 
 impl Outcome {
-    /// A short lowercase name: `solved`, `unknown`, `timeout`, `crashed`, `wrong`.
+    /// A short lowercase name: `solved`, `unknown`, `timeout`, `crashed`, `wrong`,
+    /// `unverified`.
     pub fn id(self) -> &'static str {
         match self {
             Self::Solved(_) => "solved",
@@ -180,6 +199,7 @@ impl Outcome {
             Self::Timeout => "timeout",
             Self::Crashed => "crashed",
             Self::Wrong => "wrong",
+            Self::Unverified => "unverified",
         }
     }
 }
@@ -209,6 +229,10 @@ pub struct FamilyScore {
     pub total: u32,
     /// Mean PAR-2 in billions of fuel units.
     pub par2: f64,
+    /// UNSAT answers without an accepted proof (see [`Outcome::Unverified`]), 0 in scores
+    /// from before proofs were needed.
+    #[serde(default)]
+    pub unverified: u32,
 }
 
 /// The result of a whole set: what the leaderboard shows.
@@ -224,6 +248,9 @@ pub struct Score {
     /// Total fuel of the solved instances, in billions.
     pub fuel: f64,
     pub families: Vec<FamilyScore>,
+    /// UNSAT answers without an accepted proof, they count as unsolved.
+    #[serde(default)]
+    pub unverified: u32,
 }
 
 /// A number of instances as `u32` (a set has a few dozen), saturating.
@@ -256,6 +283,9 @@ impl Score {
             sum / rs.len() as f64 / G
         };
         let all: Vec<&RunResult> = results.iter().collect();
+        let unverified = |rs: &mut dyn Iterator<Item = &RunResult>| {
+            count(rs.filter(|r| r.outcome == Outcome::Unverified).count())
+        };
         let families = Family::ALL
             .into_iter()
             .filter_map(|family| {
@@ -265,6 +295,7 @@ impl Score {
                     solved: count(rs.iter().filter(|r| r.outcome.solved()).count()),
                     total: count(rs.len()),
                     par2: par2(&rs),
+                    unverified: unverified(&mut rs.iter().copied()),
                 })
             })
             .collect();
@@ -292,6 +323,7 @@ impl Score {
             budget,
             fuel,
             families,
+            unverified: unverified(&mut results.iter()),
         }
     }
 }
@@ -321,6 +353,7 @@ pub fn fingerprint(results: &[RunResult]) -> Vec<u64> {
             Outcome::Timeout => FINGERPRINT_TIMEOUT,
             Outcome::Unknown | Outcome::Crashed => FINGERPRINT_GAVE_UP,
             Outcome::Wrong => FINGERPRINT_WRONG,
+            Outcome::Unverified => FINGERPRINT_UNVERIFIED,
         })
         .collect()
 }
@@ -328,6 +361,12 @@ pub fn fingerprint(results: &[RunResult]) -> Vec<u64> {
 pub const FINGERPRINT_TIMEOUT: u64 = u64::MAX;
 pub const FINGERPRINT_GAVE_UP: u64 = u64::MAX - 1;
 pub const FINGERPRINT_WRONG: u64 = u64::MAX - 2;
+pub const FINGERPRINT_UNVERIFIED: u64 = u64::MAX - 3;
+
+/// Whether a fingerprint entry is the fuel of a solved formula rather than a marker.
+const fn fingerprint_solved(entry: u64) -> bool {
+    entry < FINGERPRINT_UNVERIFIED
+}
 
 /// Whether `newer` looks like a copy of `older`.
 ///
@@ -343,8 +382,8 @@ pub fn similar(newer: &[u64], older: &[u64]) -> bool {
     }
     let mut shared = 0;
     for (&a, &b) in newer.iter().zip(older) {
-        let solved_a = a < FINGERPRINT_WRONG;
-        let solved_b = b < FINGERPRINT_WRONG;
+        let solved_a = fingerprint_solved(a);
+        let solved_b = fingerprint_solved(b);
         if solved_a != solved_b || (!solved_a && a != b) {
             return false;
         }
@@ -433,12 +472,49 @@ mod tests {
             run(Family::Hashi, Outcome::Solved(Answer::Sat), 1_000_000_000),
             run(Family::Hashi, Outcome::Timeout, budget),
             run(Family::Queens, Outcome::Wrong, 5),
+            run(Family::Queens, Outcome::Unverified, 7),
         ];
         let score = Score::from_results(&results, budget);
-        assert_eq!((score.solved, score.total, score.wrong), (1, 3, 1));
-        assert!((score.par2 - (1.0 + 20.0 + 20.0) / 3.0).abs() < 1e-9);
+        assert_eq!(
+            (score.solved, score.total, score.wrong, score.unverified),
+            (1, 4, 1, 1)
+        );
+        // An UNSAT answer without an accepted proof counts like an unsolved formula
+        assert!((score.par2 - (1.0 + 20.0 + 20.0 + 20.0) / 4.0).abs() < 1e-9);
         assert_eq!(score.families.len(), 2);
         assert!((score.families[0].par2 - 10.5).abs() < 1e-9);
+        assert_eq!(
+            score
+                .families
+                .iter()
+                .map(|f| f.unverified)
+                .collect::<Vec<_>>(),
+            [0, 1]
+        );
+    }
+
+    /// Scores stored before proofs were needed have no unverified counts.
+    #[test]
+    fn old_scores_load() {
+        let old = r#"{"par2":1.0,"solved":1,"total":1,"wrong":0,"budget":10,"fuel":0.5,"families":[{"family":"Hashi","solved":1,"total":1,"par2":1.0}]}"#;
+        let score: Score = serde_json::from_str(old).unwrap();
+        assert_eq!((score.unverified, score.families[0].unverified), (0, 0));
+    }
+
+    #[test]
+    fn unverified_answers_leave_their_own_fingerprint() {
+        let results = [
+            run(Family::Hashi, Outcome::Unverified, 7),
+            run(Family::Hashi, Outcome::Unknown, 7),
+        ];
+        let print = fingerprint(&results);
+        assert_eq!(print, [FINGERPRINT_UNVERIFIED, FINGERPRINT_GAVE_UP]);
+        // Markers aren't fuel: the same markers alone don't make a copy, other ones rule it out
+        let solved: Vec<u64> = (1..=8).map(|i| i * 1000).collect();
+        let a = [solved.clone(), vec![FINGERPRINT_UNVERIFIED]].concat();
+        let b = [solved, vec![FINGERPRINT_GAVE_UP]].concat();
+        assert!(similar(&a, &a));
+        assert!(!similar(&a, &b));
     }
 
     #[test]
@@ -449,10 +525,18 @@ mod tests {
             Outcome::Timeout,
             Outcome::Crashed,
             Outcome::Wrong,
+            Outcome::Unverified,
         ];
         assert_eq!(
             outcomes.map(Outcome::id),
-            ["solved", "unknown", "timeout", "crashed", "wrong"]
+            [
+                "solved",
+                "unknown",
+                "timeout",
+                "crashed",
+                "wrong",
+                "unverified"
+            ]
         );
         for answer in [Answer::Sat, Answer::Unsat] {
             assert_eq!(Answer::from_id(answer.id()), Some(answer));

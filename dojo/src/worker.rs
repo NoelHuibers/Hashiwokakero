@@ -11,6 +11,11 @@
 //! - `PORT` (8080), `DOJO_THREADS` (all cores), `DOJO_MEMORY_MB` (1024 per run)
 //! - `DOJO_IDLE_EXIT_SECS`: exit after this long without work (unset: never)
 //! - `DOJO_CACHE_DIR`: keeps generated sets here (a volume), generating one takes minutes
+//! - Proofs (see [`crate::proof`]): `DOJO_DRAT_TRIM` and `DOJO_CAKE_LPR` (else found on the
+//!   `PATH`; the worker refuses to start without them unless `DOJO_CHECKER=builtin`),
+//!   `DOJO_CHECK_SECS` (300) and `DOJO_CHECK_MEMORY_MB` (1024) per proof, `DOJO_CHECKS` (1)
+//!   checks at a time, `DOJO_PROOF_DIR` (the temp directory) for the proof files of the runs,
+//!   `DOJO_PROOF_MAX_MB` (256) per proof
 //!
 //! `POST /jobs?id=&season=&seed=&report_token=[&rules=][&export=1]` with the WebAssembly module
 //! as body: 202 when queued, 422 with a [`Rejection`] when the module can't be run, 409 when the
@@ -36,6 +41,7 @@ use tokio::sync::mpsc;
 
 use crate::bench::{self, Instance};
 use crate::eval::{Options, evaluate};
+use crate::proof::{CheckLimits, Checker, Tools};
 use crate::sandbox::Sandbox;
 use crate::{GENERATOR_VERSION, MAX_WASM_BYTES, RULES_VERSION, Report, Score};
 
@@ -207,16 +213,46 @@ struct Settings {
     threads: Option<usize>,
     memory_mb: Option<usize>,
     cache: Option<PathBuf>,
+    /// The built-in checker if `None` (tests only, the worker needs the verified one).
+    checker: Option<Checker>,
+    proof_dir: Option<PathBuf>,
+    proof_max_mb: Option<u64>,
 }
 
 impl Settings {
-    fn from_env() -> Self {
-        let var = |name| std::env::var(name).ok();
-        Self {
+    fn from_env() -> Result<Self, String> {
+        let var = |name| std::env::var(name).ok().filter(|v: &String| !v.is_empty());
+        let tools = if var("DOJO_CHECKER").as_deref() == Some("builtin") {
+            Tools::Builtin
+        } else {
+            Tools::find().ok_or(
+                "drat-trim and cake_lpr weren't found (DOJO_DRAT_TRIM, DOJO_CAKE_LPR or the \
+                 PATH); DOJO_CHECKER=builtin checks proofs with the built-in checker instead",
+            )?
+        };
+        let defaults = CheckLimits::default();
+        let limits = CheckLimits {
+            time: var("DOJO_CHECK_SECS")
+                .and_then(|s| s.parse().ok())
+                .map_or(defaults.time, Duration::from_secs),
+            memory_mb: var("DOJO_CHECK_MEMORY_MB")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(defaults.memory_mb),
+        };
+        let slots = var("DOJO_CHECKS").and_then(|s| s.parse().ok()).unwrap_or(1);
+        let mut checker = Checker::new(tools, limits, slots);
+        let proof_dir = var("DOJO_PROOF_DIR").map(PathBuf::from);
+        if let Some(dir) = &proof_dir {
+            checker.scratch.clone_from(dir);
+        }
+        Ok(Self {
             threads: var("DOJO_THREADS").and_then(|t| t.parse().ok()),
             memory_mb: var("DOJO_MEMORY_MB").and_then(|t| t.parse().ok()),
             cache: var("DOJO_CACHE_DIR").map(PathBuf::from),
-        }
+            checker: Some(checker),
+            proof_dir,
+            proof_max_mb: var("DOJO_PROOF_MAX_MB").and_then(|t| t.parse().ok()),
+        })
     }
 }
 
@@ -241,6 +277,17 @@ fn evaluator(
     if let Some(mb) = settings.memory_mb {
         options.limits.memory_bytes = mb << 20;
     }
+    if let Some(checker) = &settings.checker {
+        options.checker = checker.clone();
+    }
+    if let Some(dir) = &settings.proof_dir {
+        let _ = std::fs::create_dir_all(dir);
+        options.proof_root.clone_from(dir);
+    }
+    if let Some(mb) = settings.proof_max_mb {
+        options.limits.proof_bytes = mb << 20;
+    }
+    eprintln!("checking proofs with {}", options.checker.tools.describe());
     // Sets by seed: every submission of a season gets the same one
     let mut sets: HashMap<String, Arc<Vec<Instance>>> = HashMap::new();
     let cache = settings.cache.as_deref();
@@ -414,7 +461,7 @@ pub fn serve() -> Result<(), String> {
         };
         let handle = tokio::runtime::Handle::current();
         let (pending, active) = (shared.pending.clone(), shared.active.clone());
-        let settings = Settings::from_env();
+        let settings = Settings::from_env()?;
         std::thread::spawn(move || {
             evaluator(rx, &reporter, &pending, &active, &handle, &settings);
         });
@@ -594,6 +641,9 @@ mod tests {
             threads: Some(2),
             memory_mb: Some(64),
             cache: Some(cache.clone()),
+            proof_dir: Some(cache.join("proofs")),
+            proof_max_mb: Some(1),
+            ..Settings::default()
         };
         let handle = tokio::runtime::Handle::current();
         let (pending, active) = (shared.pending.clone(), shared.active.clone());
@@ -634,16 +684,9 @@ mod tests {
             .unwrap();
         assert_eq!(other_rules.status(), StatusCode::CONFLICT);
 
-        // Answers UNSAT to everything: right on the even formulas, wrong on the others
-        let unsat = wat::parse_str(
-            r#"(module
-                (import "wasi_snapshot_preview1" "fd_write" (func $write (param i32 i32 i32 i32) (result i32)))
-                (memory (export "memory") 1)
-                (data (i32.const 100) "s UNSATISFIABLE\n")
-                (data (i32.const 0) "\64\00\00\00\10\00\00\00")
-                (func (export "_start") (drop (call $write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 8)))))"#,
-        )
-        .unwrap();
+        // Answers UNSAT to everything: right on the even formulas, wrong on the others ...
+        // ... with a proof (any proof: unit propagation refutes these formulas)
+        let unsat = crate::sandbox::testing::unsat_solver(Some(b"0\n"), "");
         let wrong_token = post("guess", unsat.clone()).await.unwrap();
         assert_eq!(wrong_token.status(), StatusCode::UNAUTHORIZED);
         let not_wasm = post("secret", b"\0asm junk".to_vec()).await.unwrap();
@@ -703,8 +746,8 @@ mod tests {
             panic!("{report:?}");
         };
         assert_eq!(
-            (score.solved, score.wrong, score.total),
-            (total / 2, total / 2, total)
+            (score.solved, score.wrong, score.unverified, score.total),
+            (total / 2, total / 2, 0, total)
         );
         assert_eq!(fingerprint.len(), bench::SPEC.len());
         assert_eq!(rules_version, RULES_VERSION);
@@ -734,6 +777,8 @@ mod tests {
             .expect("the evaluator stops when the server does")
             .unwrap();
         assert_eq!(pending.load(Ordering::Relaxed), 0);
+        // The proof directories of the runs are gone
+        assert_eq!(std::fs::read_dir(cache.join("proofs")).unwrap().count(), 0);
         std::fs::remove_dir_all(cache).unwrap();
     }
 

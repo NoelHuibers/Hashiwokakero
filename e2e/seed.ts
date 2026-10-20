@@ -60,7 +60,7 @@ export const DOJO_SUBMISSION = 1;
 /** The Dojo's current season (`DOJO_SEASON`), the one before is archived. */
 export const DOJO_SEASON = 2;
 /** `dojo::RULES_VERSION`: results of older rules are evaluated again when the server starts. */
-const DOJO_RULES = 2;
+const DOJO_RULES = 3;
 
 /** The revealed seed of the archived season, and the commitment published at its start. */
 export const ARCHIVED_SEED = 'e2e-archived-seed';

@@ -8,6 +8,9 @@ use crate::i18n::{t, use_i18n};
 
 use super::names::{family_kanji, family_name, family_text};
 
+/// What the Dojo's proof rules follow: an UNSAT answer needs a proof a verified checker accepts.
+const SAT_COMPETITION_RULES: &str = "https://satcompetition.github.io/2026/rules.html";
+
 #[component]
 pub(super) fn Code(children: Children) -> impl IntoView {
     view! {
@@ -46,6 +49,8 @@ pub(super) fn HowItWorks() -> impl IntoView {
                 <Step number="一" title=t!(i18n, dojo.how.build_title).into_any()>
                     <p>{t!(i18n, dojo.how.build)}</p>
                     <Code>"$ cargo build --release --target wasm32-wasip1\n\nstdin   p cnf 3 2\n        1 -2 0\n        2 3 0\nstdout  s SATISFIABLE\n        v 1 2 -3 0"</Code>
+                    <p>{t!(i18n, dojo.how.proof)}</p>
+                    <Code>"argv    solver /proof/proof.out\nstdin   p cnf 1 2\n        1 0\n        -1 0\nstdout  s UNSATISFIABLE\nproof   0"</Code>
                 </Step>
                 <Step number="二" title=t!(i18n, dojo.how.train_title).into_any()>
                     <p>{t!(i18n, dojo.how.train)}</p>
@@ -118,7 +123,20 @@ pub(super) fn FairPlay() -> impl IntoView {
             <CardContent class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 {item("燃", t!(i18n, dojo.fair.fuel_title).into_any(), t!(i18n, dojo.fair.fuel).into_any())}
                 {item("秘", t!(i18n, dojo.fair.hidden_title).into_any(), t!(i18n, dojo.fair.hidden).into_any())}
-                {item("検", t!(i18n, dojo.fair.checked_title).into_any(), t!(i18n, dojo.fair.checked).into_any())}
+                {item(
+                    "検",
+                    t!(i18n, dojo.fair.checked_title).into_any(),
+                    t!(
+                        i18n,
+                        dojo.fair.checked,
+                        <a> = |children: ChildrenFn| view! {
+                            <a href=SAT_COMPETITION_RULES target="_blank" rel="noopener" class="text-primary underline underline-offset-4">
+                                {children()}
+                            </a>
+                        }
+                    )
+                        .into_any(),
+                )}
                 {item("封", t!(i18n, dojo.fair.sandbox_title).into_any(), t!(i18n, dojo.fair.sandbox).into_any())}
                 {item("一", t!(i18n, dojo.fair.accounts_title).into_any(), t!(i18n, dojo.fair.accounts).into_any())}
                 {item("写", t!(i18n, dojo.fair.copies_title).into_any(), t!(i18n, dojo.fair.copies).into_any())}
