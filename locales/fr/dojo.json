@@ -218,6 +218,24 @@
     "text": "Tu crois que ton solveur bat le nôtre ? Soumets-le et grimpe au classement.",
     "button": "Vers le dojo"
   },
+  "track": {
+    "sprint": "Épreuve Sprint",
+    "sprint_text": "Des formules générées de taille modeste, environ une demi-seconde par formule.",
+    "soon": "Bientôt",
+    "industrial": {
+      "title": "Épreuve industrielle",
+      "intro": "De vraies instances tirées des main tracks des SAT Competitions passées : vérification de matériel et bounded model checking, cryptographie, ordonnancement, planification et vérification de logiciels, récupérées depuis la <a>Global Benchmark Database</a>.",
+      "budget_title": "Des minutes, pas une demi-seconde",
+      "budget": "Environ 200 fois le budget du Sprint par formule, et jusqu’à 4 Go de mémoire par exécution.",
+      "proofs_title": "Preuves vérifiées",
+      "proofs": "Chaque réponse UNSAT exige une preuve, vérifiée comme dans le Sprint.",
+      "why_title": "Pourquoi une deuxième épreuve",
+      "why": "Avec une demi-seconde par formule, MiniSat bat CaDiCaL et Kissat : leur inprocessing ne paie que sur de grandes instances industrielles. Avec des minutes, les gros solveurs peuvent montrer ce qu’ils valent, plus près de la SAT Competition.",
+      "fee_title": "De petits frais d’inscription",
+      "fee": "La participation coûtera de petits frais qui couvrent le calcul.",
+      "board_note": "L’<a>épreuve industrielle</a> arrive bientôt : de vraies instances de la SAT Competition, des minutes par formule."
+    }
+  },
   "community": {
     "meta_title": "Apporte ton propre benchmark · SAT Dojo",
     "meta_description": "Soumets une formule CNF au pool communautaire du SAT Dojo. Les instances vérifiées et difficiles rejoignent les ensembles secrets des saisons suivantes et sont publiées avec ton nom.",
