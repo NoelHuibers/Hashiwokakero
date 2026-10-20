@@ -10,7 +10,7 @@ use crate::{
     cli::Heuristic,
     dpll::{DIMACSOutput, Error},
     hash::{self, HashMap, HashSet},
-    logger::log_clause,
+    logger::ProofLog,
     preprocessing::delete_subsumed_clauses,
     randomrestarts::luby_sequence,
 };
@@ -89,7 +89,8 @@ pub struct CDCL {
     pub unit_queue: VecDeque<(BVar, Option<CIdx>)>,
     pub restart: Restart,
     deletion_start: (usize, usize),
-    drup_output: Option<String>,
+    // The DRAT proof being written, if asked for
+    drup_output: Option<ProofLog>,
     // Give up (DIMACSOutput::Timeout) once this point in time has passed
     deadline: Option<Instant>,
     // The input contained an empty clause, so the formula is trivially UNSAT
@@ -158,7 +159,13 @@ impl CDCL {
                 factor,
             },
             deletion_start: (k, m),
-            drup_output: drup_path,
+            drup_output: drup_path.and_then(|path| match ProofLog::create(&path) {
+                Ok(log) => Some(log),
+                Err(e) => {
+                    eprintln!("Error: Couldn't write the proof to {path}: {e}");
+                    None
+                }
+            }),
             deadline: None,
             has_empty_clause: false,
         };
@@ -284,9 +291,17 @@ impl CDCL {
         self.restart.count += 1;
     }
 
+    /// The formula is refuted: the proof ends with the empty clause.
+    fn refuted(&mut self) -> DIMACSOutput {
+        if let Some(log) = &mut self.drup_output {
+            log.refuted();
+        }
+        DIMACSOutput::Unsat
+    }
+
     pub fn solve(&mut self) -> Result<DIMACSOutput, Error> {
         if self.has_empty_clause {
-            return Ok(DIMACSOutput::Unsat);
+            return Ok(self.refuted());
         }
         if self.deadline.is_some_and(|d| Instant::now() >= d) {
             return Ok(DIMACSOutput::Timeout);
@@ -295,7 +310,7 @@ impl CDCL {
         // * unit propagation
         let conflict = self.unit_prop();
         if conflict {
-            return Ok(DIMACSOutput::Unsat);
+            return Ok(self.refuted());
         }
         if let Some(res) = self.is_sat() {
             return Ok(res);
@@ -345,7 +360,7 @@ impl CDCL {
                 let (conflict_clause, backtrack_level) = self.analyze_conflict()?;
 
                 if backtrack_level < 0 {
-                    return Ok(DIMACSOutput::Unsat);
+                    return Ok(self.refuted());
                 }
 
                 // Add conflict clause to the database
@@ -632,8 +647,8 @@ impl CDCL {
     }
 
     fn insert_clause(&mut self, conflict_clause: &Clause) -> usize {
-        if let Some(path) = &self.drup_output {
-            let () = log_clause(&conflict_clause.vars, ' ', path);
+        if let Some(log) = &mut self.drup_output {
+            log.add(&conflict_clause.vars);
         }
         self.learned_size += 1;
         let clause_id = self.learned_size;
@@ -788,8 +803,8 @@ impl CDCL {
             // Unset watched literals of that clause
             let clause = self.clause_db.remove(&clause_id).unwrap();
             // println!("Remove clause {}", clause_id);
-            if let Some(path) = &self.drup_output {
-                let () = log_clause(&clause.vars, 'd', path);
+            if let Some(log) = &mut self.drup_output {
+                log.delete(&clause.vars);
             }
             for lit in [clause.watched_lhs, clause.watched_rhs] {
                 if let Some(clauses) = self.pos_watched_occ.get_mut(&lit)

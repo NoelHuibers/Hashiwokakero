@@ -46,12 +46,21 @@ fn rejection_text(locale: Locale, rejection: &Rejection) -> String {
 fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
     let i18n = use_i18n();
     let wrong = score.wrong;
+    let unverified = score.unverified;
     view! {
         {(wrong > 0)
             .then(|| {
                 view! {
                     <p class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                         {t!(i18n, dojo.detail.wrong, count = wrong)}
+                    </p>
+                }
+            })}
+        {(unverified > 0)
+            .then(|| {
+                view! {
+                    <p class="rounded-md border border-warning/40 bg-warning-light px-3 py-2 text-sm text-warning-dark">
+                        {t!(i18n, dojo.detail.unverified, count = unverified)}
                     </p>
                 }
             })}
@@ -77,6 +86,8 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
                     <tr class="border-b text-xs uppercase tracking-wider text-muted-foreground">
                         <th class="py-2 pe-3 text-start font-semibold">{t!(i18n, dojo.detail.family)}</th>
                         <th class="w-2/5 py-2 pe-3 text-start font-semibold">{t!(i18n, dojo.board.solved)}</th>
+                        {(unverified > 0)
+                            .then(|| view! { <th class="py-2 pe-3 text-end font-semibold">{t!(i18n, dojo.detail.unverified_col)}</th> })}
                         <th class="py-2 text-end font-semibold">{t!(i18n, dojo.board.par2)}</th>
                     </tr>
                 </thead>
@@ -100,6 +111,10 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
                                             <span class="w-12 text-end font-pixel tabular-nums">{format!("{}/{}", f.solved, f.total)}</span>
                                         </div>
                                     </td>
+                                    {(unverified > 0)
+                                        .then(|| {
+                                            view! { <td class="py-2.5 pe-3 text-end font-pixel tabular-nums">{f.unverified}</td> }
+                                        })}
                                     <td class="py-2.5 text-end font-pixel tabular-nums">{format!("{:.3}", f.par2)}</td>
                                 </tr>
                             }

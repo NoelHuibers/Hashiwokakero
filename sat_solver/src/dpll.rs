@@ -2,6 +2,7 @@ use crate::{
     cli::Heuristic,
     hash::{self, HashMap, HashSet},
     heuristics::{arbitrary, boehm, custom, dlcs, dlis, jeroslaw_wang, mom, vsids_dpll},
+    logger::ProofLog,
     profiling,
 };
 use std::{collections::VecDeque, fmt, time::Instant};
@@ -105,6 +106,9 @@ pub struct DPLL {
     deadline: Option<Instant>,
     // The input contained an empty clause, so the formula is trivially UNSAT
     has_empty_clause: bool,
+    // The DRAT proof being written, if asked for: at every conflict the negation of the
+    // decisions, which is RUP (see `conflict_lemma`)
+    proof: Option<ProofLog>,
 }
 
 impl DPLL {
@@ -132,6 +136,7 @@ impl DPLL {
             decisions: 0,
             deadline: None,
             has_empty_clause: false,
+            proof: None,
         };
         if input.iter().any(Vec::is_empty) {
             dpll.has_empty_clause = true;
@@ -202,6 +207,42 @@ impl DPLL {
         self
     }
 
+    /// Writes a DRAT proof to `proof` when the formula turns out unsatisfiable.
+    #[must_use]
+    pub fn with_proof(mut self, proof: Option<ProofLog>) -> Self {
+        self.proof = proof;
+        self
+    }
+
+    /// At a conflict: the decisions so far can't all hold, the negation of the decision
+    /// literals is a lemma. It is RUP: every flipped decision on the trail was made unit by the
+    /// lemma of the conflict that flipped it (which only names decisions below it), so unit
+    /// propagation from the decisions reproduces the trail and its conflict. With no decisions
+    /// left it is the empty clause, the end of the refutation.
+    fn conflict_lemma(&mut self) {
+        if let Some(log) = &mut self.proof {
+            let lemma: Vec<BVar> = self
+                .history
+                .iter()
+                .filter(|step| !step.forced)
+                .map(|step| if step.val { -step.var } else { step.var })
+                .collect();
+            if lemma.is_empty() {
+                log.refuted();
+            } else {
+                log.add(&lemma);
+            }
+        }
+    }
+
+    /// The formula is refuted without a search: unit propagation alone does it.
+    fn refuted(&mut self) -> DIMACSOutput {
+        if let Some(log) = &mut self.proof {
+            log.refuted();
+        }
+        DIMACSOutput::Unsat
+    }
+
     /// Number of branching decisions (excluding pure literals and forced assignments) so far.
     pub fn decisions(&self) -> u64 {
         self.decisions
@@ -213,7 +254,7 @@ impl DPLL {
 
     pub fn solve(&mut self) -> Result<DIMACSOutput, Error> {
         if self.has_empty_clause {
-            return Ok(DIMACSOutput::Unsat);
+            return Ok(self.refuted());
         }
         if self.deadline.is_some_and(|d| Instant::now() >= d) {
             return Ok(DIMACSOutput::Timeout);
@@ -224,7 +265,7 @@ impl DPLL {
         let conflict = self.unit_prop();
         if conflict {
             profiling::end("DPLL::solve");
-            return Ok(DIMACSOutput::Unsat);
+            return Ok(self.refuted());
         }
         if self.clauses.values().all(|c| c.sat_by_var != 0) {
             let mut res: Vec<i32> = self
@@ -261,6 +302,12 @@ impl DPLL {
                 (var, val, false)
             } else {
                 let lit = pure_lits.pop().unwrap();
+                // A pure literal is RAT: no clause has its negation (and no lemma yet either,
+                // pure literals come before any decision). The literal `set_var` makes true:
+                if let Some(log) = &mut self.proof {
+                    let val = lit.is_positive();
+                    log.add(&[if val { lit } else { -lit }]);
+                }
                 // As the lit occurs only in one polarity it doesn't make sense to try both assignments
                 (lit, lit.is_positive(), true)
             };
@@ -280,6 +327,7 @@ impl DPLL {
                     return Ok(DIMACSOutput::Timeout);
                 }
                 // * if conflict detected
+                self.conflict_lemma();
                 let unsat = self.backtrack();
                 if unsat {
                     profiling::end("DPLL::solve");
@@ -753,4 +801,35 @@ fn bug_jan_2nd_should_be_sat() {
     if matches!(res, Ok(DIMACSOutput::Unsat)) {
         panic!("Was UNSAT but expected SAT.")
     }
+}
+
+/// The DPLL proof: the negated decisions at every conflict, the empty clause at the end.
+#[test]
+fn writes_a_proof_of_negated_decisions() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("proof.drat");
+    let clauses = vec![vec![1, 2], vec![-1, 2], vec![1, -2], vec![-1, -2]];
+    let log = ProofLog::create(&path).unwrap();
+    let result = DPLL::new(clauses, 2, 4, Heuristic::Arbitrary, false)
+        .with_proof(Some(log))
+        .solve()
+        .unwrap();
+    assert!(matches!(result, DIMACSOutput::Unsat));
+    let proof = std::fs::read_to_string(&path).unwrap();
+    let lines: Vec<&str> = proof.lines().collect();
+    // One decision fails, then the flipped one: no decisions are left
+    assert_eq!(lines.len(), 2, "{proof}");
+    assert_eq!(lines[1], "0");
+    assert!(
+        ["-1 0", "1 0", "-2 0", "2 0"].contains(&lines[0]),
+        "{proof}"
+    );
+    // Refuted by unit propagation
+    let log = ProofLog::create(&path).unwrap();
+    let result = DPLL::new(vec![vec![1], vec![-1]], 1, 2, Heuristic::Arbitrary, false)
+        .with_proof(Some(log))
+        .solve()
+        .unwrap();
+    assert!(matches!(result, DIMACSOutput::Unsat));
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "0\n");
 }

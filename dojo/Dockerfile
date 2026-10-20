@@ -8,11 +8,21 @@ COPY . .
 RUN rustup toolchain install
 RUN cargo build --locked -p dojo --features worker --release
 
+# The proof checkers (drat-trim, cake_lpr) from pinned, checksummed sources
+FROM debian:trixie-slim AS checkers
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl gcc libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY dojo/checkers/build.sh /build.sh
+RUN /build.sh /checkers
+
 FROM debian:trixie-slim
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/dojo /usr/local/bin/dojo
+# UNSAT proofs are checked by these (dojo::proof); prlimit (util-linux) caps their memory
+COPY --from=checkers /checkers/drat-trim /checkers/cake_lpr /usr/local/bin/
 # Submissions run sandboxed in wasmtime; on top of that the worker doesn't run as root. Fly mounts
 # the cache volume as root, so the entry point hands it over and then drops privileges.
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin dojo

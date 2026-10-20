@@ -1,9 +1,11 @@
 //! The house entries of the SAT Dojo: the solvers behind the website, reading DIMACS on stdin
-//! and answering in the SAT competition format.
+//! and answering in the SAT competition format. An UNSAT answer comes with a DRAT proof in the
+//! file named by the first argument, as the Dojo asks.
 
 use std::io::{Read, Write};
+use std::path::Path;
 
-use backend::sat::{SatOutcome, solve_clauses};
+use backend::sat::{SatOutcome, solve_clauses, solve_clauses_with_proof};
 use common::SolverConfig;
 
 /// Clauses and the number of variables of a DIMACS formula.
@@ -44,8 +46,13 @@ pub fn run(config: SolverConfig) {
         .read_to_string(&mut text)
         .expect("could not read stdin");
     let (clauses, vars) = parse(&text);
+    let proof = std::env::args().nth(1);
     let mut out = std::io::stdout().lock();
-    let _ = match solve_clauses(&clauses, vars, &config, None) {
+    let solved = match &proof {
+        Some(path) => solve_clauses_with_proof(&clauses, vars, &config, None, Path::new(path)),
+        None => solve_clauses(&clauses, vars, &config, None),
+    };
+    let _ = match solved {
         Ok((SatOutcome::Sat(model), _)) => {
             let mut line = String::from("s SATISFIABLE\nv");
             for (v, &value) in model.iter().enumerate().skip(1) {

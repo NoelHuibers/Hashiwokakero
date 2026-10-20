@@ -24,9 +24,18 @@
 //! more clauses than the proof asks for, which can't make the argument wrong either: the RAT
 //! check always looks at every clause actually held.
 //!
-//! The format is textual DRAT (what splr writes): literals as decimal integers, each step ends
-//! with `0`, deletions start with `d`, lines starting with `c` are comments. Steps may span
-//! lines or share one, only the tokens matter.
+//! Proofs come as text or binary DRAT, told apart like drat-trim does (see [`is_binary`]):
+//!
+//! - text (what splr writes): literals as decimal integers, each step ends with `0`, deletions
+//!   start with `d`, lines starting with `c` are comments. Steps may span lines or share one,
+//!   only the tokens matter.
+//! - binary: each step starts with the byte `a` (an addition) or `d` (a deletion), followed by
+//!   its literals and a final 0, each as a variable-length number: literal `l` is `2|l|` plus
+//!   one if negative, written seven bits at a time from the lowest, with the top bit set on every
+//!   byte but the last. About three times smaller than text, and cheaper to write.
+//!
+//! This is the fallback checker for local runs and for labelling sets when drat-trim and
+//! `cake_lpr` aren't installed (see [`crate::proof`]); the leaderboard checks with those.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -34,10 +43,11 @@ use std::time::{Duration, Instant};
 
 use crate::cnf::Cnf;
 
-/// Why a proof was rejected.
+/// Why a proof was rejected (DRAT or LRAT, see [`crate::lrat`]).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DratError {
     /// The proof (or the formula) isn't well-formed; `line` counts from 1 (0 for the formula).
+    /// In binary proofs it counts steps instead of lines.
     Parse { line: usize, message: String },
     /// Lemma number `lemma` (counting only additions, from 1), starting on `line`, is neither
     /// RUP nor RAT.
@@ -64,9 +74,25 @@ impl fmt::Display for DratError {
 impl std::error::Error for DratError {}
 
 /// Variables beyond this are rejected, so a corrupt proof can't make us allocate gigabytes.
-const MAX_VAR: u32 = 1 << 20;
+pub(crate) const MAX_VAR: u32 = 1 << 20;
 
-/// Checks that `proof` (textual DRAT) shows `cnf` unsatisfiable, within `budget`.
+/// Whether a proof is binary, by its first bytes, the way drat-trim decides.
+///
+/// That is: a byte that can't appear in text (anything but digits, `-`, `c`, `d`, spaces and line breaks) among the first
+/// two, or among the next ten unless the proof starts with a comment and it is a letter. An
+/// empty proof counts as text, it has no steps either way.
+pub fn is_binary(proof: &[u8]) -> bool {
+    let binary = |b: u8| !matches!(b, b'\n' | b'\r' | b' ' | b'-' | b'0'..=b'9' | b'c' | b'd');
+    let comment = proof.starts_with(b"c ");
+    proof.iter().take(2).any(|&b| binary(b))
+        || proof
+            .iter()
+            .skip(2)
+            .take(10)
+            .any(|&b| binary(b) && (!comment || !(65..=122).contains(&b)))
+}
+
+/// Checks that `proof` (text or binary DRAT) shows `cnf` unsatisfiable, within `budget`.
 pub fn check(cnf: &Cnf, proof: &[u8], budget: Duration) -> Result<(), DratError> {
     let deadline = Instant::now().checked_add(budget);
     let over_budget = || deadline.is_some_and(|d| Instant::now() >= d);
@@ -92,6 +118,7 @@ pub fn check(cnf: &Cnf, proof: &[u8], budget: Duration) -> Result<(), DratError>
         bytes: proof,
         pos: 0,
         line: 1,
+        binary: is_binary(proof),
     };
     let mut raw = Vec::new();
     let mut lemmas = 0;
@@ -124,14 +151,41 @@ pub fn check(cnf: &Cnf, proof: &[u8], budget: Duration) -> Result<(), DratError>
 }
 
 /// Reads the proof one step at a time.
-struct Parser<'a> {
-    bytes: &'a [u8],
-    pos: usize,
-    line: usize,
+pub(crate) struct Parser<'a> {
+    pub(crate) bytes: &'a [u8],
+    pub(crate) pos: usize,
+    /// The line (text) or step (binary) number.
+    pub(crate) line: usize,
+    pub(crate) binary: bool,
+}
+
+/// One number of a binary proof (a literal or a clause id): `2|n|`, plus one if negative, seven
+/// bits per byte from the lowest, the top bit set on all but the last byte.
+pub(crate) fn read_varint(bytes: &[u8], pos: &mut usize) -> Option<u64> {
+    let mut value: u64 = 0;
+    for shift in (0..64).step_by(7) {
+        let &b = bytes.get(*pos)?;
+        *pos += 1;
+        value |= u64::from(b & 0x7f) << shift;
+        if b & 0x80 == 0 {
+            return Some(value);
+        }
+    }
+    None
+}
+
+/// `n` as a binary proof writes it, see [`read_varint`].
+pub fn write_varint(out: &mut Vec<u8>, n: i64) {
+    let mut u = 2 * n.unsigned_abs() + u64::from(n < 0);
+    while u >= 0x80 {
+        out.push(u8::try_from(u & 0x7f).expect("seven bits") | 0x80);
+        u >>= 7;
+    }
+    out.push(u8::try_from(u).expect("seven bits"));
 }
 
 impl Parser<'_> {
-    fn error(&self, message: &str) -> DratError {
+    pub(crate) fn error(&self, message: &str) -> DratError {
         DratError::Parse {
             line: self.line,
             message: message.into(),
@@ -145,6 +199,47 @@ impl Parser<'_> {
     /// The next step's literals into `lits`: `Some((is deletion, line it starts on))`, `None`
     /// at the end of the proof.
     fn step(&mut self, lits: &mut Vec<i32>) -> Result<Option<(bool, usize)>, DratError> {
+        if self.binary {
+            self.binary_step(lits)
+        } else {
+            self.text_step(lits)
+        }
+    }
+
+    fn binary_step(&mut self, lits: &mut Vec<i32>) -> Result<Option<(bool, usize)>, DratError> {
+        lits.clear();
+        let Some(&kind) = self.bytes.get(self.pos) else {
+            return Ok(None);
+        };
+        let delete = match kind {
+            b'a' => false,
+            b'd' => true,
+            _ => return Err(self.error("a step starts with neither a nor d")),
+        };
+        self.pos += 1;
+        loop {
+            let number = read_varint(self.bytes, &mut self.pos)
+                .ok_or_else(|| self.error("the last step doesn't end with 0"))?;
+            if number == 0 {
+                let line = self.line;
+                self.line += 1;
+                return Ok(Some((delete, line)));
+            }
+            lits.push(self.binary_literal(number)?);
+        }
+    }
+
+    /// A literal from its binary encoding (not 0).
+    pub(crate) fn binary_literal(&self, number: u64) -> Result<i32, DratError> {
+        let var = number >> 1;
+        if var == 0 || var > u64::from(MAX_VAR) {
+            return Err(self.error("variable out of range"));
+        }
+        let var = i32::try_from(var).expect("MAX_VAR fits an i32");
+        Ok(if number & 1 == 1 { -var } else { var })
+    }
+
+    fn text_step(&mut self, lits: &mut Vec<i32>) -> Result<Option<(bool, usize)>, DratError> {
         lits.clear();
         let mut delete = false;
         let mut start = None;
@@ -634,6 +729,92 @@ mod tests {
     fn valid_proof_is_accepted() {
         let proof = b"c a comment\n1 2 0\nd 3 2 1 0\n1 0 2 0\n0\n";
         assert_eq!(check(&all_eight(), proof, BUDGET), Ok(()));
+    }
+
+    /// A text DRAT proof in binary.
+    fn to_binary(text: &str) -> Vec<u8> {
+        let mut out = Vec::new();
+        let mut open = false;
+        for token in text.split_whitespace() {
+            if token == "d" {
+                out.push(b'd');
+                open = true;
+                continue;
+            }
+            if !open {
+                out.push(b'a');
+            }
+            let lit: i64 = token.parse().unwrap();
+            write_varint(&mut out, lit);
+            open = lit != 0;
+        }
+        out
+    }
+
+    #[test]
+    fn binary_proofs_are_accepted() {
+        let text = "1 2 0\nd 3 2 1 0\n1 0 2 0\n0\n";
+        let binary = to_binary(text);
+        assert_eq!(&binary[..4], b"a\x02\x04\x00");
+        assert!(is_binary(&binary));
+        assert_eq!(check(&all_eight(), &binary, BUDGET), Ok(()));
+        // A wrong lemma is found in binary too, counted in steps
+        let broken = to_binary("1 2 0\n1 0\n-1 0\n2 0\n0\n");
+        assert_eq!(
+            check(&all_eight(), &broken, BUDGET),
+            Err(DratError::NotRedundant { lemma: 3, line: 3 })
+        );
+        // Large literals take several bytes
+        let mut big = Vec::new();
+        write_varint(&mut big, -300);
+        assert_eq!(big, [0xd9, 0x04]);
+        assert_eq!(read_varint(&big, &mut 0), Some(601));
+        // splr's proof of PHP(5,4) in binary
+        let cnf = pigeonhole();
+        let proof = crate::bench::splr_proof(&cnf).expect("unsatisfiable");
+        let binary = to_binary(&String::from_utf8(proof).unwrap());
+        assert_eq!(check(&cnf, &binary, BUDGET), Ok(()));
+    }
+
+    #[test]
+    fn binary_is_told_apart_like_drat_trim_does() {
+        assert!(!is_binary(b""));
+        assert!(!is_binary(b"1 2 0\nd -3 0\n"));
+        // A comment may have letters in it, a step may not
+        assert!(!is_binary(b"c proof by hand\n1 0\n"));
+        assert!(is_binary(b"1 2 0\nx"));
+        assert!(is_binary(b"a\x02\x00"));
+        // `d` followed by a byte that isn't text
+        assert!(is_binary(b"d\x03\x00"));
+        assert!(!is_binary(b"d 3 0\n"));
+    }
+
+    #[test]
+    fn malformed_binary_proofs_are_rejected() {
+        for proof in [
+            &b"a\x02"[..],
+            b"a\x80",
+            b"x\x00",
+            b"a\x01\x00",
+            b"a\x02\x00\xff",
+        ] {
+            assert!(
+                matches!(
+                    check(&all_eight(), proof, BUDGET),
+                    Err(DratError::Parse { .. })
+                ),
+                "{proof:?}"
+            );
+        }
+        // A number longer than 64 bits
+        assert_eq!(read_varint(&[0xff; 11], &mut 0), None);
+        let mut too_large = b"a".to_vec();
+        write_varint(&mut too_large, i64::from(MAX_VAR) + 1);
+        too_large.push(0);
+        assert!(matches!(
+            check(&all_eight(), &too_large, BUDGET),
+            Err(DratError::Parse { .. })
+        ));
     }
 
     #[test]

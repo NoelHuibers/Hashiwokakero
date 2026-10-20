@@ -231,15 +231,18 @@
               "family": "Hashi",
               "solved": 8,
               "total": 8,
-              "par2": 0.75
+              "par2": 0.75,
+              "unverified": 0
             },
             {
               "family": "Queens",
               "solved": 4,
               "total": 5,
-              "par2": 4.0
+              "par2": 4.0,
+              "unverified": 1
             }
-          ]
+          ],
+          "unverified": 1
         },
         "created_at": 1760000000000
       }
@@ -273,15 +276,18 @@
           "family": "Hashi",
           "solved": 8,
           "total": 8,
-          "par2": 0.75
+          "par2": 0.75,
+          "unverified": 0
         },
         {
           "family": "Queens",
           "solved": 4,
           "total": 5,
-          "par2": 4.0
+          "par2": 4.0,
+          "unverified": 1
         }
-      ]
+      ],
+      "unverified": 1
     },
     "rejection": null,
     "rank": 3,
@@ -370,15 +376,18 @@
                   "family": "Hashi",
                   "solved": 8,
                   "total": 8,
-                  "par2": 0.75
+                  "par2": 0.75,
+                  "unverified": 0
                 },
                 {
                   "family": "Queens",
                   "solved": 4,
                   "total": 5,
-                  "par2": 4.0
+                  "par2": 4.0,
+                  "unverified": 1
                 }
-              ]
+              ],
+              "unverified": 1
             },
             "created_at": 1755000000000
           }

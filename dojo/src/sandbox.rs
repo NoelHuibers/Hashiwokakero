@@ -1,7 +1,13 @@
 //! Running a submission on one formula, sandboxed and metered.
 //!
-//! - WASI preview 1 with stdin (the formula), stdout (the answer, at most 8 MiB) and nothing
-//!   else: no files, no environment, no network.
+//! - WASI preview 1 with stdin (the formula), stdout (the answer, at most 8 MiB) and one file:
+//!   the proof of an UNSAT answer, at the path in `argv[1]` (`/proof/proof.out`, see
+//!   [`crate::proof`]). No other files, no environment, no network.
+//! - The proof goes to a real file on disk (proofs can be far larger than memory should hold),
+//!   in a fresh directory per run that the solver sees as `/proof`. The solver can only open
+//!   `proof.out` there and write at most [`Limits::proof_bytes`] in total; beyond that writes
+//!   fail with `EFBIG` and the proof counts as missing (not a crash: the run goes on). It can't
+//!   create other files or directories, links or renames, so the disk it uses stays bounded.
 //! - Fuel: every executed instruction costs one unit, bulk memory and table operations one per
 //!   byte or element. The budget replaces a time limit, so results are exactly reproducible.
 //! - Clocks only move when they are read and random numbers come from a seed, so even solvers
@@ -11,29 +17,46 @@
 //! - Memory is capped and a wall clock limit catches anything fuel doesn't (e.g. a host call
 //!   that blocks).
 
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use rand::SeedableRng;
 use rand::rngs::StdRng;
-use wasmtime::{Config, Engine, Linker, Module, Store, StoreLimits, StoreLimitsBuilder, Trap};
+use wasmtime::{
+    AsContextMut, Caller, Config, Engine, Extern, Linker, Module, Store, StoreLimits,
+    StoreLimitsBuilder, Trap,
+};
+use wasmtime_wasi::p1::wasi_snapshot_preview1::{self as wasi, WasiSnapshotPreview1 as _};
 use wasmtime_wasi::p1::{self, WasiP1Ctx};
 use wasmtime_wasi::p2::pipe::{MemoryInputPipe, MemoryOutputPipe};
-use wasmtime_wasi::{HostMonotonicClock, HostWallClock, I32Exit, WasiCtxBuilder};
+use wasmtime_wasi::runtime::in_tokio;
+use wasmtime_wasi::{FsPerms, HostMonotonicClock, HostWallClock, I32Exit, WasiCtxBuilder};
+use wiggle::GuestMemory;
 
 use crate::Rejection;
+use crate::proof::{GUEST_DIR, GUEST_PATH, PROOF_FILE};
 use crate::validate::validate;
 
 /// How often the wall clock limit is checked.
 const TICK: Duration = Duration::from_millis(10);
 const MAX_STDOUT: usize = 8 << 20;
 
+/// The most a solver may write to its proof file: 256 MiB.
+pub const MAX_PROOF_BYTES: u64 = 256 << 20;
+
+/// WASI errno values (preview 1).
+const ERRNO_ACCES: i32 = 2;
+const ERRNO_FBIG: i32 = 22;
+
 #[derive(Clone, Debug)]
 pub struct Limits {
     pub fuel: u64,
     pub memory_bytes: usize,
     pub wall: Duration,
+    /// Bytes the solver may write to its proof file, see the module docs.
+    pub proof_bytes: u64,
 }
 
 impl Default for Limits {
@@ -42,6 +65,7 @@ impl Default for Limits {
             fuel: crate::DEFAULT_BUDGET,
             memory_bytes: 1 << 30,
             wall: Duration::from_secs(120),
+            proof_bytes: MAX_PROOF_BYTES,
         }
     }
 }
@@ -63,6 +87,8 @@ pub struct Run {
     pub stdout: String,
     pub fuel: u64,
     pub wall: Duration,
+    /// The solver tried to write more than [`Limits::proof_bytes`] to its proof.
+    pub proof_too_large: bool,
 }
 
 /// Time that only moves when the solver looks at it: one microsecond per reading.
@@ -91,6 +117,160 @@ impl HostWallClock for VirtualClock {
 struct State {
     wasi: WasiP1Ctx,
     limits: StoreLimits,
+    /// Bytes written to files (the proof) so far.
+    proof_written: u64,
+    proof_cap: u64,
+    proof_too_large: bool,
+}
+
+/// The guest's memory as wiggle sees it, and the WASI state: to call wasmtime's own
+/// implementation of a WASI function from ours.
+fn with_wasi<R>(
+    caller: &mut Caller<'_, State>,
+    f: impl FnOnce(&mut WasiP1Ctx, &mut GuestMemory<'_>) -> wasmtime::Result<R>,
+) -> wasmtime::Result<R> {
+    let Some(Extern::Memory(memory)) = caller.get_export("memory") else {
+        return Err(wasmtime::Error::msg("missing required memory export"));
+    };
+    // What wasmtime's own glue does: without it the call may copy no bytes at all (ENOMEM)
+    let fuel = caller.as_context_mut().hostcall_fuel();
+    let (bytes, state) = memory.data_and_store_mut(caller);
+    state.wasi.set_hostcall_fuel(fuel);
+    f(&mut state.wasi, &mut GuestMemory::Unshared(bytes))
+}
+
+/// `len` bytes of guest memory at `ptr`, if they are there.
+fn guest_bytes(caller: &mut Caller<'_, State>, ptr: i32, len: i32) -> Option<Vec<u8>> {
+    let Some(Extern::Memory(memory)) = caller.get_export("memory") else {
+        return None;
+    };
+    let start = usize::try_from(ptr.cast_unsigned()).ok()?;
+    let len = usize::try_from(len.cast_unsigned()).ok()?;
+    memory
+        .data(caller)
+        .get(start..start.checked_add(len)?)
+        .map(<[u8]>::to_vec)
+}
+
+/// How much a write of the iovecs at `iovs` writes at most: wasmtime writes the first non-empty
+/// buffer only (the caller loops for the rest).
+fn first_iovec_len(caller: &mut Caller<'_, State>, iovs: i32, count: i32) -> u64 {
+    let count = count.clamp(0, 1024);
+    guest_bytes(caller, iovs, count.saturating_mul(8))
+        .unwrap_or_default()
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|iovec| u64::from(u32::from_le_bytes([iovec[4], iovec[5], iovec[6], iovec[7]])))
+        .find(|&len| len > 0)
+        .unwrap_or(0)
+}
+
+/// Counts a write of `len` bytes to file `fd` ending at `end`: `false` (and the proof is too
+/// large) if it would go beyond the limit. Writes to stdout and stderr aren't counted.
+fn allow_write(state: &mut State, fd: i32, len: u64, end: u64) -> bool {
+    if (0..=2).contains(&fd) {
+        return true;
+    }
+    let written = state.proof_written.saturating_add(len);
+    if state.proof_too_large || written > state.proof_cap || end > state.proof_cap {
+        state.proof_too_large = true;
+        return false;
+    }
+    state.proof_written = written;
+    true
+}
+
+/// Replaces wasmtime's WASI functions that could fill the disk: writes to files are counted
+/// and capped, only the proof file can be opened, nothing else can be created. Each one calls
+/// wasmtime's own implementation when the call is allowed.
+fn guard_files(linker: &mut Linker<State>) -> wasmtime::Result<()> {
+    const M: &str = "wasi_snapshot_preview1";
+    linker.allow_shadowing(true);
+    linker.func_wrap(
+        M,
+        "fd_write",
+        |mut caller: Caller<'_, State>, fd: i32, iovs: i32, n: i32, out: i32| {
+            let len = first_iovec_len(&mut caller, iovs, n);
+            if !allow_write(caller.data_mut(), fd, len, 0) {
+                return Ok(ERRNO_FBIG);
+            }
+            with_wasi(&mut caller, |ctx, mem| {
+                in_tokio(wasi::fd_write(ctx, mem, fd, iovs, n, out))
+            })
+        },
+    )?;
+    linker.func_wrap(
+        M,
+        "fd_pwrite",
+        |mut caller: Caller<'_, State>, fd: i32, iovs: i32, n: i32, offset: i64, out: i32| {
+            let len = first_iovec_len(&mut caller, iovs, n);
+            let end = offset.cast_unsigned().saturating_add(len);
+            if !allow_write(caller.data_mut(), fd, len, end) {
+                return Ok(ERRNO_FBIG);
+            }
+            with_wasi(&mut caller, |ctx, mem| {
+                in_tokio(wasi::fd_pwrite(ctx, mem, fd, iovs, n, offset, out))
+            })
+        },
+    )?;
+    linker.func_wrap(
+        M,
+        "fd_filestat_set_size",
+        |mut caller: Caller<'_, State>, fd: i32, size: i64| {
+            if !allow_write(caller.data_mut(), fd, 0, size.cast_unsigned()) {
+                return Ok(ERRNO_FBIG);
+            }
+            with_wasi(&mut caller, |ctx, mem| {
+                in_tokio(wasi::fd_filestat_set_size(ctx, mem, fd, size))
+            })
+        },
+    )?;
+    linker.func_wrap(
+        M,
+        "path_open",
+        |mut caller: Caller<'_, State>,
+         dir: i32,
+         flags: i32,
+         path: i32,
+         len: i32,
+         oflags: i32,
+         base: i64,
+         inheriting: i64,
+         fdflags: i32,
+         out: i32| {
+            let name = guest_bytes(&mut caller, path, len).unwrap_or_default();
+            let name = name.strip_prefix(b"./").unwrap_or(&name);
+            if name != PROOF_FILE.as_bytes() {
+                return Ok(ERRNO_ACCES);
+            }
+            with_wasi(&mut caller, |ctx, mem| {
+                in_tokio(wasi::path_open(
+                    ctx, mem, dir, flags, path, len, oflags, base, inheriting, fdflags, out,
+                ))
+            })
+        },
+    )?;
+    linker.func_wrap(M, "path_create_directory", |_: i32, _: i32, _: i32| {
+        ERRNO_ACCES
+    })?;
+    linker.func_wrap(
+        M,
+        "path_symlink",
+        |_: i32, _: i32, _: i32, _: i32, _: i32| ERRNO_ACCES,
+    )?;
+    linker.func_wrap(
+        M,
+        "path_link",
+        |_: i32, _: i32, _: i32, _: i32, _: i32, _: i32, _: i32| ERRNO_ACCES,
+    )?;
+    linker.func_wrap(
+        M,
+        "path_rename",
+        |_: i32, _: i32, _: i32, _: i32, _: i32, _: i32| ERRNO_ACCES,
+    )?;
+    linker.allow_shadowing(false);
+    Ok(())
 }
 
 /// A compiled submission.
@@ -127,6 +307,7 @@ impl Sandbox {
 
         let mut linker: Linker<State> = Linker::new(&engine);
         p1::add_to_linker_sync(&mut linker, |s| &mut s.wasi).map_err(|e| e.to_string())?;
+        guard_files(&mut linker).map_err(|e| e.to_string())?;
 
         // The wall clock limit: interrupts stores whose deadline (in ticks) has passed
         let ticker = engine.weak();
@@ -152,7 +333,9 @@ impl Sandbox {
         Ok(Solver { module })
     }
 
-    /// Runs the solver on `input` (DIMACS text). `seed` seeds its random numbers.
+    /// Runs the solver on `input` (DIMACS text). `seed` seeds its random numbers. With
+    /// `proof_dir` (an empty directory) the solver can write its proof to `proof.out` there,
+    /// it gets the path as its first argument.
     pub fn run(
         &self,
         solver: &Solver,
@@ -160,11 +343,24 @@ impl Sandbox {
         seed: u64,
         limits: &Limits,
         show_stderr: bool,
+        proof_dir: Option<&Path>,
     ) -> Run {
         let stdout = MemoryOutputPipe::new(MAX_STDOUT);
         let mut wasi = WasiCtxBuilder::new();
-        wasi.args(&["solver"])
-            .stdin(MemoryInputPipe::new(input.as_bytes().to_vec()))
+        wasi.arg("solver");
+        if let Some(dir) = proof_dir {
+            wasi.arg(GUEST_PATH);
+            if let Err(e) = wasi.preopened_dir(dir, GUEST_DIR, FsPerms::ReadWrite) {
+                return Run {
+                    end: End::Crashed(format!("no proof directory: {e}")),
+                    stdout: String::new(),
+                    fuel: 0,
+                    wall: Duration::ZERO,
+                    proof_too_large: false,
+                };
+            }
+        }
+        wasi.stdin(MemoryInputPipe::new(input.as_bytes().to_vec()))
             .stdout(stdout.clone())
             .secure_random(StdRng::seed_from_u64(seed))
             .insecure_random(StdRng::seed_from_u64(seed ^ 0x9e37_79b9_7f4a_7c15))
@@ -183,6 +379,9 @@ impl Sandbox {
                 .table_elements(1 << 20)
                 .instances(1)
                 .build(),
+            proof_written: 0,
+            proof_cap: limits.proof_bytes,
+            proof_too_large: false,
         };
         let mut store = Store::new(&self.engine, state);
         store.limiter(|s| &mut s.limits);
@@ -213,7 +412,62 @@ impl Sandbox {
             stdout: String::from_utf8_lossy(&stdout.contents()).into_owned(),
             fuel,
             wall,
+            proof_too_large: store.data().proof_too_large,
         }
+    }
+}
+
+/// Test solvers written in WebAssembly text.
+#[cfg(test)]
+pub(crate) mod testing {
+    /// A byte string as a WAT data string.
+    fn escaped(bytes: &[u8]) -> String {
+        use std::fmt::Write as _;
+        bytes.iter().fold(String::new(), |mut s, b| {
+            let _ = write!(s, "\\{b:02x}");
+            s
+        })
+    }
+
+    /// The WAT of a solver that answers UNSAT, prints `stdout` before it, and with `proof`
+    /// writes that to the proof file given as `argv[1]` (opened at `path`, `proof.out` in the
+    /// preopened directory, fd 3, by default).
+    pub(crate) fn unsat_wat(proof: Option<&[u8]>, stdout: &str, path: &str) -> String {
+        let out = format!("{stdout}s UNSATISFIABLE\n");
+        let write_proof = proof.map_or(String::new(), |proof| {
+            format!(
+                r"(drop (call $open (i32.const 3) (i32.const 0) (i32.const 4096) (i32.const {})
+                      (i32.const 9) (i64.const 0x1fffffff) (i64.const 0x1fffffff) (i32.const 0) (i32.const 200)))
+                   (i32.store (i32.const 16) (i32.const 8192))
+                   (i32.store (i32.const 20) (i32.const {}))
+                   (drop (call $write (i32.load (i32.const 200)) (i32.const 16) (i32.const 1) (i32.const 24)))",
+                path.len(),
+                proof.len()
+            )
+        });
+        format!(
+            r#"(module
+                (import "wasi_snapshot_preview1" "fd_write" (func $write (param i32 i32 i32 i32) (result i32)))
+                (import "wasi_snapshot_preview1" "path_open" (func $open (param i32 i32 i32 i32 i32 i64 i64 i32 i32) (result i32)))
+                (memory (export "memory") 2)
+                (data (i32.const 4096) "{path}")
+                (data (i32.const 8192) "{proof}")
+                (data (i32.const 1024) "{out}")
+                (func (export "_start")
+                    {write_proof}
+                    (i32.store (i32.const 0) (i32.const 1024))
+                    (i32.store (i32.const 4) (i32.const {len}))
+                    (drop (call $write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 8)))))"#,
+            path = escaped(path.as_bytes()),
+            proof = escaped(proof.unwrap_or_default()),
+            out = escaped(out.as_bytes()),
+            len = out.len(),
+        )
+    }
+
+    /// [`unsat_wat`] compiled.
+    pub(crate) fn unsat_solver(proof: Option<&[u8]>, stdout: &str) -> Vec<u8> {
+        wat::parse_str(unsat_wat(proof, stdout, crate::proof::PROOF_FILE)).unwrap()
     }
 }
 
@@ -254,9 +508,10 @@ mod tests {
             1,
             &limits(1_000_000),
             false,
+            None,
         );
         assert_eq!(run.end, End::Exited);
-        assert_eq!(run.stdout, "s UNSATISFIABLE\n");
+        assert_eq!(run.stdout, "s UNSATISFIABLE\n", "{run:?}");
         let small = run.fuel;
         assert!(small > 0 && small < 1_000);
 
@@ -267,6 +522,7 @@ mod tests {
             1,
             &limits(1_000_000),
             false,
+            None,
         );
         assert_eq!(again.fuel, small);
 
@@ -280,6 +536,7 @@ mod tests {
                 1,
                 &limits(1_000_000),
                 false,
+                None,
             )
             .fuel;
         let many = sandbox
@@ -289,6 +546,7 @@ mod tests {
                 1,
                 &limits(1_000_000),
                 false,
+                None,
             )
             .fuel;
         assert_eq!(many - one, 65535);
@@ -299,6 +557,7 @@ mod tests {
             1,
             &limits(10_000),
             false,
+            None,
         );
         assert_eq!(poor.end, End::OutOfFuel);
         assert_eq!(poor.fuel, 10_000);
@@ -309,7 +568,7 @@ mod tests {
         let sandbox = Sandbox::new().unwrap();
         let spin = solver(&sandbox, "(loop $l (br $l))");
         assert_eq!(
-            sandbox.run(&spin, "", 1, &limits(100_000), false).end,
+            sandbox.run(&spin, "", 1, &limits(100_000), false, None).end,
             End::OutOfFuel
         );
         let wall = Limits {
@@ -317,10 +576,13 @@ mod tests {
             wall: Duration::from_millis(50),
             ..Default::default()
         };
-        assert_eq!(sandbox.run(&spin, "", 1, &wall, false).end, End::WallClock);
+        assert_eq!(
+            sandbox.run(&spin, "", 1, &wall, false, None).end,
+            End::WallClock
+        );
         let crash = solver(&sandbox, "unreachable");
         assert!(matches!(
-            sandbox.run(&crash, "", 1, &limits(1_000), false).end,
+            sandbox.run(&crash, "", 1, &limits(1_000), false, None).end,
             End::Crashed(_)
         ));
         let greedy = solver(&sandbox, "(drop (memory.grow (i32.const 30000)))");
@@ -329,6 +591,119 @@ mod tests {
             ..limits(1_000)
         };
         // A failed grow returns -1, the program goes on
-        assert_eq!(sandbox.run(&greedy, "", 1, &small, false).end, End::Exited);
+        assert_eq!(
+            sandbox.run(&greedy, "", 1, &small, false, None).end,
+            End::Exited
+        );
+    }
+
+    fn run_with_proof(sandbox: &Sandbox, wasm: &[u8], limits: &Limits) -> (Run, Option<Vec<u8>>) {
+        let dir = crate::proof::TempDir::new(&std::env::temp_dir(), "dojo-sandbox-test").unwrap();
+        let solver = sandbox.load(wasm).unwrap();
+        let run = sandbox.run(
+            &solver,
+            "p cnf 1 2\n1 0\n-1 0\n",
+            1,
+            limits,
+            false,
+            Some(dir.path()),
+        );
+        let proof = std::fs::read(dir.path().join(PROOF_FILE)).ok();
+        (run, proof)
+    }
+
+    /// The proof file named by argv[1] is written to the run's directory on disk.
+    #[test]
+    fn proofs_go_to_the_proof_file() {
+        let sandbox = Sandbox::new().unwrap();
+        let wasm = testing::unsat_solver(Some(b"1 0\n0\n"), "c proof drat\n");
+        let (run, proof) = run_with_proof(&sandbox, &wasm, &Limits::default());
+        assert_eq!(run.end, End::Exited, "{run:?}");
+        assert_eq!(run.stdout, "c proof drat\ns UNSATISFIABLE\n");
+        assert_eq!(proof.as_deref(), Some(&b"1 0\n0\n"[..]));
+        assert!(!run.proof_too_large);
+    }
+
+    /// Writing more than the limit fails (EFBIG), the run goes on and the proof is too large.
+    #[test]
+    fn proofs_are_capped() {
+        let sandbox = Sandbox::new().unwrap();
+        let wasm = testing::unsat_solver(Some(b"1 0\n0\n"), "");
+        let small = Limits {
+            proof_bytes: 4,
+            ..Limits::default()
+        };
+        let (run, proof) = run_with_proof(&sandbox, &wasm, &small);
+        assert_eq!(run.end, End::Exited);
+        assert_eq!(run.stdout, "s UNSATISFIABLE\n");
+        assert!(run.proof_too_large);
+        assert_eq!(proof.as_deref(), Some(&b""[..]));
+        // Without a proof directory there is nothing to open, the answer still comes
+        let solver = sandbox.load(&wasm).unwrap();
+        let run = sandbox.run(&solver, "", 1, &Limits::default(), false, None);
+        assert_eq!(
+            (run.end, run.stdout.as_str()),
+            (End::Exited, "s UNSATISFIABLE\n")
+        );
+    }
+
+    /// Only `proof.out` can be opened, nothing can be created, linked or renamed, and files
+    /// can't grow beyond the limit by seeking or truncating.
+    #[test]
+    fn nothing_but_the_proof_file() {
+        let sandbox = Sandbox::new().unwrap();
+        let other = wat::parse_str(testing::unsat_wat(Some(b"0\n"), "", "other.out")).unwrap();
+        let (run, proof) = run_with_proof(&sandbox, &other, &Limits::default());
+        assert_eq!(run.end, End::Exited);
+        assert_eq!(proof, None);
+        let dot = wat::parse_str(testing::unsat_wat(Some(b"0\n"), "", "./proof.out")).unwrap();
+        assert_eq!(
+            run_with_proof(&sandbox, &dot, &Limits::default())
+                .1
+                .as_deref(),
+            Some(&b"0\n"[..])
+        );
+
+        // Every call has to fail with the expected errno for the answer to be printed
+        let calls = format!(
+            r#"(module
+                (import "wasi_snapshot_preview1" "fd_write" (func $write (param i32 i32 i32 i32) (result i32)))
+                (import "wasi_snapshot_preview1" "path_open" (func $open (param i32 i32 i32 i32 i32 i64 i64 i32 i32) (result i32)))
+                (import "wasi_snapshot_preview1" "path_create_directory" (func $mkdir (param i32 i32 i32) (result i32)))
+                (import "wasi_snapshot_preview1" "path_symlink" (func $symlink (param i32 i32 i32 i32 i32) (result i32)))
+                (import "wasi_snapshot_preview1" "path_link" (func $link (param i32 i32 i32 i32 i32 i32 i32) (result i32)))
+                (import "wasi_snapshot_preview1" "path_rename" (func $rename (param i32 i32 i32 i32 i32 i32) (result i32)))
+                (import "wasi_snapshot_preview1" "fd_pwrite" (func $pwrite (param i32 i32 i32 i64 i32) (result i32)))
+                (import "wasi_snapshot_preview1" "fd_filestat_set_size" (func $truncate (param i32 i64) (result i32)))
+                (memory (export "memory") 1)
+                (data (i32.const 100) "s UNSATISFIABLE\n")
+                (data (i32.const 0) "\64\00\00\00\10\00\00\00")
+                (data (i32.const 300) "{PROOF_FILE}")
+                (data (i32.const 400) "dir")
+                (func $expect (param i32 i32) (if (i32.ne (local.get 0) (local.get 1)) (then unreachable)))
+                (func (export "_start")
+                    (call $expect (call $open (i32.const 3) (i32.const 0) (i32.const 300) (i32.const 9) (i32.const 9)
+                        (i64.const 0x1fffffff) (i64.const 0x1fffffff) (i32.const 0) (i32.const 200)) (i32.const 0))
+                    (call $expect (call $mkdir (i32.const 3) (i32.const 400) (i32.const 3)) (i32.const {ERRNO_ACCES}))
+                    (call $expect (call $symlink (i32.const 300) (i32.const 9) (i32.const 3) (i32.const 400) (i32.const 3)) (i32.const {ERRNO_ACCES}))
+                    (call $expect (call $link (i32.const 3) (i32.const 0) (i32.const 300) (i32.const 9) (i32.const 3) (i32.const 400) (i32.const 3)) (i32.const {ERRNO_ACCES}))
+                    (call $expect (call $rename (i32.const 3) (i32.const 300) (i32.const 9) (i32.const 3) (i32.const 400) (i32.const 3)) (i32.const {ERRNO_ACCES}))
+                    (call $expect (call $truncate (i32.load (i32.const 200)) (i64.const 10)) (i32.const 0))
+                    (call $expect (call $pwrite (i32.load (i32.const 200)) (i32.const 0) (i32.const 1) (i64.const 0) (i32.const 8)) (i32.const 0))
+                    ;; Beyond the limit of 1000: growing the file, or sixteen bytes at 2000
+                    (call $expect (call $truncate (i32.load (i32.const 200)) (i64.const 2000)) (i32.const {ERRNO_FBIG}))
+                    (call $expect (call $pwrite (i32.load (i32.const 200)) (i32.const 0) (i32.const 1) (i64.const 2000) (i32.const 8)) (i32.const {ERRNO_FBIG}))
+                    (drop (call $write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 8)))))"#
+        );
+        let limits = Limits {
+            proof_bytes: 1000,
+            ..Limits::default()
+        };
+        let (run, proof) = run_with_proof(&sandbox, &wat::parse_str(calls).unwrap(), &limits);
+        assert_eq!(run.end, End::Exited, "{run:?}");
+        assert_eq!(run.stdout, "s UNSATISFIABLE\n");
+        // Truncated to ten bytes, then sixteen written at the start
+        assert_eq!(proof.map(|p| p.len()), Some(16));
+        assert!(run.proof_too_large);
     }
 }
