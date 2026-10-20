@@ -3,6 +3,7 @@
 import type { Page } from '@playwright/test';
 
 import { allow, expect, signIn, test, visit } from '../fixtures';
+import { player } from '../seed';
 import { LOCALES, localized, ROUTES, RTL_LOCALES } from '../site';
 
 async function expectLanguage(page: Page, locale: string) {
@@ -61,3 +62,19 @@ for (const locale of [LOCALES[0], 'de', 'ar']) {
     await expectInteractive(page);
   });
 }
+
+// The server writes each page's <title> once (seo::title_text), the browser keeps it up to date:
+// after navigating without a page load, and once a page has loaded what its title names
+test('the title follows the page', async ({ page }) => {
+  await visit(page, '/de');
+  await expect(page).toHaveTitle('Hashi · Tägliches Hashiwokakero-Brückenrätsel, gratis');
+  // Gone after a page load
+  await page.evaluate(() => Object.assign(window, { samePage: true }));
+  await page.locator('header').getByRole('link', { name: 'Spielanleitung' }).click();
+  await expect(page).toHaveURL(/\/de\/rules$/);
+  await expect(page).toHaveTitle('Hashiwokakero spielen · Regeln und Lösungstipps · Hashi');
+  expect(await page.evaluate(() => 'samePage' in window)).toBe(true);
+  // The server doesn't know the player's name, the browser loads it
+  await visit(page, `/player/${player('aiko').id}`);
+  await expect(page).toHaveTitle('aiko · Hashi');
+});

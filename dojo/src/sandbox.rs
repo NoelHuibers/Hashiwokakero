@@ -8,8 +8,10 @@
 //!   `proof.out` there and write at most [`Limits::proof_bytes`] in total; beyond that writes
 //!   fail with `EFBIG` and the proof counts as missing (not a crash: the run goes on). It can't
 //!   create other files or directories, links or renames, so the disk it uses stays bounded.
-//! - Fuel: every executed instruction costs one unit, bulk memory and table operations one per
-//!   byte or element. The budget replaces a time limit, so results are exactly reproducible.
+//! - Fuel: every executed operator costs what the calibrated cost model says
+//!   ([`crate::fuel::MODEL`]: loads and stores three, locals and constants nothing, the rest
+//!   one, bulk memory and table operations one per byte or element). The budget replaces a time
+//!   limit, so results are exactly reproducible.
 //! - Clocks only move when they are read and random numbers come from a seed, so even solvers
 //!   that use time or randomness give the same result every time.
 //! - Floating point NaNs are canonicalised and relaxed SIMD is deterministic, so results are the
@@ -35,6 +37,7 @@ use wasmtime_wasi::{FsPerms, HostMonotonicClock, HostWallClock, I32Exit, WasiCtx
 use wiggle::GuestMemory;
 
 use crate::Rejection;
+use crate::fuel::Weights;
 use crate::proof::{GUEST_DIR, GUEST_PATH, PROOF_FILE};
 use crate::validate::validate;
 
@@ -297,11 +300,19 @@ impl std::fmt::Debug for Sandbox {
 }
 
 impl Sandbox {
+    /// The sandbox of the leaderboard, with the Dojo's cost model ([`crate::fuel::MODEL`]).
     pub fn new() -> Result<Self, String> {
+        Self::with_weights(&crate::fuel::MODEL)
+    }
+
+    /// A sandbox with another cost model, e.g. one that only counts one category of operators
+    /// (the calibration study, see [`crate::calibrate`]).
+    pub fn with_weights(weights: &Weights) -> Result<Self, String> {
         // Without the `threads` feature wasmtime has no shared memories at all
         let mut config = Config::new();
         config
             .consume_fuel(true)
+            .operator_cost(weights.table())
             .epoch_interruption(true)
             .wasm_memory64(false)
             .wasm_multi_memory(false)
@@ -545,7 +556,8 @@ mod tests {
         );
         assert_eq!(again.fuel, small);
 
-        // Bulk operations cost one unit per byte: filling 64 KiB costs 65535 more than one byte
+        // Bulk operations cost one unit per byte (in the leaderboard's model too): filling 64 KiB
+        // costs 65535 more than one byte
         let fill =
             |n: u32| format!("(memory.fill (i32.const 0) (i32.const 0) (i32.const {n})) {print}");
         let one = sandbox
@@ -580,6 +592,47 @@ mod tests {
         );
         assert_eq!(poor.end, End::OutOfFuel);
         assert_eq!(poor.fuel, 10_000);
+    }
+
+    /// Every cost table charges its categories: ten loads (each with a constant address),
+    /// a fill of 100 bytes and a grow by two pages, counted one category at a time. Entering
+    /// `_start` costs one unit in every table (wasmtime charges function entries).
+    #[test]
+    fn cost_tables_apply() {
+        use crate::fuel::{Category, Weights};
+        let body = format!(
+            "{} (memory.fill (i32.const 0) (i32.const 0) (i32.const 100)) \
+             (drop (memory.grow (i32.const 2)))",
+            "(drop (i32.load (i32.const 0))) ".repeat(10)
+        );
+        let wasm = wat::parse_str(format!(
+            r#"(module {WASI} (func (export "_start") {body}))"#
+        ))
+        .unwrap();
+        let fuel = |weights: &Weights| {
+            let sandbox = Sandbox::with_weights(weights).unwrap();
+            let run = sandbox.run(
+                &sandbox.load(&wasm).unwrap(),
+                "",
+                1,
+                &limits(1_000_000),
+                false,
+                None,
+            );
+            assert_eq!(run.end, End::Exited);
+            run.fuel
+        };
+        assert_eq!(fuel(&Weights::ZERO), 1);
+        assert_eq!(fuel(&Weights::only(Category::Load)), 10 + 1);
+        // The loads' addresses, the fill's three operands, the grow's one
+        assert_eq!(fuel(&Weights::only(Category::Local)), 14 + 1);
+        assert_eq!(fuel(&Weights::only(Category::Bulk)), 1 + 100 + 1);
+        assert_eq!(fuel(&Weights::only(Category::Grow)), 1 + 2 + 1);
+        assert_eq!(fuel(&Weights::only(Category::Alu)), 1);
+        assert_eq!(fuel(&Weights::UNIFORM), 10 + 14 + 101 + 3 + 1);
+        let mut heavy = Weights::UNIFORM;
+        heavy.set(Category::Load, 5);
+        assert_eq!(fuel(&heavy), 50 + 14 + 101 + 3 + 1);
     }
 
     #[test]

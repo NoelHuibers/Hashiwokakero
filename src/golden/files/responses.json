@@ -210,7 +210,7 @@
   },
   "dojo_board": {
     "season": 1,
-    "formulas": 34,
+    "formulas": 54,
     "budget": 10000000000,
     "entries": [
       {
@@ -244,13 +244,91 @@
           ],
           "unverified": 1
         },
-        "created_at": 1760000000000
+        "created_at": 1760000000000,
+        "breakdown": {
+          "total": {
+            "all": {
+              "solved": 30,
+              "total": 34,
+              "par2": 2.5
+            },
+            "sat": {
+              "solved": 16,
+              "total": 17,
+              "par2": 1.25
+            },
+            "unsat": {
+              "solved": 12,
+              "total": 13,
+              "par2": 3.5
+            },
+            "unverified": 1
+          },
+          "held_out": 4,
+          "families": [
+            {
+              "family": "Mystery",
+              "breakdown": {
+                "all": {
+                  "solved": 2,
+                  "total": 4,
+                  "par2": 5.0
+                },
+                "sat": null,
+                "unsat": null,
+                "unverified": 0
+              }
+            }
+          ]
+        },
+        "contribution": {
+          "marginal": 0.5,
+          "log_ratio": 0.125,
+          "relative": 0.25,
+          "sota": 3.5,
+          "shapley": 1.75
+        }
       }
     ],
     "queued": 2,
     "commitment": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0",
     "generator_version": 1,
-    "rules_version": 1
+    "rules_version": 1,
+    "community": {
+      "benchmarks": 3,
+      "authors": [
+        "noel",
+        "ada"
+      ],
+      "per_set": 6
+    },
+    "portfolio": {
+      "entries": 2,
+      "vbs": {
+        "solved": 32,
+        "total": 34,
+        "par2": 1.5
+      },
+      "cactus": {
+        "budget": 7000000000,
+        "formulas": 34,
+        "vbs": [
+          1000,
+          25000000
+        ],
+        "curves": [
+          {
+            "id": 12,
+            "name": "minisat-ish",
+            "house": false,
+            "fuel": [
+              2000,
+              25000000
+            ]
+          }
+        ]
+      }
+    }
   },
   "dojo_submission": {
     "id": 12,
@@ -294,7 +372,77 @@
     "similar_to": 9,
     "size": 123456,
     "sha256": "abababababababababababababababababababababababababababababababab",
-    "mine": true
+    "mine": true,
+    "breakdown": {
+      "total": {
+        "all": {
+          "solved": 30,
+          "total": 34,
+          "par2": 2.5
+        },
+        "sat": {
+          "solved": 16,
+          "total": 17,
+          "par2": 1.25
+        },
+        "unsat": {
+          "solved": 12,
+          "total": 13,
+          "par2": 3.5
+        },
+        "unverified": 1
+      },
+      "held_out": 4,
+      "families": [
+        {
+          "family": "Mystery",
+          "breakdown": {
+            "all": {
+              "solved": 2,
+              "total": 4,
+              "par2": 5.0
+            },
+            "sat": null,
+            "unsat": null,
+            "unverified": 0
+          }
+        }
+      ]
+    },
+    "contribution": {
+      "marginal": 0.5,
+      "log_ratio": 0.125,
+      "relative": 0.25,
+      "sota": 3.5,
+      "shapley": 1.75
+    },
+    "portfolio": {
+      "entries": 2,
+      "vbs": {
+        "solved": 32,
+        "total": 34,
+        "par2": 1.5
+      },
+      "cactus": {
+        "budget": 7000000000,
+        "formulas": 34,
+        "vbs": [
+          1000,
+          25000000
+        ],
+        "curves": [
+          {
+            "id": 12,
+            "name": "minisat-ish",
+            "house": false,
+            "fuel": [
+              2000,
+              25000000
+            ]
+          }
+        ]
+      }
+    }
   },
   "dojo_rejected": {
     "id": 12,
@@ -316,7 +464,10 @@
     "similar_to": null,
     "size": 123456,
     "sha256": "abababababababababababababababababababababababababababababababab",
-    "mine": false
+    "mine": false,
+    "breakdown": null,
+    "contribution": null,
+    "portfolio": null
   },
   "dojo_me": {
     "registered": true,
@@ -343,7 +494,10 @@
       "set_size": null,
       "set_sha256": null,
       "entries": 0,
-      "board": []
+      "mystery": null,
+      "community": [],
+      "board": [],
+      "portfolio": null
     },
     "past": [
       {
@@ -357,6 +511,18 @@
         "set_size": 1400000,
         "set_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
         "entries": 4,
+        "mystery": "Tseitin",
+        "community": [
+          {
+            "id": 3,
+            "family": "crypto-sha1",
+            "author": "",
+            "answer": "Unsat",
+            "vars": 1200,
+            "clauses": 5600,
+            "hash": "abababababababababababababababab"
+          }
+        ],
         "board": [
           {
             "rank": 1,
@@ -389,11 +555,70 @@
               ],
               "unverified": 1
             },
-            "created_at": 1755000000000
+            "created_at": 1755000000000,
+            "breakdown": null,
+            "contribution": null
           }
-        ]
+        ],
+        "portfolio": {
+          "entries": 2,
+          "vbs": {
+            "solved": 32,
+            "total": 34,
+            "par2": 1.5
+          },
+          "cactus": {
+            "budget": 7000000000,
+            "formulas": 34,
+            "vbs": [
+              1000,
+              25000000
+            ],
+            "curves": [
+              {
+                "id": 12,
+                "name": "minisat-ish",
+                "house": false,
+                "fuel": [
+                  2000,
+                  25000000
+                ]
+              }
+            ]
+          }
+        }
       }
     ]
+  },
+  "dojo_benchmarks": {
+    "registered": true,
+    "left_today": 2,
+    "mine": [
+      {
+        "id": 4,
+        "family": "scheduling",
+        "description": "job shop",
+        "state": "Refused",
+        "reason": "too_easy",
+        "answer": "Sat",
+        "vars": 300,
+        "clauses": 2000,
+        "hash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "created_at": 1760000000000
+      }
+    ],
+    "pool": [
+      {
+        "id": 3,
+        "family": "crypto-sha1",
+        "author": "ada",
+        "answer": "Unsat",
+        "vars": 1200,
+        "clauses": 5600,
+        "hash": "abababababababababababababababab"
+      }
+    ],
+    "per_set": 6
   },
   "admin_overview": {
     "users": 100,
@@ -448,6 +673,22 @@
     "message": "Hallo! \"Brücken\" <3",
     "created_at": 1760000000000,
     "mailed": false
+  },
+  "admin_benchmark": {
+    "id": 4,
+    "family": "scheduling",
+    "description": "job shop",
+    "author": "noel",
+    "state": "Verified",
+    "reason": null,
+    "claimed": "Sat",
+    "answer": "Sat",
+    "vars": 300,
+    "clauses": 2000,
+    "solve_ms": 1234,
+    "from_gbd": true,
+    "hash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+    "created_at": 1760000000000
   },
   "generated": {
     "puzzle": {
@@ -594,11 +835,33 @@
     "HashiParity",
     "Random3Sat",
     "Pigeonhole",
-    "Queens"
+    "Queens",
+    "Factoring",
+    "Miter",
+    "Coloring",
+    "Tseitin",
+    "Quasigroup",
+    "Hamiltonian",
+    "Mystery",
+    "Community"
   ],
   "submission_actions": [
     "Requeue",
     "ClearCopy",
+    "Delete"
+  ],
+  "benchmark_states": [
+    "Queued",
+    "Checking",
+    "Verified",
+    "Refused",
+    "Accepted",
+    "Rejected"
+  ],
+  "benchmark_actions": [
+    "Accept",
+    "Reject",
+    "Requeue",
     "Delete"
   ]
 }

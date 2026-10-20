@@ -5,8 +5,8 @@ use leptos::server_fn::codec::Json;
 
 use super::HashiClient;
 use crate::model::{
-    AdminAttempt, AdminOverview, AdminSubmission, ContactMessage, Flag, FlaggedName, MoveEvent,
-    SubmissionAction,
+    AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, BenchmarkAction, ContactMessage,
+    Flag, FlaggedName, MoveEvent, SubmissionAction,
 };
 #[cfg(feature = "ssr")]
 use crate::server::{admin, contact, daily, db};
@@ -57,6 +57,21 @@ pub async fn update_admin_submission(
     let conn = db::conn()?;
     admin::require(&conn).await?;
     admin::submission_action(&conn, id, action).await
+}
+
+/// Community benchmarks, the ones waiting for a moderator first.
+#[server(input = Json, client = HashiClient)]
+pub async fn admin_benchmarks() -> Result<Vec<AdminBenchmark>, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    crate::server::dojo::admin_benchmarks(&conn).await
+}
+
+#[server(input = Json, client = HashiClient)]
+pub async fn update_admin_benchmark(id: i64, action: BenchmarkAction) -> Result<(), ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    crate::server::dojo::benchmark_action(&conn, id, action).await
 }
 
 /// Messages from the contact form, newest first.

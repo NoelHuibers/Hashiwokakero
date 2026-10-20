@@ -280,7 +280,7 @@ pub(super) async fn housekeeping_at(conn: &Connection, current: u32) -> Result<(
     )
     .await
     .map_err(err)?;
-    Ok(())
+    super::benchmarks::housekeeping(conn, now).await
 }
 
 /// Housekeeping, then sends queued submissions to the worker if there is one. Without one
@@ -300,10 +300,23 @@ pub async fn dispatch() -> Result<(), String> {
     }
 }
 
-/// [`dispatch`] to the worker at `url`, authenticated with `token`.
+/// [`dispatch`] to the worker at `url`, authenticated with `token`: submissions, then a
+/// community benchmark to verify.
 pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Result<(), String> {
     housekeeping(conn).await?;
     let client = reqwest::Client::new();
+    dispatch_submissions(conn, &client, url, token).await?;
+    super::benchmarks::dispatch_to(conn, &client, url, token).await
+}
+
+async fn dispatch_submissions(
+    conn: &Connection,
+    client: &reqwest::Client,
+    url: &str,
+    token: &str,
+) -> Result<(), String> {
+    // The draws from the community pool the worker has, by season
+    let mut pools: std::collections::HashMap<u32, String> = std::collections::HashMap::new();
     loop {
         let report_token = new_job_token()?;
         // One SQL statement claims the row and checks the global running count. This works
@@ -328,6 +341,20 @@ pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Re
         let season: u32 = row.get(2).map_err(|e| e.to_string())?;
         drop(rows);
         let seed = test_seed(season);
+        let pool = if let Some(digest) = pools.get(&season) {
+            digest.clone()
+        } else {
+            match super::benchmarks::ensure_pool(conn, client, url, token, season).await {
+                Ok(digest) => {
+                    pools.insert(season, digest.clone());
+                    digest
+                }
+                Err(e) => {
+                    release(conn, id, &report_token).await?;
+                    return Err(e);
+                }
+            }
+        };
         // The set of this season, unless the site has it from this generator already. Without
         // an answer the next job asks again
         let export = if seasons::wants_set(conn, season).await.unwrap_or(false) {
@@ -338,7 +365,7 @@ pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Re
         // The worker machine may have to start first
         let sent = client
             .post(format!(
-                "{}/jobs?id={id}&season={season}&seed={seed}&report_token={report_token}&rules={RULES_VERSION}{export}",
+                "{}/jobs?id={id}&season={season}&seed={seed}&report_token={report_token}&rules={RULES_VERSION}{export}&pool={pool}",
                 url.trim_end_matches('/')
             ))
             .bearer_auth(token)
@@ -366,16 +393,7 @@ pub(super) async fn dispatch_to(conn: &Connection, url: &str, token: &str) -> Re
                     Ok(r) => format!("worker answered {}", r.status()),
                     Err(e) => format!("worker unreachable: {e}"),
                 };
-                // Not taken (worker down, busy or on other rules): queued again without using
-                // up an attempt, unless the job was replaced meanwhile
-                conn.execute(
-                    "UPDATE dojo_submissions SET state = 'queued', job_token = NULL, attempts = attempts - 1,
-                        updated_at = ?1
-                     WHERE id = ?2 AND state = 'running' AND job_token = ?3",
-                    params![now_ms(), id, report_token.clone()],
-                )
-                .await
-                .map_err(|e| e.to_string())?;
+                release(conn, id, &report_token).await?;
                 return Err(message);
             }
         }
@@ -392,6 +410,20 @@ pub fn start_dispatcher() {
             tokio::time::sleep(Duration::from_secs(30)).await;
         }
     });
+}
+
+/// Gives back a claimed job that never reached the worker (down, busy, on other rules): queued
+/// again without using up an attempt, unless it was replaced meanwhile.
+async fn release(conn: &Connection, id: i64, report_token: &str) -> Result<(), String> {
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'queued', job_token = NULL, attempts = attempts - 1,
+            updated_at = ?1
+         WHERE id = ?2 AND state = 'running' AND job_token = ?3",
+        params![now_ms(), id, report_token],
+    )
+    .await
+    .map(|_| ())
+    .map_err(|e| e.to_string())
 }
 
 fn new_job_token() -> Result<String, String> {

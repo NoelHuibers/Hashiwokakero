@@ -4,17 +4,20 @@ use common::{
     Difficulty, GenerateParams, GeneratedPuzzle, Heuristic, Island, Pos, Puzzle, Restarts,
     SolveOutcome, SolveReport, SolveStats, SolverConfig, SolverKind,
 };
+use dojo::metrics::{Breakdown, Contribution, EntryBreakdown, FamilyBreakdown, Split};
 use dojo::{Answer, Family, FamilyScore, InstanceResult, Outcome, Rejection, Report, Score};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use super::{check, check_json};
 use crate::model::{
-    AdminAttempt, AdminOverview, AdminSubmission, AllTimeEntry, ApiError, AttemptInfo,
-    ContactMessage, DailyInfo, DayResult, Daypart, DojoBoard, DojoEntry, DojoMe, DojoRow,
-    DojoSeason, DojoSeasons, DojoState, DojoSubmission, Flag, HallOfFame, Leaderboard,
-    LeaderboardEntry, LogSummary, MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp,
-    StampProgress, SubmissionAction, SubmitResult, UserInfo, UserStats,
+    AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, AllTimeEntry, ApiError,
+    AttemptInfo, BenchmarkAction, BenchmarkState, CommunityCredit, CommunitySummary,
+    ContactMessage, DailyInfo, DayResult, Daypart, DojoBenchmark, DojoBenchmarks, DojoBoard,
+    DojoCactus, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons,
+    DojoState, DojoSubmission, Flag, HallOfFame, Leaderboard, LeaderboardEntry, LogSummary,
+    MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress, SubmissionAction,
+    SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -171,6 +174,64 @@ fn user_stats() -> UserStats {
     }
 }
 
+fn breakdown() -> EntryBreakdown {
+    let split = |solved, total, par2| Split {
+        solved,
+        total,
+        par2,
+    };
+    EntryBreakdown {
+        total: Breakdown {
+            all: split(30, 34, 2.5),
+            sat: Some(split(16, 17, 1.25)),
+            unsat: Some(split(12, 13, 3.5)),
+            unverified: 1,
+        },
+        held_out: 4,
+        families: vec![FamilyBreakdown {
+            family: Family::Mystery,
+            breakdown: Breakdown {
+                all: split(2, 4, 5.0),
+                sat: None,
+                unsat: None,
+                unverified: 0,
+            },
+        }],
+    }
+}
+
+fn contribution() -> Contribution {
+    Contribution {
+        marginal: 0.5,
+        log_ratio: 0.125,
+        relative: 0.25,
+        sota: 3.5,
+        shapley: 1.75,
+    }
+}
+
+fn portfolio() -> DojoPortfolio {
+    DojoPortfolio {
+        entries: 2,
+        vbs: Split {
+            solved: 32,
+            total: 34,
+            par2: 1.5,
+        },
+        cactus: DojoCactus {
+            budget: 7_000_000_000,
+            formulas: 34,
+            vbs: vec![1_000, 25_000_000],
+            curves: vec![DojoCurve {
+                id: 12,
+                name: "minisat-ish".into(),
+                house: false,
+                fuel: vec![2_000, 25_000_000],
+            }],
+        },
+    }
+}
+
 fn dojo_submission() -> DojoSubmission {
     DojoSubmission {
         id: 12,
@@ -191,6 +252,9 @@ fn dojo_submission() -> DojoSubmission {
         size: 123_456,
         sha256: "ab".repeat(32),
         mine: true,
+        breakdown: Some(breakdown()),
+        contribution: Some(contribution()),
+        portfolio: Some(portfolio()),
     }
 }
 
@@ -210,10 +274,12 @@ struct Responses {
     dojo_rejected: DojoSubmission,
     dojo_me: DojoMe,
     dojo_seasons: DojoSeasons,
+    dojo_benchmarks: DojoBenchmarks,
     admin_overview: AdminOverview,
     admin_attempt: AdminAttempt,
     admin_submission: AdminSubmission,
     admin_message: ContactMessage,
+    admin_benchmark: AdminBenchmark,
     generated: GeneratedPuzzle,
     solved: SolveReport,
     unsatisfiable: SolveOutcome,
@@ -225,6 +291,8 @@ struct Responses {
     dojo_states: Vec<DojoState>,
     families: Vec<Family>,
     submission_actions: Vec<SubmissionAction>,
+    benchmark_states: Vec<BenchmarkState>,
+    benchmark_actions: Vec<BenchmarkAction>,
 }
 
 fn responses() -> Responses {
@@ -300,7 +368,7 @@ fn responses() -> Responses {
         },
         dojo_board: DojoBoard {
             season: 1,
-            formulas: 34,
+            formulas: 54,
             budget: 10_000_000_000,
             entries: vec![DojoEntry {
                 rank: 1,
@@ -310,11 +378,19 @@ fn responses() -> Responses {
                 house: false,
                 score: score(),
                 created_at: 1_760_000_000_000,
+                breakdown: Some(breakdown()),
+                contribution: Some(contribution()),
             }],
             queued: 2,
             commitment: "c0".repeat(32),
             generator_version: 1,
             rules_version: 1,
+            community: CommunitySummary {
+                benchmarks: 3,
+                authors: vec!["noel".into(), "ada".into()],
+                per_set: 6,
+            },
+            portfolio: Some(portfolio()),
         },
         dojo_submission: dojo_submission(),
         dojo_rejected: DojoSubmission {
@@ -325,6 +401,9 @@ fn responses() -> Responses {
             similar_to: None,
             source_url: None,
             mine: false,
+            breakdown: None,
+            contribution: None,
+            portfolio: None,
             ..dojo_submission()
         },
         dojo_me: DojoMe {
@@ -350,7 +429,10 @@ fn responses() -> Responses {
                 set_size: None,
                 set_sha256: None,
                 entries: 0,
+                mystery: None,
+                community: Vec::new(),
                 board: Vec::new(),
+                portfolio: None,
             },
             past: vec![DojoSeason {
                 season: 1,
@@ -363,6 +445,16 @@ fn responses() -> Responses {
                 set_size: Some(1_400_000),
                 set_sha256: Some("cd".repeat(32)),
                 entries: 4,
+                mystery: Some(Family::Tseitin),
+                community: vec![CommunityCredit {
+                    id: 3,
+                    family: "crypto-sha1".into(),
+                    author: String::new(),
+                    answer: Answer::Unsat,
+                    vars: 1200,
+                    clauses: 5600,
+                    hash: "ab".repeat(16),
+                }],
                 board: vec![DojoEntry {
                     rank: 1,
                     id: 12,
@@ -371,8 +463,37 @@ fn responses() -> Responses {
                     house: false,
                     score: score(),
                     created_at: 1_755_000_000_000,
+                    breakdown: None,
+                    contribution: None,
                 }],
+                portfolio: Some(portfolio()),
             }],
+        },
+        dojo_benchmarks: DojoBenchmarks {
+            registered: true,
+            left_today: 2,
+            mine: vec![DojoBenchmark {
+                id: 4,
+                family: "scheduling".into(),
+                description: "job shop".into(),
+                state: BenchmarkState::Refused,
+                reason: Some("too_easy".into()),
+                answer: Some(Answer::Sat),
+                vars: 300,
+                clauses: 2000,
+                hash: "cd".repeat(16),
+                created_at: 1_760_000_000_000,
+            }],
+            pool: vec![CommunityCredit {
+                id: 3,
+                family: "crypto-sha1".into(),
+                author: "ada".into(),
+                answer: Answer::Unsat,
+                vars: 1200,
+                clauses: 5600,
+                hash: "ab".repeat(16),
+            }],
+            per_set: 6,
         },
         admin_overview: AdminOverview {
             users: 100,
@@ -428,6 +549,22 @@ fn responses() -> Responses {
             created_at: 1_760_000_000_000,
             mailed: false,
         },
+        admin_benchmark: AdminBenchmark {
+            id: 4,
+            family: "scheduling".into(),
+            description: "job shop".into(),
+            author: "noel".into(),
+            state: BenchmarkState::Verified,
+            reason: None,
+            claimed: Some(Answer::Sat),
+            answer: Some(Answer::Sat),
+            vars: 300,
+            clauses: 2000,
+            solve_ms: Some(1234),
+            from_gbd: true,
+            hash: "cd".repeat(16),
+            created_at: 1_760_000_000_000,
+        },
         generated: GeneratedPuzzle {
             puzzle: puzzle(),
             solution: vec![2, 1],
@@ -470,11 +607,21 @@ fn responses() -> Responses {
             DojoState::Rejected,
             DojoState::Failed,
         ],
-        families: Family::ALL.to_vec(),
+        families: Family::ALL
+            .into_iter()
+            .chain([Family::Mystery, Family::Community])
+            .collect(),
         submission_actions: vec![
             SubmissionAction::Requeue,
             SubmissionAction::ClearCopy,
             SubmissionAction::Delete,
+        ],
+        benchmark_states: BenchmarkState::ALL.to_vec(),
+        benchmark_actions: vec![
+            BenchmarkAction::Accept,
+            BenchmarkAction::Reject,
+            BenchmarkAction::Requeue,
+            BenchmarkAction::Delete,
         ],
     }
 }
@@ -718,7 +865,13 @@ fn stored_ids() {
         ]
         .map(|s| format!("dojo_state {:?} {}", s, s.id())),
     );
-    lines.extend(Family::ALL.map(|f| format!("family {:?} {}", f, f.id())));
+    lines.extend(BenchmarkState::ALL.map(|s| format!("benchmark_state {:?} {}", s, s.id())));
+    lines.extend(
+        Family::ALL
+            .into_iter()
+            .chain([Family::Mystery, Family::Community])
+            .map(|f| format!("family {:?} {}", f, f.id())),
+    );
     lines.extend(SolverKind::ALL.map(|k| format!("solver {:?} {}", k, k.id())));
     lines.extend(Heuristic::ALL.map(|h| format!("heuristic {:?} {}", h, h.id())));
     lines.extend(ApiError::ALL.map(|e| format!("error {:?} {}", e, e.code())));

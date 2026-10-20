@@ -1,6 +1,6 @@
 // The admin dashboard of a seeded admin: the overview, and every tab with what the seed put there.
 import { expect, signIn, test, visit } from '../fixtures';
-import { CONTACT_MESSAGES } from '../seed';
+import { COMMUNITY_FAMILY, CONTACT_MESSAGES } from '../seed';
 
 test('the dashboard shows the day, the Dojo and the messages', async ({ page, context }) => {
   await signIn(context, 'admin');
@@ -19,6 +19,11 @@ test('the dashboard shows the day, the Dojo and the messages', async ({ page, co
   await tab('SAT Dojo').click();
   await expect(page.getByText('SAT Dojo submissions')).toBeVisible();
   await expect(page.getByText('Plain DPLL').first()).toBeVisible();
+  // Community benchmarks to moderate, the seeded one in the pool
+  await expect(page.getByText('Community benchmarks', { exact: true })).toBeVisible();
+  const benchmark = page.locator('li').filter({ hasText: COMMUNITY_FAMILY });
+  await expect(benchmark).toContainText('accepted');
+  await expect(benchmark.getByRole('button', { name: 'Reject' })).toBeVisible();
 
   await tab('Messages').click();
   await expect(page.getByText('Contact messages')).toBeVisible();

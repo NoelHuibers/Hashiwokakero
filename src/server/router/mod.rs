@@ -50,6 +50,14 @@ pub fn router<V: IntoView + 'static>(
             )),
         )
         .route("/dojo/report", post(dojo::report_handler))
+        // Community benchmarks: uploads and the worker's verdicts (see server/dojo/benchmarks.rs)
+        .route(
+            "/dojo/benchmarks/submit",
+            post(dojo::benchmark_submit_handler).layer(DefaultBodyLimit::max(
+                ::dojo::community::MAX_BYTES + 64 * 1024,
+            )),
+        )
+        .route("/dojo/benchmark-report", post(dojo::benchmark_report_handler))
         // Reviewing daily results (see server/admin.rs)
         .route("/admin/attempt", get(admin::attempt))
         .route("/admin/flag", post(admin::flag))

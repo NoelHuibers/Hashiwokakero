@@ -15,6 +15,7 @@ use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::date_short;
 use crate::model::{MS_PER_DAY, PlayerProfile};
+use crate::seo::title_text;
 use crate::state::{Auth, error_toast};
 
 #[component]
@@ -156,7 +157,7 @@ pub fn PlayerPage() -> impl IntoView {
         })
     };
     view! {
-        <Title text=title />
+        <Title text=title_text(title) />
         // Players didn't choose to be found by search engines
         <Meta name="robots" content="noindex" />
         <section class="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-6 sm:px-6">

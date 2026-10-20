@@ -5,6 +5,8 @@
 //!   and how to check it, in `key: value` lines that [`read_tar_gz`] reads back
 //! - `answers.txt`: `<name> SAT|UNSAT` per formula, in set order
 //! - `witnesses.txt`: `<name> <literals> 0`, a model of every satisfiable formula
+//! - `community.txt`: where the community benchmarks come from (tab-separated: name, benchmark
+//!   number, GBD hash, family, author), only in sets that have some
 //! - `<name>.cnf`: the formulas in DIMACS
 //!
 //! Regenerating a set from its seed only gives the same formulas with the same generator
@@ -27,6 +29,8 @@ pub struct SetInfo {
     /// The season whose hidden set it is, `None` for the dev set or any other seed.
     pub season: Option<u32>,
     pub generator_version: u32,
+    /// A hidden set (see `bench::generate_hidden`): every season's, or `dojo export --hidden`.
+    pub hidden: bool,
 }
 
 impl SetInfo {
@@ -36,6 +40,7 @@ impl SetInfo {
             seed: seed.to_string(),
             season,
             generator_version: GENERATOR_VERSION,
+            hidden: season.is_some(),
         }
     }
 
@@ -62,6 +67,7 @@ pub fn commitment(seed: &str) -> String {
 fn readme(set: &[Instance], info: &SetInfo) -> String {
     let what = match info.season {
         Some(season) => format!("The hidden set of season {season}"),
+        None if info.hidden => "A hidden set".into(),
         None => "A benchmark set".into(),
     };
     let mut text = format!("{what} of the Hashi SAT Dojo (https://hashi.rs/dojo).\n\n");
@@ -70,20 +76,79 @@ fn readme(set: &[Instance], info: &SetInfo) -> String {
     if let Some(season) = info.season {
         let _ = writeln!(text, "season: {season}");
     }
+    let _ = writeln!(text, "kind: {}", if info.hidden { "hidden" } else { "dev" });
     let _ = writeln!(text, "generator: {}", info.generator_version);
     let _ = writeln!(text, "formulas: {}", set.len());
     let _ = writeln!(text, "budget: {DEFAULT_BUDGET}");
+    if info.hidden && info.generator_version >= 2 {
+        let _ = writeln!(
+            text,
+            "mystery family: {}",
+            crate::mystery_family(&info.seed).id()
+        );
+    }
+    text.push_str(
+        "\nFamilies (formulas, SAT/UNSAT, the family in the Global Benchmark Database):\n",
+    );
+    for family in Family::ALL {
+        let of: Vec<&Instance> = set.iter().filter(|i| i.family == family).collect();
+        if of.is_empty() {
+            continue;
+        }
+        let sat = of.iter().filter(|i| i.expected == Answer::Sat).count();
+        let _ = writeln!(
+            text,
+            "    {:<14} {:>2}  {sat}/{}  {}",
+            family.id(),
+            of.len(),
+            of.len() - sat,
+            family.gbd().unwrap_or("-")
+        );
+    }
+    let community: Vec<&Instance> = set.iter().filter(|i| i.origin.is_some()).collect();
+    if !community.is_empty() {
+        let _ = writeln!(
+            text,
+            "\nCommunity benchmarks, drawn from the pool for this set and scrambled like every formula. \
+             Their authors license them under {} ({}); community.txt lists them too:",
+            crate::community::LICENSE,
+            crate::community::LICENSE_URL
+        );
+        for i in &community {
+            if let Some(o) = &i.origin {
+                let author = if o.author.is_empty() {
+                    "(deleted account)"
+                } else {
+                    &o.author
+                };
+                let _ = writeln!(
+                    text,
+                    "    {}  {}  {}  by {author}  (GBD hash {} before scrambling)",
+                    i.name,
+                    o.family,
+                    i.expected.id(),
+                    o.hash
+                );
+            }
+        }
+    }
     let seed = &info.seed;
+    let hidden = if info.hidden { " --hidden" } else { "" };
+    let published = if info.season.is_some() {
+        ", published before the season started"
+    } else {
+        ""
+    };
     let _ = write!(
         text,
         "
 One DIMACS CNF file per formula. answers.txt has the expected answer of each, witnesses.txt a
 model of every satisfiable one. Every UNSAT label is backed by a proof or by construction.
 
-The commitment is the SHA-256 of the seed, published before the season started. Check it:
+The commitment is the SHA-256 of the seed{published}. Check it:
     printf %s {seed} | sha256sum
-Regenerate the formulas from the seed (with a dojo tool of the same generator version):
-    dojo export regenerated/ --seed {seed}
+Regenerate the generated formulas from the seed (with a dojo tool of the same generator version):
+    dojo export regenerated/ --seed {seed}{hidden}
 Score a solver on exactly these formulas, the way the leaderboard did:
     dojo run my-solver.wasm --set <this .tar.gz>
 "
@@ -110,6 +175,21 @@ pub fn files(set: &[Instance], info: &SetInfo) -> Vec<(String, Vec<u8>)> {
         ("answers.txt".to_string(), answers.into_bytes()),
         ("witnesses.txt".to_string(), witnesses.into_bytes()),
     ];
+    // Tab-separated, the author last: name, benchmark number, GBD hash, family, author
+    let community: String = set
+        .iter()
+        .filter_map(|i| {
+            i.origin.as_ref().map(|o| {
+                format!(
+                    "{}\t{}\t{}\t{}\t{}\n",
+                    i.name, o.benchmark, o.hash, o.family, o.author
+                )
+            })
+        })
+        .collect();
+    if !community.is_empty() {
+        files.push(("community.txt".to_string(), community.into_bytes()));
+    }
     for instance in set {
         let comment = format!("{} from the Hashi SAT Dojo", instance.name);
         files.push((
@@ -152,10 +232,15 @@ pub fn write_tar_gz(set: &[Instance], info: &SetInfo) -> Vec<u8> {
         .expect("writing to memory")
 }
 
-/// The family of an instance from its name (`random-3sat-04`).
+/// The family of an instance from its name (`random-3sat-04`, `community-02`).
 fn family_of(name: &str) -> Option<Family> {
-    name.rsplit_once('-')
-        .and_then(|(family, _)| Family::from_id(family))
+    name.rsplit_once('-').and_then(|(family, _)| {
+        if family == Family::Community.id() {
+            Some(Family::Community)
+        } else {
+            Family::from_id(family)
+        }
+    })
 }
 
 /// Reads a set written by [`write_tar_gz`] (or [`write_dir`] and packed by hand).
@@ -199,6 +284,7 @@ pub fn read_tar_gz(bytes: &[u8]) -> Result<(SetInfo, Vec<Instance>), String> {
         generator_version: value("generator")
             .and_then(|s| s.parse().ok())
             .ok_or("no generator in README.txt")?,
+        hidden: value("kind") == Some("hidden") || value("season").is_some(),
     };
     let mut witnesses = std::collections::HashMap::new();
     for line in file("witnesses.txt")?.lines() {
@@ -214,6 +300,26 @@ pub fn read_tar_gz(bytes: &[u8]) -> Result<(SetInfo, Vec<Instance>), String> {
             ));
         }
         witnesses.insert(name.to_string(), lits[..lits.len() - 1].to_vec());
+    }
+    let mut origins = std::collections::HashMap::new();
+    for line in files
+        .get("community.txt")
+        .map_or("", String::as_str)
+        .lines()
+    {
+        let parts: Vec<&str> = line.splitn(5, '\t').collect();
+        let &[name, benchmark, hash, family, author] = parts.as_slice() else {
+            return Err(format!("community.txt: bad line {line}"));
+        };
+        let origin = crate::community::Origin {
+            benchmark: benchmark
+                .parse()
+                .map_err(|_| format!("community.txt: bad number in {line}"))?,
+            hash: hash.to_string(),
+            family: family.to_string(),
+            author: author.to_string(),
+        };
+        origins.insert(name.to_string(), origin);
     }
     let mut set = Vec::new();
     for line in file("answers.txt")?
@@ -231,12 +337,19 @@ pub fn read_tar_gz(bytes: &[u8]) -> Result<(SetInfo, Vec<Instance>), String> {
         if (expected == Answer::Sat) != witness.is_some() {
             return Err(format!("{name}: a model goes with SAT, and only with SAT"));
         }
+        let origin = origins.remove(name);
+        if (family == Family::Community) != origin.is_some() {
+            return Err(format!(
+                "{name}: community.txt says where community benchmarks come from"
+            ));
+        }
         set.push(Instance {
             name: name.to_string(),
             family,
             expected,
             cnf,
             witness,
+            origin,
         });
     }
     Ok((info, set))
@@ -261,6 +374,7 @@ mod tests {
                 expected: Answer::Sat,
                 cnf: Cnf::new(2, vec![vec![1, -2], vec![2]]),
                 witness: Some(vec![1, 2]),
+                origin: None,
             },
             Instance {
                 name: "random-3sat-01".into(),
@@ -268,6 +382,7 @@ mod tests {
                 expected: Answer::Unsat,
                 cnf: Cnf::new(1, vec![vec![1], vec![-1]]),
                 witness: None,
+                origin: None,
             },
         ]
     }
@@ -307,24 +422,105 @@ mod tests {
         );
         let files = files(&set(), &info);
         let readme = String::from_utf8(files[0].1.clone()).unwrap();
+        let generator = format!("generator: {GENERATOR_VERSION}\n");
         for line in [
             "The hidden set of season 4 of the Hashi SAT Dojo",
             "seed: abc123\n",
             "commitment: 6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090\n",
             "season: 4\n",
-            "generator: 1\n",
+            generator.as_str(),
+            "kind: hidden\n",
             "formulas: 2\n",
+            "mystery family: ",
+            "    hashi           1  1/0  puzzle\n",
+            "    random-3sat     1  0/1  random\n",
             "printf %s abc123 | sha256sum",
-            "dojo export regenerated/ --seed abc123",
+            "dojo export regenerated/ --seed abc123 --hidden\n",
         ] {
             assert!(readme.contains(line), "{line} missing in\n{readme}");
         }
         assert_eq!(files[1].1, b"hashi-01 SAT\nrandom-3sat-01 UNSAT\n");
         assert_eq!(files[2].1, b"hashi-01 1 2 0\n");
 
-        // Without a season
+        // Without a season: a dev set, or a hidden one
         let (read, _) = read_tar_gz(&write_tar_gz(&set(), &SetInfo::new("dev", None))).unwrap();
-        assert_eq!(read.season, None);
+        assert_eq!((read.season, read.hidden), (None, false));
+        let hidden = SetInfo {
+            hidden: true,
+            ..SetInfo::new("h", None)
+        };
+        let (read, _) = read_tar_gz(&write_tar_gz(&set(), &hidden)).unwrap();
+        assert_eq!(read, hidden);
+        let readme = String::from_utf8(super::files(&set(), &hidden)[0].1.clone()).unwrap();
+        assert!(readme.starts_with("A hidden set of"));
+        assert!(readme.contains("--seed h --hidden\n"));
+    }
+
+    /// Community benchmarks keep their author and origin through the archive, and are credited
+    /// in the README.
+    #[test]
+    fn community_benchmarks_are_credited() {
+        let mut set = set();
+        set.push(Instance {
+            name: "community-01".into(),
+            family: Family::Community,
+            expected: Answer::Unsat,
+            cnf: Cnf::new(1, vec![vec![1], vec![-1]]),
+            witness: None,
+            origin: Some(crate::community::Origin {
+                benchmark: 7,
+                hash: "ab".repeat(16),
+                family: "crypto-sha1".into(),
+                author: "Ada L".into(),
+            }),
+        });
+        let info = SetInfo::new("s", Some(2));
+        let bytes = write_tar_gz(&set, &info);
+        let (_, read) = read_tar_gz(&bytes).unwrap();
+        assert_eq!(read[2].origin, set[2].origin);
+        assert_eq!(read[2].family, Family::Community);
+        let files = files(&set, &info);
+        let readme = String::from_utf8(files[0].1.clone()).unwrap();
+        assert!(
+            readme.contains("community-01  crypto-sha1  UNSAT  by Ada L"),
+            "{readme}"
+        );
+        assert!(readme.contains("CC-BY-4.0"));
+        let community = files.iter().find(|f| f.0 == "community.txt").unwrap();
+        assert_eq!(
+            community.1,
+            format!("community-01\t7\t{}\tcrypto-sha1\tAda L\n", "ab".repeat(16)).into_bytes()
+        );
+        // A deleted author: credited as such
+        set[2].origin.as_mut().unwrap().author = String::new();
+        let readme = String::from_utf8(super::files(&set, &info)[0].1.clone()).unwrap();
+        assert!(readme.contains("by (deleted account)"));
+        // A community benchmark needs its line, and only it
+        let mut broken = super::files(&set, &info);
+        broken.retain(|f| f.0 != "community.txt");
+        assert!(read_files(broken).is_err());
+        let mut broken = super::files(&set, &info);
+        broken
+            .iter_mut()
+            .find(|f| f.0 == "community.txt")
+            .unwrap()
+            .1 = b"x\t1\n".to_vec();
+        assert!(read_files(broken).is_err());
+        assert_eq!(family_of("community-03"), Some(Family::Community));
+    }
+
+    /// Packs files into a tarball and reads it.
+    fn read_files(files: Vec<(String, Vec<u8>)>) -> Result<(SetInfo, Vec<Instance>), String> {
+        let gz = flate2::GzBuilder::new().write(Vec::new(), flate2::Compression::fast());
+        let mut tar = tar::Builder::new(gz);
+        for (name, content) in files {
+            let mut header = tar::Header::new_ustar();
+            header.set_size(content.len() as u64);
+            header.set_mode(0o644);
+            tar.append_data(&mut header, name, content.as_slice())
+                .unwrap();
+        }
+        read_tar_gz(&tar.into_inner().unwrap().finish().unwrap())
     }
 
     #[test]

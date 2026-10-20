@@ -7,10 +7,14 @@
 //! doesn't depend on the machine or its load. Like in the SAT Competition, a SAT answer needs a
 //! model and an UNSAT answer a DRAT or LRAT proof that a formally verified checker accepts.
 //!
-//! - always: the result types shared with the website ([`Family`], [`Score`], [`Report`], ...)
+//! - always: the result types shared with the website ([`Family`], [`Score`], [`Report`], ...),
+//!   community benchmarks ([`community`]: their hashes and the draw from the pool) and the
+//!   metrics beyond PAR-2 ([`metrics`]: SAT/UNSAT/ALL, cactus plots, VBS and Shapley
+//!   contributions)
 //! - `bench`: benchmark generation ([`bench`]), answer checking ([`output`]) and proof checking
 //!   ([`proof`], [`drat`])
-//! - `runner`: checking ([`validate`]), the sandbox ([`sandbox`]) and evaluating a set ([`eval`])
+//! - `runner`: checking ([`validate`]), the sandbox ([`sandbox`]), evaluating a set ([`eval`])
+//!   and the reference solvers `MiniSat`, `CaDiCaL` and Kissat ([`reference`])
 //! - `worker`: the HTTP service that evaluates submissions for the website ([`worker`])
 
 use serde::{Deserialize, Serialize};
@@ -19,14 +23,22 @@ use serde::{Deserialize, Serialize};
 pub mod archive;
 #[cfg(feature = "bench")]
 pub mod bench;
+#[cfg(feature = "runner")]
+pub mod calibrate;
 #[cfg(feature = "bench")]
 pub mod cnf;
+pub mod community;
 #[cfg(feature = "bench")]
 pub mod drat;
 #[cfg(feature = "runner")]
 pub mod eval;
 #[cfg(feature = "bench")]
+pub mod families;
+#[cfg(feature = "runner")]
+pub mod fuel;
+#[cfg(feature = "bench")]
 pub mod lrat;
+pub mod metrics;
 #[cfg(feature = "bench")]
 pub mod output;
 #[cfg(feature = "bench")]
@@ -39,30 +51,52 @@ mod proof_tests;
 #[path = "tests/props.rs"]
 mod props;
 #[cfg(feature = "runner")]
+pub mod reference;
+#[cfg(feature = "runner")]
 pub mod sandbox;
 #[cfg(feature = "runner")]
 pub mod validate;
 #[cfg(feature = "worker")]
 pub mod worker;
 
-/// Fuel for one instance: about 10 billion WebAssembly instructions.
-pub const DEFAULT_BUDGET: u64 = 10_000_000_000;
+/// Fuel for one instance: 7 billion (see `fuel::MODEL` for what costs how much).
+///
+/// About as many runs finish within it as did within 10 billion instructions under the uniform
+/// cost model of rules version 3, about half a second of a native solver on the calibration
+/// machine.
+pub const DEFAULT_BUDGET: u64 = 7_000_000_000;
+
+/// The budget of a rules version: 10 billion up to version 3 (one unit per operator), then
+/// [`DEFAULT_BUDGET`]. Archived seasons keep the budget they were scored with.
+pub const fn budget_of(rules_version: u32) -> u64 {
+    if rules_version <= 3 {
+        10_000_000_000
+    } else {
+        DEFAULT_BUDGET
+    }
+}
 
 /// Largest accepted submission.
 pub const MAX_WASM_BYTES: usize = 8 << 20;
 
-/// Formulas in a set (see `bench::SPEC`).
-pub const SET_SIZE: u32 = 34;
+/// Formulas in a season's hidden set (see `bench::hidden_spec`).
+pub const SET_SIZE: u32 = 48;
+
+/// Formulas in the development set (see `bench::DEV_SPEC`).
+pub const DEV_SET_SIZE: u32 = 36;
 
 /// The public development set, the same for everyone and downloadable.
-pub const DEV_SEED: &str = "hashi-dojo-dev-1";
+pub const DEV_SEED: &str = "hashi-dojo-dev-2";
 
 /// The version of the benchmark generator: families, sizes, labels, scrambling.
 ///
 /// Bump it whenever the same seed gives other formulas (`bench::tests::sets_are_unchanged` fails), together with
 /// [`RULES_VERSION`]. The worker's cache of generated sets is keyed by it, so a new generator
 /// never evaluates on a set an older one cached, and every archived set says which one made it.
-pub const GENERATOR_VERSION: u32 = 1;
+///
+/// - 1: Hashi, Hashi parity, random 3-SAT, pigeonhole and queens
+/// - 2: factoring, miters and colouring, held-out families, larger sizes in hidden sets
+pub const GENERATOR_VERSION: u32 = 2;
 
 /// The version of the rules a score is computed with.
 ///
@@ -75,11 +109,18 @@ pub const GENERATOR_VERSION: u32 = 1;
 ///
 /// - 1: the first rules
 /// - 2: UNSAT needs a proof the checker accepts ([`Outcome::Unverified`] without one)
-/// - 3: solvers get the formula without its name in a comment, and host calls like
-///   `poll_oneoff` end at the wall clock limit too
-pub const RULES_VERSION: u32 = 3;
+/// - 3: new families and a held-out one in hidden sets ([`GENERATOR_VERSION`] 2), formulas
+///   reach the solver without a comment that names them
+/// - 4: the calibrated cost model (`fuel::MODEL`, dojo/CALIBRATION.md) instead of one unit per
+///   operator, and a budget of 7 instead of 10 billion
+pub const RULES_VERSION: u32 = 4;
 
 /// Kinds of formulas in a benchmark set.
+///
+/// The development set has the [`Family::DEV`] families. A season's hidden set has them too, at
+/// sizes beyond the dev set's, plus one family of [`Family::RESERVE`] that no dev set has (the
+/// "mystery family", see [`mystery_family`]): solvers tuned to the families they trained on
+/// should still generalise. Public scores of a hidden set show it as [`Family::Mystery`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Family {
     /// Hashiwokakero puzzles (without the connectivity rule), always satisfiable.
@@ -93,16 +134,62 @@ pub enum Family {
     Pigeonhole,
     /// N queens on an N×N board without attacks.
     Queens,
+    /// Is a number the product of two factors greater than one? A multiplier circuit with its
+    /// output fixed: satisfiable for a semiprime (the factors are the model), unsatisfiable for
+    /// a prime.
+    Factoring,
+    /// Equivalence checking: do two structurally different multiplier circuits ever disagree?
+    /// Unsatisfiable when both are correct, satisfiable when one hides a rarely triggered bug.
+    Miter,
+    /// Graph colouring with four colours: a random graph with a planted colouring, or one that
+    /// contains a Mycielski graph, whose chromatic number is known to be five.
+    Coloring,
+    /// Tseitin formulas on random regular graphs: one parity constraint per vertex on its edges,
+    /// unsatisfiable when the charges add up to an odd number. Hard for resolution.
+    Tseitin,
+    /// Completing a Latin square with holes (quasigroup with holes), always satisfiable.
+    Quasigroup,
+    /// A Hamiltonian cycle in a bipartite graph: a planted one, or none since the two sides
+    /// differ in size.
+    Hamiltonian,
+    /// Stands for the season's held-out family in public scores, see [`mystery_family`]. No
+    /// formula is of this family.
+    Mystery,
+    /// Benchmarks from the community pool (see [`community`]), whatever family their authors
+    /// named.
+    Community,
 }
 
 impl Family {
-    pub const ALL: [Self; 5] = [
+    /// Every family that formulas are generated in.
+    pub const ALL: [Self; 11] = [
         Self::Hashi,
         Self::HashiParity,
         Self::Random3Sat,
         Self::Pigeonhole,
         Self::Queens,
+        Self::Factoring,
+        Self::Miter,
+        Self::Coloring,
+        Self::Tseitin,
+        Self::Quasigroup,
+        Self::Hamiltonian,
     ];
+
+    /// The families of the development set, and of every hidden set.
+    pub const DEV: [Self; 8] = [
+        Self::Hashi,
+        Self::HashiParity,
+        Self::Random3Sat,
+        Self::Pigeonhole,
+        Self::Queens,
+        Self::Factoring,
+        Self::Miter,
+        Self::Coloring,
+    ];
+
+    /// The held-out families: never in the dev set, one of them in each hidden set.
+    pub const RESERVE: [Self; 3] = [Self::Tseitin, Self::Quasigroup, Self::Hamiltonian];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -111,12 +198,53 @@ impl Family {
             Self::Random3Sat => "random-3sat",
             Self::Pigeonhole => "pigeonhole",
             Self::Queens => "queens",
+            Self::Factoring => "factoring",
+            Self::Miter => "miter",
+            Self::Coloring => "coloring",
+            Self::Tseitin => "tseitin",
+            Self::Quasigroup => "quasigroup",
+            Self::Hamiltonian => "hamiltonian",
+            Self::Mystery => "mystery",
+            Self::Community => "community",
         }
     }
 
+    /// A generated family by its [`Family::id`] (not [`Family::Mystery`]).
     pub fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|f| f.id() == id)
     }
+
+    /// The family's name in the Global Benchmark Database (<https://benchmark-database.de>),
+    /// whose families the SAT Competition's instances are sorted into, `None` for ours.
+    pub fn gbd(self) -> Option<&'static str> {
+        match self {
+            Self::Hashi | Self::HashiParity | Self::Queens => Some("puzzle"),
+            Self::Random3Sat => Some("random"),
+            Self::Pigeonhole => Some("pigeon-hole"),
+            Self::Factoring => Some("prime-factoring"),
+            Self::Miter => Some("miter"),
+            Self::Coloring => Some("coloring"),
+            Self::Tseitin => Some("tseitin-formulas"),
+            Self::Quasigroup => Some("quasigroup-completion"),
+            Self::Hamiltonian => Some("hamiltonian"),
+            Self::Mystery | Self::Community => None,
+        }
+    }
+
+    /// Whether this is a held-out family (see [`Family::RESERVE`]).
+    pub fn reserve(self) -> bool {
+        Self::RESERVE.contains(&self)
+    }
+}
+
+/// The held-out family of the hidden set with this seed: one of [`Family::RESERVE`], picked by
+/// the seed, so it is as secret as the seed until the season is over.
+pub fn mystery_family(seed: &str) -> Family {
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(format!("mystery:{seed}").as_bytes());
+    let pick = u64::from_le_bytes(digest[..8].try_into().unwrap_or_default());
+    let len = Family::RESERVE.len() as u64;
+    Family::RESERVE[usize::try_from(pick % len).unwrap_or_default()]
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -224,6 +352,7 @@ impl Answer {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FamilyScore {
+    /// [`Family::Mystery`] for the held-out family of a hidden set.
     pub family: Family,
     pub solved: u32,
     pub total: u32,
@@ -286,10 +415,19 @@ impl Score {
         let unverified = |rs: &mut dyn Iterator<Item = &RunResult>| {
             count(rs.filter(|r| r.outcome == Outcome::Unverified).count())
         };
-        let families = Family::ALL
+        // The held-out family stays a mystery: its formulas count as `Mystery`
+        let public = |r: &RunResult| {
+            if r.family.reserve() {
+                Family::Mystery
+            } else {
+                r.family
+            }
+        };
+        let families = Family::DEV
             .into_iter()
+            .chain([Family::Mystery, Family::Community])
             .filter_map(|family| {
-                let rs: Vec<&RunResult> = results.iter().filter(|r| r.family == family).collect();
+                let rs: Vec<&RunResult> = results.iter().filter(|r| public(r) == family).collect();
                 (!rs.is_empty()).then(|| FamilyScore {
                     family,
                     solved: count(rs.iter().filter(|r| r.outcome.solved()).count()),

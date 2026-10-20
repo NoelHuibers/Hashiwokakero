@@ -125,6 +125,8 @@ reqwest = { version = "0.12.28", default-features = false, features = ["rustls-t
 lettre = { version = "0.11.23", default-features = false, features = ["builder", "hostname", "smtp-transport", "tokio1", "tokio1-rustls", "rustls-tls"], optional = true }
 libsql = { version = "0.10.0", default-features = false, features = ["core", "remote", "tls"], optional = true }
 sha2 = { version = "0.11.1", optional = true }
+# Community benchmarks from the Global Benchmark Database come xz-compressed, pure Rust
+lzma-rs = { version = "0.3", optional = true }
 # Hashing the code of Dojo submissions without their custom sections
 wasmparser = { version = "0.262", optional = true }
 tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "signal", "sync"], optional = true }
@@ -147,6 +149,7 @@ ssr = [
   "dep:reqwest",
   "dep:wasmparser",
   "dep:sha2",
+  "dep:lzma-rs",
   "dep:tokio",
   "dep:tower-http",
   "leptos/ssr",
@@ -162,6 +165,8 @@ proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 # The HTTP tests (server/router/tests): a client that keeps cookies like a browser and uploads
 # forms. Without the gzip/brotli features it leaves responses compressed, so tests see that.
 reqwest = { version = "0.12.28", default-features = false, features = ["cookies", "multipart"] }
+# Runs leptos' tasks in the tests that render outside the router (seo.rs), as leptos_axum does
+any_spawner = { version = "0.3.0", features = ["tokio"] }
 
 # Defines a size-optimized profile for the WASM bundle in release mode
 [profile.wasm-release]

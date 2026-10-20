@@ -21,11 +21,11 @@ before restarting. Numeric grants are preferred to legacy username grants.
 Deploy the worker and website from the same revision, worker first when deploying separately.
 Jobs carry the website's `dojo::RULES_VERSION` and the worker refuses jobs for other rules
 (the dispatcher queues them again without using up an attempt), and every result is stored
-with the rules it was computed with. The review fixes change what a solver sees (no formula
-names in its input) and how host calls end at the wall clock limit, so they raise
-`RULES_VERSION` to 3 (2 brought UNSAT proofs): after the deploy, housekeeping evaluates the
-current season's finished submissions again, nothing is archived. Bump it whenever a change makes the same solver score
-differently, and `GENERATOR_VERSION` with it when the sets change (the worker's set cache is
+with the rules it was computed with. Formulas reach solvers without a comment that names them
+since rules version 3. The async sandbox doesn't change scores: fuel is charged by the same
+cost model, and a run that blocks in a host call past the wall clock limit already counted
+as a timeout, it now also ends on time. So the review leaves `RULES_VERSION` as it is. Bump
+it whenever a change makes the same solver score differently, and `GENERATOR_VERSION` with it when the sets change (the worker's set cache is
 keyed by it).
 
 Migrations take a database write transaction before checking the current schema version. Schema
@@ -64,6 +64,11 @@ browser journeys from one loopback address. Production, including Fly, ignores t
   requeue between authorization and application also rejects the old report. Terminal states,
   requeues and new seasons invalidate their tokens, which also ends uploads of a stale job's
   set. Late reports stop retrying when they are refused.
+- Community benchmark checks follow the same rules: claimed with their token before they are
+  sent (one at a time across replicas), verdicts compared with the token inside the update,
+  refused sends queued again without using up an attempt, requeues and failures clear the
+  token. Upload quotas, duplicate detection and the insert share one write transaction, and
+  uploads come out of the per-network request budget before the GBD download.
 - Daily hint, check, reveal, and submit transitions share a write transaction from the running
   state read through the update. Finishing uses one authoritative penalty snapshot and verifies
   the update succeeded. Device reuse checks, submission/contact quotas, and guest merges are

@@ -22,7 +22,7 @@ use crate::seo::{SITE_URL, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 15] = [
+const PAGES: [(&str, &str); 16] = [
     ("/", "/"),
     ("/practice", "/practice"),
     ("/ranks", "/ranks"),
@@ -33,6 +33,7 @@ const PAGES: [(&str, &str); 15] = [
     ("/dojo", "/dojo"),
     ("/admin", "/admin"),
     ("/dojo/seasons", "/dojo/seasons"),
+    ("/dojo/benchmarks", "/dojo/benchmarks"),
     ("/dojo/{id}", "/dojo/1"),
     ("/rules", "/rules"),
     ("/impressum", "/impressum"),
@@ -219,6 +220,19 @@ fn expected(route: &str, l: Locale) -> Expected {
             ]),
             nav: Some("/lab"),
             canonical: Some("/dojo/seasons"),
+            ..Expected::default()
+        },
+        "/dojo/benchmarks" => Expected {
+            title: Some(td_string!(l, dojo.community.meta_title).into()),
+            texts: strings([
+                td_string!(l, dojo.seasons.back),
+                td_string!(l, dojo.community.title),
+                td_string!(l, dojo.community.form_title),
+                td_string!(l, dojo.community.pool_title),
+                loading,
+            ]),
+            nav: Some("/lab"),
+            canonical: Some("/dojo/benchmarks"),
             ..Expected::default()
         },
         "/dojo/{id}" => Expected {

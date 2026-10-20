@@ -54,17 +54,18 @@ export const player = (name: string) => {
   return p;
 };
 
-/** A finished house entry of the SAT Dojo, for /dojo/:id. */
+/** A finished house entry of the SAT Dojo, for /dojo/:id. A second one, `Plain CDCL`, ranks
+ * behind it. */
 export const DOJO_SUBMISSION = 1;
 
 /** The Dojo's current season (`DOJO_SEASON`), the one before is archived. */
 export const DOJO_SEASON = 2;
-/** `dojo::RULES_VERSION`: results of older rules are evaluated again when the server starts. */
-const DOJO_RULES = 3;
 
 /** The revealed seed of the archived season, and the commitment published at its start. */
 export const ARCHIVED_SEED = 'e2e-archived-seed';
 export const ARCHIVED_COMMITMENT = sha256(ARCHIVED_SEED);
+/** The family of the seeded community benchmark. */
+export const COMMUNITY_FAMILY = 'crypto-sha1';
 
 /** Days of dailies before today. */
 const HISTORY = 40;
@@ -110,21 +111,68 @@ export function seed(dbPath: string) {
   attempt.run(player('bram').id, today, Date.now() - 120_000, Date.now() - 1_000, 0, 0, 119_000);
   attempt.run(player('chen').id, today, Date.now() - 100_000, Date.now() - 2_000, 0, 1, 98_000);
 
+  // A hidden set: the dev families at larger sizes too, and the held-out one as the mystery family
   const families = [
-    { family: 'Hashi', solved: 8, total: 8, par2: 0.4 },
-    { family: 'HashiParity', solved: 4, total: 6, par2: 7.1 },
-    { family: 'Random3Sat', solved: 7, total: 8, par2: 3.2 },
-    { family: 'Pigeonhole', solved: 4, total: 6, par2: 7.5 },
-    { family: 'Queens', solved: 6, total: 6, par2: 0.9 },
+    { family: 'Hashi', solved: 5, total: 5, par2: 0.4 },
+    { family: 'HashiParity', solved: 4, total: 5, par2: 4.1 },
+    { family: 'Random3Sat', solved: 4, total: 5, par2: 4.2 },
+    { family: 'Pigeonhole', solved: 2, total: 5, par2: 12.5 },
+    { family: 'Queens', solved: 3, total: 4, par2: 5.9 },
+    { family: 'Factoring', solved: 5, total: 7, par2: 6.3 },
+    { family: 'Miter', solved: 4, total: 6, par2: 7.4 },
+    { family: 'Coloring', solved: 5, total: 7, par2: 6.0 },
+    { family: 'Mystery', solved: 3, total: 4, par2: 5.2 },
   ];
-  const score = { par2: 3.6, solved: 29, total: 34, wrong: 0, budget: 10_000_000_000, fuel: 41.2, families };
+  const score = { par2: 5.9, solved: 35, total: 48, wrong: 0, budget: 10_000_000_000, fuel: 61.2, families };
   const created = (today - 10) * MS_PER_DAY;
-  db.prepare(
+  // Per formula, in set order, for the metrics beyond PAR-2 (private while the season runs). The
+  // held-out family is stored under its own name, Tseitin, and shown as the mystery's.
+  const labels: Record<string, string[]> = {
+    Hashi: ['Sat'],
+    HashiParity: ['Unsat'],
+    Random3Sat: ['Sat', 'Unsat'],
+    Pigeonhole: ['Unsat', 'Unsat', 'Sat'],
+    Queens: ['Sat'],
+    Factoring: ['Sat', 'Unsat'],
+    Miter: ['Unsat', 'Sat'],
+    Coloring: ['Sat', 'Unsat'],
+    Mystery: ['Unsat', 'Unsat', 'Sat', 'Unsat'],
+  };
+  const hiddenResults = (solved: (family: string, i: number) => number | null) =>
+    families.flatMap(({ family, total }) =>
+      Array.from({ length: total }, (_, i) => {
+        const expected = labels[family][i % labels[family].length];
+        const fuel = solved(family, i);
+        return {
+          name: `f-${family}-${i}`,
+          family: family === 'Mystery' ? 'Tseitin' : family,
+          expected,
+          outcome: fuel === null ? 'Timeout' : { Solved: expected },
+          fuel: fuel ?? 7_000_000_000,
+        };
+      }),
+    );
+  // Plain DPLL solves the first ones of every family, the CDCL below some others too
+  const dpllResults = hiddenResults((family, i) => {
+    const f = families.find((x) => x.family === family)!;
+    return i < f.solved ? 2_000_000 * (i + 1) * (family.length + 3) : null;
+  });
+  const cdclResults = hiddenResults((family, i) => {
+    const f = families.find((x) => x.family === family)!;
+    if (i === f.total - 1) return 900_000_000 + 50_000_000 * family.length;
+    return i < f.solved - 1 ? 9_000_000 * (i + 2) * family.length : null;
+  });
+  const cdclScore = { ...score, par2: 6.4, solved: 34, fuel: 70.5 };
+  // rules_version is dojo::RULES_VERSION: with an older one the site evaluates it again
+  const house = db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
-       state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version)
-     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 34, 34, ?, ?, ?, 0, ?, ?)`,
-  ).run(
+       state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version, results)
+     VALUES (?, NULL, 1, ?, ?, ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 4, ?)`,
+  );
+  house.run(
     DOJO_SUBMISSION,
+    'Plain DPLL',
+    'Unit propagation and nothing else.',
     new Uint8Array([0]),
     sha256('plain-dpll'),
     created,
@@ -134,16 +182,32 @@ export function seed(dbPath: string) {
     score.par2,
     score.solved,
     sha256('plain-dpll-code'),
-    DOJO_RULES,
+    JSON.stringify(dpllResults),
   );
-  // The season before, archived: its revealed seed, its set and the house entry's final result
+  house.run(
+    DOJO_SUBMISSION + 1,
+    'Plain CDCL',
+    'Clause learning, no restarts.',
+    new Uint8Array([1]),
+    sha256('plain-cdcl'),
+    created,
+    created,
+    DOJO_SEASON,
+    JSON.stringify(cdclScore),
+    cdclScore.par2,
+    cdclScore.solved,
+    sha256('plain-cdcl-code'),
+    JSON.stringify(cdclResults),
+  );
+  // The season before, archived: its revealed seed (which reveals its mystery family), its set and
+  // the house entry's final result
   const archived = DOJO_SEASON - 1;
   db.prepare(
     `INSERT INTO dojo_seasons (season, started_at, ended_at, commitment, seed, generator_version, rules_version)
-     VALUES (?, ?, ?, ?, ?, 1, 1)`,
+     VALUES (?, ?, ?, ?, ?, 2, 3)`,
   ).run(archived, (today - 40) * MS_PER_DAY, (today - 12) * MS_PER_DAY, ARCHIVED_COMMITMENT, ARCHIVED_SEED);
   db.prepare(
-    'INSERT INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?, 1, ?, ?, ?)',
+    'INSERT INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?, 2, ?, ?, ?)',
   ).run(archived, new Uint8Array([0x1f, 0x8b, 8, 0]), sha256('set'), (today - 12) * MS_PER_DAY);
   const results = [
     { name: 'hashi-01', family: 'Hashi', expected: 'Sat', outcome: { Solved: 'Sat' }, fuel: 1_200_000 },
@@ -152,7 +216,7 @@ export function seed(dbPath: string) {
   db.prepare(
     `INSERT INTO dojo_archive (season, submission_id, user_id, house, name, created_at, par2, solved, wrong, score, results,
        rules_version, rank)
-     VALUES (?, ?, NULL, 1, 'Plain DPLL', ?, ?, ?, 0, ?, ?, 1, 1)`,
+     VALUES (?, ?, NULL, 1, 'Plain DPLL', ?, ?, ?, 0, ?, ?, 3, 1)`,
   ).run(
     archived,
     DOJO_SUBMISSION,
@@ -162,6 +226,24 @@ export function seed(dbPath: string) {
     JSON.stringify(score),
     JSON.stringify(results),
   );
+  // A community benchmark by aiko, in the pool and drawn for the archived season (the running one
+  // draws it too when the server starts)
+  const benchmark = 'p cnf 1 2\n1 0\n-1 0\n';
+  db.prepare(
+    `INSERT INTO dojo_benchmarks (id, user_id, family, description, cnf, hash, shape, vars, clauses, state, answer,
+       license, created_at, updated_at, accepted_at)
+     VALUES (1, ?, ?, 'A tiny contradiction.', ?, ?, 'e2e-shape', 1, 2, 'accepted', 'UNSAT', 'CC-BY-4.0', ?, ?, ?)`,
+  ).run(
+    player('aiko').id,
+    COMMUNITY_FAMILY,
+    new TextEncoder().encode(benchmark),
+    createHash('md5').update('1 0 -1 0').digest('hex'),
+    created - 40 * MS_PER_DAY,
+    created - 40 * MS_PER_DAY,
+    created - 40 * MS_PER_DAY,
+  );
+  db.prepare('INSERT INTO dojo_season_pool (season, position, benchmark_id) VALUES (?, 0, 1)').run(archived);
+  db.prepare("UPDATE dojo_seasons SET pool_digest = 'e2e' WHERE season = ?").run(archived);
   CONTACT_MESSAGES.forEach((m, i) => {
     db.prepare('INSERT INTO contact_messages (name, email, message, created_at) VALUES (?, ?, ?, ?)').run(
       m.name,

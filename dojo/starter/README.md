@@ -49,14 +49,39 @@ reject counts as a **wrong answer**.
 
 ## Scoring
 
-Every formula gets a budget of 10 billion *fuel*: one unit per executed WebAssembly instruction,
-one per byte for bulk memory operations. Time and machine load don't matter, so scores are exactly
-reproducible. Clocks and random numbers are deterministic too: `random_get` is seeded per formula
+Every formula gets a budget of 7 billion *fuel*. Fuel counts the WebAssembly operators your solver
+executes, weighted like a real processor pays for them: loads and stores cost 3, locals, globals
+and constants 0 (they are registers once compiled), every other operator 1, bulk memory operations
+1 per byte. The weights come from a calibration against native running time with MiniSat,
+CaDiCaL, Kissat and four other solvers ([dojo/CALIBRATION.md](../CALIBRATION.md)). Time and
+machine load don't matter, so scores are exactly reproducible. Clocks and random numbers are deterministic too: `random_get` is seeded per formula
 and set.
 
 Score = PAR-2: the mean fuel per formula, where unsolved formulas count twice the budget.
 **A single wrong answer disqualifies the submission**: a wrong model, UNSAT on a satisfiable
 formula, or a rejected proof. So never guess UNSAT.
+
+PAR-2 alone decides the rank. The leaderboard also splits every score into SAT, UNSAT and ALL
+(`dojo run` prints the split too), draws a cactus plot of all solvers with the virtual best solver,
+and shows what your solver adds to the others: its marginal contribution, its state-of-the-art
+contribution and its Shapley value. A solver that is fast where everyone else is slow counts
+there, even if it ranks low.
+
+## The formulas
+
+The public development set has 36 formulas, half of them satisfiable, in eight families: Hashi
+puzzles, Hashi parity (unsatisfiable by a parity argument), random 3-SAT, pigeonhole, queens,
+factoring (a multiplier circuit whose output is a semiprime or a prime), miters (two different
+multipliers that agree, or one with a rare bug) and graph colouring (planted colourings, or
+Mycielski graphs that need one colour more). Every formula is scrambled and reaches your solver
+without a name, under the same `c` line.
+
+A season's hidden set has 48: the same families from a secret seed, one larger formula of each,
+and one **mystery family** that the dev set doesn't have, picked by the seed from a reserve and
+revealed when the season ends. Tuning your solver to the dev set's families won't be enough, it
+has to generalise (the SAT Competition 2026 raised exactly that after an AI-built solver won with
+over a hundred family-specific sub-solvers). A few **community benchmarks** join it too: formulas
+players brought along (https://hashi.rs/dojo/benchmarks), drawn by the season's seed.
 
 ## Testing locally
 
@@ -67,6 +92,7 @@ cargo install --git https://github.com/NoelHuibers/Hashiwokakero dojo --features
 dojo run target/wasm32-wasip1/release/dojo-starter.wasm          # all families
 dojo run my.wasm --family pigeonhole --stderr                      # one family, with your logs
 dojo export dev-set/                                               # the formulas as .cnf files
+dojo run my.wasm --hidden --seed practice                          # a hidden-style set
 dojo run my.wasm --set dojo-season-1.tar.gz                        # a past season's hidden set
 ```
 

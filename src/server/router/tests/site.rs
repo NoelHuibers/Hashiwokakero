@@ -62,6 +62,46 @@ async fn pages_are_rendered_in_their_language() {
     assert!(text(res).await.contains("<html lang=\"fr\""));
 }
 
+/// Each page's `<title>` in the language of its path. `leptos_meta` writes it into the head after
+/// the body, see `seo::title_text`.
+#[tokio::test]
+async fn pages_have_their_titles_in_their_language() {
+    use crate::i18n::{Locale, td_string};
+
+    let server = Server::start().await;
+    let browser = server.browser();
+    let hashi = |title: &str| format!("{title} · Hashi");
+    for (path, title) in [
+        ("/", td_string!(Locale::en, daily.meta.title).to_string()),
+        (
+            "/ja/rules",
+            td_string!(Locale::ja, rules.meta.title).to_string(),
+        ),
+        (
+            "/fr/ranks",
+            td_string!(Locale::fr, ranks.meta.title).to_string(),
+        ),
+        ("/de/kontakt", hashi(td_string!(Locale::de, contact.title))),
+        ("/de/account", hashi(td_string!(Locale::de, account.title))),
+        // The player's name only arrives in the browser
+        (
+            "/es/player/1",
+            hashi(td_string!(Locale::es, ranks.player.title)),
+        ),
+        (
+            "/no-such-page",
+            hashi(td_string!(Locale::en, common.not_found.title)),
+        ),
+    ] {
+        let html = text(browser.get(path).await).await;
+        assert!(
+            html.contains(&format!("<title>{title}</title>")),
+            "{path}: {title}, not in {}",
+            &html[..html.len().min(1500)]
+        );
+    }
+}
+
 /// The header renders above the routes. It used to follow the browser's language on the server,
 /// so a first visit to /ja/rules from an English browser got an English header until hydration.
 #[tokio::test]

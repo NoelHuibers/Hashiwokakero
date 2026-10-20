@@ -306,10 +306,29 @@ pub struct HouseQuery {
     name: String,
     #[serde(default)]
     description: String,
+    /// The solver's directory in the repository, `dojo/house` by default.
+    #[serde(default)]
+    source: Option<String>,
 }
 
-/// `POST /dojo/house?name=` with `HASHI_ADMIN_TOKEN`: adds one of our own solvers to the
-/// leaderboard.
+/// Whether `path` can be a directory of the repository in a link.
+fn repo_path(path: &str) -> bool {
+    !path.is_empty()
+        && path.len() <= 100
+        && !path.split('/').any(|part| part.is_empty() || part == "..")
+        && path
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '-' | '_' | '.'))
+}
+
+/// `POST /dojo/house?name=[&description=][&source=]` with `HASHI_ADMIN_TOKEN`: adds one of our
+/// own solvers to the leaderboard.
+///
+/// `scripts/dojo-house.sh` uploads them all. `source` is the solver's directory in the
+/// repository (`dojo/house` by default, `dojo/reference` for `MiniSat`, `CaDiCaL` and Kissat).
+///
+/// A new version replaces the house entry of the same name. The same code again is a
+/// duplicate (422 `duplicate`), so uploading solvers that didn't change changes nothing.
 pub async fn house_handler(
     headers: HeaderMap,
     Query(q): Query<HouseQuery>,
@@ -319,10 +338,15 @@ pub async fn house_handler(
     if !crate::server::bearer_ok(&headers, "HASHI_ADMIN_TOKEN") {
         return StatusCode::UNAUTHORIZED.into_response();
     }
+    let source = q.source.unwrap_or_else(|| "dojo/house".into());
+    if !repo_path(&source) {
+        return (StatusCode::BAD_REQUEST, "source").into_response();
+    }
+    let name = q.name.trim().to_string();
     let form = Form {
-        name: q.name,
+        name: name.clone(),
         description: q.description,
-        source_url: format!("{}/tree/main/dojo/house", crate::seo::REPO_URL),
+        source_url: format!("{}/tree/main/{source}", crate::seo::REPO_URL),
         wasm: wasm.to_vec(),
         network: None,
     };
@@ -330,7 +354,35 @@ pub async fn house_handler(
         return StatusCode::INTERNAL_SERVER_ERROR.into_response();
     };
     match submit(&conn, None, form).await {
-        Ok(id) => (StatusCode::CREATED, id.to_string()).into_response(),
+        Ok(id) => match replace_house(&conn, &name, id).await {
+            Ok(()) => (StatusCode::CREATED, id.to_string()).into_response(),
+            Err(e) => {
+                eprintln!("dojo house: {e}");
+                StatusCode::INTERNAL_SERVER_ERROR.into_response()
+            }
+        },
         Err(e) => (StatusCode::UNPROCESSABLE_ENTITY, e.code()).into_response(),
     }
+}
+
+/// Deletes the house entries named `name` other than `id`, like the admin's delete (their
+/// results in archived seasons stay).
+async fn replace_house(conn: &Connection, name: &str, id: i64) -> Result<(), String> {
+    let mut rows = conn
+        .query(
+            "SELECT id FROM dojo_submissions WHERE house = 1 AND name = ?1 AND id != ?2",
+            params![name.to_string(), id],
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut older = Vec::new();
+    while let Some(row) = rows.next().await.map_err(|e| e.to_string())? {
+        older.push(row.get::<i64>(0).map_err(|e| e.to_string())?);
+    }
+    for old in older {
+        crate::server::admin::submission_action(conn, old, crate::model::SubmissionAction::Delete)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }

@@ -104,8 +104,12 @@ pub async fn admission(req: Request, next: Next) -> Response {
                     | "daily_leaderboard"
                     | "load_dojo_board"
                     | "load_dojo_seasons"
+                    | "load_dojo_benchmarks"
             )
-        );
+        )
+        // Community benchmark uploads: a download from the GBD, decompression and parsing
+        // before the per-account quotas can be checked
+        || req.uri().path() == "/dojo/benchmarks/submit";
     if expensive {
         let ip = super::client_ip(req.headers()).or_else(|| {
             req.extensions()

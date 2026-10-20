@@ -50,6 +50,48 @@ pub struct DojoEntry {
     pub house: bool,
     pub score: dojo::Score,
     pub created_at: i64,
+    /// Solved and PAR-2 by answer, overall and per family; `None` without per-formula results.
+    #[serde(default)]
+    pub breakdown: Option<dojo::metrics::EntryBreakdown>,
+    /// What it adds to the other ranked entries (see [`DojoPortfolio`]), `None` when its results
+    /// aren't on the season's formulas.
+    #[serde(default)]
+    pub contribution: Option<dojo::metrics::Contribution>,
+}
+
+/// The ranked entries of a season as a portfolio: the virtual best solver (VBS), which takes
+/// the best result of any of them on every formula, and the cactus plot.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DojoPortfolio {
+    /// Entries in it: the ranked ones with per-formula results.
+    pub entries: u32,
+    pub vbs: dojo::metrics::Split,
+    pub cactus: DojoCactus,
+}
+
+/// A cactus plot: per solver the fuel of every formula it solved, sorted (see
+/// `dojo::metrics::curve`), so it shows how far a solver gets with how much fuel without telling
+/// which formula a point is.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoCactus {
+    /// Fuel per formula: the top of the plot.
+    pub budget: u64,
+    /// Formulas in the set: the right end.
+    pub formulas: u32,
+    /// The virtual best solver's curve.
+    pub vbs: Vec<u64>,
+    /// Every solver's, in board order.
+    pub curves: Vec<DojoCurve>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoCurve {
+    /// The submission.
+    pub id: i64,
+    pub name: String,
+    pub house: bool,
+    /// Fuel of every solved formula, ascending, rounded to three significant digits.
+    pub fuel: Vec<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -71,6 +113,23 @@ pub struct DojoBoard {
     pub generator_version: u32,
     #[serde(default)]
     pub rules_version: u32,
+    /// The community pool that hidden sets draw from (see [`DojoBenchmarks`]).
+    #[serde(default)]
+    pub community: CommunitySummary,
+    /// The VBS and the cactus plot of the ranked entries, `None` while there are none.
+    #[serde(default)]
+    pub portfolio: Option<DojoPortfolio>,
+}
+
+/// The community pool in short, for the credits in the guide.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommunitySummary {
+    /// Accepted benchmarks.
+    pub benchmarks: u32,
+    /// Their authors, by how many they contributed (empty names: deleted accounts left out).
+    pub authors: Vec<String>,
+    /// How many a hidden set draws.
+    pub per_set: u32,
 }
 
 /// One season of the Dojo: its commitment, and once it is over its seed, set and final board.
@@ -93,8 +152,19 @@ pub struct DojoSeason {
     pub set_sha256: Option<String>,
     /// Finished submissions in the archive, ranked or not.
     pub entries: u32,
+    /// The held-out family of its hidden set, revealed with the seed (`dojo::mystery_family`),
+    /// `None` while it runs and for sets from before held-out families.
+    #[serde(default)]
+    pub mystery: Option<dojo::Family>,
+    /// The community benchmarks drawn for its hidden set, with their authors; only once the
+    /// season is over.
+    #[serde(default)]
+    pub community: Vec<CommunityCredit>,
     /// The final leaderboard. An empty author: the account was deleted.
     pub board: Vec<DojoEntry>,
+    /// The VBS and the cactus plot of the final leaderboard.
+    #[serde(default)]
+    pub portfolio: Option<DojoPortfolio>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -127,6 +197,15 @@ pub struct DojoSubmission {
     pub size: i64,
     pub sha256: String,
     pub mine: bool,
+    /// Solved and PAR-2 by answer, once it is done.
+    #[serde(default)]
+    pub breakdown: Option<dojo::metrics::EntryBreakdown>,
+    /// What it adds to the ranked entries, if it is one of them.
+    #[serde(default)]
+    pub contribution: Option<dojo::metrics::Contribution>,
+    /// The season's cactus plot, with this submission's curve in it even if it isn't ranked.
+    #[serde(default)]
+    pub portfolio: Option<DojoPortfolio>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -145,4 +224,93 @@ pub struct DojoMe {
     pub registered: bool,
     pub left_today: u32,
     pub submissions: Vec<DojoRow>,
+}
+
+/// Where a community benchmark is: from upload to the pool.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BenchmarkState {
+    /// Waiting for the worker.
+    Queued,
+    /// The worker is settling its answer.
+    Checking,
+    /// Answer certain, hard enough: waits for a moderator.
+    Verified,
+    /// The worker didn't take it (see [`DojoBenchmark::reason`]).
+    Refused,
+    /// In the pool.
+    Accepted,
+    /// A moderator didn't take it.
+    Rejected,
+}
+
+impl BenchmarkState {
+    pub const ALL: [Self; 6] = [
+        Self::Queued,
+        Self::Checking,
+        Self::Verified,
+        Self::Refused,
+        Self::Accepted,
+        Self::Rejected,
+    ];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Queued => "queued",
+            Self::Checking => "checking",
+            Self::Verified => "verified",
+            Self::Refused => "refused",
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Self {
+        Self::ALL
+            .into_iter()
+            .find(|s| s.id() == id)
+            .unwrap_or(Self::Queued)
+    }
+}
+
+/// One of the player's own community benchmarks.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoBenchmark {
+    pub id: i64,
+    pub family: String,
+    pub description: String,
+    pub state: BenchmarkState,
+    /// Why it was refused or rejected: `dojo::community::Refusal::id`, `wrong_claim`, `failed`
+    /// or `moderation`.
+    pub reason: Option<String>,
+    pub answer: Option<dojo::Answer>,
+    pub vars: u32,
+    pub clauses: u32,
+    /// The GBD instance hash.
+    pub hash: String,
+    pub created_at: i64,
+}
+
+/// An accepted community benchmark and who contributed it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CommunityCredit {
+    pub id: i64,
+    pub family: String,
+    /// Empty if the author deleted their account.
+    pub author: String,
+    pub answer: dojo::Answer,
+    pub vars: u32,
+    pub clauses: u32,
+    pub hash: String,
+}
+
+/// The page for community benchmarks: the player's own and the pool.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoBenchmarks {
+    /// Only registered accounts can submit.
+    pub registered: bool,
+    pub left_today: u32,
+    pub mine: Vec<DojoBenchmark>,
+    pub pool: Vec<CommunityCredit>,
+    /// How many a hidden set draws from the pool.
+    pub per_set: u32,
 }

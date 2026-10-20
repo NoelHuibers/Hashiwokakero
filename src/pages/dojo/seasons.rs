@@ -7,15 +7,16 @@ use leptos_router::components::A;
 
 use crate::api::load_dojo_seasons;
 use crate::components::layout::use_localized;
-use crate::components::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{date_short, prefix};
-use crate::model::{DojoEntry, DojoSeason, DojoSeasons, day_of};
+use crate::lang::date_short;
+use crate::model::{DojoEntry, DojoPortfolio, DojoSeason, DojoSeasons, day_of};
 use crate::seo::PageMeta;
 
+use super::benchmarks::PoolList;
 use super::guide::Code;
-use super::names::par2;
+use super::names::{family_kanji, family_name, family_text};
+use super::views::BoardViews;
 
 /// A file size in MB, for display.
 #[expect(
@@ -38,73 +39,12 @@ fn Hash(label: AnyView, value: String) -> impl IntoView {
 }
 
 #[component]
-fn FrozenBoard(board: Vec<DojoEntry>) -> impl IntoView {
+fn FrozenBoard(board: Vec<DojoEntry>, portfolio: Option<DojoPortfolio>) -> impl IntoView {
     let i18n = use_i18n();
     if board.is_empty() {
         return view! { <p class="text-sm text-muted-foreground">{t!(i18n, dojo.seasons.empty_board)}</p> }.into_any();
     }
-    view! {
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b text-start text-xs uppercase tracking-wider text-muted-foreground">
-                        <th class="py-2 pe-2 text-start font-semibold">"#"</th>
-                        <th class="py-2 pe-3 text-start font-semibold">{t!(i18n, dojo.board.solver)}</th>
-                        <th class="py-2 pe-3 text-end font-semibold">{t!(i18n, dojo.board.solved)}</th>
-                        <th class="py-2 text-end font-semibold">{t!(i18n, dojo.board.par2)}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {board
-                        .into_iter()
-                        .map(|e| {
-                            // An empty name: the author deleted their account
-                            let deleted = e.name.is_empty();
-                            let href = move || format!("{}/dojo/{}", prefix(i18n.get_locale()), e.id);
-                            view! {
-                                <tr class="border-b last:border-0">
-                                    <td class="py-2 pe-2 font-pixel tabular-nums">{e.rank}</td>
-                                    <td class="py-2 pe-3">
-                                        {if deleted {
-                                            view! { <span class="text-muted-foreground">"—"</span> }.into_any()
-                                        } else {
-                                            view! {
-                                                <A href=href attr:class="font-medium hover:text-primary hover:underline">
-                                                    {e.name.clone()}
-                                                </A>
-                                            }
-                                                .into_any()
-                                        }}
-                                        {e
-                                            .house
-                                            .then(|| {
-                                                view! {
-                                                    <Badge variant=BadgeVariant::Secondary size=BadgeSize::Sm class="ms-2">
-                                                        {t!(i18n, dojo.board.house)}
-                                                    </Badge>
-                                                }
-                                            })}
-                                        <span class="block text-xs text-muted-foreground">
-                                            {if e.author.is_empty() {
-                                                t_string!(i18n, dojo.seasons.deleted).to_string()
-                                            } else {
-                                                e.author.clone()
-                                            }}
-                                        </span>
-                                    </td>
-                                    <td class="py-2 pe-3 text-end font-pixel tabular-nums">
-                                        {format!("{}/{}", e.score.solved, e.score.total)}
-                                    </td>
-                                    <td class="py-2 text-end font-pixel tabular-nums">{par2(&e.score)}</td>
-                                </tr>
-                            }
-                        })
-                        .collect_view()}
-                </tbody>
-            </table>
-        </div>
-    }
-        .into_any()
+    view! { <BoardViews entries=board portfolio /> }.into_any()
 }
 
 /// A finished season: when, its seed, the downloads and the final board.
@@ -135,6 +75,35 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
         }
     });
     let no_set = season.set_size.is_none();
+    // The held-out family, a secret until now
+    let mystery = season.mystery.map(|f| {
+        view! {
+            <div class="flex gap-3" data-testid="mystery-family">
+                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-secondary font-pixel text-lg">
+                    {family_kanji(f)}
+                </span>
+                <div class="text-sm">
+                    <p class="font-bold">
+                        {move || {
+                            let locale = i18n.get_locale();
+                            td_string!(locale, dojo.seasons.mystery, family = family_name(locale, f))
+                        }}
+                    </p>
+                    <p class="text-muted-foreground">{move || family_text(i18n.get_locale(), f)}</p>
+                </div>
+            </div>
+        }
+    });
+    // The community benchmarks it drew, with their authors
+    let community = (!season.community.is_empty()).then(|| {
+        let pool = season.community.clone();
+        view! {
+            <div class="flex flex-col gap-1" data-testid="season-community">
+                <h3 class="font-bold">{t!(i18n, dojo.community.archive_title)}</h3>
+                <PoolList pool />
+            </div>
+        }
+    });
     view! {
         <Card class="gap-4" attr:id=format!("season-{n}")>
             <CardHeader>
@@ -152,6 +121,8 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
                     <Hash label=t!(i18n, dojo.seasons.commitment).into_any() value=season.commitment.clone() />
                     <Hash label=t!(i18n, dojo.seasons.seed).into_any() value=season.seed.clone().unwrap_or_default() />
                 </div>
+                {mystery}
+                {community}
                 <div class="flex flex-wrap gap-2">
                     {set}
                     <a href=format!("/dojo/seasons/{n}/results.csv") download class=link>
@@ -163,7 +134,7 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
                 </div>
                 {no_set.then(|| view! { <p class="text-sm text-muted-foreground">{t!(i18n, dojo.seasons.no_set)}</p> })}
                 <h3 class="font-bold">{t!(i18n, dojo.seasons.board)}</h3>
-                <FrozenBoard board=season.board />
+                <FrozenBoard board=season.board portfolio=season.portfolio />
             </CardContent>
         </Card>
     }
@@ -250,7 +221,7 @@ pub fn DojoSeasonsPage() -> impl IntoView {
                 <CardContent class="flex flex-col gap-3 text-sm text-muted-foreground">
                     <p>{t!(i18n, dojo.seasons.verify)}</p>
                     <Code>
-                        "$ printf %s <seed> | sha256sum        # = commitment\n$ dojo export regenerated/ --seed <seed>\n$ dojo run my-solver.wasm --set dojo-season-<n>.tar.gz"
+                        "$ printf %s <seed> | sha256sum        # = commitment\n$ dojo export regenerated/ --seed <seed> --hidden\n$ dojo run my-solver.wasm --set dojo-season-<n>.tar.gz"
                     </Code>
                     <p class="flex flex-wrap gap-x-4 gap-y-1">
                         <a class="text-primary underline underline-offset-4" href="/dojo/seasons.json">"/dojo/seasons.json"</a>

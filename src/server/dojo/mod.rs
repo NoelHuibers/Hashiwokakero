@@ -8,15 +8,25 @@
 //! to the worker; its reports carry a per-job token instead), `HASHI_ADMIN_TOKEN` (house entries),
 //! `DOJO_SECRET` (seed of the hidden sets), `DOJO_SEASON` (number of the current season; a
 //! new season archives the old one, reveals its seed and re-evaluates every submission on a new
-//! hidden set, see [`seasons`]).
+//! hidden set, see [`seasons`]). Community benchmarks: see [`benchmarks`] (`DOJO_GBD_URL` for
+//! another copy of the Global Benchmark Database).
 
+#[cfg(test)]
+mod benchmark_tests;
+mod benchmarks;
 mod board;
+mod metrics;
 mod seasons;
 mod submit;
 #[cfg(test)]
 mod tests;
 mod worker;
 
+pub use benchmarks::{
+    BenchmarkError, BenchmarkForm, admin_action as benchmark_action,
+    admin_list as admin_benchmarks, page as benchmarks_page,
+    report_handler as benchmark_report_handler, submit_handler as benchmark_submit_handler,
+};
 pub use board::{board, me, rank_of, submission};
 pub use seasons::{
     ArchivedEntry, ArchivedSeason, MAX_SET_BYTES, SetQuery, archived, commitment, csv, results_csv,

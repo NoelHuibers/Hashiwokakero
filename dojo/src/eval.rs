@@ -48,6 +48,10 @@ impl Default for Options {
     }
 }
 
+/// The comment above every formula a solver reads. The same for all of them: nothing in the
+/// input may give the formula's name or family away.
+pub const HEADER: &str = "a formula of the Hashi SAT Dojo";
+
 /// The verdict on the proof a run left in `dir`.
 pub fn check_proof(
     instance: &Instance,
@@ -74,6 +78,11 @@ pub fn check_proof(
     }
 }
 
+/// What the solver reads on stdin: the formula in DIMACS under [`HEADER`].
+pub fn input(instance: &Instance) -> String {
+    instance.cnf.dimacs(HEADER)
+}
+
 /// The seed of the random numbers (`random_get`) of a run.
 ///
 /// From the set's seed and the formula's name, so the same name gets other random numbers in
@@ -89,9 +98,7 @@ pub fn run_one(
     instance: &Instance,
     options: &Options,
 ) -> RunResult {
-    // No family, label or public index reaches a submission. Names remain only in the
-    // host-side report
-    let input = instance.cnf.dimacs("");
+    let input = input(instance);
     let dir = if options.keep_proofs {
         TempDir::named(&options.proof_root, &instance.name)
     } else {
@@ -210,6 +217,7 @@ mod tests {
             expected,
             cnf: Cnf::new(2, vec![vec![1, 2], vec![-1, 2], vec![1, -2], vec![-1, -2]]),
             witness: None,
+            origin: None,
         }
     }
 
@@ -281,6 +289,38 @@ mod tests {
             outcome(&unsat_solver(Some(b"-1 0\n0\n"), ""), &unsat, &hasty),
             Outcome::Unverified
         );
+    }
+
+    /// Neither the name nor the family of a formula reaches the solver: every input starts
+    /// with the same comment, then the formula.
+    #[test]
+    fn inputs_give_nothing_away() {
+        let spec = [
+            crate::bench::Spec {
+                family: Family::Coloring,
+                size: 30,
+                want: Some(Answer::Sat),
+            },
+            crate::bench::Spec {
+                family: Family::Tseitin,
+                size: 8,
+                want: Some(Answer::Unsat),
+            },
+        ];
+        for instance in crate::bench::generate_with("leaks", &spec) {
+            let text = input(&instance);
+            assert!(text.starts_with("c a formula of the Hashi SAT Dojo\np cnf "));
+            assert_eq!(text.lines().filter(|l| l.starts_with('c')).count(), 1);
+            let lower = text.to_lowercase();
+            for word in [
+                instance.name.as_str(),
+                instance.family.id(),
+                "color",
+                "tseitin",
+            ] {
+                assert!(!lower.contains(word), "{word} in the input");
+            }
+        }
     }
 
     /// `dojo run --proofs DIR` keeps a directory per formula, others are removed.

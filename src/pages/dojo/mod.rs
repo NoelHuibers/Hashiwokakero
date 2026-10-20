@@ -1,11 +1,14 @@
 //! The SAT Dojo: a leaderboard for SAT solvers submitted as WebAssembly.
 
+pub mod benchmarks;
+pub mod cactus;
 pub mod guide;
 pub mod leaderboard;
 pub mod names;
 pub mod seasons;
 pub mod submission;
 pub mod submit;
+pub mod views;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -18,7 +21,8 @@ use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::model::{DojoBoard, DojoMe};
 use crate::seo::{PageMeta, REPO_URL};
 
-use guide::{FairPlay, Families, HowItWorks};
+pub use benchmarks::DojoBenchmarksPage;
+use guide::{FairPlay, Families, HowItWorks, Metrics};
 use leaderboard::Leaderboard;
 pub use names::family_name;
 pub use seasons::DojoSeasonsPage;
@@ -26,8 +30,11 @@ pub use submission::DojoSubmissionPage;
 use submit::SubmitCard;
 
 const STARTER_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero/tree/main/dojo/starter";
-/// The dev set, `dojo export dojo-dev-1/` packed by hand and committed in `public/`.
-pub const DEV_SET_URL: &str = "/dojo-dev-1.tar.gz";
+/// The dev set as `dojo export public/dojo-dev-2.tar.gz` writes it, committed in `public/`.
+///
+/// Regenerate it (and bump the name, so no cache keeps the old one) whenever
+/// `dojo::GENERATOR_VERSION` or `dojo::DEV_SEED` changes.
+pub const DEV_SET_URL: &str = "/dojo-dev-2.tar.gz";
 
 #[component]
 pub fn DojoPage() -> impl IntoView {
@@ -123,10 +130,11 @@ pub fn DojoPage() -> impl IntoView {
             <Leaderboard board />
             <HowItWorks />
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Families />
+                <Families board />
                 <SubmitCard me />
             </div>
             <FairPlay />
+            <Metrics />
             <Card class="gap-2">
                 <CardHeader>
                     <CardTitle class="text-xl">{t!(i18n, dojo.science.title)}</CardTitle>
