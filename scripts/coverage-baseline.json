@@ -1,9 +1,9 @@
 {
-  "total": 76.69,
+  "total": 81.35,
   "crates": {
     "backend": 95.76,
     "common": 99.25,
-    "dojo": 89.61,
+    "dojo": 97.58,
     "hashi": 67.96,
     "sat_solver": 95.59
   }

@@ -775,3 +775,8 @@ mod tests {
         ));
     }
 }
+
+// In a tests/ directory, so coverage doesn't count the tests themselves
+#[cfg(test)]
+#[path = "tests/checker_failures.rs"]
+mod checker_failures;
