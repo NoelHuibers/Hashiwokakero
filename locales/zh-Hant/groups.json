@@ -1,0 +1,100 @@
+{
+  "title": "群組",
+  "intro": "和朋友、家人或同事一起玩每日謎題：看看今天誰已完成，自己解完後比比用時，看著你們之間的橋越搭越多。",
+  "list": {
+    "title": "我的群組",
+    "text": "你加入的所有群組，以及今天有幾人已經過橋。",
+    "none": "還沒有群組。建立一個，把連結傳給朋友吧。",
+    "members": "成員：{{ count }} 人",
+    "today": "今日完成"
+  },
+  "create": {
+    "title": "建立群組",
+    "text": "取個名字，再把邀請連結傳給想加入的人。不需要帳號。",
+    "name": "群組名稱",
+    "placeholder": "例如：造橋俱樂部",
+    "button": "建立群組",
+    "busy": "建立中…",
+    "invite_hint": "收到邀請連結了嗎？直接打開就能加入。"
+  },
+  "ready": {
+    "title": "群組建好了！",
+    "text": "把這個連結傳給朋友：打開它的人只要點一下就能加入。",
+    "open": "進入群組"
+  },
+  "invite": {
+    "title": "邀請連結",
+    "copy": "複製連結",
+    "copied": "邀請連結已複製到剪貼簿。",
+    "share": "分享邀請",
+    "share_text": "來 Hashi 加入我的群組「{{ name }}」，一起比比每日之橋吧！",
+    "rotate": "產生新連結",
+    "rotate_confirm": "要產生新的邀請連結嗎？舊連結將會失效。",
+    "rotated": "已產生新的邀請連結，舊連結已失效。"
+  },
+  "join": {
+    "page_title": "加入群組",
+    "title": "加入「{{ name }}」",
+    "text": "在這裡比拚每日之橋的成員：{{ count }} 人",
+    "button": "加入群組",
+    "busy": "加入中…",
+    "joined": "歡迎加入 {{ name }}！",
+    "full": "這個群組已滿，已經有 50 位成員。",
+    "guest_hint": "不需要帳號：你會以訪客身分加入，隨時都能註冊使用者名稱。",
+    "invalid_title": "這個邀請連結無效",
+    "invalid_text": "可能是連結打錯了，或是群組已經產生了新連結。請向成員要一個新連結。"
+  },
+  "page": {
+    "title": "群組",
+    "back": "我的群組",
+    "since": "{{ date }} 建立",
+    "not_found": "這個群組不存在，或是你不是它的成員。",
+    "not_found_hint": "請向成員索取邀請連結來加入。"
+  },
+  "archipelago": {
+    "label": "群組的群島，每位成員一座島。今日完成：{{ done }} / {{ total }}",
+    "done": "今日已完成",
+    "waiting": "今天還沒玩",
+    "bridge": "{{ a }} & {{ b }} · 兩人都解出的天數：{{ days }}",
+    "legend": "最近四週內解出同一道每日謎題的相鄰兩人之間會搭起一座橋，這樣的日子累積七天後變成雙橋。今天已完成的人頭上會飄著一面小旗。"
+  },
+  "today": {
+    "title": "今日",
+    "daily": "每日一橋 #{{ number }}",
+    "your_turn": "{{ total }} 人中已有 {{ done }} 人完成 – 輪到你了！",
+    "all_waiting": "還沒有人過橋 – 搶當第一個吧！",
+    "spoiler": "你自己完成今天的每日謎題後，才會顯示用時。",
+    "play": "玩今日謎題",
+    "done": "已完成",
+    "waiting": "等待中",
+    "unranked": "不列入排名"
+  },
+  "week": {
+    "title": "一週",
+    "member": "成員",
+    "earlier": "上一週",
+    "later": "下一週",
+    "solved": "{{ name }} · {{ date }}：已解出",
+    "missed": "{{ name }} · {{ date }}：錯過",
+    "open": "{{ name }} · {{ date }}：還沒玩"
+  },
+  "members": {
+    "title": "成員",
+    "count": "成員：{{ count }} / {{ max }}",
+    "owner": "擁有者",
+    "joined": "{{ date }} 加入",
+    "remove_label": "移除 {{ name }}",
+    "remove_confirm": "要把 {{ name }} 移出群組嗎？除非你產生新連結，否則對方還是能用邀請連結重新加入。",
+    "removed": "{{ name }} 已不在群組中。",
+    "leave": "退出群組",
+    "leave_confirm": "要退出「{{ name }}」嗎？你可以用邀請連結重新加入。",
+    "left": "你已退出 {{ name }}。"
+  },
+  "daily": {
+    "tabs": "排行",
+    "world": "全球",
+    "done": "今日完成：{{ done }} / {{ total }}",
+    "open": "進入群組",
+    "compare": "和朋友比一比：<b>建立群組</b>"
+  }
+}

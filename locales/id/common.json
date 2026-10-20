@@ -5,7 +5,8 @@
     "ranks": "Peringkat",
     "create": "Buat",
     "lab": "Lab",
-    "main": "Navigasi utama"
+    "main": "Navigasi utama",
+    "groups": "Grup"
   },
   "tagline_short": "Jembatan",
   "language": "Bahasa",
@@ -74,7 +75,13 @@
     "too_many_messages": "Sudah cukup banyak pesan untuk hari ini, coba lagi besok, ya.",
     "rename_too_soon": "Kamu baru saja mengganti nama pengguna, coba lagi nanti, ya.",
     "username_not_allowed": "Nama ini tidak diizinkan di sini, pilih nama lain, ya.",
-    "banned": "Akun ini diblokir. Kalau menurutmu ini keliru, silakan hubungi kami."
+    "banned": "Akun ini diblokir. Kalau menurutmu ini keliru, silakan hubungi kami.",
+    "group_name_invalid": "Nama grup terdiri dari 1 sampai 32 karakter.",
+    "group_name_not_allowed": "Nama ini tidak diizinkan di sini, pilih nama lain, ya.",
+    "group_not_found": "Grup ini tidak ada, atau kamu bukan anggotanya.",
+    "group_full": "Grup ini sudah penuh: anggotanya sudah 50 orang.",
+    "too_many_groups": "Kamu sudah ada di 10 grup, keluar dulu dari salah satunya.",
+    "group_owner_only": "Hanya pemilik grup yang bisa melakukan itu."
   },
   "solver": {
     "title": "Solver SAT",

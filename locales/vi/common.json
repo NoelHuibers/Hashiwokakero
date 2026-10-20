@@ -5,7 +5,8 @@
     "ranks": "Xếp hạng",
     "create": "Tạo",
     "lab": "Lab",
-    "main": "Điều hướng chính"
+    "main": "Điều hướng chính",
+    "groups": "Nhóm"
   },
   "tagline_short": "Nối cầu",
   "language": "Ngôn ngữ",
@@ -74,7 +75,13 @@
     "too_many_messages": "Hôm nay bạn đã gửi đủ tin nhắn rồi, vui lòng thử lại vào ngày mai.",
     "rename_too_soon": "Bạn vừa đổi tên người dùng gần đây, vui lòng thử lại sau.",
     "username_not_allowed": "Tên này không được phép dùng ở đây, vui lòng chọn tên khác.",
-    "banned": "Tài khoản này đã bị cấm. Nếu bạn nghĩ đây là nhầm lẫn, vui lòng liên hệ với chúng tôi."
+    "banned": "Tài khoản này đã bị cấm. Nếu bạn nghĩ đây là nhầm lẫn, vui lòng liên hệ với chúng tôi.",
+    "group_name_invalid": "Tên nhóm gồm 1 đến 32 ký tự.",
+    "group_name_not_allowed": "Tên này không được phép dùng ở đây, vui lòng chọn tên khác.",
+    "group_not_found": "Nhóm này không tồn tại, hoặc bạn không phải thành viên.",
+    "group_full": "Nhóm này đã đầy: đã có đủ 50 thành viên.",
+    "too_many_groups": "Bạn đã ở trong 10 nhóm rồi, hãy rời một nhóm trước.",
+    "group_owner_only": "Chỉ chủ nhóm mới làm được việc này."
   },
   "solver": {
     "title": "Bộ giải SAT",

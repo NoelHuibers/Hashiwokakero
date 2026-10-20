@@ -1,0 +1,100 @@
+{
+  "title": "Groups",
+  "intro": "Play the daily with friends, family or colleagues: see who's done today, compare times once you've finished, and watch the bridges between you grow.",
+  "list": {
+    "title": "Your groups",
+    "text": "Every group you're in, and how many have crossed today.",
+    "none": "No groups yet. Create one and send the link to your friends.",
+    "members": "Members: {{ count }}",
+    "today": "Done today"
+  },
+  "create": {
+    "title": "Create a group",
+    "text": "Give it a name, then send the invite link to whoever should join. No account needed.",
+    "name": "Group name",
+    "placeholder": "e.g. Bridge Club",
+    "button": "Create the group",
+    "busy": "Creating…",
+    "invite_hint": "Got an invite link? Just open it to join."
+  },
+  "ready": {
+    "title": "Your group is ready!",
+    "text": "Send this link to your friends: whoever opens it can join with one click.",
+    "open": "Open the group"
+  },
+  "invite": {
+    "title": "Invite link",
+    "copy": "Copy link",
+    "copied": "Invite link copied to the clipboard.",
+    "share": "Share the invite",
+    "share_text": "Join my group “{{ name }}” on Hashi and let's compare our daily bridges!",
+    "rotate": "Make a new link",
+    "rotate_confirm": "Make a new invite link? The old one stops working.",
+    "rotated": "New invite link made, the old one doesn't work any more."
+  },
+  "join": {
+    "page_title": "Join a group",
+    "title": "Join “{{ name }}”",
+    "text": "Members comparing their daily bridges here: {{ count }}",
+    "button": "Join the group",
+    "busy": "Joining…",
+    "joined": "Welcome to {{ name }}!",
+    "full": "This group is full, it has 50 members already.",
+    "guest_hint": "No account needed: you join as a guest and can claim a username any time.",
+    "invalid_title": "This invite link doesn't work",
+    "invalid_text": "It may be mistyped, or the group made a new one. Ask a member for a fresh link."
+  },
+  "page": {
+    "title": "Group",
+    "back": "Your groups",
+    "since": "since {{ date }}",
+    "not_found": "This group doesn't exist, or you're not a member of it.",
+    "not_found_hint": "Ask a member for the invite link to join."
+  },
+  "archipelago": {
+    "label": "The group's archipelago, an island per member. Done today: {{ done }} of {{ total }}",
+    "done": "done today",
+    "waiting": "still to play today",
+    "bridge": "{{ a }} & {{ b }} · days both solved: {{ days }}",
+    "legend": "A bridge for every pair of neighbours who solved the same daily in the last four weeks, a double bridge after seven such days. A pennant flies over everyone who's done today."
+  },
+  "today": {
+    "title": "Today",
+    "daily": "Daily bridge #{{ number }}",
+    "your_turn": "{{ done }} of {{ total }} done – your turn!",
+    "all_waiting": "Nobody has crossed yet – be the first!",
+    "spoiler": "Times show up once you've finished today's daily yourself.",
+    "play": "Play today's daily",
+    "done": "done",
+    "waiting": "waiting",
+    "unranked": "not ranked"
+  },
+  "week": {
+    "title": "Week",
+    "member": "Member",
+    "earlier": "Earlier week",
+    "later": "Later week",
+    "solved": "{{ name }} · {{ date }}: solved",
+    "missed": "{{ name }} · {{ date }}: missed",
+    "open": "{{ name }} · {{ date }}: still to play"
+  },
+  "members": {
+    "title": "Members",
+    "count": "Members: {{ count }} of {{ max }}",
+    "owner": "Owner",
+    "joined": "joined {{ date }}",
+    "remove_label": "Remove {{ name }}",
+    "remove_confirm": "Remove {{ name }} from the group? They can join again with the invite link, unless you make a new one.",
+    "removed": "{{ name }} is no longer in the group.",
+    "leave": "Leave the group",
+    "leave_confirm": "Leave “{{ name }}”? You can join again with the invite link.",
+    "left": "You left {{ name }}."
+  },
+  "daily": {
+    "tabs": "Rankings",
+    "world": "World",
+    "done": "Done today: {{ done }} of {{ total }}",
+    "open": "Open the group",
+    "compare": "Compare with friends: <b>create a group</b>"
+  }
+}

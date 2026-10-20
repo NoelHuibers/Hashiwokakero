@@ -1,0 +1,100 @@
+{
+  "title": "Gruppen",
+  "intro": "Spiel das Tagesrätsel mit Freunden, Familie oder Kollegen: Sieh, wer heute schon durch ist, vergleich die Zeiten, sobald du selbst fertig bist, und schau zu, wie die Brücken zwischen euch wachsen.",
+  "list": {
+    "title": "Deine Gruppen",
+    "text": "Alle Gruppen, in denen du bist, und wie viele heute schon geschafft haben.",
+    "none": "Noch keine Gruppen. Gründe eine und schick den Link an deine Freunde.",
+    "members": "Mitglieder: {{ count }}",
+    "today": "Heute geschafft"
+  },
+  "create": {
+    "title": "Gruppe gründen",
+    "text": "Gib ihr einen Namen und schick dann den Einladungslink an alle, die mitmachen sollen. Kein Konto nötig.",
+    "name": "Gruppenname",
+    "placeholder": "z. B. Brückenclub",
+    "button": "Gruppe gründen",
+    "busy": "Wird gegründet…",
+    "invite_hint": "Du hast einen Einladungslink? Öffne ihn einfach, um beizutreten."
+  },
+  "ready": {
+    "title": "Deine Gruppe ist bereit!",
+    "text": "Schick diesen Link an deine Freunde: Wer ihn öffnet, kann mit einem Klick beitreten.",
+    "open": "Zur Gruppe"
+  },
+  "invite": {
+    "title": "Einladungslink",
+    "copy": "Link kopieren",
+    "copied": "Einladungslink in die Zwischenablage kopiert.",
+    "share": "Einladung teilen",
+    "share_text": "Komm in meine Gruppe „{{ name }}“ auf Hashi und lass uns unsere täglichen Brücken vergleichen!",
+    "rotate": "Neuen Link erstellen",
+    "rotate_confirm": "Neuen Einladungslink erstellen? Der alte funktioniert dann nicht mehr.",
+    "rotated": "Neuer Einladungslink erstellt, der alte funktioniert nicht mehr."
+  },
+  "join": {
+    "page_title": "Gruppe beitreten",
+    "title": "„{{ name }}“ beitreten",
+    "text": "Mitglieder, die hier ihre täglichen Brücken vergleichen: {{ count }}",
+    "button": "Gruppe beitreten",
+    "busy": "Beitritt läuft…",
+    "joined": "Willkommen bei {{ name }}!",
+    "full": "Diese Gruppe ist voll, sie hat schon 50 Mitglieder.",
+    "guest_hint": "Kein Konto nötig: Du trittst als Gast bei und kannst dir jederzeit einen Benutzernamen sichern.",
+    "invalid_title": "Dieser Einladungslink funktioniert nicht",
+    "invalid_text": "Vielleicht ist er vertippt, oder die Gruppe hat einen neuen erstellt. Bitte ein Mitglied um einen frischen Link."
+  },
+  "page": {
+    "title": "Gruppe",
+    "back": "Deine Gruppen",
+    "since": "seit {{ date }}",
+    "not_found": "Diese Gruppe gibt es nicht, oder du bist kein Mitglied.",
+    "not_found_hint": "Bitte ein Mitglied um den Einladungslink, um beizutreten."
+  },
+  "archipelago": {
+    "label": "Der Archipel der Gruppe, eine Insel pro Mitglied. Heute geschafft: {{ done }} von {{ total }}",
+    "done": "heute geschafft",
+    "waiting": "heute noch offen",
+    "bridge": "{{ a }} & {{ b }} · Tage, an denen beide gelöst haben: {{ days }}",
+    "legend": "Eine Brücke für jedes Nachbarpaar, das in den letzten vier Wochen dasselbe Tagesrätsel gelöst hat, eine Doppelbrücke nach sieben solchen Tagen. Über allen, die heute fertig sind, weht ein Wimpel."
+  },
+  "today": {
+    "title": "Heute",
+    "daily": "Brücke des Tages #{{ number }}",
+    "your_turn": "{{ done }} von {{ total }} geschafft – du bist dran!",
+    "all_waiting": "Noch hat niemand die Brücke überquert – mach den Anfang!",
+    "spoiler": "Die Zeiten siehst du, sobald du das heutige Tagesrätsel selbst gelöst hast.",
+    "play": "Tagesrätsel spielen",
+    "done": "geschafft",
+    "waiting": "offen",
+    "unranked": "ohne Wertung"
+  },
+  "week": {
+    "title": "Woche",
+    "member": "Mitglied",
+    "earlier": "Vorige Woche",
+    "later": "Nächste Woche",
+    "solved": "{{ name }} · {{ date }}: gelöst",
+    "missed": "{{ name }} · {{ date }}: verpasst",
+    "open": "{{ name }} · {{ date }}: noch offen"
+  },
+  "members": {
+    "title": "Mitglieder",
+    "count": "Mitglieder: {{ count }} von {{ max }}",
+    "owner": "Admin",
+    "joined": "dabei seit {{ date }}",
+    "remove_label": "{{ name }} entfernen",
+    "remove_confirm": "{{ name }} aus der Gruppe entfernen? Mit dem Einladungslink ist ein erneuter Beitritt möglich, außer du erstellst einen neuen.",
+    "removed": "{{ name }} ist nicht mehr in der Gruppe.",
+    "leave": "Gruppe verlassen",
+    "leave_confirm": "„{{ name }}“ verlassen? Mit dem Einladungslink kannst du wieder beitreten.",
+    "left": "Du hast {{ name }} verlassen."
+  },
+  "daily": {
+    "tabs": "Ranglisten",
+    "world": "Welt",
+    "done": "Heute geschafft: {{ done }} von {{ total }}",
+    "open": "Zur Gruppe",
+    "compare": "Mit Freunden vergleichen: <b>Gruppe gründen</b>"
+  }
+}

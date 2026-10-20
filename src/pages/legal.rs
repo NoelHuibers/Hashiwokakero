@@ -79,7 +79,7 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Datenbank",
         &[
-            "Konten, Ergebnisse, Stempel, Dojo-Einsendungen und Kontaktnachrichten liegen in einer Datenbank von Turso (ChiselStrike Inc., 2093 Philadelphia Pike #6336, Claymont, Delaware 19703, USA) in einem Rechenzentrum von Amazon Web Services in Irland. Turso verarbeitet die Daten in unserem Auftrag (Art. 28 DSGVO). Für mögliche Zugriffe aus den USA gelten die EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO).",
+            "Konten, Ergebnisse, Stempel, Gruppen, Dojo-Einsendungen und Kontaktnachrichten liegen in einer Datenbank von Turso (ChiselStrike Inc., 2093 Philadelphia Pike #6336, Claymont, Delaware 19703, USA) in einem Rechenzentrum von Amazon Web Services in Irland. Turso verarbeitet die Daten in unserem Auftrag (Art. 28 DSGVO). Für mögliche Zugriffe aus den USA gelten die EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO).",
         ],
     ),
     (
@@ -112,6 +112,14 @@ const PRIVACY_DE: &[Section] = &[
         &[
             "Für die Stempel im Stempelheft werten wir deine Ergebnisse und das Protokoll deiner Züge aus, etwa deine Zeit, deinen Platz oder ob du eine Brücke wieder weggenommen hast, außerdem dein Monatsrennen, deine Teilnahme am SAT Dojo und das Alter deines Kontos. Deine Stempel sind mit dem Datum, an dem du sie bekommen hast, auf deinem Spielerprofil öffentlich.",
             "Für die Stempel zur Tageszeit schickt dein Browser beim Lösen den Zeitunterschied deiner Ortszeit zu UTC mit. Wir speichern ihn nicht, sondern nur, ob du nachts (0–4 Uhr) oder mittags (12–14 Uhr) deiner Ortszeit fertig geworden bist. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Spiels).",
+        ],
+    ),
+    (
+        "Gruppen",
+        &[
+            "Du kannst eine Gruppe gründen (auch als Gast) und andere über einen Einladungslink einladen; wer den Link öffnet, sieht den Namen der Gruppe, die Namen und Farben ihrer Mitglieder und wer heute schon fertig ist, und kann mit einem Klick beitreten. Wir speichern den Namen der Gruppe, den zufälligen Einladungscode, wer sie gegründet hat, wer Mitglied ist, seit wann und welche Farbe jedes Mitglied in der Gruppe hat. Die Gründerin oder der Gründer kann den Link erneuern (der alte funktioniert dann nicht mehr) und Mitglieder entfernen; austreten kann jede und jeder jederzeit.",
+            "Nur die Mitglieder einer Gruppe sehen die Gruppe: die Namen der anderen Mitglieder, ihren gewählten Stempel, ob und wann sie die Brücke des Tages gelöst haben (Wochenübersicht und die Brücken zwischen den Inseln, die zählen, an wie vielen der letzten 28 Tage zwei Mitglieder dasselbe Rätsel gelöst haben) und, sobald du das heutige Rätsel selbst beendet hast, ihre heutige Zeit mit Tipps und Prüfungen. Für Nicht-Mitglieder ist eine Gruppe nicht sichtbar, auch nicht, ob es sie gibt.",
+            "Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung der Gruppen). Mit deinem Konto endet auch deine Mitgliedschaft: Gehört dir eine Gruppe, geht sie an das Mitglied über, das am längsten dabei ist; eine Gruppe ohne Mitglieder löschen wir.",
         ],
     ),
     (
@@ -150,7 +158,7 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Speicherdauer",
         &[
-            "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Stempel, Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
+            "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Stempel, deine Gruppenmitgliedschaften (deine Gruppen gehen an das dienstälteste Mitglied über, leere Gruppen löschen wir), Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
             "Die nichtöffentliche Datensatz-ID eines gelöschten Kontos bleibt gesperrt, damit eine Kennung und ihre Berechtigungen niemals an ein neues Konto übergehen. Gastkonten, die ein Jahr lang nicht besucht wurden, löschen wir automatisch auf dieselbe Weise, denn ohne gültige Sitzung kommt niemand mehr an sie heran. Sitzungen laufen ein Jahr nach dem letzten Besuch ab, Kontaktnachrichten löschen wir spätestens nach sechs Monaten.",
         ],
     ),
@@ -182,7 +190,7 @@ const PRIVACY_EN: &[Section] = &[
         "Hosting and database",
         &[
             "The site is hosted by Fly.io, Inc. (USA) on servers in Amsterdam. Fly.io processes technically necessary data such as your IP address, time and page to deliver the site and protect it from attacks; our app itself keeps no access logs (Art. 6 (1) f GDPR). Fly.io is certified under the EU-U.S. Data Privacy Framework (Art. 45 GDPR).",
-            "Accounts, results, stamps, Dojo submissions and contact messages are stored in a Turso database (ChiselStrike Inc., USA) in an Amazon Web Services data centre in Ireland, covered by the EU Standard Contractual Clauses (Art. 46 (2) c GDPR). Both providers act as our processors (Art. 28 GDPR).",
+            "Accounts, results, stamps, groups, Dojo submissions and contact messages are stored in a Turso database (ChiselStrike Inc., USA) in an Amazon Web Services data centre in Ireland, covered by the EU Standard Contractual Clauses (Art. 46 (2) c GDPR). Both providers act as our processors (Art. 28 GDPR).",
         ],
     ),
     (
@@ -203,6 +211,13 @@ const PRIVACY_EN: &[Section] = &[
         "Stamps",
         &[
             "For the stamps we look at your results and move log, your monthly race, your Dojo entries and the age of your account. For the time-of-day stamps your browser sends its offset from UTC when you finish a daily; we don't store it, only whether you finished at night (midnight to 4 am) or over lunch (noon to 2 pm) in your local time (Art. 6 (1) b GDPR).",
+        ],
+    ),
+    (
+        "Groups",
+        &[
+            "You can create a group (as a guest too) and invite others with an invite link. Whoever opens the link sees the group's name, its members' names and colours and who is done today, and can join with a click. We store the group's name, the random invite code, who created it, who is a member, since when and each member's colour in the group. The owner can make a new link (the old one stops working) and remove members; everyone can leave at any time.",
+            "Only a group's members see it: the other members' names, their chosen stamp, whether and when they solved the daily (the week grid, and the bridges between the islands, which count the days of the last 28 two members both solved) and, once you have finished today's daily yourself, their time today with hints and checks. To anyone else a group is invisible, even whether it exists. When you delete your account your memberships go too: a group you own passes to the longest standing member, and a group without members is deleted (Art. 6 (1) b GDPR).",
         ],
     ),
     (
@@ -233,7 +248,7 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Retention",
         &[
-            "We keep your account, results, stamps and Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest.",
+            "We keep your account, results, stamps and Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, group memberships (your groups pass to their longest standing member, empty groups are deleted), Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest.",
         ],
     ),
     (

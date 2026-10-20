@@ -36,6 +36,12 @@ const SAKURA: [&str; 6] = [".kkk.", "kKkkk", "kkkKk", ".kKk.", "..b..", "..b.."]
 const TORII: [&str; 5] = ["rrrrrr", ".R..R.", ".rrrr.", ".r..r.", ".r..r."];
 const LANTERN: [&str; 5] = [".NN.", "NNNN", ".yn.", ".nn.", "nNNn"];
 
+/// A pennant in a group member's colour (`--member`) on a pole, raised on their island once
+/// they finished today's daily. 6×7.
+pub const PENNANT: [&str; 7] = [
+    "bmmmm.", "bmmmmM", "bmmmM.", "b.....", "b.....", "b.....", "b.....",
+];
+
 /// Sakura petal for the celebration, 6×6.
 pub const PETAL: [&str; 6] = ["..kk..", ".kkkk.", "kkKkkk", "kkkKkk", ".kkkk.", "..kk.."];
 

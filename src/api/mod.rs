@@ -17,6 +17,7 @@ mod client;
 mod contact;
 mod daily;
 mod dojo;
+mod groups;
 mod puzzle;
 
 pub use account::*;
@@ -25,6 +26,7 @@ pub use client::{BUILD_HEADER, HashiClient, is_outdated};
 pub use contact::*;
 pub use daily::*;
 pub use dojo::*;
+pub use groups::*;
 pub use puzzle::*;
 
 #[cfg(test)]
@@ -72,6 +74,7 @@ mod tests {
             include_str!("contact.rs"),
             include_str!("daily.rs"),
             include_str!("dojo.rs"),
+            include_str!("groups.rs"),
             include_str!("puzzle.rs"),
         ];
         let attributes: Vec<_> = sources

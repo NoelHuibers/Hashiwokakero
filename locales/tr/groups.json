@@ -1,0 +1,100 @@
+{
+  "title": "Gruplar",
+  "intro": "Günlük bulmacayı arkadaşlarınla, ailenle ya da iş arkadaşlarınla oyna: bugün kimin bitirdiğini gör, sen de bitirince süreleri karşılaştır ve aranızdaki köprülerin büyümesini izle.",
+  "list": {
+    "title": "Grupların",
+    "text": "Üyesi olduğun tüm gruplar ve bugün kaç kişinin karşıya geçtiği.",
+    "none": "Henüz grup yok. Bir tane oluştur ve bağlantıyı arkadaşlarına gönder.",
+    "members": "Üye: {{ count }}",
+    "today": "Bugün bitiren"
+  },
+  "create": {
+    "title": "Grup oluştur",
+    "text": "Bir ad ver, sonra davet bağlantısını katılacak herkese gönder. Hesap gerekmez.",
+    "name": "Grup adı",
+    "placeholder": "ör. Köprü Kulübü",
+    "button": "Grubu oluştur",
+    "busy": "Oluşturuluyor…",
+    "invite_hint": "Davet bağlantın mı var? Katılmak için açman yeterli."
+  },
+  "ready": {
+    "title": "Grubun hazır!",
+    "text": "Bu bağlantıyı arkadaşlarına gönder: açan herkes tek tıkla katılabilir.",
+    "open": "Grubu aç"
+  },
+  "invite": {
+    "title": "Davet bağlantısı",
+    "copy": "Bağlantıyı kopyala",
+    "copied": "Davet bağlantısı panoya kopyalandı.",
+    "share": "Daveti paylaş",
+    "share_text": "Hashi’deki “{{ name }}” grubuma katıl, günlük köprülerimizi karşılaştıralım!",
+    "rotate": "Yeni bağlantı oluştur",
+    "rotate_confirm": "Yeni bir davet bağlantısı oluşturulsun mu? Eskisi artık çalışmaz.",
+    "rotated": "Yeni davet bağlantısı oluşturuldu, eskisi artık çalışmıyor."
+  },
+  "join": {
+    "page_title": "Gruba katıl",
+    "title": "“{{ name }}” grubuna katıl",
+    "text": "Burada günlük köprülerini karşılaştıran üye: {{ count }}",
+    "button": "Gruba katıl",
+    "busy": "Katılınıyor…",
+    "joined": "{{ name }} grubuna hoş geldin!",
+    "full": "Bu grup dolu, zaten 50 üyesi var.",
+    "guest_hint": "Hesap gerekmez: misafir olarak katılırsın ve istediğin zaman bir kullanıcı adı sahiplenebilirsin.",
+    "invalid_title": "Bu davet bağlantısı çalışmıyor",
+    "invalid_text": "Yanlış yazılmış olabilir ya da grup yeni bir bağlantı oluşturmuş olabilir. Bir üyeden yeni bir bağlantı iste."
+  },
+  "page": {
+    "title": "Grup",
+    "back": "Grupların",
+    "since": "{{ date }} tarihinden beri",
+    "not_found": "Bu grup yok ya da üyesi değilsin.",
+    "not_found_hint": "Katılmak için bir üyeden davet bağlantısını iste."
+  },
+  "archipelago": {
+    "label": "Grubun takımadası, her üyeye bir ada. Bugün bitiren: {{ done }} / {{ total }}",
+    "done": "bugün bitirdi",
+    "waiting": "bugün henüz oynamadı",
+    "bridge": "{{ a }} & {{ b }} · ikisinin de çözdüğü gün: {{ days }}",
+    "legend": "Son dört haftada aynı günlük bulmacayı çözen her komşu çiftine bir köprü, böyle yedi günden sonra çift köprü. Bugün bitiren herkesin üstünde bir flama dalgalanır."
+  },
+  "today": {
+    "title": "Bugün",
+    "daily": "Günün köprüsü #{{ number }}",
+    "your_turn": "Bitiren: {{ done }} / {{ total }} – sıra sende!",
+    "all_waiting": "Henüz kimse karşıya geçmedi – ilk sen ol!",
+    "spoiler": "Süreler, bugünün günlük bulmacasını sen de bitirince görünür.",
+    "play": "Bugünün bulmacasını oyna",
+    "done": "bitti",
+    "waiting": "bekliyor",
+    "unranked": "sıralama dışı"
+  },
+  "week": {
+    "title": "Hafta",
+    "member": "Üye",
+    "earlier": "Önceki hafta",
+    "later": "Sonraki hafta",
+    "solved": "{{ name }} · {{ date }}: çözdü",
+    "missed": "{{ name }} · {{ date }}: kaçırdı",
+    "open": "{{ name }} · {{ date }}: henüz oynanmadı"
+  },
+  "members": {
+    "title": "Üyeler",
+    "count": "Üye: {{ count }} / {{ max }}",
+    "owner": "Grup sahibi",
+    "joined": "katılım: {{ date }}",
+    "remove_label": "Çıkar: {{ name }}",
+    "remove_confirm": "{{ name }} gruptan çıkarılsın mı? Sen yeni bir bağlantı oluşturmadıkça davet bağlantısıyla yeniden katılabilir.",
+    "removed": "{{ name }} artık grupta değil.",
+    "leave": "Gruptan ayrıl",
+    "leave_confirm": "“{{ name }}” grubundan ayrılmak istiyor musun? Davet bağlantısıyla yeniden katılabilirsin.",
+    "left": "{{ name }} grubundan ayrıldın."
+  },
+  "daily": {
+    "tabs": "Sıralamalar",
+    "world": "Dünya",
+    "done": "Bugün bitiren: {{ done }} / {{ total }}",
+    "open": "Grubu aç",
+    "compare": "Arkadaşlarınla karşılaştır: <b>grup oluştur</b>"
+  }
+}

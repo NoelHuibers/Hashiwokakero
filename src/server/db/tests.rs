@@ -144,6 +144,15 @@ async fn write_rows(conn: &Connection, version: usize) {
         ")
         .await;
     }
+    if version >= 15 {
+        // A group of the two players
+        run(r"
+            INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (1, 'Team', 'abcdefgh23', 1, 5000);
+            INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (1, 1, 5000, 0);
+            INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (1, 2, 6000, 1);
+        ")
+        .await;
+    }
     // 12 only added indexes
     if version >= 14 {
         run("UPDATE attempts SET attempt_id = 'existing-attempt-identity' WHERE user_id = 2").await;
@@ -162,7 +171,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        14,
+        15,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -302,6 +311,10 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM dojo_benchmarks b JOIN dojo_season_pool p ON p.benchmark_id = b.id WHERE b.attempts = 0",
                 i64::from(version >= 10),
+            ),
+            (
+                "SELECT COUNT(*) FROM group_members m JOIN groups g ON g.id = m.group_id WHERE g.owner_id = 1",
+                if version >= 15 { 2 } else { 0 },
             ),
             // 12 only added the indexes of ranked times
             (

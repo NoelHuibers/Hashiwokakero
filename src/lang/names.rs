@@ -317,6 +317,12 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::RenameTooSoon => td_string!(locale, common.errors.rename_too_soon),
         ApiError::UsernameNotAllowed => td_string!(locale, common.errors.username_not_allowed),
         ApiError::Banned => td_string!(locale, common.errors.banned),
+        ApiError::GroupNameInvalid => td_string!(locale, common.errors.group_name_invalid),
+        ApiError::GroupNameNotAllowed => td_string!(locale, common.errors.group_name_not_allowed),
+        ApiError::GroupNotFound => td_string!(locale, common.errors.group_not_found),
+        ApiError::GroupFull => td_string!(locale, common.errors.group_full),
+        ApiError::TooManyGroups => td_string!(locale, common.errors.too_many_groups),
+        ApiError::GroupOwnerOnly => td_string!(locale, common.errors.group_owner_only),
     }
     .to_string()
 }

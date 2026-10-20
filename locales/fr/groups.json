@@ -1,0 +1,100 @@
+{
+  "title": "Groupes",
+  "intro": "Joue le défi du jour avec tes amis, ta famille ou tes collègues : vois qui a déjà fini aujourd’hui, compare les temps une fois ton défi terminé, et regarde grandir les ponts entre vous.",
+  "list": {
+    "title": "Tes groupes",
+    "text": "Tous tes groupes, et combien ont déjà traversé aujourd’hui.",
+    "none": "Aucun groupe pour l’instant. Crées-en un et envoie le lien à tes amis.",
+    "members": "Membres : {{ count }}",
+    "today": "Fini aujourd’hui"
+  },
+  "create": {
+    "title": "Créer un groupe",
+    "text": "Donne-lui un nom, puis envoie le lien d’invitation à ceux qui doivent le rejoindre. Pas besoin de compte.",
+    "name": "Nom du groupe",
+    "placeholder": "p. ex. Club des ponts",
+    "button": "Créer le groupe",
+    "busy": "Création…",
+    "invite_hint": "Tu as un lien d’invitation ? Ouvre-le simplement pour rejoindre le groupe."
+  },
+  "ready": {
+    "title": "Ton groupe est prêt !",
+    "text": "Envoie ce lien à tes amis : il suffit de l’ouvrir pour rejoindre le groupe en un clic.",
+    "open": "Ouvrir le groupe"
+  },
+  "invite": {
+    "title": "Lien d’invitation",
+    "copy": "Copier le lien",
+    "copied": "Lien d’invitation copié dans le presse-papiers.",
+    "share": "Partager l’invitation",
+    "share_text": "Rejoins mon groupe « {{ name }} » sur Hashi et comparons nos ponts du jour !",
+    "rotate": "Créer un nouveau lien",
+    "rotate_confirm": "Créer un nouveau lien d’invitation ? L’ancien ne fonctionnera plus.",
+    "rotated": "Nouveau lien d’invitation créé, l’ancien ne fonctionne plus."
+  },
+  "join": {
+    "page_title": "Rejoindre un groupe",
+    "title": "Rejoindre « {{ name }} »",
+    "text": "Membres qui comparent ici leurs ponts du jour : {{ count }}",
+    "button": "Rejoindre le groupe",
+    "busy": "Un instant…",
+    "joined": "Bienvenue dans {{ name }} !",
+    "full": "Ce groupe est complet, il a déjà 50 membres.",
+    "guest_hint": "Pas besoin de compte : tu rejoins le groupe en invité et tu peux réserver un pseudo quand tu veux.",
+    "invalid_title": "Ce lien d’invitation ne fonctionne pas",
+    "invalid_text": "Il est peut-être mal recopié, ou le groupe en a créé un nouveau. Demande un lien tout neuf à un membre."
+  },
+  "page": {
+    "title": "Groupe",
+    "back": "Tes groupes",
+    "since": "depuis le {{ date }}",
+    "not_found": "Ce groupe n’existe pas, ou tu n’en fais pas partie.",
+    "not_found_hint": "Demande le lien d’invitation à un membre pour le rejoindre."
+  },
+  "archipelago": {
+    "label": "L’archipel du groupe, une île par membre. Fini aujourd’hui : {{ done }} sur {{ total }}",
+    "done": "fini aujourd’hui",
+    "waiting": "pas encore joué aujourd’hui",
+    "bridge": "{{ a }} & {{ b }} · jours résolus tous les deux : {{ days }}",
+    "legend": "Un pont pour chaque paire de voisins qui ont résolu le même défi du jour ces quatre dernières semaines, un double pont après sept de ces jours. Un fanion flotte au-dessus de chaque personne qui a fini aujourd’hui."
+  },
+  "today": {
+    "title": "Aujourd’hui",
+    "daily": "Pont du jour n° {{ number }}",
+    "your_turn": "{{ done }} sur {{ total }} ont fini – à toi de jouer !",
+    "all_waiting": "Personne n’a encore traversé – à toi d’ouvrir la voie !",
+    "spoiler": "Les temps s’affichent une fois que tu as toi-même terminé le défi du jour.",
+    "play": "Jouer le défi du jour",
+    "done": "fini",
+    "waiting": "en attente",
+    "unranked": "hors classement"
+  },
+  "week": {
+    "title": "Semaine",
+    "member": "Membre",
+    "earlier": "Semaine précédente",
+    "later": "Semaine suivante",
+    "solved": "{{ name }} · {{ date }} : résolu",
+    "missed": "{{ name }} · {{ date }} : manqué",
+    "open": "{{ name }} · {{ date }} : pas encore joué"
+  },
+  "members": {
+    "title": "Membres",
+    "count": "Membres : {{ count }} sur {{ max }}",
+    "owner": "Admin",
+    "joined": "membre depuis le {{ date }}",
+    "remove_label": "Retirer {{ name }}",
+    "remove_confirm": "Retirer {{ name }} du groupe ? Le lien d’invitation permet de revenir, sauf si tu en crées un nouveau.",
+    "removed": "{{ name }} ne fait plus partie du groupe.",
+    "leave": "Quitter le groupe",
+    "leave_confirm": "Quitter « {{ name }} » ? Tu pourras revenir avec le lien d’invitation.",
+    "left": "Tu as quitté {{ name }}."
+  },
+  "daily": {
+    "tabs": "Classements",
+    "world": "Monde",
+    "done": "Fini aujourd’hui : {{ done }} sur {{ total }}",
+    "open": "Ouvrir le groupe",
+    "compare": "Compare-toi à tes amis : <b>crée un groupe</b>"
+  }
+}

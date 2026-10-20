@@ -33,10 +33,23 @@ pub enum ApiError {
     UsernameNotAllowed,
     /// The account is banned, it can't sign in.
     Banned,
+    /// A group name that is empty, too long or has control characters.
+    GroupNameInvalid,
+    /// A group name with a word of the list of names that aren't welcome.
+    GroupNameNotAllowed,
+    /// No such group, or the player isn't a member: the same answer, so nobody learns which
+    /// groups there are. Also an invite link that doesn't work (any more).
+    GroupNotFound,
+    /// The group has `MAX_MEMBERS` already.
+    GroupFull,
+    /// The player is in `MAX_GROUPS` already.
+    TooManyGroups,
+    /// Only the group's owner can do that.
+    GroupOwnerOnly,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 23] = [
+    pub const ALL: [Self; 29] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -60,6 +73,12 @@ impl ApiError {
         Self::RenameTooSoon,
         Self::UsernameNotAllowed,
         Self::Banned,
+        Self::GroupNameInvalid,
+        Self::GroupNameNotAllowed,
+        Self::GroupNotFound,
+        Self::GroupFull,
+        Self::TooManyGroups,
+        Self::GroupOwnerOnly,
     ];
 
     pub fn code(self) -> &'static str {
@@ -87,6 +106,12 @@ impl ApiError {
             Self::RenameTooSoon => "rename_too_soon",
             Self::UsernameNotAllowed => "username_not_allowed",
             Self::Banned => "banned",
+            Self::GroupNameInvalid => "group_name_invalid",
+            Self::GroupNameNotAllowed => "group_name_not_allowed",
+            Self::GroupNotFound => "group_not_found",
+            Self::GroupFull => "group_full",
+            Self::TooManyGroups => "too_many_groups",
+            Self::GroupOwnerOnly => "group_owner_only",
         }
     }
 
