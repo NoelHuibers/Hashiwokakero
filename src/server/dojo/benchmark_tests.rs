@@ -104,6 +104,22 @@ fn verified(answer: Answer) -> Verdict {
     }
 }
 
+/// Keep the Python smoke's negative-auth and replay requests valid at the JSON boundary.
+#[test]
+fn packaged_smoke_callback_uses_worker_protocol() {
+    let report: BenchmarkReport = serde_json::from_str(include_str!(
+        "../../../scripts/fixtures/benchmark-report.json"
+    ))
+    .unwrap();
+    assert_eq!(report.id, 0);
+    assert_eq!(
+        report.verdict,
+        Verdict::Refused {
+            reason: Refusal::TooEasy
+        }
+    );
+}
+
 /// What the form takes and what it refuses, like solver submissions: accounts with a username
 /// and a day of age, three a day, no duplicates (also scrambled ones), a licence.
 #[tokio::test]

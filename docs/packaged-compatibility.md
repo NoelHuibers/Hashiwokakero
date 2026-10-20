@@ -70,7 +70,10 @@ The smoke makes two concrete assertions:
    worker must settle the benchmark and post its job-token callback: the database must
    contain exactly `refused / too_easy`, one attempt, and a retired job token. A replay
    using the retired token must fail without changing the result. Invalid dispatch
-   credentials must also be refused by the worker.
+   credentials must also be refused by the worker. The negative-auth/replay report
+   comes from `scripts/fixtures/benchmark-report.json`; a Rust regression deserializes
+   that same fixture using the worker protocol, so JSON rejection cannot masquerade
+   as an authentication check.
 
 This is a bounded smaller gate, **not a completed solver-to-leaderboard roundtrip**.
 Production `/jobs` always generates/evaluates the full hidden season; it does not accept

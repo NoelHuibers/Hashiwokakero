@@ -106,6 +106,14 @@ def wait_for_dispatch_claim(read_row):
         raise RuntimeError(f"{error}; last state/reason/attempts: {observed}") from error
 
 
+
+def benchmark_report(benchmark):
+    # The Rust protocol regression parses this same fixture as BenchmarkReport.
+    report = json.loads((ROOT / "scripts/fixtures/benchmark-report.json").read_text())
+    report["id"] = benchmark
+    return json.dumps(report)
+
+
 def multipart():
     boundary = "hashi-packaged-smoke-boundary"
     fields = {"family": "packaged-smoke", "description": "Packaged callback regression",
@@ -244,12 +252,12 @@ class Smoke:
             checking = wait_for_dispatch_claim(row)
             require(checking[1] is None and checking[3] == 1 and
                     re.fullmatch(r"[a-f0-9]{64}", checking[2] or ""), f"bad claim: {checking}")
-            report = json.dumps({"id": benchmark, "verdict": {"Refused": {"reason": "TooEasy"}}})
+            report = benchmark_report(benchmark)
             for token in ("wrong-token", TOKEN):
                 status, _, _ = request(site_url + "/dojo/benchmark-report", "POST", report,
                                        {"Content-Type": "application/json",
                                         "Authorization": "Bearer " + token})
-                require(status == 401, f"site accepted non-job callback token: {status}")
+                require(status == 401, f"expected callback authentication refusal (401), got {status}")
                 require(row() == checking, "unauthorized callback changed the claimed job")
             self.docker("unpause", worker)
             self.paused = None
