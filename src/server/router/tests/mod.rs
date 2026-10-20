@@ -11,6 +11,7 @@
 
 mod accounts;
 mod admin;
+mod build;
 mod contact;
 mod dojo;
 mod playing;

@@ -3,7 +3,7 @@
 use leptos::prelude::ServerFnError;
 
 use crate::i18n::{Locale, td_string};
-use crate::model::{ApiError, Stamp, is_outdated_client, month_civil};
+use crate::model::{ApiError, Stamp, month_civil};
 
 fn weekday_name(locale: Locale, weekday: usize) -> &'static str {
     match weekday {
@@ -283,10 +283,10 @@ fn error_detail(message: &str) -> Option<String> {
 
 /// A server error for players, in their language.
 pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
-    let message = error.to_string();
-    if is_outdated_client(&message) {
+    if crate::api::is_outdated(error) {
         return td_string!(locale, common.errors.outdated).to_string();
     }
+    let message = error.to_string();
     let Some(code) = ApiError::from_message(&message) else {
         return match error_detail(&message) {
             Some(detail) => td_string!(locale, common.errors.unknown, detail),
