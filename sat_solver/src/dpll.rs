@@ -304,6 +304,8 @@ impl DPLL {
                     })
                     .collect();
                 res.sort_by_key(|k| k.abs());
+                // Terminated like the other models (see above and CDCL)
+                res.push(0);
                 profiling::end("DPLL::solve");
                 return Ok(DIMACSOutput::Sat(res));
             }

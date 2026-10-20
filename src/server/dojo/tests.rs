@@ -1,12 +1,16 @@
 //! Tests of the SAT Dojo against a fresh database file.
 
-use dojo::{Answer, DEFAULT_BUDGET, Family, Outcome, Rejection, Report, RunResult, Score};
+use dojo::{
+    Answer, DEFAULT_BUDGET, Family, InstanceResult, Outcome, RULES_VERSION, Rejection, Report,
+    RunResult, Score,
+};
 use libsql::{Connection, params};
 
 use super::*;
 use crate::model::DojoState;
 use crate::server::auth::User;
 use crate::server::{db, now_ms};
+use worker::housekeeping_at;
 
 async fn test_db(name: &str) -> Connection {
     let path = std::env::temp_dir().join(format!("hashi-dojo-{name}-{}.db", std::process::id()));
@@ -158,6 +162,8 @@ async fn submissions_and_leaderboard() {
             season,
             score: score(2.0, 0),
             fingerprint: vec![],
+            results: Vec::new(),
+            rules_version: RULES_VERSION,
         },
     )
     .await
@@ -169,6 +175,8 @@ async fn submissions_and_leaderboard() {
             season,
             score: score(1.0, 0),
             fingerprint: vec![],
+            results: Vec::new(),
+            rules_version: RULES_VERSION,
         },
     )
     .await
@@ -180,6 +188,8 @@ async fn submissions_and_leaderboard() {
             season,
             score: score(0.5, 1),
             fingerprint: vec![],
+            results: Vec::new(),
+            rules_version: RULES_VERSION,
         },
     )
     .await
@@ -191,6 +201,8 @@ async fn submissions_and_leaderboard() {
             season,
             score: score(1.5, 0),
             fingerprint: vec![],
+            results: Vec::new(),
+            rules_version: RULES_VERSION,
         },
     )
     .await
@@ -203,6 +215,8 @@ async fn submissions_and_leaderboard() {
             season: season + 1,
             score: score(0.1, 0),
             fingerprint: vec![],
+            results: Vec::new(),
+            rules_version: RULES_VERSION,
         },
     )
     .await
@@ -290,6 +304,8 @@ async fn copies_and_throwaway_accounts() {
                 season,
                 score: score(1.0, 0),
                 fingerprint: fp,
+                results: Vec::new(),
+                rules_version: RULES_VERSION,
             },
         )
         .await
@@ -594,6 +610,9 @@ async fn queued_submissions_go_to_the_worker() {
         assert_eq!(job.auth.as_deref(), Some("Bearer secret"));
         assert_eq!(job.query["season"], season().to_string());
         assert_eq!(job.query["seed"], test_seed(season()));
+        // The worker has to evaluate with the site's rules, and send the set along
+        assert_eq!(job.query["rules"], RULES_VERSION.to_string());
+        assert_eq!(job.query.get("export").map(String::as_str), Some("1"));
         assert_eq!(job.wasm, module(if id == house { 3 } else { 1 }));
         // Reports about the job need the token it was sent with
         let (state, token, attempts) = state_and_token(&conn, id).await;
@@ -609,14 +628,22 @@ async fn queued_submissions_go_to_the_worker() {
 
     // A module the worker can't run is rejected with its reason
     conn.execute(
-        "UPDATE dojo_submissions SET state = 'done' WHERE id IN (?1, ?2)",
-        params![a1, house],
+        "UPDATE dojo_submissions SET state = 'done', rules_version = ?3 WHERE id IN (?1, ?2)",
+        params![a1, house, RULES_VERSION],
+    )
+    .await
+    .unwrap();
+    // Once the site has the season's set, jobs come without asking for it
+    conn.execute(
+        "INSERT INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?1, ?2, X'1f8b', 'h', 0)",
+        params![season(), dojo::GENERATOR_VERSION],
     )
     .await
     .unwrap();
     let (url, jobs) = stub_worker(StatusCode::UNPROCESSABLE_ENTITY).await;
     worker::dispatch_to(&conn, &url, "secret").await.unwrap();
     assert_eq!(jobs.lock().unwrap().len(), 1);
+    assert!(!jobs.lock().unwrap()[0].query.contains_key("export"));
     let s = submission(&conn, a2, None).await.unwrap().unwrap();
     assert_eq!(
         (s.state, s.rejection),
@@ -639,9 +666,509 @@ async fn queued_submissions_go_to_the_worker() {
         .await
         .unwrap_err();
     assert!(err.starts_with("worker unreachable"), "{err}");
-    assert_eq!(state_and_token(&conn, a3).await.0, "queued");
+    // Without a used up attempt or a token a late report could still use
+    assert_eq!(state_and_token(&conn, a3).await, ("queued".into(), None, 0));
 }
 
+/// A finished evaluation with a result per formula: `solved` of `total` formulas solved with
+/// `fuel` each, the others timed out.
+fn finished(id: i64, season: u32, solved: usize, total: usize, rules_version: u32) -> Report {
+    let results: Vec<InstanceResult> = (0..total)
+        .map(|i| InstanceResult {
+            name: format!("queens-{:02}", i + 1),
+            family: Family::Queens,
+            expected: Answer::Sat,
+            outcome: if i < solved {
+                Outcome::Solved(Answer::Sat)
+            } else {
+                Outcome::Timeout
+            },
+            fuel: if i < solved {
+                1_000_000 * (id.unsigned_abs() + 1)
+            } else {
+                DEFAULT_BUDGET
+            },
+        })
+        .collect();
+    let runs: Vec<RunResult> = results
+        .iter()
+        .map(|r| RunResult {
+            name: r.name.clone(),
+            family: r.family,
+            expected: r.expected,
+            outcome: r.outcome,
+            fuel: r.fuel,
+            wall_ms: 1,
+        })
+        .collect();
+    Report::Finished {
+        id,
+        season,
+        score: Score::from_results(&runs, DEFAULT_BUDGET),
+        fingerprint: dojo::fingerprint(&runs),
+        results,
+        rules_version,
+    }
+}
+
+/// The number a query with one parameter gives.
+async fn one(conn: &Connection, sql: &str, param: impl Into<libsql::Value>) -> i64 {
+    let mut rows = conn.query(sql, vec![param.into()]).await.unwrap();
+    rows.next().await.unwrap().unwrap().get(0).unwrap()
+}
+
+async fn state_and_season(conn: &Connection, id: i64) -> (String, u32) {
+    let mut rows = conn
+        .query(
+            "SELECT state, season FROM dojo_submissions WHERE id = ?1",
+            params![id],
+        )
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    (row.get(0).unwrap(), row.get(1).unwrap())
+}
+
+/// A season ends: its results are frozen with their ranks, its seed is revealed, everything is
+/// evaluated again in the new one. Running it again changes nothing.
+#[tokio::test]
+async fn seasons_are_archived_when_the_next_one_starts() {
+    let conn = test_db("seasons").await;
+    let alice = user(&conn, "alice", true).await;
+    let bob = user(&conn, "bob", true).await;
+    let (first, second) = (season(), season() + 1);
+
+    // The season starts with its commitment, the seed stays secret
+    housekeeping_at(&conn, first).await.unwrap();
+    let s = seasons(&conn, first).await.unwrap();
+    assert_eq!(s.current.season, first);
+    assert_eq!(s.current.commitment, commitment(&test_seed(first)));
+    assert_eq!((s.current.seed, s.current.ended_at), (None, None));
+    assert!(s.current.started_at.is_some());
+    assert_eq!(s.past, Vec::new());
+    assert_eq!(board(&conn).await.unwrap().commitment, s.current.commitment);
+
+    let a = submit(&conn, Some(&alice), form("alice's", 1))
+        .await
+        .unwrap();
+    let b = submit(&conn, Some(&bob), form("bob's", 2)).await.unwrap();
+    let house = submit(&conn, None, form("Hashi CDCL", 3)).await.unwrap();
+    let waiting = submit(&conn, Some(&bob), form("bob's next", 4))
+        .await
+        .unwrap();
+    apply(&conn, &finished(a, first, 3, 4, RULES_VERSION))
+        .await
+        .unwrap();
+    apply(&conn, &finished(b, first, 1, 4, RULES_VERSION))
+        .await
+        .unwrap();
+    apply(&conn, &finished(house, first, 2, 4, RULES_VERSION))
+        .await
+        .unwrap();
+    // Nothing changes while the season lasts
+    housekeeping_at(&conn, first).await.unwrap();
+    assert_eq!(
+        one(&conn, "SELECT COUNT(*) FROM dojo_archive WHERE ?1 = ?1", 0).await,
+        0
+    );
+    assert_eq!(state_and_season(&conn, a).await, ("done".into(), first));
+
+    housekeeping_at(&conn, second).await.unwrap();
+    let archived_season = archived(&conn, first, second).await.unwrap().unwrap();
+    assert_eq!(archived_season.seed.as_deref(), Some(&*test_seed(first)));
+    assert_eq!(
+        archived_season.commitment,
+        commitment(&test_seed(first)),
+        "the commitment from the start"
+    );
+    let entries: Vec<(&str, Option<u32>, usize)> = archived_season
+        .entries
+        .iter()
+        .map(|e| (e.name.as_str(), e.rank, e.results.len()))
+        .collect();
+    // Ranked by PAR-2: alice solved most; bob is ranked too, the queued one isn't archived
+    assert_eq!(
+        entries,
+        [
+            ("alice's", Some(1), 4),
+            ("Hashi CDCL", Some(2), 4),
+            ("bob's", Some(3), 4)
+        ]
+    );
+    assert_eq!(archived_season.entries[0].author, "alice");
+    assert_eq!(archived_season.entries[1].author, "Hashi");
+    assert_eq!(
+        archived_season.entries[0].results[3].outcome,
+        Outcome::Timeout
+    );
+    // Everything is evaluated again in the new season, without the old per-formula results
+    for id in [a, b, house, waiting] {
+        assert_eq!(state_and_season(&conn, id).await, ("queued".into(), second));
+    }
+    assert_eq!(
+        one(
+            &conn,
+            "SELECT COUNT(*) FROM dojo_submissions WHERE results IS NOT NULL OR fingerprint IS NOT NULL AND ?1 = ?1",
+            0
+        )
+        .await,
+        0
+    );
+
+    let s = seasons(&conn, second).await.unwrap();
+    assert_eq!(s.current.season, second);
+    assert_eq!(s.current.seed, None, "never the current season's seed");
+    assert_eq!(s.past.len(), 1);
+    let past = &s.past[0];
+    assert_eq!(past.seed.as_deref(), Some(&*test_seed(first)));
+    assert!(past.ended_at.is_some());
+    assert_eq!((past.entries, past.board.len()), (3, 3));
+    assert_eq!(past.board[0].name, "alice's");
+    assert_eq!(past.set_size, None);
+
+    // Again, also with a result for the old season coming in late: nothing changes
+    let ended = past.ended_at;
+    apply(&conn, &finished(waiting, first, 4, 4, RULES_VERSION))
+        .await
+        .unwrap();
+    housekeeping_at(&conn, second).await.unwrap();
+    let again = seasons(&conn, second).await.unwrap();
+    assert_eq!(again.past[0].ended_at, ended);
+    assert_eq!(again.past[0].entries, 3);
+    assert_eq!(
+        one(&conn, "SELECT COUNT(*) FROM dojo_seasons WHERE ?1 = ?1", 0).await,
+        2
+    );
+
+    // A seed in the current season's row is never shown
+    conn.execute(
+        "UPDATE dojo_seasons SET seed = 'leaked', ended_at = 1 WHERE season = ?1",
+        params![second],
+    )
+    .await
+    .unwrap();
+    let s = seasons(&conn, second).await.unwrap();
+    assert_eq!((s.current.seed, s.current.ended_at), (None, None));
+    assert_eq!(s.past.len(), 1);
+    assert!(archived(&conn, second, second).await.unwrap().is_none());
+    assert!(archived(&conn, second + 1, second).await.unwrap().is_none());
+
+    // Deleting an account keeps the numbers, not who or what
+    crate::server::auth::erase(&conn, alice.id).await.unwrap();
+    let archived_season = archived(&conn, first, second).await.unwrap().unwrap();
+    let gone = &archived_season.entries[0];
+    assert_eq!(
+        (
+            gone.name.as_str(),
+            gone.author.as_str(),
+            gone.rank,
+            &gone.source_url
+        ),
+        ("", "", Some(1), &None)
+    );
+    assert_eq!(gone.results.len(), 4);
+    let board = &seasons(&conn, second).await.unwrap().past[0].board;
+    assert_eq!((board[0].name.as_str(), board[0].author.as_str()), ("", ""));
+    assert_eq!(
+        one(
+            &conn,
+            "SELECT COUNT(*) FROM dojo_archive WHERE user_id = ?1",
+            alice.id
+        )
+        .await,
+        0
+    );
+}
+
+/// Two servers freezing the same season at the same moment: one waits for the other, and every
+/// result is archived exactly once.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn freezing_twice_at_once_is_safe() {
+    let path = std::env::temp_dir().join(format!("hashi-dojo-race-{}.db", std::process::id()));
+    db::remove_local(&path);
+    let database = db::open_local(path.to_str().unwrap()).await.unwrap();
+    let conn = db::connect(&database).unwrap();
+    db::migrate(&conn).await.unwrap();
+    let (first, second) = (season(), season() + 1);
+    let mut ids = Vec::new();
+    for i in 0..6 {
+        let author = user(&conn, &format!("racer{i}"), true).await;
+        let id = submit(&conn, Some(&author), form("racer", 10 + i))
+            .await
+            .unwrap();
+        apply(&conn, &finished(id, first, 2, 3, RULES_VERSION))
+            .await
+            .unwrap();
+        ids.push(id);
+    }
+    let runs: Vec<_> = (0..2)
+        .map(|_| {
+            let conn = db::connect(&database).unwrap();
+            tokio::spawn(async move { housekeeping_at(&conn, second).await })
+        })
+        .collect();
+    for run in runs {
+        run.await.unwrap().unwrap();
+    }
+    assert_eq!(
+        one(
+            &conn,
+            "SELECT COUNT(*) FROM dojo_archive WHERE season = ?1",
+            first
+        )
+        .await,
+        6
+    );
+    assert_eq!(
+        one(
+            &conn,
+            "SELECT COUNT(*) FROM dojo_archive WHERE season = ?1 AND rank IS NOT NULL",
+            first
+        )
+        .await,
+        6
+    );
+    for id in ids {
+        assert_eq!(state_and_season(&conn, id).await, ("queued".into(), second));
+    }
+    db::remove_local(&path);
+}
+
+/// Results from older rules are evaluated again in the same season, nothing is archived.
+#[tokio::test]
+async fn newer_rules_evaluate_again() {
+    let conn = test_db("rules").await;
+    let alice = user(&conn, "alice", true).await;
+    let current = season();
+    let old = submit(&conn, Some(&alice), form("old rules", 1))
+        .await
+        .unwrap();
+    let new = submit(&conn, Some(&alice), form("new rules", 2))
+        .await
+        .unwrap();
+    let newer = submit(&conn, Some(&alice), form("newer rules", 3))
+        .await
+        .unwrap();
+    apply(&conn, &finished(old, current, 2, 2, RULES_VERSION - 1))
+        .await
+        .unwrap();
+    apply(&conn, &finished(new, current, 2, 2, RULES_VERSION))
+        .await
+        .unwrap();
+    // From a worker deployed before the site
+    apply(&conn, &finished(newer, current, 2, 2, RULES_VERSION + 1))
+        .await
+        .unwrap();
+    // Rows from before versions existed count as version 0
+    let legacy = submit(&conn, None, form("legacy", 4)).await.unwrap();
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'done', rules_version = NULL WHERE id = ?1",
+        params![legacy],
+    )
+    .await
+    .unwrap();
+
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(
+        state_and_season(&conn, old).await,
+        ("queued".into(), current)
+    );
+    assert_eq!(
+        state_and_season(&conn, legacy).await,
+        ("queued".into(), current)
+    );
+    assert_eq!(state_and_season(&conn, new).await, ("done".into(), current));
+    assert_eq!(
+        state_and_season(&conn, newer).await,
+        ("done".into(), current)
+    );
+    assert_eq!(
+        one(&conn, "SELECT COUNT(*) FROM dojo_archive WHERE ?1 = ?1", 0).await,
+        0
+    );
+    let s = seasons(&conn, current).await.unwrap();
+    assert_eq!(s.past, Vec::new());
+    assert_eq!(
+        (s.current.season, s.current.rules_version),
+        (current, RULES_VERSION)
+    );
+    // The stored rules version of the result
+    assert_eq!(
+        one(
+            &conn,
+            "SELECT rules_version FROM dojo_submissions WHERE id = ?1",
+            new
+        )
+        .await,
+        i64::from(RULES_VERSION)
+    );
+}
+
+#[test]
+fn results_as_csv() {
+    let entry = |id, name: &str, author: &str, rank, results: Vec<InstanceResult>| ArchivedEntry {
+        id,
+        name: name.into(),
+        author: author.into(),
+        house: id == 2,
+        rank,
+        source_url: None,
+        created_at: 0,
+        rules_version: Some(1),
+        score: None,
+        results,
+    };
+    let run = |name: &str, family, expected, outcome, fuel| InstanceResult {
+        name: name.into(),
+        family,
+        expected,
+        outcome,
+        fuel,
+    };
+    let season = ArchivedSeason {
+        season: 3,
+        started_at: Some(1),
+        ended_at: Some(2),
+        commitment: "c".into(),
+        seed: Some("s".into()),
+        generator_version: 1,
+        rules_version: 1,
+        budget: DEFAULT_BUDGET,
+        set_sha256: None,
+        entries: vec![
+            entry(
+                1,
+                "Fast, \"really\"",
+                "=cmd()",
+                Some(1),
+                vec![
+                    run(
+                        "hashi-01",
+                        Family::Hashi,
+                        Answer::Sat,
+                        Outcome::Solved(Answer::Sat),
+                        123,
+                    ),
+                    run(
+                        "pigeonhole-01",
+                        Family::Pigeonhole,
+                        Answer::Unsat,
+                        Outcome::Timeout,
+                        DEFAULT_BUDGET,
+                    ),
+                ],
+            ),
+            entry(
+                2,
+                "Hashi CDCL",
+                "Hashi",
+                None,
+                vec![run(
+                    "hashi-01",
+                    Family::Hashi,
+                    Answer::Sat,
+                    Outcome::Wrong,
+                    7,
+                )],
+            ),
+            entry(3, "old", "x", None, Vec::new()),
+        ],
+    };
+    assert_eq!(
+        csv(&season),
+        "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel\n\
+         3,1,\"Fast, \"\"really\"\"\",'=cmd(),0,1,1,hashi-01,hashi,SAT,solved,123\n\
+         3,1,\"Fast, \"\"really\"\"\",'=cmd(),0,1,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000\n\
+         3,2,Hashi CDCL,Hashi,1,,1,hashi-01,hashi,SAT,wrong,7\n"
+    );
+    let json = serde_json::to_value(&season).unwrap();
+    assert_eq!(json["season"], 3);
+    assert_eq!(json["seed"], "s");
+    assert_eq!(json["budget"], DEFAULT_BUDGET);
+    assert_eq!(json["entries"][0]["rank"], 1);
+    assert_eq!(json["entries"][1]["rank"], serde_json::Value::Null);
+    assert_eq!(
+        json["entries"][0]["results"][0],
+        serde_json::json!({"name": "hashi-01", "family": "Hashi", "expected": "Sat", "outcome": {"Solved": "Sat"}, "fuel": 123})
+    );
+}
+
+/// The worker posts the set of a job with the job's token; only the current season's is kept.
+#[tokio::test]
+async fn sets_come_with_the_jobs_token() {
+    use axum::http::{HeaderMap, StatusCode, header};
+
+    let conn = test_db("sets").await;
+    let alice = user(&conn, "alice", true).await;
+    let current = season();
+    let id = submit(&conn, Some(&alice), form("x", 1)).await.unwrap();
+    conn.execute(
+        "UPDATE dojo_submissions SET job_token = 'job' WHERE id = ?1",
+        params![id],
+    )
+    .await
+    .unwrap();
+    let bearer = |token: &str| {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::AUTHORIZATION,
+            format!("Bearer {token}").parse().unwrap(),
+        );
+        headers
+    };
+    let gz: &[u8] = &[0x1f, 0x8b, 8, 0];
+    assert!(seasons::wants_set(&conn, current).await.unwrap());
+    let store = async |headers: HeaderMap, season, body: &[u8], now| {
+        let query = SetQuery {
+            id,
+            season,
+            generator: dojo::GENERATOR_VERSION,
+        };
+        seasons::store_set(&conn, &headers, &query, body, now).await
+    };
+    assert_eq!(
+        store(bearer("guess"), current, gz, current).await,
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(
+        store(HeaderMap::new(), current, gz, current).await,
+        StatusCode::UNAUTHORIZED
+    );
+    // A job of another season, or a season that is over by now
+    assert_eq!(
+        store(bearer("job"), current + 1, gz, current).await,
+        StatusCode::CONFLICT
+    );
+    assert_eq!(
+        store(bearer("job"), current, gz, current + 1).await,
+        StatusCode::CONFLICT
+    );
+    assert_eq!(
+        store(bearer("job"), current, b"not gzip", current).await,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+    assert!(seasons::wants_set(&conn, current).await.unwrap());
+    assert_eq!(
+        store(bearer("job"), current, gz, current).await,
+        StatusCode::NO_CONTENT
+    );
+    assert!(!seasons::wants_set(&conn, current).await.unwrap());
+    // Stored, private until the season is over
+    let s = seasons(&conn, current).await.unwrap();
+    assert_eq!((s.current.set_size, s.current.set_sha256), (None, None));
+    housekeeping_at(&conn, current + 1).await.unwrap();
+    let s = seasons(&conn, current + 1).await.unwrap();
+    assert_eq!(s.past[0].set_size, Some(4));
+    assert_eq!(
+        s.past[0].set_sha256.as_deref(),
+        Some(&*hex(&Sha256::digest(gz)))
+    );
+    // The new season wants its own
+    assert!(seasons::wants_set(&conn, current + 1).await.unwrap());
+}
+
+/// Reports of an evaluation that is over (finished, requeued, or replaced by another job) change
+/// nothing: the token is checked in the same statement that writes.
 #[tokio::test]
 async fn callbacks_cannot_change_a_completed_or_replaced_evaluation() {
     let conn = test_db("callback-lifecycle").await;
@@ -652,14 +1179,9 @@ async fn callbacks_cannot_change_a_completed_or_replaced_evaluation() {
     )
     .await
     .unwrap();
-    let finished = Report::Finished {
-        id,
-        season: season(),
-        score: score(1.0, 0),
-        fingerprint: vec![],
-    };
+    let done = finished(id, season(), 1, 1, RULES_VERSION);
     assert!(
-        worker::apply_for_job(&conn, &finished, Some("first"))
+        worker::apply_for_job(&conn, &done, Some("first"))
             .await
             .unwrap()
     );
@@ -681,7 +1203,7 @@ async fn callbacks_cannot_change_a_completed_or_replaced_evaluation() {
         .await
         .unwrap();
     assert!(
-        !worker::apply_for_job(&conn, &finished, Some("first"))
+        !worker::apply_for_job(&conn, &done, Some("first"))
             .await
             .unwrap()
     );
@@ -692,33 +1214,20 @@ async fn callbacks_cannot_change_a_completed_or_replaced_evaluation() {
     .await
     .unwrap();
     assert!(
-        !worker::apply_for_job(&conn, &finished, Some("first"))
+        !worker::apply_for_job(&conn, &done, Some("first"))
             .await
             .unwrap()
     );
     assert!(
-        worker::apply_for_job(&conn, &finished, Some("replacement"))
+        worker::apply_for_job(&conn, &done, Some("replacement"))
             .await
             .unwrap()
     );
-    let mut rows = conn
-        .query(
-            "SELECT job_token FROM dojo_submissions WHERE id = ?1",
-            params![id],
-        )
-        .await
-        .unwrap();
-    assert_eq!(
-        rows.next()
-            .await
-            .unwrap()
-            .unwrap()
-            .get::<Option<String>>(0)
-            .unwrap(),
-        None
-    );
+    assert_eq!(state_and_token(&conn, id).await.1, None);
 }
 
+/// A worker that reports back before it even answered the job: the dispatcher claimed the
+/// submission before sending it, so taking the job doesn't overwrite the result.
 #[tokio::test]
 async fn a_callback_before_acceptance_is_not_overwritten_by_dispatch() {
     use axum::{Router, extract::Query, routing::post};
@@ -731,13 +1240,8 @@ async fn a_callback_before_acceptance_is_not_overwritten_by_dispatch() {
         post(move |Query(q): Query<HashMap<String, String>>| {
             let conn = callback_conn.clone();
             async move {
-                let report = Report::Finished {
-                    id,
-                    season: season(),
-                    score: score(0.5, 0),
-                    fingerprint: vec![],
-                };
-                assert_eq!(q["evaluation_version"], ::dojo::EVALUATION_VERSION);
+                assert_eq!(q["rules"], RULES_VERSION.to_string());
+                let report = finished(id, season(), 1, 1, RULES_VERSION);
                 assert!(
                     worker::apply_for_job(&conn, &report, Some(&q["report_token"]))
                         .await
@@ -760,33 +1264,4 @@ async fn a_callback_before_acceptance_is_not_overwritten_by_dispatch() {
         DojoState::Done
     );
     server.abort();
-}
-
-#[tokio::test]
-async fn old_evaluator_scores_are_hidden_and_requeued() {
-    let conn = test_db("evaluator-version").await;
-    let id = submit(&conn, None, form("versioned", 63)).await.unwrap();
-    apply(
-        &conn,
-        &Report::Finished {
-            id,
-            season: season(),
-            score: score(1.0, 0),
-            fingerprint: vec![],
-        },
-    )
-    .await
-    .unwrap();
-    assert_eq!(board(&conn).await.unwrap().entries.len(), 1);
-    conn.execute(
-        "UPDATE dojo_submissions SET evaluation_version = 'old' WHERE id = ?1",
-        params![id],
-    )
-    .await
-    .unwrap();
-    assert_eq!(board(&conn).await.unwrap().entries, []);
-    housekeeping(&conn).await.unwrap();
-    let entry = submission(&conn, id, None).await.unwrap().unwrap();
-    assert_eq!(entry.state, DojoState::Queued);
-    assert_eq!(entry.score, None);
 }

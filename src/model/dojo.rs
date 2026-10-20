@@ -62,6 +62,46 @@ pub struct DojoBoard {
     pub entries: Vec<DojoEntry>,
     /// Submissions waiting or being evaluated.
     pub queued: u32,
+    /// The commitment to this season's hidden set: the SHA-256 of its seed, which is revealed
+    /// once the season is over (see [`DojoSeason`]).
+    #[serde(default)]
+    pub commitment: String,
+    /// `dojo::GENERATOR_VERSION` and `dojo::RULES_VERSION` of the site.
+    #[serde(default)]
+    pub generator_version: u32,
+    #[serde(default)]
+    pub rules_version: u32,
+}
+
+/// One season of the Dojo: its commitment, and once it is over its seed, set and final board.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DojoSeason {
+    pub season: u32,
+    /// `None` for the current season before the site recorded its start.
+    pub started_at: Option<i64>,
+    /// `None` while it runs.
+    pub ended_at: Option<i64>,
+    /// SHA-256 (hex) of the seed of the hidden set, published from the start.
+    pub commitment: String,
+    /// The seed, only once the season is over.
+    pub seed: Option<String>,
+    pub generator_version: u32,
+    pub rules_version: u32,
+    /// The archived set (`/dojo/seasons/<n>/set.tar.gz`): its size and SHA-256, `None` when
+    /// there is none (the season is running, or nothing was evaluated on it).
+    pub set_size: Option<i64>,
+    pub set_sha256: Option<String>,
+    /// Finished submissions in the archive, ranked or not.
+    pub entries: u32,
+    /// The final leaderboard. An empty author: the account was deleted.
+    pub board: Vec<DojoEntry>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DojoSeasons {
+    pub current: DojoSeason,
+    /// Finished seasons, the latest first.
+    pub past: Vec<DojoSeason>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

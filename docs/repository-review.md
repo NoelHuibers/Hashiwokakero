@@ -19,15 +19,14 @@ remain private, empty tombstones and cannot be reassigned. Remove grants for del
 before restarting. Numeric grants are preferred to legacy username grants.
 
 Deploy the worker and website from the same revision, worker first when deploying separately.
-Requests and callbacks carry `dojo::EVALUATION_VERSION`, which includes the actual locked
-Wasmtime version. The website refuses mismatched reports and hides incompatible results.
-Housekeeping requeues submissions from previous evaluators and invalidates their credentials.
-The worker's benchmark-cache filenames include the evaluation version, so the first job after
-an evaluator update regenerates the set. Allow time for this warm-up.
-
-Bump the generator/scoring parts of `EVALUATION_VERSION` whenever benchmark generation, sandbox
-configuration, metering, or scoring changes; engine patch updates are recorded automatically.
-A season number alone is insufficient to identify comparable results.
+Jobs carry the website's `dojo::RULES_VERSION` and the worker refuses jobs for other rules
+(the dispatcher queues them again without using up an attempt), and every result is stored
+with the rules it was computed with. The review fixes change what a solver sees (no formula
+names in its input) and how host calls end at the wall clock limit, so they raise
+`RULES_VERSION` to 2: after the deploy, housekeeping evaluates the current season's finished
+submissions again, nothing is archived. Bump it whenever a change makes the same solver score
+differently, and `GENERATOR_VERSION` with it when the sets change (the worker's set cache is
+keyed by it).
 
 Migrations take a database write transaction before checking the current schema version. Schema
 changes and their migration records commit together; an interrupted migration rolls back and
@@ -62,8 +61,9 @@ browser journeys from one loopback address. Production, including Fly, ignores t
 - The dispatcher claims a job and checks the global running count in one database statement
   before sending it. A fast completion is never overwritten by the HTTP acceptance response.
   Reports are guarded by both evaluation lifecycle and per-job token inside the update, so a
-  requeue between authorization and application also rejects the old report. Terminal states
-  invalidate their tokens. Late progress reports stop retrying when their credential is refused.
+  requeue between authorization and application also rejects the old report. Terminal states,
+  requeues and new seasons invalidate their tokens, which also ends uploads of a stale job's
+  set. Late reports stop retrying when they are refused.
 - Daily hint, check, reveal, and submit transitions share a write transaction from the running
   state read through the update. Finishing uses one authoritative penalty snapshot and verifies
   the update succeeded. Device reuse checks, submission/contact quotas, and guest merges are
@@ -74,8 +74,9 @@ browser journeys from one loopback address. Production, including Fly, ignores t
 - Daily identity ignores empty borders, translation, spacing of occupied rows/columns, rotation,
   and reflection. This closes the server solver/CNF shortcut. Client move logs and device ids
   remain abuse heuristics; they cannot prove that a person rather than an external solver played.
-- Hidden solver inputs contain no family/index/answer comments, and randomness is seeded from
-  formula content instead of public names. Names remain only in host-side reports.
+- Hidden solver inputs contain no family/index/answer comments. Randomness is seeded from the
+  set's secret seed and the formula, so a solver can't tell formulas apart by their random
+  numbers either. Names remain only in host-side reports.
 - `Puzzle::validate` centralizes geometric invariants before solving/canonicalization and storage
   restoration. `Board::check` rejects malformed bridge counts or vector lengths without indexing
   outside the vector. The parser and solver both accept valid 2×2 puzzles.
@@ -107,7 +108,7 @@ in every supported locale. Editor hover shortcuts ignore text inputs and modifie
 
 Focused tests cover blocking WASI sleeps, compilation complexity, cancelled CPU work, migration
 rollback/retry and starting replicas, stale/replaced callbacks, completion before dispatch
-acceptance, evaluator upgrades, concurrent daily penalties, immutable account ids, reserved admin
+acceptance, concurrent daily penalties, immutable account ids, reserved admin
 names and grants, padded daily identity, malformed puzzle/vector inputs, unique fallback,
 read-only profile awards, paginated contact history, and obsolete/disposed solver requests.
 Browser journeys cover keyboard play and editing in addition to the repository's existing flows.

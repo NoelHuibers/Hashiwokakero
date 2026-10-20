@@ -12,8 +12,11 @@
 //! - `DOJO_IDLE_EXIT_SECS`: exit after this long without work (unset: never)
 //! - `DOJO_CACHE_DIR`: keeps generated sets here (a volume), generating one takes minutes
 //!
-//! `POST /jobs?id=&season=&seed=` with the WebAssembly module as body: 202 when queued, 422 with
-//! a [`Rejection`] when the module can't be run.
+//! `POST /jobs?id=&season=&seed=&report_token=[&rules=][&export=1]` with the WebAssembly module
+//! as body: 202 when queued, 422 with a [`Rejection`] when the module can't be run, 409 when the
+//! website expects other rules (`rules`, its [`RULES_VERSION`]) than this worker's: one of the two
+//! wasn't deployed yet. With `export=1` the worker also posts the set it evaluated on as a tarball
+//! to `/dojo/set` (see [`crate::archive`]), which the website publishes once the season is over.
 
 use std::collections::HashMap;
 use std::fmt::Write as _;
@@ -34,7 +37,7 @@ use tokio::sync::mpsc;
 use crate::bench::{self, Instance};
 use crate::eval::{Options, evaluate};
 use crate::sandbox::Sandbox;
-use crate::{EVALUATION_VERSION, MAX_WASM_BYTES, Report, Score, WorkerReport};
+use crate::{GENERATOR_VERSION, MAX_WASM_BYTES, RULES_VERSION, Report, Score};
 
 #[derive(Deserialize)]
 struct JobQuery {
@@ -43,8 +46,11 @@ struct JobQuery {
     seed: String,
     /// Reports about this job carry this token: valid for this one job only.
     report_token: String,
+    /// The rules the website expects the job to be evaluated with.
+    rules: Option<u32>,
+    /// Whether the website wants the set too (`1`).
     #[serde(default)]
-    evaluation_version: String,
+    export: u8,
 }
 
 struct Job {
@@ -52,6 +58,7 @@ struct Job {
     season: u32,
     seed: String,
     report_token: Arc<str>,
+    export: bool,
     wasm: Bytes,
 }
 
@@ -94,10 +101,14 @@ async fn submit(
     if !authorized(&headers, &shared.token) {
         return StatusCode::UNAUTHORIZED.into_response();
     }
-    if q.evaluation_version != EVALUATION_VERSION {
-        return (StatusCode::CONFLICT, "incompatible evaluator version").into_response();
-    }
     shared.active.store(now_secs(), Ordering::Relaxed);
+    if q.rules.is_some_and(|rules| rules != RULES_VERSION) {
+        return (
+            StatusCode::CONFLICT,
+            format!("this worker evaluates with rules version {RULES_VERSION}"),
+        )
+            .into_response();
+    }
     if let Err(reason) = crate::validate::validate(&wasm) {
         return (StatusCode::UNPROCESSABLE_ENTITY, axum::Json(reason)).into_response();
     }
@@ -115,6 +126,7 @@ async fn submit(
         season: q.season,
         seed: q.seed,
         report_token: q.report_token.into(),
+        export: q.export == 1,
         wasm,
     };
     if shared.jobs.send(job).is_ok() {
@@ -129,35 +141,60 @@ async fn submit(
 #[derive(Clone)]
 struct Reporter {
     client: reqwest::Client,
-    url: String,
+    /// The website, e.g. `https://hashi.rs`.
+    app_url: String,
 }
 
 impl Reporter {
     async fn send(&self, report: &Report, token: &str) {
+        let url = format!("{}/dojo/report", self.app_url);
+        let body = serde_json::to_vec(report).unwrap_or_default();
+        self.post(
+            &url,
+            body,
+            "application/json",
+            token,
+            &format!("report for #{}", report.id()),
+        )
+        .await;
+    }
+
+    /// The set of a job as a tarball, for the website's season archive.
+    async fn send_set(&self, id: i64, season: u32, archive: Vec<u8>, token: &str) {
+        let url = format!(
+            "{}/dojo/set?id={id}&season={season}&generator={GENERATOR_VERSION}",
+            self.app_url
+        );
+        self.post(
+            &url,
+            archive,
+            "application/gzip",
+            token,
+            &format!("set for #{id}"),
+        )
+        .await;
+    }
+
+    async fn post(&self, url: &str, body: Vec<u8>, kind: &str, token: &str, what: &str) {
         for attempt in 0..6u32 {
             let sent = self
                 .client
-                .post(&self.url)
+                .post(url)
                 .bearer_auth(token)
-                .json(&WorkerReport {
-                    evaluation_version: EVALUATION_VERSION.into(),
-                    report: report.clone(),
-                })
-                .timeout(Duration::from_secs(30))
+                .header(header::CONTENT_TYPE, kind)
+                .body(body.clone())
+                .timeout(Duration::from_secs(60))
                 .send()
                 .await;
             match sent {
                 Ok(r) if r.status().is_success() => return,
-                // A finished or requeued evaluation invalidates its token. Retrying a late
-                // progress callback cannot make it current again.
-                Ok(r)
-                    if r.status() == StatusCode::UNAUTHORIZED
-                        || r.status() == StatusCode::CONFLICT =>
-                {
+                // Refused for good (another season by now, a stale token): no use trying again
+                Ok(r) if r.status().is_client_error() => {
+                    eprintln!("{what} refused: {}", r.status());
                     return;
                 }
-                Ok(r) => eprintln!("report for #{} refused: {}", report.id(), r.status()),
-                Err(e) => eprintln!("report for #{} failed: {e}", report.id()),
+                Ok(r) => eprintln!("{what} refused: {}", r.status()),
+                Err(e) => eprintln!("{what} failed: {e}"),
             }
             tokio::time::sleep(Duration::from_secs(2u64.pow(attempt))).await;
         }
@@ -212,6 +249,7 @@ fn evaluator(
         let token = job.report_token.clone();
         let send = |report: Report| runtime.block_on(reporter.send(&report, &token));
         let started = Instant::now();
+        options.set_seed.clone_from(&job.seed);
         let set = sets
             .entry(job.seed.clone())
             .or_insert_with(|| Arc::new(load_or_generate(cache, &job.seed)))
@@ -255,6 +293,11 @@ fn evaluator(
                     }
                 });
                 if results.len() == set.len() {
+                    if job.export {
+                        let info = crate::archive::SetInfo::new(&job.seed, Some(season));
+                        let archive = crate::archive::write_tar_gz(&set, &info);
+                        runtime.block_on(reporter.send_set(id, season, archive, &token));
+                    }
                     let score = Score::from_results(&results, options.limits.fuel);
                     let fingerprint = crate::fingerprint(&results);
                     Report::Finished {
@@ -262,6 +305,8 @@ fn evaluator(
                         season,
                         score,
                         fingerprint,
+                        results: results.iter().map(crate::RunResult::published).collect(),
+                        rules_version: RULES_VERSION,
                     }
                 } else {
                     Report::Failed {
@@ -283,10 +328,15 @@ fn evaluator(
     }
 }
 
-/// The name of the cached set of `seed`. It must not reveal the seed.
+/// The name of the cached set of `seed`. It must not reveal the seed. Sets of another generator
+/// are other files, a new one never loads a set an older one cached.
 fn cache_name(seed: &str) -> String {
+    cache_name_for(seed, GENERATOR_VERSION)
+}
+
+fn cache_name_for(seed: &str, generator: u32) -> String {
     use sha2::Digest;
-    let digest = sha2::Sha256::digest(format!("file:{EVALUATION_VERSION}:{seed}").as_bytes());
+    let digest = sha2::Sha256::digest(format!("file:g{generator}:{seed}").as_bytes());
     let hex = digest.iter().take(12).fold(String::new(), |mut hex, b| {
         let _ = write!(hex, "{b:02x}");
         hex
@@ -360,7 +410,7 @@ pub fn serve() -> Result<(), String> {
         };
         let reporter = Reporter {
             client: reqwest::Client::new(),
-            url: format!("{}/dojo/report", app_url.trim_end_matches('/')),
+            app_url: app_url.trim_end_matches('/').to_string(),
         };
         let handle = tokio::runtime::Handle::current();
         let (pending, active) = (shared.pending.clone(), shared.active.clone());
@@ -423,8 +473,8 @@ mod tests {
         const CACHE: &str = "the cached sets on the worker's volume wouldn't be found or \
                              wouldn't load any more: every set would be generated again";
         assert_eq!(
-            cache_name("golden"),
-            "set-7e38cd301c2e58c07d289f0c.json",
+            cache_name_for("golden", 1),
+            "set-4098d811dbc4a13744ae1527.json",
             "{CACHE}"
         );
         let cached = r#"[{"name":"pigeonhole-01","family":"Pigeonhole","expected":"Unsat","cnf":{"vars":2,"clauses":[[1],[2],[-1,-2]]},"witness":null},{"name":"queens-01","family":"Queens","expected":"Sat","cnf":{"vars":1,"clauses":[[1]]},"witness":[1]}]"#;
@@ -440,6 +490,20 @@ mod tests {
         );
         assert_eq!(set[1].witness, Some(vec![1]), "{CACHE}");
         assert_eq!(serde_json::to_string(&set).unwrap(), cached, "{CACHE}");
+    }
+
+    /// A new generator makes other sets from the same seed: they must not be taken from the
+    /// cache of an older one.
+    #[test]
+    fn cached_sets_depend_on_the_generator() {
+        assert_eq!(
+            cache_name("golden"),
+            cache_name_for("golden", GENERATOR_VERSION)
+        );
+        assert_ne!(cache_name_for("golden", 1), cache_name_for("golden", 2));
+        assert_ne!(cache_name_for("golden", 1), cache_name_for("golden2", 1));
+        // The name doesn't give the seed away
+        assert!(!cache_name("golden").contains("golden"));
     }
 
     /// A set of tiny formulas for `seed` in a fresh cache directory: generating a real one
@@ -482,23 +546,36 @@ mod tests {
     async fn evaluates_jobs_and_reports_back() {
         // The website, keeping the reports it gets
         let (sent, mut reports) = mpsc::unbounded_channel::<(Option<String>, Report)>();
-        let site = Router::new().route(
-            "/dojo/report",
-            post(
-                move |headers: HeaderMap, axum::Json(envelope): axum::Json<WorkerReport>| {
-                    assert_eq!(envelope.evaluation_version, EVALUATION_VERSION);
-                    let report = envelope.report;
-                    let auth = headers
-                        .get(header::AUTHORIZATION)
-                        .and_then(|v| v.to_str().ok())
-                        .map(str::to_string);
-                    sent.send((auth, report)).unwrap();
-                    async { StatusCode::NO_CONTENT }
-                },
-            ),
-        );
+        let (sets_sent, mut sets) = mpsc::unbounded_channel::<(Option<String>, String, Bytes)>();
+        let auth = |headers: &HeaderMap| {
+            headers
+                .get(header::AUTHORIZATION)
+                .and_then(|v| v.to_str().ok())
+                .map(str::to_string)
+        };
+        let site = Router::new()
+            .route(
+                "/dojo/report",
+                post(
+                    move |headers: HeaderMap, axum::Json(report): axum::Json<Report>| {
+                        sent.send((auth(&headers), report)).unwrap();
+                        async { StatusCode::NO_CONTENT }
+                    },
+                ),
+            )
+            .route(
+                "/dojo/set",
+                post(
+                    move |headers: HeaderMap, uri: axum::http::Uri, body: Bytes| {
+                        let query = uri.query().unwrap_or_default().to_string();
+                        sets_sent.send((auth(&headers), query, body)).unwrap();
+                        async { StatusCode::NO_CONTENT }
+                    },
+                ),
+            )
+            .layer(DefaultBodyLimit::max(64 << 20));
         let site_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let site_url = format!("http://{}/dojo/report", site_listener.local_addr().unwrap());
+        let site_url = format!("http://{}", site_listener.local_addr().unwrap());
         tokio::spawn(async move { axum::serve(site_listener, site).await.unwrap() });
 
         let cache = cached_set("worker-test");
@@ -511,7 +588,7 @@ mod tests {
         };
         let reporter = Reporter {
             client: reqwest::Client::new(),
-            url: site_url,
+            app_url: site_url,
         };
         let settings = Settings {
             threads: Some(2),
@@ -540,10 +617,22 @@ mod tests {
         let health = client.get(format!("{url}/health")).send().await.unwrap();
         assert_eq!(health.text().await.unwrap(), "ok");
         let job = format!(
-            "{url}/jobs?id=7&season=2&seed=worker-test&report_token=job-token&evaluation_version={EVALUATION_VERSION}"
+            "{url}/jobs?id=7&season=2&seed=worker-test&report_token=job-token&rules={RULES_VERSION}&export=1"
         );
         let post =
             |token: &str, wasm: Vec<u8>| client.post(&job).bearer_auth(token).body(wasm).send();
+        // A website that expects other rules gets nothing evaluated
+        let other_rules = client
+            .post(job.replace(
+                &format!("rules={RULES_VERSION}"),
+                &format!("rules={}", RULES_VERSION + 1),
+            ))
+            .bearer_auth("secret")
+            .body(b"\0asm junk".to_vec())
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(other_rules.status(), StatusCode::CONFLICT);
 
         // Answers UNSAT to everything: right on the even formulas, wrong on the others
         let unsat = wat::parse_str(
@@ -587,6 +676,19 @@ mod tests {
                 }
             )
         );
+        // The set it evaluated on comes first, as asked for, with the job's token
+        let (auth, query, archive) = tokio::time::timeout(Duration::from_secs(120), sets.recv())
+            .await
+            .expect("the set in time")
+            .expect("the website is up");
+        assert_eq!(auth.as_deref(), Some("Bearer job-token"));
+        assert_eq!(
+            query,
+            format!("id=7&season=2&generator={GENERATOR_VERSION}")
+        );
+        let (info, archived) = crate::archive::read_tar_gz(&archive).unwrap();
+        assert_eq!(info, crate::archive::SetInfo::new("worker-test", Some(2)));
+        assert_eq!(archived.len(), bench::SPEC.len());
         let (auth, report) = next().await;
         assert_eq!(auth.as_deref(), Some("Bearer job-token"));
         let Report::Finished {
@@ -594,6 +696,8 @@ mod tests {
             season: 2,
             score,
             fingerprint,
+            results,
+            rules_version,
         } = report
         else {
             panic!("{report:?}");
@@ -603,6 +707,20 @@ mod tests {
             (total / 2, total / 2, total)
         );
         assert_eq!(fingerprint.len(), bench::SPEC.len());
+        assert_eq!(rules_version, RULES_VERSION);
+        // Every formula in set order: right on the even ones, wrong on the others
+        assert_eq!(
+            results.iter().map(|r| r.name.as_str()).collect::<Vec<_>>(),
+            archived.iter().map(|i| i.name.as_str()).collect::<Vec<_>>()
+        );
+        for (i, r) in results.iter().enumerate() {
+            let expected = if i % 2 == 0 {
+                crate::Outcome::Solved(crate::Answer::Unsat)
+            } else {
+                crate::Outcome::Wrong
+            };
+            assert_eq!(r.outcome, expected, "{}", r.name);
+        }
 
         // The website got the last report before the worker got its answer. Stopping the server
         // drops the last job sender: the evaluator gets that answer, finishes the job and returns.

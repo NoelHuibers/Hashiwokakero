@@ -9,12 +9,14 @@
     "season": "Saison {{ season }}",
     "formulas": "Formeln: {{ count }}",
     "budget": "{{ budget }} Gfuel pro Formel",
-    "queued": "In der Warteschlange: {{ count }}"
+    "queued": "In der Warteschlange: {{ count }}",
+    "commitment": "Commitment {{ hash }}"
   },
   "cta": {
     "submit": "Solver einreichen",
     "starter": "Starter-Kit",
-    "dev_set": "Dev-Set herunterladen"
+    "dev_set": "Dev-Set herunterladen",
+    "seasons": "Saisonarchiv"
   },
   "board": {
     "title": "Rangliste",
@@ -25,6 +27,32 @@
     "empty": "Noch hat kein Solver das Dojo betreten. Mach den Anfang!",
     "house": "hauseigen",
     "par2_hint": "Mittlerer Treibstoff pro Formel in Milliarden, ungelöste Formeln zählen das doppelte Budget. Weniger ist besser."
+  },
+  "seasons": {
+    "meta_title": "Saisonarchiv · SAT Dojo",
+    "meta_description": "Jede beendete Saison des SAT Dojo: die Endstand, der aufgedeckte Seed, das geheime Set und jedes Ergebnis pro Formel, zum Herunterladen und Nachprüfen.",
+    "title": "Saisonarchiv",
+    "intro": "Wenn eine Saison endet, wird ihre Rangliste eingefroren und alles veröffentlicht: der Seed des geheimen Sets, das Set selbst und das Ergebnis jedes Solvers auf jeder Formel.",
+    "current": "Saison {{ season }} · läuft",
+    "past": "Saison {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "seit {{ date }}",
+    "versions": "Generator v{{ generator }} · Regeln v{{ rules }}",
+    "entries": "Bewertete Solver: {{ count }}",
+    "commitment": "Commitment (SHA-256 des Seeds)",
+    "seed": "Seed",
+    "sealed": "Der Seed bleibt bis zum Saisonende geheim und wird dann hier aufgedeckt.",
+    "set": "Geheimes Set ({{ size }} MB)",
+    "no_set": "Für diese Saison wurde kein Set archiviert; erzeuge es aus dem Seed neu.",
+    "csv": "Ergebnisse pro Formel (CSV)",
+    "json": "Ergebnisse pro Formel (JSON)",
+    "board": "Endstand",
+    "empty_board": "In dieser Saison wurde kein Solver gewertet.",
+    "none": "Noch ist keine Saison beendet. Das Archiv beginnt, wenn Saison {{ season }} vorbei ist.",
+    "deleted": "gelöschtes Konto",
+    "verify_title": "So prüfst du nach",
+    "verify": "Der SHA-256 des aufgedeckten Seeds muss mit dem zu Beginn veröffentlichten Commitment übereinstimmen. Mit derselben Generator-Version erzeugt dojo export das Set aus dem Seed neu; das archivierte Set bleibt dauerhaft gültig, und dojo run --set bewertet jeden Solver darauf genau wie die Rangliste.",
+    "back": "Zurück zum Dojo"
   },
   "how": {
     "title": "So funktioniert’s",
@@ -55,7 +83,7 @@
     "fuel_title": "Treibstoff statt Sekunden",
     "fuel": "Jede ausgeführte WebAssembly-Instruktion kostet eine Einheit Treibstoff, Bulk-Memory-Operationen eine pro Byte. Uhren und Zufallszahlen sind fest geseedet, also bekommt ein Solver auf jeder Maschine jedes Mal dieselbe Punktzahl.",
     "hidden_title": "Geheime, frische Formeln",
-    "hidden": "Das Test-Set entsteht aus einem geheimen Seed, der sich jede Saison ändert, und jede Formel wird verwürfelt: Variablen umbenannt und negiert, Klauseln gemischt. Ergebnisse gibt es nur pro Familie, nie pro Formel.",
+    "hidden": "Das Test-Set entsteht aus einem geheimen Seed, der sich jede Saison ändert, und jede Formel wird verwürfelt: Variablen umbenannt und negiert, Klauseln gemischt. Solange eine Saison läuft, gibt es Ergebnisse nur pro Familie, nie pro Formel.",
     "checked_title": "Jede Antwort geprüft",
     "checked": "Modelle werden gegen die Formel geprüft. UNSAT zählt nur, wo wir einen Beweis haben: Schubfach und Hashi-Parität sind konstruktionsbedingt unerfüllbar, jedes andere UNSAT-Label kommt mit einem DRAT-Beweis, den unser eigener Checker verifiziert hat. Eine einzige falsche Antwort disqualifiziert die Einreichung, Raten lohnt sich also nie.",
     "sandbox_title": "Eine versiegelte Sandbox",
@@ -63,9 +91,11 @@
     "accounts_title": "Ein Konto, bester Eintrag",
     "accounts": "Konten müssen einen Tag alt sein, um einzureichen, und es gibt drei Einreichungen am Tag pro Konto und pro Netzwerk. Identischer Code wird abgelehnt, auch umbenannt oder aufgefüllt, und nur deine beste Einreichung kommt in die Wertung.",
     "seasons_title": "Saisons",
-    "seasons": "Eine neue Saison bringt ein neues geheimes Test-Set, und jede Einreichung wird neu bewertet.",
+    "seasons": "Eine neue Saison bringt ein neues geheimes Test-Set, und jede Einreichung wird neu bewertet. Die beendete Saison kommt ins Archiv: ihr Endstand, ihr Set und jedes Ergebnis pro Formel werden veröffentlicht.",
     "copies_title": "Keine Kopien",
-    "copies": "Die Punktzahlen sind exakt, also hinterlässt ein Solver einen Fingerabdruck: den Treibstoff, den er für jede einzelne Formel braucht. Eine Einreichung, die sich wie eine frühere einer anderen Person verhält, kommt nicht in die Wertung. Wer eine Kopie so weit ändert, dass sie dem entgeht, hat einen anderen Solver gebaut, und sie langsamer zu machen bringt sie nur hinter das Original."
+    "copies": "Die Punktzahlen sind exakt, also hinterlässt ein Solver einen Fingerabdruck: den Treibstoff, den er für jede einzelne Formel braucht. Eine Einreichung, die sich wie eine frühere einer anderen Person verhält, kommt nicht in die Wertung. Wer eine Kopie so weit ändert, dass sie dem entgeht, hat einen anderen Solver gebaut, und sie langsamer zu machen bringt sie nur hinter das Original.",
+    "commit_title": "Vorab versiegelt",
+    "commit": "Zu Beginn einer Saison veröffentlichen wir den SHA-256 ihres geheimen Seeds. Nach der Saison wird der Seed aufgedeckt: So kann jeder prüfen, dass das Set vorher feststand, und es mit dojo export --seed neu erzeugen."
   },
   "science": {
     "title": "Für Forschende",

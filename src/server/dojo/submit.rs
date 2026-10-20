@@ -197,8 +197,8 @@ pub async fn submit(
     tx.execute(
         "INSERT INTO dojo_submissions
             (user_id, house, name, description, source_url, wasm, sha256, size, created_at, updated_at, state, season,
-             code_hash, ip_hash, evaluation_version)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, 'queued', ?10, ?11, ?12, ?13)",
+             code_hash, ip_hash)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, 'queued', ?10, ?11, ?12)",
         params![
             user.map(|u| u.id),
             i64::from(user.is_none()),
@@ -211,8 +211,7 @@ pub async fn submit(
             now,
             season(),
             code,
-            form.network.clone(),
-            dojo::EVALUATION_VERSION
+            form.network.clone()
         ],
     )
     .await
@@ -294,10 +293,7 @@ pub async fn board_json() -> Response {
     };
     match board {
         Ok(board) => (
-            [
-                (header::ACCESS_CONTROL_ALLOW_ORIGIN.as_str(), "*"),
-                ("x-dojo-evaluation-version", dojo::EVALUATION_VERSION),
-            ],
+            [(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")],
             axum::Json(board),
         )
             .into_response(),

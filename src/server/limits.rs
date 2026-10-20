@@ -103,6 +103,7 @@ pub async fn admission(req: Request, next: Next) -> Response {
                     | "month_leaderboard"
                     | "daily_leaderboard"
                     | "load_dojo_board"
+                    | "load_dojo_seasons"
             )
         );
     if expensive {

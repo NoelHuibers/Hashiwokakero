@@ -3,6 +3,7 @@
 pub mod guide;
 pub mod leaderboard;
 pub mod names;
+pub mod seasons;
 pub mod submission;
 pub mod submit;
 
@@ -20,17 +21,19 @@ use crate::seo::{PageMeta, REPO_URL};
 use guide::{FairPlay, Families, HowItWorks};
 use leaderboard::Leaderboard;
 pub use names::family_name;
+pub use seasons::DojoSeasonsPage;
 pub use submission::DojoSubmissionPage;
 use submit::SubmitCard;
 
 const STARTER_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero/tree/main/dojo/starter";
-/// Generated when the site is built (`dojo export`), see the Dockerfile.
+/// The dev set, `dojo export dojo-dev-1/` packed by hand and committed in `public/`.
 pub const DEV_SET_URL: &str = "/dojo-dev-1.tar.gz";
 
 #[component]
 pub fn DojoPage() -> impl IntoView {
     let i18n = use_i18n();
     let lab = use_localized("/lab");
+    let archive = use_localized("/dojo/seasons");
     let board = RwSignal::new(None::<DojoBoard>);
     let me = RwSignal::new(None::<DojoMe>);
     Effect::new(move |first: Option<()>| {
@@ -76,6 +79,28 @@ pub fn DojoPage() -> impl IntoView {
                     {stat(board_stat(|b, l| td_string!(l, dojo.stats.formulas, count = b.formulas)))}
                     {stat(board_stat(|b, l| td_string!(l, dojo.stats.budget, budget = b.budget / 1_000_000_000)))}
                     {stat(board_stat(|b, l| td_string!(l, dojo.stats.queued, count = b.queued)))}
+                    // The commitment to the hidden set, its seed is revealed in the archive
+                    <A href=archive attr:class="rounded-full border bg-card px-3 py-1 text-xs font-semibold hover:border-primary">
+                        <span
+                            dir="ltr"
+                            data-tooltip=move || board.with(|b| b.as_ref().map(|b| format!("SHA-256 {}", b.commitment)).unwrap_or_default())
+                        >
+                            {move || {
+                                board
+                                    .with(|b| {
+                                        b.as_ref()
+                                            .map(|b| {
+                                                td_string!(
+                                                    i18n.get_locale(),
+                                                    dojo.stats.commitment,
+                                                    hash = b.commitment.chars().take(12).collect::<String>()
+                                                )
+                                            })
+                                            .unwrap_or_default()
+                                    })
+                            }}
+                        </span>
+                    </A>
                 </div>
                 <div class="flex flex-wrap gap-2 pt-1">
                     <a href="#submit" class="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm">
@@ -87,6 +112,9 @@ pub fn DojoPage() -> impl IntoView {
                     <a href=DEV_SET_URL download class="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium">
                         {t!(i18n, dojo.cta.dev_set)}
                     </a>
+                    <A href=archive attr:class="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium">
+                        {t!(i18n, dojo.cta.seasons)}
+                    </A>
                     <A href=lab attr:class="inline-flex h-10 items-center rounded-md px-4 text-sm font-medium text-muted-foreground hover:text-foreground">
                         "研究室 · " {t!(i18n, common.nav.lab)}
                     </A>

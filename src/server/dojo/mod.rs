@@ -7,15 +7,21 @@
 //! Settings: `DOJO_URL` (worker, unset: nothing is evaluated), `DOJO_TOKEN` (authenticates us
 //! to the worker; its reports carry a per-job token instead), `HASHI_ADMIN_TOKEN` (house entries),
 //! `DOJO_SECRET` (seed of the hidden sets), `DOJO_SEASON` (number of the current season; a
-//! new season re-evaluates every submission on a new hidden set).
+//! new season archives the old one, reveals its seed and re-evaluates every submission on a new
+//! hidden set, see [`seasons`]).
 
 mod board;
+mod seasons;
 mod submit;
 #[cfg(test)]
 mod tests;
 mod worker;
 
 pub use board::{board, me, rank_of, submission};
+pub use seasons::{
+    ArchivedEntry, ArchivedSeason, MAX_SET_BYTES, SetQuery, archived, commitment, csv, results_csv,
+    results_json, seasons, seasons_json, set_download, set_handler,
+};
 pub use submit::{
     Form, HouseQuery, SubmitError, board_json, code_hash, house_handler, submit, submit_handler,
 };
@@ -43,8 +49,7 @@ const MAX_RUNNING: i64 = 2;
 const BOARD_SIZE: usize = 100;
 
 pub fn season() -> u32 {
-    std::env::var("DOJO_SEASON")
-        .ok()
+    crate::server::env_var("DOJO_SEASON")
         .and_then(|s| s.parse().ok())
         .unwrap_or(1)
 }

@@ -57,6 +57,15 @@ export const player = (name: string) => {
 /** A finished house entry of the SAT Dojo, for /dojo/:id. */
 export const DOJO_SUBMISSION = 1;
 
+/** The Dojo's current season (`DOJO_SEASON`), the one before is archived. */
+export const DOJO_SEASON = 2;
+/** `dojo::RULES_VERSION`: results of older rules are evaluated again when the server starts. */
+const DOJO_RULES = 2;
+
+/** The revealed seed of the archived season, and the commitment published at its start. */
+export const ARCHIVED_SEED = 'e2e-archived-seed';
+export const ARCHIVED_COMMITMENT = sha256(ARCHIVED_SEED);
+
 /** Days of dailies before today. */
 const HISTORY = 40;
 
@@ -112,19 +121,46 @@ export function seed(dbPath: string) {
   const created = (today - 10) * MS_PER_DAY;
   db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
-       state, season, progress, total, score, par2, solved, wrong, code_hash, evaluation_version)
-     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', 1, 34, 34, ?, ?, ?, 0, ?, ?)`,
+       state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version)
+     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 34, 34, ?, ?, ?, 0, ?, ?)`,
   ).run(
     DOJO_SUBMISSION,
     new Uint8Array([0]),
     sha256('plain-dpll'),
     created,
     created,
+    DOJO_SEASON,
     JSON.stringify(score),
     score.par2,
     score.solved,
     sha256('plain-dpll-code'),
-    'gen2-wasmtime49.0.3-async-fuel2',
+    DOJO_RULES,
+  );
+  // The season before, archived: its revealed seed, its set and the house entry's final result
+  const archived = DOJO_SEASON - 1;
+  db.prepare(
+    `INSERT INTO dojo_seasons (season, started_at, ended_at, commitment, seed, generator_version, rules_version)
+     VALUES (?, ?, ?, ?, ?, 1, 1)`,
+  ).run(archived, (today - 40) * MS_PER_DAY, (today - 12) * MS_PER_DAY, ARCHIVED_COMMITMENT, ARCHIVED_SEED);
+  db.prepare(
+    'INSERT INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?, 1, ?, ?, ?)',
+  ).run(archived, new Uint8Array([0x1f, 0x8b, 8, 0]), sha256('set'), (today - 12) * MS_PER_DAY);
+  const results = [
+    { name: 'hashi-01', family: 'Hashi', expected: 'Sat', outcome: { Solved: 'Sat' }, fuel: 1_200_000 },
+    { name: 'pigeonhole-01', family: 'Pigeonhole', expected: 'Unsat', outcome: 'Timeout', fuel: 10_000_000_000 },
+  ];
+  db.prepare(
+    `INSERT INTO dojo_archive (season, submission_id, user_id, house, name, created_at, par2, solved, wrong, score, results,
+       rules_version, rank)
+     VALUES (?, ?, NULL, 1, 'Plain DPLL', ?, ?, ?, 0, ?, ?, 1, 1)`,
+  ).run(
+    archived,
+    DOJO_SUBMISSION,
+    created - 30 * MS_PER_DAY,
+    score.par2,
+    score.solved,
+    JSON.stringify(score),
+    JSON.stringify(results),
   );
   CONTACT_MESSAGES.forEach((m, i) => {
     db.prepare('INSERT INTO contact_messages (name, email, message, created_at) VALUES (?, ?, ?, ?)').run(

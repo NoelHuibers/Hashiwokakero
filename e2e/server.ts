@@ -6,6 +6,7 @@ import { existsSync, openSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { DB_PATH, PORT, ROOT, RUN_DIR, SERVER_BIN, SITE_ROOT } from './env';
+import { DOJO_SEASON } from './seed';
 
 /** The usernames that see /admin (see `seed.ts`). */
 export const ADMINS = 'admin';
@@ -41,7 +42,8 @@ export async function startServer(logName: string, { port = PORT, dbPath = DB_PA
       // Never a remote database or worker, whatever the shell has set
       TURSO_DATABASE_URL: '',
       DOJO_URL: '',
-      DOJO_SEASON: '1',
+      // The second season: the first one is in the archive (seed.ts)
+      DOJO_SEASON: String(DOJO_SEASON),
     },
   });
   const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));

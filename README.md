@@ -91,7 +91,7 @@ cargo leptos build --release
 pnpm run e2e                          # pnpm run e2e --ui, or -g "practice" for some tests
 ```
 
-`E2E_BIN` and `E2E_SITE_ROOT` point it at another build (e.g. `target/debug/hashi`), `E2E_PORT` at another port. A failed run leaves a report with traces (`pnpm exec playwright show-report e2e/playwright-report`) and the server's log in `e2e/.run/server.log`.
+`E2E_BIN` and `E2E_SITE_ROOT` point it at another build (e.g. `target/debug/hashi`), `E2E_PORT` at another port. A failed run leaves a report with traces (`pnpm exec playwright show-report e2e/playwright-report`) and the server's log in `e2e/.run/server.log`. A run also fails when a server panicked, even if every test passed (a panic in one of its background tasks leaves the page as it was); the end of the run lists the panics from its logs.
 
 `e2e/tests/visual.spec.ts` compares a few pages with screenshots (`e2e/tests/__screenshots__/`): the home page, a practice board, the ranks, the rules in Japanese and Arabic, and a daily's result. They catch what breaks the layout without an error, like a Tailwind or font update. Screenshots only match where they were taken, so they are taken and compared in the official Playwright image of the version in `pnpm-lock.yaml`, in CI and locally (podman or docker, the image is pulled on first use), with a server and database of their own on the next port:
 
@@ -114,9 +114,12 @@ At [hashi.rs/dojo](https://hashi.rs/dojo) anyone can submit a SAT solver compile
 cargo build -p house --release --target wasm32-wasip1           # our own solvers as .wasm
 cargo run -p dojo --release --features worker -- run target/wasm32-wasip1/release/splr.wasm
 cargo run -p dojo --release --features bench -- export dev-set/  # the public dev set as .cnf files
+cargo run -p dojo --release --features worker -- run splr.wasm --set dojo-season-1.tar.gz  # an archived season
 ```
 
-The website stores submissions and sends them to the worker (`dojo serve`, its own Fly app in `dojo/fly.toml`), which starts on demand, evaluates and reports back. See `src/server/dojo.rs` and `dojo/src/worker.rs` for the settings.
+The website stores submissions and sends them to the worker (`dojo serve`, its own Fly app in `dojo/fly.toml`), which starts on demand, evaluates and reports back. See `src/server/dojo/` (`mod.rs` for the settings) and `dojo/src/worker.rs`.
+
+Seasons are archived like the SAT Competition publishes its results ([hashi.rs/dojo/seasons](https://hashi.rs/dojo/seasons), `src/server/dojo/seasons.rs`): a season starts with a commitment to the seed of its hidden set, `sha256(seed)`. When `DOJO_SEASON` moves on, the final results are frozen and the seed is revealed, and the set the worker evaluated on (it sends it along with a job, `dojo/src/archive.rs`) is published as `/dojo/seasons/<n>/set.tar.gz`, with the result of every solver on every formula as `results.csv` and `results.json`. `dojo::RULES_VERSION` is bumped whenever judging, fuel or the sets change within a season: every stored result keeps the version it was computed with, and the site evaluates older ones again. `dojo::GENERATOR_VERSION` (bumped with any change to the sets) keys the worker's cache of generated sets.
 
 ## Backend CLI
 

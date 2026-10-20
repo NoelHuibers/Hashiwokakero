@@ -9,12 +9,14 @@
     "season": "Saison {{ season }}",
     "formulas": "Formules : {{ count }}",
     "budget": "{{ budget }} Gfuel par formule",
-    "queued": "En file d’attente : {{ count }}"
+    "queued": "En file d’attente : {{ count }}",
+    "commitment": "Engagement {{ hash }}"
   },
   "cta": {
     "submit": "Soumettre un solveur",
     "starter": "Kit de démarrage",
-    "dev_set": "Télécharger le jeu de dév"
+    "dev_set": "Télécharger le jeu de dév",
+    "seasons": "Archives des saisons"
   },
   "board": {
     "title": "Classement",
@@ -25,6 +27,32 @@
     "empty": "Aucun solveur n’est encore entré dans le dojo. Sois le premier !",
     "house": "maison",
     "par2_hint": "Carburant moyen par formule en milliards, une formule non résolue compte pour deux fois le budget. Plus c’est bas, mieux c’est."
+  },
+  "seasons": {
+    "meta_title": "Archives des saisons · SAT Dojo",
+    "meta_description": "Chaque saison terminée du SAT Dojo : le classement final, la graine révélée, le jeu caché et chaque résultat par formule, à télécharger et à vérifier.",
+    "title": "Archives des saisons",
+    "intro": "Quand une saison se termine, son classement est figé et tout est publié : la graine du jeu caché, le jeu lui-même et le résultat de chaque solveur sur chaque formule.",
+    "current": "Saison {{ season }} · en cours",
+    "past": "Saison {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "depuis le {{ date }}",
+    "versions": "Générateur v{{ generator }} · règles v{{ rules }}",
+    "entries": "Solveurs évalués : {{ count }}",
+    "commitment": "Engagement (SHA-256 de la graine)",
+    "seed": "Graine",
+    "sealed": "La graine reste secrète jusqu'à la fin de la saison, puis elle est révélée ici.",
+    "set": "Jeu caché ({{ size }} Mo)",
+    "no_set": "Aucun jeu n'a été archivé pour cette saison ; régénérez-le à partir de la graine.",
+    "csv": "Résultats par formule (CSV)",
+    "json": "Résultats par formule (JSON)",
+    "board": "Classement final",
+    "empty_board": "Aucun solveur n'a été classé cette saison.",
+    "none": "Aucune saison n'est encore terminée. Les archives commencent à la fin de la saison {{ season }}.",
+    "deleted": "compte supprimé",
+    "verify_title": "Comment vérifier",
+    "verify": "Le SHA-256 de la graine révélée doit correspondre à l'engagement publié au début. Avec la même version du générateur, dojo export régénère le jeu à partir de la graine ; le jeu archivé reste valable pour toujours, et dojo run --set note n'importe quel solveur dessus exactement comme le classement.",
+    "back": "Retour au dojo"
   },
   "how": {
     "title": "Comment ça marche",
@@ -55,7 +83,7 @@
     "fuel_title": "Du carburant, pas des secondes",
     "fuel": "Chaque instruction WebAssembly exécutée coûte une unité de carburant, les opérations mémoire en bloc une par octet. Horloges et nombres aléatoires ont une graine fixe : un solveur obtient le même score sur chaque machine, à chaque fois.",
     "hidden_title": "Formules secrètes et inédites",
-    "hidden": "Le jeu de test provient d’une graine secrète qui change à chaque saison, et chaque formule est brouillée : variables renommées et niées, clauses mélangées. Les résultats ne sont affichés que par famille, jamais par formule.",
+    "hidden": "Le jeu de test vient d'une graine secrète qui change à chaque saison, et chaque formule est brouillée : variables renommées et niées, clauses mélangées. Tant qu'une saison dure, les résultats ne sont affichés que par famille, jamais par formule.",
     "checked_title": "Chaque réponse vérifiée",
     "checked": "Les modèles sont vérifiés par rapport à la formule. UNSAT ne compte que là où nous avons une preuve : les tiroirs et Hashi parité sont insatisfiables par construction, et toute autre étiquette UNSAT s’accompagne d’une preuve DRAT vérifiée par notre propre vérificateur. Une seule mauvaise réponse disqualifie la soumission : deviner ne paie jamais.",
     "sandbox_title": "Un bac à sable scellé",
@@ -63,9 +91,11 @@
     "accounts_title": "Un compte, une meilleure entrée",
     "accounts": "Un compte doit avoir un jour pour soumettre, et chaque compte comme chaque réseau a droit à trois soumissions par jour. Un code identique est refusé, même renommé ou gonflé artificiellement, et seule ta meilleure soumission est classée.",
     "seasons_title": "Saisons",
-    "seasons": "Une nouvelle saison apporte un nouvel ensemble secret, et chaque soumission est réévaluée.",
+    "seasons": "Une nouvelle saison apporte un nouveau jeu caché et chaque soumission est réévaluée. La saison terminée est archivée : son classement final, son jeu et chaque résultat par formule sont publiés.",
     "copies_title": "Pas de copies",
-    "copies": "Les scores sont exacts, donc un solveur laisse une empreinte : le carburant qu’il consomme sur chaque formule. Une soumission qui se comporte comme une soumission antérieure de quelqu’un d’autre n’est pas classée. Modifier une copie assez pour y échapper en fait un autre solveur, et la ralentir ne fait que la placer sous l’original."
+    "copies": "Les scores sont exacts, donc un solveur laisse une empreinte : le carburant qu’il consomme sur chaque formule. Une soumission qui se comporte comme une soumission antérieure de quelqu’un d’autre n’est pas classée. Modifier une copie assez pour y échapper en fait un autre solveur, et la ralentir ne fait que la placer sous l’original.",
+    "commit_title": "Scellé à l'avance",
+    "commit": "Au début d'une saison, nous publions le SHA-256 de sa graine secrète. À la fin, la graine est révélée : chacun peut vérifier que le jeu était fixé d'avance et le régénérer avec dojo export --seed."
   },
   "science": {
     "title": "Pour les chercheurs",

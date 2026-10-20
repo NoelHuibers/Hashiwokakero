@@ -9,12 +9,14 @@
     "season": "Sezon {{ season }}",
     "formulas": "Formuły: {{ count }}",
     "budget": "{{ budget }} Gfuel na formułę",
-    "queued": "W kolejce: {{ count }}"
+    "queued": "W kolejce: {{ count }}",
+    "commitment": "Zobowiązanie {{ hash }}"
   },
   "cta": {
     "submit": "Zgłoś solver",
     "starter": "Zestaw startowy",
-    "dev_set": "Pobierz zbiór deweloperski"
+    "dev_set": "Pobierz zbiór deweloperski",
+    "seasons": "Archiwum sezonów"
   },
   "board": {
     "title": "Ranking",
@@ -25,6 +27,32 @@
     "empty": "Żaden solver nie wszedł jeszcze do dojo. Bądź pierwszy!",
     "house": "nasz",
     "par2_hint": "Średnie paliwo na formułę w miliardach, nierozwiązane formuły liczą się jako podwójny budżet. Mniej znaczy lepiej."
+  },
+  "seasons": {
+    "meta_title": "Archiwum sezonów · SAT Dojo",
+    "meta_description": "Każdy zakończony sezon SAT Dojo: ranking końcowy, ujawnione ziarno, ukryty zestaw i każdy wynik dla każdej formuły, do pobrania i sprawdzenia.",
+    "title": "Archiwum sezonów",
+    "intro": "Gdy sezon się kończy, jego ranking zostaje zamrożony i publikujemy wszystko: ziarno ukrytego zestawu, sam zestaw i wynik każdego solvera na każdej formule.",
+    "current": "Sezon {{ season }} · trwa",
+    "past": "Sezon {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "od {{ date }}",
+    "versions": "Generator v{{ generator }} · zasady v{{ rules }}",
+    "entries": "Ocenione solvery: {{ count }}",
+    "commitment": "Zobowiązanie (SHA-256 ziarna)",
+    "seed": "Ziarno",
+    "sealed": "Ziarno pozostaje tajne do końca sezonu, potem zostanie tu ujawnione.",
+    "set": "Ukryty zestaw ({{ size }} MB)",
+    "no_set": "W tym sezonie nie zarchiwizowano zestawu; odtwórz go z ziarna.",
+    "csv": "Wyniki dla formuł (CSV)",
+    "json": "Wyniki dla formuł (JSON)",
+    "board": "Ranking końcowy",
+    "empty_board": "W tym sezonie żaden solver nie trafił do rankingu.",
+    "none": "Żaden sezon jeszcze się nie zakończył. Archiwum zacznie się po zakończeniu sezonu {{ season }}.",
+    "deleted": "usunięte konto",
+    "verify_title": "Jak to sprawdzić",
+    "verify": "SHA-256 ujawnionego ziarna musi zgadzać się ze zobowiązaniem opublikowanym na starcie. Przy tej samej wersji generatora dojo export odtwarza zestaw z ziarna; zarchiwizowany zestaw pozostaje ważny na zawsze, a dojo run --set ocenia na nim dowolny solver dokładnie tak, jak zrobił to ranking.",
+    "back": "Powrót do dojo"
   },
   "how": {
     "title": "Jak to działa",
@@ -55,7 +83,7 @@
     "fuel_title": "Paliwo, nie sekundy",
     "fuel": "Każda wykonana instrukcja WebAssembly kosztuje jedną jednostkę paliwa, masowe operacje na pamięci jedną na bajt. Zegary i liczby losowe mają stałe ziarno, więc solver dostaje ten sam wynik na każdej maszynie, za każdym razem.",
     "hidden_title": "Ukryte, świeże formuły",
-    "hidden": "Zbiór testowy pochodzi z tajnego ziarna, które zmienia się co sezon, a każda formuła jest przemieszana: zmienne przemianowane i zanegowane, klauzule przetasowane. Wyniki są pokazywane tylko dla rodzin, nigdy dla pojedynczych formuł.",
+    "hidden": "Zestaw testowy powstaje z tajnego ziarna, które zmienia się co sezon, a każda formuła jest przemieszana: zmienne przemianowane i zanegowane, klauzule potasowane. Dopóki sezon trwa, wyniki są pokazywane tylko dla rodzin, nigdy dla pojedynczych formuł.",
     "checked_title": "Każda odpowiedź sprawdzona",
     "checked": "Modele są weryfikowane względem formuły. UNSAT liczy się tylko tam, gdzie mamy dowód: zasada szufladkowa i parzystość Hashi są niespełnialne z konstrukcji, a każda inna etykieta UNSAT ma dowód DRAT zweryfikowany przez nasz własny checker. Jedna błędna odpowiedź dyskwalifikuje zgłoszenie, więc zgadywanie się nie opłaca.",
     "sandbox_title": "Szczelna piaskownica",
@@ -63,9 +91,11 @@
     "accounts_title": "Jedno konto, najlepszy wynik",
     "accounts": "Konto musi mieć co najmniej dobę, by zgłaszać, a limit to trzy zgłoszenia dziennie na konto i na sieć. Identyczny kod jest odrzucany, nawet po zmianie nazwy lub dopełnieniu, a w rankingu liczy się tylko twoje najlepsze zgłoszenie.",
     "seasons_title": "Sezony",
-    "seasons": "Nowy sezon przynosi nowy ukryty zbiór, a każde zgłoszenie jest oceniane od nowa.",
+    "seasons": "Nowy sezon przynosi nowy ukryty zestaw i każde zgłoszenie jest oceniane od nowa. Zakończony sezon trafia do archiwum: publikujemy jego ranking końcowy, zestaw i każdy wynik dla każdej formuły.",
     "copies_title": "Żadnych kopii",
-    "copies": "Wyniki są dokładne, więc solver zostawia odcisk palca: paliwo, które zużywa na każdej formule. Zgłoszenie, które zachowuje się jak wcześniejsze zgłoszenie innej osoby, nie trafia do rankingu. Zmiana kopii na tyle, by tego uniknąć, czyni z niej inny solver, a spowolnienie jej tylko spycha ją poniżej oryginału."
+    "copies": "Wyniki są dokładne, więc solver zostawia odcisk palca: paliwo, które zużywa na każdej formule. Zgłoszenie, które zachowuje się jak wcześniejsze zgłoszenie innej osoby, nie trafia do rankingu. Zmiana kopii na tyle, by tego uniknąć, czyni z niej inny solver, a spowolnienie jej tylko spycha ją poniżej oryginału.",
+    "commit_title": "Zapieczętowane z góry",
+    "commit": "Na początku sezonu publikujemy SHA-256 jego tajnego ziarna. Po sezonie ziarno zostaje ujawnione, więc każdy może sprawdzić, że zestaw był ustalony wcześniej, i odtworzyć go poleceniem dojo export --seed."
   },
   "science": {
     "title": "Dla badaczy",

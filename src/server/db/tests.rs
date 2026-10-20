@@ -111,16 +111,21 @@ async fn write_rows(conn: &Connection, version: usize) {
         run("INSERT INTO contact_messages (name, email, message, created_at) VALUES ('', 'a@b.c', 'Hi', 1)")
             .await;
     }
-    if version >= 9 {
-        conn.execute(
-            "UPDATE dojo_submissions SET evaluation_version = ?1",
-            params![dojo::EVALUATION_VERSION],
-        )
-        .await
-        .unwrap();
-    }
     if version >= 8 {
         run("UPDATE users SET renamed_at = 500 WHERE id = 1").await;
+    }
+    if version >= 9 {
+        // A season archived with the submission in it
+        run(r"
+            UPDATE dojo_submissions SET rules_version = 1, results = '[]';
+            INSERT INTO dojo_seasons (season, started_at, ended_at, commitment, seed, generator_version, rules_version)
+                VALUES (1, 1000, 3000, 'c', 's', 1, 1);
+            INSERT INTO dojo_season_sets (season, generator_version, archive, sha256, created_at)
+                VALUES (1, 1, X'1f8b', 'h', 3000);
+            INSERT INTO dojo_archive (season, submission_id, user_id, house, name, created_at, wrong, rank)
+                VALUES (1, 1, 1, 0, 'mine', 1000, 0, 1);
+        ")
+        .await;
     }
 }
 
@@ -130,10 +135,10 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 }
 
 #[tokio::test]
-async fn olddatabases_migrate_with_their_data() {
+async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        9,
+        10,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -222,6 +227,21 @@ async fn olddatabases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM stamps WHERE announced = 0",
                 i64::from(version >= 4),
+            ),
+            // Results from before rules versions are evaluated again
+            (
+                "SELECT COUNT(*) FROM dojo_submissions WHERE rules_version IS NULL",
+                i64::from((2..9).contains(&version)),
+            ),
+            (
+                "SELECT COUNT(*) FROM dojo_archive WHERE rank = 1",
+                i64::from(version >= 9),
+            ),
+            // 10 only added the indexes of ranked times
+            (
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index'
+                    AND name IN ('attempts_user_ranked', 'attempts_day_ranked')",
+                2,
             ),
         ];
         for (sql, expected) in defaults {

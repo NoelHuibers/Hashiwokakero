@@ -1,24 +1,28 @@
 //! The SAT Dojo command line.
 //!
 //! ```text
-//! dojo run <solver.wasm> [--seed S] [--budget FUEL] [--threads N] [--family F] [--stderr]
-//!     Scores a solver on the development set, exactly like the leaderboard does.
-//! dojo export <dir> [--seed S]
-//!     Writes the set as DIMACS files, with the expected answers in answers.txt.
+//! dojo run <solver.wasm> [--seed S | --set SET.tar.gz] [--budget FUEL] [--threads N]
+//!          [--family F] [--stderr]
+//!     Scores a solver on the development set, exactly like the leaderboard does. --seed takes
+//!     another set's seed (a past season's, revealed on hashi.rs/dojo/seasons), --set an
+//!     archived set as downloaded from there.
+//! dojo export <dir | file.tar.gz> [--seed S] [--season N]
+//!     Writes the set as DIMACS files, with the expected answers in answers.txt and models in
+//!     witnesses.txt; into a directory, or a tarball like the season archive's.
 //! dojo serve
 //!     The worker service for hashi.rs (see dojo::worker for its settings).
 //! ```
 
-use std::fmt::Write as _;
 use std::process::ExitCode;
 use std::time::Instant;
 
+use dojo::archive::{self, SetInfo};
 use dojo::bench::{self, Instance};
 #[cfg(feature = "runner")]
 use dojo::eval::{Options, evaluate};
 #[cfg(feature = "runner")]
 use dojo::sandbox::Sandbox;
-use dojo::{Answer, DEV_SEED, Family};
+use dojo::{DEV_SEED, Family};
 #[cfg(feature = "runner")]
 use dojo::{Outcome, Score};
 
@@ -29,10 +33,18 @@ fn flag(args: &[String], name: &str) -> Option<String> {
         .cloned()
 }
 
-fn set(args: &[String]) -> Vec<Instance> {
-    let seed = flag(args, "--seed").unwrap_or_else(|| DEV_SEED.to_string());
+/// The set the arguments ask for (`--seed`, `--set`, `--family`), with its seed.
+fn set(args: &[String]) -> Result<(String, Vec<Instance>), String> {
     let started = Instant::now();
-    let mut set = bench::generate(&seed);
+    let (seed, mut set) = if let Some(path) = flag(args, "--set") {
+        let bytes = std::fs::read(&path).map_err(|e| format!("{path}: {e}"))?;
+        let (info, set) = archive::read_tar_gz(&bytes).map_err(|e| format!("{path}: {e}"))?;
+        (info.seed, set)
+    } else {
+        let seed = flag(args, "--seed").unwrap_or_else(|| DEV_SEED.to_string());
+        let set = bench::generate(&seed);
+        (seed, set)
+    };
     if let Some(family) = flag(args, "--family") {
         let family = Family::from_id(&family).unwrap_or_else(|| {
             let ids: Vec<_> = Family::ALL.iter().map(|f| f.id()).collect();
@@ -41,11 +53,11 @@ fn set(args: &[String]) -> Vec<Instance> {
         set.retain(|i| i.family == family);
     }
     eprintln!(
-        "set {seed}: {} formulas, generated in {:.1?}",
+        "set {seed}: {} formulas, ready in {:.1?}",
         set.len(),
         started.elapsed()
     );
-    set
+    Ok((seed, set))
 }
 
 #[cfg(feature = "runner")]
@@ -69,7 +81,8 @@ fn run(args: &[String]) -> Result<(), String> {
     if let Some(threads) = flag(args, "--threads") {
         options.threads = threads.parse().map_err(|_| "--threads takes a number")?;
     }
-    let set = set(args);
+    let (seed, set) = set(args)?;
+    options.set_seed = seed;
     let started = Instant::now();
     let results = evaluate(&sandbox, &solver, &set, &options, |done, r| {
         #[expect(
@@ -81,16 +94,11 @@ fn run(args: &[String]) -> Result<(), String> {
             "[{done:>2}/{}] {:<16} {:<5} {:<9} {:>8.3} Gfuel {:>7} ms",
             set.len(),
             r.name,
-            match r.expected {
-                Answer::Sat => "SAT",
-                Answer::Unsat => "UNSAT",
-            },
-            match r.outcome {
-                Outcome::Solved(_) => "solved",
-                Outcome::Unknown => "unknown",
-                Outcome::Timeout => "timeout",
-                Outcome::Crashed => "crashed",
-                Outcome::Wrong => "WRONG",
+            r.expected.id(),
+            if r.outcome == Outcome::Wrong {
+                "WRONG"
+            } else {
+                r.outcome.id()
             },
             gfuel,
             r.wall_ms,
@@ -123,34 +131,22 @@ fn run(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
-const README: &str = "The development set of the Hashi SAT Dojo (https://hashi.rs/dojo).
-
-One DIMACS CNF file per formula, answers.txt has the expected answer of each. The hidden test
-set of a season has the same families and sizes, generated from a secret seed.
-
-Score a solver exactly like the leaderboard does:
-    dojo run my-solver.wasm
-Regenerate this set:
-    dojo export dojo-dev-1
-";
-
 fn export(args: &[String]) -> Result<(), String> {
-    let dir = std::path::PathBuf::from(args.first().ok_or("usage: dojo export <dir>")?);
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let mut answers = String::new();
-    for instance in set(args) {
-        let file = dir.join(format!("{}.cnf", instance.name));
-        let comment = format!("{} from the Hashi SAT Dojo", instance.name);
-        std::fs::write(&file, instance.cnf.dimacs(&comment)).map_err(|e| e.to_string())?;
-        let answer = match instance.expected {
-            Answer::Sat => "SAT",
-            Answer::Unsat => "UNSAT",
-        };
-        let _ = writeln!(answers, "{} {answer}", instance.name);
+    let path = std::path::PathBuf::from(
+        args.first()
+            .ok_or("usage: dojo export <dir | file.tar.gz>")?,
+    );
+    let season = flag(args, "--season")
+        .map(|s| s.parse().map_err(|_| "--season takes a number"))
+        .transpose()?;
+    let (seed, set) = set(args)?;
+    let info = SetInfo::new(&seed, season);
+    if path.to_string_lossy().ends_with(".tar.gz") {
+        archive::save(&path, &archive::write_tar_gz(&set, &info))?;
+    } else {
+        archive::write_dir(&path, &set, &info)?;
     }
-    std::fs::write(dir.join("answers.txt"), answers).map_err(|e| e.to_string())?;
-    std::fs::write(dir.join("README.txt"), README).map_err(|e| e.to_string())?;
-    eprintln!("written to {}", dir.display());
+    eprintln!("written to {}", path.display());
     Ok(())
 }
 

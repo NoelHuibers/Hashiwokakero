@@ -538,6 +538,8 @@ pub async fn delete_account(
 /// the ranked times and penalties, under a user without a name (`deleted_at`), so the rankings of
 /// old days and the medals of everyone else don't change. A user without ranked times remains
 /// as an anonymous tombstone, so numeric admin grants can never transfer to a reused id.
+/// Archived Dojo seasons keep the numbers of the user's solvers, without their names, links or
+/// a way back to the user.
 pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     let tx = conn.transaction().await.map_err(db_err)?;
     for sql in [
@@ -547,6 +549,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         "UPDATE dojo_submissions SET similar_to = NULL
          WHERE similar_to IN (SELECT id FROM dojo_submissions WHERE user_id = ?1)",
         "DELETE FROM dojo_submissions WHERE user_id = ?1",
+        "UPDATE dojo_archive SET user_id = NULL, name = '', source_url = NULL WHERE user_id = ?1",
         "DELETE FROM attempts
          WHERE user_id = ?1 AND (finished_at IS NULL OR revealed != 0 OR flag IS NOT NULL)",
         "UPDATE attempts SET bridges = NULL, log = NULL, device = NULL, run = NULL, daypart = NULL

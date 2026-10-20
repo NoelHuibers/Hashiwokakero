@@ -1,6 +1,6 @@
 //! Reading the SAT Dojo: the leaderboard, a submission and the player's own submissions.
 
-use dojo::{DEFAULT_BUDGET, Score};
+use dojo::{DEFAULT_BUDGET, GENERATOR_VERSION, RULES_VERSION, Score};
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 
@@ -16,7 +16,7 @@ fn score_of(json: Option<String>) -> Option<Score> {
 
 /// The best submission of every author this season, ranked, with the author's id (`None` for
 /// house entries).
-async fn ranked(
+pub(super) async fn ranked(
     conn: &Connection,
     season: u32,
 ) -> Result<Vec<(DojoEntry, Option<i64>)>, ServerFnError> {
@@ -25,9 +25,9 @@ async fn ranked(
             "SELECT s.id, s.name, COALESCE(u.name, 'Hashi'), s.house, s.score, s.created_at, s.user_id
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id
              WHERE s.state = 'done' AND s.season = ?1 AND s.wrong = 0 AND s.solved > 0
-               AND s.similar_to IS NULL AND s.evaluation_version = ?2
+               AND s.similar_to IS NULL
              ORDER BY s.par2 ASC, s.solved DESC, s.created_at ASC",
-            params![season, dojo::EVALUATION_VERSION],
+            params![season],
         )
         .await
         .map_err(db_err)?;
@@ -94,6 +94,9 @@ pub async fn board(conn: &Connection) -> Result<DojoBoard, ServerFnError> {
         budget: DEFAULT_BUDGET,
         entries,
         queued,
+        commitment: super::seasons::commitment_of(conn, season).await?,
+        generator_version: GENERATOR_VERSION,
+        rules_version: RULES_VERSION,
     })
 }
 
