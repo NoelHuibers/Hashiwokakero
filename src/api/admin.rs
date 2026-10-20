@@ -3,6 +3,7 @@
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
+use super::HashiClient;
 use crate::model::{
     AdminAttempt, AdminOverview, AdminSubmission, ContactMessage, Flag, FlaggedName, MoveEvent,
     SubmissionAction,
@@ -10,7 +11,7 @@ use crate::model::{
 #[cfg(feature = "ssr")]
 use crate::server::{admin, contact, daily, db};
 
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn load_admin_overview() -> Result<AdminOverview, ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
@@ -18,7 +19,7 @@ pub async fn load_admin_overview() -> Result<AdminOverview, ServerFnError> {
 }
 
 /// Every attempt of a day (today if `None`), with move log summaries.
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn admin_attempts(day: Option<i64>) -> Result<(i64, Vec<AdminAttempt>), ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
@@ -26,7 +27,7 @@ pub async fn admin_attempts(day: Option<i64>) -> Result<(i64, Vec<AdminAttempt>)
     Ok((day, admin::attempts(&conn, day).await?))
 }
 
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn admin_log(user: i64, day: i64) -> Result<Vec<MoveEvent>, ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
@@ -34,21 +35,21 @@ pub async fn admin_log(user: i64, day: i64) -> Result<Vec<MoveEvent>, ServerFnEr
 }
 
 /// Takes a result off the board (`Some`) or puts it back (`None`).
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn admin_flag(user: i64, day: i64, flag: Option<Flag>) -> Result<(), ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
     daily::set_flag(&conn, user, day, flag).await.map(|_| ())
 }
 
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn admin_submissions() -> Result<Vec<AdminSubmission>, ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
     admin::submissions(&conn).await
 }
 
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn update_admin_submission(
     id: i64,
     action: SubmissionAction,
@@ -59,7 +60,7 @@ pub async fn update_admin_submission(
 }
 
 /// Messages from the contact form, newest first.
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn admin_messages(
     #[server(default)] before: Option<i64>,
 ) -> Result<Vec<ContactMessage>, ServerFnError> {
@@ -69,7 +70,7 @@ pub async fn admin_messages(
 }
 
 /// Deletes a contact message once it is answered.
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn delete_admin_message(id: i64) -> Result<(), ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
@@ -77,7 +78,7 @@ pub async fn delete_admin_message(id: i64) -> Result<(), ServerFnError> {
 }
 
 /// Names on the boards the list of blocked names flags.
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn admin_names() -> Result<Vec<FlaggedName>, ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
@@ -85,7 +86,7 @@ pub async fn admin_names() -> Result<Vec<FlaggedName>, ServerFnError> {
 }
 
 /// Gives a player a neutral name ("Player 17"), `None` if there is no such player.
-#[server(input = Json)]
+#[server(input = Json, client = HashiClient)]
 pub async fn admin_rename_player(id: i64) -> Result<Option<String>, ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;

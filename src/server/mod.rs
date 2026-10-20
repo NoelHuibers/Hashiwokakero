@@ -10,7 +10,7 @@ pub mod limits;
 pub mod names;
 mod router;
 
-pub use router::router;
+pub use router::{build_id, router};
 
 use std::fmt::Write as _;
 

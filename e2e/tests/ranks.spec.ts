@@ -106,3 +106,35 @@ test('a tab of an older version is asked to reload, not shown the 404 page', asy
   await hydrated(page);
   await expect(toast).toHaveCount(0);
 });
+
+test('a tab of an older build is asked to reload when the server answers in another shape', async ({ page }) => {
+  // The page names the build of its WASM and every answer the server's, the same here: the server
+  // and the WASM come from one build (in CI from two jobs, put together by hash.txt)
+  const answered = page.waitForResponse((r) => r.url().endsWith('/api/daily_leaderboard'));
+  await visit(page, '/ranks');
+  const build = await page.locator('meta[name="hashi-build"]').getAttribute('content');
+  expect(build).toMatch(/^[\w-]+$/);
+  expect((await answered).headers()['x-hashi-build']).toBe(build);
+
+  // The leaderboard comes back in a shape this WASM can't read, as when a server function keeps
+  // its name and returns another type
+  let serverBuild = build!;
+  await page.route('**/api/daily_leaderboard', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      headers: { 'x-hashi-build': serverBuild },
+      body: '{"board":"of another shape"}',
+    }),
+  );
+  const reload = page.getByText('Hashi has been updated. Reload the page to continue.');
+  const earlier = page.getByRole('button', { name: /Earlier/ }).first();
+  // From the same build it's a bug, shown as an error
+  await earlier.click();
+  await expect(page.getByText(/^Something went wrong/)).toBeVisible();
+  await expect(reload).toHaveCount(0);
+  // From another build the tab is outdated
+  serverBuild = 'a-newer-build';
+  await earlier.click();
+  await expect(reload).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+});
