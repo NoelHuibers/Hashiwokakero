@@ -3,6 +3,9 @@
 Reviewed application baseline: `232ecf2` (main after PR #78). This is a
 source/configuration assessment, not a scan of production or its certificates.
 
+Follow-up: the separately scoped [Dojo Wasmtime patch](2026-10-21-wasmtime-patch.md)
+addresses the two Wasmtime findings recorded below; the legacy findings remain.
+
 ## Decision
 
 Apply only compatible lockfile patches: `rustls-webpki 0.103.15 → 0.103.16` and
