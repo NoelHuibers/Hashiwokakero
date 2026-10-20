@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Hashi · Daily Hashiwokakero (Bridges) puzzle, free online",
-    "description": "A new Hashiwokakero (Bridges) puzzle every day, the same for everyone: cute Japanese pixel art, a leaderboard and streaks, and every puzzle has exactly one solution."
+    "description": "A new Hashiwokakero (Bridges) puzzle every day, the same for everyone: cute Japanese pixel art, a leaderboard, streaks and exactly one solution per puzzle."
   },
   "title": "Daily bridge #{{ number }}",
   "penalty": "Penalty",

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Crea il tuo puzzle Hashiwokakero · Hashi",
-    "description": "Progetta un puzzle Ponti nell’officina: piazza le isole, fai verificare a un solver SAT che abbia una sola soluzione, esportalo come file di testo e giocalo."
+    "description": "Progetta un puzzle Ponti nell’officina: piazza le isole, fai verificare a un solver SAT che abbia una sola soluzione, esportalo come testo e giocalo."
   },
   "kicker": "作る · tsukuru",
   "title": "Officina dei puzzle",

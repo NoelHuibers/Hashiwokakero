@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT-Dojo · ein Fitnessstudio für SAT-Solver · Hashi",
-    "description": "Reich deinen SAT-Solver als WebAssembly ein und klettere in der Rangliste: geheime, frische Formeln, deterministischer Treibstoff statt Sekunden. Open Source."
+    "description": "Reich deinen SAT-Solver als WebAssembly ein, klettere in der Rangliste: geheime, frische Formeln, deterministischer Treibstoff statt Sekunden. Open Source."
   },
   "title": "SAT-Dojo",
   "intro": "Ein Fitnessstudio für SAT-Solver. Kompilier deinen Solver zu WebAssembly, reich ihn ein, und er wird auf einem geheimen Satz frischer Formeln bewertet: Hashi-Rätsel, Paritätsfallen, zufälliges 3-SAT, Tauben, Damen, Faktorisierung, Multiplizierer-Miter, Graphfärbung und eine geheime Familie.",

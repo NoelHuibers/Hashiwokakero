@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · SAT çözücüleri için spor salonu · Hashi",
-    "description": "SAT çözücünü WebAssembly olarak gönder ve sıralamada yüksel: saniye yerine deterministik yakıtla, gizli ve yeni formüllerde puanlanır. Ücretsiz, açık kaynak."
+    "description": "SAT çözücünü WebAssembly olarak gönder, sıralamada yüksel: saniye yerine deterministik yakıtla, gizli ve yeni formüllerde puanlanır. Ücretsiz, açık kaynak."
   },
   "title": "SAT Dojo",
   "intro": "SAT çözücüleri için bir spor salonu. Çözücünü WebAssembly'ye derle, gönder; gizli ve yeni formüllerden oluşan bir sette puanlansın: Hashi bulmacaları, parite tuzakları, rastgele 3-SAT, güvercinler, vezirler, çarpanlara ayırma, çarpıcı miter'ları, graf boyama ve bir gizemli aile.",

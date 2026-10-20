@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · uma academia para solvers SAT · Hashi",
-    "description": "Envie seu solver SAT em WebAssembly e suba no ranking: avaliado em fórmulas novas e ocultas com combustível determinístico, não segundos. Aberto e reproduzível."
+    "description": "Envie seu solver SAT em WebAssembly e suba no ranking: fórmulas novas e ocultas, combustível determinístico em vez de segundos. Aberto e reproduzível."
   },
   "title": "SAT Dojo",
   "intro": "Uma academia para solvers SAT. Compile o seu para WebAssembly, envie, e ele é avaliado num conjunto oculto de fórmulas novas: puzzles Hashi, armadilhas de paridade, 3-SAT aleatório, pombos, rainhas, fatoração, miters de multiplicadores, coloração de grafos e uma família misteriosa.",

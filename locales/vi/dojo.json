@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Dojo SAT · phòng tập cho bộ giải SAT · Hashi",
-    "description": "Gửi bộ giải SAT dạng WebAssembly và leo bảng xếp hạng: chấm trên các công thức mới, ẩn, bằng fuel tất định thay vì giây. Miễn phí, mã nguồn mở, tái lập được."
+    "description": "Gửi bộ giải SAT dạng WebAssembly và leo bảng xếp hạng: chấm trên công thức mới, ẩn, bằng fuel tất định thay vì giây. Miễn phí, mã nguồn mở, tái lập được."
   },
   "title": "Dojo SAT",
   "intro": "Phòng tập cho các bộ giải SAT. Biên dịch bộ giải của bạn sang WebAssembly, gửi lên, và nó được chấm điểm trên một tập ẩn gồm các công thức mới: câu đố Hashi, bẫy chẵn lẻ, 3-SAT ngẫu nhiên, chim bồ câu, quân hậu, phân tích thừa số, miter của mạch nhân, tô màu đồ thị và một họ bí ẩn.",
