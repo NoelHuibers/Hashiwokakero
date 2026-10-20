@@ -20,7 +20,7 @@ pub async fn attempt(
 ) -> Result<Option<AttemptInfo>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT started_at, finished_at, hints, checks, revealed, time_ms, bridges, flag
+            "SELECT started_at, finished_at, hints, checks, revealed, time_ms, bridges, flag, attempt_id
              FROM attempts WHERE user_id = ?1 AND day = ?2",
             params![user, day],
         )
@@ -31,6 +31,7 @@ pub async fn attempt(
     };
     let bridges: Option<String> = row.get(6).map_err(db_err)?;
     Ok(Some(AttemptInfo {
+        attempt_id: row.get(8).map_err(db_err)?,
         started_at: row.get(0).map_err(db_err)?,
         finished_at: row.get(1).map_err(db_err)?,
         hints: row.get(2).map_err(db_err)?,
@@ -182,6 +183,172 @@ pub async fn check(
     .map_err(db_err)?;
     tx.commit().await.map_err(db_err)?;
     Ok(wrong_edges(&bridges, &daily.solution))
+}
+
+/// A maximum of 256 distinct purchases per attempt. Receipts live with the attempt and are
+/// never evicted, even after finishing: an arbitrarily late retry cannot charge again. This
+/// bounds retained receipt count without an expiry window that could turn retries into charges.
+/// Account erasure clears them along with bridges/logs and revokes every session.
+const MAX_PAID_ACTIONS: usize = 256;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct PaidReceipt {
+    // Older receipts get their provenance from the actual owning guest inside merge_guest.
+    #[serde(default)]
+    origin_user: Option<i64>,
+    id: String,
+    action: crate::api::PaidAction,
+    bridges: Vec<u8>,
+    outcome: crate::api::PaidOutcome,
+}
+
+/// Reads an owned receipt and its counters together, without creating an attempt or charge.
+///
+/// The current owner, exact original user, attempt, ID, action and board must all agree;
+/// a coincidentally equal `started_at` on a conflicting attempt proves nothing.
+pub async fn recover_actions(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    started_at: i64,
+    intents: &[crate::api::PaidIntent],
+) -> Result<Option<crate::api::PaidRecovery>, ServerFnError> {
+    use crate::api::{PaidRecovery, PaidReply};
+    if intents.len() > MAX_PAID_ACTIONS
+        || intents.iter().any(|i| {
+            !(16..=64).contains(&i.id.len())
+                || i.bridges.len() > 2 * usize::from(common::MAX_SIZE).pow(2)
+        })
+    {
+        return Err(ApiError::WrongPuzzle.into());
+    }
+    let mut rows = conn.query(
+        "SELECT paid_actions, hints, checks, attempt_id FROM attempts WHERE user_id = ?1 AND day = ?2 AND started_at = ?3",
+        params![user, day, started_at],
+    ).await.map_err(db_err)?;
+    let Some(row) = rows.next().await.map_err(db_err)? else {
+        return Ok(None);
+    };
+    let receipts: Vec<PaidReceipt> = from_json(&row.get::<String>(0).map_err(db_err)?)?;
+    for intent in intents {
+        if intent.day != day
+            || intent.started_at != started_at
+            || (!intent.attempt_id.is_empty()
+                && intent.attempt_id != row.get::<String>(3).map_err(db_err)?)
+        {
+            continue;
+        }
+        if let Some(receipt) = receipts.iter().find(|r| {
+            r.origin_user == Some(intent.user)
+                && r.id == intent.id
+                && r.action == intent.action
+                && r.bridges == intent.bridges
+        }) {
+            return Ok(Some(PaidRecovery {
+                intent: intent.clone(),
+                reply: PaidReply {
+                    outcome: receipt.outcome.clone(),
+                    hints: row.get(1).map_err(db_err)?,
+                    checks: row.get(2).map_err(db_err)?,
+                },
+            }));
+        }
+    }
+    Ok(None)
+}
+
+/// The receipt and the penalty are committed together under the same cross-connection lock as
+/// submission. Identity comes exclusively from the session, never from the request body.
+pub async fn paid_action(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+    action: crate::api::PaidAction,
+    request_id: &str,
+    expected_attempt: &str,
+) -> Result<crate::api::PaidReply, ServerFnError> {
+    use crate::api::{PaidAction, PaidOutcome, PaidReply};
+
+    if !(16..=64).contains(&request_id.len())
+        || !request_id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+    {
+        return Err(ApiError::WrongPuzzle.into());
+    }
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    let current = attempt(&tx, user, day)
+        .await?
+        .ok_or_else(|| ApiError::SessionExpired.fail())?;
+    // Check before reading receipts or charging, while holding the write lock. A deleted
+    // guest's numeric ID (and even its start millisecond) can belong to a replacement guest.
+    // This error must retain the unresolved intent: its receipt may have moved to an account.
+    if expected_attempt.is_empty() || current.attempt_id != expected_attempt {
+        return Err(ApiError::SessionExpired.into());
+    }
+    let saved: String = tx
+        .query(
+            "SELECT paid_actions FROM attempts WHERE user_id = ?1 AND day = ?2",
+            params![user, day],
+        )
+        .await
+        .map_err(db_err)?
+        .next()
+        .await
+        .map_err(db_err)?
+        .ok_or_else(|| ApiError::NotStarted.fail())?
+        .get(0)
+        .map_err(db_err)?;
+    let mut receipts: Vec<PaidReceipt> = from_json(&saved)?;
+    // Replay before checking 'finished', so a lost reply can also be recovered after submission.
+    if let Some(receipt) = receipts.iter().find(|r| r.id == request_id) {
+        if receipt.action != action || receipt.bridges != bridges {
+            return Err(ApiError::WrongPuzzle.into());
+        }
+        let reply = PaidReply {
+            outcome: receipt.outcome.clone(),
+            hints: current.hints,
+            checks: current.checks,
+        };
+        tx.commit().await.map_err(db_err)?;
+        return Ok(reply);
+    }
+    if current.finished() {
+        return Err(ApiError::AlreadyFinished.into());
+    }
+    if receipts.len() >= MAX_PAID_ACTIONS {
+        return Err(ApiError::TooManyAttempts.into());
+    }
+    let daily = get_or_create(&tx, day).await?;
+    let board = Board::new(daily.puzzle);
+    check_bridges(&board, &bridges)?;
+    let outcome = match action {
+        PaidAction::Hint => PaidOutcome::Hint(pick_hint(&board, &bridges, &daily.solution)),
+        PaidAction::Check => PaidOutcome::Check(wrong_edges(&bridges, &daily.solution)),
+    };
+    let hints = current.hints + i64::from(matches!(&outcome, PaidOutcome::Hint(Some(_))));
+    let checks = current.checks + i64::from(action == PaidAction::Check);
+    receipts.push(PaidReceipt {
+        origin_user: Some(user),
+        id: request_id.to_owned(),
+        action,
+        bridges,
+        outcome: outcome.clone(),
+    });
+    tx.execute(
+        "UPDATE attempts SET hints = ?3, checks = ?4, paid_actions = ?5 WHERE user_id = ?1 AND day = ?2",
+        params![user, day, hints, checks, json(&receipts)?],
+    ).await.map_err(db_err)?;
+    tx.commit().await.map_err(db_err)?;
+    Ok(PaidReply {
+        outcome,
+        hints,
+        checks,
+    })
 }
 
 /// Gives up: the solution, the attempt won't be ranked.

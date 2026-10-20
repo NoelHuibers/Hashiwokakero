@@ -1,4 +1,8 @@
 {
+  "action_recover": "Appuyez sur Indice ou Vérifier pour récupérer une action précédente après la connexion.",
+  "action_pending": "En attente du serveur…",
+  "action_retry": "Le résultat est incertain. Répétez la même action pour le récupérer sans pénalité supplémentaire.",
+  "action_storage": "Le stockage du navigateur est nécessaire pour réessayer cette action en toute sécurité. Activez-le puis réessayez.",
   "meta": {
     "title": "Hashi · Hashiwokakero (Ponts) du jour, gratuit en ligne",
     "description": "Une nouvelle grille de Hashiwokakero (Ponts) chaque jour, la même pour tous : pixel art japonais, classement, séries, et une seule solution par grille."

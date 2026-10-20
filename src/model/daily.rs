@@ -42,6 +42,9 @@ impl UserInfo {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AttemptInfo {
+    /// Stable identity across guest transfer, independent of user IDs and wall-clock time.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub attempt_id: String,
     /// Server time (ms) when the player pressed start.
     pub started_at: i64,
     pub finished_at: Option<i64>,

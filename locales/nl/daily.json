@@ -1,4 +1,8 @@
 {
+  "action_recover": "Druk op Hint of Controleer om na het aanmelden een eerdere actie te herstellen.",
+  "action_pending": "Wachten op de server…",
+  "action_retry": "Het resultaat is onzeker. Druk nogmaals op dezelfde actie om het zonder extra straf op te halen.",
+  "action_storage": "Browseropslag is nodig om deze actie veilig opnieuw te proberen. Schakel deze in en probeer het opnieuw.",
   "meta": {
     "title": "Hashi · Dagelijkse Hashiwokakero-bruggenpuzzel, gratis",
     "description": "Elke dag een nieuwe Hashiwokakero-puzzel (Bruggen bouwen), voor iedereen dezelfde: schattige Japanse pixelart, ranglijst en reeksen, altijd één oplossing."

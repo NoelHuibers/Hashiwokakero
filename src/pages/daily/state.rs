@@ -65,6 +65,7 @@ pub(super) fn browser_utc_offset() -> i32 {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Daily {
+    pub(super) actions: super::actions::Actions,
     pub(super) game: Game,
     pub(super) info: RwSignal<Option<DailyInfo>>,
     /// Server clock minus client clock.
@@ -77,6 +78,34 @@ pub struct Daily {
     pub(super) logged: StoredValue<Option<MoveSnapshot>>,
     /// A quiet [`Self::refresh`] is on its way.
     pub(super) refreshing: StoredValue<bool>,
+}
+
+/// Quiet fetches may overlap a purchase, identity change, day change or page disposal.
+/// Compare the full captured info too: even a same-attempt counter update makes it stale.
+#[derive(Clone, Debug)]
+pub(super) struct RefreshGuard {
+    info: Option<DailyInfo>,
+    user: Option<i64>,
+    epoch: u32,
+    revision: u64,
+}
+
+impl RefreshGuard {
+    pub(super) fn new(daily: &Daily) -> Self {
+        Self {
+            info: daily.info.get_untracked(),
+            user: daily.actions.user(),
+            epoch: daily.game.epoch.get_untracked(),
+            revision: daily.actions.refresh_revision(),
+        }
+    }
+
+    pub(super) fn current(&self, daily: &Daily) -> bool {
+        daily.info.try_with_untracked(|i| *i == self.info) == Some(true)
+            && daily.game.epoch.try_get_untracked() == Some(self.epoch)
+            && daily.actions.user() == self.user
+            && daily.actions.refresh_revision() == self.revision
+    }
 }
 
 impl Daily {
@@ -230,11 +259,14 @@ impl Daily {
         }
         self.refreshing.set_value(true);
         let this = *self;
+        let guard = RefreshGuard::new(self);
         spawn_local(async move {
-            if let Ok(info) = daily_today().await {
+            if let Ok(info) = daily_today().await
+                && guard.current(&this)
+            {
                 this.apply(info);
             }
-            this.refreshing.set_value(false);
+            this.refreshing.try_set_value(false);
         });
     }
 
@@ -266,15 +298,20 @@ impl Daily {
         let ranking = self.ranking;
         spawn_local(async move {
             if let Ok(lb) = daily_leaderboard(None).await {
-                ranking.set(Some(lb));
+                ranking.try_set(Some(lb));
             }
         });
     }
 
     pub(super) fn reload(&self) {
         let this = *self;
+        let guard = RefreshGuard::new(self);
         spawn_local(async move {
-            match daily_today().await {
+            let response = daily_today().await;
+            if !guard.current(&this) {
+                return;
+            }
+            match response {
                 Ok(info) => this.apply(info),
                 Err(e) => error_toast(e),
             }
@@ -305,6 +342,32 @@ mod tests {
             required: 1,
         };
         Puzzle::new(3, 1, vec![island(0), island(2)])
+    }
+
+    #[test]
+    fn refresh_replies_reject_newer_counters_days_boards_and_disposed_owners() {
+        tab(|d| {
+            d.info.set(Some(info(false)));
+            let before = RefreshGuard::new(d);
+            assert!(before.current(d));
+            d.update_attempt(|a| a.hints = 2);
+            assert!(!before.current(d)); // old daily_today cannot roll back accepted penalties
+            let current = RefreshGuard::new(d);
+            d.info.update(|i| i.as_mut().unwrap().day += 1);
+            assert!(!current.current(d));
+            let current = RefreshGuard::new(d);
+            d.game.epoch.update(|e| *e += 1);
+            assert!(!current.current(d));
+        });
+        let owner = Owner::new();
+        let (d, guard) = owner.with(|| {
+            let d = daily();
+            let guard = RefreshGuard::new(&d);
+            (d, guard)
+        });
+        owner.cleanup();
+        assert!(!guard.current(&d));
+        d.refreshing.try_set_value(false); // completing a quiet fetch is also disposal-safe
     }
 
     #[test]
@@ -430,6 +493,10 @@ mod tests {
     fn daily() -> Daily {
         Daily {
             game: Game::new("test.daily"),
+            actions: super::super::actions::Actions::new(crate::state::Auth {
+                user: RwSignal::new(None),
+                loaded: RwSignal::new(true),
+            }),
             info: RwSignal::new(None),
             skew: RwSignal::new(0),
             now: RwSignal::new(0),
@@ -448,6 +515,7 @@ mod tests {
             difficulty: Difficulty::Easy,
             puzzle: Some(puzzle()),
             attempt: Some(AttemptInfo {
+                attempt_id: String::new(),
                 started_at: 1_000,
                 finished_at: finished.then_some(61_000),
                 hints: 0,
