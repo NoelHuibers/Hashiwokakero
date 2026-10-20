@@ -68,8 +68,10 @@ pub fn MobileNav() -> impl IntoView {
                         let active = move || is_active(href, &location.pathname.get());
                         let to = use_localized(href);
                         view! {
+                            // See `NavLink`
                             <A
                                 href=to
+                                exact=href == "/"
                                 attr:class=move || {
                                     format!(
                                         "flex min-h-14 flex-col items-center justify-center gap-0.5 transition-colors {}",
@@ -101,8 +103,11 @@ pub(super) fn NavLink(page: Page, href: &'static str, jp: &'static str) -> impl 
     let active = move || is_active(href, &location.pathname.get());
     let to = use_localized(href);
     view! {
+        // `A` marks a link as the current page (`aria-current`) when the location is under it:
+        // the home page of a language, `/de`, would be the current page on every German page
         <A
             href=to
+            exact=href == "/"
             attr:class=move || {
                 format!(
                     "group relative flex flex-col items-center whitespace-nowrap rounded-lg px-2 py-1.5 transition-colors sm:px-3 {}",
