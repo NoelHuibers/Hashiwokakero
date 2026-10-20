@@ -387,7 +387,16 @@ pub(super) fn Cactus(
                             .collect_view()}
                         <line x1="0" x2="1000" y1="1000" y2="1000" vector-effect="non-scaling-stroke" style="stroke: var(--chart-axis); stroke-width: 1px" />
                         <g data-series="solvers">{rows.into_iter().map(curve_view).collect_view()}</g>
-                        // The highlighted curve again, on top of the others
+                        <polyline
+                            points=vbs_points
+                            fill="none"
+                            stroke-linejoin="round"
+                            stroke-linecap="round"
+                            vector-effect="non-scaling-stroke"
+                            style=format!("stroke: {VBS}; stroke-width: 2px")
+                            data-series="vbs"
+                        />
+                        // The highlighted curve again, on top of the others and the VBS: it is the subject
                         {move || {
                             highlighted()
                                 .map(|c| {
@@ -404,15 +413,6 @@ pub(super) fn Cactus(
                                     }
                                 })
                         }}
-                        <polyline
-                            points=vbs_points
-                            fill="none"
-                            stroke-linejoin="round"
-                            stroke-linecap="round"
-                            vector-effect="non-scaling-stroke"
-                            style=format!("stroke: {VBS}; stroke-width: 2px")
-                            data-series="vbs"
-                        />
                         {move || {
                             cursor
                                 .get()

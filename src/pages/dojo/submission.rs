@@ -49,6 +49,8 @@ fn rejection_text(locale: Locale, rejection: &Rejection) -> String {
 fn AnswersTable(breakdown: EntryBreakdown) -> impl IntoView {
     let i18n = use_i18n();
     let cells = |split: Option<Split>| {
+        // No formulas with that answer: nothing to show, not a PAR-2 of 0
+        let split = split.filter(|s| s.total > 0);
         let solved = split.map_or_else(|| "—".to_string(), |s| format!("{}/{}", s.solved, s.total));
         let par2 = split.map_or_else(|| "—".to_string(), |s| format!("{:.3}", s.par2));
         view! {

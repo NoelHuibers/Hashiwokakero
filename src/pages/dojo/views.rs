@@ -84,11 +84,15 @@ pub(super) fn sorted(
 }
 
 fn solved_of(split: Option<Split>) -> String {
-    split.map_or_else(|| "—".into(), |s| format!("{}/{}", s.solved, s.total))
+    split
+        .filter(|s| s.total > 0)
+        .map_or_else(|| "—".into(), |s| format!("{}/{}", s.solved, s.total))
 }
 
 fn par2_of(split: Option<Split>) -> String {
-    split.map_or_else(|| "—".into(), |s| format!("{:.3}", s.par2))
+    split
+        .filter(|s| s.total > 0)
+        .map_or_else(|| "—".into(), |s| format!("{:.3}", s.par2))
 }
 
 /// A contribution with three decimals, "—" for none.

@@ -62,11 +62,13 @@ test('the season archive with its seed, set and results', async ({ page, request
   await expect(archived.getByTestId('mystery-family')).toContainText('Mystery family: Quasigroups');
   const archivedEntry = archived.getByRole('link', { name: 'Plain DPLL' });
   await expect(archivedEntry).toBeVisible();
-  await expect(archived.locator('tr').filter({ has: archivedEntry })).toContainText('35/48');
+  // `has` is relative to the row, so a locator from the page
+  const dpllLink = page.getByRole('link', { name: 'Plain DPLL' });
+  await expect(archived.locator('tr').filter({ has: dpllLink })).toContainText('35/48');
   // The same views and plot as the leaderboard, with every family under its own name
   await expect(archived.getByTestId('cactus').locator('polyline[data-series="vbs"]')).toHaveCount(1);
   await archived.getByRole('tab', { name: 'Contribution' }).click();
-  await expect(archived.locator('tr').filter({ has: archivedEntry })).toContainText('100.0%');
+  await expect(archived.locator('tr').filter({ has: dpllLink })).toContainText('100.0%');
   for (const [name, path] of [
     [/^Hidden set/, 'set.tar.gz'],
     ['Results per formula (CSV)', 'results.csv'],
@@ -91,9 +93,10 @@ test('the season archive with its seed, set and results', async ({ page, request
 test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
   await visit(page, '/dojo');
   const board = page.locator('#leaderboard');
-  const dpll = board.getByRole('link', { name: 'Plain DPLL' });
-  const cdcl = board.getByRole('link', { name: 'Plain CDCL' });
-  await expect(cdcl).toBeVisible();
+  // Relative to the page: `has` looks inside the row
+  const dpll = page.getByRole('link', { name: 'Plain DPLL' });
+  const cdcl = page.getByRole('link', { name: 'Plain CDCL' });
+  await expect(board.getByRole('link', { name: 'Plain CDCL' })).toBeVisible();
   // The official ranking first
   await expect(board.getByRole('tab', { name: 'Ranking' })).toHaveAttribute('aria-selected', 'true');
   await expect(board.locator('tbody tr').first()).toContainText('Plain DPLL');
