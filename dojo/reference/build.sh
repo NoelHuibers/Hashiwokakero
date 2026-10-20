@@ -25,6 +25,8 @@
 # tar, patch (or git), sha256sum and, for --native, a C and C++ compiler (CC, CXX). The wasm builds are
 # reproducible: the same bytes on every machine.
 set -eu
+# The same order of object files everywhere (globs sort by locale), so the same bytes
+export LC_ALL=C
 
 here="$(cd "$(dirname "$0")" && pwd)"
 mode=wasm
@@ -120,7 +122,7 @@ else
   # No exceptions (wasmtime would need the exception-handling proposal); signal() and the
   # process clocks and getpid() emulated by wasi-libc; 8 MiB of stack instead of 64 KiB; no names or paths
   # in the output, so the bytes don't depend on where it was built
-  target="--target=wasm32-wasip1 -fno-exceptions -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID -ffile-prefix-map=$work=/build"
+  target="--target=wasm32-wasip1 -fno-exceptions -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID -ffile-prefix-map=$work=/build -ffile-prefix-map=$here=/reference"
   libs="-lwasi-emulated-signal -lwasi-emulated-process-clocks -lwasi-emulated-getpid -Wl,-z,stack-size=8388608 -Wl,--strip-all"
   ext=".wasm"
   compiler="wasi-sdk $WASI_SDK"
