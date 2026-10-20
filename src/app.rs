@@ -136,7 +136,7 @@ pub fn App() -> impl IntoView {
 /// cookie. Pausing after making it, not before, keeps the cookie's first run, which repeats the
 /// cookie the browser sent in the response.
 #[cfg(feature = "ssr")]
-fn provide_server_i18n() {
+pub(crate) fn provide_server_i18n() {
     let owner = Owner::new();
     let i18n = owner.with(leptos_i18n::context::init_i18n_context::<Locale>);
     owner.pause();
