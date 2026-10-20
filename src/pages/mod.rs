@@ -50,7 +50,7 @@ pub fn NotFound() -> impl IntoView {
             <Stamp kanji="迷" class="size-24 text-6xl" />
             <h1 class="text-3xl font-black">{t!(i18n, common.not_found.title)}</h1>
             <p class="text-muted-foreground">{t!(i18n, common.not_found.text)} " 迷子"</p>
-            <A href=home attr:class="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground">
+            <A href=home exact=true attr:class="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground">
                 {t!(i18n, common.not_found.back)}
             </A>
         </section>
