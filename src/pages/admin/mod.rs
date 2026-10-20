@@ -1,8 +1,10 @@
-//! The admin dashboard: today at a glance, daily reviews, the Dojo, names and contact messages.
+//! The admin dashboard: today at a glance, daily reviews, the Dojo, names, bans and contact
+//! messages.
 //!
 //! Only for the accounts in `HASHI_ADMINS`; everyone else sees the usual "not found". English
 //! only.
 
+pub mod bans;
 pub mod benchmarks;
 pub mod daily;
 pub mod dojo;
@@ -19,6 +21,7 @@ use crate::model::AdminOverview;
 use crate::pages::NotFound;
 use crate::state::{Auth, error_toast};
 
+use self::bans::BansAdmin;
 use self::benchmarks::BenchmarksAdmin;
 use self::daily::DailyAdmin;
 use self::dojo::DojoAdmin;
@@ -61,6 +64,7 @@ fn Dashboard() -> impl IntoView {
         Some("dojo") => "dojo",
         Some("messages") => "messages",
         Some("names") => "names",
+        Some("bans") => "bans",
         _ => "daily",
     });
     let overview = RwSignal::new(None::<AdminOverview>);
@@ -106,10 +110,12 @@ fn Dashboard() -> impl IntoView {
                 <h1 class="text-3xl font-black">"Admin"</h1>
             </div>
             <Overview overview />
-            <div role="tablist" class="grid grid-cols-2 gap-1 rounded-lg border bg-muted/60 p-1 sm:inline-grid sm:w-fit sm:grid-cols-4">
+            <div role="tablist" class="grid grid-cols-2 gap-1 rounded-lg border bg-muted/60 p-1 sm:inline-grid sm:w-fit sm:grid-cols-5">
                 {tab_button("daily", "Daily review", |o| o.flagged)}
                 {tab_button("dojo", "SAT Dojo", |o| o.dojo_pending)}
                 {tab_button("names", "Names", |o| o.names)}
+                // Nothing waits there
+                {tab_button("bans", "Bans", |_| 0)}
                 {tab_button("messages", "Messages", |o| o.messages)}
             </div>
             {move || match tab.get() {
@@ -120,6 +126,7 @@ fn Dashboard() -> impl IntoView {
                     .into_any(),
                 "messages" => view! { <MessagesAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
                 "names" => view! { <NamesAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
+                "bans" => view! { <BansAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
                 _ => view! { <DailyAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
             }}
         </section>

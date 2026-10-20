@@ -674,6 +674,20 @@
     "created_at": 1760000000000,
     "mailed": false
   },
+  "admin_banned": {
+    "id": 9,
+    "name": "Sleepy Koi 12",
+    "username": null,
+    "banned_at": 1760000000000,
+    "reason": "a bot"
+  },
+  "ban_outcomes": [
+    {
+      "Banned": "bob"
+    },
+    "NoSuchPlayer",
+    "Admin"
+  ],
   "admin_benchmark": {
     "id": 4,
     "family": "scheduling",
@@ -814,7 +828,8 @@
     "TooFast",
     "Pace",
     "SecondAccount",
-    "Review"
+    "Review",
+    "Banned"
   ],
   "difficulties": [
     "Easy",

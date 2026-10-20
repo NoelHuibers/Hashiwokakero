@@ -12,12 +12,12 @@ use serde::{Deserialize, Serialize};
 use super::{check, check_json};
 use crate::model::{
     AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, AllTimeEntry, ApiError,
-    AttemptInfo, BenchmarkAction, BenchmarkState, CommunityCredit, CommunitySummary,
-    ContactMessage, DailyInfo, DayResult, Daypart, DojoBenchmark, DojoBenchmarks, DojoBoard,
-    DojoCactus, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons,
-    DojoState, DojoSubmission, Flag, HallOfFame, Leaderboard, LeaderboardEntry, LogSummary,
-    MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress, SubmissionAction,
-    SubmitResult, UserInfo, UserStats,
+    AttemptInfo, BanOutcome, BannedPlayer, BenchmarkAction, BenchmarkState, CommunityCredit,
+    CommunitySummary, ContactMessage, DailyInfo, DayResult, Daypart, DojoBenchmark, DojoBenchmarks,
+    DojoBoard, DojoCactus, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
+    DojoSeasons, DojoState, DojoSubmission, Flag, HallOfFame, Leaderboard, LeaderboardEntry,
+    LogSummary, MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress,
+    SubmissionAction, SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -279,6 +279,8 @@ struct Responses {
     admin_attempt: AdminAttempt,
     admin_submission: AdminSubmission,
     admin_message: ContactMessage,
+    admin_banned: BannedPlayer,
+    ban_outcomes: Vec<BanOutcome>,
     admin_benchmark: AdminBenchmark,
     generated: GeneratedPuzzle,
     solved: SolveReport,
@@ -549,6 +551,18 @@ fn responses() -> Responses {
             created_at: 1_760_000_000_000,
             mailed: false,
         },
+        admin_banned: BannedPlayer {
+            id: 9,
+            name: "Sleepy Koi 12".into(),
+            username: None,
+            banned_at: 1_760_000_000_000,
+            reason: "a bot".into(),
+        },
+        ban_outcomes: vec![
+            BanOutcome::Banned("bob".into()),
+            BanOutcome::NoSuchPlayer,
+            BanOutcome::Admin,
+        ],
         admin_benchmark: AdminBenchmark {
             id: 4,
             family: "scheduling".into(),

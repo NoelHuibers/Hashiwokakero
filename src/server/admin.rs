@@ -3,7 +3,7 @@
 //!
 //! - `GET /admin/attempt?user=&day=` shows an attempt with its move log
 //! - `POST /admin/flag?user=&day=&flag=review` takes a result off the board, without `flag`
-//!   it goes back on
+//!   it goes back on (not the results of banned players, see [`ban`])
 
 use axum::extract::{Multipart, Query};
 use axum::http::{HeaderMap, StatusCode};
@@ -16,9 +16,12 @@ use super::auth::{self, User};
 use super::db::db_err;
 use super::{daily, db, dojo, names};
 use crate::model::{
-    AdminAttempt, AdminOverview, AdminSubmission, ApiError, DojoState, Flag, FlaggedName,
-    MoveEvent, NameKind, SubmissionAction, neutral_name, summarize_log,
+    AdminAttempt, AdminOverview, AdminSubmission, ApiError, BanOutcome, BannedPlayer, DojoState,
+    Flag, FlaggedName, MoveEvent, NameKind, SubmissionAction, neutral_name, summarize_log,
 };
+
+/// The longest reason for a ban that is kept, in characters.
+const MAX_BAN_REASON: usize = 500;
 
 /// How `HASHI_ADMINS` (comma separated) lists an admin.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -189,6 +192,114 @@ pub async fn rename_player(conn: &Connection, user: i64) -> Result<Option<String
         .await
         .map_err(db_err)?;
     Ok((changed != 0).then_some(name))
+}
+
+/// Bans a player. Banning again only changes the reason.
+///
+/// It signs them out everywhere, refuses their sign ins, takes all their daily results off the
+/// boards (flag `banned`, other flags stay) and their solvers off the Dojo's, and hides their
+/// profile. Their username stays taken, so it can't be registered again. Nothing is deleted:
+/// [`unban`] puts everything back.
+pub async fn ban(conn: &Connection, user: i64, reason: &str) -> Result<BanOutcome, ServerFnError> {
+    let found = {
+        let mut rows = conn
+            .query(
+                "SELECT name, username FROM users WHERE id = ?1 AND deleted_at IS NULL",
+                params![user],
+            )
+            .await
+            .map_err(db_err)?;
+        match rows.next().await.map_err(db_err)? {
+            Some(row) => Some((
+                row.get::<String>(0).map_err(db_err)?,
+                row.get::<Option<String>>(1).map_err(db_err)?,
+            )),
+            None => None,
+        }
+    };
+    let Some((name, username)) = found else {
+        return Ok(BanOutcome::NoSuchPlayer);
+    };
+    if username.is_some_and(|u| listed(&admins(), user, &u).is_some()) {
+        return Ok(BanOutcome::Admin);
+    }
+    let reason: String = reason.trim().chars().take(MAX_BAN_REASON).collect();
+    let tx = conn.transaction().await.map_err(db_err)?;
+    tx.execute(
+        "UPDATE users SET banned_at = COALESCE(banned_at, ?2), ban_reason = ?3 WHERE id = ?1",
+        params![user, super::now_ms(), reason],
+    )
+    .await
+    .map_err(db_err)?;
+    for sql in [
+        "DELETE FROM sessions WHERE user_id = ?1",
+        "UPDATE attempts SET flag = 'banned' WHERE user_id = ?1 AND flag IS NULL",
+    ] {
+        tx.execute(sql, params![user]).await.map_err(db_err)?;
+    }
+    tx.commit().await.map_err(db_err)?;
+    // Stamps their results earned go with them
+    daily::sync_stamps(conn, user, false).await?;
+    Ok(BanOutcome::Banned(name))
+}
+
+/// Lifts a ban: the player can sign in again, their results are back on the boards. `false` if
+/// they weren't banned.
+pub async fn unban(conn: &Connection, user: i64) -> Result<bool, ServerFnError> {
+    let tx = conn.transaction().await.map_err(db_err)?;
+    let changed = tx
+        .execute(
+            "UPDATE users SET banned_at = NULL, ban_reason = NULL
+             WHERE id = ?1 AND banned_at IS NOT NULL",
+            params![user],
+        )
+        .await
+        .map_err(db_err)?;
+    tx.execute(
+        "UPDATE attempts SET flag = NULL WHERE user_id = ?1 AND flag = 'banned'",
+        params![user],
+    )
+    .await
+    .map_err(db_err)?;
+    tx.commit().await.map_err(db_err)?;
+    if changed != 0 {
+        daily::sync_stamps(conn, user, false).await?;
+    }
+    Ok(changed != 0)
+}
+
+pub async fn is_banned(conn: &Connection, user: i64) -> Result<bool, ServerFnError> {
+    let mut rows = conn
+        .query(
+            "SELECT 1 FROM users WHERE id = ?1 AND banned_at IS NOT NULL",
+            params![user],
+        )
+        .await
+        .map_err(db_err)?;
+    Ok(rows.next().await.map_err(db_err)?.is_some())
+}
+
+/// The banned players, the latest ban first.
+pub async fn banned_players(conn: &Connection) -> Result<Vec<BannedPlayer>, ServerFnError> {
+    let mut rows = conn
+        .query(
+            "SELECT id, name, username, banned_at, COALESCE(ban_reason, '') FROM users
+             WHERE banned_at IS NOT NULL ORDER BY banned_at DESC, id DESC",
+            (),
+        )
+        .await
+        .map_err(db_err)?;
+    let mut out = Vec::new();
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        out.push(BannedPlayer {
+            id: row.get(0).map_err(db_err)?,
+            name: row.get(1).map_err(db_err)?,
+            username: row.get(2).map_err(db_err)?,
+            banned_at: row.get(3).map_err(db_err)?,
+            reason: row.get(4).map_err(db_err)?,
+        });
+    }
+    Ok(out)
 }
 
 /// Every attempt of a day, finished ones fastest first, with a summary of the move log.

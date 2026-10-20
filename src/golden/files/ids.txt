@@ -48,6 +48,7 @@ flag TooFast too_fast
 flag Pace pace
 flag SecondAccount second_account
 flag Review review
+flag Banned banned
 daypart Night night
 daypart Lunch lunch
 difficulty Easy easy
@@ -112,3 +113,4 @@ error MessageInvalid message_invalid
 error TooManyMessages too_many_messages
 error RenameTooSoon rename_too_soon
 error UsernameNotAllowed username_not_allowed
+error Banned banned
