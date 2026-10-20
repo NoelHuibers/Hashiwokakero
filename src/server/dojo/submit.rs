@@ -1,5 +1,6 @@
 //! Submitting to the SAT Dojo: checking the form, storing the module and the HTTP handlers.
 
+use axum::Extension;
 use axum::body::Bytes;
 use axum::extract::{Multipart, Query};
 use axum::http::{HeaderMap, StatusCode, header};
@@ -65,7 +66,7 @@ pub struct Form {
     pub description: String,
     pub source_url: String,
     pub wasm: Vec<u8>,
-    /// The hashed network the upload came from (`None` for house entries and local runs).
+    /// The hashed network the upload came from (`None` for house entries and in-process callers).
     pub network: Option<String>,
 }
 
@@ -227,7 +228,11 @@ pub async fn submit(
 
 /// `POST /dojo/submit`, a multipart form (works without JavaScript). Redirects to the
 /// submission, or back to the form with an error code.
-pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Response {
+pub async fn submit_handler(
+    Extension(client): Extension<crate::server::ClientIdentity>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> Response {
     let mut form = Form::default();
     let mut prefix = String::new();
     let mut too_large = false;
@@ -274,8 +279,11 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             .await
             .map_err(|_| SubmitError::Server)?
             .ok_or(SubmitError::SignIn)?;
-        form.network = crate::server::client_ip(&headers)
-            .map(|ip| crate::server::network_hash(&ip, crate::model::day_of(now_ms())));
+        form.network = Some(
+            client
+                .network_hash(crate::model::day_of(now_ms()))
+                .map_err(|_| SubmitError::Server)?,
+        );
         submit(&conn, Some(&user), form).await
     }
     .await;

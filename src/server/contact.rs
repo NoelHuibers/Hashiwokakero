@@ -9,7 +9,7 @@
 //!
 //! Without them messages are only stored, the admin dashboard shows them either way.
 
-use axum::http::HeaderMap;
+use axum::Extension;
 use leptos::prelude::ServerFnError;
 use lettre::message::Mailbox;
 use lettre::message::header::ContentType;
@@ -19,7 +19,7 @@ use libsql::params::IntoParams;
 use libsql::{Connection, TransactionBehavior, params};
 
 use super::db::db_err;
-use super::{client_ip, network_hash, now_ms};
+use super::{ClientIdentity, now_ms};
 use crate::model::{ApiError, ContactMessage, MS_PER_DAY};
 
 const MAX_NAME: usize = 80;
@@ -59,11 +59,18 @@ pub async fn send(
     }
 
     let now = now_ms();
-    let headers: Option<HeaderMap> = leptos_axum::extract().await.ok();
-    let ip_hash = headers
-        .as_ref()
-        .and_then(client_ip)
-        .map(|ip| network_hash(&ip, now.div_euclid(MS_PER_DAY)));
+    // In-process service callers have no transport identity. HTTP calls must extract the
+    // boundary's extension from Leptos' request Parts, never retry resolution from headers.
+    let ip_hash = if leptos::prelude::use_context::<axum::http::request::Parts>().is_some() {
+        let Extension(client): Extension<ClientIdentity> = leptos_axum::extract().await?;
+        Some(
+            client
+                .network_hash(now.div_euclid(MS_PER_DAY))
+                .map_err(ServerFnError::new)?,
+        )
+    } else {
+        None
+    };
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .await
