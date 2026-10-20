@@ -126,6 +126,8 @@ The leaderboard compares every entry with the state of the art: MiniSat, CaDiCaL
 
 Fuel was checked against the clock (`dojo calibrate`, `dojo/src/calibrate.rs`, data and report in `dojo/calibration/`, written up in [dojo/CALIBRATION.md](dojo/CALIBRATION.md)): seven solvers, natively and in the sandbox, on 180 formulas. The cost table (`dojo/src/fuel.rs`) is the result.
 
+The rules follow the SAT Competition and recent work on proofs, deterministic effort measures and benchmark sets; the notes with their sources are in [dojo/RESEARCH.md](dojo/RESEARCH.md).
+
 The website stores submissions and sends them to the worker (`dojo serve`, its own Fly app in `dojo/fly.toml`), which starts on demand, evaluates and reports back. See `src/server/dojo/` (`mod.rs` for the settings) and `dojo/src/worker.rs`.
 
 Seasons are archived like the SAT Competition publishes its results ([hashi.rs/dojo/seasons](https://hashi.rs/dojo/seasons), `src/server/dojo/seasons.rs`): a season starts with a commitment to the seed of its hidden set, `sha256(seed)`. When `DOJO_SEASON` moves on, the final results are frozen and the seed is revealed, and the set the worker evaluated on (it sends it along with a job, `dojo/src/archive.rs`) is published as `/dojo/seasons/<n>/set.tar.gz`, with the result of every solver on every formula as `results.csv` and `results.json`. `dojo::RULES_VERSION` is bumped whenever judging, fuel or the sets change within a season: every stored result keeps the version it was computed with, and the site evaluates older ones again. `dojo::GENERATOR_VERSION` (bumped with any change to the sets) keys the worker's cache of generated sets.
