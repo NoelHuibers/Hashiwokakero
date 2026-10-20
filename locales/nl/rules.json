@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Hashiwokakero spelen · regels en tips · Hashi",
-    "description": "De regels van Hashiwokakero (Bruggen bouwen) met een opgelost voorbeeld, slimme trucs zonder gokken, en hoe een SAT-solver bewijst dat de oplossing uniek is."
+    "description": "De regels van Hashiwokakero (Bruggen bouwen) met een opgelost voorbeeld, slimme trucs zonder gokken, en hoe een SAT-solver bewijst dat er één oplossing is."
   },
   "title": "Speluitleg",
   "intro": "Hashiwokakero (橋をかけろ, “bouw bruggen!”) is een logische puzzel van uitgever Nikoli. Verbind alle eilanden met bruggen zodat elk eiland precies zoveel bruggen heeft als zijn getal aangeeft.",

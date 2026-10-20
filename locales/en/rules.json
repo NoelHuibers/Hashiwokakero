@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "How to play Hashiwokakero · Rules and solving tips · Hashi",
-    "description": "The rules of Hashiwokakero (Bridges) with a solved example, the deductions that crack most puzzles without guessing, and how a SAT solver proves a solution unique."
+    "description": "How to play Hashiwokakero (Bridges): the rules with a solved example, deductions that solve most puzzles without guessing, and how SAT proves it unique."
   },
   "title": "How to play",
   "intro": "Hashiwokakero (橋をかけろ, “build bridges!”) is a logic puzzle published by Nikoli. Connect all islands with bridges so that every island has exactly as many bridges as its number says.",

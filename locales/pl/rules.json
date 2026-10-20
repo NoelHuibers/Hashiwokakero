@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Jak grać w Hashiwokakero · zasady i porady · Hashi",
-    "description": "Zasady Hashiwokakero (Mosty) z rozwiązanym przykładem, wnioskowania, które łamią większość łamigłówek bez zgadywania, i jak solver SAT dowodzi jednoznaczności."
+    "description": "Zasady Hashiwokakero (Mosty) z rozwiązanym przykładem, wnioskowania, które łamią większość łamigłówek bez zgadywania, i jak SAT dowodzi jednoznaczności."
   },
   "title": "Jak grać",
   "intro": "Hashiwokakero (橋をかけろ, „buduj mosty!”) to łamigłówka logiczna wydawnictwa Nikoli. Połącz wszystkie wyspy mostami tak, aby każda wyspa miała dokładnie tyle mostów, ile wskazuje jej liczba.",

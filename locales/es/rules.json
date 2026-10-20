@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Cómo jugar a Hashiwokakero · Reglas y consejos · Hashi",
-    "description": "Las reglas de Hashiwokakero (Puentes) con un ejemplo resuelto, las deducciones que resuelven casi cualquier puzle sin adivinar y cómo SAT prueba que es único."
+    "description": "Las reglas de Hashiwokakero (Puentes) con un ejemplo resuelto, deducciones que resuelven casi cualquier puzle sin adivinar y cómo SAT prueba que es único."
   },
   "title": "Cómo jugar",
   "intro": "Hashiwokakero (橋をかけろ, «¡construye puentes!») es un puzle lógico publicado por Nikoli. Conecta todas las islas con puentes para que cada isla tenga exactamente tantos puentes como indica su número.",

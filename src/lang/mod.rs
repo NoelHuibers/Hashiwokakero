@@ -317,10 +317,6 @@ mod tests {
             for entry in std::fs::read_dir(root.join(lang)).expect("locales/<lang>") {
                 let path = entry.unwrap().path();
                 let ns = path.file_stem().unwrap().to_str().unwrap().to_owned();
-                // Over the limit still, shortened together with the rules page on another branch
-                if ns == "rules" {
-                    continue;
-                }
                 let json: serde_json::Value =
                     serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
                 let mut texts = std::collections::BTreeMap::new();
