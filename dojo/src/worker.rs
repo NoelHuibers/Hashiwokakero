@@ -22,6 +22,12 @@
 //! website expects other rules (`rules`, its [`RULES_VERSION`]) than this worker's: one of the two
 //! wasn't deployed yet. With `export=1` the worker also posts the set it evaluated on as a tarball
 //! to `/dojo/set` (see [`crate::archive`]), which the website publishes once the season is over.
+//! With `pool=<digest>` the season's hidden set has community benchmarks: the worker must have
+//! that draw (`GET /pools/<digest>` says whether it does, `PUT /pools/<digest>` sends it as JSON,
+//! see [`crate::community`]), otherwise it answers 428.
+//!
+//! `POST /benchmarks?id=&report_token=[&rules=]` with a community benchmark (DIMACS) as body:
+//! queued for verification (202), the verdict goes to `/dojo/benchmark-report`.
 
 use std::collections::HashMap;
 use std::fmt::Write as _;
@@ -32,14 +38,15 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use axum::Router;
 use axum::body::Bytes;
-use axum::extract::{DefaultBodyLimit, Query, State};
+use axum::extract::{DefaultBodyLimit, Path, Query, State};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use serde::Deserialize;
 use tokio::sync::mpsc;
 
 use crate::bench::{self, Instance};
+use crate::community::{BenchmarkReport, PoolInstance, Verdict};
 use crate::eval::{Options, evaluate};
 use crate::proof::{CheckLimits, Checker, Tools};
 use crate::sandbox::Sandbox;
@@ -57,6 +64,17 @@ struct JobQuery {
     /// Whether the website wants the set too (`1`).
     #[serde(default)]
     export: u8,
+    /// The [`crate::community::pool_digest`] of the community benchmarks the season's hidden
+    /// set has, empty for none. The worker must have them (`PUT /pools/<digest>`).
+    #[serde(default)]
+    pool: String,
+}
+
+/// A season's draw from the community pool.
+#[derive(Clone, Debug)]
+struct Pool {
+    digest: String,
+    instances: Arc<Vec<PoolInstance>>,
 }
 
 struct Job {
@@ -66,16 +84,64 @@ struct Job {
     report_token: Arc<str>,
     export: bool,
     wasm: Bytes,
+    pool: Option<Pool>,
+}
+
+/// A community benchmark to verify.
+struct Check {
+    id: i64,
+    report_token: Arc<str>,
+    dimacs: Bytes,
+}
+
+enum Work {
+    Evaluate(Job),
+    Verify(Check),
 }
 
 #[derive(Clone)]
 struct Shared {
     token: Arc<str>,
-    jobs: mpsc::UnboundedSender<Job>,
+    jobs: mpsc::UnboundedSender<Work>,
     /// Jobs waiting or running.
     pending: Arc<AtomicUsize>,
     /// Seconds since the epoch of the last request or finished job.
     active: Arc<AtomicU64>,
+    /// Draws from the community pool by digest, kept in `cache` too.
+    pools: Arc<Mutex<HashMap<String, Arc<Vec<PoolInstance>>>>>,
+    cache: Option<PathBuf>,
+}
+
+impl Shared {
+    /// The pool with this digest, from memory or the cache directory.
+    fn pool(&self, digest: &str) -> Option<Arc<Vec<PoolInstance>>> {
+        let known = self
+            .pools
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(digest)
+            .cloned();
+        if known.is_some() {
+            return known;
+        }
+        let path = self.cache.as_ref()?.join(pool_file(digest)?);
+        let pool: Vec<PoolInstance> = serde_json::from_slice(&std::fs::read(path).ok()?).ok()?;
+        if crate::community::pool_digest(&pool) != digest {
+            return None;
+        }
+        let pool = Arc::new(pool);
+        self.pools
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(digest.to_string(), pool.clone());
+        Some(pool)
+    }
+}
+
+/// The file of a cached pool; `None` for a digest that isn't hex (no paths from requests).
+fn pool_file(digest: &str) -> Option<String> {
+    (digest.len() == 64 && digest.bytes().all(|b| b.is_ascii_hexdigit()))
+        .then(|| format!("pool-{digest}.json"))
 }
 
 fn now_secs() -> u64 {
@@ -115,22 +181,162 @@ async fn submit(
         )
             .into_response();
     }
+    let pool = if q.pool.is_empty() {
+        None
+    } else {
+        match shared.pool(&q.pool) {
+            Some(instances) => Some(Pool {
+                digest: q.pool,
+                instances,
+            }),
+            // The website sends the pool first, then the job again
+            None => {
+                return (StatusCode::PRECONDITION_REQUIRED, "send the pool first").into_response();
+            }
+        }
+    };
     if let Err(reason) = crate::validate::validate(&wasm) {
         return (StatusCode::UNPROCESSABLE_ENTITY, axum::Json(reason)).into_response();
     }
+    queue(
+        &shared,
+        Work::Evaluate(Job {
+            id: q.id,
+            season: q.season,
+            seed: q.seed,
+            report_token: q.report_token.into(),
+            export: q.export == 1,
+            wasm,
+            pool,
+        }),
+    )
+}
+
+fn queue(shared: &Shared, work: Work) -> Response {
     shared.pending.fetch_add(1, Ordering::Relaxed);
-    let job = Job {
-        id: q.id,
-        season: q.season,
-        seed: q.seed,
-        report_token: q.report_token.into(),
-        export: q.export == 1,
-        wasm,
-    };
-    match shared.jobs.send(job) {
-        Ok(()) => StatusCode::ACCEPTED.into_response(),
-        Err(_) => StatusCode::SERVICE_UNAVAILABLE.into_response(),
+    if shared.jobs.send(work).is_ok() {
+        StatusCode::ACCEPTED.into_response()
+    } else {
+        shared.pending.fetch_sub(1, Ordering::Relaxed);
+        StatusCode::SERVICE_UNAVAILABLE.into_response()
     }
+}
+
+/// `GET /pools/<digest>`: 200 if the worker has that draw from the community pool, 404 if not.
+async fn has_pool(
+    State(shared): State<Shared>,
+    Path(digest): Path<String>,
+    headers: HeaderMap,
+) -> StatusCode {
+    if !authorized(&headers, &shared.token) {
+        return StatusCode::UNAUTHORIZED;
+    }
+    if shared.pool(&digest).is_some() {
+        StatusCode::OK
+    } else {
+        StatusCode::NOT_FOUND
+    }
+}
+
+/// `PUT /pools/<digest>`: a season's draw from the community pool, as JSON. Refused unless it
+/// has that digest and every formula the hash it claims.
+async fn put_pool(
+    State(shared): State<Shared>,
+    Path(digest): Path<String>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> StatusCode {
+    if !authorized(&headers, &shared.token) {
+        return StatusCode::UNAUTHORIZED;
+    }
+    shared.active.store(now_secs(), Ordering::Relaxed);
+    let Some(file) = pool_file(&digest) else {
+        return StatusCode::UNPROCESSABLE_ENTITY;
+    };
+    let Ok(pool) = serde_json::from_slice::<Vec<PoolInstance>>(&body) else {
+        return StatusCode::UNPROCESSABLE_ENTITY;
+    };
+    let genuine = crate::community::pool_digest(&pool) == digest
+        && pool.iter().all(|p| {
+            crate::community::Formula::parse(&p.dimacs)
+                .is_ok_and(|f| crate::community::gbd_hash(&f) == p.origin.hash)
+        });
+    if !genuine {
+        return StatusCode::UNPROCESSABLE_ENTITY;
+    }
+    if let Some(dir) = &shared.cache {
+        let path = dir.join(&file);
+        let tmp = path.with_extension("tmp");
+        if let Err(e) = std::fs::write(&tmp, &body).and_then(|()| std::fs::rename(&tmp, &path)) {
+            eprintln!("could not cache pool {digest}: {e}");
+        }
+    }
+    shared
+        .pools
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .insert(digest, Arc::new(pool));
+    StatusCode::NO_CONTENT
+}
+
+#[derive(Deserialize)]
+struct CheckQuery {
+    id: i64,
+    report_token: String,
+    rules: Option<u32>,
+}
+
+/// `POST /benchmarks?id=&report_token=[&rules=]` with a community benchmark (DIMACS) as body:
+/// queued for verification (202), the verdict goes to `/dojo/benchmark-report`.
+async fn check_benchmark(
+    State(shared): State<Shared>,
+    Query(q): Query<CheckQuery>,
+    headers: HeaderMap,
+    dimacs: Bytes,
+) -> Response {
+    if !authorized(&headers, &shared.token) {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
+    shared.active.store(now_secs(), Ordering::Relaxed);
+    if q.rules.is_some_and(|rules| rules != RULES_VERSION) {
+        return StatusCode::CONFLICT.into_response();
+    }
+    queue(
+        &shared,
+        Work::Verify(Check {
+            id: q.id,
+            report_token: q.report_token.into(),
+            dimacs,
+        }),
+    )
+}
+
+/// The verdict on a community benchmark (see [`bench::verify_benchmark`]).
+fn verify(dimacs: &[u8]) -> Verdict {
+    use crate::community::{Formula, FormulaError, Refusal};
+    let text = String::from_utf8_lossy(dimacs);
+    let formula = match Formula::parse(&text) {
+        Ok(f) => f,
+        Err(FormulaError::TooLarge) => {
+            return Verdict::Refused {
+                reason: Refusal::TooLarge,
+            };
+        }
+        Err(FormulaError::Invalid(message)) => {
+            return Verdict::Refused {
+                reason: Refusal::Invalid(message),
+            };
+        }
+        Err(FormulaError::Empty) => {
+            return Verdict::Refused {
+                reason: Refusal::Invalid("no clauses".into()),
+            };
+        }
+    };
+    let cnf = crate::cnf::Cnf::new(formula.vars, formula.clauses);
+    std::panic::catch_unwind(|| bench::verify_benchmark(&cnf)).unwrap_or_else(|_| Verdict::Failed {
+        message: "the verification panicked".into(),
+    })
 }
 
 /// Posts reports to the website, retrying a few times.
@@ -151,6 +357,20 @@ impl Reporter {
             "application/json",
             token,
             &format!("report for #{}", report.id()),
+        )
+        .await;
+    }
+
+    /// The verdict on a community benchmark.
+    async fn send_benchmark(&self, report: &BenchmarkReport, token: &str) {
+        let url = format!("{}/dojo/benchmark-report", self.app_url);
+        let body = serde_json::to_vec(report).unwrap_or_default();
+        self.post(
+            &url,
+            body,
+            "application/json",
+            token,
+            &format!("verdict on benchmark #{}", report.id),
         )
         .await;
     }
@@ -249,7 +469,7 @@ impl Settings {
 /// Evaluates jobs one after another on a blocking thread (each one uses every core). It holds
 /// no sender of `jobs`, so it returns once the server that queues them is gone.
 fn evaluator(
-    mut jobs: mpsc::UnboundedReceiver<Job>,
+    mut jobs: mpsc::UnboundedReceiver<Work>,
     reporter: &Reporter,
     pending: &AtomicUsize,
     active: &AtomicU64,
@@ -278,21 +498,51 @@ fn evaluator(
         options.limits.proof_bytes = mb << 20;
     }
     eprintln!("checking proofs with {}", options.checker.tools.describe());
-    // Sets by seed: every submission of a season gets the same one
-    let mut sets: HashMap<String, Arc<Vec<Instance>>> = HashMap::new();
+    // Sets by seed and pool: every submission of a season gets the same one
+    let mut sets: HashMap<(String, String), Arc<Vec<Instance>>> = HashMap::new();
     let cache = settings.cache.as_deref();
-    while let Some(job) = jobs.blocking_recv() {
+    while let Some(work) = jobs.blocking_recv() {
+        let job = match work {
+            Work::Evaluate(job) => job,
+            Work::Verify(check) => {
+                let started = Instant::now();
+                let report = BenchmarkReport {
+                    id: check.id,
+                    verdict: verify(&check.dimacs),
+                };
+                eprintln!(
+                    "benchmark #{}: {:?} in {:.1?}",
+                    check.id,
+                    match &report.verdict {
+                        Verdict::Verified { answer, .. } => format!("verified {}", answer.id()),
+                        other => format!("{other:?}"),
+                    },
+                    started.elapsed()
+                );
+                runtime.block_on(reporter.send_benchmark(&report, &check.report_token));
+                pending.fetch_sub(1, Ordering::Relaxed);
+                active.store(now_secs(), Ordering::Relaxed);
+                continue;
+            }
+        };
         let (id, season) = (job.id, job.season);
         let token = job.report_token.clone();
         let send = |report: Report| runtime.block_on(reporter.send(&report, &token));
         let started = Instant::now();
         options.set_seed.clone_from(&job.seed);
+        let key = (
+            job.seed.clone(),
+            job.pool
+                .as_ref()
+                .map(|p| p.digest.clone())
+                .unwrap_or_default(),
+        );
         let set = sets
-            .entry(job.seed.clone())
-            .or_insert_with(|| Arc::new(load_or_generate(cache, &job.seed)))
+            .entry(key.clone())
+            .or_insert_with(|| Arc::new(load_or_generate(cache, &job.seed, job.pool.as_ref())))
             .clone();
         if sets.len() > 3 {
-            sets.retain(|seed, _| *seed == job.seed);
+            sets.retain(|k, _| *k == key);
         }
         let total = crate::count(set.len());
         let report = match sandbox.load(&job.wasm) {
@@ -365,15 +615,21 @@ fn evaluator(
     }
 }
 
-/// The name of the cached set of `seed`. It must not reveal the seed. Sets of another generator
-/// are other files, a new one never loads a set an older one cached.
-fn cache_name(seed: &str) -> String {
-    cache_name_for(seed, GENERATOR_VERSION)
+/// The name of the cached set of `seed` (with the draw `pool` from the community pool, empty for
+/// none). It must not reveal the seed. Sets of another generator or another draw are other
+/// files, a new one never loads a set an older one cached.
+fn cache_name(seed: &str, pool: &str) -> String {
+    cache_name_for(seed, pool, GENERATOR_VERSION)
 }
 
-fn cache_name_for(seed: &str, generator: u32) -> String {
+fn cache_name_for(seed: &str, pool: &str, generator: u32) -> String {
     use sha2::Digest;
-    let digest = sha2::Sha256::digest(format!("file:g{generator}:{seed}").as_bytes());
+    let key = if pool.is_empty() {
+        format!("file:g{generator}:{seed}")
+    } else {
+        format!("file:g{generator}:{seed}:{pool}")
+    };
+    let digest = sha2::Sha256::digest(key.as_bytes());
     let hex = digest.iter().take(12).fold(String::new(), |mut hex, b| {
         let _ = write!(hex, "{b:02x}");
         hex
@@ -381,19 +637,26 @@ fn cache_name_for(seed: &str, generator: u32) -> String {
     format!("set-{hex}.json")
 }
 
-/// The hidden set for `seed`, from the cache directory if it was generated before.
-fn load_or_generate(cache: Option<&std::path::Path>, seed: &str) -> Vec<Instance> {
-    let path = cache.map(|dir| dir.join(cache_name(seed)));
+/// The hidden set for `seed` with the community benchmarks of `pool`, from the cache directory
+/// if it was generated before.
+fn load_or_generate(
+    cache: Option<&std::path::Path>,
+    seed: &str,
+    pool: Option<&Pool>,
+) -> Vec<Instance> {
+    let digest = pool.map_or("", |p| p.digest.as_str());
+    let instances: &[PoolInstance] = pool.map_or(&[], |p| p.instances.as_slice());
+    let path = cache.map(|dir| dir.join(cache_name(seed, digest)));
     if let Some(set) = path
         .as_ref()
         .and_then(|p| std::fs::read(p).ok())
         .and_then(|bytes| serde_json::from_slice::<Vec<Instance>>(&bytes).ok())
-        .filter(|set| set.len() == bench::hidden_spec(seed).len())
+        .filter(|set| set.len() == bench::hidden_spec(seed).len() + instances.len())
     {
         return set;
     }
     let started = Instant::now();
-    let set = bench::generate_hidden(seed);
+    let set = bench::generate_hidden_with(seed, instances);
     eprintln!(
         "generated a set of {} in {:.1?}",
         set.len(),
@@ -436,11 +699,14 @@ pub fn serve() -> Result<(), String> {
     let runtime = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
     runtime.block_on(async move {
         let (tx, rx) = mpsc::unbounded_channel();
+        let settings = Settings::from_env()?;
         let shared = Shared {
             token: token.clone(),
             jobs: tx,
             pending: Arc::new(AtomicUsize::new(0)),
             active: Arc::new(AtomicU64::new(now_secs())),
+            pools: Arc::default(),
+            cache: settings.cache.clone(),
         };
         let reporter = Reporter {
             client: reqwest::Client::new(),
@@ -448,7 +714,6 @@ pub fn serve() -> Result<(), String> {
         };
         let handle = tokio::runtime::Handle::current();
         let (pending, active) = (shared.pending.clone(), shared.active.clone());
-        let settings = Settings::from_env()?;
         std::thread::spawn(move || {
             evaluator(rx, &reporter, &pending, &active, &handle, &settings);
         });
@@ -481,8 +746,21 @@ pub fn serve() -> Result<(), String> {
 fn app(shared: Shared) -> Router {
     Router::new()
         .route("/health", get(|| async { "ok" }))
-        .route("/jobs", post(submit))
-        .layer(DefaultBodyLimit::max(MAX_WASM_BYTES + 4096))
+        .route(
+            "/jobs",
+            post(submit).layer(DefaultBodyLimit::max(MAX_WASM_BYTES + 4096)),
+        )
+        .route(
+            "/benchmarks",
+            post(check_benchmark).layer(DefaultBodyLimit::max(crate::community::MAX_BYTES + 4096)),
+        )
+        .route(
+            "/pools/{digest}",
+            get(has_pool).merge(put(put_pool).layer(DefaultBodyLimit::max(
+                // JSON of a draw: the formulas, their models, a little more
+                3 * crate::community::PER_SET * crate::community::MAX_BYTES,
+            ))),
+        )
         .with_state(shared)
 }
 
@@ -507,7 +785,7 @@ mod tests {
         const CACHE: &str = "the cached sets on the worker's volume wouldn't be found or \
                              wouldn't load any more: every set would be generated again";
         assert_eq!(
-            cache_name_for("golden", 1),
+            cache_name_for("golden", "", 1),
             "set-4098d811dbc4a13744ae1527.json",
             "{CACHE}"
         );
@@ -524,6 +802,11 @@ mod tests {
         );
         assert_eq!(set[1].witness, Some(vec![1]), "{CACHE}");
         assert_eq!(serde_json::to_string(&set).unwrap(), cached, "{CACHE}");
+        // Community benchmarks keep where they come from
+        let community = r#"[{"name":"community-01","family":"Community","expected":"Sat","cnf":{"vars":1,"clauses":[[1]]},"witness":[1],"origin":{"benchmark":3,"hash":"h","family":"f","author":"a"}}]"#;
+        let set: Vec<Instance> = serde_json::from_str(community).expect(CACHE);
+        assert_eq!(set[0].origin.as_ref().map(|o| o.benchmark), Some(3));
+        assert_eq!(serde_json::to_string(&set).unwrap(), community);
     }
 
     /// A new generator makes other sets from the same seed: they must not be taken from the
@@ -531,17 +814,54 @@ mod tests {
     #[test]
     fn cached_sets_depend_on_the_generator() {
         assert_eq!(
-            cache_name("golden"),
-            cache_name_for("golden", GENERATOR_VERSION)
+            cache_name("golden", ""),
+            cache_name_for("golden", "", GENERATOR_VERSION)
         );
-        assert_ne!(cache_name_for("golden", 1), cache_name_for("golden", 2));
-        assert_ne!(cache_name_for("golden", 1), cache_name_for("golden2", 1));
+        assert_ne!(
+            cache_name_for("golden", "", 1),
+            cache_name_for("golden", "", 2)
+        );
+        assert_ne!(
+            cache_name_for("golden", "", 1),
+            cache_name_for("golden2", "", 1)
+        );
+        // Another draw from the community pool, another set
+        assert_ne!(cache_name("golden", ""), cache_name("golden", "ab"));
         // The name doesn't give the seed away
-        assert!(!cache_name("golden").contains("golden"));
+        assert!(!cache_name("golden", "").contains("golden"));
+        assert_eq!(pool_file("../x"), None);
+        assert_eq!(
+            pool_file(&"a".repeat(64)),
+            Some(format!("pool-{}.json", "a".repeat(64)))
+        );
     }
 
-    /// A set of tiny formulas for `seed` in a fresh cache directory: generating a real one
-    /// takes minutes. Even ones are unsatisfiable.
+    /// A draw of two tiny community benchmarks: unsatisfiable, then satisfiable.
+    fn tiny_pool() -> Vec<PoolInstance> {
+        use crate::community::{Formula, Origin, gbd_hash};
+        ["p cnf 1 2\n1 0\n-1 0\n", "p cnf 1 1\n1 0\n"]
+            .iter()
+            .enumerate()
+            .map(|(i, dimacs)| PoolInstance {
+                origin: Origin {
+                    benchmark: i64::try_from(i).unwrap() + 1,
+                    hash: gbd_hash(&Formula::parse(dimacs).unwrap()),
+                    family: "tiny".into(),
+                    author: "ada".into(),
+                },
+                answer: if i == 0 {
+                    crate::Answer::Unsat
+                } else {
+                    crate::Answer::Sat
+                },
+                dimacs: (*dimacs).to_string(),
+                model: (i == 1).then(|| vec![1]),
+            })
+            .collect()
+    }
+
+    /// A set of tiny formulas for `seed` and [`tiny_pool`] in a fresh cache directory:
+    /// generating a real one takes minutes. Even ones are unsatisfiable.
     fn cached_set(seed: &str) -> PathBuf {
         use crate::cnf::Cnf;
         use crate::{Answer, Family};
@@ -563,12 +883,16 @@ mod tests {
                         Cnf::new(1, vec![vec![1]])
                     },
                     witness: (!unsat).then(|| vec![1]),
+                    origin: None,
                 }
             })
             .collect();
         assert!(set.iter().any(|i| i.family == Family::Queens));
+        let pool = tiny_pool();
+        let mut set = set;
+        set.extend(bench::community(seed, &pool));
         std::fs::write(
-            dir.join(cache_name(seed)),
+            dir.join(cache_name(seed, &crate::community::pool_digest(&pool))),
             serde_json::to_vec(&set).unwrap(),
         )
         .unwrap();
@@ -582,6 +906,8 @@ mod tests {
         // The website, keeping the reports it gets
         let (sent, mut reports) = mpsc::unbounded_channel::<(Option<String>, Report)>();
         let (sets_sent, mut sets) = mpsc::unbounded_channel::<(Option<String>, String, Bytes)>();
+        let (checked_sent, mut checked) =
+            mpsc::unbounded_channel::<(Option<String>, BenchmarkReport)>();
         let auth = |headers: &HeaderMap| {
             headers
                 .get(header::AUTHORIZATION)
@@ -608,6 +934,15 @@ mod tests {
                     },
                 ),
             )
+            .route(
+                "/dojo/benchmark-report",
+                post(
+                    move |headers: HeaderMap, axum::Json(report): axum::Json<BenchmarkReport>| {
+                        checked_sent.send((auth(&headers), report)).unwrap();
+                        async { StatusCode::NO_CONTENT }
+                    },
+                ),
+            )
             .layer(DefaultBodyLimit::max(64 << 20));
         let site_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let site_url = format!("http://{}", site_listener.local_addr().unwrap());
@@ -620,6 +955,8 @@ mod tests {
             jobs,
             pending: Arc::new(AtomicUsize::new(0)),
             active: Arc::new(AtomicU64::new(0)),
+            pools: Arc::default(),
+            cache: Some(cache.clone()),
         };
         let reporter = Reporter {
             client: reqwest::Client::new(),
@@ -654,8 +991,61 @@ mod tests {
         let client = reqwest::Client::new();
         let health = client.get(format!("{url}/health")).send().await.unwrap();
         assert_eq!(health.text().await.unwrap(), "ok");
+        let pool = tiny_pool();
+        let digest = crate::community::pool_digest(&pool);
         let job = format!(
-            "{url}/jobs?id=7&season=2&seed=worker-test&report_token=job-token&rules={RULES_VERSION}&export=1"
+            "{url}/jobs?id=7&season=2&seed=worker-test&report_token=job-token&rules={RULES_VERSION}&export=1&pool={digest}"
+        );
+        // The pool of the season first: the worker asks for it, checks it and keeps it
+        let pool_url = format!("{url}/pools/{digest}");
+        let status = |r: reqwest::Result<reqwest::Response>| r.unwrap().status();
+        let has = || client.get(&pool_url).bearer_auth("secret").send();
+        assert_eq!(status(has().await), StatusCode::NOT_FOUND);
+        assert_eq!(
+            status(
+                client
+                    .post(&job)
+                    .bearer_auth("secret")
+                    .body(b"\0asm".to_vec())
+                    .send()
+                    .await
+            ),
+            StatusCode::PRECONDITION_REQUIRED
+        );
+        let put =
+            |url: String, body: Vec<u8>| client.put(url).bearer_auth("secret").body(body).send();
+        let json = serde_json::to_vec(&pool).unwrap();
+        assert_eq!(
+            status(put(pool_url.replace("/pools/", "/pools/0"), json.clone()).await),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+        assert_eq!(
+            status(put(format!("{url}/pools/{}", "0".repeat(64)), json.clone()).await),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+        let mut forged = pool.clone();
+        forged[0].dimacs = "p cnf 1 1\n-1 0\n".into();
+        assert_eq!(
+            status(put(pool_url.clone(), serde_json::to_vec(&forged).unwrap()).await),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+        assert_eq!(
+            status(put(pool_url.clone(), b"[".to_vec()).await),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+        assert_eq!(
+            status(client.put(&pool_url).body(json.clone()).send().await),
+            StatusCode::UNAUTHORIZED
+        );
+        assert_eq!(
+            status(put(pool_url.clone(), json).await),
+            StatusCode::NO_CONTENT
+        );
+        assert_eq!(status(has().await), StatusCode::OK);
+        assert!(cache.join(pool_file(&digest).unwrap()).exists());
+        assert_eq!(
+            status(client.get(&pool_url).send().await),
+            StatusCode::UNAUTHORIZED
         );
         let post =
             |token: &str, wasm: Vec<u8>| client.post(&job).bearer_auth(token).body(wasm).send();
@@ -694,7 +1084,7 @@ mod tests {
                 .expect("a report in time")
                 .expect("the website is up")
         };
-        let total = crate::SET_SIZE;
+        let total = crate::SET_SIZE + 2;
         assert_eq!(
             next().await,
             (
@@ -720,6 +1110,13 @@ mod tests {
         let (info, archived) = crate::archive::read_tar_gz(&archive).unwrap();
         assert_eq!(info, crate::archive::SetInfo::new("worker-test", Some(2)));
         assert_eq!(archived.len(), total as usize);
+        // With the community benchmarks at the end, credited
+        let last = &archived[archived.len() - 1];
+        assert_eq!(
+            (last.name.as_str(), last.family),
+            ("community-02", crate::Family::Community)
+        );
+        assert_eq!(last.origin.as_ref().map(|o| o.author.as_str()), Some("ada"));
         let (auth, report) = next().await;
         assert_eq!(auth.as_deref(), Some("Bearer job-token"));
         let Report::Finished {
@@ -752,6 +1149,78 @@ mod tests {
             };
             assert_eq!(r.outcome, expected, "{}", r.name);
         }
+
+        // Community benchmarks: verified one after another, the verdict with the check's token
+        let bench_url = |id: i64| {
+            format!("{url}/benchmarks?id={id}&report_token=check-{id}&rules={RULES_VERSION}")
+        };
+        assert_eq!(
+            client
+                .post(bench_url(1))
+                .bearer_auth("guess")
+                .body("p cnf 1 1\n1 0\n")
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            StatusCode::UNAUTHORIZED
+        );
+        assert_eq!(
+            client
+                .post(format!(
+                    "{url}/benchmarks?id=1&report_token=t&rules={}",
+                    RULES_VERSION + 1
+                ))
+                .bearer_auth("secret")
+                .body("p cnf 1 1\n1 0\n")
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            StatusCode::CONFLICT
+        );
+        for (id, dimacs) in [(1, "p cnf 1 1\n1 0\n"), (2, "not a formula")] {
+            let sent = client
+                .post(bench_url(id))
+                .bearer_auth("secret")
+                .body(dimacs)
+                .send();
+            assert_eq!(sent.await.unwrap().status(), StatusCode::ACCEPTED);
+        }
+        let mut verdicts = Vec::new();
+        for _ in 0..2 {
+            verdicts.push(
+                tokio::time::timeout(Duration::from_secs(120), checked.recv())
+                    .await
+                    .expect("a verdict in time")
+                    .expect("the website is up"),
+            );
+        }
+        assert_eq!(
+            verdicts,
+            [
+                (
+                    Some("Bearer check-1".into()),
+                    BenchmarkReport {
+                        id: 1,
+                        verdict: Verdict::Refused {
+                            reason: crate::community::Refusal::TooEasy
+                        }
+                    }
+                ),
+                (
+                    Some("Bearer check-2".into()),
+                    BenchmarkReport {
+                        id: 2,
+                        verdict: Verdict::Refused {
+                            reason: crate::community::Refusal::Invalid(
+                                "clauses before the p cnf line".into()
+                            )
+                        }
+                    }
+                ),
+            ]
+        );
 
         // The website got the last report before the worker got its answer. Stopping the server
         // drops the last job sender: the evaluator gets that answer, finishes the job and returns.

@@ -4,7 +4,7 @@ use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
 use super::HashiClient;
-use crate::model::{DojoBoard, DojoMe, DojoSeasons, DojoSubmission};
+use crate::model::{DojoBenchmarks, DojoBoard, DojoMe, DojoSeasons, DojoSubmission};
 #[cfg(feature = "ssr")]
 use crate::server::{auth, db, dojo};
 
@@ -34,4 +34,12 @@ pub async fn load_dojo_me() -> Result<DojoMe, ServerFnError> {
     let conn = db::conn()?;
     let user = auth::current_user(&conn).await?;
     dojo::me(&conn, user.as_ref()).await
+}
+
+/// The current user's community benchmarks and the pool.
+#[server(input = Json, client = HashiClient)]
+pub async fn load_dojo_benchmarks() -> Result<DojoBenchmarks, ServerFnError> {
+    let conn = db::conn()?;
+    let user = auth::current_user(&conn).await?;
+    dojo::benchmarks_page(&conn, user.as_ref()).await
 }

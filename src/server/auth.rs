@@ -528,6 +528,10 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         "UPDATE dojo_submissions SET similar_to = NULL
          WHERE similar_to IN (SELECT id FROM dojo_submissions WHERE user_id = ?1)",
         "DELETE FROM dojo_submissions WHERE user_id = ?1",
+        // Community benchmarks go, unless a season drew them: those are published with its set,
+        // without a name
+        "DELETE FROM dojo_benchmarks WHERE user_id = ?1 AND id NOT IN (SELECT benchmark_id FROM dojo_season_pool)",
+        "UPDATE dojo_benchmarks SET user_id = NULL, ip_hash = NULL WHERE user_id = ?1",
         "UPDATE dojo_archive SET user_id = NULL, name = '', source_url = NULL WHERE user_id = ?1",
         "DELETE FROM attempts
          WHERE user_id = ?1 AND (finished_at IS NULL OR revealed != 0 OR flag IS NOT NULL)",

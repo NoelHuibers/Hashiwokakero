@@ -2,9 +2,12 @@
 
 use dojo::Family;
 use leptos::prelude::*;
+use leptos_router::components::A;
 
+use crate::components::layout::use_localized;
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{t, use_i18n};
+use crate::model::DojoBoard;
 
 use super::names::{family_kanji, family_name, family_text};
 
@@ -74,8 +77,17 @@ pub(super) fn HowItWorks() -> impl IntoView {
 }
 
 #[component]
-pub(super) fn Families() -> impl IntoView {
+pub(super) fn Families(board: RwSignal<Option<DojoBoard>>) -> impl IntoView {
     let i18n = use_i18n();
+    let benchmarks = use_localized("/dojo/benchmarks");
+    // Who contributed to the community pool
+    let credits = move || {
+        board.with(|b| {
+            b.as_ref()
+                .filter(|b| !b.community.authors.is_empty())
+                .map(|b| b.community.authors.join(", "))
+        })
+    };
     view! {
         <Card class="gap-4">
             <CardHeader>
@@ -100,6 +112,30 @@ pub(super) fn Families() -> impl IntoView {
                         }
                     })
                     .collect_view()}
+                <div class="flex gap-3 sm:col-span-2" data-testid="community-family">
+                    <span class="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary font-pixel text-xl">
+                        {family_kanji(Family::Community)}
+                    </span>
+                    <div class="flex flex-col gap-1">
+                        <h3 class="font-bold">{move || family_name(i18n.get_locale(), Family::Community)}</h3>
+                        <p class="text-sm text-muted-foreground">{move || family_text(i18n.get_locale(), Family::Community)}</p>
+                        {move || {
+                            credits()
+                                .map(|names| {
+                                    view! {
+                                        <p class="text-sm">
+                                            <span class="font-semibold">{t!(i18n, dojo.community.thanks)}</span>
+                                            " "
+                                            {names}
+                                        </p>
+                                    }
+                                })
+                        }}
+                        <A href=benchmarks attr:class="w-fit text-sm text-primary underline underline-offset-4">
+                            {t!(i18n, dojo.community.cta)}
+                        </A>
+                    </div>
+                </div>
             </CardContent>
         </Card>
     }

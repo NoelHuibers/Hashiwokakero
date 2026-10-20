@@ -115,7 +115,9 @@ pub async fn overview(conn: &Connection) -> Result<AdminOverview, ServerFnError>
         .await?,
         dojo_pending: count(
             conn,
-            "SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running') AND ?1 = ?1",
+            // Evaluations under way, and community benchmarks waiting for a moderator
+            "SELECT (SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running'))
+                + (SELECT COUNT(*) FROM dojo_benchmarks WHERE state = 'verified') + ?1 - ?1",
             day,
         )
         .await?,

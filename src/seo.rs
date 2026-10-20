@@ -201,7 +201,7 @@ pub fn faq_ld(locale: Locale) -> String {
 }
 
 /// The pages in the sitemap with their change frequency and priority.
-const SITEMAP: [(&str, &str, &str); 8] = [
+const SITEMAP: [(&str, &str, &str); 9] = [
     ("/", "daily", "1.0"),
     ("/practice", "monthly", "0.8"),
     ("/ranks", "daily", "0.7"),
@@ -210,6 +210,7 @@ const SITEMAP: [(&str, &str, &str); 8] = [
     ("/lab", "monthly", "0.5"),
     ("/dojo", "daily", "0.7"),
     ("/dojo/seasons", "monthly", "0.4"),
+    ("/dojo/benchmarks", "monthly", "0.4"),
 ];
 
 /// `sitemap.xml` with every page in every language, each listing its translations.

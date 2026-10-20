@@ -35,6 +35,7 @@ use sha2::{Digest, Sha256};
 use splr::{Certificate, Config, SatSolverIF, SolveIF, Solver, SolverError};
 
 use crate::cnf::{Cnf, literals};
+use crate::community::{PoolInstance, Refusal, Verdict};
 use crate::{Answer, Family};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -46,6 +47,9 @@ pub struct Instance {
     pub cnf: Cnf,
     /// A model, for satisfiable instances.
     pub witness: Option<Vec<i32>>,
+    /// Who contributed it, for benchmarks from the community pool ([`Family::Community`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<crate::community::Origin>,
 }
 
 /// One formula to generate: its family, a size (what it means depends on the family, see
@@ -198,6 +202,87 @@ pub fn generate_hidden(seed: &str) -> Vec<Instance> {
     generate_with(seed, &hidden_spec(seed))
 }
 
+/// A season's hidden set with the benchmarks drawn from the community pool for it (see
+/// [`community`]).
+pub fn generate_hidden_with(seed: &str, pool: &[PoolInstance]) -> Vec<Instance> {
+    let mut set = generate_hidden(seed);
+    set.extend(community(seed, pool));
+    set
+}
+
+/// The community benchmarks of a hidden set, `community-01` and on.
+///
+/// Each is scrambled with a random generator of the set's seed and its hash: in every season a
+/// known benchmark looks different, so a solver can't recognise it by its layout or carry a
+/// model over.
+pub fn community(seed: &str, pool: &[PoolInstance]) -> Vec<Instance> {
+    pool.iter()
+        .enumerate()
+        .filter_map(|(i, p)| {
+            let cnf = match Cnf::parse(&p.dimacs) {
+                Ok(cnf) => cnf,
+                Err(e) => {
+                    eprintln!("community benchmark #{}: {e}", p.origin.benchmark);
+                    return None;
+                }
+            };
+            let digest = Sha256::digest(format!("{seed}/community/{}", p.origin.hash));
+            let mut rng = StdRng::from_seed(digest.into());
+            let (cnf, map) = cnf.scramble(&mut rng);
+            let witness = p.model.as_ref().map(|w| {
+                w.iter()
+                    .map(|&l| {
+                        let renamed = map[l.unsigned_abs() as usize];
+                        if l > 0 { renamed } else { -renamed }
+                    })
+                    .collect()
+            });
+            Some(Instance {
+                name: format!("{}-{:02}", Family::Community.id(), i + 1),
+                family: Family::Community,
+                expected: p.answer,
+                cnf,
+                witness,
+                origin: Some(p.origin.clone()),
+            })
+        })
+        .collect()
+}
+
+/// The worker's check of a community benchmark.
+///
+/// Refused if a plain DPLL solver settles it within [`crate::community::EASY_SECS`] (too
+/// easy, like the SAT Competition's "`MiniSat` solves it in a minute"), verified if splr finds a
+/// model that checks out or proves it unsatisfiable with a proof the labelling checker accepts
+/// (see [`label`]), refused otherwise.
+pub fn verify_benchmark(cnf: &Cnf) -> Verdict {
+    // The house DPLL entry's solver
+    let dpll = SolverConfig {
+        kind: SolverKind::Dpll,
+        ..Default::default()
+    }
+    .normalized();
+    let easy = Instant::now() + Duration::from_secs(crate::community::EASY_SECS);
+    if let Ok((outcome, _)) = solve_clauses(&cnf.clauses, cnf.vars as usize, &dpll, Some(easy))
+        && !matches!(outcome, SatOutcome::Timeout)
+    {
+        return Verdict::Refused {
+            reason: Refusal::TooEasy,
+        };
+    }
+    let started = Instant::now();
+    match label(cnf) {
+        Some((answer, model)) => Verdict::Verified {
+            answer,
+            model,
+            solve_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+        },
+        None => Verdict::Refused {
+            reason: Refusal::NoAnswer,
+        },
+    }
+}
+
 /// Instances are independent (each has its own random generator), so they are generated in
 /// parallel.
 pub fn generate_with(seed: &str, spec: &[Spec]) -> Vec<Instance> {
@@ -241,8 +326,8 @@ pub fn generate_with(seed: &str, spec: &[Spec]) -> Vec<Instance> {
 
 fn generate_instance(seed: &str, index: usize, name: String, spec: Spec) -> Instance {
     assert!(
-        spec.family != Family::Mystery,
-        "the mystery family stands for another one"
+        !matches!(spec.family, Family::Mystery | Family::Community),
+        "only generated families"
     );
     let mut attempt = 0;
     loop {
@@ -265,6 +350,7 @@ fn generate_instance(seed: &str, index: usize, name: String, spec: Spec) -> Inst
                 expected,
                 cnf,
                 witness,
+                origin: None,
             };
         }
         attempt += 1;
@@ -310,7 +396,8 @@ pub fn generate_one(spec: Spec, rng: &mut StdRng) -> Option<Generated> {
         Family::Tseitin => tseitin::generate(size, want, rng),
         Family::Quasigroup => quasigroup::generate(size, rng),
         Family::Hamiltonian => hamiltonian::generate(size, want, rng),
-        Family::Mystery => None,
+        // Not generated: the mystery family stands for another, community benchmarks are given
+        Family::Mystery | Family::Community => None,
     }
 }
 
@@ -698,6 +785,71 @@ pub(crate) mod tests {
         let again = generate_with("test", &spec);
         assert!(set.iter().zip(&again).all(|(a, b)| a.cnf == b.cnf));
         assert_ne!(generate_with("other", &spec[..1])[0].cnf, set[0].cnf);
+    }
+
+    /// Community benchmarks join a hidden set scrambled, credited and with their models carried
+    /// over; another season scrambles them differently.
+    #[test]
+    fn community_benchmarks_join_hidden_sets() {
+        use crate::community::{Formula, Origin, gbd_hash};
+        let (cnf, answer, model) = pigeonhole(4, true);
+        let dimacs = Formula {
+            vars: cnf.vars,
+            clauses: cnf.clauses.clone(),
+        }
+        .dimacs();
+        let pool = vec![PoolInstance {
+            origin: Origin {
+                benchmark: 5,
+                hash: gbd_hash(&Formula::parse(&dimacs).unwrap()),
+                family: "pigeons".into(),
+                author: "ada".into(),
+            },
+            answer,
+            dimacs,
+            model,
+        }];
+        let set = community("season", &pool);
+        assert_eq!(set.len(), 1);
+        let i = &set[0];
+        assert_eq!(
+            (i.name.as_str(), i.family),
+            ("community-01", Family::Community)
+        );
+        assert_eq!(i.origin.as_ref().map(|o| o.benchmark), Some(5));
+        assert_ne!(i.cnf, cnf, "scrambled");
+        assert_eq!(i.cnf.check(i.witness.as_ref().unwrap()), Some(true));
+        assert_ne!(community("another season", &pool)[0].cnf, i.cnf);
+        // A broken one is left out
+        let mut broken = pool;
+        broken[0].dimacs = "nonsense".into();
+        assert!(community("season", &broken).is_empty());
+    }
+
+    /// The "interesting" filter: what plain DPLL settles at once is too easy; otherwise splr
+    /// settles it with a checked model or proof.
+    #[test]
+    fn benchmarks_are_verified() {
+        let easy = Cnf::new(2, vec![vec![1, 2], vec![-1]]);
+        assert_eq!(
+            verify_benchmark(&easy),
+            Verdict::Refused {
+                reason: Refusal::TooEasy
+            }
+        );
+        let spec = [unsat(Family::Factoring, 22), sat(Family::Factoring, 22)];
+        for instance in generate_with("verify", &spec) {
+            match verify_benchmark(&instance.cnf) {
+                Verdict::Verified { answer, model, .. } => {
+                    assert_eq!(answer, instance.expected);
+                    assert_eq!(model.is_some(), answer == Answer::Sat);
+                    if let Some(m) = model {
+                        assert_eq!(instance.cnf.check(&m), Some(true));
+                    }
+                }
+                other => panic!("{}: {other:?}", instance.name),
+            }
+        }
     }
 
     /// The formulas of a seed, checked in as digests. Workers generate a season's hidden set

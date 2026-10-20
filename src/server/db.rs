@@ -218,6 +218,62 @@ CREATE TABLE IF NOT EXISTS dojo_archive (
 );
 CREATE INDEX IF NOT EXISTS dojo_archive_user ON dojo_archive (user_id);
 ",
+    // 10
+    r"
+-- Community benchmarks (bring your own benchmark, see server/dojo/benchmarks.rs). The formula
+-- as normalized DIMACS, its GBD hash and a hash its scrambled copies share (dojo::community).
+-- user_id goes when the author deletes their account; benchmarks that are in a season's draw
+-- stay (licensed CC BY 4.0, published with the season), all others go
+CREATE TABLE IF NOT EXISTS dojo_benchmarks (
+    id          INTEGER PRIMARY KEY,
+    user_id     INTEGER,
+    family      TEXT NOT NULL,
+    description TEXT NOT NULL,
+    -- 'SAT', 'UNSAT' or NULL: what the author expects
+    claimed     TEXT,
+    -- fetched from the Global Benchmark Database (1) or uploaded (0)
+    from_gbd    INTEGER NOT NULL DEFAULT 0,
+    cnf         BLOB NOT NULL,
+    hash        TEXT NOT NULL,
+    shape       TEXT NOT NULL,
+    vars        INTEGER NOT NULL,
+    clauses     INTEGER NOT NULL,
+    ip_hash     TEXT,
+    -- queued, checking (at the worker), verified (waits for a moderator), refused (by the
+    -- worker), accepted (in the pool), rejected (by a moderator)
+    state       TEXT NOT NULL,
+    -- why it was refused (dojo::community::Refusal::id, wrong_claim, failed)
+    reason      TEXT,
+    -- the certain answer, a model of satisfiable ones (JSON) and how long splr took
+    answer      TEXT,
+    model       TEXT,
+    solve_ms    INTEGER,
+    job_token   TEXT,
+    attempts    INTEGER NOT NULL DEFAULT 0,
+    license     TEXT NOT NULL,
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL,
+    -- when a moderator accepted it: it can be drawn in seasons that start later
+    accepted_at INTEGER
+);
+CREATE UNIQUE INDEX IF NOT EXISTS dojo_benchmark_hash ON dojo_benchmarks (hash);
+CREATE INDEX IF NOT EXISTS dojo_benchmark_shape ON dojo_benchmarks (shape);
+CREATE INDEX IF NOT EXISTS dojo_benchmark_user ON dojo_benchmarks (user_id, created_at);
+CREATE INDEX IF NOT EXISTS dojo_benchmark_network ON dojo_benchmarks (ip_hash, created_at);
+CREATE INDEX IF NOT EXISTS dojo_benchmark_state ON dojo_benchmarks (state, created_at);
+
+-- The benchmarks drawn from the pool for a season's hidden set, fixed when the season starts
+-- (dojo::community::select), in set order
+CREATE TABLE IF NOT EXISTS dojo_season_pool (
+    season       INTEGER NOT NULL,
+    position     INTEGER NOT NULL,
+    benchmark_id INTEGER NOT NULL,
+    PRIMARY KEY (season, position)
+);
+-- dojo::community::pool_digest of the season's draw, '' for none, NULL: the season started
+-- before there was a pool (it has none)
+ALTER TABLE dojo_seasons ADD COLUMN pool_digest TEXT;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

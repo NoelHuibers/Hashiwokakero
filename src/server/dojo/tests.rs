@@ -1049,6 +1049,7 @@ fn results_as_csv() {
         budget: DEFAULT_BUDGET,
         set_sha256: None,
         mystery: None,
+        community: Vec::new(),
         entries: vec![
             entry(
                 1,

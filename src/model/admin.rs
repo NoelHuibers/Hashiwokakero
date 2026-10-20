@@ -90,6 +90,37 @@ pub enum SubmissionAction {
     Delete,
 }
 
+/// A community benchmark as moderators see it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdminBenchmark {
+    pub id: i64,
+    pub family: String,
+    pub description: String,
+    pub author: String,
+    pub state: crate::model::BenchmarkState,
+    pub reason: Option<String>,
+    pub claimed: Option<dojo::Answer>,
+    pub answer: Option<dojo::Answer>,
+    pub vars: u32,
+    pub clauses: u32,
+    pub solve_ms: Option<u64>,
+    pub from_gbd: bool,
+    pub hash: String,
+    pub created_at: i64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BenchmarkAction {
+    /// Into the pool (verified ones only).
+    Accept,
+    /// Not into the pool, or out of it for later seasons.
+    Reject,
+    /// Verify it again.
+    Requeue,
+    /// Gone for good, unless a season drew it.
+    Delete,
+}
+
 /// A message from the contact form.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContactMessage {

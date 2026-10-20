@@ -3,6 +3,7 @@
 //! Only for the accounts in `HASHI_ADMINS`; everyone else sees the usual "not found". English
 //! only.
 
+pub mod benchmarks;
 pub mod daily;
 pub mod dojo;
 pub mod messages;
@@ -18,6 +19,7 @@ use crate::model::AdminOverview;
 use crate::pages::NotFound;
 use crate::state::{Auth, error_toast};
 
+use self::benchmarks::BenchmarksAdmin;
 use self::daily::DailyAdmin;
 use self::dojo::DojoAdmin;
 use self::messages::MessagesAdmin;
@@ -111,7 +113,11 @@ fn Dashboard() -> impl IntoView {
                 {tab_button("messages", "Messages", |o| o.messages)}
             </div>
             {move || match tab.get() {
-                "dojo" => view! { <DojoAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
+                "dojo" => view! {
+                    <DojoAdmin on_change=Callback::new(move |()| load_overview()) />
+                    <BenchmarksAdmin on_change=Callback::new(move |()| load_overview()) />
+                }
+                    .into_any(),
                 "messages" => view! { <MessagesAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
                 "names" => view! { <NamesAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
                 _ => view! { <DailyAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),

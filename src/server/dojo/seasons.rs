@@ -78,7 +78,8 @@ pub(super) async fn open(conn: &Connection, current: u32, now: i64) -> Result<()
     )
     .await
     .map_err(err)?;
-    Ok(())
+    // Its draw from the community pool, fixed from now on
+    super::benchmarks::draw(conn, current, now).await
 }
 
 /// Freezes every season before `current` that still has submissions in it, or isn't marked
@@ -322,6 +323,7 @@ async fn season_rows(
                 .filter(|_| over),
             entries: row.get(9).map_err(db_err)?,
             mystery,
+            community: Vec::new(),
             board: Vec::new(),
         });
     }
@@ -376,6 +378,7 @@ pub async fn seasons(conn: &Connection, current: u32) -> Result<DojoSeasons, Ser
             set_sha256: None,
             entries: 0,
             mystery: None,
+            community: Vec::new(),
             board: Vec::new(),
         });
     let mut past = season_rows(
@@ -387,6 +390,7 @@ pub async fn seasons(conn: &Connection, current: u32) -> Result<DojoSeasons, Ser
     .await?;
     for season in &mut past {
         season.board = frozen_board(conn, season.season).await?;
+        season.community = super::benchmarks::drawn(conn, season.season).await?;
     }
     Ok(DojoSeasons {
         current: current_season,
@@ -409,6 +413,8 @@ pub struct ArchivedSeason {
     pub set_sha256: Option<String>,
     /// The held-out family of the hidden set (see `dojo::mystery_family`).
     pub mystery: Option<dojo::Family>,
+    /// The community benchmarks of the hidden set and their authors (licensed CC BY 4.0).
+    pub community: Vec<crate::model::CommunityCredit>,
     pub entries: Vec<ArchivedEntry>,
 }
 
@@ -488,6 +494,7 @@ pub async fn archived(
         budget: DEFAULT_BUDGET,
         set_sha256: info.set_sha256,
         mystery: info.mystery,
+        community: super::benchmarks::drawn(conn, season).await?,
         entries,
     }))
 }

@@ -217,6 +217,7 @@ mod tests {
             expected,
             cnf: Cnf::new(2, vec![vec![1, 2], vec![-1, 2], vec![1, -2], vec![-1, -2]]),
             witness: None,
+            origin: None,
         }
     }
 
