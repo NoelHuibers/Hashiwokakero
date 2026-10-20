@@ -202,7 +202,7 @@
     "intro": "SAT Competition gibi Dojo da katılımcılarından benchmark kabul eder. Önemsediğin bir formül gönder: cevabı kesin olarak belirlenebiliyorsa, çok kolay değilse ve bir moderatör kabul ederse havuza girer. Her sezonun gizli seti havuzdan birkaç tane çeker ve sezon bitince adınla yayımlanır.",
     "rules_title": "Neler kabul edilir",
     "rule_answer": "Kesin bir cevap: splr bir dakika içinde bizim kontrol ettiğimiz bir model bulur ya da formülün sağlanamaz olduğunu doğrulanmış denetleyicinin kabul ettiği bir kanıtla gösterir.",
-    "rule_easy": "Çok kolay değil: basit bir DPLL çözücü onu bir saniye içinde çözmemeli.",
+    "rule_easy": "Çok kolay değil, SAT Competition'daki gibi: MiniSat onu bir çözücünün formül başına aldığı yakıtın onda biriyle çözmemeli.",
     "rule_size": "En fazla 2 MB DIMACS, 200.000 değişken ve bir milyon cümle. Kopyalar, yeniden adlandırılmış ya da karıştırılmış olsalar bile reddedilir.",
     "rule_draw": "Her sezon en fazla {{ count }} tane çeker: yazar başına en fazla iki, aile başına en fazla iki, önce nadir yazarlar ve aileler, SAT ile UNSAT eşit sayıda. Çekiliş sezonun gizli tohumuyla yapılır ve sezon başında sabitlenir.",
     "rule_license": "Formülü <a>CC BY 4.0</a> ile lisanslarsın; böylece sezonun setiyle birlikte yayımlanabilir.",
@@ -243,7 +243,7 @@
     "reason": {
       "invalid": "Geçerli bir DIMACS CNF formülü değil.",
       "too_large": "Çok büyük.",
-      "too_easy": "Çok kolay: basit bir DPLL çözücü onu bir saniye içinde çözüyor.",
+      "too_easy": "Çok kolay: MiniSat onu bir çözücünün formül başına aldığı yakıtın onda biriyle çözüyor.",
       "no_answer": "Cevabı bir dakika içinde kesin olarak belirlenemedi.",
       "wrong_claim": "Cevabı beklediğin cevap değil.",
       "failed": "Doğrulama bizim tarafımızda defalarca başarısız oldu.",

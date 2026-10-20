@@ -27,6 +27,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       code: ${{ steps.diff.outputs.code }}
+      reference: ${{ steps.diff.outputs.reference }}
     steps:
       # The merge commit of the pull request and its parents
       - if: github.event_name == 'pull_request'
@@ -46,6 +47,10 @@ jobs:
           # Against the first parent, main's head: what merging the pull request changes
           files=$(git diff --no-renames --name-only HEAD^1 HEAD)
           printf '%s\n' "$files"
+          # The reference solvers' sources or binaries: rebuild and compare them
+          if printf '%s\n' "$files" | grep -q '^dojo/reference/'; then
+            echo "reference=true" >> "$GITHUB_OUTPUT"
+          fi
           # Code, unless every changed file is a doc (and some file changed at all)
           if [ -z "$files" ] || printf '%s\n' "$files" | grep -qvxE "$DOCS"; then
             echo "code=true" >> "$GITHUB_OUTPUT"
@@ -93,6 +98,20 @@ jobs:
       # first one from going untested. Not the website: it only runs its library's unit tests.
       - name: Doctests
         run: cargo test --locked --doc -p common -p backend -p sat_solver -p dojo --features dojo/worker
+
+  # The committed reference solvers (dojo/reference/*.wasm) must be exactly what their pinned
+  # sources build: a pull request that changes anything there rebuilds them with the pinned
+  # wasi-sdk and compares the bytes. Not a required check, it only runs for those.
+  reference:
+    name: Reference solvers
+    needs: changes
+    if: needs.changes.outputs.reference == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Rebuild and compare
+        run: dojo/reference/build.sh --check
 
   # A job of its own, it runs next to the server lints instead of after them
   lint-browser:
@@ -454,3 +473,30 @@ jobs:
         env:
           # A deploy token for hashi-dojo only
           FLY_API_TOKEN: ${{ secrets.FLY_DOJO_API_TOKEN }}
+
+  # The house entries (the reference solvers and our own, see scripts/dojo-house.sh) on the
+  # leaderboard, once both apps run the new code: unchanged ones are duplicates and stay, changed
+  # ones replace their old version. Skipped until the HASHI_ADMIN_TOKEN secret (the site's admin
+  # token) is set in the repository.
+  house:
+    name: Upload house entries
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [deploy, deploy-dojo]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      HASHI_ADMIN_TOKEN: ${{ secrets.HASHI_ADMIN_TOKEN }}
+    steps:
+      - if: env.HASHI_ADMIN_TOKEN == ''
+        run: echo "No HASHI_ADMIN_TOKEN secret, the house entries aren't uploaded" >> "$GITHUB_STEP_SUMMARY"
+      - if: env.HASHI_ADMIN_TOKEN != ''
+        uses: actions/checkout@v7
+      - if: env.HASHI_ADMIN_TOKEN != ''
+        run: rustup toolchain install
+      - if: env.HASHI_ADMIN_TOKEN != ''
+        uses: Swatinem/rust-cache@v2
+      - if: env.HASHI_ADMIN_TOKEN != ''
+        name: Upload
+        run: |
+          set -o pipefail
+          scripts/dojo-house.sh https://hashi.rs | tee -a "$GITHUB_STEP_SUMMARY"

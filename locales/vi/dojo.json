@@ -202,7 +202,7 @@
     "intro": "Giống SAT Competition, Dojo nhận benchmark từ người tham gia. Hãy gửi một công thức bạn quan tâm: nếu đáp án được xác định chắc chắn, nó không quá dễ và người kiểm duyệt chấp nhận, nó sẽ vào kho. Tập ẩn của mỗi mùa rút vài bài từ kho, và chúng được công bố kèm tên bạn khi mùa kết thúc.",
     "rules_title": "Điều kiện được nhận",
     "rule_answer": "Đáp án chắc chắn: trong một phút, splr tìm được mô hình mà chúng tôi kiểm tra, hoặc chứng minh công thức không thỏa mãn được bằng một chứng minh mà bộ kiểm tra đã được kiểm chứng chấp nhận.",
-    "rule_easy": "Không quá dễ: một bộ giải DPLL đơn giản không được giải xong trong một giây.",
+    "rule_easy": "Không quá dễ, như ở SAT Competition: MiniSat không được giải xong với một phần mười lượng fuel mà một bộ giải nhận cho mỗi công thức.",
     "rule_size": "Tối đa 2 MB DIMACS, 200.000 biến và một triệu mệnh đề. Bài trùng bị từ chối, kể cả khi đổi tên hay xáo trộn.",
     "rule_draw": "Mỗi mùa rút tối đa {{ count }} bài: mỗi tác giả và mỗi họ tối đa hai, ưu tiên tác giả và họ hiếm, số SAT bằng số UNSAT. Việc rút dùng seed bí mật của mùa và cố định khi mùa bắt đầu.",
     "rule_license": "Bạn cấp phép công thức theo <a>CC BY 4.0</a> để nó có thể được công bố cùng tập của mùa.",
@@ -243,7 +243,7 @@
     "reason": {
       "invalid": "Không phải công thức DIMACS CNF hợp lệ.",
       "too_large": "Quá lớn.",
-      "too_easy": "Quá dễ: một bộ giải DPLL đơn giản giải xong trong một giây.",
+      "too_easy": "Quá dễ: MiniSat giải xong với một phần mười lượng fuel mà một bộ giải nhận cho mỗi công thức.",
       "no_answer": "Không thể xác định chắc chắn đáp án trong một phút.",
       "wrong_claim": "Đáp án không giống như bạn dự kiến.",
       "failed": "Việc kiểm chứng thất bại nhiều lần phía chúng tôi.",

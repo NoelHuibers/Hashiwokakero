@@ -202,7 +202,7 @@
     "intro": "Seperti SAT Competition, Dojo menerima benchmark dari pesertanya. Kirim formula yang penting bagimu: jika jawabannya bisa dipastikan, tidak terlalu mudah, dan diterima moderator, formula itu masuk ke pool. Set tersembunyi setiap musim menarik beberapa dari pool, dan semuanya dipublikasikan dengan namamu saat musim berakhir.",
     "rules_title": "Yang bisa masuk",
     "rule_answer": "Jawaban yang pasti: dalam satu menit, splr menemukan model yang kami periksa, atau membuktikan formula tidak dapat dipenuhi dengan bukti yang diterima pemeriksa terverifikasi.",
-    "rule_easy": "Tidak terlalu mudah: solver DPLL sederhana tidak boleh menyelesaikannya dalam satu detik.",
+    "rule_easy": "Tidak terlalu mudah, seperti di SAT Competition: MiniSat tidak boleh menyelesaikannya dengan sepersepuluh fuel yang didapat solver per formula.",
     "rule_size": "Paling banyak 2 MB DIMACS, 200.000 variabel, dan satu juta klausa. Duplikat ditolak, juga yang diganti namanya atau diacak.",
     "rule_draw": "Setiap musim menarik hingga {{ count }}: paling banyak dua per penulis dan dua per keluarga, penulis dan keluarga yang jarang lebih dulu, SAT dan UNSAT sama banyak. Penarikan memakai seed rahasia musim itu dan ditetapkan saat musim dimulai.",
     "rule_license": "Kamu melisensikan formula dengan <a>CC BY 4.0</a>, agar bisa dipublikasikan bersama set musim itu.",
@@ -243,7 +243,7 @@
     "reason": {
       "invalid": "Bukan formula DIMACS CNF yang valid.",
       "too_large": "Terlalu besar.",
-      "too_easy": "Terlalu mudah: solver DPLL sederhana menyelesaikannya dalam satu detik.",
+      "too_easy": "Terlalu mudah: MiniSat menyelesaikannya dengan sepersepuluh fuel yang didapat solver per formula.",
       "no_answer": "Jawabannya tidak dapat dipastikan dalam satu menit.",
       "wrong_claim": "Jawabannya bukan yang kamu harapkan.",
       "failed": "Verifikasi berulang kali gagal di pihak kami.",

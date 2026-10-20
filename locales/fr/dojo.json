@@ -202,7 +202,7 @@
     "intro": "Comme la SAT Competition, le Dojo accueille des benchmarks de ses participants. Soumets une formule qui te tient à cœur : si sa réponse peut être établie avec certitude, qu’elle n’est pas trop facile et qu’un modérateur l’accepte, elle rejoint le pool. L’ensemble secret de chaque saison en tire quelques-unes, publiées avec ton nom à la fin de la saison.",
     "rules_title": "Ce qui est retenu",
     "rule_answer": "Une réponse certaine : en une minute, splr trouve un modèle que nous vérifions, ou prouve la formule insatisfiable avec une preuve que le vérificateur certifié accepte.",
-    "rule_easy": "Pas trop facile : un simple solveur DPLL ne doit pas la résoudre en une seconde.",
+    "rule_easy": "Pas trop facile, comme à la SAT Competition : MiniSat ne doit pas la résoudre avec un dixième du carburant qu’un solveur reçoit par formule.",
     "rule_size": "Au plus 2 Mo de DIMACS, 200 000 variables et un million de clauses. Les doublons sont refusés, même renommés ou mélangés.",
     "rule_draw": "Chaque saison en tire jusqu’à {{ count }} : au plus deux par auteur et deux par famille, les auteurs et familles rares d’abord, autant de SAT que d’UNSAT. Le tirage est initialisé avec la graine secrète de la saison et fixé dès son début.",
     "rule_license": "Tu places la formule sous licence <a>CC BY 4.0</a>, pour qu’elle puisse être publiée avec l’ensemble de la saison.",
@@ -243,7 +243,7 @@
     "reason": {
       "invalid": "Ce n’est pas une formule DIMACS CNF valide.",
       "too_large": "Trop grand.",
-      "too_easy": "Trop facile : un simple solveur DPLL la résout en une seconde.",
+      "too_easy": "Trop facile : MiniSat la résout avec un dixième du carburant qu’un solveur reçoit par formule.",
       "no_answer": "Sa réponse n’a pas pu être établie avec certitude en une minute.",
       "wrong_claim": "Sa réponse n’est pas celle que tu attendais.",
       "failed": "La vérification a échoué à plusieurs reprises de notre côté.",

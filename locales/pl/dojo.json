@@ -202,7 +202,7 @@
     "intro": "Jak SAT Competition, Dojo przyjmuje benchmarki od uczestników. Zgłoś formułę, na której ci zależy: jeśli jej odpowiedź da się ustalić na pewno, nie jest zbyt łatwa i moderator ją przyjmie, trafi do puli. Ukryty zbiór każdego sezonu losuje kilka z puli, a po sezonie są publikowane z twoim nazwiskiem.",
     "rules_title": "Co się kwalifikuje",
     "rule_answer": "Pewna odpowiedź: w ciągu minuty splr znajduje model, który sprawdzamy, albo dowodzi niespełnialności dowodem, który przyjmuje zweryfikowany sprawdzacz.",
-    "rule_easy": "Nie za łatwa: prosty solver DPLL nie może jej rozwiązać w ciągu sekundy.",
+    "rule_easy": "Nie za łatwa, jak w SAT Competition: MiniSat nie może jej rozwiązać przy jednej dziesiątej paliwa, które solver dostaje na formułę.",
     "rule_size": "Najwyżej 2 MB DIMACS, 200 000 zmiennych i milion klauzul. Duplikaty są odrzucane, także przemianowane lub przetasowane.",
     "rule_draw": "Każdy sezon losuje do {{ count }}: najwyżej dwa na autora i dwa na rodzinę, najpierw rzadkich autorów i rodziny, tyle samo SAT co UNSAT. Losowanie używa tajnego ziarna sezonu i jest ustalone od jego początku.",
     "rule_license": "Udzielasz licencji <a>CC BY 4.0</a> na formułę, aby można ją było opublikować ze zbiorem sezonu.",
@@ -243,7 +243,7 @@
     "reason": {
       "invalid": "To nie jest poprawna formuła DIMACS CNF.",
       "too_large": "Za duża.",
-      "too_easy": "Za łatwa: prosty solver DPLL rozwiązuje ją w ciągu sekundy.",
+      "too_easy": "Za łatwa: MiniSat rozwiązuje ją przy jednej dziesiątej paliwa, które solver dostaje na formułę.",
       "no_answer": "Jej odpowiedzi nie udało się ustalić na pewno w ciągu minuty.",
       "wrong_claim": "Jej odpowiedź nie jest tą, której oczekiwałeś.",
       "failed": "Weryfikacja wielokrotnie zawiodła po naszej stronie.",

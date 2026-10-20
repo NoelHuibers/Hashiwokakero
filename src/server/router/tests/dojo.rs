@@ -154,6 +154,74 @@ async fn house_entries_need_the_admin_token() {
         .unwrap()
         .unwrap();
     assert_eq!(submission.name, "House");
+    assert!(
+        submission
+            .source_url
+            .is_some_and(|url| url.ends_with("/tree/main/dojo/house"))
+    );
+}
+
+/// The reference solvers link to their own directory, and a new version of a house entry
+/// replaces the old one (scripts/dojo-house.sh uploads every house solver after a deploy).
+#[tokio::test]
+async fn house_entries_are_replaced_by_new_versions() {
+    let server = Server::start().await;
+    let script = server.browser();
+    let house = |query: &str, wasm: Vec<u8>| {
+        script
+            .post(&format!("/dojo/house?{query}"))
+            .bearer_auth(ADMIN_TOKEN)
+            .body(wasm)
+    };
+    let res = house("name=Kissat&source=dojo/reference", module(50))
+        .send()
+        .await
+        .unwrap();
+    assert_status(&res, StatusCode::CREATED);
+    let first: i64 = res.text().await.unwrap().parse().unwrap();
+    let other = house("name=MiniSat&source=dojo/reference", module(51))
+        .send()
+        .await
+        .unwrap();
+    assert_status(&other, StatusCode::CREATED);
+    let other: i64 = other.text().await.unwrap().parse().unwrap();
+    let submission = script
+        .call(LoadDojoSubmission { id: first })
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(
+        submission
+            .source_url
+            .is_some_and(|url| url.ends_with("/tree/main/dojo/reference"))
+    );
+
+    // Unchanged: nothing happens
+    let res = house("name=Kissat&source=dojo/reference", module(50))
+        .send()
+        .await
+        .unwrap();
+    assert_status(&res, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(res.text().await.unwrap(), "duplicate");
+    // A new version: the old one goes, the other solver stays
+    let res = house("name=Kissat&source=dojo/reference", module(52))
+        .send()
+        .await
+        .unwrap();
+    assert_status(&res, StatusCode::CREATED);
+    let second: i64 = res.text().await.unwrap().parse().unwrap();
+    for (id, kept) in [(first, false), (second, true), (other, true)] {
+        let found = script.call(LoadDojoSubmission { id }).await.unwrap();
+        assert_eq!(found.is_some(), kept, "#{id}");
+    }
+
+    for bad in ["../elsewhere", "/abs", "dojo//x", "dojo/x?y", ""] {
+        let res = house(&format!("name=Bad&source={bad}"), module(53))
+            .send()
+            .await
+            .unwrap();
+        assert_status(&res, StatusCode::BAD_REQUEST);
+    }
 }
 
 #[tokio::test]

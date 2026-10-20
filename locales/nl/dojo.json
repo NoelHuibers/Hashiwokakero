@@ -202,7 +202,7 @@
     "intro": "Net als de SAT Competition neemt de Dojo benchmarks van zijn deelnemers aan. Stuur een formule in die je belangrijk vindt: als het antwoord met zekerheid vast te stellen is, ze niet te makkelijk is en een moderator haar aanneemt, komt ze in de pool. De geheime set van elk seizoen trekt er een paar uit, en die worden met je naam gepubliceerd als het seizoen eindigt.",
     "rules_title": "Wat erin komt",
     "rule_answer": "Een zeker antwoord: binnen een minuut vindt splr een model dat wij controleren, of bewijst de formule onvervulbaar met een bewijs dat de geverifieerde checker accepteert.",
-    "rule_easy": "Niet te makkelijk: een eenvoudige DPLL-solver mag haar niet binnen een seconde oplossen.",
+    "rule_easy": "Niet te makkelijk, zoals bij de SAT Competition: MiniSat mag haar niet oplossen met een tiende van de brandstof die een solver per formule krijgt.",
     "rule_size": "Hoogstens 2 MB DIMACS, 200.000 variabelen en een miljoen clausules. Duplicaten worden geweigerd, ook hernoemde of geschudde.",
     "rule_draw": "Elk seizoen trekt er tot {{ count }}: hoogstens twee per auteur en twee per familie, zeldzame auteurs en families eerst, evenveel SAT als UNSAT. De trekking gebruikt de geheime seed van het seizoen en ligt vast vanaf de start.",
     "rule_license": "Je licentieert de formule onder <a>CC BY 4.0</a>, zodat ze met de set van het seizoen gepubliceerd kan worden.",
@@ -243,7 +243,7 @@
     "reason": {
       "invalid": "Geen geldige DIMACS-CNF-formule.",
       "too_large": "Te groot.",
-      "too_easy": "Te makkelijk: een eenvoudige DPLL-solver lost haar binnen een seconde op.",
+      "too_easy": "Te makkelijk: MiniSat lost haar op met een tiende van de brandstof die een solver per formule krijgt.",
       "no_answer": "Het antwoord kon niet binnen een minuut met zekerheid worden vastgesteld.",
       "wrong_claim": "Het antwoord is niet wat je verwachtte.",
       "failed": "De verificatie mislukte bij ons herhaaldelijk.",
