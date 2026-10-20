@@ -1,0 +1,216 @@
+{
+  "date": "2026-10-20",
+  "engine": "libSQL 0.10.0 / SQLite 3.47.0",
+  "build": "cargo test debug/test profile",
+  "method": "five alternating warm runs, statement preparation and all 13 result columns included; result equality asserted on every run",
+  "environment": "local Linux desktop, 30 GiB RAM, shared with other worktrees; not an isolated CPU or production measurement",
+  "results": [
+    {
+      "players": 1,
+      "days": 1,
+      "workload": "distinct",
+      "rows_returned": 1,
+      "original_median_ms": 0.425,
+      "optimized_median_ms": 0.9,
+      "speedup": 0.47,
+      "original_sorted_runs_ms": [
+        0.387,
+        0.388,
+        0.425,
+        0.436,
+        0.445
+      ],
+      "optimized_sorted_runs_ms": [
+        0.838,
+        0.848,
+        0.9,
+        0.903,
+        0.928
+      ]
+    },
+    {
+      "players": 10,
+      "days": 30,
+      "workload": "distinct",
+      "rows_returned": 30,
+      "original_median_ms": 5.008,
+      "optimized_median_ms": 1.773,
+      "speedup": 2.82,
+      "original_sorted_runs_ms": [
+        4.983,
+        5.001,
+        5.008,
+        5.019,
+        5.038
+      ],
+      "optimized_sorted_runs_ms": [
+        1.764,
+        1.77,
+        1.773,
+        1.79,
+        1.798
+      ]
+    },
+    {
+      "players": 100,
+      "days": 180,
+      "workload": "distinct",
+      "rows_returned": 180,
+      "original_median_ms": 265.184,
+      "optimized_median_ms": 29.695,
+      "speedup": 8.93,
+      "original_sorted_runs_ms": [
+        250.686,
+        264.591,
+        265.184,
+        266.169,
+        270.327
+      ],
+      "optimized_sorted_runs_ms": [
+        27.881,
+        29.432,
+        29.695,
+        30.075,
+        31.213
+      ]
+    },
+    {
+      "players": 1000,
+      "days": 180,
+      "workload": "distinct",
+      "rows_returned": 180,
+      "original_median_ms": 2072.945,
+      "optimized_median_ms": 191.042,
+      "speedup": 10.85,
+      "original_sorted_runs_ms": [
+        1976.336,
+        1978.959,
+        2072.945,
+        2085.983,
+        2138.716
+      ],
+      "optimized_sorted_runs_ms": [
+        181.0,
+        181.456,
+        191.042,
+        196.553,
+        198.243
+      ]
+    },
+    {
+      "players": 1000,
+      "days": 365,
+      "workload": "distinct",
+      "rows_returned": 365,
+      "original_median_ms": 4735.486,
+      "optimized_median_ms": 435.714,
+      "speedup": 10.87,
+      "original_sorted_runs_ms": [
+        4412.468,
+        4658.277,
+        4735.486,
+        4738.405,
+        4893.906
+      ],
+      "optimized_sorted_runs_ms": [
+        380.294,
+        428.227,
+        435.714,
+        473.482,
+        484.384
+      ]
+    },
+    {
+      "players": 1000,
+      "days": 365,
+      "workload": "sparse",
+      "rows_returned": 3,
+      "original_median_ms": 34.703,
+      "optimized_median_ms": 4.033,
+      "speedup": 8.6,
+      "original_sorted_runs_ms": [
+        33.832,
+        34.159,
+        34.703,
+        35.378,
+        36.023
+      ],
+      "optimized_sorted_runs_ms": [
+        4.017,
+        4.018,
+        4.033,
+        4.266,
+        4.446
+      ]
+    },
+    {
+      "players": 1000,
+      "days": 180,
+      "workload": "equal times",
+      "rows_returned": 180,
+      "original_median_ms": 2280.925,
+      "optimized_median_ms": 214.495,
+      "speedup": 10.63,
+      "original_sorted_runs_ms": [
+        2230.213,
+        2254.264,
+        2280.925,
+        2357.799,
+        2393.528
+      ],
+      "optimized_sorted_runs_ms": [
+        210.38,
+        210.849,
+        214.495,
+        218.803,
+        282.848
+      ]
+    },
+    {
+      "players": 1000,
+      "days": 180,
+      "workload": "exact ties",
+      "rows_returned": 180,
+      "original_median_ms": 2130.907,
+      "optimized_median_ms": 2130.047,
+      "speedup": 1.0,
+      "original_sorted_runs_ms": [
+        2101.269,
+        2124.622,
+        2130.907,
+        2159.06,
+        2166.613
+      ],
+      "optimized_sorted_runs_ms": [
+        2106.237,
+        2112.197,
+        2130.047,
+        2162.185,
+        2162.894
+      ]
+    },
+    {
+      "players": 1000,
+      "days": 180,
+      "workload": "large logs",
+      "rows_returned": 180,
+      "original_median_ms": 2427.449,
+      "optimized_median_ms": 225.911,
+      "speedup": 10.75,
+      "original_sorted_runs_ms": [
+        2221.705,
+        2269.596,
+        2427.449,
+        2430.46,
+        2519.498
+      ],
+      "optimized_sorted_runs_ms": [
+        212.359,
+        212.747,
+        225.911,
+        228.697,
+        230.649
+      ]
+    }
+  ]
+}
