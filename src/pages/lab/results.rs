@@ -203,3 +203,16 @@ pub(super) fn Results(runs: RwSignal<Vec<(SolverConfig, RunState)>>) -> impl Int
         </Card>
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::fmt_ms;
+
+    #[test]
+    fn totals_switch_to_seconds_from_one_second() {
+        assert_eq!(fmt_ms(12.34), "12.3 ms");
+        assert_eq!(fmt_ms(999.0), "999.0 ms");
+        assert_eq!(fmt_ms(1000.0), "1.00 s");
+        assert_eq!(fmt_ms(61_250.0), "61.25 s");
+    }
+}

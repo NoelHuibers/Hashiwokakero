@@ -184,20 +184,12 @@ pub fn reveal(game: Game, settings: Settings) {
         if game.status.get_untracked() == Status::Playing {
             game.status.set(Status::Revealed);
         }
-        let current = game.bridges.get_untracked();
-        // Tear down wrong bridges at once, then build the missing ones one after another
-        game.bridges.update(|b| {
-            for (e, slot) in b.iter_mut().enumerate() {
-                if *slot > solution[e] {
-                    *slot = solution[e];
-                }
-            }
-        });
-        let missing: Vec<usize> = (0..current.len())
-            .filter(|&e| current[e] < solution[e])
-            .collect();
-        let step = (2400 / missing.len().max(1) as u64).clamp(12, 90);
-        for (k, edge) in missing.into_iter().enumerate() {
+        let plan = game
+            .bridges
+            .with_untracked(|current| RevealPlan::new(current, &solution));
+        game.bridges.set(plan.torn_down);
+        let step = plan.step_ms;
+        for (k, edge) in plan.missing.into_iter().enumerate() {
             let value = solution[edge];
             set_timeout(
                 move || {
@@ -209,6 +201,37 @@ pub fn reveal(game: Game, settings: Settings) {
             );
         }
     });
+}
+
+/// How [`reveal`] gets from the player's bridges to the solution: wrong bridges are torn down at
+/// once, then the missing ones are built one after another, `step_ms` apart.
+#[derive(Debug, PartialEq, Eq)]
+struct RevealPlan {
+    /// The bridges with every one too many taken away.
+    torn_down: Vec<u8>,
+    /// The edges still short of the solution, in order.
+    missing: Vec<usize>,
+    step_ms: u64,
+}
+
+impl RevealPlan {
+    fn new(current: &[u8], solution: &[u8]) -> Self {
+        let torn_down = current
+            .iter()
+            .enumerate()
+            .map(|(e, &have)| have.min(solution[e]))
+            .collect();
+        let missing: Vec<usize> = (0..current.len())
+            .filter(|&e| current[e] < solution[e])
+            .collect();
+        // About 2.4 s for the whole board, but neither a blur nor a crawl
+        let step_ms = (2400 / missing.len().max(1) as u64).clamp(12, 90);
+        Self {
+            torn_down,
+            missing,
+            step_ms,
+        }
+    }
 }
 
 /// Asks the solver whether the solution is unique.
@@ -226,4 +249,36 @@ pub fn check_unique(game: Game, settings: Settings) {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_reveal_tears_down_wrong_bridges_and_builds_the_missing_ones() {
+        let plan = RevealPlan::new(&[2, 0, 1, 1, 0], &[1, 2, 1, 0, 1]);
+        assert_eq!(plan.torn_down, [1, 0, 1, 0, 0]);
+        assert_eq!(plan.missing, [1, 4]);
+    }
+
+    #[test]
+    fn a_solved_board_has_nothing_to_build() {
+        let plan = RevealPlan::new(&[1, 2, 0], &[1, 2, 0]);
+        assert_eq!(plan.torn_down, [1, 2, 0]);
+        assert_eq!(plan.missing, Vec::<usize>::new());
+    }
+
+    /// Building the solution takes about 2.4 s, but on a big board no bridge comes faster
+    /// than every 12 ms, and on a small one none slower than every 90 ms.
+    #[test]
+    fn the_solution_is_built_in_about_two_seconds() {
+        let step = |n: usize| RevealPlan::new(&vec![0; n], &vec![1; n]).step_ms;
+        assert_eq!(step(1), 90);
+        assert_eq!(step(26), 90);
+        assert_eq!(step(30), 80);
+        assert_eq!(step(100), 24);
+        assert_eq!(step(200), 12);
+        assert_eq!(step(1000), 12);
+    }
 }

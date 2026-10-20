@@ -397,3 +397,108 @@ fn LogView(log: Vec<MoveEvent>) -> impl IntoView {
     }
     .into_any()
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::model::LogSummary;
+
+    use super::*;
+
+    /// An attempt by guest #7, still running.
+    fn attempt() -> AdminAttempt {
+        AdminAttempt {
+            user_id: 7,
+            name: "Guest".into(),
+            username: None,
+            started_at: 1_000,
+            finished_at: None,
+            time_ms: None,
+            hints: 0,
+            checks: 0,
+            moves: None,
+            revealed: false,
+            flag: None,
+            log: LogSummary::default(),
+        }
+    }
+
+    fn action(a: &AdminAttempt) -> Option<&'static str> {
+        board_action(a).map(|(label, _)| label)
+    }
+
+    /// Only ranked results can be taken off, and only taken off ones put back.
+    #[test]
+    fn results_on_the_board_can_be_taken_off_and_put_back() {
+        let running = attempt();
+        assert!(!finished(&running));
+        assert_eq!(action(&running), None);
+
+        let ranked = AdminAttempt {
+            finished_at: Some(61_000),
+            ..attempt()
+        };
+        assert!(finished(&ranked));
+        assert_eq!(action(&ranked), Some("Take off"));
+
+        let given_up = AdminAttempt {
+            revealed: true,
+            ..ranked.clone()
+        };
+        assert!(!finished(&given_up));
+        assert_eq!(action(&given_up), None);
+
+        let taken_off = AdminAttempt {
+            flag: Some(Flag::Review),
+            ..ranked
+        };
+        assert_eq!(action(&taken_off), Some("Put back"));
+    }
+
+    #[test]
+    fn flagged_and_machine_fast_results_are_suspicious() {
+        let with_gap = |gap| AdminAttempt {
+            log: LogSummary {
+                fastest_gap_ms: gap,
+                ..LogSummary::default()
+            },
+            ..attempt()
+        };
+        assert!(!suspicious(&with_gap(None)));
+        assert!(!suspicious(&with_gap(Some(SUSPICIOUS_GAP_MS))));
+        assert!(suspicious(&with_gap(Some(SUSPICIOUS_GAP_MS - 1))));
+        let flagged = AdminAttempt {
+            flag: Some(Flag::TooFast),
+            ..attempt()
+        };
+        assert!(suspicious(&flagged));
+    }
+
+    #[test]
+    fn accounts_and_times_read_well() {
+        assert_eq!(account(&attempt()), "guest #7");
+        let named = AdminAttempt {
+            username: Some("noel".into()),
+            ..attempt()
+        };
+        assert_eq!(account(&named), "@noel · #7");
+        assert_eq!(gap(None), "–");
+        assert_eq!(gap(Some(85)), "85 ms");
+        assert_eq!(seconds(1_340), "1.3 s");
+        assert_eq!(seconds(61_000), "61.0 s");
+    }
+
+    #[test]
+    fn every_flag_has_its_own_name() {
+        let flags = [
+            Flag::Log,
+            Flag::TooFast,
+            Flag::Pace,
+            Flag::SecondAccount,
+            Flag::Review,
+        ];
+        let mut names: Vec<&str> = flags.into_iter().map(flag_name).collect();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), flags.len());
+    }
+}
