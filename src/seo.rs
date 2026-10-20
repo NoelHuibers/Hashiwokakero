@@ -9,7 +9,7 @@ use leptos_i18n::Locale as _;
 use leptos_meta::{Link, Meta, Script, Title};
 use serde_json::json;
 
-use crate::i18n::{Locale, t_string, td_string, use_i18n};
+use crate::i18n::{Locale, td_string, use_i18n};
 use crate::lang::{localized, og_locale};
 
 pub const SITE_URL: &str = "https://hashi.rs";
@@ -17,7 +17,61 @@ pub const SITE_NAME: &str = "Hashi";
 pub const AUTHOR: &str = "Noel Huibers";
 pub const AUTHOR_URL: &str = "https://github.com/NoelHuibers";
 pub const REPO_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero";
-pub const OG_IMAGE: &str = "https://hashi.rs/og.png";
+/// The English preview image. Pages in another language use [`og_image`].
+pub const OG_IMAGE: &str = "https://hashi.rs/og/en.png";
+
+/// The preview image (`og:image`) of the pages in a language, drawn by `server::og`.
+pub fn og_image(locale: Locale) -> String {
+    format!("{SITE_URL}/og/{}.png", locale.as_str())
+}
+
+/// The preview image of a day's daily, for the home page. The date is in the URL, so link
+/// previews that cached yesterday's don't show it today.
+pub fn og_daily_image(locale: Locale, day: i64) -> String {
+    format!(
+        "{SITE_URL}/og/daily/{}/{}.png",
+        crate::model::date_string(day),
+        locale.as_str()
+    )
+}
+
+/// Today's day number (UTC), as the server counts the dailies.
+fn today() -> i64 {
+    #[cfg(feature = "ssr")]
+    {
+        crate::server::daily::today()
+    }
+    #[cfg(not(feature = "ssr"))]
+    {
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "milliseconds since 1970 fit an i64"
+        )]
+        crate::model::day_of(js_sys::Date::now() as i64)
+    }
+}
+
+/// The preview image of a page and its description. The home page is today's daily: its card.
+fn page_image(locale: Locale, path: &str) -> (String, String) {
+    let alt = td_string!(locale, common.og_image_alt);
+    if path != "/" {
+        return (og_image(locale), alt.to_string());
+    }
+    let day = today();
+    let difficulty = crate::model::daily_difficulty(day);
+    let (w, h) = difficulty.size();
+    let alt = format!(
+        "{} · {} · {} {w}×{h}. {alt}",
+        td_string!(
+            locale,
+            daily.title,
+            number = crate::model::daily_number(day)
+        ),
+        crate::lang::date_long(locale, day),
+        crate::lang::difficulty_name(locale, difficulty),
+    );
+    (og_daily_image(locale, day), alt)
+}
 
 /// Title, description, canonical URL, Open Graph and Twitter tags of a page.
 #[component]
@@ -55,7 +109,7 @@ pub fn PageMeta(
         .filter(|l| **l != locale)
         .map(|l| view! { <Meta property="og:locale:alternate" content=og_locale(*l) /> })
         .collect_view();
-    let image_alt = move || t_string!(i18n, common.og_image_alt).to_string();
+    let (image, image_alt) = page_image(locale, path);
     view! {
         <Title text=title_text(move || title.get()) />
         <Meta name="description" content=move || description.get() />
@@ -69,14 +123,15 @@ pub fn PageMeta(
         <Meta property="og:title" content=move || title.get() />
         <Meta property="og:description" content=move || description.get() />
         <Meta property="og:url" content=url />
-        <Meta property="og:image" content=OG_IMAGE />
+        <Meta property="og:image" content=image.clone() />
+        <Meta property="og:image:type" content="image/png" />
         <Meta property="og:image:width" content="1200" />
         <Meta property="og:image:height" content="630" />
-        <Meta property="og:image:alt" content=image_alt />
+        <Meta property="og:image:alt" content=image_alt.clone() />
         <Meta name="twitter:card" content="summary_large_image" />
         <Meta name="twitter:title" content=move || title.get() />
         <Meta name="twitter:description" content=move || description.get() />
-        <Meta name="twitter:image" content=OG_IMAGE />
+        <Meta name="twitter:image" content=image />
         <Meta name="twitter:image:alt" content=image_alt />
         {json_ld.map(|json| view! { <Script type_="application/ld+json">{json}</Script> })}
     }
@@ -136,7 +191,7 @@ pub fn site_ld(locale: Locale) -> String {
                 "name": "Hashi – Hashiwokakero",
                 "alternateName": ["Hashiwokakero", "Bridges", "橋をかけろ", "Hashi"],
                 "url": format!("{SITE_URL}{}", localized(locale, "/")),
-                "image": OG_IMAGE,
+                "image": og_image(locale),
                 "description": td_string!(locale, common.ld.game),
                 "genre": ["Puzzle", "Logic"],
                 "gamePlatform": "Web browser",
@@ -259,6 +314,32 @@ mod tests {
         assert!(xml.contains("hreflang=\"zh-Hant\" href=\"https://hashi.rs/zh-Hant/lab\""));
     }
 
+    #[test]
+    fn preview_images_per_language_and_for_the_home_page_per_day() {
+        use crate::model::{LAUNCH_DAY, daily_number};
+
+        assert_eq!(og_image(Locale::en), OG_IMAGE);
+        assert_eq!(og_image(Locale::zh_Hant), "https://hashi.rs/og/zh-Hant.png");
+        assert_eq!(
+            og_daily_image(Locale::de, LAUNCH_DAY),
+            "https://hashi.rs/og/daily/2026-10-17/de.png"
+        );
+
+        let (image, alt) = page_image(Locale::ja, "/rules");
+        assert_eq!(image, og_image(Locale::ja));
+        assert_eq!(alt, td_string!(Locale::ja, common.og_image_alt));
+        // The home page is today's daily
+        let day = today();
+        let (image, alt) = page_image(Locale::fr, "/");
+        assert_eq!(image, og_daily_image(Locale::fr, day));
+        let title = td_string!(Locale::fr, daily.title, number = daily_number(day));
+        assert!(alt.starts_with(&title), "{alt}");
+        assert!(
+            alt.ends_with(td_string!(Locale::fr, common.og_image_alt)),
+            "{alt}"
+        );
+    }
+
     /// See [`title_text`]. The server reads a title after the arena of its page stopped being
     /// the thread's current one. Read through the closure, this panicked: "Tried to access a
     /// reactive value that has already been disposed".
@@ -284,6 +365,8 @@ mod tests {
     async fn the_head_gets_the_title_of_the_page_in_its_language() {
         use futures::StreamExt as _;
         use leptos_meta::ServerMetaContext;
+
+        use crate::i18n::t_string;
 
         // For the tasks leptos and leptos_i18n start
         _ = any_spawner::Executor::init_tokio();

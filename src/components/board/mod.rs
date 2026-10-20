@@ -14,8 +14,12 @@ use geometry::{cell_edges, cell_of, edge_at, edge_in_direction, midpoint, whole_
 use input::{Drag, Touches};
 use layers::{BlockedMark, Bridges, GhostBridge, GridDots, HoverCell, Islands};
 
+// For the board of the preview images (server/og)
+#[cfg(feature = "ssr")]
+pub(crate) use geometry::span_of;
+
 /// Space around the grid, decorations stick out of the top row.
-const PAD: i32 = 6;
+pub(crate) const PAD: i32 = 6;
 /// Pointer movement (art pixels) after which pressing an island becomes a drag.
 const DRAG_THRESHOLD: f64 = 5.0;
 
