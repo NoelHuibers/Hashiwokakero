@@ -63,7 +63,9 @@ The smoke makes two concrete assertions:
    account and session are seeded directly, as in the browser fixture. A real multipart
    HTTP upload creates a tiny community benchmark. The worker is briefly paused so the
    harness can inspect the real dispatch claim and verify that neither an incorrect
-   token nor the shared dispatch token can post a callback. After unpausing, the real
+   token nor the shared dispatch token can post a callback. The claim deadline is 45
+   seconds: a submit racing startup can miss the immediate dispatch and must wait
+   for the production dispatcher’s next 30-second tick. After unpausing, the real
    worker must settle the benchmark and post its job-token callback: the database must
    contain exactly `refused / too_easy`, one attempt, and a retired job token. A replay
    using the retired token must fail without changing the result. Invalid dispatch

@@ -89,6 +89,23 @@ def wait_for(description, check, seconds=30):
     raise RuntimeError(f"deadline exceeded waiting for {description}")
 
 
+
+def wait_for_dispatch_claim(read_row):
+    # A submit racing startup can lose BUSY.try_lock. The production dispatcher
+    # retries every 30 seconds; allow that cycle while keeping the worker paused.
+    last = None
+    def check():
+        nonlocal last
+        last = read_row()
+        return last and last[0] == "checking" and last
+    try:
+        return wait_for("authenticated dispatch claim", check, seconds=45)
+    except RuntimeError as error:
+        # Keep the job token out of logs, even on failure.
+        observed = None if last is None else (last[0], last[1], last[3])
+        raise RuntimeError(f"{error}; last state/reason/attempts: {observed}") from error
+
+
 def multipart():
     boundary = "hashi-packaged-smoke-boundary"
     fields = {"family": "packaged-smoke", "description": "Packaged callback regression",
@@ -224,8 +241,7 @@ class Smoke:
                 return db.execute("SELECT state, reason, job_token, attempts FROM dojo_benchmarks "
                                   "WHERE id = ?", (benchmark,)).fetchone()
 
-            checking = wait_for("authenticated dispatch claim", lambda: (r := row())
-                                and r[0] == "checking" and r, seconds=10)
+            checking = wait_for_dispatch_claim(row)
             require(checking[1] is None and checking[3] == 1 and
                     re.fullmatch(r"[a-f0-9]{64}", checking[2] or ""), f"bad claim: {checking}")
             report = json.dumps({"id": benchmark, "verdict": {"Refused": {"reason": "TooEasy"}}})

@@ -88,6 +88,30 @@ class PackagedSmokeTests(unittest.TestCase):
                 smoke.wait_for("callback", lambda: False, seconds=1)
             sleep.assert_called_once_with(0.1)
 
+    def test_claim_survives_a_missed_immediate_dispatch(self):
+        # The startup dispatcher may own BUSY when submit tries to dispatch.
+        # The next production tick is 30 seconds later, beyond the old 10s limit.
+        clock = [0.0]
+        claimed = ("checking", None, "a" * 64, 1)
+        def read_row():
+            return claimed if clock[0] >= 31 else ("queued", None, None, 0)
+        def sleep(seconds):
+            clock[0] += seconds
+        with patch.object(smoke.time, "monotonic", side_effect=lambda: clock[0]), \
+                patch.object(smoke.time, "sleep", side_effect=sleep):
+            self.assertEqual(smoke.wait_for_dispatch_claim(read_row), claimed)
+        self.assertGreaterEqual(clock[0], 31)
+
+    def test_claim_never_dispatched_still_fails_within_a_bound(self):
+        clock = [0.0]
+        def sleep(seconds):
+            clock[0] += seconds
+        with patch.object(smoke.time, "monotonic", side_effect=lambda: clock[0]), \
+                patch.object(smoke.time, "sleep", side_effect=sleep):
+            with self.assertRaisesRegex(RuntimeError, "last state/reason/attempts:.*queued"):
+                smoke.wait_for_dispatch_claim(lambda: ("queued", None, None, 0))
+        self.assertLess(clock[0], 46)
+
     def test_cleanup_continues_after_a_container_removal_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             args = type("Args", (), {"logs": str(Path(directory) / "logs"), "engine": "docker"})()
