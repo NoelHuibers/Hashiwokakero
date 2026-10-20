@@ -3,7 +3,7 @@
     "title": "Hashiwokakero spelen · regels en tips · Hashi",
     "description": "De regels van Hashiwokakero (Bruggen bouwen) met een opgelost voorbeeld, slimme trucs zonder gokken, en hoe een SAT-solver bewijst dat er één oplossing is."
   },
-  "title": "Speluitleg",
+  "title": "Zo speel je Hashiwokakero",
   "intro": "Hashiwokakero (橋をかけろ, “bouw bruggen!”) is een logische puzzel van uitgever Nikoli. Verbind alle eilanden met bruggen zodat elk eiland precies zoveel bruggen heeft als zijn getal aangeeft.",
   "rule": {
     "count_title": "Tel de bruggen",
@@ -16,6 +16,25 @@
     "connected": "Aan het eind moet elk eiland vanaf elk ander eiland bereikbaar zijn."
   },
   "example": "Een opgeloste puzzel",
+  "tips": {
+    "title": "Oplostechnieken voor Hashiwokakero",
+    "intro": "Vijf afleidingen waarmee je de meeste puzzels zonder gokken kraakt. Elk plaatje toont de bruggen die ze afdwingen.",
+    "corner_title": "Hoeken vragen om dubbele bruggen",
+    "corner": "Een 4 in een hoek heeft maar twee buren, dus hij heeft naar allebei een dubbele brug nodig. Hetzelfde geldt voor een 6 aan de rand en een 8 in het open veld.",
+    "corner_board": "Een 4 in de hoek linksboven met een dubbele brug naar de 3 rechts ervan en een naar de 2 eronder.",
+    "ones_title": "Twee 1’en verbinden nooit",
+    "ones": "Een brug tussen twee 1’en zou ze allebei afmaken en van al het andere afsnijden, dus elke 1 verbindt ergens anders. Om dezelfde reden delen twee 2’en nooit een dubbele brug.",
+    "ones_board": "Twee 1’en in de bovenste rij, elk met een enkele brug naar beneden naar de 3 in plaats van naar elkaar.",
+    "count_title": "Tel wat er ontbreekt",
+    "count": "Een 5 met drie buren kan hoogstens zes bruggen krijgen. Zonder een van hen komt hij op hoogstens vier, dus elke buur krijgt minstens één brug.",
+    "count_board": "Een 5 aan de bovenrand met een enkele brug naar elk van zijn drie buren: de 2 links, de 3 rechts en de 4 eronder.",
+    "block_title": "Bruggen versperren de weg",
+    "block": "Bruggen kruisen elkaar nooit, dus elke brug sluit de lijnen af waar hij overheen gaat. Een eiland erachter houdt dan soms nog maar één weg over.",
+    "block_board": "Een dubbele brug loopt door het midden naar beneden en versperrt de rij van de 1 links, dus de 1 verbindt naar beneden met de 2 in plaats van met de 2 rechts.",
+    "connect_title": "Sluit nooit een groep af",
+    "connect": "Aan het eind moet alles verbonden zijn. Als een paar eilanden onderling af zouden raken en zo afgesneden worden, moet er minstens één brug naar buiten.",
+    "connect_board": "Een rij 1, 3 en 2: de 1 verbindt met de 3. Als de 3 zijn laatste twee bruggen aan de 2 gaf, waren de drie eilanden afgesneden, dus de 3 legt ook een brug naar beneden naar de 2."
+  },
   "controls": {
     "title": "Besturing",
     "tap": "Klik op het water tussen twee eilanden om een brug te bouwen, nog eens voor een tweede, een derde klik haalt ze weg.",
