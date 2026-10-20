@@ -525,7 +525,9 @@ mod tests {
 
     #[test]
     fn written_to_a_directory() {
-        let dir = std::env::temp_dir().join(format!("dojo-archive-{}", std::process::id()));
+        // Removed when the test ends, also when it fails
+        let root = crate::proof::TempDir::new(&std::env::temp_dir(), "dojo-archive-test").unwrap();
+        let dir = root.path().join("set");
         write_dir(&dir, &set(), &SetInfo::new("dev", None)).unwrap();
         assert_eq!(
             std::fs::read_to_string(dir.join("answers.txt")).unwrap(),
@@ -539,7 +541,6 @@ mod tests {
         // Not into a file
         assert!(write_dir(&copy.join("x"), &set(), &SetInfo::new("dev", None)).is_err());
         assert!(save(&dir.join("no/such/dir.tar.gz"), b"x").is_err());
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     type Files = Vec<(String, Vec<u8>)>;

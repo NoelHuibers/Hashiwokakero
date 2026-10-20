@@ -64,7 +64,12 @@ pub(in crate::server) fn env_var(name: &str) -> Option<&'static str> {
 async fn setup() -> &'static Path {
     static SITE: OnceCell<PathBuf> = OnceCell::const_new();
     SITE.get_or_init(|| async {
-        let dir = std::env::temp_dir().join(format!("hashi-http-{}", std::process::id()));
+        // One directory per test process, which the server uses until the process ends. A
+        // static is never dropped and the test harness has no hook at its end, so a guard
+        // can't remove it. Instead the next test process removes it: `test_temp_path` sweeps
+        // the `hashi-test-<pid>-*` entries of processes that no longer run. So at most one site
+        // per finished run stays behind, until the next run.
+        let dir = db::test_temp_path("http");
         let _ = std::fs::remove_dir_all(&dir);
         let site = dir.join("site");
         std::fs::create_dir_all(site.join("pkg")).unwrap();

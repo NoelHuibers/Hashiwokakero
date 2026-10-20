@@ -882,13 +882,13 @@ mod tests {
             .collect()
     }
 
-    /// A set of tiny formulas for `seed` and [`tiny_pool`] in a fresh cache directory:
-    /// generating a real one takes minutes. Even ones are unsatisfiable.
-    fn cached_set(seed: &str) -> PathBuf {
+    /// A set of tiny formulas for `seed` and [`tiny_pool`] in a fresh cache directory, removed
+    /// when dropped: generating a real one takes minutes. Even ones are unsatisfiable.
+    fn cached_set(seed: &str) -> crate::proof::TempDir {
         use crate::cnf::Cnf;
         use crate::{Answer, Family};
-        let dir = std::env::temp_dir().join(format!("dojo-worker-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
+        let cache = crate::proof::TempDir::new(&std::env::temp_dir(), "dojo-worker-test").unwrap();
+        let dir = cache.path();
         let set: Vec<Instance> = bench::hidden_spec(seed)
             .iter()
             .enumerate()
@@ -918,7 +918,7 @@ mod tests {
             serde_json::to_vec(&set).unwrap(),
         )
         .unwrap();
-        dir
+        cache
     }
 
     /// The whole worker against a stub website: it checks the token and the module, answers
@@ -970,7 +970,8 @@ mod tests {
         let site_url = format!("http://{}", site_listener.local_addr().unwrap());
         tokio::spawn(async move { axum::serve(site_listener, site).await.unwrap() });
 
-        let cache = cached_set("worker-test");
+        let cache_dir = cached_set("worker-test");
+        let cache = cache_dir.path().to_path_buf();
         let (jobs, rx) = mpsc::unbounded_channel();
         let shared = Shared {
             token: "secret".into(),
@@ -1258,7 +1259,6 @@ mod tests {
         assert_eq!(pending.load(Ordering::Relaxed), 0);
         // The proof directories of the runs are gone
         assert_eq!(std::fs::read_dir(cache.join("proofs")).unwrap().count(), 0);
-        std::fs::remove_dir_all(cache).unwrap();
     }
 
     #[test]

@@ -385,14 +385,136 @@ async fn migrate_to(conn: &Connection, version: usize) -> Result<(), String> {
     tx.commit().await.map_err(err)
 }
 
-/// Removes a local database file of the tests and its WAL files: a fresh file next to an old
-/// `-wal` would get the old one's writes.
+/// Removes a local database file of the tests and its WAL and journal files: a fresh file next to
+/// an old `-wal` would get the old one's writes.
 #[cfg(test)]
 pub fn remove_local(path: &std::path::Path) {
-    for suffix in ["", "-wal", "-shm"] {
+    for suffix in ["", "-wal", "-shm", "-journal"] {
         let mut file = path.as_os_str().to_owned();
         file.push(suffix);
         let _ = std::fs::remove_file(file);
+    }
+}
+
+/// A database file of the tests in the temp directory, removed with its `-wal`, `-shm` and
+/// `-journal` files when this is dropped, also when the test panics.
+///
+/// The temp directory is often a tmpfs (RAM): the tests used to leave every file behind,
+/// hundreds a day.
+///
+/// Drop it after the connections to the file (declare it before them, or as a struct's last
+/// field): SQLite may still write to the files while closing.
+#[cfg(test)]
+#[derive(Debug)]
+pub struct TempDb(std::path::PathBuf);
+
+#[cfg(test)]
+impl TempDb {
+    /// A fresh file, `hashi-test-<pid>-<name>-<n>.db`: unique per process and call, tests run in
+    /// parallel.
+    pub fn new(name: &str) -> Self {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let n = NEXT.fetch_add(1, Ordering::Relaxed);
+        let path = test_temp_path(&format!("{name}-{n}.db"));
+        // Left over from a process with the same id
+        remove_local(&path);
+        Self(path)
+    }
+
+    pub fn path(&self) -> &std::path::Path {
+        &self.0
+    }
+
+    /// The path as [`open_local`] takes it.
+    pub fn as_str(&self) -> &str {
+        self.0.to_str().expect("a temp path in UTF-8")
+    }
+}
+
+#[cfg(test)]
+impl Drop for TempDb {
+    fn drop(&mut self) {
+        remove_local(&self.0);
+    }
+}
+
+/// A connection to a fresh, migrated database file of the tests, which is removed when this is
+/// dropped. Derefs to the [`Connection`], so tests use it like one.
+#[cfg(test)]
+#[derive(Debug)]
+pub struct TestConn {
+    conn: Connection,
+    /// After the connection: fields are dropped in order.
+    file: TempDb,
+}
+
+#[cfg(test)]
+impl TestConn {
+    /// A connection to a fresh [`TempDb`] named after `name`, with every migration applied.
+    pub async fn new(name: &str) -> Self {
+        let file = TempDb::new(name);
+        let database = open_local(file.as_str()).await.unwrap();
+        let conn = database.connect().unwrap();
+        migrate(&conn).await.unwrap();
+        Self { conn, file }
+    }
+}
+
+#[cfg(test)]
+impl std::ops::Deref for TestConn {
+    type Target = Connection;
+
+    fn deref(&self) -> &Connection {
+        &self.conn
+    }
+}
+
+/// What the names of the tests' temp files start with, followed by the process id.
+#[cfg(test)]
+const TEST_PREFIX: &str = "hashi-test-";
+
+/// `name` in the temp directory, prefixed with `hashi-test-<pid>-`. The first call in a process
+/// removes what test processes that no longer run left there (see [`sweep_test_files`]).
+#[cfg(test)]
+pub fn test_temp_path(name: &str) -> std::path::PathBuf {
+    static SWEPT: std::sync::Once = std::sync::Once::new();
+    let dir = std::env::temp_dir();
+    SWEPT.call_once(|| sweep_test_files(&dir));
+    dir.join(format!("{TEST_PREFIX}{}-{name}", std::process::id()))
+}
+
+/// Removes the files and directories in `dir` of test processes that no longer run: what a
+/// killed run (Ctrl-C, a timeout) left behind, and the HTTP tests' site, which lives as long as
+/// its process (see `router::tests::setup`). Only where `/proc` tells which processes run; the
+/// files of running ones (other test binaries, other checkouts) stay.
+#[cfg(test)]
+fn sweep_test_files(dir: &std::path::Path) {
+    let proc = std::path::Path::new("/proc");
+    if !proc.join("self").exists() {
+        return;
+    }
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let Some(pid) = name
+            .to_str()
+            .and_then(|name| name.strip_prefix(TEST_PREFIX))
+            .and_then(|rest| rest.split('-').next())
+            .and_then(|pid| pid.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        if proc.join(pid.to_string()).exists() {
+            continue;
+        }
+        let _ = if entry.file_type().is_ok_and(|t| t.is_dir()) {
+            std::fs::remove_dir_all(entry.path())
+        } else {
+            std::fs::remove_file(entry.path())
+        };
     }
 }
 
