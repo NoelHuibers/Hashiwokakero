@@ -339,6 +339,10 @@ async fn dispatch_submissions(
         let id: i64 = row.get(0).map_err(|e| e.to_string())?;
         let wasm: Vec<u8> = row.get(1).map_err(|e| e.to_string())?;
         let season: u32 = row.get(2).map_err(|e| e.to_string())?;
+        // Row shares ownership of the RETURNING statement. Commit the claim before
+        // pool transfer or dispatch, including when the worker reports immediately.
+        drop(row);
+        let _ = rows.next().await.map_err(|e| e.to_string())?;
         drop(rows);
         let seed = test_seed(season);
         let pool = if let Some(digest) = pools.get(&season) {

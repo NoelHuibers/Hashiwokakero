@@ -62,7 +62,8 @@ The smoke makes two concrete assertions:
 2. The packaged production site migrates a disposable local database. Only an old
    account and session are seeded directly, as in the browser fixture. A real multipart
    HTTP upload creates a tiny community benchmark. The worker is briefly paused so the
-   harness can inspect the real dispatch claim and verify that neither an incorrect
+   harness can inspect the committed dispatch claim from a separate database connection
+   before HTTP acceptance and verify that neither an incorrect
    token nor the shared dispatch token can post a callback. The claim deadline is 45
    seconds: a submit racing startup can miss the immediate dispatch and must wait
    for the production dispatcher’s next 30-second tick. After unpausing, the real
@@ -122,3 +123,16 @@ python3 -m unittest discover -s scripts/tests -p 'test_packaged_smoke.py' -v
 
 These Python tests do not run the images. A passing packaged CI job is required to claim
 the image/proof-checker or cross-service roundtrip was validated.
+
+## Claim visibility regression
+
+The paused-worker assertion caught a production SQLite transaction bug. A local libSQL
+`Row` retains its statement; dropping `Rows` alone left `UPDATE ... RETURNING` active
+while awaiting worker acceptance. Other connections still saw `queued` and no token,
+so a fast callback could not authenticate its claim. Both benchmark and solver dispatch
+must finish and release the returning statement before any network operation.
+
+The native fast-callback regressions now use separate file-backed database connections
+rather than cloned handles. They assert the committed state, job token and attempt count
+before applying a callback and before the worker returns acceptance. The exact failed CI
+server artifact also reproduced the old visibility gap with a delayed stub response.
