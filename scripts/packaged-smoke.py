@@ -285,7 +285,7 @@ class Smoke:
             scratch.chmod(0o755)
             try:
                 self.network = True
-                self.docker("network", "create", "--internal", self.prefix)
+                self.docker("network", "create", "--driver", "bridge", self.prefix)
                 self.solver(scratch)
                 self.roundtrip(scratch)
             finally:

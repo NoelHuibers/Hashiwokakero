@@ -102,7 +102,9 @@ the harness never builds, pulls, skips, uses host binaries, or inherits host app
 Docker containers receive only explicit test configuration and public test tokens.
 The site binary runs as the invoking user's uid/gid so Python can inspect its SQLite
 files; the worker server retains its production entry point and privilege drop. Hosts
-publish only ephemeral loopback ports. Container traffic uses a unique internal network.
+publish only ephemeral loopback ports. Container traffic uses a unique bridge network;
+the solver-only container has no network. Docker's internal-network mode does not publish
+the host ports needed by this HTTP harness.
 Every subprocess has a deadline, HTTP sockets have timeouts, polls have explicit limits, and `finally`
 collects logs and removes containers/network even after a failed assertion. A forced CI
 cancellation can bypass cleanup; the hosted runner is disposable. CI caps image builds
