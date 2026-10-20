@@ -96,10 +96,11 @@ jobs:
       - name: Clippy (starter kit)
         run: cargo clippy --locked --manifest-path dojo/starter/Cargo.toml --target wasm32-wasip1 -- -D warnings
       # cargo-llvm-cov runs doctests only on nightly (--doctests), so they run here, without
-      # coverage. The crates have none yet (their code blocks are `text`), this step keeps the
-      # first one from going untested. Not the website: it only runs its library's unit tests.
+      # coverage. Keep the website's examples checked too; its coverage job runs unit tests.
       - name: Doctests
         run: cargo test --locked --doc -p common -p backend -p sat_solver -p dojo --features dojo/worker
+      - name: Website doctests
+        run: cargo test --locked --doc -p hashi --no-default-features --features ssr
 
   # The committed reference solvers (dojo/reference/*.wasm) must be exactly what their pinned
   # sources build: a pull request that changes anything there rebuilds them with the pinned
@@ -318,13 +319,13 @@ jobs:
           include-hidden-files: true
           retention-days: 1
 
-  # The required check: passes when both shards passed, or when they were skipped on purpose (a
-  # docs-only pull request). always(): a failed shard must fail it, not skip it (a skipped
+  # The required check: browser shards and the packaged site/worker must pass, or be skipped
+  # on purpose for a docs-only pull request. always(): a failure must fail it, not skip it (a skipped
   # check counts as passed).
   e2e:
     name: E2E
     if: always()
-    needs: [changes, e2e-shard]
+    needs: [changes, e2e-shard, packaged]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -332,14 +333,22 @@ jobs:
           CHANGES: ${{ needs.changes.result }}
           CODE: ${{ needs.changes.outputs.code }}
           SHARDS: ${{ needs.e2e-shard.result }}
+          PACKAGED: ${{ needs.packaged.result }}
         run: |
-          echo "changes: $CHANGES, code changed: $CODE, shards: $SHARDS"
+          echo "changes: $CHANGES, code changed: $CODE, shards: $SHARDS, packaged: $PACKAGED"
           if [ "$CHANGES" != success ]; then
             echo "::error::The changes job didn't succeed, the checks that wait for it were skipped"
             exit 1
           fi
-          if [ "$CODE" = true ] && [ "$SHARDS" != success ]; then
-            echo "::error::The E2E shards didn't pass ($SHARDS)"
+          if [ "$CODE" = false ]; then
+            exit 0
+          fi
+          if [ "$CODE" != true ]; then
+            echo "::error::Missing or invalid code-change classification"
+            exit 1
+          fi
+          if [ "$SHARDS" != success ] || [ "$PACKAGED" != success ]; then
+            echo "::error::E2E prerequisites didn't pass (shards: $SHARDS, packaged: $PACKAGED)"
             exit 1
           fi
 
@@ -434,8 +443,8 @@ jobs:
           path: packaged-logs
           retention-days: 7
 
-  # A shared, fail-closed release prerequisite. All six existing required checks keep their
-  # names/conditions; branch protection can additionally require "Release compatibility".
+  # A shared, fail-closed release prerequisite. The six required names remain; E2E also
+  # requires the packaged smoke, so current branch protection enforces that result.
   # always() makes failed/cancelled/skipped prerequisites red, except intentional docs-only PRs.
   compatibility:
     name: Release compatibility

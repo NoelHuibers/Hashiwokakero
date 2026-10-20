@@ -8,11 +8,12 @@ credentials. Documentation-only PRs skip the builds deliberately.
 `Release compatibility` waits for the site and worker builds, Test & lint, browser lint,
 Coverage, E2E, Docker image, and the packaged smoke. Both deployment jobs depend on it
 and still run **only on pushes to main**. Failed, cancelled, unexpectedly skipped, or
-missing prerequisites fail this gate. The existing six required check names and their
-conditions are preserved. `Packaged site + worker`, `Build dojo worker` on PRs, and
-`Release compatibility` are additional checks; repository maintainers should add
-`Release compatibility` to branch protection if packaged failures must block merging.
-Workflow edits cannot change that GitHub setting. They already block both deployments.
+missing prerequisites fail this gate. The existing six required check names are
+preserved. Required `E2E` now checks both browser shards and the packaged smoke, so
+packaged failures also block merging under current branch protection. `Packaged
+site + worker`, `Build dojo worker` on PRs, and `Release compatibility` are additional
+checks. Both deployments depend on the shared release gate. Website doctests also
+run in Test & lint, alongside the existing library doctests.
 
 ```mermaid
 flowchart TD
@@ -26,6 +27,7 @@ flowchart TD
   browser --> shards
   changes --> e2e[E2E]
   shards --> e2e
+  packaged --> e2e
   server --> docker[Docker image]
   browser --> docker
   server --> packaged[Packaged site + worker]
