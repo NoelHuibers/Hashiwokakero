@@ -1773,6 +1773,7 @@ dependencies = [
  "common",
  "console_error_panic_hook",
  "dojo",
+ "futures",
  "getrandom 0.4.3",
  "hashi_i18n",
  "js-sys",

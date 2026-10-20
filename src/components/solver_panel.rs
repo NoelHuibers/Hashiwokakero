@@ -322,3 +322,55 @@ pub fn PanelButton(
         </Button>
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use common::{Heuristic, Restarts, SolverKind};
+
+    use super::*;
+
+    #[test]
+    fn times_get_a_unit_that_fits() {
+        assert_eq!(fmt_ms(0.25), "250 µs");
+        assert_eq!(fmt_ms(1.0), "1.0 ms");
+        assert_eq!(fmt_ms(742.06), "742.1 ms");
+        assert_eq!(fmt_ms(1000.0), "1.00 s");
+        assert_eq!(fmt_ms(12_346.0), "12.35 s");
+    }
+
+    #[test]
+    fn large_counts_are_grouped_by_thousands() {
+        assert_eq!(fmt_int(0_u64), "0");
+        assert_eq!(fmt_int(999_usize), "999");
+        assert_eq!(fmt_int(1000_usize), "1,000");
+        assert_eq!(fmt_int(123_456_u64), "123,456");
+        assert_eq!(fmt_int(1_234_567_u64), "1,234,567");
+    }
+
+    /// The terminal shows the flags of the options the chosen solver has, no others.
+    #[test]
+    fn the_command_line_names_only_the_options_the_solver_has() {
+        let cdcl = SolverConfig {
+            kind: SolverKind::Cdcl,
+            heuristic: Heuristic::Vsids,
+            restarts: Restarts::Luby { unit: 32 },
+            subsumption: true,
+            timeout_ms: 1000,
+        };
+        assert_eq!(
+            command_line(&cdcl),
+            "hashi solve --solver cdcl -H vsids --restarts luby --subsumption"
+        );
+        let dpll = SolverConfig {
+            kind: SolverKind::Dpll,
+            heuristic: Heuristic::Mom,
+            ..cdcl
+        }
+        .normalized();
+        assert_eq!(command_line(&dpll), "hashi solve --solver dpll -H mom");
+        assert_eq!(
+            command_line(&SolverConfig::splr()),
+            "hashi solve --solver splr"
+        );
+    }
+}

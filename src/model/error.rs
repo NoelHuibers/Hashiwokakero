@@ -106,6 +106,36 @@ pub fn is_outdated_client(message: &str) -> bool {
     message.contains("<!doctype") || message.contains("<html")
 }
 
+/// Whether a failed server function call means the tab runs an older build of the site than the
+/// server.
+///
+/// A web page came back ([`is_outdated_client`]), or the server that answered runs another
+/// build than the page (`api::client`) and the two didn't understand each other. The
+/// server couldn't read the arguments, or the tab the answer: a server function that kept its
+/// name but takes or returns other types. Reloading the page fixes both.
+///
+/// The errors the server meant (`E:<code>`) and network errors stay what they are, also from
+/// another build. So does every error when a build is unknown: pages of the versions before the
+/// builds were compared, and sites without hashed file names (no hash.txt).
+pub fn is_outdated_error(
+    error: &leptos::prelude::ServerFnError,
+    page_build: Option<&str>,
+    server_build: Option<&str>,
+) -> bool {
+    use leptos::prelude::ServerFnError as E;
+    if is_outdated_client(&error.to_string()) {
+        return true;
+    }
+    let (Some(page), Some(server)) = (page_build, server_build) else {
+        return false;
+    };
+    page != server
+        && matches!(
+            error,
+            E::Args(_) | E::MissingArg(_) | E::Deserialization(_) | E::Registration(_)
+        )
+}
+
 #[cfg(feature = "ssr")]
 impl From<ApiError> for leptos::prelude::ServerFnError {
     fn from(e: ApiError) -> Self {
@@ -123,6 +153,8 @@ impl ApiError {
 
 #[cfg(test)]
 mod tests {
+    use leptos::prelude::ServerFnError as E;
+
     use super::*;
 
     #[test]
@@ -149,6 +181,72 @@ mod tests {
             "a < b",
         ] {
             assert!(!is_outdated_client(message), "{message}");
+        }
+    }
+
+    /// The errors of a server function that kept its name but takes or returns other types:
+    /// the server can't read the arguments, the tab can't read the answer. Decoded the way the
+    /// browser decodes an error response.
+    fn mismatched_types() -> [E; 4] {
+        use leptos::server_fn::error::FromServerFnError as _;
+        [
+            E::de("Args|missing field `month` at line 1 column 12".into()),
+            E::de("MissingArg|day".into()),
+            E::de("Registration|Could not find a server function".into()),
+            E::Deserialization("invalid type: map, expected a sequence".into()),
+        ]
+    }
+
+    #[test]
+    fn errors_from_another_build_mean_an_outdated_client() {
+        for error in mismatched_types() {
+            assert!(
+                matches!(
+                    error,
+                    E::Args(_) | E::MissingArg(_) | E::Registration(_) | E::Deserialization(_)
+                ),
+                "{error:?}"
+            );
+            assert!(
+                is_outdated_error(&error, Some("old"), Some("new")),
+                "{error}"
+            );
+            // The same build: a bug, not an outdated tab
+            assert!(
+                !is_outdated_error(&error, Some("new"), Some("new")),
+                "{error}"
+            );
+            // A build unknown: a page of a version that didn't name its build, or a server
+            // that has none (no hash.txt), or an answer without the header
+            assert!(!is_outdated_error(&error, None, Some("new")), "{error}");
+            assert!(!is_outdated_error(&error, Some("old"), None), "{error}");
+            assert!(!is_outdated_error(&error, None, None), "{error}");
+        }
+    }
+
+    /// What the server meant to say, and calls that never reached it, stay themselves.
+    #[test]
+    fn real_errors_from_another_build_stay() {
+        for error in [
+            E::new("E:wrong_login"),
+            E::new("E:username_taken"),
+            E::Request("TypeError: Failed to fetch".into()),
+            E::Serialization("key must be a string".into()),
+        ] {
+            assert!(
+                !is_outdated_error(&error, Some("old"), Some("new")),
+                "{error}"
+            );
+        }
+    }
+
+    /// The 404 page is an outdated tab whatever the builds say.
+    #[test]
+    fn web_pages_mean_an_outdated_client_without_builds() {
+        let error =
+            E::Deserialization("Invalid format: missing delimiter in \"<!DOCTYPE html>\"".into());
+        for (page, server) in [(None, None), (Some("a"), Some("a")), (Some("a"), Some("b"))] {
+            assert!(is_outdated_error(&error, page, server));
         }
     }
 }

@@ -329,27 +329,73 @@ fn place(el: &Element, root: &HtmlElement) {
     let viewport = document()
         .document_element()
         .map_or(0.0, |d| f64::from(d.client_width()));
-    let outset = OUTLINE + ARROW + GAP;
-    let above = anchor.top() - outset - height;
-    let (side, top) = if above >= EDGE + OUTLINE {
-        ("top", above)
-    } else {
-        ("bottom", anchor.bottom() + outset)
-    };
-    let centre = anchor.left() + anchor.width() / 2.0;
-    let left = (centre - width / 2.0).clamp(
-        EDGE + OUTLINE,
-        (viewport - EDGE - OUTLINE - width).max(EDGE + OUTLINE),
-    );
-    let arrow = (centre - left).clamp(
-        ARROW + OUTLINE,
-        (width - ARROW - OUTLINE).max(ARROW + OUTLINE),
+    let Placement {
+        side,
+        left,
+        top,
+        arrow,
+    } = Placement::new(
+        Anchor {
+            top: anchor.top(),
+            bottom: anchor.bottom(),
+            left: anchor.left(),
+            width: anchor.width(),
+        },
+        (width, height),
+        viewport,
     );
 
     let _ = style.set_property("left", &format!("{left:.0}px"));
     let _ = style.set_property("top", &format!("{top:.0}px"));
     let _ = style.set_property("--arrow-x", &format!("{arrow:.0}px"));
     let _ = root.set_attribute("data-side", side);
+}
+
+/// Where the trigger is on the screen, in CSS pixels.
+#[derive(Clone, Copy, Debug)]
+struct Anchor {
+    top: f64,
+    bottom: f64,
+    left: f64,
+    width: f64,
+}
+
+/// Where the tooltip goes: its side of the trigger, its top left corner and the arrow's offset
+/// from its left edge.
+#[derive(Debug, PartialEq)]
+struct Placement {
+    side: &'static str,
+    left: f64,
+    top: f64,
+    arrow: f64,
+}
+
+impl Placement {
+    /// A tooltip of `size` (width, height) for `anchor`, on a screen `viewport` wide.
+    fn new(anchor: Anchor, (width, height): (f64, f64), viewport: f64) -> Self {
+        let outset = OUTLINE + ARROW + GAP;
+        let above = anchor.top - outset - height;
+        let (side, top) = if above >= EDGE + OUTLINE {
+            ("top", above)
+        } else {
+            ("bottom", anchor.bottom + outset)
+        };
+        let centre = anchor.left + anchor.width / 2.0;
+        let left = (centre - width / 2.0).clamp(
+            EDGE + OUTLINE,
+            (viewport - EDGE - OUTLINE - width).max(EDGE + OUTLINE),
+        );
+        let arrow = (centre - left).clamp(
+            ARROW + OUTLINE,
+            (width - ARROW - OUTLINE).max(ARROW + OUTLINE),
+        );
+        Self {
+            side,
+            left,
+            top,
+            arrow,
+        }
+    }
 }
 
 fn hide(state: &Shared, root: &HtmlElement) {
@@ -374,7 +420,7 @@ fn undescribe(state: &Shared, el: &Element) {
 
 #[cfg(test)]
 mod tests {
-    use super::CLASS;
+    use super::{ARROW, Anchor, CLASS, EDGE, GAP, OUTLINE, Placement};
 
     /// It appears where it belongs, it doesn't glide there from the top left.
     #[test]
@@ -388,5 +434,61 @@ mod tests {
                 "{class} would animate the tooltip's position",
             );
         }
+    }
+
+    /// A 40 × 20 button with its top left corner at (`x`, `y`).
+    fn button(x: f64, y: f64) -> Anchor {
+        Anchor {
+            top: y,
+            bottom: y + 20.0,
+            left: x,
+            width: 40.0,
+        }
+    }
+
+    /// A tooltip 100 × 30 on a screen 400 wide.
+    fn place(anchor: Anchor) -> Placement {
+        Placement::new(anchor, (100.0, 30.0), 400.0)
+    }
+
+    /// Room enough above the trigger: centred on it, its arrow in the middle.
+    #[test]
+    fn a_tooltip_sits_centred_above_its_trigger() {
+        let p = place(button(180.0, 200.0));
+        assert_eq!(p.side, "top");
+        assert!((p.top - (200.0 - OUTLINE - ARROW - GAP - 30.0)).abs() < 1e-9);
+        assert!((p.left - 150.0).abs() < 1e-9);
+        assert!((p.arrow - 50.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn without_room_above_it_goes_below() {
+        let p = place(button(180.0, 30.0));
+        assert_eq!(p.side, "bottom");
+        assert!((p.top - (50.0 + OUTLINE + ARROW + GAP)).abs() < 1e-9);
+    }
+
+    /// Next to the edge of the screen it moves inwards, and its arrow still points at the
+    /// trigger, as far as the arrow can go.
+    #[test]
+    fn at_the_edges_of_the_screen_it_stays_on_it() {
+        let p = place(button(0.0, 200.0));
+        assert!((p.left - (EDGE + OUTLINE)).abs() < 1e-9);
+        assert!((p.arrow - (20.0 - EDGE - OUTLINE)).abs() < 1e-9);
+
+        let p = place(button(360.0, 200.0));
+        assert!((p.left + 100.0 - (400.0 - EDGE - OUTLINE)).abs() < 1e-9);
+        assert!((p.arrow - (380.0 - p.left)).abs() < 1e-9);
+
+        // A trigger off to the side: the arrow stops at the corner
+        let p = place(button(-200.0, 200.0));
+        assert!((p.arrow - (ARROW + OUTLINE)).abs() < 1e-9);
+    }
+
+    /// On a screen narrower than the tooltip its left edge stays visible.
+    #[test]
+    fn on_a_narrow_screen_the_start_stays_visible() {
+        let p = Placement::new(button(10.0, 200.0), (300.0, 30.0), 200.0);
+        assert!((p.left - (EDGE + OUTLINE)).abs() < 1e-9);
     }
 }

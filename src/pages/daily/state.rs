@@ -241,6 +241,7 @@ mod tests {
     use common::{Difficulty, Island, Pos};
 
     use super::*;
+    use crate::model::{CHECK_PENALTY_MS, HINT_PENALTY_MS};
 
     /// Two islands with one bridge between them, the solution is `[1]`.
     fn puzzle() -> Puzzle {
@@ -390,6 +391,152 @@ mod tests {
             assert_eq!(d.game.status.get_untracked(), Status::Playing);
             assert!(!d.finished());
             assert!(editable(d));
+        });
+    }
+
+    /// The attempt of today's daily, to change a field of it.
+    fn attempt(info: &mut DailyInfo) -> &mut AttemptInfo {
+        info.attempt.as_mut().unwrap()
+    }
+
+    #[test]
+    fn a_fresh_tab_picks_up_the_running_daily_where_it_was_left() {
+        tab(|d| {
+            // The board as the last tab saved it
+            let before = Game::new("test.daily");
+            before.set_puzzle(puzzle(), None, Some(true), Source::Custom);
+            before.cycle(0, 1);
+            before.save();
+
+            d.show(info(false));
+            assert_eq!(d.game.status.get_untracked(), Status::Playing);
+            assert_eq!(d.game.bridges.get_untracked(), vec![1]);
+            assert_eq!(d.game.moves.get_untracked(), 1);
+            assert_eq!(
+                d.game.source.get_untracked(),
+                Source::Daily {
+                    date: date_string(100),
+                    params: params_for(100),
+                }
+            );
+            assert_eq!(d.game.unique.get_untracked(), Some(true));
+            assert!(d.started() && !d.finished());
+            assert_eq!(d.day(), Some(100));
+        });
+    }
+
+    #[test]
+    fn a_daily_given_up_shows_the_solution_locked() {
+        tab(|d| {
+            let mut given_up = info(false);
+            attempt(&mut given_up).revealed = true;
+            attempt(&mut given_up).bridges = Some(vec![1]);
+            d.show(given_up);
+            assert_eq!(d.game.status.get_untracked(), Status::Revealed);
+            assert_eq!(d.game.bridges.get_untracked(), vec![1]);
+            assert!(d.finished());
+            assert!(!editable(d));
+        });
+    }
+
+    /// The puzzle is only sent once the clock runs.
+    #[test]
+    fn before_the_start_there_is_no_board_and_no_clock() {
+        tab(|d| {
+            let mut waiting = info(false);
+            waiting.puzzle = None;
+            waiting.attempt = None;
+            d.show(waiting);
+            d.now.set(70_000);
+            assert_eq!(d.game.status.get_untracked(), Status::Empty);
+            assert!(!d.started() && !d.finished());
+            assert_eq!((d.clock_ms(), d.elapsed_ms()), (0, 0));
+            assert_eq!(d.day(), Some(100));
+        });
+    }
+
+    /// Both clocks go by the server's time, the shown one adds the penalties.
+    #[test]
+    fn the_clock_runs_on_server_time() {
+        tab(|d| {
+            let mut running = info(false);
+            attempt(&mut running).hints = 1;
+            attempt(&mut running).checks = 2;
+            d.show(running);
+            // The browser's clock is 5 s behind the server's
+            d.now.set(60_000);
+            d.skew.set(5_000);
+            assert_eq!(d.server_now(), 65_000);
+            assert_eq!(d.clock_ms(), 64_000);
+            assert_eq!(
+                d.elapsed_ms(),
+                64_000 + HINT_PENALTY_MS + 2 * CHECK_PENALTY_MS
+            );
+            // A clock still before the start doesn't run backwards
+            d.skew.set(-60_000);
+            assert_eq!(d.clock_ms(), 0);
+        });
+    }
+
+    #[test]
+    fn a_finished_daily_shows_its_final_time() {
+        tab(|d| {
+            let mut done = info(true);
+            d.show(done.clone());
+            d.now.set(1_000_000);
+            assert_eq!(d.elapsed_ms(), 60_000);
+            // Without the server's final time: from start to finish, with the penalties
+            attempt(&mut done).time_ms = None;
+            attempt(&mut done).hints = 1;
+            d.info.set(Some(done));
+            assert_eq!(d.elapsed_ms(), 60_000 + HINT_PENALTY_MS);
+        });
+    }
+
+    /// Why a result isn't ranked: the submit's answer, or else what the server said before.
+    #[test]
+    fn the_latest_word_on_a_flag_counts() {
+        tab(|d| {
+            assert_eq!(d.flag(), None);
+            let mut flagged = info(true);
+            attempt(&mut flagged).flag = Some(Flag::Pace);
+            d.show(flagged);
+            assert_eq!(d.flag(), Some(Flag::Pace));
+            let result = |flag| SubmitResult {
+                time_ms: 60_000,
+                rank: 0,
+                finishers: 2,
+                flag,
+                stamps: vec![],
+            };
+            d.result.set(Some(result(Some(Flag::SecondAccount))));
+            assert_eq!(d.flag(), Some(Flag::SecondAccount));
+            d.result.set(Some(result(None)));
+            assert_eq!(d.flag(), Some(Flag::Pace));
+        });
+    }
+
+    #[test]
+    fn only_a_started_daily_has_an_attempt_to_update() {
+        tab(|d| {
+            d.update_attempt(|a| a.hints += 1);
+            assert_eq!(d.info.get_untracked(), None);
+            d.show(info(false));
+            d.update_attempt(|a| a.hints += 1);
+            d.update_attempt(|a| a.checks += 1);
+            let a = d.info.get_untracked().unwrap().attempt.unwrap();
+            assert_eq!((a.hints, a.checks), (1, 1));
+        });
+    }
+
+    /// Back on the page after playing in another tab: a finished daily can't change any more,
+    /// so it isn't fetched again.
+    #[test]
+    fn a_finished_daily_is_not_fetched_again() {
+        tab(|d| {
+            d.show(info(true));
+            d.refresh();
+            assert!(!d.refreshing.get_value());
         });
     }
 }

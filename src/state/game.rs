@@ -242,7 +242,7 @@ impl Game {
         self.board.with_untracked(|b| b.puzzle.clone())
     }
 
-    pub(super) fn save(&self) {
+    pub(crate) fn save(&self) {
         if self.status.get() == Status::Empty {
             return;
         }
@@ -488,5 +488,178 @@ mod tests {
             "the games saved in the browsers wouldn't load any more: everybody loses the puzzle \
              they are playing",
         );
+    }
+
+    /// A game played a bit: two bridges, a hint, a minute on the clock.
+    fn played(key: &'static str) -> Game {
+        let game = Game::new(key);
+        let params = GenerateParams {
+            width: 3,
+            height: 3,
+            difficulty: Difficulty::Easy,
+            seed: 7,
+        };
+        game.set_puzzle(
+            crate::golden::puzzle(),
+            Some(vec![2, 1]),
+            Some(true),
+            Source::Generated(params),
+        );
+        game.cycle(0, 1);
+        game.cycle(1, 1);
+        game.hints.set(1);
+        game.elapsed.set(61);
+        game
+    }
+
+    #[test]
+    fn a_saved_game_comes_back_in_a_new_tab() {
+        Owner::new().with(|| {
+            let game = played("test.reload");
+            game.save();
+
+            let tab = Game::new("test.reload");
+            assert!(tab.ensure_restored());
+            assert_eq!(tab.puzzle(), game.puzzle());
+            assert_eq!(tab.bridges.get_untracked(), vec![1, 1]);
+            assert_eq!(tab.solution.get_untracked(), Some(vec![2, 1]));
+            assert_eq!(tab.unique.get_untracked(), Some(true));
+            assert_eq!(tab.source.get_untracked(), game.source.get_untracked());
+            assert_eq!(tab.status.get_untracked(), Status::Playing);
+            assert_eq!(
+                (
+                    tab.elapsed.get_untracked(),
+                    tab.moves.get_untracked(),
+                    tab.hints.get_untracked()
+                ),
+                (61, 2, 1)
+            );
+            // The undo history stays behind
+            assert!(tab.undo_stack.with_untracked(Vec::is_empty));
+            tab.undo();
+            assert_eq!(tab.bridges.get_untracked(), vec![1, 1]);
+        });
+    }
+
+    #[test]
+    fn a_finished_game_comes_back_finished() {
+        Owner::new().with(|| {
+            let game = played("test.finished");
+            game.status.set(Status::Revealed);
+            game.save();
+
+            let tab = Game::new("test.finished");
+            assert!(tab.ensure_restored());
+            assert_eq!(tab.status.get_untracked(), Status::Revealed);
+            assert!(!tab.is_playing());
+        });
+    }
+
+    /// Restoring happens once per tab: later saves (of the same game) don't reset the board.
+    #[test]
+    fn a_game_is_restored_only_once() {
+        Owner::new().with(|| {
+            let game = played("test.once");
+            game.save();
+            let tab = Game::new("test.once");
+            assert!(tab.ensure_restored());
+            tab.cycle(0, 1);
+            game.cycle(1, 1);
+            game.save();
+            assert!(tab.ensure_restored());
+            assert_eq!(tab.bridges.get_untracked(), vec![2, 1]);
+        });
+    }
+
+    #[test]
+    fn without_a_saved_game_nothing_is_loaded() {
+        Owner::new().with(|| {
+            let tab = Game::new("test.nothing");
+            assert!(!tab.ensure_restored());
+            assert_eq!(tab.status.get_untracked(), Status::Empty);
+        });
+    }
+
+    /// The empty board shown before anything is loaded never replaces a saved game.
+    #[test]
+    fn an_empty_board_is_not_saved() {
+        Owner::new().with(|| {
+            played("test.empty").save();
+            Game::new("test.empty").save();
+            assert!(Game::new("test.empty").ensure_restored());
+        });
+    }
+
+    /// What doesn't fit (another version, a damaged entry) is ignored rather than shown broken.
+    #[test]
+    fn saved_games_that_dont_fit_are_ignored() {
+        Owner::new().with(|| {
+            let saved = |puzzle, bridges| SavedGame {
+                puzzle,
+                bridges,
+                solution: None,
+                unique: None,
+                source: Source::Custom,
+                status: Status::Playing,
+                elapsed: 0,
+                moves: 0,
+                hints: 0,
+            };
+            store("test.bad", &saved(crate::golden::puzzle(), vec![1, 1, 1]));
+            assert!(!Game::new("test.bad").ensure_restored());
+            store("test.bad", &saved(Puzzle::empty(3, 3), vec![]));
+            assert!(!Game::new("test.bad").ensure_restored());
+            crate::state::browser::store_raw("test.bad", "{\"puzzle\":");
+            assert!(!Game::new("test.bad").ensure_restored());
+        });
+    }
+
+    /// The daily keeps only the bridges and the moves of the saved game, and only on the same
+    /// puzzle: the clock and the result come from the server.
+    #[test]
+    fn progress_is_restored_onto_the_same_puzzle_only() {
+        Owner::new().with(|| {
+            let game = played("test.progress");
+            game.status.set(Status::Won);
+            game.save();
+
+            let tab = Game::new("test.progress");
+            tab.set_puzzle(crate::golden::puzzle(), None, None, Source::Custom);
+            assert!(tab.restore_progress(&crate::golden::puzzle()));
+            assert_eq!(tab.bridges.get_untracked(), vec![1, 1]);
+            assert_eq!(tab.moves.get_untracked(), 2);
+            assert_eq!(tab.status.get_untracked(), Status::Playing);
+            assert_eq!(
+                (tab.elapsed.get_untracked(), tab.hints.get_untracked()),
+                (0, 0)
+            );
+
+            let mut other = crate::golden::puzzle();
+            other.set(common::Pos::new(0, 2), 1);
+            let tab = Game::new("test.progress");
+            tab.set_puzzle(other.clone(), None, None, Source::Custom);
+            assert!(!tab.restore_progress(&other));
+            assert!(tab.bridges.with_untracked(|b| b.iter().all(|&n| n == 0)));
+
+            assert!(!Game::new("test.no.progress").restore_progress(&other));
+        });
+    }
+
+    /// A solution that doesn't fit the puzzle (a stale one) is dropped, and every new puzzle
+    /// starts a new epoch, so late solver results for the old one are ignored.
+    #[test]
+    fn a_new_puzzle_starts_over() {
+        Owner::new().with(|| {
+            let game = played("test.new");
+            let epoch = game.epoch.get_untracked();
+            game.wrong.set(vec![0]);
+            game.set_puzzle(crate::golden::puzzle(), Some(vec![1]), None, Source::Custom);
+            assert_eq!(game.solution.get_untracked(), None);
+            assert_eq!(game.epoch.get_untracked(), epoch + 1);
+            assert_eq!(game.bridges.get_untracked(), vec![0, 0]);
+            assert_eq!(game.moves.get_untracked(), 0);
+            assert!(game.wrong.with_untracked(Vec::is_empty));
+            assert!(game.undo_stack.with_untracked(Vec::is_empty));
+        });
     }
 }

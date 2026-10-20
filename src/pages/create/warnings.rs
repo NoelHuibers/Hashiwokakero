@@ -59,3 +59,47 @@ pub(super) fn Warnings(issues: Memo<Vec<String>>) -> impl IntoView {
         }}
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use common::Pos;
+
+    use super::*;
+
+    fn warn(grid: &[Vec<u8>]) -> Vec<String> {
+        warnings(Locale::en, &Puzzle::from_grid(grid))
+    }
+
+    #[test]
+    fn an_empty_board_or_a_sound_one_gets_no_warning() {
+        assert_eq!(warn(&[vec![0, 0], vec![0, 0]]), Vec::<String>::new());
+        assert_eq!(warn(&[vec![2, 0, 2]]), Vec::<String>::new());
+    }
+
+    /// Positions count from 1 for people, and the number of neighbours limits the bridges.
+    #[test]
+    fn an_island_with_too_few_neighbours_is_named() {
+        assert_eq!(
+            warn(&[vec![1, 0, 3, 0, 0], vec![0, 0, 0, 0, 0]]),
+            ["The 3 at (3, 1) needs 3 bridges but can have at most 2."]
+        );
+    }
+
+    #[test]
+    fn an_odd_sum_can_never_be_solved() {
+        assert_eq!(
+            warn(&[vec![2, 0, 1]]),
+            ["The numbers add up to 3, an odd sum can never be solved."]
+        );
+    }
+
+    /// A board full of mistakes doesn't fill the page with warnings.
+    #[test]
+    fn at_most_four_warnings_are_shown() {
+        let mut puzzle = Puzzle::empty(9, 9);
+        for i in 0..5 {
+            puzzle.set(Pos::new(i * 2, i * 2), 3);
+        }
+        assert_eq!(warnings(Locale::en, &puzzle).len(), 4);
+    }
+}

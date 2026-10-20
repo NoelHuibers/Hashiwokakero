@@ -5,7 +5,6 @@ use std::time::Duration;
 use leptos::prelude::*;
 
 use crate::i18n::Locale;
-use crate::model::is_outdated_client;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ToastKind {
@@ -44,11 +43,12 @@ impl Toasts {
         self.show(kind, false, std::sync::Arc::new(text));
     }
 
-    /// A server function call that failed, see `lang::error_text`. When the server didn't know
-    /// the function, the tab runs an outdated version of the site: the toast offers a reload
-    /// and stays a while.
+    /// A server function call that failed, see `lang::error_text`. When the tab runs an outdated
+    /// version of the site (`api::is_outdated`: the server didn't know the function, or runs
+    /// another build that didn't understand the call), the toast offers a reload and stays a
+    /// while.
     pub fn push_error(&self, error: ServerFnError) {
-        let reload = is_outdated_client(&error.to_string());
+        let reload = crate::api::is_outdated(&error);
         let text = move |l: Locale| crate::lang::error_text(l, &error);
         self.show(ToastKind::Error, reload, std::sync::Arc::new(text));
     }
