@@ -9,12 +9,14 @@
     "season": "Seizoen {{ season }}",
     "formulas": "Formules: {{ count }}",
     "budget": "{{ budget }} Gfuel per formule",
-    "queued": "In de wachtrij: {{ count }}"
+    "queued": "In de wachtrij: {{ count }}",
+    "commitment": "Commitment {{ hash }}"
   },
   "cta": {
     "submit": "Solver insturen",
     "starter": "Starterkit",
-    "dev_set": "Download de devset"
+    "dev_set": "Download de devset",
+    "seasons": "Seizoensarchief"
   },
   "board": {
     "title": "Ranglijst",
@@ -25,6 +27,32 @@
     "empty": "Nog geen enkele solver heeft de dojo betreden. Wees de eerste!",
     "house": "eigen",
     "par2_hint": "Gemiddelde brandstof per formule in miljarden, onopgeloste formules tellen voor twee keer het budget. Lager is beter."
+  },
+  "seasons": {
+    "meta_title": "Seizoensarchief · SAT Dojo",
+    "meta_description": "Elk afgelopen seizoen van de SAT Dojo: de eindstand, de onthulde seed, de verborgen set en elk resultaat per formule, om te downloaden en na te gaan.",
+    "title": "Seizoensarchief",
+    "intro": "Als een seizoen afloopt, wordt de ranglijst bevroren en alles gepubliceerd: de seed van de verborgen set, de set zelf en het resultaat van elke solver op elke formule.",
+    "current": "Seizoen {{ season }} · loopt",
+    "past": "Seizoen {{ season }}",
+    "dates": "{{ start }} – {{ end }}",
+    "started": "sinds {{ date }}",
+    "versions": "Generator v{{ generator }} · regels v{{ rules }}",
+    "entries": "Beoordeelde solvers: {{ count }}",
+    "commitment": "Commitment (SHA-256 van de seed)",
+    "seed": "Seed",
+    "sealed": "De seed blijft geheim tot het seizoen afloopt en wordt dan hier onthuld.",
+    "set": "Verborgen set ({{ size }} MB)",
+    "no_set": "Voor dit seizoen is geen set gearchiveerd; maak hem opnieuw uit de seed.",
+    "csv": "Resultaten per formule (CSV)",
+    "json": "Resultaten per formule (JSON)",
+    "board": "Eindstand",
+    "empty_board": "Dit seizoen kwam geen solver op de ranglijst.",
+    "none": "Er is nog geen seizoen afgelopen. Het archief begint als seizoen {{ season }} voorbij is.",
+    "deleted": "verwijderd account",
+    "verify_title": "Zo controleer je het",
+    "verify": "De SHA-256 van de onthulde seed moet gelijk zijn aan de commitment die bij de start is gepubliceerd. Met dezelfde generatorversie maakt dojo export de set opnieuw uit de seed; de gearchiveerde set blijft altijd geldig, en dojo run --set beoordeelt er elke solver op, precies zoals de ranglijst deed.",
+    "back": "Terug naar de dojo"
   },
   "how": {
     "title": "Zo werkt het",
@@ -55,7 +83,7 @@
     "fuel_title": "Brandstof, geen seconden",
     "fuel": "Elke uitgevoerde WebAssembly-instructie kost één eenheid brandstof, bulk-geheugenoperaties één per byte. Klokken en willekeurige getallen hebben een vaste seed, dus een solver krijgt op elke machine telkens dezelfde score.",
     "hidden_title": "Geheime, verse formules",
-    "hidden": "De testset komt uit een geheime seed die elk seizoen verandert, en elke formule wordt door elkaar gehusseld: variabelen hernoemd en geïnverteerd, clausules geschud. Resultaten worden alleen per familie getoond, nooit per formule.",
+    "hidden": "De testset komt uit een geheime seed die elk seizoen verandert, en elke formule wordt door elkaar gehusseld: variabelen hernoemd en genegeerd, clausules geschud. Zolang een seizoen loopt, zie je resultaten alleen per familie, nooit per formule.",
     "checked_title": "Elk antwoord gecontroleerd",
     "checked": "Modellen worden tegen de formule gecontroleerd. UNSAT telt alleen waar we een bewijs hebben: duiventil en Hashi-pariteit zijn per constructie onvervulbaar, elk ander UNSAT-label komt met een DRAT-bewijs dat onze eigen checker heeft geverifieerd. Eén fout antwoord diskwalificeert de inzending, gokken loont dus nooit.",
     "sandbox_title": "Een verzegelde sandbox",
@@ -63,9 +91,11 @@
     "accounts_title": "Eén account, beste inzending",
     "accounts": "Accounts moeten een dag oud zijn om in te sturen, en er zijn drie inzendingen per dag per account en per netwerk. Identieke code wordt geweigerd, ook hernoemd of opgevuld, en alleen je beste inzending komt in de ranglijst.",
     "seasons_title": "Seizoenen",
-    "seasons": "Een nieuw seizoen brengt een nieuwe geheime set en elke inzending wordt opnieuw beoordeeld.",
+    "seasons": "Een nieuw seizoen brengt een nieuwe verborgen set en elke inzending wordt opnieuw beoordeeld. Het afgelopen seizoen gaat het archief in: de eindstand, de set en elk resultaat per formule worden gepubliceerd.",
     "copies_title": "Geen kopieën",
-    "copies": "Scores zijn exact, dus een solver laat een vingerafdruk achter: de brandstof die hij op elke formule verbruikt. Een inzending die zich gedraagt als een eerdere van iemand anders komt niet in de ranglijst. Wie een kopie genoeg verandert om daaraan te ontsnappen, heeft een andere solver gemaakt, en hem trager maken zet hem alleen onder het origineel."
+    "copies": "Scores zijn exact, dus een solver laat een vingerafdruk achter: de brandstof die hij op elke formule verbruikt. Een inzending die zich gedraagt als een eerdere van iemand anders komt niet in de ranglijst. Wie een kopie genoeg verandert om daaraan te ontsnappen, heeft een andere solver gemaakt, en hem trager maken zet hem alleen onder het origineel.",
+    "commit_title": "Vooraf verzegeld",
+    "commit": "Aan het begin van een seizoen publiceren we de SHA-256 van de geheime seed. Na afloop wordt de seed onthuld, zodat iedereen kan nagaan dat de set vooraf vastlag en hem opnieuw kan maken met dojo export --seed."
   },
   "science": {
     "title": "Voor onderzoekers",

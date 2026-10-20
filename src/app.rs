@@ -14,7 +14,7 @@ use crate::pages::admin::AdminPage;
 use crate::pages::contact::ContactPage;
 use crate::pages::create::CreatePage;
 use crate::pages::daily::DailyPage;
-use crate::pages::dojo::{DojoPage, DojoSubmissionPage};
+use crate::pages::dojo::{DojoPage, DojoSeasonsPage, DojoSubmissionPage};
 use crate::pages::lab::LabPage;
 use crate::pages::legal::{ImpressumPage, PrivacyPage};
 use crate::pages::play::PlayPage;
@@ -85,6 +85,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/lab") view=LabPage />
                             <Route path=path!("/dojo") view=DojoPage />
                             <Route path=path!("/admin") view=AdminPage />
+                            <Route path=path!("/dojo/seasons") view=DojoSeasonsPage />
                             <Route path=path!("/dojo/:id") view=DojoSubmissionPage />
                             <Route path=path!("/rules") view=RulesPage />
                             <Route path=path!("/impressum") view=ImpressumPage />

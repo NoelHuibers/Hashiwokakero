@@ -13,6 +13,8 @@
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "bench")]
+pub mod archive;
+#[cfg(feature = "bench")]
 pub mod bench;
 #[cfg(feature = "bench")]
 pub mod cnf;
@@ -44,6 +46,22 @@ pub const SET_SIZE: u32 = 34;
 
 /// The public development set, the same for everyone and downloadable.
 pub const DEV_SEED: &str = "hashi-dojo-dev-1";
+
+/// The version of the benchmark generator: families, sizes, labels, scrambling.
+///
+/// Bump it whenever the same seed gives other formulas (`bench::tests::sets_are_unchanged` fails), together with
+/// [`RULES_VERSION`]. The worker's cache of generated sets is keyed by it, so a new generator
+/// never evaluates on a set an older one cached, and every archived set says which one made it.
+pub const GENERATOR_VERSION: u32 = 1;
+
+/// The version of the rules a score is computed with.
+///
+/// That is the sets ([`GENERATOR_VERSION`]), the judging of answers, fuel costs and limits, the
+/// seeds of clocks and random numbers. Bump it whenever a change makes the same solver score differently. Every result is stored with the
+/// version it was computed with; when the website runs a newer one, it evaluates every finished
+/// submission of the season again (same season, nothing archived), and the worker refuses jobs
+/// meant for another version than its own.
+pub const RULES_VERSION: u32 = 1;
 
 /// Kinds of formulas in a benchmark set.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -122,6 +140,63 @@ pub struct RunResult {
     /// Fuel used, including the charge for bulk memory operations.
     pub fuel: u64,
     pub wall_ms: u64,
+}
+
+impl RunResult {
+    /// What is published of this run once the season is over (nothing that depends on the
+    /// machine, like `wall_ms`).
+    pub fn published(&self) -> InstanceResult {
+        InstanceResult {
+            name: self.name.clone(),
+            family: self.family,
+            expected: self.expected,
+            outcome: self.outcome,
+            fuel: self.fuel,
+        }
+    }
+}
+
+/// How a submission did on one formula of a set. Kept private by the website while the season
+/// runs (the board shows families only), published per formula once it is archived.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct InstanceResult {
+    pub name: String,
+    pub family: Family,
+    pub expected: Answer,
+    pub outcome: Outcome,
+    /// Fuel used, the whole budget for a timeout.
+    pub fuel: u64,
+}
+
+impl Outcome {
+    /// A short lowercase name: `solved`, `unknown`, `timeout`, `crashed`, `wrong`.
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Solved(_) => "solved",
+            Self::Unknown => "unknown",
+            Self::Timeout => "timeout",
+            Self::Crashed => "crashed",
+            Self::Wrong => "wrong",
+        }
+    }
+}
+
+impl Answer {
+    /// `SAT` or `UNSAT`, as in `answers.txt`.
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Sat => "SAT",
+            Self::Unsat => "UNSAT",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        match id {
+            "SAT" => Some(Self::Sat),
+            "UNSAT" => Some(Self::Unsat),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -300,6 +375,14 @@ pub enum Report {
         /// website, it only compares submissions to find copies.
         #[serde(default)]
         fingerprint: Vec<u64>,
+        /// The run of every formula, in set order. Private like the fingerprint until the
+        /// season is archived. Empty from workers that predate it.
+        #[serde(default)]
+        results: Vec<InstanceResult>,
+        /// The [`RULES_VERSION`] of the worker that computed the score, 0 from workers that
+        /// predate it.
+        #[serde(default)]
+        rules_version: u32,
     },
     Rejected {
         id: i64,
@@ -353,5 +436,35 @@ mod tests {
         assert!((score.par2 - (1.0 + 20.0 + 20.0) / 3.0).abs() < 1e-9);
         assert_eq!(score.families.len(), 2);
         assert!((score.families[0].par2 - 10.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn ids() {
+        let outcomes = [
+            Outcome::Solved(Answer::Unsat),
+            Outcome::Unknown,
+            Outcome::Timeout,
+            Outcome::Crashed,
+            Outcome::Wrong,
+        ];
+        assert_eq!(
+            outcomes.map(Outcome::id),
+            ["solved", "unknown", "timeout", "crashed", "wrong"]
+        );
+        for answer in [Answer::Sat, Answer::Unsat] {
+            assert_eq!(Answer::from_id(answer.id()), Some(answer));
+        }
+        assert_eq!(Answer::from_id("sat"), None);
+        let run = run(Family::Queens, Outcome::Timeout, 7);
+        assert_eq!(
+            run.published(),
+            InstanceResult {
+                name: String::new(),
+                family: Family::Queens,
+                expected: Answer::Sat,
+                outcome: Outcome::Timeout,
+                fuel: 7
+            }
+        );
     }
 }

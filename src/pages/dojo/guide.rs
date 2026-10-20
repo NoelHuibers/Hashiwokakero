@@ -9,7 +9,7 @@ use crate::i18n::{t, use_i18n};
 use super::names::{family_kanji, family_name, family_text};
 
 #[component]
-fn Code(children: Children) -> impl IntoView {
+pub(super) fn Code(children: Children) -> impl IntoView {
     view! {
         <pre dir="ltr" class="terminal overflow-x-auto rounded-md px-3 py-2 font-pixel text-[12px] leading-relaxed">
             {children()}
@@ -123,6 +123,7 @@ pub(super) fn FairPlay() -> impl IntoView {
                 {item("一", t!(i18n, dojo.fair.accounts_title).into_any(), t!(i18n, dojo.fair.accounts).into_any())}
                 {item("写", t!(i18n, dojo.fair.copies_title).into_any(), t!(i18n, dojo.fair.copies).into_any())}
                 {item("季", t!(i18n, dojo.fair.seasons_title).into_any(), t!(i18n, dojo.fair.seasons).into_any())}
+                {item("印", t!(i18n, dojo.fair.commit_title).into_any(), t!(i18n, dojo.fair.commit).into_any())}
             </CardContent>
         </Card>
     }

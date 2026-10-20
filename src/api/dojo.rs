@@ -3,7 +3,7 @@
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
-use crate::model::{DojoBoard, DojoMe, DojoSubmission};
+use crate::model::{DojoBoard, DojoMe, DojoSeasons, DojoSubmission};
 #[cfg(feature = "ssr")]
 use crate::server::{auth, db, dojo};
 
@@ -11,6 +11,12 @@ use crate::server::{auth, db, dojo};
 #[server(input = Json)]
 pub async fn load_dojo_board() -> Result<DojoBoard, ServerFnError> {
     dojo::board(&db::conn()?).await
+}
+
+/// The current season's commitment and every finished season with its seed and final board.
+#[server(input = Json)]
+pub async fn load_dojo_seasons() -> Result<DojoSeasons, ServerFnError> {
+    dojo::seasons(&db::conn()?, dojo::season()).await
 }
 
 /// One submission with its score, `None` if there is no such submission.
