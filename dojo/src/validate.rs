@@ -131,29 +131,7 @@ mod tests {
     }
 }
 
+// In a tests/ directory, so coverage doesn't count the tests themselves
 #[cfg(test)]
-mod resource_tests {
-    use super::*;
-    #[test]
-    fn compilation_work_is_bounded_before_validation_and_codegen() {
-        let body = "nop ".repeat(100_001);
-        let wasm = wat::parse_str(format!(
-            r#"(module
-            (import "wasi_snapshot_preview1" "proc_exit" (func (param i32)))
-            (func (export "_start") {body}))"#
-        ))
-        .unwrap();
-        let Err(Rejection::Invalid(message)) = validate(&wasm) else {
-            panic!("oversized function accepted");
-        };
-        assert!(message.contains("complexity limit"));
-        let locals = "i32 ".repeat(50_001);
-        let wasm = wat::parse_str(format!(
-            r#"(module
-            (import "wasi_snapshot_preview1" "proc_exit" (func (param i32)))
-            (func (export "_start") (local {locals})))"#
-        ))
-        .unwrap();
-        assert!(validate(&wasm).is_err());
-    }
-}
+#[path = "tests/validate.rs"]
+mod more_tests;

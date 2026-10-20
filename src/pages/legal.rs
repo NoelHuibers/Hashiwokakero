@@ -103,6 +103,7 @@ const PRIVACY_DE: &[Section] = &[
         &[
             "Damit die Rangliste fair bleibt, speichern wir zu jeder Brücke des Tages das Protokoll deiner Züge (welche Brücke wann gesetzt wurde). Dein Browser legt dafür außerdem eine zufällige Geräte-ID im lokalen Speicher ab und schickt sie beim Start mit. Wir speichern sie nur als Hash, der mit einem geheimen Schlüssel gebildet wird und jeden Tag anders ist, und prüfen damit nur, ob dasselbe Gerät das Rätsel schon mit einem anderen Konto gestartet hat.",
             "Ein Programm prüft jedes Ergebnis automatisch, etwa auf unmöglich schnelle Lösungen, ein unnatürliches Klicktempo oder ein zweites Konto auf demselben Gerät. Auffällige Ergebnisse erscheinen nicht in der Rangliste. Außerdem kann der Betreiber Ergebnisse von Hand prüfen und aus der Rangliste nehmen. Wenn du meinst, dass dein Ergebnis zu Unrecht nicht gewertet wurde, schreib uns, wir sehen es uns an.",
+            "Wer betrügt oder anderen schadet, kann gesperrt werden. Wir speichern dann den Zeitpunkt der Sperre und einen Grund, den nur der Betreiber sieht. Ein gesperrtes Konto wird abgemeldet und kann sich nicht mehr anmelden, seine Ergebnisse und sein Profil sind nicht mehr öffentlich; gelöscht wird dabei nichts, eine aufgehobene Sperre stellt alles wieder her. Auch gegen eine Sperre kannst du uns schreiben.",
             "Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse ist eine faire Rangliste ohne Betrug.",
         ],
     ),
@@ -195,6 +196,7 @@ const PRIVACY_EN: &[Section] = &[
         "Fair play",
         &[
             "To keep the leaderboard fair we store the log of your moves for each daily, and your browser keeps a random device ID in local storage that the server stores only as a keyed hash that changes every day, to see whether the same device already started the daily with another account. Results are checked automatically (impossibly fast solves, unnatural click pace, a second account on the same device) and may be reviewed by hand; flagged results don't appear on the leaderboard. If you think yours was flagged by mistake, write to us (Art. 6 (1) f GDPR, preventing cheating).",
+            "Accounts that cheat or harm others can be banned. We then store when, and a reason only the operator sees. A banned account is signed out and can't sign in again, and its results and profile are no longer public; nothing is deleted, lifting the ban restores everything. You can write to us about a ban too (same legal basis).",
         ],
     ),
     (

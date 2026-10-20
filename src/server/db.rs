@@ -276,6 +276,13 @@ ALTER TABLE dojo_seasons ADD COLUMN pool_digest TEXT;
 ",
     // 11
     "
+-- Banned players, see server/admin.rs: they can't sign in, their results are off the boards
+-- (flag 'banned'). The reason is only for the admins, '' if none was given
+ALTER TABLE users ADD COLUMN banned_at INTEGER;
+ALTER TABLE users ADD COLUMN ban_reason TEXT;
+",
+    // 12
+    "
 -- The daily rankings and a player's ranked times, see server/daily/. Partial: only finished,
 -- unrevealed attempts without a flag are ever ranked
 CREATE INDEX IF NOT EXISTS attempts_user_ranked ON attempts (user_id, day, time_ms)

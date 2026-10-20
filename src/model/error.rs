@@ -31,10 +31,12 @@ pub enum ApiError {
     RenameTooSoon,
     /// A word of the list of names that aren't welcome (`server/blocked_names.txt`).
     UsernameNotAllowed,
+    /// The account is banned, it can't sign in.
+    Banned,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 22] = [
+    pub const ALL: [Self; 23] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -57,6 +59,7 @@ impl ApiError {
         Self::TooManyMessages,
         Self::RenameTooSoon,
         Self::UsernameNotAllowed,
+        Self::Banned,
     ];
 
     pub fn code(self) -> &'static str {
@@ -83,6 +86,7 @@ impl ApiError {
             Self::TooManyMessages => "too_many_messages",
             Self::RenameTooSoon => "rename_too_soon",
             Self::UsernameNotAllowed => "username_not_allowed",
+            Self::Banned => "banned",
         }
     }
 

@@ -4,11 +4,11 @@ use reqwest::multipart::{Form, Part};
 
 use super::*;
 use crate::api::{
-    AdminAttempts, AdminFlag, AdminLog, AdminNames, AdminRenamePlayer, AdminSubmissions,
-    ChangeUsername, CurrentUser, LoadAdminOverview, LoadPlayer, Login, StartDaily,
-    UpdateAdminSubmission,
+    AdminAttempts, AdminBanPlayer, AdminBannedPlayers, AdminFlag, AdminLog, AdminNames,
+    AdminRenamePlayer, AdminSubmissions, AdminUnbanPlayer, ChangeUsername, CurrentUser,
+    DailyLeaderboard, LoadAdminOverview, LoadPlayer, Login, StartDaily, UpdateAdminSubmission,
 };
-use crate::model::{Flag, FlaggedName, NameKind, SubmissionAction};
+use crate::model::{BanOutcome, Flag, FlaggedName, NameKind, SubmissionAction};
 
 /// A module the Dojo accepts, made different by `extra`.
 fn module(extra: u8) -> Vec<u8> {
@@ -64,6 +64,25 @@ async fn the_dashboard_is_for_admins_only() {
         );
         assert_eq!(
             api_error(browser.call(AdminRenamePlayer { id: 1 }).await),
+            ApiError::Forbidden
+        );
+        assert_eq!(
+            api_error(
+                browser
+                    .call(AdminBanPlayer {
+                        id: 1,
+                        reason: String::new(),
+                    })
+                    .await
+            ),
+            ApiError::Forbidden
+        );
+        assert_eq!(
+            api_error(browser.call(AdminUnbanPlayer { id: 1 }).await),
+            ApiError::Forbidden
+        );
+        assert_eq!(
+            api_error(browser.call(AdminBannedPlayers {}).await),
             ApiError::Forbidden
         );
         assert_eq!(
@@ -319,4 +338,161 @@ async fn admins_rename_players_with_names_the_list_flags() {
     );
     let fixed = player.call(rename("friendly_fred")).await.unwrap();
     assert_eq!(fixed.name, "friendly_fred");
+}
+
+/// A finished daily of `user` on `day`, ranked unless `flag`.
+async fn result(conn: &Connection, user: i64, day: i64, time_ms: i64, flag: Option<Flag>) {
+    conn.execute(
+        "INSERT INTO attempts (user_id, day, started_at, finished_at, time_ms, flag)
+         VALUES (?1, ?2, 0, ?3, ?3, ?4)",
+        params![user, day, time_ms, flag.map(Flag::id)],
+    )
+    .await
+    .unwrap();
+}
+
+async fn on_board(browser: &Browser, day: i64, user: i64) -> bool {
+    let board = browser.call(DailyLeaderboard { day: Some(day) }).await;
+    board.unwrap().entries.iter().any(|e| e.user_id == user)
+}
+
+/// A banned player is signed out, can't sign in, and their results and profile are gone until
+/// the ban is lifted. Results taken off for other reasons stay off.
+#[tokio::test]
+async fn admins_ban_players_and_lift_bans() {
+    let server = Server::start().await;
+    let cheater = Browser::signed_up(&server, "banned_bob").await;
+    let conn = conn().await;
+    let id = user_id(&conn, "banned_bob").await;
+    // Days of their own, the tests share the database
+    let day = daily::today() - 4000;
+    let reviewed = day - 1;
+    result(&conn, id, day, 30_000, None).await;
+    result(&conn, id, reviewed, 20_000, Some(Flag::Review)).await;
+    let visitor = server.browser();
+    assert!(on_board(&visitor, day, id).await);
+    assert!(visitor.call(LoadPlayer { id }).await.unwrap().is_some());
+
+    let admin = Browser::admin(&server).await;
+    let ban = |id: i64, reason: &str| AdminBanPlayer {
+        id,
+        reason: reason.into(),
+    };
+    assert_eq!(
+        admin.call(ban(id, "  a bot  ")).await.unwrap(),
+        BanOutcome::Banned("banned_bob".into())
+    );
+    assert_eq!(
+        admin.call(ban(999_999, "")).await.unwrap(),
+        BanOutcome::NoSuchPlayer
+    );
+    // Admins can't be banned, not even by themselves
+    let admin_id = user_id(&conn, ADMIN).await;
+    assert_eq!(
+        admin.call(ban(admin_id, "")).await.unwrap(),
+        BanOutcome::Admin
+    );
+    assert!(admin.call(CurrentUser {}).await.unwrap().unwrap().admin);
+
+    // Signed out, and only told about the ban with the right password
+    assert!(cheater.call(CurrentUser {}).await.unwrap().is_none());
+    let login = |password: &str| Login {
+        username: "banned_bob".into(),
+        password: password.into(),
+    };
+    assert_eq!(
+        api_error(cheater.call(login("wrong horse")).await),
+        ApiError::WrongLogin
+    );
+    assert_eq!(
+        api_error(cheater.call(login(PASSWORD)).await),
+        ApiError::Banned
+    );
+    assert!(cheater.call(CurrentUser {}).await.unwrap().is_none());
+    // Off the board, no profile, and the review can't put the result back
+    assert!(!on_board(&visitor, day, id).await);
+    assert!(visitor.call(LoadPlayer { id }).await.unwrap().is_none());
+    admin
+        .call(AdminFlag {
+            user: id,
+            day,
+            flag: None,
+        })
+        .await
+        .unwrap();
+    assert!(!on_board(&visitor, day, id).await);
+    let flag_of = |day: i64| {
+        let admin = &admin;
+        async move {
+            let (_, attempts) = admin.call(AdminAttempts { day: Some(day) }).await.unwrap();
+            attempts.into_iter().find(|a| a.user_id == id).unwrap().flag
+        }
+    };
+    assert_eq!(flag_of(day).await, Some(Flag::Banned));
+    assert_eq!(flag_of(reviewed).await, Some(Flag::Review));
+
+    let banned = admin.call(AdminBannedPlayers {}).await.unwrap();
+    let bob = banned.iter().find(|b| b.id == id).unwrap();
+    assert_eq!(
+        (
+            bob.name.as_str(),
+            bob.username.as_deref(),
+            bob.reason.as_str()
+        ),
+        ("banned_bob", Some("banned_bob"), "a bot")
+    );
+    // The username stays taken
+    assert_eq!(
+        api_error(
+            server
+                .browser()
+                .call(crate::api::Register {
+                    username: "Banned_Bob".into(),
+                    password: PASSWORD.into(),
+                })
+                .await
+        ),
+        ApiError::UsernameTaken
+    );
+
+    assert!(admin.call(AdminUnbanPlayer { id }).await.unwrap());
+    assert!(!admin.call(AdminUnbanPlayer { id }).await.unwrap());
+    assert!(
+        admin
+            .call(AdminBannedPlayers {})
+            .await
+            .unwrap()
+            .iter()
+            .all(|b| b.id != id)
+    );
+    assert_eq!(cheater.call(login(PASSWORD)).await.unwrap().id, id);
+    assert!(on_board(&visitor, day, id).await);
+    assert!(visitor.call(LoadPlayer { id }).await.unwrap().is_some());
+    // Taken off for a reason of its own, it stays off
+    assert_eq!(flag_of(reviewed).await, Some(Flag::Review));
+}
+
+/// A banned guest loses their session like anyone else.
+#[tokio::test]
+async fn admins_ban_guests() {
+    let server = Server::start().await;
+    let guest = server.browser();
+    guest.call(StartDaily { device: None }).await.unwrap();
+    let id = guest.call(CurrentUser {}).await.unwrap().unwrap().id;
+    let admin = Browser::admin(&server).await;
+    let banned = admin
+        .call(AdminBanPlayer {
+            id,
+            reason: String::new(),
+        })
+        .await
+        .unwrap();
+    assert!(matches!(banned, BanOutcome::Banned(_)), "{banned:?}");
+    assert!(guest.call(CurrentUser {}).await.unwrap().is_none());
+    let listed = admin.call(AdminBannedPlayers {}).await.unwrap();
+    let entry = listed.iter().find(|b| b.id == id).unwrap();
+    assert_eq!(
+        (entry.username.as_deref(), entry.reason.as_str()),
+        (None, "")
+    );
 }

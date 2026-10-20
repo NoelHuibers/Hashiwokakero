@@ -156,7 +156,8 @@ pub async fn user_from_headers(
     }
 }
 
-/// The user of a session and when the session expires.
+/// The user of a session and when the session expires. Banned users have no sessions, and one
+/// that slipped through (a sign in at the moment of the ban) doesn't count.
 async fn user_by_token(
     conn: &Connection,
     token: &str,
@@ -165,7 +166,7 @@ async fn user_by_token(
         .query(
             "SELECT u.id, u.username, u.name, u.created_at, u.renamed_at, s.expires_at FROM sessions s
              JOIN users u ON u.id = s.user_id
-             WHERE s.token_hash = ?1 AND s.expires_at > ?2",
+             WHERE s.token_hash = ?1 AND s.expires_at > ?2 AND u.banned_at IS NULL",
             params![hash_token(token), now_ms()],
         )
         .await
@@ -410,6 +411,8 @@ fn record_failed_login(username: &str) {
 
 /// Signs in. Daily results the player made as a guest in this browser move to the account,
 /// unless the account already has a result for that day.
+///
+/// A banned account is told so, but only with the right password: nobody else learns about it.
 pub async fn login(
     conn: &Connection,
     username: &str,
@@ -418,6 +421,9 @@ pub async fn login(
     let Some(user) = check_password(conn, username, password).await? else {
         return Err(ApiError::WrongLogin.into());
     };
+    if super::admin::is_banned(conn, user.id).await? {
+        return Err(ApiError::Banned.into());
+    }
 
     if let Some(guest) = current_user(conn).await?.filter(|u| u.username.is_none()) {
         merge_guest(conn, guest.id, user.id).await?;

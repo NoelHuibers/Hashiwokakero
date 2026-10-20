@@ -51,9 +51,8 @@ test('the admin dashboard is only for admins', async ({ page, context }) => {
 for (const locale of [LOCALES[0], 'de', 'ar']) {
   const path = localized(locale, '/no-such-page');
   test(`${path} is a 404 page`, async ({ page, problems }) => {
-    // The router's fallback is outside the routes of the languages, so the 404 page is in the
-    // browser's language, not the URL's
-    test.fixme(locale !== LOCALES[0], '404 pages ignore the language of the URL');
+    // The router's fallback is outside the routes of the languages: LocaleFromPath (src/app.rs)
+    // takes the language from the URL, so the 404 page is in the URL's language too
     await visit(page, path, { status: 404 });
     await expectLanguage(page, locale);
     await expect(page.locator('main h1')).toBeVisible();

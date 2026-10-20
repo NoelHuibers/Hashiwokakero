@@ -73,7 +73,8 @@
     "message_invalid": "Lütfen 10 ile 5000 karakter arasında yaz.",
     "too_many_messages": "Bugünlük bu kadar mesaj yeter, lütfen yarın tekrar dene.",
     "rename_too_soon": "Kullanıcı adını kısa süre önce değiştirdin, lütfen daha sonra tekrar dene.",
-    "username_not_allowed": "Bu isme burada izin verilmiyor, lütfen başka bir isim seç."
+    "username_not_allowed": "Bu isme burada izin verilmiyor, lütfen başka bir isim seç.",
+    "banned": "Bu hesap yasaklandı. Bunun bir hata olduğunu düşünüyorsan lütfen bize yaz."
   },
   "solver": {
     "title": "SAT çözücü",

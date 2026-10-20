@@ -136,6 +136,15 @@ async fn write_rows(conn: &Connection, version: usize) {
         ")
         .await;
     }
+    if version >= 11 {
+        // A banned player
+        run(r"
+            INSERT INTO users (id, username, name, password_hash, created_at, banned_at, ban_reason)
+                VALUES (3, 'cheater', 'cheater', NULL, 3000, 4000, 'a bot');
+        ")
+        .await;
+    }
+    // 12 only added indexes
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -147,7 +156,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        11,
+        12,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -227,7 +236,16 @@ async fn old_databases_migrate_with_their_data() {
         }
         // Columns that came later are empty for old rows
         let defaults = [
-            ("SELECT COUNT(*) FROM users WHERE deleted_at IS NULL", 2),
+            (
+                "SELECT COUNT(*) FROM users WHERE deleted_at IS NULL",
+                2 + i64::from(version >= 11),
+            ),
+            // Nobody was banned before bans
+            ("SELECT COUNT(*) FROM users WHERE banned_at IS NULL", 2),
+            (
+                "SELECT COUNT(*) FROM users WHERE banned_at = 4000 AND ban_reason = 'a bot'",
+                i64::from(version >= 11),
+            ),
             ("SELECT COUNT(*) FROM attempts WHERE run IS NULL", 2),
             (
                 "SELECT COUNT(*) FROM attempts WHERE daypart IS NULL",
@@ -255,7 +273,7 @@ async fn old_databases_migrate_with_their_data() {
                 "SELECT COUNT(*) FROM dojo_benchmarks b JOIN dojo_season_pool p ON p.benchmark_id = b.id WHERE b.attempts = 0",
                 i64::from(version >= 10),
             ),
-            // 11 only added the indexes of ranked times
+            // 12 only added the indexes of ranked times
             (
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index'
                     AND name IN ('attempts_user_ranked', 'attempts_day_ranked')",

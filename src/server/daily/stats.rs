@@ -104,11 +104,12 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
     })
 }
 
-/// The public profile of a player, `None` if there is no such player.
+/// The public profile of a player, `None` if there is no such player (or they are banned).
 pub async fn profile(conn: &Connection, user: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT name, username IS NULL, created_at FROM users WHERE id = ?1 AND deleted_at IS NULL",
+            "SELECT name, username IS NULL, created_at FROM users
+             WHERE id = ?1 AND deleted_at IS NULL AND banned_at IS NULL",
             params![user],
         )
         .await
@@ -154,12 +155,16 @@ pub(crate) fn invalidate() {
 /// other replicas' writes and changes of day. No user-controlled collection can grow without limit.
 pub async fn cached_profile(user: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
     let conn = crate::server::db::conn()?;
-    // Always revalidate identity and deletion, including writes on another replica. Only the
-    // aggregates are cached; deletion must not keep a public identity alive for the TTL.
-    let mut rows = conn.query(
-        "SELECT name, username IS NULL, created_at FROM users WHERE id = ?1 AND deleted_at IS NULL",
-        params![user],
-    ).await.map_err(db_err)?;
+    // Always revalidate identity, deletion and bans, including writes on another replica. Only
+    // the aggregates are cached; neither may keep a public identity alive for the TTL.
+    let mut rows = conn
+        .query(
+            "SELECT name, username IS NULL, created_at FROM users
+         WHERE id = ?1 AND deleted_at IS NULL AND banned_at IS NULL",
+            params![user],
+        )
+        .await
+        .map_err(db_err)?;
     let Some(row) = rows.next().await.map_err(db_err)? else {
         return Ok(None);
     };

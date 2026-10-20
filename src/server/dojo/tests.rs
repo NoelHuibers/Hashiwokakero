@@ -7,7 +7,7 @@ use dojo::{
 use libsql::{Connection, params};
 
 use super::*;
-use crate::model::DojoState;
+use crate::model::{DojoBoard, DojoState};
 use crate::server::auth::User;
 use crate::server::{db, now_ms};
 use worker::housekeeping_at;
@@ -239,6 +239,23 @@ async fn submissions_and_leaderboard() {
     assert_eq!(
         (me.registered, me.left_today, me.submissions.len()),
         (true, 0, 3)
+    );
+
+    // A banned author's solvers leave the board until the ban is lifted
+    let names = |b: DojoBoard| -> Vec<(u32, String)> {
+        b.entries.into_iter().map(|e| (e.rank, e.name)).collect()
+    };
+    crate::server::admin::ban(&conn, alice.id, "")
+        .await
+        .unwrap();
+    assert_eq!(
+        names(super::board(&conn).await.unwrap()),
+        [(1, "Hashi CDCL".to_string())]
+    );
+    crate::server::admin::unban(&conn, alice.id).await.unwrap();
+    assert_eq!(
+        names(super::board(&conn).await.unwrap()),
+        [(1, "second".to_string()), (2, "Hashi CDCL".to_string())]
     );
 
     let rejected = submit(&conn, None, form("rejected", 8)).await.unwrap();

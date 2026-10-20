@@ -28,14 +28,14 @@ pub(super) struct Ranked {
 }
 
 /// The best submission of every author this season, ranked, with the author's id and the
-/// per-formula results.
+/// per-formula results. Banned authors aren't on it.
 pub(super) async fn ranked(conn: &Connection, season: u32) -> Result<Vec<Ranked>, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT s.id, s.name, COALESCE(u.name, 'Hashi'), s.house, s.score, s.created_at, s.user_id, s.results
              FROM dojo_submissions s LEFT JOIN users u ON u.id = s.user_id
              WHERE s.state = 'done' AND s.season = ?1 AND s.wrong = 0 AND s.solved > 0
-               AND s.similar_to IS NULL
+               AND s.similar_to IS NULL AND u.banned_at IS NULL
              ORDER BY s.par2 ASC, s.solved DESC, s.created_at ASC",
             params![season],
         )

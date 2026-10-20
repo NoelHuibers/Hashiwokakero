@@ -1267,3 +1267,8 @@ mod tests {
         assert_eq!(json, r#"{"Import":"env.f"}"#);
     }
 }
+
+// In a tests/ directory, so coverage doesn't count the tests themselves
+#[cfg(test)]
+#[path = "tests/worker.rs"]
+mod more_tests;

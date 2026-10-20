@@ -73,7 +73,8 @@
     "message_invalid": "Escribe entre 10 y 5000 caracteres, por favor.",
     "too_many_messages": "Ya son suficientes mensajes por hoy, inténtalo de nuevo mañana.",
     "rename_too_soon": "Cambiaste tu nombre de usuario hace poco, inténtalo más tarde.",
-    "username_not_allowed": "Este nombre no está permitido aquí, elige otro."
+    "username_not_allowed": "Este nombre no está permitido aquí, elige otro.",
+    "banned": "Esta cuenta está bloqueada. Si crees que es un error, escríbenos."
   },
   "solver": {
     "title": "Solver SAT",

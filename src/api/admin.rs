@@ -5,8 +5,8 @@ use leptos::server_fn::codec::Json;
 
 use super::HashiClient;
 use crate::model::{
-    AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, BenchmarkAction, ContactMessage,
-    Flag, FlaggedName, MoveEvent, SubmissionAction,
+    AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, BanOutcome, BannedPlayer,
+    BenchmarkAction, ContactMessage, Flag, FlaggedName, MoveEvent, SubmissionAction,
 };
 #[cfg(feature = "ssr")]
 use crate::server::{admin, contact, daily, db};
@@ -106,4 +106,28 @@ pub async fn admin_rename_player(id: i64) -> Result<Option<String>, ServerFnErro
     let conn = db::conn()?;
     admin::require(&conn).await?;
     admin::rename_player(&conn, id).await
+}
+
+/// Bans a player (see `server::admin::ban`), `reason` is only for the admins.
+#[server(input = Json, client = HashiClient)]
+pub async fn admin_ban_player(id: i64, reason: String) -> Result<BanOutcome, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    admin::ban(&conn, id, &reason).await
+}
+
+/// Lifts a ban, `false` if the player wasn't banned.
+#[server(input = Json, client = HashiClient)]
+pub async fn admin_unban_player(id: i64) -> Result<bool, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    admin::unban(&conn, id).await
+}
+
+/// The banned players, the latest ban first.
+#[server(input = Json, client = HashiClient)]
+pub async fn admin_banned_players() -> Result<Vec<BannedPlayer>, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    admin::banned_players(&conn).await
 }
