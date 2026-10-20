@@ -99,7 +99,9 @@
   "fair": {
     "title": "Adil oyun",
     "fuel_title": "Saniye değil, yakıt",
-    "fuel": "Çalıştırılan her WebAssembly komutu bir birim yakıt harcar, toplu bellek işlemleri bayt başına bir birim. Saatler ve rastgele sayılar sabit tohumludur, böylece bir çözücü her makinede, her seferinde aynı puanı alır.",
+    "fuel": "Yakıt, bir çözücünün çalıştırdığı WebAssembly işlemlerini gerçek bir işlemcinin onlar için ödediği bedele göre ağırlıklandırarak sayar: yükleme ve saklama üç birim, yerel değişkenler ve sabitler sıfır, geri kalan her şey bir, toplu bellek işlemleri bayt başına bir. Saatler ve rastgele sayılar sabit tohumludur, bu yüzden bir çözücü her makinede, her seferinde aynı puanı alır.",
+    "calibrated_title": "Saatle doğrulandı",
+    "calibrated": "Komut saymak, bir bellek erişiminin toplamadan çok daha pahalı olabileceği için eleştirilir. Biz de ölçtük: aralarında MiniSat, CaDiCaL ve Kissat'ın olduğu yedi çözücü, 180 formülde, yerel olarak ve korumalı alanda. Her çözücünün içinde yakıt, yerel çalışma süresini 0,91 ile 1,00 arasında sıra korelasyonuyla izler ve çözücüleri neredeyse tam olarak çalışma sürelerine göre sıralar. Belleğe daha fazla, yerel değişkenlere hiç ağırlık vermemek, çözücüler arasındaki süreyi işlem başına bir birimden yaklaşık onda bir daha iyi tahmin eder. Yöntem, veriler ve sınırlar: <a>CALIBRATION.md</a>.",
     "hidden_title": "Gizli, yeni formüller",
     "hidden": "Test kümesi her sezon değişen gizli bir tohumdan üretilir ve her formül karıştırılır: değişkenler yeniden adlandırılıp olumsuzlanır, cümleler karıştırılır. Sezon sürerken sonuçlar yalnızca aile bazında gösterilir, asla formül bazında değil.",
     "heldout_title": "Ezberleme, genelle",

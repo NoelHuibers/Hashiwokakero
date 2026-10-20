@@ -99,7 +99,9 @@
   "fair": {
     "title": "Juego limpio",
     "fuel_title": "Combustible, no segundos",
-    "fuel": "Cada instrucción WebAssembly ejecutada cuesta una unidad de combustible; las operaciones de memoria en bloque, una por byte. Los relojes y los números aleatorios tienen semilla fija, así que un solver obtiene la misma puntuación en cualquier máquina, siempre.",
+    "fuel": "El combustible cuenta las operaciones WebAssembly que ejecuta un solver, ponderadas según lo que le cuestan a un procesador real: cargas y almacenamientos tres unidades, variables locales y constantes nada, todo lo demás una, memoria en bloque una por byte. Los relojes y los números aleatorios tienen semilla fija, así que un solver obtiene la misma puntuación en cualquier máquina, siempre.",
+    "calibrated_title": "Comprobado con el reloj",
+    "calibrated": "Contar instrucciones se critica porque un acceso a memoria puede costar mucho más que una suma. Así que medimos: siete solvers, entre ellos MiniSat, CaDiCaL y Kissat, sobre 180 fórmulas, en nativo y en el sandbox. Dentro de cada solver, el combustible sigue al tiempo nativo con una correlación de rangos de 0,91 a 1,00, y ordena los solvers casi exactamente como su tiempo de ejecución. Dar más peso a la memoria y ninguno a las variables locales predice el tiempo entre solvers alrededor de una décima mejor que una unidad por operación. Método, datos y límites: <a>CALIBRATION.md</a>.",
     "hidden_title": "Fórmulas secretas y nuevas",
     "hidden": "El conjunto de prueba sale de una semilla secreta que cambia cada temporada, y cada fórmula se desordena: variables renombradas y negadas, cláusulas barajadas. Mientras dura una temporada, los resultados se muestran solo por familia, nunca por fórmula.",
     "heldout_title": "Generalizar, no memorizar",

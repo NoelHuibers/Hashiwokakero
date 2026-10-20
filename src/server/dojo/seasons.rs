@@ -30,7 +30,7 @@ use axum::body::Bytes;
 use axum::extract::{Path, Query};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
-use dojo::{DEFAULT_BUDGET, GENERATOR_VERSION, InstanceResult, RULES_VERSION, Score};
+use dojo::{GENERATOR_VERSION, InstanceResult, RULES_VERSION, Score};
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, TransactionBehavior, params};
 use serde::{Deserialize, Serialize};
@@ -491,7 +491,7 @@ pub async fn archived(
         seed: info.seed,
         generator_version: info.generator_version,
         rules_version: info.rules_version,
-        budget: DEFAULT_BUDGET,
+        budget: dojo::budget_of(info.rules_version),
         set_sha256: info.set_sha256,
         mystery: info.mystery,
         community: super::benchmarks::drawn(conn, season).await?,

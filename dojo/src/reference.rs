@@ -168,3 +168,54 @@ mod tests {
         assert!(!too_easy(&sandbox, &set[0].cnf, 1 << 16));
     }
 }
+
+/// What `MiniSat` pays on fixed formulas under the leaderboard's cost model: it changes only
+/// when the cost model, the sandbox or the module does, and then [`crate::RULES_VERSION`] has to
+/// change too (every stored score was computed with the old fuel).
+#[cfg(test)]
+mod golden {
+    use super::*;
+    use crate::bench::{Spec, generate_with};
+    use crate::{Answer, Family};
+
+    #[test]
+    fn leaderboard_fuel_is_unchanged() {
+        let set = generate_with(
+            "golden fuel",
+            &[
+                Spec {
+                    family: Family::Pigeonhole,
+                    size: 6,
+                    want: Some(Answer::Unsat),
+                },
+                Spec {
+                    family: Family::Factoring,
+                    size: 14,
+                    want: Some(Answer::Sat),
+                },
+            ],
+        );
+        let sandbox = Sandbox::new().unwrap();
+        let solver = sandbox.load(MINISAT).unwrap();
+        let fuel: Vec<u64> = set
+            .iter()
+            .map(|i| {
+                let run = sandbox.run(
+                    &solver,
+                    &i.cnf.dimacs(""),
+                    1,
+                    &Limits::default(),
+                    false,
+                    None,
+                );
+                assert_eq!(run.end, End::Exited);
+                run.fuel
+            })
+            .collect();
+        assert_eq!(
+            fuel,
+            [34_301_392, 23_972_394],
+            "the leaderboard's fuel changed: bump RULES_VERSION (and update these numbers)"
+        );
+    }
+}

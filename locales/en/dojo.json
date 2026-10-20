@@ -99,7 +99,9 @@
   "fair": {
     "title": "Fair play",
     "fuel_title": "Fuel, not seconds",
-    "fuel": "Every executed WebAssembly instruction costs one unit of fuel, bulk memory operations one per byte. Clocks and random numbers are seeded, so a solver gets the same score on every machine, every time.",
+    "fuel": "Fuel counts the WebAssembly operators a solver executes, weighted the way a real processor pays for them: loads and stores three units, locals and constants nothing, everything else one, bulk memory one per byte. Clocks and random numbers are seeded, so a solver gets the same score on every machine, every time.",
+    "calibrated_title": "Checked against the clock",
+    "calibrated": "Counting instructions is criticised because a memory access can cost far more than an addition. So we measured: seven solvers, MiniSat, CaDiCaL and Kissat among them, on 180 formulas, natively and in the sandbox. Within every solver, fuel follows native time with a rank correlation of 0.91 to 1.00, and it ranks the solvers almost exactly like their running time. Weighting memory and making locals free predicts time across solvers about a tenth better than one unit per operator. Method, data and limits: <a>CALIBRATION.md</a>.",
     "hidden_title": "Hidden, fresh formulas",
     "hidden": "The test set comes from a secret seed that changes every season, and every formula is scrambled: variables renamed and negated, clauses shuffled. While a season runs, results are shown per family only, never per formula.",
     "heldout_title": "Generalize, don't memorize",

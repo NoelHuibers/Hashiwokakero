@@ -1046,7 +1046,7 @@ fn results_as_csv() {
         seed: Some("s".into()),
         generator_version: 1,
         rules_version: 1,
-        budget: DEFAULT_BUDGET,
+        budget: dojo::budget_of(1),
         set_sha256: None,
         mystery: None,
         community: Vec::new(),
@@ -1069,7 +1069,7 @@ fn results_as_csv() {
                         Family::Pigeonhole,
                         Answer::Unsat,
                         Outcome::Timeout,
-                        DEFAULT_BUDGET,
+                        dojo::budget_of(1),
                     ),
                 ],
             ),
@@ -1099,7 +1099,8 @@ fn results_as_csv() {
     let json = serde_json::to_value(&season).unwrap();
     assert_eq!(json["season"], 3);
     assert_eq!(json["seed"], "s");
-    assert_eq!(json["budget"], DEFAULT_BUDGET);
+    assert_eq!(json["budget"], 10_000_000_000_u64);
+    assert_eq!(dojo::budget_of(RULES_VERSION), DEFAULT_BUDGET);
     assert_eq!(json["entries"][0]["rank"], 1);
     assert_eq!(json["entries"][1]["rank"], serde_json::Value::Null);
     assert_eq!(

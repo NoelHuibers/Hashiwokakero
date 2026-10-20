@@ -49,9 +49,12 @@ reject counts as a **wrong answer**.
 
 ## Scoring
 
-Every formula gets a budget of 10 billion *fuel*: one unit per executed WebAssembly instruction,
-one per byte for bulk memory operations. Time and machine load don't matter, so scores are exactly
-reproducible. Clocks and random numbers are deterministic too: `random_get` is seeded per formula
+Every formula gets a budget of 7 billion *fuel*. Fuel counts the WebAssembly operators your solver
+executes, weighted like a real processor pays for them: loads and stores cost 3, locals, globals
+and constants 0 (they are registers once compiled), every other operator 1, bulk memory operations
+1 per byte. The weights come from a calibration against native running time with MiniSat,
+CaDiCaL, Kissat and four other solvers ([dojo/CALIBRATION.md](../CALIBRATION.md)). Time and
+machine load don't matter, so scores are exactly reproducible. Clocks and random numbers are deterministic too: `random_get` is seeded per formula
 and set.
 
 Score = PAR-2: the mean fuel per formula, where unsolved formulas count twice the budget.

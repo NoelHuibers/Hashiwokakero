@@ -128,7 +128,7 @@ export function seed(dbPath: string) {
   db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
        state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version)
-     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 3)`,
+     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 4)`,
   ).run(
     DOJO_SUBMISSION,
     new Uint8Array([0]),

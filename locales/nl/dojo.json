@@ -99,7 +99,9 @@
   "fair": {
     "title": "Fair play",
     "fuel_title": "Brandstof, geen seconden",
-    "fuel": "Elke uitgevoerde WebAssembly-instructie kost één eenheid brandstof, bulk-geheugenoperaties één per byte. Klokken en willekeurige getallen hebben een vaste seed, dus een solver krijgt op elke machine telkens dezelfde score.",
+    "fuel": "Brandstof telt de WebAssembly-operaties die een solver uitvoert, gewogen zoals een echte processor ervoor betaalt: laden en opslaan drie eenheden, lokale variabelen en constanten niets, al het andere één, bulk-geheugenoperaties één per byte. Klokken en willekeurige getallen hebben een vaste seed, dus een solver krijgt op elke machine en bij elke run dezelfde score.",
+    "calibrated_title": "Nagemeten met de klok",
+    "calibrated": "Instructies tellen krijgt kritiek omdat een geheugentoegang veel meer kan kosten dan een optelling. Dus hebben we gemeten: zeven solvers, waaronder MiniSat, CaDiCaL en Kissat, op 180 formules, native en in de sandbox. Binnen elke solver volgt de brandstof de native looptijd met een rangcorrelatie van 0,91 tot 1,00, en hij rangschikt de solvers bijna precies zoals hun looptijd. Geheugen zwaarder laten wegen en lokale variabelen gratis maken voorspelt de tijd tussen solvers ongeveer een tiende beter dan één eenheid per operatie. Methode, data en grenzen: <a>CALIBRATION.md</a>.",
     "hidden_title": "Geheime, verse formules",
     "hidden": "De testset komt uit een geheime seed die elk seizoen verandert, en elke formule wordt door elkaar gehusseld: variabelen hernoemd en genegeerd, clausules geschud. Zolang een seizoen loopt, zie je resultaten alleen per familie, nooit per formule.",
     "heldout_title": "Generaliseren, niet uit het hoofd leren",

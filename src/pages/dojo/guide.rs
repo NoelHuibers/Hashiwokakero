@@ -20,6 +20,10 @@ const SAT_COMPETITION_RULES: &str = "https://satcompetition.github.io/2026/rules
 const SAT_COMPETITION_2026_SLIDES: &str =
     "https://satcompetition.github.io/2026/downloads/satcomp26slides.pdf";
 
+/// The calibration study of fuel against native time (method, data, the cost model).
+const CALIBRATION: &str =
+    "https://github.com/NoelHuibers/Hashiwokakero/blob/main/dojo/CALIBRATION.md";
+
 #[component]
 pub(super) fn Code(children: Children) -> impl IntoView {
     view! {
@@ -166,6 +170,20 @@ pub(super) fn FairPlay() -> impl IntoView {
             </CardHeader>
             <CardContent class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 {item("燃", t!(i18n, dojo.fair.fuel_title).into_any(), t!(i18n, dojo.fair.fuel).into_any())}
+                {item(
+                    "測",
+                    t!(i18n, dojo.fair.calibrated_title).into_any(),
+                    t!(
+                        i18n,
+                        dojo.fair.calibrated,
+                        <a> = |children: ChildrenFn| view! {
+                            <a href=CALIBRATION target="_blank" rel="noopener" class="text-primary underline underline-offset-4">
+                                {children()}
+                            </a>
+                        }
+                    )
+                        .into_any(),
+                )}
                 {item("秘", t!(i18n, dojo.fair.hidden_title).into_any(), t!(i18n, dojo.fair.hidden).into_any())}
                 {item(
                     "検",

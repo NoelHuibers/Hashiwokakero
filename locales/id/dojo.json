@@ -99,7 +99,9 @@
   "fair": {
     "title": "Main adil",
     "fuel_title": "Fuel, bukan detik",
-    "fuel": "Setiap instruksi WebAssembly yang dieksekusi memakan satu unit fuel, operasi memori massal satu per byte. Jam dan angka acak diberi seed tetap, jadi solver mendapat skor yang sama di setiap mesin, setiap kali.",
+    "fuel": "Fuel menghitung operasi WebAssembly yang dijalankan solver, diberi bobot sesuai harga yang dibayar prosesor sungguhan: load dan store tiga unit, variabel lokal dan konstanta nol, sisanya satu, memori massal satu per byte. Jam dan angka acak diberi seed tetap, jadi solver mendapat skor yang sama di setiap mesin, setiap saat.",
+    "calibrated_title": "Diperiksa dengan jam",
+    "calibrated": "Menghitung instruksi dikritik karena satu akses memori bisa jauh lebih mahal daripada penjumlahan. Jadi kami mengukurnya: tujuh solver, di antaranya MiniSat, CaDiCaL dan Kissat, pada 180 formula, secara native dan di sandbox. Di dalam setiap solver, fuel mengikuti waktu native dengan korelasi peringkat 0,91 sampai 1,00, dan mengurutkan solver hampir persis seperti waktu jalannya. Memberi bobot lebih pada memori dan nol pada variabel lokal memprediksi waktu antar-solver sekitar sepersepuluh lebih baik daripada satu unit per operasi. Metode, data dan batasannya: <a>CALIBRATION.md</a>.",
     "hidden_title": "Formula baru yang tersembunyi",
     "hidden": "Set uji berasal dari seed rahasia yang berganti setiap musim, dan setiap formula diacak: variabel diganti nama dan dinegasikan, klausa dikocok. Selama musim berjalan, hasil hanya ditampilkan per keluarga, tidak pernah per formula.",
     "heldout_title": "Menggeneralisasi, bukan menghafal",
