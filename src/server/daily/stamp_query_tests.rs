@@ -1,48 +1,19 @@
-//! The old query is an independent oracle, including its window tie ordering. The ignored
-//! benchmark uses the production libSQL engine and migrations, never an application database.
-
-use std::time::Instant;
+//! Compare all 13 columns against the independent original window-query oracle.
 
 use libsql::{Connection, Value, params};
 
-use super::{record, record_query};
+use super::{RECORD_QUERY, record};
 use crate::model::{Daypart, Record, Solve, Stamp, month_days, month_of};
 use crate::server::{admin, db::TestConn};
 
-// Frozen pre-optimization SQL, deliberately independent of fame::placed and the fallback.
-const ORIGINAL: &str =
-    "SELECT p.day, p.hints, p.checks, p.place, p.finishers, p.first_finish, p.time_ms,
-    p.started_at, p.finished_at, p.above, p.below, a.run, a.daypart
- FROM (
-    SELECT q.*, q.time_ms - LAG(q.time_ms) OVER w AS above,
-        LEAD(q.time_ms) OVER w - q.time_ms AS below
-    FROM (
-        SELECT a.user_id, a.day, a.hints, a.checks, a.finished_at,
-            ROW_NUMBER() OVER (PARTITION BY a.day ORDER BY a.time_ms, a.finished_at) AS place,
-            COUNT(*) OVER (PARTITION BY a.day) AS finishers,
-            a.finished_at = MIN(a.finished_at) OVER (PARTITION BY a.day) AS first_finish,
-            a.time_ms, a.started_at
-        FROM attempts a
-        WHERE a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL
-            AND (a.day IN (SELECT day FROM attempts WHERE user_id = ?1 AND finished_at IS NOT NULL))
-    ) q WINDOW w AS (PARTITION BY q.day ORDER BY q.place)
- ) p JOIN attempts a ON a.user_id = p.user_id AND a.day = p.day
- WHERE p.user_id = ?1 ORDER BY p.day";
-
-async fn values(conn: &Connection, sql: &str, user: i64) -> Vec<Vec<Value>> {
-    let mut rows = conn.query(sql, params![user]).await.unwrap();
-    let mut result = Vec::new();
-    while let Some(row) = rows.next().await.unwrap() {
-        result.push((0..13).map(|i| row.get_value(i).unwrap()).collect());
-    }
-    result
-}
+#[path = "../../../tests/support/stamp_query.rs"]
+mod fixture;
+use fixture::{ORIGINAL, seed, values};
 
 async fn equivalent(conn: &Connection, users: impl IntoIterator<Item = i64>) {
-    let candidate = record_query();
     for user in users {
         assert_eq!(
-            values(conn, &candidate, user).await,
+            values(conn, RECORD_QUERY, user).await,
             values(conn, ORIGINAL, user).await,
             "user {user}"
         );
@@ -81,7 +52,7 @@ async fn stamp_query_preserves_exact_places_and_neighbors() {
     let tied_places = [10, 20, 30];
     let mut places = Vec::new();
     for user in tied_places {
-        let rows = values(&conn, &record_query(), user).await;
+        let rows = values(&conn, RECORD_QUERY, user).await;
         places.push(rows.iter().find(|r| r[0] == Value::Integer(12)).unwrap()[3].clone());
     }
     places.sort_by_key(|v| match v {
@@ -95,27 +66,6 @@ async fn stamp_query_preserves_exact_places_and_neighbors() {
     // Query planning changes must not turn an accidental tie order into a new rank policy.
     conn.execute_batch("ANALYZE").await.unwrap();
     equivalent(&conn, [10, 20, 30, 40, 50, 999]).await;
-}
-
-async fn seed(conn: &Connection, players: i64, days: i64) {
-    conn.execute(
-        "WITH RECURSIVE users(id) AS (SELECT 1 UNION ALL SELECT id + 1 FROM users WHERE id < ?1)
-         INSERT INTO users (id, name, created_at) SELECT id, 'player ' || id, 0 FROM users",
-        params![players],
-    )
-    .await
-    .unwrap();
-    conn.execute(
-        "WITH RECURSIVE days(day) AS (SELECT 0 UNION ALL SELECT day + 1 FROM days WHERE day + 1 < ?1)
-         INSERT INTO attempts (user_id, day, started_at, finished_at, time_ms)
-         SELECT u.id, d.day, d.day * 86400000,
-            d.day * 86400000 + ((u.id * 173 + d.day * 97) % 1000000) + 60000,
-            ((u.id * 173 + d.day * 97) % 1000000) + 60000
-         FROM days d CROSS JOIN users u",
-        params![days],
-    )
-    .await
-    .unwrap();
 }
 
 #[tokio::test]
@@ -204,87 +154,6 @@ async fn stamp_query_keeps_progress_at_day_and_month_boundaries() {
             actual.progress(today),
             expected.progress(today),
             "day {today}"
-        );
-    }
-}
-
-/// Reproduce with:
-/// ```sh
-/// CARGO_BUILD_JOBS=2 cargo test --locked -p hashi --lib --features ssr stamp_query_benchmark -- --ignored --nocapture --test-threads=1
-/// ```
-/// No timing assertions: only output equality is a test invariant.
-#[tokio::test]
-#[ignore = "manual before/after SQL benchmark; creates up to 365,000 synthetic attempts"]
-async fn stamp_query_benchmark() {
-    let version = TestConn::new("stamp-query-version").await;
-    let mut rows = version.query("SELECT sqlite_version()", ()).await.unwrap();
-    println!(
-        "libSQL SQLite {}",
-        rows.next()
-            .await
-            .unwrap()
-            .unwrap()
-            .get::<String>(0)
-            .unwrap()
-    );
-    for (players, days, mode) in [
-        (1, 1, "distinct"),
-        (10, 30, "distinct"),
-        (100, 180, "distinct"),
-        (1000, 180, "distinct"),
-        (1000, 365, "distinct"),
-        (1000, 365, "sparse"),
-        (1000, 180, "equal times"),
-        (1000, 180, "exact ties"),
-        (1000, 180, "large logs"),
-    ] {
-        let conn = TestConn::new("stamp-query-bench").await;
-        seed(&conn, players, days).await;
-        match mode {
-            "sparse" => {
-                conn.execute(
-                    "DELETE FROM attempts WHERE user_id = 1 AND day NOT IN (0, 180, 364)",
-                    (),
-                )
-                .await
-                .unwrap();
-            }
-            "equal times" => {
-                conn.execute(
-                    "UPDATE attempts SET time_ms = 60000 + (user_id / 10) * 1000",
-                    (),
-                )
-                .await
-                .unwrap();
-            }
-            "large logs" => {
-                conn.execute("UPDATE attempts SET log = zeroblob(50000), bridges = zeroblob(2000) WHERE user_id = 1", ()).await.unwrap();
-            }
-            "exact ties" => {
-                conn.execute("UPDATE attempts SET time_ms = 60000, finished_at = day * 86400000 + 60000 WHERE user_id IN (1, 2)", ()).await.unwrap();
-            }
-            _ => {}
-        }
-        let candidate = record_query();
-        let expected = values(&conn, ORIGINAL, 1).await;
-        assert_eq!(values(&conn, &candidate, 1).await, expected);
-        let mut old_ms = Vec::new();
-        let mut new_ms = Vec::new();
-        // Alternate queries to reduce systematic drift; the first equality checks warm both.
-        for _ in 0..5 {
-            for (sql, samples) in [(ORIGINAL, &mut old_ms), (candidate.as_str(), &mut new_ms)] {
-                let start = Instant::now();
-                let actual = values(&conn, sql, 1).await;
-                samples.push(start.elapsed().as_secs_f64() * 1000.0);
-                assert_eq!(actual, expected);
-            }
-        }
-        old_ms.sort_by(f64::total_cmp);
-        new_ms.sort_by(f64::total_cmp);
-        println!(
-            "players={players} days={days} mode={mode:?} rows={} old_ms={old_ms:.3?} new_ms={new_ms:.3?} speedup={:.2}x",
-            expected.len(),
-            old_ms[2] / new_ms[2]
         );
     }
 }
