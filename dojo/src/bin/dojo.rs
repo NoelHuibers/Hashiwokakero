@@ -2,10 +2,13 @@
 //!
 //! ```text
 //! dojo run <solver.wasm> [--seed S | --set SET.tar.gz] [--budget FUEL] [--threads N]
-//!          [--family F] [--stderr]
+//!          [--family F] [--stderr] [--checker verified|builtin] [--proofs DIR]
 //!     Scores a solver on the development set, exactly like the leaderboard does. --seed takes
 //!     another set's seed (a past season's, revealed on hashi.rs/dojo/seasons), --set an
-//!     archived set as downloaded from there.
+//!     archived set as downloaded from there. UNSAT proofs are checked with drat-trim and
+//!     cake_lpr when they are installed (DOJO_DRAT_TRIM and DOJO_CAKE_LPR, or the PATH), like
+//!     on the leaderboard, with the built-in checker otherwise; --checker insists on one.
+//!     --proofs keeps the proof files there (a directory per run) instead of a temp directory.
 //! dojo export <dir | file.tar.gz> [--seed S] [--season N]
 //!     Writes the set as DIMACS files, with the expected answers in answers.txt and models in
 //!     witnesses.txt; into a directory, or a tarball like the season archive's.
@@ -20,6 +23,8 @@ use dojo::archive::{self, SetInfo};
 use dojo::bench::{self, Instance};
 #[cfg(feature = "runner")]
 use dojo::eval::{Options, evaluate};
+#[cfg(feature = "runner")]
+use dojo::proof::{CheckLimits, Checker, Tools};
 #[cfg(feature = "runner")]
 use dojo::sandbox::Sandbox;
 use dojo::{DEV_SEED, Family};
@@ -81,6 +86,23 @@ fn run(args: &[String]) -> Result<(), String> {
     if let Some(threads) = flag(args, "--threads") {
         options.threads = threads.parse().map_err(|_| "--threads takes a number")?;
     }
+    let tools = match flag(args, "--checker").as_deref() {
+        None => Tools::find_or_builtin(),
+        Some("builtin") => Tools::Builtin,
+        Some("verified") => Tools::find().ok_or(
+            "drat-trim and cake_lpr weren't found: put them on the PATH or point \
+             DOJO_DRAT_TRIM and DOJO_CAKE_LPR at them (see the starter's README)",
+        )?,
+        Some(_) => return Err("--checker takes verified or builtin".into()),
+    };
+    eprintln!("proofs are checked with {}", tools.describe());
+    options.checker = Checker::new(tools, CheckLimits::default(), options.threads);
+    let kept = flag(args, "--proofs").map(std::path::PathBuf::from);
+    if let Some(dir) = &kept {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        options.proof_root.clone_from(dir);
+        options.keep_proofs = true;
+    }
     let (seed, set) = set(args)?;
     options.set_seed = seed;
     let started = Instant::now();
@@ -95,10 +117,10 @@ fn run(args: &[String]) -> Result<(), String> {
             set.len(),
             r.name,
             r.expected.id(),
-            if r.outcome == Outcome::Wrong {
-                "WRONG"
-            } else {
-                r.outcome.id()
+            match r.outcome {
+                Outcome::Wrong => "WRONG",
+                Outcome::Unverified => "no proof",
+                other => other.id(),
             },
             gfuel,
             r.wall_ms,
@@ -107,8 +129,13 @@ fn run(args: &[String]) -> Result<(), String> {
     let score = Score::from_results(&results, options.limits.fuel);
     println!();
     for f in &score.families {
+        let unverified = if f.unverified > 0 {
+            format!("  {} UNSAT without an accepted proof", f.unverified)
+        } else {
+            String::new()
+        };
         println!(
-            "{:<14} {:>2}/{:<2} solved  PAR-2 {:>7.3}",
+            "{:<14} {:>2}/{:<2} solved  PAR-2 {:>7.3}{unverified}",
             f.family.id(),
             f.solved,
             f.total,
@@ -122,9 +149,17 @@ fn run(args: &[String]) -> Result<(), String> {
         score.par2,
         started.elapsed()
     );
+    if score.unverified > 0 {
+        println!(
+            "{} UNSAT answers without an accepted proof count as unsolved: write a DRAT or LRAT \
+             proof to the file named by the first argument",
+            score.unverified
+        );
+    }
     if score.wrong > 0 {
         println!(
-            "{} WRONG answers: the leaderboard would disqualify this solver",
+            "{} WRONG answers (a wrong model, UNSAT on a satisfiable formula or a rejected \
+             proof): the leaderboard would disqualify this solver",
             score.wrong
         );
     }

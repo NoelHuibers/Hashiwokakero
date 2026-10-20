@@ -67,14 +67,17 @@ fn score() -> Score {
                 solved: 8,
                 total: 8,
                 par2: 0.75,
+                unverified: 0,
             },
             FamilyScore {
                 family: Family::Queens,
                 solved: 4,
                 total: 5,
                 par2: 4.0,
+                unverified: 1,
             },
         ],
+        unverified: 1,
     }
 }
 
@@ -621,6 +624,7 @@ fn instance_results() -> Vec<InstanceResult> {
         (Family::Queens, Answer::Sat, Outcome::Unknown, 3),
         (Family::HashiParity, Answer::Unsat, Outcome::Crashed, 4),
         (Family::Hashi, Answer::Sat, Outcome::Wrong, 5),
+        (Family::Queens, Answer::Unsat, Outcome::Unverified, 6),
     ]
     .into_iter()
     .enumerate()

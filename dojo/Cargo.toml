@@ -23,6 +23,8 @@ tar = { version = "0.4.46", optional = true, default-features = false }
 wasmtime = { version = "49.0.3", optional = true, default-features = false, features = ["cranelift", "runtime", "std", "parallel-compilation"] }
 wasmtime-wasi = { version = "49.0.3", optional = true, default-features = false, features = ["p1"] }
 wasmparser = { version = "0.262", optional = true }
+# Calls wasmtime's own WASI functions from the sandbox's wrappers that cap the proof file
+wiggle = { version = "=49.0.3", optional = true, default-features = false, features = ["wasmtime"] }
 
 # The worker service (`worker`)
 anyhow = { version = "1", optional = true }
@@ -35,12 +37,14 @@ tokio = { version = "1", optional = true, features = ["rt-multi-thread", "macros
 [dev-dependencies]
 # Property tests of the DRAT checker and the answer parser (src/tests/props.rs)
 proptest = { version = "1.12.0", default-features = false, features = ["std"] }
+# Old scores in tests of the shared types, which need no feature
+serde_json = "1.0.154"
 wat = "1"
 
 [features]
 default = []
 bench = ["dep:backend", "dep:common", "dep:flate2", "dep:rand", "dep:sha2", "dep:splr", "dep:tar"]
-runner = ["bench", "dep:wasmtime", "dep:wasmtime-wasi", "dep:wasmparser"]
+runner = ["bench", "dep:wasmtime", "dep:wasmtime-wasi", "dep:wasmparser", "dep:wiggle"]
 worker = ["runner", "dep:anyhow", "dep:axum", "dep:reqwest", "dep:serde_json", "dep:tokio"]
 
 # `export` needs `bench`, `run` needs `runner`, `serve` needs `worker`

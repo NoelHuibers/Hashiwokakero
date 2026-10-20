@@ -14,6 +14,12 @@ primary_region = "ams"
   DOJO_CACHE_DIR = "/data"
   DOJO_THREADS = "4"
   DOJO_MEMORY_MB = "768"
+  # UNSAT proofs (dojo::proof): one check at a time, in a thread whose solver has finished, so
+  # at most three solvers (768 MB each) and one checker (1 GB) share the 4 GB. Proofs of up to
+  # 256 MB go to /tmp on the root disk, not the volume.
+  DOJO_CHECKS = "1"
+  DOJO_CHECK_MEMORY_MB = "1024"
+  DOJO_CHECK_SECS = "300"
 
 # Generated benchmark sets, generating one takes minutes
 [mounts]

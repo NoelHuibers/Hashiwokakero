@@ -1,12 +1,13 @@
 //! Runs one of the SAT solvers on clauses in memory (no files, safe to call from many threads).
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::Path;
 use std::time::Instant;
 
 use common::{Heuristic, Restarts, SolverConfig, SolverKind};
-use sat_solver::{cdcl::CDCL, cli, dpll::DIMACSOutput, dpll::DPLL};
+use sat_solver::{cdcl::CDCL, cli, dpll::DIMACSOutput, dpll::DPLL, logger::ProofLog};
 use splr::{
-    Certificate, Config, SolveIF, Solver, SolverError, assign::property::Tusize,
+    Certificate, Config, SatSolverIF as _, SolveIF, Solver, SolverError, assign::property::Tusize,
     types::PropertyDereference,
 };
 
@@ -52,8 +53,37 @@ pub fn solve_clauses(
     config: &SolverConfig,
     deadline: Option<Instant>,
 ) -> Result<(SatOutcome, SatStats), String> {
+    solve(clauses, num_vars, config, deadline, None)
+}
+
+/// Like [`solve_clauses`], with a DRAT proof (text) of an UNSAT answer in the file `proof`.
+///
+/// What the SAT Dojo asks for. Our CDCL writes its learned and deleted clauses, our DPLL the
+/// negated decisions at every conflict, splr its own certificate. The file is created in any
+/// case.
+pub fn solve_clauses_with_proof(
+    clauses: &[Vec<i32>],
+    num_vars: usize,
+    config: &SolverConfig,
+    deadline: Option<Instant>,
+    proof: &Path,
+) -> Result<(SatOutcome, SatStats), String> {
+    ProofLog::create(proof).map_err(|e| format!("{}: {e}", proof.display()))?;
+    solve(clauses, num_vars, config, deadline, Some(proof))
+}
+
+fn solve(
+    clauses: &[Vec<i32>],
+    num_vars: usize,
+    config: &SolverConfig,
+    deadline: Option<Instant>,
+    proof: Option<&Path>,
+) -> Result<(SatOutcome, SatStats), String> {
     let config = config.normalized();
     if clauses.iter().any(Vec::is_empty) {
+        if let Some(path) = proof {
+            ProofLog::create(path).map_err(|e| e.to_string())?.refuted();
+        }
         return Ok((SatOutcome::Unsat, SatStats::default()));
     }
     if clauses.is_empty() {
@@ -78,18 +108,21 @@ pub fn solve_clauses(
         // CDCL then. Only where they are on: the workspace turns them off for splr in debug
         // builds too (Cargo.toml), so tests see the models production sees.
         SolverKind::Splr => {
-            if let Ok(result) = catch_unwind(AssertUnwindSafe(|| solve_splr(clauses, deadline))) {
+            if let Ok(result) =
+                catch_unwind(AssertUnwindSafe(|| solve_splr(clauses, deadline, proof)))
+            {
                 result?
             } else {
                 let cdcl = SolverConfig {
                     kind: SolverKind::Cdcl,
                     ..SolverConfig::default()
                 };
-                solve_own(clauses, num_vars, &cdcl, deadline)?
+                // Starts the proof over
+                solve_own(clauses, num_vars, &cdcl, deadline, proof)?
             }
         }
         SolverKind::Cdcl | SolverKind::Dpll => catch_unwind(AssertUnwindSafe(|| {
-            solve_own(clauses, num_vars, &config, deadline)
+            solve_own(clauses, num_vars, &config, deadline, proof)
         }))
         .map_err(|e| {
             let msg = e
@@ -134,12 +167,27 @@ enum Raw {
     Timeout,
 }
 
-fn solve_splr(clauses: &[Vec<i32>], deadline: Option<Instant>) -> Result<(Raw, SatStats), String> {
+fn solve_splr(
+    clauses: &[Vec<i32>],
+    deadline: Option<Instant>,
+    proof: Option<&Path>,
+) -> Result<(Raw, SatStats), String> {
     // Keep the clause eliminator enabled (the default): splr 0.19 without it reports wrong
     // UNSAT results at the root level on our formulas
     let mut config = Config {
         quiet_mode: true,
         ..Default::default()
+    };
+    if let Some(path) = proof {
+        config.use_certification = true;
+        config.io_pfile = path.to_path_buf();
+    }
+    // A conflict while loading: splr writes no proof then, unit propagation refutes the formula
+    let refuted = || {
+        if let Some(path) = proof {
+            ProofLog::create(path).map_err(|e| e.to_string())?.refuted();
+        }
+        Ok((Raw::Unsat, SatStats::default()))
     };
     if let Some(deadline) = deadline {
         // splr only supports whole seconds; we check the real deadline afterwards
@@ -150,12 +198,12 @@ fn solve_splr(clauses: &[Vec<i32>], deadline: Option<Instant>) -> Result<(Raw, S
     }
     let mut solver = match Solver::try_from((config, clauses)) {
         Ok(solver) => solver,
-        Err(Ok(Certificate::UNSAT)) => return Ok((Raw::Unsat, SatStats::default())),
+        Err(Ok(Certificate::UNSAT)) => return refuted(),
         Err(Ok(Certificate::SAT(model))) => {
             return Ok((Raw::Model(model), SatStats::default()));
         }
         Err(Err(SolverError::EmptyClause | SolverError::RootLevelConflict(_))) => {
-            return Ok((Raw::Unsat, SatStats::default()));
+            return refuted();
         }
         Err(Err(e)) => return Err(format!("splr failed: {e}")),
     };
@@ -165,6 +213,14 @@ fn solve_splr(clauses: &[Vec<i32>], deadline: Option<Instant>) -> Result<(Raw, S
         restarts: Some(solver.asg.derefer(Tusize::NumRestart) as u64),
     };
     let timed_out = deadline.is_some_and(|d| Instant::now() >= d);
+    let unsat = matches!(
+        result,
+        Ok(Certificate::UNSAT) | Err(SolverError::EmptyClause | SolverError::RootLevelConflict(_))
+    );
+    if unsat && proof.is_some() {
+        // Writes what is left of the proof and the final empty clause
+        solver.save_certification();
+    }
     match result {
         Ok(Certificate::SAT(model)) => Ok((Raw::Model(model), stats)),
         Ok(Certificate::UNSAT) => Ok((Raw::Unsat, stats)),
@@ -209,11 +265,17 @@ fn solve_own(
     num_vars: usize,
     config: &SolverConfig,
     deadline: Option<Instant>,
+    proof: Option<&Path>,
 ) -> Result<(Raw, SatStats), String> {
     let heuristic = own_heuristic(config.heuristic);
     let (result, stats) = if config.kind == SolverKind::Dpll {
+        let log = proof
+            .map(ProofLog::create)
+            .transpose()
+            .map_err(|e| e.to_string())?;
         let mut dpll = DPLL::new(clauses.to_vec(), num_vars, clauses.len(), heuristic, false)
-            .with_deadline(deadline);
+            .with_deadline(deadline)
+            .with_proof(log);
         let result = dpll.solve();
         let stats = SatStats {
             decisions: Some(dpll.decisions()),
@@ -233,7 +295,7 @@ fn solve_own(
             factor,
             CDCL_K,
             CDCL_M,
-            None,
+            proof.map(|p| p.to_string_lossy().into_owned()),
         )
         .with_deadline(deadline);
         let result = cdcl.solve();
@@ -289,5 +351,46 @@ mod tests {
             let (out, _) = solve_clauses(&[vec![1, 2]], 2, &config, Some(Instant::now())).unwrap();
             assert_eq!(out, SatOutcome::Timeout);
         }
+    }
+
+    /// Every solver leaves a DRAT proof ending in the empty clause when it answers UNSAT
+    /// (checked for real in the Dojo's tests, `dojo/src/tests/proofs.rs`).
+    #[test]
+    fn proofs_are_written() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("proof.out");
+        let configs = [
+            SolverConfig::default(),
+            SolverConfig {
+                kind: SolverKind::Dpll,
+                ..Default::default()
+            },
+            SolverConfig::splr(),
+        ];
+        let read = || std::fs::read_to_string(&path).unwrap();
+        for config in &configs {
+            let hard = [vec![1, 2], vec![-1, 2], vec![1, -2], vec![-1, -2]];
+            let (out, _) = solve_clauses_with_proof(&hard, 2, config, None, &path).unwrap();
+            assert_eq!(out, SatOutcome::Unsat, "{config:?}");
+            assert!(
+                read().ends_with("0\n") && read().lines().count() > 1,
+                "{config:?}: {}",
+                read()
+            );
+            // Refuted by unit propagation, or containing the empty clause
+            for trivial in [&[vec![1], vec![-1]][..], &[vec![1], vec![]]] {
+                let (out, _) = solve_clauses_with_proof(trivial, 1, config, None, &path).unwrap();
+                assert_eq!(out, SatOutcome::Unsat);
+                assert!(read().ends_with("0\n"), "{config:?} {trivial:?}");
+            }
+            // Satisfiable: no empty clause
+            let (out, _) = solve_clauses_with_proof(&[vec![1, 2]], 2, config, None, &path).unwrap();
+            assert!(matches!(out, SatOutcome::Sat(_)));
+            assert!(!read().lines().any(|l| l.trim() == "0"), "{config:?}");
+        }
+        assert!(
+            solve_clauses_with_proof(&[vec![1]], 1, &configs[0], None, &dir.path().join("x/y"))
+                .is_err()
+        );
     }
 }

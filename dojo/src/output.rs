@@ -5,9 +5,10 @@
 //! s SATISFIABLE
 //! v 1 -2 3 0
 //! ```
-//! or `s UNSATISFIABLE` / `s UNKNOWN`.
+//! or `s UNSATISFIABLE` / `s UNKNOWN`. UNSAT comes with a proof in a file (see [`crate::proof`]).
 
 use crate::cnf::Cnf;
+use crate::proof::Verdict;
 use crate::{Answer, Outcome};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -52,18 +53,29 @@ pub fn parse(stdout: &str) -> Claim {
     }
 }
 
-/// Judges a claim.
+/// Judges a claim, like the SAT Competition.
 ///
-/// Models are always checked; UNSAT is accepted when the formula is known to
-/// be unsatisfiable. A model for a formula we believed unsatisfiable still counts (it is
+/// Models are always checked. UNSAT on a formula known to be satisfiable is wrong; otherwise
+/// `proof` checks the solver's proof (it is only called then): verified is solved, rejected is
+/// wrong, no verdict (no proof, too large, the checker ran out of time) is unverified, which
+/// counts as unsolved. A model for a formula we believed unsatisfiable still counts (it is
 /// checked, so the solver is right and our label was wrong).
-pub fn judge(cnf: &Cnf, expected: Answer, claim: &Claim) -> Outcome {
+pub fn judge(
+    cnf: &Cnf,
+    expected: Answer,
+    claim: &Claim,
+    proof: impl FnOnce() -> Verdict,
+) -> Outcome {
     match claim {
         Claim::Sat(model) => match cnf.check(model) {
             Some(true) => Outcome::Solved(Answer::Sat),
             _ => Outcome::Wrong,
         },
-        Claim::Unsat if expected == Answer::Unsat => Outcome::Solved(Answer::Unsat),
+        Claim::Unsat if expected == Answer::Unsat => match proof() {
+            Verdict::Verified => Outcome::Solved(Answer::Unsat),
+            Verdict::Rejected(_) => Outcome::Wrong,
+            Verdict::Unverified(_) => Outcome::Unverified,
+        },
         Claim::Unknown => Outcome::Unknown,
         Claim::Unsat | Claim::Malformed => Outcome::Wrong,
     }
@@ -88,26 +100,52 @@ mod tests {
         assert_eq!(parse("s SATISFIABLE\nv 1 0 2\n"), Claim::Malformed);
     }
 
+    /// The judging matrix: what each claim and proof verdict comes to.
     #[test]
     fn judges() {
         let cnf = Cnf::new(2, vec![vec![1, 2], vec![-1]]);
+        let verified = || Verdict::Verified;
+        let unused = || -> Verdict { panic!("no proof to check") };
         assert_eq!(
-            judge(&cnf, Answer::Sat, &Claim::Sat(vec![-1, 2])),
+            judge(&cnf, Answer::Sat, &Claim::Sat(vec![-1, 2]), unused),
             Outcome::Solved(Answer::Sat)
         );
         assert_eq!(
-            judge(&cnf, Answer::Sat, &Claim::Sat(vec![1, 2])),
+            judge(&cnf, Answer::Sat, &Claim::Sat(vec![1, 2]), unused),
             Outcome::Wrong
         );
-        assert_eq!(judge(&cnf, Answer::Sat, &Claim::Unsat), Outcome::Wrong);
+        // UNSAT on a known-SAT formula is wrong, whatever the proof
         assert_eq!(
-            judge(&cnf, Answer::Unsat, &Claim::Unsat),
+            judge(&cnf, Answer::Sat, &Claim::Unsat, unused),
+            Outcome::Wrong
+        );
+        assert_eq!(
+            judge(&cnf, Answer::Unsat, &Claim::Unsat, verified),
             Outcome::Solved(Answer::Unsat)
         );
         assert_eq!(
-            judge(&cnf, Answer::Unsat, &Claim::Sat(vec![-1, 2])),
+            judge(&cnf, Answer::Unsat, &Claim::Unsat, || Verdict::Rejected(
+                "lemma 3".into()
+            )),
+            Outcome::Wrong
+        );
+        assert_eq!(
+            judge(&cnf, Answer::Unsat, &Claim::Unsat, || Verdict::Unverified(
+                "no proof".into()
+            )),
+            Outcome::Unverified
+        );
+        assert_eq!(
+            judge(&cnf, Answer::Unsat, &Claim::Sat(vec![-1, 2]), unused),
             Outcome::Solved(Answer::Sat)
         );
-        assert_eq!(judge(&cnf, Answer::Sat, &Claim::Unknown), Outcome::Unknown);
+        assert_eq!(
+            judge(&cnf, Answer::Sat, &Claim::Unknown, unused),
+            Outcome::Unknown
+        );
+        assert_eq!(
+            judge(&cnf, Answer::Sat, &Claim::Malformed, unused),
+            Outcome::Wrong
+        );
     }
 }

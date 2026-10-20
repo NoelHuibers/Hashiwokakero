@@ -117,10 +117,11 @@ export function seed(dbPath: string) {
   ];
   const score = { par2: 3.6, solved: 29, total: 34, wrong: 0, budget: 10_000_000_000, fuel: 41.2, families };
   const created = (today - 10) * MS_PER_DAY;
+  // rules_version is dojo::RULES_VERSION: with an older one the site evaluates it again
   db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
        state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version)
-     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 34, 34, ?, ?, ?, 0, ?, 1)`,
+     VALUES (?, NULL, 1, 'Plain DPLL', 'Unit propagation and nothing else.', ?, ?, 1, ?, ?, 'done', ?, 34, 34, ?, ?, ?, 0, ?, 2)`,
   ).run(
     DOJO_SUBMISSION,
     new Uint8Array([0]),
