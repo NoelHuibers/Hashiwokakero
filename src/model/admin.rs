@@ -1,4 +1,4 @@
-//! The admin dashboard: overview, attempts of a day, Dojo submissions, names and contact
+//! The admin dashboard: overview, attempts of a day, Dojo submissions, names, bans and contact
 //! messages.
 
 use serde::{Deserialize, Serialize};
@@ -46,6 +46,28 @@ pub enum NameKind {
 /// away, it's no username (it has a space), so it signs nobody in.
 pub fn neutral_name(user: i64) -> String {
     format!("Player {user}")
+}
+
+/// A banned player, see `server::admin::ban`.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BannedPlayer {
+    pub id: i64,
+    pub name: String,
+    /// `None` for guests.
+    pub username: Option<String>,
+    pub banned_at: i64,
+    /// Why, for the admins. Empty if none was given.
+    pub reason: String,
+}
+
+/// What banning a player did.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BanOutcome {
+    /// Banned now (or already), with their name.
+    Banned(String),
+    NoSuchPlayer,
+    /// Admins can't be banned, not even by themselves.
+    Admin,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

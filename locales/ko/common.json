@@ -73,7 +73,8 @@
     "message_invalid": "10자에서 5000자 사이로 써 주세요.",
     "too_many_messages": "오늘은 메시지를 충분히 보냈어요. 내일 다시 시도해 주세요.",
     "rename_too_soon": "최근에 사용자 이름을 바꿨어요. 나중에 다시 시도해 주세요.",
-    "username_not_allowed": "이 이름은 사용할 수 없어요. 다른 이름을 골라 주세요."
+    "username_not_allowed": "이 이름은 사용할 수 없어요. 다른 이름을 골라 주세요.",
+    "banned": "이 계정은 이용이 정지되었어요. 잘못된 조치라고 생각되면 저희에게 연락해 주세요."
   },
   "solver": {
     "title": "SAT 솔버",

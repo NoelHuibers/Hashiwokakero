@@ -314,16 +314,21 @@ pub async fn locked(
     Ok(!done)
 }
 
-/// Takes a result off the board after a review (`flag` `None` puts it back).
+/// Takes a result off the board after a review (`flag` `None` puts it back). `false` if there
+/// is no such result, or it is a banned player's: only lifting the ban puts those back.
 pub async fn set_flag(
     conn: &Connection,
     user: i64,
     day: i64,
     flag: Option<Flag>,
 ) -> Result<bool, ServerFnError> {
+    if flag == Some(Flag::Banned) {
+        return Ok(false);
+    }
     let changed = conn
         .execute(
-            "UPDATE attempts SET flag = ?3 WHERE user_id = ?1 AND day = ?2",
+            "UPDATE attempts SET flag = ?3 WHERE user_id = ?1 AND day = ?2
+               AND (flag IS NULL OR flag != 'banned')",
             params![user, day, flag.map(Flag::id)],
         )
         .await

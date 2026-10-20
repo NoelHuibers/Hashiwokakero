@@ -21,6 +21,7 @@ fn flag_name(flag: Flag) -> &'static str {
         Flag::Pace => "machine pace",
         Flag::SecondAccount => "second account",
         Flag::Review => "taken off",
+        Flag::Banned => "banned",
     }
 }
 
@@ -203,9 +204,12 @@ fn status_badge(a: &AdminAttempt) -> AnyView {
     }
 }
 
-/// Taking a result off the board, or putting it back.
+/// Taking a result off the board, or putting it back. A banned player's results only come back
+/// with the lifted ban (the Bans tab).
 fn board_action(a: &AdminAttempt) -> Option<(&'static str, ButtonVariant)> {
-    if a.flag.is_some() {
+    if a.flag == Some(Flag::Banned) {
+        None
+    } else if a.flag.is_some() {
         Some(("Put back", ButtonVariant::Outline))
     } else if finished(a) {
         Some(("Take off", ButtonVariant::Destructive))
@@ -449,9 +453,16 @@ mod tests {
 
         let taken_off = AdminAttempt {
             flag: Some(Flag::Review),
-            ..ranked
+            ..ranked.clone()
         };
         assert_eq!(action(&taken_off), Some("Put back"));
+
+        // Only lifting the ban puts a banned player's results back
+        let banned = AdminAttempt {
+            flag: Some(Flag::Banned),
+            ..ranked
+        };
+        assert_eq!(action(&banned), None);
     }
 
     #[test]
@@ -489,13 +500,7 @@ mod tests {
 
     #[test]
     fn every_flag_has_its_own_name() {
-        let flags = [
-            Flag::Log,
-            Flag::TooFast,
-            Flag::Pace,
-            Flag::SecondAccount,
-            Flag::Review,
-        ];
+        let flags = Flag::ALL;
         let mut names: Vec<&str> = flags.into_iter().map(flag_name).collect();
         names.sort_unstable();
         names.dedup();

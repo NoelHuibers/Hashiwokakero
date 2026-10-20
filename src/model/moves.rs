@@ -26,15 +26,18 @@ pub enum Flag {
     SecondAccount,
     /// Taken off the board after a review.
     Review,
+    /// The player is banned: all their results are off the boards until the ban is lifted.
+    Banned,
 }
 
 impl Flag {
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::Log,
         Self::TooFast,
         Self::Pace,
         Self::SecondAccount,
         Self::Review,
+        Self::Banned,
     ];
 
     pub fn id(self) -> &'static str {
@@ -44,6 +47,7 @@ impl Flag {
             Self::Pace => "pace",
             Self::SecondAccount => "second_account",
             Self::Review => "review",
+            Self::Banned => "banned",
         }
     }
 

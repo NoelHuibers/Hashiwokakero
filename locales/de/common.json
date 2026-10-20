@@ -73,7 +73,8 @@
     "message_invalid": "Bitte schreib zwischen 10 und 5000 Zeichen.",
     "too_many_messages": "Für heute sind es genug Nachrichten, bitte versuch es morgen wieder.",
     "rename_too_soon": "Du hast deinen Benutzernamen erst vor Kurzem geändert, bitte versuch es später wieder.",
-    "username_not_allowed": "Dieser Name ist hier nicht erlaubt, bitte wähl einen anderen."
+    "username_not_allowed": "Dieser Name ist hier nicht erlaubt, bitte wähl einen anderen.",
+    "banned": "Dieses Konto ist gesperrt. Wenn du das für einen Fehler hältst, schreib uns bitte."
   },
   "solver": {
     "title": "SAT-Solver",

@@ -104,11 +104,12 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
     })
 }
 
-/// The public profile of a player, `None` if there is no such player.
+/// The public profile of a player, `None` if there is no such player (or they are banned).
 pub async fn profile(conn: &Connection, user: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT name, username IS NULL, created_at FROM users WHERE id = ?1 AND deleted_at IS NULL",
+            "SELECT name, username IS NULL, created_at FROM users
+             WHERE id = ?1 AND deleted_at IS NULL AND banned_at IS NULL",
             params![user],
         )
         .await

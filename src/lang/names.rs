@@ -316,6 +316,7 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::TooManyMessages => td_string!(locale, common.errors.too_many_messages),
         ApiError::RenameTooSoon => td_string!(locale, common.errors.rename_too_soon),
         ApiError::UsernameNotAllowed => td_string!(locale, common.errors.username_not_allowed),
+        ApiError::Banned => td_string!(locale, common.errors.banned),
     }
     .to_string()
 }
