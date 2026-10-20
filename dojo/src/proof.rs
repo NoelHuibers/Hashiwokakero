@@ -720,19 +720,13 @@ mod tests {
         assert_eq!(labelling().limits.time, Duration::from_secs(120));
     }
 
-    /// The real drat-trim and `cake_lpr`, when installed (CI builds them with
-    /// `dojo/checkers/build.sh` and sets `DOJO_REQUIRE_CHECKERS`, which makes their absence fail
-    /// this test instead of skipping it).
+    /// The real drat-trim and `cake_lpr`, built with `dojo/checkers/build.sh` locally and in CI.
+    /// Missing tools must fail rather than silently report an untested integration as passed.
     #[test]
     fn real_tools_check_every_format() {
-        let Some(tools) = Tools::find() else {
-            assert!(
-                std::env::var_os("DOJO_REQUIRE_CHECKERS").is_none(),
-                "DOJO_REQUIRE_CHECKERS is set but drat-trim and cake_lpr weren't found"
-            );
-            eprintln!("drat-trim and cake_lpr aren't installed, skipped");
-            return;
-        };
+        let tools = Tools::find().expect(
+            "proof checkers missing: run dojo/checkers/build.sh and set DOJO_DRAT_TRIM and DOJO_CAKE_LPR",
+        );
         let dir = TempDir::new(&std::env::temp_dir(), "dojo-real-tools").unwrap();
         let checker = Checker::new(tools, CheckLimits::default(), 1);
         let check =

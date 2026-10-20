@@ -158,14 +158,13 @@ jobs:
         with:
           node-version-file: .node-version
       # drat-trim and cake_lpr, built like in the worker image: the Dojo's tests run the
-      # leaderboard's proof checkers too, DOJO_REQUIRE_CHECKERS makes them fail without them
+      # leaderboard's proof checkers too; missing tools fail the tests
       - name: Proof checkers
         run: |
           dojo/checkers/build.sh "$HOME/checkers"
           {
             echo "DOJO_DRAT_TRIM=$HOME/checkers/drat-trim"
             echo "DOJO_CAKE_LPR=$HOME/checkers/cake_lpr"
-            echo "DOJO_REQUIRE_CHECKERS=1"
           } >> "$GITHUB_ENV"
       # Writes the per-crate and per-file tables to the job summary
       - name: Tests with coverage

@@ -55,7 +55,6 @@ fn splr_agrees_with_cdcl_on_generated_puzzles() {
 /// Changes island numbers of generated puzzles, which gives unsatisfiable puzzles and puzzles
 /// with several solutions.
 #[test]
-#[ignore = "slow in debug builds, run with --release"]
 fn splr_agrees_with_cdcl_on_perturbed_puzzles() {
     let (mut sat, mut unsat) = (0, 0);
     for difficulty in Difficulty::ALL {
@@ -80,4 +79,5 @@ fn splr_agrees_with_cdcl_on_perturbed_puzzles() {
         }
     }
     println!("{sat} satisfiable, {unsat} unsatisfiable");
+    assert!(sat > 0 && unsat > 0, "exercise both SAT and UNSAT outcomes");
 }

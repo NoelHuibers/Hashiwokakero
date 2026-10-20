@@ -356,31 +356,27 @@ fn exports_sets_and_scores_solvers() {
     }
 
     // The leaderboard's checkers accept exactly the proofs the built-in one does
-    if let Some(tools) = Tools::find() {
-        let out = ok(
-            d,
-            &[
-                "run",
-                &minisat(),
-                "--set",
-                "set.tar.gz",
-                "--checker",
-                "verified",
-            ],
-        );
-        let err = stderr(&out);
-        assert!(err.contains(&tools.describe()), "{err}");
-        let mut verified = progress(&err);
-        let mut builtin = lines.clone();
-        verified.sort();
-        builtin.sort();
-        assert_eq!(verified, builtin);
-    } else {
-        assert!(
-            std::env::var_os("DOJO_REQUIRE_CHECKERS").is_none(),
-            "DOJO_REQUIRE_CHECKERS is set but drat-trim and cake_lpr weren't found"
-        );
-    }
+    let tools = Tools::find().expect(
+        "proof checkers missing: run dojo/checkers/build.sh and set DOJO_DRAT_TRIM and DOJO_CAKE_LPR",
+    );
+    let out = ok(
+        d,
+        &[
+            "run",
+            &minisat(),
+            "--set",
+            "set.tar.gz",
+            "--checker",
+            "verified",
+        ],
+    );
+    let err = stderr(&out);
+    assert!(err.contains(&tools.describe()), "{err}");
+    let mut verified = progress(&err);
+    let mut builtin = lines.clone();
+    verified.sort();
+    builtin.sort();
+    assert_eq!(verified, builtin);
 
     // Out of fuel at once: nothing solved, every formula a timeout
     let out = ok(

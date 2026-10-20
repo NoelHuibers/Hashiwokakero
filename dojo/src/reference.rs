@@ -94,17 +94,12 @@ mod tests {
     }
 
     /// Every reference solver runs in the sandbox, finds models and proves unsatisfiability with
-    /// a proof the checker accepts: drat-trim and `cake_lpr` when installed (CI builds them and
-    /// sets `DOJO_REQUIRE_CHECKERS`), the built-in checkers otherwise.
+    /// a proof the production checkers (drat-trim and `cake_lpr`) accept.
     #[test]
     fn reference_solvers_solve_and_prove() {
-        let tools = Tools::find().unwrap_or_else(|| {
-            assert!(
-                std::env::var_os("DOJO_REQUIRE_CHECKERS").is_none(),
-                "DOJO_REQUIRE_CHECKERS is set but drat-trim and cake_lpr weren't found"
-            );
-            Tools::Builtin
-        });
+        let tools = Tools::find().expect(
+            "proof checkers missing: run dojo/checkers/build.sh and set DOJO_DRAT_TRIM and DOJO_CAKE_LPR",
+        );
         let set = generate_with(
             "reference",
             &[

@@ -43,9 +43,26 @@ them. Optional `sccache` can share dependency builds between checkouts.
 
 ```sh
 cargo test -p common -p backend -p sat_solver
-cargo test --release -p backend -- --ignored --nocapture
 cargo bench
 pnpm run coverage                    # requires cargo-llvm-cov
+```
+
+Correctness tests, including default-size generation and solver regressions, run without
+`--ignored`. Timing is measured by `cargo bench`; the optional generation report is:
+
+```sh
+cargo run --release -p backend --example generator_report
+```
+
+The Dojo integration tests require the same proof checkers as production. Build them once
+(requires a C compiler, curl and sha256sum), then set their paths before running worker tests
+or coverage:
+
+```sh
+dojo/checkers/build.sh "$HOME/.local/share/hashi/checkers"
+export DOJO_DRAT_TRIM="$HOME/.local/share/hashi/checkers/drat-trim"
+export DOJO_CAKE_LPR="$HOME/.local/share/hashi/checkers/cake_lpr"
+cargo test -p dojo --features worker
 ```
 
 Browser tests use a release build and a fresh test database:
