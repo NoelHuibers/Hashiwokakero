@@ -470,13 +470,12 @@ pub async fn login(
         return Err(ApiError::Banned.into());
     }
 
-    if let Some(token) = request_token().await {
-        if let Some((guest, _)) = user_by_token(conn, &token)
+    if let Some(token) = request_token().await
+        && let Some((guest, _)) = user_by_token(conn, &token)
             .await?
             .filter(|(u, _)| u.username.is_none())
-        {
-            merge_guest(conn, guest.id, user.id, &token).await?;
-        }
+    {
+        merge_guest(conn, guest.id, user.id, &token).await?;
     }
     if let Some(token) = request_token().await {
         conn.execute(

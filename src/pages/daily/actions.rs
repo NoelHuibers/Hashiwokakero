@@ -97,6 +97,15 @@ fn save_intent(intent: &Intent) -> bool {
     storage::set(&key, Some(&json))
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Scope {
+    user: i64,
+    day: i64,
+    started_at: i64,
+    attempt_id: String,
+    epoch: u32,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Actions {
     pub pending: RwSignal<bool>,
@@ -104,7 +113,7 @@ pub(super) struct Actions {
     pub recovery: RwSignal<bool>,
     checked_foreign: StoredValue<Vec<Intent>>,
     auth: Auth,
-    scope: StoredValue<Option<(i64, i64, i64, String, u32)>>,
+    scope: StoredValue<Option<Scope>>,
     version: RwSignal<u64>,
     sequence: RwSignal<u64>,
 }
@@ -152,7 +161,13 @@ impl Actions {
         let epoch = daily.game.epoch.get();
         let scope = user
             .zip(attempt)
-            .map(|(u, (d, s, id))| (u, d, s, id, epoch));
+            .map(|(user, (day, started_at, attempt_id))| Scope {
+                user,
+                day,
+                started_at,
+                attempt_id,
+                epoch,
+            });
         if self.scope.get_value() == scope {
             return;
         }
@@ -162,8 +177,8 @@ impl Actions {
         self.pending.set(false);
         // An old UTC day cannot be played again from this page. Drop its browser intents;
         // server receipts still remain safe to replay for the lifetime of their attempts.
-        if let Some((_, day, _, _, _)) = scope {
-            for old in saved_intents().into_iter().filter(|i| i.day < day) {
+        if let Some(scope) = scope {
+            for old in saved_intents().into_iter().filter(|i| i.day < scope.day) {
                 storage::set(&intent_key(&old), None);
             }
         }
@@ -293,10 +308,11 @@ impl Actions {
     fn restore_intent(&self) {
         let scope = self.scope.get_value();
         self.intent.set(saved_intents().into_iter().find(|intent| {
-            scope.as_ref().is_some_and(|(u, d, s, id, _)| {
-                (intent.user, intent.day, intent.started_at) == (*u, *d, *s)
+            scope.as_ref().is_some_and(|scope| {
+                (intent.user, intent.day, intent.started_at)
+                    == (scope.user, scope.day, scope.started_at)
                     && !intent.attempt_id.is_empty()
-                    && intent.attempt_id == *id
+                    && intent.attempt_id == scope.attempt_id
             })
         }));
         self.recovery.set(!self.recovery_intents().is_empty());
@@ -306,8 +322,10 @@ impl Actions {
     /// endpoint: only a read-only, authenticated server receipt can prove a real transfer.
     pub(super) fn recovery_intents(&self) -> Vec<Intent> {
         if let Some(intent) = self.intent.get_untracked() {
-            if self.scope.get_value().is_some_and(|(u, _, _, id, _)| {
-                intent.user != u || intent.attempt_id != id || id.is_empty()
+            if self.scope.get_value().is_some_and(|scope| {
+                intent.user != scope.user
+                    || intent.attempt_id != scope.attempt_id
+                    || scope.attempt_id.is_empty()
             }) {
                 return vec![intent];
             }
@@ -317,10 +335,12 @@ impl Actions {
         saved_intents()
             .into_iter()
             .filter(|i| {
-                scope.as_ref().is_some_and(|(u, d, s, id, _)| {
-                    (i.user != *u || i.attempt_id != *id || id.is_empty())
-                        && i.day == *d
-                        && i.started_at == *s
+                scope.as_ref().is_some_and(|scope| {
+                    (i.user != scope.user
+                        || i.attempt_id != scope.attempt_id
+                        || scope.attempt_id.is_empty())
+                        && i.day == scope.day
+                        && i.started_at == scope.started_at
                 }) && !self
                     .checked_foreign
                     .with_value(|checked| checked.contains(i))
@@ -751,21 +771,21 @@ mod tests {
                 // Until refresh arrives, the session error retains the original purchase.
                 d.actions
                     .failed(&d, &guard, &ServerFnError::new("E:session_expired"));
-                assert_eq!(saved_intents(), [intent.clone()]);
+                assert_eq!(saved_intents(), std::slice::from_ref(&intent));
                 d.update_attempt(|a| a.attempt_id = "replacement-attempt".into());
                 assert!(!guard.current(&d));
                 d.actions.sync(&d);
                 assert!(d.actions.intent.get_untracked().is_none());
                 // Even coincident timestamps can only attempt a read-only recovery.
-                assert_eq!(d.actions.recovery_intents(), [intent.clone()]);
+                assert_eq!(d.actions.recovery_intents(), std::slice::from_ref(&intent));
                 d.actions.recovered(None, std::slice::from_ref(&intent));
-                assert_eq!(saved_intents(), [intent.clone()]);
+                assert_eq!(saved_intents(), std::slice::from_ref(&intent));
                 assert!(!d.actions.locked());
                 // Authenticating to the receiving account exposes the transferred attempt.
                 auth.user.update(|u| u.as_mut().unwrap().id += 1);
                 d.update_attempt(|a| a.attempt_id.clone_from(&intent.attempt_id));
                 d.actions.sync(&d);
-                assert_eq!(d.actions.recovery_intents(), [intent.clone()]);
+                assert_eq!(d.actions.recovery_intents(), std::slice::from_ref(&intent));
                 let recovered = PaidRecovery {
                     intent: intent.clone(),
                     reply: PaidReply {
@@ -777,7 +797,7 @@ mod tests {
                 d.actions
                     .recovered(Some(&recovered), std::slice::from_ref(&intent));
                 d.actions.resolved();
-                assert!(saved_intents().is_empty());
+                assert_eq!(saved_intents(), Vec::<Intent>::new());
             }
         });
     }

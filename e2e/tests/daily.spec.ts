@@ -129,6 +129,7 @@ test('the move log saves bridge changes and stays idle while the clock ticks', a
 
 const paidPath = '**/api/daily_paid_action';
 const actionStatus = (page: Page) => page.getByTestId('daily-action-status');
+const penaltyValue = (page: Page) => page.getByText('Penalty · 罰', { exact: true }).locator('..').locator('span').first();
 
 // These use the real server, with only transport timing/failure controlled by the browser.
 // They require matching built WASM/server assets (the same prerequisite as the daily suite).
@@ -166,7 +167,7 @@ test('a delayed paid action blocks double taps, keyboard edits and other actions
     release();
   }
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+30s');
   expect(requests).toBe(1);
   await expect(hint).toBeEnabled();
 });
@@ -199,7 +200,7 @@ for (const action of ['Hint', 'Check'] as const) {
     expect(bodies).toHaveLength(2);
     expect(bodies[1]).toEqual(bodies[0]);
     const penalty = action === 'Hint' ? '+30s' : '+10s';
-    await expect(page.getByText(penalty, { exact: true })).toBeVisible();
+    await expect(penaltyValue(page)).toHaveText(penalty);
     expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')))).toEqual([]);
   });
 }
@@ -221,12 +222,12 @@ test('a failed paid request clears pending and retries the original intent', asy
   await check.click();
   await expect(actionStatus(page)).toContainText('Press the same action again');
   await expect(check).toBeEnabled();
-  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+0s');
   await check.click();
   await expect(actionStatus(page)).toBeEmpty();
   expect(bodies).toHaveLength(2);
   expect(bodies[1]).toEqual(bodies[0]);
-  await expect(page.getByText('+10s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+10s');
 });
 
 test('a paid reply arriving after leaving the daily cannot mutate its persistent board', async ({ page }) => {
@@ -257,7 +258,7 @@ test('a paid reply arriving after leaving the daily cannot mutate its persistent
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+30s');
 });
 
 
@@ -302,7 +303,7 @@ test('closing the tab after a lost success preserves the paid intent for the nex
     await expect(actionStatus(next)).toContainText('Press the same action again');
     await next.getByRole('button', { name: /^Hint/ }).click();
     await expect(actionStatus(next)).toBeEmpty();
-    await expect(next.getByText('+30s', { exact: true })).toBeVisible();
+    await expect(penaltyValue(next)).toHaveText('+30s');
   } finally {
     await next.close();
   }
@@ -327,7 +328,7 @@ test('unavailable intent storage prevents a charge and releases pending', async 
   await expect(page.getByText('Browser storage is required to retry this action safely. Enable it and try again.')).toBeVisible();
   await expect(hint).toBeEnabled();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+0s');
   expect(requests).toBe(0);
 });
 
@@ -368,7 +369,7 @@ for (const action of ['Hint', 'Check'] as const) {
     await page.getByRole('button', { name: new RegExp(`^${action}`) }).click();
     await expect(actionStatus(page)).toBeEmpty();
     expect(purchases).toBe(1);
-    await expect(page.getByText(action === 'Hint' ? '+30s' : '+10s', { exact: true })).toBeVisible();
+    await expect(penaltyValue(page)).toHaveText(action === 'Hint' ? '+30s' : '+10s');
     if (action === 'Hint') expect((await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
     expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')))).toEqual([]);
   });
@@ -400,12 +401,12 @@ test('a conflicting account attempt never adopts a lost guest hint', async ({ pa
   await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
   await visit(page, '/');
   await expect(page.locator('svg.board-svg')).toBeVisible();
-  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+0s');
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
   expect(purchases).toBe(1);
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+30s');
   expect(purchases).toBe(2); // a new, intentional purchase for the target account
 });
 
@@ -428,7 +429,7 @@ test('signing out and switching accounts preserves the former account intent wit
   await register(page, second, password);
   await visit(page, '/');
   await startDaily(page);
-  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+0s');
   await expect(actionStatus(page)).toBeEmpty();
   expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')).length)).toBe(1);
   await visit(page, '/account');
@@ -440,7 +441,7 @@ test('signing out and switching accounts preserves the former account intent wit
   await page.unroute(paidPath);
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+30s');
 });
 
 test('an unknown transfer lookup blocks fresh purchases until recovery succeeds', async ({ page }) => {
@@ -520,7 +521,7 @@ test('a guest merge in another tab preserves a committed hint whose reply outliv
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
   expect(purchases).toBe(1);
-  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+30s');
 });
 
 test('a delayed quiet refresh cannot roll back a paid counter or touch a disposed daily', async ({ page }) => {
@@ -545,13 +546,13 @@ test('a delayed quiet refresh cannot roll back a paid counter or touch a dispose
       } else {
         await page.getByRole('button', { name: /^Check/ }).click();
         await expect(actionStatus(page)).toBeEmpty();
-        await expect(page.getByText('+10s', { exact: true })).toBeVisible();
+        await expect(penaltyValue(page)).toHaveText('+10s');
       }
     } finally {
       release();
     }
     await page.waitForLoadState('networkidle');
-    if (!dispose) await expect(page.getByText('+10s', { exact: true })).toBeVisible();
+    if (!dispose) await expect(penaltyValue(page)).toHaveText('+10s');
     await page.unroute('**/api/daily_today');
   }
 });
@@ -583,11 +584,11 @@ test('a definitive missing transferred receipt ends recovery without purchasing 
   await expect(actionStatus(page)).toContainText('recover an earlier action after signing in');
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(page.getByText('+0s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+0s');
   expect(purchases).toBe(1);
   // Only the next, explicit purchase click can charge this account.
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(page.getByText('+30s', { exact: true })).toBeVisible();
+  await expect(penaltyValue(page)).toHaveText('+30s');
   expect(purchases).toBe(2);
 });
