@@ -45,6 +45,9 @@ pub mod output;
 pub mod proof;
 // In a tests/ directory, so coverage doesn't count the tests themselves
 #[cfg(all(test, feature = "bench"))]
+#[path = "tests/drat_gc.rs"]
+mod drat_gc_tests;
+#[cfg(all(test, feature = "bench"))]
 #[path = "tests/proofs.rs"]
 mod proof_tests;
 #[cfg(all(test, feature = "bench"))]
@@ -54,6 +57,9 @@ mod props;
 pub mod reference;
 #[cfg(feature = "runner")]
 pub mod sandbox;
+#[cfg(test)]
+#[path = "tests/shared.rs"]
+mod shared_tests;
 #[cfg(feature = "runner")]
 pub mod validate;
 #[cfg(feature = "worker")]

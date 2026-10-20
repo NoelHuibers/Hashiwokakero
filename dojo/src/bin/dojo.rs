@@ -64,6 +64,15 @@ fn hidden(args: &[String]) -> bool {
 
 /// The set the arguments ask for (`--seed`, `--hidden`, `--set`, `--family`), with its seed.
 fn set(args: &[String]) -> Result<(String, Vec<Instance>), String> {
+    // Before the set is generated, which takes a while
+    let family = flag(args, "--family")
+        .map(|id| {
+            Family::from_id(&id).ok_or_else(|| {
+                let ids: Vec<_> = Family::ALL.iter().map(|f| f.id()).collect();
+                format!("unknown family {id}, one of {}", ids.join(", "))
+            })
+        })
+        .transpose()?;
     let started = Instant::now();
     let (seed, mut set) = if let Some(path) = flag(args, "--set") {
         let bytes = std::fs::read(&path).map_err(|e| format!("{path}: {e}"))?;
@@ -78,11 +87,7 @@ fn set(args: &[String]) -> Result<(String, Vec<Instance>), String> {
         };
         (seed, set)
     };
-    if let Some(family) = flag(args, "--family") {
-        let family = Family::from_id(&family).unwrap_or_else(|| {
-            let ids: Vec<_> = Family::ALL.iter().map(|f| f.id()).collect();
-            panic!("unknown family {family}, one of {}", ids.join(", "))
-        });
+    if let Some(family) = family {
         set.retain(|i| i.family == family);
     }
     eprintln!(

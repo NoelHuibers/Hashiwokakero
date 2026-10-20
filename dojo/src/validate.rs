@@ -99,3 +99,8 @@ mod tests {
         assert!(matches!(validate(&threads), Err(Rejection::Invalid(_))));
     }
 }
+
+// In a tests/ directory, so coverage doesn't count the tests themselves
+#[cfg(test)]
+#[path = "tests/validate.rs"]
+mod more_tests;
