@@ -44,6 +44,21 @@ async fn user(conn: &Connection, name: &str, username: Option<&str>) -> i64 {
     conn.last_insert_rowid()
 }
 
+async fn paid_current(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+    action: crate::api::PaidAction,
+    id: &str,
+) -> Result<crate::api::PaidReply, ServerFnError> {
+    let identity = attempt(conn, user, day)
+        .await?
+        .map(|a| a.attempt_id)
+        .unwrap_or_default();
+    paid_action(conn, user, day, bridges, action, id, &identity).await
+}
+
 /// A player's log for `solution`: one click per bridge, 1.5 s apart.
 fn played(solution: &[u8]) -> Vec<MoveEvent> {
     let mut log = Vec::new();
@@ -981,7 +996,7 @@ async fn concurrent_paid_intents_charge_once_across_connections() {
             let bridges = empty.clone();
             tokio::spawn(async move {
                 gate.wait().await;
-                paid_action(&conn, id, MONDAY, bridges, action, request)
+                paid_current(&conn, id, MONDAY, bridges, action, request)
                     .await
                     .unwrap()
             })
@@ -1001,7 +1016,7 @@ async fn a_lost_paid_reply_replays_but_different_intents_still_charge() {
     let id = user(&conn, "retry player", None).await;
     let info = start(&conn, id, MONDAY, None).await.unwrap();
     let empty = Board::new(info.puzzle.unwrap()).empty_bridges();
-    let lost = paid_action(
+    let lost = paid_current(
         &conn,
         id,
         MONDAY,
@@ -1013,7 +1028,7 @@ async fn a_lost_paid_reply_replays_but_different_intents_still_charge() {
     .unwrap();
     assert!(matches!(lost.outcome, PaidOutcome::Hint(Some(_))));
     // A different ID explicitly buys another hint, even on identical bridges.
-    let other = paid_action(
+    let other = paid_current(
         &conn,
         id,
         MONDAY,
@@ -1024,7 +1039,7 @@ async fn a_lost_paid_reply_replays_but_different_intents_still_charge() {
     .await
     .unwrap();
     assert_eq!((other.hints, other.checks), (2, 0));
-    let recovered = paid_action(
+    let recovered = paid_current(
         &conn,
         id,
         MONDAY,
@@ -1050,7 +1065,7 @@ async fn a_lost_paid_reply_replays_but_different_intents_still_charge() {
     )
     .await
     .unwrap();
-    let again = paid_action(
+    let again = paid_current(
         &conn,
         id,
         MONDAY,
@@ -1062,7 +1077,7 @@ async fn a_lost_paid_reply_replays_but_different_intents_still_charge() {
     .unwrap();
     assert_eq!(again, recovered);
     assert!(
-        paid_action(
+        paid_current(
             &conn,
             id,
             MONDAY,
@@ -1091,23 +1106,23 @@ async fn paid_receipts_are_bound_to_player_day_action_and_payload() {
     start(&conn, b, MONDAY, None).await.unwrap();
     let empty = Board::new(info.puzzle.unwrap()).empty_bridges();
     let request = "ownership-intent-01";
-    paid_action(&conn, a, MONDAY, empty.clone(), PaidAction::Check, request)
+    paid_current(&conn, a, MONDAY, empty.clone(), PaidAction::Check, request)
         .await
         .unwrap();
     assert!(
-        paid_action(&conn, a, MONDAY, empty.clone(), PaidAction::Hint, request)
+        paid_current(&conn, a, MONDAY, empty.clone(), PaidAction::Hint, request)
             .await
             .is_err()
     );
     let mut changed = empty.clone();
     changed[0] = 1;
     assert!(
-        paid_action(&conn, a, MONDAY, changed, PaidAction::Check, request)
+        paid_current(&conn, a, MONDAY, changed, PaidAction::Check, request)
             .await
             .is_err()
     );
     assert!(
-        paid_action(
+        paid_current(
             &conn,
             a,
             MONDAY + 1,
@@ -1118,7 +1133,7 @@ async fn paid_receipts_are_bound_to_player_day_action_and_payload() {
         .await
         .is_err()
     );
-    let second = paid_action(&conn, b, MONDAY, empty, PaidAction::Check, request)
+    let second = paid_current(&conn, b, MONDAY, empty, PaidAction::Check, request)
         .await
         .unwrap();
     assert_eq!(second.checks, 1);
@@ -1140,13 +1155,13 @@ async fn paid_receipts_are_bounded_without_evicting_retry_safety() {
         "invalid!intent-id-1".into(),
     ] {
         assert!(
-            paid_action(&conn, id, MONDAY, empty.clone(), PaidAction::Check, &bad)
+            paid_current(&conn, id, MONDAY, empty.clone(), PaidAction::Check, &bad)
                 .await
                 .is_err()
         );
     }
     assert!(
-        paid_action(
+        paid_current(
             &conn,
             id,
             MONDAY,
@@ -1159,7 +1174,7 @@ async fn paid_receipts_are_bounded_without_evicting_retry_safety() {
     );
     assert_eq!(attempt(&conn, id, MONDAY).await.unwrap().unwrap().checks, 0);
     for n in 0..256 {
-        paid_action(
+        paid_current(
             &conn,
             id,
             MONDAY,
@@ -1170,7 +1185,7 @@ async fn paid_receipts_are_bounded_without_evicting_retry_safety() {
         .await
         .unwrap();
     }
-    let overflow = paid_action(
+    let overflow = paid_current(
         &conn,
         id,
         MONDAY,
@@ -1184,7 +1199,7 @@ async fn paid_receipts_are_bounded_without_evicting_retry_safety() {
         ApiError::from_message(&overflow.to_string()),
         Some(ApiError::TooManyAttempts)
     );
-    let replay = paid_action(
+    let replay = paid_current(
         &conn,
         id,
         MONDAY,
@@ -1205,7 +1220,7 @@ async fn paid_noop_hints_replay_without_penalties_and_failed_writes_leave_no_rec
     start(&conn, id, MONDAY, None).await.unwrap();
     let daily = get_or_create(&conn, MONDAY).await.unwrap();
     let request = "no-op-hint-intent-01";
-    let noop = paid_action(
+    let noop = paid_current(
         &conn,
         id,
         MONDAY,
@@ -1218,7 +1233,7 @@ async fn paid_noop_hints_replay_without_penalties_and_failed_writes_leave_no_rec
     assert_eq!(noop.outcome, PaidOutcome::Hint(None));
     assert_eq!(noop.hints, 0);
     assert_eq!(
-        paid_action(
+        paid_current(
             &conn,
             id,
             MONDAY,
@@ -1233,7 +1248,7 @@ async fn paid_noop_hints_replay_without_penalties_and_failed_writes_leave_no_rec
     conn.execute_batch("CREATE TRIGGER fail_paid BEFORE UPDATE OF paid_actions ON attempts BEGIN SELECT RAISE(ABORT, 'injected receipt write failure'); END;").await.unwrap();
     let empty = Board::new(daily.puzzle).empty_bridges();
     assert!(
-        paid_action(
+        paid_current(
             &conn,
             id,
             MONDAY,
@@ -1246,7 +1261,7 @@ async fn paid_noop_hints_replay_without_penalties_and_failed_writes_leave_no_rec
     );
     assert_eq!(attempt(&conn, id, MONDAY).await.unwrap().unwrap().checks, 0);
     conn.execute_batch("DROP TRIGGER fail_paid").await.unwrap();
-    let retry = paid_action(
+    let retry = paid_current(
         &conn,
         id,
         MONDAY,
@@ -1257,6 +1272,147 @@ async fn paid_noop_hints_replay_without_penalties_and_failed_writes_leave_no_rec
     .await
     .unwrap();
     assert_eq!(retry.checks, 1);
+}
+
+#[tokio::test]
+async fn lost_actions_never_charge_a_reused_guest_id_even_with_identical_start_times() {
+    use crate::api::{PaidAction, PaidIntent};
+    let (_db, conn) = test_db().await;
+    for action in [PaidAction::Hint, PaidAction::Check] {
+        // Keep the guest at the maximum rowid so SQLite really reuses it after transfer.
+        let account = user(&conn, "receiving owner", Some("receiving_owner")).await;
+        let guest = user(&conn, "original guest", None).await;
+        let token = crate::server::auth::insert_session(&conn, guest)
+            .await
+            .unwrap();
+        let info = start(&conn, guest, MONDAY, None).await.unwrap();
+        let original = info.attempt.unwrap();
+        let intent = PaidIntent {
+            attempt_id: original.attempt_id.clone(),
+            user: guest,
+            day: MONDAY,
+            started_at: original.started_at,
+            action,
+            bridges: Board::new(info.puzzle.unwrap()).empty_bridges(),
+            id: "reused-guest-intent-01".into(),
+        };
+        let accepted = paid_action(
+            &conn,
+            guest,
+            MONDAY,
+            intent.bridges.clone(),
+            action,
+            &intent.id,
+            &intent.attempt_id,
+        )
+        .await
+        .unwrap();
+        crate::server::auth::merge_guest(&conn, guest, account, &token)
+            .await
+            .unwrap();
+        // A stale tab can retry even before the replacement guest starts.
+        assert_eq!(
+            ApiError::from_message(
+                &paid_action(
+                    &conn,
+                    guest,
+                    MONDAY,
+                    intent.bridges.clone(),
+                    action,
+                    &intent.id,
+                    &intent.attempt_id
+                )
+                .await
+                .unwrap_err()
+                .to_string()
+            ),
+            Some(ApiError::SessionExpired)
+        );
+        let replacement = user(&conn, "replacement guest", None).await;
+        assert_eq!(replacement, guest, "exercise actual SQLite rowid reuse");
+        let replacement_info = start(&conn, replacement, MONDAY, None)
+            .await
+            .unwrap()
+            .attempt
+            .unwrap();
+        assert_ne!(replacement_info.attempt_id, intent.attempt_id);
+        conn.execute(
+            "UPDATE attempts SET started_at = ?1 WHERE user_id = ?2",
+            params![original.started_at, replacement],
+        )
+        .await
+        .unwrap();
+        for expected in [&intent.attempt_id, &String::new()] {
+            let error = paid_action(
+                &conn,
+                replacement,
+                MONDAY,
+                intent.bridges.clone(),
+                action,
+                &intent.id,
+                expected,
+            )
+            .await
+            .unwrap_err();
+            assert_eq!(
+                ApiError::from_message(&error.to_string()),
+                Some(ApiError::SessionExpired)
+            );
+        }
+        let untouched = attempt(&conn, replacement, MONDAY).await.unwrap().unwrap();
+        assert_eq!((untouched.hints, untouched.checks), (0, 0));
+        let mut rows = conn
+            .query(
+                "SELECT paid_actions FROM attempts WHERE user_id = ?1",
+                params![replacement],
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            rows.next()
+                .await
+                .unwrap()
+                .unwrap()
+                .get::<String>(0)
+                .unwrap(),
+            "[]"
+        );
+        drop(rows);
+        assert!(
+            recover_actions(
+                &conn,
+                replacement,
+                MONDAY,
+                intent.started_at,
+                std::slice::from_ref(&intent)
+            )
+            .await
+            .unwrap()
+            .is_none()
+        );
+        let recovered = recover_actions(
+            &conn,
+            account,
+            MONDAY,
+            intent.started_at,
+            std::slice::from_ref(&intent),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        assert_eq!(recovered.intent, intent);
+        assert_eq!(recovered.reply, accepted);
+        assert_eq!(
+            attempt(&conn, account, MONDAY)
+                .await
+                .unwrap()
+                .unwrap()
+                .attempt_id,
+            original.attempt_id
+        );
+        // Permit another iteration with a separate account/day ownership history.
+        crate::server::auth::erase(&conn, account).await.unwrap();
+    }
 }
 
 #[tokio::test]
@@ -1272,10 +1428,11 @@ async fn transferred_paid_receipts_recover_only_the_exact_original_purchase_with
         (PaidAction::Hint, "transferred-hint-01"),
         (PaidAction::Check, "transferred-check-1"),
     ] {
-        paid_action(&conn, guest, MONDAY, empty.clone(), action, id)
+        paid_current(&conn, guest, MONDAY, empty.clone(), action, id)
             .await
             .unwrap();
         intents.push(PaidIntent {
+            attempt_id: String::new(),
             user: guest,
             day: MONDAY,
             started_at: info.attempt.as_ref().unwrap().started_at,
@@ -1287,9 +1444,16 @@ async fn transferred_paid_receipts_recover_only_the_exact_original_purchase_with
     // The previous release's receipts had no provenance field. The actual merge must annotate
     // those too, using database ownership rather than a browser assertion.
     conn.execute("UPDATE attempts SET paid_actions = (SELECT json_group_array(json_remove(value, '$.origin_user')) FROM json_each(attempts.paid_actions)) WHERE user_id = ?1", params![guest]).await.unwrap();
-    crate::server::auth::merge_guest(&conn, guest, account)
-        .await
-        .unwrap();
+    crate::server::auth::merge_guest(
+        &conn,
+        guest,
+        account,
+        &crate::server::auth::insert_session(&conn, guest)
+            .await
+            .unwrap(),
+    )
+    .await
+    .unwrap();
     let started = intents[0].started_at;
     for intent in &intents {
         let recovered = recover_actions(
@@ -1307,14 +1471,17 @@ async fn transferred_paid_receipts_recover_only_the_exact_original_purchase_with
         // Every field participates in recovery; timestamps alone never authorize adoption.
         for changed in [
             PaidIntent {
+                attempt_id: String::new(),
                 user: account,
                 ..intent.clone()
             },
             PaidIntent {
+                attempt_id: String::new(),
                 id: "unaccepted-intent-1".into(),
                 ..intent.clone()
             },
             PaidIntent {
+                attempt_id: String::new(),
                 action: if intent.action == PaidAction::Hint {
                     PaidAction::Check
                 } else {
@@ -1323,14 +1490,17 @@ async fn transferred_paid_receipts_recover_only_the_exact_original_purchase_with
                 ..intent.clone()
             },
             PaidIntent {
+                attempt_id: String::new(),
                 bridges: vec![2; empty.len()],
                 ..intent.clone()
             },
             PaidIntent {
+                attempt_id: String::new(),
                 started_at: started + 1,
                 ..intent.clone()
             },
             PaidIntent {
+                attempt_id: String::new(),
                 day: MONDAY + 1,
                 ..intent.clone()
             },
@@ -1393,6 +1563,7 @@ async fn conflicting_attempts_with_identical_timestamps_ids_and_boards_cannot_ad
     let empty = Board::new(info.puzzle.unwrap()).empty_bridges();
     let started = info.attempt.unwrap().started_at;
     let intent = PaidIntent {
+        attempt_id: String::new(),
         user: guest,
         day: MONDAY,
         started_at: started,
@@ -1402,7 +1573,7 @@ async fn conflicting_attempts_with_identical_timestamps_ids_and_boards_cannot_ad
     };
     for owner in [guest, account] {
         start(&conn, owner, MONDAY, None).await.unwrap();
-        paid_action(
+        paid_current(
             &conn,
             owner,
             MONDAY,
@@ -1419,9 +1590,16 @@ async fn conflicting_attempts_with_identical_timestamps_ids_and_boards_cannot_ad
     )
     .await
     .unwrap();
-    crate::server::auth::merge_guest(&conn, guest, account)
-        .await
-        .unwrap();
+    crate::server::auth::merge_guest(
+        &conn,
+        guest,
+        account,
+        &crate::server::auth::insert_session(&conn, guest)
+            .await
+            .unwrap(),
+    )
+    .await
+    .unwrap();
     assert!(
         recover_actions(
             &conn,
@@ -1435,6 +1613,7 @@ async fn conflicting_attempts_with_identical_timestamps_ids_and_boards_cannot_ad
         .is_none()
     );
     let own = PaidIntent {
+        attempt_id: String::new(),
         user: account,
         ..intent
     };
@@ -1463,6 +1642,7 @@ async fn a_paid_action_racing_guest_transfer_is_either_recoverable_or_never_char
         let info = start(&conn, guest, MONDAY, None).await.unwrap();
         let empty = Board::new(info.puzzle.unwrap()).empty_bridges();
         let intent = PaidIntent {
+            attempt_id: String::new(),
             user: guest,
             day: MONDAY,
             started_at: info.attempt.unwrap().started_at,
@@ -1470,12 +1650,15 @@ async fn a_paid_action_racing_guest_transfer_is_either_recoverable_or_never_char
             bridges: empty.clone(),
             id: "racing-transfer-001".into(),
         };
+        let token = crate::server::auth::insert_session(&conn, guest)
+            .await
+            .unwrap();
         let gate = std::sync::Arc::new(tokio::sync::Barrier::new(2));
         let buying_conn = db::connect(&db.database).unwrap();
         let buying_gate = gate.clone();
         let buying = tokio::spawn(async move {
             buying_gate.wait().await;
-            paid_action(
+            paid_current(
                 &buying_conn,
                 guest,
                 MONDAY,
@@ -1488,7 +1671,7 @@ async fn a_paid_action_racing_guest_transfer_is_either_recoverable_or_never_char
         let merging_conn = db::connect(&db.database).unwrap();
         let merging = tokio::spawn(async move {
             gate.wait().await;
-            crate::server::auth::merge_guest(&merging_conn, guest, account).await
+            crate::server::auth::merge_guest(&merging_conn, guest, account, &token).await
         });
         let bought = buying.await.unwrap();
         merging.await.unwrap().unwrap();
@@ -1504,7 +1687,7 @@ async fn a_paid_action_racing_guest_transfer_is_either_recoverable_or_never_char
             Err(error) => {
                 assert_eq!(
                     ApiError::from_message(&error.to_string()),
-                    Some(ApiError::NotStarted)
+                    Some(ApiError::SessionExpired)
                 );
                 assert!(recovered.is_none());
                 assert_eq!(current.hints + current.checks, 0);
@@ -1521,9 +1704,16 @@ async fn a_login_with_an_earlier_guest_snapshot_cannot_transfer_a_claimed_accoun
     start(&conn, claimed, MONDAY, None).await.unwrap();
     // Login observed this ID as a guest, then registration claimed it before merge got its
     // transaction. The claimed identity and its attempt must remain owned by that account.
-    crate::server::auth::merge_guest(&conn, claimed, other)
-        .await
-        .unwrap();
+    crate::server::auth::merge_guest(
+        &conn,
+        claimed,
+        other,
+        &crate::server::auth::insert_session(&conn, claimed)
+            .await
+            .unwrap(),
+    )
+    .await
+    .unwrap();
     assert!(attempt(&conn, claimed, MONDAY).await.unwrap().is_some());
     assert!(attempt(&conn, other, MONDAY).await.unwrap().is_none());
 }

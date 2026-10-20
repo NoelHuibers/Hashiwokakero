@@ -145,6 +145,9 @@ async fn write_rows(conn: &Connection, version: usize) {
         .await;
     }
     // 12 only added indexes
+    if version >= 14 {
+        run("UPDATE attempts SET attempt_id = 'existing-attempt-identity' WHERE user_id = 2").await;
+    }
     if version >= 13 {
         run(r#"UPDATE attempts SET paid_actions = '[{"id":"saved-intent","action":"Check","bridges":[0,0],"outcome":{"Check":[]}}]' WHERE user_id = 2"#).await;
     }
@@ -159,7 +162,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        13,
+        14,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -171,6 +174,15 @@ async fn old_databases_migrate_with_their_data() {
             .await
             .unwrap_or_else(|e| panic!("from version {version}: {e}"));
         let label = format!("migrated from version {version}");
+
+        let identity = attempt(conn, 2, DAY).await.unwrap().unwrap().attempt_id;
+        if version >= 14 {
+            assert_eq!(identity, "existing-attempt-identity");
+        } else {
+            assert_eq!(identity.len(), 32);
+        }
+        let other_identity = attempt(conn, 1, DAY).await.unwrap().unwrap().attempt_id;
+        assert_ne!(identity, other_identity);
 
         let noel = user_by_id(conn, 1).await.unwrap().unwrap();
         assert_eq!(

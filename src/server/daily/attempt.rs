@@ -20,7 +20,7 @@ pub async fn attempt(
 ) -> Result<Option<AttemptInfo>, ServerFnError> {
     let mut rows = conn
         .query(
-            "SELECT started_at, finished_at, hints, checks, revealed, time_ms, bridges, flag
+            "SELECT started_at, finished_at, hints, checks, revealed, time_ms, bridges, flag, attempt_id
              FROM attempts WHERE user_id = ?1 AND day = ?2",
             params![user, day],
         )
@@ -31,6 +31,7 @@ pub async fn attempt(
     };
     let bridges: Option<String> = row.get(6).map_err(db_err)?;
     Ok(Some(AttemptInfo {
+        attempt_id: row.get(8).map_err(db_err)?,
         started_at: row.get(0).map_err(db_err)?,
         finished_at: row.get(1).map_err(db_err)?,
         hints: row.get(2).map_err(db_err)?,
@@ -222,7 +223,7 @@ pub async fn recover_actions(
         return Err(ApiError::WrongPuzzle.into());
     }
     let mut rows = conn.query(
-        "SELECT paid_actions, hints, checks FROM attempts WHERE user_id = ?1 AND day = ?2 AND started_at = ?3",
+        "SELECT paid_actions, hints, checks, attempt_id FROM attempts WHERE user_id = ?1 AND day = ?2 AND started_at = ?3",
         params![user, day, started_at],
     ).await.map_err(db_err)?;
     let Some(row) = rows.next().await.map_err(db_err)? else {
@@ -230,7 +231,11 @@ pub async fn recover_actions(
     };
     let receipts: Vec<PaidReceipt> = from_json(&row.get::<String>(0).map_err(db_err)?)?;
     for intent in intents {
-        if intent.day != day || intent.started_at != started_at {
+        if intent.day != day
+            || intent.started_at != started_at
+            || (!intent.attempt_id.is_empty()
+                && intent.attempt_id != row.get::<String>(3).map_err(db_err)?)
+        {
             continue;
         }
         if let Some(receipt) = receipts.iter().find(|r| {
@@ -261,6 +266,7 @@ pub async fn paid_action(
     bridges: Vec<u8>,
     action: crate::api::PaidAction,
     request_id: &str,
+    expected_attempt: &str,
 ) -> Result<crate::api::PaidReply, ServerFnError> {
     use crate::api::{PaidAction, PaidOutcome, PaidReply};
 
@@ -277,7 +283,13 @@ pub async fn paid_action(
         .map_err(db_err)?;
     let current = attempt(&tx, user, day)
         .await?
-        .ok_or_else(|| ApiError::NotStarted.fail())?;
+        .ok_or_else(|| ApiError::SessionExpired.fail())?;
+    // Check before reading receipts or charging, while holding the write lock. A deleted
+    // guest's numeric ID (and even its start millisecond) can belong to a replacement guest.
+    // This error must retain the unresolved intent: its receipt may have moved to an account.
+    if expected_attempt.is_empty() || current.attempt_id != expected_attempt {
+        return Err(ApiError::SessionExpired.into());
+    }
     let saved: String = tx
         .query(
             "SELECT paid_actions FROM attempts WHERE user_id = ?1 AND day = ?2",

@@ -515,6 +515,7 @@ mod tests {
             difficulty: Difficulty::Easy,
             puzzle: Some(puzzle()),
             attempt: Some(AttemptInfo {
+                attempt_id: String::new(),
                 started_at: 1_000,
                 finished_at: finished.then_some(61_000),
                 hints: 0,

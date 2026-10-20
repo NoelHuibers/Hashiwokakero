@@ -72,6 +72,9 @@ pub struct PaidReply {
 /// An unresolved purchase saved before dispatch. Its original identity survives guest transfer.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct PaidIntent {
+    /// Older stored intents without this field can only use read-only receipt recovery.
+    #[serde(default)]
+    pub attempt_id: String,
     pub user: i64,
     pub day: i64,
     pub started_at: i64,
@@ -110,6 +113,7 @@ pub async fn daily_paid_action(
     action: PaidAction,
     request_id: String,
     expected_user: i64,
+    expected_attempt: String,
 ) -> Result<PaidReply, ServerFnError> {
     let (conn, user) = signed_in().await?;
     // Cookies are shared across tabs. A sign-in elsewhere must not charge another player's
@@ -118,7 +122,16 @@ pub async fn daily_paid_action(
     if user.id != expected_user {
         return Err(crate::model::ApiError::SessionExpired.into());
     }
-    daily::paid_action(&conn, user.id, day, bridges, action, &request_id).await
+    daily::paid_action(
+        &conn,
+        user.id,
+        day,
+        bridges,
+        action,
+        &request_id,
+        &expected_attempt,
+    )
+    .await
 }
 
 /// The solution. The attempt is no longer ranked.

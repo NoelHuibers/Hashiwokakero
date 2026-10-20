@@ -104,7 +104,7 @@ pub(super) struct Actions {
     pub recovery: RwSignal<bool>,
     checked_foreign: StoredValue<Vec<Intent>>,
     auth: Auth,
-    scope: StoredValue<Option<(i64, i64, i64, u32)>>,
+    scope: StoredValue<Option<(i64, i64, i64, String, u32)>>,
     version: RwSignal<u64>,
     sequence: RwSignal<u64>,
 }
@@ -116,6 +116,7 @@ pub(super) struct Guard {
     user: i64,
     day: i64,
     started_at: i64,
+    attempt_id: String,
     epoch: u32,
     version: u64,
     sequence: u64,
@@ -142,21 +143,26 @@ impl Actions {
     pub(super) fn sync(&self, daily: &Daily) {
         let user = self.auth.user.with(|u| u.as_ref().map(|u| u.id));
         let attempt = daily.info.with(|i| {
-            i.as_ref()
-                .and_then(|i| i.attempt.as_ref().map(|a| (i.day, a.started_at)))
+            i.as_ref().and_then(|i| {
+                i.attempt
+                    .as_ref()
+                    .map(|a| (i.day, a.started_at, a.attempt_id.clone()))
+            })
         });
         let epoch = daily.game.epoch.get();
-        let scope = user.zip(attempt).map(|(u, (d, s))| (u, d, s, epoch));
+        let scope = user
+            .zip(attempt)
+            .map(|(u, (d, s, id))| (u, d, s, id, epoch));
         if self.scope.get_value() == scope {
             return;
         }
-        self.scope.set_value(scope);
+        self.scope.set_value(scope.clone());
         self.checked_foreign.set_value(vec![]);
         self.sequence.update(|s| *s += 1);
         self.pending.set(false);
         // An old UTC day cannot be played again from this page. Drop its browser intents;
         // server receipts still remain safe to replay for the lifetime of their attempts.
-        if let Some((_, day, _, _)) = scope {
+        if let Some((_, day, _, _, _)) = scope {
             for old in saved_intents().into_iter().filter(|i| i.day < day) {
                 storage::set(&intent_key(&old), None);
             }
@@ -222,14 +228,18 @@ impl Actions {
 
     pub(super) fn capture(&self, daily: &Daily) -> Option<Guard> {
         let user = self.auth.user.get_untracked()?.id;
-        let (day, started_at) = daily.info.with_untracked(|i| {
-            i.as_ref()
-                .and_then(|i| i.attempt.as_ref().map(|a| (i.day, a.started_at)))
+        let (day, started_at, attempt_id) = daily.info.with_untracked(|i| {
+            i.as_ref().and_then(|i| {
+                i.attempt
+                    .as_ref()
+                    .map(|a| (i.day, a.started_at, a.attempt_id.clone()))
+            })
         })?;
         Some(Guard {
             user,
             day,
             started_at,
+            attempt_id,
             epoch: daily.game.epoch.get_untracked(),
             version: self.version.get_untracked(),
             sequence: self.sequence.get_untracked(),
@@ -245,6 +255,7 @@ impl Actions {
         id: impl FnOnce() -> String,
     ) -> Option<Intent> {
         let intent = self.intent.get_untracked().unwrap_or_else(|| Intent {
+            attempt_id: guard.attempt_id.clone(),
             user: guard.user,
             day: guard.day,
             started_at: guard.started_at,
@@ -282,8 +293,10 @@ impl Actions {
     fn restore_intent(&self) {
         let scope = self.scope.get_value();
         self.intent.set(saved_intents().into_iter().find(|intent| {
-            scope.is_some_and(|(u, d, s, _)| {
-                (intent.user, intent.day, intent.started_at) == (u, d, s)
+            scope.as_ref().is_some_and(|(u, d, s, id, _)| {
+                (intent.user, intent.day, intent.started_at) == (*u, *d, *s)
+                    && !intent.attempt_id.is_empty()
+                    && intent.attempt_id == *id
             })
         }));
         self.recovery.set(!self.recovery_intents().is_empty());
@@ -293,11 +306,9 @@ impl Actions {
     /// endpoint: only a read-only, authenticated server receipt can prove a real transfer.
     pub(super) fn recovery_intents(&self) -> Vec<Intent> {
         if let Some(intent) = self.intent.get_untracked() {
-            if self
-                .scope
-                .get_value()
-                .is_some_and(|(u, _, _, _)| intent.user != u)
-            {
+            if self.scope.get_value().is_some_and(|(u, _, _, id, _)| {
+                intent.user != u || intent.attempt_id != id || id.is_empty()
+            }) {
                 return vec![intent];
             }
             return vec![];
@@ -306,10 +317,13 @@ impl Actions {
         saved_intents()
             .into_iter()
             .filter(|i| {
-                scope.is_some_and(|(u, d, s, _)| i.user != u && i.day == d && i.started_at == s)
-                    && !self
-                        .checked_foreign
-                        .with_value(|checked| checked.contains(i))
+                scope.as_ref().is_some_and(|(u, d, s, id, _)| {
+                    (i.user != *u || i.attempt_id != *id || id.is_empty())
+                        && i.day == *d
+                        && i.started_at == *s
+                }) && !self
+                    .checked_foreign
+                    .with_value(|checked| checked.contains(i))
             })
             .collect()
     }
@@ -377,9 +391,12 @@ impl Guard {
                 .try_with_untracked(|u| u.as_ref().map(|u| u.id))
                 == Some(Some(self.user))
             && daily.info.try_with_untracked(|i| {
-                i.as_ref()
-                    .and_then(|i| i.attempt.as_ref().map(|a| (i.day, a.started_at)))
-            }) == Some(Some((self.day, self.started_at)))
+                i.as_ref().and_then(|i| {
+                    i.attempt
+                        .as_ref()
+                        .map(|a| (i.day, a.started_at, a.attempt_id.clone()))
+                })
+            }) == Some(Some((self.day, self.started_at, self.attempt_id.clone())))
             && daily.game.epoch.try_get_untracked() == Some(self.epoch)
             && daily
                 .game
@@ -443,6 +460,7 @@ mod tests {
                 difficulty: Difficulty::Easy,
                 puzzle: Some(game.board.with_untracked(|b| b.puzzle.clone())),
                 attempt: Some(AttemptInfo {
+                    attempt_id: "test-attempt-identity".into(),
                     started_at: 1000,
                     finished_at: None,
                     hints: 0,
@@ -717,6 +735,71 @@ mod tests {
             d.actions.sync(&d);
             assert!(d.actions.intent.get_untracked().is_none());
             assert!(!guard.current(&d));
+        });
+    }
+
+    #[test]
+    fn reused_user_and_start_time_cannot_restore_an_intent_or_accept_old_callbacks() {
+        tab(|d, auth| {
+            for action in [PaidAction::Hint, PaidAction::Check] {
+                let guard = d.actions.begin(&d, Some(action)).unwrap();
+                let intent = d
+                    .actions
+                    .purchase(&guard, action, || "reused-identity-01".into())
+                    .unwrap();
+                // The shared cookie now names a replacement guest with exactly the same ID.
+                // Until refresh arrives, the session error retains the original purchase.
+                d.actions
+                    .failed(&d, &guard, &ServerFnError::new("E:session_expired"));
+                assert_eq!(saved_intents(), [intent.clone()]);
+                d.update_attempt(|a| a.attempt_id = "replacement-attempt".into());
+                assert!(!guard.current(&d));
+                d.actions.sync(&d);
+                assert!(d.actions.intent.get_untracked().is_none());
+                // Even coincident timestamps can only attempt a read-only recovery.
+                assert_eq!(d.actions.recovery_intents(), [intent.clone()]);
+                d.actions.recovered(None, std::slice::from_ref(&intent));
+                assert_eq!(saved_intents(), [intent.clone()]);
+                assert!(!d.actions.locked());
+                // Authenticating to the receiving account exposes the transferred attempt.
+                auth.user.update(|u| u.as_mut().unwrap().id += 1);
+                d.update_attempt(|a| a.attempt_id.clone_from(&intent.attempt_id));
+                d.actions.sync(&d);
+                assert_eq!(d.actions.recovery_intents(), [intent.clone()]);
+                let recovered = PaidRecovery {
+                    intent: intent.clone(),
+                    reply: PaidReply {
+                        outcome: PaidOutcome::Check(vec![]),
+                        hints: 1,
+                        checks: 1,
+                    },
+                };
+                d.actions
+                    .recovered(Some(&recovered), std::slice::from_ref(&intent));
+                d.actions.resolved();
+                assert!(saved_intents().is_empty());
+            }
+        });
+    }
+
+    #[test]
+    fn pre_token_intents_are_read_only_even_for_the_same_user() {
+        tab(|d, auth| {
+            let guard = d.actions.begin(&d, Some(PaidAction::Check)).unwrap();
+            let mut intent = d
+                .actions
+                .purchase(&guard, PaidAction::Check, || "legacy-intent-id-01".into())
+                .unwrap();
+            intent.attempt_id.clear();
+            assert!(save_intent(&intent));
+            let reloaded = page(&d.game, auth);
+            assert!(reloaded.actions.intent.get_untracked().is_none());
+            assert_eq!(reloaded.actions.recovery_intents(), [intent.clone()]);
+            reloaded
+                .actions
+                .recovered(None, std::slice::from_ref(&intent));
+            assert_eq!(saved_intents(), [intent]);
+            assert!(!reloaded.actions.locked());
         });
     }
 

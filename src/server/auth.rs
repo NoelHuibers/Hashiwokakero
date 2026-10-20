@@ -188,7 +188,10 @@ async fn create_session(conn: &Connection, user_id: i64) -> Result<(), ServerFnE
 
 /// Stores a session without publishing its cookie: a caller in a transaction must commit
 /// before the browser receives a token that depends on that transaction.
-async fn insert_session(conn: &Connection, user_id: i64) -> Result<String, ServerFnError> {
+pub(super) async fn insert_session(
+    conn: &Connection,
+    user_id: i64,
+) -> Result<String, ServerFnError> {
     let token = hex(&random_bytes::<32>());
     let now = now_ms();
     conn.execute(
@@ -467,8 +470,13 @@ pub async fn login(
         return Err(ApiError::Banned.into());
     }
 
-    if let Some(guest) = current_user(conn).await?.filter(|u| u.username.is_none()) {
-        merge_guest(conn, guest.id, user.id).await?;
+    if let Some(token) = request_token().await {
+        if let Some((guest, _)) = user_by_token(conn, &token)
+            .await?
+            .filter(|(u, _)| u.username.is_none())
+        {
+            merge_guest(conn, guest.id, user.id, &token).await?;
+        }
     }
     if let Some(token) = request_token().await {
         conn.execute(
@@ -525,17 +533,20 @@ pub(super) async fn merge_guest(
     conn: &Connection,
     guest: i64,
     user: i64,
+    token: &str,
 ) -> Result<(), ServerFnError> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .await
         .map_err(db_err)?;
     // Registration can claim this identity while login is waiting for the write lock. Never
-    // transfer a registered account's attempt based on the earlier guest snapshot.
+    // transfer a registered account's attempt based on the earlier guest snapshot. The
+    // captured session also excludes a replacement guest that reused the deleted guest's ID.
     let still_guest = tx
         .query(
-            "SELECT 1 FROM users WHERE id = ?1 AND username IS NULL AND deleted_at IS NULL",
-            params![guest],
+            "SELECT 1 FROM users WHERE id = ?1 AND username IS NULL AND deleted_at IS NULL
+             AND EXISTS (SELECT 1 FROM sessions WHERE token_hash = ?2 AND user_id = ?1 AND expires_at > ?3)",
+            params![guest, hash_token(token), now_ms()],
         )
         .await
         .map_err(db_err)?
@@ -860,6 +871,57 @@ mod tests {
         let row = rows.next().await.unwrap().unwrap();
         assert_eq!(row.get::<i64>(0).unwrap(), 1);
         assert_eq!(row.get::<i64>(1).unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn captured_registration_and_transfer_cannot_claim_a_reused_guest_id() {
+        use crate::server::{daily, db};
+        let db = db::TestConn::new("captured-guest-reuse").await;
+        let conn = &*db;
+        conn.execute(
+            "INSERT INTO users (username, name, created_at) VALUES ('owner', 'Owner', 1)",
+            (),
+        )
+        .await
+        .unwrap();
+        let owner = conn.last_insert_rowid();
+        let guest = ensure_user(conn).await.unwrap();
+        let token = insert_session(conn, guest.id).await.unwrap();
+        daily::start(conn, guest.id, daily::today(), None)
+            .await
+            .unwrap();
+        merge_guest(conn, guest.id, owner, &token).await.unwrap();
+        let replacement = ensure_user(conn).await.unwrap();
+        assert_eq!(replacement.id, guest.id);
+        let fresh = insert_session(conn, replacement.id).await.unwrap();
+        daily::start(conn, replacement.id, daily::today(), None)
+            .await
+            .unwrap();
+        let captured = Some((guest.clone(), token.clone()));
+        let error = register_hashed(conn, captured, "stale_claim", STORED_HASH.into())
+            .await
+            .unwrap_err();
+        assert_eq!(
+            ApiError::from_message(&error.to_string()),
+            Some(ApiError::SessionExpired)
+        );
+        merge_guest(conn, guest.id, owner, &token).await.unwrap();
+        assert!(
+            user_by_id(conn, replacement.id)
+                .await
+                .unwrap()
+                .unwrap()
+                .username
+                .is_none()
+        );
+        assert!(user_by_token(conn, &fresh).await.unwrap().is_some());
+        assert!(
+            daily::attempt(conn, replacement.id, daily::today())
+                .await
+                .unwrap()
+                .is_some()
+        );
+        assert!(user_by_token(conn, &token).await.unwrap().is_none());
     }
 
     #[tokio::test]

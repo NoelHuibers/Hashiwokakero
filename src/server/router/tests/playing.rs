@@ -359,7 +359,8 @@ async fn paid_actions_assert_the_displayed_player_without_trusting_its_identity(
     let user = first.call(CurrentUser {}).await.unwrap().unwrap();
     let day = started.day;
     let empty = Board::new(started.puzzle.unwrap()).empty_bridges();
-    let purchase = |expected_user| DailyPaidAction {
+    let purchase = |expected_user, expected_attempt| DailyPaidAction {
+        expected_attempt,
         day,
         bridges: empty.clone(),
         action: PaidAction::Hint,
@@ -367,20 +368,63 @@ async fn paid_actions_assert_the_displayed_player_without_trusting_its_identity(
         expected_user,
     };
     assert_eq!(
-        api_error(first.call(purchase(user.id + 1)).await),
+        api_error(
+            first
+                .call(purchase(
+                    user.id + 1,
+                    started.attempt.as_ref().unwrap().attempt_id.clone()
+                ))
+                .await
+        ),
         ApiError::SessionExpired
     );
-    let accepted = first.call(purchase(user.id)).await.unwrap();
-    assert_eq!((accepted.hints, accepted.checks), (1, 0));
-    assert_eq!(first.call(purchase(user.id)).await.unwrap(), accepted);
-    let second = server.browser();
-    second.call(StartDaily { device: None }).await.unwrap();
     assert_eq!(
-        api_error(second.call(purchase(user.id)).await),
+        api_error(
+            first
+                .call(purchase(user.id, "stale-attempt-identity".into()))
+                .await
+        ),
+        ApiError::SessionExpired
+    );
+    let accepted = first
+        .call(purchase(
+            user.id,
+            started.attempt.as_ref().unwrap().attempt_id.clone(),
+        ))
+        .await
+        .unwrap();
+    assert_eq!((accepted.hints, accepted.checks), (1, 0));
+    assert_eq!(
+        first
+            .call(purchase(
+                user.id,
+                started.attempt.as_ref().unwrap().attempt_id.clone()
+            ))
+            .await
+            .unwrap(),
+        accepted
+    );
+    let second = server.browser();
+    let second_started = second.call(StartDaily { device: None }).await.unwrap();
+    assert_eq!(
+        api_error(
+            second
+                .call(purchase(
+                    user.id,
+                    started.attempt.as_ref().unwrap().attempt_id.clone()
+                ))
+                .await
+        ),
         ApiError::SessionExpired
     );
     let other = second.call(CurrentUser {}).await.unwrap().unwrap();
-    let own = second.call(purchase(other.id)).await.unwrap();
+    let own = second
+        .call(purchase(
+            other.id,
+            second_started.attempt.unwrap().attempt_id,
+        ))
+        .await
+        .unwrap();
     assert_eq!((own.hints, own.checks), (1, 0));
 }
 
@@ -401,6 +445,7 @@ async fn lost_paid_replies_recover_over_http_after_guest_login_but_never_switch_
         (PaidAction::Check, "http-lost-check-001"),
     ] {
         let intent = PaidIntent {
+            attempt_id: info.attempt.as_ref().unwrap().attempt_id.clone(),
             user: former.id,
             day: info.day,
             started_at: info.attempt.as_ref().unwrap().started_at,
@@ -410,6 +455,7 @@ async fn lost_paid_replies_recover_over_http_after_guest_login_but_never_switch_
         };
         guest
             .call(DailyPaidAction {
+                expected_attempt: intent.attempt_id.clone(),
                 day: info.day,
                 bridges: intent.bridges.clone(),
                 action,
@@ -481,6 +527,7 @@ async fn lost_paid_replies_recover_over_http_after_guest_login_but_never_switch_
     let started = claiming.call(StartDaily { device: None }).await.unwrap();
     let original = claiming.call(CurrentUser {}).await.unwrap().unwrap();
     let purchase = || DailyPaidAction {
+        expected_attempt: started.attempt.as_ref().unwrap().attempt_id.clone(),
         day: started.day,
         bridges: Board::new(started.puzzle.clone().unwrap()).empty_bridges(),
         action: PaidAction::Check,

@@ -244,6 +244,7 @@ pub fn DailyPage() -> impl IntoView {
                     intent.action,
                     intent.id.clone(),
                     intent.user,
+                    intent.attempt_id.clone(),
                 )
                 .await
             };
