@@ -87,6 +87,8 @@ jobs:
         run: |
           cargo fmt --all --check
           cargo fmt --manifest-path dojo/starter/Cargo.toml --check
+      - name: Packaged smoke harness regressions
+        run: python3 -m unittest discover -s scripts/tests -p 'test_packaged_smoke.py' -v
       - name: Clippy (library crates, dojo worker, tests)
         run: cargo clippy --locked -p common -p sat_solver -p backend -p dojo -p house --all-targets --features dojo/worker -- -D warnings
       - name: Clippy (website, server)
@@ -400,13 +402,84 @@ jobs:
       - run: tar -xf server.tar && tar -xf browser.tar
       - run: scripts/docker-smoke.sh
 
+  # Same prebuilt Dockerfiles/binaries as deployment, with the production proof checkers.
+  # No deployment credentials, generated hidden set, or built-in checker fallback.
+  packaged:
+    name: Packaged site + worker
+    needs: [build, build-browser, build-dojo]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: site-*
+          merge-multiple: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: dojo
+      - run: tar -xf server.tar && tar -xf browser.tar && tar -xf dojo.tar
+      - name: Build production runtime images
+        run: |
+          mkdir -p packaged-logs
+          set -o pipefail
+          timeout 300 docker build --file Dockerfile.prebuilt --tag hashi-packaged-site . 2>&1 | tee packaged-logs/site-build.log
+          timeout 420 docker build --file dojo/Dockerfile.prebuilt --tag hashi-packaged-worker . 2>&1 | tee packaged-logs/worker-build.log
+      - name: Verified SAT/UNSAT and authenticated dispatch/callback
+        run: python3 scripts/packaged-smoke.py --site-image hashi-packaged-site --worker-image hashi-packaged-worker --logs packaged-logs/smoke
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: packaged-compatibility
+          path: packaged-logs
+          retention-days: 7
+
+  # A shared, fail-closed release prerequisite. All six existing required checks keep their
+  # names/conditions; branch protection can additionally require "Release compatibility".
+  # always() makes failed/cancelled/skipped prerequisites red, except intentional docs-only PRs.
+  compatibility:
+    name: Release compatibility
+    if: always()
+    needs: [changes, test, lint-browser, coverage, build, build-browser, build-dojo, e2e, docker, packaged]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          CHANGES: ${{ needs.changes.result }}
+          CODE: ${{ needs.changes.outputs.code }}
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          if [ "$CHANGES" != success ]; then
+            echo "::error::Change detection failed ($CHANGES)"
+            exit 1
+          fi
+          if [ "$CODE" = false ]; then
+            echo "Docs-only PR: compatibility checks intentionally skipped"
+            exit 0
+          fi
+          if [ "$CODE" != true ]; then
+            echo "::error::Missing or invalid code-change classification"
+            exit 1
+          fi
+          read -r -a results <<< "$RESULTS"
+          if [ "${#results[@]}" -ne 10 ]; then
+            echo "::error::Expected all 10 prerequisite results, got: $RESULTS"
+            exit 1
+          fi
+          for result in "${results[@]}"; do
+            if [ "$result" != success ]; then
+              echo "::error::Release compatibility prerequisite did not pass: $RESULTS"
+              exit 1
+            fi
+          done
+
   # Deploys ship the binaries built above in a slim image, built here and pushed to Fly. Fly's
   # remote builder compiled everything again from scratch, 15 to 50 minutes per deploy, and ran
   # out of memory or hit its deadline when the site and the worker built at the same time.
   deploy:
     name: Deploy site
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint-browser, coverage, build, build-browser, e2e, docker]
+    needs: [compatibility, build, build-browser]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -426,20 +499,23 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
-  # The SAT Dojo worker (dojo/fly.toml) for the deploy below, only built for it: next to the
-  # checks, it is ready when they pass
+  # Build on code PRs too: the packaged compatibility gate tests the exact worker artifact.
   build-dojo:
     name: Build dojo worker
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     # Pinned: the worker runs on Debian trixie (dojo/Dockerfile.prebuilt), it must not need a
     # newer glibc than trixie has
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
     steps:
       - uses: actions/checkout@v7
       - run: rustup toolchain install
-      # Runs on main only, so it always saves its cache
       - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build
         run: |
           cargo build --locked --release -p dojo --features worker
@@ -449,13 +525,13 @@ jobs:
         with:
           name: dojo
           path: dojo.tar
-          retention-days: 7
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
   # The worker, a separate app that only runs while evaluating
   deploy-dojo:
     name: Deploy dojo worker
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [test, lint-browser, coverage, build, build-dojo]
+    needs: [compatibility, build-dojo]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
