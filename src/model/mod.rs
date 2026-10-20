@@ -10,6 +10,7 @@ mod fame;
 mod groups;
 mod hints;
 mod moves;
+mod rivals;
 mod stamps;
 #[cfg(test)]
 mod tests;
@@ -23,4 +24,5 @@ pub use fame::*;
 pub use groups::*;
 pub use hints::*;
 pub use moves::*;
+pub use rivals::*;
 pub use stamps::*;

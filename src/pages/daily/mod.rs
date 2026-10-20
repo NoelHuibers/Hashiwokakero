@@ -5,6 +5,7 @@ mod actions;
 pub mod cover;
 pub mod ranking;
 pub mod result;
+pub mod rivals;
 pub mod state;
 pub mod week;
 pub mod win;
@@ -37,6 +38,7 @@ use about::About;
 use cover::Cover;
 use ranking::RankingCard;
 use result::ResultCard;
+use rivals::RivalsCard;
 use state::{Daily, LOG_KEY, SavedLog, browser_now, browser_utc_offset};
 use week::WeekCard;
 use win::WinCard;
@@ -587,6 +589,7 @@ pub fn DailyPage() -> impl IntoView {
                     <Show when=move || daily.finished() || matches!(game.status.get(), Status::Won | Status::Revealed)>
                         <ResultCard daily=daily />
                     </Show>
+                    <RivalsCard daily=daily />
                     <RankingCard daily=daily />
                     <WeekCard daily=daily />
                 </aside>

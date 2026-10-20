@@ -331,6 +331,18 @@ CREATE TABLE IF NOT EXISTS group_members (
 );
 CREATE INDEX IF NOT EXISTS group_members_user ON group_members (user_id);
 ",
+    // 16
+    "
+-- Rivals: players someone marked to compare themselves with, see server/daily/rivals.rs. Private
+-- to the one who marked them, the rival isn't told
+CREATE TABLE IF NOT EXISTS rivals (
+    user_id    INTEGER NOT NULL,
+    rival_id   INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, rival_id)
+);
+CREATE INDEX IF NOT EXISTS rivals_rival ON rivals (rival_id);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

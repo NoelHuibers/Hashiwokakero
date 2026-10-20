@@ -1,0 +1,45 @@
+{
+  "title": "라이벌",
+  "mark": "{{ name }}님을 라이벌로 지정",
+  "unmark": "{{ name }}님은 라이벌입니다, 해제",
+  "marked": "이제 {{ name }}님은 라이벌입니다. 매일 퍼즐이 대결!",
+  "unmarked": "{{ name }}님은 더 이상 라이벌이 아닙니다.",
+  "mark_button": "라이벌로 지정",
+  "marked_button": "내 라이벌",
+  "private": "누구를 지정했는지는 나만 볼 수 있고, 상대에게 알리지 않습니다.",
+  "gap_seconds": "{{ gap }}초",
+  "gap_minutes": "{{ gap }}분",
+  "errors": {
+    "rival_self": "자기 자신을 라이벌로 지정할 수 없습니다.",
+    "too_many_rivals": "라이벌이 이미 20명입니다. 한 명을 해제해 주세요.",
+    "no_such_player": "그런 플레이어가 없습니다."
+  },
+  "today": {
+    "title": "오늘의 라이벌",
+    "beat": "<b>{{ name }}</b>님을 {{ gap }} 차로 이겼습니다",
+    "lost": "<b>{{ name }}</b>님이 {{ gap }} 더 빨랐습니다",
+    "tie": "<b>{{ name }}</b>님과 완전히 동점",
+    "waiting": "<b>{{ name }}</b>님은 아직 플레이하지 않았습니다",
+    "solved": "<b>{{ name }}</b>님은 {{ time }}에 풀었습니다",
+    "empty": "순위표에서 플레이어를 라이벌로 지정하면 매일 퍼즐이 대결이 됩니다.",
+    "find": "라이벌 찾기 →"
+  },
+  "record": {
+    "title": "상대 전적",
+    "text": "둘 다 푼 날마다 더 빠른 쪽이 이깁니다.",
+    "short": "대결",
+    "summary": "승: {{ wins }} · 패: {{ losses }} · 무: {{ draws }}",
+    "wins": "승",
+    "losses": "패",
+    "draws": "무",
+    "none": "아직 둘 다 푼 날이 없습니다. 오늘 퍼즐이 첫 대결이 될 수도!",
+    "recent": "최근 대결",
+    "day": "데일리 #{{ number }}: {{ mine }} 대 {{ theirs }}"
+  },
+  "board": {
+    "text": "나와 라이벌들의 통산 기록. 이 목록은 나만 볼 수 있습니다.",
+    "empty": "아직 라이벌이 없습니다. 아무 순위표에서나 이름 옆의 엇갈린 칼을 눌러 지정하세요.",
+    "you": "나",
+    "streak": "연속"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "title": "Rywale",
+  "mark": "Oznacz {{ name }} jako rywala",
+  "unmark": "{{ name }} to twój rywal, usuń oznaczenie",
+  "marked": "{{ name }} jest teraz twoim rywalem. Każdy dzienny most to pojedynek!",
+  "unmarked": "{{ name }} nie jest już twoim rywalem.",
+  "mark_button": "Oznacz jako rywala",
+  "marked_button": "Twój rywal",
+  "private": "Tylko ty widzisz, kogo oznaczyłeś, nikt nie dostaje powiadomienia.",
+  "gap_seconds": "{{ gap }} s",
+  "gap_minutes": "{{ gap }} min",
+  "errors": {
+    "rival_self": "Nie możesz być swoim własnym rywalem.",
+    "too_many_rivals": "Masz już 20 rywali. Usuń jednego, aby zrobić miejsce.",
+    "no_such_player": "Nie ma takiego gracza."
+  },
+  "today": {
+    "title": "Rywale dzisiaj",
+    "beat": "Pokonałeś <b>{{ name }}</b> o {{ gap }}",
+    "lost": "<b>{{ name }}</b> był szybszy o {{ gap }}",
+    "tie": "Remis co do milisekundy z <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> jeszcze nie grał",
+    "solved": "<b>{{ name }}</b> rozwiązał w {{ time }}",
+    "empty": "Oznacz graczy w rankingu jako rywali, a każdy dzienny most stanie się pojedynkiem.",
+    "find": "Znajdź rywali →"
+  },
+  "record": {
+    "title": "Bilans bezpośredni",
+    "text": "Każdego dnia, w którym obaj rozwiązaliście, wygrywa szybszy.",
+    "short": "Pojedynki",
+    "summary": "Wygrane: {{ wins }} · przegrane: {{ losses }} · remisy: {{ draws }}",
+    "wins": "Wygrane",
+    "losses": "Przegrane",
+    "draws": "Remisy",
+    "none": "Nie ma jeszcze dnia, który obaj rozwiązaliście. Dzisiejszy most może być pierwszym pojedynkiem!",
+    "recent": "Ostatnie pojedynki",
+    "day": "Most #{{ number }}: {{ mine }} kontra {{ theirs }}"
+  },
+  "board": {
+    "text": "Ty i twoi rywale, od zawsze. Tylko ty widzisz tę listę.",
+    "empty": "Brak rywali. Dotknij skrzyżowanych mieczy obok nazwy w dowolnym rankingu, aby kogoś oznaczyć.",
+    "you": "Ty",
+    "streak": "Seria"
+  }
+}

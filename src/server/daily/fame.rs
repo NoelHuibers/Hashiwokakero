@@ -32,9 +32,22 @@ pub(super) fn placed(filter: &str) -> String {
     )
 }
 
-/// Everyone who solved a daily, best first in each of the three rankings.
-pub async fn hall_of_fame(conn: &Connection) -> Result<HallOfFame, ServerFnError> {
-    let today = today();
+/// Solved dailies, medals and streaks of every player who solved one, or of `only` those
+/// players, with the time of their first ranked finish (for tie-breaks). `rank` is 0 and `stamp`
+/// `None`, for the caller to fill in.
+pub(super) async fn all_time(
+    conn: &Connection,
+    today: i64,
+    only: Option<&[i64]>,
+) -> Result<Vec<(AllTimeEntry, i64)>, ServerFnError> {
+    // Ids are integers from the database
+    let only = only.map_or_else(
+        || "1".to_string(),
+        |ids| {
+            let ids: Vec<String> = ids.iter().map(ToString::to_string).collect();
+            format!("p.user_id IN ({})", ids.join(","))
+        },
+    );
     // Streaks: consecutive days share `day - row_number`, each group is one streak
     let mut rows = conn
         .query(
@@ -55,6 +68,7 @@ pub async fn hall_of_fame(conn: &Connection) -> Result<HallOfFame, ServerFnError
                     SUM(p.place = 1 AND p.day < ?1), SUM(p.place = 2 AND p.day < ?1),
                     SUM(p.place = 3 AND p.day < ?1), s.best, s.current, MIN(p.finished_at)
                  FROM p JOIN users u ON u.id = p.user_id JOIN streaks s ON s.user_id = p.user_id
+                 WHERE {only}
                  GROUP BY p.user_id",
                 placed = placed("1")
             ),
@@ -62,7 +76,6 @@ pub async fn hall_of_fame(conn: &Connection) -> Result<HallOfFame, ServerFnError
         )
         .await
         .map_err(db_err)?;
-    // (entry, first finish) for the tie-breaks
     let mut all = Vec::new();
     while let Some(row) = rows.next().await.map_err(db_err)? {
         let entry = AllTimeEntry {
@@ -81,6 +94,13 @@ pub async fn hall_of_fame(conn: &Connection) -> Result<HallOfFame, ServerFnError
         let first: i64 = row.get(9).map_err(db_err)?;
         all.push((entry, first));
     }
+    Ok(all)
+}
+
+/// Everyone who solved a daily, best first in each of the three rankings.
+pub async fn hall_of_fame(conn: &Connection) -> Result<HallOfFame, ServerFnError> {
+    // (entry, first finish) for the tie-breaks
+    let all = all_time(conn, today(), None).await?;
 
     let top = |key: &dyn Fn(&AllTimeEntry) -> (i64, i64, i64, i64)| {
         let mut list: Vec<_> = all.iter().filter(|(e, _)| key(e).0 > 0).cloned().collect();
@@ -204,7 +224,7 @@ pub async fn month_board(
 }
 
 /// Name and guest status of some users.
-async fn names(
+pub(super) async fn names(
     conn: &Connection,
     ids: &[i64],
 ) -> Result<HashMap<i64, (String, bool)>, ServerFnError> {

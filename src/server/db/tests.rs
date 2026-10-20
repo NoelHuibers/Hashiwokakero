@@ -160,6 +160,10 @@ async fn write_rows(conn: &Connection, version: usize) {
     if version >= 13 {
         run(r#"UPDATE attempts SET paid_actions = '[{"id":"saved-intent","action":"Check","bridges":[0,0],"outcome":{"Check":[]}}]' WHERE user_id = 2"#).await;
     }
+    if version >= 16 {
+        // noel's rival, the guest
+        run("INSERT INTO rivals (user_id, rival_id, created_at) VALUES (1, 2, 5000)").await;
+    }
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -171,7 +175,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        15,
+        16,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -247,6 +251,14 @@ async fn old_databases_migrate_with_their_data() {
                 board.entries[0].stamp
             ),
             (1, 125_000, shown),
+            "{label}"
+        );
+
+        // Rivals came with version 16
+        let rivals = crate::server::daily::rivals(conn, 1).await.unwrap();
+        assert_eq!(
+            rivals,
+            if version >= 16 { vec![2] } else { vec![] },
             "{label}"
         );
 

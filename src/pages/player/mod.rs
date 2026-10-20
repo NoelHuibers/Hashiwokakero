@@ -1,4 +1,7 @@
-//! A player's public profile, linked from every leaderboard: their daily record and stamp book.
+//! A player's public profile, linked from every leaderboard: their daily record and stamp book,
+//! and the head-to-head record against them if they are a rival.
+
+pub mod head_to_head;
 
 use leptos::prelude::*;
 use leptos_meta::{Meta, Title};
@@ -8,6 +11,7 @@ use leptos_router::hooks::use_params_map;
 use crate::api::load_player;
 use crate::components::layout::use_localized;
 use crate::components::record::Record;
+use crate::components::rivals::RivalButton;
 use crate::components::stamps::{StampBadge, StampBook};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
@@ -17,6 +21,8 @@ use crate::model::{MS_PER_DAY, PlayerProfile};
 use crate::pages::not_found_status;
 use crate::seo::{SITE_NAME, SITE_URL, og_image, title_text};
 use crate::state::{Auth, error_toast};
+
+use head_to_head::HeadToHeadCard;
 
 #[component]
 fn Profile(p: PlayerProfile) -> impl IntoView {
@@ -31,6 +37,7 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
         stats,
     } = p;
     let shown = RwSignal::new(stats.shown);
+    let name_for_button = name.clone();
     let initial = name
         .chars()
         .next()
@@ -75,9 +82,13 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
                     }}
                 </p>
             </div>
+            <div class="ms-auto shrink-0 self-start sm:self-center">
+                <RivalButton user_id=id name=name_for_button />
+            </div>
         </div>
 
         <div class="flex flex-col gap-6">
+            <HeadToHeadCard player=id />
             <Card class="gap-4">
                 <CardHeader>
                     <CardTitle class="flex items-baseline gap-2 text-xl">
