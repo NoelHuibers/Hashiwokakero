@@ -12,7 +12,7 @@ use crate::i18n::{t, t_string, use_i18n};
 use crate::model::daily_difficulty;
 use crate::state::{Auth, device_id, error_toast};
 
-use super::state::Daily;
+use super::state::{Daily, RefreshGuard};
 
 /// The board before the start: an empty sea in the fog.
 #[component]
@@ -32,8 +32,14 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
             return;
         }
         daily.busy.set(true);
+        let guard = RefreshGuard::new(&daily);
         spawn_local(async move {
-            match start_daily(Some(device_id())).await {
+            let response = start_daily(Some(device_id())).await;
+            if !guard.current(&daily) {
+                daily.busy.try_set(false);
+                return;
+            }
+            match response {
                 Ok(info) => {
                     daily.apply(info);
                     auth.refresh();

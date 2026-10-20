@@ -48,6 +48,92 @@ pub async fn daily_check(day: i64, bridges: Vec<u8>) -> Result<Vec<usize>, Serve
     daily::check(&conn, user.id, day, bridges).await
 }
 
+/// A paid action intent. The older hint/check endpoints keep their wire formats.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum PaidAction {
+    Hint,
+    Check,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum PaidOutcome {
+    Hint(Option<(usize, u8)>),
+    Check(Vec<usize>),
+}
+
+/// The original outcome and the current authoritative penalty counters, including on replay.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct PaidReply {
+    pub outcome: PaidOutcome,
+    pub hints: i64,
+    pub checks: i64,
+}
+
+/// An unresolved purchase saved before dispatch. Its original identity survives guest transfer.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct PaidIntent {
+    /// Older stored intents without this field can only use read-only receipt recovery.
+    #[serde(default)]
+    pub attempt_id: String,
+    pub user: i64,
+    pub day: i64,
+    pub started_at: i64,
+    pub action: PaidAction,
+    pub bridges: Vec<u8>,
+    pub id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct PaidRecovery {
+    pub intent: PaidIntent,
+    pub reply: PaidReply,
+}
+
+/// Read-only: recover only an exact receipt now owned by this authenticated attempt. Missing
+/// receipts never become purchases, including after an unrelated identity switch or conflict.
+#[server(input = Json, client = HashiClient)]
+pub async fn daily_recover_actions(
+    day: i64,
+    started_at: i64,
+    intents: Vec<PaidIntent>,
+    expected_user: i64,
+) -> Result<Option<PaidRecovery>, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    if user.id != expected_user {
+        return Err(crate::model::ApiError::SessionExpired.into());
+    }
+    daily::recover_actions(&conn, user.id, day, started_at, &intents).await
+}
+
+/// Retries must reuse the same ID, action and bridges. A fresh ID expresses a fresh purchase.
+#[server(input = Json, client = HashiClient)]
+pub async fn daily_paid_action(
+    day: i64,
+    bridges: Vec<u8>,
+    action: PaidAction,
+    request_id: String,
+    expected_user: i64,
+    expected_attempt: String,
+) -> Result<PaidReply, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    // Cookies are shared across tabs. A sign-in elsewhere must not charge another player's
+    // attempt while this page still displays the previous identity. This is an assertion,
+    // never a substitute for the authenticated user.
+    if user.id != expected_user {
+        return Err(crate::model::ApiError::SessionExpired.into());
+    }
+    daily::paid_action(
+        &conn,
+        user.id,
+        day,
+        bridges,
+        action,
+        &request_id,
+        &expected_attempt,
+    )
+    .await
+}
+
 /// The solution. The attempt is no longer ranked.
 #[server(input = Json, client = HashiClient)]
 pub async fn daily_reveal(day: i64) -> Result<Vec<u8>, ServerFnError> {

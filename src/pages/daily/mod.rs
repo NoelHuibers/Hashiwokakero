@@ -1,5 +1,6 @@
 //! The daily puzzle page, the home page: one puzzle a day for everyone, timed and ranked.
 
+mod actions;
 pub mod cover;
 pub mod ranking;
 pub mod result;
@@ -11,7 +12,10 @@ use std::time::Duration;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::{daily_check, daily_hint, daily_reveal, daily_today, submit_daily};
+use crate::api::{
+    PaidAction, PaidOutcome, daily_paid_action, daily_recover_actions, daily_reveal, daily_today,
+    submit_daily,
+};
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
 use crate::components::stamps::announce;
@@ -26,7 +30,7 @@ use crate::model::{
 };
 use crate::pages::play::{SeoIntro, islands_percent};
 use crate::seo::{PageMeta, site_ld};
-use crate::state::{DailyGame, Status, ToastKind, error_toast, load, toast};
+use crate::state::{Auth, DailyGame, Status, ToastKind, error_toast, load, toast};
 
 use cover::Cover;
 use ranking::RankingCard;
@@ -54,8 +58,10 @@ fn Stat(
 pub fn DailyPage() -> impl IntoView {
     let i18n = use_i18n();
     let game = expect_context::<DailyGame>().0;
+    let auth = expect_context::<Auth>();
     let daily = Daily {
         game,
+        actions: actions::Actions::new(auth),
         info: RwSignal::new(None),
         skew: RwSignal::new(0),
         now: RwSignal::new(0),
@@ -66,13 +72,14 @@ pub fn DailyPage() -> impl IntoView {
         logged: StoredValue::new(None),
     };
 
+    Effect::new(move |_| daily.actions.sync(&daily));
+
     // Load today's daily and keep a clock running (browser only)
     Effect::new(move |first: Option<()>| {
         if first.is_some() {
             return;
         }
         daily.now.set(browser_now());
-        daily.reload();
         if let Ok(handle) = set_interval_with_handle(
             move || daily.now.set(browser_now()),
             Duration::from_millis(100),
@@ -92,6 +99,15 @@ pub fn DailyPage() -> impl IntoView {
         });
     });
 
+    // Wait for the known identity before fetching its attempt, and refetch after a local
+    // registration/sign-in refresh. An old request cannot install another identity's info.
+    Effect::new(move |_| {
+        if auth.loaded.get() {
+            auth.user.with(|u| u.as_ref().map(|u| u.id));
+            untrack(|| daily.reload());
+        }
+    });
+
     // A new day started while the page was open
     Effect::new(move |_| {
         let Some(day) = daily.info.with(|i| i.as_ref().map(|i| i.day)) else {
@@ -109,12 +125,19 @@ pub fn DailyPage() -> impl IntoView {
 
     // Submit as soon as the board is solved
     Effect::new(move |_| {
-        if game.status.get() != Status::Won || daily.finished() {
+        if game.status.get() != Status::Won
+            || daily.finished()
+            || daily.actions.locked()
+            || daily.busy.get_untracked()
+        {
             return;
         }
         let Some(day) = daily.day() else { return };
         let bridges = game.bridges.get_untracked();
         let moves = game.moves.get_untracked();
+        let Some(guard) = daily.actions.capture(&daily) else {
+            return;
+        };
         daily.busy.set(true);
         // Flush synchronously: effect scheduling must not decide whether the final move is in
         // the log. The observer can run afterward without appending it twice.
@@ -125,7 +148,12 @@ pub fn DailyPage() -> impl IntoView {
                 .filter(|l| l.day == day)
                 .map(|l| l.events)
                 .unwrap_or_default();
-            match submit_daily(day, bridges, moves, log, Some(browser_utc_offset())).await {
+            let response = submit_daily(day, bridges, moves, log, Some(browser_utc_offset())).await;
+            if !guard.current(&daily) {
+                daily.busy.try_set(false);
+                return;
+            }
+            match response {
                 Ok(result) => {
                     let end = browser_now() + daily.skew.get_untracked();
                     daily.update_attempt(|a| {
@@ -138,100 +166,195 @@ pub fn DailyPage() -> impl IntoView {
                 }
                 Err(e) => {
                     error_toast(e);
-                    daily.submit_failed(daily_today().await.ok());
+                    let info = daily_today().await.ok();
+                    if !guard.current(&daily) {
+                        daily.busy.try_set(false);
+                        return;
+                    }
+                    daily.submit_failed(info);
                 }
             }
             daily.busy.set(false);
         });
     });
 
-    let hint = move |_| {
-        let Some(day) = daily.day() else { return };
-        let bridges = game.bridges.get_untracked();
+    let paid = move |action| {
+        let Some(guard) = daily.actions.begin(&daily, Some(action)) else {
+            return;
+        };
         spawn_local(async move {
-            match daily_hint(day, bridges).await {
-                Ok(Some((edge, value))) => {
-                    daily.update_attempt(|a| a.hints += 1);
-                    game.set_edges(&[(edge, value)]);
-                    game.hints.update(|h| *h += 1);
-                    game.hint.set(Some(edge));
-                    set_timeout(
-                        move || {
-                            if game.hint.get_untracked() == Some(edge) {
-                                game.hint.set(None);
-                            }
-                        },
-                        Duration::from_millis(3000),
-                    );
-                }
-                Ok(None) => toast(ToastKind::Info, |l| {
-                    td_string!(l, common.toast.nothing_to_hint).to_string()
-                }),
-                Err(e) => error_toast(e),
+            if !guard.current(&daily) {
+                daily.actions.finish(&guard);
+                return;
             }
-        });
-    };
-
-    let check = move |_| {
-        let Some(day) = daily.day() else { return };
-        let bridges = game.bridges.get_untracked();
-        spawn_local(async move {
-            match daily_check(day, bridges).await {
-                Ok(wrong) => {
-                    daily.update_attempt(|a| a.checks += 1);
-                    if wrong.is_empty() {
-                        crate::audio::play(crate::audio::Sfx::Correct);
-                        toast(ToastKind::Success, |l| {
-                            td_string!(l, common.toast.all_correct).to_string()
-                        });
-                    } else {
-                        let count = wrong.len();
-                        toast(ToastKind::Error, move |l| {
-                            td_string!(l, common.toast.wrong_bridges, count)
-                        });
-                        game.wrong.set(wrong);
-                        set_timeout(move || game.wrong.set(vec![]), Duration::from_millis(2400));
+            let candidates = daily.actions.recovery_intents();
+            let mut recovered_reply = None;
+            if !candidates.is_empty() {
+                let recovery = daily_recover_actions(
+                    guard.day(),
+                    guard.started_at(),
+                    candidates.clone(),
+                    guard.user(),
+                )
+                .await;
+                if !guard.current(&daily) {
+                    daily.actions.finish(&guard);
+                    return;
+                }
+                match recovery {
+                    Ok(recovery) => {
+                        daily.actions.recovered(recovery.as_ref(), &candidates);
+                        let Some(recovery) = recovery else {
+                            daily.actions.finish(&guard);
+                            return;
+                        };
+                        if recovery.intent.action != action {
+                            daily.actions.finish(&guard);
+                            return;
+                        }
+                        recovered_reply = Some(recovery.reply);
+                    }
+                    Err(e) => {
+                        // Unknown recovery stays locked; retrying cannot fall through to a charge.
+                        daily.actions.finish(&guard);
+                        error_toast(e);
+                        return;
                     }
                 }
-                Err(e) => error_toast(e),
             }
+            let Some(intent) = daily.actions.purchase(&guard, action, || {
+                format!(
+                    "{:016x}{:016x}",
+                    crate::state::random_seed(),
+                    crate::state::random_seed()
+                )
+            }) else {
+                daily.actions.finish(&guard);
+                toast(ToastKind::Error, |l| {
+                    td_string!(l, daily.action_storage).to_string()
+                });
+                return;
+            };
+            let reply = if let Some(reply) = recovered_reply {
+                Ok(reply)
+            } else {
+                daily_paid_action(
+                    guard.day(),
+                    intent.bridges.clone(),
+                    intent.action,
+                    intent.id.clone(),
+                    intent.user,
+                    intent.attempt_id.clone(),
+                )
+                .await
+            };
+            if !guard.current(&daily) {
+                daily.actions.finish(&guard);
+                return;
+            }
+            match reply {
+                Ok(reply) => {
+                    if let Some(outcome) = guard.accept(&daily, &intent.bridges, reply) {
+                        match outcome {
+                            PaidOutcome::Hint(Some((edge, value))) => {
+                                game.set_edges(&[(edge, value)]);
+                                game.hints.update(|h| *h += 1);
+                                game.hint.set(Some(edge));
+                                let highlight = daily.actions.capture(&daily).expect("active page");
+                                set_timeout(
+                                    move || {
+                                        highlight.clear_hint(&daily, edge);
+                                    },
+                                    Duration::from_millis(3000),
+                                );
+                            }
+                            PaidOutcome::Hint(None) => toast(ToastKind::Info, |l| {
+                                td_string!(l, common.toast.nothing_to_hint).to_string()
+                            }),
+                            PaidOutcome::Check(wrong) => {
+                                if wrong.is_empty() {
+                                    crate::audio::play(crate::audio::Sfx::Correct);
+                                    toast(ToastKind::Success, |l| {
+                                        td_string!(l, common.toast.all_correct).to_string()
+                                    });
+                                } else {
+                                    let count = wrong.len();
+                                    toast(ToastKind::Error, move |l| {
+                                        td_string!(l, common.toast.wrong_bridges, count)
+                                    });
+                                    game.wrong.set(wrong);
+                                    let feedback = guard.clone();
+                                    set_timeout(
+                                        move || {
+                                            feedback.clear_wrong(&daily);
+                                        },
+                                        Duration::from_millis(2400),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    daily.actions.resolved();
+                }
+                Err(e) => {
+                    daily.actions.failed(&daily, &guard, &e);
+                    error_toast(e);
+                }
+            }
+            daily.actions.finish(&guard);
         });
     };
+    let hint = move |_| paid(PaidAction::Hint);
+    let check = move |_| paid(PaidAction::Check);
 
     let give_up = move |_| {
-        let Some(day) = daily.day() else { return };
+        if !untrack(|| daily.actions.can_start(&daily, None)) {
+            return;
+        }
         let sure = window()
             .confirm_with_message(t_string!(i18n, daily.give_up_confirm))
             .unwrap_or(false);
         if !sure {
             return;
         }
+        let Some(guard) = daily.actions.begin(&daily, None) else {
+            return;
+        };
         spawn_local(async move {
-            match daily_reveal(day).await {
-                Ok(solution) => {
+            let reply = daily_reveal(guard.day()).await;
+            if !guard.current(&daily) {
+                daily.actions.finish(&guard);
+                return;
+            }
+            match reply {
+                Ok(solution) if solution.len() == guard.bridges.len() => {
                     game.status.set(Status::Revealed);
                     daily.update_attempt(|a| a.revealed = true);
-                    let current = game.bridges.get_untracked();
-                    let missing: Vec<usize> = (0..current.len())
-                        .filter(|&e| current[e] != solution[e])
+                    let missing: Vec<usize> = (0..guard.bridges.len())
+                        .filter(|&e| guard.bridges[e] != solution[e])
                         .collect();
                     let step = (2000 / missing.len().max(1) as u64).clamp(10, 80);
+                    let mut frame = guard.clone();
                     for (k, edge) in missing.into_iter().enumerate() {
                         let value = solution[edge];
+                        let before = frame.clone();
                         set_timeout(
-                            move || game.bridges.update(|b| b[edge] = value),
+                            move || {
+                                before.reveal_step(&daily, edge, value);
+                            },
                             Duration::from_millis(step * k as u64),
                         );
+                        frame.bridges[edge] = value;
                     }
                 }
+                Ok(_) => {}
                 Err(e) => error_toast(e),
             }
+            daily.actions.finish(&guard);
         });
     };
 
-    let playing = Signal::derive(move || {
-        daily.started() && !daily.finished() && game.status.get() == Status::Playing
-    });
+    let playing = Signal::derive(move || daily.actions.can_start(&daily, None));
     let check_state = Memo::new(move |_| game.board.with(|b| game.bridges.with(|br| b.check(br))));
     let islands = Memo::new(move |_| game.board.with(|b| b.puzzle.islands.len()));
     let islands_done = Memo::new(move |_| {
@@ -329,7 +452,7 @@ pub fn DailyPage() -> impl IntoView {
                                         board=game.board
                                         bridges=game.bridges
                                         mode=BoardMode::Play
-                                        on_cycle=Callback::new(move |(edge, delta)| game.cycle(edge, delta))
+                                        on_cycle=Callback::new(move |(edge, delta)| daily.actions.edit(&daily, || game.cycle(edge, delta)))
                                         wrong=game.wrong
                                         hint=game.hint
                                         framed=true
@@ -366,32 +489,41 @@ pub fn DailyPage() -> impl IntoView {
                                 class="h-2.5"
                             />
                         </div>
-                        <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+                        <div role="status" aria-live="polite" data-testid="daily-action-status" class="text-sm text-muted-foreground">
+                            {move || if daily.actions.pending.get() {
+                                t_string!(i18n, daily.action_pending).to_string()
+                            } else if daily.actions.recovery.get() {
+                                t_string!(i18n, daily.action_recover).to_string()
+                            } else if daily.actions.intent.with(Option::is_some) {
+                                t_string!(i18n, daily.action_retry).to_string()
+                            } else { String::new() }}
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap" aria-busy=move || daily.actions.pending.get().to_string()>
                             <Button
                                 variant=ButtonVariant::Outline
                                 attr:disabled=move || !playing.get() || game.undo_stack.with(Vec::is_empty)
-                                on:click=move |_| game.undo()
+                                on:click=move |_| daily.actions.edit(&daily, || game.undo())
                             >
                                 "↶ " {t!(i18n, common.game.undo)}
                             </Button>
                             <Button
                                 variant=ButtonVariant::Outline
                                 attr:disabled=move || !playing.get() || game.redo_stack.with(Vec::is_empty)
-                                on:click=move |_| game.redo()
+                                on:click=move |_| daily.actions.edit(&daily, || game.redo())
                             >
                                 {t!(i18n, common.game.redo)} " ↷"
                             </Button>
                             <Button
                                 variant=ButtonVariant::Ghost
                                 attr:disabled=move || !playing.get()
-                                on:click=move |_| game.restart()
+                                on:click=move |_| daily.actions.edit(&daily, || game.restart())
                             >
                                 {t!(i18n, common.game.clear)}
                             </Button>
                             <div class="contents sm:ms-auto sm:flex sm:gap-2">
                                 <Button
                                     variant=ButtonVariant::Secondary
-                                    attr:disabled=move || !playing.get()
+                                    attr:disabled=move || !daily.actions.can_start(&daily, Some(PaidAction::Check))
                                     attr:data-tooltip=format!("+{} s", CHECK_PENALTY_MS / 1000)
                                     on:click=check
                                 >
@@ -399,7 +531,7 @@ pub fn DailyPage() -> impl IntoView {
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Secondary
-                                    attr:disabled=move || !playing.get()
+                                    attr:disabled=move || !daily.actions.can_start(&daily, Some(PaidAction::Hint))
                                     attr:data-tooltip=format!("+{} s", HINT_PENALTY_MS / 1000)
                                     on:click=hint
                                 >

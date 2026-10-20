@@ -290,6 +290,23 @@ CREATE INDEX IF NOT EXISTS attempts_user_ranked ON attempts (user_id, day, time_
 CREATE INDEX IF NOT EXISTS attempts_day_ranked ON attempts (day, time_ms, finished_at)
     WHERE finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL;
 ",
+    "
+-- Bounded paid-action receipts belong to the attempt, including account deletion/guest cleanup.
+-- Never evict an accepted ID: replaying an old intent must never become a new charge.
+ALTER TABLE attempts ADD COLUMN paid_actions TEXT NOT NULL DEFAULT '[]';
+",
+    "
+-- An attempt survives guest transfer, but never aliases a new attempt after user-ID reuse.
+-- Millisecond start times can coincide. Give existing and future rows independent 128-bit IDs.
+ALTER TABLE attempts ADD COLUMN attempt_id TEXT NOT NULL DEFAULT '';
+UPDATE attempts SET attempt_id = lower(hex(randomblob(16)));
+CREATE UNIQUE INDEX attempts_identity ON attempts (attempt_id);
+CREATE TRIGGER attempts_identity_on_insert AFTER INSERT ON attempts
+WHEN NEW.attempt_id = '' BEGIN
+    UPDATE attempts SET attempt_id = lower(hex(randomblob(16)))
+    WHERE user_id = NEW.user_id AND day = NEW.day;
+END;
+",
 ];
 
 pub async fn init() -> Result<(), String> {
