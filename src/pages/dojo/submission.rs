@@ -366,3 +366,75 @@ pub fn DojoSubmissionPage() -> impl IntoView {
         </section>
     }
 }
+
+#[cfg(all(test, feature = "ssr"))]
+mod tests {
+    use dojo::Family;
+    use dojo::metrics::FamilyBreakdown;
+
+    use super::*;
+    use crate::i18n::Locale;
+
+    /// The split by answer and the contribution tiles, rendered on the server.
+    #[tokio::test]
+    async fn renders_answers_and_contributions() {
+        _ = any_spawner::Executor::init_tokio();
+        let split = |solved, total, par2| Split {
+            solved,
+            total,
+            par2,
+        };
+        let breakdown = EntryBreakdown {
+            total: Breakdown {
+                all: split(3, 5, 4.25),
+                sat: Some(split(2, 2, 1.5)),
+                unsat: Some(split(0, 0, 0.0)),
+                unverified: 0,
+            },
+            held_out: 3,
+            families: vec![FamilyBreakdown {
+                family: Family::Mystery,
+                breakdown: Breakdown {
+                    all: split(1, 3, 9.0),
+                    sat: None,
+                    unsat: None,
+                    unverified: 0,
+                },
+            }],
+        };
+        let contribution = Contribution {
+            marginal: 0.25,
+            log_ratio: 0.1,
+            relative: 0.375,
+            sota: 2.5,
+            shapley: 1.125,
+        };
+        let owner = Owner::new_root(None);
+        let html = owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::en);
+            view! {
+                <AnswersTable breakdown />
+                <ContributionTiles contribution />
+            }
+            .to_html()
+        });
+        for text in [
+            "All families",
+            "Mystery family",
+            "2/2",
+            "1.500",
+            "3/5",
+            "4.250",
+            "37.5%",
+            "2.50",
+            "1.125",
+            "0.250",
+        ] {
+            assert!(html.contains(text), "{text} missing in {html}");
+        }
+        // No UNSAT formulas: no PAR-2 of 0
+        assert!(!html.contains("0.000"));
+        assert!(html.contains("formulas of the mystery family"));
+    }
+}

@@ -469,4 +469,55 @@ mod tests {
         );
         assert_eq!(number(Some(1.23456), 3), "1.235");
     }
+
+    /// The board rendered on the server: the tabs, a row per entry (a deleted author's without
+    /// a link), the VBS line and the plot.
+    #[cfg(feature = "ssr")]
+    #[tokio::test]
+    async fn renders_the_views() {
+        use crate::i18n::{Locale, use_i18n};
+        use crate::model::{DojoCactus, DojoCurve};
+        _ = any_spawner::Executor::init_tokio();
+        let mut deleted = entry(2, Some((7, 3.0)), Some(1.5));
+        deleted.name = String::new();
+        let board = vec![entry(1, Some((5, 2.0)), Some(0.5)), deleted];
+        let portfolio = DojoPortfolio {
+            entries: 2,
+            vbs: Split {
+                solved: 8,
+                total: 10,
+                par2: 1.5,
+            },
+            cactus: DojoCactus {
+                budget: 7_000_000_000,
+                formulas: 10,
+                vbs: vec![1_000, 2_000],
+                curves: vec![DojoCurve {
+                    id: 1,
+                    name: "#1".into(),
+                    house: false,
+                    fuel: vec![1_000],
+                }],
+            },
+        };
+        let owner = Owner::new_root(None);
+        let html = owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::en);
+            // Links need a router, on the server with the request's URL
+            provide_context(leptos_router::location::RequestUrl::new("/dojo"));
+            view! {
+                <leptos_router::components::Router>
+                    <BoardViews entries=board portfolio=Some(portfolio) families=true />
+                </leptos_router::components::Router>
+            }
+            .to_html()
+        });
+        assert_eq!(html.matches("role=\"tab\"").count(), 3, "{html}");
+        assert!(html.contains("aria-selected=\"true\""));
+        assert!(html.contains("href=\"/dojo/1\""));
+        assert!(!html.contains("href=\"/dojo/2\""), "no link without a name");
+        assert!(html.contains("Virtual best solver of 2 solvers: 8/10 solved, PAR-2 1.500"));
+        assert!(html.contains("data-testid=\"cactus\""));
+    }
 }
