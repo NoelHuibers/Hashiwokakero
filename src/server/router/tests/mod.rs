@@ -14,6 +14,7 @@ mod admin;
 mod build;
 mod contact;
 mod dojo;
+mod pages;
 mod playing;
 mod site;
 
