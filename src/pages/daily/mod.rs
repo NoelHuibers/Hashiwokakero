@@ -21,12 +21,12 @@ use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};
 use crate::model::{
-    AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, MoveEvent, WEEKDAY_KANJI,
-    daily_number, format_duration, weekday,
+    AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_number,
+    format_duration, weekday,
 };
 use crate::pages::play::{SeoIntro, islands_percent};
 use crate::seo::{PageMeta, site_ld};
-use crate::state::{DailyGame, Status, ToastKind, error_toast, load, store, toast};
+use crate::state::{DailyGame, Status, ToastKind, error_toast, load, toast};
 
 use cover::Cover;
 use ranking::RankingCard;
@@ -63,6 +63,7 @@ pub fn DailyPage() -> impl IntoView {
         ranking: RwSignal::new(None),
         busy: RwSignal::new(false),
         refreshing: StoredValue::new(false),
+        logged: StoredValue::new(None),
     };
 
     // Load today's daily and keep a clock running (browser only)
@@ -104,38 +105,7 @@ pub fn DailyPage() -> impl IntoView {
 
     // Every bridge change while the clock runs, for the server to check the result: a click
     // changes one bridge and counts a move, hints, undo and restart don't
-    Effect::new(move |prev: Option<(Vec<u8>, u32)>| {
-        let bridges = game.bridges.get();
-        let moves = game.moves.get_untracked();
-        let Some(day) = daily.day() else {
-            return (bridges, moves);
-        };
-        let running = daily.started() && !daily.finished();
-        if let Some((before, moves_before)) = prev
-            && running
-            && before.len() == bridges.len()
-        {
-            let changed: Vec<usize> = (0..bridges.len())
-                .filter(|&e| before[e] != bridges[e])
-                .collect();
-            let tap = changed.len() == 1 && moves > moves_before;
-            let t = daily.clock_ms();
-            let mut saved = load::<SavedLog>(LOG_KEY)
-                .filter(|l| l.day == day)
-                .unwrap_or_default();
-            saved.day = day;
-            for edge in changed {
-                saved.events.push(MoveEvent {
-                    t,
-                    edge: u16::try_from(edge).unwrap_or(u16::MAX),
-                    count: bridges[edge],
-                    tap,
-                });
-            }
-            store(LOG_KEY, &saved);
-        }
-        (bridges, moves)
-    });
+    Effect::new(move |_| daily.record_moves());
 
     // Submit as soon as the board is solved
     Effect::new(move |_| {
@@ -146,8 +116,11 @@ pub fn DailyPage() -> impl IntoView {
         let bridges = game.bridges.get_untracked();
         let moves = game.moves.get_untracked();
         daily.busy.set(true);
+        // Flush synchronously: effect scheduling must not decide whether the final move is in
+        // the log. The observer can run afterward without appending it twice.
+        untrack(|| daily.record_moves());
         spawn_local(async move {
-            // Read here, after the last move was logged
+            // The final move has already been logged
             let log = load::<SavedLog>(LOG_KEY)
                 .filter(|l| l.day == day)
                 .map(|l| l.events)
