@@ -664,6 +664,15 @@ async fn community_benchmarks() {
         submit_benchmark(&browser, benchmark("x", "p cnf 1 1\n1 0\n")).await,
         "/dojo/benchmarks?error=account_age#submit"
     );
+    // Eligibility precedes even GBD hash validation, before any download is possible.
+    let gbd = Form::new()
+        .text("family", "x")
+        .text("license", "1")
+        .text("gbd", "not-a-hash");
+    assert_eq!(
+        submit_benchmark(&browser, gbd).await,
+        "/dojo/benchmarks?error=account_age#submit"
+    );
     let conn = conn().await;
     let user = user_id(&conn, "bench_bea").await;
     conn.execute(

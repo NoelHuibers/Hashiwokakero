@@ -126,7 +126,7 @@ lettre = { version = "0.11.23", default-features = false, features = ["builder",
 libsql = { version = "0.10.0", default-features = false, features = ["core", "remote", "tls"], optional = true }
 sha2 = { version = "0.11.1", optional = true }
 # Community benchmarks from the Global Benchmark Database come xz-compressed, pure Rust
-lzma-rs = { version = "0.3", optional = true }
+lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "xz"], optional = true }
 # Hashing the code of Dojo submissions without their custom sections
 wasmparser = { version = "0.262", optional = true }
 tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "signal", "sync"], optional = true }
@@ -149,7 +149,7 @@ ssr = [
   "dep:reqwest",
   "dep:wasmparser",
   "dep:sha2",
-  "dep:lzma-rs",
+  "dep:lzma-rust2",
   "dep:tokio",
   "dep:tower-http",
   "leptos/ssr",
@@ -160,6 +160,8 @@ ssr = [
 ]
 
 [dev-dependencies]
+# Generate xz fixtures; the production decoder does not need the encoder.
+lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "xz", "encoder"] }
 # Property tests of the models and the client state (model/tests.rs, state/game.rs)
 proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 # The HTTP tests (server/router/tests): a client that keeps cookies like a browser and uploads
