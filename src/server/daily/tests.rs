@@ -12,41 +12,26 @@ use crate::server::db;
 
 /// A fresh database file, removed again when dropped.
 struct TestDb {
-    path: std::path::PathBuf,
     /// Kept open for as long as the test runs.
     _database: libsql::Database,
-}
-
-impl Drop for TestDb {
-    fn drop(&mut self) {
-        db::remove_local(&self.path);
-    }
+    /// Removed after the database is closed: fields are dropped in order.
+    _file: db::TempDb,
 }
 
 async fn test_db() -> (TestDb, Connection) {
-    let name = format!(
-        "hashi-test-{}-{}.db",
-        std::process::id(),
-        now_ms() ^ rand_suffix()
-    );
-    let path = std::env::temp_dir().join(name);
-    let database = db::open_local(path.to_str().unwrap()).await.unwrap();
+    let file = db::TempDb::new("daily");
+    let database = db::open_local(file.as_str()).await.unwrap();
     let conn = database.connect().unwrap();
     db::migrate(&conn).await.unwrap();
     // Running the migrations again is a no-op
     db::migrate(&conn).await.unwrap();
     (
         TestDb {
-            path,
             _database: database,
+            _file: file,
         },
         conn,
     )
-}
-
-fn rand_suffix() -> i64 {
-    static COUNTER: std::sync::atomic::AtomicI64 = std::sync::atomic::AtomicI64::new(0);
-    COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed) << 40
 }
 
 async fn user(conn: &Connection, name: &str, username: Option<&str>) -> i64 {

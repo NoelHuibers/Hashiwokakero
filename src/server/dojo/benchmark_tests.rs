@@ -11,13 +11,9 @@ use crate::model::{BenchmarkAction, BenchmarkState};
 use crate::server::auth::User;
 use crate::server::{db, now_ms};
 
-async fn test_db(name: &str) -> Connection {
-    let path = std::env::temp_dir().join(format!("hashi-bench-{name}-{}.db", std::process::id()));
-    db::remove_local(&path);
-    let db = db::open_local(path.to_str().unwrap()).await.unwrap();
-    let conn = db.connect().unwrap();
-    db::migrate(&conn).await.unwrap();
-    conn
+/// A fresh database, removed when the test ends (also when it fails).
+async fn test_db(name: &str) -> db::TestConn {
+    db::TestConn::new(&format!("bench-{name}")).await
 }
 
 async fn user(conn: &Connection, name: &str, registered: bool, created_at: i64) -> User {

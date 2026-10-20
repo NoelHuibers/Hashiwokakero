@@ -12,13 +12,9 @@ use crate::server::auth::User;
 use crate::server::{db, now_ms};
 use worker::housekeeping_at;
 
-async fn test_db(name: &str) -> Connection {
-    let path = std::env::temp_dir().join(format!("hashi-dojo-{name}-{}.db", std::process::id()));
-    db::remove_local(&path);
-    let db = db::open_local(path.to_str().unwrap()).await.unwrap();
-    let conn = db.connect().unwrap();
-    db::migrate(&conn).await.unwrap();
-    conn
+/// A fresh database, removed when the test ends (also when it fails).
+async fn test_db(name: &str) -> db::TestConn {
+    db::TestConn::new(&format!("dojo-{name}")).await
 }
 
 async fn user(conn: &Connection, name: &str, registered: bool) -> User {
@@ -897,9 +893,8 @@ async fn seasons_are_archived_when_the_next_one_starts() {
 /// result is archived exactly once.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn freezing_twice_at_once_is_safe() {
-    let path = std::env::temp_dir().join(format!("hashi-dojo-race-{}.db", std::process::id()));
-    db::remove_local(&path);
-    let database = db::open_local(path.to_str().unwrap()).await.unwrap();
+    let file = db::TempDb::new("dojo-race");
+    let database = db::open_local(file.as_str()).await.unwrap();
     let conn = db::connect(&database).unwrap();
     db::migrate(&conn).await.unwrap();
     let (first, second) = (season(), season() + 1);
@@ -944,7 +939,6 @@ async fn freezing_twice_at_once_is_safe() {
     for id in ids {
         assert_eq!(state_and_season(&conn, id).await, ("queued".into(), second));
     }
-    db::remove_local(&path);
 }
 
 /// Results from older rules are evaluated again in the same season, nothing is archived.

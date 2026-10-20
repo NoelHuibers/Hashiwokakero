@@ -5,7 +5,10 @@
 use dojo::{Family, FamilyScore, Score};
 use libsql::{Connection, params};
 
-use super::{MIGRATIONS, connect, migrate, migrate_to, open_local, remove_local};
+use super::{
+    MIGRATIONS, TempDb, TestConn, connect, migrate, migrate_to, open_local, sweep_test_files,
+    test_temp_path,
+};
 use crate::golden::puzzle;
 use crate::model::{DojoState, Flag, Stamp};
 use crate::server::auth::user_by_id;
@@ -14,27 +17,20 @@ use crate::server::dojo::submission;
 
 /// A fresh database file, removed again when dropped.
 struct TestDb {
-    path: std::path::PathBuf,
     conn: Connection,
     _database: libsql::Database,
-}
-
-impl Drop for TestDb {
-    fn drop(&mut self) {
-        remove_local(&self.path);
-    }
+    /// Removed after the connections are closed: fields are dropped in order.
+    _file: TempDb,
 }
 
 async fn test_db(version: usize) -> TestDb {
-    let path =
-        std::env::temp_dir().join(format!("hashi-migrate-{version}-{}.db", std::process::id()));
-    remove_local(&path);
-    let database = open_local(path.to_str().unwrap()).await.unwrap();
+    let file = TempDb::new(&format!("migrate-{version}"));
+    let database = open_local(file.as_str()).await.unwrap();
     let conn = database.connect().unwrap();
     TestDb {
-        path,
         conn,
         _database: database,
+        _file: file,
     }
 }
 
@@ -282,9 +278,8 @@ async fn old_databases_migrate_with_their_data() {
 /// block their thread while they wait, the first one commits on another.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn a_write_waits_for_another_one() {
-    let path = std::env::temp_dir().join(format!("hashi-busy-{}.db", std::process::id()));
-    remove_local(&path);
-    let database = open_local(path.to_str().unwrap()).await.unwrap();
+    let file = TempDb::new("busy");
+    let database = open_local(file.as_str()).await.unwrap();
     let first = connect(&database).unwrap();
     let second = connect(&database).unwrap();
     migrate(&first).await.unwrap();
@@ -309,7 +304,6 @@ async fn a_write_waits_for_another_one() {
         .unwrap();
     commit.await.unwrap();
     assert_eq!(count(&second, "SELECT COUNT(*) FROM users").await, 2);
-    remove_local(&path);
 }
 
 /// A request still reading (its query's statement not run to the end) while another one writes.
@@ -319,9 +313,8 @@ async fn a_write_waits_for_another_one() {
 /// hash was checked). Local files are in WAL mode, there a read never holds up a write.
 #[tokio::test]
 async fn a_read_in_progress_doesnt_hold_up_a_write() {
-    let path = std::env::temp_dir().join(format!("hashi-wal-{}.db", std::process::id()));
-    remove_local(&path);
-    let database = open_local(path.to_str().unwrap()).await.unwrap();
+    let file = TempDb::new("wal");
+    let database = open_local(file.as_str()).await.unwrap();
     let reader = connect(&database).unwrap();
     let writer = connect(&database).unwrap();
     migrate(&reader).await.unwrap();
@@ -360,6 +353,113 @@ async fn a_read_in_progress_doesnt_hold_up_a_write() {
     assert!(rows.next().await.unwrap().is_some());
     drop(rows);
     assert_eq!(count(&reader, "SELECT COUNT(*) FROM sessions").await, 1);
-    drop((reader, writer, database));
-    remove_local(&path);
+}
+
+/// The four files SQLite may make for `file`.
+fn sqlite_files(file: &std::path::Path) -> Vec<std::path::PathBuf> {
+    ["", "-wal", "-shm", "-journal"]
+        .iter()
+        .map(|suffix| {
+            let mut path = file.as_os_str().to_owned();
+            path.push(suffix);
+            path.into()
+        })
+        .collect()
+}
+
+/// A test's database file goes away with its WAL and shared-memory files (they stayed in the
+/// temp directory, a tmpfs, hundreds of them a day).
+#[tokio::test]
+async fn temp_db_files_are_removed_when_dropped() {
+    let file = TempDb::new("guard");
+    let files = sqlite_files(file.path());
+    assert!(file.path().starts_with(std::env::temp_dir()));
+    assert!(
+        file.path()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .starts_with(&format!("hashi-test-{}-guard-", std::process::id()))
+    );
+    let database = open_local(file.as_str()).await.unwrap();
+    let conn = connect(&database).unwrap();
+    migrate(&conn).await.unwrap();
+    // A journal of rollback mode too (auth's sign-in test runs in it)
+    std::fs::write(&files[3], b"journal").unwrap();
+    assert!(files.iter().all(|f| f.exists()), "{files:?}");
+    drop((conn, database));
+    drop(file);
+    assert!(files.iter().all(|f| !f.exists()), "{files:?}");
+
+    // Names are unique: tests run in parallel
+    assert_ne!(TempDb::new("guard").path(), TempDb::new("guard").path());
+}
+
+/// Also when the test fails.
+#[test]
+fn temp_db_files_are_removed_on_a_panic() {
+    let mut files = Vec::new();
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let file = TempDb::new("panic");
+        files = sqlite_files(file.path());
+        for path in &files {
+            std::fs::write(path, b"x").unwrap();
+        }
+        panic!("a failing test");
+    }));
+    assert!(result.is_err());
+    assert_eq!(files.len(), 4);
+    assert!(files.iter().all(|f| !f.exists()), "{files:?}");
+}
+
+/// The connection of the dojo tests takes its file with it.
+#[tokio::test]
+async fn test_conn_files_are_removed_when_dropped() {
+    let conn = TestConn::new("conn").await;
+    let files = sqlite_files(conn.file.path());
+    assert!(files[0].exists());
+    assert!(count(&conn, "SELECT COUNT(*) FROM schema_migrations").await > 0);
+    drop(conn);
+    assert!(files.iter().all(|f| !f.exists()), "{files:?}");
+}
+
+/// What test processes that no longer run left behind is removed, the files of running ones
+/// and everything else stay.
+#[test]
+fn files_of_finished_test_processes_are_swept() {
+    if !std::path::Path::new("/proc/self").exists() {
+        return;
+    }
+    let dir = test_temp_path("sweep");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    // Above the highest process id Linux hands out (2^22)
+    let gone = 4_000_000_000_u32;
+    let own = std::process::id();
+    let swept = [
+        format!("hashi-test-{gone}-dojo-x-0.db"),
+        format!("hashi-test-{gone}-dojo-x-0.db-wal"),
+        format!("hashi-test-{gone}-http"),
+    ];
+    let kept = [
+        format!("hashi-test-{own}-dojo-x-0.db"),
+        format!("hashi-other-{gone}.db"),
+        "hashi-test-x-1.db".to_string(),
+    ];
+    for name in swept.iter().chain(&kept) {
+        std::fs::write(dir.join(name), b"x").unwrap();
+    }
+    std::fs::remove_file(dir.join(&swept[2])).unwrap();
+    std::fs::create_dir_all(dir.join(&swept[2]).join("site/pkg")).unwrap();
+    std::fs::write(dir.join(&swept[2]).join("hashi.db"), b"x").unwrap();
+
+    sweep_test_files(&dir);
+    for name in &swept {
+        assert!(!dir.join(name).exists(), "{name}");
+    }
+    for name in &kept {
+        assert!(dir.join(name).exists(), "{name}");
+    }
+    std::fs::remove_dir_all(&dir).unwrap();
 }
