@@ -75,6 +75,10 @@ export const SEEDED_GROUP = {
   members: ['aiko', 'bram', 'chen', 'Drowsy Otter 21', 'emre', 'fatima'],
 };
 
+/** The day before today: the seeded group's members who played it have move logs, for the
+ * replay theatre (replay.spec.ts). Every log moves on the first edges, which every daily has. */
+export const REPLAY_DAY_BACK = 1;
+
 /** Days of dailies before today. */
 const HISTORY = 40;
 
@@ -118,6 +122,33 @@ export function seed(dbPath: string) {
   // Today's board isn't empty, but the signed in players haven't played yet
   attempt.run(player('bram').id, today, Date.now() - 120_000, Date.now() - 1_000, 0, 0, 119_000);
   attempt.run(player('chen').id, today, Date.now() - 100_000, Date.now() - 2_000, 0, 1, 98_000);
+
+  // Move logs of yesterday for the group's members who played it, as the daily stores them:
+  // a few bridges each, quicker or slower by their pace, and a hint for the second
+  const logged = db.prepare(
+    `UPDATE attempts SET log = ?1, paid_actions = CASE WHEN ?2 > 0 THEN json_array(json_object(
+       'id', 'seeded-hint-0001', 'action', 'Hint', 'bridges', json_array(), 'outcome', json_object('Hint', json_array(1, 1)),
+       'at', started_at + ?2)) ELSE '[]' END
+     WHERE user_id = ?3 AND day = ?4 AND finished_at IS NOT NULL`,
+  );
+  SEEDED_GROUP.members.forEach((name, i) => {
+    const p = player(name);
+    const step = Math.round(9_000 * p.pace);
+    const moves = [
+      [0, 1],
+      [1, 1],
+      [0, 2],
+      [2, 1],
+      [3, 2],
+      [1, 2],
+      [4, 1],
+      [5, 1],
+    ];
+    const log = moves.map(([edge, count], k) => ({ t: step * (k + 1) + i * 700, edge, count, tap: true }));
+    // The hint, bought between the third and fourth move
+    const hintAt = i === 1 ? step * 3 + i * 700 + 1_000 : 0;
+    logged.run(JSON.stringify(log), hintAt, p.id, today - REPLAY_DAY_BACK);
+  });
 
   // The group, a member colour each in the order they joined
   db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(

@@ -1,0 +1,71 @@
+{
+  "title": "回放劇場",
+  "own_title": "你的解答",
+  "watch": "觀看所有人的解答",
+  "watch_mine": "觀看你的解答",
+  "duel": "你 vs {{ name }}：觀看回放",
+  "flag": "{{ name }} 用時 {{ time }} 完成",
+  "missing": "這裡沒有可回放的內容。",
+  "card": {
+    "title": "回放劇場",
+    "text": "同時觀看所有人的解答，一座橋接一座橋，每人一種顏色。",
+    "locked": "完成今日謎題後即可觀看今天的解答。",
+    "earlier": "往日"
+  },
+  "page": {
+    "daily": "每日一橋 #{{ number }} · {{ date }}",
+    "earlier": "前一天",
+    "later": "後一天",
+    "back_daily": "今日謎題"
+  },
+  "locked": {
+    "title": "不許偷看！",
+    "text": "你親自完成今日謎題後，今天的回放才會開放。",
+    "play": "玩今日謎題"
+  },
+  "empty": {
+    "title": "沒有可觀看的解答",
+    "text": "這一天沒有記錄任何步驟。換一天試試。"
+  },
+  "stage": {
+    "label": "每日一橋 #{{ number }} 的棋盤，以及 {{ names }} 的橋"
+  },
+  "controls": {
+    "play": "播放",
+    "pause": "暫停",
+    "again": "再看一遍",
+    "next": "下一步",
+    "previous": "上一步",
+    "speed": "速度",
+    "speed_n": "{{ n }} 倍速",
+    "layout": "檢視",
+    "together": "疊放",
+    "apart": "並排",
+    "timeline": "時間軸",
+    "position": "{{ time }} / {{ end }}",
+    "keys": "空白鍵播放和暫停，← → 逐步前進或後退，Shift 加方向鍵跳過 10 秒。",
+    "still": "已開啟減少動態效果：回放在等你。用 ← → 逐步查看，或按播放。"
+  },
+  "legend": {
+    "title": "玩家",
+    "everyone": "所有人",
+    "just_me": "只看我",
+    "show": "顯示 {{ name }}",
+    "hide": "隱藏 {{ name }}",
+    "gave_up": "放棄了",
+    "missing": "未完成",
+    "no_log": "沒有記錄步驟",
+    "unranked": "未計入排名",
+    "unranked_hint": "不在排行榜上：此成績已被標記。",
+    "progress": "{{ name }}：已完成 {{ percent }}% 的橋"
+  },
+  "finish": {
+    "title": "終點線",
+    "none": "還沒有人到達…",
+    "official": "含罰時 {{ time }}"
+  },
+  "marks": {
+    "hint": "{{ name }} 在 {{ time }} 使用了提示",
+    "check": "{{ name }} 在 {{ time }} 進行了檢查"
+  }
+}

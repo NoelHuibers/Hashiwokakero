@@ -8,7 +8,7 @@ use crate::components::layout::use_localized;
 use crate::components::share::ShareBar;
 use crate::components::ui::card::Card;
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
-use crate::lang::{difficulty_name, localized};
+use crate::lang::{difficulty_name, localized, prefix};
 use crate::model::{Flag, WEEKDAY_KANJI, daily_number, format_duration, points, weekday};
 use crate::state::{Auth, Status};
 
@@ -146,6 +146,22 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
             </div>
             <div class="flex w-full flex-col gap-2">
                 <Show when=move || daily.finished()><ShareBar text=share_text /></Show>
+                {move || {
+                    let day = daily.info.with(|i| i.as_ref().map(|i| i.day))?;
+                    (!revealed()).then(|| {
+                        let href = move || format!("{}/replay/{day}", prefix(i18n.get_locale()));
+                        view! {
+                            <A
+                                href=href
+                                attr:class="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border bg-card text-sm font-medium shadow-xs hover:bg-accent"
+                                attr:data-testid="watch-mine"
+                            >
+                                <span class="font-pixel text-primary" aria-hidden="true">"再"</span>
+                                {t!(i18n, replay.watch_mine)}
+                            </A>
+                        }
+                    })
+                }}
                 <A
                     href=practice
                     attr:class="inline-flex min-h-10 items-center justify-center text-sm text-primary underline-offset-4 hover:underline"

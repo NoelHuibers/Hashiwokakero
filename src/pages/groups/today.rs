@@ -7,8 +7,10 @@ use leptos_router::components::A;
 use crate::components::layout::use_localized;
 use crate::components::leaderboard::{HIGHLIGHT_ROW, PlayerName, RANK_TABLE, ROW_INSET, RankCell};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
-use crate::i18n::{t, t_string, use_i18n};
+use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::lang::prefix;
 use crate::model::{GroupToday, TodayEntry, TodayState, colour_var, daily_number, format_duration};
+use crate::pages::replay::replay_path;
 
 use super::GroupContext;
 
@@ -59,8 +61,34 @@ const fn state_id(state: TodayState) -> &'static str {
     }
 }
 
+/// A small ▶ next to a member who finished, once the board is open: the viewer's solve against
+/// theirs in the replay theatre.
 #[component]
-fn Row(entry: TodayEntry, me: bool) -> impl IntoView {
+fn DuelLink(group: i64, day: i64, user_id: i64, name: String) -> impl IntoView {
+    let i18n = use_i18n();
+    let href = move || {
+        format!(
+            "{}{}",
+            prefix(i18n.get_locale()),
+            replay_path(group, day, Some(user_id))
+        )
+    };
+    let label = move || td_string!(i18n.get_locale(), replay.duel, name = name.clone());
+    view! {
+        <A
+            href=href
+            attr:class="grid size-6 shrink-0 place-items-center rounded-full border bg-card text-[10px] text-primary shadow-xs transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
+            attr:aria-label=label.clone()
+            attr:data-tooltip=label
+            attr:data-duel=user_id
+        >
+            "▶"
+        </A>
+    }
+}
+
+#[component]
+fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>) -> impl IntoView {
     let i18n = use_i18n();
     let TodayEntry {
         user_id,
@@ -119,6 +147,10 @@ fn Row(entry: TodayEntry, me: bool) -> impl IntoView {
         ),
     };
     let has_penalties = penalties.is_some();
+    // Their solve can be watched against one's own: finished and not given up
+    let duel = duel
+        .filter(|_| !me && matches!(state, TodayState::Ranked { .. } | TodayState::Unranked))
+        .map(|(group, day)| view! { <DuelLink group day user_id name=name.clone() /> });
     view! {
         <tr class=format!("{ROW_INSET} {}", if me { HIGHLIGHT_ROW } else { "" }) data-state=state_id(state)>
             <td class="py-2 pe-2">{first}</td>
@@ -126,6 +158,7 @@ fn Row(entry: TodayEntry, me: bool) -> impl IntoView {
                 <div class="flex min-w-0 items-center gap-2 [&>div]:min-w-0">
                     <ColourPip colour=colour />
                     <PlayerName user_id name guest stamp me />
+                    {duel}
                 </div>
             </td>
             <td
@@ -147,6 +180,8 @@ pub fn TodayBoard(board: GroupToday, me: Option<i64>) -> impl IntoView {
     let daily = use_localized("/");
     let done = board.done();
     let total = board.entries.len();
+    // The group and the day, for the rows' duel links
+    let place = (board.group_id, board.day);
     let open = board.open;
     let summary = if open {
         None
@@ -191,7 +226,8 @@ pub fn TodayBoard(board: GroupToday, me: Option<i64>) -> impl IntoView {
                             .into_iter()
                             .map(|e| {
                                 let mine = Some(e.user_id) == me;
-                                view! { <Row entry=e me=mine /> }
+                                let duel = open.then_some(place);
+                                view! { <Row entry=e me=mine duel /> }
                             })
                             .collect_view()}
                     </tbody>

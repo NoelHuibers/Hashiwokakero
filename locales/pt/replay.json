@@ -1,0 +1,71 @@
+{
+  "title": "Teatro de replays",
+  "own_title": "Sua partida",
+  "watch": "Ver as partidas de todos",
+  "watch_mine": "Ver sua partida",
+  "duel": "Você contra {{ name }}: ver o replay",
+  "flag": "{{ name }} terminou em {{ time }}",
+  "missing": "Não há nada para rever aqui.",
+  "card": {
+    "title": "Teatro de replays",
+    "text": "Vejam todas as partidas ao mesmo tempo, ponte por ponte, cada uma na sua cor.",
+    "locked": "Termine o desafio de hoje para ver as partidas de hoje.",
+    "earlier": "Dias anteriores"
+  },
+  "page": {
+    "daily": "Ponte diária #{{ number }} · {{ date }}",
+    "earlier": "O dia anterior",
+    "later": "O dia seguinte",
+    "back_daily": "O desafio de hoje"
+  },
+  "locked": {
+    "title": "Nada de espiar!",
+    "text": "Os replays de hoje abrem quando você mesmo terminar o desafio de hoje.",
+    "play": "Jogar o desafio de hoje"
+  },
+  "empty": {
+    "title": "Nenhuma partida para ver",
+    "text": "Nenhum movimento foi registrado neste dia. Tente outro."
+  },
+  "stage": {
+    "label": "O tabuleiro da ponte diária #{{ number }} com as pontes de {{ names }}"
+  },
+  "controls": {
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "again": "Ver de novo",
+    "next": "Próximo movimento",
+    "previous": "Movimento anterior",
+    "speed": "Velocidade",
+    "speed_n": "{{ n }} vezes mais rápido",
+    "layout": "Visualização",
+    "together": "Juntos",
+    "apart": "Lado a lado",
+    "timeline": "Linha do tempo",
+    "position": "{{ time }} de {{ end }}",
+    "keys": "Espaço reproduz e pausa, ← → vão de movimento em movimento, Shift com uma seta pula 10 segundos.",
+    "still": "Movimento reduzido ativado: o replay espera por você. Avance com ← → ou aperte reproduzir."
+  },
+  "legend": {
+    "title": "Jogadores",
+    "everyone": "Todos",
+    "just_me": "Só eu",
+    "show": "Mostrar {{ name }}",
+    "hide": "Ocultar {{ name }}",
+    "gave_up": "desistiu",
+    "missing": "não terminou",
+    "no_log": "nenhum movimento registrado",
+    "unranked": "fora do ranking",
+    "unranked_hint": "Fora do ranking: este resultado foi sinalizado.",
+    "progress": "{{ name }}: {{ percent }}% das pontes"
+  },
+  "finish": {
+    "title": "Linha de chegada",
+    "none": "Ninguém chegou ainda…",
+    "official": "{{ time }} com penalidades"
+  },
+  "marks": {
+    "hint": "{{ name }} pegou uma dica em {{ time }}",
+    "check": "{{ name }} verificou em {{ time }}"
+  }
+}

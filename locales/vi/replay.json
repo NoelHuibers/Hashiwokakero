@@ -1,0 +1,71 @@
+{
+  "title": "Rạp phát lại",
+  "own_title": "Lời giải của bạn",
+  "watch": "Xem lời giải của mọi người",
+  "watch_mine": "Xem lời giải của bạn",
+  "duel": "Bạn đấu {{ name }}: xem phát lại",
+  "flag": "{{ name }} về đích sau {{ time }}",
+  "missing": "Ở đây không có gì để phát lại.",
+  "card": {
+    "title": "Rạp phát lại",
+    "text": "Xem lời giải của mọi người cùng lúc, từng cây cầu một, mỗi người một màu.",
+    "locked": "Hãy giải xong câu đố hôm nay để xem các lời giải hôm nay.",
+    "earlier": "Những ngày trước"
+  },
+  "page": {
+    "daily": "Cầu mỗi ngày #{{ number }} · {{ date }}",
+    "earlier": "Ngày trước đó",
+    "later": "Ngày sau đó",
+    "back_daily": "Câu đố hôm nay"
+  },
+  "locked": {
+    "title": "Không nhìn trộm!",
+    "text": "Các bản phát lại hôm nay sẽ mở khi chính bạn giải xong câu đố hôm nay.",
+    "play": "Chơi câu đố hôm nay"
+  },
+  "empty": {
+    "title": "Không có lời giải để xem",
+    "text": "Không có nước đi nào được ghi lại vào ngày này. Hãy thử ngày khác."
+  },
+  "stage": {
+    "label": "Bàn cờ cầu mỗi ngày #{{ number }} với các cây cầu của {{ names }}"
+  },
+  "controls": {
+    "play": "Phát",
+    "pause": "Tạm dừng",
+    "again": "Xem lại",
+    "next": "Nước tiếp theo",
+    "previous": "Nước trước đó",
+    "speed": "Tốc độ",
+    "speed_n": "Nhanh gấp {{ n }} lần",
+    "layout": "Chế độ xem",
+    "together": "Cùng nhau",
+    "apart": "Cạnh nhau",
+    "timeline": "Dòng thời gian",
+    "position": "{{ time }} / {{ end }}",
+    "keys": "Phím cách để phát và tạm dừng, ← → đi từ nước này sang nước khác, Shift kèm mũi tên nhảy 10 giây.",
+    "still": "Đang bật giảm chuyển động: bản phát lại chờ bạn. Đi từng bước với ← → hoặc bấm phát."
+  },
+  "legend": {
+    "title": "Người chơi",
+    "everyone": "Mọi người",
+    "just_me": "Chỉ mình tôi",
+    "show": "Hiện {{ name }}",
+    "hide": "Ẩn {{ name }}",
+    "gave_up": "bỏ cuộc",
+    "missing": "chưa xong",
+    "no_log": "không có nước đi được ghi",
+    "unranked": "không xếp hạng",
+    "unranked_hint": "Không có trên bảng xếp hạng: kết quả này đã bị gắn cờ.",
+    "progress": "{{ name }}: {{ percent }}% số cầu"
+  },
+  "finish": {
+    "title": "Vạch đích",
+    "none": "Chưa ai về đích…",
+    "official": "{{ time }} kể cả phạt"
+  },
+  "marks": {
+    "hint": "{{ name }} dùng gợi ý lúc {{ time }}",
+    "check": "{{ name }} kiểm tra lúc {{ time }}"
+  }
+}

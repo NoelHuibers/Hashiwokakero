@@ -1,0 +1,71 @@
+{
+  "title": "Replay theatre",
+  "own_title": "Your solve",
+  "watch": "Watch everyone's solve",
+  "watch_mine": "Watch your solve",
+  "duel": "You vs {{ name }}: watch the replay",
+  "flag": "{{ name }} finished at {{ time }}",
+  "missing": "There's nothing to replay here.",
+  "card": {
+    "title": "Replay theatre",
+    "text": "Watch everyone's solve at once, bridge by bridge, each in their colour.",
+    "locked": "Finish today's daily to watch today's solves.",
+    "earlier": "Earlier days"
+  },
+  "page": {
+    "daily": "Daily #{{ number }} · {{ date }}",
+    "earlier": "The day before",
+    "later": "The day after",
+    "back_daily": "Today's daily"
+  },
+  "locked": {
+    "title": "No peeking!",
+    "text": "Today's replays open once you've finished today's daily yourself.",
+    "play": "Play today's daily"
+  },
+  "empty": {
+    "title": "No solves to watch",
+    "text": "Nobody's moves were recorded on this day. Try another one."
+  },
+  "stage": {
+    "label": "The board of daily #{{ number }} with the bridges of {{ names }}"
+  },
+  "controls": {
+    "play": "Play",
+    "pause": "Pause",
+    "again": "Watch again",
+    "next": "Next move",
+    "previous": "Previous move",
+    "speed": "Speed",
+    "speed_n": "{{ n }} times as fast",
+    "layout": "View",
+    "together": "Together",
+    "apart": "Side by side",
+    "timeline": "Timeline",
+    "position": "{{ time }} of {{ end }}",
+    "keys": "Space plays and pauses, ← → step from move to move, Shift with an arrow jumps 10 seconds.",
+    "still": "Reduced motion is on: the replay waits for you. Step with ← →, or press play."
+  },
+  "legend": {
+    "title": "Players",
+    "everyone": "Everyone",
+    "just_me": "Just me",
+    "show": "Show {{ name }}",
+    "hide": "Hide {{ name }}",
+    "gave_up": "gave up",
+    "missing": "didn't finish",
+    "no_log": "no moves recorded",
+    "unranked": "unranked",
+    "unranked_hint": "Not on the leaderboard: this result was flagged.",
+    "progress": "{{ name }}: {{ percent }}% of the bridges"
+  },
+  "finish": {
+    "title": "Finish line",
+    "none": "Nobody's across yet…",
+    "official": "{{ time }} with penalties"
+  },
+  "marks": {
+    "hint": "{{ name }} took a hint at {{ time }}",
+    "check": "{{ name }} checked at {{ time }}"
+  }
+}

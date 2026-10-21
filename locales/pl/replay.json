@@ -1,0 +1,71 @@
+{
+  "title": "Teatr powtórek",
+  "own_title": "Twoje rozwiązanie",
+  "watch": "Obejrzyj rozwiązania wszystkich",
+  "watch_mine": "Obejrzyj swoje rozwiązanie",
+  "duel": "Ty kontra {{ name }}: obejrzyj powtórkę",
+  "flag": "{{ name }} skończył(a) w {{ time }}",
+  "missing": "Nie ma tu nic do powtórzenia.",
+  "card": {
+    "title": "Teatr powtórek",
+    "text": "Oglądajcie wszystkie rozwiązania naraz, most po moście, każde w swoim kolorze.",
+    "locked": "Ukończ dzisiejszy most, żeby obejrzeć dzisiejsze rozwiązania.",
+    "earlier": "Wcześniejsze dni"
+  },
+  "page": {
+    "daily": "Most dnia #{{ number }} · {{ date }}",
+    "earlier": "Dzień wcześniej",
+    "later": "Dzień później",
+    "back_daily": "Dzisiejszy most"
+  },
+  "locked": {
+    "title": "Bez podglądania!",
+    "text": "Dzisiejsze powtórki otworzą się, gdy sam(a) ukończysz dzisiejszy most.",
+    "play": "Zagraj w dzisiejszy most"
+  },
+  "empty": {
+    "title": "Brak rozwiązań do obejrzenia",
+    "text": "Tego dnia nie zapisano żadnych ruchów. Spróbuj innego dnia."
+  },
+  "stage": {
+    "label": "Plansza mostu dnia #{{ number }} z mostami graczy: {{ names }}"
+  },
+  "controls": {
+    "play": "Odtwórz",
+    "pause": "Pauza",
+    "again": "Obejrzyj jeszcze raz",
+    "next": "Następny ruch",
+    "previous": "Poprzedni ruch",
+    "speed": "Prędkość",
+    "speed_n": "{{ n }} razy szybciej",
+    "layout": "Widok",
+    "together": "Razem",
+    "apart": "Obok siebie",
+    "timeline": "Oś czasu",
+    "position": "{{ time }} z {{ end }}",
+    "keys": "Spacja odtwarza i pauzuje, ← → przechodzą od ruchu do ruchu, Shift ze strzałką przeskakuje o 10 sekund.",
+    "still": "Ograniczony ruch jest włączony: powtórka na ciebie czeka. Przechodź strzałkami ← → albo naciśnij odtwórz."
+  },
+  "legend": {
+    "title": "Gracze",
+    "everyone": "Wszyscy",
+    "just_me": "Tylko ja",
+    "show": "Pokaż: {{ name }}",
+    "hide": "Ukryj: {{ name }}",
+    "gave_up": "poddał(a) się",
+    "missing": "nie ukończył(a)",
+    "no_log": "brak zapisanych ruchów",
+    "unranked": "poza rankingiem",
+    "unranked_hint": "Poza rankingiem: ten wynik został oznaczony.",
+    "progress": "{{ name }}: {{ percent }}% mostów"
+  },
+  "finish": {
+    "title": "Meta",
+    "none": "Nikt jeszcze nie dotarł…",
+    "official": "{{ time }} z karami"
+  },
+  "marks": {
+    "hint": "{{ name }} wziął(ęła) podpowiedź w {{ time }}",
+    "check": "{{ name }} sprawdził(a) w {{ time }}"
+  }
+}

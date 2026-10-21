@@ -1,0 +1,71 @@
+{
+  "title": "Tekrar tiyatrosu",
+  "own_title": "Senin çözümün",
+  "watch": "Herkesin çözümünü izle",
+  "watch_mine": "Kendi çözümünü izle",
+  "duel": "Sen ve {{ name }}: tekrarı izle",
+  "flag": "{{ name }} {{ time }} sürede bitirdi",
+  "missing": "Burada izlenecek bir şey yok.",
+  "card": {
+    "title": "Tekrar tiyatrosu",
+    "text": "Herkesin çözümünü aynı anda, köprü köprü, her biri kendi renginde izleyin.",
+    "locked": "Bugünün çözümlerini izlemek için bugünün bulmacasını bitir.",
+    "earlier": "Önceki günler"
+  },
+  "page": {
+    "daily": "Günün köprüsü #{{ number }} · {{ date }}",
+    "earlier": "Önceki gün",
+    "later": "Sonraki gün",
+    "back_daily": "Bugünün bulmacası"
+  },
+  "locked": {
+    "title": "Kopya yok!",
+    "text": "Bugünün tekrarları, bugünün bulmacasını kendin bitirince açılır.",
+    "play": "Bugünün bulmacasını oyna"
+  },
+  "empty": {
+    "title": "İzlenecek çözüm yok",
+    "text": "Bu gün hiç hamle kaydedilmedi. Başka bir gün dene."
+  },
+  "stage": {
+    "label": "Günün köprüsü #{{ number }} tahtası, {{ names }} köprüleriyle"
+  },
+  "controls": {
+    "play": "Oynat",
+    "pause": "Duraklat",
+    "again": "Tekrar izle",
+    "next": "Sonraki hamle",
+    "previous": "Önceki hamle",
+    "speed": "Hız",
+    "speed_n": "{{ n }} kat hızlı",
+    "layout": "Görünüm",
+    "together": "Birlikte",
+    "apart": "Yan yana",
+    "timeline": "Zaman çizelgesi",
+    "position": "{{ time }} / {{ end }}",
+    "keys": "Boşluk oynatır ve duraklatır, ← → hamleden hamleye geçer, Shift ile ok 10 saniye atlar.",
+    "still": "Azaltılmış hareket açık: tekrar seni bekliyor. ← → ile adım adım ilerle ya da oynat'a bas."
+  },
+  "legend": {
+    "title": "Oyuncular",
+    "everyone": "Herkes",
+    "just_me": "Sadece ben",
+    "show": "{{ name }} göster",
+    "hide": "{{ name }} gizle",
+    "gave_up": "pes etti",
+    "missing": "bitirmedi",
+    "no_log": "hamle kaydedilmedi",
+    "unranked": "sıralama dışı",
+    "unranked_hint": "Sıralamada değil: bu sonuç işaretlendi.",
+    "progress": "{{ name }}: köprülerin %{{ percent }}'i"
+  },
+  "finish": {
+    "title": "Bitiş çizgisi",
+    "none": "Henüz kimse bitirmedi…",
+    "official": "cezalarla {{ time }}"
+  },
+  "marks": {
+    "hint": "{{ name }}, {{ time }} anında ipucu aldı",
+    "check": "{{ name }}, {{ time }} anında kontrol etti"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "title": "Teater ulangan",
+  "own_title": "Solusimu",
+  "watch": "Tonton solusi semua orang",
+  "watch_mine": "Tonton solusimu",
+  "duel": "Kamu lawan {{ name }}: tonton ulangannya",
+  "flag": "{{ name }} selesai dalam {{ time }}",
+  "missing": "Tidak ada yang bisa diulang di sini.",
+  "card": {
+    "title": "Teater ulangan",
+    "text": "Tonton solusi semua orang sekaligus, jembatan demi jembatan, masing-masing dengan warnanya.",
+    "locked": "Selesaikan teka-teki hari ini untuk menonton solusi hari ini.",
+    "earlier": "Hari-hari sebelumnya"
+  },
+  "page": {
+    "daily": "Jembatan harian #{{ number }} · {{ date }}",
+    "earlier": "Hari sebelumnya",
+    "later": "Hari berikutnya",
+    "back_daily": "Teka-teki hari ini"
+  },
+  "locked": {
+    "title": "Jangan mengintip!",
+    "text": "Ulangan hari ini terbuka setelah kamu sendiri menyelesaikan teka-teki hari ini.",
+    "play": "Mainkan teka-teki hari ini"
+  },
+  "empty": {
+    "title": "Tidak ada solusi untuk ditonton",
+    "text": "Tidak ada langkah yang tercatat pada hari ini. Coba hari lain."
+  },
+  "stage": {
+    "label": "Papan jembatan harian #{{ number }} dengan jembatan {{ names }}"
+  },
+  "controls": {
+    "play": "Putar",
+    "pause": "Jeda",
+    "again": "Tonton lagi",
+    "next": "Langkah berikutnya",
+    "previous": "Langkah sebelumnya",
+    "speed": "Kecepatan",
+    "speed_n": "{{ n }} kali lebih cepat",
+    "layout": "Tampilan",
+    "together": "Bersama",
+    "apart": "Berdampingan",
+    "timeline": "Lini waktu",
+    "position": "{{ time }} dari {{ end }}",
+    "keys": "Spasi memutar dan menjeda, ← → berpindah dari langkah ke langkah, Shift dengan panah melompat 10 detik.",
+    "still": "Gerakan dikurangi aktif: ulangan menunggumu. Melangkah dengan ← → atau tekan putar."
+  },
+  "legend": {
+    "title": "Pemain",
+    "everyone": "Semua",
+    "just_me": "Hanya aku",
+    "show": "Tampilkan {{ name }}",
+    "hide": "Sembunyikan {{ name }}",
+    "gave_up": "menyerah",
+    "missing": "tidak selesai",
+    "no_log": "tidak ada langkah tercatat",
+    "unranked": "tidak diperingkat",
+    "unranked_hint": "Tidak di papan peringkat: hasil ini ditandai.",
+    "progress": "{{ name }}: {{ percent }}% jembatan"
+  },
+  "finish": {
+    "title": "Garis finis",
+    "none": "Belum ada yang sampai…",
+    "official": "{{ time }} dengan penalti"
+  },
+  "marks": {
+    "hint": "{{ name }} mengambil petunjuk pada {{ time }}",
+    "check": "{{ name }} mengecek pada {{ time }}"
+  }
+}

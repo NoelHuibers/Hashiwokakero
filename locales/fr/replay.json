@@ -1,0 +1,71 @@
+{
+  "title": "Théâtre des parties",
+  "own_title": "Ta partie",
+  "watch": "Revoir les parties de tous",
+  "watch_mine": "Revoir ta partie",
+  "duel": "Toi contre {{ name }} : revoir la partie",
+  "flag": "{{ name }} a fini en {{ time }}",
+  "missing": "Il n'y a rien à revoir ici.",
+  "card": {
+    "title": "Théâtre des parties",
+    "text": "Revoyez toutes vos parties en même temps, pont après pont, chacun dans sa couleur.",
+    "locked": "Termine le défi du jour pour revoir les parties d'aujourd'hui.",
+    "earlier": "Jours précédents"
+  },
+  "page": {
+    "daily": "Pont du jour n° {{ number }} · {{ date }}",
+    "earlier": "La veille",
+    "later": "Le lendemain",
+    "back_daily": "Le défi du jour"
+  },
+  "locked": {
+    "title": "Pas de triche !",
+    "text": "Les parties d'aujourd'hui s'ouvrent dès que tu as fini toi-même le défi du jour.",
+    "play": "Jouer le défi du jour"
+  },
+  "empty": {
+    "title": "Aucune partie à revoir",
+    "text": "Aucun coup n'a été enregistré ce jour-là. Essaie un autre jour."
+  },
+  "stage": {
+    "label": "La grille du pont du jour n° {{ number }} avec les ponts de {{ names }}"
+  },
+  "controls": {
+    "play": "Lecture",
+    "pause": "Pause",
+    "again": "Revoir",
+    "next": "Coup suivant",
+    "previous": "Coup précédent",
+    "speed": "Vitesse",
+    "speed_n": "{{ n }} fois plus vite",
+    "layout": "Affichage",
+    "together": "Ensemble",
+    "apart": "Côte à côte",
+    "timeline": "Chronologie",
+    "position": "{{ time }} sur {{ end }}",
+    "keys": "Espace lance et met en pause, ← → passent d'un coup à l'autre, Maj avec une flèche saute de 10 secondes.",
+    "still": "Mouvement réduit activé : la partie t'attend. Avance avec ← → ou appuie sur lecture."
+  },
+  "legend": {
+    "title": "Joueurs",
+    "everyone": "Tout le monde",
+    "just_me": "Moi seul",
+    "show": "Afficher {{ name }}",
+    "hide": "Masquer {{ name }}",
+    "gave_up": "a abandonné",
+    "missing": "pas fini",
+    "no_log": "aucun coup enregistré",
+    "unranked": "non classé",
+    "unranked_hint": "Pas au classement : ce résultat a été signalé.",
+    "progress": "{{ name }} : {{ percent }} % des ponts"
+  },
+  "finish": {
+    "title": "Ligne d'arrivée",
+    "none": "Personne n'est encore arrivé…",
+    "official": "{{ time }} avec pénalités"
+  },
+  "marks": {
+    "hint": "{{ name }} a pris un indice à {{ time }}",
+    "check": "{{ name }} a vérifié à {{ time }}"
+  }
+}
