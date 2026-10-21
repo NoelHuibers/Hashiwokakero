@@ -48,7 +48,7 @@ fn NewStamps(stamps: Vec<model::Stamp>) -> impl IntoView {
         })
         .collect_view();
     view! {
-        <div class="flex w-full flex-col items-center gap-2 rounded-lg border border-dashed bg-muted/50 p-3">
+        <div class="flex w-full flex-col items-center gap-1.5 rounded-lg border border-dashed bg-muted/50 p-2 sm:p-3">
             <p class="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 {t!(i18n, stamps.earned)} " · 判子"
             </p>
@@ -100,7 +100,9 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
     };
     let share = move || share_text(&daily, i18n.get_locale_untracked());
     view! {
-        <div class="absolute inset-0 z-10 grid place-items-center p-3 sm:p-4">
+        // At least the board's height: on a phone a tall card goes on over the controls below
+        // the board, which are done now, rather than scroll inside the board
+        <div class="absolute inset-x-0 top-0 z-10 grid min-h-full place-items-center p-3 sm:p-4">
             <div
                 node_ref=dialog
                 role="dialog"
@@ -108,14 +110,14 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
                 aria-labelledby="daily-win-title"
                 tabindex="-1"
                 data-testid="daily-win"
-                class="max-h-full w-full max-w-sm overflow-y-auto overscroll-contain rounded-xl outline-none"
+                class="w-full max-w-sm rounded-xl outline-none"
             >
-                <Card class="items-center gap-2 px-5 text-center shadow-2xl animate-in zoom-in-95 fade-in sm:gap-3 sm:px-6">
-                    <Stamp kanji="完" class="size-16 text-4xl sm:size-20 sm:text-5xl" />
-                    <h2 id="daily-win-title" class="text-2xl font-black">
+                <Card class="items-center gap-2 px-5 py-5 text-center shadow-2xl animate-in zoom-in-95 fade-in sm:gap-3 sm:px-6 sm:py-6">
+                    <Stamp kanji="完" class="size-14 text-4xl sm:size-20 sm:text-5xl" />
+                    <h2 id="daily-win-title" class="text-xl font-black sm:text-2xl">
                         "見事！ " {t!(i18n, common.game.well_done)}
                     </h2>
-                    <p class="font-pixel text-3xl tabular-nums">{move || format_duration(daily.elapsed_ms())}</p>
+                    <p class="font-pixel text-2xl tabular-nums sm:text-3xl">{move || format_duration(daily.elapsed_ms())}</p>
                     <p class="text-sm text-muted-foreground">{place}</p>
                     {move || {
                         let stamps = stamps();
