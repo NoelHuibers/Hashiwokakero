@@ -212,6 +212,38 @@ async fn submit_validates_and_ranks() {
     assert_eq!(board.me.unwrap().rank, 2);
 }
 
+/// A browser clock that ran ahead of the server's mid-game (2026-10-21: the last click logged
+/// 55 s after the finish the server measured) doesn't take a human result off the board.
+#[tokio::test]
+async fn a_log_ahead_of_the_server_clock_is_ranked() {
+    let (_db, conn) = test_db().await;
+    let player = user(&conn, "kit", Some("kit")).await;
+    let daily = get_or_create(&conn, MONDAY).await.unwrap();
+    start(&conn, player, MONDAY, Some("device-of-kit"))
+        .await
+        .unwrap();
+    let mut log = played(&daily.solution);
+    let measured = i64::from(log.last().unwrap().t) + 500;
+    let half = log.len() / 2;
+    for e in &mut log[half..] {
+        e.t += 55_000;
+    }
+    age(&conn, player, MONDAY, measured).await;
+    let r = submit(&conn, player, MONDAY, daily.solution.clone(), 9, log, None)
+        .await
+        .unwrap();
+    assert_eq!((r.rank, r.flag), (1, None));
+    assert!(
+        (measured..measured + 5_000).contains(&r.time_ms),
+        "{}",
+        r.time_ms
+    );
+    assert_eq!(
+        attempt(&conn, player, MONDAY).await.unwrap().unwrap().flag,
+        None
+    );
+}
+
 #[tokio::test]
 async fn implausible_results_are_not_ranked() {
     let (_db, conn) = test_db().await;

@@ -8,7 +8,7 @@ use super::stamps::sync;
 use super::{from_json, get_or_create, json, load, today};
 use crate::model::{
     ApiError, AttemptInfo, DailyInfo, Daypart, Flag, MoveEvent, SubmitResult, canonical,
-    daily_difficulty, pick_hint, summarize, verify_log, wrong_edges,
+    daily_difficulty, pick_hint, server_times, summarize, verify_log, wrong_edges,
 };
 use crate::server::db::db_err;
 use crate::server::now_ms;
@@ -510,7 +510,8 @@ async fn submit_inner(
         )
         .err()
     });
-    let run = summarize(&board.puzzle, &bridges, &log);
+    // The stamps read the clicks on the server's clock too, the stored log stays as sent
+    let run = summarize(&board.puzzle, &bridges, &server_times(&log, elapsed));
     let daypart = utc_offset.and_then(|offset| Daypart::at(finished_at, offset));
     let changed = tx.execute(
         "UPDATE attempts SET finished_at = ?3, time_ms = ?4, moves = ?5, bridges = ?6, log = ?7, flag = ?8,
