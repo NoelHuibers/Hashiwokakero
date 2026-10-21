@@ -55,7 +55,9 @@
     "second_thoughts": "망설임",
     "palindrome": "회문",
     "lanterne_rouge": "꼴찌",
-    "leap_day": "윤일"
+    "leap_day": "윤일",
+    "yokozuna": "요코즈나",
+    "sansho": "특별상"
   },
   "texts": {
     "first": "첫 데일리 풀기.",
@@ -102,7 +104,9 @@
     "second_thoughts": "데일리 하나에서 같은 다리를 10번 지우기.",
     "palindrome": "1:22.1이나 12:21처럼 거꾸로 읽어도 같은 기록으로 완료하기.",
     "lanterne_rouge": "플레이어가 20명 이상인 데일리에서 꼴찌로 완료하기. 누군가는 맨 뒤를 지켜야죠!",
-    "leap_day": "2월 29일에 데일리 풀기."
+    "leap_day": "2월 29일에 데일리 풀기.",
+    "yokozuna": "3명 이상이 플레이한 주에 그룹의 주간 반즈케 1위 하기.",
+    "sansho": "3명 이상이 플레이한 주에 그룹의 주간 상 중 하나 받기."
   },
   "secret": {
     "name": "비밀 도장",

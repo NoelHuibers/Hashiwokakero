@@ -55,7 +55,9 @@
     "second_thoughts": "Pensándolo mejor",
     "palindrome": "Palíndromo",
     "lanterne_rouge": "Farolillo rojo",
-    "leap_day": "Día bisiesto"
+    "leap_day": "Día bisiesto",
+    "yokozuna": "Yokozuna",
+    "sansho": "Premio especial"
   },
   "texts": {
     "first": "Resuelve tu primer reto.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Quita el mismo puente 10 veces en un mismo reto.",
     "palindrome": "Termina con un tiempo que se lee igual al revés, como 1:22.1 o 12:21.",
     "lanterne_rouge": "Termina último en un reto con al menos 20 jugadores. ¡Alguien tiene que llevar el farolillo!",
-    "leap_day": "Resuelve el reto del 29 de febrero."
+    "leap_day": "Resuelve el reto del 29 de febrero.",
+    "yokozuna": "Termina primero en el banzuke semanal de un grupo, en una semana con al menos tres jugadores.",
+    "sansho": "Gana uno de los premios semanales de un grupo, en una semana con al menos tres jugadores."
   },
   "secret": {
     "name": "Sello secreto",

@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Poprzedni tydzień",
+  "later": "Następny tydzień",
+  "live": "trwa do północy UTC w niedzielę",
+  "final_state": "ostateczny",
+  "empty": "W tym tygodniu nikt nie ma jeszcze łamigłówki dnia w rankingu. Pierwszy most otwiera turniej!",
+  "today_hidden": "Dzisiejsze wyniki liczą się po samodzielnym ukończeniu dzisiejszej łamigłówki dnia.",
+  "play": "Zagraj w dzisiejszy most",
+  "plate": "{{ title }} · miejsce {{ place }}",
+  "kyujo": "Kyūjō: pauzuje w tym tygodniu",
+  "days": "Rozegrane dni: {{ played }} z 7, wygrane: {{ wins }}",
+  "day": "{{ date }}: miejsce {{ place }}, {{ points }} pkt",
+  "day_open": "{{ date }}: jeszcze przed nami",
+  "day_missed": "{{ date }}: nierozegrany",
+  "points": "Punkty w tym tygodniu: {{ points }}",
+  "crown": "yokozuna z zeszłego tygodnia",
+  "movement": {
+    "up": "W górę o {{ n }} od poprzedniego tygodnia",
+    "down": "W dół o {{ n }} od poprzedniego tygodnia",
+    "same": "To samo miejsce co tydzień wcześniej",
+    "new": "Nowość w banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Jak działa banzuke",
+    "points": "Każdego dnia każdy z łamigłówką dnia w rankingu dostaje punkty za miejsce w grupie: pierwszy tyle, ilu członków ma grupa, każde kolejne miejsce o jeden mniej. Równe czasy dzielą miejsce, nierozegrany dzień nie daje nic.",
+    "titles": "O tygodniu decydują punkty, potem wygrane dni. Pierwszy jest yokozuna, potem ōzeki, sekiwake i komusubi, a wszyscy dalej to numerowani maegashira. Kto opuścił tydzień, jest kyūjō.",
+    "pace": "Nagrody porównują tempo: czas względem mediany wszystkich graczy tego dnia, żeby łatwa poniedziałkowa łamigłówka i niedzielna Oni liczyły się tak samo.",
+    "members": "Liczone według obecnych członków grupy, tydzień kończy się w niedzielę o północy UTC."
+  },
+  "awards": {
+    "title": "Nagrody",
+    "leading": "Na razie prowadzą",
+    "final_state": "Zwycięzcy tego tygodnia",
+    "nobody": "Jeszcze nikt",
+    "nobody_final": "Nieprzyznana w tym tygodniu",
+    "names": {
+      "fastest": "Szybkość",
+      "cleanest": "Czystość",
+      "steadiest": "Regularność",
+      "early_bird": "Ranny ptaszek",
+      "improved": "Postęp",
+      "lantern": "Czerwona latarnia"
+    },
+    "rules": {
+      "fastest": "Najkrótszy łączny czas spośród tych, którzy grali najwięcej dni.",
+      "cleanest": "Najwięcej łamigłówek dnia bez podpowiedzi i sprawdzeń.",
+      "steadiest": "Najbardziej wyrównane tempo, przy co najmniej trzech łamigłówkach dnia.",
+      "early_bird": "Zwykle kończy najwcześniej po publikacji łamigłówki dnia, przy co najmniej trzech łamigłówkach.",
+      "improved": "Tempo, które najbardziej się poprawiło względem czterech poprzednich tygodni.",
+      "lantern": "Najwolniejszy łączny czas spośród tych, którzy grali wszystkie siedem dni. Ktoś musi nieść latarnię!"
+    },
+    "reasons": {
+      "fastest": "Łącznie {{ time }}, rozegrane dni: {{ days }}",
+      "cleanest": "{{ clean }} z {{ solves }} bez podpowiedzi i sprawdzeń",
+      "steadiest": "Łamigłówki: {{ days }}, tempo w granicach {{ spread }}%",
+      "early_bird": "Zwykle gotowe do {{ time }}",
+      "improved": "Tempo o {{ percent }}% szybsze niż w czterech poprzednich tygodniach",
+      "lantern": "Najwolniej z {{ of }} grających codziennie: {{ time }}"
+    }
+  }
+}

@@ -55,7 +55,9 @@
     "second_thoughts": "舉棋不定",
     "palindrome": "迴文",
     "lanterne_rouge": "紅燈籠",
-    "leap_day": "閏日"
+    "leap_day": "閏日",
+    "yokozuna": "橫綱",
+    "sansho": "三賞"
   },
   "texts": {
     "first": "解出你的第一道每日謎題。",
@@ -102,7 +104,9 @@
     "second_thoughts": "在一道每日謎題中把同一座橋拆掉 10 次。",
     "palindrome": "以正讀反讀都一樣的用時完成，例如 1:22.1 或 12:21。",
     "lanterne_rouge": "在至少 20 人參與的每日謎題中排名最後。總得有人提燈籠嘛！",
-    "leap_day": "在 2 月 29 日解出每日謎題。"
+    "leap_day": "在 2 月 29 日解出每日謎題。",
+    "yokozuna": "在至少三人參與的一週中，登上群組週番付第一名。",
+    "sansho": "在至少三人參與的一週中，贏得群組的一項週獎項。"
   },
   "secret": {
     "name": "神秘印章",

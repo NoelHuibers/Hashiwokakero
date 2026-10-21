@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Önceki hafta",
+  "later": "Sonraki hafta",
+  "live": "pazar gece yarısına (UTC) kadar sürüyor",
+  "final_state": "kesin",
+  "empty": "Bu hafta henüz kimsenin sıralamaya giren bir günlük bulmacası yok. İlk köprü turnuvayı açar!",
+  "today_hidden": "Bugünün sonuçları, bugünün günlük bulmacasını sen de bitirince sayılır.",
+  "play": "Bugünün bulmacasını oyna",
+  "plate": "{{ title }} · {{ place }}. sıra",
+  "kyujo": "Kyūjō: bu haftayı pas geçiyor",
+  "days": "Oynanan gün: {{ played }} / 7, kazanılan: {{ wins }}",
+  "day": "{{ date }}: {{ place }}. sıra, {{ points }} puan",
+  "day_open": "{{ date }}: henüz gelmedi",
+  "day_missed": "{{ date }}: oynanmadı",
+  "points": "Bu haftaki puan: {{ points }}",
+  "crown": "geçen haftanın yokozunası",
+  "movement": {
+    "up": "Önceki haftadan bu yana {{ n }} sıra yükseldi",
+    "down": "Önceki haftadan bu yana {{ n }} sıra düştü",
+    "same": "Önceki haftayla aynı sırada",
+    "new": "Banzuke'de yeni"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Banzuke nasıl işler",
+    "points": "Her gün, sıralamaya giren günlük bulmacası olan herkes gruptaki sırasına göre puan alır: birinci, grubun üye sayısı kadar; sonraki her sıra bir eksik. Eşit süreler sırayı paylaşır, oynanmayan gün puan getirmez.",
+    "titles": "Hafta önce puana, sonra kazanılan güne göre sıralanır. Birinci yokozuna olur, ardından ōzeki, sekiwake ve komusubi gelir; sonrakilerin hepsi numaralı maegashiradır. Haftayı pas geçen kyūjō sayılır.",
+    "pace": "Ödüller tempoları karşılaştırır: tempo, bir sürenin o gün tüm oyuncuların medyanına oranıdır. Böylece pazartesinin kolay bulmacası ile pazarın Oni'si eşit sayılır.",
+    "members": "Grubun şu anki üyelerine göre hesaplanır; hafta pazar günü gece yarısı UTC'de biter."
+  },
+  "awards": {
+    "title": "Ödüller",
+    "leading": "Şimdilik önde",
+    "final_state": "Bu haftanın kazananları",
+    "nobody": "Henüz kimse",
+    "nobody_final": "Bu hafta kazanılmadı",
+    "names": {
+      "fastest": "En hızlı",
+      "cleanest": "En temiz",
+      "steadiest": "En istikrarlı",
+      "early_bird": "Erkenci kuş",
+      "improved": "En çok gelişen",
+      "lantern": "Kırmızı fener"
+    },
+    "rules": {
+      "fastest": "En çok gün oynayanlar arasında en düşük toplam süre.",
+      "cleanest": "İpucu ve kontrol kullanmadan en çok günlük bulmaca.",
+      "steadiest": "En az üç günlük bulmacada birbirine en yakın tempolar.",
+      "early_bird": "En az üç günlük bulmacada, bulmaca çıktıktan sonra genellikle en erken bitiren.",
+      "improved": "Önceki dört haftaya göre en çok gelişen tempo.",
+      "lantern": "Yedi günün hepsini oynayanlar arasında en yavaş toplam. Feneri birinin taşıması gerek!"
+    },
+    "reasons": {
+      "fastest": "Toplam {{ time }}, oynanan gün: {{ days }}",
+      "cleanest": "İpucu ve kontrolsüz: {{ clean }} / {{ solves }}",
+      "steadiest": "{{ days }} günlük bulmaca, tempolar arasında en fazla %{{ spread }} fark",
+      "early_bird": "Genellikle bitirdiği saat: {{ time }}",
+      "improved": "Tempo, önceki dört haftaya göre %{{ percent }} daha hızlı",
+      "lantern": "Her gün oynayan {{ of }} kişinin en yavaşı: {{ time }}"
+    }
+  }
+}

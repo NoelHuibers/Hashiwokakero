@@ -2,6 +2,7 @@
 //! groups.
 
 mod admin;
+mod banzuke;
 mod calendar;
 mod daily;
 mod dojo;
@@ -16,6 +17,7 @@ mod stamps;
 mod tests;
 
 pub use admin::*;
+pub use banzuke::*;
 pub use calendar::*;
 pub use daily::*;
 pub use dojo::*;

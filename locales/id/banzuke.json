@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Pekan sebelumnya",
+  "later": "Pekan berikutnya",
+  "live": "berlangsung sampai Minggu tengah malam UTC",
+  "final_state": "selesai",
+  "empty": "Belum ada yang punya teka-teki harian berperingkat pekan ini. Jembatan pertama membuka turnamen!",
+  "today_hidden": "Hasil hari ini dihitung setelah kamu sendiri menyelesaikan teka-teki harian hari ini.",
+  "play": "Mainkan teka-teki hari ini",
+  "plate": "{{ title }} · peringkat {{ place }}",
+  "kyujo": "Kyūjō: absen pekan ini",
+  "days": "Hari bermain: {{ played }} dari 7, menang: {{ wins }}",
+  "day": "{{ date }}: peringkat {{ place }}, {{ points }} poin",
+  "day_open": "{{ date }}: belum tiba",
+  "day_missed": "{{ date }}: tidak dimainkan",
+  "points": "Poin pekan ini: {{ points }}",
+  "crown": "yokozuna pekan lalu",
+  "movement": {
+    "up": "Naik {{ n }} dari pekan sebelumnya",
+    "down": "Turun {{ n }} dari pekan sebelumnya",
+    "same": "Peringkat sama dengan pekan sebelumnya",
+    "new": "Baru di banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Cara kerja banzuke",
+    "points": "Setiap hari, semua yang punya teka-teki harian berperingkat mendapat poin sesuai peringkatnya di grup: yang pertama sebanyak jumlah anggota grup, setiap peringkat berikutnya satu lebih sedikit. Waktu yang sama berbagi peringkat, hari yang tidak dimainkan tidak mendapat poin.",
+    "titles": "Pekan ditentukan oleh poin, lalu oleh jumlah hari menang. Yang pertama adalah yokozuna, lalu ōzeki, sekiwake, dan komusubi, sisanya maegashira bernomor. Yang absen sepekan adalah kyūjō.",
+    "pace": "Penghargaan membandingkan tempo: waktu dibandingkan median semua pemain hari itu, sehingga teka-teki mudah hari Senin dan Oni hari Minggu dihitung setara.",
+    "members": "Dihitung dari anggota grup saat ini, pekan berakhir hari Minggu tengah malam UTC."
+  },
+  "awards": {
+    "title": "Penghargaan",
+    "leading": "Memimpin sementara",
+    "final_state": "Pemenang pekan ini",
+    "nobody": "Belum ada",
+    "nobody_final": "Tidak dimenangkan pekan ini",
+    "names": {
+      "fastest": "Tercepat",
+      "cleanest": "Terbersih",
+      "steadiest": "Terstabil",
+      "early_bird": "Paling pagi",
+      "improved": "Paling berkembang",
+      "lantern": "Lanterne rouge"
+    },
+    "rules": {
+      "fastest": "Total waktu terendah di antara yang bermain paling banyak hari.",
+      "cleanest": "Teka-teki harian terbanyak tanpa petunjuk atau cek.",
+      "steadiest": "Tempo yang paling berdekatan, dari minimal tiga teka-teki harian.",
+      "early_bird": "Biasanya paling cepat selesai setelah teka-teki harian terbit, dari minimal tiga teka-teki harian.",
+      "improved": "Tempo yang paling meningkat dibanding empat pekan sebelumnya.",
+      "lantern": "Total paling lambat di antara yang bermain ketujuh hari. Harus ada yang membawa lenteranya!"
+    },
+    "reasons": {
+      "fastest": "Total {{ time }}, hari bermain: {{ days }}",
+      "cleanest": "{{ clean }} dari {{ solves }} tanpa petunjuk atau cek",
+      "steadiest": "{{ days }} teka-teki harian, selisih tempo paling banyak {{ spread }}%",
+      "early_bird": "Biasanya selesai sekitar {{ time }}",
+      "improved": "Tempo {{ percent }}% lebih cepat dari empat pekan sebelumnya",
+      "lantern": "Paling lambat dari {{ of }} pemain yang bermain setiap hari: {{ time }}"
+    }
+  }
+}

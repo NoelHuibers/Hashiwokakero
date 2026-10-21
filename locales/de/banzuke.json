@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Vorige Woche",
+  "later": "Nächste Woche",
+  "live": "läuft bis Sonntag, Mitternacht UTC",
+  "final_state": "endgültig",
+  "empty": "Diese Woche hat noch niemand ein gewertetes Tagesrätsel. Die erste Brücke eröffnet das Turnier!",
+  "today_hidden": "Die heutigen Ergebnisse zählen, sobald du das heutige Tagesrätsel selbst gelöst hast.",
+  "play": "Tagesrätsel spielen",
+  "plate": "{{ title }} · Platz {{ place }}",
+  "kyujo": "Kyūjō: setzt diese Woche aus",
+  "days": "Gespielte Tage: {{ played }} von 7, gewonnen: {{ wins }}",
+  "day": "{{ date }}: Platz {{ place }}, {{ points }} Pkt.",
+  "day_open": "{{ date }}: kommt noch",
+  "day_missed": "{{ date }}: nicht gespielt",
+  "points": "Punkte diese Woche: {{ points }}",
+  "crown": "Yokozuna der Vorwoche",
+  "movement": {
+    "up": "Seit der Vorwoche um {{ n }} gestiegen",
+    "down": "Seit der Vorwoche um {{ n }} gefallen",
+    "same": "Gleicher Platz wie in der Vorwoche",
+    "new": "Neu auf dem Banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "So funktioniert das Banzuke",
+    "points": "Jeden Tag bekommt jeder mit einem gewerteten Tagesrätsel Punkte nach seinem Platz in der Gruppe: der Erste so viele, wie die Gruppe Mitglieder hat, jeder Platz danach einen weniger. Gleiche Zeiten teilen sich einen Platz, ein nicht gespielter Tag bringt nichts.",
+    "titles": "Die Woche zählt nach Punkten, dann nach gewonnenen Tagen. Der Erste ist Yokozuna, dann folgen Ōzeki, Sekiwake und Komusubi, alle danach sind nummerierte Maegashira. Wer die Woche aussetzt, ist Kyūjō.",
+    "pace": "Die Auszeichnungen vergleichen das Tempo: eine Zeit im Verhältnis zum Median aller Spieler an dem Tag, damit das leichte Rätsel am Montag und das Oni am Sonntag gleich zählen.",
+    "members": "Berechnet aus den aktuellen Mitgliedern der Gruppe, die Woche endet am Sonntag um Mitternacht UTC."
+  },
+  "awards": {
+    "title": "Auszeichnungen",
+    "leading": "Bisher vorn",
+    "final_state": "Die Sieger dieser Woche",
+    "nobody": "Noch niemand",
+    "nobody_final": "Diese Woche nicht vergeben",
+    "names": {
+      "fastest": "Am schnellsten",
+      "cleanest": "Am saubersten",
+      "steadiest": "Am beständigsten",
+      "early_bird": "Frühaufsteher",
+      "improved": "Größte Steigerung",
+      "lantern": "Rote Laterne"
+    },
+    "rules": {
+      "fastest": "Die niedrigste Gesamtzeit unter denen, die an den meisten Tagen gespielt haben.",
+      "cleanest": "Die meisten Tagesrätsel ohne Tipps und Prüfungen.",
+      "steadiest": "Das gleichmäßigste Tempo, bei mindestens drei Tagesrätseln.",
+      "early_bird": "Meist am schnellsten fertig, nachdem das Tagesrätsel erscheint, bei mindestens drei Tagesrätseln.",
+      "improved": "Das Tempo, das sich gegenüber den vier Wochen davor am meisten verbessert hat.",
+      "lantern": "Die langsamste Gesamtzeit unter denen, die alle sieben Tage gespielt haben. Einer muss ja die Laterne tragen!"
+    },
+    "reasons": {
+      "fastest": "{{ time }} insgesamt, gespielte Tage: {{ days }}",
+      "cleanest": "{{ clean }} von {{ solves }} ohne Tipps und Prüfungen",
+      "steadiest": "{{ days }} Tagesrätsel, Tempo höchstens {{ spread }} % auseinander",
+      "early_bird": "Meist fertig bis {{ time }}",
+      "improved": "Tempo {{ percent }} % schneller als in den vier Wochen davor",
+      "lantern": "Am langsamsten von {{ of }}, die jeden Tag gespielt haben: {{ time }}"
+    }
+  }
+}

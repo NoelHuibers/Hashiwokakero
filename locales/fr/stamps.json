@@ -55,7 +55,9 @@
     "second_thoughts": "Hésitations",
     "palindrome": "Palindrome",
     "lanterne_rouge": "Lanterne rouge",
-    "leap_day": "29 février"
+    "leap_day": "29 février",
+    "yokozuna": "Yokozuna",
+    "sansho": "Prix spécial"
   },
   "texts": {
     "first": "Résous ton premier défi.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Retire le même pont 10 fois dans un même défi.",
     "palindrome": "Termine avec un temps qui se lit pareil à l’envers, comme 1:22.1 ou 12:21.",
     "lanterne_rouge": "Termine dernier d’un défi d’au moins 20 joueurs. Il faut bien que quelqu’un porte la lanterne !",
-    "leap_day": "Résous le défi du 29 février."
+    "leap_day": "Résous le défi du 29 février.",
+    "yokozuna": "Termine en tête du banzuke hebdomadaire d’un groupe, lors d’une semaine d’au moins trois joueurs.",
+    "sansho": "Remporte l’un des prix hebdomadaires d’un groupe, lors d’une semaine d’au moins trois joueurs."
   },
   "secret": {
     "name": "Tampon secret",

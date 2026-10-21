@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Tuần trước",
+  "later": "Tuần sau",
+  "live": "đang diễn ra đến nửa đêm Chủ nhật (UTC)",
+  "final_state": "chung cuộc",
+  "empty": "Tuần này chưa ai có câu đố ngày được xếp hạng. Cây cầu đầu tiên sẽ mở màn giải đấu!",
+  "today_hidden": "Kết quả hôm nay được tính khi chính bạn đã giải xong câu đố hôm nay.",
+  "play": "Chơi câu đố hôm nay",
+  "plate": "{{ title }} · hạng {{ place }}",
+  "kyujo": "Kyūjō: nghỉ tuần này",
+  "days": "Số ngày đã chơi: {{ played }} trên 7, thắng: {{ wins }}",
+  "day": "{{ date }}: hạng {{ place }}, {{ points }} điểm",
+  "day_open": "{{ date }}: sắp tới",
+  "day_missed": "{{ date }}: không chơi",
+  "points": "Điểm tuần này: {{ points }}",
+  "crown": "yokozuna tuần trước",
+  "movement": {
+    "up": "Tăng {{ n }} hạng so với tuần trước",
+    "down": "Giảm {{ n }} hạng so với tuần trước",
+    "same": "Giữ nguyên hạng so với tuần trước",
+    "new": "Mới lên banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Banzuke hoạt động thế nào",
+    "points": "Mỗi ngày, ai có câu đố ngày được xếp hạng đều nhận điểm theo thứ hạng trong nhóm: người nhất nhận số điểm bằng số thành viên của nhóm, mỗi hạng sau ít hơn một. Thời gian bằng nhau thì chung hạng, ngày không chơi không có điểm.",
+    "titles": "Tuần được xếp theo điểm, rồi theo số ngày thắng. Người nhất là yokozuna, tiếp theo là ōzeki, sekiwake và komusubi, tất cả những người sau là maegashira có đánh số. Ai bỏ cả tuần thì là kyūjō.",
+    "pace": "Các giải so sánh nhịp độ: thời gian so với trung vị của mọi người chơi trong ngày, để câu dễ thứ Hai và câu Quỷ Chủ nhật được tính ngang nhau.",
+    "members": "Tính theo thành viên hiện tại của nhóm, tuần kết thúc lúc nửa đêm Chủ nhật UTC."
+  },
+  "awards": {
+    "title": "Giải thưởng",
+    "leading": "Đang dẫn đầu",
+    "final_state": "Người thắng tuần này",
+    "nobody": "Chưa có ai",
+    "nobody_final": "Tuần này không ai đạt",
+    "names": {
+      "fastest": "Nhanh nhất",
+      "cleanest": "Sạch nhất",
+      "steadiest": "Đều nhất",
+      "early_bird": "Chim dậy sớm",
+      "improved": "Tiến bộ nhất",
+      "lantern": "Đèn lồng đỏ"
+    },
+    "rules": {
+      "fastest": "Tổng thời gian thấp nhất trong số những người chơi nhiều ngày nhất.",
+      "cleanest": "Nhiều câu đố ngày nhất mà không dùng gợi ý hay kiểm tra.",
+      "steadiest": "Nhịp độ sát nhau nhất, với ít nhất ba câu đố ngày.",
+      "early_bird": "Thường xong sớm nhất sau khi câu đố ngày ra mắt, với ít nhất ba câu đố ngày.",
+      "improved": "Nhịp độ tiến bộ nhiều nhất so với bốn tuần trước đó.",
+      "lantern": "Tổng thời gian chậm nhất trong số những người chơi đủ bảy ngày. Phải có ai đó cầm đèn lồng chứ!"
+    },
+    "reasons": {
+      "fastest": "Tổng {{ time }}, số ngày chơi: {{ days }}",
+      "cleanest": "{{ clean }} trên {{ solves }} không dùng gợi ý hay kiểm tra",
+      "steadiest": "{{ days }} câu đố ngày, nhịp độ chênh nhau trong {{ spread }}%",
+      "early_bird": "Thường xong trước {{ time }}",
+      "improved": "Nhịp độ nhanh hơn {{ percent }}% so với bốn tuần trước đó",
+      "lantern": "Chậm nhất trong {{ of }} người chơi mỗi ngày: {{ time }}"
+    }
+  }
+}

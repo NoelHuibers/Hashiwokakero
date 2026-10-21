@@ -55,7 +55,9 @@
     "second_thoughts": "Hin und her",
     "palindrome": "Palindrom",
     "lanterne_rouge": "Rote Laterne",
-    "leap_day": "Schalttag"
+    "leap_day": "Schalttag",
+    "yokozuna": "Yokozuna",
+    "sansho": "Sonderpreis"
   },
   "texts": {
     "first": "Löse dein erstes Tagesrätsel.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Entferne in einem Tagesrätsel 10-mal dieselbe Brücke.",
     "palindrome": "Schaffe eine Zeit, die sich rückwärts gleich liest, etwa 1:22.1 oder 12:21.",
     "lanterne_rouge": "Werde Letzter bei einem Tagesrätsel mit mindestens 20 Spielern. Einer muss ja die Laterne tragen!",
-    "leap_day": "Löse das Tagesrätsel am 29. Februar."
+    "leap_day": "Löse das Tagesrätsel am 29. Februar.",
+    "yokozuna": "Werde Erster im Wochen-Banzuke einer Gruppe, in einer Woche mit mindestens drei Spielern.",
+    "sansho": "Gewinne eine der Wochenauszeichnungen einer Gruppe, in einer Woche mit mindestens drei Spielern."
   },
   "secret": {
     "name": "Geheimer Stempel",
