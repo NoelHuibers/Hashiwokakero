@@ -55,7 +55,9 @@
     "second_thoughts": "Đắn đo",
     "palindrome": "Thuận nghịch",
     "lanterne_rouge": "Đèn lồng đỏ",
-    "leap_day": "Ngày nhuận"
+    "leap_day": "Ngày nhuận",
+    "yokozuna": "Yokozuna",
+    "sansho": "Giải đặc biệt"
   },
   "texts": {
     "first": "Giải câu đố ngày đầu tiên của bạn.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Gỡ cùng một cây cầu 10 lần trong một câu đố ngày.",
     "palindrome": "Về đích với thời gian đọc xuôi hay ngược đều như nhau, như 1:22.1 hoặc 12:21.",
     "lanterne_rouge": "Về cuối trong một câu đố ngày có ít nhất 20 người chơi. Phải có ai đó cầm đèn lồng chứ!",
-    "leap_day": "Giải câu đố ngày vào ngày 29 tháng 2."
+    "leap_day": "Giải câu đố ngày vào ngày 29 tháng 2.",
+    "yokozuna": "Đứng đầu banzuke tuần của một nhóm, trong tuần có ít nhất ba người chơi.",
+    "sansho": "Giành một giải thưởng tuần của một nhóm, trong tuần có ít nhất ba người chơi."
   },
   "secret": {
     "name": "Con dấu bí mật",

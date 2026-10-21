@@ -55,7 +55,9 @@
     "second_thoughts": "Pensando bem",
     "palindrome": "Palíndromo",
     "lanterne_rouge": "Lanterna vermelha",
-    "leap_day": "Dia bissexto"
+    "leap_day": "Dia bissexto",
+    "yokozuna": "Yokozuna",
+    "sansho": "Prêmio especial"
   },
   "texts": {
     "first": "Resolva seu primeiro desafio diário.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Remova a mesma ponte 10 vezes em um único diário.",
     "palindrome": "Termine com um tempo que se lê igual de trás para frente, como 1:22.1 ou 12:21.",
     "lanterne_rouge": "Termine em último um diário com pelo menos 20 jogadores. Alguém tem que carregar a lanterna!",
-    "leap_day": "Resolva o diário no dia 29 de fevereiro."
+    "leap_day": "Resolva o diário no dia 29 de fevereiro.",
+    "yokozuna": "Fique em primeiro no banzuke semanal de um grupo, em uma semana com pelo menos três jogadores.",
+    "sansho": "Ganhe um dos prêmios semanais de um grupo, em uma semana com pelo menos três jogadores."
   },
   "secret": {
     "name": "Carimbo secreto",

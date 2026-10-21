@@ -55,7 +55,9 @@
     "second_thoughts": "Kararsızlık",
     "palindrome": "Palindrom",
     "lanterne_rouge": "Kırmızı fener",
-    "leap_day": "Artık gün"
+    "leap_day": "Artık gün",
+    "yokozuna": "Yokozuna",
+    "sansho": "Özel ödül"
   },
   "texts": {
     "first": "İlk günlük bulmacanı çöz.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Bir günlük bulmacada aynı köprüyü 10 kez kaldır.",
     "palindrome": "Tersten okununca aynı kalan bir süreyle bitir, örneğin 1:22.1 ya da 12:21.",
     "lanterne_rouge": "En az 20 oyunculu bir günlük bulmacayı sonuncu bitir. Feneri birinin taşıması gerek!",
-    "leap_day": "Günlük bulmacayı 29 Şubat'ta çöz."
+    "leap_day": "Günlük bulmacayı 29 Şubat'ta çöz.",
+    "yokozuna": "En az üç oyunculu bir haftada bir grubun haftalık banzukesinde birinci ol.",
+    "sansho": "En az üç oyunculu bir haftada bir grubun haftalık ödüllerinden birini kazan."
   },
   "secret": {
     "name": "Gizli mühür",

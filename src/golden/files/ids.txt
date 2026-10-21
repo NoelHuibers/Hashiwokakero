@@ -43,6 +43,8 @@ stamp SecondThoughts second_thoughts
 stamp Palindrome palindrome
 stamp LanterneRouge lanterne_rouge
 stamp LeapDay leap_day
+stamp Yokozuna yokozuna
+stamp Sansho sansho
 flag Log log
 flag TooFast too_fast
 flag Pace pace

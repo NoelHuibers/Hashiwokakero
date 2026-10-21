@@ -1,0 +1,69 @@
+{
+  "title": "番付",
+  "earlier": "上一週",
+  "later": "下一週",
+  "live": "進行中，至週日午夜（UTC）",
+  "final_state": "最終結果",
+  "empty": "本週還沒有人有列入排名的每日謎題。第一座橋將揭開比賽序幕！",
+  "today_hidden": "你自己完成今天的每日謎題後，今天的成績才會列入。",
+  "play": "玩今日謎題",
+  "plate": "{{ title }} · 第 {{ place }} 名",
+  "kyujo": "休場：本週缺席",
+  "days": "出賽：{{ played }} / 7 天，獲勝：{{ wins }} 天",
+  "day": "{{ date }}：第 {{ place }} 名，{{ points }} 分",
+  "day_open": "{{ date }}：尚未開始",
+  "day_missed": "{{ date }}：未參加",
+  "points": "本週積分：{{ points }}",
+  "crown": "上週橫綱",
+  "movement": {
+    "up": "比上週上升 {{ n }} 位",
+    "down": "比上週下降 {{ n }} 位",
+    "same": "與上週名次相同",
+    "new": "新上番付"
+  },
+  "titles": {
+    "yokozuna": "橫綱",
+    "ozeki": "大關",
+    "sekiwake": "關脇",
+    "komusubi": "小結",
+    "maegashira": "前頭 {{ number }}"
+  },
+  "rules": {
+    "title": "番付規則",
+    "points": "每天，有列入排名的每日謎題的人依群組內名次得分：第一名得到與群組人數相同的分數，之後每低一名少一分。用時相同則名次相同，沒玩的那天不得分。",
+    "titles": "一週先比積分，再比獲勝天數。第一名為橫綱，接著是大關、關脇和小結，其餘都是帶編號的前頭。整週缺席的人為休場。",
+    "pace": "各獎項比較配速：即當天用時相對於所有玩家中位數的比值，這樣週一的簡單題和週日的鬼題分量相同。",
+    "members": "依群組目前成員計算，每週在週日午夜（UTC）結束。"
+  },
+  "awards": {
+    "title": "獎項",
+    "leading": "目前領先",
+    "final_state": "本週得主",
+    "nobody": "暫無",
+    "nobody_final": "本週無人獲得",
+    "names": {
+      "fastest": "神速獎",
+      "cleanest": "清風獎",
+      "steadiest": "穩定獎",
+      "early_bird": "早起鳥",
+      "improved": "進步獎",
+      "lantern": "紅燈籠"
+    },
+    "rules": {
+      "fastest": "在出賽天數最多的人中，總用時最短。",
+      "cleanest": "不用提示和檢查解出的每日謎題最多。",
+      "steadiest": "至少三道每日謎題中，配速最接近。",
+      "early_bird": "至少三道每日謎題中，通常在謎題發布後最早完成。",
+      "improved": "與前四週相比，配速進步最大。",
+      "lantern": "七天全勤的人中總用時最慢。總得有人提燈籠嘛！"
+    },
+    "reasons": {
+      "fastest": "總計 {{ time }}，出賽天數：{{ days }}",
+      "cleanest": "{{ solves }} 道中有 {{ clean }} 道未用提示和檢查",
+      "steadiest": "{{ days }} 道每日謎題，配速相差不超過 {{ spread }}%",
+      "early_bird": "通常在 {{ time }} 前完成",
+      "improved": "配速比前四週快 {{ percent }}%",
+      "lantern": "每天都玩的 {{ of }} 人中最慢：{{ time }}"
+    }
+  }
+}

@@ -55,7 +55,9 @@
     "second_thoughts": "Rozterki",
     "palindrome": "Palindrom",
     "lanterne_rouge": "Czerwona latarnia",
-    "leap_day": "Dzień przestępny"
+    "leap_day": "Dzień przestępny",
+    "yokozuna": "Yokozuna",
+    "sansho": "Nagroda specjalna"
   },
   "texts": {
     "first": "Rozwiąż swoją pierwszą łamigłówkę dnia.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Usuń ten sam most 10 razy w jednej łamigłówce dnia.",
     "palindrome": "Skończ z czasem, który czytany wspak brzmi tak samo, np. 1:22.1 lub 12:21.",
     "lanterne_rouge": "Ukończ łamigłówkę dnia na ostatnim miejscu, gdy grało w nią co najmniej 20 graczy. Ktoś musi nieść latarnię!",
-    "leap_day": "Rozwiąż łamigłówkę dnia 29 lutego."
+    "leap_day": "Rozwiąż łamigłówkę dnia 29 lutego.",
+    "yokozuna": "Zajmij pierwsze miejsce w tygodniowym banzuke grupy, w tygodniu z co najmniej trzema graczami.",
+    "sansho": "Zdobądź jedną z tygodniowych nagród grupy, w tygodniu z co najmniej trzema graczami."
   },
   "secret": {
     "name": "Tajna pieczątka",

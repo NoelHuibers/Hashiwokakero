@@ -58,10 +58,12 @@ pub enum Stamp {
     Palindrome,
     LanterneRouge,
     LeapDay,
+    Yokozuna,
+    Sansho,
 }
 
 impl Stamp {
-    pub const ALL: [Self; 45] = [
+    pub const ALL: [Self; 47] = [
         Self::First,
         Self::Solved10,
         Self::Solved50,
@@ -107,6 +109,8 @@ impl Stamp {
         Self::Palindrome,
         Self::LanterneRouge,
         Self::LeapDay,
+        Self::Yokozuna,
+        Self::Sansho,
     ];
 
     /// Stored in the `stamps` table.
@@ -157,6 +161,8 @@ impl Stamp {
             Self::Palindrome => "palindrome",
             Self::LanterneRouge => "lanterne_rouge",
             Self::LeapDay => "leap_day",
+            Self::Yokozuna => "yokozuna",
+            Self::Sansho => "sansho",
         }
     }
 
@@ -216,6 +222,10 @@ impl Stamp {
             Self::LanterneRouge => "灯",
             // 閏日, the leap day
             Self::LeapDay => "閏",
+            // The rope 綱 a yokozuna wears
+            Self::Yokozuna => "綱",
+            // 三賞, the special prizes of a sumo tournament
+            Self::Sansho => "賞",
         }
     }
 
@@ -241,9 +251,13 @@ impl Stamp {
     }
 
     /// Kept once earned, even when what earned it is gone: a place on the Dojo board doesn't
-    /// last past the season.
+    /// last past the season, the group weeks are only looked at for a while
+    /// ([`super::HONOUR_WEEKS`]) and change when members come and go.
     pub const fn sticky(self) -> bool {
-        matches!(self, Self::BlackBelt | Self::Sensei)
+        matches!(
+            self,
+            Self::BlackBelt | Self::Sensei | Self::Yokozuna | Self::Sansho
+        )
     }
 }
 
@@ -407,6 +421,11 @@ pub struct Record {
     pub joined: i64,
     /// [`Stamp::sticky`] stamps already earned, they stay.
     pub kept: Vec<Stamp>,
+    /// Weeks the player was the yokozuna of a group's banzuke, of the last ones that are over
+    /// (see `model::honours`).
+    pub yokozuna_weeks: i64,
+    /// Weeks the player won one of a group's weekly awards.
+    pub award_weeks: i64,
 }
 
 /// A stamp and how far along the player is, for the stamp book.
@@ -537,6 +556,8 @@ impl Record {
                         1,
                     ),
                     Stamp::LeapDay => (any(&|s| date(s, 2, 29)), 1),
+                    Stamp::Yokozuna => (i64::from(self.yokozuna_weeks > 0 || kept(stamp)), 1),
+                    Stamp::Sansho => (i64::from(self.award_weeks > 0 || kept(stamp)), 1),
                 };
                 (stamp, progress.min(target), target)
             })
@@ -895,6 +916,36 @@ mod tests {
             (collector.1, collector.2),
             (COLLECTOR_TARGET, COLLECTOR_TARGET)
         );
+    }
+
+    /// Group weeks earn a stamp each, which stays when the week is too long ago to be looked at.
+    #[test]
+    fn group_weeks_earn_stamps_that_stay() {
+        let earned = |record: Record| record.earned(LAUNCH_DAY);
+        assert_eq!(earned(Record::default()), []);
+        assert_eq!(
+            earned(Record {
+                yokozuna_weeks: 1,
+                ..Record::default()
+            }),
+            [Stamp::Yokozuna]
+        );
+        assert_eq!(
+            earned(Record {
+                award_weeks: 2,
+                ..Record::default()
+            }),
+            [Stamp::Sansho]
+        );
+        assert_eq!(
+            earned(Record {
+                kept: vec![Stamp::Yokozuna, Stamp::Sansho],
+                ..Record::default()
+            }),
+            [Stamp::Yokozuna, Stamp::Sansho]
+        );
+        assert!(Stamp::Yokozuna.sticky() && Stamp::Sansho.sticky());
+        assert!(!Stamp::Yokozuna.secret());
     }
 
     #[test]

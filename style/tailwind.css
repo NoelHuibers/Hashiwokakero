@@ -602,6 +602,10 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 }
 .px-m { fill: var(--member); }
 .px-M { fill: color-mix(in srgb, var(--member) 70%, black); }
+/* Sea in small sprites: the award icons */
+.px-a { fill: var(--px-sea); }
+.px-A { fill: var(--px-sea-deep); }
+.px-c { fill: var(--px-sea-light); }
 .nakama-tag rect {
   fill: var(--card);
   stroke: color-mix(in srgb, var(--member) 60%, var(--px-ink));
@@ -630,6 +634,111 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
   box-shadow:
     inset 0 0 0 2px var(--member),
     inset 0 0 0 3px var(--card);
+}
+
+/* ------------------------------------------------------------------ */
+/*  The banzuke 番付: a group's week as a hanging scroll of washi     */
+/* ------------------------------------------------------------------ */
+
+.banzuke-scroll {
+  --paper: #fbf3df;
+  --paper-line: rgb(116 71 31 / 0.25);
+  --ink: #2b2420;
+  --ink-soft: #6b5a48;
+  position: relative;
+  padding-block: 9px;
+  padding-inline: 4px;
+}
+.dark .banzuke-scroll {
+  --paper: color-mix(in srgb, var(--card) 86%, var(--px-wood));
+  --paper-line: rgb(227 171 107 / 0.2);
+  --ink: var(--foreground);
+  --ink-soft: var(--muted-foreground);
+}
+/* The wooden rollers at both ends, their knobs sticking out */
+.banzuke-scroll::before,
+.banzuke-scroll::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 10px;
+  background: linear-gradient(180deg, var(--px-wood-light) 0 3px, var(--px-wood) 3px 7px, var(--px-wood-dark) 7px);
+  box-shadow:
+    -4px 0 0 0 var(--px-wood-dark),
+    4px 0 0 0 var(--px-wood-dark),
+    0 3px 6px -3px rgb(0 0 0 / 0.35);
+}
+.banzuke-scroll::before { top: 0; }
+.banzuke-scroll::after { bottom: 0; }
+.banzuke-paper {
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.05), transparent 5%, transparent 95%, rgb(0 0 0 / 0.05)),
+    var(--paper);
+}
+.banzuke-paper .ink-soft { color: var(--ink-soft); }
+.banzuke-row + .banzuke-row { border-top: 1px dashed var(--paper-line); }
+
+/* A rank on the banzuke, written top to bottom on a plate */
+.rank-plate {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: var(--font-pixel);
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 35%, transparent);
+}
+/* The yokozuna's plate in gold, the white rope 綱 across its top */
+.rank-plate[data-title="yokozuna"] {
+  position: relative;
+  padding-top: 12px;
+  background: var(--px-gold);
+  color: #3a2a05;
+  box-shadow:
+    inset 0 0 0 1.5px #3a2a05,
+    0 4px 10px -6px color-mix(in srgb, var(--px-gold) 80%, black);
+}
+.rank-plate[data-title="yokozuna"]::before {
+  content: "";
+  position: absolute;
+  inset-inline: -4px;
+  top: 2px;
+  height: 7px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(115deg, #fffdf6 0 3px, #cfc6ae 3px 5px);
+  box-shadow: 0 0 0 1.5px #3a2a05;
+}
+.rank-plate[data-title="ozeki"] {
+  background: var(--px-shu);
+  color: #fff8e8;
+  box-shadow:
+    inset 0 0 0 2px var(--px-shu),
+    inset 0 0 0 3px #fff8e8;
+}
+.rank-plate:is([data-title="sekiwake"], [data-title="komusubi"]) {
+  color: var(--px-shu-dark);
+  background: color-mix(in srgb, var(--px-shu) 9%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--px-shu);
+}
+.dark .rank-plate:is([data-title="sekiwake"], [data-title="komusubi"]) {
+  color: var(--px-shu-light);
+}
+.rank-plate[data-title="kyujo"] {
+  color: var(--ink-soft);
+  box-shadow: none;
+  outline: 1px dashed color-mix(in srgb, var(--ink-soft) 60%, transparent);
+  outline-offset: -1px;
+}
+
+/* An award won: pressed with a small 賞 hanko */
+.award-tile[data-won="true"] {
+  background: color-mix(in srgb, var(--px-gold) 7%, var(--background));
+  border-color: color-mix(in srgb, var(--px-gold) 45%, var(--border));
+}
+.award-tile[data-mine="true"] {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
 }
 
 /* ------------------------------------------------------------------ */

@@ -55,7 +55,9 @@
     "second_thoughts": "Ripensamenti",
     "palindrome": "Palindromo",
     "lanterne_rouge": "Maglia nera",
-    "leap_day": "Giorno bisestile"
+    "leap_day": "Giorno bisestile",
+    "yokozuna": "Yokozuna",
+    "sansho": "Premio speciale"
   },
   "texts": {
     "first": "Risolvi la tua prima sfida.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Togli lo stesso ponte 10 volte in una sola sfida.",
     "palindrome": "Finisci con un tempo che si legge uguale al contrario, come 1:22.1 o 12:21.",
     "lanterne_rouge": "Finisci ultimo in una sfida con almeno 20 giocatori. Qualcuno dovrà pur indossare la maglia nera!",
-    "leap_day": "Risolvi la sfida del 29 febbraio."
+    "leap_day": "Risolvi la sfida del 29 febbraio.",
+    "yokozuna": "Arriva primo nel banzuke settimanale di un gruppo, in una settimana con almeno tre giocatori.",
+    "sansho": "Vinci uno dei premi settimanali di un gruppo, in una settimana con almeno tre giocatori."
   },
   "secret": {
     "name": "Timbro segreto",

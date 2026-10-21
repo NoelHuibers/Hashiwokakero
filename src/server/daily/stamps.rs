@@ -118,6 +118,9 @@ async fn record(conn: &Connection, user: i64, kept: Vec<Stamp>) -> Result<Record
         None => 0,
     };
 
+    let (yokozuna_weeks, award_weeks) =
+        crate::server::groups::banzuke::honours(conn, user, today()).await?;
+
     Ok(Record {
         solves,
         champion_months,
@@ -125,6 +128,8 @@ async fn record(conn: &Connection, user: i64, kept: Vec<Stamp>) -> Result<Record
         dojo_rank,
         joined,
         kept,
+        yokozuna_weeks,
+        award_weeks,
     })
 }
 

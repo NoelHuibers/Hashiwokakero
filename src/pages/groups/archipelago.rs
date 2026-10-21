@@ -7,6 +7,8 @@ use crate::components::sprites::{
     BOAT, BoardDefs, BridgeSprite, CELL, PENNANT, PixelArt, PixelSprite, Span,
 };
 use crate::i18n::{td_string, use_i18n};
+
+use super::banzuke::CROWN;
 use crate::model::{GroupMember, SharedDays, archipelago, bridge_count, colour_var, shared_days};
 
 /// Sea around the islands, in art pixels.
@@ -64,19 +66,25 @@ pub fn tag(name: &str) -> (String, f32) {
     (format!("{}…", out.trim_end()), width)
 }
 
-/// One member's island, with their pennant if they're done and their name tag.
+/// One member's island, with their pennant if they're done, a crown if they were last week's
+/// yokozuna (see the banzuke), and their name tag.
 #[component]
-fn Island(member: GroupMember, x: i32, y: i32, me: bool) -> impl IntoView {
+fn Island(member: GroupMember, x: i32, y: i32, me: bool, crowned: Signal<bool>) -> impl IntoView {
     let i18n = use_i18n();
     let (label, width) = tag(&member.name);
     let done = member.done_today;
     let name = member.name.clone();
     let tooltip = move || {
         let l = i18n.get_locale();
-        if done {
-            format!("{name} · {}", td_string!(l, groups.archipelago.done))
+        let state = if done {
+            td_string!(l, groups.archipelago.done)
         } else {
-            format!("{name} · {}", td_string!(l, groups.archipelago.waiting))
+            td_string!(l, groups.archipelago.waiting)
+        };
+        if crowned.get() {
+            format!("{name} · {state} · {}", td_string!(l, banzuke.crown))
+        } else {
+            format!("{name} · {state}")
         }
     };
     let (px, py) = (x * CELL, y * CELL);
@@ -91,6 +99,7 @@ fn Island(member: GroupMember, x: i32, y: i32, me: bool) -> impl IntoView {
         >
             {done.then(|| view! { <PixelArt art=&PENNANT x=10 y=-5 /> })}
             <use href="#isl" />
+            {move || crowned.get().then(|| view! { <g class="nakama-crown" data-crown="true"><PixelArt art=&CROWN x=0 y=-4 /></g> })}
             <text class="num" x="8" y="8.4" text-anchor="middle" dominant-baseline="central">
                 {initial(&member.name)}
             </text>
@@ -117,6 +126,9 @@ pub fn Archipelago(
     members: Vec<GroupMember>,
     #[prop(optional)] shared: Vec<SharedDays>,
     #[prop(optional)] me: Option<i64>,
+    /// Last week's yokozuna, with a crown.
+    #[prop(optional)]
+    crowned: Option<RwSignal<Vec<i64>>>,
 ) -> impl IntoView {
     let i18n = use_i18n();
     let ids: Vec<i64> = members.iter().map(|m| m.user_id).collect();
@@ -171,7 +183,10 @@ pub fn Archipelago(
         .filter_map(|spot| {
             let member = members.iter().find(|m| m.user_id == spot.user_id)?.clone();
             let mine = me == Some(member.user_id);
-            Some(view! { <Island member x=spot.x y=spot.y me=mine /> })
+            let id = member.user_id;
+            let crowned =
+                Signal::derive(move || crowned.is_some_and(|c| c.with(|c| c.contains(&id))));
+            Some(view! { <Island member x=spot.x y=spot.y me=mine crowned /> })
         })
         .collect();
     view! {

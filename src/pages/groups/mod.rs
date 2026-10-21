@@ -7,6 +7,8 @@
 //! the group itself.
 
 pub mod archipelago;
+pub mod awards;
+pub mod banzuke;
 pub mod create;
 pub mod invite;
 pub mod join;
@@ -31,6 +33,7 @@ use crate::seo::title_text;
 use crate::state::{Auth, error_toast};
 
 use archipelago::Archipelago;
+use banzuke::BanzukeCard;
 use create::{CreateCard, ReadyCard};
 use list::GroupList;
 use members::MembersCard;
@@ -194,6 +197,8 @@ fn NotMember() -> impl IntoView {
 #[component]
 fn GroupView(group: GroupContext) -> impl IntoView {
     let i18n = use_i18n();
+    // Last week's yokozuna, crowned on the archipelago once the banzuke is loaded
+    let crowns = RwSignal::new(Vec::<i64>::new());
     let header = move || {
         group.page.get().map(|p| {
             let members = p.members.len();
@@ -219,7 +224,7 @@ fn GroupView(group: GroupContext) -> impl IntoView {
                     </div>
                 </div>
                 <div class="flex flex-col gap-2">
-                    <Archipelago group=p.id members=p.members shared=p.shared me=p.me />
+                    <Archipelago group=p.id members=p.members shared=p.shared me=p.me crowned=crowns />
                     <p class="text-xs text-muted-foreground">{t!(i18n, groups.archipelago.legend)}</p>
                 </div>
             }
@@ -232,6 +237,7 @@ fn GroupView(group: GroupContext) -> impl IntoView {
             <div class="flex min-w-0 flex-col gap-6">
                 <TodayCard group />
                 <WeekCard group />
+                <BanzukeCard group crowns />
             </div>
             <aside class="flex min-w-0 flex-col gap-6">
                 <MembersCard group />

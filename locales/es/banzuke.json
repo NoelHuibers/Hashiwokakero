@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Semana anterior",
+  "later": "Semana siguiente",
+  "live": "en curso hasta el domingo a medianoche UTC",
+  "final_state": "definitivo",
+  "empty": "Nadie tiene todavía un reto clasificado esta semana. ¡El primer puente abre el torneo!",
+  "today_hidden": "Los resultados de hoy cuentan cuando hayas terminado tú el reto de hoy.",
+  "play": "Jugar el reto de hoy",
+  "plate": "{{ title }} · puesto {{ place }}",
+  "kyujo": "Kyūjō: descansa esta semana",
+  "days": "Días jugados: {{ played }} de 7, ganados: {{ wins }}",
+  "day": "{{ date }}: puesto {{ place }}, puntos: {{ points }}",
+  "day_open": "{{ date }}: por llegar",
+  "day_missed": "{{ date }}: no jugado",
+  "points": "Puntos esta semana: {{ points }}",
+  "crown": "yokozuna de la semana pasada",
+  "movement": {
+    "up": "Sube {{ n }} respecto a la semana anterior",
+    "down": "Baja {{ n }} respecto a la semana anterior",
+    "same": "Mismo puesto que la semana anterior",
+    "new": "Nuevo en el banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Cómo funciona el banzuke",
+    "points": "Cada día, quien tenga un reto clasificado suma puntos según su puesto en el grupo: el primero, tantos como miembros tenga el grupo; cada puesto siguiente, uno menos. Los tiempos iguales comparten puesto y un día sin jugar no suma nada.",
+    "titles": "La semana se ordena por puntos y después por días ganados. El primero es yokozuna; luego vienen ōzeki, sekiwake y komusubi, y todos los demás son maegashira numerados. Quien se pierde la semana queda kyūjō.",
+    "pace": "Los premios comparan ritmos: un tiempo frente a la mediana de todos los jugadores ese día, para que el reto fácil del lunes y el oni del domingo cuenten igual.",
+    "members": "Se calcula con los miembros actuales del grupo; la semana termina el domingo a medianoche UTC."
+  },
+  "awards": {
+    "title": "Premios",
+    "leading": "En cabeza por ahora",
+    "final_state": "Ganadores de esta semana",
+    "nobody": "Nadie todavía",
+    "nobody_final": "Sin ganador esta semana",
+    "names": {
+      "fastest": "Más rápido",
+      "cleanest": "Más limpio",
+      "steadiest": "Más constante",
+      "early_bird": "Madrugador",
+      "improved": "Mayor progreso",
+      "lantern": "Farolillo rojo"
+    },
+    "rules": {
+      "fastest": "El menor tiempo total entre quienes jugaron más días.",
+      "cleanest": "La mayor cantidad de retos sin pistas ni comprobaciones.",
+      "steadiest": "Los ritmos más parejos, con al menos tres retos.",
+      "early_bird": "Suele terminar antes que nadie tras publicarse el reto, con al menos tres retos.",
+      "improved": "El ritmo que más mejoró respecto a las cuatro semanas anteriores.",
+      "lantern": "El total más lento entre quienes jugaron los siete días. ¡Alguien tiene que llevar el farolillo!"
+    },
+    "reasons": {
+      "fastest": "{{ time }} en total, días jugados: {{ days }}",
+      "cleanest": "{{ clean }} de {{ solves }} sin pistas ni comprobaciones",
+      "steadiest": "{{ days }} retos, ritmos a menos de un {{ spread }} % entre sí",
+      "early_bird": "Hora habitual de terminar: {{ time }}",
+      "improved": "Ritmo un {{ percent }} % más rápido que las cuatro semanas anteriores",
+      "lantern": "El más lento de los {{ of }} que jugaron todos los días: {{ time }}"
+    }
+  }
+}

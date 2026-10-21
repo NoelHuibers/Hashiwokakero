@@ -10,6 +10,7 @@
 //! request for a group's data goes through [`require_member`], which answers a group the player
 //! isn't in like one that doesn't exist.
 
+pub mod banzuke;
 #[cfg(test)]
 mod tests;
 

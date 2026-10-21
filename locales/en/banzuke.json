@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Earlier week",
+  "later": "Later week",
+  "live": "under way until Sunday, midnight UTC",
+  "final_state": "final",
+  "empty": "Nobody has a ranked daily this week yet. The first bridge opens the tournament!",
+  "today_hidden": "Today's results count once you've finished today's daily yourself.",
+  "play": "Play today's daily",
+  "plate": "{{ title }} · place {{ place }}",
+  "kyujo": "Kyūjō: sitting this week out",
+  "days": "Days played: {{ played }} of 7, won: {{ wins }}",
+  "day": "{{ date }}: place {{ place }}, {{ points }} points",
+  "day_open": "{{ date }}: still to come",
+  "day_missed": "{{ date }}: not played",
+  "points": "Points this week: {{ points }}",
+  "crown": "last week's yokozuna",
+  "movement": {
+    "up": "Up {{ n }} since the week before",
+    "down": "Down {{ n }} since the week before",
+    "same": "Same place as the week before",
+    "new": "New on the banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "How the banzuke works",
+    "points": "Every day, everyone with a ranked daily scores points by their place in the group: the first as many as the group has members, every place after one less. Equal times share a place, a day not played scores nothing.",
+    "titles": "The week goes by points, then by days won. First is yokozuna, then ōzeki, sekiwake and komusubi, everyone after them a numbered maegashira. Whoever sat the week out is kyūjō.",
+    "pace": "The awards compare paces: a time against the median of all players that day, so Monday's easy daily and Sunday's oni count alike.",
+    "members": "Worked out from the group's current members, the week ends on Sunday at midnight UTC."
+  },
+  "awards": {
+    "title": "Awards",
+    "leading": "Leading so far",
+    "final_state": "This week's winners",
+    "nobody": "Nobody yet",
+    "nobody_final": "Not won this week",
+    "names": {
+      "fastest": "Fastest",
+      "cleanest": "Cleanest",
+      "steadiest": "Steadiest",
+      "early_bird": "Early bird",
+      "improved": "Most improved",
+      "lantern": "Lanterne rouge"
+    },
+    "rules": {
+      "fastest": "The lowest total time of those who played the most days.",
+      "cleanest": "The most dailies without hints or checks.",
+      "steadiest": "The paces closest together, of at least three dailies.",
+      "early_bird": "Usually done the soonest after the daily comes out, of at least three dailies.",
+      "improved": "The pace that improved the most on the four weeks before.",
+      "lantern": "The slowest total of those who played all seven days. Somebody has to carry the lantern!"
+    },
+    "reasons": {
+      "fastest": "{{ time }} in total, days played: {{ days }}",
+      "cleanest": "{{ clean }} of {{ solves }} without hints or checks",
+      "steadiest": "{{ days }} dailies, paces within {{ spread }}% of each other",
+      "early_bird": "Usually done by {{ time }}",
+      "improved": "Pace {{ percent }}% quicker than the four weeks before",
+      "lantern": "Slowest of the {{ of }} who played every day: {{ time }}"
+    }
+  }
+}

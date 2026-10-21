@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Vorige week",
+  "later": "Volgende week",
+  "live": "loopt tot zondag middernacht UTC",
+  "final_state": "definitief",
+  "empty": "Nog niemand heeft deze week een dagpuzzel in de ranking. De eerste brug opent het toernooi!",
+  "today_hidden": "De resultaten van vandaag tellen zodra je de dagpuzzel van vandaag zelf hebt afgerond.",
+  "play": "Speel de dagpuzzel van vandaag",
+  "plate": "{{ title }} · plek {{ place }}",
+  "kyujo": "Kyūjō: slaat deze week over",
+  "days": "Dagen gespeeld: {{ played }} van 7, gewonnen: {{ wins }}",
+  "day": "{{ date }}: plek {{ place }}, punten: {{ points }}",
+  "day_open": "{{ date }}: komt nog",
+  "day_missed": "{{ date }}: niet gespeeld",
+  "points": "Punten deze week: {{ points }}",
+  "crown": "yokozuna van vorige week",
+  "movement": {
+    "up": "{{ n }} omhoog sinds de week ervoor",
+    "down": "{{ n }} omlaag sinds de week ervoor",
+    "same": "Zelfde plek als de week ervoor",
+    "new": "Nieuw op de banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Zo werkt de banzuke",
+    "points": "Elke dag scoort iedereen met een dagpuzzel in de ranking punten naar zijn plek in de groep: de eerste zoveel als de groep leden heeft, elke plek daarna één minder. Gelijke tijden delen een plek, een niet gespeelde dag levert niets op.",
+    "titles": "De week gaat op punten, daarna op gewonnen dagen. De eerste is yokozuna, dan volgen ōzeki, sekiwake en komusubi, iedereen daarna is een genummerde maegashira. Wie de week oversloeg, is kyūjō.",
+    "pace": "De prijzen vergelijken tempo's: een tijd ten opzichte van de mediaan van alle spelers die dag, zodat de makkelijke dagpuzzel op maandag en de oni op zondag even zwaar tellen.",
+    "members": "Berekend op de huidige leden van de groep, de week eindigt zondag om middernacht UTC."
+  },
+  "awards": {
+    "title": "Prijzen",
+    "leading": "Voorlopig aan kop",
+    "final_state": "Winnaars van deze week",
+    "nobody": "Nog niemand",
+    "nobody_final": "Deze week niet gewonnen",
+    "names": {
+      "fastest": "Snelste",
+      "cleanest": "Schoonste",
+      "steadiest": "Stabielste",
+      "early_bird": "Vroege vogel",
+      "improved": "Grootste stijger",
+      "lantern": "Rode lantaarn"
+    },
+    "rules": {
+      "fastest": "De laagste totaaltijd van wie de meeste dagen speelde.",
+      "cleanest": "De meeste dagpuzzels zonder hints of controles.",
+      "steadiest": "De tempo's die het dichtst bij elkaar liggen, over minstens drie dagpuzzels.",
+      "early_bird": "Meestal het snelst klaar nadat de dagpuzzel uitkomt, over minstens drie dagpuzzels.",
+      "improved": "Het tempo dat het meest verbeterde ten opzichte van de vier weken ervoor.",
+      "lantern": "Het traagste totaal van wie alle zeven dagen speelde. Iemand moet de lantaarn dragen!"
+    },
+    "reasons": {
+      "fastest": "{{ time }} in totaal, dagen gespeeld: {{ days }}",
+      "cleanest": "{{ clean }} van {{ solves }} zonder hints of controles",
+      "steadiest": "{{ days }} dagpuzzels, tempo's binnen {{ spread }}% van elkaar",
+      "early_bird": "Meestal klaar rond {{ time }}",
+      "improved": "Tempo {{ percent }}% sneller dan de vier weken ervoor",
+      "lantern": "Traagste van de {{ of }} die elke dag speelden: {{ time }}"
+    }
+  }
+}

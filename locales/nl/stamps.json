@@ -55,7 +55,9 @@
     "second_thoughts": "Twijfelaar",
     "palindrome": "Palindroom",
     "lanterne_rouge": "Rode lantaarn",
-    "leap_day": "Schrikkeldag"
+    "leap_day": "Schrikkeldag",
+    "yokozuna": "Yokozuna",
+    "sansho": "Speciale prijs"
   },
   "texts": {
     "first": "Los je eerste dagpuzzel op.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Haal dezelfde brug 10 keer weg in één dagpuzzel.",
     "palindrome": "Eindig met een tijd die achterstevoren hetzelfde is, zoals 1:22.1 of 12:21.",
     "lanterne_rouge": "Eindig als laatste bij een dagpuzzel met minstens 20 spelers. Iemand moet de lantaarn dragen!",
-    "leap_day": "Los de dagpuzzel op 29 februari op."
+    "leap_day": "Los de dagpuzzel op 29 februari op.",
+    "yokozuna": "Eindig bovenaan de weekbanzuke van een groep, in een week met minstens drie spelers.",
+    "sansho": "Win een van de weekprijzen van een groep, in een week met minstens drie spelers."
   },
   "secret": {
     "name": "Geheime stempel",

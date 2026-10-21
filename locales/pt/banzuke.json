@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Semana anterior",
+  "later": "Semana seguinte",
+  "live": "em andamento até domingo, meia-noite UTC",
+  "final_state": "encerrado",
+  "empty": "Ninguém tem um desafio ranqueado nesta semana ainda. A primeira ponte abre o torneio!",
+  "today_hidden": "Os resultados de hoje contam depois que você mesmo terminar o desafio de hoje.",
+  "play": "Jogar o desafio de hoje",
+  "plate": "{{ title }} · {{ place }}º lugar",
+  "kyujo": "Kyūjō: fora nesta semana",
+  "days": "Dias jogados: {{ played }} de 7, vencidos: {{ wins }}",
+  "day": "{{ date }}: {{ place }}º lugar, pontos: {{ points }}",
+  "day_open": "{{ date }}: ainda por vir",
+  "day_missed": "{{ date }}: não jogado",
+  "points": "Pontos nesta semana: {{ points }}",
+  "crown": "yokozuna da semana passada",
+  "movement": {
+    "up": "Subiu {{ n }} desde a semana anterior",
+    "down": "Caiu {{ n }} desde a semana anterior",
+    "same": "Mesmo lugar da semana anterior",
+    "new": "Novo no banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Como funciona o banzuke",
+    "points": "Todo dia, cada pessoa com um desafio ranqueado ganha pontos pela sua colocação no grupo: o primeiro, tantos quantos membros o grupo tiver; cada colocação seguinte, um a menos. Tempos iguais dividem a colocação, e um dia não jogado não vale nada.",
+    "titles": "A semana é decidida por pontos, depois por dias vencidos. O primeiro é yokozuna, depois vêm ōzeki, sekiwake e komusubi, e todos os demais são maegashira numerados. Quem ficou fora da semana é kyūjō.",
+    "pace": "Os prêmios comparam ritmos: um tempo em relação à mediana de todos os jogadores naquele dia, para que o desafio fácil de segunda e o oni de domingo contem igual.",
+    "members": "Calculado com os membros atuais do grupo; a semana termina no domingo à meia-noite UTC."
+  },
+  "awards": {
+    "title": "Prêmios",
+    "leading": "Na frente até agora",
+    "final_state": "Vencedores da semana",
+    "nobody": "Ninguém ainda",
+    "nobody_final": "Sem vencedor nesta semana",
+    "names": {
+      "fastest": "Mais rápido",
+      "cleanest": "Mais limpo",
+      "steadiest": "Mais constante",
+      "early_bird": "Madrugador",
+      "improved": "Maior evolução",
+      "lantern": "Lanterna vermelha"
+    },
+    "rules": {
+      "fastest": "O menor tempo total entre quem jogou mais dias.",
+      "cleanest": "Mais desafios sem dicas nem verificações.",
+      "steadiest": "Os ritmos mais próximos entre si, em pelo menos três desafios.",
+      "early_bird": "Costuma terminar mais cedo depois que o desafio sai, em pelo menos três desafios.",
+      "improved": "O ritmo que mais melhorou em relação às quatro semanas anteriores.",
+      "lantern": "O total mais lento entre quem jogou os sete dias. Alguém tem que carregar a lanterna!"
+    },
+    "reasons": {
+      "fastest": "{{ time }} no total, dias jogados: {{ days }}",
+      "cleanest": "{{ clean }} de {{ solves }} sem dicas nem verificações",
+      "steadiest": "{{ days }} desafios, ritmos a até {{ spread }}% uns dos outros",
+      "early_bird": "Costuma terminar até {{ time }}",
+      "improved": "Ritmo {{ percent }}% mais rápido que nas quatro semanas anteriores",
+      "lantern": "O mais lento dos {{ of }} que jogaram todos os dias: {{ time }}"
+    }
+  }
+}

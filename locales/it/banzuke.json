@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Settimana precedente",
+  "later": "Settimana successiva",
+  "live": "in corso fino a domenica, mezzanotte UTC",
+  "final_state": "definitivo",
+  "empty": "Nessuno ha ancora una sfida in classifica questa settimana. Il primo ponte apre il torneo!",
+  "today_hidden": "I risultati di oggi contano quando hai finito anche tu la sfida di oggi.",
+  "play": "Gioca la sfida di oggi",
+  "plate": "{{ title }} · {{ place }}° posto",
+  "kyujo": "Kyūjō: salta questa settimana",
+  "days": "Giorni giocati: {{ played }} su 7, vinti: {{ wins }}",
+  "day": "{{ date }}: {{ place }}° posto, punti: {{ points }}",
+  "day_open": "{{ date }}: in arrivo",
+  "day_missed": "{{ date }}: non giocato",
+  "points": "Punti questa settimana: {{ points }}",
+  "crown": "yokozuna della settimana scorsa",
+  "movement": {
+    "up": "Su di {{ n }} rispetto alla settimana prima",
+    "down": "Giù di {{ n }} rispetto alla settimana prima",
+    "same": "Stesso posto della settimana prima",
+    "new": "Nuovo nel banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Come funziona il banzuke",
+    "points": "Ogni giorno, chi ha una sfida in classifica prende punti in base al suo posto nel gruppo: il primo tanti quanti sono i membri del gruppo, ogni posto successivo uno in meno. Tempi uguali condividono il posto, un giorno non giocato non dà punti.",
+    "titles": "La settimana si ordina per punti, poi per giorni vinti. Il primo è yokozuna, poi vengono ōzeki, sekiwake e komusubi, tutti gli altri sono maegashira numerati. Chi ha saltato la settimana è kyūjō.",
+    "pace": "I premi confrontano i ritmi: un tempo rispetto alla mediana di tutti i giocatori quel giorno, così la facile del lunedì e l’oni della domenica contano allo stesso modo.",
+    "members": "Calcolato sui membri attuali del gruppo, la settimana finisce domenica a mezzanotte UTC."
+  },
+  "awards": {
+    "title": "Premi",
+    "leading": "In testa per ora",
+    "final_state": "I vincitori della settimana",
+    "nobody": "Ancora nessuno",
+    "nobody_final": "Non assegnato questa settimana",
+    "names": {
+      "fastest": "Più veloce",
+      "cleanest": "Più pulito",
+      "steadiest": "Più costante",
+      "early_bird": "Mattiniero",
+      "improved": "Maggior progresso",
+      "lantern": "Maglia nera"
+    },
+    "rules": {
+      "fastest": "Il tempo totale più basso tra chi ha giocato più giorni.",
+      "cleanest": "Più sfide senza indizi né verifiche.",
+      "steadiest": "I ritmi più vicini tra loro, su almeno tre sfide.",
+      "early_bird": "Di solito il primo a finire dopo l’uscita della sfida, su almeno tre sfide.",
+      "improved": "Il ritmo migliorato di più rispetto alle quattro settimane precedenti.",
+      "lantern": "Il totale più lento tra chi ha giocato tutti e sette i giorni. Qualcuno dovrà pur indossare la maglia nera!"
+    },
+    "reasons": {
+      "fastest": "{{ time }} in totale, giorni giocati: {{ days }}",
+      "cleanest": "{{ clean }} su {{ solves }} senza indizi né verifiche",
+      "steadiest": "{{ days }} sfide, ritmi entro il {{ spread }}% l’uno dall’altro",
+      "early_bird": "Di solito finito entro: {{ time }}",
+      "improved": "Ritmo più veloce del {{ percent }}% rispetto alle quattro settimane precedenti",
+      "lantern": "Il più lento dei {{ of }} che hanno giocato ogni giorno: {{ time }}"
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "title": "Banzuke",
+  "earlier": "Semaine précédente",
+  "later": "Semaine suivante",
+  "live": "en cours jusqu’à dimanche, minuit UTC",
+  "final_state": "définitif",
+  "empty": "Personne n’a encore de défi classé cette semaine. Le premier pont ouvre le tournoi !",
+  "today_hidden": "Les résultats du jour comptent une fois que tu as toi-même terminé le défi du jour.",
+  "play": "Jouer le défi du jour",
+  "plate": "{{ title }} · rang {{ place }}",
+  "kyujo": "Kyūjō : absent cette semaine",
+  "days": "Jours joués : {{ played }} sur 7, gagnés : {{ wins }}",
+  "day": "{{ date }} : rang {{ place }}, points : {{ points }}",
+  "day_open": "{{ date }} : à venir",
+  "day_missed": "{{ date }} : pas joué",
+  "points": "Points cette semaine : {{ points }}",
+  "crown": "yokozuna de la semaine dernière",
+  "movement": {
+    "up": "En hausse de {{ n }} depuis la semaine précédente",
+    "down": "En baisse de {{ n }} depuis la semaine précédente",
+    "same": "Même rang que la semaine précédente",
+    "new": "Nouveau sur le banzuke"
+  },
+  "titles": {
+    "yokozuna": "Yokozuna",
+    "ozeki": "Ōzeki",
+    "sekiwake": "Sekiwake",
+    "komusubi": "Komusubi",
+    "maegashira": "Maegashira {{ number }}"
+  },
+  "rules": {
+    "title": "Comment marche le banzuke",
+    "points": "Chaque jour, chaque personne avec un défi classé marque des points selon son rang dans le groupe : le premier autant que le groupe a de membres, chaque rang suivant un de moins. Les temps égaux partagent un rang, un jour non joué ne rapporte rien.",
+    "titles": "La semaine se classe aux points, puis aux jours gagnés. Le premier est yokozuna, puis viennent ōzeki, sekiwake et komusubi, tous les suivants sont maegashira numérotés. Qui a sauté la semaine est kyūjō.",
+    "pace": "Les prix comparent les allures : un temps rapporté à la médiane de tous les joueurs ce jour-là, pour que le défi facile du lundi et l’oni du dimanche comptent pareil.",
+    "members": "Calculé d’après les membres actuels du groupe, la semaine se termine le dimanche à minuit UTC."
+  },
+  "awards": {
+    "title": "Prix",
+    "leading": "En tête pour l’instant",
+    "final_state": "Les gagnants de la semaine",
+    "nobody": "Personne pour l’instant",
+    "nobody_final": "Pas attribué cette semaine",
+    "names": {
+      "fastest": "Rapidité",
+      "cleanest": "Propreté",
+      "steadiest": "Régularité",
+      "early_bird": "Lève-tôt",
+      "improved": "Progression",
+      "lantern": "Lanterne rouge"
+    },
+    "rules": {
+      "fastest": "Le temps total le plus bas parmi ceux qui ont joué le plus de jours.",
+      "cleanest": "Le plus de défis sans indice ni vérification.",
+      "steadiest": "Les allures les plus proches les unes des autres, sur au moins trois défis.",
+      "early_bird": "D’habitude le plus prompt à finir après la sortie du défi, sur au moins trois défis.",
+      "improved": "L’allure qui a le plus progressé par rapport aux quatre semaines précédentes.",
+      "lantern": "Le total le plus lent parmi ceux qui ont joué les sept jours. Il faut bien que quelqu’un porte la lanterne !"
+    },
+    "reasons": {
+      "fastest": "{{ time }} au total, jours joués : {{ days }}",
+      "cleanest": "{{ clean }} sur {{ solves }} sans indice ni vérification",
+      "steadiest": "{{ days }} défis, allures à moins de {{ spread }} % d’écart",
+      "early_bird": "D’habitude fini vers {{ time }}",
+      "improved": "Allure {{ percent }} % plus rapide que les quatre semaines précédentes",
+      "lantern": "Le plus lent des {{ of }} qui ont joué tous les jours : {{ time }}"
+    }
+  }
+}

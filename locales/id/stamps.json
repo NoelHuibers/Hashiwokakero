@@ -55,7 +55,9 @@
     "second_thoughts": "Ragu-ragu",
     "palindrome": "Palindrom",
     "lanterne_rouge": "Lanterne rouge",
-    "leap_day": "Hari kabisat"
+    "leap_day": "Hari kabisat",
+    "yokozuna": "Yokozuna",
+    "sansho": "Hadiah khusus"
   },
   "texts": {
     "first": "Selesaikan teka-teki harian pertamamu.",
@@ -102,7 +104,9 @@
     "second_thoughts": "Hapus jembatan yang sama 10 kali dalam satu teka-teki harian.",
     "palindrome": "Selesai dengan waktu yang terbaca sama dari belakang, seperti 1:22.1 atau 12:21.",
     "lanterne_rouge": "Selesai paling akhir di teka-teki harian dengan minimal 20 pemain. Harus ada yang membawa lenteranya!",
-    "leap_day": "Selesaikan teka-teki harian pada 29 Februari."
+    "leap_day": "Selesaikan teka-teki harian pada 29 Februari.",
+    "yokozuna": "Puncaki banzuke mingguan sebuah grup, dalam pekan dengan minimal tiga pemain.",
+    "sansho": "Menangkan salah satu penghargaan mingguan sebuah grup, dalam pekan dengan minimal tiga pemain."
   },
   "secret": {
     "name": "Stempel rahasia",

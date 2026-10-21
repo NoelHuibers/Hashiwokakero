@@ -13,6 +13,7 @@
 
 mod account;
 mod admin;
+mod banzuke;
 mod client;
 mod contact;
 mod daily;
@@ -23,6 +24,7 @@ mod rivals;
 
 pub use account::*;
 pub use admin::*;
+pub use banzuke::*;
 pub use client::{BUILD_HEADER, HashiClient, is_outdated};
 pub use contact::*;
 pub use daily::*;
@@ -73,6 +75,7 @@ mod tests {
         let sources = [
             include_str!("account.rs"),
             include_str!("admin.rs"),
+            include_str!("banzuke.rs"),
             include_str!("contact.rs"),
             include_str!("daily.rs"),
             include_str!("dojo.rs"),
