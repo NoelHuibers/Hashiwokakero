@@ -132,69 +132,214 @@ pub async fn profile(conn: &Connection, user: i64) -> Result<Option<PlayerProfil
 // Only the installed HTTP database uses this cache. Domain helpers above also serve independent
 // databases in tests and deliberately do not share entries between those databases.
 use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
+use std::future::Future;
+use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
-#[derive(Default)]
+use tokio::sync::watch;
+
+const PROFILE_TTL: Duration = Duration::from_secs(30);
+const PROFILE_ENTRIES: usize = 512;
+const PROFILE_FLIGHTS: usize = 64;
+
+type StatsResult = Result<UserStats, ServerFnError>;
+type Completion = watch::Receiver<Option<StatsResult>>;
+
+#[derive(Debug)]
+struct Flight {
+    token: Arc<()>,
+    completion: Completion,
+}
+
+#[derive(Debug, Default)]
 struct Profiles {
     generation: u64,
     entries: HashMap<i64, (Instant, UserStats)>,
+    flights: HashMap<i64, Flight>,
+    // Includes obsolete owners still running after invalidation. Clearing the lookup map must
+    // not allow repeated invalidation to bypass the active-flight metadata bound.
+    active_flights: usize,
 }
 
-static PROFILES: LazyLock<Mutex<Profiles>> = LazyLock::new(|| Mutex::new(Profiles::default()));
+#[derive(Debug, Default)]
+struct ProfileCache(Mutex<Profiles>);
+
+enum Lookup<'a> {
+    Cached(UserStats),
+    Follow(Completion),
+    Owner(FlightOwner<'a>),
+    Uncached,
+}
+
+/// The request owns its computation: no detached task outlives it. Dropping this guard closes
+/// the watch channel, waking followers so one can retry with its own computation closure.
+struct FlightOwner<'a> {
+    cache: &'a ProfileCache,
+    user: i64,
+    generation: u64,
+    token: Arc<()>,
+    completion: watch::Sender<Option<StatsResult>>,
+}
+
+impl FlightOwner<'_> {
+    fn is_current(&self, cache: &Profiles) -> bool {
+        cache.generation == self.generation
+            && cache
+                .flights
+                .get(&self.user)
+                .is_some_and(|flight| Arc::ptr_eq(&flight.token, &self.token))
+    }
+
+    fn complete(self, result: StatsResult) -> StatsResult {
+        {
+            let mut cache = self.cache.lock();
+            if self.is_current(&cache)
+                && cache.entries.len() < PROFILE_ENTRIES
+                && let Ok(stats) = &result
+            {
+                cache
+                    .entries
+                    .insert(self.user, (Instant::now(), stats.clone()));
+            }
+        }
+        // Completion belongs to the flight, independently of cache admission or invalidation.
+        // Retain the value even if every follower was cancelled before publication.
+        self.completion.send_replace(Some(result.clone()));
+        result
+    }
+}
+
+impl Drop for FlightOwner<'_> {
+    fn drop(&mut self) {
+        let mut cache = self.cache.lock();
+        if self.is_current(&cache) {
+            cache.flights.remove(&self.user);
+        }
+        cache.active_flights -= 1;
+        // The sender drops after this lock is released. Old owners cannot remove replacements.
+    }
+}
+
+impl ProfileCache {
+    fn lock(&self) -> MutexGuard<'_, Profiles> {
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn invalidate(&self) {
+        let mut cache = self.lock();
+        cache.generation = cache.generation.wrapping_add(1);
+        cache.entries.clear();
+        // Existing followers keep their receivers. New requests cannot join obsolete work.
+        cache.flights.clear();
+    }
+
+    fn lookup(&self, user: i64) -> Lookup<'_> {
+        let mut cache = self.lock();
+        cache
+            .entries
+            .retain(|_, (at, _)| at.elapsed() < PROFILE_TTL);
+        if let Some((_, stats)) = cache.entries.get(&user) {
+            return Lookup::Cached(stats.clone());
+        }
+        if let Some(flight) = cache.flights.get(&user) {
+            return Lookup::Follow(flight.completion.clone());
+        }
+        if cache.active_flights >= PROFILE_FLIGHTS {
+            // Capacity fallback: run the original uncached computation in this request. It
+            // creates no flight metadata and does not populate the cache. Existing keys can
+            // still be joined at capacity; this is not a limit on concurrent database work.
+            return Lookup::Uncached;
+        }
+        let (completion, receiver) = watch::channel(None);
+        let token = Arc::new(());
+        cache.flights.insert(
+            user,
+            Flight {
+                token: token.clone(),
+                completion: receiver,
+            },
+        );
+        cache.active_flights += 1;
+        Lookup::Owner(FlightOwner {
+            cache: self,
+            user,
+            generation: cache.generation,
+            token,
+            completion,
+        })
+    }
+
+    async fn get_or_compute<F, Fut>(&self, user: i64, compute: F) -> StatsResult
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = StatsResult>,
+    {
+        loop {
+            match self.lookup(user) {
+                Lookup::Cached(stats) => return Ok(stats),
+                Lookup::Owner(owner) => return owner.complete(compute().await),
+                Lookup::Uncached => return compute().await,
+                Lookup::Follow(mut completion) => loop {
+                    let completed = completion.borrow_and_update().clone();
+                    if let Some(result) = completed {
+                        return result;
+                    }
+                    // watch remembers completion between inspecting the value and awaiting;
+                    // there is no Notify registration/lost-wakeup window. Closure means the
+                    // owner was cancelled: retry election without consuming our FnOnce.
+                    if completion.changed().await.is_err() {
+                        break;
+                    }
+                },
+            }
+        }
+    }
+}
+
+static PROFILES: LazyLock<ProfileCache> = LazyLock::new(ProfileCache::default);
 
 pub(crate) fn invalidate() {
-    let mut cache = PROFILES
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner);
-    cache.generation = cache.generation.wrapping_add(1);
-    cache.entries.clear();
+    PROFILES.invalidate();
 }
 
 /// Bounded snapshots of public aggregates. A mutation invalidates them; the TTL also refreshes
 /// other replicas' writes and changes of day. No user-controlled collection can grow without limit.
 pub async fn cached_profile(user: i64) -> Result<Option<PlayerProfile>, ServerFnError> {
     let conn = crate::server::db::conn()?;
+    profile_with_cache(&PROFILES, &conn, user).await
+}
+
+async fn profile_with_cache(
+    cache: &ProfileCache,
+    conn: &Connection,
+    user: i64,
+) -> Result<Option<PlayerProfile>, ServerFnError> {
     // Always revalidate identity, deletion and bans, including writes on another replica. Only
     // the aggregates are cached; neither may keep a public identity alive for the TTL.
-    let mut rows = conn
-        .query(
-            "SELECT name, username IS NULL, created_at FROM users
+    // Finish the identity statement before joining a flight. A follower may become a
+    // replacement owner after invalidation; retaining this read would reuse its old SQLite
+    // snapshot and could insert stale statistics into the new generation.
+    let (name, guest, created_at) = {
+        let mut rows = conn
+            .query(
+                "SELECT name, username IS NULL, created_at FROM users
          WHERE id = ?1 AND deleted_at IS NULL AND banned_at IS NULL",
-            params![user],
-        )
-        .await
-        .map_err(db_err)?;
-    let Some(row) = rows.next().await.map_err(db_err)? else {
-        return Ok(None);
-    };
-    let name: String = row.get(0).map_err(db_err)?;
-    let guest = row.get::<i64>(1).map_err(db_err)? != 0;
-    let created_at = row.get(2).map_err(db_err)?;
-    let (generation, cached) = {
-        let mut cache = PROFILES
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        cache
-            .entries
-            .retain(|_, (at, _)| at.elapsed() < Duration::from_secs(30));
+                params![user],
+            )
+            .await
+            .map_err(db_err)?;
+        let Some(row) = rows.next().await.map_err(db_err)? else {
+            return Ok(None);
+        };
         (
-            cache.generation,
-            cache.entries.get(&user).map(|(_, stats)| stats.clone()),
+            row.get::<String>(0).map_err(db_err)?,
+            row.get::<i64>(1).map_err(db_err)? != 0,
+            row.get::<i64>(2).map_err(db_err)?,
         )
     };
-    let stats = if let Some(stats) = cached {
-        stats
-    } else {
-        let stats = stats(&conn, user).await?;
-        let mut cache = PROFILES
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if cache.generation == generation && cache.entries.len() < 512 {
-            cache.entries.insert(user, (Instant::now(), stats.clone()));
-        }
-        stats
-    };
+    let stats = cache.get_or_compute(user, || stats(conn, user)).await?;
     Ok(Some(PlayerProfile {
         id: user,
         name,
@@ -203,3 +348,7 @@ pub async fn cached_profile(user: i64) -> Result<Option<PlayerProfile>, ServerFn
         stats,
     }))
 }
+
+#[cfg(test)]
+#[path = "profile_cache_tests.rs"]
+mod profile_cache_tests;
