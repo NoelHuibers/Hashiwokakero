@@ -637,6 +637,112 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 }
 
 /* ------------------------------------------------------------------ */
+/*  Hanko 判子: seals members press on each other's daily results      */
+/* ------------------------------------------------------------------ */
+
+/* A seal (components/hanko.rs): a pixel ring, or inked all over, turned a little by hand */
+.hanko-seal {
+  color: var(--px-shu);
+  rotate: var(--tilt, 0deg);
+}
+/* Turned, crisp edges would fray the ring into dashes: smoothed it reads as ink */
+.hanko-seal svg {
+  shape-rendering: geometricPrecision;
+}
+/* Paper showing through the ink, light in the night theme too */
+.hanko-seal[data-solid="true"] {
+  color: #fff8ec;
+}
+/* One kind of seal on a result with its count. Pressed by the viewer: a little more ink. */
+.hanko-pill {
+  background: color-mix(in srgb, var(--px-shu) 7%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--px-shu) 22%, transparent);
+  transition: background-color 150ms, box-shadow 150ms;
+}
+button.hanko-pill:hover {
+  background: color-mix(in srgb, var(--px-shu) 14%, transparent);
+}
+.hanko-pill[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--px-shu) 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--px-shu) 55%, transparent);
+}
+.hanko-pill:focus-visible,
+.hanko-pick:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+/* The ＋判 button after a result's seals that opens the picker: a dashed outline waiting for
+   ink, clearer on the row's hover; inked while its tray is open. Touch screens can't hover,
+   there it's clear always. */
+.hanko-pick {
+  color: var(--px-shu);
+  border: 1.5px dashed color-mix(in srgb, var(--px-shu) 60%, transparent);
+  opacity: 0.6;
+  transition: opacity 150ms, background-color 150ms, color 150ms;
+}
+tr:hover .hanko-pick,
+.hanko-pick:focus-visible {
+  opacity: 1;
+}
+.hanko-pick:hover,
+.hanko-pick[aria-expanded="true"] {
+  opacity: 1;
+  background: var(--px-shu);
+  border-style: solid;
+  border-color: var(--px-shu);
+  color: var(--primary-foreground);
+}
+@media (hover: none) {
+  .hanko-pick {
+    opacity: 0.9;
+  }
+}
+.hanko-choice[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--px-shu) 10%, transparent);
+}
+/* A seal got that wasn't seen before */
+.hanko-received[data-fresh="true"] {
+  background: color-mix(in srgb, var(--px-shu) 8%, transparent);
+}
+/* New seals on one's results: a dot on the groups' entry of the navigation */
+.hanko-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--px-shu);
+  box-shadow: 0 0 0 2px var(--background);
+}
+/* On the current page's entry, which is inked already: paper on ink */
+[aria-current] .hanko-dot {
+  background: var(--primary-foreground);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+/* Pressed: the seal comes down from above, squashes a little, and leaves a ring of ink */
+@keyframes hanko-press {
+  0% { scale: 2.1; rotate: calc(var(--tilt, 0deg) - 16deg); translate: 0 -4px; opacity: 0; }
+  55% { scale: 0.86; rotate: var(--tilt, 0deg); translate: 0 0; opacity: 1; }
+  78% { scale: 1.07; }
+  100% { scale: 1; rotate: var(--tilt, 0deg); opacity: 1; }
+}
+@keyframes hanko-ink {
+  0% { scale: 0.8; opacity: 0.55; }
+  100% { scale: 1.5; opacity: 0; }
+}
+.hanko-press {
+  animation: hanko-press 460ms cubic-bezier(.2, .9, .3, 1.2) var(--delay, 0ms) both;
+}
+.hanko-press::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  border: 2px solid var(--px-shu);
+  opacity: 0;
+  pointer-events: none;
+  animation: hanko-ink 520ms ease-out calc(var(--delay, 0ms) + 250ms);
+}
+
+/* ------------------------------------------------------------------ */
 /*  The banzuke 番付: a group's week as a hanging scroll of washi     */
 /* ------------------------------------------------------------------ */
 
@@ -828,7 +934,8 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 
 @media (prefers-reduced-motion: reduce) {
   .petal, .drift, .bob, .island.over, .island .sel,
-  .bridge.pop, .bridge.wrong, .bridge.hint, .blocked-x, .terminal.busy {
+  .bridge.pop, .bridge.wrong, .bridge.hint, .blocked-x, .terminal.busy,
+  .hanko-press, .hanko-press::after {
     animation: none !important;
   }
 

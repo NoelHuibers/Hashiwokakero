@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Rapide",
+    "wow": "Génial",
+    "close": "De peu",
+    "funny": "Drôle",
+    "grit": "Ténacité",
+    "cheers": "Bravo"
+  },
+  "pick": "Tamponner le résultat de {{ name }} d'un hanko",
+  "picker": "Hanko pour {{ name }}",
+  "who": "{{ kind }} : {{ names }}",
+  "you": "toi",
+  "unread": "Nouveaux hanko : {{ count }}",
+  "received": {
+    "title": "Hanko pour toi",
+    "text": "Les sceaux que les autres ont tamponnés sur ton résultat du jour.",
+    "item": "<b>{{ name }}</b> a tamponné ton résultat : {{ kind }}",
+    "yesterday": "puzzle d'hier",
+    "new": "nouveau",
+    "empty": "Pas encore de hanko sur ton résultat. Quand les autres auront fini, ils pourront le tamponner.",
+    "how": "Tamponne les résultats des autres avec <k>判</k> à côté de leur nom."
+  },
+  "errors": {
+    "not_allowed": "Ce résultat ne peut pas (plus) être tamponné."
+  }
+}

@@ -5,6 +5,7 @@ use leptos_router::components::A;
 use leptos_router::hooks::use_location;
 
 use super::use_localized;
+use crate::components::hanko::HankoDot;
 use crate::i18n::{t, t_string, use_i18n};
 use crate::lang::unlocalized;
 
@@ -86,10 +87,14 @@ pub fn MobileNav() -> impl IntoView {
                             >
                                 <span class=move || {
                                     format!(
-                                        "grid h-7 min-w-11 place-items-center rounded-full px-2 font-pixel text-base leading-none transition-colors {}",
+                                        "relative grid h-7 min-w-11 place-items-center rounded-full px-2 font-pixel text-base leading-none transition-colors {}",
                                         if active() { "bg-primary text-primary-foreground" } else { "" },
                                     )
-                                }>{jp}</span>
+                                }>
+                                    {jp}
+                                    // New hanko on one's results
+                                    {(page == Page::Groups).then(|| view! { <HankoDot class="absolute top-0 end-0.5" /> })}
+                                </span>
                                 <span class="max-w-full truncate px-0.5 text-[10px] font-bold uppercase tracking-wider">
                                     <PageName page />
                                 </span>
@@ -125,6 +130,7 @@ pub(super) fn NavLink(page: Page, href: &'static str, jp: &'static str) -> impl 
             }
         >
             <span class="font-pixel text-sm leading-none sm:text-base">{jp}</span>
+            {(page == Page::Groups).then(|| view! { <HankoDot class="absolute top-1 end-1" /> })}
             <span class="text-[9px] font-bold uppercase tracking-[0.12em] opacity-80 sm:text-[10px] sm:tracking-[0.18em]">
                 <PageName page />
             </span>

@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Snel",
+    "wow": "Geweldig",
+    "close": "Net niet",
+    "funny": "Grappig",
+    "grit": "Doorzetter",
+    "cheers": "Gefeliciteerd"
+  },
+  "pick": "Stempel het resultaat van {{ name }} met een hanko",
+  "picker": "Hanko voor {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "jij",
+  "unread": "Nieuwe hanko: {{ count }}",
+  "received": {
+    "title": "Hanko voor jou",
+    "text": "De stempels die de anderen op je dagresultaat hebben gezet.",
+    "item": "<b>{{ name }}</b> stempelde je resultaat: {{ kind }}",
+    "yesterday": "puzzel van gisteren",
+    "new": "nieuw",
+    "empty": "Nog geen hanko op je resultaat. Zodra de anderen klaar zijn, kunnen ze het stempelen.",
+    "how": "Stempel de resultaten van de anderen met <k>判</k> naast hun naam."
+  },
+  "errors": {
+    "not_allowed": "Dit resultaat kan niet (meer) gestempeld worden."
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Schnell",
+    "wow": "Stark",
+    "close": "Knapp",
+    "funny": "Lustig",
+    "grit": "Ausdauer",
+    "cheers": "Glückwunsch"
+  },
+  "pick": "Hanko auf das Ergebnis von {{ name }} drücken",
+  "picker": "Hanko für {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "du",
+  "unread": "Neue Hanko: {{ count }}",
+  "received": {
+    "title": "Hanko für dich",
+    "text": "Die Stempel, die die anderen auf dein Tagesergebnis gedrückt haben.",
+    "item": "<b>{{ name }}</b> hat dein Ergebnis gestempelt: {{ kind }}",
+    "yesterday": "Rätsel von gestern",
+    "new": "neu",
+    "empty": "Noch kein Hanko auf deinem Ergebnis. Sobald die anderen fertig sind, können sie es stempeln.",
+    "how": "Stemple die Ergebnisse der anderen mit <k>判</k> neben ihrem Namen."
+  },
+  "errors": {
+    "not_allowed": "Dieses Ergebnis kann nicht (mehr) gestempelt werden."
+  }
+}

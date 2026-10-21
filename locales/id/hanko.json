@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Cepat",
+    "wow": "Keren",
+    "close": "Nyaris",
+    "funny": "Lucu",
+    "grit": "Gigih",
+    "cheers": "Selamat"
+  },
+  "pick": "Cap hanko pada hasil {{ name }}",
+  "picker": "Hanko untuk {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "kamu",
+  "unread": "Hanko baru: {{ count }}",
+  "received": {
+    "title": "Hanko untukmu",
+    "text": "Cap yang diberikan anggota lain pada hasil harianmu.",
+    "item": "<b>{{ name }}</b> mengecap hasilmu: {{ kind }}",
+    "yesterday": "teka-teki kemarin",
+    "new": "baru",
+    "empty": "Belum ada hanko pada hasilmu. Setelah yang lain selesai, mereka bisa mengecapnya.",
+    "how": "Cap hasil anggota lain dengan <k>判</k> di samping nama mereka."
+  },
+  "errors": {
+    "not_allowed": "Hasil ini tidak bisa dicap (lagi)."
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Nhanh",
+    "wow": "Tuyệt vời",
+    "close": "Suýt nữa",
+    "funny": "Hài hước",
+    "grit": "Kiên trì",
+    "cheers": "Chúc mừng"
+  },
+  "pick": "Đóng hanko lên kết quả của {{ name }}",
+  "picker": "Hanko cho {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "bạn",
+  "unread": "Hanko mới: {{ count }}",
+  "received": {
+    "title": "Hanko cho bạn",
+    "text": "Những con dấu người khác đã đóng lên kết quả hôm nay của bạn.",
+    "item": "<b>{{ name }}</b> đã đóng dấu lên kết quả của bạn: {{ kind }}",
+    "yesterday": "câu đố hôm qua",
+    "new": "mới",
+    "empty": "Kết quả của bạn chưa có hanko nào. Khi người khác giải xong, họ có thể đóng dấu.",
+    "how": "Đóng dấu lên kết quả của người khác bằng nút <k>判</k> cạnh tên họ."
+  },
+  "errors": {
+    "not_allowed": "Không thể đóng dấu lên kết quả này (nữa)."
+  }
+}

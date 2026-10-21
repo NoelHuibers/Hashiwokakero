@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Rápido",
+    "wow": "Increíble",
+    "close": "Por poco",
+    "funny": "Divertido",
+    "grit": "Tesón",
+    "cheers": "Felicidades"
+  },
+  "pick": "Sellar el resultado de {{ name }} con un hanko",
+  "picker": "Hanko para {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "tú",
+  "unread": "Hanko nuevos: {{ count }}",
+  "received": {
+    "title": "Hanko para ti",
+    "text": "Los sellos que los demás pusieron en tu resultado del día.",
+    "item": "<b>{{ name }}</b> selló tu resultado: {{ kind }}",
+    "yesterday": "puzle de ayer",
+    "new": "nuevo",
+    "empty": "Aún no hay hanko en tu resultado. Cuando los demás terminen, podrán sellarlo.",
+    "how": "Sella los resultados de los demás con <k>判</k> junto a su nombre."
+  },
+  "errors": {
+    "not_allowed": "Este resultado no se puede sellar (ya)."
+  }
+}

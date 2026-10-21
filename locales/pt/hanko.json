@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Rápido",
+    "wow": "Incrível",
+    "close": "Quase",
+    "funny": "Engraçado",
+    "grit": "Garra",
+    "cheers": "Parabéns"
+  },
+  "pick": "Carimbar o resultado de {{ name }} com um hanko",
+  "picker": "Hanko para {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "você",
+  "unread": "Hanko novos: {{ count }}",
+  "received": {
+    "title": "Hanko para você",
+    "text": "Os selos que os outros carimbaram no seu resultado do dia.",
+    "item": "<b>{{ name }}</b> carimbou seu resultado: {{ kind }}",
+    "yesterday": "quebra-cabeça de ontem",
+    "new": "novo",
+    "empty": "Ainda não há hanko no seu resultado. Quando os outros terminarem, poderão carimbá-lo.",
+    "how": "Carimbe os resultados dos outros com <k>判</k> ao lado do nome."
+  },
+  "errors": {
+    "not_allowed": "Este resultado não pode (mais) ser carimbado."
+  }
+}

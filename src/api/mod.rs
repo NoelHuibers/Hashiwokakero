@@ -19,6 +19,7 @@ mod contact;
 mod daily;
 mod dojo;
 mod groups;
+mod hanko;
 mod puzzle;
 mod replay;
 mod rivals;
@@ -31,6 +32,7 @@ pub use contact::*;
 pub use daily::*;
 pub use dojo::*;
 pub use groups::*;
+pub use hanko::*;
 pub use puzzle::*;
 pub use replay::*;
 pub use rivals::*;
@@ -82,6 +84,7 @@ mod tests {
             include_str!("daily.rs"),
             include_str!("dojo.rs"),
             include_str!("groups.rs"),
+            include_str!("hanko.rs"),
             include_str!("puzzle.rs"),
             include_str!("replay.rs"),
             include_str!("rivals.rs"),

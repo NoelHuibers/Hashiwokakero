@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Fast",
+    "wow": "Amazing",
+    "close": "So close",
+    "funny": "Funny",
+    "grit": "Grit",
+    "cheers": "Congrats"
+  },
+  "pick": "Stamp {{ name }}'s result with a hanko",
+  "picker": "Hanko for {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "you",
+  "unread": "New hanko: {{ count }}",
+  "received": {
+    "title": "Hanko for you",
+    "text": "The seals the others stamped on your daily result.",
+    "item": "<b>{{ name }}</b> stamped your result: {{ kind }}",
+    "yesterday": "yesterday's daily",
+    "new": "new",
+    "empty": "No hanko on your result yet. Once the others finish, they can stamp it.",
+    "how": "Stamp the others' results with <k>判</k> next to their names."
+  },
+  "errors": {
+    "not_allowed": "This result can't be stamped (any more)."
+  }
+}

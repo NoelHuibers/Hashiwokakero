@@ -16,8 +16,9 @@ use crate::model::{
     CommunitySummary, ContactMessage, DailyInfo, DayResult, Daypart, DojoBenchmark, DojoBenchmarks,
     DojoBoard, DojoBudgetCurve, DojoBudgets, DojoCactus, DojoCrossover, DojoCurve, DojoEntry,
     DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons, DojoState, DojoSubmission, Flag,
-    HallOfFame, Leaderboard, LeaderboardEntry, LogSummary, MonthBoard, MonthEntry, MoveEvent,
-    PlayerProfile, Run, Stamp, StampProgress, SubmissionAction, SubmitResult, UserInfo, UserStats,
+    HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, MonthBoard, MonthEntry,
+    MoveEvent, PlayerProfile, Run, Stamp, StampProgress, SubmissionAction, SubmitResult, UserInfo,
+    UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -916,5 +917,6 @@ fn stored_ids() {
     lines.extend(SolverKind::ALL.map(|k| format!("solver {:?} {}", k, k.id())));
     lines.extend(Heuristic::ALL.map(|h| format!("heuristic {:?} {}", h, h.id())));
     lines.extend(ApiError::ALL.map(|e| format!("error {:?} {}", e, e.code())));
+    lines.extend(HankoKind::ALL.map(|k| format!("hanko {:?} {}", k, k.id())));
     check("ids.txt", &lines.join("\n"), IDS);
 }

@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Veloce",
+    "wow": "Fantastico",
+    "close": "Per poco",
+    "funny": "Divertente",
+    "grit": "Tenacia",
+    "cheers": "Complimenti"
+  },
+  "pick": "Timbra il risultato di {{ name }} con un hanko",
+  "picker": "Hanko per {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "tu",
+  "unread": "Nuovi hanko: {{ count }}",
+  "received": {
+    "title": "Hanko per te",
+    "text": "I sigilli che gli altri hanno timbrato sul tuo risultato del giorno.",
+    "item": "<b>{{ name }}</b> ha timbrato il tuo risultato: {{ kind }}",
+    "yesterday": "puzzle di ieri",
+    "new": "nuovo",
+    "empty": "Ancora nessun hanko sul tuo risultato. Quando gli altri avranno finito, potranno timbrarlo.",
+    "how": "Timbra i risultati degli altri con <k>判</k> accanto al loro nome."
+  },
+  "errors": {
+    "not_allowed": "Questo risultato non si può (più) timbrare."
+  }
+}

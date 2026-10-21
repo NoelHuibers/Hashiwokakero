@@ -343,6 +343,32 @@ CREATE TABLE IF NOT EXISTS rivals (
 );
 CREATE INDEX IF NOT EXISTS rivals_rival ON rivals (rival_id);
 ",
+    // 17
+    "
+-- Hanko 判子: seals members of a group press on each other's daily results, see
+-- server/groups/hanko.rs. `seen`: the one whose result it is saw it (the unread dot)
+CREATE TABLE IF NOT EXISTS group_hanko (
+    group_id   INTEGER NOT NULL,
+    day        INTEGER NOT NULL,
+    target_id  INTEGER NOT NULL,
+    giver_id   INTEGER NOT NULL,
+    kind       TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    seen       INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (group_id, day, target_id, giver_id, kind)
+);
+CREATE INDEX IF NOT EXISTS group_hanko_target ON group_hanko (target_id, day);
+CREATE INDEX IF NOT EXISTS group_hanko_giver ON group_hanko (giver_id);
+-- A member who leaves (or is removed, or deleted) takes the seals they pressed and got in the
+-- group along, and a group that goes all of its seals
+CREATE TRIGGER group_hanko_member_gone AFTER DELETE ON group_members BEGIN
+    DELETE FROM group_hanko WHERE group_id = OLD.group_id
+        AND (giver_id = OLD.user_id OR target_id = OLD.user_id);
+END;
+CREATE TRIGGER group_hanko_group_gone AFTER DELETE ON groups BEGIN
+    DELETE FROM group_hanko WHERE group_id = OLD.id;
+END;
+",
 ];
 
 pub async fn init() -> Result<(), String> {
