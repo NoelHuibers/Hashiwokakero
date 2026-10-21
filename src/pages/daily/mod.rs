@@ -20,7 +20,7 @@ use crate::api::{PaidAction, PaidOutcome, daily_paid_action, daily_recover_actio
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
 use crate::components::ui::badge::{Badge, BadgeVariant};
-use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
+use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};

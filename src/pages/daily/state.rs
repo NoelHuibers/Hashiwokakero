@@ -290,7 +290,6 @@ impl Daily {
     /// playing it in another tab.
     /// Focus refreshes stop on failure; only a named manual retry clears the error.
     /// Unconfirmed solved boards can only be reconciled by the owned submission flow.
-
     pub(super) fn refresh(&self) {
         if self.finished()
             || self.info.with_untracked(Option::is_none)

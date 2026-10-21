@@ -890,3 +890,38 @@ for (const failFirst of [false, true]) {
     expect(reads).toBe(failFirst ? 2 : 1);
   });
 }
+
+test('midnight replacement of solved metadata keeps the new discovery request', async ({ page }) => {
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  await solveDaily(page, puzzle, solution);
+  await expectResult(page);
+  await page.keyboard.press('Escape');
+  await page.getByRole('link', { name: /Practice/ }).first().click();
+  await expect(page).toHaveURL(/\/practice/);
+  let reads = 0;
+  let nextDay = 0;
+  await page.route('**/api/daily_today', async (route) => {
+    const response = await route.fetch();
+    const info = await response.json();
+    reads++;
+    nextDay = info.day + 1;
+    // The old day's finish was fetched just as the server clock crossed midnight.
+    info.server_now = nextDay * 86_400_000 + 1000;
+    if (reads > 1) {
+      info.day = nextDay;
+      info.attempt = null;
+      info.puzzle = null;
+      info.stamps = [];
+      info.finishers = 0;
+    }
+    await route.fulfill({ response, json: info });
+  });
+  await page.getByRole('link', { name: /Daily/ }).first().click();
+  await expect.poll(() => reads).toBe(2);
+  await expect(metadataStatus(page)).toBeEmpty();
+  await expect(page.getByRole('button', { name: /^Start/ })).toBeEnabled();
+  await expect(submitStatus(page)).toHaveCount(0);
+  await page.waitForLoadState('networkidle');
+  expect(reads).toBe(2);
+});

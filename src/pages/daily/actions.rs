@@ -590,7 +590,12 @@ mod tests {
             let returning = page(&d.game, auth);
             returning.info.set(None);
             returning.actions.sync(&returning);
+            returning
+                .submission
+                .set(super::super::recovery::Phase::Idle);
             let refresh = super::super::state::RefreshGuard::new(&returning);
+            assert!(returning.actions.submit_guard(&returning).is_none());
+            assert!(refresh.current(&returning));
             assert!(!returning.ready_to_submit());
             assert!(returning.begin_submit(false).is_none());
             assert!(refresh.current(&returning));
