@@ -26,24 +26,5 @@
   "admire": "Bewonderen",
   "revealed": "Opgelost door de SAT-solver.",
   "play_myself": "Zelf spelen",
-  "new_puzzle": "Nieuwe puzzel",
-  "about": {
-    "kicker": "over het spel",
-    "title": "Hashiwokakero, de bruggenpuzzel",
-    "what_title": "Wat is Hashiwokakero?",
-    "what": "Hashiwokakero (橋をかけろ, “bouw bruggen!”) is een Japanse logische puzzel van uitgever Nikoli, ook bekend als <b>Bruggen bouwen</b>, <b>Hashi</b> of Ai-Ki-Ai. Een rooster met genummerde eilanden moet met bruggen worden verbonden: elk eiland krijgt precies zoveel bruggen als zijn getal, bruggen lopen recht en kruisen elkaar nooit, hoogstens twee verbinden hetzelfde paar eilanden, en aan het eind is elk eiland vanaf elk ander bereikbaar. Net als sudoku of nurikabe heb je geen rekenwerk nodig, alleen logisch nadenken.",
-    "how_title": "Zo speel je Bruggen bouwen online",
-    "how": "Kies een moeilijkheidsgraad van Makkelijk (7×7) tot Oni (24×24) en druk op Genereer. Klik op het water tussen twee eilanden om een brug te bouwen, nog eens voor een dubbele brug, een derde klik haalt ze weg, of sleep gewoon van het ene eiland naar het volgende. Afgeronde eilanden worden groen, overvolle rood. Vastgelopen? Vraag om een hint of laat de solver je bruggen controleren. De volledige regels met een opgelost voorbeeld staan op de pagina <a>speluitleg</a>.",
-    "techniques_title": "Oplostechnieken zonder gokken",
-    "technique_double": "Een eiland waarvan het getal het dubbele is van zijn aantal buren, heeft een dubbele brug naar elk van hen: een 8 in het open veld, een 6 aan de rand, een 4 in een hoek.",
-    "technique_isolation": "Een 1 verbindt nooit met een andere 1, en twee 2’en krijgen nooit een dubbele brug, want dan raken ze afgesneden van de rest.",
-    "technique_count": "Tel wat er nog ontbreekt: als een eiland nog 5 bruggen nodig heeft over drie buren, krijgt elke buur er minstens één.",
-    "technique_block": "Bruggen blokkeren de lijnen die ze kruisen, dus een geplaatste brug kan de eilanden aan beide kanten dwingen om ergens anders te verbinden.",
-    "technique_connect": "Uiteindelijk moet alles verbonden zijn: een groep die de rest maar via één opening kan bereiken, moet die ook gebruiken.",
-    "why_title": "Waarom hier Hashi spelen",
-    "why_unique": "Elke puzzel heeft <b>precies één oplossing</b>, bewezen door een SAT-solver voordat je hem ziet, dus logica is altijd genoeg.",
-    "why_unlimited": "Onbeperkt gratis puzzels in vijf formaten, met hints en controles die uit de echte oplossing komen, niet uit vuistregels.",
-    "why_art": "Schattige Japanse pixelart, een dag- en een nachtthema, sneltoetsen, ongedaan maken en opnieuw, en je spel wordt in de browser bewaard.",
-    "why_workshop": "Maak je eigen puzzels in de <workshop>werkplaats</workshop>, of kijk hoe onze eigen CDCL- en DPLL-SAT-solvers het tegen elkaar opnemen in het <lab>lab</lab>. Het hele spel is open source en geschreven in Rust."
-  }
+  "new_puzzle": "Nieuwe puzzel"
 }

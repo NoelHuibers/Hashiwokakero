@@ -1,5 +1,6 @@
 //! The daily puzzle page, the home page: one puzzle a day for everyone, timed and ranked.
 
+pub mod about;
 mod actions;
 pub mod cover;
 pub mod ranking;
@@ -28,10 +29,11 @@ use crate::model::{
     AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_difficulty,
     daily_number, format_duration, weekday,
 };
-use crate::pages::play::{SeoIntro, islands_percent};
+use crate::pages::play::islands_percent;
 use crate::seo::{PageMeta, site_ld};
 use crate::state::{Auth, DailyGame, Status, ToastKind, error_toast, load, toast};
 
+use about::About;
 use cover::Cover;
 use ranking::RankingCard;
 use result::ResultCard;
@@ -581,6 +583,6 @@ pub fn DailyPage() -> impl IntoView {
                 </aside>
             </div>
         </section>
-        <SeoIntro />
+        <About />
     }
 }

@@ -68,6 +68,9 @@ pub fn BoardView(
     /// Draw the wooden frame around the sea.
     #[prop(optional)]
     framed: bool,
+    /// What the board shows, for screen readers, instead of just "puzzle board".
+    #[prop(into, optional)]
+    label: Option<Signal<String>>,
 ) -> impl IntoView {
     let i18n = use_i18n();
     let svg_ref = NodeRef::<leptos::svg::Svg>::new();
@@ -623,7 +626,10 @@ pub fn BoardView(
             xmlns="http://www.w3.org/2000/svg"
             role=if mode == BoardMode::View { "img" } else { "group" }
             tabindex=(mode != BoardMode::View).then_some(0)
-            aria-label=move || t_string!(i18n, common.board.label)
+            aria-label=move || match label {
+                Some(label) => label.get(),
+                None => t_string!(i18n, common.board.label).to_string(),
+            }
             aria-description=keyboard_help
             on:keydown=on_key
             on:focus=move |_| {

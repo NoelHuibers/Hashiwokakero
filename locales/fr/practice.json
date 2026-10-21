@@ -26,24 +26,5 @@
   "admire": "Admirer",
   "revealed": "Résolu par le solveur SAT.",
   "play_myself": "La faire moi-même",
-  "new_puzzle": "Nouvelle grille",
-  "about": {
-    "kicker": "à propos du jeu",
-    "title": "Hashiwokakero, le casse-tête des ponts",
-    "what_title": "Qu’est-ce que le Hashiwokakero ?",
-    "what": "Le Hashiwokakero (橋をかけろ, « construis des ponts ! ») est un casse-tête logique japonais publié par Nikoli, aussi connu sous les noms <b>Ponts</b>, <b>Hashi</b> ou Ai-Ki-Ai. Une grille d’îles numérotées doit être reliée par des ponts : chaque île reçoit exactement autant de ponts que son chiffre, les ponts sont droits et ne se croisent jamais, deux au plus relient la même paire d’îles, et à la fin chaque île doit être accessible depuis toutes les autres. Comme le Sudoku ou le Nurikabe, il ne demande aucun calcul, seulement de la déduction.",
-    "how_title": "Comment jouer aux Ponts en ligne",
-    "how": "Choisis une difficulté de Facile (7×7) à Oni (24×24) et appuie sur Générer. Clique sur l’eau entre deux îles pour construire un pont, clique à nouveau pour un pont double, un troisième clic les retire, ou fais simplement glisser d’une île à la suivante. Les îles terminées passent au vert, celles qui débordent au rouge. Bloqué ? Demande un indice ou laisse le solveur vérifier tes ponts. Les règles complètes avec un exemple résolu sont sur la page <a>comment jouer</a>.",
-    "techniques_title": "Techniques de résolution sans deviner",
-    "technique_double": "Une île dont le chiffre vaut le double de ses voisins a un pont double vers chacun d’eux : un 8 en pleine mer, un 6 sur un bord, un 4 dans un coin.",
-    "technique_isolation": "Un 1 ne se relie jamais à un autre 1, et deux 2 ne sont jamais reliés par un pont double : ils seraient coupés du reste.",
-    "technique_count": "Compte ce qui manque encore : si une île a besoin de 5 ponts de plus répartis sur trois voisins, chaque voisin en reçoit au moins un.",
-    "technique_block": "Les ponts bloquent les lignes qu’ils traversent : un pont posé peut forcer les îles des deux côtés à se relier ailleurs.",
-    "technique_connect": "Tout doit finir relié : un groupe qui ne peut rejoindre le reste que par un seul passage doit l’emprunter.",
-    "why_title": "Pourquoi jouer au Hashi ici",
-    "why_unique": "Chaque grille a <b>exactement une solution</b>, prouvée par un solveur SAT avant que tu la voies : la logique suffit toujours.",
-    "why_unlimited": "Des grilles gratuites illimitées en cinq tailles, avec des indices et des vérifications tirés de la vraie solution, pas d’heuristiques.",
-    "why_art": "Un joli pixel art japonais, un thème de jour et de nuit, des raccourcis clavier, annuler et rétablir, et ta partie est sauvegardée dans le navigateur.",
-    "why_workshop": "Crée tes propres grilles dans l’<workshop>atelier</workshop>, ou regarde nos solveurs SAT CDCL et DPLL maison faire la course dans le <lab>labo</lab>. Tout le jeu est open source et écrit en Rust."
-  }
+  "new_puzzle": "Nouvelle grille"
 }

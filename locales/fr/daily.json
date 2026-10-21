@@ -50,5 +50,31 @@
     "pace": "Des clics aussi rapides, encore et encore, ressemblent à un programme, ce résultat n’est donc pas classé.",
     "second_account": "Cet appareil a déjà ouvert le défi du jour avec un autre compte, ce résultat n’est donc pas classé. Joue chaque défi du jour avec un seul compte.",
     "review": "Ce résultat a été retiré du classement après vérification."
+  },
+  "about": {
+    "kicker": "à propos du jeu",
+    "title": "Hashiwokakero, le casse-tête des ponts",
+    "intro": "Le Hashiwokakero (橋をかけろ, « construis des ponts ! »), aussi appelé <b>Ponts</b>, <b>Hashi</b> ou Hashikake, est un casse-tête logique japonais publié par Nikoli. Ici, tu en joues un nouveau chaque jour, gratuitement et sans compte, et chaque grille a exactement une solution : tu n’as jamais besoin de deviner.",
+    "how_title": "Comment jouer au Hashi",
+    "daily_title": "Comment marche la grille du jour",
+    "day_title": "Une grille par jour",
+    "day": "La même pour tout le monde, nouvelle à minuit UTC. Comme les jeux du journal, elle devient plus dure à l’approche du dimanche.",
+    "clock_title": "Commence quand tu es prêt",
+    "clock": "La grille reste cachée jusqu’à ce que tu appuies sur Commencer. Le chrono ne démarre qu’à ce moment-là.",
+    "penalty_title": "Vérifier et les indices coûtent du temps",
+    "penalty": "Chaque vérification ajoute {{ check }} à ton temps, chaque indice {{ hint }}.",
+    "give_up_title": "Abandonner",
+    "give_up": "Bloqué ? Abandonne pour voir la solution. Cette partie n’est pas classée, mais demain une nouvelle grille t’attend.",
+    "tips_title": "Astuces pour résoudre le Hashiwokakero",
+    "tips_intro": "Trois déductions pour bien commencer. Chaque image montre les ponts qu’elles imposent.",
+    "faq_title": "Questions fréquentes",
+    "account_q": "Ai-je besoin d’un compte ?",
+    "account_a": "Non. Tu joues tout de suite en invité et tu apparais quand même au classement. Réserve un pseudo pour garder ta série sur tous tes appareils.",
+    "next_q": "Quand arrive une nouvelle grille du jour ?",
+    "next_a": "Chaque jour à minuit UTC, au même moment partout dans le monde. Un compte à rebours sur cette page indique le temps restant.",
+    "more_q": "Où jouer davantage ?",
+    "more_a": "En <practice>mode libre</practice> : des grilles illimitées en cinq tailles, de 7×7 à 24×24, avec des indices quand tu veux. Ou crée tes propres grilles dans l’<workshop>atelier</workshop>.",
+    "to_rules": "Règles du Hashiwokakero et astuces →",
+    "to_practice": "Mode libre : grilles illimitées →"
   }
 }

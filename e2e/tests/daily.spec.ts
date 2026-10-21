@@ -3,7 +3,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { register, signInWith, signOut } from '../account';
-import { addBridge, DAILY_KEY, missing, saved } from '../board';
+import { addBridge, board, DAILY_KEY, missing, saved } from '../board';
 import { expectResult, solveDaily, startDaily } from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
 
@@ -155,11 +155,11 @@ test('a delayed paid action blocks double taps, keyboard edits and other actions
     for (const name of [/^Hint/, /^Check/, /^Give up/, /Undo/, /Redo/, /^Clear/]) {
       await expect(page.getByRole('button', { name })).toBeDisabled();
     }
-    const board = page.locator('svg.board-svg').first();
-    await board.focus();
-    await board.press('Enter');
-    await board.press('ArrowRight');
-    await board.press('Space');
+    const svg = board(page);
+    await svg.focus();
+    await svg.press('Enter');
+    await svg.press('ArrowRight');
+    await svg.press('Space');
     expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
     expect((await saved(page, DAILY_KEY)).moves).toBe(before.moves);
     expect(requests).toBe(1);
@@ -400,7 +400,7 @@ test('a conflicting account attempt never adopts a lost guest hint', async ({ pa
   await signInWith(page, username, password);
   await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
   await visit(page, '/');
-  await expect(page.locator('svg.board-svg')).toBeVisible();
+  await expect(board(page)).toBeVisible();
   await expect(penaltyValue(page)).toHaveText('+0s');
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
   expect(purchases).toBe(1);

@@ -3,7 +3,7 @@
     "title": "Cách chơi Hashiwokakero · Luật và mẹo giải · Hashi",
     "description": "Luật chơi Hashiwokakero (Nối cầu) kèm ví dụ, các suy luận giải được hầu hết câu đố mà không cần đoán, và cách bộ giải SAT chứng minh lời giải duy nhất."
   },
-  "title": "Cách chơi",
+  "title": "Cách chơi Hashiwokakero",
   "intro": "Hashiwokakero (橋をかけろ, “hãy xây cầu!”) là câu đố logic do Nikoli phát hành. Hãy nối tất cả các đảo bằng cầu sao cho số cầu của mỗi đảo đúng bằng con số ghi trên nó.",
   "rule": {
     "count_title": "Đếm cầu",
@@ -16,6 +16,25 @@
     "connected": "Cuối cùng, từ mỗi đảo phải đi được tới mọi đảo khác."
   },
   "example": "Một câu đố đã giải",
+  "tips": {
+    "title": "Kỹ thuật giải Hashiwokakero",
+    "intro": "Năm suy luận giải được hầu hết câu đố mà không cần đoán. Mỗi hình cho thấy những cây cầu mà chúng buộc phải có.",
+    "corner_title": "Góc cần cầu đôi",
+    "corner": "Số 4 ở góc chỉ có hai láng giềng, nên cần cầu đôi tới cả hai. Điều tương tự đúng với số 6 ở cạnh và số 8 ở giữa.",
+    "corner_board": "Số 4 ở góc trên bên trái, nối cầu đôi tới số 3 bên phải và cầu đôi tới số 2 bên dưới.",
+    "ones_title": "Hai số 1 không bao giờ nối nhau",
+    "ones": "Cầu giữa hai số 1 sẽ làm cả hai hoàn tất và tách chúng khỏi mọi đảo khác, nên mỗi số 1 phải nối nơi khác. Cũng vì vậy, hai số 2 không bao giờ chung một cầu đôi.",
+    "ones_board": "Hai số 1 ở hàng trên, mỗi số nối một cầu đơn xuống số 3 bên dưới thay vì nối với nhau.",
+    "count_title": "Đếm số còn thiếu",
+    "count": "Số 5 có ba láng giềng nhận được tối đa sáu cầu. Thiếu một láng giềng thì nó chỉ đạt tối đa bốn, nên mỗi láng giềng nhận ít nhất một cầu.",
+    "count_board": "Số 5 ở cạnh trên, nối một cầu đơn tới từng láng giềng: số 2 bên trái, số 3 bên phải và số 4 bên dưới.",
+    "block_title": "Cầu chặn đường",
+    "block": "Cầu không bao giờ cắt nhau, nên mỗi cây cầu chặn các đường mà nó đi qua. Đảo phía sau có thể chỉ còn một lối đi.",
+    "block_board": "Cầu đôi chạy dọc ở giữa chặn hàng của số 1 bên trái, nên số 1 nối xuống số 2 bên dưới thay vì sang số 2 bên phải.",
+    "connect_title": "Đừng bao giờ khép kín một nhóm",
+    "connect": "Cuối cùng mọi thứ phải liên thông. Nếu vài đảo hoàn tất với nhau sẽ bị tách riêng, thì ít nhất một cây cầu phải dẫn ra ngoài.",
+    "connect_board": "Một hàng 1, 3 và 2: số 1 nối với số 3. Nếu số 3 dồn hai cầu cuối cho số 2, ba đảo này sẽ bị tách riêng, nên số 3 còn nối một cầu xuống số 2 bên dưới."
+  },
   "controls": {
     "title": "Điều khiển",
     "tap": "Bấm vào mặt nước giữa hai đảo để xây cầu, bấm lần nữa để thêm cầu thứ hai, lần thứ ba sẽ gỡ bỏ.",

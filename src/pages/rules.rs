@@ -4,6 +4,8 @@ use leptos_router::components::A;
 
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::layout::use_localized;
+use crate::components::rules::Rules;
+use crate::components::tips::{Tip, TipCards};
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::components::ui::kbd::Kbd;
 use crate::components::ui::separator::Separator;
@@ -35,21 +37,6 @@ fn example(width: u8, height: u8, bridges: &[ExampleBridge]) -> (Board, Vec<u8>)
         }
     }
     (board, counts)
-}
-
-#[component]
-fn Rule(number: &'static str, title: AnyView, children: Children) -> impl IntoView {
-    view! {
-        <div class="flex gap-4">
-            <span class="grid size-12 shrink-0 place-items-center rounded-lg bg-primary font-pixel text-2xl text-primary-foreground shadow-md">
-                {number}
-            </span>
-            <div>
-                <h3 class="text-lg font-bold">{title}</h3>
-                <p class="text-muted-foreground">{children()}</p>
-            </div>
-        </div>
-    }
 }
 
 #[component]
@@ -96,20 +83,7 @@ pub fn RulesPage() -> impl IntoView {
             </div>
 
             <div class="grid grid-cols-1 items-center gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <div class="flex flex-col gap-6">
-                    <Rule number="一" title=t!(i18n, rules.rule.count_title).into_any()>
-                        {t!(i18n, rules.rule.count)}
-                    </Rule>
-                    <Rule number="二" title=t!(i18n, rules.rule.double_title).into_any()>
-                        {t!(i18n, rules.rule.double)}
-                    </Rule>
-                    <Rule number="三" title=t!(i18n, rules.rule.straight_title).into_any()>
-                        {t!(i18n, rules.rule.straight)}
-                    </Rule>
-                    <Rule number="四" title=t!(i18n, rules.rule.connected_title).into_any()>
-                        {t!(i18n, rules.rule.connected)}
-                    </Rule>
-                </div>
+                <Rules class="flex flex-col gap-6" />
                 <div class="flex flex-col items-center gap-3">
                     <BoardView
                         board=Signal::stored(board)
@@ -121,6 +95,17 @@ pub fn RulesPage() -> impl IntoView {
                     <p class="text-sm text-muted-foreground">{t!(i18n, rules.example)}</p>
                 </div>
             </div>
+
+            <Separator class="my-10" />
+
+            <section class="flex scroll-mt-20 flex-col gap-5" id="tips">
+                <div>
+                    <p class="font-pixel text-sm text-primary">"コツ · kotsu"</p>
+                    <h2 class="text-2xl font-black">{t!(i18n, rules.tips.title)}</h2>
+                    <p class="mt-2 max-w-2xl text-muted-foreground">{t!(i18n, rules.tips.intro)}</p>
+                </div>
+                <TipCards count=Tip::ALL.len() class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" />
+            </section>
 
             <Separator class="my-10" />
 
@@ -174,7 +159,7 @@ pub fn RulesPage() -> impl IntoView {
 
             <Separator class="my-10" />
 
-            <section class="flex flex-col gap-5" id="faq">
+            <section class="flex scroll-mt-20 flex-col gap-5" id="faq">
                 <div>
                     <p class="font-pixel text-sm text-primary">"よくある質問 · FAQ"</p>
                     <h2 class="text-2xl font-black">{t!(i18n, rules.faq_title)}</h2>

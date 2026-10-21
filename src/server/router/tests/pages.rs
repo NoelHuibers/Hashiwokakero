@@ -18,7 +18,8 @@ use super::*;
 use crate::api::{SendMessage, StartDaily, SubmitDaily};
 use crate::i18n::{Locale, td_string};
 use crate::lang::{difficulty_name, localized, unlocalized};
-use crate::model::MoveEvent;
+use crate::model::{CHECK_PENALTY_MS, HINT_PENALTY_MS, MoveEvent};
+use crate::pages::daily::about::penalty;
 use crate::pages::legal::CONTACT_EMAIL;
 use crate::seo::{OG_IMAGE, SITE_URL, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
@@ -90,14 +91,40 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, daily.week.title),
                 td_string!(l, daily.week.text),
                 td_string!(l, daily.week.next),
-                // The introduction for search engines
-                td_string!(l, practice.about.title),
-                td_string!(l, practice.about.what_title),
-                td_string!(l, practice.about.how_title),
-                td_string!(l, practice.about.techniques_title),
+                // The introduction for search engines: the rules, the daily, the first tips
+                td_string!(l, daily.about.title),
+                td_string!(l, daily.about.how_title),
+                td_string!(l, rules.rule.count_title),
+                td_string!(l, rules.rule.connected),
+                td_string!(l, daily.about.daily_title),
+                td_string!(l, daily.about.day),
+                td_string!(l, daily.about.give_up),
+                td_string!(l, daily.about.tips_title),
+                td_string!(l, rules.tips.corner_title),
+                td_string!(l, rules.tips.ones),
+                td_string!(l, rules.tips.count_title),
+                td_string!(l, daily.about.faq_title),
+                td_string!(l, rules.faq.unique_q),
+                td_string!(l, daily.about.account_a),
+                td_string!(l, daily.about.next_q),
+                td_string!(l, daily.about.to_rules),
+                td_string!(l, daily.about.to_practice),
+            ])
+            .into_iter()
+            .chain([td_string!(
+                l,
+                daily.about.penalty,
+                check = penalty(CHECK_PENALTY_MS),
+                hint = penalty(HINT_PENALTY_MS)
+            )])
+            .collect(),
+            // The game's buttons only once the daily is started (the text below the daily
+            // names the give up button), and the tips only the rules page has
+            absent: strings([
+                td_string!(l, common.game.undo),
+                td_string!(l, rules.tips.block_title),
+                td_string!(l, rules.tips.connect_title),
             ]),
-            // Only once the daily is started
-            absent: strings([td_string!(l, daily.give_up)]),
             nav: Some("/"),
             canonical: Some("/"),
             ..Expected::default()
@@ -322,6 +349,18 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, rules.rule.straight_title),
                 td_string!(l, rules.rule.connected_title),
                 td_string!(l, rules.example),
+                td_string!(l, rules.tips.title),
+                td_string!(l, rules.tips.intro),
+                td_string!(l, rules.tips.corner_title),
+                td_string!(l, rules.tips.corner),
+                td_string!(l, rules.tips.ones_title),
+                td_string!(l, rules.tips.ones),
+                td_string!(l, rules.tips.count_title),
+                td_string!(l, rules.tips.count),
+                td_string!(l, rules.tips.block_title),
+                td_string!(l, rules.tips.block),
+                td_string!(l, rules.tips.connect_title),
+                td_string!(l, rules.tips.connect),
                 td_string!(l, rules.controls.title),
                 td_string!(l, rules.hood.title),
                 td_string!(l, rules.faq_title),
@@ -573,8 +612,22 @@ async fn pages_link_and_describe_themselves() {
     let home = page("/de").await;
     assert!(home.contains(r#""@type":"VideoGame""#));
     assert!(home.contains(r#""inLanguage":"de""#));
+    // The home page leads to the tips in its language
+    assert!(home.contains(r#"href="/de/rules#tips""#));
+    assert!(home.contains(r#"href="/de/practice""#));
     let rules = page("/ja/rules").await;
     assert!(rules.contains(r#""@type":"FAQPage""#));
+    // The boards of the tips say what they show
+    assert!(rules.contains(r#"id="tips""#));
+    for label in [
+        td_string!(Locale::ja, rules.tips.corner_board),
+        td_string!(Locale::ja, rules.tips.connect_board),
+    ] {
+        assert!(
+            rules.contains(&format!(r#"aria-label="{label}""#)),
+            "{label}"
+        );
+    }
     assert!(rules.contains(&format!(r#""name":"{}""#, rules_faq(Locale::ja)[0].0)));
     // Every language of a page, for search engines to pick from
     for l in Locale::get_all() {

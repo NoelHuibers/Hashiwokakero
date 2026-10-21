@@ -3,7 +3,7 @@
     "title": "Comment jouer au Hashiwokakero · Règles et astuces · Hashi",
     "description": "Les règles du Hashiwokakero (Ponts) avec un exemple résolu, les déductions qui résolvent presque toute grille sans deviner et comment SAT prouve l’unicité."
   },
-  "title": "Comment jouer",
+  "title": "Comment jouer au Hashiwokakero",
   "intro": "Le Hashiwokakero (橋をかけろ, « construis des ponts ! ») est un casse-tête logique publié par Nikoli. Relie toutes les îles par des ponts pour que chaque île ait exactement autant de ponts que son chiffre l’indique.",
   "rule": {
     "count_title": "Compte les ponts",
@@ -16,6 +16,25 @@
     "connected": "À la fin, chaque île doit être accessible depuis toutes les autres."
   },
   "example": "Une grille résolue",
+  "tips": {
+    "title": "Techniques de résolution du Hashiwokakero",
+    "intro": "Cinq déductions qui viennent à bout de la plupart des grilles sans deviner. Chaque image montre les ponts qu’elles imposent.",
+    "corner_title": "Les coins veulent des doubles",
+    "corner": "Un 4 dans un coin n’a que deux voisins : il lui faut donc un pont double vers chacun. Il en va de même pour un 6 sur un bord et un 8 en pleine mer.",
+    "corner_board": "Un 4 dans le coin en haut à gauche, avec un pont double vers le 3 à sa droite et un autre vers le 2 en dessous.",
+    "ones_title": "Deux 1 ne se relient jamais",
+    "ones": "Un pont entre deux 1 les terminerait tous les deux et les couperait du reste : chaque 1 se relie donc ailleurs. Pour la même raison, deux 2 ne partagent jamais un pont double.",
+    "ones_board": "Deux 1 sur la ligne du haut, chacun relié par un pont simple au 3 en dessous plutôt que l’un à l’autre.",
+    "count_title": "Compte ce qui manque",
+    "count": "Un 5 avec trois voisins peut recevoir au plus six ponts. Sans l’un d’eux, il n’en aurait que quatre au plus : chaque voisin reçoit donc au moins un pont.",
+    "count_board": "Un 5 sur le bord du haut, avec un pont simple vers chacun de ses trois voisins : le 2 à gauche, le 3 à droite et le 4 en dessous.",
+    "block_title": "Les ponts barrent la route",
+    "block": "Les ponts ne se croisent jamais : chaque pont ferme les lignes qu’il traverse. Une île derrière lui n’a parfois plus qu’un seul chemin.",
+    "block_board": "Un pont double descend au milieu et barre la ligne du 1 à gauche : le 1 se relie donc au 2 en dessous au lieu du 2 à droite.",
+    "connect_title": "Ne jamais isoler un groupe",
+    "connect": "Tout doit finir relié. Si quelques îles pouvaient se compléter entre elles et se retrouver coupées du reste, au moins un pont doit sortir du groupe.",
+    "connect_board": "Une ligne 1, 3, 2 : le 1 se relie au 3. Si le 3 donnait ses deux derniers ponts au 2, les trois îles seraient coupées du reste : le 3 envoie donc aussi un pont vers le 2 en dessous."
+  },
   "controls": {
     "title": "Commandes",
     "tap": "Clique sur l’eau entre deux îles pour construire un pont, encore une fois pour un second, un troisième clic les retire.",
