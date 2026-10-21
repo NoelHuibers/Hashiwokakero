@@ -572,6 +572,11 @@ pub(super) async fn merge_guest(
     for sql in [
         "UPDATE OR IGNORE attempts SET user_id = ?1 WHERE user_id = ?2",
         "UPDATE OR IGNORE stamps SET user_id = ?1 WHERE user_id = ?2",
+        // Rivals: the guest's become the account's, and whoever marked the guest has the account
+        // as their rival now. Nobody is their own rival.
+        "DELETE FROM rivals WHERE (user_id = ?1 AND rival_id = ?2) OR (user_id = ?2 AND rival_id = ?1)",
+        "UPDATE OR IGNORE rivals SET user_id = ?1 WHERE user_id = ?2",
+        "UPDATE OR IGNORE rivals SET rival_id = ?1 WHERE rival_id = ?2",
     ]
     .into_iter()
     .chain(super::groups::MERGE_GUEST)
@@ -583,6 +588,7 @@ pub(super) async fn merge_guest(
     for sql in [
         "DELETE FROM attempts WHERE user_id = ?1",
         "DELETE FROM stamps WHERE user_id = ?1",
+        "DELETE FROM rivals WHERE user_id = ?1 OR rival_id = ?1",
         "DELETE FROM sessions WHERE user_id = ?1",
         "DELETE FROM users WHERE id = ?1 AND username IS NULL",
     ] {
@@ -627,14 +633,14 @@ pub async fn delete_account(
 
 /// Deletes everything personal of a user.
 ///
-/// That is name, password, sessions, stamps, group memberships (groups they own pass on to the
-/// longest standing member, groups nobody else is in go, see `groups::ERASE`), Dojo
-/// submissions, and of the daily results the boards, move logs, devices and unranked attempts.
-/// What stays are the ranked times and penalties, under a user without a name (`deleted_at`), so
-/// the rankings of old days and the medals of everyone else don't change. A user without ranked
-/// times remains as an anonymous tombstone, so numeric admin grants can never transfer to a
-/// reused id. Archived Dojo seasons keep the numbers of the user's solvers, without their names,
-/// links or a way back to the user.
+/// That is name, password, sessions, stamps, rivals (their list, and their place in everyone
+/// else's), group memberships (groups they own pass on to the longest standing member, groups
+/// nobody else is in go, see `groups::ERASE`), Dojo submissions, and of the daily results the
+/// boards, move logs, devices and unranked attempts. What stays are the ranked times and
+/// penalties, under a user without a name (`deleted_at`), so the rankings of old days and the
+/// medals of everyone else don't change. A user without ranked times remains as an anonymous
+/// tombstone, so numeric admin grants can never transfer to a reused id. Archived Dojo seasons
+/// keep the numbers of the user's solvers, without their names, links or a way back to the user.
 pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     let tx = conn.transaction().await.map_err(db_err)?;
     for sql in super::groups::ERASE {
@@ -643,6 +649,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     for sql in [
         "DELETE FROM sessions WHERE user_id = ?1",
         "DELETE FROM stamps WHERE user_id = ?1",
+        "DELETE FROM rivals WHERE user_id = ?1 OR rival_id = ?1",
         // Later copies of a deleted submission are no copies any more
         "UPDATE dojo_submissions SET similar_to = NULL
          WHERE similar_to IN (SELECT id FROM dojo_submissions WHERE user_id = ?1)",

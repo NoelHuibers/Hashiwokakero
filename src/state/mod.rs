@@ -4,6 +4,7 @@ mod auth;
 mod browser;
 mod editor;
 mod game;
+mod rivals;
 mod settings;
 mod solver;
 mod toasts;
@@ -18,6 +19,7 @@ use browser::store_raw;
 pub use browser::{device_id, download, format_time, load, random_seed, store};
 pub use editor::Editor;
 pub use game::{DailyGame, Game, Source, Status};
+pub use rivals::Rivals;
 pub use settings::Settings;
 pub use solver::{check, check_unique, hint, new_puzzle, reveal, run_solver};
 pub use toasts::{Toast, ToastKind, ToastText, Toasts, error_toast, toast};
@@ -43,6 +45,8 @@ pub fn provide_state() {
     provide_context(game);
     provide_context(DailyGame(daily));
     provide_context(auth);
+    let rivals = Rivals::new();
+    provide_context(rivals);
     provide_context(editor);
     provide_context(settings);
     provide_context(Toasts(RwSignal::new(vec![])));
@@ -77,6 +81,15 @@ pub fn provide_state() {
             unlock_keys.remove();
         });
         auth.refresh();
+    });
+
+    // The rivals of whoever is signed in, again when that changes
+    Effect::new(move |prev: Option<Option<i64>>| {
+        let user = auth.user.with(|u| u.as_ref().map(|u| u.id));
+        if prev.is_some_and(|p| p != user) || (prev.is_none() && user.is_some()) {
+            rivals.load(user.is_some());
+        }
+        user
     });
 
     // Sound settings, saved like the theme

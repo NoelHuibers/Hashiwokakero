@@ -3,6 +3,7 @@ pub mod celebration;
 pub mod layout;
 pub mod leaderboard;
 pub mod record;
+pub mod rivals;
 pub mod rules;
 pub mod share;
 pub mod solver_panel;

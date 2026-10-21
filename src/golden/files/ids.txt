@@ -120,3 +120,6 @@ error GroupNotFound group_not_found
 error GroupFull group_full
 error TooManyGroups too_many_groups
 error GroupOwnerOnly group_owner_only
+error RivalSelf rival_self
+error TooManyRivals too_many_rivals
+error NoSuchPlayer no_such_player

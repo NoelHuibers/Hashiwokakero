@@ -79,7 +79,7 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Datenbank",
         &[
-            "Konten, Ergebnisse, Stempel, Gruppen, Dojo-Einsendungen und Kontaktnachrichten liegen in einer Datenbank von Turso (ChiselStrike Inc., 2093 Philadelphia Pike #6336, Claymont, Delaware 19703, USA) in einem Rechenzentrum von Amazon Web Services in Irland. Turso verarbeitet die Daten in unserem Auftrag (Art. 28 DSGVO). Für mögliche Zugriffe aus den USA gelten die EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO).",
+            "Konten, Ergebnisse, Stempel, Gruppen, Rivalenlisten, Dojo-Einsendungen und Kontaktnachrichten liegen in einer Datenbank von Turso (ChiselStrike Inc., 2093 Philadelphia Pike #6336, Claymont, Delaware 19703, USA) in einem Rechenzentrum von Amazon Web Services in Irland. Turso verarbeitet die Daten in unserem Auftrag (Art. 28 DSGVO). Für mögliche Zugriffe aus den USA gelten die EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO).",
         ],
     ),
     (
@@ -123,6 +123,13 @@ const PRIVACY_DE: &[Section] = &[
         ],
     ),
     (
+        "Rivalen",
+        &[
+            "Du kannst andere Spieler als Rivalen markieren, um deine Ergebnisse mit ihren zu vergleichen (höchstens 20). Wir speichern dazu, wen du wann markiert hast. Deine Rivalenliste ist privat: Nur du siehst, wen du markiert hast, und die markierten Spieler erfahren nichts davon. Verglichen wird nur, was ohnehin öffentlich in den Ranglisten steht (gewertete Zeiten, gelöste Rätsel, Medaillen und Serien); die Zeiten deiner Rivalen am heutigen Tag zeigen wir dir erst, wenn du das Rätsel selbst beendet hast.",
+            "Du kannst Rivalen jederzeit wieder entfernen. Löschst du dein Konto (oder wird ein verlassenes Gastkonto gelöscht), löschen wir deine Rivalenliste und entfernen dich aus den Listen aller anderen. Gesperrte Spieler verschwinden aus allen Listen, solange die Sperre gilt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Spiels).",
+        ],
+    ),
+    (
         "SAT Dojo",
         &[
             "Mit einem registrierten Konto kannst du im SAT Dojo einen eigenen Löser als WebAssembly-Datei einsenden. Wir speichern die Datei, Name, Beschreibung und Quellcode-Link des Lösers, den Zeitpunkt und das Ergebnis. Öffentlich sichtbar sind Name, Beschreibung, Link, dein Benutzername, Datum, Punktzahl (auch nach Antwort und Familie aufgeschlüsselt, als sortierte Kurve des Treibstoffs der gelösten Formeln und als Beitrag im Vergleich mit den anderen Lösern), Prüfsumme und Größe der Datei; die Datei selbst geben wir nicht heraus. Bitte beachte, dass WebAssembly-Dateien Debug-Informationen wie lokale Dateipfade enthalten können; wir speichern die Datei so, wie du sie hochlädst.",
@@ -158,7 +165,7 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Speicherdauer",
         &[
-            "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Stempel, deine Gruppenmitgliedschaften (deine Gruppen gehen an das dienstälteste Mitglied über, leere Gruppen löschen wir), Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
+            "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Stempel, deine Rivalenliste (und deinen Eintrag in den Listen anderer), deine Gruppenmitgliedschaften (deine Gruppen gehen an das dienstälteste Mitglied über, leere Gruppen löschen wir), Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
             "Die nichtöffentliche Datensatz-ID eines gelöschten Kontos bleibt gesperrt, damit eine Kennung und ihre Berechtigungen niemals an ein neues Konto übergehen. Gastkonten, die ein Jahr lang nicht besucht wurden, löschen wir automatisch auf dieselbe Weise, denn ohne gültige Sitzung kommt niemand mehr an sie heran. Sitzungen laufen ein Jahr nach dem letzten Besuch ab, Kontaktnachrichten löschen wir spätestens nach sechs Monaten.",
         ],
     ),
@@ -190,7 +197,7 @@ const PRIVACY_EN: &[Section] = &[
         "Hosting and database",
         &[
             "The site is hosted by Fly.io, Inc. (USA) on servers in Amsterdam. Fly.io processes technically necessary data such as your IP address, time and page to deliver the site and protect it from attacks; our app itself keeps no access logs (Art. 6 (1) f GDPR). Fly.io is certified under the EU-U.S. Data Privacy Framework (Art. 45 GDPR).",
-            "Accounts, results, stamps, groups, Dojo submissions and contact messages are stored in a Turso database (ChiselStrike Inc., USA) in an Amazon Web Services data centre in Ireland, covered by the EU Standard Contractual Clauses (Art. 46 (2) c GDPR). Both providers act as our processors (Art. 28 GDPR).",
+            "Accounts, results, stamps, groups, rival lists, Dojo submissions and contact messages are stored in a Turso database (ChiselStrike Inc., USA) in an Amazon Web Services data centre in Ireland, covered by the EU Standard Contractual Clauses (Art. 46 (2) c GDPR). Both providers act as our processors (Art. 28 GDPR).",
         ],
     ),
     (
@@ -221,6 +228,12 @@ const PRIVACY_EN: &[Section] = &[
         ],
     ),
     (
+        "Rivals",
+        &[
+            "You can mark other players as rivals to compare your results with theirs (at most 20). We store whom you marked and when. Your list of rivals is private: only you see whom you marked, and the players you mark aren't told. Only what the leaderboards show publicly anyway is compared (ranked times, solved dailies, medals and streaks), and your rivals' times of the current day are only shown to you once you finished that daily yourself. You can unmark rivals at any time. Deleting your account (or the deletion of an abandoned guest account) deletes your list and removes you from everyone else's; banned players drop out of all lists while the ban lasts (Art. 6 (1) b GDPR).",
+        ],
+    ),
+    (
         "SAT Dojo",
         &[
             "Registered players can submit a solver as a WebAssembly file. We store the file, its name, description, source link, time and result; everything but the file itself is public along with your username, the result also split by answer and family, as a sorted curve of the fuel of the solved formulas and as a contribution compared with the other solvers. WebAssembly files can contain debug information such as local file paths, and we store the file as uploaded. Only the file, without anything about you, is sent to our own benchmark server, also at Fly.io in Amsterdam, and new entries are compared with earlier ones to detect copies (Art. 6 (1) b GDPR). When a season ends, its final results are archived publicly for good: the solver's name and source link, your username, rank, score and the result on every formula. Deleting your account removes the name, link and the link to you from the archive; the numbers stay without a name, so everyone else keeps their places (Art. 6 (1) b GDPR). To limit submissions per network we store a keyed hash of your IP address that changes every day, never the address itself (Art. 6 (1) f GDPR).",
@@ -248,7 +261,7 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Retention",
         &[
-            "We keep your account, results, stamps and Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, group memberships (your groups pass to their longest standing member, empty groups are deleted), Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest.",
+            "We keep your account, results, stamps and Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, rivals (your list and your place on everyone else's), group memberships (your groups pass to their longest standing member, empty groups are deleted), Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest.",
         ],
     ),
     (

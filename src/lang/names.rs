@@ -323,6 +323,9 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::GroupFull => td_string!(locale, common.errors.group_full),
         ApiError::TooManyGroups => td_string!(locale, common.errors.too_many_groups),
         ApiError::GroupOwnerOnly => td_string!(locale, common.errors.group_owner_only),
+        ApiError::RivalSelf => td_string!(locale, rivals.errors.rival_self),
+        ApiError::TooManyRivals => td_string!(locale, rivals.errors.too_many_rivals),
+        ApiError::NoSuchPlayer => td_string!(locale, rivals.errors.no_such_player),
     }
     .to_string()
 }

@@ -18,6 +18,7 @@ mod groups;
 mod og;
 mod pages;
 mod playing;
+mod rivals;
 mod site;
 
 use std::path::{Path, PathBuf};

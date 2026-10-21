@@ -46,10 +46,16 @@ pub enum ApiError {
     TooManyGroups,
     /// Only the group's owner can do that.
     GroupOwnerOnly,
+    /// Marking yourself as your own rival.
+    RivalSelf,
+    /// Already `MAX_RIVALS` rivals.
+    TooManyRivals,
+    /// No such player (deleted, banned or never there).
+    NoSuchPlayer,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 29] = [
+    pub const ALL: [Self; 32] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -79,6 +85,9 @@ impl ApiError {
         Self::GroupFull,
         Self::TooManyGroups,
         Self::GroupOwnerOnly,
+        Self::RivalSelf,
+        Self::TooManyRivals,
+        Self::NoSuchPlayer,
     ];
 
     pub fn code(self) -> &'static str {
@@ -112,6 +121,9 @@ impl ApiError {
             Self::GroupFull => "group_full",
             Self::TooManyGroups => "too_many_groups",
             Self::GroupOwnerOnly => "group_owner_only",
+            Self::RivalSelf => "rival_self",
+            Self::TooManyRivals => "too_many_rivals",
+            Self::NoSuchPlayer => "no_such_player",
         }
     }
 

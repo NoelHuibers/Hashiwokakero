@@ -58,6 +58,28 @@ pub const BOAT: [&str; 9] = [
     "...ooooooooo....",
 ];
 
+/// Crossed katanas, the mark of a rival, 12×12.
+pub const SWORDS: [&str; 12] = [
+    "wN........Nw",
+    "NwN......NwN",
+    ".NwN....NwN.",
+    "..NwN..NwN..",
+    "...NwNNwN...",
+    "....NwwN....",
+    "....NwwN....",
+    "..yNwNNwNy..",
+    "..yy....yy..",
+    "..rRy..yRr..",
+    ".rR......Rr.",
+    "RR........RR",
+];
+
+/// A flame for a day won against a rival, 8×11.
+pub const FLAME: [&str; 11] = [
+    "....r...", "....rr..", "...rrr..", "..rryr.r", ".rryyrrr", ".ryyyyrr", "rryyyyyr", "ryyyyyyr",
+    "Ryyyyyyr", ".Ryyyyr.", "..RRRR..",
+];
+
 /// Horizontal runs of equal pixels: (x, y, width, char).
 #[expect(
     clippy::cast_possible_truncation,

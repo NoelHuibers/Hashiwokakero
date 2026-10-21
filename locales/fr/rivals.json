@@ -1,0 +1,45 @@
+{
+  "title": "Rivaux",
+  "mark": "Marquer {{ name }} comme rival",
+  "unmark": "{{ name }} est ton rival, retirer",
+  "marked": "{{ name }} est maintenant ton rival. Chaque pont du jour devient un duel !",
+  "unmarked": "{{ name }} n'est plus ton rival.",
+  "mark_button": "Marquer comme rival",
+  "marked_button": "Ton rival",
+  "private": "Toi seul vois qui tu as marqué, personne n'est prévenu.",
+  "gap_seconds": "{{ gap }} s",
+  "gap_minutes": "{{ gap }} min",
+  "errors": {
+    "rival_self": "Tu ne peux pas être ton propre rival.",
+    "too_many_rivals": "Tu as déjà 20 rivaux. Retires-en un pour faire de la place.",
+    "no_such_player": "Ce joueur n'existe pas."
+  },
+  "today": {
+    "title": "Rivaux aujourd'hui",
+    "beat": "Tu as battu <b>{{ name }}</b> de {{ gap }}",
+    "lost": "<b>{{ name }}</b> a été plus rapide de {{ gap }}",
+    "tie": "Égalité parfaite avec <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> n'a pas encore joué",
+    "solved": "<b>{{ name }}</b> l'a résolu en {{ time }}",
+    "empty": "Marque des joueurs comme rivaux dans le classement, et chaque pont du jour devient un duel.",
+    "find": "Trouver des rivaux →"
+  },
+  "record": {
+    "title": "Face-à-face",
+    "text": "Chaque jour où vous avez tous deux résolu, le plus rapide gagne.",
+    "short": "Duels",
+    "summary": "Victoires : {{ wins }} · défaites : {{ losses }} · égalités : {{ draws }}",
+    "wins": "Victoires",
+    "losses": "Défaites",
+    "draws": "Égalités",
+    "none": "Aucun jour résolu par vous deux pour l'instant. Le pont d'aujourd'hui pourrait être le premier duel !",
+    "recent": "Derniers duels",
+    "day": "Pont #{{ number }} : {{ mine }} contre {{ theirs }}"
+  },
+  "board": {
+    "text": "Toi et tes rivaux, depuis toujours. Toi seul vois cette liste.",
+    "empty": "Pas encore de rivaux. Touche les sabres croisés à côté d'un nom dans un classement pour marquer quelqu'un.",
+    "you": "Toi",
+    "streak": "Série"
+  }
+}

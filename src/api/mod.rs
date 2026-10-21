@@ -19,6 +19,7 @@ mod daily;
 mod dojo;
 mod groups;
 mod puzzle;
+mod rivals;
 
 pub use account::*;
 pub use admin::*;
@@ -28,6 +29,7 @@ pub use daily::*;
 pub use dojo::*;
 pub use groups::*;
 pub use puzzle::*;
+pub use rivals::*;
 
 #[cfg(test)]
 mod tests {
@@ -76,6 +78,7 @@ mod tests {
             include_str!("dojo.rs"),
             include_str!("groups.rs"),
             include_str!("puzzle.rs"),
+            include_str!("rivals.rs"),
         ];
         let attributes: Vec<_> = sources
             .iter()

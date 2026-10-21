@@ -3,6 +3,7 @@
 mod attempt;
 mod fame;
 mod leaderboard;
+mod rivals;
 mod stamps;
 mod stats;
 #[cfg(test)]
@@ -14,6 +15,10 @@ pub use attempt::{
 };
 pub use fame::{hall_of_fame, month_board};
 pub use leaderboard::leaderboard;
+pub use rivals::{
+    board as rivals_board, duels_of_day as rival_duels, list as rivals, record as rival_record,
+    set as set_rival,
+};
 pub use stamps::{
     show as show_stamp, shown_stamps, start_syncing as start_stamp_sync, sync as sync_stamps,
 };

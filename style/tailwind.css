@@ -336,6 +336,33 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
   box-shadow: inset 0 0 0 1.5px var(--primary);
 }
 
+/* The crossed swords next to a name on the leaderboards (components/rivals.rs). Unmarked they
+   wait, greyed out, until their row is hovered or they are focused; touch screens can't hover,
+   there they show faintly. Marked they stay in colour: the rival marker. */
+.rival-toggle {
+  opacity: 0;
+  filter: grayscale(1);
+}
+:is(tr, li, .rival-host):hover .rival-toggle,
+.rival-toggle:focus-visible {
+  opacity: 0.7;
+}
+.rival-toggle:hover {
+  opacity: 1;
+  filter: none;
+}
+@media (hover: none) {
+  .rival-toggle {
+    opacity: 0.35;
+  }
+}
+.rival-toggle[aria-pressed="true"] {
+  opacity: 1;
+  filter: none;
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
 /* Ranking tables: a hairline under every row, and the marked row (your own result, the fastest
    run) pressed like a hanko, a rounded 朱 outline the neighbouring lines step aside for.
    Separate borders, collapsed ones can't be rounded. Every row reserves the outline's width at
