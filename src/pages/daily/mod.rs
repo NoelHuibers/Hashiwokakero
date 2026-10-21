@@ -146,7 +146,6 @@ pub fn DailyPage() -> impl IntoView {
             return;
         };
         if daily.server_now() >= (day + 1) * MS_PER_DAY && daily.finished() {
-            daily.info.set(None);
             daily.reload();
         }
     });

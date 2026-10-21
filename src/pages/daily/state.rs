@@ -430,6 +430,9 @@ impl Daily {
     }
 
     pub(super) fn reload(&self) {
+        // Old metadata belongs to the preceding identity/day. Discover the new attempt before
+        // any solved-board effect can dispatch under the new authenticated user.
+        self.info.set(None);
         // Synchronize the cleared day/changed identity before capturing a metadata guard.
         // The reactive scope effect may otherwise run later and invalidate this new request.
         untrack(|| self.actions.sync(self));
