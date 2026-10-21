@@ -1,7 +1,5 @@
 {
   "title": "Rivalen",
-  "mark": "{{ name }} als Rivalen markieren",
-  "unmark": "{{ name }} ist dein Rivale, Markierung entfernen",
   "marked": "{{ name }} ist jetzt dein Rivale. Jedes Tagesrätsel wird zum Duell!",
   "unmarked": "{{ name }} ist nicht mehr dein Rivale.",
   "mark_button": "Als Rivalen markieren",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> war {{ gap }} schneller",
     "tie": "Gleichstand mit <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> hat noch nicht gespielt",
-    "solved": "<b>{{ name }}</b> hat es in {{ time }} gelöst",
-    "empty": "Markiere Spieler in der Rangliste als Rivalen, und jedes Tagesrätsel wird zum Duell.",
-    "find": "Rivalen finden →"
+    "solved": "<b>{{ name }}</b> hat es in {{ time }} gelöst"
   },
   "record": {
     "title": "Direkter Vergleich",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Du und deine Rivalen, über die ganze Zeit. Nur du siehst diese Liste.",
-    "empty": "Noch keine Rivalen. Tippe in einer Rangliste auf die gekreuzten Schwerter neben einem Namen, um jemanden zu markieren.",
     "you": "Du",
     "streak": "Serie"
   }

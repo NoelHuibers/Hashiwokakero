@@ -1,7 +1,5 @@
 {
   "title": "Đối thủ",
-  "mark": "Đánh dấu {{ name }} là đối thủ",
-  "unmark": "{{ name }} là đối thủ của bạn, bỏ đánh dấu",
   "marked": "{{ name }} giờ là đối thủ của bạn. Mỗi câu đố hằng ngày là một trận đấu!",
   "unmarked": "{{ name }} không còn là đối thủ của bạn.",
   "mark_button": "Đánh dấu đối thủ",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> nhanh hơn {{ gap }}",
     "tie": "Hòa tuyệt đối với <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> chưa chơi",
-    "solved": "<b>{{ name }}</b> giải xong trong {{ time }}",
-    "empty": "Đánh dấu người chơi là đối thủ trên bảng xếp hạng, và mỗi câu đố hằng ngày sẽ thành một trận đấu.",
-    "find": "Tìm đối thủ →"
+    "solved": "<b>{{ name }}</b> giải xong trong {{ time }}"
   },
   "record": {
     "title": "Đối đầu",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Bạn và các đối thủ, mọi thời đại. Chỉ bạn thấy danh sách này.",
-    "empty": "Chưa có đối thủ. Chạm vào hai thanh kiếm bắt chéo cạnh một cái tên trên bảng xếp hạng bất kỳ để đánh dấu ai đó.",
     "you": "Bạn",
     "streak": "Chuỗi"
   }

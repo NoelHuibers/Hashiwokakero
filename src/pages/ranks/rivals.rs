@@ -7,7 +7,6 @@ use leptos::task::spawn_local;
 use crate::api::load_rivals_board;
 use crate::components::leaderboard::{HIGHLIGHT_ROW, PlayerName, RANK_TABLE, ROW_INSET};
 use crate::components::rivals::{RecentDuels, Score};
-use crate::components::sprites::{PixelSprite, SWORDS};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, use_i18n};
 use crate::model::{RivalRow, RivalsBoard};
@@ -100,14 +99,14 @@ fn Board(board: RivalsBoard) -> impl IntoView {
     }
 }
 
-/// You and your rivals, or how to get some.
+/// You and your rivals, once you have some.
 #[component]
 pub(super) fn RivalsCard() -> impl IntoView {
     let i18n = use_i18n();
     let auth = expect_context::<Auth>();
     let rivals = expect_context::<Rivals>();
-    // `None` while it loads, `Some(None)` without a session
-    let board = RwSignal::new(None::<Option<RivalsBoard>>);
+    // `None` while it loads and without a session
+    let board = RwSignal::new(None::<RivalsBoard>);
 
     // Again whenever the rivals or the player change (browser only)
     Effect::new(move |_| {
@@ -118,42 +117,31 @@ pub(super) fn RivalsCard() -> impl IntoView {
         }
         spawn_local(async move {
             match load_rivals_board().await {
-                Ok(b) => board.set(Some(b)),
+                Ok(b) => board.set(b),
                 Err(e) => error_toast(e),
             }
         });
     });
 
+    // Only once you have rivals (the board always holds you): they are marked on a player's
+    // profile, the ranks don't advertise them
+    let shown = move || board.get().filter(|b| b.rows.len() > 1);
     view! {
-        <Card class="gap-4" attr:data-rivals-board="">
-            <CardHeader>
-                <div class="flex items-center gap-3">
-                    <span class="hanko grid size-12 shrink-0 rotate-[-4deg] place-items-center rounded-lg font-pixel text-2xl">
-                        "競"
-                    </span>
-                    <div>
-                        <CardTitle class="text-xl">{t!(i18n, rivals.title)} <span class="font-pixel text-sm text-primary">" ライバル"</span></CardTitle>
-                        <CardDescription>{t!(i18n, rivals.board.text)}</CardDescription>
+        <Show when=move || shown().is_some()>
+            <Card class="gap-4" attr:data-rivals-board="">
+                <CardHeader>
+                    <div class="flex items-center gap-3">
+                        <span class="hanko grid size-12 shrink-0 rotate-[-4deg] place-items-center rounded-lg font-pixel text-2xl">
+                            "競"
+                        </span>
+                        <div>
+                            <CardTitle class="text-xl">{t!(i18n, rivals.title)} <span class="font-pixel text-sm text-primary">" ライバル"</span></CardTitle>
+                            <CardDescription>{t!(i18n, rivals.board.text)}</CardDescription>
+                        </div>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {move || match board.get() {
-                    None => view! { <p class="text-sm text-muted-foreground">{t!(i18n, common.game.loading)}</p> }.into_any(),
-                    Some(Some(b)) if b.rows.len() > 1 => view! { <Board board=b /> }.into_any(),
-                    Some(_) => {
-                        view! {
-                            <div class="seigaiha flex items-center gap-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                                <span class="grid size-10 shrink-0 place-items-center rounded-lg bg-card shadow-xs">
-                                    <PixelSprite art=&SWORDS class="size-6" />
-                                </span>
-                                <p class="rounded-md bg-card px-2 py-1">{t!(i18n, rivals.board.empty)}</p>
-                            </div>
-                        }
-                            .into_any()
-                    }
-                }}
-            </CardContent>
-        </Card>
+                </CardHeader>
+                <CardContent>{move || shown().map(|b| view! { <Board board=b /> })}</CardContent>
+            </Card>
+        </Show>
     }
 }

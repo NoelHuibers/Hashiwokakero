@@ -1,7 +1,5 @@
 {
   "title": "Rivals",
-  "mark": "Mark {{ name }} as your rival",
-  "unmark": "{{ name }} is your rival, unmark",
   "marked": "{{ name }} is your rival now. Every daily is a duel!",
   "unmarked": "{{ name }} is no longer your rival.",
   "mark_button": "Mark as rival",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> was {{ gap }} faster",
     "tie": "Dead heat with <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> hasn't played yet",
-    "solved": "<b>{{ name }}</b> solved it in {{ time }}",
-    "empty": "Mark players as rivals on the leaderboard, and every daily becomes a duel.",
-    "find": "Find rivals →"
+    "solved": "<b>{{ name }}</b> solved it in {{ time }}"
   },
   "record": {
     "title": "Head-to-head",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "You and your rivals, all time. Only you see this list.",
-    "empty": "No rivals yet. Tap the crossed swords next to a name on any leaderboard to mark someone.",
     "you": "You",
     "streak": "Streak"
   }

@@ -3,10 +3,8 @@
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_router::components::A;
 
 use crate::api::todays_rivals;
-use crate::components::layout::use_localized;
 use crate::components::rivals::{Score, gap_text};
 use crate::components::sprites::{FLAME, PixelSprite, SWORDS};
 use crate::components::stamps::StampBadge;
@@ -116,12 +114,11 @@ fn Line(verdict: Verdict, rival: RivalDay) -> impl IntoView {
     }
 }
 
-/// The rivals card under the result, once today's daily is finished.
+/// The rivals card under the result, once today's daily is finished and if you have rivals.
 #[component]
 pub(super) fn RivalsCard(daily: Daily) -> impl IntoView {
     let i18n = use_i18n();
     let rivals = expect_context::<Rivals>();
-    let ranks = use_localized("/ranks");
     let today = RwSignal::new(None::<RivalsToday>);
 
     // Loaded once the daily is finished, again when the ranking was refreshed (after the
@@ -141,8 +138,10 @@ pub(super) fn RivalsCard(daily: Daily) -> impl IntoView {
         });
     });
 
+    // Nothing at all while you have no rivals: they are marked on a player's profile
+    let list = move || today.get().map(duels).unwrap_or_default();
     view! {
-        <Show when=move || today.with(Option::is_some)>
+        <Show when=move || !list().is_empty()>
             <Card class="gap-3" attr:data-rivals="">
                 <CardHeader>
                     <CardTitle class="flex items-baseline gap-2 text-lg">
@@ -150,30 +149,9 @@ pub(super) fn RivalsCard(daily: Daily) -> impl IntoView {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {move || {
-                        let list = today.get().map(duels).unwrap_or_default();
-                        if list.is_empty() {
-                            view! {
-                                <div class="seigaiha flex flex-col items-center gap-2 rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-                                    <span class="grid size-10 place-items-center rounded-lg bg-card shadow-xs">
-                                        <PixelSprite art=&SWORDS class="size-6" />
-                                    </span>
-                                    <p class="rounded-md bg-card px-2 py-0.5">{t!(i18n, rivals.today.empty)}</p>
-                                    <A href=ranks attr:class="rounded-md bg-card px-2 font-medium text-primary underline-offset-4 hover:underline">
-                                        {t!(i18n, rivals.today.find)}
-                                    </A>
-                                </div>
-                            }
-                                .into_any()
-                        } else {
-                            view! {
-                                <ul class="-my-2 divide-y">
-                                    {list.into_iter().map(|(verdict, rival)| view! { <Line verdict rival /> }).collect_view()}
-                                </ul>
-                            }
-                                .into_any()
-                        }
-                    }}
+                    <ul class="-my-2 divide-y">
+                        {move || list().into_iter().map(|(verdict, rival)| view! { <Line verdict rival /> }).collect_view()}
+                    </ul>
                 </CardContent>
             </Card>
         </Show>

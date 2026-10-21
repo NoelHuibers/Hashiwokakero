@@ -1,7 +1,5 @@
 {
   "title": "Rivales",
-  "mark": "Marcar a {{ name }} como rival",
-  "unmark": "{{ name }} es tu rival, desmarcar",
   "marked": "{{ name }} ya es tu rival. ¡Cada puente del día es un duelo!",
   "unmarked": "{{ name }} ya no es tu rival.",
   "mark_button": "Marcar como rival",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> fue {{ gap }} más rápido",
     "tie": "Empate exacto con <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> aún no ha jugado",
-    "solved": "<b>{{ name }}</b> lo resolvió en {{ time }}",
-    "empty": "Marca jugadores como rivales en la clasificación y cada puente del día será un duelo.",
-    "find": "Buscar rivales →"
+    "solved": "<b>{{ name }}</b> lo resolvió en {{ time }}"
   },
   "record": {
     "title": "Cara a cara",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Tú y tus rivales, de siempre. Solo tú ves esta lista.",
-    "empty": "Aún no tienes rivales. Toca las espadas cruzadas junto a un nombre en cualquier clasificación para marcar a alguien.",
     "you": "Tú",
     "streak": "Racha"
   }

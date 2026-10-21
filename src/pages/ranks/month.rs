@@ -23,7 +23,7 @@ fn Row(entry: MonthEntry, me: bool) -> impl IntoView {
                 <RankCell rank=entry.rank />
             </td>
             <td class="max-w-0 py-2 pe-2">
-                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me />
+                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me rival=true />
             </td>
             <td class="py-2 text-end font-pixel tabular-nums text-muted-foreground">{entry.solved}</td>
             <td class="py-2 text-end font-pixel text-base tabular-nums" class:text-primary=me>{entry.points}</td>

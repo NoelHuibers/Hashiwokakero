@@ -1,7 +1,5 @@
 {
   "title": "Rivalen",
-  "mark": "{{ name }} als rivaal markeren",
-  "unmark": "{{ name }} is je rivaal, markering weghalen",
   "marked": "{{ name }} is nu je rivaal. Elke dagpuzzel wordt een duel!",
   "unmarked": "{{ name }} is niet langer je rivaal.",
   "mark_button": "Als rivaal markeren",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> was {{ gap }} sneller",
     "tie": "Precies gelijk met <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> heeft nog niet gespeeld",
-    "solved": "<b>{{ name }}</b> loste hem op in {{ time }}",
-    "empty": "Markeer spelers als rivalen in de ranglijst, en elke dagpuzzel wordt een duel.",
-    "find": "Rivalen zoeken →"
+    "solved": "<b>{{ name }}</b> loste hem op in {{ time }}"
   },
   "record": {
     "title": "Onderling",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Jij en je rivalen, aller tijden. Alleen jij ziet deze lijst.",
-    "empty": "Nog geen rivalen. Tik op de gekruiste zwaarden naast een naam in een ranglijst om iemand te markeren.",
     "you": "Jij",
     "streak": "Reeks"
   }

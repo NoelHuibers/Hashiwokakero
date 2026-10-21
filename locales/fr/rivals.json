@@ -1,7 +1,5 @@
 {
   "title": "Rivaux",
-  "mark": "Marquer {{ name }} comme rival",
-  "unmark": "{{ name }} est ton rival, retirer",
   "marked": "{{ name }} est maintenant ton rival. Chaque pont du jour devient un duel !",
   "unmarked": "{{ name }} n'est plus ton rival.",
   "mark_button": "Marquer comme rival",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> a été plus rapide de {{ gap }}",
     "tie": "Égalité parfaite avec <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> n'a pas encore joué",
-    "solved": "<b>{{ name }}</b> l'a résolu en {{ time }}",
-    "empty": "Marque des joueurs comme rivaux dans le classement, et chaque pont du jour devient un duel.",
-    "find": "Trouver des rivaux →"
+    "solved": "<b>{{ name }}</b> l'a résolu en {{ time }}"
   },
   "record": {
     "title": "Face-à-face",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Toi et tes rivaux, depuis toujours. Toi seul vois cette liste.",
-    "empty": "Pas encore de rivaux. Touche les sabres croisés à côté d'un nom dans un classement pour marquer quelqu'un.",
     "you": "Toi",
     "streak": "Série"
   }

@@ -1,14 +1,14 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
 
-use super::rivals::RivalToggle;
+use super::rivals::RivalMark;
 use super::stamps::StampBadge;
 use super::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::{LeaderboardEntry, Stamp, format_duration};
-use crate::state::{Auth, Rivals};
+use crate::state::Auth;
 
 /// 🥇🥈🥉 as pixel-ish kanji medals: 金 gold, 銀 silver, 銅 bronze.
 fn medal(rank: i64) -> Option<(&'static str, &'static str)> {
@@ -49,6 +49,9 @@ pub fn RankCell(rank: i64, #[prop(optional)] large: bool) -> impl IntoView {
 ///
 /// The guest label only shows where the table is wide enough (a container query on an
 /// `@container` around the table, boards sit in narrow cards too): the name has priority.
+///
+/// `rival` puts the small crossed swords after a player you marked as your rival, only on the
+/// daily and monthly boards, where you race them.
 #[component]
 pub fn PlayerName(
     user_id: i64,
@@ -56,6 +59,7 @@ pub fn PlayerName(
     guest: bool,
     stamp: Option<Stamp>,
     #[prop(optional)] me: bool,
+    #[prop(optional)] rival: bool,
 ) -> impl IntoView {
     let i18n = use_i18n();
     if name.is_empty() {
@@ -67,22 +71,12 @@ pub fn PlayerName(
         .into_any();
     }
     let href = move || format!("{}/player/{user_id}", prefix(i18n.get_locale()));
-    let rivals = expect_context::<Rivals>();
-    let shown = name.clone();
     view! {
-        <div class="rival-host flex items-center gap-2">
-            <A
-                href=href
-                attr:class=move || {
-                    format!(
-                        "min-w-0 truncate font-medium underline-offset-4 hover:text-primary hover:underline {}",
-                        if rivals.is(user_id) { "text-primary" } else { "" },
-                    )
-                }
-            >
-                {shown}
+        <div class="flex items-center gap-2">
+            <A href=href attr:class="min-w-0 truncate font-medium underline-offset-4 hover:text-primary hover:underline">
+                {name}
             </A>
-            <RivalToggle user_id name />
+            {rival.then(|| view! { <RivalMark user_id /> })}
             {stamp.map(|stamp| view! { <StampBadge stamp=stamp /> })}
             {me.then(|| view! { <Badge variant=BadgeVariant::Default size=BadgeSize::Sm class="shrink-0">{t!(i18n, common.ranking.you)}</Badge> })}
             {guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}
@@ -208,7 +202,7 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
                             <RankCell rank=place.rank large=true />
                             // PlayerName is a flex row that has to shrink for its name to truncate
                             <div class="flex w-full min-w-0 justify-center [&>div]:min-w-0">
-                                <PlayerName user_id=place.user_id name=place.name guest=place.guest stamp=place.stamp />
+                                <PlayerName user_id=place.user_id name=place.name guest=place.guest stamp=place.stamp rival=true />
                             </div>
                             <span
                                 class=format!("font-pixel tabular-nums {}", if index == 0 { "text-2xl" } else { "text-xl" })
@@ -236,7 +230,7 @@ fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
                 <RankCell rank=entry.rank />
             </td>
             <td class="max-w-0 py-2 pe-2">
-                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me />
+                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me rival=true />
             </td>
             <td class="py-2 pe-2 text-end text-xs text-muted-foreground" data-tooltip=move || t_string!(i18n, common.ranking.penalties)>
                 {(penalties > 0).then(|| format!("{}h {}c", entry.hints, entry.checks))}
