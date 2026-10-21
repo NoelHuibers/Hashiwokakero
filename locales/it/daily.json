@@ -78,5 +78,14 @@
     "more_a": "Nell’<practice>allenamento</practice>: puzzle illimitati in cinque dimensioni, da 7×7 a 24×24, con indizi quando vuoi. Oppure crea i tuoi puzzle nell’<workshop>officina</workshop>.",
     "to_rules": "Regole di Hashiwokakero e consigli →",
     "to_practice": "Allenamento: puzzle illimitati →"
+  },
+  "recovery": {
+    "metadata_error": "Impossibile caricare il rompicapo di oggi. Riprova.",
+    "metadata_retry": "Riprova rompicapo",
+    "ranking_error": "Impossibile caricare la classifica. Riprova.",
+    "ranking_retry": "Riprova classifica",
+    "submit_pending": "Salvataggio del risultato…",
+    "submit_error": "Il risultato non è stato confermato. La griglia risolta è al sicuro. Riprova per verificarlo e salvarlo.",
+    "submit_retry": "Riprova risultato"
   }
 }

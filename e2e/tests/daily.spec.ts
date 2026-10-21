@@ -287,7 +287,7 @@ test('a final paid hint flushes its move log and submits exactly once', async ({
   const { solution } = await startDaily(page);
   let submissions = 0;
   page.on('request', (request) => {
-    if (request.url().endsWith('/api/submit_daily')) submissions++;
+    if (request.url().endsWith('/api/submit_daily_attempt')) submissions++;
   });
   const hint = page.getByRole('button', { name: /^Hint/ });
   while (missing((await saved(page, DAILY_KEY)).bridges, solution).length > 0) {
@@ -307,7 +307,7 @@ test('a solved daily whose submit failed waits to be submitted again', async ({ 
   await visit(page, '/');
   const { solution } = await startDaily(page);
   let submissions = 0;
-  await page.route('**/api/submit_daily', async (route) => {
+  await page.route('**/api/submit_daily_attempt', async (route) => {
     submissions++;
     // The server never sees the first one, and the page can't read the reply
     if (submissions === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
@@ -319,9 +319,9 @@ test('a solved daily whose submit failed waits to be submitted again', async ({ 
     await hint.click();
     await expect.poll(async () => (await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
   }
-  const again = page.getByRole('button', { name: 'Submit again' });
+  const again = page.getByRole('button', { name: 'Retry result' });
   await expect(again).toBeVisible();
-  await expect(page.getByText("Your solution hasn't reached the server yet.")).toBeVisible();
+  await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
   // Still solved and locked, and it doesn't retry on its own
   await expect(page.getByRole('button', { name: /Undo/ })).toBeDisabled();
   await page.waitForLoadState('networkidle');
@@ -646,4 +646,282 @@ test('a definitive missing transferred receipt ends recovery without purchasing 
   await expect(actionStatus(page)).toBeEmpty();
   await expect(penaltyValue(page)).toHaveText('+30s');
   expect(purchases).toBe(2);
+});
+
+// Transient failures must preserve the board and wait for an explicit, bounded retry.
+const metadataStatus = (page: Page) => page.getByTestId('daily-metadata-status');
+const rankingStatus = (page: Page) => page.getByTestId('daily-ranking-status');
+const submitStatus = (page: Page) => page.getByTestId('daily-submit-status');
+const submitPath = '**/api/submit_daily_attempt';
+const reconcilePath = '**/api/daily_attempt_info';
+
+test('initial metadata failure has a persistent manual retry with an immediate pending guard', async ({ page }) => {
+  let requests = 0;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/api/daily_today', async (route) => {
+    requests++;
+    if (requests === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
+    else { await held; await route.continue(); }
+  });
+  await visit(page, '/');
+  await expect(metadataStatus(page)).toContainText("Couldn't load today's puzzle.");
+  await expect(page.getByRole('button', { name: /^Start/ })).toHaveCount(0);
+  await expect(rankingStatus(page)).toBeEmpty(); // ranking succeeded independently
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.waitForLoadState('networkidle');
+  expect(requests).toBe(1); // no automatic error loop, including focus
+  try {
+    await page.getByRole('button', { name: 'Retry puzzle', exact: true }).evaluate((button) => {
+      (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click();
+    });
+    await expect.poll(() => requests).toBe(2);
+    await expect(metadataStatus(page)).toContainText('Loading');
+    expect(requests).toBe(2);
+  } finally { release(); }
+  await expect(metadataStatus(page)).toBeEmpty();
+  await expect(page.getByRole('button', { name: /^Start/ })).toBeEnabled();
+});
+
+test('ranking failure retries independently and preserves the running board', async ({ page }) => {
+  let rankings = 0;
+  let retrySucceeds = false;
+  await page.route('**/api/daily_leaderboard', async (route) => {
+    rankings++;
+    if (!retrySucceeds) await route.fulfill({ contentType: 'application/json', body: 'null' });
+    else await route.continue();
+  });
+  await visit(page, '/');
+  await expect(rankingStatus(page)).toContainText("Couldn't load the ranking.");
+  const { puzzle, solution } = await startDaily(page);
+  await page.waitForLoadState('networkidle'); // settle the new guest's identity refresh
+  await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
+  const before = await saved(page, DAILY_KEY);
+  const beforeRetry = rankings;
+  retrySucceeds = true;
+  let metadata = 0;
+  page.on('request', (request) => { if (request.url().endsWith('/api/daily_today')) metadata++; });
+  await page.getByRole('button', { name: 'Retry ranking', exact: true }).evaluate((button) => {
+    (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click();
+  });
+  await expect(rankingStatus(page)).toBeEmpty();
+  expect(rankings).toBe(beforeRetry + 1);
+  expect(metadata).toBe(0);
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
+  expect((await saved(page, DAILY_KEY)).moves).toBe(before.moves);
+});
+
+test('a lost submit success and failed reconciliation keep the solution until explicit recovery', async ({ page }) => {
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  let submissions = 0;
+  let reads = 0;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  await page.route(submitPath, async (route) => {
+    submissions++;
+    const response = await route.fetch(); // finish is committed, response is lost
+    await route.fulfill({ response, contentType: 'application/json', body: 'null' });
+  });
+  await page.route(reconcilePath, async (route) => {
+    reads++;
+    if (reads <= 2) {
+      if (reads === 2) await held;
+      await route.fulfill({ contentType: 'application/json', body: 'null' });
+    } else await route.continue();
+  });
+  await solveDaily(page, puzzle, solution);
+  await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
+  const originalLog = await page.evaluate(() => localStorage.getItem('hashi.daily.log'));
+  const penalty = await penaltyValue(page).textContent();
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+  for (const name of [/^Hint/, /^Check/, /^Give up/, /Undo/, /Redo/, /^Clear/]) {
+    await expect(page.getByRole('button', { name })).toBeDisabled();
+  }
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.waitForLoadState('networkidle');
+  expect([submissions, reads]).toEqual([1, 1]);
+  try {
+    await page.getByRole('button', { name: 'Retry result', exact: true }).evaluate((button) => {
+      (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click();
+    });
+    await expect.poll(() => reads).toBe(2);
+    await expect(submitStatus(page)).toHaveText('Saving your result…');
+    expect(submissions).toBe(1);
+  } finally { release(); }
+  await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
+  expect(submissions).toBe(1); // a failed read must not dispatch a write
+  await page.getByRole('button', { name: 'Retry result', exact: true }).click();
+  await expect(submitStatus(page)).toBeEmpty();
+  await expectResult(page);
+  expect([submissions, reads]).toEqual([1, 3]); // read-only confirmation of the lost success
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+  expect(await page.evaluate(() => localStorage.getItem('hashi.daily.log'))).toBe(originalLog);
+  await expect(penaltyValue(page)).toHaveText(penalty!);
+});
+
+test('an unsent submission can explicitly retry the original solved board and final log', async ({ page }) => {
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  const bodies: Record<string, unknown>[] = [];
+  await page.route(submitPath, async (route) => {
+    bodies.push(route.request().postDataJSON());
+    if (bodies.length === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
+    else await route.continue();
+  });
+  await solveDaily(page, puzzle, solution);
+  await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+  const log = await page.evaluate(() => JSON.parse(localStorage.getItem('hashi.daily.log')!));
+  // A competing tab can rewrite the legacy shared log key while recovery is pending.
+  await page.evaluate(() => localStorage.setItem('hashi.daily.log', JSON.stringify({ day: -1, events: [] })));
+  await page.getByRole('button', { name: 'Retry result', exact: true }).click();
+  await expect(submitStatus(page)).toBeEmpty();
+  await expectResult(page);
+  expect(bodies).toHaveLength(2);
+  expect(bodies[1]).toEqual(bodies[0]);
+  expect(bodies[0].log).toEqual(log.events);
+  expect(log.events.at(-1).tap).toBe(true); // the final hand-built bridge was flushed
+});
+
+test('a delayed submit response cannot touch a disposed daily page', async ({ page }) => {
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  let committed = false;
+  await page.route(submitPath, async (route) => {
+    const response = await route.fetch();
+    committed = true;
+    await held;
+    await route.fulfill({ response });
+  });
+  await solveDaily(page, puzzle, solution);
+  await expect.poll(() => committed).toBe(true);
+  const before = await saved(page, DAILY_KEY);
+  const log = await page.evaluate(() => localStorage.getItem('hashi.daily.log'));
+  try {
+    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await expect(page).toHaveURL(/\/practice/);
+  } finally { release(); }
+  await page.waitForLoadState('networkidle');
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
+  expect(await page.evaluate(() => localStorage.getItem('hashi.daily.log'))).toBe(log);
+  await visit(page, '/');
+  await expectResult(page);
+});
+
+test('a transient metadata refresh failure preserves running bridges and allows manual recovery', async ({ page }) => {
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  await page.waitForLoadState('networkidle'); // settle the guest identity refresh before intercepting reads
+  await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
+  const before = await saved(page, DAILY_KEY);
+  let reads = 0;
+  await page.route('**/api/daily_today', async (route) => {
+    reads++;
+    if (reads === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
+    else await route.continue();
+  });
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(metadataStatus(page)).toContainText("Couldn't load today's puzzle.");
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
+  expect((await saved(page, DAILY_KEY)).moves).toBe(before.moves);
+  await expect(page.getByRole('button', { name: /^Check/ })).toBeEnabled();
+  await page.getByRole('button', { name: 'Retry puzzle', exact: true }).click();
+  await expect(metadataStatus(page)).toBeEmpty();
+  expect(reads).toBe(2);
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
+  expect((await saved(page, DAILY_KEY)).moves).toBe(before.moves);
+});
+
+test('a reload of an unconfirmed solved daily stays locked for explicit retry', async ({ page }) => {
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  let writes = 0;
+  await page.route(submitPath, async (route) => {
+    writes++;
+    if (writes === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
+    else await route.continue();
+  });
+  await solveDaily(page, puzzle, solution);
+  await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
+  const log = await page.evaluate(() => localStorage.getItem('hashi.daily.log'));
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
+  await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
+  expect(writes).toBe(1);
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+  expect(await page.evaluate(() => localStorage.getItem('hashi.daily.log'))).toBe(log);
+  await expect(page.getByRole('button', { name: /^Clear/ })).toBeDisabled();
+  await page.getByRole('button', { name: 'Retry result', exact: true }).click();
+  await expectResult(page);
+  expect(writes).toBe(2);
+});
+
+for (const failFirst of [false, true]) {
+  test(`a solved SPA return discovers metadata${failFirst ? ' after a manual retry' : ''}`, async ({ page }) => {
+    await visit(page, '/');
+    const { puzzle, solution } = await startDaily(page);
+    await solveDaily(page, puzzle, solution);
+    await expectResult(page);
+    await page.keyboard.press('Escape');
+    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await expect(page).toHaveURL(/\/practice/);
+    await page.evaluate(() => document.documentElement.dataset.returnMarker = 'same-document');
+    let reads = 0;
+    await page.route('**/api/daily_today', async (route) => {
+      reads++;
+      if (failFirst && reads === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
+      else await route.continue();
+    });
+    await page.getByRole('link', { name: /Daily/ }).first().click();
+    if (failFirst) {
+      await expect(metadataStatus(page)).toContainText("Couldn't load today's puzzle.");
+      const retry = page.getByRole('button', { name: 'Retry puzzle', exact: true });
+      await expect(retry).toBeEnabled();
+      await retry.click();
+    }
+    await expectResult(page);
+    await expect(metadataStatus(page)).toBeEmpty();
+    await expect(page.locator('html')).toHaveAttribute('data-return-marker', 'same-document');
+    await expect(winCard(page)).toHaveCount(0);
+    expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+    expect(reads).toBe(failFirst ? 2 : 1);
+  });
+}
+
+test('midnight replacement of solved metadata keeps the new discovery request', async ({ page }) => {
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  await solveDaily(page, puzzle, solution);
+  await expectResult(page);
+  await page.keyboard.press('Escape');
+  await page.getByRole('link', { name: /Practice/ }).first().click();
+  await expect(page).toHaveURL(/\/practice/);
+  let reads = 0;
+  let nextDay = 0;
+  await page.route('**/api/daily_today', async (route) => {
+    const response = await route.fetch();
+    const info = await response.json();
+    reads++;
+    nextDay = info.day + 1;
+    // The old day's finish was fetched just as the server clock crossed midnight.
+    info.server_now = nextDay * 86_400_000 + 1000;
+    if (reads > 1) {
+      info.day = nextDay;
+      info.attempt = null;
+      info.puzzle = null;
+      info.stamps = [];
+      info.finishers = 0;
+    }
+    await route.fulfill({ response, json: info });
+  });
+  await page.getByRole('link', { name: /Daily/ }).first().click();
+  await expect.poll(() => reads).toBe(2);
+  await expect(metadataStatus(page)).toBeEmpty();
+  await expect(page.getByRole('button', { name: /^Start/ })).toBeEnabled();
+  await expect(submitStatus(page)).toHaveCount(0);
+  await page.waitForLoadState('networkidle');
+  expect(reads).toBe(2);
 });

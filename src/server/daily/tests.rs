@@ -1717,3 +1717,160 @@ async fn a_login_with_an_earlier_guest_snapshot_cannot_transfer_a_claimed_accoun
     assert!(attempt(&conn, claimed, MONDAY).await.unwrap().is_some());
     assert!(attempt(&conn, other, MONDAY).await.unwrap().is_none());
 }
+
+#[tokio::test]
+async fn guarded_submit_replays_lost_success_without_mutating_the_finish_or_penalties() {
+    let (db, conn) = test_db().await;
+    let id = user(&conn, "recover", Some("recover")).await;
+    let started = start(&conn, id, MONDAY, None).await.unwrap();
+    let identity = started.attempt.unwrap().attempt_id;
+    let daily = get_or_create(&conn, MONDAY).await.unwrap();
+    age(&conn, id, MONDAY, 600_000).await;
+    check(&conn, id, MONDAY, Board::new(daily.puzzle).empty_bridges())
+        .await
+        .unwrap();
+    let first = submit_owned(
+        &conn,
+        id,
+        MONDAY,
+        daily.solution.clone(),
+        20,
+        played(&daily.solution),
+        Some(-120),
+        &identity,
+    )
+    .await
+    .unwrap();
+    let original = attempt(&conn, id, MONDAY).await.unwrap().unwrap();
+    let saved = conn
+        .query(
+            "SELECT log, moves, run, daypart FROM attempts WHERE user_id = ?1 AND day = ?2",
+            params![id, MONDAY],
+        )
+        .await
+        .unwrap()
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
+    let saved_fields = (
+        saved.get::<String>(0).unwrap(),
+        saved.get::<i64>(1).unwrap(),
+        saved.get::<String>(2).unwrap(),
+        saved.get::<Option<String>>(3).unwrap(),
+    );
+    // Different payload metadata on replay must not overwrite the accepted log/moves/time.
+    // Separate connections also exercise the serialization used for simultaneous retries.
+    let mut tasks = vec![];
+    for _ in 0..2 {
+        let connection = db.database.connect().unwrap();
+        let solution = daily.solution.clone();
+        let expected = identity.clone();
+        tasks.push(tokio::spawn(async move {
+            submit_owned(
+                &connection,
+                id,
+                MONDAY,
+                solution,
+                999,
+                vec![],
+                None,
+                &expected,
+            )
+            .await
+            .unwrap()
+        }));
+    }
+    for task in tasks {
+        let replay = task.await.unwrap();
+        assert_eq!(
+            (replay.time_ms, replay.rank, replay.flag),
+            (first.time_ms, first.rank, first.flag)
+        );
+    }
+    let confirmed = owned_info(&conn, id, MONDAY, &identity).await.unwrap();
+    assert_eq!(confirmed.attempt, Some(original));
+    let after = conn
+        .query(
+            "SELECT log, moves, run, daypart FROM attempts WHERE user_id = ?1 AND day = ?2",
+            params![id, MONDAY],
+        )
+        .await
+        .unwrap()
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        (
+            after.get::<String>(0).unwrap(),
+            after.get::<i64>(1).unwrap(),
+            after.get::<String>(2).unwrap(),
+            after.get::<Option<String>>(3).unwrap()
+        ),
+        saved_fields
+    );
+    assert_eq!(finishers(&conn, MONDAY).await.unwrap(), 1);
+    // The legacy endpoint retains its behavior and exact public request shape.
+    assert!(
+        submit(&conn, id, MONDAY, daily.solution.clone(), 20, vec![], None)
+            .await
+            .is_err()
+    );
+    for wrong in ["", "replacement-attempt"] {
+        assert!(owned_info(&conn, id, MONDAY, wrong).await.is_err());
+        assert!(
+            submit_owned(
+                &conn,
+                id,
+                MONDAY,
+                daily.solution.clone(),
+                20,
+                vec![],
+                None,
+                wrong
+            )
+            .await
+            .is_err()
+        );
+    }
+}
+
+#[tokio::test]
+async fn guarded_submit_rejects_a_replaced_attempt_before_any_write_or_replay() {
+    let (_db, conn) = test_db().await;
+    let id = user(&conn, "replace", Some("replace")).await;
+    let identity = start(&conn, id, MONDAY, None)
+        .await
+        .unwrap()
+        .attempt
+        .unwrap()
+        .attempt_id;
+    let daily = get_or_create(&conn, MONDAY).await.unwrap();
+    // Same account/day/start millisecond, different stable identity (as in guest replacement).
+    conn.execute(
+        "UPDATE attempts SET attempt_id = 'replacement' WHERE user_id = ?1 AND day = ?2",
+        params![id, MONDAY],
+    )
+    .await
+    .unwrap();
+    assert!(owned_info(&conn, id, MONDAY, &identity).await.is_err());
+    assert!(
+        submit_owned(
+            &conn,
+            id,
+            MONDAY,
+            daily.solution,
+            20,
+            vec![],
+            None,
+            &identity
+        )
+        .await
+        .is_err()
+    );
+    let untouched = attempt(&conn, id, MONDAY).await.unwrap().unwrap();
+    assert!(!untouched.finished());
+    assert_eq!((untouched.hints, untouched.checks), (0, 0));
+    assert!(untouched.bridges.is_none());
+}

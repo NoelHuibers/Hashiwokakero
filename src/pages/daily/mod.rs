@@ -4,6 +4,7 @@ pub mod about;
 mod actions;
 pub mod cover;
 pub mod ranking;
+mod recovery;
 pub mod result;
 pub mod rivals;
 pub mod state;
@@ -15,14 +16,11 @@ use std::time::Duration;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::{
-    PaidAction, PaidOutcome, daily_paid_action, daily_recover_actions, daily_reveal, daily_today,
-    submit_daily,
-};
+use crate::api::{PaidAction, PaidOutcome, daily_paid_action, daily_recover_actions, daily_reveal};
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
 use crate::components::ui::badge::{Badge, BadgeVariant};
-use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
+use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};
@@ -32,14 +30,15 @@ use crate::model::{
 };
 use crate::pages::play::islands_percent;
 use crate::seo::{PageMeta, site_ld};
-use crate::state::{Auth, DailyGame, Status, ToastKind, error_toast, load, toast};
+use crate::state::{Auth, DailyGame, Status, ToastKind, error_toast, toast};
 
 use about::About;
 use cover::Cover;
 use ranking::RankingCard;
+use recovery::{Fetch, Phase};
 use result::ResultCard;
 use rivals::RivalsCard;
-use state::{Daily, LOG_KEY, SavedLog, browser_now, browser_utc_offset};
+use state::{Daily, browser_now};
 use week::WeekCard;
 use win::WinCard;
 
@@ -89,9 +88,13 @@ pub fn DailyPage() -> impl IntoView {
         now: RwSignal::new(0),
         result: RwSignal::new(None),
         admired: RwSignal::new(false),
-        unsent: RwSignal::new(false),
         ranking: RwSignal::new(None),
         busy: RwSignal::new(false),
+        metadata: Fetch::new(),
+        starting: Fetch::new(),
+        ranking_load: Fetch::new(),
+        submission: RwSignal::new(Phase::Idle),
+        submit_payload: StoredValue::new(None),
         refreshing: StoredValue::new(false),
         logged: StoredValue::new(None),
     };
@@ -125,9 +128,14 @@ pub fn DailyPage() -> impl IntoView {
 
     // Wait for the known identity before fetching its attempt, and refetch after a local
     // registration/sign-in refresh. An old request cannot install another identity's info.
+    let identity = Memo::new(move |_| {
+        (
+            auth.loaded.get(),
+            auth.user.with(|u| u.as_ref().map(|u| u.id)),
+        )
+    });
     Effect::new(move |_| {
-        if auth.loaded.get() {
-            auth.user.with(|u| u.as_ref().map(|u| u.id));
+        if identity.get().0 {
             untrack(|| daily.reload());
         }
     });
@@ -138,7 +146,6 @@ pub fn DailyPage() -> impl IntoView {
             return;
         };
         if daily.server_now() >= (day + 1) * MS_PER_DAY && daily.finished() {
-            daily.info.set(None);
             daily.reload();
         }
     });
@@ -149,48 +156,9 @@ pub fn DailyPage() -> impl IntoView {
 
     // Submit as soon as the board is solved
     Effect::new(move |_| {
-        if !daily.ready_to_submit() {
-            return;
+        if daily.ready_to_submit() {
+            untrack(|| daily.submit(false));
         }
-        let Some(day) = daily.day() else { return };
-        let bridges = game.bridges.get_untracked();
-        let moves = game.moves.get_untracked();
-        let Some(guard) = daily.actions.capture(&daily) else {
-            return;
-        };
-        daily.busy.set(true);
-        // Flush synchronously: effect scheduling must not decide whether the final move is in
-        // the log. The observer can run afterward without appending it twice.
-        untrack(|| daily.record_moves());
-        spawn_local(async move {
-            // The final move has already been logged
-            let log = load::<SavedLog>(LOG_KEY)
-                .filter(|l| l.day == day)
-                .map(|l| l.events)
-                .unwrap_or_default();
-            let response = submit_daily(day, bridges, moves, log, Some(browser_utc_offset())).await;
-            if !guard.current(&daily) {
-                daily.busy.try_set(false);
-                return;
-            }
-            match response {
-                Ok(result) => {
-                    // The win card shows the stamps, no toasts on top of it
-                    daily.submitted(result, browser_now() + daily.skew.get_untracked());
-                    daily.refresh_ranking();
-                }
-                Err(e) => {
-                    error_toast(e);
-                    let info = daily_today().await.ok();
-                    if !guard.current(&daily) {
-                        daily.busy.try_set(false);
-                        return;
-                    }
-                    daily.submit_failed(info);
-                }
-            }
-            daily.busy.set(false);
-        });
     });
 
     let paid = move |action| {
@@ -431,6 +399,20 @@ pub fn DailyPage() -> impl IntoView {
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <div class="flex min-w-0 flex-col gap-4">
+                    <div role="status" aria-live="polite" data-testid="daily-metadata-status"
+                        class:hidden=move || daily.metadata.phase.get() == Phase::Idle && daily.info.with(Option::is_some)>
+                        <Show when=move || daily.metadata.phase.get() == Phase::Pending || (daily.info.with(Option::is_none) && daily.metadata.phase.get() != Phase::Error)>
+                            <p>{t!(i18n, common.game.loading)}</p>
+                        </Show>
+                        <Show when=move || daily.metadata.phase.get() == Phase::Error>
+                            <p>{t!(i18n, daily.recovery.metadata_error)}</p>
+                            <Button variant=ButtonVariant::Outline
+                                attr:disabled=move || daily.busy.get() || daily.unconfirmed()
+                                on:click=move |_| daily.retry_metadata()>
+                                {t!(i18n, daily.recovery.metadata_retry)}
+                            </Button>
+                        </Show>
+                    </div>
                     <div class="flex min-h-16 flex-wrap items-end justify-between gap-3">
                         {header}
                         <div class="flex gap-2">
@@ -522,18 +504,6 @@ pub fn DailyPage() -> impl IntoView {
                                 t_string!(i18n, daily.action_retry).to_string()
                             } else { String::new() }}
                         </div>
-                        <Show when=move || daily.unsent.get() && !daily.finished()>
-                            <div class="flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning-light px-3 py-2 text-sm text-warning-dark">
-                                <span class="flex-1">{t!(i18n, daily.submit_failed)}</span>
-                                <Button
-                                    size=ButtonSize::Sm
-                                    attr:disabled=move || daily.busy.get()
-                                    on:click=move |_| daily.submit_again()
-                                >
-                                    {t!(i18n, daily.submit_again)}
-                                </Button>
-                            </div>
-                        </Show>
                         <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap" aria-busy=move || daily.actions.pending.get().to_string()>
                             <Button
                                 variant=ButtonVariant::Outline
@@ -586,7 +556,7 @@ pub fn DailyPage() -> impl IntoView {
                 </div>
 
                 <aside class="flex flex-col gap-4">
-                    <Show when=move || daily.finished() || matches!(game.status.get(), Status::Won | Status::Revealed)>
+                    <Show when=move || daily.started() && (daily.finished() || matches!(game.status.get(), Status::Won | Status::Revealed))>
                         <ResultCard daily=daily />
                     </Show>
                     <RivalsCard daily=daily />

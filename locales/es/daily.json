@@ -78,5 +78,14 @@
     "more_a": "En la <practice>práctica</practice>: puzles ilimitados en cinco tamaños, de 7×7 a 24×24, con pistas cuando quieras. O crea tus propios puzles en el <workshop>taller</workshop>.",
     "to_rules": "Reglas de Hashiwokakero y consejos →",
     "to_practice": "Práctica: puzles ilimitados →"
+  },
+  "recovery": {
+    "metadata_error": "No se pudo cargar el puzle de hoy. Inténtalo de nuevo.",
+    "metadata_retry": "Reintentar puzle",
+    "ranking_error": "No se pudo cargar la clasificación. Inténtalo de nuevo.",
+    "ranking_retry": "Reintentar clasificación",
+    "submit_pending": "Guardando tu resultado…",
+    "submit_error": "No se pudo confirmar tu resultado. Tu tablero resuelto está a salvo. Reintenta para comprobarlo y guardarlo.",
+    "submit_retry": "Reintentar resultado"
   }
 }

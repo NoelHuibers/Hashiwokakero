@@ -78,5 +78,14 @@
     "more_a": "W <practice>treningu</practice>: nieograniczona liczba łamigłówek w pięciu rozmiarach, od 7×7 do 24×24, z podpowiedziami, kiedy chcesz. Albo twórz własne łamigłówki w <workshop>warsztacie</workshop>.",
     "to_rules": "Zasady Hashiwokakero i porady →",
     "to_practice": "Trening: łamigłówki bez limitu →"
+  },
+  "recovery": {
+    "metadata_error": "Nie udało się wczytać dzisiejszej łamigłówki. Spróbuj ponownie.",
+    "metadata_retry": "Ponów łamigłówkę",
+    "ranking_error": "Nie udało się wczytać rankingu. Spróbuj ponownie.",
+    "ranking_retry": "Ponów ranking",
+    "submit_pending": "Zapisywanie wyniku…",
+    "submit_error": "Nie udało się potwierdzić wyniku. Rozwiązana plansza jest bezpieczna. Ponów próbę, aby sprawdzić i zapisać wynik.",
+    "submit_retry": "Ponów wynik"
   }
 }

@@ -78,5 +78,14 @@
     "more_a": "En <practice>mode libre</practice> : des grilles illimitées en cinq tailles, de 7×7 à 24×24, avec des indices quand tu veux. Ou crée tes propres grilles dans l’<workshop>atelier</workshop>.",
     "to_rules": "Règles du Hashiwokakero et astuces →",
     "to_practice": "Mode libre : grilles illimitées →"
+  },
+  "recovery": {
+    "metadata_error": "Impossible de charger le puzzle du jour. Réessayez.",
+    "metadata_retry": "Réessayer le puzzle",
+    "ranking_error": "Impossible de charger le classement. Réessayez.",
+    "ranking_retry": "Réessayer le classement",
+    "submit_pending": "Enregistrement du résultat…",
+    "submit_error": "Votre résultat n’a pas pu être confirmé. Votre grille résolue est conservée. Réessayez pour le vérifier et l’enregistrer.",
+    "submit_retry": "Réessayer le résultat"
   }
 }

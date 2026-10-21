@@ -99,6 +99,8 @@ pub async fn admission(req: Request, next: Next) -> Response {
                     | "puzzle_cnf"
                     | "start_daily"
                     | "daily_today"
+                    | "daily_attempt_info"
+                    | "submit_daily_attempt"
                     | "load_player"
                     | "load_hall_of_fame"
                     | "month_leaderboard"

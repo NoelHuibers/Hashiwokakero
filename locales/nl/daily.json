@@ -78,5 +78,14 @@
     "more_a": "Bij <practice>Oefenen</practice>: onbeperkt puzzels in vijf formaten, van 7×7 tot 24×24, met hints wanneer je wilt. Of bouw je eigen puzzels in de <workshop>werkplaats</workshop>.",
     "to_rules": "Hashiwokakero-regels en oplostips →",
     "to_practice": "Oefenen: onbeperkt puzzels →"
+  },
+  "recovery": {
+    "metadata_error": "De puzzel van vandaag kon niet worden geladen. Probeer opnieuw.",
+    "metadata_retry": "Puzzel opnieuw laden",
+    "ranking_error": "De ranglijst kon niet worden geladen. Probeer opnieuw.",
+    "ranking_retry": "Ranglijst opnieuw laden",
+    "submit_pending": "Je resultaat wordt opgeslagen…",
+    "submit_error": "Je resultaat kon niet worden bevestigd. Je opgeloste bord is veilig. Probeer opnieuw om het te controleren en op te slaan.",
+    "submit_retry": "Resultaat opnieuw proberen"
   }
 }

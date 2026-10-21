@@ -78,5 +78,14 @@
     "more_a": "在<practice>练习</practice>里：五种尺寸、从 7×7 到 24×24 的无限题目，随时可以用提示。也可以在<workshop>工坊</workshop>里制作自己的谜题。",
     "to_rules": "数桥规则与解题技巧 →",
     "to_practice": "练习：无限题目 →"
+  },
+  "recovery": {
+    "metadata_error": "无法加载今日谜题。请重试。",
+    "metadata_retry": "重试谜题",
+    "ranking_error": "无法加载排行榜。请重试。",
+    "ranking_retry": "重试排行榜",
+    "submit_pending": "正在保存结果…",
+    "submit_error": "无法确认你的结果。已解出的棋盘已保留。请重试以确认并保存结果。",
+    "submit_retry": "重试结果"
   }
 }

@@ -31,12 +31,19 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
         if daily.busy.get_untracked() {
             return;
         }
+        let Some(request) = daily.starting.begin(false) else {
+            return;
+        };
         daily.busy.set(true);
         let guard = RefreshGuard::new(&daily);
         spawn_local(async move {
             let response = start_daily(Some(device_id())).await;
+            if !daily.starting.current(request) {
+                return;
+            }
+            daily.starting.finish(request, false);
+            daily.busy.set(false);
             if !guard.current(&daily) {
-                daily.busy.try_set(false);
                 return;
             }
             match response {
@@ -46,7 +53,6 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
                 }
                 Err(e) => error_toast(e),
             }
-            daily.busy.set(false);
         });
     };
     // A penalty as a small tag: what you do and what it costs.

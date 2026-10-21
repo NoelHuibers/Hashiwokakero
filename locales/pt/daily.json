@@ -78,5 +78,14 @@
     "more_a": "No <practice>treino</practice>: puzzles ilimitados em cinco tamanhos, de 7×7 a 24×24, com dicas quando quiser. Ou crie seus próprios puzzles na <workshop>oficina</workshop>.",
     "to_rules": "Regras de Hashiwokakero e dicas →",
     "to_practice": "Treino: puzzles ilimitados →"
+  },
+  "recovery": {
+    "metadata_error": "Não foi possível carregar o puzzle de hoje. Tenta novamente.",
+    "metadata_retry": "Tentar puzzle novamente",
+    "ranking_error": "Não foi possível carregar a classificação. Tenta novamente.",
+    "ranking_retry": "Tentar classificação novamente",
+    "submit_pending": "A guardar o resultado…",
+    "submit_error": "Não foi possível confirmar o resultado. O tabuleiro resolvido está seguro. Tenta novamente para verificar e guardar.",
+    "submit_retry": "Tentar resultado novamente"
   }
 }

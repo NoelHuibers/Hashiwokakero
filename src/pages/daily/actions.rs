@@ -175,6 +175,17 @@ impl Actions {
         self.checked_foreign.set_value(vec![]);
         self.sequence.update(|s| *s += 1);
         self.pending.set(false);
+        daily.busy.set(false);
+        daily.starting.cancel();
+        daily.submission.set(
+            if daily.game.status.get_untracked() == crate::state::Status::Won && !daily.finished() {
+                super::recovery::Phase::Error
+            } else {
+                super::recovery::Phase::Idle
+            },
+        );
+        daily.submit_payload.set_value(None);
+        daily.result.set(None);
         // An old UTC day cannot be played again from this page. Drop its browser intents;
         // server receipts still remain safe to replay for the lifetime of their attempts.
         if let Some(scope) = scope {
@@ -238,6 +249,13 @@ impl Actions {
         self.sequence.update(|s| *s += 1);
         daily.game.hint.set(None);
         daily.game.wrong.set(vec![]);
+        self.capture(daily)
+    }
+
+    pub(super) fn submit_guard(&self, daily: &Daily) -> Option<Guard> {
+        // Missing metadata cannot invalidate the request that is still discovering it.
+        self.capture(daily)?;
+        self.sequence.update(|s| *s += 1);
         self.capture(daily)
     }
 
@@ -450,6 +468,19 @@ impl Guard {
         }
     }
 
+    pub(super) fn attempt_id(&self) -> &str {
+        &self.attempt_id
+    }
+
+    pub(super) fn matches(&self, info: &crate::model::DailyInfo) -> bool {
+        info.day == self.day
+            && info.puzzle.as_ref() == Some(&self.puzzle)
+            && info
+                .attempt
+                .as_ref()
+                .is_some_and(|a| a.started_at == self.started_at && a.attempt_id == self.attempt_id)
+    }
+
     pub(super) fn user(&self) -> i64 {
         self.user
     }
@@ -498,9 +529,13 @@ mod tests {
             now: RwSignal::new(2000),
             result: RwSignal::new(None),
             admired: RwSignal::new(false),
-            unsent: RwSignal::new(false),
             ranking: RwSignal::new(None),
             busy: RwSignal::new(false),
+            metadata: super::super::recovery::Fetch::new(),
+            starting: super::super::recovery::Fetch::new(),
+            ranking_load: super::super::recovery::Fetch::new(),
+            submission: RwSignal::new(super::super::recovery::Phase::Idle),
+            submit_payload: StoredValue::new(None),
             logged: StoredValue::new(None),
             refreshing: StoredValue::new(false),
         };
@@ -543,6 +578,151 @@ mod tests {
                 loaded: RwSignal::new(true),
             };
             test(page(&game, auth), auth);
+        });
+    }
+
+    #[test]
+    fn solved_spa_return_without_metadata_preserves_the_discovery_request() {
+        tab(|d, auth| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            // A new page shares the solved board but has not discovered its attempt yet.
+            let returning = page(&d.game, auth);
+            returning.info.set(None);
+            returning.actions.sync(&returning);
+            returning
+                .submission
+                .set(super::super::recovery::Phase::Idle);
+            let refresh = super::super::state::RefreshGuard::new(&returning);
+            assert!(returning.actions.submit_guard(&returning).is_none());
+            assert!(refresh.current(&returning));
+            assert!(!returning.ready_to_submit());
+            assert!(returning.begin_submit(false).is_none());
+            assert!(refresh.current(&returning));
+            assert!(!returning.unconfirmed()); // manual metadata retry remains eligible
+            returning
+                .metadata
+                .phase
+                .set(super::super::recovery::Phase::Error);
+            assert!(!returning.unconfirmed());
+        });
+    }
+
+    #[test]
+    fn a_concurrent_reveal_is_authoritative_and_never_submitted_again() {
+        tab(|d, _| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            let guard = d.begin_submit(false).unwrap();
+            let mut revealed = d.info.get_untracked().unwrap();
+            let attempt = revealed.attempt.as_mut().unwrap();
+            attempt.revealed = true;
+            attempt.bridges = Some(vec![1]);
+            assert!(d.reconcile(&guard, revealed));
+            assert!(d.finished());
+            assert_eq!(d.game.status.get_untracked(), Status::Revealed);
+            assert!(d.begin_submit(true).is_none());
+            assert!(!d.celebrating()); // a read-only receipt does not invent a win modal
+        });
+    }
+
+    #[test]
+    fn submit_recovery_keeps_the_solution_log_and_penalties_until_exact_confirmation() {
+        tab(|d, _| {
+            d.game.bridges.set(vec![1]);
+            d.game.moves.set(7);
+            d.game.status.set(Status::Won);
+            d.update_attempt(|a| {
+                a.hints = 1;
+                a.checks = 2;
+            });
+            crate::state::store(
+                super::super::state::LOG_KEY,
+                &super::super::state::SavedLog {
+                    day: 100,
+                    events: vec![crate::model::MoveEvent {
+                        t: 1000,
+                        edge: 0,
+                        count: 1,
+                        tap: true,
+                    }],
+                },
+            );
+            d.record_moves();
+            let refresh = super::super::state::RefreshGuard::new(&d);
+            let guard = d.begin_submit(false).unwrap();
+            assert!(!refresh.current(&d)); // an earlier quiet reply cannot unfinish this board
+            assert!(d.begin_submit(false).is_none());
+            assert!(d.begin_submit(true).is_none());
+            let original = d.info.get_untracked().unwrap();
+            let saved_log =
+                crate::state::load::<super::super::state::SavedLog>(super::super::state::LOG_KEY)
+                    .map(|l| l.events);
+            // A successful running read authorizes a guarded retry, never board editing.
+            assert!(!d.reconcile(&guard, original.clone()));
+            assert_eq!(d.game.status.get_untracked(), Status::Won);
+            assert_eq!(d.game.bridges.get_untracked(), [1]);
+            assert_eq!(d.info.get_untracked(), Some(original.clone()));
+            for mismatch in 0..4 {
+                let mut other = original.clone();
+                match mismatch {
+                    0 => other.day += 1,
+                    1 => other.attempt.as_mut().unwrap().started_at += 1,
+                    2 => other.attempt.as_mut().unwrap().attempt_id.push('x'),
+                    _ => other.puzzle = None,
+                }
+                other.attempt.as_mut().unwrap().finished_at = Some(5000);
+                assert!(!d.reconcile(&guard, other));
+                assert!(!d.finished());
+            }
+            // Failed reconciliation leaves a durable visible phase without re-dispatch.
+            d.busy.set(false);
+            d.submission.set(super::super::recovery::Phase::Error);
+            assert!(d.begin_submit(false).is_none());
+            let retry = d.begin_submit(true).unwrap();
+            assert!(!guard.current(&d));
+            assert!(d.begin_submit(true).is_none());
+            assert_eq!(
+                crate::state::load::<super::super::state::SavedLog>(super::super::state::LOG_KEY)
+                    .map(|l| l.events),
+                saved_log
+            );
+            let mut done = original;
+            let a = done.attempt.as_mut().unwrap();
+            a.finished_at = Some(5000);
+            a.time_ms = Some(4000);
+            a.bridges = Some(vec![1]);
+            assert!(d.reconcile(&retry, done));
+            assert!(d.finished());
+            assert_eq!(d.game.status.get_untracked(), Status::Won);
+            assert_eq!(d.game.bridges.get_untracked(), [1]);
+            assert!(!d.busy.get_untracked());
+            assert!(d.begin_submit(true).is_none());
+        });
+    }
+
+    #[test]
+    fn stale_submission_cannot_finish_a_new_identity_or_a_disposed_page() {
+        tab(|d, auth| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            let old = d.begin_submit(false).unwrap();
+            let info = d.info.get_untracked().unwrap();
+            auth.user.update(|u| u.as_mut().unwrap().id += 1);
+            d.actions.sync(&d);
+            let current = d.begin_submit(true).unwrap();
+            assert!(!d.reconcile(&old, info.clone()));
+            assert!(d.busy.get_untracked());
+            assert!(current.current(&d));
+            let owner = Owner::new();
+            let (disposed, guard) = owner.with(|| {
+                let page = page(&d.game, auth);
+                let guard = page.begin_submit(true).unwrap();
+                (page, guard)
+            });
+            owner.cleanup();
+            assert!(!disposed.reconcile(&guard, info));
+            assert_eq!(d.game.status.get_untracked(), Status::Won);
         });
     }
 

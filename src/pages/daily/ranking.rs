@@ -15,7 +15,9 @@ use crate::model::GroupToday;
 use crate::pages::groups::today::TodayBoard;
 use crate::state::Auth;
 
+use super::recovery::Phase;
 use super::state::Daily;
+use crate::components::ui::button::{Button, ButtonVariant};
 
 /// The tabs: the world's ranking (`None`) and one per group.
 #[component]
@@ -116,6 +118,19 @@ pub(super) fn RankingCard(daily: Daily) -> impl IntoView {
                 </CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-3">
+                <div role="status" aria-live="polite" data-testid="daily-ranking-status"
+                    class:hidden=move || daily.ranking_load.phase.get() == Phase::Idle && daily.ranking.with(Option::is_some)>
+                    <Show when=move || daily.ranking_load.phase.get() == Phase::Pending || (daily.ranking.with(Option::is_none) && daily.ranking_load.phase.get() != Phase::Error)>
+                        <p>{t!(i18n, common.game.loading)}</p>
+                    </Show>
+                    <Show when=move || daily.ranking_load.phase.get() == Phase::Error>
+                        <p>{t!(i18n, daily.recovery.ranking_error)}</p>
+                        <Button variant=ButtonVariant::Outline on:click=move |_| daily.retry_ranking()>
+                            {t!(i18n, daily.recovery.ranking_retry)}
+                        </Button>
+                    </Show>
+                </div>
+
                 {move || {
                     boards
                         .get()

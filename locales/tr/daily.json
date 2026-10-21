@@ -78,5 +78,14 @@
     "more_a": "<practice>Pratik</practice> bölümünde: 7×7’den 24×24’e beş boyutta sınırsız bulmaca, istediğin zaman ipucuyla. Ya da <workshop>atölyede</workshop> kendi bulmacalarını yap.",
     "to_rules": "Hashiwokakero kuralları ve çözüm ipuçları →",
     "to_practice": "Pratik: sınırsız bulmaca →"
+  },
+  "recovery": {
+    "metadata_error": "Bugünün bulmacası yüklenemedi. Tekrar deneyin.",
+    "metadata_retry": "Bulmacayı yeniden dene",
+    "ranking_error": "Sıralama yüklenemedi. Tekrar deneyin.",
+    "ranking_retry": "Sıralamayı yeniden dene",
+    "submit_pending": "Sonucunuz kaydediliyor…",
+    "submit_error": "Sonucunuz doğrulanamadı. Çözülmüş tahtanız güvende. Kontrol edip kaydetmek için tekrar deneyin.",
+    "submit_retry": "Sonucu yeniden dene"
   }
 }

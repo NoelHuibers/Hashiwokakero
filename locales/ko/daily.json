@@ -78,5 +78,14 @@
     "more_a": "<practice>연습</practice>에서 7×7부터 24×24까지 다섯 가지 크기의 퍼즐을 무제한으로, 힌트도 원할 때 쓸 수 있어요. <workshop>공방</workshop>에서 나만의 퍼즐을 만들 수도 있어요.",
     "to_rules": "하시 규칙과 풀이 팁 →",
     "to_practice": "연습: 무제한 퍼즐 →"
+  },
+  "recovery": {
+    "metadata_error": "오늘의 퍼즐을 불러오지 못했습니다. 다시 시도하세요.",
+    "metadata_retry": "퍼즐 다시 시도",
+    "ranking_error": "순위를 불러오지 못했습니다. 다시 시도하세요.",
+    "ranking_retry": "순위 다시 시도",
+    "submit_pending": "결과 저장 중…",
+    "submit_error": "결과를 확인하지 못했습니다. 완성한 보드는 안전하게 유지됩니다. 다시 시도하여 확인하고 저장하세요.",
+    "submit_retry": "결과 다시 시도"
   }
 }

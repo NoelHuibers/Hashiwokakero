@@ -78,5 +78,14 @@
     "more_a": "Beim <practice>Üben</practice>: unbegrenzt viele Rätsel in fünf Größen, von 7×7 bis 24×24, mit Tipps, wann immer du willst. Oder bau eigene Rätsel in der <workshop>Werkstatt</workshop>.",
     "to_rules": "Hashiwokakero-Regeln und Lösungstipps →",
     "to_practice": "Üben: unbegrenzt viele Rätsel →"
+  },
+  "recovery": {
+    "metadata_error": "Das heutige Rätsel konnte nicht geladen werden. Versuche es erneut.",
+    "metadata_retry": "Rätsel erneut laden",
+    "ranking_error": "Die Rangliste konnte nicht geladen werden. Versuche es erneut.",
+    "ranking_retry": "Rangliste erneut laden",
+    "submit_pending": "Dein Ergebnis wird gespeichert…",
+    "submit_error": "Dein Ergebnis konnte nicht bestätigt werden. Dein gelöstes Brett ist sicher. Versuche es erneut, um es zu prüfen und zu speichern.",
+    "submit_retry": "Ergebnis erneut versuchen"
   }
 }

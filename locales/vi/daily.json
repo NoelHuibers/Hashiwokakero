@@ -78,5 +78,14 @@
     "more_a": "Trong phần <practice>luyện tập</practice>: câu đố không giới hạn ở năm kích thước, từ 7×7 đến 24×24, có gợi ý bất cứ lúc nào. Hoặc tự tạo câu đố trong <workshop>xưởng</workshop>.",
     "to_rules": "Luật Hashiwokakero và mẹo giải →",
     "to_practice": "Luyện tập: câu đố không giới hạn →"
+  },
+  "recovery": {
+    "metadata_error": "Không thể tải câu đố hôm nay. Hãy thử lại.",
+    "metadata_retry": "Thử lại câu đố",
+    "ranking_error": "Không thể tải bảng xếp hạng. Hãy thử lại.",
+    "ranking_retry": "Thử lại bảng xếp hạng",
+    "submit_pending": "Đang lưu kết quả…",
+    "submit_error": "Chưa thể xác nhận kết quả. Bàn đã giải của bạn vẫn an toàn. Hãy thử lại để kiểm tra và lưu.",
+    "submit_retry": "Thử lại kết quả"
   }
 }
