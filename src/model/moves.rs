@@ -68,9 +68,10 @@ pub const MAX_LOG_EVENTS: usize = 20_000;
 
 /// Checks the move log of a finished daily.
 ///
-/// It has to lead from the empty board to the submitted one, fit the time the server measured
-/// (`elapsed_ms`, without penalties) and be humanly possible. Hints placed some bridges for
-/// free, the floor accounts for them.
+/// It has to lead from the empty board to the submitted one and be humanly possible within the
+/// time the server measured (`elapsed_ms`, without penalties). Hints placed some bridges for
+/// free, the floor accounts for them. Its times are read on the server's clock, see
+/// [`server_times`]: a browser clock that disagrees with the server doesn't unrank a result.
 pub fn verify_log(
     board: &Board,
     solution: &[u8],
@@ -83,18 +84,17 @@ pub fn verify_log(
         return Err(Flag::Log);
     }
     let mut state = board.empty_bridges();
-    let mut last = 0;
     for e in log {
         let slot = state.get_mut(usize::from(e.edge)).ok_or(Flag::Log)?;
-        if e.count > 2 || e.t < last || i64::from(e.t) > elapsed_ms + CLOCK_SLACK_MS {
+        if e.count > 2 {
             return Err(Flag::Log);
         }
         *slot = e.count;
-        last = e.t;
     }
     if state != bridges {
         return Err(Flag::Log);
     }
+    let log = server_times(log, elapsed_ms);
     // Every bridge of the solution takes a click, minus what hints placed (up to two each)
     let needed = solution.iter().map(|&b| i64::from(b)).sum::<i64>() - 2 * hints;
     if elapsed_ms < needed.max(0) * MIN_MS_PER_BRIDGE {
@@ -114,6 +114,34 @@ pub fn verify_log(
         return Err(Flag::Pace);
     }
     Ok(())
+}
+
+/// The times of a move log on the server's clock.
+///
+/// The browser stamps each move with its estimate of the server's clock, which can disagree
+/// with what the server measured: a phone clock that jumps, a resync after the tab slept. On
+/// 2026-10-21 a 1:41.6 run lost its place because its last move came 55 s after the finish the
+/// server saw. Neither makes a human result suspicious, so times that go back are held, and a log
+/// that ends more than [`CLOCK_SLACK_MS`] after the finish is squeezed into the measured time.
+/// Squeezing only shortens the gaps between clicks: the pace check gets stricter, never looser,
+/// and a program gains nothing by sending late times.
+pub fn server_times(log: &[MoveEvent], elapsed_ms: i64) -> Vec<MoveEvent> {
+    let mut last = 0;
+    let mut log: Vec<MoveEvent> = log
+        .iter()
+        .map(|&e| {
+            last = last.max(e.t);
+            MoveEvent { t: last, ..e }
+        })
+        .collect();
+    let elapsed = u64::try_from(elapsed_ms.max(0)).unwrap_or(0);
+    if last > 0 && i64::from(last) > elapsed_ms.saturating_add(CLOCK_SLACK_MS) {
+        for e in &mut log {
+            // t <= last, so the result is at most `elapsed`, below `last`: it fits a u32
+            e.t = u32::try_from(u64::from(e.t) * elapsed / u64::from(last)).unwrap_or(e.t);
+        }
+    }
+    log
 }
 
 /// A puzzle in a form that is the same for all its rotations and mirror images, to recognise
@@ -261,17 +289,6 @@ mod tests {
             verify_log(&board, &solution, &solution, &log[..2], 3000, 0),
             Err(Flag::Log)
         );
-        // Time going backwards, or far beyond what the server measured
-        let backwards = [tap(900, 0, 1), tap(800, 0, 2), tap(2400, 1, 1)];
-        assert_eq!(
-            verify_log(&board, &solution, &solution, &backwards, 3000, 0),
-            Err(Flag::Log)
-        );
-        let late = [tap(900, 0, 1), tap(1300, 0, 2), tap(40_000, 1, 1)];
-        assert_eq!(
-            verify_log(&board, &solution, &solution, &late, 3000, 0),
-            Err(Flag::Log)
-        );
         // Three bridges in half a second
         let quick = [tap(100, 0, 1), tap(300, 0, 2), tap(500, 1, 1)];
         assert_eq!(
@@ -283,6 +300,84 @@ mod tests {
         assert_eq!(
             verify_log(&board, &solution, &solution, &bogus, 3000, 0),
             Err(Flag::Log)
+        );
+    }
+
+    /// The browser's clock may disagree with the server's: times that go back or run past the
+    /// finish don't unrank a human result, they are read on the server's clock.
+    #[test]
+    fn clock_drift_is_not_a_bad_log() {
+        let (board, solution) = small();
+        let backwards = [tap(900, 0, 1), tap(800, 0, 2), tap(2400, 1, 1)];
+        assert_eq!(
+            verify_log(&board, &solution, &solution, &backwards, 3000, 0),
+            Ok(())
+        );
+        assert_eq!(
+            server_times(&backwards, 3000)
+                .iter()
+                .map(|e| e.t)
+                .collect::<Vec<_>>(),
+            [900, 900, 2400]
+        );
+        // The last click 55 s after the finish the server measured, like the browser's clock
+        // jumping ahead mid-game: squeezed into the 3 s
+        let late = [tap(900, 0, 1), tap(1300, 0, 2), tap(58_000, 1, 1)];
+        assert_eq!(
+            verify_log(&board, &solution, &solution, &late, 3000, 0),
+            Ok(())
+        );
+        assert_eq!(
+            server_times(&late, 3000)
+                .iter()
+                .map(|e| e.t)
+                .collect::<Vec<_>>(),
+            [46, 67, 3000]
+        );
+        // Within the slack nothing moves
+        let close = [tap(900, 0, 1), tap(1300, 0, 2), tap(18_000, 1, 1)];
+        assert_eq!(server_times(&close, 3000), close);
+        // A log that doesn't lead to the board stays flagged, whatever its times
+        assert_eq!(
+            verify_log(&board, &solution, &solution, &late[..2], 3000, 0),
+            Err(Flag::Log)
+        );
+    }
+
+    /// Squeezing late times into the measured time only makes the clicks faster: a program
+    /// can't spread its clicks out past the finish to look human.
+    #[test]
+    fn late_times_dont_hide_a_program() {
+        let mut puzzle = Puzzle::empty(9, 1);
+        for x in 0..9 {
+            puzzle.set(common::Pos::new(x, 0), if x == 0 || x == 8 { 1 } else { 2 });
+        }
+        let board = Board::new(puzzle);
+        let solution = vec![1; board.edges.len()];
+        // Five rounds over all bridges (1, 2, 1, 2, 1), a calm click every 10 s
+        let log: Vec<MoveEvent> = (0..5 * board.edges.len())
+            .map(|i| {
+                let count = if (i / board.edges.len()).is_multiple_of(2) {
+                    1
+                } else {
+                    2
+                };
+                tap(
+                    10_000 * u32::try_from(i + 1).unwrap(),
+                    i % board.edges.len(),
+                    count,
+                )
+            })
+            .collect();
+        let span = i64::from(log.last().unwrap().t);
+        assert_eq!(
+            verify_log(&board, &solution, &solution, &log, span, 0),
+            Ok(())
+        );
+        // The same log from a game the server saw finish after 2 s: 50 ms a click
+        assert_eq!(
+            verify_log(&board, &solution, &solution, &log, 2000, 0),
+            Err(Flag::Pace)
         );
     }
 

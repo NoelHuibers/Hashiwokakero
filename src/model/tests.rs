@@ -175,9 +175,9 @@ proptest! {
     }
 
     /// A log of a player clicking the bridges into place at a human pace passes, one that
-    /// doesn't lead to the submitted board or goes back in time doesn't.
+    /// doesn't lead to the submitted board doesn't.
     #[test]
-    fn honest_logs_pass((board, solution, start) in board_and_counts(), gaps in prop::collection::vec(500..2000u32, 200)) {
+    fn honest_logs_pass((board, solution, start) in board_and_counts(), gaps in prop::collection::vec(500..2000u32, 200), stretch in 1..4u32) {
         // From the empty board through some other bridges to the solution, one click each, at
         // least half a second apart (two bridges' worth of the floor)
         let mut log = Vec::new();
@@ -203,11 +203,15 @@ proptest! {
         let mut other = solution.clone();
         other[0] = (other[0] + 1) % 3;
         prop_assert_eq!(verify_log(&board, &solution, &other, &log, elapsed, 0), Err(Flag::Log));
-        if log.len() > 1 {
+        // The browser's clock disagreeing with the server's isn't a bad log: times that go back,
+        // or run on past the finish the server measured
+        if log.len() > 1 && log[0].edge != log[1].edge {
             let mut backwards = log.clone();
             backwards.swap(0, 1);
-            prop_assert_eq!(verify_log(&board, &solution, &solution, &backwards, elapsed, 0), Err(Flag::Log));
+            prop_assert_eq!(verify_log(&board, &solution, &solution, &backwards, elapsed, 0), Ok(()));
         }
+        let ahead: Vec<MoveEvent> = log.iter().map(|&e| MoveEvent { t: e.t * stretch, ..e }).collect();
+        prop_assert_eq!(verify_log(&board, &solution, &solution, &ahead, elapsed, 0), Ok(()));
         let mut beyond = log.clone();
         beyond.push(tap(t + 1, board.edges.len(), 1));
         prop_assert_eq!(verify_log(&board, &solution, &solution, &beyond, elapsed, 0), Err(Flag::Log));
