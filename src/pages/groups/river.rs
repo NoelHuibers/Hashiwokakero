@@ -656,6 +656,138 @@ fn Crossed(completed: Vec<RiverLevel>, level: u32) -> impl IntoView {
     }
 }
 
+/// How far the current level got, and what's new since the viewer looked last.
+#[component]
+fn Progress(river: GroupRiver) -> impl IntoView {
+    let i18n = use_i18n();
+    let r = river;
+    let level = r.level;
+    let fresh = r.total - r.seen.min(r.total);
+    view! {
+        <div class="flex flex-col items-start gap-0.5 sm:items-end">
+            <p class="font-pixel text-lg tabular-nums" data-testid="river-progress">
+                {move || {
+                    let l = i18n.get_locale();
+                    td_string!(
+                        l,
+                        river.progress,
+                        done = thousands(r.progress, l),
+                        target = thousands(r.target, l)
+                    )
+                }}
+            </p>
+            {(fresh > 0)
+                .then(|| {
+                    view! {
+                        <span class="rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-success-dark">
+                            {move || td_string!(i18n.get_locale(), river.new, count = thousands(fresh, i18n.get_locale()))}
+                        </span>
+                    }
+                })}
+        </div>
+        <span class="sr-only">{move || waters_name(i18n.get_locale(), level)}</span>
+    }
+}
+
+/// The scene of a river, who builds most this week and the waters crossed, and the celebration
+/// of a level when there is one.
+#[component]
+fn RiverView(
+    river: GroupRiver,
+    members: Vec<GroupMember>,
+    me: i64,
+    celebrating: RwSignal<Option<RiverLevel>>,
+) -> impl IntoView {
+    let i18n = use_i18n();
+    let r = river;
+    let crew: Vec<(GroupMember, i64)> = r
+        .week
+        .iter()
+        .filter_map(|c| {
+            members
+                .iter()
+                .find(|m| m.user_id == c.user_id)
+                .map(|m| (m.clone(), c.bridges))
+        })
+        .collect();
+    let planks = plank_count(Waters::of(r.level));
+    let laid = planks_laid(r.progress, r.target, planks);
+    let new_from = planks_laid(r.seen_progress(), r.target, planks);
+    let (level, progress, target) = (r.level, r.progress, r.target);
+    let label = Signal::derive(move || {
+        let l = i18n.get_locale();
+        td_string!(
+            l,
+            river.scene,
+            waters = waters_name(l, level),
+            done = thousands(progress, l),
+            target = thousands(target, l)
+        )
+    });
+    let to_go = move || {
+        let l = i18n.get_locale();
+        td_string!(l, river.to_go, count = thousands(target - progress, l))
+    };
+    let days = LEVEL_DAYS[usize::try_from(level)
+        .unwrap_or(usize::MAX)
+        .min(LEVEL_DAYS.len() - 1)];
+    let week = crew
+        .iter()
+        .take(CREW_SHOWN)
+        .map(|(m, bridges)| {
+            let bridges = *bridges;
+            let mine = m.user_id == me;
+            view! {
+                <li class="flex min-w-0 items-center gap-2 text-sm" data-member=m.user_id>
+                    <ColourPip colour=m.colour />
+                    <span class="truncate" class:font-bold=mine>{m.name.clone()}</span>
+                    <span class="ms-auto font-pixel tabular-nums">
+                        {move || thousands(bridges, i18n.get_locale())}
+                    </span>
+                </li>
+            }
+        })
+        .collect_view();
+    let nobody = crew.is_empty();
+    view! {
+        // The scene, and next to it on wide screens who builds and what was crossed
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,44rem)_minmax(0,1fr)]">
+            <div class="flex min-w-0 flex-col gap-2">
+                <div class="relative rounded-xl bg-[var(--px-sea)] shadow-inner">
+                    <div class="overflow-hidden rounded-xl">
+                        <Scene level laid new_from crew=crew.clone() me label />
+                    </div>
+                    {move || {
+                        celebrating
+                            .get()
+                            .map(|level| {
+                                view! {
+                                    <Celebration level on_close=Callback::new(move |()| celebrating.set(None)) />
+                                }
+                            })
+                    }}
+                </div>
+                <p class="text-xs font-medium">{to_go}</p>
+                <p class="text-xs text-muted-foreground">{move || td_string!(i18n.get_locale(), river.how, days)}</p>
+            </div>
+            <div class="grid min-w-0 grid-cols-1 content-start gap-5 sm:grid-cols-2 lg:grid-cols-1">
+                <div class="flex min-w-0 flex-col gap-2">
+                    <h3 class="text-sm font-bold">{t!(i18n, river.week)}</h3>
+                    {if nobody {
+                        view! { <p class="text-sm text-muted-foreground">{t!(i18n, river.week_none)}</p> }.into_any()
+                    } else {
+                        view! { <ol class="flex max-w-xs flex-col gap-1.5" data-testid="river-week">{week}</ol> }.into_any()
+                    }}
+                </div>
+                <div class="flex min-w-0 flex-col gap-2">
+                    <h3 class="text-sm font-bold">{t!(i18n, river.crossed)}</h3>
+                    <Crossed completed=r.completed level />
+                </div>
+            </div>
+        </div>
+    }
+}
+
 /// The group page's river card.
 #[component]
 pub fn RiverCard(group: GroupContext) -> impl IntoView {
@@ -683,36 +815,7 @@ pub fn RiverCard(group: GroupContext) -> impl IntoView {
     });
 
     let me = move || group.page.with(|p| p.as_ref().map_or(0, |p| p.me));
-    let header = move || {
-        river.get().map(|r| {
-            let level = r.level;
-            let fresh = r.total - r.seen.min(r.total);
-            view! {
-                <div class="flex flex-col items-start gap-0.5 sm:items-end">
-                    <p class="font-pixel text-lg tabular-nums" data-testid="river-progress">
-                        {move || {
-                            let l = i18n.get_locale();
-                            td_string!(
-                                l,
-                                river.progress,
-                                done = thousands(r.progress, l),
-                                target = thousands(r.target, l)
-                            )
-                        }}
-                    </p>
-                    {(fresh > 0)
-                        .then(|| {
-                            view! {
-                                <span class="rounded-full bg-success-light px-2 py-0.5 text-xs font-medium text-success-dark">
-                                    {move || td_string!(i18n.get_locale(), river.new, count = thousands(fresh, i18n.get_locale()))}
-                                </span>
-                            }
-                        })}
-                </div>
-                <span class="sr-only">{move || waters_name(i18n.get_locale(), level)}</span>
-            }
-        })
-    };
+    let header = move || river.get().map(|r| view! { <Progress river=r /> });
     let body = move || {
         let Some(r) = river.get() else {
             return view! { <p class="text-sm text-muted-foreground">{t!(i18n, common.game.loading)}</p> }
@@ -721,94 +824,7 @@ pub fn RiverCard(group: GroupContext) -> impl IntoView {
         let members = group
             .page
             .with(|p| p.as_ref().map(|p| p.members.clone()).unwrap_or_default());
-        let crew: Vec<(GroupMember, i64)> = r
-            .week
-            .iter()
-            .filter_map(|c| {
-                members
-                    .iter()
-                    .find(|m| m.user_id == c.user_id)
-                    .map(|m| (m.clone(), c.bridges))
-            })
-            .collect();
-        let planks = plank_count(Waters::of(r.level));
-        let laid = planks_laid(r.progress, r.target, planks);
-        let new_from = planks_laid(r.seen_progress(), r.target, planks);
-        let (level, progress, target) = (r.level, r.progress, r.target);
-        let label = Signal::derive(move || {
-            let l = i18n.get_locale();
-            td_string!(
-                l,
-                river.scene,
-                waters = waters_name(l, level),
-                done = thousands(progress, l),
-                target = thousands(target, l)
-            )
-        });
-        let to_go = move || {
-            let l = i18n.get_locale();
-            td_string!(l, river.to_go, count = thousands(target - progress, l))
-        };
-        let days = LEVEL_DAYS[usize::try_from(level)
-            .unwrap_or(usize::MAX)
-            .min(LEVEL_DAYS.len() - 1)];
-        let me = me();
-        let week = crew
-            .iter()
-            .take(CREW_SHOWN)
-            .map(|(m, bridges)| {
-                let bridges = *bridges;
-                let mine = m.user_id == me;
-                view! {
-                    <li class="flex min-w-0 items-center gap-2 text-sm" data-member=m.user_id>
-                        <ColourPip colour=m.colour />
-                        <span class="truncate" class:font-bold=mine>{m.name.clone()}</span>
-                        <span class="ms-auto font-pixel tabular-nums">
-                            {move || thousands(bridges, i18n.get_locale())}
-                        </span>
-                    </li>
-                }
-            })
-            .collect_view();
-        let nobody = crew.is_empty();
-        view! {
-            // The scene, and next to it on wide screens who builds and what was crossed
-            <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,44rem)_minmax(0,1fr)]">
-                <div class="flex min-w-0 flex-col gap-2">
-                    <div class="relative rounded-xl bg-[var(--px-sea)] shadow-inner">
-                        <div class="overflow-hidden rounded-xl">
-                            <Scene level laid new_from crew=crew.clone() me label />
-                        </div>
-                        {move || {
-                            celebrating
-                                .get()
-                                .map(|level| {
-                                    view! {
-                                        <Celebration level on_close=Callback::new(move |()| celebrating.set(None)) />
-                                    }
-                                })
-                        }}
-                    </div>
-                    <p class="text-xs font-medium">{to_go}</p>
-                    <p class="text-xs text-muted-foreground">{move || td_string!(i18n.get_locale(), river.how, days)}</p>
-                </div>
-                <div class="grid min-w-0 grid-cols-1 content-start gap-5 sm:grid-cols-2 lg:grid-cols-1">
-                    <div class="flex min-w-0 flex-col gap-2">
-                        <h3 class="text-sm font-bold">{t!(i18n, river.week)}</h3>
-                        {if nobody {
-                            view! { <p class="text-sm text-muted-foreground">{t!(i18n, river.week_none)}</p> }.into_any()
-                        } else {
-                            view! { <ol class="flex max-w-xs flex-col gap-1.5" data-testid="river-week">{week}</ol> }.into_any()
-                        }}
-                    </div>
-                    <div class="flex min-w-0 flex-col gap-2">
-                        <h3 class="text-sm font-bold">{t!(i18n, river.crossed)}</h3>
-                        <Crossed completed=r.completed level />
-                    </div>
-                </div>
-            </div>
-        }
-        .into_any()
+        view! { <RiverView river=r members me=me() celebrating /> }.into_any()
     };
     view! {
         <Card class="gap-4" attr:data-testid="river-card">
@@ -875,6 +891,121 @@ mod tests {
             );
             last = planks;
         }
+    }
+
+    fn member(user_id: i64, name: &str, colour: u8) -> GroupMember {
+        GroupMember {
+            user_id,
+            name: name.into(),
+            guest: false,
+            colour,
+            joined_at: 0,
+            owner: false,
+            stamp: None,
+            done_today: true,
+        }
+    }
+
+    fn river(level: u32, progress: i64, seen: i64) -> GroupRiver {
+        let completed: Vec<RiverLevel> = (0..level)
+            .map(|l| RiverLevel {
+                level: l,
+                target: 400,
+                completed_at: 20_000 * 86_400_000 + i64::from(l),
+            })
+            .collect();
+        let base = 400 * i64::from(level);
+        GroupRiver {
+            group_id: 1,
+            level,
+            base,
+            progress,
+            target: 850,
+            total: base + progress,
+            celebrate: completed.last().copied(),
+            completed,
+            week: vec![
+                crate::model::Contribution {
+                    user_id: 2,
+                    bridges: 1_240,
+                },
+                crate::model::Contribution {
+                    user_id: 9,
+                    bridges: 30,
+                },
+                crate::model::Contribution {
+                    user_id: 1,
+                    bridges: 12,
+                },
+            ],
+            seen,
+        }
+    }
+
+    /// Every water renders on the server: the planks laid (the new ones animated), the crew on
+    /// the bank, the crossed hanko, and the celebration when a level is new to the viewer.
+    #[cfg(feature = "ssr")]
+    #[tokio::test]
+    async fn every_water_renders_its_bridge_crew_and_hanko() {
+        use crate::i18n::use_i18n;
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::en);
+        });
+        let members = vec![member(1, "aiko", 0), member(2, "bram", 1)];
+        for level in 0..6 {
+            let waters = Waters::of(level);
+            let r = river(level, 425, 400 * i64::from(level) + 200);
+            let laid = planks_laid(425, 850, plank_count(waters));
+            let new = laid - planks_laid(200, 850, plank_count(waters));
+            let html = owner.with(|| {
+                let celebrating = RwSignal::new(r.celebrate);
+                let members = members.clone();
+                view! {
+                    <Progress river=r.clone() />
+                    <RiverView river=r members me=1 celebrating />
+                }
+                .to_html()
+            });
+            assert!(
+                html.contains(&format!("data-waters=\"{}\"", waters.id())),
+                "{level}"
+            );
+            assert_eq!(html.matches("class=\"plank").count(), laid, "{level}");
+            assert_eq!(html.matches("plank-new").count(), new, "{level}");
+            assert!(html.contains("425 / 850 bridges"), "{level}");
+            assert!(html.contains("+225 since you last looked"), "{level}");
+            assert!(html.contains("425 to the other side"), "{level}");
+            // bram leads the week, a member who left (9) isn't shown
+            assert!(
+                html.contains("data-crew=\"2\"") && html.contains("1,240"),
+                "{level}"
+            );
+            assert!(!html.contains("data-crew=\"9\""), "{level}");
+            assert_eq!(
+                html.matches("data-level=").count(),
+                usize::try_from(level).unwrap()
+            );
+            if level > 0 {
+                assert!(html.contains("river-crossed-title"), "{level}");
+                assert!(html.contains("Bridge builder"), "{level}");
+            } else {
+                assert!(!html.contains("river-crossed-title"));
+            }
+        }
+        // Nobody laid a plank this week
+        let html = owner.with(|| {
+            let quiet = GroupRiver {
+                week: vec![],
+                ..river(0, 0, 0)
+            };
+            view! { <RiverView river=quiet members=vec![] me=1 celebrating=RwSignal::new(None) /> }
+                .to_html()
+        });
+        assert!(html.contains("Nobody has laid a plank this week yet."));
+        assert_eq!(html.matches("class=\"plank").count(), 0);
     }
 
     #[test]
