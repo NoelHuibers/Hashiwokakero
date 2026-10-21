@@ -530,6 +530,59 @@ async fn stale_runs_are_retried() {
     );
 }
 
+/// The failure of 2026-10-21: of the two jobs the site sends, the worker runs one while the
+/// other waits in its queue, for longer than `STALE_MS`. With the worker's heartbeats it stays
+/// at the worker with its token, instead of being sent again while the worker still has it.
+/// Without them (the worker is gone) it is queued again.
+#[tokio::test]
+async fn waiting_jobs_with_heartbeats_are_not_requeued() {
+    let conn = test_db("heartbeat").await;
+    let id = submit(&conn, None, form("waiting", 9)).await.unwrap();
+    let current = season();
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'running', job_token = 'waiting', attempts = 1,
+            updated_at = ?2 WHERE id = ?1",
+        params![id, now_ms() - STALE_MS - 60_000],
+    )
+    .await
+    .unwrap();
+    let heartbeat = |token| {
+        let conn = conn.clone();
+        async move {
+            let report = Report::Heartbeat {
+                id,
+                season: current,
+            };
+            worker::apply_for_job(&conn, &report, Some(token))
+                .await
+                .unwrap()
+        }
+    };
+    assert!(!heartbeat("other").await);
+    assert!(heartbeat("waiting").await);
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(
+        state_and_token(&conn, id).await,
+        ("running".into(), Some("waiting".into()), 1)
+    );
+    // The heartbeat changes nothing else
+    let s = submission(&conn, id, None).await.unwrap().unwrap();
+    assert_eq!((s.progress, s.score), (0, None));
+
+    // No heartbeat for longer than STALE_MS: the worker is gone, the job goes out again
+    conn.execute(
+        "UPDATE dojo_submissions SET updated_at = ?2 WHERE id = ?1",
+        params![id, now_ms() - STALE_MS - 1],
+    )
+    .await
+    .unwrap();
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(state_and_token(&conn, id).await, ("queued".into(), None, 1));
+    // A late heartbeat of the lost job doesn't bring it back
+    assert!(!heartbeat("waiting").await);
+    assert_eq!(state_and_token(&conn, id).await.0, "queued");
+}
+
 /// What the stub worker of [`stub_worker`] was sent.
 #[derive(Debug)]
 struct SentJob {

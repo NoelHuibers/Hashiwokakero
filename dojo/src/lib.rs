@@ -643,6 +643,9 @@ pub enum Report {
         season: u32,
         message: String,
     },
+    /// The worker still holds the job, waiting in its queue or running. Sent about every
+    /// minute (see `worker`), so the website gives up only on jobs of a worker that is gone.
+    Heartbeat { id: i64, season: u32 },
 }
 
 impl Report {
@@ -651,7 +654,8 @@ impl Report {
             Self::Progress { id, .. }
             | Self::Finished { id, .. }
             | Self::Rejected { id, .. }
-            | Self::Failed { id, .. } => *id,
+            | Self::Failed { id, .. }
+            | Self::Heartbeat { id, .. } => *id,
         }
     }
 }
