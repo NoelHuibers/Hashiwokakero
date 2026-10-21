@@ -311,6 +311,7 @@
       },
       "cactus": {
         "budget": 7000000000,
+        "run_budget": 70000000000,
         "formulas": 34,
         "vbs": [
           1000,
@@ -325,6 +326,36 @@
               2000,
               25000000
             ]
+          }
+        ]
+      },
+      "budgets": {
+        "budget": 7000000000,
+        "run_budget": 70000000000,
+        "curves": [
+          {
+            "id": 12,
+            "name": "minisat-ish",
+            "house": false,
+            "points": [
+              {
+                "budget": 7000000000,
+                "solved": 32,
+                "total": 34,
+                "par2": 1.5,
+                "sat": 20,
+                "unsat": 12,
+                "wrong": 0,
+                "unverified": 1
+              }
+            ]
+          }
+        ],
+        "crossovers": [
+          {
+            "budget": 31000000000,
+            "ahead": 12,
+            "behind": 13
           }
         ]
       }
@@ -425,6 +456,7 @@
       },
       "cactus": {
         "budget": 7000000000,
+        "run_budget": 70000000000,
         "formulas": 34,
         "vbs": [
           1000,
@@ -439,6 +471,36 @@
               2000,
               25000000
             ]
+          }
+        ]
+      },
+      "budgets": {
+        "budget": 7000000000,
+        "run_budget": 70000000000,
+        "curves": [
+          {
+            "id": 12,
+            "name": "minisat-ish",
+            "house": false,
+            "points": [
+              {
+                "budget": 7000000000,
+                "solved": 32,
+                "total": 34,
+                "par2": 1.5,
+                "sat": 20,
+                "unsat": 12,
+                "wrong": 0,
+                "unverified": 1
+              }
+            ]
+          }
+        ],
+        "crossovers": [
+          {
+            "budget": 31000000000,
+            "ahead": 12,
+            "behind": 13
           }
         ]
       }
@@ -569,6 +631,7 @@
           },
           "cactus": {
             "budget": 7000000000,
+            "run_budget": 70000000000,
             "formulas": 34,
             "vbs": [
               1000,
@@ -583,6 +646,36 @@
                   2000,
                   25000000
                 ]
+              }
+            ]
+          },
+          "budgets": {
+            "budget": 7000000000,
+            "run_budget": 70000000000,
+            "curves": [
+              {
+                "id": 12,
+                "name": "minisat-ish",
+                "house": false,
+                "points": [
+                  {
+                    "budget": 7000000000,
+                    "solved": 32,
+                    "total": 34,
+                    "par2": 1.5,
+                    "sat": 20,
+                    "unsat": 12,
+                    "wrong": 0,
+                    "unverified": 1
+                  }
+                ]
+              }
+            ],
+            "crossovers": [
+              {
+                "budget": 31000000000,
+                "ahead": 12,
+                "behind": 13
               }
             ]
           }

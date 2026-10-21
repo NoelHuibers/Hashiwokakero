@@ -3,7 +3,9 @@
 //! ```text
 //! dojo run <solver.wasm> [--seed S [--hidden] | --set SET.tar.gz] [--budget FUEL] [--threads N]
 //!          [--family F] [--stderr] [--checker verified|builtin] [--proofs DIR]
-//!     Scores a solver on the development set, exactly like the leaderboard does. --seed takes
+//!     Scores a solver on the development set, exactly like the leaderboard does: the runs go
+//!     on to ten times the budget (--budget, the leaderboard's by default), the score counts
+//!     what happened within it and the end shows it at other budgets too. --seed takes
 //!     another seed, with --hidden for a hidden set like a season's (a past season's seed is
 //!     revealed on hashi.rs/dojo/seasons), --set an archived set as downloaded from there. UNSAT proofs are checked with drat-trim and
 //!     cake_lpr when they are installed (DOJO_DRAT_TRIM and DOJO_CAKE_LPR, or the PATH), like
@@ -110,12 +112,15 @@ fn run(args: &[String]) -> Result<(), String> {
         stderr: args.iter().any(|a| a == "--stderr"),
         ..Default::default()
     };
-    if let Some(budget) = flag(args, "--budget") {
-        options.limits.fuel = budget
+    // The ranking budget; the runs go on to BUDGET_FACTOR times it, like on the leaderboard
+    let budget: u64 = match flag(args, "--budget") {
+        Some(budget) => budget
             .replace('_', "")
             .parse()
-            .map_err(|_| "--budget takes a number")?;
-    }
+            .map_err(|_| "--budget takes a number")?,
+        None => dojo::DEFAULT_BUDGET,
+    };
+    options.limits.fuel = budget.saturating_mul(dojo::BUDGET_FACTOR);
     if let Some(threads) = flag(args, "--threads") {
         options.threads = threads.parse().map_err(|_| "--threads takes a number")?;
     }
@@ -145,21 +150,29 @@ fn run(args: &[String]) -> Result<(), String> {
             reason = "fuel is at most the budget, far below 2^53, and only printed"
         )]
         let gfuel = r.fuel as f64 / 1e9;
+        let id = |outcome| match outcome {
+            Outcome::Wrong => "WRONG",
+            Outcome::Unverified => "no proof",
+            other => other.id(),
+        };
+        // What counts is the outcome within the budget; how the run ended past it, too
+        let at_budget = r.outcome_at(budget);
+        let later = if at_budget == r.outcome {
+            String::new()
+        } else {
+            format!("  (past the budget: {})", id(r.outcome))
+        };
         eprintln!(
-            "[{done:>2}/{}] {:<16} {:<5} {:<9} {:>8.3} Gfuel {:>7} ms",
+            "[{done:>2}/{}] {:<16} {:<5} {:<9} {:>8.3} Gfuel {:>7} ms{later}",
             set.len(),
             r.name,
             r.expected.id(),
-            match r.outcome {
-                Outcome::Wrong => "WRONG",
-                Outcome::Unverified => "no proof",
-                other => other.id(),
-            },
+            id(at_budget),
             gfuel,
             r.wall_ms,
         );
     });
-    let score = Score::from_results(&results, options.limits.fuel);
+    let score = Score::from_results(&results, budget);
     println!();
     for f in &score.families {
         let unverified = if f.unverified > 0 {
@@ -184,7 +197,7 @@ fn run(args: &[String]) -> Result<(), String> {
     );
     // Split by answer, as the SAT Competition reports it
     let published: Vec<_> = results.iter().map(RunResult::published).collect();
-    let split = dojo::metrics::breakdown(&published, options.limits.fuel, true).total;
+    let split = dojo::metrics::breakdown(&published, budget, true).total;
     for (label, part) in [("SAT", split.sat), ("UNSAT", split.unsat)] {
         if let Some(part) = part.filter(|p| p.total > 0) {
             println!(
@@ -192,6 +205,27 @@ fn run(args: &[String]) -> Result<(), String> {
                 part.solved, part.total, part.par2
             );
         }
+    }
+    // The leaderboard's budget view: the same runs with a tenth of the budget and all of them
+    println!(
+        "\nwith other budgets (the runs went on to {} times the budget):",
+        dojo::BUDGET_FACTOR
+    );
+    for (label, at) in [
+        ("1/10", budget / 10),
+        ("1x", budget),
+        ("max", options.limits.fuel),
+    ] {
+        let score = dojo::metrics::score_at(&published, at, true);
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "budgets are far below 2^53, only printed"
+        )]
+        let gfuel = at as f64 / 1e9;
+        println!(
+            "{label:<5} {gfuel:>8.3} Gfuel  solved {}/{}  PAR-2 {:.3}",
+            score.solved, score.total, score.par2
+        );
     }
     if score.unverified > 0 {
         println!(

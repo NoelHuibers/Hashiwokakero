@@ -178,6 +178,19 @@ The budget went from 10 to 7 billion: under the new model a run costs 0.68 times
 the website evaluate every entry again; the "too easy" filter for community benchmarks keeps a
 tenth of the budget.
 
+**Larger budgets.** Half a second per formula is a short race: the SAT Competition gives 5,000
+seconds, and solvers with heavy inprocessing pay for it before it pays off. Since rules version 5
+every run goes on to ten times the budget (`dojo::RUN_BUDGET`, 70 billion), and the leaderboard
+also ranks by smaller and larger budgets from the same runs. On nine hidden sets like a season's
+(`calibration-1` to `-3`, `hidden-4` to `-9`), MiniSat leads Kissat and CaDiCaL at the budget on
+every one; Kissat overtakes MiniSat for good between 2.4 and 3.9 times the budget on five of them
+and for a while on three more, CaDiCaL only for a while on four. Beyond ten times nothing changes
+among the three: each solves all 48 formulas of every set by then. Ten times costs little on the
+worker (4 shared CPUs, four runs at a time, about 3.4 billion fuel per second and run): the
+reference solvers take well under a minute per set with proofs checked, and a solver that solves
+nothing takes five to ten minutes, within the quarter of an hour after which the website gives an
+evaluation up as lost. A hundred times would take most of an hour.
+
 **The answer to the objection.** Instruction counts are not time, and refactoring changes them;
 both are true. Measured on seven very different solvers, counting operators with weights for
 memory and none for registers predicts native time within a solver with rank correlations of

@@ -41,7 +41,20 @@
     "relative_tip": "Sparkle 2018: tỉ phần của nó trong tổng log10(PAR-2 khi không có ÷ PAR-2 khi có) của mọi bộ giải",
     "sota_tip": "Mỗi công thức nó giải được mang về 1 ÷ số bộ giải giải được công thức đó",
     "shapley_tip": "Phần công bằng của nó trong lượng fuel cả nhóm tiết kiệm được, tính bằng tỷ mỗi công thức",
-    "vbs_line": "Bộ giải tốt nhất ảo của {{ count }} bộ giải: đã giải {{ solved }}/{{ total }}, PAR-2 {{ par2 }}"
+    "vbs_line": "Bộ giải tốt nhất ảo của {{ count }} bộ giải: đã giải {{ solved }}/{{ total }}, PAR-2 {{ par2 }}",
+    "view_budget": "Ngân sách",
+    "budget_hint": "Cùng các lần chạy đó, xếp hạng với một ngân sách khác cho mỗi công thức. Mỗi lần chạy tiếp tục đến mười lần ngân sách chính thức, và fuel có tính tất định, nên mỗi ngân sách nhỏ hơn cho đúng kết quả mà một lần chạy với ngân sách đó sẽ có. Bảng xếp hạng chính thức vẫn ở 1×; các mũi tên cho thấy solver dịch khỏi vị trí của nó ở đó bao xa.",
+    "budget_pick": "Ngân sách mỗi công thức",
+    "budget_official": "chính thức",
+    "budget_wrong": "trả lời sai",
+    "crossover": "{{ ahead }} vượt {{ behind }} khi trên {{ fuel }} fuel (≈ {{ time }} native).",
+    "no_crossovers": "Đến {{ fuel }} fuel mỗi công thức, không solver dẫn đầu nào vượt solver khác.",
+    "budget_chart": "PAR-2 theo ngân sách",
+    "budget_chart_hint": "Mỗi solver một đường, cả hai trục theo thang logarit. Chỗ hai đường cắt nhau là nơi một solver vượt solver kia. Thời gian native chỉ là ước lượng: trung bình của bước hiệu chuẩn, một solver có thể nhanh hoặc chậm gấp đôi.",
+    "budget_chart_x": "Fuel mỗi công thức",
+    "budget_chart_y": "PAR-2 tính bằng tỷ fuel mỗi công thức, theo thang logarit; công thức chưa giải được tính gấp đôi ngân sách trên trục x.",
+    "budget_chart_aria": "Biểu đồ đường PAR-2 theo ngân sách cho {{ count }} solver, từ {{ low }} đến {{ high }} fuel mỗi công thức. Các phím mũi tên di chuyển qua các ngân sách.",
+    "budget_at": "{{ fuel }} fuel mỗi công thức, ≈ {{ time }} native"
   },
   "seasons": {
     "meta_title": "Kho lưu trữ mùa giải · SAT Dojo",
@@ -293,7 +306,7 @@
     "title": "Biểu đồ cactus",
     "hint": "Mỗi đường là một bộ giải, các công thức nó giải được sắp theo fuel: càng sang phải là giải được càng nhiều, càng thấp là càng ít fuel. Biểu đồ không cho biết mỗi điểm là công thức nào.",
     "x": "Số công thức đã giải",
-    "y": "Fuel mỗi công thức theo thang logarit, làm tròn đến ba chữ số; đường trên cùng là ngân sách.",
+    "y": "Fuel mỗi công thức theo thang logarit, làm tròn đến ba chữ số. Đường nét đứt là ngân sách xếp hạng; phía trên, các lần chạy vẫn tiếp tục để phục vụ chế độ xem Ngân sách.",
     "budget": "ngân sách",
     "vbs": "Bộ giải tốt nhất ảo",
     "vbs_short": "VBS",
@@ -304,7 +317,9 @@
     "table": "Hiển thị dạng bảng",
     "fastest": "Nhanh nhất",
     "median": "Trung vị",
-    "slowest": "Chậm nhất"
+    "slowest": "Chậm nhất",
+    "run_budget": "cuối các lần chạy",
+    "ranking": "ngân sách xếp hạng"
   },
   "metrics": {
     "title": "Không chỉ PAR-2",
@@ -318,6 +333,8 @@
     "sota_title": "Đóng góp vào trình độ hiện đại nhất",
     "sota": "Lấy từ cuộc thi chứng minh định lý <a>CASC</a>: mỗi công thức một bộ giải giải được mang về cho nó 1 chia cho số bộ giải giải được công thức đó. CASC lấy trung bình trên các công thức đã giải; chúng tôi lấy tổng, nên giải thêm không bao giờ làm nó giảm, và các tổng cộng lại bằng số công thức VBS giải được.",
     "shapley_title": "Giá trị Shapley",
-    "shapley": "Điểm số riêng lẻ thưởng cho các bản gần giống nhau, còn đóng góp biên thì phạt chúng. Giá trị Shapley từ lý thuyết trò chơi hợp tác công bằng với cả hai: nó chia lượng fuel mà cả nhóm tiết kiệm được so với việc không giải gì theo đóng góp biên trung bình của mỗi bộ giải trên mọi thứ tự gia nhập (<a>Fréchette et al., AAAI 2016</a>). Chúng tôi tính chính xác, theo tỷ fuel mỗi công thức; các giá trị cộng lại bằng hai lần ngân sách trừ đi PAR-2 của VBS."
+    "shapley": "Điểm số riêng lẻ thưởng cho các bản gần giống nhau, còn đóng góp biên thì phạt chúng. Giá trị Shapley từ lý thuyết trò chơi hợp tác công bằng với cả hai: nó chia lượng fuel mà cả nhóm tiết kiệm được so với việc không giải gì theo đóng góp biên trung bình của mỗi bộ giải trên mọi thứ tự gia nhập (<a>Fréchette et al., AAAI 2016</a>). Chúng tôi tính chính xác, theo tỷ fuel mỗi công thức; các giá trị cộng lại bằng hai lần ngân sách trừ đi PAR-2 của VBS.",
+    "budget_title": "Xếp hạng ở ngân sách khác",
+    "budget": "Bảng xếp hạng đo một cuộc đua ngắn: 7 tỷ fuel mỗi công thức, khoảng nửa giây của một solver native, trong khi SAT Competition cho 5.000 giây. Các solver có tiền xử lý và xử lý trong lúc giải nặng như Kissat và CaDiCaL phải trả giá trước khi được lợi, nên ở ngân sách này chúng xếp sau MiniSat. Mỗi lần chạy tiếp tục đến mười lần ngân sách, và vì fuel có tính tất định, một lần chạy cho điểm chính xác ở mọi ngân sách nhỏ hơn: chế độ xem Ngân sách cho thấy bảng xếp hạng thay đổi thế nào khi có thêm thời gian."
   }
 }

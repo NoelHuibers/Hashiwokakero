@@ -50,7 +50,7 @@ use crate::community::{BenchmarkReport, PoolInstance, Verdict};
 use crate::eval::{Options, evaluate};
 use crate::proof::{CheckLimits, Checker, Tools};
 use crate::sandbox::Sandbox;
-use crate::{GENERATOR_VERSION, MAX_WASM_BYTES, RULES_VERSION, Report, Score};
+use crate::{DEFAULT_BUDGET, GENERATOR_VERSION, MAX_WASM_BYTES, RULES_VERSION, Report, Score};
 
 #[derive(Deserialize)]
 struct JobQuery {
@@ -592,7 +592,8 @@ fn evaluator(
                         let archive = crate::archive::write_tar_gz(&set, &info);
                         runtime.block_on(reporter.send_set(id, season, archive, &token));
                     }
-                    let score = Score::from_results(&results, options.limits.fuel);
+                    // The runs went on to the run budget, the ranking stays at the budget
+                    let score = Score::from_results(&results, DEFAULT_BUDGET);
                     let fingerprint = crate::fingerprint(&results);
                     Report::Finished {
                         id,

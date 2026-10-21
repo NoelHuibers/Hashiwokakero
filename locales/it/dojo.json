@@ -41,7 +41,20 @@
     "relative_tip": "Sparkle 2018: la sua quota del log10(PAR-2 senza ÷ PAR-2 con) di tutti i solver",
     "sota_tip": "Ogni formula che risolve vale 1 ÷ il numero di solver che la risolvono",
     "shapley_tip": "La sua giusta quota del carburante risparmiato dall’intero campo, in miliardi per formula",
-    "vbs_line": "Miglior solver virtuale di {{ count }} solver: {{ solved }}/{{ total }} risolte, PAR-2 {{ par2 }}"
+    "vbs_line": "Miglior solver virtuale di {{ count }} solver: {{ solved }}/{{ total }} risolte, PAR-2 {{ par2 }}",
+    "view_budget": "Budget",
+    "budget_hint": "Le stesse esecuzioni, classificate con un altro budget per formula. Ogni esecuzione prosegue fino a dieci volte il budget ufficiale e il carburante è deterministico, quindi ogni budget più piccolo dà esattamente il risultato che avrebbe avuto un’esecuzione con quel budget. La classifica ufficiale resta a 1×; le frecce mostrano di quanto un solver si sposta dal suo posto.",
+    "budget_pick": "Budget per formula",
+    "budget_official": "ufficiale",
+    "budget_wrong": "risposta sbagliata",
+    "crossover": "{{ ahead }} supera {{ behind }} oltre {{ fuel }} di carburante (≈ {{ time }} in nativo).",
+    "no_crossovers": "Fino a {{ fuel }} di carburante per formula, nessuno dei solver di testa ne supera un altro.",
+    "budget_chart": "PAR-2 in funzione del budget",
+    "budget_chart_hint": "Una linea per solver, entrambi gli assi in scala logaritmica. Dove due linee si incrociano, un solver supera l’altro. I tempi nativi sono indicativi: la media della calibrazione, un solver può essere fino a due volte più veloce o più lento.",
+    "budget_chart_x": "Carburante per formula",
+    "budget_chart_y": "PAR-2 in miliardi di carburante per formula, su scala logaritmica; le formule non risolte contano il doppio del budget sull’asse x.",
+    "budget_chart_aria": "Grafico a linee del PAR-2 in funzione del budget per {{ count }} solver, da {{ low }} a {{ high }} di carburante per formula. I tasti freccia scorrono i budget.",
+    "budget_at": "{{ fuel }} di carburante per formula, ≈ {{ time }} in nativo"
   },
   "seasons": {
     "meta_title": "Archivio delle stagioni · SAT Dojo",
@@ -293,7 +306,7 @@
     "title": "Grafico a cactus",
     "hint": "Ogni linea è un solver, con le formule risolte ordinate per carburante: più a destra significa più formule risolte, più in basso meno carburante. Nulla indica a quale formula corrisponda un punto.",
     "x": "Formule risolte",
-    "y": "Carburante per formula su scala logaritmica, arrotondato a tre cifre; la linea in alto è il budget.",
+    "y": "Carburante per formula su scala logaritmica, arrotondato a tre cifre. La linea tratteggiata è il budget della classifica; sopra, le esecuzioni sono proseguite, per la vista Budget.",
     "budget": "budget",
     "vbs": "Miglior solver virtuale",
     "vbs_short": "VBS",
@@ -304,7 +317,9 @@
     "table": "Mostra come tabella",
     "fastest": "Il più veloce",
     "median": "Mediana",
-    "slowest": "Il più lento"
+    "slowest": "Il più lento",
+    "run_budget": "fine delle esecuzioni",
+    "ranking": "budget della classifica"
   },
   "metrics": {
     "title": "Oltre il PAR-2",
@@ -318,6 +333,8 @@
     "sota_title": "Contributo allo stato dell’arte",
     "sota": "Dalla competizione di dimostrazione automatica di teoremi <a>CASC</a>: ogni formula che un solver risolve gli frutta 1 diviso il numero di solver che la risolvono. CASC fa la media sulle formule risolte; noi sommiamo, così risolverne di più non lo abbassa mai, e le somme danno il numero di formule risolte dal VBS.",
     "shapley_title": "Valore di Shapley",
-    "shapley": "I punteggi individuali premiano i quasi-cloni, i contributi marginali li puniscono. Il valore di Shapley della teoria dei giochi cooperativi è equo con entrambi: divide il carburante che l’intero campo risparmia rispetto a non risolvere nulla in base al contributo marginale medio di ogni solver su tutti gli ordini di ingresso (<a>Fréchette et al., AAAI 2016</a>). Lo calcoliamo in modo esatto, in miliardi di carburante per formula; la somma dei valori è il doppio del budget meno il PAR-2 del VBS."
+    "shapley": "I punteggi individuali premiano i quasi-cloni, i contributi marginali li puniscono. Il valore di Shapley della teoria dei giochi cooperativi è equo con entrambi: divide il carburante che l’intero campo risparmia rispetto a non risolvere nulla in base al contributo marginale medio di ogni solver su tutti gli ordini di ingresso (<a>Fréchette et al., AAAI 2016</a>). Lo calcoliamo in modo esatto, in miliardi di carburante per formula; la somma dei valori è il doppio del budget meno il PAR-2 del VBS.",
+    "budget_title": "Classifiche con altri budget",
+    "budget": "La classifica misura una gara breve: 7 miliardi di carburante per formula, circa mezzo secondo di un solver nativo, mentre la SAT Competition concede 5.000 secondi. I solver con molto preprocessing e inprocessing, come Kissat e CaDiCaL, lo pagano prima che renda, così con questo budget finiscono dietro MiniSat. Ogni esecuzione prosegue fino a dieci volte il budget e, poiché il carburante è deterministico, una sola esecuzione dà il punteggio esatto con ogni budget più piccolo: la vista Budget mostra come cambia la classifica con più tempo."
   }
 }

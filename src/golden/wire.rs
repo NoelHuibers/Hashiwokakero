@@ -4,7 +4,7 @@ use common::{
     Difficulty, GenerateParams, GeneratedPuzzle, Heuristic, Island, Pos, Puzzle, Restarts,
     SolveOutcome, SolveReport, SolveStats, SolverConfig, SolverKind,
 };
-use dojo::metrics::{Breakdown, Contribution, EntryBreakdown, FamilyBreakdown, Split};
+use dojo::metrics::{Breakdown, BudgetScore, Contribution, EntryBreakdown, FamilyBreakdown, Split};
 use dojo::{Answer, Family, FamilyScore, InstanceResult, Outcome, Rejection, Report, Score};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -14,10 +14,10 @@ use crate::model::{
     AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, AllTimeEntry, ApiError,
     AttemptInfo, BanOutcome, BannedPlayer, BenchmarkAction, BenchmarkState, CommunityCredit,
     CommunitySummary, ContactMessage, DailyInfo, DayResult, Daypart, DojoBenchmark, DojoBenchmarks,
-    DojoBoard, DojoCactus, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
-    DojoSeasons, DojoState, DojoSubmission, Flag, HallOfFame, Leaderboard, LeaderboardEntry,
-    LogSummary, MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress,
-    SubmissionAction, SubmitResult, UserInfo, UserStats,
+    DojoBoard, DojoBudgetCurve, DojoBudgets, DojoCactus, DojoCrossover, DojoCurve, DojoEntry,
+    DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons, DojoState, DojoSubmission, Flag,
+    HallOfFame, Leaderboard, LeaderboardEntry, LogSummary, MonthBoard, MonthEntry, MoveEvent,
+    PlayerProfile, Run, Stamp, StampProgress, SubmissionAction, SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -220,6 +220,7 @@ fn portfolio() -> DojoPortfolio {
         },
         cactus: DojoCactus {
             budget: 7_000_000_000,
+            run_budget: 70_000_000_000,
             formulas: 34,
             vbs: vec![1_000, 25_000_000],
             curves: vec![DojoCurve {
@@ -229,6 +230,30 @@ fn portfolio() -> DojoPortfolio {
                 fuel: vec![2_000, 25_000_000],
             }],
         },
+        budgets: Some(DojoBudgets {
+            budget: 7_000_000_000,
+            run_budget: 70_000_000_000,
+            curves: vec![DojoBudgetCurve {
+                id: 12,
+                name: "minisat-ish".into(),
+                house: false,
+                points: vec![BudgetScore {
+                    budget: 7_000_000_000,
+                    solved: 32,
+                    total: 34,
+                    par2: 1.5,
+                    sat: 20,
+                    unsat: 12,
+                    wrong: 0,
+                    unverified: 1,
+                }],
+            }],
+            crossovers: vec![DojoCrossover {
+                budget: 31_000_000_000,
+                ahead: 12,
+                behind: 13,
+            }],
+        }),
     }
 }
 

@@ -23,8 +23,10 @@ const SPACE: f64 = 1000.0;
 pub(super) struct Scale {
     /// The bottom of the y axis, a power of ten at or below the smallest fuel.
     pub(super) low: u64,
-    /// The top: the budget.
+    /// The top: how far the runs went, the budget for older rules.
     pub(super) high: u64,
+    /// The ranking budget, marked with a line (at the top for older rules).
+    pub(super) budget: u64,
     /// The right end of the x axis.
     pub(super) formulas: u32,
 }
@@ -44,7 +46,10 @@ impl Scale {
         while low.saturating_mul(10) <= smallest {
             low *= 10;
         }
-        let high = cactus.budget.max(low.saturating_mul(10));
+        let high = cactus
+            .budget
+            .max(cactus.run_budget)
+            .max(low.saturating_mul(10));
         let most = cactus
             .curves
             .iter()
@@ -58,8 +63,19 @@ impl Scale {
         Self {
             low,
             high,
+            budget: cactus.budget,
             formulas,
         }
+    }
+
+    /// Whether the runs went past the ranking budget, so it gets a line of its own.
+    pub(super) fn beyond(self) -> bool {
+        self.high > self.budget
+    }
+
+    /// Whether a tick's label would run into the ranking budget's.
+    pub(super) fn crowds_budget(self, tick: u64) -> bool {
+        self.beyond() && (self.y(tick) - self.y(self.budget)).abs() < 0.06
     }
 
     /// The k-th formula solved, as a share of the width (0 to 1).
@@ -116,7 +132,7 @@ impl Scale {
 }
 
 /// Fuel in three digits: `950`, `12.3K`, `4.56M`, `7G`.
-pub(super) fn compact(fuel: u64) -> String {
+pub fn compact(fuel: u64) -> String {
     #[expect(clippy::cast_precision_loss, reason = "only shown, three digits")]
     let value = fuel as f64;
     let (scaled, unit) = [(1e9, "G"), (1e6, "M"), (1e3, "K")]
@@ -151,13 +167,13 @@ fn summary(fuel: &[u64]) -> Option<(u64, u64, u64)> {
 
 /// A short line in a series' colour, the key of a line in the legend and the tooltip.
 #[component]
-fn LineKey(color: &'static str) -> impl IntoView {
+pub(super) fn LineKey(color: &'static str) -> impl IntoView {
     view! { <span aria-hidden="true" class="inline-block h-0.5 w-4 shrink-0 rounded-full" style=format!("background: {color}")></span> }
 }
 
 const VBS: &str = "var(--chart-vbs)";
-const MARK: &str = "var(--chart-mark)";
-const CONTEXT: &str = "var(--chart-context)";
+pub(super) const MARK: &str = "var(--chart-mark)";
+pub(super) const CONTEXT: &str = "var(--chart-context)";
 
 #[component]
 pub(super) fn Cactus(
@@ -386,6 +402,24 @@ pub(super) fn Cactus(
                             })
                             .collect_view()}
                         <line x1="0" x2="1000" y1="1000" y2="1000" vector-effect="non-scaling-stroke" style="stroke: var(--chart-axis); stroke-width: 1px" />
+                        // The ranking budget: the runs went on above it, for the budget view
+                        {scale
+                            .beyond()
+                            .then(|| {
+                                let y = scale.y(scale.budget) * SPACE;
+                                view! {
+                                    <line
+                                        x1="0"
+                                        x2="1000"
+                                        y1=y
+                                        y2=y
+                                        vector-effect="non-scaling-stroke"
+                                        stroke-dasharray="4 3"
+                                        style="stroke: var(--chart-axis); stroke-width: 1.5px"
+                                        data-testid="ranking-budget"
+                                    />
+                                }
+                            })}
                         <g data-series="solvers">{rows.into_iter().map(curve_view).collect_view()}</g>
                         <polyline
                             points=vbs_points
@@ -430,6 +464,7 @@ pub(super) fn Cactus(
                     {scale
                         .y_ticks()
                         .into_iter()
+                        .filter(|&tick| !scale.crowds_budget(tick))
                         .map(|tick| {
                             view! {
                                 <span
@@ -444,7 +479,27 @@ pub(super) fn Cactus(
                     <span class="absolute end-full top-0 me-2 -translate-y-1/2 text-[11px] font-semibold tabular-nums text-muted-foreground">
                         {compact(scale.high)}
                     </span>
-                    <span class="absolute start-1 top-0 -translate-y-full pb-0.5 text-[11px] text-muted-foreground">{t!(i18n, dojo.cactus.budget)}</span>
+                    <span class="absolute start-1 top-0 -translate-y-full pb-0.5 text-[11px] text-muted-foreground">
+                        {if scale.beyond() { t!(i18n, dojo.cactus.run_budget).into_any() } else { t!(i18n, dojo.cactus.budget).into_any() }}
+                    </span>
+                    {scale
+                        .beyond()
+                        .then(|| {
+                            view! {
+                                <span
+                                    class="absolute end-full me-2 -translate-y-1/2 text-[11px] font-semibold tabular-nums text-muted-foreground"
+                                    style=format!("top: {}", pct(scale.y(scale.budget)))
+                                >
+                                    {compact(scale.budget)}
+                                </span>
+                                <span
+                                    class="pointer-events-none absolute start-1 -translate-y-full pb-0.5 text-[11px] text-muted-foreground"
+                                    style=format!("top: {}", pct(scale.y(scale.budget)))
+                                >
+                                    {t!(i18n, dojo.cactus.ranking)}
+                                </span>
+                            }
+                        })}
                     {scale
                         .x_ticks()
                         .into_iter()
@@ -519,6 +574,7 @@ mod tests {
     fn cactus() -> DojoCactus {
         DojoCactus {
             budget: 7_000_000_000,
+            run_budget: 0,
             formulas: 48,
             vbs: vec![1_200_000, 30_000_000, 2_000_000_000],
             curves: vec![
@@ -546,6 +602,7 @@ mod tests {
             Scale {
                 low: 1_000_000,
                 high: 7_000_000_000,
+                budget: 7_000_000_000,
                 formulas: 48
             }
         );
@@ -566,23 +623,38 @@ mod tests {
         let small = Scale {
             low: 1,
             high: 10,
+            budget: 10,
             formulas: 5,
         };
         assert_eq!(small.x_ticks(), [0, 1, 2, 3, 4, 5]);
         let odd = Scale {
             low: 1,
             high: 10,
+            budget: 10,
             formulas: 54,
         };
         assert_eq!(odd.x_ticks(), [0, 10, 20, 30, 40, 54]);
         // Nothing solved yet: a decade below the budget
         let empty = Scale::of(&DojoCactus {
             budget: 7_000_000_000,
+            run_budget: 0,
             formulas: 0,
             vbs: Vec::new(),
             curves: Vec::new(),
         });
         assert_eq!((empty.low, empty.formulas), (1_000_000_000, 1));
+        assert!(!scale.beyond());
+
+        // Runs that went on to ten times the budget: the top is theirs, the budget is marked
+        let mut longer = cactus();
+        longer.run_budget = 70_000_000_000;
+        let scale = Scale::of(&longer);
+        assert_eq!((scale.high, scale.budget), (70_000_000_000, 7_000_000_000));
+        assert!(scale.beyond());
+        assert!(scale.y(7_000_000_000) > 0.0);
+        // 10G sits right above 7G: its label would cover the budget's
+        assert!(scale.crowds_budget(10_000_000_000));
+        assert!(!scale.crowds_budget(1_000_000_000));
     }
 
     #[test]
@@ -639,5 +711,15 @@ mod tests {
         // The table: the VBS and both solvers
         assert!(html.contains("3/48") && html.contains("2/48"));
         assert!(html.contains("Show as a table"));
+        assert!(!html.contains("ranking-budget"));
+
+        // Runs past the budget: a line at it, the top is the end of the runs
+        let mut longer = cactus();
+        longer.run_budget = 70_000_000_000;
+        let nothing: Option<i64> = None;
+        let html = owner.with(|| view! { <Cactus cactus=longer highlight=nothing /> }.to_html());
+        assert!(html.contains("data-testid=\"ranking-budget\""), "{html}");
+        assert!(html.contains(">70G<") && html.contains(">7G<"));
+        assert!(!html.contains(">10G<"), "covered by the budget's label");
     }
 }

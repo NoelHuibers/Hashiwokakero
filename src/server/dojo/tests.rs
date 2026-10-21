@@ -7,7 +7,7 @@ use dojo::{
 use libsql::{Connection, params};
 
 use super::*;
-use crate::model::{DojoBoard, DojoState};
+use crate::model::{DojoBoard, DojoCrossover, DojoState};
 use crate::server::auth::User;
 use crate::server::{db, now_ms};
 use worker::housekeeping_at;
@@ -1060,6 +1060,7 @@ fn results_as_csv() {
         generator_version: 1,
         rules_version: 1,
         budget: dojo::budget_of(1),
+        run_budget: dojo::run_budget_of(1),
         set_sha256: None,
         mystery: None,
         community: Vec::new(),
@@ -1105,10 +1106,10 @@ fn results_as_csv() {
     };
     assert_eq!(
         csv(&season),
-        "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel\n\
-         3,1,\"Fast, \"\"really\"\"\",'=cmd(),0,1,1,hashi-01,hashi,SAT,solved,123\n\
-         3,1,\"Fast, \"\"really\"\"\",'=cmd(),0,1,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000\n\
-         3,2,Hashi CDCL,Hashi,1,,1,hashi-01,hashi,SAT,wrong,7\n"
+        "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel,budget,run_budget\n\
+         3,1,\"Fast, \"\"really\"\"\",'=cmd(),0,1,1,hashi-01,hashi,SAT,solved,123,10000000000,10000000000\n\
+         3,1,\"Fast, \"\"really\"\"\",'=cmd(),0,1,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000,10000000000,10000000000\n\
+         3,2,Hashi CDCL,Hashi,1,,1,hashi-01,hashi,SAT,wrong,7,10000000000,10000000000\n"
     );
     let json = serde_json::to_value(&season).unwrap();
     assert_eq!(json["season"], 3);
@@ -1341,4 +1342,94 @@ async fn metrics_beyond_par2() {
         "score":{"par2":1.0,"solved":1,"total":1,"wrong":0,"budget":10,"fuel":0.5,"families":[]}}"#;
     let entry: crate::model::DojoEntry = serde_json::from_str(old).unwrap();
     assert_eq!((entry.breakdown, entry.contribution), (None, None));
+}
+
+/// Runs go on to ten times the budget: the board ranks by what happened within the budget,
+/// the budget view and the cactus plot show the rest, the archive says how far the runs went.
+#[tokio::test]
+async fn scores_at_every_budget() {
+    use Answer::{Sat, Unsat};
+    const G: u64 = 1_000_000_000;
+    let conn = test_db("budgets").await;
+    let (first, second) = (season(), season() + 1);
+    housekeeping_at(&conn, first).await.unwrap();
+    let quick = submit(&conn, None, form("MiniSat", 1)).await.unwrap();
+    let slow = submit(&conn, None, form("Kissat", 2)).await.unwrap();
+    // The quick one never solves the last formula, the slow one does with 20 billion
+    for (id, last) in [(quick, None), (slow, Some(20 * G))] {
+        let fuel = if id == quick {
+            [G / 10, G]
+        } else {
+            [2 * G, 3 * G]
+        };
+        let results = [
+            (Family::Hashi, Sat, Some(fuel[0])),
+            (Family::Pigeonhole, Unsat, Some(fuel[1])),
+            (Family::Queens, Sat, last),
+        ];
+        apply(&conn, &finished_with(id, first, &results))
+            .await
+            .unwrap();
+    }
+
+    let b = board(&conn).await.unwrap();
+    let ids: Vec<i64> = b.entries.iter().map(|e| e.id).collect();
+    assert_eq!(ids, [quick, slow]);
+    // Officially the slow one's third formula is a timeout
+    let official = &b.entries[1].score;
+    assert_eq!(official.solved, 2);
+    assert!((official.par2 - 19.0 / 3.0).abs() < 1e-9);
+    let portfolio = b.portfolio.unwrap();
+    assert_eq!(portfolio.vbs.solved, 2);
+    // The plot goes on to the run budget, with the VBS
+    assert_eq!(
+        (portfolio.cactus.budget, portfolio.cactus.run_budget),
+        (DEFAULT_BUDGET, dojo::RUN_BUDGET)
+    );
+    assert_eq!(portfolio.cactus.curves[1].fuel, [2 * G, 3 * G, 20 * G]);
+    assert_eq!(portfolio.cactus.vbs, [G / 10, G, 20 * G]);
+
+    let budgets = portfolio.budgets.unwrap();
+    assert_eq!(budgets.curves.len(), 2);
+    let at = |curve: usize, budget: u64| {
+        *budgets.curves[curve]
+            .points
+            .iter()
+            .find(|p| p.budget == budget)
+            .unwrap()
+    };
+    // The ranking budget's point is the official score, PAR-2 to three decimals
+    assert_eq!(at(1, DEFAULT_BUDGET).solved, 2);
+    assert_eq!(at(1, DEFAULT_BUDGET).par2, 6.333);
+    assert_eq!(
+        (at(1, dojo::RUN_BUDGET).solved, at(1, dojo::RUN_BUDGET).sat),
+        (3, 2)
+    );
+    assert_eq!(at(0, dojo::RUN_BUDGET).par2, 47.033);
+    assert_eq!(at(0, DEFAULT_BUDGET / 10).solved, 1);
+    // The slow one overtakes the quick one when it solves the last formula
+    assert_eq!(
+        budgets.crossovers,
+        [DojoCrossover {
+            budget: 20 * G,
+            ahead: slow,
+            behind: quick
+        }]
+    );
+
+    // Archived with the run budget, the fuel as far as the run went
+    housekeeping_at(&conn, second).await.unwrap();
+    let season = archived(&conn, first, second).await.unwrap().unwrap();
+    assert_eq!(
+        (season.budget, season.run_budget),
+        (DEFAULT_BUDGET, dojo::RUN_BUDGET)
+    );
+    let text = csv(&season);
+    assert!(
+        text.contains(",queens,SAT,solved,20000000000,7000000000,70000000000\n"),
+        "{text}"
+    );
+    let past = seasons(&conn, second).await.unwrap().past.remove(0);
+    let archived_budgets = past.portfolio.unwrap().budgets.unwrap();
+    assert_eq!(archived_budgets.crossovers, budgets.crossovers);
 }

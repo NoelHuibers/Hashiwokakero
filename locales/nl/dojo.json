@@ -41,7 +41,20 @@
     "relative_tip": "Sparkle 2018: zijn aandeel in de log10(PAR-2 zonder ÷ PAR-2 met) van alle solvers",
     "sota_tip": "Elke formule die hij oplost levert 1 ÷ het aantal solvers op dat haar oplost",
     "shapley_tip": "Zijn eerlijke deel van de brandstof die het hele veld bespaart, in miljarden per formule",
-    "vbs_line": "Virtuele beste solver van {{ count }} solvers: {{ solved }}/{{ total }} opgelost, PAR-2 {{ par2 }}"
+    "vbs_line": "Virtuele beste solver van {{ count }} solvers: {{ solved }}/{{ total }} opgelost, PAR-2 {{ par2 }}",
+    "view_budget": "Budget",
+    "budget_hint": "Dezelfde runs, gerangschikt met een ander budget per formule. Elke run loopt door tot tien keer het officiële budget, en brandstof is deterministisch, dus elk kleiner budget geeft precies het resultaat dat een run ermee had gehad. De officiële ranglijst blijft bij 1×; de pijlen tonen hoe ver een solver van zijn plek daar verschuift.",
+    "budget_pick": "Budget per formule",
+    "budget_official": "officieel",
+    "budget_wrong": "fout antwoord",
+    "crossover": "{{ ahead }} haalt {{ behind }} in boven {{ fuel }} brandstof (≈ {{ time }} native).",
+    "no_crossovers": "Tot {{ fuel }} brandstof per formule haalt geen van de leidende solvers een andere in.",
+    "budget_chart": "PAR-2 tegen het budget",
+    "budget_chart_hint": "Eén lijn per solver, beide assen logaritmisch. Waar twee lijnen kruisen, haalt de ene solver de andere in. Native tijden zijn grof: het gemiddelde van de kalibratie, een solver kan tot twee keer zo snel of traag zijn.",
+    "budget_chart_x": "Brandstof per formule",
+    "budget_chart_y": "PAR-2 in miljarden brandstof per formule, logaritmisch; onopgeloste formules tellen voor twee keer het budget op de x-as.",
+    "budget_chart_aria": "Lijngrafiek van PAR-2 tegen het budget voor {{ count }} solvers, van {{ low }} tot {{ high }} brandstof per formule. Met de pijltjestoetsen ga je langs de budgetten.",
+    "budget_at": "{{ fuel }} brandstof per formule, ≈ {{ time }} native"
   },
   "seasons": {
     "meta_title": "Seizoensarchief · SAT Dojo",
@@ -293,7 +306,7 @@
     "title": "Cactusplot",
     "hint": "Elke lijn is een solver, met zijn opgeloste formules gesorteerd op brandstof: verder naar rechts betekent meer opgelost, lager betekent minder brandstof. Niets in de plot verraadt welke formule een punt is.",
     "x": "Opgeloste formules",
-    "y": "Brandstof per formule op een logaritmische schaal, afgerond op drie cijfers; de bovenste lijn is het budget.",
+    "y": "Brandstof per formule op een logaritmische schaal, afgerond op drie cijfers. De gestippelde lijn is het rangschikkingsbudget; daarboven liepen de runs door, voor de budgetweergave.",
     "budget": "budget",
     "vbs": "Virtuele beste solver",
     "vbs_short": "VBS",
@@ -304,7 +317,9 @@
     "table": "Als tabel tonen",
     "fastest": "Snelste",
     "median": "Mediaan",
-    "slowest": "Traagste"
+    "slowest": "Traagste",
+    "run_budget": "einde van de runs",
+    "ranking": "rangschikkingsbudget"
   },
   "metrics": {
     "title": "Voorbij PAR-2",
@@ -318,6 +333,8 @@
     "sota_title": "Bijdrage aan de stand van de techniek",
     "sota": "Uit de wedstrijd in automatisch stellingen bewijzen <a>CASC</a>: elke formule die een solver oplost levert hem 1 gedeeld door het aantal solvers op dat haar oplost. CASC middelt over de opgeloste formules; wij tellen op, zodat meer oplossen de waarde nooit verlaagt, en de sommen tellen op tot het aantal formules dat de VBS oplost.",
     "shapley_title": "Shapley-waarde",
-    "shapley": "Losse scores belonen bijna-klonen, marginale bijdragen straffen ze af. De Shapley-waarde uit de coöperatieve speltheorie is eerlijk voor beide: ze verdeelt de brandstof die het hele veld bespaart ten opzichte van niets oplossen naar de gemiddelde marginale bijdrage van elke solver over elke volgorde van toetreden (<a>Fréchette et al., AAAI 2016</a>). Wij berekenen haar exact, in miljarden brandstof per formule; de waarden tellen op tot twee keer het budget min de PAR-2 van de VBS."
+    "shapley": "Losse scores belonen bijna-klonen, marginale bijdragen straffen ze af. De Shapley-waarde uit de coöperatieve speltheorie is eerlijk voor beide: ze verdeelt de brandstof die het hele veld bespaart ten opzichte van niets oplossen naar de gemiddelde marginale bijdrage van elke solver over elke volgorde van toetreden (<a>Fréchette et al., AAAI 2016</a>). Wij berekenen haar exact, in miljarden brandstof per formule; de waarden tellen op tot twee keer het budget min de PAR-2 van de VBS.",
+    "budget_title": "Ranglijsten bij andere budgetten",
+    "budget": "De ranglijst meet een korte race: 7 miljard brandstof per formule, ongeveer een halve seconde van een native solver, terwijl de SAT Competition 5.000 seconden geeft. Solvers met veel preprocessing en inprocessing, zoals Kissat en CaDiCaL, betalen daarvoor voordat het iets oplevert, en staan bij dit budget achter MiniSat. Elke run loopt door tot tien keer het budget, en omdat brandstof deterministisch is, geeft één run de exacte score bij elk kleiner budget: de budgetweergave laat zien hoe de ranglijst verandert met meer tijd."
   }
 }

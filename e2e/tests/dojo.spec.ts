@@ -129,6 +129,30 @@ test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
   await cactus.getByText('Show as a table').click();
   await expect(cactus.locator('tr').filter({ hasText: 'Virtual best solver' })).toBeVisible();
 
+  // The ranking at other budgets, linkable, with PAR-2 against the budget
+  await board.getByRole('tab', { name: 'Budget' }).click();
+  const budgets = board.getByTestId('budget-view');
+  await expect(budgets.locator('a[data-budget="1"]')).toHaveAttribute('aria-current', 'true');
+  await budgets.locator('a[data-budget="10"]').click();
+  await expect(page).toHaveURL(/\?budget=10$/);
+  await expect(budgets.locator('a[data-budget="10"]')).toHaveAttribute('aria-current', 'true');
+  const chart = budgets.getByTestId('budget-chart');
+  await expect(chart.locator('polyline[data-curve]')).toHaveCount(2);
+  await expect(chart.locator('line[data-testid="official-budget"]')).toHaveCount(1);
+  await budgets.locator('tr').filter({ has: cdcl }).hover();
+  await expect(chart.locator('polyline[data-series="highlight"]')).toHaveCount(1);
+  await chart.getByRole('img').focus();
+  await page.keyboard.press('End');
+  await expect(chart.getByText(/fuel per formula, ≈ .* native$/)).toBeVisible();
+  await expect(budgets.locator('li').first()).toContainText(/overtakes|none of the leading solvers/);
+  // The cactus plot marks the ranking budget, the runs went on above it
+  await expect(cactus.locator('line[data-testid="ranking-budget"]')).toHaveCount(1);
+  // A link to a budget opens the view
+  await visit(page, '/dojo?budget=0.1');
+  await expect(page.locator('#leaderboard').getByRole('tab', { name: 'Budget' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('a[data-budget="0.1"]')).toHaveAttribute('aria-current', 'true');
+  await visit(page, '/dojo');
+
   // The submission's page: its split, its contribution and its line in the plot
   await dpll.click();
   await expect(page).toHaveURL(new RegExp(`/dojo/${DOJO_SUBMISSION}$`));
