@@ -1,7 +1,5 @@
 {
   "title": "Rivali",
-  "mark": "Segna {{ name }} come rivale",
-  "unmark": "{{ name }} è un tuo rivale, rimuovi",
   "marked": "{{ name }} ora è un tuo rivale. Ogni ponte del giorno è un duello!",
   "unmarked": "{{ name }} non è più un tuo rivale.",
   "mark_button": "Segna come rivale",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> è stato più veloce di {{ gap }}",
     "tie": "Pari esatto con <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> non ha ancora giocato",
-    "solved": "<b>{{ name }}</b> l'ha risolto in {{ time }}",
-    "empty": "Segna dei giocatori come rivali nella classifica, e ogni ponte del giorno diventa un duello.",
-    "find": "Trova rivali →"
+    "solved": "<b>{{ name }}</b> l'ha risolto in {{ time }}"
   },
   "record": {
     "title": "Testa a testa",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Tu e i tuoi rivali, da sempre. Solo tu vedi questa lista.",
-    "empty": "Ancora nessun rivale. Tocca le spade incrociate accanto a un nome in una classifica per segnare qualcuno.",
     "you": "Tu",
     "streak": "Serie"
   }

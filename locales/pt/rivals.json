@@ -1,7 +1,5 @@
 {
   "title": "Rivais",
-  "mark": "Marcar {{ name }} como rival",
-  "unmark": "{{ name }} é seu rival, desmarcar",
   "marked": "{{ name }} agora é seu rival. Cada ponte do dia vira um duelo!",
   "unmarked": "{{ name }} não é mais seu rival.",
   "mark_button": "Marcar como rival",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> foi {{ gap }} mais rápido",
     "tie": "Empate exato com <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> ainda não jogou",
-    "solved": "<b>{{ name }}</b> resolveu em {{ time }}",
-    "empty": "Marque jogadores como rivais na classificação, e cada ponte do dia vira um duelo.",
-    "find": "Encontrar rivais →"
+    "solved": "<b>{{ name }}</b> resolveu em {{ time }}"
   },
   "record": {
     "title": "Confronto direto",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Você e seus rivais, desde sempre. Só você vê esta lista.",
-    "empty": "Ainda sem rivais. Toque nas espadas cruzadas ao lado de um nome em qualquer classificação para marcar alguém.",
     "you": "Você",
     "streak": "Sequência"
   }

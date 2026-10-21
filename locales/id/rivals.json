@@ -1,7 +1,5 @@
 {
   "title": "Rival",
-  "mark": "Tandai {{ name }} sebagai rival",
-  "unmark": "{{ name }} adalah rivalmu, hapus tanda",
   "marked": "{{ name }} sekarang rivalmu. Setiap teka-teki harian jadi duel!",
   "unmarked": "{{ name }} bukan rivalmu lagi.",
   "mark_button": "Tandai sebagai rival",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> lebih cepat {{ gap }}",
     "tie": "Seri persis dengan <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> belum bermain",
-    "solved": "<b>{{ name }}</b> menyelesaikannya dalam {{ time }}",
-    "empty": "Tandai pemain sebagai rival di papan peringkat, dan setiap teka-teki harian jadi duel.",
-    "find": "Cari rival →"
+    "solved": "<b>{{ name }}</b> menyelesaikannya dalam {{ time }}"
   },
   "record": {
     "title": "Head-to-head",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Kamu dan rival-rivalmu, sepanjang masa. Hanya kamu yang melihat daftar ini.",
-    "empty": "Belum ada rival. Ketuk pedang bersilang di samping nama di papan peringkat mana pun untuk menandai seseorang.",
     "you": "Kamu",
     "streak": "Beruntun"
   }

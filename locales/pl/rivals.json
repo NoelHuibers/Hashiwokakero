@@ -1,7 +1,5 @@
 {
   "title": "Rywale",
-  "mark": "Oznacz {{ name }} jako rywala",
-  "unmark": "{{ name }} to twój rywal, usuń oznaczenie",
   "marked": "{{ name }} jest teraz twoim rywalem. Każdy dzienny most to pojedynek!",
   "unmarked": "{{ name }} nie jest już twoim rywalem.",
   "mark_button": "Oznacz jako rywala",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> był szybszy o {{ gap }}",
     "tie": "Remis co do milisekundy z <b>{{ name }}</b>",
     "waiting": "<b>{{ name }}</b> jeszcze nie grał",
-    "solved": "<b>{{ name }}</b> rozwiązał w {{ time }}",
-    "empty": "Oznacz graczy w rankingu jako rywali, a każdy dzienny most stanie się pojedynkiem.",
-    "find": "Znajdź rywali →"
+    "solved": "<b>{{ name }}</b> rozwiązał w {{ time }}"
   },
   "record": {
     "title": "Bilans bezpośredni",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Ty i twoi rywale, od zawsze. Tylko ty widzisz tę listę.",
-    "empty": "Brak rywali. Dotknij skrzyżowanych mieczy obok nazwy w dowolnym rankingu, aby kogoś oznaczyć.",
     "you": "Ty",
     "streak": "Seria"
   }

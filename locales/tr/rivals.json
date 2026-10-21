@@ -1,7 +1,5 @@
 {
   "title": "Rakipler",
-  "mark": "{{ name }} adlı oyuncuyu rakip olarak işaretle",
-  "unmark": "{{ name }} rakibin, işareti kaldır",
   "marked": "{{ name }} artık rakibin. Her günlük bulmaca bir düello!",
   "unmarked": "{{ name }} artık rakibin değil.",
   "mark_button": "Rakip olarak işaretle",
@@ -20,9 +18,7 @@
     "lost": "<b>{{ name }}</b> {{ gap }} daha hızlıydı",
     "tie": "<b>{{ name }}</b> ile tam beraberlik",
     "waiting": "<b>{{ name }}</b> henüz oynamadı",
-    "solved": "<b>{{ name }}</b> {{ time }} sürede çözdü",
-    "empty": "Sıralamada oyuncuları rakip olarak işaretle, her günlük bulmaca bir düelloya dönüşsün.",
-    "find": "Rakip bul →"
+    "solved": "<b>{{ name }}</b> {{ time }} sürede çözdü"
   },
   "record": {
     "title": "Karşılıklı",
@@ -38,7 +34,6 @@
   },
   "board": {
     "text": "Sen ve rakiplerin, tüm zamanlar. Bu listeyi yalnızca sen görürsün.",
-    "empty": "Henüz rakip yok. Birini işaretlemek için herhangi bir sıralamada bir ismin yanındaki çapraz kılıçlara dokun.",
     "you": "Sen",
     "streak": "Seri"
   }
