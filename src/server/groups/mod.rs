@@ -57,15 +57,39 @@ pub const ERASE: [&str; 4] = [
     "DELETE FROM group_members WHERE user_id = ?1",
 ];
 
-/// What signing in does to the groups of the guest who played in this browser before.
+/// What signing in does to the groups of the guest who played in this browser before, in
+/// `auth::merge_guest`'s transaction.
 ///
-/// Statements for `auth::merge_guest`, `?1` the account, `?2` the guest: the account takes their
-/// memberships and the groups they own. Where both were members, the account's membership stays.
-pub const MERGE_GUEST: [&str; 3] = [
-    "UPDATE OR IGNORE group_members SET user_id = ?1 WHERE user_id = ?2",
-    "UPDATE groups SET owner_id = ?1 WHERE owner_id = ?2",
-    "DELETE FROM group_members WHERE user_id = ?2",
-];
+/// The account takes the guest's memberships, as many as fit under [`MAX_GROUPS`]: the account's
+/// own groups stay, then the guest's newest ones come along. Where both were members, the
+/// account's membership stays. The groups that don't fit the guest leaves like a deleted account
+/// ([`ERASE`]): one they own passes to its longest standing member, one only they are in goes.
+pub async fn merge_guest(conn: &Connection, user: i64, guest: i64) -> Result<(), ServerFnError> {
+    let room = crate::server::count(MAX_GROUPS)
+        .saturating_sub(groups_of(conn, user).await?)
+        .max(0);
+    conn.execute(
+        "UPDATE group_members SET user_id = ?1 WHERE user_id = ?2 AND group_id IN (
+             SELECT group_id FROM group_members
+             WHERE user_id = ?2
+               AND group_id NOT IN (SELECT group_id FROM group_members WHERE user_id = ?1)
+             ORDER BY joined_at DESC, group_id DESC LIMIT ?3)",
+        params![user, guest, room],
+    )
+    .await
+    .map_err(db_err)?;
+    conn.execute(
+        "UPDATE groups SET owner_id = ?1 WHERE owner_id = ?2
+           AND id IN (SELECT group_id FROM group_members WHERE user_id = ?1)",
+        params![user, guest],
+    )
+    .await
+    .map_err(db_err)?;
+    for sql in ERASE {
+        conn.execute(sql, params![guest]).await.map_err(db_err)?;
+    }
+    Ok(())
+}
 
 /// A new invite code, [`INVITE_LEN`] characters of [`INVITE_ALPHABET`].
 pub fn new_invite() -> String {
