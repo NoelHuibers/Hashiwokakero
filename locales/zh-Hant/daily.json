@@ -3,6 +3,8 @@
   "action_pending": "正在等待伺服器…",
   "action_retry": "結果尚不確定。再次執行相同操作即可取得結果，不會增加罰時。",
   "action_storage": "安全重試此操作需要瀏覽器儲存空間。請啟用後重試。",
+  "submit_failed": "你的答案尚未送達伺服器。",
+  "submit_again": "重新提交",
   "meta": {
     "title": "Hashi · 每日數橋邏輯謎題 · 免費線上玩",
     "description": "每天一道新的數橋（Hashiwokakero）謎題，大家都玩同一題：可愛的日式像素畫風、排行榜與連勝紀錄，每題唯一解。"

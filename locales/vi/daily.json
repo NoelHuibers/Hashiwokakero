@@ -3,6 +3,8 @@
   "action_pending": "Đang chờ máy chủ…",
   "action_retry": "Chưa rõ kết quả. Nhấn lại cùng thao tác để nhận kết quả mà không bị phạt thêm.",
   "action_storage": "Cần bộ nhớ trình duyệt để thử lại thao tác này an toàn. Hãy bật rồi thử lại.",
+  "submit_failed": "Lời giải của bạn chưa đến được máy chủ.",
+  "submit_again": "Gửi lại",
   "meta": {
     "title": "Hashi · Câu đố Nối cầu (Hashiwokakero) mỗi ngày, miễn phí",
     "description": "Mỗi ngày một câu đố Hashiwokakero (Nối cầu) mới, chung cho mọi người: pixel art Nhật Bản dễ thương, bảng xếp hạng, chuỗi ngày và luôn có đúng một lời giải."

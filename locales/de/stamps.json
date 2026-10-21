@@ -4,6 +4,7 @@
   "collected": "{{ earned }} von {{ total }} Stempeln gesammelt.",
   "new": "Neuer Stempel: {{ name }}!",
   "more": "Und {{ count }} weitere neue Stempel, schau in dein Stempelheft.",
+  "earned": "Neue Stempel",
   "share": "{{ percent }} % der Spieler",
   "pick": "Tippe auf einen verdienten Stempel, um ihn in den Ranglisten neben deinem Namen zu zeigen.",
   "shown": "{{ name }} steht jetzt in den Ranglisten neben deinem Namen.",

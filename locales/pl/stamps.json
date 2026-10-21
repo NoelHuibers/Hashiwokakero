@@ -4,6 +4,7 @@
   "collected": "Zebrane pieczątki: {{ earned }} z {{ total }}.",
   "new": "Nowa pieczątka: {{ name }}!",
   "more": "Kolejne nowe pieczątki: {{ count }}. Zajrzyj do swojego albumu.",
+  "earned": "Nowe pieczątki",
   "share": "{{ percent }}% graczy",
   "pick": "Dotknij zdobytej pieczątki, aby pokazać ją przy swoim nazwisku w rankingach.",
   "shown": "{{ name }} jest teraz widoczna przy twoim nazwisku w rankingach.",

@@ -4,6 +4,7 @@
   "collected": "{{ earned }} de {{ total }} carimbos coletados.",
   "new": "Novo carimbo: {{ name }}!",
   "more": "E mais {{ count }} carimbos novos, veja seu caderno de carimbos.",
+  "earned": "Novos carimbos",
   "share": "{{ percent }}% dos jogadores",
   "pick": "Toca num carimbo conquistado para o mostrar ao lado do teu nome nas classificações.",
   "shown": "{{ name }} aparece agora ao lado do teu nome nas classificações.",

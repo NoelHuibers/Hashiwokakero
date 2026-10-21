@@ -3,6 +3,8 @@
   "action_pending": "Waiting for the server…",
   "action_retry": "The result is uncertain. Press the same action again to recover it without another penalty.",
   "action_storage": "Browser storage is required to retry this action safely. Enable it and try again.",
+  "submit_failed": "Your solution hasn't reached the server yet.",
+  "submit_again": "Submit again",
   "meta": {
     "title": "Hashi · Daily Hashiwokakero (Bridges) puzzle, free online",
     "description": "A new Hashiwokakero (Bridges) puzzle every day, the same for everyone: cute Japanese pixel art, a leaderboard, streaks and exactly one solution per puzzle."

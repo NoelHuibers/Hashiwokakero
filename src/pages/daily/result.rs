@@ -7,12 +7,46 @@ use crate::components::celebration::Stamp;
 use crate::components::layout::use_localized;
 use crate::components::share::ShareBar;
 use crate::components::ui::card::Card;
-use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::{difficulty_name, localized};
 use crate::model::{Flag, WEEKDAY_KANJI, daily_number, format_duration, points, weekday};
 use crate::state::{Auth, Status};
 
 use super::state::Daily;
+
+/// What the share buttons post about the finished daily: its number, weekday and difficulty,
+/// the time, the rank once it's known, and the link.
+pub(super) fn share_text(daily: &Daily, locale: Locale) -> String {
+    let Some(info) = daily.info.get_untracked() else {
+        return String::new();
+    };
+    let rank = daily
+        .result
+        .get_untracked()
+        .map(|r| (r.rank, r.finishers))
+        .or_else(|| {
+            daily.ranking.with_untracked(|lb| {
+                lb.as_ref()
+                    .and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))
+            })
+        });
+    let origin = window().location().origin().unwrap_or_default();
+    let headline = td_string!(
+        locale,
+        daily.share,
+        number = daily_number(info.day),
+        weekday = WEEKDAY_KANJI[weekday(info.day)],
+        difficulty = difficulty_name(locale, info.difficulty)
+    );
+    let rank = rank
+        .map(|(rank, total)| format!(" · {}", td_string!(locale, daily.share_rank, rank, total)))
+        .unwrap_or_default();
+    format!(
+        "{headline}\n⏱ {}{rank}\n{origin}{}",
+        format_duration(daily.elapsed_ms()),
+        localized(locale, "/"),
+    )
+}
 
 #[component]
 pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
@@ -20,40 +54,7 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
     let auth = expect_context::<Auth>();
     let practice = use_localized("/practice");
     let account = use_localized("/account");
-    let share_text = move || {
-        let Some(info) = daily.info.get_untracked() else {
-            return String::new();
-        };
-        let rank = daily
-            .result
-            .get_untracked()
-            .map(|r| (r.rank, r.finishers))
-            .or_else(|| {
-                daily.ranking.with_untracked(|lb| {
-                    lb.as_ref()
-                        .and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))
-                })
-            });
-        let locale = i18n.get_locale_untracked();
-        let origin = window().location().origin().unwrap_or_default();
-        let headline = td_string!(
-            locale,
-            daily.share,
-            number = daily_number(info.day),
-            weekday = WEEKDAY_KANJI[weekday(info.day)],
-            difficulty = difficulty_name(locale, info.difficulty)
-        );
-        let rank = rank
-            .map(|(rank, total)| {
-                format!(" · {}", td_string!(locale, daily.share_rank, rank, total))
-            })
-            .unwrap_or_default();
-        format!(
-            "{headline}\n⏱ {}{rank}\n{origin}{}",
-            format_duration(daily.elapsed_ms()),
-            localized(locale, "/"),
-        )
-    };
+    let share_text = move || share_text(&daily, i18n.get_locale_untracked());
     let revealed = move || daily.game.status.get() == Status::Revealed;
     // (rank, finishers): from the submit, later from the ranking, which keeps up with the others
     let place = move || {
