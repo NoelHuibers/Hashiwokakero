@@ -654,6 +654,21 @@ const rankingStatus = (page: Page) => page.getByTestId('daily-ranking-status');
 const submitStatus = (page: Page) => page.getByTestId('daily-submit-status');
 const submitPath = '**/api/submit_daily_attempt';
 const reconcilePath = '**/api/daily_attempt_info';
+/** Width of the metadata status: sr-only shrinks it to 1px, the board placeholder says "Loading" instead. */
+const statusWidth = async (page: Page) => (await metadataStatus(page).boundingBox())?.width ?? 0;
+
+test('loading the puzzle shows one visible loading message, in the board placeholder', async ({ page }) => {
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/api/daily_today', async (route) => { await held; await route.continue(); });
+  try {
+    await page.goto('/');
+    await expect(page.getByText('読み込み中 · Loading…')).toBeVisible();
+    await expect(metadataStatus(page)).toContainText('Loading'); // still announced to screen readers
+    expect(await statusWidth(page)).toBeLessThanOrEqual(1);
+  } finally { release(); }
+  await expect(page.getByRole('button', { name: /^Start/ })).toBeEnabled();
+});
 
 test('initial metadata failure has a persistent manual retry with an immediate pending guard', async ({ page }) => {
   let requests = 0;
@@ -666,6 +681,7 @@ test('initial metadata failure has a persistent manual retry with an immediate p
   });
   await visit(page, '/');
   await expect(metadataStatus(page)).toContainText("Couldn't load today's puzzle.");
+  expect(await statusWidth(page)).toBeGreaterThan(1); // the error, unlike loading, is shown
   await expect(page.getByRole('button', { name: /^Start/ })).toHaveCount(0);
   await expect(rankingStatus(page)).toBeEmpty(); // ranking succeeded independently
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
@@ -677,6 +693,7 @@ test('initial metadata failure has a persistent manual retry with an immediate p
     });
     await expect.poll(() => requests).toBe(2);
     await expect(metadataStatus(page)).toContainText('Loading');
+    expect(await statusWidth(page)).toBeLessThanOrEqual(1);
     expect(requests).toBe(2);
   } finally { release(); }
   await expect(metadataStatus(page)).toBeEmpty();
