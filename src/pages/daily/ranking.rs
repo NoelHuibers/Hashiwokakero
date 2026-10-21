@@ -118,7 +118,8 @@ pub(super) fn RankingCard(daily: Daily) -> impl IntoView {
                 </CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-3">
-                <div role="status" aria-live="polite" data-testid="daily-ranking-status">
+                <div role="status" aria-live="polite" data-testid="daily-ranking-status"
+                    class:hidden=move || daily.ranking_load.phase.get() == Phase::Idle && daily.ranking.with(Option::is_some)>
                     <Show when=move || daily.ranking_load.phase.get() == Phase::Pending || (daily.ranking.with(Option::is_none) && daily.ranking_load.phase.get() != Phase::Error)>
                         <p>{t!(i18n, common.game.loading)}</p>
                     </Show>
