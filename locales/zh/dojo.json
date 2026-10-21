@@ -231,6 +231,24 @@
     "text": "觉得你的求解器比我们的强？提交上来，冲上排行榜。",
     "button": "前往道场"
   },
+  "track": {
+    "sprint": "冲刺赛道",
+    "sprint_text": "生成的中等规模公式，每个公式约半秒。",
+    "soon": "即将推出",
+    "industrial": {
+      "title": "工业赛道",
+      "intro": "来自往届 SAT Competition 主赛道的真实实例：硬件验证与有界模型检测、密码学、调度、规划和软件验证，从 <a>Global Benchmark Database</a> 获取。",
+      "budget_title": "几分钟，而不是半秒",
+      "budget": "每个公式约为冲刺赛道预算的 200 倍，每次运行最多 4 GB 内存。",
+      "proofs_title": "证明照样检查",
+      "proofs": "每个 UNSAT 答案都需要证明，检查方式与冲刺赛道相同。",
+      "why_title": "为什么要有第二条赛道",
+      "why": "每个公式只有半秒时，MiniSat 胜过 CaDiCaL 和 Kissat：它们的求解中化简（inprocessing）只在大型工业实例上才划算。有了几分钟，大型求解器才能施展身手，也更接近 SAT Competition。",
+      "fee_title": "少量参赛费",
+      "fee": "参赛将收取少量费用，用于支付计算成本。",
+      "board_note": "<a>工业赛道</a>即将推出：来自 SAT Competition 的真实实例，每个公式几分钟。"
+    }
+  },
   "community": {
     "meta_title": "自带基准 · SAT 道场",
     "meta_description": "向 SAT 道场的社区池提交 CNF 公式。经过验证的难题会进入之后赛季的隐藏集，并署名公开。",

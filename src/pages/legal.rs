@@ -151,7 +151,7 @@ const PRIVACY_DE: &[Section] = &[
         "Speicherdauer",
         &[
             "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Stempel, Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
-            "Gastkonten, die ein Jahr lang nicht besucht wurden, löschen wir automatisch auf dieselbe Weise, denn ohne gültige Sitzung kommt niemand mehr an sie heran. Sitzungen laufen ein Jahr nach dem letzten Besuch ab, Kontaktnachrichten löschen wir spätestens nach sechs Monaten.",
+            "Die nichtöffentliche Datensatz-ID eines gelöschten Kontos bleibt gesperrt, damit eine Kennung und ihre Berechtigungen niemals an ein neues Konto übergehen. Gastkonten, die ein Jahr lang nicht besucht wurden, löschen wir automatisch auf dieselbe Weise, denn ohne gültige Sitzung kommt niemand mehr an sie heran. Sitzungen laufen ein Jahr nach dem letzten Besuch ab, Kontaktnachrichten löschen wir spätestens nach sechs Monaten.",
         ],
     ),
     (
@@ -233,7 +233,7 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Retention",
         &[
-            "We keep your account, results, stamps and Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest.",
+            "We keep your account, results, stamps and Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest.",
         ],
     ),
     (

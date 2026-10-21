@@ -25,13 +25,15 @@ fn DifficultyPicker() -> impl IntoView {
     let i18n = use_i18n();
     let settings = expect_context::<Settings>();
     view! {
-        <div class="grid grid-cols-5 gap-1.5">
+        <div class="grid grid-cols-5 gap-1.5" role="group" aria-label=move || t_string!(i18n, practice.new_puzzle)>
             {Difficulty::ALL
                 .into_iter()
                 .map(|d| {
                     let (w, h) = d.size();
                     view! {
                         <button
+                            type="button"
+                            aria-pressed=move || (settings.difficulty.get() == d).to_string()
                             class=move || {
                                 format!(
                                     "flex flex-col items-center rounded-lg border px-1 py-2 transition-all hover:-translate-y-0.5 {}",
@@ -45,7 +47,7 @@ fn DifficultyPicker() -> impl IntoView {
                             data-tooltip=move || format!("{} · {w}×{h}", difficulty_name(i18n.get_locale(), d))
                             on:click=move |_| settings.difficulty.set(d)
                         >
-                            <span class="font-pixel text-lg leading-none">{d.kanji()}</span>
+                            <span class="font-pixel text-lg leading-none" aria-hidden="true">{d.kanji()}</span>
                             <span class="mt-1 max-w-full truncate text-[10px] font-bold uppercase tracking-wider">
                                 {move || difficulty_name(i18n.get_locale(), d)}
                             </span>
@@ -86,5 +88,44 @@ pub(super) fn NewGameCard() -> impl IntoView {
                 </div>
             </CardContent>
         </Card>
+    }
+}
+
+#[cfg(all(test, feature = "ssr"))]
+mod tests {
+    use super::*;
+    use crate::i18n::{Locale, td_string};
+
+    #[tokio::test]
+    async fn every_difficulty_exposes_exactly_one_pressed_choice() {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::ar);
+            let settings = Settings::new();
+            provide_context(settings);
+            for difficulty in Difficulty::ALL {
+                settings.difficulty.set(difficulty);
+                let html = view! { <DifficultyPicker /> }.to_html();
+                assert!(html.contains("role=\"group\""));
+                assert!(html.contains(td_string!(Locale::ar, practice.new_puzzle)));
+                assert_eq!(html.matches("aria-pressed=\"true\"").count(), 1);
+                assert_eq!(html.matches("aria-pressed=\"false\"").count(), 4);
+                let pressed = html
+                    .split("<button ")
+                    .find(|b| {
+                        b.split('>')
+                            .next()
+                            .unwrap()
+                            .contains("aria-pressed=\"true\"")
+                    })
+                    .unwrap()
+                    .split("</button>")
+                    .next()
+                    .unwrap();
+                assert!(pressed.contains(&difficulty_name(Locale::ar, difficulty)));
+            }
+        });
     }
 }

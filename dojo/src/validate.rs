@@ -9,6 +9,10 @@ pub const WASI: &str = "wasi_snapshot_preview1";
 
 /// Checks that a submission is a WASI command the sandbox can run.
 pub fn validate(wasm: &[u8]) -> Result<(), Rejection> {
+    const MAX_TYPES: usize = 20_000;
+    const MAX_FUNCTION_OPERATORS: usize = 100_000;
+    const MAX_OPERATORS: usize = 1_000_000;
+
     if wasm.len() > crate::MAX_WASM_BYTES {
         return Err(Rejection::TooLarge);
     }
@@ -20,16 +24,40 @@ pub fn validate(wasm: &[u8]) -> Result<(), Rejection> {
     );
     features.remove(wasmparser::WasmFeatures::MEMORY64 | wasmparser::WasmFeatures::MULTI_MEMORY);
     features.remove(wasmparser::WasmFeatures::COMPONENT_MODEL);
-    wasmparser::Validator::new_with_features(features)
-        .validate_all(wasm)
-        .map_err(invalid)?;
-
+    // Bound compilation work before asking either validator or compiler to build its state.
+    // Byte size alone permits enormous local vectors, recursive type groups or a huge function.
+    let too_complex =
+        || Rejection::Invalid("the module exceeds the compilation complexity limit".into());
+    let mut operators = 0usize;
     let (mut types, mut has_imports, mut has_start) = (0usize, false, false);
     for payload in Parser::new(0).parse_all(wasm) {
         match payload.map_err(invalid)? {
             Payload::TypeSection(section) => {
                 for group in section {
                     types += group.map_err(invalid)?.types().len();
+                    if types > MAX_TYPES {
+                        return Err(too_complex());
+                    }
+                }
+            }
+            Payload::CodeSectionStart { count, .. } if count > 20_000 => return Err(too_complex()),
+            Payload::CodeSectionEntry(body) => {
+                let mut locals = 0u64;
+                for local in body.get_locals_reader().map_err(invalid)? {
+                    locals += u64::from(local.map_err(invalid)?.0);
+                    if locals > 50_000 {
+                        return Err(too_complex());
+                    }
+                }
+                let mut reader = body.get_operators_reader().map_err(invalid)?;
+                let mut function_operators = 0;
+                while !reader.eof() {
+                    reader.read().map_err(invalid)?;
+                    operators += 1;
+                    function_operators += 1;
+                    if function_operators > MAX_FUNCTION_OPERATORS || operators > MAX_OPERATORS {
+                        return Err(too_complex());
+                    }
                 }
             }
             Payload::ImportSection(section) => {
@@ -54,6 +82,9 @@ pub fn validate(wasm: &[u8]) -> Result<(), Rejection> {
             _ => {}
         }
     }
+    wasmparser::Validator::new_with_features(features)
+        .validate_all(wasm)
+        .map_err(invalid)?;
     if !has_start {
         return Err(Rejection::NoStart);
     }

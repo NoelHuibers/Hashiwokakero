@@ -1,7 +1,7 @@
 //! The built-in DRAT checker after it dropped deleted clauses from memory (`collect_garbage`,
 //! once more than 2^16 literals are deleted): clause ids are renumbered, and the watches, the
 //! reasons and the index of deletable clauses must follow, or later steps check against the
-//! wrong clauses. The leaderboard's checkers have to agree where they are installed.
+//! wrong clauses. The leaderboard's checkers have to agree too.
 
 use std::fmt::Write as _;
 use std::time::Duration;
@@ -39,25 +39,20 @@ fn proof(steps: &str) -> Vec<u8> {
     proof.into_bytes()
 }
 
-/// The verdicts of the built-in checker and, if installed, of drat-trim and `cake_lpr`.
-fn verdicts(steps: &str) -> (Result<(), DratError>, Option<Verdict>) {
+/// The verdicts of the built-in checker and of drat-trim and `cake_lpr`.
+fn verdicts(steps: &str) -> (Result<(), DratError>, Verdict) {
     let cnf = formula();
     let bytes = proof(steps);
     let builtin = check(&cnf, &bytes, Duration::from_secs(60));
-    let verified = Tools::find().map(|tools| {
-        let dir = TempDir::new(&std::env::temp_dir(), "dojo-drat-gc").unwrap();
-        let path = dir.path().join(PROOF_FILE);
-        std::fs::write(&path, &bytes).unwrap();
-        let mut checker = Checker::new(tools, CheckLimits::default(), 1);
-        checker.scratch = dir.path().to_path_buf();
-        checker.check(&cnf, &path, Format::Drat)
-    });
-    if verified.is_none() {
-        assert!(
-            std::env::var_os("DOJO_REQUIRE_CHECKERS").is_none(),
-            "DOJO_REQUIRE_CHECKERS is set but drat-trim and cake_lpr weren't found"
-        );
-    }
+    let tools = Tools::find().expect(
+        "proof checkers missing: run dojo/checkers/build.sh and set DOJO_DRAT_TRIM and DOJO_CAKE_LPR",
+    );
+    let dir = TempDir::new(&std::env::temp_dir(), "dojo-drat-gc").unwrap();
+    let path = dir.path().join(PROOF_FILE);
+    std::fs::write(&path, &bytes).unwrap();
+    let mut checker = Checker::new(tools, CheckLimits::default(), 1);
+    checker.scratch = dir.path().to_path_buf();
+    let verified = checker.check(&cnf, &path, Format::Drat);
     (builtin, verified)
 }
 
@@ -68,10 +63,7 @@ fn verdicts(steps: &str) -> (Result<(), DratError>, Option<Verdict>) {
 fn proofs_check_after_a_collection() {
     let (builtin, verified) = verdicts("d 4 -3 0\nd 1 2 3 4 0\n-1 0\n0\n");
     assert_eq!(builtin, Ok(()));
-    assert!(
-        matches!(verified, None | Some(Verdict::Verified)),
-        "{verified:?}"
-    );
+    assert_eq!(verified, Verdict::Verified);
 }
 
 /// Deleting a core clause after the collection finds it through the renumbered index: the
@@ -86,8 +78,5 @@ fn deletions_after_a_collection_find_their_clause() {
             line: usize::try_from(PADDING).unwrap() + 3
         })
     );
-    assert!(
-        matches!(verified, None | Some(Verdict::Rejected(_))),
-        "{verified:?}"
-    );
+    assert!(matches!(verified, Verdict::Rejected(_)), "{verified:?}");
 }

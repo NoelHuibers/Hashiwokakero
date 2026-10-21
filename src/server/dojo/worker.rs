@@ -12,8 +12,18 @@ use crate::server::{hex, now_ms};
 
 /// Applies a report from the worker. Reports for another season are stale and ignored.
 pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Error> {
+    apply_for_job(conn, report, None).await.map(|_| ())
+}
+
+/// Token comparison is repeated inside the UPDATE: a requeue between authorization and this
+/// statement must not let a previous evaluation change the replacement job.
+pub(super) async fn apply_for_job(
+    conn: &Connection,
+    report: &Report,
+    token: Option<&str>,
+) -> Result<bool, libsql::Error> {
     let now = now_ms();
-    match report {
+    let changed = match report {
         Report::Progress {
             id,
             season,
@@ -21,11 +31,12 @@ pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Err
             total,
         } => {
             conn.execute(
-                "UPDATE dojo_submissions SET state = 'running', progress = ?1, total = ?2, updated_at = ?3
-                 WHERE id = ?4 AND season = ?5 AND state IN ('queued', 'running')",
-                params![*done, *total, now, *id, *season],
+                "UPDATE dojo_submissions SET state = 'running', progress = MAX(progress, ?1), total = ?2, updated_at = ?3
+                 WHERE id = ?4 AND season = ?5 AND state IN ('queued', 'running')
+                   AND (?6 IS NULL OR job_token = ?6)",
+                params![*done, *total, now, *id, *season, token],
             )
-            .await?;
+            .await?
         }
         Report::Finished {
             id,
@@ -38,50 +49,65 @@ pub async fn apply(conn: &Connection, report: &Report) -> Result<(), libsql::Err
             let json = serde_json::to_string(score).unwrap_or_default();
             let fingerprint = serde_json::to_string(fingerprint).unwrap_or_default();
             let results = serde_json::to_string(results).unwrap_or_default();
-            conn.execute(
-                "UPDATE dojo_submissions SET state = 'done', progress = ?1, total = ?1, score = ?2, par2 = ?3,
-                    solved = ?4, wrong = ?5, error = NULL, updated_at = ?6, fingerprint = ?9, similar_to = NULL,
-                    results = ?10, rules_version = ?11
-                 WHERE id = ?7 AND season = ?8",
-                params![
-                    score.total,
-                    json,
-                    score.par2,
-                    score.solved,
-                    score.wrong,
-                    now,
-                    *id,
-                    *season,
-                    fingerprint,
-                    results,
-                    *rules_version
-                ],
-            )
-            .await?;
-            mark_copies(conn, *id).await?;
+            let changed = conn
+                .execute(
+                    "UPDATE dojo_submissions SET state = 'done', job_token = NULL, progress = ?1, total = ?1,
+                    score = ?2, par2 = ?3, solved = ?4, wrong = ?5, error = NULL, updated_at = ?6,
+                    fingerprint = ?9, similar_to = NULL, results = ?10, rules_version = ?11
+                 WHERE id = ?7 AND season = ?8 AND state IN ('queued', 'running')
+                   AND (?12 IS NULL OR job_token = ?12)",
+                    params![
+                        score.total,
+                        json,
+                        score.par2,
+                        score.solved,
+                        score.wrong,
+                        now,
+                        *id,
+                        *season,
+                        fingerprint,
+                        results,
+                        *rules_version,
+                        token
+                    ],
+                )
+                .await?;
+            if changed > 0 {
+                mark_copies(conn, *id).await?;
+                crate::server::daily::invalidate_profiles();
+                let mut rows = conn
+                    .query(
+                        "SELECT user_id FROM dojo_submissions WHERE id = ?1",
+                        params![*id],
+                    )
+                    .await?;
+                if let Some(row) = rows.next().await?
+                    && let Some(user) = row.get::<Option<i64>>(0)?
+                    && let Err(e) = crate::server::daily::sync_stamps(conn, user, false).await
+                {
+                    eprintln!("dojo #{id}: stamp reconciliation: {e}");
+                }
+            }
+            changed
         }
-        Report::Rejected { id, season, reason } => {
-            let json = serde_json::to_string(reason).unwrap_or_default();
-            conn.execute(
-                "UPDATE dojo_submissions SET state = 'rejected', error = ?1, updated_at = ?2 WHERE id = ?3 AND season = ?4",
-                params![json, now, *id, *season],
-            )
-            .await?;
-        }
-        Report::Failed {
-            id,
-            season,
-            message,
-        } => {
+        Report::Rejected { id, season, reason } => conn.execute(
+            "UPDATE dojo_submissions SET state = 'rejected', job_token = NULL, error = ?1, updated_at = ?2
+             WHERE id = ?3 AND season = ?4 AND state IN ('queued', 'running')
+               AND (?5 IS NULL OR job_token = ?5)",
+            params![serde_json::to_string(reason).unwrap_or_default(), now, *id, *season, token],
+        ).await?,
+        Report::Failed { id, season, message } => {
             eprintln!("dojo #{id}: worker failed: {message}");
             conn.execute(
-                "UPDATE dojo_submissions SET state = 'queued', updated_at = ?1 WHERE id = ?2 AND season = ?3",
-                params![now, *id, *season],
-            )
-            .await?;
+                "UPDATE dojo_submissions SET state = CASE WHEN attempts >= ?4 THEN 'failed' ELSE 'queued' END,
+                    job_token = NULL, updated_at = ?1
+                 WHERE id = ?2 AND season = ?3 AND state IN ('queued', 'running')
+                   AND (?5 IS NULL OR job_token = ?5)",
+                params![now, *id, *season, MAX_ATTEMPTS, token],
+            ).await?
         }
-    }
-    Ok(())
+    };
+    Ok(changed > 0)
 }
 
 /// Compares a finished submission with everyone else's of the same season: of two that behave
@@ -151,11 +177,7 @@ pub(super) async fn job_authorized(
         },
         Err(_) => return Err(StatusCode::SERVICE_UNAVAILABLE),
     };
-    let given = headers
-        .get(header::AUTHORIZATION)
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.strip_prefix("Bearer "));
-    let valid = match (expected, given) {
+    let valid = match (expected, bearer(headers)) {
         (Some(expected), Some(given)) => {
             expected.len() == given.len()
                 && expected
@@ -167,6 +189,14 @@ pub(super) async fn job_authorized(
         _ => false,
     };
     Ok(valid.then_some(season))
+}
+
+/// The bearer token of a request.
+fn bearer(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
 }
 
 /// `POST /dojo/report` from the worker.
@@ -182,8 +212,12 @@ pub async fn report_handler(
         Ok(None) => return StatusCode::UNAUTHORIZED,
         Err(status) => return status,
     }
-    match apply(&conn, &report).await {
-        Ok(()) => StatusCode::NO_CONTENT,
+    // The token goes into the UPDATE again: a requeue between the check above and the write
+    // must not let the previous evaluation change the next one
+    let given = bearer(&headers);
+    match apply_for_job(&conn, &report, given).await {
+        Ok(true) => StatusCode::NO_CONTENT,
+        Ok(false) => StatusCode::CONFLICT,
         Err(e) => {
             eprintln!("dojo report: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
@@ -207,7 +241,8 @@ pub(super) async fn housekeeping_at(conn: &Connection, current: u32) -> Result<(
     // Later seasons (DOJO_SEASON went back): evaluated again, nothing archived or revealed
     conn.execute(
         "UPDATE dojo_submissions SET state = 'queued', season = ?1, progress = 0, updated_at = ?2, attempts = 0,
-            fingerprint = NULL, similar_to = NULL, results = NULL
+            fingerprint = NULL, similar_to = NULL, results = NULL, score = NULL, par2 = NULL,
+            solved = NULL, wrong = 0, error = NULL, job_token = NULL
          WHERE season != ?1 AND state IN ('done', 'queued', 'running')",
         params![current, now],
     )
@@ -239,7 +274,7 @@ pub(super) async fn housekeeping_at(conn: &Connection, current: u32) -> Result<(
         .map_err(err)?;
     }
     conn.execute(
-        "UPDATE dojo_submissions SET state = CASE WHEN attempts >= ?1 THEN 'failed' ELSE 'queued' END, updated_at = ?2
+        "UPDATE dojo_submissions SET state = CASE WHEN attempts >= ?1 THEN 'failed' ELSE 'queued' END, job_token = NULL, updated_at = ?2
          WHERE state = 'running' AND updated_at < ?3",
         params![MAX_ATTEMPTS, now, now - STALE_MS],
     )
@@ -283,61 +318,54 @@ async fn dispatch_submissions(
     // The draws from the community pool the worker has, by season
     let mut pools: std::collections::HashMap<u32, String> = std::collections::HashMap::new();
     loop {
+        let report_token = new_job_token()?;
+        // One SQL statement claims the row and checks the global running count. This works
+        // across server replicas, and the claim exists before any worker can report back.
         let mut rows = conn
             .query(
-                "SELECT
-                    (SELECT COUNT(*) FROM dojo_submissions WHERE state = 'running'),
-                    (SELECT id FROM dojo_submissions WHERE state = 'queued' ORDER BY house DESC, created_at LIMIT 1)",
-                (),
+                "UPDATE dojo_submissions SET state = 'running', job_token = ?1,
+                attempts = attempts + 1, updated_at = ?2
+             WHERE id = (SELECT id FROM dojo_submissions WHERE state = 'queued'
+                         ORDER BY house DESC, created_at, id LIMIT 1)
+               AND (SELECT COUNT(*) FROM dojo_submissions WHERE state = 'running') < ?3
+             RETURNING id, wasm, season",
+                params![report_token.clone(), now_ms(), MAX_RUNNING],
             )
             .await
             .map_err(|e| e.to_string())?;
         let Some(row) = rows.next().await.map_err(|e| e.to_string())? else {
             return Ok(());
         };
-        let running: i64 = row.get(0).map_err(|e| e.to_string())?;
-        let Some(id) = row.get::<Option<i64>>(1).map_err(|e| e.to_string())? else {
-            return Ok(());
-        };
-        if running >= MAX_RUNNING {
-            return Ok(());
-        }
-        let mut rows = conn
-            .query(
-                "SELECT wasm, season FROM dojo_submissions WHERE id = ?1",
-                params![id],
-            )
-            .await
-            .map_err(|e| e.to_string())?;
-        let Some(row) = rows.next().await.map_err(|e| e.to_string())? else {
-            return Ok(());
-        };
-        let wasm: Vec<u8> = row.get(0).map_err(|e| e.to_string())?;
-        let season = row.get::<u32>(1).map_err(|e| e.to_string())?;
+        let id: i64 = row.get(0).map_err(|e| e.to_string())?;
+        let wasm: Vec<u8> = row.get(1).map_err(|e| e.to_string())?;
+        let season: u32 = row.get(2).map_err(|e| e.to_string())?;
+        // Row shares ownership of the RETURNING statement. Commit the claim before
+        // pool transfer or dispatch, including when the worker reports immediately.
+        drop(row);
+        let _ = rows.next().await.map_err(|e| e.to_string())?;
+        drop(rows);
         let seed = test_seed(season);
         let pool = if let Some(digest) = pools.get(&season) {
             digest.clone()
         } else {
-            let digest = super::benchmarks::ensure_pool(conn, client, url, token, season).await?;
-            pools.insert(season, digest.clone());
-            digest
+            match super::benchmarks::ensure_pool(conn, client, url, token, season).await {
+                Ok(digest) => {
+                    pools.insert(season, digest.clone());
+                    digest
+                }
+                Err(e) => {
+                    release(conn, id, &report_token).await?;
+                    return Err(e);
+                }
+            }
         };
-        // The set of this season, unless the site has it from this generator already
-        let export = if seasons::wants_set(conn, season).await? {
+        // The set of this season, unless the site has it from this generator already. Without
+        // an answer the next job asks again
+        let export = if seasons::wants_set(conn, season).await.unwrap_or(false) {
             "&export=1"
         } else {
             ""
         };
-        // Reports about this job have to carry this token, it's good for nothing else
-        let mut bytes = [0u8; 32];
-        getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
-        let report_token = hex(&bytes);
-        conn.execute(
-            "UPDATE dojo_submissions SET job_token = ?2 WHERE id = ?1",
-            params![id, report_token.clone()],
-        )
-        .await
-        .map_err(|e| e.to_string())?;
         // The worker machine may have to start first
         let sent = client
             .post(format!(
@@ -349,26 +377,29 @@ async fn dispatch_submissions(
             .timeout(Duration::from_secs(120))
             .send()
             .await;
-        let now = now_ms();
         match sent {
-            Ok(r) if r.status() == StatusCode::ACCEPTED => {
-                conn.execute(
-                    "UPDATE dojo_submissions SET state = 'running', attempts = attempts + 1, updated_at = ?1 WHERE id = ?2",
-                    params![now, id],
-                )
-                .await
-                .map_err(|e| e.to_string())?;
-            }
+            // The worker may already have finished. Never overwrite its callback on acceptance.
+            Ok(r) if r.status() == StatusCode::ACCEPTED => {}
             Ok(r) if r.status() == StatusCode::UNPROCESSABLE_ENTITY => {
                 let body = r.bytes().await.unwrap_or_default();
                 let reason =
                     serde_json::from_slice(&body).unwrap_or(Rejection::Invalid(String::new()));
-                apply(conn, &Report::Rejected { id, season, reason })
-                    .await
-                    .map_err(|e| e.to_string())?;
+                apply_for_job(
+                    conn,
+                    &Report::Rejected { id, season, reason },
+                    Some(&report_token),
+                )
+                .await
+                .map_err(|e| e.to_string())?;
             }
-            Ok(r) => return Err(format!("worker answered {}", r.status())),
-            Err(e) => return Err(format!("worker unreachable: {e}")),
+            other => {
+                let message = match other {
+                    Ok(r) => format!("worker answered {}", r.status()),
+                    Err(e) => format!("worker unreachable: {e}"),
+                };
+                release(conn, id, &report_token).await?;
+                return Err(message);
+            }
         }
     }
 }
@@ -383,4 +414,24 @@ pub fn start_dispatcher() {
             tokio::time::sleep(Duration::from_secs(30)).await;
         }
     });
+}
+
+/// Gives back a claimed job that never reached the worker (down, busy, on other rules): queued
+/// again without using up an attempt, unless it was replaced meanwhile.
+async fn release(conn: &Connection, id: i64, report_token: &str) -> Result<(), String> {
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'queued', job_token = NULL, attempts = attempts - 1,
+            updated_at = ?1
+         WHERE id = ?2 AND state = 'running' AND job_token = ?3",
+        params![now_ms(), id, report_token],
+    )
+    .await
+    .map(|_| ())
+    .map_err(|e| e.to_string())
+}
+
+fn new_job_token() -> Result<String, String> {
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
+    Ok(hex(&bytes))
 }

@@ -1,11 +1,12 @@
 //! Submitting to the SAT Dojo: checking the form, storing the module and the HTTP handlers.
 
+use axum::Extension;
 use axum::body::Bytes;
 use axum::extract::{Multipart, Query};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Redirect, Response};
 use dojo::MAX_WASM_BYTES;
-use libsql::{Connection, params};
+use libsql::{Connection, TransactionBehavior, params};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -65,7 +66,7 @@ pub struct Form {
     pub description: String,
     pub source_url: String,
     pub wasm: Vec<u8>,
-    /// The hashed network the upload came from (`None` for house entries and local runs).
+    /// The hashed network the upload came from (`None` for house entries and in-process callers).
     pub network: Option<String>,
 }
 
@@ -129,6 +130,11 @@ pub async fn submit(
         eprintln!("dojo submit: {e}");
         SubmitError::Server
     };
+    // Quotas, duplicate detection and insertion share one write transaction across replicas.
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(server)?;
     if let Some(user) = user {
         if user.username.is_none() {
             return Err(SubmitError::SignIn);
@@ -137,14 +143,14 @@ pub async fn submit(
         if user.created_at > now_ms() - MIN_ACCOUNT_AGE_MS {
             return Err(SubmitError::AccountAge);
         }
-        let today = submitted_today(conn, user.id)
+        let today = submitted_today(&tx, user.id)
             .await
             .map_err(|_| SubmitError::Server)?;
         if today >= PER_DAY {
             return Err(SubmitError::Limit);
         }
         if let Some(network) = &form.network {
-            let mut rows = conn
+            let mut rows = tx
                 .query(
                     "SELECT COUNT(*) FROM dojo_submissions WHERE ip_hash = ?1",
                     params![network.clone()],
@@ -159,7 +165,7 @@ pub async fn submit(
                 return Err(SubmitError::NetworkLimit);
             }
         }
-        let mut rows = conn
+        let mut rows = tx
             .query(
                 "SELECT COUNT(*) FROM dojo_submissions WHERE state IN ('queued', 'running')",
                 (),
@@ -177,7 +183,7 @@ pub async fn submit(
     let sha256 = hex(&Sha256::digest(&form.wasm));
     // Renaming, padding or adding custom sections doesn't make a different solver
     let code = code_hash(&form.wasm).ok_or(SubmitError::NotWasm)?;
-    let mut rows = conn
+    let mut rows = tx
         .query(
             "SELECT 1 FROM dojo_submissions WHERE sha256 = ?1 OR code_hash = ?2",
             params![sha256.clone(), code.clone()],
@@ -189,7 +195,7 @@ pub async fn submit(
     }
     let now = now_ms();
     let url = form.source_url.trim();
-    conn.execute(
+    tx.execute(
         "INSERT INTO dojo_submissions
             (user_id, house, name, description, source_url, wasm, sha256, size, created_at, updated_at, state, season,
              code_hash, ip_hash)
@@ -211,7 +217,8 @@ pub async fn submit(
     )
     .await
     .map_err(server)?;
-    let id = conn.last_insert_rowid();
+    let id = tx.last_insert_rowid();
+    tx.commit().await.map_err(server)?;
     // Don't wait for the next round of the dispatcher
     tokio::spawn(async {
         let _ = dispatch().await;
@@ -221,7 +228,11 @@ pub async fn submit(
 
 /// `POST /dojo/submit`, a multipart form (works without JavaScript). Redirects to the
 /// submission, or back to the form with an error code.
-pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Response {
+pub async fn submit_handler(
+    Extension(client): Extension<crate::server::ClientIdentity>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> Response {
     let mut form = Form::default();
     let mut prefix = String::new();
     let mut too_large = false;
@@ -268,8 +279,11 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             .await
             .map_err(|_| SubmitError::Server)?
             .ok_or(SubmitError::SignIn)?;
-        form.network = crate::server::client_ip(&headers)
-            .map(|ip| crate::server::network_hash(&ip, crate::model::day_of(now_ms())));
+        form.network = Some(
+            client
+                .network_hash(crate::model::day_of(now_ms()))
+                .map_err(|_| SubmitError::Server)?,
+        );
         submit(&conn, Some(&user), form).await
     }
     .await;

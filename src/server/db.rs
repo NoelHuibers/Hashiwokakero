@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 use leptos::prelude::ServerFnError;
-use libsql::{Builder, Connection, Database, params};
+use libsql::{Builder, Connection, Database, TransactionBehavior, params};
 
 use super::{count, now_ms};
 
@@ -274,11 +274,38 @@ CREATE TABLE IF NOT EXISTS dojo_season_pool (
 -- before there was a pool (it has none)
 ALTER TABLE dojo_seasons ADD COLUMN pool_digest TEXT;
 ",
+    // 11
     "
 -- Banned players, see server/admin.rs: they can't sign in, their results are off the boards
 -- (flag 'banned'). The reason is only for the admins, '' if none was given
 ALTER TABLE users ADD COLUMN banned_at INTEGER;
 ALTER TABLE users ADD COLUMN ban_reason TEXT;
+",
+    // 12
+    "
+-- The daily rankings and a player's ranked times, see server/daily/. Partial: only finished,
+-- unrevealed attempts without a flag are ever ranked
+CREATE INDEX IF NOT EXISTS attempts_user_ranked ON attempts (user_id, day, time_ms)
+    WHERE finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL;
+CREATE INDEX IF NOT EXISTS attempts_day_ranked ON attempts (day, time_ms, finished_at)
+    WHERE finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL;
+",
+    "
+-- Bounded paid-action receipts belong to the attempt, including account deletion/guest cleanup.
+-- Never evict an accepted ID: replaying an old intent must never become a new charge.
+ALTER TABLE attempts ADD COLUMN paid_actions TEXT NOT NULL DEFAULT '[]';
+",
+    "
+-- An attempt survives guest transfer, but never aliases a new attempt after user-ID reuse.
+-- Millisecond start times can coincide. Give existing and future rows independent 128-bit IDs.
+ALTER TABLE attempts ADD COLUMN attempt_id TEXT NOT NULL DEFAULT '';
+UPDATE attempts SET attempt_id = lower(hex(randomblob(16)));
+CREATE UNIQUE INDEX attempts_identity ON attempts (attempt_id);
+CREATE TRIGGER attempts_identity_on_insert AFTER INSERT ON attempts
+WHEN NEW.attempt_id = '' BEGIN
+    UPDATE attempts SET attempt_id = lower(hex(randomblob(16)))
+    WHERE user_id = NEW.user_id AND day = NEW.day;
+END;
 ",
 ];
 
@@ -351,7 +378,13 @@ async fn migrate_to(conn: &Connection, version: usize) -> Result<(), String> {
     )
     .await
     .map_err(err)?;
-    let mut rows = conn
+    // Take the write lock before reading the version. Two starting replicas must not both
+    // decide to apply the same ALTER TABLE; the schema and its record commit together.
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(err)?;
+    let mut rows = tx
         .query(
             "SELECT COALESCE(MAX(version), 0) FROM schema_migrations",
             (),
@@ -365,15 +398,15 @@ async fn migrate_to(conn: &Connection, version: usize) -> Result<(), String> {
     // A version that doesn't fit (never written by this code) skips everything, like before
     let applied = usize::try_from(current).unwrap_or(usize::MAX);
     for (i, sql) in MIGRATIONS.iter().enumerate().take(version).skip(applied) {
-        conn.execute_batch(sql).await.map_err(err)?;
-        conn.execute(
+        tx.execute_batch(sql).await.map_err(err)?;
+        tx.execute(
             "INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?1, ?2)",
             params![count(i + 1), now_ms()],
         )
         .await
         .map_err(err)?;
     }
-    Ok(())
+    tx.commit().await.map_err(err)
 }
 
 /// Removes a local database file of the tests and its WAL and journal files: a fresh file next to
@@ -449,6 +482,15 @@ impl TestConn {
         let conn = database.connect().unwrap();
         migrate(&conn).await.unwrap();
         Self { conn, file }
+    }
+
+    /// A separate SQLite connection: cloning `Connection` shares the original handle.
+    pub async fn independent_connection(&self) -> Connection {
+        open_local(self.file.as_str())
+            .await
+            .unwrap()
+            .connect()
+            .unwrap()
     }
 }
 

@@ -14,17 +14,31 @@ use super::{SECTION, error};
 #[component]
 pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
     let list = RwSignal::new(None::<Vec<ContactMessage>>);
-    let load = move || {
+    let more = RwSignal::new(false);
+    let busy = RwSignal::new(false);
+    let load = move |before: Option<i64>| {
+        if busy.get_untracked() {
+            return;
+        }
+        busy.set(true);
         spawn_local(async move {
-            match admin_messages().await {
-                Ok(l) => list.set(Some(l)),
+            match admin_messages(before).await {
+                Ok(l) => {
+                    more.set(l.len() == 100);
+                    if before.is_some() {
+                        list.update(|all| all.get_or_insert_with(Vec::new).extend(l));
+                    } else {
+                        list.set(Some(l));
+                    }
+                }
                 Err(e) => error(&e),
             }
+            busy.set(false);
         });
     };
     Effect::new(move |first: Option<()>| {
         if first.is_none() {
-            load();
+            load(None);
         }
     });
     let delete = move |id: i64| {
@@ -37,7 +51,7 @@ pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
         spawn_local(async move {
             match delete_admin_message(id).await {
                 Ok(()) => {
-                    load();
+                    load(None);
                     on_change.run(());
                 }
                 Err(e) => error(&e),
@@ -85,6 +99,13 @@ pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
                         .collect_view()
                         .into_any(),
                 }}
+                <Show when=move || more.get()>
+                    <Button variant=ButtonVariant::Outline attr:disabled=move || busy.get()
+                        on:click=move |_| {
+                            let before = list.with_untracked(|rows| rows.as_ref().and_then(|rows| rows.last()).map(|m| m.id));
+                            load(before);
+                        }>"Load older messages"</Button>
+                </Show>
             </CardContent>
         </Card>
     }

@@ -264,9 +264,10 @@ fn generate_with(params: &GenerateParams, safety: Duration) -> (GeneratedPuzzle,
     }
 
     let candidate = match (best, fallback) {
-        (Some((_, c)), _) | (None, Some(c)) => c,
-        // Not even a non-unique puzzle (tiny grids): fall back to the smallest valid puzzle
-        (None, None) => trivial(&params),
+        (Some((_, c)), _) => c,
+        // A bounded search may find only ambiguous candidates. A small proven-unique puzzle
+        // is preferable to publishing a puzzle that breaks the generator's contract.
+        (None, _) => trivial(&params),
     };
     let generated = GeneratedPuzzle {
         puzzle: candidate.puzzle,
@@ -1181,5 +1182,34 @@ mod tests {
                 "island {i} has a neighbour"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod uniqueness_contract_tests {
+    use super::*;
+    #[test]
+    fn an_exhausted_search_returns_a_proven_unique_fallback() {
+        let params = GenerateParams {
+            width: 30,
+            height: 30,
+            difficulty: Difficulty::Oni,
+            seed: 0,
+        };
+        let generated = generate_with(&params, Duration::ZERO).0;
+        assert!(generated.unique);
+        assert!(
+            Board::new(generated.puzzle.clone())
+                .check(&generated.solution)
+                .solved
+        );
+        let report = crate::api::solve_unique(&generated.puzzle, &SolverConfig::splr()).unwrap();
+        assert!(matches!(
+            report.outcome,
+            common::SolveOutcome::Solved {
+                unique: Some(true),
+                ..
+            }
+        ));
     }
 }

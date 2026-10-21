@@ -1,4 +1,8 @@
 {
+  "action_recover": "Pressione Dica ou Verificar para recuperar uma ação anterior após entrar.",
+  "action_pending": "A aguardar o servidor…",
+  "action_retry": "O resultado é incerto. Repete a mesma ação para o recuperar sem outra penalização.",
+  "action_storage": "O armazenamento do navegador é necessário para repetir esta ação com segurança. Ativa-o e tenta novamente.",
   "meta": {
     "title": "Hashi · Hashiwokakero (Pontes) diário, grátis online",
     "description": "Um novo puzzle Hashiwokakero (Pontes) todo dia, igual para todos: pixel art japonesa fofa, ranking e sequências, e cada puzzle tem uma única solução."

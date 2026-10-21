@@ -154,7 +154,7 @@ async fn freeze(conn: &Connection, season: u32, current: u32, now: i64) -> Resul
     .map_err(err)?;
     tx.execute(
         "UPDATE dojo_submissions SET state = 'queued', season = ?2, progress = 0, updated_at = ?3, attempts = 0,
-            fingerprint = NULL, similar_to = NULL, results = NULL
+            fingerprint = NULL, similar_to = NULL, results = NULL, job_token = NULL
          WHERE season = ?1 AND state IN ('done', 'queued', 'running')",
         params![season, current, now],
     )
@@ -172,7 +172,7 @@ pub(super) async fn requeue_old_rules(
 ) -> Result<u64, String> {
     conn.execute(
         "UPDATE dojo_submissions SET state = 'queued', progress = 0, updated_at = ?3, attempts = 0,
-            fingerprint = NULL, similar_to = NULL, results = NULL
+            fingerprint = NULL, similar_to = NULL, results = NULL, job_token = NULL
          WHERE season = ?1 AND state = 'done' AND COALESCE(rules_version, 0) < ?2",
         params![current, RULES_VERSION, now],
     )

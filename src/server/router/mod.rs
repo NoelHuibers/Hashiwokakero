@@ -29,6 +29,18 @@ pub fn router<V: IntoView + 'static>(
     leptos_options: LeptosOptions,
     shell: fn(LeptosOptions) -> V,
 ) -> Router {
+    router_with_client_source(
+        leptos_options,
+        shell,
+        super::env_var("FLY_APP_NAME").is_some(),
+    )
+}
+
+fn router_with_client_source<V: IntoView + 'static>(
+    leptos_options: LeptosOptions,
+    shell: fn(LeptosOptions) -> V,
+    fly: bool,
+) -> Router {
     let routes = generate_route_list(App);
     let hash_files = leptos_options.hash_files;
     let build = build_id(&leptos_options).and_then(|b| HeaderValue::from_str(&b).ok());
@@ -86,6 +98,10 @@ pub fn router<V: IntoView + 'static>(
             move || shell(leptos_options.clone())
         })
         .fallback(leptos_axum::file_and_error_handler(shell))
+        .layer(middleware::from_fn(super::limits::admission))
+        .layer(middleware::from_fn(move |req, next| {
+            super::identify_client(req, next, fly)
+        }))
         .layer(middleware::from_fn(move |req: Request, next: Next| async move {
             cache_control(hash_files, req, next).await
         }))

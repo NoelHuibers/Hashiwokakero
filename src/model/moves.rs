@@ -119,7 +119,22 @@ pub fn verify_log(
 /// A puzzle in a form that is the same for all its rotations and mirror images, to recognise
 /// today's daily however it is turned.
 pub fn canonical(puzzle: &Puzzle) -> (u8, u8, Vec<(u8, u8, u8)>) {
-    let (w, h) = (puzzle.width, puzzle.height);
+    // Coordinates are ranks of occupied rows/columns: padding, translation and stretching
+    // empty water do not change the puzzle's visibility graph or bridge crossings.
+    let mut xs: Vec<u8> = puzzle.islands.iter().map(|i| i.pos.x).collect();
+    let mut ys: Vec<u8> = puzzle.islands.iter().map(|i| i.pos.y).collect();
+    xs.sort_unstable();
+    xs.dedup();
+    ys.sort_unstable();
+    ys.dedup();
+    let (w, h) = (xs.len(), ys.len());
+    if w == 0 || h == 0 || w > 255 || h > 255 {
+        return (0, 0, Vec::new());
+    }
+    let (w, h) = (
+        u8::try_from(w).expect("checked width"),
+        u8::try_from(h).expect("checked height"),
+    );
     (0..8)
         .map(|t| {
             let transpose = t & 4 != 0;
@@ -128,7 +143,10 @@ pub fn canonical(puzzle: &Puzzle) -> (u8, u8, Vec<(u8, u8, u8)>) {
                 .islands
                 .iter()
                 .map(|i| {
-                    let (mut x, mut y) = (i.pos.x, i.pos.y);
+                    let mut x = u8::try_from(xs.binary_search(&i.pos.x).expect("occupied column"))
+                        .expect("checked width");
+                    let mut y = u8::try_from(ys.binary_search(&i.pos.y).expect("occupied row"))
+                        .expect("checked height");
                     if t & 1 != 0 {
                         x = w - 1 - x;
                     }
@@ -332,5 +350,25 @@ mod tests {
         let mut other = mirrored.clone();
         other.set(common::Pos::new(0, 2), 2);
         assert_ne!(canonical(&puzzle), canonical(&other));
+    }
+}
+
+#[cfg(test)]
+mod padding_tests {
+    use super::*;
+    #[test]
+    fn canonical_identity_ignores_empty_borders_and_stretched_water() {
+        let mut p = Puzzle::empty(7, 7);
+        p.set(common::Pos::new(0, 0), 2);
+        p.set(common::Pos::new(3, 0), 3);
+        p.set(common::Pos::new(3, 3), 1);
+        let mut padded = Puzzle::empty(20, 20);
+        padded.set(common::Pos::new(2, 5), 2);
+        padded.set(common::Pos::new(18, 5), 3);
+        padded.set(common::Pos::new(18, 10), 1);
+        assert_eq!(canonical(&p), canonical(&padded));
+        padded.set(common::Pos::new(18, 10), 2);
+        assert_ne!(canonical(&p), canonical(&padded));
+        assert_eq!(canonical(&Puzzle::empty(0, 0)), (0, 0, vec![]));
     }
 }

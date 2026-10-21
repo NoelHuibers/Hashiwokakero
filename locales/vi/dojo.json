@@ -231,6 +231,24 @@
     "text": "Nghĩ bộ giải của bạn hơn của chúng tôi? Gửi lên và leo bảng xếp hạng.",
     "button": "Đến dojo"
   },
+  "track": {
+    "sprint": "Hạng mục Nước rút",
+    "sprint_text": "Các công thức được sinh ra có kích thước vừa phải, khoảng nửa giây cho mỗi công thức.",
+    "soon": "Sắp ra mắt",
+    "industrial": {
+      "title": "Hạng mục Công nghiệp",
+      "intro": "Các bài thực tế từ main track của các kỳ SAT Competition trước: kiểm chứng phần cứng và kiểm tra mô hình có giới hạn, mật mã học, lập lịch, lập kế hoạch và kiểm chứng phần mềm, lấy từ <a>Global Benchmark Database</a>.",
+      "budget_title": "Hàng phút, không phải nửa giây",
+      "budget": "Khoảng 200 lần ngân sách của hạng mục Nước rút cho mỗi công thức, và tới 4 GB bộ nhớ cho mỗi lần chạy.",
+      "proofs_title": "Chứng minh được kiểm tra",
+      "proofs": "Mọi câu trả lời UNSAT đều cần chứng minh, được kiểm tra như ở hạng mục Nước rút.",
+      "why_title": "Vì sao có hạng mục thứ hai",
+      "why": "Với nửa giây cho mỗi công thức, MiniSat thắng CaDiCaL và Kissat: kỹ thuật inprocessing của chúng chỉ có lợi trên các bài công nghiệp lớn. Khi có hàng phút, các bộ giải lớn mới thể hiện được sức mạnh, gần với SAT Competition hơn.",
+      "fee_title": "Một khoản phí nhỏ",
+      "fee": "Tham gia sẽ mất một khoản phí nhỏ để trang trải chi phí tính toán.",
+      "board_note": "<a>Hạng mục Công nghiệp</a> sắp ra mắt: bài thực tế từ SAT Competition, hàng phút cho mỗi công thức."
+    }
+  },
   "community": {
     "meta_title": "Mang benchmark của bạn đến · SAT Dojo",
     "meta_description": "Gửi một công thức CNF vào kho cộng đồng của SAT Dojo. Các bài khó đã được kiểm chứng sẽ vào tập ẩn của các mùa sau và được công bố kèm tên bạn.",

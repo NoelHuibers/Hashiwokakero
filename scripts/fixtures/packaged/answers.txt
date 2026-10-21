@@ -1,0 +1,2 @@
+hashi-sat SAT
+pigeonhole-unsat UNSAT

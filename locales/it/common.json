@@ -128,7 +128,11 @@
     "zoom_hint": "Scorri per spostarti, tocca per costruire",
     "cells_small": "Caselle troppo piccole?",
     "pinch": "Pizzica per zoomare",
-    "zoom_out": "Riduci"
+    "zoom_out": "Riduci",
+    "keyboard_play": "←/→ seleziona un ponte. Invio/Spazio: +1; Maiusc+Invio: −1. Le isole mostrano coordinate e ponti attuali/richiesti.",
+    "keyboard_edit": "Le frecce spostano la selezione. 1–8 inserisce un’isola; 0/Canc la elimina.",
+    "edge": "Ponte {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Casella ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Perso in mare",

@@ -231,6 +231,24 @@
     "text": "Denk je dat jouw solver de onze verslaat? Stuur hem in en klim op de ranglijst.",
     "button": "Naar de dojo"
   },
+  "track": {
+    "sprint": "Sprintcategorie",
+    "sprint_text": "Gegenereerde formules van bescheiden omvang, ongeveer een halve seconde per formule.",
+    "soon": "Binnenkort",
+    "industrial": {
+      "title": "Industriële categorie",
+      "intro": "Echte instanties uit de main tracks van eerdere SAT Competitions: hardwareverificatie en bounded model checking, cryptografie, roostering, planning en softwareverificatie, opgehaald uit de <a>Global Benchmark Database</a>.",
+      "budget_title": "Minuten, geen halve seconde",
+      "budget": "Ongeveer 200 keer het Sprintbudget per formule, en tot 4 GB geheugen per run.",
+      "proofs_title": "Gecontroleerde bewijzen",
+      "proofs": "Elk UNSAT-antwoord heeft een bewijs nodig, gecontroleerd zoals in de Sprint.",
+      "why_title": "Waarom een tweede categorie",
+      "why": "Met een halve seconde per formule verslaat MiniSat CaDiCaL en Kissat: hun inprocessing loont pas op grote industriële instanties. Met minuten kunnen de grote solvers laten zien wat ze kunnen, dichter bij de SAT Competition.",
+      "fee_title": "Een klein inschrijfgeld",
+      "fee": "Meedoen gaat een klein bedrag kosten dat de rekenkracht dekt.",
+      "board_note": "De <a>industriële categorie</a> komt binnenkort: echte instanties uit de SAT Competition, minuten per formule."
+    }
+  },
   "community": {
     "meta_title": "Breng je eigen benchmark mee · SAT Dojo",
     "meta_description": "Stuur een CNF-formule in voor de communitypool van de SAT Dojo. Geverifieerde, moeilijke instanties komen in de geheime sets van latere seizoenen en worden met je naam gepubliceerd.",

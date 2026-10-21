@@ -128,7 +128,11 @@
     "zoom_hint": "Geser untuk berpindah, ketuk untuk membangun",
     "cells_small": "Sel terlalu kecil?",
     "pinch": "Cubit untuk zoom",
-    "zoom_out": "Perkecil"
+    "zoom_out": "Perkecil",
+    "keyboard_play": "←/→ memilih jembatan. Enter/Spasi: +1; Shift+Enter: −1. Pulau menampilkan koordinat dan jembatan saat ini/diperlukan.",
+    "keyboard_edit": "Tombol panah memilih sel. 1–8 menempatkan pulau; 0/Delete menghapusnya.",
+    "edge": "Jembatan {{ a }} ↔ {{ b }}: {{ count }}/2.",
+    "cell": "Sel ({{ x }}, {{ y }}): {{ number }}."
   },
   "not_found": {
     "title": "Tersesat di laut",

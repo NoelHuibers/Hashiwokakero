@@ -231,6 +231,24 @@
     "text": "Glaubst du, dein Solver schlägt unseren? Reich ihn ein und klettere in der Rangliste.",
     "button": "Zum Dojo"
   },
+  "track": {
+    "sprint": "Sprint-Track",
+    "sprint_text": "Generierte Formeln von überschaubarer Größe, etwa eine halbe Sekunde pro Formel.",
+    "soon": "Bald",
+    "industrial": {
+      "title": "Industrie-Track",
+      "intro": "Echte Instanzen aus den Main Tracks früherer SAT Competitions: Hardwareverifikation und Bounded Model Checking, Kryptografie, Scheduling, Planung und Softwareverifikation, bezogen aus der <a>Global Benchmark Database</a>.",
+      "budget_title": "Minuten statt einer halben Sekunde",
+      "budget": "Etwa das 200-Fache des Sprint-Budgets pro Formel und bis zu 4 GB Speicher pro Lauf.",
+      "proofs_title": "Geprüfte Beweise",
+      "proofs": "Jede UNSAT-Antwort braucht einen Beweis, geprüft wie im Sprint.",
+      "why_title": "Warum ein zweiter Track",
+      "why": "Mit einer halben Sekunde pro Formel schlägt MiniSat CaDiCaL und Kissat: Ihr Inprocessing zahlt sich erst bei großen industriellen Instanzen aus. Mit Minuten können die großen Solver zeigen, was sie können, näher an der SAT Competition.",
+      "fee_title": "Eine kleine Startgebühr",
+      "fee": "Die Teilnahme wird eine kleine Gebühr kosten, die die Rechenzeit deckt.",
+      "board_note": "Der <a>Industrie-Track</a> kommt bald: echte Instanzen der SAT Competition, Minuten pro Formel."
+    }
+  },
   "community": {
     "meta_title": "Bring deinen eigenen Benchmark mit · SAT-Dojo",
     "meta_description": "Reich eine CNF-Formel für den Community-Pool des SAT-Dojos ein. Geprüfte, schwere Instanzen kommen in die geheimen Sets späterer Saisons und werden mit deinem Namen veröffentlicht.",

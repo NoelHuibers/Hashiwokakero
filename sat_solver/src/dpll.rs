@@ -294,6 +294,8 @@ impl DPLL {
                 profiling::end("DPLL::solve");
                 return Ok(DIMACSOutput::Timeout);
             }
+            // Root propagation may already have assigned one of the original pure literals.
+            pure_lits.retain(|l| self.lit_val[&as_atom(*l)].is_free);
             // * choose literal var
             let (var, val, forced) = if pure_lits.is_empty() {
                 self.history_enabled = true;
@@ -303,20 +305,19 @@ impl DPLL {
             } else {
                 let lit = pure_lits.pop().unwrap();
                 // A pure literal is RAT: no clause has its negation (and no lemma yet either,
-                // pure literals come before any decision). The literal `set_var` makes true:
+                // pure literals come before any decision). `set_var` makes it true:
                 if let Some(log) = &mut self.proof {
-                    let val = lit.is_positive();
-                    log.add(&[if val { lit } else { -lit }]);
+                    log.add(&[lit]);
                 }
                 // As the lit occurs only in one polarity it doesn't make sense to try both assignments
-                (lit, lit.is_positive(), true)
+                (lit, true, true)
             };
             // * set value var
-            self.set_var(forced, val, var);
+            let mut decision_conflict = self.set_var(forced, val, var);
 
             // * unit propagation
             loop {
-                let conflict = self.unit_prop();
+                let conflict = std::mem::take(&mut decision_conflict) || self.unit_prop();
                 if !conflict {
                     break;
                 }
@@ -328,8 +329,9 @@ impl DPLL {
                 }
                 // * if conflict detected
                 self.conflict_lemma();
-                let unsat = self.backtrack();
-                if unsat {
+                if let Some(conflict) = self.backtrack() {
+                    decision_conflict = conflict;
+                } else {
                     profiling::end("DPLL::solve");
                     return Ok(DIMACSOutput::Unsat);
                 }
@@ -373,13 +375,13 @@ impl DPLL {
                 };
                 as_lit(*literal) * sign
             })
-            .filter(|p| !self.lit_val.contains_key(&as_atom(*p)))
+            .filter(|p| self.lit_val[&as_atom(*p)].is_free)
             .collect::<Vec<BVar>>();
         profiling::end("get_pure_lits");
         result
     }
 
-    fn backtrack(&mut self) -> bool {
+    fn backtrack(&mut self) -> Option<bool> {
         profiling::start("backtrack");
         let mut last_step = self.history.pop();
         while last_step.as_ref().is_some_and(|step| step.forced) {
@@ -392,15 +394,15 @@ impl DPLL {
         }
         if last_step.is_none() {
             profiling::end("backtrack");
-            return true;
+            return None;
         }
         let var = last_step.as_ref().unwrap().var;
         let val = last_step.unwrap().val;
         self.unset_var(var);
         self.unit_queue.clear();
-        self.set_var(true, !val, var);
+        let conflict = self.set_var(true, !val, var);
         profiling::end("backtrack");
-        false
+        Some(conflict)
     }
 
     // TODO: @Laura hier können die Heuristiken rein. Gerne auch mit enum flag welche an/aus sind.
@@ -439,11 +441,15 @@ impl DPLL {
 
     fn set_var(&mut self, forced: bool, val: bool, var: BVar) -> bool {
         profiling::start("set var");
+        let mut conflict = false;
+        let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
+        if !lit.is_free {
+            profiling::end("set var");
+            return lit.val != (val == var.is_positive());
+        }
         if self.history_enabled {
             self.history.push(Assignment { var, val, forced });
         }
-        let mut conflict = false;
-        let lit = self.lit_val.get_mut(&as_atom(var)).unwrap();
         lit.is_free = false;
         // Just for heuristics
         self.free_lits.remove(&var);
@@ -787,19 +793,91 @@ fn should_elim_pure_lit() {
 }
 
 #[test]
-#[ignore = "over five minutes: the arbitrary heuristic is a poor fit for ssa7552-038"]
-fn bug_jan_2nd_should_be_sat() {
-    let (mut input, mut v_c, mut c_c) =
-        crate::parse::parse("./src/inputs/sat/ssa7552-038.cnf").unwrap();
-    let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if matches!(res, Ok(DIMACSOutput::Unsat)) {
-        panic!("Was UNSAT but expected SAT.")
+fn historical_sat_regressions_return_valid_models() {
+    // Arbitrary branching takes over five minutes on ssa7552-038. DLIS retains coverage of
+    // that formula in the normal suite; the smaller fixture still exercises Arbitrary.
+    for (file, heuristic) in [
+        ("ssa7552-038.cnf", Heuristic::DLIS),
+        ("uf50-06.cnf", Heuristic::Arbitrary),
+    ] {
+        let (input, v_c, c_c) = crate::parse::parse(&format!("./src/inputs/sat/{file}")).unwrap();
+        let result = DPLL::new(input.clone(), v_c, c_c, heuristic, false)
+            .with_deadline(Some(Instant::now() + std::time::Duration::from_secs(30)))
+            .solve();
+        let Ok(DIMACSOutput::Sat(model)) = result else {
+            panic!("{file}: expected SAT, got {result:?}");
+        };
+        // The model ends with the DIMACS terminator 0, which is not an assignment.
+        let assigned: HashSet<_> = model.into_iter().filter(|&lit| lit != 0).collect();
+        assert!(
+            assigned.iter().all(|lit| !assigned.contains(&-lit)),
+            "{file}: contradictory model"
+        );
+        assert!(
+            input
+                .iter()
+                .all(|clause| clause.iter().any(|lit| assigned.contains(lit))),
+            "{file}: model does not satisfy the input"
+        );
     }
+}
 
-    (input, v_c, c_c) = crate::parse::parse("./src/inputs/sat/uf50-06.cnf").unwrap();
-    let res = DPLL::new(input, v_c, c_c, Heuristic::Arbitrary, true).solve();
-    if matches!(res, Ok(DIMACSOutput::Unsat)) {
-        panic!("Was UNSAT but expected SAT.")
+#[test]
+fn repeated_literals_and_tautologies_preserve_sat_models() {
+    let formula = vec![vec![4, -3, -1, -3], vec![-4], vec![1], vec![-2, 3]];
+    for heuristic in [
+        Heuristic::Arbitrary,
+        Heuristic::VSIDS,
+        Heuristic::DLIS,
+        Heuristic::DLCS,
+        Heuristic::MOM,
+        Heuristic::Boehm,
+        Heuristic::JeroslawWang,
+        Heuristic::Custom,
+    ] {
+        let label = format!("{heuristic:?}");
+        let mut input = formula.clone();
+        input.push(vec![2, -2, 2]);
+        let result = DPLL::new(input.clone(), 4, input.len(), heuristic, false)
+            .solve()
+            .unwrap();
+        let DIMACSOutput::Sat(model) = result else {
+            panic!("{label}: {result:?}");
+        };
+        assert!(
+            input.iter().all(|c| c.iter().any(|l| model.contains(l))),
+            "{label}: {model:?}"
+        );
+    }
+}
+
+#[test]
+fn negative_pure_literals_and_decision_conflicts_keep_valid_models() {
+    for formula in [
+        vec![vec![-1, -2], vec![1, -2]],
+        vec![vec![-1, 2], vec![-1, -2], vec![1, 2]],
+    ] {
+        for heuristic in [
+            Heuristic::Arbitrary,
+            Heuristic::VSIDS,
+            Heuristic::DLIS,
+            Heuristic::DLCS,
+            Heuristic::MOM,
+            Heuristic::Boehm,
+            Heuristic::JeroslawWang,
+            Heuristic::Custom,
+        ] {
+            let result = DPLL::new(formula.clone(), 2, formula.len(), heuristic, false)
+                .solve()
+                .unwrap();
+            let DIMACSOutput::Sat(model) = result else {
+                panic!("expected a model: {result:?}")
+            };
+            assert!(
+                formula.iter().all(|c| c.iter().any(|l| model.contains(l))),
+                "{model:?} violates {formula:?}"
+            );
+        }
     }
 }
 
@@ -832,4 +910,30 @@ fn writes_a_proof_of_negated_decisions() {
         .unwrap();
     assert!(matches!(result, DIMACSOutput::Unsat));
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "0\n");
+}
+
+/// A pure literal goes into the proof as the literal it makes true, which is RAT (no clause
+/// has its negation). For a negative one that is the negative literal: the proof had its
+/// negation, which isn't implied, while the solver assigned the wrong value.
+#[test]
+fn negative_pure_literals_are_logged_as_themselves() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("proof.drat");
+    let clauses = vec![
+        vec![1, 2],
+        vec![-1, 2],
+        vec![1, -2],
+        vec![-1, -2],
+        vec![-3, 1],
+    ];
+    let log = ProofLog::create(&path).unwrap();
+    let result = DPLL::new(clauses, 3, 5, Heuristic::Arbitrary, false)
+        .with_proof(Some(log))
+        .solve()
+        .unwrap();
+    assert!(matches!(result, DIMACSOutput::Unsat));
+    let proof = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(proof.lines().next(), Some("-3 0"), "{proof}");
+    assert!(!proof.lines().any(|l| l == "3 0"), "{proof}");
+    assert_eq!(proof.lines().last(), Some("0"), "{proof}");
 }

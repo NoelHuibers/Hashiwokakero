@@ -18,7 +18,7 @@ use crate::seo::PageMeta;
 
 const FIELD: &str = "flex w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm";
 const LICENSE_URL: &str = dojo::community::LICENSE_URL;
-const GBD_URL: &str = "https://benchmark-database.de";
+pub(super) const GBD_URL: &str = "https://benchmark-database.de";
 
 fn error_text(locale: Locale, code: &str) -> String {
     match code {

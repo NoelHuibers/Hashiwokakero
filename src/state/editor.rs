@@ -10,6 +10,7 @@ pub struct Editor {
     pub solution: RwSignal<Option<Vec<u8>>>,
     pub report: RwSignal<Option<SolveReport>>,
     pub solving: RwSignal<bool>,
+    pub epoch: RwSignal<u32>,
 }
 
 impl Editor {
@@ -19,10 +20,13 @@ impl Editor {
             solution: RwSignal::new(None),
             report: RwSignal::new(None),
             solving: RwSignal::new(false),
+            epoch: RwSignal::new(0),
         }
     }
 
     pub fn edit(&self, f: impl FnOnce(&mut Puzzle)) {
+        self.epoch.update(|e| *e = e.wrapping_add(1));
+        self.solving.set(false);
         self.puzzle.update(f);
         self.solution.set(None);
         self.report.set(None);

@@ -1,0 +1,4 @@
+c Tiny satisfiable formula: x2 is true and x1 is false.
+p cnf 2 2
+1 2 0
+-1 0

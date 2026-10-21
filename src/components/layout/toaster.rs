@@ -10,7 +10,15 @@ pub fn Toaster() -> impl IntoView {
     let i18n = use_i18n();
     let toasts = expect_context::<Toasts>();
     view! {
-        <div class="pointer-events-none fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] end-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2 md:bottom-4">
+        // Keep the live region mounted before messages arrive. Announce additions politely,
+        // without moving focus or reading every earlier toast again when one disappears.
+        <div
+            class="pointer-events-none fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] end-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2 md:bottom-4"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions text"
+            aria-atomic="false"
+        >
             <For
                 each=move || toasts.0.get()
                 key=|t| t.id
@@ -39,7 +47,7 @@ pub fn Toaster() -> impl IntoView {
                         <div class=format!(
                             "pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2 {class}",
                         )>
-                            <span class="font-pixel">{mark}</span>
+                            <span class="font-pixel" aria-hidden="true">{mark}</span>
                             <span class="flex-1">{move || text(i18n.get_locale())}</span>
                             {reload}
                         </div>
@@ -47,5 +55,41 @@ pub fn Toaster() -> impl IntoView {
                 }
             />
         </div>
+    }
+}
+
+#[cfg(all(test, feature = "ssr"))]
+mod tests {
+    use super::*;
+    use crate::i18n::{Locale, td_string};
+    use crate::state::Toast;
+
+    #[tokio::test]
+    async fn an_empty_live_region_precedes_localized_feedback() {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::ja);
+            let toasts = Toasts(RwSignal::new(vec![]));
+            provide_context(toasts);
+            let empty = view! { <Toaster /> }.to_html();
+            let host = empty.split('>').next().unwrap();
+            assert!(host.contains("role=\"log\""));
+            assert!(host.contains("aria-live=\"polite\""));
+            assert!(host.contains("aria-relevant=\"additions text\""));
+            assert!(host.contains("aria-atomic=\"false\""));
+            toasts.0.set(vec![Toast {
+                id: 0,
+                kind: ToastKind::Error,
+                text: std::sync::Arc::new(|l| td_string!(l, common.errors.outdated).to_string()),
+                reload: true,
+            }]);
+            let filled = view! { <Toaster /> }.to_html();
+            assert_eq!(filled.split('>').next().unwrap(), host);
+            assert!(filled.contains(td_string!(Locale::ja, common.errors.outdated)));
+            assert!(filled.contains(td_string!(Locale::ja, common.toast.reload)));
+            assert!(!filled.contains("role=\"alert\""));
+        });
     }
 }

@@ -16,8 +16,11 @@
 //!   draw (`PUT {DOJO_URL}/pools/<digest>`) before the season's first job.
 //! - Authors are credited in the guide, on this page and in the season archive.
 
+use std::io::Read as _;
+use std::sync::OnceLock;
 use std::time::Duration;
 
+use axum::Extension;
 use axum::extract::Multipart;
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Redirect, Response};
@@ -27,7 +30,8 @@ use dojo::community::{
 };
 use leptos::prelude::ServerFnError;
 use libsql::params::IntoParams;
-use libsql::{Connection, params};
+use libsql::{Connection, TransactionBehavior, params};
+use tokio::sync::{Semaphore, SemaphorePermit};
 
 use super::{DESCRIPTION_MAX, MAX_ATTEMPTS, MIN_ACCOUNT_AGE_MS, PER_DAY, STALE_MS, test_seed};
 use crate::model::{
@@ -43,6 +47,10 @@ const MAX_QUEUED: i64 = 40;
 const FAMILY_MAX: usize = 40;
 /// Largest download from GBD (xz-compressed).
 const MAX_DOWNLOAD: usize = 16 << 20;
+/// Decoder dictionary plus overhead; checked before allocating it.
+const DECODER_MEMORY_KIB: u32 = 32 << 10;
+/// Bound buffered uploads/downloads as well as the separate blocking CPU pool.
+static IMPORT_REQUESTS: Semaphore = Semaphore::const_new(4);
 
 /// Why a benchmark was refused, as a code for the page (see `dojo.community.errors` in locales).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -118,27 +126,26 @@ pub(super) fn gbd_hash_ok(hash: &str) -> bool {
 /// xz-compressed (like GBD's files) or plain, at most [`community::MAX_BYTES`] of text.
 fn decompress(bytes: &[u8]) -> Result<String, BenchmarkError> {
     const XZ: &[u8] = &[0xfd, b'7', b'z', b'X', b'Z', 0];
+    if bytes.len() > MAX_DOWNLOAD {
+        return Err(BenchmarkError::TooLarge);
+    }
     let text = if bytes.starts_with(XZ) {
-        /// Fails once more than the limit comes out.
-        struct Capped(Vec<u8>);
-        impl std::io::Write for Capped {
-            fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-                if self.0.len() + buf.len() > community::MAX_BYTES {
-                    return Err(std::io::Error::other("too large"));
+        let decoder = lzma_rust2::XzReader::new_mem_limit(bytes, true, DECODER_MEMORY_KIB);
+        let mut out = Vec::new();
+        decoder
+            .take(community::MAX_BYTES as u64 + 1)
+            .read_to_end(&mut out)
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::OutOfMemory {
+                    BenchmarkError::TooLarge
+                } else {
+                    BenchmarkError::Invalid
                 }
-                self.0.extend_from_slice(buf);
-                Ok(buf.len())
-            }
-            fn flush(&mut self) -> std::io::Result<()> {
-                Ok(())
-            }
+            })?;
+        if out.len() > community::MAX_BYTES {
+            return Err(BenchmarkError::TooLarge);
         }
-        let mut out = Capped(Vec::new());
-        match lzma_rs::xz_decompress(&mut std::io::Cursor::new(bytes), &mut out) {
-            Ok(()) => out.0,
-            Err(lzma_rs::error::Error::IoError(_)) => return Err(BenchmarkError::TooLarge),
-            Err(_) => return Err(BenchmarkError::Invalid),
-        }
+        out
     } else {
         if bytes.len() > community::MAX_BYTES {
             return Err(BenchmarkError::TooLarge);
@@ -155,11 +162,13 @@ fn gbd_url() -> String {
 
 /// The file the GBD at `base` has under `hash` (xz-compressed).
 pub(super) async fn fetch_gbd(base: &str, hash: &str) -> Result<Vec<u8>, BenchmarkError> {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
     if !gbd_hash_ok(hash) {
         return Err(BenchmarkError::Gbd);
     }
     let url = format!("{}/file/{}", base.trim_end_matches('/'), hash);
-    let response = reqwest::Client::new()
+    let mut response = CLIENT
+        .get_or_init(reqwest::Client::new)
         .get(url)
         .timeout(Duration::from_secs(60))
         .send()
@@ -174,11 +183,14 @@ pub(super) async fn fetch_gbd(base: &str, hash: &str) -> Result<Vec<u8>, Benchma
     {
         return Err(BenchmarkError::TooLarge);
     }
-    let bytes = response.bytes().await.map_err(|_| BenchmarkError::Gbd)?;
-    if bytes.len() > MAX_DOWNLOAD {
-        return Err(BenchmarkError::TooLarge);
+    let mut bytes = Vec::new();
+    while let Some(chunk) = response.chunk().await.map_err(|_| BenchmarkError::Gbd)? {
+        if chunk.len() > MAX_DOWNLOAD - bytes.len() {
+            return Err(BenchmarkError::TooLarge);
+        }
+        bytes.extend_from_slice(&chunk);
     }
-    Ok(bytes.to_vec())
+    Ok(bytes)
 }
 
 async fn one(conn: &Connection, sql: &str, args: impl IntoParams) -> Result<i64, libsql::Error> {
@@ -189,18 +201,8 @@ async fn one(conn: &Connection, sql: &str, args: impl IntoParams) -> Result<i64,
     }
 }
 
-/// Stores a benchmark and queues it for verification. `gbd`: the hash it was fetched under,
-/// which it has to have.
-pub(super) async fn submit(
-    conn: &Connection,
-    user: &User,
-    form: BenchmarkForm,
-    gbd: Option<&str>,
-) -> Result<i64, BenchmarkError> {
-    let server = |e: libsql::Error| {
-        eprintln!("dojo benchmark: {e}");
-        BenchmarkError::Server
-    };
+/// Validate cheap account and metadata checks before downloading or decoding anything.
+fn validate(user: &User, form: &BenchmarkForm) -> Result<(), BenchmarkError> {
     if user.username.is_none() {
         return Err(BenchmarkError::SignIn);
     }
@@ -225,8 +227,84 @@ pub(super) async fn submit(
     if !form.license {
         return Err(BenchmarkError::License);
     }
+    Ok(())
+}
+
+struct Prepared {
+    cnf: Vec<u8>,
+    hash: String,
+    shape: String,
+    vars: u32,
+    clauses: i64,
+}
+
+fn prepare(bytes: &[u8], gbd: Option<&str>) -> Result<Prepared, BenchmarkError> {
+    let text = decompress(bytes)?;
+    let formula = Formula::parse(&text).map_err(|e| match e {
+        FormulaError::TooLarge => BenchmarkError::TooLarge,
+        FormulaError::Invalid(_) | FormulaError::Empty => BenchmarkError::Invalid,
+    })?;
+    let hash = community::gbd_hash(&formula);
+    if gbd.is_some_and(|wanted| !wanted.eq_ignore_ascii_case(&hash)) {
+        return Err(BenchmarkError::Gbd);
+    }
+    Ok(Prepared {
+        cnf: formula.dimacs().into_bytes(),
+        hash,
+        shape: community::shape_hash(&formula),
+        vars: formula.vars,
+        clauses: crate::server::count(formula.clauses.len()),
+    })
+}
+
+#[cfg(test)]
+pub(super) async fn submit(
+    conn: &Connection,
+    user: &User,
+    form: BenchmarkForm,
+    gbd: Option<&str>,
+) -> Result<i64, BenchmarkError> {
+    submit_inner(conn, user, form, gbd, None).await
+}
+
+/// Stores a benchmark and queues it for verification. `gbd` must match its computed hash.
+async fn submit_inner(
+    conn: &Connection,
+    user: &User,
+    mut form: BenchmarkForm,
+    gbd: Option<&str>,
+    admission: Option<SemaphorePermit<'static>>,
+) -> Result<i64, BenchmarkError> {
+    validate(user, &form)?;
+    let bytes = std::mem::take(&mut form.formula);
+    let gbd = gbd.map(str::to_owned);
+    let Prepared {
+        cnf,
+        hash,
+        shape,
+        vars,
+        clauses,
+    } = crate::server::limits::IMPORTS
+        .run(move || {
+            // Retain admission until actual computation ends, even if the request is cancelled.
+            let _admission = admission;
+            Ok(prepare(&bytes, gbd.as_deref()))
+        })
+        .await
+        .map_err(|_| BenchmarkError::Busy)??;
+    let family = form.family.trim().to_lowercase();
+    let description = form.description.trim();
+    let server = |e: libsql::Error| {
+        eprintln!("dojo benchmark: {e}");
+        BenchmarkError::Server
+    };
+    // Quotas, duplicates and the insert in one write transaction, across replicas too
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(server)?;
     let today = one(
-        conn,
+        &tx,
         "SELECT COUNT(*) FROM dojo_benchmarks WHERE user_id = ?1 AND created_at > ?2",
         params![user.id, now_ms() - MS_PER_DAY],
     )
@@ -237,7 +315,7 @@ pub(super) async fn submit(
     }
     if let Some(network) = &form.network {
         let from_network = one(
-            conn,
+            &tx,
             "SELECT COUNT(*) FROM dojo_benchmarks WHERE ip_hash = ?1",
             params![network.clone()],
         )
@@ -248,7 +326,7 @@ pub(super) async fn submit(
         }
     }
     let queued = one(
-        conn,
+        &tx,
         "SELECT COUNT(*) FROM dojo_benchmarks WHERE state IN ('queued', 'checking') AND ?1 = ?1",
         params![0],
     )
@@ -257,18 +335,8 @@ pub(super) async fn submit(
     if queued >= MAX_QUEUED {
         return Err(BenchmarkError::Busy);
     }
-    let text = decompress(&form.formula)?;
-    let formula = Formula::parse(&text).map_err(|e| match e {
-        FormulaError::TooLarge => BenchmarkError::TooLarge,
-        FormulaError::Invalid(_) | FormulaError::Empty => BenchmarkError::Invalid,
-    })?;
-    let hash = community::gbd_hash(&formula);
-    if gbd.is_some_and(|wanted| !wanted.eq_ignore_ascii_case(&hash)) {
-        return Err(BenchmarkError::Gbd);
-    }
-    let shape = community::shape_hash(&formula);
     let known = one(
-        conn,
+        &tx,
         "SELECT COUNT(*) FROM dojo_benchmarks WHERE hash = ?1 OR shape = ?2",
         params![hash.clone(), shape.clone()],
     )
@@ -278,7 +346,7 @@ pub(super) async fn submit(
         return Err(BenchmarkError::Duplicate);
     }
     let now = now_ms();
-    conn.execute(
+    tx.execute(
         "INSERT INTO dojo_benchmarks (user_id, family, description, claimed, from_gbd, cnf, hash, shape, vars,
             clauses, ip_hash, state, license, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'queued', ?12, ?13, ?13)",
@@ -288,11 +356,11 @@ pub(super) async fn submit(
             description.to_string(),
             form.claimed.map(Answer::id),
             i64::from(form.from_gbd),
-            formula.dimacs().into_bytes(),
+            cnf,
             hash,
             shape,
-            formula.vars,
-            crate::server::count(formula.clauses.len()),
+            vars,
+            clauses,
             form.network.clone(),
             community::LICENSE,
             now
@@ -300,7 +368,8 @@ pub(super) async fn submit(
     )
     .await
     .map_err(server)?;
-    let id = conn.last_insert_rowid();
+    let id = tx.last_insert_rowid();
+    tx.commit().await.map_err(server)?;
     tokio::spawn(async {
         let _ = super::dispatch().await;
     });
@@ -309,45 +378,58 @@ pub(super) async fn submit(
 
 /// `POST /dojo/benchmarks/submit`, a multipart form (works without JavaScript). Redirects back to the
 /// page, with the new benchmark or an error code.
-pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Response {
+pub async fn submit_handler(
+    Extension(client): Extension<crate::server::ClientIdentity>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> Response {
+    let Ok(admission) = IMPORT_REQUESTS.try_acquire() else {
+        return Redirect::to("/dojo/benchmarks?error=busy#submit").into_response();
+    };
     let mut form = BenchmarkForm::default();
     let mut gbd = String::new();
     let mut prefix = String::new();
     let mut too_large = false;
-    loop {
-        let field = match multipart.next_field().await {
-            Ok(Some(field)) => field,
-            Ok(None) => break,
-            Err(_) => {
-                too_large = true;
-                break;
+    let parsed = tokio::time::timeout(Duration::from_secs(60), async {
+        loop {
+            let field = match multipart.next_field().await {
+                Ok(Some(field)) => field,
+                Ok(None) => break,
+                Err(_) => {
+                    too_large = true;
+                    break;
+                }
+            };
+            let name = field.name().unwrap_or_default().to_string();
+            if name == "cnf" {
+                match field.bytes().await {
+                    Ok(bytes) => form.formula = bytes.to_vec(),
+                    Err(_) => too_large = true,
+                }
+                continue;
             }
-        };
-        let name = field.name().unwrap_or_default().to_string();
-        if name == "cnf" {
-            match field.bytes().await {
-                Ok(bytes) => form.formula = bytes.to_vec(),
-                Err(_) => too_large = true,
+            let text = field.text().await.unwrap_or_default();
+            match name.as_str() {
+                "family" => form.family = text,
+                "description" => form.description = text,
+                "gbd" => gbd = text.trim().to_lowercase(),
+                "claimed" => form.claimed = Answer::from_id(&text),
+                "license" => form.license = !text.is_empty(),
+                "prefix"
+                    if text.len() <= 8
+                        && text
+                            .chars()
+                            .all(|c| c == '/' || c == '-' || c.is_ascii_alphabetic()) =>
+                {
+                    prefix = text;
+                }
+                _ => {}
             }
-            continue;
         }
-        let text = field.text().await.unwrap_or_default();
-        match name.as_str() {
-            "family" => form.family = text,
-            "description" => form.description = text,
-            "gbd" => gbd = text.trim().to_lowercase(),
-            "claimed" => form.claimed = Answer::from_id(&text),
-            "license" => form.license = !text.is_empty(),
-            "prefix"
-                if text.len() <= 8
-                    && text
-                        .chars()
-                        .all(|c| c == '/' || c == '-' || c.is_ascii_alphabetic()) =>
-            {
-                prefix = text;
-            }
-            _ => {}
-        }
+    })
+    .await;
+    if parsed.is_err() {
+        too_large = true;
     }
     let result = async {
         if too_large {
@@ -358,10 +440,12 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             .await
             .map_err(|_| BenchmarkError::Server)?
             .ok_or(BenchmarkError::SignIn)?;
-        // Checked before the download, which takes a while
-        if user.username.is_none() {
-            return Err(BenchmarkError::SignIn);
-        }
+        validate(&user, &form)?;
+        form.network = Some(
+            client
+                .network_hash(crate::model::day_of(now_ms()))
+                .map_err(|_| BenchmarkError::Server)?,
+        );
         let hash = match (form.formula.is_empty(), gbd.is_empty()) {
             (false, true) => None,
             (true, false) => {
@@ -371,9 +455,7 @@ pub async fn submit_handler(headers: HeaderMap, mut multipart: Multipart) -> Res
             }
             _ => return Err(BenchmarkError::Source),
         };
-        form.network = crate::server::client_ip(&headers)
-            .map(|ip| crate::server::network_hash(&ip, crate::model::day_of(now_ms())));
-        submit(&conn, &user, form, hash).await
+        submit_inner(&conn, &user, form, hash, Some(admission)).await
     }
     .await;
     match result {
@@ -526,13 +608,25 @@ pub async fn page(conn: &Connection, user: Option<&User>) -> Result<DojoBenchmar
     })
 }
 
-/// Applies the worker's verdict on a benchmark being checked.
+/// Applies the worker's verdict on a benchmark being checked, whatever its token.
+#[cfg(test)]
 pub(super) async fn apply(
     conn: &Connection,
     report: &BenchmarkReport,
 ) -> Result<(), libsql::Error> {
+    apply_for_check(conn, report, None).await.map(|_| ())
+}
+
+/// [`apply`] for the check with `token`, compared in the same statement that writes: a check
+/// requeued or sent again between authorization and this write keeps its own verdict. Whether
+/// the verdict was taken.
+pub(super) async fn apply_for_check(
+    conn: &Connection,
+    report: &BenchmarkReport,
+    token: Option<&str>,
+) -> Result<bool, libsql::Error> {
     let now = now_ms();
-    match &report.verdict {
+    let changed = match &report.verdict {
         Verdict::Verified {
             answer,
             model,
@@ -544,7 +638,7 @@ pub(super) async fn apply(
                     state = CASE WHEN claimed IS NOT NULL AND claimed != ?2 THEN 'refused' ELSE 'verified' END,
                     reason = CASE WHEN claimed IS NOT NULL AND claimed != ?2 THEN 'wrong_claim' ELSE NULL END,
                     answer = ?2, model = ?3, solve_ms = ?4, job_token = NULL, updated_at = ?5
-                 WHERE id = ?1 AND state = 'checking'",
+                 WHERE id = ?1 AND state = 'checking' AND (?6 IS NULL OR job_token = ?6)",
                 params![
                     report.id,
                     answer.id(),
@@ -552,31 +646,33 @@ pub(super) async fn apply(
                         .as_ref()
                         .map(|m| serde_json::to_string(m).unwrap_or_default()),
                     i64::try_from(*solve_ms).unwrap_or(i64::MAX),
-                    now
+                    now,
+                    token
                 ],
             )
-            .await?;
+            .await?
         }
         Verdict::Refused { reason } => {
             conn.execute(
                 "UPDATE dojo_benchmarks SET state = 'refused', reason = ?2, job_token = NULL, updated_at = ?3
-                 WHERE id = ?1 AND state = 'checking'",
-                params![report.id, reason.id(), now],
+                 WHERE id = ?1 AND state = 'checking' AND (?4 IS NULL OR job_token = ?4)",
+                params![report.id, reason.id(), now, token],
             )
-            .await?;
+            .await?
         }
         Verdict::Failed { message } => {
             eprintln!("dojo benchmark #{}: worker failed: {message}", report.id);
             conn.execute(
                 "UPDATE dojo_benchmarks SET state = CASE WHEN attempts >= ?2 THEN 'refused' ELSE 'queued' END,
-                    reason = CASE WHEN attempts >= ?2 THEN 'failed' ELSE NULL END, updated_at = ?3
-                 WHERE id = ?1 AND state = 'checking'",
-                params![report.id, MAX_ATTEMPTS, now],
+                    reason = CASE WHEN attempts >= ?2 THEN 'failed' ELSE NULL END, job_token = NULL,
+                    updated_at = ?3
+                 WHERE id = ?1 AND state = 'checking' AND (?4 IS NULL OR job_token = ?4)",
+                params![report.id, MAX_ATTEMPTS, now, token],
             )
-            .await?;
+            .await?
         }
-    }
-    Ok(())
+    };
+    Ok(changed > 0)
 }
 
 /// Whether the request carries the token of the check of benchmark `id`.
@@ -628,8 +724,14 @@ pub async fn report_handler(
         Ok(false) => return StatusCode::UNAUTHORIZED,
         Err(status) => return status,
     }
-    match apply(&conn, &report).await {
-        Ok(()) => StatusCode::NO_CONTENT,
+    let given = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "));
+    match apply_for_check(&conn, &report, given).await {
+        Ok(true) => StatusCode::NO_CONTENT,
+        // Not at the worker any more (requeued, sent again, decided): the worker stops retrying
+        Ok(false) => StatusCode::CONFLICT,
         Err(e) => {
             eprintln!("dojo benchmark report: {e}");
             StatusCode::INTERNAL_SERVER_ERROR
@@ -641,7 +743,8 @@ pub async fn report_handler(
 pub(super) async fn housekeeping(conn: &Connection, now: i64) -> Result<(), String> {
     conn.execute(
         "UPDATE dojo_benchmarks SET state = CASE WHEN attempts >= ?1 THEN 'refused' ELSE 'queued' END,
-            reason = CASE WHEN attempts >= ?1 THEN 'failed' ELSE NULL END, updated_at = ?2
+            reason = CASE WHEN attempts >= ?1 THEN 'failed' ELSE NULL END, job_token = NULL,
+            updated_at = ?2
          WHERE state = 'checking' AND updated_at < ?3",
         params![MAX_ATTEMPTS, now, now - STALE_MS],
     )
@@ -658,20 +761,19 @@ pub(super) async fn dispatch_to(
     token: &str,
 ) -> Result<(), String> {
     let err = |e: libsql::Error| e.to_string();
-    let checking = one(
-        conn,
-        "SELECT COUNT(*) FROM dojo_benchmarks WHERE state = 'checking' AND ?1 = ?1",
-        params![0],
-    )
-    .await
-    .map_err(err)?;
-    if checking > 0 {
-        return Ok(());
-    }
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
+    let report_token = hex(&bytes);
+    // One statement claims the next one if none is at the worker, before it is sent: a verdict
+    // can't come before the claim, and replicas can't both send one
     let mut rows = conn
         .query(
-            "SELECT id, cnf FROM dojo_benchmarks WHERE state = 'queued' ORDER BY created_at, id LIMIT 1",
-            (),
+            "UPDATE dojo_benchmarks SET state = 'checking', job_token = ?1, attempts = attempts + 1,
+                updated_at = ?2
+             WHERE id = (SELECT id FROM dojo_benchmarks WHERE state = 'queued' ORDER BY created_at, id LIMIT 1)
+               AND NOT EXISTS (SELECT 1 FROM dojo_benchmarks WHERE state = 'checking')
+             RETURNING id, cnf",
+            params![report_token.clone(), now_ms()],
         )
         .await
         .map_err(err)?;
@@ -680,16 +782,11 @@ pub(super) async fn dispatch_to(
     };
     let id: i64 = row.get(0).map_err(err)?;
     let cnf: Vec<u8> = row.get(1).map_err(err)?;
+    // Row retains the local statement too. Finish RETURNING before network I/O so
+    // other connections can see the claim and authenticate an immediate callback.
+    drop(row);
+    let _ = rows.next().await.map_err(err)?;
     drop(rows);
-    let mut bytes = [0u8; 32];
-    getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
-    let report_token = hex(&bytes);
-    conn.execute(
-        "UPDATE dojo_benchmarks SET job_token = ?2 WHERE id = ?1",
-        params![id, report_token.clone()],
-    )
-    .await
-    .map_err(err)?;
     let sent = client
         .post(format!(
             "{}/benchmarks?id={id}&report_token={report_token}&rules={}",
@@ -701,19 +798,21 @@ pub(super) async fn dispatch_to(
         .timeout(Duration::from_secs(120))
         .send()
         .await;
-    match sent {
-        Ok(r) if r.status() == StatusCode::ACCEPTED => {
-            conn.execute(
-                "UPDATE dojo_benchmarks SET state = 'checking', attempts = attempts + 1, updated_at = ?2 WHERE id = ?1",
-                params![id, now_ms()],
-            )
-            .await
-            .map_err(err)?;
-            Ok(())
-        }
-        Ok(r) => Err(format!("worker answered {} to a benchmark", r.status())),
-        Err(e) => Err(format!("worker unreachable: {e}")),
-    }
+    let failed = match sent {
+        // The verdict may be in already: nothing to change
+        Ok(r) if r.status() == StatusCode::ACCEPTED => return Ok(()),
+        Ok(r) => format!("worker answered {} to a benchmark", r.status()),
+        Err(e) => format!("worker unreachable: {e}"),
+    };
+    // Never at the worker: queued again without using up an attempt
+    conn.execute(
+        "UPDATE dojo_benchmarks SET state = 'queued', job_token = NULL, attempts = attempts - 1, updated_at = ?3
+         WHERE id = ?1 AND state = 'checking' AND job_token = ?2",
+        params![id, report_token, now_ms()],
+    )
+    .await
+    .map_err(err)?;
+    Err(failed)
 }
 
 /// Draws the benchmarks of a season that just started from the pool, once: every benchmark
@@ -930,12 +1029,13 @@ pub async fn admin_action(
              WHERE id = ?1 AND state IN ('verified', 'rejected') AND answer IS NOT NULL"
         }
         BenchmarkAction::Reject => {
-            "UPDATE dojo_benchmarks SET state = 'rejected', reason = 'moderation', accepted_at = NULL, updated_at = ?2
+            "UPDATE dojo_benchmarks SET state = 'rejected', reason = 'moderation', accepted_at = NULL,
+                job_token = NULL, updated_at = ?2
              WHERE id = ?1"
         }
         BenchmarkAction::Requeue => {
             "UPDATE dojo_benchmarks SET state = 'queued', reason = NULL, attempts = 0, accepted_at = NULL,
-                updated_at = ?2 WHERE id = ?1"
+                job_token = NULL, updated_at = ?2 WHERE id = ?1"
         }
         BenchmarkAction::Delete => {
             "DELETE FROM dojo_benchmarks WHERE id = ?1 AND ?2 = ?2
@@ -960,3 +1060,7 @@ pub async fn admin_action(
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "import_tests.rs"]
+mod import_tests;

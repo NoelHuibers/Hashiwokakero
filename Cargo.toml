@@ -47,6 +47,11 @@ workspace = true
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+# Manual SQL timing/equivalence diagnostic; never part of the unit-test workload.
+[[example]]
+name = "stamp_record_query"
+required-features = ["ssr"]
+
 [dependencies]
 common = { path = "./common" }
 # The SAT Dojo: only its result types here, the worker runs submissions
@@ -126,7 +131,7 @@ lettre = { version = "0.11.23", default-features = false, features = ["builder",
 libsql = { version = "0.10.0", default-features = false, features = ["core", "remote", "tls"], optional = true }
 sha2 = { version = "0.11.1", optional = true }
 # Community benchmarks from the Global Benchmark Database come xz-compressed, pure Rust
-lzma-rs = { version = "0.3", optional = true }
+lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "xz"], optional = true }
 # Hashing the code of Dojo submissions without their custom sections
 wasmparser = { version = "0.262", optional = true }
 tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "signal", "sync"], optional = true }
@@ -149,7 +154,7 @@ ssr = [
   "dep:reqwest",
   "dep:wasmparser",
   "dep:sha2",
-  "dep:lzma-rs",
+  "dep:lzma-rust2",
   "dep:tokio",
   "dep:tower-http",
   "leptos/ssr",
@@ -160,6 +165,8 @@ ssr = [
 ]
 
 [dev-dependencies]
+# Generate xz fixtures; the production decoder does not need the encoder.
+lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "xz", "encoder"] }
 # Property tests of the models and the client state (model/tests.rs, state/game.rs)
 proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 # The HTTP tests (server/router/tests): a client that keeps cookies like a browser and uploads
@@ -186,7 +193,12 @@ debug = "line-tables-only"
 [profile.dev.package."*"]
 debug = false
 
-# The solvers are slow without optimizations, even during development
+# Generation, deduction and the solvers are slow without optimizations, even during
+# development. The default-size regression tests must also stay below the generator's wall
+# safety limit while checking its deterministic work budget, including under coverage.
+[profile.dev.package.backend]
+opt-level = 3
+
 [profile.dev.package.sat_solver]
 opt-level = 3
 

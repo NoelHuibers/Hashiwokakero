@@ -231,6 +231,24 @@
     "text": "Çözücünün bizimkini yeneceğini mi düşünüyorsun? Gönder ve sıralamada yüksel.",
     "button": "Dojoya git"
   },
+  "track": {
+    "sprint": "Sprint kategorisi",
+    "sprint_text": "Üretilmiş, orta büyüklükte formüller; formül başına yaklaşık yarım saniye.",
+    "soon": "Yakında",
+    "industrial": {
+      "title": "Endüstriyel kategori",
+      "intro": "Geçmiş SAT Competition ana kategorilerinden gerçek örnekler: donanım doğrulama ve sınırlı model denetimi, kriptografi, zaman çizelgeleme, planlama ve yazılım doğrulama; <a>Global Benchmark Database</a>'den alınır.",
+      "budget_title": "Yarım saniye değil, dakikalar",
+      "budget": "Formül başına Sprint bütçesinin yaklaşık 200 katı ve çalıştırma başına 4 GB'a kadar bellek.",
+      "proofs_title": "Denetlenen kanıtlar",
+      "proofs": "Her UNSAT cevabı, Sprint'teki gibi denetlenen bir kanıt ister.",
+      "why_title": "Neden ikinci bir kategori",
+      "why": "Formül başına yarım saniyede MiniSat, CaDiCaL ve Kissat'ı geçer: onların inprocessing'i ancak büyük endüstriyel örneklerde karşılığını verir. Dakikalar verildiğinde büyük çözücüler neler yapabildiklerini gösterebilir; bu da SAT Competition'a daha yakındır.",
+      "fee_title": "Küçük bir katılım ücreti",
+      "fee": "Katılım, hesaplama maliyetini karşılayan küçük bir ücrete tabi olacak.",
+      "board_note": "<a>Endüstriyel kategori</a> yakında: SAT Competition'dan gerçek örnekler, formül başına dakikalar."
+    }
+  },
   "community": {
     "meta_title": "Kendi benchmark'ını getir · SAT Dojo",
     "meta_description": "SAT Dojo'nun topluluk havuzuna bir CNF formülü gönder. Doğrulanmış zor örnekler sonraki sezonların gizli setlerine girer ve adınla yayımlanır.",

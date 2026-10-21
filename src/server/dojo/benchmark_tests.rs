@@ -46,6 +46,14 @@ fn formula(n: i32) -> String {
     text
 }
 
+pub(super) fn compress(bytes: &[u8]) -> Vec<u8> {
+    use std::io::Write as _;
+    let mut writer =
+        lzma_rust2::XzWriter::new(Vec::new(), lzma_rust2::XzOptions::with_preset(0)).unwrap();
+    writer.write_all(bytes).unwrap();
+    writer.finish().unwrap()
+}
+
 fn form(family: &str, text: &str) -> BenchmarkForm {
     BenchmarkForm {
         family: family.into(),
@@ -94,6 +102,22 @@ fn verified(answer: Answer) -> Verdict {
         model: (answer == Answer::Sat).then(|| vec![1]),
         solve_ms: 1200,
     }
+}
+
+/// Keep the Python smoke's negative-auth and replay requests valid at the JSON boundary.
+#[test]
+fn packaged_smoke_callback_uses_worker_protocol() {
+    let report: BenchmarkReport = serde_json::from_str(include_str!(
+        "../../../scripts/fixtures/benchmark-report.json"
+    ))
+    .unwrap();
+    assert_eq!(report.id, 0);
+    assert_eq!(
+        report.verdict,
+        Verdict::Refused {
+            reason: Refusal::TooEasy
+        }
+    );
 }
 
 /// What the form takes and what it refuses, like solver submissions: accounts with a username
@@ -186,8 +210,7 @@ async fn submissions_are_checked() {
         Err(BenchmarkError::Duplicate)
     );
     // xz-compressed, like GBD's files
-    let mut xz = Vec::new();
-    lzma_rs::xz_compress(&mut formula(3).as_bytes(), &mut xz).unwrap();
+    let xz = compress(formula(3).as_bytes());
     let packed = BenchmarkForm {
         formula: xz,
         ..form("x", "")
@@ -677,4 +700,145 @@ async fn seasons_draw_from_the_pool() {
         .await
         .unwrap();
     assert_eq!(state(&conn, kept).await.0, "rejected");
+}
+
+async fn token_and_attempts(conn: &Connection, id: i64) -> (Option<String>, i64) {
+    let mut rows = conn
+        .query(
+            "SELECT job_token, attempts FROM dojo_benchmarks WHERE id = ?1",
+            params![id],
+        )
+        .await
+        .unwrap();
+    let row = rows.next().await.unwrap().unwrap();
+    (row.get(0).unwrap(), row.get(1).unwrap())
+}
+
+/// Verdicts of a check that is over (decided, requeued, or sent again with another token)
+/// change nothing: the token is compared in the same statement that writes. Requeues and
+/// failures take the token away.
+#[tokio::test]
+async fn verdicts_cannot_change_a_decided_or_replaced_check() {
+    let conn = test_db("verdict-lifecycle").await;
+    let ada = user(&conn, "ada", true, 0).await;
+    let id = benchmarks::submit(&conn, &ada, form("x", &formula(3)), None)
+        .await
+        .unwrap();
+    let at_worker = |token: &'static str| {
+        let conn = conn.clone();
+        async move {
+            conn.execute(
+                "UPDATE dojo_benchmarks SET state = 'checking', job_token = ?2 WHERE id = ?1",
+                params![id, token],
+            )
+            .await
+            .unwrap();
+        }
+    };
+    let report = |verdict| BenchmarkReport { id, verdict };
+    let failed = || {
+        report(Verdict::Failed {
+            message: "x".into(),
+        })
+    };
+    at_worker("first").await;
+    assert!(
+        !benchmarks::apply_for_check(&conn, &report(verified(Answer::Sat)), Some("other"))
+            .await
+            .unwrap()
+    );
+    assert!(
+        benchmarks::apply_for_check(&conn, &failed(), Some("first"))
+            .await
+            .unwrap()
+    );
+    assert_eq!(state(&conn, id).await.0, "queued");
+    assert_eq!(token_and_attempts(&conn, id).await.0, None);
+    // Sent again: the first check's late verdict is refused
+    at_worker("second").await;
+    assert!(
+        !benchmarks::apply_for_check(&conn, &report(verified(Answer::Sat)), Some("first"))
+            .await
+            .unwrap()
+    );
+    assert!(
+        benchmarks::apply_for_check(&conn, &report(verified(Answer::Sat)), Some("second"))
+            .await
+            .unwrap()
+    );
+    assert_eq!(state(&conn, id).await, ("verified".into(), None));
+    assert!(
+        !benchmarks::apply_for_check(&conn, &failed(), Some("second"))
+            .await
+            .unwrap()
+    );
+    // A moderator's requeue takes the token away too
+    at_worker("third").await;
+    benchmark_action(&conn, id, BenchmarkAction::Requeue)
+        .await
+        .unwrap();
+    assert_eq!(token_and_attempts(&conn, id).await, (None, 0));
+}
+
+/// The check is claimed before it is sent: a worker that reports its verdict before it even
+/// answered keeps it. A worker that doesn't take the check gives it back without using up an
+/// attempt.
+#[tokio::test]
+async fn a_verdict_before_acceptance_is_kept() {
+    use axum::extract::Query;
+    use std::collections::HashMap;
+    let conn = test_db("fast-verdict").await;
+    let ada = user(&conn, "ada", true, 0).await;
+    let id = benchmarks::submit(&conn, &ada, form("x", &formula(4)), None)
+        .await
+        .unwrap();
+    let callback = conn.independent_connection().await;
+    let app = axum::Router::new().route(
+        "/benchmarks",
+        axum::routing::post(move |Query(q): Query<HashMap<String, String>>| {
+            let conn = callback.clone();
+            async move {
+                // The callback uses another connection, as the real HTTP handler does.
+                // Its claim must already be committed before the worker accepts the job.
+                assert_eq!(state(&conn, id).await.0, "checking");
+                assert_eq!(
+                    token_and_attempts(&conn, id).await,
+                    (Some(q["report_token"].clone()), 1)
+                );
+                let report = BenchmarkReport {
+                    id,
+                    verdict: verified(Answer::Sat),
+                };
+                assert!(
+                    benchmarks::apply_for_check(&conn, &report, Some(&q["report_token"]))
+                        .await
+                        .unwrap()
+                );
+                StatusCode::ACCEPTED
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let client = reqwest::Client::new();
+    tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        benchmarks::dispatch_to(&conn, &client, &url, "secret"),
+    )
+    .await
+    .expect("a callback on another connection must complete before acceptance")
+    .unwrap();
+    assert_eq!(state(&conn, id).await, ("verified".into(), None));
+
+    let other = benchmarks::submit(&conn, &ada, form("x", &formula(5)), None)
+        .await
+        .unwrap();
+    assert!(
+        benchmarks::dispatch_to(&conn, &client, "http://127.0.0.1:1", "secret")
+            .await
+            .is_err()
+    );
+    assert_eq!(state(&conn, other).await.0, "queued");
+    assert_eq!(token_and_attempts(&conn, other).await, (None, 0));
 }

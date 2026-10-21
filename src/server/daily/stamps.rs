@@ -8,7 +8,7 @@ use libsql::{Connection, params};
 
 use common::Puzzle;
 
-use super::fame::{champion, placed};
+use super::fame::champion;
 use super::{from_json, json, today};
 use crate::model::{
     ApiError, Daypart, MoveEvent, Record, Solve, Stamp, StampProgress, day_of, month_of, summarize,
@@ -39,6 +39,7 @@ async fn backfill_runs(conn: &Connection, user: i64) -> Result<(), ServerFnError
         };
         runs.push((day, summarize(&puzzle, &bridges, &log)));
     }
+    let changed = !runs.is_empty();
     for (day, run) in runs {
         conn.execute(
             "UPDATE attempts SET run = ?3 WHERE user_id = ?1 AND day = ?2",
@@ -47,30 +48,20 @@ async fn backfill_runs(conn: &Connection, user: i64) -> Result<(), ServerFnError
         .await
         .map_err(db_err)?;
     }
+    if changed {
+        super::stats::invalidate();
+    }
     Ok(())
 }
 
+/// Shared with the standalone diagnostic without exposing a benchmark-only public API.
+/// Ambiguous ranking keys and legacy NULL own times retain the original window ordering.
+const RECORD_QUERY: &str = include_str!("stamp_record.sql");
+
 /// Everything the stamps of a player depend on. `kept` are the stored stamps that stay.
 async fn record(conn: &Connection, user: i64, kept: Vec<Stamp>) -> Result<Record, ServerFnError> {
-    backfill_runs(conn, user).await?;
-    // The gaps to the times just above and below, before only the player's rows are left
     let mut rows = conn
-        .query(
-            &format!(
-                "SELECT p.day, p.hints, p.checks, p.place, p.finishers, p.first_finish, p.time_ms,
-                    p.started_at, p.finished_at, p.above, p.below, a.run, a.daypart
-                 FROM (
-                    SELECT q.*, q.time_ms - LAG(q.time_ms) OVER w AS above,
-                        LEAD(q.time_ms) OVER w - q.time_ms AS below
-                    FROM ({}) q WINDOW w AS (PARTITION BY q.day ORDER BY q.place)
-                 ) p JOIN attempts a ON a.user_id = p.user_id AND a.day = p.day
-                 WHERE p.user_id = ?1 ORDER BY p.day",
-                placed(
-                    "a.day IN (SELECT day FROM attempts WHERE user_id = ?1 AND finished_at IS NOT NULL)"
-                )
-            ),
-            params![user],
-        )
+        .query(RECORD_QUERY, params![user])
         .await
         .map_err(db_err)?;
     let mut solves = Vec::new();
@@ -170,10 +161,12 @@ pub async fn sync(
     user: i64,
     announce: bool,
 ) -> Result<(Vec<StampProgress>, Vec<Stamp>), ServerFnError> {
+    backfill_runs(conn, user).await?;
     let mut stored = stored(conn, user).await?;
     let kept = stored.keys().copied().filter(|s| s.sticky()).collect();
     let progress = record(conn, user, kept).await?.progress(today());
     let now = now_ms();
+    let mut changed = false;
     for &(stamp, done, target) in &progress {
         let earned = done >= target;
         match (earned, stored.contains_key(&stamp)) {
@@ -185,6 +178,7 @@ pub async fn sync(
                 .await
                 .map_err(db_err)?;
                 stored.insert(stamp, (now, false));
+                changed = true;
             }
             (false, true) => {
                 conn.execute(
@@ -194,6 +188,7 @@ pub async fn sync(
                 .await
                 .map_err(db_err)?;
                 stored.remove(&stamp);
+                changed = true;
             }
             _ => {}
         }
@@ -224,7 +219,32 @@ pub async fn sync(
             holders: 0,
         })
         .collect();
+    if changed {
+        super::stats::invalidate();
+    }
     Ok((book, new))
+}
+
+/// Reading a profile never awards/removes stamps or backfills historical rows. Reconciliation
+/// belongs to attempt changes and the background worker, rather than arbitrary visitors.
+pub(super) async fn book(
+    conn: &Connection,
+    user: i64,
+) -> Result<Vec<StampProgress>, ServerFnError> {
+    let stored = stored(conn, user).await?;
+    let kept = stored.keys().copied().filter(|s| s.sticky()).collect();
+    Ok(record(conn, user, kept)
+        .await?
+        .progress(today())
+        .into_iter()
+        .map(|(stamp, progress, target)| StampProgress {
+            stamp,
+            progress,
+            target,
+            earned_at: stored.get(&stamp).map(|&(at, _)| at),
+            holders: 0,
+        })
+        .collect())
 }
 
 /// How many players have each stamp, and how many have any (everyone who solved a daily or got
@@ -260,7 +280,9 @@ pub(super) async fn sync_recent(conn: &Connection) -> Result<usize, ServerFnErro
             "SELECT DISTINCT user_id FROM attempts a
              WHERE a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL
                AND (a.day >= ?1 - 2 OR NOT EXISTS (SELECT 1 FROM stamps s WHERE s.user_id = a.user_id))
-               AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = a.user_id AND u.deleted_at IS NOT NULL)",
+               AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = a.user_id AND u.deleted_at IS NOT NULL)
+             UNION SELECT d.user_id FROM dojo_submissions d JOIN users u ON u.id = d.user_id
+             WHERE d.state = 'done' AND u.deleted_at IS NULL",
             params![today()],
         )
         .await
@@ -347,5 +369,10 @@ pub async fn show(conn: &Connection, user: i64, stamp: Option<Stamp>) -> Result<
     )
     .await
     .map_err(db_err)?;
+    super::stats::invalidate();
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "stamp_query_tests.rs"]
+mod tests;

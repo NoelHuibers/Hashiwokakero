@@ -212,8 +212,20 @@ async fn submit(
     )
 }
 
+/// Jobs and checks the worker takes at a time, waiting or running: the website sends at most
+/// two evaluations and one check, more is a misbehaving client.
+const MAX_PENDING: usize = 3;
+
 fn queue(shared: &Shared, work: Work) -> Response {
-    shared.pending.fetch_add(1, Ordering::Relaxed);
+    if shared
+        .pending
+        .try_update(Ordering::Relaxed, Ordering::Relaxed, |n| {
+            (n < MAX_PENDING).then_some(n + 1)
+        })
+        .is_err()
+    {
+        return StatusCode::TOO_MANY_REQUESTS.into_response();
+    }
     if shared.jobs.send(work).is_ok() {
         StatusCode::ACCEPTED.into_response()
     } else {
@@ -698,6 +710,9 @@ pub fn serve() -> Result<(), String> {
     let token: Arc<str> = std::env::var("DOJO_TOKEN")
         .map_err(|_| "DOJO_TOKEN is not set")?
         .into();
+    if token.trim().len() < 32 {
+        return Err("DOJO_TOKEN must contain at least 32 characters".into());
+    }
     let app_url = std::env::var("APP_URL").unwrap_or_else(|_| "http://127.0.0.1:3000".into());
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".into());
     let idle_exit = std::env::var("DOJO_IDLE_EXIT_SECS")

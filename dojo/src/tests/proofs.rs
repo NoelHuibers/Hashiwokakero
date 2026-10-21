@@ -1,6 +1,6 @@
 //! The house solvers' proofs (`backend::sat::solve_clauses_with_proof`, what `dojo/house` runs)
 //! and the starter's, checked like the leaderboard checks them: with the built-in checker, and
-//! with drat-trim and `cake_lpr` when they are installed.
+//! with drat-trim and `cake_lpr`. Missing test prerequisites must fail explicitly.
 
 use std::path::Path;
 use std::time::Duration;
@@ -49,11 +49,13 @@ fn checkers() -> Vec<Checker> {
         time: Duration::from_secs(60),
         memory_mb: 1024,
     };
-    let mut checkers = vec![Checker::new(Tools::Builtin, limits.clone(), 1)];
-    if let Some(tools) = Tools::find() {
-        checkers.push(Checker::new(tools, limits, 1));
-    }
-    checkers
+    let tools = Tools::find().expect(
+        "proof checkers missing: run dojo/checkers/build.sh and set DOJO_DRAT_TRIM and DOJO_CAKE_LPR",
+    );
+    vec![
+        Checker::new(Tools::Builtin, limits.clone(), 1),
+        Checker::new(tools, limits, 1),
+    ]
 }
 
 #[test]
@@ -99,16 +101,16 @@ fn house_proofs_verify() {
     assert!(Path::new(&path).exists());
 }
 
-/// The starter kit built for WASI, `None` if that isn't possible here (no wasm32-wasip1
-/// target). CI has the target, so there it must build.
+/// The starter kit built for WASI with the target declared in rust-toolchain.toml.
 #[cfg(feature = "runner")]
-fn starter_wasm() -> Option<Vec<u8>> {
+fn starter_wasm() -> Vec<u8> {
     let starter = Path::new(env!("CARGO_MANIFEST_DIR")).join("starter");
     let target = Path::new(env!("CARGO_MANIFEST_DIR")).join("../target/dojo-starter");
     let mut cargo = std::process::Command::new(env!("CARGO"));
     cargo
         .args([
             "build",
+            "--locked",
             "--release",
             "--target",
             "wasm32-wasip1",
@@ -129,16 +131,13 @@ fn starter_wasm() -> Option<Vec<u8>> {
     ] {
         cargo.env_remove(var);
     }
-    let built = cargo.status().is_ok_and(|s| s.success());
-    if !built {
-        assert!(
-            std::env::var_os("CI").is_none(),
-            "the starter must build for wasm32-wasip1 in CI"
-        );
-        eprintln!("the starter doesn't build for wasm32-wasip1 here, skipped");
-        return None;
-    }
-    std::fs::read(target.join("wasm32-wasip1/release/dojo-starter.wasm")).ok()
+    let status = cargo.status().expect("run cargo to build the WASI starter");
+    assert!(
+        status.success(),
+        "the starter must build; install its target with rustup target add wasm32-wasip1"
+    );
+    std::fs::read(target.join("wasm32-wasip1/release/dojo-starter.wasm"))
+        .expect("read the built WASI starter")
 }
 
 /// The starter answers UNSAT with a proof the checkers accept, in the real sandbox.
@@ -150,9 +149,7 @@ fn starter_proofs_verify() {
     use crate::sandbox::Sandbox;
     use crate::{Answer, Outcome};
 
-    let Some(wasm) = starter_wasm() else {
-        return;
-    };
+    let wasm = starter_wasm();
     let sandbox = Sandbox::new().unwrap();
     let solver = sandbox.load(&wasm).unwrap();
     let mut formulas: Vec<(String, Cnf, Answer)> = unsat_formulas()

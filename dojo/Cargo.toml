@@ -24,11 +24,11 @@ tar = { version = "0.4.46", optional = true, default-features = false }
 
 # Running submissions (`runner`)
 # reexport-wasmparser: the operator list of the cost tables (fuel.rs) is wasmtime's own
-wasmtime = { version = "49.0.3", optional = true, default-features = false, features = ["cranelift", "runtime", "std", "parallel-compilation", "reexport-wasmparser"] }
-wasmtime-wasi = { version = "49.0.3", optional = true, default-features = false, features = ["p1"] }
+wasmtime = { version = "49.0.4", optional = true, default-features = false, features = ["cranelift", "runtime", "std", "parallel-compilation", "reexport-wasmparser"] }
+wasmtime-wasi = { version = "49.0.4", optional = true, default-features = false, features = ["p1"] }
 wasmparser = { version = "0.262", optional = true }
 # Calls wasmtime's own WASI functions from the sandbox's wrappers that cap the proof file
-wiggle = { version = "=49.0.3", optional = true, default-features = false, features = ["wasmtime"] }
+wiggle = { version = "=49.0.4", optional = true, default-features = false, features = ["wasmtime"] }
 
 # The worker service (`worker`)
 anyhow = { version = "1", optional = true }
@@ -48,7 +48,7 @@ wat = "1"
 [features]
 default = []
 bench = ["dep:backend", "dep:common", "dep:flate2", "dep:rand", "dep:splr", "dep:tar"]
-runner = ["bench", "dep:wasmtime", "dep:wasmtime-wasi", "dep:wasmparser", "dep:wiggle"]
+runner = ["bench", "dep:wasmtime", "dep:wasmtime-wasi", "dep:wasmparser", "dep:wiggle", "dep:tokio"]
 worker = ["runner", "dep:anyhow", "dep:axum", "dep:reqwest", "dep:serde_json", "dep:tokio"]
 
 # `export` needs `bench`, `run` needs `runner`, `serve` needs `worker`

@@ -231,6 +231,24 @@
     "text": "Yakin solvermu mengalahkan solver kami? Kirim dan panjat papan peringkat.",
     "button": "Ke dojo"
   },
+  "track": {
+    "sprint": "Kategori Sprint",
+    "sprint_text": "Formula hasil generator berukuran sedang, sekitar setengah detik per formula.",
+    "soon": "Segera",
+    "industrial": {
+      "title": "Kategori Industri",
+      "intro": "Instans nyata dari main track SAT Competition sebelumnya: verifikasi perangkat keras dan bounded model checking, kriptografi, penjadwalan, perencanaan, dan verifikasi perangkat lunak, diambil dari <a>Global Benchmark Database</a>.",
+      "budget_title": "Menit, bukan setengah detik",
+      "budget": "Sekitar 200 kali anggaran Sprint per formula, dan memori hingga 4 GB per eksekusi.",
+      "proofs_title": "Bukti diperiksa",
+      "proofs": "Setiap jawaban UNSAT butuh bukti, diperiksa seperti di Sprint.",
+      "why_title": "Mengapa kategori kedua",
+      "why": "Dengan setengah detik per formula, MiniSat mengalahkan CaDiCaL dan Kissat: inprocessing mereka baru terbayar pada instans industri yang besar. Dengan waktu bermenit-menit, solver besar bisa menunjukkan kemampuannya, lebih dekat dengan SAT Competition.",
+      "fee_title": "Biaya pendaftaran kecil",
+      "fee": "Ikut serta akan dikenai biaya kecil untuk menutup biaya komputasi.",
+      "board_note": "<a>Kategori Industri</a> segera hadir: instans nyata dari SAT Competition, hitungan menit per formula."
+    }
+  },
   "community": {
     "meta_title": "Bawa benchmark-mu sendiri · SAT Dojo",
     "meta_description": "Kirim formula CNF ke pool komunitas SAT Dojo. Instans sulit yang terverifikasi masuk ke set tersembunyi musim berikutnya dan dipublikasikan dengan namamu.",

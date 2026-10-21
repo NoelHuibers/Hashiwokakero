@@ -8,11 +8,15 @@ mod stats;
 #[cfg(test)]
 mod tests;
 
-pub use attempt::{attempt, check, finishers, hint, info, locked, reveal, set_flag, start, submit};
+pub use attempt::{
+    attempt, check, finishers, hint, info, locked, paid_action, recover_actions, reveal, set_flag,
+    start, submit,
+};
 pub use fame::{hall_of_fame, month_board};
 pub use leaderboard::leaderboard;
 pub use stamps::{show as show_stamp, start_syncing as start_stamp_sync, sync as sync_stamps};
-pub use stats::{profile, stats};
+pub(crate) use stats::invalidate as invalidate_profiles;
+pub use stats::{cached_profile, profile, stats};
 
 use common::{Difficulty, GenerateParams, Puzzle};
 use leptos::prelude::ServerFnError;
@@ -101,6 +105,9 @@ pub async fn get_or_create(conn: &Connection, day: i64) -> Result<Daily, ServerF
     let params = params(day, seed(day));
     let difficulty = params.difficulty;
     let generated = run_blocking(move || Ok(backend::api::generate(&params))).await?;
+    if !generated.unique {
+        return Err(ApiError::Internal.fail());
+    }
     // Another server may have been faster, then its puzzle wins
     conn.execute(
         "INSERT OR IGNORE INTO dailies (day, difficulty, puzzle, solution, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
