@@ -1549,7 +1549,7 @@ async fn metrics_beyond_par2() {
     assert_eq!((entry.breakdown, entry.contribution), (None, None));
 }
 
-/// Runs go on to ten times the budget: the board ranks by what happened within the budget,
+/// Runs go on to four times the budget: the board ranks by what happened within the budget,
 /// the budget view and the cactus plot show the rest, the archive says how far the runs went.
 #[tokio::test]
 async fn scores_at_every_budget() {
@@ -1610,7 +1610,7 @@ async fn scores_at_every_budget() {
         (at(1, dojo::RUN_BUDGET).solved, at(1, dojo::RUN_BUDGET).sat),
         (3, 2)
     );
-    assert_eq!(at(0, dojo::RUN_BUDGET).par2, 47.033);
+    assert_eq!(at(0, dojo::RUN_BUDGET).par2, 19.033);
     assert_eq!(at(0, DEFAULT_BUDGET / 10).solved, 1);
     // The slow one overtakes the quick one when it solves the last formula
     assert_eq!(
@@ -1631,7 +1631,7 @@ async fn scores_at_every_budget() {
     );
     let text = csv(&season);
     assert!(
-        text.contains(",queens,SAT,solved,20000000000,7000000000,70000000000\n"),
+        text.contains(",queens,SAT,solved,20000000000,7000000000,28000000000\n"),
         "{text}"
     );
     let past = seasons(&conn, second).await.unwrap().past.remove(0);

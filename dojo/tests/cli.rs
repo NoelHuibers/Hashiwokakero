@@ -410,9 +410,9 @@ fn exports_sets_and_scores_solvers() {
         stderr(&out)
     );
     assert!(stdout(&out).contains(&format!("solved 0/{n}")));
-    assert!(stdout(&out).contains("with other budgets (the runs went on to 10 times the budget)"));
+    assert!(stdout(&out).contains("with other budgets (the runs went on to 4 times the budget)"));
 
-    // The runs go on to ten times the budget: with half the fuel of the slowest formula MiniSat
+    // The runs go on to four times the budget: with half the fuel of the slowest formula MiniSat
     // solved, that one is a timeout within the budget but solved past it
     let (slowest, gfuel) = gfuel_of(&err_first)
         .into_iter()

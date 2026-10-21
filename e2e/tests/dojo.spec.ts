@@ -159,9 +159,9 @@ test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
   await board.getByRole('tab', { name: 'Budget' }).click();
   const budgets = board.getByTestId('budget-view');
   await expect(budgets.locator('a[data-budget="1"]')).toHaveAttribute('aria-current', 'true');
-  await budgets.locator('a[data-budget="10"]').click();
-  await expect(page).toHaveURL(/\?budget=10$/);
-  await expect(budgets.locator('a[data-budget="10"]')).toHaveAttribute('aria-current', 'true');
+  await budgets.locator('a[data-budget="4"]').click();
+  await expect(page).toHaveURL(/\?budget=4$/);
+  await expect(budgets.locator('a[data-budget="4"]')).toHaveAttribute('aria-current', 'true');
   const chart = budgets.getByTestId('budget-chart');
   await expect(chart.locator('polyline[data-curve]')).toHaveCount(2);
   await expect(chart.locator('line[data-testid="official-budget"]')).toHaveCount(1);

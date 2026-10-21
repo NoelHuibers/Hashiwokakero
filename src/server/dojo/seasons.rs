@@ -605,9 +605,9 @@ fn csv_field(text: &str) -> String {
 
 /// One line per entry and formula, like the SAT Competition's `scores.csv`.
 ///
-/// `outcome` and `fuel` are how the run ended and what it used, up to `run_budget` (since
-/// rules version 5 ten times `budget`); with `budget` a result with more fuel counts as a
-/// timeout, see `dojo::Outcome::at`.
+/// `outcome` and `fuel` are how the run ended and what it used, up to `run_budget` (ten times
+/// `budget` in rules version 5, four times since 6); with `budget` a result with more fuel
+/// counts as a timeout, see `dojo::Outcome::at`.
 pub fn csv(season: &ArchivedSeason) -> String {
     let mut out = String::from(
         "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel,budget,run_budget\n",

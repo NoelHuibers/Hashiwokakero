@@ -43,7 +43,7 @@
     "shapley_tip": "Zijn eerlijke deel van de brandstof die het hele veld bespaart, in miljarden per formule",
     "vbs_line": "Virtuele beste solver van {{ count }} solvers: {{ solved }}/{{ total }} opgelost, PAR-2 {{ par2 }}",
     "view_budget": "Budget",
-    "budget_hint": "Dezelfde runs, gerangschikt met een ander budget per formule. Elke run loopt door tot tien keer het officiële budget, en brandstof is deterministisch, dus elk kleiner budget geeft precies het resultaat dat een run ermee had gehad. De officiële ranglijst blijft bij 1×; de pijlen tonen hoe ver een solver van zijn plek daar verschuift.",
+    "budget_hint": "Dezelfde runs, gerangschikt met een ander budget per formule. Elke run loopt door tot vier keer het officiële budget, en brandstof is deterministisch, dus elk kleiner budget geeft precies het resultaat dat een run ermee had gehad. De officiële ranglijst blijft bij 1×; de pijlen tonen hoe ver een solver van zijn plek daar verschuift.",
     "budget_pick": "Budget per formule",
     "budget_official": "officieel",
     "budget_wrong": "fout antwoord",
@@ -353,6 +353,6 @@
     "shapley_title": "Shapley-waarde",
     "shapley": "Losse scores belonen bijna-klonen, marginale bijdragen straffen ze af. De Shapley-waarde uit de coöperatieve speltheorie is eerlijk voor beide: ze verdeelt de brandstof die het hele veld bespaart ten opzichte van niets oplossen naar de gemiddelde marginale bijdrage van elke solver over elke volgorde van toetreden (<a>Fréchette et al., AAAI 2016</a>). Wij berekenen haar exact, in miljarden brandstof per formule; de waarden tellen op tot twee keer het budget min de PAR-2 van de VBS.",
     "budget_title": "Ranglijsten bij andere budgetten",
-    "budget": "De ranglijst meet een korte race: 7 miljard brandstof per formule, ongeveer een halve seconde van een native solver, terwijl de SAT Competition 5.000 seconden geeft. Solvers met veel preprocessing en inprocessing, zoals Kissat en CaDiCaL, betalen daarvoor voordat het iets oplevert, en staan bij dit budget achter MiniSat. Elke run loopt door tot tien keer het budget, en omdat brandstof deterministisch is, geeft één run de exacte score bij elk kleiner budget: de budgetweergave laat zien hoe de ranglijst verandert met meer tijd."
+    "budget": "De ranglijst meet een korte race: 7 miljard brandstof per formule, ongeveer een halve seconde van een native solver, terwijl de SAT Competition 5.000 seconden geeft. Solvers met veel preprocessing en inprocessing, zoals Kissat en CaDiCaL, betalen daarvoor voordat het iets oplevert, en staan bij dit budget achter MiniSat. Elke run loopt door tot vier keer het budget, en omdat brandstof deterministisch is, geeft één run de exacte score bij elk kleiner budget: de budgetweergave laat zien hoe de ranglijst verandert met meer tijd."
   }
 }

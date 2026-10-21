@@ -77,11 +77,13 @@ pub const DEFAULT_BUDGET: u64 = 7_000_000_000;
 /// The official ranking stays at [`DEFAULT_BUDGET`], about half a second of a native solver,
 /// where solvers with heavy inprocessing can't make up for its cost yet. Fuel is deterministic,
 /// so a run that goes on gives the result at every smaller budget too (see [`Outcome::at`]),
-/// and the leaderboard shows how the ranking changes with more time. Ten times: that is where
-/// Kissat overtakes `MiniSat` on most hidden sets, and a solver that solves nothing still needs
-/// only five to ten minutes on the worker for a whole set, within the quarter of an hour after
-/// which the website gives an evaluation up as lost (dojo/CALIBRATION.md, "Larger budgets").
-pub const BUDGET_FACTOR: u64 = 10;
+/// and the leaderboard shows how the ranking changes with more time. Four times: Kissat
+/// overtakes `MiniSat` for good between 2.4 and 3.9 times the budget on most hidden sets, and
+/// the worker gets through a set in a few minutes for the house entries, in about a quarter of
+/// an hour for a solver that solves nothing. Ten times (rules version 5) took 16 minutes for
+/// Hashi CDCL and would take most of an hour for a solver that solves nothing
+/// (dojo/CALIBRATION.md, "Larger budgets").
+pub const BUDGET_FACTOR: u64 = 4;
 
 /// Fuel a run may use, [`BUDGET_FACTOR`] times the ranking budget.
 pub const RUN_BUDGET: u64 = BUDGET_FACTOR * DEFAULT_BUDGET;
@@ -96,13 +98,13 @@ pub const fn budget_of(rules_version: u32) -> u64 {
     }
 }
 
-/// How far the runs of a rules version went: to the ranking budget up to version 4, then
-/// [`RUN_BUDGET`].
+/// How far the runs of a rules version went: to the ranking budget up to version 4, ten times
+/// it in version 5, then [`RUN_BUDGET`].
 pub const fn run_budget_of(rules_version: u32) -> u64 {
-    if rules_version <= 4 {
-        budget_of(rules_version)
-    } else {
-        RUN_BUDGET
+    match rules_version {
+        0..=4 => budget_of(rules_version),
+        5 => 10 * DEFAULT_BUDGET,
+        _ => RUN_BUDGET,
     }
 }
 
@@ -143,9 +145,11 @@ pub const GENERATOR_VERSION: u32 = 2;
 ///   reach the solver without a comment that names them
 /// - 4: the calibrated cost model (`fuel::MODEL`, dojo/CALIBRATION.md) instead of one unit per
 ///   operator, and a budget of 7 instead of 10 billion
-/// - 5: runs go on to [`RUN_BUDGET`], ten times the ranking budget, so scores exist at every
-///   budget up to it; the ranking itself is unchanged
-pub const RULES_VERSION: u32 = 5;
+/// - 5: runs go on to ten times the ranking budget, so scores exist at every budget up to it;
+///   the ranking itself is unchanged
+/// - 6: runs go on to [`RUN_BUDGET`], four times the ranking budget instead of ten, which took
+///   the worker too long; the ranking itself is unchanged
+pub const RULES_VERSION: u32 = 6;
 
 /// Kinds of formulas in a benchmark set.
 ///
