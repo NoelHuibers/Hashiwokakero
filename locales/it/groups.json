@@ -1,0 +1,100 @@
+{
+  "title": "Gruppi",
+  "intro": "Gioca la sfida del giorno con amici, famiglia o colleghi: scopri chi ha già finito oggi, confronta i tempi quando hai finito anche tu e guarda crescere i ponti tra di voi.",
+  "list": {
+    "title": "I tuoi gruppi",
+    "text": "Tutti i gruppi di cui fai parte, e quanti hanno già attraversato oggi.",
+    "none": "Ancora nessun gruppo. Creane uno e manda il link ai tuoi amici.",
+    "members": "Membri: {{ count }}",
+    "today": "Finito oggi"
+  },
+  "create": {
+    "title": "Crea un gruppo",
+    "text": "Dagli un nome, poi manda il link d’invito a chi deve unirsi. Non serve un account.",
+    "name": "Nome del gruppo",
+    "placeholder": "es. Club dei ponti",
+    "button": "Crea il gruppo",
+    "busy": "Creazione…",
+    "invite_hint": "Hai un link d’invito? Basta aprirlo per unirti."
+  },
+  "ready": {
+    "title": "Il tuo gruppo è pronto!",
+    "text": "Manda questo link ai tuoi amici: chi lo apre può unirsi con un clic.",
+    "open": "Apri il gruppo"
+  },
+  "invite": {
+    "title": "Link d’invito",
+    "copy": "Copia link",
+    "copied": "Link d’invito copiato negli appunti.",
+    "share": "Condividi l’invito",
+    "share_text": "Unisciti al mio gruppo «{{ name }}» su Hashi e confrontiamo i nostri ponti del giorno!",
+    "rotate": "Crea un nuovo link",
+    "rotate_confirm": "Creare un nuovo link d’invito? Quello vecchio smetterà di funzionare.",
+    "rotated": "Nuovo link d’invito creato, quello vecchio non funziona più."
+  },
+  "join": {
+    "page_title": "Unisciti a un gruppo",
+    "title": "Unisciti a «{{ name }}»",
+    "text": "Membri che qui confrontano i loro ponti del giorno: {{ count }}",
+    "button": "Unisciti al gruppo",
+    "busy": "Ingresso…",
+    "joined": "Ti diamo il benvenuto in {{ name }}!",
+    "full": "Questo gruppo è pieno, ha già 50 membri.",
+    "guest_hint": "Non serve un account: entri come ospite e puoi registrare un nome utente quando vuoi.",
+    "invalid_title": "Questo link d’invito non funziona",
+    "invalid_text": "Forse è stato copiato male, o il gruppo ne ha creato uno nuovo. Chiedi un link nuovo a un membro."
+  },
+  "page": {
+    "title": "Gruppo",
+    "back": "I tuoi gruppi",
+    "since": "dal {{ date }}",
+    "not_found": "Questo gruppo non esiste, oppure non ne fai parte.",
+    "not_found_hint": "Chiedi il link d’invito a un membro per unirti."
+  },
+  "archipelago": {
+    "label": "L’arcipelago del gruppo, un’isola per membro. Finito oggi: {{ done }} su {{ total }}",
+    "done": "finito oggi",
+    "waiting": "deve ancora giocare oggi",
+    "bridge": "{{ a }} & {{ b }} · giorni risolti da entrambi: {{ days }}",
+    "legend": "Un ponte per ogni coppia di vicini che ha risolto la stessa sfida del giorno nelle ultime quattro settimane, un ponte doppio dopo sette giorni così. Un gagliardetto sventola su chi ha già finito oggi."
+  },
+  "today": {
+    "title": "Oggi",
+    "daily": "Ponte del giorno n. {{ number }}",
+    "your_turn": "{{ done }} su {{ total }} hanno finito – tocca a te!",
+    "all_waiting": "Nessuno ha ancora attraversato – apri tu la strada!",
+    "spoiler": "I tempi compaiono quando hai finito anche tu la sfida di oggi.",
+    "play": "Gioca la sfida di oggi",
+    "done": "finito",
+    "waiting": "in attesa",
+    "unranked": "fuori classifica"
+  },
+  "week": {
+    "title": "Settimana",
+    "member": "Membro",
+    "earlier": "Settimana precedente",
+    "later": "Settimana successiva",
+    "solved": "{{ name }} · {{ date }}: risolta",
+    "missed": "{{ name }} · {{ date }}: saltata",
+    "open": "{{ name }} · {{ date }}: ancora da giocare"
+  },
+  "members": {
+    "title": "Membri",
+    "count": "Membri: {{ count }} su {{ max }}",
+    "owner": "Admin",
+    "joined": "nel gruppo dal {{ date }}",
+    "remove_label": "Rimuovi {{ name }}",
+    "remove_confirm": "Rimuovere {{ name }} dal gruppo? Potrà rientrare con il link d’invito, a meno che tu non ne crei uno nuovo.",
+    "removed": "{{ name }} non fa più parte del gruppo.",
+    "leave": "Lascia il gruppo",
+    "leave_confirm": "Lasciare «{{ name }}»? Potrai rientrare con il link d’invito.",
+    "left": "Hai lasciato {{ name }}."
+  },
+  "daily": {
+    "tabs": "Classifiche",
+    "world": "Mondo",
+    "done": "Finito oggi: {{ done }} su {{ total }}",
+    "open": "Apri il gruppo",
+    "compare": "Confrontati con gli amici: <b>crea un gruppo</b>"
+  }
+}

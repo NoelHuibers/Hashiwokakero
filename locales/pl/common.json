@@ -5,7 +5,8 @@
     "ranks": "Ranking",
     "create": "Twórz",
     "lab": "Lab",
-    "main": "Nawigacja główna"
+    "main": "Nawigacja główna",
+    "groups": "Grupy"
   },
   "tagline_short": "Mosty",
   "language": "Język",
@@ -74,7 +75,13 @@
     "too_many_messages": "Na dziś wystarczy wiadomości, spróbuj ponownie jutro.",
     "rename_too_soon": "Niedawno zmieniono twoją nazwę użytkownika, spróbuj ponownie później.",
     "username_not_allowed": "Ta nazwa nie jest tu dozwolona, wybierz inną.",
-    "banned": "To konto jest zablokowane. Jeśli uważasz, że to pomyłka, napisz do nas."
+    "banned": "To konto jest zablokowane. Jeśli uważasz, że to pomyłka, napisz do nas.",
+    "group_name_invalid": "Nazwa grupy ma od 1 do 32 znaków.",
+    "group_name_not_allowed": "Ta nazwa nie jest tu dozwolona, wybierz inną.",
+    "group_not_found": "Ta grupa nie istnieje albo do niej nie należysz.",
+    "group_full": "Ta grupa jest pełna: ma już 50 członków.",
+    "too_many_groups": "Należysz już do 10 grup, najpierw opuść jedną.",
+    "group_owner_only": "Tylko właściciel grupy może to zrobić."
   },
   "solver": {
     "title": "Solver SAT",

@@ -5,7 +5,8 @@
     "ranks": "Ranks",
     "create": "Create",
     "lab": "Lab",
-    "main": "Main navigation"
+    "main": "Main navigation",
+    "groups": "Groups"
   },
   "tagline_short": "Bridges",
   "language": "Language",
@@ -74,7 +75,13 @@
     "too_many_messages": "That's enough messages for today, please try again tomorrow.",
     "rename_too_soon": "You changed your username recently, please try again later.",
     "username_not_allowed": "This name isn't allowed here, please choose another one.",
-    "banned": "This account is banned. If you think that's a mistake, please write to us."
+    "banned": "This account is banned. If you think that's a mistake, please write to us.",
+    "group_name_invalid": "Group names have 1 to 32 characters.",
+    "group_name_not_allowed": "This name isn't allowed here, please choose another one.",
+    "group_not_found": "This group doesn't exist, or you're not a member of it.",
+    "group_full": "This group is full: it has 50 members already.",
+    "too_many_groups": "You're in 10 groups already, leave one first.",
+    "group_owner_only": "Only the group's owner can do that."
   },
   "solver": {
     "title": "SAT Solver",

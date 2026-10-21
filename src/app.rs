@@ -15,6 +15,7 @@ use crate::pages::contact::ContactPage;
 use crate::pages::create::CreatePage;
 use crate::pages::daily::DailyPage;
 use crate::pages::dojo::{DojoBenchmarksPage, DojoPage, DojoSeasonsPage, DojoSubmissionPage};
+use crate::pages::groups::{GroupDetailPage, GroupsPage, JoinGroupPage};
 use crate::pages::lab::LabPage;
 use crate::pages::legal::{ImpressumPage, PrivacyPage};
 use crate::pages::play::PlayPage;
@@ -94,6 +95,9 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("") view=DailyPage />
                             <Route path=path!("/practice") view=PlayPage />
                             <Route path=path!("/ranks") view=RanksPage />
+                            <Route path=path!("/groups") view=GroupsPage />
+                            <Route path=path!("/groups/:id") view=GroupDetailPage />
+                            <Route path=path!("/g/:code") view=JoinGroupPage />
                             // Waits for the player, for the title and the link preview
                             <Route path=path!("/player/:id") view=PlayerPage ssr=SsrMode::Async />
                             <Route path=path!("/account") view=AccountPage />

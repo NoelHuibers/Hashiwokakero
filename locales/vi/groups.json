@@ -1,0 +1,100 @@
+{
+  "title": "Nhóm",
+  "intro": "Chơi câu đố mỗi ngày cùng bạn bè, gia đình hay đồng nghiệp: xem hôm nay ai đã xong, so thời gian khi bạn đã giải xong, và ngắm những cây cầu giữa mọi người lớn dần.",
+  "list": {
+    "title": "Nhóm của bạn",
+    "text": "Mọi nhóm bạn tham gia, và hôm nay đã có bao nhiêu người qua cầu.",
+    "none": "Chưa có nhóm nào. Hãy tạo một nhóm và gửi liên kết cho bạn bè.",
+    "members": "Thành viên: {{ count }}",
+    "today": "Xong hôm nay"
+  },
+  "create": {
+    "title": "Tạo nhóm",
+    "text": "Đặt tên cho nhóm, rồi gửi liên kết mời cho những ai muốn tham gia. Không cần tài khoản.",
+    "name": "Tên nhóm",
+    "placeholder": "vd. Hội Bắc Cầu",
+    "button": "Tạo nhóm",
+    "busy": "Đang tạo…",
+    "invite_hint": "Đã có liên kết mời? Chỉ cần mở nó là tham gia được."
+  },
+  "ready": {
+    "title": "Nhóm của bạn đã sẵn sàng!",
+    "text": "Gửi liên kết này cho bạn bè: ai mở nó đều có thể tham gia chỉ với một cú nhấp.",
+    "open": "Mở nhóm"
+  },
+  "invite": {
+    "title": "Liên kết mời",
+    "copy": "Sao chép liên kết",
+    "copied": "Đã sao chép liên kết mời vào bộ nhớ tạm.",
+    "share": "Chia sẻ lời mời",
+    "share_text": "Vào nhóm “{{ name }}” của mình trên Hashi để cùng so tài cầu mỗi ngày nhé!",
+    "rotate": "Tạo liên kết mới",
+    "rotate_confirm": "Tạo liên kết mời mới? Liên kết cũ sẽ không dùng được nữa.",
+    "rotated": "Đã tạo liên kết mời mới, liên kết cũ không còn dùng được nữa."
+  },
+  "join": {
+    "page_title": "Tham gia nhóm",
+    "title": "Tham gia “{{ name }}”",
+    "text": "Thành viên đang so cầu mỗi ngày ở đây: {{ count }}",
+    "button": "Tham gia nhóm",
+    "busy": "Đang tham gia…",
+    "joined": "Chào mừng bạn đến với {{ name }}!",
+    "full": "Nhóm này đã đầy, đã có đủ 50 thành viên.",
+    "guest_hint": "Không cần tài khoản: bạn tham gia với tư cách khách và có thể giữ tên người dùng bất cứ lúc nào.",
+    "invalid_title": "Liên kết mời này không dùng được",
+    "invalid_text": "Có thể liên kết bị gõ sai, hoặc nhóm đã tạo liên kết mới. Hãy xin một thành viên liên kết mới."
+  },
+  "page": {
+    "title": "Nhóm",
+    "back": "Nhóm của bạn",
+    "since": "từ {{ date }}",
+    "not_found": "Nhóm này không tồn tại, hoặc bạn không phải thành viên.",
+    "not_found_hint": "Hãy xin một thành viên liên kết mời để tham gia."
+  },
+  "archipelago": {
+    "label": "Quần đảo của nhóm, mỗi thành viên một hòn đảo. Xong hôm nay: {{ done }} trên {{ total }}",
+    "done": "đã xong hôm nay",
+    "waiting": "hôm nay chưa chơi",
+    "bridge": "{{ a }} & {{ b }} · số ngày cùng giải: {{ days }}",
+    "legend": "Mỗi cặp hàng xóm cùng giải câu đố của một ngày nào đó trong bốn tuần qua được nối bằng một cây cầu, và bằng cầu đôi khi đã có bảy ngày như thế. Lá cờ nhỏ tung bay trên đầu những ai đã xong hôm nay."
+  },
+  "today": {
+    "title": "Hôm nay",
+    "daily": "Cầu mỗi ngày #{{ number }}",
+    "your_turn": "Đã xong: {{ done }} trên {{ total }} – đến lượt bạn!",
+    "all_waiting": "Chưa ai qua cầu – hãy là người đầu tiên!",
+    "spoiler": "Thời gian sẽ hiện ra khi chính bạn đã giải xong câu đố hôm nay.",
+    "play": "Chơi câu đố hôm nay",
+    "done": "đã xong",
+    "waiting": "đang chờ",
+    "unranked": "không xếp hạng"
+  },
+  "week": {
+    "title": "Tuần",
+    "member": "Thành viên",
+    "earlier": "Tuần trước",
+    "later": "Tuần sau",
+    "solved": "{{ name }} · {{ date }}: đã giải",
+    "missed": "{{ name }} · {{ date }}: bỏ lỡ",
+    "open": "{{ name }} · {{ date }}: chưa chơi"
+  },
+  "members": {
+    "title": "Thành viên",
+    "count": "Thành viên: {{ count }} trên {{ max }}",
+    "owner": "Chủ nhóm",
+    "joined": "tham gia {{ date }}",
+    "remove_label": "Xóa {{ name }} khỏi nhóm",
+    "remove_confirm": "Xóa {{ name }} khỏi nhóm? Họ vẫn có thể tham gia lại bằng liên kết mời, trừ khi bạn tạo liên kết mới.",
+    "removed": "{{ name }} không còn trong nhóm nữa.",
+    "leave": "Rời nhóm",
+    "leave_confirm": "Rời “{{ name }}”? Bạn có thể tham gia lại bằng liên kết mời.",
+    "left": "Bạn đã rời {{ name }}."
+  },
+  "daily": {
+    "tabs": "Xếp hạng",
+    "world": "Thế giới",
+    "done": "Xong hôm nay: {{ done }} trên {{ total }}",
+    "open": "Mở nhóm",
+    "compare": "So tài với bạn bè: <b>tạo nhóm</b>"
+  }
+}

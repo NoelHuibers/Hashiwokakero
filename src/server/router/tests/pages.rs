@@ -24,10 +24,13 @@ use crate::seo::{OG_IMAGE, SITE_URL, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 16] = [
+const PAGES: [(&str, &str); 19] = [
     ("/", "/"),
     ("/practice", "/practice"),
     ("/ranks", "/ranks"),
+    ("/groups", "/groups"),
+    ("/groups/{id}", "/groups/1"),
+    ("/g/{code}", "/g/abcdefgh23"),
     // Nobody, user ids start at 1
     ("/player/{id}", "/player/0"),
     ("/account", "/account"),
@@ -149,6 +152,49 @@ fn expected(route: &str, l: Locale) -> Expected {
             status: StatusCode::NOT_FOUND,
             // Profiles are opened from the leaderboards
             nav: Some("/ranks"),
+            ..Expected::default()
+        },
+        // Whose groups they are is only known in the browser
+        "/groups" => Expected {
+            title: Some(hashi(td_string!(l, groups.title))),
+            texts: strings([
+                td_string!(l, groups.title),
+                td_string!(l, groups.intro),
+                td_string!(l, groups.list.title),
+                td_string!(l, groups.list.text),
+                td_string!(l, groups.create.title),
+                td_string!(l, groups.create.name),
+                td_string!(l, groups.create.button),
+                td_string!(l, groups.create.invite_hint),
+                loading,
+            ]),
+            absent: strings([
+                td_string!(l, groups.ready.title),
+                td_string!(l, groups.list.none),
+            ]),
+            nav: Some("/groups"),
+            ..Expected::default()
+        },
+        // Only members see a group, the browser asks once it knows who's visiting
+        "/groups/{id}" => Expected {
+            title: Some(hashi(td_string!(l, groups.page.title))),
+            texts: strings([td_string!(l, groups.page.back), loading]),
+            absent: strings([
+                td_string!(l, groups.today.title),
+                td_string!(l, groups.page.not_found),
+            ]),
+            nav: Some("/groups"),
+            ..Expected::default()
+        },
+        // The invite link joins nobody by being opened
+        "/g/{code}" => Expected {
+            title: Some(hashi(td_string!(l, groups.join.page_title))),
+            texts: strings([loading]),
+            absent: strings([
+                td_string!(l, groups.join.button),
+                td_string!(l, groups.join.invalid_title),
+            ]),
+            nav: Some("/groups"),
             ..Expected::default()
         },
         "/account" => Expected {

@@ -5,7 +5,7 @@ use leptos::task::spawn_local;
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::i18n::{t, td_string, use_i18n};
+use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::state::{ToastKind, toast};
 
 fn copy(text: &str) {
@@ -61,6 +61,9 @@ const X_LOGO: &str = "M18.2 2.3h3.4l-7.3 8.4 8.6 11.4h-6.7l-5.3-6.9-6 6.9H1.5l7.
 pub fn ShareBar(
     text: impl Fn() -> String + Copy + Send + Sync + 'static,
     #[prop(optional)] outline: bool,
+    /// The big button's label, "Share result" if none.
+    #[prop(optional, into)]
+    label: Option<Signal<String>>,
 ) -> impl IntoView {
     let i18n = use_i18n();
     let small = move |label: AnyView,
@@ -92,7 +95,10 @@ pub fn ShareBar(
                 class="w-full"
                 on:click=move |_| share(&text())
             >
-                {t!(i18n, common.game.share)}
+                {move || match label {
+                    Some(label) => label.get(),
+                    None => t_string!(i18n, common.game.share).to_string(),
+                }}
             </Button>
             <div class="flex w-full gap-1">
                 {small(

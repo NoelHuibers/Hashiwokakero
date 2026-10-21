@@ -5,7 +5,8 @@
     "ranks": "Ranking",
     "create": "Criar",
     "lab": "Lab",
-    "main": "Navegação principal"
+    "main": "Navegação principal",
+    "groups": "Grupos"
   },
   "tagline_short": "Pontes",
   "language": "Idioma",
@@ -74,7 +75,13 @@
     "too_many_messages": "Já são mensagens suficientes por hoje, tente de novo amanhã.",
     "rename_too_soon": "Você mudou seu nome de usuário há pouco tempo, tente de novo mais tarde.",
     "username_not_allowed": "Este nome não é permitido aqui, escolha outro.",
-    "banned": "Esta conta está banida. Se você acha que é um engano, escreva para nós."
+    "banned": "Esta conta está banida. Se você acha que é um engano, escreva para nós.",
+    "group_name_invalid": "O nome do grupo tem de 1 a 32 caracteres.",
+    "group_name_not_allowed": "Este nome não é permitido aqui, escolha outro.",
+    "group_not_found": "Este grupo não existe ou você não é membro dele.",
+    "group_full": "Este grupo está cheio: já tem 50 membros.",
+    "too_many_groups": "Você já está em 10 grupos, saia de um primeiro.",
+    "group_owner_only": "Só o admin do grupo pode fazer isso."
   },
   "solver": {
     "title": "Solver SAT",

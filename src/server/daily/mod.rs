@@ -14,7 +14,9 @@ pub use attempt::{
 };
 pub use fame::{hall_of_fame, month_board};
 pub use leaderboard::leaderboard;
-pub use stamps::{show as show_stamp, start_syncing as start_stamp_sync, sync as sync_stamps};
+pub use stamps::{
+    show as show_stamp, shown_stamps, start_syncing as start_stamp_sync, sync as sync_stamps,
+};
 pub(crate) use stats::invalidate as invalidate_profiles;
 pub use stats::{cached_profile, profile, stats};
 

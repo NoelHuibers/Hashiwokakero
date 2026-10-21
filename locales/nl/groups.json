@@ -1,0 +1,100 @@
+{
+  "title": "Groepen",
+  "intro": "Speel de dagpuzzel met vrienden, familie of collega's: zie wie vandaag al klaar is, vergelijk tijden zodra je zelf klaar bent en zie de bruggen tussen jullie groeien.",
+  "list": {
+    "title": "Jouw groepen",
+    "text": "Alle groepen waarin je zit, en hoeveel leden er vandaag al zijn overgestoken.",
+    "none": "Nog geen groepen. Maak er een en stuur de link naar je vrienden.",
+    "members": "Leden: {{ count }}",
+    "today": "Vandaag klaar"
+  },
+  "create": {
+    "title": "Groep maken",
+    "text": "Geef hem een naam en stuur de uitnodigingslink naar wie erbij mag. Geen account nodig.",
+    "name": "Groepsnaam",
+    "placeholder": "bijv. Bruggenclub",
+    "button": "Groep maken",
+    "busy": "Aanmaken…",
+    "invite_hint": "Een uitnodigingslink gekregen? Open hem gewoon om mee te doen."
+  },
+  "ready": {
+    "title": "Je groep is klaar!",
+    "text": "Stuur deze link naar je vrienden: wie hem opent, kan met één klik meedoen.",
+    "open": "Naar de groep"
+  },
+  "invite": {
+    "title": "Uitnodigingslink",
+    "copy": "Link kopiëren",
+    "copied": "Uitnodigingslink gekopieerd naar het klembord.",
+    "share": "Uitnodiging delen",
+    "share_text": "Word lid van mijn groep “{{ name }}” op Hashi, dan vergelijken we onze dagelijkse bruggen!",
+    "rotate": "Nieuwe link maken",
+    "rotate_confirm": "Een nieuwe uitnodigingslink maken? De oude werkt dan niet meer.",
+    "rotated": "Nieuwe uitnodigingslink gemaakt, de oude werkt niet meer."
+  },
+  "join": {
+    "page_title": "Lid worden van een groep",
+    "title": "Lid worden van “{{ name }}”",
+    "text": "Leden die hier hun dagelijkse bruggen vergelijken: {{ count }}",
+    "button": "Lid worden",
+    "busy": "Lid worden…",
+    "joined": "Welkom bij {{ name }}!",
+    "full": "Deze groep is vol, er zijn al 50 leden.",
+    "guest_hint": "Geen account nodig: je doet mee als gast en kunt op elk moment een gebruikersnaam claimen.",
+    "invalid_title": "Deze uitnodigingslink werkt niet",
+    "invalid_text": "Misschien zit er een typfout in, of heeft de groep een nieuwe gemaakt. Vraag een lid om een verse link."
+  },
+  "page": {
+    "title": "Groep",
+    "back": "Jouw groepen",
+    "since": "sinds {{ date }}",
+    "not_found": "Deze groep bestaat niet, of je bent er geen lid van.",
+    "not_found_hint": "Vraag een lid om de uitnodigingslink om mee te doen."
+  },
+  "archipelago": {
+    "label": "De archipel van de groep, een eiland per lid. Vandaag klaar: {{ done }} van {{ total }}",
+    "done": "vandaag klaar",
+    "waiting": "moet vandaag nog spelen",
+    "bridge": "{{ a }} & {{ b }} · dagen allebei opgelost: {{ days }}",
+    "legend": "Een brug voor elk paar buren dat in de afgelopen vier weken dezelfde dagpuzzel heeft opgelost, een dubbele brug na zeven van zulke dagen. Boven iedereen die vandaag klaar is, wappert een vaantje."
+  },
+  "today": {
+    "title": "Vandaag",
+    "daily": "Brug van de dag #{{ number }}",
+    "your_turn": "{{ done }} van {{ total }} klaar – jouw beurt!",
+    "all_waiting": "Nog niemand is overgestoken – wees de eerste!",
+    "spoiler": "Tijden verschijnen zodra je de dagpuzzel van vandaag zelf hebt afgerond.",
+    "play": "Speel de dagpuzzel van vandaag",
+    "done": "klaar",
+    "waiting": "wacht nog",
+    "unranked": "buiten de ranking"
+  },
+  "week": {
+    "title": "Week",
+    "member": "Lid",
+    "earlier": "Vorige week",
+    "later": "Volgende week",
+    "solved": "{{ name }} · {{ date }}: opgelost",
+    "missed": "{{ name }} · {{ date }}: gemist",
+    "open": "{{ name }} · {{ date }}: nog te spelen"
+  },
+  "members": {
+    "title": "Leden",
+    "count": "Leden: {{ count }} van {{ max }}",
+    "owner": "Eigenaar",
+    "joined": "lid sinds {{ date }}",
+    "remove_label": "{{ name }} verwijderen",
+    "remove_confirm": "{{ name }} uit de groep verwijderen? Met de uitnodigingslink kan diegene opnieuw lid worden, tenzij je een nieuwe maakt.",
+    "removed": "{{ name }} zit niet meer in de groep.",
+    "leave": "Groep verlaten",
+    "leave_confirm": "“{{ name }}” verlaten? Met de uitnodigingslink kun je opnieuw lid worden.",
+    "left": "Je hebt {{ name }} verlaten."
+  },
+  "daily": {
+    "tabs": "Ranglijsten",
+    "world": "Wereld",
+    "done": "Vandaag klaar: {{ done }} van {{ total }}",
+    "open": "Naar de groep",
+    "compare": "Vergelijk met vrienden: <b>maak een groep</b>"
+  }
+}
