@@ -114,3 +114,12 @@ error TooManyMessages too_many_messages
 error RenameTooSoon rename_too_soon
 error UsernameNotAllowed username_not_allowed
 error Banned banned
+error GroupNameInvalid group_name_invalid
+error GroupNameNotAllowed group_name_not_allowed
+error GroupNotFound group_not_found
+error GroupFull group_full
+error TooManyGroups too_many_groups
+error GroupOwnerOnly group_owner_only
+error RivalSelf rival_self
+error TooManyRivals too_many_rivals
+error NoSuchPlayer no_such_player

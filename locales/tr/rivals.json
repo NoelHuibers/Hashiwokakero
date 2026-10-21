@@ -1,0 +1,45 @@
+{
+  "title": "Rakipler",
+  "mark": "{{ name }} adlı oyuncuyu rakip olarak işaretle",
+  "unmark": "{{ name }} rakibin, işareti kaldır",
+  "marked": "{{ name }} artık rakibin. Her günlük bulmaca bir düello!",
+  "unmarked": "{{ name }} artık rakibin değil.",
+  "mark_button": "Rakip olarak işaretle",
+  "marked_button": "Rakibin",
+  "private": "Kimi işaretlediğini yalnızca sen görürsün, kimseye haber verilmez.",
+  "gap_seconds": "{{ gap }} sn",
+  "gap_minutes": "{{ gap }} dk",
+  "errors": {
+    "rival_self": "Kendi rakibin olamazsın.",
+    "too_many_rivals": "Zaten 20 rakibin var. Yer açmak için birini kaldır.",
+    "no_such_player": "Böyle bir oyuncu yok."
+  },
+  "today": {
+    "title": "Bugünkü rakipler",
+    "beat": "<b>{{ name }}</b> adlı rakibi {{ gap }} farkla geçtin",
+    "lost": "<b>{{ name }}</b> {{ gap }} daha hızlıydı",
+    "tie": "<b>{{ name }}</b> ile tam beraberlik",
+    "waiting": "<b>{{ name }}</b> henüz oynamadı",
+    "solved": "<b>{{ name }}</b> {{ time }} sürede çözdü",
+    "empty": "Sıralamada oyuncuları rakip olarak işaretle, her günlük bulmaca bir düelloya dönüşsün.",
+    "find": "Rakip bul →"
+  },
+  "record": {
+    "title": "Karşılıklı",
+    "text": "İkinizin de çözdüğü her gün, daha hızlı olan kazanır.",
+    "short": "Düellolar",
+    "summary": "Galibiyet: {{ wins }} · mağlubiyet: {{ losses }} · beraberlik: {{ draws }}",
+    "wins": "Galibiyet",
+    "losses": "Mağlubiyet",
+    "draws": "Beraberlik",
+    "none": "İkinizin de çözdüğü bir gün henüz yok. Bugünün bulmacası ilk düello olabilir!",
+    "recent": "Son düellolar",
+    "day": "Günlük #{{ number }}: {{ mine }} - {{ theirs }}"
+  },
+  "board": {
+    "text": "Sen ve rakiplerin, tüm zamanlar. Bu listeyi yalnızca sen görürsün.",
+    "empty": "Henüz rakip yok. Birini işaretlemek için herhangi bir sıralamada bir ismin yanındaki çapraz kılıçlara dokun.",
+    "you": "Sen",
+    "streak": "Seri"
+  }
+}

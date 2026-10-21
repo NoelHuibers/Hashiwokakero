@@ -391,6 +391,9 @@ pub enum Verdict {
     Failed {
         message: String,
     },
+    /// No verdict yet: the worker's heartbeat while it holds the check, waiting in its queue
+    /// or running (like [`crate::Report::Heartbeat`]).
+    Pending,
 }
 
 /// The worker's report about a benchmark, posted to `/dojo/benchmark-report`.

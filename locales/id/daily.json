@@ -3,6 +3,8 @@
   "action_pending": "Menunggu server…",
   "action_retry": "Hasil belum pasti. Tekan tindakan yang sama lagi untuk mendapatkan hasilnya tanpa penalti tambahan.",
   "action_storage": "Penyimpanan browser diperlukan untuk mencoba ulang tindakan ini dengan aman. Aktifkan lalu coba lagi.",
+  "submit_failed": "Solusimu belum sampai ke server.",
+  "submit_again": "Kirim lagi",
   "meta": {
     "title": "Hashi · Teka-teki Hashiwokakero (Jembatan) harian, gratis",
     "description": "Teka-teki Hashiwokakero (Jembatan) baru setiap hari, sama untuk semua: pixel art Jepang yang imut, papan peringkat, rentetan, dan selalu tepat satu solusi."
@@ -50,5 +52,31 @@
     "pace": "Klik secepat ini, berulang-ulang, terlihat seperti program, jadi hasil ini tidak masuk peringkat.",
     "second_account": "Perangkat ini sudah membuka teka-teki harian hari ini dengan akun lain, jadi hasil ini tidak masuk peringkat. Mainkan setiap teka-teki harian dengan satu akun saja.",
     "review": "Hasil ini dihapus dari papan peringkat setelah ditinjau."
+  },
+  "about": {
+    "kicker": "tentang permainan",
+    "title": "Hashiwokakero, teka-teki jembatan",
+    "intro": "Hashiwokakero (橋をかけろ, “bangun jembatan!”), juga disebut <b>Bridges</b> (Jembatan), <b>Hashi</b> atau Hashikake, adalah teka-teki logika Jepang terbitan Nikoli. Di sini kamu bisa memainkan yang baru setiap hari, gratis dan tanpa akun, dan setiap teka-teki punya tepat satu solusi, jadi kamu tidak pernah perlu menebak.",
+    "how_title": "Cara bermain Hashi",
+    "daily_title": "Cara kerja teka-teki harian",
+    "day_title": "Satu teka-teki sehari",
+    "day": "Sama untuk semua orang, baru setiap tengah malam UTC. Seperti teka-teki di koran, makin sulit menjelang hari Minggu.",
+    "clock_title": "Mulai saat kamu siap",
+    "clock": "Teka-tekinya tersembunyi sampai kamu menekan Mulai. Baru saat itulah jam mulai berjalan.",
+    "penalty_title": "Cek dan petunjuk memakan waktu",
+    "penalty": "Setiap cek menambah {{ check }} ke waktumu, setiap petunjuk {{ hint }}.",
+    "give_up_title": "Menyerah",
+    "give_up": "Buntu? Menyerahlah untuk melihat solusinya. Permainan itu tidak masuk peringkat, tapi besok ada teka-teki baru.",
+    "tips_title": "Tips memecahkan Hashiwokakero",
+    "tips_intro": "Tiga deduksi untuk memulai. Setiap gambar menunjukkan jembatan yang dipastikannya.",
+    "faq_title": "Pertanyaan umum",
+    "account_q": "Apakah saya perlu akun?",
+    "account_a": "Tidak. Kamu langsung bermain sebagai tamu dan tetap muncul di peringkat. Klaim nama agar rentetanmu tersimpan di semua perangkat.",
+    "next_q": "Kapan ada teka-teki harian baru?",
+    "next_a": "Setiap hari pada tengah malam UTC, di saat yang sama di seluruh dunia. Hitung mundur di halaman ini menunjukkan berapa lama lagi.",
+    "more_q": "Di mana saya bisa bermain lebih banyak?",
+    "more_a": "Di <practice>latihan</practice>: teka-teki tanpa batas dalam lima ukuran, dari 7×7 sampai 24×24, dengan petunjuk kapan pun kamu mau. Atau buat teka-tekimu sendiri di <workshop>bengkel</workshop>.",
+    "to_rules": "Aturan Hashiwokakero dan tips →",
+    "to_practice": "Latihan: teka-teki tanpa batas →"
   }
 }

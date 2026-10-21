@@ -1,0 +1,45 @@
+{
+  "title": "对手",
+  "mark": "将 {{ name }} 设为对手",
+  "unmark": "{{ name }} 是你的对手，取消",
+  "marked": "{{ name }} 现在是你的对手了。每日谜题都是一场对决！",
+  "unmarked": "{{ name }} 不再是你的对手。",
+  "mark_button": "设为对手",
+  "marked_button": "你的对手",
+  "private": "只有你能看到你标记了谁，对方不会收到通知。",
+  "gap_seconds": "{{ gap }} 秒",
+  "gap_minutes": "{{ gap }} 分",
+  "errors": {
+    "rival_self": "你不能把自己设为对手。",
+    "too_many_rivals": "你已经有 20 个对手了。取消一个来腾出位置。",
+    "no_such_player": "没有这名玩家。"
+  },
+  "today": {
+    "title": "今日对手",
+    "beat": "你以 {{ gap }} 的优势赢了 <b>{{ name }}</b>",
+    "lost": "<b>{{ name }}</b> 快了 {{ gap }}",
+    "tie": "与 <b>{{ name }}</b> 完全打平",
+    "waiting": "<b>{{ name }}</b> 还没有玩",
+    "solved": "<b>{{ name }}</b> 用时 {{ time }} 解出",
+    "empty": "在排行榜上把玩家设为对手，每日谜题都会变成一场对决。",
+    "find": "寻找对手 →"
+  },
+  "record": {
+    "title": "交手记录",
+    "text": "你们都解出的每一天，更快的一方获胜。",
+    "short": "对决",
+    "summary": "胜：{{ wins }} · 负：{{ losses }} · 平：{{ draws }}",
+    "wins": "胜",
+    "losses": "负",
+    "draws": "平",
+    "none": "还没有你们都解出的日子。今天的谜题可能就是第一场对决！",
+    "recent": "最近对决",
+    "day": "每日 #{{ number }}：{{ mine }} 对 {{ theirs }}"
+  },
+  "board": {
+    "text": "你和你的对手，历史总成绩。只有你能看到这份名单。",
+    "empty": "还没有对手。点击任意排行榜上名字旁的交叉双剑来标记某人。",
+    "you": "你",
+    "streak": "连胜"
+  }
+}

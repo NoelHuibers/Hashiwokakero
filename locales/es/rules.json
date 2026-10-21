@@ -3,7 +3,7 @@
     "title": "Cómo jugar a Hashiwokakero · Reglas y consejos · Hashi",
     "description": "Las reglas de Hashiwokakero (Puentes) con un ejemplo resuelto, deducciones que resuelven casi cualquier puzle sin adivinar y cómo SAT prueba que es único."
   },
-  "title": "Cómo jugar",
+  "title": "Cómo jugar a Hashiwokakero",
   "intro": "Hashiwokakero (橋をかけろ, «¡construye puentes!») es un puzle lógico publicado por Nikoli. Conecta todas las islas con puentes para que cada isla tenga exactamente tantos puentes como indica su número.",
   "rule": {
     "count_title": "Cuenta los puentes",
@@ -16,6 +16,25 @@
     "connected": "Al final, se tiene que poder llegar a cada isla desde todas las demás."
   },
   "example": "Un puzle resuelto",
+  "tips": {
+    "title": "Técnicas para resolver Hashiwokakero",
+    "intro": "Cinco deducciones que resuelven la mayoría de los puzles sin adivinar. Cada imagen muestra los puentes que obligan a poner.",
+    "corner_title": "Las esquinas piden dobles",
+    "corner": "Un 4 en una esquina solo tiene dos vecinas, así que necesita un puente doble hacia cada una. Lo mismo vale para un 6 en un borde y un 8 en mar abierto.",
+    "corner_board": "Un 4 en la esquina superior izquierda con un puente doble hacia el 3 de su derecha y otro hacia el 2 de abajo.",
+    "ones_title": "Dos 1 nunca se unen",
+    "ones": "Un puente entre dos 1 completaría ambos y los aislaría de todo lo demás, así que cada 1 se conecta a otra isla. Por lo mismo, dos 2 nunca comparten un puente doble.",
+    "ones_board": "Dos 1 en la fila de arriba, cada uno con un puente sencillo hacia el 3 de abajo en lugar de unirse entre sí.",
+    "count_title": "Cuenta lo que falta",
+    "count": "Un 5 con tres vecinas puede recibir como mucho seis puentes. Sin una de ellas llegaría a cuatro como mucho, así que cada vecina recibe al menos un puente.",
+    "count_board": "Un 5 en el borde superior con un puente sencillo hacia cada una de sus tres vecinas: el 2 de la izquierda, el 3 de la derecha y el 4 de abajo.",
+    "block_title": "Los puentes cortan el paso",
+    "block": "Los puentes nunca se cruzan, así que cada puente cierra las líneas por las que pasa. A una isla al otro lado quizá solo le quede un camino.",
+    "block_board": "Un puente doble baja por el centro y corta la fila del 1 de la izquierda, así que el 1 se une al 2 de abajo en lugar de al 2 de la derecha.",
+    "connect_title": "Nunca dejes un grupo cerrado",
+    "connect": "Todo tiene que acabar conectado. Si completar unas pocas islas entre sí las dejara aisladas, al menos un puente tiene que salir del grupo.",
+    "connect_board": "Una fila de 1, 3 y 2: el 1 se une al 3. Si el 3 diera sus dos últimos puentes al 2, las tres islas quedarían aisladas, así que el 3 también tiende un puente hacia el 2 de abajo."
+  },
   "controls": {
     "title": "Controles",
     "tap": "Haz clic en el agua entre dos islas para construir un puente, otra vez para un segundo, un tercer clic los quita.",

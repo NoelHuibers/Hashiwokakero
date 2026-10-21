@@ -18,16 +18,20 @@ use super::*;
 use crate::api::{SendMessage, StartDaily, SubmitDaily};
 use crate::i18n::{Locale, td_string};
 use crate::lang::{difficulty_name, localized, unlocalized};
-use crate::model::MoveEvent;
+use crate::model::{CHECK_PENALTY_MS, HINT_PENALTY_MS, MoveEvent};
+use crate::pages::daily::about::penalty;
 use crate::pages::legal::CONTACT_EMAIL;
-use crate::seo::{OG_IMAGE, SITE_URL, rules_faq};
+use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 16] = [
+const PAGES: [(&str, &str); 19] = [
     ("/", "/"),
     ("/practice", "/practice"),
     ("/ranks", "/ranks"),
+    ("/groups", "/groups"),
+    ("/groups/{id}", "/groups/1"),
+    ("/g/{code}", "/g/abcdefgh23"),
     // Nobody, user ids start at 1
     ("/player/{id}", "/player/0"),
     ("/account", "/account"),
@@ -87,14 +91,40 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, daily.week.title),
                 td_string!(l, daily.week.text),
                 td_string!(l, daily.week.next),
-                // The introduction for search engines
-                td_string!(l, practice.about.title),
-                td_string!(l, practice.about.what_title),
-                td_string!(l, practice.about.how_title),
-                td_string!(l, practice.about.techniques_title),
+                // The introduction for search engines: the rules, the daily, the first tips
+                td_string!(l, daily.about.title),
+                td_string!(l, daily.about.how_title),
+                td_string!(l, rules.rule.count_title),
+                td_string!(l, rules.rule.connected),
+                td_string!(l, daily.about.daily_title),
+                td_string!(l, daily.about.day),
+                td_string!(l, daily.about.give_up),
+                td_string!(l, daily.about.tips_title),
+                td_string!(l, rules.tips.corner_title),
+                td_string!(l, rules.tips.ones),
+                td_string!(l, rules.tips.count_title),
+                td_string!(l, daily.about.faq_title),
+                td_string!(l, rules.faq.unique_q),
+                td_string!(l, daily.about.account_a),
+                td_string!(l, daily.about.next_q),
+                td_string!(l, daily.about.to_rules),
+                td_string!(l, daily.about.to_practice),
+            ])
+            .into_iter()
+            .chain([td_string!(
+                l,
+                daily.about.penalty,
+                check = penalty(CHECK_PENALTY_MS),
+                hint = penalty(HINT_PENALTY_MS)
+            )])
+            .collect(),
+            // The game's buttons only once the daily is started (the text below the daily
+            // names the give up button), and the tips only the rules page has
+            absent: strings([
+                td_string!(l, common.game.undo),
+                td_string!(l, rules.tips.block_title),
+                td_string!(l, rules.tips.connect_title),
             ]),
-            // Only once the daily is started
-            absent: strings([td_string!(l, daily.give_up)]),
             nav: Some("/"),
             canonical: Some("/"),
             ..Expected::default()
@@ -149,6 +179,49 @@ fn expected(route: &str, l: Locale) -> Expected {
             status: StatusCode::NOT_FOUND,
             // Profiles are opened from the leaderboards
             nav: Some("/ranks"),
+            ..Expected::default()
+        },
+        // Whose groups they are is only known in the browser
+        "/groups" => Expected {
+            title: Some(hashi(td_string!(l, groups.title))),
+            texts: strings([
+                td_string!(l, groups.title),
+                td_string!(l, groups.intro),
+                td_string!(l, groups.list.title),
+                td_string!(l, groups.list.text),
+                td_string!(l, groups.create.title),
+                td_string!(l, groups.create.name),
+                td_string!(l, groups.create.button),
+                td_string!(l, groups.create.invite_hint),
+                loading,
+            ]),
+            absent: strings([
+                td_string!(l, groups.ready.title),
+                td_string!(l, groups.list.none),
+            ]),
+            nav: Some("/groups"),
+            ..Expected::default()
+        },
+        // Only members see a group, the browser asks once it knows who's visiting
+        "/groups/{id}" => Expected {
+            title: Some(hashi(td_string!(l, groups.page.title))),
+            texts: strings([td_string!(l, groups.page.back), loading]),
+            absent: strings([
+                td_string!(l, groups.today.title),
+                td_string!(l, groups.page.not_found),
+            ]),
+            nav: Some("/groups"),
+            ..Expected::default()
+        },
+        // The invite link joins nobody by being opened
+        "/g/{code}" => Expected {
+            title: Some(hashi(td_string!(l, groups.join.page_title))),
+            texts: strings([loading]),
+            absent: strings([
+                td_string!(l, groups.join.button),
+                td_string!(l, groups.join.invalid_title),
+            ]),
+            nav: Some("/groups"),
             ..Expected::default()
         },
         "/account" => Expected {
@@ -276,6 +349,18 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, rules.rule.straight_title),
                 td_string!(l, rules.rule.connected_title),
                 td_string!(l, rules.example),
+                td_string!(l, rules.tips.title),
+                td_string!(l, rules.tips.intro),
+                td_string!(l, rules.tips.corner_title),
+                td_string!(l, rules.tips.corner),
+                td_string!(l, rules.tips.ones_title),
+                td_string!(l, rules.tips.ones),
+                td_string!(l, rules.tips.count_title),
+                td_string!(l, rules.tips.count),
+                td_string!(l, rules.tips.block_title),
+                td_string!(l, rules.tips.block),
+                td_string!(l, rules.tips.connect_title),
+                td_string!(l, rules.tips.connect),
                 td_string!(l, rules.controls.title),
                 td_string!(l, rules.hood.title),
                 td_string!(l, rules.faq_title),
@@ -527,8 +612,22 @@ async fn pages_link_and_describe_themselves() {
     let home = page("/de").await;
     assert!(home.contains(r#""@type":"VideoGame""#));
     assert!(home.contains(r#""inLanguage":"de""#));
+    // The home page leads to the tips in its language
+    assert!(home.contains(r#"href="/de/rules#tips""#));
+    assert!(home.contains(r#"href="/de/practice""#));
     let rules = page("/ja/rules").await;
     assert!(rules.contains(r#""@type":"FAQPage""#));
+    // The boards of the tips say what they show
+    assert!(rules.contains(r#"id="tips""#));
+    for label in [
+        td_string!(Locale::ja, rules.tips.corner_board),
+        td_string!(Locale::ja, rules.tips.connect_board),
+    ] {
+        assert!(
+            rules.contains(&format!(r#"aria-label="{label}""#)),
+            "{label}"
+        );
+    }
     assert!(rules.contains(&format!(r#""name":"{}""#, rules_faq(Locale::ja)[0].0)));
     // Every language of a page, for search engines to pick from
     for l in Locale::get_all() {
@@ -777,7 +876,12 @@ async fn a_players_page_names_them_in_link_previews() {
         }
         assert_eq!(meta(&html, "og:type").as_deref(), Some("profile"));
         assert_eq!(meta(&html, "og:url"), Some(format!("{SITE_URL}{path}")));
-        assert_eq!(meta(&html, "og:image").as_deref(), Some(OG_IMAGE));
+        assert_eq!(meta(&html, "og:image"), Some(og_image(l)), "{path}");
+        assert_eq!(
+            meta(&html, "og:image:alt").as_deref(),
+            Some(td_string!(l, common.og_image_alt)),
+            "{path}"
+        );
         assert_eq!(
             meta(&html, "twitter:card").as_deref(),
             Some("summary_large_image")

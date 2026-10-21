@@ -1,0 +1,45 @@
+{
+  "title": "Rivalen",
+  "mark": "{{ name }} als Rivalen markieren",
+  "unmark": "{{ name }} ist dein Rivale, Markierung entfernen",
+  "marked": "{{ name }} ist jetzt dein Rivale. Jedes Tagesrätsel wird zum Duell!",
+  "unmarked": "{{ name }} ist nicht mehr dein Rivale.",
+  "mark_button": "Als Rivalen markieren",
+  "marked_button": "Dein Rivale",
+  "private": "Nur du siehst, wen du markiert hast, niemand erfährt davon.",
+  "gap_seconds": "{{ gap }} s",
+  "gap_minutes": "{{ gap }} min",
+  "errors": {
+    "rival_self": "Du kannst nicht dein eigener Rivale sein.",
+    "too_many_rivals": "Du hast schon 20 Rivalen. Entferne einen, um Platz zu machen.",
+    "no_such_player": "Diesen Spieler gibt es nicht."
+  },
+  "today": {
+    "title": "Rivalen heute",
+    "beat": "Du hast <b>{{ name }}</b> um {{ gap }} geschlagen",
+    "lost": "<b>{{ name }}</b> war {{ gap }} schneller",
+    "tie": "Gleichstand mit <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> hat noch nicht gespielt",
+    "solved": "<b>{{ name }}</b> hat es in {{ time }} gelöst",
+    "empty": "Markiere Spieler in der Rangliste als Rivalen, und jedes Tagesrätsel wird zum Duell.",
+    "find": "Rivalen finden →"
+  },
+  "record": {
+    "title": "Direkter Vergleich",
+    "text": "An jedem Tag, an dem ihr beide gelöst habt, gewinnt der Schnellere.",
+    "short": "Duelle",
+    "summary": "Siege: {{ wins }} · Niederlagen: {{ losses }} · Unentschieden: {{ draws }}",
+    "wins": "Siege",
+    "losses": "Niederlagen",
+    "draws": "Remis",
+    "none": "Noch kein Tag, an dem ihr beide gelöst habt. Das heutige Rätsel könnte das erste Duell sein!",
+    "recent": "Letzte Duelle",
+    "day": "Tagesrätsel #{{ number }}: {{ mine }} gegen {{ theirs }}"
+  },
+  "board": {
+    "text": "Du und deine Rivalen, über die ganze Zeit. Nur du siehst diese Liste.",
+    "empty": "Noch keine Rivalen. Tippe in einer Rangliste auf die gekreuzten Schwerter neben einem Namen, um jemanden zu markieren.",
+    "you": "Du",
+    "streak": "Serie"
+  }
+}

@@ -180,16 +180,50 @@ tenth of the budget.
 
 **Larger budgets.** Half a second per formula is a short race: the SAT Competition gives 5,000
 seconds, and solvers with heavy inprocessing pay for it before it pays off. Since rules version 5
-every run goes on to ten times the budget (`dojo::RUN_BUDGET`, 70 billion), and the leaderboard
-also ranks by smaller and larger budgets from the same runs. On nine hidden sets like a season's
-(`calibration-1` to `-3`, `hidden-4` to `-9`), MiniSat leads Kissat and CaDiCaL at the budget on
-every one; Kissat overtakes MiniSat for good between 2.4 and 3.9 times the budget on five of them
-and for a while on three more, CaDiCaL only for a while on four. Beyond ten times nothing changes
-among the three: each solves all 48 formulas of every set by then. Ten times costs little on the
-worker (4 shared CPUs, four runs at a time, about 3.4 billion fuel per second and run): the
-reference solvers take well under a minute per set with proofs checked, and a solver that solves
-nothing takes five to ten minutes, within the quarter of an hour after which the website gives an
-evaluation up as lost. A hundred times would take most of an hour.
+every run goes on past the budget, and the leaderboard also ranks by smaller and larger budgets
+from the same runs. On nine hidden sets like a season's (`calibration-1` to `-3`, `hidden-4` to
+`-9`), MiniSat leads Kissat and CaDiCaL at the budget on every one; Kissat overtakes MiniSat for
+good between 2.4 and 3.9 times the budget on five of them and for a while on three more, CaDiCaL
+only for a while on four. Beyond ten times nothing changes among the three: each solves all 48
+formulas of every set by then.
+
+Rules version 5 went on to ten times the budget, version 6 goes to four times
+(`dojo::RUN_BUDGET`, 28 billion): that keeps all five crossovers for good, at less than half the
+cost. Ten times turned out far too slow on the worker. Its four shared CPUs (Fly.io
+`shared-cpu-4x`) may run 5 ms of every 80 ms each, a quarter of one core between the four, once a
+small burst balance is used up, and a machine that starts on demand has little of it. On
+2026-10-21 Hashi CDCL took 977.5 s there at ten times the budget and splr about 476 s; on four
+fast desktop cores (`taskset -c 0-3`, four runs at a time, 4.3 to 8.5 billion fuel per second
+and run depending on the solver, the same with one thread as with four) the two take 55 s and
+22 s on `calibration-1`. So the worker gets through about 1.5 billion fuel per second for the
+whole machine, 0.4 billion per run, 18 to 22 times less than the desktop, and more threads
+don't help under a quota that all four CPUs share. (Rules version 5 assumed 3.4 billion per
+run, as if the four CPUs were whole cores, and so five to ten minutes for a solver that solves
+nothing.) Checking proofs is the smaller part: drat-trim and cake_lpr, one proof at a time, need
+at most 20 s on a desktop core for all the proofs of a set (MiniSat's 25; the largest, 76 MB
+from a run of 64 billion fuel, takes 11 s), up to two fifths of the time for the quick solvers,
+next to nothing for the slow ones, whose time goes into runs that end out of fuel.
+
+CPU seconds on the desktop for `calibration-1`, solving and checking, with the runs going to a
+multiple of the budget; the worker takes about five seconds for each (977.5 s for Hashi CDCL's
+211, 476 s for splr's 73, on the season's set, which is of the same kind):
+
+| | 1× | 2× | 4× | 10× | worker at 4× | worker at 10× |
+|---|---|---|---|---|---|---|
+| Kissat | 12 | 14 | 23 | 23 | 2 min | 2 min |
+| CaDiCaL | 16 | 19 | 24 | 33 | 2 min | 3 min |
+| MiniSat | 17 | 20 | 27 | 45 | 2 min | 4 min |
+| splr | 30 | 40 | 54 | 73 | 4½ min | 8 min (measured) |
+| Hashi CDCL | 28 | 52 | 98 | 211 | 8 min | 16 min (measured) |
+| Hashi DPLL | 46 | 86 | 148 | 307 | 12 min | 26 min |
+| solves nothing | 40–65 | 80–130 | 160–250 | 400–630 | 13–21 min | 33–53 min |
+
+A solver that solves nothing runs every formula to the end: 48 runs of 28 billion fuel, at the
+fuel rates of the solvers above. At ten times the budget a run of a solver with MiniSat's rate
+would also take about five and a half minutes on the worker, past the 300 s wall clock limit,
+which would have decided its result instead of fuel; at four times it takes about two. On
+dedicated CPUs (`performance`, a whole core each) the worker would be about eight times faster
+with two of them: a minute or two for every house entry.
 
 **The answer to the objection.** Instruction counts are not time, and refactoring changes them;
 both are true. Measured on seven very different solvers, counting operators with weights for

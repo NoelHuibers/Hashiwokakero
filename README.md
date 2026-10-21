@@ -39,6 +39,10 @@ for production configuration.
 `pnpm run clean` previews removable build artifacts; `pnpm run clean --yes` deletes
 them. Optional `sccache` can share dependency builds between checkouts.
 
+The server draws the social preview images (`src/server/og`) with fonts cut down to their
+characters, committed in `src/server/og/fonts`. After changing a text on them, run
+`pnpm run og-fonts`; the og tests fail until then.
+
 ## Tests
 
 ```sh

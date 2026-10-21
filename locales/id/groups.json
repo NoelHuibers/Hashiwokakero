@@ -1,0 +1,100 @@
+{
+  "title": "Grup",
+  "intro": "Mainkan teka-teki harian bersama teman, keluarga, atau rekan kerja: lihat siapa yang sudah selesai hari ini, bandingkan waktu setelah kamu selesai, dan saksikan jembatan di antara kalian terus tumbuh.",
+  "list": {
+    "title": "Grupmu",
+    "text": "Semua grup yang kamu ikuti, dan berapa orang yang sudah menyeberang hari ini.",
+    "none": "Belum ada grup. Buat satu dan kirim tautannya ke teman-temanmu.",
+    "members": "Anggota: {{ count }}",
+    "today": "Selesai hari ini"
+  },
+  "create": {
+    "title": "Buat grup",
+    "text": "Beri nama, lalu kirim tautan undangan ke siapa saja yang mau bergabung. Tidak perlu akun.",
+    "name": "Nama grup",
+    "placeholder": "mis. Klub Jembatan",
+    "button": "Buat grup",
+    "busy": "Membuat…",
+    "invite_hint": "Punya tautan undangan? Buka saja untuk bergabung."
+  },
+  "ready": {
+    "title": "Grupmu sudah siap!",
+    "text": "Kirim tautan ini ke teman-temanmu: siapa pun yang membukanya bisa bergabung dengan satu klik.",
+    "open": "Buka grup"
+  },
+  "invite": {
+    "title": "Tautan undangan",
+    "copy": "Salin tautan",
+    "copied": "Tautan undangan disalin ke papan klip.",
+    "share": "Bagikan undangan",
+    "share_text": "Gabung ke grupku “{{ name }}” di Hashi dan ayo bandingkan jembatan harian kita!",
+    "rotate": "Buat tautan baru",
+    "rotate_confirm": "Buat tautan undangan baru? Tautan lama tidak akan berfungsi lagi.",
+    "rotated": "Tautan undangan baru sudah dibuat, tautan lama tidak berfungsi lagi."
+  },
+  "join": {
+    "page_title": "Gabung ke grup",
+    "title": "Gabung ke “{{ name }}”",
+    "text": "Anggota yang membandingkan jembatan harian mereka di sini: {{ count }}",
+    "button": "Gabung ke grup",
+    "busy": "Bergabung…",
+    "joined": "Selamat datang di {{ name }}!",
+    "full": "Grup ini sudah penuh, anggotanya sudah 50 orang.",
+    "guest_hint": "Tidak perlu akun: kamu bergabung sebagai tamu dan bisa mengklaim nama pengguna kapan saja.",
+    "invalid_title": "Tautan undangan ini tidak berfungsi",
+    "invalid_text": "Mungkin ada salah ketik, atau grupnya sudah membuat tautan baru. Minta tautan baru ke salah satu anggota."
+  },
+  "page": {
+    "title": "Grup",
+    "back": "Grupmu",
+    "since": "sejak {{ date }}",
+    "not_found": "Grup ini tidak ada, atau kamu bukan anggotanya.",
+    "not_found_hint": "Minta tautan undangan ke salah satu anggota untuk bergabung."
+  },
+  "archipelago": {
+    "label": "Kepulauan grup, satu pulau untuk setiap anggota. Selesai hari ini: {{ done }} dari {{ total }}",
+    "done": "selesai hari ini",
+    "waiting": "belum main hari ini",
+    "bridge": "{{ a }} & {{ b }} · hari keduanya selesai: {{ days }}",
+    "legend": "Satu jembatan untuk setiap pasangan tetangga yang menyelesaikan teka-teki harian yang sama dalam empat minggu terakhir, dan jembatan ganda setelah tujuh hari seperti itu. Bendera kecil berkibar di atas setiap orang yang sudah selesai hari ini."
+  },
+  "today": {
+    "title": "Hari ini",
+    "daily": "Jembatan harian #{{ number }}",
+    "your_turn": "Sudah selesai: {{ done }} dari {{ total }} – giliranmu!",
+    "all_waiting": "Belum ada yang menyeberang – jadilah yang pertama!",
+    "spoiler": "Waktu baru muncul setelah kamu sendiri menyelesaikan teka-teki harian hari ini.",
+    "play": "Mainkan teka-teki hari ini",
+    "done": "selesai",
+    "waiting": "menunggu",
+    "unranked": "tanpa peringkat"
+  },
+  "week": {
+    "title": "Pekan",
+    "member": "Anggota",
+    "earlier": "Pekan sebelumnya",
+    "later": "Pekan berikutnya",
+    "solved": "{{ name }} · {{ date }}: selesai",
+    "missed": "{{ name }} · {{ date }}: terlewat",
+    "open": "{{ name }} · {{ date }}: belum dimainkan"
+  },
+  "members": {
+    "title": "Anggota",
+    "count": "Anggota: {{ count }} dari {{ max }}",
+    "owner": "Pemilik",
+    "joined": "bergabung {{ date }}",
+    "remove_label": "Keluarkan {{ name }}",
+    "remove_confirm": "Keluarkan {{ name }} dari grup? Dia bisa bergabung lagi lewat tautan undangan, kecuali kamu membuat tautan baru.",
+    "removed": "{{ name }} sudah tidak ada di grup.",
+    "leave": "Keluar dari grup",
+    "leave_confirm": "Keluar dari “{{ name }}”? Kamu bisa bergabung lagi lewat tautan undangan.",
+    "left": "Kamu sudah keluar dari {{ name }}."
+  },
+  "daily": {
+    "tabs": "Peringkat",
+    "world": "Dunia",
+    "done": "Selesai hari ini: {{ done }} dari {{ total }}",
+    "open": "Buka grup",
+    "compare": "Bandingkan dengan teman: <b>buat grup</b>"
+  }
+}

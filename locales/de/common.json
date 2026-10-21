@@ -5,7 +5,8 @@
     "ranks": "Ranking",
     "create": "Bauen",
     "lab": "Labor",
-    "main": "Hauptnavigation"
+    "main": "Hauptnavigation",
+    "groups": "Gruppen"
   },
   "tagline_short": "Brücken",
   "language": "Sprache",
@@ -74,7 +75,13 @@
     "too_many_messages": "Für heute sind es genug Nachrichten, bitte versuch es morgen wieder.",
     "rename_too_soon": "Du hast deinen Benutzernamen erst vor Kurzem geändert, bitte versuch es später wieder.",
     "username_not_allowed": "Dieser Name ist hier nicht erlaubt, bitte wähl einen anderen.",
-    "banned": "Dieses Konto ist gesperrt. Wenn du das für einen Fehler hältst, schreib uns bitte."
+    "banned": "Dieses Konto ist gesperrt. Wenn du das für einen Fehler hältst, schreib uns bitte.",
+    "group_name_invalid": "Gruppennamen haben 1 bis 32 Zeichen.",
+    "group_name_not_allowed": "Dieser Name ist hier nicht erlaubt, bitte wähl einen anderen.",
+    "group_not_found": "Diese Gruppe gibt es nicht, oder du bist kein Mitglied.",
+    "group_full": "Diese Gruppe ist voll: Sie hat schon 50 Mitglieder.",
+    "too_many_groups": "Du bist schon in 10 Gruppen, verlass zuerst eine.",
+    "group_owner_only": "Das kann nur der Admin der Gruppe."
   },
   "solver": {
     "title": "SAT-Solver",
@@ -187,6 +194,12 @@
   "date_long": "{{ weekday }}, {{ day }}. {{ month }} {{ year }}",
   "date_short": "{{ day }}. {{ month }} {{ year }}",
   "og_image_alt": "Ein gelöstes Hashiwokakero-Rätsel in Pixel-Art: nummerierte Inseln, verbunden durch hölzerne und zinnoberrote Brücken",
+  "og": {
+    "tagline": "Das japanische Brückenrätsel, in Pixel-Art",
+    "free": "Kostenlos spielen",
+    "daily": "Jeden Tag ein neues Rätsel",
+    "unique": "Genau eine Lösung"
+  },
   "ld": {
     "site": "Hashiwokakero, das japanische Brückenrätsel, kostenlos im Browser spielbar.",
     "game": "Verbinde die Inseln mit Brücken, sodass jede Insel so viele Brücken hat, wie ihre Zahl angibt. Ein Tagesrätsel mit Rangliste, fünf Schwierigkeitsgrade, Pixel-Art – und jedes Rätsel hat genau eine Lösung."

@@ -14,8 +14,12 @@ use geometry::{cell_edges, cell_of, edge_at, edge_in_direction, midpoint, whole_
 use input::{Drag, Touches};
 use layers::{BlockedMark, Bridges, GhostBridge, GridDots, HoverCell, Islands};
 
+// For the board of the preview images (server/og)
+#[cfg(feature = "ssr")]
+pub(crate) use geometry::span_of;
+
 /// Space around the grid, decorations stick out of the top row.
-const PAD: i32 = 6;
+pub(crate) const PAD: i32 = 6;
 /// Pointer movement (art pixels) after which pressing an island becomes a drag.
 const DRAG_THRESHOLD: f64 = 5.0;
 
@@ -68,6 +72,9 @@ pub fn BoardView(
     /// Draw the wooden frame around the sea.
     #[prop(optional)]
     framed: bool,
+    /// What the board shows, for screen readers, instead of just "puzzle board".
+    #[prop(into, optional)]
+    label: Option<Signal<String>>,
 ) -> impl IntoView {
     let i18n = use_i18n();
     let svg_ref = NodeRef::<leptos::svg::Svg>::new();
@@ -623,7 +630,10 @@ pub fn BoardView(
             xmlns="http://www.w3.org/2000/svg"
             role=if mode == BoardMode::View { "img" } else { "group" }
             tabindex=(mode != BoardMode::View).then_some(0)
-            aria-label=move || t_string!(i18n, common.board.label)
+            aria-label=move || match label {
+                Some(label) => label.get(),
+                None => t_string!(i18n, common.board.label).to_string(),
+            }
             aria-description=keyboard_help
             on:keydown=on_key
             on:focus=move |_| {

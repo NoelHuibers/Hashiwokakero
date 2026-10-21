@@ -43,7 +43,7 @@
     "shapley_tip": "Its fair share of the fuel the whole field saves, in billions per formula",
     "vbs_line": "Virtual best solver of {{ count }} solvers: {{ solved }}/{{ total }} solved, PAR-2 {{ par2 }}",
     "view_budget": "Budget",
-    "budget_hint": "The same runs ranked with another budget per formula. Every run goes on to ten times the official budget, and fuel is deterministic, so each smaller budget gives exactly the result a run with it would have had. The official ranking stays at 1×; the arrows show how far a solver moves from its place there.",
+    "budget_hint": "The same runs ranked with another budget per formula. Every run goes on to four times the official budget, and fuel is deterministic, so each smaller budget gives exactly the result a run with it would have had. The official ranking stays at 1×; the arrows show how far a solver moves from its place there.",
     "budget_pick": "Budget per formula",
     "budget_official": "official",
     "budget_wrong": "wrong answer",
@@ -353,6 +353,6 @@
     "shapley_title": "Shapley value",
     "shapley": "Standalone scores reward near-clones, marginal contributions punish them. The Shapley value from cooperative game theory is fair to both: it splits the fuel the whole field saves over solving nothing by each solver's average marginal contribution over every order of joining (<a>Fréchette et al., AAAI 2016</a>). We compute it exactly, in billions of fuel per formula; the values add up to twice the budget minus the VBS's PAR-2.",
     "budget_title": "Rankings at other budgets",
-    "budget": "The ranking measures a short race: 7 billion fuel per formula, about half a second of a native solver, where the SAT Competition allows 5,000 seconds. Solvers with heavy preprocessing and inprocessing, like Kissat and CaDiCaL, pay for it before it pays off, so at this budget they rank behind MiniSat. Every run goes on to ten times the budget, and since fuel is deterministic one run gives the exact score at every smaller budget: the Budget view shows how the ranking changes with more time."
+    "budget": "The ranking measures a short race: 7 billion fuel per formula, about half a second of a native solver, where the SAT Competition allows 5,000 seconds. Solvers with heavy preprocessing and inprocessing, like Kissat and CaDiCaL, pay for it before it pays off, so at this budget they rank behind MiniSat. Every run goes on to four times the budget, and since fuel is deterministic one run gives the exact score at every smaller budget: the Budget view shows how the ranking changes with more time."
   }
 }

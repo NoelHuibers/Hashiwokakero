@@ -89,6 +89,21 @@
   --chart-context: rgb(119 106 92 / 0.45);
   --chart-grid: #ece2cf;
   --chart-axis: #c9b998;
+
+  /* Member colours of a group (model::colour_var), traditional colours that read on washi paper
+     and on the sea: 朱 藍 抹 黄 桜 藤 浅 茶 柿 鼠 苔 梅 */
+  --nakama-0: #d8402a;
+  --nakama-1: #2f5d9e;
+  --nakama-2: #5f8f22;
+  --nakama-3: #b98000;
+  --nakama-4: #cf5784;
+  --nakama-5: #7d5fb0;
+  --nakama-6: #1d8689;
+  --nakama-7: #8b5a2b;
+  --nakama-8: #d9631a;
+  --nakama-9: #67717f;
+  --nakama-10: #3c7a4c;
+  --nakama-11: #a3365e;
 }
 
 html[lang="ko"] { --app-font: "Noto Sans KR Variable", "Murecho Variable", system-ui, sans-serif; }
@@ -169,6 +184,20 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
   --chart-context: rgb(154 167 191 / 0.4);
   --chart-grid: #22304a;
   --chart-axis: #3a4c70;
+
+  /* Lighter at night, lanterns on the indigo sea */
+  --nakama-0: #ff7a5c;
+  --nakama-1: #7aa7ea;
+  --nakama-2: #a3d65a;
+  --nakama-3: #ffc94d;
+  --nakama-4: #f59bbd;
+  --nakama-5: #b9a0ec;
+  --nakama-6: #4fd0cf;
+  --nakama-7: #d39a63;
+  --nakama-8: #ff9d5c;
+  --nakama-9: #a9b4c4;
+  --nakama-10: #74c08b;
+  --nakama-11: #e8799f;
 }
 
 @theme inline {
@@ -240,6 +269,7 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
   h1,
   h2,
   h3,
+  h4,
   .uppercase.font-bold {
     font-family: var(--display-font);
   }
@@ -304,6 +334,33 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 .hanko-ink {
   color: var(--primary);
   box-shadow: inset 0 0 0 1.5px var(--primary);
+}
+
+/* The crossed swords next to a name on the leaderboards (components/rivals.rs). Unmarked they
+   wait, greyed out, until their row is hovered or they are focused; touch screens can't hover,
+   there they show faintly. Marked they stay in colour: the rival marker. */
+.rival-toggle {
+  opacity: 0;
+  filter: grayscale(1);
+}
+:is(tr, li, .rival-host):hover .rival-toggle,
+.rival-toggle:focus-visible {
+  opacity: 0.7;
+}
+.rival-toggle:hover {
+  opacity: 1;
+  filter: none;
+}
+@media (hover: none) {
+  .rival-toggle {
+    opacity: 0.35;
+  }
+}
+.rival-toggle[aria-pressed="true"] {
+  opacity: 1;
+  filter: none;
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent);
 }
 
 /* Ranking tables: a hairline under every row, and the marked row (your own result, the fastest
@@ -516,6 +573,63 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 .grid-dot {
   fill: var(--px-sea-light);
   opacity: 0.7;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Groups 仲間: the archipelago of a group's members                    */
+/* ------------------------------------------------------------------ */
+
+/* The archipelago's sea: crisp pixels like the board, but it scrolls with the page on phones */
+.nakama-sea {
+  display: block;
+  shape-rendering: crispEdges;
+}
+.nakama-sea text {
+  font-family: var(--font-pixel);
+  shape-rendering: auto;
+}
+
+/* A member's island: the plate in their colour (`--member`, set per island), their initial on it */
+.nakama-island {
+  --isl-plate: var(--member);
+  --isl-plate-shade: color-mix(in srgb, var(--member) 72%, black);
+  --isl-number: var(--card);
+}
+.nakama-island .num {
+  fill: var(--isl-number);
+  font-size: 8px;
+  pointer-events: none;
+}
+.px-m { fill: var(--member); }
+.px-M { fill: color-mix(in srgb, var(--member) 70%, black); }
+.nakama-tag rect {
+  fill: var(--card);
+  stroke: color-mix(in srgb, var(--member) 60%, var(--px-ink));
+  stroke-width: 0.5;
+}
+.nakama-tag text {
+  fill: var(--foreground);
+  font-size: 5.5px;
+}
+.nakama-tag.me rect {
+  fill: var(--primary);
+  stroke: var(--px-ink);
+}
+.nakama-tag.me text {
+  fill: var(--primary-foreground);
+}
+/* A member waiting to play today's daily dozes: their island a little paler */
+.nakama-island.waiting > use {
+  opacity: 0.82;
+}
+
+/* A day of the week grid: a hanko in the member's colour, or empty paper */
+.nakama-stamp {
+  background: var(--member);
+  color: var(--card);
+  box-shadow:
+    inset 0 0 0 2px var(--member),
+    inset 0 0 0 3px var(--card);
 }
 
 /* ------------------------------------------------------------------ */

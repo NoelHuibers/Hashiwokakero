@@ -2,7 +2,8 @@
 //!
 //! A submission is stored with its WebAssembly module and queued. A background task sends
 //! queued submissions to the worker (`DOJO_URL`, which starts on demand), the worker reports
-//! progress and the score to `/dojo/report`. Runs that go quiet are queued again.
+//! progress and the score to `/dojo/report`, and a heartbeat for every job it holds, waiting
+//! or running. Jobs it stops reporting about (the worker is gone) are queued again.
 //!
 //! Settings: `DOJO_URL` (worker, unset: nothing is evaluated), `DOJO_TOKEN` (authenticates us
 //! to the worker; its reports carry a per-job token instead), `HASHI_ADMIN_TOKEN` (house entries),
@@ -51,10 +52,12 @@ const MAX_PENDING: i64 = 40;
 const NAME_MAX: usize = 40;
 const DESCRIPTION_MAX: usize = 600;
 const URL_MAX: usize = 200;
-/// A running evaluation that hasn't reported for this long is queued again.
+/// A job or check at the worker that hasn't reported for this long is queued again. The worker
+/// sends heartbeats every minute (`dojo::worker`), so only a worker that is gone stays quiet.
 const STALE_MS: i64 = 15 * 60 * 1000;
 const MAX_ATTEMPTS: i64 = 3;
-/// Evaluations sent to the worker at the same time.
+/// Evaluations sent to the worker at the same time. It runs one, the other waits in its queue
+/// (with heartbeats), so it can start right after.
 const MAX_RUNNING: i64 = 2;
 const BOARD_SIZE: usize = 100;
 

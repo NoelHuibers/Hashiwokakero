@@ -3,7 +3,7 @@
     "title": "Hashiwokakero nasıl oynanır · Kurallar ve ipuçları · Hashi",
     "description": "Çözülmüş örnekle Hashiwokakero (Köprüler) kuralları, çoğu bulmacayı tahminsiz çözen çıkarımlar ve SAT çözücünün çözümün tekliğini nasıl kanıtladığı."
   },
-  "title": "Nasıl oynanır",
+  "title": "Hashiwokakero nasıl oynanır",
   "intro": "Hashiwokakero (橋をかけろ, “köprüleri kur!”), Nikoli tarafından yayımlanan bir mantık bulmacasıdır. Tüm adaları köprülerle bağla; her adada, üzerindeki sayı kadar köprü olsun.",
   "rule": {
     "count_title": "Köprüleri say",
@@ -16,6 +16,25 @@
     "connected": "Sonunda her adadan diğer her adaya ulaşılabilmelidir."
   },
   "example": "Çözülmüş bir bulmaca",
+  "tips": {
+    "title": "Hashiwokakero çözüm teknikleri",
+    "intro": "Çoğu bulmacayı tahmin etmeden çözen beş çıkarım. Her resim, bu çıkarımların zorunlu kıldığı köprüleri gösterir.",
+    "corner_title": "Köşeler çift köprü ister",
+    "corner": "Köşedeki bir 4’ün yalnızca iki komşusu vardır, bu yüzden ikisine de çift köprü gerekir. Kenardaki bir 6 ve açıktaki bir 8 için de aynısı geçerlidir.",
+    "corner_board": "Sol üst köşede bir 4; sağındaki 3’e ve altındaki 2’ye birer çift köprüyle bağlı.",
+    "ones_title": "İki 1 asla birleşmez",
+    "ones": "İki 1 arasındaki bir köprü ikisini de tamamlar ve geri kalan her şeyden koparırdı, bu yüzden her 1 başka yere bağlanır. Aynı nedenle iki 2 asla bir çift köprü paylaşmaz.",
+    "ones_board": "Üst sırada iki 1; birbirine değil, her biri tek köprüyle altındaki 3’e bağlı.",
+    "count_title": "Eksik olanı say",
+    "count": "Üç komşusu olan bir 5 en fazla altı köprü alabilir. Komşulardan biri olmadan en fazla dörde ulaşır, bu yüzden her komşu en az bir köprü alır.",
+    "count_board": "Üst kenarda bir 5; üç komşusunun her birine tek köprüyle bağlı: soldaki 2, sağdaki 3 ve alttaki 4.",
+    "block_title": "Köprüler yolu keser",
+    "block": "Köprüler asla kesişmez, bu yüzden her köprü üzerinden geçtiği hatları kapatır. Arkasında kalan bir adaya tek bir yol kalabilir.",
+    "block_board": "Ortadan aşağı inen çift köprü soldaki 1’in sırasını keser; bu yüzden 1, sağdaki 2 yerine altındaki 2’ye bağlanır.",
+    "connect_title": "Bir grubu asla kapatma",
+    "connect": "Sonunda her şey bağlı olmalı. Birkaç adayı kendi aralarında tamamlamak onları koparacaksa, en az bir köprü dışarı çıkmalıdır.",
+    "connect_board": "1, 3 ve 2’den oluşan bir sıra: 1, 3’e bağlanır. 3 son iki köprüsünü 2’ye verseydi üç ada kopuk kalırdı, bu yüzden 3 aşağıdaki 2’ye de bir köprü kurar."
+  },
   "controls": {
     "title": "Kontroller",
     "tap": "Köprü kurmak için iki ada arasındaki suya tıkla, ikinci köprü için tekrar tıkla, üçüncü tık köprüleri kaldırır.",

@@ -1,11 +1,14 @@
 //! The daily puzzle page, the home page: one puzzle a day for everyone, timed and ranked.
 
+pub mod about;
 mod actions;
 pub mod cover;
 pub mod ranking;
 pub mod result;
+pub mod rivals;
 pub mod state;
 pub mod week;
+pub mod win;
 
 use std::time::Duration;
 
@@ -18,9 +21,8 @@ use crate::api::{
 };
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
-use crate::components::stamps::announce;
 use crate::components::ui::badge::{Badge, BadgeVariant};
-use crate::components::ui::button::{Button, ButtonVariant};
+use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};
@@ -28,15 +30,18 @@ use crate::model::{
     AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_difficulty,
     daily_number, format_duration, weekday,
 };
-use crate::pages::play::{SeoIntro, islands_percent};
+use crate::pages::play::islands_percent;
 use crate::seo::{PageMeta, site_ld};
 use crate::state::{Auth, DailyGame, Status, ToastKind, error_toast, load, toast};
 
+use about::About;
 use cover::Cover;
 use ranking::RankingCard;
 use result::ResultCard;
+use rivals::RivalsCard;
 use state::{Daily, LOG_KEY, SavedLog, browser_now, browser_utc_offset};
 use week::WeekCard;
+use win::WinCard;
 
 #[component]
 fn Stat(
@@ -83,6 +88,8 @@ pub fn DailyPage() -> impl IntoView {
         skew: RwSignal::new(0),
         now: RwSignal::new(0),
         result: RwSignal::new(None),
+        admired: RwSignal::new(false),
+        unsent: RwSignal::new(false),
         ranking: RwSignal::new(None),
         busy: RwSignal::new(false),
         refreshing: StoredValue::new(false),
@@ -142,11 +149,7 @@ pub fn DailyPage() -> impl IntoView {
 
     // Submit as soon as the board is solved
     Effect::new(move |_| {
-        if game.status.get() != Status::Won
-            || daily.finished()
-            || daily.actions.locked()
-            || daily.busy.get_untracked()
-        {
+        if !daily.ready_to_submit() {
             return;
         }
         let Some(day) = daily.day() else { return };
@@ -172,13 +175,8 @@ pub fn DailyPage() -> impl IntoView {
             }
             match response {
                 Ok(result) => {
-                    let end = browser_now() + daily.skew.get_untracked();
-                    daily.update_attempt(|a| {
-                        a.finished_at = Some(end);
-                        a.time_ms = Some(result.time_ms);
-                    });
-                    announce(&result.stamps);
-                    daily.result.set(Some(result));
+                    // The win card shows the stamps, no toasts on top of it
+                    daily.submitted(result, browser_now() + daily.skew.get_untracked());
                     daily.refresh_ranking();
                 }
                 Err(e) => {
@@ -483,6 +481,9 @@ pub fn DailyPage() -> impl IntoView {
                                     <Show when=move || game.status.get() == Status::Won>
                                         <Petals />
                                     </Show>
+                                    <Show when=move || daily.celebrating()>
+                                        <WinCard daily=daily />
+                                    </Show>
                                 </div>
                             }
                                 .into_any()
@@ -521,6 +522,18 @@ pub fn DailyPage() -> impl IntoView {
                                 t_string!(i18n, daily.action_retry).to_string()
                             } else { String::new() }}
                         </div>
+                        <Show when=move || daily.unsent.get() && !daily.finished()>
+                            <div class="flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning-light px-3 py-2 text-sm text-warning-dark">
+                                <span class="flex-1">{t!(i18n, daily.submit_failed)}</span>
+                                <Button
+                                    size=ButtonSize::Sm
+                                    attr:disabled=move || daily.busy.get()
+                                    on:click=move |_| daily.submit_again()
+                                >
+                                    {t!(i18n, daily.submit_again)}
+                                </Button>
+                            </div>
+                        </Show>
                         <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap" aria-busy=move || daily.actions.pending.get().to_string()>
                             <Button
                                 variant=ButtonVariant::Outline
@@ -576,11 +589,12 @@ pub fn DailyPage() -> impl IntoView {
                     <Show when=move || daily.finished() || matches!(game.status.get(), Status::Won | Status::Revealed)>
                         <ResultCard daily=daily />
                     </Show>
+                    <RivalsCard daily=daily />
                     <RankingCard daily=daily />
                     <WeekCard daily=daily />
                 </aside>
             </div>
         </section>
-        <SeoIntro />
+        <About />
     }
 }

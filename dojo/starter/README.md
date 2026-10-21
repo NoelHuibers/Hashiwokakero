@@ -58,7 +58,7 @@ machine load don't matter, so scores are exactly reproducible. Clocks and random
 and set.
 
 Score = PAR-2: the mean fuel per formula, where unsolved formulas count twice the budget.
-Runs go on to ten times the budget: the ranking counts only what happened within it, and the
+Runs go on to four times the budget: the ranking counts only what happened within it, and the
 leaderboard's Budget view ranks the same runs with a tenth of the budget or all of it, since fuel
 is deterministic. `dojo run` prints both.
 **A single wrong answer disqualifies the submission**: a wrong model, UNSAT on a satisfiable

@@ -433,7 +433,7 @@ mod tests {
             generator.as_str(),
             "kind: hidden\n",
             "formulas: 2\n",
-            "budget: 7000000000\nrun budget: 70000000000\n",
+            "budget: 7000000000\nrun budget: 28000000000\n",
             "mystery family: ",
             "    hashi           1  1/0  puzzle\n",
             "    random-3sat     1  0/1  random\n",

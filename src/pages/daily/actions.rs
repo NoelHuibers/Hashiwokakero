@@ -497,6 +497,8 @@ mod tests {
             skew: RwSignal::new(0),
             now: RwSignal::new(2000),
             result: RwSignal::new(None),
+            admired: RwSignal::new(false),
+            unsent: RwSignal::new(false),
             ranking: RwSignal::new(None),
             busy: RwSignal::new(false),
             logged: StoredValue::new(None),

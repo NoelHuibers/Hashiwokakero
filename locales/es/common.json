@@ -5,7 +5,8 @@
     "ranks": "Podio",
     "create": "Crear",
     "lab": "Lab",
-    "main": "Navegación principal"
+    "main": "Navegación principal",
+    "groups": "Grupos"
   },
   "tagline_short": "Puentes",
   "language": "Idioma",
@@ -74,7 +75,13 @@
     "too_many_messages": "Ya son suficientes mensajes por hoy, inténtalo de nuevo mañana.",
     "rename_too_soon": "Cambiaste tu nombre de usuario hace poco, inténtalo más tarde.",
     "username_not_allowed": "Este nombre no está permitido aquí, elige otro.",
-    "banned": "Esta cuenta está bloqueada. Si crees que es un error, escríbenos."
+    "banned": "Esta cuenta está bloqueada. Si crees que es un error, escríbenos.",
+    "group_name_invalid": "El nombre del grupo debe tener de 1 a 32 caracteres.",
+    "group_name_not_allowed": "Este nombre no está permitido aquí, elige otro.",
+    "group_not_found": "Este grupo no existe o no eres miembro.",
+    "group_full": "Este grupo está lleno: ya tiene 50 miembros.",
+    "too_many_groups": "Ya estás en 10 grupos, sal de uno primero.",
+    "group_owner_only": "Solo el admin del grupo puede hacer eso."
   },
   "solver": {
     "title": "Solver SAT",
@@ -187,6 +194,12 @@
   "date_long": "{{ weekday }}, {{ day }} de {{ month }} de {{ year }}",
   "date_short": "{{ day }} de {{ month }} de {{ year }}",
   "og_image_alt": "Un puzle de Hashiwokakero resuelto en pixel art: islas numeradas unidas por puentes de madera y bermellón",
+  "og": {
+    "tagline": "El puzle japonés de puentes, en pixel art",
+    "free": "Gratis",
+    "daily": "Un puzle nuevo cada día",
+    "unique": "Una única solución"
+  },
   "ld": {
     "site": "Hashiwokakero, el puzle japonés de puentes, gratis en el navegador.",
     "game": "Une las islas con puentes para que cada isla tenga tantos puentes como indica su número. Un reto diario con clasificación, cinco dificultades, pixel art, y cada puzle tiene exactamente una solución."

@@ -1,0 +1,45 @@
+{
+  "title": "Rivals",
+  "mark": "Mark {{ name }} as your rival",
+  "unmark": "{{ name }} is your rival, unmark",
+  "marked": "{{ name }} is your rival now. Every daily is a duel!",
+  "unmarked": "{{ name }} is no longer your rival.",
+  "mark_button": "Mark as rival",
+  "marked_button": "Your rival",
+  "private": "Only you see whom you marked, nobody is told.",
+  "gap_seconds": "{{ gap }} s",
+  "gap_minutes": "{{ gap }} min",
+  "errors": {
+    "rival_self": "You can't be your own rival.",
+    "too_many_rivals": "You have 20 rivals already. Unmark one to make room.",
+    "no_such_player": "There is no such player."
+  },
+  "today": {
+    "title": "Rivals today",
+    "beat": "You beat <b>{{ name }}</b> by {{ gap }}",
+    "lost": "<b>{{ name }}</b> was {{ gap }} faster",
+    "tie": "Dead heat with <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> hasn't played yet",
+    "solved": "<b>{{ name }}</b> solved it in {{ time }}",
+    "empty": "Mark players as rivals on the leaderboard, and every daily becomes a duel.",
+    "find": "Find rivals →"
+  },
+  "record": {
+    "title": "Head-to-head",
+    "text": "Every day you both solved, the faster one wins.",
+    "short": "Duels",
+    "summary": "Wins: {{ wins }} · losses: {{ losses }} · draws: {{ draws }}",
+    "wins": "Wins",
+    "losses": "Losses",
+    "draws": "Draws",
+    "none": "No day you both solved yet. Today's daily could be the first duel!",
+    "recent": "Last duels",
+    "day": "Daily #{{ number }}: {{ mine }} vs {{ theirs }}"
+  },
+  "board": {
+    "text": "You and your rivals, all time. Only you see this list.",
+    "empty": "No rivals yet. Tap the crossed swords next to a name on any leaderboard to mark someone.",
+    "you": "You",
+    "streak": "Streak"
+  }
+}

@@ -307,6 +307,42 @@ WHEN NEW.attempt_id = '' BEGIN
     WHERE user_id = NEW.user_id AND day = NEW.day;
 END;
 ",
+    // 15
+    "
+-- Groups (仲間 nakama) of players who compare their dailies, see server/groups/. Joined with
+-- the invite code (the link /g/<code>), which the owner can replace. A group goes when its last
+-- member leaves, the owner's role passes to the longest standing member
+CREATE TABLE IF NOT EXISTS groups (
+    id         INTEGER PRIMARY KEY,
+    name       TEXT NOT NULL,
+    invite     TEXT NOT NULL UNIQUE,
+    owner_id   INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS groups_owner ON groups (owner_id);
+
+CREATE TABLE IF NOT EXISTS group_members (
+    group_id  INTEGER NOT NULL,
+    user_id   INTEGER NOT NULL,
+    joined_at INTEGER NOT NULL,
+    -- the member's colour in the group (model::colour_var), kept while they stay
+    colour    INTEGER NOT NULL,
+    PRIMARY KEY (group_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS group_members_user ON group_members (user_id);
+",
+    // 16
+    "
+-- Rivals: players someone marked to compare themselves with, see server/daily/rivals.rs. Private
+-- to the one who marked them, the rival isn't told
+CREATE TABLE IF NOT EXISTS rivals (
+    user_id    INTEGER NOT NULL,
+    rival_id   INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, rival_id)
+);
+CREATE INDEX IF NOT EXISTS rivals_rival ON rivals (rival_id);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

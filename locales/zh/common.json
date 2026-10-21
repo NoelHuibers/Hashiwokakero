@@ -5,7 +5,8 @@
     "ranks": "排行",
     "create": "创作",
     "lab": "实验室",
-    "main": "主导航"
+    "main": "主导航",
+    "groups": "小组"
   },
   "tagline_short": "搭桥",
   "language": "语言",
@@ -74,7 +75,13 @@
     "too_many_messages": "今天的消息已经够多了，请明天再试。",
     "rename_too_soon": "你最近刚更改过用户名，请稍后再试。",
     "username_not_allowed": "这个名字不能在这里使用，请换一个。",
-    "banned": "此账号已被封禁。如果你认为这是误判，请联系我们。"
+    "banned": "此账号已被封禁。如果你认为这是误判，请联系我们。",
+    "group_name_invalid": "小组名称需 1 到 32 个字符。",
+    "group_name_not_allowed": "这个名字不能在这里使用，请换一个。",
+    "group_not_found": "这个小组不存在，或者你不是它的成员。",
+    "group_full": "这个小组已满，已有 50 名成员。",
+    "too_many_groups": "你已加入 10 个小组，请先退出一个。",
+    "group_owner_only": "只有组长才能这样做。"
   },
   "solver": {
     "title": "SAT 求解器",
@@ -187,6 +194,12 @@
   "date_long": "{{ year }}年{{ month }}{{ day }}日 {{ weekday }}",
   "date_short": "{{ year }}年{{ month }}{{ day }}日",
   "og_image_alt": "像素风的已解数桥（Hashiwokakero）谜题：带数字的小岛由木桥和朱红桥相连",
+  "og": {
+    "tagline": "来自日本的搭桥谜题，像素画风",
+    "free": "免费畅玩",
+    "daily": "每天一道新谜题",
+    "unique": "答案唯一"
+  },
   "ld": {
     "site": "数桥（Hashiwokakero），来自日本的搭桥逻辑谜题，在浏览器里免费畅玩。",
     "game": "用桥把小岛连起来，让每座岛的桥数等于它的数字。每日谜题配排行榜，五种难度，像素画风，每道题都只有唯一解。"

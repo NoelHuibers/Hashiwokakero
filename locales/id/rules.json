@@ -3,7 +3,7 @@
     "title": "Cara bermain Hashiwokakero · Aturan dan tips · Hashi",
     "description": "Aturan Hashiwokakero (Jembatan) dengan contoh, deduksi yang memecahkan sebagian besar teka-teki tanpa menebak, dan cara solver SAT membuktikan solusi unik."
   },
-  "title": "Cara bermain",
+  "title": "Cara bermain Hashiwokakero",
   "intro": "Hashiwokakero (橋をかけろ, “bangun jembatan!”) adalah teka-teki logika terbitan Nikoli. Hubungkan semua pulau dengan jembatan sehingga setiap pulau punya jembatan tepat sebanyak angkanya.",
   "rule": {
     "count_title": "Hitung jembatannya",
@@ -16,6 +16,25 @@
     "connected": "Pada akhirnya setiap pulau harus bisa dicapai dari pulau mana pun."
   },
   "example": "Teka-teki yang sudah selesai",
+  "tips": {
+    "title": "Teknik memecahkan Hashiwokakero",
+    "intro": "Lima deduksi yang memecahkan sebagian besar teka-teki tanpa menebak. Setiap gambar menunjukkan jembatan yang dipastikannya.",
+    "corner_title": "Sudut butuh jembatan ganda",
+    "corner": "Angka 4 di sudut hanya punya dua tetangga, jadi butuh jembatan ganda ke keduanya. Hal yang sama berlaku untuk 6 di tepi dan 8 di tengah.",
+    "corner_board": "Angka 4 di sudut kiri atas dengan jembatan ganda ke angka 3 di kanannya dan satu lagi ke angka 2 di bawahnya.",
+    "ones_title": "Dua angka 1 tak pernah terhubung",
+    "ones": "Jembatan antara dua angka 1 akan menuntaskan keduanya dan memutus mereka dari yang lain, jadi setiap 1 terhubung ke tempat lain. Karena alasan yang sama, dua angka 2 tidak pernah berbagi jembatan ganda.",
+    "ones_board": "Dua angka 1 di baris atas, masing-masing dengan satu jembatan ke angka 3 di bawahnya, bukan ke satu sama lain.",
+    "count_title": "Hitung yang kurang",
+    "count": "Angka 5 dengan tiga tetangga paling banyak mendapat enam jembatan. Tanpa salah satunya ia paling banyak hanya mencapai empat, jadi setiap tetangga mendapat minimal satu jembatan.",
+    "count_board": "Angka 5 di tepi atas dengan satu jembatan ke masing-masing dari tiga tetangganya: angka 2 di kiri, 3 di kanan, dan 4 di bawah.",
+    "block_title": "Jembatan menghalangi jalan",
+    "block": "Jembatan tidak pernah bersilangan, jadi setiap jembatan menutup garis yang dilewatinya. Pulau di baliknya mungkin hanya punya satu jalan tersisa.",
+    "block_board": "Jembatan ganda turun di tengah dan menghalangi baris angka 1 di kiri, jadi angka 1 terhubung ke angka 2 di bawahnya, bukan ke angka 2 di kanan.",
+    "connect_title": "Jangan pernah menutup kelompok",
+    "connect": "Semua harus terhubung pada akhirnya. Jika menuntaskan beberapa pulau di antara mereka sendiri akan memutus mereka, minimal satu jembatan harus keluar.",
+    "connect_board": "Baris 1, 3, dan 2: angka 1 terhubung ke 3. Jika 3 memberikan dua jembatan terakhirnya ke 2, ketiga pulau itu akan terputus, jadi 3 juga membangun jembatan ke angka 2 di bawahnya."
+  },
   "controls": {
     "title": "Kontrol",
     "tap": "Klik air di antara dua pulau untuk membangun jembatan, klik lagi untuk jembatan kedua, klik ketiga menghapus keduanya.",
