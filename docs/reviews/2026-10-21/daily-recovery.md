@@ -19,11 +19,11 @@ The old `submit_daily` commits the finish before rank/finisher/stamp queries. Fa
 
 ## Validation
 
-All Rust checks use `CARGO_BUILD_JOBS=2`. Final integrated SSR suite: **402 passed, one existing manual OG sample generator ignored**, plus one doctest passed. All 44 daily page tests and SSR/WASM Clippy with warnings denied passed. Formatting and diff checks passed. Matching release and browser validation are pending.
+All Rust checks use `CARGO_BUILD_JOBS=2`. Final integrated SSR suite: **402 passed, one existing manual OG sample generator ignored**, plus one doctest passed. All 44 daily page tests and SSR/WASM Clippy with warnings denied passed. Formatting and diff checks passed. Fresh matching release build passed. **33 Chromium cases passed** (30 daily journeys and three keyboard journeys), plus **two official-container visual comparisons passed** against existing home/result baselines. The browser ran in the official Playwright 1.64.1 container against matching host fixture servers because the host binary needs newer glibc; no baseline changes were needed.
 
 New focused regressions cover immediate fetch/submit guards, superseded generations/disposal, same-attempt reconciliation, wrong day/start/attempt/puzzle rejection, solved-board/log preservation, old quiet reads, identity changes, replay immutability and concurrent replay, stable-ID replacement, and HTTP user/attempt assertions. Existing paid-intent and synchronous final-move tests remain in the daily suite.
 
-Browser cases added to `e2e/tests/daily.spec.ts` are **unexecuted** pending the parent's matching server/WASM build:
+The following recovery scenarios passed in the matching-build daily browser suite:
 
 1. Initial metadata failure → manual retry, same-turn double click, no focus retry.
 2. Independent ranking failure → ranking-only retry while preserving running progress.
@@ -35,7 +35,7 @@ Browser cases added to `e2e/tests/daily.spec.ts` are **unexecuted** pending the 
 8. Solved SPA return, including an initial metadata failure and manual retry in the same document.
 9. Midnight replacement of an old solved daily with the new day’s metadata (ranking/difficulty are not asserted under the simulated future clock).
 
-The existing final-paid-hint submission counter now observes the new guarded endpoint. A fresh matching release is building; browser cases remain unexecuted until it completes.
+The existing final-paid-hint submission counter now observes the new guarded endpoint. The complete daily suite, including existing paid-action and win-modal behavior, passed without browser errors. CI coverage and required checks remain the merge gate.
 
 ## Limits and tradeoffs
 
