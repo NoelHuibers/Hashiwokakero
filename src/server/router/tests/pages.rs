@@ -21,7 +21,7 @@ use crate::lang::{difficulty_name, localized, unlocalized};
 use crate::model::{CHECK_PENALTY_MS, HINT_PENALTY_MS, MoveEvent};
 use crate::pages::daily::about::penalty;
 use crate::pages::legal::CONTACT_EMAIL;
-use crate::seo::{OG_IMAGE, SITE_URL, rules_faq};
+use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
@@ -876,7 +876,12 @@ async fn a_players_page_names_them_in_link_previews() {
         }
         assert_eq!(meta(&html, "og:type").as_deref(), Some("profile"));
         assert_eq!(meta(&html, "og:url"), Some(format!("{SITE_URL}{path}")));
-        assert_eq!(meta(&html, "og:image").as_deref(), Some(OG_IMAGE));
+        assert_eq!(meta(&html, "og:image"), Some(og_image(l)), "{path}");
+        assert_eq!(
+            meta(&html, "og:image:alt").as_deref(),
+            Some(td_string!(l, common.og_image_alt)),
+            "{path}"
+        );
         assert_eq!(
             meta(&html, "twitter:card").as_deref(),
             Some("summary_large_image")
