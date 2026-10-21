@@ -3,6 +3,8 @@
   "action_pending": "Wachten op de server…",
   "action_retry": "Het resultaat is onzeker. Druk nogmaals op dezelfde actie om het zonder extra straf op te halen.",
   "action_storage": "Browseropslag is nodig om deze actie veilig opnieuw te proberen. Schakel deze in en probeer het opnieuw.",
+  "submit_failed": "Je oplossing is nog niet bij de server aangekomen.",
+  "submit_again": "Opnieuw versturen",
   "meta": {
     "title": "Hashi · Dagelijkse Hashiwokakero-bruggenpuzzel, gratis",
     "description": "Elke dag een nieuwe Hashiwokakero-puzzel (Bruggen bouwen), voor iedereen dezelfde: schattige Japanse pixelart, ranglijst en reeksen, altijd één oplossing."
@@ -50,6 +52,32 @@
     "pace": "Zulke snelle klikken, keer op keer, lijken op een programma, dus dit resultaat telt niet mee voor de ranglijst.",
     "second_account": "Op dit apparaat is de dagpuzzel van vandaag al met een ander account geopend, dus dit resultaat telt niet mee voor de ranglijst. Speel elke dagpuzzel met één account.",
     "review": "Dit resultaat is na een controle uit de ranglijst gehaald."
+  },
+  "about": {
+    "kicker": "over het spel",
+    "title": "Hashiwokakero, de bruggenpuzzel",
+    "intro": "Hashiwokakero (橋をかけろ, “bouw bruggen!”), ook <b>Bruggen bouwen</b>, <b>Hashi</b> of Hashikake genoemd, is een Japanse logische puzzel van uitgever Nikoli. Hier speel je elke dag een nieuwe, gratis en zonder account, en elke puzzel heeft precies één oplossing, dus gokken hoeft nooit.",
+    "how_title": "Zo speel je Hashi",
+    "daily_title": "Zo werkt de puzzel van de dag",
+    "day_title": "Eén puzzel per dag",
+    "day": "Voor iedereen dezelfde, nieuw om middernacht UTC. Net als een krantenpuzzel wordt hij richting zondag steeds moeilijker.",
+    "clock_title": "Begin wanneer je wilt",
+    "clock": "De puzzel blijft verborgen tot je op Start drukt. Pas dan gaat de klok lopen.",
+    "penalty_title": "Controleren en hints kosten tijd",
+    "penalty": "Elke controle telt {{ check }} op bij je tijd, elke hint {{ hint }}.",
+    "give_up_title": "Opgeven",
+    "give_up": "Kom je er niet uit? Geef op om de oplossing te zien. Die poging telt niet mee in de ranking, maar morgen is er een nieuwe puzzel.",
+    "tips_title": "Tips om Hashiwokakero op te lossen",
+    "tips_intro": "Drie afleidingen om mee te beginnen. Elk plaatje toont de bruggen die ze afdwingen.",
+    "faq_title": "Veelgestelde vragen",
+    "account_q": "Heb ik een account nodig?",
+    "account_a": "Nee. Je speelt meteen als gast en staat toch in de ranking. Claim een naam om je reeks op elk apparaat te houden.",
+    "next_q": "Wanneer is er een nieuwe puzzel van de dag?",
+    "next_a": "Elke dag om middernacht UTC, overal ter wereld op hetzelfde moment. Een aftelklok op deze pagina laat zien hoe lang het nog duurt.",
+    "more_q": "Waar kan ik meer spelen?",
+    "more_a": "Bij <practice>Oefenen</practice>: onbeperkt puzzels in vijf formaten, van 7×7 tot 24×24, met hints wanneer je wilt. Of bouw je eigen puzzels in de <workshop>werkplaats</workshop>.",
+    "to_rules": "Hashiwokakero-regels en oplostips →",
+    "to_practice": "Oefenen: onbeperkt puzzels →"
   },
   "recovery": {
     "metadata_error": "De puzzel van vandaag kon niet worden geladen. Probeer opnieuw.",

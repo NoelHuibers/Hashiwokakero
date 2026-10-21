@@ -67,6 +67,14 @@ export const ARCHIVED_COMMITMENT = sha256(ARCHIVED_SEED);
 /** The family of the seeded community benchmark. */
 export const COMMUNITY_FAMILY = 'crypto-sha1';
 
+/** A group of the players who play the most, made by aiko (the others joined after her). */
+export const SEEDED_GROUP = {
+  id: 1,
+  name: 'Bridge Club',
+  invite: 'seededgrp2',
+  members: ['aiko', 'bram', 'chen', 'Drowsy Otter 21', 'emre', 'fatima'],
+};
+
 /** Days of dailies before today. */
 const HISTORY = 40;
 
@@ -110,6 +118,23 @@ export function seed(dbPath: string) {
   // Today's board isn't empty, but the signed in players haven't played yet
   attempt.run(player('bram').id, today, Date.now() - 120_000, Date.now() - 1_000, 0, 0, 119_000);
   attempt.run(player('chen').id, today, Date.now() - 100_000, Date.now() - 2_000, 0, 1, 98_000);
+
+  // The group, a member colour each in the order they joined
+  db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(
+    SEEDED_GROUP.id,
+    SEEDED_GROUP.name,
+    SEEDED_GROUP.invite,
+    player('aiko').id,
+    (today - HISTORY) * MS_PER_DAY,
+  );
+  SEEDED_GROUP.members.forEach((name, i) => {
+    db.prepare('INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)').run(
+      SEEDED_GROUP.id,
+      player(name).id,
+      (today - HISTORY) * MS_PER_DAY + i * 3_600_000,
+      i,
+    );
+  });
 
   // A hidden set: the dev families at larger sizes too, and the held-out one as the mystery family
   const families = [
@@ -167,7 +192,7 @@ export function seed(dbPath: string) {
   const house = db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
        state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version, results)
-     VALUES (?, NULL, 1, ?, ?, ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 4, ?)`,
+     VALUES (?, NULL, 1, ?, ?, ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 6, ?)`,
   );
   house.run(
     DOJO_SUBMISSION,

@@ -3,6 +3,8 @@
   "action_pending": "Warte auf den Server…",
   "action_retry": "Das Ergebnis ist ungewiss. Drücke dieselbe Aktion erneut, um es ohne weitere Strafe abzurufen.",
   "action_storage": "Browserspeicher ist erforderlich, um diese Aktion sicher zu wiederholen. Aktiviere ihn und versuche es erneut.",
+  "submit_failed": "Deine Lösung ist noch nicht beim Server angekommen.",
+  "submit_again": "Erneut senden",
   "meta": {
     "title": "Hashi · Tägliches Hashiwokakero-Brückenrätsel, gratis",
     "description": "Jeden Tag ein neues Hashiwokakero-Rätsel (Brücken bauen), für alle gleich: süße japanische Pixel-Art, Rangliste und Serien, immer genau eine Lösung."
@@ -50,6 +52,32 @@
     "pace": "So schnelle Klicks, immer und immer wieder, sehen nach einem Programm aus, deshalb kommt dieses Ergebnis nicht in die Wertung.",
     "second_account": "Auf diesem Gerät wurde das heutige Tagesrätsel schon mit einem anderen Konto geöffnet, deshalb kommt dieses Ergebnis nicht in die Wertung. Spiel jedes Tagesrätsel mit nur einem Konto.",
     "review": "Dieses Ergebnis wurde nach einer Prüfung aus der Rangliste entfernt."
+  },
+  "about": {
+    "kicker": "über das Spiel",
+    "title": "Hashiwokakero, das Brückenrätsel",
+    "intro": "Hashiwokakero (橋をかけろ, „Baut Brücken!“), auch <b>Brücken bauen</b>, <b>Hashi</b> oder Hashikake genannt, ist ein japanisches Logikrätsel des Verlags Nikoli. Hier spielst du jeden Tag ein neues, kostenlos und ohne Konto, und jedes Rätsel hat genau eine Lösung, raten musst du also nie.",
+    "how_title": "So spielst du Hashi",
+    "daily_title": "So funktioniert das Tagesrätsel",
+    "day_title": "Ein Rätsel pro Tag",
+    "day": "Für alle dasselbe, neu um Mitternacht UTC. Wie beim Zeitungsrätsel wird es bis Sonntag immer kniffliger.",
+    "clock_title": "Start, wenn du bereit bist",
+    "clock": "Das Rätsel bleibt verdeckt, bis du auf Start drückst. Erst dann läuft die Uhr.",
+    "penalty_title": "Prüfen und Tipps kosten Zeit",
+    "penalty": "Jedes Prüfen kostet dich {{ check }}, jeder Tipp {{ hint }}.",
+    "give_up_title": "Aufgeben",
+    "give_up": "Festgefahren? Gib auf, dann siehst du die Lösung. Dieser Lauf kommt nicht in die Wertung, aber morgen wartet ein neues Rätsel.",
+    "tips_title": "Tipps zum Lösen von Hashiwokakero",
+    "tips_intro": "Drei Schlüsse für den Anfang. Jedes Bild zeigt die Brücken, die sie erzwingen.",
+    "faq_title": "Häufige Fragen",
+    "account_q": "Brauche ich ein Konto?",
+    "account_a": "Nein. Du spielst sofort als Gast und stehst trotzdem in der Rangliste. Sichere dir einen Namen, um deine Serie auf jedem Gerät zu behalten.",
+    "next_q": "Wann gibt es ein neues Tagesrätsel?",
+    "next_a": "Jeden Tag um Mitternacht UTC, überall auf der Welt im selben Moment. Ein Countdown auf dieser Seite zeigt, wie lange es noch dauert.",
+    "more_q": "Wo kann ich mehr spielen?",
+    "more_a": "Beim <practice>Üben</practice>: unbegrenzt viele Rätsel in fünf Größen, von 7×7 bis 24×24, mit Tipps, wann immer du willst. Oder bau eigene Rätsel in der <workshop>Werkstatt</workshop>.",
+    "to_rules": "Hashiwokakero-Regeln und Lösungstipps →",
+    "to_practice": "Üben: unbegrenzt viele Rätsel →"
   },
   "recovery": {
     "metadata_error": "Das heutige Rätsel konnte nicht geladen werden. Versuche es erneut.",

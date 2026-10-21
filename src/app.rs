@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos_i18n_router::I18nRoute;
 use leptos_meta::{HashedStylesheet, Link, Meta, MetaTags, provide_meta_context};
 use leptos_router::components::{Outlet, Route, Router, Routes};
-use leptos_router::path;
+use leptos_router::{SsrMode, path};
 
 use crate::components::layout::{Footer, Header, MobileNav, Toaster};
 use crate::components::ui::tooltip::Tooltips;
@@ -15,6 +15,7 @@ use crate::pages::contact::ContactPage;
 use crate::pages::create::CreatePage;
 use crate::pages::daily::DailyPage;
 use crate::pages::dojo::{DojoBenchmarksPage, DojoPage, DojoSeasonsPage, DojoSubmissionPage};
+use crate::pages::groups::{GroupDetailPage, GroupsPage, JoinGroupPage};
 use crate::pages::lab::LabPage;
 use crate::pages::legal::{ImpressumPage, PrivacyPage};
 use crate::pages::play::PlayPage;
@@ -94,7 +95,11 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("") view=DailyPage />
                             <Route path=path!("/practice") view=PlayPage />
                             <Route path=path!("/ranks") view=RanksPage />
-                            <Route path=path!("/player/:id") view=PlayerPage />
+                            <Route path=path!("/groups") view=GroupsPage />
+                            <Route path=path!("/groups/:id") view=GroupDetailPage />
+                            <Route path=path!("/g/:code") view=JoinGroupPage />
+                            // Waits for the player, for the title and the link preview
+                            <Route path=path!("/player/:id") view=PlayerPage ssr=SsrMode::Async />
                             <Route path=path!("/account") view=AccountPage />
                             <Route path=path!("/create") view=CreatePage />
                             <Route path=path!("/lab") view=LabPage />

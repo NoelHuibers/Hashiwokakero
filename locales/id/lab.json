@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Lab solver SAT · CDCL, DPLL dan splr pada teka-teki Hashi",
-    "description": "Adu teka-teki Hashiwokakero di solver SAT CDCL dan DPLL buatan kami dengan heuristik percabangan dan kebijakan restart berbeda, lalu bandingkan dengan splr."
+    "description": "Adu satu teka-teki Hashiwokakero di solver SAT CDCL dan DPLL kami dengan heuristik percabangan dan kebijakan restart berbeda, lalu bandingkan dengan splr."
   },
   "title": "Lab solver",
   "intro": "Adu satu teka-teki di solver CDCL dan DPLL buatan kami dalam berbagai mode (heuristik percabangan, kebijakan restart, subsumsi) dan bandingkan dengan splr.",

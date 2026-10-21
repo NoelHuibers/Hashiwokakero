@@ -1,6 +1,6 @@
 //! Reading the SAT Dojo: the leaderboard, a submission and the player's own submissions.
 
-use dojo::{DEFAULT_BUDGET, GENERATOR_VERSION, InstanceResult, RULES_VERSION, Score};
+use dojo::{DEFAULT_BUDGET, GENERATOR_VERSION, InstanceResult, RULES_VERSION, RUN_BUDGET, Score};
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 
@@ -88,6 +88,7 @@ async fn current_board(
             .iter_mut()
             .map(|r| (&mut r.entry, r.results.as_slice())),
         DEFAULT_BUDGET,
+        RUN_BUDGET,
         false,
     );
     Ok((ranked, portfolio))

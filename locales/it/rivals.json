@@ -1,0 +1,45 @@
+{
+  "title": "Rivali",
+  "mark": "Segna {{ name }} come rivale",
+  "unmark": "{{ name }} è un tuo rivale, rimuovi",
+  "marked": "{{ name }} ora è un tuo rivale. Ogni ponte del giorno è un duello!",
+  "unmarked": "{{ name }} non è più un tuo rivale.",
+  "mark_button": "Segna come rivale",
+  "marked_button": "Tuo rivale",
+  "private": "Solo tu vedi chi hai segnato, nessuno viene avvisato.",
+  "gap_seconds": "{{ gap }} s",
+  "gap_minutes": "{{ gap }} min",
+  "errors": {
+    "rival_self": "Non puoi essere rivale di te stesso.",
+    "too_many_rivals": "Hai già 20 rivali. Toglierne uno per fare spazio.",
+    "no_such_player": "Questo giocatore non esiste."
+  },
+  "today": {
+    "title": "Rivali oggi",
+    "beat": "Hai battuto <b>{{ name }}</b> di {{ gap }}",
+    "lost": "<b>{{ name }}</b> è stato più veloce di {{ gap }}",
+    "tie": "Pari esatto con <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> non ha ancora giocato",
+    "solved": "<b>{{ name }}</b> l'ha risolto in {{ time }}",
+    "empty": "Segna dei giocatori come rivali nella classifica, e ogni ponte del giorno diventa un duello.",
+    "find": "Trova rivali →"
+  },
+  "record": {
+    "title": "Testa a testa",
+    "text": "Ogni giorno in cui avete risolto entrambi, vince il più veloce.",
+    "short": "Duelli",
+    "summary": "Vittorie: {{ wins }} · sconfitte: {{ losses }} · pareggi: {{ draws }}",
+    "wins": "Vittorie",
+    "losses": "Sconfitte",
+    "draws": "Pareggi",
+    "none": "Ancora nessun giorno risolto da entrambi. Il ponte di oggi potrebbe essere il primo duello!",
+    "recent": "Ultimi duelli",
+    "day": "Ponte #{{ number }}: {{ mine }} contro {{ theirs }}"
+  },
+  "board": {
+    "text": "Tu e i tuoi rivali, da sempre. Solo tu vedi questa lista.",
+    "empty": "Ancora nessun rivale. Tocca le spade incrociate accanto a un nome in una classifica per segnare qualcuno.",
+    "you": "Tu",
+    "streak": "Serie"
+  }
+}

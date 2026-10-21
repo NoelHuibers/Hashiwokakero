@@ -1,0 +1,45 @@
+{
+  "title": "Rivalen",
+  "mark": "{{ name }} als rivaal markeren",
+  "unmark": "{{ name }} is je rivaal, markering weghalen",
+  "marked": "{{ name }} is nu je rivaal. Elke dagpuzzel wordt een duel!",
+  "unmarked": "{{ name }} is niet langer je rivaal.",
+  "mark_button": "Als rivaal markeren",
+  "marked_button": "Je rivaal",
+  "private": "Alleen jij ziet wie je hebt gemarkeerd, niemand krijgt een melding.",
+  "gap_seconds": "{{ gap }} s",
+  "gap_minutes": "{{ gap }} min",
+  "errors": {
+    "rival_self": "Je kunt niet je eigen rivaal zijn.",
+    "too_many_rivals": "Je hebt al 20 rivalen. Haal er een weg om ruimte te maken.",
+    "no_such_player": "Deze speler bestaat niet."
+  },
+  "today": {
+    "title": "Rivalen vandaag",
+    "beat": "Je versloeg <b>{{ name }}</b> met {{ gap }}",
+    "lost": "<b>{{ name }}</b> was {{ gap }} sneller",
+    "tie": "Precies gelijk met <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> heeft nog niet gespeeld",
+    "solved": "<b>{{ name }}</b> loste hem op in {{ time }}",
+    "empty": "Markeer spelers als rivalen in de ranglijst, en elke dagpuzzel wordt een duel.",
+    "find": "Rivalen zoeken →"
+  },
+  "record": {
+    "title": "Onderling",
+    "text": "Op elke dag dat jullie allebei oplosten, wint de snelste.",
+    "short": "Duels",
+    "summary": "Gewonnen: {{ wins }} · verloren: {{ losses }} · gelijk: {{ draws }}",
+    "wins": "Gewonnen",
+    "losses": "Verloren",
+    "draws": "Gelijk",
+    "none": "Nog geen dag die jullie allebei oplosten. De puzzel van vandaag kan het eerste duel zijn!",
+    "recent": "Laatste duels",
+    "day": "Dagpuzzel #{{ number }}: {{ mine }} tegen {{ theirs }}"
+  },
+  "board": {
+    "text": "Jij en je rivalen, aller tijden. Alleen jij ziet deze lijst.",
+    "empty": "Nog geen rivalen. Tik op de gekruiste zwaarden naast een naam in een ranglijst om iemand te markeren.",
+    "you": "Jij",
+    "streak": "Reeks"
+  }
+}

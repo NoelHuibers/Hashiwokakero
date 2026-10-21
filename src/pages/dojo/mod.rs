@@ -1,6 +1,7 @@
 //! The SAT Dojo: a leaderboard for SAT solvers submitted as WebAssembly.
 
 pub mod benchmarks;
+pub mod budgets;
 pub mod cactus;
 pub mod guide;
 pub mod leaderboard;

@@ -3,9 +3,11 @@
   "action_pending": "Waiting for the server…",
   "action_retry": "The result is uncertain. Press the same action again to recover it without another penalty.",
   "action_storage": "Browser storage is required to retry this action safely. Enable it and try again.",
+  "submit_failed": "Your solution hasn't reached the server yet.",
+  "submit_again": "Submit again",
   "meta": {
     "title": "Hashi · Daily Hashiwokakero (Bridges) puzzle, free online",
-    "description": "A new Hashiwokakero (Bridges) puzzle every day, the same for everyone: cute Japanese pixel art, a leaderboard and streaks, and every puzzle has exactly one solution."
+    "description": "A new Hashiwokakero (Bridges) puzzle every day, the same for everyone: cute Japanese pixel art, a leaderboard, streaks and exactly one solution per puzzle."
   },
   "title": "Daily bridge #{{ number }}",
   "penalty": "Penalty",
@@ -50,6 +52,32 @@
     "pace": "Clicks this fast, again and again, look like a program, so this result isn't ranked.",
     "second_account": "This device already opened today's daily with another account, so this result isn't ranked. Play each daily with one account.",
     "review": "This result was taken off the leaderboard after a review."
+  },
+  "about": {
+    "kicker": "about the game",
+    "title": "Hashiwokakero, the bridges puzzle",
+    "intro": "Hashiwokakero (橋をかけろ, “build bridges!”), also called <b>Bridges</b>, <b>Hashi</b> or Hashikake, is a Japanese logic puzzle published by Nikoli. Here you can play a new one every day for free, no account needed, and every puzzle has exactly one solution, so you never have to guess.",
+    "how_title": "How to play Hashi",
+    "daily_title": "How the daily works",
+    "day_title": "One puzzle a day",
+    "day": "The same puzzle for everyone, new at midnight UTC. Like a newspaper puzzle, it gets harder towards Sunday.",
+    "clock_title": "Start when you're ready",
+    "clock": "The puzzle stays hidden until you press Start. Only then does the clock begin to run.",
+    "penalty_title": "Checks and hints cost time",
+    "penalty": "Each check adds {{ check }} to your time, each hint {{ hint }}.",
+    "give_up_title": "Giving up",
+    "give_up": "Stuck? Give up to see the solution. That run isn't ranked, but tomorrow brings a new puzzle.",
+    "tips_title": "Hashiwokakero solving tips",
+    "tips_intro": "Three deductions to get you started. Each picture shows the bridges they force.",
+    "faq_title": "Frequently asked questions",
+    "account_q": "Do I need an account?",
+    "account_a": "No. You play as a guest right away and still appear in the ranking. Claim a name to keep your streak on every device.",
+    "next_q": "When is there a new daily?",
+    "next_a": "Every day at midnight UTC, at the same moment all over the world. A countdown on this page shows how long until the next one.",
+    "more_q": "Where can I play more?",
+    "more_a": "In <practice>practice</practice>: unlimited puzzles in five sizes, from 7×7 to 24×24, with hints whenever you like. Or build your own puzzles in the <workshop>workshop</workshop>.",
+    "to_rules": "Hashiwokakero rules and solving tips →",
+    "to_practice": "Practice: unlimited puzzles →"
   },
   "recovery": {
     "metadata_error": "Couldn't load today's puzzle. Try again.",

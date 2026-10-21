@@ -5,7 +5,8 @@
     "ranks": "Podio",
     "create": "Crea",
     "lab": "Lab",
-    "main": "Navigazione principale"
+    "main": "Navigazione principale",
+    "groups": "Gruppi"
   },
   "tagline_short": "Ponti",
   "language": "Lingua",
@@ -74,7 +75,13 @@
     "too_many_messages": "Per oggi hai inviato abbastanza messaggi, riprova domani.",
     "rename_too_soon": "Hai cambiato nome utente di recente, riprova più tardi.",
     "username_not_allowed": "Questo nome non è consentito qui, scegline un altro.",
-    "banned": "Questo account è bannato. Se pensi che sia un errore, scrivici."
+    "banned": "Questo account è bannato. Se pensi che sia un errore, scrivici.",
+    "group_name_invalid": "Il nome del gruppo deve avere da 1 a 32 caratteri.",
+    "group_name_not_allowed": "Questo nome non è consentito qui, scegline un altro.",
+    "group_not_found": "Questo gruppo non esiste, oppure non ne fai parte.",
+    "group_full": "Questo gruppo è pieno: ha già 50 membri.",
+    "too_many_groups": "Sei già in 10 gruppi, lasciane prima uno.",
+    "group_owner_only": "Solo l’admin del gruppo può farlo."
   },
   "solver": {
     "title": "Solver SAT",
@@ -187,6 +194,12 @@
   "date_long": "{{ weekday }} {{ day }} {{ month }} {{ year }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Un puzzle Hashiwokakero risolto in pixel art: isole numerate unite da ponti di legno e vermigli",
+  "og": {
+    "tagline": "Il rompicapo giapponese dei ponti, in pixel art",
+    "free": "Gratis",
+    "daily": "Un nuovo rompicapo ogni giorno",
+    "unique": "Una sola soluzione"
+  },
   "ld": {
     "site": "Hashiwokakero, il rompicapo giapponese dei ponti, da giocare gratis nel browser.",
     "game": "Collega le isole con dei ponti in modo che ogni isola abbia tanti ponti quanti ne indica il suo numero. Una sfida quotidiana con classifica, cinque livelli di difficoltà, pixel art, e ogni puzzle ha esattamente una soluzione."

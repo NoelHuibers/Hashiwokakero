@@ -290,6 +290,7 @@ pub(super) fn Metrics() -> impl IntoView {
                         t!(i18n, dojo.metrics.shapley_title).into_any(),
                         t!(i18n, dojo.metrics.shapley, <a> = cite(SHAPLEY_PAPER)).into_any(),
                     )}
+                    {item("時", t!(i18n, dojo.metrics.budget_title).into_any(), t!(i18n, dojo.metrics.budget).into_any())}
                 </div>
             </CardContent>
         </Card>

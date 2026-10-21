@@ -57,7 +57,9 @@ fn err(e: impl std::fmt::Display) -> String {
 }
 
 /// Records the start of the current season with its commitment (once), and the versions of
-/// the generator and the rules it runs with now.
+/// the generator and the rules it runs with now. When those change, the season's failed
+/// evaluations get another chance, with their attempts back: whatever made them fail may be
+/// gone with the new rules (finished ones are evaluated again by [`requeue_old_rules`]).
 pub(super) async fn open(conn: &Connection, current: u32, now: i64) -> Result<(), String> {
     conn.execute(
         "INSERT OR IGNORE INTO dojo_seasons (season, started_at, commitment, generator_version, rules_version)
@@ -72,13 +74,30 @@ pub(super) async fn open(conn: &Connection, current: u32, now: i64) -> Result<()
     )
     .await
     .map_err(err)?;
-    conn.execute(
-        "UPDATE dojo_seasons SET generator_version = ?2, rules_version = ?3
-         WHERE season = ?1 AND ended_at IS NULL AND (generator_version != ?2 OR rules_version != ?3)",
-        params![current, GENERATOR_VERSION, RULES_VERSION],
-    )
-    .await
-    .map_err(err)?;
+    // Both or neither: another housekeeping run at the same moment finds the versions changed
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(err)?;
+    let changed = tx
+        .execute(
+            "UPDATE dojo_seasons SET generator_version = ?2, rules_version = ?3
+             WHERE season = ?1 AND ended_at IS NULL AND (generator_version != ?2 OR rules_version != ?3)",
+            params![current, GENERATOR_VERSION, RULES_VERSION],
+        )
+        .await
+        .map_err(err)?;
+    if changed > 0 {
+        tx.execute(
+            "UPDATE dojo_submissions SET state = 'queued', progress = 0, updated_at = ?2, attempts = 0,
+                fingerprint = NULL, similar_to = NULL, results = NULL, error = NULL, job_token = NULL
+             WHERE season = ?1 AND state = 'failed'",
+            params![current, now],
+        )
+        .await
+        .map_err(err)?;
+    }
+    tx.commit().await.map_err(err)?;
     // Its draw from the community pool, fixed from now on
     super::benchmarks::draw(conn, current, now).await
 }
@@ -333,12 +352,12 @@ async fn season_rows(
 }
 
 /// The final board of an archived season: its ranked entries, best first, with their metrics
-/// (every family under its own name now), and its portfolio. `budget`: fuel per formula of
-/// the rules it was scored with.
+/// (every family under its own name now), and its portfolio. `rules`: the rules version it
+/// was scored with, which says the budget and how far the runs went.
 async fn frozen_board(
     conn: &Connection,
     season: u32,
-    budget: u64,
+    rules: u32,
 ) -> Result<(Vec<DojoEntry>, Option<DojoPortfolio>), ServerFnError> {
     let mut rows = conn
         .query(
@@ -371,7 +390,8 @@ async fn frozen_board(
     }
     let portfolio = metrics::apply(
         board.iter_mut().map(|(e, rs)| (e, rs.as_slice())),
-        budget,
+        dojo::budget_of(rules),
+        dojo::run_budget_of(rules),
         true,
     );
     Ok((board.into_iter().map(|(e, _)| e).collect(), portfolio))
@@ -406,8 +426,8 @@ pub async fn seasons(conn: &Connection, current: u32) -> Result<DojoSeasons, Ser
     )
     .await?;
     for season in &mut past {
-        let budget = dojo::budget_of(season.rules_version);
-        (season.board, season.portfolio) = frozen_board(conn, season.season, budget).await?;
+        (season.board, season.portfolio) =
+            frozen_board(conn, season.season, season.rules_version).await?;
         season.community = super::benchmarks::drawn(conn, season.season).await?;
     }
     Ok(DojoSeasons {
@@ -426,8 +446,12 @@ pub struct ArchivedSeason {
     pub seed: Option<String>,
     pub generator_version: u32,
     pub rules_version: u32,
-    /// Fuel per formula.
+    /// Fuel per formula: the official scores count what happened within it.
     pub budget: u64,
+    /// How far the runs went, the same as `budget` up to rules version 4. The fuel of a result
+    /// is up to this, its outcome how the run ended (see `dojo::Outcome::at` for what it
+    /// counts as with less).
+    pub run_budget: u64,
     pub set_sha256: Option<String>,
     /// The held-out family of the hidden set (see `dojo::mystery_family`).
     pub mystery: Option<dojo::Family>,
@@ -510,6 +534,7 @@ pub async fn archived(
     }
     // The metrics as the archive page shows them: contributions among the final board
     let budget = dojo::budget_of(info.rules_version);
+    let run_budget = dojo::run_budget_of(info.rules_version);
     let mut ranked: Vec<(DojoEntry, Vec<InstanceResult>)> = entries
         .iter()
         .filter(|e| e.rank.is_some())
@@ -534,6 +559,7 @@ pub async fn archived(
     let portfolio = metrics::apply(
         ranked.iter_mut().map(|(e, rs)| (e, rs.as_slice())),
         budget,
+        run_budget,
         true,
     );
     for entry in &mut entries {
@@ -553,6 +579,7 @@ pub async fn archived(
         generator_version: info.generator_version,
         rules_version: info.rules_version,
         budget,
+        run_budget,
         set_sha256: info.set_sha256,
         mystery: info.mystery,
         community: super::benchmarks::drawn(conn, season).await?,
@@ -577,15 +604,21 @@ fn csv_field(text: &str) -> String {
 }
 
 /// One line per entry and formula, like the SAT Competition's `scores.csv`.
+///
+/// `outcome` and `fuel` are how the run ended and what it used, up to `run_budget` (ten times
+/// `budget` in rules version 5, four times since 6); with `budget` a result with more fuel
+/// counts as a timeout, see `dojo::Outcome::at`.
 pub fn csv(season: &ArchivedSeason) -> String {
     let mut out = String::from(
-        "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel\n",
+        "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel,budget,run_budget\n",
     );
     for entry in &season.entries {
+        // Per entry: within a season results of older rules may be archived
+        let rules = entry.rules_version.unwrap_or(season.rules_version);
         for r in &entry.results {
             let _ = writeln!(
                 out,
-                "{},{},{},{},{},{},{},{},{},{},{},{}",
+                "{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
                 season.season,
                 entry.id,
                 csv_field(&entry.name),
@@ -600,7 +633,9 @@ pub fn csv(season: &ArchivedSeason) -> String {
                 r.family.id(),
                 r.expected.id(),
                 r.outcome.id(),
-                r.fuel
+                r.fuel,
+                dojo::budget_of(rules),
+                dojo::run_budget_of(rules)
             );
         }
     }

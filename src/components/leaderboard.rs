@@ -1,13 +1,14 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
 
+use super::rivals::RivalToggle;
 use super::stamps::StampBadge;
 use super::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::{LeaderboardEntry, Stamp, format_duration};
-use crate::state::Auth;
+use crate::state::{Auth, Rivals};
 
 /// 🥇🥈🥉 as pixel-ish kanji medals: 金 gold, 銀 silver, 銅 bronze.
 fn medal(rank: i64) -> Option<(&'static str, &'static str)> {
@@ -66,11 +67,22 @@ pub fn PlayerName(
         .into_any();
     }
     let href = move || format!("{}/player/{user_id}", prefix(i18n.get_locale()));
+    let rivals = expect_context::<Rivals>();
+    let shown = name.clone();
     view! {
-        <div class="flex items-center gap-2">
-            <A href=href attr:class="min-w-0 truncate font-medium underline-offset-4 hover:text-primary hover:underline">
-                {name}
+        <div class="rival-host flex items-center gap-2">
+            <A
+                href=href
+                attr:class=move || {
+                    format!(
+                        "min-w-0 truncate font-medium underline-offset-4 hover:text-primary hover:underline {}",
+                        if rivals.is(user_id) { "text-primary" } else { "" },
+                    )
+                }
+            >
+                {shown}
             </A>
+            <RivalToggle user_id name />
             {stamp.map(|stamp| view! { <StampBadge stamp=stamp /> })}
             {me.then(|| view! { <Badge variant=BadgeVariant::Default size=BadgeSize::Sm class="shrink-0">{t!(i18n, common.ranking.you)}</Badge> })}
             {guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}

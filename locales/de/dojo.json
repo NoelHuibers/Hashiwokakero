@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT-Dojo · ein Fitnessstudio für SAT-Solver · Hashi",
-    "description": "Reich deinen SAT-Solver als WebAssembly ein und klettere in der Rangliste: geheime, frische Formeln, deterministischer Treibstoff statt Sekunden. Open Source."
+    "description": "Reich deinen SAT-Solver als WebAssembly ein, klettere in der Rangliste: geheime, frische Formeln, deterministischer Treibstoff statt Sekunden. Open Source."
   },
   "title": "SAT-Dojo",
   "intro": "Ein Fitnessstudio für SAT-Solver. Kompilier deinen Solver zu WebAssembly, reich ihn ein, und er wird auf einem geheimen Satz frischer Formeln bewertet: Hashi-Rätsel, Paritätsfallen, zufälliges 3-SAT, Tauben, Damen, Faktorisierung, Multiplizierer-Miter, Graphfärbung und eine geheime Familie.",
@@ -41,7 +41,20 @@
     "relative_tip": "Sparkle 2018: sein Anteil an log10(PAR-2 ohne ÷ PAR-2 mit) über alle Solver",
     "sota_tip": "Jede Formel, die er löst, bringt 1 ÷ die Zahl der Solver, die sie lösen",
     "shapley_tip": "Sein fairer Anteil am Treibstoff, den das ganze Feld spart, in Milliarden pro Formel",
-    "vbs_line": "Virtuell bester Solver aus {{ count }} Solvern: {{ solved }}/{{ total }} gelöst, PAR-2 {{ par2 }}"
+    "vbs_line": "Virtuell bester Solver aus {{ count }} Solvern: {{ solved }}/{{ total }} gelöst, PAR-2 {{ par2 }}",
+    "view_budget": "Budget",
+    "budget_hint": "Dieselben Läufe, gewertet mit einem anderen Budget pro Formel. Jeder Lauf geht bis zum Vierfachen des offiziellen Budgets, und Treibstoff ist deterministisch, also liefert jedes kleinere Budget genau das Ergebnis, das ein Lauf damit gehabt hätte. Die offizielle Wertung bleibt bei 1×; die Pfeile zeigen, wie weit ein Solver von seinem Platz dort abrückt.",
+    "budget_pick": "Budget pro Formel",
+    "budget_official": "offiziell",
+    "budget_wrong": "falsche Antwort",
+    "crossover": "{{ ahead }} überholt {{ behind }} ab {{ fuel }} Treibstoff (≈ {{ time }} nativ).",
+    "no_crossovers": "Bis {{ fuel }} Treibstoff pro Formel überholt keiner der führenden Solver einen anderen.",
+    "budget_chart": "PAR-2 über dem Budget",
+    "budget_chart_hint": "Eine Linie pro Solver, beide Achsen logarithmisch. Wo sich zwei Linien kreuzen, überholt ein Solver den anderen. Native Zeiten sind grob: der Mittelwert der Kalibrierung, ein Solver kann bis zu doppelt so schnell oder langsam sein.",
+    "budget_chart_x": "Treibstoff pro Formel",
+    "budget_chart_y": "PAR-2 in Milliarden Treibstoff pro Formel, logarithmisch; ungelöste Formeln zählen das doppelte Budget auf der x-Achse.",
+    "budget_chart_aria": "Liniendiagramm von PAR-2 über dem Budget für {{ count }} Solver, von {{ low }} bis {{ high }} Treibstoff pro Formel. Mit den Pfeiltasten bewegst du dich entlang der Budgets.",
+    "budget_at": "{{ fuel }} Treibstoff pro Formel, ≈ {{ time }} nativ"
   },
   "seasons": {
     "meta_title": "Saisonarchiv · SAT Dojo",
@@ -311,7 +324,7 @@
     "title": "Kaktus-Plot",
     "hint": "Jede Linie ist ein Solver, seine gelösten Formeln nach Treibstoff sortiert: weiter rechts heißt mehr gelöst, weiter unten weniger Treibstoff. Welche Formel ein Punkt ist, verrät der Plot nicht.",
     "x": "Gelöste Formeln",
-    "y": "Treibstoff pro Formel auf logarithmischer Skala, auf drei Stellen gerundet; die oberste Linie ist das Budget.",
+    "y": "Treibstoff pro Formel auf logarithmischer Skala, auf drei Stellen gerundet. Die gestrichelte Linie ist das Wertungsbudget; darüber liefen die Läufe weiter, für die Budget-Ansicht.",
     "budget": "Budget",
     "vbs": "Virtuell bester Solver",
     "vbs_short": "VBS",
@@ -322,7 +335,9 @@
     "table": "Als Tabelle anzeigen",
     "fastest": "Schnellster",
     "median": "Median",
-    "slowest": "Langsamster"
+    "slowest": "Langsamster",
+    "run_budget": "Ende der Läufe",
+    "ranking": "Wertungsbudget"
   },
   "metrics": {
     "title": "Mehr als PAR-2",
@@ -336,6 +351,8 @@
     "sota_title": "Beitrag zum Stand der Technik",
     "sota": "Aus dem Wettbewerb für automatisches Theorembeweisen <a>CASC</a>: Jede Formel, die ein Solver löst, bringt ihm 1 geteilt durch die Zahl der Solver, die sie lösen. CASC mittelt über die gelösten Formeln; wir summieren, so senkt mehr Lösen den Wert nie, und die Summen ergeben zusammen die Formeln, die der VBS löst.",
     "shapley_title": "Shapley-Wert",
-    "shapley": "Einzelwertungen belohnen Beinahe-Klone, marginale Beiträge bestrafen sie. Der Shapley-Wert aus der kooperativen Spieltheorie ist zu beiden fair: Er verteilt den Treibstoff, den das ganze Feld gegenüber dem Lösen von nichts spart, nach dem mittleren marginalen Beitrag jedes Solvers über alle Beitrittsreihenfolgen (<a>Fréchette et al., AAAI 2016</a>). Wir berechnen ihn exakt, in Milliarden Treibstoff pro Formel; die Werte ergeben zusammen das doppelte Budget minus den PAR-2 des VBS."
+    "shapley": "Einzelwertungen belohnen Beinahe-Klone, marginale Beiträge bestrafen sie. Der Shapley-Wert aus der kooperativen Spieltheorie ist zu beiden fair: Er verteilt den Treibstoff, den das ganze Feld gegenüber dem Lösen von nichts spart, nach dem mittleren marginalen Beitrag jedes Solvers über alle Beitrittsreihenfolgen (<a>Fréchette et al., AAAI 2016</a>). Wir berechnen ihn exakt, in Milliarden Treibstoff pro Formel; die Werte ergeben zusammen das doppelte Budget minus den PAR-2 des VBS.",
+    "budget_title": "Wertungen bei anderen Budgets",
+    "budget": "Die Wertung misst ein kurzes Rennen: 7 Milliarden Treibstoff pro Formel, etwa eine halbe Sekunde eines nativen Solvers, während die SAT Competition 5.000 Sekunden erlaubt. Solver mit viel Preprocessing und Inprocessing wie Kissat und CaDiCaL zahlen dafür, bevor es sich auszahlt, und landen bei diesem Budget hinter MiniSat. Jeder Lauf geht bis zum Vierfachen des Budgets, und weil Treibstoff deterministisch ist, liefert ein einziger Lauf den genauen Score bei jedem kleineren Budget: Die Budget-Ansicht zeigt, wie sich die Wertung mit mehr Zeit ändert."
   }
 }

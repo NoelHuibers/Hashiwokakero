@@ -253,6 +253,8 @@ impl Actions {
     }
 
     pub(super) fn submit_guard(&self, daily: &Daily) -> Option<Guard> {
+        // Missing metadata cannot invalidate the request that is still discovering it.
+        self.capture(daily)?;
         self.sequence.update(|s| *s += 1);
         self.capture(daily)
     }
@@ -526,6 +528,7 @@ mod tests {
             skew: RwSignal::new(0),
             now: RwSignal::new(2000),
             result: RwSignal::new(None),
+            admired: RwSignal::new(false),
             ranking: RwSignal::new(None),
             busy: RwSignal::new(false),
             metadata: super::super::recovery::Fetch::new(),
@@ -575,6 +578,46 @@ mod tests {
                 loaded: RwSignal::new(true),
             };
             test(page(&game, auth), auth);
+        });
+    }
+
+    #[test]
+    fn solved_spa_return_without_metadata_preserves_the_discovery_request() {
+        tab(|d, auth| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            // A new page shares the solved board but has not discovered its attempt yet.
+            let returning = page(&d.game, auth);
+            returning.info.set(None);
+            returning.actions.sync(&returning);
+            let refresh = super::super::state::RefreshGuard::new(&returning);
+            assert!(!returning.ready_to_submit());
+            assert!(returning.begin_submit(false).is_none());
+            assert!(refresh.current(&returning));
+            assert!(!returning.unconfirmed()); // manual metadata retry remains eligible
+            returning
+                .metadata
+                .phase
+                .set(super::super::recovery::Phase::Error);
+            assert!(!returning.unconfirmed());
+        });
+    }
+
+    #[test]
+    fn a_concurrent_reveal_is_authoritative_and_never_submitted_again() {
+        tab(|d, _| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            let guard = d.begin_submit(false).unwrap();
+            let mut revealed = d.info.get_untracked().unwrap();
+            let attempt = revealed.attempt.as_mut().unwrap();
+            attempt.revealed = true;
+            attempt.bridges = Some(vec![1]);
+            assert!(d.reconcile(&guard, revealed));
+            assert!(d.finished());
+            assert_eq!(d.game.status.get_untracked(), Status::Revealed);
+            assert!(d.begin_submit(true).is_none());
+            assert!(!d.celebrating()); // a read-only receipt does not invent a win modal
         });
     }
 

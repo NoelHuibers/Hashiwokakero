@@ -1,9 +1,9 @@
 {
   "meta": {
     "title": "Come si gioca a Hashiwokakero · Regole e consigli · Hashi",
-    "description": "Le regole di Hashiwokakero (Ponti) con un esempio risolto, le deduzioni che risolvono quasi ogni puzzle senza tirare a indovinare e come SAT ne prova l’unicità."
+    "description": "Le regole di Hashiwokakero (Ponti) con un esempio risolto, le deduzioni che risolvono quasi ogni puzzle senza indovinare e come SAT ne prova l’unicità."
   },
-  "title": "Come si gioca",
+  "title": "Come si gioca a Hashiwokakero",
   "intro": "Hashiwokakero (橋をかけろ, «costruisci ponti!») è un rompicapo logico pubblicato da Nikoli. Collega tutte le isole con dei ponti in modo che ogni isola abbia esattamente tanti ponti quanti ne indica il suo numero.",
   "rule": {
     "count_title": "Conta i ponti",
@@ -16,6 +16,25 @@
     "connected": "Alla fine ogni isola deve essere raggiungibile da tutte le altre."
   },
   "example": "Un puzzle risolto",
+  "tips": {
+    "title": "Tecniche di risoluzione di Hashiwokakero",
+    "intro": "Cinque deduzioni che risolvono quasi tutti i puzzle senza tirare a indovinare. Ogni immagine mostra i ponti che impongono.",
+    "corner_title": "Gli angoli vogliono ponti doppi",
+    "corner": "Un 4 in un angolo ha solo due vicini, quindi gli serve un ponte doppio verso entrambi. Lo stesso vale per un 6 su un bordo e un 8 in mare aperto.",
+    "corner_board": "Un 4 nell’angolo in alto a sinistra con un ponte doppio verso il 3 alla sua destra e un altro verso il 2 sotto.",
+    "ones_title": "Due 1 non si collegano mai",
+    "ones": "Un ponte tra due 1 li completerebbe entrambi e li taglierebbe fuori da tutto il resto, quindi ogni 1 si collega altrove. Per lo stesso motivo due 2 non condividono mai un ponte doppio.",
+    "ones_board": "Due 1 nella riga in alto, ciascuno con un ponte singolo verso il 3 sotto di sé invece che tra loro.",
+    "count_title": "Conta cosa manca",
+    "count": "Un 5 con tre vicini può ricevere al massimo sei ponti. Senza uno di loro arriverebbe al massimo a quattro, quindi ogni vicino riceve almeno un ponte.",
+    "count_board": "Un 5 sul bordo in alto con un ponte singolo verso ciascuno dei suoi tre vicini: il 2 a sinistra, il 3 a destra e il 4 sotto.",
+    "block_title": "I ponti sbarrano la strada",
+    "block": "I ponti non si incrociano mai, quindi ogni ponte chiude le linee che attraversa. A un’isola dall’altra parte può restare una sola strada.",
+    "block_board": "Un ponte doppio scende al centro e sbarra la riga dell’1 a sinistra, così l’1 si collega al 2 sotto invece che al 2 a destra.",
+    "connect_title": "Mai chiudere un gruppo",
+    "connect": "Alla fine tutto deve essere collegato. Se completare alcune isole tra loro le lasciasse isolate, almeno un ponte deve portare fuori.",
+    "connect_board": "Una riga di 1, 3 e 2: l’1 si collega al 3. Se il 3 desse i suoi ultimi due ponti al 2, le tre isole resterebbero isolate, quindi il 3 manda un ponte anche verso il 2 sotto."
+  },
   "controls": {
     "title": "Comandi",
     "tap": "Clicca sull’acqua tra due isole per costruire un ponte, di nuovo per un secondo, un terzo clic li rimuove.",

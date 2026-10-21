@@ -3,6 +3,8 @@
   "action_pending": "A aguardar o servidor…",
   "action_retry": "O resultado é incerto. Repete a mesma ação para o recuperar sem outra penalização.",
   "action_storage": "O armazenamento do navegador é necessário para repetir esta ação com segurança. Ativa-o e tenta novamente.",
+  "submit_failed": "A tua solução ainda não chegou ao servidor.",
+  "submit_again": "Enviar de novo",
   "meta": {
     "title": "Hashi · Hashiwokakero (Pontes) diário, grátis online",
     "description": "Um novo puzzle Hashiwokakero (Pontes) todo dia, igual para todos: pixel art japonesa fofa, ranking e sequências, e cada puzzle tem uma única solução."
@@ -50,6 +52,32 @@
     "pace": "Cliques tão rápidos, de novo e de novo, parecem coisa de programa, então este resultado não entra no ranking.",
     "second_account": "Este dispositivo já abriu o desafio diário de hoje com outra conta, então este resultado não entra no ranking. Jogue cada desafio diário com uma única conta.",
     "review": "Este resultado foi retirado do ranking após uma revisão."
+  },
+  "about": {
+    "kicker": "sobre o jogo",
+    "title": "Hashiwokakero, o puzzle das pontes",
+    "intro": "Hashiwokakero (橋をかけろ, “construa pontes!”), também chamado de <b>Pontes</b>, <b>Hashi</b> ou Hashikake, é um puzzle de lógica japonês publicado pela Nikoli. Aqui você joga um novo todo dia, de graça e sem conta, e cada puzzle tem exatamente uma solução, então você nunca precisa chutar.",
+    "how_title": "Como jogar Hashi",
+    "daily_title": "Como funciona o puzzle diário",
+    "day_title": "Um puzzle por dia",
+    "day": "O mesmo para todos, novo à meia-noite UTC. Como o puzzle do jornal, fica mais difícil até domingo.",
+    "clock_title": "Comece quando quiser",
+    "clock": "O puzzle fica escondido até você tocar em Começar. Só então o relógio começa a contar.",
+    "penalty_title": "Verificar e dicas custam tempo",
+    "penalty": "Cada verificação soma {{ check }} ao seu tempo, cada dica {{ hint }}.",
+    "give_up_title": "Desistir",
+    "give_up": "Travou? Desista para ver a solução. Essa partida não entra no ranking, mas amanhã chega um puzzle novo.",
+    "tips_title": "Dicas para resolver Hashiwokakero",
+    "tips_intro": "Três deduções para começar. Cada imagem mostra as pontes que elas obrigam.",
+    "faq_title": "Perguntas frequentes",
+    "account_q": "Preciso de uma conta?",
+    "account_a": "Não. Você joga como convidado na hora e aparece no ranking mesmo assim. Registre um nome para manter sua sequência em qualquer dispositivo.",
+    "next_q": "Quando sai um novo puzzle diário?",
+    "next_a": "Todo dia à meia-noite UTC, no mesmo instante no mundo inteiro. Uma contagem regressiva nesta página mostra quanto falta.",
+    "more_q": "Onde posso jogar mais?",
+    "more_a": "No <practice>treino</practice>: puzzles ilimitados em cinco tamanhos, de 7×7 a 24×24, com dicas quando quiser. Ou crie seus próprios puzzles na <workshop>oficina</workshop>.",
+    "to_rules": "Regras de Hashiwokakero e dicas →",
+    "to_practice": "Treino: puzzles ilimitados →"
   },
   "recovery": {
     "metadata_error": "Não foi possível carregar o puzzle de hoje. Tenta novamente.",

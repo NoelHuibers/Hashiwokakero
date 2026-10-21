@@ -125,6 +125,19 @@ fn progress(err: &str) -> Vec<(String, String, String)> {
         .collect()
 }
 
+/// The solved formulas of `dojo run`'s progress lines with their fuel in billions.
+fn gfuel_of(err: &str) -> Vec<(String, f64)> {
+    err.lines()
+        .filter(|line| line.starts_with('[') && line.contains(" solved "))
+        .filter_map(|line| {
+            let words: Vec<&str> = line.split_whitespace().collect();
+            let at = words.iter().position(|w| *w == "Gfuel")?;
+            let name = line.split_once(']')?.1.split_whitespace().next()?;
+            Some((name.to_string(), words[at - 1].parse().ok()?))
+        })
+        .collect()
+}
+
 #[test]
 fn usage_and_bad_arguments() {
     let dir = scratch("dojo-cli-usage");
@@ -315,6 +328,7 @@ fn exports_sets_and_scores_solvers() {
         ],
     );
     let (text, err) = (stdout(&out), stderr(&out));
+    let err_first = err.clone();
     assert!(
         err.contains("proofs are checked with the built-in checker"),
         "{err}"
@@ -396,6 +410,58 @@ fn exports_sets_and_scores_solvers() {
         stderr(&out)
     );
     assert!(stdout(&out).contains(&format!("solved 0/{n}")));
+    assert!(stdout(&out).contains("with other budgets (the runs went on to 4 times the budget)"));
+
+    // The runs go on to four times the budget: with half the fuel of the slowest formula MiniSat
+    // solved, that one is a timeout within the budget but solved past it
+    let (slowest, gfuel) = gfuel_of(&err_first)
+        .into_iter()
+        .max_by(|a, b| a.1.total_cmp(&b.1))
+        .unwrap();
+    assert!(gfuel >= 0.002, "{gfuel}");
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "test fuel"
+    )]
+    let half = (gfuel * 5e8) as u64;
+    let out = ok(
+        d,
+        &[
+            "run",
+            &minisat(),
+            "--set",
+            "set.tar.gz",
+            "--budget",
+            &half.to_string(),
+        ],
+    );
+    let (text, err) = (stdout(&out), stderr(&out));
+    let line = err
+        .lines()
+        .find(|l| l.contains(&format!(" {slowest} ")))
+        .unwrap();
+    assert!(
+        line.contains(" timeout ") && line.ends_with("(past the budget: solved)"),
+        "{line}"
+    );
+    // ... and counts as solved with the run budget, not with the budget
+    let solved_within = progress(&err).iter().filter(|l| l.2 == "solved").count();
+    assert!(
+        text.contains(&format!("solved {solved_within}/{n}  PAR-2")),
+        "{text}"
+    );
+    let max: usize = text
+        .lines()
+        .find_map(|l| {
+            l.strip_prefix("max ")?
+                .split_once("solved ")?
+                .1
+                .split_once('/')
+        })
+        .and_then(|(count, _)| count.parse().ok())
+        .unwrap();
+    assert!(max > solved_within, "{text}");
 
     // UNSAT on everything, without a proof: wrong on the satisfiable formulas, unsolved on the
     // others

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Stwórz własną łamigłówkę Hashiwokakero · Hashi",
-    "description": "Zaprojektuj łamigłówkę Mosty w warsztacie: rozmieść wyspy, niech solver SAT sprawdzi, czy ma jedno rozwiązanie, wyeksportuj ją do pliku tekstowego i zagraj."
+    "description": "Zaprojektuj łamigłówkę Mosty w warsztacie: rozmieść wyspy, niech solver SAT sprawdzi, czy ma jedno rozwiązanie, wyeksportuj do pliku tekstowego i zagraj."
   },
   "kicker": "作る · tsukuru",
   "title": "Warsztat łamigłówek",

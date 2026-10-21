@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { addBridge, DAILY_KEY, missing, type Puzzle, saved } from './board';
+import { addBridge, board, DAILY_KEY, missing, type Puzzle, saved } from './board';
 import { DB_PATH, VISUAL_DB_PATH } from './env';
 
 /** The database of the running test's server, see `VISUAL_URL`. */
@@ -35,8 +35,9 @@ export async function startDaily(page: Page) {
   test.slow();
   await expect(page.getByRole('heading', { name: "Today's bridge" })).toBeVisible();
   await page.getByRole('button', { name: /^Start/ }).click();
-  // An Oni (Sundays) takes the generator a few seconds
-  await expect(page.locator('svg.board-svg g.island').first()).toBeVisible({ timeout: 30_000 });
+  // An Oni (Sundays) takes the generator a few seconds. The first board is the daily's (the
+  // tips below the daily have boards of their own), until then the empty one behind the cover
+  await expect(board(page).locator('g.island').first()).toBeVisible({ timeout: 30_000 });
   await expect(penalty(page)).toHaveText('+0s');
   const { puzzle } = await saved(page, DAILY_KEY);
   return { puzzle, solution: dailySolution(puzzle) };

@@ -4,6 +4,7 @@ pub mod contact;
 pub mod create;
 pub mod daily;
 pub mod dojo;
+pub mod groups;
 pub mod lab;
 pub mod legal;
 pub mod play;
@@ -34,14 +35,19 @@ pub fn download_cnf(puzzle: Puzzle) {
     });
 }
 
-#[component]
-pub fn NotFound() -> impl IntoView {
+/// Answers the page's request with 404 Not Found (on the server, the browser has no status).
+pub fn not_found_status() {
     #[cfg(feature = "ssr")]
     {
         if let Some(resp) = use_context::<leptos_axum::ResponseOptions>() {
             resp.set_status(axum::http::StatusCode::NOT_FOUND);
         }
     }
+}
+
+#[component]
+pub fn NotFound() -> impl IntoView {
+    not_found_status();
     let i18n = use_i18n();
     let home = use_localized("/");
     view! {

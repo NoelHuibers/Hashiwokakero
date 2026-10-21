@@ -3,6 +3,8 @@
   "action_pending": "Đang chờ máy chủ…",
   "action_retry": "Chưa rõ kết quả. Nhấn lại cùng thao tác để nhận kết quả mà không bị phạt thêm.",
   "action_storage": "Cần bộ nhớ trình duyệt để thử lại thao tác này an toàn. Hãy bật rồi thử lại.",
+  "submit_failed": "Lời giải của bạn chưa đến được máy chủ.",
+  "submit_again": "Gửi lại",
   "meta": {
     "title": "Hashi · Câu đố Nối cầu (Hashiwokakero) mỗi ngày, miễn phí",
     "description": "Mỗi ngày một câu đố Hashiwokakero (Nối cầu) mới, chung cho mọi người: pixel art Nhật Bản dễ thương, bảng xếp hạng, chuỗi ngày và luôn có đúng một lời giải."
@@ -50,6 +52,32 @@
     "pace": "Những cú nhấp nhanh như vậy, lặp đi lặp lại, trông giống một chương trình, nên kết quả này không được xếp hạng.",
     "second_account": "Thiết bị này đã mở câu đố hôm nay bằng một tài khoản khác, nên kết quả này không được xếp hạng. Hãy chơi mỗi câu đố hằng ngày bằng một tài khoản.",
     "review": "Kết quả này đã bị gỡ khỏi bảng xếp hạng sau khi xem xét."
+  },
+  "about": {
+    "kicker": "về trò chơi",
+    "title": "Hashiwokakero, câu đố nối cầu",
+    "intro": "Hashiwokakero (橋をかけろ, “hãy xây cầu!”), còn gọi là <b>Nối cầu</b> (Bridges), <b>Hashi</b> hay Hashikake, là câu đố logic Nhật Bản do Nikoli phát hành. Ở đây bạn chơi một câu đố mới mỗi ngày, miễn phí và không cần tài khoản, và mỗi câu đố có đúng một lời giải nên bạn không bao giờ phải đoán.",
+    "how_title": "Cách chơi Hashi",
+    "daily_title": "Câu đố mỗi ngày hoạt động thế nào",
+    "day_title": "Mỗi ngày một câu đố",
+    "day": "Giống nhau cho mọi người, đổi mới lúc nửa đêm UTC. Như câu đố trên báo, độ khó tăng dần về Chủ Nhật.",
+    "clock_title": "Bắt đầu khi bạn sẵn sàng",
+    "clock": "Câu đố được giấu cho tới khi bạn nhấn Bắt đầu. Chỉ khi đó đồng hồ mới chạy.",
+    "penalty_title": "Kiểm tra và gợi ý tốn thời gian",
+    "penalty": "Mỗi lần kiểm tra cộng {{ check }} vào thời gian của bạn, mỗi gợi ý {{ hint }}.",
+    "give_up_title": "Bỏ cuộc",
+    "give_up": "Bí rồi? Bỏ cuộc để xem lời giải. Lượt đó không được xếp hạng, nhưng ngày mai sẽ có câu đố mới.",
+    "tips_title": "Mẹo giải Hashiwokakero",
+    "tips_intro": "Ba suy luận để bắt đầu. Mỗi hình cho thấy những cây cầu mà chúng buộc phải có.",
+    "faq_title": "Câu hỏi thường gặp",
+    "account_q": "Tôi có cần tài khoản không?",
+    "account_a": "Không. Bạn chơi ngay với tư cách khách và vẫn có tên trên bảng xếp hạng. Giữ một cái tên để lưu chuỗi ngày trên mọi thiết bị.",
+    "next_q": "Khi nào có câu đố mỗi ngày mới?",
+    "next_a": "Mỗi ngày lúc nửa đêm UTC, cùng một thời điểm trên toàn thế giới. Đồng hồ đếm ngược trên trang này cho biết còn bao lâu.",
+    "more_q": "Tôi có thể chơi thêm ở đâu?",
+    "more_a": "Trong phần <practice>luyện tập</practice>: câu đố không giới hạn ở năm kích thước, từ 7×7 đến 24×24, có gợi ý bất cứ lúc nào. Hoặc tự tạo câu đố trong <workshop>xưởng</workshop>.",
+    "to_rules": "Luật Hashiwokakero và mẹo giải →",
+    "to_practice": "Luyện tập: câu đố không giới hạn →"
   },
   "recovery": {
     "metadata_error": "Không thể tải câu đố hôm nay. Hãy thử lại.",

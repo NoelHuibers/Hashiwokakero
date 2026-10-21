@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT solver lab · CDCL, DPLL and splr on Hashi puzzles",
-    "description": "Race one Hashiwokakero puzzle through our own CDCL and DPLL SAT solvers with different branching heuristics and restart policies, and compare them with splr."
+    "description": "Race one Hashiwokakero puzzle through our own CDCL and DPLL SAT solvers with different branching heuristics and restart policies, and compare with splr."
   },
   "title": "Solver lab",
   "intro": "Race one puzzle through our own CDCL and DPLL solvers in different modes (branching heuristics, restart policies, subsumption) and compare them to splr.",

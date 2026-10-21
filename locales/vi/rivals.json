@@ -1,0 +1,45 @@
+{
+  "title": "Đối thủ",
+  "mark": "Đánh dấu {{ name }} là đối thủ",
+  "unmark": "{{ name }} là đối thủ của bạn, bỏ đánh dấu",
+  "marked": "{{ name }} giờ là đối thủ của bạn. Mỗi câu đố hằng ngày là một trận đấu!",
+  "unmarked": "{{ name }} không còn là đối thủ của bạn.",
+  "mark_button": "Đánh dấu đối thủ",
+  "marked_button": "Đối thủ của bạn",
+  "private": "Chỉ bạn thấy mình đã đánh dấu ai, không ai được thông báo.",
+  "gap_seconds": "{{ gap }} giây",
+  "gap_minutes": "{{ gap }} phút",
+  "errors": {
+    "rival_self": "Bạn không thể là đối thủ của chính mình.",
+    "too_many_rivals": "Bạn đã có 20 đối thủ. Hãy bỏ bớt một người để có chỗ.",
+    "no_such_player": "Không có người chơi này."
+  },
+  "today": {
+    "title": "Đối thủ hôm nay",
+    "beat": "Bạn thắng <b>{{ name }}</b> {{ gap }}",
+    "lost": "<b>{{ name }}</b> nhanh hơn {{ gap }}",
+    "tie": "Hòa tuyệt đối với <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> chưa chơi",
+    "solved": "<b>{{ name }}</b> giải xong trong {{ time }}",
+    "empty": "Đánh dấu người chơi là đối thủ trên bảng xếp hạng, và mỗi câu đố hằng ngày sẽ thành một trận đấu.",
+    "find": "Tìm đối thủ →"
+  },
+  "record": {
+    "title": "Đối đầu",
+    "text": "Mỗi ngày cả hai cùng giải, người nhanh hơn thắng.",
+    "short": "Trận đấu",
+    "summary": "Thắng: {{ wins }} · thua: {{ losses }} · hòa: {{ draws }}",
+    "wins": "Thắng",
+    "losses": "Thua",
+    "draws": "Hòa",
+    "none": "Chưa có ngày nào cả hai cùng giải. Câu đố hôm nay có thể là trận đấu đầu tiên!",
+    "recent": "Các trận gần đây",
+    "day": "Hằng ngày #{{ number }}: {{ mine }} và {{ theirs }}"
+  },
+  "board": {
+    "text": "Bạn và các đối thủ, mọi thời đại. Chỉ bạn thấy danh sách này.",
+    "empty": "Chưa có đối thủ. Chạm vào hai thanh kiếm bắt chéo cạnh một cái tên trên bảng xếp hạng bất kỳ để đánh dấu ai đó.",
+    "you": "Bạn",
+    "streak": "Chuỗi"
+  }
+}

@@ -1,8 +1,10 @@
-//! The ranks page: the daily leaderboard of any day, the monthly race and the hall of fame.
+//! The ranks page: the daily leaderboard of any day, you and your rivals, the monthly race and the
+//! hall of fame.
 
 pub mod daily_board;
 pub mod hall_of_fame;
 pub mod month;
+pub mod rivals;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -16,6 +18,7 @@ use crate::state::error_toast;
 use daily_board::DailyBoard;
 use hall_of_fame::HallOfFame;
 use month::MonthRace;
+use rivals::RivalsCard;
 
 #[component]
 pub fn RanksPage() -> impl IntoView {
@@ -72,6 +75,7 @@ pub fn RanksPage() -> impl IntoView {
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <div class="flex min-w-0 flex-col gap-6">
                     <DailyBoard day=day today=today board=board loading=loading />
+                    <RivalsCard />
                     <MonthRace />
                 </div>
                 <HallOfFame fame=fame />

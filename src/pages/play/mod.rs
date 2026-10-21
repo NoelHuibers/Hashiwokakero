@@ -2,10 +2,7 @@
 
 pub mod legend;
 pub mod new_game;
-pub mod seo;
 pub mod win;
-
-pub use seo::SeoIntro;
 
 use common::Difficulty;
 use leptos::prelude::*;

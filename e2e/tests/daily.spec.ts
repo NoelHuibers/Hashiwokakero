@@ -3,9 +3,12 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { register, signInWith, signOut } from '../account';
-import { addBridge, DAILY_KEY, missing, saved } from '../board';
+import { addBridge, board, DAILY_KEY, missing, saved } from '../board';
 import { expectResult, solveDaily, startDaily } from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
+
+/** The card over the board after this tab's finish. */
+const winCard = (page: Page) => page.getByRole('dialog', { name: /Well done!/ });
 
 /** The first card of the ranks page, the monthly race below has the same buttons. */
 const todaysBoard = (page: Page) =>
@@ -22,6 +25,16 @@ test('a guest solves the daily and is on the leaderboard', async ({ page, contex
   expect(name).toMatch(/^\p{Lu}\p{Ll}+ \p{Lu}\p{Ll}+ \d+$/u);
   const time = (await card.locator('p.font-pixel.text-3xl').textContent())!;
 
+  // This tab's win covers the board until it's put away, the result card stays
+  const win = winCard(page);
+  await expect(win).toBeFocused();
+  await expect(win.getByText(/^Rank \d+ of \d+ today$/)).toBeVisible();
+  await expect(win.getByText(time, { exact: true })).toBeVisible();
+  await win.getByRole('button', { name: 'Admire' }).click();
+  await expect(win).toHaveCount(0);
+  await expect(card).toBeVisible();
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+
   // Today's ranking next to the board, with the penalties. A row of the table, or a step of the
   // ranks page's podium.
   const mine = (root: Locator) => root.locator('tr, li.podium-step').filter({ hasText: name });
@@ -32,6 +45,8 @@ test('a guest solves the daily and is on the leaderboard', async ({ page, contex
   // Finished is finished: after a reload, and in another tab
   const finished = async (p: Page) => {
     await expect(p.getByRole('heading', { name: /Well done!/ })).toBeVisible();
+    // The win card is for the tab that finished, right then
+    await expect(p.getByRole('dialog')).toHaveCount(0);
     await expect(p.locator('p.font-pixel.text-3xl')).toHaveText(time);
     await expect(p.getByRole('button', { name: /^Start/ })).toHaveCount(0);
     for (const button of [/^Hint/, /^Check/, /^Give up/, /Undo/]) {
@@ -70,10 +85,15 @@ test('sign up, sign out and in again, then the daily counts for the account', as
   const card = await expectResult(page);
   // Not a guest any more: nothing to claim
   await expect(card.getByText(/Claim your name/)).toHaveCount(0);
-  await expect(page.getByText('New stamp: First bridge!')).toBeVisible();
+  // The win card has the stamp, and no toast repeats it
+  const win = winCard(page);
+  await expect(win.getByText('New stamps · 判子')).toBeVisible();
+  await expect(win.getByRole('listitem').filter({ hasText: 'First bridge' })).toBeVisible();
+  await expect(page.getByText('New stamp: First bridge!')).toHaveCount(0);
 
   // The account has the result and the stamp
-  await visit(page, '/account');
+  await win.getByRole('link', { name: 'Stamp book →' }).click();
+  await expect(page).toHaveURL(/\/account$/);
   await expect(page.getByText('No dailies yet.')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Stamp book' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'First bridge' })).toBeVisible();
@@ -155,11 +175,11 @@ test('a delayed paid action blocks double taps, keyboard edits and other actions
     for (const name of [/^Hint/, /^Check/, /^Give up/, /Undo/, /Redo/, /^Clear/]) {
       await expect(page.getByRole('button', { name })).toBeDisabled();
     }
-    const board = page.locator('svg.board-svg').first();
-    await board.focus();
-    await board.press('Enter');
-    await board.press('ArrowRight');
-    await board.press('Space');
+    const svg = board(page);
+    await svg.focus();
+    await svg.press('Enter');
+    await svg.press('ArrowRight');
+    await svg.press('Space');
     expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
     expect((await saved(page, DAILY_KEY)).moves).toBe(before.moves);
     expect(requests).toBe(1);
@@ -283,6 +303,41 @@ test('a final paid hint flushes its move log and submits exactly once', async ({
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
 });
 
+test('a solved daily whose submit failed waits to be submitted again', async ({ page }) => {
+  await visit(page, '/');
+  const { solution } = await startDaily(page);
+  let submissions = 0;
+  await page.route('**/api/submit_daily_attempt', async (route) => {
+    submissions++;
+    // The server never sees the first one, and the page can't read the reply
+    if (submissions === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
+    else await route.continue();
+  });
+  const hint = page.getByRole('button', { name: /^Hint/ });
+  while (missing((await saved(page, DAILY_KEY)).bridges, solution).length > 0) {
+    const before = (await saved(page, DAILY_KEY)).bridges;
+    await hint.click();
+    await expect.poll(async () => (await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
+  }
+  const again = page.getByRole('button', { name: 'Retry result' });
+  await expect(again).toBeVisible();
+  await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
+  // Still solved and locked, and it doesn't retry on its own
+  await expect(page.getByRole('button', { name: /Undo/ })).toBeDisabled();
+  await page.waitForLoadState('networkidle');
+  expect(submissions).toBe(1);
+  await expect(winCard(page)).toHaveCount(0);
+
+  await again.click();
+  await expect(winCard(page)).toBeVisible();
+  expect(submissions).toBe(2);
+  await expect(again).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(winCard(page)).toHaveCount(0);
+  await expectResult(page);
+  expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+});
+
 test('closing the tab after a lost success preserves the paid intent for the next tab', async ({ page, context, problems }) => {
   await visit(page, '/');
   await startDaily(page);
@@ -400,7 +455,7 @@ test('a conflicting account attempt never adopts a lost guest hint', async ({ pa
   await signInWith(page, username, password);
   await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
   await visit(page, '/');
-  await expect(page.locator('svg.board-svg')).toBeVisible();
+  await expect(board(page)).toBeVisible();
   await expect(penaltyValue(page)).toHaveText('+0s');
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
   expect(purchases).toBe(1);
@@ -593,7 +648,7 @@ test('a definitive missing transferred receipt ends recovery without purchasing 
   expect(purchases).toBe(2);
 });
 
-// Recovery coverage is intentionally unexecuted until the parent builds matching server/WASM.
+// Transient failures must preserve the board and wait for an explicit, bounded retry.
 const metadataStatus = (page: Page) => page.getByTestId('daily-metadata-status');
 const rankingStatus = (page: Page) => page.getByTestId('daily-ranking-status');
 const submitStatus = (page: Page) => page.getByTestId('daily-submit-status');
@@ -802,3 +857,35 @@ test('a reload of an unconfirmed solved daily stays locked for explicit retry', 
   await expectResult(page);
   expect(writes).toBe(2);
 });
+
+for (const failFirst of [false, true]) {
+  test(`a solved SPA return discovers metadata${failFirst ? ' after a manual retry' : ''}`, async ({ page }) => {
+    await visit(page, '/');
+    const { puzzle, solution } = await startDaily(page);
+    await solveDaily(page, puzzle, solution);
+    await expectResult(page);
+    await page.keyboard.press('Escape');
+    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await expect(page).toHaveURL(/\/practice/);
+    await page.evaluate(() => document.documentElement.dataset.returnMarker = 'same-document');
+    let reads = 0;
+    await page.route('**/api/daily_today', async (route) => {
+      reads++;
+      if (failFirst && reads === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
+      else await route.continue();
+    });
+    await page.getByRole('link', { name: /Daily/ }).first().click();
+    if (failFirst) {
+      await expect(metadataStatus(page)).toContainText("Couldn't load today's puzzle.");
+      const retry = page.getByRole('button', { name: 'Retry puzzle', exact: true });
+      await expect(retry).toBeEnabled();
+      await retry.click();
+    }
+    await expectResult(page);
+    await expect(metadataStatus(page)).toBeEmpty();
+    await expect(page.locator('html')).toHaveAttribute('data-return-marker', 'same-document');
+    await expect(winCard(page)).toHaveCount(0);
+    expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
+    expect(reads).toBe(failFirst ? 2 : 1);
+  });
+}

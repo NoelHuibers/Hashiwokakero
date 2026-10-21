@@ -316,7 +316,7 @@ pub fn start_syncing() {
 
 /// The stamp each of some players chose to show next to their name (those that chose one they
 /// still have).
-pub(super) async fn shown_stamps(
+pub async fn shown_stamps(
     conn: &Connection,
     users: &[i64],
 ) -> Result<HashMap<i64, Stamp>, ServerFnError> {

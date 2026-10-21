@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Classement du jour · Hashi, le casse-tête des ponts",
-    "description": "Les joueurs de Hashiwokakero les plus rapides du jour, le classement de chaque défi passé, la course du mois et le panthéon des défis les plus résolus, des médailles et des plus longues séries."
+    "description": "Les plus rapides du jour au Hashiwokakero, le classement de chaque défi passé, la course du mois et le panthéon : défis résolus, médailles, séries."
   },
   "title": "Classement",
   "intro": "Chaque jour, tout le monde joue le même pont. Le meilleur temps gagne, les indices et vérifications s’y ajoutent, les solutions révélées ne comptent pas.",
@@ -53,6 +53,8 @@
     "back": "Classement",
     "not_found": "Ce joueur n'existe pas.",
     "since": "Joue depuis le {{ date }}.",
-    "you": "C'est toi, vers ton compte"
+    "you": "C'est toi, vers ton compte",
+    "preview": "{{ name }} sur Hashi, le Hashiwokakero du jour : palmarès et carnet de tampons.",
+    "preview_stats": "Défis résolus : {{ solved }} · Meilleure série : {{ best }} · Médailles : {{ medals }}"
   }
 }

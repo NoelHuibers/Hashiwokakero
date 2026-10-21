@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Günlük sıralama · Hashi, köprü bulmacası",
-    "description": "Bugünün en hızlı Hashiwokakero çözücüleri, geçmiş tüm günlük bulmacaların sıralaması, aylık yarış ve en çok bulmaca çözenlerin, en çok madalya alanların ve en uzun serilerin şöhretler listesi."
+    "description": "Bugünün en hızlı Hashiwokakero çözücüleri, geçmiş tüm günlük bulmacaların sıralaması, aylık yarış ve şöhretler listesi: çözümler, madalyalar, seriler."
   },
   "title": "Sıralama",
   "intro": "Herkes her gün aynı köprüyü oynar. En hızlı süre kazanır, ipuçları ve kontroller süreye eklenir, açılan çözümler sayılmaz.",
@@ -53,6 +53,8 @@
     "back": "Sıralama",
     "not_found": "Böyle bir oyuncu yok.",
     "since": "{{ date }} tarihinden beri oynuyor.",
-    "you": "Bu sensin, hesabına git"
+    "you": "Bu sensin, hesabına git",
+    "preview": "Günlük Hashiwokakero bulmacası Hashi'de {{ name }}: sonuçlar ve mühür defteri.",
+    "preview_stats": "Çözülen günlük bulmaca: {{ solved }} · En iyi seri: {{ best }} · Madalya: {{ medals }}"
   }
 }

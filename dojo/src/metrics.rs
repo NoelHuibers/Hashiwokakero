@@ -40,7 +40,7 @@ impl Split {
         let mut sum = 0u128;
         for r in results {
             split.total += 1;
-            if r.outcome.solved() {
+            if r.outcome_at(budget).solved() {
                 split.solved += 1;
             }
             sum += u128::from(cost(r, budget));
@@ -71,9 +71,10 @@ fn par2(costs: &[u64]) -> f64 {
     )
 }
 
-/// The PAR-2 cost of one result: its fuel when solved, twice the budget otherwise.
+/// The PAR-2 cost of one result: its fuel when solved within the budget, twice the budget
+/// otherwise.
 fn cost(r: &InstanceResult, budget: u64) -> u64 {
-    if r.outcome.solved() {
+    if r.outcome_at(budget).solved() {
         r.fuel
     } else {
         budget.saturating_mul(2)
@@ -135,7 +136,7 @@ pub fn breakdown(results: &[InstanceResult], budget: u64, reveal: bool) -> Entry
             unsat: by(Answer::Unsat),
             unverified: count(
                 rs.iter()
-                    .filter(|r| r.outcome == crate::Outcome::Unverified)
+                    .filter(|r| r.outcome_at(budget) == crate::Outcome::Unverified)
                     .count(),
             ),
         }
@@ -163,8 +164,10 @@ pub fn breakdown(results: &[InstanceResult], budget: u64, reveal: bool) -> Entry
     }
 }
 
-/// Fuel of every solved formula, sorted: the points of an entry in a cactus plot (the k-th
-/// point is the fuel the k-th fastest solved formula took), in [`round`] precision.
+/// Fuel of every solved formula, sorted: the points of an entry in a cactus plot.
+///
+/// The k-th point is the fuel the k-th fastest solved formula took, in [`round`] precision. As
+/// far as the runs went, so past the ranking budget since rules version 5.
 pub fn curve(results: &[InstanceResult]) -> Vec<u64> {
     let mut fuel: Vec<u64> = results
         .iter()
@@ -243,7 +246,7 @@ impl Portfolio {
             .filter(|(_, member)| **member)
             .map(|(rs, _)| {
                 rs.iter()
-                    .map(|r| r.outcome.solved().then_some(r.fuel))
+                    .map(|r| r.outcome_at(budget).solved().then_some(r.fuel))
                     .collect()
             })
             .collect();
@@ -419,6 +422,201 @@ impl Portfolio {
             })
             .collect()
     }
+}
+
+/// Native milliseconds per billion fuel, roughly.
+///
+/// The ranking budget of 7 billion is what the median run of the calibration study needs for
+/// 566 ms of a native solver (dojo/CALIBRATION.md). Solvers differ from it by a factor of up to
+/// about two, so it only gives an idea of the time.
+pub const NATIVE_MS_PER_GFUEL: f64 = 566.0 / 7.0;
+
+/// An entry's score with another budget per formula than the ranking's.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct BudgetScore {
+    /// Fuel per formula.
+    pub budget: u64,
+    pub solved: u32,
+    pub total: u32,
+    /// Mean PAR-2 in billions of fuel: unsolved formulas count twice this budget.
+    pub par2: f64,
+    /// Solved satisfiable and unsatisfiable formulas, without the held-out family's while its
+    /// season runs (see [`breakdown`]).
+    pub sat: u32,
+    pub unsat: u32,
+    /// Wrong answers given within this budget: with it, the entry would be disqualified.
+    pub wrong: u32,
+    pub unverified: u32,
+}
+
+/// What results score with `budget` per formula, from runs that may have gone further (see
+/// [`crate::Outcome::at`]). `reveal`: the season is over, see [`breakdown`].
+pub fn score_at(results: &[InstanceResult], budget: u64, reveal: bool) -> BudgetScore {
+    let split = Split::of(results, budget);
+    let mut score = BudgetScore {
+        budget,
+        solved: split.solved,
+        total: split.total,
+        par2: split.par2,
+        ..BudgetScore::default()
+    };
+    for r in results {
+        match r.outcome_at(budget) {
+            crate::Outcome::Solved(_) if reveal || !r.family.reserve() => match r.expected {
+                Answer::Sat => score.sat += 1,
+                Answer::Unsat => score.unsat += 1,
+            },
+            crate::Outcome::Wrong => score.wrong += 1,
+            crate::Outcome::Unverified => score.unverified += 1,
+            _ => {}
+        }
+    }
+    score
+}
+
+/// Points per power of ten in [`budget_grid`].
+const GRID_STEPS: i32 = 4;
+
+/// Budgets on a log scale from a hundredth of the ranking `budget` to `run_budget`.
+///
+/// Four per power of ten, so a tenth, the budget itself and ten times it are on the grid
+/// exactly. Ends with `run_budget`, also if it isn't a point of the grid.
+pub fn budget_grid(budget: u64, run_budget: u64) -> Vec<u64> {
+    let mut grid = Vec::new();
+    // 10^19 is the largest power of ten in a u64
+    for step in -2 * GRID_STEPS..19 * GRID_STEPS {
+        let decades = step.div_euclid(GRID_STEPS);
+        let rest = step.rem_euclid(GRID_STEPS);
+        // Whole powers of ten exactly, the points in between rounded
+        let base = if decades < 0 {
+            budget / 10u64.pow(decades.unsigned_abs())
+        } else {
+            budget.saturating_mul(10u64.pow(decades.unsigned_abs()))
+        };
+        #[expect(
+            clippy::cast_precision_loss,
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "budgets are far below 2^53, the points between powers of ten are rounded \
+                      anyway"
+        )]
+        let point =
+            (base as f64 * 10f64.powf(f64::from(rest) / f64::from(GRID_STEPS))).round() as u64;
+        if point > run_budget {
+            break;
+        }
+        if point > 0 {
+            grid.push(point);
+        }
+    }
+    if grid.last() != Some(&run_budget) {
+        grid.push(run_budget);
+    }
+    grid.dedup();
+    grid
+}
+
+/// An entry's [`score_at`] every budget of `grid`.
+pub fn budget_curve(results: &[InstanceResult], grid: &[u64], reveal: bool) -> Vec<BudgetScore> {
+    grid.iter().map(|&b| score_at(results, b, reveal)).collect()
+}
+
+/// A change of the lead between two entries, see [`crossovers`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Crossover {
+    /// The smallest budget with the new leader ahead.
+    pub budget: u64,
+    /// Whether the first entry took the lead, else the second.
+    pub first: bool,
+}
+
+/// Every budget in `low..=high` from which on another one of two entries has the lower PAR-2,
+/// both with results on the same formulas (none otherwise).
+///
+/// PAR-2 at a budget `x` is `(S + 2·x·U) / n`, with `S` the fuel of the formulas solved within
+/// `x` and `U` the number of the others. Between the fuel values at which formulas get solved
+/// both sums stay the same, so the difference of two entries is a line there and changes sign
+/// at most once, at a point that can be computed exactly; at those fuel values it jumps. So
+/// this is exact, no grid in between. A tie hands the lead to nobody: who led before keeps it
+/// until the other one is ahead. Once one of them gives a wrong answer it would be
+/// disqualified at that budget, so nothing from there on counts.
+pub fn crossovers(
+    first: &[InstanceResult],
+    second: &[InstanceResult],
+    low: u64,
+    high: u64,
+) -> Vec<Crossover> {
+    let same_formulas =
+        first.len() == second.len() && first.iter().zip(second).all(|(a, b)| a.name == b.name);
+    if !same_formulas || first.is_empty() {
+        return Vec::new();
+    }
+    let both = || first.iter().chain(second);
+    let wrong = both()
+        .filter(|r| r.outcome == crate::Outcome::Wrong)
+        .map(|r| r.fuel)
+        .min();
+    let high = wrong.map_or(high, |w| high.min(w.saturating_sub(1)));
+    if low > high {
+        return Vec::new();
+    }
+    // Where formulas get solved: the segments start there
+    let mut starts: Vec<u64> = both()
+        .filter(|r| r.outcome.solved() && r.fuel > low && r.fuel <= high)
+        .map(|r| r.fuel)
+        .collect();
+    starts.sort_unstable();
+    starts.dedup();
+    starts.insert(0, low);
+    // n times the difference of PAR-2 at `x`: positive while the second one is ahead
+    let solved = |rs: &[InstanceResult], x: u64| {
+        rs.iter()
+            .filter(|r| r.outcome_at(x).solved())
+            .fold((0i128, 0i128), |(sum, n), r| {
+                (sum + i128::from(r.fuel), n + 1)
+            })
+    };
+    let total = i128::try_from(first.len()).unwrap_or(i128::MAX);
+    let mut leader: Option<bool> = None;
+    let mut found = Vec::new();
+    let mut lead = |x: u64, d: i128, found: &mut Vec<Crossover>| {
+        let now = match d.signum() {
+            -1 => true,
+            1 => false,
+            _ => return,
+        };
+        if leader.is_some_and(|l| l != now) {
+            found.push(Crossover {
+                budget: x,
+                first: now,
+            });
+        }
+        leader = Some(now);
+    };
+    for (i, &start) in starts.iter().enumerate() {
+        let end = starts
+            .get(i + 1)
+            .copied()
+            .unwrap_or_else(|| high.saturating_add(1));
+        let ((sa, na), (sb, nb)) = (solved(first, start), solved(second, start));
+        // d(x) = a + 2·c·x on [start, end)
+        let a = sa - sb;
+        let c = (total - na) - (total - nb);
+        lead(start, a + 2 * c * i128::from(start), &mut found);
+        // The first whole budget past the zero of the line, if it is in the segment
+        let past = match c.signum() {
+            1 => Some((-a).div_euclid(2 * c) + 1),
+            -1 => Some(a.div_euclid(-2 * c) + 1),
+            _ => None,
+        };
+        if let Some(x) = past.and_then(|x| u64::try_from(x).ok())
+            && x > start
+            && x < end
+        {
+            lead(x, a + 2 * c * i128::from(x), &mut found);
+        }
+    }
+    found
 }
 
 #[cfg(test)]

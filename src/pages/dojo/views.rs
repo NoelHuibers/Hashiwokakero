@@ -1,17 +1,20 @@
 //! A season's board in three views, sortable, with the cactus plot below.
 //!
-//! The views: the official ranking by PAR-2, SAT/UNSAT/ALL, and every solver's contribution to
-//! the field. The leaderboard and the archive's final boards look the same.
+//! The views: the official ranking by PAR-2, SAT/UNSAT/ALL, every solver's contribution to the
+//! field, and the ranking at other budgets (see [`super::budgets`]). The leaderboard and the
+//! archive's final boards look the same.
 
 use dojo::metrics::Split;
 use leptos::prelude::*;
 use leptos_router::components::A;
+use leptos_router::hooks::use_query_map;
 
 use crate::components::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::{DojoEntry, DojoPortfolio};
 
+use super::budgets::BudgetView;
 use super::cactus::Cactus;
 use super::names::{family_kanji, family_name, par2};
 
@@ -20,6 +23,7 @@ pub(super) enum View {
     Ranking,
     Answers,
     Contribution,
+    Budget,
 }
 
 /// What a view can be sorted by. Every column sorts best first on the first click.
@@ -138,7 +142,14 @@ pub(super) fn BoardViews(
     families: bool,
 ) -> impl IntoView {
     let i18n = use_i18n();
-    let view_mode = RwSignal::new(View::Ranking);
+    // A link to a budget (`?budget=10`) opens the budget view
+    let linked = use_query_map().with_untracked(|q| q.get("budget").is_some());
+    let budgets = portfolio.as_ref().and_then(|p| p.budgets.clone());
+    let view_mode = RwSignal::new(if linked && budgets.is_some() {
+        View::Budget
+    } else {
+        View::Ranking
+    });
     let sort = RwSignal::new((Column::Rank, false));
     // The row under the pointer or focus, emphasised in the plot
     let hovered = RwSignal::new(None::<i64>);
@@ -244,7 +255,8 @@ pub(super) fn BoardViews(
                 let b = e.breakdown.clone();
                 let c = e.contribution;
                 let cells = match mode {
-                    View::Ranking => view! {
+                    // Not shown: the budget view has a table of its own
+                    View::Ranking | View::Budget => view! {
                         <td class="py-2.5 pe-3 text-end font-pixel tabular-nums">{format!("{}/{}", e.score.solved, e.score.total)}</td>
                         <td class="py-2.5 pe-3 text-end font-pixel tabular-nums">{par2(&e.score)}</td>
                         {chips.map(|entry| view! { <td class="hidden py-2.5 sm:table-cell"><FamilyChips entry /></td> })}
@@ -307,7 +319,7 @@ pub(super) fn BoardViews(
     };
     let head = move || {
         match view_mode.get() {
-        View::Ranking => view! {
+        View::Ranking | View::Budget => view! {
             <th class="py-2 pe-3 text-end font-semibold">{t!(i18n, dojo.board.solved)}</th>
             <th class="py-2 pe-3 text-end font-semibold">{t!(i18n, dojo.board.par2)}</th>
             {families.then(|| view! { <th class="hidden py-2 text-start font-semibold sm:table-cell">{t!(i18n, dojo.board.families)}</th> })}
@@ -337,6 +349,7 @@ pub(super) fn BoardViews(
         View::Ranking => t!(i18n, dojo.board.par2_hint).into_any(),
         View::Answers => t!(i18n, dojo.board.answers_hint).into_any(),
         View::Contribution => t!(i18n, dojo.board.contribution_hint).into_any(),
+        View::Budget => t!(i18n, dojo.board.budget_hint).into_any(),
     };
     let vbs = portfolio.as_ref().map(|p| {
         let line = td_string!(
@@ -350,6 +363,7 @@ pub(super) fn BoardViews(
         view! { <p class="text-sm text-muted-foreground" data-testid="vbs">{line}</p> }
     });
     let cactus = portfolio.map(|p| view! { <Cactus cactus=p.cactus highlight=hovered /> });
+    let has_budgets = budgets.is_some();
 
     view! {
         <div class="flex flex-col gap-4">
@@ -357,19 +371,26 @@ pub(super) fn BoardViews(
                 {tab(View::Ranking, t!(i18n, dojo.board.view_ranking).into_any())}
                 {tab(View::Answers, view! { "SAT / UNSAT" }.into_any())}
                 {tab(View::Contribution, t!(i18n, dojo.board.view_contribution).into_any())}
+                {has_budgets.then(|| tab(View::Budget, t!(i18n, dojo.board.view_budget).into_any()))}
             </div>
             <p class="text-sm text-muted-foreground">{hint}</p>
             <div class="overflow-x-auto" role="tabpanel">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b text-start text-xs uppercase tracking-wider text-muted-foreground">
-                            <th class="py-2 pe-2 text-start font-semibold">"#"</th>
-                            <th class="py-2 pe-3 text-start font-semibold">{t!(i18n, dojo.board.solver)}</th>
-                            {head}
-                        </tr>
-                    </thead>
-                    <tbody>{rows}</tbody>
-                </table>
+                {move || match (view_mode.get(), budgets.clone()) {
+                    (View::Budget, Some(budgets)) => view! { <BudgetView budgets entries hovered /> }.into_any(),
+                    _ => view! {
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b text-start text-xs uppercase tracking-wider text-muted-foreground">
+                                    <th class="py-2 pe-2 text-start font-semibold">"#"</th>
+                                    <th class="py-2 pe-3 text-start font-semibold">{t!(i18n, dojo.board.solver)}</th>
+                                    {head}
+                                </tr>
+                            </thead>
+                            <tbody>{rows}</tbody>
+                        </table>
+                    }
+                        .into_any(),
+                }}
             </div>
             {vbs}
             {cactus}
@@ -490,6 +511,7 @@ mod tests {
             },
             cactus: DojoCactus {
                 budget: 7_000_000_000,
+                run_budget: 0,
                 formulas: 10,
                 vbs: vec![1_000, 2_000],
                 curves: vec![DojoCurve {
@@ -499,6 +521,7 @@ mod tests {
                     fuel: vec![1_000],
                 }],
             },
+            budgets: None,
         };
         let owner = Owner::new_root(None);
         let html = owner.with(|| {
@@ -519,5 +542,97 @@ mod tests {
         assert!(!html.contains("href=\"/dojo/2\""), "no link without a name");
         assert!(html.contains("Virtual best solver of 2 solvers: 8/10 solved, PAR-2 1.500"));
         assert!(html.contains("data-testid=\"cactus\""));
+        assert!(!html.contains("budget-view"));
+    }
+
+    /// With scores at other budgets: a fourth tab, and a link to a budget opens it with that
+    /// budget's ranking, the chart and the crossovers.
+    #[cfg(feature = "ssr")]
+    #[tokio::test]
+    async fn renders_the_budget_view() {
+        use crate::i18n::{Locale, use_i18n};
+        use crate::model::{DojoBudgetCurve, DojoBudgets, DojoCactus, DojoCrossover};
+        use dojo::metrics::BudgetScore;
+        const G: u64 = 1_000_000_000;
+        _ = any_spawner::Executor::init_tokio();
+        let point = |budget, solved, par2| BudgetScore {
+            budget,
+            solved,
+            total: 10,
+            par2,
+            sat: solved,
+            unsat: 0,
+            wrong: 0,
+            unverified: 0,
+        };
+        let curve = |id: i64, name: &str, par2: [f64; 3]| DojoBudgetCurve {
+            id,
+            name: name.into(),
+            house: true,
+            points: vec![
+                point(700_000_000, 3, par2[0]),
+                point(7 * G, 8, par2[1]),
+                point(70 * G, 10, par2[2]),
+            ],
+        };
+        let mut first = entry(1, Some((5, 2.0)), None);
+        first.name = "MiniSat".into();
+        let mut second = entry(2, Some((5, 3.0)), None);
+        second.name = "Kissat".into();
+        let portfolio = DojoPortfolio {
+            entries: 2,
+            vbs: Split {
+                solved: 10,
+                total: 10,
+                par2: 1.0,
+            },
+            cactus: DojoCactus {
+                budget: 7 * G,
+                run_budget: 70 * G,
+                formulas: 10,
+                vbs: vec![G],
+                curves: Vec::new(),
+            },
+            budgets: Some(DojoBudgets {
+                budget: 7 * G,
+                run_budget: 70 * G,
+                curves: vec![
+                    curve(1, "MiniSat", [0.9, 3.0, 9.0]),
+                    curve(2, "Kissat", [1.1, 4.0, 2.0]),
+                ],
+                crossovers: vec![DojoCrossover {
+                    budget: 20 * G,
+                    ahead: 2,
+                    behind: 1,
+                }],
+            }),
+        };
+        let owner = Owner::new_root(None);
+        let html = owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::en);
+            provide_context(leptos_router::location::RequestUrl::new("/dojo?budget=10"));
+            view! {
+                <leptos_router::components::Router>
+                    <BoardViews entries=vec![first, second] portfolio=Some(portfolio) families=true />
+                </leptos_router::components::Router>
+            }
+            .to_html()
+        });
+        assert_eq!(html.matches("role=\"tab\"").count(), 4, "{html}");
+        assert!(html.contains("data-testid=\"budget-view\""), "{html}");
+        assert!(html.contains("data-testid=\"budget-chart\""));
+        assert_eq!(html.matches("data-curve=").count(), 2);
+        // Ranked at ten times the budget: Kissat first, up one place
+        let kissat = html.find("data-entry=\"2\"").unwrap();
+        let minisat = html.find("data-entry=\"1\"").unwrap();
+        assert!(kissat < minisat);
+        assert!(html.contains("▲1"));
+        assert!(
+            html.contains("Kissat overtakes MiniSat above 2×10¹⁰ fuel (≈ 1.6 s native)."),
+            "{html}"
+        );
+        assert!(html.contains("data-budget=\"0.1\"") && html.contains("data-budget=\"10\""));
+        assert!(html.contains("aria-current=\"true\""));
     }
 }

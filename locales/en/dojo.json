@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · a gym for SAT solvers · Hashi",
-    "description": "Submit your SAT solver as WebAssembly and climb the leaderboard: scored on hidden, fresh formulas with deterministic fuel instead of seconds. Free, open source, reproducible."
+    "description": "Submit your SAT solver as WebAssembly and climb the leaderboard: scored on hidden, fresh formulas with deterministic fuel, not seconds. Free, open source."
   },
   "title": "SAT Dojo",
   "intro": "A gym for SAT solvers. Compile yours to WebAssembly, submit it, and it is scored on a hidden set of fresh formulas: Hashi puzzles, parity traps, random 3-SAT, pigeons, queens, factoring, multiplier miters, graph coloring and one mystery family.",
@@ -41,7 +41,20 @@
     "relative_tip": "Sparkle 2018: its share of all solvers' log10(PAR-2 without ÷ PAR-2 with)",
     "sota_tip": "Each formula it solves earns 1 ÷ the number of solvers that solve it",
     "shapley_tip": "Its fair share of the fuel the whole field saves, in billions per formula",
-    "vbs_line": "Virtual best solver of {{ count }} solvers: {{ solved }}/{{ total }} solved, PAR-2 {{ par2 }}"
+    "vbs_line": "Virtual best solver of {{ count }} solvers: {{ solved }}/{{ total }} solved, PAR-2 {{ par2 }}",
+    "view_budget": "Budget",
+    "budget_hint": "The same runs ranked with another budget per formula. Every run goes on to four times the official budget, and fuel is deterministic, so each smaller budget gives exactly the result a run with it would have had. The official ranking stays at 1×; the arrows show how far a solver moves from its place there.",
+    "budget_pick": "Budget per formula",
+    "budget_official": "official",
+    "budget_wrong": "wrong answer",
+    "crossover": "{{ ahead }} overtakes {{ behind }} above {{ fuel }} fuel (≈ {{ time }} native).",
+    "no_crossovers": "Up to {{ fuel }} fuel per formula, none of the leading solvers overtakes another.",
+    "budget_chart": "PAR-2 against the budget",
+    "budget_chart_hint": "One line per solver, both axes on a log scale. Where two lines cross, one solver overtakes the other. Native times are rough: the calibration's average, a solver can be up to twice as fast or slow.",
+    "budget_chart_x": "Fuel per formula",
+    "budget_chart_y": "PAR-2 in billions of fuel per formula, on a log scale; unsolved formulas count twice the budget on the x axis.",
+    "budget_chart_aria": "Line chart of PAR-2 against the budget for {{ count }} solvers, from {{ low }} to {{ high }} fuel per formula. The arrow keys move along the budgets.",
+    "budget_at": "{{ fuel }} fuel per formula, ≈ {{ time }} native"
   },
   "seasons": {
     "meta_title": "Season archive · SAT Dojo",
@@ -311,7 +324,7 @@
     "title": "Cactus plot",
     "hint": "Every line is a solver, its solved formulas sorted by fuel: further right means more solved, lower means less fuel. Nothing in it tells which formula a point is.",
     "x": "Formulas solved",
-    "y": "Fuel per formula on a log scale, rounded to three digits; the top line is the budget.",
+    "y": "Fuel per formula on a log scale, rounded to three digits. The dashed line is the ranking budget; above it the runs went on, for the Budget view.",
     "budget": "budget",
     "vbs": "Virtual best solver",
     "vbs_short": "VBS",
@@ -322,7 +335,9 @@
     "table": "Show as a table",
     "fastest": "Fastest",
     "median": "Median",
-    "slowest": "Slowest"
+    "slowest": "Slowest",
+    "run_budget": "end of the runs",
+    "ranking": "ranking budget"
   },
   "metrics": {
     "title": "Beyond PAR-2",
@@ -336,6 +351,8 @@
     "sota_title": "State-of-the-art contribution",
     "sota": "From the theorem proving competition <a>CASC</a>: each formula a solver solves earns it 1 divided by the number of solvers that solve it. CASC averages over the solved formulas; we sum, so solving more never lowers it, and the sums add up to the formulas the VBS solves.",
     "shapley_title": "Shapley value",
-    "shapley": "Standalone scores reward near-clones, marginal contributions punish them. The Shapley value from cooperative game theory is fair to both: it splits the fuel the whole field saves over solving nothing by each solver's average marginal contribution over every order of joining (<a>Fréchette et al., AAAI 2016</a>). We compute it exactly, in billions of fuel per formula; the values add up to twice the budget minus the VBS's PAR-2."
+    "shapley": "Standalone scores reward near-clones, marginal contributions punish them. The Shapley value from cooperative game theory is fair to both: it splits the fuel the whole field saves over solving nothing by each solver's average marginal contribution over every order of joining (<a>Fréchette et al., AAAI 2016</a>). We compute it exactly, in billions of fuel per formula; the values add up to twice the budget minus the VBS's PAR-2.",
+    "budget_title": "Rankings at other budgets",
+    "budget": "The ranking measures a short race: 7 billion fuel per formula, about half a second of a native solver, where the SAT Competition allows 5,000 seconds. Solvers with heavy preprocessing and inprocessing, like Kissat and CaDiCaL, pay for it before it pays off, so at this budget they rank behind MiniSat. Every run goes on to four times the budget, and since fuel is deterministic one run gives the exact score at every smaller budget: the Budget view shows how the ranking changes with more time."
   }
 }

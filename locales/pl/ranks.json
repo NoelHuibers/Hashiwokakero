@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Ranking dnia · Hashi, łamigłówka z mostami",
-    "description": "Najszybsi dziś gracze Hashiwokakero, ranking każdej wcześniejszej łamigłówki dnia, wyścig miesiąca i galeria sław z najwięcej rozwiązanymi dniami, medalami i najdłuższymi seriami."
+    "description": "Najszybsi dziś gracze Hashiwokakero, ranking każdej wcześniejszej łamigłówki dnia, wyścig miesiąca i galeria sław: rozwiązane dni, medale, serie."
   },
   "title": "Ranking",
   "intro": "Każdego dnia wszyscy grają ten sam most. Wygrywa najlepszy czas, podpowiedzi i sprawdzenia go wydłużają, odkryte rozwiązania się nie liczą.",
@@ -53,6 +53,8 @@
     "back": "Ranking",
     "not_found": "Nie ma takiego gracza.",
     "since": "Gra od {{ date }}.",
-    "you": "To ty, przejdź do konta"
+    "you": "To ty, przejdź do konta",
+    "preview": "{{ name }} na Hashi, codziennej łamigłówce Hashiwokakero: wyniki i album pieczątek.",
+    "preview_stats": "Rozwiązane łamigłówki dnia: {{ solved }} · Najlepsza seria: {{ best }} · Medale: {{ medals }}"
   }
 }

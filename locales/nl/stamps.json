@@ -4,6 +4,7 @@
   "collected": "{{ earned }} van {{ total }} stempels verzameld.",
   "new": "Nieuwe stempel: {{ name }}!",
   "more": "En nog {{ count }} nieuwe stempels, kijk in je stempelboekje.",
+  "earned": "Nieuwe stempels",
   "share": "{{ percent }}% van de spelers",
   "pick": "Tik op een verdiende stempel om hem naast je naam in de ranglijsten te tonen.",
   "shown": "{{ name }} staat nu naast je naam in de ranglijsten.",

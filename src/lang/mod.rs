@@ -281,4 +281,63 @@ mod tests {
         }
         assert!(problems.is_empty(), "{}", problems.join("\n"));
     }
+
+    /// Roughly how wide a text is in a search result, in Latin letters: Chinese, Japanese and
+    /// Korean characters take up about two.
+    fn search_width(text: &str) -> usize {
+        text.chars()
+            .map(|c| match u32::from(c) {
+                0x1100..=0x115F
+                | 0x2E80..=0xA4CF
+                | 0xAC00..=0xD7A3
+                | 0xF900..=0xFAFF
+                | 0xFE30..=0xFE4F
+                | 0xFF00..=0xFF60
+                | 0xFFE0..=0xFFE6 => 2,
+                _ => 1,
+            })
+            .sum()
+    }
+
+    #[test]
+    fn wide_characters_count_twice() {
+        assert_eq!(search_width("Hashi"), 5);
+        assert_eq!(search_width("橋をかけろ"), 10);
+        assert_eq!(search_width("하시"), 4);
+        assert_eq!(search_width("Мосты"), 5);
+    }
+
+    /// Search engines cut titles after about 60 characters and descriptions after about 155.
+    #[test]
+    fn titles_and_descriptions_fit_in_search_results() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("locales");
+        let mut problems = Vec::new();
+        for locale in Locale::get_all() {
+            let lang = locale.as_str();
+            for entry in std::fs::read_dir(root.join(lang)).expect("locales/<lang>") {
+                let path = entry.unwrap().path();
+                let ns = path.file_stem().unwrap().to_str().unwrap().to_owned();
+                let json: serde_json::Value =
+                    serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+                let mut texts = std::collections::BTreeMap::new();
+                strings(&json, "", &mut texts);
+                for (key, text) in &texts {
+                    let limit = if key.ends_with("meta.title") {
+                        60
+                    } else if key.ends_with("meta.description") {
+                        155
+                    } else {
+                        continue;
+                    };
+                    let width = search_width(text);
+                    if width > limit {
+                        problems.push(format!(
+                            "{lang}/{ns}: {key} is {width} wide, {limit} at most"
+                        ));
+                    }
+                }
+            }
+        }
+        assert!(problems.is_empty(), "{}", problems.join("\n"));
+    }
 }

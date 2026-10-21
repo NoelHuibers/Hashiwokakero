@@ -62,11 +62,17 @@ pub struct Limits {
 }
 
 impl Default for Limits {
+    /// The leaderboard's: runs go on to [`crate::RUN_BUDGET`] (scores are computed at the
+    /// ranking budget from them, see [`crate::Outcome::at`]). The wall clock limit is well
+    /// beyond what the run budget takes, so it only catches what fuel doesn't and never decides
+    /// a result that fuel would have: 3 to 7 seconds on a fast desktop core, one to two and a
+    /// half minutes on the worker, whose four shared CPUs get a quarter of one core between
+    /// them once their burst is used up (dojo/CALIBRATION.md, "Larger budgets").
     fn default() -> Self {
         Self {
-            fuel: crate::DEFAULT_BUDGET,
+            fuel: crate::RUN_BUDGET,
             memory_bytes: 1 << 30,
-            wall: Duration::from_secs(120),
+            wall: Duration::from_secs(300),
             proof_bytes: MAX_PROOF_BYTES,
         }
     }

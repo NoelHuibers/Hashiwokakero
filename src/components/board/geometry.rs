@@ -4,7 +4,8 @@ use common::{Board, Orientation, Pos};
 
 use crate::components::sprites::{CELL, Span};
 
-pub(super) fn span_of(board: &Board, edge: usize) -> Span {
+/// Where the bridges of an edge go, also for the board of the preview images (`server::og`).
+pub(crate) fn span_of(board: &Board, edge: usize) -> Span {
     let (a, b) = board.endpoints(edge);
     Span {
         horizontal: board.edges[edge].orientation == Orientation::Horizontal,

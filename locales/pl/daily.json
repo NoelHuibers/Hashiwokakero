@@ -3,6 +3,8 @@
   "action_pending": "Oczekiwanie na serwer…",
   "action_retry": "Wynik jest niepewny. Powtórz tę samą czynność, aby go odzyskać bez kolejnej kary.",
   "action_storage": "Pamięć przeglądarki jest potrzebna do bezpiecznego ponowienia tej czynności. Włącz ją i spróbuj ponownie.",
+  "submit_failed": "Twoje rozwiązanie jeszcze nie dotarło do serwera.",
+  "submit_again": "Wyślij ponownie",
   "meta": {
     "title": "Hashi · Codzienna łamigłówka Hashiwokakero (Mosty) online",
     "description": "Codziennie nowa łamigłówka Hashiwokakero (Mosty), ta sama dla wszystkich: urocza japońska grafika pixel art, ranking, serie i zawsze jedno rozwiązanie."
@@ -50,6 +52,32 @@
     "pace": "Tak szybkie kliknięcia, raz za razem, wyglądają na program, więc ten wynik nie trafia do rankingu.",
     "second_account": "Na tym urządzeniu dzisiejsza łamigłówka dnia była już otwarta na innym koncie, więc ten wynik nie trafia do rankingu. Graj w każdą łamigłówkę dnia na jednym koncie.",
     "review": "Ten wynik został usunięty z rankingu po weryfikacji."
+  },
+  "about": {
+    "kicker": "o grze",
+    "title": "Hashiwokakero, łamigłówka z mostami",
+    "intro": "Hashiwokakero (橋をかけろ, „buduj mosty!”), znane też jako <b>Mosty</b>, <b>Hashi</b> lub Hashikake, to japońska łamigłówka logiczna wydawnictwa Nikoli. Tutaj co dzień rozwiążesz nową, za darmo i bez konta, a każda ma dokładnie jedno rozwiązanie, więc nigdy nie musisz zgadywać.",
+    "how_title": "Jak grać w Hashi",
+    "daily_title": "Jak działa most dnia",
+    "day_title": "Jedna łamigłówka dziennie",
+    "day": "Ta sama dla wszystkich, nowa o północy UTC. Jak w gazetowej łamigłówce, z każdym dniem aż do niedzieli jest trudniej.",
+    "clock_title": "Zaczynasz, kiedy chcesz",
+    "clock": "Łamigłówka jest ukryta, dopóki nie naciśniesz Start. Dopiero wtedy rusza zegar.",
+    "penalty_title": "Sprawdzanie i podpowiedzi kosztują czas",
+    "penalty": "Każde sprawdzenie dodaje {{ check }} do twojego czasu, każda podpowiedź {{ hint }}.",
+    "give_up_title": "Poddanie się",
+    "give_up": "Utknąłeś? Poddaj się, a zobaczysz rozwiązanie. Ta próba nie trafi do rankingu, ale jutro czeka nowa łamigłówka.",
+    "tips_title": "Porady, jak rozwiązywać Hashiwokakero",
+    "tips_intro": "Trzy wnioski na początek. Każdy obrazek pokazuje mosty, które z nich wynikają.",
+    "faq_title": "Częste pytania",
+    "account_q": "Czy potrzebuję konta?",
+    "account_a": "Nie. Od razu grasz jako gość i i tak pojawiasz się w rankingu. Zarezerwuj nazwę, by mieć swoją serię na każdym urządzeniu.",
+    "next_q": "Kiedy jest nowy most dnia?",
+    "next_a": "Codziennie o północy UTC, w tej samej chwili na całym świecie. Odliczanie na tej stronie pokazuje, ile zostało czasu.",
+    "more_q": "Gdzie mogę zagrać więcej?",
+    "more_a": "W <practice>treningu</practice>: nieograniczona liczba łamigłówek w pięciu rozmiarach, od 7×7 do 24×24, z podpowiedziami, kiedy chcesz. Albo twórz własne łamigłówki w <workshop>warsztacie</workshop>.",
+    "to_rules": "Zasady Hashiwokakero i porady →",
+    "to_practice": "Trening: łamigłówki bez limitu →"
   },
   "recovery": {
     "metadata_error": "Nie udało się wczytać dzisiejszej łamigłówki. Spróbuj ponownie.",

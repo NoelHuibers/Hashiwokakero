@@ -28,12 +28,17 @@
 //!
 //! `POST /benchmarks?id=&report_token=[&rules=]` with a community benchmark (DIMACS) as body:
 //! queued for verification (202), the verdict goes to `/dojo/benchmark-report`.
+//!
+//! Jobs and checks are worked through one at a time. Every minute the worker sends a heartbeat
+//! for each one it holds, waiting or running ([`Report::Heartbeat`], [`Verdict::Pending`]):
+//! the website gives up only on work it hasn't heard of for a quarter of an hour, so a job that
+//! waits behind another isn't sent again, while the work of a worker that is gone still is.
 
 use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use axum::Router;
@@ -50,7 +55,7 @@ use crate::community::{BenchmarkReport, PoolInstance, Verdict};
 use crate::eval::{Options, evaluate};
 use crate::proof::{CheckLimits, Checker, Tools};
 use crate::sandbox::Sandbox;
-use crate::{GENERATOR_VERSION, MAX_WASM_BYTES, RULES_VERSION, Report, Score};
+use crate::{DEFAULT_BUDGET, GENERATOR_VERSION, MAX_WASM_BYTES, RULES_VERSION, Report, Score};
 
 #[derive(Deserialize)]
 struct JobQuery {
@@ -99,12 +104,61 @@ enum Work {
     Verify(Check),
 }
 
+/// What a heartbeat is about: a job or a check.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Held {
+    Job { id: i64, season: u32 },
+    Check { id: i64 },
+}
+
+/// A job or check the worker holds, waiting or running.
+#[derive(Clone, Debug)]
+struct Ticket {
+    held: Held,
+    /// The token its reports carry.
+    token: Arc<str>,
+    /// The website doesn't expect it any more (sent again with another token, or decided
+    /// meanwhile): skipped if it hasn't started yet.
+    dropped: Arc<AtomicBool>,
+}
+
+impl Ticket {
+    fn new(held: Held, token: Arc<str>) -> Self {
+        Self {
+            held,
+            token,
+            dropped: Arc::default(),
+        }
+    }
+}
+
+/// The jobs and checks the worker holds, waiting or running, which get heartbeats.
+#[derive(Debug, Default)]
+struct Holding(Mutex<Vec<Ticket>>);
+
+impl Holding {
+    fn lock(&self) -> MutexGuard<'_, Vec<Ticket>> {
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn len(&self) -> usize {
+        self.lock().len()
+    }
+
+    fn release(&self, ticket: &Ticket) {
+        self.lock()
+            .retain(|t| !Arc::ptr_eq(&t.dropped, &ticket.dropped));
+    }
+}
+
 #[derive(Clone)]
 struct Shared {
     token: Arc<str>,
-    jobs: mpsc::UnboundedSender<Work>,
-    /// Jobs waiting or running.
-    pending: Arc<AtomicUsize>,
+    jobs: mpsc::UnboundedSender<(Ticket, Work)>,
+    /// Jobs and checks waiting or running.
+    holding: Arc<Holding>,
     /// Seconds since the epoch of the last request or finished job.
     active: Arc<AtomicU64>,
     /// Draws from the community pool by digest, kept in `cache` too.
@@ -198,13 +252,19 @@ async fn submit(
     if let Err(reason) = crate::validate::validate(&wasm) {
         return (StatusCode::UNPROCESSABLE_ENTITY, axum::Json(reason)).into_response();
     }
+    let report_token: Arc<str> = q.report_token.into();
+    let held = Held::Job {
+        id: q.id,
+        season: q.season,
+    };
     queue(
         &shared,
+        Ticket::new(held, report_token.clone()),
         Work::Evaluate(Job {
             id: q.id,
             season: q.season,
             seed: q.seed,
-            report_token: q.report_token.into(),
+            report_token,
             export: q.export == 1,
             wasm,
             pool,
@@ -216,21 +276,44 @@ async fn submit(
 /// two evaluations and one check, more is a misbehaving client.
 const MAX_PENDING: usize = 3;
 
-fn queue(shared: &Shared, work: Work) -> Response {
-    if shared
-        .pending
-        .try_update(Ordering::Relaxed, Ordering::Relaxed, |n| {
-            (n < MAX_PENDING).then_some(n + 1)
-        })
-        .is_err()
+fn queue(shared: &Shared, ticket: Ticket, work: Work) -> Response {
     {
-        return StatusCode::TOO_MANY_REQUESTS.into_response();
+        let mut holding = shared.holding.lock();
+        if holding.len() >= MAX_PENDING {
+            return StatusCode::TOO_MANY_REQUESTS.into_response();
+        }
+        holding.push(ticket.clone());
     }
-    if shared.jobs.send(work).is_ok() {
-        StatusCode::ACCEPTED.into_response()
-    } else {
-        shared.pending.fetch_sub(1, Ordering::Relaxed);
-        StatusCode::SERVICE_UNAVAILABLE.into_response()
+    match shared.jobs.send((ticket, work)) {
+        Ok(()) => StatusCode::ACCEPTED.into_response(),
+        Err(mpsc::error::SendError((ticket, _))) => {
+            shared.holding.release(&ticket);
+            StatusCode::SERVICE_UNAVAILABLE.into_response()
+        }
+    }
+}
+
+/// How often the worker sends heartbeats for the work it holds: well within the website's
+/// quarter of an hour, so a few lost ones don't matter.
+const HEARTBEAT: Duration = Duration::from_secs(60);
+
+/// Sends a heartbeat for every job and check in `holding` every `every`, waiting or running.
+/// What the website refuses (401: it sent the work again with another token, 409: decided or
+/// given up meanwhile) is dropped before it starts.
+async fn heartbeats(holding: Arc<Holding>, reporter: Reporter, every: Duration) {
+    loop {
+        tokio::time::sleep(every).await;
+        let tickets = holding.lock().clone();
+        for ticket in tickets {
+            let status = reporter.heartbeat(&ticket).await;
+            if matches!(
+                status,
+                Some(StatusCode::UNAUTHORIZED | StatusCode::CONFLICT)
+            ) && !ticket.dropped.swap(true, Ordering::Relaxed)
+            {
+                eprintln!("{:?} isn't expected any more: {status:?}", ticket.held);
+            }
+        }
     }
 }
 
@@ -313,11 +396,13 @@ async fn check_benchmark(
     if q.rules.is_some_and(|rules| rules != RULES_VERSION) {
         return StatusCode::CONFLICT.into_response();
     }
+    let report_token: Arc<str> = q.report_token.into();
     queue(
         &shared,
+        Ticket::new(Held::Check { id: q.id }, report_token.clone()),
         Work::Verify(Check {
             id: q.id,
-            report_token: q.report_token.into(),
+            report_token,
             dimacs,
         }),
     )
@@ -392,6 +477,40 @@ impl Reporter {
             &format!("verdict on benchmark #{}", report.id),
         )
         .await;
+    }
+
+    /// A heartbeat for work the worker holds (see [`heartbeats`]), sent once: the next one
+    /// follows soon. The website's answer, `None` if there was none.
+    async fn heartbeat(&self, ticket: &Ticket) -> Option<StatusCode> {
+        let (url, body) = match ticket.held {
+            Held::Job { id, season } => (
+                format!("{}/dojo/report", self.app_url),
+                serde_json::to_vec(&Report::Heartbeat { id, season }),
+            ),
+            Held::Check { id } => (
+                format!("{}/dojo/benchmark-report", self.app_url),
+                serde_json::to_vec(&BenchmarkReport {
+                    id,
+                    verdict: Verdict::Pending,
+                }),
+            ),
+        };
+        let sent = self
+            .client
+            .post(url)
+            .bearer_auth(&*ticket.token)
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(body.unwrap_or_default())
+            .timeout(Duration::from_secs(20))
+            .send()
+            .await;
+        match sent {
+            Ok(r) => Some(r.status()),
+            Err(e) => {
+                eprintln!("heartbeat for {:?} failed: {e}", ticket.held);
+                None
+            }
+        }
     }
 
     /// The set of a job as a tarball, for the website's season archive.
@@ -488,9 +607,9 @@ impl Settings {
 /// Evaluates jobs one after another on a blocking thread (each one uses every core). It holds
 /// no sender of `jobs`, so it returns once the server that queues them is gone.
 fn evaluator(
-    mut jobs: mpsc::UnboundedReceiver<Work>,
+    mut jobs: mpsc::UnboundedReceiver<(Ticket, Work)>,
     reporter: &Reporter,
-    pending: &AtomicUsize,
+    holding: &Holding,
     active: &AtomicU64,
     runtime: &tokio::runtime::Handle,
     settings: &Settings,
@@ -520,7 +639,15 @@ fn evaluator(
     // Sets by seed and pool: every submission of a season gets the same one
     let mut sets: HashMap<(String, String), Arc<Vec<Instance>>> = HashMap::new();
     let cache = settings.cache.as_deref();
-    while let Some(work) = jobs.blocking_recv() {
+    while let Some((ticket, work)) = jobs.blocking_recv() {
+        if ticket.dropped.load(Ordering::Relaxed) {
+            eprintln!(
+                "{:?} skipped: the website doesn't expect it any more",
+                ticket.held
+            );
+            holding.release(&ticket);
+            continue;
+        }
         let job = match work {
             Work::Evaluate(job) => job,
             Work::Verify(check) => {
@@ -539,7 +666,7 @@ fn evaluator(
                     started.elapsed()
                 );
                 runtime.block_on(reporter.send_benchmark(&report, &check.report_token));
-                pending.fetch_sub(1, Ordering::Relaxed);
+                holding.release(&ticket);
                 active.store(now_secs(), Ordering::Relaxed);
                 continue;
             }
@@ -604,7 +731,8 @@ fn evaluator(
                         let archive = crate::archive::write_tar_gz(&set, &info);
                         runtime.block_on(reporter.send_set(id, season, archive, &token));
                     }
-                    let score = Score::from_results(&results, options.limits.fuel);
+                    // The runs went on to the run budget, the ranking stays at the budget
+                    let score = Score::from_results(&results, DEFAULT_BUDGET);
                     let fingerprint = crate::fingerprint(&results);
                     Report::Finished {
                         id,
@@ -629,7 +757,7 @@ fn evaluator(
             started.elapsed()
         );
         send(report);
-        pending.fetch_sub(1, Ordering::Relaxed);
+        holding.release(&ticket);
         active.store(now_secs(), Ordering::Relaxed);
     }
 }
@@ -725,7 +853,7 @@ pub fn serve() -> Result<(), String> {
         let shared = Shared {
             token: token.clone(),
             jobs: tx,
-            pending: Arc::new(AtomicUsize::new(0)),
+            holding: Arc::default(),
             active: Arc::new(AtomicU64::new(now_secs())),
             pools: Arc::default(),
             cache: settings.cache.clone(),
@@ -735,9 +863,14 @@ pub fn serve() -> Result<(), String> {
             app_url: app_url.trim_end_matches('/').to_string(),
         };
         let handle = tokio::runtime::Handle::current();
-        let (pending, active) = (shared.pending.clone(), shared.active.clone());
+        tokio::spawn(heartbeats(
+            shared.holding.clone(),
+            reporter.clone(),
+            HEARTBEAT,
+        ));
+        let (holding, active) = (shared.holding.clone(), shared.active.clone());
         std::thread::spawn(move || {
-            evaluator(rx, &reporter, &pending, &active, &handle, &settings);
+            evaluator(rx, &reporter, &holding, &active, &handle, &settings);
         });
 
         if let Some(idle) = idle_exit {
@@ -746,7 +879,7 @@ pub fn serve() -> Result<(), String> {
                 loop {
                     tokio::time::sleep(Duration::from_secs(10)).await;
                     let quiet = now_secs().saturating_sub(shared.active.load(Ordering::Relaxed));
-                    if shared.pending.load(Ordering::Relaxed) == 0 && quiet >= idle {
+                    if shared.holding.len() == 0 && quiet >= idle {
                         eprintln!("idle for {quiet} s, exiting");
                         std::process::exit(0);
                     }
@@ -976,7 +1109,7 @@ mod tests {
         let shared = Shared {
             token: "secret".into(),
             jobs,
-            pending: Arc::new(AtomicUsize::new(0)),
+            holding: Arc::default(),
             active: Arc::new(AtomicU64::new(0)),
             pools: Arc::default(),
             cache: Some(cache.clone()),
@@ -994,10 +1127,10 @@ mod tests {
             ..Settings::default()
         };
         let handle = tokio::runtime::Handle::current();
-        let (pending, active) = (shared.pending.clone(), shared.active.clone());
+        let (holding, active) = (shared.holding.clone(), shared.active.clone());
         let evaluating = tokio::task::spawn_blocking({
-            let pending = pending.clone();
-            move || evaluator(rx, &reporter, &pending, &active, &handle, &settings)
+            let holding = holding.clone();
+            move || evaluator(rx, &reporter, &holding, &active, &handle, &settings)
         });
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
@@ -1256,7 +1389,7 @@ mod tests {
             .await
             .expect("the evaluator stops when the server does")
             .unwrap();
-        assert_eq!(pending.load(Ordering::Relaxed), 0);
+        assert_eq!(holding.len(), 0);
         // The proof directories of the runs are gone
         assert_eq!(std::fs::read_dir(cache.join("proofs")).unwrap().count(), 0);
     }

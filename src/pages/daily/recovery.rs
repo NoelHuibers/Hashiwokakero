@@ -5,7 +5,6 @@ use leptos::task::spawn_local;
 
 use super::state::{Daily, LOG_KEY, SavedLog, browser_now, browser_utc_offset};
 use crate::api::{DailyOwner, daily_attempt_info, submit_daily_attempt};
-use crate::components::stamps::announce;
 use crate::model::DailyInfo;
 use crate::state::{Status, load};
 
@@ -184,12 +183,7 @@ impl Daily {
             }
             if let Ok(result) = reply {
                 let end = browser_now() + this.skew.get_untracked();
-                this.update_attempt(|a| {
-                    a.finished_at = Some(end);
-                    a.time_ms = Some(result.time_ms);
-                });
-                announce(&result.stamps);
-                this.result.set(Some(result));
+                this.submitted(result, end);
                 this.submission.set(Phase::Idle);
                 this.submit_payload.set_value(None);
                 this.busy.set(false);

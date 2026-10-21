@@ -5,7 +5,8 @@
     "ranks": "Ranking",
     "create": "Criar",
     "lab": "Lab",
-    "main": "Navegação principal"
+    "main": "Navegação principal",
+    "groups": "Grupos"
   },
   "tagline_short": "Pontes",
   "language": "Idioma",
@@ -74,7 +75,13 @@
     "too_many_messages": "Já são mensagens suficientes por hoje, tente de novo amanhã.",
     "rename_too_soon": "Você mudou seu nome de usuário há pouco tempo, tente de novo mais tarde.",
     "username_not_allowed": "Este nome não é permitido aqui, escolha outro.",
-    "banned": "Esta conta está banida. Se você acha que é um engano, escreva para nós."
+    "banned": "Esta conta está banida. Se você acha que é um engano, escreva para nós.",
+    "group_name_invalid": "O nome do grupo tem de 1 a 32 caracteres.",
+    "group_name_not_allowed": "Este nome não é permitido aqui, escolha outro.",
+    "group_not_found": "Este grupo não existe ou você não é membro dele.",
+    "group_full": "Este grupo está cheio: já tem 50 membros.",
+    "too_many_groups": "Você já está em 10 grupos, saia de um primeiro.",
+    "group_owner_only": "Só o admin do grupo pode fazer isso."
   },
   "solver": {
     "title": "Solver SAT",
@@ -187,6 +194,12 @@
   "date_long": "{{ weekday }}, {{ day }} de {{ month }} de {{ year }}",
   "date_short": "{{ day }} de {{ month }} de {{ year }}",
   "og_image_alt": "Um puzzle Hashiwokakero resolvido em pixel art: ilhas numeradas ligadas por pontes de madeira e vermelhão",
+  "og": {
+    "tagline": "O puzzle japonês das pontes, em pixel art",
+    "free": "Grátis",
+    "daily": "Um puzzle novo todos os dias",
+    "unique": "Uma única solução"
+  },
   "ld": {
     "site": "Hashiwokakero, o puzzle japonês das pontes, para jogar grátis no navegador.",
     "game": "Ligue as ilhas com pontes para que cada ilha tenha tantas pontes quanto indica seu número. Um desafio diário com ranking, cinco dificuldades, pixel art, e cada puzzle tem exatamente uma solução."
