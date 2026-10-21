@@ -1083,6 +1083,49 @@ async fn newer_rules_evaluate_again() {
     );
 }
 
+/// Evaluations that failed for good get another chance when the site runs newer rules, with
+/// their attempts back, like finished ones: on 2026-10-21 two house entries ended up failed
+/// after the rules changed and stayed so. Only once per change, not on every housekeeping.
+#[tokio::test]
+async fn failed_evaluations_get_another_chance_on_newer_rules() {
+    let conn = test_db("failed-rules").await;
+    let current = season();
+    let id = submit(&conn, None, form("failed", 5)).await.unwrap();
+    housekeeping_at(&conn, current).await.unwrap();
+    let fail = || {
+        let conn = conn.clone();
+        async move {
+            conn.execute(
+                "UPDATE dojo_submissions SET state = 'failed', attempts = 3, job_token = NULL WHERE id = ?1",
+                params![id],
+            )
+            .await
+            .unwrap();
+        }
+    };
+    fail().await;
+    // Same rules: it stays failed
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(state_and_token(&conn, id).await, ("failed".into(), None, 3));
+    // The site was deployed with newer rules
+    conn.execute(
+        "UPDATE dojo_seasons SET rules_version = ?2 WHERE season = ?1",
+        params![current, RULES_VERSION - 1],
+    )
+    .await
+    .unwrap();
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(state_and_token(&conn, id).await, ("queued".into(), None, 0));
+    assert_eq!(
+        seasons(&conn, current).await.unwrap().current.rules_version,
+        RULES_VERSION
+    );
+    // Failing again on the new rules is final until the next change
+    fail().await;
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(state_and_token(&conn, id).await, ("failed".into(), None, 3));
+}
+
 #[test]
 fn results_as_csv() {
     let entry = |id, name: &str, author: &str, rank, results: Vec<InstanceResult>| ArchivedEntry {
