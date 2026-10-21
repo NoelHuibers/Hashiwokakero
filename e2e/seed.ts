@@ -167,7 +167,7 @@ export function seed(dbPath: string) {
   const house = db.prepare(
     `INSERT INTO dojo_submissions (id, user_id, house, name, description, wasm, sha256, size, created_at, updated_at,
        state, season, progress, total, score, par2, solved, wrong, code_hash, rules_version, results)
-     VALUES (?, NULL, 1, ?, ?, ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 4, ?)`,
+     VALUES (?, NULL, 1, ?, ?, ?, ?, 1, ?, ?, 'done', ?, 48, 48, ?, ?, ?, 0, ?, 5, ?)`,
   );
   house.run(
     DOJO_SUBMISSION,

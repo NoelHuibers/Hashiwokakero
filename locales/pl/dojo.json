@@ -41,7 +41,20 @@
     "relative_tip": "Sparkle 2018: jego udział w log10(PAR-2 bez ÷ PAR-2 z) wszystkich solverów",
     "sota_tip": "Każda rozwiązana formuła daje 1 ÷ liczba solverów, które ją rozwiązują",
     "shapley_tip": "Jego sprawiedliwa część paliwa oszczędzanego przez całą stawkę, w miliardach na formułę",
-    "vbs_line": "Wirtualny najlepszy solver z {{ count }} solverów: rozwiązane {{ solved }}/{{ total }}, PAR-2 {{ par2 }}"
+    "vbs_line": "Wirtualny najlepszy solver z {{ count }} solverów: rozwiązane {{ solved }}/{{ total }}, PAR-2 {{ par2 }}",
+    "view_budget": "Budżet",
+    "budget_hint": "Te same przebiegi, ocenione z innym budżetem na formułę. Każdy przebieg trwa do dziesięciokrotności oficjalnego budżetu, a paliwo jest deterministyczne, więc każdy mniejszy budżet daje dokładnie taki wynik, jaki miałby przebieg z nim. Oficjalny ranking zostaje przy 1×; strzałki pokazują, o ile solver przesuwa się względem swojego miejsca.",
+    "budget_pick": "Budżet na formułę",
+    "budget_official": "oficjalny",
+    "budget_wrong": "błędna odpowiedź",
+    "crossover": "{{ ahead }} wyprzedza {{ behind }} powyżej {{ fuel }} paliwa (≈ {{ time }} natywnie).",
+    "no_crossovers": "Do {{ fuel }} paliwa na formułę żaden z czołowych solverów nie wyprzedza innego.",
+    "budget_chart": "PAR-2 w zależności od budżetu",
+    "budget_chart_hint": "Jedna linia na solver, obie osie w skali logarytmicznej. Gdzie dwie linie się przecinają, jeden solver wyprzedza drugi. Czasy natywne są przybliżone: średnia z kalibracji, solver może być do dwóch razy szybszy lub wolniejszy.",
+    "budget_chart_x": "Paliwo na formułę",
+    "budget_chart_y": "PAR-2 w miliardach paliwa na formułę, w skali logarytmicznej; nierozwiązane formuły liczą się jako podwójny budżet z osi x.",
+    "budget_chart_aria": "Wykres liniowy PAR-2 w zależności od budżetu dla {{ count }} solverów, od {{ low }} do {{ high }} paliwa na formułę. Strzałki przesuwają po budżetach.",
+    "budget_at": "{{ fuel }} paliwa na formułę, ≈ {{ time }} natywnie"
   },
   "seasons": {
     "meta_title": "Archiwum sezonów · SAT Dojo",
@@ -311,7 +324,7 @@
     "title": "Wykres kaktusowy",
     "hint": "Każda linia to solver, a jego rozwiązane formuły są posortowane według paliwa: dalej w prawo znaczy więcej rozwiązanych, niżej znaczy mniej paliwa. Nic na wykresie nie zdradza, którą formułą jest dany punkt.",
     "x": "Rozwiązane formuły",
-    "y": "Paliwo na formułę w skali logarytmicznej, zaokrąglone do trzech cyfr; górna linia to budżet.",
+    "y": "Paliwo na formułę w skali logarytmicznej, zaokrąglone do trzech cyfr. Przerywana linia to budżet rankingu; powyżej niej przebiegi trwały dalej, na potrzeby widoku Budżet.",
     "budget": "budżet",
     "vbs": "Wirtualny najlepszy solver",
     "vbs_short": "VBS",
@@ -322,7 +335,9 @@
     "table": "Pokaż jako tabelę",
     "fastest": "Najszybszy",
     "median": "Mediana",
-    "slowest": "Najwolniejszy"
+    "slowest": "Najwolniejszy",
+    "run_budget": "koniec przebiegów",
+    "ranking": "budżet rankingu"
   },
   "metrics": {
     "title": "Poza PAR-2",
@@ -336,6 +351,8 @@
     "sota_title": "Wkład w stan techniki",
     "sota": "Z konkursu automatycznego dowodzenia twierdzeń <a>CASC</a>: każda formuła rozwiązana przez solver daje mu 1 podzielone przez liczbę solverów, które ją rozwiązują. CASC uśrednia po rozwiązanych formułach; my sumujemy, więc rozwiązanie większej liczby nigdy nie obniża wyniku, a sumy dają łącznie liczbę formuł rozwiązywanych przez VBS.",
     "shapley_title": "Wartość Shapleya",
-    "shapley": "Wyniki samodzielne nagradzają niemal klony, wkład marginalny je karze. Wartość Shapleya z kooperacyjnej teorii gier jest sprawiedliwa dla obu: dzieli paliwo, które cała stawka oszczędza w porównaniu z nierozwiązaniem niczego, według średniego wkładu marginalnego każdego solvera po wszystkich kolejnościach dołączania (<a>Fréchette et al., AAAI 2016</a>). Liczymy ją dokładnie, w miliardach paliwa na formułę; wartości sumują się do podwójnego budżetu minus PAR-2 VBS."
+    "shapley": "Wyniki samodzielne nagradzają niemal klony, wkład marginalny je karze. Wartość Shapleya z kooperacyjnej teorii gier jest sprawiedliwa dla obu: dzieli paliwo, które cała stawka oszczędza w porównaniu z nierozwiązaniem niczego, według średniego wkładu marginalnego każdego solvera po wszystkich kolejnościach dołączania (<a>Fréchette et al., AAAI 2016</a>). Liczymy ją dokładnie, w miliardach paliwa na formułę; wartości sumują się do podwójnego budżetu minus PAR-2 VBS.",
+    "budget_title": "Rankingi przy innych budżetach",
+    "budget": "Ranking mierzy krótki wyścig: 7 miliardów paliwa na formułę, około pół sekundy natywnego solvera, podczas gdy SAT Competition daje 5000 sekund. Solvery z rozbudowanym preprocessingiem i inprocessingiem, jak Kissat i CaDiCaL, płacą za to, zanim się opłaci, więc przy tym budżecie są za MiniSatem. Każdy przebieg trwa do dziesięciokrotności budżetu, a ponieważ paliwo jest deterministyczne, jeden przebieg daje dokładny wynik przy każdym mniejszym budżecie: widok Budżet pokazuje, jak ranking zmienia się z większą ilością czasu."
   }
 }

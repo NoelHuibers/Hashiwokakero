@@ -3,8 +3,9 @@
 
 use crate::community::Refusal;
 use crate::{
-    Answer, DEFAULT_BUDGET, FINGERPRINT_GAVE_UP, FINGERPRINT_TIMEOUT, Family, Outcome,
-    RULES_VERSION, Rejection, Report, RunResult, Score, budget_of, fingerprint, similar,
+    Answer, BUDGET_FACTOR, DEFAULT_BUDGET, FINGERPRINT_GAVE_UP, FINGERPRINT_TIMEOUT, Family,
+    Outcome, RULES_VERSION, RUN_BUDGET, Rejection, Report, RunResult, Score, budget_of,
+    fingerprint, run_budget_of, similar,
 };
 
 /// Archived seasons are shown with the budget they were scored with.
@@ -15,6 +16,51 @@ fn budgets_of_rules_versions() {
     }
     assert_eq!(budget_of(4), 7_000_000_000);
     assert_eq!(budget_of(RULES_VERSION), DEFAULT_BUDGET);
+    // Runs went no further than the budget until version 5
+    for version in 1..=4 {
+        assert_eq!(
+            run_budget_of(version),
+            budget_of(version),
+            "rules {version}"
+        );
+    }
+    assert_eq!(run_budget_of(5), 70_000_000_000);
+    assert_eq!(run_budget_of(RULES_VERSION), RUN_BUDGET);
+    assert_eq!(RUN_BUDGET, BUDGET_FACTOR * DEFAULT_BUDGET);
+}
+
+/// What a run counts as with less fuel than it had: the same if it ended within it, a timeout
+/// otherwise, whatever it ended with.
+#[test]
+fn outcomes_at_smaller_budgets() {
+    let outcomes = [
+        Outcome::Solved(Answer::Sat),
+        Outcome::Solved(Answer::Unsat),
+        Outcome::Unknown,
+        Outcome::Timeout,
+        Outcome::Crashed,
+        Outcome::Wrong,
+        Outcome::Unverified,
+    ];
+    for outcome in outcomes {
+        assert_eq!(outcome.at(5, 5), outcome, "{outcome:?}");
+        assert_eq!(outcome.at(5, 50), outcome, "{outcome:?}");
+        assert_eq!(outcome.at(6, 5), Outcome::Timeout, "{outcome:?}");
+    }
+    // An unverified answer is unsolved at every budget
+    assert!(!Outcome::Unverified.at(1, 10).solved());
+    let run = RunResult {
+        name: "f".into(),
+        family: Family::Hashi,
+        expected: Answer::Unsat,
+        outcome: Outcome::Wrong,
+        fuel: 30,
+        wall_ms: 0,
+    };
+    assert_eq!(run.outcome_at(29), Outcome::Timeout);
+    assert_eq!(run.outcome_at(30), Outcome::Wrong);
+    assert_eq!(run.published().outcome_at(29), Outcome::Timeout);
+    assert_eq!(run.published().outcome_at(100), Outcome::Wrong);
 }
 
 /// The website stores these codes with refused benchmarks and looks up its texts by them.

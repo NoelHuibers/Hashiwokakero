@@ -20,7 +20,7 @@ use sha2::{Digest, Sha256};
 
 use crate::bench::Instance;
 use crate::cnf::Cnf;
-use crate::{Answer, DEFAULT_BUDGET, Family, GENERATOR_VERSION};
+use crate::{Answer, DEFAULT_BUDGET, Family, GENERATOR_VERSION, RUN_BUDGET};
 
 /// Where a set comes from.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -80,6 +80,8 @@ fn readme(set: &[Instance], info: &SetInfo) -> String {
     let _ = writeln!(text, "generator: {}", info.generator_version);
     let _ = writeln!(text, "formulas: {}", set.len());
     let _ = writeln!(text, "budget: {DEFAULT_BUDGET}");
+    // Runs go on to this for the scores at larger budgets, the ranking stays at the budget
+    let _ = writeln!(text, "run budget: {RUN_BUDGET}");
     if info.hidden && info.generator_version >= 2 {
         let _ = writeln!(
             text,
@@ -431,6 +433,7 @@ mod tests {
             generator.as_str(),
             "kind: hidden\n",
             "formulas: 2\n",
+            "budget: 7000000000\nrun budget: 70000000000\n",
             "mystery family: ",
             "    hashi           1  1/0  puzzle\n",
             "    random-3sat     1  0/1  random\n",

@@ -62,11 +62,15 @@ pub struct Limits {
 }
 
 impl Default for Limits {
+    /// The leaderboard's: runs go on to [`crate::RUN_BUDGET`] (scores are computed at the
+    /// ranking budget from them, see [`crate::Outcome::at`]). The wall clock limit is far
+    /// beyond what the run budget takes (about 20 s on the worker), so it only catches what
+    /// fuel doesn't and never decides a result that fuel would have.
     fn default() -> Self {
         Self {
-            fuel: crate::DEFAULT_BUDGET,
+            fuel: crate::RUN_BUDGET,
             memory_bytes: 1 << 30,
-            wall: Duration::from_secs(120),
+            wall: Duration::from_secs(300),
             proof_bytes: MAX_PROOF_BYTES,
         }
     }

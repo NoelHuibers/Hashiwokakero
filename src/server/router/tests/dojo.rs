@@ -496,14 +496,18 @@ async fn the_season_archive() {
     assert_eq!(
         lines,
         [
-            "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel",
-            &*format!("{past},9001,Archived house,Hashi,1,1,1,hashi-01,hashi,SAT,solved,1234"),
+            "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel,budget,run_budget",
             &*format!(
-                "{past},9001,Archived house,Hashi,1,1,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000"
+                "{past},9001,Archived house,Hashi,1,1,1,hashi-01,hashi,SAT,solved,1234,10000000000,10000000000"
             ),
-            &*format!("{past},9002,Wrong one,,0,,1,hashi-01,hashi,SAT,solved,1234"),
             &*format!(
-                "{past},9002,Wrong one,,0,,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000"
+                "{past},9001,Archived house,Hashi,1,1,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000,10000000000,10000000000"
+            ),
+            &*format!(
+                "{past},9002,Wrong one,,0,,1,hashi-01,hashi,SAT,solved,1234,10000000000,10000000000"
+            ),
+            &*format!(
+                "{past},9002,Wrong one,,0,,1,pigeonhole-01,pigeonhole,UNSAT,timeout,10000000000,10000000000,10000000000"
             ),
         ]
     );

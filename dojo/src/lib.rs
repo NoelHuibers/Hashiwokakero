@@ -72,6 +72,20 @@ pub mod worker;
 /// machine.
 pub const DEFAULT_BUDGET: u64 = 7_000_000_000;
 
+/// How much further than [`DEFAULT_BUDGET`] every run goes: to [`RUN_BUDGET`].
+///
+/// The official ranking stays at [`DEFAULT_BUDGET`], about half a second of a native solver,
+/// where solvers with heavy inprocessing can't make up for its cost yet. Fuel is deterministic,
+/// so a run that goes on gives the result at every smaller budget too (see [`Outcome::at`]),
+/// and the leaderboard shows how the ranking changes with more time. Ten times: that is where
+/// Kissat overtakes `MiniSat` on most hidden sets, and a solver that solves nothing still needs
+/// only five to ten minutes on the worker for a whole set, within the quarter of an hour after
+/// which the website gives an evaluation up as lost (dojo/CALIBRATION.md, "Larger budgets").
+pub const BUDGET_FACTOR: u64 = 10;
+
+/// Fuel a run may use, [`BUDGET_FACTOR`] times the ranking budget.
+pub const RUN_BUDGET: u64 = BUDGET_FACTOR * DEFAULT_BUDGET;
+
 /// The budget of a rules version: 10 billion up to version 3 (one unit per operator), then
 /// [`DEFAULT_BUDGET`]. Archived seasons keep the budget they were scored with.
 pub const fn budget_of(rules_version: u32) -> u64 {
@@ -79,6 +93,16 @@ pub const fn budget_of(rules_version: u32) -> u64 {
         10_000_000_000
     } else {
         DEFAULT_BUDGET
+    }
+}
+
+/// How far the runs of a rules version went: to the ranking budget up to version 4, then
+/// [`RUN_BUDGET`].
+pub const fn run_budget_of(rules_version: u32) -> u64 {
+    if rules_version <= 4 {
+        budget_of(rules_version)
+    } else {
+        RUN_BUDGET
     }
 }
 
@@ -119,7 +143,9 @@ pub const GENERATOR_VERSION: u32 = 2;
 ///   reach the solver without a comment that names them
 /// - 4: the calibrated cost model (`fuel::MODEL`, dojo/CALIBRATION.md) instead of one unit per
 ///   operator, and a budget of 7 instead of 10 billion
-pub const RULES_VERSION: u32 = 4;
+/// - 5: runs go on to [`RUN_BUDGET`], ten times the ranking budget, so scores exist at every
+///   budget up to it; the ranking itself is unchanged
+pub const RULES_VERSION: u32 = 5;
 
 /// Kinds of formulas in a benchmark set.
 ///
@@ -283,6 +309,17 @@ impl Outcome {
     pub fn solved(self) -> bool {
         matches!(self, Self::Solved(_))
     }
+
+    /// What a run that ended like this after `fuel` would have been with only `budget`.
+    ///
+    /// Runs are deterministic, so a run with a smaller budget does exactly the same up to it:
+    /// whatever ended within the budget ends the same way, anything later is a timeout there.
+    /// That holds for every outcome, so a wrong or unverified answer only counts at budgets
+    /// from the fuel it was given at, and an unverified answer is unsolved at every budget.
+    #[must_use]
+    pub fn at(self, fuel: u64, budget: u64) -> Self {
+        if fuel <= budget { self } else { Self::Timeout }
+    }
 }
 
 /// One instance of an evaluation. Only shown for the public development set.
@@ -298,6 +335,11 @@ pub struct RunResult {
 }
 
 impl RunResult {
+    /// The outcome with only `budget`, see [`Outcome::at`].
+    pub fn outcome_at(&self, budget: u64) -> Outcome {
+        self.outcome.at(self.fuel, budget)
+    }
+
     /// What is published of this run once the season is over (nothing that depends on the
     /// machine, like `wall_ms`).
     pub fn published(&self) -> InstanceResult {
@@ -319,8 +361,17 @@ pub struct InstanceResult {
     pub family: Family,
     pub expected: Answer,
     pub outcome: Outcome,
-    /// Fuel used, the whole budget for a timeout.
+    /// Fuel used, the whole run budget for a timeout. Since rules version 5 runs go on past
+    /// the ranking budget, to [`run_budget_of`] their rules: `outcome` is how the run ended,
+    /// [`InstanceResult::outcome_at`] what it counts as with less.
     pub fuel: u64,
+}
+
+impl InstanceResult {
+    /// The outcome with only `budget`, see [`Outcome::at`].
+    pub fn outcome_at(&self, budget: u64) -> Outcome {
+        self.outcome.at(self.fuel, budget)
+    }
 }
 
 impl Outcome {
@@ -379,6 +430,7 @@ pub struct Score {
     pub total: u32,
     /// Wrong answers disqualify a submission.
     pub wrong: u32,
+    /// The ranking budget, fuel per formula: everything here counts what happened within it.
     pub budget: u64,
     /// Total fuel of the solved instances, in billions.
     pub fuel: f64,
@@ -394,6 +446,8 @@ pub(crate) fn count(n: usize) -> u32 {
 }
 
 impl Score {
+    /// The score with `budget` per formula, from runs that may have gone further (see
+    /// [`Outcome::at`]).
     pub fn from_results(results: &[RunResult], budget: u64) -> Self {
         const G: f64 = 1e9;
         #[expect(
@@ -408,7 +462,7 @@ impl Score {
             let sum: f64 = rs
                 .iter()
                 .map(|r| {
-                    if r.outcome.solved() {
+                    if r.outcome_at(budget).solved() {
                         r.fuel as f64
                     } else {
                         2.0 * budget as f64
@@ -419,7 +473,10 @@ impl Score {
         };
         let all: Vec<&RunResult> = results.iter().collect();
         let unverified = |rs: &mut dyn Iterator<Item = &RunResult>| {
-            count(rs.filter(|r| r.outcome == Outcome::Unverified).count())
+            count(
+                rs.filter(|r| r.outcome_at(budget) == Outcome::Unverified)
+                    .count(),
+            )
         };
         // The held-out family stays a mystery: its formulas count as `Mystery`
         let public = |r: &RunResult| {
@@ -436,7 +493,7 @@ impl Score {
                 let rs: Vec<&RunResult> = results.iter().filter(|r| public(r) == family).collect();
                 (!rs.is_empty()).then(|| FamilyScore {
                     family,
-                    solved: count(rs.iter().filter(|r| r.outcome.solved()).count()),
+                    solved: count(rs.iter().filter(|r| r.outcome_at(budget).solved()).count()),
                     total: count(rs.len()),
                     par2: par2(&rs),
                     unverified: unverified(&mut rs.iter().copied()),
@@ -450,18 +507,23 @@ impl Score {
         )]
         let fuel = results
             .iter()
-            .filter(|r| r.outcome.solved())
+            .filter(|r| r.outcome_at(budget).solved())
             .map(|r| r.fuel as f64)
             .sum::<f64>()
             / G;
         Self {
             par2: par2(&all),
-            solved: count(results.iter().filter(|r| r.outcome.solved()).count()),
+            solved: count(
+                results
+                    .iter()
+                    .filter(|r| r.outcome_at(budget).solved())
+                    .count(),
+            ),
             total: count(results.len()),
             wrong: count(
                 results
                     .iter()
-                    .filter(|r| r.outcome == Outcome::Wrong)
+                    .filter(|r| r.outcome_at(budget) == Outcome::Wrong)
                     .count(),
             ),
             budget,
@@ -635,6 +697,31 @@ mod tests {
                 .collect::<Vec<_>>(),
             [0, 1]
         );
+    }
+
+    /// Runs go on past the ranking budget: the score counts only what happened within it.
+    #[test]
+    fn scores_count_only_the_budget() {
+        let budget = 10;
+        let results = [
+            run(Family::Hashi, Outcome::Solved(Answer::Sat), 4),
+            run(Family::Hashi, Outcome::Solved(Answer::Sat), 10),
+            run(Family::Hashi, Outcome::Solved(Answer::Sat), 11),
+            run(Family::Queens, Outcome::Wrong, 50),
+            run(Family::Queens, Outcome::Unverified, 60),
+            run(Family::Queens, Outcome::Timeout, 100),
+        ];
+        let score = Score::from_results(&results, budget);
+        // Past the budget, a wrong answer doesn't disqualify and nothing is unverified yet
+        assert_eq!(
+            (score.solved, score.total, score.wrong, score.unverified),
+            (2, 6, 0, 0)
+        );
+        assert!((score.par2 - (4.0 + 10.0 + 4.0 * 20.0) / 6.0 / 1e9).abs() < 1e-18);
+        assert!((score.fuel - 14.0 / 1e9).abs() < 1e-18);
+        assert_eq!(score.families[0].solved, 2);
+        let all = Score::from_results(&results, 100);
+        assert_eq!((all.solved, all.wrong, all.unverified), (3, 1, 1));
     }
 
     /// Scores stored before proofs were needed have no unverified counts.

@@ -67,6 +67,46 @@ pub struct DojoPortfolio {
     pub entries: u32,
     pub vbs: dojo::metrics::Split,
     pub cactus: DojoCactus,
+    /// The ranking at other budgets, `None` from before it existed.
+    #[serde(default)]
+    pub budgets: Option<DojoBudgets>,
+}
+
+/// How the ranking changes with the budget.
+///
+/// Every ranked entry's score from a hundredth of the ranking budget to the run budget (see
+/// `dojo::metrics::budget_grid`), from the same runs, and where entries overtake each other.
+/// Aggregates per entry like PAR-2 itself, PAR-2
+/// rounded to the three decimals shown and crossovers to three digits, so nothing in it tells
+/// one formula from another.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DojoBudgets {
+    /// The ranking budget.
+    pub budget: u64,
+    /// How far the runs went.
+    pub run_budget: u64,
+    /// In board order, the same budgets for every entry.
+    pub curves: Vec<DojoBudgetCurve>,
+    /// Per pair of leading entries the last lead change, if it is past the ranking budget: who
+    /// leads from there up to the run budget. By budget.
+    pub crossovers: Vec<DojoCrossover>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DojoBudgetCurve {
+    /// The submission.
+    pub id: i64,
+    pub name: String,
+    pub house: bool,
+    pub points: Vec<dojo::metrics::BudgetScore>,
+}
+
+/// From `budget` on, `ahead` has a lower PAR-2 than `behind` (ids of submissions).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DojoCrossover {
+    pub budget: u64,
+    pub ahead: i64,
+    pub behind: i64,
 }
 
 /// A cactus plot: per solver the fuel of every formula it solved, sorted (see
@@ -74,8 +114,11 @@ pub struct DojoPortfolio {
 /// which formula a point is.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DojoCactus {
-    /// Fuel per formula: the top of the plot.
+    /// The ranking budget, marked in the plot.
     pub budget: u64,
+    /// How far the runs went: the top of the plot, 0 from before runs went past the budget.
+    #[serde(default)]
+    pub run_budget: u64,
     /// Formulas in the set: the right end.
     pub formulas: u32,
     /// The virtual best solver's curve.

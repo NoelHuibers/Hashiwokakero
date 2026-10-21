@@ -207,6 +207,254 @@ fn sat_unsat_and_all() {
     assert_eq!(breakdown(&[], B, true).total.all, Split::default());
 }
 
+/// Results of rules version 5 go on past the ranking budget: the official metrics count what
+/// happened within it, the cactus curve shows everything.
+#[test]
+fn the_ranking_counts_only_its_budget() {
+    let mut late = entry(&[Some(B / 2), Some(3 * B), Some(9 * B)]);
+    late[2].outcome = Outcome::Wrong;
+    let early = entry(&[Some(B), None, None]);
+    let split = breakdown(&late, B, true).total.all;
+    assert_eq!((split.solved, split.total), (1, 3));
+    assert!(close(split.par2, (0.5 + 2.0 + 2.0) / 3.0));
+    let (p, _) = Portfolio::new(&[&late, &early], B);
+    assert_eq!(p.vbs().solved, 1);
+    assert!(close(p.vbs().par2, (0.5 + 2.0 + 2.0) / 3.0));
+    assert_eq!(p.vbs_curve(), [B / 2]);
+    // The same portfolio with ten times the budget
+    let (wide, _) = Portfolio::new(&[&late, &early], 10 * B);
+    assert_eq!(wide.vbs_curve(), [B / 2, 3 * B]);
+    assert_eq!(curve(&late), [B / 2, 3 * B]);
+}
+
+#[test]
+fn scores_at_any_budget() {
+    let mut rs = vec![
+        result("hashi-01", Family::Hashi, Answer::Sat, Some(B / 10)),
+        result("hashi-02", Family::Hashi, Answer::Sat, Some(4 * B)),
+        result("parity-01", Family::HashiParity, Answer::Unsat, Some(B)),
+        result("parity-02", Family::HashiParity, Answer::Unsat, Some(2 * B)),
+        result("parity-03", Family::HashiParity, Answer::Unsat, Some(5 * B)),
+        result("tseitin-01", Family::Tseitin, Answer::Unsat, Some(B / 2)),
+        result("tseitin-02", Family::Tseitin, Answer::Sat, None),
+    ];
+    // Unverified at 2B, wrong at 5B, the timeout at the run budget
+    rs[3].outcome = Outcome::Unverified;
+    rs[4].outcome = Outcome::Wrong;
+    rs[6].fuel = 10 * B;
+    let at = |budget, reveal| score_at(&rs, budget, reveal);
+
+    let small = at(B / 10, false);
+    assert_eq!((small.budget, small.solved, small.total), (B / 10, 1, 7));
+    assert!(close(small.par2, (0.1 + 6.0 * 0.2) / 7.0));
+    assert_eq!(
+        (small.sat, small.unsat, small.wrong, small.unverified),
+        (1, 0, 0, 0)
+    );
+
+    // The held-out family counts in solved, not in SAT and UNSAT while the season runs
+    let one = at(B, false);
+    assert_eq!((one.solved, one.sat, one.unsat), (3, 1, 1));
+    assert!(close(
+        one.par2,
+        (0.1 + 2.0 + 1.0 + 2.0 + 2.0 + 0.5 + 2.0) / 7.0
+    ));
+    let revealed = at(B, true);
+    assert_eq!((revealed.sat, revealed.unsat), (1, 2));
+    assert_eq!(one.par2, revealed.par2);
+
+    // An unverified answer counts from its fuel on, and stays unsolved
+    let two = at(2 * B, false);
+    assert_eq!((two.solved, two.unverified, two.wrong), (3, 1, 0));
+    // A wrong answer only from its fuel on
+    let four = at(4 * B, false);
+    assert_eq!((four.solved, four.sat, four.wrong), (4, 2, 0));
+    let five = at(5 * B, true);
+    assert_eq!((five.solved, five.wrong, five.unverified), (4, 1, 1));
+    assert!(close(
+        five.par2,
+        (0.1 + 4.0 + 1.0 + 10.0 + 10.0 + 0.5 + 10.0) / 7.0
+    ));
+    // The run budget: the timeout is still one
+    let all = at(10 * B, true);
+    assert_eq!((all.solved, all.total), (4, 7));
+    // The same as the official breakdown at every budget
+    for budget in [B / 10, B, 2 * B, 5 * B] {
+        let official = breakdown(&rs, budget, true).total.all;
+        let score = at(budget, true);
+        assert_eq!(
+            (score.solved, score.total),
+            (official.solved, official.total)
+        );
+        assert!(close(score.par2, official.par2));
+    }
+    assert_eq!(
+        score_at(&[], B, true),
+        BudgetScore {
+            budget: B,
+            ..BudgetScore::default()
+        }
+    );
+}
+
+#[test]
+fn budget_grids() {
+    let grid = budget_grid(7_000_000_000, 70_000_000_000);
+    // A hundredth of the budget to ten times it, four per power of ten
+    assert_eq!(grid.len(), 13);
+    assert_eq!(grid.first(), Some(&70_000_000));
+    for exact in [700_000_000, 7_000_000_000, 70_000_000_000] {
+        assert!(grid.contains(&exact), "{exact} in {grid:?}");
+    }
+    assert_eq!(grid[1], 124_479_559);
+    assert!(grid.windows(2).all(|w| w[0] < w[1]));
+    // Older rules went no further than the budget
+    let old = budget_grid(7_000_000_000, 7_000_000_000);
+    assert_eq!((old.len(), old.last()), (9, Some(&7_000_000_000)));
+    // A run budget off the grid ends it
+    let odd = budget_grid(1_000, 5_000);
+    assert_eq!(
+        odd,
+        [
+            10, 18, 32, 56, 100, 178, 316, 562, 1_000, 1_778, 3_162, 5_000
+        ]
+    );
+    assert_eq!(budget_grid(0, 0), [0]);
+
+    let rs = entry(&[Some(B / 2), Some(3 * B), None]);
+    let points = budget_curve(&rs, &[B, 3 * B], true);
+    assert_eq!(points, [score_at(&rs, B, true), score_at(&rs, 3 * B, true)]);
+    assert_eq!((points[0].solved, points[1].solved), (1, 2));
+}
+
+/// The example of the docs: the first entry solves two formulas quickly, the second three
+/// slowly. The first leads from a hundredth of B, the second's lower penalty catches up within
+/// the last segment, at 1.34 B.
+fn racers() -> (Vec<InstanceResult>, Vec<InstanceResult>) {
+    let quick = entry(&[Some(B / 100), Some(B / 100), None, None]);
+    let slow = entry(&[Some(9 * B / 10), Some(9 * B / 10), Some(9 * B / 10), None]);
+    (quick, slow)
+}
+
+#[test]
+fn crossovers_are_exact() {
+    let (quick, slow) = racers();
+    let found = crossovers(&quick, &slow, B / 100, 10 * B);
+    assert_eq!(
+        found,
+        [Crossover {
+            budget: 1_340_000_001,
+            first: false
+        }]
+    );
+    // Just below the crossover the first entry is ahead, at it the second
+    let par2 = |rs: &[InstanceResult], b| score_at(rs, b, true).par2;
+    assert!(par2(&quick, 1_340_000_000) <= par2(&slow, 1_340_000_000));
+    assert!(par2(&slow, 1_340_000_001) < par2(&quick, 1_340_000_001));
+    // The other way round, the other one takes the lead
+    assert_eq!(
+        crossovers(&slow, &quick, B / 100, 10 * B),
+        [Crossover {
+            budget: 1_340_000_001,
+            first: true
+        }]
+    );
+    // Outside the range, nothing
+    assert_eq!(crossovers(&quick, &slow, B / 100, B), []);
+    assert_eq!(crossovers(&quick, &slow, 2 * B, 10 * B), []);
+    assert_eq!(crossovers(&quick, &slow, 2 * B, B), []);
+
+    // At a jump: the second one solves the last formula at 3 B
+    let a = entry(&[Some(B / 10), None]);
+    let b = entry(&[Some(B / 2), Some(3 * B)]);
+    assert_eq!(
+        crossovers(&a, &b, B / 100, 10 * B),
+        [Crossover {
+            budget: 3 * B,
+            first: false
+        }]
+    );
+}
+
+#[test]
+fn crossovers_and_their_edge_cases() {
+    let (quick, mut slow) = racers();
+    // A wrong answer would disqualify the second one from 1.2 B on: no crossover after it
+    slow[3].outcome = Outcome::Wrong;
+    slow[3].fuel = 6 * B / 5;
+    assert_eq!(crossovers(&quick, &slow, B / 100, 10 * B), []);
+    // ... but one at 2 B is beyond the crossover at 1.34 B
+    slow[3].fuel = 2 * B;
+    assert_eq!(crossovers(&quick, &slow, B / 100, 10 * B).len(), 1);
+    // A wrong answer right at the start leaves nothing to compare
+    slow[3].fuel = 0;
+    assert_eq!(crossovers(&quick, &slow, B / 100, 10 * B), []);
+    // An unverified answer is never solved: the second entry's three proofs failing hands the
+    // lead to the first for good
+    let (quick, mut slow) = racers();
+    for r in &mut slow[..3] {
+        r.outcome = Outcome::Unverified;
+    }
+    assert_eq!(crossovers(&quick, &slow, B / 100, 10 * B), []);
+    // Equal entries never overtake each other, ties keep the lead
+    assert_eq!(crossovers(&quick, &quick, B / 100, 10 * B), []);
+    let a = entry(&[Some(B), None]);
+    let b = entry(&[None, Some(B)]);
+    assert_eq!(crossovers(&a, &b, B / 100, 10 * B), []);
+    // Results on other formulas aren't compared
+    assert_eq!(crossovers(&quick, &quick[..2], B / 100, 10 * B), []);
+    let mut renamed = quick.clone();
+    renamed[0].name = "other".into();
+    assert_eq!(crossovers(&quick, &renamed, B / 100, 10 * B), []);
+    assert_eq!(crossovers(&[], &[], B / 100, 10 * B), []);
+}
+
+/// Who leads at every whole budget from `low` to `high`, by brute force: lead changes as
+/// [`crossovers`] reports them.
+fn crossovers_by_scanning(
+    first: &[InstanceResult],
+    second: &[InstanceResult],
+    low: u64,
+    high: u64,
+) -> Vec<Crossover> {
+    let wrong = first
+        .iter()
+        .chain(second)
+        .filter(|r| r.outcome == Outcome::Wrong)
+        .map(|r| r.fuel)
+        .min()
+        .unwrap_or(u64::MAX);
+    let n_par2 = |rs: &[InstanceResult], x: u64| -> i128 {
+        rs.iter()
+            .map(|r| {
+                if r.outcome_at(x).solved() {
+                    i128::from(r.fuel)
+                } else {
+                    2 * i128::from(x)
+                }
+            })
+            .sum()
+    };
+    let mut leader = None;
+    let mut found = Vec::new();
+    for x in low..=high.min(wrong.saturating_sub(1)) {
+        let d = n_par2(first, x) - n_par2(second, x);
+        let now = match d.signum() {
+            -1 => true,
+            1 => false,
+            _ => continue,
+        };
+        if leader.is_some_and(|l| l != now) {
+            found.push(Crossover {
+                budget: x,
+                first: now,
+            });
+        }
+        leader = Some(now);
+    }
+    found
+}
+
 fn config() -> ProptestConfig {
     contextualize_config(ProptestConfig {
         cases: 300,
@@ -270,8 +518,51 @@ fn shapley_by_definition(costs: &[Vec<u64>]) -> Vec<f64> {
         .collect()
 }
 
+/// How one entry did on a formula in [`pair`]: `None` for a timeout, else what it gave (see
+/// [`entry_of`]) after how much fuel.
+type Run = Option<(u8, u64)>;
+
+/// Two entries on 1 to 5 formulas with small fuel, so ties, jumps and crossings inside
+/// segments all happen, and the outcomes that count differently at different budgets.
+fn pair() -> impl Strategy<Value = Vec<(Run, Run)>> {
+    let result = prop_oneof![
+        3 => Just(None),
+        8 => (0..4u8, 0..=60u64).prop_map(Some),
+    ];
+    prop::collection::vec((result.clone(), result), 1..=5)
+}
+
+/// An entry's results from (kind, fuel): solved, wrong, unverified or unknown.
+fn entry_of(results: &[Run]) -> Vec<InstanceResult> {
+    results
+        .iter()
+        .enumerate()
+        .map(|(i, r)| {
+            let mut result = result(&format!("f{i}"), Family::Hashi, Answer::Sat, None);
+            result.fuel = 60;
+            if let Some((kind, fuel)) = *r {
+                result.fuel = fuel;
+                result.outcome = match kind {
+                    0 => Outcome::Wrong,
+                    1 => Outcome::Unverified,
+                    2 => Outcome::Unknown,
+                    _ => Outcome::Solved(Answer::Sat),
+                };
+            }
+            result
+        })
+        .collect()
+}
+
 proptest! {
     #![proptest_config(config())]
+
+    #[test]
+    fn crossovers_match_a_scan_of_every_budget(results in pair(), low in 0..20u64) {
+        let (a, b): (Vec<_>, Vec<_>) = results.into_iter().unzip();
+        let (a, b) = (entry_of(&a), entry_of(&b));
+        prop_assert_eq!(crossovers(&a, &b, low, 60), crossovers_by_scanning(&a, &b, low, 60));
+    }
 
     #[test]
     fn shapley_matches_the_definition(fuel in portfolio()) {
