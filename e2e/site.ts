@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { ROOT } from './env';
-import { DOJO_SUBMISSION, player, SEEDED_GROUP } from './seed';
+import { DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed';
 
 const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 
@@ -16,12 +16,17 @@ export const LOCALES: string[] = (() => {
 })();
 export const DEFAULT_LOCALE = LOCALES[0];
 
+const replayDay = Math.floor(Date.now() / 86_400_000) - REPLAY_DAY_BACK;
+
 /** A seeded value for the parameters of every route that has some. */
 const PARAMS: Record<string, Record<string, number | string>> = {
   '/dojo/:id': { id: DOJO_SUBMISSION },
   '/player/:id': { id: player('aiko').id },
   '/groups/:id': { id: SEEDED_GROUP.id },
   '/g/:code': { code: SEEDED_GROUP.invite },
+  // Yesterday has the seeded move logs
+  '/groups/:id/replay/:day': { id: SEEDED_GROUP.id, day: replayDay },
+  '/replay/:day': { day: replayDay },
 };
 
 /** Every page of the router, parameters filled in: `/`, `/practice`, `/dojo/1`, ... */
