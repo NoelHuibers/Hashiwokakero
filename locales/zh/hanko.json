@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "真快",
+    "wow": "厉害",
+    "close": "好可惜",
+    "funny": "好笑",
+    "grit": "坚持",
+    "cheers": "恭喜"
+  },
+  "pick": "在{{ name }}的成绩上盖印章",
+  "picker": "给{{ name }}的印章",
+  "who": "{{ kind }}：{{ names }}",
+  "you": "你",
+  "unread": "新印章：{{ count }}",
+  "received": {
+    "title": "给你的印章",
+    "text": "其他成员在你今天的成绩上盖的印章。",
+    "item": "<b>{{ name }}</b>在你的成绩上盖了印章：{{ kind }}",
+    "yesterday": "昨天的谜题",
+    "new": "新",
+    "empty": "你的成绩上还没有印章。其他人完成后就可以给你盖章。",
+    "how": "点名字旁边的<k>判</k>，给其他人的成绩盖印章。"
+  },
+  "errors": {
+    "not_allowed": "这个成绩不能（再）盖印章了。"
+  }
+}

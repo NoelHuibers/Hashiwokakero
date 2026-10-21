@@ -9,6 +9,8 @@ use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::{GroupSummary, colour_var};
 
+use super::hanko::{UnreadBadge, refresh_unread};
+
 /// One group of the list: its name, a row of its members' colours, today's progress.
 #[component]
 fn GroupItem(group: GroupSummary) -> impl IntoView {
@@ -38,14 +40,17 @@ fn GroupItem(group: GroupSummary) -> impl IntoView {
                             {move || td_string!(i18n.get_locale(), groups.list.members, count = members)}
                         </p>
                     </div>
-                    {owner
-                        .then(|| {
-                            view! {
-                                <Badge variant=BadgeVariant::Secondary size=BadgeSize::Sm class="shrink-0">
-                                    "主 " {t!(i18n, groups.members.owner)}
-                                </Badge>
-                            }
-                        })}
+                    <div class="flex shrink-0 items-center gap-1.5">
+                        <UnreadBadge group=id />
+                        {owner
+                            .then(|| {
+                                view! {
+                                    <Badge variant=BadgeVariant::Secondary size=BadgeSize::Sm class="shrink-0">
+                                        "主 " {t!(i18n, groups.members.owner)}
+                                    </Badge>
+                                }
+                            })}
+                    </div>
                 </div>
                 <div class="flex flex-wrap gap-1" aria-hidden="true">
                     {colours
@@ -76,6 +81,8 @@ fn GroupItem(group: GroupSummary) -> impl IntoView {
 #[component]
 pub fn GroupList(groups: RwSignal<Option<Vec<GroupSummary>>>) -> impl IntoView {
     let i18n = use_i18n();
+    // Hanko got since the app loaded show up on the list
+    refresh_unread();
     view! {
         <Card class="gap-4">
             <CardHeader>

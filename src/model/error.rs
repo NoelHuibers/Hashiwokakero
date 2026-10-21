@@ -52,10 +52,13 @@ pub enum ApiError {
     TooManyRivals,
     /// No such player (deleted, banned or never there).
     NoSuchPlayer,
+    /// A hanko seal that can't be pressed (any more): on one's own result, on a result not
+    /// finished, before finishing the daily oneself, or after its days.
+    HankoNotAllowed,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 32] = [
+    pub const ALL: [Self; 33] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -88,6 +91,7 @@ impl ApiError {
         Self::RivalSelf,
         Self::TooManyRivals,
         Self::NoSuchPlayer,
+        Self::HankoNotAllowed,
     ];
 
     pub fn code(self) -> &'static str {
@@ -124,6 +128,7 @@ impl ApiError {
             Self::RivalSelf => "rival_self",
             Self::TooManyRivals => "too_many_rivals",
             Self::NoSuchPlayer => "no_such_player",
+            Self::HankoNotAllowed => "hanko_not_allowed",
         }
     }
 

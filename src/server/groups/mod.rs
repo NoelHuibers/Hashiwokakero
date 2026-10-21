@@ -11,6 +11,7 @@
 //! isn't in like one that doesn't exist.
 
 pub mod banzuke;
+pub mod hanko;
 #[cfg(test)]
 mod tests;
 
@@ -500,12 +501,19 @@ pub async fn today_board(
     day: i64,
 ) -> Result<GroupToday, ServerFnError> {
     let (entries, open) = day_entries(conn, members, viewer, day).await?;
+    // The seals on the results are as much a spoiler as the results
+    let hanko = if open {
+        hanko::marks(conn, group.id, day, members).await?
+    } else {
+        Vec::new()
+    };
     Ok(GroupToday {
         group_id: group.id,
         group_name: group.name.clone(),
         day,
         open,
         entries: spoiler_safe(entries, open),
+        hanko,
     })
 }
 

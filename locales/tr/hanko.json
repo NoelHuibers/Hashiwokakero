@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Hızlı",
+    "wow": "Harika",
+    "close": "Az kalsın",
+    "funny": "Komik",
+    "grit": "Azim",
+    "cheers": "Tebrikler"
+  },
+  "pick": "{{ name }} sonucuna hanko bas",
+  "picker": "{{ name }} için hanko",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "sen",
+  "unread": "Yeni hanko: {{ count }}",
+  "received": {
+    "title": "Sana gelen hanko",
+    "text": "Diğerlerinin günlük sonucuna bastığı mühürler.",
+    "item": "<b>{{ name }}</b> sonucuna mühür bastı: {{ kind }}",
+    "yesterday": "dünün bulmacası",
+    "new": "yeni",
+    "empty": "Sonucunda henüz hanko yok. Diğerleri bitirince mühür basabilirler.",
+    "how": "Diğerlerinin sonuçlarına adlarının yanındaki <k>判</k> ile mühür bas."
+  },
+  "errors": {
+    "not_allowed": "Bu sonuca (artık) mühür basılamaz."
+  }
+}

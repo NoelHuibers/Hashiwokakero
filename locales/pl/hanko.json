@@ -1,0 +1,27 @@
+{
+  "kinds": {
+    "fast": "Szybko",
+    "wow": "Niesamowite",
+    "close": "Tak blisko",
+    "funny": "Zabawne",
+    "grit": "Wytrwałość",
+    "cheers": "Gratulacje"
+  },
+  "pick": "Przybij hanko na wyniku: {{ name }}",
+  "picker": "Hanko dla: {{ name }}",
+  "who": "{{ kind }}: {{ names }}",
+  "you": "ty",
+  "unread": "Nowe hanko: {{ count }}",
+  "received": {
+    "title": "Hanko dla ciebie",
+    "text": "Pieczątki, które inni przybili na twoim dziennym wyniku.",
+    "item": "<b>{{ name }}</b> przybija pieczątkę na twoim wyniku: {{ kind }}",
+    "yesterday": "wczorajsza łamigłówka",
+    "new": "nowe",
+    "empty": "Na twoim wyniku nie ma jeszcze hanko. Gdy inni skończą, będą mogli je przybić.",
+    "how": "Przybijaj pieczątki na wynikach innych przyciskiem <k>判</k> obok ich nazwy."
+  },
+  "errors": {
+    "not_allowed": "Na tym wyniku nie można (już) przybić pieczątki."
+  }
+}

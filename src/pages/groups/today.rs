@@ -13,6 +13,7 @@ use crate::model::{GroupToday, TodayEntry, TodayState, colour_var, daily_number,
 use crate::pages::replay::replay_path;
 
 use super::GroupContext;
+use super::hanko::{HankoBoard, HankoStrip};
 
 /// A member's colour, as a little square next to their name.
 #[component]
@@ -88,7 +89,7 @@ fn DuelLink(group: i64, day: i64, user_id: i64, name: String) -> impl IntoView {
 }
 
 #[component]
-fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>) -> impl IntoView {
+fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>, hanko: HankoBoard) -> impl IntoView {
     let i18n = use_i18n();
     let TodayEntry {
         user_id,
@@ -151,6 +152,9 @@ fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>) -> impl IntoView {
     let duel = duel
         .filter(|_| !me && matches!(state, TodayState::Ranked { .. } | TodayState::Unranked))
         .map(|(group, day)| view! { <DuelLink group day user_id name=name.clone() /> });
+    // Hanko 判子: the seals on the result, and the button to press one on someone else's
+    let can_stamp = hanko.can_stamp(user_id, state);
+    let seals = view! { <HankoStrip board=hanko target=user_id name=name.clone() can=can_stamp /> };
     view! {
         <tr class=format!("{ROW_INSET} {}", if me { HIGHLIGHT_ROW } else { "" }) data-state=state_id(state)>
             <td class="py-2 pe-2">{first}</td>
@@ -160,6 +164,7 @@ fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>) -> impl IntoView {
                     <PlayerName user_id name guest stamp me />
                     {duel}
                 </div>
+                {seals}
             </td>
             <td
                 class="py-2 pe-2 text-end text-xs text-muted-foreground"
@@ -183,6 +188,7 @@ pub fn TodayBoard(board: GroupToday, me: Option<i64>) -> impl IntoView {
     // The group and the day, for the rows' duel links
     let place = (board.group_id, board.day);
     let open = board.open;
+    let hanko = HankoBoard::new(&board, me);
     let summary = if open {
         None
     } else {
@@ -212,7 +218,8 @@ pub fn TodayBoard(board: GroupToday, me: Option<i64>) -> impl IntoView {
     view! {
         <div class="flex flex-col gap-3" data-board=board.group_id data-open=open.to_string()>
             {summary}
-            <div class="@container -mx-2">
+            // The hanko picker is placed in here, as wide as the board
+            <div class="@container relative -mx-2">
                 <table class=format!("{RANK_TABLE} w-full table-fixed text-sm")>
                     <colgroup>
                         <col class="w-12" />
@@ -227,7 +234,7 @@ pub fn TodayBoard(board: GroupToday, me: Option<i64>) -> impl IntoView {
                             .map(|e| {
                                 let mine = Some(e.user_id) == me;
                                 let duel = open.then_some(place);
-                                view! { <Row entry=e me=mine duel /> }
+                                view! { <Row entry=e me=mine duel hanko /> }
                             })
                             .collect_view()}
                     </tbody>

@@ -125,3 +125,10 @@ error GroupOwnerOnly group_owner_only
 error RivalSelf rival_self
 error TooManyRivals too_many_rivals
 error NoSuchPlayer no_such_player
+error HankoNotAllowed hanko_not_allowed
+hanko Fast fast
+hanko Wow wow
+hanko Close close
+hanko Funny funny
+hanko Grit grit
+hanko Cheers cheers

@@ -1,5 +1,6 @@
 pub mod board;
 pub mod celebration;
+pub mod hanko;
 pub mod layout;
 pub mod leaderboard;
 pub mod record;

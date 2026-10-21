@@ -10,6 +10,7 @@ pub mod archipelago;
 pub mod awards;
 pub mod banzuke;
 pub mod create;
+pub mod hanko;
 pub mod invite;
 pub mod join;
 pub mod list;
@@ -36,6 +37,7 @@ use crate::state::{Auth, error_toast};
 use archipelago::Archipelago;
 use banzuke::BanzukeCard;
 use create::{CreateCard, ReadyCard};
+use hanko::HankoCard;
 use list::GroupList;
 use members::MembersCard;
 use replay::ReplayCard;
@@ -238,6 +240,7 @@ fn GroupView(group: GroupContext) -> impl IntoView {
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
             <div class="flex min-w-0 flex-col gap-6">
                 <TodayCard group />
+                <HankoCard group />
                 <ReplayCard group />
                 <WeekCard group />
                 <BanzukeCard group crowns />

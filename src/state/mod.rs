@@ -4,6 +4,7 @@ mod auth;
 mod browser;
 mod editor;
 mod game;
+mod hanko;
 mod rivals;
 mod settings;
 mod solver;
@@ -19,6 +20,7 @@ use browser::store_raw;
 pub use browser::{device_id, download, format_time, load, random_seed, store};
 pub use editor::Editor;
 pub use game::{DailyGame, Game, Source, Status};
+pub use hanko::HankoInbox;
 pub use rivals::Rivals;
 pub use settings::Settings;
 pub use solver::{check, check_unique, hint, new_puzzle, reveal, run_solver};
@@ -47,6 +49,8 @@ pub fn provide_state() {
     provide_context(auth);
     let rivals = Rivals::new();
     provide_context(rivals);
+    let hanko = HankoInbox::new();
+    provide_context(hanko);
     provide_context(editor);
     provide_context(settings);
     provide_context(Toasts(RwSignal::new(vec![])));
@@ -83,11 +87,12 @@ pub fn provide_state() {
         auth.refresh();
     });
 
-    // The rivals of whoever is signed in, again when that changes
+    // The rivals and unread hanko of whoever is signed in, again when that changes
     Effect::new(move |prev: Option<Option<i64>>| {
         let user = auth.user.with(|u| u.as_ref().map(|u| u.id));
         if prev.is_some_and(|p| p != user) || (prev.is_none() && user.is_some()) {
             rivals.load(user.is_some());
+            hanko.load(user.is_some());
         }
         user
     });

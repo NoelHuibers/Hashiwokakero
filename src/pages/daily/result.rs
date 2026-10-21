@@ -10,6 +10,7 @@ use crate::components::ui::card::Card;
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::{difficulty_name, localized, prefix};
 use crate::model::{Flag, WEEKDAY_KANJI, daily_number, format_duration, points, weekday};
+use crate::pages::groups::hanko::ReceivedHanko;
 use crate::state::{Auth, Status};
 
 use super::recovery::Phase;
@@ -58,6 +59,7 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
     let account = use_localized("/account");
     let share_text = move || share_text(&daily, i18n.get_locale_untracked());
     let revealed = move || daily.game.status.get() == Status::Revealed;
+    let day = Memo::new(move |_| daily.info.with(|i| i.as_ref().map(|i| i.day)));
     // (rank, finishers): from the submit, later from the ranking, which keeps up with the others
     let place = move || {
         daily
@@ -144,6 +146,8 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
                     </Button>
                 </Show>
             </div>
+            // The hanko the group members pressed on this result
+            {move || day.get().map(|today| view! { <ReceivedHanko today /> })}
             <div class="flex w-full flex-col gap-2">
                 <Show when=move || daily.finished()><ShareBar text=share_text /></Show>
                 {move || {

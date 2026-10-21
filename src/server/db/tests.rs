@@ -164,6 +164,11 @@ async fn write_rows(conn: &Connection, version: usize) {
         // noel's rival, the guest
         run("INSERT INTO rivals (user_id, rival_id, created_at) VALUES (1, 2, 5000)").await;
     }
+    if version >= 17 {
+        // noel pressed 凄 on the guest's result in their group
+        run("INSERT INTO group_hanko (group_id, day, target_id, giver_id, kind, created_at) VALUES (1, 20745, 2, 1, 'wow', 7000)")
+            .await;
+    }
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -175,7 +180,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        16,
+        17,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -298,6 +303,11 @@ async fn old_databases_migrate_with_their_data() {
                 i64::from(version >= 11),
             ),
             ("SELECT COUNT(*) FROM attempts WHERE run IS NULL", 2),
+            // The seal pressed, not seen yet
+            (
+                "SELECT COUNT(*) FROM group_hanko WHERE seen = 0",
+                i64::from(version >= 17),
+            ),
             (
                 "SELECT COUNT(*) FROM attempts WHERE daypart IS NULL",
                 if version >= 5 { 1 } else { 2 },

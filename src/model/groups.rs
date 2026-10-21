@@ -149,6 +149,10 @@ pub struct GroupToday {
     /// The viewer finished today's daily: the board has times.
     pub open: bool,
     pub entries: Vec<TodayEntry>,
+    /// The hanko 判子 the members pressed on each other's results (`model::hanko`), only once
+    /// the board is open.
+    #[serde(default)]
+    pub hanko: Vec<super::HankoMark>,
 }
 
 impl GroupToday {
