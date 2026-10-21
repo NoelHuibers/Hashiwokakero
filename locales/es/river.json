@@ -1,0 +1,34 @@
+{
+  "title": "Al otro lado del río",
+  "intro": "Cada puente que alguno de vosotros construye en un reto resuelto es un tablón del puente del grupo. ¡Cruzad juntos!",
+  "level": "Nivel {{ level }}",
+  "waters": {
+    "stream": "El arroyo",
+    "river": "El río",
+    "wide_river": "El gran río",
+    "strait": "El estrecho",
+    "ocean": "El océano",
+    "ocean_n": "Océano {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} puentes",
+  "to_go": "Faltan {{ count }} hasta la otra orilla",
+  "new": "+{{ count }} desde tu última visita",
+  "scene": "{{ waters }}: un puente de {{ done }} de {{ target }} puentes",
+  "week": "Más tablones esta semana",
+  "week_none": "Nadie ha puesto un tablón esta semana todavía. ¡Resuelve el reto de hoy para poner el primero!",
+  "laid": "{{ name }}: {{ count }} puentes esta semana",
+  "crossed": "Aguas cruzadas",
+  "crossed_level": "{{ waters }}: cruzado el {{ date }}, {{ count }} puentes",
+  "building": "{{ waters }}: en construcción",
+  "how": "Un nivel le lleva al grupo unos {{ days }} días de retos. Más miembros construyen un puente más largo, pero cada miembro a partir del quinto cuenta un poco menos.",
+  "celebrate": {
+    "stream": "¡El arroyo está cruzado!",
+    "river": "¡El río está cruzado!",
+    "wide_river": "¡El gran río está cruzado!",
+    "strait": "¡El estrecho está cruzado!",
+    "ocean": "¡El océano está cruzado!",
+    "text": "Juntos habéis puesto {{ count }} puentes. Siguiente: {{ waters }}.",
+    "stamp": "Todos los que pusieron tablones reciben el sello «{{ stamp }}».",
+    "onward": "¡Adelante!"
+  }
+}

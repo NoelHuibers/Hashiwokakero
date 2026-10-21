@@ -575,7 +575,8 @@ pub(super) async fn merge_guest(
             .await
             .map_err(db_err)?;
     }
-    // At most MAX_GROUPS of them, see there
+    // Groups first, while the guest's dailies are still theirs: the groups they leave keep what
+    // they laid in their rivers. At most MAX_GROUPS come along, see there
     super::groups::merge_guest(&tx, user, guest).await?;
     for sql in [
         "UPDATE OR IGNORE attempts SET user_id = ?1 WHERE user_id = ?2",

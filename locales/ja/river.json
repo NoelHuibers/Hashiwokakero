@@ -1,0 +1,34 @@
+{
+  "title": "川を渡る",
+  "intro": "だれかがクリアしたデイリーでかけた橋は、すべて仲間の橋の板一枚になります。みんなで向こう岸へ！",
+  "level": "レベル {{ level }}",
+  "waters": {
+    "stream": "沢",
+    "river": "川",
+    "wide_river": "大河",
+    "strait": "海峡",
+    "ocean": "大海",
+    "ocean_n": "大海 {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} 本",
+  "to_go": "向こう岸まであと {{ count }} 本",
+  "new": "前回から +{{ count }}",
+  "scene": "{{ waters }}：{{ target }} 本のうち {{ done }} 本の橋",
+  "week": "今週いちばん板を置いた人",
+  "week_none": "今週はまだだれも板を置いていません。今日のデイリーをクリアして最初の一枚を！",
+  "laid": "{{ name }}：今週 {{ count }} 本",
+  "crossed": "渡った水辺",
+  "crossed_level": "{{ waters }}：{{ date }} に渡りきった・{{ count }} 本",
+  "building": "{{ waters }}：建設中",
+  "how": "1レベルは仲間のデイリーでおよそ {{ days }} 日分。人数が多いほど橋は長くなりますが、5人目からは一人ぶんが少し軽く数えられます。",
+  "celebrate": {
+    "stream": "沢に橋がかかった！",
+    "river": "川に橋がかかった！",
+    "wide_river": "大河に橋がかかった！",
+    "strait": "海峡に橋がかかった！",
+    "ocean": "大海に橋がかかった！",
+    "text": "みんなで {{ count }} 本の橋をかけました。次は{{ waters }}。",
+    "stamp": "板を置いた全員に「{{ stamp }}」のはんこ。",
+    "onward": "いざ次へ！"
+  }
+}

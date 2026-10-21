@@ -1,0 +1,34 @@
+{
+  "title": "过河",
+  "intro": "你们任何人在解出的每日谜题中搭的每一座桥，都是小组之桥的一块木板。一起到对岸去！",
+  "level": "第 {{ level }} 关",
+  "waters": {
+    "stream": "小溪",
+    "river": "河流",
+    "wide_river": "大河",
+    "strait": "海峡",
+    "ocean": "大海",
+    "ocean_n": "大海 {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} 座桥",
+  "to_go": "离对岸还有 {{ count }} 座",
+  "new": "比上次 +{{ count }}",
+  "scene": "{{ waters }}：{{ target }} 座中已搭 {{ done }} 座的桥",
+  "week": "本周铺板最多",
+  "week_none": "本周还没有人铺下木板。解出今天的每日谜题，铺下第一块吧！",
+  "laid": "{{ name }}：本周 {{ count }} 座桥",
+  "crossed": "已跨越的水域",
+  "crossed_level": "{{ waters }}：{{ date }} 跨越，{{ count }} 座桥",
+  "building": "{{ waters }}：建造中",
+  "how": "每一关大约需要小组 {{ days }} 天的每日谜题。成员越多桥越长，但第四位之后的每位成员算得稍少一些。",
+  "celebrate": {
+    "stream": "小溪上架起了桥！",
+    "river": "河流上架起了桥！",
+    "wide_river": "大河上架起了桥！",
+    "strait": "海峡上架起了桥！",
+    "ocean": "大海上架起了桥！",
+    "text": "你们一起铺了 {{ count }} 座桥。下一关：{{ waters }}。",
+    "stamp": "每位铺过木板的成员都获得印章“{{ stamp }}”。",
+    "onward": "继续前进！"
+  }
+}

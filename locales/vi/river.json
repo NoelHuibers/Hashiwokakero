@@ -1,0 +1,34 @@
+{
+  "title": "Qua sông",
+  "intro": "Mỗi cây cầu mà bất kỳ ai trong nhóm xây trong một câu đố ngày đã giải là một tấm ván của cây cầu chung. Cùng nhau sang bờ bên kia!",
+  "level": "Màn {{ level }}",
+  "waters": {
+    "stream": "Con suối",
+    "river": "Dòng sông",
+    "wide_river": "Sông lớn",
+    "strait": "Eo biển",
+    "ocean": "Đại dương",
+    "ocean_n": "Đại dương {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} cây cầu",
+  "to_go": "Còn {{ count }} nữa tới bờ bên kia",
+  "new": "+{{ count }} từ lần bạn xem trước",
+  "scene": "{{ waters }}: một cây cầu {{ done }} trên {{ target }} cây cầu",
+  "week": "Nhiều ván nhất tuần này",
+  "week_none": "Tuần này chưa ai lát tấm ván nào. Giải câu đố hôm nay để lát tấm đầu tiên!",
+  "laid": "{{ name }}: {{ count }} cây cầu tuần này",
+  "crossed": "Vùng nước đã vượt",
+  "crossed_level": "{{ waters }}: vượt qua ngày {{ date }}, {{ count }} cây cầu",
+  "building": "{{ waters }}: đang xây",
+  "how": "Mỗi màn cần khoảng {{ days }} ngày câu đố của cả nhóm. Càng nhiều thành viên thì cầu càng dài, nhưng mỗi thành viên sau người thứ tư được tính ít hơn một chút.",
+  "celebrate": {
+    "stream": "Đã bắc cầu qua suối!",
+    "river": "Đã bắc cầu qua sông!",
+    "wide_river": "Đã bắc cầu qua sông lớn!",
+    "strait": "Đã bắc cầu qua eo biển!",
+    "ocean": "Đã bắc cầu qua đại dương!",
+    "text": "Cả nhóm đã lát {{ count }} cây cầu. Tiếp theo: {{ waters }}.",
+    "stamp": "Ai đã lát ván đều nhận con dấu “{{ stamp }}”.",
+    "onward": "Tiến lên!"
+  }
+}

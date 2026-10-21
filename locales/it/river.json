@@ -1,0 +1,34 @@
+{
+  "title": "Oltre il fiume",
+  "intro": "Ogni ponte che uno di voi costruisce in una sfida risolta è un’asse del ponte del gruppo. Arrivate insieme dall’altra parte!",
+  "level": "Livello {{ level }}",
+  "waters": {
+    "stream": "Il ruscello",
+    "river": "Il fiume",
+    "wide_river": "Il grande fiume",
+    "strait": "Lo stretto",
+    "ocean": "L’oceano",
+    "ocean_n": "Oceano {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} ponti",
+  "to_go": "Ancora {{ count }} fino all’altra sponda",
+  "new": "+{{ count }} dalla tua ultima visita",
+  "scene": "{{ waters }}: un ponte di {{ done }} ponti su {{ target }}",
+  "week": "Più assi questa settimana",
+  "week_none": "Nessuno ha ancora posato un’asse questa settimana. Risolvi la sfida di oggi per posare la prima!",
+  "laid": "{{ name }}: {{ count }} ponti questa settimana",
+  "crossed": "Acque attraversate",
+  "crossed_level": "{{ waters }}: attraversato il {{ date }}, {{ count }} ponti",
+  "building": "{{ waters }}: in costruzione",
+  "how": "Un livello richiede al gruppo circa {{ days }} giorni di sfide. Più membri costruiscono un ponte più lungo, ma ogni membro dopo il quarto conta un po’ meno.",
+  "celebrate": {
+    "stream": "Il ruscello è attraversato!",
+    "river": "Il fiume è attraversato!",
+    "wide_river": "Il grande fiume è attraversato!",
+    "strait": "Lo stretto è attraversato!",
+    "ocean": "L’oceano è attraversato!",
+    "text": "Insieme avete posato {{ count }} ponti. Prossima tappa: {{ waters }}.",
+    "stamp": "Chi ha posato assi riceve il timbro «{{ stamp }}».",
+    "onward": "Avanti!"
+  }
+}

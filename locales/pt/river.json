@@ -1,0 +1,34 @@
+{
+  "title": "Do outro lado do rio",
+  "intro": "Cada ponte que alguém de vocês constrói em um desafio resolvido é uma tábua da ponte do grupo. Atravessem juntos!",
+  "level": "Nível {{ level }}",
+  "waters": {
+    "stream": "O riacho",
+    "river": "O rio",
+    "wide_river": "O grande rio",
+    "strait": "O estreito",
+    "ocean": "O oceano",
+    "ocean_n": "Oceano {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} pontes",
+  "to_go": "Faltam {{ count }} até a outra margem",
+  "new": "+{{ count }} desde a sua última visita",
+  "scene": "{{ waters }}: uma ponte de {{ done }} de {{ target }} pontes",
+  "week": "Mais tábuas nesta semana",
+  "week_none": "Ninguém colocou uma tábua nesta semana ainda. Resolva o desafio de hoje para colocar a primeira!",
+  "laid": "{{ name }}: {{ count }} pontes nesta semana",
+  "crossed": "Águas atravessadas",
+  "crossed_level": "{{ waters }}: atravessado em {{ date }}, {{ count }} pontes",
+  "building": "{{ waters }}: em construção",
+  "how": "Um nível leva cerca de {{ days }} dias de desafios do grupo. Mais membros constroem uma ponte mais longa, mas cada membro depois do quarto conta um pouco menos.",
+  "celebrate": {
+    "stream": "O riacho foi atravessado!",
+    "river": "O rio foi atravessado!",
+    "wide_river": "O grande rio foi atravessado!",
+    "strait": "O estreito foi atravessado!",
+    "ocean": "O oceano foi atravessado!",
+    "text": "Juntos vocês colocaram {{ count }} pontes. Próximo: {{ waters }}.",
+    "stamp": "Todos que colocaram tábuas ganham o carimbo “{{ stamp }}”.",
+    "onward": "Avante!"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "title": "Nehrin karşısına",
+  "intro": "Herhangi birinizin çözülmüş bir günlük bulmacada kurduğu her köprü, grubun köprüsünün bir tahtasıdır. Karşıya birlikte geçin!",
+  "level": "Seviye {{ level }}",
+  "waters": {
+    "stream": "Dere",
+    "river": "Nehir",
+    "wide_river": "Geniş nehir",
+    "strait": "Boğaz",
+    "ocean": "Okyanus",
+    "ocean_n": "Okyanus {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} köprü",
+  "to_go": "Karşı kıyıya {{ count }} kaldı",
+  "new": "Son bakışından beri +{{ count }}",
+  "scene": "{{ waters }}: {{ target }} köprünün {{ done }} tanesiyle bir köprü",
+  "week": "Bu hafta en çok tahta",
+  "week_none": "Bu hafta henüz kimse tahta döşemedi. İlkini döşemek için bugünün bulmacasını çöz!",
+  "laid": "{{ name }}: bu hafta {{ count }} köprü",
+  "crossed": "Geçilen sular",
+  "crossed_level": "{{ waters }}: {{ date }} tarihinde geçildi, {{ count }} köprü",
+  "building": "{{ waters }}: yapım aşamasında",
+  "how": "Bir seviye grubun yaklaşık {{ days }} günlük bulmacasını alır. Daha çok üye daha uzun bir köprü kurar, ama dördüncüden sonraki her üye biraz daha az sayılır.",
+  "celebrate": {
+    "stream": "Dere geçildi!",
+    "river": "Nehir geçildi!",
+    "wide_river": "Geniş nehir geçildi!",
+    "strait": "Boğaz geçildi!",
+    "ocean": "Okyanus geçildi!",
+    "text": "Birlikte {{ count }} köprü döşediniz. Sırada: {{ waters }}.",
+    "stamp": "Tahta döşeyen herkes “{{ stamp }}” damgasını alır.",
+    "onward": "İleri!"
+  }
+}

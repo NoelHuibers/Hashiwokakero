@@ -1,0 +1,34 @@
+{
+  "title": "Na drugi brzeg",
+  "intro": "Każdy most, który ktoś z was zbuduje w rozwiązanej łamigłówce dnia, to deska mostu całej grupy. Przejdźcie razem na drugi brzeg!",
+  "level": "Poziom {{ level }}",
+  "waters": {
+    "stream": "Strumień",
+    "river": "Rzeka",
+    "wide_river": "Szeroka rzeka",
+    "strait": "Cieśnina",
+    "ocean": "Ocean",
+    "ocean_n": "Ocean {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} mostów",
+  "to_go": "Do drugiego brzegu: {{ count }}",
+  "new": "+{{ count }} od twojej ostatniej wizyty",
+  "scene": "{{ waters }}: most z {{ done }} z {{ target }} mostów",
+  "week": "Najwięcej desek w tym tygodniu",
+  "week_none": "Nikt nie położył jeszcze deski w tym tygodniu. Rozwiąż dzisiejszą łamigłówkę i połóż pierwszą!",
+  "laid": "{{ name }}: mostów w tym tygodniu – {{ count }}",
+  "crossed": "Pokonane wody",
+  "crossed_level": "{{ waters }}: pokonane {{ date }}, mostów: {{ count }}",
+  "building": "{{ waters }}: w budowie",
+  "how": "Poziom zajmuje grupie około {{ days }} dni łamigłówek. Więcej członków buduje dłuższy most, ale każdy członek po czwartym liczy się trochę mniej.",
+  "celebrate": {
+    "stream": "Strumień pokonany!",
+    "river": "Rzeka pokonana!",
+    "wide_river": "Szeroka rzeka pokonana!",
+    "strait": "Cieśnina pokonana!",
+    "ocean": "Ocean pokonany!",
+    "text": "Razem położyliście {{ count }} mostów. Dalej: {{ waters }}.",
+    "stamp": "Każdy, kto kładł deski, dostaje pieczątkę „{{ stamp }}”.",
+    "onward": "Naprzód!"
+  }
+}

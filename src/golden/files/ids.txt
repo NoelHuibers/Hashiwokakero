@@ -45,6 +45,7 @@ stamp LanterneRouge lanterne_rouge
 stamp LeapDay leap_day
 stamp Yokozuna yokozuna
 stamp Sansho sansho
+stamp RiverCrew river_crew
 flag Log log
 flag TooFast too_fast
 flag Pace pace

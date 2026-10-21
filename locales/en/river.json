@@ -1,0 +1,34 @@
+{
+  "title": "Across the river",
+  "intro": "Every bridge any of you builds in a solved daily is a plank of the group's bridge. Get across together!",
+  "level": "Level {{ level }}",
+  "waters": {
+    "stream": "The stream",
+    "river": "The river",
+    "wide_river": "The wide river",
+    "strait": "The strait",
+    "ocean": "The ocean",
+    "ocean_n": "Ocean {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} bridges",
+  "to_go": "{{ count }} to the other side",
+  "new": "+{{ count }} since you last looked",
+  "scene": "{{ waters }}: a bridge of {{ done }} of {{ target }} bridges",
+  "week": "Most planks this week",
+  "week_none": "Nobody has laid a plank this week yet. Solve today's daily to lay the first!",
+  "laid": "{{ name }}: {{ count }} bridges this week",
+  "crossed": "Waters crossed",
+  "crossed_level": "{{ waters }}: crossed on {{ date }}, {{ count }} bridges",
+  "building": "{{ waters }}: under construction",
+  "how": "A level takes the group about {{ days }} days of dailies. More members build a longer bridge, but every member after the fourth counts a little less.",
+  "celebrate": {
+    "stream": "The stream is bridged!",
+    "river": "The river is bridged!",
+    "wide_river": "The wide river is bridged!",
+    "strait": "The strait is bridged!",
+    "ocean": "The ocean is bridged!",
+    "text": "Together you laid {{ count }} bridges. Next: {{ waters }}.",
+    "stamp": "Everyone who laid planks gets the stamp “{{ stamp }}”.",
+    "onward": "Onward!"
+  }
+}

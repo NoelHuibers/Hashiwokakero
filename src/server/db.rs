@@ -369,6 +369,37 @@ CREATE TRIGGER group_hanko_group_gone AFTER DELETE ON groups BEGIN
     DELETE FROM group_hanko WHERE group_id = OLD.id;
 END;
 ",
+    // 18
+    "
+-- The river 川 of a group, see server/groups/river.rs: the bridges members laid in their solved
+-- dailies since they joined, plus what members who left had laid (without their names)
+ALTER TABLE groups ADD COLUMN river_banked INTEGER NOT NULL DEFAULT 0;
+-- How far a member saw the river last: its bridges then (the planks after are new to them) and
+-- the levels celebrated with them
+ALTER TABLE group_members ADD COLUMN river_seen INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE group_members ADD COLUMN river_levels_seen INTEGER NOT NULL DEFAULT 0;
+-- The levels a group completed (0 the first), with the bridges they took
+CREATE TABLE IF NOT EXISTS group_river (
+    group_id     INTEGER NOT NULL,
+    level        INTEGER NOT NULL,
+    target       INTEGER NOT NULL,
+    completed_at INTEGER NOT NULL,
+    PRIMARY KEY (group_id, level)
+);
+-- Who laid planks of a completed level, for their stamp
+CREATE TABLE IF NOT EXISTS group_river_crew (
+    group_id INTEGER NOT NULL,
+    level    INTEGER NOT NULL,
+    user_id  INTEGER NOT NULL,
+    PRIMARY KEY (group_id, level, user_id)
+);
+CREATE INDEX IF NOT EXISTS group_river_crew_user ON group_river_crew (user_id);
+-- A group that goes takes its river along, however it goes
+CREATE TRIGGER group_river_gone AFTER DELETE ON groups BEGIN
+    DELETE FROM group_river WHERE group_id = OLD.id;
+    DELETE FROM group_river_crew WHERE group_id = OLD.id;
+END;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

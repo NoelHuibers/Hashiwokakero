@@ -57,7 +57,8 @@
     "lanterne_rouge": "Rode lantaarn",
     "leap_day": "Schrikkeldag",
     "yokozuna": "Yokozuna",
-    "sansho": "Speciale prijs"
+    "sansho": "Speciale prijs",
+    "river_crew": "Bruggenbouwer"
   },
   "texts": {
     "first": "Los je eerste dagpuzzel op.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "Eindig als laatste bij een dagpuzzel met minstens 20 spelers. Iemand moet de lantaarn dragen!",
     "leap_day": "Los de dagpuzzel op 29 februari op.",
     "yokozuna": "Eindig bovenaan de weekbanzuke van een groep, in een week met minstens drie spelers.",
-    "sansho": "Win een van de weekprijzen van een groep, in een week met minstens drie spelers."
+    "sansho": "Win een van de weekprijzen van een groep, in een week met minstens drie spelers.",
+    "river_crew": "Help je groep over de rivier: leg planken van een level dat jullie voltooien."
   },
   "secret": {
     "name": "Geheime stempel",
