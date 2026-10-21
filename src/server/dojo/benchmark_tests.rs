@@ -842,3 +842,52 @@ async fn a_verdict_before_acceptance_is_kept() {
     assert_eq!(state(&conn, other).await.0, "queued");
     assert_eq!(token_and_attempts(&conn, other).await, (None, 0));
 }
+
+/// A check waiting at the worker behind an evaluation for longer than `STALE_MS` stays at the
+/// worker while it sends heartbeats; one from a worker that went quiet (it is gone) is queued
+/// again.
+#[tokio::test]
+async fn checks_with_heartbeats_are_not_given_up() {
+    let conn = test_db("heartbeat").await;
+    let ada = user(&conn, "ada", true, 0).await;
+    let id = benchmarks::submit(&conn, &ada, form("x", &formula(5)), None)
+        .await
+        .unwrap();
+    let sent = now_ms() - STALE_MS - 60_000;
+    conn.execute(
+        "UPDATE dojo_benchmarks SET state = 'checking', job_token = 'waiting', attempts = 1,
+            updated_at = ?2 WHERE id = ?1",
+        params![id, sent],
+    )
+    .await
+    .unwrap();
+    let heartbeat = |token| {
+        let conn = conn.clone();
+        async move {
+            let report = BenchmarkReport {
+                id,
+                verdict: Verdict::Pending,
+            };
+            benchmarks::apply_for_check(&conn, &report, Some(token))
+                .await
+                .unwrap()
+        }
+    };
+    assert!(!heartbeat("other").await);
+    assert!(heartbeat("waiting").await);
+    benchmarks::housekeeping(&conn, now_ms()).await.unwrap();
+    assert_eq!(state(&conn, id).await.0, "checking");
+    assert_eq!(
+        token_and_attempts(&conn, id).await,
+        (Some("waiting".into()), 1)
+    );
+    // No heartbeat for longer than STALE_MS: the worker is gone
+    benchmarks::housekeeping(&conn, now_ms() + STALE_MS + 1)
+        .await
+        .unwrap();
+    assert_eq!(state(&conn, id).await.0, "queued");
+    assert_eq!(token_and_attempts(&conn, id).await, (None, 1));
+    // A late heartbeat doesn't bring it back
+    assert!(!heartbeat("waiting").await);
+    assert_eq!(state(&conn, id).await.0, "queued");
+}

@@ -530,6 +530,59 @@ async fn stale_runs_are_retried() {
     );
 }
 
+/// The failure of 2026-10-21: of the two jobs the site sends, the worker runs one while the
+/// other waits in its queue, for longer than `STALE_MS`. With the worker's heartbeats it stays
+/// at the worker with its token, instead of being sent again while the worker still has it.
+/// Without them (the worker is gone) it is queued again.
+#[tokio::test]
+async fn waiting_jobs_with_heartbeats_are_not_requeued() {
+    let conn = test_db("heartbeat").await;
+    let id = submit(&conn, None, form("waiting", 9)).await.unwrap();
+    let current = season();
+    conn.execute(
+        "UPDATE dojo_submissions SET state = 'running', job_token = 'waiting', attempts = 1,
+            updated_at = ?2 WHERE id = ?1",
+        params![id, now_ms() - STALE_MS - 60_000],
+    )
+    .await
+    .unwrap();
+    let heartbeat = |token| {
+        let conn = conn.clone();
+        async move {
+            let report = Report::Heartbeat {
+                id,
+                season: current,
+            };
+            worker::apply_for_job(&conn, &report, Some(token))
+                .await
+                .unwrap()
+        }
+    };
+    assert!(!heartbeat("other").await);
+    assert!(heartbeat("waiting").await);
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(
+        state_and_token(&conn, id).await,
+        ("running".into(), Some("waiting".into()), 1)
+    );
+    // The heartbeat changes nothing else
+    let s = submission(&conn, id, None).await.unwrap().unwrap();
+    assert_eq!((s.progress, s.score), (0, None));
+
+    // No heartbeat for longer than STALE_MS: the worker is gone, the job goes out again
+    conn.execute(
+        "UPDATE dojo_submissions SET updated_at = ?2 WHERE id = ?1",
+        params![id, now_ms() - STALE_MS - 1],
+    )
+    .await
+    .unwrap();
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(state_and_token(&conn, id).await, ("queued".into(), None, 1));
+    // A late heartbeat of the lost job doesn't bring it back
+    assert!(!heartbeat("waiting").await);
+    assert_eq!(state_and_token(&conn, id).await.0, "queued");
+}
+
 /// What the stub worker of [`stub_worker`] was sent.
 #[derive(Debug)]
 struct SentJob {
@@ -1030,6 +1083,49 @@ async fn newer_rules_evaluate_again() {
     );
 }
 
+/// Evaluations that failed for good get another chance when the site runs newer rules, with
+/// their attempts back, like finished ones: on 2026-10-21 two house entries ended up failed
+/// after the rules changed and stayed so. Only once per change, not on every housekeeping.
+#[tokio::test]
+async fn failed_evaluations_get_another_chance_on_newer_rules() {
+    let conn = test_db("failed-rules").await;
+    let current = season();
+    let id = submit(&conn, None, form("failed", 5)).await.unwrap();
+    housekeeping_at(&conn, current).await.unwrap();
+    let fail = || {
+        let conn = conn.clone();
+        async move {
+            conn.execute(
+                "UPDATE dojo_submissions SET state = 'failed', attempts = 3, job_token = NULL WHERE id = ?1",
+                params![id],
+            )
+            .await
+            .unwrap();
+        }
+    };
+    fail().await;
+    // Same rules: it stays failed
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(state_and_token(&conn, id).await, ("failed".into(), None, 3));
+    // The site was deployed with newer rules
+    conn.execute(
+        "UPDATE dojo_seasons SET rules_version = ?2 WHERE season = ?1",
+        params![current, RULES_VERSION - 1],
+    )
+    .await
+    .unwrap();
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(state_and_token(&conn, id).await, ("queued".into(), None, 0));
+    assert_eq!(
+        seasons(&conn, current).await.unwrap().current.rules_version,
+        RULES_VERSION
+    );
+    // Failing again on the new rules is final until the next change
+    fail().await;
+    housekeeping_at(&conn, current).await.unwrap();
+    assert_eq!(state_and_token(&conn, id).await, ("failed".into(), None, 3));
+}
+
 #[test]
 fn results_as_csv() {
     let entry = |id, name: &str, author: &str, rank, results: Vec<InstanceResult>| ArchivedEntry {
@@ -1453,7 +1549,7 @@ async fn metrics_beyond_par2() {
     assert_eq!((entry.breakdown, entry.contribution), (None, None));
 }
 
-/// Runs go on to ten times the budget: the board ranks by what happened within the budget,
+/// Runs go on to four times the budget: the board ranks by what happened within the budget,
 /// the budget view and the cactus plot show the rest, the archive says how far the runs went.
 #[tokio::test]
 async fn scores_at_every_budget() {
@@ -1514,7 +1610,7 @@ async fn scores_at_every_budget() {
         (at(1, dojo::RUN_BUDGET).solved, at(1, dojo::RUN_BUDGET).sat),
         (3, 2)
     );
-    assert_eq!(at(0, dojo::RUN_BUDGET).par2, 47.033);
+    assert_eq!(at(0, dojo::RUN_BUDGET).par2, 19.033);
     assert_eq!(at(0, DEFAULT_BUDGET / 10).solved, 1);
     // The slow one overtakes the quick one when it solves the last formula
     assert_eq!(
@@ -1535,7 +1631,7 @@ async fn scores_at_every_budget() {
     );
     let text = csv(&season);
     assert!(
-        text.contains(",queens,SAT,solved,20000000000,7000000000,70000000000\n"),
+        text.contains(",queens,SAT,solved,20000000000,7000000000,28000000000\n"),
         "{text}"
     );
     let past = seasons(&conn, second).await.unwrap().past.remove(0);

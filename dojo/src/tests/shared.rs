@@ -25,6 +25,7 @@ fn budgets_of_rules_versions() {
         );
     }
     assert_eq!(run_budget_of(5), 70_000_000_000);
+    assert_eq!(run_budget_of(6), 28_000_000_000);
     assert_eq!(run_budget_of(RULES_VERSION), RUN_BUDGET);
     assert_eq!(RUN_BUDGET, BUDGET_FACTOR * DEFAULT_BUDGET);
 }

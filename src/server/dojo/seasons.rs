@@ -57,7 +57,9 @@ fn err(e: impl std::fmt::Display) -> String {
 }
 
 /// Records the start of the current season with its commitment (once), and the versions of
-/// the generator and the rules it runs with now.
+/// the generator and the rules it runs with now. When those change, the season's failed
+/// evaluations get another chance, with their attempts back: whatever made them fail may be
+/// gone with the new rules (finished ones are evaluated again by [`requeue_old_rules`]).
 pub(super) async fn open(conn: &Connection, current: u32, now: i64) -> Result<(), String> {
     conn.execute(
         "INSERT OR IGNORE INTO dojo_seasons (season, started_at, commitment, generator_version, rules_version)
@@ -72,13 +74,30 @@ pub(super) async fn open(conn: &Connection, current: u32, now: i64) -> Result<()
     )
     .await
     .map_err(err)?;
-    conn.execute(
-        "UPDATE dojo_seasons SET generator_version = ?2, rules_version = ?3
-         WHERE season = ?1 AND ended_at IS NULL AND (generator_version != ?2 OR rules_version != ?3)",
-        params![current, GENERATOR_VERSION, RULES_VERSION],
-    )
-    .await
-    .map_err(err)?;
+    // Both or neither: another housekeeping run at the same moment finds the versions changed
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(err)?;
+    let changed = tx
+        .execute(
+            "UPDATE dojo_seasons SET generator_version = ?2, rules_version = ?3
+             WHERE season = ?1 AND ended_at IS NULL AND (generator_version != ?2 OR rules_version != ?3)",
+            params![current, GENERATOR_VERSION, RULES_VERSION],
+        )
+        .await
+        .map_err(err)?;
+    if changed > 0 {
+        tx.execute(
+            "UPDATE dojo_submissions SET state = 'queued', progress = 0, updated_at = ?2, attempts = 0,
+                fingerprint = NULL, similar_to = NULL, results = NULL, error = NULL, job_token = NULL
+             WHERE season = ?1 AND state = 'failed'",
+            params![current, now],
+        )
+        .await
+        .map_err(err)?;
+    }
+    tx.commit().await.map_err(err)?;
     // Its draw from the community pool, fixed from now on
     super::benchmarks::draw(conn, current, now).await
 }
@@ -586,9 +605,9 @@ fn csv_field(text: &str) -> String {
 
 /// One line per entry and formula, like the SAT Competition's `scores.csv`.
 ///
-/// `outcome` and `fuel` are how the run ended and what it used, up to `run_budget` (since
-/// rules version 5 ten times `budget`); with `budget` a result with more fuel counts as a
-/// timeout, see `dojo::Outcome::at`.
+/// `outcome` and `fuel` are how the run ended and what it used, up to `run_budget` (ten times
+/// `budget` in rules version 5, four times since 6); with `budget` a result with more fuel
+/// counts as a timeout, see `dojo::Outcome::at`.
 pub fn csv(season: &ArchivedSeason) -> String {
     let mut out = String::from(
         "season,entry,solver,author,house,rank,rules_version,instance,family,expected,outcome,fuel,budget,run_budget\n",

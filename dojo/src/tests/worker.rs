@@ -1,8 +1,8 @@
 //! Tests of the worker's parts that the end-to-end test in `worker.rs` doesn't reach: pools from
-//! the cache directory, a worker whose evaluator is gone, benchmarks that aren't formulas, and
-//! how reports are retried.
+//! the cache directory, a worker whose evaluator is gone, benchmarks that aren't formulas, how
+//! reports are retried, and heartbeats for the work it holds.
 
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -13,10 +13,13 @@ use axum::response::IntoResponse;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 
-use super::{CheckQuery, Reporter, Shared, Work, check_benchmark, pool_file, put_pool, verify};
+use super::{
+    Check, CheckQuery, Held, JobQuery, Reporter, Settings, Shared, Ticket, Work, check_benchmark,
+    evaluator, heartbeats, pool_file, put_pool, submit, verify,
+};
 use crate::community::{
-    Formula, FormulaError, MAX_BYTES, MAX_CLAUSES, Origin, PoolInstance, Refusal, Verdict,
-    gbd_hash, pool_digest,
+    BenchmarkReport, Formula, FormulaError, MAX_BYTES, MAX_CLAUSES, Origin, PoolInstance, Refusal,
+    Verdict, gbd_hash, pool_digest,
 };
 use crate::proof::TempDir;
 use crate::{Answer, Report};
@@ -37,12 +40,14 @@ fn pool() -> Vec<PoolInstance> {
     }]
 }
 
-fn shared(cache: Option<std::path::PathBuf>) -> (Shared, mpsc::UnboundedReceiver<Work>) {
+type Jobs = mpsc::UnboundedReceiver<(Ticket, Work)>;
+
+fn shared(cache: Option<std::path::PathBuf>) -> (Shared, Jobs) {
     let (jobs, rx) = mpsc::unbounded_channel();
     let shared = Shared {
         token: "secret".into(),
         jobs,
-        pending: Arc::new(AtomicUsize::new(0)),
+        holding: Arc::default(),
         active: Arc::new(AtomicU64::new(0)),
         pools: Arc::default(),
         cache,
@@ -130,7 +135,7 @@ async fn work_is_refused_without_an_evaluator() {
     .await
     .into_response();
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(worker.pending.load(Ordering::Relaxed), 0);
+    assert_eq!(worker.holding.len(), 0);
     assert!(worker.active.load(Ordering::Relaxed) > 0);
 }
 
@@ -269,4 +274,196 @@ async fn refused_reports_are_not_retried() {
     // Without the pause before a second attempt
     assert!(started.elapsed() < Duration::from_secs(1));
     assert_eq!(seen.lock().unwrap().len(), 1);
+}
+
+/// A website that keeps the heartbeats it gets with their token, and answers those for job 8
+/// with 401 (it sent the job again with another token) and those for check 3 with 409 (decided
+/// meanwhile).
+async fn heartbeat_site() -> (String, mpsc::UnboundedReceiver<(String, String)>) {
+    use axum::routing::post;
+    let (seen, heard) = mpsc::unbounded_channel::<(String, String)>();
+    let auth = |headers: &HeaderMap| {
+        headers
+            .get(header::AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_string()
+    };
+    let reports = seen.clone();
+    let site = axum::Router::new()
+        .route(
+            "/dojo/report",
+            post(
+                move |headers: HeaderMap, axum::Json(report): axum::Json<Report>| {
+                    let status = if report.id() == 8 {
+                        StatusCode::UNAUTHORIZED
+                    } else {
+                        StatusCode::NO_CONTENT
+                    };
+                    reports
+                        .send((auth(&headers), format!("{report:?}")))
+                        .unwrap();
+                    async move { status }
+                },
+            ),
+        )
+        .route(
+            "/dojo/benchmark-report",
+            post(
+                move |headers: HeaderMap, axum::Json(report): axum::Json<BenchmarkReport>| {
+                    seen.send((auth(&headers), format!("{report:?}"))).unwrap();
+                    async { StatusCode::CONFLICT }
+                },
+            ),
+        );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move { axum::serve(listener, site).await.unwrap() });
+    (url, heard)
+}
+
+/// The failure of 2026-10-21: the website sent two jobs, the worker ran one and the other
+/// waited in its queue without a word for over a quarter of an hour, so the website sent it
+/// again and refused every report about the first copy. Now everything the worker holds,
+/// waiting or running, gets heartbeats with its own token, and what the website refuses is
+/// marked as dropped.
+#[tokio::test]
+async fn waiting_work_gets_heartbeats() {
+    let (worker, _jobs) = shared(None);
+    // Nothing takes work from the queue: everything waits
+    let wasm = crate::sandbox::testing::unsat_solver(None, "");
+    for (id, token) in [(7, "job-7"), (8, "job-8")] {
+        let response = submit(
+            State(worker.clone()),
+            Query(JobQuery {
+                id,
+                season: 2,
+                seed: "s".into(),
+                report_token: token.into(),
+                rules: None,
+                export: 0,
+                pool: String::new(),
+            }),
+            bearer("secret"),
+            Bytes::from(wasm.clone()),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::ACCEPTED);
+    }
+    let response = check_benchmark(
+        State(worker.clone()),
+        Query(CheckQuery {
+            id: 3,
+            report_token: "check-3".into(),
+            rules: None,
+        }),
+        bearer("secret"),
+        Bytes::from_static(b"p cnf 1 1\n1 0\n"),
+    )
+    .await
+    .into_response();
+    assert_eq!(response.status(), StatusCode::ACCEPTED);
+    assert_eq!(worker.holding.len(), 3);
+
+    let (url, mut heard) = heartbeat_site().await;
+    let reporter = Reporter {
+        client: reqwest::Client::new(),
+        app_url: url,
+    };
+    let beating = tokio::spawn(heartbeats(
+        worker.holding.clone(),
+        reporter,
+        Duration::from_millis(20),
+    ));
+    let mut seen = Vec::new();
+    while seen.len() < 6 {
+        let next = tokio::time::timeout(Duration::from_secs(30), heard.recv());
+        seen.push(next.await.expect("heartbeats in time").unwrap());
+    }
+    beating.abort();
+    // Every one of the three, round after round, with its own token
+    for (auth, report) in [
+        ("Bearer job-7", "Heartbeat { id: 7, season: 2 }"),
+        ("Bearer job-8", "Heartbeat { id: 8, season: 2 }"),
+        (
+            "Bearer check-3",
+            "BenchmarkReport { id: 3, verdict: Pending }",
+        ),
+    ] {
+        let beats = seen
+            .iter()
+            .filter(|(a, r)| a == auth && r == report)
+            .count();
+        assert_eq!(beats, 2, "{auth} {report}: {seen:?}");
+    }
+    // The refused ones are dropped, the other one stays
+    let dropped: Vec<(Held, bool)> = worker
+        .holding
+        .lock()
+        .iter()
+        .map(|t| (t.held, t.dropped.load(Ordering::Relaxed)))
+        .collect();
+    assert_eq!(
+        dropped,
+        [
+            (Held::Job { id: 7, season: 2 }, false),
+            (Held::Job { id: 8, season: 2 }, true),
+            (Held::Check { id: 3 }, true),
+        ]
+    );
+}
+
+/// Work the website doesn't expect any more by the time its turn comes is skipped: the worker
+/// doesn't spend minutes on a copy whose reports would all be refused.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn dropped_work_is_skipped() {
+    let (url, mut heard) = heartbeat_site().await;
+    let reporter = Reporter {
+        client: reqwest::Client::new(),
+        app_url: url,
+    };
+    let (worker, jobs) = shared(None);
+    for (id, dropped) in [(1, true), (2, false)] {
+        let ticket = Ticket::new(Held::Check { id }, format!("check-{id}").into());
+        ticket.dropped.store(dropped, Ordering::Relaxed);
+        worker.holding.lock().push(ticket.clone());
+        let check = Check {
+            id,
+            report_token: ticket.token.clone(),
+            dimacs: Bytes::from_static(b"p cnf 1 1\n1 0\n"),
+        };
+        worker.jobs.send((ticket, Work::Verify(check))).unwrap();
+    }
+    let holding = worker.holding.clone();
+    let active = worker.active.clone();
+    drop(worker);
+    let handle = tokio::runtime::Handle::current();
+    tokio::task::spawn_blocking(move || {
+        evaluator(
+            jobs,
+            &reporter,
+            &holding,
+            &active,
+            &handle,
+            &Settings {
+                memory_mb: Some(64),
+                ..Settings::default()
+            },
+        );
+        assert_eq!(holding.len(), 0);
+    })
+    .await
+    .unwrap();
+    // Only the second one's verdict
+    let mut verdicts = Vec::new();
+    while let Ok(verdict) = heard.try_recv() {
+        verdicts.push(verdict);
+    }
+    assert_eq!(
+        verdicts,
+        [(
+            "Bearer check-2".to_string(),
+            "BenchmarkReport { id: 2, verdict: Refused { reason: TooEasy } }".to_string()
+        )]
+    );
 }

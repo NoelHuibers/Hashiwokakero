@@ -43,7 +43,7 @@
     "shapley_tip": "Phần công bằng của nó trong lượng fuel cả nhóm tiết kiệm được, tính bằng tỷ mỗi công thức",
     "vbs_line": "Bộ giải tốt nhất ảo của {{ count }} bộ giải: đã giải {{ solved }}/{{ total }}, PAR-2 {{ par2 }}",
     "view_budget": "Ngân sách",
-    "budget_hint": "Cùng các lần chạy đó, xếp hạng với một ngân sách khác cho mỗi công thức. Mỗi lần chạy tiếp tục đến mười lần ngân sách chính thức, và fuel có tính tất định, nên mỗi ngân sách nhỏ hơn cho đúng kết quả mà một lần chạy với ngân sách đó sẽ có. Bảng xếp hạng chính thức vẫn ở 1×; các mũi tên cho thấy solver dịch khỏi vị trí của nó ở đó bao xa.",
+    "budget_hint": "Cùng các lần chạy đó, xếp hạng với một ngân sách khác cho mỗi công thức. Mỗi lần chạy tiếp tục đến bốn lần ngân sách chính thức, và fuel có tính tất định, nên mỗi ngân sách nhỏ hơn cho đúng kết quả mà một lần chạy với ngân sách đó sẽ có. Bảng xếp hạng chính thức vẫn ở 1×; các mũi tên cho thấy solver dịch khỏi vị trí của nó ở đó bao xa.",
     "budget_pick": "Ngân sách mỗi công thức",
     "budget_official": "chính thức",
     "budget_wrong": "trả lời sai",
@@ -353,6 +353,6 @@
     "shapley_title": "Giá trị Shapley",
     "shapley": "Điểm số riêng lẻ thưởng cho các bản gần giống nhau, còn đóng góp biên thì phạt chúng. Giá trị Shapley từ lý thuyết trò chơi hợp tác công bằng với cả hai: nó chia lượng fuel mà cả nhóm tiết kiệm được so với việc không giải gì theo đóng góp biên trung bình của mỗi bộ giải trên mọi thứ tự gia nhập (<a>Fréchette et al., AAAI 2016</a>). Chúng tôi tính chính xác, theo tỷ fuel mỗi công thức; các giá trị cộng lại bằng hai lần ngân sách trừ đi PAR-2 của VBS.",
     "budget_title": "Xếp hạng ở ngân sách khác",
-    "budget": "Bảng xếp hạng đo một cuộc đua ngắn: 7 tỷ fuel mỗi công thức, khoảng nửa giây của một solver native, trong khi SAT Competition cho 5.000 giây. Các solver có tiền xử lý và xử lý trong lúc giải nặng như Kissat và CaDiCaL phải trả giá trước khi được lợi, nên ở ngân sách này chúng xếp sau MiniSat. Mỗi lần chạy tiếp tục đến mười lần ngân sách, và vì fuel có tính tất định, một lần chạy cho điểm chính xác ở mọi ngân sách nhỏ hơn: chế độ xem Ngân sách cho thấy bảng xếp hạng thay đổi thế nào khi có thêm thời gian."
+    "budget": "Bảng xếp hạng đo một cuộc đua ngắn: 7 tỷ fuel mỗi công thức, khoảng nửa giây của một solver native, trong khi SAT Competition cho 5.000 giây. Các solver có tiền xử lý và xử lý trong lúc giải nặng như Kissat và CaDiCaL phải trả giá trước khi được lợi, nên ở ngân sách này chúng xếp sau MiniSat. Mỗi lần chạy tiếp tục đến bốn lần ngân sách, và vì fuel có tính tất định, một lần chạy cho điểm chính xác ở mọi ngân sách nhỏ hơn: chế độ xem Ngân sách cho thấy bảng xếp hạng thay đổi thế nào khi có thêm thời gian."
   }
 }

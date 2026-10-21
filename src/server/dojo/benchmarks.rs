@@ -660,6 +660,15 @@ pub(super) async fn apply_for_check(
             )
             .await?
         }
+        // The worker's heartbeat: it still has the check, so it isn't lost
+        Verdict::Pending => {
+            conn.execute(
+                "UPDATE dojo_benchmarks SET updated_at = ?2
+                 WHERE id = ?1 AND state = 'checking' AND (?3 IS NULL OR job_token = ?3)",
+                params![report.id, now, token],
+            )
+            .await?
+        }
         Verdict::Failed { message } => {
             eprintln!("dojo benchmark #{}: worker failed: {message}", report.id);
             conn.execute(
@@ -739,7 +748,9 @@ pub async fn report_handler(
     }
 }
 
-/// Checks that went quiet are queued again, or refused after a few attempts.
+/// Checks that went quiet are queued again, or refused after a few attempts. The worker sends a
+/// heartbeat for every check it holds, waiting or running ([`Verdict::Pending`]), so only those
+/// of a worker that is gone go quiet.
 pub(super) async fn housekeeping(conn: &Connection, now: i64) -> Result<(), String> {
     conn.execute(
         "UPDATE dojo_benchmarks SET state = CASE WHEN attempts >= ?1 THEN 'refused' ELSE 'queued' END,

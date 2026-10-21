@@ -43,7 +43,7 @@
     "shapley_tip": "Tüm alanın tasarruf ettiği yakıttan adil payı, formül başına milyar cinsinden",
     "vbs_line": "{{ count }} çözücünün sanal en iyi çözücüsü: {{ solved }}/{{ total }} çözüldü, PAR-2 {{ par2 }}",
     "view_budget": "Bütçe",
-    "budget_hint": "Aynı çalıştırmalar, formül başına başka bir bütçeyle sıralanmış. Her çalıştırma resmi bütçenin on katına kadar sürer ve yakıt deterministiktir; bu yüzden daha küçük her bütçe, o bütçeyle yapılan bir çalıştırmanın vereceği sonucu tam olarak verir. Resmi sıralama 1×'te kalır; oklar bir çözücünün oradaki yerinden ne kadar kaydığını gösterir.",
+    "budget_hint": "Aynı çalıştırmalar, formül başına başka bir bütçeyle sıralanmış. Her çalıştırma resmi bütçenin dört katına kadar sürer ve yakıt deterministiktir; bu yüzden daha küçük her bütçe, o bütçeyle yapılan bir çalıştırmanın vereceği sonucu tam olarak verir. Resmi sıralama 1×'te kalır; oklar bir çözücünün oradaki yerinden ne kadar kaydığını gösterir.",
     "budget_pick": "Formül başına bütçe",
     "budget_official": "resmi",
     "budget_wrong": "yanlış cevap",
@@ -353,6 +353,6 @@
     "shapley_title": "Shapley değeri",
     "shapley": "Tek başına puanlar neredeyse-klonları ödüllendirir, marjinal katkılar onları cezalandırır. İşbirlikçi oyun teorisinden gelen Shapley değeri her ikisine de adildir: tüm alanın hiçbir şey çözmemeye göre tasarruf ettiği yakıtı, her çözücünün olası tüm katılım sıraları üzerinden ortalama marjinal katkısına göre böler (<a>Fréchette et al., AAAI 2016</a>). Onu tam olarak, formül başına milyar yakıt cinsinden hesaplarız; değerlerin toplamı bütçenin iki katı eksi VBS'nin PAR-2'sidir.",
     "budget_title": "Başka bütçelerde sıralamalar",
-    "budget": "Sıralama kısa bir yarışı ölçer: formül başına 7 milyar yakıt, yerel bir çözücünün yaklaşık yarım saniyesi; SAT Competition ise 5.000 saniye tanır. Kissat ve CaDiCaL gibi yoğun ön işleme ve iç işleme yapan çözücüler bunun bedelini karşılığını almadan öder, bu yüzden bu bütçede MiniSat'ın gerisinde kalırlar. Her çalıştırma bütçenin on katına kadar sürer ve yakıt deterministik olduğu için tek bir çalıştırma daha küçük her bütçedeki tam puanı verir: Bütçe görünümü sıralamanın daha fazla zamanla nasıl değiştiğini gösterir."
+    "budget": "Sıralama kısa bir yarışı ölçer: formül başına 7 milyar yakıt, yerel bir çözücünün yaklaşık yarım saniyesi; SAT Competition ise 5.000 saniye tanır. Kissat ve CaDiCaL gibi yoğun ön işleme ve iç işleme yapan çözücüler bunun bedelini karşılığını almadan öder, bu yüzden bu bütçede MiniSat'ın gerisinde kalırlar. Her çalıştırma bütçenin dört katına kadar sürer ve yakıt deterministik olduğu için tek bir çalıştırma daha küçük her bütçedeki tam puanı verir: Bütçe görünümü sıralamanın daha fazla zamanla nasıl değiştiğini gösterir."
   }
 }
