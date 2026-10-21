@@ -4,13 +4,14 @@ use common::{GenerateParams, Puzzle};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
+use super::recovery::{Fetch, Phase, Submission, error_feedback};
 use crate::api::{daily_leaderboard, daily_today};
 use crate::components::stamps::announce;
 use crate::model::{
     AttemptInfo, DailyInfo, Flag, Leaderboard, MoveEvent, SubmitResult, daily_difficulty,
     date_string,
 };
-use crate::state::{Game, Source, Status, error_toast, load, store};
+use crate::state::{Game, Source, Status, load, store};
 
 /// The move log of the running daily, kept in the browser so a reload doesn't lose it.
 pub(super) const LOG_KEY: &str = "hashi.daily.log";
@@ -75,6 +76,11 @@ pub struct Daily {
     pub(super) result: RwSignal<Option<SubmitResult>>,
     pub(super) ranking: RwSignal<Option<Leaderboard>>,
     pub(super) busy: RwSignal<bool>,
+    pub(super) metadata: Fetch,
+    pub(super) starting: Fetch,
+    pub(super) ranking_load: Fetch,
+    pub(super) submission: RwSignal<Phase>,
+    pub(super) submit_payload: StoredValue<Option<Submission>>,
     pub(super) logged: StoredValue<Option<MoveSnapshot>>,
     /// A quiet [`Self::refresh`] is on its way.
     pub(super) refreshing: StoredValue<bool>,
@@ -215,19 +221,31 @@ impl Daily {
     }
 
     pub(super) fn apply(&self, info: DailyInfo) {
+        let new_day = self.day().is_some_and(|day| day != info.day);
         self.skew.set(info.server_now - browser_now());
         self.show(info);
+        if new_day {
+            self.result.set(None);
+            self.ranking.set(None);
+            self.refresh_ranking();
+        }
     }
 
     /// Shows the server's state of today's daily. A board that still plays a daily the server
     /// has finished (in another tab) gets the finished board, locked. It never unlocks here:
-    /// a submit may be on its way, see [`Self::submit_failed`].
-    fn show(&self, info: DailyInfo) {
+    /// a submit may be on its way, see the owned submission recovery.
+    pub(super) fn show(&self, info: DailyInfo) {
         announce(&info.stamps);
         if let Some(puzzle) = &info.puzzle {
             let status = self.game.status.get_untracked();
             let loaded = status != Status::Empty
-                && !(finished(&info) && status == Status::Playing)
+                && !(finished(&info)
+                    && status
+                        != if info.attempt.as_ref().is_some_and(|a| a.revealed) {
+                            Status::Revealed
+                        } else {
+                            Status::Won
+                        })
                 && self.game.board.with_untracked(|b| b.puzzle == *puzzle);
             if !loaded {
                 self.load_puzzle(&info, puzzle);
@@ -236,35 +254,53 @@ impl Daily {
         self.info.set(Some(info));
     }
 
-    /// After a failed submit, with today's daily as the server sees it now (`None` if it
-    /// couldn't be asked). The finish may be saved despite the error (one after the update, or
-    /// another tab was first), so the board only unlocks if the server says the daily still
-    /// runs. Otherwise it stays solved and locked, a reload submits again.
-    pub(super) fn submit_failed(&self, server: Option<DailyInfo>) {
-        let Some(info) = server else { return };
-        if !finished(&info) {
-            self.game.status.set(Status::Playing);
-        }
-        self.show(info);
-    }
-
-    /// Fetches today's daily again, quietly, unless it's finished: back on the page after
-    /// playing it in another tab.
+    /// Focus refreshes stop on failure; only a named manual retry clears the error.
+    /// Unconfirmed solved boards can only be reconciled by the owned submission flow.
     pub(super) fn refresh(&self) {
-        let done = self
-            .info
-            .with_untracked(|i| i.as_ref().is_some_and(finished));
-        if done || self.refreshing.get_value() {
+        if self.finished()
+            || self.info.with_untracked(Option::is_none)
+            || self.game.status.get_untracked() == Status::Won
+            || self.busy.get_untracked()
+            || self.actions.locked()
+            || self.metadata.phase.get_untracked() == Phase::Error
+        {
             return;
         }
+        self.fetch_metadata(false);
+    }
+
+    pub(super) fn retry_metadata(&self) {
+        self.fetch_metadata(false);
+    }
+
+    fn fetch_metadata(&self, replace: bool) {
+        if !replace && self.game.status.get_untracked() == Status::Won && !self.finished() {
+            return;
+        }
+        let Some(request) = self.metadata.begin(replace) else {
+            return;
+        };
         self.refreshing.set_value(true);
         let this = *self;
         let guard = RefreshGuard::new(self);
         spawn_local(async move {
-            if let Ok(info) = daily_today().await
-                && guard.current(&this)
-            {
-                this.apply(info);
+            let response = daily_today().await;
+            if !this.metadata.current(request) {
+                return;
+            }
+            if guard.current(&this) {
+                match response {
+                    Ok(info) => {
+                        this.metadata.finish(request, false);
+                        this.apply(info);
+                    }
+                    Err(error) => {
+                        this.metadata.finish(request, true);
+                        error_feedback(&error);
+                    }
+                }
+            } else {
+                this.metadata.finish(request, false);
             }
             this.refreshing.try_set_value(false);
         });
@@ -289,34 +325,67 @@ impl Daily {
                 });
             }
             _ => {
-                game.restore_progress(puzzle);
+                if game.restore_progress(puzzle)
+                    && game
+                        .board
+                        .with_untracked(|b| game.bridges.with_untracked(|br| b.check(br).solved))
+                {
+                    // A reload cannot prove whether this solved board reached the server.
+                    // Restore it locked with explicit recovery, rather than editing or auto-send.
+                    game.status.set(Status::Won);
+                    self.submission.set(Phase::Error);
+                }
             }
         }
     }
 
     pub(super) fn refresh_ranking(&self) {
-        let ranking = self.ranking;
+        // A saved finish supersedes an older pending ranking response.
+        self.fetch_ranking(true);
+    }
+
+    pub(super) fn retry_ranking(&self) {
+        self.fetch_ranking(false);
+    }
+
+    fn fetch_ranking(&self, replace: bool) {
+        let Some(request) = self.ranking_load.begin(replace) else {
+            return;
+        };
+        let this = *self;
+        let user = self.actions.user();
+        let day = self.day();
         spawn_local(async move {
-            if let Ok(lb) = daily_leaderboard(None).await {
-                ranking.try_set(Some(lb));
+            let response = daily_leaderboard(day).await;
+            if !this.ranking_load.current(request) {
+                return;
+            }
+            // Ranking is independently owned: metadata/counter updates do not invalidate it.
+            if this.actions.user() == user && (day.is_none() || this.day() == day) {
+                match response {
+                    Ok(lb) => {
+                        this.ranking.set(Some(lb));
+                        this.ranking_load.finish(request, false);
+                    }
+                    Err(error) => {
+                        this.ranking_load.finish(request, true);
+                        error_feedback(&error);
+                    }
+                }
+            } else {
+                this.ranking_load.finish(request, false);
             }
         });
     }
 
     pub(super) fn reload(&self) {
-        let this = *self;
-        let guard = RefreshGuard::new(self);
-        spawn_local(async move {
-            let response = daily_today().await;
-            if !guard.current(&this) {
-                return;
-            }
-            match response {
-                Ok(info) => this.apply(info),
-                Err(e) => error_toast(e),
-            }
-        });
-        self.refresh_ranking();
+        self.busy.set(false);
+        self.starting.cancel();
+        self.submission.set(Phase::Idle);
+        self.submit_payload.set_value(None);
+        self.fetch_metadata(true);
+        self.ranking.set(None);
+        self.fetch_ranking(true);
     }
 
     pub(super) fn update_attempt(&self, f: impl FnOnce(&mut AttemptInfo)) {
@@ -503,6 +572,11 @@ mod tests {
             result: RwSignal::new(None),
             ranking: RwSignal::new(None),
             busy: RwSignal::new(false),
+            metadata: Fetch::new(),
+            starting: Fetch::new(),
+            ranking_load: Fetch::new(),
+            submission: RwSignal::new(Phase::Idle),
+            submit_payload: StoredValue::new(None),
             refreshing: StoredValue::new(false),
             logged: StoredValue::new(None),
         }
@@ -569,45 +643,13 @@ mod tests {
         });
     }
 
-    #[test]
-    fn a_failed_submit_the_server_saved_keeps_the_board_locked() {
-        tab(|d| {
-            board(d, vec![1], Status::Won);
-            d.submit_failed(Some(info(true)));
-            assert_eq!(d.game.status.get_untracked(), Status::Won);
-            assert!(d.finished());
-            assert!(!editable(d));
-        });
-    }
-
-    #[test]
-    fn a_failed_submit_keeps_the_board_locked_if_the_server_cant_tell() {
-        tab(|d| {
-            board(d, vec![1], Status::Won);
-            d.submit_failed(None);
-            assert_eq!(d.game.status.get_untracked(), Status::Won);
-            assert!(!editable(d));
-        });
-    }
-
-    #[test]
-    fn a_failed_submit_unlocks_the_board_while_the_daily_runs() {
-        tab(|d| {
-            board(d, vec![1], Status::Won);
-            d.submit_failed(Some(info(false)));
-            assert_eq!(d.game.status.get_untracked(), Status::Playing);
-            assert!(!d.finished());
-            assert!(editable(d));
-        });
-    }
-
     /// The attempt of today's daily, to change a field of it.
     fn attempt(info: &mut DailyInfo) -> &mut AttemptInfo {
         info.attempt.as_mut().unwrap()
     }
 
     #[test]
-    fn a_fresh_tab_picks_up_the_running_daily_where_it_was_left() {
+    fn a_fresh_tab_restores_an_unconfirmed_solved_daily_locked_for_retry() {
         tab(|d| {
             // The board as the last tab saved it
             let before = Game::new("test.daily");
@@ -616,7 +658,8 @@ mod tests {
             before.save();
 
             d.show(info(false));
-            assert_eq!(d.game.status.get_untracked(), Status::Playing);
+            assert_eq!(d.game.status.get_untracked(), Status::Won);
+            assert_eq!(d.submission.get_untracked(), Phase::Error);
             assert_eq!(d.game.bridges.get_untracked(), vec![1]);
             assert_eq!(d.game.moves.get_untracked(), 1);
             assert_eq!(

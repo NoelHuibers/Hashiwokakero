@@ -50,5 +50,14 @@
     "pace": "Clics tan rápidos, una y otra vez, parecen de un programa, así que este resultado no entra en la clasificación.",
     "second_account": "Este dispositivo ya abrió el reto diario de hoy con otra cuenta, así que este resultado no entra en la clasificación. Juega cada reto diario con una sola cuenta.",
     "review": "Este resultado se retiró de la clasificación tras una revisión."
+  },
+  "recovery": {
+    "metadata_error": "No se pudo cargar el puzle de hoy. Inténtalo de nuevo.",
+    "metadata_retry": "Reintentar puzle",
+    "ranking_error": "No se pudo cargar la clasificación. Inténtalo de nuevo.",
+    "ranking_retry": "Reintentar clasificación",
+    "submit_pending": "Guardando tu resultado…",
+    "submit_error": "No se pudo confirmar tu resultado. Tu tablero resuelto está a salvo. Reintenta para comprobarlo y guardarlo.",
+    "submit_retry": "Reintentar resultado"
   }
 }

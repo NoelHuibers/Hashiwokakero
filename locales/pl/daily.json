@@ -50,5 +50,14 @@
     "pace": "Tak szybkie kliknięcia, raz za razem, wyglądają na program, więc ten wynik nie trafia do rankingu.",
     "second_account": "Na tym urządzeniu dzisiejsza łamigłówka dnia była już otwarta na innym koncie, więc ten wynik nie trafia do rankingu. Graj w każdą łamigłówkę dnia na jednym koncie.",
     "review": "Ten wynik został usunięty z rankingu po weryfikacji."
+  },
+  "recovery": {
+    "metadata_error": "Nie udało się wczytać dzisiejszej łamigłówki. Spróbuj ponownie.",
+    "metadata_retry": "Ponów łamigłówkę",
+    "ranking_error": "Nie udało się wczytać rankingu. Spróbuj ponownie.",
+    "ranking_retry": "Ponów ranking",
+    "submit_pending": "Zapisywanie wyniku…",
+    "submit_error": "Nie udało się potwierdzić wyniku. Rozwiązana plansza jest bezpieczna. Ponów próbę, aby sprawdzić i zapisać wynik.",
+    "submit_retry": "Ponów wynik"
   }
 }

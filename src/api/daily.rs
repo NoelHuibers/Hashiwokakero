@@ -155,6 +155,51 @@ pub async fn submit_daily(
     daily::submit(&conn, user.id, day, bridges, moves, log, utc_offset).await
 }
 
+/// Explicit ownership assertion for the recovery-capable endpoints. Legacy requests keep
+/// their original formats; cookies alone cannot identify the board displayed in another tab.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct DailyOwner {
+    pub user: i64,
+    pub attempt: String,
+}
+
+/// Read the captured day, including after midnight, only for the exact authenticated attempt.
+#[server(input = Json, client = HashiClient)]
+pub async fn daily_attempt_info(day: i64, owner: DailyOwner) -> Result<DailyInfo, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    if user.id != owner.user {
+        return Err(crate::model::ApiError::SessionExpired.into());
+    }
+    daily::owned_info(&conn, user.id, day, &owner.attempt).await
+}
+
+/// Guarded submission replays an already saved success without changing its finish or log.
+#[server(input = Json, client = HashiClient)]
+pub async fn submit_daily_attempt(
+    day: i64,
+    bridges: Vec<u8>,
+    moves: u32,
+    log: Vec<MoveEvent>,
+    utc_offset: Option<i32>,
+    owner: DailyOwner,
+) -> Result<SubmitResult, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    if user.id != owner.user {
+        return Err(crate::model::ApiError::SessionExpired.into());
+    }
+    daily::submit_owned(
+        &conn,
+        user.id,
+        day,
+        bridges,
+        moves,
+        log,
+        utc_offset,
+        &owner.attempt,
+    )
+    .await
+}
+
 /// The ranking of a day, today if `day` is `None`.
 #[server(input = Json, client = HashiClient)]
 pub async fn daily_leaderboard(day: Option<i64>) -> Result<Leaderboard, ServerFnError> {

@@ -50,5 +50,14 @@
     "pace": "Clicks this fast, again and again, look like a program, so this result isn't ranked.",
     "second_account": "This device already opened today's daily with another account, so this result isn't ranked. Play each daily with one account.",
     "review": "This result was taken off the leaderboard after a review."
+  },
+  "recovery": {
+    "metadata_error": "Couldn't load today's puzzle. Try again.",
+    "metadata_retry": "Retry puzzle",
+    "ranking_error": "Couldn't load the ranking. Try again.",
+    "ranking_retry": "Retry ranking",
+    "submit_pending": "Saving your result…",
+    "submit_error": "Your result could not be confirmed. Your solved board is safe. Retry to check and save it.",
+    "submit_retry": "Retry result"
   }
 }

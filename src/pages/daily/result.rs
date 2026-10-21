@@ -12,7 +12,9 @@ use crate::lang::{difficulty_name, localized};
 use crate::model::{Flag, WEEKDAY_KANJI, daily_number, format_duration, points, weekday};
 use crate::state::{Auth, Status};
 
+use super::recovery::Phase;
 use super::state::Daily;
+use crate::components::ui::button::{Button, ButtonVariant};
 
 #[component]
 pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
@@ -110,7 +112,8 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
                             {move || match (daily.flag(), place()) {
                                 (Some(_), _) => t_string!(i18n, daily.flag.title).to_string(),
                                 (None, Some((rank, total))) => t_string!(i18n, daily.result.rank, rank, total),
-                                (None, None) => t_string!(i18n, daily.result.ranking).to_string(),
+                                (None, None) if daily.finished() && daily.ranking_load.phase.get() != Phase::Error => t_string!(i18n, daily.result.ranking).to_string(),
+                                (None, None) => String::new(),
                             }}
                         </p>
                         {move || {
@@ -128,8 +131,20 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
                         .into_any()
                 }
             }}
+            <div role="status" aria-live="polite" data-testid="daily-submit-status"
+                class:hidden=move || daily.submission.get() == Phase::Idle>
+                <Show when=move || daily.submission.get() == Phase::Pending>
+                    <p>{t!(i18n, daily.recovery.submit_pending)}</p>
+                </Show>
+                <Show when=move || daily.submission.get() == Phase::Error>
+                    <p>{t!(i18n, daily.recovery.submit_error)}</p>
+                    <Button variant=ButtonVariant::Outline on:click=move |_| daily.submit(true)>
+                        {t!(i18n, daily.recovery.submit_retry)}
+                    </Button>
+                </Show>
+            </div>
             <div class="flex w-full flex-col gap-2">
-                <ShareBar text=share_text />
+                <Show when=move || daily.finished()><ShareBar text=share_text /></Show>
                 <A
                     href=practice
                     attr:class="inline-flex min-h-10 items-center justify-center text-sm text-primary underline-offset-4 hover:underline"
@@ -140,6 +155,7 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
             {move || {
                 auth.user
                     .get()
+                    .filter(|_| daily.finished())
                     .filter(|u| u.guest)
                     .map(|u| {
                         view! {

@@ -50,5 +50,14 @@
     "pace": "Tekrar tekrar bu kadar hızlı tıklamalar bir programa benziyor, bu yüzden bu sonuç sıralamaya girmiyor.",
     "second_account": "Bu cihaz bugünün günlük bulmacasını başka bir hesapla zaten açtı, bu yüzden bu sonuç sıralamaya girmiyor. Her günlük bulmacayı tek bir hesapla oyna.",
     "review": "Bu sonuç bir incelemenin ardından sıralamadan kaldırıldı."
+  },
+  "recovery": {
+    "metadata_error": "Bugünün bulmacası yüklenemedi. Tekrar deneyin.",
+    "metadata_retry": "Bulmacayı yeniden dene",
+    "ranking_error": "Sıralama yüklenemedi. Tekrar deneyin.",
+    "ranking_retry": "Sıralamayı yeniden dene",
+    "submit_pending": "Sonucunuz kaydediliyor…",
+    "submit_error": "Sonucunuz doğrulanamadı. Çözülmüş tahtanız güvende. Kontrol edip kaydetmek için tekrar deneyin.",
+    "submit_retry": "Sonucu yeniden dene"
   }
 }

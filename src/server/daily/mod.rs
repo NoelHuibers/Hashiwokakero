@@ -9,8 +9,8 @@ mod stats;
 mod tests;
 
 pub use attempt::{
-    attempt, check, finishers, hint, info, locked, paid_action, recover_actions, reveal, set_flag,
-    start, submit,
+    attempt, check, finishers, hint, info, locked, owned_info, paid_action, recover_actions,
+    reveal, set_flag, start, submit, submit_owned,
 };
 pub use fame::{hall_of_fame, month_board};
 pub use leaderboard::leaderboard;

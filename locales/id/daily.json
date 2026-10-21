@@ -50,5 +50,14 @@
     "pace": "Klik secepat ini, berulang-ulang, terlihat seperti program, jadi hasil ini tidak masuk peringkat.",
     "second_account": "Perangkat ini sudah membuka teka-teki harian hari ini dengan akun lain, jadi hasil ini tidak masuk peringkat. Mainkan setiap teka-teki harian dengan satu akun saja.",
     "review": "Hasil ini dihapus dari papan peringkat setelah ditinjau."
+  },
+  "recovery": {
+    "metadata_error": "Teka-teki hari ini gagal dimuat. Coba lagi.",
+    "metadata_retry": "Coba lagi teka-teki",
+    "ranking_error": "Peringkat gagal dimuat. Coba lagi.",
+    "ranking_retry": "Coba lagi peringkat",
+    "submit_pending": "Menyimpan hasilmu…",
+    "submit_error": "Hasilmu belum dapat dipastikan. Papan yang sudah diselesaikan tetap aman. Coba lagi untuk memeriksa dan menyimpannya.",
+    "submit_retry": "Coba lagi hasil"
   }
 }

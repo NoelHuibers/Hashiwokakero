@@ -8,7 +8,9 @@ use crate::components::leaderboard::LeaderboardTable;
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, use_i18n};
 
+use super::recovery::Phase;
 use super::state::Daily;
+use crate::components::ui::button::{Button, ButtonVariant};
 
 #[component]
 pub(super) fn RankingCard(daily: Daily) -> impl IntoView {
@@ -32,11 +34,22 @@ pub(super) fn RankingCard(daily: Daily) -> impl IntoView {
                     {move || {
                         daily
                             .ranking
-                            .with(|lb| lb.as_ref().map(|lb| lb.finishers)).map_or_else(|| t_string!(i18n, common.game.loading).to_string(), |count| t_string!(i18n, daily.ranking.crossed, count))
+                            .with(|lb| lb.as_ref().map(|lb| lb.finishers)).map_or_else(String::new, |count| t_string!(i18n, daily.ranking.crossed, count))
                     }}
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                <div role="status" aria-live="polite" data-testid="daily-ranking-status">
+                    <Show when=move || daily.ranking_load.phase.get() == Phase::Pending || (daily.ranking.with(Option::is_none) && daily.ranking_load.phase.get() != Phase::Error)>
+                        <p>{t!(i18n, common.game.loading)}</p>
+                    </Show>
+                    <Show when=move || daily.ranking_load.phase.get() == Phase::Error>
+                        <p>{t!(i18n, daily.recovery.ranking_error)}</p>
+                        <Button variant=ButtonVariant::Outline on:click=move |_| daily.retry_ranking()>
+                            {t!(i18n, daily.recovery.ranking_retry)}
+                        </Button>
+                    </Show>
+                </div>
                 {move || {
                     daily
                         .ranking

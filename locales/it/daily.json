@@ -50,5 +50,14 @@
     "pace": "Clic così veloci, uno dopo l’altro, sembrano un programma, quindi questo risultato non entra in classifica.",
     "second_account": "Questo dispositivo ha già aperto la sfida del giorno con un altro account, quindi questo risultato non entra in classifica. Gioca ogni sfida del giorno con un solo account.",
     "review": "Questo risultato è stato rimosso dalla classifica dopo una verifica."
+  },
+  "recovery": {
+    "metadata_error": "Impossibile caricare il rompicapo di oggi. Riprova.",
+    "metadata_retry": "Riprova rompicapo",
+    "ranking_error": "Impossibile caricare la classifica. Riprova.",
+    "ranking_retry": "Riprova classifica",
+    "submit_pending": "Salvataggio del risultato…",
+    "submit_error": "Il risultato non è stato confermato. La griglia risolta è al sicuro. Riprova per verificarlo e salvarlo.",
+    "submit_retry": "Riprova risultato"
   }
 }

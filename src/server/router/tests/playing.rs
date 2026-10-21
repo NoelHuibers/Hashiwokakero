@@ -545,3 +545,62 @@ async fn lost_paid_replies_recover_over_http_after_guest_login_but_never_switch_
     assert_eq!(registered.id, original.id);
     assert_eq!(claiming.call(purchase()).await.unwrap(), accepted);
 }
+
+#[tokio::test]
+async fn recovery_endpoints_require_the_displayed_user_and_stable_attempt() {
+    use crate::api::{DailyAttemptInfo, DailyOwner, SubmitDailyAttempt};
+
+    let server = Server::start().await;
+    let browser = server.browser();
+    let info = browser.call(StartDaily { device: None }).await.unwrap();
+    let user = browser.call(CurrentUser {}).await.unwrap().unwrap().id;
+    let identity = info.attempt.unwrap().attempt_id;
+    for owner in [
+        DailyOwner {
+            user: user + 1,
+            attempt: identity.clone(),
+        },
+        DailyOwner {
+            user,
+            attempt: "different-attempt".into(),
+        },
+    ] {
+        assert_eq!(
+            api_error(
+                browser
+                    .call(DailyAttemptInfo {
+                        day: info.day,
+                        owner: owner.clone()
+                    })
+                    .await
+            ),
+            ApiError::SessionExpired
+        );
+        assert_eq!(
+            api_error(
+                browser
+                    .call(SubmitDailyAttempt {
+                        day: info.day,
+                        bridges: vec![],
+                        moves: 0,
+                        log: vec![],
+                        utc_offset: None,
+                        owner,
+                    })
+                    .await
+            ),
+            ApiError::SessionExpired
+        );
+    }
+    let confirmed = browser
+        .call(DailyAttemptInfo {
+            day: info.day,
+            owner: DailyOwner {
+                user,
+                attempt: identity,
+            },
+        })
+        .await
+        .unwrap();
+    assert!(!confirmed.attempt.unwrap().finished());
+}

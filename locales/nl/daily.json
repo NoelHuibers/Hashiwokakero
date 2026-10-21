@@ -50,5 +50,14 @@
     "pace": "Zulke snelle klikken, keer op keer, lijken op een programma, dus dit resultaat telt niet mee voor de ranglijst.",
     "second_account": "Op dit apparaat is de dagpuzzel van vandaag al met een ander account geopend, dus dit resultaat telt niet mee voor de ranglijst. Speel elke dagpuzzel met één account.",
     "review": "Dit resultaat is na een controle uit de ranglijst gehaald."
+  },
+  "recovery": {
+    "metadata_error": "De puzzel van vandaag kon niet worden geladen. Probeer opnieuw.",
+    "metadata_retry": "Puzzel opnieuw laden",
+    "ranking_error": "De ranglijst kon niet worden geladen. Probeer opnieuw.",
+    "ranking_retry": "Ranglijst opnieuw laden",
+    "submit_pending": "Je resultaat wordt opgeslagen…",
+    "submit_error": "Je resultaat kon niet worden bevestigd. Je opgeloste bord is veilig. Probeer opnieuw om het te controleren en op te slaan.",
+    "submit_retry": "Resultaat opnieuw proberen"
   }
 }

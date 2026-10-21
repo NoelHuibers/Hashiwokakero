@@ -50,5 +50,14 @@
     "pace": "Những cú nhấp nhanh như vậy, lặp đi lặp lại, trông giống một chương trình, nên kết quả này không được xếp hạng.",
     "second_account": "Thiết bị này đã mở câu đố hôm nay bằng một tài khoản khác, nên kết quả này không được xếp hạng. Hãy chơi mỗi câu đố hằng ngày bằng một tài khoản.",
     "review": "Kết quả này đã bị gỡ khỏi bảng xếp hạng sau khi xem xét."
+  },
+  "recovery": {
+    "metadata_error": "Không thể tải câu đố hôm nay. Hãy thử lại.",
+    "metadata_retry": "Thử lại câu đố",
+    "ranking_error": "Không thể tải bảng xếp hạng. Hãy thử lại.",
+    "ranking_retry": "Thử lại bảng xếp hạng",
+    "submit_pending": "Đang lưu kết quả…",
+    "submit_error": "Chưa thể xác nhận kết quả. Bàn đã giải của bạn vẫn an toàn. Hãy thử lại để kiểm tra và lưu.",
+    "submit_retry": "Thử lại kết quả"
   }
 }

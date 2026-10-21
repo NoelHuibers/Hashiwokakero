@@ -89,6 +89,28 @@ pub async fn info(
     })
 }
 
+/// Validate and read under one lock: a guest transfer or replacement cannot interleave.
+pub async fn owned_info(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    expected: &str,
+) -> Result<DailyInfo, ServerFnError> {
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    let current = attempt(&tx, user, day)
+        .await?
+        .ok_or_else(|| ApiError::SessionExpired.fail())?;
+    if expected.is_empty() || current.attempt_id != expected {
+        return Err(ApiError::SessionExpired.into());
+    }
+    let info = info(&tx, Some(user), day).await?;
+    tx.commit().await.map_err(db_err)?;
+    Ok(info)
+}
+
 /// Starts the clock (once) and returns the puzzle.
 ///
 /// `device` is a random id the browser keeps: if the same device already started this daily
@@ -402,11 +424,71 @@ pub async fn submit(
     log: Vec<MoveEvent>,
     utc_offset: Option<i32>,
 ) -> Result<SubmitResult, ServerFnError> {
+    submit_inner(conn, user, day, bridges, moves, log, utc_offset, None).await
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Legacy submission fields plus the stable attempt assertion"
+)]
+pub async fn submit_owned(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+    moves: u32,
+    log: Vec<MoveEvent>,
+    utc_offset: Option<i32>,
+    expected: &str,
+) -> Result<SubmitResult, ServerFnError> {
+    submit_inner(
+        conn,
+        user,
+        day,
+        bridges,
+        moves,
+        log,
+        utc_offset,
+        Some(expected),
+    )
+    .await
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Shared legacy and guarded submission transaction"
+)]
+async fn submit_inner(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+    moves: u32,
+    log: Vec<MoveEvent>,
+    utc_offset: Option<i32>,
+    expected: Option<&str>,
+) -> Result<SubmitResult, ServerFnError> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .await
         .map_err(db_err)?;
-    let attempt = running(&tx, user, day).await?;
+    let attempt = attempt(&tx, user, day)
+        .await?
+        .ok_or_else(|| ApiError::NotStarted.fail())?;
+    if expected.is_some_and(|id| id.is_empty() || id != attempt.attempt_id) {
+        return Err(ApiError::SessionExpired.into());
+    }
+    if attempt.finished() {
+        if expected.is_some() && !attempt.revealed && attempt.bridges.as_ref() == Some(&bridges) {
+            let time_ms = attempt.time_ms.ok_or_else(|| ApiError::Internal.fail())?;
+            let finished_at = attempt
+                .finished_at
+                .ok_or_else(|| ApiError::Internal.fail())?;
+            tx.commit().await.map_err(db_err)?;
+            return submission_result(conn, user, day, time_ms, finished_at, attempt.flag).await;
+        }
+        return Err(ApiError::AlreadyFinished.into());
+    }
     let daily = get_or_create(&tx, day).await?;
     let board = Board::new(daily.puzzle);
     check_bridges(&board, &bridges)?;
@@ -454,6 +536,17 @@ pub async fn submit(
     }
     tx.commit().await.map_err(db_err)?;
     super::stats::invalidate();
+    submission_result(conn, user, day, time_ms, finished_at, flag).await
+}
+
+async fn submission_result(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    time_ms: i64,
+    finished_at: i64,
+    flag: Option<Flag>,
+) -> Result<SubmitResult, ServerFnError> {
     Ok(SubmitResult {
         time_ms,
         rank: if flag.is_some() {

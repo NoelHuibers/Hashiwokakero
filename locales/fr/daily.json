@@ -50,5 +50,14 @@
     "pace": "Des clics aussi rapides, encore et encore, ressemblent à un programme, ce résultat n’est donc pas classé.",
     "second_account": "Cet appareil a déjà ouvert le défi du jour avec un autre compte, ce résultat n’est donc pas classé. Joue chaque défi du jour avec un seul compte.",
     "review": "Ce résultat a été retiré du classement après vérification."
+  },
+  "recovery": {
+    "metadata_error": "Impossible de charger le puzzle du jour. Réessayez.",
+    "metadata_retry": "Réessayer le puzzle",
+    "ranking_error": "Impossible de charger le classement. Réessayez.",
+    "ranking_retry": "Réessayer le classement",
+    "submit_pending": "Enregistrement du résultat…",
+    "submit_error": "Votre résultat n’a pas pu être confirmé. Votre grille résolue est conservée. Réessayez pour le vérifier et l’enregistrer.",
+    "submit_retry": "Réessayer le résultat"
   }
 }
