@@ -814,6 +814,7 @@ test('a delayed submit response cannot touch a disposed daily page', async ({ pa
 test('a transient metadata refresh failure preserves running bridges and allows manual recovery', async ({ page }) => {
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
+  await page.waitForLoadState('networkidle'); // settle the guest identity refresh before intercepting reads
   await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
   const before = await saved(page, DAILY_KEY);
   let reads = 0;
