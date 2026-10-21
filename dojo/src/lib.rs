@@ -78,7 +78,7 @@ pub const DEFAULT_BUDGET: u64 = 7_000_000_000;
 /// where solvers with heavy inprocessing can't make up for its cost yet. Fuel is deterministic,
 /// so a run that goes on gives the result at every smaller budget too (see [`Outcome::at`]),
 /// and the leaderboard shows how the ranking changes with more time. Ten times: that is where
-/// Kissat overtakes MiniSat on most hidden sets, and a solver that solves nothing still needs
+/// Kissat overtakes `MiniSat` on most hidden sets, and a solver that solves nothing still needs
 /// only five to ten minutes on the worker for a whole set, within the quarter of an hour after
 /// which the website gives an evaluation up as lost (dojo/CALIBRATION.md, "Larger budgets").
 pub const BUDGET_FACTOR: u64 = 10;
