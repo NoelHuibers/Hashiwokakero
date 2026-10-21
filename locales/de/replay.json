@@ -1,0 +1,71 @@
+{
+  "title": "Wiederholungstheater",
+  "own_title": "Deine Lösung",
+  "watch": "Alle Lösungen ansehen",
+  "watch_mine": "Deine Lösung ansehen",
+  "duel": "Du gegen {{ name }}: Wiederholung ansehen",
+  "flag": "{{ name }} war nach {{ time }} fertig",
+  "missing": "Hier gibt es nichts zu wiederholen.",
+  "card": {
+    "title": "Wiederholungstheater",
+    "text": "Seht euch alle Lösungen gleichzeitig an, Brücke für Brücke, jede in ihrer Farbe.",
+    "locked": "Löse die heutige Brücke des Tages, um die heutigen Lösungen zu sehen.",
+    "earlier": "Frühere Tage"
+  },
+  "page": {
+    "daily": "Brücke des Tages #{{ number }} · {{ date }}",
+    "earlier": "Der Tag davor",
+    "later": "Der Tag danach",
+    "back_daily": "Brücke des Tages"
+  },
+  "locked": {
+    "title": "Nicht spicken!",
+    "text": "Die heutigen Wiederholungen öffnen sich, sobald du das heutige Rätsel selbst beendet hast.",
+    "play": "Tagesrätsel spielen"
+  },
+  "empty": {
+    "title": "Keine Lösungen zum Ansehen",
+    "text": "An diesem Tag wurden keine Züge aufgezeichnet. Versuch einen anderen."
+  },
+  "stage": {
+    "label": "Das Brett der Brücke des Tages #{{ number }} mit den Brücken von {{ names }}"
+  },
+  "controls": {
+    "play": "Abspielen",
+    "pause": "Pause",
+    "again": "Noch einmal ansehen",
+    "next": "Nächster Zug",
+    "previous": "Vorheriger Zug",
+    "speed": "Tempo",
+    "speed_n": "{{ n }}-fach schnell",
+    "layout": "Ansicht",
+    "together": "Zusammen",
+    "apart": "Nebeneinander",
+    "timeline": "Zeitleiste",
+    "position": "{{ time }} von {{ end }}",
+    "keys": "Leertaste spielt und pausiert, ← → gehen von Zug zu Zug, Umschalt mit einem Pfeil springt 10 Sekunden.",
+    "still": "Reduzierte Bewegung ist an: Die Wiederholung wartet auf dich. Geh mit ← → Schritt für Schritt oder drück auf Abspielen."
+  },
+  "legend": {
+    "title": "Spieler",
+    "everyone": "Alle",
+    "just_me": "Nur ich",
+    "show": "{{ name }} zeigen",
+    "hide": "{{ name }} ausblenden",
+    "gave_up": "aufgegeben",
+    "missing": "nicht fertig",
+    "no_log": "keine Züge aufgezeichnet",
+    "unranked": "nicht gewertet",
+    "unranked_hint": "Nicht in der Rangliste: Dieses Ergebnis wurde markiert.",
+    "progress": "{{ name }}: {{ percent }} % der Brücken"
+  },
+  "finish": {
+    "title": "Ziellinie",
+    "none": "Noch niemand im Ziel …",
+    "official": "{{ time }} mit Strafzeit"
+  },
+  "marks": {
+    "hint": "{{ name }} hat bei {{ time }} einen Tipp genommen",
+    "check": "{{ name }} hat bei {{ time }} geprüft"
+  }
+}

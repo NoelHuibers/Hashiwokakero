@@ -14,6 +14,7 @@ pub mod invite;
 pub mod join;
 pub mod list;
 pub mod members;
+pub mod replay;
 pub mod today;
 pub mod week;
 
@@ -37,6 +38,7 @@ use banzuke::BanzukeCard;
 use create::{CreateCard, ReadyCard};
 use list::GroupList;
 use members::MembersCard;
+use replay::ReplayCard;
 use today::TodayCard;
 use week::WeekCard;
 
@@ -236,6 +238,7 @@ fn GroupView(group: GroupContext) -> impl IntoView {
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
             <div class="flex min-w-0 flex-col gap-6">
                 <TodayCard group />
+                <ReplayCard group />
                 <WeekCard group />
                 <BanzukeCard group crowns />
             </div>

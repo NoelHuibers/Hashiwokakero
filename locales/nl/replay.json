@@ -1,0 +1,71 @@
+{
+  "title": "Herhalingstheater",
+  "own_title": "Jouw oplossing",
+  "watch": "Bekijk ieders oplossing",
+  "watch_mine": "Bekijk jouw oplossing",
+  "duel": "Jij tegen {{ name }}: bekijk de herhaling",
+  "flag": "{{ name }} was klaar na {{ time }}",
+  "missing": "Hier valt niets te herhalen.",
+  "card": {
+    "title": "Herhalingstheater",
+    "text": "Bekijk alle oplossingen tegelijk, brug voor brug, ieder in een eigen kleur.",
+    "locked": "Maak de dagpuzzel van vandaag af om de oplossingen van vandaag te zien.",
+    "earlier": "Eerdere dagen"
+  },
+  "page": {
+    "daily": "Brug van de dag #{{ number }} · {{ date }}",
+    "earlier": "De dag ervoor",
+    "later": "De dag erna",
+    "back_daily": "De dagpuzzel"
+  },
+  "locked": {
+    "title": "Niet spieken!",
+    "text": "De herhalingen van vandaag gaan open zodra je de dagpuzzel van vandaag zelf hebt afgemaakt.",
+    "play": "Speel de dagpuzzel van vandaag"
+  },
+  "empty": {
+    "title": "Geen oplossingen om te bekijken",
+    "text": "Op deze dag zijn geen zetten opgeslagen. Probeer een andere dag."
+  },
+  "stage": {
+    "label": "Het bord van brug van de dag #{{ number }} met de bruggen van {{ names }}"
+  },
+  "controls": {
+    "play": "Afspelen",
+    "pause": "Pauze",
+    "again": "Opnieuw bekijken",
+    "next": "Volgende zet",
+    "previous": "Vorige zet",
+    "speed": "Snelheid",
+    "speed_n": "{{ n }} keer zo snel",
+    "layout": "Weergave",
+    "together": "Samen",
+    "apart": "Naast elkaar",
+    "timeline": "Tijdlijn",
+    "position": "{{ time }} van {{ end }}",
+    "keys": "Spatie speelt en pauzeert, ← → gaan van zet naar zet, Shift met een pijl springt 10 seconden.",
+    "still": "Beperkte beweging staat aan: de herhaling wacht op jou. Stap met ← → of druk op afspelen."
+  },
+  "legend": {
+    "title": "Spelers",
+    "everyone": "Iedereen",
+    "just_me": "Alleen ik",
+    "show": "{{ name }} tonen",
+    "hide": "{{ name }} verbergen",
+    "gave_up": "opgegeven",
+    "missing": "niet klaar",
+    "no_log": "geen zetten opgeslagen",
+    "unranked": "niet gerangschikt",
+    "unranked_hint": "Niet in de ranglijst: dit resultaat is gemarkeerd.",
+    "progress": "{{ name }}: {{ percent }}% van de bruggen"
+  },
+  "finish": {
+    "title": "Finish",
+    "none": "Nog niemand over de streep…",
+    "official": "{{ time }} met strafseconden"
+  },
+  "marks": {
+    "hint": "{{ name }} nam een hint op {{ time }}",
+    "check": "{{ name }} controleerde op {{ time }}"
+  }
+}

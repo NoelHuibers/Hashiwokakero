@@ -25,12 +25,14 @@ use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 19] = [
+const PAGES: [(&str, &str); 21] = [
     ("/", "/"),
     ("/practice", "/practice"),
     ("/ranks", "/ranks"),
     ("/groups", "/groups"),
     ("/groups/{id}", "/groups/1"),
+    ("/groups/{id}/replay/{day}", "/groups/1/replay/20747"),
+    ("/replay/{day}", "/replay/20747"),
     ("/g/{code}", "/g/abcdefgh23"),
     // Nobody, user ids start at 1
     ("/player/{id}", "/player/0"),
@@ -211,6 +213,31 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, groups.page.not_found),
             ]),
             nav: Some("/groups"),
+            ..Expected::default()
+        },
+        // The logs are only for members, and today's only once done: the browser asks
+        "/groups/{id}/replay/{day}" => Expected {
+            title: Some(hashi(td_string!(l, replay.title))),
+            texts: strings([
+                td_string!(l, replay.title),
+                td_string!(l, groups.page.back),
+                loading,
+            ]),
+            absent: strings([
+                td_string!(l, replay.locked.title),
+                td_string!(l, replay.legend.title),
+            ]),
+            nav: Some("/groups"),
+            ..Expected::default()
+        },
+        "/replay/{day}" => Expected {
+            title: Some(hashi(td_string!(l, replay.own_title))),
+            texts: strings([
+                td_string!(l, replay.own_title),
+                td_string!(l, replay.page.back_daily),
+                loading,
+            ]),
+            absent: strings([td_string!(l, replay.locked.title)]),
             ..Expected::default()
         },
         // The invite link joins nobody by being opened

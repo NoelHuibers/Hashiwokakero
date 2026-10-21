@@ -13,6 +13,7 @@ use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::GroupToday;
 use crate::pages::groups::today::TodayBoard;
+use crate::pages::replay::replay_path;
 use crate::state::Auth;
 
 use super::recovery::Phase;
@@ -140,14 +141,27 @@ pub(super) fn RankingCard(daily: Daily) -> impl IntoView {
                 <div role="tabpanel">
                     {move || match board() {
                         Some(b) => {
-                            let id = b.group_id;
+                            let (id, day, open) = (b.group_id, b.day, b.open);
                             let href = move || format!("{}/groups/{id}", prefix(i18n.get_locale()));
+                            let replay = move || format!("{}{}", prefix(i18n.get_locale()), replay_path(id, day, None));
                             view! {
                                 <div class="flex flex-col gap-2">
                                     <TodayBoard board=b me=me() />
-                                    <A href=href attr:class="w-fit text-xs text-primary underline-offset-4 hover:underline">
-                                        {t!(i18n, groups.daily.open)} " →"
-                                    </A>
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <A href=href attr:class="w-fit text-xs text-primary underline-offset-4 hover:underline">
+                                            {t!(i18n, groups.daily.open)} " →"
+                                        </A>
+                                        {open.then(|| view! {
+                                            <A
+                                                href=replay
+                                                attr:class="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
+                                                attr:data-testid="watch-group"
+                                            >
+                                                <span aria-hidden="true">"▶"</span>
+                                                {t!(i18n, replay.watch)}
+                                            </A>
+                                        })}
+                                    </div>
                                 </div>
                             }
                                 .into_any()

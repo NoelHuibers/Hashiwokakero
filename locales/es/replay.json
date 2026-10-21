@@ -1,0 +1,71 @@
+{
+  "title": "Teatro de repeticiones",
+  "own_title": "Tu partida",
+  "watch": "Ver las partidas de todos",
+  "watch_mine": "Ver tu partida",
+  "duel": "Tú contra {{ name }}: ver la repetición",
+  "flag": "{{ name }} terminó en {{ time }}",
+  "missing": "Aquí no hay nada que repetir.",
+  "card": {
+    "title": "Teatro de repeticiones",
+    "text": "Mirad todas las partidas a la vez, puente a puente, cada una en su color.",
+    "locked": "Termina el reto de hoy para ver las partidas de hoy.",
+    "earlier": "Días anteriores"
+  },
+  "page": {
+    "daily": "Puente del día n.º {{ number }} · {{ date }}",
+    "earlier": "El día anterior",
+    "later": "El día siguiente",
+    "back_daily": "El reto de hoy"
+  },
+  "locked": {
+    "title": "¡Nada de espiar!",
+    "text": "Las repeticiones de hoy se abren cuando hayas terminado tú el reto de hoy.",
+    "play": "Jugar el reto de hoy"
+  },
+  "empty": {
+    "title": "No hay partidas que ver",
+    "text": "Ese día no se registró ningún movimiento. Prueba otro día."
+  },
+  "stage": {
+    "label": "El tablero del puente del día n.º {{ number }} con los puentes de {{ names }}"
+  },
+  "controls": {
+    "play": "Reproducir",
+    "pause": "Pausa",
+    "again": "Ver otra vez",
+    "next": "Siguiente movimiento",
+    "previous": "Movimiento anterior",
+    "speed": "Velocidad",
+    "speed_n": "{{ n }} veces más rápido",
+    "layout": "Vista",
+    "together": "Juntos",
+    "apart": "Lado a lado",
+    "timeline": "Línea de tiempo",
+    "position": "{{ time }} de {{ end }}",
+    "keys": "Espacio reproduce y pausa, ← → van de movimiento en movimiento, Mayús con una flecha salta 10 segundos.",
+    "still": "Movimiento reducido activado: la repetición te espera. Avanza con ← → o pulsa reproducir."
+  },
+  "legend": {
+    "title": "Jugadores",
+    "everyone": "Todos",
+    "just_me": "Solo yo",
+    "show": "Mostrar a {{ name }}",
+    "hide": "Ocultar a {{ name }}",
+    "gave_up": "se rindió",
+    "missing": "no terminó",
+    "no_log": "sin movimientos registrados",
+    "unranked": "sin clasificar",
+    "unranked_hint": "No está en la clasificación: este resultado fue marcado.",
+    "progress": "{{ name }}: {{ percent }} % de los puentes"
+  },
+  "finish": {
+    "title": "Meta",
+    "none": "Nadie ha llegado todavía…",
+    "official": "{{ time }} con penalizaciones"
+  },
+  "marks": {
+    "hint": "{{ name }} pidió una pista en {{ time }}",
+    "check": "{{ name }} comprobó en {{ time }}"
+  }
+}

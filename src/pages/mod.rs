@@ -10,6 +10,7 @@ pub mod legal;
 pub mod play;
 pub mod player;
 pub mod ranks;
+pub mod replay;
 pub mod rules;
 
 use common::Puzzle;

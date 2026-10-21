@@ -21,6 +21,7 @@ use crate::pages::legal::{ImpressumPage, PrivacyPage};
 use crate::pages::play::PlayPage;
 use crate::pages::player::PlayerPage;
 use crate::pages::ranks::RanksPage;
+use crate::pages::replay::{GroupReplayPage, OwnReplayPage};
 use crate::pages::rules::RulesPage;
 use crate::state::provide_state;
 
@@ -97,6 +98,8 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/ranks") view=RanksPage />
                             <Route path=path!("/groups") view=GroupsPage />
                             <Route path=path!("/groups/:id") view=GroupDetailPage />
+                            <Route path=path!("/groups/:id/replay/:day") view=GroupReplayPage />
+                            <Route path=path!("/replay/:day") view=OwnReplayPage />
                             <Route path=path!("/g/:code") view=JoinGroupPage />
                             // Waits for the player, for the title and the link preview
                             <Route path=path!("/player/:id") view=PlayerPage ssr=SsrMode::Async />

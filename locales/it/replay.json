@@ -1,0 +1,71 @@
+{
+  "title": "Teatro dei replay",
+  "own_title": "La tua partita",
+  "watch": "Guarda le partite di tutti",
+  "watch_mine": "Guarda la tua partita",
+  "duel": "Tu contro {{ name }}: guarda il replay",
+  "flag": "{{ name }} ha finito in {{ time }}",
+  "missing": "Qui non c'è niente da rivedere.",
+  "card": {
+    "title": "Teatro dei replay",
+    "text": "Guardate tutte le partite insieme, ponte dopo ponte, ognuno nel suo colore.",
+    "locked": "Finisci la sfida di oggi per vedere le partite di oggi.",
+    "earlier": "Giorni precedenti"
+  },
+  "page": {
+    "daily": "Ponte del giorno n. {{ number }} · {{ date }}",
+    "earlier": "Il giorno prima",
+    "later": "Il giorno dopo",
+    "back_daily": "La sfida di oggi"
+  },
+  "locked": {
+    "title": "Niente sbirciate!",
+    "text": "I replay di oggi si aprono quando hai finito tu stesso la sfida di oggi.",
+    "play": "Gioca la sfida di oggi"
+  },
+  "empty": {
+    "title": "Nessuna partita da guardare",
+    "text": "Quel giorno non sono state registrate mosse. Prova un altro giorno."
+  },
+  "stage": {
+    "label": "La griglia del ponte del giorno n. {{ number }} con i ponti di {{ names }}"
+  },
+  "controls": {
+    "play": "Riproduci",
+    "pause": "Pausa",
+    "again": "Guarda di nuovo",
+    "next": "Mossa successiva",
+    "previous": "Mossa precedente",
+    "speed": "Velocità",
+    "speed_n": "{{ n }} volte più veloce",
+    "layout": "Vista",
+    "together": "Insieme",
+    "apart": "Affiancate",
+    "timeline": "Linea del tempo",
+    "position": "{{ time }} di {{ end }}",
+    "keys": "Spazio avvia e mette in pausa, ← → vanno da una mossa all'altra, Maiusc con una freccia salta di 10 secondi.",
+    "still": "Movimento ridotto attivo: il replay ti aspetta. Avanza con ← → o premi riproduci."
+  },
+  "legend": {
+    "title": "Giocatori",
+    "everyone": "Tutti",
+    "just_me": "Solo io",
+    "show": "Mostra {{ name }}",
+    "hide": "Nascondi {{ name }}",
+    "gave_up": "si è arreso",
+    "missing": "non ha finito",
+    "no_log": "nessuna mossa registrata",
+    "unranked": "fuori classifica",
+    "unranked_hint": "Non in classifica: questo risultato è stato segnalato.",
+    "progress": "{{ name }}: {{ percent }}% dei ponti"
+  },
+  "finish": {
+    "title": "Traguardo",
+    "none": "Ancora nessuno al traguardo…",
+    "official": "{{ time }} con penalità"
+  },
+  "marks": {
+    "hint": "{{ name }} ha preso un indizio a {{ time }}",
+    "check": "{{ name }} ha verificato a {{ time }}"
+  }
+}

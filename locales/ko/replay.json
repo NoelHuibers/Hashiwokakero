@@ -1,0 +1,71 @@
+{
+  "title": "리플레이 극장",
+  "own_title": "내 풀이",
+  "watch": "모두의 풀이 보기",
+  "watch_mine": "내 풀이 보기",
+  "duel": "나 vs {{ name }}: 리플레이 보기",
+  "flag": "{{ name }} 님이 {{ time }}에 완주",
+  "missing": "여기에는 다시 볼 것이 없어요.",
+  "card": {
+    "title": "리플레이 극장",
+    "text": "모두의 풀이를 한꺼번에, 다리 하나하나, 각자의 색으로 봐요.",
+    "locked": "오늘의 데일리를 끝내야 오늘의 풀이를 볼 수 있어요.",
+    "earlier": "이전 날짜"
+  },
+  "page": {
+    "daily": "데일리 #{{ number }} · {{ date }}",
+    "earlier": "전날",
+    "later": "다음 날",
+    "back_daily": "오늘의 데일리"
+  },
+  "locked": {
+    "title": "엿보기 금지!",
+    "text": "오늘의 리플레이는 직접 오늘의 데일리를 끝내면 열려요.",
+    "play": "오늘의 데일리 플레이"
+  },
+  "empty": {
+    "title": "볼 수 있는 풀이가 없어요",
+    "text": "이날은 기록된 수가 없어요. 다른 날을 골라 보세요."
+  },
+  "stage": {
+    "label": "데일리 #{{ number }} 보드와 {{ names }} 님의 다리"
+  },
+  "controls": {
+    "play": "재생",
+    "pause": "일시정지",
+    "again": "다시 보기",
+    "next": "다음 수",
+    "previous": "이전 수",
+    "speed": "속도",
+    "speed_n": "{{ n }}배속",
+    "layout": "보기",
+    "together": "겹쳐 보기",
+    "apart": "나란히 보기",
+    "timeline": "타임라인",
+    "position": "{{ time }} / {{ end }}",
+    "keys": "스페이스로 재생·일시정지, ← → 로 한 수씩, Shift와 화살표로 10초씩 이동해요.",
+    "still": "동작 줄이기가 켜져 있어요: 리플레이가 기다리고 있어요. ← → 로 한 수씩 넘기거나 재생을 누르세요."
+  },
+  "legend": {
+    "title": "플레이어",
+    "everyone": "모두",
+    "just_me": "나만",
+    "show": "{{ name }} 표시",
+    "hide": "{{ name }} 숨기기",
+    "gave_up": "포기",
+    "missing": "미완료",
+    "no_log": "기록된 수 없음",
+    "unranked": "순위 제외",
+    "unranked_hint": "순위표에 없음: 이 결과는 표시되었어요.",
+    "progress": "{{ name }}: 다리의 {{ percent }}%"
+  },
+  "finish": {
+    "title": "결승선",
+    "none": "아직 아무도 도착하지 않았어요…",
+    "official": "페널티 포함 {{ time }}"
+  },
+  "marks": {
+    "hint": "{{ name }} 님이 {{ time }}에 힌트 사용",
+    "check": "{{ name }} 님이 {{ time }}에 확인"
+  }
+}

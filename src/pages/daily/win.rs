@@ -10,7 +10,7 @@ use crate::components::share::ShareBar;
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::Card;
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::stamp_name;
+use crate::lang::{prefix, stamp_name};
 use crate::model::{self, format_duration};
 
 use super::result::share_text;
@@ -128,6 +128,17 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
                         <Button variant=ButtonVariant::Ghost on:click=move |_| daily.admired.set(true)>
                             {t!(i18n, practice.admire)}
                         </Button>
+                        {move || {
+                            daily.info.with(|i| i.as_ref().map(|i| i.day)).map(|day| {
+                                let replay = format!("{}/replay/{day}", prefix(i18n.get_locale()));
+                                view! {
+                                    <Button variant=ButtonVariant::Outline href=replay attr:data-testid="win-replay">
+                                        <span class="font-pixel text-primary" aria-hidden="true">"再"</span>
+                                        {t!(i18n, replay.watch_mine)}
+                                    </Button>
+                                }
+                            })
+                        }}
                         <ShareBar text=share outline=true />
                     </div>
                 </Card>

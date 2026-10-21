@@ -1,4 +1,4 @@
-//! Server only code: database, users, the daily puzzle, groups and the SAT Dojo.
+//! Server only code: database, users, the daily puzzle, groups, replays and the SAT Dojo.
 
 pub mod admin;
 pub mod auth;
@@ -10,6 +10,7 @@ pub mod groups;
 pub mod limits;
 pub mod names;
 pub mod og;
+pub mod replay;
 mod router;
 
 pub use router::{build_id, router};

@@ -222,6 +222,10 @@ struct PaidReceipt {
     action: crate::api::PaidAction,
     bridges: Vec<u8>,
     outcome: crate::api::PaidOutcome,
+    /// When it was bought (server time), for the markers of the replay theatre (server/replay).
+    /// Receipts from before it have none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    at: Option<i64>,
 }
 
 /// Reads an owned receipt and its counters together, without creating an attempt or charge.
@@ -360,6 +364,7 @@ pub async fn paid_action(
         action,
         bridges,
         outcome: outcome.clone(),
+        at: Some(now_ms()),
     });
     tx.execute(
         "UPDATE attempts SET hints = ?3, checks = ?4, paid_actions = ?5 WHERE user_id = ?1 AND day = ?2",
