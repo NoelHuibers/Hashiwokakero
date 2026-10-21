@@ -327,9 +327,14 @@ async fn puzzles_and_the_archive() {
 async fn expensive_requests_share_the_network_budget_before_parsing() {
     let server = Server::start().await;
     let browser = server.browser_from("2001:db8:aa11::1");
+    let paths = [
+        GeneratePuzzle::PATH,
+        crate::api::DailyAttemptInfo::PATH,
+        crate::api::SubmitDailyAttempt::PATH,
+    ];
     for n in 0..32 {
         let response = browser
-            .post(GeneratePuzzle::PATH)
+            .post(paths[n % paths.len()])
             .header(CONTENT_TYPE, "application/json")
             .header("x-forwarded-for", format!("198.51.100.{n}"))
             .body("not JSON")
