@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Maak je eigen Hashiwokakero-puzzel · Hashi",
-    "description": "Ontwerp een bruggenpuzzel in de werkplaats: plaats eilanden, laat een SAT-solver checken of er precies één oplossing is, exporteer als tekstbestand en speel."
+    "description": "Ontwerp een bruggenpuzzel in de werkplaats: plaats eilanden, laat een SAT-solver checken of er precies één oplossing is, exporteer als tekst en speel."
   },
   "kicker": "作る · tsukuru",
   "title": "Puzzelwerkplaats",

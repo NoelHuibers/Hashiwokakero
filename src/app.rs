@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos_i18n_router::I18nRoute;
 use leptos_meta::{HashedStylesheet, Link, Meta, MetaTags, provide_meta_context};
 use leptos_router::components::{Outlet, Route, Router, Routes};
-use leptos_router::path;
+use leptos_router::{SsrMode, path};
 
 use crate::components::layout::{Footer, Header, MobileNav, Toaster};
 use crate::components::ui::tooltip::Tooltips;
@@ -94,7 +94,8 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("") view=DailyPage />
                             <Route path=path!("/practice") view=PlayPage />
                             <Route path=path!("/ranks") view=RanksPage />
-                            <Route path=path!("/player/:id") view=PlayerPage />
+                            // Waits for the player, for the title and the link preview
+                            <Route path=path!("/player/:id") view=PlayerPage ssr=SsrMode::Async />
                             <Route path=path!("/account") view=AccountPage />
                             <Route path=path!("/create") view=CreatePage />
                             <Route path=path!("/lab") view=LabPage />

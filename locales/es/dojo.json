@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · un gimnasio para solvers SAT · Hashi",
-    "description": "Envía tu solver SAT en WebAssembly y escala en la clasificación: fórmulas secretas y nuevas, combustible determinista en vez de segundos. Libre y reproducible."
+    "description": "Envía tu solver SAT en WebAssembly y sube en la clasificación: fórmulas secretas y nuevas, combustible determinista, no segundos. Libre y reproducible."
   },
   "title": "SAT Dojo",
   "intro": "Un gimnasio para solvers SAT. Compila el tuyo a WebAssembly, envíalo y se evaluará con un conjunto secreto de fórmulas nuevas: puzles Hashi, trampas de paridad, 3-SAT aleatorio, palomas, reinas, factorización, miters de multiplicadores, coloreado de grafos y una familia misteriosa.",

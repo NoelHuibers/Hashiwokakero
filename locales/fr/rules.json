@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Comment jouer au Hashiwokakero · Règles et astuces · Hashi",
-    "description": "Les règles du Hashiwokakero (Ponts) avec un exemple résolu, les déductions qui résolvent la plupart des grilles sans deviner, et comment SAT prouve l’unicité."
+    "description": "Les règles du Hashiwokakero (Ponts) avec un exemple résolu, les déductions qui résolvent presque toute grille sans deviner et comment SAT prouve l’unicité."
   },
   "title": "Comment jouer",
   "intro": "Le Hashiwokakero (橋をかけろ, « construis des ponts ! ») est un casse-tête logique publié par Nikoli. Relie toutes les îles par des ponts pour que chaque île ait exactement autant de ponts que son chiffre l’indique.",

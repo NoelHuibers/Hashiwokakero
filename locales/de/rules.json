@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Hashiwokakero spielen · Regeln und Lösungstipps · Hashi",
-    "description": "Die Regeln von Hashiwokakero (Brücken bauen) mit Beispiel, Schlüsse, die fast jedes Rätsel ohne Raten knacken, und wie ein SAT-Solver Eindeutigkeit beweist."
+    "description": "Hashiwokakero (Brücken bauen) spielen: Regeln mit Beispiel, Schlüsse, die fast jedes Rätsel ohne Raten lösen, und wie ein SAT-Solver Eindeutigkeit beweist."
   },
   "title": "Spielanleitung",
   "intro": "Hashiwokakero (橋をかけろ, „Baut Brücken!“) ist ein Logikrätsel des Verlags Nikoli. Verbinde alle Inseln mit Brücken, sodass jede Insel genau so viele Brücken hat, wie ihre Zahl angibt.",

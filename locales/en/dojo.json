@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · a gym for SAT solvers · Hashi",
-    "description": "Submit your SAT solver as WebAssembly and climb the leaderboard: scored on hidden, fresh formulas with deterministic fuel instead of seconds. Free, open source, reproducible."
+    "description": "Submit your SAT solver as WebAssembly and climb the leaderboard: scored on hidden, fresh formulas with deterministic fuel, not seconds. Free, open source."
   },
   "title": "SAT Dojo",
   "intro": "A gym for SAT solvers. Compile yours to WebAssembly, submit it, and it is scored on a hidden set of fresh formulas: Hashi puzzles, parity traps, random 3-SAT, pigeons, queens, factoring, multiplier miters, graph coloring and one mystery family.",

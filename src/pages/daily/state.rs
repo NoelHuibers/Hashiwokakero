@@ -319,6 +319,19 @@ impl Daily {
         self.refresh_ranking();
     }
 
+    /// The day of the header: `rendered`, the server's day the page was rendered with, until the
+    /// daily is loaded, then the loaded daily's, and the last one while a new day loads. So the
+    /// server's page has its heading before the daily is loaded, and it doesn't change when the
+    /// daily comes (it's the same day) or flash away when a new day starts.
+    pub(super) fn header_day(&self, rendered: Option<i64>) -> Memo<Option<i64>> {
+        let info = self.info;
+        Memo::new(move |before: Option<&Option<i64>>| {
+            info.with(|i| i.as_ref().map(|i| i.day))
+                .or_else(|| before.copied().flatten())
+                .or(rendered)
+        })
+    }
+
     pub(super) fn update_attempt(&self, f: impl FnOnce(&mut AttemptInfo)) {
         self.info.update(|i| {
             if let Some(a) = i.as_mut().and_then(|i| i.attempt.as_mut()) {
@@ -733,6 +746,35 @@ mod tests {
             d.update_attempt(|a| a.checks += 1);
             let a = d.info.get_untracked().unwrap().attempt.unwrap();
             assert_eq!((a.hints, a.checks), (1, 1));
+        });
+    }
+
+    #[test]
+    fn the_header_shows_the_rendered_day_until_the_daily_is_loaded() {
+        tab(|d| {
+            let day = d.header_day(Some(99));
+            assert_eq!(day.get_untracked(), Some(99));
+            // Loaded just after midnight, a day after the page was rendered
+            d.show(info(false));
+            assert_eq!(day.get_untracked(), Some(100));
+            // A new day loads: the header keeps the day it shows until it's there
+            d.info.set(None);
+            assert_eq!(day.get_untracked(), Some(100));
+            let mut tomorrow = info(false);
+            tomorrow.day = 101;
+            d.info.set(Some(tomorrow));
+            assert_eq!(day.get_untracked(), Some(101));
+        });
+    }
+
+    /// Opened in the browser, without a day from the server: no header until the daily is loaded.
+    #[test]
+    fn without_a_rendered_day_the_header_waits_for_the_daily() {
+        tab(|d| {
+            let day = d.header_day(None);
+            assert_eq!(day.get_untracked(), None);
+            d.show(info(false));
+            assert_eq!(day.get_untracked(), Some(100));
         });
     }
 

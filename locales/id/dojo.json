@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · tempat latihan solver SAT · Hashi",
-    "description": "Kirim solver SAT-mu dalam WebAssembly dan panjat papan peringkat: dinilai pada formula baru tersembunyi dengan fuel deterministik, bukan detik. Gratis, terbuka."
+    "description": "Kirim solver SAT-mu sebagai WebAssembly, naiki papan peringkat: dinilai pada formula baru yang tersembunyi dengan fuel deterministik, bukan detik. Gratis."
   },
   "title": "SAT Dojo",
   "intro": "Tempat latihan untuk solver SAT. Kompilasi solvermu ke WebAssembly, kirimkan, dan solver itu dinilai pada set tersembunyi berisi formula baru: teka-teki Hashi, jebakan paritas, 3-SAT acak, merpati, ratu, faktorisasi, miter pengali, pewarnaan graf, dan satu keluarga misteri.",

@@ -25,8 +25,8 @@ use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};
 use crate::model::{
-    AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_number,
-    format_duration, weekday,
+    AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_difficulty,
+    daily_number, format_duration, weekday,
 };
 use crate::pages::play::{SeoIntro, islands_percent};
 use crate::seo::{PageMeta, site_ld};
@@ -51,6 +51,23 @@ fn Stat(
                 {move || label.get()} " · " {jp}
             </span>
         </div>
+    }
+}
+
+/// Today on the server's clock, the day of `daily_today`. `None` in the browser, which doesn't
+/// know the server's day before it loads the daily.
+#[cfg_attr(
+    feature = "ssr",
+    expect(clippy::unnecessary_wraps, reason = "`None` in the browser")
+)]
+fn server_today() -> Option<i64> {
+    #[cfg(feature = "ssr")]
+    {
+        Some(crate::server::daily::today())
+    }
+    #[cfg(not(feature = "ssr"))]
+    {
+        None
     }
 }
 
@@ -370,9 +387,15 @@ pub fn DailyPage() -> impl IntoView {
         })
     });
 
+    // The browser reads the server's day back from the page while it hydrates (its own clock
+    // may be on another day); opened in the browser, the page has none and waits for the daily
+    let rendered = SharedValue::new(server_today).into_inner();
+    let shown_day = daily.header_day(rendered);
+
     let header = move || {
-        daily.info.get().map(|info| {
-            let wd = weekday(info.day);
+        shown_day.get().map(|day| {
+            let wd = weekday(day);
+            let difficulty = daily_difficulty(day);
             view! {
                 <div class="flex items-center gap-3">
                     <span class="hanko grid size-14 shrink-0 rotate-[-4deg] place-items-center rounded-lg font-pixel text-3xl">
@@ -380,17 +403,17 @@ pub fn DailyPage() -> impl IntoView {
                     </span>
                     <div>
                         <p class="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                            {move || date_long(i18n.get_locale(), info.day)}
+                            {move || date_long(i18n.get_locale(), day)}
                         </p>
                         <h1 class="text-2xl font-black sm:text-3xl">
-                            {t!(i18n, daily.title, number = daily_number(info.day))}
+                            {t!(i18n, daily.title, number = daily_number(day))}
                         </h1>
                         <div class="mt-1 flex gap-1.5">
                             <Badge variant=BadgeVariant::Default>
-                                {info.difficulty.kanji()} " " {move || difficulty_name(i18n.get_locale(), info.difficulty)}
+                                {difficulty.kanji()} " " {move || difficulty_name(i18n.get_locale(), difficulty)}
                             </Badge>
                             <Badge variant=BadgeVariant::Muted>
-                                {let (w, h) = info.difficulty.size();
+                                {let (w, h) = difficulty.size();
                                 format!("{w}×{h}")}
                             </Badge>
                         </div>

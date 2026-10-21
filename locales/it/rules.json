@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Come si gioca a Hashiwokakero · Regole e consigli · Hashi",
-    "description": "Le regole di Hashiwokakero (Ponti) con un esempio risolto, le deduzioni che risolvono quasi ogni puzzle senza tirare a indovinare e come SAT ne prova l’unicità."
+    "description": "Le regole di Hashiwokakero (Ponti) con un esempio risolto, le deduzioni che risolvono quasi ogni puzzle senza indovinare e come SAT ne prova l’unicità."
   },
   "title": "Come si gioca",
   "intro": "Hashiwokakero (橋をかけろ, «costruisci ponti!») è un rompicapo logico pubblicato da Nikoli. Collega tutte le isole con dei ponti in modo che ogni isola abbia esattamente tanti ponti quanti ne indica il suo numero.",

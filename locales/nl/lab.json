@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT-solverlab · CDCL, DPLL en splr op Hashi-puzzels",
-    "description": "Laat één Hashiwokakero-puzzel racen door onze eigen CDCL- en DPLL-SAT-solvers met verschillende heuristieken en herstartstrategieën, en vergelijk ze met splr."
+    "description": "Laat een Hashiwokakero-puzzel racen door onze eigen CDCL- en DPLL-SAT-solvers met verschillende heuristieken en herstartstrategieën, en vergelijk met splr."
   },
   "title": "Solverlab",
   "intro": "Laat één puzzel racen door onze eigen CDCL- en DPLL-solvers in verschillende modi (vertakkingsheuristieken, herstartstrategieën, subsumptie) en vergelijk ze met splr.",

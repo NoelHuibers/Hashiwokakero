@@ -1,7 +1,6 @@
 //! A player's public profile, linked from every leaderboard: their daily record and stamp book.
 
 use leptos::prelude::*;
-use leptos::task::spawn_local;
 use leptos_meta::{Meta, Title};
 use leptos_router::components::A;
 use leptos_router::hooks::use_params_map;
@@ -12,10 +11,11 @@ use crate::components::record::Record;
 use crate::components::stamps::{StampBadge, StampBook};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
-use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::date_short;
+use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
+use crate::lang::{date_short, localized, og_locale};
 use crate::model::{MS_PER_DAY, PlayerProfile};
-use crate::seo::title_text;
+use crate::pages::not_found_status;
+use crate::seo::{OG_IMAGE, SITE_NAME, SITE_URL, title_text};
 use crate::state::{Auth, error_toast};
 
 #[component]
@@ -117,47 +117,81 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
     }
 }
 
+/// What a link to a player's page shows where it's shared: who, and their record in short.
+fn preview(locale: Locale, p: &PlayerProfile) -> String {
+    let who = td_string!(locale, ranks.player.preview, name = p.name.clone());
+    let s = &p.stats;
+    let record = if s.solved > 0 {
+        td_string!(
+            locale,
+            ranks.player.preview_stats,
+            solved = s.solved,
+            best = s.best_streak,
+            medals = s.gold + s.silver + s.bronze
+        )
+    } else {
+        td_string!(locale, account.no_dailies).to_string()
+    };
+    format!("{who} {record}")
+}
+
+/// The title, description and social tags of a player's page, for links to it. Unlike
+/// [`crate::seo::PageMeta`] without a canonical URL or other languages: the page isn't indexed.
+#[component]
+fn PlayerMeta(p: PlayerProfile) -> impl IntoView {
+    let i18n = use_i18n();
+    let locale = i18n.get_locale_untracked();
+    let title = format!("{} · {SITE_NAME}", p.name);
+    let description = preview(locale, &p);
+    let url = format!(
+        "{SITE_URL}{}",
+        localized(locale, &format!("/player/{}", p.id))
+    );
+    let tab = title.clone();
+    view! {
+        <Title text=title_text(move || tab.clone()) />
+        <Meta name="description" content=description.clone() />
+        <Meta property="og:type" content="profile" />
+        <Meta property="profile:username" content=p.name />
+        <Meta property="og:site_name" content=SITE_NAME />
+        <Meta property="og:locale" content=og_locale(locale) />
+        <Meta property="og:title" content=title.clone() />
+        <Meta property="og:description" content=description.clone() />
+        <Meta property="og:url" content=url />
+        <Meta property="og:image" content=OG_IMAGE />
+        <Meta name="twitter:card" content="summary_large_image" />
+        <Meta name="twitter:title" content=title />
+        <Meta name="twitter:description" content=description />
+        <Meta name="twitter:image" content=OG_IMAGE />
+    }
+}
+
 #[component]
 pub fn PlayerPage() -> impl IntoView {
     let i18n = use_i18n();
     let params = use_params_map();
     let back = use_localized("/ranks");
     let id = move || params.with(|p| p.get("id").and_then(|id| id.parse::<i64>().ok()));
-    // `Some(None)`: there is no such player
-    let profile = RwSignal::new(None::<Option<PlayerProfile>>);
-
-    // Fetch whenever the player changes (browser only)
+    // Loaded on the server as well, which renders the page once it's there (`SsrMode::Async` in
+    // app.rs), so a link to it shows the player's name and record. `Ok(None)`: there is no such
+    // player. The browser loads another one when the URL changes.
+    let profile = Resource::new(id, |id| async move {
+        match id {
+            Some(id) => load_player(id).await,
+            None => Ok(None),
+        }
+    });
     Effect::new(move |_| {
-        let Some(id) = id() else {
-            profile.set(Some(None));
-            return;
-        };
-        profile.set(None);
-        spawn_local(async move {
-            let result = load_player(id).await;
-            let current = params
-                .try_with_untracked(|map| map.get("id").and_then(|v| v.parse::<i64>().ok()))
-                .flatten();
-            if current != Some(id) {
-                return;
-            }
-            match result {
-                Ok(p) => {
-                    profile.try_set(Some(p));
-                }
-                Err(e) => error_toast(e),
-            }
-        });
+        if let Some(Err(e)) = profile.get() {
+            error_toast(e);
+        }
     });
 
-    let title = move || {
-        profile.with(|p| match p {
-            Some(Some(p)) => format!("{} · Hashi", p.name),
-            _ => format!("{} · Hashi", t_string!(i18n, ranks.player.title)),
-        })
-    };
+    let loading =
+        move || view! { <p class="text-muted-foreground">{t!(i18n, common.game.loading)}</p> };
     view! {
-        <Title text=title_text(title) />
+        // Until the player is loaded, and when they can't be
+        <Title text=title_text(move || format!("{} · Hashi", t_string!(i18n, ranks.player.title))) />
         // Players didn't choose to be found by search engines
         <Meta name="robots" content="noindex" />
         <section class="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-6 sm:px-6">
@@ -165,12 +199,63 @@ pub fn PlayerPage() -> impl IntoView {
                 "← " {t!(i18n, ranks.player.back)}
             </A>
             <div>
-                {move || match profile.get() {
-                    None => view! { <p class="text-muted-foreground">{t!(i18n, common.game.loading)}</p> }.into_any(),
-                    Some(None) => view! { <p class="text-muted-foreground">{t!(i18n, ranks.player.not_found)}</p> }.into_any(),
-                    Some(Some(p)) => view! { <Profile p /> }.into_any(),
-                }}
+                <Suspense fallback=loading>
+                    {move || Suspend::new(async move {
+                        match profile.await {
+                            Ok(Some(p)) => view! { <PlayerMeta p=p.clone() /> <Profile p /> }.into_any(),
+                            Ok(None) => {
+                                not_found_status();
+                                view! {
+                                    <Title text=title_text(move || format!("{} · Hashi", t_string!(i18n, common.not_found.title))) />
+                                    <p class="text-muted-foreground">{t!(i18n, ranks.player.not_found)}</p>
+                                }
+                                    .into_any()
+                            }
+                            // Shown as a toast
+                            Err(_) => loading().into_any(),
+                        }
+                    })}
+                </Suspense>
             </div>
         </section>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::UserStats;
+
+    fn player(stats: UserStats) -> PlayerProfile {
+        PlayerProfile {
+            id: 7,
+            name: "aiko".into(),
+            guest: false,
+            created_at: 0,
+            stats,
+        }
+    }
+
+    #[test]
+    fn previews_sum_up_the_record() {
+        let stats = UserStats {
+            solved: 12,
+            current_streak: 2,
+            best_streak: 5,
+            gold: 1,
+            silver: 2,
+            bronze: 0,
+            ..UserStats::default()
+        };
+        assert_eq!(
+            preview(Locale::en, &player(stats)),
+            "aiko on Hashi, the daily Hashiwokakero puzzle: record and stamp book. \
+             Dailies solved: 12 · Best streak: 5 · Medals: 3"
+        );
+        assert_eq!(
+            preview(Locale::de, &player(UserStats::default())),
+            "aiko auf Hashi, dem täglichen Hashiwokakero-Rätsel: Bilanz und Stempelheft. \
+             Noch keine Tagesrätsel."
+        );
     }
 }
