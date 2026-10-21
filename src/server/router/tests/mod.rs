@@ -14,8 +14,11 @@ mod admin;
 mod build;
 mod contact;
 mod dojo;
+mod groups;
+mod og;
 mod pages;
 mod playing;
+mod rivals;
 mod site;
 
 use std::path::{Path, PathBuf};

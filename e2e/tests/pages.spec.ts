@@ -73,7 +73,7 @@ test('the title follows the page', async ({ page }) => {
   await expect(page).toHaveURL(/\/de\/rules$/);
   await expect(page).toHaveTitle('Hashiwokakero spielen · Regeln und Lösungstipps · Hashi');
   expect(await page.evaluate(() => 'samePage' in window)).toBe(true);
-  // The server doesn't know the player's name, the browser loads it
+  // Rendered on the server with the player's name, for link previews
   await visit(page, `/player/${player('aiko').id}`);
   await expect(page).toHaveTitle('aiko · Hashi');
 });

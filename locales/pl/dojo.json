@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · siłownia dla solverów SAT · Hashi",
-    "description": "Zgłoś swój solver SAT jako WebAssembly i wspinaj się w rankingu: ocena na ukrytych, świeżych formułach, deterministyczne paliwo zamiast sekund. Open source."
+    "description": "Zgłoś solver SAT jako WebAssembly i wspinaj się w rankingu: ocena na ukrytych, świeżych formułach, deterministyczne paliwo zamiast sekund. Open source."
   },
   "title": "SAT Dojo",
   "intro": "Siłownia dla solverów SAT. Skompiluj swój do WebAssembly, zgłoś go, a zostanie oceniony na ukrytym zbiorze świeżych formuł: łamigłówki Hashi, pułapki parzystości, losowe 3-SAT, gołębie, hetmany, faktoryzacja, mitery układów mnożących, kolorowanie grafów i jedna tajemnicza rodzina.",
@@ -43,7 +43,7 @@
     "shapley_tip": "Jego sprawiedliwa część paliwa oszczędzanego przez całą stawkę, w miliardach na formułę",
     "vbs_line": "Wirtualny najlepszy solver z {{ count }} solverów: rozwiązane {{ solved }}/{{ total }}, PAR-2 {{ par2 }}",
     "view_budget": "Budżet",
-    "budget_hint": "Te same przebiegi, ocenione z innym budżetem na formułę. Każdy przebieg trwa do dziesięciokrotności oficjalnego budżetu, a paliwo jest deterministyczne, więc każdy mniejszy budżet daje dokładnie taki wynik, jaki miałby przebieg z nim. Oficjalny ranking zostaje przy 1×; strzałki pokazują, o ile solver przesuwa się względem swojego miejsca.",
+    "budget_hint": "Te same przebiegi, ocenione z innym budżetem na formułę. Każdy przebieg trwa do czterokrotności oficjalnego budżetu, a paliwo jest deterministyczne, więc każdy mniejszy budżet daje dokładnie taki wynik, jaki miałby przebieg z nim. Oficjalny ranking zostaje przy 1×; strzałki pokazują, o ile solver przesuwa się względem swojego miejsca.",
     "budget_pick": "Budżet na formułę",
     "budget_official": "oficjalny",
     "budget_wrong": "błędna odpowiedź",
@@ -353,6 +353,6 @@
     "shapley_title": "Wartość Shapleya",
     "shapley": "Wyniki samodzielne nagradzają niemal klony, wkład marginalny je karze. Wartość Shapleya z kooperacyjnej teorii gier jest sprawiedliwa dla obu: dzieli paliwo, które cała stawka oszczędza w porównaniu z nierozwiązaniem niczego, według średniego wkładu marginalnego każdego solvera po wszystkich kolejnościach dołączania (<a>Fréchette et al., AAAI 2016</a>). Liczymy ją dokładnie, w miliardach paliwa na formułę; wartości sumują się do podwójnego budżetu minus PAR-2 VBS.",
     "budget_title": "Rankingi przy innych budżetach",
-    "budget": "Ranking mierzy krótki wyścig: 7 miliardów paliwa na formułę, około pół sekundy natywnego solvera, podczas gdy SAT Competition daje 5000 sekund. Solvery z rozbudowanym preprocessingiem i inprocessingiem, jak Kissat i CaDiCaL, płacą za to, zanim się opłaci, więc przy tym budżecie są za MiniSatem. Każdy przebieg trwa do dziesięciokrotności budżetu, a ponieważ paliwo jest deterministyczne, jeden przebieg daje dokładny wynik przy każdym mniejszym budżecie: widok Budżet pokazuje, jak ranking zmienia się z większą ilością czasu."
+    "budget": "Ranking mierzy krótki wyścig: 7 miliardów paliwa na formułę, około pół sekundy natywnego solvera, podczas gdy SAT Competition daje 5000 sekund. Solvery z rozbudowanym preprocessingiem i inprocessingiem, jak Kissat i CaDiCaL, płacą za to, zanim się opłaci, więc przy tym budżecie są za MiniSatem. Każdy przebieg trwa do czterokrotności budżetu, a ponieważ paliwo jest deterministyczne, jeden przebieg daje dokładny wynik przy każdym mniejszym budżecie: widok Budżet pokazuje, jak ranking zmienia się z większą ilością czasu."
   }
 }

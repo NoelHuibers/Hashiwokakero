@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Dagelijkse ranglijst · Hashi, de bruggenpuzzel",
-    "description": "De snelste Hashiwokakero-puzzelaars van vandaag, de ranglijst van elke eerdere dagpuzzel, de maandrace en de eregalerij met de meeste dagpuzzels, medailles en de langste reeksen."
+    "description": "De snelste Hashiwokakero-puzzelaars van vandaag, de ranglijst van elke eerdere dagpuzzel, de maandrace en de eregalerij: dagpuzzels, medailles, reeksen."
   },
   "title": "Ranglijst",
   "intro": "Iedereen speelt elke dag dezelfde brug. De snelste tijd wint, hints en controles tellen erbij op, getoonde oplossingen tellen niet mee.",
@@ -53,6 +53,8 @@
     "back": "Ranglijst",
     "not_found": "Deze speler bestaat niet.",
     "since": "Speelt sinds {{ date }}.",
-    "you": "Dat ben jij, naar je account"
+    "you": "Dat ben jij, naar je account",
+    "preview": "{{ name }} op Hashi, de dagelijkse Hashiwokakero-puzzel: resultaten en stempelboekje.",
+    "preview_stats": "Dagpuzzels opgelost: {{ solved }} · Beste reeks: {{ best }} · Medailles: {{ medals }}"
   }
 }

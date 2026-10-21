@@ -26,24 +26,5 @@
   "admire": "Bestaunen",
   "revealed": "Vom SAT-Solver gelöst.",
   "play_myself": "Selbst spielen",
-  "new_puzzle": "Neues Rätsel",
-  "about": {
-    "kicker": "über das Spiel",
-    "title": "Hashiwokakero, das Brückenrätsel",
-    "what_title": "Was ist Hashiwokakero?",
-    "what": "Hashiwokakero (橋をかけろ, „Baut Brücken!“) ist ein japanisches Logikrätsel des Verlags Nikoli, auch bekannt als <b>Brücken bauen</b>, <b>Hashi</b> oder Ai-Ki-Ai. Ein Gitter aus nummerierten Inseln muss mit Brücken verbunden werden: Jede Insel bekommt genau so viele Brücken, wie ihre Zahl angibt, Brücken verlaufen gerade und kreuzen sich nie, höchstens zwei verbinden dasselbe Inselpaar, und am Ende ist jede Insel von jeder anderen aus erreichbar. Wie Sudoku oder Nurikabe braucht es keine Rechnerei, nur Logik.",
-    "how_title": "Brücken bauen online spielen – so geht’s",
-    "how": "Wähle einen Schwierigkeitsgrad von Leicht (7×7) bis Oni (24×24) und drück auf Erzeugen. Klick aufs Wasser zwischen zwei Inseln, um eine Brücke zu bauen, noch einmal für eine Doppelbrücke, ein dritter Klick entfernt sie – oder zieh einfach von einer Insel zur nächsten. Fertige Inseln werden grün, überfüllte rot. Du steckst fest? Hol dir einen Tipp oder lass den Solver deine Brücken prüfen. Die vollständigen Regeln mit einem gelösten Beispiel findest du in der <a>Spielanleitung</a>.",
-    "techniques_title": "Lösungstechniken ganz ohne Raten",
-    "technique_double": "Eine Insel, deren Zahl doppelt so groß ist wie die Zahl ihrer Nachbarn, hat zu jedem von ihnen eine Doppelbrücke: eine 8 im offenen Feld, eine 6 am Rand, eine 4 in der Ecke.",
-    "technique_isolation": "Eine 1 verbindet sich nie mit einer anderen 1, und zwei 2en werden nie durch eine Doppelbrücke verbunden – sonst wären sie vom Rest abgeschnitten.",
-    "technique_count": "Zähl, was noch fehlt: Braucht eine Insel noch 5 Brücken zu drei Nachbarn, bekommt jeder Nachbar mindestens eine.",
-    "technique_block": "Brücken blockieren die Linien, die sie kreuzen. Eine gesetzte Brücke kann also die Inseln auf beiden Seiten zwingen, sich anderswo zu verbinden.",
-    "technique_connect": "Am Ende muss alles verbunden sein: Eine Gruppe, die den Rest nur durch eine einzige Lücke erreicht, muss diese nutzen.",
-    "why_title": "Warum Hashi hier spielen?",
-    "why_unique": "Jedes Rätsel hat <b>genau eine Lösung</b>, bewiesen von einem SAT-Solver, bevor du es siehst – reine Logik reicht also immer.",
-    "why_unlimited": "Unbegrenzt viele Gratis-Rätsel in fünf Größen, mit Tipps und Prüfungen, die aus der echten Lösung stammen statt aus Heuristiken.",
-    "why_art": "Süße japanische Pixel-Art, ein Tag- und ein Nachtmodus, Tastenkürzel, Rückgängig und Wiederholen, und dein Spielstand wird im Browser gespeichert.",
-    "why_workshop": "Bau deine eigenen Rätsel in der <workshop>Werkstatt</workshop> oder schau unseren eigenen CDCL- und DPLL-SAT-Solvern im <lab>Labor</lab> beim Wettrennen zu. Das ganze Spiel ist Open Source und in Rust geschrieben."
-  }
+  "new_puzzle": "Neues Rätsel"
 }

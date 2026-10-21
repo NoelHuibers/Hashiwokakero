@@ -1,0 +1,45 @@
+{
+  "title": "Rivales",
+  "mark": "Marcar a {{ name }} como rival",
+  "unmark": "{{ name }} es tu rival, desmarcar",
+  "marked": "{{ name }} ya es tu rival. ¡Cada puente del día es un duelo!",
+  "unmarked": "{{ name }} ya no es tu rival.",
+  "mark_button": "Marcar como rival",
+  "marked_button": "Tu rival",
+  "private": "Solo tú ves a quién marcaste, nadie recibe aviso.",
+  "gap_seconds": "{{ gap }} s",
+  "gap_minutes": "{{ gap }} min",
+  "errors": {
+    "rival_self": "No puedes ser tu propio rival.",
+    "too_many_rivals": "Ya tienes 20 rivales. Desmarca a uno para hacer sitio.",
+    "no_such_player": "Ese jugador no existe."
+  },
+  "today": {
+    "title": "Rivales hoy",
+    "beat": "Le ganaste a <b>{{ name }}</b> por {{ gap }}",
+    "lost": "<b>{{ name }}</b> fue {{ gap }} más rápido",
+    "tie": "Empate exacto con <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> aún no ha jugado",
+    "solved": "<b>{{ name }}</b> lo resolvió en {{ time }}",
+    "empty": "Marca jugadores como rivales en la clasificación y cada puente del día será un duelo.",
+    "find": "Buscar rivales →"
+  },
+  "record": {
+    "title": "Cara a cara",
+    "text": "Cada día que ambos resolvisteis, gana el más rápido.",
+    "short": "Duelos",
+    "summary": "Victorias: {{ wins }} · derrotas: {{ losses }} · empates: {{ draws }}",
+    "wins": "Victorias",
+    "losses": "Derrotas",
+    "draws": "Empates",
+    "none": "Todavía no hay un día que hayáis resuelto los dos. ¡El puente de hoy podría ser el primer duelo!",
+    "recent": "Últimos duelos",
+    "day": "Puente #{{ number }}: {{ mine }} contra {{ theirs }}"
+  },
+  "board": {
+    "text": "Tú y tus rivales, de siempre. Solo tú ves esta lista.",
+    "empty": "Aún no tienes rivales. Toca las espadas cruzadas junto a un nombre en cualquier clasificación para marcar a alguien.",
+    "you": "Tú",
+    "streak": "Racha"
+  }
+}

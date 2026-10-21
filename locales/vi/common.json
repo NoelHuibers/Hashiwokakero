@@ -5,7 +5,8 @@
     "ranks": "Xếp hạng",
     "create": "Tạo",
     "lab": "Lab",
-    "main": "Điều hướng chính"
+    "main": "Điều hướng chính",
+    "groups": "Nhóm"
   },
   "tagline_short": "Nối cầu",
   "language": "Ngôn ngữ",
@@ -74,7 +75,13 @@
     "too_many_messages": "Hôm nay bạn đã gửi đủ tin nhắn rồi, vui lòng thử lại vào ngày mai.",
     "rename_too_soon": "Bạn vừa đổi tên người dùng gần đây, vui lòng thử lại sau.",
     "username_not_allowed": "Tên này không được phép dùng ở đây, vui lòng chọn tên khác.",
-    "banned": "Tài khoản này đã bị cấm. Nếu bạn nghĩ đây là nhầm lẫn, vui lòng liên hệ với chúng tôi."
+    "banned": "Tài khoản này đã bị cấm. Nếu bạn nghĩ đây là nhầm lẫn, vui lòng liên hệ với chúng tôi.",
+    "group_name_invalid": "Tên nhóm gồm 1 đến 32 ký tự.",
+    "group_name_not_allowed": "Tên này không được phép dùng ở đây, vui lòng chọn tên khác.",
+    "group_not_found": "Nhóm này không tồn tại, hoặc bạn không phải thành viên.",
+    "group_full": "Nhóm này đã đầy: đã có đủ 50 thành viên.",
+    "too_many_groups": "Bạn đã ở trong 10 nhóm rồi, hãy rời một nhóm trước.",
+    "group_owner_only": "Chỉ chủ nhóm mới làm được việc này."
   },
   "solver": {
     "title": "Bộ giải SAT",
@@ -187,6 +194,12 @@
   "date_long": "{{ weekday }}, ngày {{ day }} {{ month }} năm {{ year }}",
   "date_short": "{{ day }} {{ month }}, {{ year }}",
   "og_image_alt": "Một câu đố Hashiwokakero đã giải theo phong cách pixel art: các hòn đảo đánh số được nối bằng cầu gỗ và cầu đỏ son",
+  "og": {
+    "tagline": "Trò chơi nối cầu của Nhật Bản, phong cách pixel art",
+    "free": "Miễn phí",
+    "daily": "Mỗi ngày một câu đố mới",
+    "unique": "Đúng một lời giải"
+  },
   "ld": {
     "site": "Hashiwokakero, trò chơi nối cầu của Nhật Bản, chơi miễn phí trên trình duyệt.",
     "game": "Nối các hòn đảo bằng cầu sao cho số cầu của mỗi đảo đúng bằng con số ghi trên đảo. Câu đố mỗi ngày kèm bảng xếp hạng, năm mức độ khó, đồ họa pixel art, và mỗi câu đố có đúng một lời giải."

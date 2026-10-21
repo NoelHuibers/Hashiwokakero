@@ -852,6 +852,7 @@ fn worker_reports() {
             season: 1,
             message: "worker restarted".into(),
         },
+        Report::Heartbeat { id: 12, season: 1 },
     ];
     let lines: Vec<String> = reports
         .iter()

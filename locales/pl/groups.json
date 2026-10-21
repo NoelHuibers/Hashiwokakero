@@ -1,0 +1,100 @@
+{
+  "title": "Grupy",
+  "intro": "Graj w łamigłówkę dnia z przyjaciółmi, rodziną albo współpracownikami: zobacz, kto już dziś skończył, porównaj czasy po ukończeniu własnej gry i patrz, jak rosną mosty między wami.",
+  "list": {
+    "title": "Twoje grupy",
+    "text": "Wszystkie twoje grupy i to, ile osób jest w nich dziś już na mecie.",
+    "none": "Nie masz jeszcze grup. Załóż jedną i wyślij link znajomym.",
+    "members": "Członkowie: {{ count }}",
+    "today": "Dziś na mecie"
+  },
+  "create": {
+    "title": "Załóż grupę",
+    "text": "Nadaj jej nazwę, a potem wyślij link z zaproszeniem tym, którzy mają dołączyć. Konto nie jest potrzebne.",
+    "name": "Nazwa grupy",
+    "placeholder": "np. Klub Mostowy",
+    "button": "Załóż grupę",
+    "busy": "Zakładam…",
+    "invite_hint": "Masz link z zaproszeniem? Po prostu go otwórz, żeby dołączyć."
+  },
+  "ready": {
+    "title": "Twoja grupa jest gotowa!",
+    "text": "Wyślij ten link znajomym: każdy, kto go otworzy, dołączy jednym kliknięciem.",
+    "open": "Otwórz grupę"
+  },
+  "invite": {
+    "title": "Link z zaproszeniem",
+    "copy": "Kopiuj link",
+    "copied": "Link z zaproszeniem skopiowany do schowka.",
+    "share": "Udostępnij zaproszenie",
+    "share_text": "Dołącz do mojej grupy „{{ name }}” w Hashi i porównajmy nasze mosty dnia!",
+    "rotate": "Utwórz nowy link",
+    "rotate_confirm": "Utworzyć nowy link z zaproszeniem? Stary przestanie działać.",
+    "rotated": "Nowy link z zaproszeniem gotowy, stary już nie działa."
+  },
+  "join": {
+    "page_title": "Dołącz do grupy",
+    "title": "Dołącz do grupy „{{ name }}”",
+    "text": "Członkowie, którzy porównują tu swoje mosty dnia: {{ count }}",
+    "button": "Dołącz do grupy",
+    "busy": "Dołączam…",
+    "joined": "Witaj w grupie {{ name }}!",
+    "full": "Ta grupa jest pełna, ma już 50 członków.",
+    "guest_hint": "Konto nie jest potrzebne: dołączysz jako gość i w każdej chwili możesz zarezerwować nazwę użytkownika.",
+    "invalid_title": "Ten link z zaproszeniem nie działa",
+    "invalid_text": "Może jest w nim literówka albo grupa utworzyła nowy. Poproś kogoś z grupy o świeży link."
+  },
+  "page": {
+    "title": "Grupa",
+    "back": "Twoje grupy",
+    "since": "od {{ date }}",
+    "not_found": "Ta grupa nie istnieje albo do niej nie należysz.",
+    "not_found_hint": "Poproś kogoś z grupy o link z zaproszeniem, żeby dołączyć."
+  },
+  "archipelago": {
+    "label": "Archipelag grupy, jedna wyspa na osobę. Dziś na mecie: {{ done }} z {{ total }}",
+    "done": "dziś na mecie",
+    "waiting": "dziś jeszcze przed grą",
+    "bridge": "{{ a }} i {{ b }} · dni rozwiązane przez oboje: {{ days }}",
+    "legend": "Most łączy każdą parę sąsiadów, którzy w ostatnich czterech tygodniach rozwiązali tę samą łamigłówkę dnia, a po siedmiu takich dniach staje się podwójny. Nad każdym, kto dziś już skończył, powiewa proporczyk."
+  },
+  "today": {
+    "title": "Dziś",
+    "daily": "Most dnia #{{ number }}",
+    "your_turn": "Na mecie: {{ done }} z {{ total }} – twoja kolej!",
+    "all_waiting": "Nikt jeszcze nie przeszedł – bądź pierwszy!",
+    "spoiler": "Czasy pojawią się po samodzielnym ukończeniu dzisiejszej łamigłówki dnia.",
+    "play": "Zagraj w dzisiejszy most",
+    "done": "gotowe",
+    "waiting": "czeka",
+    "unranked": "poza rankingiem"
+  },
+  "week": {
+    "title": "Tydzień",
+    "member": "Członek",
+    "earlier": "Poprzedni tydzień",
+    "later": "Następny tydzień",
+    "solved": "{{ name }} · {{ date }}: rozwiązane",
+    "missed": "{{ name }} · {{ date }}: przegapione",
+    "open": "{{ name }} · {{ date }}: jeszcze do zagrania"
+  },
+  "members": {
+    "title": "Członkowie",
+    "count": "Członkowie: {{ count }} z {{ max }}",
+    "owner": "Właściciel",
+    "joined": "w grupie od {{ date }}",
+    "remove_label": "Usuń: {{ name }}",
+    "remove_confirm": "Usunąć {{ name }} z grupy? Link z zaproszeniem pozwoli wrócić, chyba że utworzysz nowy.",
+    "removed": "{{ name }} nie należy już do grupy.",
+    "leave": "Opuść grupę",
+    "leave_confirm": "Opuścić grupę „{{ name }}”? Możesz do niej wrócić przez link z zaproszeniem.",
+    "left": "Nie należysz już do grupy {{ name }}."
+  },
+  "daily": {
+    "tabs": "Rankingi",
+    "world": "Świat",
+    "done": "Dziś na mecie: {{ done }} z {{ total }}",
+    "open": "Otwórz grupę",
+    "compare": "Porównaj się ze znajomymi: <b>załóż grupę</b>"
+  }
+}

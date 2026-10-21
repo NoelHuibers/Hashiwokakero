@@ -72,7 +72,13 @@ pub struct Daily {
     pub(super) skew: RwSignal<i64>,
     /// Client clock, ticking while the page is open.
     pub(super) now: RwSignal<i64>,
+    /// What this tab's submit got back, `None` for a daily finished before the page was opened.
     pub(super) result: RwSignal<Option<SubmitResult>>,
+    /// The player put the win card of [`Self::result`] away to look at the board.
+    pub(super) admired: RwSignal<bool>,
+    /// The last submit failed and the server doesn't have the finish: the solved board waits
+    /// for the player to submit it again, see [`Self::submit_failed`].
+    pub(super) unsent: RwSignal<bool>,
     pub(super) ranking: RwSignal<Option<Leaderboard>>,
     pub(super) busy: RwSignal<bool>,
     pub(super) logged: StoredValue<Option<MoveSnapshot>>,
@@ -236,16 +242,62 @@ impl Daily {
         self.info.set(Some(info));
     }
 
+    /// Whether the solved board can go to the server now: once per win, never while a submit
+    /// or a paid action is on its way, and after a failed one only when the player says so.
+    pub(super) fn ready_to_submit(&self) -> bool {
+        self.game.status.get() == Status::Won
+            && !self.unsent.get()
+            && !self.finished()
+            && !self.actions.locked()
+            && !self.busy.get_untracked()
+    }
+
+    /// The server took the solved board: `end` is the finish on the server's clock.
+    pub(super) fn submitted(&self, result: SubmitResult, end: i64) {
+        self.update_attempt(|a| {
+            a.finished_at = Some(end);
+            a.time_ms = Some(result.time_ms);
+        });
+        self.admired.set(false);
+        self.result.set(Some(result));
+    }
+
     /// After a failed submit, with today's daily as the server sees it now (`None` if it
     /// couldn't be asked). The finish may be saved despite the error (one after the update, or
-    /// another tab was first), so the board only unlocks if the server says the daily still
-    /// runs. Otherwise it stays solved and locked, a reload submits again.
+    /// another tab was first), so nothing changes if the server says it's finished. Otherwise
+    /// a solved board stays solved and locked until the player submits it again, which a
+    /// lasting server error can't turn into a loop; a board that isn't solved unlocks.
     pub(super) fn submit_failed(&self, server: Option<DailyInfo>) {
-        let Some(info) = server else { return };
-        if !finished(&info) {
+        if server.as_ref().is_some_and(finished) {
+            self.unsent.set(false);
+        } else if self.solved() {
+            self.unsent.set(true);
+        } else {
             self.game.status.set(Status::Playing);
         }
-        self.show(info);
+        if let Some(info) = server {
+            self.show(info);
+        }
+    }
+
+    /// The player submits the solved board again after a failed submit.
+    pub(super) fn submit_again(&self) {
+        self.unsent.set(false);
+    }
+
+    /// The board in this tab is a solution.
+    fn solved(&self) -> bool {
+        let game = self.game;
+        game.board
+            .with_untracked(|b| game.bridges.with_untracked(|br| b.check(br).solved))
+    }
+
+    /// The win card over the board: right after this tab's submit, until the player puts it
+    /// away. A daily finished before the page was opened only has the result card.
+    pub(super) fn celebrating(&self) -> bool {
+        self.result.with(Option::is_some)
+            && self.game.status.get() == Status::Won
+            && !self.admired.get()
     }
 
     /// Fetches today's daily again, quietly, unless it's finished: back on the page after
@@ -277,6 +329,9 @@ impl Daily {
             params: params_for(info.day),
         };
         game.set_puzzle(puzzle.clone(), None, Some(true), source);
+        // A result or a failed submit belongs to the board before
+        self.result.set(None);
+        self.unsent.set(false);
         match &info.attempt {
             Some(a) if a.finished() => {
                 if let Some(bridges) = &a.bridges {
@@ -317,6 +372,19 @@ impl Daily {
             }
         });
         self.refresh_ranking();
+    }
+
+    /// The day of the header: `rendered`, the server's day the page was rendered with, until the
+    /// daily is loaded, then the loaded daily's, and the last one while a new day loads. So the
+    /// server's page has its heading before the daily is loaded, and it doesn't change when the
+    /// daily comes (it's the same day) or flash away when a new day starts.
+    pub(super) fn header_day(&self, rendered: Option<i64>) -> Memo<Option<i64>> {
+        let info = self.info;
+        Memo::new(move |before: Option<&Option<i64>>| {
+            info.with(|i| i.as_ref().map(|i| i.day))
+                .or_else(|| before.copied().flatten())
+                .or(rendered)
+        })
     }
 
     pub(super) fn update_attempt(&self, f: impl FnOnce(&mut AttemptInfo)) {
@@ -501,6 +569,8 @@ mod tests {
             skew: RwSignal::new(0),
             now: RwSignal::new(0),
             result: RwSignal::new(None),
+            admired: RwSignal::new(false),
+            unsent: RwSignal::new(false),
             ranking: RwSignal::new(None),
             busy: RwSignal::new(false),
             refreshing: StoredValue::new(false),
@@ -590,14 +660,136 @@ mod tests {
         });
     }
 
+    /// The status used to go back to playing, and a board that's still solved never won again
+    /// (no petals, no submit) until a bridge changed.
     #[test]
-    fn a_failed_submit_unlocks_the_board_while_the_daily_runs() {
+    fn a_solved_board_can_be_submitted_again_after_a_failed_submit() {
         tab(|d| {
             board(d, vec![1], Status::Won);
+            d.show(info(false));
+            assert!(d.ready_to_submit());
+            d.busy.set(true);
+            assert!(!d.ready_to_submit());
+            d.submit_failed(Some(info(false)));
+            d.busy.set(false);
+            assert_eq!(d.game.status.get_untracked(), Status::Won);
+            assert!(!d.finished());
+            assert!(!editable(d));
+            // A lasting server error can't loop: the next submit waits for the player
+            assert!(d.unsent.get_untracked());
+            assert!(!d.ready_to_submit());
+            d.submit_again();
+            assert!(d.ready_to_submit());
+            // It fails again: waiting again
+            d.busy.set(true);
+            d.submit_failed(Some(info(false)));
+            d.busy.set(false);
+            assert!(!d.ready_to_submit());
+        });
+    }
+
+    #[test]
+    fn a_failed_submit_unlocks_a_board_that_isnt_solved() {
+        tab(|d| {
+            board(d, vec![0], Status::Won);
             d.submit_failed(Some(info(false)));
             assert_eq!(d.game.status.get_untracked(), Status::Playing);
-            assert!(!d.finished());
+            assert!(!d.unsent.get_untracked());
+            assert!(!d.ready_to_submit());
             assert!(editable(d));
+        });
+    }
+
+    #[test]
+    fn a_failed_submit_the_server_cant_tell_about_can_be_sent_again() {
+        tab(|d| {
+            board(d, vec![1], Status::Won);
+            d.show(info(false));
+            d.submit_failed(None);
+            assert!(!d.ready_to_submit());
+            d.submit_again();
+            assert!(d.ready_to_submit());
+        });
+    }
+
+    #[test]
+    fn a_failed_submit_the_server_saved_isnt_sent_again() {
+        tab(|d| {
+            board(d, vec![1], Status::Won);
+            d.submit_failed(Some(info(true)));
+            assert!(!d.unsent.get_untracked());
+            assert!(!d.ready_to_submit());
+        });
+    }
+
+    /// What this tab's submit got back.
+    fn result(stamps: Vec<crate::model::Stamp>) -> SubmitResult {
+        SubmitResult {
+            time_ms: 60_000,
+            rank: 1,
+            finishers: 1,
+            flag: None,
+            stamps,
+        }
+    }
+
+    #[test]
+    fn the_win_card_shows_after_this_tabs_submit_until_its_put_away() {
+        tab(|d| {
+            board(d, vec![1], Status::Won);
+            d.show(info(false));
+            assert!(!d.celebrating());
+            d.submitted(result(vec![crate::model::Stamp::First]), 61_000);
+            assert!(d.celebrating());
+            assert!(d.finished() && !d.ready_to_submit());
+            assert_eq!(d.elapsed_ms(), 60_000);
+            d.admired.set(true);
+            assert!(!d.celebrating());
+            // The result card still has the result, and the board stays solved
+            assert!(d.result.with_untracked(Option::is_some));
+            assert_eq!(d.game.status.get_untracked(), Status::Won);
+            assert_eq!(d.game.bridges.get_untracked(), vec![1]);
+        });
+    }
+
+    #[test]
+    fn a_daily_finished_before_the_page_opened_has_no_win_card() {
+        tab(|d| {
+            d.show(info(true));
+            assert_eq!(d.game.status.get_untracked(), Status::Won);
+            assert!(!d.celebrating());
+            assert!(!d.ready_to_submit());
+        });
+    }
+
+    #[test]
+    fn the_next_daily_drops_the_win_card_of_the_last_one() {
+        tab(|d| {
+            board(d, vec![1], Status::Won);
+            d.show(info(false));
+            d.submitted(result(vec![]), 61_000);
+            assert!(d.celebrating());
+            // The next day, already finished in another tab
+            let mut tomorrow = info(true);
+            tomorrow.day = 101;
+            tomorrow.puzzle = Some(Puzzle::new(
+                3,
+                1,
+                vec![
+                    Island {
+                        pos: Pos { x: 0, y: 0 },
+                        required: 2,
+                    },
+                    Island {
+                        pos: Pos { x: 2, y: 0 },
+                        required: 2,
+                    },
+                ],
+            ));
+            attempt(&mut tomorrow).bridges = Some(vec![2]);
+            d.show(tomorrow);
+            assert_eq!(d.game.status.get_untracked(), Status::Won);
+            assert!(!d.celebrating());
         });
     }
 
@@ -733,6 +925,35 @@ mod tests {
             d.update_attempt(|a| a.checks += 1);
             let a = d.info.get_untracked().unwrap().attempt.unwrap();
             assert_eq!((a.hints, a.checks), (1, 1));
+        });
+    }
+
+    #[test]
+    fn the_header_shows_the_rendered_day_until_the_daily_is_loaded() {
+        tab(|d| {
+            let day = d.header_day(Some(99));
+            assert_eq!(day.get_untracked(), Some(99));
+            // Loaded just after midnight, a day after the page was rendered
+            d.show(info(false));
+            assert_eq!(day.get_untracked(), Some(100));
+            // A new day loads: the header keeps the day it shows until it's there
+            d.info.set(None);
+            assert_eq!(day.get_untracked(), Some(100));
+            let mut tomorrow = info(false);
+            tomorrow.day = 101;
+            d.info.set(Some(tomorrow));
+            assert_eq!(day.get_untracked(), Some(101));
+        });
+    }
+
+    /// Opened in the browser, without a day from the server: no header until the daily is loaded.
+    #[test]
+    fn without_a_rendered_day_the_header_waits_for_the_daily() {
+        tab(|d| {
+            let day = d.header_day(None);
+            assert_eq!(day.get_untracked(), None);
+            d.show(info(false));
+            assert_eq!(day.get_untracked(), Some(100));
         });
     }
 

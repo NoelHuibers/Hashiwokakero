@@ -1,9 +1,9 @@
 {
   "meta": {
     "title": "Hashiwokakero spielen · Regeln und Lösungstipps · Hashi",
-    "description": "Die Regeln von Hashiwokakero (Brücken bauen) mit Beispiel, Schlüsse, die fast jedes Rätsel ohne Raten knacken, und wie ein SAT-Solver Eindeutigkeit beweist."
+    "description": "Hashiwokakero (Brücken bauen) spielen: Regeln mit Beispiel, Schlüsse, die fast jedes Rätsel ohne Raten lösen, und wie ein SAT-Solver Eindeutigkeit beweist."
   },
-  "title": "Spielanleitung",
+  "title": "So spielst du Hashiwokakero",
   "intro": "Hashiwokakero (橋をかけろ, „Baut Brücken!“) ist ein Logikrätsel des Verlags Nikoli. Verbinde alle Inseln mit Brücken, sodass jede Insel genau so viele Brücken hat, wie ihre Zahl angibt.",
   "rule": {
     "count_title": "Brücken zählen",
@@ -16,6 +16,25 @@
     "connected": "Am Ende muss jede Insel von jeder anderen aus erreichbar sein."
   },
   "example": "Ein gelöstes Rätsel",
+  "tips": {
+    "title": "Lösungstechniken für Hashiwokakero",
+    "intro": "Fünf Schlüsse, mit denen du die meisten Rätsel ohne Raten knackst. Jedes Bild zeigt die Brücken, die sie erzwingen.",
+    "corner_title": "Ecken brauchen Doppelbrücken",
+    "corner": "Eine 4 in der Ecke hat nur zwei Nachbarn, also braucht sie zu beiden eine Doppelbrücke. Dasselbe gilt für eine 6 am Rand und eine 8 im offenen Feld.",
+    "corner_board": "Eine 4 in der Ecke oben links mit je einer Doppelbrücke zur 3 rechts daneben und zur 2 darunter.",
+    "ones_title": "Zwei 1en verbinden sich nie",
+    "ones": "Eine Brücke zwischen zwei 1en würde beide fertig machen und vom Rest abschneiden, also verbindet sich jede 1 woanders. Aus demselben Grund teilen sich zwei 2en nie eine Doppelbrücke.",
+    "ones_board": "Zwei 1en in der oberen Reihe, jede mit einer einfachen Brücke nach unten zur 3 statt zueinander.",
+    "count_title": "Zähl, was fehlt",
+    "count": "Eine 5 mit drei Nachbarn kann höchstens sechs Brücken bekommen. Ohne einen von ihnen käme sie auf höchstens vier, also bekommt jeder Nachbar mindestens eine Brücke.",
+    "count_board": "Eine 5 am oberen Rand mit je einer einfachen Brücke zu ihren drei Nachbarn: der 2 links, der 3 rechts und der 4 darunter.",
+    "block_title": "Brücken versperren den Weg",
+    "block": "Brücken kreuzen sich nie, also sperrt jede Brücke die Linien, über die sie führt. Einer Insel dahinter bleibt dann oft nur noch ein Weg.",
+    "block_board": "Eine Doppelbrücke führt durch die Mitte nach unten und versperrt der 1 links die Reihe, also baut die 1 ihre Brücke nach unten zur 2 statt hinüber zur 2 rechts.",
+    "connect_title": "Nie eine Gruppe abschließen",
+    "connect": "Am Ende muss alles verbunden sein. Würden ein paar Inseln untereinander fertig und damit abgeschnitten, muss mindestens eine Brücke hinausführen.",
+    "connect_board": "Eine Reihe aus 1, 3 und 2: Die 1 baut eine Brücke zur 3. Gäbe die 3 ihre letzten beiden Brücken an die 2, wären die drei Inseln abgeschnitten, also baut die 3 auch eine Brücke nach unten zur 2."
+  },
   "controls": {
     "title": "Steuerung",
     "tap": "Klick aufs Wasser zwischen zwei Inseln, um eine Brücke zu bauen, noch einmal für eine zweite, ein dritter Klick entfernt beide.",

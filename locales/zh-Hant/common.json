@@ -5,7 +5,8 @@
     "ranks": "排行",
     "create": "創作",
     "lab": "實驗室",
-    "main": "主選單"
+    "main": "主選單",
+    "groups": "群組"
   },
   "tagline_short": "造橋",
   "language": "語言",
@@ -74,7 +75,13 @@
     "too_many_messages": "今天的訊息已經夠多了，請明天再試。",
     "rename_too_soon": "你最近才更改過使用者名稱，請稍後再試。",
     "username_not_allowed": "這個名字不能在這裡使用，請換一個。",
-    "banned": "此帳號已被停權。如果你認為這是誤判，請與我們聯絡。"
+    "banned": "此帳號已被停權。如果你認為這是誤判，請與我們聯絡。",
+    "group_name_invalid": "群組名稱需為 1 到 32 個字元。",
+    "group_name_not_allowed": "這個名字不能在這裡使用，請換一個。",
+    "group_not_found": "這個群組不存在，或是你不是它的成員。",
+    "group_full": "這個群組已滿，已經有 50 位成員。",
+    "too_many_groups": "你已經加入 10 個群組了，請先退出一個。",
+    "group_owner_only": "只有群組擁有者才能這麼做。"
   },
   "solver": {
     "title": "SAT 求解器",
@@ -187,6 +194,12 @@
   "date_long": "{{ year }}年{{ month }}{{ day }}日（{{ weekday }}）",
   "date_short": "{{ year }}年{{ month }}{{ day }}日",
   "og_image_alt": "像素風格的已解數橋（Hashiwokakero）謎題：標有數字的小島以木橋和朱紅色的橋相連",
+  "og": {
+    "tagline": "來自日本的造橋謎題，像素畫風",
+    "free": "免費暢玩",
+    "daily": "每天一道新謎題",
+    "unique": "答案唯一"
+  },
   "ld": {
     "site": "數橋（Hashiwokakero），來自日本的造橋邏輯謎題，在瀏覽器上免費暢玩。",
     "game": "用橋把小島連起來，讓每座島的橋數等於島上的數字。每日謎題搭配排行榜，五種難度，像素畫風，每道題都只有唯一解。"

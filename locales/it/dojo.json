@@ -43,7 +43,7 @@
     "shapley_tip": "La sua giusta quota del carburante risparmiato dall’intero campo, in miliardi per formula",
     "vbs_line": "Miglior solver virtuale di {{ count }} solver: {{ solved }}/{{ total }} risolte, PAR-2 {{ par2 }}",
     "view_budget": "Budget",
-    "budget_hint": "Le stesse esecuzioni, classificate con un altro budget per formula. Ogni esecuzione prosegue fino a dieci volte il budget ufficiale e il carburante è deterministico, quindi ogni budget più piccolo dà esattamente il risultato che avrebbe avuto un’esecuzione con quel budget. La classifica ufficiale resta a 1×; le frecce mostrano di quanto un solver si sposta dal suo posto.",
+    "budget_hint": "Le stesse esecuzioni, classificate con un altro budget per formula. Ogni esecuzione prosegue fino a quattro volte il budget ufficiale e il carburante è deterministico, quindi ogni budget più piccolo dà esattamente il risultato che avrebbe avuto un’esecuzione con quel budget. La classifica ufficiale resta a 1×; le frecce mostrano di quanto un solver si sposta dal suo posto.",
     "budget_pick": "Budget per formula",
     "budget_official": "ufficiale",
     "budget_wrong": "risposta sbagliata",
@@ -353,6 +353,6 @@
     "shapley_title": "Valore di Shapley",
     "shapley": "I punteggi individuali premiano i quasi-cloni, i contributi marginali li puniscono. Il valore di Shapley della teoria dei giochi cooperativi è equo con entrambi: divide il carburante che l’intero campo risparmia rispetto a non risolvere nulla in base al contributo marginale medio di ogni solver su tutti gli ordini di ingresso (<a>Fréchette et al., AAAI 2016</a>). Lo calcoliamo in modo esatto, in miliardi di carburante per formula; la somma dei valori è il doppio del budget meno il PAR-2 del VBS.",
     "budget_title": "Classifiche con altri budget",
-    "budget": "La classifica misura una gara breve: 7 miliardi di carburante per formula, circa mezzo secondo di un solver nativo, mentre la SAT Competition concede 5.000 secondi. I solver con molto preprocessing e inprocessing, come Kissat e CaDiCaL, lo pagano prima che renda, così con questo budget finiscono dietro MiniSat. Ogni esecuzione prosegue fino a dieci volte il budget e, poiché il carburante è deterministico, una sola esecuzione dà il punteggio esatto con ogni budget più piccolo: la vista Budget mostra come cambia la classifica con più tempo."
+    "budget": "La classifica misura una gara breve: 7 miliardi di carburante per formula, circa mezzo secondo di un solver nativo, mentre la SAT Competition concede 5.000 secondi. I solver con molto preprocessing e inprocessing, come Kissat e CaDiCaL, lo pagano prima che renda, così con questo budget finiscono dietro MiniSat. Ogni esecuzione prosegue fino a quattro volte il budget e, poiché il carburante è deterministico, una sola esecuzione dà il punteggio esatto con ogni budget più piccolo: la vista Budget mostra come cambia la classifica con più tempo."
   }
 }

@@ -12,7 +12,7 @@ use leptos_axum::{LeptosRoutes, generate_route_list};
 use tower_http::compression::predicate::{NotForContentType, Predicate};
 use tower_http::compression::{CompressionLayer, DefaultPredicate};
 
-use super::{admin, dojo};
+use super::{admin, dojo, og};
 use crate::api::BUILD_HEADER;
 use crate::app::App;
 
@@ -54,6 +54,10 @@ fn router_with_client_source<V: IntoView + 'static>(
                 )
             }),
         )
+        // Social preview images, per language and of the day's daily (see server/og)
+        .route("/og.png", get(og::legacy_image))
+        .route("/og/{file}", get(og::site_image))
+        .route("/og/daily/{date}/{file}", get(og::daily_image))
         // The SAT Dojo: uploads, reports from the worker, house entries (see server/dojo)
         .route(
             "/dojo/submit",

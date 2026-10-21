@@ -26,24 +26,5 @@
   "admire": "Hayran kal",
   "revealed": "SAT çözücü çözdü.",
   "play_myself": "Kendim oynayacağım",
-  "new_puzzle": "Yeni bulmaca",
-  "about": {
-    "kicker": "oyun hakkında",
-    "title": "Hashiwokakero, köprü bulmacası",
-    "what_title": "Hashiwokakero nedir?",
-    "what": "Hashiwokakero (橋をかけろ, “köprüleri kur!”), Nikoli tarafından yayımlanan bir Japon mantık bulmacasıdır; <b>Köprüler</b>, <b>Hashi</b> veya Ai-Ki-Ai olarak da bilinir. Numaralı adalardan oluşan bir ızgara köprülerle bağlanmalıdır: her ada, sayısı kadar köprü alır; köprüler düz gider ve asla kesişmez; aynı iki adayı en fazla iki köprü bağlar ve sonunda her adadan diğer her adaya ulaşılabilir. Sudoku veya Nurikabe gibi hesap gerektirmez, sadece mantık yürütme ister.",
-    "how_title": "Köprüler online nasıl oynanır",
-    "how": "Kolay (7×7) ile Oni (24×24) arasında bir zorluk seç ve Üret'e bas. Köprü kurmak için iki ada arasındaki suya tıkla, çift köprü için tekrar tıkla, üçüncü tık köprüleri kaldırır; ya da bir adadan diğerine sürükle. Tamamlanan adalar yeşile, fazla dolanlar kırmızıya döner. Takıldın mı? İpucu iste ya da çözücü köprülerini kontrol etsin. Çözülmüş örnekli tüm kurallar <a>nasıl oynanır</a> sayfasında.",
-    "techniques_title": "Tahmin gerektirmeyen çözüm teknikleri",
-    "technique_double": "Sayısı komşu sayısının iki katı olan bir adanın her komşusuna çift köprüsü vardır: açıkta bir 8, kenarda bir 6, köşede bir 4.",
-    "technique_isolation": "Bir 1 asla başka bir 1'e bağlanmaz, iki 2 de asla çift köprüyle bağlanmaz; yoksa geri kalanından kopar.",
-    "technique_count": "Eksik olanı say: bir adanın üç komşuya dağılan 5 köprüye daha ihtiyacı varsa, her komşu en az bir köprü alır.",
-    "technique_block": "Köprüler kesiştikleri hatları kapatır, yani kurulan bir köprü iki yandaki adaları başka yerden bağlanmaya zorlayabilir.",
-    "technique_connect": "Sonunda her şey bağlı olmalı: geri kalanına yalnızca tek bir boşluktan ulaşabilen bir grup o boşluğu kullanmak zorundadır.",
-    "why_title": "Neden Hashi'yi burada oynamalı",
-    "why_unique": "Her bulmacanın <b>tam olarak tek bir çözümü</b> var; sen görmeden önce SAT çözücü kanıtlar, yani mantık her zaman yeter.",
-    "why_unlimited": "Beş boyutta sınırsız ücretsiz bulmaca; ipuçları ve kontroller sezgisellerden değil, gerçek çözümden gelir.",
-    "why_art": "Sevimli Japon piksel sanatı, gündüz ve gece teması, klavye kısayolları, geri al ve yinele; oyunun tarayıcıda kaydedilir.",
-    "why_workshop": "<workshop>Atölyede</workshop> kendi bulmacalarını yap ya da kendi CDCL ve DPLL SAT çözücülerimizin <lab>laboratuvarda</lab> yarışını izle. Oyunun tamamı açık kaynak ve Rust ile yazıldı."
-  }
+  "new_puzzle": "Yeni bulmaca"
 }

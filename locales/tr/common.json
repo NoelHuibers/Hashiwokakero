@@ -5,7 +5,8 @@
     "ranks": "Sıralama",
     "create": "Oluştur",
     "lab": "Lab",
-    "main": "Ana menü"
+    "main": "Ana menü",
+    "groups": "Gruplar"
   },
   "tagline_short": "Köprüler",
   "language": "Dil",
@@ -74,7 +75,13 @@
     "too_many_messages": "Bugünlük bu kadar mesaj yeter, lütfen yarın tekrar dene.",
     "rename_too_soon": "Kullanıcı adını kısa süre önce değiştirdin, lütfen daha sonra tekrar dene.",
     "username_not_allowed": "Bu isme burada izin verilmiyor, lütfen başka bir isim seç.",
-    "banned": "Bu hesap yasaklandı. Bunun bir hata olduğunu düşünüyorsan lütfen bize yaz."
+    "banned": "Bu hesap yasaklandı. Bunun bir hata olduğunu düşünüyorsan lütfen bize yaz.",
+    "group_name_invalid": "Grup adı 1 ila 32 karakter olmalı.",
+    "group_name_not_allowed": "Bu isme burada izin verilmiyor, lütfen başka bir isim seç.",
+    "group_not_found": "Bu grup yok ya da üyesi değilsin.",
+    "group_full": "Bu grup dolu: zaten 50 üyesi var.",
+    "too_many_groups": "Zaten 10 grubun üyesisin, önce birinden ayrıl.",
+    "group_owner_only": "Bunu yalnızca grubun sahibi yapabilir."
   },
   "solver": {
     "title": "SAT çözücü",
@@ -187,6 +194,12 @@
   "date_long": "{{ day }} {{ month }} {{ year }} {{ weekday }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Piksel sanatıyla çözülmüş bir Hashiwokakero bulmacası: ahşap ve kırmızı köprülerle bağlanmış numaralı adalar",
+  "og": {
+    "tagline": "Japon köprü bulmacası, piksel sanatıyla",
+    "free": "Ücretsiz",
+    "daily": "Her gün yeni bir bulmaca",
+    "unique": "Tek bir çözüm"
+  },
   "ld": {
     "site": "Hashiwokakero, Japon köprü bulmacası, tarayıcıda ücretsiz oynanır.",
     "game": "Adaları köprülerle bağla; her adada, üzerindeki sayı kadar köprü olsun. Sıralamalı günlük bulmaca, beş zorluk seviyesi, piksel sanatı ve her bulmacanın tam olarak tek bir çözümü var."

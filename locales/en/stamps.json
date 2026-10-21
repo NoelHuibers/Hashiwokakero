@@ -4,6 +4,7 @@
   "collected": "{{ earned }} of {{ total }} stamps collected.",
   "new": "New stamp: {{ name }}!",
   "more": "And {{ count }} more new stamps, see your stamp book.",
+  "earned": "New stamps",
   "share": "{{ percent }}% of players",
   "pick": "Tap one you've earned to show it next to your name on the leaderboards.",
   "shown": "{{ name }} now shows next to your name on the leaderboards.",

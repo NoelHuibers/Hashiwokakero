@@ -4,7 +4,7 @@
 //! dojo run <solver.wasm> [--seed S [--hidden] | --set SET.tar.gz] [--budget FUEL] [--threads N]
 //!          [--family F] [--stderr] [--checker verified|builtin] [--proofs DIR]
 //!     Scores a solver on the development set, exactly like the leaderboard does: the runs go
-//!     on to ten times the budget (--budget, the leaderboard's by default), the score counts
+//!     on to four times the budget (--budget, the leaderboard's by default), the score counts
 //!     what happened within it and the end shows it at other budgets too. --seed takes
 //!     another seed, with --hidden for a hidden set like a season's (a past season's seed is
 //!     revealed on hashi.rs/dojo/seasons), --set an archived set as downloaded from there. UNSAT proofs are checked with drat-trim and

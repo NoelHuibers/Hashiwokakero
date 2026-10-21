@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · tempat latihan solver SAT · Hashi",
-    "description": "Kirim solver SAT-mu dalam WebAssembly dan panjat papan peringkat: dinilai pada formula baru tersembunyi dengan fuel deterministik, bukan detik. Gratis, terbuka."
+    "description": "Kirim solver SAT-mu sebagai WebAssembly, naiki papan peringkat: dinilai pada formula baru yang tersembunyi dengan fuel deterministik, bukan detik. Gratis."
   },
   "title": "SAT Dojo",
   "intro": "Tempat latihan untuk solver SAT. Kompilasi solvermu ke WebAssembly, kirimkan, dan solver itu dinilai pada set tersembunyi berisi formula baru: teka-teki Hashi, jebakan paritas, 3-SAT acak, merpati, ratu, faktorisasi, miter pengali, pewarnaan graf, dan satu keluarga misteri.",
@@ -43,7 +43,7 @@
     "shapley_tip": "Bagian adilnya dari fuel yang dihemat seluruh peserta, dalam miliar per formula",
     "vbs_line": "Solver terbaik virtual dari {{ count }} solver: {{ solved }}/{{ total }} terpecahkan, PAR-2 {{ par2 }}",
     "view_budget": "Anggaran",
-    "budget_hint": "Run yang sama, diperingkat dengan anggaran lain per formula. Setiap run berlanjut sampai sepuluh kali anggaran resmi, dan fuel bersifat deterministik, jadi setiap anggaran yang lebih kecil memberi persis hasil yang akan didapat run dengan anggaran itu. Peringkat resmi tetap di 1×; panah menunjukkan seberapa jauh solver bergeser dari posisinya di sana.",
+    "budget_hint": "Run yang sama, diperingkat dengan anggaran lain per formula. Setiap run berlanjut sampai empat kali anggaran resmi, dan fuel bersifat deterministik, jadi setiap anggaran yang lebih kecil memberi persis hasil yang akan didapat run dengan anggaran itu. Peringkat resmi tetap di 1×; panah menunjukkan seberapa jauh solver bergeser dari posisinya di sana.",
     "budget_pick": "Anggaran per formula",
     "budget_official": "resmi",
     "budget_wrong": "jawaban salah",
@@ -353,6 +353,6 @@
     "shapley_title": "Nilai Shapley",
     "shapley": "Skor mandiri menguntungkan solver yang nyaris kembar, kontribusi marjinal menghukumnya. Nilai Shapley dari teori permainan kooperatif adil bagi keduanya: nilai ini membagi fuel yang dihemat seluruh peserta dibandingkan dengan tidak memecahkan apa pun, menurut rata-rata kontribusi marjinal tiap solver atas setiap urutan bergabung (<a>Fréchette et al., AAAI 2016</a>). Kami menghitungnya secara eksak, dalam miliar fuel per formula; jumlah nilainya sama dengan dua kali anggaran dikurangi PAR-2 VBS.",
     "budget_title": "Peringkat pada anggaran lain",
-    "budget": "Peringkat mengukur balapan singkat: 7 miliar fuel per formula, sekitar setengah detik solver native, sementara SAT Competition memberi 5.000 detik. Solver dengan preprocessing dan inprocessing berat, seperti Kissat dan CaDiCaL, membayar biayanya sebelum hasilnya terasa, sehingga pada anggaran ini mereka berada di belakang MiniSat. Setiap run berlanjut sampai sepuluh kali anggaran, dan karena fuel deterministik, satu run memberi skor tepat pada setiap anggaran yang lebih kecil: tampilan Anggaran menunjukkan bagaimana peringkat berubah dengan lebih banyak waktu."
+    "budget": "Peringkat mengukur balapan singkat: 7 miliar fuel per formula, sekitar setengah detik solver native, sementara SAT Competition memberi 5.000 detik. Solver dengan preprocessing dan inprocessing berat, seperti Kissat dan CaDiCaL, membayar biayanya sebelum hasilnya terasa, sehingga pada anggaran ini mereka berada di belakang MiniSat. Setiap run berlanjut sampai empat kali anggaran, dan karena fuel deterministik, satu run memberi skor tepat pada setiap anggaran yang lebih kecil: tampilan Anggaran menunjukkan bagaimana peringkat berubah dengan lebih banyak waktu."
   }
 }

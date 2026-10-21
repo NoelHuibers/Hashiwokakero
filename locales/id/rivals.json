@@ -1,0 +1,45 @@
+{
+  "title": "Rival",
+  "mark": "Tandai {{ name }} sebagai rival",
+  "unmark": "{{ name }} adalah rivalmu, hapus tanda",
+  "marked": "{{ name }} sekarang rivalmu. Setiap teka-teki harian jadi duel!",
+  "unmarked": "{{ name }} bukan rivalmu lagi.",
+  "mark_button": "Tandai sebagai rival",
+  "marked_button": "Rivalmu",
+  "private": "Hanya kamu yang melihat siapa yang kamu tandai, tidak ada yang diberi tahu.",
+  "gap_seconds": "{{ gap }} dtk",
+  "gap_minutes": "{{ gap }} mnt",
+  "errors": {
+    "rival_self": "Kamu tidak bisa menjadi rival dirimu sendiri.",
+    "too_many_rivals": "Kamu sudah punya 20 rival. Hapus satu untuk memberi tempat.",
+    "no_such_player": "Pemain itu tidak ada."
+  },
+  "today": {
+    "title": "Rival hari ini",
+    "beat": "Kamu mengalahkan <b>{{ name }}</b> selisih {{ gap }}",
+    "lost": "<b>{{ name }}</b> lebih cepat {{ gap }}",
+    "tie": "Seri persis dengan <b>{{ name }}</b>",
+    "waiting": "<b>{{ name }}</b> belum bermain",
+    "solved": "<b>{{ name }}</b> menyelesaikannya dalam {{ time }}",
+    "empty": "Tandai pemain sebagai rival di papan peringkat, dan setiap teka-teki harian jadi duel.",
+    "find": "Cari rival →"
+  },
+  "record": {
+    "title": "Head-to-head",
+    "text": "Setiap hari kalian berdua menyelesaikannya, yang lebih cepat menang.",
+    "short": "Duel",
+    "summary": "Menang: {{ wins }} · kalah: {{ losses }} · seri: {{ draws }}",
+    "wins": "Menang",
+    "losses": "Kalah",
+    "draws": "Seri",
+    "none": "Belum ada hari yang kalian berdua selesaikan. Teka-teki hari ini bisa jadi duel pertama!",
+    "recent": "Duel terakhir",
+    "day": "Harian #{{ number }}: {{ mine }} lawan {{ theirs }}"
+  },
+  "board": {
+    "text": "Kamu dan rival-rivalmu, sepanjang masa. Hanya kamu yang melihat daftar ini.",
+    "empty": "Belum ada rival. Ketuk pedang bersilang di samping nama di papan peringkat mana pun untuk menandai seseorang.",
+    "you": "Kamu",
+    "streak": "Beruntun"
+  }
+}

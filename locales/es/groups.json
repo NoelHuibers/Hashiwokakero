@@ -1,0 +1,100 @@
+{
+  "title": "Grupos",
+  "intro": "Juega el reto diario con amigos, familia o compañeros: mira quién ha terminado ya hoy, compara los tiempos cuando hayas terminado tú y observa cómo crecen los puentes entre todos.",
+  "list": {
+    "title": "Tus grupos",
+    "text": "Todos tus grupos y cuántos han cruzado ya hoy.",
+    "none": "Aún no tienes grupos. Crea uno y manda el enlace a tus amigos.",
+    "members": "Miembros: {{ count }}",
+    "today": "Terminado hoy"
+  },
+  "create": {
+    "title": "Crear un grupo",
+    "text": "Ponle un nombre y luego manda el enlace de invitación a quien quieras que se una. No hace falta cuenta.",
+    "name": "Nombre del grupo",
+    "placeholder": "p. ej. Club del Puente",
+    "button": "Crear el grupo",
+    "busy": "Creando…",
+    "invite_hint": "¿Tienes un enlace de invitación? Solo tienes que abrirlo para unirte."
+  },
+  "ready": {
+    "title": "¡Tu grupo está listo!",
+    "text": "Manda este enlace a tus amigos: quien lo abra podrá unirse con un clic.",
+    "open": "Abrir el grupo"
+  },
+  "invite": {
+    "title": "Enlace de invitación",
+    "copy": "Copiar enlace",
+    "copied": "Enlace de invitación copiado al portapapeles.",
+    "share": "Compartir la invitación",
+    "share_text": "¡Únete a mi grupo «{{ name }}» en Hashi y comparemos nuestros puentes diarios!",
+    "rotate": "Crear un enlace nuevo",
+    "rotate_confirm": "¿Crear un enlace de invitación nuevo? El anterior dejará de funcionar.",
+    "rotated": "Nuevo enlace de invitación creado, el anterior ya no funciona."
+  },
+  "join": {
+    "page_title": "Unirse a un grupo",
+    "title": "Unirse a «{{ name }}»",
+    "text": "Miembros que comparan aquí sus puentes diarios: {{ count }}",
+    "button": "Unirse al grupo",
+    "busy": "Uniéndote…",
+    "joined": "¡Te damos la bienvenida a {{ name }}!",
+    "full": "Este grupo está lleno, ya tiene 50 miembros.",
+    "guest_hint": "No hace falta cuenta: te unes como invitado y puedes reservar un nombre de usuario cuando quieras.",
+    "invalid_title": "Este enlace de invitación no funciona",
+    "invalid_text": "Puede que esté mal escrito o que el grupo haya creado uno nuevo. Pide un enlace nuevo a algún miembro."
+  },
+  "page": {
+    "title": "Grupo",
+    "back": "Tus grupos",
+    "since": "desde el {{ date }}",
+    "not_found": "Este grupo no existe o no eres miembro.",
+    "not_found_hint": "Pide el enlace de invitación a un miembro para unirte."
+  },
+  "archipelago": {
+    "label": "El archipiélago del grupo, una isla por miembro. Terminado hoy: {{ done }} de {{ total }}",
+    "done": "terminado hoy",
+    "waiting": "le falta jugar hoy",
+    "bridge": "{{ a }} & {{ b }} · días resueltos por ambos: {{ days }}",
+    "legend": "Un puente por cada pareja de vecinos que resolvió el mismo reto diario en las últimas cuatro semanas, y un puente doble tras siete de esos días. Un banderín ondea sobre quien ya ha terminado hoy."
+  },
+  "today": {
+    "title": "Hoy",
+    "daily": "Puente del día n.º {{ number }}",
+    "your_turn": "{{ done }} de {{ total }} han terminado – ¡te toca!",
+    "all_waiting": "Nadie ha cruzado todavía – ¡abre tú el camino!",
+    "spoiler": "Los tiempos aparecen cuando hayas terminado tú el reto de hoy.",
+    "play": "Jugar el reto de hoy",
+    "done": "terminado",
+    "waiting": "pendiente",
+    "unranked": "sin clasificar"
+  },
+  "week": {
+    "title": "Semana",
+    "member": "Miembro",
+    "earlier": "Semana anterior",
+    "later": "Semana siguiente",
+    "solved": "{{ name }} · {{ date }}: resuelto",
+    "missed": "{{ name }} · {{ date }}: perdido",
+    "open": "{{ name }} · {{ date }}: por jugar"
+  },
+  "members": {
+    "title": "Miembros",
+    "count": "Miembros: {{ count }} de {{ max }}",
+    "owner": "Admin",
+    "joined": "se unió el {{ date }}",
+    "remove_label": "Quitar a {{ name }}",
+    "remove_confirm": "¿Quitar a {{ name }} del grupo? Podrá volver a unirse con el enlace de invitación, salvo que crees uno nuevo.",
+    "removed": "{{ name }} ya no está en el grupo.",
+    "leave": "Salir del grupo",
+    "leave_confirm": "¿Salir de «{{ name }}»? Puedes volver a unirte con el enlace de invitación.",
+    "left": "Has salido de {{ name }}."
+  },
+  "daily": {
+    "tabs": "Clasificaciones",
+    "world": "Mundo",
+    "done": "Terminado hoy: {{ done }} de {{ total }}",
+    "open": "Abrir el grupo",
+    "compare": "Compárate con tus amigos: <b>crea un grupo</b>"
+  }
+}

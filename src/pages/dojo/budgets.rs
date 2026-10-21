@@ -2,9 +2,9 @@
 //! fuel as the runs had, PAR-2 against the budget as a line chart, and where solvers overtake
 //! each other.
 //!
-//! The runs go on to `dojo::RUN_BUDGET`; fuel is deterministic, so every smaller budget gives
+//! The runs go on to `dojo::run_budget_of` their rules; fuel is deterministic, so every smaller budget gives
 //! exactly what a run with it would have (see `dojo::Outcome::at`). The budget to rank by is
-//! the query parameter `budget` (a factor of the ranking budget: `0.1`, `1`, `10`), so a view
+//! the query parameter `budget` (a factor of the ranking budget: `0.1`, `1`, `4`), so a view
 //! can be linked. The chart is an emphasis chart like the cactus plot: every solver as quiet
 //! context, the hovered one (in the table or a sentence) in the accent colour.
 
@@ -34,7 +34,7 @@ pub(super) fn choices(budgets: &DojoBudgets) -> Vec<u64> {
     choices
 }
 
-/// A budget as a factor of the ranking budget: `⅒×`, `1×`, `10×`.
+/// A budget as a factor of the ranking budget: `⅒×`, `1×`, `4×` (`10×` for rules version 5).
 pub(super) fn factor(budget: u64, at: u64) -> String {
     if at.saturating_mul(10) == budget {
         return "⅒×".into();

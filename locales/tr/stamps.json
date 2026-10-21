@@ -4,6 +4,7 @@
   "collected": "{{ total }} mühürden {{ earned }} tanesi toplandı.",
   "new": "Yeni mühür: {{ name }}!",
   "more": "Ve {{ count }} yeni mühür daha, mühür defterine bak.",
+  "earned": "Yeni mühürler",
   "share": "Oyuncu oranı: %{{ percent }}",
   "pick": "Kazandığın bir mühre dokun, sıralamalarda adının yanında görünsün.",
   "shown": "{{ name }} artık sıralamalarda adının yanında görünüyor.",

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Tages-Rangliste · Hashi, das Brückenrätsel",
-    "description": "Die schnellsten Hashiwokakero-Löser von heute, die Rangliste jedes vergangenen Tagesrätsels, das Monatsrennen und die Ruhmeshalle mit den meisten Lösungen, Medaillen und längsten Serien."
+    "description": "Die schnellsten Hashiwokakero-Löser von heute, Ranglisten aller früheren Tagesrätsel, das Monatsrennen und die Ruhmeshalle: Lösungen, Medaillen, Serien."
   },
   "title": "Rangliste",
   "intro": "Alle spielen jeden Tag dieselbe Brücke. Die schnellste Zeit gewinnt, Tipps und Prüfungen werden aufgeschlagen, aufgedeckte Lösungen zählen nicht.",
@@ -53,6 +53,8 @@
     "back": "Rangliste",
     "not_found": "Diesen Spieler gibt es nicht.",
     "since": "Spielt seit {{ date }}.",
-    "you": "Das bist du, zu deinem Konto"
+    "you": "Das bist du, zu deinem Konto",
+    "preview": "{{ name }} auf Hashi, dem täglichen Hashiwokakero-Rätsel: Bilanz und Stempelheft.",
+    "preview_stats": "Tagesrätsel gelöst: {{ solved }} · Beste Serie: {{ best }} · Medaillen: {{ medals }}"
   }
 }

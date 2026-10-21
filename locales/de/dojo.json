@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT-Dojo · ein Fitnessstudio für SAT-Solver · Hashi",
-    "description": "Reich deinen SAT-Solver als WebAssembly ein und klettere in der Rangliste: geheime, frische Formeln, deterministischer Treibstoff statt Sekunden. Open Source."
+    "description": "Reich deinen SAT-Solver als WebAssembly ein, klettere in der Rangliste: geheime, frische Formeln, deterministischer Treibstoff statt Sekunden. Open Source."
   },
   "title": "SAT-Dojo",
   "intro": "Ein Fitnessstudio für SAT-Solver. Kompilier deinen Solver zu WebAssembly, reich ihn ein, und er wird auf einem geheimen Satz frischer Formeln bewertet: Hashi-Rätsel, Paritätsfallen, zufälliges 3-SAT, Tauben, Damen, Faktorisierung, Multiplizierer-Miter, Graphfärbung und eine geheime Familie.",
@@ -43,7 +43,7 @@
     "shapley_tip": "Sein fairer Anteil am Treibstoff, den das ganze Feld spart, in Milliarden pro Formel",
     "vbs_line": "Virtuell bester Solver aus {{ count }} Solvern: {{ solved }}/{{ total }} gelöst, PAR-2 {{ par2 }}",
     "view_budget": "Budget",
-    "budget_hint": "Dieselben Läufe, gewertet mit einem anderen Budget pro Formel. Jeder Lauf geht bis zum Zehnfachen des offiziellen Budgets, und Treibstoff ist deterministisch, also liefert jedes kleinere Budget genau das Ergebnis, das ein Lauf damit gehabt hätte. Die offizielle Wertung bleibt bei 1×; die Pfeile zeigen, wie weit ein Solver von seinem Platz dort abrückt.",
+    "budget_hint": "Dieselben Läufe, gewertet mit einem anderen Budget pro Formel. Jeder Lauf geht bis zum Vierfachen des offiziellen Budgets, und Treibstoff ist deterministisch, also liefert jedes kleinere Budget genau das Ergebnis, das ein Lauf damit gehabt hätte. Die offizielle Wertung bleibt bei 1×; die Pfeile zeigen, wie weit ein Solver von seinem Platz dort abrückt.",
     "budget_pick": "Budget pro Formel",
     "budget_official": "offiziell",
     "budget_wrong": "falsche Antwort",
@@ -353,6 +353,6 @@
     "shapley_title": "Shapley-Wert",
     "shapley": "Einzelwertungen belohnen Beinahe-Klone, marginale Beiträge bestrafen sie. Der Shapley-Wert aus der kooperativen Spieltheorie ist zu beiden fair: Er verteilt den Treibstoff, den das ganze Feld gegenüber dem Lösen von nichts spart, nach dem mittleren marginalen Beitrag jedes Solvers über alle Beitrittsreihenfolgen (<a>Fréchette et al., AAAI 2016</a>). Wir berechnen ihn exakt, in Milliarden Treibstoff pro Formel; die Werte ergeben zusammen das doppelte Budget minus den PAR-2 des VBS.",
     "budget_title": "Wertungen bei anderen Budgets",
-    "budget": "Die Wertung misst ein kurzes Rennen: 7 Milliarden Treibstoff pro Formel, etwa eine halbe Sekunde eines nativen Solvers, während die SAT Competition 5.000 Sekunden erlaubt. Solver mit viel Preprocessing und Inprocessing wie Kissat und CaDiCaL zahlen dafür, bevor es sich auszahlt, und landen bei diesem Budget hinter MiniSat. Jeder Lauf geht bis zum Zehnfachen des Budgets, und weil Treibstoff deterministisch ist, liefert ein einziger Lauf den genauen Score bei jedem kleineren Budget: Die Budget-Ansicht zeigt, wie sich die Wertung mit mehr Zeit ändert."
+    "budget": "Die Wertung misst ein kurzes Rennen: 7 Milliarden Treibstoff pro Formel, etwa eine halbe Sekunde eines nativen Solvers, während die SAT Competition 5.000 Sekunden erlaubt. Solver mit viel Preprocessing und Inprocessing wie Kissat und CaDiCaL zahlen dafür, bevor es sich auszahlt, und landen bei diesem Budget hinter MiniSat. Jeder Lauf geht bis zum Vierfachen des Budgets, und weil Treibstoff deterministisch ist, liefert ein einziger Lauf den genauen Score bei jedem kleineren Budget: Die Budget-Ansicht zeigt, wie sich die Wertung mit mehr Zeit ändert."
   }
 }

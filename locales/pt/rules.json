@@ -1,9 +1,9 @@
 {
   "meta": {
     "title": "Como jogar Hashiwokakero · Regras e dicas · Hashi",
-    "description": "Regras do Hashiwokakero (Pontes) com exemplo resolvido, deduções que resolvem a maioria dos puzzles sem chute e como um solver SAT prova que a solução é única."
+    "description": "Regras do Hashiwokakero (Pontes) com exemplo resolvido, deduções que resolvem quase todo puzzle sem chute e como um solver SAT prova que a solução é única."
   },
-  "title": "Como jogar",
+  "title": "Como jogar Hashiwokakero",
   "intro": "Hashiwokakero (橋をかけろ, “construa pontes!”) é um puzzle de lógica publicado pela Nikoli. Ligue todas as ilhas com pontes para que cada ilha tenha exatamente tantas pontes quanto indica seu número.",
   "rule": {
     "count_title": "Conte as pontes",
@@ -16,6 +16,25 @@
     "connected": "No fim, deve ser possível chegar a qualquer ilha a partir de qualquer outra."
   },
   "example": "Um puzzle resolvido",
+  "tips": {
+    "title": "Técnicas para resolver Hashiwokakero",
+    "intro": "Cinco deduções que resolvem a maioria dos puzzles sem chute. Cada imagem mostra as pontes que elas obrigam.",
+    "corner_title": "Cantos pedem pontes duplas",
+    "corner": "Um 4 no canto tem só dois vizinhos, então precisa de uma ponte dupla para cada um. O mesmo vale para um 6 na borda e um 8 no meio.",
+    "corner_board": "Um 4 no canto superior esquerdo com uma ponte dupla para o 3 à direita e outra para o 2 abaixo.",
+    "ones_title": "Dois 1 nunca se ligam",
+    "ones": "Uma ponte entre dois 1 completaria os dois e os isolaria de todo o resto, então cada 1 se liga a outra ilha. Pelo mesmo motivo, dois 2 nunca dividem uma ponte dupla.",
+    "ones_board": "Dois 1 na linha de cima, cada um com uma ponte simples até o 3 abaixo em vez de um ao outro.",
+    "count_title": "Conte o que falta",
+    "count": "Um 5 com três vizinhos pode receber no máximo seis pontes. Sem um deles chegaria a quatro no máximo, então cada vizinho recebe pelo menos uma ponte.",
+    "count_board": "Um 5 na borda de cima com uma ponte simples para cada um de seus três vizinhos: o 2 à esquerda, o 3 à direita e o 4 abaixo.",
+    "block_title": "Pontes bloqueiam o caminho",
+    "block": "Pontes nunca se cruzam, então cada ponte fecha as linhas por onde passa. Uma ilha do outro lado pode ficar com um só caminho.",
+    "block_board": "Uma ponte dupla desce pelo meio e bloqueia a linha do 1 à esquerda, então o 1 se liga ao 2 abaixo em vez do 2 à direita.",
+    "connect_title": "Nunca feche um grupo",
+    "connect": "Tudo precisa terminar conectado. Se completar algumas ilhas entre si as deixasse isoladas, pelo menos uma ponte tem que sair do grupo.",
+    "connect_board": "Uma linha de 1, 3 e 2: o 1 se liga ao 3. Se o 3 desse suas duas últimas pontes ao 2, as três ilhas ficariam isoladas, então o 3 também manda uma ponte para o 2 abaixo."
+  },
   "controls": {
     "title": "Controles",
     "tap": "Clique na água entre duas ilhas para construir uma ponte, de novo para uma segunda, e um terceiro clique remove as duas.",

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Classifica del giorno · Hashi, il rompicapo dei ponti",
-    "description": "I solutori di Hashiwokakero più veloci di oggi, la classifica di ogni sfida passata, la gara del mese e l’albo d’oro delle sfide più risolte, delle medaglie e delle serie più lunghe."
+    "description": "I solutori di Hashiwokakero più veloci di oggi, la classifica di ogni sfida passata, la gara del mese e l’albo d’oro: sfide risolte, medaglie e serie."
   },
   "title": "Classifica",
   "intro": "Ogni giorno tutti giocano lo stesso ponte. Vince il tempo migliore, indizi e verifiche si sommano, le soluzioni rivelate non contano.",
@@ -53,6 +53,8 @@
     "back": "Classifica",
     "not_found": "Questo giocatore non esiste.",
     "since": "Gioca dal {{ date }}.",
-    "you": "Sei tu, vai al tuo account"
+    "you": "Sei tu, vai al tuo account",
+    "preview": "{{ name }} su Hashi, l’Hashiwokakero del giorno: risultati e libretto dei timbri.",
+    "preview_stats": "Sfide risolte: {{ solved }} · Serie migliore: {{ best }} · Medaglie: {{ medals }}"
   }
 }

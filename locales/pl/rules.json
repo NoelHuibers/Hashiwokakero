@@ -1,9 +1,9 @@
 {
   "meta": {
     "title": "Jak grać w Hashiwokakero · zasady i porady · Hashi",
-    "description": "Zasady Hashiwokakero (Mosty) z rozwiązanym przykładem, wnioskowania, które łamią większość łamigłówek bez zgadywania, i jak solver SAT dowodzi jednoznaczności."
+    "description": "Zasady Hashiwokakero (Mosty) z rozwiązanym przykładem, wnioskowania, które łamią większość łamigłówek bez zgadywania, i jak SAT dowodzi jednoznaczności."
   },
-  "title": "Jak grać",
+  "title": "Jak grać w Hashiwokakero",
   "intro": "Hashiwokakero (橋をかけろ, „buduj mosty!”) to łamigłówka logiczna wydawnictwa Nikoli. Połącz wszystkie wyspy mostami tak, aby każda wyspa miała dokładnie tyle mostów, ile wskazuje jej liczba.",
   "rule": {
     "count_title": "Policz mosty",
@@ -16,6 +16,25 @@
     "connected": "Na końcu z każdej wyspy musi dać się dotrzeć do każdej innej."
   },
   "example": "Rozwiązana łamigłówka",
+  "tips": {
+    "title": "Techniki rozwiązywania Hashiwokakero",
+    "intro": "Pięć wniosków, które rozwiązują większość łamigłówek bez zgadywania. Każdy obrazek pokazuje mosty, które z nich wynikają.",
+    "corner_title": "Rogi wymagają podwójnych",
+    "corner": "Czwórka w rogu ma tylko dwóch sąsiadów, więc potrzebuje podwójnego mostu do każdego z nich. To samo dotyczy szóstki przy krawędzi i ósemki na otwartej przestrzeni.",
+    "corner_board": "Czwórka w lewym górnym rogu z podwójnym mostem do trójki po prawej i drugim do dwójki poniżej.",
+    "ones_title": "Dwie jedynki nigdy się nie łączą",
+    "ones": "Most między dwiema jedynkami zamknąłby obie i odciął je od reszty, więc każda jedynka łączy się gdzie indziej. Z tego samego powodu dwie dwójki nigdy nie mają wspólnego podwójnego mostu.",
+    "ones_board": "Dwie jedynki w górnym rzędzie, każda z pojedynczym mostem w dół do trójki zamiast do siebie nawzajem.",
+    "count_title": "Policz, czego brakuje",
+    "count": "Piątka z trzema sąsiadami może dostać najwyżej sześć mostów. Bez jednego z nich miałaby najwyżej cztery, więc każdy sąsiad dostaje co najmniej jeden most.",
+    "count_board": "Piątka przy górnej krawędzi z pojedynczym mostem do każdego z trzech sąsiadów: dwójki po lewej, trójki po prawej i czwórki poniżej.",
+    "block_title": "Mosty zagradzają drogę",
+    "block": "Mosty nigdy się nie krzyżują, więc każdy most zamyka linie, które przecina. Wyspie za nim może zostać już tylko jedna droga.",
+    "block_board": "Podwójny most biegnie środkiem w dół i zagradza rząd jedynki po lewej, więc jedynka łączy się w dół z dwójką zamiast z dwójką po prawej.",
+    "connect_title": "Nigdy nie zamykaj grupy",
+    "connect": "Na końcu wszystko musi być połączone. Jeśli domknięcie kilku wysp między sobą odcięłoby je od reszty, co najmniej jeden most musi wyjść na zewnątrz.",
+    "connect_board": "Rząd 1, 3 i 2: jedynka łączy się z trójką. Gdyby trójka oddała dwa ostatnie mosty dwójce, te trzy wyspy byłyby odcięte, więc trójka prowadzi też most w dół do dwójki."
+  },
   "controls": {
     "title": "Sterowanie",
     "tap": "Kliknij wodę między dwiema wyspami, by zbudować most, jeszcze raz, by dodać drugi, trzecie kliknięcie usuwa oba.",

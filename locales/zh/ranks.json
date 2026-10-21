@@ -53,6 +53,8 @@
     "back": "排行榜",
     "not_found": "没有这位玩家。",
     "since": "自 {{ date }} 起开始游戏。",
-    "you": "这是你，前往我的账号"
+    "you": "这是你，前往我的账号",
+    "preview": "{{ name }} 在 Hashi（每日数桥谜题）的战绩与印章册。",
+    "preview_stats": "已解每日谜题：{{ solved }} · 最长连胜：{{ best }} · 奖牌：{{ medals }}"
   }
 }

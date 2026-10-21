@@ -5,7 +5,8 @@
     "ranks": "Ranking",
     "create": "Twórz",
     "lab": "Lab",
-    "main": "Nawigacja główna"
+    "main": "Nawigacja główna",
+    "groups": "Grupy"
   },
   "tagline_short": "Mosty",
   "language": "Język",
@@ -74,7 +75,13 @@
     "too_many_messages": "Na dziś wystarczy wiadomości, spróbuj ponownie jutro.",
     "rename_too_soon": "Niedawno zmieniono twoją nazwę użytkownika, spróbuj ponownie później.",
     "username_not_allowed": "Ta nazwa nie jest tu dozwolona, wybierz inną.",
-    "banned": "To konto jest zablokowane. Jeśli uważasz, że to pomyłka, napisz do nas."
+    "banned": "To konto jest zablokowane. Jeśli uważasz, że to pomyłka, napisz do nas.",
+    "group_name_invalid": "Nazwa grupy ma od 1 do 32 znaków.",
+    "group_name_not_allowed": "Ta nazwa nie jest tu dozwolona, wybierz inną.",
+    "group_not_found": "Ta grupa nie istnieje albo do niej nie należysz.",
+    "group_full": "Ta grupa jest pełna: ma już 50 członków.",
+    "too_many_groups": "Należysz już do 10 grup, najpierw opuść jedną.",
+    "group_owner_only": "Tylko właściciel grupy może to zrobić."
   },
   "solver": {
     "title": "Solver SAT",
@@ -187,6 +194,12 @@
   "date_long": "{{ weekday }}, {{ day }} {{ month }} {{ year }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Rozwiązana łamigłówka Hashiwokakero w pixel arcie: ponumerowane wyspy połączone drewnianymi i cynobrowymi mostami",
+  "og": {
+    "tagline": "Japońska łamigłówka z mostami, w pixel arcie",
+    "free": "Za darmo",
+    "daily": "Codziennie nowa łamigłówka",
+    "unique": "Dokładnie jedno rozwiązanie"
+  },
   "ld": {
     "site": "Hashiwokakero, japońska łamigłówka z mostami, do grania za darmo w przeglądarce.",
     "game": "Połącz wyspy mostami tak, aby każda wyspa miała tyle mostów, ile wskazuje jej liczba. Łamigłówka dnia z rankingiem, pięć poziomów trudności, pixel art, a każda łamigłówka ma dokładnie jedno rozwiązanie."

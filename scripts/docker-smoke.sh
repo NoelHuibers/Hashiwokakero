@@ -63,3 +63,5 @@ for asset in "/pkg/hashi[^\"']*\.js" "/pkg/hashi[^\"']*\.wasm" "/pkg/hashi[^\"']
 done
 # A page that needs the database
 expect_type /ranks text/html
+# A social preview image, drawn by the server with the fonts compiled into it
+expect_type /og/ja.png image/png

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Daily leaderboard · Hashi, the bridges puzzle",
-    "description": "Today's fastest Hashiwokakero solvers, the ranking of every past daily puzzle, the monthly race, and the hall of fame of the most solved dailies, medals and longest streaks."
+    "description": "The daily Hashiwokakero leaderboard: today's fastest solvers, every past daily puzzle, the monthly race and a hall of fame of medals and longest streaks."
   },
   "title": "Leaderboard",
   "intro": "Everyone plays the same bridge each day. Fastest time wins, hints and checks add to it, revealed solutions don't count.",
@@ -53,6 +53,8 @@
     "back": "Leaderboard",
     "not_found": "There is no such player.",
     "since": "Playing since {{ date }}.",
-    "you": "That's you, to your account"
+    "you": "That's you, to your account",
+    "preview": "{{ name }} on Hashi, the daily Hashiwokakero puzzle: record and stamp book.",
+    "preview_stats": "Dailies solved: {{ solved }} · Best streak: {{ best }} · Medals: {{ medals }}"
   }
 }

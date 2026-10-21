@@ -13,15 +13,17 @@ pub enum Page {
     Daily,
     Practice,
     Ranks,
+    Groups,
     Create,
     Lab,
 }
 
 /// Path and the decorative kanji of each page in the navigation.
-pub(super) const NAV: [(Page, &str, &str); 5] = [
+pub(super) const NAV: [(Page, &str, &str); 6] = [
     (Page::Daily, "/", "今日"),
     (Page::Practice, "/practice", "練習"),
     (Page::Ranks, "/ranks", "順位"),
+    (Page::Groups, "/groups", "仲間"),
     (Page::Create, "/create", "作る"),
     (Page::Lab, "/lab", "研究"),
 ];
@@ -33,6 +35,7 @@ fn PageName(page: Page) -> impl IntoView {
         Page::Daily => t!(i18n, common.nav.daily).into_any(),
         Page::Practice => t!(i18n, common.nav.practice).into_any(),
         Page::Ranks => t!(i18n, common.nav.ranks).into_any(),
+        Page::Groups => t!(i18n, common.nav.groups).into_any(),
         Page::Create => t!(i18n, common.nav.create).into_any(),
         Page::Lab => t!(i18n, common.nav.lab).into_any(),
     }
@@ -47,11 +50,13 @@ fn is_active(href: &str, path: &str) -> bool {
         "/lab" => path.starts_with("/lab") || path.starts_with("/dojo"),
         // Profiles are opened from the leaderboards
         "/ranks" => path.starts_with("/ranks") || path.starts_with("/player"),
+        // Invite links lead into a group
+        "/groups" => path.starts_with("/groups") || path.starts_with("/g/"),
         _ => path.starts_with(href),
     }
 }
 
-/// Tab bar at the bottom of the screen on phones, the header has no room for five links.
+/// Tab bar at the bottom of the screen on phones, the header has no room for six links.
 #[component]
 pub fn MobileNav() -> impl IntoView {
     let i18n = use_i18n();
@@ -61,7 +66,7 @@ pub fn MobileNav() -> impl IntoView {
             class="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
             aria-label=move || t_string!(i18n, common.nav.main)
         >
-            <div class="mx-auto grid max-w-md grid-cols-5">
+            <div class="mx-auto grid max-w-md grid-cols-6">
                 {NAV
                     .into_iter()
                     .map(|(page, href, jp)| {
@@ -124,5 +129,22 @@ pub(super) fn NavLink(page: Page, href: &'static str, jp: &'static str) -> impl 
                 <PageName page />
             </span>
         </A>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pages_light_up_their_section() {
+        assert!(is_active("/groups", "/groups"));
+        assert!(is_active("/groups", "/de/groups/12"));
+        // An invite link leads into a group
+        assert!(is_active("/groups", "/ja/g/abcdefgh23"));
+        assert!(!is_active("/groups", "/ranks"));
+        assert!(is_active("/ranks", "/player/3"));
+        assert!(is_active("/", "/de"));
+        assert!(!is_active("/", "/de/groups"));
     }
 }

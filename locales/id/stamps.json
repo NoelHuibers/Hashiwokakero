@@ -4,6 +4,7 @@
   "collected": "{{ earned }} dari {{ total }} stempel terkumpul.",
   "new": "Stempel baru: {{ name }}!",
   "more": "Dan {{ count }} stempel baru lainnya, lihat buku stempelmu.",
+  "earned": "Stempel baru",
   "share": "{{ percent }}% pemain",
   "pick": "Ketuk stempel yang sudah kamu dapat untuk menampilkannya di samping namamu di papan peringkat.",
   "shown": "{{ name }} sekarang tampil di samping namamu di papan peringkat.",

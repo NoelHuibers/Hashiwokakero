@@ -2,11 +2,8 @@
 
 pub mod legend;
 pub mod new_game;
-pub mod seo;
 pub mod solver_tools;
 pub mod win;
-
-pub use seo::SeoIntro;
 
 use common::Difficulty;
 use leptos::prelude::*;

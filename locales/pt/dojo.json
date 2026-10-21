@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "SAT Dojo · uma academia para solvers SAT · Hashi",
-    "description": "Envie seu solver SAT em WebAssembly e suba no ranking: avaliado em fórmulas novas e ocultas com combustível determinístico, não segundos. Aberto e reproduzível."
+    "description": "Envie seu solver SAT em WebAssembly e suba no ranking: fórmulas novas e ocultas, combustível determinístico em vez de segundos. Aberto e reproduzível."
   },
   "title": "SAT Dojo",
   "intro": "Uma academia para solvers SAT. Compile o seu para WebAssembly, envie, e ele é avaliado num conjunto oculto de fórmulas novas: puzzles Hashi, armadilhas de paridade, 3-SAT aleatório, pombos, rainhas, fatoração, miters de multiplicadores, coloração de grafos e uma família misteriosa.",
@@ -43,7 +43,7 @@
     "shapley_tip": "A parte justa dele no combustível que o campo inteiro economiza, em bilhões por fórmula",
     "vbs_line": "Melhor solver virtual de {{ count }} solvers: {{ solved }}/{{ total }} resolvidas, PAR-2 {{ par2 }}",
     "view_budget": "Orçamento",
-    "budget_hint": "As mesmas execuções, classificadas com outro orçamento por fórmula. Cada execução vai até dez vezes o orçamento oficial, e o combustível é determinístico, então cada orçamento menor dá exatamente o resultado que uma execução com ele teria tido. A classificação oficial continua em 1×; as setas mostram quanto um solver se afasta da posição dele lá.",
+    "budget_hint": "As mesmas execuções, classificadas com outro orçamento por fórmula. Cada execução vai até quatro vezes o orçamento oficial, e o combustível é determinístico, então cada orçamento menor dá exatamente o resultado que uma execução com ele teria tido. A classificação oficial continua em 1×; as setas mostram quanto um solver se afasta da posição dele lá.",
     "budget_pick": "Orçamento por fórmula",
     "budget_official": "oficial",
     "budget_wrong": "resposta errada",
@@ -353,6 +353,6 @@
     "shapley_title": "Valor de Shapley",
     "shapley": "Pontuações isoladas premiam quase-clones, contribuições marginais os punem. O valor de Shapley, da teoria dos jogos cooperativos, é justo com ambos: divide o combustível que o campo inteiro economiza em relação a não resolver nada pela contribuição marginal média de cada solver em todas as ordens de entrada (<a>Fréchette et al., AAAI 2016</a>). Nós o calculamos exatamente, em bilhões de combustível por fórmula; os valores somam o dobro do orçamento menos o PAR-2 do VBS.",
     "budget_title": "Classificações com outros orçamentos",
-    "budget": "A classificação mede uma corrida curta: 7 bilhões de combustível por fórmula, cerca de meio segundo de um solver nativo, enquanto a SAT Competition permite 5.000 segundos. Solvers com muito pré-processamento e inprocessing, como Kissat e CaDiCaL, pagam por isso antes de compensar, então com esse orçamento ficam atrás do MiniSat. Cada execução vai até dez vezes o orçamento e, como o combustível é determinístico, uma única execução dá a pontuação exata com cada orçamento menor: a visão Orçamento mostra como a classificação muda com mais tempo."
+    "budget": "A classificação mede uma corrida curta: 7 bilhões de combustível por fórmula, cerca de meio segundo de um solver nativo, enquanto a SAT Competition permite 5.000 segundos. Solvers com muito pré-processamento e inprocessing, como Kissat e CaDiCaL, pagam por isso antes de compensar, então com esse orçamento ficam atrás do MiniSat. Cada execução vai até quatro vezes o orçamento e, como o combustível é determinístico, uma única execução dá a pontuação exata com cada orçamento menor: a visão Orçamento mostra como a classificação muda com mais tempo."
   }
 }

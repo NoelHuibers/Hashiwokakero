@@ -132,6 +132,12 @@ libsql = { version = "0.10.0", default-features = false, features = ["core", "re
 sha2 = { version = "0.11.1", optional = true }
 # Community benchmarks from the Global Benchmark Database come xz-compressed, pure Rust
 lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "xz"], optional = true }
+# The social preview images (server/og): SVG rasterized by resvg, which shapes text itself (no
+# system fonts), the character maps of their fonts, and PNG encoding with a palette
+resvg = { version = "0.48.1", default-features = false, features = ["text"], optional = true }
+skrifa = { version = "0.44.0", optional = true }
+png = { version = "0.18.1", optional = true }
+color_quant = { version = "2.0.0", optional = true }
 # Hashing the code of Dojo submissions without their custom sections
 wasmparser = { version = "0.262", optional = true }
 tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "signal", "sync"], optional = true }
@@ -152,6 +158,10 @@ ssr = [
   "dep:lettre",
   "dep:libsql",
   "dep:reqwest",
+  "dep:resvg",
+  "dep:skrifa",
+  "dep:png",
+  "dep:color_quant",
   "dep:wasmparser",
   "dep:sha2",
   "dep:lzma-rust2",

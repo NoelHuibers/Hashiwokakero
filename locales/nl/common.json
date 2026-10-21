@@ -5,7 +5,8 @@
     "ranks": "Ranking",
     "create": "Maken",
     "lab": "Lab",
-    "main": "Hoofdnavigatie"
+    "main": "Hoofdnavigatie",
+    "groups": "Groepen"
   },
   "tagline_short": "Bruggen",
   "language": "Taal",
@@ -74,7 +75,13 @@
     "too_many_messages": "Genoeg berichten voor vandaag, probeer het morgen opnieuw.",
     "rename_too_soon": "Je hebt je gebruikersnaam pas gewijzigd, probeer het later opnieuw.",
     "username_not_allowed": "Deze naam is hier niet toegestaan, kies een andere.",
-    "banned": "Dit account is geblokkeerd. Denk je dat dit een vergissing is, schrijf ons dan."
+    "banned": "Dit account is geblokkeerd. Denk je dat dit een vergissing is, schrijf ons dan.",
+    "group_name_invalid": "Groepsnamen hebben 1 tot 32 tekens.",
+    "group_name_not_allowed": "Deze naam is hier niet toegestaan, kies een andere.",
+    "group_not_found": "Deze groep bestaat niet, of je bent er geen lid van.",
+    "group_full": "Deze groep is vol: er zijn al 50 leden.",
+    "too_many_groups": "Je zit al in 10 groepen, verlaat er eerst een.",
+    "group_owner_only": "Alleen de eigenaar van de groep kan dat doen."
   },
   "solver": {
     "title": "SAT-solver",
@@ -187,6 +194,12 @@
   "date_long": "{{ weekday }} {{ day }} {{ month }} {{ year }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Een opgeloste Hashiwokakero-puzzel in pixelart: genummerde eilanden verbonden door houten en vermiljoenrode bruggen",
+  "og": {
+    "tagline": "De Japanse bruggenpuzzel, in pixelart",
+    "free": "Gratis te spelen",
+    "daily": "Elke dag een nieuwe puzzel",
+    "unique": "Precies één oplossing"
+  },
   "ld": {
     "site": "Hashiwokakero, de Japanse bruggenpuzzel, gratis te spelen in je browser.",
     "game": "Verbind de eilanden met bruggen zodat elk eiland zoveel bruggen heeft als zijn getal aangeeft. Een dagpuzzel met ranglijst, vijf moeilijkheidsgraden, pixelart, en elke puzzel heeft precies één oplossing."

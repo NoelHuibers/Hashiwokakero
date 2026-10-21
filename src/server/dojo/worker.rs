@@ -96,6 +96,16 @@ pub(super) async fn apply_for_job(
                AND (?5 IS NULL OR job_token = ?5)",
             params![serde_json::to_string(reason).unwrap_or_default(), now, *id, *season, token],
         ).await?,
+        // The worker still has it, waiting in its queue or running: not lost
+        Report::Heartbeat { id, season } => {
+            conn.execute(
+                "UPDATE dojo_submissions SET updated_at = ?1
+                 WHERE id = ?2 AND season = ?3 AND state = 'running'
+                   AND (?4 IS NULL OR job_token = ?4)",
+                params![now, *id, *season, token],
+            )
+            .await?
+        }
         Report::Failed { id, season, message } => {
             eprintln!("dojo #{id}: worker failed: {message}");
             conn.execute(
@@ -228,7 +238,9 @@ pub async fn report_handler(
 /// Housekeeping before sending work.
 ///
 /// A new season freezes the old one and re-evaluates everything (see [`seasons`]), so do newer
-/// rules, evaluations that went quiet are queued again (or given up after a few attempts).
+/// rules, evaluations that went quiet are queued again (or given up after a few attempts). The
+/// worker sends a heartbeat for every job it holds, waiting or running ([`Report::Heartbeat`]),
+/// so only the jobs of a worker that is gone go quiet.
 pub async fn housekeeping(conn: &Connection) -> Result<(), String> {
     housekeeping_at(conn, season()).await
 }

@@ -1,11 +1,14 @@
 //! The daily puzzle page, the home page: one puzzle a day for everyone, timed and ranked.
 
+pub mod about;
 mod actions;
 pub mod cover;
 pub mod ranking;
 pub mod result;
+pub mod rivals;
 pub mod state;
 pub mod week;
+pub mod win;
 
 use std::time::Duration;
 
@@ -18,25 +21,27 @@ use crate::api::{
 };
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
-use crate::components::stamps::announce;
 use crate::components::ui::badge::{Badge, BadgeVariant};
-use crate::components::ui::button::{Button, ButtonVariant};
+use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};
 use crate::model::{
-    AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_number,
-    format_duration, weekday,
+    AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_difficulty,
+    daily_number, format_duration, weekday,
 };
-use crate::pages::play::{SeoIntro, islands_percent};
+use crate::pages::play::islands_percent;
 use crate::seo::{PageMeta, site_ld};
 use crate::state::{Auth, DailyGame, Status, ToastKind, error_toast, load, toast};
 
+use about::About;
 use cover::Cover;
 use ranking::RankingCard;
 use result::ResultCard;
+use rivals::RivalsCard;
 use state::{Daily, LOG_KEY, SavedLog, browser_now, browser_utc_offset};
 use week::WeekCard;
+use win::WinCard;
 
 #[component]
 fn Stat(
@@ -54,6 +59,23 @@ fn Stat(
     }
 }
 
+/// Today on the server's clock, the day of `daily_today`. `None` in the browser, which doesn't
+/// know the server's day before it loads the daily.
+#[cfg_attr(
+    feature = "ssr",
+    expect(clippy::unnecessary_wraps, reason = "`None` in the browser")
+)]
+fn server_today() -> Option<i64> {
+    #[cfg(feature = "ssr")]
+    {
+        Some(crate::server::daily::today())
+    }
+    #[cfg(not(feature = "ssr"))]
+    {
+        None
+    }
+}
+
 #[component]
 pub fn DailyPage() -> impl IntoView {
     let i18n = use_i18n();
@@ -66,6 +88,8 @@ pub fn DailyPage() -> impl IntoView {
         skew: RwSignal::new(0),
         now: RwSignal::new(0),
         result: RwSignal::new(None),
+        admired: RwSignal::new(false),
+        unsent: RwSignal::new(false),
         ranking: RwSignal::new(None),
         busy: RwSignal::new(false),
         refreshing: StoredValue::new(false),
@@ -125,11 +149,7 @@ pub fn DailyPage() -> impl IntoView {
 
     // Submit as soon as the board is solved
     Effect::new(move |_| {
-        if game.status.get() != Status::Won
-            || daily.finished()
-            || daily.actions.locked()
-            || daily.busy.get_untracked()
-        {
+        if !daily.ready_to_submit() {
             return;
         }
         let Some(day) = daily.day() else { return };
@@ -155,13 +175,8 @@ pub fn DailyPage() -> impl IntoView {
             }
             match response {
                 Ok(result) => {
-                    let end = browser_now() + daily.skew.get_untracked();
-                    daily.update_attempt(|a| {
-                        a.finished_at = Some(end);
-                        a.time_ms = Some(result.time_ms);
-                    });
-                    announce(&result.stamps);
-                    daily.result.set(Some(result));
+                    // The win card shows the stamps, no toasts on top of it
+                    daily.submitted(result, browser_now() + daily.skew.get_untracked());
                     daily.refresh_ranking();
                 }
                 Err(e) => {
@@ -370,9 +385,15 @@ pub fn DailyPage() -> impl IntoView {
         })
     });
 
+    // The browser reads the server's day back from the page while it hydrates (its own clock
+    // may be on another day); opened in the browser, the page has none and waits for the daily
+    let rendered = SharedValue::new(server_today).into_inner();
+    let shown_day = daily.header_day(rendered);
+
     let header = move || {
-        daily.info.get().map(|info| {
-            let wd = weekday(info.day);
+        shown_day.get().map(|day| {
+            let wd = weekday(day);
+            let difficulty = daily_difficulty(day);
             view! {
                 <div class="flex items-center gap-3">
                     <span class="hanko grid size-14 shrink-0 rotate-[-4deg] place-items-center rounded-lg font-pixel text-3xl">
@@ -380,17 +401,17 @@ pub fn DailyPage() -> impl IntoView {
                     </span>
                     <div>
                         <p class="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                            {move || date_long(i18n.get_locale(), info.day)}
+                            {move || date_long(i18n.get_locale(), day)}
                         </p>
                         <h1 class="text-2xl font-black sm:text-3xl">
-                            {t!(i18n, daily.title, number = daily_number(info.day))}
+                            {t!(i18n, daily.title, number = daily_number(day))}
                         </h1>
                         <div class="mt-1 flex gap-1.5">
                             <Badge variant=BadgeVariant::Default>
-                                {info.difficulty.kanji()} " " {move || difficulty_name(i18n.get_locale(), info.difficulty)}
+                                {difficulty.kanji()} " " {move || difficulty_name(i18n.get_locale(), difficulty)}
                             </Badge>
                             <Badge variant=BadgeVariant::Muted>
-                                {let (w, h) = info.difficulty.size();
+                                {let (w, h) = difficulty.size();
                                 format!("{w}×{h}")}
                             </Badge>
                         </div>
@@ -460,6 +481,9 @@ pub fn DailyPage() -> impl IntoView {
                                     <Show when=move || game.status.get() == Status::Won>
                                         <Petals />
                                     </Show>
+                                    <Show when=move || daily.celebrating()>
+                                        <WinCard daily=daily />
+                                    </Show>
                                 </div>
                             }
                                 .into_any()
@@ -498,6 +522,18 @@ pub fn DailyPage() -> impl IntoView {
                                 t_string!(i18n, daily.action_retry).to_string()
                             } else { String::new() }}
                         </div>
+                        <Show when=move || daily.unsent.get() && !daily.finished()>
+                            <div class="flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning-light px-3 py-2 text-sm text-warning-dark">
+                                <span class="flex-1">{t!(i18n, daily.submit_failed)}</span>
+                                <Button
+                                    size=ButtonSize::Sm
+                                    attr:disabled=move || daily.busy.get()
+                                    on:click=move |_| daily.submit_again()
+                                >
+                                    {t!(i18n, daily.submit_again)}
+                                </Button>
+                            </div>
+                        </Show>
                         <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap" aria-busy=move || daily.actions.pending.get().to_string()>
                             <Button
                                 variant=ButtonVariant::Outline
@@ -553,11 +589,12 @@ pub fn DailyPage() -> impl IntoView {
                     <Show when=move || daily.finished() || matches!(game.status.get(), Status::Won | Status::Revealed)>
                         <ResultCard daily=daily />
                     </Show>
+                    <RivalsCard daily=daily />
                     <RankingCard daily=daily />
                     <WeekCard daily=daily />
                 </aside>
             </div>
         </section>
-        <SeoIntro />
+        <About />
     }
 }
