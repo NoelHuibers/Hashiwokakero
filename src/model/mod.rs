@@ -13,8 +13,8 @@ mod hanko;
 mod hints;
 mod moves;
 mod replay;
-mod river;
 mod rivals;
+mod river;
 mod stamps;
 #[cfg(test)]
 mod tests;
@@ -31,6 +31,6 @@ pub use hanko::*;
 pub use hints::*;
 pub use moves::*;
 pub use replay::*;
-pub use river::*;
 pub use rivals::*;
+pub use river::*;
 pub use stamps::*;

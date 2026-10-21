@@ -630,7 +630,10 @@ async fn signing_in_keeps_to_the_group_limit() {
     assert_eq!(groups_of(&conn, guest).await.unwrap(), 0);
     assert_eq!(owner_of(&conn, alone).await, None);
     assert_eq!(owner_of(&conn, owned).await, Some(bram));
-    assert_eq!(ids(&page(&conn, newest, bram, TODAY).await.unwrap().members), [bram]);
+    assert_eq!(
+        ids(&page(&conn, newest, bram, TODAY).await.unwrap().members),
+        [bram]
+    );
     assert_eq!(
         ids(&page(&conn, shared, bram, TODAY).await.unwrap().members),
         [bram, aiko]
@@ -668,7 +671,10 @@ async fn signing_in_brings_the_newest_groups_that_fit() {
     assert_eq!(groups_of(&conn, guest).await.unwrap(), 0);
     // The one both were in: the account owns it now, alone in it
     assert_eq!(owner_of(&conn, shared).await, Some(aiko));
-    assert_eq!(ids(&page(&conn, shared, aiko, TODAY).await.unwrap().members), [aiko]);
+    assert_eq!(
+        ids(&page(&conn, shared, aiko, TODAY).await.unwrap().members),
+        [aiko]
+    );
     // The newest came along, with the day the guest joined; the older ones were left
     assert_eq!(
         ids(&page(&conn, newest, aiko, TODAY).await.unwrap().members),

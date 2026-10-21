@@ -15,8 +15,7 @@ use libsql::{Connection, TransactionBehavior, params};
 
 use super::{Group, require_member};
 use crate::model::{
-    Contribution, GroupRiver, Laid, RiverLevel, crossings, level_target, monday_of,
-    ranking,
+    Contribution, GroupRiver, Laid, RiverLevel, crossings, level_target, monday_of, ranking,
 };
 use crate::server::daily::sync_stamps;
 use crate::server::db::db_err;
@@ -197,7 +196,11 @@ async fn complete(conn: &Connection, group: i64, now: i64) -> Result<Vec<i64>, S
 }
 
 /// What each member laid in the week of `today` (its dailies, Monday to Sunday), most first.
-async fn week(conn: &Connection, group: i64, today: i64) -> Result<Vec<Contribution>, ServerFnError> {
+async fn week(
+    conn: &Connection,
+    group: i64,
+    today: i64,
+) -> Result<Vec<Contribution>, ServerFnError> {
     let mut rows = conn
         .query(
             &format!(
@@ -218,9 +221,10 @@ async fn week(conn: &Connection, group: i64, today: i64) -> Result<Vec<Contribut
     Ok(ranking(laid))
 }
 
-/// The river of a group, for a member. Completes the levels that are across, and remembers how
-/// far the member saw it: the next look shows the planks laid since as new, and a level
-/// completed in between is celebrated once.
+/// The river of a group, for a member.
+///
+/// Completes the levels that are across, and remembers how far the member saw it: the next look
+/// shows the planks laid since as new, and a level completed in between is celebrated once.
 pub async fn river(
     conn: &Connection,
     group: i64,

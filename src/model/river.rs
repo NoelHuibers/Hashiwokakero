@@ -45,7 +45,9 @@ impl Waters {
 
     /// The waters of a level (0 is the first).
     pub fn of(level: u32) -> Self {
-        Self::ALL[usize::try_from(level).unwrap_or(usize::MAX).min(Self::ALL.len() - 1)]
+        Self::ALL[usize::try_from(level)
+            .unwrap_or(usize::MAX)
+            .min(Self::ALL.len() - 1)]
     }
 
     /// The kanji on the level's stamp: 沢 a mountain stream, 川 a river, 河 a wide river, 峡 a
@@ -78,9 +80,10 @@ pub fn ocean_number(level: u32) -> u32 {
     level.saturating_sub(first) + 1
 }
 
-/// How many members a group's river counts, in quarters of a member (whole numbers for the
-/// arithmetic): the first four count fully, the fifth to twelfth half, every one after a
-/// quarter; a group counts as two at least.
+/// How many members a group's river counts, in quarters of a member.
+///
+/// The first four count fully, the fifth to twelfth half, every one after a quarter; a group
+/// counts as two at least (quarters keep the arithmetic in whole numbers).
 ///
 /// Big groups have more members who play now and then, so a level doesn't take them longer
 /// than a small group, and a player alone still crosses a stream in a week.
@@ -273,7 +276,10 @@ mod tests {
         assert_eq!(level_target(0, 1), level_target(0, 2));
         for members in [1, 2, 6, 12, 50] {
             let targets: Vec<_> = (0..7).map(|l| level_target(l, members)).collect();
-            assert!(targets.windows(2).take(4).all(|w| w[0] < w[1]), "{targets:?}");
+            assert!(
+                targets.windows(2).take(4).all(|w| w[0] < w[1]),
+                "{targets:?}"
+            );
             // The oceans after the first one take as long as it
             assert_eq!(targets[4], targets[6]);
             assert!(targets.iter().all(|t| t % TARGET_STEP == 0), "{targets:?}");
@@ -293,7 +299,10 @@ mod tests {
                 let target = level_target(level, members);
                 // Rounded up to the step: a day more at most
                 let takes = (target + a_day - 1) / a_day;
-                assert!((days..=days + 1).contains(&takes), "{level}, {members}: {target}");
+                assert!(
+                    (days..=days + 1).contains(&takes),
+                    "{level}, {members}: {target}"
+                );
             }
         }
     }
@@ -441,7 +450,14 @@ mod tests {
         };
         assert_eq!(river.seen_progress(), 100);
         // Last seen before the level started: all of it is new
-        assert_eq!(GroupRiver { seen: 120, ..river.clone() }.seen_progress(), 0);
+        assert_eq!(
+            GroupRiver {
+                seen: 120,
+                ..river.clone()
+            }
+            .seen_progress(),
+            0
+        );
         // Seen more than there is now (a result taken back): nothing new
         assert_eq!(GroupRiver { seen: 900, ..river }.seen_progress(), 300);
     }

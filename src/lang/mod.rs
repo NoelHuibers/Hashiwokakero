@@ -294,7 +294,8 @@ mod tests {
             if owner.contains("admin") || admins.contains(&stem) {
                 problems.push(format!("{}: {owner} / {admins}", locale.as_str()));
             }
-            let only = crate::i18n::td_string!(locale, common.errors.group_owner_only).to_lowercase();
+            let only =
+                crate::i18n::td_string!(locale, common.errors.group_owner_only).to_lowercase();
             if only.contains("admin") {
                 problems.push(format!("{}: {only}", locale.as_str()));
             }

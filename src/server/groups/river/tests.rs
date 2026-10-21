@@ -47,7 +47,11 @@ async fn group(conn: &Connection, members: &[i64]) -> i64 {
     for (i, &m) in members.iter().enumerate() {
         conn.execute(
             "UPDATE group_members SET joined_at = ?3 WHERE group_id = ?1 AND user_id = ?2",
-            params![id, m, MADE * MS_PER_DAY + i64::try_from(i).unwrap() * 3_600_000],
+            params![
+                id,
+                m,
+                MADE * MS_PER_DAY + i64::try_from(i).unwrap() * 3_600_000
+            ],
         )
         .await
         .unwrap();
@@ -209,7 +213,10 @@ async fn signing_in_neither_loses_nor_doubles_bridges() {
     solved(&conn, tanuki, MADE + 1, 33).await;
     solved(&conn, aiko, MADE + 2, 7).await;
     assert_eq!(
-        (total(&conn, both, bram).await, total(&conn, left, bram).await),
+        (
+            total(&conn, both, bram).await,
+            total(&conn, left, bram).await
+        ),
         (40, 33)
     );
     // What `auth::merge_guest` does: the groups, then the dailies
@@ -221,7 +228,10 @@ async fn signing_in_neither_loses_nor_doubles_bridges() {
     .await
     .unwrap();
     assert_eq!(
-        (total(&conn, both, bram).await, total(&conn, left, bram).await),
+        (
+            total(&conn, both, bram).await,
+            total(&conn, left, bram).await
+        ),
         (40, 33)
     );
 }
@@ -253,8 +263,14 @@ async fn a_level_completes_once_with_its_crew() {
         completed_at: (MADE + 3) * MS_PER_DAY + MS_PER_DAY / 2,
     };
     assert_eq!(across.completed, [level]);
-    assert_eq!((across.level, across.base, across.progress), (1, target, 20));
-    assert_eq!((across.total, across.target), (target + 20, level_target(1, 3)));
+    assert_eq!(
+        (across.level, across.base, across.progress),
+        (1, target, 20)
+    );
+    assert_eq!(
+        (across.total, across.target),
+        (target + 20, level_target(1, 3))
+    );
     assert_eq!(across.celebrate, Some(level));
     // Who laid planks of it has the stamp, chen didn't lay any
     assert_eq!(crew(&conn, id, 0).await, [aiko, bram]);
@@ -264,7 +280,10 @@ async fn a_level_completes_once_with_its_crew() {
     // Seen again, by anyone: still the one level, celebrated once with each member
     assert_eq!(river(&conn, id, bram, TODAY).await.unwrap().celebrate, None);
     let aiko_sees = river(&conn, id, aiko, TODAY).await.unwrap();
-    assert_eq!((aiko_sees.completed.len(), aiko_sees.celebrate), (1, Some(level)));
+    assert_eq!(
+        (aiko_sees.completed.len(), aiko_sees.celebrate),
+        (1, Some(level))
+    );
     assert_eq!(river(&conn, id, aiko, TODAY).await.unwrap().celebrate, None);
     assert_eq!(number(&conn, "SELECT COUNT(*) FROM group_river").await, 1);
     // Who joins later isn't told about levels from before
@@ -282,8 +301,11 @@ async fn members_looking_at_once_complete_a_level_once() {
     let id = group(&conn, &[aiko, bram]).await;
     solved(&conn, aiko, MADE + 1, level_target(0, 2) + 5).await;
     let other = conn.independent_connection().await;
-    other.busy_timeout(std::time::Duration::from_secs(5)).unwrap();
-    conn.busy_timeout(std::time::Duration::from_secs(5)).unwrap();
+    other
+        .busy_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
+    conn.busy_timeout(std::time::Duration::from_secs(5))
+        .unwrap();
     let (a, b) = tokio::join!(
         river(&conn, id, aiko, TODAY),
         river(&other, id, bram, TODAY)
@@ -356,7 +378,10 @@ async fn new_planks_are_new_once() {
     assert_eq!((first.seen, first.total), (0, 40));
     solved(&conn, aiko, MADE + 2, 25).await;
     let back = river(&conn, id, aiko, TODAY).await.unwrap();
-    assert_eq!((back.seen, back.seen_progress(), back.progress), (40, 40, 65));
+    assert_eq!(
+        (back.seen, back.seen_progress(), back.progress),
+        (40, 40, 65)
+    );
     let again = river(&conn, id, aiko, TODAY).await.unwrap();
     assert_eq!(again.seen_progress(), again.progress);
     // bram hasn't looked yet: everything is new to him
@@ -377,9 +402,15 @@ async fn rivers_go_with_their_groups_and_crews_with_their_members() {
     assert_eq!(number(&conn, "SELECT COUNT(*) FROM group_river").await, 2);
     leave(&conn, other, aiko).await.unwrap();
     assert_eq!(number(&conn, "SELECT COUNT(*) FROM group_river").await, 1);
-    assert_eq!(number(&conn, "SELECT COUNT(*) FROM group_river_crew").await, 1);
+    assert_eq!(
+        number(&conn, "SELECT COUNT(*) FROM group_river_crew").await,
+        1
+    );
     erase(&conn, aiko).await.unwrap();
-    assert_eq!(number(&conn, "SELECT COUNT(*) FROM group_river_crew").await, 0);
+    assert_eq!(
+        number(&conn, "SELECT COUNT(*) FROM group_river_crew").await,
+        0
+    );
     // The group's level stays, its bridges too
     let seen = river(&conn, id, bram, TODAY).await.unwrap();
     assert_eq!((seen.level, seen.total), (1, level_target(0, 2)));
