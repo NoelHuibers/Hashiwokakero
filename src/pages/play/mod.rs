@@ -3,6 +3,7 @@
 pub mod legend;
 pub mod new_game;
 pub mod seo;
+pub mod solver_tools;
 pub mod win;
 
 pub use seo::SeoIntro;
@@ -22,6 +23,7 @@ use crate::state::{self, Game, Settings, Source, Status, format_time};
 
 use legend::LegendCard;
 use new_game::{NewGameCard, new_random};
+use solver_tools::SolverTools;
 use win::WinOverlay;
 
 /// Share of the islands that are done, for the progress bar.
@@ -251,6 +253,8 @@ pub fn PlayPage() -> impl IntoView {
 
                 <aside class="flex flex-col gap-4">
                     <NewGameCard />
+                    <LegendCard />
+                    <SolverTools>
                     <SolverPanel report=game.report busy=game.solving>
                         <PanelButton
                             primary=true
@@ -272,7 +276,7 @@ pub fn PlayPage() -> impl IntoView {
                             "CNF ↓"
                         </PanelButton>
                     </SolverPanel>
-                    <LegendCard />
+                    </SolverTools>
                 </aside>
             </div>
         </section>
