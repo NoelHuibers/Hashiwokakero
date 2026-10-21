@@ -4,6 +4,7 @@
   "collected": "已收集 {{ earned }} 枚印章，共 {{ total }} 枚。",
   "new": "新印章：{{ name }}！",
   "more": "还有 {{ count }} 枚新印章，去印章册看看吧。",
+  "earned": "新印章",
   "share": "{{ percent }}% 的玩家",
   "pick": "点击已获得的印章，即可在排行榜上显示在你的名字旁边。",
   "shown": "{{ name }}现在显示在你的名字旁边。",

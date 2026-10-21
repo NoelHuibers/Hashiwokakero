@@ -3,6 +3,8 @@
   "action_pending": "In attesa del server…",
   "action_retry": "Il risultato è incerto. Ripeti la stessa azione per recuperarlo senza ulteriori penalità.",
   "action_storage": "Per riprovare questa azione in sicurezza serve la memoria del browser. Attivala e riprova.",
+  "submit_failed": "La tua soluzione non è ancora arrivata al server.",
+  "submit_again": "Invia di nuovo",
   "meta": {
     "title": "Hashi · Hashiwokakero (Ponti) del giorno, gratis online",
     "description": "Un nuovo Hashiwokakero (Ponti) ogni giorno, uguale per tutti: pixel art giapponese, classifica e serie, e ogni puzzle ha esattamente una soluzione."

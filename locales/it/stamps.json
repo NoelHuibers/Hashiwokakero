@@ -4,6 +4,7 @@
   "collected": "{{ earned }} timbri su {{ total }} raccolti.",
   "new": "Nuovo timbro: {{ name }}!",
   "more": "E altri {{ count }} timbri nuovi, guarda il tuo libretto.",
+  "earned": "Nuovi timbri",
   "share": "{{ percent }}% dei giocatori",
   "pick": "Tocca un timbro ottenuto per mostrarlo accanto al tuo nome nelle classifiche.",
   "shown": "{{ name }} ora appare accanto al tuo nome nelle classifiche.",

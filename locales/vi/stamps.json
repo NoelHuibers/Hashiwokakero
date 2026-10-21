@@ -4,6 +4,7 @@
   "collected": "Đã sưu tầm {{ earned }} trên {{ total }} con dấu.",
   "new": "Con dấu mới: {{ name }}!",
   "more": "Và thêm {{ count }} con dấu mới, hãy xem sổ con dấu của bạn.",
+  "earned": "Con dấu mới",
   "share": "{{ percent }}% người chơi",
   "pick": "Chạm vào một con dấu bạn đã nhận để hiện nó cạnh tên bạn trên bảng xếp hạng.",
   "shown": "{{ name }} giờ hiện cạnh tên bạn trên bảng xếp hạng.",

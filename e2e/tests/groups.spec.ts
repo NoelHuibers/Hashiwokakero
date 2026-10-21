@@ -72,7 +72,11 @@ test('a group is made, a friend joins with the link as a guest, times show after
   await hydrated(friend);
   const { puzzle, solution } = await startDaily(friend);
   await solveDaily(friend, puzzle, solution);
-  await expect(friend.getByRole('heading', { name: /Well done!/ })).toBeVisible();
+  // The win card over the board, put away for the ranking next to it
+  const win = friend.getByRole('dialog', { name: /Well done!/ });
+  await expect(win).toBeVisible();
+  await win.getByRole('button', { name: 'Admire' }).click();
+  await expect(win).toHaveCount(0);
   // On the daily page their group has a tab next to the world's ranking, with their time
   const tab = friend.getByRole('tab', { name: /Lunch Bridges/ });
   await expect(tab).toContainText('1/2');
