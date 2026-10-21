@@ -1,6 +1,6 @@
 # Daily recovery implementation
 
-Base: `f66f556`. Branch: `fix/daily-recovery`. Parent integrated current main (`b994bfe`), preserving its win modal, rivals, grouped rankings and About content. Matching checks are pending. No general play layout or Dojo changes.
+Base: `f66f556`. Branch: `fix/daily-recovery`. Parent integrated current main (`b994bfe`), preserving its win modal, rivals, grouped rankings and About content. Parent validation is in progress. No general play layout or Dojo changes.
 
 ## Behavior and ownership
 
@@ -19,7 +19,7 @@ The old `submit_daily` commits the finish before rank/finisher/stamp queries. Fa
 
 ## Validation
 
-Final commands/results are recorded in the implementation handoff. All Rust checks use `CARGO_BUILD_JOBS=2`.
+All Rust checks use `CARGO_BUILD_JOBS=2`. Final integrated SSR suite: **402 passed, one existing manual OG sample generator ignored**, plus one doctest passed. All 44 daily page tests and SSR/WASM Clippy with warnings denied passed. Formatting and diff checks passed. Matching release and browser validation are pending.
 
 New focused regressions cover immediate fetch/submit guards, superseded generations/disposal, same-attempt reconciliation, wrong day/start/attempt/puzzle rejection, solved-board/log preservation, old quiet reads, identity changes, replay immutability and concurrent replay, stable-ID replacement, and HTTP user/attempt assertions. Existing paid-intent and synchronous final-move tests remain in the daily suite.
 
@@ -33,8 +33,9 @@ Browser cases added to `e2e/tests/daily.spec.ts` are **unexecuted** pending the 
 6. Transient metadata refresh failure while running → manual recovery with progress intact.
 7. Hard reload of an unconfirmed solved board → locked explicit retry.
 8. Solved SPA return, including an initial metadata failure and manual retry in the same document.
+9. Midnight replacement of an old solved daily with the new day’s metadata (ranking/difficulty are not asserted under the simulated future clock).
 
-The existing final-paid-hint submission counter now observes the new guarded endpoint. No cargo-leptos, full release/server, coverage, or browser runs were performed here.
+The existing final-paid-hint submission counter now observes the new guarded endpoint. A fresh matching release is building; browser cases remain unexecuted until it completes.
 
 ## Limits and tradeoffs
 
@@ -50,7 +51,7 @@ capturable attempt, or by a later scope effect on a day/identity transition. Sub
 requires loaded metadata before advancing its revision; metadata retry remains available when
 shared game state is Won but metadata is absent. Reload clears previous metadata and synchronizes
 scope before capturing the new read guard. This also prevents old-attempt auto-submission under
-a newly authenticated user. First metadata establishes ranking-day ownership and supersedes
+a newly authenticated user. Both recovery endpoints also share network admission before parsing; the HTTP regression mixes their requests with puzzle generation and proves the common IPv6/header-spoofing budget. First metadata establishes ranking-day ownership and supersedes
 initial unknown-day requests; leaderboard responses must match the displayed day.
 
 Successful guarded writes call main's `submitted()` helper and retain the win modal. Read-only
