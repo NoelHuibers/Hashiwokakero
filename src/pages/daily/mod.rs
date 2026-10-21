@@ -399,8 +399,10 @@ pub fn DailyPage() -> impl IntoView {
         <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
                 <div class="flex min-w-0 flex-col gap-4">
+                    // Only the error needs to be seen: while loading, the board placeholder
+                    // already says so, so the status stays for screen readers only.
                     <div role="status" aria-live="polite" data-testid="daily-metadata-status"
-                        class:hidden=move || daily.metadata.phase.get() == Phase::Idle && daily.info.with(Option::is_some)>
+                        class:sr-only=move || daily.metadata.phase.get() != Phase::Error>
                         <Show when=move || daily.metadata.phase.get() == Phase::Pending || (daily.info.with(Option::is_none) && daily.metadata.phase.get() != Phase::Error)>
                             <p>{t!(i18n, common.game.loading)}</p>
                         </Show>
