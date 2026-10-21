@@ -414,7 +414,7 @@ pub(super) fn BudgetView(
                 </table>
             </div>
             <BudgetChart budgets=budgets.get_value() highlight=hovered selected />
-            <ul class="flex list-disc flex-col gap-1 ps-5 text-sm text-muted-foreground">{sentences}</ul>
+            <ul class="flex list-disc flex-col gap-1 ps-5 text-sm text-muted-foreground" data-testid="crossovers">{sentences}</ul>
         </div>
     }
 }

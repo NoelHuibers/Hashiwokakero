@@ -110,7 +110,7 @@ test('the season archive with its seed, set and results', async ({ page, request
   const csv = await request.get(`/dojo/seasons/${DOJO_SEASON - 1}/results.csv`);
   expect(csv.status()).toBe(200);
   expect((await csv.text()).split('\n')[1]).toBe(
-    `${DOJO_SEASON - 1},${DOJO_SUBMISSION},Plain DPLL,Hashi,1,1,3,hashi-01,hashi,SAT,solved,1200000`,
+    `${DOJO_SEASON - 1},${DOJO_SUBMISSION},Plain DPLL,Hashi,1,1,3,hashi-01,hashi,SAT,solved,1200000,10000000000,10000000000`,
   );
   // Nothing of the running season
   expect((await request.get(`/dojo/seasons/${DOJO_SEASON}/results.csv`)).status()).toBe(404);
@@ -170,7 +170,7 @@ test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
   await chart.getByRole('img').focus();
   await page.keyboard.press('End');
   await expect(chart.getByText(/fuel per formula, ≈ .* native$/)).toBeVisible();
-  await expect(budgets.locator('li').first()).toContainText(/overtakes|none of the leading solvers/);
+  await expect(budgets.getByTestId('crossovers')).toContainText(/overtakes|none of the leading solvers/);
   // The cactus plot marks the ranking budget, the runs went on above it
   await expect(cactus.locator('line[data-testid="ranking-budget"]')).toHaveCount(1);
   // A link to a budget opens the view
