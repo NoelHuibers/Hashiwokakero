@@ -666,7 +666,7 @@ test('initial metadata failure has a persistent manual retry with an immediate p
   });
   await visit(page, '/');
   await expect(metadataStatus(page)).toContainText("Couldn't load today's puzzle.");
-  await expect(page.getByRole('button', { name: /^Start/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /^Start/ })).toHaveCount(0);
   await expect(rankingStatus(page)).toBeEmpty(); // ranking succeeded independently
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await page.waitForLoadState('networkidle');
