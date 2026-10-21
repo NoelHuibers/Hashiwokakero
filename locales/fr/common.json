@@ -81,7 +81,7 @@
     "group_not_found": "Ce groupe n’existe pas, ou tu n’en fais pas partie.",
     "group_full": "Ce groupe est complet : il a déjà 50 membres.",
     "too_many_groups": "Tu es déjà dans 10 groupes, quittes-en un d’abord.",
-    "group_owner_only": "Seul l’admin du groupe peut faire ça."
+    "group_owner_only": "Seule la personne responsable du groupe peut faire ça."
   },
   "solver": {
     "title": "Solveur SAT",

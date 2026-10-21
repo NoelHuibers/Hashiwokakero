@@ -81,7 +81,7 @@
   "members": {
     "title": "Mitglieder",
     "count": "Mitglieder: {{ count }} von {{ max }}",
-    "owner": "Admin",
+    "owner": "Leitung",
     "joined": "dabei seit {{ date }}",
     "remove_label": "{{ name }} entfernen",
     "remove_confirm": "{{ name }} aus der Gruppe entfernen? Mit dem Einladungslink ist ein erneuter Beitritt möglich, außer du erstellst einen neuen.",
