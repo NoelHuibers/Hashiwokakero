@@ -282,7 +282,8 @@ impl ProfileCache {
                 Lookup::Owner(owner) => return owner.complete(compute().await),
                 Lookup::Uncached => return compute().await,
                 Lookup::Follow(mut completion) => loop {
-                    if let Some(result) = completion.borrow_and_update().clone() {
+                    let completed = completion.borrow_and_update().clone();
+                    if let Some(result) = completed {
                         return result;
                     }
                     // watch remembers completion between inspecting the value and awaiting;
@@ -317,20 +318,27 @@ async fn profile_with_cache(
 ) -> Result<Option<PlayerProfile>, ServerFnError> {
     // Always revalidate identity, deletion and bans, including writes on another replica. Only
     // the aggregates are cached; neither may keep a public identity alive for the TTL.
-    let mut rows = conn
-        .query(
-            "SELECT name, username IS NULL, created_at FROM users
+    // Finish the identity statement before joining a flight. A follower may become a
+    // replacement owner after invalidation; retaining this read would reuse its old SQLite
+    // snapshot and could insert stale statistics into the new generation.
+    let (name, guest, created_at) = {
+        let mut rows = conn
+            .query(
+                "SELECT name, username IS NULL, created_at FROM users
          WHERE id = ?1 AND deleted_at IS NULL AND banned_at IS NULL",
-            params![user],
+                params![user],
+            )
+            .await
+            .map_err(db_err)?;
+        let Some(row) = rows.next().await.map_err(db_err)? else {
+            return Ok(None);
+        };
+        (
+            row.get::<String>(0).map_err(db_err)?,
+            row.get::<i64>(1).map_err(db_err)? != 0,
+            row.get::<i64>(2).map_err(db_err)?,
         )
-        .await
-        .map_err(db_err)?;
-    let Some(row) = rows.next().await.map_err(db_err)? else {
-        return Ok(None);
     };
-    let name: String = row.get(0).map_err(db_err)?;
-    let guest = row.get::<i64>(1).map_err(db_err)? != 0;
-    let created_at = row.get(2).map_err(db_err)?;
     let stats = cache.get_or_compute(user, || stats(conn, user)).await?;
     Ok(Some(PlayerProfile {
         id: user,

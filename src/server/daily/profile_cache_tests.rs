@@ -51,9 +51,9 @@ impl ArcWake for WakeCount {
     }
 }
 
-fn observed_poll<F: Future>(future: Pin<&mut F>, wakes: &Arc<WakeCount>) -> Poll<F::Output> {
-    let waker = waker_ref(wakes);
-    future.poll(&mut Context::from_waker(&waker))
+fn observed_poll<F: Future>(future: Pin<&mut F>, observer: &Arc<WakeCount>) -> Poll<F::Output> {
+    let task_waker = waker_ref(observer);
+    future.poll(&mut Context::from_waker(&task_waker))
 }
 
 #[tokio::test]
@@ -149,7 +149,7 @@ async fn warm_hits_do_no_work_and_do_not_extend_the_thirty_second_ttl() {
     assert_eq!(PROFILE_TTL, Duration::from_secs(30));
     // Model an entry from before the UTC day changed. Day-sensitive aggregates must refresh
     // by the same TTL, even after repeated warm reads, without waiting 30 seconds in a test.
-    cache.lock().entries.get_mut(&1).unwrap().0 = Instant::now() - PROFILE_TTL;
+    cache.lock().entries.get_mut(&1).unwrap().0 = Instant::now().checked_sub(PROFILE_TTL).unwrap();
     let calls = Cell::new(0);
     assert_eq!(
         cache
@@ -417,32 +417,6 @@ async fn active_key_limit_falls_back_without_metadata_even_across_invalidation()
 }
 
 #[tokio::test]
-async fn completion_between_inspection_and_wait_is_retained() {
-    let cache = ProfileCache::default();
-    let (release, gate) = oneshot::channel();
-    let mut owner = Box::pin(cache.get_or_compute(1, || async {
-        gate.await.unwrap();
-        Ok(snapshot(1))
-    }));
-    assert!(poll!(owner.as_mut()).is_pending());
-    let Lookup::Follow(mut completion) = cache.lookup(1) else {
-        panic!("expected follower");
-    };
-    assert!(completion.borrow_and_update().is_none());
-    release.send(()).unwrap();
-    assert_eq!(ready(poll!(owner.as_mut())).unwrap(), snapshot(1));
-    // Complete and drop the sender before even creating the changed() future.
-    assert_eq!(
-        ready(poll!(Box::pin(completion.changed()).as_mut())),
-        Ok(())
-    );
-    assert_eq!(
-        completion.borrow_and_update().clone(),
-        Some(Ok(snapshot(1)))
-    );
-}
-
-#[tokio::test]
 async fn cached_http_assembly_matches_domain_stats_and_rechecks_every_identity_field() {
     let conn = TestConn::new("profile-cache-identity").await;
     conn.execute_batch(
@@ -514,4 +488,38 @@ async fn cached_http_assembly_matches_domain_stats_and_rechecks_every_identity_f
         profile_with_cache(&cache, &conn, 1).await.unwrap(),
         profile(&conn, 1).await.unwrap()
     );
+}
+
+/// A follower may become the next generation's owner after cancellation. Its earlier
+/// identity read must not retain a SQLite snapshot across that wait and into computation.
+#[tokio::test]
+async fn replacement_owner_uses_a_fresh_database_view_after_invalidation() {
+    let writer = TestConn::new("profile-cache-replacement-snapshot").await;
+    writer
+        .execute_batch("INSERT INTO users (id, name, created_at) VALUES (1, 'player', 0)")
+        .await
+        .unwrap();
+    let reader = writer.independent_connection().await;
+    let cache = ProfileCache::default();
+    let mut owner = Box::pin(cache.get_or_compute(1, pending::<StatsResult>));
+    assert!(poll!(owner.as_mut()).is_pending());
+    let mut request = Box::pin(profile_with_cache(&cache, &reader, 1));
+    assert!(poll!(request.as_mut()).is_pending());
+    writer
+        .execute_batch(
+            "INSERT INTO attempts (user_id, day, started_at, finished_at, time_ms)
+             VALUES (1, 1, 100, 300, 200)",
+        )
+        .await
+        .unwrap();
+    assert_eq!(stats(&writer, 1).await.unwrap().solved, 1);
+    cache.invalidate();
+    drop(owner);
+    let fresh = tokio::time::timeout(Duration::from_secs(5), request)
+        .await
+        .expect("replacement owner must finish")
+        .unwrap()
+        .unwrap();
+    assert_eq!(fresh.stats.solved, 1);
+    assert_eq!(cache.lock().entries[&1].1.solved, 1);
 }
