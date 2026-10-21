@@ -194,6 +194,12 @@
   "date_long": "{{ weekday }}, {{ day }} {{ month }} {{ year }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "A solved Hashiwokakero puzzle in pixel art: numbered islands joined by wooden and vermilion bridges",
+  "og": {
+    "tagline": "The Japanese bridges puzzle, in pixel art",
+    "free": "Free to play",
+    "daily": "A new puzzle every day",
+    "unique": "Exactly one solution"
+  },
   "ld": {
     "site": "Hashiwokakero, the Japanese bridges puzzle, playable for free in the browser.",
     "game": "Connect the islands with bridges so that every island has as many bridges as its number says. A daily puzzle with a leaderboard, five difficulties, pixel art, and every puzzle has exactly one solution."

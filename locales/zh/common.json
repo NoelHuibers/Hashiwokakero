@@ -194,6 +194,12 @@
   "date_long": "{{ year }}年{{ month }}{{ day }}日 {{ weekday }}",
   "date_short": "{{ year }}年{{ month }}{{ day }}日",
   "og_image_alt": "像素风的已解数桥（Hashiwokakero）谜题：带数字的小岛由木桥和朱红桥相连",
+  "og": {
+    "tagline": "来自日本的搭桥谜题，像素画风",
+    "free": "免费畅玩",
+    "daily": "每天一道新谜题",
+    "unique": "答案唯一"
+  },
   "ld": {
     "site": "数桥（Hashiwokakero），来自日本的搭桥逻辑谜题，在浏览器里免费畅玩。",
     "game": "用桥把小岛连起来，让每座岛的桥数等于它的数字。每日谜题配排行榜，五种难度，像素画风，每道题都只有唯一解。"

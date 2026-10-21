@@ -15,7 +15,7 @@ use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::{date_short, localized, og_locale};
 use crate::model::{MS_PER_DAY, PlayerProfile};
 use crate::pages::not_found_status;
-use crate::seo::{OG_IMAGE, SITE_NAME, SITE_URL, title_text};
+use crate::seo::{SITE_NAME, SITE_URL, og_image, title_text};
 use crate::state::{Auth, error_toast};
 
 #[component]
@@ -147,6 +147,8 @@ fn PlayerMeta(p: PlayerProfile) -> impl IntoView {
         "{SITE_URL}{}",
         localized(locale, &format!("/player/{}", p.id))
     );
+    let image = og_image(locale);
+    let image_alt = td_string!(locale, common.og_image_alt);
     let tab = title.clone();
     view! {
         <Title text=title_text(move || tab.clone()) />
@@ -158,11 +160,16 @@ fn PlayerMeta(p: PlayerProfile) -> impl IntoView {
         <Meta property="og:title" content=title.clone() />
         <Meta property="og:description" content=description.clone() />
         <Meta property="og:url" content=url />
-        <Meta property="og:image" content=OG_IMAGE />
+        <Meta property="og:image" content=image.clone() />
+        <Meta property="og:image:type" content="image/png" />
+        <Meta property="og:image:width" content="1200" />
+        <Meta property="og:image:height" content="630" />
+        <Meta property="og:image:alt" content=image_alt />
         <Meta name="twitter:card" content="summary_large_image" />
         <Meta name="twitter:title" content=title />
         <Meta name="twitter:description" content=description />
-        <Meta name="twitter:image" content=OG_IMAGE />
+        <Meta name="twitter:image" content=image />
+        <Meta name="twitter:image:alt" content=image_alt />
     }
 }
 

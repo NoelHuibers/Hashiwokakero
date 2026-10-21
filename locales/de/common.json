@@ -194,6 +194,12 @@
   "date_long": "{{ weekday }}, {{ day }}. {{ month }} {{ year }}",
   "date_short": "{{ day }}. {{ month }} {{ year }}",
   "og_image_alt": "Ein gelöstes Hashiwokakero-Rätsel in Pixel-Art: nummerierte Inseln, verbunden durch hölzerne und zinnoberrote Brücken",
+  "og": {
+    "tagline": "Das japanische Brückenrätsel, in Pixel-Art",
+    "free": "Kostenlos spielen",
+    "daily": "Jeden Tag ein neues Rätsel",
+    "unique": "Genau eine Lösung"
+  },
   "ld": {
     "site": "Hashiwokakero, das japanische Brückenrätsel, kostenlos im Browser spielbar.",
     "game": "Verbinde die Inseln mit Brücken, sodass jede Insel so viele Brücken hat, wie ihre Zahl angibt. Ein Tagesrätsel mit Rangliste, fünf Schwierigkeitsgrade, Pixel-Art – und jedes Rätsel hat genau eine Lösung."

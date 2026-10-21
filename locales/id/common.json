@@ -194,6 +194,12 @@
   "date_long": "{{ weekday }}, {{ day }} {{ month }} {{ year }}",
   "date_short": "{{ day }} {{ month }} {{ year }}",
   "og_image_alt": "Teka-teki Hashiwokakero yang sudah selesai dalam pixel art: pulau bernomor dihubungkan jembatan kayu dan merah",
+  "og": {
+    "tagline": "Teka-teki jembatan dari Jepang, dalam pixel art",
+    "free": "Gratis",
+    "daily": "Teka-teki baru setiap hari",
+    "unique": "Tepat satu solusi"
+  },
   "ld": {
     "site": "Hashiwokakero, teka-teki jembatan dari Jepang, bisa dimainkan gratis di browser.",
     "game": "Hubungkan pulau-pulau dengan jembatan sehingga setiap pulau punya jembatan sebanyak angkanya. Teka-teki harian dengan papan peringkat, lima tingkat kesulitan, pixel art, dan setiap teka-teki punya tepat satu solusi."
