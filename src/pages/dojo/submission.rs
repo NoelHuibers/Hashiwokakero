@@ -356,6 +356,8 @@ pub fn DojoSubmissionPage() -> impl IntoView {
                                     }
                                         .into_any()
                                 }
+                                // A newer server's state: just the badge
+                                (DojoState::Unknown, _, _) => ().into_any(),
                                 _ => view! { <p class="text-muted-foreground">{t!(i18n, dojo.detail.failed)}</p> }.into_any(),
                             }}
                         </Card>

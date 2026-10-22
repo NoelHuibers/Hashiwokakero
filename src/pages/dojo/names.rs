@@ -70,6 +70,7 @@ fn state_name(locale: Locale, state: DojoState) -> String {
         DojoState::Done => td_string!(locale, dojo.state.done),
         DojoState::Rejected => td_string!(locale, dojo.state.rejected),
         DojoState::Failed => td_string!(locale, dojo.state.failed),
+        DojoState::Unknown => "?",
     }
     .to_string()
 }
@@ -79,7 +80,7 @@ pub(super) fn StateBadge(state: DojoState, #[prop(optional)] disqualified: bool)
     let i18n = use_i18n();
     let variant = match state {
         _ if disqualified => BadgeVariant::Destructive,
-        DojoState::Queued => BadgeVariant::Muted,
+        DojoState::Queued | DojoState::Unknown => BadgeVariant::Muted,
         DojoState::Running => BadgeVariant::Warning,
         DojoState::Done => BadgeVariant::Success,
         DojoState::Rejected | DojoState::Failed => BadgeVariant::Destructive,

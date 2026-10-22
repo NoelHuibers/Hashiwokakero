@@ -103,6 +103,7 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
                                         Flag::SecondAccount => td_string!(locale, daily.flag.second_account),
                                         // A banned player isn't signed in to see it
                                         Flag::Review | Flag::Banned => td_string!(locale, daily.flag.review),
+                                        Flag::Unknown => td_string!(locale, daily.flag.title),
                                     };
                                     view! {
                                         <p class="rounded-md border border-warning/40 bg-warning-light px-3 py-2 text-start text-sm text-warning-dark">

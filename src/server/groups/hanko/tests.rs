@@ -183,6 +183,11 @@ async fn seals_follow_the_rules() {
         error(stamp(&conn, group, dana, bram, Wow).await),
         ApiError::HankoNotAllowed
     );
+    // Not a seal only a newer page knows
+    assert_eq!(
+        error(stamp(&conn, group, aiko, bram, Unknown).await),
+        ApiError::HankoNotAllowed
+    );
     // Not on someone outside the group, and not in a group one isn't in
     assert_eq!(
         error(stamp(&conn, group, aiko, outsider, Wow).await),

@@ -497,6 +497,29 @@ mod tests {
         });
     }
 
+    /// A newer server's kind of help (an app that wasn't updated yet) gets no marker.
+    #[tokio::test]
+    async fn unknown_marks_are_left_out() {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            let markers = |data| {
+                view! { <TheatreView data only=None /> }
+                    .to_html()
+                    .matches("data-mark=")
+                    .count()
+            };
+            let mut newer = data();
+            newer.lanes[0].marks.push(Mark {
+                t: 700,
+                kind: MarkKind::Unknown,
+            });
+            assert!(markers(data()) > 0);
+            assert_eq!(markers(newer), markers(data()));
+        });
+    }
+
     #[test]
     fn replay_paths() {
         assert_eq!(replay_path(3, 20_747, None), "/groups/3/replay/20747");
