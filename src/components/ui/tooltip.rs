@@ -249,11 +249,13 @@ pub fn Tooltips() -> impl IntoView {
     }
 }
 
-/// The element with the tooltip `el` is part of, if any.
+/// The element with the tooltip `el` is part of, if any. One marked `data-tooltip-clipped` (a
+/// name that may be cut off with an ellipsis) only has it while its text doesn't fit.
 fn trigger_of(el: &Element) -> Option<Element> {
     el.closest(SELECTOR).ok().flatten().filter(|t| {
         t.get_attribute("data-tooltip")
             .is_some_and(|s| !s.is_empty())
+            && (!t.has_attribute("data-tooltip-clipped") || t.scroll_width() > t.client_width())
     })
 }
 
@@ -308,8 +310,10 @@ fn show(state: &Shared, el: &Element, root: &HtmlElement, text: &HtmlElement) {
     root.set_hidden(false);
     place(el, root);
 
-    // Screen readers: the tooltip describes the trigger, unless it already says the same
+    // Screen readers: the tooltip describes the trigger, unless it already says the same (a cut
+    // off name is read whole anyway)
     let described = el.get_attribute("aria-label").as_deref() != Some(label.as_str())
+        && !el.has_attribute("data-tooltip-clipped")
         && el.get_attribute("aria-describedby").is_none();
     if described {
         let _ = el.set_attribute("aria-describedby", ID);

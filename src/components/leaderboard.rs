@@ -71,9 +71,16 @@ pub fn PlayerName(
         .into_any();
     }
     let href = move || format!("{}/player/{user_id}", prefix(i18n.get_locale()));
+    let full = name.clone();
     view! {
         <div class="flex items-center gap-2">
-            <A href=href attr:class="min-w-0 truncate font-medium underline-offset-4 hover:text-primary hover:underline">
+            // The whole name in a tooltip, while it's cut off
+            <A
+                href=href
+                attr:class="min-w-0 truncate font-medium underline-offset-4 hover:text-primary hover:underline"
+                attr:data-tooltip=full
+                attr:data-tooltip-clipped=""
+            >
                 {name}
             </A>
             {rival.then(|| view! { <RivalMark user_id /> })}
