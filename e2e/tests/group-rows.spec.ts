@@ -72,7 +72,7 @@ test('short names stay whole on a phone, on the group page and in the daily tab'
   await page.getByRole('tab', { name: new RegExp(TEA_GROUP.name) }).click();
   await chenWhole(page, board);
 
-  // A name that is cut off shows whole in its tooltip, one that fits has none: narrowed so the
+  // A name that is cut off shows whole in its tooltip, one that fits has none: narrowed so that
   // a guest's (two words and a number, other runs may have joined too) is cut off and chen fits
   await page.addStyleTag({ content: 'a[data-tooltip-clipped] { max-width: 2.75rem }' });
   const tooltip = page.getByRole('tooltip');
