@@ -48,7 +48,8 @@
     "not_unique": "Deze puzzel heeft meer dan één oplossing.",
     "copied": "Resultaat gekopieerd naar het klembord.",
     "copy_failed": "Kopiëren naar het klembord is niet gelukt.",
-    "reload": "Herladen"
+    "reload": "Herladen",
+    "update": "Bijwerken"
   },
   "errors": {
     "unknown": "Er ging iets mis: {{ detail }}",

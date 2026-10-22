@@ -163,6 +163,7 @@
     "button": "Gönder",
     "left": "Bugün kalan gönderim: {{ count }}",
     "none_left": "Bugün gönderim hakkın kalmadı, yarın tekrar gel.",
+    "on_website": "Uygulamada yüklemeler web sitesi üzerinden yapılır: <a>hashi.rs'yi aç</a> ve orada aynı hesapla giriş yap.",
     "errors": {
       "sign_in": "Lütfen önce kayıtlı bir hesapla giriş yap.",
       "name": "Çözücüne en fazla 40 karakterlik bir ad ver.",

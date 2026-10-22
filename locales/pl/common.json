@@ -48,7 +48,8 @@
     "not_unique": "Ta łamigłówka ma więcej niż jedno rozwiązanie.",
     "copied": "Wynik skopiowany do schowka.",
     "copy_failed": "Nie udało się skopiować do schowka.",
-    "reload": "Odśwież"
+    "reload": "Odśwież",
+    "update": "Aktualizuj"
   },
   "errors": {
     "unknown": "Coś poszło nie tak: {{ detail }}",

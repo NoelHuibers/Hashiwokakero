@@ -48,7 +48,8 @@
     "not_unique": "Bu bulmacanın birden fazla çözümü var.",
     "copied": "Sonuç panoya kopyalandı.",
     "copy_failed": "Panoya kopyalanamadı.",
-    "reload": "Yenile"
+    "reload": "Yenile",
+    "update": "Güncelle"
   },
   "errors": {
     "unknown": "Bir şeyler ters gitti: {{ detail }}",

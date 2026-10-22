@@ -48,7 +48,8 @@
     "not_unique": "Cette grille a plus d’une solution.",
     "copied": "Résultat copié dans le presse-papiers.",
     "copy_failed": "Impossible de copier dans le presse-papiers.",
-    "reload": "Recharger"
+    "reload": "Recharger",
+    "update": "Mettre à jour"
   },
   "errors": {
     "unknown": "Un problème est survenu : {{ detail }}",

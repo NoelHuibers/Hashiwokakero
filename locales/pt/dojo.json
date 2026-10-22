@@ -163,6 +163,7 @@
     "button": "Enviar",
     "left": "Envios restantes hoje: {{ count }}",
     "none_left": "Sem envios restantes hoje, volte amanhã.",
+    "on_website": "No app, os envios são feitos pelo site: <a>abra hashi.rs</a> e entre lá com a mesma conta.",
     "errors": {
       "sign_in": "Entre primeiro com uma conta registrada.",
       "name": "Dê ao seu solver um nome de até 40 caracteres.",

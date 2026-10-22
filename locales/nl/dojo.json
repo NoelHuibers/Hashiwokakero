@@ -163,6 +163,7 @@
     "button": "Insturen",
     "left": "Inzendingen over vandaag: {{ count }}",
     "none_left": "Geen inzendingen meer over vandaag, kom morgen terug.",
+    "on_website": "In de app gaan uploads via de website: <a>open hashi.rs</a> en log daar in met hetzelfde account.",
     "errors": {
       "sign_in": "Log eerst in met een geregistreerd account.",
       "name": "Geef je solver een naam van hoogstens 40 tekens.",

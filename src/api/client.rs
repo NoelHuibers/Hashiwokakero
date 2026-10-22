@@ -7,6 +7,9 @@
 //! binary): the server sends it with every response (`x-hashi-build`, see `server/router`) and
 //! in every page (`<meta name="hashi-build">`, see `app::shell`), so a tab knows the build of
 //! the WASM it runs from the page it loaded.
+//!
+//! In the app the client also says who it is and carries the session, see `api::app`. The app
+//! can't reload into a newer build, it needs an update from the store ([`needs_update`]).
 
 use std::sync::Mutex;
 
@@ -19,7 +22,7 @@ use leptos::server_fn::error::FromServerFnError;
 use leptos::server_fn::request::browser::BrowserRequest;
 use leptos::server_fn::response::browser::BrowserResponse;
 
-use crate::model::is_outdated_error;
+use crate::model::{ApiError, is_outdated_error};
 
 /// The response header with the build of the server, see the module docs.
 pub const BUILD_HEADER: &str = "x-hashi-build";
@@ -59,16 +62,38 @@ where
     type Response = BrowserResponse;
 
     async fn send(req: Self::Request) -> Result<Self::Response, E> {
+        // The app says who it is and sends its session, see `api::app`
+        #[cfg(feature = "csr")]
+        let (_admitted, sent) = {
+            let admitted = super::app::admit(
+                &super::app::SESSION_GATE,
+                super::app::may_make_session(&req.url()),
+            )
+            .await;
+            let token = super::app::session_token();
+            if let Some(app) = super::app::app_header() {
+                let headers = req.headers();
+                for (name, value) in super::app::request_headers(app, token.as_deref()) {
+                    headers.set(name, &value);
+                }
+            }
+            (admitted, token)
+        };
         let res =
             <BrowserClient as Client<E, InputStreamError, OutputStreamError>>::send(req).await?;
-        let build = res
-            .generate_headers()
+        let headers = res.generate_headers();
+        let build = headers
             .get(BUILD_HEADER)
             .and_then(|v| v.to_str().ok())
             .map(str::to_owned);
         if let Ok(mut server) = SERVER_BUILD.lock() {
             *server = build;
         }
+        #[cfg(feature = "csr")]
+        super::app::keep_session(
+            sent.as_deref(),
+            headers.get(SESSION_HEADER).and_then(|v| v.to_str().ok()),
+        );
         Ok(res)
     }
 
@@ -118,4 +143,44 @@ fn page_build() -> Option<&'static str> {
 pub fn is_outdated(error: &ServerFnError) -> bool {
     let server = SERVER_BUILD.lock().ok().and_then(|b| b.clone());
     is_outdated_error(error, page_build(), server.as_deref())
+}
+
+/// Whether a failed server function call means the app needs an update. Never on the website.
+///
+/// The server turned the app's version away (`ApiError::AppOutdated`), or the call failed like
+/// an outdated tab's, which a reload can't fix in the app: it loads the same bundle again.
+pub fn needs_update(error: &ServerFnError) -> bool {
+    update_needed(cfg!(feature = "csr"), error)
+}
+
+/// [`needs_update`] in the app (`app`) or on the website.
+fn update_needed(app: bool, error: &ServerFnError) -> bool {
+    app && (is_outdated(error)
+        || ApiError::from_message(&error.to_string()) == Some(ApiError::AppOutdated))
+}
+
+#[cfg(test)]
+mod tests {
+    use leptos::server_fn::Bytes;
+
+    use super::*;
+
+    #[test]
+    fn the_app_needs_an_update_where_the_site_needs_a_reload() {
+        let refused = ServerFnError::de(Bytes::from("ServerError|E:app_outdated"));
+        let page = ServerFnError::de(Bytes::from("<!DOCTYPE html><html><body></body></html>"));
+        for error in [&refused, &page] {
+            assert!(update_needed(true, error), "{error}");
+            assert!(!update_needed(false, error), "{error}");
+        }
+        assert!(is_outdated(&page) && !is_outdated(&refused));
+        for error in [
+            ServerFnError::new("E:session_expired"),
+            ServerFnError::Request("TypeError: Failed to fetch".into()),
+        ] {
+            assert!(!update_needed(true, &error), "{error}");
+        }
+        // The website's build
+        assert!(!needs_update(&refused));
+    }
 }

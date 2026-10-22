@@ -13,6 +13,7 @@
 
 mod account;
 mod admin;
+mod app;
 mod banzuke;
 mod client;
 mod contact;
@@ -28,9 +29,13 @@ mod river;
 
 pub use account::*;
 pub use admin::*;
+#[cfg(feature = "csr")]
+pub use app::start as start_app;
+pub use app::update_url;
 pub use banzuke::*;
 pub use client::{
     APP_HEADER, BUILD_HEADER, HashiClient, SESSION_BEARER, SESSION_HEADER, is_outdated,
+    needs_update,
 };
 pub use contact::*;
 pub use daily::*;

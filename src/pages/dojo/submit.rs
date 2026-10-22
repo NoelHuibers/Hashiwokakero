@@ -8,12 +8,35 @@ use crate::components::layout::use_localized;
 use crate::components::ui::button::Button;
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
-use crate::lang::prefix;
+use crate::lang::{localized, prefix};
 use crate::model::DojoMe;
+use crate::seo::SITE_URL;
 
 use super::names::{StateBadge, par2};
 
 const FIELD: &str = "flex w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm";
+
+/// The app's stand-in for an upload form: the forms post files the plain way, with the
+/// website's cookie, and the server answers with a redirect, so uploads go through the website
+/// (its page at `path`).
+#[component]
+pub(super) fn UploadOnWebsite(path: &'static str) -> impl IntoView {
+    let i18n = use_i18n();
+    let href = move || format!("{SITE_URL}{}", localized(i18n.get_locale(), path));
+    view! {
+        <p class="text-sm text-muted-foreground">
+            // TODO(step 10 of docs/mobile.md): the WebView opens no new windows, open the
+            // website with Tauri's opener plugin
+            {t!(
+                i18n,
+                dojo.submit.on_website,
+                <a> = move |children: ChildrenFn| view! {
+                    <a href=href target="_blank" rel="noopener" class="text-primary underline underline-offset-4">{children()}</a>
+                }
+            )}
+        </p>
+    }
+}
 
 fn submit_error(locale: Locale, code: &str) -> String {
     match code {
@@ -69,6 +92,13 @@ pub(super) fn SubmitCard(me: RwSignal<Option<DojoMe>>) -> impl IntoView {
                             >
                                 {t!(i18n, dojo.submit.create_account)}
                             </A>
+                        }
+                            .into_any()
+                    }
+                    Some(m) if cfg!(feature = "csr") => {
+                        view! {
+                            <UploadOnWebsite path="/dojo" />
+                            <MySubmissions me=m />
                         }
                             .into_any()
                     }
@@ -163,5 +193,28 @@ fn MySubmissions(me: DojoMe) -> impl IntoView {
                     .into_any()
             }}
         </div>
+    }
+}
+
+#[cfg(all(test, feature = "ssr"))]
+mod tests {
+    use super::*;
+
+    /// The app's note in place of an upload form links to the page on the website, in the
+    /// player's language, in a window of its own.
+    #[tokio::test]
+    async fn the_app_uploads_on_the_website() {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        let html = owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::de);
+            view! { <UploadOnWebsite path="/dojo/benchmarks" /> }.to_html()
+        });
+        assert!(
+            html.contains("href=\"https://hashi.rs/de/dojo/benchmarks\" target=\"_blank\""),
+            "{html}"
+        );
+        assert!(!html.contains("<form"));
     }
 }

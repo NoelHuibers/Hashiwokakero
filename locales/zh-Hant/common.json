@@ -48,7 +48,8 @@
     "not_unique": "這道謎題不只一個解。",
     "copied": "成績已複製到剪貼簿。",
     "copy_failed": "無法複製到剪貼簿。",
-    "reload": "重新整理"
+    "reload": "重新整理",
+    "update": "更新"
   },
   "errors": {
     "unknown": "發生錯誤：{{ detail }}",

@@ -32,5 +32,8 @@ const fn same(a: &str, b: &str) -> bool {
 }
 
 fn main() {
-    hashi::mount();
+    // The app's version, the one of this crate: the stores' version name, which the release
+    // (docs/mobile.md, step 11) keeps equal to it. The server answers versions below its
+    // minimum with `AppOutdated`.
+    hashi::mount(env!("CARGO_PKG_VERSION"));
 }

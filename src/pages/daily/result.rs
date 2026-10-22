@@ -33,7 +33,7 @@ pub(super) fn share_text(daily: &Daily, locale: Locale) -> String {
                     .and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))
             })
         });
-    let origin = window().location().origin().unwrap_or_default();
+    let origin = crate::seo::public_origin();
     let headline = td_string!(
         locale,
         daily.share,

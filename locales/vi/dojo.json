@@ -163,6 +163,7 @@
     "button": "Gửi",
     "left": "Lượt gửi còn lại hôm nay: {{ count }}",
     "none_left": "Hôm nay đã hết lượt gửi, hãy quay lại vào ngày mai.",
+    "on_website": "Trong ứng dụng, việc tải lên đi qua trang web: <a>mở hashi.rs</a> và đăng nhập ở đó bằng cùng tài khoản.",
     "errors": {
       "sign_in": "Vui lòng đăng nhập bằng tài khoản đã đăng ký trước.",
       "name": "Hãy đặt tên cho bộ giải, tối đa 40 ký tự.",
