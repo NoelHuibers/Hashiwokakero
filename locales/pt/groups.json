@@ -81,7 +81,7 @@
   "members": {
     "title": "Membros",
     "count": "Membros: {{ count }} de {{ max }}",
-    "owner": "Admin",
+    "owner": "Responsável",
     "joined": "entrou em {{ date }}",
     "remove_label": "Remover {{ name }}",
     "remove_confirm": "Remover {{ name }} do grupo? A pessoa pode voltar com o link de convite, a menos que você gere um novo.",

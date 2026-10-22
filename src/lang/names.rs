@@ -129,6 +129,7 @@ pub fn stamp_name(locale: Locale, stamp: Stamp) -> &'static str {
         Stamp::LeapDay => td_string!(locale, stamps.names.leap_day),
         Stamp::Yokozuna => td_string!(locale, stamps.names.yokozuna),
         Stamp::Sansho => td_string!(locale, stamps.names.sansho),
+        Stamp::RiverCrew => td_string!(locale, stamps.names.river_crew),
     }
 }
 
@@ -182,6 +183,7 @@ pub fn stamp_text(locale: Locale, stamp: Stamp) -> &'static str {
         Stamp::LeapDay => td_string!(locale, stamps.texts.leap_day),
         Stamp::Yokozuna => td_string!(locale, stamps.texts.yokozuna),
         Stamp::Sansho => td_string!(locale, stamps.texts.sansho),
+        Stamp::RiverCrew => td_string!(locale, stamps.texts.river_crew),
     }
 }
 

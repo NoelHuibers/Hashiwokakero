@@ -57,7 +57,8 @@
     "lanterne_rouge": "Lanterne rouge",
     "leap_day": "Hari kabisat",
     "yokozuna": "Yokozuna",
-    "sansho": "Hadiah khusus"
+    "sansho": "Hadiah khusus",
+    "river_crew": "Pembangun jembatan"
   },
   "texts": {
     "first": "Selesaikan teka-teki harian pertamamu.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "Selesai paling akhir di teka-teki harian dengan minimal 20 pemain. Harus ada yang membawa lenteranya!",
     "leap_day": "Selesaikan teka-teki harian pada 29 Februari.",
     "yokozuna": "Puncaki banzuke mingguan sebuah grup, dalam pekan dengan minimal tiga pemain.",
-    "sansho": "Menangkan salah satu penghargaan mingguan sebuah grup, dalam pekan dengan minimal tiga pemain."
+    "sansho": "Menangkan salah satu penghargaan mingguan sebuah grup, dalam pekan dengan minimal tiga pemain.",
+    "river_crew": "Bantu grupmu menyeberangi sungai: pasang papan di level yang diselesaikan grup."
   },
   "secret": {
     "name": "Stempel rahasia",

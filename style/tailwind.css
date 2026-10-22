@@ -563,12 +563,15 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
 }
 
 /* A member's island: the plate in their colour (`--member`, set per island), their initial on it */
-.nakama-island {
+/* The river's crew on the bank (pages/groups/river.rs) are small islands like these */
+.nakama-island,
+.river-crew {
   --isl-plate: var(--member);
   --isl-plate-shade: color-mix(in srgb, var(--member) 72%, black);
   --isl-number: var(--card);
 }
-.nakama-island .num {
+.nakama-island .num,
+.river-crew .num {
   fill: var(--isl-number);
   font-size: 8px;
   pointer-events: none;
@@ -607,6 +610,55 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
   box-shadow:
     inset 0 0 0 2px var(--member),
     inset 0 0 0 3px var(--card);
+}
+
+/* The river 川 of a group (pages/groups/river.rs): the water flows down in steps, the planks
+   laid since the last visit drop into place one after another, fish and boats drift by */
+@keyframes river-flow {
+  from { transform: translateY(0); }
+  to { transform: translateY(16px); }
+}
+.river-flow {
+  animation: river-flow 3.2s steps(8) infinite;
+}
+@keyframes plank-in {
+  0% { transform: translateY(-6px); opacity: 0; }
+  60% { transform: translateY(1px); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+.plank-new {
+  animation: plank-in 420ms steps(4) both;
+}
+@keyframes river-drift {
+  from { transform: translateY(-16px); }
+  to { transform: translateY(124px); }
+}
+.river-drift {
+  animation: river-drift 26s linear infinite;
+}
+@keyframes twinkle {
+  50% { opacity: 0.15; }
+}
+.river-twinkle {
+  animation: twinkle 2.4s steps(2) infinite;
+}
+/* Lanterns, windows and fireflies glow at night, the sun glints on the water by day */
+.river-glow {
+  opacity: 0.2;
+}
+/* The kanji on the island across the ocean */
+.river-goal {
+  fill: var(--px-number);
+  font-size: 8px;
+}
+.river-night {
+  display: none;
+}
+.dark .river-night {
+  display: inline;
+}
+.dark .river-day {
+  display: none;
 }
 
 /* ------------------------------------------------------------------ */
@@ -908,7 +960,8 @@ tr:hover .hanko-pick,
 @media (prefers-reduced-motion: reduce) {
   .petal, .drift, .bob, .island.over, .island .sel,
   .bridge.pop, .bridge.wrong, .bridge.hint, .blocked-x, .terminal.busy,
-  .hanko-press, .hanko-press::after {
+  .hanko-press, .hanko-press::after,
+  .river-flow, .plank-new, .river-drift, .river-twinkle {
     animation: none !important;
   }
 

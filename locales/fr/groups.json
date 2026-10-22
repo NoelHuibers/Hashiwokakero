@@ -81,7 +81,7 @@
   "members": {
     "title": "Membres",
     "count": "Membres : {{ count }} sur {{ max }}",
-    "owner": "Admin",
+    "owner": "Responsable",
     "joined": "membre depuis le {{ date }}",
     "remove_label": "Retirer {{ name }}",
     "remove_confirm": "Retirer {{ name }} du groupe ? Le lien d’invitation permet de revenir, sauf si tu en crées un nouveau.",

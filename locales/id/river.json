@@ -1,0 +1,34 @@
+{
+  "title": "Menyeberangi sungai",
+  "intro": "Setiap jembatan yang dibangun salah satu dari kalian di teka-teki harian yang terpecahkan adalah satu papan jembatan grup. Seberangi bersama!",
+  "level": "Level {{ level }}",
+  "waters": {
+    "stream": "Anak sungai",
+    "river": "Sungai",
+    "wide_river": "Sungai lebar",
+    "strait": "Selat",
+    "ocean": "Samudra",
+    "ocean_n": "Samudra {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} jembatan",
+  "to_go": "{{ count }} lagi ke seberang",
+  "new": "+{{ count }} sejak kunjunganmu terakhir",
+  "scene": "{{ waters }}: jembatan dari {{ done }} dari {{ target }} jembatan",
+  "week": "Papan terbanyak minggu ini",
+  "week_none": "Belum ada yang memasang papan minggu ini. Selesaikan teka-teki hari ini untuk memasang yang pertama!",
+  "laid": "{{ name }}: {{ count }} jembatan minggu ini",
+  "crossed": "Perairan yang diseberangi",
+  "crossed_level": "{{ waters }}: diseberangi pada {{ date }}, {{ count }} jembatan",
+  "building": "{{ waters }}: sedang dibangun",
+  "how": "Satu level butuh sekitar {{ days }} hari teka-teki harian dari grup. Makin banyak anggota, makin panjang jembatannya, tapi setiap anggota setelah yang keempat dihitung sedikit lebih kecil.",
+  "celebrate": {
+    "stream": "Anak sungai terseberangi!",
+    "river": "Sungai terseberangi!",
+    "wide_river": "Sungai lebar terseberangi!",
+    "strait": "Selat terseberangi!",
+    "ocean": "Samudra terseberangi!",
+    "text": "Bersama kalian memasang {{ count }} jembatan. Berikutnya: {{ waters }}.",
+    "stamp": "Semua yang memasang papan mendapat cap “{{ stamp }}”.",
+    "onward": "Maju!"
+  }
+}

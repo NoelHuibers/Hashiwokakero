@@ -23,6 +23,7 @@ mod hanko;
 mod puzzle;
 mod replay;
 mod rivals;
+mod river;
 
 pub use account::*;
 pub use admin::*;
@@ -36,6 +37,7 @@ pub use hanko::*;
 pub use puzzle::*;
 pub use replay::*;
 pub use rivals::*;
+pub use river::*;
 
 #[cfg(test)]
 mod tests {
@@ -88,6 +90,7 @@ mod tests {
             include_str!("puzzle.rs"),
             include_str!("replay.rs"),
             include_str!("rivals.rs"),
+            include_str!("river.rs"),
         ];
         let attributes: Vec<_> = sources
             .iter()

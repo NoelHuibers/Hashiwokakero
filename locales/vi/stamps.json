@@ -57,7 +57,8 @@
     "lanterne_rouge": "Đèn lồng đỏ",
     "leap_day": "Ngày nhuận",
     "yokozuna": "Yokozuna",
-    "sansho": "Giải đặc biệt"
+    "sansho": "Giải đặc biệt",
+    "river_crew": "Thợ bắc cầu"
   },
   "texts": {
     "first": "Giải câu đố ngày đầu tiên của bạn.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "Về cuối trong một câu đố ngày có ít nhất 20 người chơi. Phải có ai đó cầm đèn lồng chứ!",
     "leap_day": "Giải câu đố ngày vào ngày 29 tháng 2.",
     "yokozuna": "Đứng đầu banzuke tuần của một nhóm, trong tuần có ít nhất ba người chơi.",
-    "sansho": "Giành một giải thưởng tuần của một nhóm, trong tuần có ít nhất ba người chơi."
+    "sansho": "Giành một giải thưởng tuần của một nhóm, trong tuần có ít nhất ba người chơi.",
+    "river_crew": "Giúp nhóm vượt sông: lát ván cho một màn mà nhóm hoàn thành."
   },
   "secret": {
     "name": "Con dấu bí mật",

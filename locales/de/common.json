@@ -81,7 +81,7 @@
     "group_not_found": "Diese Gruppe gibt es nicht, oder du bist kein Mitglied.",
     "group_full": "Diese Gruppe ist voll: Sie hat schon 50 Mitglieder.",
     "too_many_groups": "Du bist schon in 10 Gruppen, verlass zuerst eine.",
-    "group_owner_only": "Das kann nur der Admin der Gruppe."
+    "group_owner_only": "Das kann nur die Leitung der Gruppe."
   },
   "solver": {
     "title": "SAT-Solver",

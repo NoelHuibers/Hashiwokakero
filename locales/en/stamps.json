@@ -57,7 +57,8 @@
     "lanterne_rouge": "Lanterne rouge",
     "leap_day": "Leap day",
     "yokozuna": "Yokozuna",
-    "sansho": "Special prize"
+    "sansho": "Special prize",
+    "river_crew": "Bridge builder"
   },
   "texts": {
     "first": "Solve your first daily.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "Finish last of a daily with at least 20 players. Somebody has to carry the lantern!",
     "leap_day": "Solve the daily on the 29th of February.",
     "yokozuna": "Top a group's weekly banzuke, in a week with at least three players.",
-    "sansho": "Win one of a group's weekly awards, in a week with at least three players."
+    "sansho": "Win one of a group's weekly awards, in a week with at least three players.",
+    "river_crew": "Help your group across its river: lay planks of a level it completes."
   },
   "secret": {
     "name": "Secret stamp",

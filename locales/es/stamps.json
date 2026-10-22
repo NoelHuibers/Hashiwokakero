@@ -57,7 +57,8 @@
     "lanterne_rouge": "Farolillo rojo",
     "leap_day": "Día bisiesto",
     "yokozuna": "Yokozuna",
-    "sansho": "Premio especial"
+    "sansho": "Premio especial",
+    "river_crew": "Constructor de puentes"
   },
   "texts": {
     "first": "Resuelve tu primer reto.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "Termina último en un reto con al menos 20 jugadores. ¡Alguien tiene que llevar el farolillo!",
     "leap_day": "Resuelve el reto del 29 de febrero.",
     "yokozuna": "Termina primero en el banzuke semanal de un grupo, en una semana con al menos tres jugadores.",
-    "sansho": "Gana uno de los premios semanales de un grupo, en una semana con al menos tres jugadores."
+    "sansho": "Gana uno de los premios semanales de un grupo, en una semana con al menos tres jugadores.",
+    "river_crew": "Ayuda a tu grupo a cruzar su río: pon tablones de un nivel que complete."
   },
   "secret": {
     "name": "Sello secreto",

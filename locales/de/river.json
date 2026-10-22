@@ -1,0 +1,34 @@
+{
+  "title": "Über den Fluss",
+  "intro": "Jede Brücke, die einer von euch in einem gelösten Tagesrätsel baut, ist eine Planke der Brücke eurer Gruppe. Kommt gemeinsam ans andere Ufer!",
+  "level": "Level {{ level }}",
+  "waters": {
+    "stream": "Der Bach",
+    "river": "Der Fluss",
+    "wide_river": "Der breite Strom",
+    "strait": "Die Meerenge",
+    "ocean": "Der Ozean",
+    "ocean_n": "Ozean {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} Brücken",
+  "to_go": "Noch {{ count }} bis zum anderen Ufer",
+  "new": "+{{ count }} seit deinem letzten Besuch",
+  "scene": "{{ waters }}: eine Brücke aus {{ done }} von {{ target }} Brücken",
+  "week": "Die meisten Planken diese Woche",
+  "week_none": "Diese Woche hat noch niemand eine Planke gelegt. Löse das heutige Tagesrätsel und leg die erste!",
+  "laid": "{{ name }}: {{ count }} Brücken diese Woche",
+  "crossed": "Überquerte Gewässer",
+  "crossed_level": "{{ waters }}: überquert am {{ date }}, {{ count }} Brücken",
+  "building": "{{ waters }}: im Bau",
+  "how": "Ein Level braucht etwa {{ days }} Tage Tagesrätsel der ganzen Gruppe. Mehr Mitglieder bauen eine längere Brücke, aber jedes Mitglied nach dem vierten zählt etwas weniger.",
+  "celebrate": {
+    "stream": "Der Bach ist überbrückt!",
+    "river": "Der Fluss ist überbrückt!",
+    "wide_river": "Der breite Strom ist überbrückt!",
+    "strait": "Die Meerenge ist überbrückt!",
+    "ocean": "Der Ozean ist überbrückt!",
+    "text": "Zusammen habt ihr {{ count }} Brücken gelegt. Als Nächstes: {{ waters }}.",
+    "stamp": "Alle, die Planken gelegt haben, bekommen den Stempel „{{ stamp }}“.",
+    "onward": "Weiter!"
+  }
+}

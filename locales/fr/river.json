@@ -1,0 +1,34 @@
+{
+  "title": "De l’autre côté de la rivière",
+  "intro": "Chaque pont que l’un de vous construit dans un défi résolu est une planche du pont du groupe. Traversez ensemble !",
+  "level": "Niveau {{ level }}",
+  "waters": {
+    "stream": "Le ruisseau",
+    "river": "La rivière",
+    "wide_river": "Le grand fleuve",
+    "strait": "Le détroit",
+    "ocean": "L’océan",
+    "ocean_n": "Océan {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} ponts",
+  "to_go": "Encore {{ count }} jusqu’à l’autre rive",
+  "new": "+{{ count }} depuis ta dernière visite",
+  "scene": "{{ waters }} : un pont de {{ done }} ponts sur {{ target }}",
+  "week": "Le plus de planches cette semaine",
+  "week_none": "Personne n’a encore posé de planche cette semaine. Résous le défi du jour pour poser la première !",
+  "laid": "{{ name }} : {{ count }} ponts cette semaine",
+  "crossed": "Eaux traversées",
+  "crossed_level": "{{ waters }} : traversé le {{ date }}, {{ count }} ponts",
+  "building": "{{ waters }} : en construction",
+  "how": "Un niveau demande au groupe environ {{ days }} jours de défis. Plus de membres construisent un pont plus long, mais chaque membre après le quatrième compte un peu moins.",
+  "celebrate": {
+    "stream": "Le ruisseau est franchi !",
+    "river": "La rivière est franchie !",
+    "wide_river": "Le grand fleuve est franchi !",
+    "strait": "Le détroit est franchi !",
+    "ocean": "L’océan est franchi !",
+    "text": "Ensemble, vous avez posé {{ count }} ponts. Prochaine étape : {{ waters }}.",
+    "stamp": "Tous ceux qui ont posé des planches reçoivent le tampon « {{ stamp }} ».",
+    "onward": "En avant !"
+  }
+}

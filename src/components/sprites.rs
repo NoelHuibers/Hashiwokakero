@@ -29,12 +29,12 @@ const ISLAND: [&str; 16] = [
 ];
 
 /// Decorations sit on the top right rim of an island and may stick out of the cell.
-const PINE: [&str; 7] = [
+pub const PINE: [&str; 7] = [
     "..T..", ".TtT.", "TTtTT", ".TTT.", "TTTTT", "..b..", "..b..",
 ];
-const SAKURA: [&str; 6] = [".kkk.", "kKkkk", "kkkKk", ".kKk.", "..b..", "..b.."];
-const TORII: [&str; 5] = ["rrrrrr", ".R..R.", ".rrrr.", ".r..r.", ".r..r."];
-const LANTERN: [&str; 5] = [".NN.", "NNNN", ".yn.", ".nn.", "nNNn"];
+pub const SAKURA: [&str; 6] = [".kkk.", "kKkkk", "kkkKk", ".kKk.", "..b..", "..b.."];
+pub const TORII: [&str; 5] = ["rrrrrr", ".R..R.", ".rrrr.", ".r..r.", ".r..r."];
+pub const LANTERN: [&str; 5] = [".NN.", "NNNN", ".yn.", ".nn.", "nNNn"];
 
 /// A pennant in a group member's colour (`--member`) on a pole, raised on their island once
 /// they finished today's daily. 6×7.

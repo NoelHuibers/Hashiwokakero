@@ -57,7 +57,8 @@
     "lanterne_rouge": "Kırmızı fener",
     "leap_day": "Artık gün",
     "yokozuna": "Yokozuna",
-    "sansho": "Özel ödül"
+    "sansho": "Özel ödül",
+    "river_crew": "Köprü ustası"
   },
   "texts": {
     "first": "İlk günlük bulmacanı çöz.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "En az 20 oyunculu bir günlük bulmacayı sonuncu bitir. Feneri birinin taşıması gerek!",
     "leap_day": "Günlük bulmacayı 29 Şubat'ta çöz.",
     "yokozuna": "En az üç oyunculu bir haftada bir grubun haftalık banzukesinde birinci ol.",
-    "sansho": "En az üç oyunculu bir haftada bir grubun haftalık ödüllerinden birini kazan."
+    "sansho": "En az üç oyunculu bir haftada bir grubun haftalık ödüllerinden birini kazan.",
+    "river_crew": "Grubunun nehri geçmesine yardım et: tamamladığı bir seviyenin tahtalarını döşe."
   },
   "secret": {
     "name": "Gizli mühür",

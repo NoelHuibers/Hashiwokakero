@@ -57,7 +57,8 @@
     "lanterne_rouge": "Rote Laterne",
     "leap_day": "Schalttag",
     "yokozuna": "Yokozuna",
-    "sansho": "Sonderpreis"
+    "sansho": "Sonderpreis",
+    "river_crew": "Brückenbauer"
   },
   "texts": {
     "first": "Löse dein erstes Tagesrätsel.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "Werde Letzter bei einem Tagesrätsel mit mindestens 20 Spielern. Einer muss ja die Laterne tragen!",
     "leap_day": "Löse das Tagesrätsel am 29. Februar.",
     "yokozuna": "Werde Erster im Wochen-Banzuke einer Gruppe, in einer Woche mit mindestens drei Spielern.",
-    "sansho": "Gewinne eine der Wochenauszeichnungen einer Gruppe, in einer Woche mit mindestens drei Spielern."
+    "sansho": "Gewinne eine der Wochenauszeichnungen einer Gruppe, in einer Woche mit mindestens drei Spielern.",
+    "river_crew": "Hilf deiner Gruppe über ihren Fluss: Lege Planken eines Levels, das sie schafft."
   },
   "secret": {
     "name": "Geheimer Stempel",

@@ -1,0 +1,34 @@
+{
+  "title": "過河",
+  "intro": "你們任何人在解出的每日謎題中搭的每一座橋，都是群組之橋的一塊木板。一起到對岸去！",
+  "level": "第 {{ level }} 關",
+  "waters": {
+    "stream": "小溪",
+    "river": "河流",
+    "wide_river": "大河",
+    "strait": "海峽",
+    "ocean": "大海",
+    "ocean_n": "大海 {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} 座橋",
+  "to_go": "離對岸還有 {{ count }} 座",
+  "new": "比上次 +{{ count }}",
+  "scene": "{{ waters }}：{{ target }} 座中已搭 {{ done }} 座的橋",
+  "week": "本週鋪板最多",
+  "week_none": "本週還沒有人鋪下木板。解出今天的每日謎題，鋪下第一塊吧！",
+  "laid": "{{ name }}：本週 {{ count }} 座橋",
+  "crossed": "已跨越的水域",
+  "crossed_level": "{{ waters }}：{{ date }} 跨越，{{ count }} 座橋",
+  "building": "{{ waters }}：建造中",
+  "how": "每一關大約需要群組 {{ days }} 天的每日謎題。成員越多橋越長，但第四位之後的每位成員算得稍少一些。",
+  "celebrate": {
+    "stream": "小溪上架起了橋！",
+    "river": "河流上架起了橋！",
+    "wide_river": "大河上架起了橋！",
+    "strait": "海峽上架起了橋！",
+    "ocean": "大海上架起了橋！",
+    "text": "你們一起鋪了 {{ count }} 座橋。下一關：{{ waters }}。",
+    "stamp": "每位鋪過木板的成員都獲得印章「{{ stamp }}」。",
+    "onward": "繼續前進！"
+  }
+}
