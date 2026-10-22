@@ -53,6 +53,10 @@ pub fn RankCell(rank: i64, #[prop(optional)] large: bool) -> impl IntoView {
 /// `rival` puts the small crossed swords after a player you marked as your rival, only on the
 /// daily and monthly boards, where you race them.
 #[component]
+#[expect(
+    clippy::fn_params_excessive_bools,
+    reason = "component props are always named where they're set"
+)]
 pub fn PlayerName(
     user_id: i64,
     name: String,
