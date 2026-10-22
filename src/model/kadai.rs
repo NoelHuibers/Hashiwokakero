@@ -200,6 +200,12 @@ pub struct Help {
 pub fn hardest(helps: &[Help]) -> Option<Hardest> {
     let mut counts: Vec<Hardest> = Vec::new();
     for help in helps {
+        let hint = match help.kind {
+            MarkKind::Hint => true,
+            MarkKind::Check => false,
+            // A help of a newer server: not counted
+            MarkKind::Unknown => continue,
+        };
         for &edge in &help.edges {
             let edge = usize::from(edge);
             let i = if let Some(i) = counts.iter().position(|h| h.edge == edge) {
@@ -212,9 +218,10 @@ pub fn hardest(helps: &[Help]) -> Option<Hardest> {
                 });
                 counts.len() - 1
             };
-            match help.kind {
-                MarkKind::Hint => counts[i].hints += 1,
-                MarkKind::Check => counts[i].wrong += 1,
+            if hint {
+                counts[i].hints += 1;
+            } else {
+                counts[i].wrong += 1;
             }
         }
     }
@@ -382,6 +389,11 @@ mod tests {
         assert_eq!(hardest(&tie).map(|h| h.edge), Some(3));
         let tie = [help(MarkKind::Hint, &[5]), help(MarkKind::Hint, &[2])];
         assert_eq!(hardest(&tie).map(|h| h.edge), Some(2));
+        // A newer server's help counts for no bridge
+        assert_eq!(hardest(&[help(MarkKind::Unknown, &[6])]), None);
+        let mut newer = helps.to_vec();
+        newer.push(help(MarkKind::Unknown, &[2, 2, 2]));
+        assert_eq!(hardest(&newer), hardest(&helps));
     }
 
     #[test]

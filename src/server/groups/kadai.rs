@@ -655,6 +655,8 @@ async fn record_help(conn: &Connection, row: &Row, help: Help) -> Result<(), Ser
     let column = match help.kind {
         MarkKind::Hint => "hints",
         MarkKind::Check => "checks",
+        // Only a newer server's helps read back by an old one: nothing this one gives
+        MarkKind::Unknown => return Ok(()),
     };
     let mut helps = row.helps.clone();
     helps.push(help);
