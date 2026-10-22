@@ -78,7 +78,8 @@ fn DuelLink(group: i64, day: i64, user_id: i64, name: String) -> impl IntoView {
     view! {
         <A
             href=href
-            attr:class="grid size-6 shrink-0 place-items-center rounded-full border bg-card text-[10px] text-primary shadow-xs transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
+            // Small to look at, a finger's size to tap (the ::after)
+            attr:class="relative grid size-6 shrink-0 place-items-center rounded-full border bg-card text-[10px] text-primary shadow-xs transition-colors after:absolute after:-inset-2 hover:border-primary hover:bg-primary hover:text-primary-foreground"
             attr:aria-label=label.clone()
             attr:data-tooltip=label
             attr:data-duel=user_id
@@ -147,11 +148,26 @@ fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>, hanko: HankoBoard)
                 .into_any(),
         ),
     };
-    let has_penalties = penalties.is_some();
+    let penalties = penalties.map(|p| {
+        view! {
+            <span
+                class="text-xs text-muted-foreground tabular-nums"
+                data-tooltip=move || t_string!(i18n, common.ranking.penalties)
+                data-penalties=""
+            >
+                {p}
+            </span>
+        }
+    });
     // Their solve can be watched against one's own: finished and not given up
     let duel = duel
         .filter(|_| !me && matches!(state, TodayState::Ranked { .. } | TodayState::Unranked))
         .map(|(group, day)| view! { <DuelLink group day user_id name=name.clone() /> });
+    // Under the time, like the seals under the name: a row is two lines at most, and the name
+    // gets the whole width of its column, also on a phone
+    let under = (penalties.is_some() || duel.is_some()).then(
+        || view! { <div class="flex items-center justify-end gap-2">{penalties} {duel}</div> },
+    );
     // Hanko 判子: the seals on the result, and the button to press one on someone else's
     let can_stamp = hanko.can_stamp(user_id, state);
     let seals = view! { <HankoStrip board=hanko target=user_id name=name.clone() can=can_stamp /> };
@@ -159,20 +175,15 @@ fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>, hanko: HankoBoard)
         <tr class=format!("{ROW_INSET} {}", if me { HIGHLIGHT_ROW } else { "" }) data-state=state_id(state)>
             <td class="py-2 pe-2">{first}</td>
             <td class="max-w-0 py-2 pe-2">
-                <div class="flex min-w-0 items-center gap-2 [&>div]:min-w-0">
+                <div class="flex min-w-0 items-center gap-2 [&>div]:min-w-0" data-name-line="">
                     <ColourPip colour=colour />
                     <PlayerName user_id name guest stamp me />
-                    {duel}
                 </div>
                 {seals}
             </td>
-            <td
-                class="py-2 pe-2 text-end text-xs text-muted-foreground"
-                data-tooltip=move || has_penalties.then(|| t_string!(i18n, common.ranking.penalties))
-            >
-                {penalties}
+            <td class="py-2 text-end">
+                <div class="flex flex-col items-end gap-1">{end} {under}</div>
             </td>
-            <td class="py-2 text-end">{end}</td>
         </tr>
     }
 }
@@ -224,8 +235,7 @@ pub fn TodayBoard(board: GroupToday, me: Option<i64>) -> impl IntoView {
                     <colgroup>
                         <col class="w-12" />
                         <col />
-                        <col class="w-16" />
-                        <col class="w-24" />
+                        <col class="w-20 @md:w-24" />
                     </colgroup>
                     <tbody>
                         {board

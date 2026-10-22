@@ -75,6 +75,15 @@ export const SEEDED_GROUP = {
   members: ['aiko', 'bram', 'chen', 'Drowsy Otter 21', 'emre', 'fatima'],
 };
 
+/** Two who played today (seed.ts) and nobody else: a test joins it as a guest and finishes the
+ * daily, to see the open board with times, seals and duels (group-rows.spec.ts). */
+export const TEA_GROUP = {
+  id: 2,
+  name: 'Tea House',
+  invite: 'seededtea2',
+  members: ['chen', 'bram'],
+};
+
 /** The day before today: the seeded group's members who played it have move logs, for the
  * replay theatre (replay.spec.ts). Every log moves on the first edges, which every daily has. */
 export const REPLAY_DAY_BACK = 1;
@@ -164,6 +173,22 @@ export function seed(dbPath: string) {
       player(name).id,
       (today - HISTORY) * MS_PER_DAY + i * 3_600_000,
       i,
+    );
+  });
+
+  db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(
+    TEA_GROUP.id,
+    TEA_GROUP.name,
+    TEA_GROUP.invite,
+    player('chen').id,
+    (today - 3) * MS_PER_DAY,
+  );
+  TEA_GROUP.members.forEach((name, i) => {
+    db.prepare('INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)').run(
+      TEA_GROUP.id,
+      player(name).id,
+      (today - 3) * MS_PER_DAY + i * 3_600_000,
+      i + 2,
     );
   });
 
