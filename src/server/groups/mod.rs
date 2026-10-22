@@ -54,7 +54,7 @@ macro_rules! staying {
 }
 
 /// What happens to a group `?1` goes from (see the `WHERE` of each), after the river has their
-/// bridges: without anyone [`staying!`] it is deleted, and with it its memberships (banned
+/// bridges: without anyone `staying!` it is deleted, and with it its memberships (banned
 /// players' too), seals and river (triggers in `db.rs`).
 macro_rules! close_if_left_alone {
     ($groups:literal) => {
@@ -88,8 +88,9 @@ macro_rules! pass_on {
 ///
 /// Statements for `auth::erase`'s transaction with the user as `?1`: what they laid stays in the
 /// groups' rivers without their name, groups nobody but them (and banned players) is in go,
-/// groups without them or a banned player as owner pass to the longest standing other member
-/// (see [`take_out`]), and their memberships go, and with them who they were in the rivers' crews.
+/// groups they or a banned player own pass to the longest standing other member who isn't banned
+/// (like in [`take_out`]), and their memberships go, and with them who they were in the rivers'
+/// crews.
 pub const ERASE: [&str; 6] = [
     river::BANK,
     close_if_left_alone!("id IN (SELECT group_id FROM group_members WHERE user_id = ?1)"),
@@ -357,7 +358,7 @@ pub async fn join(conn: &Connection, code: &str, user: i64) -> Result<i64, Serve
 }
 
 /// Takes `user` out of a group. The last one to go (banned players don't count, see
-/// [`staying!`]) takes the group along; else an owner's group, or one whose owner is banned,
+/// `staying!`) takes the group along; else an owner's group, or one whose owner is banned,
 /// passes to the longest standing member.
 async fn take_out(conn: &Connection, group: &Group, user: i64) -> Result<(), ServerFnError> {
     river::bank(conn, group.id, user).await?;
