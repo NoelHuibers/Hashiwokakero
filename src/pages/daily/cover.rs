@@ -4,7 +4,7 @@ use common::{Board, Puzzle};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::start_daily;
+use crate::api::{current_user, start_daily};
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::ui::button::{Button, ButtonSize};
 use crate::components::ui::card::Card;
@@ -41,7 +41,24 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
             if !daily.starting.current(request) {
                 return;
             }
+            // Without an account the start made a guest. The board waits until the page knows
+            // them: until then it can't take their clicks, and the new identity reloads the
+            // daily (the identity effect in `DailyPage`), which would swap a board shown now for
+            // the loading placeholder under the first clicks. That reload shows the started daily.
+            let guest = match &response {
+                Ok(_) if auth.user.with_untracked(Option::is_none) => {
+                    current_user().await.ok().flatten()
+                }
+                _ => None,
+            };
+            if !daily.starting.current(request) {
+                return;
+            }
             daily.starting.finish(request, false);
+            if let Some(guest) = guest {
+                auth.user.set(Some(guest));
+                return;
+            }
             daily.busy.set(false);
             if !guard.current(&daily) {
                 return;

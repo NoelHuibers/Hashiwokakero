@@ -4,7 +4,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import { register, signInWith, signOut } from '../account';
 import { addBridge, board, DAILY_KEY, missing, saved } from '../board';
-import { expectResult, solveDaily, startDaily } from '../daily';
+import { dailySolution, expectResult, solveDaily, startDaily } from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
 
 /** The card over the board after this tab's finish. */
@@ -145,6 +145,31 @@ test('the move log saves bridge changes and stays idle while the clock ticks', a
   await page.clock.runFor(1_000);
   expect(await writes()).toBe(3);
   expect(await log()).toEqual(before);
+});
+
+test("a new guest's board shows up once, when they can play it, and takes the first clicks", async ({ page }) => {
+  await visit(page, '/');
+  // The start makes a guest, then the page asks who that is: held, like on a slow connection
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/api/current_user', async (route) => { await held; await route.continue(); });
+  const started = page.waitForEvent('requestfinished', (r) => r.url().endsWith('/api/start_daily'));
+  await page.getByRole('button', { name: /^Start/ }).click();
+  await started;
+  // Two frames for the page to handle the reply. A board now would drop clicks (nobody to play
+  // it yet) and be swapped for the loading placeholder once the guest is known.
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await expect(page.getByRole('button', { name: /^Preparing/ })).toBeDisabled();
+  await expect(page.locator('svg.board-interactive')).toHaveCount(0);
+  release();
+  await expect(board(page)).toHaveClass(/board-interactive/); // the daily's, not a tip's below it
+  await expect(board(page).locator('g.island').first()).toBeVisible();
+  await board(page).evaluate((svg) => svg.setAttribute('data-first-board', ''));
+  const { puzzle } = await saved(page, DAILY_KEY);
+  const solution = dailySolution(puzzle);
+  // Right away, no waiting for anything else
+  await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
+  await expect(board(page)).toHaveAttribute('data-first-board', '');
 });
 
 const paidPath = '**/api/daily_paid_action';
@@ -711,7 +736,8 @@ test('ranking failure retries independently and preserves the running board', as
   await visit(page, '/');
   await expect(rankingStatus(page)).toContainText("Couldn't load the ranking.");
   const { puzzle, solution } = await startDaily(page);
-  await page.waitForLoadState('networkidle'); // settle the new guest's identity refresh
+  // The new guest's reload asked for the ranking again before the board showed up
+  await expect(rankingStatus(page)).toContainText("Couldn't load the ranking.");
   await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
   const before = await saved(page, DAILY_KEY);
   const beforeRetry = rankings;
@@ -831,7 +857,6 @@ test('a delayed submit response cannot touch a disposed daily page', async ({ pa
 test('a transient metadata refresh failure preserves running bridges and allows manual recovery', async ({ page }) => {
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
-  await page.waitForLoadState('networkidle'); // settle the guest identity refresh before intercepting reads
   await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
   const before = await saved(page, DAILY_KEY);
   let reads = 0;
