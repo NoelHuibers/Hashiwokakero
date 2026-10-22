@@ -811,12 +811,12 @@ fn stored_formats() {
             &vec![
                 crate::model::Help {
                     t: 1_250,
-                    kind: crate::model::MarkKind::Hint,
+                    kind: MarkKind::Hint,
                     edges: vec![3],
                 },
                 crate::model::Help {
                     t: 4_000,
-                    kind: crate::model::MarkKind::Check,
+                    kind: MarkKind::Check,
                     edges: vec![],
                 },
             ],

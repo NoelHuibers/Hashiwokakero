@@ -282,6 +282,33 @@ fn requests() -> Vec<Entry> {
         }),
         entry(&api::OpenHanko { group: Some(2) }),
         entry(&api::UnreadHankoCounts {}),
+        // kadai
+        entry(&api::PostGroupPuzzle {
+            group: 2,
+            puzzle: puzzle(),
+            title: "Spiral".into(),
+        }),
+        entry(&api::LoadGroupPuzzles { group: 2 }),
+        entry(&api::LoadGroupPuzzle { id: 4 }),
+        entry(&api::StartGroupPuzzle { id: 4 }),
+        entry(&api::GroupPuzzleHint {
+            id: 4,
+            bridges: vec![2, 1, 0],
+        }),
+        entry(&api::GroupPuzzleCheck {
+            id: 4,
+            bridges: vec![2, 1, 0],
+        }),
+        entry(&api::GroupPuzzleReveal { id: 4 }),
+        entry(&api::SubmitGroupPuzzle {
+            id: 4,
+            bridges: vec![2, 1, 0],
+            moves: 12,
+            log: log(),
+        }),
+        entry(&api::WithdrawGroupPuzzle { id: 4 }),
+        entry(&api::SeenGroupPuzzleKudos { id: 4 }),
+        entry(&api::LoadPuzzleReplay { id: 4 }),
         // puzzle
         entry(&api::GeneratePuzzle {
             params: GenerateParams {
