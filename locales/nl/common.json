@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Er ging iets mis: {{ detail }}",
     "outdated": "Hashi is bijgewerkt. Herlaad de pagina om verder te gaan.",
+    "app_outdated": "Deze versie van de app is te oud. Werk hem bij om online te blijven spelen.",
     "database": "De database reageerde niet, probeer het opnieuw.",
     "internal": "Er ging iets mis op de server, probeer het opnieuw.",
     "archive_only_past": "Alleen eerdere dagpuzzels kun je oefenen.",

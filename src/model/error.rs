@@ -73,10 +73,13 @@ pub enum ApiError {
     PuzzleLocked,
     /// Only a group puzzle's author can do that (withdraw it).
     PuzzleAuthorOnly,
+    /// The app is older than the oldest version the server still answers (see
+    /// `server::apps`). Reloading doesn't help, only an update from the store.
+    AppOutdated,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 42] = [
+    pub const ALL: [Self; 43] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -119,6 +122,7 @@ impl ApiError {
         Self::PuzzleOwn,
         Self::PuzzleLocked,
         Self::PuzzleAuthorOnly,
+        Self::AppOutdated,
     ];
 
     pub fn code(self) -> &'static str {
@@ -165,6 +169,7 @@ impl ApiError {
             Self::PuzzleOwn => "puzzle_own",
             Self::PuzzleLocked => "puzzle_locked",
             Self::PuzzleAuthorOnly => "puzzle_author_only",
+            Self::AppOutdated => "app_outdated",
         }
     }
 
@@ -319,6 +324,24 @@ mod tests {
                 !is_outdated_error(&error, Some("old"), Some("new")),
                 "{error}"
             );
+        }
+    }
+
+    /// An app below the server's minimum version can't be fixed by a reload, whatever the
+    /// builds say: it is its own case, with its own message.
+    #[test]
+    fn an_outdated_app_is_no_outdated_tab() {
+        use leptos::server_fn::Bytes;
+        use leptos::server_fn::error::FromServerFnError as _;
+        let sent = E::de(Bytes::from("ServerError|E:app_outdated"));
+        for error in [E::from(ApiError::AppOutdated), sent] {
+            assert_eq!(
+                ApiError::from_message(&error.to_string()),
+                Some(ApiError::AppOutdated)
+            );
+            for (page, server) in [(None, None), (Some("a"), Some("a")), (Some("a"), Some("b"))] {
+                assert!(!is_outdated_error(&error, page, server), "{error}");
+            }
         }
     }
 

@@ -12,6 +12,7 @@
 mod accounts;
 mod admin;
 mod app_sessions;
+mod apps;
 mod build;
 mod contact;
 mod dojo;
@@ -50,6 +51,16 @@ const ADMIN_TOKEN: &str = "admin-token-for-tests";
 const PASSWORD: &str = "correct horse";
 /// `DOJO_SEASON` of the tests.
 const CURRENT_SEASON: &str = "2";
+
+/// App settings from these variables, the others unset.
+fn app_settings(vars: &[(&str, &str)]) -> crate::server::apps::AppSettings {
+    crate::server::apps::AppSettings::from_env(|name| {
+        vars.iter()
+            .find(|(n, _)| *n == name)
+            .map(|(_, v)| (*v).to_string())
+    })
+    .unwrap()
+}
 
 /// The settings the tests run with, instead of environment variables (see `server::env_var`).
 pub(in crate::server) fn env_var(name: &str) -> Option<&'static str> {
@@ -148,17 +159,23 @@ impl Server {
 
     /// With changed settings, as cargo-leptos or the LEPTOS_* variables would make them.
     async fn with(change: impl FnOnce(&mut LeptosOptions)) -> Self {
-        Self::with_transport(change, true, true).await
+        Self::with_transport(change, true, true, &app_settings(&[])).await
+    }
+
+    /// With these app settings (`HASHI_APP_*`, see `server::apps`) and changed Leptos settings.
+    async fn with_apps(settings: &[(&str, &str)], change: impl FnOnce(&mut LeptosOptions)) -> Self {
+        Self::with_transport(change, true, true, &app_settings(settings)).await
     }
 
     async fn direct(connect_info: bool) -> Self {
-        Self::with_transport(|_| {}, false, connect_info).await
+        Self::with_transport(|_| {}, false, connect_info, &app_settings(&[])).await
     }
 
     async fn with_transport(
         change: impl FnOnce(&mut LeptosOptions),
         fly: bool,
         connect_info: bool,
+        apps: &crate::server::apps::AppSettings,
     ) -> Self {
         static TURN: Mutex<()> = Mutex::const_new(());
         let turn = TURN.lock().await;
@@ -175,7 +192,7 @@ impl Server {
         change(&mut options);
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
-        let app = super::router_with_client_source(options, crate::app::shell, fly);
+        let app = super::router_with_client_source(options, crate::app::shell, fly, apps);
         tokio::spawn(async move {
             if connect_info {
                 axum::serve(

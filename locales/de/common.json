@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Etwas ist schiefgelaufen: {{ detail }}",
     "outdated": "Hashi wurde aktualisiert. Lade die Seite neu, um weiterzumachen.",
+    "app_outdated": "Diese Version der App ist zu alt. Bitte aktualisiere sie, um weiter online zu spielen.",
     "database": "Die Datenbank antwortet nicht, bitte versuch es noch einmal.",
     "internal": "Auf dem Server ist etwas schiefgelaufen, bitte versuch es noch einmal.",
     "archive_only_past": "Nur frühere Tagesrätsel können geübt werden.",

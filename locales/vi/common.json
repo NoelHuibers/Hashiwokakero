@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Đã xảy ra lỗi: {{ detail }}",
     "outdated": "Hashi đã được cập nhật. Vui lòng tải lại trang để tiếp tục.",
+    "app_outdated": "Phiên bản ứng dụng này đã quá cũ. Vui lòng cập nhật để tiếp tục chơi trực tuyến.",
     "database": "Cơ sở dữ liệu không phản hồi, vui lòng thử lại.",
     "internal": "Máy chủ gặp sự cố, vui lòng thử lại.",
     "archive_only_past": "Chỉ có thể luyện các câu đố của những ngày trước.",

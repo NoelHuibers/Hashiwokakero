@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Coś poszło nie tak: {{ detail }}",
     "outdated": "Hashi został zaktualizowany. Odśwież stronę, aby kontynuować.",
+    "app_outdated": "Ta wersja aplikacji jest zbyt stara. Zaktualizuj ją, aby dalej grać online.",
     "database": "Baza danych nie odpowiada, spróbuj ponownie.",
     "internal": "Coś poszło nie tak na serwerze, spróbuj ponownie.",
     "archive_only_past": "Ćwiczyć można tylko wcześniejsze łamigłówki dnia.",

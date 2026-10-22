@@ -345,6 +345,7 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::PuzzleOwn => td_string!(locale, kadai.errors.own),
         ApiError::PuzzleLocked => td_string!(locale, kadai.errors.locked),
         ApiError::PuzzleAuthorOnly => td_string!(locale, kadai.errors.author_only),
+        ApiError::AppOutdated => td_string!(locale, common.errors.app_outdated),
     }
     .to_string()
 }

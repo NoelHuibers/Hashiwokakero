@@ -913,7 +913,7 @@ mod tests {
             "cookie",
             &format!("hashi_session={token}")
         )])));
-        assert!(app_request(&headers(&[("x-hashi-app", "1.0.0")])));
+        assert!(app_request(&headers(&[("x-hashi-app", "android/1.0.0")])));
         assert!(!app_request(&headers(&[("x-hashi-app", "")])));
         assert!(app_request(&headers(&[(
             "authorization",

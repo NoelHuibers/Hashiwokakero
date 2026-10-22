@@ -67,17 +67,21 @@ pub(super) struct Submission {
     utc_offset: i32,
 }
 
-/// Preserve the existing reload/sign-in guidance, without passing arbitrary exception text
-/// through the general-purpose error toast. The persistent recovery messages stay generic.
+/// Preserve the existing reload/sign-in/update guidance, without passing arbitrary exception
+/// text through the general-purpose error toast. The persistent recovery messages stay generic.
 pub(super) fn error_feedback(error: &ServerFnError) {
-    if crate::api::is_outdated(error)
-        || matches!(
-            crate::model::ApiError::from_message(&error.to_string()),
-            Some(crate::model::ApiError::SessionExpired)
-        )
-    {
+    if crate::api::is_outdated(error) || needs_guidance(error) {
         crate::state::error_toast(error.clone());
     }
+}
+
+/// The errors a retry can't fix: the player has to sign in again, or update the app.
+fn needs_guidance(error: &ServerFnError) -> bool {
+    use crate::model::ApiError;
+    matches!(
+        ApiError::from_message(&error.to_string()),
+        Some(ApiError::SessionExpired | ApiError::AppOutdated)
+    )
 }
 
 impl Daily {
@@ -233,5 +237,23 @@ mod tests {
         owner.cleanup();
         assert!(!fetch.current(retry));
         fetch.finish(retry, true);
+    }
+
+    #[test]
+    fn only_errors_a_retry_cannot_fix_get_a_toast() {
+        use crate::model::ApiError;
+        for (code, toast) in [
+            (ApiError::SessionExpired, true),
+            (ApiError::AppOutdated, true),
+            (ApiError::Database, false),
+            (ApiError::NotSolved, false),
+        ] {
+            assert_eq!(
+                needs_guidance(&ServerFnError::from(code)),
+                toast,
+                "{code:?}"
+            );
+        }
+        assert!(!needs_guidance(&ServerFnError::new("Failed to fetch")));
     }
 }

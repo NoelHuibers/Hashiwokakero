@@ -1,5 +1,6 @@
 //! The HTTP routes of the site: the pages and server functions (Leptos), the plain axum
-//! endpoints of the Dojo and the admin tools, static files, caching and compression.
+//! endpoints of the Dojo and the admin tools, static files, caching and compression, and the
+//! app's version gate and cross-origin calls (see `server::apps`).
 
 use axum::Router;
 use axum::extract::{DefaultBodyLimit, Request};
@@ -7,11 +8,13 @@ use axum::http::{HeaderValue, header};
 use axum::middleware::{self, Next};
 use axum::response::Response;
 use axum::routing::{get, post};
+use leptos::config::Env;
 use leptos::prelude::{IntoView, LeptosOptions};
 use leptos_axum::{LeptosRoutes, generate_route_list};
 use tower_http::compression::predicate::{NotForContentType, Predicate};
 use tower_http::compression::{CompressionLayer, DefaultPredicate};
 
+use super::apps::AppSettings;
 use super::{admin, dojo, og};
 use crate::api::{BUILD_HEADER, SESSION_HEADER};
 use crate::app::App;
@@ -20,7 +23,7 @@ use crate::app::App;
 pub(super) mod tests;
 
 /// Everything the server answers, around `shell` (`app::shell`). The database has to be set up
-/// first (`db::init`).
+/// first (`db::init`), and the settings checked (`validate_configuration`).
 ///
 /// Generic over the shell, so the code that renders the pages is compiled where the router is
 /// made (the server binary, the tests) and not into the library: it is by far the heaviest
@@ -29,10 +32,13 @@ pub fn router<V: IntoView + 'static>(
     leptos_options: LeptosOptions,
     shell: fn(LeptosOptions) -> V,
 ) -> Router {
+    let apps = AppSettings::from_env(super::env_var)
+        .unwrap_or_else(|e| panic!("{e} (validate_configuration checks it at startup)"));
     router_with_client_source(
         leptos_options,
         shell,
         super::env_var("FLY_APP_NAME").is_some(),
+        &apps,
     )
 }
 
@@ -40,10 +46,14 @@ fn router_with_client_source<V: IntoView + 'static>(
     leptos_options: LeptosOptions,
     shell: fn(LeptosOptions) -> V,
     fly: bool,
+    apps: &AppSettings,
 ) -> Router {
     let routes = generate_route_list(App);
     let hash_files = leptos_options.hash_files;
     let build = build_id(&leptos_options).and_then(|b| HeaderValue::from_str(&b).ok());
+    let min_version = apps.min_version;
+    // The app's dev server runs on localhost, see `AppSettings::cors`
+    let cors = apps.cors(leptos_options.env != Env::PROD);
     Router::new()
         .route(
             "/sitemap.xml",
@@ -103,6 +113,10 @@ fn router_with_client_source<V: IntoView + 'static>(
         })
         .fallback(leptos_axum::file_and_error_handler(shell))
         .layer(middleware::from_fn(super::limits::admission))
+        // Before admission: an app too old to be answered costs nothing
+        .layer(middleware::from_fn(move |req, next| {
+            super::apps::gate(min_version, req, next)
+        }))
         .layer(middleware::from_fn(move |req, next| {
             super::identify_client(req, next, fly)
         }))
@@ -123,6 +137,8 @@ fn router_with_client_source<V: IntoView + 'static>(
         .layer(CompressionLayer::new().compress_when(
             DefaultPredicate::new().and(NotForContentType::const_new("font/")),
         ))
+        // Outermost: preflights are answered here, before admission or the 404 page
+        .layer(cors)
         .with_state(leptos_options)
 }
 

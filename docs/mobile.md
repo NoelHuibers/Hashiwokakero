@@ -57,23 +57,44 @@ Installed apps keep their version until the user updates. From the first release
   reload. Raise the minimum only after the store has offered the update for a while.
 - CI checks the list of paths and the request and response JSON against golden files.
 
+## API headers
+
+What the app and the server send each other, on top of the server functions' JSON:
+
+- `x-hashi-app: <platform>/<major>.<minor>.<patch>` on every call of the app, e.g.
+  `android/1.0.0` or `ios/1.0.0`. It marks the request as the app's. Other platforms
+  are accepted; a value of another form counts as an outdated app.
+- `Authorization: Bearer hs1.<token>`: the app's session token, the same 64 hex digits
+  as the web's cookie. The `hs1.` prefix keeps it apart from the admin and worker tokens.
+- `x-hashi-session` in responses to the app: its new session token, empty when the
+  session ended (logout, account deleted). Such responses are `Cache-Control: no-store`.
+- `x-hashi-build` in every response: the build of the server (see `api::client`).
+- `AppOutdated` (`E:app_outdated`): the answer to every `/api/*` call of an app below
+  `HASHI_APP_MIN_VERSION`, encoded like any server function error, before the function
+  or the rate limits run. The app asks for an update instead of a reload.
+- CORS: the app's origins `https://tauri.localhost` (Android) and `tauri://localhost`
+  (iOS), or `HASHI_APP_ORIGINS`; outside production also `http://localhost` and
+  `http://127.0.0.1` on any port. GET and POST, the request headers `content-type`,
+  `accept`, `authorization` and `x-hashi-app`; `x-hashi-build` and `x-hashi-session`
+  are exposed; no credentials. Preflights are answered for two hours.
+
 ## Steps
 
-| # | Step | Depends on |
-|---|------|------------|
-| 1 | This plan | |
-| 2 | API contract: golden list of server function paths and request JSON; response enums tolerate unknown variants | |
-| 3 | Bearer sessions: `Authorization: Bearer hs1.<token>` accepted next to the cookie, replacement tokens in `x-hashi-session` for requests that opt in | |
-| 4 | `browser` and `csr` features, CSR entry point, CSR lint in CI | |
-| 5 | App version header, minimum version and `AppOutdated`; CORS for the app origins | 2 |
-| 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 |
-| 7 | CSR shell (`app/`, Trunk, `index.html`, Tailwind) built in CI | 6 |
-| 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 |
-| 9 | Offline practice: native generator and solver through Tauri commands | 8 |
-| 10 | Android polish: back button, safe areas, share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 |
-| 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 |
-| 12 | First release: closed test, store listing, production | 9, 10, 11 |
-| 13 | iOS: same project, macOS runner, TestFlight and App Store | 12 |
+| # | Step | Depends on | Status |
+|---|------|------------|--------|
+| 1 | This plan | | ✓ #108 |
+| 2 | API contract: golden list of server function paths and request JSON; response enums tolerate unknown variants | | ✓ #111 |
+| 3 | Bearer sessions: `Authorization: Bearer hs1.<token>` accepted next to the cookie, replacement tokens in `x-hashi-session` for requests that opt in | | ✓ #113 |
+| 4 | `browser` and `csr` features, CSR entry point, CSR lint in CI | | ✓ #114 |
+| 5 | App version header, minimum version and `AppOutdated`; CORS for the app origins | 2 | ✓ #119 |
+| 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 | |
+| 7 | CSR shell (`app/`, Trunk, `index.html`, Tailwind) built in CI | 6 | |
+| 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 | |
+| 9 | Offline practice: native generator and solver through Tauri commands | 8 | |
+| 10 | Android polish: back button, safe areas, share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 | |
+| 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | |
+| 12 | First release: closed test, store listing, production | 9, 10, 11 | |
+| 13 | iOS: same project, macOS runner, TestFlight and App Store | 12 | |
 
 ## Owner tasks
 

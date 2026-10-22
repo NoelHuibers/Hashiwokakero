@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Algo deu errado: {{ detail }}",
     "outdated": "O Hashi foi atualizado. Recarregue a página para continuar.",
+    "app_outdated": "Esta versão do app está desatualizada. Atualize-o para continuar jogando online.",
     "database": "O banco de dados não respondeu, tente de novo.",
     "internal": "Algo deu errado no servidor, tente de novo.",
     "archive_only_past": "Só dá para treinar desafios diários anteriores.",
