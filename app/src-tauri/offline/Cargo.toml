@@ -1,0 +1,24 @@
+[package]
+name = "hashi_offline"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+# The app's offline practice: the puzzle server functions without a server, see src/lib.rs.
+# Without Tauri, so its tests build and run on any machine (CI: "Build app (Android)").
+
+[dependencies]
+# Without the command line (clap), which the app doesn't need
+backend = { path = "../../../backend", default-features = false }
+common = { path = "../../../common" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+# Already in the app through Tauri, whose async runtime it is
+tokio = { version = "1.54.1", features = ["rt", "sync"] }
+
+[dev-dependencies]
+tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread", "time"] }
+
+[lints]
+workspace = true

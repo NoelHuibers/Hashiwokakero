@@ -1,3 +1,7 @@
+//! The command line of `sat`, and the heuristics the solvers know. Reading the command line needs
+//! the `cli` feature (clap); the backend uses the solvers without it.
+
+#[cfg(feature = "cli")]
 use clap::{Arg, ArgAction, command, value_parser};
 
 #[derive(Debug)]
@@ -37,11 +41,13 @@ pub enum Heuristic {
     Custom,
 }
 
+#[cfg(feature = "cli")]
 pub fn cli() -> CliArgs {
     cli_from(std::env::args_os())
 }
 
 /// [`cli`] on the given arguments, the program name first.
+#[cfg(feature = "cli")]
 pub fn cli_from<I, T>(args: I) -> CliArgs
 where
     I: IntoIterator<Item = T>,
@@ -197,6 +203,7 @@ where
 }
 
 /// A time limit for `--timeout`.
+#[cfg(feature = "cli")]
 fn seconds(arg: &str) -> Result<f64, String> {
     match arg.parse::<f64>() {
         Ok(t) if t >= 0.0 => Ok(t),
@@ -204,7 +211,7 @@ fn seconds(arg: &str) -> Result<f64, String> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "cli"))]
 mod tests {
     use super::*;
 

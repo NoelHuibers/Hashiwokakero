@@ -1,7 +1,12 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "default",
-  "description": "The app's one window: Tauri's core defaults only, no plugins yet",
+  "description": "The app's one window: Tauri's core defaults and the offline practice's commands, no plugins yet",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "allow-generate-puzzle",
+    "allow-solve-puzzle",
+    "allow-puzzle-cnf"
+  ]
 }

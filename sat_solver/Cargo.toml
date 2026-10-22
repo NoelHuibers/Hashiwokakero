@@ -7,11 +7,13 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.6.7", features = ["cargo"] }
+clap = { version = "4.6.7", features = ["cargo"], optional = true }
 flame = { version = "0.2.2", optional = true }
 
 [features]
-default = ["flamegraph"]
+default = ["cli", "flamegraph"]
+# The command line `sat` (`cli::cli`, clap). The backend only uses the solvers.
+cli = ["dep:clap"]
 # Profiling with --flamegraph, flame doesn't build for wasm
 flamegraph = ["dep:flame"]
 
@@ -22,6 +24,11 @@ path = "src/lib.rs"
 [[bin]]
 name = "sat"
 path = "src/main.rs"
+required-features = ["cli"]
+
+[[test]]
+name = "cli"
+required-features = ["cli"]
 
 [lints]
 workspace = true

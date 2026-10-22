@@ -9,7 +9,7 @@ use leptos::task::spawn_local;
 use super::game::{Game, Source, Status};
 use super::settings::Settings;
 use super::toasts::{ToastKind, error_toast, toast};
-use crate::api::{generate_puzzle, solve_puzzle};
+use crate::api::practice;
 use crate::i18n::td_string;
 
 pub fn new_puzzle(game: Game, params: GenerateParams, source: Source) {
@@ -19,7 +19,7 @@ pub fn new_puzzle(game: Game, params: GenerateParams, source: Source) {
     let epoch = game.epoch.get_untracked();
     game.loading.set(true);
     spawn_local(async move {
-        let generated = generate_puzzle(params).await;
+        let generated = practice::generate(params).await;
         if game.epoch.try_get_untracked() != Some(epoch) {
             return;
         }
@@ -47,7 +47,7 @@ pub async fn run_solver(
 ) -> Option<Vec<u8>> {
     let request = epoch.get_untracked();
     busy.set(true);
-    let result = solve_puzzle(puzzle, config, unique).await;
+    let result = practice::solve(puzzle, config, unique).await;
     // Do this before touching report, busy or toasts. The caller's check after this function
     // returned was too late to stop an old result overwriting a replacement puzzle.
     if !current_request(epoch, request) {

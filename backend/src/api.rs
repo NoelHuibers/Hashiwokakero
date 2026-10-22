@@ -21,6 +21,9 @@ use crate::sat::{self, SatOutcome, SatStats};
 pub const DEFAULT_TIMEOUT_MS: u32 = 10_000;
 /// Upper bound for `timeout_ms`, the server is shared.
 pub const MAX_TIMEOUT_MS: u32 = 120_000;
+/// Bounds of `timeout_ms` for a solver run that a player asks for, whatever the client sends:
+/// the website's server functions and the app's offline practice allow the same.
+pub const PLAYER_TIMEOUT_MS: (u32, u32) = (100, 20_000);
 
 /// Solves the puzzle with the configured solver. `unique` of the solution is `None`.
 pub fn solve(puzzle: &Puzzle, config: &SolverConfig) -> Result<SolveReport, String> {
@@ -94,6 +97,23 @@ pub fn validate(puzzle: &Puzzle) -> Result<(), String> {
         return Err("The puzzle has no islands".into());
     }
     Ok(())
+}
+
+/// A puzzle as a client sent it, in reading order, or an error if it can't be encoded
+/// ([`validate`]). Deserializing skips [`Puzzle::new`], which sorts the islands.
+pub fn player_puzzle(puzzle: Puzzle) -> Result<Puzzle, String> {
+    let puzzle = Puzzle::new(puzzle.width, puzzle.height, puzzle.islands);
+    validate(&puzzle)?;
+    Ok(puzzle)
+}
+
+/// A solver config as a client sent it, its time limit within [`PLAYER_TIMEOUT_MS`].
+pub fn player_config(config: SolverConfig) -> SolverConfig {
+    let (min, max) = PLAYER_TIMEOUT_MS;
+    SolverConfig {
+        timeout_ms: config.timeout_ms.clamp(min, max),
+        ..config
+    }
 }
 
 fn deadline(config: &SolverConfig) -> Instant {

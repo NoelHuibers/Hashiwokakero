@@ -208,6 +208,37 @@ fn rejects_invalid_puzzles() {
     }
 }
 
+/// What a client sends: islands in any order are sorted, a puzzle that can't be encoded is
+/// refused, the time limit is kept within the players' bounds (0 included, which would mean
+/// the default otherwise).
+#[test]
+fn player_requests_are_normalized() {
+    let ok = Puzzle::parse_txt("3 3\n1.1\n...\n...\n").unwrap();
+    let mut unsorted = ok.clone();
+    unsorted.islands.reverse();
+    assert_eq!(api::player_puzzle(unsorted), Ok(ok.clone()));
+    let mut empty = ok;
+    empty.islands.clear();
+    assert!(api::player_puzzle(empty).is_err());
+
+    let timeout = |ms| {
+        api::player_config(SolverConfig {
+            timeout_ms: ms,
+            ..SolverConfig::splr()
+        })
+        .timeout_ms
+    };
+    assert_eq!(api::PLAYER_TIMEOUT_MS, (100, 20_000));
+    assert_eq!(
+        [timeout(0), timeout(5), timeout(3_000), timeout(u32::MAX)],
+        [100, 100, 3_000, 20_000]
+    );
+    assert_eq!(
+        api::player_config(SolverConfig::splr()).kind,
+        SolverKind::Splr
+    );
+}
+
 #[test]
 fn dimacs_round_trip() {
     let puzzle = Puzzle::parse_txt(&std::fs::read_to_string("input/test1.txt").unwrap()).unwrap();

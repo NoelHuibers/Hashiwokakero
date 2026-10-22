@@ -8,7 +8,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos_router::components::A;
 
-use crate::api::{generate_puzzle, solve_puzzle};
+use crate::api::practice;
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
@@ -79,7 +79,7 @@ pub fn LabPage() -> impl IntoView {
         };
         running.set(true);
         spawn_local(async move {
-            match generate_puzzle(params).await {
+            match practice::generate(params).await {
                 Ok(g) => fresh.set(Some(g.puzzle)),
                 Err(e) => error_toast(e),
             }
@@ -126,7 +126,7 @@ pub fn LabPage() -> impl IntoView {
             // One after another, so they don't compete for the server's CPU
             for (i, config) in configs.into_iter().enumerate() {
                 runs.update(|r| r[i].1 = RunState::Running);
-                let state = match solve_puzzle(puzzle.clone(), config, false).await {
+                let state = match practice::solve(puzzle.clone(), config, false).await {
                     Ok(report) => RunState::Done(report),
                     Err(e) => RunState::Failed(error_text(i18n.get_locale_untracked(), &e)),
                 };
