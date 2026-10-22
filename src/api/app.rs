@@ -41,7 +41,8 @@ const APP_ORIGINS: [&str; 3] = [
 ];
 
 /// The server the app calls from its own origin: hashi.rs, or the server named by
-/// `HASHI_SERVER_URL` when the app was built.
+/// `HASHI_SERVER_URL` when the app was built. The app's content security policy
+/// (`app/src-tauri/tauri.conf.json`, `connect-src`) has to allow it as well.
 ///
 /// `None` keeps the calls on the page's origin: the bundle in a browser, where a proxy passes
 /// `/api` on (`pnpm run app:web`, the smoke test in e2e/app).

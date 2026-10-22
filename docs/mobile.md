@@ -82,7 +82,8 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 
 - Server: on the app's origins (`https://tauri.localhost`, `http://tauri.localhost`,
   `tauri://localhost`) the server functions go to `https://hashi.rs`, or to
-  `HASHI_SERVER_URL` if it was set when the app was built. Anywhere else they stay on the
+  `HASHI_SERVER_URL` if it was set when the app was built (and added to the CSP's
+  `connect-src` in `app/src-tauri/tauri.conf.json`). Anywhere else they stay on the
   page's origin, where a proxy passes `/api` on (`pnpm run app:web`, the smoke test).
 - `x-hashi-app`: the platform from the user agent (`android`; `ios` for iPhone, iPad and a
   Mac with a touch screen; else `web`) and the version of `app/Cargo.toml`, which

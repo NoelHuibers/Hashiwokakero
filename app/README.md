@@ -58,7 +58,9 @@ section of [docs/mobile.md](../docs/mobile.md#api-headers) describes on top (`sr
 - In the `WebView` (`https://tauri.localhost`, `tauri://localhost`) the calls go to
   `https://hashi.rs`. Another server is set when building, e.g.
   `HASHI_SERVER_URL=https://staging.example pnpm run app:build` (HTTPS: the `WebView`'s page
-  is). In a browser (`app:web`, the smoke test) they stay on the page's origin and its proxy.
+  is). The content security policy in `src-tauri/tauri.conf.json` only lets the app connect to
+  `https://hashi.rs`: another server has to be added to its `connect-src` too. In a browser
+  (`app:web`, the smoke test) the calls stay on the page's origin and its proxy.
 - Every call sends `x-hashi-app: <platform>/<version>`, the version of this crate's
   `Cargo.toml` (`env!("CARGO_PKG_VERSION")` in `src/main.rs`). Release builds keep it equal to
   the version in the stores (docs/mobile.md, step 11): the server turns versions below
