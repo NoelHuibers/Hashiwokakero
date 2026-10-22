@@ -1,0 +1,18 @@
+[package]
+name = "hashi_app"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+# The mobile app's web bundle: the whole UI rendered in the browser (CSR), built by Trunk from
+# index.html (see README.md). The Tauri project that wraps it will live in src-tauri/, a crate
+# of its own outside the workspace.
+
+[lints]
+workspace = true
+
+[dependencies]
+hashi = { path = "..", default-features = false, features = ["csr"] }
+# The `ServerFn` trait, for the check of the server functions' paths in main.rs
+leptos = "0.8.22"

@@ -1,0 +1,43 @@
+# Builds the web bundle of the app from index.html, see README.md. Trunk 0.22.0, as in CI.
+trunk-version = "=0.22.0"
+
+[build]
+target = "index.html"
+# `pnpm run app:build`. The dev server (`pnpm run app:web`) writes to target/app-dev instead.
+dist = "../target/app-dist"
+public_url = "/"
+# Minifying the HTML would rewrite the inline theme script, whose hash the app's content security
+# policy allows (see README.md). Tailwind minifies the CSS itself, wasm-opt shrinks the WASM.
+minify = "never"
+
+[watch]
+# The crates and assets the bundle is made of; target/ (where the CSS goes) must stay out
+watch = [".", "../src", "../style", "../locales", "../public", "../common/src", "../dojo/src"]
+
+[serve]
+addresses = ["127.0.0.1"]
+port = 8080
+
+# Server functions call /api/... on the page's origin. The dev server passes them on to a local
+# hashi server (`pnpm run dev`), so they are same-origin calls without CORS.
+[[proxy]]
+backend = "http://127.0.0.1:3000/api/"
+
+# Tailwind, from the pnpm packages like the website's (cargo-leptos), run in the repository root:
+# style/tailwind.css scans src/ and Tailwind detects the other sources from there.
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = [
+  "-c",
+  "cd .. && pnpm exec tailwindcss -i style/tailwind.css -o target/app-css/hashi.css $([ \"$TRUNK_PROFILE\" = release ] && echo --minify)",
+]
+
+# public/ as it is, at the root like on the website: icons, the manifest and the fonts
+[[hooks]]
+stage = "build"
+command = "sh"
+command_arguments = [
+  "-c",
+  "if [ ! -f ../public/fonts/fonts.css ]; then echo 'public/fonts is missing: pnpm run fonts' >&2; exit 1; fi; cp -R ../public/. \"$TRUNK_STAGING_DIR\"",
+]

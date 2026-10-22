@@ -17,7 +17,10 @@
     "css:watch": "tailwindcss -i style/tailwind.css -o target/site/pkg/hashi.css --watch",
     "e2e": "playwright test -c e2e",
     "e2e:container": "node scripts/e2e-container.mjs",
-    "e2e:update-snapshots": "node scripts/e2e-container.mjs --project visual --update-snapshots"
+    "e2e:update-snapshots": "node scripts/e2e-container.mjs --project visual --update-snapshots",
+    "app:web": "cd app && trunk serve --dist ../target/app-dev",
+    "app:build": "cd app && trunk build --release",
+    "app:e2e": "playwright test -c e2e/app.config.ts"
   },
   "devDependencies": {
     "@fontsource-variable/murecho": "^5.3.1",
