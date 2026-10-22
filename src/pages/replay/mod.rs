@@ -37,7 +37,7 @@ use state::{Layout, Theatre};
 
 /// Whether the visitor asked for less motion: the replay starts paused then, for stepping.
 fn reduced_motion() -> bool {
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "browser")]
     {
         window()
             .match_media("(prefers-reduced-motion: reduce)")
@@ -45,14 +45,14 @@ fn reduced_motion() -> bool {
             .flatten()
             .is_some_and(|m| m.matches())
     }
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(feature = "browser"))]
     {
         false
     }
 }
 
 /// Runs the clock while the theatre plays, a frame at a time.
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 fn run_frames(theatre: Theatre) {
     fn frame(theatre: Theatre, run: u32, last: f64) {
         request_animation_frame(move || {
@@ -73,7 +73,7 @@ fn run_frames(theatre: Theatre) {
 
 /// The keys of the theatre anywhere on the page, except while typing, and space on a button
 /// (which presses it).
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 fn listen_to_keys(theatre: Theatre) {
     let handle = window_event_listener(leptos::ev::keydown, move |ev| {
         if ev.ctrl_key() || ev.meta_key() || ev.alt_key() || ev.default_prevented() {
@@ -108,7 +108,7 @@ fn listen_to_keys(theatre: Theatre) {
 pub fn TheatreView(data: ReplayData, only: Option<Vec<i64>>) -> impl IntoView {
     let still = reduced_motion();
     let theatre = Theatre::new(data, only.as_deref());
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "browser")]
     {
         Effect::new(move |_| {
             if theatre.playing.get() {
