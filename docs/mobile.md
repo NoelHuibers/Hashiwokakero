@@ -108,7 +108,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 3 | Bearer sessions: `Authorization: Bearer hs1.<token>` accepted next to the cookie, replacement tokens in `x-hashi-session` for requests that opt in | | ✓ #113 |
 | 4 | `browser` and `csr` features, CSR entry point, CSR lint in CI | | ✓ #114 |
 | 5 | App version header, minimum version and `AppOutdated`; CORS for the app origins | 2 | ✓ #119 |
-| 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 | ✓ #PR |
+| 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 | ✓ #122 |
 | 7 | CSR shell (`app/`, Trunk, `index.html`, Tailwind) built in CI | 6 | |
 | 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 | |
 | 9 | Offline practice: native generator and solver through Tauri commands | 8 | |
