@@ -13,7 +13,7 @@ use tower_http::compression::predicate::{NotForContentType, Predicate};
 use tower_http::compression::{CompressionLayer, DefaultPredicate};
 
 use super::{admin, dojo, og};
-use crate::api::BUILD_HEADER;
+use crate::api::{BUILD_HEADER, SESSION_HEADER};
 use crate::app::App;
 
 #[cfg(test)]
@@ -163,6 +163,7 @@ fn wasm_hash(hashes: &str) -> Option<&str> {
 /// a new build gets new names; everything else is revalidated on every visit. The font files
 /// always have a content hash in their names (scripts/fonts.mjs). Errors are never cached for
 /// good: a hashed name that isn't there yet (a page from another deploy) would stay broken.
+/// A response with the app's session token (see `auth`) is stored nowhere.
 async fn cache_control(hash_files: bool, req: Request, next: Next) -> Response {
     let path = req.uri().path();
     let immutable = (hash_files && path.starts_with("/pkg/"))
@@ -171,6 +172,11 @@ async fn cache_control(hash_files: bool, req: Request, next: Next) -> Response {
                 .extension()
                 .is_some_and(|e| e.eq_ignore_ascii_case("woff2")));
     let mut res = next.run(req).await;
+    if res.headers().contains_key(SESSION_HEADER) {
+        res.headers_mut()
+            .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+        return res;
+    }
     let value = if immutable && res.status().is_success() {
         "public, max-age=31536000, immutable"
     } else {

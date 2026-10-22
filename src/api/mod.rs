@@ -28,7 +28,9 @@ mod river;
 pub use account::*;
 pub use admin::*;
 pub use banzuke::*;
-pub use client::{BUILD_HEADER, HashiClient, is_outdated};
+pub use client::{
+    APP_HEADER, BUILD_HEADER, HashiClient, SESSION_BEARER, SESSION_HEADER, is_outdated,
+};
 pub use contact::*;
 pub use daily::*;
 pub use dojo::*;

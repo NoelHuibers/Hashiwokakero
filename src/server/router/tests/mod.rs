@@ -11,6 +11,7 @@
 
 mod accounts;
 mod admin;
+mod app_sessions;
 mod build;
 mod contact;
 mod dojo;
@@ -273,9 +274,19 @@ impl Browser {
         F: ServerFn + Serialize,
         F::Output: DeserializeOwned,
     {
+        self.call_sending(args, HeaderMap::new()).await
+    }
+
+    /// With these headers on top of the browser's.
+    async fn call_sending<F>(&self, args: F, headers: HeaderMap) -> Called<F::Output>
+    where
+        F: ServerFn + Serialize,
+        F::Output: DeserializeOwned,
+    {
         let res = self
             .http
             .post(format!("{}{}", self.url, F::PATH))
+            .headers(headers)
             .header(CONTENT_TYPE, "application/json")
             .header(ACCEPT, "application/json")
             .body(serde_json::to_vec(&args).unwrap())

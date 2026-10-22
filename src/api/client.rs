@@ -24,6 +24,23 @@ use crate::model::is_outdated_error;
 /// The response header with the build of the server, see the module docs.
 pub const BUILD_HEADER: &str = "x-hashi-build";
 
+/// The request header that marks a request of the app (any value but an empty one).
+///
+/// The app's `WebView` runs on its own origin, where the session cookie of the site is a
+/// third-party cookie it blocks, so the app gets its session token in [`SESSION_HEADER`]
+/// instead, and sends it back as `Authorization: Bearer hs1.<token>` ([`SESSION_BEARER`], see
+/// `server::auth`).
+pub const APP_HEADER: &str = "x-hashi-app";
+
+/// The response header with the app's new session token; empty when the session ended.
+pub const SESSION_HEADER: &str = "x-hashi-session";
+
+/// What comes before the session token in the app's `Authorization: Bearer` header.
+///
+/// The admin and the Dojo worker send bearer tokens too: the prefix keeps a session token from
+/// ever passing for one of theirs, and theirs for a session.
+pub const SESSION_BEARER: &str = "hs1.";
+
 /// The build named by the last response of a server function call, if it named one.
 static SERVER_BUILD: Mutex<Option<String>> = Mutex::new(None);
 
