@@ -1,0 +1,90 @@
+# Mobile apps
+
+Plan for the Android app, then iOS with the same setup. Each step below is its own PR;
+this file is updated as they land.
+
+## Decisions
+
+- **Tauri 2.** The app bundles a client-side rendered (CSR) build of the same Leptos UI
+  and runs `backend` natively for offline practice. One UI, one language, no second
+  code base to keep in sync.
+- **Application ID `rs.hashi`** (Android `applicationId`, iOS bundle id). Fixed once the
+  first build is uploaded to a store. Play only accepts IDs with at least one dot,
+  so plain `hashi` is not possible. Users see the name "Hashi", not the ID.
+- **Android first.** Every build runs in CI: a debug APK on pull requests, and a
+  signed App Bundle uploaded to Google Play from a tag. iOS follows with the same
+  workflow on a macOS runner and TestFlight.
+- **Offline practice in the first release.** Generation, hints and checks of practice
+  and created puzzles run on the phone. The daily, rankings, rivals and groups stay on
+  the server, which keeps the daily's timing authoritative. The local solver is never
+  used for today's daily.
+- **The server is the API.** The app calls the existing server functions on
+  `https://hashi.rs`. Their paths are already stable (`/api/<name>`, no hash, see
+  `.cargo/config.toml`); from the first release on they are a contract that installed
+  apps rely on for months.
+- **Bearer sessions in the app, cookies on the web.** The app's WebView runs on its own
+  origin, where the `SameSite=Lax` session cookie of hashi.rs is a third-party cookie
+  that WebViews block. The app sends the same session token as
+  `Authorization: Bearer hs1.<token>` and receives replacements in a response header.
+  The web keeps its HttpOnly cookie.
+- **Dojo uploads and admin stay on the website.** The app links to hashi.rs for them.
+
+## Architecture
+
+```
+common · backend · sat_solver · hashi_i18n        shared crates
+        │                        │
+   hashi (web)                app/ (Tauri 2)
+   Axum + Leptos SSR,         WebView: Leptos CSR build of the same UI
+   hydrate in the browser     Rust: backend natively (offline practice)
+        ▲                        │
+        └──── HTTPS, /api/* ─────┘  bearer token, x-hashi-app version
+```
+
+The `hashi` crate gets a `csr` feature next to `hydrate` and `ssr`. Both `hydrate` and
+`csr` enable `browser`, which marks code that needs a browser (audio, animation frames,
+listeners). The app crate builds the CSR bundle with Trunk and wraps it with Tauri.
+
+## Compatibility rules
+
+Installed apps keep their version until the user updates. From the first release on:
+
+- Never rename or remove a server function, never change its arguments incompatibly.
+  Add a new function instead and keep the old one until no supported app calls it.
+- Response enums that reach the client tolerate unknown variants.
+- The app sends its version (`x-hashi-app`). The server answers versions below its
+  configured minimum with `AppOutdated`, and the app asks for an update instead of a
+  reload. Raise the minimum only after the store has offered the update for a while.
+- CI checks the list of paths and the request and response JSON against golden files.
+
+## Steps
+
+| # | Step | Depends on |
+|---|------|------------|
+| 1 | This plan | |
+| 2 | API contract: golden list of server function paths and request JSON; response enums tolerate unknown variants | |
+| 3 | Bearer sessions: `Authorization: Bearer hs1.<token>` accepted next to the cookie, replacement tokens in `x-hashi-session` for requests that opt in | |
+| 4 | `browser` and `csr` features, CSR entry point, CSR lint in CI | |
+| 5 | App version header, minimum version and `AppOutdated`; CORS for the app origins | 2 |
+| 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 |
+| 7 | CSR shell (`app/`, Trunk, `index.html`, Tailwind) built in CI | 6 |
+| 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 |
+| 9 | Offline practice: native generator and solver through Tauri commands | 8 |
+| 10 | Android polish: back button, safe areas, share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 |
+| 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 |
+| 12 | First release: closed test, store listing, production | 9, 10, 11 |
+| 13 | iOS: same project, macOS runner, TestFlight and App Store | 12 |
+
+## Owner tasks
+
+Things only the account owner can do, needed from step 11 on:
+
+- Play Console: create the app `rs.hashi`, enable Play App Signing.
+- A Google Cloud service account with release rights in the Play Console, its JSON key
+  as GitHub secret.
+- The upload keystore as GitHub secrets (generated once, a backup kept offline).
+- Store listing: description, screenshots, privacy policy URL (`/datenschutz`), the
+  Data safety form, content rating, and trader status (EU).
+- Personal Play accounts created after 13 November 2023 need a closed test with at
+  least 12 testers for 14 days before the first production release.
+- iOS: Apple Developer Program membership and an App Store Connect API key.
