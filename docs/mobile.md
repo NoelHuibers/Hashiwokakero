@@ -78,6 +78,27 @@ What the app and the server send each other, on top of the server functions' JSO
   `accept`, `authorization` and `x-hashi-app`; `x-hashi-build` and `x-hashi-session`
   are exposed; no credentials. Preflights are answered for two hours.
 
+The app's side (`src/api/app.rs`, only in the `csr` build; the website sends none of it):
+
+- Server: on the app's origins (`https://tauri.localhost`, `http://tauri.localhost`,
+  `tauri://localhost`) the server functions go to `https://hashi.rs`, or to
+  `HASHI_SERVER_URL` if it was set when the app was built. Anywhere else they stay on the
+  page's origin, where a proxy passes `/api` on (`pnpm run app:web`, the smoke test).
+- `x-hashi-app`: the platform from the user agent (`android`; `ios` for iPhone, iPad and a
+  Mac with a touch screen; else `web`) and the version of `app/Cargo.toml`, which
+  `hashi_app` passes to `hashi::mount`. Releases keep it equal to the store version.
+- Session token: in local storage, `hashi.session`. Not HttpOnly like the cookie, but the
+  `WebView`'s storage is private to the app. A response's `x-hashi-session` replaces it, an
+  empty one removes it, unless the token changed while the call was out (an answer to a call
+  sent before a sign in doesn't bring the old session back).
+- Single flight: without a token, a call that may make a session (`start_daily`,
+  `create_group`, `join_group`, `set_rival`, `login`, `register`) holds back every other
+  call until its answer's token is kept, so calls at the same time don't make two guests.
+- `AppOutdated`, and an answer that is a web page (a server function the server no longer
+  has), show one toast with an "Update" button to the store, where the website offers a
+  reload. Share and invite links point at `https://hashi.rs`; the Dojo's upload forms and the
+  admin's house form are links to the website.
+
 ## Steps
 
 | # | Step | Depends on | Status |
@@ -87,7 +108,7 @@ What the app and the server send each other, on top of the server functions' JSO
 | 3 | Bearer sessions: `Authorization: Bearer hs1.<token>` accepted next to the cookie, replacement tokens in `x-hashi-session` for requests that opt in | | ✓ #113 |
 | 4 | `browser` and `csr` features, CSR entry point, CSR lint in CI | | ✓ #114 |
 | 5 | App version header, minimum version and `AppOutdated`; CORS for the app origins | 2 | ✓ #119 |
-| 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 | |
+| 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 | ✓ #PR |
 | 7 | CSR shell (`app/`, Trunk, `index.html`, Tailwind) built in CI | 6 | |
 | 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 | |
 | 9 | Offline practice: native generator and solver through Tauri commands | 8 | |

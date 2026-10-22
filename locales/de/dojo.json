@@ -163,6 +163,7 @@
     "button": "Einreichen",
     "left": "Heute übrige Einreichungen: {{ count }}",
     "none_left": "Für heute keine Einreichungen mehr übrig, komm morgen wieder.",
+    "on_website": "In der App laufen Uploads über die Website: <a>hashi.rs öffnen</a> und dort mit demselben Konto anmelden.",
     "errors": {
       "sign_in": "Bitte melde dich zuerst mit einem registrierten Konto an.",
       "name": "Gib deinem Solver einen Namen mit höchstens 40 Zeichen.",

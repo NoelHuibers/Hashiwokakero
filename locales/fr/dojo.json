@@ -163,6 +163,7 @@
     "button": "Soumettre",
     "left": "Soumissions restantes aujourd’hui : {{ count }}",
     "none_left": "Plus de soumissions pour aujourd’hui, reviens demain.",
+    "on_website": "Dans l'app, les envois passent par le site : <a>ouvrir hashi.rs</a> et s'y connecter avec le même compte.",
     "errors": {
       "sign_in": "Connecte-toi d’abord avec un compte enregistré.",
       "name": "Donne à ton solveur un nom de 40 caractères au plus.",

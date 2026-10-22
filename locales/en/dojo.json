@@ -163,6 +163,7 @@
     "button": "Submit",
     "left": "Submissions left today: {{ count }}",
     "none_left": "No submissions left today, come back tomorrow.",
+    "on_website": "In the app, uploads go through the website: <a>open hashi.rs</a> and sign in there with the same account.",
     "errors": {
       "sign_in": "Please sign in with a registered account first.",
       "name": "Give your solver a name of up to 40 characters.",

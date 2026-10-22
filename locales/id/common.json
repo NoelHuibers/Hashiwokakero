@@ -48,7 +48,8 @@
     "not_unique": "Teka-teki ini punya lebih dari satu solusi.",
     "copied": "Hasil disalin ke papan klip.",
     "copy_failed": "Gagal menyalin ke papan klip.",
-    "reload": "Muat ulang"
+    "reload": "Muat ulang",
+    "update": "Perbarui"
   },
   "errors": {
     "unknown": "Terjadi kesalahan: {{ detail }}",

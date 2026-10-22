@@ -292,8 +292,19 @@ fn error_detail(message: &str) -> Option<String> {
 
 /// A server error for players, in their language.
 pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
+    error_text_in(cfg!(feature = "csr"), locale, error)
+}
+
+/// [`error_text`] in the app (`app`) or on the website. An outdated tab is told to reload, the
+/// app to update: reloading it would load the same bundle.
+fn error_text_in(app: bool, locale: Locale, error: &ServerFnError) -> String {
     if crate::api::is_outdated(error) {
-        return td_string!(locale, common.errors.outdated).to_string();
+        return if app {
+            td_string!(locale, common.errors.app_outdated)
+        } else {
+            td_string!(locale, common.errors.outdated)
+        }
+        .to_string();
     }
     let message = error.to_string();
     let Some(code) = ApiError::from_message(&message) else {
@@ -421,6 +432,9 @@ mod tests {
                 let text = error_text(l, &from_body(body));
                 assert_eq!(text, td_string!(l, common.errors.outdated), "{l:?}");
                 assert!(filled(&text) && !text.contains('<'), "{l:?}: {text}");
+                // The app can't reload into a newer version
+                let text = error_text_in(true, l, &from_body(body));
+                assert_eq!(text, td_string!(l, common.errors.app_outdated), "{l:?}");
             }
         }
     }

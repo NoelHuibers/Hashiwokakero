@@ -2,8 +2,11 @@
 
 use leptos::prelude::*;
 
+use crate::api::update_url;
 use crate::i18n::{t, use_i18n};
-use crate::state::{ToastKind, Toasts};
+use crate::state::{ToastAction, ToastKind, Toasts};
+
+const ACTION: &str = "shrink-0 cursor-pointer rounded-md border border-current px-2 py-0.5 font-medium hover:bg-destructive/10";
 
 #[component]
 pub fn Toaster() -> impl IntoView {
@@ -29,12 +32,13 @@ pub fn Toaster() -> impl IntoView {
                         ToastKind::Info => ("◇", "border-border bg-card text-foreground"),
                     };
                     let text = t.text.clone();
-                    // A button, not an automatic reload: that would throw away a board in progress
-                    let reload = t.reload.then(|| {
-                        view! {
+                    let action = t.action.map(|action| match action {
+                        // A button, not an automatic reload: that would throw away a board in
+                        // progress
+                        ToastAction::Reload => view! {
                             <button
                                 type="button"
-                                class="shrink-0 cursor-pointer rounded-md border border-current px-2 py-0.5 font-medium hover:bg-destructive/10"
+                                class=ACTION
                                 on:click=|_| {
                                     _ = window().location().reload();
                                 }
@@ -42,6 +46,15 @@ pub fn Toaster() -> impl IntoView {
                                 {t!(i18n, common.toast.reload)}
                             </button>
                         }
+                        .into_any(),
+                        // The store's page. TODO(step 10 of docs/mobile.md): the WebView opens
+                        // no new windows, open it with Tauri's opener plugin.
+                        ToastAction::Update => view! {
+                            <a class=ACTION href=update_url() target="_blank" rel="noopener">
+                                {t!(i18n, common.toast.update)}
+                            </a>
+                        }
+                        .into_any(),
                     });
                     view! {
                         <div class=format!(
@@ -49,7 +62,7 @@ pub fn Toaster() -> impl IntoView {
                         )>
                             <span class="font-pixel" aria-hidden="true">{mark}</span>
                             <span class="flex-1">{move || text(i18n.get_locale())}</span>
-                            {reload}
+                            {action}
                         </div>
                     }
                 }
@@ -83,13 +96,29 @@ mod tests {
                 id: 0,
                 kind: ToastKind::Error,
                 text: std::sync::Arc::new(|l| td_string!(l, common.errors.outdated).to_string()),
-                reload: true,
+                action: Some(ToastAction::Reload),
             }]);
             let filled = view! { <Toaster /> }.to_html();
             assert_eq!(filled.split('>').next().unwrap(), host);
             assert!(filled.contains(td_string!(Locale::ja, common.errors.outdated)));
             assert!(filled.contains(td_string!(Locale::ja, common.toast.reload)));
             assert!(!filled.contains("role=\"alert\""));
+            // An outdated app: the store, not a reload
+            toasts.0.set(vec![Toast {
+                id: 1,
+                kind: ToastKind::Error,
+                text: std::sync::Arc::new(|l| {
+                    td_string!(l, common.errors.app_outdated).to_string()
+                }),
+                action: Some(ToastAction::Update),
+            }]);
+            let update = view! { <Toaster /> }.to_html();
+            assert!(update.contains(td_string!(Locale::ja, common.errors.app_outdated)));
+            assert!(
+                update.contains("href=\"https://hashi.rs\" target=\"_blank\" rel=\"noopener\"")
+            );
+            assert!(update.contains(td_string!(Locale::ja, common.toast.update)));
+            assert!(!update.contains(td_string!(Locale::ja, common.toast.reload)));
         });
     }
 }

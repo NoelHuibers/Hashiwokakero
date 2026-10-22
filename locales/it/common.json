@@ -48,7 +48,8 @@
     "not_unique": "Questo puzzle ha più di una soluzione.",
     "copied": "Risultato copiato negli appunti.",
     "copy_failed": "Impossibile copiare negli appunti.",
-    "reload": "Ricarica"
+    "reload": "Ricarica",
+    "update": "Aggiorna"
   },
   "errors": {
     "unknown": "Qualcosa è andato storto: {{ detail }}",

@@ -13,6 +13,16 @@ pub enum ToastKind {
     Error,
 }
 
+/// The button of a toast that says the client is outdated.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ToastAction {
+    /// Reloads the page: the tab runs an outdated version of the site.
+    Reload,
+    /// Opens the app's store page (`api::update_url`): the app is outdated, and reloading
+    /// would load the same bundle again.
+    Update,
+}
+
 /// The text of a toast in a given language, so it follows the language picker.
 pub type ToastText = std::sync::Arc<dyn Fn(Locale) -> String + Send + Sync>;
 
@@ -21,8 +31,8 @@ pub struct Toast {
     pub id: u32,
     pub kind: ToastKind,
     pub text: ToastText,
-    /// With a button that reloads the page: the tab runs an outdated version of the site.
-    pub reload: bool,
+    /// A button for a client that is outdated.
+    pub action: Option<ToastAction>,
 }
 
 impl std::fmt::Debug for Toast {
@@ -30,7 +40,7 @@ impl std::fmt::Debug for Toast {
         f.debug_struct("Toast")
             .field("id", &self.id)
             .field("kind", &self.kind)
-            .field("reload", &self.reload)
+            .field("action", &self.action)
             .finish_non_exhaustive()
     }
 }
@@ -40,25 +50,28 @@ pub struct Toasts(pub RwSignal<Vec<Toast>>);
 
 impl Toasts {
     pub fn push(&self, kind: ToastKind, text: impl Fn(Locale) -> String + Send + Sync + 'static) {
-        self.show(kind, false, std::sync::Arc::new(text));
+        self.show(kind, None, std::sync::Arc::new(text));
     }
 
     /// A server function call that failed, see `lang::error_text`. When the tab runs an outdated
     /// version of the site (`api::is_outdated`: the server didn't know the function, or runs
     /// another build that didn't understand the call), the toast offers a reload and stays a
-    /// while.
+    /// while; in an outdated app (`api::needs_update`) an update.
     pub fn push_error(&self, error: ServerFnError) {
-        let reload = crate::api::is_outdated(&error);
+        let action = error_action(
+            crate::api::needs_update(&error),
+            crate::api::is_outdated(&error),
+        );
         let text = move |l: Locale| crate::lang::error_text(l, &error);
-        self.show(ToastKind::Error, reload, std::sync::Arc::new(text));
+        self.show(ToastKind::Error, action, std::sync::Arc::new(text));
     }
 
-    fn show(&self, kind: ToastKind, reload: bool, text: ToastText) {
+    fn show(&self, kind: ToastKind, action: Option<ToastAction>, text: ToastText) {
         let list = self.0;
-        let Some(Some(id)) = list.try_update(|l| add(l, kind, reload, text)) else {
+        let Some(Some(id)) = list.try_update(|l| add(l, kind, action, text)) else {
             return;
         };
-        let shown = if reload { 12_000 } else { 3600 };
+        let shown = if action.is_some() { 12_000 } else { 3600 };
         set_timeout(
             move || list.update(|l| l.retain(|t| t.id != id)),
             Duration::from_millis(shown),
@@ -66,10 +79,27 @@ impl Toasts {
     }
 }
 
+/// The button of an error's toast: an update for an app that needs one, else a reload for an
+/// outdated tab.
+fn error_action(update: bool, outdated: bool) -> Option<ToastAction> {
+    if update {
+        Some(ToastAction::Update)
+    } else if outdated {
+        Some(ToastAction::Reload)
+    } else {
+        None
+    }
+}
+
 /// Adds a toast to the list, which keeps the last three. Its id, or `None` when it asks for a
-/// reload that is already asked for: an outdated tab fails every call at once.
-fn add(list: &mut Vec<Toast>, kind: ToastKind, reload: bool, text: ToastText) -> Option<u32> {
-    if reload && list.iter().any(|t| t.reload) {
+/// reload or an update that is already asked for: an outdated tab or app fails every call at once.
+fn add(
+    list: &mut Vec<Toast>,
+    kind: ToastKind,
+    action: Option<ToastAction>,
+    text: ToastText,
+) -> Option<u32> {
+    if action.is_some() && list.iter().any(|t| t.action == action) {
         return None;
     }
     let id = list.iter().map(|t| t.id + 1).max().unwrap_or(0);
@@ -77,7 +107,7 @@ fn add(list: &mut Vec<Toast>, kind: ToastKind, reload: bool, text: ToastText) ->
         id,
         kind,
         text,
-        reload,
+        action,
     });
     if list.len() > 3 {
         list.remove(0);
@@ -112,7 +142,7 @@ mod tests {
     fn the_last_three_toasts_stay() {
         let mut list = Vec::new();
         for i in 0..5 {
-            assert_eq!(add(&mut list, ToastKind::Info, false, text("hi")), Some(i));
+            assert_eq!(add(&mut list, ToastKind::Info, None, text("hi")), Some(i));
         }
         assert_eq!(list.iter().map(|t| t.id).collect::<Vec<_>>(), [2, 3, 4]);
     }
@@ -120,16 +150,53 @@ mod tests {
     /// An outdated tab fails every call of a page: one toast asks for a reload, not three.
     #[test]
     fn one_reload_toast_at_a_time() {
+        let reload = Some(ToastAction::Reload);
         let mut list = Vec::new();
         assert_eq!(
-            add(&mut list, ToastKind::Error, true, text("reload")),
+            add(&mut list, ToastKind::Error, reload, text("reload")),
             Some(0)
         );
-        assert_eq!(add(&mut list, ToastKind::Error, true, text("reload")), None);
         assert_eq!(
-            add(&mut list, ToastKind::Error, false, text("other")),
+            add(&mut list, ToastKind::Error, reload, text("reload")),
+            None
+        );
+        assert_eq!(
+            add(&mut list, ToastKind::Error, None, text("other")),
             Some(1)
         );
-        assert_eq!(list.iter().filter(|t| t.reload).count(), 1);
+        assert_eq!(list.iter().filter(|t| t.action == reload).count(), 1);
+    }
+
+    /// An app below the server's minimum fails every call: one toast asks for the update,
+    /// however many there are.
+    #[test]
+    fn one_update_toast_at_a_time() {
+        use leptos::server_fn::Bytes;
+        use leptos::server_fn::error::FromServerFnError as _;
+        let refused = ServerFnError::de(Bytes::from("ServerError|E:app_outdated"));
+        let mut list = Vec::new();
+        let mut shown = 0;
+        for _ in 0..5 {
+            // As in the app, where `api::needs_update` says so
+            let action = error_action(true, crate::api::is_outdated(&refused));
+            assert_eq!(action, Some(ToastAction::Update));
+            shown +=
+                usize::from(add(&mut list, ToastKind::Error, action, text("update")).is_some());
+        }
+        assert_eq!(shown, 1);
+        assert_eq!(list.len(), 1);
+        // Other errors still have their toasts
+        assert_eq!(
+            add(&mut list, ToastKind::Error, None, text("other")),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn outdated_apps_update_and_outdated_tabs_reload() {
+        assert_eq!(error_action(true, true), Some(ToastAction::Update));
+        assert_eq!(error_action(true, false), Some(ToastAction::Update));
+        assert_eq!(error_action(false, true), Some(ToastAction::Reload));
+        assert_eq!(error_action(false, false), None);
     }
 }

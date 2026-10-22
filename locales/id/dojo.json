@@ -163,6 +163,7 @@
     "button": "Kirim",
     "left": "Sisa kiriman hari ini: {{ count }}",
     "none_left": "Kiriman hari ini sudah habis, kembali lagi besok.",
+    "on_website": "Di aplikasi, unggahan lewat situs web: <a>buka hashi.rs</a> lalu masuk di sana dengan akun yang sama.",
     "errors": {
       "sign_in": "Masuk dulu dengan akun terdaftar.",
       "name": "Beri solvermu nama maksimal 40 karakter.",

@@ -11,7 +11,7 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::date_short;
 use crate::model::{DojoEntry, DojoPortfolio, DojoSeason, DojoSeasons, day_of};
-use crate::seo::PageMeta;
+use crate::seo::{PageMeta, server_link, server_link_target};
 
 use super::benchmarks::PoolList;
 use super::guide::Code;
@@ -69,7 +69,7 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
     let set = season.set_size.map(|size| {
         let sha = season.set_sha256.clone().unwrap_or_default();
         view! {
-            <a href=format!("/dojo/seasons/{n}/set.tar.gz") download class=link data-tooltip=format!("SHA-256 {sha}")>
+            <a href=server_link(&format!("/dojo/seasons/{n}/set.tar.gz")) target=server_link_target() download class=link data-tooltip=format!("SHA-256 {sha}")>
                 {t!(i18n, dojo.seasons.set, size = format!("{:.1}", megabytes(size)))}
             </a>
         }
@@ -125,10 +125,10 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
                 {community}
                 <div class="flex flex-wrap gap-2">
                     {set}
-                    <a href=format!("/dojo/seasons/{n}/results.csv") download class=link>
+                    <a href=server_link(&format!("/dojo/seasons/{n}/results.csv")) target=server_link_target() download class=link>
                         {t!(i18n, dojo.seasons.csv)}
                     </a>
-                    <a href=format!("/dojo/seasons/{n}/results.json") download class=link>
+                    <a href=server_link(&format!("/dojo/seasons/{n}/results.json")) target=server_link_target() download class=link>
                         {t!(i18n, dojo.seasons.json)}
                     </a>
                 </div>
@@ -224,7 +224,7 @@ pub fn DojoSeasonsPage() -> impl IntoView {
                         "$ printf %s <seed> | sha256sum        # = commitment\n$ dojo export regenerated/ --seed <seed> --hidden\n$ dojo run my-solver.wasm --set dojo-season-<n>.tar.gz"
                     </Code>
                     <p class="flex flex-wrap gap-x-4 gap-y-1">
-                        <a class="text-primary underline underline-offset-4" href="/dojo/seasons.json">"/dojo/seasons.json"</a>
+                        <a class="text-primary underline underline-offset-4" href=server_link("/dojo/seasons.json") target=server_link_target()>"/dojo/seasons.json"</a>
                     </p>
                 </CardContent>
             </Card>

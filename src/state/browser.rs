@@ -21,6 +21,13 @@ mod storage {
             let _ = s.set_item(key, value);
         }
     }
+
+    #[cfg(feature = "csr")]
+    pub(super) fn remove(key: &str) {
+        if let Some(s) = storage() {
+            let _ = s.remove_item(key);
+        }
+    }
 }
 
 /// The unit tests run natively, without a browser: each test thread gets a local storage of its
@@ -41,6 +48,10 @@ pub(crate) mod storage {
     pub(crate) fn set(key: &str, value: &str) {
         ITEMS.with_borrow_mut(|items| items.insert(key.to_string(), value.to_string()));
     }
+
+    pub(crate) fn remove(key: &str) {
+        ITEMS.with_borrow_mut(|items| items.remove(key));
+    }
 }
 
 pub fn load<T: DeserializeOwned>(key: &str) -> Option<T> {
@@ -53,8 +64,20 @@ pub fn store<T: Serialize>(key: &str, value: &T) {
     }
 }
 
-pub(super) fn store_raw(key: &str, value: &str) {
+/// A value kept as it is, not as JSON: the theme (read by the page's script before the WASM
+/// runs), the app's session token.
+pub(crate) fn store_raw(key: &str, value: &str) {
     storage::set(key, value);
+}
+
+#[cfg(any(feature = "csr", test))]
+pub(crate) fn load_raw(key: &str) -> Option<String> {
+    storage::get(key)
+}
+
+#[cfg(any(feature = "csr", test))]
+pub(crate) fn remove_item(key: &str) {
+    storage::remove(key);
 }
 
 /// A random id this browser keeps, sent when a daily starts: a second account on the same device
@@ -82,6 +105,9 @@ pub fn random_seed() -> u64 {
 }
 
 /// Offers `content` as a file download.
+///
+/// TODO(step 10 of docs/mobile.md): the app's `WebView` ignores downloads of Blob links, it
+/// needs a download handler (or Tauri's dialog and fs plugins).
 pub fn download(filename: &str, content: &str, mime: &str) {
     use wasm_bindgen::JsCast;
     let parts = js_sys::Array::of1(&wasm_bindgen::JsValue::from_str(content));
@@ -134,7 +160,9 @@ mod tests {
         assert_eq!(load::<Vec<u8>>("test.missing"), None);
         store_raw("test.raw", "dark");
         assert_eq!(load::<String>("test.raw"), None);
-        assert_eq!(storage::get("test.raw").as_deref(), Some("dark"));
+        assert_eq!(load_raw("test.raw").as_deref(), Some("dark"));
+        remove_item("test.raw");
+        assert_eq!(load_raw("test.raw"), None);
     }
 
     /// The device id is made once, then the kept one is sent with every daily.

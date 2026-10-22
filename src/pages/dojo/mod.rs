@@ -21,7 +21,7 @@ use crate::components::layout::use_localized;
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::model::{DojoBoard, DojoMe};
-use crate::seo::{PageMeta, REPO_URL};
+use crate::seo::{PageMeta, REPO_URL, server_link, server_link_target};
 
 pub use benchmarks::DojoBenchmarksPage;
 use guide::{FairPlay, Families, HowItWorks, Metrics};
@@ -120,7 +120,7 @@ pub fn DojoPage() -> impl IntoView {
                     <a href=STARTER_URL target="_blank" rel="noopener" class="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium">
                         {t!(i18n, dojo.cta.starter)}
                     </a>
-                    <a href=DEV_SET_URL download class="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium">
+                    <a href=server_link(DEV_SET_URL) target=server_link_target() download class="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium">
                         {t!(i18n, dojo.cta.dev_set)}
                     </a>
                     <A href=archive attr:class="inline-flex h-10 items-center rounded-md border bg-card px-4 text-sm font-medium">
@@ -147,7 +147,7 @@ pub fn DojoPage() -> impl IntoView {
                 <CardContent class="flex flex-col gap-2 text-sm text-muted-foreground">
                     <p>{t!(i18n, dojo.science.text)}</p>
                     <p class="flex flex-wrap gap-x-4 gap-y-1">
-                        <a class="text-primary underline underline-offset-4" href="/dojo/board.json">"/dojo/board.json"</a>
+                        <a class="text-primary underline underline-offset-4" href=server_link("/dojo/board.json") target=server_link_target()>"/dojo/board.json"</a>
                         <a class="text-primary underline underline-offset-4" href=format!("{REPO_URL}/tree/main/dojo") target="_blank" rel="noopener">
                             "github.com/NoelHuibers/Hashiwokakero/dojo"
                         </a>

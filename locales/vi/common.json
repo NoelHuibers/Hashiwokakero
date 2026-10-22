@@ -48,7 +48,8 @@
     "not_unique": "Câu đố này có nhiều hơn một lời giải.",
     "copied": "Đã sao chép kết quả vào bộ nhớ tạm.",
     "copy_failed": "Không sao chép được vào bộ nhớ tạm.",
-    "reload": "Tải lại"
+    "reload": "Tải lại",
+    "update": "Cập nhật"
   },
   "errors": {
     "unknown": "Đã xảy ra lỗi: {{ detail }}",

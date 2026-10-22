@@ -16,6 +16,8 @@ use crate::lang::prefix;
 use crate::model::{BenchmarkState, CommunityCredit, DojoBenchmark, DojoBenchmarks};
 use crate::seo::PageMeta;
 
+use super::submit::UploadOnWebsite;
+
 const FIELD: &str = "flex w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm";
 const LICENSE_URL: &str = dojo::community::LICENSE_URL;
 pub(super) const GBD_URL: &str = "https://benchmark-database.de";
@@ -147,6 +149,9 @@ fn SubmitForm(data: DojoBenchmarks) -> impl IntoView {
             </A>
         }
             .into_any();
+    }
+    if cfg!(feature = "csr") {
+        return view! { <UploadOnWebsite path="/dojo/benchmarks" /> }.into_any();
     }
     let left = data.left_today;
     view! {

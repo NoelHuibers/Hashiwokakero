@@ -36,7 +36,7 @@ pub(super) fn WinOverlay() -> impl IntoView {
                 moves = game.moves.get_untracked(),
                 hints = game.hints.get_untracked()
             ),
-            window().location().origin().unwrap_or_default() + &localized(locale, "/practice"),
+            crate::seo::public_origin() + &localized(locale, "/practice"),
         )
     };
 
