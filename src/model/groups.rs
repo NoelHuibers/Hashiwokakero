@@ -214,6 +214,12 @@ impl GroupPage {
     pub fn member(&self, user_id: i64) -> Option<&GroupMember> {
         self.members.iter().find(|m| m.user_id == user_id)
     }
+
+    /// Whether the player is the last one in the group (banned players aren't in the list and
+    /// don't count): leaving deletes it.
+    pub fn last_one(&self) -> bool {
+        self.members.iter().all(|m| m.user_id == self.me)
+    }
 }
 
 /// What the join page shows of a group before joining.

@@ -88,7 +88,10 @@
     "removed": "{{ name }} zit niet meer in de groep.",
     "leave": "Groep verlaten",
     "leave_confirm": "“{{ name }}” verlaten? Met de uitnodigingslink kun je opnieuw lid worden.",
-    "left": "Je hebt {{ name }} verlaten."
+    "left": "Je hebt {{ name }} verlaten.",
+    "leave_delete": "Verlaten en groep verwijderen",
+    "delete_confirm": "Je bent de laatste in “{{ name }}”. Als je vertrekt, wordt de groep voorgoed verwijderd, met de rivier, de banzuke, puzzels en stempels.",
+    "deleted": "De groep {{ name }} is verwijderd."
   },
   "daily": {
     "tabs": "Ranglijsten",

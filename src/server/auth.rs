@@ -641,7 +641,7 @@ pub async fn delete_account(
 ///
 /// That is name, password, sessions, stamps, rivals (their list, and their place in everyone
 /// else's), group memberships (groups they own pass on to the longest standing member, groups
-/// nobody else is in go, see `groups::ERASE`), the hanko seals they pressed and got, Dojo submissions, and of the daily results the
+/// nobody else but banned players is in go, see `groups::ERASE`), the hanko seals they pressed and got, Dojo submissions, and of the daily results the
 /// boards, move logs, devices and unranked attempts. What stays are the ranked times and
 /// penalties, under a user without a name (`deleted_at`), so the rankings of old days and the
 /// medals of everyone else don't change. A user without ranked times remains as an anonymous

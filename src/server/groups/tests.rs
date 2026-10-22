@@ -683,3 +683,229 @@ async fn signing_in_brings_the_newest_groups_that_fit() {
     assert_eq!(owner_of(&conn, owned).await, Some(bram));
     assert_eq!(owner_of(&conn, alone).await, None);
 }
+
+async fn ban(conn: &Connection, user: i64) {
+    conn.execute(
+        "UPDATE users SET banned_at = 1, ban_reason = 'a bot' WHERE id = ?1",
+        params![user],
+    )
+    .await
+    .unwrap();
+}
+
+/// How many rows of `group` each table of a group has: memberships, seals, river levels and
+/// crews.
+async fn rows_of(conn: &Connection, group: i64) -> [i64; 4] {
+    let mut counts = [0; 4];
+    for (count, table) in counts.iter_mut().zip([
+        "group_members",
+        "group_hanko",
+        "group_river",
+        "group_river_crew",
+    ]) {
+        *count = number(
+            conn,
+            &format!("SELECT COUNT(*) FROM {table} WHERE group_id = {group}"),
+        )
+        .await;
+    }
+    counts
+}
+
+/// A seal `banned` pressed on `other`'s daily, a completed level of the river and its crew.
+async fn seal_and_river(conn: &Connection, group: i64, banned: i64, other: i64) {
+    conn.execute(
+        "INSERT INTO group_hanko (group_id, day, target_id, giver_id, kind, created_at)
+         VALUES (?1, ?4, ?3, ?2, 'wow', 0)",
+        params![group, banned, other, TODAY],
+    )
+    .await
+    .unwrap();
+    conn.execute(
+        "INSERT INTO group_river (group_id, level, target, completed_at) VALUES (?1, 0, 40, 0)",
+        params![group],
+    )
+    .await
+    .unwrap();
+    for user in [banned, other] {
+        conn.execute(
+            "INSERT INTO group_river_crew (group_id, level, user_id) VALUES (?1, 0, ?2)",
+            params![group, user],
+        )
+        .await
+        .unwrap();
+    }
+}
+
+/// Banned players are hidden from the group and don't keep it alive: the last one who isn't
+/// banned takes it along, with everything in it, the banned players' memberships too.
+#[tokio::test]
+async fn the_last_member_who_isnt_banned_turns_off_the_light() {
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let chen = player(&conn, "chen").await;
+    let dana = player(&conn, "dana").await;
+    let id = group_of(&conn, aiko, &[chen, dana, bram]).await;
+    assert!(!page_of(&conn, id, aiko).await.unwrap().last_one());
+    // Another group of the banned two stays as it is
+    let other = group_of(&conn, chen, &[dana]).await;
+    seal_and_river(&conn, id, chen, dana).await;
+    seal_and_river(&conn, other, chen, dana).await;
+    ban(&conn, chen).await;
+    ban(&conn, dana).await;
+
+    leave(&conn, id, bram).await.unwrap();
+    assert_eq!(owner_of(&conn, id).await, Some(aiko));
+    let page = page(&conn, id, aiko, TODAY).await.unwrap();
+    assert_eq!(ids(&page.members), [aiko]);
+    // The page asks before deleting the group
+    assert!(page.last_one());
+    assert_eq!(mine(&conn, aiko, TODAY).await.unwrap()[0].members, 1);
+
+    // Aiko is the last one there: the group goes
+    leave(&conn, id, aiko).await.unwrap();
+    assert_eq!(owner_of(&conn, id).await, None);
+    assert_eq!(rows_of(&conn, id).await, [0; 4]);
+    assert_eq!(owner_of(&conn, other).await, Some(chen));
+    assert_eq!(rows_of(&conn, other).await, [2, 1, 1, 2]);
+    // Lifting the ban brings nothing back
+    conn.execute("UPDATE users SET banned_at = NULL", ())
+        .await
+        .unwrap();
+    assert_eq!(groups_of(&conn, chen).await.unwrap(), 1);
+    assert_eq!(
+        error(page_of(&conn, id, chen).await),
+        ApiError::GroupNotFound
+    );
+}
+
+async fn page_of(conn: &Connection, group: i64, user: i64) -> Result<GroupPage, ServerFnError> {
+    page(conn, group, user, TODAY).await
+}
+
+/// The owner removing the last other member who isn't banned leaves the group to the owner.
+#[tokio::test]
+async fn removing_the_last_other_member_keeps_the_group() {
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let chen = player(&conn, "chen").await;
+    let id = group_of(&conn, aiko, &[chen, bram]).await;
+    ban(&conn, chen).await;
+    remove(&conn, id, aiko, bram).await.unwrap();
+    assert_eq!(owner_of(&conn, id).await, Some(aiko));
+    assert_eq!(rows_of(&conn, id).await[0], 2);
+    // Removing oneself is leaving: the last one there
+    remove(&conn, id, aiko, aiko).await.unwrap();
+    assert_eq!(rows_of(&conn, id).await, [0; 4]);
+}
+
+/// A group never passes to a banned player, and one a banned player owns passes on with the next
+/// member who goes.
+#[tokio::test]
+async fn a_group_never_passes_to_a_banned_member() {
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let chen = player(&conn, "chen").await;
+    let dana = player(&conn, "dana").await;
+    let id = group_of(&conn, aiko, &[chen, bram, dana]).await;
+    ban(&conn, chen).await;
+
+    // Chen joined before bram, but is banned
+    leave(&conn, id, aiko).await.unwrap();
+    assert_eq!(owner_of(&conn, id).await, Some(bram));
+    assert!(page_of(&conn, id, dana).await.unwrap().members[0].owner);
+
+    // Bram is banned now: the next one who goes passes the group on
+    ban(&conn, bram).await;
+    let erin = player(&conn, "erin").await;
+    let fumi = player(&conn, "fumi").await;
+    let code = invite(&conn, id).await;
+    for (i, member) in [erin, fumi].into_iter().enumerate() {
+        join(&conn, &code, member).await.unwrap();
+        // After the others of `group_of`, a few seconds apart
+        conn.execute(
+            "UPDATE group_members SET joined_at = joined_at + ?3 WHERE group_id = ?1 AND user_id = ?2",
+            params![id, member, 10_000 + i64::try_from(i).unwrap() * 1000],
+        )
+        .await
+        .unwrap();
+    }
+    assert_eq!(owner_of(&conn, id).await, Some(bram));
+    leave(&conn, id, fumi).await.unwrap();
+    assert_eq!(owner_of(&conn, id).await, Some(dana));
+    assert_eq!(
+        ids(&page_of(&conn, id, erin).await.unwrap().members),
+        [dana, erin]
+    );
+}
+
+/// Deleting an account and the guest cleanup go by the same rules: a group only banned players
+/// are left in goes, a group passes to the longest standing member who isn't banned, and one a
+/// banned player owns passes on too.
+#[tokio::test]
+async fn deleted_accounts_and_guests_leave_banned_members_behind() {
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let chen = player(&conn, "chen").await;
+    let guest = user(&conn, "Sleepy Tanuki 27", None).await;
+    let lonely = group_of(&conn, aiko, &[chen]).await;
+    let shared = group_of(&conn, aiko, &[chen, bram]).await;
+    let banned_owner = group_of(&conn, chen, &[aiko, bram]).await;
+    let guest_lonely = group_of(&conn, guest, &[chen]).await;
+    let guest_shared = group_of(&conn, guest, &[chen, bram]).await;
+    seal_and_river(&conn, lonely, chen, aiko).await;
+    seal_and_river(&conn, guest_lonely, chen, guest).await;
+    ban(&conn, chen).await;
+
+    erase(&conn, aiko).await.unwrap();
+    assert_eq!(rows_of(&conn, lonely).await, [0; 4]);
+    assert_eq!(owner_of(&conn, lonely).await, None);
+    assert_eq!(owner_of(&conn, shared).await, Some(bram));
+    assert_eq!(owner_of(&conn, banned_owner).await, Some(bram));
+    assert_eq!(rows_of(&conn, shared).await[0], 2);
+
+    assert_eq!(cleanup_guests(&conn).await.unwrap(), 1);
+    assert_eq!(rows_of(&conn, guest_lonely).await, [0; 4]);
+    assert_eq!(owner_of(&conn, guest_lonely).await, None);
+    assert_eq!(owner_of(&conn, guest_shared).await, Some(bram));
+    // Chen is in the groups that are left, bram owns all of them
+    assert_eq!(groups_of(&conn, chen).await.unwrap(), 3);
+    assert_eq!(
+        number(
+            &conn,
+            &format!("SELECT COUNT(*) FROM groups WHERE owner_id != {bram}")
+        )
+        .await,
+        0
+    );
+}
+
+/// The groups a guest leaves on signing in (no room for them) go by the same rules.
+#[tokio::test]
+async fn signing_in_leaves_banned_members_behind() {
+    let conn = db().await;
+    let guest = user(&conn, "Sleepy Tanuki 27", None).await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let chen = player(&conn, "chen").await;
+    for i in 0..MAX_GROUPS {
+        create(&conn, aiko, &format!("Aiko {i}")).await.unwrap();
+    }
+    let lonely = group_of(&conn, guest, &[chen]).await;
+    let shared = group_of(&conn, guest, &[chen, bram]).await;
+    seal_and_river(&conn, lonely, chen, guest).await;
+    ban(&conn, chen).await;
+
+    merge_guest(&conn, aiko, guest).await.unwrap();
+    assert_eq!(rows_of(&conn, lonely).await, [0; 4]);
+    assert_eq!(owner_of(&conn, lonely).await, None);
+    assert_eq!(owner_of(&conn, shared).await, Some(bram));
+    assert_eq!(
+        ids(&page_of(&conn, shared, bram).await.unwrap().members),
+        [bram]
+    );
+}

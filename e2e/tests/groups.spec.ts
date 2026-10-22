@@ -149,3 +149,34 @@ test('strangers see no group, and a broken link says so', async ({ page }) => {
   await expect(page.getByRole('heading', { name: `Join “${SEEDED_GROUP.name}”` })).toBeVisible();
   await expect(page.locator('svg g.nakama-island')).toHaveCount(SEEDED_GROUP.members.length);
 });
+
+test('the last one to leave deletes the group, and is told so first', async ({ page }) => {
+  await visit(page, '/groups');
+  await page.getByLabel('Group name').fill('Solo Bridges');
+  await page.getByRole('button', { name: 'Create the group' }).click();
+  await page.getByTestId('group-ready').getByRole('link', { name: /Open the group/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Solo Bridges' })).toBeVisible();
+  await hydrated(page);
+  await expect(page.getByRole('button', { name: 'Leave the group' })).toHaveCount(0);
+
+  // The question says what goes; saying no keeps everything
+  const questions: string[] = [];
+  let accept = false;
+  page.on('dialog', (d) => {
+    questions.push(d.message());
+    void (accept ? d.accept() : d.dismiss());
+  });
+  const leave = page.getByRole('button', { name: 'Leave and delete the group' });
+  await leave.click();
+  await expect.poll(() => questions.length).toBe(1);
+  expect(questions[0]).toContain('You’re the last one in “Solo Bridges”');
+  expect(questions[0]).toContain('deletes the group for good');
+  await expect(page).toHaveURL(/\/groups\/\d+$/);
+
+  accept = true;
+  await leave.click();
+  await expect(page).toHaveURL(/\/groups$/);
+  await expect(page.getByText('The group Solo Bridges is deleted.')).toBeVisible();
+  await expect(page.locator('a[data-group]')).toHaveCount(0);
+  await expect(page.getByText('No groups yet.', { exact: false })).toBeVisible();
+});

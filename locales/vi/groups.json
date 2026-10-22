@@ -88,7 +88,10 @@
     "removed": "{{ name }} không còn trong nhóm nữa.",
     "leave": "Rời nhóm",
     "leave_confirm": "Rời “{{ name }}”? Bạn có thể tham gia lại bằng liên kết mời.",
-    "left": "Bạn đã rời {{ name }}."
+    "left": "Bạn đã rời {{ name }}.",
+    "leave_delete": "Rời và xóa nhóm",
+    "delete_confirm": "Bạn là người cuối cùng trong “{{ name }}”. Rời đi sẽ xóa vĩnh viễn nhóm, cùng dòng sông, banzuke, câu đố và con dấu.",
+    "deleted": "Đã xóa nhóm {{ name }}."
   },
   "daily": {
     "tabs": "Xếp hạng",

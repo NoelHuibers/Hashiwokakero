@@ -88,7 +88,10 @@
     "removed": "{{ name }} ne fait plus partie du groupe.",
     "leave": "Quitter le groupe",
     "leave_confirm": "Quitter « {{ name }} » ? Tu pourras revenir avec le lien d’invitation.",
-    "left": "Tu as quitté {{ name }}."
+    "left": "Tu as quitté {{ name }}.",
+    "leave_delete": "Quitter et supprimer le groupe",
+    "delete_confirm": "Tu es la dernière personne dans « {{ name }} ». En partant, tu supprimes le groupe pour de bon, avec sa rivière, son banzuke, ses puzzles et ses sceaux.",
+    "deleted": "Le groupe {{ name }} a été supprimé."
   },
   "daily": {
     "tabs": "Classements",

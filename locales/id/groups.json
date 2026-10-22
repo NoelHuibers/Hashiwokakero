@@ -88,7 +88,10 @@
     "removed": "{{ name }} sudah tidak ada di grup.",
     "leave": "Keluar dari grup",
     "leave_confirm": "Keluar dari “{{ name }}”? Kamu bisa bergabung lagi lewat tautan undangan.",
-    "left": "Kamu sudah keluar dari {{ name }}."
+    "left": "Kamu sudah keluar dari {{ name }}.",
+    "leave_delete": "Keluar dan hapus grup",
+    "delete_confirm": "Kamu orang terakhir di “{{ name }}”. Jika keluar, grup ini terhapus selamanya, beserta sungai, banzuke, teka-teki, dan stempelnya.",
+    "deleted": "Grup {{ name }} sudah dihapus."
   },
   "daily": {
     "tabs": "Peringkat",
