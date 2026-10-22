@@ -49,7 +49,8 @@
     "copied": "Resultado copiado para a área de transferência.",
     "copy_failed": "Não foi possível copiar para a área de transferência.",
     "reload": "Recarregar",
-    "update": "Atualizar"
+    "update": "Atualizar",
+    "offline": "Você está offline. O treino continua funcionando."
   },
   "errors": {
     "unknown": "Algo deu errado: {{ detail }}",

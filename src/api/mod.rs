@@ -1,5 +1,5 @@
-//! Server functions. Solving and generating run on the server, in the backend crate; users and
-//! daily results live in the database (see `server`).
+//! Server functions. Solving and generating run on the server, in the backend crate (in the app
+//! on the phone, see `practice`); users and daily results live in the database (see `server`).
 
 // In the browser build `#[server]` replaces each body with a request to the server, and the
 // trait impl the macro generates keeps an `async fn` that has nothing to await
@@ -22,6 +22,9 @@ mod dojo;
 mod groups;
 mod hanko;
 mod kadai;
+#[cfg(feature = "csr")]
+mod native;
+pub mod practice;
 mod puzzle;
 mod replay;
 mod rivals;

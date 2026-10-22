@@ -49,7 +49,8 @@
     "copied": "결과를 클립보드에 복사했어요.",
     "copy_failed": "클립보드에 복사하지 못했어요.",
     "reload": "새로 고침",
-    "update": "업데이트"
+    "update": "업데이트",
+    "offline": "오프라인 상태예요. 연습은 그대로 할 수 있어요."
   },
   "errors": {
     "unknown": "문제가 생겼어요: {{ detail }}",

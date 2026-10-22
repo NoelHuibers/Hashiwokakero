@@ -84,7 +84,7 @@ mod tests {
         owner.with(|| {
             crate::app::provide_server_i18n();
             use_i18n().set_locale(Locale::ja);
-            let toasts = Toasts(RwSignal::new(vec![]));
+            let toasts = Toasts::new();
             provide_context(toasts);
             let empty = view! { <Toaster /> }.to_html();
             let host = empty.split('>').next().unwrap();

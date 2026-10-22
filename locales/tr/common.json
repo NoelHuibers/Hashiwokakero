@@ -49,7 +49,8 @@
     "copied": "Sonuç panoya kopyalandı.",
     "copy_failed": "Panoya kopyalanamadı.",
     "reload": "Yenile",
-    "update": "Güncelle"
+    "update": "Güncelle",
+    "offline": "Çevrimdışısın. Pratik yine de çalışıyor."
   },
   "errors": {
     "unknown": "Bir şeyler ters gitti: {{ detail }}",

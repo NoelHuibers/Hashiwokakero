@@ -49,7 +49,8 @@
     "copied": "Resultado copiado al portapapeles.",
     "copy_failed": "No se pudo copiar al portapapeles.",
     "reload": "Recargar",
-    "update": "Actualizar"
+    "update": "Actualizar",
+    "offline": "Estás sin conexión. La práctica sigue funcionando."
   },
   "errors": {
     "unknown": "Algo salió mal: {{ detail }}",

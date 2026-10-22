@@ -112,7 +112,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 | ✓ #122 |
 | 7 | CSR shell (`app/`, Trunk, `index.html`, Tailwind) built in CI | 6 | |
 | 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 | |
-| 9 | Offline practice: native generator and solver through Tauri commands | 8 | |
+| 9 | Offline practice: native generator and solver through Tauri commands | 8 | ✓ #125 |
 | 10 | Android polish: back button, safe areas, share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 | |
 | 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | |
 | 12 | First release: closed test, store listing, production | 9, 10, 11 | |

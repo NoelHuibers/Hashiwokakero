@@ -55,7 +55,8 @@ pub fn provide_state() {
     provide_context(hanko);
     provide_context(editor);
     provide_context(settings);
-    provide_context(Toasts(RwSignal::new(vec![])));
+    let toasts = Toasts::new();
+    provide_context(toasts);
 
     // Everything below only runs in the browser
     Effect::new(move |first: Option<()>| {
@@ -82,9 +83,14 @@ pub fn provide_state() {
         // Browsers allow audio only after a gesture
         let unlock = window_event_listener(leptos::ev::pointerdown, |_| crate::audio::unlock());
         let unlock_keys = window_event_listener(leptos::ev::keydown, |_| crate::audio::unlock());
+        // The app's offline notice, again once the network is back
+        #[cfg(feature = "csr")]
+        let online = window_event_listener(leptos::ev::online, move |_| toasts.back_online());
         on_cleanup(move || {
             unlock.remove();
             unlock_keys.remove();
+            #[cfg(feature = "csr")]
+            online.remove();
         });
         auth.refresh();
     });
@@ -177,4 +183,11 @@ pub fn provide_state() {
             Duration::from_secs(1),
         );
     });
+}
+
+/// The daily this device saved (`DAILY_KEY`): its puzzle, its day (`Source::Daily`) and how far
+/// it got. For the app's daily lock, see `api::practice`.
+#[cfg(feature = "csr")]
+pub fn saved_daily() -> Option<(Puzzle, Source, Status)> {
+    game::saved(DAILY_KEY)
 }

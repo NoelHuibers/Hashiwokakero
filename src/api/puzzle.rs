@@ -9,10 +9,6 @@ use super::HashiClient;
 #[cfg(feature = "ssr")]
 use crate::server::{auth, daily, db, run_blocking};
 
-/// Upper bound for a single solver run, whatever the client asks for.
-#[cfg(feature = "ssr")]
-const MAX_TIMEOUT_MS: u32 = 20_000;
-
 /// Refuses to solve today's daily for anyone who hasn't finished it: the leaderboard is about
 /// solving it yourself. The same for an open puzzle of one of the player's groups.
 #[cfg(feature = "ssr")]
@@ -28,12 +24,10 @@ async fn not_the_daily(puzzle: &Puzzle) -> Result<(), ServerFnError> {
     Ok(())
 }
 
-/// Deserializing skips `Puzzle::new`, which keeps the islands in reading order.
+/// The puzzle in reading order, see `backend::api::player_puzzle`.
 #[cfg(feature = "ssr")]
 fn normalized(puzzle: Puzzle) -> Result<Puzzle, ServerFnError> {
-    let puzzle = Puzzle::new(puzzle.width, puzzle.height, puzzle.islands);
-    backend::api::validate(&puzzle).map_err(|_| crate::model::ApiError::WrongPuzzle.fail())?;
-    Ok(puzzle)
+    backend::api::player_puzzle(puzzle).map_err(|_| crate::model::ApiError::WrongPuzzle.fail())
 }
 
 /// Generates a new puzzle with a unique solution.
@@ -52,10 +46,8 @@ pub async fn solve_puzzle(
 ) -> Result<SolveReport, ServerFnError> {
     let puzzle = normalized(puzzle)?;
     not_the_daily(&puzzle).await?;
-    let config = SolverConfig {
-        timeout_ms: config.timeout_ms.clamp(100, MAX_TIMEOUT_MS),
-        ..config
-    };
+    // The same limits as the app's offline practice (app/src-tauri/offline)
+    let config = backend::api::player_config(config);
     run_blocking(move || {
         if unique {
             backend::api::solve_unique(&puzzle, &config)

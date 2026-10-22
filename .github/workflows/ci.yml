@@ -545,12 +545,18 @@ jobs:
         with:
           name: app-web
           path: target/app-dist
-      # The crate is outside the workspace, the lints of "Test & lint" don't see it
+      # The crates are outside the workspace, the lints of "Test & lint" don't see them
       - name: Formatting and Clippy
         working-directory: app/src-tauri
         run: |
-          cargo fmt --check
-          cargo clippy --locked --target aarch64-linux-android -- -D warnings
+          cargo fmt --all --check
+          cargo clippy --locked --workspace --target aarch64-linux-android -- -D warnings
+          cargo clippy --locked -p hashi_offline --all-targets -- -D warnings
+      # The offline practice (offline/, without Tauri): on the runner itself, which has none of
+      # the system libraries Tauri needs on Linux
+      - name: Test the offline practice
+        working-directory: app/src-tauri
+        run: cargo test --locked -p hashi_offline
       # Without beforeBuildCommand: the bundle is already there, from the artifact
       - name: Build
         working-directory: app/src-tauri

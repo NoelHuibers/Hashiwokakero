@@ -223,14 +223,15 @@ pub fn is_outdated_error(
         )
 }
 
-#[cfg(feature = "ssr")]
+// On the server, and in the app, whose offline practice answers like the server
+#[cfg(any(feature = "ssr", feature = "csr"))]
 impl From<ApiError> for leptos::prelude::ServerFnError {
     fn from(e: ApiError) -> Self {
         Self::new(format!("E:{}", e.code()))
     }
 }
 
-#[cfg(feature = "ssr")]
+#[cfg(any(feature = "ssr", feature = "csr"))]
 impl ApiError {
     /// The error as a server function error, where `.into()` can't infer the type.
     pub fn fail(self) -> leptos::prelude::ServerFnError {

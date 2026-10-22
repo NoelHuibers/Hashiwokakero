@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use leptos::prelude::*;
 
-use crate::i18n::Locale;
+use crate::i18n::{Locale, td_string};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ToastKind {
@@ -46,9 +46,29 @@ impl std::fmt::Debug for Toast {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct Toasts(pub RwSignal<Vec<Toast>>);
+pub struct Toasts(
+    pub RwSignal<Vec<Toast>>,
+    /// The app said it's offline, which it says once until the network is back.
+    StoredValue<bool>,
+);
+
+impl Default for Toasts {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl Toasts {
+    pub fn new() -> Self {
+        Self(RwSignal::new(Vec::new()), StoredValue::new(false))
+    }
+
+    /// The network is back (the window's `online` event): the next call that can't reach the
+    /// server says so again.
+    pub fn back_online(&self) {
+        self.1.set_value(false);
+    }
+
     pub fn push(&self, kind: ToastKind, text: impl Fn(Locale) -> String + Send + Sync + 'static) {
         self.show(kind, None, std::sync::Arc::new(text));
     }
@@ -57,7 +77,21 @@ impl Toasts {
     /// version of the site (`api::is_outdated`: the server didn't know the function, or runs
     /// another build that didn't understand the call), the toast offers a reload and stays a
     /// while; in an outdated app (`api::needs_update`) an update.
+    ///
+    /// In the app, a call that didn't reach the server shows a calm notice instead, once while
+    /// offline: without a network every call fails, and practice works on.
     pub fn push_error(&self, error: ServerFnError) {
+        match shown(cfg!(feature = "csr"), &error, self.1.get_value()) {
+            Shown::Error => {}
+            Shown::Offline => {
+                self.1.set_value(true);
+                self.push(ToastKind::Info, |l| {
+                    td_string!(l, common.toast.offline).to_string()
+                });
+                return;
+            }
+            Shown::Nothing => return,
+        }
         let action = error_action(
             crate::api::needs_update(&error),
             crate::api::is_outdated(&error),
@@ -76,6 +110,29 @@ impl Toasts {
             move || list.update(|l| l.retain(|t| t.id != id)),
             Duration::from_millis(shown),
         );
+    }
+}
+
+/// What a failed call shows.
+#[derive(Debug, PartialEq, Eq)]
+enum Shown {
+    Error,
+    /// The app's notice that it's offline.
+    Offline,
+    /// Nothing more: the app said it's offline already.
+    Nothing,
+}
+
+/// What the failed call shows in the app (`app`) or on the website, with the offline notice
+/// shown already or not (`noted`). On the website an error, as always: a page there doesn't
+/// work without the server either.
+fn shown(app: bool, error: &ServerFnError, noted: bool) -> Shown {
+    if !(app && matches!(error, ServerFnError::Request(_))) {
+        Shown::Error
+    } else if noted {
+        Shown::Nothing
+    } else {
+        Shown::Offline
     }
 }
 
@@ -190,6 +247,21 @@ mod tests {
             add(&mut list, ToastKind::Error, None, text("other")),
             Some(1)
         );
+    }
+
+    /// Without a network every call of the app fails at once (the ranks page makes three): one
+    /// notice that it's offline, until the network is back. The server's own errors still show,
+    /// and the website shows every error as before.
+    #[test]
+    fn the_app_says_once_that_it_is_offline() {
+        let offline = ServerFnError::Request("TypeError: Failed to fetch".into());
+        assert_eq!(shown(true, &offline, false), Shown::Offline);
+        assert_eq!(shown(true, &offline, true), Shown::Nothing);
+        let locked = ServerFnError::ServerError("E:daily_locked".into());
+        assert_eq!(shown(true, &locked, false), Shown::Error);
+        assert_eq!(shown(true, &locked, true), Shown::Error);
+        assert_eq!(shown(false, &offline, false), Shown::Error);
+        assert_eq!(shown(false, &offline, true), Shown::Error);
     }
 
     #[test]

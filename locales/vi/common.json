@@ -49,7 +49,8 @@
     "copied": "Đã sao chép kết quả vào bộ nhớ tạm.",
     "copy_failed": "Không sao chép được vào bộ nhớ tạm.",
     "reload": "Tải lại",
-    "update": "Cập nhật"
+    "update": "Cập nhật",
+    "offline": "Bạn đang ngoại tuyến. Luyện tập vẫn hoạt động."
   },
   "errors": {
     "unknown": "Đã xảy ra lỗi: {{ detail }}",

@@ -11,7 +11,7 @@ use leptos::task::spawn_local;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
-use crate::api::generate_puzzle;
+use crate::api::practice;
 use crate::components::board::{BoardMode, BoardView, CellAction};
 use crate::components::layout::use_localized;
 use crate::components::solver_panel::{PanelButton, SolverPanel};
@@ -124,7 +124,7 @@ pub fn CreatePage() -> impl IntoView {
         let epoch = editor.epoch.get_untracked();
         generating.set(true);
         spawn_local(async move {
-            let result = generate_puzzle(params).await;
+            let result = practice::generate(params).await;
             if editor.epoch.try_get_untracked() != Some(epoch) {
                 generating.try_set(false);
                 return;

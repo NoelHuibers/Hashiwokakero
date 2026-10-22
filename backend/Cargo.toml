@@ -7,13 +7,27 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.6.7", features = ["cargo"] }
+clap = { version = "4.6.7", features = ["cargo"], optional = true }
 itertools = "0.15.0"
 splr = "0.19.0"
 sat_solver = { path = "../sat_solver", default-features = false }
 rand = "0.10.3"
 common = { path = "../common" }
 
+
+[features]
+default = ["cli"]
+# The command line, src/main.rs. The server and the app only use the library.
+cli = ["dep:clap"]
+
+[[bin]]
+name = "backend"
+path = "src/main.rs"
+required-features = ["cli"]
+
+[[test]]
+name = "test_cli"
+required-features = ["cli"]
 
 [dev-dependencies]
 criterion = "0.8.2"

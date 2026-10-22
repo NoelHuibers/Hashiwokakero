@@ -8,9 +8,10 @@ publish = false
 # The mobile app: Tauri 2 around the web bundle of ../ (target/app-dist), see ../README.md.
 # A workspace of its own with its own Cargo.lock, outside the repository's workspace, so the
 # website's builds and CI never compile Tauri or need its system libraries. It is still built
-# inside the repository, where .cargo/config.toml applies (the server functions' paths, once
-# this crate calls `backend` or `hashi`).
+# inside the repository, where .cargo/config.toml applies. Its other member, offline/, is the
+# offline practice without Tauri, testable on any machine.
 [workspace]
+members = ["offline"]
 
 [lib]
 # Android loads the app as a shared library (cdylib), iOS links a static one (staticlib); the
@@ -24,9 +25,15 @@ tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
 tauri = { version = "2.12.5", features = [] }
+# The offline practice (offline/): generator and solvers natively, in the app's library
+hashi_offline = { path = "offline" }
 
-# The workspace's lints (../../Cargo.toml), repeated: a crate outside it can't inherit them
-[lints.rust]
+[lints]
+workspace = true
+
+# The repository's lints (../../Cargo.toml), repeated: a crate outside its workspace can't
+# inherit them
+[workspace.lints.rust]
 unsafe_code = "forbid"
 rust_2018_idioms = { level = "warn", priority = -1 }
 unused_qualifications = "warn"
@@ -37,7 +44,7 @@ missing_debug_implementations = "warn"
 trivial_casts = "warn"
 trivial_numeric_casts = "warn"
 
-[lints.clippy]
+[workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
@@ -48,8 +55,22 @@ missing_const_for_fn = "allow"
 option_if_let_else = "allow"
 redundant_pub_crate = "allow"
 
+# As in the repository's Cargo.toml: the generator and the solvers optimized in debug builds too,
+# and splr without its debug assertions, which some formulas trip (backend::sat then falls back to
+# another solver, which finds other models). With them, the debug APK and the tests of offline/
+# would generate other puzzles than the server for some seeds.
+[profile.dev.package.backend]
+opt-level = 3
+
+[profile.dev.package.sat_solver]
+opt-level = 3
+
+[profile.dev.package.splr]
+opt-level = 3
+debug-assertions = false
+
 # The release build (the store's App Bundle): one optimized library without symbols. Speed over
-# size (opt-level 3), the native solver of the offline practice will run in it.
+# size (opt-level 3), the generator and the solvers of the offline practice run in it.
 [profile.release]
 lto = true
 codegen-units = 1

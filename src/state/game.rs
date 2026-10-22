@@ -284,6 +284,13 @@ impl Game {
     }
 }
 
+/// The puzzle of the game saved under `key`, where it is from and how far it got, without
+/// restoring it.
+#[cfg(feature = "csr")]
+pub(super) fn saved(key: &str) -> Option<(Puzzle, Source, Status)> {
+    load::<SavedGame>(key).map(|s| (s.puzzle, s.source, s.status))
+}
+
 impl Game {
     /// Restores the saved bridges if they belong to `puzzle` (daily progress of today).
     pub fn restore_progress(&self, puzzle: &Puzzle) -> bool {
