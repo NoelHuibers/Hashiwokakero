@@ -127,6 +127,15 @@ error RivalSelf rival_self
 error TooManyRivals too_many_rivals
 error NoSuchPlayer no_such_player
 error HankoNotAllowed hanko_not_allowed
+error PuzzleTooBig puzzle_too_big
+error PuzzleUnsolvable puzzle_unsolvable
+error PuzzleNotUnique puzzle_not_unique
+error TooManyPuzzles too_many_puzzles
+error PuzzleTitleInvalid puzzle_title_invalid
+error PuzzleClosed puzzle_closed
+error PuzzleOwn puzzle_own
+error PuzzleLocked puzzle_locked
+error PuzzleAuthorOnly puzzle_author_only
 error AppOutdated app_outdated
 hanko Fast fast
 hanko Wow wow

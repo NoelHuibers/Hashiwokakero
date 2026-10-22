@@ -1,0 +1,125 @@
+{
+  "title": "Câu đố nhóm",
+  "untitled": "Câu đố của {{ name }}",
+  "untitled_former": "Câu đố của một thành viên",
+  "by": "do {{ name }} ra đề",
+  "by_former": "do một cựu thành viên ra đề",
+  "solved_of": "{{ solved }} trên {{ players }} người đã giải",
+  "left": {
+    "days": "còn {{ count }} ngày",
+    "hours": "còn {{ count }} giờ",
+    "minutes": "còn {{ count }} phút",
+    "closed": "Đã đóng"
+  },
+  "card": {
+    "text": "Câu đố do các thành viên tự làm, mở trong một tuần. Giải để lên bảng xếp hạng nhóm, hoặc tự làm một câu đố.",
+    "new": "Câu đố mới",
+    "none": "Hiện chưa có câu đố nào đang mở. Hãy làm một câu trong xưởng và thách cả nhóm!",
+    "make": "Làm câu đố",
+    "full": "Bạn đã có {{ max }} câu đố đang mở ở đây, mức tối đa cho phép. Hãy làm câu tiếp theo khi một câu đã đóng.",
+    "closed": "Câu đố đã đóng",
+    "yours": "của bạn",
+    "play": "Chơi",
+    "continue_playing": "Chơi tiếp",
+    "gave_up": "bỏ cuộc"
+  },
+  "kudos": {
+    "title": "Câu đố “{{ name }}” của bạn đã đóng. Đây là thành tích của cả nhóm:",
+    "claps": "{{ count }} người giải được vỗ tay tán thưởng bạn!",
+    "none": "Lần này chưa ai giải được. Đúng là một câu đố hóc búa!",
+    "thanks": "Cảm ơn!",
+    "see": "Xem bảng xếp hạng cuối cùng"
+  },
+  "page": {
+    "title": "Câu đố nhóm",
+    "missing": "Câu đố này không có ở đây.",
+    "missing_hint": "Có thể nó đã bị rút lại, hoặc thuộc về một nhóm mà bạn không tham gia.",
+    "give_up": "Bỏ cuộc",
+    "give_up_confirm": "Bỏ cuộc và xem lời giải? Bạn sẽ không có tên trên bảng xếp hạng nhóm của câu đố này.",
+    "submit_failed": "Lời giải của bạn chưa đến được máy chủ.",
+    "submit_retry": "Gửi lại",
+    "closed_text": "Câu đố này đã đóng: đây là lời giải, cùng bảng xếp hạng cuối cùng ở bên cạnh."
+  },
+  "cover": {
+    "lead": "Một câu đố {{ count }} đảo dành cho {{ group }}. Đồng hồ bắt đầu chạy khi bạn bấm Bắt đầu, và thời gian của bạn được xếp hạng trong nhóm.",
+    "unranked": "không xếp hạng",
+    "start": "Bắt đầu",
+    "preparing": "Đang chuẩn bị…",
+    "once": "Chỉ một lượt duy nhất: đồng hồ vẫn chạy nếu bạn rời đi."
+  },
+  "ranking": {
+    "title": "Xếp hạng nhóm",
+    "open": "Mọi người trừ tác giả, theo thời gian kể cả phạt.",
+    "final_board": "Bảng xếp hạng cuối cùng: câu đố này đã đóng.",
+    "spoiler": "Đã xong: {{ done }} trên {{ total }}. Thời gian sẽ hiện ra khi chính bạn đã giải xong.",
+    "alone": "Nhóm chưa có ai khác.",
+    "missed": "chưa xong"
+  },
+  "result": {
+    "rank": "Hạng {{ rank }} trên {{ total }} trong {{ group }}",
+    "unranked": "Đã giải, nhưng không có trên bảng xếp hạng nhóm.",
+    "revealed_title": "Đã hiện lời giải",
+    "revealed_text": "Lần này không xếp hạng. Lời giải đang ở trên bàn, hãy xem kỹ nhé!",
+    "back": "Quay lại {{ group }}",
+    "practice": "Chơi lại để luyện tập"
+  },
+  "author": {
+    "title": "Câu đố của bạn",
+    "open": "Bạn là người làm câu đố này nên không thể chơi. Đây là tình hình của mọi người.",
+    "closed": "Câu đố đã đóng. Đây là thành tích của mọi người.",
+    "withdraw": "Rút lại câu đố",
+    "withdraw_confirm": "Rút lại câu đố này? Nó sẽ biến mất khỏi nhóm, cùng với thời gian của mọi người.",
+    "withdrawn": "Đã rút lại câu đố."
+  },
+  "stats": {
+    "solved": "Đã giải",
+    "fastest": "Nhanh nhất",
+    "median": "Trung vị",
+    "playing": "Đang chơi",
+    "gave_up": "Bỏ cuộc",
+    "hardest": "Cây cầu được đánh dấu là chỗ cần trợ giúp nhiều nhất. Gợi ý đã sửa nó: {{ hints }} · lần kiểm tra phát hiện nó sai: {{ wrong }}.",
+    "no_help": "Không ai cần gợi ý hay đặt sai cầu. Gọn gàng!",
+    "hints": "Gợi ý",
+    "checks": "Kiểm tra"
+  },
+  "challenge": {
+    "title": "Thách đấu nhóm",
+    "text": "Đăng câu đố của bạn lên một nhóm của bạn: mọi người trong nhóm có một tuần để giải, được tính giờ và xếp hạng như câu đố mỗi ngày.",
+    "no_group": "Bạn chưa ở trong nhóm nào.",
+    "to_groups": "Tạo hoặc tham gia nhóm",
+    "empty": "Hãy đặt vài hòn đảo trước.",
+    "too_big": "Câu đố nhóm tối đa {{ max }}×{{ max }} ô.",
+    "unchecked": "Trước tiên hãy để bộ giải chứng minh câu đố có đúng một lời giải.",
+    "check": "Kiểm tra tính duy nhất",
+    "not_unique": "Câu đố này có nhiều hơn một lời giải. Hãy sửa cho đến khi bộ giải chỉ tìm thấy một.",
+    "unsolvable": "Câu đố này không có lời giải. Hãy sửa cho đến khi bộ giải tìm thấy một.",
+    "ready": "Đúng một lời giải: sẵn sàng đăng!",
+    "group": "Nhóm",
+    "name": "Tiêu đề (không bắt buộc)",
+    "placeholder": "vd. Xoắn ốc",
+    "post": "Thách đấu nhóm",
+    "posting": "Đang kiểm tra và đăng…",
+    "posted": "Đã đăng lên {{ group }}!",
+    "rules": "Mở trong 7 ngày, tối đa 3 câu đố đang mở mỗi nhóm. Bạn không thể chơi câu đố của chính mình, nhưng sẽ thấy mọi người làm thế nào."
+  },
+  "errors": {
+    "too_big": "Câu đố nhóm tối đa 20×20 ô.",
+    "unsolvable": "Câu đố này không có lời giải.",
+    "not_unique": "Câu đố này có nhiều hơn một lời giải, hoặc bộ giải không chứng minh được nó chỉ có một.",
+    "too_many": "Bạn đã có 3 câu đố đang mở trong nhóm này. Hãy đợi đến khi một câu đóng lại.",
+    "title_invalid": "Tiêu đề tối đa 40 ký tự.",
+    "closed": "Câu đố này đã đóng hoặc đã bị rút lại.",
+    "own": "Đó là câu đố của chính bạn: bạn có thể theo dõi, nhưng không thể chơi.",
+    "locked": "Đó là câu đố đang mở của nhóm bạn: các bộ giải sẽ giúp bạn sau khi bạn tự hoàn thành nó.",
+    "author_only": "Chỉ tác giả câu đố mới làm được việc này."
+  },
+  "summary": {
+    "title": "Kết quả ra sao"
+  },
+  "replay": {
+    "back": "Quay lại câu đố",
+    "locked": "Các bản phát lại của câu đố này sẽ mở khi bạn đã giải xong hoặc bỏ cuộc.",
+    "empty": "Chưa có nước đi nào được ghi lại cho câu đố này.",
+    "stage": "Bàn cờ câu đố nhóm với các cây cầu của {{ names }}"
+  }
+}

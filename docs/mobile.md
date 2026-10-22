@@ -85,7 +85,7 @@ What the app and the server send each other, on top of the server functions' JSO
 | 1 | This plan | | ✓ #108 |
 | 2 | API contract: golden list of server function paths and request JSON; response enums tolerate unknown variants | | ✓ #111 |
 | 3 | Bearer sessions: `Authorization: Bearer hs1.<token>` accepted next to the cookie, replacement tokens in `x-hashi-session` for requests that opt in | | ✓ #113 |
-| 4 | `browser` and `csr` features, CSR entry point, CSR lint in CI | | |
+| 4 | `browser` and `csr` features, CSR entry point, CSR lint in CI | | ✓ #114 |
 | 5 | App version header, minimum version and `AppOutdated`; CORS for the app origins | 2 | ✓ #PR |
 | 6 | App client: configurable server URL, bearer token, version header, share links on hashi.rs, Dojo/admin links out | 3, 4, 5 | |
 | 7 | CSR shell (`app/`, Trunk, `index.html`, Tailwind) built in CI | 6 | |

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { ROOT } from './env';
-import { DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed';
+import { CLOSED_PUZZLE, DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed';
 
 const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 
@@ -27,6 +27,9 @@ const PARAMS: Record<string, Record<string, number | string>> = {
   // Yesterday has the seeded move logs
   '/groups/:id/replay/:day': { id: SEEDED_GROUP.id, day: replayDay },
   '/replay/:day': { day: replayDay },
+  // The closed one: everyone of the group sees it all
+  '/groups/:id/puzzles/:puzzle': { id: SEEDED_GROUP.id, puzzle: CLOSED_PUZZLE.id },
+  '/groups/:id/puzzles/:puzzle/replay': { id: SEEDED_GROUP.id, puzzle: CLOSED_PUZZLE.id },
 };
 
 /** Every page of the router, parameters filled in: `/`, `/practice`, `/dojo/1`, ... */

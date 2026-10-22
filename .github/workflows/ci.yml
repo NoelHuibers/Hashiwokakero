@@ -130,6 +130,9 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Clippy (website, browser)
         run: cargo clippy --locked -p hashi --lib --no-default-features --features hydrate --target wasm32-unknown-unknown -- -D warnings
+      # The client-side rendered build of the mobile app (docs/mobile.md)
+      - name: Clippy (app, browser)
+        run: cargo clippy --locked -p hashi --lib --no-default-features --features csr --target wasm32-unknown-unknown -- -D warnings
 
   # The unit, integration and HTTP tests (scripts/coverage.mjs), run once: instrumented for line
   # coverage, in debug, with the packages and features they always had. The script fails the job

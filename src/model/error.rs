@@ -55,13 +55,31 @@ pub enum ApiError {
     /// A hanko seal that can't be pressed (any more): on one's own result, on a result not
     /// finished, before finishing the daily oneself, or after its days.
     HankoNotAllowed,
+    /// A group puzzle wider or taller than `MAX_SIDE`.
+    PuzzleTooBig,
+    /// A group puzzle without a solution.
+    PuzzleUnsolvable,
+    /// A group puzzle with more than one solution, or one the solver couldn't prove unique.
+    PuzzleNotUnique,
+    /// Already `MAX_OPEN` open puzzles in the group.
+    TooManyPuzzles,
+    /// A puzzle title that is too long or has control characters.
+    PuzzleTitleInvalid,
+    /// A group puzzle that closed (or was withdrawn): it can't be played any more.
+    PuzzleClosed,
+    /// The author of a group puzzle can't play it.
+    PuzzleOwn,
+    /// Our solvers don't touch a group puzzle the player is still to finish.
+    PuzzleLocked,
+    /// Only a group puzzle's author can do that (withdraw it).
+    PuzzleAuthorOnly,
     /// The app is older than the oldest version the server still answers (see
     /// `server::apps`). Reloading doesn't help, only an update from the store.
     AppOutdated,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 34] = [
+    pub const ALL: [Self; 43] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -95,6 +113,15 @@ impl ApiError {
         Self::TooManyRivals,
         Self::NoSuchPlayer,
         Self::HankoNotAllowed,
+        Self::PuzzleTooBig,
+        Self::PuzzleUnsolvable,
+        Self::PuzzleNotUnique,
+        Self::TooManyPuzzles,
+        Self::PuzzleTitleInvalid,
+        Self::PuzzleClosed,
+        Self::PuzzleOwn,
+        Self::PuzzleLocked,
+        Self::PuzzleAuthorOnly,
         Self::AppOutdated,
     ];
 
@@ -133,6 +160,15 @@ impl ApiError {
             Self::TooManyRivals => "too_many_rivals",
             Self::NoSuchPlayer => "no_such_player",
             Self::HankoNotAllowed => "hanko_not_allowed",
+            Self::PuzzleTooBig => "puzzle_too_big",
+            Self::PuzzleUnsolvable => "puzzle_unsolvable",
+            Self::PuzzleNotUnique => "puzzle_not_unique",
+            Self::TooManyPuzzles => "too_many_puzzles",
+            Self::PuzzleTitleInvalid => "puzzle_title_invalid",
+            Self::PuzzleClosed => "puzzle_closed",
+            Self::PuzzleOwn => "puzzle_own",
+            Self::PuzzleLocked => "puzzle_locked",
+            Self::PuzzleAuthorOnly => "puzzle_author_only",
             Self::AppOutdated => "app_outdated",
         }
     }

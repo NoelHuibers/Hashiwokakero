@@ -4,7 +4,7 @@
 // In the browser build `#[server]` replaces each body with a request to the server, and the
 // trait impl the macro generates keeps an `async fn` that has nothing to await
 #![cfg_attr(
-    feature = "hydrate",
+    feature = "browser",
     expect(
         clippy::unused_async_trait_impl,
         reason = "`#[server]` generates an `async fn` without `.await` for the client side"
@@ -20,6 +20,7 @@ mod daily;
 mod dojo;
 mod groups;
 mod hanko;
+mod kadai;
 mod puzzle;
 mod replay;
 mod rivals;
@@ -36,6 +37,7 @@ pub use daily::*;
 pub use dojo::*;
 pub use groups::*;
 pub use hanko::*;
+pub use kadai::*;
 pub use puzzle::*;
 pub use replay::*;
 pub use rivals::*;
@@ -89,6 +91,7 @@ mod tests {
             include_str!("dojo.rs"),
             include_str!("groups.rs"),
             include_str!("hanko.rs"),
+            include_str!("kadai.rs"),
             include_str!("puzzle.rs"),
             include_str!("replay.rs"),
             include_str!("rivals.rs"),

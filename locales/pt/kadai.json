@@ -1,0 +1,125 @@
+{
+  "title": "Puzzles do grupo",
+  "untitled": "O puzzle de {{ name }}",
+  "untitled_former": "O puzzle de um membro",
+  "by": "por {{ name }}",
+  "by_former": "por um ex-membro",
+  "solved_of": "Resolveram: {{ solved }} de {{ players }}",
+  "left": {
+    "days": "fecha em {{ count }} d",
+    "hours": "fecha em {{ count }} h",
+    "minutes": "fecha em {{ count }} min",
+    "closed": "Encerrado"
+  },
+  "card": {
+    "text": "Puzzles criados pelos membros, abertos por uma semana. Resolva-os para o ranking do grupo ou crie um você mesmo.",
+    "new": "Novo puzzle",
+    "none": "Nenhum puzzle aberto agora. Monte um na oficina e desafie o grupo!",
+    "make": "Criar um puzzle",
+    "full": "Você já tem {{ max }} puzzles abertos aqui, o máximo permitido. Crie o próximo quando um deles encerrar.",
+    "closed": "Puzzles encerrados",
+    "yours": "seu",
+    "play": "Jogar",
+    "continue_playing": "Continuar",
+    "gave_up": "desistiu"
+  },
+  "kudos": {
+    "title": "Seu puzzle “{{ name }}” foi encerrado. Veja como o grupo se saiu:",
+    "claps": "Palmas! Resolveram: {{ count }}",
+    "none": "Ninguém resolveu desta vez. Esse era difícil!",
+    "thanks": "Valeu!",
+    "see": "Ver o tabuleiro final"
+  },
+  "page": {
+    "title": "Puzzle do grupo",
+    "missing": "Este puzzle não está aqui.",
+    "missing_hint": "Talvez tenha sido retirado, ou pertence a um grupo do qual você não é membro.",
+    "give_up": "Desistir",
+    "give_up_confirm": "Desistir e ver a solução? Você não entrará no ranking do grupo para este puzzle.",
+    "submit_failed": "Sua solução não chegou ao servidor.",
+    "submit_retry": "Enviar de novo",
+    "closed_text": "Este puzzle foi encerrado: aqui está a solução e, ao lado, o ranking final."
+  },
+  "cover": {
+    "lead": "Um puzzle para {{ group }}, com {{ count }} ilhas. O relógio começa quando você aperta Começar, e seu tempo entra no ranking do grupo.",
+    "unranked": "fora do ranking",
+    "start": "Começar",
+    "preparing": "Preparando…",
+    "once": "Só uma tentativa: o relógio continua correndo se você sair."
+  },
+  "ranking": {
+    "title": "Ranking do grupo",
+    "open": "Todos menos o autor, por tempo com penalidades.",
+    "final_board": "O ranking final: este puzzle foi encerrado.",
+    "spoiler": "Concluíram: {{ done }} de {{ total }}. Os tempos aparecem depois que você mesmo terminar.",
+    "alone": "Ainda não há mais ninguém no grupo.",
+    "missed": "não terminou"
+  },
+  "result": {
+    "rank": "Posição {{ rank }} de {{ total }} em {{ group }}",
+    "unranked": "Resolvido, mas fora do ranking do grupo.",
+    "revealed_title": "Solução revelada",
+    "revealed_text": "Desta vez fica fora do ranking. A solução está no tabuleiro, dê uma boa olhada!",
+    "back": "Voltar para {{ group }}",
+    "practice": "Jogar de novo para treinar"
+  },
+  "author": {
+    "title": "Seu puzzle",
+    "open": "Foi você que criou este, então não pode jogá-lo. Veja como todos estão indo.",
+    "closed": "Ele foi encerrado. Veja como todos se saíram.",
+    "withdraw": "Retirar o puzzle",
+    "withdraw_confirm": "Retirar este puzzle? Ele desaparece do grupo, junto com os tempos de todos.",
+    "withdrawn": "Puzzle retirado."
+  },
+  "stats": {
+    "solved": "Resolveram",
+    "fastest": "Mais rápido",
+    "median": "Mediana",
+    "playing": "Jogando",
+    "gave_up": "Desistiram",
+    "hardest": "A ponte marcada foi a que mais precisou de ajuda. Dicas que a corrigiram: {{ hints }} · verificações que a acharam errada: {{ wrong }}.",
+    "no_help": "Ninguém precisou de dica nem encontrou ponte errada. Trabalho limpo!",
+    "hints": "Dicas",
+    "checks": "Verificações"
+  },
+  "challenge": {
+    "title": "Desafiar um grupo",
+    "text": "Publique seu puzzle em um dos seus grupos: todos lá têm uma semana para resolvê-lo, com tempo e ranking como no desafio diário.",
+    "no_group": "Você ainda não está em nenhum grupo.",
+    "to_groups": "Criar um grupo ou entrar em um",
+    "empty": "Coloque algumas ilhas primeiro.",
+    "too_big": "Puzzles do grupo podem ter no máximo {{ max }}×{{ max }} células.",
+    "unchecked": "Primeiro deixe o solver provar que ele tem exatamente uma solução.",
+    "check": "Verificar unicidade",
+    "not_unique": "Este puzzle tem mais de uma solução. Mude-o até o solver encontrar só uma.",
+    "unsolvable": "Este puzzle não tem solução. Mude-o até o solver encontrar uma.",
+    "ready": "Exatamente uma solução: pronto para publicar!",
+    "group": "Grupo",
+    "name": "Título (opcional)",
+    "placeholder": "ex.: A Espiral",
+    "post": "Desafiar o grupo",
+    "posting": "Verificando e publicando…",
+    "posted": "Publicado em {{ group }}!",
+    "rules": "Aberto por 7 dias, até 3 puzzles abertos por grupo. Você não pode jogar o seu, mas vai ver como todos se saem."
+  },
+  "errors": {
+    "too_big": "Puzzles do grupo podem ter no máximo 20×20 células.",
+    "unsolvable": "Este puzzle não tem solução.",
+    "not_unique": "Este puzzle tem mais de uma solução, ou o solver não conseguiu provar que ele tem só uma.",
+    "too_many": "Você já tem 3 puzzles abertos neste grupo. Espere até um deles encerrar.",
+    "title_invalid": "Os títulos têm no máximo 40 caracteres.",
+    "closed": "Este puzzle foi encerrado ou retirado.",
+    "own": "Esse é o seu próprio puzzle: você pode acompanhar, não jogar.",
+    "locked": "Esse é um puzzle aberto do seu grupo: os solvers vão ajudar depois que você terminar sozinho.",
+    "author_only": "Só o autor do puzzle pode fazer isso."
+  },
+  "summary": {
+    "title": "Como foi"
+  },
+  "replay": {
+    "back": "Voltar ao puzzle",
+    "locked": "Os replays deste puzzle abrem quando você o resolver ou desistir.",
+    "empty": "Ainda não foi registrado nenhum movimento neste puzzle.",
+    "stage": "O tabuleiro do puzzle do grupo com as pontes de {{ names }}"
+  }
+}
