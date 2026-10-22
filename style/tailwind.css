@@ -729,6 +729,11 @@ tr:hover .hanko-pick,
 .hanko-received[data-fresh="true"] {
   background: color-mix(in srgb, var(--px-shu) 8%, transparent);
 }
+/* The names under the kanji of the phone's tab bar. Kaisei Decol draws Cyrillic at full width
+   (Japanese fonts take it from JIS), ПРАКТИКА would need 84 px of a tab's 53 to 65: Murecho's fit */
+html:is([lang="ru"], [lang="uk"]) .tab-label {
+  font-family: var(--app-font);
+}
 /* New seals on one's results: a dot on the groups' entry of the navigation */
 .hanko-dot {
   width: 9px;

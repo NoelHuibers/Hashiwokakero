@@ -67,7 +67,9 @@ pub fn MobileNav() -> impl IntoView {
             class="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
             aria-label=move || t_string!(i18n, common.nav.main)
         >
-            <div class="mx-auto grid max-w-md grid-cols-6">
+            // Even columns, unless a name needs more room than its share: Indonesian's PERINGKAT
+            // takes a little from the others rather than being cut off
+            <div class="mx-auto grid max-w-md grid-cols-[repeat(6,minmax(min-content,1fr))]">
                 {NAV
                     .into_iter()
                     .map(|(page, href, jp)| {
@@ -95,7 +97,9 @@ pub fn MobileNav() -> impl IntoView {
                                     // New hanko on one's results
                                     {(page == Page::Groups).then(|| view! { <HankoDot class="absolute top-0 end-0.5" /> })}
                                 </span>
-                                <span class="max-w-full truncate px-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                // Smaller and without the spacing on the narrowest phones: six
+                                // names like PRACTICE and GROUPS share 320 px (see tab-bar.spec.ts)
+                                <span class="tab-label max-w-full truncate px-0.5 text-[10px] font-bold uppercase tracking-wider max-[360px]:px-0 max-[360px]:text-[9px] max-[360px]:tracking-normal">
                                     <PageName page />
                                 </span>
                             </A>
