@@ -22,6 +22,7 @@ fn flag_name(flag: Flag) -> &'static str {
         Flag::SecondAccount => "second account",
         Flag::Review => "taken off",
         Flag::Banned => "banned",
+        Flag::Unknown => "unknown",
     }
 }
 

@@ -6,24 +6,26 @@ use leptos::task::spawn_local;
 use crate::api::show_stamp;
 use crate::i18n::{td_string, use_i18n};
 use crate::lang::{date_short, stamp_name, stamp_text};
-use crate::model::{MS_PER_DAY, Stamp, StampProgress, share_percent};
+use crate::model::{MS_PER_DAY, Stamp, StampProgress, known_stamps, share_percent};
 use crate::state::{ToastKind, error_toast, toast};
 
 /// The stamp a player chose to show next to their name, pressed in red ink so it doesn't
-/// compete with the medals.
+/// compete with the medals. Nothing for a newer server's stamp this build doesn't know.
 #[component]
 pub fn StampBadge(stamp: Stamp) -> impl IntoView {
     let i18n = use_i18n();
     let title = move || stamp_name(i18n.get_locale(), stamp);
-    view! {
-        <span
-            class="hanko-ink inline-grid size-5 shrink-0 rotate-[-8deg] place-items-center rounded-[4px] font-pixel text-xs leading-none"
-            data-tooltip=title
-            aria-label=title
-        >
-            {stamp.kanji()}
-        </span>
-    }
+    (stamp != Stamp::Unknown).then(|| {
+        view! {
+            <span
+                class="hanko-ink inline-grid size-5 shrink-0 rotate-[-8deg] place-items-center rounded-[4px] font-pixel text-xs leading-none"
+                data-tooltip=title
+                aria-label=title
+            >
+                {stamp.kanji()}
+            </span>
+        }
+    })
 }
 
 /// One stamp of the stamp book, greyed out with a progress bar while it's still to get, and how
@@ -185,15 +187,16 @@ fn toggle(shown: RwSignal<Option<Stamp>>, stamp: Stamp) {
 
 /// Every stamp, earned or not. `players` counts everyone with a stamp, for the share of players
 /// who have each one. `shown` is the stamp next to the player's name, which they can change with
-/// `pick` (their own book).
+/// `pick` (their own book). A newer server's stamps this build doesn't know are left out.
 #[component]
 pub fn StampBook(
-    book: Vec<StampProgress>,
+    mut book: Vec<StampProgress>,
     players: i64,
     shown: RwSignal<Option<Stamp>>,
     #[prop(optional)] pick: bool,
 ) -> impl IntoView {
     let i18n = use_i18n();
+    book.retain(|p| p.stamp != Stamp::Unknown);
     let earned = book.iter().filter(|p| p.earned_at.is_some()).count();
     let total = book.len();
     view! {
@@ -216,6 +219,7 @@ pub fn StampBook(
 /// Toasts for stamps just earned, the first few by name.
 pub fn announce(stamps: &[Stamp]) {
     const NAMED: usize = 3;
+    let stamps = known_stamps(stamps);
     for &stamp in stamps.iter().take(NAMED) {
         toast(ToastKind::Success, move |l| {
             format!(
@@ -230,5 +234,50 @@ pub fn announce(stamps: &[Stamp]) {
         toast(ToastKind::Success, move |l| {
             td_string!(l, stamps.more, count)
         });
+    }
+}
+
+// Rendering on the server needs its features
+#[cfg(all(test, feature = "ssr"))]
+mod tests {
+    use super::*;
+    use crate::i18n::Locale;
+
+    fn render(view: impl FnOnce() -> AnyView) -> String {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        let html = owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::en);
+            view().to_html()
+        });
+        drop(owner);
+        html
+    }
+
+    /// A newer server's stamps (an app that wasn't updated yet) show nowhere: not next to a
+    /// name, not in the book.
+    #[tokio::test]
+    async fn unknown_stamps_are_left_out() {
+        let badge = render(|| view! { <StampBadge stamp=Stamp::Unknown /> }.into_any());
+        assert!(!badge.contains("hanko-ink"), "{badge}");
+        let badge = render(|| view! { <StampBadge stamp=Stamp::Gold /> }.into_any());
+        assert!(badge.contains("hanko-ink"), "{badge}");
+        let tile = |stamp| StampProgress {
+            stamp,
+            earned_at: Some(0),
+            progress: 1,
+            target: 1,
+            holders: 1,
+        };
+        let book = render(|| {
+            let shown = RwSignal::new(None);
+            view! {
+                <StampBook book=vec![tile(Stamp::Gold), tile(Stamp::Unknown)] players=2 shown />
+            }
+            .into_any()
+        });
+        assert_eq!(book.matches("<li").count(), 1, "{book}");
+        assert!(book.contains("1 of 1"), "{book}");
     }
 }

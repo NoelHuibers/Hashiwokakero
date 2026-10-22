@@ -130,6 +130,9 @@ fn state_badge(s: &AdminSubmission) -> AnyView {
         DojoState::Queued => {
             view! { <Badge variant=BadgeVariant::Muted>"queued"</Badge> }.into_any()
         }
+        DojoState::Unknown => {
+            view! { <Badge variant=BadgeVariant::Muted>"unknown"</Badge> }.into_any()
+        }
         DojoState::Running => {
             view! { <Badge variant=BadgeVariant::Warning>"running"</Badge> }.into_any()
         }

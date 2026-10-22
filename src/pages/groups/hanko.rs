@@ -16,7 +16,7 @@ use crate::components::hanko::Seal;
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{Locale, t, td_string, use_i18n};
 use crate::model::{
-    GroupToday, HankoKind, HankoMark, HankoReceived, TodayState, tally, tilt, toggled,
+    GroupToday, HankoKind, HankoMark, HankoReceived, TodayState, known_seals, tally, tilt, toggled,
 };
 use crate::state::{HankoInbox, error_toast};
 
@@ -32,6 +32,8 @@ pub fn kind_name(locale: Locale, kind: HankoKind) -> String {
         HankoKind::Funny => td_string!(locale, hanko.kinds.funny),
         HankoKind::Grit => td_string!(locale, hanko.kinds.grit),
         HankoKind::Cheers => td_string!(locale, hanko.kinds.cheers),
+        // Left out wherever seals are shown
+        HankoKind::Unknown => HankoKind::Unknown.kanji(),
     }
     .into()
 }
@@ -523,7 +525,7 @@ fn load_received(group: Option<i64>, items: RwSignal<Option<Vec<HankoReceived>>>
                 if let Some(inbox) = inbox {
                     inbox.seen(group);
                 }
-                items.set(Some(list));
+                items.set(Some(known_seals(list)));
             }
             Err(e) => error_toast(e),
         }

@@ -12,6 +12,10 @@ pub enum DojoState {
     Rejected,
     /// Evaluation kept failing on our side.
     Failed,
+    /// A state of a newer server, read by a page or an app that doesn't know it yet. Never
+    /// stored.
+    #[serde(other)]
+    Unknown,
 }
 
 impl DojoState {
@@ -22,6 +26,7 @@ impl DojoState {
             Self::Done => "done",
             Self::Rejected => "rejected",
             Self::Failed => "failed",
+            Self::Unknown => "unknown",
         }
     }
 
@@ -284,6 +289,10 @@ pub enum BenchmarkState {
     Accepted,
     /// A moderator didn't take it.
     Rejected,
+    /// A state of a newer server, read by a page or an app that doesn't know it yet (not in
+    /// [`BenchmarkState::ALL`]). Never stored.
+    #[serde(other)]
+    Unknown,
 }
 
 impl BenchmarkState {
@@ -304,6 +313,7 @@ impl BenchmarkState {
             Self::Refused => "refused",
             Self::Accepted => "accepted",
             Self::Rejected => "rejected",
+            Self::Unknown => "unknown",
         }
     }
 

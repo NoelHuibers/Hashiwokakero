@@ -14,7 +14,7 @@ use super::{SECTION, error};
 
 fn badge(state: BenchmarkState) -> impl IntoView {
     let variant = match state {
-        BenchmarkState::Queued => BadgeVariant::Muted,
+        BenchmarkState::Queued | BenchmarkState::Unknown => BadgeVariant::Muted,
         BenchmarkState::Checking => BadgeVariant::Warning,
         BenchmarkState::Verified => BadgeVariant::Secondary,
         BenchmarkState::Accepted => BadgeVariant::Success,

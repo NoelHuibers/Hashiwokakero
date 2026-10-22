@@ -290,6 +290,12 @@ async fn implausible_results_are_not_ranked() {
     let board = leaderboard(&conn, MONDAY, None).await.unwrap();
     assert_eq!(board.entries.len(), 0);
     set_flag(&conn, fair, MONDAY, None).await.unwrap();
+    // Not with a reason only a newer page knows: the result stays on the board
+    assert!(
+        !set_flag(&conn, fair, MONDAY, Some(Flag::Unknown))
+            .await
+            .unwrap()
+    );
     assert_eq!(
         leaderboard(&conn, MONDAY, None)
             .await
@@ -538,6 +544,8 @@ async fn stamps_are_earned_kept_and_taken_back() {
     let lb = leaderboard(&conn, yesterday, None).await.unwrap();
     assert_eq!(lb.entries[0].stamp, None);
     assert!(show_stamp(&conn, a, Some(Stamp::Sensei)).await.is_err());
+    // Nor one only a newer page knows
+    assert!(show_stamp(&conn, a, Some(Stamp::Unknown)).await.is_err());
     show_stamp(&conn, a, Some(Stamp::Gold)).await.unwrap();
     let lb = leaderboard(&conn, yesterday, None).await.unwrap();
     assert_eq!(lb.entries[0].stamp, Some(Stamp::Gold));

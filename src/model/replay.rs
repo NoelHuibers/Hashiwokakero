@@ -18,6 +18,9 @@ pub const SPEEDS: [u32; 3] = [1, 4, 16];
 pub enum MarkKind {
     Hint,
     Check,
+    /// A help of a newer server, read by a page or an app that doesn't know it yet: no marker.
+    #[serde(other)]
+    Unknown,
 }
 
 /// When a member took a hint or a check, ms after their start like [`MoveEvent::t`].

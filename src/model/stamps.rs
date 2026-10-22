@@ -61,6 +61,11 @@ pub enum Stamp {
     Yokozuna,
     Sansho,
     RiverCrew,
+    /// A stamp of a newer server, read by a page or an app that doesn't know it yet (not in
+    /// [`Stamp::ALL`]): shown nowhere. The server never stores or sends it, and refuses it as an
+    /// argument.
+    #[serde(other)]
+    Unknown,
 }
 
 impl Stamp {
@@ -166,6 +171,7 @@ impl Stamp {
             Self::Yokozuna => "yokozuna",
             Self::Sansho => "sansho",
             Self::RiverCrew => "river_crew",
+            Self::Unknown => "unknown",
         }
     }
 
@@ -231,6 +237,7 @@ impl Stamp {
             Self::Sansho => "賞",
             // 架ける, to build a bridge across: a level of a group's river
             Self::RiverCrew => "架",
+            Self::Unknown => "?",
         }
     }
 
@@ -265,6 +272,16 @@ impl Stamp {
             Self::BlackBelt | Self::Sensei | Self::Yokozuna | Self::Sansho | Self::RiverCrew
         )
     }
+}
+
+/// The stamps of `stamps` this build knows, in their order: a newer server's
+/// ([`Stamp::Unknown`]) are left out.
+pub fn known_stamps(stamps: &[Stamp]) -> Vec<Stamp> {
+    stamps
+        .iter()
+        .copied()
+        .filter(|&s| s != Stamp::Unknown)
+        .collect()
 }
 
 /// How many ranked finishers a daily needs before its fastest tenth earns [`Stamp::Swift`].
@@ -567,6 +584,7 @@ impl Record {
                     Stamp::Yokozuna => (i64::from(self.yokozuna_weeks > 0 || kept(stamp)), 1),
                     Stamp::Sansho => (i64::from(self.award_weeks > 0 || kept(stamp)), 1),
                     Stamp::RiverCrew => (i64::from(self.river_levels > 0 || kept(stamp)), 1),
+                    Stamp::Unknown => (0, 1),
                 };
                 (stamp, progress.min(target), target)
             })
@@ -979,6 +997,18 @@ mod tests {
         );
         assert!(Stamp::RiverCrew.sticky() && !Stamp::RiverCrew.secret());
         assert_eq!(Stamp::from_id("river_crew"), Some(Stamp::RiverCrew));
+    }
+
+    /// A newer server's stamp loads as `Unknown` (an app keeps its version for months), which
+    /// is in no book, has no id the database knows and is left out where stamps are shown.
+    #[test]
+    fn unknown_stamps_load_and_are_left_out() {
+        let stamps: Vec<Stamp> = serde_json::from_str(r#"["Gold","Kintsugi"]"#).unwrap();
+        assert_eq!(stamps, [Stamp::Gold, Stamp::Unknown]);
+        assert!(!Stamp::ALL.contains(&Stamp::Unknown));
+        assert_eq!(Stamp::from_id(Stamp::Unknown.id()), None);
+        assert_eq!(known_stamps(&stamps), [Stamp::Gold]);
+        assert_eq!(known_stamps(&Stamp::ALL), Stamp::ALL);
     }
 
     #[test]

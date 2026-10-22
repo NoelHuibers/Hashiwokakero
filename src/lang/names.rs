@@ -130,6 +130,8 @@ pub fn stamp_name(locale: Locale, stamp: Stamp) -> &'static str {
         Stamp::Yokozuna => td_string!(locale, stamps.names.yokozuna),
         Stamp::Sansho => td_string!(locale, stamps.names.sansho),
         Stamp::RiverCrew => td_string!(locale, stamps.names.river_crew),
+        // Not shown, but like a stamp still to find if it were
+        Stamp::Unknown => td_string!(locale, stamps.secret.name),
     }
 }
 
@@ -184,6 +186,7 @@ pub fn stamp_text(locale: Locale, stamp: Stamp) -> &'static str {
         Stamp::Yokozuna => td_string!(locale, stamps.texts.yokozuna),
         Stamp::Sansho => td_string!(locale, stamps.texts.sansho),
         Stamp::RiverCrew => td_string!(locale, stamps.texts.river_crew),
+        Stamp::Unknown => td_string!(locale, stamps.secret.text),
     }
 }
 

@@ -120,7 +120,11 @@ fn Timeline(theatre: Theatre) -> impl IntoView {
         .iter()
         .flat_map(|(i, l)| {
             let (i, name, colour) = (*i, l.name.clone(), l.colour);
-            l.marks.iter().map(move |m| (i, name.clone(), colour, *m))
+            // A newer server's kinds of help this build doesn't know get no marker
+            l.marks
+                .iter()
+                .filter(|m| m.kind != MarkKind::Unknown)
+                .map(move |m| (i, name.clone(), colour, *m))
         })
         .map(|(i, name, colour, mark)| {
             let tip = move || {
@@ -128,12 +132,14 @@ fn Timeline(theatre: Theatre) -> impl IntoView {
                 let time = format_duration(i64::from(mark.t));
                 match mark.kind {
                     MarkKind::Hint => td_string!(l, replay.marks.hint, name = name.clone(), time),
-                    MarkKind::Check => td_string!(l, replay.marks.check, name = name.clone(), time),
+                    MarkKind::Check | MarkKind::Unknown => {
+                        td_string!(l, replay.marks.check, name = name.clone(), time)
+                    }
                 }
             };
             let shape = match mark.kind {
                 MarkKind::Hint => "rounded-full",
-                MarkKind::Check => "rotate-45 rounded-[1px]",
+                MarkKind::Check | MarkKind::Unknown => "rotate-45 rounded-[1px]",
             };
             view! {
                 <span

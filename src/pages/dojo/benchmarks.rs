@@ -48,6 +48,7 @@ fn state_text(locale: Locale, state: BenchmarkState) -> String {
         BenchmarkState::Refused => td_string!(locale, dojo.community.state.refused),
         BenchmarkState::Accepted => td_string!(locale, dojo.community.state.accepted),
         BenchmarkState::Rejected => td_string!(locale, dojo.community.state.rejected),
+        BenchmarkState::Unknown => "?",
     }
     .to_string()
 }
@@ -67,7 +68,7 @@ pub(super) fn reason_text(locale: Locale, reason: &str) -> String {
 
 fn state_variant(state: BenchmarkState) -> BadgeVariant {
     match state {
-        BenchmarkState::Queued => BadgeVariant::Muted,
+        BenchmarkState::Queued | BenchmarkState::Unknown => BadgeVariant::Muted,
         BenchmarkState::Checking | BenchmarkState::Verified => BadgeVariant::Warning,
         BenchmarkState::Accepted => BadgeVariant::Success,
         BenchmarkState::Refused | BenchmarkState::Rejected => BadgeVariant::Destructive,
