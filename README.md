@@ -34,7 +34,8 @@ English is always included; other omitted languages fall back to English. Leave
 
 Build a release with `cargo leptos build --release`. The server binary is
 `target/release/hashi` and serves `target/site`. See [Deployment](docs/deployment.md)
-for production configuration.
+for production configuration. The Android and iOS apps are planned in
+[Mobile apps](docs/mobile.md).
 
 `pnpm run clean` previews removable build artifacts; `pnpm run clean --yes` deletes
 them. Optional `sccache` can share dependency builds between checkouts.
