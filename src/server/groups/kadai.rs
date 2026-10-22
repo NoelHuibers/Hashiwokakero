@@ -875,9 +875,9 @@ pub async fn locked(
 /// What deleting a user does to group puzzles, in `auth::erase`'s transaction after
 /// `groups::ERASE`.
 ///
-/// Their open puzzles go with everyone's attempts at them (nobody can be
-/// ranked on them by an author who's gone), their closed ones stay in the groups' archives
-/// without a name, and their own attempts go. Puzzles of the groups that went with them go by the trigger
+/// Their open puzzles go with everyone's attempts at them (nobody can be ranked on them by an
+/// author who's gone), their closed ones stay in the groups' archives without a name, and their
+/// own attempts go. The puzzles of groups that went with them go by the trigger
 /// `group_puzzles_gone` (db.rs).
 pub async fn erase(conn: &Connection, user: i64, now: i64) -> Result<(), ServerFnError> {
     for sql in [
