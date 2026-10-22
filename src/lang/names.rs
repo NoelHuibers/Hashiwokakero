@@ -336,6 +336,7 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::TooManyRivals => td_string!(locale, rivals.errors.too_many_rivals),
         ApiError::NoSuchPlayer => td_string!(locale, rivals.errors.no_such_player),
         ApiError::HankoNotAllowed => td_string!(locale, hanko.errors.not_allowed),
+        ApiError::AppOutdated => td_string!(locale, common.errors.app_outdated),
     }
     .to_string()
 }

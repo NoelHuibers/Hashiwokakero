@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Un problème est survenu : {{ detail }}",
     "outdated": "Hashi a été mis à jour. Recharge la page pour continuer.",
+    "app_outdated": "Cette version de l'appli est trop ancienne. Mets-la à jour pour continuer à jouer en ligne.",
     "database": "La base de données n’a pas répondu, réessaie.",
     "internal": "Un problème est survenu sur le serveur, réessaie.",
     "archive_only_past": "Seuls les défis des jours passés peuvent être rejoués.",

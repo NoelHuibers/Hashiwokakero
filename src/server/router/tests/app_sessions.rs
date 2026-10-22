@@ -50,7 +50,7 @@ impl App {
         F::Output: DeserializeOwned,
     {
         let mut headers = HeaderMap::new();
-        headers.insert(APP_HEADER, HeaderValue::from_static("1.0.0"));
+        headers.insert(APP_HEADER, HeaderValue::from_static("android/1.0.0"));
         if let Some(token) = self.token() {
             headers.insert(AUTHORIZATION, bearer(&token));
         }

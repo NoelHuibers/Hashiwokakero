@@ -1,6 +1,7 @@
 //! Server only code: database, users, the daily puzzle, groups, replays and the SAT Dojo.
 
 pub mod admin;
+pub mod apps;
 pub mod auth;
 pub mod contact;
 pub mod daily;
@@ -157,9 +158,15 @@ pub async fn run_auth_blocking<T: Send + 'static>(
     limits::AUTH.run(job).await
 }
 
-/// Production must not silently use the published development seeds or an empty secret.
+/// Production must not silently use the published development seeds or an empty secret, and no
+/// server runs with a malformed setting of the app (`apps::AppSettings`).
 pub fn validate_configuration() -> Result<(), String> {
-    validate_secrets(env_var)
+    validate_settings(env_var)
+}
+
+fn validate_settings(var: impl Fn(&str) -> Option<String>) -> Result<(), String> {
+    validate_secrets(&var)?;
+    apps::AppSettings::from_env(&var).map(drop)
 }
 
 fn validate_secrets(var: impl Fn(&str) -> Option<String>) -> Result<(), String> {
@@ -221,6 +228,43 @@ mod configuration_tests {
             })
             .is_err()
         );
+    }
+    /// A malformed app setting stops the server, in development and production alike.
+    #[test]
+    fn malformed_app_settings_stop_the_server() {
+        let production = |k: &str| match k {
+            "LEPTOS_ENV" => Some("PROD".into()),
+            "HASHI_DAILY_SECRET" | "DOJO_SECRET" => Some("s".repeat(32)),
+            _ => None,
+        };
+        assert!(validate_settings(|_| None).is_ok());
+        assert!(validate_settings(production).is_ok());
+        for (name, value) in [
+            ("HASHI_APP_MIN_VERSION", "1.2.3"),
+            ("HASHI_APP_ORIGINS", "https://tauri.localhost"),
+        ] {
+            let with = |k: &str| {
+                (k == name)
+                    .then(|| value.to_string())
+                    .or_else(|| production(k))
+            };
+            assert!(validate_settings(with).is_ok(), "{name}");
+        }
+        for (name, value) in [
+            ("HASHI_APP_MIN_VERSION", "1.2"),
+            ("HASHI_APP_ORIGINS", "https://tauri.localhost/"),
+        ] {
+            let with = |k: &str| (k == name).then(|| value.to_string());
+            let error = validate_settings(with).unwrap_err();
+            assert!(error.contains(name), "{error}");
+            let with = |k: &str| {
+                (k == name)
+                    .then(|| value.to_string())
+                    .or_else(|| production(k))
+            };
+            let error = validate_settings(with).unwrap_err();
+            assert!(error.contains(name), "{error}");
+        }
     }
     #[test]
     fn transport_identity_respects_the_deployment_trust_boundary() {

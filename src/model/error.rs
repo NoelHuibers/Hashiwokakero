@@ -55,10 +55,13 @@ pub enum ApiError {
     /// A hanko seal that can't be pressed (any more): on one's own result, on a result not
     /// finished, before finishing the daily oneself, or after its days.
     HankoNotAllowed,
+    /// The app is older than the oldest version the server still answers (see
+    /// `server::apps`). Reloading doesn't help, only an update from the store.
+    AppOutdated,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 33] = [
+    pub const ALL: [Self; 34] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -92,6 +95,7 @@ impl ApiError {
         Self::TooManyRivals,
         Self::NoSuchPlayer,
         Self::HankoNotAllowed,
+        Self::AppOutdated,
     ];
 
     pub fn code(self) -> &'static str {
@@ -129,6 +133,7 @@ impl ApiError {
             Self::TooManyRivals => "too_many_rivals",
             Self::NoSuchPlayer => "no_such_player",
             Self::HankoNotAllowed => "hanko_not_allowed",
+            Self::AppOutdated => "app_outdated",
         }
     }
 
@@ -283,6 +288,24 @@ mod tests {
                 !is_outdated_error(&error, Some("old"), Some("new")),
                 "{error}"
             );
+        }
+    }
+
+    /// An app below the server's minimum version can't be fixed by a reload, whatever the
+    /// builds say: it is its own case, with its own message.
+    #[test]
+    fn an_outdated_app_is_no_outdated_tab() {
+        use leptos::server_fn::Bytes;
+        use leptos::server_fn::error::FromServerFnError as _;
+        let sent = E::de(Bytes::from("ServerError|E:app_outdated"));
+        for error in [E::from(ApiError::AppOutdated), sent] {
+            assert_eq!(
+                ApiError::from_message(&error.to_string()),
+                Some(ApiError::AppOutdated)
+            );
+            for (page, server) in [(None, None), (Some("a"), Some("a")), (Some("a"), Some("b"))] {
+                assert!(!is_outdated_error(&error, page, server), "{error}");
+            }
         }
     }
 

@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Algo salió mal: {{ detail }}",
     "outdated": "Hashi se ha actualizado. Recarga la página para continuar.",
+    "app_outdated": "Esta versión de la app es demasiado antigua. Actualízala para seguir jugando en línea.",
     "database": "La base de datos no respondió, inténtalo de nuevo.",
     "internal": "Algo salió mal en el servidor, inténtalo de nuevo.",
     "archive_only_past": "Solo se pueden practicar retos de días anteriores.",

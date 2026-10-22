@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "出错了：{{ detail }}",
     "outdated": "Hashi 已更新，请刷新页面以继续。",
+    "app_outdated": "此版本的应用过旧，请更新后继续在线游戏。",
     "database": "数据库没有响应，请重试。",
     "internal": "服务器出了点问题，请重试。",
     "archive_only_past": "只能练习以前的每日谜题。",

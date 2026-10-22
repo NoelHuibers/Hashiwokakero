@@ -35,6 +35,14 @@ Store credentials in the deployment platform's secret store.
 - `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`: remote database connection. For a
   local database, set `HASHI_DB_PATH` to a persistent location; it defaults to
   `hashi.db`.
+- `HASHI_APP_MIN_VERSION`: optional, the oldest app version (`x.y.z`) the server
+  answers; older apps are asked to update (see [mobile.md](mobile.md#api-headers)).
+  Raise it only when a server function changes incompatibly, and only after the
+  stores have offered the update for a while: installed apps update late.
+- `HASHI_APP_ORIGINS`: optional, comma-separated origins of the app's WebView that
+  may call the API. Defaults to `https://tauri.localhost,tauri://localhost`.
+
+A malformed value of either stops the server at startup.
 
 The worker also needs `APP_URL` pointing to the website. Its remaining settings
 are documented in [dojo/fly.toml](../dojo/fly.toml).

@@ -127,6 +127,7 @@ error RivalSelf rival_self
 error TooManyRivals too_many_rivals
 error NoSuchPlayer no_such_player
 error HankoNotAllowed hanko_not_allowed
+error AppOutdated app_outdated
 hanko Fast fast
 hanko Wow wow
 hanko Close close

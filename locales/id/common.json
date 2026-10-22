@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Terjadi kesalahan: {{ detail }}",
     "outdated": "Hashi telah diperbarui. Muat ulang halaman untuk melanjutkan.",
+    "app_outdated": "Versi aplikasi ini terlalu lama. Perbarui aplikasi untuk terus bermain online.",
     "database": "Database tidak merespons, coba lagi.",
     "internal": "Terjadi kesalahan di server, coba lagi.",
     "archive_only_past": "Hanya teka-teki harian sebelumnya yang bisa dilatih.",

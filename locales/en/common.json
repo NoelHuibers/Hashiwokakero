@@ -53,6 +53,7 @@
   "errors": {
     "unknown": "Something went wrong: {{ detail }}",
     "outdated": "Hashi has been updated. Reload the page to continue.",
+    "app_outdated": "This version of the app is too old. Please update it to keep playing online.",
     "database": "The database didn't answer, please try again.",
     "internal": "Something went wrong on the server, please try again.",
     "archive_only_past": "Only earlier dailies can be practised.",
