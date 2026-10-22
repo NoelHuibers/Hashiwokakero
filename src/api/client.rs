@@ -93,7 +93,7 @@ where
 
 /// The build of the WASM this tab runs: the one named by the page it loaded, `None` for pages
 /// without it.
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 fn page_build() -> Option<&'static str> {
     static PAGE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
     PAGE.get_or_init(|| {
@@ -108,7 +108,7 @@ fn page_build() -> Option<&'static str> {
 }
 
 /// The server has no page.
-#[cfg(not(feature = "hydrate"))]
+#[cfg(not(feature = "browser"))]
 fn page_build() -> Option<&'static str> {
     None
 }

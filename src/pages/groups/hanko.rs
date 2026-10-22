@@ -75,7 +75,7 @@ impl HankoBoard {
             pressed: RwSignal::new(Vec::new()),
         };
         // Only the browser has a window to listen on
-        #[cfg(feature = "hydrate")]
+        #[cfg(feature = "browser")]
         this.dismiss();
         this
     }
@@ -157,7 +157,7 @@ impl HankoBoard {
     }
 
     /// The picker closes on a click outside of it (its own button toggles it) and on Escape.
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "browser")]
     fn dismiss(self) {
         let outside = window_event_listener(leptos::ev::pointerdown, move |ev| {
             if self.picking.get_untracked().is_none() {
