@@ -4,7 +4,8 @@
 //! Opening the link only shows the group; joining takes a click ([`join`]). The owner can replace
 //! the code, which ends the old links, and remove members. Everyone can leave; when the owner
 //! does, the longest standing member takes over, and the last one to leave takes the group with
-//! them.
+//! them. Banned players don't count there: they are hidden from the group, never take one over,
+//! and a group only they are left in is gone (see [`take_out`]).
 //!
 //! Members see each other's names and dailies, nobody else sees anything of a group: every
 //! request for a group's data goes through [`require_member`], which answers a group the player
@@ -41,21 +42,58 @@ pub struct Group {
     pub created_at: i64,
 }
 
+/// The members of the group of the statement (`groups.id`) who are still there when `?1` goes:
+/// everyone else who isn't banned (or deleted). Banned players keep their memberships, in case
+/// the ban is lifted, but they don't keep a group alive and never get one passed to them.
+macro_rules! staying {
+    () => {
+        "SELECT m.user_id FROM group_members m JOIN users u ON u.id = m.user_id
+         WHERE m.group_id = groups.id AND m.user_id != ?1
+           AND u.banned_at IS NULL AND u.deleted_at IS NULL"
+    };
+}
+
+/// What happens to a group `?1` goes from (see the `WHERE` of each), after the river has their
+/// bridges: without anyone [`staying!`] it is deleted, and with it its memberships (banned
+/// players' too), seals and river (triggers in `db.rs`).
+macro_rules! close_if_left_alone {
+    ($groups:literal) => {
+        concat!(
+            "DELETE FROM groups WHERE ",
+            $groups,
+            " AND NOT EXISTS (",
+            staying!(),
+            ")"
+        )
+    };
+}
+
+/// ...and one whose owner isn't staying (`?1` itself, or a banned owner) passes to the longest
+/// standing member who is.
+macro_rules! pass_on {
+    ($groups:literal) => {
+        concat!(
+            "UPDATE groups SET owner_id = (",
+            staying!(),
+            " ORDER BY m.joined_at, m.user_id LIMIT 1) WHERE ",
+            $groups,
+            " AND owner_id NOT IN (",
+            staying!(),
+            ")"
+        )
+    };
+}
+
 /// What deleting a user does to their groups.
 ///
 /// Statements for `auth::erase`'s transaction with the user as `?1`: what they laid stays in the
-/// groups' rivers without their name, groups only they are in go, groups they own pass to the
-/// longest standing other member, and their memberships go, and with them who they were in the
-/// rivers' crews.
+/// groups' rivers without their name, groups nobody but them (and banned players) is in go,
+/// groups without them or a banned player as owner pass to the longest standing other member
+/// (see [`take_out`]), and their memberships go, and with them who they were in the rivers' crews.
 pub const ERASE: [&str; 6] = [
     river::BANK,
-    "DELETE FROM groups WHERE id IN (SELECT group_id FROM group_members WHERE user_id = ?1)
-       AND NOT EXISTS (SELECT 1 FROM group_members m WHERE m.group_id = groups.id AND m.user_id != ?1)",
-    "UPDATE groups SET owner_id = (
-         SELECT m.user_id FROM group_members m WHERE m.group_id = groups.id AND m.user_id != ?1
-         ORDER BY m.joined_at, m.user_id LIMIT 1)
-     WHERE owner_id = ?1
-       AND EXISTS (SELECT 1 FROM group_members m WHERE m.group_id = groups.id AND m.user_id != ?1)",
+    close_if_left_alone!("id IN (SELECT group_id FROM group_members WHERE user_id = ?1)"),
+    pass_on!("id IN (SELECT group_id FROM group_members WHERE user_id = ?1)"),
     // Owned without being in it, which never happens: nobody to pass it to
     "DELETE FROM groups WHERE owner_id = ?1",
     "DELETE FROM group_members WHERE user_id = ?1",
@@ -68,7 +106,8 @@ pub const ERASE: [&str; 6] = [
 /// The account takes the guest's memberships, as many as fit under [`MAX_GROUPS`]: the account's
 /// own groups stay, then the guest's newest ones come along. Where both were members, the
 /// account's membership stays. The groups that don't fit the guest leaves like a deleted account
-/// ([`ERASE`]): one they own passes to its longest standing member, one only they are in goes.
+/// ([`ERASE`]): one they own passes to its longest standing member, one nobody else (but banned
+/// players) is in goes.
 pub async fn merge_guest(conn: &Connection, user: i64, guest: i64) -> Result<(), ServerFnError> {
     let room = crate::server::count(MAX_GROUPS)
         .saturating_sub(groups_of(conn, user).await?)
@@ -317,43 +356,19 @@ pub async fn join(conn: &Connection, code: &str, user: i64) -> Result<i64, Serve
     Ok(group.id)
 }
 
-/// Takes `user` out of a group. An owner's group passes to the longest standing member, an empty
-/// group is deleted.
+/// Takes `user` out of a group. The last one to go (banned players don't count, see
+/// [`staying!`]) takes the group along; else an owner's group, or one whose owner is banned,
+/// passes to the longest standing member.
 async fn take_out(conn: &Connection, group: &Group, user: i64) -> Result<(), ServerFnError> {
     river::bank(conn, group.id, user).await?;
-    conn.execute(
-        "DELETE FROM group_members WHERE group_id = ?1 AND user_id = ?2",
-        params![group.id, user],
-    )
-    .await
-    .map_err(db_err)?;
-    let mut rows = conn
-        .query(
-            "SELECT user_id FROM group_members WHERE group_id = ?1 ORDER BY joined_at, user_id LIMIT 1",
-            params![group.id],
-        )
-        .await
-        .map_err(db_err)?;
-    let next = match rows.next().await.map_err(db_err)? {
-        Some(row) => Some(row.get::<i64>(0).map_err(db_err)?),
-        None => None,
-    };
-    drop(rows);
-    match next {
-        None => {
-            conn.execute("DELETE FROM groups WHERE id = ?1", params![group.id])
-                .await
-                .map_err(db_err)?;
-        }
-        Some(next) if group.owner_id == user => {
-            conn.execute(
-                "UPDATE groups SET owner_id = ?2 WHERE id = ?1",
-                params![group.id, next],
-            )
+    for sql in [
+        "DELETE FROM group_members WHERE group_id = ?2 AND user_id = ?1",
+        close_if_left_alone!("id = ?2"),
+        pass_on!("id = ?2"),
+    ] {
+        conn.execute(sql, params![user, group.id])
             .await
             .map_err(db_err)?;
-        }
-        Some(_) => {}
     }
     Ok(())
 }

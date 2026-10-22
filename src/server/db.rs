@@ -400,6 +400,14 @@ CREATE TRIGGER group_river_gone AFTER DELETE ON groups BEGIN
     DELETE FROM group_river_crew WHERE group_id = OLD.id;
 END;
 ",
+    // 19
+    "
+-- A group that goes takes its memberships along: the last member who isn't banned takes it with
+-- them, banned members included (see server/groups/mod.rs)
+CREATE TRIGGER group_members_gone AFTER DELETE ON groups BEGIN
+    DELETE FROM group_members WHERE group_id = OLD.id;
+END;
+",
 ];
 
 pub async fn init() -> Result<(), String> {
