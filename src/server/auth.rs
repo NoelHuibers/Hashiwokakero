@@ -622,7 +622,10 @@ pub(super) async fn merge_guest(
         "DELETE FROM rivals WHERE (user_id = ?1 AND rival_id = ?2) OR (user_id = ?2 AND rival_id = ?1)",
         "UPDATE OR IGNORE rivals SET user_id = ?1 WHERE user_id = ?2",
         "UPDATE OR IGNORE rivals SET rival_id = ?1 WHERE rival_id = ?2",
-    ] {
+    ]
+    .into_iter()
+    .chain(super::groups::kadai::MERGE_GUEST)
+    {
         tx.execute(sql, params![user, guest])
             .await
             .map_err(db_err)?;
@@ -677,7 +680,9 @@ pub async fn delete_account(
 ///
 /// That is name, password, sessions, stamps, rivals (their list, and their place in everyone
 /// else's), group memberships (groups they own pass on to the longest standing member, groups
-/// nobody else but banned players is in go, see `groups::ERASE`), the hanko seals they pressed and got, Dojo submissions, and of the daily results the
+/// nobody else but banned players is in go, see `groups::ERASE`), the hanko seals they pressed
+/// and got, group puzzles (open ones go, closed ones stay without a name, their attempts at
+/// others' go, see `groups::kadai::erase`), Dojo submissions, and of the daily results the
 /// boards, move logs, devices and unranked attempts. What stays are the ranked times and
 /// penalties, under a user without a name (`deleted_at`), so the rankings of old days and the
 /// medals of everyone else don't change. A user without ranked times remains as an anonymous
@@ -691,6 +696,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
     }
+    super::groups::kadai::erase(&tx, user, now_ms()).await?;
     for sql in [
         "DELETE FROM sessions WHERE user_id = ?1",
         "DELETE FROM stamps WHERE user_id = ?1",

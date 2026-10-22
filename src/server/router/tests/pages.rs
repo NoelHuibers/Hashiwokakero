@@ -25,13 +25,18 @@ use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 21] = [
+const PAGES: [(&str, &str); 23] = [
     ("/", "/"),
     ("/practice", "/practice"),
     ("/ranks", "/ranks"),
     ("/groups", "/groups"),
     ("/groups/{id}", "/groups/1"),
     ("/groups/{id}/replay/{day}", "/groups/1/replay/20747"),
+    ("/groups/{id}/puzzles/{puzzle}", "/groups/1/puzzles/1"),
+    (
+        "/groups/{id}/puzzles/{puzzle}/replay",
+        "/groups/1/puzzles/1/replay",
+    ),
     ("/replay/{day}", "/replay/20747"),
     ("/g/{code}", "/g/abcdefgh23"),
     // Nobody, user ids start at 1
@@ -227,6 +232,29 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, replay.locked.title),
                 td_string!(l, replay.legend.title),
             ]),
+            nav: Some("/groups"),
+            ..Expected::default()
+        },
+        // Only members see a group's puzzles, and the puzzle only once the clock runs: the browser
+        // asks
+        "/groups/{id}/puzzles/{puzzle}" => Expected {
+            title: Some(hashi(td_string!(l, kadai.page.title))),
+            texts: strings([td_string!(l, groups.page.back), loading]),
+            absent: strings([
+                td_string!(l, kadai.page.missing),
+                td_string!(l, kadai.ranking.title),
+            ]),
+            nav: Some("/groups"),
+            ..Expected::default()
+        },
+        "/groups/{id}/puzzles/{puzzle}/replay" => Expected {
+            title: Some(hashi(td_string!(l, replay.title))),
+            texts: strings([
+                td_string!(l, replay.title),
+                td_string!(l, kadai.replay.back),
+                loading,
+            ]),
+            absent: strings([td_string!(l, replay.locked.title)]),
             nav: Some("/groups"),
             ..Expected::default()
         },

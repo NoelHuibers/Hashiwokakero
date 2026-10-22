@@ -84,6 +84,24 @@ export const TEA_GROUP = {
   members: ['chen', 'bram'],
 };
 
+/** A puzzle of the seeded group made by chen, closed two days ago (kadai.spec.ts): aiko solved it
+ * fastest, bram with a hint and a check, fatima gave up, the guest otter started and didn't
+ * finish. A 7×7 from the generator, its solution in the order of the board's edges. */
+export const CLOSED_PUZZLE = {
+  id: 1,
+  title: 'Lantern Path',
+  author: 'chen',
+  puzzle: {
+    width: 7,
+    height: 7,
+    islands: [
+      [0, 0, 1], [2, 0, 5], [5, 0, 4], [0, 3, 2], [2, 3, 5],
+      [5, 3, 3], [2, 5, 1], [0, 6, 2], [3, 6, 4], [5, 6, 3],
+    ].map(([x, y, required]) => ({ pos: { x, y }, required })),
+  },
+  solution: [1, 0, 2, 2, 2, 2, 0, 0, 1, 1, 2, 2],
+};
+
 /** The day before today: the seeded group's members who played it have move logs, for the
  * replay theatre (replay.spec.ts). Every log moves on the first edges, which every daily has. */
 export const REPLAY_DAY_BACK = 1;
@@ -222,6 +240,45 @@ export function seed(dbPath: string) {
     const run = { bridges, islands: 0, steady: false, dithers: 0, cleared: false, burst: 0 };
     db.prepare('UPDATE attempts SET run = ? WHERE user_id = ? AND day = ?').run(JSON.stringify(run), crane, day);
   });
+  // The closed group puzzle and how the members did
+  const posted = (today - 9) * MS_PER_DAY + 3_600_000;
+  db.prepare(
+    `INSERT INTO group_puzzles (id, group_id, author_id, title, puzzle, solution, created_at, closes_at, kudos_seen)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+  ).run(
+    CLOSED_PUZZLE.id,
+    SEEDED_GROUP.id,
+    player(CLOSED_PUZZLE.author).id,
+    CLOSED_PUZZLE.title,
+    JSON.stringify(CLOSED_PUZZLE.puzzle),
+    JSON.stringify(CLOSED_PUZZLE.solution),
+    posted,
+    posted + 7 * MS_PER_DAY,
+  );
+  const puzzleAttempt = db.prepare(
+    `INSERT INTO group_puzzle_attempts (puzzle_id, user_id, started_at, finished_at, hints, checks, revealed, time_ms, bridges, helps)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const solved = JSON.stringify(CLOSED_PUZZLE.solution);
+  const started = posted + MS_PER_DAY;
+  puzzleAttempt.run(CLOSED_PUZZLE.id, player('aiko').id, started, started + 102_400, 0, 0, 0, 102_400, solved, '[]');
+  puzzleAttempt.run(
+    CLOSED_PUZZLE.id,
+    player('bram').id,
+    started,
+    started + 95_000,
+    1,
+    1,
+    0,
+    135_000,
+    solved,
+    JSON.stringify([
+      { t: 30_000, kind: 'Check', edges: [4] },
+      { t: 52_000, kind: 'Hint', edges: [4] },
+    ]),
+  );
+  puzzleAttempt.run(CLOSED_PUZZLE.id, player('fatima').id, started, null, 0, 0, 1, null, solved, '[]');
+  puzzleAttempt.run(CLOSED_PUZZLE.id, player('Drowsy Otter 21').id, started, null, 0, 0, 0, null, null, '[]');
 
   db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(
     TEA_GROUP.id,

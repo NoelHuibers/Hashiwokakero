@@ -179,6 +179,16 @@ async fn write_rows(conn: &Connection, version: usize) {
         ")
         .await;
     }
+    if version >= 20 {
+        // noel's puzzle for the group, the guest solved it
+        run(r#"
+            INSERT INTO group_puzzles (id, group_id, author_id, title, puzzle, solution, created_at, closes_at)
+                VALUES (1, 1, 1, 'Pair', '{"width":3,"height":1,"islands":[{"pos":{"x":0,"y":0},"required":1},{"pos":{"x":2,"y":0},"required":1}]}', '[1]', 5000, 604805000);
+            INSERT INTO group_puzzle_attempts (puzzle_id, user_id, started_at, finished_at, time_ms, bridges)
+                VALUES (1, 2, 6000, 9000, 3000, '[1]');
+        "#)
+        .await;
+    }
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -190,7 +200,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        19,
+        20,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -368,6 +378,15 @@ async fn old_databases_migrate_with_their_data() {
             // 19 only added the trigger that takes a group's memberships along
             (
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name = 'group_members_gone'",
+                1,
+            ),
+            (
+                "SELECT COUNT(*) FROM group_puzzle_attempts a JOIN group_puzzles p ON p.id = a.puzzle_id
+                 WHERE p.author_id = 1 AND a.helps = '[]' AND p.kudos_seen = 0",
+                i64::from(version >= 20),
+            ),
+            (
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name = 'group_puzzles_gone'",
                 1,
             ),
             // 12 only added the indexes of ranked times

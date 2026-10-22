@@ -16,6 +16,7 @@ mod build;
 mod contact;
 mod dojo;
 mod groups;
+mod kadai;
 mod og;
 mod pages;
 mod playing;

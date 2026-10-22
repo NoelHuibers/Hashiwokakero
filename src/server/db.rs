@@ -408,6 +408,53 @@ CREATE TRIGGER group_members_gone AFTER DELETE ON groups BEGIN
     DELETE FROM group_members WHERE group_id = OLD.id;
 END;
 ",
+    // 20
+    "
+-- Group puzzles (課題 kadai): a member's own puzzle posted to their group for a week, see
+-- server/groups/kadai.rs. author_id NULL: the author deleted their account, a closed puzzle
+-- stays in the group's archive without a name
+CREATE TABLE IF NOT EXISTS group_puzzles (
+    id         INTEGER PRIMARY KEY,
+    group_id   INTEGER NOT NULL,
+    author_id  INTEGER,
+    title      TEXT,
+    puzzle     TEXT NOT NULL,
+    solution   TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    closes_at  INTEGER NOT NULL,
+    -- the author has seen the applause after it closed
+    kudos_seen INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS group_puzzles_group ON group_puzzles (group_id, closes_at);
+CREATE INDEX IF NOT EXISTS group_puzzles_author ON group_puzzles (author_id);
+
+-- A member's go at a group puzzle, timed like a daily's attempt
+CREATE TABLE IF NOT EXISTS group_puzzle_attempts (
+    puzzle_id   INTEGER NOT NULL,
+    user_id     INTEGER NOT NULL,
+    started_at  INTEGER NOT NULL,
+    finished_at INTEGER,
+    hints       INTEGER NOT NULL DEFAULT 0,
+    checks      INTEGER NOT NULL DEFAULT 0,
+    revealed    INTEGER NOT NULL DEFAULT 0,
+    -- finished_at - started_at + penalties
+    time_ms     INTEGER,
+    moves       INTEGER,
+    bridges     TEXT,
+    log         TEXT,
+    flag        TEXT,
+    -- the hints and checks: when and on which bridges (model::Help), JSON
+    helps       TEXT NOT NULL DEFAULT '[]',
+    PRIMARY KEY (puzzle_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS group_puzzle_attempts_user ON group_puzzle_attempts (user_id);
+-- A group that goes takes its puzzles and everyone's attempts at them along
+CREATE TRIGGER group_puzzles_gone AFTER DELETE ON groups BEGIN
+    DELETE FROM group_puzzle_attempts
+        WHERE puzzle_id IN (SELECT id FROM group_puzzles WHERE group_id = OLD.id);
+    DELETE FROM group_puzzles WHERE group_id = OLD.id;
+END;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

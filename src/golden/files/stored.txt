@@ -3,6 +3,8 @@ dailies.solution [2,1]
 attempts.bridges [2,1]
 attempts.log [{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":2,"count":2,"tap":false}]
 attempts.run {"bridges":3,"islands":3,"steady":true,"dithers":1,"cleared":false,"burst":4}
+group_puzzles.puzzle {"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]}
+group_puzzle_attempts.helps [{"t":1250,"kind":"Hint","edges":[3]},{"t":4000,"kind":"Check","edges":[]}]
 dojo_submissions.score {"par2":2.5,"solved":30,"total":34,"wrong":0,"budget":10000000000,"fuel":12.125,"families":[{"family":"Hashi","solved":8,"total":8,"par2":0.75,"unverified":0},{"family":"Queens","solved":4,"total":5,"par2":4.0,"unverified":1}],"unverified":1}
 dojo_submissions.fingerprint [1000000000,18446744073709551615,18446744073709551614,18446744073709551613]
 dojo_submissions.results [{"name":"hashi-01","family":"Hashi","expected":"Sat","outcome":{"Solved":"Sat"},"fuel":1000},{"name":"pigeonhole-02","family":"Pigeonhole","expected":"Unsat","outcome":{"Solved":"Unsat"},"fuel":2000},{"name":"random-3sat-03","family":"Random3Sat","expected":"Sat","outcome":"Timeout","fuel":10000000000},{"name":"queens-04","family":"Queens","expected":"Sat","outcome":"Unknown","fuel":3},{"name":"hashi-parity-05","family":"HashiParity","expected":"Unsat","outcome":"Crashed","fuel":4},{"name":"hashi-06","family":"Hashi","expected":"Sat","outcome":"Wrong","fuel":5},{"name":"queens-07","family":"Queens","expected":"Unsat","outcome":"Unverified","fuel":6}]

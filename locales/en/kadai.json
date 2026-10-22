@@ -1,0 +1,125 @@
+{
+  "title": "Group puzzles",
+  "untitled": "{{ name }}'s puzzle",
+  "untitled_former": "A member's puzzle",
+  "by": "by {{ name }}",
+  "by_former": "by a former member",
+  "solved_of": "{{ solved }} of {{ players }} solved",
+  "left": {
+    "days": "{{ count }}d left",
+    "hours": "{{ count }}h left",
+    "minutes": "{{ count }} min left",
+    "closed": "Closed"
+  },
+  "card": {
+    "text": "Puzzles made by members, open for a week. Solve them for the group ranking, or make one yourself.",
+    "new": "New puzzle",
+    "none": "No open puzzles right now. Build one in the workshop and challenge the group!",
+    "make": "Make a puzzle",
+    "full": "You have {{ max }} open puzzles here, the most there can be. Make the next one once one closes.",
+    "closed": "Closed puzzles",
+    "yours": "yours",
+    "play": "Play",
+    "continue_playing": "Continue",
+    "gave_up": "gave up"
+  },
+  "kudos": {
+    "title": "Your puzzle “{{ name }}” has closed. Here's how the group did:",
+    "claps": "Applause from {{ count }} solvers!",
+    "none": "Nobody solved it this time. A tough one!",
+    "thanks": "Thanks!",
+    "see": "See the final board"
+  },
+  "page": {
+    "title": "Group puzzle",
+    "missing": "This puzzle isn't here.",
+    "missing_hint": "It may have been withdrawn, or it belongs to a group you're not in.",
+    "give_up": "Give up",
+    "give_up_confirm": "Give up and see the solution? You won't be on the group's ranking for this puzzle.",
+    "submit_failed": "Your solution didn't reach the server.",
+    "submit_retry": "Send it again",
+    "closed_text": "This puzzle has closed: here's its solution, and the final ranking next to it."
+  },
+  "cover": {
+    "lead": "A puzzle of {{ count }} islands for {{ group }}. The clock starts when you press start, and your time is ranked within the group.",
+    "unranked": "not ranked",
+    "start": "Start",
+    "preparing": "Getting it ready…",
+    "once": "One go only: the clock keeps running if you leave."
+  },
+  "ranking": {
+    "title": "Group ranking",
+    "open": "Everyone but the author, by time with penalties.",
+    "final_board": "The final ranking: this puzzle has closed.",
+    "spoiler": "{{ done }} of {{ total }} done. Times show up once you've finished it yourself.",
+    "alone": "Nobody else is in the group yet.",
+    "missed": "didn't finish"
+  },
+  "result": {
+    "rank": "Place {{ rank }} of {{ total }} in {{ group }}",
+    "unranked": "Solved, but not on the group's ranking.",
+    "revealed_title": "Solution revealed",
+    "revealed_text": "Not ranked this time. The solution is on the board, take a good look!",
+    "back": "Back to {{ group }}",
+    "practice": "Play it again for practice"
+  },
+  "author": {
+    "title": "Your puzzle",
+    "open": "You made this one, so you can't play it. Here's how everyone is doing.",
+    "closed": "It has closed. Here's how everyone did.",
+    "withdraw": "Withdraw the puzzle",
+    "withdraw_confirm": "Withdraw this puzzle? It disappears from the group, with everyone's times on it.",
+    "withdrawn": "Puzzle withdrawn."
+  },
+  "stats": {
+    "solved": "Solved",
+    "fastest": "Fastest",
+    "median": "Median",
+    "playing": "Playing",
+    "gave_up": "Gave up",
+    "hardest": "The marked bridge took the most help. Hints that fixed it: {{ hints }} · checks that found it wrong: {{ wrong }}.",
+    "no_help": "Nobody needed a hint or found a wrong bridge. Clean work!",
+    "hints": "Hints",
+    "checks": "Checks"
+  },
+  "challenge": {
+    "title": "Challenge a group",
+    "text": "Post your puzzle to one of your groups: everyone there gets a week to solve it, timed and ranked like a daily.",
+    "no_group": "You're not in a group yet.",
+    "to_groups": "Create or join a group",
+    "empty": "Place some islands first.",
+    "too_big": "Group puzzles can be at most {{ max }}×{{ max }} cells.",
+    "unchecked": "First let the solver prove it has exactly one solution.",
+    "check": "Check uniqueness",
+    "not_unique": "This puzzle has more than one solution. Change it until the solver finds just one.",
+    "unsolvable": "This puzzle has no solution. Change it until the solver finds one.",
+    "ready": "Exactly one solution: ready to post!",
+    "group": "Group",
+    "name": "Title (optional)",
+    "placeholder": "e.g. The Spiral",
+    "post": "Challenge the group",
+    "posting": "Checking and posting…",
+    "posted": "Posted to {{ group }}!",
+    "rules": "Open for 7 days, up to 3 open puzzles per group. You can't play your own, but you'll see how everyone does."
+  },
+  "errors": {
+    "too_big": "Group puzzles can be at most 20×20 cells.",
+    "unsolvable": "This puzzle has no solution.",
+    "not_unique": "This puzzle has more than one solution, or the solver couldn't prove it has only one.",
+    "too_many": "You have 3 open puzzles in this group already. Wait until one closes.",
+    "title_invalid": "Titles have at most 40 characters.",
+    "closed": "This puzzle has closed or was withdrawn.",
+    "own": "That's your own puzzle: you can watch, not play.",
+    "locked": "That's an open puzzle of your group: the solvers will help with it once you've finished it yourself.",
+    "author_only": "Only the puzzle's author can do that."
+  },
+  "summary": {
+    "title": "How it went"
+  },
+  "replay": {
+    "back": "Back to the puzzle",
+    "locked": "This puzzle's replays open once you've solved it or given up.",
+    "empty": "Nobody's moves were recorded for this puzzle yet.",
+    "stage": "The group puzzle's board with the bridges of {{ names }}"
+  }
+}
