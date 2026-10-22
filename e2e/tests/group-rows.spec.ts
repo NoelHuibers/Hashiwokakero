@@ -73,15 +73,15 @@ test('short names stay whole on a phone, on the group page and in the daily tab'
   await chenWhole(page, board);
 
   // A name that is cut off shows whole in its tooltip, one that fits has none: narrowed so the
-  // guest's (two words and a number) is cut off and chen still fits
+  // a guest's (two words and a number, other runs may have joined too) is cut off and chen fits
   await page.addStyleTag({ content: 'a[data-tooltip-clipped] { max-width: 2.75rem }' });
   const tooltip = page.getByRole('tooltip');
-  const [mine] = await names(board).filter({ hasNotText: /^(chen|bram)$/ }).all();
-  const myName = (await mine.textContent())!.trim();
-  expect(await clipped(mine)).toBe(true);
-  await mine.hover();
+  const [guest] = await names(board).filter({ hasNotText: /^(chen|bram)$/ }).all();
+  const guestName = (await guest.textContent())!.trim();
+  expect(await clipped(guest)).toBe(true);
+  await guest.hover();
   await expect(tooltip).toBeVisible();
-  await expect(tooltip).toHaveText(myName);
+  await expect(tooltip).toHaveText(guestName);
   const chen = page.getByRole('link', { name: 'chen', exact: true });
   expect(await clipped(chen)).toBe(false);
   await chen.hover();
