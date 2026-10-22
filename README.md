@@ -116,6 +116,7 @@ Start with the [solver starter and protocol](dojo/starter/README.md). The
 - `common/`, `backend/`, `sat_solver/`: puzzle types, generation, encoding, and solvers.
 - `dojo/`: benchmark tooling, worker, and solver starter.
 - `locales/`, `style/`, `public/`: translations, styles, and static assets.
+- `app/`: the mobile app's client-side rendered web bundle, see [app/README.md](app/README.md).
 - `e2e/`: browser tests.
 - `backend/input/`, `solutions/`: example puzzles and solver outputs.
 

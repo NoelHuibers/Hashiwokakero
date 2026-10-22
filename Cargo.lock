@@ -1909,6 +1909,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashi_app"
+version = "0.1.0"
+dependencies = [
+ "hashi",
+ "leptos",
+]
+
+[[package]]
 name = "hashi_i18n"
 version = "0.1.0"
 dependencies = [

@@ -5,7 +5,7 @@ edition = "2024"
 license = "MIT"
 
 [workspace]
-members = ["backend", "common", "dojo", "dojo/house", "i18n", "sat_solver"]
+members = ["app", "backend", "common", "dojo", "dojo/house", "i18n", "sat_solver"]
 exclude = ["dojo/starter"]
 
 # As strict as is sensible: everything in clippy's pedantic and nursery groups, CI fails on any

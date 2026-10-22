@@ -194,3 +194,19 @@ fn ScriptFont() -> impl IntoView {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    /// The mobile app's page (app/index.html, see app/README.md) applies the theme with a copy of
+    /// the same script. The app's content security policy allows inline scripts by their hash,
+    /// so the copy must stay identical, and be the page's only inline script.
+    #[test]
+    fn app_page_has_the_theme_script() {
+        let page = include_str!("../app/index.html");
+        assert!(
+            page.contains(&format!("<script>{}</script>", super::THEME_SCRIPT)),
+            "app/index.html must have THEME_SCRIPT as it is"
+        );
+        assert_eq!(page.matches("<script").count(), 1, "app/index.html");
+    }
+}
