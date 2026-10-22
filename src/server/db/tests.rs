@@ -190,7 +190,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        18,
+        19,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -364,6 +364,11 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM group_river JOIN group_river_crew USING (group_id, level)",
                 i64::from(version >= 18),
+            ),
+            // 19 only added the trigger that takes a group's memberships along
+            (
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name = 'group_members_gone'",
+                1,
             ),
             // 12 only added the indexes of ranked times
             (
