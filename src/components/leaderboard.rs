@@ -53,6 +53,10 @@ pub fn RankCell(rank: i64, #[prop(optional)] large: bool) -> impl IntoView {
 /// `rival` puts the small crossed swords after a player you marked as your rival, only on the
 /// daily and monthly boards, where you race them.
 #[component]
+#[expect(
+    clippy::fn_params_excessive_bools,
+    reason = "component props are always named where they're set"
+)]
 pub fn PlayerName(
     user_id: i64,
     name: String,
@@ -60,6 +64,10 @@ pub fn PlayerName(
     stamp: Option<Stamp>,
     #[prop(optional)] me: bool,
     #[prop(optional)] rival: bool,
+    /// In a row marked as yours ([`HIGHLIGHT_ROW`]), which already says it: the "you" badge is
+    /// then only for screen readers and leaves its room to the name.
+    #[prop(optional)]
+    marked_row: bool,
 ) -> impl IntoView {
     let i18n = use_i18n();
     if name.is_empty() {
@@ -85,7 +93,14 @@ pub fn PlayerName(
             </A>
             {rival.then(|| view! { <RivalMark user_id /> })}
             {stamp.map(|stamp| view! { <StampBadge stamp=stamp /> })}
-            {me.then(|| view! { <Badge variant=BadgeVariant::Default size=BadgeSize::Sm class="shrink-0">{t!(i18n, common.ranking.you)}</Badge> })}
+            {me.then(|| {
+                if marked_row {
+                    view! { <span class="sr-only">{t!(i18n, common.ranking.you)}</span> }.into_any()
+                } else {
+                    view! { <Badge variant=BadgeVariant::Default size=BadgeSize::Sm class="shrink-0">{t!(i18n, common.ranking.you)}</Badge> }
+                        .into_any()
+                }
+            })}
             {guest.then(|| view! { <span class="hidden text-xs text-muted-foreground @sm:inline">{t!(i18n, common.ranking.guest)}</span> })}
         </div>
     }
@@ -237,7 +252,7 @@ fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
                 <RankCell rank=entry.rank />
             </td>
             <td class="max-w-0 py-2 pe-2">
-                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me rival=true />
+                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me marked_row=true rival=true />
             </td>
             <td class="py-2 pe-2 text-end text-xs text-muted-foreground" data-tooltip=move || t_string!(i18n, common.ranking.penalties)>
                 {(penalties > 0).then(|| format!("{}h {}c", entry.hints, entry.checks))}
