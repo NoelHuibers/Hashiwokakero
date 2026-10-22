@@ -20,6 +20,36 @@ updates:
           - minor
           - patch
 
+  # The Android app's Tauri crate, outside the workspace with its own Cargo.lock
+  - package-ecosystem: cargo
+    directory: /app/src-tauri
+    schedule:
+      interval: weekly
+    groups:
+      # Tauri's crates have to move together (and with tauri-cli, pinned in ci.yml)
+      tauri:
+        patterns:
+          - "tauri*"
+      rust-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Its Android project: the Gradle wrapper, the Android Gradle and Kotlin plugins, AndroidX
+  - package-ecosystem: gradle
+    directory: /app/src-tauri/gen/android
+    schedule:
+      interval: weekly
+    groups:
+      android-gradle:
+        patterns:
+          - "com.android.tools.build:*"
+          - "org.jetbrains.kotlin*"
+      gradle-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
   # Reads and updates pnpm-lock.yaml
   - package-ecosystem: npm
     directory: /

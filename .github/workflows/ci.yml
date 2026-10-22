@@ -448,6 +448,8 @@ jobs:
             });
             console.log(["| App bundle | raw | gzip | brotli |", "|---|---|---|---|", ...rows].join("\n"));
           ' >> "$GITHUB_STEP_SUMMARY"
+          # Left out by Trunk.toml, the app doesn't carry the Dojo's development set
+          if ls dojo-dev-*.tar.gz > /dev/null 2>&1; then echo "::error::the Dojo's development set is in the bundle"; exit 1; fi
       - uses: actions/upload-artifact@v7
         with:
           name: app-web
@@ -496,6 +498,80 @@ jobs:
             e2e/playwright-report-app
             e2e/.run/*.log
           include-hidden-files: true
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+
+  # The Android app (app/src-tauri, docs/mobile.md): Tauri around the bundle of "Build app (web)",
+  # taken from its artifact, as a debug APK for 64-bit ARM phones. Not a required check and not in
+  # Release compatibility either: trouble with the Android toolchain can't hold up the website.
+  android:
+    name: Build app (Android)
+    needs: [changes, build-app]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      # The runner's Android SDK has it preinstalled; pinned, as it links the Rust library
+      NDK_VERSION: 29.0.14206865
+      # No debug info in the debug build: a far smaller APK. Panics still say where.
+      CARGO_PROFILE_DEV_DEBUG: 0
+    steps:
+      - uses: actions/checkout@v7
+      # Gradle (the Android Gradle plugin) needs a JDK 17 or newer
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      # Gradle's caches, written on main only like the Rust caches (basic: the open source cache)
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Android NDK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+      # The Android target in this job only, not in rust-toolchain.toml (every job would get it)
+      - run: rustup toolchain install && rustup target add aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Install the Tauri CLI
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y tauri-cli@2.12.4
+      # The web bundle, which Tauri puts into the app (frontendDist in tauri.conf.json)
+      - uses: actions/download-artifact@v8
+        with:
+          name: app-web
+          path: target/app-dist
+      # The crate is outside the workspace, the lints of "Test & lint" don't see it
+      - name: Formatting and Clippy
+        working-directory: app/src-tauri
+        run: |
+          cargo fmt --check
+          cargo clippy --locked --target aarch64-linux-android -- -D warnings
+      # Without beforeBuildCommand: the bundle is already there, from the artifact
+      - name: Build
+        working-directory: app/src-tauri
+        run: cargo tauri android build --ci --debug --apk --target aarch64 --config '{"build":{"beforeBuildCommand":null}}'
+      - name: Size
+        working-directory: app/src-tauri
+        run: |
+          mb() { awk -v bytes="$(stat -L -c %s "$1")" 'BEGIN { printf "%.1f MB", bytes / 1048576 }'; }
+          {
+            echo "| Android (debug, arm64) | size |"
+            echo "|---|---|"
+            echo "| APK | $(mb gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk) |"
+            # Stored uncompressed in the APK; the web bundle is in it, compressed by Tauri
+            echo "| native library | $(mb target/aarch64-linux-android/debug/libhashi_tauri_lib.so) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-debug-apk
+          path: app/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+          # Already compressed
+          compression-level: 0
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
   # The image the deploy ships, built from the same artifact and started: it has to serve the

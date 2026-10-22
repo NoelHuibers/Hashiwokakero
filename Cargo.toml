@@ -6,7 +6,7 @@ license = "MIT"
 
 [workspace]
 members = ["app", "backend", "common", "dojo", "dojo/house", "i18n", "sat_solver"]
-exclude = ["dojo/starter"]
+exclude = ["app/src-tauri", "dojo/starter"]
 
 # As strict as is sensible: everything in clippy's pedantic and nursery groups, CI fails on any
 # warning. The few lints switched off below don't fit this code base, each with its reason.

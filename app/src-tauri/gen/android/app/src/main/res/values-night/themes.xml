@@ -1,0 +1,7 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Night mode of the system; the page's own night mode (.dark) uses the same background -->
+    <style name="Theme.hashi_tauri" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_night</item>
+        <item name="android:windowBackground">@color/background_night</item>
+    </style>
+</resources>

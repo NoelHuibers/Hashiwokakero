@@ -1,0 +1,4 @@
+# The build of this crate (outside the workspace, so not in the root target/)
+/target/
+# Written by tauri-build on every build
+/gen/schemas
