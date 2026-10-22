@@ -6,7 +6,7 @@
 use leptos::ev::{KeyboardEvent, PointerEvent};
 use leptos::prelude::*;
 
-use crate::components::sprites::{BOAT, PENNANT, PixelSprite};
+use crate::components::sprites::{BOAT, PENNANT, PixelSprite, runs};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::model::{MarkKind, SPEEDS, colour_var, format_duration, fraction};
 
@@ -25,7 +25,8 @@ fn Segment(
             type="button"
             aria-pressed=move || pressed.get().to_string()
             aria-label=label
-            class="flex min-h-8 shrink-0 items-center gap-1 rounded-md px-2.5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-ring"
+            data-tooltip=label
+            class="flex min-h-9 shrink-0 items-center gap-1 rounded-md px-2.5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-ring"
             class=(["bg-background", "text-foreground", "shadow-sm"], move || pressed.get())
             class=(["text-foreground/60", "hover:text-foreground"], move || !pressed.get())
             on:click=move |_| on_press()
@@ -199,8 +200,10 @@ fn Timeline(theatre: Theatre) -> impl IntoView {
                     }
                 }
             >
-                <div class="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2 overflow-hidden rounded-full bg-[var(--px-sea-light)]">
-                    <div class="h-full bg-[var(--px-sea)]" style=move || format!("width: {:.3}%", at())></div>
+                // The water still ahead is faint, the stretch sailed in the sea's colour (the light
+                // one at night, where the sea itself is darker than the card)
+                <div class="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 overflow-hidden rounded-full bg-foreground/10">
+                    <div class="h-full rounded-full bg-[var(--px-sea)] dark:bg-[var(--px-sea-light)]" style=move || format!("width: {:.3}%", at())></div>
                 </div>
                 <span class="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-[70%]" style=move || format!("left: {:.3}%", at())>
                     <PixelSprite art=&BOAT class="h-6 w-auto drop-shadow-sm" />
@@ -211,17 +214,72 @@ fn Timeline(theatre: Theatre) -> impl IntoView {
     }
 }
 
+/// Pixel icons for the transport buttons, drawn in the button's text colour.
+const PLAY: [&str; 11] = [
+    "x.......", "xx......", "xxxx....", "xxxxx...", "xxxxxxx.", "xxxxxxxx", "xxxxxxx.", "xxxxx...",
+    "xxxx....", "xx......", "x.......",
+];
+const PAUSE: [&str; 11] = ["xxx..xxx"; 11];
+const AGAIN: [&str; 9] = [
+    "...x.....",
+    "..xxxxx..",
+    ".xxx...x.",
+    "..x.....x",
+    "x.......x",
+    "x.......x",
+    "x.......x",
+    ".x.....x.",
+    "..xxxxx..",
+];
+const PREVIOUS: [&str; 7] = [
+    "xx....x", "xx...xx", "xx..xxx", "xx.xxxx", "xx..xxx", "xx...xx", "xx....x",
+];
+const NEXT: [&str; 7] = [
+    "x....xx", "xx...xx", "xxx..xx", "xxxx.xx", "xxx..xx", "xx...xx", "x....xx",
+];
+
+/// A pixel icon in `currentColor`, `scale` screen pixels to an art pixel: a whole number keeps
+/// every pixel the same size.
+#[component]
+fn Glyph(
+    art: &'static [&'static str],
+    scale: usize,
+    #[prop(into, optional)] class: String,
+) -> impl IntoView {
+    let (w, h) = (art.iter().map(|r| r.len()).max().unwrap_or(0), art.len());
+    view! {
+        <svg
+            class=class
+            width=w * scale
+            height=h * scale
+            viewBox=format!("0 0 {w} {h}")
+            shape-rendering="crispEdges"
+            aria-hidden="true"
+        >
+            {runs(art)
+                .into_iter()
+                .map(|(x, y, w, _)| {
+                    view! { <rect x=x y=y width=w height="1" fill="currentColor" /> }
+                })
+                .collect_view()}
+        </svg>
+    }
+}
+
 /// Play, pause, step, speed, layout and the timeline.
+///
+/// Laid out like a media player: the timeline across the top with the clock under its ends,
+/// the transport in the middle, the speed and the layout under it (beside it from `sm` on).
 #[component]
 pub fn Controls(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoView {
     let i18n = use_i18n();
     let playing = move || theatre.playing.get();
     let at_end = Memo::new(move |_| theatre.now() >= theatre.end);
-    let at_end = move || at_end.get();
+    let at_end = move || at_end.get() && theatre.end > 0;
     let play_label = move || {
         if playing() {
             t_string!(i18n, replay.controls.pause)
-        } else if at_end() && theatre.end > 0 {
+        } else if at_end() {
             t_string!(i18n, replay.controls.again)
         } else {
             t_string!(i18n, replay.controls.play)
@@ -238,24 +296,43 @@ pub fn Controls(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoVie
         view! {
             <button
                 type="button"
-                class="grid size-9 place-items-center rounded-md border bg-card font-pixel text-sm shadow-xs transition-colors hover:bg-accent disabled:opacity-40"
+                class="grid size-11 place-items-center rounded-full text-foreground/70 transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-40"
                 data-tooltip=label
                 aria-label=label
                 disabled=theatre.end == 0
                 on:click=move |_| theatre.step(forward)
             >
-                {if forward { "▶|" } else { "|◀" }}
+                <Glyph art=if forward { &NEXT } else { &PREVIOUS } scale=2 />
             </button>
         }
     };
     view! {
-        <div class="flex flex-col gap-2" data-testid="replay-controls">
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <div class="flex items-center gap-1.5">
+        <div class="flex flex-col gap-3" data-testid="replay-controls">
+            <div class="flex flex-col gap-1">
+                <Timeline theatre />
+                <p
+                    dir="ltr"
+                    class="flex justify-between px-1 font-pixel text-xs tabular-nums"
+                    data-testid="replay-clock"
+                >
+                    <span class="text-foreground">
+                        {move || format_duration(i64::from(theatre.now()))}
+                    </span>
+                    <span class="text-muted-foreground">
+                        {format_duration(i64::from(theatre.end))}
+                    </span>
+                </p>
+            </div>
+            <div class="grid grid-cols-2 items-center gap-x-2 gap-y-3 sm:grid-cols-[1fr_auto_1fr]">
+                // Back, play, on: the middle of the card on every width
+                <div
+                    dir="ltr"
+                    class="col-span-2 flex items-center justify-center gap-3 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+                >
                     {step_button(false)}
                     <button
                         type="button"
-                        class="grid size-12 place-items-center rounded-full bg-primary text-xl text-primary-foreground shadow-md transition-transform hover:scale-105 active:scale-95 disabled:opacity-40"
+                        class="grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95 disabled:opacity-40"
                         aria-label=play_label
                         data-tooltip=play_label
                         data-testid="replay-play"
@@ -263,62 +340,87 @@ pub fn Controls(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoVie
                         disabled=theatre.end == 0
                         on:click=move |_| theatre.toggle_play()
                     >
-                        {move || if playing() { "❚❚" } else if at_end() && theatre.end > 0 { "↺" } else { "▶" }}
+                        {move || {
+                            if playing() {
+                                view! { <Glyph art=&PAUSE scale=2 /> }.into_any()
+                            } else if at_end() {
+                                view! { <Glyph art=&AGAIN scale=3 /> }.into_any()
+                            } else {
+                                // A triangle's weight sits left of its box: nudged to look centred
+                                view! { <Glyph art=&PLAY scale=2 class="ms-1" /> }
+                                    .into_any()
+                            }
+                        }}
                     </button>
                     {step_button(true)}
                 </div>
-                <p class="font-pixel text-sm tabular-nums" data-testid="replay-clock">
-                    <span class="text-foreground">{move || format_duration(i64::from(theatre.now()))}</span>
-                    <span class="text-muted-foreground">" / " {format_duration(i64::from(theatre.end))}</span>
-                </p>
-                <div class="ms-auto flex flex-wrap items-center gap-2">
-                    <div
-                        role="group"
-                        aria-label=move || t_string!(i18n, replay.controls.speed)
-                        class="flex gap-0.5 rounded-lg bg-muted p-[3px]"
+                <div
+                    role="group"
+                    aria-label=move || t_string!(i18n, replay.controls.speed)
+                    class="flex w-fit gap-0.5 justify-self-start rounded-lg bg-muted p-[3px] sm:row-start-1"
+                >
+                    {SPEEDS
+                        .into_iter()
+                        .map(|speed| {
+                            view! {
+                                <Segment
+                                    pressed=Signal::derive(move || theatre.speed.get() == speed)
+                                    label=Signal::derive(move || {
+                                        td_string!(
+                                            i18n.get_locale(), replay.controls.speed_n, n = speed
+                                        )
+                                    })
+                                    on_press=move || theatre.speed.set(speed)
+                                >
+                                    <span class="font-pixel text-xs">{format!("{speed}×")}</span>
+                                </Segment>
+                            }
+                        })
+                        .collect_view()}
+                </div>
+                <div
+                    role="group"
+                    aria-label=move || t_string!(i18n, replay.controls.layout)
+                    class="flex w-fit gap-0.5 justify-self-end rounded-lg bg-muted p-[3px] sm:col-start-3 sm:row-start-1"
+                >
+                    <Segment
+                        pressed=Signal::derive(move || theatre.layout.get() == Layout::Together)
+                        label=Signal::derive(move || {
+                            t_string!(i18n, replay.controls.together).to_string()
+                        })
+                        on_press=move || theatre.layout.set(Layout::Together)
                     >
-                        {SPEEDS
-                            .into_iter()
-                            .map(|speed| {
-                                view! {
-                                    <Segment
-                                        pressed=Signal::derive(move || theatre.speed.get() == speed)
-                                        label=Signal::derive(move || td_string!(i18n.get_locale(), replay.controls.speed_n, n = speed))
-                                        on_press=move || theatre.speed.set(speed)
-                                    >
-                                        <span class="font-pixel text-xs">{format!("{speed}×")}</span>
-                                    </Segment>
-                                }
-                            })
-                            .collect_view()}
-                    </div>
-                    <div
-                        role="group"
-                        aria-label=move || t_string!(i18n, replay.controls.layout)
-                        class="flex gap-0.5 rounded-lg bg-muted p-[3px]"
+                        <span class="font-pixel" aria-hidden="true">
+                            "重"
+                        </span>
+                        <span class="hidden lg:inline">{t!(i18n, replay.controls.together)}</span>
+                    </Segment>
+                    <Segment
+                        pressed=Signal::derive(move || theatre.layout.get() == Layout::Apart)
+                        label=Signal::derive(move || {
+                            t_string!(i18n, replay.controls.apart).to_string()
+                        })
+                        on_press=move || theatre.layout.set(Layout::Apart)
                     >
-                        <Segment
-                            pressed=Signal::derive(move || theatre.layout.get() == Layout::Together)
-                            label=Signal::derive(move || t_string!(i18n, replay.controls.together).to_string())
-                            on_press=move || theatre.layout.set(Layout::Together)
-                        >
-                            <span class="font-pixel" aria-hidden="true">"重"</span>
-                            <span class="hidden sm:inline">{t!(i18n, replay.controls.together)}</span>
-                        </Segment>
-                        <Segment
-                            pressed=Signal::derive(move || theatre.layout.get() == Layout::Apart)
-                            label=Signal::derive(move || t_string!(i18n, replay.controls.apart).to_string())
-                            on_press=move || theatre.layout.set(Layout::Apart)
-                        >
-                            <span class="font-pixel" aria-hidden="true">"並"</span>
-                            <span class="hidden sm:inline">{t!(i18n, replay.controls.apart)}</span>
-                        </Segment>
-                    </div>
+                        <span class="font-pixel" aria-hidden="true">
+                            "並"
+                        </span>
+                        <span class="hidden lg:inline">{t!(i18n, replay.controls.apart)}</span>
+                    </Segment>
                 </div>
             </div>
-            <Timeline theatre />
-            <p class="text-xs text-muted-foreground">
-                {move || if still { t_string!(i18n, replay.controls.still) } else { t_string!(i18n, replay.controls.keys) }}
+            // The keys are no help on a touch screen; reduced motion's note is
+            <p
+                class="border-t pt-3 text-center text-xs text-muted-foreground"
+                class=(["hidden", "pointer-fine:block"], !still)
+            >
+                {move || {
+                    if still {
+                        t_string!(i18n, replay.controls.still)
+                    } else {
+                        t_string!(i18n, replay.controls.keys)
+                    }
+                }}
             </p>
         </div>
     }
@@ -389,6 +491,28 @@ mod tests {
             assert!(snap(-0.2).abs() < 1e-9 && snap(0.003).abs() < 1e-9);
             assert!((snap(0.5) - 0.5).abs() < 1e-9);
             assert!((snap(0.997) - 1.0).abs() < 1e-9 && (snap(1.4) - 1.0).abs() < 1e-9);
+        });
+    }
+
+    /// The keys' note only where there's a mouse, reduced motion's everywhere; the clock under
+    /// the timeline, the play button drawn as a pixel icon.
+    #[tokio::test]
+    async fn controls_render() {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            let theatre = Theatre::new(super::super::tests::data(), None);
+            let keys = view! { <Controls theatre /> }.to_html();
+            let still = view! { <Controls theatre still=true /> }.to_html();
+            assert!(keys.contains("hidden pointer-fine:block"), "{keys}");
+            assert!(keys.contains("Space plays and pauses"));
+            assert!(!still.contains("pointer-fine:block"), "{still}");
+            assert!(still.contains("Reduced motion is on"));
+            let clock = keys.find("replay-clock").unwrap();
+            assert!(keys.find("replay-timeline").unwrap() < clock);
+            assert!(keys[..keys.find("replay-play").unwrap()].contains("0:00.0"));
+            assert!(!keys.contains('▶'));
         });
     }
 }
