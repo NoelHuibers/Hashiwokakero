@@ -4,6 +4,10 @@
 //! a session cookie. Registering gives that same user a username and password, so results and
 //! streaks carry over. The cookie holds a random token, the database only its SHA-256.
 //!
+//! The app can't keep the cookie: its `WebView` runs on its own origin, where the cookie is a
+//! third-party one. It sends the same token as `Authorization: Bearer hs1.<token>` and gets new
+//! ones in a response header (`api::SESSION_HEADER`) instead of the cookie, see `send_session`.
+//!
 //! Sessions last a year and are renewed while the player keeps coming back. A guest without a
 //! valid session can never get back in, so guests are deleted a year after their last visit
 //! ([`start_cleanup`]). Deleting keeps the ranked times without a name ([`erase`]), so old
@@ -14,7 +18,7 @@ use std::sync::Mutex;
 
 use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash};
-use axum::http::{HeaderMap, HeaderValue, header};
+use axum::http::{HeaderMap, HeaderName, HeaderValue, header, request::Parts};
 use leptos::config::{Env, LeptosOptions};
 use leptos::prelude::*;
 use libsql::{Connection, TransactionBehavior, params};
@@ -23,11 +27,12 @@ use sha2::{Digest, Sha256};
 use super::db::db_err;
 use super::names;
 use super::{hex, now_ms, run_auth_blocking};
+use crate::api::{APP_HEADER, SESSION_BEARER, SESSION_HEADER};
 use crate::model::{ApiError, MS_PER_DAY, RENAME_EVERY_DAYS, UserInfo};
 
 const COOKIE: &str = "hashi_session";
 const SESSION_DAYS: i64 = 365;
-/// A session is renewed (and its cookie sent again) once it is this old, so at most once a day.
+/// A session is renewed (and its token sent again) once it is this old, so at most once a day.
 const RENEW_AFTER_MS: i64 = MS_PER_DAY;
 /// Failed logins per username within the window before further attempts are refused.
 const MAX_FAILED_LOGINS: u32 = 8;
@@ -66,35 +71,66 @@ fn hash_token(token: &str) -> String {
     hex(&Sha256::digest(token.as_bytes()))
 }
 
-/// The session token from the request's cookie header.
+/// The session token of the request, see [`token_from_headers`].
 async fn request_token() -> Option<String> {
     let headers: HeaderMap = leptos_axum::extract().await.ok()?;
     token_from_headers(&headers)
 }
 
+/// The session token of a request: the app's bearer token if it sent one, else the cookie's.
+/// A malformed bearer token is no session at all, it doesn't fall back to the cookie.
 fn token_from_headers(headers: &HeaderMap) -> Option<String> {
-    headers
-        .get_all(header::COOKIE)
-        .iter()
-        .filter_map(|v| v.to_str().ok())
-        .flat_map(|v| v.split(';'))
-        .filter_map(|pair| pair.trim().split_once('='))
-        .find(|(name, _)| *name == COOKIE)
-        .map(|(_, value)| value.to_string())
-        .filter(|v| v.len() == 64 && v.bytes().all(|b| b.is_ascii_hexdigit()))
+    let token = match app_bearer(headers) {
+        Some(token) => token,
+        None => headers
+            .get_all(header::COOKIE)
+            .iter()
+            .filter_map(|v| v.to_str().ok())
+            .flat_map(|v| v.split(';'))
+            .filter_map(|pair| pair.trim().split_once('='))
+            .find(|(name, _)| *name == COOKIE)
+            .map(|(_, value)| value)?,
+    };
+    (token.len() == 64 && token.bytes().all(|b| b.is_ascii_hexdigit())).then(|| token.to_string())
 }
 
-fn set_cookie(value: &str, max_age_s: i64) {
+/// What follows `Bearer hs1.` in the `Authorization` header: the app's session token, unchecked.
+/// Other bearer tokens (the admin's, the Dojo worker's) are none.
+fn app_bearer(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(header::AUTHORIZATION)?
+        .to_str()
+        .ok()?
+        .strip_prefix("Bearer ")?
+        .strip_prefix(SESSION_BEARER)
+}
+
+/// Whether the request comes from the app: it says so ([`APP_HEADER`]) or sends its bearer token.
+fn app_request(headers: &HeaderMap) -> bool {
+    headers.get(APP_HEADER).is_some_and(|v| !v.is_empty()) || app_bearer(headers).is_some()
+}
+
+/// Hands the client its session token, or an empty one to forget it: the app in
+/// [`SESSION_HEADER`] (the router makes such responses `no-store`), the browser in the cookie.
+fn send_session(token: &str, max_age_s: i64) {
+    let Some(response) = use_context::<leptos_axum::ResponseOptions>() else {
+        return;
+    };
+    if use_context::<Parts>().is_some_and(|parts| app_request(&parts.headers)) {
+        // The last one counts, as it does for cookies: deleting an account renews its session
+        // first, then ends it
+        if let Ok(value) = HeaderValue::from_str(token) {
+            response.insert_header(HeaderName::from_static(SESSION_HEADER), value);
+        }
+        return;
+    }
     // LEPTOS_ENV=PROD, as the router's settings say. Local development has no HTTPS.
     let secure = use_context::<LeptosOptions>().is_some_and(|o| o.env == Env::PROD);
     let cookie = format!(
-        "{COOKIE}={value}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age_s}{}",
+        "{COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age_s}{}",
         if secure { "; Secure" } else { "" }
     );
-    if let (Some(response), Ok(value)) = (
-        use_context::<leptos_axum::ResponseOptions>(),
-        HeaderValue::from_str(&cookie),
-    ) {
+    if let Ok(value) = HeaderValue::from_str(&cookie) {
         response.append_header(header::SET_COOKIE, value);
     }
 }
@@ -140,7 +176,7 @@ pub async fn current_user(conn: &Connection) -> Result<Option<User>, ServerFnErr
         )
         .await
         .map_err(db_err)?;
-        set_cookie(&token, SESSION_DAYS * 24 * 3600);
+        send_session(&token, SESSION_DAYS * 24 * 3600);
     }
     Ok(Some(user))
 }
@@ -182,12 +218,12 @@ async fn user_by_token(
 
 async fn create_session(conn: &Connection, user_id: i64) -> Result<(), ServerFnError> {
     let token = insert_session(conn, user_id).await?;
-    set_cookie(&token, SESSION_DAYS * 24 * 3600);
+    send_session(&token, SESSION_DAYS * 24 * 3600);
     Ok(())
 }
 
-/// Stores a session without publishing its cookie: a caller in a transaction must commit
-/// before the browser receives a token that depends on that transaction.
+/// Stores a session without sending its token: a caller in a transaction must commit
+/// before the client receives a token that depends on that transaction.
 pub(super) async fn insert_session(
     conn: &Connection,
     user_id: i64,
@@ -301,7 +337,7 @@ pub async fn register(
     };
     let hash = hash_password(password).await?;
     let (user, token) = register_hashed(conn, current, username, hash).await?;
-    set_cookie(&token, SESSION_DAYS * 24 * 3600);
+    send_session(&token, SESSION_DAYS * 24 * 3600);
     super::daily::invalidate_profiles();
     Ok(user)
 }
@@ -586,7 +622,10 @@ pub(super) async fn merge_guest(
         "DELETE FROM rivals WHERE (user_id = ?1 AND rival_id = ?2) OR (user_id = ?2 AND rival_id = ?1)",
         "UPDATE OR IGNORE rivals SET user_id = ?1 WHERE user_id = ?2",
         "UPDATE OR IGNORE rivals SET rival_id = ?1 WHERE rival_id = ?2",
-    ] {
+    ]
+    .into_iter()
+    .chain(super::groups::kadai::MERGE_GUEST)
+    {
         tx.execute(sql, params![user, guest])
             .await
             .map_err(db_err)?;
@@ -614,7 +653,7 @@ pub async fn logout(conn: &Connection) -> Result<(), ServerFnError> {
         .await
         .map_err(db_err)?;
     }
-    set_cookie("", 0);
+    send_session("", 0);
     Ok(())
 }
 
@@ -633,7 +672,7 @@ pub async fn delete_account(
         }
     }
     erase(conn, user.id).await?;
-    set_cookie("", 0);
+    send_session("", 0);
     Ok(())
 }
 
@@ -641,7 +680,9 @@ pub async fn delete_account(
 ///
 /// That is name, password, sessions, stamps, rivals (their list, and their place in everyone
 /// else's), group memberships (groups they own pass on to the longest standing member, groups
-/// nobody else but banned players is in go, see `groups::ERASE`), the hanko seals they pressed and got, Dojo submissions, and of the daily results the
+/// nobody else but banned players is in go, see `groups::ERASE`), the hanko seals they pressed
+/// and got, group puzzles (open ones go, closed ones stay without a name, their attempts at
+/// others' go, see `groups::kadai::erase`), Dojo submissions, and of the daily results the
 /// boards, move logs, devices and unranked attempts. What stays are the ranked times and
 /// penalties, under a user without a name (`deleted_at`), so the rankings of old days and the
 /// medals of everyone else don't change. A user without ranked times remains as an anonymous
@@ -655,6 +696,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
     }
+    super::groups::kadai::erase(&tx, user, now_ms()).await?;
     for sql in [
         "DELETE FROM sessions WHERE user_id = ?1",
         "DELETE FROM stamps WHERE user_id = ?1",
@@ -792,6 +834,100 @@ mod tests {
         assert_eq!(token.len(), 64);
         assert_eq!(hash_token(&token).len(), 64);
         assert_ne!(hash_token(&token), token);
+    }
+
+    fn headers(pairs: &[(&'static str, &str)]) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        for (name, value) in pairs {
+            headers.append(*name, value.parse().unwrap());
+        }
+        headers
+    }
+
+    #[test]
+    fn session_tokens_come_from_the_apps_bearer_or_the_cookie() {
+        let app = "ab".repeat(32);
+        let web = "cd".repeat(32);
+        let cookie = format!("theme=dark; hashi_session={web}");
+        let bearer = format!("Bearer hs1.{app}");
+        assert_eq!(token_from_headers(&HeaderMap::new()), None);
+        assert_eq!(
+            token_from_headers(&headers(&[("cookie", &cookie)])),
+            Some(web.clone())
+        );
+        assert_eq!(
+            token_from_headers(&headers(&[("authorization", &bearer)])),
+            Some(app.clone())
+        );
+        // Both: the bearer wins
+        assert_eq!(
+            token_from_headers(&headers(&[("cookie", &cookie), ("authorization", &bearer)])),
+            Some(app.clone())
+        );
+        // A broken bearer is no session, the cookie doesn't stand in for it
+        for broken in [
+            "Bearer hs1.".to_string(),
+            "Bearer hs1.garbage".to_string(),
+            format!("Bearer hs1.{}", "ab".repeat(31)),
+            format!("Bearer hs1.{app}0"),
+            format!("Bearer hs1.{}zz", "ab".repeat(31)),
+            format!("Bearer hs1. {app}"),
+            format!("Bearer hs1.hs1.{app}"),
+        ] {
+            assert_eq!(
+                token_from_headers(&headers(&[("cookie", &cookie), ("authorization", &broken)])),
+                None,
+                "{broken}"
+            );
+            assert_eq!(
+                token_from_headers(&headers(&[("authorization", &broken)])),
+                None,
+                "{broken}"
+            );
+        }
+        // Other bearer tokens, the admin's and the worker's, are no session and leave the cookie
+        for other in [
+            format!("Bearer {app}"),
+            "Bearer admin-token".to_string(),
+            format!("Bearer hs2.{app}"),
+            format!("Basic hs1.{app}"),
+        ] {
+            assert_eq!(
+                token_from_headers(&headers(&[("authorization", &other)])),
+                None,
+                "{other}"
+            );
+            assert_eq!(
+                token_from_headers(&headers(&[("cookie", &cookie), ("authorization", &other)])),
+                Some(web.clone()),
+                "{other}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_app_says_so_or_sends_its_bearer() {
+        let token = "ab".repeat(32);
+        assert!(!app_request(&HeaderMap::new()));
+        assert!(!app_request(&headers(&[(
+            "cookie",
+            &format!("hashi_session={token}")
+        )])));
+        assert!(app_request(&headers(&[("x-hashi-app", "1.0.0")])));
+        assert!(!app_request(&headers(&[("x-hashi-app", "")])));
+        assert!(app_request(&headers(&[(
+            "authorization",
+            &format!("Bearer hs1.{token}")
+        )])));
+        // A broken bearer still comes from the app, which gets its new guest in the header
+        assert!(app_request(&headers(&[(
+            "authorization",
+            "Bearer hs1.garbage"
+        )])));
+        assert!(!app_request(&headers(&[(
+            "authorization",
+            "Bearer admin-token"
+        )])));
     }
 
     /// A hash as `register` stored it, made with argon2 0.6.0 and its defaults.

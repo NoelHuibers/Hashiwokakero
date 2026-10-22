@@ -28,6 +28,10 @@ pub enum Flag {
     Review,
     /// The player is banned: all their results are off the boards until the ban is lifted.
     Banned,
+    /// A reason of a newer server, read by a page or an app that doesn't know it yet (not in
+    /// [`Flag::ALL`]): not ranked, without saying why. The server never stores it.
+    #[serde(other)]
+    Unknown,
 }
 
 impl Flag {
@@ -48,6 +52,7 @@ impl Flag {
             Self::SecondAccount => "second_account",
             Self::Review => "review",
             Self::Banned => "banned",
+            Self::Unknown => "unknown",
         }
     }
 

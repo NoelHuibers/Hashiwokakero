@@ -144,11 +144,23 @@ tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "signal",
 tower-http = { version = "0.7.1", features = ["compression-gzip", "compression-br"], optional = true }
 
 [features]
+# The website in the browser: hydrates the page the server rendered
 hydrate = [
   "leptos/hydrate",
   "hashi_i18n/hydrate",
   "dep:console_error_panic_hook",
+  "browser",
 ]
+# Client-side rendered, without a server rendering the page first: the mobile app (docs/mobile.md)
+csr = [
+  "leptos/csr",
+  "hashi_i18n/csr",
+  "dep:console_error_panic_hook",
+  "browser",
+]
+# Not for use on its own: code that needs a browser (audio, animation frames, window
+# listeners, the page's build), enabled by `hydrate` and `csr`
+browser = []
 ssr = [
   "dep:argon2",
   "dep:axum",

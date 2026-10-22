@@ -29,6 +29,10 @@ pub enum HankoKind {
     Grit,
     /// 祝 congratulations.
     Cheers,
+    /// A seal of a newer server, read by a page or an app that doesn't know it yet (not in
+    /// [`HankoKind::ALL`]): shown nowhere. The server never stores it, and refuses to press it.
+    #[serde(other)]
+    Unknown,
 }
 
 impl HankoKind {
@@ -50,6 +54,7 @@ impl HankoKind {
             Self::Funny => "funny",
             Self::Grit => "grit",
             Self::Cheers => "cheers",
+            Self::Unknown => "unknown",
         }
     }
 
@@ -66,6 +71,7 @@ impl HankoKind {
             Self::Funny => "笑",
             Self::Grit => "粘",
             Self::Cheers => "祝",
+            Self::Unknown => "?",
         }
     }
 }
@@ -92,6 +98,12 @@ pub fn tally(marks: &[HankoMark], target: i64) -> Vec<(HankoKind, Vec<i64>)> {
             (!givers.is_empty()).then_some((kind, givers))
         })
         .collect()
+}
+
+/// The seals of `got` this build knows: a newer server's ([`HankoKind::Unknown`]) are left out.
+pub fn known_seals(mut got: Vec<HankoReceived>) -> Vec<HankoReceived> {
+    got.retain(|h| h.kind != HankoKind::Unknown);
+    got
 }
 
 /// Whether `viewer` may press seals on `entry` of a board: it's open (the viewer finished the
@@ -190,6 +202,33 @@ mod tests {
         assert_eq!(HankoKind::from_id("chat"), None);
         let kanji: std::collections::HashSet<_> = HankoKind::ALL.map(HankoKind::kanji).into();
         assert_eq!(kanji.len(), HankoKind::ALL.len());
+    }
+
+    /// A newer server's seal loads as `Unknown` (an app keeps its version for months), which no
+    /// board or list shows.
+    #[test]
+    fn unknown_seals_load_and_are_left_out() {
+        let mark: HankoMark =
+            serde_json::from_str(r#"{"target":2,"giver":3,"kind":"Hug"}"#).unwrap();
+        assert_eq!(mark.kind, HankoKind::Unknown);
+        assert!(!HankoKind::ALL.contains(&HankoKind::Unknown));
+        assert_eq!(HankoKind::from_id(HankoKind::Unknown.id()), None);
+        assert_eq!(tally(&[mark], 2), []);
+        let got = |kind| HankoReceived {
+            group_id: 9,
+            group_name: "Team".into(),
+            day: 20_747,
+            giver: 3,
+            giver_name: "chen".into(),
+            giver_colour: 0,
+            kind,
+            at: 0,
+            fresh: true,
+        };
+        assert_eq!(
+            known_seals(vec![got(HankoKind::Unknown), got(HankoKind::Wow)]),
+            [got(HankoKind::Wow)]
+        );
     }
 
     #[test]

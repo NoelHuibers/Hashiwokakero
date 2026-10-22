@@ -4,9 +4,14 @@
 //! code, the worker deploys separately. An update of serde, `serde_json` or a change of one of our
 //! types has to keep producing (and reading) the same text.
 //!
+//! The server functions are a contract with the installed apps too, which keep their version
+//! for months: their paths and arguments are in `api_paths.txt` and `requests.txt`, see `api.rs`
+//! for what to do when they change.
+//!
 //! For an intended change, `GOLDEN_UPDATE=1 cargo test ...` writes the current text instead.
 //! Before committing it, make sure the old text still loads (keep a test with it).
 
+mod api;
 mod wire;
 
 pub(crate) use wire::puzzle;

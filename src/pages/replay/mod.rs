@@ -37,7 +37,7 @@ use state::{Layout, Theatre};
 
 /// Whether the visitor asked for less motion: the replay starts paused then, for stepping.
 fn reduced_motion() -> bool {
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "browser")]
     {
         window()
             .match_media("(prefers-reduced-motion: reduce)")
@@ -45,14 +45,14 @@ fn reduced_motion() -> bool {
             .flatten()
             .is_some_and(|m| m.matches())
     }
-    #[cfg(not(feature = "hydrate"))]
+    #[cfg(not(feature = "browser"))]
     {
         false
     }
 }
 
 /// Runs the clock while the theatre plays, a frame at a time.
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 fn run_frames(theatre: Theatre) {
     fn frame(theatre: Theatre, run: u32, last: f64) {
         request_animation_frame(move || {
@@ -73,7 +73,7 @@ fn run_frames(theatre: Theatre) {
 
 /// The keys of the theatre anywhere on the page, except while typing, and space on a button
 /// (which presses it).
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 fn listen_to_keys(theatre: Theatre) {
     let handle = window_event_listener(leptos::ev::keydown, move |ev| {
         if ev.ctrl_key() || ev.meta_key() || ev.alt_key() || ev.default_prevented() {
@@ -108,7 +108,7 @@ fn listen_to_keys(theatre: Theatre) {
 pub fn TheatreView(data: ReplayData, only: Option<Vec<i64>>) -> impl IntoView {
     let still = reduced_motion();
     let theatre = Theatre::new(data, only.as_deref());
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "browser")]
     {
         Effect::new(move |_| {
             if theatre.playing.get() {
@@ -458,6 +458,7 @@ mod tests {
                 lane(3, "chen", Vec::new(), LaneOutcome::GaveUp),
                 lane(4, "emre", Vec::new(), LaneOutcome::Missing),
             ],
+            group_puzzle: None,
         }
     }
 
@@ -494,6 +495,29 @@ mod tests {
             assert!(apart.contains("replay-apart"), "{apart}");
             let finish = view! { <FinishLine theatre /> }.to_html();
             assert!(finish.contains("data-place=\"2\""), "{finish}");
+        });
+    }
+
+    /// A newer server's kind of help (an app that wasn't updated yet) gets no marker.
+    #[tokio::test]
+    async fn unknown_marks_are_left_out() {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            let markers = |data| {
+                view! { <TheatreView data only=None /> }
+                    .to_html()
+                    .matches("data-mark=")
+                    .count()
+            };
+            let mut newer = data();
+            newer.lanes[0].marks.push(Mark {
+                t: 700,
+                kind: MarkKind::Unknown,
+            });
+            assert!(markers(data()) > 0);
+            assert_eq!(markers(newer), markers(data()));
         });
     }
 

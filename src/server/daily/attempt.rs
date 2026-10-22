@@ -597,7 +597,8 @@ pub async fn set_flag(
     day: i64,
     flag: Option<Flag>,
 ) -> Result<bool, ServerFnError> {
-    if flag == Some(Flag::Banned) {
+    // Bans set their own flag, and one this build doesn't know isn't one to set
+    if matches!(flag, Some(Flag::Banned | Flag::Unknown)) {
         return Ok(false);
     }
     let changed = conn

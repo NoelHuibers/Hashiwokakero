@@ -114,7 +114,8 @@ pub async fn press(
 ) -> Result<Vec<HankoMark>, ServerFnError> {
     let group = require_member(conn, group, user).await?;
     let members = members(conn, &group, today).await?;
-    let allowed = target != user
+    let allowed = kind != HankoKind::Unknown
+        && target != user
         && (first_day(today)..=today).contains(&day)
         && members.iter().any(|m| m.user_id == target)
         && members.iter().any(|m| m.user_id == user)

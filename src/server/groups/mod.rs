@@ -13,6 +13,7 @@
 
 pub mod banzuke;
 pub mod hanko;
+pub mod kadai;
 pub mod river;
 #[cfg(test)]
 mod tests;

@@ -729,6 +729,11 @@ tr:hover .hanko-pick,
 .hanko-received[data-fresh="true"] {
   background: color-mix(in srgb, var(--px-shu) 8%, transparent);
 }
+/* The names under the kanji of the phone's tab bar. Kaisei Decol draws Cyrillic at full width
+   (Japanese fonts take it from JIS), ПРАКТИКА would need 84 px of a tab's 53 to 65: Murecho's fit */
+html:is([lang="ru"], [lang="uk"]) .tab-label {
+  font-family: var(--app-font);
+}
 /* New seals on one's results: a dot on the groups' entry of the navigation */
 .hanko-dot {
   width: 9px;
@@ -944,6 +949,22 @@ tr:hover .hanko-pick,
   animation: stamp 420ms cubic-bezier(.2, .9, .3, 1.2) both;
 }
 
+/* 拍手: the applause for a group puzzle's author, one 拍 after the other, like hands clapping */
+@keyframes clap {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-3px) scale(1.15); }
+  60% { transform: translateY(0) scale(0.95); }
+}
+.clap-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.clap-row > span {
+  display: inline-block;
+  animation: clap 1.2s steps(4) infinite;
+}
+
 @keyframes solver-scan {
   0% { background-position: 0 0; }
   100% { background-position: 0 24px; }
@@ -961,7 +982,8 @@ tr:hover .hanko-pick,
   .petal, .drift, .bob, .island.over, .island .sel,
   .bridge.pop, .bridge.wrong, .bridge.hint, .blocked-x, .terminal.busy,
   .hanko-press, .hanko-press::after,
-  .river-flow, .plank-new, .river-drift, .river-twinkle {
+  .river-flow, .plank-new, .river-drift, .river-twinkle,
+  .clap-row > span {
     animation: none !important;
   }
 

@@ -18,6 +18,9 @@ pub const SPEEDS: [u32; 3] = [1, 4, 16];
 pub enum MarkKind {
     Hint,
     Check,
+    /// A help of a newer server, read by a page or an app that doesn't know it yet: no marker.
+    #[serde(other)]
+    Unknown,
 }
 
 /// When a member took a hint or a check, ms after their start like [`MoveEvent::t`].
@@ -92,6 +95,10 @@ pub struct ReplayData {
     pub puzzle: Option<Puzzle>,
     /// A lane per member, the group's order (longest standing first).
     pub lanes: Vec<Lane>,
+    /// A group puzzle's replay (`model::kadai`) instead of a day's: the puzzle's id, `day` and
+    /// `today` don't count then.
+    #[serde(default)]
+    pub group_puzzle: Option<i64>,
 }
 
 impl ReplayData {
@@ -429,6 +436,7 @@ mod tests {
             locked: false,
             puzzle: None,
             lanes: lanes.to_vec(),
+            group_puzzle: None,
         };
         assert_eq!(data.end(), 3000);
         assert_eq!(data.lane(2).map(Lane::finish), Some(Some(1800)));

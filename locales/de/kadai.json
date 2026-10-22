@@ -1,0 +1,125 @@
+{
+  "title": "Gruppenrätsel",
+  "untitled": "Rätsel von {{ name }}",
+  "untitled_former": "Rätsel eines Mitglieds",
+  "by": "von {{ name }}",
+  "by_former": "von einem ehemaligen Mitglied",
+  "solved_of": "{{ solved }} von {{ players }} gelöst",
+  "left": {
+    "days": "noch {{ count }} T",
+    "hours": "noch {{ count }} Std.",
+    "minutes": "noch {{ count }} Min.",
+    "closed": "Beendet"
+  },
+  "card": {
+    "text": "Rätsel von Mitgliedern, eine Woche lang offen. Löse sie für die Gruppenrangliste oder bau selbst eins.",
+    "new": "Neues Rätsel",
+    "none": "Gerade sind keine Rätsel offen. Bau eins in der Werkstatt und fordere die Gruppe heraus!",
+    "make": "Rätsel bauen",
+    "full": "Du hast hier {{ max }} offene Rätsel, mehr geht nicht. Das nächste kannst du posten, sobald eins beendet ist.",
+    "closed": "Beendete Rätsel",
+    "yours": "deins",
+    "play": "Spielen",
+    "continue_playing": "Weiterspielen",
+    "gave_up": "aufgegeben"
+  },
+  "kudos": {
+    "title": "Dein Rätsel „{{ name }}“ ist beendet. So hat sich die Gruppe geschlagen:",
+    "claps": "Applaus! Gelöst haben es: {{ count }}",
+    "none": "Diesmal hat es niemand gelöst. Eine harte Nuss!",
+    "thanks": "Danke!",
+    "see": "Endstand ansehen"
+  },
+  "page": {
+    "title": "Gruppenrätsel",
+    "missing": "Dieses Rätsel gibt es hier nicht.",
+    "missing_hint": "Vielleicht wurde es zurückgezogen, oder es gehört zu einer Gruppe, in der du nicht bist.",
+    "give_up": "Aufgeben",
+    "give_up_confirm": "Aufgeben und die Lösung ansehen? Dann stehst du bei diesem Rätsel nicht in der Rangliste der Gruppe.",
+    "submit_failed": "Deine Lösung ist nicht beim Server angekommen.",
+    "submit_retry": "Erneut senden",
+    "closed_text": "Dieses Rätsel ist beendet: Hier ist seine Lösung, daneben die endgültige Rangliste."
+  },
+  "cover": {
+    "lead": "Ein Rätsel mit {{ count }} Inseln für {{ group }}. Die Uhr läuft, sobald du auf Start drückst, und deine Zeit kommt in die Wertung der Gruppe.",
+    "unranked": "ohne Wertung",
+    "start": "Start",
+    "preparing": "Wird vorbereitet…",
+    "once": "Nur ein Versuch: Die Uhr läuft weiter, auch wenn du die Seite verlässt."
+  },
+  "ranking": {
+    "title": "Gruppenrangliste",
+    "open": "Alle außer dem Autor, nach Zeit inklusive Strafzeit.",
+    "final_board": "Die endgültige Rangliste: Dieses Rätsel ist beendet.",
+    "spoiler": "{{ done }} von {{ total }} fertig. Die Zeiten siehst du, sobald du es selbst gelöst hast.",
+    "alone": "Noch ist niemand sonst in der Gruppe.",
+    "missed": "nicht fertig"
+  },
+  "result": {
+    "rank": "Platz {{ rank }} von {{ total }} in {{ group }}",
+    "unranked": "Gelöst, aber nicht in der Rangliste der Gruppe.",
+    "revealed_title": "Lösung aufgedeckt",
+    "revealed_text": "Diesmal ohne Wertung. Die Lösung liegt auf dem Brett, schau sie dir gut an!",
+    "back": "Zurück zu {{ group }}",
+    "practice": "Zum Üben noch einmal spielen"
+  },
+  "author": {
+    "title": "Dein Rätsel",
+    "open": "Du hast es gebaut, deshalb kannst du es nicht spielen. So schlagen sich die anderen.",
+    "closed": "Es ist beendet. So haben sich alle geschlagen.",
+    "withdraw": "Rätsel zurückziehen",
+    "withdraw_confirm": "Dieses Rätsel zurückziehen? Es verschwindet aus der Gruppe, samt den Zeiten aller.",
+    "withdrawn": "Rätsel zurückgezogen."
+  },
+  "stats": {
+    "solved": "Gelöst",
+    "fastest": "Bestzeit",
+    "median": "Median",
+    "playing": "Im Spiel",
+    "gave_up": "Aufgegeben",
+    "hardest": "Die markierte Brücke hat die meiste Hilfe gebraucht. Tipps, die sie gesetzt haben: {{ hints }} · Prüfungen, die sie als falsch erkannt haben: {{ wrong }}.",
+    "no_help": "Niemand brauchte einen Tipp oder hatte eine falsche Brücke. Saubere Arbeit!",
+    "hints": "Tipps",
+    "checks": "Prüfungen"
+  },
+  "challenge": {
+    "title": "Gruppe herausfordern",
+    "text": "Poste dein Rätsel in einer deiner Gruppen: Alle dort haben eine Woche Zeit, es zu lösen, mit Uhr und Rangliste wie beim Tagesrätsel.",
+    "no_group": "Du bist noch in keiner Gruppe.",
+    "to_groups": "Gruppe gründen oder beitreten",
+    "empty": "Setz zuerst ein paar Inseln.",
+    "too_big": "Gruppenrätsel dürfen höchstens {{ max }}×{{ max }} Felder groß sein.",
+    "unchecked": "Lass zuerst den Solver beweisen, dass es genau eine Lösung hat.",
+    "check": "Eindeutigkeit prüfen",
+    "not_unique": "Dieses Rätsel hat mehr als eine Lösung. Ändere es, bis der Solver nur noch eine findet.",
+    "unsolvable": "Dieses Rätsel hat keine Lösung. Ändere es, bis der Solver eine findet.",
+    "ready": "Genau eine Lösung: bereit zum Posten!",
+    "group": "Gruppe",
+    "name": "Titel (optional)",
+    "placeholder": "z. B. Die Spirale",
+    "post": "Gruppe herausfordern",
+    "posting": "Wird geprüft und gepostet…",
+    "posted": "In {{ group }} gepostet!",
+    "rules": "7 Tage offen, bis zu 3 offene Rätsel pro Gruppe. Dein eigenes kannst du nicht spielen, aber du siehst, wie sich alle schlagen."
+  },
+  "errors": {
+    "too_big": "Gruppenrätsel dürfen höchstens 20×20 Felder groß sein.",
+    "unsolvable": "Dieses Rätsel hat keine Lösung.",
+    "not_unique": "Dieses Rätsel hat mehr als eine Lösung, oder der Solver konnte nicht beweisen, dass es nur eine hat.",
+    "too_many": "Du hast in dieser Gruppe schon 3 offene Rätsel. Warte, bis eins beendet ist.",
+    "title_invalid": "Titel haben höchstens 40 Zeichen.",
+    "closed": "Dieses Rätsel ist beendet oder wurde zurückgezogen.",
+    "own": "Das ist dein eigenes Rätsel: Zuschauen ja, spielen nein.",
+    "locked": "Das ist ein offenes Rätsel deiner Gruppe: Die Solver helfen dabei erst, wenn du es selbst gelöst hast.",
+    "author_only": "Das kann nur der Autor des Rätsels."
+  },
+  "summary": {
+    "title": "So lief es"
+  },
+  "replay": {
+    "back": "Zurück zum Rätsel",
+    "locked": "Die Wiederholungen dieses Rätsels öffnen sich, sobald du es gelöst oder aufgegeben hast.",
+    "empty": "Für dieses Rätsel wurden noch keine Züge aufgezeichnet.",
+    "stage": "Das Brett des Gruppenrätsels mit den Brücken von {{ names }}"
+  }
+}

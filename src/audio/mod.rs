@@ -5,9 +5,9 @@
 //! (D E♭ G A B♭), with an echo and now and then a low drone. Browsers only allow audio after a
 //! user gesture, so the audio context is created on the first click or key press.
 
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 mod imp;
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 mod music;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -29,17 +29,17 @@ pub enum Sfx {
     Win,
 }
 
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 pub use imp::{play, set_sound, unlock};
-#[cfg(feature = "hydrate")]
+#[cfg(feature = "browser")]
 pub use music::set_music;
 
 /// On the server there is nothing to play.
-#[cfg(not(feature = "hydrate"))]
+#[cfg(not(feature = "browser"))]
 pub fn play(_sfx: Sfx) {}
-#[cfg(not(feature = "hydrate"))]
+#[cfg(not(feature = "browser"))]
 pub fn set_sound(_on: bool) {}
-#[cfg(not(feature = "hydrate"))]
+#[cfg(not(feature = "browser"))]
 pub fn set_music(_on: bool) {}
-#[cfg(not(feature = "hydrate"))]
+#[cfg(not(feature = "browser"))]
 pub fn unlock() {}

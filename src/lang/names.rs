@@ -130,6 +130,8 @@ pub fn stamp_name(locale: Locale, stamp: Stamp) -> &'static str {
         Stamp::Yokozuna => td_string!(locale, stamps.names.yokozuna),
         Stamp::Sansho => td_string!(locale, stamps.names.sansho),
         Stamp::RiverCrew => td_string!(locale, stamps.names.river_crew),
+        // Not shown, but like a stamp still to find if it were
+        Stamp::Unknown => td_string!(locale, stamps.secret.name),
     }
 }
 
@@ -184,6 +186,7 @@ pub fn stamp_text(locale: Locale, stamp: Stamp) -> &'static str {
         Stamp::Yokozuna => td_string!(locale, stamps.texts.yokozuna),
         Stamp::Sansho => td_string!(locale, stamps.texts.sansho),
         Stamp::RiverCrew => td_string!(locale, stamps.texts.river_crew),
+        Stamp::Unknown => td_string!(locale, stamps.secret.text),
     }
 }
 
@@ -333,6 +336,15 @@ pub fn error_text(locale: Locale, error: &ServerFnError) -> String {
         ApiError::TooManyRivals => td_string!(locale, rivals.errors.too_many_rivals),
         ApiError::NoSuchPlayer => td_string!(locale, rivals.errors.no_such_player),
         ApiError::HankoNotAllowed => td_string!(locale, hanko.errors.not_allowed),
+        ApiError::PuzzleTooBig => td_string!(locale, kadai.errors.too_big),
+        ApiError::PuzzleUnsolvable => td_string!(locale, kadai.errors.unsolvable),
+        ApiError::PuzzleNotUnique => td_string!(locale, kadai.errors.not_unique),
+        ApiError::TooManyPuzzles => td_string!(locale, kadai.errors.too_many),
+        ApiError::PuzzleTitleInvalid => td_string!(locale, kadai.errors.title_invalid),
+        ApiError::PuzzleClosed => td_string!(locale, kadai.errors.closed),
+        ApiError::PuzzleOwn => td_string!(locale, kadai.errors.own),
+        ApiError::PuzzleLocked => td_string!(locale, kadai.errors.locked),
+        ApiError::PuzzleAuthorOnly => td_string!(locale, kadai.errors.author_only),
     }
     .to_string()
 }

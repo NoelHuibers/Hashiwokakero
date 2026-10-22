@@ -1,0 +1,125 @@
+{
+  "title": "Teka-teki grup",
+  "untitled": "Teka-teki {{ name }}",
+  "untitled_former": "Teka-teki seorang anggota",
+  "by": "oleh {{ name }}",
+  "by_former": "oleh mantan anggota",
+  "solved_of": "Selesai: {{ solved }} dari {{ players }}",
+  "left": {
+    "days": "{{ count }} hari lagi",
+    "hours": "{{ count }} jam lagi",
+    "minutes": "{{ count }} menit lagi",
+    "closed": "Ditutup"
+  },
+  "card": {
+    "text": "Teka-teki buatan anggota, dibuka selama seminggu. Selesaikan untuk peringkat grup, atau buat sendiri.",
+    "new": "Teka-teki baru",
+    "none": "Belum ada teka-teki yang dibuka. Buat satu di bengkel dan tantang grupmu!",
+    "make": "Buat teka-teki",
+    "full": "Kamu punya {{ max }} teka-teki terbuka di sini, sudah batas maksimal. Buat yang berikutnya setelah salah satunya ditutup.",
+    "closed": "Teka-teki yang sudah ditutup",
+    "yours": "punyamu",
+    "play": "Main",
+    "continue_playing": "Lanjutkan",
+    "gave_up": "menyerah"
+  },
+  "kudos": {
+    "title": "Teka-tekimu “{{ name }}” sudah ditutup. Begini hasil grupmu:",
+    "claps": "Tepuk tangan dari {{ count }} orang yang memecahkannya!",
+    "none": "Kali ini tidak ada yang berhasil. Teka-teki yang alot!",
+    "thanks": "Terima kasih!",
+    "see": "Lihat peringkat akhir"
+  },
+  "page": {
+    "title": "Teka-teki grup",
+    "missing": "Teka-teki ini tidak ada di sini.",
+    "missing_hint": "Mungkin sudah ditarik, atau milik grup yang tidak kamu ikuti.",
+    "give_up": "Menyerah",
+    "give_up_confirm": "Menyerah dan lihat solusinya? Kamu tidak akan masuk peringkat grup untuk teka-teki ini.",
+    "submit_failed": "Solusimu tidak sampai ke server.",
+    "submit_retry": "Kirim lagi",
+    "closed_text": "Teka-teki ini sudah ditutup: ini solusinya, dengan peringkat akhir di sebelahnya."
+  },
+  "cover": {
+    "lead": "Teka-teki {{ count }} pulau untuk {{ group }}. Jam mulai berjalan saat kamu menekan Mulai, dan waktumu diperingkat di dalam grup.",
+    "unranked": "tanpa peringkat",
+    "start": "Mulai",
+    "preparing": "Menyiapkan…",
+    "once": "Hanya sekali main: jam tetap berjalan meski kamu pergi."
+  },
+  "ranking": {
+    "title": "Peringkat grup",
+    "open": "Semua orang kecuali pembuatnya, berdasarkan waktu dengan penalti.",
+    "final_board": "Peringkat akhir: teka-teki ini sudah ditutup.",
+    "spoiler": "Selesai: {{ done }} dari {{ total }}. Waktu baru muncul setelah kamu sendiri menyelesaikannya.",
+    "alone": "Belum ada orang lain di grup ini.",
+    "missed": "tidak selesai"
+  },
+  "result": {
+    "rank": "Peringkat {{ rank }} dari {{ total }} di {{ group }}",
+    "unranked": "Selesai, tapi tidak masuk peringkat grup.",
+    "revealed_title": "Solusi ditampilkan",
+    "revealed_text": "Kali ini tanpa peringkat. Solusinya ada di papan, perhatikan baik-baik!",
+    "back": "Kembali ke {{ group }}",
+    "practice": "Main lagi untuk latihan"
+  },
+  "author": {
+    "title": "Teka-tekimu",
+    "open": "Kamu yang membuat teka-teki ini, jadi kamu tidak bisa memainkannya. Begini perkembangan semua orang.",
+    "closed": "Teka-teki ini sudah ditutup. Begini hasil semua orang.",
+    "withdraw": "Tarik teka-teki",
+    "withdraw_confirm": "Tarik teka-teki ini? Teka-tekinya hilang dari grup, beserta waktu semua orang.",
+    "withdrawn": "Teka-teki ditarik."
+  },
+  "stats": {
+    "solved": "Selesai",
+    "fastest": "Tercepat",
+    "median": "Median",
+    "playing": "Sedang main",
+    "gave_up": "Menyerah",
+    "hardest": "Jembatan yang ditandai paling banyak butuh bantuan. Petunjuk yang memperbaikinya: {{ hints }} · cek yang mendapatinya salah: {{ wrong }}.",
+    "no_help": "Tidak ada yang butuh petunjuk atau menemukan jembatan yang salah. Kerja yang rapi!",
+    "hints": "Petunjuk",
+    "checks": "Cek"
+  },
+  "challenge": {
+    "title": "Tantang grup",
+    "text": "Kirim teka-tekimu ke salah satu grupmu: semua anggotanya punya waktu seminggu untuk memecahkannya, dengan waktu dan peringkat seperti teka-teki harian.",
+    "no_group": "Kamu belum ikut grup mana pun.",
+    "to_groups": "Buat atau gabung ke grup",
+    "empty": "Taruh beberapa pulau dulu.",
+    "too_big": "Teka-teki grup maksimal {{ max }}×{{ max }} sel.",
+    "unchecked": "Biarkan solver membuktikan dulu bahwa teka-tekinya punya tepat satu solusi.",
+    "check": "Cek keunikan",
+    "not_unique": "Teka-teki ini punya lebih dari satu solusi. Ubah sampai solver hanya menemukan satu.",
+    "unsolvable": "Teka-teki ini tidak punya solusi. Ubah sampai solver menemukan satu.",
+    "ready": "Tepat satu solusi: siap dikirim!",
+    "group": "Grup",
+    "name": "Judul (opsional)",
+    "placeholder": "mis. Spiral",
+    "post": "Tantang grup",
+    "posting": "Memeriksa dan mengirim…",
+    "posted": "Terkirim ke {{ group }}!",
+    "rules": "Dibuka selama 7 hari, maksimal 3 teka-teki terbuka per grup. Kamu tidak bisa memainkan teka-tekimu sendiri, tapi bisa melihat hasil semua orang."
+  },
+  "errors": {
+    "too_big": "Teka-teki grup maksimal 20×20 sel.",
+    "unsolvable": "Teka-teki ini tidak punya solusi.",
+    "not_unique": "Teka-teki ini punya lebih dari satu solusi, atau solver tidak bisa membuktikan bahwa solusinya hanya satu.",
+    "too_many": "Kamu sudah punya 3 teka-teki terbuka di grup ini. Tunggu sampai salah satunya ditutup.",
+    "title_invalid": "Judul maksimal 40 karakter.",
+    "closed": "Teka-teki ini sudah ditutup atau ditarik.",
+    "own": "Itu teka-tekimu sendiri: kamu bisa menonton, tapi tidak bisa bermain.",
+    "locked": "Itu teka-teki terbuka di grupmu: solver baru akan membantu setelah kamu menyelesaikannya sendiri.",
+    "author_only": "Hanya pembuat teka-teki yang bisa melakukannya."
+  },
+  "summary": {
+    "title": "Bagaimana hasilnya"
+  },
+  "replay": {
+    "back": "Kembali ke teka-teki",
+    "locked": "Ulangan teka-teki ini terbuka setelah kamu menyelesaikannya atau menyerah.",
+    "empty": "Belum ada langkah siapa pun yang tercatat untuk teka-teki ini.",
+    "stage": "Papan teka-teki grup dengan jembatan {{ names }}"
+  }
+}

@@ -16,9 +16,9 @@ use crate::model::{
     CommunitySummary, ContactMessage, DailyInfo, DayResult, Daypart, DojoBenchmark, DojoBenchmarks,
     DojoBoard, DojoBudgetCurve, DojoBudgets, DojoCactus, DojoCrossover, DojoCurve, DojoEntry,
     DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons, DojoState, DojoSubmission, Flag,
-    HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, MonthBoard, MonthEntry,
-    MoveEvent, PlayerProfile, Run, Stamp, StampProgress, SubmissionAction, SubmitResult, UserInfo,
-    UserStats,
+    GroupToday, HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind,
+    MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress, SubmissionAction,
+    SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -705,6 +705,57 @@ fn responses_without_later_fields_load() {
     assert_eq!(progress.holders, 0, "{RESPONSES}");
 }
 
+/// `value` with the string at `pointer` replaced by `variant`, loaded again.
+fn with_variant<T: Serialize + DeserializeOwned>(value: &T, pointer: &str, variant: &str) -> T {
+    let mut json = serde_json::to_value(value).unwrap();
+    *json.pointer_mut(pointer).unwrap() = variant.into();
+    serde_json::from_value(json).unwrap_or_else(|e| panic!("{pointer} = {variant}: {e}. {NEWER}"))
+}
+
+/// What a newer server can send an older app.
+const NEWER: &str = "installed apps keep their version for months: a variant they don't know \
+                     has to load as the fallback (`#[serde(other)]`), not fail the whole call";
+
+/// Variants a newer server added load as `Unknown` in the responses that carry them.
+#[test]
+fn responses_with_newer_variants_load() {
+    let r = responses();
+    let daily = with_variant(&r.daily, "/stamps/0", "Kintsugi");
+    assert_eq!(daily.stamps, [Stamp::Unknown, Stamp::Streak7], "{NEWER}");
+    let daily = with_variant(&r.daily, "/attempt/flag", "Nap");
+    assert_eq!(daily.attempt.unwrap().flag, Some(Flag::Unknown), "{NEWER}");
+    let submit = with_variant(&r.submit, "/flag", "Nap");
+    assert_eq!(submit.flag, Some(Flag::Unknown), "{NEWER}");
+    let board = with_variant(&r.leaderboard, "/entries/0/stamp", "Kintsugi");
+    assert_eq!(board.entries[0].stamp, Some(Stamp::Unknown), "{NEWER}");
+    let profile = with_variant(&r.profile, "/stats/stamps/0/stamp", "Kintsugi");
+    assert_eq!(profile.stats.stamps[0].stamp, Stamp::Unknown, "{NEWER}");
+    let profile = with_variant(&r.profile, "/stats/shown", "Kintsugi");
+    assert_eq!(profile.stats.shown, Some(Stamp::Unknown), "{NEWER}");
+    let me = with_variant(&r.dojo_me, "/submissions/0/state", "Paused");
+    assert_eq!(me.submissions[0].state, DojoState::Unknown, "{NEWER}");
+    let submission = with_variant(&r.dojo_submission, "/state", "Paused");
+    assert_eq!(submission.state, DojoState::Unknown, "{NEWER}");
+    let benchmarks = with_variant(&r.dojo_benchmarks, "/mine/0/state", "Archived");
+    assert_eq!(benchmarks.mine[0].state, BenchmarkState::Unknown, "{NEWER}");
+    let today: GroupToday = serde_json::from_str(
+        r#"{"group_id":2,"group_name":"Team","day":20381,"open":true,"entries":[],
+            "hanko":[{"target":7,"giver":9,"kind":"Hug"}]}"#,
+    )
+    .unwrap();
+    assert_eq!(today.hanko[0].kind, HankoKind::Unknown, "{NEWER}");
+    let mark: Mark = serde_json::from_str(r#"{"t":500,"kind":"Undo"}"#).unwrap();
+    assert_eq!(mark.kind, MarkKind::Unknown, "{NEWER}");
+    // The ids and the stored formats don't know the fallbacks: they never leave a page
+    assert!(
+        !Stamp::ALL.contains(&Stamp::Unknown)
+            && !Flag::ALL.contains(&Flag::Unknown)
+            && !HankoKind::ALL.contains(&HankoKind::Unknown)
+            && !BenchmarkState::ALL.contains(&BenchmarkState::Unknown),
+        "{IDS}"
+    );
+}
+
 /// A value as one line of compact JSON, the way it is written to a column or local storage,
 /// and checks that the line loads as the value again.
 fn line<T>(label: &str, value: &T) -> String
@@ -754,6 +805,22 @@ fn stored_formats() {
         line("attempts.bridges", &vec![2u8, 1]),
         line("attempts.log", &log),
         line("attempts.run", &run),
+        line("group_puzzles.puzzle", &puzzle()),
+        line(
+            "group_puzzle_attempts.helps",
+            &vec![
+                crate::model::Help {
+                    t: 1_250,
+                    kind: MarkKind::Hint,
+                    edges: vec![3],
+                },
+                crate::model::Help {
+                    t: 4_000,
+                    kind: MarkKind::Check,
+                    edges: vec![],
+                },
+            ],
+        ),
         line("dojo_submissions.score", &score()),
         line(
             "dojo_submissions.fingerprint",
