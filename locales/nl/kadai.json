@@ -1,0 +1,125 @@
+{
+  "title": "Groepspuzzels",
+  "untitled": "Puzzel van {{ name }}",
+  "untitled_former": "Puzzel van een lid",
+  "by": "door {{ name }}",
+  "by_former": "door een oud-lid",
+  "solved_of": "{{ solved }} van {{ players }} opgelost",
+  "left": {
+    "days": "nog {{ count }} d",
+    "hours": "nog {{ count }} u",
+    "minutes": "nog {{ count }} min",
+    "closed": "Gesloten"
+  },
+  "card": {
+    "text": "Puzzels gemaakt door leden, een week lang open. Los ze op voor de groepsranking, of maak er zelf een.",
+    "new": "Nieuwe puzzel",
+    "none": "Er staan nu geen puzzels open. Bouw er een in de werkplaats en daag de groep uit!",
+    "make": "Maak een puzzel",
+    "full": "Je hebt hier {{ max }} open puzzels, meer kan niet. Je kunt de volgende plaatsen zodra er een gesloten is.",
+    "closed": "Gesloten puzzels",
+    "yours": "van jou",
+    "play": "Spelen",
+    "continue_playing": "Verder spelen",
+    "gave_up": "opgegeven"
+  },
+  "kudos": {
+    "title": "Je puzzel “{{ name }}” is gesloten. Zo deed de groep het:",
+    "claps": "Applaus! Aantal oplossers: {{ count }}",
+    "none": "Niemand heeft hem deze keer opgelost. Een taaie!",
+    "thanks": "Bedankt!",
+    "see": "Bekijk de eindstand"
+  },
+  "page": {
+    "title": "Groepspuzzel",
+    "missing": "Deze puzzel is hier niet.",
+    "missing_hint": "Misschien is hij ingetrokken, of hij hoort bij een groep waar je niet in zit.",
+    "give_up": "Opgeven",
+    "give_up_confirm": "Opgeven en de oplossing bekijken? Dan sta je voor deze puzzel niet in de ranking van de groep.",
+    "submit_failed": "Je oplossing is niet bij de server aangekomen.",
+    "submit_retry": "Opnieuw versturen",
+    "closed_text": "Deze puzzel is gesloten: hier is de oplossing, met de eindstand ernaast."
+  },
+  "cover": {
+    "lead": "Een puzzel met {{ count }} eilanden voor {{ group }}. De klok gaat lopen zodra je op start drukt, en je tijd komt in de ranking van de groep.",
+    "unranked": "buiten de ranking",
+    "start": "Start",
+    "preparing": "Voorbereiden…",
+    "once": "Maar één poging: de klok blijft lopen als je weggaat."
+  },
+  "ranking": {
+    "title": "Groepsranking",
+    "open": "Iedereen behalve de maker, op tijd inclusief straftijd.",
+    "final_board": "De eindstand: deze puzzel is gesloten.",
+    "spoiler": "{{ done }} van {{ total }} klaar. Tijden verschijnen zodra je hem zelf hebt afgerond.",
+    "alone": "Er zit nog niemand anders in de groep.",
+    "missed": "niet klaar"
+  },
+  "result": {
+    "rank": "Plek {{ rank }} van {{ total }} in {{ group }}",
+    "unranked": "Opgelost, maar niet in de ranking van de groep.",
+    "revealed_title": "Oplossing onthuld",
+    "revealed_text": "Deze keer buiten de ranking. De oplossing staat op het bord, bekijk hem goed!",
+    "back": "Terug naar {{ group }}",
+    "practice": "Nog eens spelen om te oefenen"
+  },
+  "author": {
+    "title": "Jouw puzzel",
+    "open": "Je hebt hem zelf gemaakt, dus je kunt hem niet spelen. Zo doet iedereen het.",
+    "closed": "Hij is gesloten. Zo heeft iedereen het gedaan.",
+    "withdraw": "Puzzel intrekken",
+    "withdraw_confirm": "Deze puzzel intrekken? Hij verdwijnt uit de groep, samen met ieders tijden.",
+    "withdrawn": "Puzzel ingetrokken."
+  },
+  "stats": {
+    "solved": "Opgelost",
+    "fastest": "Snelste",
+    "median": "Mediaan",
+    "playing": "Bezig",
+    "gave_up": "Opgegeven",
+    "hardest": "Bij de gemarkeerde brug was de meeste hulp nodig. Hints die hem rechtzetten: {{ hints }} · controles die hem fout vonden: {{ wrong }}.",
+    "no_help": "Niemand had een hint nodig of legde een foute brug. Netjes gedaan!",
+    "hints": "Hints",
+    "checks": "Controles"
+  },
+  "challenge": {
+    "title": "Daag een groep uit",
+    "text": "Plaats je puzzel in een van je groepen: iedereen daar krijgt een week om hem op te lossen, op tijd en met ranking, net als de dagpuzzel.",
+    "no_group": "Je zit nog niet in een groep.",
+    "to_groups": "Maak een groep of word lid",
+    "empty": "Zet eerst een paar eilanden neer.",
+    "too_big": "Groepspuzzels zijn hoogstens {{ max }}×{{ max }} vakjes groot.",
+    "unchecked": "Laat de solver eerst bewijzen dat er precies één oplossing is.",
+    "check": "Controleer of hij uniek is",
+    "not_unique": "Deze puzzel heeft meer dan één oplossing. Pas hem aan tot de solver er maar één vindt.",
+    "unsolvable": "Deze puzzel heeft geen oplossing. Pas hem aan tot de solver er een vindt.",
+    "ready": "Precies één oplossing: klaar om te plaatsen!",
+    "group": "Groep",
+    "name": "Titel (optioneel)",
+    "placeholder": "bijv. De Spiraal",
+    "post": "Daag de groep uit",
+    "posting": "Controleren en plaatsen…",
+    "posted": "Geplaatst in {{ group }}!",
+    "rules": "7 dagen open, hoogstens 3 open puzzels per groep. Je eigen puzzel kun je niet spelen, maar je ziet wel hoe iedereen het doet."
+  },
+  "errors": {
+    "too_big": "Groepspuzzels zijn hoogstens 20×20 vakjes groot.",
+    "unsolvable": "Deze puzzel heeft geen oplossing.",
+    "not_unique": "Deze puzzel heeft meer dan één oplossing, of de solver kon niet bewijzen dat er maar één is.",
+    "too_many": "Je hebt in deze groep al 3 open puzzels. Wacht tot er een gesloten is.",
+    "title_invalid": "Titels hebben hoogstens 40 tekens.",
+    "closed": "Deze puzzel is gesloten of ingetrokken.",
+    "own": "Dat is je eigen puzzel: kijken mag, spelen niet.",
+    "locked": "Dat is een open puzzel van je groep: de solvers helpen pas als je hem zelf hebt afgerond.",
+    "author_only": "Alleen de maker van de puzzel kan dat doen."
+  },
+  "summary": {
+    "title": "Hoe het ging"
+  },
+  "replay": {
+    "back": "Terug naar de puzzel",
+    "locked": "De herhalingen van deze puzzel gaan open zodra je hem hebt opgelost of hebt opgegeven.",
+    "empty": "Voor deze puzzel zijn nog geen zetten opgenomen.",
+    "stage": "Het bord van de groepspuzzel met de bruggen van {{ names }}"
+  }
+}

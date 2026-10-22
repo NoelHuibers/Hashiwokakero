@@ -1,5 +1,5 @@
 //! Data exchanged between the server functions and the pages: users, daily puzzles, results,
-//! groups, replays.
+//! groups, replays, group puzzles.
 
 mod admin;
 mod banzuke;
@@ -11,6 +11,7 @@ mod fame;
 mod groups;
 mod hanko;
 mod hints;
+mod kadai;
 mod moves;
 mod replay;
 mod rivals;
@@ -29,6 +30,7 @@ pub use fame::*;
 pub use groups::*;
 pub use hanko::*;
 pub use hints::*;
+pub use kadai::*;
 pub use moves::*;
 pub use replay::*;
 pub use rivals::*;

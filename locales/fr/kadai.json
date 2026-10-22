@@ -1,0 +1,125 @@
+{
+  "title": "Grilles du groupe",
+  "untitled": "La grille de {{ name }}",
+  "untitled_former": "La grille d’un membre",
+  "by": "par {{ name }}",
+  "by_former": "par un ancien membre",
+  "solved_of": "résolue par {{ solved }} sur {{ players }}",
+  "left": {
+    "days": "encore {{ count }} j",
+    "hours": "encore {{ count }} h",
+    "minutes": "encore {{ count }} min",
+    "closed": "Terminée"
+  },
+  "card": {
+    "text": "Des grilles créées par les membres, ouvertes pendant une semaine. Résous-les pour le classement du groupe, ou crée la tienne.",
+    "new": "Nouvelle grille",
+    "none": "Aucune grille ouverte pour l’instant. Crées-en une dans l’atelier et lance un défi au groupe !",
+    "make": "Créer une grille",
+    "full": "Tu as {{ max }} grilles ouvertes ici, c’est le maximum. Tu pourras publier la suivante dès qu’une sera terminée.",
+    "closed": "Grilles terminées",
+    "yours": "la tienne",
+    "play": "Jouer",
+    "continue_playing": "Continuer",
+    "gave_up": "abandonnée"
+  },
+  "kudos": {
+    "title": "Ta grille « {{ name }} » est terminée. Voici comment le groupe s’en est sorti :",
+    "claps": "Applaudissements ! Ont réussi : {{ count }}",
+    "none": "Personne ne l’a résolue cette fois. Une coriace !",
+    "thanks": "Merci !",
+    "see": "Voir le classement final"
+  },
+  "page": {
+    "title": "Grille du groupe",
+    "missing": "Cette grille est introuvable.",
+    "missing_hint": "Elle a peut-être été retirée, ou elle appartient à un groupe dont tu ne fais pas partie.",
+    "give_up": "Abandonner",
+    "give_up_confirm": "Abandonner et voir la solution ? Tu ne figureras pas au classement du groupe pour cette grille.",
+    "submit_failed": "Ta solution n’est pas parvenue au serveur.",
+    "submit_retry": "Envoyer à nouveau",
+    "closed_text": "Cette grille est terminée : voici sa solution, avec le classement final à côté."
+  },
+  "cover": {
+    "lead": "Une grille de {{ count }} îles pour {{ group }}. Le chrono démarre quand tu appuies sur Commencer, et ton temps est classé au sein du groupe.",
+    "unranked": "hors classement",
+    "start": "Commencer",
+    "preparing": "Préparation…",
+    "once": "Un seul essai : le chrono continue de tourner si tu quittes la page."
+  },
+  "ranking": {
+    "title": "Classement du groupe",
+    "open": "Tout le monde sauf l’auteur, selon le temps avec pénalités.",
+    "final_board": "Le classement final : cette grille est terminée.",
+    "spoiler": "{{ done }} sur {{ total }} ont fini. Les temps s’affichent une fois que tu l’as toi-même terminée.",
+    "alone": "Personne d’autre n’est encore dans le groupe.",
+    "missed": "pas fini"
+  },
+  "result": {
+    "rank": "Rang {{ rank }} sur {{ total }} dans {{ group }}",
+    "unranked": "Résolue, mais hors du classement du groupe.",
+    "revealed_title": "Solution dévoilée",
+    "revealed_text": "Pas de classement cette fois. La solution est sur la grille, regarde-la bien !",
+    "back": "Retour à {{ group }}",
+    "practice": "La rejouer pour t’entraîner"
+  },
+  "author": {
+    "title": "Ta grille",
+    "open": "C’est toi qui l’as créée, tu ne peux donc pas la jouer. Voici où en sont les autres.",
+    "closed": "Elle est terminée. Voici comment tout le monde s’en est sorti.",
+    "withdraw": "Retirer la grille",
+    "withdraw_confirm": "Retirer cette grille ? Elle disparaîtra du groupe, avec les temps de tout le monde.",
+    "withdrawn": "Grille retirée."
+  },
+  "stats": {
+    "solved": "Réussites",
+    "fastest": "Meilleur temps",
+    "median": "Médiane",
+    "playing": "En cours",
+    "gave_up": "Abandons",
+    "hardest": "C’est le pont marqué qui a demandé le plus d’aide. Indices qui l’ont corrigé : {{ hints }} · vérifications qui l’ont trouvé faux : {{ wrong }}.",
+    "no_help": "Personne n’a eu besoin d’un indice ni posé de pont faux. Du travail propre !",
+    "hints": "Indices",
+    "checks": "Vérifications"
+  },
+  "challenge": {
+    "title": "Défier un groupe",
+    "text": "Publie ta grille dans un de tes groupes : chacun y a une semaine pour la résoudre, chronométrée et classée comme un défi du jour.",
+    "no_group": "Tu n’es encore dans aucun groupe.",
+    "to_groups": "Créer ou rejoindre un groupe",
+    "empty": "Place d’abord quelques îles.",
+    "too_big": "Les grilles de groupe font au plus {{ max }}×{{ max }} cases.",
+    "unchecked": "Laisse d’abord le solveur prouver qu’elle a exactement une solution.",
+    "check": "Vérifier l’unicité",
+    "not_unique": "Cette grille a plus d’une solution. Modifie-la jusqu’à ce que le solveur n’en trouve plus qu’une.",
+    "unsolvable": "Cette grille n’a pas de solution. Modifie-la jusqu’à ce que le solveur en trouve une.",
+    "ready": "Exactement une solution : prête à publier !",
+    "group": "Groupe",
+    "name": "Titre (facultatif)",
+    "placeholder": "p. ex. La Spirale",
+    "post": "Défier le groupe",
+    "posting": "Vérification et publication…",
+    "posted": "Publiée dans {{ group }} !",
+    "rules": "Ouverte 7 jours, jusqu’à 3 grilles ouvertes par groupe. Tu ne peux pas jouer la tienne, mais tu verras comment tout le monde s’en sort."
+  },
+  "errors": {
+    "too_big": "Les grilles de groupe font au plus 20×20 cases.",
+    "unsolvable": "Cette grille n’a pas de solution.",
+    "not_unique": "Cette grille a plus d’une solution, ou le solveur n’a pas pu prouver qu’elle n’en a qu’une.",
+    "too_many": "Tu as déjà 3 grilles ouvertes dans ce groupe. Attends qu’une soit terminée.",
+    "title_invalid": "Les titres font au plus 40 caractères.",
+    "closed": "Cette grille est terminée ou a été retirée.",
+    "own": "C’est ta propre grille : tu peux regarder, pas jouer.",
+    "locked": "C’est une grille ouverte de ton groupe : les solveurs t’aideront une fois que tu l’auras terminée toi-même.",
+    "author_only": "Seul l’auteur de la grille peut faire ça."
+  },
+  "summary": {
+    "title": "Le bilan"
+  },
+  "replay": {
+    "back": "Retour à la grille",
+    "locked": "Les parties de cette grille s’ouvrent dès que tu l’as résolue ou que tu as abandonné.",
+    "empty": "Aucun coup n’a encore été enregistré pour cette grille.",
+    "stage": "La grille du groupe avec les ponts de {{ names }}"
+  }
+}

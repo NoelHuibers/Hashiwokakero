@@ -5,6 +5,7 @@ pub mod create;
 pub mod daily;
 pub mod dojo;
 pub mod groups;
+pub mod kadai;
 pub mod lab;
 pub mod legal;
 pub mod play;

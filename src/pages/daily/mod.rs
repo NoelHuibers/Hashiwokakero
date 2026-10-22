@@ -42,8 +42,9 @@ use state::{Daily, browser_now};
 use week::WeekCard;
 use win::WinCard;
 
+/// A number above the board: the time, the moves, the penalties. Also on a group puzzle's page.
 #[component]
-fn Stat(
+pub fn Stat(
     #[prop(into)] label: Signal<String>,
     jp: &'static str,
     #[prop(into)] value: Signal<String>,

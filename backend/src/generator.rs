@@ -20,8 +20,8 @@
 //! Everything is driven by a seeded RNG and fixed work limits, so the same [`GenerateParams`]
 //! give the same puzzle on every machine, however fast or busy it is. The budget that ends the
 //! search counts work, not time (see [`Budget`]): a time budget made the puzzle of a seed depend
-//! on the load of the machine. Wall-clock limits only exist as a safety net, far beyond what the
-//! budget allows.
+//! on the load of the machine. The only wall-clock limit is the one of a single SAT check
+//! ([`SAT_LIMIT`]), far beyond what a check takes.
 
 use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
@@ -107,7 +107,9 @@ fn profile(difficulty: Difficulty) -> Profile {
     }
 }
 
-/// Upper bound of the work budget for large grids.
+/// Upper bound of the work budget for large grids. It also bounds the wall time of a
+/// generation: about 4 s on the CPU [`WORK_PER_MS`] was measured on, proportionally more on a
+/// slower or busy one (the default sizes need at most 1.4 s there, Oni 24x24).
 const MAX_BUDGET_MS: u64 = 4_000;
 
 /// Work units per millisecond of a laptop CPU from 2026 (Intel Core Ultra X7): the deduction
@@ -117,45 +119,37 @@ const MAX_BUDGET_MS: u64 = 4_000;
 const WORK_PER_MS: u64 = 250_000;
 /// Work charged for every clause handed to the SAT solver (per call).
 const SAT_WORK_PER_CLAUSE: u64 = 200;
-/// Safety net for the wall time of one [`generate`] call: no new candidate, repair or tuning
-/// step after this long, and SAT checks get only what is left of it. The server generates on a
-/// single shared CPU, every other request waits meanwhile: twice the old time cap
-/// ([`MAX_BUDGET_MS`]) leaves room for a CPU 2x slower than the one [`WORK_PER_MS`] was measured
-/// on before large grids get cut short (and then depend on the machine, as they used to).
-///
-/// The default sizes stay far inside it: they need at most 1.4 s of work (Oni 24x24, the most
-/// of 40 seeds per difficulty), 5.5 s on a 4x slower CPU, so they never reach it and their
-/// puzzles don't depend on the machine (see the test `default_sizes_stay_inside_the_safety_limit`).
-const SAFETY_LIMIT: Duration = Duration::from_millis(2 * MAX_BUDGET_MS);
-/// How much slower than the measuring CPU a machine may be before the default sizes could reach
-/// [`SAFETY_LIMIT`].
-#[cfg(test)]
-const SLOWDOWN: u64 = 4;
+/// Time limit of one SAT check, the only wall-clock limit of the generator. A check takes
+/// milliseconds, the limit only stops a runaway one. It is the same for every check, however
+/// long the generation already ran: splr stops its clause eliminator after a tenth of its time
+/// limit, and the model it then finds decides how a puzzle gets repaired. A limit that shrank
+/// with the time left (the 8 s wall-clock cap of a generation this replaced) gave a slow or busy
+/// machine other puzzles, and so did the cap itself once a generation ran past it (Oni 24x24 in
+/// the coverage build).
+const SAT_LIMIT: Duration = Duration::from_secs(8);
 
-/// What is left of the work budget of one [`generate`] call.
+/// What is left of the work budget of one [`generate`] call, and its SAT checks' time limit.
 struct Budget {
     left: u64,
-    spent: u64,
-    safety: Instant,
+    sat_limit: Duration,
 }
 
 impl Budget {
-    fn new(budget_ms: u64, start: Instant, safety: Duration) -> Self {
+    fn new(budget_ms: u64, sat_limit: Duration) -> Self {
         Self {
             left: budget_ms.saturating_mul(WORK_PER_MS),
-            spent: 0,
-            safety: start + safety,
+            sat_limit,
         }
     }
 
     fn spend(&mut self, work: u64) {
         self.left = self.left.saturating_sub(work);
-        self.spent = self.spent.saturating_add(work);
     }
 
-    /// Whether the budget is used up (or the safety limit passed).
+    /// Whether the budget is used up. Counts work only, never time, so a slow machine takes
+    /// longer but gets the same puzzle.
     fn exhausted(&self) -> bool {
-        self.left == 0 || Instant::now() >= self.safety
+        self.left == 0
     }
 }
 
@@ -172,17 +166,12 @@ fn sat_solver() -> SolverConfig {
 }
 
 pub fn generate(params: &GenerateParams) -> GeneratedPuzzle {
-    generate_counted(params).0
+    generate_with(params, Instant::now(), SAT_LIMIT)
 }
 
-/// [`generate`] and the work it spent.
-fn generate_counted(params: &GenerateParams) -> (GeneratedPuzzle, u64) {
-    generate_with(params, SAFETY_LIMIT)
-}
-
-/// [`generate_counted`] with another safety limit.
-fn generate_with(params: &GenerateParams, safety: Duration) -> (GeneratedPuzzle, u64) {
-    let start = Instant::now();
+/// [`generate`] that started at `start` (only `generate_ms` is measured from it, the tests move
+/// it back to look like a generation that already ran for long) with another SAT time limit.
+fn generate_with(params: &GenerateParams, start: Instant, sat_limit: Duration) -> GeneratedPuzzle {
     let params = GenerateParams {
         width: params.width.clamp(MIN_SIZE, MAX_SIZE),
         height: params.height.clamp(MIN_SIZE, MAX_SIZE),
@@ -211,7 +200,7 @@ fn generate_with(params: &GenerateParams, safety: Duration) -> (GeneratedPuzzle,
         let budget_ms = (profile.budget_ms as f64 * scale.sqrt()) as u64;
         profile.budget_ms = budget_ms.min(MAX_BUDGET_MS);
     }
-    let mut budget = Budget::new(profile.budget_ms, start, safety);
+    let mut budget = Budget::new(profile.budget_ms, sat_limit);
     // Mix the parameters into the seed, so e.g. sizes don't share the same random stream
     let seed = params.seed
         ^ u64::from(params.width) << 56
@@ -269,15 +258,14 @@ fn generate_with(params: &GenerateParams, safety: Duration) -> (GeneratedPuzzle,
         // is preferable to publishing a puzzle that breaks the generator's contract.
         (None, _) => trivial(&params),
     };
-    let generated = GeneratedPuzzle {
+    GeneratedPuzzle {
         puzzle: candidate.puzzle,
         solution: candidate.solution,
         params,
         unique: candidate.unique,
         attempts,
         generate_ms: start.elapsed().as_secs_f64() * 1000.0,
-    };
-    (generated, budget.spent)
+    }
 }
 
 fn distance(score: f64, (lo, hi): (f64, f64)) -> f64 {
@@ -452,15 +440,9 @@ pub const MAX_TRIALS: u32 = 10_000;
 const SEARCH_NODES: u32 = 2_000;
 
 /// Another solution according to the SAT solver (with the lazy connectivity loop). `None` if it
-/// failed or ran past the safety limit.
-///
-/// Its time limit is what is left of [`SAFETY_LIMIT`], so a SAT check can't extend it. splr
-/// stops its clause eliminator after a tenth of its time limit (wall clock), and the model it
-/// then finds decides how a puzzle gets repaired: with the 1 to 2 s limit checks used to get,
-/// a slow or busy machine could get other puzzles. The default sizes always have seconds left
-/// (see [`SAFETY_LIMIT`]), which gives the eliminator at least a few hundred milliseconds.
+/// failed or ran past its time limit ([`SAT_LIMIT`], counted from the start of this check).
 fn sat_other_solution(puzzle: &Puzzle, solution: &[u8], budget: &mut Budget) -> Option<Search> {
-    let deadline = budget.safety;
+    let deadline = Instant::now() + budget.sat_limit;
     let (search, clauses) = other_solution(puzzle, solution, &sat_solver(), Some(deadline)).ok()?;
     budget.spend(clauses.saturating_mul(SAT_WORK_PER_CLAUSE));
     Some(search)
@@ -1078,8 +1060,6 @@ mod tests {
     /// The work budget counts work, not time: on a machine busy with other things (tests in
     /// parallel, coverage instrumentation) the same parameters give the same puzzle. With the
     /// time budget it had, this failed: the busy run stopped earlier and took another candidate.
-    /// Without the safety limit here, it is the one thing that may (deliberately) stop a
-    /// generation on a machine that is too slow, and this test makes the machine very slow.
     #[test]
     fn busy_machine_gets_the_same_puzzle() {
         use std::sync::atomic::{AtomicBool, Ordering};
@@ -1091,8 +1071,7 @@ mod tests {
             difficulty: Difficulty::Medium,
             seed: 1,
         };
-        let no_limit = Duration::from_secs(3_600);
-        let calm = generate_with(&params, no_limit).0;
+        let calm = generate(&params);
         let stop = AtomicBool::new(false);
         // Many more busy threads than cores, the generator gets a small share of a core
         let threads = std::thread::available_parallelism().map_or(4, std::num::NonZero::get) * 12;
@@ -1104,7 +1083,7 @@ mod tests {
                     }
                 });
             }
-            let busy = generate_with(&params, no_limit).0;
+            let busy = generate(&params);
             stop.store(true, Ordering::Relaxed);
             busy
         });
@@ -1117,55 +1096,27 @@ mod tests {
         );
     }
 
-    /// The default sizes (and the sizes the tests use) need far less work than the safety limit
-    /// allows, even on a CPU [`SLOWDOWN`] times slower than the one the work was measured on:
-    /// there the budget ends their search, never the clock.
+    /// A generation that has been running for a minute, far past the 8 s wall-clock cap
+    /// generations had, gets the same puzzle: no limit counts from its start. With the cap, Oni
+    /// 24x24 seed 1 got another puzzle in the coverage build, which took longer than that.
     #[test]
-    fn default_sizes_stay_inside_the_safety_limit() {
-        #[expect(
-            clippy::cast_possible_truncation,
-            reason = "the safety limit is a few seconds"
-        )]
-        let limit = WORK_PER_MS * SAFETY_LIMIT.as_millis() as u64 / SLOWDOWN;
-        let mut cases = Vec::new();
-        for difficulty in Difficulty::ALL {
-            let (width, height) = difficulty.size();
-            // Oni takes seconds in a debug build: only seed 2, which needs the most work of the
-            // first three (0.62 of the limit, 40 seeds needed at most 0.69)
-            let seeds = if difficulty == Difficulty::Oni {
-                2..=2
-            } else {
-                1..=3
-            };
-            for seed in seeds {
-                cases.push(GenerateParams {
-                    width,
-                    height,
-                    difficulty,
-                    seed,
-                });
-            }
-        }
-        for (difficulty, size) in [
-            (Difficulty::Expert, 12),
-            (Difficulty::Oni, 12),
-            (Difficulty::Medium, 16),
-        ] {
-            cases.push(GenerateParams {
-                width: size,
-                height: size,
-                difficulty,
-                seed: 1,
-            });
-        }
-        for params in cases {
-            let (_, work) = generate_counted(&params);
-            assert!(
-                work < limit,
-                "{params:?}: {work} units of work, a {SLOWDOWN}x slower CPU needs more than \
-                 the safety limit for that, its puzzle would depend on the machine"
-            );
-        }
+    fn a_long_generation_gets_the_same_puzzle() {
+        let params = GenerateParams {
+            width: 24,
+            height: 24,
+            difficulty: Difficulty::Oni,
+            seed: 1,
+        };
+        let long_ago = Instant::now()
+            .checked_sub(Duration::from_secs(60))
+            .expect("the machine has been up for a minute");
+        let normal = generate(&params);
+        let long = generate_with(&params, long_ago, SAT_LIMIT);
+        assert!(long.generate_ms >= 60_000.0);
+        assert_eq!(
+            (normal.puzzle, normal.solution),
+            (long.puzzle, long.solution)
+        );
     }
 
     #[test]
@@ -1196,7 +1147,8 @@ mod uniqueness_contract_tests {
             difficulty: Difficulty::Oni,
             seed: 0,
         };
-        let generated = generate_with(&params, Duration::ZERO).0;
+        // Every SAT check times out, so no candidate is confirmed unique
+        let generated = generate_with(&params, Instant::now(), Duration::ZERO);
         assert!(generated.unique);
         assert!(
             Board::new(generated.puzzle.clone())

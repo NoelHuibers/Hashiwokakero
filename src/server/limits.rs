@@ -108,6 +108,8 @@ pub async fn admission(req: Request, next: Next) -> Response {
                     | "load_dojo_board"
                     | "load_dojo_seasons"
                     | "load_dojo_benchmarks"
+                    // Proves the puzzle unique with the SAT solver
+                    | "post_group_puzzle"
             )
         )
         // Community benchmark uploads: a download from the GBD, decompression and parsing

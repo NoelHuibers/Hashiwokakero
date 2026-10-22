@@ -458,6 +458,7 @@ mod tests {
                 lane(3, "chen", Vec::new(), LaneOutcome::GaveUp),
                 lane(4, "emre", Vec::new(), LaneOutcome::Missing),
             ],
+            group_puzzle: None,
         }
     }
 

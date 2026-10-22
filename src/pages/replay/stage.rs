@@ -247,6 +247,7 @@ pub fn Stage(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoView {
     });
     let shown = Memo::new(move |_| theatre.shown_lanes());
     let day = theatre.data.with_value(|d| d.day);
+    let puzzle_replay = theatre.data.with_value(|d| d.group_puzzle.is_some());
     let label = move || {
         let names = shown.with(|s| {
             theatre.data.with_value(|d| {
@@ -256,12 +257,17 @@ pub fn Stage(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoView {
                     .join(", ")
             })
         });
-        td_string!(
-            i18n.get_locale(),
-            replay.stage.label,
-            number = daily_number(day),
-            names
-        )
+        let locale = i18n.get_locale();
+        if puzzle_replay {
+            td_string!(locale, kadai.replay.stage, names)
+        } else {
+            td_string!(
+                locale,
+                replay.stage.label,
+                number = daily_number(day),
+                names
+            )
+        }
     };
     let edges = board.with_value(|b| {
         (0..b.edges.len())

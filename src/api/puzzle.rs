@@ -14,13 +14,16 @@ use crate::server::{auth, daily, db, run_blocking};
 const MAX_TIMEOUT_MS: u32 = 20_000;
 
 /// Refuses to solve today's daily for anyone who hasn't finished it: the leaderboard is about
-/// solving it yourself.
+/// solving it yourself. The same for an open puzzle of one of the player's groups.
 #[cfg(feature = "ssr")]
 async fn not_the_daily(puzzle: &Puzzle) -> Result<(), ServerFnError> {
     let conn = db::conn()?;
     let user = auth::current_user(&conn).await?.map(|u| u.id);
     if daily::locked(&conn, user, puzzle).await? {
         return Err(crate::model::ApiError::DailyLocked.fail());
+    }
+    if crate::server::groups::kadai::locked(&conn, user, puzzle, crate::server::now_ms()).await? {
+        return Err(crate::model::ApiError::PuzzleLocked.fail());
     }
     Ok(())
 }

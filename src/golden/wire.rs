@@ -805,6 +805,22 @@ fn stored_formats() {
         line("attempts.bridges", &vec![2u8, 1]),
         line("attempts.log", &log),
         line("attempts.run", &run),
+        line("group_puzzles.puzzle", &puzzle()),
+        line(
+            "group_puzzle_attempts.helps",
+            &vec![
+                crate::model::Help {
+                    t: 1_250,
+                    kind: MarkKind::Hint,
+                    edges: vec![3],
+                },
+                crate::model::Help {
+                    t: 4_000,
+                    kind: MarkKind::Check,
+                    edges: vec![],
+                },
+            ],
+        ),
         line("dojo_submissions.score", &score()),
         line(
             "dojo_submissions.fingerprint",
