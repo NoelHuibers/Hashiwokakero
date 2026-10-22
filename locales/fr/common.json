@@ -49,7 +49,8 @@
     "copied": "Résultat copié dans le presse-papiers.",
     "copy_failed": "Impossible de copier dans le presse-papiers.",
     "reload": "Recharger",
-    "update": "Mettre à jour"
+    "update": "Mettre à jour",
+    "offline": "Vous êtes hors ligne. Le jeu libre fonctionne toujours."
   },
   "errors": {
     "unknown": "Un problème est survenu : {{ detail }}",

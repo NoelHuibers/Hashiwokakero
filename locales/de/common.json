@@ -49,7 +49,8 @@
     "copied": "Ergebnis in die Zwischenablage kopiert.",
     "copy_failed": "Kopieren in die Zwischenablage hat nicht geklappt.",
     "reload": "Neu laden",
-    "update": "Aktualisieren"
+    "update": "Aktualisieren",
+    "offline": "Du bist offline. Üben geht trotzdem."
   },
   "errors": {
     "unknown": "Etwas ist schiefgelaufen: {{ detail }}",

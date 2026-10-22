@@ -49,7 +49,8 @@
     "copied": "Risultato copiato negli appunti.",
     "copy_failed": "Impossibile copiare negli appunti.",
     "reload": "Ricarica",
-    "update": "Aggiorna"
+    "update": "Aggiorna",
+    "offline": "Sei offline. L'allenamento funziona lo stesso."
   },
   "errors": {
     "unknown": "Qualcosa è andato storto: {{ detail }}",

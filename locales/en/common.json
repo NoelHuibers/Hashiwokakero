@@ -49,7 +49,8 @@
     "copied": "Result copied to the clipboard.",
     "copy_failed": "Couldn't copy to the clipboard.",
     "reload": "Reload",
-    "update": "Update"
+    "update": "Update",
+    "offline": "You're offline. Practice still works."
   },
   "errors": {
     "unknown": "Something went wrong: {{ detail }}",

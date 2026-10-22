@@ -207,17 +207,17 @@ mod tests {
     #[test]
     fn the_phone_computes_in_the_app_only() {
         let saved = daily(TODAY, Status::Playing);
+        let (today, mut other) = (puzzle(), puzzle());
+        other.islands[0].required = 1;
         let route = |native, puzzle| route(native, puzzle, Some(&saved), TODAY);
         assert_eq!(route(false, None).unwrap(), Route::Server);
-        assert_eq!(route(false, Some(&puzzle())).unwrap(), Route::Server);
+        assert_eq!(route(false, Some(&today)).unwrap(), Route::Server);
         assert_eq!(route(true, None).unwrap(), Route::Phone);
-        let error = route(true, Some(&puzzle())).unwrap_err();
+        let error = route(true, Some(&today)).unwrap_err();
         assert_eq!(
             ApiError::from_message(&error.to_string()),
             Some(ApiError::DailyLocked)
         );
-        let mut other = puzzle();
-        other.islands[0].required = 1;
         assert_eq!(route(true, Some(&other)).unwrap(), Route::Phone);
     }
 

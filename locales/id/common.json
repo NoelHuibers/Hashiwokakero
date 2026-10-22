@@ -49,7 +49,8 @@
     "copied": "Hasil disalin ke papan klip.",
     "copy_failed": "Gagal menyalin ke papan klip.",
     "reload": "Muat ulang",
-    "update": "Perbarui"
+    "update": "Perbarui",
+    "offline": "Kamu sedang offline. Latihan tetap berjalan."
   },
   "errors": {
     "unknown": "Terjadi kesalahan: {{ detail }}",

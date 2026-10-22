@@ -49,7 +49,8 @@
     "copied": "Wynik skopiowany do schowka.",
     "copy_failed": "Nie udało się skopiować do schowka.",
     "reload": "Odśwież",
-    "update": "Aktualizuj"
+    "update": "Aktualizuj",
+    "offline": "Jesteś offline. Trening nadal działa."
   },
   "errors": {
     "unknown": "Coś poszło nie tak: {{ detail }}",

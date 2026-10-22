@@ -98,9 +98,10 @@ fn normalized(puzzle: Puzzle) -> Result<Puzzle, String> {
     backend::api::player_puzzle(puzzle).map_err(|_| WRONG_PUZZLE.to_string())
 }
 
-/// The functions above as the app's commands: they take the server functions' request bodies
-/// (the JSON in `src/golden/files/requests.txt`) and answer with the JSON of the server
-/// functions' answers, both as text. The page sends them as strings because JavaScript's numbers
+/// The functions above as the app's commands, with the server functions' JSON as text.
+///
+/// They take the server functions' request bodies (the JSON in `src/golden/files/requests.txt`)
+/// and answer with the JSON of the server functions' answers. The page sends them as strings because JavaScript's numbers
 /// would round the 64-bit seeds (`src/api/native.rs`).
 pub mod json {
     use serde::Deserialize;
