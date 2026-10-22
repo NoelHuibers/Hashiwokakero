@@ -43,9 +43,9 @@ fn Row(row: RivalRow) -> impl IntoView {
     let RivalRow { entry, me, record } = row;
     view! {
         <tr class=format!("{ROW_INSET} {}", if me { HIGHLIGHT_ROW } else { "" })>
-            <td class="py-2 pe-2 text-center font-pixel text-sm tabular-nums text-muted-foreground">{entry.rank}</td>
+            <td class="py-2 pe-1 text-center font-pixel text-sm tabular-nums text-muted-foreground">{entry.rank}</td>
             <td class="max-w-0 py-2 pe-2">
-                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me />
+                <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me marked_row=true />
             </td>
             <td class="py-2 pe-2 text-end font-pixel tabular-nums">{entry.solved}</td>
             <td class="hidden py-2 pe-2 text-end sm:table-cell">
@@ -79,18 +79,19 @@ fn Row(row: RivalRow) -> impl IntoView {
 fn Board(board: RivalsBoard) -> impl IntoView {
     let i18n = use_i18n();
     view! {
-        // A size container for PlayerName and the last duels, pulled out by the row inset
+        // A size container for PlayerName and the last duels, pulled out by the row inset. On a
+        // phone the number columns are narrower so the name keeps its room
         <div class="@container -mx-2">
             <table class=format!("{RANK_TABLE} w-full table-fixed text-sm")>
                 // Widths on the head cells, not a colgroup: the medals column hides on phones
                 <thead>
-                    <tr class=format!("text-start text-[10px] uppercase tracking-wider text-muted-foreground {ROW_INSET}")>
-                        <th class="w-10"></th>
+                    <tr class=format!("text-start text-[10px] uppercase tracking-wider text-muted-foreground hyphens-auto {ROW_INSET}")>
+                        <th class="w-8 @md:w-10"></th>
                         <th class="py-1.5 text-start font-semibold">{t!(i18n, ranks.fame.player)}</th>
-                        <th class="w-16 py-1.5 pe-2 text-end font-semibold">{t!(i18n, account.stats.solved)}</th>
+                        <th class="w-14 py-1.5 pe-2 text-end font-semibold @md:w-16">{t!(i18n, account.stats.solved)}</th>
                         <th class="hidden w-36 py-1.5 pe-2 text-end font-semibold sm:table-cell">{t!(i18n, ranks.fame.medals)}</th>
-                        <th class="w-16 py-1.5 pe-2 text-end font-semibold">{t!(i18n, rivals.board.streak)}</th>
-                        <th class="w-20 py-1.5 text-end font-semibold @3xl:w-64">{t!(i18n, rivals.record.short)}</th>
+                        <th class="w-14 py-1.5 pe-2 text-end font-semibold @md:w-16">{t!(i18n, rivals.board.streak)}</th>
+                        <th class="w-16 py-1.5 text-end font-semibold @md:w-20 @3xl:w-64">{t!(i18n, rivals.record.short)}</th>
                     </tr>
                 </thead>
                 <tbody>{board.rows.into_iter().map(|row| view! { <Row row /> }).collect_view()}</tbody>

@@ -64,3 +64,30 @@ test('mark rivals on their profiles, then duel them in the daily', async ({ page
   await expect(rivalsCard.locator('tr').filter({ hasText: 'chen' })).toHaveCount(0);
   await expect(podium.locator('.rival-mark')).toHaveCount(0);
 });
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  // The number columns took the row, so the names were cut down to their first letter
+  test('the rivals card leaves the names their room', async ({ page }) => {
+    await visit(page, `/player/${player('chen').id}`);
+    await page.getByRole('button', { name: /^Mark as rival/ }).click();
+    await expect(page.getByRole('button', { name: /^Your rival/ })).toHaveAttribute('aria-pressed', 'true');
+
+    await visit(page, '/ranks');
+    const rivalsCard = page.locator('[data-rivals-board]');
+    const name = (row: string) => rivalsCard.locator(row).locator('a[href*="/player/"]');
+    const chen = name('tr:has-text("chen")');
+    await expect(chen).toBeVisible();
+    // chen in full, not truncated
+    expect(await chen.evaluate((a) => a.scrollWidth <= a.clientWidth)).toBe(true);
+    // Your own guest name ("Sleepy Tanuki 27") may truncate, but keeps a word's room: the
+    // marked row says it's you, the "you" badge is only for screen readers
+    const mine = rivalsCard.locator('tr.rank-mark');
+    expect((await name('tr.rank-mark').boundingBox())!.width).toBeGreaterThan(70);
+    await expect(mine).toContainText('you');
+    expect((await mine.getByText('you', { exact: true }).boundingBox())!.width).toBeLessThanOrEqual(1);
+    // And nothing runs out of the card
+    expect(await rivalsCard.evaluate((c) => c.scrollWidth <= c.clientWidth)).toBe(true);
+  });
+});

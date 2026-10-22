@@ -177,7 +177,7 @@ fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>, hanko: HankoBoard)
             <td class="max-w-0 py-2 pe-2">
                 <div class="flex min-w-0 items-center gap-2 [&>div]:min-w-0" data-name-line="">
                     <ColourPip colour=colour />
-                    <PlayerName user_id name guest stamp me />
+                    <PlayerName user_id name guest stamp me marked_row=true />
                 </div>
                 {seals}
             </td>
