@@ -1,0 +1,125 @@
+{
+  "title": "Grup bulmacaları",
+  "untitled": "{{ name }} imzalı bulmaca",
+  "untitled_former": "Bir üyenin bulmacası",
+  "by": "hazırlayan: {{ name }}",
+  "by_former": "hazırlayan: eski bir üye",
+  "solved_of": "Çözen: {{ solved }} / {{ players }}",
+  "left": {
+    "days": "{{ count }} gün kaldı",
+    "hours": "{{ count }} sa kaldı",
+    "minutes": "{{ count }} dk kaldı",
+    "closed": "Kapandı"
+  },
+  "card": {
+    "text": "Üyelerin hazırladığı, bir hafta açık kalan bulmacalar. Grup sıralaması için çöz ya da kendin bir tane yap.",
+    "new": "Yeni bulmaca",
+    "none": "Şu an açık bulmaca yok. Atölyede bir tane hazırla ve gruba meydan oku!",
+    "make": "Bulmaca yap",
+    "full": "Burada {{ max }} açık bulmacan var, olabilecek en fazla sayı bu. Biri kapanınca yenisini yapabilirsin.",
+    "closed": "Kapanan bulmacalar",
+    "yours": "senin",
+    "play": "Oyna",
+    "continue_playing": "Devam et",
+    "gave_up": "pes etti"
+  },
+  "kudos": {
+    "title": "“{{ name }}” bulmacan kapandı. Grubun sonuçları:",
+    "claps": "Alkışlar! Çözen: {{ count }}",
+    "none": "Bu sefer kimse çözemedi. Zorlu bir bulmacaymış!",
+    "thanks": "Teşekkürler!",
+    "see": "Son tahtayı gör"
+  },
+  "page": {
+    "title": "Grup bulmacası",
+    "missing": "Bu bulmaca burada değil.",
+    "missing_hint": "Geri çekilmiş olabilir ya da üyesi olmadığın bir gruba ait.",
+    "give_up": "Pes et",
+    "give_up_confirm": "Pes edip çözümü görmek istiyor musun? Bu bulmacada grup sıralamasına girmezsin.",
+    "submit_failed": "Çözümün sunucuya ulaşmadı.",
+    "submit_retry": "Yeniden gönder",
+    "closed_text": "Bu bulmaca kapandı: işte çözümü, yanında da son sıralama."
+  },
+  "cover": {
+    "lead": "{{ group }} için {{ count }} adalı bir bulmaca. Saat, Başla’ya bastığında işlemeye başlar ve süren grup içinde sıralanır.",
+    "unranked": "sıralama dışı",
+    "start": "Başla",
+    "preparing": "Hazırlanıyor…",
+    "once": "Tek hakkın var: sayfadan ayrılsan da saat işlemeye devam eder."
+  },
+  "ranking": {
+    "title": "Grup sıralaması",
+    "open": "Hazırlayan hariç herkes, cezalar dahil süreye göre.",
+    "final_board": "Son sıralama: bu bulmaca kapandı.",
+    "spoiler": "Bitiren: {{ done }} / {{ total }}. Süreler, sen de bitirince görünür.",
+    "alone": "Grupta henüz başka kimse yok.",
+    "missed": "bitirmedi"
+  },
+  "result": {
+    "rank": "{{ group }} grubundaki sıran: {{ rank }} / {{ total }}",
+    "unranked": "Çözüldü, ama grup sıralamasında değil.",
+    "revealed_title": "Çözüm gösterildi",
+    "revealed_text": "Bu sefer sıralama dışı. Çözüm tahtada, iyice bak!",
+    "back": "{{ group }} grubuna dön",
+    "practice": "Pratik için yeniden oyna"
+  },
+  "author": {
+    "title": "Bulmacan",
+    "open": "Bunu sen hazırladın, o yüzden oynayamazsın. Herkesin durumu burada.",
+    "closed": "Bulmaca kapandı. Herkesin sonucu burada.",
+    "withdraw": "Bulmacayı geri çek",
+    "withdraw_confirm": "Bu bulmaca geri çekilsin mi? Herkesin süreleriyle birlikte gruptan kaybolur.",
+    "withdrawn": "Bulmaca geri çekildi."
+  },
+  "stats": {
+    "solved": "Çözen",
+    "fastest": "En hızlı",
+    "median": "Medyan",
+    "playing": "Oynayan",
+    "gave_up": "Pes eden",
+    "hardest": "En çok yardım gerektiren köprü işaretli olan. Onu düzelten ipucu: {{ hints }} · onu yanlış bulan kontrol: {{ wrong }}.",
+    "no_help": "Kimsenin ipucuna ihtiyacı olmadı, yanlış köprü de çıkmadı. Tertemiz iş!",
+    "hints": "İpucu",
+    "checks": "Kontrol"
+  },
+  "challenge": {
+    "title": "Bir gruba meydan oku",
+    "text": "Bulmacanı gruplarından birinde paylaş: oradaki herkesin onu çözmek için bir haftası olur, günlük bulmaca gibi süre tutulur ve sıralanır.",
+    "no_group": "Henüz bir grupta değilsin.",
+    "to_groups": "Grup oluştur ya da bir gruba katıl",
+    "empty": "Önce birkaç ada yerleştir.",
+    "too_big": "Grup bulmacaları en fazla {{ max }}×{{ max }} hücre olabilir.",
+    "unchecked": "Önce çözücü, bulmacanın tam olarak tek çözümü olduğunu kanıtlasın.",
+    "check": "Tekliği kontrol et",
+    "not_unique": "Bu bulmacanın birden fazla çözümü var. Çözücü yalnızca bir tane bulana kadar değiştir.",
+    "unsolvable": "Bu bulmacanın çözümü yok. Çözücü bir çözüm bulana kadar değiştir.",
+    "ready": "Tam olarak tek çözüm: paylaşmaya hazır!",
+    "group": "Grup",
+    "name": "Başlık (isteğe bağlı)",
+    "placeholder": "ör. Sarmal",
+    "post": "Gruba meydan oku",
+    "posting": "Kontrol ediliyor ve paylaşılıyor…",
+    "posted": "{{ group }} grubunda paylaşıldı!",
+    "rules": "7 gün açık kalır, grup başına en fazla 3 açık bulmaca. Kendi bulmacanı oynayamazsın ama herkesin nasıl gittiğini görürsün."
+  },
+  "errors": {
+    "too_big": "Grup bulmacaları en fazla 20×20 hücre olabilir.",
+    "unsolvable": "Bu bulmacanın çözümü yok.",
+    "not_unique": "Bu bulmacanın birden fazla çözümü var ya da çözücü tek çözümü olduğunu kanıtlayamadı.",
+    "too_many": "Bu grupta zaten 3 açık bulmacan var. Biri kapanana kadar bekle.",
+    "title_invalid": "Başlık en fazla 40 karakter olabilir.",
+    "closed": "Bu bulmaca kapandı ya da geri çekildi.",
+    "own": "Bu senin kendi bulmacan: izleyebilirsin ama oynayamazsın.",
+    "locked": "Bu, grubunun açık bir bulmacası: çözücüler, sen kendin bitirdikten sonra yardım eder.",
+    "author_only": "Bunu yalnızca bulmacayı hazırlayan yapabilir."
+  },
+  "summary": {
+    "title": "Nasıl geçti"
+  },
+  "replay": {
+    "back": "Bulmacaya dön",
+    "locked": "Bu bulmacanın tekrarları, onu çözünce ya da pes edince açılır.",
+    "empty": "Bu bulmaca için henüz kimsenin hamlesi kaydedilmedi.",
+    "stage": "Grup bulmacasının tahtası, {{ names }} köprüleriyle"
+  }
+}

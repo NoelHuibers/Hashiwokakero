@@ -1,6 +1,7 @@
 //! The workshop: build a puzzle by hand or from a generated one, check it, then play it.
 
 pub mod brush;
+pub mod challenge;
 pub mod size_input;
 pub mod warnings;
 
@@ -26,6 +27,7 @@ use crate::state::{
 };
 
 use brush::BrushPalette;
+use challenge::ChallengeCard;
 use size_input::SizeInput;
 use warnings::{Warnings, warnings};
 
@@ -321,6 +323,7 @@ pub fn CreatePage() -> impl IntoView {
                         </CardContent>
                     </Card>
 
+                    <ChallengeCard on_check=Callback::new(move |()| solve(true)) busy />
                     <SolverPanel report=editor.report busy=editor.solving>
                         <PanelButton
                             primary=true

@@ -324,6 +324,7 @@ mod tests {
                 lane(2, vec![mv(500, 1, 1), mv(3000, 0, 2)]),
                 lane(3, Vec::new()),
             ],
+            group_puzzle: None,
         }
     }
 

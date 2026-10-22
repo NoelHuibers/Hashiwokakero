@@ -1,0 +1,125 @@
+{
+  "title": "Łamigłówki grupy",
+  "untitled": "Łamigłówka: {{ name }}",
+  "untitled_former": "Łamigłówka członka grupy",
+  "by": "autor: {{ name }}",
+  "by_former": "autor: były członek grupy",
+  "solved_of": "Na mecie: {{ solved }} z {{ players }}",
+  "left": {
+    "days": "zostało {{ count }} d",
+    "hours": "zostało {{ count }} h",
+    "minutes": "zostało {{ count }} min",
+    "closed": "Zamknięta"
+  },
+  "card": {
+    "text": "Łamigłówki stworzone przez członków grupy, otwarte przez tydzień. Rozwiązuj je do rankingu grupy albo stwórz własną.",
+    "new": "Nowa łamigłówka",
+    "none": "Teraz nie ma otwartych łamigłówek. Zbuduj jedną w warsztacie i rzuć wyzwanie grupie!",
+    "make": "Stwórz łamigłówkę",
+    "full": "Masz tu już maksymalną liczbę otwartych łamigłówek: {{ max }}. Następną stworzysz, gdy któraś się zamknie.",
+    "closed": "Zamknięte łamigłówki",
+    "yours": "twoja",
+    "play": "Graj",
+    "continue_playing": "Kontynuuj",
+    "gave_up": "poddał(a) się"
+  },
+  "kudos": {
+    "title": "Twoja łamigłówka „{{ name }}” została zamknięta. Tak poradziła sobie grupa:",
+    "claps": "Oklaski! Na mecie: {{ count }}",
+    "none": "Tym razem nikt jej nie rozwiązał. Twarda sztuka!",
+    "thanks": "Dzięki!",
+    "see": "Zobacz końcową planszę"
+  },
+  "page": {
+    "title": "Łamigłówka grupy",
+    "missing": "Tej łamigłówki tu nie ma.",
+    "missing_hint": "Może została wycofana albo pochodzi z grupy, do której nie należysz.",
+    "give_up": "Poddaję się",
+    "give_up_confirm": "Poddać się i zobaczyć rozwiązanie? Przy tej łamigłówce nie trafisz wtedy do rankingu grupy.",
+    "submit_failed": "Twoje rozwiązanie nie dotarło do serwera.",
+    "submit_retry": "Wyślij ponownie",
+    "closed_text": "Ta łamigłówka jest już zamknięta: oto jej rozwiązanie, a obok końcowy ranking."
+  },
+  "cover": {
+    "lead": "Łamigłówka dla grupy {{ group }}, wyspy: {{ count }}. Zegar rusza po naciśnięciu Start, a twój czas trafia do rankingu grupy.",
+    "unranked": "poza rankingiem",
+    "start": "Start",
+    "preparing": "Przygotowuję…",
+    "once": "Tylko jedno podejście: zegar biegnie dalej, nawet jeśli wyjdziesz."
+  },
+  "ranking": {
+    "title": "Ranking grupy",
+    "open": "Wszyscy oprócz autora, według czasu z karami.",
+    "final_board": "Końcowy ranking: ta łamigłówka jest już zamknięta.",
+    "spoiler": "Na mecie: {{ done }} z {{ total }}. Czasy pojawią się po samodzielnym ukończeniu łamigłówki.",
+    "alone": "W grupie nie ma jeszcze nikogo innego.",
+    "missed": "nie ukończył(a)"
+  },
+  "result": {
+    "rank": "Miejsce {{ rank }} na {{ total }} w grupie {{ group }}",
+    "unranked": "Rozwiązane, ale poza rankingiem grupy.",
+    "revealed_title": "Rozwiązanie odkryte",
+    "revealed_text": "Tym razem poza rankingiem. Rozwiązanie jest na planszy, przyjrzyj mu się dobrze!",
+    "back": "Wróć do grupy {{ group }}",
+    "practice": "Zagraj jeszcze raz dla treningu"
+  },
+  "author": {
+    "title": "Twoja łamigłówka",
+    "open": "To twoje dzieło, więc nie możesz w nie zagrać. Zobacz, jak idzie innym.",
+    "closed": "Łamigłówka jest już zamknięta. Zobacz, jak poszło innym.",
+    "withdraw": "Wycofaj łamigłówkę",
+    "withdraw_confirm": "Wycofać tę łamigłówkę? Zniknie z grupy razem z czasami wszystkich graczy.",
+    "withdrawn": "Łamigłówka wycofana."
+  },
+  "stats": {
+    "solved": "Na mecie",
+    "fastest": "Najszybciej",
+    "median": "Mediana",
+    "playing": "W grze",
+    "gave_up": "Poddali się",
+    "hardest": "Zaznaczony most wymagał najwięcej pomocy. Podpowiedzi, które go poprawiły: {{ hints }} · sprawdzenia, które wykazały w nim błąd: {{ wrong }}.",
+    "no_help": "Nikt nie potrzebował podpowiedzi ani nie trafił na błędny most. Czysta robota!",
+    "hints": "Podpowiedzi",
+    "checks": "Sprawdzenia"
+  },
+  "challenge": {
+    "title": "Rzuć wyzwanie grupie",
+    "text": "Opublikuj swoją łamigłówkę w jednej ze swoich grup: wszyscy w niej mają tydzień na rozwiązanie, z pomiarem czasu i rankingiem jak w łamigłówce dnia.",
+    "no_group": "Nie należysz jeszcze do żadnej grupy.",
+    "to_groups": "Załóż grupę albo dołącz do istniejącej",
+    "empty": "Najpierw postaw kilka wysp.",
+    "too_big": "Łamigłówki grupy mogą mieć najwyżej {{ max }}×{{ max }} pól.",
+    "unchecked": "Najpierw pozwól solverowi udowodnić, że ma dokładnie jedno rozwiązanie.",
+    "check": "Sprawdź jednoznaczność",
+    "not_unique": "Ta łamigłówka ma więcej niż jedno rozwiązanie. Zmieniaj ją, aż solver znajdzie tylko jedno.",
+    "unsolvable": "Ta łamigłówka nie ma rozwiązania. Zmieniaj ją, aż solver jakieś znajdzie.",
+    "ready": "Dokładnie jedno rozwiązanie: można publikować!",
+    "group": "Grupa",
+    "name": "Tytuł (opcjonalnie)",
+    "placeholder": "np. Spirala",
+    "post": "Rzuć wyzwanie grupie",
+    "posting": "Sprawdzam i publikuję…",
+    "posted": "Opublikowano w grupie {{ group }}!",
+    "rules": "Otwarta przez 7 dni, do 3 otwartych łamigłówek na grupę. Swojej nie zagrasz, ale zobaczysz, jak radzą sobie inni."
+  },
+  "errors": {
+    "too_big": "Łamigłówki grupy mogą mieć najwyżej 20×20 pól.",
+    "unsolvable": "Ta łamigłówka nie ma rozwiązania.",
+    "not_unique": "Ta łamigłówka ma więcej niż jedno rozwiązanie albo solver nie zdołał udowodnić, że ma tylko jedno.",
+    "too_many": "Masz już w tej grupie 3 otwarte łamigłówki. Poczekaj, aż któraś się zamknie.",
+    "title_invalid": "Tytuł może mieć najwyżej 40 znaków.",
+    "closed": "Ta łamigłówka jest zamknięta albo została wycofana.",
+    "own": "To twoja własna łamigłówka: możesz obserwować, ale nie grać.",
+    "locked": "To otwarta łamigłówka twojej grupy: solvery pomogą w niej dopiero po jej samodzielnym ukończeniu.",
+    "author_only": "Tylko autor łamigłówki może to zrobić."
+  },
+  "summary": {
+    "title": "Jak poszło"
+  },
+  "replay": {
+    "back": "Wróć do łamigłówki",
+    "locked": "Powtórki tej łamigłówki otworzą się, gdy ją rozwiążesz albo się poddasz.",
+    "empty": "Przy tej łamigłówce nie zapisano jeszcze żadnych ruchów.",
+    "stage": "Plansza łamigłówki grupy z mostami graczy: {{ names }}"
+  }
+}

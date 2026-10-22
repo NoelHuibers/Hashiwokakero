@@ -360,6 +360,7 @@ mod tests {
                     locked: false,
                     puzzle: Some(puzzle),
                     lanes: vec![lane],
+                    group_puzzle: None,
                 },
                 None,
             );

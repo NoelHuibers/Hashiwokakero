@@ -92,6 +92,10 @@ pub struct ReplayData {
     pub puzzle: Option<Puzzle>,
     /// A lane per member, the group's order (longest standing first).
     pub lanes: Vec<Lane>,
+    /// A group puzzle's replay (`model::kadai`) instead of a day's: the puzzle's id, `day` and
+    /// `today` don't count then.
+    #[serde(default)]
+    pub group_puzzle: Option<i64>,
 }
 
 impl ReplayData {
@@ -429,6 +433,7 @@ mod tests {
             locked: false,
             puzzle: None,
             lanes: lanes.to_vec(),
+            group_puzzle: None,
         };
         assert_eq!(data.end(), 3000);
         assert_eq!(data.lane(2).map(Lane::finish), Some(Some(1800)));

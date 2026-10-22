@@ -13,6 +13,7 @@ pub mod create;
 pub mod hanko;
 pub mod invite;
 pub mod join;
+pub mod kadai;
 pub mod list;
 pub mod members;
 pub mod replay;
@@ -39,6 +40,7 @@ use archipelago::Archipelago;
 use banzuke::BanzukeCard;
 use create::{CreateCard, ReadyCard};
 use hanko::HankoCard;
+use kadai::KadaiCard;
 use list::GroupList;
 use members::MembersCard;
 use replay::ReplayCard;
@@ -245,6 +247,7 @@ fn GroupView(group: GroupContext) -> impl IntoView {
             <div class="flex min-w-0 flex-col gap-6">
                 <TodayCard group />
                 <HankoCard group />
+                <KadaiCard group />
                 <ReplayCard group />
                 <WeekCard group />
                 <BanzukeCard group crowns />
