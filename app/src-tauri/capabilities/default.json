@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "default",
+  "description": "The app's one window: Tauri's core defaults only, no plugins yet",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

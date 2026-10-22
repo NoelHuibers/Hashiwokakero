@@ -1,0 +1,7 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- The window shows the page's background (and the splash screen) before the WebView paints -->
+    <style name="Theme.hashi_tauri" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="android:windowBackground">@color/background</item>
+    </style>
+</resources>

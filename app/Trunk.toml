@@ -33,11 +33,13 @@ command_arguments = [
   "cd .. && pnpm exec tailwindcss -i style/tailwind.css -o target/app-css/hashi.css $([ \"$TRUNK_PROFILE\" = release ] && echo --minify)",
 ]
 
-# public/ as it is, at the root like on the website: icons, the manifest and the fonts
+# public/ at the root like on the website: icons, the manifest and the fonts. Without the Dojo's
+# development set (dojo-dev-*.tar.gz, 1.4 MB): the app would carry it in every install. Its Dojo
+# page gets the set from hashi.rs (docs/mobile.md, step 6).
 [[hooks]]
 stage = "build"
 command = "sh"
 command_arguments = [
   "-c",
-  "if [ ! -f ../public/fonts/fonts.css ]; then echo 'public/fonts is missing: pnpm run fonts' >&2; exit 1; fi; cp -R ../public/. \"$TRUNK_STAGING_DIR\"",
+  "if [ ! -f ../public/fonts/fonts.css ]; then echo 'public/fonts is missing: pnpm run fonts' >&2; exit 1; fi; cp -R ../public/. \"$TRUNK_STAGING_DIR\" && rm -f \"$TRUNK_STAGING_DIR\"/dojo-dev-*.tar.gz",
 ]

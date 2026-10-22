@@ -1,0 +1,56 @@
+[package]
+name = "hashi_tauri"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+# The mobile app: Tauri 2 around the web bundle of ../ (target/app-dist), see ../README.md.
+# A workspace of its own with its own Cargo.lock, outside the repository's workspace, so the
+# website's builds and CI never compile Tauri or need its system libraries. It is still built
+# inside the repository, where .cargo/config.toml applies (the server functions' paths, once
+# this crate calls `backend` or `hashi`).
+[workspace]
+
+[lib]
+# Android loads the app as a shared library (cdylib), iOS links a static one (staticlib); the
+# rlib is for main.rs. Not called `hashi_tauri` like the binary, whose files would clash on
+# some platforms.
+name = "hashi_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.5", features = [] }
+
+# The workspace's lints (../../Cargo.toml), repeated: a crate outside it can't inherit them
+[lints.rust]
+unsafe_code = "forbid"
+rust_2018_idioms = { level = "warn", priority = -1 }
+unused_qualifications = "warn"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
+unreachable_pub = "warn"
+missing_debug_implementations = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+missing_const_for_fn = "allow"
+option_if_let_else = "allow"
+redundant_pub_crate = "allow"
+
+# The release build (the store's App Bundle): one optimized library without symbols. Speed over
+# size (opt-level 3), the native solver of the offline practice will run in it.
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

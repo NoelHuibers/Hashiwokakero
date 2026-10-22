@@ -1,0 +1,6 @@
+{
+  "default": "../../public/icon-512.png",
+  "bg_color": "#f4ecdd",
+  "android_fg": "icons/android-foreground.png",
+  "android_fg_scale": 100
+}
