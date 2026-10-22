@@ -1,0 +1,34 @@
+{
+  "title": "강 건너기",
+  "intro": "누구든 푼 데일리에서 놓은 다리 하나하나가 그룹 다리의 판자가 돼요. 함께 건너편으로 가요!",
+  "level": "레벨 {{ level }}",
+  "waters": {
+    "stream": "개울",
+    "river": "강",
+    "wide_river": "큰 강",
+    "strait": "해협",
+    "ocean": "대양",
+    "ocean_n": "대양 {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }}개 다리",
+  "to_go": "건너편까지 {{ count }}개 남음",
+  "new": "지난번 이후 +{{ count }}",
+  "scene": "{{ waters }}: 다리 {{ target }}개 중 {{ done }}개로 지은 다리",
+  "week": "이번 주 판자를 가장 많이 놓은 사람",
+  "week_none": "이번 주에는 아직 아무도 판자를 놓지 않았어요. 오늘의 데일리를 풀어 첫 판자를 놓아 보세요!",
+  "laid": "{{ name }}: 이번 주 다리 {{ count }}개",
+  "crossed": "건넌 물길",
+  "crossed_level": "{{ waters }}: {{ date }}에 건넘, 다리 {{ count }}개",
+  "building": "{{ waters }}: 공사 중",
+  "how": "한 레벨은 그룹의 데일리 약 {{ days }}일 분량이에요. 멤버가 많을수록 다리가 길어지지만, 다섯 번째 멤버부터는 조금씩 덜 계산돼요.",
+  "celebrate": {
+    "stream": "개울에 다리가 놓였어요!",
+    "river": "강에 다리가 놓였어요!",
+    "wide_river": "큰 강에 다리가 놓였어요!",
+    "strait": "해협에 다리가 놓였어요!",
+    "ocean": "대양에 다리가 놓였어요!",
+    "text": "함께 다리 {{ count }}개를 놓았어요. 다음: {{ waters }}.",
+    "stamp": "판자를 놓은 모두가 “{{ stamp }}” 도장을 받아요.",
+    "onward": "다음으로!"
+  }
+}

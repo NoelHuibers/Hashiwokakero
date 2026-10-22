@@ -121,6 +121,18 @@ async fn record(conn: &Connection, user: i64, kept: Vec<Stamp>) -> Result<Record
     let (yokozuna_weeks, award_weeks) =
         crate::server::groups::banzuke::honours(conn, user, today()).await?;
 
+    let mut rows = conn
+        .query(
+            "SELECT COUNT(*) FROM group_river_crew WHERE user_id = ?1",
+            params![user],
+        )
+        .await
+        .map_err(db_err)?;
+    let river_levels = match rows.next().await.map_err(db_err)? {
+        Some(row) => row.get(0).map_err(db_err)?,
+        None => 0,
+    };
+
     Ok(Record {
         solves,
         champion_months,
@@ -130,6 +142,7 @@ async fn record(conn: &Connection, user: i64, kept: Vec<Stamp>) -> Result<Record
         kept,
         yokozuna_weeks,
         award_weeks,
+        river_levels,
     })
 }
 

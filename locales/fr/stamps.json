@@ -57,7 +57,8 @@
     "lanterne_rouge": "Lanterne rouge",
     "leap_day": "29 février",
     "yokozuna": "Yokozuna",
-    "sansho": "Prix spécial"
+    "sansho": "Prix spécial",
+    "river_crew": "Bâtisseur de ponts"
   },
   "texts": {
     "first": "Résous ton premier défi.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "Termine dernier d’un défi d’au moins 20 joueurs. Il faut bien que quelqu’un porte la lanterne !",
     "leap_day": "Résous le défi du 29 février.",
     "yokozuna": "Termine en tête du banzuke hebdomadaire d’un groupe, lors d’une semaine d’au moins trois joueurs.",
-    "sansho": "Remporte l’un des prix hebdomadaires d’un groupe, lors d’une semaine d’au moins trois joueurs."
+    "sansho": "Remporte l’un des prix hebdomadaires d’un groupe, lors d’une semaine d’au moins trois joueurs.",
+    "river_crew": "Aide ton groupe à franchir sa rivière : pose des planches d’un niveau qu’il termine."
   },
   "secret": {
     "name": "Tampon secret",

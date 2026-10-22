@@ -57,7 +57,8 @@
     "lanterne_rouge": "Lanterna vermelha",
     "leap_day": "Dia bissexto",
     "yokozuna": "Yokozuna",
-    "sansho": "Prêmio especial"
+    "sansho": "Prêmio especial",
+    "river_crew": "Construtor de pontes"
   },
   "texts": {
     "first": "Resolva seu primeiro desafio diário.",
@@ -106,7 +107,8 @@
     "lanterne_rouge": "Termine em último um diário com pelo menos 20 jogadores. Alguém tem que carregar a lanterna!",
     "leap_day": "Resolva o diário no dia 29 de fevereiro.",
     "yokozuna": "Fique em primeiro no banzuke semanal de um grupo, em uma semana com pelo menos três jogadores.",
-    "sansho": "Ganhe um dos prêmios semanais de um grupo, em uma semana com pelo menos três jogadores."
+    "sansho": "Ganhe um dos prêmios semanais de um grupo, em uma semana com pelo menos três jogadores.",
+    "river_crew": "Ajude seu grupo a atravessar o rio: coloque tábuas de um nível que ele complete."
   },
   "secret": {
     "name": "Carimbo secreto",

@@ -577,9 +577,7 @@ async fn signing_in_takes_the_guests_groups_along() {
     let bram = player(&conn, "bram").await;
     let owned = group_of(&conn, guest, &[bram]).await;
     let both = group_of(&conn, bram, &[guest, aiko]).await;
-    for sql in MERGE_GUEST {
-        conn.execute(sql, params![aiko, guest]).await.unwrap();
-    }
+    merge_guest(&conn, aiko, guest).await.unwrap();
     assert_eq!(owner_of(&conn, owned).await, Some(aiko));
     assert_eq!(
         ids(&page(&conn, owned, aiko, TODAY).await.unwrap().members),
@@ -597,4 +595,91 @@ async fn signing_in_takes_the_guests_groups_along() {
         .await,
         0
     );
+}
+
+/// Signing in never takes an account past [`MAX_GROUPS`]: its own groups stay, the guest's newest
+/// ones come along while there's room, and the guest leaves the others like a deleted account.
+#[tokio::test]
+async fn signing_in_keeps_to_the_group_limit() {
+    let conn = db().await;
+    let limit = crate::server::count(MAX_GROUPS);
+    let guest = user(&conn, "Sleepy Tanuki 27", None).await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let shared = group_of(&conn, bram, &[aiko, guest]).await;
+    for i in 1..MAX_GROUPS {
+        create(&conn, aiko, &format!("Aiko {i}")).await.unwrap();
+    }
+    assert_eq!(groups_of(&conn, aiko).await.unwrap(), limit);
+    // The guest's, oldest first: alone, owned with bram, and bram's that the guest joined last
+    let alone = create(&conn, guest, "Tanuki").await.unwrap();
+    let owned = group_of(&conn, guest, &[bram]).await;
+    let newest = group_of(&conn, bram, &[guest]).await;
+    for (i, group) in [alone, owned, newest].into_iter().enumerate() {
+        conn.execute(
+            "UPDATE group_members SET joined_at = ?3 WHERE group_id = ?1 AND user_id = ?2",
+            params![group, guest, 10_000 + i64::try_from(i).unwrap()],
+        )
+        .await
+        .unwrap();
+    }
+
+    // No room at all: the account's ten stay, the guest leaves theirs
+    merge_guest(&conn, aiko, guest).await.unwrap();
+    assert_eq!(groups_of(&conn, aiko).await.unwrap(), limit);
+    assert_eq!(groups_of(&conn, guest).await.unwrap(), 0);
+    assert_eq!(owner_of(&conn, alone).await, None);
+    assert_eq!(owner_of(&conn, owned).await, Some(bram));
+    assert_eq!(
+        ids(&page(&conn, newest, bram, TODAY).await.unwrap().members),
+        [bram]
+    );
+    assert_eq!(
+        ids(&page(&conn, shared, bram, TODAY).await.unwrap().members),
+        [bram, aiko]
+    );
+}
+
+/// With room for some, the guest's newest groups come along, the group both are in doesn't
+/// count, and the account takes over the groups the guest owned that it is in now.
+#[tokio::test]
+async fn signing_in_brings_the_newest_groups_that_fit() {
+    let conn = db().await;
+    let limit = crate::server::count(MAX_GROUPS);
+    let guest = user(&conn, "Sleepy Tanuki 27", None).await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let shared = group_of(&conn, guest, &[aiko]).await;
+    for i in 2..MAX_GROUPS {
+        create(&conn, aiko, &format!("Aiko {i}")).await.unwrap();
+    }
+    assert_eq!(groups_of(&conn, aiko).await.unwrap(), limit - 1);
+    let alone = create(&conn, guest, "Tanuki").await.unwrap();
+    let owned = group_of(&conn, guest, &[bram]).await;
+    let newest = group_of(&conn, bram, &[guest]).await;
+    for (i, group) in [alone, owned, newest].into_iter().enumerate() {
+        conn.execute(
+            "UPDATE group_members SET joined_at = ?3 WHERE group_id = ?1 AND user_id = ?2",
+            params![group, guest, 10_000 + i64::try_from(i).unwrap()],
+        )
+        .await
+        .unwrap();
+    }
+
+    merge_guest(&conn, aiko, guest).await.unwrap();
+    assert_eq!(groups_of(&conn, aiko).await.unwrap(), limit);
+    assert_eq!(groups_of(&conn, guest).await.unwrap(), 0);
+    // The one both were in: the account owns it now, alone in it
+    assert_eq!(owner_of(&conn, shared).await, Some(aiko));
+    assert_eq!(
+        ids(&page(&conn, shared, aiko, TODAY).await.unwrap().members),
+        [aiko]
+    );
+    // The newest came along, with the day the guest joined; the older ones were left
+    assert_eq!(
+        ids(&page(&conn, newest, aiko, TODAY).await.unwrap().members),
+        [aiko, bram]
+    );
+    assert_eq!(owner_of(&conn, owned).await, Some(bram));
+    assert_eq!(owner_of(&conn, alone).await, None);
 }

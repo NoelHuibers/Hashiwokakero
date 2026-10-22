@@ -569,6 +569,15 @@ pub(super) async fn merge_guest(
     )
     .await
     .map_err(db_err)?;
+    // The seals before the memberships: a guest's membership that goes takes its seals along
+    for sql in super::groups::hanko::MERGE_GUEST {
+        tx.execute(sql, params![user, guest])
+            .await
+            .map_err(db_err)?;
+    }
+    // Groups first, while the guest's dailies are still theirs: the groups they leave keep what
+    // they laid in their rivers. At most MAX_GROUPS come along, see there
+    super::groups::merge_guest(&tx, user, guest).await?;
     for sql in [
         "UPDATE OR IGNORE attempts SET user_id = ?1 WHERE user_id = ?2",
         "UPDATE OR IGNORE stamps SET user_id = ?1 WHERE user_id = ?2",
@@ -577,12 +586,7 @@ pub(super) async fn merge_guest(
         "DELETE FROM rivals WHERE (user_id = ?1 AND rival_id = ?2) OR (user_id = ?2 AND rival_id = ?1)",
         "UPDATE OR IGNORE rivals SET user_id = ?1 WHERE user_id = ?2",
         "UPDATE OR IGNORE rivals SET rival_id = ?1 WHERE rival_id = ?2",
-    ]
-    .into_iter()
-    // The seals before the memberships: a guest's membership that goes takes its seals along
-    .chain(super::groups::hanko::MERGE_GUEST)
-    .chain(super::groups::MERGE_GUEST)
-    {
+    ] {
         tx.execute(sql, params![user, guest])
             .await
             .map_err(db_err)?;

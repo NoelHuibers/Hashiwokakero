@@ -4,7 +4,7 @@
 use super::*;
 use crate::api::{
     CreateGroup, CurrentUser, GroupBoards, GroupInvite, JoinGroup, LeaveGroup, LoadGroup,
-    LoadGroupWeek, MyGroups, RemoveMember, RotateInvite,
+    LoadGroupRiver, LoadGroupWeek, MyGroups, RemoveMember, RotateInvite,
 };
 
 async fn users(conn: &Connection) -> i64 {
@@ -143,5 +143,32 @@ async fn group_names_are_checked() {
                 .await
         ),
         ApiError::GroupNameNotAllowed
+    );
+}
+
+/// The river over HTTP: its members see it (an empty stream for a new group), nobody else does.
+#[tokio::test]
+async fn only_members_see_the_river() {
+    let server = Server::start().await;
+    let owner = Browser::signed_up(&server, "river_owner").await;
+    let page = owner
+        .call(CreateGroup {
+            name: "Rafters".into(),
+        })
+        .await
+        .unwrap();
+    let river = owner.call(LoadGroupRiver { id: page.id }).await.unwrap();
+    assert_eq!((river.group_id, river.level, river.total), (page.id, 0, 0));
+    assert_eq!(river.target, crate::model::level_target(0, 1));
+    assert_eq!((river.celebrate, river.week.len()), (None, 0));
+
+    let stranger = Browser::signed_up(&server, "river_stranger").await;
+    assert_eq!(
+        api_error(stranger.call(LoadGroupRiver { id: page.id }).await),
+        ApiError::GroupNotFound
+    );
+    assert_eq!(
+        api_error(server.browser().call(LoadGroupRiver { id: page.id }).await),
+        ApiError::SessionExpired
     );
 }

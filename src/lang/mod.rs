@@ -282,6 +282,27 @@ mod tests {
         assert!(problems.is_empty(), "{}", problems.join("\n"));
     }
 
+    /// A group's owner isn't called what the site's admins are (`errors.forbidden`, "only for
+    /// admins"): a member would think the owner can do more than run the group.
+    #[test]
+    fn group_owners_are_not_called_admins() {
+        let mut problems = Vec::new();
+        for &locale in Locale::get_all() {
+            let owner = crate::i18n::td_string!(locale, groups.members.owner).to_lowercase();
+            let admins = crate::i18n::td_string!(locale, common.errors.forbidden).to_lowercase();
+            let stem: String = owner.chars().take(5).collect();
+            if owner.contains("admin") || admins.contains(&stem) {
+                problems.push(format!("{}: {owner} / {admins}", locale.as_str()));
+            }
+            let only =
+                crate::i18n::td_string!(locale, common.errors.group_owner_only).to_lowercase();
+            if only.contains("admin") {
+                problems.push(format!("{}: {only}", locale.as_str()));
+            }
+        }
+        assert!(problems.is_empty(), "{}", problems.join("\n"));
+    }
+
     /// Roughly how wide a text is in a search result, in Latin letters: Chinese, Japanese and
     /// Korean characters take up about two.
     fn search_width(text: &str) -> usize {

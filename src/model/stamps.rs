@@ -60,10 +60,11 @@ pub enum Stamp {
     LeapDay,
     Yokozuna,
     Sansho,
+    RiverCrew,
 }
 
 impl Stamp {
-    pub const ALL: [Self; 47] = [
+    pub const ALL: [Self; 48] = [
         Self::First,
         Self::Solved10,
         Self::Solved50,
@@ -111,6 +112,7 @@ impl Stamp {
         Self::LeapDay,
         Self::Yokozuna,
         Self::Sansho,
+        Self::RiverCrew,
     ];
 
     /// Stored in the `stamps` table.
@@ -163,6 +165,7 @@ impl Stamp {
             Self::LeapDay => "leap_day",
             Self::Yokozuna => "yokozuna",
             Self::Sansho => "sansho",
+            Self::RiverCrew => "river_crew",
         }
     }
 
@@ -226,6 +229,8 @@ impl Stamp {
             Self::Yokozuna => "綱",
             // 三賞, the special prizes of a sumo tournament
             Self::Sansho => "賞",
+            // 架ける, to build a bridge across: a level of a group's river
+            Self::RiverCrew => "架",
         }
     }
 
@@ -252,11 +257,12 @@ impl Stamp {
 
     /// Kept once earned, even when what earned it is gone: a place on the Dojo board doesn't
     /// last past the season, the group weeks are only looked at for a while
-    /// ([`super::HONOUR_WEEKS`]) and change when members come and go.
+    /// ([`super::HONOUR_WEEKS`]) and change when members come and go, a group and its river
+    /// can go.
     pub const fn sticky(self) -> bool {
         matches!(
             self,
-            Self::BlackBelt | Self::Sensei | Self::Yokozuna | Self::Sansho
+            Self::BlackBelt | Self::Sensei | Self::Yokozuna | Self::Sansho | Self::RiverCrew
         )
     }
 }
@@ -426,6 +432,8 @@ pub struct Record {
     pub yokozuna_weeks: i64,
     /// Weeks the player won one of a group's weekly awards.
     pub award_weeks: i64,
+    /// Levels of a group's river (see `model::river`) the player laid planks of.
+    pub river_levels: i64,
 }
 
 /// A stamp and how far along the player is, for the stamp book.
@@ -558,6 +566,7 @@ impl Record {
                     Stamp::LeapDay => (any(&|s| date(s, 2, 29)), 1),
                     Stamp::Yokozuna => (i64::from(self.yokozuna_weeks > 0 || kept(stamp)), 1),
                     Stamp::Sansho => (i64::from(self.award_weeks > 0 || kept(stamp)), 1),
+                    Stamp::RiverCrew => (i64::from(self.river_levels > 0 || kept(stamp)), 1),
                 };
                 (stamp, progress.min(target), target)
             })
@@ -946,6 +955,30 @@ mod tests {
         );
         assert!(Stamp::Yokozuna.sticky() && Stamp::Sansho.sticky());
         assert!(!Stamp::Yokozuna.secret());
+    }
+
+    /// Planks of a completed level of a group's river earn a stamp, which stays when the group
+    /// is gone.
+    #[test]
+    fn a_river_crossed_together_earns_a_stamp_that_stays() {
+        let earned = |record: Record| record.earned(LAUNCH_DAY);
+        assert_eq!(earned(Record::default()), []);
+        assert_eq!(
+            earned(Record {
+                river_levels: 2,
+                ..Record::default()
+            }),
+            [Stamp::RiverCrew]
+        );
+        assert_eq!(
+            earned(Record {
+                kept: vec![Stamp::RiverCrew],
+                ..Record::default()
+            }),
+            [Stamp::RiverCrew]
+        );
+        assert!(Stamp::RiverCrew.sticky() && !Stamp::RiverCrew.secret());
+        assert_eq!(Stamp::from_id("river_crew"), Some(Stamp::RiverCrew));
     }
 
     #[test]

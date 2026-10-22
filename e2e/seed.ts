@@ -79,6 +79,23 @@ export const SEEDED_GROUP = {
  * replay theatre (replay.spec.ts). Every log moves on the first edges, which every daily has. */
 export const REPLAY_DAY_BACK = 1;
 
+/**
+ * A pair whose river 川 is across its stream: Quiet Crane 5 (signed in, no other test uses them)
+ * made it with bram. Only the crane's dailies in it have bridges (their runs), enough for the
+ * stream and half of the river after it, a level that nobody has looked at yet: the crane's first
+ * visit completes it and celebrates.
+ */
+export const RIVER_GROUP = {
+  id: 2,
+  name: 'Paper Cranes',
+  invite: 'papercrane',
+  members: ['Quiet Crane 5', 'bram'],
+  /** Days before today it was made. */
+  age: 30,
+  /** A pair's stream takes 400 bridges, its river 850 (model::level_target). */
+  bridges: 400 + 425,
+};
+
 /** Days of dailies before today. */
 const HISTORY = 40;
 
@@ -165,6 +182,36 @@ export function seed(dbPath: string) {
       (today - HISTORY) * MS_PER_DAY + i * 3_600_000,
       i,
     );
+  });
+
+  // The pair's river: the crane's dailies since it was made share its bridges, double bridges
+  // and all, as their runs (server/daily/stamps.rs) have them
+  const made = (today - RIVER_GROUP.age) * MS_PER_DAY;
+  db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(
+    RIVER_GROUP.id,
+    RIVER_GROUP.name,
+    RIVER_GROUP.invite,
+    player(RIVER_GROUP.members[0]).id,
+    made,
+  );
+  RIVER_GROUP.members.forEach((name, i) => {
+    db.prepare('INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)').run(
+      RIVER_GROUP.id,
+      player(name).id,
+      made,
+      i,
+    );
+  });
+  const crane = player(RIVER_GROUP.members[0]).id;
+  const days = db
+    .prepare('SELECT day FROM attempts WHERE user_id = ? AND finished_at >= ? ORDER BY day')
+    .all(crane, made)
+    .map((row) => Number(row.day));
+  days.forEach((day, i) => {
+    // Shared out evenly, the first ones get what doesn't divide
+    const bridges = Math.floor(RIVER_GROUP.bridges / days.length) + (i < RIVER_GROUP.bridges % days.length ? 1 : 0);
+    const run = { bridges, islands: 0, steady: false, dithers: 0, cleared: false, burst: 0 };
+    db.prepare('UPDATE attempts SET run = ? WHERE user_id = ? AND day = ?').run(JSON.stringify(run), crane, day);
   });
 
   // A hidden set: the dev families at larger sizes too, and the held-out one as the mystery family

@@ -1,0 +1,34 @@
+{
+  "title": "Over de rivier",
+  "intro": "Elke brug die een van jullie bouwt in een opgeloste dagpuzzel is een plank van de brug van de groep. Kom samen aan de overkant!",
+  "level": "Level {{ level }}",
+  "waters": {
+    "stream": "De beek",
+    "river": "De rivier",
+    "wide_river": "De brede stroom",
+    "strait": "De zeestraat",
+    "ocean": "De oceaan",
+    "ocean_n": "Oceaan {{ n }}"
+  },
+  "progress": "{{ done }} / {{ target }} bruggen",
+  "to_go": "Nog {{ count }} tot de overkant",
+  "new": "+{{ count }} sinds je laatste bezoek",
+  "scene": "{{ waters }}: een brug van {{ done }} van {{ target }} bruggen",
+  "week": "Meeste planken deze week",
+  "week_none": "Niemand heeft deze week nog een plank gelegd. Los de dagpuzzel van vandaag op en leg de eerste!",
+  "laid": "{{ name }}: {{ count }} bruggen deze week",
+  "crossed": "Overgestoken wateren",
+  "crossed_level": "{{ waters }}: overgestoken op {{ date }}, {{ count }} bruggen",
+  "building": "{{ waters }}: in aanbouw",
+  "how": "Een level kost de groep ongeveer {{ days }} dagen aan dagpuzzels. Meer leden bouwen een langere brug, maar elk lid na het vierde telt iets minder.",
+  "celebrate": {
+    "stream": "De beek is overbrugd!",
+    "river": "De rivier is overbrugd!",
+    "wide_river": "De brede stroom is overbrugd!",
+    "strait": "De zeestraat is overbrugd!",
+    "ocean": "De oceaan is overbrugd!",
+    "text": "Samen legden jullie {{ count }} bruggen. Volgende: {{ waters }}.",
+    "stamp": "Iedereen die planken legde krijgt de stempel ‘{{ stamp }}’.",
+    "onward": "Verder!"
+  }
+}

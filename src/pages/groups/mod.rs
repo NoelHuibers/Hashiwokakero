@@ -16,6 +16,7 @@ pub mod join;
 pub mod list;
 pub mod members;
 pub mod replay;
+pub mod river;
 pub mod today;
 pub mod week;
 
@@ -41,6 +42,7 @@ use hanko::HankoCard;
 use list::GroupList;
 use members::MembersCard;
 use replay::ReplayCard;
+use river::RiverCard;
 use today::TodayCard;
 use week::WeekCard;
 
@@ -236,6 +238,8 @@ fn GroupView(group: GroupContext) -> impl IntoView {
     };
     view! {
         {header}
+        // What the group does together, across the page
+        <RiverCard group />
         // The stack of cards: what happens in the group on the left, the group on the right
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
             <div class="flex min-w-0 flex-col gap-6">

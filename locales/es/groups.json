@@ -81,7 +81,7 @@
   "members": {
     "title": "Miembros",
     "count": "Miembros: {{ count }} de {{ max }}",
-    "owner": "Admin",
+    "owner": "Responsable",
     "joined": "se unió el {{ date }}",
     "remove_label": "Quitar a {{ name }}",
     "remove_confirm": "¿Quitar a {{ name }} del grupo? Podrá volver a unirse con el enlace de invitación, salvo que crees uno nuevo.",

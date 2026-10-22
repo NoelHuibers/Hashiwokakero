@@ -12,6 +12,7 @@
 
 pub mod banzuke;
 pub mod hanko;
+pub mod river;
 #[cfg(test)]
 mod tests;
 
@@ -42,9 +43,12 @@ pub struct Group {
 
 /// What deleting a user does to their groups.
 ///
-/// Statements for `auth::erase`'s transaction with the user as `?1`: groups only they are in go,
-/// groups they own pass to the longest standing other member, and their memberships go.
-pub const ERASE: [&str; 4] = [
+/// Statements for `auth::erase`'s transaction with the user as `?1`: what they laid stays in the
+/// groups' rivers without their name, groups only they are in go, groups they own pass to the
+/// longest standing other member, and their memberships go, and with them who they were in the
+/// rivers' crews.
+pub const ERASE: [&str; 6] = [
+    river::BANK,
     "DELETE FROM groups WHERE id IN (SELECT group_id FROM group_members WHERE user_id = ?1)
        AND NOT EXISTS (SELECT 1 FROM group_members m WHERE m.group_id = groups.id AND m.user_id != ?1)",
     "UPDATE groups SET owner_id = (
@@ -55,17 +59,48 @@ pub const ERASE: [&str; 4] = [
     // Owned without being in it, which never happens: nobody to pass it to
     "DELETE FROM groups WHERE owner_id = ?1",
     "DELETE FROM group_members WHERE user_id = ?1",
+    "DELETE FROM group_river_crew WHERE user_id = ?1",
 ];
 
-/// What signing in does to the groups of the guest who played in this browser before.
+/// What signing in does to the groups of the guest who played in this browser before, in
+/// `auth::merge_guest`'s transaction.
 ///
-/// Statements for `auth::merge_guest`, `?1` the account, `?2` the guest: the account takes their
-/// memberships and the groups they own. Where both were members, the account's membership stays.
-pub const MERGE_GUEST: [&str; 3] = [
-    "UPDATE OR IGNORE group_members SET user_id = ?1 WHERE user_id = ?2",
-    "UPDATE groups SET owner_id = ?1 WHERE owner_id = ?2",
-    "DELETE FROM group_members WHERE user_id = ?2",
-];
+/// The account takes the guest's memberships, as many as fit under [`MAX_GROUPS`]: the account's
+/// own groups stay, then the guest's newest ones come along. Where both were members, the
+/// account's membership stays. The groups that don't fit the guest leaves like a deleted account
+/// ([`ERASE`]): one they own passes to its longest standing member, one only they are in goes.
+pub async fn merge_guest(conn: &Connection, user: i64, guest: i64) -> Result<(), ServerFnError> {
+    let room = crate::server::count(MAX_GROUPS)
+        .saturating_sub(groups_of(conn, user).await?)
+        .max(0);
+    conn.execute(
+        "UPDATE group_members SET user_id = ?1 WHERE user_id = ?2 AND group_id IN (
+             SELECT group_id FROM group_members
+             WHERE user_id = ?2
+               AND group_id NOT IN (SELECT group_id FROM group_members WHERE user_id = ?1)
+             ORDER BY joined_at DESC, group_id DESC LIMIT ?3)",
+        params![user, guest, room],
+    )
+    .await
+    .map_err(db_err)?;
+    for sql in [
+        "UPDATE groups SET owner_id = ?1 WHERE owner_id = ?2
+           AND id IN (SELECT group_id FROM group_members WHERE user_id = ?1)",
+        // In a group both are in, the guest's dailies become the account's (`auth::merge_guest`)
+        // and count in its river: nothing to keep of them
+        "DELETE FROM group_members WHERE user_id = ?2
+           AND group_id IN (SELECT group_id FROM group_members WHERE user_id = ?1)",
+        "UPDATE OR IGNORE group_river_crew SET user_id = ?1 WHERE user_id = ?2",
+    ] {
+        conn.execute(sql, params![user, guest])
+            .await
+            .map_err(db_err)?;
+    }
+    for sql in ERASE {
+        conn.execute(sql, params![guest]).await.map_err(db_err)?;
+    }
+    Ok(())
+}
 
 /// A new invite code, [`INVITE_LEN`] characters of [`INVITE_ALPHABET`].
 pub fn new_invite() -> String {
@@ -285,6 +320,7 @@ pub async fn join(conn: &Connection, code: &str, user: i64) -> Result<i64, Serve
 /// Takes `user` out of a group. An owner's group passes to the longest standing member, an empty
 /// group is deleted.
 async fn take_out(conn: &Connection, group: &Group, user: i64) -> Result<(), ServerFnError> {
+    river::bank(conn, group.id, user).await?;
     conn.execute(
         "DELETE FROM group_members WHERE group_id = ?1 AND user_id = ?2",
         params![group.id, user],

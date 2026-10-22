@@ -169,6 +169,16 @@ async fn write_rows(conn: &Connection, version: usize) {
         run("INSERT INTO group_hanko (group_id, day, target_id, giver_id, kind, created_at) VALUES (1, 20745, 2, 1, 'wow', 7000)")
             .await;
     }
+    if version >= 18 {
+        // The group's river crossed its stream, noel laid planks of it
+        run(r"
+            UPDATE groups SET river_banked = 30;
+            UPDATE group_members SET river_seen = 400, river_levels_seen = 1 WHERE user_id = 1;
+            INSERT INTO group_river (group_id, level, target, completed_at) VALUES (1, 0, 400, 7000);
+            INSERT INTO group_river_crew (group_id, level, user_id) VALUES (1, 0, 1);
+        ")
+        .await;
+    }
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -180,7 +190,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        17,
+        18,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -337,6 +347,23 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM group_members m JOIN groups g ON g.id = m.group_id WHERE g.owner_id = 1",
                 if version >= 15 { 2 } else { 0 },
+            ),
+            // Rivers came with version 18: the group's from before has nothing in it yet
+            (
+                "SELECT COALESCE((SELECT river_banked FROM groups WHERE id = 1), 0)",
+                if version >= 18 { 30 } else { 0 },
+            ),
+            (
+                "SELECT COUNT(*) FROM group_members WHERE river_seen = 0 AND river_levels_seen = 0",
+                match version {
+                    ..15 => 0,
+                    15..=17 => 2,
+                    _ => 1,
+                },
+            ),
+            (
+                "SELECT COUNT(*) FROM group_river JOIN group_river_crew USING (group_id, level)",
+                i64::from(version >= 18),
             ),
             // 12 only added the indexes of ranked times
             (
