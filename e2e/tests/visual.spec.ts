@@ -1,7 +1,7 @@
 // Screenshots of a few pages, compared with the ones in __screenshots__: the only tests that see
-// a layout broken by a Tailwind update or a font that went missing. Run in the Playwright
-// container only (`pnpm run e2e:container`, `pnpm run e2e:update-snapshots` after a change on
-// purpose), the fonts and the rendering differ from one system to the next.
+// a layout broken by a Tailwind update or a font that went missing. Run with the Playwright
+// container's browser only (`pnpm run e2e:container`, `pnpm run e2e:update-snapshots` after a
+// change on purpose), the fonts and the rendering differ from one system to the next.
 //
 // Whatever changes from day to day is hidden (not masked: a mask is as wide as the text under
 // it): dates, the daily's number and difficulty, the monthly race. The project has a server and database of its own (see env.ts), and its tests run
