@@ -150,7 +150,7 @@ pub fn TheatreView(data: ReplayData, only: Option<Vec<i64>>) -> impl IntoView {
                         .into_any(),
                     Layout::Apart => view! { <Apart theatre /> }.into_any(),
                 }}
-                <Card class="px-4 py-3 sm:px-5">
+                <Card class="p-4 sm:px-5">
                     <Controls theatre still />
                 </Card>
             </div>
@@ -419,7 +419,7 @@ mod tests {
         }
     }
 
-    fn data() -> ReplayData {
+    pub(super) fn data() -> ReplayData {
         let mut puzzle = common::Puzzle::empty(5, 5);
         puzzle.set(common::Pos::new(0, 0), 2);
         puzzle.set(common::Pos::new(4, 0), 3);
