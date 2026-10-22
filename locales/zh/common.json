@@ -48,7 +48,8 @@
     "not_unique": "这道谜题不止一个解。",
     "copied": "成绩已复制到剪贴板。",
     "copy_failed": "无法复制到剪贴板。",
-    "reload": "刷新"
+    "reload": "刷新",
+    "update": "更新"
   },
   "errors": {
     "unknown": "出错了：{{ detail }}",

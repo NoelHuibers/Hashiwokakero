@@ -38,10 +38,29 @@ pub fn hydrate() {
 /// The mobile app's entry point: renders the whole app into the `<body>` of a static page.
 /// That page brings what `app::shell` adds on the website, the stylesheet, icons and the theme
 /// script.
+///
+/// `version` is the app's (`major.minor.patch`), sent with every call (`api::APP_HEADER`) and
+/// compared with the server's minimum. Before the first call, the server functions are pointed
+/// at the website's server when the page runs in the app's `WebView` (see `api::app`).
 #[cfg(feature = "csr")]
-pub fn mount() {
+pub fn mount(version: &'static str) {
+    use leptos::prelude::Owner;
     console_error_panic_hook::set_once();
-    leptos::mount::mount_to_body(app::App);
+    api::start_app(version);
+    let app = std::rc::Rc::new(std::cell::Cell::new(None));
+    leptos::mount::mount_to_body({
+        let app = app.clone();
+        move || {
+            app.set(Owner::current());
+            app::App()
+        }
+    });
+    // The app's owner stays the current one, as `hydrate_body` leaves it on the website: tasks
+    // without an owner of their own (`spawn_local`) find the app's contexts after an `.await`,
+    // the toasts of a call's answer for one. `mount_to_body` would leave none.
+    if let Some(owner) = app.take() {
+        owner.set();
+    }
     mark_ready();
 }
 

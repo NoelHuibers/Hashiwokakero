@@ -50,8 +50,34 @@ It has to run inside this repository: `.cargo/config.toml` sets `DISABLE_SERVER_
 makes the server functions answer at `/api/<name>`. Built elsewhere, the paths get a hash the
 server doesn't know. A `const` assertion in `src/main.rs` stops such a build.
 
-The server functions call `/api/...` on the page's origin for now; the app's client makes the
-server configurable (docs/mobile.md, step 6).
+Where the server functions go: see [Talking to the server](#talking-to-the-server).
+
+## Talking to the server
+
+The app calls the website's server functions as the website does, with what the API headers
+section of [docs/mobile.md](../docs/mobile.md#api-headers) describes on top (`src/api/app.rs`):
+
+- In the `WebView` (`https://tauri.localhost`, `tauri://localhost`) the calls go to
+  `https://hashi.rs`. Another server is set when building, e.g.
+  `HASHI_SERVER_URL=https://staging.example pnpm run app:build` (HTTPS: the `WebView`'s page
+  is). The content security policy in `src-tauri/tauri.conf.json` only lets the app connect to
+  `https://hashi.rs`: another server has to be added to its `connect-src` too. In a browser
+  (`app:web`, the smoke test) the calls stay on the page's origin and its proxy.
+- Every call sends `x-hashi-app: <platform>/<version>`, the version of this crate's
+  `Cargo.toml` (`env!("CARGO_PKG_VERSION")` in `src/main.rs`). Release builds keep it equal to
+  the version in the stores (docs/mobile.md, step 11): the server turns versions below
+  `HASHI_APP_MIN_VERSION` away, and the app then asks for an update from the store.
+- The session is a token in local storage (`hashi.session`), sent as
+  `Authorization: Bearer hs1.<token>`, never a cookie.
+- Share and invite links point at `https://hashi.rs`. Uploads to the Dojo and the admin's
+  forms are links to the website, as are the Dojo's downloads.
+
+Left for the Android polish (step 10): links with `target="_blank"` (the store's page, the
+website) need Tauri's opener plugin, the clipboard and `navigator.share` may need its plugins,
+and Blob downloads (the CNF of a puzzle) need a download handler.
+
+The smoke test checks the session (a guest made in the app, no cookie, the same guest after a
+reload), the headers, one update toast however many calls the server refuses, and the links.
 
 ## index.html and app::shell
 

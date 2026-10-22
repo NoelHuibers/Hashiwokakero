@@ -163,6 +163,7 @@
     "button": "Enviar",
     "left": "Envíos restantes hoy: {{ count }}",
     "none_left": "No te quedan envíos hoy, vuelve mañana.",
+    "on_website": "En la app, las subidas se hacen en la web: <a>abre hashi.rs</a> e inicia sesión allí con la misma cuenta.",
     "errors": {
       "sign_in": "Primero inicia sesión con una cuenta registrada.",
       "name": "Dale a tu solver un nombre de hasta 40 caracteres.",

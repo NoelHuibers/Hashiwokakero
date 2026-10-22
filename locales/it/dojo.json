@@ -163,6 +163,7 @@
     "button": "Invia",
     "left": "Invii rimasti oggi: {{ count }}",
     "none_left": "Nessun invio rimasto per oggi, torna domani.",
+    "on_website": "Nell'app i caricamenti passano dal sito: <a>apri hashi.rs</a> e accedi lì con lo stesso account.",
     "errors": {
       "sign_in": "Prima accedi con un account registrato.",
       "name": "Dai al tuo solver un nome di massimo 40 caratteri.",

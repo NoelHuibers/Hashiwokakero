@@ -156,6 +156,7 @@ const PRIVACY_DE: &[Section] = &[
         &[
             "Neben dem Sitzungs-Cookie „hashi_session“ merkt sich das Cookie „i18n_pref_locale“ deine Sprache, bis du den Browser schließt.",
             "Im lokalen Speicher deines Browsers liegen das Farbschema, die Ton- und Musikeinstellungen, deine laufenden Spiele, die Rätselwerkstatt, die Einstellungen des Solver-Labors und die Geräte-ID. Davon schickt dein Browser nur die Geräte-ID und das Zugprotokoll der Brücke des Tages an uns. Alles bleibt gespeichert, bis du es in deinem Browser löschst.",
+            "Die App für Android und iOS setzt kein Sitzungs-Cookie. Sie bewahrt denselben zufälligen Schlüssel im eigenen Speicher der App auf, den andere Apps nicht lesen können, und schickt ihn bei jeder Anfrage mit, zusammen mit ihrer Plattform und Versionsnummer, damit wir veraltete Versionen erkennen. Abmelden oder das Löschen der App-Daten entfernt den Schlüssel.",
             "Cookies und lokaler Speicher dienen nur dazu, die Funktionen bereitzustellen, die du nutzt (§ 25 Abs. 2 Nr. 2 TDDDG). Deshalb fragen wir nicht nach einer Einwilligung.",
         ],
     ),
@@ -258,6 +259,7 @@ const PRIVACY_EN: &[Section] = &[
         "Cookies and local storage",
         &[
             "The cookie \"i18n_pref_locale\" remembers your language until you close the browser. Your colour scheme, sound and music settings, running games, puzzle workshop, solver lab settings and the device ID stay in your browser's local storage until you clear it; only the device ID and the daily's move log are sent to us. All of these are strictly necessary for the features you use (§ 25 (2) 2 TDDDG), so we don't ask for consent.",
+            "The Android and iOS app sets no session cookie. It keeps the same random key in the app's own storage, which other apps can't read, and sends it with every request, along with its platform and version number so we can tell outdated versions. Logging out or clearing the app's data removes the key.",
         ],
     ),
     (

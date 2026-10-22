@@ -16,15 +16,17 @@ use common::{Puzzle, SolverConfig};
 use leptos::prelude::*;
 
 pub use auth::Auth;
-use browser::store_raw;
+pub(crate) use browser::store_raw;
 pub use browser::{device_id, download, format_time, load, random_seed, store};
+#[cfg(any(feature = "csr", test))]
+pub(crate) use browser::{load_raw, remove_item};
 pub use editor::Editor;
 pub use game::{DailyGame, Game, Source, Status};
 pub use hanko::HankoInbox;
 pub use rivals::Rivals;
 pub use settings::Settings;
 pub use solver::{check, check_unique, hint, new_puzzle, reveal, run_solver};
-pub use toasts::{Toast, ToastKind, ToastText, Toasts, error_toast, toast};
+pub use toasts::{Toast, ToastAction, ToastKind, ToastText, Toasts, error_toast, toast};
 
 const GAME_KEY: &str = "hashi.game.v2";
 const DAILY_KEY: &str = "hashi.daily.v1";

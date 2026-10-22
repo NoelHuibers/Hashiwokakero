@@ -20,6 +20,40 @@ pub const REPO_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero";
 /// The English preview image. Pages in another language use [`og_image`].
 pub const OG_IMAGE: &str = "https://hashi.rs/og/en.png";
 
+/// Where the links people share point (results, invites): the site the page runs on, the
+/// website in the app, whose page runs on an origin of its own (`tauri.localhost`).
+/// Browser only.
+pub fn public_origin() -> String {
+    if cfg!(feature = "csr") {
+        SITE_URL.to_string()
+    } else {
+        window().location().origin().unwrap_or_default()
+    }
+}
+
+/// A link to something only the server has (downloads, JSON): a path of this site, but in the
+/// app, which only has the pages, the website's.
+pub fn server_link(path: &str) -> String {
+    server_link_in(cfg!(feature = "csr"), path)
+}
+
+/// The `target` of a [`server_link`]: in the app a new window.
+///
+/// The app's `WebView` shouldn't navigate away to the website. TODO(step 10 of docs/mobile.md):
+/// the `WebView` opens no new windows, open these with Tauri's opener plugin.
+pub fn server_link_target() -> Option<&'static str> {
+    cfg!(feature = "csr").then_some("_blank")
+}
+
+/// [`server_link`] in the app (`app`) or on the website.
+fn server_link_in(app: bool, path: &str) -> String {
+    if app {
+        format!("{SITE_URL}{path}")
+    } else {
+        path.to_string()
+    }
+}
+
 /// The preview image (`og:image`) of the pages in a language, drawn by `server::og`.
 pub fn og_image(locale: Locale) -> String {
     format!("{SITE_URL}/og/{}.png", locale.as_str())
@@ -303,6 +337,19 @@ pub fn sitemap() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_app_links_to_the_servers_files_on_the_website() {
+        assert_eq!(server_link("/dojo/board.json"), "/dojo/board.json");
+        assert_eq!(
+            server_link_in(false, "/dojo-dev-2.tar.gz"),
+            "/dojo-dev-2.tar.gz"
+        );
+        assert_eq!(
+            server_link_in(true, "/dojo/seasons/3/results.csv"),
+            "https://hashi.rs/dojo/seasons/3/results.csv"
+        );
+    }
 
     #[test]
     fn sitemap_lists_every_language() {

@@ -10,7 +10,7 @@ use crate::state::{ToastKind, toast};
 
 /// The link to join a group with `code`, on this site.
 pub fn invite_url(code: &str) -> String {
-    let origin = window().location().origin().unwrap_or_default();
+    let origin = crate::seo::public_origin();
     format!("{origin}/g/{code}")
 }
 

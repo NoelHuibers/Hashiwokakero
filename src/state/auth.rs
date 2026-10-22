@@ -16,6 +16,9 @@ impl Auth {
         spawn_local(async move {
             match crate::api::current_user().await {
                 Ok(user) => auth.user.set(user),
+                // The first call of every start of the app: an outdated one asks for the update
+                // here, also on pages whose own calls fail silently
+                Err(e) if crate::api::needs_update(&e) => super::error_toast(e),
                 Err(e) => leptos::logging::warn!("could not load the user: {e}"),
             }
             auth.loaded.set(true);

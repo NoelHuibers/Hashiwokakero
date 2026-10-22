@@ -9,6 +9,7 @@ use crate::components::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::model::{AdminSubmission, DojoState, SubmissionAction, date_string};
+use crate::seo::SITE_URL;
 
 use super::{SECTION, error, phone_stat};
 
@@ -104,18 +105,33 @@ pub(super) fn DojoAdmin(on_change: Callback<()>) -> impl IntoView {
                 } else {
                     view! { <p class="text-muted-foreground">"Loading…"</p> }.into_any()
                 }}
-                <form
-                    action="/admin/house"
-                    method="post"
-                    enctype="multipart/form-data"
-                    class="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-end"
-                >
-                    <p class="text-sm font-medium sm:basis-full">"Add a house entry"</p>
-                    <input name="name" required maxlength="40" placeholder="Name, e.g. Hashi CDCL" aria-label="Name" class=format!("{input} sm:w-48") />
-                    <input name="description" maxlength="600" placeholder="Description" aria-label="Description" class=format!("{input} sm:flex-1") />
-                    <input name="wasm" type="file" accept=".wasm" required aria-label="Solver (.wasm)" class="max-w-full text-sm file:me-3 file:rounded-md file:border file:bg-card file:px-3 file:py-1.5 file:text-sm file:font-medium" />
-                    <Button attr:r#type="submit" class="max-sm:h-10 max-sm:w-full">"Add"</Button>
-                </form>
+                // A plain form, which needs the website's cookie and its redirect: in the app,
+                // a link to the website instead
+                {if cfg!(feature = "csr") {
+                    view! {
+                        <p class="border-t pt-4 text-sm text-muted-foreground">
+                            "House entries are added on the website: "
+                            <a href=format!("{SITE_URL}/admin?tab=dojo") target="_blank" rel="noopener" class="text-primary underline underline-offset-4">"hashi.rs/admin"</a>
+                        </p>
+                    }
+                    .into_any()
+                } else {
+                    view! {
+                        <form
+                            action="/admin/house"
+                            method="post"
+                            enctype="multipart/form-data"
+                            class="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-end"
+                        >
+                            <p class="text-sm font-medium sm:basis-full">"Add a house entry"</p>
+                            <input name="name" required maxlength="40" placeholder="Name, e.g. Hashi CDCL" aria-label="Name" class=format!("{input} sm:w-48") />
+                            <input name="description" maxlength="600" placeholder="Description" aria-label="Description" class=format!("{input} sm:flex-1") />
+                            <input name="wasm" type="file" accept=".wasm" required aria-label="Solver (.wasm)" class="max-w-full text-sm file:me-3 file:rounded-md file:border file:bg-card file:px-3 file:py-1.5 file:text-sm file:font-medium" />
+                            <Button attr:r#type="submit" class="max-sm:h-10 max-sm:w-full">"Add"</Button>
+                        </form>
+                    }
+                    .into_any()
+                }}
             </CardContent>
         </Card>
     }

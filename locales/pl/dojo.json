@@ -163,6 +163,7 @@
     "button": "Zgłoś",
     "left": "Pozostałe zgłoszenia na dziś: {{ count }}",
     "none_left": "Na dziś nie masz już zgłoszeń, wróć jutro.",
+    "on_website": "W aplikacji przesyłanie odbywa się przez stronę: <a>otwórz hashi.rs</a> i zaloguj się tam na to samo konto.",
     "errors": {
       "sign_in": "Najpierw zaloguj się na zarejestrowane konto.",
       "name": "Nadaj solverowi nazwę o długości do 40 znaków.",
