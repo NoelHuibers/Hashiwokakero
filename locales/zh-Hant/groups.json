@@ -88,7 +88,10 @@
     "removed": "{{ name }} 已不在群組中。",
     "leave": "退出群組",
     "leave_confirm": "要退出「{{ name }}」嗎？你可以用邀請連結重新加入。",
-    "left": "你已退出 {{ name }}。"
+    "left": "你已退出 {{ name }}。",
+    "leave_delete": "退出並刪除群組",
+    "delete_confirm": "「{{ name }}」裡只剩你了。退出後群組會被永久刪除，連同它的河、番付、謎題和印章。",
+    "deleted": "群組 {{ name }} 已刪除。"
   },
   "daily": {
     "tabs": "排行",

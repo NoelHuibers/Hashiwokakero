@@ -88,7 +88,10 @@
     "removed": "{{ name }} nie należy już do grupy.",
     "leave": "Opuść grupę",
     "leave_confirm": "Opuścić grupę „{{ name }}”? Możesz do niej wrócić przez link z zaproszeniem.",
-    "left": "Nie należysz już do grupy {{ name }}."
+    "left": "Nie należysz już do grupy {{ name }}.",
+    "leave_delete": "Opuść i usuń grupę",
+    "delete_confirm": "Jesteś ostatnią osobą w grupie „{{ name }}”. Jeśli wyjdziesz, grupa zniknie na zawsze, razem z rzeką, banzuke, łamigłówkami i pieczęciami.",
+    "deleted": "Grupa {{ name }} została usunięta."
   },
   "daily": {
     "tabs": "Rankingi",

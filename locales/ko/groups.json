@@ -88,7 +88,10 @@
     "removed": "{{ name }} 님은 이제 그룹에 없어요.",
     "leave": "그룹 나가기",
     "leave_confirm": "“{{ name }}”에서 나갈까요? 초대 링크로 다시 참여할 수 있어요.",
-    "left": "{{ name }}에서 나갔어요."
+    "left": "{{ name }}에서 나갔어요.",
+    "leave_delete": "나가고 그룹 삭제",
+    "delete_confirm": "“{{ name }}”에 남은 사람은 나뿐이에요. 나가면 강, 반즈케, 퍼즐, 도장과 함께 그룹이 영영 삭제돼요.",
+    "deleted": "{{ name }} 그룹을 삭제했어요."
   },
   "daily": {
     "tabs": "순위",

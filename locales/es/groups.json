@@ -88,7 +88,10 @@
     "removed": "{{ name }} ya no está en el grupo.",
     "leave": "Salir del grupo",
     "leave_confirm": "¿Salir de «{{ name }}»? Puedes volver a unirte con el enlace de invitación.",
-    "left": "Has salido de {{ name }}."
+    "left": "Has salido de {{ name }}.",
+    "leave_delete": "Salir y borrar el grupo",
+    "delete_confirm": "Eres la última persona en «{{ name }}». Si sales, el grupo se borra para siempre, con su río, su banzuke, sus puzles y sus sellos.",
+    "deleted": "Se borró el grupo {{ name }}."
   },
   "daily": {
     "tabs": "Clasificaciones",

@@ -88,7 +88,10 @@
     "removed": "{{ name }} ist nicht mehr in der Gruppe.",
     "leave": "Gruppe verlassen",
     "leave_confirm": "„{{ name }}“ verlassen? Mit dem Einladungslink kannst du wieder beitreten.",
-    "left": "Du hast {{ name }} verlassen."
+    "left": "Du hast {{ name }} verlassen.",
+    "leave_delete": "Verlassen und Gruppe löschen",
+    "delete_confirm": "Außer dir ist niemand mehr in „{{ name }}“. Wenn du gehst, wird die Gruppe endgültig gelöscht, mit Fluss, Banzuke, Rätseln und Hanko.",
+    "deleted": "Die Gruppe {{ name }} ist gelöscht."
   },
   "daily": {
     "tabs": "Ranglisten",

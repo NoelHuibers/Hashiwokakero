@@ -88,7 +88,10 @@
     "removed": "{{ name }} 已不在小组中。",
     "leave": "退出小组",
     "leave_confirm": "要退出“{{ name }}”吗？你可以通过邀请链接重新加入。",
-    "left": "你已退出 {{ name }}。"
+    "left": "你已退出 {{ name }}。",
+    "leave_delete": "退出并删除小组",
+    "delete_confirm": "“{{ name }}”里只剩你了。退出后小组将被永久删除，连同它的河、番付、谜题和印章。",
+    "deleted": "小组 {{ name }} 已删除。"
   },
   "daily": {
     "tabs": "排行",

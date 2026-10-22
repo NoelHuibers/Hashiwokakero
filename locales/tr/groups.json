@@ -88,7 +88,10 @@
     "removed": "{{ name }} artık grupta değil.",
     "leave": "Gruptan ayrıl",
     "leave_confirm": "“{{ name }}” grubundan ayrılmak istiyor musun? Davet bağlantısıyla yeniden katılabilirsin.",
-    "left": "{{ name }} grubundan ayrıldın."
+    "left": "{{ name }} grubundan ayrıldın.",
+    "leave_delete": "Ayrıl ve grubu sil",
+    "delete_confirm": "“{{ name }}” grubunda kalan son kişi sensin. Ayrılırsan grup; nehri, banzukesi, bulmacaları ve mühürleriyle birlikte kalıcı olarak silinir.",
+    "deleted": "{{ name }} grubu silindi."
   },
   "daily": {
     "tabs": "Sıralamalar",

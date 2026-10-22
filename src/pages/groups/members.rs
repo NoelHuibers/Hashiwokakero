@@ -151,14 +151,22 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
         });
     };
 
+    // The last one to leave takes the group along (`server::groups::take_out`)
+    let last_one = move || {
+        group
+            .page
+            .with(|p| p.as_ref().is_some_and(GroupPage::last_one))
+    };
     let leave = move |_| {
         let Some(p) = group.get() else { return };
         let l = i18n.get_locale_untracked();
-        if !confirm(&td_string!(
-            l,
-            groups.members.leave_confirm,
-            name = p.name.clone()
-        )) {
+        let last = p.last_one();
+        let question = if last {
+            td_string!(l, groups.members.delete_confirm, name = p.name.clone())
+        } else {
+            td_string!(l, groups.members.leave_confirm, name = p.name.clone())
+        };
+        if !confirm(&question) {
             return;
         }
         let navigate = navigate.clone();
@@ -167,7 +175,11 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
                 Ok(()) => {
                     let name = p.name.clone();
                     toast(ToastKind::Info, move |l| {
-                        td_string!(l, groups.members.left, name = name.clone())
+                        if last {
+                            td_string!(l, groups.members.deleted, name = name.clone())
+                        } else {
+                            td_string!(l, groups.members.left, name = name.clone())
+                        }
                     });
                     navigate(&localized(l, "/groups"), NavigateOptions::default());
                 }
@@ -220,7 +232,13 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
                     }}
                 </ul>
                 <Button variant=ButtonVariant::Outline size=ButtonSize::Sm class="w-full text-destructive" on:click=leave>
-                    {t!(i18n, groups.members.leave)}
+                    {move || {
+                        if last_one() {
+                            t_string!(i18n, groups.members.leave_delete)
+                        } else {
+                            t_string!(i18n, groups.members.leave)
+                        }
+                    }}
                 </Button>
             </CardContent>
         </Card>

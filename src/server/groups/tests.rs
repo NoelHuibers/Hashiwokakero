@@ -747,6 +747,7 @@ async fn the_last_member_who_isnt_banned_turns_off_the_light() {
     let chen = player(&conn, "chen").await;
     let dana = player(&conn, "dana").await;
     let id = group_of(&conn, aiko, &[chen, dana, bram]).await;
+    assert!(!page_of(&conn, id, aiko).await.unwrap().last_one());
     // Another group of the banned two stays as it is
     let other = group_of(&conn, chen, &[dana]).await;
     seal_and_river(&conn, id, chen, dana).await;
@@ -758,6 +759,8 @@ async fn the_last_member_who_isnt_banned_turns_off_the_light() {
     assert_eq!(owner_of(&conn, id).await, Some(aiko));
     let page = page(&conn, id, aiko, TODAY).await.unwrap();
     assert_eq!(ids(&page.members), [aiko]);
+    // The page asks before deleting the group
+    assert!(page.last_one());
     assert_eq!(mine(&conn, aiko, TODAY).await.unwrap()[0].members, 1);
 
     // Aiko is the last one there: the group goes

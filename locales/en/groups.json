@@ -88,7 +88,10 @@
     "removed": "{{ name }} is no longer in the group.",
     "leave": "Leave the group",
     "leave_confirm": "Leave “{{ name }}”? You can join again with the invite link.",
-    "left": "You left {{ name }}."
+    "left": "You left {{ name }}.",
+    "leave_delete": "Leave and delete the group",
+    "delete_confirm": "You’re the last one in “{{ name }}”. Leaving deletes the group for good, with its river, banzuke, puzzles and seals.",
+    "deleted": "The group {{ name }} is deleted."
   },
   "daily": {
     "tabs": "Rankings",
