@@ -75,6 +75,20 @@ fn every_language_has_the_glyphs_of_its_cards() {
     }
 }
 
+/// Titles in Kaisei Decol where the site's headings are (--display-font in style/tailwind.css):
+/// not in Cyrillic, which it draws as wide as kanji, nor in Polish and Turkish, whose letters it
+/// partly lacks.
+#[test]
+fn titles_are_in_the_font_of_the_sites_headings() {
+    for locale in [Locale::en, Locale::de, Locale::fr, Locale::ja] {
+        assert_eq!(families(locale).1, Family::KaiseiDecol, "{locale:?}");
+    }
+    for locale in [Locale::ru, Locale::uk, Locale::pl, Locale::tr] {
+        assert_eq!(families(locale), (Family::Murecho, Family::Murecho), "{locale:?}");
+    }
+    assert_eq!(families(Locale::vi), (Family::BeVietnamPro, Family::BeVietnamPro));
+}
+
 /// The daily's texts of every weekday, month and difficulty, and the digits, in every language.
 #[test]
 fn every_date_has_its_glyphs() {
