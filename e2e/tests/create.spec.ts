@@ -1,6 +1,6 @@
 // The workshop: a puzzle drawn island by island, proven unique, exported, imported again and
 // played.
-import { readFileSync } from 'node:fs';
+import { text } from 'node:stream/consumers';
 
 import { board, build, cellCenter, PRACTICE_KEY, saved } from '../board';
 import { expect, test, visit } from '../fixtures';
@@ -35,8 +35,9 @@ test('draw a puzzle, check it, export it, import it and play it', async ({ page 
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export .txt' }).click();
-  const file = await (await download).path();
-  const txt = readFileSync(file, 'utf8');
+  // Read as a stream, not from path(): with the browser in a container (pnpm run e2e:container)
+  // the file is on the container's side
+  const txt = await text(await (await download).createReadStream());
   // Rows and columns, then the grid
   expect(txt).toBe(`8 8\n2.3.....\n........\n..1.....\n${'........\n'.repeat(5)}`);
 
