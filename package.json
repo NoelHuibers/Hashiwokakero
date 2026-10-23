@@ -20,7 +20,8 @@
     "e2e:update-snapshots": "node scripts/e2e-container.mjs --project visual --update-snapshots",
     "app:web": "cd app && trunk serve --dist ../target/app-dev",
     "app:build": "cd app && trunk build --release",
-    "app:e2e": "playwright test -c e2e/app.config.ts"
+    "app:e2e": "playwright test -c e2e/app.config.ts",
+    "app:android-e2e": "playwright test -c e2e/android.config.ts"
   },
   "devDependencies": {
     "@fontsource-variable/murecho": "^5.3.1",
