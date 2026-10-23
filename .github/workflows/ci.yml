@@ -580,6 +580,167 @@ jobs:
           compression-level: 0
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
+  # The debug APK started on an Android emulator (e2e/android/, its own Playwright config): the
+  # real WebView with the real content security policy and the offline practice's native
+  # commands, driven through Playwright's Android support. Built here for x86_64, the emulator's
+  # architecture, next to the arm64 build instead of after it: the emulator waits for no other
+  # job. The device is offline the whole time and hashi.rs is blocked on the runner too: the debug
+  # APK calls the production server, where the test must not make a guest. Not a required check
+  # and not in Release compatibility, an emulator is flaky by nature.
+  android-emulator:
+    name: Android emulator smoke
+    needs: [changes, build-app]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      NDK_VERSION: 29.0.14206865
+      CARGO_PROFILE_DEV_DEBUG: 0
+      # Google APIs x86_64, the newest API level the emulator action tests itself on Linux
+      # runners (targetSdk is 37)
+      EMULATOR_API: 35
+      EMULATOR_TARGET: google_apis
+    steps:
+      # When the job's parts started and ended, for the job summary
+      - run: |
+          echo "TIMES=$RUNNER_TEMP/android-times" >> "$GITHUB_ENV"
+          echo "job $(date +%s)" >> "$RUNNER_TEMP/android-times"
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Android NDK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+      - run: rustup toolchain install && rustup target add x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Install the Tauri CLI
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y tauri-cli@2.12.4
+      - uses: actions/download-artifact@v8
+        with:
+          name: app-web
+          path: target/app-dist
+      # As in "Build app (Android)", for the emulator's architecture
+      - name: Build
+        working-directory: app/src-tauri
+        run: |
+          echo "build $(date +%s)" >> "$TIMES"
+          cargo tauri android build --ci --debug --apk --target x86_64 --config '{"build":{"beforeBuildCommand":null}}'
+          echo "built $(date +%s)" >> "$TIMES"
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      # Playwright drives the WebView over adb, it needs no browser of its own
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Behind the device's airplane mode: the emulator's traffic leaves through the runner
+      - name: Block hashi.rs
+        run: |
+          for ip in $(getent ahosts hashi.rs | awk '{ print $1 }' | sort -u); do
+            case "$ip" in *:*) sudo ip6tables -I OUTPUT -d "$ip" -j REJECT ;; *) sudo iptables -I OUTPUT -d "$ip" -j REJECT ;; esac
+          done
+          if curl -sS --max-time 10 -o /dev/null https://hashi.rs/; then echo "::error::hashi.rs is still reachable"; exit 1; fi
+      # As GitHub documents it for the emulator
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      # What the emulator action installs, beforehand with retries: a download of the emulator
+      # failed once ("Error on ZipFile unknown archive"), the action would give up
+      - name: Emulator and system image
+        run: |
+          for attempt in 1 2 3; do
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install emulator "platforms;android-$EMULATOR_API" \
+              "system-images;android-$EMULATOR_API;$EMULATOR_TARGET;x86_64" > /dev/null && exit 0
+            sleep 10
+          done
+          exit 1
+      # A cold boot every time, about 35 s. A cached snapshot of the booted emulator (the action's
+      # README) was 2 GB: restoring it took longer than the boot it saved, and the caches are full.
+      # Every line of the script runs alone (sh -c), a failing one ends it: the tests' result is
+      # kept for the last line, after the logcat.
+      - name: Tests on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.EMULATOR_API }}
+          target: ${{ env.EMULATOR_TARGET }}
+          arch: x86_64
+          profile: pixel_7
+          cores: 4
+          ram-size: 4096M
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            echo "booted $(date +%s)" >> "$TIMES"
+            adb logcat -c
+            pnpm run app:android-e2e || echo failed > "$RUNNER_TEMP/android-failed"
+            echo "tested $(date +%s)" >> "$TIMES"
+            adb logcat -d -v threadtime > "$RUNNER_TEMP/logcat-all.txt"
+            grep -E 'rs\.hashi|Tauri|[Ww]ry|RustStdoutStderr|chromium|cr_|WebView|Console|AndroidRuntime|DEBUG|libc|ActivityManager' "$RUNNER_TEMP/logcat-all.txt" > e2e/test-results-android-logcat.txt || true
+            test ! -f "$RUNNER_TEMP/android-failed"
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: |
+          echo "done $(date +%s)" >> "$TIMES"
+          node -e '
+            const fs = require("fs");
+            const times = Object.fromEntries(fs.readFileSync(process.env.TIMES, "utf8").trim().split("\n").map((l) => l.split(" ")));
+            const span = (a, b) => (times[a] && times[b] ? `${Math.round((times[b] - times[a]) / 60 * 10) / 10} min` : "–");
+            const read = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : null);
+            const device = read("e2e/test-results-android-device.json");
+            const report = read("e2e/test-results-android.json");
+            const rows = [
+              "| Android emulator | |", "|---|---|",
+              `| image | API ${process.env.EMULATOR_API}, ${process.env.EMULATOR_TARGET}, x86_64 |`,
+              `| device | ${device ? `${device.model}, Android ${device.android}, WebView ${device.webView}` : "–"} |`,
+              `| job | ${span("job", "done")} |`,
+              `| x86_64 APK build | ${span("build", "built")} |`,
+              `| emulator (SDK, cold boot) | ${span("built", "booted")} |`,
+              `| tests | ${span("booted", "tested")} |`,
+            ];
+            if (report) {
+              const s = report.stats;
+              rows.push(`| passed | ${s.expected} |`, `| failed | ${s.unexpected} |`, `| flaky (passed on the retry) | ${s.flaky} |`, `| skipped | ${s.skipped} |`);
+              const walk = (suite) => [...(suite.specs ?? []), ...(suite.suites ?? []).flatMap(walk)];
+              for (const spec of report.suites.flatMap(walk)) {
+                for (const result of spec.tests.flatMap((t) => t.results)) {
+                  for (const a of result.annotations ?? []) {
+                    const note = a.type === "launch" ? `launch ${a.description}` : `${a.type}: ${a.description}`;
+                    rows.push(`| ${spec.title} | ${note} |`);
+                  }
+                }
+              }
+            }
+            console.log(rows.join("\n"));
+          ' | tee -a "$GITHUB_STEP_SUMMARY"
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-emulator-screenshot
+          path: e2e/android-screens
+          if-no-files-found: ignore
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-emulator-report
+          path: |
+            e2e/playwright-report-android
+            e2e/test-results-android-logcat.txt
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+
   # The image the deploy ships, built from the same artifact and started: it has to serve the
   # site. Dependabot's updates of its base image are tested here, before they deploy.
   docker:
