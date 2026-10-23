@@ -199,12 +199,13 @@ for (const theme of ['light', 'dark'] as const) {
     ] as const) {
       const { darkest, median, brightest } = await extremes(device, from, to);
       test.info().annotations.push({ type: bar, description: `luminance ${darkest.toFixed(2)} / ${median.toFixed(2)} / ${brightest.toFixed(2)}` });
+      // Android's dark icons are a grey (about 0.37 on the light page), its light ones white
       if (theme === 'light') {
         expect(median, `the light page behind the ${bar}`).toBeGreaterThan(0.6);
-        expect(darkest, `dark icons on the ${bar}`).toBeLessThan(0.35);
+        expect(median - darkest, `dark icons on the ${bar}`).toBeGreaterThan(0.4);
       } else {
         expect(median, `the dark page behind the ${bar}`).toBeLessThan(0.3);
-        expect(brightest, `light icons on the ${bar}`).toBeGreaterThan(0.65);
+        expect(brightest - median, `light icons on the ${bar}`).toBeGreaterThan(0.4);
       }
     }
   });
@@ -217,7 +218,10 @@ test('the app starts in dark mode without a white frame', async ({ page, device 
     await shell(device, `am force-stop ${PKG}`);
     // The test's page goes with it
     await page.waitForEvent('close', { timeout: 10_000 }).catch(() => {});
-    await shell(device, `am start -n ${ACTIVITY}`);
+    await expect.poll(() => shell(device, 'cmd uimode night')).toMatch(/Night mode: yes/);
+    // From the app's first frame on (-W waits for it), not the screen before
+    await shell(device, 'input keyevent KEYCODE_HOME');
+    await shell(device, `am start -W -n ${ACTIVITY}`);
     // A row in the middle and one at a quarter of the screen, their middle brightness: the text
     // on them doesn't count
     const row = (shot: Awaited<ReturnType<typeof screen>>, y: number) => {
@@ -261,8 +265,10 @@ test('links out of the app open outside it', async ({ page, device }) => {
   );
   expect(page.url()).toBe(`${ORIGIN}/rules`);
   await backToTheApp(device);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');
 
-  // A page of another site the WebView would go to by itself: refused, and opened outside too
+  // A page of another site the WebView would go to by itself: refused, and opened outside too.
+  // Last: Playwright keeps waiting for the navigation the app refused
   await shell(device, 'logcat -c');
   await page.evaluate(() => {
     location.href = 'https://example.com/';
@@ -273,7 +279,6 @@ test('links out of the app open outside it', async ({ page, device }) => {
   await page.waitForTimeout(1000);
   expect(page.url()).toBe(`${ORIGIN}/rules`);
   await backToTheApp(device);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');
 });
 
 test("sharing opens Android's share sheet, copying works", async ({ page, device }) => {
