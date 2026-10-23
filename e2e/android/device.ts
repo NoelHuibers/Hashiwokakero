@@ -37,6 +37,64 @@ export async function connect(): Promise<AndroidDevice> {
 
 export const shell = async (device: AndroidDevice, command: string) => (await device.shell(command)).toString().trim();
 
+/** The screen's pixels: `screencap` without `-p`, RGBA after a header (width, height, format…). */
+export interface Screen {
+  width: number;
+  height: number;
+  /** The luminance of a pixel, 0 (black) to 1 (white). */
+  luminance(x: number, y: number): number;
+}
+
+export async function screen(device: AndroidDevice): Promise<Screen> {
+  const raw = await device.shell('screencap');
+  const width = raw.readUInt32LE(0);
+  const height = raw.readUInt32LE(4);
+  // 12 bytes of header before Android 9, 16 since (the colour space)
+  const start = raw.length - width * height * 4;
+  return {
+    width,
+    height,
+    luminance(x, y) {
+      const i = start + (y * width + x) * 4;
+      const [r, g, b] = [raw[i], raw[i + 1], raw[i + 2]].map((c) => c / 255);
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    },
+  };
+}
+
+/** The status bar and the navigation bar, in screen pixels: their height from the top and the bottom. */
+export interface Bars {
+  top: number;
+  bottom: number;
+  /** What `dumpsys window` said about them, for the report. */
+  source: string;
+}
+
+/**
+ * Where the window manager has the system bars (`InsetsSource … type=statusBars
+ * frame=[left,top][right,bottom]`), not what the app told its page.
+ */
+export async function systemBars(device: AndroidDevice): Promise<Bars> {
+  const dump = await shell(device, 'dumpsys window');
+  const frame = (type: string) => {
+    const lines = dump.split('\n').filter((l) => new RegExp(`type=${type}\\b`).test(l) && /frame=\[/.test(l));
+    const frames = lines
+      .map((l) => l.match(/frame=\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/))
+      .filter((m): m is RegExpMatchArray => !!m)
+      .map((m) => m.slice(1, 5).map(Number))
+      .filter(([l, t, r, b]) => r > l && b > t);
+    return { lines, frames };
+  };
+  const status = frame('statusBars');
+  const navigation = frame('navigationBars');
+  const source = [...status.lines.slice(0, 3), ...navigation.lines.slice(0, 3)].join('\n');
+  if (!status.frames.length || !navigation.frames.length) throw new Error(`no system bars in dumpsys window:\n${source}`);
+  const top = Math.max(...status.frames.map(([, , , b]) => b));
+  const height = Math.max(...navigation.frames.map(([, , , b]) => b));
+  const bottom = Math.max(...navigation.frames.map(([, t]) => height - t));
+  return { top, bottom, source };
+}
+
 /** Whether the device reaches the internet: an address, or a name to look up. */
 async function online(device: AndroidDevice) {
   for (const host of ['1.1.1.1', SERVER]) {

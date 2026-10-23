@@ -106,10 +106,14 @@ pub fn random_seed() -> u64 {
 
 /// Offers `content` as a file download.
 ///
-/// TODO(step 10 of docs/mobile.md): the app's `WebView` ignores downloads of Blob links, it
-/// needs a download handler (or Tauri's dialog and fs plugins).
+/// The app's `WebView` ignores downloads of Blob links: there the file goes to the system's
+/// share sheet, which saves it (Files, Drive) or sends it on (`api::native::share`).
 pub fn download(filename: &str, content: &str, mime: &str) {
     use wasm_bindgen::JsCast;
+    #[cfg(feature = "csr")]
+    if crate::api::native::share(content, Some((filename, mime))) {
+        return;
+    }
     let parts = js_sys::Array::of1(&wasm_bindgen::JsValue::from_str(content));
     let options = web_sys::BlobPropertyBag::new();
     options.set_type(mime);

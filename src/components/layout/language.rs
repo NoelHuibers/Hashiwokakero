@@ -64,7 +64,7 @@ pub fn LanguagePicker() -> impl IntoView {
             </button>
             <Show when=move || open.get()>
                 // Phones: across the screen below the header, the button isn't at the edge
-                <div class="fixed inset-x-3 top-16 z-50 rounded-xl border bg-card p-2 shadow-2xl animate-in fade-in zoom-in-95 sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-[26rem]">
+                <div class="fixed inset-x-3 top-[calc(4rem+var(--safe-top))] z-50 rounded-xl border bg-card p-2 shadow-2xl animate-in fade-in zoom-in-95 sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-[26rem]">
                     <p class="px-2 pb-2 pt-1 font-pixel text-xs text-muted-foreground">
                         "言語 · " {t!(i18n, common.language)}
                     </p>

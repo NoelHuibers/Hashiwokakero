@@ -95,10 +95,18 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 - Single flight: without a token, a call that may make a session (`start_daily`,
   `create_group`, `join_group`, `set_rival`, `login`, `register`) holds back every other
   call until its answer's token is kept, so calls at the same time don't make two guests.
-- `AppOutdated`, and an answer that is a web page (a server function the server no longer
-  has), show one toast with an "Update" button to the store, where the website offers a
-  reload. Share and invite links point at `https://hashi.rs`; the Dojo's upload forms and the
-  admin's house form are links to the website.
+- `AppOutdated`, and the server's 404 page (a server function the server no longer has),
+  show one toast with an "Update" button to the store, where the website offers a reload.
+  Any other web page instead of an answer (a proxy's 502 or 503 while the server starts or is
+  down, a captive portal) is a call that didn't get through, like one without a network, on
+  the website too. Share and invite links point at `https://hashi.rs`; the Dojo's upload forms
+  and the admin's house form are links to the website.
+- What the `WebView` can't do itself (`src/api/native.rs`, app/README.md): links to other
+  sites and `mailto:` open outside the app (Tauri's opener plugin, https and mailto only), the
+  share buttons and the CNF/puzzle downloads go to Android's share sheet (the app's own plugin,
+  `HashiPlugin.kt`), and the WebView never leaves the app's pages. The page draws behind the
+  system bars: the app passes their sizes in as CSS variables (`--app-inset-*`), and the bars'
+  icons follow the page's theme.
 
 ## Steps
 
@@ -114,7 +122,8 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 | |
 | 9 | Offline practice: native generator and solver through Tauri commands | 8 | ✓ #125 |
 | 10a | Android emulator smoke test in CI: the real debug APK on an emulator, its WebView driven by Playwright, offline | 8, 9 | ✓ #127 |
-| 10 | Android polish: back button, safe areas (status and navigation bar cover the header and the tab bar, seen in 10a), `ACCESS_NETWORK_STATE` (without it the WebView's `navigator.onLine` is always true), share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 | |
+| 10 | Android polish: back button, safe areas (status and navigation bar cover the header and the tab bar, seen in 10a), `ACCESS_NETWORK_STATE` (without it the WebView's `navigator.onLine` is always true), share/clipboard/links through Tauri plugins | 8 | ✓ #PR |
+| 10b | App Links for `https://hashi.rs/g/<code>` invites: `assetlinks.json` served from config, intent filters, deep-link routing | 10, 11 | |
 | 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | ✓ #126 |
 | 12 | First release: closed test, store listing, production | 9, 10, 11 | |
 | 13 | iOS: same project, macOS runner, TestFlight and App Store | 12 | |

@@ -25,6 +25,8 @@ tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
 tauri = { version = "2.12.5", features = [] }
+# Links out of the app in the phone's browser (only https and mailto, capabilities/default.json)
+tauri-plugin-opener = "2.7.2"
 # The offline practice (offline/): generator and solvers natively, in the app's library
 hashi_offline = { path = "offline" }
 

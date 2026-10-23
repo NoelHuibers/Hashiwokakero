@@ -37,12 +37,25 @@ pub fn server_link(path: &str) -> String {
     server_link_in(cfg!(feature = "csr"), path)
 }
 
-/// The `target` of a [`server_link`]: in the app a new window.
-///
-/// The app's `WebView` shouldn't navigate away to the website. TODO(step 10 of docs/mobile.md):
-/// the `WebView` opens no new windows, open these with Tauri's opener plugin.
+/// The `target` of a [`server_link`]: in the app a new window, which is the phone's browser
+/// (see [`opens_outside`]). The app's `WebView` shouldn't navigate away to the website.
 pub fn server_link_target() -> Option<&'static str> {
     cfg!(feature = "csr").then_some("_blank")
+}
+
+/// Whether a link to `href` (the whole URL) leaves a page of `origin`.
+///
+/// A page of another site, or an e-mail to write: the app opens these with the phone's browser
+/// or mail app instead of in its `WebView` (`api::native`).
+pub fn opens_outside(href: &str, origin: &str) -> bool {
+    if href.starts_with("mailto:") {
+        return true;
+    }
+    let web = href.starts_with("https://") || href.starts_with("http://");
+    let same = href
+        .strip_prefix(origin)
+        .is_some_and(|rest| rest.is_empty() || rest.starts_with(['/', '?', '#']));
+    web && !same
 }
 
 /// [`server_link`] in the app (`app`) or on the website.
@@ -337,6 +350,39 @@ pub fn sitemap() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The app opens these in the phone's browser or mail app, the rest in its `WebView`.
+    #[test]
+    fn links_to_other_sites_and_mail_leave_the_page() {
+        let app = "https://tauri.localhost";
+        for href in [
+            "https://hashi.rs/dojo/seasons/3/results.csv",
+            "https://play.google.com/store/apps/details?id=rs.hashi",
+            "https://github.com/NoelHuibers/Hashiwokakero",
+            "https://wa.me/?text=hi",
+            "http://example.com/",
+            "mailto:hello@hashi.rs",
+            // Not the app's origin, only its name at the start
+            "https://tauri.localhost.example/",
+            "https://tauri.localhost:8443/rules",
+        ] {
+            assert!(opens_outside(href, app), "{href}");
+        }
+        for href in [
+            "https://tauri.localhost",
+            "https://tauri.localhost/",
+            "https://tauri.localhost/ja/rules",
+            "https://tauri.localhost?x=1",
+            "https://tauri.localhost#top",
+            "javascript:void(0)",
+            "blob:https://tauri.localhost/0e7c",
+            "",
+        ] {
+            assert!(!opens_outside(href, app), "{href}");
+        }
+        // On the website, its own pages stay
+        assert!(!opens_outside("https://hashi.rs/rules", SITE_URL));
+    }
 
     #[test]
     fn the_app_links_to_the_servers_files_on_the_website() {

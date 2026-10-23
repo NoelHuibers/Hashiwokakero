@@ -25,8 +25,7 @@ pub(super) fn UploadOnWebsite(path: &'static str) -> impl IntoView {
     let href = move || format!("{SITE_URL}{}", localized(i18n.get_locale(), path));
     view! {
         <p class="text-sm text-muted-foreground">
-            // TODO(step 10 of docs/mobile.md): the WebView opens no new windows, open the
-            // website with Tauri's opener plugin
+            // In the app the phone's browser (`api::native::open_links_outside`)
             {t!(
                 i18n,
                 dojo.submit.on_website,

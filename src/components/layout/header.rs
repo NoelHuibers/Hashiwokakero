@@ -16,7 +16,7 @@ pub fn Header() -> impl IntoView {
     let i18n = use_i18n();
     let home = use_localized("/");
     view! {
-        <header class="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md">
+        <header class="sticky top-0 z-40 border-b border-border/70 bg-background/85 pt-(--safe-top) backdrop-blur-md">
             <div class="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6">
                 <A
                     href=home
