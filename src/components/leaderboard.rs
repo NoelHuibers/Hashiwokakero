@@ -368,7 +368,7 @@ pub fn AccountButton() -> impl IntoView {
     view! {
         <A
             href=to
-            attr:class="flex h-10 shrink-0 items-center gap-2 rounded-lg border bg-card px-2 transition-transform hover:-translate-y-0.5"
+            attr:class="flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border bg-card px-2 lg:h-10 transition-transform hover:-translate-y-0.5"
             attr:data-tooltip=move || t_string!(i18n, common.account)
             attr:aria-label=move || match auth.user.get() {
                 Some(user) => format!("{} · {}", t_string!(i18n, common.account),

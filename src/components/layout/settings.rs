@@ -60,7 +60,7 @@ pub fn SettingsButton() -> impl IntoView {
         <div node_ref=root class="relative shrink-0">
             <button
                 node_ref=button
-                class="grid size-10 place-items-center rounded-lg border bg-card transition-transform hover:-translate-y-0.5"
+                class="grid size-11 place-items-center rounded-lg border bg-card transition-transform lg:size-10 hover:-translate-y-0.5"
                 class:ring-2=move || open.get()
                 class:ring-primary=move || open.get()
                 aria-haspopup="true"
