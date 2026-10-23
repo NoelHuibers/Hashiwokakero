@@ -69,25 +69,40 @@ export const test = base.extend<{ problems: string[]; consoleLog: void }, { devi
  * the WebView by the debugging socket that debug builds open (`webview_devtools_remote_<pid>`).
  */
 async function launch(device: AndroidDevice, testInfo: TestInfo): Promise<Page> {
-  // Also stops the app; then its old WebView goes away
-  expect(await shell(device, `pm clear ${PKG}`)).toBe('Success');
-  await expect.poll(() => device.webViews().some((w) => w.pkg() === PKG), { message: 'the old WebView is gone' }).toBe(false);
-  const started = Date.now();
-  const output = await shell(device, `am start -W -n ${ACTIVITY}`);
-  expect(output, 'the activity started').toMatch(/Status: ok/);
-  const webView = await device.webView({ pkg: PKG }, { timeout: 60_000 });
-  const page = await webView.page();
-  await hydrated(page);
-  testInfo.annotations.push({ type: 'launch', description: `${Date.now() - started} ms` });
-  // From the next page on, the policy's violations are kept (read by `violations`)
-  await page.addInitScript(() => {
-    const seen: string[] = [];
-    Object.defineProperty(window, 'cspViolations', { value: seen });
-    document.addEventListener('securitypolicyviolation', (e) =>
-      seen.push(`${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || e.documentURI}:${e.lineNumber})`),
-    );
+  return test.step('start the app', async () => {
+    // Also stops the app; then its old WebView goes away
+    expect(await shell(device, `pm clear ${PKG}`)).toBe('Success');
+    await expect.poll(() => device.webViews().some((w) => w.pkg() === PKG), { message: 'the old WebView is gone' }).toBe(false);
+    const started = Date.now();
+    expect(await shell(device, `am start -W -n ${ACTIVITY}`), 'the activity started').toMatch(/Status: ok/);
+    const webView = await device.webView({ pkg: PKG }, { timeout: 60_000 });
+    const page = await within(30_000, 'attaching to the WebView', webView.page());
+    // Only the mark: the requests the page sent before Playwright was attached never end for it
+    await expect(page.locator('html')).toHaveAttribute('data-hydrated', '', { timeout: 60_000 });
+    testInfo.annotations.push({ type: 'launch', description: `${Date.now() - started} ms` });
+    // From the next page on, the policy's violations are kept (read by `violations`)
+    await page.addInitScript(() => {
+      const seen: string[] = [];
+      Object.defineProperty(window, 'cspViolations', { value: seen });
+      document.addEventListener('securitypolicyviolation', (e) =>
+        seen.push(`${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || e.documentURI}:${e.lineNumber})`),
+      );
+    });
+    return page;
   });
-  return page;
+}
+
+/** `promise`, or an error after `ms`: some of Playwright's Android calls take no timeout. */
+async function within<T>(ms: number, what: string, promise: Promise<T>): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${what} took more than ${ms} ms`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** The content security policy's violations on the current page, since it loaded. */

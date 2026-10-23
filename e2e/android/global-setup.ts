@@ -2,7 +2,7 @@
 // with a network.
 import { existsSync, mkdirSync } from 'node:fs';
 
-import { APK, connect, describe, goOffline, SCREENS } from './device';
+import { ACTIVITY, APK, connect, describe, goOffline, PKG, SCREENS, shell } from './device';
 
 export default async function globalSetup() {
   if (!existsSync(APK)) throw new Error(`no APK at ${APK}, see app/README.md (E2E_APK)`);
@@ -11,6 +11,11 @@ export default async function globalSetup() {
   try {
     await goOffline(device);
     await device.installApk(APK);
+    // The first start after the install does work of its own (the WebView's first run, the app's
+    // profile): once here, offline too, until the WebView is up
+    await shell(device, `am start -W -n ${ACTIVITY}`);
+    await device.webView({ pkg: PKG }, { timeout: 60_000 });
+    await shell(device, `am force-stop ${PKG}`);
     const info = await describe(device);
     console.log(`${info.model}, Android ${info.android} (API ${info.sdk}, ${info.abi}), WebView ${info.webView}`);
   } finally {
