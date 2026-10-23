@@ -300,8 +300,8 @@ runner.
 
 CI runs it in "Android emulator smoke" (`.github/workflows/ci.yml`), next to the arm64 build: it
 builds an x86_64 debug APK from the `app-web` artifact, boots a Google APIs x86_64 emulator of
-API 35 with KVM (`reactivecircus/android-emulator-runner`; main caches the emulator with a booted
-snapshot, pull requests restore it), and runs the spec. Emulators are flaky, so this config, and
+API 35 with KVM (`reactivecircus/android-emulator-runner`, a cold boot of about 35 s: a cached
+snapshot was 2 GB and took longer to restore), and runs the spec. About 5 minutes in all. Emulators are flaky, so this config, and
 only this one, retries a failed test once; the job summary counts the flaky tests next to the
 times of the build, the emulator's start and the tests. The artifact
 `android-emulator-screenshot` has the practice board; a failed run also uploads

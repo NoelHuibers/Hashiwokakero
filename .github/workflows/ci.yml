@@ -668,38 +668,10 @@ jobs:
             sleep 10
           done
           exit 1
-      # The emulator's disk and a snapshot of it booted, made and saved on main only (a few hundred
-      # MB, the repository's caches are full). Pull requests boot from it, or cold without it.
-      - uses: actions/cache/restore@v6
-        id: avd
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ env.EMULATOR_API }}-${{ env.EMULATOR_TARGET }}-x86_64-pixel_7-v1
-      - name: Snapshot the emulator
-        if: steps.avd.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ env.EMULATOR_API }}
-          target: ${{ env.EMULATOR_TARGET }}
-          arch: x86_64
-          profile: pixel_7
-          cores: 4
-          ram-size: 4096M
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: echo "The emulator's snapshot is made"
-      - if: steps.avd.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v6
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: ${{ steps.avd.outputs.cache-primary-key }}
+      # A cold boot every time, about 35 s. A cached snapshot of the booted emulator (the action's
+      # README) was 2 GB: restoring it took longer than the boot it saved, and the caches are full.
       # Every line of the script runs alone (sh -c), a failing one ends it: the tests' result is
-      # kept for the last line, after the logcat
+      # kept for the last line, after the logcat.
       - name: Tests on the emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -709,9 +681,7 @@ jobs:
           profile: pixel_7
           cores: 4
           ram-size: 4096M
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             echo "booted $(date +%s)" >> "$TIMES"
             adb logcat -c
@@ -722,8 +692,6 @@ jobs:
             test ! -f "$RUNNER_TEMP/android-failed"
       - name: Summary
         if: ${{ !cancelled() }}
-        env:
-          AVD_CACHE: ${{ steps.avd.outputs.cache-hit == 'true' && 'warm (snapshot from the cache)' || 'cold (no snapshot)' }}
         run: |
           echo "done $(date +%s)" >> "$TIMES"
           node -e '
@@ -737,10 +705,9 @@ jobs:
               "| Android emulator | |", "|---|---|",
               `| image | API ${process.env.EMULATOR_API}, ${process.env.EMULATOR_TARGET}, x86_64 |`,
               `| device | ${device ? `${device.model}, Android ${device.android}, WebView ${device.webView}` : "–"} |`,
-              `| emulator | ${process.env.AVD_CACHE} |`,
               `| job | ${span("job", "done")} |`,
               `| x86_64 APK build | ${span("build", "built")} |`,
-              `| emulator start | ${span("built", "booted")} |`,
+              `| emulator (SDK, cold boot) | ${span("built", "booted")} |`,
               `| tests | ${span("booted", "tested")} |`,
             ];
             if (report) {
