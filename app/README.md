@@ -209,9 +209,9 @@ Android Studio brings all of that except the Rust parts; without it, the
 [command line tools](https://developer.android.com/studio#command-line-tools-only) have
 `sdkmanager`. Gradle downloads what is still missing on the first build. NDK 29 links the
 library for Android's 16 KB memory pages, which Google Play requires. Its version is in three
-places, changed together: `NDK_VERSION` in `ci.yml` (both Android jobs) and `android-release.yml`, `ndkVersion` in
-`gen/android/app/build.gradle.kts` (Gradle strips release builds with it). The web bundle needs
-what [Building](#building) lists.
+places, changed together: `NDK_VERSION` in `ci.yml` (both Android jobs) and in
+`android-release.yml`, and `ndkVersion` in `gen/android/app/build.gradle.kts` (Gradle strips
+release builds with it). The web bundle needs what [Building](#building) lists.
 
 ### Building and running
 
