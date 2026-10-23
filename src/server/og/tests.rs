@@ -84,9 +84,16 @@ fn titles_are_in_the_font_of_the_sites_headings() {
         assert_eq!(families(locale).1, Family::KaiseiDecol, "{locale:?}");
     }
     for locale in [Locale::ru, Locale::uk, Locale::pl, Locale::tr] {
-        assert_eq!(families(locale), (Family::Murecho, Family::Murecho), "{locale:?}");
+        assert_eq!(
+            families(locale),
+            (Family::Murecho, Family::Murecho),
+            "{locale:?}"
+        );
     }
-    assert_eq!(families(Locale::vi), (Family::BeVietnamPro, Family::BeVietnamPro));
+    assert_eq!(
+        families(Locale::vi),
+        (Family::BeVietnamPro, Family::BeVietnamPro)
+    );
 }
 
 /// The daily's texts of every weekday, month and difficulty, and the digits, in every language.
