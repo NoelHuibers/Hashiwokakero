@@ -55,8 +55,12 @@ export const test = base.extend<{ problems: string[]; consoleLog: void }, { devi
         if (new URL(r.url()).hostname === SERVER) problems.push(`reached the server: ${r.request().method()} ${r.url()}`);
       });
       await use(problems);
-      // The page the app started with has no listener yet
-      const seen = page.isClosed() ? [] : await page.evaluate(() => (window as unknown as { cspViolations?: string[] }).cspViolations ?? []);
+      // The page the app started with has no listener yet. A test that stopped the app leaves a
+      // page that may not know it's gone yet
+      const read = page
+        .evaluate(() => (window as unknown as { cspViolations?: string[] }).cspViolations ?? [])
+        .catch(() => [] as string[]);
+      const seen = page.isClosed() ? [] : await within(10_000, 'reading the violations', read).catch(() => []);
       problems.push(...seen.map((v) => `CSP: ${v}`));
       expect(problems, 'errors in the app').toEqual([]);
     },

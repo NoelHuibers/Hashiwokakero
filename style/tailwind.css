@@ -18,6 +18,14 @@
   --app-font: "Murecho Variable", system-ui, sans-serif;
   --display-font: "Kaisei Decol", "Murecho Variable", serif;
   --radius: 0.75rem;
+  /* The system bars over the page. The app's page draws behind them (Android's edge to edge),
+     and Android's WebView reports no env(safe-area-inset-*) for them: the app sets
+     --app-inset-* itself (MainActivity.kt in app/src-tauri/gen/android). On the website they
+     stay unset, and only the bottom follows env() as before. */
+  --safe-top: var(--app-inset-top, 0px);
+  --safe-bottom: max(env(safe-area-inset-bottom), var(--app-inset-bottom, 0px));
+  --safe-left: var(--app-inset-left, 0px);
+  --safe-right: var(--app-inset-right, 0px);
 
   --background: #f4ecdd; /* kinari 生成り */
   --foreground: #2b2420; /* sumi 墨 */
@@ -257,6 +265,9 @@ html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [l
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    /* The app's system bars at the sides (a phone held sideways) */
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
     /* washi paper: soft fibres + a seigaiha 青海波 wave pattern fading in at the bottom */
     background-image:
       radial-gradient(circle at 20% 15%, var(--washi-fiber) 0 1px, transparent 1.5px),

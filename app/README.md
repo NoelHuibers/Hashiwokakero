@@ -72,9 +72,43 @@ section of [docs/mobile.md](../docs/mobile.md#api-headers) describes on top (`sr
 - Share and invite links point at `https://hashi.rs`. Uploads to the Dojo and the admin's
   forms are links to the website, as are the Dojo's downloads.
 
-Left for the Android polish (step 10): links with `target="_blank"` (the store's page, the
-website) need Tauri's opener plugin, the clipboard and `navigator.share` may need its plugins,
-and Blob downloads (the CNF of a puzzle) need a download handler.
+An answer that is a web page asks for an update only when it is the server's 404 page (a server
+function the server doesn't have any more). Other web pages, a proxy's 502 or 503 while the
+server starts or is down, or a captive portal's, count as a call that didn't get through
+(`api::client`, also on the website).
+
+## On the phone
+
+What the `WebView` doesn't do like a browser, and what the app does instead (`src/api/native.rs`
+in the repository root, only in the app):
+
+- **Links out of the app.** The `WebView` has no tabs: a link with `target="_blank"` or to
+  another site would replace the app's page. A click listener sends every link to another origin
+  and every `mailto:` link to Tauri's opener plugin, which hands it to Android (the browser, the
+  Play Store for the update toast's link, the mail app); `window.open` of the share bar's
+  WhatsApp and X buttons too. The capability allows `https://*` and `mailto:*` only: the pages
+  link to GitHub, the SAT Competition, the GBD and the Dojo's sources (any https URL), so a list
+  of hosts would break some of them. As a second line, the app refuses every navigation away
+  from its pages (`on_navigation` in `src-tauri/src/lib.rs`, Tauri allows them all by default)
+  and opens https ones in the browser.
+- **Sharing.** Android's `WebView` has no `navigator.share`. The share buttons open Android's
+  share sheet with the text through the app's own plugin (`HashiPlugin.kt`, command `share`).
+- **Downloads.** The `WebView` ignores downloads of Blob links (the CNF of a puzzle, the
+  workshop's puzzle as text). The file goes to the share sheet instead, written to the app's
+  cache and lent to the receiving app by the `FileProvider` of the manifest: Files, Drive, a
+  mail. Simpler than the dialog and fs plugins, and no storage permission.
+- **The clipboard.** `navigator.clipboard.writeText` works in the `WebView`
+  (`https://tauri.localhost` is a secure context, the copy is a tap), no plugin needed.
+- **Edge to edge.** The page draws behind the status and the navigation bar (Android 15 enforces
+  it for apps targeting it). The `WebView` reports no `env(safe-area-inset-*)` for the bars, so
+  `MainActivity.kt` passes their sizes in as CSS variables, `--app-inset-top`, `-right`,
+  `-bottom` and `-left`, and `style/tailwind.css` makes `--safe-*` of them, which the header
+  (top), the tab bar, the toasts and the page's end (bottom), and the body (sides) use. On the
+  website they are unset (the bottom keeps following `env()`), so it looks as before. The bars'
+  icons follow the page's theme, not the phone's: the theme's effect calls the plugin's
+  `system_bars`.
+- **The network.** With `ACCESS_NETWORK_STATE` the `WebView` knows when it is offline:
+  `navigator.onLine` and the window's `online` event, which brings the offline notice back.
 
 The smoke test checks the session (a guest made in the app, no cookie, the same guest after a
 reload), the headers, one update toast however many calls the server refuses, and the links.
@@ -174,9 +208,13 @@ no clap).
   `src/main.rs`, the same on the desktop, for development only.
 - `tauri.conf.json`: application ID `rs.hashi`, the name, the version, the bundle
   (`frontendDist`), the one window, and the content security policy (below).
-- `capabilities/default.json`: what the page may call in Tauri: `core:default` and the offline
-  practice's commands, no plugins yet. `build.rs` lists the commands, which makes Tauri check
-  them against the capabilities.
+- `capabilities/default.json`: what the page may call in Tauri: `core:default`, the offline
+  practice's commands, the opener's `open_url` for `https:` and `mailto:` URLs, and the app's
+  own plugin `hashi` (`share`, `system_bars`). `build.rs` lists the commands of the app and of
+  its plugin, which makes Tauri check them against the capabilities.
+- Plugins: `tauri-plugin-opener` (official, links out of the app, its own click script off), and
+  `hashi`, the app's own, in `src/lib.rs` with its Android side in `gen/android`
+  (`HashiPlugin.kt`). See [On the phone](#on-the-phone).
 - `icons/`: generated from `public/icon-512.png` by `cargo tauri icon app-icon.json`, along with
   the Android launcher icons in `gen/android/.../res/mipmap-*`. Android's adaptive icon cuts a
   circle (or a squircle) out of the middle of its foreground, so the foreground,
@@ -190,9 +228,12 @@ no clap).
 
 - `gen/android/`: the Android project (Gradle), generated by `cargo tauri android init` and
   committed with its Gradle wrapper. Changed by hand: the window's colours (the website's
-  background, light and dark, so the screen doesn't flash white before the page paints), the
-  icons, and the checksum of the Gradle download. Build outputs and the files Tauri writes on
-  every build are in its `.gitignore`s.
+  background, light and dark, so the screen doesn't flash white before the page paints; the
+  `WebView` itself is transparent until then), the icons, the checksum of the Gradle download,
+  the manifest (`ACCESS_NETWORK_STATE`; no Android TV launcher), `MainActivity.kt` (the
+  system bars, see [On the phone](#on-the-phone)) and `HashiPlugin.kt`, and the template's
+  unused `activity_main.xml` removed. Build outputs and the files Tauri writes on every build
+  are in its `.gitignore`s.
 
 ### Prerequisites
 
@@ -286,13 +327,23 @@ patch stay below 1000). `scripts/app-version.mjs` sets it, see [Releases](#relea
 `e2e/android/smoke.spec.ts`, with its own Playwright config (`e2e/android.config.ts`), starts the
 real debug APK on an Android emulator and drives its WebView through Playwright's Android support
 (`_android`, the WebView's debugging socket, which Tauri opens in debug builds). Each test clears
-the app's data and starts it with `am start`: it hydrates, no page of the app breaks the content
-security policy (`securitypolicyviolation` events and the console's CSP messages on `/`, `/rules`,
-`/ja/rules`, `/practice`, `/create`, `/lab`, `/dojo`, `/groups`, `/daily`), practice generates,
-hints and checks through the native commands, the ranks show one offline notice, and Android's
-back button goes back from the practice to the rules instead of closing the app (a skipped test
-with the finding if it closes it). A screenshot of the practice board is taken with
-`screencap`.
+the app's data and starts it with `am start`: it hydrates and knows it is offline
+(`navigator.onLine`), no page of the app breaks the content security policy
+(`securitypolicyviolation` events and the console's CSP messages on `/`, `/rules`, `/ja/rules`,
+`/practice`, `/create`, `/lab`, `/dojo`, `/groups`, `/daily`), practice generates, hints and
+checks through the native commands, the ranks show one offline notice (again after an `online`
+event), and Android's back button goes back from the practice to the rules instead of closing
+the app.
+
+What only the phone shows: in the light and the dark theme, the header starts below the status
+bar and the tab bar's labels end above the navigation bar (their boxes against the bars'
+frames of `dumpsys window`), the page shows behind the bars and their icons stand out (the
+darkest and brightest pixels of the bars in `screencap`); in the phone's dark mode no frame of
+the start is bright; a link to GitHub and a `location` to another site leave the app's page
+where it is and start a `VIEW` intent (the logcat); the share bar's copy works, its share button
+and the CNF button open Android's share sheet (a `CHOOSER` intent), the CNF as a file in the
+app's cache. Screenshots of the practice board, `practice-light.png` and `practice-dark.png`,
+are taken with `screencap`.
 
 The debug APK calls the production server when it can. The whole test runs without a network,
 so it never makes a guest or starts a daily there: the global setup turns airplane mode, Wi-Fi
@@ -306,7 +357,7 @@ API 35 with KVM (`reactivecircus/android-emulator-runner`, a cold boot of about 
 snapshot was 2 GB and took longer to restore), and runs the spec. About 5 minutes in all. Emulators are flaky, so this config, and
 only this one, retries a failed test once; the job summary counts the flaky tests next to the
 times of the build, the emulator's start and the tests. The artifact
-`android-emulator-screenshot` has the practice board; a failed run also uploads
+`android-emulator-screenshot` has the practice board, light and dark; a failed run also uploads
 `android-emulator-report`, the Playwright report and the app's, WebView's and Tauri's lines of
 the logcat. Not a required check.
 

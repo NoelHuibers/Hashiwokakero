@@ -47,6 +47,8 @@ pub fn mount(version: &'static str) {
     use leptos::prelude::Owner;
     console_error_panic_hook::set_once();
     api::start_app(version);
+    // Before the router's listener, see there
+    api::native::open_links_outside();
     let app = std::rc::Rc::new(std::cell::Cell::new(None));
     leptos::mount::mount_to_body({
         let app = app.clone();

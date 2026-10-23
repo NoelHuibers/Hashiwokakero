@@ -23,7 +23,7 @@ mod groups;
 mod hanko;
 mod kadai;
 #[cfg(feature = "csr")]
-mod native;
+pub(crate) mod native;
 pub mod practice;
 mod puzzle;
 mod replay;

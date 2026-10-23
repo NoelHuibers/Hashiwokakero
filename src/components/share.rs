@@ -1,4 +1,5 @@
-//! Sharing a result: the phone's share sheet, `WhatsApp`, X, or the clipboard.
+//! Sharing a result: the phone's share sheet, `WhatsApp`, X, or the clipboard. In the app the
+//! share sheet is Android's (`api::native`): its `WebView` has no `navigator.share`.
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -24,7 +25,12 @@ fn copy(text: &str) {
     });
 }
 
+/// Opens `url` in a new tab, in the app in the phone's browser (or the app that takes it).
 fn open(url: &str) {
+    #[cfg(feature = "csr")]
+    if crate::api::native::open_url(url) {
+        return;
+    }
     let _ = window().open_with_url_and_target(url, "_blank");
 }
 
@@ -42,6 +48,10 @@ fn native_share() -> Option<js_sys::Function> {
 
 /// Opens the system share sheet, or copies the text where there is none.
 fn share(text: &str) {
+    #[cfg(feature = "csr")]
+    if crate::api::native::share(text, None) {
+        return;
+    }
     let Some(share) = native_share() else {
         copy(text);
         return;

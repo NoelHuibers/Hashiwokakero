@@ -81,10 +81,9 @@ impl Toasts {
     /// In the app, a call that didn't reach the server shows a calm notice instead, once while
     /// offline: without a network every call fails, and practice works on.
     pub fn push_error(&self, error: ServerFnError) {
-        match shown(cfg!(feature = "csr"), &error, self.1.get_value()) {
+        match self.noted(cfg!(feature = "csr"), &error) {
             Shown::Error => {}
             Shown::Offline => {
-                self.1.set_value(true);
                 self.push(ToastKind::Info, |l| {
                     td_string!(l, common.toast.offline).to_string()
                 });
@@ -98,6 +97,16 @@ impl Toasts {
         );
         let text = move |l: Locale| crate::lang::error_text(l, &error);
         self.show(ToastKind::Error, action, std::sync::Arc::new(text));
+    }
+
+    /// What a failed call shows in the app (`app`) or on the website, see [`shown`]. Notes the
+    /// offline notice, which isn't shown again until [`Self::back_online`].
+    fn noted(&self, app: bool, error: &ServerFnError) -> Shown {
+        let shown = shown(app, error, self.1.get_value());
+        if shown == Shown::Offline {
+            self.1.set_value(true);
+        }
+        shown
     }
 
     fn show(&self, kind: ToastKind, action: Option<ToastAction>, text: ToastText) {
@@ -262,6 +271,25 @@ mod tests {
         assert_eq!(shown(true, &locked, true), Shown::Error);
         assert_eq!(shown(false, &offline, false), Shown::Error);
         assert_eq!(shown(false, &offline, true), Shown::Error);
+    }
+
+    /// The window's `online` event (`state::provide_state`) brings the notice back: the next
+    /// call that can't reach the server says once more that the app is offline.
+    #[test]
+    fn the_offline_notice_comes_again_once_the_network_is_back() {
+        Owner::new().with(|| {
+            let toasts = Toasts::new();
+            let offline = ServerFnError::Request("TypeError: Failed to fetch".into());
+            assert_eq!(toasts.noted(true, &offline), Shown::Offline);
+            assert_eq!(toasts.noted(true, &offline), Shown::Nothing);
+            toasts.back_online();
+            assert_eq!(toasts.noted(true, &offline), Shown::Offline);
+            assert_eq!(toasts.noted(true, &offline), Shown::Nothing);
+            // The website has no notice, every error shows
+            toasts.back_online();
+            assert_eq!(toasts.noted(false, &offline), Shown::Error);
+            assert_eq!(toasts.noted(true, &offline), Shown::Offline);
+        });
     }
 
     #[test]

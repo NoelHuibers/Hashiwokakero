@@ -89,7 +89,7 @@ pub fn App() -> impl IntoView {
 
         <Router>
             <LocaleFromPath />
-            <div class="flex min-h-screen flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+            <div class="flex min-h-screen flex-col pb-[calc(3.5rem+var(--safe-bottom))] md:pb-0">
                 <Header />
                 <main class="flex-1">
                     <Routes fallback=|| view! { <NotFound /> }>

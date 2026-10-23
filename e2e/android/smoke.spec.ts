@@ -1,14 +1,18 @@
 // The debug APK on a device without a network: it starts, every page keeps to the content
 // security policy of tauri.conf.json, practice runs on the phone through the app's commands,
 // the pages that need the server say once that the app is offline, and Android's back button
-// goes back in the app. Nothing here may reach hashi.rs: no guest, no daily, no group.
+// goes back in the app. What only a phone shows: the header and the tab bar clear the system
+// bars, whose icons follow the page's theme, the app starts without a white frame, links out
+// of the app open outside it, and sharing opens Android's share sheet. Nothing here may reach
+// hashi.rs: no guest, no daily, no group.
 import path from 'node:path';
 
-import type { Page } from '@playwright/test';
+import type { AndroidDevice, Page } from '@playwright/test';
 
-import { board } from '../board';
+import { board, PRACTICE_KEY } from '../board';
+import { LADDER, LADDER_SOLUTION } from '../puzzles';
 import { expect, hydrated, inFront, test, violations, visit } from './app';
-import { ORIGIN, SCREENS, shell } from './device';
+import { ACTIVITY, ORIGIN, PKG, SCREENS, screen, shell, systemBars } from './device';
 
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
 const toasts = (page: Page) => page.locator('[role=log] > div');
@@ -36,11 +40,8 @@ test('the app starts in its WebView, offline', async ({ page }) => {
   expect(new URL(page.url()).origin).toBe(ORIGIN);
   // Tauri's bridge, which the practice takes for its commands (src/api/native.rs)
   expect(await page.evaluate(() => typeof (window as any).__TAURI_INTERNALS__?.invoke)).toBe('function');
-  // Without the permission ACCESS_NETWORK_STATE the WebView takes itself for online, always: a
-  // finding for the Android polish (docs/mobile.md, step 10), the offline notice waits for `online`
-  if (await page.evaluate(() => navigator.onLine)) {
-    test.info().annotations.push({ type: 'finding', description: 'navigator.onLine is true without a network' });
-  }
+  // Without the permission ACCESS_NETWORK_STATE the WebView would take itself for online, always
+  expect(await page.evaluate(() => navigator.onLine), 'navigator.onLine').toBe(false);
   // The daily needs the server
   await expect(page.getByText("Couldn't load today's puzzle. Try again.")).toBeVisible();
   await expect(errorToasts(page)).toHaveCount(0);
@@ -105,6 +106,12 @@ test('pages that need the server say once that the app is offline', async ({ pag
   await expect(page).toHaveURL(/\/groups$/);
   await hydrated(page);
   await expect(toasts(page)).toHaveCount(0);
+  // Once the network is back (the window's `online` event), the next call that fails says it again.
+  // The real event would need a network, which the device must not have.
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await page.getByRole('link', { name: /Ranks/ }).filter({ visible: true }).first().click();
+  await expect(page).toHaveURL(/\/ranks$/);
+  await expect(offlineNotice(page)).toHaveCount(1);
 });
 
 test("Android's back button goes back in the app", async ({ page, device }) => {
@@ -116,9 +123,201 @@ test("Android's back button goes back in the app", async ({ page, device }) => {
   await shell(device, 'input keyevent KEYCODE_BACK');
   // Gives the app the time to go back, or Android to close it
   await page.waitForTimeout(1500);
-  const closed = page.isClosed() || !(await inFront(device));
-  // A finding for the Android polish (docs/mobile.md, step 10) rather than a failure
-  test.skip(closed, 'the first press of Back closed the app instead of going back to the rules');
+  expect(page.isClosed() || !(await inFront(device)), 'the app closed').toBe(false);
   await expect(page).toHaveURL(/\/rules$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');
+});
+
+/** The middle of the darkest and of the brightest pixels in rows `from` to `to` of the screen. */
+async function extremes(device: AndroidDevice, from: number, to: number) {
+  const shot = await screen(device);
+  const values: number[] = [];
+  for (let y = Math.max(0, from); y < Math.min(shot.height, to); y += 2) {
+    for (let x = 0; x < shot.width; x += 2) values.push(shot.luminance(x, y));
+  }
+  values.sort((a, b) => a - b);
+  const at = (q: number) => values[Math.floor(q * (values.length - 1))];
+  return { darkest: at(0.002), median: at(0.5), brightest: at(0.998) };
+}
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`the header and the tab bar clear the system bars, ${theme}`, async ({ page, device }) => {
+    // The page's theme, whatever the phone's
+    await page.evaluate((t) => localStorage.setItem('hashi.theme', t), theme);
+    await visit(page, '/practice');
+    await expect(islands(page).first()).toBeVisible();
+    await expect(page.getByText('Growing islands')).toBeHidden();
+    await page.evaluate(() => document.fonts.ready);
+    // The board scrolled to the top, the toasts gone
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(toasts(page)).toHaveCount(0);
+    await page.waitForTimeout(500);
+    await device.screenshot({ path: path.join(SCREENS, `practice-${theme}.png`) });
+
+    const bars = await systemBars(device);
+    const page_ = await page.evaluate(() => {
+      const style = getComputedStyle(document.documentElement);
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
+      document.body.append(probe);
+      const env = `${getComputedStyle(probe).paddingTop} ${getComputedStyle(probe).paddingBottom}`;
+      probe.remove();
+      return {
+        dpr: devicePixelRatio,
+        height: innerHeight,
+        width: innerWidth,
+        env,
+        app: ['top', 'bottom'].map((side) => style.getPropertyValue(`--app-inset-${side}`)).join(' '),
+      };
+    });
+    test.info().annotations.push(
+      { type: 'system bars', description: `top ${bars.top} px, bottom ${bars.bottom} px` },
+      { type: 'insets', description: `env(safe-area-inset-top/bottom) ${page_.env}, --app-inset-top/bottom ${page_.app}` },
+    );
+    await test.info().attach('dumpsys window', { body: bars.source, contentType: 'text/plain' });
+    const shot = await screen(device);
+    // The page fills the screen, under the bars too (edge to edge)
+    expect(Math.abs(page_.height * page_.dpr - shot.height), 'the page is as high as the screen').toBeLessThan(3);
+
+    // In CSS pixels, half a pixel for the rounding
+    const statusBar = bars.top / page_.dpr;
+    const tabBarEnd = (shot.height - bars.bottom) / page_.dpr;
+    const header = await page.locator('header > div').first().boundingBox();
+    expect(header, 'the header').not.toBeNull();
+    expect(header!.y, 'the header below the status bar').toBeGreaterThanOrEqual(statusBar - 0.5);
+    const labels = await page.locator('.tab-label').evaluateAll((all) =>
+      all.filter((l) => l.getClientRects().length).map((l) => l.getBoundingClientRect().bottom),
+    );
+    expect(labels.length, 'the tab bar').toBe(6);
+    for (const bottom of labels) expect(bottom, 'a tab above the navigation bar').toBeLessThanOrEqual(tabBarEnd + 0.5);
+
+    // The bars show the page behind them, and their icons have to stand out: dark ones on the
+    // light page, light ones on the dark page
+    for (const [bar, from, to] of [
+      ['status bar', 0, bars.top],
+      ['navigation bar', shot.height - bars.bottom, shot.height],
+    ] as const) {
+      const { darkest, median, brightest } = await extremes(device, from, to);
+      test.info().annotations.push({ type: bar, description: `luminance ${darkest.toFixed(2)} / ${median.toFixed(2)} / ${brightest.toFixed(2)}` });
+      // Android's dark icons are a grey (about 0.37 on the light page), its light ones white
+      if (theme === 'light') {
+        expect(median, `the light page behind the ${bar}`).toBeGreaterThan(0.6);
+        expect(median - darkest, `dark icons on the ${bar}`).toBeGreaterThan(0.4);
+      } else {
+        expect(median, `the dark page behind the ${bar}`).toBeLessThan(0.3);
+        expect(brightest - median, `light icons on the ${bar}`).toBeGreaterThan(0.4);
+      }
+    }
+  });
+}
+
+test('the app starts in dark mode without a white frame', async ({ page, device }) => {
+  // The phone's dark mode, a fresh start: before the page paints, the window's background shows
+  await shell(device, 'cmd uimode night yes');
+  try {
+    await shell(device, `am force-stop ${PKG}`);
+    // The test's page goes with it
+    await page.waitForEvent('close', { timeout: 10_000 }).catch(() => {});
+    await expect.poll(() => shell(device, 'cmd uimode night')).toMatch(/Night mode: yes/);
+    // From the app's first frame on (-W waits for it), not the screen before
+    await shell(device, 'input keyevent KEYCODE_HOME');
+    await shell(device, `am start -W -n ${ACTIVITY}`);
+    // A row in the middle and one at a quarter of the screen, their middle brightness: the text
+    // on them doesn't count
+    const row = (shot: Awaited<ReturnType<typeof screen>>, y: number) => {
+      const values = Array.from({ length: shot.width >> 2 }, (_, i) => shot.luminance(i * 4, y)).sort((a, b) => a - b);
+      return values[values.length >> 1];
+    };
+    const samples: number[] = [];
+    const end = Date.now() + 6000;
+    while (Date.now() < end) {
+      const shot = await screen(device);
+      samples.push(row(shot, shot.height >> 1), row(shot, shot.height >> 2));
+    }
+    test.info().annotations.push({ type: 'luminance', description: samples.map((l) => l.toFixed(2)).join(' ') });
+    expect(samples.length).toBeGreaterThan(4);
+    expect(Math.max(...samples), 'the brightest moment').toBeLessThan(0.5);
+  } finally {
+    await shell(device, 'cmd uimode night no');
+    await shell(device, `am force-stop ${PKG}`);
+  }
+});
+
+/** The activities the device started since `logcat -c`. */
+const started = async (device: AndroidDevice) =>
+  (await shell(device, 'logcat -d -s ActivityTaskManager:I')).split('\n').filter((l) => /START u\d+ \{/.test(l));
+
+/** Brings the app back in front of what it opened. */
+async function backToTheApp(device: AndroidDevice) {
+  await shell(device, `am start -n ${ACTIVITY}`);
+  await expect.poll(() => inFront(device), { message: 'the app in front' }).toBe(true);
+}
+
+test('links out of the app open outside it', async ({ page, device }) => {
+  await visit(page, '/rules');
+  const link = page.locator('footer a[href="https://github.com/NoelHuibers/Hashiwokakero"]');
+  await link.scrollIntoViewIfNeeded();
+  await shell(device, 'logcat -c');
+  await link.click();
+  // Android opens the browser (offline here), the app's WebView stays on its page
+  await expect.poll(() => started(device), { message: 'a VIEW intent for the link' }).toContainEqual(
+    expect.stringMatching(/act=android\.intent\.action\.VIEW dat=https:\/\/github\.com/),
+  );
+  expect(page.url()).toBe(`${ORIGIN}/rules`);
+  await backToTheApp(device);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');
+
+  // A page of another site the WebView would go to by itself: refused, and opened outside too.
+  // Last: Playwright keeps waiting for the navigation the app refused
+  await shell(device, 'logcat -c');
+  await page.evaluate(() => {
+    location.href = 'https://example.com/';
+  });
+  await expect.poll(() => started(device), { message: 'a VIEW intent for the address' }).toContainEqual(
+    expect.stringMatching(/act=android\.intent\.action\.VIEW dat=https:\/\/example\.com/),
+  );
+  await page.waitForTimeout(1000);
+  expect(page.url()).toBe(`${ORIGIN}/rules`);
+  await backToTheApp(device);
+});
+
+test("sharing opens Android's share sheet, copying works", async ({ page, device }) => {
+  // A practice puzzle solved: its win screen has the share bar
+  await page.evaluate(
+    ([key, game]) => {
+      localStorage.setItem(key, game);
+      localStorage.setItem('hashi.practice.solver.open', 'true');
+    },
+    [
+      PRACTICE_KEY,
+      JSON.stringify({ puzzle: LADDER, bridges: LADDER_SOLUTION, solution: LADDER_SOLUTION, status: 'Won', moves: 9, hints: 0, unique: null, source: 'Custom', elapsed: 42 }),
+    ],
+  );
+  await visit(page, '/practice');
+  await expect(page.getByRole('heading', { name: /Well done!/ })).toBeVisible();
+
+  // The clipboard of the WebView itself, on a tap
+  await page.getByRole('button', { name: 'Copy', exact: true }).click();
+  await expect(toasts(page).filter({ hasText: 'Result copied to the clipboard.' })).toBeVisible();
+
+  const chooser = async (what: string) => {
+    await expect.poll(() => started(device), { message: `the share sheet for ${what}` }).toContainEqual(
+      expect.stringMatching(/act=android\.intent\.action\.CHOOSER/),
+    );
+    await expect.poll(() => inFront(device), { message: 'the share sheet in front' }).toBe(false);
+    await shell(device, 'input keyevent KEYCODE_BACK');
+    await expect.poll(() => inFront(device), { message: 'the app in front again' }).toBe(true);
+  };
+  await shell(device, 'logcat -c');
+  await page.getByRole('button', { name: 'Share result', exact: true }).click();
+  await chooser('the result');
+
+  // The CNF, which the website downloads, as a file to share
+  await page.getByRole('button', { name: 'Admire', exact: true }).click();
+  await shell(device, 'logcat -c');
+  await page.getByRole('button', { name: 'CNF ↓' }).click();
+  await chooser('the CNF');
+  const cnf = await shell(device, `run-as ${PKG} cat cache/share/hashi.cnf`);
+  expect(cnf).toMatch(/^p cnf \d+ \d+/m);
+  expect(page.url()).toBe(`${ORIGIN}/practice`);
 });

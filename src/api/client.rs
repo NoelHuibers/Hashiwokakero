@@ -18,8 +18,9 @@ use leptos::prelude::ServerFnError;
 use leptos::server_fn::Bytes;
 use leptos::server_fn::client::Client;
 use leptos::server_fn::client::browser::BrowserClient;
-use leptos::server_fn::error::FromServerFnError;
+use leptos::server_fn::error::{FromServerFnError, ServerFnErrorErr};
 use leptos::server_fn::request::browser::BrowserRequest;
+use leptos::server_fn::response::ClientRes;
 use leptos::server_fn::response::browser::BrowserResponse;
 
 use crate::model::{ApiError, is_outdated_error};
@@ -94,6 +95,13 @@ where
             sent.as_deref(),
             headers.get(SESSION_HEADER).and_then(|v| v.to_str().ok()),
         );
+        let status = <BrowserResponse as ClientRes<E>>::status(&res);
+        let content_type = headers.get("content-type").and_then(|v| v.to_str().ok());
+        if unavailable(status, content_type) {
+            return Err(E::from_server_fn_error(ServerFnErrorErr::Request(format!(
+                "server unavailable (HTTP {status})"
+            ))));
+        }
         Ok(res)
     }
 
@@ -114,6 +122,19 @@ where
     fn spawn(future: impl Future<Output = ()> + Send + 'static) {
         <BrowserClient as Client<E, InputStreamError, OutputStreamError>>::spawn(future);
     }
+}
+
+/// Whether an answer is a web page that doesn't come from the server's router: a proxy's error
+/// page (Fly's 502 or 503 while the server starts or is down), a captive portal's sign in. Such a
+/// call failed like one without a network, and is shown like one (`ServerFnError::Request`).
+///
+/// Only the server's 404 page, the answer to a server function it doesn't have, means the page
+/// runs an outdated version ([`is_outdated`]): telling the app to update for a server that is
+/// briefly down would be wrong.
+fn unavailable(status: u16, content_type: Option<&str>) -> bool {
+    status != 404
+        && content_type
+            .is_some_and(|t| t.trim_start().to_ascii_lowercase().starts_with("text/html"))
 }
 
 /// The build of the WASM this tab runs: the one named by the page it loaded, `None` for pages
@@ -182,5 +203,32 @@ mod tests {
         }
         // The website's build
         assert!(!needs_update(&refused));
+    }
+
+    /// Only the server's 404 page means an outdated page or app. Other web pages (a proxy's
+    /// error page while the server is down, a captive portal) are a call that didn't get
+    /// through, not a reason to update the app.
+    #[test]
+    fn only_a_404_page_asks_for_an_update() {
+        assert!(!unavailable(404, Some("text/html; charset=utf-8")));
+        for status in [200, 403, 429, 500, 502, 503, 504] {
+            assert!(unavailable(status, Some("text/html")), "{status}");
+            assert!(
+                unavailable(status, Some("Text/HTML; charset=UTF-8")),
+                "{status}"
+            );
+        }
+        // The server functions' own answers and errors
+        assert!(!unavailable(200, Some("application/json")));
+        assert!(!unavailable(500, None));
+        assert!(!unavailable(429, Some("text/plain; charset=utf-8")));
+        assert!(!unavailable(503, None));
+
+        // What the call then fails with: a network error, never an update or a reload
+        let down = ServerFnError::from_server_fn_error(ServerFnErrorErr::Request(
+            "server unavailable (HTTP 503)".into(),
+        ));
+        assert!(matches!(down, ServerFnError::Request(_)));
+        assert!(!update_needed(true, &down) && !is_outdated(&down));
     }
 }

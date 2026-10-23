@@ -1,12 +1,18 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "default",
-  "description": "The app's one window: Tauri's core defaults and the offline practice's commands, no plugins yet",
+  "description": "The app's one window: Tauri's core defaults, the offline practice's commands, links out of the app (https and mailto only) and the app's own plugin",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "allow-generate-puzzle",
     "allow-solve-puzzle",
-    "allow-puzzle-cnf"
+    "allow-puzzle-cnf",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://*" }, { "url": "mailto:*" }]
+    },
+    "hashi:allow-share",
+    "hashi:allow-system-bars"
   ]
 }

@@ -130,6 +130,9 @@ pub fn provide_state() {
     Effect::new(move |_| store(SOLVER_KEY, &settings.solver.get()));
     Effect::new(move |prev: Option<bool>| {
         let dark = settings.dark.get();
+        // The app's page draws behind the system bars, their icons follow its theme
+        #[cfg(feature = "csr")]
+        crate::api::native::system_bars(dark);
         if prev.is_some() {
             if let Some(el) = document().document_element() {
                 let _ = if dark {

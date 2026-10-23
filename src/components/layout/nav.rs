@@ -64,7 +64,7 @@ pub fn MobileNav() -> impl IntoView {
     let location = use_location();
     view! {
         <nav
-            class="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+            class="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left) backdrop-blur-md md:hidden"
             aria-label=move || t_string!(i18n, common.nav.main)
         >
             // Even columns, unless a name needs more room than its share: Indonesian's PERINGKAT

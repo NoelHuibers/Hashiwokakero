@@ -16,7 +16,7 @@ pub fn Toaster() -> impl IntoView {
         // Keep the live region mounted before messages arrive. Announce additions politely,
         // without moving focus or reading every earlier toast again when one disappears.
         <div
-            class="pointer-events-none fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] end-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2 md:bottom-4"
+            class="pointer-events-none fixed bottom-[calc(4.5rem+var(--safe-bottom))] end-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2 md:bottom-4"
             role="log"
             aria-live="polite"
             aria-relevant="additions text"
@@ -47,8 +47,8 @@ pub fn Toaster() -> impl IntoView {
                             </button>
                         }
                         .into_any(),
-                        // The store's page. TODO(step 10 of docs/mobile.md): the WebView opens
-                        // no new windows, open it with Tauri's opener plugin.
+                        // The store's page, which the app opens in the Play Store
+                        // (`api::native::open_links_outside`)
                         ToastAction::Update => view! {
                             <a class=ACTION href=update_url() target="_blank" rel="noopener">
                                 {t!(i18n, common.toast.update)}
