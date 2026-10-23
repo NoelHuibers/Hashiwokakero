@@ -10,7 +10,10 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.hashi_tauri"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
+        <!-- adjustResize: the window gets the soft keyboard's insets (edge to edge it no longer
+             shrinks for it), MainActivity ends the WebView above the keyboard -->
         <activity
+            android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:launchMode="singleTask"
             android:label="@string/main_activity_title"
@@ -20,6 +23,139 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- DEEP LINK PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
+            <intent-filter android:autoVerify="true" >
+                <action android:name="android.intent.action.VIEW" />
+                <!-- ChromeOS ARC++ uses a different action for deep links -->
+                <action android:name="org.chromium.arc.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="hashi.rs" />
+                <data android:path="/" />
+                <data android:path="/de" />
+                <data android:path="/fr" />
+                <data android:path="/it" />
+                <data android:path="/es" />
+                <data android:path="/pt" />
+                <data android:path="/nl" />
+                <data android:path="/pl" />
+                <data android:path="/tr" />
+                <data android:path="/ru" />
+                <data android:path="/uk" />
+                <data android:path="/ar" />
+                <data android:path="/hi" />
+                <data android:path="/id" />
+                <data android:path="/vi" />
+                <data android:path="/th" />
+                <data android:path="/ja" />
+                <data android:path="/ko" />
+                <data android:path="/zh" />
+                <data android:path="/zh-Hant" />
+                <data android:path="/practice" />
+                <data android:path="/de/practice" />
+                <data android:path="/fr/practice" />
+                <data android:path="/it/practice" />
+                <data android:path="/es/practice" />
+                <data android:path="/pt/practice" />
+                <data android:path="/nl/practice" />
+                <data android:path="/pl/practice" />
+                <data android:path="/tr/practice" />
+                <data android:path="/ru/practice" />
+                <data android:path="/uk/practice" />
+                <data android:path="/ar/practice" />
+                <data android:path="/hi/practice" />
+                <data android:path="/id/practice" />
+                <data android:path="/vi/practice" />
+                <data android:path="/th/practice" />
+                <data android:path="/ja/practice" />
+                <data android:path="/ko/practice" />
+                <data android:path="/zh/practice" />
+                <data android:path="/zh-Hant/practice" />
+                <data android:path="/groups" />
+                <data android:path="/de/groups" />
+                <data android:path="/fr/groups" />
+                <data android:path="/it/groups" />
+                <data android:path="/es/groups" />
+                <data android:path="/pt/groups" />
+                <data android:path="/nl/groups" />
+                <data android:path="/pl/groups" />
+                <data android:path="/tr/groups" />
+                <data android:path="/ru/groups" />
+                <data android:path="/uk/groups" />
+                <data android:path="/ar/groups" />
+                <data android:path="/hi/groups" />
+                <data android:path="/id/groups" />
+                <data android:path="/vi/groups" />
+                <data android:path="/th/groups" />
+                <data android:path="/ja/groups" />
+                <data android:path="/ko/groups" />
+                <data android:path="/zh/groups" />
+                <data android:path="/zh-Hant/groups" />
+                
+                <data android:pathPrefix="/g/" />
+                <data android:pathPrefix="/de/g/" />
+                <data android:pathPrefix="/fr/g/" />
+                <data android:pathPrefix="/it/g/" />
+                <data android:pathPrefix="/es/g/" />
+                <data android:pathPrefix="/pt/g/" />
+                <data android:pathPrefix="/nl/g/" />
+                <data android:pathPrefix="/pl/g/" />
+                <data android:pathPrefix="/tr/g/" />
+                <data android:pathPrefix="/ru/g/" />
+                <data android:pathPrefix="/uk/g/" />
+                <data android:pathPrefix="/ar/g/" />
+                <data android:pathPrefix="/hi/g/" />
+                <data android:pathPrefix="/id/g/" />
+                <data android:pathPrefix="/vi/g/" />
+                <data android:pathPrefix="/th/g/" />
+                <data android:pathPrefix="/ja/g/" />
+                <data android:pathPrefix="/ko/g/" />
+                <data android:pathPrefix="/zh/g/" />
+                <data android:pathPrefix="/zh-Hant/g/" />
+                <data android:pathPrefix="/groups/" />
+                <data android:pathPrefix="/de/groups/" />
+                <data android:pathPrefix="/fr/groups/" />
+                <data android:pathPrefix="/it/groups/" />
+                <data android:pathPrefix="/es/groups/" />
+                <data android:pathPrefix="/pt/groups/" />
+                <data android:pathPrefix="/nl/groups/" />
+                <data android:pathPrefix="/pl/groups/" />
+                <data android:pathPrefix="/tr/groups/" />
+                <data android:pathPrefix="/ru/groups/" />
+                <data android:pathPrefix="/uk/groups/" />
+                <data android:pathPrefix="/ar/groups/" />
+                <data android:pathPrefix="/hi/groups/" />
+                <data android:pathPrefix="/id/groups/" />
+                <data android:pathPrefix="/vi/groups/" />
+                <data android:pathPrefix="/th/groups/" />
+                <data android:pathPrefix="/ja/groups/" />
+                <data android:pathPrefix="/ko/groups/" />
+                <data android:pathPrefix="/zh/groups/" />
+                <data android:pathPrefix="/zh-Hant/groups/" />
+                <data android:pathPrefix="/player/" />
+                <data android:pathPrefix="/de/player/" />
+                <data android:pathPrefix="/fr/player/" />
+                <data android:pathPrefix="/it/player/" />
+                <data android:pathPrefix="/es/player/" />
+                <data android:pathPrefix="/pt/player/" />
+                <data android:pathPrefix="/nl/player/" />
+                <data android:pathPrefix="/pl/player/" />
+                <data android:pathPrefix="/tr/player/" />
+                <data android:pathPrefix="/ru/player/" />
+                <data android:pathPrefix="/uk/player/" />
+                <data android:pathPrefix="/ar/player/" />
+                <data android:pathPrefix="/hi/player/" />
+                <data android:pathPrefix="/id/player/" />
+                <data android:pathPrefix="/vi/player/" />
+                <data android:pathPrefix="/th/player/" />
+                <data android:pathPrefix="/ja/player/" />
+                <data android:pathPrefix="/ko/player/" />
+                <data android:pathPrefix="/zh/player/" />
+                <data android:pathPrefix="/zh-Hant/player/" />
+                
+            </intent-filter>
+            <!-- DEEP LINK PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
         </activity>
 
         <provider

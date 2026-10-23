@@ -67,6 +67,46 @@ fn server_link_in(app: bool, path: &str) -> String {
     }
 }
 
+/// The pages of `https://hashi.rs` whose links open in the Android app (App Links).
+///
+/// Besides [`APP_LINK_PREFIXES`]: the daily (`/`, where a daily result's share text points),
+/// practice (`/practice`, the practice's), and the list of groups. In every language,
+/// `/ja/practice` too. The links people send each other, to pages that show what only the
+/// player's own session knows. Not the rest: the rules and the legal pages, the admin's, the Dojo
+/// with its uploads, and nothing the server answers itself (`/api`, `/og`, the downloads), which
+/// the app doesn't have. `plugins.deep-link.mobile` in `app/src-tauri/tauri.conf.json` lists them
+/// for Android (a test compares the two).
+pub const APP_LINK_PATHS: &[&str] = &["/", "/practice", "/groups"];
+
+/// The paths whose pages below them open in the app, like [`APP_LINK_PATHS`]: invites to a group
+/// (`/g/<code>`), the pages of a group (its puzzles, its replays) and players' pages.
+pub const APP_LINK_PREFIXES: &[&str] = &["/g/", "/groups/", "/player/"];
+
+/// The app's page for the App Link `url`, with its query and fragment.
+///
+/// The page the app shows when Android opens it with the link. `None` for every other URL:
+/// another site, another page, a path with anything but letters, digits, `-` and `_` between its
+/// slashes (no `..`, which the browser would resolve to another page).
+pub fn app_link(url: &str) -> Option<String> {
+    let rest = url.strip_prefix(SITE_URL)?;
+    let end = rest.find(['?', '#']).unwrap_or(rest.len());
+    let (path, after) = rest.split_at(end);
+    let path = if path.is_empty() { "/" } else { path };
+    let plain = path.starts_with('/')
+        && path
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"/-_".contains(&b));
+    if !plain {
+        return None;
+    }
+    let page = crate::lang::unlocalized(path);
+    let covered = APP_LINK_PATHS.contains(&page.as_str())
+        || APP_LINK_PREFIXES
+            .iter()
+            .any(|prefix| page.starts_with(prefix));
+    covered.then(|| format!("{path}{after}"))
+}
+
 /// The preview image (`og:image`) of the pages in a language, drawn by `server::og`.
 pub fn og_image(locale: Locale) -> String {
     format!("{SITE_URL}/og/{}.png", locale.as_str())
@@ -382,6 +422,118 @@ mod tests {
         }
         // On the website, its own pages stay
         assert!(!opens_outside("https://hashi.rs/rules", SITE_URL));
+    }
+
+    /// The links people share open their page in the app, in their language; other pages of the
+    /// site and other sites don't.
+    #[test]
+    fn app_links_are_the_shared_pages() {
+        for (url, page) in [
+            ("https://hashi.rs/g/k7m2xq_9", "/g/k7m2xq_9"),
+            ("https://hashi.rs/ja/g/k7m2xq_9", "/ja/g/k7m2xq_9"),
+            ("https://hashi.rs/zh-Hant/g/abc", "/zh-Hant/g/abc"),
+            // A daily's result, in English and in German
+            ("https://hashi.rs/", "/"),
+            ("https://hashi.rs", "/"),
+            ("https://hashi.rs/de", "/de"),
+            ("https://hashi.rs/practice", "/practice"),
+            ("https://hashi.rs/ko/practice", "/ko/practice"),
+            ("https://hashi.rs/groups", "/groups"),
+            ("https://hashi.rs/groups/12", "/groups/12"),
+            (
+                "https://hashi.rs/fr/groups/12/replay/20400",
+                "/fr/groups/12/replay/20400",
+            ),
+            (
+                "https://hashi.rs/groups/12/puzzles/3",
+                "/groups/12/puzzles/3",
+            ),
+            ("https://hashi.rs/player/42", "/player/42"),
+            (
+                "https://hashi.rs/player/42?from=ranks#record",
+                "/player/42?from=ranks#record",
+            ),
+            ("https://hashi.rs?x=1", "/?x=1"),
+        ] {
+            assert_eq!(app_link(url).as_deref(), Some(page), "{url}");
+        }
+        for url in [
+            "https://hashi.rs/admin",
+            "https://hashi.rs/ja/admin",
+            "https://hashi.rs/dojo",
+            "https://hashi.rs/dojo/seasons/3/set.tar.gz",
+            "https://hashi.rs/dojo/board.json",
+            "https://hashi.rs/api/daily_today",
+            "https://hashi.rs/og/en.png",
+            "https://hashi.rs/rules",
+            "https://hashi.rs/de/rules",
+            "https://hashi.rs/kontakt",
+            "https://hashi.rs/sitemap.xml",
+            "https://hashi.rs/.well-known/assetlinks.json",
+            "https://hashi.rs/replay/20400",
+            // A language the site doesn't have, English spelled out
+            "https://hashi.rs/xx/g/abc",
+            "https://hashi.rs/en/g/abc",
+            // The browser would make other pages of these
+            "https://hashi.rs/g/../admin",
+            "https://hashi.rs/g/%2e%2e/admin",
+            "https://hashi.rs/g/..%2Fadmin",
+            "https://hashi.rs/g/x\\..\\..\\admin",
+            "https://hashi.rs//admin.example/g/x",
+            "https://hashi.rs/practice/",
+            "https://hashi.rs/gx",
+            // Other sites, other schemes
+            "https://hashi.rs.example/g/abc",
+            "https://hashi.rs:8443/g/abc",
+            "https://hashi.rs@example.com/g/abc",
+            "http://hashi.rs/g/abc",
+            "https://www.hashi.rs/g/abc",
+            "https://tauri.localhost/g/abc",
+            "hashi://g/abc",
+            "",
+        ] {
+            assert_eq!(app_link(url), None, "{url}");
+        }
+    }
+
+    /// Android's intent filter (`plugins.deep-link.mobile` of the app's tauri.conf.json, which
+    /// tauri-plugin-deep-link writes into the manifest) lists the same pages as [`app_link`], in
+    /// every language.
+    #[test]
+    fn the_app_claims_the_app_links() {
+        let conf: serde_json::Value =
+            serde_json::from_str(include_str!("../app/src-tauri/tauri.conf.json")).unwrap();
+        let every_language = |paths: &[&str]| -> Vec<String> {
+            paths
+                .iter()
+                .flat_map(|path| {
+                    Locale::get_all()
+                        .iter()
+                        .map(|locale| localized(*locale, path))
+                })
+                .collect()
+        };
+        let expected = json!([{
+            "scheme": ["https"],
+            "host": "hashi.rs",
+            "appLink": true,
+            "path": every_language(APP_LINK_PATHS),
+            "pathPrefix": every_language(APP_LINK_PREFIXES),
+        }]);
+        assert_eq!(
+            conf["plugins"]["deep-link"]["mobile"],
+            expected,
+            "plugins.deep-link.mobile in app/src-tauri/tauri.conf.json should be\n{}",
+            serde_json::to_string_pretty(&expected).unwrap()
+        );
+        // Each of them is an App Link
+        for path in every_language(APP_LINK_PATHS) {
+            assert_eq!(app_link(&format!("{SITE_URL}{path}")), Some(path.clone()));
+        }
+        for prefix in every_language(APP_LINK_PREFIXES) {
+            let path = format!("{prefix}x1");
+            assert_eq!(app_link(&format!("{SITE_URL}{path}")), Some(path.clone()));
+        }
     }
 
     #[test]

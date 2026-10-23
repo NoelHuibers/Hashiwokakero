@@ -95,6 +95,21 @@ export async function systemBars(device: AndroidDevice): Promise<Bars> {
   return { top, bottom, source };
 }
 
+/**
+ * The top of the soft keyboard in screen pixels, while it is shown: its frame in `dumpsys window`
+ * (`InsetsSource … type=ime frame=[left,top][right,bottom] visible=true`). `null` without one.
+ */
+export async function keyboardTop(device: AndroidDevice): Promise<number | null> {
+  const dump = await shell(device, 'dumpsys window');
+  const tops = dump
+    .split('\n')
+    .filter((l) => /type=ime\b/.test(l) && /visible=true/.test(l))
+    .map((l) => l.match(/frame=\[-?\d+,(-?\d+)\]\[-?\d+,(-?\d+)\]/))
+    .filter((m): m is RegExpMatchArray => !!m && Number(m[2]) > Number(m[1]))
+    .map((m) => Number(m[1]));
+  return tops.length ? Math.min(...tops) : null;
+}
+
 /** Whether the device reaches the internet: an address, or a name to look up. */
 async function online(device: AndroidDevice) {
   for (const host of ['1.1.1.1', SERVER]) {

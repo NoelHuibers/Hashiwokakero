@@ -9,6 +9,11 @@
 //! The `WebView` runs on its own origin (`https://tauri.localhost` on Android, `tauri://localhost`
 //! on iOS), so its calls are cross-origin: [`AppSettings::cors`] allows them, for those origins
 //! only (`HASHI_APP_ORIGINS`). No credentials: the app sends its session as a bearer token.
+//!
+//! Links to some pages of `https://hashi.rs` open in the Android app instead of the browser (App
+//! Links, `seo::app_link`). Android believes the app only when the site names the app's
+//! certificates: [`AppSettings::asset_links`], served at `/.well-known/assetlinks.json`
+//! (`HASHI_ANDROID_CERT_SHA256`).
 
 use std::str::FromStr;
 use std::time::Duration;
@@ -29,6 +34,10 @@ use crate::model::ApiError;
 /// The app's origins when `HASHI_APP_ORIGINS` isn't set: Android's `WebView` (with
 /// `useHttpsScheme`) and iOS's.
 const DEFAULT_ORIGINS: &str = "https://tauri.localhost,tauri://localhost";
+
+/// The Android app's application ID (`identifier` in app/src-tauri/tauri.conf.json). Debug
+/// builds (`rs.hashi.debug`) aren't in the asset links: their links are never verified.
+pub const ANDROID_PACKAGE: &str = "rs.hashi";
 
 /// A version of the app, `major.minor.patch`. Ordered as numbers, so 1.10.0 comes after 1.9.0.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -80,6 +89,9 @@ pub struct AppSettings {
     pub min_version: Option<Version>,
     /// `HASHI_APP_ORIGINS`: where the app's `WebView` calls from.
     pub origins: Vec<HeaderValue>,
+    /// `HASHI_ANDROID_CERT_SHA256`: the SHA-256 fingerprints of the certificates the Android app
+    /// is signed with, `AB:CD:…`. None: the site claims no app, `assetlinks.json` is a 404.
+    pub android_certs: Vec<String>,
 }
 
 impl AppSettings {
@@ -104,10 +116,53 @@ impl AppSettings {
             .map(|origin| parse_origin(origin.trim()))
             .collect::<Result<_, _>>()
             .map_err(|e| format!("HASHI_APP_ORIGINS: {e}"))?;
+        let android_certs = match var("HASHI_ANDROID_CERT_SHA256")
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+        {
+            None => Vec::new(),
+            Some(certs) => certs
+                .split(',')
+                .map(|cert| {
+                    let cert = cert.trim();
+                    fingerprint(cert).then(|| cert.to_string()).ok_or_else(|| {
+                        format!(
+                            "HASHI_ANDROID_CERT_SHA256: {cert:?} is no SHA-256 fingerprint like \
+                             AB:CD:…, 32 bytes in uppercase hex"
+                        )
+                    })
+                })
+                .collect::<Result<_, _>>()?,
+        };
         Ok(Self {
             min_version,
             origins,
+            android_certs,
         })
+    }
+
+    /// The Digital Asset Links of the site (`/.well-known/assetlinks.json`): the Android app
+    /// signed with one of `android_certs` may open the site's links. Android fetches it when the
+    /// app is installed, and opens links of `https://hashi.rs` in the app only if the
+    /// certificate of the installed app is listed (`autoVerify` in the app's manifest). `None`
+    /// without certificates.
+    ///
+    /// One certificate is the upload key's, which signs the APK of the GitHub release, the
+    /// other Google's, which signs the app installed from Play (docs/deployment.md).
+    pub fn asset_links(&self) -> Option<String> {
+        if self.android_certs.is_empty() {
+            return None;
+        }
+        let links = serde_json::json!([{
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": ANDROID_PACKAGE,
+                "sha256_cert_fingerprints": self.android_certs,
+            },
+        }]);
+        Some(links.to_string())
     }
 
     /// Cross-origin calls from the app: its origins, and in development (`dev`) any port of
@@ -168,6 +223,18 @@ fn parse_origin(origin: &str) -> Result<HeaderValue, String> {
         ));
     }
     HeaderValue::from_str(origin).map_err(|e| e.to_string())
+}
+
+/// A certificate's SHA-256 fingerprint as keytool and the Play Console show it: 32 bytes in
+/// uppercase hex, separated by colons, the form `assetlinks.json` takes.
+fn fingerprint(cert: &str) -> bool {
+    cert.len() == 32 * 3 - 1
+        && cert.split(':').all(|byte| {
+            byte.len() == 2
+                && byte
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'A'..=b'F').contains(&b))
+        })
 }
 
 /// `http://localhost` or `http://127.0.0.1`, with any port or none.
@@ -276,6 +343,8 @@ mod tests {
     fn settings_have_defaults() {
         let defaults = settings(&[]).unwrap();
         assert_eq!(defaults.min_version, None);
+        assert_eq!(defaults.android_certs, Vec::<String>::new());
+        assert_eq!(defaults.asset_links(), None);
         assert_eq!(
             defaults.origins,
             ["https://tauri.localhost", "tauri://localhost"]
@@ -321,6 +390,63 @@ mod tests {
             let error = settings(&[("HASHI_APP_ORIGINS", origins)]).unwrap_err();
             assert!(error.contains("HASHI_APP_ORIGINS"), "{origins:?}: {error}");
         }
+        for certs in [
+            // Lowercase, as some tools print it
+            UPLOAD_CERT.to_lowercase(),
+            // Without colons
+            UPLOAD_CERT.replace(':', ""),
+            // SHA-1, the other fingerprint the Play Console shows
+            "5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25".into(),
+            format!("{UPLOAD_CERT}:00"),
+            UPLOAD_CERT[3..].into(),
+            UPLOAD_CERT.replacen("BB", "BG", 1),
+            UPLOAD_CERT.replacen("BB:", "BB::", 1),
+            format!("{UPLOAD_CERT},"),
+            format!("{UPLOAD_CERT};{PLAY_CERT}"),
+            "SHA256: BB:86".into(),
+        ] {
+            let error = settings(&[("HASHI_ANDROID_CERT_SHA256", &certs)]).unwrap_err();
+            assert!(
+                error.contains("HASHI_ANDROID_CERT_SHA256"),
+                "{certs:?}: {error}"
+            );
+        }
+    }
+
+    /// The upload key's certificate (fly.toml) and another one, as Play's would be.
+    const UPLOAD_CERT: &str = "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B";
+    const PLAY_CERT: &str = "0F:1E:2D:3C:4B:5A:69:78:87:96:A5:B4:C3:D2:E1:F0:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF";
+
+    /// One certificate or several, the upload key's and Google's: the app of either may open
+    /// the site's links.
+    #[test]
+    fn asset_links_name_the_app_and_its_certificates() {
+        let one = settings(&[("HASHI_ANDROID_CERT_SHA256", UPLOAD_CERT)]).unwrap();
+        assert_eq!(one.android_certs, [UPLOAD_CERT]);
+        let links: serde_json::Value = serde_json::from_str(&one.asset_links().unwrap()).unwrap();
+        assert_eq!(
+            links,
+            serde_json::json!([{
+                "relation": ["delegate_permission/common.handle_all_urls"],
+                "target": {
+                    "namespace": "android_app",
+                    "package_name": "rs.hashi",
+                    "sha256_cert_fingerprints": [UPLOAD_CERT],
+                },
+            }])
+        );
+        let two = settings(&[(
+            "HASHI_ANDROID_CERT_SHA256",
+            &format!(" {UPLOAD_CERT} , {PLAY_CERT}\n"),
+        )])
+        .unwrap();
+        assert_eq!(two.android_certs, [UPLOAD_CERT, PLAY_CERT]);
+        assert_eq!(
+            settings(&[("HASHI_ANDROID_CERT_SHA256", " ")])
+                .unwrap()
+                .asset_links(),
+            None
+        );
     }
 
     #[test]

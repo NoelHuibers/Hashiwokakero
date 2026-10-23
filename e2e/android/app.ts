@@ -11,7 +11,10 @@ export { expect };
 /** The browser's notes about requests that couldn't go out: expected without a network. */
 const NETWORK_ERROR = /ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED|ERR_ADDRESS_UNREACHABLE|ERR_NETWORK_CHANGED/;
 
-export const test = base.extend<{ problems: string[]; consoleLog: void }, { device: AndroidDevice }>({
+export const test = base.extend<{ start: string; problems: string[]; consoleLog: void }, { device: AndroidDevice }>({
+  /** What `am start` starts the app with: its launcher's activity, or an intent (an App Link). */
+  start: [`-n ${ACTIVITY}`, { option: true }],
+
   device: [
     async ({}, use) => {
       const device = await connect();
@@ -21,8 +24,8 @@ export const test = base.extend<{ problems: string[]; consoleLog: void }, { devi
     { scope: 'worker' },
   ],
 
-  page: async ({ device }, use, testInfo) => {
-    const page = await launch(device, testInfo);
+  page: async ({ device, start }, use, testInfo) => {
+    const page = await launch(device, start, testInfo);
     await use(page);
     if (testInfo.status !== testInfo.expectedStatus) {
       await testInfo.attach('screen', { body: await device.screenshot(), contentType: 'image/png' });
@@ -69,19 +72,20 @@ export const test = base.extend<{ problems: string[]; consoleLog: void }, { devi
 });
 
 /**
- * Starts the app with its data cleared and waits for its WebView to hydrate. Playwright finds
+ * Starts the app with its data cleared (with `am start <start>`) and waits for its WebView to
+ * hydrate. Playwright finds
  * the WebView by the debugging socket that debug builds open (`webview_devtools_remote_<pid>`).
  * Attaching to it now and then never ends on the emulator: then the app starts again, up to
  * three times, each one noted for the job summary.
  */
-async function launch(device: AndroidDevice, testInfo: TestInfo): Promise<Page> {
+async function launch(device: AndroidDevice, start: string, testInfo: TestInfo): Promise<Page> {
   return test.step('start the app', async () => {
     for (let attempt = 1; ; attempt++) {
       // Also stops the app; then its old WebView goes away
       expect(await shell(device, `pm clear ${PKG}`)).toBe('Success');
       await expect.poll(() => device.webViews().some((w) => w.pkg() === PKG), { message: 'the old WebView is gone' }).toBe(false);
       const started = Date.now();
-      expect(await shell(device, `am start -W -n ${ACTIVITY}`), 'the activity started').toMatch(/Status: ok/);
+      expect(await shell(device, `am start -W ${start}`), 'the activity started').toMatch(/Status: ok/);
       const webView = await device.webView({ pkg: PKG }, { timeout: 60_000 });
       const attached = webView.page();
       const page = await within(20_000, 'attaching to the WebView', attached).catch((e: Error) => {
@@ -91,6 +95,7 @@ async function launch(device: AndroidDevice, testInfo: TestInfo): Promise<Page> 
         return null;
       });
       if (!page) continue;
+      await closeSystemDialogs(device);
       // Only the mark: the requests the page sent before Playwright was attached never end for it
       await expect(page.locator('html')).toHaveAttribute('data-hydrated', '', { timeout: 60_000 });
       testInfo.annotations.push({ type: 'launch', description: `${Date.now() - started} ms` });
@@ -143,4 +148,28 @@ export async function hydrated(page: Page) {
 export async function inFront(device: AndroidDevice) {
   const activities = await shell(device, 'dumpsys activity activities');
   return (activities.match(/(?:mResumedActivity|topResumedActivity)[^\n]*/g) ?? []).some((l) => l.includes(PKG));
+}
+
+/** The activities the device started since `logcat -c`. */
+export const started = async (device: AndroidDevice) =>
+  (await shell(device, 'logcat -d -s ActivityTaskManager:I')).split('\n').filter((l) => /START u\d+ \{/.test(l));
+
+/** The window that gets the keys (`mCurrentFocus`): `<package>/<activity>`, or a dialog's title. */
+export async function focused(device: AndroidDevice) {
+  return (await shell(device, 'dumpsys window')).match(/mCurrentFocus=Window\{\S+ u\d+ ([^}]*)\}/)?.[1] ?? '';
+}
+
+/**
+ * Closes a system dialog in front of the app, noted for the job summary. Android shows one when
+ * another app stops answering (a busy emulator's launcher did) or crashes; it dims the screen and
+ * takes the back button. The global setup turns them off (`hide_error_dialogs`): this is for the
+ * one that comes anyway, before what a dialog would spoil.
+ */
+export async function closeSystemDialogs(device: AndroidDevice) {
+  const focus = () => focused(device);
+  const dialog = await focus();
+  if (!/^Application (Not Responding|Error):/.test(dialog)) return;
+  test.info().annotations.push({ type: 'system dialog', description: dialog });
+  await shell(device, 'am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS');
+  await expect.poll(focus, { message: 'the system dialog closed' }).not.toBe(dialog);
 }

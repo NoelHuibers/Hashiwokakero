@@ -13,9 +13,12 @@
 //!   (Tauri's opener plugin), sharing goes through the system's share sheet, also for files the
 //!   website downloads, and the system bars' icons follow the page's theme (the app's plugin,
 //!   `HashiPlugin.kt` in `gen/android`). The capabilities in `capabilities/default.json` allow
-//!   exactly these.
+//!   exactly these;
+//! - the App Links the app is opened with (`tauri-plugin-deep-link`): their pages are the app's
+//!   own, the router shows them (see `follow_app_links`).
 
 use leptos::prelude::{ServerFnError, document, window};
+use leptos_router::NavigateOptions;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use wasm_bindgen::{JsCast, JsValue};
@@ -158,4 +161,121 @@ pub(crate) fn open_links_outside() {
     let _ = document().add_event_listener_with_callback("click", on_click.as_ref().unchecked_ref());
     // As long as the page
     on_click.forget();
+}
+
+/// Where the page notes the last App Link it showed, for the page loaded anew (a reload): the
+/// plugin still has the one the app started with, which it shouldn't show again. The session's
+/// storage lasts as long as the `WebView`: the next start of the app begins without it.
+const APP_LINK_KEY: &str = "hashi.app-link";
+
+/// Shows the pages of the App Links the app is opened with (`seo::app_link`, the intent filter
+/// of `plugins.deep-link` in `tauri.conf.json`): the one it started with, instead of the page it
+/// started on, and those that bring it back to the front later, on top of the page it was on.
+/// With the router: the app's page stays, only another of its pages shows.
+///
+/// Android hands the links to tauri-plugin-deep-link, the page asks it for the first one
+/// (`get_current`) and hears of the next ones through Tauri's events (`deep-link://new-url`,
+/// what the plugin's `onOpenUrl` listens to). Links to other pages of the site, which the
+/// plugin doesn't pass on anyway, change nothing.
+pub(crate) fn follow_app_links(navigate: impl Fn(&str, NavigateOptions) + Clone + 'static) {
+    use wasm_bindgen::closure::Closure;
+    let Some((internals, invoke)) = invoke() else {
+        return;
+    };
+    let first = invoke.call1(&internals, &"plugin:deep-link|get_current".into());
+    let start = navigate.clone();
+    leptos::task::spawn_local(async move {
+        let urls = match first {
+            Ok(promise) => {
+                wasm_bindgen_futures::JsFuture::from(js_sys::Promise::resolve(&promise)).await
+            }
+            Err(e) => Err(e),
+        };
+        match urls {
+            Ok(urls) => {
+                if let Some(url) = first_url(&urls) {
+                    show_app_link(&url, true, &start);
+                }
+            }
+            Err(e) => leptos::logging::warn!("get_current failed: {}", failed(&e)),
+        }
+    });
+
+    // Tauri's `listen`: the handler is a callback of the page that Tauri calls with each event
+    let Some(transform) = js_sys::Reflect::get(&internals, &"transformCallback".into())
+        .ok()
+        .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
+    else {
+        return;
+    };
+    let on_event = Closure::<dyn Fn(JsValue)>::new(move |event: JsValue| {
+        let urls = js_sys::Reflect::get(&event, &"payload".into()).unwrap_or(JsValue::NULL);
+        if let Some(url) = first_url(&urls) {
+            show_app_link(&url, false, &navigate);
+        }
+    });
+    let Ok(handler) = transform.call1(&internals, on_event.as_ref()) else {
+        return;
+    };
+    // As long as the page
+    on_event.forget();
+    let args = js_sys::Object::new();
+    let target = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&target, &"kind".into(), &"Any".into());
+    let _ = js_sys::Reflect::set(&args, &"event".into(), &"deep-link://new-url".into());
+    let _ = js_sys::Reflect::set(&args, &"target".into(), &target);
+    let _ = js_sys::Reflect::set(&args, &"handler".into(), &handler);
+    let listening = invoke.call2(&internals, &"plugin:event|listen".into(), &args);
+    leptos::task::spawn_local(async move {
+        let listening = match listening {
+            Ok(promise) => {
+                wasm_bindgen_futures::JsFuture::from(js_sys::Promise::resolve(&promise)).await
+            }
+            Err(e) => Err(e),
+        };
+        if let Err(e) = listening {
+            leptos::logging::warn!("listening for App Links failed: {}", failed(&e));
+        }
+    });
+}
+
+/// The first URL of the plugin's list (`get_current`, an event's payload), if there is one.
+fn first_url(urls: &JsValue) -> Option<String> {
+    js_sys::Array::is_array(urls)
+        .then(|| js_sys::Array::from(urls).get(0).as_string())
+        .flatten()
+}
+
+/// Shows the page of the App Link `url`: the app's page replaced by it at the `start`, a new
+/// page in the history (which the back button leaves) later. Not when the app shows that page
+/// already, nor at the start of a page loaded anew that showed it (see [`APP_LINK_KEY`]).
+fn show_app_link(url: &str, start: bool, navigate: &impl Fn(&str, NavigateOptions)) {
+    let Some(page) = crate::seo::app_link(url) else {
+        return;
+    };
+    let storage = window().session_storage().ok().flatten();
+    let shown = storage
+        .as_ref()
+        .and_then(|s| s.get_item(APP_LINK_KEY).ok().flatten());
+    if start && shown.as_deref() == Some(url) {
+        return;
+    }
+    if let Some(storage) = &storage {
+        let _ = storage.set_item(APP_LINK_KEY, url);
+    }
+    let location = window().location();
+    let here = [location.pathname(), location.search(), location.hash()]
+        .into_iter()
+        .map(Result::unwrap_or_default)
+        .collect::<String>();
+    if here == page {
+        return;
+    }
+    navigate(
+        &page,
+        NavigateOptions {
+            replace: start,
+            ..NavigateOptions::default()
+        },
+    );
 }

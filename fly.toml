@@ -8,10 +8,15 @@ primary_region = "ams"
 
 [build]
 
-# Accounts that can open the admin dashboard, comma separated: user ids (2 is Noel), or usernames
-# (who then can't change them, see server/admin.rs)
 [env]
+  # Accounts that can open the admin dashboard, comma separated: user ids (2 is Noel), or
+  # usernames (who then can't change them, see server/admin.rs)
   HASHI_ADMINS = "2"
+  # The SHA-256 fingerprints of the certificates the Android app is signed with, for its App Links
+  # (/.well-known/assetlinks.json, docs/deployment.md); public. The upload key's, which signs the
+  # APK of the GitHub release. Google's app signing certificate (Play Console, Test and release,
+  # App integrity) goes after it, comma separated, once the app is in Play.
+  HASHI_ANDROID_CERT_SHA256 = "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B"
 
 [http_service]
   internal_port = 8080
