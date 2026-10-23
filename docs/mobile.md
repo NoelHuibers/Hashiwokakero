@@ -114,7 +114,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 | |
 | 9 | Offline practice: native generator and solver through Tauri commands | 8 | ✓ #125 |
 | 10 | Android polish: back button, safe areas, share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 | |
-| 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | |
+| 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | ✓ #126 |
 | 12 | First release: closed test, store listing, production | 9, 10, 11 | |
 | 13 | iOS: same project, macOS runner, TestFlight and App Store | 12 | |
 
