@@ -89,6 +89,11 @@ jobs:
           cargo fmt --manifest-path dojo/starter/Cargo.toml --check
       - name: Packaged smoke harness regressions
         run: python3 -m unittest discover -s scripts/tests -p 'test_packaged_smoke.py' -v
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Script tests
+        run: node --test scripts/tests/*.test.mjs
       - name: Clippy (library crates, dojo worker, tests)
         run: cargo clippy --locked -p common -p sat_solver -p backend -p dojo -p house --all-targets --features dojo/worker -- -D warnings
       - name: Clippy (website, server)
