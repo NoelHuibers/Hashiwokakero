@@ -4,9 +4,9 @@
 
 use axum::Router;
 use axum::extract::{DefaultBodyLimit, Request};
-use axum::http::{HeaderValue, header};
+use axum::http::{HeaderValue, StatusCode, header};
 use axum::middleware::{self, Next};
-use axum::response::Response;
+use axum::response::{IntoResponse as _, Response};
 use axum::routing::{get, post};
 use leptos::config::Env;
 use leptos::prelude::{IntoView, LeptosOptions};
@@ -54,7 +54,29 @@ fn router_with_client_source<V: IntoView + 'static>(
     let min_version = apps.min_version;
     // The app's dev server runs on localhost, see `AppSettings::cors`
     let cors = apps.cors(leptos_options.env != Env::PROD);
+    let asset_links = apps.asset_links();
     Router::new()
+        // Which Android app may open the site's links (see `AppSettings::asset_links`). Google's
+        // verifier fetches it: no redirect, and admission only budgets expensive calls
+        .route(
+            "/.well-known/assetlinks.json",
+            get(move || {
+                let asset_links = asset_links.clone();
+                async move {
+                match asset_links {
+                    Some(json) => (
+                        [
+                            (header::CONTENT_TYPE, "application/json"),
+                            (header::CACHE_CONTROL, "public, max-age=3600"),
+                        ],
+                        json,
+                    )
+                        .into_response(),
+                    None => StatusCode::NOT_FOUND.into_response(),
+                }
+                }
+            }),
+        )
         .route(
             "/sitemap.xml",
             get(|| async {

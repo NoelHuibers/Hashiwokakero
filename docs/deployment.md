@@ -41,8 +41,19 @@ Store credentials in the deployment platform's secret store.
   stores have offered the update for a while: installed apps update late.
 - `HASHI_APP_ORIGINS`: optional, comma-separated origins of the app's WebView that
   may call the API. Defaults to `https://tauri.localhost,tauri://localhost`.
+- `HASHI_ANDROID_CERT_SHA256`: optional, comma-separated SHA-256 fingerprints
+  (uppercase hex with colons, as keytool and the Play Console show them) of the
+  certificates the Android app `rs.hashi` is signed with. The server lists them in
+  `/.well-known/assetlinks.json`, which Android fetches to verify the app's App
+  Links (invites and shared results open in the app, see
+  [app/README.md](../app/README.md#app-links)); unset, that file is a 404 and the
+  links open in the browser. Public, so it is in `fly.toml`: the upload key's
+  certificate, which signs the APK of the GitHub release. Once the app is in Google
+  Play, append Google's app signing certificate (Play Console, Test and release,
+  App integrity, "App signing key certificate", SHA-256), which signs the installs
+  from Play, and deploy.
 
-A malformed value of either stops the server at startup.
+A malformed value of any of them stops the server at startup.
 
 The worker also needs `APP_URL` pointing to the website. Its remaining settings
 are documented in [dojo/fly.toml](../dojo/fly.toml).

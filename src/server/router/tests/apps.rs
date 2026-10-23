@@ -404,3 +404,47 @@ async fn the_origins_can_be_configured() {
         );
     }
 }
+
+/// The upload key's certificate, as in fly.toml, and another one, as Google's would be.
+const UPLOAD_CERT: &str = "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B";
+const PLAY_CERT: &str = "0F:1E:2D:3C:4B:5A:69:78:87:96:A5:B4:C3:D2:E1:F0:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF";
+const ASSET_LINKS: &str = "/.well-known/assetlinks.json";
+
+/// Without certificates the site claims no app: Android then opens its links in the browser.
+#[tokio::test]
+async fn without_certificates_there_are_no_asset_links() {
+    let server = Server::start().await;
+    let res = server.browser().get(ASSET_LINKS).await;
+    assert_status(&res, StatusCode::NOT_FOUND);
+}
+
+/// With them, the JSON Google's verifier reads: the app `rs.hashi` signed with one of them may
+/// open the site's links. Answered right there (no redirect, which the verifier doesn't
+/// follow), as JSON, cached for an hour, and never refused for the network's budget.
+#[tokio::test]
+async fn the_asset_links_name_the_app_and_its_certificates() {
+    let certs = format!("{UPLOAD_CERT},{PLAY_CERT}");
+    let server = Server::with_apps(&[("HASHI_ANDROID_CERT_SHA256", &certs)], |o| {
+        o.env = Env::PROD;
+    })
+    .await;
+    let browser = server.browser();
+    for _ in 0..40 {
+        let res = browser.get(ASSET_LINKS).await;
+        assert_status(&res, StatusCode::OK);
+        assert_eq!(
+            header(res.headers(), CONTENT_TYPE),
+            Some("application/json")
+        );
+        assert_eq!(
+            header(res.headers(), CACHE_CONTROL),
+            Some("public, max-age=3600")
+        );
+        assert_eq!(
+            res.text().await.unwrap(),
+            format!(
+                r#"[{{"relation":["delegate_permission/common.handle_all_urls"],"target":{{"namespace":"android_app","package_name":"rs.hashi","sha256_cert_fingerprints":["{UPLOAD_CERT}","{PLAY_CERT}"]}}}}]"#
+            )
+        );
+    }
+}
