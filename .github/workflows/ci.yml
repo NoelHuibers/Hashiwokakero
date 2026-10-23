@@ -668,7 +668,7 @@ jobs:
             ~/.android/adb*
           key: avd-${{ env.EMULATOR_API }}-${{ env.EMULATOR_TARGET }}-x86_64-pixel_7-v1
       - name: Snapshot the emulator
-        if: steps.avd.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+        if: steps.avd.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ env.EMULATOR_API }}
@@ -681,7 +681,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "The emulator's snapshot is made"
-      - if: steps.avd.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+      - if: steps.avd.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: |
