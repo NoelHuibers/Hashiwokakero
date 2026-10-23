@@ -29,10 +29,11 @@ on:
         type: boolean
         default: false
 
-# One run per tag (or branch) at a time; a second one waits, it doesn't cancel an upload
+# One run per tag (or branch) at a time; a second one waits, it doesn't cancel an upload. A new
+# push to a pull request cancels its older dry run.
 concurrency:
   group: android-release-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -280,7 +281,8 @@ jobs:
       - name: Check
         run: |
           bundletool() { java -jar "$RUNNER_TEMP/bundletool.jar" "$@"; }
-          fingerprint() { keytool -printcert "$@" | sed -n 's/^\s*SHA256: //p'; }
+          # SHA-256 of a certificate as lowercase hex, as apksigner prints it
+          fingerprint() { keytool -printcert "$@" | sed -n 's/^\s*SHA256: //p' | tr -d : | tr '[:upper:]' '[:lower:]'; }
           aab="release/hashi-$VERSION.aab"
           apk="release/hashi-$VERSION-universal.apk"
           fail() { echo "::error::$1"; exit 1; }
@@ -290,8 +292,11 @@ jobs:
           jarsigner -verify "$aab" | grep -q '^jar verified' || fail "the App Bundle's signature doesn't verify"
           [ "$(fingerprint -jarfile "$aab")" = "$expected" ] || fail "the App Bundle isn't signed with the upload key"
           build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 | sort -V | tail -n 1)
-          "$build_tools/apksigner" verify "$apk" || fail "the universal APK's signature doesn't verify"
-          [ "$(fingerprint -jarfile "$apk")" = "$expected" ] || fail "the universal APK isn't signed with the upload key"
+          # Only APK signature schemes v2 and v3 (minSdk 24), keytool can't read those
+          signers=$("$build_tools/apksigner" verify --print-certs "$apk") || fail "the universal APK's signature doesn't verify"
+          [ "$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<< "$signers")" = "$expected" ] \
+            || fail "the universal APK isn't signed with the upload key"
+          [ "$(grep -c '^Signer #[0-9]* certificate SHA-256' <<< "$signers")" = 1 ] || fail "the universal APK has more than one signer"
 
           bundletool validate --bundle "$aab" > /dev/null
           manifest() { bundletool dump manifest --bundle "$aab" --xpath "$1"; }
