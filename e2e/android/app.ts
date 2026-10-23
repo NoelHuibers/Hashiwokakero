@@ -67,28 +67,39 @@ export const test = base.extend<{ problems: string[]; consoleLog: void }, { devi
 /**
  * Starts the app with its data cleared and waits for its WebView to hydrate. Playwright finds
  * the WebView by the debugging socket that debug builds open (`webview_devtools_remote_<pid>`).
+ * Attaching to it now and then never ends on the emulator: then the app starts again, up to
+ * three times, each one noted for the job summary.
  */
 async function launch(device: AndroidDevice, testInfo: TestInfo): Promise<Page> {
   return test.step('start the app', async () => {
-    // Also stops the app; then its old WebView goes away
-    expect(await shell(device, `pm clear ${PKG}`)).toBe('Success');
-    await expect.poll(() => device.webViews().some((w) => w.pkg() === PKG), { message: 'the old WebView is gone' }).toBe(false);
-    const started = Date.now();
-    expect(await shell(device, `am start -W -n ${ACTIVITY}`), 'the activity started').toMatch(/Status: ok/);
-    const webView = await device.webView({ pkg: PKG }, { timeout: 60_000 });
-    const page = await within(30_000, 'attaching to the WebView', webView.page());
-    // Only the mark: the requests the page sent before Playwright was attached never end for it
-    await expect(page.locator('html')).toHaveAttribute('data-hydrated', '', { timeout: 60_000 });
-    testInfo.annotations.push({ type: 'launch', description: `${Date.now() - started} ms` });
-    // From the next page on, the policy's violations are kept (read by `violations`)
-    await page.addInitScript(() => {
-      const seen: string[] = [];
-      Object.defineProperty(window, 'cspViolations', { value: seen });
-      document.addEventListener('securitypolicyviolation', (e) =>
-        seen.push(`${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || e.documentURI}:${e.lineNumber})`),
-      );
-    });
-    return page;
+    for (let attempt = 1; ; attempt++) {
+      // Also stops the app; then its old WebView goes away
+      expect(await shell(device, `pm clear ${PKG}`)).toBe('Success');
+      await expect.poll(() => device.webViews().some((w) => w.pkg() === PKG), { message: 'the old WebView is gone' }).toBe(false);
+      const started = Date.now();
+      expect(await shell(device, `am start -W -n ${ACTIVITY}`), 'the activity started').toMatch(/Status: ok/);
+      const webView = await device.webView({ pkg: PKG }, { timeout: 60_000 });
+      const attached = webView.page();
+      const page = await within(20_000, 'attaching to the WebView', attached).catch((e: Error) => {
+        attached.catch(() => {});
+        if (attempt === 3) throw e;
+        testInfo.annotations.push({ type: 'relaunch', description: e.message });
+        return null;
+      });
+      if (!page) continue;
+      // Only the mark: the requests the page sent before Playwright was attached never end for it
+      await expect(page.locator('html')).toHaveAttribute('data-hydrated', '', { timeout: 60_000 });
+      testInfo.annotations.push({ type: 'launch', description: `${Date.now() - started} ms` });
+      // From the next page on, the policy's violations are kept (read by `violations`)
+      await page.addInitScript(() => {
+        const seen: string[] = [];
+        Object.defineProperty(window, 'cspViolations', { value: seen });
+        document.addEventListener('securitypolicyviolation', (e) =>
+          seen.push(`${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || e.documentURI}:${e.lineNumber})`),
+        );
+      });
+      return page;
+    }
   });
 }
 
