@@ -11,7 +11,7 @@ import type { AndroidDevice, Page } from '@playwright/test';
 
 import { board, PRACTICE_KEY } from '../board';
 import { LADDER, LADDER_SOLUTION } from '../puzzles';
-import { closeSystemDialogs, expect, hydrated, inFront, started, test, violations, visit } from './app';
+import { closeSystemDialogs, expect, focused, hydrated, inFront, started, test, violations, visit } from './app';
 import { ACTIVITY, keyboardTop, ORIGIN, PKG, SCREENS, screen, shell, systemBars } from './device';
 
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
@@ -303,6 +303,9 @@ test("sharing opens Android's share sheet, copying works", async ({ page, device
       expect.stringMatching(/act=android\.intent\.action\.CHOOSER/),
     );
     await expect.poll(() => inFront(device), { message: 'the share sheet in front' }).toBe(false);
+    // Its window has the keys only a moment after it is in front: the back button would go to the
+    // app's WebView behind it until then
+    await expect.poll(() => focused(device), { message: 'the share sheet has the keys' }).toMatch(/intentresolver|Chooser/i);
     await shell(device, 'input keyevent KEYCODE_BACK');
     await expect.poll(() => inFront(device), { message: 'the app in front again' }).toBe(true);
   };

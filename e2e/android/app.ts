@@ -73,7 +73,7 @@ export const test = base.extend<{ start: string; problems: string[]; consoleLog:
 
 /**
  * Starts the app with its data cleared (with `am start <start>`) and waits for its WebView to
- * hydrate. The logcat begins with the start, for the activities started since. Playwright finds
+ * hydrate. Playwright finds
  * the WebView by the debugging socket that debug builds open (`webview_devtools_remote_<pid>`).
  * Attaching to it now and then never ends on the emulator: then the app starts again, up to
  * three times, each one noted for the job summary.
@@ -84,7 +84,6 @@ async function launch(device: AndroidDevice, start: string, testInfo: TestInfo):
       // Also stops the app; then its old WebView goes away
       expect(await shell(device, `pm clear ${PKG}`)).toBe('Success');
       await expect.poll(() => device.webViews().some((w) => w.pkg() === PKG), { message: 'the old WebView is gone' }).toBe(false);
-      await shell(device, 'logcat -c');
       const started = Date.now();
       expect(await shell(device, `am start -W ${start}`), 'the activity started').toMatch(/Status: ok/);
       const webView = await device.webView({ pkg: PKG }, { timeout: 60_000 });
@@ -151,9 +150,14 @@ export async function inFront(device: AndroidDevice) {
   return (activities.match(/(?:mResumedActivity|topResumedActivity)[^\n]*/g) ?? []).some((l) => l.includes(PKG));
 }
 
-/** The activities the device started since `logcat -c` (the app's start clears it). */
+/** The activities the device started since `logcat -c`. */
 export const started = async (device: AndroidDevice) =>
   (await shell(device, 'logcat -d -s ActivityTaskManager:I')).split('\n').filter((l) => /START u\d+ \{/.test(l));
+
+/** The window that gets the keys (`mCurrentFocus`): `<package>/<activity>`, or a dialog's title. */
+export async function focused(device: AndroidDevice) {
+  return (await shell(device, 'dumpsys window')).match(/mCurrentFocus=Window\{\S+ u\d+ ([^}]*)\}/)?.[1] ?? '';
+}
 
 /**
  * Closes a system dialog in front of the app, noted for the job summary. Android shows one when
@@ -162,7 +166,7 @@ export const started = async (device: AndroidDevice) =>
  * one that comes anyway, before what a dialog would spoil.
  */
 export async function closeSystemDialogs(device: AndroidDevice) {
-  const focus = async () => (await shell(device, 'dumpsys window')).match(/mCurrentFocus=Window\{\S+ u\d+ ([^}]*)\}/)?.[1] ?? '';
+  const focus = () => focused(device);
   const dialog = await focus();
   if (!/^Application (Not Responding|Error):/.test(dialog)) return;
   test.info().annotations.push({ type: 'system dialog', description: dialog });

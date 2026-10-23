@@ -28,11 +28,16 @@ function navigationsOut(page: Page) {
   return out;
 }
 
-/** Only the app's own activity started since the logcat was cleared: no browser, no chooser. */
-async function onlyTheApp(device: AndroidDevice) {
+/**
+ * Only the app's own activity started since the intent for `url` (the last one in the logcat):
+ * no browser, no chooser. The logcat isn't cleared, the job's report keeps all of it.
+ */
+async function onlyTheApp(device: AndroidDevice, url: string) {
   await closeSystemDialogs(device);
-  const starts = await started(device);
-  expect(starts.length, 'the intent reached an activity').toBeGreaterThan(0);
+  const all = await started(device);
+  const from = all.findLastIndex((l) => l.includes(`dat=${url.replace(/^https:\/\/([^/]+).*$/, 'https://$1')}`) && l.includes('act=android.intent.action.VIEW'));
+  expect(from, `the intent for ${url}`).toBeGreaterThanOrEqual(0);
+  const starts = all.slice(from);
   expect(
     starts.filter((l) => !l.includes(`cmp=${PKG}/`)),
     'activities of other apps',
@@ -40,10 +45,15 @@ async function onlyTheApp(device: AndroidDevice) {
   expect(await inFront(device), 'the app in front').toBe(true);
 }
 
-/** The invite's page without a network: it waits for the group, and says once that it's offline. */
-async function offlineInvite(page: Page) {
+/**
+ * The invite's page without a network: it waits for the group, and says that the app is offline,
+ * once (`notice`). Started by the invite, the start page's call may have said it already.
+ */
+async function offlineInvite(page: Page, notice: boolean) {
   await expect(page.getByText('Loading…')).toBeVisible();
-  await expect(offlineNotice(page)).toHaveCount(1);
+  if (notice) await expect(offlineNotice(page)).toHaveCount(1);
+  else expect(await offlineNotice(page).count()).toBeLessThanOrEqual(1);
+  await expect(page.locator('[role=log] > div').filter({ hasText: '✕' }), 'error toasts').toHaveCount(0);
 }
 
 test.describe('started by an invite', () => {
@@ -52,8 +62,8 @@ test.describe('started by an invite', () => {
   test('the app shows the invite', async ({ page, device }) => {
     const out = navigationsOut(page);
     await expect(page).toHaveURL(`${ORIGIN}/g/testcode`);
-    await offlineInvite(page);
-    await onlyTheApp(device);
+    await offlineInvite(page, false);
+    await onlyTheApp(device, INVITE);
     // Instead of the start page, not on top of it: the back button leaves the app
     expect(await page.evaluate(() => history.length)).toBe(1);
     expect(out).toEqual([]);
@@ -67,7 +77,7 @@ test.describe("started by a daily's result", () => {
     await expect(page).toHaveURL(`${ORIGIN}/ja`);
     await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
     await expect(page.getByRole('link', { name: /ルール/ }).first()).toBeVisible();
-    await onlyTheApp(device);
+    await onlyTheApp(device, DAILY_JA);
   });
 });
 
@@ -76,20 +86,18 @@ test('links bring the running app to their page', async ({ page, device }) => {
   const out = navigationsOut(page);
   await page.evaluate(() => Object.assign(window, { sameDocument: true }));
 
-  await shell(device, 'logcat -c');
   expect(await shell(device, `am start -W ${view(INVITE)}`)).toMatch(/Status: ok/);
   await expect(page).toHaveURL(`${ORIGIN}/g/testcode`);
-  await offlineInvite(page);
-  await onlyTheApp(device);
+  await offlineInvite(page, true);
+  await onlyTheApp(device, INVITE);
 
   // From the app in the background too
   await shell(device, 'input keyevent KEYCODE_HOME');
   await expect.poll(() => inFront(device), { message: 'the app in the background' }).toBe(false);
-  await shell(device, 'logcat -c');
   expect(await shell(device, `am start -W ${view(DAILY_JA)}`)).toMatch(/Status: ok/);
   await expect(page).toHaveURL(`${ORIGIN}/ja`);
   await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
-  await onlyTheApp(device);
+  await onlyTheApp(device, DAILY_JA);
 
   // The router showed them: the same page, with the pages before them in its history
   expect(await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument)).toBe(true);
@@ -105,9 +113,8 @@ test('other pages of the site change nothing', async ({ page, device }) => {
   expect(await shell(device, `am start -W ${view('https://hashi.rs/admin')}`)).toMatch(/unable to resolve Intent/);
   // Sent to the app's activity anyway: the app stays where it is
   for (const url of ['https://hashi.rs/admin', 'https://hashi.rs/dojo/seasons/1/set.tar.gz', 'https://example.com/g/testcode']) {
-    await shell(device, 'logcat -c');
     expect(await shell(device, `am start -W ${view(url, `-n ${ACTIVITY}`)}`)).toMatch(/Status: ok/);
-    await onlyTheApp(device);
+    await onlyTheApp(device, url);
   }
   await page.waitForTimeout(1000);
   expect(page.url()).toBe(`${ORIGIN}/rules`);
@@ -123,6 +130,6 @@ test.describe('started by another page of the site', () => {
     expect(page.url()).toBe(`${ORIGIN}/`);
     await hydrated(page);
     await expect(page.getByText("Couldn't load today's puzzle. Try again.")).toBeVisible();
-    await onlyTheApp(device);
+    await onlyTheApp(device, 'https://hashi.rs/admin');
   });
 });
