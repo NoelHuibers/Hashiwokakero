@@ -71,7 +71,7 @@ debug-assertions = false
 
 # The release build (the store's App Bundle): one optimized library. Speed over size (opt-level
 # 3), the generator and the solvers of the offline practice run in it. Without debug info, but
-# with its symbol table: Gradle puts it into the bundle for Play's crash reports
+# with its symbol table: Gradle puts that into the bundle for Play's crash reports
 # (debugSymbolLevel) and strips it from the library that phones get.
 [profile.release]
 lto = true

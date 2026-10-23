@@ -31,6 +31,11 @@ val uploadKeystore = signingValue("storeFile", "ANDROID_KEYSTORE_FILE")
 android {
     compileSdk = 37
     namespace = "rs.hashi"
+    // The NDK that Tauri links the library with (NDK_HOME, NDK_VERSION in the workflows).
+    // Release builds strip the library with it and take its symbol table out; with Gradle's own
+    // default version, which isn't installed, it packs the library unstripped and without
+    // symbols for Play.
+    ndkVersion = "29.0.14206865"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "rs.hashi"
@@ -93,6 +98,14 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_1_8
+    }
+}
+
+// The debug build type's keepDebugSymbols above lands in the packaging of every variant, which
+// kept Gradle from stripping release libraries and taking their symbols. Release keeps none.
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.packaging.jniLibs.keepDebugSymbols.set(emptySet())
     }
 }
 
