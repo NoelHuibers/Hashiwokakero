@@ -384,7 +384,9 @@ pub fn AccountButton() -> impl IntoView {
                             "grid size-7 place-items-center rounded-md font-pixel text-sm {}",
                             if user.guest { "bg-secondary text-secondary-foreground" } else { "hanko" },
                         )>{initial}</span>
-                        <span class="hidden max-w-28 truncate text-sm font-medium lg:inline">
+                        // From xl on: next to the six links of a 1024 px header a long name
+                        // pushed the button off the screen
+                        <span class="hidden max-w-28 truncate text-sm font-medium xl:inline">
                             {if user.guest { t_string!(i18n, common.ranking.guest_name).to_string() } else { user.name }}
                         </span>
                     }
