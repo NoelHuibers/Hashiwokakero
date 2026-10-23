@@ -40,6 +40,8 @@ async function fakeTauri(page: Page) {
       Object.assign(window, {
         __TAURI_INTERNALS__: {
           invoke(cmd: string, payload: { args: string }) {
+            // The plugins' commands (the system bars' icons, src/api/native.rs) need no answer
+            if (cmd.startsWith('plugin:')) return Promise.resolve(null);
             calls.push({ cmd, args: payload.args });
             const answer = answers[cmd];
             if (!answer) return Promise.reject(`unknown command ${cmd}`);
