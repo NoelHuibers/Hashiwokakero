@@ -11,8 +11,8 @@ import type { AndroidDevice, Page } from '@playwright/test';
 
 import { board, PRACTICE_KEY } from '../board';
 import { LADDER, LADDER_SOLUTION } from '../puzzles';
-import { expect, hydrated, inFront, test, violations, visit } from './app';
-import { ACTIVITY, ORIGIN, PKG, SCREENS, screen, shell, systemBars } from './device';
+import { closeSystemDialogs, expect, hydrated, inFront, started, test, violations, visit } from './app';
+import { ACTIVITY, keyboardTop, ORIGIN, PKG, SCREENS, screen, shell, systemBars } from './device';
 
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
 const toasts = (page: Page) => page.locator('[role=log] > div');
@@ -120,6 +120,7 @@ test("Android's back button goes back in the app", async ({ page, device }) => {
   await expect(page).toHaveURL(/\/practice$/);
   await expect(islands(page).first()).toBeVisible();
 
+  await closeSystemDialogs(device);
   await shell(device, 'input keyevent KEYCODE_BACK');
   // Gives the app the time to go back, or Android to close it
   await page.waitForTimeout(1500);
@@ -151,6 +152,7 @@ for (const theme of ['light', 'dark'] as const) {
     // The board scrolled to the top, the toasts gone
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(toasts(page)).toHaveCount(0);
+    await closeSystemDialogs(device);
     await page.waitForTimeout(500);
     await device.screenshot({ path: path.join(SCREENS, `practice-${theme}.png`) });
 
@@ -243,10 +245,6 @@ test('the app starts in dark mode without a white frame', async ({ page, device 
   }
 });
 
-/** The activities the device started since `logcat -c`. */
-const started = async (device: AndroidDevice) =>
-  (await shell(device, 'logcat -d -s ActivityTaskManager:I')).split('\n').filter((l) => /START u\d+ \{/.test(l));
-
 /** Brings the app back in front of what it opened. */
 async function backToTheApp(device: AndroidDevice) {
   await shell(device, `am start -n ${ACTIVITY}`);
@@ -320,4 +318,53 @@ test("sharing opens Android's share sheet, copying works", async ({ page, device
   const cnf = await shell(device, `run-as ${PKG} cat cache/share/hashi.cnf`);
   expect(cnf).toMatch(/^p cnf \d+ \d+/m);
   expect(page.url()).toBe(`${ORIGIN}/practice`);
+});
+
+test('the focused input stays above the soft keyboard', async ({ page, device }) => {
+  // The soft keyboard, also where the emulator has a hardware one
+  await shell(device, 'settings put secure show_ime_with_hard_keyboard 1');
+  await visit(page, '/kontakt');
+  const input = page.locator('main textarea').first();
+  await expect(input).toBeVisible();
+  // At the bottom of the screen, just above the tab bar: where the keyboard comes up
+  const { dpr, screenHeight } = await input.evaluate((el) => {
+    const bar = document.querySelector('nav.fixed')!.getBoundingClientRect().top;
+    window.scrollBy(0, el.getBoundingClientRect().bottom - (bar - 8));
+    return { dpr: devicePixelRatio, screenHeight: innerHeight * devicePixelRatio };
+  });
+  const box = (await input.boundingBox())!;
+  test.info().annotations.push({ type: 'input before', description: `${Math.round(box.y * dpr)}–${Math.round((box.y + box.height) * dpr)} px` });
+  expect((box.y + box.height) * dpr, 'the input in the lower half of the screen').toBeGreaterThan(screenHeight / 2);
+
+  // A tap, as a finger does: only that brings the keyboard up
+  await closeSystemDialogs(device);
+  await shell(device, `input tap ${Math.round((box.x + box.width / 2) * dpr)} ${Math.round((box.y + box.height - 12) * dpr)}`);
+  await expect.poll(() => keyboardTop(device), { message: 'the keyboard is up' }).not.toBeNull();
+  const top = (await keyboardTop(device))!;
+  expect(top, 'the keyboard covers the input where it was').toBeLessThan((box.y + box.height) * dpr);
+  expect(await input.evaluate((el) => el === document.activeElement), 'the input has the focus').toBe(true);
+  // The page ends above the keyboard, and the input scrolled into view
+  await expect.poll(() => page.evaluate(() => innerHeight * devicePixelRatio), { message: 'the page ends at the keyboard' }).toBeLessThanOrEqual(top + 1);
+  await expect
+    .poll(async () => {
+      const b = (await input.boundingBox())!;
+      return (b.y + b.height) * dpr;
+    }, { message: 'the input above the keyboard' })
+    .toBeLessThanOrEqual(top);
+  const after = (await input.boundingBox())!;
+  test.info().annotations.push(
+    { type: 'keyboard', description: `top ${top} px of ${screenHeight} px` },
+    { type: 'input with the keyboard', description: `${Math.round(after.y * dpr)}–${Math.round((after.y + after.height) * dpr)} px` },
+  );
+  expect(after.y, 'the input below the header').toBeGreaterThan(0);
+  await page.waitForTimeout(500);
+  await device.screenshot({ path: path.join(SCREENS, 'keyboard.png') });
+
+  // Typing works, and the keyboard goes away again with the back button: the page is whole again
+  await shell(device, 'input text hello');
+  await expect(input).toHaveValue(/hello$/);
+  await shell(device, 'input keyevent KEYCODE_BACK');
+  await expect.poll(() => keyboardTop(device), { message: 'the keyboard is down' }).toBeNull();
+  await expect.poll(() => page.evaluate(() => innerHeight * devicePixelRatio), { message: 'the page as high as the screen' }).toBeGreaterThan(screenHeight - 3);
+  expect(page.url()).toBe(`${ORIGIN}/kontakt`);
 });

@@ -109,9 +109,48 @@ in the repository root, only in the app):
   `system_bars`.
 - **The network.** With `ACCESS_NETWORK_STATE` the `WebView` knows when it is offline:
   `navigator.onLine` and the window's `online` event, which brings the offline notice back.
+- **The soft keyboard.** Edge to edge, the window no longer shrinks for the keyboard
+  (`adjustResize` only hands its size to the app now), so it covered the inputs at the bottom of
+  the page. `MainActivity.kt` ends the `WebView` above it instead: the page's viewport shrinks as
+  in a browser, the focused input scrolls into view, the tab bar sits on the keyboard, and the
+  page's bottom inset is 0 while the keyboard covers the navigation bar.
+- **App Links.** Links to the app's pages on `https://hashi.rs` open in the app, see
+  [App Links](#app-links).
 
 The smoke test checks the session (a guest made in the app, no cookie, the same guest after a
 reload), the headers, one update toast however many calls the server refuses, and the links.
+
+## App Links
+
+Where the app is installed, Android opens links to some pages of `https://hashi.rs` in the app
+instead of the browser, the ones people send each other: an invite to a group (`/g/<code>`), the
+daily (`/`, where a daily result's share text points), practice (`/practice`, the practice's),
+the groups (`/groups`, `/groups/...`) and players' pages (`/player/<id>`), each in every language
+(`/ja/g/<code>`). Not the rules, the legal pages, the admin's, the Dojo with its uploads, or
+anything the server answers itself (`/api`, `/og`, the downloads). `seo::APP_LINK_PATHS` and
+`APP_LINK_PREFIXES` list them, and `plugins.deep-link.mobile` in `src-tauri/tauri.conf.json` for
+Android (a test in `seo.rs` compares the two and prints the JSON to paste after a change, a new
+language say).
+
+- **The app:** `tauri-plugin-deep-link` (official) writes an intent filter with
+  `android:autoVerify="true"` for these paths into the manifest when the app is built (between its
+  `DEEP LINK PLUGIN` markers, committed like the rest of `gen/android`). The page asks the plugin
+  for the link the app started with (`get_current`, allowed in the capabilities) and listens for
+  the next ones (Tauri's event `deep-link://new-url`), and its router shows their page
+  (`api::native::follow_app_links`), keeping the language of the link: the one the app started
+  with instead of the start page, later ones on top of the page the app was on, which the back
+  button goes back to. Other URLs change nothing. The link never becomes a navigation of the
+  `WebView`, so the guard that sends other sites to the browser (`on_navigation`) doesn't see it.
+  Links to these pages from the app's own pages: there are none (share and invite links are
+  copied or shared, not followed); one would go to Android, which brings it back to the app.
+- **The server** says which app may open its links: `/.well-known/assetlinks.json` names
+  `rs.hashi` and the SHA-256 fingerprints of its signing certificates, from
+  `HASHI_ANDROID_CERT_SHA256` (docs/deployment.md; a 404 without it). Android fetches it when the
+  app is installed and opens the links in the app only if the installed app's certificate is
+  listed. The upload key's is in `fly.toml` (it signs the APK of the GitHub release); the app from
+  Play is signed by Google, whose certificate the owner adds once the app is in Play
+  (docs/mobile.md, owner tasks). Debug builds (`rs.hashi.debug`) are never verified: the links
+  open them only when an intent names the package, as the emulator test's do.
 
 ## Offline
 
@@ -209,11 +248,11 @@ no clap).
 - `tauri.conf.json`: application ID `rs.hashi`, the name, the version, the bundle
   (`frontendDist`), the one window, and the content security policy (below).
 - `capabilities/default.json`: what the page may call in Tauri: `core:default`, the offline
-  practice's commands, the opener's `open_url` for `https:` and `mailto:` URLs, and the app's
-  own plugin `hashi` (`share`, `system_bars`). `build.rs` lists the commands of the app and of
+  practice's commands, the opener's `open_url` for `https:` and `mailto:` URLs, the deep-link
+  plugin's `get_current`, and the app's own plugin `hashi` (`share`, `system_bars`). `build.rs` lists the commands of the app and of
   its plugin, which makes Tauri check them against the capabilities.
-- Plugins: `tauri-plugin-opener` (official, links out of the app, its own click script off), and
-  `hashi`, the app's own, in `src/lib.rs` with its Android side in `gen/android`
+- Plugins: `tauri-plugin-opener` (official, links out of the app, its own click script off),
+  `tauri-plugin-deep-link` (official, [App Links](#app-links)), and `hashi`, the app's own, in `src/lib.rs` with its Android side in `gen/android`
   (`HashiPlugin.kt`). See [On the phone](#on-the-phone).
 - `icons/`: generated from `public/icon-512.png` by `cargo tauri icon app-icon.json`, along with
   the Android launcher icons in `gen/android/.../res/mipmap-*`. Android's adaptive icon cuts a
@@ -230,8 +269,9 @@ no clap).
   committed with its Gradle wrapper. Changed by hand: the window's colours (the website's
   background, light and dark, so the screen doesn't flash white before the page paints; the
   `WebView` itself is transparent until then), the icons, the checksum of the Gradle download,
-  the manifest (`ACCESS_NETWORK_STATE`; no Android TV launcher), `MainActivity.kt` (the
-  system bars, see [On the phone](#on-the-phone)) and `HashiPlugin.kt`, and the template's
+  the manifest (`ACCESS_NETWORK_STATE`, `adjustResize`; no Android TV launcher; the App Links'
+  intent filter is the deep-link plugin's), `MainActivity.kt` (the system bars and the keyboard,
+  see [On the phone](#on-the-phone)) and `HashiPlugin.kt`, and the template's
   unused `activity_main.xml` removed. Build outputs and the files Tauri writes on every build
   are in its `.gitignore`s.
 

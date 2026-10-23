@@ -10,6 +10,10 @@ export default async function globalSetup() {
   const device = await connect();
   try {
     await goOffline(device);
+    // A busy emulator's launcher sometimes stops answering for a while: Android's "Pixel Launcher
+    // isn't responding" dialog then covers the app, takes the back button and dims the screen.
+    // Without the dialogs the launcher is restarted instead
+    await shell(device, 'settings put global hide_error_dialogs 1');
     await device.installApk(APK);
     // The first start after the install does work of its own (the WebView's first run, the app's
     // profile): once here, offline too, until the WebView is up

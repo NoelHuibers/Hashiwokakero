@@ -2,6 +2,7 @@ package rs.hashi
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
 import androidx.core.graphics.Insets
@@ -18,6 +19,11 @@ import androidx.webkit.WebViewFeature
 // the CSS variables --app-inset-top, -right, -bottom and -left of the page (in CSS pixels), which
 // style/tailwind.css turns into the header's and the tab bar's padding. Their icons follow the
 // page's theme, which only the page knows (HashiPlugin.systemBars).
+//
+// Nor does the window shrink for the soft keyboard any more (adjustResize, edge to edge): it would
+// cover the inputs at the bottom. The WebView ends above it instead, so the page's viewport
+// shrinks as it did before, the focused input scrolls into view, and the tab bar sits on the
+// keyboard. The navigation bar is under the keyboard then: the page's bottom inset is 0.
 class MainActivity : TauriActivity() {
   /** The script that sets the variables in every new page, replaced when the bars change. */
   private var insetsScript: ScriptHandler? = null
@@ -36,9 +42,18 @@ class MainActivity : TauriActivity() {
       val bars = insets.getInsets(
         WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
       )
-      showInsets(view as WebView, bars)
-      // The WebView's own handling as well, for WebViews that report the insets themselves
-      ViewCompat.onApplyWindowInsets(view, insets)
+      val keyboard = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+      (view.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+        if (params.bottomMargin != keyboard) {
+          params.bottomMargin = keyboard
+          view.layoutParams = params
+        }
+      }
+      showInsets(view as WebView, Insets.of(bars.left, bars.top, bars.right, maxOf(bars.bottom - keyboard, 0)))
+      // The WebView's own handling as well, for WebViews that report the insets themselves;
+      // without the keyboard's, which it no longer covers
+      val rest = WindowInsetsCompat.Builder(insets).setInsets(WindowInsetsCompat.Type.ime(), Insets.NONE).build()
+      ViewCompat.onApplyWindowInsets(view, rest)
     }
     ViewCompat.requestApplyInsets(webView)
   }

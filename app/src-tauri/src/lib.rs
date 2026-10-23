@@ -9,7 +9,9 @@
 //!
 //! Links out of the app open in the phone's browser through Tauri's opener plugin; the app's own
 //! plugin ([`hashi`]) shares through Android's share sheet, sets the system bars' icons and keeps
-//! the `WebView` on the app's pages.
+//! the `WebView` on the app's pages. Links to the app's pages on `https://hashi.rs` (App Links,
+//! `plugins.deep-link` in `tauri.conf.json`) open the app through the deep-link plugin, and the
+//! page shows them (`api::native::follow_app_links`).
 
 use tauri::plugin::TauriPlugin;
 use tauri::{Manager as _, Runtime, Url, Webview};
@@ -26,6 +28,9 @@ pub fn run() {
                 .open_js_links_on_click(false)
                 .build(),
         )
+        // Starts with Android's intent and hears of the next ones, see `hashi` for why they never
+        // reach the `WebView` as navigations
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(hashi())
         .invoke_handler(tauri::generate_handler![
             generate_puzzle,
@@ -41,7 +46,11 @@ pub fn run() {
 ///
 /// It also keeps the `WebView` on the app's pages: a page of another site (a link the page
 /// didn't send to the opener, a script's `location`) opens in the browser instead when it is
-/// an https one, else nowhere. Tauri lets the `WebView` go anywhere by itself.
+/// an https one, else nowhere. Tauri lets the `WebView` go anywhere by itself. That includes
+/// `https://hashi.rs/g/<code>` and the other App Links: an App Link the app is opened with
+/// isn't a navigation, the deep-link plugin hands it to the page, whose router shows its page
+/// in the app (`api::native::follow_app_links`). From a page of the app such a link goes to
+/// Android, which brings it back to the app once Android verified the app's links.
 fn hashi<R: Runtime>() -> TauriPlugin<R> {
     tauri::plugin::Builder::new("hashi")
         .setup(|_app, api| {

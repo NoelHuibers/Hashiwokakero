@@ -89,6 +89,7 @@ pub fn App() -> impl IntoView {
 
         <Router>
             <LocaleFromPath />
+            <AppLinks />
             <div class="flex min-h-screen flex-col pb-[calc(3.5rem+var(--safe-bottom))] md:pb-0">
                 <Header />
                 <main class="flex-1">
@@ -184,6 +185,14 @@ fn LocaleFromPath() -> impl IntoView {
     {
         i18n.set_locale(locale);
     }
+}
+
+/// In the app: the pages of the App Links it is opened with (`api::native::follow_app_links`).
+/// Nothing on the website, where the browser opens them itself.
+#[component]
+fn AppLinks() -> impl IntoView {
+    #[cfg(feature = "csr")]
+    crate::api::native::follow_app_links(leptos_router::hooks::use_navigate());
 }
 
 /// Korean, Chinese, Arabic, Hindi, Thai and Vietnamese need a font for their script, loaded only

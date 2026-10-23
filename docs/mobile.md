@@ -106,7 +106,10 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
   share buttons and the CNF/puzzle downloads go to Android's share sheet (the app's own plugin,
   `HashiPlugin.kt`), and the WebView never leaves the app's pages. The page draws behind the
   system bars: the app passes their sizes in as CSS variables (`--app-inset-*`), and the bars'
-  icons follow the page's theme.
+  icons follow the page's theme. The page ends above the soft keyboard.
+- App Links: links to the pages people share (an invite `/g/<code>`, the daily, practice, groups,
+  players, in every language) open in the app where it is installed, on their page
+  (tauri-plugin-deep-link; `/.well-known/assetlinks.json` names the app's certificates).
 
 ## Steps
 
@@ -145,7 +148,16 @@ replaced through Play's support). Left, in this order (details in
 3. **Play App Signing**, asked for with that first release: keep "Google-generated key". Google
    holds the key that signs the app on phones; our upload key only proves an upload is ours. The
    first bundle registers the upload key.
-4. **The service account** for the uploads from the workflow:
+4. **Google's certificate for the App Links.** Play Console, Test and release, App integrity, App
+   signing: copy the SHA-256 fingerprint of the "App signing key certificate". Append it to
+   `HASHI_ANDROID_CERT_SHA256` in `fly.toml` after the upload key's, comma separated, and deploy
+   (docs/deployment.md). Without it the app installed from Play opens invites and shared results
+   in the browser: Android only opens them in the app when
+   `https://hashi.rs/.well-known/assetlinks.json` lists the certificate the installed app is
+   signed with. Check it with the Play Console's Deep links page (Grow users), or on a phone with
+   the app from Play: `adb shell pm verify-app-links --re-verify rs.hashi`, then
+   `adb shell pm get-app-links rs.hashi` says `hashi.rs: verified`.
+5. **The service account** for the uploads from the workflow:
    1. [Google Cloud console](https://console.cloud.google.com/): a project (e.g. "hashi-play"),
       in it APIs and services, Enable APIs, "Google Play Android Developer API".
    2. IAM and admin, Service accounts, Create service account (e.g. `play-release`), no project
@@ -162,11 +174,11 @@ replaced through Play's support). Left, in this order (details in
    `gh workflow run android-release.yml --ref app-v<version> -f publish=true` (a version Play
    already has is refused: bump the version for a real test). While Play still calls the app a
    draft, it only accepts draft releases: repository variable `PLAY_RELEASE_STATUS=draft`.
-5. **Closed test**: personal developer accounts created after 13 November 2023 need a closed
+6. **Closed test**: personal developer accounts created after 13 November 2023 need a closed
    test with at least 12 testers, opted in for 14 days in a row, before they may apply for
    production. The account's creation date isn't certain, so plan for it: a closed track
    (Testing, Closed testing) with a Google Group or email list of 12 or more testers, the
    internal release promoted to it.
-6. **Store listing**: description, screenshots, privacy policy URL (`/datenschutz`), the Data
+7. **Store listing**: description, screenshots, privacy policy URL (`/datenschutz`), the Data
    safety form, content rating, target audience, and trader status (EU).
-7. **iOS**: Apple Developer Program membership and an App Store Connect API key.
+8. **iOS**: Apple Developer Program membership and an App Store Connect API key.
