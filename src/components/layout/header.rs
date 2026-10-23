@@ -29,7 +29,8 @@ pub fn Header() -> impl IntoView {
                     <Hanko class="size-11 shrink-0 text-xl sm:text-2xl" />
                     <span class="hidden flex-col leading-none sm:flex">
                         <span class="font-pixel text-2xl tracking-wide">"Hashi"</span>
-                        <span class="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                        // Not next to the six links of a laptop's header, it would wrap
+                        <span class="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground lg:max-xl:hidden">
                             "橋をかけろ · " {t!(i18n, common.tagline_short)}
                         </span>
                     </span>

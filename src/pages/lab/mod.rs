@@ -199,7 +199,7 @@ pub fn LabPage() -> impl IntoView {
                             </CardDescription>
                         </CardHeader>
                         <CardContent class="flex flex-col gap-3">
-                            <div class="flex gap-2">
+                            <div class="flex flex-wrap gap-2">
                                 {source_button(PuzzleSource::Game, t!(i18n, lab.puzzle.game).into_any())}
                                 {source_button(PuzzleSource::Workshop, t!(i18n, lab.puzzle.workshop).into_any())}
                                 {source_button(PuzzleSource::Fresh, t!(i18n, lab.puzzle.fresh).into_any())}
