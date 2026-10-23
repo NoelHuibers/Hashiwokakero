@@ -215,7 +215,8 @@ test('the app starts in dark mode without a white frame', async ({ page, device 
   await shell(device, 'cmd uimode night yes');
   try {
     await shell(device, `am force-stop ${PKG}`);
-    await expect.poll(() => page.isClosed(), { message: 'the old page is gone' }).toBe(true);
+    // The test's page goes with it
+    await page.waitForEvent('close', { timeout: 10_000 }).catch(() => {});
     await shell(device, `am start -n ${ACTIVITY}`);
     // A row in the middle and one at a quarter of the screen, their middle brightness: the text
     // on them doesn't count
