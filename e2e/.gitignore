@@ -4,3 +4,8 @@
 /blob-report
 /test-results-app
 /playwright-report-app
+/test-results-android
+/test-results-android.json
+/test-results-android-device.json
+/playwright-report-android
+/android-screens

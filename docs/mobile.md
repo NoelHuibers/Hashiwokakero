@@ -113,7 +113,8 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 7 | CSR shell (`app/`, Trunk, `index.html`, Tailwind) built in CI | 6 | |
 | 8 | Tauri 2 Android project; CI builds a debug APK on every PR | 7 | |
 | 9 | Offline practice: native generator and solver through Tauri commands | 8 | ✓ #125 |
-| 10 | Android polish: back button, safe areas, share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 | |
+| 10a | Android emulator smoke test in CI: the real debug APK on an emulator, its WebView driven by Playwright, offline | 8, 9 | ✓ #127 |
+| 10 | Android polish: back button, safe areas (status and navigation bar cover the header and the tab bar, seen in 10a), `ACCESS_NETWORK_STATE` (without it the WebView's `navigator.onLine` is always true), share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 | |
 | 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | ✓ #126 |
 | 12 | First release: closed test, store listing, production | 9, 10, 11 | |
 | 13 | iOS: same project, macOS runner, TestFlight and App Store | 12 | |

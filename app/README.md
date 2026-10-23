@@ -209,7 +209,7 @@ Android Studio brings all of that except the Rust parts; without it, the
 [command line tools](https://developer.android.com/studio#command-line-tools-only) have
 `sdkmanager`. Gradle downloads what is still missing on the first build. NDK 29 links the
 library for Android's 16 KB memory pages, which Google Play requires. Its version is in three
-places, changed together: `NDK_VERSION` in `ci.yml` and `android-release.yml`, and `ndkVersion` in
+places, changed together: `NDK_VERSION` in `ci.yml` (both Android jobs) and `android-release.yml`, `ndkVersion` in
 `gen/android/app/build.gradle.kts` (Gradle strips release builds with it). The web bundle needs
 what [Building](#building) lists.
 
@@ -280,6 +280,42 @@ object-src 'none'; base-uri 'self'
 `versionCode`, which must grow with every upload to Play, from it:
 `major × 1,000,000 + minor × 1,000 + patch`, so 0.1.0 is 1000 and 1.2.3 is 1,002,003 (minor and
 patch stay below 1000). `scripts/app-version.mjs` sets it, see [Releases](#releases).
+
+## Emulator test
+
+`e2e/android/smoke.spec.ts`, with its own Playwright config (`e2e/android.config.ts`), starts the
+real debug APK on an Android emulator and drives its WebView through Playwright's Android support
+(`_android`, the WebView's debugging socket, which Tauri opens in debug builds). Each test clears
+the app's data and starts it with `am start`: it hydrates, no page of the app breaks the content
+security policy (`securitypolicyviolation` events and the console's CSP messages on `/`, `/rules`,
+`/ja/rules`, `/practice`, `/create`, `/lab`, `/dojo`, `/groups`, `/daily`), practice generates,
+hints and checks through the native commands, the ranks show one offline notice, and Android's
+back button goes back from the practice to the rules instead of closing the app (a skipped test
+with the finding if it closes it). A screenshot of the practice board is taken with
+`screencap`.
+
+The debug APK calls the production server when it can. The whole test runs without a network,
+so it never makes a guest or starts a daily there: the global setup turns airplane mode, Wi-Fi
+and mobile data off and waits until nothing answers before it installs the APK, the app never
+starts online, and a test fails if any answer comes from hashi.rs. CI also blocks hashi.rs on the
+runner.
+
+CI runs it in "Android emulator smoke" (`.github/workflows/ci.yml`), next to the arm64 build: it
+builds an x86_64 debug APK from the `app-web` artifact, boots a Google APIs x86_64 emulator of
+API 35 with KVM (`reactivecircus/android-emulator-runner`, a cold boot of about 35 s: a cached
+snapshot was 2 GB and took longer to restore), and runs the spec. About 5 minutes in all. Emulators are flaky, so this config, and
+only this one, retries a failed test once; the job summary counts the flaky tests next to the
+times of the build, the emulator's start and the tests. The artifact
+`android-emulator-screenshot` has the practice board; a failed run also uploads
+`android-emulator-report`, the Playwright report and the app's, WebView's and Tauri's lines of
+the logcat. Not a required check.
+
+With an emulator or a phone on adb (airplane mode goes on, and stays on afterwards):
+
+```sh
+cargo tauri android build --debug --apk --target x86_64   # in src-tauri/, aarch64 for a phone
+pnpm run app:android-e2e     # E2E_APK=<path> for another APK
+```
 
 ## Releases
 
