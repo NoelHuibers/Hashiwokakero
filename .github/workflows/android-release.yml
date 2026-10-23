@@ -4,6 +4,9 @@ name: Android release
 # with the upload key and uploads it to Play's internal test track. A GitHub release for the tag
 # gets the bundle and a universal APK.
 #
+# A pull request that changes this workflow, the Gradle build or the version script runs it as a
+# dry run, below.
+#
 # By hand (Actions, Run workflow, or `gh workflow run android-release.yml --ref <ref>`):
 # - publish off (the default): a dry run on any branch or tag. Builds, signs and checks the bundle
 #   and keeps it as an artifact; no Play upload, no GitHub release. On a branch it skips the
@@ -14,6 +17,11 @@ on:
   push:
     tags:
       - app-v*
+  pull_request:
+    paths:
+      - .github/workflows/android-release.yml
+      - app/src-tauri/gen/android/app/build.gradle.kts
+      - scripts/app-version.mjs
   workflow_dispatch:
     inputs:
       publish:
@@ -211,47 +219,58 @@ jobs:
         with:
           name: app-web-release
           path: target/app-dist
-      # The upload key in a file of the runner's temp dir, gone at the end of the job (below).
-      # Gradle and bundletool read the passwords from the environment and from files there: a
-      # password can't break the format of keystore.properties then.
+      # The upload key in files of the runner's temp dir, gone at the end of the job (below).
+      # Gradle gets the passwords through the environment of its step, bundletool reads them from
+      # the files: a password can't break the format of keystore.properties then. Dry runs
+      # without the secrets (pull requests of Dependabot or forks) sign with a throwaway key.
       - name: Upload key
         env:
+          PUBLISH: ${{ needs.check.outputs.publish }}
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo "::error::The ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_PASSWORD secrets are needed"
-            exit 1
-          fi
           key="$RUNNER_TEMP/upload-key"
           mkdir -m 700 "$key"
-          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$key/upload.p12"
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$key/upload.p12"
+          elif [ "$PUBLISH" = true ]; then
+            echo "::error::The secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD are needed"
+            exit 1
+          else
+            echo "::notice::No upload key in this run's secrets, signed with a throwaway key"
+            # PKCS12 has one password for the store and its keys
+            KEYSTORE_PASSWORD=$(openssl rand -hex 16) KEY_ALIAS=upload
+            KEY_PASSWORD=$KEYSTORE_PASSWORD
+            keytool -genkeypair -keystore "$key/upload.p12" -storetype PKCS12 -alias upload -keyalg RSA \
+              -validity 1 -dname "CN=Throwaway" -storepass "$KEYSTORE_PASSWORD" > /dev/null 2>&1
+          fi
           printf '%s\n' "$KEYSTORE_PASSWORD" > "$key/store-password"
           printf '%s\n' "$KEY_PASSWORD" > "$key/key-password"
+          printf '%s\n' "$KEY_ALIAS" > "$key/alias"
           echo "UPLOAD_KEY=$key" >> "$GITHUB_ENV"
       # Release, arm64 + 32-bit ARM + x86_64; without beforeBuildCommand, the bundle is there
       - name: Build
         working-directory: app/src-tauri
-        env:
-          ANDROID_KEYSTORE_FILE: ${{ env.UPLOAD_KEY }}/upload.p12
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: cargo tauri android build --ci --aab --target aarch64 armv7 x86_64 --config '{"build":{"beforeBuildCommand":null}}'
-      - name: Universal APK
-        env:
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
+          ANDROID_KEYSTORE_FILE="$UPLOAD_KEY/upload.p12" \
+          ANDROID_KEYSTORE_PASSWORD=$(cat "$UPLOAD_KEY/store-password") \
+          ANDROID_KEY_ALIAS=$(cat "$UPLOAD_KEY/alias") \
+          ANDROID_KEY_PASSWORD=$(cat "$UPLOAD_KEY/key-password") \
+            cargo tauri android build --ci --aab --target aarch64 armv7 x86_64 --config '{"build":{"beforeBuildCommand":null}}'
+      - name: Universal APK
+        run: |
+          alias=$(cat "$UPLOAD_KEY/alias")
           mkdir -p release
           cp "$AAB" "release/hashi-$VERSION.aab"
           java -jar "$RUNNER_TEMP/bundletool.jar" build-apks --mode=universal \
             --bundle "release/hashi-$VERSION.aab" --output "$RUNNER_TEMP/universal.apks" \
-            --ks "$UPLOAD_KEY/upload.p12" --ks-key-alias "$KEY_ALIAS" \
+            --ks "$UPLOAD_KEY/upload.p12" --ks-key-alias "$alias" \
             --ks-pass "file:$UPLOAD_KEY/store-password" --key-pass "file:$UPLOAD_KEY/key-password"
           unzip -p "$RUNNER_TEMP/universal.apks" universal.apk > "release/hashi-$VERSION-universal.apk"
           # The upload key's certificate, to compare the signatures with (not secret)
-          keytool -exportcert -rfc -keystore "$UPLOAD_KEY/upload.p12" -alias "$KEY_ALIAS" \
+          keytool -exportcert -rfc -keystore "$UPLOAD_KEY/upload.p12" -alias "$alias" \
             -storepass:file "$UPLOAD_KEY/store-password" > "$RUNNER_TEMP/upload-cert.pem"
       - if: always()
         name: Remove the upload key

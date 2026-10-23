@@ -341,9 +341,12 @@ the upload key.
   default is `completed`).
 - The workflow's artifact `android-release`, the same two files (30 days).
 
-Run by hand (`gh workflow run android-release.yml --ref <ref>`), the workflow is a dry run: it
-builds, signs and checks, keeps the files as the artifact for three days, and publishes nothing.
-On a branch it skips the checks of the tag, of main and of CI. With `-f publish=true` on a tag
+Run by hand (`gh workflow run android-release.yml --ref <ref>`), or by a pull request that
+changes the workflow, `gen/android/app/build.gradle.kts` or `scripts/app-version.mjs`, the
+workflow is a dry run: it builds, signs and checks, keeps the files as the artifact for three
+days, and publishes nothing. On a branch it skips the checks of the tag, of main and of CI.
+Without the signing secrets (pull requests of Dependabot or of forks) a dry run signs with a
+throwaway key. With `-f publish=true` on a tag
 (`--ref app-v0.2.0`) it is the full release again, e.g. to upload a version once the service
 account exists; the GitHub release then only gets its files replaced.
 
