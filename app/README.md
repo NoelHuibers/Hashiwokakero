@@ -208,8 +208,10 @@ cargo binstall -y tauri-cli@2.12.4
 Android Studio brings all of that except the Rust parts; without it, the
 [command line tools](https://developer.android.com/studio#command-line-tools-only) have
 `sdkmanager`. Gradle downloads what is still missing on the first build. NDK 29 links the
-library for Android's 16 KB memory pages, which Google Play requires. The web bundle needs what
-[Building](#building) lists.
+library for Android's 16 KB memory pages, which Google Play requires. Its version is in three
+places, changed together: `NDK_VERSION` in `ci.yml` (both Android jobs) and in
+`android-release.yml`, and `ndkVersion` in `gen/android/app/build.gradle.kts` (Gradle strips
+release builds with it). The web bundle needs what [Building](#building) lists.
 
 ### Building and running
 
@@ -228,9 +230,9 @@ key and have the ID `rs.hashi.debug`, so they install next to the store's app. `
 Wi-Fi, pass `--host` and let Trunk listen on that address (`trunk serve --address`).
 
 The architectures: `aarch64` (arm64-v8a) is nearly every phone of the last years and the one
-pull requests build. The store's App Bundle (step 11) should add `armv7` (older and cheap 32-bit
-phones) and `x86_64` (Chromebooks, emulators): Play delivers only the device's own, so more of
-them only make the upload bigger. `i686` isn't worth it.
+pull requests build. The store's App Bundle ([Releases](#releases)) adds `armv7` (older and cheap
+32-bit phones) and `x86_64` (Chromebooks, emulators): Play delivers only the device's own, so more
+of them only make the upload bigger. `i686` isn't worth it.
 
 ### In CI
 
@@ -277,7 +279,7 @@ object-src 'none'; base-uri 'self'
 `version` in `tauri.conf.json` is the version users see (`versionName`). Tauri derives Android's
 `versionCode`, which must grow with every upload to Play, from it:
 `major × 1,000,000 + minor × 1,000 + patch`, so 0.1.0 is 1000 and 1.2.3 is 1,002,003 (minor and
-patch stay below 1000). The release workflow (step 11) sets the version from the tag.
+patch stay below 1000). `scripts/app-version.mjs` sets it, see [Releases](#releases).
 
 ## Emulator test
 
@@ -313,4 +315,104 @@ With an emulator or a phone on adb (airplane mode goes on, and stays on afterwar
 ```sh
 cargo tauri android build --debug --apk --target x86_64   # in src-tauri/, aarch64 for a phone
 pnpm run app:android-e2e     # E2E_APK=<path> for another APK
+```
+
+## Releases
+
+A release is a tag `app-v<x.y.z>` on main. `.github/workflows/android-release.yml` builds the
+App Bundle for Google Play from it, signs it with the upload key and uploads it to Play's
+internal test track; from there it is promoted in the Play Console (closed test, production).
+
+### Cutting one
+
+1. A pull request with the new version and its release notes:
+
+   ```sh
+   node scripts/app-version.mjs 0.2.0     # every file below; --code prints the versionCode
+   $EDITOR app/store/whatsnew/whatsnew-en-US
+   ```
+
+   The script sets the version in `app/Cargo.toml` (what the app sends in `x-hashi-app`),
+   `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` (the store's version and versionCode) and
+   the two crates' entries in `Cargo.lock` and `src-tauri/Cargo.lock`. It refuses a version whose
+   minor or patch is 1000 or more, or whose versionCode isn't above the current one. "Test & lint"
+   fails when the files disagree (`node scripts/app-version.mjs` without a version).
+   `whatsnew-en-US` is Play's "What's new" (at most 500 characters); other languages go next to
+   it as `whatsnew-<locale>`, e.g. `whatsnew-de-DE`.
+2. After the merge, tag main's merge commit and push the tag:
+
+   ```sh
+   git fetch origin
+   git tag -a app-v0.2.0 -m "Hashi 0.2.0" origin/main
+   git push origin app-v0.2.0
+   ```
+
+   The tag can follow the merge right away: the workflow waits for main's CI run of the commit.
+
+### What the workflow checks
+
+Before it builds: the tag is `app-v<x.y.z>` and equals the version in all the files, the tagged
+commit is on main, and CI's run on main for that commit passed (it waits up to an hour for one
+still going; a cancelled or failed one fails the release, re-run it or tag a newer commit).
+
+After it builds `cargo tauri android build --aab --target aarch64 armv7 x86_64` (release): the
+bundle and the APK are signed with the upload key (their certificate is the key's, not a debug
+key's), `bundletool validate` passes, the ID is `rs.hashi` (not `.debug`), versionCode and
+versionName are the version's, the bundle isn't debuggable, it has the native library and its
+symbols for all three architectures, and the 64-bit libraries are aligned for 16 KB pages (the
+ELF segments, and `zipalign -P 16` of the APK). The job summary has the sizes (the bundle, the
+download for an arm64 phone as `bundletool get-size` computes it) and the SHA-256 fingerprint of
+the upload key.
+
+### Where it goes
+
+- The tag's GitHub release (a pre-release): `hashi-<version>.aab` and
+  `hashi-<version>-universal.apk`, every architecture in one APK for testers who install it by
+  hand. Both are signed with the upload key, which Play only uses to check that an upload is
+  ours; Play signs the app it delivers with its own app signing key. So they are safe to publish,
+  and a hand-installed APK and the app from Play can't update each other.
+- Google Play, the internal track, with the release notes of `app/store/whatsnew/`. The native
+  symbols (`debugSymbolLevel = "SYMBOL_TABLE"`) and R8's mapping are in the bundle, Play takes
+  them from there. Skipped, with a notice in the job summary, while the `PLAY_SERVICE_ACCOUNT_JSON`
+  secret isn't set. While the app itself is still a draft in the Play Console, Play only accepts
+  draft releases: set the repository variable `PLAY_RELEASE_STATUS` to `draft` until then (the
+  default is `completed`).
+- The workflow's artifact `android-release`, the same two files (30 days).
+
+Run by hand (`gh workflow run android-release.yml --ref <ref>`), or by a pull request that
+changes the workflow, `gen/android/app/build.gradle.kts` or `scripts/app-version.mjs`, the
+workflow is a dry run: it builds, signs and checks, keeps the files as the artifact for three
+days, and publishes nothing. On a branch it skips the checks of the tag, of main and of CI.
+Without the signing secrets (pull requests of Dependabot or of forks) a dry run signs with a
+throwaway key. With `-f publish=true` on a tag
+(`--ref app-v0.2.0`) it is the full release again, e.g. to upload a version once the service
+account exists; the GitHub release then only gets its files replaced.
+
+### The first release
+
+Play's API can only upload to an app that already has a bundle: the first one has to be
+uploaded by hand. Create the app `rs.hashi` in the Play Console, push the first tag (the upload to
+Play is skipped or fails), download `hashi-<version>.aab` from its GitHub release and upload it to
+the internal test track by hand, accepting Play App Signing (Google keeps the app signing key, the
+upload key only signs uploads). From then on, with the service account set up
+([docs/mobile.md](../docs/mobile.md#owner-tasks)), tags upload by themselves.
+
+### Signing
+
+The upload key is a PKCS12 keystore with the key `upload`, in the repository's secrets
+`ANDROID_KEYSTORE_BASE64` (the file, base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
+`ANDROID_KEY_PASSWORD`. The workflow writes it to a file in the runner's temp dir and deletes it at
+the end of the job, also when the job fails. `gen/android/app/build.gradle.kts` signs release
+builds with it when it finds the key: in `gen/android/keystore.properties` (gitignored; `storeFile`,
+relative to `gen/android/` or absolute, `storePassword`, `keyAlias`, `keyPassword`), else in the
+environment (`ANDROID_KEYSTORE_FILE`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`,
+`ANDROID_KEY_PASSWORD`, what the workflow uses). Without either, release builds stay unsigned;
+debug builds always use the local debug key. To try a signed release build locally, make a
+throwaway key, never a copy of the real one:
+
+```sh
+keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 -alias upload -keyalg RSA \
+  -validity 10000 -dname CN=test -storepass testtest
+ANDROID_KEYSTORE_FILE=/tmp/test.p12 ANDROID_KEYSTORE_PASSWORD=testtest ANDROID_KEY_ALIAS=upload \
+  ANDROID_KEY_PASSWORD=testtest cargo tauri android build --aab --target aarch64
 ```

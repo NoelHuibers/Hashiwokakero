@@ -14,9 +14,28 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// The upload key that signs release builds for Google Play (app/README.md, Releases): from
+// keystore.properties next to settings.gradle (gitignored), else from the environment. Without
+// one, release builds stay unsigned. Debug builds always use the local debug key.
+val keystoreProperties = Properties().apply {
+    val propFile = rootProject.file("keystore.properties")
+    if (propFile.exists()) {
+        propFile.inputStream().use { load(it) }
+    }
+}
+fun signingValue(property: String, variable: String): String? =
+    keystoreProperties.getProperty(property)
+        ?: providers.environmentVariable(variable).orNull?.takeIf { it.isNotEmpty() }
+val uploadKeystore = signingValue("storeFile", "ANDROID_KEYSTORE_FILE")
+
 android {
     compileSdk = 37
     namespace = "rs.hashi"
+    // The NDK that Tauri links the library with (NDK_HOME, NDK_VERSION in the workflows).
+    // Release builds strip the library with it and take its symbol table out; with Gradle's own
+    // default version, which isn't installed, it packs the library unstripped and without
+    // symbols for Play.
+    ndkVersion = "29.0.14206865"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "rs.hashi"
@@ -24,6 +43,16 @@ android {
         targetSdk = 37
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+    }
+    signingConfigs {
+        if (uploadKeystore != null) {
+            create("upload") {
+                storeFile = rootProject.file(uploadKeystore)
+                storePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         getByName("debug") {
@@ -40,6 +69,12 @@ android {
             }
         }
         getByName("release") {
+            signingConfigs.findByName("upload")?.let { signingConfig = it }
+            // The native library's symbol table in the App Bundle (BUNDLE-METADATA), from which
+            // Play symbolicates native crashes. Devices get the stripped library.
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             optimization {
                enable = true
             }
@@ -63,6 +98,14 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_1_8
+    }
+}
+
+// The debug build type's keepDebugSymbols above lands in the packaging of every variant, which
+// kept Gradle from stripping release libraries and taking their symbols. Release keeps none.
+androidComponents {
+    onVariants(selector().withBuildType("release")) { variant ->
+        variant.packaging.jniLibs.keepDebugSymbols.set(emptySet())
     }
 }
 

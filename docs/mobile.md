@@ -115,20 +115,49 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 9 | Offline practice: native generator and solver through Tauri commands | 8 | ✓ #125 |
 | 10a | Android emulator smoke test in CI: the real debug APK on an emulator, its WebView driven by Playwright, offline | 8, 9 | ✓ #127 |
 | 10 | Android polish: back button, safe areas (status and navigation bar cover the header and the tab bar, seen in 10a), `ACCESS_NETWORK_STATE` (without it the WebView's `navigator.onLine` is always true), share/clipboard/links through Tauri plugins, App Links for `/g/<code>` invites | 8 | |
-| 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | |
+| 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | ✓ #126 |
 | 12 | First release: closed test, store listing, production | 9, 10, 11 | |
 | 13 | iOS: same project, macOS runner, TestFlight and App Store | 12 | |
 
 ## Owner tasks
 
-Things only the account owner can do, needed from step 11 on:
+Things only the account owner can do. Done: the upload keystore, as the GitHub secrets
+`ANDROID_KEYSTORE_*` and `ANDROID_KEY_*` (keep its offline backup: a lost upload key can only be
+replaced through Play's support). Left, in this order (details in
+[app/README.md](../app/README.md#releases)):
 
-- Play Console: create the app `rs.hashi`, enable Play App Signing.
-- A Google Cloud service account with release rights in the Play Console, its JSON key
-  as GitHub secret.
-- The upload keystore as GitHub secrets (generated once, a backup kept offline).
-- Store listing: description, screenshots, privacy policy URL (`/datenschutz`), the
-  Data safety form, content rating, and trader status (EU).
-- Personal Play accounts created after 13 November 2023 need a closed test with at
-  least 12 testers for 14 days before the first production release.
-- iOS: Apple Developer Program membership and an App Store Connect API key.
+1. **Create the app** in the Play Console: Create app, name "Hashi", app (not game), free.
+   The package name `rs.hashi` is set by the first upload and can never change.
+2. **The first upload by hand.** Push the first tag (`app-v0.1.0` or the next version); the
+   workflow makes the GitHub release, its upload to Play is skipped without the secret. In the
+   Play Console: Test and release, Testing, Internal testing, Create new release; upload
+   `hashi-<version>.aab` from the GitHub release, then roll it out to the internal testers
+   (Testers tab: an email list).
+3. **Play App Signing**, asked for with that first release: keep "Google-generated key". Google
+   holds the key that signs the app on phones; our upload key only proves an upload is ours. The
+   first bundle registers the upload key.
+4. **The service account** for the uploads from the workflow:
+   1. [Google Cloud console](https://console.cloud.google.com/): a project (e.g. "hashi-play"),
+      in it APIs and services, Enable APIs, "Google Play Android Developer API".
+   2. IAM and admin, Service accounts, Create service account (e.g. `play-release`), no project
+      roles.
+   3. That account, Keys, Add key, Create new key, JSON: a file is downloaded.
+   4. Repository Settings, Secrets and variables, Actions: new secret
+      `PLAY_SERVICE_ACCOUNT_JSON` with the file's whole content. Then delete the file.
+   5. Play Console, Users and permissions, Invite new users: the service account's email
+      (`...@<project>.iam.gserviceaccount.com`), App permissions, add Hashi, with "Release apps to
+      testing tracks" (and "Release to production, exclude devices, and use Play App Signing" for
+      later promotions from the workflow), Invite user.
+
+   Check it by running the workflow on the tag again with publish on:
+   `gh workflow run android-release.yml --ref app-v<version> -f publish=true` (a version Play
+   already has is refused: bump the version for a real test). While Play still calls the app a
+   draft, it only accepts draft releases: repository variable `PLAY_RELEASE_STATUS=draft`.
+5. **Closed test**: personal developer accounts created after 13 November 2023 need a closed
+   test with at least 12 testers, opted in for 14 days in a row, before they may apply for
+   production. The account's creation date isn't certain, so plan for it: a closed track
+   (Testing, Closed testing) with a Google Group or email list of 12 or more testers, the
+   internal release promoted to it.
+6. **Store listing**: description, screenshots, privacy policy URL (`/datenschutz`), the Data
+   safety form, content rating, target audience, and trader status (EU).
+7. **iOS**: Apple Developer Program membership and an App Store Connect API key.

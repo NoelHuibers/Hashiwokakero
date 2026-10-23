@@ -1,0 +1,426 @@
+name: Android release
+# The Android app's release (app/README.md, Releases): a tag app-v<x.y.z> on main, whose version
+# all files agree on (scripts/app-version.mjs), builds the App Bundle for Google Play, signs it
+# with the upload key and uploads it to Play's internal test track. A GitHub release for the tag
+# gets the bundle and a universal APK.
+#
+# A pull request that changes this workflow, the Gradle build or the version script runs it as a
+# dry run, below.
+#
+# By hand (Actions, Run workflow, or `gh workflow run android-release.yml --ref <ref>`):
+# - publish off (the default): a dry run on any branch or tag. Builds, signs and checks the bundle
+#   and keeps it as an artifact; no Play upload, no GitHub release. On a branch it skips the
+#   checks of the tag, of main and of CI.
+# - publish on: the same as pushing the tag, the ref has to be one (`--ref app-v1.2.3`). For an
+#   upload that failed or was skipped, e.g. before the PLAY_SERVICE_ACCOUNT_JSON secret was set.
+on:
+  push:
+    tags:
+      - app-v*
+  pull_request:
+    paths:
+      - .github/workflows/android-release.yml
+      - app/src-tauri/gen/android/app/build.gradle.kts
+      - scripts/app-version.mjs
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Upload to Google Play and make the GitHub release (the ref must be a tag app-v<x.y.z>)
+        type: boolean
+        default: false
+
+# One run per tag (or branch) at a time; a second one waits, it doesn't cancel an upload. A new
+# push to a pull request cancels its older dry run.
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # What this run is, and whether it may publish: the tag is app-v<the version of every file>, its
+  # commit is on main and CI passed for it there
+  check:
+    name: Check the release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      # The CI runs of the commit
+      actions: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      code: ${{ steps.version.outputs.code }}
+      publish: ${{ steps.mode.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: mode
+        env:
+          EVENT: ${{ github.event_name }}
+          PUBLISH: ${{ inputs.publish }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT" = push ] || [ "$PUBLISH" = true ]; then
+            if [ "$REF_TYPE" != tag ]; then
+              echo "::error::Publishing needs a tag app-v<x.y.z>, not the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
+              exit 1
+            fi
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "Release of $REF_NAME: Google Play (internal track) and a GitHub release" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Dry run on the $REF_TYPE $REF_NAME: built, signed and checked, not published" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      # Fails when the files disagree; prints the version
+      - id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version=$(node scripts/app-version.mjs)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$(node scripts/app-version.mjs --code)" >> "$GITHUB_OUTPUT"
+          if [ "$REF_TYPE" = tag ]; then
+            if ! [[ "$REF_NAME" =~ ^app-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+              echo "::error::The tag $REF_NAME isn't app-v<x.y.z>"
+              exit 1
+            fi
+            if [ "$REF_NAME" != "app-v$version" ]; then
+              echo "::error::The tag $REF_NAME doesn't match the app's version $version (set it with scripts/app-version.mjs in a pull request, then tag the merge)"
+              exit 1
+            fi
+          fi
+      - if: steps.mode.outputs.publish == 'true'
+        name: On main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          # identical or behind: main has the commit
+          status=$(gh api "repos/$REPO/compare/main...$sha" --jq .status)
+          if [ "$status" != identical ] && [ "$status" != behind ]; then
+            echo "::error::The tagged commit $sha isn't on main ($status); tag a commit of main"
+            exit 1
+          fi
+      # CI ran on main for this very commit and passed. A run still going is waited for (up to an
+      # hour), so the tag can follow the merge right away.
+      - if: steps.mode.outputs.publish == 'true'
+        name: CI passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          deadline=$((SECONDS + 3600))
+          while :; do
+            run=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$sha&branch=main&event=push&per_page=1" \
+              --jq '.workflow_runs[0] // empty | "\(.status) \(.conclusion) \(.html_url)"')
+            read -r status conclusion url <<< "$run"
+            if [ -z "$run" ] && [ "$SECONDS" -gt 180 ]; then
+              echo "::error::No CI run on main for $sha"
+              exit 1
+            fi
+            if [ "$status" = completed ]; then
+              if [ "$conclusion" != success ]; then
+                echo "::error::CI on main for $sha: $conclusion ($url). Re-run it or tag a newer commit."
+                exit 1
+              fi
+              echo "CI on main passed for $sha: $url" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ "$SECONDS" -gt "$deadline" ]; then
+              echo "::error::CI on main for $sha didn't finish within an hour ($url)"
+              exit 1
+            fi
+            echo "CI for $sha: ${status:-not started}, waiting"
+            sleep 30
+          done
+
+  # The web bundle, as "Build app (web)" in ci.yml builds it (same tools and versions; the same job
+  # id, so it starts from main's Rust cache). Another workflow's artifacts aren't at hand here.
+  build-app:
+    name: Build app (web)
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: rustup toolchain install
+      # Only main saves caches; a tag's would only be seen by that tag
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: false
+      - name: Install Trunk
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y trunk@0.22.0
+      - name: Build
+        run: pnpm run app:build --locked
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app-web-release
+          path: target/app-dist
+          retention-days: 1
+
+  # The App Bundle for every architecture Play delivers (each phone gets its own), signed with the
+  # upload key, and checked. Plus a universal APK, signed with the same key, for testers who
+  # install it by hand.
+  android:
+    name: Build App Bundle (Android)
+    needs: [check, build-app]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      NDK_VERSION: 29.0.14206865
+      # apksigner and zipalign for the checks
+      BUILD_TOOLS_VERSION: 36.0.0
+      VERSION: ${{ needs.check.outputs.version }}
+      CODE: ${{ needs.check.outputs.code }}
+      # Pinned with its checksum (the release has none of its own)
+      BUNDLETOOL_VERSION: 1.18.3
+      BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
+      AAB: app/src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+          cache-read-only: true
+      - name: Android NDK and bundletool
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS_VERSION"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+          curl -sSfL -o "$RUNNER_TEMP/bundletool.jar" \
+            "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar"
+          echo "$BUNDLETOOL_SHA256  $RUNNER_TEMP/bundletool.jar" | sha256sum -c
+      - run: rustup toolchain install && rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          save-if: false
+      - name: Install the Tauri CLI
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y tauri-cli@2.12.4
+      - uses: actions/download-artifact@v8
+        with:
+          name: app-web-release
+          path: target/app-dist
+      # The upload key in files of the runner's temp dir, gone at the end of the job (below).
+      # Gradle gets the passwords through the environment of its step, bundletool reads them from
+      # the files: a password can't break the format of keystore.properties then. Dry runs
+      # without the secrets (pull requests of Dependabot or forks) sign with a throwaway key.
+      - name: Upload key
+        env:
+          PUBLISH: ${{ needs.check.outputs.publish }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          key="$RUNNER_TEMP/upload-key"
+          mkdir -m 700 "$key"
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$key/upload.p12"
+          elif [ "$PUBLISH" = true ]; then
+            echo "::error::The secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD are needed"
+            exit 1
+          else
+            echo "::notice::No upload key in this run's secrets, signed with a throwaway key"
+            # PKCS12 has one password for the store and its keys
+            KEYSTORE_PASSWORD=$(openssl rand -hex 16) KEY_ALIAS=upload
+            KEY_PASSWORD=$KEYSTORE_PASSWORD
+            keytool -genkeypair -keystore "$key/upload.p12" -storetype PKCS12 -alias upload -keyalg RSA \
+              -validity 1 -dname "CN=Throwaway" -storepass "$KEYSTORE_PASSWORD" > /dev/null 2>&1
+          fi
+          printf '%s\n' "$KEYSTORE_PASSWORD" > "$key/store-password"
+          printf '%s\n' "$KEY_PASSWORD" > "$key/key-password"
+          printf '%s\n' "$KEY_ALIAS" > "$key/alias"
+          echo "UPLOAD_KEY=$key" >> "$GITHUB_ENV"
+      # Release, arm64 + 32-bit ARM + x86_64; without beforeBuildCommand, the bundle is there
+      - name: Build
+        working-directory: app/src-tauri
+        run: |
+          ANDROID_KEYSTORE_FILE="$UPLOAD_KEY/upload.p12" \
+          ANDROID_KEYSTORE_PASSWORD=$(cat "$UPLOAD_KEY/store-password") \
+          ANDROID_KEY_ALIAS=$(cat "$UPLOAD_KEY/alias") \
+          ANDROID_KEY_PASSWORD=$(cat "$UPLOAD_KEY/key-password") \
+            cargo tauri android build --ci --aab --target aarch64 armv7 x86_64 --config '{"build":{"beforeBuildCommand":null}}'
+      - name: Universal APK
+        run: |
+          alias=$(cat "$UPLOAD_KEY/alias")
+          mkdir -p release
+          cp "$AAB" "release/hashi-$VERSION.aab"
+          java -jar "$RUNNER_TEMP/bundletool.jar" build-apks --mode=universal \
+            --bundle "release/hashi-$VERSION.aab" --output "$RUNNER_TEMP/universal.apks" \
+            --ks "$UPLOAD_KEY/upload.p12" --ks-key-alias "$alias" \
+            --ks-pass "file:$UPLOAD_KEY/store-password" --key-pass "file:$UPLOAD_KEY/key-password"
+          unzip -p "$RUNNER_TEMP/universal.apks" universal.apk > "release/hashi-$VERSION-universal.apk"
+          # The upload key's certificate, to compare the signatures with (not secret)
+          keytool -exportcert -rfc -keystore "$UPLOAD_KEY/upload.p12" -alias "$alias" \
+            -storepass:file "$UPLOAD_KEY/store-password" > "$RUNNER_TEMP/upload-cert.pem"
+      - if: always()
+        name: Remove the upload key
+        run: rm -rf "$RUNNER_TEMP/upload-key"
+      # Signed with the upload key (not the debug key), Play's checks of the bundle, the store's
+      # ID and the version, every architecture there, its native code ready for 16 KB pages
+      - name: Check
+        run: |
+          bundletool() { java -jar "$RUNNER_TEMP/bundletool.jar" "$@"; }
+          # SHA-256 of a certificate as lowercase hex, as apksigner prints it
+          fingerprint() { keytool -printcert "$@" | sed -n 's/^\s*SHA256: //p' | tr -d : | tr '[:upper:]' '[:lower:]'; }
+          aab="release/hashi-$VERSION.aab"
+          apk="release/hashi-$VERSION-universal.apk"
+          fail() { echo "::error::$1"; exit 1; }
+
+          expected=$(fingerprint -file "$RUNNER_TEMP/upload-cert.pem")
+          [ -n "$expected" ] || fail "no fingerprint of the upload key"
+          jarsigner -verify "$aab" | grep -q '^jar verified' || fail "the App Bundle's signature doesn't verify"
+          [ "$(fingerprint -jarfile "$aab")" = "$expected" ] || fail "the App Bundle isn't signed with the upload key"
+          build_tools="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION"
+          # Only APK signature schemes v2 and v3 (minSdk 24), keytool can't read those
+          signers=$("$build_tools/apksigner" verify --print-certs "$apk") || fail "the universal APK's signature doesn't verify"
+          digests=$(sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p' <<< "$signers")
+          [ "$digests" = "$expected" ] \
+            || fail "the universal APK isn't signed with the upload key alone: ${digests//$'\n'/ }, not $expected"
+
+          bundletool validate --bundle "$aab" > /dev/null
+          manifest() { bundletool dump manifest --bundle "$aab" --xpath "$1"; }
+          [ "$(manifest /manifest/@package)" = rs.hashi ] || fail "applicationId $(manifest /manifest/@package), not rs.hashi"
+          [ "$(manifest /manifest/@android:versionCode)" = "$CODE" ] || fail "versionCode $(manifest /manifest/@android:versionCode), not $CODE"
+          [ "$(manifest /manifest/@android:versionName)" = "$VERSION" ] || fail "versionName $(manifest /manifest/@android:versionName), not $VERSION"
+          [ -z "$(manifest /manifest/application/@android:debuggable)" ] || fail "the App Bundle is debuggable"
+
+          files=$(unzip -Z1 "$aab")
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            grep -qx "base/lib/$abi/libhashi_tauri_lib.so" <<< "$files" || fail "no native library for $abi"
+            grep -qx "BUNDLE-METADATA/com.android.tools.build.debugsymbols/$abi/libhashi_tauri_lib.so.sym" <<< "$files" \
+              || fail "no native symbols for $abi"
+          done
+          # 16 KB pages (Play requires them for 64-bit): the libraries' LOAD segments aligned to
+          # 16 KB, and stored uncompressed and 16 KB-aligned in the APK
+          readelf="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          for abi in arm64-v8a x86_64; do
+            unzip -p "$aab" "base/lib/$abi/libhashi_tauri_lib.so" > "$RUNNER_TEMP/lib.so"
+            "$readelf" -lW "$RUNNER_TEMP/lib.so" | awk '$1 == "LOAD" { if (strtonum($NF) < 16384) bad = 1; n++ } END { exit bad || !n }' \
+              || fail "$abi: the native library isn't aligned for 16 KB pages"
+          done
+          "$build_tools/zipalign" -c -P 16 4 "$apk" || fail "the universal APK isn't aligned for 16 KB pages"
+          echo "Signed with the upload key, SHA-256 $expected" >> "$GITHUB_STEP_SUMMARY"
+      # What a phone downloads (the arm64 split APKs Play makes from the bundle), and the files
+      - name: Size
+        run: |
+          bundletool() { java -jar "$RUNNER_TEMP/bundletool.jar" "$@"; }
+          aab="release/hashi-$VERSION.aab"
+          bundletool build-apks --bundle "$aab" --output "$RUNNER_TEMP/split.apks"
+          echo '{"supportedAbis":["arm64-v8a"],"supportedLocales":["en"],"screenDensity":440,"sdkVersion":35}' > "$RUNNER_TEMP/arm64.json"
+          mb() { awk -v bytes="$1" 'BEGIN { printf "%.1f MB", bytes / 1048576 }'; }
+          size=$(bundletool get-size total --apks "$RUNNER_TEMP/split.apks" --device-spec "$RUNNER_TEMP/arm64.json" | tail -n 1)
+          {
+            echo "| Android $VERSION (versionCode $CODE) | size |"
+            echo "|---|---|"
+            echo "| App Bundle (upload) | $(mb "$(stat -c %s "$aab")") |"
+            echo "| Download for an arm64 phone (min-max) | $(mb "${size%%,*}") - $(mb "${size##*,}") |"
+            echo "| Universal APK | $(mb "$(stat -c %s "release/hashi-$VERSION-universal.apk")") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-release
+          path: release
+          compression-level: 0
+          retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
+
+  # The bundle and the APK on the tag's GitHub release: the source of the first upload, which has
+  # to be done by hand in the Play Console
+  release:
+    name: GitHub release
+    needs: [check, android]
+    if: needs.check.outputs.publish == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: android-release
+          path: release
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.check.outputs.version }}
+          CODE: ${{ needs.check.outputs.code }}
+        run: |
+          {
+            cat app/store/whatsnew/whatsnew-en-US
+            echo
+            echo "## Android"
+            echo
+            echo "- \`hashi-$VERSION.aab\`: the App Bundle uploaded to Google Play (versionCode $CODE)."
+            echo "- \`hashi-$VERSION-universal.apk\`: the same app for every architecture, to install by hand."
+            echo
+            echo "Both are signed with the app's upload key, which only identifies uploads to Google Play;"
+            echo "Play signs the app it delivers with its own key. So they're safe to publish, and the APK"
+            echo "can't update an app installed from Play (or the other way round): uninstall that first."
+          } > notes.md
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" release/* --clobber
+          else
+            gh release create "$TAG" release/* --verify-tag --prerelease --title "Hashi $VERSION (Android)" --notes-file notes.md
+          fi
+
+  # Google Play's internal test track. Skipped until the PLAY_SERVICE_ACCOUNT_JSON secret (the
+  # service account's JSON key) is set, and Play only accepts uploads through the API after the
+  # first bundle was uploaded by hand (app/README.md, Releases). PLAY_RELEASE_STATUS (a repository
+  # variable) can make it a draft, which Play requires while the app itself is still a draft.
+  play:
+    name: Upload to Google Play
+    needs: [check, android]
+    if: needs.check.outputs.publish == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - if: env.PLAY_SERVICE_ACCOUNT_JSON == ''
+        run: |
+          echo "::notice::No PLAY_SERVICE_ACCOUNT_JSON secret, the App Bundle isn't uploaded to Google Play"
+          echo "No PLAY_SERVICE_ACCOUNT_JSON secret, the App Bundle isn't uploaded to Google Play. It is on the GitHub release; once the secret is set, run this workflow on the tag with publish." >> "$GITHUB_STEP_SUMMARY"
+      - if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+        uses: actions/checkout@v7
+      - if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+        uses: actions/download-artifact@v8
+        with:
+          name: android-release
+          path: release
+      # The native symbols and R8's mapping are in the bundle (BUNDLE-METADATA), Play takes them
+      # from there
+      - if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: rs.hashi
+          releaseFiles: release/hashi-${{ needs.check.outputs.version }}.aab
+          releaseName: ${{ needs.check.outputs.version }}
+          track: internal
+          status: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
+          whatsNewDirectory: app/store/whatsnew
+      - if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+        run: echo "Uploaded ${{ needs.check.outputs.version }} to Google Play's internal track" >> "$GITHUB_STEP_SUMMARY"
