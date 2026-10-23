@@ -44,9 +44,12 @@ pub fn run() {
 /// an https one, else nowhere. Tauri lets the `WebView` go anywhere by itself.
 fn hashi<R: Runtime>() -> TauriPlugin<R> {
     tauri::plugin::Builder::new("hashi")
-        .setup(|_app, _api| {
+        .setup(|_app, api| {
             #[cfg(target_os = "android")]
-            _api.register_android_plugin("rs.hashi", "HashiPlugin")?;
+            api.register_android_plugin("rs.hashi", "HashiPlugin")?;
+            // Only Android has its side yet (iOS: step 13 of docs/mobile.md)
+            #[cfg(not(target_os = "android"))]
+            let _ = api;
             Ok(())
         })
         .on_navigation(|webview, url| {
