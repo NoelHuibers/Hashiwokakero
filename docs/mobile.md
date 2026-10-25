@@ -133,6 +133,10 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 
 ## Owner tasks
 
+The versions follow the release stages: 0.0.x for the first internal test uploads (getting the
+Play Console set up may take a few), 0.1.0 for the closed test, 1.0.0 for production. Play only
+takes a versionCode above every earlier upload's, so the stages only go up.
+
 Things only the account owner can do. Done: the upload keystore, as the GitHub secrets
 `ANDROID_KEYSTORE_*` and `ANDROID_KEY_*` (keep its offline backup: a lost upload key can only be
 replaced through Play's support). Left, in this order (details in
@@ -140,7 +144,7 @@ replaced through Play's support). Left, in this order (details in
 
 1. **Create the app** in the Play Console: Create app, name "Hashi", app (not game), free.
    The package name `rs.hashi` is set by the first upload and can never change.
-2. **The first upload by hand.** Push the first tag (`app-v0.1.0` or the next version); the
+2. **The first upload by hand.** Push the first tag (`app-v0.0.1`); the
    workflow makes the GitHub release, its upload to Play is skipped without the secret. In the
    Play Console: Test and release, Testing, Internal testing, Create new release; upload
    `hashi-<version>.aab` from the GitHub release, then roll it out to the internal testers
