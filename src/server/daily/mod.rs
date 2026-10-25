@@ -25,11 +25,15 @@ pub use stamps::{
 pub(crate) use stats::invalidate as invalidate_profiles;
 pub use stats::{cached_profile, profile, stats};
 
-use common::{Difficulty, GenerateParams, Puzzle};
+use std::future::Future;
+use std::sync::LazyLock;
+
+use common::{Difficulty, GenerateParams, GeneratedPuzzle, Puzzle};
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
 use sha2::{Digest, Sha256};
 
+use super::coalesce::Flights;
 use super::db::db_err;
 use super::{now_ms, run_blocking};
 use crate::model::{ApiError, daily_difficulty, day_of};
@@ -104,14 +108,41 @@ async fn load(conn: &Connection, day: i64) -> Result<Option<Daily>, ServerFnErro
     }))
 }
 
+type Generation = Result<GeneratedPuzzle, ServerFnError>;
+
+/// The dailies being generated. The first requests of a day (everybody starting the new daily
+/// after midnight) wait for one generation instead of each queueing their own: the same
+/// parameters give the same puzzle (see `backend::generator`). Only days somebody plays get
+/// here, so there are few keys.
+static GENERATIONS: LazyLock<Flights<GenerateParams, Generation>> =
+    LazyLock::new(|| Flights::new(16));
+
 /// The puzzle of a day, generated and stored on first use.
 pub async fn get_or_create(conn: &Connection, day: i64) -> Result<Daily, ServerFnError> {
+    get_or_create_with(conn, day, &GENERATIONS, |params| {
+        run_blocking(move || Ok(backend::api::generate(&params)))
+    })
+    .await
+}
+
+/// [`get_or_create`] with the generations of `flights`, made by `generate`.
+async fn get_or_create_with<F, Fut>(
+    conn: &Connection,
+    day: i64,
+    flights: &Flights<GenerateParams, Generation>,
+    generate: F,
+) -> Result<Daily, ServerFnError>
+where
+    F: FnOnce(GenerateParams) -> Fut + Send,
+    Fut: Future<Output = Generation> + Send,
+{
     if let Some(daily) = load(conn, day).await? {
         return Ok(daily);
     }
     let params = params(day, seed(day));
     let difficulty = params.difficulty;
-    let generated = run_blocking(move || Ok(backend::api::generate(&params))).await?;
+    // Every request stores it itself: the owner's connection may be in a transaction
+    let generated = flights.run(params, || generate(params)).await?;
     if !generated.unique {
         return Err(ApiError::Internal.fail());
     }
