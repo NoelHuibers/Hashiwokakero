@@ -53,4 +53,44 @@ ordered by user id, in both the count and the stored rows.
 
 ## Measurements
 
-FILLED IN BELOW
+Measured 2026-10-25 with Python SQLite 3.51.2 on the synthetic history of
+[profile-cache-coalescing.md](profile-cache-coalescing.md): 1,000 players × 180 days, 180,000
+ranked attempts, April 25 to October 21, so six closed months. The script reads the month SQL,
+the stored-standings read and migration 21 (tables and triggers) from the source; the Rust
+aggregation is mirrored in Python only to time a fill. Medians of five warm runs, run under
+`hashi-heavy` so no build ran alongside.
+
+| What | Before | After | Rows before → after |
+| --- | ---: | ---: | ---: |
+| Six closed-month champions, SQL only | 259.89 ms | 0.01 ms | 159,000 → 6 |
+| Six closed-month champions, with aggregation | 307.30 ms | 0.01 ms | 159,000 → 6 |
+| Board of a closed month (September) | 56.82 ms | 0.31 ms | 30,000 → 1,000 |
+
+The SQL-only row is the query of the October 21 baseline (229.56 ms there, same 159,000
+rows). The cost moves to one fill per month: counting and storing all six
+months took **308.63 ms** in total (11.54 ms for the six April days, about 60 ms for each full
+month), once, on whichever request first reads the month after it closes (or after a change
+drops it).
+
+The triggers add a lookup in `closed_months` (one row per month) to every insert, delete
+and ranking-relevant update of `attempts`: 1,000 finishes of today's daily took 3.73 ms
+without and 4.37 ms with them, under a microsecond per write. A review of one June result
+dropped only that month (five months and 5,000 standings rows stayed).
+
+[Raw results](closed-month-aggregates-results.json). Reproduce from the repository root
+(no server, Rust build or packages; it reads the current source, so record the revision):
+
+```sh
+git rev-parse HEAD
+python3 -I examples/closed_month_aggregates.py
+```
+
+## Limits
+
+These are in-memory SQL timings, not HTTP, Turso or production latency. On Turso the number of
+round trips for a cold profile stays the same (one per month the player finished a daily
+in), each now reading at most one row instead of a month of ranked times. A fill holds the
+write lock while it counts, about 60 ms per month here; writes wait for it (the busy timeout
+is five seconds), once per month. The running month, the hall of fame and personal ranks are
+still counted on every read. A future migration that recreates `attempts` must recreate the
+triggers.

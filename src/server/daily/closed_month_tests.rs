@@ -203,7 +203,11 @@ async fn stored_standings_match_counting_through_every_change() {
 
     // A review (/admin/flag) takes the result off: January only is worked out again
     mark(&conn).await;
-    assert!(set_flag(&conn, winner, day, Some(Flag::Review)).await.unwrap());
+    assert!(
+        set_flag(&conn, winner, day, Some(Flag::Review))
+            .await
+            .unwrap()
+    );
     dropped(&conn, &[day]).await;
     equivalent(&conn, "flagged").await;
     // and puts it back
@@ -248,7 +252,7 @@ async fn stored_standings_match_counting_through_every_change() {
         "finished_at IS NULL OR revealed != 0 OR flag IS NOT NULL",
     )
     .await;
-    assert!(!unranked.is_empty());
+    assert_ne!(unranked, Vec::<i64>::new());
     mark(&conn).await;
     auth::erase(&conn, deleted).await.unwrap();
     dropped(&conn, &unranked).await;
@@ -264,7 +268,7 @@ async fn stored_standings_match_counting_through_every_change() {
     auth::merge_guest(&conn, guest, account, &token)
         .await
         .unwrap();
-    assert!(days_of(&conn, guest, "1").await.is_empty());
+    assert_eq!(days_of(&conn, guest, "1").await, Vec::<i64>::new());
     dropped(&conn, &guest_days).await;
     equivalent(&conn, "guest moved").await;
 
@@ -329,12 +333,9 @@ async fn stored_standings_match_counting_through_every_change() {
     dropped(&conn, &[40]).await;
     equivalent(&conn, "new").await;
     mark(&conn).await;
-    conn.execute(
-        "DELETE FROM attempts WHERE user_id = ?1",
-        params![newcomer],
-    )
-    .await
-    .unwrap();
+    conn.execute("DELETE FROM attempts WHERE user_id = ?1", params![newcomer])
+        .await
+        .unwrap();
     dropped(&conn, &[40]).await;
     equivalent(&conn, "removed").await;
 
@@ -384,10 +385,7 @@ async fn exact_ties_are_stored_in_the_order_counted() {
     .unwrap();
     let month = month_of(3);
     let counted = count_points(&conn, month).await.unwrap();
-    assert_eq!(
-        counted.iter().map(|p| p.0).collect::<Vec<_>>(),
-        [4, 7, 9]
-    );
+    assert_eq!(counted.iter().map(|p| p.0).collect::<Vec<_>>(), [4, 7, 9]);
     assert_eq!(month_points(&conn, month).await.unwrap(), counted);
     assert_eq!(month_points(&conn, month).await.unwrap(), counted);
     assert_eq!(champion(&conn, month).await.unwrap(), Some(4));
@@ -412,7 +410,11 @@ async fn late_finishes_and_early_clocks_drop_stored_months() {
     .unwrap();
     // Bob alone on the first and the last day of last month, alice alone on another day: bob
     // won with 40 points
-    for (user, day, time) in [(bob, earlier, 90_000), (bob, last, 90_000), (alice, earlier + 1, 90_000)] {
+    for (user, day, time) in [
+        (bob, earlier, 90_000),
+        (bob, last, 90_000),
+        (alice, earlier + 1, 90_000),
+    ] {
         conn.execute(
             "INSERT INTO attempts (user_id, day, started_at, finished_at, time_ms) VALUES (?1, ?2, ?3, ?3 + ?4, ?4)",
             params![user, day, day * MS_PER_DAY, time],
@@ -482,10 +484,7 @@ async fn a_change_while_storing_is_never_lost() {
     let other = conn.independent_connection().await;
     other.busy_timeout(timeout).unwrap();
     // The other server reviews January's winner and hasn't committed yet
-    other
-        .execute("BEGIN IMMEDIATE", ())
-        .await
-        .unwrap();
+    other.execute("BEGIN IMMEDIATE", ()).await.unwrap();
     other
         .execute(
             "UPDATE attempts SET flag = 'review' WHERE user_id = ?1 AND day < 31",

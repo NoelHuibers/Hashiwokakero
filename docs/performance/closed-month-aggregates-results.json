@@ -1,0 +1,137 @@
+{
+  "sqlite": "3.51.2",
+  "repeats": 5,
+  "shape": {
+    "players": 1000,
+    "days": 180,
+    "attempts": 180000,
+    "from": "2026-04-25",
+    "through": "2026-10-21",
+    "closed_months": 6
+  },
+  "before_six_champions_sql_only": {
+    "median_ms": 259.89,
+    "runs_ms": [
+      265.73,
+      263.68,
+      259.87,
+      259.89,
+      259.46
+    ],
+    "rows": 159000
+  },
+  "before_six_champions_with_aggregation": {
+    "median_ms": 307.3,
+    "runs_ms": [
+      320.98,
+      306.99,
+      307.3,
+      308.5,
+      306.67
+    ],
+    "rows": 159000
+  },
+  "fill_once_per_month": {
+    "total_ms": 308.63,
+    "months": [
+      {
+        "month": 24315,
+        "rows_read": 6000,
+        "standings_stored": 1000,
+        "ms": 11.54
+      },
+      {
+        "month": 24316,
+        "rows_read": 31000,
+        "standings_stored": 1000,
+        "ms": 59.97
+      },
+      {
+        "month": 24317,
+        "rows_read": 30000,
+        "standings_stored": 1000,
+        "ms": 58.38
+      },
+      {
+        "month": 24318,
+        "rows_read": 31000,
+        "standings_stored": 1000,
+        "ms": 60.06
+      },
+      {
+        "month": 24319,
+        "rows_read": 31000,
+        "standings_stored": 1000,
+        "ms": 60.44
+      },
+      {
+        "month": 24320,
+        "rows_read": 30000,
+        "standings_stored": 1000,
+        "ms": 58.24
+      }
+    ]
+  },
+  "after_six_champions": {
+    "median_ms": 0.01,
+    "runs_ms": [
+      0.07,
+      0.01,
+      0.01,
+      0.01,
+      0.01
+    ],
+    "rows": 6
+  },
+  "closed_month_board": {
+    "before": {
+      "median_ms": 56.82,
+      "runs_ms": [
+        56.85,
+        56.82,
+        56.96,
+        56.55,
+        56.5
+      ],
+      "rows": 30000
+    },
+    "after": {
+      "median_ms": 0.31,
+      "runs_ms": [
+        0.31,
+        0.31,
+        0.31,
+        0.31,
+        0.34
+      ],
+      "rows": 1000
+    }
+  },
+  "today_finish_x1000": {
+    "without_triggers": {
+      "median_ms": 3.73,
+      "runs_ms": [
+        3.84,
+        3.7,
+        3.72,
+        3.73,
+        3.74
+      ]
+    },
+    "with_triggers": {
+      "median_ms": 4.37,
+      "runs_ms": [
+        5.59,
+        4.63,
+        4.37,
+        4.35,
+        4.35
+      ]
+    }
+  },
+  "after_review": {
+    "months_stored": 5,
+    "standings_rows": 5000
+  },
+  "caveat": "SQL plus the equivalent Python aggregation, in memory, one process; not HTTP, Turso round trips or production latency. Rust aggregation/sorting is mirrored in Python only to time a fill."
+}
