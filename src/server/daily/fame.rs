@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use leptos::prelude::ServerFnError;
-use libsql::{Connection, params};
+use libsql::{Connection, TransactionBehavior, params};
 
 use super::stamps::shown_stamps;
 use super::today;
@@ -151,6 +151,17 @@ pub(super) async fn month_points(
     conn: &Connection,
     month: i64,
 ) -> Result<Vec<(i64, i64, i64, i64)>, ServerFnError> {
+    if month < month_of(today()) {
+        return closed_month(conn, month, None).await;
+    }
+    count_points(conn, month).await
+}
+
+/// [`month_points`] from every ranked time of the month.
+async fn count_points(
+    conn: &Connection,
+    month: i64,
+) -> Result<Vec<(i64, i64, i64, i64)>, ServerFnError> {
     let (from, to) = month_days(month);
     let mut rows = conn
         .query(&placed("a.day BETWEEN ?1 AND ?2"), params![from, to])
@@ -171,9 +182,106 @@ pub(super) async fn month_points(
         .into_iter()
         .map(|(user, (points, solved, first))| (user, points, solved, first))
         .collect();
-    // More points first, then whoever got there first
-    list.sort_by(|a, b| b.1.cmp(&a.1).then(a.3.cmp(&b.3)));
+    // More points first, then whoever got there first. The lower id only breaks a tie down to
+    // the millisecond, which used to fall to the order of the map, a different one each time
+    list.sort_by(|a, b| b.1.cmp(&a.1).then(a.3.cmp(&b.3)).then(a.0.cmp(&b.0)));
     Ok(list)
+}
+
+/// The first `limit` (`None`: all) of [`month_points`] of a month that is over.
+///
+/// Its ranked times hardly ever change any more, so the standings are worked out once and
+/// stored, the first read after the month is over does it. Whatever changes a ranked time of the
+/// month still drops them again, triggers on `attempts` take care of that (see the migration of
+/// `closed_months`), so they always are what [`count_points`] would say. Also on another server,
+/// and on one whose clock thinks the month is over before the others do.
+async fn closed_month(
+    conn: &Connection,
+    month: i64,
+    limit: Option<i64>,
+) -> Result<Vec<(i64, i64, i64, i64)>, ServerFnError> {
+    if let Some(list) = stored_month(conn, month, limit).await? {
+        return Ok(list);
+    }
+    // Under the write lock: a change of the month's ranked times can't come between counting
+    // and storing, it waits and then drops what was stored
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    // Another request (or server) may have been faster
+    if let Some(list) = stored_month(&tx, month, limit).await? {
+        tx.commit().await.map_err(db_err)?;
+        return Ok(list);
+    }
+    let mut list = count_points(&tx, month).await?;
+    let (from, to) = month_days(month);
+    tx.execute(
+        "INSERT INTO closed_months (month, first_day, last_day) VALUES (?1, ?2, ?3)",
+        params![month, from, to],
+    )
+    .await
+    .map_err(db_err)?;
+    // Numbers from the database and our own count, nothing to escape
+    let values: Vec<String> = list
+        .iter()
+        .zip(1..)
+        .map(|(&(user, points, solved, first), place)| {
+            format!("({month}, {place}, {user}, {points}, {solved}, {first})")
+        })
+        .collect();
+    for chunk in values.chunks(STORE_CHUNK) {
+        tx.execute(
+            &format!(
+                "INSERT INTO month_standings (month, place, user_id, points, solved, first_finish) VALUES {}",
+                chunk.join(",")
+            ),
+            (),
+        )
+        .await
+        .map_err(db_err)?;
+    }
+    tx.commit().await.map_err(db_err)?;
+    if let Some(limit) = limit {
+        list.truncate(usize::try_from(limit).unwrap_or(0));
+    }
+    Ok(list)
+}
+
+/// Players stored per statement, which keeps each statement small.
+const STORE_CHUNK: usize = 500;
+
+/// The stored standings of a month, `None` if there are none (yet, or any more).
+async fn stored_month(
+    conn: &Connection,
+    month: i64,
+    limit: Option<i64>,
+) -> Result<Option<Vec<(i64, i64, i64, i64)>>, ServerFnError> {
+    // One statement, one snapshot: the month and its standings together. A month without
+    // standings is one row of NULLs
+    let mut rows = conn
+        .query(
+            "SELECT s.user_id, s.points, s.solved, s.first_finish FROM closed_months c
+             LEFT JOIN month_standings s ON s.month = c.month AND s.place <= ?2
+             WHERE c.month = ?1 ORDER BY s.place",
+            params![month, limit.unwrap_or(i64::MAX)],
+        )
+        .await
+        .map_err(db_err)?;
+    let mut list = Vec::new();
+    let mut stored = false;
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        stored = true;
+        if let Some(user) = row.get::<Option<i64>>(0).map_err(db_err)? {
+            list.push((
+                user,
+                row.get(1).map_err(db_err)?,
+                row.get(2).map_err(db_err)?,
+                row.get(3).map_err(db_err)?,
+            ));
+        }
+    }
+    Ok(stored.then_some(list))
 }
 
 /// The winner of a month that is over, nobody before that.
@@ -181,7 +289,10 @@ pub(super) async fn champion(conn: &Connection, month: i64) -> Result<Option<i64
     if month >= month_of(today()) {
         return Ok(None);
     }
-    Ok(month_points(conn, month).await?.first().map(|p| p.0))
+    Ok(closed_month(conn, month, Some(1))
+        .await?
+        .first()
+        .map(|p| p.0))
 }
 
 /// The monthly board, `month` defaults to the running one.
@@ -255,3 +366,7 @@ pub(super) async fn names(
     }
     Ok(names)
 }
+
+#[cfg(test)]
+#[path = "closed_month_tests.rs"]
+mod tests;
