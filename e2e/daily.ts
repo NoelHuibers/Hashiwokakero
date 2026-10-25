@@ -64,7 +64,7 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
   await hint.click();
   await expect.poll(async () => JSON.stringify((await saved(page, DAILY_KEY)).bridges)).not.toBe(before);
   await expect(penalty(page)).toHaveText('+40s');
-  await hintAllButOne(page, solution);
+  await hintUntil(page, solution, 1);
 
   const [last] = missing((await saved(page, DAILY_KEY)).bridges, solution);
   const built = (await saved(page, DAILY_KEY)).bridges[last];
@@ -72,25 +72,25 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
 }
 
 /**
- * Presses Hint until one bridge of the solution is left. A Sunday's Oni takes 150 hints and more
- * (172 on 2026-10-25). Pressed through Playwright, every hint also waited for the button to hold
- * still on the animated board and for a poll of the saved game, about half a second each, and
- * the bigger Onis ran out of the test's time. Pressed in the page, a hint is its request and a
- * render; and the test gets time for every hint on top, so no board is too big for it.
+ * Presses Hint until `left` bridges of the solution are missing. A Sunday's Oni takes 150 hints
+ * and more (172 on 2026-10-25). Pressed through Playwright, every hint also waited for the button
+ * to hold still on the animated board and for a poll of the saved game, about half a second
+ * each, and the bigger Onis ran out of the test's time. Pressed in the page, a hint is its
+ * request and a render; and the test gets time for every hint on top, so no board is too big.
  */
-async function hintAllButOne(page: Page, solution: number[]) {
-  const hints = missing((await saved(page, DAILY_KEY)).bridges, solution).length - 1;
+export async function hintUntil(page: Page, solution: number[], left: number) {
+  const hints = missing((await saved(page, DAILY_KEY)).bridges, solution).length - left;
   if (hints <= 0) return;
   test.setTimeout(test.info().timeout + hints * 500);
   await page.getByRole('button', { name: /^Hint/ }).evaluate(
-    async (button: HTMLElement, { key, solution }) => {
+    async (button: HTMLElement, { key, solution, left }) => {
       const built = () => (JSON.parse(localStorage.getItem(key)!) as { bridges: number[] }).bridges;
       const bridges = () => JSON.stringify(built());
-      const left = () => {
+      const missing = () => {
         const now = built();
         return solution.filter((s, e) => now[e] < s).length;
       };
-      for (let n = 1; left() > 1; n++) {
+      for (let n = 1; missing() > left; n++) {
         const before = bridges();
         const pressed = performance.now();
         button.click();
@@ -107,7 +107,7 @@ async function hintAllButOne(page: Page, solution: number[]) {
         }
       }
     },
-    { key: DAILY_KEY, solution },
+    { key: DAILY_KEY, solution, left },
   );
 }
 
