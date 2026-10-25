@@ -42,7 +42,11 @@ export async function startDaily(page: Page) {
   await expect(board(page).locator('g.island').first()).toBeVisible();
   await expect(penalty(page)).toHaveText('+0s');
   const { puzzle } = await saved(page, DAILY_KEY);
-  return { puzzle, solution: dailySolution(puzzle) };
+  const solution = dailySolution(puzzle);
+  // Tests solve it with hints, a round trip to the server each, and a Sunday's Oni takes 170 and
+  // more: longer than the 90 s of `test.slow()` alone. A second more per bridge of the solution
+  test.setTimeout(test.info().timeout + 1_000 * solution.filter((b) => b > 0).length);
+  return { puzzle, solution };
 }
 
 /**
@@ -52,9 +56,6 @@ export async function startDaily(page: Page) {
  * need (`verify_log` in src/model/moves.rs), and a handful of clicks always does.
  */
 export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[]) {
-  // Every hint is a round trip to the server, and a Sunday's Oni takes 170 and more: longer than
-  // the 90 s of `test.slow()` alone. A second more per bridge of the solution
-  test.setTimeout(test.info().timeout + 1_000 * solution.filter((b) => b > 0).length);
   const first = solution.findIndex((b) => b > 0);
   await addBridge(page, DAILY_KEY, puzzle, first);
 
