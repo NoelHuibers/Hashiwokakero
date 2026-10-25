@@ -240,6 +240,49 @@ fn image_urls_name_language_and_day() {
     assert_eq!(day_of(crate::server::now_ms()), today);
 }
 
+/// The previews of a shared link, asked for at once: one rendering, the same PNG for all, then
+/// kept. Another image renders on its own.
+#[tokio::test]
+async fn concurrent_requests_of_an_image_share_one_rendering() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    const REQUESTS: usize = 6;
+    static RENDERS: AtomicUsize = AtomicUsize::new(0);
+    static RENDERING: LazyLock<Flights<Image, Result<Bytes, StatusCode>>> =
+        LazyLock::new(|| Flights::new(4));
+    let cache = Mutex::default();
+    let image = Image::Daily(Locale::de, LAUNCH_DAY);
+    let render = move |rendered: Image| {
+        RENDERS.fetch_add(1, Ordering::SeqCst);
+        // Done once all the other requests wait for it
+        for _ in 0..2000 {
+            if RENDERING.followers(&image) == REQUESTS - 1 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+        Ok(format!("{rendered:?}").into_bytes())
+    };
+    let pngs = futures::future::join_all(
+        (0..REQUESTS).map(|_| cached_with(&cache, &RENDERING, image, render)),
+    )
+    .await;
+    assert_eq!(RENDERS.load(Ordering::SeqCst), 1);
+    let expected = Bytes::from(format!("{image:?}"));
+    assert!(pngs.iter().all(|png| png.as_ref() == Ok(&expected)));
+    assert_eq!(cache.lock().unwrap().get(&image), Some(&expected));
+    assert_eq!(RENDERING.in_flight(), 0);
+    // Kept: no rendering. Another language renders.
+    cached_with(&cache, &RENDERING, image, render)
+        .await
+        .unwrap();
+    assert_eq!(RENDERS.load(Ordering::SeqCst), 1);
+    let other = Image::Daily(Locale::ja, LAUNCH_DAY);
+    let png = cached_with(&cache, &RENDERING, other, render).await;
+    assert_eq!(png, Ok(Bytes::from(format!("{other:?}"))));
+    assert_eq!(RENDERS.load(Ordering::SeqCst), 2);
+}
+
 /// Writes every card to `$OG_SAMPLES` (a directory), to look at them:
 /// `OG_SAMPLES=~/og cargo test --no-default-features --features ssr --lib og::tests::samples -- --ignored`
 #[test]
