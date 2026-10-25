@@ -58,6 +58,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         CFBundleShortVersionString: 0.0.1
         CFBundleVersion: "0.0.1"
+        ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: hashi_tauri_iOS/hashi_tauri_iOS.entitlements
     scheme:

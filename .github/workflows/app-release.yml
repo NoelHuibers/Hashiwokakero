@@ -1,38 +1,48 @@
-name: Android release
-# The Android app's release (app/README.md, Releases): a tag app-v<x.y.z> on main, whose version
-# all files agree on (scripts/app-version.mjs), builds the App Bundle for Google Play, signs it
-# with the upload key and uploads it to Play's internal test track. A GitHub release for the tag
-# gets the bundle and a universal APK.
+name: App release
+# The mobile app's release (app/README.md, Releases): a tag app-v<x.y.z> on main, whose version
+# all files agree on (scripts/app-version.mjs), builds both platforms from the same commit:
+# - Android: the App Bundle for Google Play, signed with the upload key and uploaded to Play's
+#   internal test track.
+# - iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key (automatic
+#   signing, cloud-managed certificate) and uploaded to App Store Connect, where it shows up in
+#   TestFlight once Apple has processed it.
+# A GitHub release for the tag gets the bundle, a universal APK and the IPA.
 #
-# A pull request that changes this workflow, the Gradle build or the version script runs it as a
-# dry run, below.
+# A pull request that changes this workflow or the version script runs it as a dry run for both
+# platforms, below; one that changes the Gradle build for Android, one that changes the iOS project
+# (gen/apple, Info.ios.plist) for iOS.
 #
-# By hand (Actions, Run workflow, or `gh workflow run android-release.yml --ref <ref>`):
+# By hand (Actions, Run workflow, or `gh workflow run app-release.yml --ref <ref>`):
 # - publish off (the default): a dry run on any branch or tag. Builds, signs and checks the bundle
-#   and keeps it as an artifact; no Play upload, no GitHub release. On a branch it skips the
-#   checks of the tag, of main and of CI.
+#   and the IPA and keeps them as artifacts; no upload to Play or App Store Connect, no GitHub
+#   release. On a branch it skips the checks of the tag, of main and of CI.
 # - publish on: the same as pushing the tag, the ref has to be one (`--ref app-v1.2.3`). For an
 #   upload that failed or was skipped, e.g. before the PLAY_SERVICE_ACCOUNT_JSON secret was set.
+#
+# iOS needs the secrets APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8. Without them
+# (pull requests of Dependabot or forks) it is skipped with a notice; Android goes on.
 on:
   push:
     tags:
       - app-v*
   pull_request:
     paths:
-      - .github/workflows/android-release.yml
-      - app/src-tauri/gen/android/app/build.gradle.kts
+      - .github/workflows/app-release.yml
       - scripts/app-version.mjs
+      - app/src-tauri/gen/android/app/build.gradle.kts
+      - app/src-tauri/gen/apple/**
+      - app/src-tauri/Info.ios.plist
   workflow_dispatch:
     inputs:
       publish:
-        description: Upload to Google Play and make the GitHub release (the ref must be a tag app-v<x.y.z>)
+        description: Upload to Google Play and App Store Connect and make the GitHub release (the ref must be a tag app-v<x.y.z>)
         type: boolean
         default: false
 
 # One run per tag (or branch) at a time; a second one waits, it doesn't cancel an upload. A new
 # push to a pull request cancels its older dry run.
 concurrency:
-  group: android-release-${{ github.ref }}
+  group: app-release-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -43,7 +53,7 @@ env:
 
 jobs:
   # What this run is, and whether it may publish: the tag is app-v<the version of every file>, its
-  # commit is on main and CI passed for it there
+  # commit is on main and CI passed for it there. And which platforms it builds.
   check:
     name: Check the release
     runs-on: ubuntu-24.04
@@ -56,8 +66,13 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       code: ${{ steps.version.outputs.code }}
       publish: ${{ steps.mode.outputs.publish }}
+      android: ${{ steps.platforms.outputs.android }}
+      ios: ${{ steps.platforms.outputs.ios }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # A pull request's merge commit and its parents, for the platforms below
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 1 }}
       - id: mode
         env:
           EVENT: ${{ github.event_name }}
@@ -71,11 +86,36 @@ jobs:
               exit 1
             fi
             echo "publish=true" >> "$GITHUB_OUTPUT"
-            echo "Release of $REF_NAME: Google Play (internal track) and a GitHub release" >> "$GITHUB_STEP_SUMMARY"
+            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight) and a GitHub release" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
             echo "Dry run on the $REF_TYPE $REF_NAME: built, signed and checked, not published" >> "$GITHUB_STEP_SUMMARY"
           fi
+      # Both, except on a pull request: the platforms whose files it changes. iOS only with the App
+      # Store Connect API key, which pull requests of Dependabot and of forks don't get.
+      - id: platforms
+        env:
+          EVENT: ${{ github.event_name }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          android=true ios=true
+          if [ "$EVENT" = pull_request ]; then
+            # Against the first parent, main's head: what merging the pull request changes
+            files=$(git diff --no-renames --name-only HEAD^1 HEAD)
+            both='^(\.github/workflows/app-release\.yml|scripts/app-version\.mjs)$'
+            grep -qE "$both|^app/src-tauri/gen/android/app/build\.gradle\.kts$" <<< "$files" || android=false
+            grep -qE "$both|^app/src-tauri/gen/apple/|^app/src-tauri/Info\.ios\.plist$" <<< "$files" || ios=false
+          fi
+          if [ "$ios" = true ] && { [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; }; then
+            ios=false
+            echo "::notice::No App Store Connect API key in this run's secrets (APPLE_API_KEY_ID, APPLE_API_ISSUER, APPLE_API_KEY_P8), the iOS app isn't built"
+            echo "No App Store Connect API key in this run's secrets, the iOS app isn't built (for a tag: once the secrets are set, run this workflow on it with publish)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Platforms: Android $android, iOS $ios"
+          echo "android=$android" >> "$GITHUB_OUTPUT"
+          echo "ios=$ios" >> "$GITHUB_OUTPUT"
       # Fails when the files disagree; prints the version
       - id: version
         env:
@@ -147,6 +187,7 @@ jobs:
   build-app:
     name: Build app (web)
     needs: check
+    if: needs.check.outputs.android == 'true' || needs.check.outputs.ios == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -180,6 +221,7 @@ jobs:
   android:
     name: Build App Bundle (Android)
     needs: [check, build-app]
+    if: needs.check.outputs.android == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
@@ -346,12 +388,179 @@ jobs:
           compression-level: 0
           retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
 
+  # The IPA for the App Store, as "Build app (iOS)" in ci.yml builds the app (same runner image,
+  # Xcode and CLI) but for devices, in release, and signed. Tauri archives it unsigned, then Xcode
+  # exports the archive for App Store Connect with automatic signing: with the API key
+  # (-allowProvisioningUpdates and -authenticationKey*) it makes or reuses the team's
+  # cloud-managed distribution certificate and the App Store profile for rs.hashi, nothing to keep
+  # in secrets. Publishing then uploads the same archive to App Store Connect.
+  ios:
+    name: Build IPA (iOS)
+    needs: [check, build-app]
+    if: needs.check.outputs.ios == 'true'
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      # The Xcode of ci.yml; its SDK is iOS 26.5 (the App Store takes the iOS 26 SDK or newer)
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      VERSION: ${{ needs.check.outputs.version }}
+      CODE: ${{ needs.check.outputs.code }}
+      # The team of the signing, Tauri writes it into the Xcode project (not a secret)
+      APPLE_DEVELOPMENT_TEAM: Q35TCGM5PW
+      ARCHIVE: app/src-tauri/gen/apple/build/hashi_tauri_iOS.xcarchive
+      IPA: app/src-tauri/gen/apple/build/arm64/Hashi.ipa
+    steps:
+      - uses: actions/checkout@v7
+      - name: Xcode
+        run: xcodebuild -version | tee -a "$GITHUB_STEP_SUMMARY"
+      - run: rustup toolchain install && rustup target add aarch64-apple-ios
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          save-if: false
+      # The arm64 build of the CLI, as in ci.yml
+      - name: Install the Tauri CLI
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
+          file ~/.cargo/bin/cargo-tauri | grep -q arm64
+      - uses: actions/download-artifact@v8
+        with:
+          name: app-web-release
+          path: target/app-dist
+      # The API key's .p8 in a file of the runner's temp dir, gone at the end of the job (below).
+      # Tauri passes it on to xcodebuild through APPLE_API_KEY, APPLE_API_ISSUER and
+      # APPLE_API_KEY_PATH.
+      - name: API key
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          key="$RUNNER_TEMP/api-key"
+          mkdir -m 700 "$key"
+          (umask 077 && printf '%s\n' "$APPLE_API_KEY_P8" > "$key/AuthKey_$APPLE_API_KEY_ID.p8")
+          grep -q -- '-----BEGIN PRIVATE KEY-----' "$key/AuthKey_$APPLE_API_KEY_ID.p8" \
+            || { echo "::error::APPLE_API_KEY_P8 isn't the content of the key's .p8 file"; exit 1; }
+          {
+            echo "APPLE_API_KEY=$APPLE_API_KEY_ID"
+            echo "APPLE_API_ISSUER=$APPLE_API_ISSUER"
+            echo "APPLE_API_KEY_PATH=$key/AuthKey_$APPLE_API_KEY_ID.p8"
+          } >> "$GITHUB_ENV"
+      # Release, arm64, without beforeBuildCommand (the bundle is there). CFBundleVersion, the build
+      # number App Store Connect counts, is the versionCode: it grows with every version, and
+      # --build-number would append it as a fourth number, which App Store Connect refuses.
+      - name: Build
+        working-directory: app/src-tauri
+        run: |
+          config=$(jq -nc --arg code "$CODE" '{build: {beforeBuildCommand: null}, bundle: {iOS: {bundleVersion: $code}}}')
+          cargo tauri ios build --ci --target aarch64 --export-method app-store-connect --config "$config"
+      # Signed for the App Store by the team (an Apple Distribution certificate and an App Store
+      # profile: no devices, TestFlight allowed, not debuggable), the store's ID with the Universal
+      # Links' domain, the version and build number, the export compliance answer, arm64
+      - name: Check
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          work="$RUNNER_TEMP/ipa"
+          rm -rf "$work" && mkdir "$work"
+          unzip -q "$IPA" -d "$work"
+          app="$work/Payload/Hashi.app"
+          [ -d "$app" ] || fail "no Payload/Hashi.app in the IPA"
+          codesign --verify --strict --deep "$app" || fail "the app's signature doesn't verify"
+          signature=$(codesign -dvv "$app" 2>&1)
+          authority=$(sed -n 's/^Authority=//p' <<< "$signature" | head -n 1)
+          team=$(sed -n 's/^TeamIdentifier=//p' <<< "$signature")
+          [[ "$authority" == "Apple Distribution: "* ]] || fail "signed by $authority, not an Apple Distribution certificate"
+          [ "$team" = "$APPLE_DEVELOPMENT_TEAM" ] || fail "signed for the team $team, not $APPLE_DEVELOPMENT_TEAM"
+
+          codesign -d --entitlements "$RUNNER_TEMP/entitlements.plist" --xml "$app" 2> /dev/null
+          security cms -D -i "$app/embedded.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          get() { /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2> /dev/null; }
+          entitlement() { get "$RUNNER_TEMP/entitlements.plist" "$1"; }
+          [ "$(entitlement application-identifier)" = "$APPLE_DEVELOPMENT_TEAM.rs.hashi" ] \
+            || fail "application-identifier $(entitlement application-identifier), not $APPLE_DEVELOPMENT_TEAM.rs.hashi"
+          [ "$(entitlement get-task-allow)" = false ] || fail "the app is debuggable (get-task-allow)"
+          [ "$(entitlement beta-reports-active)" = true ] || fail "not signed for TestFlight (beta-reports-active)"
+          entitlement com.apple.developer.associated-domains | grep -qE '^[[:space:]]*applinks:hashi\.rs$' \
+            || fail "the Associated Domains don't have applinks:hashi.rs"
+          profile=$(get "$RUNNER_TEMP/profile.plist" Name)
+          [ -z "$(get "$RUNNER_TEMP/profile.plist" ProvisionedDevices)" ] || fail "the profile $profile has devices, it isn't an App Store one"
+
+          info() { get "$app/Info.plist" "$1"; }
+          [ "$(info CFBundleIdentifier)" = rs.hashi ] || fail "CFBundleIdentifier $(info CFBundleIdentifier), not rs.hashi"
+          [ "$(info CFBundleShortVersionString)" = "$VERSION" ] || fail "CFBundleShortVersionString $(info CFBundleShortVersionString), not $VERSION"
+          [ "$(info CFBundleVersion)" = "$CODE" ] || fail "CFBundleVersion $(info CFBundleVersion), not $CODE"
+          [ "$(info ITSAppUsesNonExemptEncryption)" = false ] || fail "ITSAppUsesNonExemptEncryption isn't false"
+          [ "$(lipo -archs "$app/Hashi")" = arm64 ] || fail "the binary is $(lipo -archs "$app/Hashi"), not arm64"
+          {
+            echo "Signed by $authority (team $team), profile $profile"
+            echo
+            echo "SDK $(info DTSDKName), Xcode $(info DTXcode), iOS $(info MinimumOSVersion) and newer"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Size
+        run: |
+          mkdir -p release
+          cp "$IPA" "release/hashi-$VERSION.ipa"
+          mb() { awk -v kb="$1" 'BEGIN { printf "%.1f MB", kb / 1024 }'; }
+          {
+            echo "| iOS $VERSION (build $CODE) | size |"
+            echo "|---|---|"
+            echo "| IPA (upload) | $(mb "$(du -k "release/hashi-$VERSION.ipa" | cut -f1)") |"
+            echo "| Hashi.app | $(mb "$(du -sk "$RUNNER_TEMP/ipa/Payload/Hashi.app" | cut -f1)") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-release
+          path: release
+          compression-level: 0
+          retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
+      # The archive once more, exported straight to App Store Connect (`destination: upload`, with
+      # its symbols): xcodebuild's own upload, with the same key. App Store Connect refuses a build
+      # number it already has, so a re-run needs a new version. TestFlight has the build once Apple
+      # has processed it (minutes to an hour); internal testers get it from there.
+      - if: needs.check.outputs.publish == 'true'
+        name: Upload to App Store Connect
+        run: |
+          # manageAppVersionAndBuildNumber off: the build number is ours (CFBundleVersion above)
+          options="$RUNNER_TEMP/upload.plist"
+          cat > "$options" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_DEVELOPMENT_TEAM</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          EOF
+          plutil -lint "$options"
+          xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$options" \
+            -exportPath "$RUNNER_TEMP/upload" -allowProvisioningUpdates \
+            -authenticationKeyPath "$APPLE_API_KEY_PATH" -authenticationKeyID "$APPLE_API_KEY" \
+            -authenticationKeyIssuerID "$APPLE_API_ISSUER"
+          echo "Uploaded $VERSION (build $CODE) to App Store Connect, in TestFlight once Apple has processed it" >> "$GITHUB_STEP_SUMMARY"
+      # Xcode's log of a failed export or upload: its errors only, the full log has the session's
+      # requests
+      - if: failure()
+        name: Xcode's errors
+        run: |
+          find "${TMPDIR:-/tmp}" -name 'IDEDistribution.standard.log' -path '*.xcdistributionlogs/*' 2> /dev/null \
+            | while read -r log; do echo "== $log"; grep -iE 'error|fail' "$log" | head -n 100; done
+      - if: always()
+        name: Remove the API key
+        run: rm -rf "$RUNNER_TEMP/api-key"
+
   # The bundle and the APK on the tag's GitHub release: the source of the first upload, which has
-  # to be done by hand in the Play Console
+  # to be done by hand in the Play Console. And the IPA, when iOS was built: a failed or skipped
+  # iOS build doesn't hold up Android's files (a re-run of it adds the IPA).
   release:
     name: GitHub release
-    needs: [check, android]
-    if: needs.check.outputs.publish == 'true'
+    needs: [check, android, ios]
+    if: ${{ !cancelled() && needs.check.outputs.publish == 'true' && needs.android.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -362,12 +571,18 @@ jobs:
         with:
           name: android-release
           path: release
+      - if: needs.ios.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          name: ios-release
+          path: release
       - env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           VERSION: ${{ needs.check.outputs.version }}
           CODE: ${{ needs.check.outputs.code }}
         run: |
+          title="Hashi $VERSION (Android)"
           {
             cat app/store/whatsnew/whatsnew-en-US
             echo
@@ -379,11 +594,23 @@ jobs:
             echo "Both are signed with the app's upload key, which only identifies uploads to Google Play;"
             echo "Play signs the app it delivers with its own key. So they're safe to publish, and the APK"
             echo "can't update an app installed from Play (or the other way round): uninstall that first."
+            if [ -f "release/hashi-$VERSION.ipa" ]; then
+              title="Hashi $VERSION (Android, iOS)"
+              echo
+              echo "## iOS"
+              echo
+              echo "- \`hashi-$VERSION.ipa\`: the app uploaded to App Store Connect for TestFlight (build $CODE)."
+              echo
+              echo "It is signed for App Store distribution, so it only installs through TestFlight or the"
+              echo "App Store, not by hand."
+            fi
           } > notes.md
+          # A re-run replaces the files and adds the IPA's notes
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" release/* --clobber
+            gh release edit "$TAG" --title "$title" --notes-file notes.md
           else
-            gh release create "$TAG" release/* --verify-tag --prerelease --title "Hashi $VERSION (Android)" --notes-file notes.md
+            gh release create "$TAG" release/* --verify-tag --prerelease --title "$title" --notes-file notes.md
           fi
 
   # Google Play's internal test track. Skipped until the PLAY_SERVICE_ACCOUNT_JSON secret (the
