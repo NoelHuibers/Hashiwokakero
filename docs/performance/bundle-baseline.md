@@ -34,27 +34,27 @@ deploy; a red "Bundle size" says the bundle grew, look before merging.
 
 ## Baseline
 
-Recorded 2026-10-25 on `9606899` (main after #130), a local release build (`cargo leptos build
---release`, cargo-leptos 0.3.11), hydration on a 16-core desktop with Chromium of Playwright
-1.64, the CPU slowed down 4×.
+Recorded 2026-10-25 on `9606899` (main after #130) by the "Bundle size" job of CI: the release
+build of "Build site (browser)" (cargo-leptos 0.3.11), hydration in the Playwright container on an
+`ubuntu-24.04` runner, the CPU slowed down 4×.
 
 | Asset | Raw | gzip | brotli |
 | --- | --: | --: | --: |
-| hashi.wasm | 11,984 KB | 3,890 KB | 2,628 KB |
+| hashi.wasm | 11,984 KB | 3,890 KB | 2,627 KB |
 | hashi.js | 35.2 KB | 9.7 KB | 8.4 KB |
 | hashi.css | 106.3 KB | 18.8 KB | 15.7 KB |
-| **WASM + JS** | 12,019 KB | 3,900 KB | 2,636 KB |
-| **total** | 12,126 KB | 3,918 KB | 2,652 KB |
+| **WASM + JS** | 12,019 KB | 3,900 KB | 2,635 KB |
+| **total** | 12,126 KB | 3,919 KB | 2,651 KB |
 
-| Page | Hydrated (median of 5) | Range |
-| --- | --: | --: |
-| `/` (daily) | 880 ms | 853–906 ms |
-| `/practice` | 872 ms | 819–902 ms |
-| `/ranks` | 672 ms | 639–676 ms |
+| Page | Hydrated (median of 5) | Range | Local, 16-core desktop |
+| --- | --: | --: | --: |
+| `/` (daily) | 943 ms | 920–1,117 ms | 880 ms |
+| `/practice` | 1,064 ms | 853–1,122 ms | 872 ms |
+| `/ranks` | 777 ms | 720–802 ms | 672 ms |
 
-The WASM is nearly all of it: 12 MB raw, about 2.6 MB over the wire with brotli. The hydration
-times are from a fast machine on loopback; on a phone, with a real network, the download of the
-WASM comes on top.
+The WASM is nearly all of it: 12 MB raw, about 2.6 MB over the wire with brotli. A local build
+came out within 0.5 KB of CI's. The hydration times are on loopback; on a phone, with a real
+network, the download of the WASM comes on top.
 
 ## Updating the baseline
 
