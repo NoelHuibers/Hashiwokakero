@@ -359,8 +359,8 @@ object-src 'none'; base-uri 'self'
 
 `version` in `tauri.conf.json` is the version users see (`versionName`). Tauri derives Android's
 `versionCode`, which must grow with every upload to Play, from it:
-`major × 1,000,000 + minor × 1,000 + patch`, so 0.1.0 is 1000 and 1.2.3 is 1,002,003 (minor and
-patch stay below 1000). `scripts/app-version.mjs` sets it, see [Releases](#releases).
+`major × 1,000,000 + minor × 1,000 + patch`, so 0.0.1 is 1, 0.1.0 is 1000 and 1.2.3 is 1,002,003
+(minor and patch stay below 1000). `scripts/app-version.mjs` sets it, see [Releases](#releases).
 
 ## Emulator test
 

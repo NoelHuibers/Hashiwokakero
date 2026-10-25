@@ -1,5 +1,6 @@
 //! The practice page: endless generated puzzles with the solver at hand.
 
+pub mod actions;
 pub mod legend;
 pub mod new_game;
 pub mod solver_tools;
@@ -12,12 +13,12 @@ use crate::components::board::{BoardMode, BoardView};
 use crate::components::solver_panel::{PanelButton, SolverPanel};
 use crate::components::sprites::{BOAT, PixelSprite};
 use crate::components::ui::badge::{Badge, BadgeVariant};
-use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, use_i18n};
 use crate::seo::PageMeta;
 use crate::state::{self, Game, Settings, Source, Status, format_time};
 
+use actions::GameActions;
 use legend::LegendCard;
 use new_game::{NewGameCard, new_random};
 use solver_tools::SolverTools;
@@ -43,10 +44,10 @@ fn Stat(
     #[prop(into)] value: Signal<String>,
 ) -> impl IntoView {
     view! {
-        <div class="flex min-w-[4.5rem] flex-col items-center rounded-lg border bg-card px-3 py-1.5 shadow-xs">
-            <span class="font-pixel text-xl tabular-nums leading-tight">{move || value.get()}</span>
-            <span class="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                {move || label.get()} " · " {jp}
+        <div class="flex min-w-0 flex-1 flex-col items-center rounded-lg border bg-card px-1.5 py-0.5 shadow-xs sm:min-w-[4.5rem] sm:flex-none sm:px-3 sm:py-1.5">
+            <span class="font-pixel text-lg tabular-nums leading-tight sm:text-xl">{move || value.get()}</span>
+            <span class="max-w-full truncate text-[10px] font-bold uppercase tracking-[0.06em] text-muted-foreground max-sm:font-sans sm:tracking-[0.16em]">
+                {move || label.get()} <span class="hidden sm:inline">" · " {jp}</span>
             </span>
         </div>
     }
@@ -112,10 +113,10 @@ pub fn PlayPage() -> impl IntoView {
             description=Signal::derive(move || t_string!(i18n, practice.meta.description).to_string())
             path="/practice"
         />
-        <section class="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <section class="mx-auto max-w-7xl px-4 pt-4 pb-6 sm:px-6 sm:pt-6">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-                <div class="flex min-w-0 flex-col gap-4">
-                    <div class="flex flex-wrap items-end justify-between gap-3">
+                <div class="flex min-w-0 flex-col gap-3 sm:gap-4">
+                    <div class="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
                         <div class="flex items-center gap-3">
                             <span class="vertical-jp hidden font-pixel text-sm leading-none text-primary sm:block">
                                 {move || {
@@ -126,8 +127,11 @@ pub fn PlayPage() -> impl IntoView {
                                 <h1 class="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
                                     "Hashiwokakero · " {t!(i18n, practice.heading)}
                                 </h1>
+                                // Phones: the badges next to the title while they fit, and without the
+                                // island count, which the progress under the board shows too
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-1 sm:block">
                                 <p class="text-2xl font-black sm:text-3xl">{move || game.source.get().title(i18n.get_locale())}</p>
-                                <div class="mt-1 flex gap-1.5">
+                                <div class="flex gap-1.5 sm:mt-1">
                                     {move || match game.unique.get() {
                                         Some(true) => {
                                             view! {
@@ -143,13 +147,14 @@ pub fn PlayPage() -> impl IntoView {
                                         }
                                         None => ().into_any(),
                                     }}
-                                    <Badge variant=BadgeVariant::Muted>
+                                    <Badge variant=BadgeVariant::Muted class="hidden sm:inline-flex">
                                         {move || t_string!(i18n, common.game.islands, count = island_count.get())}
                                     </Badge>
                                 </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex w-full gap-1.5 sm:w-auto sm:gap-2">
                             <Stat label=Signal::derive(move || t_string!(i18n, common.game.time).to_string()) jp="時間" value=Signal::derive(move || format_time(game.elapsed.get())) />
                             <Stat label=Signal::derive(move || t_string!(i18n, common.game.moves).to_string()) jp="手" value=Signal::derive(move || game.moves.get().to_string()) />
                             <Stat label=Signal::derive(move || t_string!(i18n, common.game.hints).to_string()) jp="助" value=Signal::derive(move || game.hints.get().to_string()) />
@@ -207,45 +212,7 @@ pub fn PlayPage() -> impl IntoView {
                         />
                     </div>
 
-                    <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-                        <Button
-                            variant=ButtonVariant::Outline
-                            attr:disabled=move || not_playing.get() || game.undo_stack.with(Vec::is_empty)
-                            on:click=move |_| game.undo()
-                        >
-                            "↶ " {t!(i18n, common.game.undo)}
-                        </Button>
-                        <Button
-                            variant=ButtonVariant::Outline
-                            attr:disabled=move || not_playing.get() || game.redo_stack.with(Vec::is_empty)
-                            on:click=move |_| game.redo()
-                        >
-                            {t!(i18n, common.game.redo)} " ↷"
-                        </Button>
-                        <Button
-                            variant=ButtonVariant::Ghost
-                            attr:disabled=move || busy.get() || game.status.get() == Status::Empty
-                            on:click=move |_| game.restart()
-                        >
-                            {t!(i18n, common.game.restart)}
-                        </Button>
-                        <div class="contents sm:ms-auto sm:flex sm:gap-2">
-                            <Button
-                                variant=ButtonVariant::Secondary
-                                attr:disabled=move || not_playing.get()
-                                on:click=move |_| state::check(game, settings)
-                            >
-                                {t!(i18n, common.game.check)} <span class="hidden sm:inline">" 確認"</span>
-                            </Button>
-                            <Button
-                                variant=ButtonVariant::Secondary
-                                attr:disabled=move || not_playing.get()
-                                on:click=move |_| state::hint(game, settings)
-                            >
-                                {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span>
-                            </Button>
-                        </div>
-                    </div>
+                    <GameActions busy=busy not_playing=not_playing />
                 </div>
 
                 <aside class="flex flex-col gap-4">
