@@ -189,6 +189,15 @@ async fn write_rows(conn: &Connection, version: usize) {
         "#)
         .await;
     }
+    if version >= 21 {
+        // The standings of the month of the daily, stored once it was over: noel won it
+        run(r"
+            INSERT INTO closed_months (month, first_day, last_day) VALUES (24321, 20727, 20757);
+            INSERT INTO month_standings (month, place, user_id, points, solved, first_finish)
+                VALUES (24321, 1, 1, 20, 1, 96000);
+        ")
+        .await;
+    }
 }
 
 async fn count(conn: &Connection, sql: &str) -> i64 {
@@ -200,7 +209,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        20,
+        21,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -395,10 +404,36 @@ async fn old_databases_migrate_with_their_data() {
                     AND name IN ('attempts_user_ranked', 'attempts_day_ranked')",
                 2,
             ),
+            (
+                "SELECT COUNT(*) FROM closed_months JOIN month_standings USING (month)
+                 WHERE user_id = 1 AND place = 1",
+                i64::from(version >= 21),
+            ),
+            (
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'closed_month_%'",
+                4,
+            ),
         ];
         for (sql, expected) in defaults {
             assert_eq!(count(conn, sql).await, expected, "{label}: {sql}");
         }
+        // A review of an old result drops the standings of its month, and only of its month
+        conn.execute_batch(
+            "INSERT INTO closed_months (month, first_day, last_day) VALUES (24320, 20697, 20726);
+             UPDATE attempts SET flag = 'review' WHERE user_id = 1;",
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            count(conn, "SELECT COUNT(*) FROM closed_months").await,
+            1,
+            "{label}"
+        );
+        assert_eq!(
+            count(conn, "SELECT COUNT(*) FROM month_standings").await,
+            0,
+            "{label}"
+        );
         // Every version recorded, and migrating again changes nothing
         let versions = i64::try_from(MIGRATIONS.len()).unwrap();
         assert_eq!(
