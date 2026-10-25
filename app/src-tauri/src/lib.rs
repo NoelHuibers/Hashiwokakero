@@ -56,7 +56,7 @@ fn hashi<R: Runtime>() -> TauriPlugin<R> {
         .setup(|_app, api| {
             #[cfg(target_os = "android")]
             api.register_android_plugin("rs.hashi", "HashiPlugin")?;
-            // Only Android has its side yet (iOS: step 13 of docs/mobile.md)
+            // Only Android has its side yet (iOS: step 13c of docs/mobile.md)
             #[cfg(not(target_os = "android"))]
             let _ = api;
             Ok(())

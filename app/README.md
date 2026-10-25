@@ -3,8 +3,8 @@
 `hashi_app` renders the whole UI of the website in the browser, without a server rendering the
 page first (client-side rendering, CSR). It is the web part of the mobile app; the plan and the
 steps are in [docs/mobile.md](../docs/mobile.md). The Tauri project that wraps it for Android
-(and later iOS) is `app/src-tauri/`, a crate of its own outside the workspace, see
-[Android](#android) below.
+and iOS is `app/src-tauri/`, a crate of its own outside the workspace, see [Android](#android)
+and [iOS](#ios) below.
 
 The crate is a WASM binary whose `main` calls `hashi::mount()`. It depends on `hashi` with the
 `csr` feature only; `hashi` with `hydrate` or `ssr` (the website) never gets `csr` from it,
@@ -255,7 +255,7 @@ no clap).
   `tauri-plugin-deep-link` (official, [App Links](#app-links)), and `hashi`, the app's own, in `src/lib.rs` with its Android side in `gen/android`
   (`HashiPlugin.kt`). See [On the phone](#on-the-phone).
 - `icons/`: generated from `public/icon-512.png` by `cargo tauri icon app-icon.json`, along with
-  the Android launcher icons in `gen/android/.../res/mipmap-*`. Android's adaptive icon cuts a
+  the Android launcher icons in `gen/android/.../res/mipmap-*` and the iOS ones (see [iOS](#ios)). Android's adaptive icon cuts a
   circle (or a squircle) out of the middle of its foreground, so the foreground,
   `icons/android-foreground.png`, is the badge alone, small on a transparent square; the
   background is the website's `#f4ecdd`. Made with ImageMagick, in the repository root:
@@ -424,10 +424,12 @@ internal test track; from there it is promoted in the Play Console (closed test,
    ```
 
    The script sets the version in `app/Cargo.toml` (what the app sends in `x-hashi-app`),
-   `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` (the store's version and versionCode) and
-   the two crates' entries in `Cargo.lock` and `src-tauri/Cargo.lock`. It refuses a version whose
-   minor or patch is 1000 or more, or whose versionCode isn't above the current one. "Test & lint"
-   fails when the files disagree (`node scripts/app-version.mjs` without a version).
+   `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` (the store's version and versionCode), the
+   two crates' entries in `Cargo.lock` and `src-tauri/Cargo.lock`, and the iOS project's
+   `CFBundleShortVersionString` and `CFBundleVersion` in `gen/apple` (see [iOS](#ios)). It refuses
+   a version whose minor or patch is 1000 or more, or whose versionCode isn't above the current
+   one. "Test & lint" fails when the files disagree (`node scripts/app-version.mjs` without a
+   version).
    `whatsnew-en-US` is Play's "What's new" (at most 500 characters); other languages go next to
    it as `whatsnew-<locale>`, e.g. `whatsnew-de-DE`.
 2. After the merge, tag main's merge commit and push the tag:
@@ -507,3 +509,78 @@ keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 -alias upload -key
 ANDROID_KEYSTORE_FILE=/tmp/test.p12 ANDROID_KEYSTORE_PASSWORD=testtest ANDROID_KEY_ALIAS=upload \
   ANDROID_KEY_PASSWORD=testtest cargo tauri android build --aab --target aarch64
 ```
+
+## iOS
+
+The same crate in an Xcode project, `gen/apple/`, made by `cargo tauri ios init` (xcodegen, from
+its `project.yml`; tauri-cli 2.12.4 as for Android). Everything Tauri does for iOS needs a Mac with
+Xcode: the project is generated, built and run there or in CI on a macOS runner, never on Linux.
+This repository's project was generated in CI and committed like `gen/android`, with Tauri's
+`.gitignore` for the build outputs (`build/`, `Externals/`). Changed by hand, or by the build:
+
+- The icons in `Assets.xcassets/AppIcon.appiconset`: `cargo tauri icon app-icon.json` writes them
+  there once `gen/apple` exists (instead of `icons/ios/`), on the website's background `#f4ecdd`,
+  but with an alpha channel, which the App Store refuses for the 1024 px icon. After running it, in
+  `src-tauri/`:
+
+  ```sh
+  for f in gen/apple/Assets.xcassets/AppIcon.appiconset/*.png; do
+    magick "$f" -background '#f4ecdd' -alpha remove -alpha off -define png:color-type=2 "$f"
+  done
+  ```
+
+- What the build writes into the project, committed so that a build leaves it as it is: the
+  deep-link plugin puts `applinks:hashi.rs` (the App Links' host) into the Associated Domains of
+  `hashi_tauri_iOS.entitlements` (Universal Links, step 13d of docs/mobile.md), and Tauri rewrites
+  bits of `project.pbxproj` and `Info.plist`.
+- The version. Every build writes the version of `tauri.conf.json` into `Info.plist`, as
+  `CFBundleShortVersionString` and, through `agvtool`, as `CFBundleVersion`; `tauri ios init`
+  writes it into `project.yml`. `scripts/app-version.mjs` sets all four with the other files
+  ([Releases](#releases)), so a build leaves them as they are. App Store Connect wants a
+  `CFBundleVersion` that grows with every upload, of at most three numbers: the release (step 13e)
+  passes Android's versionCode (`node scripts/app-version.mjs --code`) as
+  `--config '{"bundle":{"iOS":{"bundleVersion":"<code>"}}}'`, not as `--build-number`, which
+  Tauri appends to the version as a fourth number (`0.0.1.1`). Pull requests keep the version.
+
+`bundle.iOS.minimumSystemVersion` in `tauri.conf.json` is **iOS 16.4**: the app's page runs in the
+system's `WKWebView`, the Safari of the phone's iOS. Tailwind 4 supports Safari 16.4 and newer
+(`@property`, `color-mix()`, cascade layers), and the stylesheet uses container queries (Safari 16)
+and `:has()` (15.4). The WASM needs less, Safari 15 (reference types, bulk memory, non-trapping
+float-to-int; `wasm-tools validate --features` on the bundle). iOS 16 runs on the iPhone 8 and
+newer. Raise it with the CSS or the Rust toolchain's WASM features, never lower it below them.
+
+The page runs at `tauri://localhost` on iOS (`useHttpsScheme` is Android's), the server's CORS list
+has it; its IPC is `ipc:`, which the content security policy allows. Like Android's origin, it can
+never change after the first release.
+
+### Building and running
+
+On a Mac with Xcode 26 (the App Store takes builds with the iOS 26 SDK or newer only), from
+`app/src-tauri/`:
+
+```sh
+rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+cargo tauri ios build --debug --target aarch64-sim --no-sign   # gen/apple/build/arm64-sim/Hashi.app
+xcrun simctl install booted gen/apple/build/arm64-sim/Hashi.app && xcrun simctl launch booted rs.hashi
+cargo tauri ios dev                                            # a simulator, with the dev server
+```
+
+`--no-sign` builds without a team or a certificate, enough for the simulator. Xcode's build phase
+"Build Rust Code" calls `cargo tauri ios xcode-script`, which builds the library for the
+architecture Xcode asks for. No development team is set in the project: the release workflow
+(step 13e) will pass it, with an App Store Connect API key. After a Tauri update, compare
+`gen/apple` with a fresh `cargo tauri ios init --ci` (on a Mac, or in a temporary CI step that
+uploads the directory as an artifact): the template changes with Tauri.
+
+### In CI
+
+"Build app (iOS)" in `.github/workflows/ci.yml` runs on `macos-26` (Apple silicon) with Xcode 26.6
+pinned (`DEVELOPER_DIR`; the release will use the same). Like the Android build it takes the bundle
+of "Build app (web)" and skips `beforeBuildCommand`. It runs Clippy for `aarch64-apple-ios`, builds
+the debug app for the simulator and checks that the build left `gen/apple` as committed and that the
+icons have no alpha channel. The app is the artifact `ios-simulator-app`, its size in the job
+summary. Then it starts the app on an iPhone 17 simulator of iOS 26.5, booted while the app builds,
+with hashi.rs blocked on the runner (no guest is made there; the start page shows its offline
+state): the job fails when the app doesn't start or doesn't run ten seconds later. A screenshot of
+it then is the artifact `ios-simulator-screenshot`; a failed run also keeps the simulator's log of
+the app and WebKit, `ios-simulator-log`. Not a required check.

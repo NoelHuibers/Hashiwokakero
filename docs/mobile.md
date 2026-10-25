@@ -129,7 +129,12 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 10b | App Links for `https://hashi.rs/g/<code>` invites and shared results: `assetlinks.json` served from config, intent filters, deep-link routing; the soft keyboard | 10, 11 | ✓ #130 |
 | 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | ✓ #126 |
 | 12 | First release: closed test, store listing, production | 9, 10, 11 | |
-| 13 | iOS: same project, macOS runner, TestFlight and App Store | 12 | |
+| 13a | iOS project (`gen/apple`) and a simulator build in CI | 8, 9 | ✓ #147 |
+| 13b | iOS simulator smoke test in CI: the simulator build on a booted simulator, offline, like 10a | 13a | |
+| 13c | iOS polish: safe areas (notch, home indicator), share sheet in Swift like `HashiPlugin.kt`, status bar, soft keyboard, links out | 13a | |
+| 13d | Universal Links: `apple-app-site-association` served from config, Associated Domains; needs the Team ID | 10b, 13a | |
+| 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | |
+| 13f | First iOS release: TestFlight, App Store listing and review | 13b–13e | |
 
 ## Owner tasks
 
@@ -185,4 +190,5 @@ replaced through Play's support). Left, in this order (details in
    internal release promoted to it.
 7. **Store listing**: description, screenshots, privacy policy URL (`/datenschutz`), the Data
    safety form, content rating, target audience, and trader status (EU).
-8. **iOS**: Apple Developer Program membership and an App Store Connect API key.
+8. **iOS**: an App Store Connect API key for the release workflow (step 13e), and the Team ID
+   for the Universal Links (13d). The Apple Developer Program membership is there.
