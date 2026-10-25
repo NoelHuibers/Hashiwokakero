@@ -31,6 +31,7 @@ use leptos_i18n::Locale as _;
 
 use self::card::{BoardArt, Card, Content};
 use self::fonts::{Family, Fonts};
+use super::coalesce::Flights;
 use crate::i18n::{Locale, td_string};
 use crate::lang::{date_long, difficulty_name};
 use crate::model::{
@@ -152,21 +153,46 @@ pub fn render(image: Image) -> Result<Vec<u8>, String> {
 /// Rendered images. The languages' stay, the dailies' only for today and yesterday.
 static CACHE: LazyLock<Mutex<HashMap<Image, Bytes>>> = LazyLock::new(Mutex::default);
 
+/// Images being rendered: the first requests of one (the previews of a shared link, fetched by
+/// several apps at once) wait for one rendering. At most one key per language and day.
+static RENDERING: LazyLock<Flights<Image, Result<Bytes, StatusCode>>> =
+    LazyLock::new(|| Flights::new(64));
+
 async fn cached(image: Image) -> Result<Bytes, StatusCode> {
-    if let Some(png) = CACHE.lock().ok().and_then(|c| c.get(&image).cloned()) {
+    cached_with(&CACHE, &RENDERING, image, render).await
+}
+
+/// [`cached`] with its own cache and renderings, made by `render`.
+async fn cached_with(
+    cache: &Mutex<HashMap<Image, Bytes>>,
+    rendering: &Flights<Image, Result<Bytes, StatusCode>>,
+    image: Image,
+    render: impl FnOnce(Image) -> Result<Vec<u8>, String> + Send + 'static,
+) -> Result<Bytes, StatusCode> {
+    let kept = || cache.lock().ok().and_then(|c| c.get(&image).cloned());
+    if let Some(png) = kept() {
         return Ok(png);
     }
-    let png = Bytes::from(
-        super::run_blocking(move || render(image))
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?,
-    );
-    if let Ok(mut cache) = CACHE.lock() {
-        let today = super::daily::today();
-        cache.retain(|i, _| !matches!(i, Image::Daily(_, day) if *day < today - 1));
-        cache.insert(image, png.clone());
-    }
-    Ok(png)
+    rendering
+        .run(image, || async move {
+            // A rendering may have ended since
+            if let Some(png) = kept() {
+                return Ok(png);
+            }
+            let png = Bytes::from(
+                super::run_blocking(move || render(image))
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?,
+            );
+            // Before the rendering ends: later requests find it here
+            if let Ok(mut cache) = cache.lock() {
+                let today = super::daily::today();
+                cache.retain(|i, _| !matches!(i, Image::Daily(_, day) if *day < today - 1));
+                cache.insert(image, png.clone());
+            }
+            Ok(png)
+        })
+        .await
 }
 
 /// The language of `<lang>.png`.

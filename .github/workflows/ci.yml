@@ -402,6 +402,50 @@ jobs:
           include-hidden-files: true
           retention-days: 7
 
+  # What the browser downloads of the release build above, and how long three pages take to
+  # hydrate on a CPU slowed down 4×, against docs/performance/bundle-baseline.json, in the job
+  # summary (scripts/bundle-size.mjs, e2e/perf/). Fails when the gzipped WASM and JS grow more than
+  # the baseline's tolerance; the hydration times are only reported, a runner's speed varies too
+  # much. Not a required check and not in Release compatibility, it holds up no merge or deploy.
+  bundle:
+    name: Bundle size
+    needs: [build, build-browser]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # The browser of the E2E job
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.build-browser.outputs.playwright }}-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: site-*
+          merge-multiple: true
+      - run: tar -xf server.tar && tar -xf browser.tar
+      # A failure here leaves the sizes without times, it doesn't fail the job
+      - name: Hydration
+        continue-on-error: true
+        run: pnpm run perf:hydration
+        env:
+          E2E_BIN: dist/hashi
+          E2E_SITE_ROOT: dist/site
+      - name: Size
+        run: node scripts/bundle-size.mjs --site dist/site
+      # bundle.json: these numbers in the baseline's format, to commit as the new baseline
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: bundle-size
+          path: target/bundle
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+
   # The mobile app's web bundle (app/, docs/mobile.md): the same UI rendered in the browser
   # alone, built by Trunk. Not a required check and not in Release compatibility, the app can't
   # hold up the website's deploy. The Android build takes the bundle from its artifact.

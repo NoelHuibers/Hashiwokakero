@@ -60,21 +60,57 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
   await expect(penalty(page)).toHaveText('+10s');
 
   const hint = page.getByRole('button', { name: /^Hint/ });
-  const hintOnce = async () => {
-    const before = JSON.stringify((await saved(page, DAILY_KEY)).bridges);
-    await hint.click();
-    // Polled often: a Sunday's Oni takes a hundred hints and more
-    await expect
-      .poll(async () => JSON.stringify((await saved(page, DAILY_KEY)).bridges), { intervals: [20, 50, 100] })
-      .not.toBe(before);
-  };
-  await hintOnce();
+  const before = JSON.stringify((await saved(page, DAILY_KEY)).bridges);
+  await hint.click();
+  await expect.poll(async () => JSON.stringify((await saved(page, DAILY_KEY)).bridges)).not.toBe(before);
   await expect(penalty(page)).toHaveText('+40s');
-  while (missing((await saved(page, DAILY_KEY)).bridges, solution).length > 1) await hintOnce();
+  await hintUntil(page, solution, 1);
 
   const [last] = missing((await saved(page, DAILY_KEY)).bridges, solution);
   const built = (await saved(page, DAILY_KEY)).bridges[last];
   for (let n = built; n < solution[last]; n++) await addBridge(page, DAILY_KEY, puzzle, last);
+}
+
+/**
+ * Presses Hint until `left` bridges of the solution are missing. A Sunday's Oni takes 150 hints
+ * and more (172 on 2026-10-25). Pressed through Playwright, every hint also waited for the button
+ * to hold still on the animated board and for a poll of the saved game, about half a second
+ * each, and the bigger Onis ran out of the test's time. Pressed in the page, a hint is its
+ * request and a render; and the test gets time for every hint on top, so no board is too big.
+ * 1.5 s each: about 70 ms here, but on CI, with four workers on the runner's four cores, today's
+ * 172 hints took up to 170 s (main after #144), past the 0.5 s each it had at first.
+ */
+export async function hintUntil(page: Page, solution: number[], left: number) {
+  const hints = missing((await saved(page, DAILY_KEY)).bridges, solution).length - left;
+  if (hints <= 0) return;
+  test.setTimeout(test.info().timeout + hints * 1_500);
+  await page.getByRole('button', { name: /^Hint/ }).evaluate(
+    async (button: HTMLElement, { key, solution, left }) => {
+      const built = () => (JSON.parse(localStorage.getItem(key)!) as { bridges: number[] }).bridges;
+      const bridges = () => JSON.stringify(built());
+      const missing = () => {
+        const now = built();
+        return solution.filter((s, e) => now[e] < s).length;
+      };
+      for (let n = 1; missing() > left; n++) {
+        const before = bridges();
+        const pressed = performance.now();
+        button.click();
+        // The page takes one paid action at a time and ignores presses meanwhile: a press
+        // lost that way is repeated after a while, one still underway ignores the repeat
+        for (let repeat = 1; bridges() === before; ) {
+          const waited = performance.now() - pressed;
+          if (waited > 15_000) throw new Error(`hint ${n} changed no bridge in 15 s`);
+          if (waited > 2_000 * repeat) {
+            button.click();
+            repeat++;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }
+    },
+    { key: DAILY_KEY, solution, left },
+  );
 }
 
 /** The result card after the finish. */

@@ -3,8 +3,8 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { register, signInWith, signOut } from '../account';
-import { addBridge, board, DAILY_KEY, missing, saved } from '../board';
-import { dailySolution, expectResult, solveDaily, startDaily } from '../daily';
+import { addBridge, board, DAILY_KEY, saved } from '../board';
+import { dailySolution, expectResult, hintUntil, solveDaily, startDaily } from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
 
 /** The card over the board after this tab's finish. */
@@ -314,12 +314,7 @@ test('a final paid hint flushes its move log and submits exactly once', async ({
   page.on('request', (request) => {
     if (request.url().endsWith('/api/submit_daily_attempt')) submissions++;
   });
-  const hint = page.getByRole('button', { name: /^Hint/ });
-  while (missing((await saved(page, DAILY_KEY)).bridges, solution).length > 0) {
-    const before = (await saved(page, DAILY_KEY)).bridges;
-    await hint.click();
-    await expect.poll(async () => (await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
-  }
+  await hintUntil(page, solution, 0);
   await expectResult(page);
   expect(submissions).toBe(1);
   const log = await page.evaluate(() => JSON.parse(localStorage.getItem('hashi.daily.log') ?? 'null'));
@@ -338,12 +333,7 @@ test('a solved daily whose submit failed waits to be submitted again', async ({ 
     if (submissions === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
     else await route.continue();
   });
-  const hint = page.getByRole('button', { name: /^Hint/ });
-  while (missing((await saved(page, DAILY_KEY)).bridges, solution).length > 0) {
-    const before = (await saved(page, DAILY_KEY)).bridges;
-    await hint.click();
-    await expect.poll(async () => (await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
-  }
+  await hintUntil(page, solution, 0);
   const again = page.getByRole('button', { name: 'Retry result' });
   await expect(again).toBeVisible();
   await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');

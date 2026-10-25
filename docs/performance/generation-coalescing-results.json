@@ -1,0 +1,334 @@
+{
+  "revision_before": "9606899",
+  "measured": "2026-10-25, Sunday (Oni 24x24 daily), debug build of the server (cargo leptos build; backend, sat_solver and splr at opt-level 3), 16-core desktop with other builds running (load 7-13), HASHI_RATE_LIMITS=off, a fresh database per run",
+  "series": {
+    "daily20": {
+      "what": "20 concurrent POST /api/start_daily, no daily stored",
+      "before": {
+        "median_wall_s": 5.868,
+        "median_server_cpu_s": 11.68,
+        "runs": [
+          {
+            "wall_s": 6.138,
+            "server_cpu_s": 12.26,
+            "statuses": {
+              "200": 14,
+              "500": 6
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 4.053,
+            "max_s": 6.134
+          },
+          {
+            "wall_s": 5.771,
+            "server_cpu_s": 11.23,
+            "statuses": {
+              "500": 10,
+              "200": 10
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 5.09,
+            "max_s": 5.769
+          },
+          {
+            "wall_s": 5.868,
+            "server_cpu_s": 11.68,
+            "statuses": {
+              "200": 14,
+              "500": 6
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 4.109,
+            "max_s": 5.86
+          },
+          {
+            "wall_s": 6.08,
+            "server_cpu_s": 12.13,
+            "statuses": {
+              "200": 12,
+              "500": 8
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 5.021,
+            "max_s": 6.078
+          },
+          {
+            "wall_s": 5.582,
+            "server_cpu_s": 10.95,
+            "statuses": {
+              "200": 10,
+              "500": 10
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 5.055,
+            "max_s": 5.576
+          }
+        ]
+      },
+      "after": {
+        "median_wall_s": 1.149,
+        "median_server_cpu_s": 1.17,
+        "runs": [
+          {
+            "wall_s": 1.26,
+            "server_cpu_s": 1.17,
+            "statuses": {
+              "200": 20
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 1.1,
+            "max_s": 1.253
+          },
+          {
+            "wall_s": 0.967,
+            "server_cpu_s": 1.09,
+            "statuses": {
+              "200": 20
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 0.886,
+            "max_s": 0.963
+          },
+          {
+            "wall_s": 1.041,
+            "server_cpu_s": 1.29,
+            "statuses": {
+              "200": 20
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 0.965,
+            "max_s": 1.035
+          },
+          {
+            "wall_s": 1.149,
+            "server_cpu_s": 1.15,
+            "statuses": {
+              "200": 20
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 1.046,
+            "max_s": 1.147
+          },
+          {
+            "wall_s": 1.373,
+            "server_cpu_s": 1.45,
+            "statuses": {
+              "200": 20
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 1.303,
+            "max_s": 1.368
+          }
+        ]
+      }
+    },
+    "daily1": {
+      "what": "1 POST /api/start_daily, no daily stored",
+      "before": {
+        "median_wall_s": 0.907,
+        "median_server_cpu_s": 0.89,
+        "runs": [
+          {
+            "wall_s": 0.964,
+            "server_cpu_s": 0.95,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 0.964,
+            "max_s": 0.964
+          },
+          {
+            "wall_s": 0.907,
+            "server_cpu_s": 0.89,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 0.907,
+            "max_s": 0.907
+          },
+          {
+            "wall_s": 0.885,
+            "server_cpu_s": 0.87,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 0.885,
+            "max_s": 0.885
+          }
+        ]
+      },
+      "after": {
+        "median_wall_s": 0.884,
+        "median_server_cpu_s": 0.87,
+        "runs": [
+          {
+            "wall_s": 0.894,
+            "server_cpu_s": 0.88,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 0.894,
+            "max_s": 0.894
+          },
+          {
+            "wall_s": 0.868,
+            "server_cpu_s": 0.85,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 0.867,
+            "max_s": 0.867
+          },
+          {
+            "wall_s": 0.884,
+            "server_cpu_s": 0.87,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 0.884,
+            "max_s": 0.884
+          }
+        ]
+      }
+    },
+    "og10": {
+      "what": "10 concurrent GET /og/daily/2026-10-25/en.png, nothing cached",
+      "before": {
+        "median_wall_s": 5.934,
+        "median_server_cpu_s": 11.66,
+        "runs": [
+          {
+            "wall_s": 5.934,
+            "server_cpu_s": 11.66,
+            "statuses": {
+              "200": 4,
+              "500": 6
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 5.003,
+            "max_s": 5.932
+          },
+          {
+            "wall_s": 5.906,
+            "server_cpu_s": 11.6,
+            "statuses": {
+              "200": 4,
+              "500": 6
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 5.004,
+            "max_s": 5.905
+          },
+          {
+            "wall_s": 5.952,
+            "server_cpu_s": 11.76,
+            "statuses": {
+              "200": 4,
+              "500": 6
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 5.004,
+            "max_s": 5.951
+          }
+        ]
+      },
+      "after": {
+        "median_wall_s": 2.788,
+        "median_server_cpu_s": 2.77,
+        "runs": [
+          {
+            "wall_s": 2.779,
+            "server_cpu_s": 2.77,
+            "statuses": {
+              "200": 10
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 2.777,
+            "max_s": 2.778
+          },
+          {
+            "wall_s": 2.847,
+            "server_cpu_s": 2.84,
+            "statuses": {
+              "200": 10
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 2.844,
+            "max_s": 2.846
+          },
+          {
+            "wall_s": 2.788,
+            "server_cpu_s": 2.77,
+            "statuses": {
+              "200": 10
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 2.786,
+            "max_s": 2.787
+          }
+        ]
+      }
+    },
+    "og1": {
+      "what": "1 GET /og/daily/2026-10-25/en.png, nothing cached",
+      "before": {
+        "median_wall_s": 2.808,
+        "median_server_cpu_s": 2.79,
+        "runs": [
+          {
+            "wall_s": 2.826,
+            "server_cpu_s": 2.82,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 2.825,
+            "max_s": 2.825
+          },
+          {
+            "wall_s": 2.789,
+            "server_cpu_s": 2.77,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 2.789,
+            "max_s": 2.789
+          }
+        ]
+      },
+      "after": {
+        "median_wall_s": 2.805,
+        "median_server_cpu_s": 2.8,
+        "runs": [
+          {
+            "wall_s": 2.824,
+            "server_cpu_s": 2.82,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 2.824,
+            "max_s": 2.824
+          },
+          {
+            "wall_s": 2.786,
+            "server_cpu_s": 2.78,
+            "statuses": {
+              "200": 1
+            },
+            "distinct_puzzles": 1,
+            "p50_s": 2.785,
+            "max_s": 2.785
+          }
+        ]
+      }
+    }
+  }
+}

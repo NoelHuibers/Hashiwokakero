@@ -88,6 +88,14 @@ in a browser: the main pages answer, hydrate and react, with all their assets. I
 it never makes a guest; CI runs it after every deploy and every 6 hours
 (`.github/workflows/production-smoke.yml`).
 
+The bundle's size and the pages' hydration times have a baseline, see
+[docs/performance/bundle-baseline.md](docs/performance/bundle-baseline.md):
+
+```sh
+pnpm run perf:hydration              # hydration times on a 4× slower CPU
+pnpm run bundle-size                 # sizes and times against the baseline (--update stores them)
+```
+
 ## Backend CLI
 
 Run these commands from the repository root:
