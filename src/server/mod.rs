@@ -3,6 +3,7 @@
 pub mod admin;
 pub mod apps;
 pub mod auth;
+pub mod coalesce;
 pub mod contact;
 pub mod daily;
 pub mod db;
