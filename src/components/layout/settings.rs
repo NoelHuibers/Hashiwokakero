@@ -7,7 +7,7 @@ use crate::i18n::{t, t_string, use_i18n};
 use crate::state::Settings;
 
 /// Closes a pop-up on a click outside of `root` and on Escape (focus goes back to `button`).
-pub(super) fn use_dismiss(
+pub(crate) fn use_dismiss(
     open: RwSignal<bool>,
     root: NodeRef<leptos::html::Div>,
     button: NodeRef<leptos::html::Button>,

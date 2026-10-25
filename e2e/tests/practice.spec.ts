@@ -20,7 +20,9 @@ const layout = (page: Page) =>
  * also hold the trees and gates on them, and were off centre.
  */
 async function gap(page: Page) {
-  await board(page).scrollIntoViewIfNeeded();
+  // In the middle of the screen: "if needed" left its top row under the sticky header once
+  // Generate, further down on phones, was clicked
+  await board(page).evaluate((el) => el.scrollIntoView({ block: 'center' }));
   const point = await board(page)
     .locator('g.island')
     .evaluateAll((islands) => {
@@ -97,8 +99,10 @@ test('play a puzzle from the first bridge to the win screen', async ({ page }) =
   await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[edge]).toBe(0);
   await expect(redo).toBeDisabled();
 
-  // Restart clears the board
+  // Restart clears the board, it is behind the "more" button
+  await page.getByRole('button', { name: 'More actions' }).click();
   await page.getByRole('button', { name: 'Restart' }).click();
+  await expect(page.getByRole('button', { name: 'Restart' })).toBeHidden();
   await expect(bridges(page)).toHaveCount(0);
   expect((await saved(page, PRACTICE_KEY)).bridges.every((b) => b === 0)).toBe(true);
 
