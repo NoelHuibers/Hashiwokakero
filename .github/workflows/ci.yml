@@ -746,6 +746,130 @@ jobs:
             e2e/test-results-android-logcat.txt
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
+  # The iOS app (app/src-tauri, gen/apple): Tauri around the bundle of "Build app (web)", taken from
+  # its artifact, as a debug build for the iOS simulator on Apple silicon, unsigned. It is started on
+  # a simulator with hashi.rs blocked (the start page shows its offline state, no guest is made
+  # there), and a screenshot of it is kept: a launch that fails or crashes fails the job, the
+  # screenshot is for people. Not a required check and not in Release compatibility either: trouble
+  # with Xcode or the macOS runners can't hold up the website.
+  ios:
+    name: Build app (iOS)
+    needs: [changes, build-app]
+    if: needs.changes.outputs.code == 'true'
+    # Apple silicon. The App Store only takes builds made with the iOS 26 SDK (Xcode 26) or newer.
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      # One of the image's Xcodes, pinned (the image's default moves): the release builds with the
+      # same one. Its SDK is iOS 26.5.
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      # A simulator of the image for that SDK
+      SIMULATOR_DEVICE: iPhone 17
+      SIMULATOR_RUNTIME: iOS 26.5
+      CARGO_PROFILE_DEV_DEBUG: 0
+    steps:
+      - uses: actions/checkout@v7
+      - name: Xcode
+        run: xcodebuild -version | tee -a "$GITHUB_STEP_SUMMARY"
+      # The first boot takes about two minutes; it runs while the app builds
+      - name: Boot a simulator
+        run: |
+          runtime=$(xcrun simctl list runtimes -j | jq -r --arg name "$SIMULATOR_RUNTIME" '.runtimes[] | select(.name == $name and .isAvailable) | .identifier')
+          if [ -z "$runtime" ]; then echo "::error::the runner has no $SIMULATOR_RUNTIME simulator"; xcrun simctl list runtimes; exit 1; fi
+          udid=$(xcrun simctl create hashi "$SIMULATOR_DEVICE" "$runtime")
+          echo "SIMULATOR=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid"
+      # The iOS targets in this job only, like the Android one: devices, and the simulator on
+      # Apple silicon
+      - run: rustup toolchain install && rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # The arm64 build of the CLI. Without --targets cargo-binstall falls back to the x86_64 one
+      # (the crate's metadata names a tgz, the release has a zip for arm64), which runs under
+      # Rosetta, and with it the Xcode build it starts.
+      - name: Install the Tauri CLI
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
+          file ~/.cargo/bin/cargo-tauri | grep -q arm64
+      - uses: actions/download-artifact@v8
+        with:
+          name: app-web
+          path: target/app-dist
+      # "Build app (Android)" checks the formatting and lints for Android
+      - name: Clippy
+        working-directory: app/src-tauri
+        run: cargo clippy --locked --workspace --target aarch64-apple-ios -- -D warnings
+      # Without beforeBuildCommand, as for Android. --no-sign: an archive for the simulator, without
+      # a team or a certificate; the app is moved to gen/apple/build/arm64-sim.
+      - name: Build
+        working-directory: app/src-tauri
+        run: cargo tauri ios build --ci --debug --target aarch64-sim --no-sign --config '{"build":{"beforeBuildCommand":null}}'
+      # The build rewrites parts of the project (the deep-link plugin the entitlements, Tauri the
+      # Xcode project): what is committed is what it leaves. The App Store refuses an icon with an
+      # alpha channel, which `cargo tauri icon` writes (app/README.md).
+      - name: Check the project
+        working-directory: app/src-tauri/gen/apple
+        run: |
+          if [ -n "$(git status --porcelain -- .)" ]; then
+            git status --short -- . && git diff -- .
+            echo "::error::the build changed gen/apple, commit what it wrote"; exit 1
+          fi
+          for icon in Assets.xcassets/AppIcon.appiconset/*.png; do
+            sips -g hasAlpha "$icon" | grep -q 'hasAlpha: no' || { echo "::error::$icon has an alpha channel"; exit 1; }
+          done
+      - name: Size
+        working-directory: app/src-tauri/gen/apple/build/arm64-sim
+        run: |
+          mb() { awk -v kb="$1" 'BEGIN { printf "%.1f MB", kb / 1024 }'; }
+          {
+            echo "| iOS (debug, simulator, arm64) | size |"
+            echo "|---|---|"
+            echo "| Hashi.app | $(mb "$(du -sk Hashi.app | cut -f1)") |"
+            # The Rust library with the web bundle in it, linked into the app's binary
+            echo "| binary | $(mb "$(du -sk Hashi.app/Hashi | cut -f1)") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-simulator-app
+          path: app/src-tauri/gen/apple/build/arm64-sim
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+      # The simulator's traffic leaves through the runner
+      - name: Block hashi.rs
+        run: |
+          printf '0.0.0.0 hashi.rs\n:: hashi.rs\n' | sudo tee -a /etc/hosts
+          sudo dscacheutil -flushcache
+          sudo killall -HUP mDNSResponder
+          if curl -sS --max-time 10 -o /dev/null https://hashi.rs/; then echo "::error::hashi.rs is still reachable"; exit 1; fi
+      - name: Start the app
+        run: |
+          xcrun simctl bootstatus "$SIMULATOR" -b
+          xcrun simctl install "$SIMULATOR" app/src-tauri/gen/apple/build/arm64-sim/Hashi.app
+          xcrun simctl launch "$SIMULATOR" rs.hashi
+          sleep 10
+          mkdir -p "$RUNNER_TEMP/ios-screens"
+          xcrun simctl io "$SIMULATOR" screenshot "$RUNNER_TEMP/ios-screens/start.png"
+          # Still running ten seconds later
+          xcrun simctl spawn "$SIMULATOR" launchctl list | grep -q 'rs\.hashi' || { echo "::error::the app isn't running any more"; exit 1; }
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-simulator-screenshot
+          path: ${{ runner.temp }}/ios-screens
+          if-no-files-found: ignore
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+      - if: failure() && env.SIMULATOR
+        run: xcrun simctl spawn "$SIMULATOR" log show --last 5m --predicate 'process == "Hashi" OR subsystem BEGINSWITH "com.apple.WebKit"' --style compact > "$RUNNER_TEMP/ios-simulator.log" || true
+      - if: failure() && env.SIMULATOR
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-simulator-log
+          path: ${{ runner.temp }}/ios-simulator.log
+          if-no-files-found: ignore
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+
   # The image the deploy ships, built from the same artifact and started: it has to serve the
   # site. Dependabot's updates of its base image are tested here, before they deploy.
   docker:
