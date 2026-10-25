@@ -15,6 +15,11 @@ updates:
           - "web-sys"
           - "js-sys"
           - "tw_merge"
+      # The dojo's sandbox: wiggle is pinned exactly, all three only compile at the same version
+      wasmtime:
+        patterns:
+          - "wasmtime*"
+          - "wiggle*"
       rust-minor-and-patch:
         update-types:
           - minor
