@@ -89,10 +89,13 @@ jobs:
           cargo fmt --manifest-path dojo/starter/Cargo.toml --check
       - name: Packaged smoke harness regressions
         run: python3 -m unittest discover -s scripts/tests -p 'test_packaged_smoke.py' -v
-      # The mobile app's version is the same in all its files (the runner's Node, no packages)
-      - name: App version
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      # The scripts' own tests, the mobile app's version among them: it is the same in all its files
+      - name: Script tests
         run: |
-          node --test scripts/tests/app-version.test.mjs
+          node --test scripts/tests/*.test.mjs
           node scripts/app-version.mjs
       - name: Clippy (library crates, dojo worker, tests)
         run: cargo clippy --locked -p common -p sat_solver -p backend -p dojo -p house --all-targets --features dojo/worker -- -D warnings
