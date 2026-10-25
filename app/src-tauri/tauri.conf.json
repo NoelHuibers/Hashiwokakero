@@ -79,6 +79,9 @@
     "android": {
       "minSdkVersion": 24,
       "debugApplicationIdSuffix": ".debug"
+    },
+    "iOS": {
+      "minimumSystemVersion": "16.4"
     }
   }
 }
