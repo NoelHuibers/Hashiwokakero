@@ -10,8 +10,11 @@ import { expect, newUsername, signIn, test, visit } from '../fixtures';
 import { SEEDED_GROUP } from '../seed';
 import { localized, LOCALES } from '../site';
 
-/** The pages the tab bar leads to, a group, the account and the rules. */
-const ALL = ['/', '/practice', '/ranks', '/groups', `/groups/${SEEDED_GROUP.id}`, '/create', '/lab', '/account', '/rules'];
+/** The pages the tab bar leads to, a group, the account, the rules, the Dojo and the contact form. */
+const ALL = [
+  '/', '/practice', '/ranks', '/groups', `/groups/${SEEDED_GROUP.id}`, '/create', '/lab', '/account', '/rules', '/dojo',
+  '/kontakt',
+];
 const SOME = ['/', '/groups', '/ranks', '/account'];
 
 /** What doesn't fit `width`: buttons off the screen or too small, a squeezed wordmark, overflow. */
