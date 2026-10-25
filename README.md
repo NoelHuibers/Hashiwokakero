@@ -93,6 +93,11 @@ changed beyond the comparison threshold; commit those.
 `E2E_BIN`, `E2E_SITE_ROOT`, and `E2E_PORT` override the build and port used by the
 browser tests, `E2E_BROWSER_PORT` the container's browser server port (a free one by default). Inspect failed runs with `pnpm exec playwright show-report e2e/playwright-report`.
 
+`pnpm run smoke:production` checks the deployed site (https://hashi.rs, `SMOKE_URL` for another)
+in a browser: the main pages answer, hydrate and react, with all their assets. It is read-only,
+it never makes a guest; CI runs it after every deploy and every 6 hours
+(`.github/workflows/production-smoke.yml`).
+
 The bundle's size and the pages' hydration times have a baseline, see
 [docs/performance/bundle-baseline.md](docs/performance/bundle-baseline.md):
 

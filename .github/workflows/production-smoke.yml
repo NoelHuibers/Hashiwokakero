@@ -1,0 +1,64 @@
+name: Production smoke
+# The deployed site in a browser (e2e/production/, `pnpm run smoke:production`): its main pages
+# answer, hydrate and react, with all their assets and no error in the browser. Read-only, it
+# makes no guest or anything else in the production database.
+#
+# Runs every 6 hours, by hand (Actions, Run workflow, or `gh workflow run production-smoke.yml`,
+# with another URL if need be), after every deploy of main (the "Production smoke" job of CI calls
+# it with the build it just deployed, which the site must then serve), and on a pull request that
+# changes the smoke itself.
+on:
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      url:
+        description: The site to check
+        type: string
+        default: https://hashi.rs
+  workflow_call:
+    inputs:
+      build:
+        description: The build the site has to serve (its x-hashi-build, the WASM's hash in hash.txt)
+        type: string
+        required: true
+  pull_request:
+    paths:
+      - .github/workflows/production-smoke.yml
+      - e2e/production/**
+      - e2e/production.config.ts
+
+# Called from CI, the event is the caller's: a push to main
+concurrency:
+  group: production-smoke-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Only Chromium, with the system libraries it needs
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Smoke test
+        run: pnpm run smoke:production
+        env:
+          SMOKE_URL: ${{ inputs.url || 'https://hashi.rs' }}
+          SMOKE_BUILD: ${{ inputs.build }}
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-smoke-report
+          path: e2e/playwright-report-production
+          retention-days: 7
