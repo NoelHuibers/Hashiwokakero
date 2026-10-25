@@ -9,3 +9,5 @@
 /test-results-android-device.json
 /playwright-report-android
 /android-screens
+/test-results-production
+/playwright-report-production

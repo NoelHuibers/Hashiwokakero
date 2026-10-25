@@ -83,6 +83,11 @@ pnpm run e2e:update-snapshots        # after intentional visual changes
 `E2E_BIN`, `E2E_SITE_ROOT`, and `E2E_PORT` override the build and port used by the
 browser tests. Inspect failed runs with `pnpm exec playwright show-report e2e/playwright-report`.
 
+`pnpm run smoke:production` checks the deployed site (https://hashi.rs, `SMOKE_URL` for another)
+in a browser: the main pages answer, hydrate and react, with all their assets. It is read-only,
+it never makes a guest; CI runs it after every deploy and every 6 hours
+(`.github/workflows/production-smoke.yml`).
+
 ## Backend CLI
 
 Run these commands from the repository root:
