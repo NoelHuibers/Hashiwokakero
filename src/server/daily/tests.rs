@@ -103,6 +103,96 @@ async fn daily_is_generated_once_and_kept() {
     assert_ne!(tuesday.puzzle, first.puzzle);
 }
 
+/// The first requests of a day all need its puzzle: they wait for one generation, and all get
+/// the puzzle that is stored.
+#[tokio::test]
+async fn concurrent_first_requests_share_one_generation() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    const REQUESTS: usize = 8;
+    let (db, conn) = test_db().await;
+    let flights = Flights::new(4);
+    let generations = AtomicUsize::new(0);
+    let generate = |params: GenerateParams| {
+        let (flights, generations) = (&flights, &generations);
+        async move {
+            generations.fetch_add(1, Ordering::SeqCst);
+            // Done once all the other requests wait for it
+            for _ in 0..1000 {
+                if flights.followers(&params) == REQUESTS - 1 {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+            Ok(backend::api::generate(&params))
+        }
+    };
+    let conns: Vec<_> = (0..REQUESTS)
+        .map(|_| db.database.connect().unwrap())
+        .collect();
+    let dailies = futures::future::join_all(
+        conns
+            .iter()
+            .map(|conn| get_or_create_with(conn, MONDAY, &flights, generate)),
+    )
+    .await;
+    assert_eq!(generations.load(Ordering::SeqCst), 1);
+    let stored = load(&conn, MONDAY).await.unwrap().unwrap();
+    for daily in dailies {
+        let daily = daily.unwrap();
+        assert_eq!(
+            (daily.puzzle, daily.solution),
+            (stored.puzzle.clone(), stored.solution.clone())
+        );
+    }
+    assert_eq!(flights.in_flight(), 0);
+    // Another day is generated on its own
+    get_or_create_with(&conn, MONDAY + 1, &flights, generate)
+        .await
+        .unwrap();
+    assert_eq!(generations.load(Ordering::SeqCst), 2);
+}
+
+/// A failed generation fails every request waiting for it, and isn't kept: the next request
+/// generates again.
+#[tokio::test]
+async fn a_failed_generation_is_retried_by_the_next_request() {
+    let (db, conn) = test_db().await;
+    let other = db.database.connect().unwrap();
+    let flights = Flights::new(4);
+    let (release, gate) = tokio::sync::oneshot::channel::<()>();
+    let failing = move |_| async move {
+        gate.await.unwrap();
+        Err(ApiError::TooManyAttempts.fail())
+    };
+    let mut first = Box::pin(get_or_create_with(&conn, MONDAY, &flights, failing));
+    assert!(futures::poll!(first.as_mut()).is_pending());
+    let mut waiting = Box::pin(get_or_create_with(
+        &other,
+        MONDAY,
+        &flights,
+        |_| -> std::future::Ready<Generation> { panic!("follows the first request") },
+    ));
+    assert!(futures::poll!(waiting.as_mut()).is_pending());
+    release.send(()).unwrap();
+    for result in [first.await, waiting.await] {
+        assert_eq!(
+            ApiError::from_message(&result.unwrap_err().to_string()),
+            Some(ApiError::TooManyAttempts)
+        );
+    }
+    assert!(load(&conn, MONDAY).await.unwrap().is_none());
+    let daily = get_or_create_with(&conn, MONDAY, &flights, |params| async move {
+        Ok(backend::api::generate(&params))
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        daily.puzzle,
+        get_or_create(&conn, MONDAY).await.unwrap().puzzle
+    );
+}
+
 #[tokio::test]
 async fn puzzle_is_only_sent_after_start() {
     let (_db, conn) = test_db().await;

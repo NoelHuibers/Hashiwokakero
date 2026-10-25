@@ -455,6 +455,45 @@ CREATE TRIGGER group_puzzles_gone AFTER DELETE ON groups BEGIN
     DELETE FROM group_puzzles WHERE group_id = OLD.id;
 END;
 ",
+    // 21
+    "
+-- The points race of months that are over, worked out once from their ranked times instead of
+-- on every read, see daily::fame::closed_month. A month is in closed_months once its standings
+-- are stored (none: nobody finished a ranked daily in it)
+CREATE TABLE IF NOT EXISTS closed_months (
+    month     INTEGER PRIMARY KEY,
+    -- its days, for the triggers below
+    first_day INTEGER NOT NULL,
+    last_day  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS month_standings (
+    month        INTEGER NOT NULL,
+    -- 1 the winner
+    place        INTEGER NOT NULL,
+    user_id      INTEGER NOT NULL,
+    points       INTEGER NOT NULL,
+    solved       INTEGER NOT NULL,
+    first_finish INTEGER NOT NULL,
+    PRIMARY KEY (month, place)
+);
+CREATE TRIGGER closed_month_gone AFTER DELETE ON closed_months BEGIN
+    DELETE FROM month_standings WHERE month = OLD.month;
+END;
+-- Whatever changes the ranked times of a month's day drops its standings, to be worked out
+-- again on the next read: a finish after the month was over, a review, a ban, a deleted account,
+-- a guest's dailies moving to their account. Only the columns the standings are made of count
+CREATE TRIGGER closed_month_attempt_added AFTER INSERT ON attempts BEGIN
+    DELETE FROM closed_months WHERE NEW.day BETWEEN first_day AND last_day;
+END;
+CREATE TRIGGER closed_month_attempt_changed
+AFTER UPDATE OF user_id, day, finished_at, revealed, flag, time_ms ON attempts BEGIN
+    DELETE FROM closed_months
+    WHERE OLD.day BETWEEN first_day AND last_day OR NEW.day BETWEEN first_day AND last_day;
+END;
+CREATE TRIGGER closed_month_attempt_removed AFTER DELETE ON attempts BEGIN
+    DELETE FROM closed_months WHERE OLD.day BETWEEN first_day AND last_day;
+END;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

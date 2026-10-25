@@ -72,6 +72,9 @@ test.describe('on a phone', () => {
   test('the rivals card leaves the names their room', async ({ page }) => {
     await visit(page, `/player/${player('chen').id}`);
     await page.getByRole('button', { name: /^Mark as rival/ }).click();
+    // The toggle flips at once, the toast comes with the server's answer: leaving before it
+    // left the ranks without the rival now and then
+    await expect(page.getByText('chen is your rival now. Every daily is a duel!')).toBeVisible();
     await expect(page.getByRole('button', { name: /^Your rival/ })).toHaveAttribute('aria-pressed', 'true');
 
     await visit(page, '/ranks');
