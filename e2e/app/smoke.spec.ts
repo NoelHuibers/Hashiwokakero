@@ -101,3 +101,38 @@ test('the server’s files are linked on the website', async ({ page }) => {
   await expect(set).toHaveAttribute('target', '_blank');
   await expect(page.getByRole('link', { name: '/dojo/board.json' })).toHaveAttribute('href', 'https://hashi.rs/dojo/board.json');
 });
+
+test('the header, the tab bar and the sides clear the safe areas the WebView reports', async ({ page }) => {
+  // What iOS's WKWebView reports as env(safe-area-inset-*) on an iPhone 17, held upright: the
+  // status bar with the Dynamic Island, the home indicator. Chromium takes them from DevTools.
+  const cdp = await page.context().newCDPSession(page);
+  const report = (insets: { top: number; right: number; bottom: number; left: number }) =>
+    cdp.send('Emulation.setSafeAreaInsetsOverride', { insets });
+  await report({ top: 62, right: 0, bottom: 34, left: 0 });
+  await visit(page, '/rules');
+  const header = page.locator('header');
+  const tabBar = page.locator('nav').filter({ has: page.locator('.tab-label') });
+  const body = page.locator('body');
+  await expect(header).toHaveCSS('padding-top', '62px');
+  await expect(tabBar).toHaveCSS('padding-bottom', '34px');
+  await expect(body).toHaveCSS('padding-left', '0px');
+
+  // Held sideways: the camera's side and the other one, the home indicator, no status bar
+  await report({ top: 0, right: 62, bottom: 21, left: 62 });
+  await expect(header).toHaveCSS('padding-top', '0px');
+  await expect(tabBar).toHaveCSS('padding-bottom', '21px');
+  for (const side of ['left', 'right']) {
+    await expect(body).toHaveCSS(`padding-${side}`, '62px');
+    await expect(tabBar).toHaveCSS(`padding-${side}`, '62px');
+  }
+
+  // Android's WebView reports none of them (env() is 0 in WebView 124); MainActivity.kt sets the
+  // variables on the element, which win over env() where a newer WebView reports something
+  await report({ top: 62, right: 0, bottom: 0, left: 0 });
+  await page.evaluate(() => {
+    const insets = { top: 24, right: 0, bottom: 48, left: 0 };
+    for (const [side, px] of Object.entries(insets)) document.documentElement.style.setProperty(`--app-inset-${side}`, `${px}px`);
+  });
+  await expect(header).toHaveCSS('padding-top', '24px');
+  await expect(tabBar).toHaveCSS('padding-bottom', '48px');
+});

@@ -1,5 +1,6 @@
 //! Sharing a result: the phone's share sheet, `WhatsApp`, X, or the clipboard. In the app the
-//! share sheet is Android's (`api::native`): its `WebView` has no `navigator.share`.
+//! share sheet is the system's, through the app's plugin (`api::native`): Android's `WebView` has
+//! no `navigator.share`.
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;

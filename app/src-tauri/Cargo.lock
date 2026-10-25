@@ -1525,6 +1525,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-deep-link",
  "tauri-plugin-opener",
+ "tauri-utils",
 ]
 
 [[package]]
