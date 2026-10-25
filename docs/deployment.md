@@ -52,6 +52,17 @@ Store credentials in the deployment platform's secret store.
   Play, append Google's app signing certificate (Play Console, Test and release,
   App integrity, "App signing key certificate", SHA-256), which signs the installs
   from Play, and deploy.
+- `HASHI_IOS_APP_IDS`: optional, comma-separated app IDs of the iOS app, the team
+  ID and the bundle ID (`Q35TCGM5PW.rs.hashi`, as the Apple developer portal shows
+  them). The server lists them in `/.well-known/apple-app-site-association`, which
+  Apple's CDN fetches for iOS to verify the app's Universal Links (the same links
+  as Android's, see [app/README.md](../app/README.md#app-links)); unset, that file
+  is a 404 and the links open in Safari. Public (every signed build of the app has
+  it), so it is in `fly.toml`. After a deploy that changes it, check
+  `curl -sI https://hashi.rs/.well-known/apple-app-site-association` (200,
+  `application/json`) and Apple's copy,
+  `https://app-site-association.cdn-apple.com/a/v1/hashi.rs`, which follows on
+  Apple's own schedule.
 
 A malformed value of any of them stops the server at startup.
 

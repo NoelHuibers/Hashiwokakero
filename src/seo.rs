@@ -67,7 +67,8 @@ fn server_link_in(app: bool, path: &str) -> String {
     }
 }
 
-/// The pages of `https://hashi.rs` whose links open in the Android app (App Links).
+/// The pages of `https://hashi.rs` whose links open in the app (App Links on Android, Universal
+/// Links on iOS).
 ///
 /// Besides [`APP_LINK_PREFIXES`]: the daily (`/`, where a daily result's share text points),
 /// practice (`/practice`, the practice's), and the list of groups. In every language,
@@ -75,16 +76,46 @@ fn server_link_in(app: bool, path: &str) -> String {
 /// player's own session knows. Not the rest: the rules and the legal pages, the admin's, the Dojo
 /// with its uploads, and nothing the server answers itself (`/api`, `/og`, the downloads), which
 /// the app doesn't have. `plugins.deep-link.mobile` in `app/src-tauri/tauri.conf.json` lists them
-/// for Android (a test compares the two).
+/// for Android, [`app_link_components`] for iOS (a test compares the three).
 pub const APP_LINK_PATHS: &[&str] = &["/", "/practice", "/groups"];
 
 /// The paths whose pages below them open in the app, like [`APP_LINK_PATHS`]: invites to a group
 /// (`/g/<code>`), the pages of a group (its puzzles, its replays) and players' pages.
 pub const APP_LINK_PREFIXES: &[&str] = &["/g/", "/groups/", "/player/"];
 
+/// `paths` in every language of the site, the default's first: `/practice`, `/de/practice`, ...
+/// (`/` is `/de` in German).
+pub fn in_every_language(paths: &[&str]) -> Vec<String> {
+    paths
+        .iter()
+        .flat_map(|path| {
+            Locale::get_all()
+                .iter()
+                .map(|locale| localized(*locale, path))
+        })
+        .collect()
+}
+
+/// The App Links as Apple wants them, the `components` of the site's
+/// `apple-app-site-association` (`server::apps`).
+///
+/// Each of [`APP_LINK_PATHS`] exactly (`/` itself, not the pages below it), each of
+/// [`APP_LINK_PREFIXES`] with anything after it (`*`, which also matches nothing, like Android's
+/// `pathPrefix`), in every language. Without `?` and `#` they match any query and fragment. No
+/// path has a `*` or `?` of its own, which Apple would read as a pattern.
+pub fn app_link_components() -> Vec<serde_json::Value> {
+    let paths = in_every_language(APP_LINK_PATHS)
+        .into_iter()
+        .map(|path| json!({ "/": path }));
+    let prefixes = in_every_language(APP_LINK_PREFIXES)
+        .into_iter()
+        .map(|prefix| json!({ "/": format!("{prefix}*") }));
+    paths.chain(prefixes).collect()
+}
+
 /// The app's page for the App Link `url`, with its query and fragment.
 ///
-/// The page the app shows when Android opens it with the link. `None` for every other URL:
+/// The page the app shows when Android or iOS opens it with the link. `None` for every other URL:
 /// another site, another page, a path with anything but letters, digits, `-` and `_` between its
 /// slashes (no `..`, which the browser would resolve to another page).
 pub fn app_link(url: &str) -> Option<String> {
@@ -501,24 +532,13 @@ mod tests {
     /// every language.
     #[test]
     fn the_app_claims_the_app_links() {
-        let conf: serde_json::Value =
-            serde_json::from_str(include_str!("../app/src-tauri/tauri.conf.json")).unwrap();
-        let every_language = |paths: &[&str]| -> Vec<String> {
-            paths
-                .iter()
-                .flat_map(|path| {
-                    Locale::get_all()
-                        .iter()
-                        .map(|locale| localized(*locale, path))
-                })
-                .collect()
-        };
+        let conf = app_conf();
         let expected = json!([{
             "scheme": ["https"],
             "host": "hashi.rs",
             "appLink": true,
-            "path": every_language(APP_LINK_PATHS),
-            "pathPrefix": every_language(APP_LINK_PREFIXES),
+            "path": in_every_language(APP_LINK_PATHS),
+            "pathPrefix": in_every_language(APP_LINK_PREFIXES),
         }]);
         assert_eq!(
             conf["plugins"]["deep-link"]["mobile"],
@@ -527,13 +547,168 @@ mod tests {
             serde_json::to_string_pretty(&expected).unwrap()
         );
         // Each of them is an App Link
-        for path in every_language(APP_LINK_PATHS) {
+        for path in in_every_language(APP_LINK_PATHS) {
             assert_eq!(app_link(&format!("{SITE_URL}{path}")), Some(path.clone()));
         }
-        for prefix in every_language(APP_LINK_PREFIXES) {
+        for prefix in in_every_language(APP_LINK_PREFIXES) {
             let path = format!("{prefix}x1");
             assert_eq!(app_link(&format!("{SITE_URL}{path}")), Some(path.clone()));
         }
+    }
+
+    fn app_conf() -> serde_json::Value {
+        serde_json::from_str(include_str!("../app/src-tauri/tauri.conf.json")).unwrap()
+    }
+
+    /// Whether Apple's pattern of a URL component matches `text`: `*` any characters, none
+    /// too, `?` exactly one, the rest itself (case-sensitive, Apple's default).
+    fn apple_matches(pattern: &[u8], text: &[u8]) -> bool {
+        match pattern.split_first() {
+            None => text.is_empty(),
+            Some((b'*', rest)) => (0..=text.len()).any(|i| apple_matches(rest, &text[i..])),
+            Some((b'?', rest)) => !text.is_empty() && apple_matches(rest, &text[1..]),
+            Some((c, rest)) => text.first() == Some(c) && apple_matches(rest, &text[1..]),
+        }
+    }
+
+    /// iOS opens the same links in the app as Android: the `components` of the site's
+    /// `apple-app-site-association` are the intent filter's paths and prefixes, and Apple's
+    /// patterns match the URLs Android's `path` (exactly) and `pathPrefix` do. Neither takes
+    /// what only the server answers (`/api`, `/og`, the Dojo's files, `/.well-known`), nor the
+    /// rest of the site.
+    #[test]
+    fn ios_claims_the_links_android_claims() {
+        let conf = app_conf();
+        let filter = &conf["plugins"]["deep-link"]["mobile"][0];
+        let list = |key: &str| -> Vec<String> {
+            filter[key]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|p| p.as_str().unwrap().to_string())
+                .collect()
+        };
+        let (paths, prefixes) = (list("path"), list("pathPrefix"));
+        let components = app_link_components();
+        let expected: Vec<_> = paths
+            .iter()
+            .map(|path| json!({ "/": path }))
+            .chain(
+                prefixes
+                    .iter()
+                    .map(|prefix| json!({ "/": format!("{prefix}*") })),
+            )
+            .collect();
+        assert_eq!(components, expected);
+        // Nothing in them that Apple would read as a pattern
+        for path in paths.iter().chain(&prefixes) {
+            assert!(!path.contains(['*', '?', '#']), "{path}");
+        }
+
+        let android = |path: &str| {
+            paths.iter().any(|p| p == path) || prefixes.iter().any(|p| path.starts_with(p.as_str()))
+        };
+        let ios = |path: &str| {
+            components
+                .iter()
+                .any(|c| apple_matches(c["/"].as_str().unwrap().as_bytes(), path.as_bytes()))
+        };
+        for (path, claimed) in [
+            ("/", true),
+            ("/de", true),
+            ("/zh-Hant", true),
+            ("/practice", true),
+            ("/ja/practice", true),
+            ("/groups", true),
+            ("/ko/groups", true),
+            ("/groups/12", true),
+            ("/groups/12/replay/20400", true),
+            ("/fr/groups/12/puzzles/3", true),
+            ("/g/k7m2xq_9", true),
+            ("/zh-Hant/g/abc", true),
+            ("/g/", true),
+            ("/player/42", true),
+            ("/ar/player/42", true),
+            // Only the root, the daily, not what is below it
+            ("/rules", false),
+            ("/de/rules", false),
+            ("/de/", false),
+            ("/kontakt", false),
+            ("/impressum", false),
+            ("/replay/20400", false),
+            ("/admin", false),
+            ("/ja/admin", false),
+            ("/dojo", false),
+            ("/de/dojo", false),
+            ("/dojo/board.json", false),
+            ("/dojo/seasons/3/set.tar.gz", false),
+            ("/api/daily_today", false),
+            ("/og/en.png", false),
+            ("/og/daily/2026-10-25/en.png", false),
+            ("/sitemap.xml", false),
+            ("/pkg/hashi.wasm", false),
+            ("/.well-known/apple-app-site-association", false),
+            ("/.well-known/assetlinks.json", false),
+            // Exact paths are exact, prefixes end with a slash
+            ("/practice/", false),
+            ("/practicex", false),
+            ("/groupsx", false),
+            ("/g", false),
+            ("/gx", false),
+            ("/player", false),
+            ("/Practice", false),
+            ("/G/abc", false),
+            ("/en/g/abc", false),
+            ("/xx/g/abc", false),
+        ] {
+            assert_eq!(android(path), claimed, "Android, {path}");
+            assert_eq!(ios(path), claimed, "iOS, {path}");
+        }
+    }
+
+    /// The iOS app asks for the site's links: the deep-link plugin writes the App Links' host into
+    /// the Associated Domains of the app's entitlements (committed, the iOS build in CI checks
+    /// that it leaves them so), which both configurations of the Xcode project sign the app with.
+    /// The team that signs it is the one of the app ID in `HASHI_IOS_APP_IDS` (fly.toml).
+    #[test]
+    fn the_ios_app_claims_the_site() {
+        let conf = app_conf();
+        let host = conf["plugins"]["deep-link"]["mobile"][0]["host"]
+            .as_str()
+            .unwrap();
+        assert_eq!(format!("https://{host}"), SITE_URL);
+        let entitlements: String =
+            include_str!("../app/src-tauri/gen/apple/hashi_tauri_iOS/hashi_tauri_iOS.entitlements")
+                .split_whitespace()
+                .collect();
+        assert!(
+            entitlements.contains(&format!(
+                "<key>com.apple.developer.associated-domains</key><array><string>applinks:{host}</string></array>"
+            )),
+            "{entitlements}"
+        );
+        let project =
+            include_str!("../app/src-tauri/gen/apple/hashi_tauri.xcodeproj/project.pbxproj");
+        assert_eq!(
+            project
+                .matches("CODE_SIGN_ENTITLEMENTS = hashi_tauri_iOS/hashi_tauri_iOS.entitlements;")
+                .count(),
+            2
+        );
+        // Tauri writes the team into both on every build
+        let team = conf["bundle"]["iOS"]["developmentTeam"].as_str().unwrap();
+        assert_eq!(
+            project
+                .matches(&format!("DEVELOPMENT_TEAM = \"{team}\";"))
+                .count(),
+            2
+        );
+        let app_id = format!("{team}.{}", conf["identifier"].as_str().unwrap());
+        assert_eq!(app_id, "Q35TCGM5PW.rs.hashi");
+        assert!(
+            include_str!("../fly.toml").contains(&format!("HASHI_IOS_APP_IDS = \"{app_id}\"")),
+            "fly.toml should name the app {app_id}"
+        );
     }
 
     #[test]

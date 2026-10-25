@@ -448,3 +448,83 @@ async fn the_asset_links_name_the_app_and_its_certificates() {
         );
     }
 }
+
+const APPLE_APP_SITE_ASSOCIATION: &str = "/.well-known/apple-app-site-association";
+
+/// Without app IDs the site claims no iOS app: iOS then opens its links in Safari. Android's
+/// certificates don't make one, nor the other way round. The 404 isn't kept anywhere, so the
+/// file is there as soon as a deploy sets the IDs.
+#[tokio::test]
+async fn without_app_ids_there_is_no_apple_app_site_association() {
+    let server = Server::with_apps(&[("HASHI_ANDROID_CERT_SHA256", UPLOAD_CERT)], |o| {
+        o.env = Env::PROD;
+    })
+    .await;
+    let browser = server.browser();
+    let res = browser.get(APPLE_APP_SITE_ASSOCIATION).await;
+    assert_status(&res, StatusCode::NOT_FOUND);
+    assert_eq!(header(res.headers(), CACHE_CONTROL), Some("no-cache"));
+    assert_status(&browser.get(ASSET_LINKS).await, StatusCode::OK);
+    drop(server);
+    let server = Server::with_apps(&[("HASHI_IOS_APP_IDS", "Q35TCGM5PW.rs.hashi")], |_| {}).await;
+    assert_status(
+        &server.browser().get(ASSET_LINKS).await,
+        StatusCode::NOT_FOUND,
+    );
+}
+
+/// With them, the file Apple's CDN fetches, with the app ID of fly.toml
+/// (`src/golden/files/apple-app-site-association.json`): the app may open the pages of Android's
+/// intent filter (`seo::app_link_components`). Answered right there under its name without an
+/// extension (no redirect, which Apple doesn't follow), as JSON, cached for an hour, for
+/// `curl -I` too, and never refused for the network's budget.
+#[tokio::test]
+async fn the_apple_app_site_association_names_the_ios_app() {
+    let server = Server::with_apps(&[("HASHI_IOS_APP_IDS", "Q35TCGM5PW.rs.hashi")], |o| {
+        o.env = Env::PROD;
+    })
+    .await;
+    let browser = server.browser();
+    let mut body = String::new();
+    for _ in 0..40 {
+        let res = browser.get(APPLE_APP_SITE_ASSOCIATION).await;
+        assert_status(&res, StatusCode::OK);
+        assert_eq!(
+            header(res.headers(), CONTENT_TYPE),
+            Some("application/json")
+        );
+        assert_eq!(
+            header(res.headers(), CACHE_CONTROL),
+            Some("public, max-age=3600")
+        );
+        body = res.text().await.unwrap();
+    }
+    let association: serde_json::Value = serde_json::from_str(&body).unwrap();
+    // The exact text, compact
+    assert_eq!(body, association.to_string());
+    crate::golden::check(
+        "apple-app-site-association.json",
+        &serde_json::to_string_pretty(&association).unwrap(),
+        "iOS would open other links of hashi.rs in the app (or none); the app's \
+         plugins.deep-link.mobile in tauri.conf.json has to claim the same (see seo.rs)",
+    );
+
+    let res = browser
+        .http
+        .head(format!("{}{APPLE_APP_SITE_ASSOCIATION}", browser.url))
+        .send()
+        .await
+        .unwrap();
+    assert_status(&res, StatusCode::OK);
+    assert_eq!(
+        header(res.headers(), CONTENT_TYPE),
+        Some("application/json")
+    );
+    // Not under other names
+    for path in [
+        "/.well-known/apple-app-site-association.json",
+        "/.well-known/apple-app-site-association/",
+    ] {
+        assert_status(&browser.get(path).await, StatusCode::NOT_FOUND);
+    }
+}

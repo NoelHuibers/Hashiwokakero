@@ -81,7 +81,8 @@
       "debugApplicationIdSuffix": ".debug"
     },
     "iOS": {
-      "minimumSystemVersion": "16.4"
+      "minimumSystemVersion": "16.4",
+      "developmentTeam": "Q35TCGM5PW"
     }
   }
 }
