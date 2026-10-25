@@ -83,6 +83,14 @@ pnpm run e2e:update-snapshots        # after intentional visual changes
 `E2E_BIN`, `E2E_SITE_ROOT`, and `E2E_PORT` override the build and port used by the
 browser tests. Inspect failed runs with `pnpm exec playwright show-report e2e/playwright-report`.
 
+The bundle's size and the pages' hydration times have a baseline, see
+[docs/performance/bundle-baseline.md](docs/performance/bundle-baseline.md):
+
+```sh
+pnpm run perf:hydration              # hydration times on a 4× slower CPU
+pnpm run bundle-size                 # sizes and times against the baseline (--update stores them)
+```
+
 ## Backend CLI
 
 Run these commands from the repository root:
