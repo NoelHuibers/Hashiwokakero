@@ -99,7 +99,7 @@ pub fn MobileNav() -> impl IntoView {
                                 </span>
                                 // Smaller and without the spacing on the narrowest phones: six
                                 // names like PRACTICE and GROUPS share 320 px (see tab-bar.spec.ts)
-                                <span class="max-w-full truncate px-0.5 text-[10px] font-bold uppercase tracking-wider max-[360px]:px-0 max-[360px]:text-[9px] max-[360px]:tracking-normal">
+                                <span class="tab-label max-w-full truncate px-0.5 text-[10px] font-bold uppercase tracking-wider max-[360px]:px-0 max-[360px]:text-[9px] max-[360px]:tracking-normal">
                                     <PageName page />
                                 </span>
                             </A>
