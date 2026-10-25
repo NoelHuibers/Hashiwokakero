@@ -424,10 +424,12 @@ internal test track; from there it is promoted in the Play Console (closed test,
    ```
 
    The script sets the version in `app/Cargo.toml` (what the app sends in `x-hashi-app`),
-   `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` (the store's version and versionCode) and
-   the two crates' entries in `Cargo.lock` and `src-tauri/Cargo.lock`. It refuses a version whose
-   minor or patch is 1000 or more, or whose versionCode isn't above the current one. "Test & lint"
-   fails when the files disagree (`node scripts/app-version.mjs` without a version).
+   `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` (the store's version and versionCode), the
+   two crates' entries in `Cargo.lock` and `src-tauri/Cargo.lock`, and the iOS project's
+   `CFBundleShortVersionString` and `CFBundleVersion` in `gen/apple` (see [iOS](#ios)). It refuses
+   a version whose minor or patch is 1000 or more, or whose versionCode isn't above the current
+   one. "Test & lint" fails when the files disagree (`node scripts/app-version.mjs` without a
+   version).
    `whatsnew-en-US` is Play's "What's new" (at most 500 characters); other languages go next to
    it as `whatsnew-<locale>`, e.g. `whatsnew-de-DE`.
 2. After the merge, tag main's merge commit and push the tag:
@@ -531,6 +533,14 @@ This repository's project was generated in CI and committed like `gen/android`, 
   deep-link plugin puts `applinks:hashi.rs` (the App Links' host) into the Associated Domains of
   `hashi_tauri_iOS.entitlements` (Universal Links, step 13d of docs/mobile.md), and Tauri rewrites
   bits of `project.pbxproj` and `Info.plist`.
+- The version. Every build writes the version of `tauri.conf.json` into `Info.plist`, as
+  `CFBundleShortVersionString` and, through `agvtool`, as `CFBundleVersion`; `tauri ios init`
+  writes it into `project.yml`. `scripts/app-version.mjs` sets all four with the other files
+  ([Releases](#releases)), so a build leaves them as they are. App Store Connect wants a
+  `CFBundleVersion` that grows with every upload, of at most three numbers: the release (step 13e)
+  passes Android's versionCode (`node scripts/app-version.mjs --code`) as
+  `--config '{"bundle":{"iOS":{"bundleVersion":"<code>"}}}'`, not as `--build-number`, which
+  Tauri appends to the version as a fourth number (`0.0.1.1`). Pull requests keep the version.
 
 `bundle.iOS.minimumSystemVersion` in `tauri.conf.json` is **iOS 16.4**: the app's page runs in the
 system's `WKWebView`, the Safari of the phone's iOS. Tailwind 4 supports Safari 16.4 and newer
