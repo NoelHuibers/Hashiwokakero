@@ -77,11 +77,13 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
  * to hold still on the animated board and for a poll of the saved game, about half a second
  * each, and the bigger Onis ran out of the test's time. Pressed in the page, a hint is its
  * request and a render; and the test gets time for every hint on top, so no board is too big.
+ * 1.5 s each: about 70 ms here, but on CI, with four workers on the runner's four cores, today's
+ * 172 hints took up to 170 s (main after #144), past the 0.5 s each it had at first.
  */
 export async function hintUntil(page: Page, solution: number[], left: number) {
   const hints = missing((await saved(page, DAILY_KEY)).bridges, solution).length - left;
   if (hints <= 0) return;
-  test.setTimeout(test.info().timeout + hints * 500);
+  test.setTimeout(test.info().timeout + hints * 1_500);
   await page.getByRole('button', { name: /^Hint/ }).evaluate(
     async (button: HTMLElement, { key, solution, left }) => {
       const built = () => (JSON.parse(localStorage.getItem(key)!) as { bridges: number[] }).bridges;
