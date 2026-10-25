@@ -25,7 +25,7 @@ fn DifficultyPicker() -> impl IntoView {
     let i18n = use_i18n();
     let settings = expect_context::<Settings>();
     view! {
-        <div class="grid grid-cols-5 gap-1.5" role="group" aria-label=move || t_string!(i18n, practice.new_puzzle)>
+        <div class="grid grid-cols-5 gap-1 sm:gap-1.5" role="group" aria-label=move || t_string!(i18n, practice.new_puzzle)>
             {Difficulty::ALL
                 .into_iter()
                 .map(|d| {
@@ -36,7 +36,7 @@ fn DifficultyPicker() -> impl IntoView {
                             aria-pressed=move || (settings.difficulty.get() == d).to_string()
                             class=move || {
                                 format!(
-                                    "flex flex-col items-center rounded-lg border px-1 py-2 transition-all hover:-translate-y-0.5 {}",
+                                    "flex min-w-0 flex-col items-center rounded-lg border px-0.5 py-1.5 transition-all hover:-translate-y-0.5 max-[359px]:px-0 sm:px-1 sm:py-2 {}",
                                     if settings.difficulty.get() == d {
                                         "border-primary bg-primary text-primary-foreground shadow-md"
                                     } else {
@@ -48,7 +48,9 @@ fn DifficultyPicker() -> impl IntoView {
                             on:click=move |_| settings.difficulty.set(d)
                         >
                             <span class="font-pixel text-lg leading-none" aria-hidden="true">{d.kanji()}</span>
-                            <span class="mt-1 max-w-full truncate text-[10px] font-bold uppercase tracking-wider">
+                            // Phones: lower case in the body font, smaller below 360 px. A fifth of
+                            // the card has no room for MEDIUM or Складний in the display capitals
+                            <span class="mt-1 max-w-full truncate text-[10px] font-bold uppercase max-sm:font-sans max-sm:whitespace-normal max-sm:normal-case max-sm:leading-tight max-[359px]:text-[9px] sm:tracking-wider">
                                 {move || difficulty_name(i18n.get_locale(), d)}
                             </span>
                             <span class="text-[10px] opacity-70">{format!("{w}×{h}")}</span>
@@ -66,8 +68,8 @@ pub(super) fn NewGameCard() -> impl IntoView {
     let game = expect_context::<Game>();
     let settings = expect_context::<Settings>();
     view! {
-        <Card class="gap-4">
-            <CardHeader>
+        <Card class="gap-3 py-4 sm:gap-4 sm:py-6">
+            <CardHeader class="px-4 sm:px-6">
                 <CardTitle class="flex items-baseline gap-2 text-xl">
                     {t!(i18n, practice.card.title)} <span class="font-pixel text-sm text-primary">"練習"</span>
                 </CardTitle>
@@ -75,11 +77,11 @@ pub(super) fn NewGameCard() -> impl IntoView {
                     {t!(i18n, practice.card.text)}
                 </CardDescription>
             </CardHeader>
-            <CardContent class="flex flex-col gap-3">
+            <CardContent class="flex flex-col gap-3 px-4 sm:px-6">
                 <DifficultyPicker />
                 <div class="flex gap-2">
                     <Button
-                        class="flex-1"
+                        class="h-11 flex-1"
                         attr:disabled=move || game.loading.get()
                         on:click=move |_| new_random(&game, settings.difficulty.get_untracked())
                     >
