@@ -57,14 +57,14 @@ fn is_active(href: &str, path: &str) -> bool {
     }
 }
 
-/// Tab bar at the bottom of the screen on phones, the header has no room for six links.
+/// Tab bar at the bottom of the screen on phones and tablets, the header has no room for six links.
 #[component]
 pub fn MobileNav() -> impl IntoView {
     let i18n = use_i18n();
     let location = use_location();
     view! {
         <nav
-            class="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left) backdrop-blur-md md:hidden"
+            class="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/90 pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left) backdrop-blur-md lg:hidden"
             aria-label=move || t_string!(i18n, common.nav.main)
         >
             // Even columns, unless a name needs more room than its share: Indonesian's PERINGKAT

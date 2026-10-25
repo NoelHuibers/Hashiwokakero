@@ -51,7 +51,8 @@ fn Grid(week: GroupWeek, me: i64) -> impl IntoView {
         ..
     } = week;
     view! {
-        <div class="-mx-2 overflow-x-auto px-2">
+        // relative: the hidden captions (sr-only, absolute) stay in the scroller, not past the screen
+        <div class="relative -mx-2 overflow-x-auto px-2">
             <table class="w-full min-w-[19rem] table-fixed border-separate border-spacing-y-1 text-sm">
                 <colgroup>
                     <col class="w-[34%] sm:w-[30%]" />

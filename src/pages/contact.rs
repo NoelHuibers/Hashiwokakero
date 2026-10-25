@@ -116,8 +116,9 @@ pub fn ContactPage() -> impl IntoView {
                                     {move || format!("{} / {MAX_MESSAGE}", message.with(|m| m.chars().count()))}
                                 </p>
                             </div>
-                            // The honeypot: off screen and skipped by keyboards and screen readers
-                            <div class="absolute -left-[9999px] size-px overflow-hidden" aria-hidden="true">
+                            // The honeypot: off screen and skipped by keyboards and screen readers. Off the
+                            // start side: past the end, right to left, the page would scroll to it
+                            <div class="absolute -start-[9999px] size-px overflow-hidden" aria-hidden="true">
                                 <label for="contact-website">"Website"</label>
                                 <input id="contact-website" type="text" tabindex="-1" autocomplete="off" bind:value=website />
                             </div>

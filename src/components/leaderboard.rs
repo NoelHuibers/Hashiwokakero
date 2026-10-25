@@ -368,7 +368,7 @@ pub fn AccountButton() -> impl IntoView {
     view! {
         <A
             href=to
-            attr:class="flex h-10 shrink-0 items-center gap-2 rounded-lg border bg-card px-2 transition-transform hover:-translate-y-0.5"
+            attr:class="flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border bg-card px-2 lg:h-10 transition-transform hover:-translate-y-0.5"
             attr:data-tooltip=move || t_string!(i18n, common.account)
             attr:aria-label=move || match auth.user.get() {
                 Some(user) => format!("{} · {}", t_string!(i18n, common.account),
@@ -384,7 +384,9 @@ pub fn AccountButton() -> impl IntoView {
                             "grid size-7 place-items-center rounded-md font-pixel text-sm {}",
                             if user.guest { "bg-secondary text-secondary-foreground" } else { "hanko" },
                         )>{initial}</span>
-                        <span class="hidden max-w-28 truncate text-sm font-medium lg:inline">
+                        // From xl on: next to the six links of a 1024 px header a long name
+                        // pushed the button off the screen
+                        <span class="hidden max-w-28 truncate text-sm font-medium xl:inline">
                             {if user.guest { t_string!(i18n, common.ranking.guest_name).to_string() } else { user.name }}
                         </span>
                     }

@@ -73,9 +73,10 @@ pub fn RulesPage() -> impl IntoView {
         <section class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
             <div class="mb-8 flex items-end gap-4">
                 <span class="vertical-jp font-pixel text-4xl leading-none text-primary">"橋をかけろ"</span>
-                <div>
+                // Hashiwokakero, a long word, fits next to the vertical title on a phone
+                <div class="min-w-0">
                     <p class="font-pixel text-sm text-primary">"遊び方 · asobikata"</p>
-                    <h1 class="text-4xl font-black">{t!(i18n, rules.title)}</h1>
+                    <h1 class="text-3xl font-black break-words sm:text-4xl">{t!(i18n, rules.title)}</h1>
                     <p class="mt-2 max-w-2xl text-muted-foreground">
                         {t!(i18n, rules.intro)}
                     </p>

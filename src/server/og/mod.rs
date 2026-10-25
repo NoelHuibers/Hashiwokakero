@@ -68,9 +68,9 @@ fn families(locale: Locale) -> (Family, Family) {
         _ => Family::Murecho,
     };
     // Kaisei Decol, as the site's headings, in Latin and Japanese. Its Cyrillic letters are as
-    // wide as kanji, a title in it looks letterspaced.
+    // wide as kanji, a title in it looks letterspaced, and it lacks Polish and Turkish letters.
     let title = match locale {
-        Locale::ru | Locale::uk => Family::Murecho,
+        Locale::ru | Locale::uk | Locale::pl | Locale::tr => Family::Murecho,
         _ if text == Family::Murecho => Family::KaiseiDecol,
         _ => text,
     };

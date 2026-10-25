@@ -105,10 +105,10 @@ for (const lang of LOCALES) {
   add(font, text + title);
   // Murecho backs up every language, as in the site's font stacks
   add('murecho', text + title);
-  // The titles' font where the site's headings use it, but not for Cyrillic (see `families`
-  // in src/server/og/mod.rs)
+  // The titles' font where the site's headings use it, but not for Cyrillic, Polish and Turkish
+  // (see `families` in src/server/og/mod.rs)
   // Its ° is as wide as a kanji, `n° 4` looks torn apart: Murecho draws it
-  if (font === 'murecho' && !['ru', 'uk'].includes(lang)) add('kaisei-decol', title.replace('°', ''));
+  if (font === 'murecho' && !['ru', 'uk', 'pl', 'tr'].includes(lang)) add('kaisei-decol', title.replace('°', ''));
 }
 
 // unicode-range: U+0000-00FF,U+0131 -> a test for code points

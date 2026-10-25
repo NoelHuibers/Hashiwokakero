@@ -148,7 +148,8 @@ pub fn DojoPage() -> impl IntoView {
                     <p>{t!(i18n, dojo.science.text)}</p>
                     <p class="flex flex-wrap gap-x-4 gap-y-1">
                         <a class="text-primary underline underline-offset-4" href=server_link("/dojo/board.json") target=server_link_target()>"/dojo/board.json"</a>
-                        <a class="text-primary underline underline-offset-4" href=format!("{REPO_URL}/tree/main/dojo") target="_blank" rel="noopener">
+                        // Breaks within the address on a phone rather than past the screen
+                        <a class="text-primary underline underline-offset-4 [overflow-wrap:anywhere]" href=format!("{REPO_URL}/tree/main/dojo") target="_blank" rel="noopener">
                             "github.com/NoelHuibers/Hashiwokakero/dojo"
                         </a>
                     </p>
