@@ -122,9 +122,18 @@ html[lang="hi"] { --app-font: "Noto Sans Devanagari Variable", "Murecho Variable
 html[lang="th"] { --app-font: "Noto Sans Thai Variable", "Murecho Variable", system-ui, sans-serif; }
 html[lang="vi"] { --app-font: "Be Vietnam Pro", "Murecho Variable", system-ui, sans-serif; }
 /* Their headings too: Kaisei Decol would draw Chinese with Japanese glyph shapes and lacks the
-   other scripts, a serif Latin next to a sans Hangul or Thai looks patched together */
-html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [lang="th"], [lang="vi"]) {
+   other scripts, a serif Latin next to a sans Hangul or Thai looks patched together. Russian and
+   Ukrainian as well: like every Japanese font it takes Cyrillic from JIS, each letter as wide as
+   a kanji (Г р у п п ы), and without Ukrainian's і ї є ґ. Polish and Turkish: it lacks ą ę ś ź ż
+   and ğ ş İ, which would come from Murecho in the middle of a word. */
+html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [lang="th"], [lang="vi"],
+  [lang="ru"], [lang="uk"], [lang="pl"], [lang="tr"]) {
   --display-font: var(--app-font);
+}
+/* Letter spacing tears Devanagari's headline apart and Thai words (written without spaces)
+   into single letters: the spaced small capitals of the Latin languages go without it */
+html:is([lang="hi"], [lang="th"]) [class*="tracking-"] {
+  letter-spacing: normal;
 }
 
 .dark {
@@ -739,11 +748,6 @@ tr:hover .hanko-pick,
 /* A seal got that wasn't seen before */
 .hanko-received[data-fresh="true"] {
   background: color-mix(in srgb, var(--px-shu) 8%, transparent);
-}
-/* The names under the kanji of the phone's tab bar. Kaisei Decol draws Cyrillic at full width
-   (Japanese fonts take it from JIS), ПРАКТИКА would need 84 px of a tab's 53 to 65: Murecho's fit */
-html:is([lang="ru"], [lang="uk"]) .tab-label {
-  font-family: var(--app-font);
 }
 /* New seals on one's results: a dot on the groups' entry of the navigation */
 .hanko-dot {

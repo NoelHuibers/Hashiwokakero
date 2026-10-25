@@ -34,7 +34,10 @@ for (const [width, locale] of [[320, 'en'], [375, 'de'], [375, 'ja'], [320, 'ar'
     await summary.press('Enter');
     await expect(tools).toHaveAttribute('open', '');
     await expect(tools.locator('#heuristic')).toBeVisible();
+    // The solver choice is one Tab stop, the chosen solver
     await summary.press('Tab');
+    await expect(tools.getByRole('radio', { checked: true })).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(tools.locator('#heuristic')).toBeFocused();
     await summary.focus();
     await summary.press('Space');

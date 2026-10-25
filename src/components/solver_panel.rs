@@ -48,7 +48,12 @@ pub fn SolverOptions() -> impl IntoView {
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
                 <Label>{t!(i18n, common.solver.solver)}</Label>
-                <ToggleGroup variant=ToggleGroupVariant::Outline spacing=0 class="w-full">
+                <ToggleGroup
+                    variant=ToggleGroupVariant::Outline
+                    spacing=0
+                    class="w-full"
+                    aria_label=Signal::derive(move || t_string!(i18n, common.solver.solver).to_string())
+                >
                     {SolverKind::ALL
                         .into_iter()
                         .map(|k| {
@@ -328,6 +333,51 @@ mod tests {
     use common::{Heuristic, Restarts, SolverKind};
 
     use super::*;
+
+    /// The solvers are a radio group with one Tab stop, the chosen solver, also when it isn't
+    /// the first one: Tab used to skip the group, and nothing said which one was chosen.
+    #[cfg(feature = "ssr")]
+    #[tokio::test]
+    async fn the_solvers_are_a_radio_group_with_the_chosen_one_as_tab_stop() {
+        use crate::i18n::{Locale, td_string};
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            use_i18n().set_locale(Locale::de);
+            let settings = Settings::new();
+            provide_context(settings);
+            for kind in SolverKind::ALL {
+                settings.solver.update(|c| c.kind = kind);
+                let html = view! { <SolverOptions /> }.to_html();
+                let group = html.split("role=\"radiogroup\"").nth(1).unwrap();
+                let group = group.split("</div>").next().unwrap();
+                assert!(html.contains(&format!(
+                    "aria-label=\"{}\"",
+                    td_string!(Locale::de, common.solver.solver)
+                )));
+                let radios: Vec<&str> = group
+                    .split("<button ")
+                    .skip(1)
+                    .map(|b| b.split('>').next().unwrap())
+                    .collect();
+                assert_eq!(radios.len(), SolverKind::ALL.len());
+                for (radio, k) in radios.iter().zip(SolverKind::ALL) {
+                    assert!(radio.contains("role=\"radio\""));
+                    let chosen = k == kind;
+                    assert!(
+                        radio.contains(&format!("aria-checked=\"{chosen}\"")),
+                        "{radio}"
+                    );
+                    let tabindex = if chosen { 0 } else { -1 };
+                    assert!(
+                        radio.contains(&format!("tabindex=\"{tabindex}\"")),
+                        "{radio}"
+                    );
+                }
+            }
+        });
+    }
 
     #[test]
     fn times_get_a_unit_that_fits() {

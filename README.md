@@ -80,8 +80,18 @@ pnpm run e2e:container               # includes visual tests; requires Docker or
 pnpm run e2e:update-snapshots        # after intentional visual changes
 ```
 
+The screenshots in `e2e/tests/__screenshots__` only match the browser of the official
+Playwright image, the one CI runs in. `e2e:container` and `e2e:update-snapshots` therefore
+start that image (podman or docker, tag = the `@playwright/test` version in `node_modules`) with
+just `playwright run-server` in it, on the host network at `127.0.0.1`. The tests and the
+release server run on the host and connect to it (`PW_TEST_CONNECT_WS_ENDPOINT`), so the server
+binary never has to start inside the container (a build on a newer distribution links against a
+newer glibc than the image has). Nothing else needs installing; `playwright install` is only for
+`pnpm run e2e`. After `e2e:update-snapshots`, `git status` shows only the screenshots that
+changed beyond the comparison threshold; commit those.
+
 `E2E_BIN`, `E2E_SITE_ROOT`, and `E2E_PORT` override the build and port used by the
-browser tests. Inspect failed runs with `pnpm exec playwright show-report e2e/playwright-report`.
+browser tests, `E2E_BROWSER_PORT` the container's browser server port (a free one by default). Inspect failed runs with `pnpm exec playwright show-report e2e/playwright-report`.
 
 `pnpm run smoke:production` checks the deployed site (https://hashi.rs, `SMOKE_URL` for another)
 in a browser: the main pages answer, hydrate and react, with all their assets. It is read-only,

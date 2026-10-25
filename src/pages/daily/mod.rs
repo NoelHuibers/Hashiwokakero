@@ -50,9 +50,10 @@ pub fn Stat(
     #[prop(into)] value: Signal<String>,
 ) -> impl IntoView {
     view! {
-        <div class="flex min-w-[4.5rem] flex-col items-center rounded-lg border bg-card px-3 py-1.5 shadow-xs">
+        // Without the letter spacing on the narrowest phones: three of them share 320 px
+        <div class="flex min-w-[4.5rem] flex-col items-center rounded-lg border bg-card px-2 py-1.5 shadow-xs min-[360px]:px-3">
             <span class="font-pixel text-xl tabular-nums leading-tight">{move || value.get()}</span>
-            <span class="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            <span class="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground max-[360px]:tracking-normal">
                 {move || label.get()} " · " {jp}
             </span>
         </div>

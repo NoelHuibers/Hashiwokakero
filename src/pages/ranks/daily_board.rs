@@ -104,7 +104,7 @@ pub(super) fn DailyBoard(
                             </CardDescription>
                         </div>
                     </div>
-                    <div class="flex gap-1.5">
+                    <div class="flex flex-wrap gap-1.5">
                         <Button
                             variant=ButtonVariant::Outline
                             size=ButtonSize::Sm

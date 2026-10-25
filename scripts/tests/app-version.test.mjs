@@ -44,8 +44,17 @@ test('a version is x.y.z with minor and patch below 1000', () => {
 });
 
 test('set changes every file, and only the app crates in the lock files', () => {
+  // The app crates start with the version of another crate in Cargo.lock, which has to keep it
+  const packages = /\[\[package\]\]\nname = "([^"]*)"\nversion = "([^"]*)"/g;
+  const old = [...text('Cargo.lock').matchAll(packages)]
+    .map(([, name, version]) => ({ name, version }))
+    .find(({ name, version }) => name !== 'hashi_app' && /^[0-6]\.\d{1,3}\.\d{1,3}$/.test(version))
+    .version;
+  for (const { file, pattern } of FILES) {
+    fs.writeFileSync(path.join(dir, file), text(file).replace(pattern, `$1${old}$3`));
+  }
+  assert.equal(check(dir), old);
   const before = Object.fromEntries(FILES.map(({ file }) => [file, text(file)]));
-  const old = check(dir);
   set('7.8.9', dir);
   assert.equal(check(dir), '7.8.9');
   for (const { file } of FILES) {
@@ -57,7 +66,7 @@ test('set changes every file, and only the app crates in the lock files', () => 
     assert.equal(changed.length, 1, file);
     assert.match(changed[0], /7\.8\.9/, file);
   }
-  // The workspace's other crates have the old version too, and keep it
+  // The other crates with the old version keep it
   const olds = (lock) => lock.split('\n').filter((l) => l === `version = "${old}"`).length;
   assert.ok(olds(before['Cargo.lock']) > 1);
   assert.equal(olds(text('Cargo.lock')), olds(before['Cargo.lock']) - 1);

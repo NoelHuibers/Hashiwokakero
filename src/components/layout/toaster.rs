@@ -16,7 +16,7 @@ pub fn Toaster() -> impl IntoView {
         // Keep the live region mounted before messages arrive. Announce additions politely,
         // without moving focus or reading every earlier toast again when one disappears.
         <div
-            class="pointer-events-none fixed bottom-[calc(4.5rem+var(--safe-bottom))] end-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2 md:bottom-4"
+            class="pointer-events-none fixed bottom-[calc(4.5rem+var(--safe-bottom))] end-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-2 lg:bottom-4"
             role="log"
             aria-live="polite"
             aria-relevant="additions text"

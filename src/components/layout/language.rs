@@ -45,7 +45,7 @@ pub fn LanguagePicker() -> impl IntoView {
         <div node_ref=root class="relative shrink-0">
             <button
                 node_ref=button
-                class="grid h-10 min-w-10 place-items-center rounded-lg border bg-card px-2 text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
+                class="grid h-11 min-w-11 place-items-center rounded-lg border bg-card px-2 lg:h-10 lg:min-w-10 text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
                 class:ring-2=move || open.get()
                 class:ring-primary=move || open.get()
                 aria-haspopup="true"
@@ -64,7 +64,7 @@ pub fn LanguagePicker() -> impl IntoView {
             </button>
             <Show when=move || open.get()>
                 // Phones: across the screen below the header, the button isn't at the edge
-                <div class="fixed inset-x-3 top-[calc(4rem+var(--safe-top))] z-50 rounded-xl border bg-card p-2 shadow-2xl animate-in fade-in zoom-in-95 sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-[26rem]">
+                <div class="fixed inset-x-3 top-[calc(4.25rem+var(--safe-top))] z-50 rounded-xl border bg-card p-2 shadow-2xl animate-in fade-in zoom-in-95 sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-[26rem]">
                     <p class="px-2 pb-2 pt-1 font-pixel text-xs text-muted-foreground">
                         "言語 · " {t!(i18n, common.language)}
                     </p>
