@@ -6,6 +6,7 @@ use dojo::metrics::{Breakdown, Contribution, EntryBreakdown, Split};
 use dojo::{Rejection, Score};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos_meta::{Meta, Title};
 use leptos_router::components::A;
 use leptos_router::hooks::use_params_map;
 
@@ -17,7 +18,7 @@ use crate::components::ui::progress::Progress;
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::{date_short, prefix};
 use crate::model::{DojoState, DojoSubmission, day_of};
-use crate::seo::PageMeta;
+use crate::seo::title_text;
 
 use super::cactus::Cactus;
 use super::names::{StateBadge, family_kanji, family_name, par2};
@@ -291,7 +292,11 @@ pub fn DojoSubmissionPage() -> impl IntoView {
         })
     });
     view! {
-        <PageMeta title description=Signal::derive(move || t_string!(i18n, dojo.meta.description).to_string()) path="/dojo" />
+        // One entry's page, not the Dojo's: no canonical link to the Dojo with its translations,
+        // as if it were the same page, and kept out of search engines like players' pages
+        <Title text=title_text(move || title.get()) />
+        <Meta name="description" content=move || t_string!(i18n, dojo.meta.description) />
+        <Meta name="robots" content="noindex" />
         <section class="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-6 sm:px-6">
             <A href=back attr:class="text-sm text-primary hover:underline">
                 "← " {t!(i18n, dojo.detail.back)}

@@ -252,7 +252,7 @@
   },
   "community": {
     "meta_title": "Przynieś własny benchmark · SAT Dojo",
-    "meta_description": "Zgłoś formułę CNF do puli społeczności SAT Dojo. Zweryfikowane, trudne instancje trafiają do ukrytych zbiorów kolejnych sezonów i są publikowane z twoim nazwiskiem.",
+    "meta_description": "Zgłoś formułę CNF do puli społeczności SAT Dojo. Zweryfikowane, trudne instancje trafiają do ukrytych zbiorów kolejnych sezonów, z twoim nazwiskiem.",
     "title": "Przynieś własny benchmark",
     "intro": "Jak SAT Competition, Dojo przyjmuje benchmarki od uczestników. Zgłoś formułę, na której ci zależy: jeśli jej odpowiedź da się ustalić na pewno, nie jest zbyt łatwa i moderator ją przyjmie, trafi do puli. Ukryty zbiór każdego sezonu losuje kilka z puli, a po sezonie są publikowane z twoim nazwiskiem.",
     "rules_title": "Co się kwalifikuje",

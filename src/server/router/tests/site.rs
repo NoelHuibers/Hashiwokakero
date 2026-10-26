@@ -181,6 +181,51 @@ async fn unknown_paths_are_not_found() {
     assert_status(&res, StatusCode::NOT_FOUND);
 }
 
+/// One URL per page: a trailing slash and the `/en` of the default language redirect for good
+/// to the page's canonical URL (`router::canonical_target`), with the query. Only reads of pages:
+/// a form posted there, the server's own files and what isn't a page aren't redirected.
+#[tokio::test]
+async fn other_spellings_of_a_page_redirect_to_it() {
+    use reqwest::header::LOCATION;
+
+    let server = Server::start().await;
+    let browser = server.browser();
+    for (path, target) in [
+        ("/rules/", "/rules"),
+        ("/de/", "/de"),
+        ("/ja/practice/?size=9", "/ja/practice?size=9"),
+        ("/en", "/"),
+        ("/en/rules", "/rules"),
+        ("/en/ranks/", "/ranks"),
+    ] {
+        let res = browser.get(path).await;
+        assert_status(&res, StatusCode::MOVED_PERMANENTLY);
+        assert_eq!(res.headers()[LOCATION], target, "{path}");
+        let res = browser
+            .http
+            .head(format!("{}{path}", server.url))
+            .send()
+            .await
+            .unwrap();
+        assert_status(&res, StatusCode::MOVED_PERMANENTLY);
+        // Where it leads is the page
+        assert_status(&browser.get(target).await, StatusCode::OK);
+    }
+    let res = browser.post("/kontakt/").send().await.unwrap();
+    assert_ne!(res.status(), StatusCode::MOVED_PERMANENTLY);
+    for path in [
+        "/.well-known/assetlinks.json/",
+        "/api/current_user/",
+        "//example.com/",
+        "/en//example.com",
+    ] {
+        let res = browser.get(path).await;
+        assert_ne!(res.status(), StatusCode::MOVED_PERMANENTLY, "{path}");
+        assert!(res.headers().get(LOCATION).is_none(), "{path}");
+    }
+    assert_status(&browser.get("/rules").await, StatusCode::OK);
+}
+
 #[tokio::test]
 async fn sitemap() {
     let server = Server::start().await;

@@ -378,7 +378,8 @@ fn expected(route: &str, l: Locale) -> Expected {
             texts: strings([td_string!(l, dojo.detail.back), loading]),
             absent: strings([td_string!(l, dojo.detail.not_found)]),
             nav: Some("/lab"),
-            canonical: Some("/dojo"),
+            // One entry, not indexed (`pages::dojo::submission`)
+            canonical: None,
             ..Expected::default()
         },
         // Decided in the browser once the session is known: the dashboard, or the "not found"
@@ -665,7 +666,7 @@ async fn pages_link_and_describe_themselves() {
 
     // Structured data for search engines
     let home = page("/de").await;
-    assert!(home.contains(r#""@type":"VideoGame""#));
+    assert!(home.contains(r#""@type":["VideoGame","WebApplication"]"#));
     assert!(home.contains(r#""inLanguage":"de""#));
     // The home page leads to the tips in its language
     assert!(home.contains(r#"href="/de/rules#tips""#));
