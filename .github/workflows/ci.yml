@@ -794,18 +794,19 @@ jobs:
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
   # The iOS app (app/src-tauri, gen/apple): Tauri around the bundle of "Build app (web)", taken from
-  # its artifact, as a debug build for the iOS simulator on Apple silicon, unsigned. It is started on
-  # a simulator with hashi.rs blocked (the start page shows its offline state, no guest is made
-  # there), and a screenshot of it is kept: a launch that fails or crashes fails the job, the
-  # screenshot is for people. Not a required check and not in Release compatibility either: trouble
-  # with Xcode or the macOS runners can't hold up the website.
+  # its artifact, as a debug build for the iOS simulator on Apple silicon, unsigned. Then the smoke
+  # test of e2e/ios/ (the counterpart of "Android emulator smoke") runs it on the simulator, booted
+  # while the app builds, with hashi.rs blocked: Appium drives the page in its WKWebView. In this job
+  # rather than one of its own: a second macOS runner would boot another simulator and wait for this
+  # build's artifact. Not a required check and not in Release compatibility either: trouble with
+  # Xcode, the macOS runners or a simulator can't hold up the website.
   ios:
     name: Build app (iOS)
     needs: [changes, build-app]
     if: needs.changes.outputs.code == 'true'
     # Apple silicon. The App Store only takes builds made with the iOS 26 SDK (Xcode 26) or newer.
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       # One of the image's Xcodes, pinned (the image's default moves): the release builds with the
       # same one. Its SDK is iOS 26.5.
@@ -814,7 +815,14 @@ jobs:
       SIMULATOR_DEVICE: iPhone 17
       SIMULATOR_RUNTIME: iOS 26.5
       CARGO_PROFILE_DEV_DEBUG: 0
+      # The smoke test's driver (e2e/ios/app.ts), pinned
+      APPIUM_VERSION: 3.8.0
+      XCUITEST_VERSION: 12.20.0
     steps:
+      # When the job's parts started and ended, for the job summary
+      - run: |
+          echo "TIMES=$RUNNER_TEMP/ios-times" >> "$GITHUB_ENV"
+          echo "job $(date +%s)" >> "$RUNNER_TEMP/ios-times"
       - uses: actions/checkout@v7
       - name: Xcode
         run: xcodebuild -version | tee -a "$GITHUB_STEP_SUMMARY"
@@ -848,12 +856,16 @@ jobs:
       # "Build app (Android)" checks the formatting and lints for Android
       - name: Clippy
         working-directory: app/src-tauri
-        run: cargo clippy --locked --workspace --target aarch64-apple-ios -- -D warnings
+        run: |
+          echo "build $(date +%s)" >> "$TIMES"
+          cargo clippy --locked --workspace --target aarch64-apple-ios -- -D warnings
       # Without beforeBuildCommand, as for Android. --no-sign: an archive for the simulator, without
       # a team or a certificate; the app is moved to gen/apple/build/arm64-sim.
       - name: Build
         working-directory: app/src-tauri
-        run: cargo tauri ios build --ci --debug --target aarch64-sim --no-sign --config '{"build":{"beforeBuildCommand":null}}'
+        run: |
+          cargo tauri ios build --ci --debug --target aarch64-sim --no-sign --config '{"build":{"beforeBuildCommand":null}}'
+          echo "built $(date +%s)" >> "$TIMES"
       # The build rewrites parts of the project (the deep-link plugin the entitlements, Tauri the
       # Xcode project): what is committed is what it leaves. The App Store refuses an icon with an
       # alpha channel, which `cargo tauri icon` writes (app/README.md).
@@ -883,6 +895,23 @@ jobs:
           name: ios-simulator-app
           path: app/src-tauri/gen/apple/build/arm64-sim
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+      # The suite's runner (Playwright Test, no browser) and Appium, which drives the app's page
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Appium's XCUITest driver reaches the WKWebView through the simulator's WebKit inspector.
+      # It needs WebDriverAgent on the simulator: the driver's prebuilt one for simulators instead
+      # of an Xcode build of it (minutes).
+      - name: Appium
+        run: |
+          echo "appium $(date +%s)" >> "$TIMES"
+          npm install --global --no-fund --no-audit "appium@$APPIUM_VERSION"
+          appium driver install "xcuitest@$XCUITEST_VERSION"
+          appium driver run xcuitest download-wda -- --kind sim --platform iOS --outdir "$RUNNER_TEMP/wda"
+          echo "E2E_WDA=$(ls -d "$RUNNER_TEMP"/wda/*.app)" >> "$GITHUB_ENV"
       # The simulator's traffic leaves through the runner
       - name: Block hashi.rs
         run: |
@@ -890,30 +919,69 @@ jobs:
           sudo dscacheutil -flushcache
           sudo killall -HUP mDNSResponder
           if curl -sS --max-time 10 -o /dev/null https://hashi.rs/; then echo "::error::hashi.rs is still reachable"; exit 1; fi
-      - name: Start the app
+      # e2e/ios/: installs the app, starts Appium and runs the tests
+      - name: Tests on the simulator
+        env:
+          E2E_SIMULATOR: ${{ env.SIMULATOR }}
         run: |
-          xcrun simctl bootstatus "$SIMULATOR" -b
-          xcrun simctl install "$SIMULATOR" app/src-tauri/gen/apple/build/arm64-sim/Hashi.app
-          xcrun simctl launch "$SIMULATOR" rs.hashi
-          sleep 10
-          mkdir -p "$RUNNER_TEMP/ios-screens"
-          xcrun simctl io "$SIMULATOR" screenshot "$RUNNER_TEMP/ios-screens/start.png"
-          # Still running ten seconds later
-          xcrun simctl spawn "$SIMULATOR" launchctl list | grep -q 'rs\.hashi' || { echo "::error::the app isn't running any more"; exit 1; }
+          xcrun simctl bootstatus "$SIMULATOR" -b > /dev/null
+          echo "booted $(date +%s)" >> "$TIMES"
+          pnpm run app:ios-e2e || failed=1
+          echo "tested $(date +%s)" >> "$TIMES"
+          test -z "$failed"
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: |
+          echo "done $(date +%s)" >> "$TIMES"
+          node -e '
+            const fs = require("fs");
+            const times = Object.fromEntries(fs.readFileSync(process.env.TIMES, "utf8").trim().split("\n").map((l) => l.split(" ")));
+            const span = (a, b) => (times[a] && times[b] ? `${Math.round((times[b] - times[a]) / 60 * 10) / 10} min` : "–");
+            const read = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, "utf8")) : null);
+            const device = read("e2e/test-results-ios-device.json");
+            const report = read("e2e/test-results-ios.json");
+            const rows = [
+              "| iOS simulator | |", "|---|---|",
+              `| device | ${device ? `${device.model}, iOS ${device.ios}` : "–"} |`,
+              `| job | ${span("job", "done")} |`,
+              `| build (Clippy, app) | ${span("build", "built")} |`,
+              `| Appium, WebDriverAgent | ${span("appium", "booted")} |`,
+              `| tests | ${span("booted", "tested")} |`,
+            ];
+            if (report) {
+              const s = report.stats;
+              rows.push(`| passed | ${s.expected} |`, `| failed | ${s.unexpected} |`, `| flaky (passed on the retry) | ${s.flaky} |`, `| skipped | ${s.skipped} |`);
+              const walk = (suite) => [...(suite.specs ?? []), ...(suite.suites ?? []).flatMap(walk)];
+              for (const spec of report.suites.flatMap(walk)) {
+                for (const result of spec.tests.flatMap((t) => t.results)) {
+                  for (const a of result.annotations ?? []) {
+                    if (a.type === "calls") continue;
+                    const note = a.type === "launch" ? `launch ${a.description}` : `${a.type}: ${a.description}`;
+                    rows.push(`| ${spec.title} | ${note} |`);
+                  }
+                }
+              }
+            }
+            console.log(rows.join("\n"));
+          ' | tee -a "$GITHUB_STEP_SUMMARY"
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: ios-simulator-screenshot
-          path: ${{ runner.temp }}/ios-screens
+          path: e2e/ios-screens
           if-no-files-found: ignore
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
       - if: failure() && env.SIMULATOR
-        run: xcrun simctl spawn "$SIMULATOR" log show --last 5m --predicate 'process == "Hashi" OR subsystem BEGINSWITH "com.apple.WebKit"' --style compact > "$RUNNER_TEMP/ios-simulator.log" || true
+        run: xcrun simctl spawn "$SIMULATOR" log show --last 15m --predicate 'process == "Hashi" OR subsystem BEGINSWITH "com.apple.WebKit"' --style compact > e2e/test-results-ios-simulator.log || true
       - if: failure() && env.SIMULATOR
         uses: actions/upload-artifact@v7
         with:
-          name: ios-simulator-log
-          path: ${{ runner.temp }}/ios-simulator.log
+          name: ios-simulator-report
+          path: |
+            e2e/playwright-report-ios
+            e2e/test-results-ios-appium.log
+            e2e/test-results-ios.json
+            e2e/test-results-ios-simulator.log
           if-no-files-found: ignore
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
