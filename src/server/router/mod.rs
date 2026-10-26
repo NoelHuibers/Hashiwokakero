@@ -187,53 +187,6 @@ fn wasm_hash(hashes: &str) -> Option<&str> {
         .filter(|hash| !hash.is_empty())
 }
 
-/// The page a URL of another spelling is, for a permanent redirect: without a trailing slash
-/// (`/rules/` is `/rules`, `/de/` is `/de`), and without `/en`, the default language, which has
-/// no prefix (`/en/rules` is `/rules`). The query stays. These were 404s (the slash) or a second
-/// URL of the same page (`/en`), which search engines and shared links may have.
-///
-/// Only pages: not the server's own paths, where a slash is another file (Apple's and Google's
-/// verifiers want a 404 there, not a redirect). Never to another site (`//example.com`).
-fn canonical_target(path: &str, query: Option<&str>) -> Option<String> {
-    const NOT_PAGES: [&str; 5] = ["/.well-known/", "/api/", "/pkg/", "/fonts/", "/og/"];
-    if NOT_PAGES.iter().any(|prefix| path.starts_with(prefix)) {
-        return None;
-    }
-    let english = match path.strip_prefix("/en") {
-        Some("") => "/",
-        Some(rest) if rest.starts_with('/') => rest,
-        _ => path,
-    };
-    let trimmed = english.trim_end_matches('/');
-    let target = if trimmed.is_empty() { "/" } else { trimmed };
-    if target == path || target.starts_with("//") {
-        return None;
-    }
-    Some(match query {
-        Some(query) => format!("{target}?{query}"),
-        None => target.to_string(),
-    })
-}
-
-/// Redirects requests for pages to their canonical URL, see [`canonical_target`].
-async fn canonical_redirect(req: Request, next: Next) -> Response {
-    let read = matches!(
-        *req.method(),
-        axum::http::Method::GET | axum::http::Method::HEAD
-    );
-    match canonical_target(req.uri().path(), req.uri().query()).filter(|_| read) {
-        Some(target) => match HeaderValue::from_str(&target) {
-            Ok(location) => (
-                StatusCode::MOVED_PERMANENTLY,
-                [(header::LOCATION, location)],
-            )
-                .into_response(),
-            Err(_) => next.run(req).await,
-        },
-        None => next.run(req).await,
-    }
-}
-
 /// Browsers kept an old stylesheet after a deploy because its URL never changed and no cache
 /// headers were sent. With hashed file names everything under /pkg/ can be cached forever, since
 /// a new build gets new names; everything else is revalidated on every visit. The font files
@@ -283,6 +236,53 @@ async fn cache_control(hash_files: bool, req: Request, next: Next) -> Response {
         .entry(header::CACHE_CONTROL)
         .or_insert(HeaderValue::from_static(value));
     res
+}
+
+/// The page a URL of another spelling is, for a permanent redirect: without a trailing slash
+/// (`/rules/` is `/rules`, `/de/` is `/de`), and without `/en`, the default language, which has
+/// no prefix (`/en/rules` is `/rules`). The query stays. These were 404s (the slash) or a second
+/// URL of the same page (`/en`), which search engines and shared links may have.
+///
+/// Only pages: not the server's own paths, where a slash is another file (Apple's and Google's
+/// verifiers want a 404 there, not a redirect). Never to another site (`//example.com`).
+fn canonical_target(path: &str, query: Option<&str>) -> Option<String> {
+    const NOT_PAGES: [&str; 5] = ["/.well-known/", "/api/", "/pkg/", "/fonts/", "/og/"];
+    if NOT_PAGES.iter().any(|prefix| path.starts_with(prefix)) {
+        return None;
+    }
+    let english = match path.strip_prefix("/en") {
+        Some("") => "/",
+        Some(rest) if rest.starts_with('/') => rest,
+        _ => path,
+    };
+    let trimmed = english.trim_end_matches('/');
+    let target = if trimmed.is_empty() { "/" } else { trimmed };
+    if target == path || target.starts_with("//") {
+        return None;
+    }
+    Some(match query {
+        Some(query) => format!("{target}?{query}"),
+        None => target.to_string(),
+    })
+}
+
+/// Redirects requests for pages to their canonical URL, see [`canonical_target`].
+async fn canonical_redirect(req: Request, next: Next) -> Response {
+    let read = matches!(
+        *req.method(),
+        axum::http::Method::GET | axum::http::Method::HEAD
+    );
+    match canonical_target(req.uri().path(), req.uri().query()).filter(|_| read) {
+        Some(target) => match HeaderValue::from_str(&target) {
+            Ok(location) => (
+                StatusCode::MOVED_PERMANENTLY,
+                [(header::LOCATION, location)],
+            )
+                .into_response(),
+            Err(_) => next.run(req).await,
+        },
+        None => next.run(req).await,
+    }
 }
 
 #[cfg(test)]
