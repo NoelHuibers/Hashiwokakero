@@ -955,7 +955,8 @@ jobs:
               for (const spec of report.suites.flatMap(walk)) {
                 for (const result of spec.tests.flatMap((t) => t.results)) {
                   for (const a of result.annotations ?? []) {
-                    if (a.type === "calls") continue;
+                    // The practice test's list of fetches, and test.slow()'s mark
+                    if (a.type === "calls" || a.type === "slow") continue;
                     const note = a.type === "launch" ? `launch ${a.description}` : `${a.type}: ${a.description}`;
                     rows.push(`| ${spec.title} | ${note} |`);
                   }
