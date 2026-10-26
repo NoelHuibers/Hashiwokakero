@@ -12,8 +12,8 @@
 //! - what the `WebView` can't do itself on the phone: links out of the app open in the browser
 //!   (Tauri's opener plugin), sharing goes through the system's share sheet, also for files the
 //!   website downloads, and the system bars' icons follow the page's theme (the app's plugin,
-//!   `HashiPlugin.kt` in `gen/android`). The capabilities in `capabilities/default.json` allow
-//!   exactly these;
+//!   `HashiPlugin.kt` in `gen/android`, `HashiPlugin.swift` in `ios/`). The capabilities in
+//!   `capabilities/default.json` allow exactly these;
 //! - the App Links the app is opened with (`tauri-plugin-deep-link`): their pages are the app's
 //!   own, the router shows them (see `follow_app_links`).
 
@@ -121,7 +121,8 @@ pub(crate) fn share(text: &str, file: Option<(&str, &str)>) -> bool {
 
 /// Dark icons on the system bars for the light theme, light ones for the dark theme. The page
 /// draws behind the bars (`--app-inset-*` in `style/tailwind.css`), so their icons have to
-/// follow the page's theme, not the phone's.
+/// follow the page's theme, not the phone's (on iOS the status bar's, through the window's
+/// style).
 pub(crate) fn system_bars(dark: bool) {
     #[derive(Serialize)]
     struct Args {

@@ -8,8 +8,8 @@
 //! (`capabilities/default.json`, the permissions from `build.rs`).
 //!
 //! Links out of the app open in the phone's browser through Tauri's opener plugin; the app's own
-//! plugin ([`hashi`]) shares through Android's share sheet, sets the system bars' icons and keeps
-//! the `WebView` on the app's pages. Links to the app's pages on `https://hashi.rs` (App Links,
+//! plugin ([`hashi`]) shares through the system's share sheet, sets the system bars' icons and
+//! keeps the `WebView` on the app's pages. Links to the app's pages on `https://hashi.rs` (App Links,
 //! `plugins.deep-link` in `tauri.conf.json`) open the app through the deep-link plugin, and the
 //! page shows them (`api::native::follow_app_links`).
 
@@ -41,8 +41,12 @@ pub fn run() {
         .expect("the app failed to start");
 }
 
-/// The app's own plugin: its commands are `HashiPlugin.kt` on Android (`gen/android`), the
-/// `share` and `system_bars` of `api::native`.
+// The iOS side of the plugin `hashi`, `ios/Sources/HashiPlugin.swift` (linked by `build.rs`)
+#[cfg(target_os = "ios")]
+tauri::ios_plugin_binding!(init_plugin_hashi);
+
+/// The app's own plugin: its commands are `HashiPlugin.kt` on Android (`gen/android`) and
+/// `HashiPlugin.swift` on iOS (`ios/`), the `share` and `system_bars` of `api::native`.
 ///
 /// It also keeps the `WebView` on the app's pages: a page of another site (a link the page
 /// didn't send to the opener, a script's `location`) opens in the browser instead when it is
@@ -50,14 +54,17 @@ pub fn run() {
 /// `https://hashi.rs/g/<code>` and the other App Links: an App Link the app is opened with
 /// isn't a navigation, the deep-link plugin hands it to the page, whose router shows its page
 /// in the app (`api::native::follow_app_links`). From a page of the app such a link goes to
-/// Android, which brings it back to the app once Android verified the app's links.
+/// the system, which brings it back to the app once it verified the app's links (Android's App
+/// Links, iOS's Universal Links).
 fn hashi<R: Runtime>() -> TauriPlugin<R> {
     tauri::plugin::Builder::new("hashi")
         .setup(|_app, api| {
             #[cfg(target_os = "android")]
             api.register_android_plugin("rs.hashi", "HashiPlugin")?;
-            // Only Android has its side yet (iOS: step 13c of docs/mobile.md)
-            #[cfg(not(target_os = "android"))]
+            #[cfg(target_os = "ios")]
+            api.register_ios_plugin(init_plugin_hashi)?;
+            // The desktop, for development, has no side
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
             let _ = api;
             Ok(())
         })
@@ -66,7 +73,7 @@ fn hashi<R: Runtime>() -> TauriPlugin<R> {
                 return true;
             }
             if url.scheme() == "https" {
-                // Not here: the opener asks Android, which may need this thread
+                // Not here: the opener asks the system, which may need this thread
                 let app = webview.app_handle().clone();
                 let url = url.to_string();
                 tauri::async_runtime::spawn(async move {

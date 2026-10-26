@@ -45,6 +45,14 @@ targets:
       path: hashi_tauri_iOS/Info.plist
       properties:
         LSRequiresIPhoneOS: true
+        # The scene lifecycle (tao's TaoSceneDelegate): without it UIKit keeps the portrait safe
+        # areas when an iPhone is turned sideways (iOS 26), see app/README.md
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: TaoSceneDelegate
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities: [arm64, metal]
         UISupportedInterfaceOrientations:

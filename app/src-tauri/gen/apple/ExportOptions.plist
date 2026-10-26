@@ -4,5 +4,7 @@
 <dict>
     <key>method</key>
     <string>debugging</string>
+    <key>manageAppVersionAndBuildNumber</key>
+    <false/>
 </dict>
 </plist>

@@ -117,6 +117,39 @@ in the repository root, only in the app):
 - **App Links.** Links to the app's pages on `https://hashi.rs` open in the app, see
   [App Links](#app-links).
 
+On iOS the `WebView` is WebKit's `WKWebView`, which does more of it itself. The app's own plugin
+has its iOS side in `src-tauri/ios/` (`HashiPlugin.swift`, see [iOS](#ios)). Where it differs:
+
+- **Safe areas.** With `viewport-fit=cover` the page draws under the status bar, the Dynamic
+  Island and the home indicator, and the sides held sideways, and `WKWebView` reports them as
+  `env(safe-area-inset-*)`, in portrait and landscape, on the iPad too. `index.html` sets
+  `--app-inset-*` to them, no native code. On Android the variables `MainActivity.kt` sets on
+  the element win over that rule. With `viewport-fit=cover` WebKit sets the page's scroll view's
+  `contentInsetAdjustmentBehavior` to `never` itself, so nothing is inset twice, and wry turns
+  the scroll view's bounce off: no band of another colour above or below the page. Landscape
+  needs the scene lifecycle (`UIApplicationSceneManifest` in `Info.plist`, tao's
+  `TaoSceneDelegate`): without it UIKit kept the portrait insets when the phone was turned (top
+  62, sides 0 on an iPhone 17 under iOS 26), and the page went under the Dynamic Island.
+- **Sharing and downloads.** `WKWebView` has `navigator.share` (`tauri://localhost` is a secure
+  context, so `navigator.clipboard` works too), but the page takes the same path as on Android,
+  the plugin's `share`: `UIActivityViewController` with the text, or with the file
+  (written to the app's temporary folder), which the sheet offers to save in Files. Blob
+  downloads don't work in the `WebView` either. On the iPad the sheet is a popover in the
+  middle of the page.
+- **The status bar** follows the page's theme through the window's style
+  (`overrideUserInterfaceStyle`), which the share sheet and the keyboard take on too.
+- **The soft keyboard.** Nothing to do: `WKWebView` scrolls the focused input above the
+  keyboard, the page's visual viewport ends at it, and the tab bar sits on it, also while the
+  page scrolls. Unlike Android the bottom inset stays (the home indicator's 34 px under the tab
+  bar's labels) while the keyboard is open.
+- **Links out** go to Safari and Mail through the opener plugin's iOS side, the same capability
+  and `on_navigation` guard as on Android (the page's origin is `tauri://localhost`).
+- **Back.** iOS has no back button: the swipe from the screen's left edge goes back in the
+  page's history, the router's pages, like Android's back gesture
+  (`allowsBackForwardNavigationGestures`, which wry sets on macOS only). The pages are one
+  document, so it never leaves the app; at the first page it does nothing.
+- **App Links** are Universal Links on iOS, see [App Links](#app-links).
+
 The smoke test checks the session (a guest made in the app, no cookie, the same guest after a
 reload), the headers, one update toast however many calls the server refuses, and the links.
 
@@ -147,11 +180,13 @@ language say) and check that Apple's patterns match the same paths as Android's.
   (`on_navigation`) doesn't see it. Links to these pages from the app's own pages: there are none
   (share and invite links are copied or shared, not followed); one would go to the system, which
   brings it back to the app.
-- **iOS** hands a Universal Link to the app delegate (`application:continueUserActivity:`), at a
-  cold start right after launching too. Tao turns it into Tauri's `RunEvent::Opened`, where the
-  plugin keeps it for `get_current` and sends the event. The app has no scene manifest in its
-  `Info.plist`, so it runs on the app delegate's lifecycle; with scenes a cold start's link would
-  come in `scene:willConnectToSession:options:`, which tao 0.37 doesn't pass on. Universal Links
+- **iOS** hands a Universal Link to the scene delegate: tao's `TaoSceneDelegate`
+  (`scene:continueUserActivity:`) turns the link of a running app into Tauri's `RunEvent::Opened`,
+  where the plugin keeps it for `get_current` and sends the event. The app runs on the scene
+  lifecycle (for the safe areas in landscape, see [On the phone](#on-the-phone)), where a cold
+  start's link comes in `scene:willConnectToSession:options:`, which tao 0.37 doesn't pass on:
+  `gen/apple/Sources/hashi_tauri/main.mm` passes it on to `scene:continueUserActivity:` after tao's
+  own method (see [iOS](#ios)). Universal Links
   open the app when a link is tapped in another app (Messages, Mail, Safari from another site);
   typed into Safari's address bar, or tapped on a page of hashi.rs itself, they stay in Safari.
 - **The server** says which app may open its links. For Android `/.well-known/assetlinks.json`
@@ -276,7 +311,8 @@ no clap).
   its plugin, which makes Tauri check them against the capabilities.
 - Plugins: `tauri-plugin-opener` (official, links out of the app, its own click script off),
   `tauri-plugin-deep-link` (official, [App Links](#app-links)), and `hashi`, the app's own, in `src/lib.rs` with its Android side in `gen/android`
-  (`HashiPlugin.kt`). See [On the phone](#on-the-phone).
+  (`HashiPlugin.kt`) and its iOS side in `ios/` (`HashiPlugin.swift`, see [iOS](#ios)). See
+  [On the phone](#on-the-phone).
 - `icons/`: generated from `public/icon-512.png` by `cargo tauri icon app-icon.json`, along with
   the Android launcher icons in `gen/android/.../res/mipmap-*` and the iOS ones (see [iOS](#ios)). Android's adaptive icon cuts a
   circle (or a squircle) out of the middle of its foreground, so the foreground,
@@ -549,7 +585,11 @@ certificate or profile is kept in the repository's secrets.
   --code`, 2 for 0.0.2), passed as `bundle.iOS.bundleVersion`. App Store Connect needs a higher
   one for every upload of a version, and it refuses four numbers, which `--build-number` would
   give (`0.0.2.1`). `CFBundleShortVersionString` is the version. In `gen/apple` both stay the
-  version (`scripts/app-version.mjs`): only the release's build changes them.
+  version (`scripts/app-version.mjs`): only the release's build changes them. Xcode's export
+  must not pick another one: with the key it asks App Store Connect and takes the next free
+  number once a version's build is there (3 for 0.0.2 in pull requests after its upload), so
+  `gen/apple/ExportOptions.plist`, which Tauri's export starts from, turns
+  `manageAppVersionAndBuildNumber` off.
 - **Export compliance.** `src-tauri/Info.ios.plist` sets `ITSAppUsesNonExemptEncryption` to
   false (the app only uses HTTPS, which is exempt), so TestFlight doesn't hold every build until
   the encryption question is answered. Every `tauri ios build` merges that file into
@@ -629,6 +669,22 @@ This repository's project was generated in CI and committed like `gen/android`, 
   ([iOS releases](#ios-releases)) passes Android's versionCode (`node scripts/app-version.mjs --code`) as
   `--config '{"bundle":{"iOS":{"bundleVersion":"<code>"}}}'`, not as `--build-number`, which
   Tauri appends to the version as a fourth number (`0.0.1.1`). Pull requests keep the version.
+- The scene lifecycle: `UIApplicationSceneManifest` in `Info.plist` and `project.yml`, one scene
+  with tao's `TaoSceneDelegate` (see [On the phone](#on-the-phone)). The template of tauri-cli
+  2.12.4 has none. On it iOS hands the Universal Link the app is started with to the scene
+  delegate's `scene:willConnectToSession:options:`, which tao 0.37 ignores: `Sources/hashi_tauri/main.mm`
+  wraps that method of tao's class before the first scene connects (once UIKit has set the app's
+  delegate; a scene restored from an earlier launch never asks for its configuration) and passes
+  the launch's links on to `scene:continueUserActivity:` and `scene:openURLContexts:`, where tao
+  hands the links of a running app to the deep-link plugin. Checked in the simulator with a test
+  scheme: the link that starts the app reaches the page's `get_current`.
+
+The iOS side of the app's own plugin `hashi` is outside `gen/apple`, in `src-tauri/ios/`: a Swift
+package (`HashiPlugin.swift`, the counterpart of `HashiPlugin.kt`) that `build.rs` builds with
+`swift build` and links into the app's library when it builds for iOS, as `tauri-plugin` does for a
+plugin crate's `ios/` (an app's own plugin can't use that). It imports Tauri's Swift API, which
+`build.rs` copies from the `tauri` crate to `src-tauri/.tauri/` (ignored by git); Swift Package
+Manager fetches its one dependency, swift-rs, from GitHub.
 
 `bundle.iOS.minimumSystemVersion` in `tauri.conf.json` is **iOS 16.4**: the app's page runs in the
 system's `WKWebView`, the Safari of the phone's iOS. Tailwind 4 supports Safari 16.4 and newer
@@ -701,17 +757,21 @@ content security policy (`/`, `/rules`, `/ja/rules`, `/practice`, `/create`, `/l
 `/groups`, `/daily`); practice generates through the native generator (Tauri's IPC is a fetch of
 `ipc://localhost/generate_puzzle` on iOS) and hints and checks without the server; the ranks show
 one offline notice, again after an `online` event; a link to GitHub and a `location` to another site
-leave the app's page where it is and bring Safari to the front. The screenshots `start.png`,
-`practice.png`, `practice-light.png` and `practice-dark.png` are the artifact
+leave the app's page where it is and bring Safari to the front; the practice page clears the safe
+areas (step 13c): the header starts below `env(safe-area-inset-top)` and the tab bar's labels end
+above the home indicator, in both themes, and turned sideways (WebDriver's orientation) the top's
+inset is 0, the body's and the tab bar's sides clear the Dynamic Island, as the scene lifecycle
+gives them; the app's own plugin answers `system_bars` and `share` with a file (without its Swift
+side Tauri refuses them). The screenshots `start.png`, `practice.png`, `practice-light.png`,
+`practice-dark.png` (the page dark on a light phone: the status bar's icons light),
+`landscape.png` and `share.png` (the share sheet with the file) are the artifact
 `ios-simulator-screenshot`.
 
 Not checked, unlike on Android: `navigator.onLine` (the simulator has the Mac's network, only
-hashi.rs is blocked), the back button (iOS has none), App Links (Universal Links, step 13d), the
-copy button (a click on it froze the simulator's page for 25 s, the clipboard's sync with the Mac),
-and what step 13c changes: the safe areas (the header is under the status bar and the Dynamic
-Island, the tab bar over the home indicator), the share sheet, the status bar's style, the soft
-keyboard and a dark start. The light and dark screenshots show them, the job summary notes the
-safe-area insets and where the header starts; 13c turns them into checks.
+hashi.rs is blocked), the back button (iOS has none; the swipe from the edge isn't a WebDriver
+gesture), App Links (Universal Links need a signed build), the copy button (a click on it froze the
+simulator's page for 25 s, the clipboard's sync with the Mac), the status bar's style (the
+screenshots show it) and the soft keyboard (the simulator may have the Mac's keyboard connected).
 
 The debug build calls the production server when it can. The simulator has no airplane mode: the
 global setup refuses to run while hashi.rs answers from the Mac, and CI points hashi.rs to `0.0.0.0`

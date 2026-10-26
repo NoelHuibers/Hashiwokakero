@@ -1,0 +1,4 @@
+# Written when build.rs builds the package
+Package.resolved
+.build/
+.swiftpm/

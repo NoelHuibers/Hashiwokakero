@@ -103,10 +103,12 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
   and the admin's house form are links to the website.
 - What the `WebView` can't do itself (`src/api/native.rs`, app/README.md): links to other
   sites and `mailto:` open outside the app (Tauri's opener plugin, https and mailto only), the
-  share buttons and the CNF/puzzle downloads go to Android's share sheet (the app's own plugin,
-  `HashiPlugin.kt`), and the WebView never leaves the app's pages. The page draws behind the
-  system bars: the app passes their sizes in as CSS variables (`--app-inset-*`), and the bars'
-  icons follow the page's theme. The page ends above the soft keyboard.
+  share buttons and the CNF/puzzle downloads go to the system's share sheet (the app's own plugin,
+  `HashiPlugin.kt` and `HashiPlugin.swift`), and the WebView never leaves the app's pages. The page
+  draws behind the system bars: the app passes their sizes in as CSS variables (`--app-inset-*`;
+  on iOS `env(safe-area-inset-*)`, which needs the scene lifecycle in landscape), and the bars'
+  icons follow the page's theme. The page ends above the soft keyboard. On iOS the swipe from the
+  screen's edge goes back in the page's history.
 - App Links (Android) and Universal Links (iOS): links to the pages people share (an invite
   `/g/<code>`, the daily, practice, groups, players, in every language) open in the app where it
   is installed, on their page (tauri-plugin-deep-link). The site names the app:
@@ -136,7 +138,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 12 | First release: closed test, store listing, production | 9, 10, 11 | |
 | 13a | iOS project (`gen/apple`) and a simulator build in CI | 8, 9 | ✓ #147 |
 | 13b | iOS simulator smoke test in CI: the simulator build on a booted simulator, offline, like 10a | 13a | ✓ #157 |
-| 13c | iOS polish: safe areas (notch, home indicator), share sheet in Swift like `HashiPlugin.kt`, status bar, soft keyboard, links out | 13a | |
+| 13c | iOS polish: safe areas (notch, home indicator), share sheet in Swift like `HashiPlugin.kt`, status bar, soft keyboard, links out | 13a | ✓ #153 |
 | 13d | Universal Links: `apple-app-site-association` served from config, Associated Domains; needs the Team ID | 10b, 13a | ✓ #155 |
 | 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | ✓ #154 |
 | 13f | First iOS release: TestFlight, App Store listing and review | 13b–13e | |
