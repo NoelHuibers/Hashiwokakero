@@ -251,10 +251,6 @@ mod configuration_tests {
                 "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B",
             ),
             ("HASHI_IOS_APP_IDS", "Q35TCGM5PW.rs.hashi"),
-            (
-                "HASHI_GOOGLE_SITE_VERIFICATION",
-                "google0123456789abcdef.html",
-            ),
             ("HASHI_BING_SITE_AUTH", "0123456789ABCDEF0123456789ABCDEF"),
             ("HASHI_YANDEX_VERIFICATION", "yandex_0123456789abcdef.html"),
             ("HASHI_INDEXNOW_KEY", "3f2b8a9c4d1e4f6a9b7c0e5d1a2b3c4d"),
@@ -271,7 +267,6 @@ mod configuration_tests {
             ("HASHI_APP_ORIGINS", "https://tauri.localhost/"),
             ("HASHI_ANDROID_CERT_SHA256", "bb:86:d4:c6"),
             ("HASHI_IOS_APP_IDS", "rs.hashi"),
-            ("HASHI_GOOGLE_SITE_VERIFICATION", "0123456789abcdef"),
             ("HASHI_BING_SITE_AUTH", "<user>0123</user>"),
             ("HASHI_YANDEX_VERIFICATION", "0123456789abcdef"),
             ("HASHI_INDEXNOW_KEY", "short"),

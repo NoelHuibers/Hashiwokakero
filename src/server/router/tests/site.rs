@@ -355,7 +355,6 @@ async fn without_tokens_there_are_no_verification_files() {
     let server = Server::start().await;
     let browser = server.browser();
     for path in [
-        "/google0123456789abcdef.html",
         "/BingSiteAuth.xml",
         "/yandex_0123456789abcdef.html",
         "/3f2b8a9c4d1e4f6a9b7c0e5d1a2b3c4d.txt",
@@ -371,10 +370,6 @@ async fn without_tokens_there_are_no_verification_files() {
 async fn search_engines_find_their_files() {
     const KEY: &str = "3f2b8a9c-4d1e-4f6a-9b7c-0e5d1a2b3c4d";
     let server = Server::with_search(&[
-        (
-            "HASHI_GOOGLE_SITE_VERIFICATION",
-            "google0123456789abcdef.html",
-        ),
         ("HASHI_BING_SITE_AUTH", "0123456789ABCDEF0123456789ABCDEF"),
         ("HASHI_YANDEX_VERIFICATION", "yandex_0123456789abcdef.html"),
         ("HASHI_INDEXNOW_KEY", KEY),
@@ -383,11 +378,6 @@ async fn search_engines_find_their_files() {
     let browser = server.browser();
     let key_file = format!("/{KEY}.txt");
     for (path, content_type, body) in [
-        (
-            "/google0123456789abcdef.html",
-            "text/html; charset=utf-8",
-            "google-site-verification: google0123456789abcdef.html".to_string(),
-        ),
         (
             "/BingSiteAuth.xml",
             "application/xml",
@@ -416,8 +406,8 @@ async fn search_engines_find_their_files() {
         assert_status(&res, StatusCode::OK);
     }
     for path in [
-        "/google0000000000000000.html",
-        "/googleBingSiteAuth.xml",
+        "/yandex_0000000000000000.html",
+        "/google0123456789abcdef.html",
         "/0123456789abcdef.txt",
         "/de/BingSiteAuth.xml",
         "/BingSiteAuth.xml/",

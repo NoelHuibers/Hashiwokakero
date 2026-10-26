@@ -21,10 +21,9 @@ primary_region = "ams"
   # (/.well-known/apple-app-site-association, docs/deployment.md); public, it is in every signed
   # build of the app. More go after it, comma separated.
   HASHI_IOS_APP_IDS = "Q35TCGM5PW.rs.hashi"
-  # Search engines (docs/seo.md, docs/deployment.md); public, empty until there are tokens. The
-  # name of the HTML file Google Search Console offers for verification (google<token>.html)
-  HASHI_GOOGLE_SITE_VERIFICATION = ""
-  # The code in the <user> of the BingSiteAuth.xml Bing Webmaster Tools offers
+  # Search engines (docs/seo.md, docs/deployment.md); public, empty until there are tokens.
+  # Google Search Console verifies hashi.rs with a DNS record. The code in the <user> of the
+  # BingSiteAuth.xml Bing Webmaster Tools offers (not needed when importing from Search Console)
   HASHI_BING_SITE_AUTH = ""
   # The name of the HTML file Yandex Webmaster offers (yandex_<token>.html), optional
   HASHI_YANDEX_VERIFICATION = ""

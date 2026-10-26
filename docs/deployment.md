@@ -73,13 +73,10 @@ are documented in [dojo/fly.toml](../dojo/fly.toml).
 Optional and public, so they are in `fly.toml` (empty until the tokens exist). Each
 one makes the server answer a file at the site's root exactly as the search
 engine's console offers it; unset or empty, that file is a 404. See
-[seo.md](seo.md) for registering the site.
+[seo.md](seo.md) for registering the site. Google Search Console verifies the
+domain property `hashi.rs` with a DNS TXT record (Cloudflare), so there is no
+Google setting.
 
-- `HASHI_GOOGLE_SITE_VERIFICATION`: comma-separated names of the HTML files Google
-  Search Console asks to upload for a URL-prefix property ("HTML file" method),
-  `google0123456789abcdef.html`. The server answers `/google0123456789abcdef.html`
-  with `google-site-verification: google0123456789abcdef.html`. A Domain property
-  is verified with a DNS TXT record instead and needs no setting.
 - `HASHI_BING_SITE_AUTH`: comma-separated codes from the `BingSiteAuth.xml` that
   Bing Webmaster Tools offers (the text in its `<user>`). The server answers
   `/BingSiteAuth.xml` with a `<user>` for each. Not needed when the site is imported

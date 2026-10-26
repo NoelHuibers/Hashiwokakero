@@ -41,8 +41,9 @@ in [deployment.md](deployment.md#search-engines).
   language (`/og/<lang>.png`), the home page today's daily (`/og/daily/<date>/`).
 - **Languages**: `<html lang dir>` per page (`dir="rtl"` for Arabic), the rules
   ("how to play Hashiwokakero") in every language at `/<lang>/rules`.
-- **Verification files** for Google, Bing and Yandex, and the IndexNow key file,
-  from settings (empty until the tokens exist, see below).
+- **Verification files** for Bing and Yandex, and the IndexNow key file, from
+  settings (empty until the tokens exist, see below). Google verifies the domain
+  with a DNS record, which needs nothing on the site.
 - **IndexNow**: `scripts/indexnow.mjs`, run by `.github/workflows/indexnow.yml`,
   submits to Bing, Yandex and the other IndexNow engines the sitemap URLs a deploy
   added or changed, and after midnight UTC the pages of the new daily (the URLs
@@ -109,14 +110,12 @@ answer 200 before you press "Verify".
 
 ### Google Search Console
 
-1. Open https://search.google.com/search-console and add a property:
-   - **Domain** `hashi.rs` (recommended: covers http, https and every subdomain).
-     Google shows a TXT record; add it at the domain's DNS provider, then press
-     Verify. No setting needed.
-   - Or **URL prefix** `https://hashi.rs/` with the "HTML file" method: copy the
-     file's name (`google<token>.html`) into `HASHI_GOOGLE_SITE_VERIFICATION`,
-     deploy, check `https://hashi.rs/google<token>.html`, press Verify. Keep the
-     setting afterwards, Google checks again from time to time.
+1. Open https://search.google.com/search-console and add a **Domain** property
+   `hashi.rs` (covers http, https and every subdomain). Google shows a TXT record
+   (`google-site-verification=…`): in Cloudflare, DNS, Records, add a `TXT` record
+   with name `@` (hashi.rs) and that value, then press Verify (it can take a few
+   minutes to an hour to be seen). Keep the record afterwards, Google checks again
+   from time to time. No setting on the site.
 2. Sitemaps: submit `https://hashi.rs/sitemap.xml`. Status "Success" with 180
    discovered pages.
 3. URL inspection: "Request indexing" for `https://hashi.rs/`, `/rules`,

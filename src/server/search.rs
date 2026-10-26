@@ -1,9 +1,9 @@
 //! Files for search engines at the site's root.
 //!
-//! The proof that the site is ours, for the consoles of Google (Search Console), Bing (Webmaster
-//! Tools) and Yandex (Webmaster), and the key of `IndexNow`, with which the site tells Bing,
-//! Yandex and the other `IndexNow` engines about pages that changed (`scripts/indexnow.mjs`,
-//! docs/seo.md).
+//! The proof that the site is ours, for the consoles of Bing (Webmaster Tools) and Yandex
+//! (Webmaster), and the key of `IndexNow`, with which the site tells Bing, Yandex and the other
+//! `IndexNow` engines about pages that changed (`scripts/indexnow.mjs`, docs/seo.md). Google
+//! Search Console verifies the whole domain with a DNS record instead, which needs nothing here.
 //!
 //! Each console offers a file to put on the site, whose name or content is a token; the site
 //! serves it at the root while the setting names the token (fly.toml, docs/deployment.md). The
@@ -17,9 +17,6 @@ use std::fmt::Write as _;
 /// The search engine settings of the server, from the environment. Every one is optional.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SearchSettings {
-    /// `HASHI_GOOGLE_SITE_VERIFICATION`: the names of the HTML files Search Console asks for,
-    /// `google0123456789abcdef.html`.
-    pub google: Vec<String>,
     /// `HASHI_BING_SITE_AUTH`: the users of Bing's `BingSiteAuth.xml`, the codes in its `<user>`.
     pub bing: Vec<String>,
     /// `HASHI_YANDEX_VERIFICATION`: the names of the HTML files Yandex Webmaster asks for,
@@ -43,12 +40,6 @@ impl SearchSettings {
     /// refuses to start, see `validate_configuration`). Each is a comma separated list, for more
     /// than one owner, but the `IndexNow` key.
     pub fn from_env(var: impl Fn(&str) -> Option<String>) -> Result<Self, String> {
-        let google = list(
-            &var,
-            "HASHI_GOOGLE_SITE_VERIFICATION",
-            "the name of the file Search Console offers, like google0123456789abcdef.html",
-            |name| html_file(name, "google").is_some(),
-        )?;
         let bing = list(
             &var,
             "HASHI_BING_SITE_AUTH",
@@ -72,7 +63,6 @@ impl SearchSettings {
             }
         };
         Ok(Self {
-            google,
             bing,
             yandex,
             indexnow_key,
@@ -81,16 +71,7 @@ impl SearchSettings {
 
     /// The files the settings ask for, each with the exact content its console expects.
     pub fn files(&self) -> Vec<SearchFile> {
-        let html = "text/html; charset=utf-8";
-        let mut files: Vec<SearchFile> = self
-            .google
-            .iter()
-            .map(|name| SearchFile {
-                path: format!("/{name}"),
-                content_type: html,
-                body: format!("google-site-verification: {name}"),
-            })
-            .collect();
+        let mut files = Vec::new();
         if !self.bing.is_empty() {
             let users = self.bing.iter().fold(String::new(), |mut users, code| {
                 let _ = writeln!(users, "\t<user>{code}</user>");
@@ -106,7 +87,7 @@ impl SearchSettings {
             let code = html_file(name, "yandex_").unwrap_or_default();
             SearchFile {
                 path: format!("/{name}"),
-                content_type: html,
+                content_type: "text/html; charset=utf-8",
                 body: format!(
                     "<html>\n    <head>\n        <meta http-equiv=\"Content-Type\" \
                      content=\"text/html; charset=UTF-8\">\n    </head>\n    <body>Verification: \
@@ -193,7 +174,6 @@ mod tests {
         assert_eq!(SearchSettings::default().files(), []);
         // Empty, as fly.toml has them until the tokens are there
         let empty = settings(&[
-            ("HASHI_GOOGLE_SITE_VERIFICATION", ""),
             ("HASHI_BING_SITE_AUTH", " "),
             ("HASHI_YANDEX_VERIFICATION", ""),
             ("HASHI_INDEXNOW_KEY", ""),
@@ -206,10 +186,6 @@ mod tests {
     #[test]
     fn each_console_gets_its_file() {
         let configured = settings(&[
-            (
-                "HASHI_GOOGLE_SITE_VERIFICATION",
-                "google0123456789abcdef.html, googleZ-9_x.html",
-            ),
             ("HASHI_BING_SITE_AUTH", "0123456789ABCDEF0123456789ABCDEF"),
             ("HASHI_YANDEX_VERIFICATION", "yandex_0123456789abcdef.html"),
             (
@@ -223,8 +199,6 @@ mod tests {
         assert_eq!(
             paths,
             [
-                "/google0123456789abcdef.html",
-                "/googleZ-9_x.html",
                 "/BingSiteAuth.xml",
                 "/yandex_0123456789abcdef.html",
                 "/3f2b8a9c-4d1e-4f6a-9b7c-0e5d1a2b3c4d.txt",
@@ -232,23 +206,30 @@ mod tests {
         );
         assert_eq!(
             files[0].body,
-            "google-site-verification: google0123456789abcdef.html"
-        );
-        assert_eq!(files[0].content_type, "text/html; charset=utf-8");
-        assert_eq!(
-            files[2].body,
             "<?xml version=\"1.0\"?>\n<users>\n\t<user>0123456789ABCDEF0123456789ABCDEF</user>\n</users>\n"
         );
-        assert_eq!(files[2].content_type, "application/xml");
+        assert_eq!(files[0].content_type, "application/xml");
         assert!(
-            files[3]
+            files[1]
                 .body
                 .contains("<body>Verification: 0123456789abcdef</body>"),
             "{}",
-            files[3].body
+            files[1].body
         );
-        assert_eq!(files[4].body, "3f2b8a9c-4d1e-4f6a-9b7c-0e5d1a2b3c4d");
-        assert_eq!(files[4].content_type, "text/plain; charset=utf-8");
+        assert_eq!(files[1].content_type, "text/html; charset=utf-8");
+        assert_eq!(files[2].body, "3f2b8a9c-4d1e-4f6a-9b7c-0e5d1a2b3c4d");
+        assert_eq!(files[2].content_type, "text/plain; charset=utf-8");
+        // Two Yandex owners, a file each
+        let two = settings(&[(
+            "HASHI_YANDEX_VERIFICATION",
+            "yandex_0123456789abcdef.html, yandex_Z-9_x.html",
+        )])
+        .unwrap();
+        let paths: Vec<_> = two.files().into_iter().map(|f| f.path).collect();
+        assert_eq!(
+            paths,
+            ["/yandex_0123456789abcdef.html", "/yandex_Z-9_x.html"]
+        );
 
         // More than one Bing user: one file, a <user> each
         let two = settings(&[("HASHI_BING_SITE_AUTH", "AAAA,BBBB")]).unwrap();
@@ -262,15 +243,12 @@ mod tests {
     #[test]
     fn malformed_tokens_are_errors() {
         for (name, value) in [
-            ("HASHI_GOOGLE_SITE_VERIFICATION", "0123456789abcdef"),
-            ("HASHI_GOOGLE_SITE_VERIFICATION", "google.html"),
-            ("HASHI_GOOGLE_SITE_VERIFICATION", "google0123.htm"),
-            ("HASHI_GOOGLE_SITE_VERIFICATION", "google../admin.html"),
-            ("HASHI_GOOGLE_SITE_VERIFICATION", "google01/23.html"),
-            (
-                "HASHI_GOOGLE_SITE_VERIFICATION",
-                "google0123456789abcdef.html,",
-            ),
+            ("HASHI_YANDEX_VERIFICATION", "0123456789abcdef"),
+            ("HASHI_YANDEX_VERIFICATION", "yandex_.html"),
+            ("HASHI_YANDEX_VERIFICATION", "yandex_0123.htm"),
+            ("HASHI_YANDEX_VERIFICATION", "yandex_../admin.html"),
+            ("HASHI_YANDEX_VERIFICATION", "yandex_01/23.html"),
+            ("HASHI_YANDEX_VERIFICATION", "yandex_0123456789abcdef.html,"),
             ("HASHI_BING_SITE_AUTH", "<user>ABC</user>"),
             ("HASHI_BING_SITE_AUTH", "ABC-DEF"),
             ("HASHI_YANDEX_VERIFICATION", "yandex0123.html"),
@@ -300,7 +278,6 @@ mod tests {
             })
             .collect();
         for name in [
-            "HASHI_GOOGLE_SITE_VERIFICATION",
             "HASHI_BING_SITE_AUTH",
             "HASHI_YANDEX_VERIFICATION",
             "HASHI_INDEXNOW_KEY",
