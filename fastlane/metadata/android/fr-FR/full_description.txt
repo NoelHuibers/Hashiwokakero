@@ -1,0 +1,31 @@
+Hashi, c'est le Hashiwokakero, le casse-tête japonais des ponts, en pixel art tout mignon. Chaque jour, un nouveau pont du jour, la même grille pour tout le monde, et un classement montre à quelle vitesse tu as traversé. Un petit jeu de réflexion pour la pause café, et un vrai défi le dimanche.
+
+COMMENT JOUER
+Relie toutes les îles par des ponts. Le chiffre de chaque île indique combien de ponts elle doit avoir. Les ponts sont droits, ne se croisent jamais, et deux îles partagent au plus deux ponts. À la fin, toutes les îles forment un seul réseau. Chaque grille a exactement une solution : jamais besoin de deviner, rien que de la logique.
+
+LE PONT DU JOUR
+• Une nouvelle grille chaque jour à minuit (UTC), facile le lundi, de plus en plus corsée jusqu'à l'Oni géant du dimanche
+• La grille reste cachée jusqu'à ce que tu commences, puis le chrono tourne
+• Indices et vérifications t'aident quand tu bloques, contre une petite pénalité de temps
+• Le classement du jour, la course du mois et un panthéon de médailles et de séries
+• Joue tout de suite en invité, sans compte ; choisis un nom pour garder ta série sur tous tes appareils
+
+JEU LIBRE, MÊME HORS LIGNE
+• Des grilles illimitées en cinq niveaux, de Facile 7×7 à Oni 24×24
+• Sans chrono, avec indices, vérifications, annuler et rétablir
+• Fonctionne sans connexion : les grilles sont créées sur ton téléphone
+• Crée tes propres grilles dans l'atelier, un solveur vérifie qu'elles ont une seule solution
+
+ENTRE AMIS
+• Des groupes pour les amis, la famille ou les collègues : vois qui a déjà résolu le pont du jour et comparez vos temps
+• Désigne des rivaux et transforme chaque défi du jour en duel
+• Revois les parties de chacun dans le théâtre des parties
+• Envoie tes grilles à ton groupe et construisez ensemble, planche par planche, un pont jusqu'à l'autre rive
+
+COLLECTIONNER ET SE DÉTENDRE
+• Un carnet de tampons avec un tampon hanko pour chaque étape, et des séries qui te font revenir chaque jour
+• Thèmes jour et nuit, douces mélodies de koto et effets sonores discrets
+• Des îles en pixel art, des ponts de bois et de vermillon
+• Disponible en 20 langues
+
+Hashi est gratuit, sans publicité et sans achats intégrés. Il est open source et fait avec soin par un développeur indépendant. Une question, une idée ? Écris-nous via hashi.rs/fr/kontakt.

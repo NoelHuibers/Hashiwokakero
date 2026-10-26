@@ -1,0 +1,86 @@
+# The store listings of the app (app/README.md, Store listings): names, descriptions, keywords and
+# screenshots, from target/store/fastlane, which `node store/assemble.mjs` puts together from
+# fastlane/metadata and the generated images. .github/workflows/store-listing.yml runs these lanes:
+#
+#   bundle exec fastlane android listing what:all validate_only:true
+#   bundle exec fastlane ios listing what:text
+#
+# what: text (the texts), images (icon, feature graphic, screenshots) or all.
+#
+# Only the listing. No binary is uploaded and no release, track, rollout, review submission,
+# review information, age rating, privacy labels, data safety, prices or release settings are
+# touched: those are done by hand in the Play Console and App Store Connect.
+opt_out_usage
+
+STORE = File.expand_path("../target/store/fastlane", __dir__)
+
+def what_of(options)
+  what = (options[:what] || "all").to_s
+  UI.user_error!("what: text, images or all, not #{what}") unless %w[text images all].include?(what)
+  what
+end
+
+def flag(value)
+  value == true || value.to_s == "true"
+end
+
+platform :android do
+  desc "Google Play: the store listing in every language (validate_only:true checks it with Play without saving)"
+  lane :listing do |options|
+    what = what_of(options)
+    supply(
+      package_name: "rs.hashi",
+      json_key: ENV.fetch("PLAY_JSON_KEY"),
+      metadata_path: File.join(STORE, "android"),
+      # Read only: supply wants a release to hang the listing on (the internal track has one since
+      # the first upload). `version_code:` picks one when the track has several.
+      track: "internal",
+      version_code: options[:version_code]&.to_i,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      # The release notes are the release workflow's (app/store/whatsnew)
+      skip_upload_changelogs: true,
+      skip_upload_metadata: what == "images",
+      skip_upload_images: what == "text",
+      skip_upload_screenshots: what == "text",
+      # Images Play already has (same SHA-256) aren't sent again
+      sync_image_upload: true,
+      validate_only: flag(options[:validate_only])
+    )
+  end
+end
+
+platform :ios do
+  desc "App Store: the listing of the version being prepared, in every language (never submitted)"
+  lane :listing do |options|
+    what = what_of(options)
+    deliver(
+      app_identifier: "rs.hashi",
+      api_key_path: ENV.fetch("APPLE_API_KEY_JSON"),
+      platform: "ios",
+      metadata_path: File.join(STORE, "apple", "metadata"),
+      screenshots_path: File.join(STORE, "apple", "screenshots"),
+      # The version in "Prepare for Submission" as it is: no new version, no build, no review
+      skip_binary_upload: true,
+      skip_app_version_update: true,
+      submit_for_review: false,
+      skip_metadata: what == "images",
+      skip_screenshots: what == "text",
+      overwrite_screenshots: true,
+      # No HTML preview to confirm on a runner
+      force: true,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false
+    )
+    # Apple's metadata rules on what is in App Store Connect now (other platforms, placeholder
+    # text, broken URLs...), as warnings in the log: it submits nothing
+    if what != "images"
+      precheck(
+        app_identifier: "rs.hashi",
+        api_key_path: ENV.fetch("APPLE_API_KEY_JSON"),
+        default_rule_level: :warn,
+        include_in_app_purchases: false
+      )
+    end
+  end
+end

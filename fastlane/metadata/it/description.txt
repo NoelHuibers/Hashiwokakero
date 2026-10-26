@@ -1,0 +1,31 @@
+Hashi è l'Hashiwokakero, il rompicapo giapponese dei ponti, in un tenero pixel art. Ogni giorno c'è un nuovo ponte del giorno, lo stesso puzzle per tutti, e una classifica mostra quanto in fretta hai attraversato. Un gioco di logica rilassante per la pausa caffè, e una vera sfida la domenica.
+
+COME SI GIOCA
+Collega tutte le isole con dei ponti. Il numero su ogni isola dice quanti ponti le servono. I ponti sono dritti, non si incrociano mai e tra due isole ce ne sono al massimo due. Alla fine tutte le isole formano un'unica rete. Ogni puzzle ha esattamente una soluzione: non serve mai tirare a indovinare, è pura logica.
+
+IL PONTE DI OGGI
+• Un nuovo puzzle ogni giorno a mezzanotte (UTC): facile il lunedì, sempre più difficile fino al gigantesco Oni della domenica
+• Il puzzle resta nascosto finché non inizi, poi parte il cronometro
+• Indizi e verifiche ti aiutano quando sei bloccato, con una piccola penalità di tempo
+• La classifica del giorno, la gara del mese e una hall of fame di medaglie e serie
+• Gioca subito come ospite, senza account; scegli un nome per tenere la tua serie su ogni dispositivo
+
+ALLENATI, ANCHE OFFLINE
+• Puzzle illimitati in cinque livelli, da Facile 7×7 a Oni 24×24
+• Senza cronometro, con indizi, verifiche, annulla e ripeti
+• Funziona senza connessione: i puzzle nascono sul tuo telefono
+• Crea i tuoi puzzle nell'officina, un risolutore controlla che abbiano una sola soluzione
+
+CON GLI AMICI
+• Gruppi per amici, famiglia o colleghi: scopri chi ha già risolto il ponte di oggi e confrontate i tempi
+• Scegli i tuoi rivali e trasforma ogni sfida del giorno in un duello
+• Rivedi le partite di tutti nel teatro dei replay
+• Invia i tuoi puzzle al gruppo e costruite insieme, asse dopo asse, un ponte oltre il fiume
+
+COLLEZIONA E RILASSATI
+• Un libretto dei timbri con un timbro hanko per ogni traguardo, e serie che ti fanno tornare ogni giorno
+• Temi giorno e notte, melodie di koto rilassanti ed effetti sonori delicati
+• Isole in pixel art con ponti di legno e vermiglio
+• Disponibile in 20 lingue
+
+Hashi è gratuito, senza pubblicità e senza acquisti in-app. È open source e fatto con cura da un unico sviluppatore. Domande o idee? Scrivici su hashi.rs/it/kontakt.

@@ -1,0 +1,31 @@
+Hashi es Hashiwokakero, el puzzle japonés de los puentes, en un adorable pixel art. Cada día hay un nuevo puente del día, el mismo puzzle para todos, y una clasificación muestra qué tan rápido cruzaste. Un juego de lógica relajante para un descanso, y un auténtico reto el domingo.
+
+CÓMO SE JUEGA
+Une todas las islas con puentes. El número de cada isla indica cuántos puentes necesita. Los puentes son rectos, nunca se cruzan y entre dos islas hay como mucho dos. Al final, todas las islas quedan conectadas en una sola red. Cada puzzle tiene exactamente una solución, así que nunca hay que adivinar: lógica pura.
+
+EL PUENTE DE HOY
+• Un puzzle nuevo cada día a medianoche (UTC), fácil el lunes y cada vez más difícil hasta el enorme Oni del domingo
+• El puzzle está oculto hasta que empiezas, y entonces corre el reloj
+• Las pistas y comprobaciones te ayudan cuando te atascas, con una pequeña penalización de tiempo
+• La clasificación del día, la carrera del mes y un salón de la fama con medallas y rachas
+• Juega al instante como invitado, sin cuenta; elige un nombre para conservar tu racha en todos tus dispositivos
+
+PRÁCTICA, INCLUSO SIN CONEXIÓN
+• Puzzles ilimitados en cinco niveles, de Fácil 7×7 a Oni 24×24
+• Sin reloj, con pistas, comprobaciones, deshacer y rehacer
+• Funciona sin conexión: los puzzles se crean en tu celular
+• Crea tus propios puzzles en el taller y un solucionador comprueba que tienen una única solución
+
+CON AMIGOS
+• Grupos para amigos, familia o compañeros: mira quién ha resuelto ya el puente de hoy y comparen sus tiempos
+• Marca rivales y convierte cada reto diario en un duelo
+• Mira las partidas de todos en el teatro de repeticiones
+• Envía tus puzzles a tu grupo y construyan juntos, tabla a tabla, un puente al otro lado del río
+
+COLECCIONA Y RELÁJATE
+• Un cuaderno de sellos con un sello hanko por cada hito, y rachas que te hacen volver cada día
+• Temas de día y de noche, melodías tranquilas de koto y efectos de sonido suaves
+• Islas en pixel art con puentes de madera y bermellón
+• Disponible en 20 idiomas
+
+Hashi es gratis, sin anuncios y sin compras dentro de la app. Es de código abierto y está hecho con cariño por un único desarrollador. ¿Dudas o ideas? Escríbenos en hashi.rs/es/kontakt.

@@ -1,0 +1,325 @@
+name: Store listing
+# The app's listings on Google Play and the App Store (app/README.md, Store listings): the texts in
+# fastlane/metadata, the images made by store/capture (the built site on a seeded local database,
+# every language, framed by store/templates), uploaded with fastlane (fastlane/Fastfile).
+#
+# A pull request that changes them checks the texts (store/validate.mjs and its tests), makes every
+# image and keeps them as the artifact "store-listing-images" to look at. It uploads nothing.
+#
+# By hand (Actions, Store listing, Run workflow, or
+# `gh workflow run store-listing.yml -f platform=both -f what=all`):
+# - platform: play, apple or both
+# - what: text, images or all
+# - validate_only: Google Play checks the listing without saving it (App Store Connect has no
+#   such check: its upload is skipped, the local checks run)
+# - play_version_code: the release of the internal track supply hangs the listing on, when the
+#   track has more than one
+# Only the listing is uploaded: no binary, release, track, review, age rating, privacy labels,
+# data safety, price or release setting is touched (fastlane/Fastfile).
+on:
+  pull_request:
+    paths:
+      - .github/workflows/store-listing.yml
+      - fastlane/**
+      - store/**
+      - scripts/tests/store-listing.test.mjs
+      - public/icon-512.png
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: The store
+        type: choice
+        options: [both, play, apple]
+        default: both
+      what:
+        description: What to upload
+        type: choice
+        options: [all, text, images]
+        default: all
+      validate_only:
+        description: Google Play only checks the listing, saves nothing (the App Store upload is skipped)
+        type: boolean
+        default: false
+      play_version_code:
+        description: Google Play, the internal track's release to use (empty for its only one)
+        type: string
+        default: ''
+
+# One run per ref; an upload is never cancelled halfway
+concurrency:
+  group: store-listing-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # The texts against the stores' limits and rules, and the tests of those checks
+  validate:
+    name: Validate texts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - run: node store/validate.mjs
+      - run: node --test scripts/tests/store-listing.test.mjs
+      - name: Upload tree (texts)
+        run: node store/assemble.mjs --text
+
+  # The site's release build, as CI's "Build site" jobs make it: the server and the browser's half,
+  # for the images (not for texts only). The same job ids as there, so they start from the Rust
+  # cache main's CI saves (rust-cache keys on the job id).
+  build:
+    name: Build site (server)
+    if: github.event_name == 'pull_request' || inputs.what != 'text'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: false
+      - name: Install cargo-leptos
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y cargo-leptos@0.3.11
+      - name: Build
+        run: cargo leptos build --release --cargo-locked --server-only
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp target/release/hashi dist/
+          tar -cf server.tar dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: store-site-server
+          path: server.tar
+          retention-days: 1
+
+  build-browser:
+    name: Build site (browser)
+    if: github.event_name == 'pull_request' || inputs.what != 'text'
+    runs-on: ubuntu-24.04
+    outputs:
+      playwright: ${{ steps.playwright.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      # Its postinstall writes the fonts to public/fonts (scripts/fonts.mjs)
+      - run: pnpm install --frozen-lockfile
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: false
+      - name: Install cargo-leptos
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y cargo-leptos@0.3.11
+      - name: Build
+        run: cargo leptos build --release --cargo-locked --frontend-only
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp target/release/hash.txt dist/
+          cp -r target/site dist/site
+          tar -cf browser.tar dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: store-site-browser
+          path: browser.tar
+          retention-days: 1
+
+  # Every scene in every language, phone and tablet, framed for each store, in the Playwright
+  # image the browser tests use (its Chromium and fonts). Then the upload tree, which checks every
+  # image's size and that none has an alpha channel.
+  images:
+    name: Images
+    needs: [validate, build, build-browser]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.build-browser.outputs.playwright }}-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      # No fonts needed, the site in the artifact has them
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: store-site-*
+          merge-multiple: true
+      - run: tar -xf server.tar && tar -xf browser.tar
+      - name: Take the screenshots
+        run: pnpm run store:images
+        env:
+          E2E_BIN: dist/hashi
+          E2E_SITE_ROOT: dist/site
+      - name: Upload tree (texts and images)
+        run: |
+          node store/assemble.mjs
+          {
+            echo "### Store images"
+            echo
+            echo "Every language's images are in the artifact \`store-listing-images\`: \`<language>/<frame>/<n>-<scene>.png\`"
+            echo "(\`iphone-69\`, \`ipad-13\`, \`play-phone\`, \`play-tablet-7\`, \`play-tablet-10\`) and \`<language>/feature.png\`."
+            echo
+            echo "| Language | Images |"
+            echo "|---|---|"
+            for dir in target/store/images/*/; do
+              echo "| $(basename "$dir") | $(find "$dir" -name '*.png' | wc -l) |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: store-listing-images
+          path: target/store/images
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 3 }}
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: store-listing-logs
+          path: |
+            target/store/test-results
+            e2e/.run/*.log
+          include-hidden-files: true
+          retention-days: 3
+
+  # Google Play: the listing of rs.hashi with supply, the service account's key in a file of the
+  # runner's temp dir, deleted at the end
+  play:
+    name: Upload to Google Play
+    if: >-
+      always() && github.event_name == 'workflow_dispatch' && inputs.platform != 'apple' &&
+      needs.validate.result == 'success' && (inputs.what == 'text' || needs.images.result == 'success')
+    needs: [validate, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: inputs.what != 'text'
+        uses: actions/download-artifact@v8
+        with:
+          name: store-listing-images
+          path: target/store/images
+      - run: node store/assemble.mjs ${{ inputs.what == 'text' && '--text' || '' }}
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+          working-directory: fastlane
+      - name: The service account's key
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::No PLAY_SERVICE_ACCOUNT_JSON secret"
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/play.json"
+      - name: supply
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/fastlane/Gemfile
+          PLAY_JSON_KEY: ${{ runner.temp }}/play.json
+          WHAT: ${{ inputs.what }}
+          VALIDATE_ONLY: ${{ inputs.validate_only }}
+          VERSION_CODE: ${{ inputs.play_version_code }}
+        run: |
+          args=(what:"$WHAT" validate_only:"$VALIDATE_ONLY")
+          if [ -n "$VERSION_CODE" ]; then args+=(version_code:"$VERSION_CODE"); fi
+          bundle exec fastlane android listing "${args[@]}"
+          if [ "$VALIDATE_ONLY" = true ]; then
+            echo "Google Play: the listing ($WHAT) passed Play's checks, nothing was saved" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Google Play: the listing ($WHAT) of rs.hashi is updated in 25 locales" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - if: always()
+        run: rm -f "$RUNNER_TEMP/play.json"
+
+  # The App Store: the listing of the version in "Prepare for Submission" with deliver, the App
+  # Store Connect API key as fastlane's JSON in the runner's temp dir, deleted at the end
+  apple:
+    name: Upload to App Store Connect
+    if: >-
+      always() && github.event_name == 'workflow_dispatch' && inputs.platform != 'play' &&
+      needs.validate.result == 'success' && (inputs.what == 'text' || needs.images.result == 'success')
+    needs: [validate, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - if: inputs.validate_only
+        run: |
+          echo "::notice::validate_only: App Store Connect has no dry run, nothing is uploaded; the texts and images passed the local checks"
+          echo "App Store: validate_only, nothing uploaded (the local checks passed)" >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ !inputs.validate_only }}
+        uses: actions/checkout@v7
+      - if: ${{ !inputs.validate_only }}
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: ${{ !inputs.validate_only && inputs.what != 'text' }}
+        uses: actions/download-artifact@v8
+        with:
+          name: store-listing-images
+          path: target/store/images
+      - if: ${{ !inputs.validate_only }}
+        run: node store/assemble.mjs ${{ inputs.what == 'text' && '--text' || '' }}
+      - if: ${{ !inputs.validate_only }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+          working-directory: fastlane
+      - if: ${{ !inputs.validate_only }}
+        name: The API key
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          if [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; then
+            echo "::error::The APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8 secrets are needed"
+            exit 1
+          fi
+          umask 077
+          # fastlane's API key JSON (docs.fastlane.tools/app-store-connect-api)
+          node -e '
+            const fs = require("fs");
+            fs.writeFileSync(process.argv[1], JSON.stringify({
+              key_id: process.env.APPLE_API_KEY_ID,
+              issuer_id: process.env.APPLE_API_ISSUER,
+              key: process.env.APPLE_API_KEY_P8,
+              in_house: false,
+            }));
+          ' "$RUNNER_TEMP/asc-key.json"
+      - if: ${{ !inputs.validate_only }}
+        name: deliver
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/fastlane/Gemfile
+          APPLE_API_KEY_JSON: ${{ runner.temp }}/asc-key.json
+          WHAT: ${{ inputs.what }}
+        run: |
+          bundle exec fastlane ios listing what:"$WHAT"
+          echo "App Store: the listing ($WHAT) of the version being prepared is updated in 26 locales, not submitted" >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        run: rm -f "$RUNNER_TEMP/asc-key.json"

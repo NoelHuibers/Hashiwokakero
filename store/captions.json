@@ -1,0 +1,602 @@
+{
+  "en": {
+    "daily": {
+      "title": "Link every island with *bridges*",
+      "text": "A fresh logic puzzle every day"
+    },
+    "ranking": {
+      "title": "Race everyone on the *same puzzle*",
+      "text": "Today's ranking, medals and streaks"
+    },
+    "practice": {
+      "title": "Unlimited puzzles, *even offline*",
+      "text": "Five difficulties, from 7×7 to 24×24"
+    },
+    "friends": {
+      "title": "Play with *friends* and rivals",
+      "text": "Groups, duels and replays"
+    },
+    "stamps": {
+      "title": "Collect *hanko* stamps",
+      "text": "One for every milestone of your streak"
+    },
+    "night": {
+      "title": "Day and *night*, in pixel art",
+      "text": "Dark mode and calm koto music"
+    },
+    "feature": {
+      "title": "The Japanese bridges puzzle",
+      "text": "One puzzle a day, the same for everyone"
+    }
+  },
+  "de": {
+    "daily": {
+      "title": "Verbinde alle Inseln mit *Brücken*",
+      "text": "Jeden Tag ein frisches Logikrätsel"
+    },
+    "ranking": {
+      "title": "Alle spielen *dasselbe Rätsel*",
+      "text": "Tagesrangliste, Medaillen und Serien"
+    },
+    "practice": {
+      "title": "Unbegrenzt üben, *auch offline*",
+      "text": "Fünf Schwierigkeitsgrade, 7×7 bis 24×24"
+    },
+    "friends": {
+      "title": "Spiel mit *Freunden* und Rivalen",
+      "text": "Gruppen, Duelle und Wiederholungen"
+    },
+    "stamps": {
+      "title": "Sammle *Hanko*-Stempel",
+      "text": "Einen für jeden Meilenstein deiner Serie"
+    },
+    "night": {
+      "title": "Tag und *Nacht* in Pixel-Art",
+      "text": "Dunkelmodus und ruhige Koto-Musik"
+    },
+    "feature": {
+      "title": "Das japanische Brückenrätsel",
+      "text": "Ein Rätsel am Tag, für alle dasselbe"
+    }
+  },
+  "fr": {
+    "daily": {
+      "title": "Relie les îles par des *ponts*",
+      "text": "Une nouvelle grille de logique chaque jour"
+    },
+    "ranking": {
+      "title": "Tous sur la *même grille*",
+      "text": "Classement du jour, médailles et séries"
+    },
+    "practice": {
+      "title": "Jeu libre, *même hors ligne*",
+      "text": "Cinq niveaux, de 7×7 à 24×24"
+    },
+    "friends": {
+      "title": "Joue avec tes *amis* et rivaux",
+      "text": "Groupes, duels et rediffusions"
+    },
+    "stamps": {
+      "title": "Collectionne les *tampons* hanko",
+      "text": "Un pour chaque étape de ta série"
+    },
+    "night": {
+      "title": "De jour comme de *nuit*",
+      "text": "Mode sombre et douce musique de koto"
+    },
+    "feature": {
+      "title": "Le casse-tête japonais des ponts",
+      "text": "Une grille par jour, la même pour tous"
+    }
+  },
+  "it": {
+    "daily": {
+      "title": "Collega le isole con i *ponti*",
+      "text": "Un nuovo rompicapo logico ogni giorno"
+    },
+    "ranking": {
+      "title": "Tutti sullo *stesso puzzle*",
+      "text": "Classifica del giorno, medaglie e serie"
+    },
+    "practice": {
+      "title": "Puzzle illimitati, *anche offline*",
+      "text": "Cinque livelli, da 7×7 a 24×24"
+    },
+    "friends": {
+      "title": "Gioca con *amici* e rivali",
+      "text": "Gruppi, duelli e replay"
+    },
+    "stamps": {
+      "title": "Colleziona timbri *hanko*",
+      "text": "Uno per ogni traguardo della tua serie"
+    },
+    "night": {
+      "title": "Di giorno e di *notte*",
+      "text": "Tema scuro e rilassanti melodie di koto"
+    },
+    "feature": {
+      "title": "Il rompicapo giapponese dei ponti",
+      "text": "Un puzzle al giorno, uguale per tutti"
+    }
+  },
+  "es": {
+    "daily": {
+      "title": "Une las islas con *puentes*",
+      "text": "Un nuevo puzle de lógica cada día"
+    },
+    "ranking": {
+      "title": "Todos con el *mismo puzle*",
+      "text": "Clasificación del día, medallas y rachas"
+    },
+    "practice": {
+      "title": "Puzles sin límite, *sin conexión*",
+      "text": "Cinco niveles, de 7×7 a 24×24"
+    },
+    "friends": {
+      "title": "Juega con *amigos* y rivales",
+      "text": "Grupos, duelos y repeticiones"
+    },
+    "stamps": {
+      "title": "Colecciona sellos *hanko*",
+      "text": "Uno por cada hito de tu racha"
+    },
+    "night": {
+      "title": "De día y de *noche*",
+      "text": "Modo oscuro y música de koto relajante"
+    },
+    "feature": {
+      "title": "El puzle japonés de los puentes",
+      "text": "Un puzle al día, el mismo para todos"
+    }
+  },
+  "pt": {
+    "daily": {
+      "title": "Ilhas, números e *pontes*",
+      "text": "Um novo puzzle de lógica todos os dias"
+    },
+    "ranking": {
+      "title": "Todos no *mesmo puzzle*",
+      "text": "Ranking do dia, medalhas e sequências"
+    },
+    "practice": {
+      "title": "Puzzles ilimitados, *até offline*",
+      "text": "Cinco níveis, de 7×7 a 24×24"
+    },
+    "friends": {
+      "title": "Com *amigos* e rivais",
+      "text": "Grupos, duelos e replays"
+    },
+    "stamps": {
+      "title": "Carimbos *hanko* para colecionar",
+      "text": "Um para cada conquista da sequência"
+    },
+    "night": {
+      "title": "De dia e de *noite*",
+      "text": "Modo escuro e música calma de koto"
+    },
+    "feature": {
+      "title": "O puzzle japonês das pontes",
+      "text": "Um puzzle por dia, igual para todos"
+    }
+  },
+  "nl": {
+    "daily": {
+      "title": "Verbind alle eilanden met *bruggen*",
+      "text": "Elke dag een nieuwe logische puzzel"
+    },
+    "ranking": {
+      "title": "Iedereen speelt *dezelfde puzzel*",
+      "text": "Dagranglijst, medailles en reeksen"
+    },
+    "practice": {
+      "title": "Onbeperkt oefenen, *ook offline*",
+      "text": "Vijf niveaus, van 7×7 tot 24×24"
+    },
+    "friends": {
+      "title": "Speel met *vrienden* en rivalen",
+      "text": "Groepen, duels en herhalingen"
+    },
+    "stamps": {
+      "title": "Verzamel *hanko*-stempels",
+      "text": "Eén voor elke mijlpaal van je reeks"
+    },
+    "night": {
+      "title": "Overdag en 's *nachts*",
+      "text": "Donkere modus en rustige koto-muziek"
+    },
+    "feature": {
+      "title": "De Japanse bruggenpuzzel",
+      "text": "Eén puzzel per dag, voor iedereen dezelfde"
+    }
+  },
+  "pl": {
+    "daily": {
+      "title": "Połącz wyspy *mostami*",
+      "text": "Codziennie nowa łamigłówka logiczna"
+    },
+    "ranking": {
+      "title": "Ta sama łamigłówka *dla wszystkich*",
+      "text": "Ranking dnia, medale i serie"
+    },
+    "practice": {
+      "title": "Bez limitu, *także offline*",
+      "text": "Pięć poziomów, od 7×7 do 24×24"
+    },
+    "friends": {
+      "title": "Graj z *przyjaciółmi* i rywalami",
+      "text": "Grupy, pojedynki i powtórki"
+    },
+    "stamps": {
+      "title": "Zbieraj pieczątki *hanko*",
+      "text": "Za każdy kamień milowy twojej serii"
+    },
+    "night": {
+      "title": "W dzień i w *nocy*",
+      "text": "Tryb ciemny i spokojna muzyka koto"
+    },
+    "feature": {
+      "title": "Japońska łamigłówka z mostami",
+      "text": "Jedna dziennie, ta sama dla wszystkich"
+    }
+  },
+  "tr": {
+    "daily": {
+      "title": "Adaları *köprülerle* bağla",
+      "text": "Her gün yeni bir mantık bulmacası"
+    },
+    "ranking": {
+      "title": "Herkes *aynı bulmacada*",
+      "text": "Günün sıralaması, madalyalar, seriler"
+    },
+    "practice": {
+      "title": "Sınırsız bulmaca, *çevrimdışı da*",
+      "text": "Beş zorluk, 7×7'den 24×24'e"
+    },
+    "friends": {
+      "title": "*Arkadaşlarınla* ve rakiplerinle",
+      "text": "Gruplar, düellolar ve tekrarlar"
+    },
+    "stamps": {
+      "title": "*Hanko* mühürleri topla",
+      "text": "Her dönüm noktası için bir mühür"
+    },
+    "night": {
+      "title": "Gündüz de *gece* de",
+      "text": "Karanlık mod ve sakin koto müziği"
+    },
+    "feature": {
+      "title": "Japon köprü bulmacası",
+      "text": "Günde bir bulmaca, herkes için aynı"
+    }
+  },
+  "ru": {
+    "daily": {
+      "title": "Соедини острова *мостами*",
+      "text": "Новая логическая головоломка каждый день"
+    },
+    "ranking": {
+      "title": "Одна головоломка *на всех*",
+      "text": "Рейтинг дня, медали и серии"
+    },
+    "practice": {
+      "title": "Без ограничений, *даже офлайн*",
+      "text": "Пять уровней, от 7×7 до 24×24"
+    },
+    "friends": {
+      "title": "Играй с *друзьями* и соперниками",
+      "text": "Группы, дуэли и повторы"
+    },
+    "stamps": {
+      "title": "Собирай печати *ханко*",
+      "text": "За каждое достижение в серии"
+    },
+    "night": {
+      "title": "Днём и *ночью*",
+      "text": "Тёмная тема и спокойная музыка кото"
+    },
+    "feature": {
+      "title": "Японская головоломка «Мосты»",
+      "text": "Одна в день, одинаковая для всех"
+    }
+  },
+  "uk": {
+    "daily": {
+      "title": "З’єднай острови *мостами*",
+      "text": "Нова логічна головоломка щодня"
+    },
+    "ranking": {
+      "title": "Одна головоломка *для всіх*",
+      "text": "Рейтинг дня, медалі та серії"
+    },
+    "practice": {
+      "title": "Без обмежень, *навіть офлайн*",
+      "text": "П’ять рівнів, від 7×7 до 24×24"
+    },
+    "friends": {
+      "title": "Грай із *друзями* й суперниками",
+      "text": "Групи, дуелі та повтори"
+    },
+    "stamps": {
+      "title": "Збирай печатки *ханко*",
+      "text": "За кожне досягнення в серії"
+    },
+    "night": {
+      "title": "Удень і *вночі*",
+      "text": "Темна тема й спокійна музика кото"
+    },
+    "feature": {
+      "title": "Японська головоломка «Мости»",
+      "text": "Одна на день, однакова для всіх"
+    }
+  },
+  "ar": {
+    "daily": {
+      "title": "صِل الجزر *بالجسور*",
+      "text": "لغز منطقي جديد كل يوم"
+    },
+    "ranking": {
+      "title": "اللغز نفسه *للجميع*",
+      "text": "ترتيب اليوم والميداليات والسلاسل"
+    },
+    "practice": {
+      "title": "ألغاز بلا حدود، *حتى دون اتصال*",
+      "text": "خمسة مستويات، من 7×7 إلى 24×24"
+    },
+    "friends": {
+      "title": "العب مع *الأصدقاء* والمنافسين",
+      "text": "مجموعات ومبارزات وإعادات"
+    },
+    "stamps": {
+      "title": "اجمع أختام *الهانكو*",
+      "text": "ختم لكل إنجاز في سلسلتك"
+    },
+    "night": {
+      "title": "في النهار وفي *الليل*",
+      "text": "الوضع الداكن وموسيقى كوتو هادئة"
+    },
+    "feature": {
+      "title": "لغز الجسور الياباني",
+      "text": "لغز واحد كل يوم، نفسه للجميع"
+    }
+  },
+  "hi": {
+    "daily": {
+      "title": "द्वीपों को *पुलों* से जोड़ें",
+      "text": "हर दिन एक नई तर्क पहेली"
+    },
+    "ranking": {
+      "title": "सबके लिए *एक ही पहेली*",
+      "text": "आज की रैंकिंग, पदक और स्ट्रीक"
+    },
+    "practice": {
+      "title": "असीमित पहेलियाँ, *ऑफ़लाइन भी*",
+      "text": "पाँच स्तर, 7×7 से 24×24 तक"
+    },
+    "friends": {
+      "title": "*दोस्तों* और प्रतिद्वंद्वियों संग",
+      "text": "ग्रुप, मुक़ाबले और रीप्ले"
+    },
+    "stamps": {
+      "title": "*हांको* मुहरें इकट्ठा करें",
+      "text": "आपकी स्ट्रीक के हर पड़ाव के लिए"
+    },
+    "night": {
+      "title": "दिन में भी, *रात* में भी",
+      "text": "डार्क मोड और शांत कोटो संगीत"
+    },
+    "feature": {
+      "title": "जापानी पुल पहेली",
+      "text": "हर दिन एक पहेली, सबके लिए एक जैसी"
+    }
+  },
+  "id": {
+    "daily": {
+      "title": "Hubungkan pulau dengan *jembatan*",
+      "text": "Teka-teki logika baru setiap hari"
+    },
+    "ranking": {
+      "title": "Semua main *teka-teki sama*",
+      "text": "Peringkat harian, medali, dan rentetan"
+    },
+    "practice": {
+      "title": "Tanpa batas, *bahkan offline*",
+      "text": "Lima tingkat, 7×7 sampai 24×24"
+    },
+    "friends": {
+      "title": "Main bareng *teman* dan rival",
+      "text": "Grup, duel, dan tayangan ulang"
+    },
+    "stamps": {
+      "title": "Kumpulkan stempel *hanko*",
+      "text": "Satu untuk setiap pencapaianmu"
+    },
+    "night": {
+      "title": "Siang dan *malam*",
+      "text": "Mode gelap dan musik koto yang tenang"
+    },
+    "feature": {
+      "title": "Teka-teki jembatan dari Jepang",
+      "text": "Satu teka-teki sehari, sama untuk semua"
+    }
+  },
+  "vi": {
+    "daily": {
+      "title": "Nối các đảo bằng *cây cầu*",
+      "text": "Mỗi ngày một câu đố logic mới"
+    },
+    "ranking": {
+      "title": "Mọi người cùng *một câu đố*",
+      "text": "Xếp hạng hôm nay, huy chương, chuỗi ngày"
+    },
+    "practice": {
+      "title": "Không giới hạn, *cả khi offline*",
+      "text": "Năm mức độ, từ 7×7 đến 24×24"
+    },
+    "friends": {
+      "title": "Chơi cùng *bạn bè* và đối thủ",
+      "text": "Nhóm, đấu tay đôi và phát lại"
+    },
+    "stamps": {
+      "title": "Sưu tầm con dấu *hanko*",
+      "text": "Một con dấu cho mỗi cột mốc"
+    },
+    "night": {
+      "title": "Ngày cũng như *đêm*",
+      "text": "Chế độ tối và nhạc koto êm dịu"
+    },
+    "feature": {
+      "title": "Câu đố nối cầu Nhật Bản",
+      "text": "Mỗi ngày một câu đố, chung cho mọi người"
+    }
+  },
+  "th": {
+    "daily": {
+      "title": "เชื่อมเกาะด้วย*สะพาน*",
+      "text": "ปริศนาตรรกะใหม่ทุกวัน"
+    },
+    "ranking": {
+      "title": "ทุกคนเล่น*ปริศนาเดียวกัน*",
+      "text": "อันดับวันนี้ เหรียญรางวัล และสตรีค"
+    },
+    "practice": {
+      "title": "เล่นไม่จำกัด *แม้ออฟไลน์*",
+      "text": "ห้าระดับ ตั้งแต่ 7×7 ถึง 24×24"
+    },
+    "friends": {
+      "title": "เล่นกับ*เพื่อน*และคู่แข่ง",
+      "text": "กลุ่ม การดวล และรีเพลย์"
+    },
+    "stamps": {
+      "title": "สะสมตรา*ฮังโกะ*",
+      "text": "หนึ่งตราสำหรับทุกความสำเร็จ"
+    },
+    "night": {
+      "title": "ทั้งกลางวันและ*กลางคืน*",
+      "text": "โหมดมืดและเพลงโคโตะสบาย ๆ"
+    },
+    "feature": {
+      "title": "ปริศนาสร้างสะพานจากญี่ปุ่น",
+      "text": "วันละหนึ่งปริศนา เหมือนกันสำหรับทุกคน"
+    }
+  },
+  "ja": {
+    "daily": {
+      "title": "島と島を*橋*でつなごう",
+      "text": "毎日新しいロジックパズル"
+    },
+    "ranking": {
+      "title": "みんな*同じ問題*で勝負",
+      "text": "今日のランキング、メダル、連続記録"
+    },
+    "practice": {
+      "title": "無制限に、*オフラインでも*",
+      "text": "5段階の難易度、7×7から24×24まで"
+    },
+    "friends": {
+      "title": "*仲間*とライバルと",
+      "text": "グループ、対決、リプレイ"
+    },
+    "stamps": {
+      "title": "*はんこ*を集めよう",
+      "text": "節目ごとに、はんこをひとつ"
+    },
+    "night": {
+      "title": "昼も*夜*も、ドット絵で",
+      "text": "ダークモードと穏やかな箏の調べ"
+    },
+    "feature": {
+      "title": "日本生まれの橋のパズル",
+      "text": "1日1問、みんな同じ問題"
+    }
+  },
+  "ko": {
+    "daily": {
+      "title": "섬과 섬을 *다리*로 이어요",
+      "text": "매일 새로운 논리 퍼즐"
+    },
+    "ranking": {
+      "title": "모두 *같은 퍼즐*로 겨뤄요",
+      "text": "오늘의 순위, 메달, 연속 기록"
+    },
+    "practice": {
+      "title": "무제한 퍼즐, *오프라인에서도*",
+      "text": "다섯 가지 난이도, 7×7부터 24×24까지"
+    },
+    "friends": {
+      "title": "*친구*, 라이벌과 함께",
+      "text": "그룹, 대결, 리플레이"
+    },
+    "stamps": {
+      "title": "*한코* 도장을 모아요",
+      "text": "이정표마다 도장 하나씩"
+    },
+    "night": {
+      "title": "낮에도 *밤*에도",
+      "text": "다크 모드와 잔잔한 고토 선율"
+    },
+    "feature": {
+      "title": "일본의 다리 놓기 퍼즐",
+      "text": "하루 한 문제, 모두 같은 문제"
+    }
+  },
+  "zh": {
+    "daily": {
+      "title": "用*桥*把小岛连起来",
+      "text": "每天一道新的逻辑谜题"
+    },
+    "ranking": {
+      "title": "人人*同一道题*",
+      "text": "今日排行、奖牌与连胜"
+    },
+    "practice": {
+      "title": "无限畅玩，*离线也行*",
+      "text": "五种难度，7×7 到 24×24"
+    },
+    "friends": {
+      "title": "和*朋友*、对手一起玩",
+      "text": "小组、对决和回放"
+    },
+    "stamps": {
+      "title": "收集*判子*印章",
+      "text": "每个里程碑盖一枚"
+    },
+    "night": {
+      "title": "白天黑夜，*像素*之美",
+      "text": "深色模式与舒缓筝乐"
+    },
+    "feature": {
+      "title": "来自日本的搭桥谜题",
+      "text": "每天一道，人人同题"
+    }
+  },
+  "zh-Hant": {
+    "daily": {
+      "title": "用*橋*把小島連起來",
+      "text": "每天一道新的邏輯謎題"
+    },
+    "ranking": {
+      "title": "大家都玩*同一題*",
+      "text": "今日排行、獎牌與連勝"
+    },
+    "practice": {
+      "title": "無限暢玩，*離線也行*",
+      "text": "五種難度，7×7 到 24×24"
+    },
+    "friends": {
+      "title": "和*朋友*、對手一起玩",
+      "text": "群組、對決和回放"
+    },
+    "stamps": {
+      "title": "收集*印章*",
+      "text": "每個里程碑蓋一枚"
+    },
+    "night": {
+      "title": "白天黑夜，*像素*之美",
+      "text": "深色模式與舒緩箏樂"
+    },
+    "feature": {
+      "title": "來自日本的造橋謎題",
+      "text": "每天一道，大家同一題"
+    }
+  }
+}

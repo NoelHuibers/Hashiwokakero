@@ -1,0 +1,31 @@
+Hashi is Hashiwokakero, de Japanse bruggenpuzzel, in schattige pixelart. Elke dag is er een nieuwe brug van de dag, voor iedereen dezelfde puzzel, en een ranglijst laat zien hoe snel je aan de overkant was. Een ontspannende breinbreker voor de koffiepauze, en op zondag een echte uitdaging.
+
+ZO SPEEL JE
+Verbind alle eilanden met bruggen. Het getal op elk eiland zegt hoeveel bruggen het nodig heeft. Bruggen lopen recht, kruisen elkaar nooit en tussen twee eilanden liggen er hoogstens twee. Aan het eind hangen alle eilanden samen. Elke puzzel heeft precies één oplossing, dus gokken hoeft nooit: pure logica.
+
+DE BRUG VAN VANDAAG
+• Elke dag om middernacht (UTC) een nieuwe puzzel, makkelijk op maandag en steeds pittiger tot de reusachtige Oni op zondag
+• De puzzel blijft verborgen tot je begint, pas dan loopt de klok
+• Hints en controles helpen als je vastzit, voor een kleine tijdstraf
+• De ranglijst van de dag, de maandrace en een eregalerij met medailles en reeksen
+• Speel meteen als gast, zonder account; kies een naam om je reeks op elk apparaat te houden
+
+OEFENEN, OOK OFFLINE
+• Onbeperkt puzzels in vijf moeilijkheidsgraden, van Makkelijk 7×7 tot Oni 24×24
+• Zonder klok, met hints, controles, ongedaan maken en opnieuw
+• Werkt zonder verbinding: de puzzels ontstaan op je telefoon
+• Maak je eigen puzzels in de puzzelwerkplaats, een solver controleert dat ze precies één oplossing hebben
+
+MET VRIENDEN
+• Groepen voor vrienden, familie of collega's: zie wie de brug van vandaag al heeft opgelost en vergelijk jullie tijden
+• Kies rivalen en maak van elke dagpuzzel een duel
+• Bekijk ieders oplossing terug in het herhalingstheater
+• Stuur je groep je eigen puzzels en bouw samen, plank voor plank, een brug over de rivier
+
+VERZAMELEN EN ONTSPANNEN
+• Een stempelboekje met een hanko-stempel voor elke mijlpaal, en reeksen die je elke dag terug laten komen
+• Dag- en nachtthema, rustige koto-melodieën en zachte geluidseffecten
+• Eilanden in pixelart met houten en vermiljoenrode bruggen
+• Beschikbaar in 20 talen
+
+Hashi is gratis, zonder advertenties en zonder in-app-aankopen. Het is open source en met zorg gemaakt door één ontwikkelaar. Vragen of ideeën? Schrijf ons via hashi.rs/nl/kontakt.

@@ -1,0 +1,330 @@
+<!doctype html>
+<!--
+  A store screenshot (app/README.md, Store listings): a caption over a phone or tablet with a
+  screenshot of the site in it. store/capture/frame.ts opens it on the local server (for the
+  site's fonts) with its settings as JSON in ?frame=, waits for window.READY and takes the page at
+  the frame's size.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      :root {
+        --paper: #f4ecdd;
+        --paper-deep: #ecdfc6;
+        --ink: #2b2420;
+        --muted: #776a5c;
+        --shu: #cf3a24;
+        --shu-ink: #fff7ee;
+        --wave: rgb(31 78 121 / 0.1);
+        --bezel: #2b2420;
+        --bezel-edge: #4a3d35;
+        --app-font: "Murecho Variable", system-ui, sans-serif;
+        --display-font: "Kaisei Decol", "Murecho Variable", serif;
+      }
+      html.dark {
+        --paper: #101827;
+        --paper-deep: #0b1220;
+        --ink: #f1e8d7;
+        --muted: #9aa7bf;
+        --shu: #ff6a45;
+        --shu-ink: #1b0d08;
+        --wave: rgb(169 205 242 / 0.08);
+        --bezel: #05080f;
+        --bezel-edge: #2a3550;
+      }
+      /* The site's fonts per script (style/tailwind.css) */
+      html[lang="ko"] { --app-font: "Noto Sans KR Variable", "Murecho Variable", sans-serif; }
+      html[lang="zh"] { --app-font: "Noto Sans SC Variable", "Murecho Variable", sans-serif; }
+      html[lang="zh-Hant"] { --app-font: "Noto Sans TC Variable", "Murecho Variable", sans-serif; }
+      html[lang="ar"] { --app-font: "Noto Sans Arabic Variable", "Murecho Variable", sans-serif; }
+      html[lang="hi"] { --app-font: "Noto Sans Devanagari Variable", "Murecho Variable", sans-serif; }
+      html[lang="th"] { --app-font: "Noto Sans Thai Variable", "Murecho Variable", sans-serif; }
+      html[lang="vi"] { --app-font: "Be Vietnam Pro", "Murecho Variable", sans-serif; }
+      html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [lang="th"], [lang="vi"],
+        [lang="ru"], [lang="uk"], [lang="pl"], [lang="tr"]) {
+        --display-font: var(--app-font);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        width: var(--w);
+        height: var(--h);
+        overflow: hidden;
+        position: relative;
+        color: var(--ink);
+        font-family: var(--app-font);
+        background:
+          radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--paper) 70%, white) 0%, transparent 60%),
+          linear-gradient(var(--paper), var(--paper-deep));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      html.dark body {
+        background:
+          radial-gradient(ellipse at 50% 0%, #1d2b48 0%, transparent 62%),
+          linear-gradient(var(--paper), var(--paper-deep));
+      }
+      /* 青海波 seigaiha, fading in towards the bottom as on the site */
+      .waves {
+        position: absolute;
+        inset: 38% 0 0 0;
+        --s: calc(var(--u) * 9);
+        background:
+          radial-gradient(circle at 50% 100%, transparent 18%, var(--wave) 19% 22%, transparent 23% 34%, var(--wave) 35% 38%, transparent 39% 50%, var(--wave) 51% 54%, transparent 55%) 0 0 / var(--s) calc(var(--s) / 2),
+          radial-gradient(circle at 50% 100%, transparent 18%, var(--wave) 19% 22%, transparent 23% 34%, var(--wave) 35% 38%, transparent 39% 50%, var(--wave) 51% 54%, transparent 55%) calc(var(--s) / 2) calc(var(--s) / 4) / var(--s) calc(var(--s) / 2);
+        -webkit-mask-image: linear-gradient(transparent, black 45%);
+        mask-image: linear-gradient(transparent, black 45%);
+      }
+      /* Washi fibres */
+      .fibres {
+        position: absolute;
+        inset: 0;
+        opacity: 0.55;
+        background-image:
+          radial-gradient(circle at 20% 15%, rgb(120 90 60 / 0.10) 0 calc(var(--u) * 0.12), transparent calc(var(--u) * 0.18)),
+          radial-gradient(circle at 70% 60%, rgb(120 90 60 / 0.08) 0 calc(var(--u) * 0.12), transparent calc(var(--u) * 0.18));
+        background-size: calc(var(--u) * 2.6) calc(var(--u) * 3.1), calc(var(--u) * 3.4) calc(var(--u) * 3.9);
+      }
+      html.dark .fibres { opacity: 0.2; }
+
+      .caption {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        padding: var(--top) calc(var(--u) * 7) 0;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: calc(var(--title) * 0.22);
+      }
+      /* A hanko 判子 with the scene's kanji, like the stamps beside the site's page titles */
+      .hanko {
+        width: var(--hanko);
+        height: var(--hanko);
+        border-radius: calc(var(--hanko) * 0.2);
+        background: var(--shu);
+        color: var(--shu-ink);
+        display: grid;
+        place-items: center;
+        font-family: "DotGothic16", monospace;
+        font-size: calc(var(--hanko) * 0.5);
+        line-height: 1;
+        box-shadow:
+          inset 0 0 0 calc(var(--hanko) * 0.05) var(--shu),
+          inset 0 0 0 calc(var(--hanko) * 0.085) var(--shu-ink),
+          0 calc(var(--hanko) * 0.06) 0 rgb(0 0 0 / 0.12);
+        transform: rotate(-4deg);
+        letter-spacing: -0.06em;
+        margin-bottom: calc(var(--title) * 0.12);
+      }
+      .hanko.two { font-size: calc(var(--hanko) * 0.34); writing-mode: vertical-rl; letter-spacing: 0; }
+      h1 {
+        margin: 0;
+        font-family: var(--display-font);
+        font-weight: 700;
+        font-size: var(--title);
+        line-height: 1.16;
+        letter-spacing: -0.005em;
+        text-wrap: balance;
+      }
+      h1 em { font-style: normal; color: var(--shu); }
+      p {
+        margin: 0;
+        font-size: var(--text);
+        line-height: 1.35;
+        color: var(--muted);
+        font-weight: 500;
+        text-wrap: balance;
+      }
+
+      .stage {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        width: 100%;
+        min-height: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .device {
+        position: relative;
+        background: var(--bezel);
+        box-shadow:
+          inset 0 0 0 calc(var(--bz) * 0.18) var(--bezel-edge),
+          0 calc(var(--u) * 1.6) calc(var(--u) * 4) rgb(43 36 32 / 0.28),
+          0 calc(var(--u) * 0.4) calc(var(--u) * 0.8) rgb(43 36 32 / 0.18);
+        padding: var(--bz);
+      }
+      html.dark .device {
+        box-shadow:
+          inset 0 0 0 calc(var(--bz) * 0.18) var(--bezel-edge),
+          0 calc(var(--u) * 1.6) calc(var(--u) * 5) rgb(0 0 0 / 0.55);
+      }
+      .screen {
+        position: relative;
+        overflow: hidden;
+        background: var(--paper);
+      }
+      .screen img { display: block; width: 100%; height: 100%; }
+      .status {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 7%;
+        color: var(--status);
+        font-family: "Murecho Variable", system-ui, sans-serif;
+        font-weight: 600;
+      }
+      .status .icons { display: flex; align-items: center; gap: 0.3em; }
+      .status svg { height: 0.9em; width: auto; fill: currentColor; }
+      .island {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #000;
+        border-radius: 999px;
+      }
+      .home {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: var(--status);
+        opacity: 0.85;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fibres"></div>
+    <div class="waves"></div>
+    <div class="caption">
+      <div class="hanko"></div>
+      <h1></h1>
+      <p></p>
+    </div>
+    <div class="stage">
+      <div class="device">
+        <div class="screen">
+          <img alt="" />
+          <div class="status">
+            <span class="time">9:41</span>
+            <span class="icons">
+              <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5.5" width="3" height="6.5" rx="1" /><rect x="10" y="3" width="3" height="9" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" /></svg>
+              <svg viewBox="0 0 16 12"><path d="M8 2.2c2.4 0 4.6.9 6.3 2.5l1.3-1.4A10.9 10.9 0 0 0 8 .2 10.9 10.9 0 0 0 .4 3.3l1.3 1.4A9 9 0 0 1 8 2.2Zm0 3.6c1.5 0 2.9.6 3.9 1.5l1.3-1.4A7.7 7.7 0 0 0 8 3.8c-2 0-3.8.8-5.2 2.1l1.3 1.4c1-.9 2.4-1.5 3.9-1.5Zm0 3.6c.6 0 1.1.2 1.5.6L8 12 6.5 10c.4-.4.9-.6 1.5-.6Z" /></svg>
+              <svg viewBox="0 0 27 12"><rect x="0.6" y="0.6" width="22.8" height="10.8" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45" /><rect x="2.4" y="2.4" width="17.6" height="7.2" rx="1.6" /><rect x="24.6" y="3.8" width="1.6" height="4.4" rx="0.8" opacity="0.45" /></svg>
+            </span>
+          </div>
+          <div class="island"></div>
+          <div class="home"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // ?frame=: { width, height, kind: 'phone' | 'tablet', store: 'apple' | 'play', image,
+      //   screen: { width, height, insetTop, insetBottom }, lang, dir, dark, hanko, title, text,
+      //   sizes: { top, hanko, title, text } (in units of a hundredth of the width) }
+      (async () => {
+        const f = JSON.parse(new URLSearchParams(location.search).get('frame'));
+        const root = document.documentElement;
+        root.lang = f.lang;
+        root.dir = f.dir;
+        root.classList.toggle('dark', !!f.dark);
+        const u = f.width / 100;
+        const set = (k, v) => root.style.setProperty(k, v);
+        set('--w', `${f.width}px`);
+        set('--h', `${f.height}px`);
+        set('--u', `${u}px`);
+        set('--top', `${f.sizes.top * u}px`);
+        set('--hanko', `${f.sizes.hanko * u}px`);
+        set('--title', `${f.sizes.title * u}px`);
+        set('--text', `${f.sizes.text * u}px`);
+        set('--status', f.dark ? '#f1e8d7' : '#2b2420');
+        // Script fonts the site loads for its language (ScriptFont in src/app.rs)
+        const scriptCss = { ko: 'noto-sans-kr', zh: 'noto-sans-sc', 'zh-Hant': 'noto-sans-tc', ar: 'noto-sans-arabic', hi: 'noto-sans-devanagari', th: 'noto-sans-thai', vi: 'be-vietnam-pro' }[f.lang];
+        if (scriptCss) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = `/fonts/${scriptCss}.css`;
+          const loaded = new Promise((r) => (link.onload = r));
+          document.head.append(link);
+          await loaded;
+        }
+        const hanko = document.querySelector('.hanko');
+        hanko.textContent = f.hanko;
+        hanko.classList.toggle('two', [...f.hanko].length > 1);
+        // *words* in the title are the accent colour
+        document.querySelector('h1').innerHTML = escape(f.title).replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        const p = document.querySelector('p');
+        p.textContent = f.text ?? '';
+        p.hidden = !f.text;
+        const img = document.querySelector('img');
+        img.src = f.image;
+        await img.decode();
+        await document.fonts.ready;
+
+        // The device as big as the room below the caption allows, a margin all round
+        const stage = document.querySelector('.stage').getBoundingClientRect();
+        const s = f.screen;
+        const bezelOf = (w) => w * (f.kind === 'phone' ? 0.032 : 0.022);
+        const roomW = stage.width * (f.kind === 'phone' ? 0.86 : 0.9);
+        const roomH = stage.height - f.height * (f.kind === 'phone' ? 0.045 : 0.04);
+        let w = roomW;
+        let h = (w * s.height) / s.width;
+        if (h + 2 * bezelOf(w) > roomH) {
+          h = roomH - 2 * bezelOf(w);
+          w = (h * s.width) / s.height;
+        }
+        const bz = bezelOf(w);
+        set('--bz', `${bz}px`);
+        const device = document.querySelector('.device');
+        const screen = document.querySelector('.screen');
+        screen.style.width = `${w}px`;
+        screen.style.height = `${h}px`;
+        const radius = w * (f.kind === 'phone' ? 0.12 : 0.045);
+        screen.style.borderRadius = `${radius}px`;
+        device.style.borderRadius = `${radius + bz}px`;
+        // The stage centres it; pushed down a little so it sits closer to the caption's weight
+        device.style.transform = `translateY(${-f.height * 0.005}px)`;
+
+        // The system bars: the status bar over the top inset, the home indicator in the bottom one
+        const px = w / s.width;
+        const status = document.querySelector('.status');
+        status.style.height = `${s.insetTop * px}px`;
+        status.style.fontSize = `${(f.kind === 'phone' ? 16 : 13) * px}px`;
+        if (f.kind === 'phone') status.style.padding = `${s.insetTop * px * 0.12}px ${w * 0.085}px 0`;
+        const island = document.querySelector('.island');
+        if (f.kind === 'phone' && f.store === 'apple') {
+          Object.assign(island.style, { width: `${124 * px}px`, height: `${36 * px}px`, top: `${11 * px}px` });
+        } else if (f.kind === 'phone') {
+          // A punch hole camera
+          Object.assign(island.style, { width: `${22 * px}px`, height: `${22 * px}px`, top: `${16 * px}px` });
+        } else {
+          island.remove();
+        }
+        const home = document.querySelector('.home');
+        Object.assign(home.style, {
+          width: `${(f.kind === 'phone' ? 136 : 200) * px}px`,
+          height: `${5 * px}px`,
+          bottom: `${8 * px}px`,
+        });
+        window.READY = true;
+      })().catch((e) => {
+        window.FAILED = String(e);
+      });
+
+      function escape(text) {
+        return text.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      }
+    </script>
+  </body>
+</html>

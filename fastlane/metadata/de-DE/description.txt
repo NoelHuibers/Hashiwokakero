@@ -1,0 +1,31 @@
+Hashi ist Hashiwokakero, das japanische Brückenrätsel, in niedlicher Pixel-Art. Jeden Tag gibt es eine neue Brücke des Tages, für alle dieselbe, und die Rangliste zeigt, wie schnell du drüben warst. Ein entspannendes Denkspiel für die Kaffeepause, und sonntags eine echte Herausforderung.
+
+SO WIRD GESPIELT
+Verbinde alle Inseln mit Brücken. Die Zahl auf jeder Insel sagt, wie viele Brücken sie braucht. Brücken verlaufen gerade, kreuzen sich nie, und zwischen zwei Inseln liegen höchstens zwei. Am Ende hängen alle Inseln zusammen. Jedes Rätsel hat genau eine Lösung, raten musst du also nie: reine Logik.
+
+DIE BRÜCKE VON HEUTE
+• Jeden Tag um Mitternacht (UTC) ein neues Rätsel, montags leicht und bis zum riesigen Oni am Sonntag immer kniffliger
+• Das Rätsel bleibt verdeckt, bis du anfängst, erst dann läuft die Uhr
+• Tipps und Prüfungen helfen, wenn du feststeckst, und kosten ein paar Sekunden
+• Die Rangliste des Tages, das Monatsrennen und eine Ruhmeshalle mit Medaillen und Serien
+• Sofort als Gast spielen, ohne Konto; mit einem Namen behältst du deine Serie auf jedem Gerät
+
+ÜBEN, AUCH OFFLINE
+• Unbegrenzt viele neue Rätsel in fünf Schwierigkeitsgraden, von Leicht 7×7 bis Oni 24×24
+• Ohne Zeitdruck, mit Tipps, Prüfen, Rückgängig und Wiederholen
+• Funktioniert ohne Verbindung: Die Rätsel entstehen auf deinem Handy
+• Bau eigene Rätsel in der Rätselwerkstatt, ein Solver prüft, dass sie genau eine Lösung haben
+
+MIT FREUNDEN SPIELEN
+• Gruppen für Freunde, Familie oder Kollegen: Sieh, wer die Brücke von heute schon gelöst hat, und vergleicht eure Zeiten
+• Markiere Rivalen und mach jedes Tagesrätsel zum Duell
+• Schau im Wiederholungstheater zu, wie die anderen gelöst haben
+• Schick deiner Gruppe eigene Rätsel und baut gemeinsam, Planke für Planke, eine Brücke über den Fluss
+
+SAMMELN UND ENTSPANNEN
+• Ein Stempelheft mit einem Hanko-Stempel für jeden Meilenstein, und Serien, die dich jeden Tag zurückholen
+• Tag- und Nachtmodus, ruhige Koto-Melodien und sanfte Soundeffekte
+• Inseln in Pixel-Art mit Holz- und Zinnoberbrücken
+• In 20 Sprachen
+
+Hashi ist kostenlos, ohne Werbung und ohne In-App-Käufe. Es ist Open Source und mit Liebe von einem einzelnen Entwickler gemacht. Fragen oder Ideen? Schreib uns über hashi.rs/de/kontakt.

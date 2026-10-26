@@ -1,0 +1,7 @@
+# What fastlane writes when it runs
+README.md
+report.xml
+Preview.html
+test_output/
+.bundle/
+vendor/

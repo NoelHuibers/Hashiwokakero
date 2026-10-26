@@ -1,0 +1,31 @@
+Hashi adalah Hashiwokakero, teka-teki jembatan dari Jepang, dalam pixel art yang imut. Setiap hari ada jembatan harian baru, teka-teki yang sama untuk semua orang, dan papan peringkat menunjukkan seberapa cepat kamu menyeberang. Asah otak yang santai untuk rehat kopi, dan tantangan sungguhan di hari Minggu.
+
+CARA BERMAIN
+Hubungkan semua pulau dengan jembatan. Angka di setiap pulau menunjukkan berapa jembatan yang dibutuhkannya. Jembatan selalu lurus, tidak pernah bersilangan, dan di antara dua pulau paling banyak ada dua. Di akhir, semua pulau terhubung menjadi satu jaringan. Setiap teka-teki punya tepat satu solusi, jadi kamu tidak perlu menebak: murni logika.
+
+JEMBATAN HARI INI
+• Teka-teki baru setiap tengah malam (UTC), mudah di hari Senin dan makin sulit hingga Oni raksasa di hari Minggu
+• Teka-teki tersembunyi sampai kamu mulai, lalu jam berjalan
+• Petunjuk dan cek membantu saat kamu buntu, dengan sedikit penalti waktu
+• Peringkat hari ini, balapan bulanan, dan galeri juara berisi medali dan rentetan
+• Langsung main sebagai tamu tanpa akun; pilih nama agar rentetanmu tersimpan di semua perangkat
+
+LATIHAN, BAHKAN OFFLINE
+• Teka-teki tanpa batas dalam lima tingkat kesulitan, dari Mudah 7×7 sampai Oni 24×24
+• Tanpa jam, dengan petunjuk, cek, urungkan, dan ulangi
+• Bisa dimainkan tanpa koneksi: teka-teki dibuat langsung di ponselmu
+• Buat teka-tekimu sendiri di bengkel teka-teki, dan solver memastikan hanya ada satu solusi
+
+BERSAMA TEMAN
+• Grup untuk teman, keluarga, atau rekan kerja: lihat siapa yang sudah menyelesaikan jembatan hari ini dan bandingkan waktu kalian
+• Tandai rival dan jadikan setiap teka-teki harian sebuah duel
+• Tonton cara semua orang menyelesaikannya di teater ulangan
+• Kirim teka-tekimu ke grup dan bangun bersama, papan demi papan, jembatan menyeberangi sungai
+
+KUMPULKAN DAN SANTAI
+• Buku stempel dengan stempel hanko untuk setiap pencapaian, dan rentetan yang membuatmu kembali setiap hari
+• Tema siang dan malam, melodi koto yang tenang, dan efek suara yang lembut
+• Pulau pixel art dengan jembatan kayu dan merah terang
+• Tersedia dalam 20 bahasa
+
+Hashi gratis, tanpa iklan dan tanpa pembelian dalam aplikasi. Hashi bersifat open source dan dibuat dengan sepenuh hati oleh satu pengembang. Ada pertanyaan atau ide? Tulis ke kami lewat hashi.rs/id/kontakt.
