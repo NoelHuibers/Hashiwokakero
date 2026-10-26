@@ -68,6 +68,33 @@ A malformed value of any of them stops the server at startup.
 The worker also needs `APP_URL` pointing to the website. Its remaining settings
 are documented in [dojo/fly.toml](../dojo/fly.toml).
 
+### Search engines
+
+Optional and public, so they are in `fly.toml` (empty until the tokens exist). Each
+one makes the server answer a file at the site's root exactly as the search
+engine's console offers it; unset or empty, that file is a 404. See
+[seo.md](seo.md) for registering the site.
+
+- `HASHI_GOOGLE_SITE_VERIFICATION`: comma-separated names of the HTML files Google
+  Search Console asks to upload for a URL-prefix property ("HTML file" method),
+  `google0123456789abcdef.html`. The server answers `/google0123456789abcdef.html`
+  with `google-site-verification: google0123456789abcdef.html`. A Domain property
+  is verified with a DNS TXT record instead and needs no setting.
+- `HASHI_BING_SITE_AUTH`: comma-separated codes from the `BingSiteAuth.xml` that
+  Bing Webmaster Tools offers (the text in its `<user>`). The server answers
+  `/BingSiteAuth.xml` with a `<user>` for each. Not needed when the site is imported
+  from Search Console.
+- `HASHI_YANDEX_VERIFICATION`: comma-separated names of the HTML files Yandex
+  Webmaster offers, `yandex_0123456789abcdef.html`.
+- `HASHI_INDEXNOW_KEY`: the site's IndexNow key, 8 to 128 letters, digits and
+  dashes (generate one with `uuidgen` or at bing.com/indexnow). The server answers
+  `/<key>.txt` with the key, which proves to the IndexNow engines that the URLs
+  submitted with it are ours.
+
+After a deploy that sets one, check it with `curl -i https://hashi.rs/<file>`
+before pressing "Verify" in the console. Keep a token in place after the
+verification: the consoles check again from time to time.
+
 ## Maintenance
 
 Back up production data before schema-changing deployments and verify that the
