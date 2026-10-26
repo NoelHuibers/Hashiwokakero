@@ -2,11 +2,12 @@
 // page keeps to the content security policy of tauri.conf.json, practice runs on the phone
 // through the app's commands, the pages that need the server say once that the app is offline,
 // and links out of the app and other sites' pages open in Safari. Like e2e/android/smoke.spec.ts,
-// as far as iOS has it: no back button, and the safe areas, the share sheet, the status bar and
-// the soft keyboard are step 13c of docs/mobile.md (their screenshots are kept, nothing is
-// checked). Nothing here may reach hashi.rs: no guest, no daily, no group.
+// as far as iOS has it (no back button): the header and the tab bar clear the safe areas, upright
+// and sideways, and the app's own plugin answers (HashiPlugin.swift). Nothing here may reach
+// hashi.rs: no guest, no daily, no group.
 import { expect, inFront, type App, test } from './app';
 import { BUNDLE, ORIGIN, SAFARI } from './device';
+import { NATIVE } from './webdriver';
 
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
 const TOASTS = '[role=log] > div';
@@ -133,28 +134,105 @@ test('links out of the app open in Safari', async ({ app }) => {
   await openedInSafari(app, 'the address');
 });
 
-// What step 13c changes: the header under the status bar and the Dynamic Island, the tab bar over
-// the home indicator. Kept as screenshots and notes for now, not checked.
+/**
+ * The safe areas WKWebView reports (`env(safe-area-inset-*)`, which app/index.html passes on as
+ * `--app-inset-*`) and where the header, the tab bar's labels and the body's sides are, in CSS px.
+ */
+const geometry = (app: App) =>
+  app.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.style.cssText =
+      'position:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+    document.body.append(probe);
+    const style = getComputedStyle(probe);
+    const env = { top: style.paddingTop, right: style.paddingRight, bottom: style.paddingBottom, left: style.paddingLeft };
+    probe.remove();
+    const body = getComputedStyle(document.body);
+    const labels = [...document.querySelectorAll('.tab-label')].filter((l) => l.getClientRects().length).map((l) => l.getBoundingClientRect());
+    return {
+      env: Object.fromEntries(Object.entries(env).map(([side, px]) => [side, parseFloat(px)])) as Record<'top' | 'right' | 'bottom' | 'left', number>,
+      header: document.querySelector('header > div')!.getBoundingClientRect().top,
+      labels: labels.map((r) => ({ left: r.left, right: r.right, bottom: r.bottom })),
+      body: { left: parseFloat(body.paddingLeft), right: parseFloat(body.paddingRight) },
+      width: innerWidth,
+      height: innerHeight,
+    };
+  });
+
+/** Turns the simulator (WebDriver's orientation, a command of the native context). */
+async function turn(app: App, orientation: 'LANDSCAPE' | 'PORTRAIT') {
+  const context = await app.session.context();
+  await app.session.setContext(NATIVE);
+  try {
+    await app.session.command('POST', '/orientation', { orientation });
+  } finally {
+    await app.session.setContext(context);
+  }
+}
+
+// The header below the status bar and the Dynamic Island, the tab bar above the home indicator
+// (step 13c). The status bar's icons follow the page's theme, not the phone's (light here): the
+// screenshots show them.
 for (const theme of ['light', 'dark'] as const) {
-  test(`the practice board, ${theme}`, async ({ app }) => {
+  test(`the practice board clears the safe areas, ${theme}`, async ({ app }) => {
     await app.evaluate((t) => localStorage.setItem('hashi.theme', t), theme);
     await app.visit('/practice');
     await practiceBoard(app);
     await app.evaluate(() => window.scrollTo(0, 0));
     await expect.poll(() => app.count(TOASTS)).toBe(0);
     await app.screenshot(`practice-${theme}.png`);
-    const insets = await app.evaluate(() => {
-      const probe = document.createElement('div');
-      probe.style.cssText = 'position:fixed;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
-      document.body.append(probe);
-      const env = `${getComputedStyle(probe).paddingTop} ${getComputedStyle(probe).paddingBottom}`;
-      probe.remove();
-      const header = document.querySelector('header > div')?.getBoundingClientRect().top;
-      return { env, header, height: innerHeight, dpr: devicePixelRatio };
-    });
-    test.info().annotations.push({
-      type: 'insets',
-      description: `env(safe-area-inset-top/bottom) ${insets.env}, header at ${insets.header} of ${insets.height} px (×${insets.dpr})`,
-    });
+    const at = await geometry(app);
+    test.info().annotations.push({ type: 'insets', description: `env(safe-area-inset-*) ${JSON.stringify(at.env)}, header at ${at.header} of ${at.height} px` });
+    expect(at.env.top, 'the status bar').toBeGreaterThan(0);
+    expect(at.env.bottom, 'the home indicator').toBeGreaterThan(0);
+    expect(at.header, 'the header below the status bar').toBeGreaterThanOrEqual(at.env.top);
+    expect(at.labels, 'the tab bar').toHaveLength(6);
+    for (const label of at.labels) expect(label.bottom, 'a tab above the home indicator').toBeLessThanOrEqual(at.height - at.env.bottom + 0.5);
   });
 }
+
+test('turned sideways, the page clears the Dynamic Island and the home indicator', async ({ app }) => {
+  await app.visit('/practice');
+  await practiceBoard(app);
+  await turn(app, 'LANDSCAPE');
+  try {
+    await expect.poll(() => app.evaluate(() => innerWidth > innerHeight), { message: 'the page sideways' }).toBe(true);
+    // UIKit reports the landscape insets only on the scene lifecycle (Info.plist): without it the
+    // portrait ones stayed, the top's and none at the sides
+    await expect.poll(async () => (await geometry(app)).env.top, { message: 'no status bar sideways' }).toBe(0);
+    const at = await geometry(app);
+    test.info().annotations.push({ type: 'insets sideways', description: JSON.stringify(at.env) });
+    expect(Math.min(at.env.left, at.env.right), 'the sides').toBeGreaterThan(0);
+    expect(at.body, "the body's sides").toEqual({ left: at.env.left, right: at.env.right });
+    expect(at.labels, 'the tab bar').toHaveLength(6);
+    for (const label of at.labels) {
+      expect(label.left, 'a tab right of the Dynamic Island').toBeGreaterThanOrEqual(at.env.left - 0.5);
+      expect(label.right, 'a tab left of the other side').toBeLessThanOrEqual(at.width - at.env.right + 0.5);
+      expect(label.bottom, 'a tab above the home indicator').toBeLessThanOrEqual(at.height - at.env.bottom + 0.5);
+    }
+    await app.screenshot('landscape.png');
+  } finally {
+    await turn(app, 'PORTRAIT');
+  }
+});
+
+test("the app's own plugin answers on iOS", async ({ app }) => {
+  // The commands of api::native: the status bar for the page's theme, and the share sheet with a
+  // file, as the CNF's download opens it. Without the Swift side Tauri refuses them ("Plugin hashi
+  // not initialized"), and the page only logs a warning.
+  const invoke = (command: string, args: Record<string, unknown>) =>
+    app.evaluate(
+      ({ command, args }) =>
+        (window as any).__TAURI_INTERNALS__.invoke(command, args).then(
+          () => 'ok',
+          (e: unknown) => `refused: ${String(e)}`,
+        ),
+      { command, args },
+    );
+  expect(await invoke('plugin:hashi|system_bars', { dark: true })).toBe('ok');
+  expect(await invoke('plugin:hashi|system_bars', { dark: false })).toBe('ok');
+  expect(await invoke('plugin:hashi|share', { text: 'p cnf 1 1\n1 0\n', file: 'hashi.cnf', mime: 'text/plain' })).toBe('ok');
+  // The sheet over the app, Save to Files among its actions
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  await app.screenshot('share.png');
+});

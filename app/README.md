@@ -757,17 +757,21 @@ content security policy (`/`, `/rules`, `/ja/rules`, `/practice`, `/create`, `/l
 `/groups`, `/daily`); practice generates through the native generator (Tauri's IPC is a fetch of
 `ipc://localhost/generate_puzzle` on iOS) and hints and checks without the server; the ranks show
 one offline notice, again after an `online` event; a link to GitHub and a `location` to another site
-leave the app's page where it is and bring Safari to the front. The screenshots `start.png`,
-`practice.png`, `practice-light.png` and `practice-dark.png` are the artifact
+leave the app's page where it is and bring Safari to the front; the practice page clears the safe
+areas (step 13c): the header starts below `env(safe-area-inset-top)` and the tab bar's labels end
+above the home indicator, in both themes, and turned sideways (WebDriver's orientation) the top's
+inset is 0, the body's and the tab bar's sides clear the Dynamic Island, as the scene lifecycle
+gives them; the app's own plugin answers `system_bars` and `share` with a file (without its Swift
+side Tauri refuses them). The screenshots `start.png`, `practice.png`, `practice-light.png`,
+`practice-dark.png` (the page dark on a light phone: the status bar's icons light),
+`landscape.png` and `share.png` (the share sheet with the file) are the artifact
 `ios-simulator-screenshot`.
 
 Not checked, unlike on Android: `navigator.onLine` (the simulator has the Mac's network, only
-hashi.rs is blocked), the back button (iOS has none), App Links (Universal Links, step 13d), the
-copy button (a click on it froze the simulator's page for 25 s, the clipboard's sync with the Mac),
-and what step 13c changes: the safe areas (the header is under the status bar and the Dynamic
-Island, the tab bar over the home indicator), the share sheet, the status bar's style, the soft
-keyboard and a dark start. The light and dark screenshots show them, the job summary notes the
-safe-area insets and where the header starts; 13c turns them into checks.
+hashi.rs is blocked), the back button (iOS has none; the swipe from the edge isn't a WebDriver
+gesture), App Links (Universal Links need a signed build), the copy button (a click on it froze the
+simulator's page for 25 s, the clipboard's sync with the Mac), the status bar's style (the
+screenshots show it) and the soft keyboard (the simulator may have the Mac's keyboard connected).
 
 The debug build calls the production server when it can. The simulator has no airplane mode: the
 global setup refuses to run while hashi.rs answers from the Mac, and CI points hashi.rs to `0.0.0.0`
