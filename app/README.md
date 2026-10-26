@@ -666,7 +666,11 @@ This repository's project was generated in CI and committed like `gen/android`, 
   Tauri appends to the version as a fourth number (`0.0.1.1`). Pull requests keep the version.
 - The scene lifecycle: `UIApplicationSceneManifest` in `Info.plist` and `project.yml`, one scene
   with tao's `TaoSceneDelegate` (see [On the phone](#on-the-phone)). The template of tauri-cli
-  2.12.4 has none.
+  2.12.4 has none. On it iOS hands the Universal Link the app is started with to the scene
+  delegate's `scene:willConnectToSession:options:`, which tao 0.37 ignores: `Sources/hashi_tauri/main.mm`
+  wraps that method of tao's class (when tao names it, before the first scene) and passes the
+  launch's links on to `scene:continueUserActivity:` and `scene:openURLContexts:`, where tao
+  hands the links of a running app to the deep-link plugin.
 
 The iOS side of the app's own plugin `hashi` is outside `gen/apple`, in `src-tauri/ios/`: a Swift
 package (`HashiPlugin.swift`, the counterpart of `HashiPlugin.kt`) that `build.rs` builds with
