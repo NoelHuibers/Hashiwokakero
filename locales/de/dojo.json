@@ -252,7 +252,7 @@
   },
   "community": {
     "meta_title": "Bring deinen eigenen Benchmark mit · SAT-Dojo",
-    "meta_description": "Reich eine CNF-Formel für den Community-Pool des SAT-Dojos ein. Geprüfte, schwere Instanzen kommen in die geheimen Sets späterer Saisons und werden mit deinem Namen veröffentlicht.",
+    "meta_description": "Reich eine CNF-Formel für den Community-Pool des SAT-Dojos ein. Geprüfte, schwere Instanzen kommen in spätere geheime Sets, mit deinem Namen.",
     "title": "Bring deinen eigenen Benchmark mit",
     "intro": "Wie die SAT Competition nimmt das Dojo Benchmarks von seinen Teilnehmern. Reich eine Formel ein, die dir wichtig ist: Lässt sich ihre Antwort sicher klären, ist sie nicht zu leicht und nimmt sie ein Moderator an, kommt sie in den Pool. Das geheime Set jeder Saison zieht ein paar davon, und sie werden mit deinem Namen veröffentlicht, wenn die Saison endet.",
     "rules_title": "Was hineinkommt",

@@ -289,6 +289,12 @@ fn author() -> serde_json::Value {
 }
 
 /// The website and the game itself, for the home page.
+///
+/// The website as Google's site names want it: its name, other names it goes by, and the home
+/// page's canonical URL. The game is a `VideoGame` played in the browser: Google reads software
+/// only co-typed with an application type (`WebApplication`), whose category it takes from
+/// [Google's list](https://developers.google.com/search/docs/appearance/structured-data/software-app)
+/// (`GameApplication`). Without ratings it shows no rich result for it, but knows the game.
 pub fn site_ld(locale: Locale) -> String {
     let lang = locale.as_str();
     json!({
@@ -297,14 +303,15 @@ pub fn site_ld(locale: Locale) -> String {
             {
                 "@type": "WebSite",
                 "@id": format!("{SITE_URL}/#website"),
-                "url": SITE_URL,
+                "url": format!("{SITE_URL}/"),
                 "name": SITE_NAME,
+                "alternateName": ["hashi.rs", "Hashi – Hashiwokakero"],
                 "description": td_string!(locale, common.ld.site),
                 "inLanguage": lang,
                 "publisher": { "@id": format!("{SITE_URL}/#author") },
             },
             {
-                "@type": "VideoGame",
+                "@type": ["VideoGame", "WebApplication"],
                 "@id": format!("{SITE_URL}/#game"),
                 "name": "Hashi – Hashiwokakero",
                 "alternateName": ["Hashiwokakero", "Bridges", "橋をかけろ", "Hashi"],
@@ -314,14 +321,14 @@ pub fn site_ld(locale: Locale) -> String {
                 "genre": ["Puzzle", "Logic"],
                 "gamePlatform": "Web browser",
                 "playMode": "SinglePlayer",
-                "applicationCategory": "Game",
+                "applicationCategory": "GameApplication",
                 "operatingSystem": "Any",
+                "browserRequirements": "Requires JavaScript and WebAssembly",
                 "inLanguage": Locale::get_all().iter().map(|l| l.as_str()).collect::<Vec<_>>(),
                 "isAccessibleForFree": true,
                 "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
                 "author": { "@id": format!("{SITE_URL}/#author") },
                 "isBasedOn": "https://en.wikipedia.org/wiki/Hashiwokakero",
-                "codeRepository": REPO_URL,
             },
             author(),
         ]
@@ -386,8 +393,20 @@ const SITEMAP: [(&str, &str, &str); 9] = [
     ("/dojo/benchmarks", "monthly", "0.4"),
 ];
 
+/// The pages that change with every day's daily, at midnight UTC: the daily itself (its board,
+/// its preview image, the week) and its ranking. Their `<lastmod>` is today. The others have
+/// none: their content changes with deploys, and only some deploys change it, and Google trusts
+/// a sitemap's `lastmod` only while it is right.
+const NEW_EVERY_DAY: [&str; 2] = ["/", "/ranks"];
+
 /// `sitemap.xml` with every page in every language, each listing its translations.
 pub fn sitemap() -> String {
+    sitemap_on(today())
+}
+
+/// The sitemap on `day`.
+fn sitemap_on(day: i64) -> String {
+    let today = crate::model::date_string(day);
     let mut xml = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
          <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n",
@@ -406,10 +425,15 @@ pub fn sitemap() -> String {
                 "    <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"{SITE_URL}{path}\"/>\n"
             )))
             .collect();
+        let lastmod = if NEW_EVERY_DAY.contains(&path) {
+            format!("    <lastmod>{today}</lastmod>\n")
+        } else {
+            String::new()
+        };
         for l in Locale::get_all() {
             let _ = write!(
                 xml,
-                "  <url>\n    <loc>{SITE_URL}{}</loc>\n{alternates}    <changefreq>{freq}</changefreq>\n    <priority>{priority}</priority>\n  </url>\n",
+                "  <url>\n    <loc>{SITE_URL}{}</loc>\n{alternates}{lastmod}    <changefreq>{freq}</changefreq>\n    <priority>{priority}</priority>\n  </url>\n",
                 localized(*l, path)
             );
         }
@@ -732,6 +756,215 @@ mod tests {
         assert!(xml.contains("<loc>https://hashi.rs/</loc>"));
         assert!(xml.contains("<loc>https://hashi.rs/de/rules</loc>"));
         assert!(xml.contains("hreflang=\"zh-Hant\" href=\"https://hashi.rs/zh-Hant/lab\""));
+        // Each URL lists every language of its page, itself among them, and the default
+        for entry in xml.split("<url>").skip(1) {
+            let loc = entry
+                .split("<loc>")
+                .nth(1)
+                .unwrap()
+                .split("</loc>")
+                .next()
+                .unwrap();
+            assert_eq!(
+                entry.matches("<xhtml:link ").count(),
+                Locale::get_all().len() + 1,
+                "{loc}"
+            );
+            assert!(entry.contains(&format!("href=\"{loc}\"/>")), "{loc}");
+            assert!(entry.contains("hreflang=\"x-default\""), "{loc}");
+        }
+        // Only pages search engines may index, under 50,000 URLs and 50 MB (one file is enough)
+        assert!(!xml.contains("/player/") && !xml.contains("/account") && !xml.contains("/admin"));
+        assert!(xml.len() < 50 * 1024 * 1024);
+    }
+
+    /// Only the pages that change every day say when they changed: today, for every language.
+    #[test]
+    fn sitemap_dates_only_the_pages_of_the_day() {
+        let day = crate::model::LAUNCH_DAY + 9;
+        let xml = sitemap_on(day);
+        let date = crate::model::date_string(day);
+        assert_eq!(date, "2026-10-26");
+        let dated: Vec<_> = xml
+            .split("<url>")
+            .skip(1)
+            .filter(|entry| entry.contains("<lastmod>"))
+            .map(|entry| {
+                assert!(
+                    entry.contains(&format!("<lastmod>{date}</lastmod>")),
+                    "{entry}"
+                );
+                entry
+                    .split("<loc>")
+                    .nth(1)
+                    .unwrap()
+                    .split("</loc>")
+                    .next()
+                    .unwrap()
+            })
+            .collect();
+        assert_eq!(dated.len(), NEW_EVERY_DAY.len() * Locale::get_all().len());
+        for url in [
+            "https://hashi.rs/",
+            "https://hashi.rs/ja",
+            "https://hashi.rs/ranks",
+            "https://hashi.rs/de/ranks",
+        ] {
+            assert!(dated.contains(&url), "{url}");
+        }
+        assert!(!dated.contains(&"https://hashi.rs/rules"));
+        // The next day, the next date
+        assert!(sitemap_on(day + 1).contains("<lastmod>2026-10-27</lastmod>"));
+        // Before <changefreq>, as the schema orders them
+        assert!(xml.contains(&format!(
+            "<lastmod>{date}</lastmod>\n    <changefreq>daily</changefreq>"
+        )));
+    }
+
+    fn graph(locale: Locale) -> Vec<serde_json::Value> {
+        let ld: serde_json::Value = serde_json::from_str(&site_ld(locale)).unwrap();
+        assert_eq!(ld["@context"], "https://schema.org");
+        ld["@graph"].as_array().unwrap().clone()
+    }
+
+    fn node(graph: &[serde_json::Value], id: &str) -> serde_json::Value {
+        graph
+            .iter()
+            .find(|n| n["@id"] == format!("{SITE_URL}/#{id}"))
+            .unwrap_or_else(|| panic!("no #{id}"))
+            .clone()
+    }
+
+    /// The website for Google's site names: its name, other names, and the URL of the home
+    /// page as its canonical link names it.
+    #[test]
+    fn the_website_is_named_with_its_home_page() {
+        for locale in [Locale::en, Locale::de, Locale::ar] {
+            let site = node(&graph(locale), "website");
+            assert_eq!(site["@type"], "WebSite");
+            assert_eq!(
+                site["url"],
+                format!("{SITE_URL}{}", localized(Locale::en, "/"))
+            );
+            assert_eq!(site["name"], SITE_NAME);
+            assert!(
+                site["alternateName"]
+                    .as_array()
+                    .unwrap()
+                    .contains(&json!("hashi.rs"))
+            );
+            assert_eq!(site["inLanguage"], locale.as_str());
+            assert_eq!(site["description"], td_string!(locale, common.ld.site));
+        }
+    }
+
+    /// The game as Google reads software: co-typed with an application type, a category from its
+    /// list, free, and only properties schema.org has for these types.
+    #[test]
+    fn the_game_is_software_google_reads() {
+        // schema.org's properties of VideoGame and WebApplication (and of what they inherit:
+        // SoftwareApplication, Game, CreativeWork, Thing) that the game uses
+        const KNOWN: [&str; 21] = [
+            "@type",
+            "@id",
+            "name",
+            "alternateName",
+            "url",
+            "image",
+            "description",
+            "genre",
+            "gamePlatform",
+            "playMode",
+            "applicationCategory",
+            "operatingSystem",
+            "browserRequirements",
+            "inLanguage",
+            "isAccessibleForFree",
+            "offers",
+            "author",
+            "isBasedOn",
+            "sameAs",
+            "screenshot",
+            "publisher",
+        ];
+        for locale in [Locale::en, Locale::ja] {
+            let game = node(&graph(locale), "game");
+            assert_eq!(game["@type"], json!(["VideoGame", "WebApplication"]));
+            assert_eq!(game["applicationCategory"], "GameApplication");
+            assert_eq!(game["offers"]["price"], "0");
+            assert_eq!(game["offers"]["@type"], "Offer");
+            assert_eq!(game["name"], "Hashi – Hashiwokakero");
+            assert_eq!(game["url"], format!("{SITE_URL}{}", localized(locale, "/")));
+            assert_eq!(game["image"], og_image(locale));
+            assert_eq!(game["description"], td_string!(locale, common.ld.game));
+            for key in game.as_object().unwrap().keys() {
+                assert!(
+                    KNOWN.contains(&key.as_str()),
+                    "{key} isn't a property of the game's types"
+                );
+            }
+            // The people behind it are in the graph
+            assert_eq!(game["author"]["@id"], format!("{SITE_URL}/#author"));
+            let author = node(&graph(locale), "author");
+            assert_eq!(author["@type"], "Person");
+            assert_eq!(author["name"], AUTHOR);
+        }
+    }
+
+    /// Search results show about 60 characters of a title and 160 of a description, in every
+    /// language. (Chinese, Japanese and Korean characters are twice as wide, and theirs are
+    /// half as long.)
+    #[test]
+    fn titles_and_descriptions_fit_in_search_results() {
+        for l in Locale::get_all() {
+            let l = *l;
+            for (title, description) in [
+                (
+                    td_string!(l, daily.meta.title),
+                    td_string!(l, daily.meta.description),
+                ),
+                (
+                    td_string!(l, practice.meta.title),
+                    td_string!(l, practice.meta.description),
+                ),
+                (
+                    td_string!(l, ranks.meta.title),
+                    td_string!(l, ranks.meta.description),
+                ),
+                (
+                    td_string!(l, rules.meta.title),
+                    td_string!(l, rules.meta.description),
+                ),
+                (
+                    td_string!(l, create.meta.title),
+                    td_string!(l, create.meta.description),
+                ),
+                (
+                    td_string!(l, lab.meta.title),
+                    td_string!(l, lab.meta.description),
+                ),
+                (
+                    td_string!(l, dojo.meta.title),
+                    td_string!(l, dojo.meta.description),
+                ),
+                (
+                    td_string!(l, dojo.seasons.meta_title),
+                    td_string!(l, dojo.seasons.meta_description),
+                ),
+                (
+                    td_string!(l, dojo.community.meta_title),
+                    td_string!(l, dojo.community.meta_description),
+                ),
+                (
+                    td_string!(l, contact.title),
+                    td_string!(l, contact.description),
+                ),
+            ] {
+                assert!(title.chars().count() <= 60, "{l:?}: {title}");
+                let length = description.chars().count();
+                assert!(length <= 160, "{l:?}: {length} characters, {description}");
+            }
+        }
     }
 
     #[test]

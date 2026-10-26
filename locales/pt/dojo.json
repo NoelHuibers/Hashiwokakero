@@ -252,7 +252,7 @@
   },
   "community": {
     "meta_title": "Traga o seu benchmark · SAT Dojo",
-    "meta_description": "Envie uma fórmula CNF para o pool da comunidade do SAT Dojo. Instâncias verificadas e difíceis entram nos conjuntos ocultos das temporadas seguintes e são publicadas com o seu nome.",
+    "meta_description": "Envie uma fórmula CNF para o pool da comunidade do SAT Dojo. Instâncias difíceis verificadas entram nos conjuntos ocultos e são publicadas com o seu nome.",
     "title": "Traga o seu benchmark",
     "intro": "Como a SAT Competition, o Dojo aceita benchmarks dos participantes. Envie uma fórmula que lhe interesse: se a resposta puder ser estabelecida com certeza, não for fácil demais e um moderador aceitar, ela entra no pool. O conjunto oculto de cada temporada sorteia algumas do pool, e elas são publicadas com o seu nome quando a temporada termina.",
     "rules_title": "O que entra",

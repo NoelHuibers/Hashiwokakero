@@ -252,7 +252,7 @@
   },
   "community": {
     "meta_title": "Porta il tuo benchmark · SAT Dojo",
-    "meta_description": "Invia una formula CNF al pool della comunità del SAT Dojo. Le istanze verificate e difficili entrano negli insiemi segreti delle stagioni successive e vengono pubblicate con il tuo nome.",
+    "meta_description": "Invia una formula CNF al pool della comunità del SAT Dojo. Le istanze difficili verificate entrano negli insiemi segreti e vengono pubblicate con il tuo nome.",
     "title": "Porta il tuo benchmark",
     "intro": "Come la SAT Competition, il Dojo accetta benchmark dai suoi partecipanti. Invia una formula a cui tieni: se la sua risposta si può stabilire con certezza, non è troppo facile e un moderatore la accetta, entra nel pool. L’insieme segreto di ogni stagione ne estrae alcune, pubblicate con il tuo nome a fine stagione.",
     "rules_title": "Cosa entra",

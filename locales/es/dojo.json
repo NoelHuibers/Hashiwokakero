@@ -58,7 +58,7 @@
   },
   "seasons": {
     "meta_title": "Archivo de temporadas · SAT Dojo",
-    "meta_description": "Cada temporada terminada del SAT Dojo: la clasificación final, la semilla revelada, el conjunto oculto y cada resultado por fórmula, listos para descargar y comprobar.",
+    "meta_description": "Cada temporada terminada del SAT Dojo: clasificación final, semilla revelada, conjunto oculto y cada resultado por fórmula, listos para descargar y comprobar.",
     "title": "Archivo de temporadas",
     "intro": "Cuando termina una temporada, su clasificación se congela y se publica todo: la semilla del conjunto oculto, el propio conjunto y el resultado de cada solver en cada fórmula.",
     "current": "Temporada {{ season }} · en curso",
@@ -252,7 +252,7 @@
   },
   "community": {
     "meta_title": "Trae tu propio benchmark · SAT Dojo",
-    "meta_description": "Envía una fórmula CNF al pool de la comunidad del SAT Dojo. Las instancias verificadas y difíciles entran en los conjuntos secretos de temporadas posteriores y se publican con tu nombre.",
+    "meta_description": "Envía una fórmula CNF al pool de la comunidad del SAT Dojo. Las instancias difíciles verificadas entran en los conjuntos secretos y se publican con tu nombre.",
     "title": "Trae tu propio benchmark",
     "intro": "Como la SAT Competition, el Dojo acepta benchmarks de sus participantes. Envía una fórmula que te importe: si su respuesta puede establecerse con certeza, no es demasiado fácil y un moderador la acepta, entra en el pool. El conjunto secreto de cada temporada saca algunas del pool, y se publican con tu nombre cuando termina la temporada.",
     "rules_title": "Qué entra",
