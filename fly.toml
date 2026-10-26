@@ -14,9 +14,9 @@ primary_region = "ams"
   HASHI_ADMINS = "2"
   # The SHA-256 fingerprints of the certificates the Android app is signed with, for its App Links
   # (/.well-known/assetlinks.json, docs/deployment.md); public. The upload key's, which signs the
-  # APK of the GitHub release. Google's app signing certificate (Play Console, Test and release,
-  # App integrity) goes after it, comma separated, once the app is in Play.
-  HASHI_ANDROID_CERT_SHA256 = "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B"
+  # APK of the GitHub release, then Google's app signing certificate, which signs the app from
+  # Play (Play Console, Protected by Google Play, App signing).
+  HASHI_ANDROID_CERT_SHA256 = "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B,5B:25:46:4B:F1:0A:07:4B:0E:3B:29:3E:C4:07:7E:14:25:93:67:0D:06:75:63:C1:BC:7B:7C:9D:26:D6:A9:D9"
   # The app ID of the iOS app, team ID and bundle ID, for its Universal Links
   # (/.well-known/apple-app-site-association, docs/deployment.md); public, it is in every signed
   # build of the app. More go after it, comma separated.

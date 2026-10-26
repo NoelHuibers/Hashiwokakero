@@ -498,9 +498,22 @@ mod tests {
         }
     }
 
-    /// The upload key's certificate (fly.toml) and another one, as Play's would be.
+    /// The upload key's certificate and Google's app signing certificate, as in fly.toml.
     const UPLOAD_CERT: &str = "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B";
-    const PLAY_CERT: &str = "0F:1E:2D:3C:4B:5A:69:78:87:96:A5:B4:C3:D2:E1:F0:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF";
+    const PLAY_CERT: &str = "5B:25:46:4B:F1:0A:07:4B:0E:3B:29:3E:C4:07:7E:14:25:93:67:0D:06:75:63:C1:BC:7B:7C:9D:26:D6:A9:D9";
+
+    /// fly.toml names both: the APK of the GitHub release and the app from Play may open the
+    /// site's links.
+    #[test]
+    fn fly_toml_names_the_upload_and_the_play_certificate() {
+        let line = include_str!("../../fly.toml")
+            .lines()
+            .find_map(|l| l.trim().strip_prefix("HASHI_ANDROID_CERT_SHA256 = "))
+            .expect("HASHI_ANDROID_CERT_SHA256 in fly.toml");
+        let value = line.trim_matches('"');
+        let parsed = settings(&[("HASHI_ANDROID_CERT_SHA256", value)]).unwrap();
+        assert_eq!(parsed.android_certs, [UPLOAD_CERT, PLAY_CERT]);
+    }
 
     /// One certificate or several, the upload key's and Google's: the app of either may open
     /// the site's links.

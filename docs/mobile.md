@@ -154,18 +154,18 @@ Things only the account owner can do. Done: the upload keystore, as the GitHub s
 replaced through Play's support). Left, in this order (details in
 [app/README.md](../app/README.md#releases)):
 
-1. **Create the app** in the Play Console: Create app, name "Hashi", app (not game), free.
+1. **Create the app** (done 2026-10-26, as a game) in the Play Console: Create app, name "Hashi", game (Puzzle), free.
    The package name `rs.hashi` is set by the first upload and can never change.
-2. **The first upload by hand.** Push the first tag (`app-v0.0.1`); the
+2. **The first upload by hand** (done 2026-10-26: 0.0.2 to the internal track). Push the first tag (`app-v0.0.1`); the
    workflow makes the GitHub release, its upload to Play is skipped without the secret. In the
    Play Console: Test and release, Testing, Internal testing, Create new release; upload
    `hashi-<version>.aab` from the GitHub release, then roll it out to the internal testers
    (Testers tab: an email list).
-3. **Play App Signing**, asked for with that first release: keep "Google-generated key". Google
+3. **Play App Signing** (done, Google-generated key), asked for with that first release: keep "Google-generated key". Google
    holds the key that signs the app on phones; our upload key only proves an upload is ours. The
    first bundle registers the upload key.
-4. **Google's certificate for the App Links.** Play Console, Test and release, App integrity, App
-   signing: copy the SHA-256 fingerprint of the "App signing key certificate". Append it to
+4. **Google's certificate for the App Links** (done 2026-10-26, `5B:25:46:4B…A9:D9`). Play
+   Console, Protected by Google Play, App signing: copy the SHA-256 fingerprint of the "App signing key certificate". Append it to
    `HASHI_ANDROID_CERT_SHA256` in `fly.toml` after the upload key's, comma separated, and deploy
    (docs/deployment.md). Without it the app installed from Play opens invites and shared results
    in the browser: Android only opens them in the app when
