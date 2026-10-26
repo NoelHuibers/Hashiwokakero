@@ -26,6 +26,11 @@
     "open_source": "GitHubでオープンソース",
     "tech": "Rust · Leptos · Turso · 自作のCDCL・DPLLソルバー"
   },
+  "apps": {
+    "label": "アプリ",
+    "app_store": "App Store からダウンロード",
+    "google_play": "Google Play で手に入れよう"
+  },
   "difficulty": {
     "easy": "かんたん",
     "medium": "ふつう",

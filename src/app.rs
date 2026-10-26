@@ -42,6 +42,8 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 // The build of this page's WASM, for the tab to compare with the server's
                 // (`api::client`)
                 <meta name="hashi-build" content=page_build(&options) />
+                // The apps in the stores, once they are there (`seo::AppStores`)
+                {app_store_tags()}
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
                 <link rel="icon" href="/favicon.ico" sizes="32x32" />
                 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -73,6 +75,35 @@ fn page_build(options: &LeptosOptions) -> Option<String> {
 fn page_build(_: &LeptosOptions) -> Option<String> {
     None
 }
+
+/// The tags of the apps for the page the server renders, once the settings name their stores
+/// (`server::apps`): Apple's Smart App Banner, which opens or offers the iOS app with the page's
+/// URL; the stores for the browser, which shows the same badges as the server
+/// (`seo::use_app_stores`); and on the home page in every language, the apps as structured
+/// data. Written by the shell, which the browser doesn't hydrate, so nothing of them has to
+/// match in the browser. Nothing without the settings, and on pages that aren't the site's
+/// (the 404 page of a missing file).
+#[cfg(feature = "ssr")]
+fn app_store_tags() -> impl IntoView {
+    use crate::seo::{APP_STORES_META, AppStores, SITE_URL};
+
+    let stores = use_context::<AppStores>().unwrap_or_default();
+    let path = use_context::<axum::http::request::Parts>()
+        .map_or_else(|| "/".to_string(), |parts| parts.uri.path().to_string());
+    let home = crate::lang::unlocalized(&path) == "/";
+    let locale = crate::lang::path_locale(&path).unwrap_or_default();
+    let banner = stores.smart_banner(&format!("{SITE_URL}{path}"));
+    let meta = (!stores.is_empty()).then(|| stores.to_meta());
+    let json_ld = if home { stores.apps_ld(locale) } else { None };
+    view! {
+        {banner.map(|content| view! { <meta name="apple-itunes-app" content=content /> })}
+        {meta.map(|content| view! { <meta name=APP_STORES_META content=content /> })}
+        {json_ld.map(|json| view! { <script type="application/ld+json" inner_html=json></script> })}
+    }
+}
+
+#[cfg(not(feature = "ssr"))]
+fn app_store_tags() {}
 
 #[component]
 pub fn App() -> impl IntoView {

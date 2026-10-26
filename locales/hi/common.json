@@ -26,6 +26,11 @@
     "open_source": "GitHub पर ओपन सोर्स",
     "tech": "Rust · Leptos · Turso · हमारे अपने CDCL और DPLL सॉल्वर"
   },
+  "apps": {
+    "label": "ऐप",
+    "app_store": "App Store से डाउनलोड करें",
+    "google_play": "Google Play पर पाएं"
+  },
   "difficulty": {
     "easy": "आसान",
     "medium": "मध्यम",

@@ -244,6 +244,8 @@ mod configuration_tests {
         assert!(validate_settings(|_| None).is_ok());
         assert!(validate_settings(production).is_ok());
         for (name, value) in [
+            ("HASHI_APP_STORE_ID", "6826916346"),
+            ("HASHI_PLAY_PACKAGE", "rs.hashi"),
             ("HASHI_APP_MIN_VERSION", "1.2.3"),
             ("HASHI_APP_ORIGINS", "https://tauri.localhost"),
             (
@@ -263,6 +265,8 @@ mod configuration_tests {
             assert!(validate_settings(with).is_ok(), "{name}");
         }
         for (name, value) in [
+            ("HASHI_APP_STORE_ID", "id6826916346"),
+            ("HASHI_PLAY_PACKAGE", "hashi"),
             ("HASHI_APP_MIN_VERSION", "1.2"),
             ("HASHI_APP_ORIGINS", "https://tauri.localhost/"),
             ("HASHI_ANDROID_CERT_SHA256", "bb:86:d4:c6"),

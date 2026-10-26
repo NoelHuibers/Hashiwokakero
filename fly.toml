@@ -12,6 +12,12 @@ primary_region = "ams"
   # Accounts that can open the admin dashboard, comma separated: user ids (2 is Noel), or
   # usernames (who then can't change them, see server/admin.rs)
   HASHI_ADMINS = "2"
+  # The apps' pages in the stores, for the site's Smart App Banner, store badges, structured data
+  # and manifest (docs/deployment.md); empty until the apps are live in the stores. The Apple ID
+  # of the iOS app (App Store Connect, App Information): 6826916346
+  HASHI_APP_STORE_ID = ""
+  # The Android app's package in Google Play: rs.hashi
+  HASHI_PLAY_PACKAGE = ""
   # The SHA-256 fingerprints of the certificates the Android app is signed with, for its App Links
   # (/.well-known/assetlinks.json, docs/deployment.md); public. The upload key's, which signs the
   # APK of the GitHub release, then Google's app signing certificate, which signs the app from

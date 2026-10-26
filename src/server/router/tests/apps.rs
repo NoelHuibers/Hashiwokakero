@@ -528,3 +528,112 @@ async fn the_apple_app_site_association_names_the_ios_app() {
         assert_status(&browser.get(path).await, StatusCode::NOT_FOUND);
     }
 }
+
+/// Before the apps are in the stores, the site advertises none: no Smart App Banner, no badges,
+/// no apps in the structured data or the manifest.
+#[tokio::test]
+async fn without_stores_the_site_advertises_no_app() {
+    let server = Server::start().await;
+    let browser = server.browser();
+    for path in ["/", "/de", "/rules"] {
+        let html = browser.get(path).await.text().await.unwrap();
+        assert!(!html.contains("apple-itunes-app"), "{path}");
+        assert!(!html.contains(crate::seo::APP_STORES_META), "{path}");
+        assert!(!html.contains("/badges/"), "{path}");
+        assert!(!html.contains("MobileApplication"), "{path}");
+    }
+    let res = browser.get("/manifest.webmanifest").await;
+    assert_status(&res, StatusCode::OK);
+    assert_eq!(
+        header(res.headers(), CONTENT_TYPE),
+        Some("application/manifest+json")
+    );
+    let manifest: serde_json::Value = serde_json::from_str(&res.text().await.unwrap()).unwrap();
+    assert!(manifest.get("related_applications").is_none());
+    assert_eq!(manifest["short_name"], "Hashi");
+}
+
+/// Once they are: Safari's banner on every page, with the page's URL for the app to open; the
+/// stores' badges in the footer, in the page's language and linking to the stores; the apps in
+/// the home page's structured data; the manifest names them.
+#[tokio::test]
+async fn with_stores_every_page_offers_the_apps() {
+    use crate::i18n::{Locale, td_string};
+
+    let server = Server::with_apps(
+        &[
+            ("HASHI_APP_STORE_ID", "6826916346"),
+            ("HASHI_PLAY_PACKAGE", "rs.hashi"),
+        ],
+        |_| {},
+    )
+    .await;
+    let browser = server.browser();
+    for (path, locale, apple, google, hl) in [
+        ("/", Locale::en, "en", "en", "en"),
+        ("/de/rules", Locale::de, "de", "de", "de"),
+        // Apple has no Arabic badge, Google no Ukrainian one
+        ("/ar/practice", Locale::ar, "en", "ar", "ar"),
+        ("/uk", Locale::uk, "uk", "en", "uk"),
+        (
+            "/zh-Hant/ranks",
+            Locale::zh_Hant,
+            "zh-Hant",
+            "zh-Hant",
+            "zh-TW",
+        ),
+    ] {
+        let html = browser.get(path).await.text().await.unwrap();
+        let head = html.split("</head>").next().unwrap();
+        let url = format!("https://hashi.rs{path}");
+        assert!(
+            head.contains(&format!(
+                r#"<meta name="apple-itunes-app" content="app-id=6826916346, app-argument={url}">"#
+            )),
+            "{path}: {head}"
+        );
+        assert!(
+            head.contains(r#"<meta name="hashi-app-stores" content="app-store=6826916346, google-play=rs.hashi">"#),
+            "{path}"
+        );
+        let footer = html.split("<footer").nth(1).unwrap();
+        assert!(
+            footer.contains(r#"href="https://apps.apple.com/app/id6826916346""#),
+            "{path}"
+        );
+        assert!(
+            footer.contains(&format!(
+                r#"href="https://play.google.com/store/apps/details?id=rs.hashi&amp;hl={hl}""#
+            )),
+            "{path}: {footer}"
+        );
+        assert!(
+            footer.contains(&format!(r#"src="/badges/app-store/{apple}.svg""#)),
+            "{path}"
+        );
+        assert!(
+            footer.contains(&format!(r#"src="/badges/google-play/{google}.png""#)),
+            "{path}"
+        );
+        for alt in [
+            td_string!(locale, common.apps.app_store),
+            td_string!(locale, common.apps.google_play),
+        ] {
+            assert!(footer.contains(&format!(r#"alt="{alt}""#)), "{path}: {alt}");
+        }
+        assert!(
+            footer.contains(&format!(
+                r#"aria-label="{}""#,
+                td_string!(locale, common.apps.label)
+            )),
+            "{path}"
+        );
+        // The apps' structured data only on the home page
+        let home = crate::lang::unlocalized(path) == "/";
+        assert_eq!(html.contains(r#""MobileApplication""#), home, "{path}");
+    }
+    let res = browser.get("/manifest.webmanifest").await;
+    let manifest: serde_json::Value = serde_json::from_str(&res.text().await.unwrap()).unwrap();
+    assert_eq!(manifest["related_applications"][0]["id"], "rs.hashi");
+    assert_eq!(manifest["prefer_related_applications"], false);
+}

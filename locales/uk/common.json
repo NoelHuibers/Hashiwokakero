@@ -26,6 +26,11 @@
     "open_source": "Відкритий код на GitHub",
     "tech": "Rust · Leptos · Turso · власні розв’язувачі CDCL і DPLL"
   },
+  "apps": {
+    "label": "Застосунок",
+    "app_store": "Завантажте в App Store",
+    "google_play": "Завантажте з Google Play"
+  },
   "difficulty": {
     "easy": "Легкий",
     "medium": "Середній",

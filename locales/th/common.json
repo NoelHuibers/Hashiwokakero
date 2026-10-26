@@ -26,6 +26,11 @@
     "open_source": "โอเพนซอร์สบน GitHub",
     "tech": "Rust · Leptos · Turso · ตัวแก้ CDCL และ DPLL ของเราเอง"
   },
+  "apps": {
+    "label": "แอป",
+    "app_store": "ดาวน์โหลดบน App Store",
+    "google_play": "ดาวน์โหลดบน Google Play"
+  },
   "difficulty": {
     "easy": "ง่าย",
     "medium": "ปานกลาง",
