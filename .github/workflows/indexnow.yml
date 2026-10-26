@@ -1,0 +1,57 @@
+name: IndexNow
+# Tells Bing, Yandex and the other IndexNow engines which pages of hashi.rs changed
+# (scripts/indexnow.mjs, docs/seo.md), so they crawl them soon. Google doesn't take part, it reads
+# the sitemap on its own. Nothing is submitted while fly.toml's HASHI_INDEXNOW_KEY is empty.
+#
+# - After every deploy (CI's "IndexNow" job calls it): the sitemap's URLs that are new or have
+#   another <lastmod> than before the deploy, usually none.
+# - After midnight UTC: the pages of the new daily, the ones whose <lastmod> is today.
+# - By hand (Actions, Run workflow, or `gh workflow run indexnow.yml -f all=true`): every URL,
+#   once after registering the site or after changing many pages.
+on:
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+    inputs:
+      all:
+        description: Submit every URL of the sitemap
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      before:
+        description: The artifact with the sitemap before the deploy (sitemap-before.xml)
+        type: string
+        required: true
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    name: Submit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: inputs.before != ''
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.before }}
+      - name: Submit
+        run: |
+          set -o pipefail
+          args=()
+          if [ "$ALL" = true ]; then args+=(--all); fi
+          if [ -n "$BEFORE" ]; then args+=(--before sitemap-before.xml); fi
+          node scripts/indexnow.mjs "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+        env:
+          ALL: ${{ inputs.all }}
+          BEFORE: ${{ inputs.before }}

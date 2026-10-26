@@ -1096,6 +1096,16 @@ jobs:
       # What the site names its build once it runs this one (x-hashi-build): the WASM's hash
       - id: build
         run: echo "build=$(awk '$1 == "wasm:" { print $2 }' dist/hash.txt)" >> "$GITHUB_OUTPUT"
+      # The sitemap before the deploy, for IndexNow to submit what the deploy changes in it
+      # (indexnow.yml). Empty when the site doesn't answer: then only today's pages are submitted
+      - name: Sitemap before the deploy
+        run: |
+          curl -fsS --retry 3 https://hashi.rs/sitemap.xml -o sitemap-before.xml || : > sitemap-before.xml
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sitemap-before
+          path: sitemap-before.xml
+          retention-days: 1
       - uses: superfly/flyctl-actions/setup-flyctl@1.6
       - name: Deploy to fly
         # pipefail: a failed deploy must fail the job, not just print its last line
@@ -1114,6 +1124,15 @@ jobs:
     uses: ./.github/workflows/production-smoke.yml
     with:
       build: ${{ needs.deploy.outputs.build }}
+
+  # The pages the deploy added or changed in the sitemap, to the IndexNow search engines
+  # (.github/workflows/indexnow.yml, docs/seo.md). Holds nothing up; skipped without a key.
+  indexnow:
+    name: IndexNow
+    needs: deploy
+    uses: ./.github/workflows/indexnow.yml
+    with:
+      before: sitemap-before
 
   # Build on code PRs too: the packaged compatibility gate tests the exact worker artifact.
   build-dojo:
