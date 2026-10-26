@@ -11,4 +11,10 @@
 /android-screens
 /test-results-production
 /playwright-report-production
+/test-results-ios
+/test-results-ios.json
+/test-results-ios-device.json
+/test-results-ios-appium.log
+/playwright-report-ios
+/ios-screens
 /test-results-perf

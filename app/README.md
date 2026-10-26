@@ -669,8 +669,76 @@ pinned (`DEVELOPER_DIR`; the release uses the same). Like the Android build it t
 of "Build app (web)" and skips `beforeBuildCommand`. It runs Clippy for `aarch64-apple-ios`, builds
 the debug app for the simulator and checks that the build left `gen/apple` as committed and that the
 icons have no alpha channel. The app is the artifact `ios-simulator-app`, its size in the job
-summary. Then it starts the app on an iPhone 17 simulator of iOS 26.5, booted while the app builds,
-with hashi.rs blocked on the runner (no guest is made there; the start page shows its offline
-state): the job fails when the app doesn't start or doesn't run ten seconds later. A screenshot of
-it then is the artifact `ios-simulator-screenshot`; a failed run also keeps the simulator's log of
-the app and WebKit, `ios-simulator-log`. Not a required check.
+summary. Then it runs the [simulator test](#simulator-test) on an iPhone 17 simulator of iOS 26.5,
+booted while the app builds, with hashi.rs blocked on the runner. Not a required check.
+
+## Simulator test
+
+`e2e/ios/smoke.spec.ts`, with its own Playwright config (`e2e/ios.config.ts`), the counterpart of
+the [emulator test](#emulator-test): the debug app on an iOS simulator, its page driven through
+[Appium](https://appium.io)'s XCUITest driver. Playwright can't attach to a `WKWebView`; Appium
+reaches it through the simulator's WebKit inspector (Safari's Web Inspector), which debug builds
+allow (wry sets `isInspectable` with `debug_assertions`); the inspector lists it as `process-Hashi`,
+the name of the app's process, not by its bundle ID (the session's `additionalWebviewBundleIds`).
+Playwright Test still runs the tests, reports and retries like the Android ones;
+`e2e/ios/webdriver.ts` sends Appium the few WebDriver commands they need: scripts in the page
+(`execute`, which awaits a promise), clicks on its elements (WebDriver's click, a user's gesture),
+the driver's `mobile:` commands (clear, launch and activate an app, the app in front) and the page's
+console from the inspector.
+
+Each test clears the app's data and launches it (`mobile: clearApp`, `mobile: launchApp`), selects
+its page once the inspector lists it and waits for it to hydrate. Another page of the app is opened
+with WebDriver's navigation, which waits for the load event: a script sent while the document
+changes waits for the next one. WebDriver can't run a script before the page's own like Playwright's
+`addInitScript`: after every page load the test adds listeners for errors and
+`securitypolicyviolation` events and notes the page's `fetch`es, and the console of the inspector
+(Appium's `safariConsole` log) covers the start of the page. Any error, CSP message or answer from
+hashi.rs fails the test.
+
+What it checks: the app starts on its start page at `tauri://localhost`, with Tauri's bridge, an
+iPhone's user agent (`x-hashi-app: ios/...`) and the daily's offline state; no page breaks the
+content security policy (`/`, `/rules`, `/ja/rules`, `/practice`, `/create`, `/lab`, `/dojo`,
+`/groups`, `/daily`); practice generates through the native generator (Tauri's IPC is a fetch of
+`ipc://localhost/generate_puzzle` on iOS) and hints and checks without the server; the ranks show
+one offline notice, again after an `online` event; a link to GitHub and a `location` to another site
+leave the app's page where it is and bring Safari to the front. The screenshots `start.png`,
+`practice.png`, `practice-light.png` and `practice-dark.png` are the artifact
+`ios-simulator-screenshot`.
+
+Not checked, unlike on Android: `navigator.onLine` (the simulator has the Mac's network, only
+hashi.rs is blocked), the back button (iOS has none), App Links (Universal Links, step 13d), the
+copy button (a click on it froze the simulator's page for 25 s, the clipboard's sync with the Mac),
+and what step 13c changes: the safe areas (the header is under the status bar and the Dynamic
+Island, the tab bar over the home indicator), the share sheet, the status bar's style, the soft
+keyboard and a dark start. The light and dark screenshots show them, the job summary notes the
+safe-area insets and where the header starts; 13c turns them into checks.
+
+The debug build calls the production server when it can. The simulator has no airplane mode: the
+global setup refuses to run while hashi.rs answers from the Mac, and CI points hashi.rs to `0.0.0.0`
+in `/etc/hosts`.
+
+In CI, after the build: Appium (`APPIUM_VERSION`, `XCUITEST_VERSION` in the job, installed with npm)
+and the driver's prebuilt WebDriverAgent for simulators (`download-wda --kind sim`; building it with
+Xcode takes minutes), then the tests. A simulator is flaky like an emulator: the config retries a
+failed test once, and the job summary counts the flaky ones next to the device, the times of the
+build, Appium's setup and the tests, and each test's launch time. A failed run also uploads
+`ios-simulator-report`: the Playwright report (with each test's console), Appium's log and the
+simulator's log of the app and WebKit.
+
+On a Mac with Xcode, one booted simulator and the app built for it ([Building and
+running](#building-and-running-1)):
+
+
+
+```sh
+npm install --global appium@3.8.0 && appium driver install xcuitest@12.20.0
+sudo sh -c 'printf "0.0.0.0 hashi.rs\n:: hashi.rs\n" >> /etc/hosts'   # undo it afterwards
+pnpm run app:ios-e2e
+```
+
+The global setup installs the app (`E2E_IOS_APP=<path>` for another build), starts Appium unless
+one runs at `E2E_APPIUM_URL` (`http://127.0.0.1:4723`) and writes its log to
+`e2e/test-results-ios-appium.log`. Without `E2E_WDA` (the `.app` of `appium driver run xcuitest
+download-wda -- --kind sim --platform iOS --outdir <dir>`) Appium builds WebDriverAgent with Xcode
+on the first run. `E2E_SIMULATOR=<udid>` picks a simulator when more than one is booted. To look
+at the page while a test runs: Safari, Develop, the simulator, then `localhost`.

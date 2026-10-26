@@ -24,6 +24,7 @@
     "app:build": "cd app && trunk build --release",
     "app:e2e": "playwright test -c e2e/app.config.ts",
     "app:android-e2e": "playwright test -c e2e/android.config.ts",
+    "app:ios-e2e": "playwright test -c e2e/ios.config.ts",
     "smoke:production": "playwright test -c e2e/production.config.ts"
   },
   "devDependencies": {
