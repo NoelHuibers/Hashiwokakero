@@ -32,19 +32,32 @@ static void passOnLaunchLinks(Class delegateClass) {
 	}));
 }
 
-// tao names its scene delegate's class when UIKit asks the app for the scene's configuration,
-// before the first scene connects: that is when its method can be wrapped
+// tao registers its scene delegate's class before UIKit starts, and names it when UIKit asks the
+// app for a new scene's configuration. A scene restored from an earlier launch (the usual case
+// after the first one) isn't asked for: UIKit looks the class up by name. So the method is
+// wrapped once UIKit has given the application its delegate, before any scene connects, and when
+// the class is named, whichever comes first.
+static void replace(Class cls, SEL selector, id block, IMP *original) {
+	Method method = class_getInstanceMethod(cls, selector);
+	*original = method_getImplementation(method);
+	method_setImplementation(method, imp_implementationWithBlock(block));
+}
+
 static void watchSceneDelegates(void) {
-	SEL setDelegateClass = @selector(setDelegateClass:);
-	Method method = class_getInstanceMethod([UISceneConfiguration class], setDelegateClass);
-	typedef void (*SetDelegateClass)(id, SEL, Class);
-	SetDelegateClass original = (SetDelegateClass)method_getImplementation(method);
-	method_setImplementation(method, imp_implementationWithBlock(^(id configuration, Class delegateClass) {
+	static IMP setDelegate, setDelegateClass;
+	replace([UIApplication class], @selector(setDelegate:), ^(UIApplication *application, id delegate) {
+		((void (*)(id, SEL, id))setDelegate)(application, @selector(setDelegate:), delegate);
+		Class delegateClass = NSClassFromString(@"TaoSceneDelegate");
 		if (delegateClass) {
 			passOnLaunchLinks(delegateClass);
 		}
-		original(configuration, setDelegateClass, delegateClass);
-	}));
+	}, &setDelegate);
+	replace([UISceneConfiguration class], @selector(setDelegateClass:), ^(UISceneConfiguration *configuration, Class delegateClass) {
+		if (delegateClass) {
+			passOnLaunchLinks(delegateClass);
+		}
+		((void (*)(id, SEL, Class))setDelegateClass)(configuration, @selector(setDelegateClass:), delegateClass);
+	}, &setDelegateClass);
 }
 
 int main(int argc, char * argv[]) {
