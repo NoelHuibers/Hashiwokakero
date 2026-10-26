@@ -26,6 +26,11 @@
     "open_source": "在 GitHub 上开源",
     "tech": "Rust · Leptos · Turso · 自研 CDCL 与 DPLL 求解器"
   },
+  "apps": {
+    "label": "应用",
+    "app_store": "在 App Store 下载",
+    "google_play": "在 Google Play 上获取"
+  },
   "difficulty": {
     "easy": "简单",
     "medium": "中等",

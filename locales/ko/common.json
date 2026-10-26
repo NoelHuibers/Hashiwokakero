@@ -26,6 +26,11 @@
     "open_source": "GitHub 오픈 소스",
     "tech": "Rust · Leptos · Turso · 자체 CDCL·DPLL 솔버"
   },
+  "apps": {
+    "label": "앱",
+    "app_store": "App Store에서 다운로드",
+    "google_play": "Google Play에서 다운로드"
+  },
   "difficulty": {
     "easy": "쉬움",
     "medium": "보통",

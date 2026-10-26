@@ -248,6 +248,8 @@ mod configuration_tests {
                 "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B",
             ),
             ("HASHI_IOS_APP_IDS", "Q35TCGM5PW.rs.hashi"),
+            ("HASHI_APP_STORE_ID", "6826916346"),
+            ("HASHI_PLAY_PACKAGE", "rs.hashi"),
         ] {
             let with = |k: &str| {
                 (k == name)
@@ -261,6 +263,8 @@ mod configuration_tests {
             ("HASHI_APP_ORIGINS", "https://tauri.localhost/"),
             ("HASHI_ANDROID_CERT_SHA256", "bb:86:d4:c6"),
             ("HASHI_IOS_APP_IDS", "rs.hashi"),
+            ("HASHI_APP_STORE_ID", "id6826916346"),
+            ("HASHI_PLAY_PACKAGE", "hashi"),
         ] {
             let with = |k: &str| (k == name).then(|| value.to_string());
             let error = validate_settings(with).unwrap_err();

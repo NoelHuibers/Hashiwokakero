@@ -118,10 +118,27 @@ fn router_with_client_source<V: IntoView + 'static>(
             "/dojo/house",
             post(dojo::house_handler).layer(DefaultBodyLimit::max(::dojo::MAX_WASM_BYTES)),
         )
-        .leptos_routes(&leptos_options, routes, {
-            let leptos_options = leptos_options.clone();
-            move || shell(leptos_options.clone())
+        // The web app manifest, with the apps once they are in the stores
+        .route("/manifest.webmanifest", {
+            let manifest = apps.manifest();
+            get(move || {
+                let manifest = manifest.clone();
+                async move { ([(header::CONTENT_TYPE, "application/manifest+json")], manifest) }
+            })
         })
+        // The apps' stores, for the shell's tags and the footer's badges (`seo::AppStores`)
+        .leptos_routes_with_context(
+            &leptos_options,
+            routes,
+            {
+                let stores = apps.stores.clone();
+                move || leptos::prelude::provide_context(stores.clone())
+            },
+            {
+                let leptos_options = leptos_options.clone();
+                move || shell(leptos_options.clone())
+            },
+        )
         .fallback(leptos_axum::file_and_error_handler(shell))
         .layer(middleware::from_fn(super::limits::admission))
         // Before admission: an app too old to be answered costs nothing

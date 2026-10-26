@@ -26,6 +26,11 @@
     "open_source": "Sumber terbuka di GitHub",
     "tech": "Rust · Leptos · Turso · solver CDCL & DPLL buatan sendiri"
   },
+  "apps": {
+    "label": "Aplikasi",
+    "app_store": "Download di App Store",
+    "google_play": "Temukan di Google Play"
+  },
   "difficulty": {
     "easy": "Mudah",
     "medium": "Sedang",

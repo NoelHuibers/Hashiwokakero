@@ -62,6 +62,20 @@ Store credentials in the deployment platform's secret store.
   `application/json`) and Apple's copy,
   `https://app-site-association.cdn-apple.com/a/v1/hashi.rs`, which follows on
   Apple's own schedule.
+- `HASHI_APP_STORE_ID` and `HASHI_PLAY_PACKAGE`: optional, the apps' pages in the
+  stores, the iOS app's Apple ID (the digits of its `apps.apple.com/app/id…` link,
+  App Store Connect, App Information: `6826916346`) and the Android app's package
+  (`rs.hashi`). Public, in `fly.toml`, empty until the apps are live: set each once
+  its app is publicly available in its store, not before (the site would link to a
+  page that isn't there). With them, every page has Apple's Smart App Banner (iOS
+  only, `<meta name="apple-itunes-app">`, which also opens the installed app on the
+  same page), the footer the stores' official badges in the page's language
+  (`public/badges/`, unchanged artwork from Apple's and Google's badge tools; Apple
+  has none in Arabic and Hindi, Google none in Ukrainian, those get the English one),
+  the home page the apps as structured data (`MobileApplication`, `sameAs` of the
+  game), and `/manifest.webmanifest` the apps as `related_applications`
+  (`prefer_related_applications: false`, the site stays installable on its own).
+  Either one alone works too.
 
 A malformed value of any of them stops the server at startup.
 

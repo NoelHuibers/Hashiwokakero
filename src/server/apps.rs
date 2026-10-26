@@ -32,6 +32,7 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 
 use crate::api::{APP_HEADER, BUILD_HEADER, SESSION_HEADER};
 use crate::model::ApiError;
+use crate::seo::AppStores;
 
 /// The app's origins when `HASHI_APP_ORIGINS` isn't set: Android's `WebView` (with
 /// `useHttpsScheme`) and iOS's.
@@ -97,12 +98,20 @@ pub struct AppSettings {
     /// `HASHI_IOS_APP_IDS`: the app IDs of the iOS app, `<team ID>.<bundle ID>`. None: the
     /// site claims no app, `apple-app-site-association` is a 404.
     pub ios_app_ids: Vec<String>,
+    /// `HASHI_APP_STORE_ID` and `HASHI_PLAY_PACKAGE`: the apps' pages in the stores, which the
+    /// site advertises once they are set (`seo::AppStores`). Unset until the apps are live.
+    pub stores: AppStores,
 }
 
 impl AppSettings {
     /// Reads and checks the settings; a malformed one is an error, never ignored (the server
     /// refuses to start, see `validate_configuration`).
     pub fn from_env(var: impl Fn(&str) -> Option<String>) -> Result<Self, String> {
+        let setting = |name: &str| {
+            var(name)
+                .map(|v| v.trim().to_string())
+                .filter(|v| !v.is_empty())
+        };
         let min_version = match var("HASHI_APP_MIN_VERSION")
             .as_deref()
             .map(str::trim)
@@ -159,12 +168,60 @@ impl AppSettings {
                 })
                 .collect::<Result<_, _>>()?,
         };
+        let app_store = match setting("HASHI_APP_STORE_ID") {
+            None => None,
+            Some(id) if store_id(&id) => Some(id),
+            Some(id) => {
+                return Err(format!(
+                    "HASHI_APP_STORE_ID: {id:?} is no App Store ID like 6826916346, the digits of \
+                     the app's apps.apple.com/app/id… link (App Store Connect, App Information, \
+                     Apple ID)"
+                ));
+            }
+        };
+        let google_play = match setting("HASHI_PLAY_PACKAGE") {
+            None => None,
+            Some(package) if package_name(&package) => Some(package),
+            Some(package) => {
+                return Err(format!(
+                    "HASHI_PLAY_PACKAGE: {package:?} is no Android package name like rs.hashi"
+                ));
+            }
+        };
         Ok(Self {
             min_version,
             origins,
             android_certs,
             ios_app_ids,
+            stores: AppStores {
+                app_store,
+                google_play,
+            },
         })
+    }
+
+    /// The web app manifest (`/manifest.webmanifest`): `public/manifest.webmanifest`, and once
+    /// the apps are in the stores their pages as `related_applications`, so browsers know the
+    /// site's apps (`getInstalledRelatedApps`). `prefer_related_applications` is false: the
+    /// site works on its own, browsers shouldn't offer the store instead of installing it.
+    pub fn manifest(&self) -> String {
+        let mut manifest: serde_json::Value =
+            serde_json::from_str(include_str!("../../public/manifest.webmanifest"))
+                .expect("public/manifest.webmanifest is JSON");
+        let mut related = Vec::new();
+        if let (Some(package), Some(url)) =
+            (&self.stores.google_play, self.stores.google_play_url(None))
+        {
+            related.push(serde_json::json!({ "platform": "play", "url": url, "id": package }));
+        }
+        if let Some(url) = self.stores.app_store_url() {
+            related.push(serde_json::json!({ "platform": "itunes", "url": url }));
+        }
+        if !related.is_empty() {
+            manifest["related_applications"] = related.into();
+            manifest["prefer_related_applications"] = false.into();
+        }
+        manifest.to_string()
     }
 
     /// The Digital Asset Links of the site (`/.well-known/assetlinks.json`): the Android app
@@ -297,6 +354,22 @@ fn app_id(id: &str) -> bool {
             .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
         && bundle.split('.').all(|part| {
             !part.is_empty() && part.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        })
+}
+
+/// The Apple ID of an app in the App Store: its number, the digits in `apps.apple.com/app/id…`.
+fn store_id(id: &str) -> bool {
+    (1..=12).contains(&id.len()) && id.bytes().all(|b| b.is_ascii_digit()) && !id.starts_with('0')
+}
+
+/// An Android package name (application ID), the `id` of a Google Play link: at least two
+/// parts separated by dots, each a letter followed by letters, digits and `_`.
+fn package_name(package: &str) -> bool {
+    package.len() <= 150
+        && package.split('.').count() >= 2
+        && package.split('.').all(|part| {
+            part.starts_with(|c: char| c.is_ascii_alphabetic())
+                && part.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
         })
 }
 
@@ -638,5 +711,86 @@ mod tests {
             assert_eq!(outdated(min, &headers(value)), expected, "{value:?}");
             assert!(!outdated(None, &headers(value)), "{value:?}");
         }
+    }
+
+    /// The stores' IDs, once the apps are live: unset (or empty, as in fly.toml) there are none.
+    #[test]
+    fn the_stores_are_set_when_the_apps_are_live() {
+        assert!(settings(&[]).unwrap().stores.is_empty());
+        let empty = settings(&[("HASHI_APP_STORE_ID", ""), ("HASHI_PLAY_PACKAGE", " ")]).unwrap();
+        assert!(empty.stores.is_empty());
+        let both = settings(&[
+            ("HASHI_APP_STORE_ID", " 6826916346 "),
+            ("HASHI_PLAY_PACKAGE", "rs.hashi"),
+        ])
+        .unwrap();
+        assert_eq!(
+            both.stores,
+            AppStores {
+                app_store: Some("6826916346".into()),
+                google_play: Some("rs.hashi".into()),
+            }
+        );
+        assert!(settings(&[("HASHI_PLAY_PACKAGE", "com.example.my_app2")]).is_ok());
+        for (name, value) in [
+            ("HASHI_APP_STORE_ID", "id6826916346"),
+            (
+                "HASHI_APP_STORE_ID",
+                "https://apps.apple.com/app/id6826916346",
+            ),
+            ("HASHI_APP_STORE_ID", "0123"),
+            ("HASHI_APP_STORE_ID", "1234567890123"),
+            ("HASHI_APP_STORE_ID", "Q35TCGM5PW.rs.hashi"),
+            ("HASHI_PLAY_PACKAGE", "hashi"),
+            ("HASHI_PLAY_PACKAGE", "rs.hashi&hl=de"),
+            ("HASHI_PLAY_PACKAGE", "rs..hashi"),
+            ("HASHI_PLAY_PACKAGE", "rs.1hashi"),
+            ("HASHI_PLAY_PACKAGE", "rs.hashi,rs.other"),
+            (
+                "HASHI_PLAY_PACKAGE",
+                "https://play.google.com/store/apps/details?id=rs.hashi",
+            ),
+        ] {
+            let error = settings(&[(name, value)]).unwrap_err();
+            assert!(error.starts_with(name), "{value}: {error}");
+        }
+    }
+
+    /// The manifest is the site's file, with the apps once they are in the stores. Browsers
+    /// shouldn't prefer the stores to the site.
+    #[test]
+    fn the_manifest_names_the_apps_in_the_stores() {
+        let file: serde_json::Value =
+            serde_json::from_str(include_str!("../../public/manifest.webmanifest")).unwrap();
+        let without: serde_json::Value =
+            serde_json::from_str(&settings(&[]).unwrap().manifest()).unwrap();
+        assert_eq!(without, file);
+        assert_eq!(file["id"], "/");
+        assert_eq!(file["start_url"], "/");
+        assert!(file.get("related_applications").is_none());
+
+        let both = settings(&[
+            ("HASHI_APP_STORE_ID", "6826916346"),
+            ("HASHI_PLAY_PACKAGE", "rs.hashi"),
+        ])
+        .unwrap();
+        let with: serde_json::Value = serde_json::from_str(&both.manifest()).unwrap();
+        assert_eq!(
+            with["related_applications"],
+            serde_json::json!([
+                {
+                    "platform": "play",
+                    "url": "https://play.google.com/store/apps/details?id=rs.hashi",
+                    "id": "rs.hashi",
+                },
+                { "platform": "itunes", "url": "https://apps.apple.com/app/id6826916346" },
+            ])
+        );
+        assert_eq!(with["prefer_related_applications"], false);
+        assert_eq!(with["name"], file["name"]);
+        // One store alone
+        let ios = settings(&[("HASHI_APP_STORE_ID", "6826916346")]).unwrap();
+        let with: serde_json::Value = serde_json::from_str(&ios.manifest()).unwrap();
+        assert_eq!(with["related_applications"].as_array().unwrap().len(), 1);
     }
 }

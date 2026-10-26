@@ -26,6 +26,11 @@
     "open_source": "Open source na GitHubie",
     "tech": "Rust · Leptos · Turso · własne solvery CDCL i DPLL"
   },
+  "apps": {
+    "label": "Aplikacja",
+    "app_store": "Pobierz z App Store",
+    "google_play": "Pobierz z Google Play"
+  },
   "difficulty": {
     "easy": "Łatwy",
     "medium": "Średni",

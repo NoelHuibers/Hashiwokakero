@@ -138,6 +138,176 @@ pub fn app_link(url: &str) -> Option<String> {
     covered.then(|| format!("{path}{after}"))
 }
 
+/// The name of the `<meta>` that tells the browser which apps the site advertises.
+///
+/// Its content is [`AppStores::to_meta`]: the server writes it into every page (`app::shell`),
+/// the browser reads it while hydrating, so it renders the same badges as the server.
+pub const APP_STORES_META: &str = "hashi-app-stores";
+
+/// The App Store's name of the iOS app.
+pub const IOS_APP_NAME: &str = "Hashi: Daily Bridges";
+/// Google Play's name of the Android app.
+pub const ANDROID_APP_NAME: &str = "Hashi: Daily Bridges Puzzle";
+
+/// The apps' pages in the stores, from the server's settings.
+///
+/// `HASHI_APP_STORE_ID` and `HASHI_PLAY_PACKAGE` (`server::apps`). Nothing of them shows before
+/// they are set, so the site advertises no app that isn't in the store yet.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct AppStores {
+    /// The Apple ID of the iOS app, `6826916346`.
+    pub app_store: Option<String>,
+    /// The package name of the Android app, `rs.hashi`.
+    pub google_play: Option<String>,
+}
+
+impl AppStores {
+    pub const fn is_empty(&self) -> bool {
+        self.app_store.is_none() && self.google_play.is_none()
+    }
+
+    /// The iOS app's page. Without a country, Apple opens the visitor's own store.
+    pub fn app_store_url(&self) -> Option<String> {
+        self.app_store
+            .as_ref()
+            .map(|id| format!("https://apps.apple.com/app/id{id}"))
+    }
+
+    /// The Android app's page, in `locale`'s language if there is one.
+    pub fn google_play_url(&self, locale: Option<Locale>) -> Option<String> {
+        self.google_play.as_ref().map(|package| {
+            let url = format!("https://play.google.com/store/apps/details?id={package}");
+            match locale {
+                Some(locale) => format!("{url}&hl={}", play_language(locale)),
+                None => url,
+            }
+        })
+    }
+
+    /// Apple's Smart App Banner for the page at `url` (`<meta name="apple-itunes-app">`):
+    /// Safari on iOS shows the app above the page, with "Open" once it is installed, which
+    /// hands the app the page's URL.
+    pub fn smart_banner(&self, url: &str) -> Option<String> {
+        self.app_store
+            .as_ref()
+            .map(|id| format!("app-id={id}, app-argument={url}"))
+    }
+
+    /// The content of the [`APP_STORES_META`] tag, `app-store=6826916346, google-play=rs.hashi`.
+    pub fn to_meta(&self) -> String {
+        let stores = [
+            self.app_store.as_ref().map(|id| format!("app-store={id}")),
+            self.google_play
+                .as_ref()
+                .map(|package| format!("google-play={package}")),
+        ];
+        stores.into_iter().flatten().collect::<Vec<_>>().join(", ")
+    }
+
+    /// The stores of a [`to_meta`](Self::to_meta) text. Values with anything but letters,
+    /// digits, `.` and `_` are left out.
+    pub fn from_meta(content: &str) -> Self {
+        let mut stores = Self::default();
+        for entry in content.split(',') {
+            let Some((store, value)) = entry.trim().split_once('=') else {
+                continue;
+            };
+            let value = value.trim();
+            let plain = !value.is_empty()
+                && value
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'_');
+            if !plain {
+                continue;
+            }
+            match store.trim() {
+                "app-store" => stores.app_store = Some(value.to_string()),
+                "google-play" => stores.google_play = Some(value.to_string()),
+                _ => {}
+            }
+        }
+        stores
+    }
+
+    /// The apps as structured data, for the home page: a `MobileApplication` (and `VideoGame`)
+    /// per store, and the game of [`site_ld`] with the store pages as its `sameAs`. `None`
+    /// without stores.
+    pub fn apps_ld(&self, locale: Locale) -> Option<String> {
+        if self.is_empty() {
+            return None;
+        }
+        let app = |id: &str, name: &str, os: &str, url: &str| {
+            json!({
+                "@type": ["MobileApplication", "VideoGame"],
+                "@id": format!("{SITE_URL}/#{id}"),
+                "name": name,
+                "url": url,
+                "installUrl": url,
+                "operatingSystem": os,
+                "applicationCategory": "GameApplication",
+                "genre": ["Puzzle", "Logic"],
+                "playMode": "SinglePlayer",
+                "description": td_string!(locale, common.ld.game),
+                "image": og_image(locale),
+                "inLanguage": Locale::get_all().iter().map(|l| l.as_str()).collect::<Vec<_>>(),
+                "isAccessibleForFree": true,
+                "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+                "author": { "@id": format!("{SITE_URL}/#author") },
+            })
+        };
+        let mut graph = Vec::new();
+        let mut same_as = Vec::new();
+        if let Some(url) = self.app_store_url() {
+            graph.push(app("ios-app", IOS_APP_NAME, "iOS 16.4 or later", &url));
+            same_as.push(url);
+        }
+        if let Some(url) = self.google_play_url(None) {
+            graph.push(app(
+                "android-app",
+                ANDROID_APP_NAME,
+                "Android 7.0 or later",
+                &url,
+            ));
+            same_as.push(url);
+        }
+        graph.push(json!({ "@id": format!("{SITE_URL}/#game"), "sameAs": same_as }));
+        Some(json!({ "@context": "https://schema.org", "@graph": graph }).to_string())
+    }
+}
+
+/// Google Play's name of a language (`hl`).
+fn play_language(locale: Locale) -> &'static str {
+    match locale {
+        Locale::pt => "pt-BR",
+        Locale::zh => "zh-CN",
+        Locale::zh_Hant => "zh-TW",
+        _ => locale.as_str(),
+    }
+}
+
+/// The stores the server advertises (see [`AppStores`]). On the server the router's settings,
+/// in the browser the page's [`APP_STORES_META`] tag, in the app none: it is the app.
+pub fn use_app_stores() -> AppStores {
+    #[cfg(feature = "ssr")]
+    {
+        use_context::<AppStores>().unwrap_or_default()
+    }
+    #[cfg(all(feature = "hydrate", not(feature = "ssr")))]
+    {
+        document()
+            .query_selector(&format!("meta[name={APP_STORES_META}]"))
+            .ok()
+            .flatten()
+            .and_then(|meta| meta.get_attribute("content"))
+            .map(|content| AppStores::from_meta(&content))
+            .unwrap_or_default()
+    }
+    #[cfg(not(any(feature = "ssr", feature = "hydrate")))]
+    {
+        AppStores::default()
+    }
+}
+
 /// The preview image (`og:image`) of the pages in a language, drawn by `server::og`.
 pub fn og_image(locale: Locale) -> String {
     format!("{SITE_URL}/og/{}.png", locale.as_str())
@@ -722,6 +892,122 @@ mod tests {
             server_link_in(true, "/dojo/seasons/3/results.csv"),
             "https://hashi.rs/dojo/seasons/3/results.csv"
         );
+    }
+
+    fn both_stores() -> AppStores {
+        AppStores {
+            app_store: Some("6826916346".into()),
+            google_play: Some("rs.hashi".into()),
+        }
+    }
+
+    /// The stores' pages, the Smart App Banner, and the tag the browser reads them back from.
+    #[test]
+    fn the_apps_link_to_their_stores() {
+        let stores = both_stores();
+        assert_eq!(
+            stores.app_store_url().as_deref(),
+            Some("https://apps.apple.com/app/id6826916346")
+        );
+        assert_eq!(
+            stores.google_play_url(None).as_deref(),
+            Some("https://play.google.com/store/apps/details?id=rs.hashi")
+        );
+        for (locale, hl) in [
+            (Locale::de, "de"),
+            (Locale::pt, "pt-BR"),
+            (Locale::zh, "zh-CN"),
+            (Locale::zh_Hant, "zh-TW"),
+        ] {
+            assert_eq!(
+                stores.google_play_url(Some(locale)),
+                Some(format!(
+                    "https://play.google.com/store/apps/details?id=rs.hashi&hl={hl}"
+                ))
+            );
+        }
+        assert_eq!(
+            stores.smart_banner("https://hashi.rs/de/rules").as_deref(),
+            Some("app-id=6826916346, app-argument=https://hashi.rs/de/rules")
+        );
+        assert_eq!(
+            stores.to_meta(),
+            "app-store=6826916346, google-play=rs.hashi"
+        );
+        assert_eq!(AppStores::from_meta(&stores.to_meta()), stores);
+
+        let none = AppStores::default();
+        assert!(none.is_empty());
+        assert_eq!(none.app_store_url(), None);
+        assert_eq!(none.google_play_url(Some(Locale::de)), None);
+        assert_eq!(none.smart_banner("https://hashi.rs/"), None);
+        assert_eq!(none.to_meta(), "");
+        assert_eq!(AppStores::from_meta(""), none);
+        assert_eq!(none.apps_ld(Locale::en), None);
+
+        // One store alone, and nothing the tag shouldn't have
+        let android = AppStores::from_meta("google-play=rs.hashi");
+        assert_eq!(android.app_store, None);
+        assert_eq!(android.smart_banner("https://hashi.rs/"), None);
+        assert_eq!(
+            AppStores::from_meta("app-store=1\"><script>, google-play=x y, other=1"),
+            AppStores::default()
+        );
+    }
+
+    /// The apps as Google reads software: each a `MobileApplication`, free, with its store page,
+    /// and the game of the website names them as the same game.
+    #[test]
+    fn the_apps_are_software_google_reads() {
+        let ld: serde_json::Value =
+            serde_json::from_str(&both_stores().apps_ld(Locale::ja).unwrap()).unwrap();
+        assert_eq!(ld["@context"], "https://schema.org");
+        let graph = ld["@graph"].as_array().unwrap();
+        assert_eq!(graph.len(), 3);
+        for (app, name, url) in [
+            (
+                &graph[0],
+                IOS_APP_NAME,
+                "https://apps.apple.com/app/id6826916346",
+            ),
+            (
+                &graph[1],
+                ANDROID_APP_NAME,
+                "https://play.google.com/store/apps/details?id=rs.hashi",
+            ),
+        ] {
+            assert_eq!(app["@type"], json!(["MobileApplication", "VideoGame"]));
+            assert_eq!(app["name"], name);
+            assert_eq!(app["url"], url);
+            assert_eq!(app["installUrl"], url);
+            assert_eq!(app["applicationCategory"], "GameApplication");
+            assert_eq!(app["offers"]["price"], "0");
+            assert!(
+                app["operatingSystem"]
+                    .as_str()
+                    .unwrap()
+                    .contains(" or later")
+            );
+            assert_eq!(app["description"], td_string!(Locale::ja, common.ld.game));
+            assert_eq!(app["author"]["@id"], format!("{SITE_URL}/#author"));
+        }
+        assert_eq!(graph[2]["@id"], format!("{SITE_URL}/#game"));
+        assert_eq!(
+            graph[2]["sameAs"],
+            json!([
+                "https://apps.apple.com/app/id6826916346",
+                "https://play.google.com/store/apps/details?id=rs.hashi"
+            ])
+        );
+        // The game's node is the one of the home page's other structured data
+        assert!(site_ld(Locale::ja).contains(&format!("\"@id\":\"{SITE_URL}/#game\"")));
+        let ios = AppStores {
+            app_store: Some("6826916346".into()),
+            google_play: None,
+        };
+        let ld: serde_json::Value =
+            serde_json::from_str(&ios.apps_ld(Locale::en).unwrap()).unwrap();
+        assert_eq!(ld["@graph"].as_array().unwrap().len(), 2);
     }
 
     #[test]

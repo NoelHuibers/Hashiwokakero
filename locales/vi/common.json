@@ -26,6 +26,11 @@
     "open_source": "Mã nguồn mở trên GitHub",
     "tech": "Rust · Leptos · Turso · bộ giải CDCL & DPLL tự viết"
   },
+  "apps": {
+    "label": "Ứng dụng",
+    "app_store": "Tải về trên App Store",
+    "google_play": "Tải nội dung trên Google Play"
+  },
   "difficulty": {
     "easy": "Dễ",
     "medium": "Vừa",

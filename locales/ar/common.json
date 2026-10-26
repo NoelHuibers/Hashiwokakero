@@ -26,6 +26,11 @@
     "open_source": "مفتوح المصدر على GitHub",
     "tech": "Rust · Leptos · Turso · حلّالات CDCL وDPLL من صنعنا"
   },
+  "apps": {
+    "label": "التطبيق",
+    "app_store": "حمّل من App Store",
+    "google_play": "احصل عليه من Google Play"
+  },
   "difficulty": {
     "easy": "سهل",
     "medium": "متوسط",

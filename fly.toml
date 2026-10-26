@@ -21,6 +21,12 @@ primary_region = "ams"
   # (/.well-known/apple-app-site-association, docs/deployment.md); public, it is in every signed
   # build of the app. More go after it, comma separated.
   HASHI_IOS_APP_IDS = "Q35TCGM5PW.rs.hashi"
+  # The apps' pages in the stores, for the site's Smart App Banner, store badges, structured data
+  # and manifest (docs/deployment.md); empty until the apps are live in the stores. The Apple ID
+  # of the iOS app (App Store Connect, App Information): 6826916346
+  HASHI_APP_STORE_ID = ""
+  # The Android app's package in Google Play: rs.hashi
+  HASHI_PLAY_PACKAGE = ""
 
 [http_service]
   internal_port = 8080
