@@ -10,10 +10,12 @@
 //! on iOS), so its calls are cross-origin: [`AppSettings::cors`] allows them, for those origins
 //! only (`HASHI_APP_ORIGINS`). No credentials: the app sends its session as a bearer token.
 //!
-//! Links to some pages of `https://hashi.rs` open in the Android app instead of the browser (App
-//! Links, `seo::app_link`). Android believes the app only when the site names the app's
-//! certificates: [`AppSettings::asset_links`], served at `/.well-known/assetlinks.json`
-//! (`HASHI_ANDROID_CERT_SHA256`).
+//! Links to some pages of `https://hashi.rs` open in the app instead of the browser (App Links on
+//! Android, Universal Links on iOS, `seo::app_link`). The phone believes the app only when the
+//! site names it: Android its certificates, [`AppSettings::asset_links`] at
+//! `/.well-known/assetlinks.json` (`HASHI_ANDROID_CERT_SHA256`), iOS its app ID,
+//! [`AppSettings::apple_app_site_association`] at `/.well-known/apple-app-site-association`
+//! (`HASHI_IOS_APP_IDS`).
 
 use std::str::FromStr;
 use std::time::Duration;
@@ -92,6 +94,9 @@ pub struct AppSettings {
     /// `HASHI_ANDROID_CERT_SHA256`: the SHA-256 fingerprints of the certificates the Android app
     /// is signed with, `AB:CD:…`. None: the site claims no app, `assetlinks.json` is a 404.
     pub android_certs: Vec<String>,
+    /// `HASHI_IOS_APP_IDS`: the app IDs of the iOS app, `<team ID>.<bundle ID>`. None: the
+    /// site claims no app, `apple-app-site-association` is a 404.
+    pub ios_app_ids: Vec<String>,
 }
 
 impl AppSettings {
@@ -135,10 +140,30 @@ impl AppSettings {
                 })
                 .collect::<Result<_, _>>()?,
         };
+        let ios_app_ids = match var("HASHI_IOS_APP_IDS")
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+        {
+            None => Vec::new(),
+            Some(ids) => ids
+                .split(',')
+                .map(|id| {
+                    let id = id.trim();
+                    app_id(id).then(|| id.to_string()).ok_or_else(|| {
+                        format!(
+                            "HASHI_IOS_APP_IDS: {id:?} is no app ID like ABCDE12345.rs.hashi, the \
+                             team ID (10 uppercase letters and digits) and the bundle ID"
+                        )
+                    })
+                })
+                .collect::<Result<_, _>>()?,
+        };
         Ok(Self {
             min_version,
             origins,
             android_certs,
+            ios_app_ids,
         })
     }
 
@@ -163,6 +188,29 @@ impl AppSettings {
             },
         }]);
         Some(links.to_string())
+    }
+
+    /// The site's `apple-app-site-association` (`/.well-known/`): the iOS apps of `ios_app_ids`
+    /// may open its App Links (`seo::app_link_components`, the pages Android's intent filter
+    /// lists). Apple's CDN fetches it from the site, iOS from the CDN when the app is installed
+    /// or updated, and opens the links in the app only if its app ID is listed and its
+    /// entitlements name `applinks:hashi.rs`. `None` without app IDs.
+    ///
+    /// No `webcredentials`: the app's entitlements would have to name the site for those too,
+    /// and the deep-link plugin writes its Associated Domains on every build.
+    pub fn apple_app_site_association(&self) -> Option<String> {
+        if self.ios_app_ids.is_empty() {
+            return None;
+        }
+        let association = serde_json::json!({
+            "applinks": {
+                "details": [{
+                    "appIDs": self.ios_app_ids,
+                    "components": crate::seo::app_link_components(),
+                }],
+            },
+        });
+        Some(association.to_string())
     }
 
     /// Cross-origin calls from the app: its origins, and in development (`dev`) any port of
@@ -234,6 +282,21 @@ fn fingerprint(cert: &str) -> bool {
                 && byte
                     .bytes()
                     .all(|b| b.is_ascii_digit() || (b'A'..=b'F').contains(&b))
+        })
+}
+
+/// An app ID of an iOS app as Apple's developer portal shows it: the team ID, ten uppercase
+/// letters and digits, a dot and the bundle ID (letters, digits, `-`, parts separated by dots).
+fn app_id(id: &str) -> bool {
+    let Some((team, bundle)) = id.split_once('.') else {
+        return false;
+    };
+    team.len() == 10
+        && team
+            .bytes()
+            .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
+        && bundle.split('.').all(|part| {
+            !part.is_empty() && part.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
         })
 }
 
@@ -345,6 +408,8 @@ mod tests {
         assert_eq!(defaults.min_version, None);
         assert_eq!(defaults.android_certs, Vec::<String>::new());
         assert_eq!(defaults.asset_links(), None);
+        assert_eq!(defaults.ios_app_ids, Vec::<String>::new());
+        assert_eq!(defaults.apple_app_site_association(), None);
         assert_eq!(
             defaults.origins,
             ["https://tauri.localhost", "tauri://localhost"]
@@ -411,6 +476,26 @@ mod tests {
                 "{certs:?}: {error}"
             );
         }
+        for ids in [
+            // The team ID alone, or the bundle ID
+            "Q35TCGM5PW",
+            "rs.hashi",
+            "Q35TCGM5PW.",
+            ".rs.hashi",
+            // Lowercase, too short, too long
+            "q35tcgm5pw.rs.hashi",
+            "Q35TCGM5P.rs.hashi",
+            "Q35TCGM5PWX.rs.hashi",
+            "Q35TCGM5PW.rs..hashi",
+            "Q35TCGM5PW.rs.hashi.",
+            "Q35TCGM5PW.rs hashi",
+            "Q35TCGM5PW.rs.hashi,",
+            "Q35TCGM5PW.rs.hashi;Q35TCGM5PW.rs.hashi.beta",
+            "Q35TCGM5PW.*",
+        ] {
+            let error = settings(&[("HASHI_IOS_APP_IDS", ids)]).unwrap_err();
+            assert!(error.contains("HASHI_IOS_APP_IDS"), "{ids:?}: {error}");
+        }
     }
 
     /// The upload key's certificate (fly.toml) and another one, as Play's would be.
@@ -447,6 +532,45 @@ mod tests {
                 .asset_links(),
             None
         );
+    }
+
+    /// The app ID of fly.toml, or several: each app may open the site's links, all of them.
+    #[test]
+    fn the_association_names_the_ios_apps() {
+        let one = settings(&[("HASHI_IOS_APP_IDS", "Q35TCGM5PW.rs.hashi")]).unwrap();
+        assert_eq!(one.ios_app_ids, ["Q35TCGM5PW.rs.hashi"]);
+        let association: serde_json::Value =
+            serde_json::from_str(&one.apple_app_site_association().unwrap()).unwrap();
+        assert_eq!(
+            association,
+            serde_json::json!({
+                "applinks": {
+                    "details": [{
+                        "appIDs": ["Q35TCGM5PW.rs.hashi"],
+                        "components": crate::seo::app_link_components(),
+                    }],
+                },
+            })
+        );
+        let two = settings(&[(
+            "HASHI_IOS_APP_IDS",
+            " Q35TCGM5PW.rs.hashi , A1B2C3D4E5.rs.hashi-beta\n",
+        )])
+        .unwrap();
+        assert_eq!(
+            two.ios_app_ids,
+            ["Q35TCGM5PW.rs.hashi", "A1B2C3D4E5.rs.hashi-beta"]
+        );
+        assert_eq!(
+            settings(&[("HASHI_IOS_APP_IDS", " ")])
+                .unwrap()
+                .apple_app_site_association(),
+            None
+        );
+        // One platform's setting claims nothing for the other
+        let android = settings(&[("HASHI_ANDROID_CERT_SHA256", UPLOAD_CERT)]).unwrap();
+        assert_eq!(android.apple_app_site_association(), None);
+        assert_eq!(one.asset_links(), None);
     }
 
     #[test]

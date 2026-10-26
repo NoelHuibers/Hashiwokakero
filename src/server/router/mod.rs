@@ -7,7 +7,7 @@ use axum::extract::{DefaultBodyLimit, Request};
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse as _, Response};
-use axum::routing::{get, post};
+use axum::routing::{MethodRouter, get, post};
 use leptos::config::Env;
 use leptos::prelude::{IntoView, LeptosOptions};
 use leptos_axum::{LeptosRoutes, generate_route_list};
@@ -54,28 +54,17 @@ fn router_with_client_source<V: IntoView + 'static>(
     let min_version = apps.min_version;
     // The app's dev server runs on localhost, see `AppSettings::cors`
     let cors = apps.cors(leptos_options.env != Env::PROD);
-    let asset_links = apps.asset_links();
     Router::new()
-        // Which Android app may open the site's links (see `AppSettings::asset_links`). Google's
-        // verifier fetches it: no redirect, and admission only budgets expensive calls
+        // Which Android app may open the site's links (see `AppSettings::asset_links`), and which
+        // iOS app (`AppSettings::apple_app_site_association`). Google's verifier and Apple's CDN
+        // fetch them: no redirect, and admission only budgets expensive calls
         .route(
             "/.well-known/assetlinks.json",
-            get(move || {
-                let asset_links = asset_links.clone();
-                async move {
-                match asset_links {
-                    Some(json) => (
-                        [
-                            (header::CONTENT_TYPE, "application/json"),
-                            (header::CACHE_CONTROL, "public, max-age=3600"),
-                        ],
-                        json,
-                    )
-                        .into_response(),
-                    None => StatusCode::NOT_FOUND.into_response(),
-                }
-                }
-            }),
+            app_association(apps.asset_links()),
+        )
+        .route(
+            "/.well-known/apple-app-site-association",
+            app_association(apps.apple_app_site_association()),
         )
         .route(
             "/sitemap.xml",
@@ -202,6 +191,27 @@ fn wasm_hash(hashes: &str) -> Option<&str> {
 /// always have a content hash in their names (scripts/fonts.mjs). Errors are never cached for
 /// good: a hashed name that isn't there yet (a page from another deploy) would stay broken.
 /// A response with the app's session token (see `auth`) is stored nowhere.
+/// A file of `/.well-known` that names the site's apps, JSON, cached for an hour: a 404 without
+/// one (`None`), which the phone takes as no app.
+fn app_association<S: Clone + Send + Sync + 'static>(json: Option<String>) -> MethodRouter<S> {
+    get(move || {
+        let json = json.clone();
+        async move {
+            match json {
+                Some(json) => (
+                    [
+                        (header::CONTENT_TYPE, "application/json"),
+                        (header::CACHE_CONTROL, "public, max-age=3600"),
+                    ],
+                    json,
+                )
+                    .into_response(),
+                None => StatusCode::NOT_FOUND.into_response(),
+            }
+        }
+    })
+}
+
 async fn cache_control(hash_files: bool, req: Request, next: Next) -> Response {
     let path = req.uri().path();
     let immutable = (hash_files && path.starts_with("/pkg/"))

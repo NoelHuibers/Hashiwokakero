@@ -122,35 +122,58 @@ reload), the headers, one update toast however many calls the server refuses, an
 
 ## App Links
 
-Where the app is installed, Android opens links to some pages of `https://hashi.rs` in the app
-instead of the browser, the ones people send each other: an invite to a group (`/g/<code>`), the
-daily (`/`, where a daily result's share text points), practice (`/practice`, the practice's),
-the groups (`/groups`, `/groups/...`) and players' pages (`/player/<id>`), each in every language
-(`/ja/g/<code>`). Not the rules, the legal pages, the admin's, the Dojo with its uploads, or
-anything the server answers itself (`/api`, `/og`, the downloads). `seo::APP_LINK_PATHS` and
-`APP_LINK_PREFIXES` list them, and `plugins.deep-link.mobile` in `src-tauri/tauri.conf.json` for
-Android (a test in `seo.rs` compares the two and prints the JSON to paste after a change, a new
-language say).
+Where the app is installed, the phone opens links to some pages of `https://hashi.rs` in the app
+instead of the browser (App Links on Android, Universal Links on iOS), the ones people send each
+other: an invite to a group (`/g/<code>`), the daily (`/`, where a daily result's share text
+points), practice (`/practice`, the practice's), the groups (`/groups`, `/groups/...`) and
+players' pages (`/player/<id>`), each in every language (`/ja/g/<code>`). Not the rules, the legal
+pages, the admin's, the Dojo with its uploads, or anything the server answers itself (`/api`,
+`/og`, the downloads). `seo::APP_LINK_PATHS` and `APP_LINK_PREFIXES` list them;
+`plugins.deep-link.mobile` in `src-tauri/tauri.conf.json` for Android, `seo::app_link_components`
+for iOS. Tests in `seo.rs` compare the three (and print the JSON to paste after a change, a new
+language say) and check that Apple's patterns match the same paths as Android's.
 
-- **The app:** `tauri-plugin-deep-link` (official) writes an intent filter with
-  `android:autoVerify="true"` for these paths into the manifest when the app is built (between its
-  `DEEP LINK PLUGIN` markers, committed like the rest of `gen/android`). The page asks the plugin
-  for the link the app started with (`get_current`, allowed in the capabilities) and listens for
-  the next ones (Tauri's event `deep-link://new-url`), and its router shows their page
-  (`api::native::follow_app_links`), keeping the language of the link: the one the app started
-  with instead of the start page, later ones on top of the page the app was on, which the back
-  button goes back to. Other URLs change nothing. The link never becomes a navigation of the
-  `WebView`, so the guard that sends other sites to the browser (`on_navigation`) doesn't see it.
-  Links to these pages from the app's own pages: there are none (share and invite links are
-  copied or shared, not followed); one would go to Android, which brings it back to the app.
-- **The server** says which app may open its links: `/.well-known/assetlinks.json` names
-  `rs.hashi` and the SHA-256 fingerprints of its signing certificates, from
+- **The app:** `tauri-plugin-deep-link` (official) writes, when the app is built, an intent
+  filter with `android:autoVerify="true"` for these paths into the manifest (between its
+  `DEEP LINK PLUGIN` markers, committed like the rest of `gen/android`), and `applinks:hashi.rs`
+  into the Associated Domains of the iOS app's entitlements (`gen/apple`, committed; the iOS job
+  fails if a build changes them). iOS takes the paths from the site, not from the app. The page
+  asks the plugin for the link the app started with (`get_current`, allowed in the capabilities)
+  and listens for the next ones (Tauri's event `deep-link://new-url`), the same on both platforms,
+  and its router shows their page (`api::native::follow_app_links`), keeping the language of the
+  link: the one the app started with instead of the start page, later ones on top of the page the
+  app was on, which the back button goes back to. Other URLs change nothing. The link never becomes
+  a navigation of the `WebView`, so the guard that sends other sites to the browser
+  (`on_navigation`) doesn't see it. Links to these pages from the app's own pages: there are none
+  (share and invite links are copied or shared, not followed); one would go to the system, which
+  brings it back to the app.
+- **iOS** hands a Universal Link to the app delegate (`application:continueUserActivity:`), at a
+  cold start right after launching too. Tao turns it into Tauri's `RunEvent::Opened`, where the
+  plugin keeps it for `get_current` and sends the event. The app has no scene manifest in its
+  `Info.plist`, so it runs on the app delegate's lifecycle; with scenes a cold start's link would
+  come in `scene:willConnectToSession:options:`, which tao 0.37 doesn't pass on. Universal Links
+  open the app when a link is tapped in another app (Messages, Mail, Safari from another site);
+  typed into Safari's address bar, or tapped on a page of hashi.rs itself, they stay in Safari.
+- **The server** says which app may open its links. For Android `/.well-known/assetlinks.json`
+  names `rs.hashi` and the SHA-256 fingerprints of its signing certificates, from
   `HASHI_ANDROID_CERT_SHA256` (docs/deployment.md; a 404 without it). Android fetches it when the
   app is installed and opens the links in the app only if the installed app's certificate is
   listed. The upload key's is in `fly.toml` (it signs the APK of the GitHub release); the app from
   Play is signed by Google, whose certificate the owner adds once the app is in Play
   (docs/mobile.md, owner tasks). Debug builds (`rs.hashi.debug`) are never verified: the links
   open them only when an intent names the package, as the emulator test's do.
+- For iOS `/.well-known/apple-app-site-association` (no extension, `application/json`) names the
+  app ID `Q35TCGM5PW.rs.hashi` (team ID and bundle ID, from `HASHI_IOS_APP_IDS` in `fly.toml`; a
+  404 without it) and the paths as `components`: `{"/": "/practice"}` for a page, `{"/": "/g/*"}`
+  for the pages below a prefix. The exact file is `src/golden/files/apple-app-site-association.json`.
+  iOS doesn't fetch it from the site but from Apple's CDN
+  (`https://app-site-association.cdn-apple.com/a/v1/hashi.rs`), which refreshes it now and then:
+  after a change of the paths, phones can take a while to see it (installs and updates fetch it). A build
+  only gets the links when it is signed with the team (`bundle.iOS.developmentTeam`) and its
+  provisioning profile has Associated Domains, so the unsigned simulator build in CI never opens
+  them (`xcrun simctl openurl` sends them to Safari). On a device with a TestFlight build:
+  Settings, Developer, Universal Links (with the developer mode on) diagnoses a URL, and
+  `swcutil` on a Mac shows what the device fetched.
 
 ## Offline
 
@@ -516,7 +539,7 @@ cargo tauri ios build --ci --target aarch64 --export-method app-store-connect \
 The key's `.p8` goes into a file in the runner's temp dir, which is deleted at the end of the
 job, also when the job fails. Tauri gets it through `APPLE_API_KEY`, `APPLE_API_ISSUER` and
 `APPLE_API_KEY_PATH`, and the team through `APPLE_DEVELOPMENT_TEAM` (`Q35TCGM5PW`, in the
-workflow). It archives the app unsigned. Xcode then exports the archive with automatic signing
+workflow; the same as `bundle.iOS.developmentTeam`, which it overrides). It archives the app unsigned. Xcode then exports the archive with automatic signing
 (`-allowProvisioningUpdates` with `-authenticationKeyPath`, `-authenticationKeyID` and
 `-authenticationKeyIssuerID`): it makes or reuses the team's cloud-managed Apple Distribution
 certificate and the App Store profile of `rs.hashi`. Its private key stays with Apple, and no
@@ -632,8 +655,10 @@ cargo tauri ios dev                                            # a simulator, wi
 
 `--no-sign` builds without a team or a certificate, enough for the simulator. Xcode's build phase
 "Build Rust Code" calls `cargo tauri ios xcode-script`, which builds the library for the
-architecture Xcode asks for. No development team is set in the project: the release workflow
-passes it, with an App Store Connect API key ([iOS releases](#ios-releases)). After a Tauri update, compare
+architecture Xcode asks for. The development team is `Q35TCGM5PW` (`bundle.iOS.developmentTeam`),
+which Tauri writes into the Xcode project as `DEVELOPMENT_TEAM` on every build (committed, so a
+build leaves the project as it is). It signs nothing without a certificate: the release workflow
+signs with the team's App Store Connect API key ([iOS releases](#ios-releases)). After a Tauri update, compare
 `gen/apple` with a fresh `cargo tauri ios init --ci` (on a Mac, or in a temporary CI step that
 uploads the directory as an artifact): the template changes with Tauri.
 

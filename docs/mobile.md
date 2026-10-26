@@ -107,9 +107,14 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
   `HashiPlugin.kt`), and the WebView never leaves the app's pages. The page draws behind the
   system bars: the app passes their sizes in as CSS variables (`--app-inset-*`), and the bars'
   icons follow the page's theme. The page ends above the soft keyboard.
-- App Links: links to the pages people share (an invite `/g/<code>`, the daily, practice, groups,
-  players, in every language) open in the app where it is installed, on their page
-  (tauri-plugin-deep-link; `/.well-known/assetlinks.json` names the app's certificates).
+- App Links (Android) and Universal Links (iOS): links to the pages people share (an invite
+  `/g/<code>`, the daily, practice, groups, players, in every language) open in the app where it
+  is installed, on their page (tauri-plugin-deep-link). The site names the app:
+  `/.well-known/assetlinks.json` its certificates (`HASHI_ANDROID_CERT_SHA256`),
+  `/.well-known/apple-app-site-association` its app ID (`HASHI_IOS_APP_IDS`), both 404 without
+  the setting. Android takes the paths from the installed app, iOS from the site's file: a path
+  added to `seo::APP_LINK_PATHS`/`APP_LINK_PREFIXES` opens older iOS apps too, whose router
+  ignores it (they stay on their page). Add one only once the app that shows it is out.
 
 ## Steps
 
@@ -132,7 +137,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 13a | iOS project (`gen/apple`) and a simulator build in CI | 8, 9 | ✓ #147 |
 | 13b | iOS simulator smoke test in CI: the simulator build on a booted simulator, offline, like 10a | 13a | |
 | 13c | iOS polish: safe areas (notch, home indicator), share sheet in Swift like `HashiPlugin.kt`, status bar, soft keyboard, links out | 13a | |
-| 13d | Universal Links: `apple-app-site-association` served from config, Associated Domains; needs the Team ID | 10b, 13a | |
+| 13d | Universal Links: `apple-app-site-association` served from config, Associated Domains; needs the Team ID | 10b, 13a | ✓ #155 |
 | 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | ✓ #154 |
 | 13f | First iOS release: TestFlight, App Store listing and review | 13b–13e | |
 
@@ -191,7 +196,7 @@ replaced through Play's support). Left, in this order (details in
 7. **Store listing**: description, screenshots, privacy policy URL (`/datenschutz`), the Data
    safety form, content rating, target audience, and trader status (EU).
 8. **iOS.** Done: the Apple Developer Program membership, the Team ID `Q35TCGM5PW` (for the
-   signing and the Universal Links), the bundle ID `rs.hashi` with Associated Domains on, the App
+   signing and the Universal Links, in `tauri.conf.json` and `fly.toml`), the bundle ID `rs.hashi` with Associated Domains on, the App
    Store Connect app "Hashi: Daily Bridges", and the App Store Connect API key for the release
    workflow (a team key with the Admin role, in the secrets `APPLE_API_KEY_ID`,
    `APPLE_API_ISSUER` and `APPLE_API_KEY_P8`; Xcode makes the certificate and the profile with
@@ -202,6 +207,9 @@ replaced through Play's support). Left, in this order (details in
       `app/store/whatsnew/whatsnew-en-US`), merged, then the tag `app-v0.0.2` on its merge
       commit. That also uploads 0.0.2 to Play. Apple emails when the build is processed, and it
       then appears in App Store Connect under the app's TestFlight tab.
+      On an iPhone with it, check the Universal Links (step 13d): Settings, Developer (developer
+      mode on), Universal Links, Diagnostics, `https://hashi.rs/g/test` should say the app opens
+      it.
    2. **Internal testers.** App Store Connect, Apps, Hashi, TestFlight, Internal Testing, "+": a
       group (e.g. "Team") with automatic distribution on, so that every new build goes to it.
       Add testers to it: people in Users and Access (any role; invite them there first, up to

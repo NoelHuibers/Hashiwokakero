@@ -17,6 +17,10 @@ primary_region = "ams"
   # APK of the GitHub release. Google's app signing certificate (Play Console, Test and release,
   # App integrity) goes after it, comma separated, once the app is in Play.
   HASHI_ANDROID_CERT_SHA256 = "BB:86:D4:C6:60:8F:98:D8:FC:68:BA:3C:5F:23:CC:4C:08:80:D7:76:61:A8:68:56:10:24:C5:CB:1D:38:5A:4B"
+  # The app ID of the iOS app, team ID and bundle ID, for its Universal Links
+  # (/.well-known/apple-app-site-association, docs/deployment.md); public, it is in every signed
+  # build of the app. More go after it, comma separated.
+  HASHI_IOS_APP_IDS = "Q35TCGM5PW.rs.hashi"
 
 [http_service]
   internal_port = 8080

@@ -1,0 +1,373 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "Q35TCGM5PW.rs.hashi"
+        ],
+        "components": [
+          {
+            "/": "/"
+          },
+          {
+            "/": "/de"
+          },
+          {
+            "/": "/fr"
+          },
+          {
+            "/": "/it"
+          },
+          {
+            "/": "/es"
+          },
+          {
+            "/": "/pt"
+          },
+          {
+            "/": "/nl"
+          },
+          {
+            "/": "/pl"
+          },
+          {
+            "/": "/tr"
+          },
+          {
+            "/": "/ru"
+          },
+          {
+            "/": "/uk"
+          },
+          {
+            "/": "/ar"
+          },
+          {
+            "/": "/hi"
+          },
+          {
+            "/": "/id"
+          },
+          {
+            "/": "/vi"
+          },
+          {
+            "/": "/th"
+          },
+          {
+            "/": "/ja"
+          },
+          {
+            "/": "/ko"
+          },
+          {
+            "/": "/zh"
+          },
+          {
+            "/": "/zh-Hant"
+          },
+          {
+            "/": "/practice"
+          },
+          {
+            "/": "/de/practice"
+          },
+          {
+            "/": "/fr/practice"
+          },
+          {
+            "/": "/it/practice"
+          },
+          {
+            "/": "/es/practice"
+          },
+          {
+            "/": "/pt/practice"
+          },
+          {
+            "/": "/nl/practice"
+          },
+          {
+            "/": "/pl/practice"
+          },
+          {
+            "/": "/tr/practice"
+          },
+          {
+            "/": "/ru/practice"
+          },
+          {
+            "/": "/uk/practice"
+          },
+          {
+            "/": "/ar/practice"
+          },
+          {
+            "/": "/hi/practice"
+          },
+          {
+            "/": "/id/practice"
+          },
+          {
+            "/": "/vi/practice"
+          },
+          {
+            "/": "/th/practice"
+          },
+          {
+            "/": "/ja/practice"
+          },
+          {
+            "/": "/ko/practice"
+          },
+          {
+            "/": "/zh/practice"
+          },
+          {
+            "/": "/zh-Hant/practice"
+          },
+          {
+            "/": "/groups"
+          },
+          {
+            "/": "/de/groups"
+          },
+          {
+            "/": "/fr/groups"
+          },
+          {
+            "/": "/it/groups"
+          },
+          {
+            "/": "/es/groups"
+          },
+          {
+            "/": "/pt/groups"
+          },
+          {
+            "/": "/nl/groups"
+          },
+          {
+            "/": "/pl/groups"
+          },
+          {
+            "/": "/tr/groups"
+          },
+          {
+            "/": "/ru/groups"
+          },
+          {
+            "/": "/uk/groups"
+          },
+          {
+            "/": "/ar/groups"
+          },
+          {
+            "/": "/hi/groups"
+          },
+          {
+            "/": "/id/groups"
+          },
+          {
+            "/": "/vi/groups"
+          },
+          {
+            "/": "/th/groups"
+          },
+          {
+            "/": "/ja/groups"
+          },
+          {
+            "/": "/ko/groups"
+          },
+          {
+            "/": "/zh/groups"
+          },
+          {
+            "/": "/zh-Hant/groups"
+          },
+          {
+            "/": "/g/*"
+          },
+          {
+            "/": "/de/g/*"
+          },
+          {
+            "/": "/fr/g/*"
+          },
+          {
+            "/": "/it/g/*"
+          },
+          {
+            "/": "/es/g/*"
+          },
+          {
+            "/": "/pt/g/*"
+          },
+          {
+            "/": "/nl/g/*"
+          },
+          {
+            "/": "/pl/g/*"
+          },
+          {
+            "/": "/tr/g/*"
+          },
+          {
+            "/": "/ru/g/*"
+          },
+          {
+            "/": "/uk/g/*"
+          },
+          {
+            "/": "/ar/g/*"
+          },
+          {
+            "/": "/hi/g/*"
+          },
+          {
+            "/": "/id/g/*"
+          },
+          {
+            "/": "/vi/g/*"
+          },
+          {
+            "/": "/th/g/*"
+          },
+          {
+            "/": "/ja/g/*"
+          },
+          {
+            "/": "/ko/g/*"
+          },
+          {
+            "/": "/zh/g/*"
+          },
+          {
+            "/": "/zh-Hant/g/*"
+          },
+          {
+            "/": "/groups/*"
+          },
+          {
+            "/": "/de/groups/*"
+          },
+          {
+            "/": "/fr/groups/*"
+          },
+          {
+            "/": "/it/groups/*"
+          },
+          {
+            "/": "/es/groups/*"
+          },
+          {
+            "/": "/pt/groups/*"
+          },
+          {
+            "/": "/nl/groups/*"
+          },
+          {
+            "/": "/pl/groups/*"
+          },
+          {
+            "/": "/tr/groups/*"
+          },
+          {
+            "/": "/ru/groups/*"
+          },
+          {
+            "/": "/uk/groups/*"
+          },
+          {
+            "/": "/ar/groups/*"
+          },
+          {
+            "/": "/hi/groups/*"
+          },
+          {
+            "/": "/id/groups/*"
+          },
+          {
+            "/": "/vi/groups/*"
+          },
+          {
+            "/": "/th/groups/*"
+          },
+          {
+            "/": "/ja/groups/*"
+          },
+          {
+            "/": "/ko/groups/*"
+          },
+          {
+            "/": "/zh/groups/*"
+          },
+          {
+            "/": "/zh-Hant/groups/*"
+          },
+          {
+            "/": "/player/*"
+          },
+          {
+            "/": "/de/player/*"
+          },
+          {
+            "/": "/fr/player/*"
+          },
+          {
+            "/": "/it/player/*"
+          },
+          {
+            "/": "/es/player/*"
+          },
+          {
+            "/": "/pt/player/*"
+          },
+          {
+            "/": "/nl/player/*"
+          },
+          {
+            "/": "/pl/player/*"
+          },
+          {
+            "/": "/tr/player/*"
+          },
+          {
+            "/": "/ru/player/*"
+          },
+          {
+            "/": "/uk/player/*"
+          },
+          {
+            "/": "/ar/player/*"
+          },
+          {
+            "/": "/hi/player/*"
+          },
+          {
+            "/": "/id/player/*"
+          },
+          {
+            "/": "/vi/player/*"
+          },
+          {
+            "/": "/th/player/*"
+          },
+          {
+            "/": "/ja/player/*"
+          },
+          {
+            "/": "/ko/player/*"
+          },
+          {
+            "/": "/zh/player/*"
+          },
+          {
+            "/": "/zh-Hant/player/*"
+          }
+        ]
+      }
+    ]
+  }
+}
