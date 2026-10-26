@@ -34,7 +34,7 @@ primary_region = "ams"
   # The name of the HTML file Yandex Webmaster offers (yandex_<token>.html), optional
   HASHI_YANDEX_VERIFICATION = ""
   # The site's IndexNow key (8 to 128 letters, digits, dashes), served as /<key>.txt
-  HASHI_INDEXNOW_KEY = ""
+  HASHI_INDEXNOW_KEY = "e83c23c20d8841f7b2a2db9524ee285e"
 
 [http_service]
   internal_port = 8080
