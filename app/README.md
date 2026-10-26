@@ -117,6 +117,40 @@ in the repository root, only in the app):
 - **App Links.** Links to the app's pages on `https://hashi.rs` open in the app, see
   [App Links](#app-links).
 
+On iOS the `WebView` is WebKit's `WKWebView`, which does more of it itself. The app's own plugin
+has its iOS side in `src-tauri/ios/` (`HashiPlugin.swift`, see [iOS](#ios)). Where it differs:
+
+- **Safe areas.** With `viewport-fit=cover` the page draws under the status bar, the Dynamic
+  Island and the home indicator, and the sides held sideways, and `WKWebView` reports them as
+  `env(safe-area-inset-*)`, in portrait and landscape, on the iPad too. `index.html` sets
+  `--app-inset-*` to them, no native code. On Android the variables `MainActivity.kt` sets on
+  the element win over that rule. With `viewport-fit=cover` WebKit sets the page's scroll view's
+  `contentInsetAdjustmentBehavior` to `never` itself, so nothing is inset twice, and wry turns
+  the scroll view's bounce off: no band of another colour above or below the page. Landscape
+  needs the scene lifecycle (`UIApplicationSceneManifest` in `Info.plist`, tao's
+  `TaoSceneDelegate`): without it UIKit kept the portrait insets when the phone was turned (top
+  62, sides 0 on an iPhone 17 under iOS 26), and the page went under the Dynamic Island.
+- **Sharing and downloads.** `WKWebView` has `navigator.share` (`tauri://localhost` is a secure
+  context, so `navigator.clipboard` works too), but the page takes the same path as on Android,
+  the plugin's `share`: `UIActivityViewController` with the text, or with the file
+  (written to the app's temporary folder), which the sheet offers to save in Files. Blob
+  downloads don't work in the `WebView` either. On the iPad the sheet is a popover in the
+  middle of the page.
+- **The status bar** follows the page's theme through the window's style
+  (`overrideUserInterfaceStyle`), which the share sheet and the keyboard take on too.
+- **The soft keyboard.** Nothing to do: `WKWebView` scrolls the focused input above the
+  keyboard, the page's visual viewport ends at it, and the tab bar sits on it, also while the
+  page scrolls. Unlike Android the bottom inset stays (the home indicator's 34 px under the tab
+  bar's labels) while the keyboard is open.
+- **Links out** go to Safari and Mail through the opener plugin's iOS side, the same capability
+  and `on_navigation` guard as on Android (the page's origin is `tauri://localhost`).
+- **Back.** iOS has no back button: the swipe from the screen's left edge goes back in the
+  page's history, the router's pages, like Android's back gesture
+  (`allowsBackForwardNavigationGestures`, which wry sets on macOS only). The pages are one
+  document, so it never leaves the app; at the first page it does nothing.
+- **App Links** are Universal Links on iOS, step 13d of docs/mobile.md. Until then links to
+  `https://hashi.rs` open in Safari.
+
 The smoke test checks the session (a guest made in the app, no cookie, the same guest after a
 reload), the headers, one update toast however many calls the server refuses, and the links.
 
@@ -276,7 +310,8 @@ no clap).
   its plugin, which makes Tauri check them against the capabilities.
 - Plugins: `tauri-plugin-opener` (official, links out of the app, its own click script off),
   `tauri-plugin-deep-link` (official, [App Links](#app-links)), and `hashi`, the app's own, in `src/lib.rs` with its Android side in `gen/android`
-  (`HashiPlugin.kt`). See [On the phone](#on-the-phone).
+  (`HashiPlugin.kt`) and its iOS side in `ios/` (`HashiPlugin.swift`, see [iOS](#ios)). See
+  [On the phone](#on-the-phone).
 - `icons/`: generated from `public/icon-512.png` by `cargo tauri icon app-icon.json`, along with
   the Android launcher icons in `gen/android/.../res/mipmap-*` and the iOS ones (see [iOS](#ios)). Android's adaptive icon cuts a
   circle (or a squircle) out of the middle of its foreground, so the foreground,
@@ -629,6 +664,16 @@ This repository's project was generated in CI and committed like `gen/android`, 
   ([iOS releases](#ios-releases)) passes Android's versionCode (`node scripts/app-version.mjs --code`) as
   `--config '{"bundle":{"iOS":{"bundleVersion":"<code>"}}}'`, not as `--build-number`, which
   Tauri appends to the version as a fourth number (`0.0.1.1`). Pull requests keep the version.
+- The scene lifecycle: `UIApplicationSceneManifest` in `Info.plist` and `project.yml`, one scene
+  with tao's `TaoSceneDelegate` (see [On the phone](#on-the-phone)). The template of tauri-cli
+  2.12.4 has none.
+
+The iOS side of the app's own plugin `hashi` is outside `gen/apple`, in `src-tauri/ios/`: a Swift
+package (`HashiPlugin.swift`, the counterpart of `HashiPlugin.kt`) that `build.rs` builds with
+`swift build` and links into the app's library when it builds for iOS, as `tauri-plugin` does for a
+plugin crate's `ios/` (an app's own plugin can't use that). It imports Tauri's Swift API, which
+`build.rs` copies from the `tauri` crate to `src-tauri/.tauri/` (ignored by git); Swift Package
+Manager fetches its one dependency, swift-rs, from GitHub.
 
 `bundle.iOS.minimumSystemVersion` in `tauri.conf.json` is **iOS 16.4**: the app's page runs in the
 system's `WKWebView`, the Safari of the phone's iOS. Tailwind 4 supports Safari 16.4 and newer
