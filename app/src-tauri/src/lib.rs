@@ -55,7 +55,7 @@ tauri::ios_plugin_binding!(init_plugin_hashi);
 /// isn't a navigation, the deep-link plugin hands it to the page, whose router shows its page
 /// in the app (`api::native::follow_app_links`). From a page of the app such a link goes to
 /// the system, which brings it back to the app once it verified the app's links (Android's App
-/// Links; iOS opens it in Safari until the app has Universal Links, step 13d of docs/mobile.md).
+/// Links, iOS's Universal Links).
 fn hashi<R: Runtime>() -> TauriPlugin<R> {
     tauri::plugin::Builder::new("hashi")
         .setup(|_app, api| {

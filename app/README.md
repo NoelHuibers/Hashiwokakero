@@ -148,8 +148,7 @@ has its iOS side in `src-tauri/ios/` (`HashiPlugin.swift`, see [iOS](#ios)). Whe
   page's history, the router's pages, like Android's back gesture
   (`allowsBackForwardNavigationGestures`, which wry sets on macOS only). The pages are one
   document, so it never leaves the app; at the first page it does nothing.
-- **App Links** are Universal Links on iOS, step 13d of docs/mobile.md. Until then links to
-  `https://hashi.rs` open in Safari.
+- **App Links** are Universal Links on iOS, see [App Links](#app-links).
 
 The smoke test checks the session (a guest made in the app, no cookie, the same guest after a
 reload), the headers, one update toast however many calls the server refuses, and the links.
@@ -181,11 +180,13 @@ language say) and check that Apple's patterns match the same paths as Android's.
   (`on_navigation`) doesn't see it. Links to these pages from the app's own pages: there are none
   (share and invite links are copied or shared, not followed); one would go to the system, which
   brings it back to the app.
-- **iOS** hands a Universal Link to the app delegate (`application:continueUserActivity:`), at a
-  cold start right after launching too. Tao turns it into Tauri's `RunEvent::Opened`, where the
-  plugin keeps it for `get_current` and sends the event. The app has no scene manifest in its
-  `Info.plist`, so it runs on the app delegate's lifecycle; with scenes a cold start's link would
-  come in `scene:willConnectToSession:options:`, which tao 0.37 doesn't pass on. Universal Links
+- **iOS** hands a Universal Link to the scene delegate: tao's `TaoSceneDelegate`
+  (`scene:continueUserActivity:`) turns the link of a running app into Tauri's `RunEvent::Opened`,
+  where the plugin keeps it for `get_current` and sends the event. The app runs on the scene
+  lifecycle (for the safe areas in landscape, see [On the phone](#on-the-phone)), where a cold
+  start's link comes in `scene:willConnectToSession:options:`, which tao 0.37 doesn't pass on:
+  `gen/apple/Sources/hashi_tauri/main.mm` passes it on to `scene:continueUserActivity:` after tao's
+  own method (see [iOS](#ios)). Universal Links
   open the app when a link is tapped in another app (Messages, Mail, Safari from another site);
   typed into Safari's address bar, or tapped on a page of hashi.rs itself, they stay in Safari.
 - **The server** says which app may open its links. For Android `/.well-known/assetlinks.json`
@@ -584,7 +585,11 @@ certificate or profile is kept in the repository's secrets.
   --code`, 2 for 0.0.2), passed as `bundle.iOS.bundleVersion`. App Store Connect needs a higher
   one for every upload of a version, and it refuses four numbers, which `--build-number` would
   give (`0.0.2.1`). `CFBundleShortVersionString` is the version. In `gen/apple` both stay the
-  version (`scripts/app-version.mjs`): only the release's build changes them.
+  version (`scripts/app-version.mjs`): only the release's build changes them. Xcode's export
+  must not pick another one: with the key it asks App Store Connect and takes the next free
+  number once a version's build is there (3 for 0.0.2 in pull requests after its upload), so
+  `gen/apple/ExportOptions.plist`, which Tauri's export starts from, turns
+  `manageAppVersionAndBuildNumber` off.
 - **Export compliance.** `src-tauri/Info.ios.plist` sets `ITSAppUsesNonExemptEncryption` to
   false (the app only uses HTTPS, which is exempt), so TestFlight doesn't hold every build until
   the encryption question is answered. Every `tauri ios build` merges that file into
