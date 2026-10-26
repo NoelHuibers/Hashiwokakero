@@ -15,6 +15,7 @@ use tower_http::compression::predicate::{NotForContentType, Predicate};
 use tower_http::compression::{CompressionLayer, DefaultPredicate};
 
 use super::apps::AppSettings;
+use super::search::{SearchFile, SearchSettings};
 use super::{admin, dojo, og};
 use crate::api::{BUILD_HEADER, SESSION_HEADER};
 use crate::app::App;
@@ -34,11 +35,14 @@ pub fn router<V: IntoView + 'static>(
 ) -> Router {
     let apps = AppSettings::from_env(super::env_var)
         .unwrap_or_else(|e| panic!("{e} (validate_configuration checks it at startup)"));
+    let search = SearchSettings::from_env(super::env_var)
+        .unwrap_or_else(|e| panic!("{e} (validate_configuration checks it at startup)"));
     router_with_client_source(
         leptos_options,
         shell,
         super::env_var("FLY_APP_NAME").is_some(),
         &apps,
+        &search,
     )
 }
 
@@ -47,6 +51,7 @@ fn router_with_client_source<V: IntoView + 'static>(
     shell: fn(LeptosOptions) -> V,
     fly: bool,
     apps: &AppSettings,
+    search: &SearchSettings,
 ) -> Router {
     let routes = generate_route_list(App);
     let hash_files = leptos_options.hash_files;
@@ -54,7 +59,7 @@ fn router_with_client_source<V: IntoView + 'static>(
     let min_version = apps.min_version;
     // The app's dev server runs on localhost, see `AppSettings::cors`
     let cors = apps.cors(leptos_options.env != Env::PROD);
-    Router::new()
+    search_files(Router::new(), search.files())
         // Which Android app may open the site's links (see `AppSettings::asset_links`), and which
         // iOS app (`AppSettings::apple_app_site_association`). Google's verifier and Apple's CDN
         // fetch them: no redirect, and admission only budgets expensive calls
@@ -183,6 +188,28 @@ fn wasm_hash(hashes: &str) -> Option<&str> {
         .find_map(|line| line.trim().strip_prefix("wasm:"))
         .map(str::trim)
         .filter(|hash| !hash.is_empty())
+}
+
+/// The files of the search engines' consoles and of `IndexNow` at the root (see `server::search`),
+/// each under its exact name. Their crawlers fetch them like any page, and come back to check.
+fn search_files<S: Clone + Send + Sync + 'static>(
+    router: Router<S>,
+    files: Vec<SearchFile>,
+) -> Router<S> {
+    files.into_iter().fold(router, |router, file| {
+        let SearchFile {
+            path,
+            content_type,
+            body,
+        } = file;
+        router.route(
+            &path,
+            get(move || {
+                let body = body.clone();
+                async move { ([(header::CONTENT_TYPE, content_type)], body) }
+            }),
+        )
+    })
 }
 
 /// Browsers kept an old stylesheet after a deploy because its URL never changed and no cache

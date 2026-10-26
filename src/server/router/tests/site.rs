@@ -347,3 +347,76 @@ async fn pages_do_not_touch_disposed_signals() {
         disposed[0]
     );
 }
+
+/// The search engines' consoles verify the site with a file of theirs at the root, `IndexNow` with
+/// the key file (`server::search`): none of them without the settings.
+#[tokio::test]
+async fn without_tokens_there_are_no_verification_files() {
+    let server = Server::start().await;
+    let browser = server.browser();
+    for path in [
+        "/BingSiteAuth.xml",
+        "/yandex_0123456789abcdef.html",
+        "/3f2b8a9c4d1e4f6a9b7c0e5d1a2b3c4d.txt",
+    ] {
+        assert_status(&browser.get(path).await, StatusCode::NOT_FOUND);
+    }
+}
+
+/// With them, each file exactly as its console offers it, for `HEAD` too, never cached for good
+/// (a changed token is there with the next deploy). Other names stay 404s, and the site's own
+/// files are still there.
+#[tokio::test]
+async fn search_engines_find_their_files() {
+    const KEY: &str = "3f2b8a9c-4d1e-4f6a-9b7c-0e5d1a2b3c4d";
+    let server = Server::with_search(&[
+        ("HASHI_BING_SITE_AUTH", "0123456789ABCDEF0123456789ABCDEF"),
+        ("HASHI_YANDEX_VERIFICATION", "yandex_0123456789abcdef.html"),
+        ("HASHI_INDEXNOW_KEY", KEY),
+    ])
+    .await;
+    let browser = server.browser();
+    let key_file = format!("/{KEY}.txt");
+    for (path, content_type, body) in [
+        (
+            "/BingSiteAuth.xml",
+            "application/xml",
+            "<?xml version=\"1.0\"?>\n<users>\n\t<user>0123456789ABCDEF0123456789ABCDEF</user>\n</users>\n"
+                .to_string(),
+        ),
+        (
+            "/yandex_0123456789abcdef.html",
+            "text/html; charset=utf-8",
+            "<html>\n    <head>\n        <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n    </head>\n    <body>Verification: 0123456789abcdef</body>\n</html>\n"
+                .to_string(),
+        ),
+        (key_file.as_str(), "text/plain; charset=utf-8", KEY.to_string()),
+    ] {
+        let res = browser.get(path).await;
+        assert_status(&res, StatusCode::OK);
+        assert_eq!(res.headers()[CONTENT_TYPE], content_type, "{path}");
+        assert_eq!(res.headers()[CACHE_CONTROL], "no-cache", "{path}");
+        assert_eq!(text(res).await, body, "{path}");
+        let res = browser
+            .http
+            .head(format!("{}{path}", server.url))
+            .send()
+            .await
+            .unwrap();
+        assert_status(&res, StatusCode::OK);
+    }
+    for path in [
+        "/yandex_0000000000000000.html",
+        "/google0123456789abcdef.html",
+        "/0123456789abcdef.txt",
+        "/de/BingSiteAuth.xml",
+    ] {
+        assert_status(&browser.get(path).await, StatusCode::NOT_FOUND);
+    }
+    // Not served under another name: a 404, or a redirect to the file once trailing slashes
+    // redirect to pages
+    let res = browser.get("/BingSiteAuth.xml/").await;
+    assert_ne!(res.status(), StatusCode::OK);
+    assert_status(&browser.get("/sitemap.xml").await, StatusCode::OK);
+    assert_status(&browser.get("/rules").await, StatusCode::OK);
+}

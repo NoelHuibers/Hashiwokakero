@@ -40,6 +40,7 @@ use serde::de::DeserializeOwned;
 use tokio::sync::{Mutex, MutexGuard, OnceCell};
 
 use crate::model::ApiError;
+use crate::server::search::SearchSettings;
 use crate::server::{auth, daily, db};
 
 /// The admin listed by username, see [`env_var`].
@@ -159,16 +160,49 @@ impl Server {
 
     /// With changed settings, as cargo-leptos or the LEPTOS_* variables would make them.
     async fn with(change: impl FnOnce(&mut LeptosOptions)) -> Self {
-        Self::with_transport(change, true, true, &app_settings(&[])).await
+        Self::with_transport(
+            change,
+            true,
+            true,
+            &app_settings(&[]),
+            &SearchSettings::default(),
+        )
+        .await
     }
 
     /// With these app settings (`HASHI_APP_*`, see `server::apps`) and changed Leptos settings.
     async fn with_apps(settings: &[(&str, &str)], change: impl FnOnce(&mut LeptosOptions)) -> Self {
-        Self::with_transport(change, true, true, &app_settings(settings)).await
+        Self::with_transport(
+            change,
+            true,
+            true,
+            &app_settings(settings),
+            &SearchSettings::default(),
+        )
+        .await
+    }
+
+    /// With these search engine settings (`server::search`).
+    async fn with_search(settings: &[(&str, &str)]) -> Self {
+        let search = SearchSettings::from_env(|name| {
+            settings
+                .iter()
+                .find(|(n, _)| *n == name)
+                .map(|(_, v)| (*v).to_string())
+        })
+        .unwrap();
+        Self::with_transport(|_| {}, true, true, &app_settings(&[]), &search).await
     }
 
     async fn direct(connect_info: bool) -> Self {
-        Self::with_transport(|_| {}, false, connect_info, &app_settings(&[])).await
+        Self::with_transport(
+            |_| {},
+            false,
+            connect_info,
+            &app_settings(&[]),
+            &SearchSettings::default(),
+        )
+        .await
     }
 
     async fn with_transport(
@@ -176,6 +210,7 @@ impl Server {
         fly: bool,
         connect_info: bool,
         apps: &crate::server::apps::AppSettings,
+        search: &SearchSettings,
     ) -> Self {
         static TURN: Mutex<()> = Mutex::const_new(());
         let turn = TURN.lock().await;
@@ -192,7 +227,7 @@ impl Server {
         change(&mut options);
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());
-        let app = super::router_with_client_source(options, crate::app::shell, fly, apps);
+        let app = super::router_with_client_source(options, crate::app::shell, fly, apps, search);
         tokio::spawn(async move {
             if connect_info {
                 axum::serve(
