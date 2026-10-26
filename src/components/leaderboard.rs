@@ -174,6 +174,7 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
                 .enumerate()
                 .map(|(index, place)| {
                     let (column, top) = if tied { ("", "pt-6") } else { step_layout(index) };
+                    let row = if tied { "" } else { "row-start-1" };
                     let me = place.me;
                     let detail = match place.detail {
                         PlaceDetail::None => None,
@@ -208,7 +209,7 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
                         <li
                             data-place=place.rank
                             class=format!(
-                                "podium-step relative row-start-1 flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 pb-3 text-center text-sm {column} {top}",
+                                "podium-step relative {row} flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 pb-3 text-center text-sm {column} {top}",
                             )
                             class:rank-mark=me
                         >

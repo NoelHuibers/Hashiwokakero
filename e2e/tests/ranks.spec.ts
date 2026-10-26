@@ -165,4 +165,12 @@ test('shared hundredths show every tied medalist and equal winning steps', async
   expect(first.y).toBe(second.y);
   expect(first.height).toBe(second.height);
   await expect(page.locator('table.rank-table').first()).toContainText('Fifth');
+  const fourth = (await podium.locator('> li').nth(3).boundingBox())!;
+  expect(fourth.y).toBeGreaterThan(first.y);
+  await page.setViewportSize({ width: 360, height: 800 });
+  const mobileFirst = (await winners.nth(0).boundingBox())!;
+  const mobileSecond = (await winners.nth(1).boundingBox())!;
+  expect(mobileFirst.y).toBe(mobileSecond.y);
+  expect(mobileFirst.height).toBe(mobileSecond.height);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
 });

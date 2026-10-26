@@ -1,6 +1,6 @@
 # Easy ranking and replay timing — 2026-10-26
 
-Status: implementation complete; release validation and deployment in progress.
+Status: implemented. Release verification is tracked in [PR #160](https://github.com/NoelHuibers/Hashiwokakero/pull/160).
 Shared hundredth places apply from 2026-10-26; server receipt timing applies from
 2026-10-27. Earlier days retain their original ranking policy.
 
