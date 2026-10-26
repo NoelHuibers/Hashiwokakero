@@ -48,10 +48,9 @@ Store credentials in the deployment platform's secret store.
   Links (invites and shared results open in the app, see
   [app/README.md](../app/README.md#app-links)); unset, that file is a 404 and the
   links open in the browser. Public, so it is in `fly.toml`: the upload key's
-  certificate, which signs the APK of the GitHub release. Once the app is in Google
-  Play, append Google's app signing certificate (Play Console, Test and release,
-  App integrity, "App signing key certificate", SHA-256), which signs the installs
-  from Play, and deploy.
+  certificate, which signs the APK of the GitHub release, and Google's app signing
+  certificate (Play Console, Protected by Google Play, App signing, "App signing
+  key certificate", SHA-256), which signs the installs from Play.
 - `HASHI_IOS_APP_IDS`: optional, comma-separated app IDs of the iOS app, the team
   ID and the bundle ID (`Q35TCGM5PW.rs.hashi`, as the Apple developer portal shows
   them). The server lists them in `/.well-known/apple-app-site-association`, which
