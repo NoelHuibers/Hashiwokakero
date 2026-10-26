@@ -6,7 +6,7 @@ use leptos::prelude::*;
 use crate::components::leaderboard::RankCell;
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::model::{LaneOutcome, colour_var, format_duration, progress};
+use crate::model::{LaneOutcome, colour_var, format_score, progress};
 
 use super::state::Theatre;
 
@@ -41,11 +41,12 @@ fn Row(theatre: Theatre, lane: usize) -> impl IntoView {
         LaneOutcome::Solved { .. } if !playable => {
             view! { <span class="text-xs text-muted-foreground">{t!(i18n, replay.legend.no_log)}</span> }.into_any()
         }
-        LaneOutcome::Solved { .. } => match place() {
-            Some((_, at)) => view! {
-                <span class="font-pixel text-sm tabular-nums">{format_duration(i64::from(at))}</span>
+        LaneOutcome::Solved { time_ms, .. } => match place() {
+            Some((_, _at)) => view! {
+                <span class="font-pixel text-sm tabular-nums">{format_score(time_ms)}</span>
             }
                 .into_any(),
+            None if percent.get() >= 100 => view! { <span class="text-xs text-muted-foreground">{t!(i18n, replay.legend.receipt)}</span> }.into_any(),
             None => view! {
                 <span class="font-pixel text-xs tabular-nums text-muted-foreground">{move || format!("{}%", percent.get())}</span>
             }
@@ -92,8 +93,8 @@ fn Row(theatre: Theatre, lane: usize) -> impl IntoView {
             >
                 <span class="grid w-7 shrink-0 place-items-center">
                     {move || match place() {
-                        Some((place, _)) => view! { <RankCell rank=i64::try_from(place).unwrap_or(0) /> }.into_any(),
-                        None => view! { <span class="size-3 rounded-[4px] transition-all" style=pip_style.clone()></span> }.into_any(),
+                        Some((place, _)) if place > 0 => view! { <RankCell rank=i64::try_from(place).unwrap_or(0) /> }.into_any(),
+                        _ => view! { <span class="size-3 rounded-[4px] transition-all" style=pip_style.clone()></span> }.into_any(),
                     }}
                 </span>
                 <span class="min-w-0 flex-1 truncate" class:font-bold=me>{info.name.clone()}</span>
@@ -176,6 +177,7 @@ pub fn FinishLine(theatre: Theatre) -> impl IntoView {
                 </CardTitle>
             </CardHeader>
             <CardContent>
+                <p class="mb-2 text-xs text-muted-foreground">{t!(i18n, replay.finish.timing)}</p>
                 {move || {
                     let list = finishers.get();
                     if list.is_empty() {
@@ -194,7 +196,7 @@ pub fn FinishLine(theatre: Theatre) -> impl IntoView {
                                 .filter_map(|f| theatre.lane(f.lane).map(|l| (f, l)))
                                 .map(|(f, lane)| {
                                     let official = match lane.outcome {
-                                        LaneOutcome::Solved { time_ms, hints, checks, .. } if hints + checks > 0 => Some(time_ms),
+                                        LaneOutcome::Solved { time_ms, .. } => Some(time_ms),
                                         _ => None,
                                     };
                                     let mine = lane.user_id == me;
@@ -204,15 +206,12 @@ pub fn FinishLine(theatre: Theatre) -> impl IntoView {
                                             class=(["bg-primary/10"], mine)
                                             data-place=f.place
                                         >
-                                            <RankCell rank=i64::try_from(f.place).unwrap_or(0) />
+                                            {(f.place > 0).then(|| view! { <RankCell rank=i64::try_from(f.place).unwrap_or(0) /> })}
                                             <span class="size-2.5 shrink-0 rounded-[3px]" style=format!("background: {}", colour_var(lane.colour)) aria-hidden="true"></span>
                                             <span class="min-w-0 flex-1 truncate" class:font-bold=mine>{lane.name}</span>
-                                            {official.map(|ms| view! {
-                                                <span class="shrink-0 text-xs text-muted-foreground">
-                                                    {move || td_string!(i18n.get_locale(), replay.finish.official, time = format_duration(ms))}
-                                                </span>
-                                            })}
-                                            <span class="shrink-0 font-pixel tabular-nums">{format_duration(i64::from(f.at))}</span>
+                                            {(f.place == 0).then(|| view! { <span class="text-xs text-muted-foreground">{t!(i18n, replay.legend.unranked)}</span> })}
+
+                                            <span class="shrink-0 font-pixel tabular-nums">{format_score(official.unwrap_or_else(|| i64::from(f.at)))}</span>
                                         </li>
                                     }
                                 })

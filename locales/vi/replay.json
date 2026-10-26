@@ -57,12 +57,14 @@
     "no_log": "không có nước đi được ghi",
     "unranked": "không xếp hạng",
     "unranked_hint": "Không có trên bảng xếp hạng: kết quả này đã bị gắn cờ.",
-    "progress": "{{ name }}: {{ percent }}% số cầu"
+    "progress": "{{ name }}: {{ percent }}% số cầu",
+    "receipt": "Đang chờ máy chủ nhận"
   },
   "finish": {
     "title": "Vạch đích",
     "none": "Chưa ai về đích…",
-    "official": "{{ time }} kể cả phạt"
+    "official": "{{ time }} kể cả phạt",
+    "timing": "Thứ hạng và thời gian theo kết quả chính thức của máy chủ, gồm cả thời gian phạt. Thời điểm các nước đi là gần đúng; bảng đã giải có thể vẫn chờ máy chủ nhận."
   },
   "marks": {
     "hint": "{{ name }} dùng gợi ý lúc {{ time }}",

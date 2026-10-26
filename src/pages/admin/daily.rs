@@ -7,7 +7,7 @@ use crate::api::{admin_attempts, admin_flag, admin_log};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
-use crate::model::{AdminAttempt, Flag, MoveEvent, date_string, format_duration};
+use crate::model::{AdminAttempt, Flag, MoveEvent, date_string, format_score};
 
 use super::{SECTION, error, phone_stat};
 
@@ -27,7 +27,7 @@ fn flag_name(flag: Flag) -> &'static str {
 }
 
 fn seconds(ms: u32) -> String {
-    format!("{:.1} s", f64::from(ms) / 1000.0)
+    format!("{:.3} s", f64::from(ms) / 1000.0)
 }
 
 #[component]
@@ -240,12 +240,13 @@ fn log_open(
 fn open_log_view(
     open_log: RwSignal<Option<(i64, Vec<MoveEvent>)>>,
     user: i64,
+    attempt: AdminAttempt,
 ) -> impl Fn() -> Option<AnyView> {
     move || {
         open_log.with(|l| {
-            l.as_ref()
-                .filter(|(u, _)| *u == user)
-                .map(|(_, log)| view! { <LogView log=log.clone() /> }.into_any())
+            l.as_ref().filter(|(u, _)| *u == user).map(|(_, log)| {
+                view! { <LogView log=log.clone() attempt=attempt.clone() /> }.into_any()
+            })
         })
     }
 }
@@ -265,7 +266,7 @@ fn AttemptRow(
                 <span class="font-medium">{if a.name.is_empty() { "(deleted)".to_string() } else { a.name.clone() }}</span>
                 <span class="block text-xs text-muted-foreground">{account(&a)}</span>
             </td>
-            <td class="py-2 pe-3 text-end font-pixel tabular-nums">{a.time_ms.map(format_duration).unwrap_or_default()}</td>
+            <td class="py-2 pe-3 text-end font-pixel tabular-nums">{a.time_ms.map(format_score).unwrap_or_default()}</td>
             <td class="py-2 pe-3 text-end tabular-nums">{format!("{} · {}", a.hints, a.checks)}</td>
             <td class="py-2 pe-3 text-end tabular-nums" data-tooltip=format!("{} changes in the log, over {}", a.log.events, seconds(a.log.span_ms))>
                 {a.log.taps}
@@ -289,7 +290,7 @@ fn AttemptRow(
             </td>
         </tr>
         {move || {
-            open_log_view(open_log, user)()
+            open_log_view(open_log, user, a.clone())()
                 .map(|log| {
                     view! {
                         <tr>
@@ -338,7 +339,7 @@ fn AttemptCard(
                 <div class="shrink-0">{status_badge(&a)}</div>
             </div>
             <dl class="mt-3 grid grid-cols-4 gap-2 border-t pt-3">
-                {phone_stat("Time", a.time_ms.map_or_else(|| "–".into(), format_duration), "font-pixel")}
+                {phone_stat("Time", a.time_ms.map_or_else(|| "–".into(), format_score), "font-pixel")}
                 {phone_stat("Hints", a.hints.to_string(), "")}
                 {phone_stat("Checks", a.checks.to_string(), "")}
                 {phone_stat("Clicks", a.log.taps.to_string(), "")}
@@ -353,21 +354,35 @@ fn AttemptCard(
                         view! { <Button variant class="flex-1" on:click=move |_| on_toggle.run(user)>{label}</Button> }
                     })}
             </div>
-            {move || open_log_view(open_log, user)().map(|log| view! { <div class="mt-3">{log}</div> })}
+            {move || open_log_view(open_log, user, a.clone())().map(|log| view! { <div class="mt-3">{log}</div> })}
         </li>
     }
 }
 
 /// The move log: one row per change, time since the start, the gap since the previous click.
 #[component]
-fn LogView(log: Vec<MoveEvent>) -> impl IntoView {
+fn LogView(log: Vec<MoveEvent>, attempt: AdminAttempt) -> impl IntoView {
     if log.is_empty() {
         return view! { <p class="rounded-md bg-muted px-3 py-2 text-sm">"No move log (played before logs existed, or not sent)."</p> }.into_any();
     }
+    let elapsed = attempt
+        .finished_at
+        .map(|end| (end - attempt.started_at).max(0));
+    let normalized = crate::model::server_times(&log, elapsed.unwrap_or(0));
+    let header = format!(
+        "Official score: {} · raw: {} ms\nServer elapsed: {} ms · penalty: {} ms\nLast logged move: {} ms (diagnostic; not the ranked finish)\nRaw and reconciled times below; the difference is not measured network latency.\n",
+        attempt.time_ms.map_or_else(|| "–".into(), format_score),
+        attempt.time_ms.unwrap_or(0),
+        elapsed.unwrap_or(0),
+        attempt.hints * crate::model::HINT_PENALTY_MS
+            + attempt.checks * crate::model::CHECK_PENALTY_MS,
+        log.last().map_or(0, |e| e.t),
+    );
     let mut last_tap: Option<u32> = None;
     let rows: Vec<_> = log
         .iter()
-        .map(|e| {
+        .zip(&normalized)
+        .map(|(e, normalized)| {
             let gap = e
                 .tap
                 .then(|| last_tap.map(|l| e.t.saturating_sub(l)))
@@ -375,20 +390,21 @@ fn LogView(log: Vec<MoveEvent>) -> impl IntoView {
             if e.tap {
                 last_tap = Some(e.t);
             }
-            (*e, gap)
+            (*e, *normalized, gap)
         })
         .collect();
     view! {
         <div dir="ltr" class="terminal max-h-80 overflow-auto whitespace-pre rounded-md px-3 py-2 font-pixel text-[12px] leading-relaxed">
+            <p>{header}</p>
             {rows
                 .into_iter()
-                .map(|(e, gap)| {
+                .map(|(e, normalized, gap)| {
                     let fast = gap.is_some_and(|g| g < SUSPICIOUS_GAP_MS);
                     view! {
                         <div class:text-red-400=fast>
                             {format!(
-                                "{:>8}  bridge {:>4} → {}  {}{}",
-                                seconds(e.t),
+                                "{:>10} raw / {:>10} reconciled  bridge {:>4} → {}  {}{}",
+                                seconds(e.t), seconds(normalized.t),
                                 e.edge,
                                 e.count,
                                 if e.tap { "click" } else { "hint/undo" },
@@ -495,8 +511,8 @@ mod tests {
         assert_eq!(account(&named), "@noel · #7");
         assert_eq!(gap(None), "–");
         assert_eq!(gap(Some(85)), "85 ms");
-        assert_eq!(seconds(1_340), "1.3 s");
-        assert_eq!(seconds(61_000), "61.0 s");
+        assert_eq!(seconds(1_340), "1.340 s");
+        assert_eq!(seconds(61_000), "61.000 s");
     }
 
     #[test]

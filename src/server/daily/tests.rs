@@ -2004,3 +2004,224 @@ async fn guarded_submit_rejects_a_replaced_attempt_before_any_write_or_replay() 
     assert_eq!((untouched.hints, untouched.checks), (0, 0));
     assert!(untouched.bridges.is_none());
 }
+
+/// The reported Easy result: hidden milliseconds cannot split a displayed tie.
+#[tokio::test]
+async fn shared_hundredths_agree_across_boards_rewards_and_raw_records() {
+    let (_db, conn) = test_db().await;
+    let day = crate::model::SHARED_PLACES_DAY;
+    let mut ids = Vec::new();
+    for (name, time) in [
+        ("Noel", 7826),
+        ("Nele", 7831),
+        ("Third", 8803),
+        ("Fourth", 8804),
+    ] {
+        let id = user(&conn, name, Some(name)).await;
+        ids.push(id);
+        finish(&conn, id, day, time).await;
+        finish(&conn, id, day - 1, time).await;
+    }
+    let board = leaderboard(&conn, day, Some(ids[1])).await.unwrap();
+    assert_eq!(
+        board.entries.iter().map(|e| e.rank).collect::<Vec<_>>(),
+        [1, 1, 3, 3]
+    );
+    assert_eq!(board.me.unwrap().rank, 1);
+    assert_eq!(
+        board.entries.iter().map(|e| e.time_ms).collect::<Vec<_>>(),
+        [7826, 7831, 8803, 8804]
+    );
+    let old = leaderboard(&conn, day - 1, None).await.unwrap();
+    assert_eq!(
+        old.entries.iter().map(|e| e.rank).collect::<Vec<_>>(),
+        [1, 2, 3, 4]
+    );
+    for &id in &ids[..2] {
+        let a = attempt(&conn, id, day).await.unwrap().unwrap();
+        assert_eq!(
+            attempt::rank(&conn, day, a.time_ms.unwrap(), a.finished_at.unwrap())
+                .await
+                .unwrap(),
+            1
+        );
+        let profile = stats(&conn, id).await.unwrap();
+        assert_eq!(
+            profile.recent.iter().find(|d| d.day == day).unwrap().rank,
+            Some(1)
+        );
+    }
+    let placed = fame::placed("a.day = 20752");
+    let mut rows = conn.query(&placed, ()).await.unwrap();
+    let mut points = Vec::new();
+    while let Some(row) = rows.next().await.unwrap() {
+        points.push((
+            row.get::<i64>(0).unwrap(),
+            row.get::<i64>(5).unwrap(),
+            crate::model::points(row.get(5).unwrap(), row.get(6).unwrap()),
+        ));
+    }
+    assert_eq!(points[0].1, points[1].1);
+    assert_eq!(points[0].2, points[1].2);
+    let medals = fame::all_time(&conn, day + 1, Some(&ids)).await.unwrap();
+    assert_eq!(
+        medals
+            .iter()
+            .find(|(e, _)| e.user_id == ids[0])
+            .unwrap()
+            .0
+            .gold,
+        2
+    );
+    assert_eq!(
+        medals
+            .iter()
+            .find(|(e, _)| e.user_id == ids[1])
+            .unwrap()
+            .0
+            .gold,
+        1
+    );
+    let a = stamps::record(&conn, ids[0], vec![]).await.unwrap();
+    let b = stamps::record(&conn, ids[1], vec![]).await.unwrap();
+    for record in [a, b] {
+        let solve = record.solves.iter().find(|s| s.day == day).unwrap();
+        assert_eq!(solve.place, 1);
+        assert_eq!(solve.gap_ms, Some(0));
+    }
+    let duels = rivals::duels(&conn, ids[0], &[ids[1]]).await.unwrap();
+    assert_eq!(
+        duels[&ids[1]]
+            .iter()
+            .find(|d| d.day == day)
+            .unwrap()
+            .outcome(),
+        crate::model::Outcome::Draw
+    );
+}
+
+#[tokio::test]
+async fn leaderboard_does_not_cut_off_a_shared_boundary_place() {
+    let (_db, conn) = test_db().await;
+    let day = crate::model::SHARED_PLACES_DAY;
+    for i in 0..52 {
+        let id = user(&conn, &format!("p{i}"), None).await;
+        finish(
+            &conn,
+            id,
+            day,
+            if i < 49 {
+                i * 100 + 1000
+            } else {
+                10_000 + i % 3
+            },
+        )
+        .await;
+    }
+    let board = leaderboard(&conn, day, None).await.unwrap();
+    assert_eq!(board.entries.len(), 52);
+    assert_eq!(board.entries.iter().filter(|e| e.rank == 50).count(), 3);
+}
+
+/// Forged log times and retries cannot replace the server's measured finish.
+#[tokio::test]
+async fn receipt_timing_is_server_only_validated_and_idempotent() {
+    let (_db, conn) = test_db().await;
+    let day = crate::model::RECEIPT_TIMING_DAY;
+    let id = user(&conn, "receipt", Some("receipt")).await;
+    start(&conn, id, day, None).await.unwrap();
+    age(&conn, id, day, 60_000).await;
+    let a = attempt(&conn, id, day).await.unwrap().unwrap();
+    let stored = get_or_create(&conn, day).await.unwrap();
+    let received = a.started_at + 30_000;
+    let mut log = played(&stored.solution);
+    // A client claims it completed almost instantly. It still cannot change the score.
+    for event in &mut log {
+        event.t = 1;
+    }
+    let result = submit_received(
+        &conn,
+        id,
+        day,
+        stored.solution.clone(),
+        1,
+        log.clone(),
+        None,
+        Some(&a.attempt_id),
+        received,
+    )
+    .await
+    .unwrap();
+    assert_eq!(result.time_ms, 30_000);
+    let saved = attempt(&conn, id, day).await.unwrap().unwrap();
+    assert_eq!(saved.finished_at, Some(received));
+    let retry = submit_received(
+        &conn,
+        id,
+        day,
+        stored.solution,
+        99,
+        log,
+        None,
+        Some(&a.attempt_id),
+        received - 10_000,
+    )
+    .await
+    .unwrap();
+    assert_eq!(retry.time_ms, result.time_ms);
+    assert_eq!(
+        attempt(&conn, id, day).await.unwrap().unwrap().finished_at,
+        Some(received)
+    );
+
+    let other = user(&conn, "future receipt", None).await;
+    start(&conn, other, day, None).await.unwrap();
+    let a = attempt(&conn, other, day).await.unwrap().unwrap();
+    let stored = get_or_create(&conn, day).await.unwrap();
+    assert!(
+        submit_received(
+            &conn,
+            other,
+            day,
+            stored.solution.clone(),
+            1,
+            played(&stored.solution),
+            None,
+            Some(&a.attempt_id),
+            a.started_at - 1
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        attempt(&conn, other, day)
+            .await
+            .unwrap()
+            .unwrap()
+            .finished_at
+            .is_none()
+    );
+    assert!(
+        submit_received(
+            &conn,
+            other,
+            day,
+            vec![0; stored.solution.len()],
+            1,
+            vec![],
+            None,
+            Some(&a.attempt_id),
+            a.started_at + 30_000
+        )
+        .await
+        .is_err()
+    );
+    assert!(
+        attempt(&conn, other, day)
+            .await
+            .unwrap()
+            .unwrap()
+            .finished_at
+            .is_none()
+    );
+}

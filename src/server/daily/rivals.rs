@@ -125,7 +125,7 @@ pub async fn set(
 }
 
 /// Every day `user` and each of `others` both have a ranked time, oldest first.
-async fn duels(
+pub(super) async fn duels(
     conn: &Connection,
     user: i64,
     others: &[i64],
@@ -139,7 +139,7 @@ async fn duels(
     let mut rows = conn
         .query(
             &format!(
-                "SELECT b.user_id, a.day, a.time_ms, b.time_ms
+                "SELECT b.user_id, a.day, a.rank_ms, b.rank_ms
                  FROM attempts a JOIN attempts b ON b.day = a.day
                  WHERE a.user_id = ?1 AND b.user_id IN ({})
                    AND {} AND {}
@@ -208,7 +208,8 @@ pub async fn duels_of_day(
     };
     let mine = mine
         .time_ms
-        .filter(|_| !mine.revealed && mine.flag.is_none());
+        .filter(|_| !mine.revealed && mine.flag.is_none())
+        .map(|ms| crate::model::score_time(day, ms));
     let list = rivals(conn, user).await?;
     let ids: Vec<i64> = list.iter().map(|r| r.id).collect();
     let mut times = HashMap::new();
@@ -217,7 +218,7 @@ pub async fn duels_of_day(
         let mut rows = conn
             .query(
                 &format!(
-                    "SELECT a.user_id, a.time_ms FROM attempts a
+                    "SELECT a.user_id, a.rank_ms FROM attempts a
                      WHERE a.day = ?1 AND a.user_id IN ({}) AND {}",
                     joined.join(","),
                     ranked("a"),

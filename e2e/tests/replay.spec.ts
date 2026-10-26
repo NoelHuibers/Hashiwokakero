@@ -62,7 +62,7 @@ test('the seeded group watches yesterday: play, seek, step, side by side', async
   // Keys: Home to the start, an arrow to the first move
   await timeline.focus();
   await page.keyboard.press('Home');
-  await expect(clock(page)).toHaveText('0:00.0');
+  await expect(clock(page)).toHaveText('0:00.00');
   await expect(finish.locator('li[data-place]')).toHaveCount(0);
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => clockMs(page)).toBeGreaterThan(0);

@@ -8,7 +8,7 @@ use leptos::prelude::*;
 
 use crate::components::sprites::{BOAT, PENNANT, PixelSprite, runs};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::model::{MarkKind, SPEEDS, colour_var, format_duration, fraction};
+use crate::model::{MarkKind, SPEEDS, colour_var, format_score, fraction};
 
 use super::state::{Layout, Theatre};
 
@@ -100,7 +100,7 @@ fn Timeline(theatre: Theatre) -> impl IntoView {
         .filter_map(|(i, l)| l.finish().map(|f| (*i, l.name.clone(), l.colour, f)))
         .map(|(i, name, colour, finish)| {
             let tip = move || {
-                td_string!(i18n.get_locale(), replay.flag, name = name.clone(), time = format_duration(i64::from(finish)))
+                td_string!(i18n.get_locale(), replay.flag, name = name.clone(), time = format_score(i64::from(finish)))
             };
             view! {
                 <span
@@ -130,7 +130,7 @@ fn Timeline(theatre: Theatre) -> impl IntoView {
         .map(|(i, name, colour, mark)| {
             let tip = move || {
                 let l = i18n.get_locale();
-                let time = format_duration(i64::from(mark.t));
+                let time = format_score(i64::from(mark.t));
                 match mark.kind {
                     MarkKind::Hint => td_string!(l, replay.marks.hint, name = name.clone(), time),
                     MarkKind::Check | MarkKind::Unknown => {
@@ -159,8 +159,8 @@ fn Timeline(theatre: Theatre) -> impl IntoView {
         td_string!(
             i18n.get_locale(),
             replay.controls.position,
-            time = format_duration(i64::from(theatre.now())),
-            end = format_duration(i64::from(end))
+            time = format_score(i64::from(theatre.now())),
+            end = format_score(i64::from(end))
         )
     };
     view! {
@@ -316,10 +316,10 @@ pub fn Controls(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoVie
                     data-testid="replay-clock"
                 >
                     <span class="text-foreground">
-                        {move || format_duration(i64::from(theatre.now()))}
+                        {move || format_score(i64::from(theatre.now()))}
                     </span>
                     <span class="text-muted-foreground">
-                        {format_duration(i64::from(theatre.end))}
+                        {format_score(i64::from(theatre.end))}
                     </span>
                 </p>
             </div>
@@ -440,7 +440,7 @@ mod tests {
                 guest: false,
                 colour: 0,
                 outcome: LaneOutcome::Solved {
-                    time_ms: 1,
+                    time_ms: 30_000,
                     hints: 0,
                     checks: 0,
                     ranked: true,
@@ -455,6 +455,7 @@ mod tests {
                     })
                     .collect(),
                 marks: Vec::new(),
+                official_rank: None,
             };
             let mut puzzle = common::Puzzle::empty(3, 1);
             puzzle.set(common::Pos::new(0, 0), 1);

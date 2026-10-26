@@ -57,12 +57,14 @@
     "no_log": "sin movimientos registrados",
     "unranked": "sin clasificar",
     "unranked_hint": "No está en la clasificación: este resultado fue marcado.",
-    "progress": "{{ name }}: {{ percent }} % de los puentes"
+    "progress": "{{ name }}: {{ percent }} % de los puentes",
+    "receipt": "Esperando la recepción del servidor"
   },
   "finish": {
     "title": "Meta",
     "none": "Nadie ha llegado todavía…",
-    "official": "{{ time }} con penalizaciones"
+    "official": "{{ time }} con penalizaciones",
+    "timing": "Los puestos y tiempos usan el resultado oficial del servidor, incluidas las penalizaciones. Los tiempos de las jugadas son aproximados; un tablero resuelto puede esperar al servidor."
   },
   "marks": {
     "hint": "{{ name }} pidió una pista en {{ time }}",

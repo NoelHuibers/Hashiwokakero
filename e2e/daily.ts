@@ -117,8 +117,8 @@ export async function hintUntil(page: Page, solution: number[], left: number) {
 export async function expectResult(page: Page) {
   const card = page.locator('aside > div').filter({ has: page.getByRole('heading', { name: /Well done!/ }) });
   await expect(card).toBeVisible();
-  // The penalties are in the time: at least 40 s, in m:ss.d below ten minutes, h:mm:ss above
-  await expect(card.locator('p.font-pixel.text-3xl')).toHaveText(/^(\d+:\d{2}\.\d|\d+:\d{2}(:\d{2})?)$/);
+  // Official scores always show the hundredths used for shared ranking, including penalties.
+  await expect(card.locator('p.font-pixel.text-3xl')).toHaveText(/^\d+:\d{2}(?::\d{2})?\.\d{2}$/);
   await expect(card.getByText(/^Rank \d+ of \d+ today$/)).toBeVisible();
   await expect(card.getByText('Not on today\'s leaderboard')).toHaveCount(0);
   return card;

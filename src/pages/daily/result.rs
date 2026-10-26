@@ -9,7 +9,7 @@ use crate::components::share::ShareBar;
 use crate::components::ui::card::Card;
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::{difficulty_name, localized, prefix};
-use crate::model::{Flag, WEEKDAY_KANJI, daily_number, format_duration, points, weekday};
+use crate::model::{Flag, WEEKDAY_KANJI, daily_number, format_score, points, weekday};
 use crate::pages::groups::hanko::ReceivedHanko;
 use crate::state::{Auth, Status};
 
@@ -46,7 +46,7 @@ pub(super) fn share_text(daily: &Daily, locale: Locale) -> String {
         .unwrap_or_default();
     format!(
         "{headline}\n⏱ {}{rank}\n{origin}{}",
-        format_duration(daily.elapsed_ms()),
+        format_score(daily.elapsed_ms()),
         localized(locale, "/"),
     )
 }
@@ -90,7 +90,7 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
                     view! {
                         <Stamp kanji="完" class="size-20 text-5xl" />
                         <h2 class="text-2xl font-black">"見事！ " {t!(i18n, common.game.well_done)}</h2>
-                        <p class="font-pixel text-3xl tabular-nums">{move || format_duration(daily.elapsed_ms())}</p>
+                        <p class="font-pixel text-3xl tabular-nums">{move || format_score(daily.elapsed_ms())}</p>
                         {move || {
                             daily
                                 .flag()

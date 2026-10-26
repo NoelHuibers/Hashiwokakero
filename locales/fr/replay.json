@@ -57,12 +57,14 @@
     "no_log": "aucun coup enregistré",
     "unranked": "non classé",
     "unranked_hint": "Pas au classement : ce résultat a été signalé.",
-    "progress": "{{ name }} : {{ percent }} % des ponts"
+    "progress": "{{ name }} : {{ percent }} % des ponts",
+    "receipt": "En attente de réception par le serveur"
   },
   "finish": {
     "title": "Ligne d'arrivée",
     "none": "Personne n'est encore arrivé…",
-    "official": "{{ time }} avec pénalités"
+    "official": "{{ time }} avec pénalités",
+    "timing": "Les places et les temps utilisent le résultat officiel du serveur, pénalités incluses. Le minutage des coups est approximatif ; une grille terminée peut encore attendre le serveur."
   },
   "marks": {
     "hint": "{{ name }} a pris un indice à {{ time }}",

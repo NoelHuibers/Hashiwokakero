@@ -16,6 +16,7 @@ mod moves;
 mod replay;
 mod rivals;
 mod river;
+mod scoring;
 mod stamps;
 #[cfg(test)]
 mod tests;
@@ -35,4 +36,5 @@ pub use moves::*;
 pub use replay::*;
 pub use rivals::*;
 pub use river::*;
+pub use scoring::*;
 pub use stamps::*;

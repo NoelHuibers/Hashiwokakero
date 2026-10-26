@@ -59,7 +59,11 @@ async fn backfill_runs(conn: &Connection, user: i64) -> Result<(), ServerFnError
 const RECORD_QUERY: &str = include_str!("stamp_record.sql");
 
 /// Everything the stamps of a player depend on. `kept` are the stored stamps that stay.
-async fn record(conn: &Connection, user: i64, kept: Vec<Stamp>) -> Result<Record, ServerFnError> {
+pub(super) async fn record(
+    conn: &Connection,
+    user: i64,
+    kept: Vec<Stamp>,
+) -> Result<Record, ServerFnError> {
     let mut rows = conn
         .query(RECORD_QUERY, params![user])
         .await

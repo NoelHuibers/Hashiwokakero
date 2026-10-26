@@ -57,12 +57,14 @@
     "no_log": "tidak ada langkah tercatat",
     "unranked": "tidak diperingkat",
     "unranked_hint": "Tidak di papan peringkat: hasil ini ditandai.",
-    "progress": "{{ name }}: {{ percent }}% jembatan"
+    "progress": "{{ name }}: {{ percent }}% jembatan",
+    "receipt": "Menunggu penerimaan server"
   },
   "finish": {
     "title": "Garis finis",
     "none": "Belum ada yang sampai…",
-    "official": "{{ time }} dengan penalti"
+    "official": "{{ time }} dengan penalti",
+    "timing": "Peringkat dan waktu mengikuti hasil resmi server, termasuk penalti. Waktu langkah adalah perkiraan; papan yang selesai mungkin masih menunggu penerimaan server."
   },
   "marks": {
     "hint": "{{ name }} mengambil petunjuk pada {{ time }}",

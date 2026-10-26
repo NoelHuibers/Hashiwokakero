@@ -57,12 +57,14 @@
     "no_log": "no moves recorded",
     "unranked": "unranked",
     "unranked_hint": "Not on the leaderboard: this result was flagged.",
-    "progress": "{{ name }}: {{ percent }}% of the bridges"
+    "progress": "{{ name }}: {{ percent }}% of the bridges",
+    "receipt": "Awaiting server receipt"
   },
   "finish": {
     "title": "Finish line",
     "none": "Nobody's across yet…",
-    "official": "{{ time }} with penalties"
+    "official": "{{ time }} with penalties",
+    "timing": "Places and times use the official server result, including penalties. Move playback is approximate; a completed board may wait for server receipt."
   },
   "marks": {
     "hint": "{{ name }} took a hint at {{ time }}",

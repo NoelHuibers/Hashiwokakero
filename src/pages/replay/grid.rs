@@ -6,7 +6,7 @@ use leptos::prelude::*;
 
 use crate::components::sprites::{BoardDefs, BridgeSprite, CELL, PENNANT, PixelSprite, Span};
 use crate::i18n::{t_string, td_string, use_i18n};
-use crate::model::{colour_var, format_duration, progress};
+use crate::model::{LaneOutcome, colour_var, format_score, progress};
 
 use super::stage::{PAD, StaticIslands};
 use super::state::Theatre;
@@ -49,6 +49,10 @@ fn Mini(theatre: Theatre, board: StoredValue<Board>, lane: usize) -> impl IntoVi
     let done = Signal::derive(move || board.with_value(|b| bridges.with(|br| islands_done(b, br))));
     let percent = move || bridges.with(|b| progress(b, theatre.total));
     let finish = info.finish();
+    let score = match info.outcome {
+        LaneOutcome::Solved { time_ms, .. } => time_ms,
+        _ => 0,
+    };
     let crossed = Memo::new(move |_| finish.filter(|&at| theatre.now() >= at));
     let (w, h) = board.with_value(|b| {
         (
@@ -83,10 +87,10 @@ fn Mini(theatre: Theatre, board: StoredValue<Board>, lane: usize) -> impl IntoVi
                 </span>
                 <span class="ms-auto shrink-0 font-pixel text-xs tabular-nums text-muted-foreground">
                     {move || match crossed.get() {
-                        Some(at) => view! {
+                        Some(_at) => view! {
                             <span class="inline-flex items-center gap-1 text-foreground">
                                 <PixelSprite art=&PENNANT class="h-3 w-auto" />
-                                {format_duration(i64::from(at))}
+                                {format_score(score)}
                             </span>
                         }
                             .into_any(),

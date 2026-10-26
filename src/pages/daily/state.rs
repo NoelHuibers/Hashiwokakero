@@ -85,6 +85,8 @@ pub struct Daily {
     pub(super) submission: RwSignal<Phase>,
     pub(super) submit_payload: StoredValue<Option<Submission>>,
     pub(super) logged: StoredValue<Option<MoveSnapshot>>,
+    #[cfg(feature = "browser")]
+    pub(super) log_clock: StoredValue<Option<super::clock::MoveClock>>,
     /// A quiet [`Self::refresh`] is on its way.
     pub(super) refreshing: StoredValue<bool>,
 }
@@ -141,6 +143,16 @@ impl Daily {
 
     /// Milliseconds since the start on the server clock, without penalties: the move log's time.
     pub(super) fn clock_ms(&self) -> u32 {
+        #[cfg(feature = "browser")]
+        if let Some(t) = self
+            .log_clock
+            .with_value(|c| c.as_ref().map(|c| c.at(super::clock::monotonic_now())))
+        {
+            return t;
+        }
+        #[cfg(feature = "browser")]
+        let now = browser_now() + self.skew.get_untracked();
+        #[cfg(not(feature = "browser"))]
         let now = self.server_now();
         let started = self.info.with_untracked(|i| {
             i.as_ref()
@@ -184,6 +196,7 @@ impl Daily {
             .filter(|l| l.day == day)
             .unwrap_or_default();
         saved.day = day;
+        let t = t.max(saved.events.last().map_or(0, |e| e.t));
         for edge in changed {
             saved.events.push(MoveEvent {
                 t,
@@ -225,6 +238,26 @@ impl Daily {
 
     pub(super) fn apply(&self, info: DailyInfo) {
         let new_day = self.day() != Some(info.day);
+        #[cfg(feature = "browser")]
+        self.log_clock.update_value(|clock| {
+            let Some(attempt) = &info.attempt else {
+                *clock = None;
+                return;
+            };
+            let elapsed =
+                u32::try_from((info.server_now - attempt.started_at).max(0)).unwrap_or(u32::MAX);
+            let now = super::clock::monotonic_now();
+            match clock {
+                Some(c) if c.attempt == attempt.attempt_id => c.observe(elapsed, now),
+                _ => {
+                    *clock = Some(super::clock::MoveClock::new(
+                        attempt.attempt_id.clone(),
+                        elapsed,
+                        now,
+                    ));
+                }
+            }
+        });
         self.skew.set(info.server_now - browser_now());
         self.show(info);
         if new_day {
@@ -662,6 +695,8 @@ mod tests {
             submit_payload: StoredValue::new(None),
             refreshing: StoredValue::new(false),
             logged: StoredValue::new(None),
+            #[cfg(feature = "browser")]
+            log_clock: StoredValue::new(None),
         }
     }
 

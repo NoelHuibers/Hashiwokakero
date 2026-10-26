@@ -9,7 +9,7 @@ use crate::components::leaderboard::{HIGHLIGHT_ROW, PlayerName, RANK_TABLE, ROW_
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
-use crate::model::{GroupToday, TodayEntry, TodayState, colour_var, daily_number, format_duration};
+use crate::model::{GroupToday, TodayEntry, TodayState, colour_var, daily_number, format_score};
 use crate::pages::replay::replay_path;
 
 use super::GroupContext;
@@ -129,7 +129,7 @@ fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>, hanko: HankoBoard)
             ..
         } => (
             (hints + checks > 0).then(|| format!("{hints}h {checks}c")),
-            view! { <span class="font-pixel tabular-nums" class:text-primary=me>{format_duration(time_ms)}</span> }
+            view! { <span class="font-pixel tabular-nums" class:text-primary=me>{format_score(time_ms)}</span> }
                 .into_any(),
         ),
         TodayState::Done => (

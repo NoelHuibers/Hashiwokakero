@@ -11,7 +11,7 @@ use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::Card;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{prefix, stamp_name};
-use crate::model::{self, format_duration};
+use crate::model::{self, format_score};
 
 use super::result::share_text;
 use super::state::Daily;
@@ -119,7 +119,7 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
                     <h2 id="daily-win-title" class="text-xl font-black sm:text-2xl">
                         "見事！ " {t!(i18n, common.game.well_done)}
                     </h2>
-                    <p class="font-pixel text-2xl tabular-nums sm:text-3xl">{move || format_duration(daily.elapsed_ms())}</p>
+                    <p class="font-pixel text-2xl tabular-nums sm:text-3xl">{move || format_score(daily.elapsed_ms())}</p>
                     <p class="text-sm text-muted-foreground">{place}</p>
                     {move || {
                         let stamps = stamps();

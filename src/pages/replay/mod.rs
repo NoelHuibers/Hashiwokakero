@@ -412,6 +412,7 @@ mod tests {
             colour: u8::try_from(user_id).unwrap(),
             outcome,
             log,
+            official_rank: None,
             marks: vec![Mark {
                 t: 500,
                 kind: MarkKind::Hint,
@@ -490,11 +491,12 @@ mod tests {
             assert!(duel.contains("replay-stage"));
             let theatre = Theatre::new(data(), None);
             theatre.layout.set(Layout::Apart);
-            theatre.seek(9000.0);
+            theatre.seek(10_000.0);
             let apart = view! { <Apart theatre /> }.to_html();
             assert!(apart.contains("replay-apart"), "{apart}");
             let finish = view! { <FinishLine theatre /> }.to_html();
-            assert!(finish.contains("data-place=\"2\""), "{finish}");
+            assert!(finish.contains("data-place=\"0\""), "{finish}");
+            assert!(finish.contains("unranked"));
         });
     }
 

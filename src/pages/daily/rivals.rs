@@ -10,7 +10,7 @@ use crate::components::sprites::{FLAME, PixelSprite, SWORDS};
 use crate::components::stamps::StampBadge;
 use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{t, use_i18n};
-use crate::model::{HeadToHead, RivalDay, RivalsToday, Verdict, format_duration};
+use crate::model::{HeadToHead, RivalDay, RivalsToday, Verdict, format_score};
 use crate::state::Rivals;
 
 use super::state::Daily;
@@ -89,7 +89,7 @@ fn Line(verdict: Verdict, rival: RivalDay) -> impl IntoView {
                 i18n,
                 rivals.today.solved,
                 name = who,
-                time = format_duration(time_ms),
+                time = format_score(time_ms),
                 <b> = <b class="font-bold text-foreground" />
             )
                 .into_any()
@@ -106,7 +106,7 @@ fn Line(verdict: Verdict, rival: RivalDay) -> impl IntoView {
                 </p>
                 {time_ms
                     .map(|t| {
-                        view! { <span class="font-pixel text-xs tabular-nums text-muted-foreground">{format_duration(t)}</span> }
+                        view! { <span class="font-pixel text-xs tabular-nums text-muted-foreground">{format_score(t)}</span> }
                     })}
             </div>
             <Score wins losses draws />

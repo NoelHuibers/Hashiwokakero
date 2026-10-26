@@ -58,14 +58,27 @@ pub struct Lane {
     /// In time order, only edges of the day's board (see [`clean_log`]). Empty unless solved.
     pub log: Vec<MoveEvent>,
     pub marks: Vec<Mark>,
+    /// Server-computed place among this group's eligible solves, including ties.
+    #[serde(default)]
+    pub official_rank: Option<usize>,
 }
 
 impl Lane {
-    /// When they crossed the line: the move that solved it, the last of the log.
+    /// Server-measured completion, before penalties. A log is needed for playback.
     pub fn finish(&self) -> Option<u32> {
         match self.outcome {
-            LaneOutcome::Solved { .. } => self.log.last().map(|e| e.t),
-            LaneOutcome::GaveUp | LaneOutcome::Missing => None,
+            LaneOutcome::Solved {
+                time_ms,
+                hints,
+                checks,
+                ..
+            } if !self.log.is_empty() => {
+                let elapsed = time_ms
+                    .saturating_sub(hints.saturating_mul(super::HINT_PENALTY_MS))
+                    .saturating_sub(checks.saturating_mul(super::CHECK_PENALTY_MS));
+                Some(u32::try_from(elapsed.max(0)).unwrap_or(u32::MAX))
+            }
+            LaneOutcome::Solved { .. } | LaneOutcome::GaveUp | LaneOutcome::Missing => None,
         }
     }
 }
@@ -218,24 +231,44 @@ pub struct Finisher {
     pub at: u32,
 }
 
-/// Who crossed the line by time `t`, in the order they did: earlier first, the same moment in
-/// lane order. The places count everyone, shown or not.
+/// Official places among ranked lanes, revealed at their server completion.
+///
+/// Client log times and lane order never decide a new-policy place. Unranked lanes
+/// have place zero; they may play but cannot take a medal from a ranked result.
 pub fn finish_order(lanes: &[Lane], t: u32) -> Vec<Finisher> {
-    let mut done: Vec<(u32, usize)> = lanes
+    official_finish_order(lanes, t, super::SHARED_PLACES_DAY)
+}
+
+pub fn official_finish_order(lanes: &[Lane], t: u32, day: i64) -> Vec<Finisher> {
+    let score = |lane: &Lane| match lane.outcome {
+        LaneOutcome::Solved {
+            time_ms,
+            ranked: true,
+            ..
+        } => Some(super::score_time(day, time_ms)),
+        _ => None,
+    };
+    let mut done: Vec<Finisher> = lanes
         .iter()
         .enumerate()
-        .filter_map(|(i, l)| l.finish().map(|at| (at, i)))
-        .collect();
-    done.sort_unstable();
-    done.into_iter()
-        .enumerate()
-        .filter(|&(_, (at, _))| at <= t)
-        .map(|(i, (at, lane))| Finisher {
-            lane,
-            place: i + 1,
-            at,
+        .filter_map(|(i, lane)| {
+            let at = lane.finish()?;
+            if at > t {
+                return None;
+            }
+            let place = score(lane).map_or(0, |mine| {
+                lane.official_rank.unwrap_or_else(|| {
+                    1 + lanes
+                        .iter()
+                        .filter(|l| score(l).is_some_and(|other| other < mine))
+                        .count()
+                })
+            });
+            Some(Finisher { lane: i, place, at })
         })
-        .collect()
+        .collect();
+    done.sort_by_key(|f| (f.place == 0, f.place, lanes[f.lane].user_id));
+    done
 }
 
 /// Bridges a puzzle's solution has: every bridge counts at both its islands.
@@ -311,7 +344,7 @@ mod tests {
             colour: 0,
             outcome: if solved {
                 LaneOutcome::Solved {
-                    time_ms: 0,
+                    time_ms: i64::from(log.last().map_or(0, |e| e.t)),
                     hints: 0,
                     checks: 0,
                     ranked: true,
@@ -321,6 +354,7 @@ mod tests {
             },
             log,
             marks: Vec::new(),
+            official_rank: None,
         }
     }
 
@@ -426,8 +460,8 @@ mod tests {
             .iter()
             .map(|f| (f.lane, f.place))
             .collect();
-        // The same moment: in lane order
-        assert_eq!(all, [(1, 1), (0, 2), (3, 3)]);
+        // Equal official scores share a place.
+        assert_eq!(all, [(1, 1), (0, 2), (3, 2)]);
         let data = ReplayData {
             day: 1,
             today: 2,
@@ -473,5 +507,49 @@ mod tests {
             assert!(lane_offset(1, n) > first);
         }
         assert!((lane_pitch(0) - LANE_PITCH).abs() < 1e-9);
+    }
+}
+
+#[cfg(test)]
+mod scoring_tests {
+    use super::*;
+
+    #[test]
+    fn forged_move_times_cannot_win_the_replay_or_split_a_tie() {
+        let lane = |user_id, time_ms, t, ranked| Lane {
+            user_id,
+            name: String::new(),
+            guest: false,
+            colour: 0,
+            outcome: LaneOutcome::Solved {
+                time_ms,
+                hints: 0,
+                checks: 0,
+                ranked,
+            },
+            log: vec![MoveEvent {
+                t,
+                edge: 0,
+                count: 1,
+                tap: true,
+            }],
+            marks: vec![],
+            official_rank: None,
+        };
+        let lanes = [
+            lane(1, 7826, 7297, true),
+            lane(2, 7831, 7161, true),
+            lane(3, 8000, 1, false),
+        ];
+        assert_eq!(finish_order(&lanes, 7300), []);
+        let finished = finish_order(&lanes, 9000);
+        assert_eq!(
+            finished.iter().map(|f| f.place).collect::<Vec<_>>(),
+            [1, 1, 0]
+        );
+        assert_eq!(
+            finished.iter().map(|f| f.at).collect::<Vec<_>>(),
+            [7826, 7831, 8000]
+        );
     }
 }

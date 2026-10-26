@@ -182,7 +182,10 @@ pub fn standings(members: &[i64], solves: &[WeekSolve], monday: i64) -> Vec<Stan
         let day: Vec<(usize, i64)> = solves
             .iter()
             .filter(|s| week_index(s.day, monday) == Some(i))
-            .filter_map(|s| at.get(&s.user).map(|&m| (m, s.time_ms)))
+            .filter_map(|s| {
+                at.get(&s.user)
+                    .map(|&m| (m, super::score_time(s.day, s.time_ms)))
+            })
             .collect();
         for &(m, time) in &day {
             // Equal times share the place
@@ -348,8 +351,8 @@ fn median(mut values: Vec<i64>) -> Option<i64> {
 /// A time against the median time of all players of that day, in thousandths: 1000 is the
 /// usual player, 800 a fifth quicker. Makes Monday's easy daily and Sunday's oni comparable.
 pub fn pace<S: BuildHasher>(solve: &WeekSolve, medians: &HashMap<i64, i64, S>) -> Option<i64> {
-    let median = *medians.get(&solve.day)?;
-    (median > 0).then(|| solve.time_ms * 1000 / median)
+    let median = super::score_time(solve.day, *medians.get(&solve.day)?);
+    (median > 0).then(|| super::score_time(solve.day, solve.time_ms) * 1000 / median)
 }
 
 /// The awards of the week of `monday` among `members`.
@@ -373,8 +376,9 @@ pub fn awards<S: BuildHasher>(
     }
     let played = |user: &i64| count(week.get(user).map_or(0, Vec::len));
     let total = |user: &i64| {
-        week.get(user)
-            .map_or(0, |w| w.iter().map(|s| s.time_ms).sum())
+        week.get(user).map_or(0, |w| {
+            w.iter().map(|s| super::score_time(s.day, s.time_ms)).sum()
+        })
     };
     let paces = |solves: Option<&Vec<WeekSolve>>| -> Vec<i64> {
         solves
@@ -1159,5 +1163,12 @@ mod tests {
         let kanji: std::collections::HashSet<_> =
             AwardKind::ALL.iter().map(|k| k.kanji()).collect();
         assert_eq!(kanji.len(), AwardKind::ALL.len());
+    }
+    #[test]
+    fn shared_hundredths_have_equal_pace_for_weekly_awards() {
+        let day = crate::model::SHARED_PLACES_DAY;
+        let medians = HashMap::from([(day, 7829)]);
+        assert_eq!(pace(&solve(1, day, 7826), &medians), Some(1000));
+        assert_eq!(pace(&solve(2, day, 7831), &medians), Some(1000));
     }
 }

@@ -7,7 +7,6 @@ use super::attempt::rank;
 use super::finishers;
 use super::stamps::shown_stamps;
 use crate::model::{Leaderboard, LeaderboardEntry, daily_difficulty};
-use crate::server::count;
 use crate::server::db::db_err;
 
 /// Ranked entries shown on a daily leaderboard.
@@ -37,9 +36,11 @@ pub async fn leaderboard(
     let mut rows = conn
         .query(
             &format!(
-                "SELECT {ENTRY_COLUMNS} FROM attempts a JOIN users u ON u.id = a.user_id
-                 WHERE a.day = ?1 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL
-                 ORDER BY a.time_ms, a.finished_at LIMIT ?2"
+                "WITH ranked AS (SELECT {ENTRY_COLUMNS},
+                    RANK() OVER (ORDER BY a.rank_ms, a.rank_finish) AS place
+                 FROM attempts a JOIN users u ON u.id = a.user_id
+                 WHERE a.day = ?1 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL)
+                 SELECT * FROM ranked WHERE place <= ?2 ORDER BY place, user_id"
             ),
             params![day, LEADERBOARD_SIZE],
         )
@@ -47,7 +48,7 @@ pub async fn leaderboard(
         .map_err(db_err)?;
     let mut entries = Vec::new();
     while let Some(row) = rows.next().await.map_err(db_err)? {
-        entries.push(entry(&row, count(entries.len() + 1)).map_err(db_err)?);
+        entries.push(entry(&row, row.get(7).map_err(db_err)?).map_err(db_err)?);
     }
 
     let mut mine = entries.iter().find(|e| Some(e.user_id) == me).cloned();

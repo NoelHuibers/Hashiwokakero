@@ -5,7 +5,7 @@ use leptos::prelude::*;
 
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::date_short;
-use crate::model::{UserStats, date_string, format_duration};
+use crate::model::{UserStats, date_string, format_score};
 
 #[component]
 fn StatTile(label: String, jp: &'static str, value: String) -> impl IntoView {
@@ -38,7 +38,7 @@ fn Calendar(stats: UserStats) -> impl IntoView {
                                 .unwrap_or_default();
                             (
                                 if r.is_some_and(|r| r <= 3) { "bg-[var(--px-gold)]" } else { "bg-[var(--px-grass)]" },
-                                format!("{} · {}{rank}", date_short(locale, d.day), format_duration(t)),
+                                format!("{} · {}{rank}", date_short(locale, d.day), format_score(t)),
                             )
                         }
                         _ => (
@@ -79,12 +79,12 @@ pub fn Record(stats: UserStats) -> impl IntoView {
             <StatTile
                 label=t_string!(i18n, account.stats.fastest).to_string()
                 jp="最速"
-                value=s.best_time_ms.map_or_else(|| "–".into(), format_duration)
+                value=s.best_time_ms.map_or_else(|| "–".into(), format_score)
             />
             <StatTile
                 label=t_string!(i18n, account.stats.average).to_string()
                 jp="平均"
-                value=s.average_time_ms.map_or_else(|| "–".into(), format_duration)
+                value=s.average_time_ms.map_or_else(|| "–".into(), format_score)
             />
             <StatTile label=t_string!(i18n, account.stats.week).to_string() jp="週" value=week.to_string() />
             <StatTile

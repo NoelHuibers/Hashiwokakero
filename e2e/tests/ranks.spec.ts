@@ -138,3 +138,39 @@ test('a tab of an older build is asked to reload when the server answers in anot
   await expect(reload).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
 });
+
+test('shared hundredths show every tied medalist and equal winning steps', async ({ page }) => {
+  await page.route('**/api/daily_leaderboard', (route) => route.fulfill({
+    json: {
+      day: 20752, difficulty: 'Easy', me: null, finishers: 5,
+      entries: [
+        { rank: 1, user_id: 501, name: 'Noel', time_ms: 7826 },
+        { rank: 1, user_id: 502, name: 'Nele', time_ms: 7831 },
+        { rank: 3, user_id: 503, name: 'Third A', time_ms: 8803 },
+        { rank: 3, user_id: 504, name: 'Third B', time_ms: 8804 },
+        { rank: 5, user_id: 505, name: 'Fifth', time_ms: 9000 },
+      ].map((entry) => ({ ...entry, guest: true, hints: 0, checks: 0, stamp: null })),
+    },
+  }));
+  await visit(page, '/ranks');
+  const podium = page.locator('ol:has(> li.podium-step)').first();
+  await expect(podium.locator('> li')).toHaveCount(4);
+  const winners = podium.locator('> li[data-place="1"]');
+  await expect(winners).toHaveCount(2);
+  await expect(winners.nth(0)).toContainText('0:07.83');
+  await expect(winners.nth(1)).toContainText('0:07.83');
+  await expect(podium.locator('> li[data-place="3"]')).toHaveCount(2);
+  const first = (await winners.nth(0).boundingBox())!;
+  const second = (await winners.nth(1).boundingBox())!;
+  expect(first.y).toBe(second.y);
+  expect(first.height).toBe(second.height);
+  await expect(page.locator('table.rank-table').first()).toContainText('Fifth');
+  const fourth = (await podium.locator('> li').nth(3).boundingBox())!;
+  expect(fourth.y).toBeGreaterThan(first.y);
+  await page.setViewportSize({ width: 360, height: 800 });
+  const mobileFirst = (await winners.nth(0).boundingBox())!;
+  const mobileSecond = (await winners.nth(1).boundingBox())!;
+  expect(mobileFirst.y).toBe(mobileSecond.y);
+  expect(mobileFirst.height).toBe(mobileSecond.height);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});

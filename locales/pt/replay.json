@@ -57,12 +57,14 @@
     "no_log": "nenhum movimento registrado",
     "unranked": "fora do ranking",
     "unranked_hint": "Fora do ranking: este resultado foi sinalizado.",
-    "progress": "{{ name }}: {{ percent }}% das pontes"
+    "progress": "{{ name }}: {{ percent }}% das pontes",
+    "receipt": "A aguardar receção pelo servidor"
   },
   "finish": {
     "title": "Linha de chegada",
     "none": "Ninguém chegou ainda…",
-    "official": "{{ time }} com penalidades"
+    "official": "{{ time }} com penalidades",
+    "timing": "As posições e os tempos usam o resultado oficial do servidor, incluindo penalizações. Os tempos das jogadas são aproximados; um tabuleiro resolvido pode aguardar o servidor."
   },
   "marks": {
     "hint": "{{ name }} pegou uma dica em {{ time }}",
