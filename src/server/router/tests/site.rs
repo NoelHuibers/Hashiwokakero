@@ -410,10 +410,13 @@ async fn search_engines_find_their_files() {
         "/google0123456789abcdef.html",
         "/0123456789abcdef.txt",
         "/de/BingSiteAuth.xml",
-        "/BingSiteAuth.xml/",
     ] {
         assert_status(&browser.get(path).await, StatusCode::NOT_FOUND);
     }
+    // Not served under another name: a 404, or a redirect to the file once trailing slashes
+    // redirect to pages
+    let res = browser.get("/BingSiteAuth.xml/").await;
+    assert_ne!(res.status(), StatusCode::OK);
     assert_status(&browser.get("/sitemap.xml").await, StatusCode::OK);
     assert_status(&browser.get("/rules").await, StatusCode::OK);
 }
