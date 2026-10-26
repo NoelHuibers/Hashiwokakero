@@ -133,7 +133,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 13b | iOS simulator smoke test in CI: the simulator build on a booted simulator, offline, like 10a | 13a | |
 | 13c | iOS polish: safe areas (notch, home indicator), share sheet in Swift like `HashiPlugin.kt`, status bar, soft keyboard, links out | 13a | |
 | 13d | Universal Links: `apple-app-site-association` served from config, Associated Domains; needs the Team ID | 10b, 13a | |
-| 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | |
+| 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | ✓ #154 |
 | 13f | First iOS release: TestFlight, App Store listing and review | 13b–13e | |
 
 ## Owner tasks
@@ -180,7 +180,7 @@ replaced through Play's support). Left, in this order (details in
       later promotions from the workflow), Invite user.
 
    Check it by running the workflow on the tag again with publish on:
-   `gh workflow run android-release.yml --ref app-v<version> -f publish=true` (a version Play
+   `gh workflow run app-release.yml --ref app-v<version> -f publish=true` (a version Play
    already has is refused: bump the version for a real test). While Play still calls the app a
    draft, it only accepts draft releases: repository variable `PLAY_RELEASE_STATUS=draft`.
 6. **Closed test**: personal developer accounts created after 13 November 2023 need a closed
@@ -190,5 +190,36 @@ replaced through Play's support). Left, in this order (details in
    internal release promoted to it.
 7. **Store listing**: description, screenshots, privacy policy URL (`/datenschutz`), the Data
    safety form, content rating, target audience, and trader status (EU).
-8. **iOS**: an App Store Connect API key for the release workflow (step 13e), and the Team ID
-   for the Universal Links (13d). The Apple Developer Program membership is there.
+8. **iOS.** Done: the Apple Developer Program membership, the Team ID `Q35TCGM5PW` (for the
+   signing and the Universal Links), the bundle ID `rs.hashi` with Associated Domains on, the App
+   Store Connect app "Hashi: Daily Bridges", and the App Store Connect API key for the release
+   workflow (a team key with the Admin role, in the secrets `APPLE_API_KEY_ID`,
+   `APPLE_API_ISSUER` and `APPLE_API_KEY_P8`; Xcode makes the certificate and the profile with
+   it). Left, in this order (step 13f; how the workflow does it is in
+   [app/README.md](../app/README.md#ios-releases)):
+   1. **The first TestFlight build.** `app-v0.0.1`'s commit has no iOS job, so the first iOS
+      upload needs a new version: a pull request with `node scripts/app-version.mjs 0.0.2` (and
+      `app/store/whatsnew/whatsnew-en-US`), merged, then the tag `app-v0.0.2` on its merge
+      commit. That also uploads 0.0.2 to Play. Apple emails when the build is processed, and it
+      then appears in App Store Connect under the app's TestFlight tab.
+   2. **Internal testers.** App Store Connect, Apps, Hashi, TestFlight, Internal Testing, "+": a
+      group (e.g. "Team") with automatic distribution on, so that every new build goes to it.
+      Add testers to it: people in Users and Access (any role; invite them there first, up to
+      100). They get an email, install the TestFlight app and accept it. Internal builds need no
+      review. External testers (a public link, up to 10,000) need the Test Information (a beta
+      description, a feedback email, the privacy policy URL) and Beta App Review of the first
+      build.
+   3. **Store listing**, App Store tab, the 1.0 version: subtitle, description, keywords,
+      support URL, privacy policy URL (`https://hashi.rs/datenschutz`), category (Games, Puzzle),
+      copyright. Screenshots: iPhone 6.9" (1320 × 2868) and, because the app also runs on the
+      iPad, iPad 13" (2064 × 2752); the simulators of Xcode take them.
+   4. **App Privacy** (the privacy labels): what the app and the server collect, as
+      `/datenschutz` and Play's Data safety form say. The privacy policy URL goes there too.
+   5. **Age rating**: the questionnaire in App Information (no objectionable content: 4+).
+   6. **EU trader status** (Digital Services Act): Business, the account's compliance details:
+      trader or not; a trader's address, phone and email are verified and shown on the EU
+      product pages. Without it the app isn't offered in the EU.
+   7. **App Review**: in the 1.0 version, pick a TestFlight build, fill in App Review
+      Information (contact; notes such as "no sign-in needed, guests play right away"), and
+      submit. The export compliance question is already answered by the build
+      (`ITSAppUsesNonExemptEncryption`).

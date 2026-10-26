@@ -291,7 +291,7 @@ Android Studio brings all of that except the Rust parts; without it, the
 `sdkmanager`. Gradle downloads what is still missing on the first build. NDK 29 links the
 library for Android's 16 KB memory pages, which Google Play requires. Its version is in three
 places, changed together: `NDK_VERSION` in `ci.yml` (both Android jobs) and in
-`android-release.yml`, and `ndkVersion` in `gen/android/app/build.gradle.kts` (Gradle strips
+`app-release.yml`, and `ndkVersion` in `gen/android/app/build.gradle.kts` (Gradle strips
 release builds with it). The web bundle needs what [Building](#building) lists.
 
 ### Building and running
@@ -410,9 +410,14 @@ pnpm run app:android-e2e     # E2E_APK=<path> for another APK
 
 ## Releases
 
-A release is a tag `app-v<x.y.z>` on main. `.github/workflows/android-release.yml` builds the
-App Bundle for Google Play from it, signs it with the upload key and uploads it to Play's
-internal test track; from there it is promoted in the Play Console (closed test, production).
+A release is a tag `app-v<x.y.z>` on main. `.github/workflows/app-release.yml` builds both
+platforms from it:
+
+- Android: the App Bundle for Google Play, signed with the upload key and uploaded to Play's
+  internal test track; from there it is promoted in the Play Console (closed test, production).
+- iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key and uploaded
+  to App Store Connect, where it shows up in TestFlight; from there it goes to the testers, and
+  later to App Review (see [iOS releases](#ios-releases)).
 
 ### Cutting one
 
@@ -441,6 +446,9 @@ internal test track; from there it is promoted in the Play Console (closed test,
    ```
 
    The tag can follow the merge right away: the workflow waits for main's CI run of the commit.
+
+The version is the same on both platforms: `versionName` and `CFBundleShortVersionString`. The
+versionCode is the build number of both, Android's `versionCode` and iOS's `CFBundleVersion`.
 
 ### What the workflow checks
 
@@ -471,15 +479,19 @@ the upload key.
   draft releases: set the repository variable `PLAY_RELEASE_STATUS` to `draft` until then (the
   default is `completed`).
 - The workflow's artifact `android-release`, the same two files (30 days).
+- For iOS: App Store Connect, `hashi-<version>.ipa` on the GitHub release, and the artifact
+  `ios-release` (see [iOS releases](#ios-releases)).
 
-Run by hand (`gh workflow run android-release.yml --ref <ref>`), or by a pull request that
-changes the workflow, `gen/android/app/build.gradle.kts` or `scripts/app-version.mjs`, the
-workflow is a dry run: it builds, signs and checks, keeps the files as the artifact for three
-days, and publishes nothing. On a branch it skips the checks of the tag, of main and of CI.
-Without the signing secrets (pull requests of Dependabot or of forks) a dry run signs with a
-throwaway key. With `-f publish=true` on a tag
+Run by hand (`gh workflow run app-release.yml --ref <ref>`), or by a pull request, the workflow
+is a dry run: it builds, signs and checks, keeps the files as the artifacts for three days, and
+publishes nothing. On a branch it skips the checks of the tag, of main and of CI. A pull request
+builds the platforms whose files it changes: both for the workflow or `scripts/app-version.mjs`,
+Android for `gen/android/app/build.gradle.kts`, iOS for `gen/apple/` or `src-tauri/Info.ios.plist`.
+Without the signing secrets (pull requests of Dependabot or of forks) an Android dry run signs
+with a throwaway key, and iOS is skipped with a notice. With `-f publish=true` on a tag
 (`--ref app-v0.2.0`) it is the full release again, e.g. to upload a version once the service
-account exists; the GitHub release then only gets its files replaced.
+account exists. The GitHub release then gets its files replaced, and the IPA's notes when the
+IPA is new.
 
 ### The first release
 
@@ -489,6 +501,59 @@ Play is skipped or fails), download `hashi-<version>.aab` from its GitHub releas
 the internal test track by hand, accepting Play App Signing (Google keeps the app signing key, the
 upload key only signs uploads). From then on, with the service account set up
 ([docs/mobile.md](../docs/mobile.md#owner-tasks)), tags upload by themselves.
+
+### iOS releases
+
+"Build IPA (iOS)" runs on `macos-26` with Xcode 26.6, as ["In CI"](#in-ci-1) does, and builds
+with the secrets `APPLE_API_KEY_ID`, `APPLE_API_ISSUER` and `APPLE_API_KEY_P8`, an App Store
+Connect team key with the Admin role (Admin is needed to make certificates):
+
+```sh
+cargo tauri ios build --ci --target aarch64 --export-method app-store-connect \
+  --config '{"build":{"beforeBuildCommand":null},"bundle":{"iOS":{"bundleVersion":"<versionCode>"}}}'
+```
+
+The key's `.p8` goes into a file in the runner's temp dir, which is deleted at the end of the
+job, also when the job fails. Tauri gets it through `APPLE_API_KEY`, `APPLE_API_ISSUER` and
+`APPLE_API_KEY_PATH`, and the team through `APPLE_DEVELOPMENT_TEAM` (`Q35TCGM5PW`, in the
+workflow). It archives the app unsigned. Xcode then exports the archive with automatic signing
+(`-allowProvisioningUpdates` with `-authenticationKeyPath`, `-authenticationKeyID` and
+`-authenticationKeyIssuerID`): it makes or reuses the team's cloud-managed Apple Distribution
+certificate and the App Store profile of `rs.hashi`. Its private key stays with Apple, and no
+certificate or profile is kept in the repository's secrets.
+
+- **The build number.** `CFBundleVersion` is the versionCode (`node scripts/app-version.mjs
+  --code`, 2 for 0.0.2), passed as `bundle.iOS.bundleVersion`. App Store Connect needs a higher
+  one for every upload of a version, and it refuses four numbers, which `--build-number` would
+  give (`0.0.2.1`). `CFBundleShortVersionString` is the version. In `gen/apple` both stay the
+  version (`scripts/app-version.mjs`): only the release's build changes them.
+- **Export compliance.** `src-tauri/Info.ios.plist` sets `ITSAppUsesNonExemptEncryption` to
+  false (the app only uses HTTPS, which is exempt), so TestFlight doesn't hold every build until
+  the encryption question is answered. Every `tauri ios build` merges that file into
+  `gen/apple`'s `Info.plist`, which has the key committed too, as `project.yml` does.
+- **The checks.** The signature verifies. The certificate is an Apple Distribution one of team
+  `Q35TCGM5PW`, and the profile is an App Store one (no devices, `beta-reports-active` for
+  TestFlight, `get-task-allow` false). `application-identifier` is `Q35TCGM5PW.rs.hashi`, the
+  Associated Domains have `applinks:hashi.rs`, and `CFBundleShortVersionString`,
+  `CFBundleVersion` and `ITSAppUsesNonExemptEncryption` are as above. The binary is arm64. The job
+  summary has the certificate, the profile, the SDK and the sizes.
+- **The upload.** Publishing exports the same archive again, straight to App Store Connect:
+  `xcodebuild -exportArchive` with `destination: upload` in its export options (symbols
+  included, `manageAppVersionAndBuildNumber` off) and the same key. This is Xcode's own upload,
+  the one the Organizer uses, and it fails the step when App Store Connect refuses the build.
+  Apple processes the build (minutes to an hour, with an email) before it appears under
+  TestFlight in App Store Connect. Internal testers then get it in the TestFlight app.
+- **The IPA** (`hashi-<version>.ipa`, on the GitHub release and in the artifact `ios-release`)
+  is the same archive exported for App Store Connect. It is signed for App Store distribution,
+  so it only installs through TestFlight or the App Store. A failed or skipped iOS build doesn't
+  hold up Android's release files, and a re-run adds the IPA.
+- **Without the secrets** iOS is skipped with a notice in the job summary, and Android goes on.
+
+**Re-running an upload.** If the upload failed, "Re-run failed jobs" on the run, or
+`gh workflow run app-release.yml --ref app-v<version> -f publish=true`, builds and uploads again.
+That only works while App Store Connect doesn't have the build: it refuses a build number it
+already has, e.g. after a run whose upload went through but whose GitHub release failed. To ship
+a new build then, bump the version (`scripts/app-version.mjs`) and tag again, as for Play.
 
 ### Signing
 
@@ -537,8 +602,8 @@ This repository's project was generated in CI and committed like `gen/android`, 
   `CFBundleShortVersionString` and, through `agvtool`, as `CFBundleVersion`; `tauri ios init`
   writes it into `project.yml`. `scripts/app-version.mjs` sets all four with the other files
   ([Releases](#releases)), so a build leaves them as they are. App Store Connect wants a
-  `CFBundleVersion` that grows with every upload, of at most three numbers: the release (step 13e)
-  passes Android's versionCode (`node scripts/app-version.mjs --code`) as
+  `CFBundleVersion` that grows with every upload, of at most three numbers: the release
+  ([iOS releases](#ios-releases)) passes Android's versionCode (`node scripts/app-version.mjs --code`) as
   `--config '{"bundle":{"iOS":{"bundleVersion":"<code>"}}}'`, not as `--build-number`, which
   Tauri appends to the version as a fourth number (`0.0.1.1`). Pull requests keep the version.
 
@@ -568,14 +633,14 @@ cargo tauri ios dev                                            # a simulator, wi
 `--no-sign` builds without a team or a certificate, enough for the simulator. Xcode's build phase
 "Build Rust Code" calls `cargo tauri ios xcode-script`, which builds the library for the
 architecture Xcode asks for. No development team is set in the project: the release workflow
-(step 13e) will pass it, with an App Store Connect API key. After a Tauri update, compare
+passes it, with an App Store Connect API key ([iOS releases](#ios-releases)). After a Tauri update, compare
 `gen/apple` with a fresh `cargo tauri ios init --ci` (on a Mac, or in a temporary CI step that
 uploads the directory as an artifact): the template changes with Tauri.
 
 ### In CI
 
 "Build app (iOS)" in `.github/workflows/ci.yml` runs on `macos-26` (Apple silicon) with Xcode 26.6
-pinned (`DEVELOPER_DIR`; the release will use the same). Like the Android build it takes the bundle
+pinned (`DEVELOPER_DIR`; the release uses the same). Like the Android build it takes the bundle
 of "Build app (web)" and skips `beforeBuildCommand`. It runs Clippy for `aarch64-apple-ios`, builds
 the debug app for the simulator and checks that the build left `gen/apple` as committed and that the
 icons have no alpha channel. The app is the artifact `ios-simulator-app`, its size in the job
