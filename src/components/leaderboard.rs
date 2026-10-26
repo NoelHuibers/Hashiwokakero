@@ -120,6 +120,43 @@ pub const RANK_TABLE: &str = "rank-table";
 /// the table out by as much (`-mx-2`) to keep its contents flush with the card's.
 pub const ROW_INSET: &str = "[&>*:first-child]:ps-2 [&>*:last-child]:pe-2";
 
+/// Keep short races easy to compare, without letting an hour-long time take over a row.
+/// All hundredths stay visible; only their emphasis changes after the first minute.
+#[component]
+pub fn ScoreTime(ms: i64) -> impl IntoView {
+    let formatted = format_score(ms);
+    let (whole, fraction) = formatted.rsplit_once('.').expect("scores have hundredths");
+    let short = whole.starts_with("0:");
+    let whole = if short {
+        whole.trim_start_matches("0:").trim_start_matches('0')
+    } else {
+        whole
+    };
+    let whole = if whole.is_empty() { "0" } else { whole };
+    view! {
+        <span class="rank-time" class:rank-time-long=!short dir="ltr">
+            <span>{whole.to_owned()}</span><span class="rank-time-fraction">"."{fraction.to_owned()}</span>
+            {short.then(|| view! { <span class="rank-time-unit">"s"</span> })}
+        </span>
+    }
+}
+
+/// A podium can show either a daily time or monthly points.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PlaceValue {
+    Time(i64),
+    Points(i64),
+}
+
+fn penalty_summary(hints: i64, checks: i64) -> String {
+    match (hints > 0, checks > 0) {
+        (true, true) => format!("{hints}h {checks}c"),
+        (true, false) => format!("{hints}h"),
+        (false, true) => format!("{checks}c"),
+        (false, false) => String::new(),
+    }
+}
+
 /// What a [`Podium`] step shows under the big number.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PlaceDetail {
@@ -142,24 +179,12 @@ pub struct Place {
     /// The signed in player, marked like [`HIGHLIGHT_ROW`].
     pub me: bool,
     /// The big number: a time, points.
-    pub value: String,
+    pub value: PlaceValue,
     pub detail: PlaceDetail,
 }
 
-/// Where the n-th place stands on the podium: 2 · 1 · 3, the winner in the middle and highest.
-/// Grid columns are logical, so right to left languages mirror it.
-const fn step_layout(index: usize) -> (&'static str, &'static str) {
-    match index {
-        0 => ("col-start-2", "pt-6"),
-        1 => ("col-start-1", "pt-4"),
-        _ => ("col-start-3", "pt-3"),
-    }
-}
-
-/// How many of a ranking go on the podium, the rest stay in the table below.
-pub const PODIUM: usize = 3;
-
-/// Medal places, including all shared places. Tied boards use equal-height cards.
+/// Medal places, including all shared places. Compact rows for ties and narrow containers;
+/// only three distinct places in a wide card use the traditional 2 · 1 · 3 podium.
 #[component]
 pub fn Podium(places: Vec<Place>) -> impl IntoView {
     let i18n = use_i18n();
@@ -167,14 +192,19 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
         .iter()
         .enumerate()
         .any(|(i, p)| p.rank != i64::try_from(i + 1).unwrap_or(0));
+    let classic = places.len() == 3 && !tied;
+    let shared: Vec<i64> = places
+        .iter()
+        .filter(|p| places.iter().filter(|other| other.rank == p.rank).count() > 1)
+        .map(|p| p.rank)
+        .collect();
     view! {
-        <ol class=if tied { "grid grid-cols-2 items-end gap-2 sm:grid-cols-3" } else { "grid grid-cols-3 items-end gap-2" }>
+        <div class="podium-wrap">
+        <ol class=if classic { "podium podium-classic" } else { "podium" }>
             {places
                 .into_iter()
-                .enumerate()
-                .map(|(index, place)| {
-                    let (column, top) = if tied { ("", "pt-6") } else { step_layout(index) };
-                    let row = if tied { "" } else { "row-start-1" };
+                .map(|place| {
+                    let is_shared = shared.contains(&place.rank);
                     let me = place.me;
                     let detail = match place.detail {
                         PlaceDetail::None => None,
@@ -198,7 +228,7 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
                                             class="text-xs text-muted-foreground"
                                             data-tooltip=move || t_string!(i18n, common.ranking.penalties)
                                         >
-                                            {format!("{hints}h {checks}c")}
+                                            {penalty_summary(hints, checks)}
                                         </span>
                                     }
                                         .into_any()
@@ -208,9 +238,7 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
                     view! {
                         <li
                             data-place=place.rank
-                            class=format!(
-                                "podium-step relative {row} flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 pb-3 text-center text-sm {column} {top}",
-                            )
+                            class="podium-step"
                             class:rank-mark=me
                         >
                             {me
@@ -219,30 +247,41 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
                                         <Badge
                                             variant=BadgeVariant::Default
                                             size=BadgeSize::Sm
-                                            class="absolute inset-x-0 -top-2 mx-auto"
+                                            class="podium-you"
                                         >
                                             {t!(i18n, common.ranking.you)}
                                         </Badge>
                                     }
                                 })}
-                            <RankCell rank=place.rank large=true />
+                            <span class="podium-medal">
+                                <RankCell rank=place.rank large=true />
+                                {is_shared.then(|| view! {
+                                    <span class="podium-shared-label" data-tooltip=move || t_string!(i18n, common.ranking.shared)>
+                                        <span aria-hidden="true">{format!("={}", place.rank)}</span>
+                                        <span class="sr-only">{t!(i18n, common.ranking.shared)}</span>
+                                    </span>
+                                })}
+                            </span>
                             // PlayerName is a flex row that has to shrink for its name to truncate
-                            <div class="flex w-full min-w-0 justify-center [&>div]:min-w-0">
+                            <div class="podium-player [&>div]:min-w-0">
                                 <PlayerName user_id=place.user_id name=place.name guest=place.guest stamp=place.stamp rival=true />
                             </div>
                             <span
-                                class=format!("font-pixel tabular-nums {}", if place.rank == 1 { "text-2xl" } else { "text-xl" })
+                                class="podium-value font-pixel tabular-nums"
                                 class:text-primary=me
                             >
-                                {place.value}
+                                {match place.value {
+                                    PlaceValue::Time(ms) => view! { <ScoreTime ms /> }.into_any(),
+                                    PlaceValue::Points(points) => points.into_any(),
+                                }}
                             </span>
-                            // Always the line, so only the place decides how high a step is
-                            <span class="flex h-4 items-center">{detail}</span>
+                            {detail.map(|detail| view! { <span class="podium-detail">{detail}</span> })}
                         </li>
                     }
                 })
                 .collect_view()}
         </ol>
+        </div>
     }
 }
 
@@ -257,22 +296,15 @@ fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
             </td>
             <td class="max-w-0 py-2 pe-2">
                 <PlayerName user_id=entry.user_id name=entry.name guest=entry.guest stamp=entry.stamp me=me marked_row=true rival=true />
+                {(penalties > 0).then(|| view! {
+                    <span class="text-xs text-muted-foreground" data-tooltip=move || t_string!(i18n, common.ranking.penalties)>
+                        {penalty_summary(entry.hints, entry.checks)}
+                    </span>
+                })}
             </td>
-            <td class="py-2 pe-2 text-end text-xs text-muted-foreground" data-tooltip=move || t_string!(i18n, common.ranking.penalties)>
-                {(penalties > 0).then(|| format!("{}h {}c", entry.hints, entry.checks))}
-            </td>
-            <td class="py-2 text-end font-pixel tabular-nums" class:text-primary=me>{format_score(entry.time_ms)}</td>
+            <td class="whitespace-nowrap py-2 text-end font-pixel tabular-nums" class:text-primary=me><ScoreTime ms=entry.time_ms /></td>
         </tr>
     }
-}
-
-/// The places on the podium and the rest of a ranking, if it gets one.
-pub fn split_podium<T>(mut entries: Vec<T>, podium: bool) -> (Vec<T>, Vec<T>) {
-    if !podium {
-        return (Vec::new(), entries);
-    }
-    let rest = entries.split_off(entries.len().min(PODIUM));
-    (entries, rest)
 }
 
 /// Ranked finishers of a daily, with the current player's row added if they're further down.
@@ -317,7 +349,7 @@ pub fn LeaderboardTable(
             rank: e.rank,
             me: Some(e.user_id) == my_id,
             user_id: e.user_id,
-            value: format_score(e.time_ms),
+            value: PlaceValue::Time(e.time_ms),
             detail: PlaceDetail::Penalties {
                 hints: e.hints,
                 checks: e.checks,
@@ -335,10 +367,9 @@ pub fn LeaderboardTable(
                 <table class=format!("{RANK_TABLE} w-full table-fixed text-sm")>
                     <colgroup>
                         // The first and last columns hold the row inset (ROW_INSET) too
-                        <col class="w-14" />
+                        <col class="w-10" />
                         <col />
-                        <col class="w-16" />
-                        <col class="w-22" />
+                        <col class="w-28" />
                     </colgroup>
                     <tbody>
                         {rest
@@ -352,7 +383,7 @@ pub fn LeaderboardTable(
                             .map(|m| {
                                 view! {
                                     <tr aria-hidden="true">
-                                        <td colspan="4" class="py-0.5 text-center text-xs text-muted-foreground">"⋯"</td>
+                                        <td colspan="3" class="py-0.5 text-center text-xs text-muted-foreground">"⋯"</td>
                                     </tr>
                                     <Row entry=m me=true />
                                 }
@@ -413,32 +444,5 @@ pub fn AccountButton() -> impl IntoView {
                 }
             }}
         </A>
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_top_three_go_on_the_podium() {
-        assert_eq!(
-            split_podium(vec![1, 2, 3, 4, 5], true),
-            (vec![1, 2, 3], vec![4, 5])
-        );
-        assert_eq!(split_podium(vec![1, 2], true), (vec![1, 2], vec![]));
-        assert_eq!(split_podium(Vec::<i32>::new(), true), (vec![], vec![]));
-        assert_eq!(
-            split_podium(vec![1, 2, 3, 4], false),
-            (vec![], vec![1, 2, 3, 4])
-        );
-    }
-
-    #[test]
-    fn the_winner_stands_in_the_middle_and_highest() {
-        let columns: Vec<_> = (0..3).map(|i| step_layout(i).0).collect();
-        assert_eq!(columns, ["col-start-2", "col-start-1", "col-start-3"]);
-        let tops: Vec<_> = (0..3).map(|i| step_layout(i).1).collect();
-        assert_eq!(tops, ["pt-6", "pt-4", "pt-3"]);
     }
 }

@@ -24,6 +24,7 @@ test('a guest solves the daily and is on the leaderboard', async ({ page, contex
   const name = (await card.locator('b').textContent())!;
   expect(name).toMatch(/^\p{Lu}\p{Ll}+ \p{Lu}\p{Ll}+ \d+$/u);
   const time = (await card.locator('p.font-pixel.text-3xl').textContent())!;
+  const rankingTime = time.replace(/^0:0?(\d+\.\d+)$/, '$1s');
 
   // This tab's win covers the board until it's put away, the result card stays
   const win = winCard(page);
@@ -39,8 +40,8 @@ test('a guest solves the daily and is on the leaderboard', async ({ page, contex
   // ranks page's podium.
   const mine = (root: Locator) => root.locator('tr, li.podium-step').filter({ hasText: name });
   await expect(mine(page.locator('aside'))).toContainText(/you/i);
-  await expect(mine(page.locator('aside'))).toContainText(/\d+h 1c/);
-  await expect(mine(page.locator('aside'))).toContainText(time);
+  await expect(mine(page.locator('aside'))).toContainText('1c');
+  await expect(mine(page.locator('aside')).locator('.rank-time')).toHaveText(rankingTime);
 
   // Finished is finished: after a reload, and in another tab
   const finished = async (p: Page) => {
@@ -64,7 +65,7 @@ test('a guest solves the daily and is on the leaderboard', async ({ page, contex
   // The ranks page has them too, on today's board
   await visit(other, '/ranks');
   await expect(mine(todaysBoard(other))).toContainText(/you/i);
-  await expect(mine(todaysBoard(other))).toContainText(time);
+  await expect(mine(todaysBoard(other)).locator('.rank-time')).toHaveText(rankingTime);
   await other.close();
 });
 
