@@ -7,7 +7,7 @@ use super::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
 use crate::lang::prefix;
-use crate::model::{LeaderboardEntry, Stamp, format_duration};
+use crate::model::{LeaderboardEntry, Stamp, format_score};
 use crate::state::Auth;
 
 /// 🥇🥈🥉 as pixel-ish kanji medals: 金 gold, 銀 silver, 銅 bronze.
@@ -159,18 +159,21 @@ const fn step_layout(index: usize) -> (&'static str, &'static str) {
 /// How many of a ranking go on the podium, the rest stay in the table below.
 pub const PODIUM: usize = 3;
 
-/// The top three of a ranking as a podium. Pass at most [`PODIUM`] places, in order.
+/// Medal places, including all shared places. Tied boards use equal-height cards.
 #[component]
 pub fn Podium(places: Vec<Place>) -> impl IntoView {
     let i18n = use_i18n();
+    let tied = places
+        .iter()
+        .enumerate()
+        .any(|(i, p)| p.rank != i64::try_from(i + 1).unwrap_or(0));
     view! {
-        <ol class="grid grid-cols-3 items-end gap-2">
+        <ol class=if tied { "grid grid-cols-2 items-end gap-2 sm:grid-cols-3" } else { "grid grid-cols-3 items-end gap-2" }>
             {places
                 .into_iter()
-                .take(PODIUM)
                 .enumerate()
                 .map(|(index, place)| {
-                    let (column, top) = step_layout(index);
+                    let (column, top) = if tied { ("", "pt-6") } else { step_layout(index) };
                     let me = place.me;
                     let detail = match place.detail {
                         PlaceDetail::None => None,
@@ -203,7 +206,7 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
                     };
                     view! {
                         <li
-                            data-place=index + 1
+                            data-place=place.rank
                             class=format!(
                                 "podium-step relative row-start-1 flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 pb-3 text-center text-sm {column} {top}",
                             )
@@ -227,7 +230,7 @@ pub fn Podium(places: Vec<Place>) -> impl IntoView {
                                 <PlayerName user_id=place.user_id name=place.name guest=place.guest stamp=place.stamp rival=true />
                             </div>
                             <span
-                                class=format!("font-pixel tabular-nums {}", if index == 0 { "text-2xl" } else { "text-xl" })
+                                class=format!("font-pixel tabular-nums {}", if place.rank == 1 { "text-2xl" } else { "text-xl" })
                                 class:text-primary=me
                             >
                                 {place.value}
@@ -257,7 +260,7 @@ fn Row(entry: LeaderboardEntry, me: bool) -> impl IntoView {
             <td class="py-2 pe-2 text-end text-xs text-muted-foreground" data-tooltip=move || t_string!(i18n, common.ranking.penalties)>
                 {(penalties > 0).then(|| format!("{}h {}c", entry.hints, entry.checks))}
             </td>
-            <td class="py-2 text-end font-pixel tabular-nums" class:text-primary=me>{format_duration(entry.time_ms)}</td>
+            <td class="py-2 text-end font-pixel tabular-nums" class:text-primary=me>{format_score(entry.time_ms)}</td>
         </tr>
     }
 }
@@ -287,7 +290,9 @@ pub fn LeaderboardTable(
     let my_id = me.as_ref().map(|m| m.user_id);
     let shown: Vec<LeaderboardEntry> = entries
         .into_iter()
-        .take(limit.unwrap_or(usize::MAX))
+        .take_while(|entry| {
+            limit.is_none_or(|limit| entry.rank <= i64::try_from(limit).unwrap_or(i64::MAX))
+        })
         .collect();
     let me_below = me.filter(|m| !shown.iter().any(|e| e.user_id == m.user_id));
     if shown.is_empty() {
@@ -298,14 +303,20 @@ pub fn LeaderboardTable(
         }
         .into_any();
     }
-    let (top, rest) = split_podium(shown, podium);
+    let mut top = shown;
+    let boundary = if podium {
+        top.partition_point(|e| e.rank <= 3)
+    } else {
+        0
+    };
+    let rest = top.split_off(boundary);
     let places: Vec<Place> = top
         .into_iter()
         .map(|e| Place {
             rank: e.rank,
             me: Some(e.user_id) == my_id,
             user_id: e.user_id,
-            value: format_duration(e.time_ms),
+            value: format_score(e.time_ms),
             detail: PlaceDetail::Penalties {
                 hints: e.hints,
                 checks: e.checks,

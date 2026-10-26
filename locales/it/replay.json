@@ -57,12 +57,14 @@
     "no_log": "nessuna mossa registrata",
     "unranked": "fuori classifica",
     "unranked_hint": "Non in classifica: questo risultato è stato segnalato.",
-    "progress": "{{ name }}: {{ percent }}% dei ponti"
+    "progress": "{{ name }}: {{ percent }}% dei ponti",
+    "receipt": "In attesa della ricezione del server"
   },
   "finish": {
     "title": "Traguardo",
     "none": "Ancora nessuno al traguardo…",
-    "official": "{{ time }} con penalità"
+    "official": "{{ time }} con penalità",
+    "timing": "Posizioni e tempi seguono il risultato ufficiale del server, penalità incluse. I tempi delle mosse sono approssimativi; una griglia risolta può attendere la ricezione del server."
   },
   "marks": {
     "hint": "{{ name }} ha preso un indizio a {{ time }}",

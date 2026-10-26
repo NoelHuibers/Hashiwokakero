@@ -609,3 +609,87 @@ async fn recovery_endpoints_require_the_displayed_user_and_stable_attempt() {
         .unwrap();
     assert!(!confirmed.attempt.unwrap().finished());
 }
+
+/// An early connection and a forged timestamp cannot backdate the official finish.
+#[tokio::test]
+async fn a_slow_submission_is_timed_after_its_complete_body() {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let server = Server::start().await;
+    let browser = server.browser();
+    browser.call(StartDaily { device: None }).await.unwrap();
+    let connection = conn().await;
+    let day = crate::model::RECEIPT_TIMING_DAY;
+    easy_daily(&connection, day).await;
+    let current = browser.call(CurrentUser {}).await.unwrap().unwrap();
+    daily::start(&connection, current.id, day, None)
+        .await
+        .unwrap();
+    let began = crate::server::now_ms() - 60_000;
+    connection
+        .execute(
+            "UPDATE attempts SET started_at = ?3 WHERE user_id = ?1 AND day = ?2",
+            params![current.id, day, began],
+        )
+        .await
+        .unwrap();
+    let a = daily::attempt(&connection, current.id, day)
+        .await
+        .unwrap()
+        .unwrap();
+    let puzzle = daily::get_or_create(&connection, day).await.unwrap();
+    let payload = serde_json::json!({
+        "day": day, "bridges": puzzle.solution, "moves": 1,
+        "log": played(&puzzle.solution), "utc_offset": null,
+        "owner": {"user": current.id, "attempt": a.attempt_id},
+        "received_at": began + 1, "time_ms": 1, "elapsed_ms": 1
+    })
+    .to_string();
+    let mut socket = tokio::net::TcpStream::connect(server.url.strip_prefix("http://").unwrap())
+        .await
+        .unwrap();
+    let headers = format!(
+        "POST /api/submit_daily_attempt HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nAccept: application/json\r\nCookie: hashi_session={}\r\nX-Received-At: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        browser.session().unwrap(),
+        began + 1,
+        payload.len()
+    );
+    socket.write_all(headers.as_bytes()).await.unwrap();
+    let split = payload.len() / 2;
+    socket
+        .write_all(&payload.as_bytes()[..split])
+        .await
+        .unwrap();
+    tokio::time::sleep(std::time::Duration::from_millis(80)).await;
+    assert!(
+        daily::attempt(&connection, current.id, day)
+            .await
+            .unwrap()
+            .unwrap()
+            .finished_at
+            .is_none()
+    );
+    let before_body = crate::server::now_ms();
+    socket
+        .write_all(&payload.as_bytes()[split..])
+        .await
+        .unwrap();
+    let mut response = Vec::new();
+    tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        socket.read_to_end(&mut response),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert!(
+        String::from_utf8_lossy(&response).starts_with("HTTP/1.1 200"),
+        "{}",
+        String::from_utf8_lossy(&response)
+    );
+    let saved = daily::attempt(&connection, current.id, day)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(saved.finished_at.unwrap() >= before_body);
+    assert!(saved.time_ms.unwrap() >= before_body - began);
+}

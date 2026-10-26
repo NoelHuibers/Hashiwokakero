@@ -537,6 +537,8 @@ mod tests {
             submission: RwSignal::new(super::super::recovery::Phase::Idle),
             submit_payload: StoredValue::new(None),
             logged: StoredValue::new(None),
+            #[cfg(feature = "browser")]
+            log_clock: StoredValue::new(None),
             refreshing: StoredValue::new(false),
         };
         daily.actions.sync(&daily);

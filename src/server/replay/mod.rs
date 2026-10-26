@@ -20,7 +20,7 @@ use super::db::db_err;
 use super::groups::{members, require_member};
 use crate::api::{PaidAction, PaidOutcome};
 use crate::model::{
-    Lane, LaneOutcome, Mark, MarkKind, MoveEvent, ReplayData, ReplayGroup, clean_log, group_day,
+    Lane, LaneOutcome, Mark, MarkKind, MoveEvent, ReplayData, ReplayGroup, group_day,
 };
 
 /// Who a lane is for, before their attempt is looked up.
@@ -115,6 +115,7 @@ pub(crate) fn marks(
 struct Row {
     started_at: i64,
     finished: bool,
+    finished_at: i64,
     revealed: bool,
     flagged: bool,
     time_ms: i64,
@@ -152,6 +153,7 @@ async fn attempts(
             Row {
                 started_at: row.get(1).map_err(db_err)?,
                 finished: row.get::<Option<i64>>(2).map_err(db_err)?.is_some(),
+                finished_at: row.get::<Option<i64>>(2).map_err(db_err)?.unwrap_or(0),
                 revealed: row.get::<i64>(3).map_err(db_err)? != 0,
                 flagged: row.get::<Option<String>>(4).map_err(db_err)?.is_some(),
                 time_ms: row.get::<Option<i64>>(5).map_err(db_err)?.unwrap_or(0),
@@ -175,6 +177,7 @@ fn lane(person: Person, row: Option<&Row>, edges: usize) -> Lane {
         outcome: LaneOutcome::Missing,
         log: Vec::new(),
         marks: Vec::new(),
+        official_rank: None,
     };
     let Some(row) = row else { return lane };
     if row.revealed {
@@ -192,7 +195,21 @@ fn lane(person: Person, row: Option<&Row>, edges: usize) -> Lane {
             .as_deref()
             .and_then(|l| serde_json::from_str(l).ok())
             .unwrap_or_default();
-        lane.log = clean_log(&log, edges);
+        let elapsed = row
+            .time_ms
+            .saturating_sub(row.hints.saturating_mul(crate::model::HINT_PENALTY_MS))
+            .saturating_sub(row.checks.saturating_mul(crate::model::CHECK_PENALTY_MS))
+            .max(0);
+        // Same event order/clock reconciliation as verification; never sort actions into
+        // a different board. Bound playback to the server's finish without changing raw evidence.
+        lane.log = crate::model::server_times(&log, elapsed)
+            .into_iter()
+            .filter(|e| usize::from(e.edge) < edges && e.count <= 2)
+            .map(|e| MoveEvent {
+                t: e.t.min(u32::try_from(elapsed).unwrap_or(u32::MAX)),
+                ..e
+            })
+            .collect();
         let receipts: Vec<Receipt> = serde_json::from_str(&row.receipts).unwrap_or_default();
         lane.marks = marks(&receipts, row.started_at, &lane.log, edges);
     }
@@ -248,11 +265,22 @@ async fn replay(
         Some(Board::new(get_or_create(conn, day).await?.puzzle))
     };
     let edges = board.as_ref().map_or(0, |b| b.edges.len());
+    let eligible: Vec<_> = rows
+        .values()
+        .filter(|r| r.finished && !r.revealed && !r.flagged)
+        .map(|r| crate::model::ranking_key(day, r.time_ms, r.finished_at))
+        .collect();
     data.lanes = people
         .into_iter()
         .map(|p| {
             let row = rows.get(&p.user_id);
-            lane(p, row, edges)
+            let mut lane = lane(p, row, edges);
+            if let Some(r) = row.filter(|r| r.finished && !r.revealed && !r.flagged) {
+                let key = crate::model::ranking_key(day, r.time_ms, r.finished_at);
+                lane.official_rank =
+                    Some(1 + eligible.iter().filter(|&&other| other < key).count());
+            }
+            lane
         })
         .collect();
     data.puzzle = board.map(|b| b.puzzle);

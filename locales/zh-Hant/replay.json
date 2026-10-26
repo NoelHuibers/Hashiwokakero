@@ -57,12 +57,14 @@
     "no_log": "沒有記錄步驟",
     "unranked": "未計入排名",
     "unranked_hint": "不在排行榜上：此成績已被標記。",
-    "progress": "{{ name }}：已完成 {{ percent }}% 的橋"
+    "progress": "{{ name }}：已完成 {{ percent }}% 的橋",
+    "receipt": "等待伺服器接收"
   },
   "finish": {
     "title": "終點線",
     "none": "還沒有人到達…",
-    "official": "含罰時 {{ time }}"
+    "official": "含罰時 {{ time }}",
+    "timing": "名次和用時以伺服器的官方結果為準，包含罰時。操作時間僅為近似值；完成的棋盤可能仍在等待伺服器接收。"
   },
   "marks": {
     "hint": "{{ name }} 在 {{ time }} 使用了提示",

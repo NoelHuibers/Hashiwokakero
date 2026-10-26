@@ -151,8 +151,20 @@ pub async fn submit_daily(
     // The browser's time zone, for the night owl and lunch break stamps (not stored)
     #[server(default)] utc_offset: Option<i32>,
 ) -> Result<SubmitResult, ServerFnError> {
+    let received_at = crate::server::now_ms();
     let (conn, user) = signed_in().await?;
-    daily::submit(&conn, user.id, day, bridges, moves, log, utc_offset).await
+    daily::submit_received(
+        &conn,
+        user.id,
+        day,
+        bridges,
+        moves,
+        log,
+        utc_offset,
+        None,
+        received_at,
+    )
+    .await
 }
 
 /// Explicit ownership assertion for the recovery-capable endpoints. Legacy requests keep
@@ -183,11 +195,12 @@ pub async fn submit_daily_attempt(
     utc_offset: Option<i32>,
     owner: DailyOwner,
 ) -> Result<SubmitResult, ServerFnError> {
+    let received_at = crate::server::now_ms();
     let (conn, user) = signed_in().await?;
     if user.id != owner.user {
         return Err(crate::model::ApiError::SessionExpired.into());
     }
-    daily::submit_owned(
+    daily::submit_received(
         &conn,
         user.id,
         day,
@@ -195,7 +208,8 @@ pub async fn submit_daily_attempt(
         moves,
         log,
         utc_offset,
-        &owner.attempt,
+        Some(&owner.attempt),
+        received_at,
     )
     .await
 }

@@ -57,12 +57,14 @@
     "no_log": "hamle kaydedilmedi",
     "unranked": "sıralama dışı",
     "unranked_hint": "Sıralamada değil: bu sonuç işaretlendi.",
-    "progress": "{{ name }}: köprülerin %{{ percent }}'i"
+    "progress": "{{ name }}: köprülerin %{{ percent }}'i",
+    "receipt": "Sunucunun alması bekleniyor"
   },
   "finish": {
     "title": "Bitiş çizgisi",
     "none": "Henüz kimse bitirmedi…",
-    "official": "cezalarla {{ time }}"
+    "official": "cezalarla {{ time }}",
+    "timing": "Sıralar ve süreler, cezalar dahil sunucunun resmi sonucuna dayanır. Hamle zamanları yaklaşık değerlerdir; tamamlanan tahta sunucuya ulaşmayı bekleyebilir."
   },
   "marks": {
     "hint": "{{ name }}, {{ time }} anında ipucu aldı",

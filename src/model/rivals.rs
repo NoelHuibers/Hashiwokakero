@@ -16,7 +16,7 @@ pub const RECENT_DUELS: usize = 7;
 pub enum Outcome {
     Win,
     Loss,
-    /// The same time to the millisecond.
+    /// The same ranked time.
     Draw,
 }
 
@@ -50,7 +50,10 @@ pub struct Duel {
 
 impl Duel {
     pub fn outcome(&self) -> Outcome {
-        Outcome::of(self.mine, self.theirs)
+        Outcome::of(
+            super::score_time(self.day, self.mine),
+            super::score_time(self.day, self.theirs),
+        )
     }
 }
 
@@ -127,7 +130,7 @@ pub enum Verdict {
     Beat { gap_ms: i64 },
     /// "Tobias was 40 s faster"
     Lost { gap_ms: i64 },
-    /// The same time to the millisecond.
+    /// The same ranked time.
     Tie,
     /// "Lena hasn't played yet": no ranked time today.
     Waiting,
@@ -165,7 +168,14 @@ impl Verdict {
 pub fn format_gap(ms: i64) -> (String, bool) {
     let ms = ms.max(0);
     if ms < 10_000 {
-        (format!("{}.{}", ms / 1000, ms % 1000 / 100), false)
+        (
+            format!(
+                "{}.{:02}",
+                super::rounded_time(ms) / 1000,
+                super::rounded_time(ms) % 1000 / 10
+            ),
+            false,
+        )
     } else if ms < 60_000 {
         ((ms / 1000).to_string(), false)
     } else {
@@ -291,12 +301,12 @@ mod tests {
 
     #[test]
     fn gaps_read_naturally() {
-        assert_eq!(format_gap(400), ("0.4".into(), false));
-        assert_eq!(format_gap(4_250), ("4.2".into(), false));
+        assert_eq!(format_gap(400), ("0.40".into(), false));
+        assert_eq!(format_gap(4_250), ("4.25".into(), false));
         assert_eq!(format_gap(12_900), ("12".into(), false));
         assert_eq!(format_gap(59_999), ("59".into(), false));
         assert_eq!(format_gap(65_000), ("1:05".into(), true));
         assert_eq!(format_gap(3_725_000), ("1:02:05".into(), true));
-        assert_eq!(format_gap(-5), ("0.0".into(), false));
+        assert_eq!(format_gap(-5), ("0.00".into(), false));
     }
 }

@@ -2,6 +2,8 @@
 
 pub mod about;
 mod actions;
+#[cfg(any(feature = "browser", test))]
+mod clock;
 pub mod cover;
 pub mod ranking;
 mod recovery;
@@ -26,7 +28,7 @@ use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};
 use crate::model::{
     AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_difficulty,
-    daily_number, format_duration, weekday,
+    daily_number, format_score, weekday,
 };
 use crate::pages::play::islands_percent;
 use crate::seo::{PageMeta, site_ld};
@@ -99,6 +101,8 @@ pub fn DailyPage() -> impl IntoView {
         submit_payload: StoredValue::new(None),
         refreshing: StoredValue::new(false),
         logged: StoredValue::new(None),
+        #[cfg(feature = "browser")]
+        log_clock: StoredValue::new(None),
     };
 
     Effect::new(move |_| daily.actions.sync(&daily));
@@ -424,7 +428,7 @@ pub fn DailyPage() -> impl IntoView {
                                 label=Signal::derive(move || t_string!(i18n, common.game.time).to_string())
                                 jp="時間"
                                 value=Signal::derive(move || {
-                                    if daily.started() { format_duration(daily.elapsed_ms()) } else { "–".into() }
+                                    if daily.started() { format_score(daily.elapsed_ms()) } else { "–".into() }
                                 })
                             />
                             <Stat label=Signal::derive(move || t_string!(i18n, common.game.moves).to_string()) jp="手" value=Signal::derive(move || game.moves.get().to_string()) />

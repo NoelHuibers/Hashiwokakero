@@ -189,6 +189,19 @@ async fn write_rows(conn: &Connection, version: usize) {
         "#)
         .await;
     }
+    if version >= 22 {
+        // Virtual keys preserve the original server time and legacy tie-breaker.
+        let mut rows = conn
+            .query(
+                "SELECT time_ms, rank_ms, rank_finish FROM attempts WHERE user_id = 1",
+                (),
+            )
+            .await
+            .unwrap();
+        let row = rows.next().await.unwrap().unwrap();
+        assert_eq!(row.get::<i64>(0).unwrap(), row.get::<i64>(1).unwrap());
+        assert_eq!(row.get::<i64>(2).unwrap(), 96000);
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -209,7 +222,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        21,
+        22,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {

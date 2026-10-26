@@ -4,8 +4,8 @@
 use leptos::prelude::*;
 
 use crate::model::{
-    Cursor, Finisher, Lane, ReplayData, SPEEDS, advance, finish_order, merged, next_moment,
-    previous_moment, total_bridges,
+    Cursor, Finisher, Lane, ReplayData, SPEEDS, advance, merged, next_moment,
+    official_finish_order, previous_moment, total_bridges,
 };
 
 /// A jump of Shift + an arrow key, in replay time.
@@ -70,7 +70,15 @@ impl Theatre {
         let end = data.end();
         let logs: Vec<&[crate::model::MoveEvent]> =
             data.lanes.iter().map(|l| l.log.as_slice()).collect();
-        let moments = merged(&logs);
+        let mut moments = merged(&logs);
+        moments.extend(
+            data.lanes
+                .iter()
+                .enumerate()
+                .filter_map(|(i, l)| l.finish().map(|t| (t, i))),
+        );
+        moments.sort_unstable();
+        moments.dedup();
         let hidden: Vec<bool> = data
             .lanes
             .iter()
@@ -108,7 +116,13 @@ impl Theatre {
         });
         let finished = Memo::new(move |_| {
             let t = at.get();
-            data.with_value(|d| finish_order(&d.lanes, t))
+            data.with_value(|d| {
+                official_finish_order(
+                    &d.lanes,
+                    t,
+                    if d.group_puzzle.is_some() { 0 } else { d.day },
+                )
+            })
         });
         Self {
             data,
@@ -295,7 +309,7 @@ mod tests {
                 LaneOutcome::GaveUp
             } else {
                 LaneOutcome::Solved {
-                    time_ms: 1,
+                    time_ms: i64::from(log.last().unwrap().t),
                     hints: 0,
                     checks: 0,
                     ranked: true,
@@ -303,6 +317,7 @@ mod tests {
             },
             log,
             marks: Vec::new(),
+            official_rank: None,
         }
     }
 

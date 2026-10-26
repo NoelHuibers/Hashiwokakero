@@ -969,10 +969,22 @@ pub async fn replay(
                 outcome: LaneOutcome::Missing,
                 log: Vec::new(),
                 marks: Vec::new(),
+                official_rank: None,
             };
             match row {
                 Some(r) if r.revealed => lane.outcome = LaneOutcome::GaveUp,
                 Some(r) if r.solved() => {
+                    lane.official_rank = r.time_ms.map(|time| {
+                        1 + rows
+                            .iter()
+                            .filter(|other| {
+                                other.solved()
+                                    && other.flag.is_none()
+                                    && (other.time_ms, other.finished_at)
+                                        < (Some(time), r.finished_at)
+                            })
+                            .count()
+                    });
                     lane.outcome = LaneOutcome::Solved {
                         time_ms: r.time_ms.unwrap_or(0),
                         hints: r.hints,

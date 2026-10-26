@@ -57,12 +57,14 @@
     "no_log": "keine Züge aufgezeichnet",
     "unranked": "nicht gewertet",
     "unranked_hint": "Nicht in der Rangliste: Dieses Ergebnis wurde markiert.",
-    "progress": "{{ name }}: {{ percent }} % der Brücken"
+    "progress": "{{ name }}: {{ percent }} % der Brücken",
+    "receipt": "Warten auf Servereingang"
   },
   "finish": {
     "title": "Ziellinie",
     "none": "Noch niemand im Ziel …",
-    "official": "{{ time }} mit Strafzeit"
+    "official": "{{ time }} mit Strafzeit",
+    "timing": "Plätze und Zeiten stammen vom Server, einschließlich Strafen. Die Zeitpunkte der Züge sind Näherungswerte; ein fertiges Brett wartet eventuell noch auf den Server."
   },
   "marks": {
     "hint": "{{ name }} hat bei {{ time }} einen Tipp genommen",

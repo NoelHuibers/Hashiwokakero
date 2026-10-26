@@ -396,18 +396,19 @@ pub async fn reveal(conn: &Connection, user: i64, day: i64) -> Result<Vec<u8>, S
     Ok(daily.solution)
 }
 
-/// Rank among the ranked finishers: faster times first, earlier finishes break ties.
+/// Rank among eligible finishers under the policy of this day.
 pub(super) async fn rank(
     conn: &Connection,
     day: i64,
     time_ms: i64,
     finished_at: i64,
 ) -> Result<i64, ServerFnError> {
+    let (time_ms, finished_at) = crate::model::ranking_key(day, time_ms, finished_at);
     let mut rows = conn
         .query(
             "SELECT COUNT(*) + 1 FROM attempts
              WHERE day = ?1 AND finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL
-               AND (time_ms < ?2 OR (time_ms = ?2 AND finished_at < ?3))",
+               AND (rank_ms < ?2 OR (rank_ms = ?2 AND rank_finish < ?3))",
             params![day, time_ms, finished_at],
         )
         .await
@@ -429,7 +430,18 @@ pub async fn submit(
     log: Vec<MoveEvent>,
     utc_offset: Option<i32>,
 ) -> Result<SubmitResult, ServerFnError> {
-    submit_inner(conn, user, day, bridges, moves, log, utc_offset, None).await
+    submit_inner(
+        conn,
+        user,
+        day,
+        bridges,
+        moves,
+        log,
+        utc_offset,
+        None,
+        now_ms(),
+    )
+    .await
 }
 
 #[expect(
@@ -455,6 +467,37 @@ pub async fn submit_owned(
         log,
         utc_offset,
         Some(expected),
+        now_ms(),
+    )
+    .await
+}
+
+/// The receipt is captured by the decoded server function, never taken from request data.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Submission payload and server-only receipt"
+)]
+pub async fn submit_received(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    bridges: Vec<u8>,
+    moves: u32,
+    log: Vec<MoveEvent>,
+    utc_offset: Option<i32>,
+    expected: Option<&str>,
+    received_at: i64,
+) -> Result<SubmitResult, ServerFnError> {
+    submit_inner(
+        conn,
+        user,
+        day,
+        bridges,
+        moves,
+        log,
+        utc_offset,
+        expected,
+        received_at,
     )
     .await
 }
@@ -472,6 +515,7 @@ async fn submit_inner(
     log: Vec<MoveEvent>,
     utc_offset: Option<i32>,
     expected: Option<&str>,
+    received_at: i64,
 ) -> Result<SubmitResult, ServerFnError> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -500,8 +544,17 @@ async fn submit_inner(
     if !board.check(&bridges).solved {
         return Err(ApiError::NotSolved.into());
     }
-    let finished_at = now_ms();
-    let elapsed = finished_at - attempt.started_at;
+    // Only the server can supply this timestamp, after the entire JSON body was decoded.
+    // Tomorrow switches to receipt timing; existing days retain their measurement contract.
+    let finished_at = if day >= crate::model::RECEIPT_TIMING_DAY {
+        received_at
+    } else {
+        now_ms()
+    };
+    let elapsed = finished_at
+        .checked_sub(attempt.started_at)
+        .filter(|&ms| ms >= 0)
+        .ok_or_else(|| ApiError::NotStarted.fail())?;
     let time_ms = elapsed + attempt.penalty_ms();
     // A flag from the start (second account) stays, otherwise the move log decides
     let flag = attempt.flag.or_else(|| {

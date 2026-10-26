@@ -40,7 +40,7 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
             "SELECT a.day, a.time_ms, (
                 SELECT COUNT(*) + 1 FROM attempts b
                 WHERE b.day = a.day AND b.finished_at IS NOT NULL AND b.revealed = 0 AND b.flag IS NULL
-                  AND (b.time_ms < a.time_ms OR (b.time_ms = a.time_ms AND b.finished_at < a.finished_at))
+                  AND (b.rank_ms < a.rank_ms OR (b.rank_ms = a.rank_ms AND b.rank_finish < a.rank_finish))
              ) FROM attempts a
              WHERE a.user_id = ?1 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL",
             params![user],

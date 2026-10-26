@@ -182,7 +182,10 @@ pub fn standings(members: &[i64], solves: &[WeekSolve], monday: i64) -> Vec<Stan
         let day: Vec<(usize, i64)> = solves
             .iter()
             .filter(|s| week_index(s.day, monday) == Some(i))
-            .filter_map(|s| at.get(&s.user).map(|&m| (m, s.time_ms)))
+            .filter_map(|s| {
+                at.get(&s.user)
+                    .map(|&m| (m, super::score_time(s.day, s.time_ms)))
+            })
             .collect();
         for &(m, time) in &day {
             // Equal times share the place
@@ -373,8 +376,9 @@ pub fn awards<S: BuildHasher>(
     }
     let played = |user: &i64| count(week.get(user).map_or(0, Vec::len));
     let total = |user: &i64| {
-        week.get(user)
-            .map_or(0, |w| w.iter().map(|s| s.time_ms).sum())
+        week.get(user).map_or(0, |w| {
+            w.iter().map(|s| super::score_time(s.day, s.time_ms)).sum()
+        })
     };
     let paces = |solves: Option<&Vec<WeekSolve>>| -> Vec<i64> {
         solves

@@ -494,6 +494,16 @@ CREATE TRIGGER closed_month_attempt_removed AFTER DELETE ON attempts BEGIN
     DELETE FROM closed_months WHERE OLD.day BETWEEN first_day AND last_day;
 END;
 ",
+    "
+-- 2026-10-26: shared places at the same displayed hundredth. Keep raw measurements and
+-- older days' exact ordering. Virtual columns cannot be supplied or overwritten by a client.
+ALTER TABLE attempts ADD COLUMN rank_ms INTEGER GENERATED ALWAYS AS
+    (CASE WHEN day >= 20752 THEN ((max(0, time_ms) + 5) / 10) * 10 ELSE time_ms END) VIRTUAL;
+ALTER TABLE attempts ADD COLUMN rank_finish INTEGER GENERATED ALWAYS AS
+    (CASE WHEN day >= 20752 THEN 0 ELSE finished_at END) VIRTUAL;
+CREATE INDEX attempts_shared_rank ON attempts (day, rank_ms, rank_finish)
+    WHERE finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

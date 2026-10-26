@@ -57,12 +57,14 @@
     "no_log": "기록된 수 없음",
     "unranked": "순위 제외",
     "unranked_hint": "순위표에 없음: 이 결과는 표시되었어요.",
-    "progress": "{{ name }}: 다리의 {{ percent }}%"
+    "progress": "{{ name }}: 다리의 {{ percent }}%",
+    "receipt": "서버 수신 대기 중"
   },
   "finish": {
     "title": "결승선",
     "none": "아직 아무도 도착하지 않았어요…",
-    "official": "페널티 포함 {{ time }}"
+    "official": "페널티 포함 {{ time }}",
+    "timing": "순위와 시간은 페널티를 포함한 서버의 공식 결과를 따릅니다. 수를 둔 시각은 근사치이며, 완성된 보드도 서버 수신을 기다릴 수 있습니다."
   },
   "marks": {
     "hint": "{{ name }} 님이 {{ time }}에 힌트 사용",

@@ -57,12 +57,14 @@
     "no_log": "brak zapisanych ruchów",
     "unranked": "poza rankingiem",
     "unranked_hint": "Poza rankingiem: ten wynik został oznaczony.",
-    "progress": "{{ name }}: {{ percent }}% mostów"
+    "progress": "{{ name }}: {{ percent }}% mostów",
+    "receipt": "Oczekiwanie na odbiór przez serwer"
   },
   "finish": {
     "title": "Meta",
     "none": "Nikt jeszcze nie dotarł…",
-    "official": "{{ time }} z karami"
+    "official": "{{ time }} z karami",
+    "timing": "Miejsca i czasy wynikają z oficjalnego wyniku serwera, wraz z karami. Czasy ruchów są przybliżone; rozwiązana plansza może jeszcze czekać na serwer."
   },
   "marks": {
     "hint": "{{ name }} wziął(ęła) podpowiedź w {{ time }}",

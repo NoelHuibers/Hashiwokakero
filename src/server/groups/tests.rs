@@ -909,3 +909,38 @@ async fn signing_in_leaves_banned_members_behind() {
         [bram]
     );
 }
+
+#[tokio::test]
+async fn group_daily_and_week_share_the_same_hundredth_places() {
+    let conn = db().await;
+    let a = player(&conn, "Noel").await;
+    let b = player(&conn, "Nele").await;
+    let c = player(&conn, "Third").await;
+    let group_id = group_of(&conn, a, &[b, c]).await;
+    let day = crate::model::SHARED_PLACES_DAY;
+    finished(&conn, a, day, 7826, 10_000).await;
+    finished(&conn, b, day, 7831, 20_000).await;
+    finished(&conn, c, day, 8803, 30_000).await;
+    let group = require_member(&conn, group_id, a).await.unwrap();
+    let members = members(&conn, &group, day).await.unwrap();
+    let board = today_board(&conn, &group, &members, a, day).await.unwrap();
+    let places: Vec<_> = board
+        .entries
+        .iter()
+        .filter_map(|e| match e.state {
+            TodayState::Ranked { rank, .. } => Some(rank),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(places, [1, 1, 3]);
+    let solves = [(a, 7826), (b, 7831), (c, 8803)].map(|(user, time_ms)| crate::model::WeekSolve {
+        user,
+        day,
+        time_ms,
+        finished_at: day * MS_PER_DAY + time_ms,
+        clean: true,
+    });
+    let standings = crate::model::standings(&[a, b, c], &solves, monday_of(day));
+    assert_eq!(standings[0].points, standings[1].points);
+    assert_eq!(standings[0].wins, standings[1].wins);
+}

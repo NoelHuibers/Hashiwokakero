@@ -514,13 +514,20 @@ async fn day_entries(
     }
     let mut ranked: Vec<(i64, i64, i64)> = results
         .iter()
-        .filter_map(|(&user, r)| r.map(|(time, at, _)| (time, at, user)))
+        .filter_map(|(&user, r)| {
+            r.map(|(time, at, _)| {
+                let (time, at) = crate::model::ranking_key(day, time, at);
+                (time, at, user)
+            })
+        })
         .collect();
     ranked.sort_unstable();
     let places: HashMap<i64, i64> = ranked
         .iter()
-        .enumerate()
-        .map(|(i, &(_, _, user))| (user, crate::server::count(i + 1)))
+        .map(|&(time, at, user)| {
+            let better = ranked.partition_point(|&(t, a, _)| (t, a) < (time, at));
+            (user, crate::server::count(better + 1))
+        })
         .collect();
     let entries = members
         .iter()

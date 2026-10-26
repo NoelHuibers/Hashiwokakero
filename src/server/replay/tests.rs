@@ -195,7 +195,14 @@ async fn members_watch_each_others_solves_of_a_past_day() {
         ]
     );
     let otter_lane = data.lane(otter).unwrap();
-    assert_eq!(otter_lane.log, solve(40_000));
+    assert_eq!(
+        otter_lane.log,
+        [
+            mv(40_000, 1, 1, true),
+            mv(40_000, 0, 2, true),
+            mv(40_000, 0, 1, true)
+        ]
+    );
     assert!(otter_lane.guest);
     assert_eq!(otter_lane.finish(), Some(40_000));
     assert_eq!(data.end(), 60_000);

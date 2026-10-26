@@ -17,13 +17,15 @@ use crate::server::db::db_err;
 const BOARD_SIZE: usize = 20;
 
 /// Every ranked finish with its place among the day's ranked finishers (faster times first,
-/// earlier finishes break ties, like `daily::rank`), the number of them, whether it was the
+/// shared hundredth places from 2026-10-26, like `daily::rank`), the number of them, whether it was the
 /// first of the day to finish, the time and the start. `filter` picks the attempts before
 /// ranking, it has to keep whole days.
 pub(super) fn placed(filter: &str) -> String {
     format!(
         "SELECT a.user_id, a.day, a.hints, a.checks, a.finished_at,
-            ROW_NUMBER() OVER (PARTITION BY a.day ORDER BY a.time_ms, a.finished_at) AS place,
+            CASE WHEN a.day >= 20752 THEN
+                RANK() OVER (PARTITION BY a.day ORDER BY a.rank_ms, a.rank_finish)
+            ELSE ROW_NUMBER() OVER (PARTITION BY a.day ORDER BY a.rank_ms, a.rank_finish) END AS place,
             COUNT(*) OVER (PARTITION BY a.day) AS finishers,
             a.finished_at = MIN(a.finished_at) OVER (PARTITION BY a.day) AS first_finish,
             a.time_ms, a.started_at

@@ -57,12 +57,14 @@
     "no_log": "geen zetten opgeslagen",
     "unranked": "niet gerangschikt",
     "unranked_hint": "Niet in de ranglijst: dit resultaat is gemarkeerd.",
-    "progress": "{{ name }}: {{ percent }}% van de bruggen"
+    "progress": "{{ name }}: {{ percent }}% van de bruggen",
+    "receipt": "Wachten op ontvangst door server"
   },
   "finish": {
     "title": "Finish",
     "none": "Nog niemand over de streep…",
-    "official": "{{ time }} met strafseconden"
+    "official": "{{ time }} met strafseconden",
+    "timing": "Plaatsen en tijden volgen de officiële servertijd, inclusief straffen. De timing van zetten is bij benadering; een opgelost bord kan nog op de server wachten."
   },
   "marks": {
     "hint": "{{ name }} nam een hint op {{ time }}",
