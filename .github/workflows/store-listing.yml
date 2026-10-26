@@ -59,7 +59,7 @@ env:
 jobs:
   # The texts against the stores' limits and rules, and the tests of those checks
   validate:
-    name: Validate texts
+    name: Validate store texts
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -76,7 +76,7 @@ jobs:
   # for the images (not for texts only). The same job ids as there, so they start from the Rust
   # cache main's CI saves (rust-cache keys on the job id).
   build:
-    name: Build site (server)
+    name: Build site for the images (server)
     if: github.event_name == 'pull_request' || inputs.what != 'text'
     runs-on: ubuntu-24.04
     steps:
@@ -103,7 +103,7 @@ jobs:
           retention-days: 1
 
   build-browser:
-    name: Build site (browser)
+    name: Build site for the images (browser)
     if: github.event_name == 'pull_request' || inputs.what != 'text'
     runs-on: ubuntu-24.04
     outputs:
@@ -145,7 +145,7 @@ jobs:
   # image the browser tests use (its Chromium and fonts). Then the upload tree, which checks every
   # image's size and that none has an alpha channel.
   images:
-    name: Images
+    name: Store images
     needs: [validate, build, build-browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 40
