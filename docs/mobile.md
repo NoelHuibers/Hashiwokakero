@@ -135,7 +135,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 11 | Release workflow: tag `app-v<version>` builds a signed AAB and uploads it to the Play internal track | 8 | ✓ #126 |
 | 12 | First release: closed test, store listing, production | 9, 10, 11 | |
 | 13a | iOS project (`gen/apple`) and a simulator build in CI | 8, 9 | ✓ #147 |
-| 13b | iOS simulator smoke test in CI: the simulator build on a booted simulator, offline, like 10a | 13a | |
+| 13b | iOS simulator smoke test in CI: the simulator build on a booted simulator, offline, like 10a | 13a | ✓ #157 |
 | 13c | iOS polish: safe areas (notch, home indicator), share sheet in Swift like `HashiPlugin.kt`, status bar, soft keyboard, links out | 13a | |
 | 13d | Universal Links: `apple-app-site-association` served from config, Associated Domains; needs the Team ID | 10b, 13a | ✓ #155 |
 | 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | ✓ #154 |
