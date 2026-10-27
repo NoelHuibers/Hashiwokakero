@@ -3,6 +3,7 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { allow, expect, hydrated, signIn, test, visit } from '../fixtures';
+import { rankingExample } from '../ranking';
 
 /** The podium of the daily board some days ago (the seed has no results of today). */
 async function daysAgo(page: Page, days: number) {
@@ -139,7 +140,7 @@ test('a tab of an older build is asked to reload when the server answers in anot
   await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
 });
 
-test('shared hundredths show every tied medalist and equal winning steps', async ({ page }) => {
+test('shared hundredths show every tied medalist in equal compact rows', async ({ page }) => {
   await page.route('**/api/daily_leaderboard', (route) => route.fulfill({
     json: {
       day: 20752, difficulty: 'Easy', me: null, finishers: 5,
@@ -157,20 +158,84 @@ test('shared hundredths show every tied medalist and equal winning steps', async
   await expect(podium.locator('> li')).toHaveCount(4);
   const winners = podium.locator('> li[data-place="1"]');
   await expect(winners).toHaveCount(2);
-  await expect(winners.nth(0)).toContainText('0:07.83');
-  await expect(winners.nth(1)).toContainText('0:07.83');
+  await expect(winners.nth(0)).toContainText('7.83s');
+  await expect(winners.nth(1)).toContainText('7.83s');
+  await expect(winners.locator('.podium-shared-label')).toHaveCount(2);
   await expect(podium.locator('> li[data-place="3"]')).toHaveCount(2);
   const first = (await winners.nth(0).boundingBox())!;
   const second = (await winners.nth(1).boundingBox())!;
-  expect(first.y).toBe(second.y);
+  expect(first.y).toBeLessThan(second.y);
   expect(first.height).toBe(second.height);
+  expect(first.width).toBe(second.width);
   await expect(page.locator('table.rank-table').first()).toContainText('Fifth');
   const fourth = (await podium.locator('> li').nth(3).boundingBox())!;
   expect(fourth.y).toBeGreaterThan(first.y);
   await page.setViewportSize({ width: 360, height: 800 });
   const mobileFirst = (await winners.nth(0).boundingBox())!;
   const mobileSecond = (await winners.nth(1).boundingBox())!;
-  expect(mobileFirst.y).toBe(mobileSecond.y);
+  expect(mobileFirst.y).toBeLessThan(mobileSecond.y);
   expect(mobileFirst.height).toBe(mobileSecond.height);
+  expect(mobileFirst.width).toBe(mobileSecond.width);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
+
+for (const kind of ['shared', 'long', 'many'] as const) {
+  test(`${kind} results fit phones without overlapping names, medals, or times`, async ({ page }) => {
+    await rankingExample(page, kind);
+    await visit(page, '/ranks');
+    const podium = page.locator('ol.podium').first();
+    await expect(podium.locator('> li')).toHaveCount(kind === 'many' ? 8 : 3);
+    for (const width of [320, 360, 390, 768, 1024]) {
+      await page.setViewportSize({ width, height: 900 });
+      const layout = await podium.locator('> li').evaluateAll((items) => items.map((li) => {
+        const rect = (selector: string) => li.querySelector(selector)!.getBoundingClientRect();
+        const medal = rect('.podium-medal');
+        const name = rect('.podium-player');
+        const value = rect('.podium-value');
+        const box = li.getBoundingClientRect();
+        const compact = getComputedStyle(li).display === 'grid';
+        return {
+          nameWidth: name.width,
+          noOverlap: compact ? medal.right <= name.left && name.right <= value.left : name.bottom <= value.top,
+          contained: value.right <= box.right && value.left >= box.left,
+          height: box.height,
+          compact,
+        };
+      }));
+      for (const row of layout) {
+        expect(row.nameWidth, `${width}px name width`).toBeGreaterThan(40);
+        expect(row.noOverlap, `${width}px overlaps`).toBe(true);
+        expect(row.contained, `${width}px score outside card`).toBe(true);
+        if (row.compact) expect(row.height, `${width}px row height`).toBeLessThan(90);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    }
+    if (kind === 'long') {
+      await expect(podium.locator('.rank-time-long')).toHaveCount(3);
+      await expect(podium.locator('.rank-time').first()).toHaveText('28:44.32');
+      await expect(page.locator('table.rank-table').first()).toContainText('2:03:47.13');
+      await expect(podium.locator('.podium-shared-label')).toHaveCount(0);
+    } else {
+      await expect(podium.locator('.podium-shared-label')).toHaveCount(kind === 'many' ? 8 : 2);
+    }
+  });
+}
+
+test('the monthly medal rows include everyone sharing a medal place', async ({ page }) => {
+  await page.route('**/api/month_leaderboard', (route) => route.fulfill({
+    json: {
+      month: 2026 * 12 + 9, me: null, players: 5,
+      entries: [1, 2, 2, 2, 5].map((rank, i) => ({
+        rank, user_id: 601 + i, name: `Monthly ${i + 1}`, guest: false,
+        points: rank === 1 ? 200 : rank === 2 ? 180 : 100, solved: 10, stamp: null,
+      })),
+    },
+  }));
+  await visit(page, '/ranks');
+  const monthly = page.locator('[data-name="Card"]').filter({ has: page.getByRole('heading', { name: /^Monthly race/ }) });
+  await expect(monthly.locator('li.podium-step')).toHaveCount(4);
+  await expect(monthly.locator('li.podium-step[data-place="2"]')).toHaveCount(3);
+  await expect(monthly.locator('.podium-shared-label')).toHaveCount(3);
+  await expect(monthly.locator('table')).toContainText('Monthly 5');
+  await expect(monthly.locator('.rank-time')).toHaveCount(0);
 });

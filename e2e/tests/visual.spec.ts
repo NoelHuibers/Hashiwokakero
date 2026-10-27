@@ -13,6 +13,7 @@ import { deleteResults, expectResult, solveDaily, startDaily } from '../daily';
 import { register } from '../account';
 import { expect, newUsername, test, visit } from '../fixtures';
 import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
+import { rankingExample } from '../ranking';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -100,6 +101,19 @@ test('ranks', async ({ page }) => {
     card(page, /^Monthly race/),
   ]);
 });
+
+for (const kind of ['shared', 'long'] as const) {
+  test(`ranks on a phone, ${kind} results`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await rankingExample(page, kind);
+    await visit(page, '/ranks');
+    const daily = page.locator('[data-name="Card"]').filter({ has: page.getByRole('button', { name: /Earlier/ }) }).first();
+    await expect(daily.locator('li.podium-step')).toHaveCount(3);
+    await settle(page);
+    await expect(daily).toHaveScreenshot(`ranks-mobile-${kind}.png`);
+  });
+}
 
 for (const [locale, name] of [
   ['ja', 'Japanese'],

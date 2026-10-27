@@ -5,8 +5,8 @@ use leptos::task::spawn_local;
 
 use crate::api::month_leaderboard;
 use crate::components::leaderboard::{
-    HIGHLIGHT_ROW, Place, PlaceDetail, PlayerName, Podium, RANK_TABLE, ROW_INSET, RankCell,
-    split_podium,
+    HIGHLIGHT_ROW, Place, PlaceDetail, PlaceValue, PlayerName, Podium, RANK_TABLE, ROW_INSET,
+    RankCell,
 };
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
@@ -112,14 +112,15 @@ pub(super) fn MonthRace() -> impl IntoView {
                     Some(b) => {
                         let me = b.me.as_ref().map(|m| m.user_id);
                         let outside = b.me.clone().filter(|m| !b.entries.iter().any(|e| e.user_id == m.user_id));
-                        let (top, rest) = split_podium(b.entries, true);
+                        let mut top = b.entries;
+                        let rest = top.split_off(top.partition_point(|entry| entry.rank <= 3));
                         let places: Vec<Place> = top
                             .into_iter()
                             .map(|e| Place {
                                 rank: e.rank,
                                 me: Some(e.user_id) == me,
                                 user_id: e.user_id,
-                                value: e.points.to_string(),
+                                value: PlaceValue::Points(e.points),
                                 detail: PlaceDetail::Solved(e.solved),
                                 name: e.name,
                                 guest: e.guest,
