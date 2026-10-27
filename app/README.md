@@ -1026,7 +1026,10 @@ package (`HashiPlugin.swift`, the counterpart of `HashiPlugin.kt`) that `build.r
 `swift build` and links into the app's library when it builds for iOS, as `tauri-plugin` does for a
 plugin crate's `ios/` (an app's own plugin can't use that). It imports Tauri's Swift API, which
 `build.rs` copies from the `tauri` crate to `src-tauri/.tauri/` (ignored by git); Swift Package
-Manager fetches its one dependency, swift-rs, from GitHub.
+Manager fetches its one dependency, swift-rs, from GitHub. It builds for the iOS of
+`IPHONEOS_DEPLOYMENT_TARGET`, which Xcode sets to the app's minimum, and
+`src-tauri/.cargo/config.toml` to the same outside Xcode (CI's Clippy): without it the package was
+built for iOS 13, where GameKit lacks what the plugin uses.
 
 `bundle.iOS.minimumSystemVersion` in `tauri.conf.json` is **iOS 16.4**: the app's page runs in the
 system's `WKWebView`, the Safari of the phone's iOS. Tailwind 4 supports Safari 16.4 and newer

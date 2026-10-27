@@ -1,0 +1,7 @@
+# The app's oldest iOS (bundle.iOS.minimumSystemVersion in tauri.conf.json) for builds outside
+# Xcode, Clippy in CI say: build.rs builds the plugin's Swift package (ios/) for
+# IPHONEOS_DEPLOYMENT_TARGET, else for iOS 13, where GameKit's GKAccessPoint and
+# GKLeaderboard.submitScore are missing. Xcode's builds set it themselves, to the same version.
+# On top of the repository's .cargo/config.toml, which still applies.
+[env]
+IPHONEOS_DEPLOYMENT_TARGET = "16.4"

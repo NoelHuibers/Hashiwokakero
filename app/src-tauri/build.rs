@@ -43,7 +43,8 @@ mod ios {
 
     /// Builds the Swift package `ios/` with `swift build` and links it. Its classes import Tauri's
     /// Swift API, the package of the `tauri` crate (`DEP_TAURI_IOS_LIBRARY_PATH`), copied to
-    /// `.tauri/tauri-api` where `ios/Package.swift` looks for it.
+    /// `.tauri/tauri-api` where `ios/Package.swift` looks for it. For the iOS of
+    /// `IPHONEOS_DEPLOYMENT_TARGET`: Xcode's, or `.cargo/config.toml`'s outside Xcode.
     pub(super) fn link_plugin() {
         let api = std::env::var("DEP_TAURI_IOS_LIBRARY_PATH")
             .expect("the tauri crate names its Swift API");
@@ -51,6 +52,7 @@ mod ios {
         let _ = fs::remove_dir_all(copy);
         copy_dir(Path::new(&api), copy).expect("copying Tauri's Swift API failed");
         println!("cargo:rerun-if-env-changed=DEP_TAURI_IOS_LIBRARY_PATH");
+        println!("cargo:rerun-if-env-changed=IPHONEOS_DEPLOYMENT_TARGET");
         println!("cargo:rerun-if-changed=ios/Package.swift");
         println!("cargo:rerun-if-changed=ios/Sources");
         tauri_utils::build::link_apple_library("hashi-plugin", "ios");
