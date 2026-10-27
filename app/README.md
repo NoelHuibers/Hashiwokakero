@@ -973,7 +973,8 @@ Once, before the first upload, in the **Play Console** (in German; Hashi, then):
 
 In **App Store Connect** nothing is needed before the first run, which switches Game Center on;
 create the iOS version that will report them (1.1) first, so it is switched on there too. The app
-needs the Game Center capability (on by default for the App ID) and its entitlement. Afterwards:
+needs its entitlement and the Game Center capability on the App ID, which the release's
+automatic signing can't add ([Games services](#games-services)). Afterwards:
 
 1. Check the leaderboard "Today's daily" (Apps, Hashi, Services, Game Center, Leaderboards): a
    recurring one, every day for a day, from a midnight UTC. Apple documents the recurrence's

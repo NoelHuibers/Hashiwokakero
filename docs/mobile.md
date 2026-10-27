@@ -248,8 +248,9 @@ replaced through Play's support). Left, in this order (details in
    id; iOS: Game Center signs in, its reports of unknown ids are refused by Apple and only logged).
    1. **Game Center, Apple Developer**: [Certificates, Identifiers &
       Profiles](https://developer.apple.com/account/resources/identifiers/list), Identifiers,
-      `rs.hashi`, Capabilities, tick Game Center, Save. The release's automatic signing can't add
-      it: without it the IPA export fails with "Automatic signing cannot update bundle identifier".
+      `rs.hashi`, Capabilities, tick Game Center, Save (confirm the dialog: the old profiles are
+      invalidated, the release makes a new one). The release's automatic signing can't add it:
+      without it the IPA export fails with "Automatic signing cannot update bundle identifier".
    2. **Play Games Services** in the Play Console (the project, its credentials, the service
       account's permission, the import of the achievements with their icons), the project id into
       `project_id` of `app/achievements-play.json`, then the "Game achievements" workflow uploads
