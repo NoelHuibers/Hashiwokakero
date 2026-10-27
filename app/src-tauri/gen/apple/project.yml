@@ -64,8 +64,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        CFBundleShortVersionString: 0.0.3
-        CFBundleVersion: "0.0.3"
+        CFBundleShortVersionString: 1.0.0
+        CFBundleVersion: "1.0.0"
         ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: hashi_tauri_iOS/hashi_tauri_iOS.entitlements
