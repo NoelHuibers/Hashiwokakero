@@ -22,6 +22,11 @@ on:
       - .github/workflows/store-listing.yml
       - fastlane/**
       - store/**
+      # The achievements have their own workflow (achievements.yml)
+      - '!store/achievements/**'
+      - '!store/templates/hanko.html'
+      - '!store/capture/achievements.icons.ts'
+      - '!store/capture/icons.config.ts'
       - scripts/tests/store-listing.test.mjs
       - public/icon-512.png
   workflow_dispatch:

@@ -1,0 +1,184 @@
+name: Game achievements
+# The stamps as Game Center and Play Games achievements, and the leaderboards (app/README.md,
+# Game achievements): the catalogue (store/achievements/catalogue.mjs, from the Rust model and
+# the stamp book's texts), the hanko icons (store/templates/hanko.html), uploaded with the App
+# Store Connect API (store/achievements/apple.mjs) and Play's Games Services Publishing API
+# (store/achievements/play.mjs).
+#
+# A pull request that changes them checks the catalogue against the stores' limits, makes every
+# icon and Play's import ZIP, runs the uploads against an empty App Store Connect and Play project
+# in memory and keeps the icons and the ZIP as the artifact "achievements". It uploads nothing.
+#
+# By hand (Actions, Game achievements, Run workflow, or
+# `gh workflow run achievements.yml -f platform=both`):
+# - platform: apple, play or both
+# - validate_only: reads what the stores have and lists what an upload would change, changes
+#   nothing
+# Play's IDs of new achievements and leaderboards end up in the job summary and the artifact
+# "achievements-play": that file goes into app/achievements-play.json by a pull request. Nothing
+# is submitted for review or published: see app/README.md for the steps in the consoles.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/achievements.yml
+      - store/achievements/**
+      - store/templates/hanko.html
+      - store/capture/achievements.icons.ts
+      - store/capture/icons.config.ts
+      - store/capture/frame.ts
+      - store/locales.mjs
+      - locales/*/stamps.json
+      - app/achievements-play.json
+      - scripts/tests/achievements.test.mjs
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: The platform
+        type: choice
+        options: [both, apple, play]
+        default: both
+      validate_only:
+        description: Only read what the stores have and list the changes, change nothing
+        type: boolean
+        default: false
+
+# One run per ref; an upload is never cancelled halfway
+concurrency:
+  group: achievements-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # The catalogue against the stores' limits, its tests, and the uploads against empty stores
+  validate:
+    name: Validate achievements
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      playwright: ${{ steps.playwright.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - run: node store/achievements/catalogue.mjs
+      - run: node --test scripts/tests/achievements.test.mjs
+
+  # Every icon in the Playwright image the store images use (its Chromium), with the site's fonts,
+  # and Play's import ZIP with them
+  icons:
+    name: Achievement icons
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.validate.outputs.playwright }}-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      # Its postinstall writes the fonts to public/fonts (scripts/fonts.mjs)
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run store:icons
+      - name: Check the icons, Play's import ZIP
+        run: |
+          node store/achievements/catalogue.mjs
+          {
+            echo "### Achievement icons"
+            echo
+            echo "In the artifact \`achievements\`: \`icons/apple/<id>.png\` (1024 × 1024), \`icons/play/<id>.png\` (512 × 512),"
+            echo "\`play-import.zip\` for the Play Console's import, \`catalogue.json\` with every text."
+            echo
+            echo "Game Center $(ls target/store/achievements/icons/apple | wc -l) icons, Play $(ls target/store/achievements/icons/play | wc -l)."
+          } >> "$GITHUB_STEP_SUMMARY"
+      # With the icons, which Game Center's upload sends
+      - name: Uploads to empty stores
+        # bash's pipefail (the container's default shell is sh): a failed upload fails the step
+        shell: bash
+        run: |
+          set -o pipefail
+          node store/achievements/apple.mjs --offline | tail -n 20
+          node store/achievements/play.mjs --offline --ids "$RUNNER_TEMP/ids.json" | tail -n 5
+      - uses: actions/upload-artifact@v7
+        with:
+          name: achievements
+          path: target/store/achievements
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: achievements-logs
+          path: target/store/test-results
+          retention-days: 3
+
+  # Game Center, with the App Store Connect API key. The first upload sends about 4000 requests,
+  # more than the 3600 an hour App Store Connect allows: it waits when told to. Stopped halfway,
+  # a second run carries on where it was.
+  apple:
+    name: Upload to Game Center
+    if: github.event_name == 'workflow_dispatch' && inputs.platform != 'play'
+    needs: icons
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@v8
+        with:
+          name: achievements
+          path: target/store/achievements
+      - name: App Store Connect
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          VALIDATE_ONLY: ${{ inputs.validate_only }}
+        run: |
+          if [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; then
+            echo "::error::The APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8 secrets are needed"
+            exit 1
+          fi
+          node store/achievements/apple.mjs $([ "$VALIDATE_ONLY" = true ] && echo --dry-run)
+
+  # Play Games Services, with the service account fastlane uploads with. Needs no icons (Play's
+  # API can't take them), only the catalogue.
+  play:
+    name: Upload to Play Games
+    if: github.event_name == 'workflow_dispatch' && inputs.platform != 'apple'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Play Games Services
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          VALIDATE_ONLY: ${{ inputs.validate_only }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::No PLAY_SERVICE_ACCOUNT_JSON secret"
+            exit 1
+          fi
+          node store/achievements/play.mjs $([ "$VALIDATE_ONLY" = true ] && echo --dry-run) --ids target/achievements-play/achievements-play.json
+      - if: ${{ !inputs.validate_only }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: achievements-play
+          path: target/achievements-play/achievements-play.json
+          retention-days: 30

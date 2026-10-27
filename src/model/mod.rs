@@ -1,6 +1,7 @@
 //! Data exchanged between the server functions and the pages: users, daily puzzles, results,
 //! groups, replays, group puzzles.
 
+mod achievements;
 mod admin;
 mod banzuke;
 mod calendar;
@@ -21,6 +22,7 @@ mod stamps;
 #[cfg(test)]
 mod tests;
 
+pub use achievements::*;
 pub use admin::*;
 pub use banzuke::*;
 pub use calendar::*;

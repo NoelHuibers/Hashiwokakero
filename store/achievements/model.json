@@ -1,0 +1,457 @@
+{
+  "achievements": [
+    {
+      "id": "stamp_first",
+      "kanji": "初",
+      "points": 5,
+      "secret": false,
+      "stamp": "first",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_solved_10",
+      "kanji": "百",
+      "points": 10,
+      "secret": false,
+      "stamp": "solved_10",
+      "steps": 10,
+      "tier": 10
+    },
+    {
+      "id": "stamp_solved_50",
+      "kanji": "百",
+      "points": 15,
+      "secret": false,
+      "stamp": "solved_50",
+      "steps": 50,
+      "tier": 50
+    },
+    {
+      "id": "stamp_solved_100",
+      "kanji": "百",
+      "points": 20,
+      "secret": false,
+      "stamp": "solved_100",
+      "steps": 100,
+      "tier": 100
+    },
+    {
+      "id": "stamp_solved_365",
+      "kanji": "百",
+      "points": 40,
+      "secret": false,
+      "stamp": "solved_365",
+      "steps": 365,
+      "tier": 365
+    },
+    {
+      "id": "stamp_bridges_1000",
+      "kanji": "千",
+      "points": 10,
+      "secret": false,
+      "stamp": "bridges_1000",
+      "steps": 1000,
+      "tier": null
+    },
+    {
+      "id": "stamp_bridges_10000",
+      "kanji": "万",
+      "points": 25,
+      "secret": false,
+      "stamp": "bridges_10000",
+      "steps": 10000,
+      "tier": null
+    },
+    {
+      "id": "stamp_islands_1000",
+      "kanji": "島",
+      "points": 10,
+      "secret": false,
+      "stamp": "islands_1000",
+      "steps": 1000,
+      "tier": null
+    },
+    {
+      "id": "stamp_streak_7",
+      "kanji": "連",
+      "points": 10,
+      "secret": false,
+      "stamp": "streak_7",
+      "steps": 7,
+      "tier": 7
+    },
+    {
+      "id": "stamp_streak_30",
+      "kanji": "連",
+      "points": 25,
+      "secret": false,
+      "stamp": "streak_30",
+      "steps": 30,
+      "tier": 30
+    },
+    {
+      "id": "stamp_streak_100",
+      "kanji": "連",
+      "points": 50,
+      "secret": false,
+      "stamp": "streak_100",
+      "steps": 100,
+      "tier": 100
+    },
+    {
+      "id": "stamp_full_week",
+      "kanji": "週",
+      "points": 20,
+      "secret": false,
+      "stamp": "full_week",
+      "steps": 7,
+      "tier": null
+    },
+    {
+      "id": "stamp_full_moon",
+      "kanji": "満",
+      "points": 30,
+      "secret": false,
+      "stamp": "full_moon",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_four_seasons",
+      "kanji": "季",
+      "points": 15,
+      "secret": false,
+      "stamp": "four_seasons",
+      "steps": 4,
+      "tier": null
+    },
+    {
+      "id": "stamp_oni",
+      "kanji": "鬼",
+      "points": 10,
+      "secret": false,
+      "stamp": "oni",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_clean",
+      "kanji": "清",
+      "points": 10,
+      "secret": false,
+      "stamp": "clean",
+      "steps": 10,
+      "tier": null
+    },
+    {
+      "id": "stamp_stone_bridge",
+      "kanji": "石",
+      "points": 15,
+      "secret": false,
+      "stamp": "stone_bridge",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_storm",
+      "kanji": "嵐",
+      "points": 10,
+      "secret": false,
+      "stamp": "storm",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_phoenix",
+      "kanji": "鳳",
+      "points": 20,
+      "secret": false,
+      "stamp": "phoenix",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_tortoise",
+      "kanji": "亀",
+      "points": 5,
+      "secret": false,
+      "stamp": "tortoise",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_metronome",
+      "kanji": "律",
+      "points": 15,
+      "secret": false,
+      "stamp": "metronome",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_early_bird",
+      "kanji": "早",
+      "points": 15,
+      "secret": false,
+      "stamp": "early_bird",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_zero_hour",
+      "kanji": "零",
+      "points": 10,
+      "secret": false,
+      "stamp": "zero_hour",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_on_the_brink",
+      "kanji": "際",
+      "points": 10,
+      "secret": false,
+      "stamp": "on_the_brink",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_night_owl",
+      "kanji": "梟",
+      "points": 5,
+      "secret": false,
+      "stamp": "night_owl",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_lunch_break",
+      "kanji": "昼",
+      "points": 5,
+      "secret": false,
+      "stamp": "lunch_break",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_swift",
+      "kanji": "速",
+      "points": 15,
+      "secret": false,
+      "stamp": "swift",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_podium",
+      "kanji": "銅",
+      "points": 10,
+      "secret": false,
+      "stamp": "podium",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_rainbow",
+      "kanji": "虹",
+      "points": 30,
+      "secret": false,
+      "stamp": "rainbow",
+      "steps": 7,
+      "tier": null
+    },
+    {
+      "id": "stamp_photo_finish",
+      "kanji": "差",
+      "points": 10,
+      "secret": false,
+      "stamp": "photo_finish",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_gold",
+      "kanji": "金",
+      "points": 20,
+      "secret": false,
+      "stamp": "gold",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_hat_trick",
+      "kanji": "三",
+      "points": 30,
+      "secret": false,
+      "stamp": "hat_trick",
+      "steps": 3,
+      "tier": null
+    },
+    {
+      "id": "stamp_gold_10",
+      "kanji": "金",
+      "points": 40,
+      "secret": false,
+      "stamp": "gold_10",
+      "steps": 10,
+      "tier": 10
+    },
+    {
+      "id": "stamp_champion",
+      "kanji": "王",
+      "points": 50,
+      "secret": false,
+      "stamp": "champion",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_new_year",
+      "kanji": "元",
+      "points": 10,
+      "secret": false,
+      "stamp": "new_year",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_tanabata",
+      "kanji": "鵲",
+      "points": 10,
+      "secret": false,
+      "stamp": "tanabata",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_anniversary",
+      "kanji": "誕",
+      "points": 20,
+      "secret": false,
+      "stamp": "anniversary",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_dojo",
+      "kanji": "道",
+      "points": 15,
+      "secret": false,
+      "stamp": "dojo",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_black_belt",
+      "kanji": "帯",
+      "points": 25,
+      "secret": false,
+      "stamp": "black_belt",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_sensei",
+      "kanji": "師",
+      "points": 40,
+      "secret": false,
+      "stamp": "sensei",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_collector",
+      "kanji": "集",
+      "points": 25,
+      "secret": false,
+      "stamp": "collector",
+      "steps": 20,
+      "tier": null
+    },
+    {
+      "id": "stamp_second_thoughts",
+      "kanji": "迷",
+      "points": 5,
+      "secret": true,
+      "stamp": "second_thoughts",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_palindrome",
+      "kanji": "回",
+      "points": 10,
+      "secret": true,
+      "stamp": "palindrome",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_lanterne_rouge",
+      "kanji": "灯",
+      "points": 10,
+      "secret": true,
+      "stamp": "lanterne_rouge",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_leap_day",
+      "kanji": "閏",
+      "points": 15,
+      "secret": true,
+      "stamp": "leap_day",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_yokozuna",
+      "kanji": "綱",
+      "points": 20,
+      "secret": false,
+      "stamp": "yokozuna",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_sansho",
+      "kanji": "賞",
+      "points": 15,
+      "secret": false,
+      "stamp": "sansho",
+      "steps": null,
+      "tier": null
+    },
+    {
+      "id": "stamp_river_crew",
+      "kanji": "架",
+      "points": 15,
+      "secret": false,
+      "stamp": "river_crew",
+      "steps": null,
+      "tier": null
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": "daily_time",
+      "kanji": "時",
+      "lower_is_better": true,
+      "play": false
+    },
+    {
+      "id": "puzzles_solved",
+      "kanji": "解",
+      "lower_is_better": false,
+      "play": true
+    },
+    {
+      "id": "best_streak",
+      "kanji": "連",
+      "lower_is_better": false,
+      "play": true
+    }
+  ],
+  "max_points": 1000
+}
