@@ -30,13 +30,23 @@ val uploadKeystore = signingValue("storeFile", "ANDROID_KEYSTORE_FILE")
 
 // Google Play Games (app/README.md, Games services): the numeric project id of the game's Play
 // Games Services project in the Play Console, which isn't secret. Release builds take
-// `hashi.playGamesAppId` of gradle.properties, every build HASHI_PLAY_GAMES_APP_ID of the
-// environment instead (debug builds are rs.hashi.debug, which Play Games only signs in with a
-// credential of their own). Empty: no Play Games, the SDK is never started (its start-up
-// provider is off, HashiPlugin answers that the service isn't there).
+// `project_id` of app/achievements-play.json (with Play's ids of the achievements), every build
+// HASHI_PLAY_GAMES_APP_ID of the environment instead (debug builds are rs.hashi.debug, which Play
+// Games only signs in with a credential of their own). Empty, null or no file: no Play Games, the
+// SDK is never started (its start-up provider is off, HashiPlugin answers that the service isn't
+// there).
+val playIds = providers.fileContents(
+    rootProject.layout.projectDirectory.file("../../../achievements-play.json"),
+).asText
 fun playGamesAppId(release: Boolean): String {
     val id = providers.environmentVariable("HASHI_PLAY_GAMES_APP_ID").orNull
-        ?: if (release) providers.gradleProperty("hashi.playGamesAppId").orNull else null
+        ?: if (release) {
+            playIds.orNull
+                ?.let { (groovy.json.JsonSlurper().parseText(it) as? Map<*, *>)?.get("project_id") }
+                ?.toString()
+        } else {
+            null
+        }
     return id.orEmpty().trim().also {
         require(it.all(Char::isDigit)) { "the Play Games project id is a number, not '$it'" }
     }

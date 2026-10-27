@@ -20,7 +20,7 @@ pub(crate) struct Achievement {
     pub(crate) earned: bool,
 }
 
-/// A score for the leaderboard `id`: a time in ms or a count, whichever the board ranks.
+/// A score for the leaderboard `id`, in the board's own unit (the catalogue converts it).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub(crate) struct Score {
     pub(crate) id: String,

@@ -9,8 +9,8 @@ name: App release
 # A GitHub release for the tag gets the bundle, a universal APK and the IPA.
 #
 # A pull request that changes this workflow or the version script runs it as a dry run for both
-# platforms, below; one that changes the Gradle build for Android, one that changes the iOS project
-# (gen/apple, Info.ios.plist) for iOS.
+# platforms, below; one that changes the Gradle build or app/achievements-play.json (Play Games'
+# project id) for Android, one that changes the iOS project (gen/apple, Info.ios.plist) for iOS.
 #
 # By hand (Actions, Run workflow, or `gh workflow run app-release.yml --ref <ref>`):
 # - publish off (the default): a dry run on any branch or tag. Builds, signs and checks the bundle
@@ -30,6 +30,8 @@ on:
       - .github/workflows/app-release.yml
       - scripts/app-version.mjs
       - app/src-tauri/gen/android/app/build.gradle.kts
+      # Play Games' project id (and ids) for the release's App Bundle
+      - app/achievements-play.json
       - app/src-tauri/gen/apple/**
       - app/src-tauri/Info.ios.plist
   workflow_dispatch:
@@ -105,7 +107,7 @@ jobs:
             # Against the first parent, main's head: what merging the pull request changes
             files=$(git diff --no-renames --name-only HEAD^1 HEAD)
             both='^(\.github/workflows/app-release\.yml|scripts/app-version\.mjs)$'
-            grep -qE "$both|^app/src-tauri/gen/android/app/build\.gradle\.kts$" <<< "$files" || android=false
+            grep -qE "$both|^app/src-tauri/gen/android/app/build\.gradle\.kts$|^app/achievements-play\.json$" <<< "$files" || android=false
             grep -qE "$both|^app/src-tauri/gen/apple/|^app/src-tauri/Info\.ios\.plist$" <<< "$files" || ios=false
           fi
           if [ "$ios" = true ] && { [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; }; then
@@ -348,9 +350,9 @@ jobs:
           [ "$(manifest /manifest/@android:versionCode)" = "$CODE" ] || fail "versionCode $(manifest /manifest/@android:versionCode), not $CODE"
           [ "$(manifest /manifest/@android:versionName)" = "$VERSION" ] || fail "versionName $(manifest /manifest/@android:versionName), not $VERSION"
           [ -z "$(manifest /manifest/application/@android:debuggable)" ] || fail "the App Bundle is debuggable"
-          # Google Play Games on with the project id of gradle.properties, else its SDK never starts
-          # (its provider off, app/README.md, Games services)
-          games_id=$(sed -n 's/^hashi\.playGamesAppId=//p' app/src-tauri/gen/android/gradle.properties | tr -d '[:space:]')
+          # Google Play Games on with the project id of app/achievements-play.json, else its SDK
+          # never starts (its provider off, app/README.md, Games services)
+          games_id=$(jq -r '.project_id // empty | tostring' app/achievements-play.json 2> /dev/null || true)
           games=$(manifest "/manifest/application/provider[@android:name='com.google.android.gms.games.provider.PlayGamesInitProvider']/@android:enabled")
           [ "$games" = "$([ -n "$games_id" ] && echo true || echo false)" ] \
             || fail "Play Games' provider enabled=$games, the project id is '${games_id}'"
@@ -373,7 +375,7 @@ jobs:
           {
             echo "Signed with the upload key, SHA-256 $expected"
             echo
-            if [ -n "$games_id" ]; then echo "Google Play Games: on, project $games_id"; else echo "Google Play Games: off (no project id in gradle.properties)"; fi
+            if [ -n "$games_id" ]; then echo "Google Play Games: on, project $games_id"; else echo "Google Play Games: off (no project_id in app/achievements-play.json)"; fi
           } >> "$GITHUB_STEP_SUMMARY"
       # What a phone downloads (the arm64 split APKs Play makes from the bundle), and the files
       - name: Size

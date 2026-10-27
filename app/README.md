@@ -268,11 +268,11 @@ Tauri's own plugins; the entitlement `com.apple.developer.game-center` is in
 **Android** (`HashiPlugin.kt`, `com.google.android.gms:play-services-games-v2`):
 
 - Play Games' project id, the numeric one of the Play Console, is a build input
-  (`gen/android/app/build.gradle.kts`): release builds take `hashi.playGamesAppId` of
-  `gen/android/gradle.properties`, any build `HASHI_PLAY_GAMES_APP_ID` of the environment instead.
-  It isn't secret. It goes into the manifest's `com.google.android.gms.games.APP_ID` (as a string
+  (`gen/android/app/build.gradle.kts`): release builds take `project_id` of
+  `app/achievements-play.json`, next to Play's ids of the achievements, any build
+  `HASHI_PLAY_GAMES_APP_ID` of the environment instead. It isn't secret. It goes into the manifest's `com.google.android.gms.games.APP_ID` (as a string
   resource) and `BuildConfig.PLAY_GAMES_APP_ID`.
-- **Empty, the default, means no Play Games**: the SDK's provider (`PlayGamesInitProvider`, which
+- **Empty, `null` or no file means no Play Games**: the SDK's provider (`PlayGamesInitProvider`, which
   starts it with the app since version 22) is off in the manifest (`playGamesEnabled`), and the
   commands never touch the SDK: `games_sign_in` answers `available: false`, `games_report` does
   nothing, `games_show` refuses. Debug builds have no id unless the environment sets one: they
@@ -286,8 +286,14 @@ Tauri's own plugins; the entitlement `com.apple.developer.game-center` is in
   the one time Play Games may ask) and opens `achievementsIntent` or `allLeaderboardsIntent`.
 - The release checks the provider against the id and names it in the job summary.
 
-To turn Play Games on: the owner's steps in [docs/mobile.md](../docs/mobile.md#owner-tasks), then
-the project id into `gradle.properties` in a pull request. To try it with a debug build: a
+To turn Play Games on: the Play Games Services project in the Play Console (its credentials for
+`rs.hashi` with the app signing key's and the upload key's SHA-1, the testers), then its project
+id into `project_id` of `app/achievements-play.json` in a pull request, whose release dry run
+checks the bundle. Game Center needs its capability on the App ID: Apple Developer,
+[Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list),
+Identifiers, `rs.hashi`, Capabilities, Game Center ticked, Save. Without it the release's export
+fails with "Automatic signing cannot update bundle identifier": the API key's automatic signing
+can't add it. To try Play Games with a debug build: a
 credential for `rs.hashi.debug` with the debug key's SHA-1, then
 `HASHI_PLAY_GAMES_APP_ID=<id> cargo tauri android build --debug --apk --target aarch64`.
 
@@ -412,9 +418,8 @@ no clap).
   `WebView` itself is transparent until then), the icons, the checksum of the Gradle download,
   the manifest (`ACCESS_NETWORK_STATE`, `adjustResize`; no Android TV launcher; the App Links'
   intent filter is the deep-link plugin's; Play Games' project id and provider, see
-  [Games services](#games-services)), `build.gradle.kts` (signing, the NDK, Play Games),
-  `gradle.properties` (`hashi.playGamesAppId`), `MainActivity.kt` (the system bars and the
-  keyboard, see [On the phone](#on-the-phone)) and `HashiPlugin.kt`, and the template's
+  [Games services](#games-services)), `build.gradle.kts` (signing, the NDK, Play Games'
+  project id), `MainActivity.kt` (the system bars and the keyboard, see [On the phone](#on-the-phone)) and `HashiPlugin.kt`, and the template's
   unused `activity_main.xml` removed. Build outputs and the files Tauri writes on every build
   are in its `.gitignore`s.
 
