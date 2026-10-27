@@ -10,6 +10,9 @@
   "shown": "{{ name }} steht jetzt in den Ranglisten neben deinem Namen.",
   "hidden": "Kein Stempel mehr neben deinem Namen.",
   "shown_label": "In den Ranglisten zu sehen",
+  "games": {
+    "show": "In {{ service }} ansehen"
+  },
   "names": {
     "first": "Erste Brücke",
     "solved_10": "10 Tagesrätsel",

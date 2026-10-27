@@ -19,6 +19,8 @@ mod client;
 mod contact;
 mod daily;
 mod dojo;
+#[cfg(any(feature = "csr", test))]
+pub(crate) mod games;
 mod groups;
 mod hanko;
 mod kadai;

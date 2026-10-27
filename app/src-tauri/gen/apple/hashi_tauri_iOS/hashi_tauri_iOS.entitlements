@@ -6,5 +6,7 @@
 	<array>
 		<string>applinks:hashi.rs</string>
 	</array>
+	<key>com.apple.developer.game-center</key>
+	<true/>
 </dict>
 </plist>

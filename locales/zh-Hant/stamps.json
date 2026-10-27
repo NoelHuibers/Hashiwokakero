@@ -10,6 +10,9 @@
   "shown": "{{ name }}現在顯示在你的名字旁邊。",
   "hidden": "名字旁邊不再顯示印章。",
   "shown_label": "在排行榜上顯示",
+  "games": {
+    "show": "在 {{ service }} 中查看"
+  },
   "names": {
     "first": "第一座橋",
     "solved_10": "每日 10 題",

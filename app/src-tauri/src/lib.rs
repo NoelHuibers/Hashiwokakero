@@ -8,8 +8,9 @@
 //! (`capabilities/default.json`, the permissions from `build.rs`).
 //!
 //! Links out of the app open in the phone's browser through Tauri's opener plugin; the app's own
-//! plugin ([`hashi`]) shares through the system's share sheet, sets the system bars' icons and
-//! keeps the `WebView` on the app's pages. Links to the app's pages on `https://hashi.rs` (App Links,
+//! plugin ([`hashi`]) shares through the system's share sheet, sets the system bars' icons,
+//! talks to the phone's games service (Game Center, Google Play Games) and keeps the `WebView`
+//! on the app's pages. Links to the app's pages on `https://hashi.rs` (App Links,
 //! `plugins.deep-link` in `tauri.conf.json`) open the app through the deep-link plugin, and the
 //! page shows them (`api::native::follow_app_links`).
 
@@ -46,7 +47,9 @@ pub fn run() {
 tauri::ios_plugin_binding!(init_plugin_hashi);
 
 /// The app's own plugin: its commands are `HashiPlugin.kt` on Android (`gen/android`) and
-/// `HashiPlugin.swift` on iOS (`ios/`), the `share` and `system_bars` of `api::native`.
+/// `HashiPlugin.swift` on iOS (`ios/`), the `share`, `system_bars` and `games_*` of
+/// `api::native`. The desktop, for development, has no side for them: Tauri refuses them there,
+/// and the page only logs that (the games service isn't there then).
 ///
 /// It also keeps the `WebView` on the app's pages: a page of another site (a link the page
 /// didn't send to the opener, a script's `location`) opens in the browser instead when it is

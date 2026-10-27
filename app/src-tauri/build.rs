@@ -13,7 +13,13 @@ fn main() {
         "solve_puzzle",
         "puzzle_cnf",
     ]);
-    let hashi = tauri_build::InlinedPlugin::new().commands(&["share", "system_bars"]);
+    let hashi = tauri_build::InlinedPlugin::new().commands(&[
+        "share",
+        "system_bars",
+        "games_sign_in",
+        "games_report",
+        "games_show",
+    ]);
     tauri_build::try_build(
         tauri_build::Attributes::new()
             .app_manifest(commands)

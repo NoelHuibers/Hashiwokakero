@@ -3,8 +3,9 @@
 // the pages that need the server say once that the app is offline, and Android's back button
 // goes back in the app. What only a phone shows: the header and the tab bar clear the system
 // bars, whose icons follow the page's theme, the app starts without a white frame, links out
-// of the app open outside it, and sharing opens Android's share sheet. Nothing here may reach
-// hashi.rs: no guest, no daily, no group.
+// of the app open outside it, sharing opens Android's share sheet, and a build without Play
+// Games' project id never starts its SDK. Nothing here may reach hashi.rs: no guest, no daily,
+// no group.
 import path from 'node:path';
 
 import type { AndroidDevice, Page } from '@playwright/test';
@@ -370,4 +371,36 @@ test('the focused input stays above the soft keyboard', async ({ page, device })
   await expect.poll(() => keyboardTop(device), { message: 'the keyboard is down' }).toBeNull();
   await expect.poll(() => page.evaluate(() => innerHeight * devicePixelRatio), { message: 'the page as high as the screen' }).toBeGreaterThan(screenHeight - 3);
   expect(page.url()).toBe(`${ORIGIN}/kontakt`);
+});
+
+// Google Play Games (HashiPlugin.kt): without its project id, as in debug builds unless
+// HASHI_PLAY_GAMES_APP_ID is set (gen/android/app/build.gradle.kts), the plugin says the service
+// isn't there and the SDK never starts. Its provider, which would start it with the app, is off:
+// the app's process has the FileProvider of the manifest but not Play Games'.
+test('without a project id, Play Games never starts', async ({ page, device }) => {
+  const invoke = (command: string, args: Record<string, unknown>) =>
+    page.evaluate(
+      ([command, args]) =>
+        (window as any).__TAURI_INTERNALS__.invoke(command, args).then(
+          (answer: unknown) => ({ answer: answer ?? null }),
+          (e: unknown) => ({ refused: String(e) }),
+        ),
+      [command, args] as const,
+    );
+  expect(await invoke('plugin:hashi|games_sign_in', {})).toEqual({ answer: { available: false, signedIn: false } });
+  const report = await invoke('plugin:hashi|games_report', {
+    achievements: [
+      { id: 'stamp_first', steps: null, target: null, earned: true },
+      { id: 'stamp_solved_100', steps: 42, target: 100, earned: false },
+    ],
+    scores: [{ id: 'daily_time', value: 83_456 }],
+  });
+  expect(report).not.toHaveProperty('refused');
+  expect(await invoke('plugin:hashi|games_show', { kind: 'achievements' })).toEqual({
+    refused: expect.stringContaining('no Play Games'),
+  });
+  const providers = await shell(device, `dumpsys activity providers ${PKG}`);
+  await test.info().attach('providers', { body: providers, contentType: 'text/plain' });
+  expect(providers, "the app's providers").toContain('androidx.core.content.FileProvider');
+  expect(providers, "Play Games' provider").not.toContain('PlayGamesInitProvider');
 });

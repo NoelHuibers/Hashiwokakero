@@ -10,6 +10,9 @@
   "shown": "{{ name }} staat nu naast je naam in de ranglijsten.",
   "hidden": "Geen stempel meer naast je naam.",
   "shown_label": "Te zien in de ranglijsten",
+  "games": {
+    "show": "Bekijken in {{ service }}"
+  },
   "names": {
     "first": "Eerste brug",
     "solved_10": "10 dagpuzzels",

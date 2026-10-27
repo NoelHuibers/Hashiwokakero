@@ -3,7 +3,8 @@
 // through the app's commands, the pages that need the server say once that the app is offline,
 // and links out of the app and other sites' pages open in Safari. Like e2e/android/smoke.spec.ts,
 // as far as iOS has it (no back button): the header and the tab bar clear the safe areas, upright
-// and sideways, and the app's own plugin answers (HashiPlugin.swift). Nothing here may reach
+// and sideways, the app's own plugin answers (HashiPlugin.swift), and Game Center's sign-in
+// stays out of the way. Nothing here may reach
 // hashi.rs: no guest, no daily, no group.
 import { expect, inFront, type App, test } from './app';
 import { BUNDLE, ORIGIN, SAFARI } from './device';
@@ -235,4 +236,46 @@ test("the app's own plugin answers on iOS", async ({ app }) => {
   // The sheet over the app, Save to Files among its actions
   await new Promise((resolve) => setTimeout(resolve, 1500));
   await app.screenshot('share.png');
+});
+
+// Game Center (HashiPlugin.swift): the page signs in at its start, silently. The simulator has no
+// Apple Account, so GameKit offers its sign-in sheet, which the plugin never shows by itself there
+// (on a phone once per install): nothing may cover the page. Reports wait for a signed-in player.
+// Last in the file: `games_show` presents the sheet the plugin kept, over the page.
+test('Game Center signs in without covering the page', async ({ app }) => {
+  const invoke = (command: string, args: Record<string, unknown>) =>
+    app.evaluate(
+      ({ command, args }) =>
+        (window as any).__TAURI_INTERNALS__.invoke(command, args).then(
+          (answer: unknown) => ({ answer: answer ?? null }),
+          (e: unknown) => ({ refused: String(e) }),
+        ),
+      { command, args },
+    );
+  const status = await invoke('plugin:hashi|games_sign_in', {});
+  test.info().annotations.push({ type: 'games_sign_in', description: JSON.stringify(status) });
+  expect(status).toEqual({ answer: { available: true, signedIn: false } });
+  const report = await invoke('plugin:hashi|games_report', {
+    achievements: [{ id: 'stamp_first', steps: null, target: null, earned: true }],
+    scores: [{ id: 'daily_time', value: 83_456 }],
+  });
+  expect(report).not.toHaveProperty('refused');
+
+  // Nothing of GameKit on the screen: the app's views, as XCUITest sees them
+  const context = await app.session.context();
+  await app.session.setContext(NATIVE);
+  let source: string;
+  try {
+    source = await app.session.command<string>('GET', '/source');
+  } finally {
+    await app.session.setContext(context);
+  }
+  expect(source, 'a Game Center sheet over the page').not.toMatch(/Game Center/i);
+
+  // The button's command: the sheet GameKit handed over, or a refusal if it handed none
+  const shown = await invoke('plugin:hashi|games_show', { kind: 'achievements' });
+  test.info().annotations.push({ type: 'games_show', description: JSON.stringify(shown) });
+  if ('refused' in shown) expect(shown.refused).toContain('not signed in to Game Center');
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await app.screenshot('game-center.png');
 });

@@ -216,6 +216,39 @@ pub fn StampBook(
     }
 }
 
+/// In the app, where the phone has Game Center or Google Play Games: a button that opens the
+/// service's achievements, which the stamps also are there (`api::native::games_report`).
+/// Nothing on the website, nor before the service's sign-in has answered.
+#[cfg(feature = "csr")]
+#[component]
+pub fn GamesButton() -> impl IntoView {
+    use crate::api::games::Board;
+    use crate::api::native;
+    use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
+
+    let i18n = use_i18n();
+    let status = LocalResource::new(native::games_sign_in);
+    move || {
+        let service = native::games_service()?;
+        status.get().filter(|s| s.available)?;
+        Some(view! {
+            <Button
+                variant=ButtonVariant::Outline
+                size=ButtonSize::Sm
+                class="w-fit"
+                on:click=move |_| native::games_show(Board::Achievements)
+            >
+                {move || td_string!(i18n.get_locale(), stamps.games.show, service)}
+            </Button>
+        })
+    }
+}
+
+/// Nothing on the website.
+#[cfg(not(feature = "csr"))]
+#[component]
+pub fn GamesButton() -> impl IntoView {}
+
 /// Toasts for stamps just earned, the first few by name.
 pub fn announce(stamps: &[Stamp]) {
     const NAMED: usize = 3;

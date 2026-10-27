@@ -10,6 +10,9 @@
   "shown": "{{ name }} giờ hiện cạnh tên bạn trên bảng xếp hạng.",
   "hidden": "Không còn con dấu nào cạnh tên bạn.",
   "shown_label": "Hiện trên bảng xếp hạng",
+  "games": {
+    "show": "Xem trong {{ service }}"
+  },
   "names": {
     "first": "Cây cầu đầu tiên",
     "solved_10": "10 câu đố ngày",

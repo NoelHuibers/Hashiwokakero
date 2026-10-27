@@ -10,6 +10,9 @@
   "shown": "{{ name }} aparece agora ao lado do teu nome nas classificações.",
   "hidden": "Já não há carimbo ao lado do teu nome.",
   "shown_label": "Visível nas classificações",
+  "games": {
+    "show": "Ver no {{ service }}"
+  },
   "names": {
     "first": "Primeira ponte",
     "solved_10": "10 diários",
