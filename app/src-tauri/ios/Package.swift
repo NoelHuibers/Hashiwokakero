@@ -7,9 +7,11 @@ import PackageDescription
 
 let package = Package(
   name: "hashi-plugin",
+  // The app's minimum (bundle.iOS.minimumSystemVersion in tauri.conf.json); GameKit's
+  // GKAccessPoint and GKLeaderboard.submitScore need iOS 14
   platforms: [
     .macOS(.v10_13),
-    .iOS(.v13),
+    .iOS("16.4"),
   ],
   products: [
     .library(name: "hashi-plugin", type: .static, targets: ["hashi-plugin"])
