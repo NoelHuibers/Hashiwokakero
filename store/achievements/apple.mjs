@@ -115,6 +115,11 @@ export async function syncApple({ api, catalogue, icons = ICONS, appId = APP_ID,
   const notes = [];
   const failures = [];
   const apple = catalogue.apple;
+  // Every image there before anything is changed
+  const missing = [...apple.achievements, ...apple.leaderboards].filter((x) => !fs.existsSync(path.join(icons, x.image)));
+  if (missing.length > 0) {
+    throw new Error(`no icons in ${icons} for ${missing.map((x) => x.id).join(', ')}: \`pnpm run store:icons\` first`);
+  }
 
   // Game Center for the app
   let detail = await getOrNull(api, `/v1/apps/${appId}/gameCenterDetail`);

@@ -5,9 +5,9 @@ name: Game achievements
 # Store Connect API (store/achievements/apple.mjs) and Play's Games Services Publishing API
 # (store/achievements/play.mjs).
 #
-# A pull request that changes them checks the catalogue against the stores' limits, runs the
-# uploads against an empty App Store Connect and Play project in memory, makes every icon and
-# Play's import ZIP and keeps them as the artifact "achievements". It uploads nothing.
+# A pull request that changes them checks the catalogue against the stores' limits, makes every
+# icon and Play's import ZIP, runs the uploads against an empty App Store Connect and Play project
+# in memory and keeps the icons and the ZIP as the artifact "achievements". It uploads nothing.
 #
 # By hand (Actions, Game achievements, Run workflow, or
 # `gh workflow run achievements.yml -f platform=both`):
@@ -70,10 +70,6 @@ jobs:
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
       - run: node store/achievements/catalogue.mjs
       - run: node --test scripts/tests/achievements.test.mjs
-      - name: Uploads to empty stores
-        run: |
-          node store/achievements/apple.mjs --offline | tail -n 20
-          node store/achievements/play.mjs --offline --ids "$RUNNER_TEMP/ids.json" | tail -n 5
 
   # Every icon in the Playwright image the store images use (its Chromium), with the site's fonts,
   # and Play's import ZIP with them
@@ -106,6 +102,12 @@ jobs:
             echo
             echo "Game Center $(ls target/store/achievements/icons/apple | wc -l) icons, Play $(ls target/store/achievements/icons/play | wc -l)."
           } >> "$GITHUB_STEP_SUMMARY"
+      # With the icons, which Game Center's upload sends
+      - name: Uploads to empty stores
+        run: |
+          set -o pipefail
+          node store/achievements/apple.mjs --offline | tail -n 20
+          node store/achievements/play.mjs --offline --ids "$RUNNER_TEMP/ids.json" | tail -n 5
       - uses: actions/upload-artifact@v7
         with:
           name: achievements

@@ -236,6 +236,14 @@ test('Game Center: a change of a live achievement goes into a new version', asyn
   assert.match(failures[0], /^achievement stamp_solved_100: .*409/);
 });
 
+test('Game Center: without the icons nothing is changed', async () => {
+  const fake = counting(fakeApple());
+  const dir = icons();
+  fs.rmSync(path.join(dir, 'apple', 'stamp_oni.png'));
+  await assert.rejects(syncApple({ api: fake, catalogue, icons: dir, log: quiet }), /no icons in .* for stamp_oni: `pnpm run store:icons` first/);
+  nothing(fake);
+});
+
 test('Game Center: no version being prepared is a note, not a failure', async () => {
   const fake = fakeApple({ versions: [{ id: 'asv-0', versionString: '1.0', state: 'READY_FOR_DISTRIBUTION' }] });
   const { notes } = await syncApple({ api: fake, catalogue, icons: icons(), log: quiet });
