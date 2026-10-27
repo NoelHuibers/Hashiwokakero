@@ -28,6 +28,38 @@ fun signingValue(property: String, variable: String): String? =
         ?: providers.environmentVariable(variable).orNull?.takeIf { it.isNotEmpty() }
 val uploadKeystore = signingValue("storeFile", "ANDROID_KEYSTORE_FILE")
 
+// Google Play Games (app/README.md, Games services): the numeric project id of the game's Play
+// Games Services project in the Play Console, which isn't secret. Release builds take
+// `project_id` of app/achievements-play.json (with Play's ids of the achievements), every build
+// HASHI_PLAY_GAMES_APP_ID of the environment instead (debug builds are rs.hashi.debug, which Play
+// Games only signs in with a credential of their own). Empty, null or no file: no Play Games, the
+// SDK is never started (its start-up provider is off, HashiPlugin answers that the service isn't
+// there).
+val playIds = providers.fileContents(
+    rootProject.layout.projectDirectory.file("../../../achievements-play.json"),
+).asText
+fun playGamesAppId(release: Boolean): String {
+    val id = providers.environmentVariable("HASHI_PLAY_GAMES_APP_ID").orNull
+        ?: if (release) {
+            playIds.orNull
+                ?.let { (groovy.json.JsonSlurper().parseText(it) as? Map<*, *>)?.get("project_id") }
+                ?.toString()
+        } else {
+            null
+        }
+    return id.orEmpty().trim().also {
+        require(it.all(Char::isDigit)) { "the Play Games project id is a number, not '$it'" }
+    }
+}
+fun com.android.build.api.dsl.ApplicationBuildType.playGames(release: Boolean) {
+    val id = playGamesAppId(release)
+    // The manifest's com.google.android.gms.games.APP_ID, a string: as a number Android would
+    // read it as an integer, which the SDK doesn't take
+    resValue("string", "game_services_project_id", id)
+    manifestPlaceholders["playGamesEnabled"] = id.isNotEmpty().toString()
+    buildConfigField("String", "PLAY_GAMES_APP_ID", "\"$id\"")
+}
+
 android {
     compileSdk = 37
     namespace = "rs.hashi"
@@ -58,6 +90,7 @@ android {
         getByName("debug") {
             applicationIdSuffix = ".debug"
             manifestPlaceholders["usesCleartextTraffic"] = "true"
+            playGames(release = false)
             isDebuggable = true
             isJniDebuggable = true
             isMinifyEnabled = false
@@ -70,6 +103,7 @@ android {
         }
         getByName("release") {
             signingConfigs.findByName("upload")?.let { signingConfig = it }
+            playGames(release = true)
             // The native library's symbol table in the App Bundle (BUNDLE-METADATA), from which
             // Play symbolicates native crashes. Devices get the stripped library.
             ndk {
@@ -92,6 +126,8 @@ android {
     }
     buildFeatures {
         buildConfig = true
+        // The Play Games project id's string (playGames above)
+        resValues = true
     }
 }
 
@@ -119,6 +155,8 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("com.google.android.material:material:1.14.0")
     implementation("androidx.lifecycle:lifecycle-process:2.10.0")
+    // Google Play Games Services v2: sign-in, achievements, leaderboards (HashiPlugin.kt)
+    implementation("com.google.android.gms:play-services-games-v2:22.1.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.4")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")

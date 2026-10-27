@@ -10,6 +10,9 @@
   "shown": "{{ name }} sekarang tampil di samping namamu di papan peringkat.",
   "hidden": "Tidak ada stempel lagi di samping namamu.",
   "shown_label": "Tampil di papan peringkat",
+  "games": {
+    "show": "Lihat di {{ service }}"
+  },
   "names": {
     "first": "Jembatan pertama",
     "solved_10": "10 harian",

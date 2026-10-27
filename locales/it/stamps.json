@@ -10,6 +10,9 @@
   "shown": "{{ name }} ora appare accanto al tuo nome nelle classifiche.",
   "hidden": "Nessun timbro accanto al tuo nome.",
   "shown_label": "Visibile nelle classifiche",
+  "games": {
+    "show": "Vedi in {{ service }}"
+  },
   "names": {
     "first": "Primo ponte",
     "solved_10": "10 sfide",

@@ -11,7 +11,7 @@ use leptos_router::components::A;
 
 use crate::api::{logout, my_stats};
 use crate::components::record::Record;
-use crate::components::stamps::StampBook;
+use crate::components::stamps::{GamesButton, StampBook};
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
@@ -130,8 +130,9 @@ pub fn AccountPage() -> impl IntoView {
                                         </CardTitle>
                                         <CardDescription>{t!(i18n, stamps.intro)}</CardDescription>
                                     </CardHeader>
-                                    <CardContent>
+                                    <CardContent class="flex flex-col gap-4">
                                         <StampBook book=s.stamps players=s.players shown pick=true />
+                                        <GamesButton />
                                     </CardContent>
                                 </Card>
                             }

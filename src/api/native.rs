@@ -15,13 +15,19 @@
 //!   `HashiPlugin.kt` in `gen/android`, `HashiPlugin.swift` in `ios/`). The capabilities in
 //!   `capabilities/default.json` allow exactly these;
 //! - the App Links the app is opened with (`tauri-plugin-deep-link`): their pages are the app's
-//!   own, the router shows them (see `follow_app_links`).
+//!   own, the router shows them (see `follow_app_links`);
+//! - the phone's games service, Game Center or Google Play Games (`games_sign_in`,
+//!   `games_report`, `games_show`, with the arguments of `api::games`), through the app's plugin.
 
+use futures::FutureExt as _;
+use futures::future::{LocalBoxFuture, Shared};
 use leptos::prelude::{ServerFnError, document, window};
 use leptos_router::NavigateOptions;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use wasm_bindgen::{JsCast, JsValue};
+
+use super::games::{self, Achievement, Board, Report, Score, Show, Status};
 
 /// Tauri's `invoke` and the object it belongs to, if the page runs in the app's `WebView`.
 fn invoke() -> Option<(JsValue, js_sys::Function)> {
@@ -129,6 +135,97 @@ pub(crate) fn system_bars(dark: bool) {
         dark: bool,
     }
     run("plugin:hashi|system_bars", &Args { dark });
+}
+
+thread_local! {
+    /// The answer of the page's one `games_sign_in`, for everyone who waits for it.
+    static GAMES: std::cell::RefCell<Option<Shared<LocalBoxFuture<'static, Status>>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Signs the player in to the phone's games service, Game Center or Google Play Games
+/// (`api::games`), without asking: the platform signs in whoever is signed in on the phone. Asked
+/// once per page, at the start (`mount`); later calls get the same answer. Never fails: outside
+/// the app, or when the plugin refuses (a desktop build), the service isn't there.
+///
+/// iOS may want to show its sign-in sheet; the plugin does that once per install at most, and
+/// never in the simulator (`HashiPlugin.swift`). Android signs in by itself at the start
+/// (Play Games' automatic sign-in), the command only asks whether it did.
+#[expect(
+    clippy::future_not_send,
+    reason = "a JavaScript promise, awaited on the page's one thread (`spawn_local`, `LocalResource`)"
+)]
+pub(crate) fn games_sign_in() -> impl Future<Output = Status> {
+    GAMES.with(|games| {
+        games
+            .borrow_mut()
+            .get_or_insert_with(|| ask_games().boxed_local().shared())
+            .clone()
+    })
+}
+
+#[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
+async fn ask_games() -> Status {
+    let Some((internals, invoke)) = invoke() else {
+        return Status::default();
+    };
+    let answer = match invoke.call1(&internals, &"plugin:hashi|games_sign_in".into()) {
+        Ok(promise) => {
+            wasm_bindgen_futures::JsFuture::from(js_sys::Promise::resolve(&promise)).await
+        }
+        Err(e) => Err(e),
+    };
+    let status = answer
+        .map_err(|e| failed(&e).to_string())
+        .and_then(|answer| {
+            // A plugin without the command's answer: the service isn't there
+            if answer.is_null() || answer.is_undefined() {
+                return Ok(Status::default());
+            }
+            let json = js_sys::JSON::stringify(&answer).map_err(|e| failed(&e).to_string())?;
+            serde_json::from_str(&String::from(json)).map_err(|e| e.to_string())
+        });
+    status.unwrap_or_else(|e| {
+        leptos::logging::warn!("games_sign_in failed: {e}");
+        Status::default()
+    })
+}
+
+/// Reports `achievements` and `scores` to the phone's games service, once its sign-in is done.
+/// What the server says the player has, mapped to the platform's ids by the caller (Apple's
+/// vendor ids, Play's from `app/achievements-play.json`); see [`Report::new`] for what is left
+/// out. In the background, a failure is only logged. Nothing outside the app, nor where the
+/// service isn't there; the plugin skips it while nobody is signed in.
+#[expect(
+    dead_code,
+    reason = "the stamp book and the win screen call it once the stamps have their platforms' ids"
+)]
+pub(crate) fn games_report(
+    achievements: impl IntoIterator<Item = Achievement>,
+    scores: impl IntoIterator<Item = Score>,
+) {
+    let Some(report) = Report::new(achievements, scores) else {
+        return;
+    };
+    if !available() {
+        return;
+    }
+    leptos::task::spawn_local(async move {
+        if games_sign_in().await.available {
+            run("plugin:hashi|games_report", &report);
+        }
+    });
+}
+
+/// Opens the games service's own screens, its achievements or its leaderboards, after its
+/// sign-in when nobody is signed in yet (a tap on a button: the one time the plugin may ask).
+pub(crate) fn games_show(kind: Board) {
+    run("plugin:hashi|games_show", &Show { kind });
+}
+
+/// The name of the phone's games service, for its button: `None` outside the app.
+pub(crate) fn games_service() -> Option<&'static str> {
+    super::app::app_platform().and_then(games::service)
 }
 
 /// Sends every link that leads out of the app (`seo::opens_outside`) to [`open_url`]: the

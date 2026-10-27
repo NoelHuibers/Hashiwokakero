@@ -10,6 +10,9 @@
   "shown": "{{ name }} s'affiche maintenant à côté de ton nom dans les classements.",
   "hidden": "Plus de tampon à côté de ton nom.",
   "shown_label": "Affiché dans les classements",
+  "games": {
+    "show": "Voir dans {{ service }}"
+  },
   "names": {
     "first": "Premier pont",
     "solved_10": "10 défis",

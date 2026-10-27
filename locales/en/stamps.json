@@ -10,6 +10,9 @@
   "shown": "{{ name }} now shows next to your name on the leaderboards.",
   "hidden": "No stamp next to your name any more.",
   "shown_label": "Shown on the leaderboards",
+  "games": {
+    "show": "Show in {{ service }}"
+  },
   "names": {
     "first": "First bridge",
     "solved_10": "10 dailies",

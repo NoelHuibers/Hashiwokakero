@@ -10,6 +10,9 @@
   "shown": "{{ name }} artık sıralamalarda adının yanında görünüyor.",
   "hidden": "Adının yanında artık mühür yok.",
   "shown_label": "Sıralamalarda görünüyor",
+  "games": {
+    "show": "{{ service }} uygulamasında göster"
+  },
   "names": {
     "first": "İlk köprü",
     "solved_10": "10 bulmaca",

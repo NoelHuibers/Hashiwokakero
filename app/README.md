@@ -116,6 +116,8 @@ in the repository root, only in the app):
   page's bottom inset is 0 while the keyboard covers the navigation bar.
 - **App Links.** Links to the app's pages on `https://hashi.rs` open in the app, see
   [App Links](#app-links).
+- **Games services.** The stamps are Google Play Games achievements (Game Center's on iOS), see
+  [Games services](#games-services).
 
 On iOS the `WebView` is WebKit's `WKWebView`, which does more of it itself. The app's own plugin
 has its iOS side in `src-tauri/ios/` (`HashiPlugin.swift`, see [iOS](#ios)). Where it differs:
@@ -209,6 +211,91 @@ language say) and check that Apple's patterns match the same paths as Android's.
   them (`xcrun simctl openurl` sends them to Safari). On a device with a TestFlight build:
   Settings, Developer, Universal Links (with the developer mode on) diagnoses a URL, and
   `swcutil` on a Mac shows what the device fetched.
+
+## Games services
+
+The stamps (`Stamp::ALL`) are achievements of the phone's games service too, and a few results go
+to its leaderboards: Game Center on iOS, Google Play Games (Play Games Services v2) on Android.
+The server stays the source of truth: the page reports what the server says the player has, the
+platforms only show it. Both keep the most a player ever reached (an achievement never goes back,
+a leaderboard keeps the best score), so the same report again changes nothing.
+
+The page (`src/api/native.rs`, the arguments in `src/api/games.rs`, nothing on the website):
+
+- `games_sign_in()`, once at the start (`mount`), silently: the platform signs in whoever is
+  signed in on the phone. Its answer, `{ available, signedIn }`, is shared by every later call.
+  `available`: the phone has the service, always on iOS, on Android only in a build with Play
+  Games' project id (below).
+- `games_report(achievements, scores)`: each achievement as `{ id, steps, target, earned }`
+  (`steps` of `target` for a stamp that counts, `None` for one that is only earned), each score as
+  `{ id, value }`, with the platform's ids (Apple's vendor ids; Play's own, from
+  `app/achievements-play.json`). `games::Report::new` sends only what there is to say: the steps
+  within `1..=target`, all of them once earned, an unearned stamp without steps not at all. It
+  waits for the sign-in and runs in the background; the plugin skips it while nobody is signed in.
+  The stamp book and the win screen call it once the stamps have their ids.
+- `games_show(Board::Achievements | Leaderboards)`: the service's own screens. The stamp book of
+  the account page has a button for the achievements ("Show in Game Center",
+  `stamps.games.show` with the service's name, which isn't translated), in the app where the
+  service is available.
+
+All of it is a no-op outside the app, and a failure is only logged, never shown. The commands are
+`games_sign_in`, `games_report` and `games_show` of the app's plugin (`build.rs`,
+`capabilities/default.json`).
+
+**iOS** (`HashiPlugin.swift`, GameKit, which Swift links by itself for `import GameKit`, as for
+Tauri's own plugins; the entitlement `com.apple.developer.game-center` is in
+`gen/apple/hashi_tauri_iOS/hashi_tauri_iOS.entitlements`, which the build leaves as it is):
+
+- The sign-in sets `GKLocalPlayer.local.authenticateHandler`. When nobody is signed in, GameKit
+  hands over its sign-in sheet: the plugin shows it by itself once per install
+  (`hashi.gameCenterPrompted` in `UserDefaults`), never in the simulator (no Apple Account there,
+  and the smoke test starts every test as a fresh install), and otherwise keeps it for the
+  button. It answers the page once GameKit called the handler, or after 10 s (GameKit doesn't
+  call it again when the sheet is cancelled).
+- A report loads the player's achievements first and sends only those that got further:
+  `percentComplete` of the steps, 100 once earned. Game Center's banner shows when exactly one
+  achievement is completed by it (a stamp just earned), not for a row of them at once (the stamps
+  from before, at the first sign-in), where the page's own toasts already speak. Scores go
+  through `GKLeaderboard.submitScore`, one board each.
+- The screens open through `GKAccessPoint.shared.trigger(state:)`, with the access point's
+  floating button off: it would sit over the page's header. `GKGameCenterViewController` ends
+  with iOS 26 (deprecated in its SDK), and the access point presents and dismisses the screens
+  itself. Without a signed-in player the button shows the sign-in sheet GameKit kept, if it
+  handed one over.
+- The release checks that the signed app has the entitlement and its App Store profile Game
+  Center (`app-release.yml`).
+
+**Android** (`HashiPlugin.kt`, `com.google.android.gms:play-services-games-v2`):
+
+- Play Games' project id, the numeric one of the Play Console, is a build input
+  (`gen/android/app/build.gradle.kts`): release builds take `project_id` of
+  `app/achievements-play.json`, next to Play's ids of the achievements, any build
+  `HASHI_PLAY_GAMES_APP_ID` of the environment instead. It isn't secret. It goes into the manifest's `com.google.android.gms.games.APP_ID` (as a string
+  resource) and `BuildConfig.PLAY_GAMES_APP_ID`.
+- **Empty, `null` or no file means no Play Games**: the SDK's provider (`PlayGamesInitProvider`, which
+  starts it with the app since version 22) is off in the manifest (`playGamesEnabled`), and the
+  commands never touch the SDK: `games_sign_in` answers `available: false`, `games_report` does
+  nothing, `games_show` refuses. Debug builds have no id unless the environment sets one: they
+  are `rs.hashi.debug`, which Play Games only signs in with a credential of its own. The
+  emulator test checks that the app's process has no Play Games provider.
+- With an id the SDK signs in by itself at the start (automatic sign-in); `games_sign_in` asks
+  for its result (`isAuthenticated`). A report sets a counting achievement's steps (`setSteps`;
+  Play unlocks it at its total, which has to be the stamp's target, and the achievement has to be
+  incremental in the Play Console) and unlocks the others (`unlock`), and submits the scores
+  (`submitScore`); Play sends them when it can. The button signs in first if nobody is (`signIn`,
+  the one time Play Games may ask) and opens `achievementsIntent` or `allLeaderboardsIntent`.
+- The release checks the provider against the id and names it in the job summary.
+
+To turn Play Games on: the Play Games Services project in the Play Console (its credentials for
+`rs.hashi` with the app signing key's and the upload key's SHA-1, the testers), then its project
+id into `project_id` of `app/achievements-play.json` in a pull request, whose release dry run
+checks the bundle. Game Center needs its capability on the App ID: Apple Developer,
+[Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list),
+Identifiers, `rs.hashi`, Capabilities, Game Center ticked, Save. Without it the release's export
+fails with "Automatic signing cannot update bundle identifier": the API key's automatic signing
+can't add it. To try Play Games with a debug build: a
+credential for `rs.hashi.debug` with the debug key's SHA-1, then
+`HASHI_PLAY_GAMES_APP_ID=<id> cargo tauri android build --debug --apk --target aarch64`.
 
 ## Offline
 
@@ -307,8 +394,9 @@ no clap).
   (`frontendDist`), the one window, and the content security policy (below).
 - `capabilities/default.json`: what the page may call in Tauri: `core:default`, the offline
   practice's commands, the opener's `open_url` for `https:` and `mailto:` URLs, the deep-link
-  plugin's `get_current`, and the app's own plugin `hashi` (`share`, `system_bars`). `build.rs` lists the commands of the app and of
-  its plugin, which makes Tauri check them against the capabilities.
+  plugin's `get_current`, and the app's own plugin `hashi` (`share`, `system_bars`, `games_*` of
+  [Games services](#games-services)). `build.rs` lists the commands of the app and of its plugin,
+  which makes Tauri check them against the capabilities.
 - Plugins: `tauri-plugin-opener` (official, links out of the app, its own click script off),
   `tauri-plugin-deep-link` (official, [App Links](#app-links)), and `hashi`, the app's own, in `src/lib.rs` with its Android side in `gen/android`
   (`HashiPlugin.kt`) and its iOS side in `ios/` (`HashiPlugin.swift`, see [iOS](#ios)). See
@@ -329,8 +417,9 @@ no clap).
   background, light and dark, so the screen doesn't flash white before the page paints; the
   `WebView` itself is transparent until then), the icons, the checksum of the Gradle download,
   the manifest (`ACCESS_NETWORK_STATE`, `adjustResize`; no Android TV launcher; the App Links'
-  intent filter is the deep-link plugin's), `MainActivity.kt` (the system bars and the keyboard,
-  see [On the phone](#on-the-phone)) and `HashiPlugin.kt`, and the template's
+  intent filter is the deep-link plugin's; Play Games' project id and provider, see
+  [Games services](#games-services)), `build.gradle.kts` (signing, the NDK, Play Games'
+  project id), `MainActivity.kt` (the system bars and the keyboard, see [On the phone](#on-the-phone)) and `HashiPlugin.kt`, and the template's
   unused `activity_main.xml` removed. Build outputs and the files Tauri writes on every build
   are in its `.gitignore`s.
 
@@ -431,8 +520,9 @@ the app's data and starts it with `am start`: it hydrates and knows it is offlin
 (`securitypolicyviolation` events and the console's CSP messages on `/`, `/rules`, `/ja/rules`,
 `/practice`, `/create`, `/lab`, `/dojo`, `/groups`, `/daily`), practice generates, hints and
 checks through the native commands, the ranks show one offline notice (again after an `online`
-event), and Android's back button goes back from the practice to the rules instead of closing
-the app.
+event), Android's back button goes back from the practice to the rules instead of closing
+the app, and without Play Games' project id the games commands say the service isn't there and
+its SDK never starts.
 
 What only the phone shows: in the light and the dark theme, the header starts below the status
 bar and the tab bar's labels end above the navigation bar (their boxes against the bars'
@@ -883,7 +973,8 @@ Once, before the first upload, in the **Play Console** (in German; Hashi, then):
 
 In **App Store Connect** nothing is needed before the first run, which switches Game Center on;
 create the iOS version that will report them (1.1) first, so it is switched on there too. The app
-needs the Game Center capability (on by default for the App ID) and its entitlement. Afterwards:
+needs its entitlement and the Game Center capability on the App ID, which the release's
+automatic signing can't add ([Games services](#games-services)). Afterwards:
 
 1. Check the leaderboard "Today's daily" (Apps, Hashi, Services, Game Center, Leaderboards): a
    recurring one, every day for a day, from a midnight UTC. Apple documents the recurrence's
@@ -941,7 +1032,10 @@ package (`HashiPlugin.swift`, the counterpart of `HashiPlugin.kt`) that `build.r
 `swift build` and links into the app's library when it builds for iOS, as `tauri-plugin` does for a
 plugin crate's `ios/` (an app's own plugin can't use that). It imports Tauri's Swift API, which
 `build.rs` copies from the `tauri` crate to `src-tauri/.tauri/` (ignored by git); Swift Package
-Manager fetches its one dependency, swift-rs, from GitHub.
+Manager fetches its one dependency, swift-rs, from GitHub. It builds for the iOS of
+`IPHONEOS_DEPLOYMENT_TARGET`, which Xcode sets to the app's minimum, and
+`src-tauri/.cargo/config.toml` to the same outside Xcode (CI's Clippy): without it the package was
+built for iOS 13, where GameKit lacks what the plugin uses.
 
 `bundle.iOS.minimumSystemVersion` in `tauri.conf.json` is **iOS 16.4**: the app's page runs in the
 system's `WKWebView`, the Safari of the phone's iOS. Tailwind 4 supports Safari 16.4 and newer
@@ -1019,9 +1113,12 @@ areas (step 13c): the header starts below `env(safe-area-inset-top)` and the tab
 above the home indicator, in both themes, and turned sideways (WebDriver's orientation) the top's
 inset is 0, the body's and the tab bar's sides clear the Dynamic Island, as the scene lifecycle
 gives them; the app's own plugin answers `system_bars` and `share` with a file (without its Swift
-side Tauri refuses them). The screenshots `start.png`, `practice.png`, `practice-light.png`,
-`practice-dark.png` (the page dark on a light phone: the status bar's icons light),
-`landscape.png` and `share.png` (the share sheet with the file) are the artifact
+side Tauri refuses them); Game Center's sign-in answers (available, nobody signed in) with nothing
+of GameKit over the page, a report goes through, and the button's command shows the sign-in sheet
+GameKit kept, or is refused without one. The screenshots `start.png`, `practice.png`,
+`practice-light.png`, `practice-dark.png` (the page dark on a light phone: the status bar's icons
+light), `landscape.png`, `share.png` (the share sheet with the file) and `game-center.png` are the
+artifact
 `ios-simulator-screenshot`.
 
 Not checked, unlike on Android: `navigator.onLine` (the simulator has the Mac's network, only

@@ -10,6 +10,9 @@
   "shown": "{{ name }} aparece ahora junto a tu nombre en las clasificaciones.",
   "hidden": "Ya no hay sello junto a tu nombre.",
   "shown_label": "Visible en las clasificaciones",
+  "games": {
+    "show": "Ver en {{ service }}"
+  },
   "names": {
     "first": "Primer puente",
     "solved_10": "10 retos",

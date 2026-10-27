@@ -120,6 +120,12 @@ pub(super) fn app_header() -> Option<&'static str> {
     APP.get().map(|app| app.header.as_str())
 }
 
+/// The phone the app runs on, `android` or `ios` (`web` in a browser), `None` before [`start`].
+#[cfg(feature = "csr")]
+pub(super) fn app_platform() -> Option<&'static str> {
+    APP.get().map(|app| app.platform)
+}
+
 /// The local storage key of the session token.
 #[cfg(any(feature = "csr", test))]
 const SESSION_KEY: &str = "hashi.session";

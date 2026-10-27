@@ -10,6 +10,9 @@
   "shown": "{{ name }}を名前の横に押しました。",
   "hidden": "名前の横のはんこを外しました。",
   "shown_label": "ランキングに表示中",
+  "games": {
+    "show": "{{ service }}で見る"
+  },
   "names": {
     "first": "はじめての橋",
     "solved_10": "デイリー10回",

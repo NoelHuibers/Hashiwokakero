@@ -10,6 +10,9 @@
   "shown": "이제 순위표에서 이름 옆에 {{ name }} 도장이 보여요.",
   "hidden": "이름 옆의 도장을 뺐어요.",
   "shown_label": "순위표에 표시 중",
+  "games": {
+    "show": "{{ service }}에서 보기"
+  },
   "names": {
     "first": "첫 다리",
     "solved_10": "데일리 10회",

@@ -63,6 +63,10 @@ pub fn mount(version: &'static str) {
     if let Some(owner) = app.take() {
         owner.set();
     }
+    // Game Center or Play Games, silently and in the background: the platforms want it early
+    leptos::task::spawn_local(async {
+        api::native::games_sign_in().await;
+    });
     mark_ready();
 }
 

@@ -142,7 +142,9 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 13d | Universal Links: `apple-app-site-association` served from config, Associated Domains; needs the Team ID | 10b, 13a | ✓ #155 |
 | 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | ✓ #154 |
 | 13f | First iOS release: TestFlight, App Store listing and review | 13b–13e | |
-| 14a | Game achievements: the stamps as Game Center and Play Games achievements, leaderboards, icons, upload workflow ([app/README.md](../app/README.md#game-achievements)) | 12, 13f | |
+| 14a | Game achievements: the stamps as Game Center and Play Games achievements, leaderboards, icons, upload workflow ([app/README.md](../app/README.md#game-achievements)) | 12, 13f | ✓ #170 |
+| 14b | Games services, native: Game Center and Google Play Games in the app's plugin (sign-in, reports, their screens), Play Games' project id from `app/achievements-play.json`, off without it | 13c | |
+| 14c | The stamps reported: the stamp book and the win screen send the stamps' progress and the leaderboards' scores to the platform | 14a, 14b | |
 
 ## Owner tasks
 
@@ -241,8 +243,19 @@ replaced through Play's support). Left, in this order (details in
       Information (contact; notes such as "no sign-in needed, guests play right away"), and
       submit. The export compliance question is already answered by the build
       (`ITSAppUsesNonExemptEncryption`).
-9. **Game achievements** (step 14a, for app 1.1): Play Games Services set up for the game in the
-   Play Console (the project, its credentials, the service account's permission, the import of
-   the achievements with their icons), then the "Game achievements" workflow uploads them to
-   both platforms; Game Center needs no console step before it. The click paths are in
-   [app/README.md](../app/README.md#in-the-consoles).
+9. **Games services** (steps 14a–14c, for app 1.1, [app/README.md](../app/README.md#games-services)).
+   Until these are done nothing changes for players (Android: no Play Games without the project
+   id; iOS: Game Center signs in, its reports of unknown ids are refused by Apple and only logged).
+   1. **Game Center, Apple Developer**: [Certificates, Identifiers &
+      Profiles](https://developer.apple.com/account/resources/identifiers/list), Identifiers,
+      `rs.hashi`, Capabilities, tick Game Center, Save (confirm the dialog: the old profiles are
+      invalidated, the release makes a new one). The release's automatic signing can't add it:
+      without it the IPA export fails with "Automatic signing cannot update bundle identifier".
+   2. **Play Games Services** in the Play Console (the project, its credentials, the service
+      account's permission, the import of the achievements with their icons), the project id into
+      `project_id` of `app/achievements-play.json`, then the "Game achievements" workflow uploads
+      them to both platforms. The click paths are in
+      [app/README.md](../app/README.md#in-the-consoles).
+   3. **Publish** the Play Games configuration at least two hours before the rollout of the app
+      version reporting them, and give the Data safety form Play Games' data (the player's Play
+      Games profile and game activity, through Google).

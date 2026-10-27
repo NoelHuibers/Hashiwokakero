@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Without it the WebView takes itself for online, always: navigator.onLine and the window's
          online and offline events (the offline notice, src/state/toasts.rs) -->
@@ -157,6 +158,19 @@
             </intent-filter>
             <!-- DEEP LINK PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
         </activity>
+
+        <!-- Google Play Games (HashiPlugin.kt): the project id from the Gradle build, empty
+             without one. The SDK starts itself through its provider when the app starts, which
+             is off then (playGamesEnabled): without an id, nothing of Play Games runs -->
+        <meta-data
+          android:name="com.google.android.gms.games.APP_ID"
+          android:value="@string/game_services_project_id" />
+        <provider
+          android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"
+          android:authorities="${applicationId}.playgamesinitprovider"
+          android:exported="false"
+          android:enabled="${playGamesEnabled}"
+          tools:replace="android:enabled" />
 
         <provider
           android:name="androidx.core.content.FileProvider"

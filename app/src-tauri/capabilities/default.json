@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "default",
-  "description": "The app's one window: Tauri's core defaults, the offline practice's commands, links out of the app (https and mailto only), the App Link the app was opened with, and the app's own plugin",
+  "description": "The app's one window: Tauri's core defaults, the offline practice's commands, links out of the app (https and mailto only), the App Link the app was opened with, and the app's own plugin (sharing, the system bars, Game Center and Google Play Games)",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -14,6 +14,9 @@
     },
     "deep-link:allow-get-current",
     "hashi:allow-share",
-    "hashi:allow-system-bars"
+    "hashi:allow-system-bars",
+    "hashi:allow-games-sign-in",
+    "hashi:allow-games-report",
+    "hashi:allow-games-show"
   ]
 }

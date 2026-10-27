@@ -10,6 +10,9 @@
   "shown": "{{ name }} jest teraz widoczna przy twoim nazwisku w rankingach.",
   "hidden": "Przy twoim nazwisku nie ma już pieczątki.",
   "shown_label": "Widoczna w rankingach",
+  "games": {
+    "show": "Pokaż w {{ service }}"
+  },
   "names": {
     "first": "Pierwszy most",
     "solved_10": "10 mostów dnia",
