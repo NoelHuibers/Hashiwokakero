@@ -1,0 +1,102 @@
+{
+  "en": {
+    "daily_time": "Today's daily",
+    "puzzles_solved": "Dailies solved",
+    "best_streak": "Best streak"
+  },
+  "de": {
+    "daily_time": "Tagesrätsel heute",
+    "puzzles_solved": "Gelöste Tagesrätsel",
+    "best_streak": "Beste Serie"
+  },
+  "fr": {
+    "daily_time": "Défi du jour",
+    "puzzles_solved": "Défis résolus",
+    "best_streak": "Meilleure série"
+  },
+  "it": {
+    "daily_time": "Sfida del giorno",
+    "puzzles_solved": "Sfide risolte",
+    "best_streak": "Serie migliore"
+  },
+  "es": {
+    "daily_time": "Reto del día",
+    "puzzles_solved": "Retos resueltos",
+    "best_streak": "Mejor racha"
+  },
+  "pt": {
+    "daily_time": "Diário de hoje",
+    "puzzles_solved": "Diários resolvidos",
+    "best_streak": "Melhor sequência"
+  },
+  "nl": {
+    "daily_time": "Dagpuzzel van vandaag",
+    "puzzles_solved": "Opgeloste dagpuzzels",
+    "best_streak": "Beste reeks"
+  },
+  "pl": {
+    "daily_time": "Łamigłówka dnia",
+    "puzzles_solved": "Rozwiązane łamigłówki",
+    "best_streak": "Najlepsza seria"
+  },
+  "tr": {
+    "daily_time": "Günün bulmacası",
+    "puzzles_solved": "Çözülen bulmacalar",
+    "best_streak": "En iyi seri"
+  },
+  "ru": {
+    "daily_time": "Головоломка дня",
+    "puzzles_solved": "Решённые головоломки",
+    "best_streak": "Лучшая серия"
+  },
+  "uk": {
+    "daily_time": "Головоломка дня",
+    "puzzles_solved": "Розв’язані головоломки",
+    "best_streak": "Найкраща серія"
+  },
+  "ar": {
+    "daily_time": "لغز اليوم",
+    "puzzles_solved": "الألغاز المحلولة",
+    "best_streak": "أفضل سلسلة"
+  },
+  "hi": {
+    "daily_time": "आज की दैनिक पहेली",
+    "puzzles_solved": "हल की गई पहेलियाँ",
+    "best_streak": "सबसे लंबी स्ट्रीक"
+  },
+  "id": {
+    "daily_time": "Harian hari ini",
+    "puzzles_solved": "Harian diselesaikan",
+    "best_streak": "Rekor beruntun"
+  },
+  "vi": {
+    "daily_time": "Câu đố hôm nay",
+    "puzzles_solved": "Câu đố đã giải",
+    "best_streak": "Chuỗi dài nhất"
+  },
+  "th": {
+    "daily_time": "ปริศนาวันนี้",
+    "puzzles_solved": "ปริศนาที่แก้แล้ว",
+    "best_streak": "สตรีคสูงสุด"
+  },
+  "ja": {
+    "daily_time": "今日のデイリー",
+    "puzzles_solved": "クリアしたデイリー",
+    "best_streak": "最長連続"
+  },
+  "ko": {
+    "daily_time": "오늘의 데일리",
+    "puzzles_solved": "푼 데일리",
+    "best_streak": "최장 연속"
+  },
+  "zh": {
+    "daily_time": "今日谜题",
+    "puzzles_solved": "已解谜题",
+    "best_streak": "最长连胜"
+  },
+  "zh-Hant": {
+    "daily_time": "今日謎題",
+    "puzzles_solved": "已解謎題",
+    "best_streak": "最長連勝"
+  }
+}

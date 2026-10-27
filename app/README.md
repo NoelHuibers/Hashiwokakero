@@ -751,6 +751,150 @@ PLAY_JSON_KEY=/path/to/key.json BUNDLE_GEMFILE=fastlane/Gemfile bundle exec fast
 APPLE_API_KEY_JSON=/path/to/key.json BUNDLE_GEMFILE=fastlane/Gemfile bundle exec fastlane ios listing what:text
 ```
 
+## Game achievements
+
+The 48 stamps of the stamp book are achievements on Apple's Game Center and on Google Play Games
+Services, next to three leaderboards. The server decides what a player has; the app reports it to
+the platform (the `games_*` commands of the `hashi` plugin). Both sides take the ids, points and
+steps from `src/model/achievements.rs`:
+
+- `Stamp::achievement_id`: `stamp_<id>` (`stamp_first`, `stamp_solved_100`). Game Center's vendor
+  identifier; Play makes up its own IDs (`CgkI…`), which `app/achievements-play.json` maps these
+  to. An achievement missing there isn't reported on Android, so the app works before Play has
+  them.
+- `Stamp::points`: multiples of 5 from 5 to 50, 855 of Game Center's 1000 together (Play allows
+  2000), the rest kept for stamps to come. Can't be changed once an achievement is live.
+- `Stamp::steps`: the stamp book's target for stamps that count up to one (10 dailies, 30 days in a
+  row, 1000 bridges...): incremental on Play, a percentage on Game Center. `None` for those
+  earned at once and for the full moon, whose target is the month's length.
+- Hidden on both: the book's secret stamps. Game Center wants a description before it's earned
+  even so: the book's neutral "A secret stamp. Keep playing to find it!".
+- `GamesLeaderboard`: `daily_time` (today's daily, lower is better), `puzzles_solved` and
+  `best_streak` (all time). `daily_time` is only on Game Center, as a leaderboard that starts over
+  every day at midnight UTC with the puzzle day. Play's daily leaderboards start over at 07:00 UTC
+  all year (its "midnight Pacific Daylight Time"), which can't be changed: one of its days would
+  mix two puzzles, and its all-time view would rank Monday's easy times above every other day's.
+  Game Center has no format for milliseconds: the time goes there in hundredths
+  (`GamesLeaderboard::apple_score`).
+
+A test in `src/model/achievements.rs` writes them to `store/achievements/model.json` for the
+upload tooling and fails when that is out of date (`UPDATE_ACHIEVEMENTS=1 cargo test
+--no-default-features --features ssr -p hashi --lib achievements` writes it).
+
+### Catalogue and icons
+
+`node store/achievements/catalogue.mjs` (`pnpm run store:achievements`) puts together what each
+platform gets, in the store locales of `store/locales.mjs` (Game Center 26, Play 25): the names
+and texts of `locales/<language>/stamps.json`, the leaderboards' names of
+`store/achievements/leaderboards.json`. It checks the limits: Play's names ≤ 100 and descriptions
+≤ 500 characters, each name once per locale, steps ≤ 10000, points; Game Center's ids, ≤ 100
+points each and 1000 together. Apple documents no lengths for its texts: they are held to 100
+(names) and 255 characters (descriptions). It writes `target/store/achievements/catalogue.json`.
+
+The icons are the stamps' hanko, pressed like the stamp book does, with the tier's number where
+stamps share a kanji: `store/templates/hanko.html`, taken by Playwright like the store images
+(`store/capture/achievements.icons.ts`), but without the site: only the fonts `pnpm install`
+writes to `public/fonts`. Game Center's at 1024 × 1024, Play's at 512 × 512, opaque, nothing
+outside the circle Android masks Play's icons with. Then `catalogue.mjs` checks them and writes
+Play's import ZIP (below).
+
+```sh
+pnpm run store:icons          # target/store/achievements/icons/{apple,play}/<id>.png
+pnpm run store:achievements   # the checks, catalogue.json, play-import.zip
+```
+
+### Uploading
+
+`.github/workflows/achievements.yml` ("Game achievements"):
+
+- **A pull request** that changes the catalogue, the texts of the stamps, the icons' template or
+  the workflow: the checks and their tests (`scripts/tests/achievements.test.mjs`), both uploads
+  against an empty App Store Connect and Play project in memory (`store/achievements/fake.mjs`;
+  `--offline`), and all icons with Play's import ZIP, kept as the artifact `achievements`.
+- **By hand** (Actions, Game achievements, Run workflow; or `gh workflow run achievements.yml -f
+  platform=both`): `platform` apple, play or both. `validate_only` reads what the platform has and
+  lists what an upload would change, without changing anything.
+
+Each upload looks at what is there first and only changes what differs, so a second run changes
+nothing and never makes a second achievement. Nothing is ever deleted, submitted or published.
+
+- **Game Center** (`store/achievements/apple.mjs`, the App Store Connect API; fastlane has no
+  action for it): switches Game Center on for the app and for the iOS version being prepared,
+  then every achievement and leaderboard by its vendor id. Since the API's version 4.2 their
+  texts and images hang on versions: the run edits the latest one while it is being prepared,
+  and makes a new one when it is live (it goes to review with the next app version). An image is
+  uploaded per locale, named by its content's hash, so a changed icon is replaced. The first run
+  sends about 4000 requests, more than App Store Connect's 3600 an hour: it waits when told to,
+  up to the job's three hours; a run stopped halfway is just run again. The daily leaderboard's
+  first day is the next midnight UTC, set when it is created.
+- **Play Games** (`store/achievements/play.mjs`, the Games Services Publishing API with the
+  service account of the releases): finds each achievement and leaderboard by its ID in
+  `app/achievements-play.json`, else by its English name, else creates it; sets type, steps,
+  hidden, points, names and descriptions in every locale. The new IDs are in the job summary and
+  the artifact `achievements-play`: that file replaces `app/achievements-play.json` in a pull
+  request (a workflow can't push to main, and a pull request it opened wouldn't run CI). What
+  Play's API can't do: icons (its image upload is gone), the order, publishing. Type, steps and
+  hidden can't change once published.
+
+Locally, with the keys in the environment (`APPLE_API_KEY_ID`, `APPLE_API_ISSUER`,
+`APPLE_API_KEY_P8`; `PLAY_SERVICE_ACCOUNT_JSON`, the key file or its contents):
+
+```sh
+node store/achievements/apple.mjs --offline   # against an empty App Store Connect, no key
+node store/achievements/apple.mjs --dry-run   # what an upload would change
+node store/achievements/play.mjs --offline
+node store/achievements/play.mjs --dry-run --ids /tmp/ids.json
+```
+
+### In the consoles
+
+Once, before the first upload, in the **Play Console** (in German; Hashi, then):
+
+1. Mehr Nutzer gewinnen (or Wachstum), Play-Spieldienste, Einrichtung und Verwaltung,
+   Konfiguration: "Ja, mein Spiel verwendet bereits Google-APIs", the Cloud project
+   `hashi-play-512817` (the service account's), Verwenden. Under the game's name is now its
+   Projekt-ID (12 digits): into `project_id` of `app/achievements-play.json` by a pull request
+   (the Android app needs it too).
+2. On the same page, Eigenschaften bearbeiten: the display name "Hashi", the default language
+   English (United States) (the upload finds achievements by their en-US names), and the
+   translations: every Play language of `store/locales.mjs`. Speichern.
+3. Anmeldedaten, Anmeldedaten hinzufügen, Android: first the OAuth consent screen (Konfigurieren,
+   in Google Cloud), then OAuth-Client erstellen with the package `rs.hashi` and the SHA-1 of the
+   app signing key (the page the SHA-256 for `fly.toml` came from, docs/mobile.md: App-Signatur,
+   the app signing key's certificate); a second credential with the upload key's SHA-1 for
+   builds not installed from Play. Änderungen speichern.
+4. The service account may edit the game's services: Nutzer und Berechtigungen,
+   `play-release@hashi-play-512817.iam.gserviceaccount.com`, Kontoberechtigungen: "Google
+   Play-Spieldienste-Projekte bearbeiten". In the Google Cloud console, project
+   `hashi-play-512817`, APIs und Dienste, Bibliothek: enable "Google Play Game Services
+   Publishing API".
+5. The achievements with their icons: the artifact `achievements` of a run (any pull request's),
+   `play-import.zip`. Play-Spieldienste, Einrichtung und Verwaltung, Erfolge, Erfolge
+   importieren, Hochladen, the ZIP, Als Entwurf speichern. Only into a project without
+   achievements: the names are unique. (Without the import the upload creates them, with no icon:
+   each is then set by hand on its page.)
+6. Run the workflow (`-f platform=play`, first with `-f validate_only=true`): it adds the
+   descriptions and translations and the leaderboards, and the IDs come out for
+   `app/achievements-play.json`. The leaderboards' icons by hand: Bestenlisten, each one, Symbol,
+   `icons/play/<id>.png` of the artifact.
+7. Tester: yourself and the testing tracks, so the drafts work in test builds. Publishing
+   (Veröffentlichung, Spiel veröffentlichen) once the app version reporting them is out, at least
+   two hours before its rollout.
+
+In **App Store Connect** nothing is needed before the first run, which switches Game Center on;
+create the iOS version that will report them (1.1) first, so it is switched on there too. The app
+needs the Game Center capability (on by default for the App ID) and its entitlement. Afterwards:
+
+1. Check the leaderboard "Today's daily" (Apps, Hashi, Services, Game Center, Leaderboards): a
+   recurring one, every day for a day, from a midnight UTC. Apple documents the recurrence's
+   format only loosely; if it refused it, the run failed at `daily_time`: create it there by hand
+   (Recurring, ID `daily_time`, Elapsed Time to the hundredth, Low to High, Best Score, start at
+   00:00 UTC, duration and restart 1 day), then run the workflow again, which finds it by its id
+   and adds its texts and images.
+2. The first achievements and leaderboards go to review with an app version: on the version's
+   page, Game Center, choose them all, then submit the version as usual. Later ones can go on
+   their own.
+
 ## iOS
 
 The same crate in an Xcode project, `gen/apple/`, made by `cargo tauri ios init` (xcodegen, from

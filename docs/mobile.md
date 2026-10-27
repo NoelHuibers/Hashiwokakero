@@ -142,6 +142,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 13d | Universal Links: `apple-app-site-association` served from config, Associated Domains; needs the Team ID | 10b, 13a | ✓ #155 |
 | 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | ✓ #154 |
 | 13f | First iOS release: TestFlight, App Store listing and review | 13b–13e | |
+| 14a | Game achievements: the stamps as Game Center and Play Games achievements, leaderboards, icons, upload workflow ([app/README.md](../app/README.md#game-achievements)) | 12, 13f | |
 
 ## Owner tasks
 
@@ -240,3 +241,8 @@ replaced through Play's support). Left, in this order (details in
       Information (contact; notes such as "no sign-in needed, guests play right away"), and
       submit. The export compliance question is already answered by the build
       (`ITSAppUsesNonExemptEncryption`).
+9. **Game achievements** (step 14a, for app 1.1): Play Games Services set up for the game in the
+   Play Console (the project, its credentials, the service account's permission, the import of
+   the achievements with their icons), then the "Game achievements" workflow uploads them to
+   both platforms; Game Center needs no console step before it. The click paths are in
+   [app/README.md](../app/README.md#in-the-consoles).

@@ -27,10 +27,23 @@ export const HANKO: Record<SceneId, string> = {
   night: '夜',
 };
 
-/** A page that serves the templates and the raw screenshots from the site's origin (its fonts). */
-export async function framePage(browser: Browser): Promise<Page> {
+/**
+ * A page that serves the templates and the raw screenshots from the site's origin (its fonts).
+ * `offline`: no server, the fonts from public/fonts (`pnpm install` writes them), for the
+ * achievements' icons.
+ */
+export async function framePage(browser: Browser, { offline = false } = {}): Promise<Page> {
   const context = await browser.newContext({ viewport: { width: 1000, height: 1000 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
+  if (offline) {
+    const fonts = path.join(ROOT, 'public/fonts');
+    await page.route(`${STORE_URL}/fonts/**`, async (route) => {
+      const file = path.join(fonts, new URL(route.request().url()).pathname.replace(/^\/fonts\//, ''));
+      if (!file.startsWith(fonts)) return route.abort();
+      const type = file.endsWith('.css') ? 'text/css' : 'font/woff2';
+      return route.fulfill({ body: readFileSync(file), contentType: type });
+    });
+  }
   await page.route(`${STORE_URL}/__store/**`, async (route) => {
     const url = new URL(route.request().url());
     const rest = url.pathname.replace(/^\/__store\//, '');

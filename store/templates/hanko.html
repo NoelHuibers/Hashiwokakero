@@ -1,0 +1,100 @@
+<!doctype html>
+<!--
+  An achievement's icon (app/README.md, Game achievements): the stamp's hanko 判子 as the stamp
+  book presses it, its kanji in the paper colour on vermilion inside a thin paper ring, and the
+  tier's number where stamps share a kanji. store/capture/achievements.icons.ts opens it with its
+  settings as JSON in ?icon=, waits for window.READY and takes the page at the icon's size.
+
+  Opaque (Game Center wants RGB), nothing outside the circle of the icon: Android masks Play's
+  icons to one in its toasts.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      :root {
+        --paper: #f4ecdd;
+        --paper-deep: #ecdfc6;
+        --shu: #cf3a24;
+        --shu-deep: #b52f1b;
+        --shu-ink: #fff7ee;
+        --ink: #2b2420;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        width: var(--s);
+        height: var(--s);
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--paper) 60%, white) 0%, transparent 62%),
+          linear-gradient(var(--paper), var(--paper-deep));
+      }
+      .seal {
+        position: relative;
+        width: calc(var(--s) * 0.6);
+        height: calc(var(--s) * 0.6);
+        border-radius: calc(var(--s) * 0.12);
+        background: radial-gradient(circle at 35% 30%, var(--shu) 0%, var(--shu) 55%, var(--shu-deep) 100%);
+        color: var(--shu-ink);
+        display: grid;
+        place-items: center;
+        font-family: "DotGothic16", monospace;
+        font-size: calc(var(--s) * 0.34);
+        line-height: 1;
+        box-shadow:
+          inset 0 0 0 calc(var(--s) * 0.024) var(--shu),
+          inset 0 0 0 calc(var(--s) * 0.04) var(--shu-ink),
+          0 calc(var(--s) * 0.03) 0 rgb(0 0 0 / 0.12);
+        transform: rotate(-6deg);
+      }
+      .kanji { transform: translateY(calc(var(--s) * -0.004)); }
+      .seal.tiered .kanji { transform: translateY(calc(var(--s) * -0.03)); }
+      /* The tier, as the stamp book's little tag, on the seal's lower edge */
+      .tier {
+        position: absolute;
+        left: 50%;
+        bottom: calc(var(--s) * -0.06);
+        transform: translateX(-50%) rotate(6deg);
+        padding: calc(var(--s) * 0.012) calc(var(--s) * 0.035);
+        border-radius: calc(var(--s) * 0.025);
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "DotGothic16", monospace;
+        font-size: calc(var(--s) * 0.15);
+        line-height: 1.05;
+        white-space: nowrap;
+        box-shadow: 0 calc(var(--s) * 0.008) calc(var(--s) * 0.02) rgb(0 0 0 / 0.18);
+      }
+      .tier[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <div class="seal">
+      <span class="kanji"></span>
+      <span class="tier" hidden></span>
+    </div>
+    <script>
+      // ?icon=: { size, kanji, tier: number | null }
+      (async () => {
+        const icon = JSON.parse(new URLSearchParams(location.search).get('icon'));
+        document.documentElement.style.setProperty('--s', `${icon.size}px`);
+        document.querySelector('.kanji').textContent = icon.kanji;
+        const tier = document.querySelector('.tier');
+        tier.textContent = icon.tier ?? '';
+        tier.hidden = icon.tier == null;
+        document.querySelector('.seal').classList.toggle('tiered', icon.tier != null);
+        // The slices of the pixel font with the kanji (and the digits): none is a kanji it lacks
+        const faces = await document.fonts.load(`${icon.size}px "DotGothic16"`, icon.kanji);
+        if (faces.length === 0) throw new Error(`DotGothic16 has no ${icon.kanji}`);
+        await document.fonts.ready;
+        window.READY = true;
+      })().catch((e) => {
+        window.FAILED = String(e);
+      });
+    </script>
+  </body>
+</html>

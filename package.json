@@ -28,7 +28,9 @@
     "smoke:production": "playwright test -c e2e/production.config.ts",
     "store:validate": "node store/validate.mjs",
     "store:images": "playwright test -c store/capture/playwright.config.ts",
-    "store:assemble": "node store/assemble.mjs"
+    "store:assemble": "node store/assemble.mjs",
+    "store:icons": "playwright test -c store/capture/icons.config.ts",
+    "store:achievements": "node store/achievements/catalogue.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/murecho": "^5.3.1",
