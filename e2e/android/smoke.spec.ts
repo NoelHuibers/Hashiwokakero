@@ -383,7 +383,7 @@ test('without a project id, Play Games never starts', async ({ page, device }) =
       ([command, args]) =>
         (window as any).__TAURI_INTERNALS__.invoke(command, args).then(
           (answer: unknown) => ({ answer: answer ?? null }),
-          (e: unknown) => ({ refused: String(e) }),
+          (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
         ),
       [command, args] as const,
     );

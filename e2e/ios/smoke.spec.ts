@@ -248,7 +248,7 @@ test('Game Center signs in without covering the page', async ({ app }) => {
       ({ command, args }) =>
         (window as any).__TAURI_INTERNALS__.invoke(command, args).then(
           (answer: unknown) => ({ answer: answer ?? null }),
-          (e: unknown) => ({ refused: String(e) }),
+          (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
         ),
       { command, args },
     );
