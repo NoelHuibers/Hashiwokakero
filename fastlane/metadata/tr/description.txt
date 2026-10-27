@@ -1,0 +1,31 @@
+Hashi, Japon köprü bulmacası Hashiwokakero'yu sevimli piksel sanatıyla sunuyor. Her gün herkes için aynı, yeni bir günün köprüsü var; sıralama da karşıya ne kadar hızlı geçtiğini gösteriyor. Kahve molası için rahatlatıcı bir zekâ oyunu, pazar günleri ise gerçek bir meydan okuma.
+
+NASIL OYNANIR
+Tüm adaları köprülerle bağla. Her adadaki sayı, o adanın kaç köprüye ihtiyacı olduğunu söyler. Köprüler düz gider, asla kesişmez ve iki ada arasında en fazla iki köprü olur. Sonunda tüm adalar tek bir ağda birleşir. Her bulmacanın tam olarak tek bir çözümü vardır, yani asla tahmin etmen gerekmez: saf mantık.
+
+GÜNÜN KÖPRÜSÜ
+• Her gün gece yarısı (UTC) yeni bir bulmaca: pazartesi kolay, pazar günkü dev Oni'ye kadar giderek zorlaşır
+• Bulmaca sen başlayana kadar gizli kalır, sonra süre işlemeye başlar
+• Takıldığında ipuçları ve kontroller yardım eder, küçük bir süre cezası karşılığında
+• Günün sıralaması, aylık yarış ve madalyalar ile serilerden oluşan bir şöhret listesi
+• Hesap açmadan hemen misafir olarak oyna; serini her cihazda korumak için bir isim al
+
+PRATİK, ÇEVRİMDIŞI BİLE
+• Kolay 7×7'den Oni 24×24'e beş zorluk seviyesinde sınırsız bulmaca
+• Süre baskısı yok; ipuçları, kontroller, geri al ve yinele
+• İnternetsiz çalışır: bulmacalar telefonunda üretilir
+• Bulmaca atölyesinde kendi bulmacalarını yap, bir çözücü tek çözümleri olduğunu kontrol etsin
+
+ARKADAŞLARLA
+• Arkadaşlar, aile ya da iş arkadaşları için gruplar: günün köprüsünü kimin çözdüğünü gör ve sürelerinizi karşılaştırın
+• Rakiplerini işaretle, her günlük bulmacayı bir düelloya çevir
+• Tekrar tiyatrosunda herkesin çözümünü izle
+• Grubuna kendi bulmacalarını gönder ve birlikte, tahta tahta, nehrin karşısına bir köprü kurun
+
+TOPLA VE RAHATLA
+• Her dönüm noktası için bir hanko mührü olan mühür defteri ve seni her gün geri getiren seriler
+• Gündüz ve gece temaları, sakin koto melodileri ve yumuşak ses efektleri
+• Ahşap ve kırmızı köprülü piksel sanatı adalar
+• 20 dilde
+
+Hashi ücretsizdir; reklam ve uygulama içi satın alma yoktur. Açık kaynaklıdır ve tek bir geliştirici tarafından özenle yapılmıştır. Soru ya da fikir? hashi.rs/tr/kontakt üzerinden bize yaz.

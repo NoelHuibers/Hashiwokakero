@@ -1,0 +1,31 @@
+Hashi to Hashiwokakero, japońska łamigłówka z mostami w uroczej grafice pixel art. Każdego dnia czeka nowy most dnia, ta sama łamigłówka dla wszystkich, a ranking pokazuje, jak szybko udało ci się przejść na drugi brzeg. Relaksująca zagadka logiczna na przerwę na kawę, a w niedzielę prawdziwe wyzwanie.
+
+JAK GRAĆ
+Połącz wszystkie wyspy mostami. Liczba na każdej wyspie mówi, ilu mostów potrzebuje. Mosty biegną prosto, nigdy się nie krzyżują, a dwie wyspy łączą najwyżej dwa. Na koniec wszystkie wyspy tworzą jedną sieć. Każda łamigłówka ma dokładnie jedno rozwiązanie, więc nigdy nie musisz zgadywać: czysta logika.
+
+DZISIEJSZY MOST
+• Codziennie o północy (UTC) nowa łamigłówka: łatwa w poniedziałek, coraz trudniejsza aż do ogromnego Oni w niedzielę
+• Łamigłówka jest ukryta, dopóki nie zaczniesz, potem rusza zegar
+• Podpowiedzi i sprawdzenia pomagają, gdy utkniesz, za niewielką karę czasową
+• Ranking dnia, wyścig miesiąca i galeria sław z medalami i seriami
+• Graj od razu jako gość, bez konta; wybierz nazwę, by zachować serię na każdym urządzeniu
+
+TRENING, TAKŻE OFFLINE
+• Nieograniczone łamigłówki w pięciu poziomach trudności, od Łatwego 7×7 do Oni 24×24
+• Bez zegara, z podpowiedziami, sprawdzaniem, cofaniem i ponawianiem
+• Działa bez internetu: łamigłówki powstają na twoim telefonie
+• Twórz własne łamigłówki w warsztacie, a solver sprawdzi, czy mają dokładnie jedno rozwiązanie
+
+Z PRZYJACIÓŁMI
+• Grupy dla przyjaciół, rodziny czy współpracowników: zobacz, kto już rozwiązał dzisiejszy most, i porównajcie czasy
+• Wybierz rywali i zamień każdą łamigłówkę dnia w pojedynek
+• Oglądaj rozwiązania wszystkich w teatrze powtórek
+• Wysyłaj grupie własne łamigłówki i budujcie razem, deska po desce, most na drugi brzeg rzeki
+
+ZBIERAJ I ODPOCZYWAJ
+• Album pieczątek z pieczątką hanko za każdy kamień milowy oraz serie, które przyciągają cię każdego dnia
+• Motyw dzienny i nocny, spokojne melodie koto i delikatne efekty dźwiękowe
+• Wyspy w pixel arcie z drewnianymi i cynobrowymi mostami
+• Dostępna w 20 językach
+
+Hashi jest darmową grą, bez reklam i bez zakupów w aplikacji. Ma otwarty kod źródłowy i powstała z troską dzięki jednemu programiście. Pytania lub pomysły? Napisz do nas przez hashi.rs/pl/kontakt.

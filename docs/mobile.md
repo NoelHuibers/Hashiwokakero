@@ -195,8 +195,13 @@ replaced through Play's support). Left, in this order (details in
    production. The account's creation date isn't certain, so plan for it: a closed track
    (Testing, Closed testing) with a Google Group or email list of 12 or more testers, the
    internal release promoted to it.
-7. **Store listing**: description, screenshots, privacy policy URL (`/datenschutz`), the Data
-   safety form, content rating, target audience, and trader status (EU).
+7. **Store listing**: the texts and images of both stores are in the repository and uploaded by
+   the "Store listing" workflow ([app/README.md](../app/README.md#store-listings)): after its pull
+   request is merged, run it by hand (`gh workflow run store-listing.yml -f platform=both -f
+   what=all`, first with `-f platform=play -f validate_only=true` to let Play check it). Left by
+   hand in the Play Console (category Puzzle and its tags are set): the privacy policy URL (`https://hashi.rs/datenschutz`, App content),
+   the contact details (`online-impressum.d50dw@passmail.net`, website `https://hashi.rs`), the Data
+   safety form, content rating, target audience, ads (none), and trader status (EU).
 8. **iOS.** Done: the Apple Developer Program membership, the Team ID `Q35TCGM5PW` (for the
    signing and the Universal Links, in `tauri.conf.json` and `fly.toml`), the bundle ID `rs.hashi` with Associated Domains on, the App
    Store Connect app "Hashi: Daily Bridges", and the App Store Connect API key for the release
@@ -219,17 +224,19 @@ replaced through Play's support). Left, in this order (details in
       review. External testers (a public link, up to 10,000) need the Test Information (a beta
       description, a feedback email, the privacy policy URL) and Beta App Review of the first
       build.
-   3. **Store listing**, App Store tab, the 1.0 version: subtitle, description, keywords,
-      support URL, privacy policy URL (`https://hashi.rs/datenschutz`), category (Games, Puzzle),
-      copyright. Screenshots: iPhone 6.9" (1320 × 2868) and, because the app also runs on the
-      iPad, iPad 13" (2064 × 2752); the simulators of Xcode take them.
+   3. **Store listing**, the version 1.0.0: name, subtitle, description, keywords, promotional
+      text, support, marketing and privacy policy URLs, copyright, and the screenshots (iPhone
+      6.9" 1320 × 2868 and iPad 13" 2064 × 2752) in 26 locales come from the "Store listing"
+      workflow (`-f platform=apple`, [app/README.md](../app/README.md#store-listings)). By hand
+      (done 2026-10-26, the workflow never touches them): the category (Games, Puzzle and Board),
+      the App Privacy label, the age rating, pricing and availability.
    4. **App Privacy** (the privacy labels): what the app and the server collect, as
       `/datenschutz` and Play's Data safety form say. The privacy policy URL goes there too.
    5. **Age rating**: the questionnaire in App Information (no objectionable content: 4+).
    6. **EU trader status** (Digital Services Act): Business, the account's compliance details:
       trader or not; a trader's address, phone and email are verified and shown on the EU
       product pages. Without it the app isn't offered in the EU.
-   7. **App Review**: in the 1.0 version, pick a TestFlight build, fill in App Review
+   7. **App Review**: in the version 1.0.0, pick a TestFlight build, fill in App Review
       Information (contact; notes such as "no sign-in needed, guests play right away"), and
       submit. The export compliance question is already answered by the build
       (`ITSAppUsesNonExemptEncryption`).

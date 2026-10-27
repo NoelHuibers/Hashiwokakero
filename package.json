@@ -25,7 +25,10 @@
     "app:e2e": "playwright test -c e2e/app.config.ts",
     "app:android-e2e": "playwright test -c e2e/android.config.ts",
     "app:ios-e2e": "playwright test -c e2e/ios.config.ts",
-    "smoke:production": "playwright test -c e2e/production.config.ts"
+    "smoke:production": "playwright test -c e2e/production.config.ts",
+    "store:validate": "node store/validate.mjs",
+    "store:images": "playwright test -c store/capture/playwright.config.ts",
+    "store:assemble": "node store/assemble.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/murecho": "^5.3.1",

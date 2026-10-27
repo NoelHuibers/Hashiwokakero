@@ -1,0 +1,31 @@
+Hashi is Hashiwokakero, the Japanese bridges logic puzzle, drawn in cute pixel art. Every day brings a new daily bridge, the same puzzle for everyone, and a leaderboard shows how fast you crossed. A calm brain teaser for your coffee break, and a real challenge by Sunday.
+
+HOW TO PLAY
+Connect all the islands with bridges. The number on each island says how many bridges it needs. Bridges run straight, never cross, and two islands share at most two of them. In the end, every island is linked into one network. Every puzzle has exactly one solution, so you never have to guess: it is pure logic.
+
+THE DAILY BRIDGE
+• A new puzzle every day at midnight UTC, easy on Monday and getting harder towards a giant Oni on Sunday
+• The puzzle stays hidden until you press Start, then the clock runs
+• Hints and checks help when you are stuck, and add a small time penalty
+• Today's ranking, a monthly race and a hall of fame of medals and streaks
+• Play right away as a guest, no account needed; claim a name to keep your streak on every device
+
+PRACTICE, EVEN OFFLINE
+• Unlimited fresh puzzles in five difficulties, from Easy 7×7 to Oni 24×24
+• No clock pressure, with hints, checks, undo and redo
+• Works without a connection: the puzzles are made on your phone
+• Build your own puzzles in the workshop, and a solver checks that they have exactly one solution
+
+PLAY WITH FRIENDS
+• Groups for friends, family or colleagues: see who has solved today's bridge and compare times
+• Mark rivals and turn every daily into a duel
+• Watch replays of everyone's solve in the replay theatre
+• Send your own puzzles to your group, and build a bridge across the river together, plank by plank
+
+COLLECT AND RELAX
+• A stamp book with a hanko stamp for every milestone, and streaks that bring you back each day
+• Day and night themes, calm koto music and gentle sound effects
+• Pixel art islands with wooden and vermilion bridges
+• Available in 20 languages
+
+Hashi is free, with no ads and no in-app purchases. It is open source and made with care by one developer. Questions or ideas? Write to us through hashi.rs/kontakt.

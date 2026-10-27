@@ -638,6 +638,119 @@ ANDROID_KEYSTORE_FILE=/tmp/test.p12 ANDROID_KEYSTORE_PASSWORD=testtest ANDROID_K
   ANDROID_KEY_PASSWORD=testtest cargo tauri android build --aab --target aarch64
 ```
 
+## Store listings
+
+What the stores show of the app, its name, texts and images in every language, lives in the
+repository, and `.github/workflows/store-listing.yml` uploads it with
+[fastlane](https://docs.fastlane.tools) (pinned in `fastlane/Gemfile.lock`): `supply` for Google
+Play, `deliver` for the App Store (`fastlane/Fastfile`). Only the listing: the workflow uploads no
+build and never touches a release, a track, the review submission or its information, the age
+rating, the privacy labels or Data safety form, the price or the release settings. Those are set by
+hand in the Play Console and App Store Connect.
+
+### Texts
+
+In fastlane's layout, one folder per store locale:
+
+- `fastlane/metadata/android/<locale>/`: Google Play's `title.txt` (at most 30 characters),
+  `short_description.txt` (80) and `full_description.txt` (4000).
+- `fastlane/metadata/<locale>/`: the App Store's `name.txt` and `subtitle.txt` (30 each),
+  `keywords.txt` (100 bytes), `promotional_text.txt` (170), `description.txt` (4000) and the
+  URLs: `support_url.txt` (`/kontakt`), `marketing_url.txt` (the home page) and `privacy_url.txt`
+  (`/datenschutz`), each the site in the listing's language. `copyright.txt` is for every locale.
+
+`store/locales.mjs` lists the locales of each store and the site language their screenshots are
+taken in: all 20 of the site's languages, Spanish and Portuguese twice (es-ES and es-419/es-MX,
+pt-PT and pt-BR, each written for its region). A locale with `same` gets a copy of another's texts
+when the upload tree is put together, so they are written once: on Play fr-CA (fr-FR), es-US
+(es-419) and zh-HK (zh-TW); on the App Store en-GB, en-AU, en-CA (en-US) and fr-CA (fr-FR).
+Locales without a listing of their own fall back to the default language, en-US.
+
+The texts are written for each language, not translated word for word, with the site's own words
+for things (locales/: "die Brücke von heute", "Stempelheft", 鬼, ...). For the stores' search:
+
+- **The name** (Play's title, the App Store's name) weighs most. "Hashi" first, then what people
+  search for in that language: "Daily Bridges Puzzle", "Tägliches Brückenrätsel", "橋をかけろ".
+- **The App Store** indexes the name, the subtitle and the keywords, not the description. The
+  keywords are single words or short phrases, comma separated without spaces; every word of the
+  name or the subtitle counts already (and plurals of them), so it doesn't go into the keywords
+  again, nor "app", "game" or the category. **Google Play** indexes the title, the short and the
+  full description: the short description has the main terms (Hashiwokakero, logic puzzle,
+  bridges), the description uses them naturally.
+- **Never**: names of other games, puzzle brands or apps (no "Sudoku", "Nikoli", "Kakuro"), the
+  other store's platform, emoji or capitals for emphasis in names, rankings or price claims ("#1",
+  "best", "free" in a name; "free, no ads" in a description is fine), calls to action ("download
+  now").
+
+`node store/validate.mjs` (`pnpm run store:validate`) checks all of it: every locale there and
+known to fastlane, the limits (keywords in UTF-8 bytes, the safe reading for Chinese, Japanese and
+Korean), the keyword rules, the forbidden words and the URLs, and the screenshots' captions.
+`scripts/tests/store-listing.test.mjs` tests the checks; "Test & lint" runs it with the other
+script tests.
+
+The release notes ("What's new") are not part of this: the release workflow uploads them with each
+build (`app/store/whatsnew`, [Releases](#releases)).
+
+### Images
+
+Made in CI, not committed (a run makes about 600). The sources:
+
+- `store/capture/`: a Playwright run (`store.capture.ts`) on the built site with a seeded local
+  database (`seed.ts`, made-up players, never Turso), the same server the browser tests start
+  (`e2e/server.ts`). Every language of the site, six scenes (`scenes.ts`): today's daily in
+  progress, the leaderboard with mika on the podium, a hard practice board, the group of friends,
+  the stamp book and the solved daily at night. Each on a phone (402 × 874, three times) and a
+  tablet (1032 × 1376, twice), with room left for the system bars as the app leaves it
+  (`--app-inset-*`). The dailies are fixed puzzles (`puzzles.json`), one per difficulty: the page
+  names the weekday's, so a run on a Monday shows the easy 7×7, on a Sunday the 24×24 Oni.
+- `store/templates/frame.html`: a caption (`store/captions.json`, per language, `*word*` in
+  vermilion) and a hanko over the device with the screenshot in it, in the site's colours, fonts
+  and waves. `store/capture/devices.ts` has the sizes: the App Store's iPhone 6.9" (1320 × 2868)
+  and iPad 13" (2064 × 2752), Google Play's phone (1080 × 1920) and 7" and 10" tablets
+  (1080 × 1920, 1440 × 2560), all 9:16 or Apple's sizes, opaque PNGs.
+- `store/templates/feature.html`: Play's feature graphic (1024 × 500), like the site's social
+  preview. Play's hi-res icon is `public/icon-512.png`, the app's icon.
+
+```sh
+cargo leptos build --release              # the site, as for the browser tests
+pnpm run store:images                     # target/store/images/<language>/<frame>/<n>-<scene>.png
+STORE_LANGS=en,de,ja pnpm run store:images    # a few languages
+STORE_FRAME_ONLY=1 pnpm run store:images      # only frame again (after changing a template)
+pnpm run store:assemble                   # the upload tree, see below
+```
+
+`node store/assemble.mjs` puts together `target/store/fastlane/` for fastlane: the texts with the
+copies of `same`, and the images sorted into supply's and deliver's folders. It checks every
+image's size and that none has an alpha channel (Play's icon has one). With `--text` it leaves the
+images out.
+
+### Uploading
+
+`.github/workflows/store-listing.yml`:
+
+- **A pull request** that changes the listings, `store/` or the workflow: the checks, then all the
+  images, kept for a week as the artifact `store-listing-images` to look at. It uploads nothing.
+- **By hand** (Actions, Store listing, Run workflow; or `gh workflow run store-listing.yml -f
+  platform=both -f what=all`): `platform` play, apple or both; `what` text, images or all (text
+  needs no images and is quick). `validate_only` lets Google Play check the listing without saving
+  it (Play's API validates an edit); App Store Connect has no such check, its upload is skipped
+  then. Play: supply needs a release on a track to attach the listing to; it reads the internal
+  track's, whose only release is the newest upload (`play_version_code` picks one when it has
+  several). The App Store: deliver edits the version in "Prepare for Submission" (no new version,
+  no build, never submitted), replaces its screenshots, and precheck then reports Apple's metadata
+  rules as warnings in the log.
+
+The keys are the release workflow's secrets, `PLAY_SERVICE_ACCOUNT_JSON` and
+`APPLE_API_KEY_ID`/`APPLE_API_ISSUER`/`APPLE_API_KEY_P8`, written to files in the runner's temp
+dir (fastlane's API key JSON for Apple) and deleted at the end of the job, also when it fails. To
+run a lane locally (from the repository root, after `node store/assemble.mjs`):
+
+```sh
+BUNDLE_GEMFILE=fastlane/Gemfile bundle install
+PLAY_JSON_KEY=/path/to/key.json BUNDLE_GEMFILE=fastlane/Gemfile bundle exec fastlane android listing what:text validate_only:true
+APPLE_API_KEY_JSON=/path/to/key.json BUNDLE_GEMFILE=fastlane/Gemfile bundle exec fastlane ios listing what:text
+```
+
 ## iOS
 
 The same crate in an Xcode project, `gen/apple/`, made by `cargo tauri ios init` (xcodegen, from

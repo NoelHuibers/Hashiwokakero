@@ -1,0 +1,31 @@
+O Hashi é o Hashiwokakero, o puzzle japonês das pontes, num pixel art adorável. Todos os dias há uma nova ponte do dia, o mesmo puzzle para toda a gente, e um ranking mostra a rapidez com que atravessaste. Um jogo de lógica relaxante para a pausa do café, e um verdadeiro desafio ao domingo.
+
+COMO JOGAR
+Liga todas as ilhas com pontes. O número de cada ilha indica de quantas pontes precisa. As pontes são retas, nunca se cruzam e entre duas ilhas há no máximo duas. No fim, todas as ilhas ficam ligadas numa única rede. Cada puzzle tem exatamente uma solução, por isso nunca precisas de adivinhar: é pura lógica.
+
+A PONTE DE HOJE
+• Um puzzle novo todos os dias à meia-noite (UTC), fácil à segunda-feira e cada vez mais difícil até ao gigante Oni de domingo
+• O puzzle fica escondido até começares, e só então o relógio começa a contar
+• Dicas e verificações ajudam quando ficas preso, com uma pequena penalização de tempo
+• O ranking do dia, a corrida do mês e um hall da fama de medalhas e sequências
+• Joga logo como convidado, sem conta; escolhe um nome para manteres a tua sequência em todos os dispositivos
+
+TREINO, MESMO OFFLINE
+• Puzzles ilimitados em cinco níveis, do Fácil 7×7 ao Oni 24×24
+• Sem relógio, com dicas, verificações, anular e refazer
+• Funciona sem ligação: os puzzles são criados no teu telemóvel
+• Cria os teus próprios puzzles na oficina, e um solucionador verifica que têm uma única solução
+
+COM OS AMIGOS
+• Grupos para amigos, família ou colegas: vê quem já resolveu a ponte de hoje e comparem os vossos tempos
+• Marca rivais e transforma cada desafio diário num duelo
+• Revê as partidas de todos no teatro de replays
+• Envia os teus puzzles ao grupo e construam juntos, tábua a tábua, uma ponte até à outra margem do rio
+
+COLECIONA E RELAXA
+• Um caderno de carimbos com um carimbo hanko para cada conquista, e sequências que te fazem voltar todos os dias
+• Temas de dia e de noite, melodias calmas de koto e efeitos sonoros suaves
+• Ilhas em pixel art com pontes de madeira e vermelhão
+• Disponível em 20 línguas
+
+O Hashi é gratuito, sem anúncios e sem compras na app. É código aberto e feito com carinho por um único programador. Dúvidas ou ideias? Escreve-nos em hashi.rs/pt/kontakt.

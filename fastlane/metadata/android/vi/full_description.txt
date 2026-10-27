@@ -1,0 +1,31 @@
+Hashi là Hashiwokakero, trò chơi nối cầu của Nhật Bản, trong phong cách pixel art dễ thương. Mỗi ngày có một cây cầu mới, cùng một câu đố cho tất cả mọi người, và bảng xếp hạng cho thấy bạn qua sông nhanh đến đâu. Một trò chơi trí tuệ thư giãn cho giờ nghỉ cà phê, và một thử thách thật sự vào Chủ nhật.
+
+CÁCH CHƠI
+Nối tất cả các hòn đảo bằng cầu. Con số trên mỗi đảo cho biết đảo đó cần bao nhiêu cây cầu. Cầu luôn thẳng, không bao giờ cắt nhau, và giữa hai đảo có tối đa hai cây cầu. Cuối cùng, mọi hòn đảo được nối thành một mạng duy nhất. Mỗi câu đố có đúng một lời giải, nên bạn không bao giờ phải đoán: hoàn toàn là logic.
+
+CÂY CẦU HÔM NAY
+• Câu đố mới mỗi ngày lúc nửa đêm (UTC), dễ vào thứ Hai và khó dần đến câu đố Quỷ khổng lồ vào Chủ nhật
+• Câu đố được giấu kín cho đến khi bạn bắt đầu, rồi đồng hồ mới chạy
+• Gợi ý và kiểm tra giúp bạn khi bí, đổi lại một chút thời gian phạt
+• Bảng xếp hạng hôm nay, cuộc đua hằng tháng và đại sảnh danh vọng với huy chương và chuỗi ngày
+• Chơi ngay với tư cách khách, không cần tài khoản; chọn một cái tên để giữ chuỗi ngày trên mọi thiết bị
+
+LUYỆN TẬP, KỂ CẢ NGOẠI TUYẾN
+• Câu đố không giới hạn với năm mức độ khó, từ Dễ 7×7 đến Quỷ 24×24
+• Không tính giờ, có gợi ý, kiểm tra, hoàn tác và làm lại
+• Chơi được khi không có mạng: câu đố được tạo ngay trên điện thoại của bạn
+• Tự tạo câu đố trong xưởng câu đố, bộ giải sẽ kiểm tra rằng chúng chỉ có một lời giải
+
+CÙNG BẠN BÈ
+• Nhóm cho bạn bè, gia đình hay đồng nghiệp: xem ai đã giải cây cầu hôm nay và so thời gian với nhau
+• Đánh dấu đối thủ và biến mỗi câu đố hằng ngày thành một trận đấu tay đôi
+• Xem lại cách mọi người giải trong rạp phát lại
+• Gửi câu đố của bạn cho nhóm và cùng nhau xây, từng tấm ván một, cây cầu sang bên kia sông
+
+SƯU TẦM VÀ THƯ GIÃN
+• Sổ con dấu với một con dấu hanko cho mỗi cột mốc, và chuỗi ngày khiến bạn quay lại mỗi ngày
+• Giao diện ngày và đêm, giai điệu koto êm dịu và hiệu ứng âm thanh nhẹ nhàng
+• Những hòn đảo pixel art với cầu gỗ và cầu đỏ son
+• Có 20 ngôn ngữ
+
+Hashi miễn phí, không quảng cáo và không có mua hàng trong ứng dụng. Trò chơi là mã nguồn mở và được một nhà phát triển duy nhất làm ra bằng cả tấm lòng. Có câu hỏi hay ý tưởng? Hãy viết cho chúng tôi qua hashi.rs/vi/kontakt.

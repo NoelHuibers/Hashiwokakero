@@ -1,0 +1,156 @@
+<!doctype html>
+<!--
+  Google Play's feature graphic, 1024 × 500 (app/README.md, Store listings): the name, the
+  tagline in the listing's language and a board of the game, in the style of the site's social
+  preview (src/server/og). store/capture/frame.ts opens it like frame.html, settings in ?feature=.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <style>
+      :root {
+        --paper: #f4ecdd;
+        --ink: #2b2420;
+        --muted: #776a5c;
+        --shu: #cf3a24;
+        --wave: rgb(31 78 121 / 0.1);
+        --app-font: "Murecho Variable", system-ui, sans-serif;
+        --display-font: "Kaisei Decol", "Murecho Variable", serif;
+      }
+      html[lang="ko"] { --app-font: "Noto Sans KR Variable", "Murecho Variable", sans-serif; }
+      html[lang="zh"] { --app-font: "Noto Sans SC Variable", "Murecho Variable", sans-serif; }
+      html[lang="zh-Hant"] { --app-font: "Noto Sans TC Variable", "Murecho Variable", sans-serif; }
+      html[lang="ar"] { --app-font: "Noto Sans Arabic Variable", "Murecho Variable", sans-serif; }
+      html[lang="hi"] { --app-font: "Noto Sans Devanagari Variable", "Murecho Variable", sans-serif; }
+      html[lang="th"] { --app-font: "Noto Sans Thai Variable", "Murecho Variable", sans-serif; }
+      html[lang="vi"] { --app-font: "Be Vietnam Pro", "Murecho Variable", sans-serif; }
+      html:is([lang="ko"], [lang="zh"], [lang="zh-Hant"], [lang="ar"], [lang="hi"], [lang="th"], [lang="vi"],
+        [lang="ru"], [lang="uk"], [lang="pl"], [lang="tr"]) {
+        --display-font: var(--app-font);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        width: 1024px;
+        height: 500px;
+        overflow: hidden;
+        position: relative;
+        background:
+          radial-gradient(ellipse at 25% 20%, #fbf6ec 0%, transparent 60%),
+          linear-gradient(var(--paper), #ecdfc6);
+        color: var(--ink);
+        font-family: var(--app-font);
+      }
+      .waves {
+        position: absolute;
+        inset: 45% 0 0 0;
+        --s: 44px;
+        background:
+          radial-gradient(circle at 50% 100%, transparent 18%, var(--wave) 19% 22%, transparent 23% 34%, var(--wave) 35% 38%, transparent 39% 50%, var(--wave) 51% 54%, transparent 55%) 0 0 / var(--s) calc(var(--s) / 2),
+          radial-gradient(circle at 50% 100%, transparent 18%, var(--wave) 19% 22%, transparent 23% 34%, var(--wave) 35% 38%, transparent 39% 50%, var(--wave) 51% 54%, transparent 55%) calc(var(--s) / 2) calc(var(--s) / 4) / var(--s) calc(var(--s) / 2);
+        -webkit-mask-image: linear-gradient(transparent, black 50%);
+        mask-image: linear-gradient(transparent, black 50%);
+      }
+      .text {
+        position: absolute;
+        left: 64px;
+        top: 0;
+        bottom: 0;
+        width: 470px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 14px;
+      }
+      .brand { display: flex; align-items: center; gap: 22px; direction: ltr; }
+      .hanko {
+        width: 92px;
+        height: 92px;
+        border-radius: 18px;
+        background: var(--shu);
+        color: #fff7ee;
+        display: grid;
+        place-items: center;
+        font-family: "DotGothic16", monospace;
+        font-size: 54px;
+        line-height: 1;
+        box-shadow: inset 0 0 0 5px var(--shu), inset 0 0 0 8px #fff7ee, 0 5px 0 rgb(0 0 0 / 0.12);
+        transform: rotate(-4deg);
+        flex: none;
+      }
+      .name { font-family: "DotGothic16", monospace; font-size: 104px; line-height: 0.9; letter-spacing: 0.02em; }
+      .kana { font-family: "DotGothic16", monospace; color: var(--shu); font-size: 19px; letter-spacing: 0.04em; white-space: nowrap; margin-top: 8px; }
+      h1 {
+        margin: 6px 0 0;
+        font-family: var(--display-font);
+        font-weight: 700;
+        font-size: 38px;
+        line-height: 1.18;
+        text-wrap: balance;
+      }
+      p { margin: 0; font-size: 21px; color: var(--muted); font-weight: 500; text-wrap: balance; }
+      html[dir="rtl"] .text h1, html[dir="rtl"] .text p { direction: rtl; text-align: left; }
+      .board {
+        position: absolute;
+        left: 585px;
+        top: 34px;
+        width: 540px;
+        transform: rotate(-7deg);
+        transform-origin: 0 0;
+        /* The board's wooden frame, as on the site */
+        border: 14px solid #c98d52;
+        border-radius: 18px;
+        box-shadow:
+          0 0 0 4px #7a4b26,
+          0 22px 30px rgb(43 36 32 / 0.32);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="waves"></div>
+    <img class="board" alt="" />
+    <div class="text">
+      <div class="brand">
+        <div class="hanko">橋</div>
+        <div>
+          <div class="name">Hashi</div>
+          <div class="kana">橋をかけろ · HASHIWOKAKERO</div>
+        </div>
+      </div>
+      <h1></h1>
+      <p></p>
+    </div>
+    <script>
+      // ?feature=: { lang, dir, title, text, image }
+      (async () => {
+        const f = JSON.parse(new URLSearchParams(location.search).get('feature'));
+        document.documentElement.lang = f.lang;
+        document.documentElement.dir = f.dir;
+        const scriptCss = { ko: 'noto-sans-kr', zh: 'noto-sans-sc', 'zh-Hant': 'noto-sans-tc', ar: 'noto-sans-arabic', hi: 'noto-sans-devanagari', th: 'noto-sans-thai', vi: 'be-vietnam-pro' }[f.lang];
+        if (scriptCss) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = `/fonts/${scriptCss}.css`;
+          const loaded = new Promise((r) => (link.onload = r));
+          document.head.append(link);
+          await loaded;
+        }
+        document.querySelector('h1').textContent = f.title.replace(/\*/g, '');
+        document.querySelector('p').textContent = f.text ?? '';
+        const img = document.querySelector('.board');
+        img.src = f.image;
+        await img.decode();
+        await document.fonts.ready;
+        // A long tagline gets smaller rather than a third line
+        const h1 = document.querySelector('h1');
+        for (let size = 38; h1.getBoundingClientRect().height > 2.4 * size * 1.0 && size > 26; size -= 2) {
+          h1.style.fontSize = `${size - 2}px`;
+        }
+        window.READY = true;
+      })().catch((e) => {
+        window.FAILED = String(e);
+      });
+    </script>
+  </body>
+</html>

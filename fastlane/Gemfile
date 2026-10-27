@@ -1,0 +1,4 @@
+# fastlane, for the store listings (app/README.md, Store listings). Pinned: Gemfile.lock.
+source "https://rubygems.org"
+
+gem "fastlane", "2.241.2"
