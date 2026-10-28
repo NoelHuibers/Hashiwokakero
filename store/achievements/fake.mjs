@@ -216,9 +216,14 @@ export function fakeApple({ versions = [{ id: 'asv-1', versionString: '1.1', sta
   };
 }
 
-/** Play Games Services with one project. `publish()` publishes the drafts, as the console does. */
+/**
+ * Play Games Services with one project. `publish()` publishes the drafts, as the console does.
+ * Each item has a `token` that changes with every write; a PUT must send the one it read (else
+ * 410 UpdateTokenInvalid, as Play answers).
+ */
 export function fakePlay() {
   let n = 0;
+  let version = 0;
   const state = { achievements: new Map(), leaderboards: new Map() };
   const LOCKED = { achievements: ['achievementType', 'initialState', 'stepsToUnlock'], leaderboards: ['scoreOrder'] };
   const routes = [];
@@ -231,17 +236,20 @@ export function fakePlay() {
           throw new HttpError('POST', plural, 400, { error: { message: `the name ${name} is taken` } });
         }
         const id = `CgkIfake${String(++n).padStart(4, '0')}`;
-        const item = { ...structuredClone(body), id };
+        const item = { ...structuredClone(body), id, token: `v${++version}` };
         state[plural].set(id, item);
         return item;
       }],
       ['PUT', new RegExp(`^/${plural}/([^/]+)$`), ({ params: [id], body }) => {
         const old = state[plural].get(id);
         if (!old) throw new HttpError('PUT', id, 404, {});
+        if (body.token !== old.token) {
+          throw new HttpError('PUT', id, 410, { error: { code: 410, errors: [{ reason: 'UpdateTokenInvalid' }] } });
+        }
         if (old.published && LOCKED[plural].some((f) => old[f] !== body[f])) {
           throw new HttpError('PUT', id, 400, { error: { message: `${LOCKED[plural].join(', ')} can't change once published` } });
         }
-        const item = { ...structuredClone(body), id, ...(old.published ? { published: old.published } : {}) };
+        const item = { ...structuredClone(body), id, token: `v${++version}`, ...(old.published ? { published: old.published } : {}) };
         state[plural].set(id, item);
         return item;
       }],
