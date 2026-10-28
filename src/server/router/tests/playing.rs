@@ -64,6 +64,8 @@ async fn a_guest_plays_the_daily() {
     let day = started.day;
     let puzzle = started.puzzle.unwrap();
     assert!(started.attempt.is_some());
+    // The requests keep the day's puzzle, the next ones don't read it again
+    assert!(daily::installed().days().contains(&day));
     // Starting again neither resets the clock nor makes another guest
     let again = browser.call_with_headers(StartDaily { device: None }).await;
     assert!(again.headers.get(reqwest::header::SET_COOKIE).is_none());

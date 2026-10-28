@@ -219,7 +219,7 @@ async fn the_clock_starts_after_the_work_before_it() {
     finish(&conn, early, MONDAY, 50_000).await;
     finish(&conn, late, MONDAY, 60_000).await;
     let flights = Flights::new(4);
-    let generated = std::sync::Mutex::new(None);
+    let generated = Mutex::new(None);
     let slow = |params: GenerateParams| {
         let generated = &generated;
         async move {
