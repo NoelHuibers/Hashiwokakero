@@ -137,7 +137,8 @@ async function syncItem({ api, kind, plural, item, body, changesOf, ids, byId, b
     if (found.published && changes.some((c) => ['type', 'hidden', 'steps', 'order'].includes(c))) {
       notes.push(`${kind} ${item.id} is published: Play keeps its ${changes.join(', ')} (it refuses to change them)`);
     }
-    await api.put(`/${plural}/${found.id}`, { id: found.id, ...body(item) });
+    // `token` is the version read: Play refuses an update without it (410 UpdateTokenInvalid)
+    await api.put(`/${plural}/${found.id}`, { id: found.id, token: found.token, ...body(item) });
   }
 }
 
