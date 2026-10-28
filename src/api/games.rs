@@ -6,9 +6,15 @@
 //! (a stamp earned or how far along it is, a score), the platforms only show it. Both take a
 //! report again as often as it comes and keep the highest: an achievement never goes back, a
 //! leaderboard keeps the best score. The ids are the platform's own, Apple's vendor ids or the
-//! ids Play generates (`app/achievements-play.json`); this module doesn't know them.
+//! ids Play generates (`app/achievements-play.json`, built into the page): [`report`] makes the
+//! report of the server's statistics for the phone's [`Platform`].
+
+use std::collections::HashMap;
+use std::sync::LazyLock;
 
 use serde::{Deserialize, Serialize};
+
+use crate::model::{GamesLeaderboard, Stamp, StampProgress, UserStats};
 
 /// An achievement as the server sees it: `earned`, or `steps` of `target` done for one that
 /// counts (solved 100 dailies), `None` for one that is only earned or not.
@@ -123,6 +129,171 @@ pub(crate) fn service(platform: &str) -> Option<&'static str> {
         "ios" => Some("Game Center"),
         "android" => Some("Google Play Games"),
         _ => None,
+    }
+}
+
+/// The phone's games service, by the ids it knows the achievements and leaderboards by.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Platform {
+    /// iOS: Apple's vendor ids, `Stamp::achievement_id` and `GamesLeaderboard::id`.
+    GameCenter,
+    /// Android: the ids Play generated for them, from `app/achievements-play.json`.
+    PlayGames,
+}
+
+impl Platform {
+    /// The service of the app's `platform` (`api::app`), `None` outside the app.
+    pub(crate) fn of(platform: &str) -> Option<Self> {
+        match platform {
+            "ios" => Some(Self::GameCenter),
+            "android" => Some(Self::PlayGames),
+            _ => None,
+        }
+    }
+
+    /// The id of `stamp`'s achievement, `None` for one Play doesn't have (yet), and for a stamp
+    /// of a newer server that this page doesn't know.
+    fn achievement(self, stamp: Stamp, play: &PlayIds) -> Option<&str> {
+        if stamp == Stamp::Unknown {
+            return None;
+        }
+        match self {
+            Self::GameCenter => Some(stamp.achievement_id()),
+            Self::PlayGames => play.achievement(stamp),
+        }
+    }
+
+    /// The id of `board`, `None` for one Play doesn't have: never the daily's time
+    /// (`GamesLeaderboard::on_play`), the others once they are in the file.
+    fn leaderboard(self, board: GamesLeaderboard, play: &PlayIds) -> Option<&str> {
+        match self {
+            Self::GameCenter => Some(board.id()),
+            Self::PlayGames => board.on_play().then(|| play.leaderboard(board)).flatten(),
+        }
+    }
+
+    /// `value` in `board`'s unit on this platform: the daily's time in hundredths of a second
+    /// on Game Center, in milliseconds on Play.
+    const fn score(self, board: GamesLeaderboard, value: i64) -> i64 {
+        match self {
+            Self::GameCenter => board.apple_score(value),
+            Self::PlayGames => value,
+        }
+    }
+}
+
+/// `app/achievements-play.json`: the ids Play generated, by `Stamp::achievement_id` and
+/// `GamesLeaderboard::id` (its `project_id` is the Android build's, see app/README.md).
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+pub(crate) struct PlayIds {
+    achievements: HashMap<String, String>,
+    leaderboards: HashMap<String, String>,
+}
+
+/// The file as it was when the page was built: a new id needs a new app version anyway.
+static PLAY_IDS: LazyLock<PlayIds> =
+    LazyLock::new(|| PlayIds::parse(include_str!("../../app/achievements-play.json")));
+
+impl PlayIds {
+    /// The ids of `json`; none when it doesn't parse (a test keeps the checked-in file valid).
+    fn parse(json: &str) -> Self {
+        serde_json::from_str(json).unwrap_or_else(|e| {
+            leptos::logging::warn!("app/achievements-play.json: {e}");
+            Self::default()
+        })
+    }
+
+    /// The ids built into the page.
+    pub(crate) fn embedded() -> &'static Self {
+        &PLAY_IDS
+    }
+
+    fn achievement(&self, stamp: Stamp) -> Option<&str> {
+        Self::id(&self.achievements, stamp.achievement_id())
+    }
+
+    fn leaderboard(&self, board: GamesLeaderboard) -> Option<&str> {
+        Self::id(&self.leaderboards, board.id())
+    }
+
+    fn id<'a>(ids: &'a HashMap<String, String>, key: &str) -> Option<&'a str> {
+        ids.get(key).map(String::as_str).filter(|id| !id.is_empty())
+    }
+}
+
+/// The report of the server's statistics of the player (`my_stats`) for `platform`: every
+/// stamp of the book, earned or how far along (the steps toward `Stamp::steps`), and the
+/// leaderboards' scores, the dailies solved, the best streak, and the time of today's daily
+/// if the player solved it ranked (the last day of `recent` is the server's today). Without a
+/// score of 0: nobody goes on a leaderboard for nothing. `None` when nothing is left to send.
+pub(crate) fn report(platform: Platform, play: &PlayIds, stats: &UserStats) -> Option<Report> {
+    let achievements = stats.stamps.iter().filter_map(|p| {
+        let id = platform.achievement(p.stamp, play)?;
+        Some(achievement(id, p))
+    });
+    let today = stats
+        .recent
+        .last()
+        .and_then(|day| day.time_ms)
+        .unwrap_or_default();
+    let scores = [
+        (GamesLeaderboard::DailyTime, today),
+        (GamesLeaderboard::PuzzlesSolved, stats.solved),
+        (GamesLeaderboard::BestStreak, stats.best_streak),
+    ]
+    .into_iter()
+    .filter(|&(_, value)| value > 0)
+    .filter_map(|(board, value)| {
+        Some(Score {
+            id: platform.leaderboard(board, play)?.to_owned(),
+            value: platform.score(board, value),
+        })
+    });
+    Report::new(achievements, scores)
+}
+
+/// The achievement `id` of a stamp of the book: its progress as steps of `Stamp::steps` for
+/// one that counts, else only whether it is earned.
+fn achievement(id: &str, progress: &StampProgress) -> Achievement {
+    let target = progress.stamp.steps();
+    Achievement {
+        id: id.to_owned(),
+        steps: target.map(|_| u32::try_from(progress.progress.max(0)).unwrap_or(u32::MAX)),
+        target,
+        earned: progress.earned_at.is_some(),
+    }
+}
+
+/// What this page reported already, so that the next report has only what changed since: a
+/// stamp earned or further along, a new score. The platforms take the same report again, this
+/// only keeps them from getting all 48 stamps after every daily.
+#[derive(Debug, Default)]
+pub(crate) struct Reported {
+    achievements: HashMap<String, Achievement>,
+    scores: HashMap<String, i64>,
+}
+
+impl Reported {
+    /// The part of `report` that wasn't reported yet, noted as reported. `None`: nothing new.
+    pub(crate) fn fresh(&mut self, report: Report) -> Option<Report> {
+        let achievements: Vec<_> = report
+            .achievements
+            .into_iter()
+            .filter(|a| self.achievements.get(&a.id) != Some(a))
+            .collect();
+        let scores: Vec<_> = report
+            .scores
+            .into_iter()
+            .filter(|s| self.scores.get(&s.id) != Some(&s.value))
+            .collect();
+        for a in &achievements {
+            self.achievements.insert(a.id.clone(), a.clone());
+        }
+        for s in &scores {
+            self.scores.insert(s.id.clone(), s.value);
+        }
+        Report::new(achievements, scores)
     }
 }
 
@@ -290,5 +461,225 @@ mod tests {
         assert_eq!(service("ios"), Some("Game Center"));
         assert_eq!(service("android"), Some("Google Play Games"));
         assert_eq!(service("web"), None);
+        assert_eq!(Platform::of("ios"), Some(Platform::GameCenter));
+        assert_eq!(Platform::of("android"), Some(Platform::PlayGames));
+        assert_eq!(Platform::of("web"), None);
+    }
+
+    fn stamp(stamp: Stamp, progress: i64, earned: bool) -> StampProgress {
+        StampProgress {
+            stamp,
+            earned_at: earned.then_some(1_700_000_000_000),
+            progress,
+            target: stamp.steps().map_or(1, i64::from),
+            holders: 3,
+        }
+    }
+
+    fn day(day: i64, time_ms: Option<i64>) -> crate::model::DayResult {
+        crate::model::DayResult {
+            day,
+            time_ms,
+            rank: time_ms.map(|_| 4),
+        }
+    }
+
+    /// A player with the first stamp, 42 of 100 dailies, a streak stamp earned with a streak
+    /// that broke since, nothing of the clean one, and today's daily solved in 1:23.456.
+    fn stats() -> UserStats {
+        UserStats {
+            solved: 42,
+            current_streak: 2,
+            best_streak: 9,
+            recent: vec![day(100, Some(70_000)), day(101, Some(83_456))],
+            stamps: vec![
+                stamp(Stamp::First, 1, true),
+                stamp(Stamp::Solved100, 42, false),
+                stamp(Stamp::Streak7, 2, true),
+                stamp(Stamp::Clean, 0, false),
+                stamp(Stamp::Oni, 0, false),
+                stamp(Stamp::Unknown, 1, true),
+            ],
+            ..UserStats::default()
+        }
+    }
+
+    fn play_ids(json: serde_json::Value) -> PlayIds {
+        serde_json::from_value(json).unwrap()
+    }
+
+    /// Game Center: Apple's vendor ids, every leaderboard, the daily's time in hundredths.
+    #[test]
+    fn game_center_gets_the_vendor_ids() {
+        let report = report(Platform::GameCenter, &PlayIds::default(), &stats()).unwrap();
+        assert_eq!(
+            report.achievements,
+            [
+                achievement("stamp_first", None, None, true),
+                achievement("stamp_solved_100", Some(42), Some(100), false),
+                achievement("stamp_streak_7", Some(7), Some(7), true),
+            ]
+        );
+        assert_eq!(
+            report.scores,
+            [
+                score("daily_time", 8345),
+                score("puzzles_solved", 42),
+                score("best_streak", 9),
+            ]
+        );
+    }
+
+    /// Play: its own ids from the file, nothing it has no id for, never the daily's time.
+    #[test]
+    fn play_gets_its_own_ids_and_no_daily_time() {
+        let play = play_ids(json!({
+            "project_id": "123456789012",
+            "achievements": {
+                "stamp_first": "CgkI_first",
+                "stamp_solved_100": "CgkI_solved_100",
+                // No stamp_streak_7: not reported
+                "stamp_clean": "CgkI_clean",
+                "stamp_unknown": "CgkI_unknown",
+            },
+            "leaderboards": {
+                "daily_time": "CgkI_daily",
+                "puzzles_solved": "CgkI_solved",
+                // No best_streak
+            },
+        }));
+        let report = report(Platform::PlayGames, &play, &stats()).unwrap();
+        assert_eq!(
+            report.achievements,
+            [
+                achievement("CgkI_first", None, None, true),
+                achievement("CgkI_solved_100", Some(42), Some(100), false),
+            ]
+        );
+        assert_eq!(report.scores, [score("CgkI_solved", 42)]);
+    }
+
+    /// Before Play has any ids (the checked-in file until the first upload) there's nothing
+    /// to report on Android.
+    #[test]
+    fn without_play_ids_android_reports_nothing() {
+        assert_eq!(
+            report(Platform::PlayGames, &PlayIds::default(), &stats()),
+            None
+        );
+        let empty = play_ids(json!({
+            "project_id": null,
+            "achievements": { "stamp_first": "" },
+            "leaderboards": {},
+        }));
+        assert_eq!(report(Platform::PlayGames, &empty, &stats()), None);
+        // Not the file's form: no ids at all
+        assert_eq!(
+            report(Platform::PlayGames, &PlayIds::parse("[]"), &stats()),
+            None
+        );
+    }
+
+    /// The file built into the page parses, and its ids are those of stamps and leaderboards.
+    #[test]
+    fn the_checked_in_play_ids_are_valid() {
+        let json: serde_json::Value =
+            serde_json::from_str(include_str!("../../app/achievements-play.json")).unwrap();
+        let ids: PlayIds = serde_json::from_value(json).unwrap();
+        for key in ids.achievements.keys() {
+            assert!(
+                Stamp::ALL.iter().any(|s| s.achievement_id() == key),
+                "{key}"
+            );
+        }
+        for key in ids.leaderboards.keys() {
+            assert!(
+                GamesLeaderboard::ALL
+                    .iter()
+                    .any(|b| b.id() == key && b.on_play()),
+                "{key}"
+            );
+        }
+        assert_eq!(
+            PlayIds::embedded().achievements.len(),
+            ids.achievements.len()
+        );
+    }
+
+    /// Steps go to the platform within the stamp's target, whatever the server counts.
+    #[test]
+    fn steps_are_clamped_to_the_stamps_target() {
+        let stats = UserStats {
+            stamps: vec![
+                stamp(Stamp::Bridges1000, 1234, false),
+                stamp(Stamp::Solved10, -3, false),
+                stamp(Stamp::Bridges10000, i64::MAX, false),
+            ],
+            ..UserStats::default()
+        };
+        let report = report(Platform::GameCenter, &PlayIds::default(), &stats).unwrap();
+        assert_eq!(
+            report.achievements,
+            [
+                achievement("stamp_bridges_1000", Some(1000), Some(1000), true),
+                achievement("stamp_bridges_10000", Some(10_000), Some(10_000), true),
+            ]
+        );
+    }
+
+    /// Without today's daily solved (or with it unranked) no time; no score of 0.
+    #[test]
+    fn only_scores_there_are() {
+        let stats = UserStats {
+            solved: 1,
+            best_streak: 0,
+            recent: vec![day(100, Some(70_000)), day(101, None)],
+            ..UserStats::default()
+        };
+        let sent = report(Platform::GameCenter, &PlayIds::default(), &stats).unwrap();
+        assert_eq!(sent.scores, [score("puzzles_solved", 1)]);
+        assert_eq!(
+            report(
+                Platform::GameCenter,
+                &PlayIds::default(),
+                &UserStats::default()
+            ),
+            None
+        );
+    }
+
+    /// The second report of a session has only what changed since the first.
+    #[test]
+    fn a_report_sends_only_what_changed() {
+        let mut reported = Reported::default();
+        let first = report(Platform::GameCenter, &PlayIds::default(), &stats()).unwrap();
+        assert_eq!(reported.fresh(first.clone()), Some(first.clone()));
+        // The same again: nothing
+        assert_eq!(reported.fresh(first), None);
+
+        // A daily later: one more solved, the hundred further along, a new stamp, a new time
+        let mut later = stats();
+        later.solved = 43;
+        later.stamps[1].progress = 43;
+        later.stamps[3] = stamp(Stamp::Clean, 1, false);
+        later.recent.push(day(102, Some(65_000)));
+        let fresh = reported
+            .fresh(report(Platform::GameCenter, &PlayIds::default(), &later).unwrap())
+            .unwrap();
+        assert_eq!(
+            fresh.achievements,
+            [
+                achievement("stamp_solved_100", Some(43), Some(100), false),
+                achievement("stamp_clean", Some(1), Some(10), false),
+            ]
+        );
+        assert_eq!(
+            fresh.scores,
+            [score("daily_time", 6500), score("puzzles_solved", 43)]
+        );
+        assert_eq!(
+            reported.fresh(report(Platform::GameCenter, &PlayIds::default(), &later).unwrap()),
+            None
+        );
     }
 }

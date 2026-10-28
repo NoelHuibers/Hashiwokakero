@@ -27,7 +27,10 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use wasm_bindgen::{JsCast, JsValue};
 
-use super::games::{self, Achievement, Board, Report, Score, Show, Status};
+use super::games::{
+    self, Achievement, Board, Platform, PlayIds, Report, Reported, Score, Show, Status,
+};
+use crate::model::UserStats;
 
 /// Tauri's `invoke` and the object it belongs to, if the page runs in the app's `WebView`.
 fn invoke() -> Option<(JsValue, js_sys::Function)> {
@@ -196,10 +199,6 @@ async fn ask_games() -> Status {
 /// vendor ids, Play's from `app/achievements-play.json`); see [`Report::new`] for what is left
 /// out. In the background, a failure is only logged. Nothing outside the app, nor where the
 /// service isn't there; the plugin skips it while nobody is signed in.
-#[expect(
-    dead_code,
-    reason = "the stamp book and the win screen call it once the stamps have their platforms' ids"
-)]
 pub(crate) fn games_report(
     achievements: impl IntoIterator<Item = Achievement>,
     scores: impl IntoIterator<Item = Score>,
@@ -213,6 +212,56 @@ pub(crate) fn games_report(
     leptos::task::spawn_local(async move {
         if games_sign_in().await.available {
             run("plugin:hashi|games_report", &report);
+        }
+    });
+}
+
+thread_local! {
+    /// What the page reported to the games service so far (`games::Reported`).
+    static REPORTED: std::cell::RefCell<Reported> = std::cell::RefCell::default();
+}
+
+/// Reports the player's stamps and scores as the server has them (`my_stats`) to the phone's
+/// games service: at the start (`mount`), and whenever the server says something changed, a
+/// daily it took (the daily page's `submitted`) or stamps earned since the last visit. Only for
+/// a player the start's sign-in signed in, otherwise the server isn't even asked. Never fails,
+/// a failed call is only logged.
+pub(crate) fn games_sync() {
+    if !available() {
+        return;
+    }
+    leptos::task::spawn_local(async {
+        if !games_sign_in().await.signed_in {
+            return;
+        }
+        match super::my_stats().await {
+            Ok(Some(stats)) => games_progress(&stats),
+            // No session: no stamps
+            Ok(None) => {}
+            Err(e) => leptos::logging::warn!("my_stats for the games service failed: {e}"),
+        }
+    });
+}
+
+/// Reports what the server's statistics `stats` of the player say, those the page has already
+/// (the account page's), see [`games_sync`]: [`games::report`] with the ids of the phone's
+/// platform, only what this page hasn't reported yet.
+pub(crate) fn games_progress(stats: &UserStats) {
+    if !available() {
+        return;
+    }
+    let Some(platform) = super::app::app_platform().and_then(Platform::of) else {
+        return;
+    };
+    let Some(report) = games::report(platform, PlayIds::embedded(), stats) else {
+        return;
+    };
+    leptos::task::spawn_local(async move {
+        if !games_sign_in().await.signed_in {
+            return;
+        }
+        if let Some(fresh) = REPORTED.with_borrow_mut(|reported| reported.fresh(report)) {
+            games_report(fresh.achievements, fresh.scores);
         }
     });
 }

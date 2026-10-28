@@ -232,7 +232,18 @@ The page (`src/api/native.rs`, the arguments in `src/api/games.rs`, nothing on t
   `app/achievements-play.json`). `games::Report::new` sends only what there is to say: the steps
   within `1..=target`, all of them once earned, an unearned stamp without steps not at all. It
   waits for the sign-in and runs in the background; the plugin skips it while nobody is signed in.
-  The stamp book and the win screen call it once the stamps have their ids.
+- When the page reports (`native::games_sync`, `games_progress`): at the start, once the sign-in
+  signed a player in, and after each daily the server took (the win screen's `submitted`, or a
+  finish the recovery found), or stamps the server announces (yesterday's medal, a Dojo stamp),
+  then from the server's statistics (`my_stats`, the stamp book's call), and on the account page
+  from its own. `games::report` makes the report: every stamp of the book, earned or its
+  progress as steps of `Stamp::steps`, and the scores `puzzles_solved`, `best_streak` and, on
+  Game Center only, `daily_time` of today's daily solved ranked (none of 0). The ids are Apple's
+  vendor ids on iOS; on Android Play's, from `app/achievements-play.json` as it was when the page
+  was built (`include_str!`): a stamp or leaderboard missing there isn't reported. The page sends
+  only what changed since its last report (`games::Reported`), the next start everything again.
+  Without a signed-in player at the start nothing is asked or sent until the next start, even
+  after a sign-in through the button.
 - `games_show(Board::Achievements | Leaderboards)`: the service's own screens. The stamp book of
   the account page has a button for the achievements ("Show in Game Center",
   `stamps.games.show` with the service's name, which isn't translated), in the app where the

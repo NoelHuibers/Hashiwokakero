@@ -40,6 +40,16 @@ pub fn AccountPage() -> impl IntoView {
             });
         }
     });
+    // In the app, the stamp book goes to Game Center or Play Games too: the page's own, and
+    // the account's after a sign in (`api::native::games_progress`)
+    #[cfg(feature = "csr")]
+    Effect::new(move || {
+        stats.with(|s| {
+            if let Some(s) = s {
+                crate::api::native::games_progress(s);
+            }
+        });
+    });
 
     let sign_out = move |_| {
         spawn_local(async move {
