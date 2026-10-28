@@ -5,7 +5,7 @@
 # Secrets: DOJO_TOKEN (the same as on the website).
 
 app = "hashi-dojo"
-primary_region = "ams"
+primary_region = "fra"
 
 [env]
   APP_URL = "https://hashi.rs"

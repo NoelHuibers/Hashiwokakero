@@ -4,7 +4,7 @@
 #
 
 app = "hashi"
-primary_region = "ams"
+primary_region = "fra"
 
 [build]
 
