@@ -7,6 +7,8 @@ mod rivals;
 mod stamps;
 mod stats;
 #[cfg(test)]
+mod stored_tests;
+#[cfg(test)]
 mod tests;
 
 pub use attempt::{
@@ -25,8 +27,9 @@ pub use stamps::{
 pub(crate) use stats::invalidate as invalidate_profiles;
 pub use stats::{cached_profile, profile, stats};
 
+use std::collections::BTreeMap;
 use std::future::Future;
-use std::sync::LazyLock;
+use std::sync::{LazyLock, Mutex, MutexGuard};
 
 use common::{Difficulty, GenerateParams, GeneratedPuzzle, Puzzle};
 use leptos::prelude::ServerFnError;
@@ -66,7 +69,7 @@ fn params(day: i64, seed: u64) -> GenerateParams {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Daily {
     pub difficulty: Difficulty,
     pub puzzle: Puzzle,
@@ -117,7 +120,79 @@ type Generation = Result<GeneratedPuzzle, ServerFnError>;
 static GENERATIONS: LazyLock<Flights<GenerateParams, Generation>> =
     LazyLock::new(|| Flights::new(16));
 
-/// The puzzle of a day, generated and stored on first use.
+/// How many days [`Stored`] keeps: yesterday's, today's and tomorrow's (a player whose day
+/// differs from the server's around midnight, the HTTP tests).
+const STORED_DAYS: usize = 3;
+
+/// The dailies of one database as it stores them, by day.
+///
+/// A stored daily never changes (the only write is the `INSERT OR IGNORE` of
+/// [`get_or_create_with`]), so the requests that need it again skip the query: on Turso about
+/// 6 ms (a `describe` round trip and the query). Only the latest [`STORED_DAYS`] are kept: an
+/// older day (a replay) goes again at once.
+#[derive(Debug, Default)]
+pub struct Stored(Mutex<BTreeMap<i64, Daily>>);
+
+impl Stored {
+    pub const fn new() -> Self {
+        Self(Mutex::new(BTreeMap::new()))
+    }
+
+    fn lock(&self) -> MutexGuard<'_, BTreeMap<i64, Daily>> {
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn get(&self, day: i64) -> Option<Daily> {
+        self.lock().get(&day).cloned()
+    }
+
+    fn keep(&self, day: i64, daily: &Daily) {
+        let mut days = self.lock();
+        days.insert(day, daily.clone());
+        while days.len() > STORED_DAYS {
+            days.pop_first();
+        }
+        drop(days);
+    }
+
+    /// The days kept.
+    #[cfg(test)]
+    pub fn days(&self) -> Vec<i64> {
+        self.lock().keys().copied().collect()
+    }
+}
+
+/// The dailies of the installed database (`db::install`), which every request uses.
+static INSTALLED: Stored = Stored::new();
+
+tokio::task_local! {
+    /// The dailies of the database the request's connections belong to.
+    static REQUEST_STORED: &'static Stored;
+}
+
+/// Runs a request with the dailies of the installed database.
+///
+/// Its connections come from `db::conn`. Elsewhere (the tests' own databases, tasks spawned by
+/// the request) nothing is kept, so no database sees another one's dailies.
+pub async fn with_installed<F: Future>(request: F) -> F::Output {
+    with_stored(&INSTALLED, request).await
+}
+
+/// Runs `work` with `stored` as the dailies of its connections' database.
+async fn with_stored<F: Future>(stored: &'static Stored, work: F) -> F::Output {
+    REQUEST_STORED.scope(stored, work).await
+}
+
+/// The dailies of the installed database, see [`with_installed`].
+#[cfg(test)]
+pub fn installed() -> &'static Stored {
+    &INSTALLED
+}
+
+/// The puzzle of a day, generated and stored on first use. In a request kept in memory once
+/// read (see [`Stored`]).
 pub async fn get_or_create(conn: &Connection, day: i64) -> Result<Daily, ServerFnError> {
     get_or_create_with(conn, day, &GENERATIONS, |params| {
         run_blocking(move || Ok(backend::api::generate(&params)))
@@ -127,6 +202,34 @@ pub async fn get_or_create(conn: &Connection, day: i64) -> Result<Daily, ServerF
 
 /// [`get_or_create`] with the generations of `flights`, made by `generate`.
 async fn get_or_create_with<F, Fut>(
+    conn: &Connection,
+    day: i64,
+    flights: &Flights<GenerateParams, Generation>,
+    generate: F,
+) -> Result<Daily, ServerFnError>
+where
+    F: FnOnce(GenerateParams) -> Fut + Send,
+    Fut: Future<Output = Generation> + Send,
+{
+    let stored = REQUEST_STORED.try_with(|stored| *stored).ok();
+    if let Some(daily) = stored.and_then(|stored| stored.get(day)) {
+        return Ok(daily);
+    }
+    // Outside a transaction what is read is committed. In one it may be the transaction's own
+    // insert (here or earlier), which a rollback takes back: then nothing is kept.
+    let committed = conn.is_autocommit();
+    let daily = load_or_create(conn, day, flights, generate).await?;
+    if let Some(stored) = stored
+        && committed
+        && conn.is_autocommit()
+    {
+        stored.keep(day, &daily);
+    }
+    Ok(daily)
+}
+
+/// [`get_or_create_with`] from the database.
+async fn load_or_create<F, Fut>(
     conn: &Connection,
     day: i64,
     flights: &Flights<GenerateParams, Generation>,

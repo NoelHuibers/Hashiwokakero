@@ -145,6 +145,10 @@ fn router_with_client_source<V: IntoView + 'static>(
             },
         )
         .fallback(leptos_axum::file_and_error_handler(shell))
+        // Innermost: the handlers run in the request's task, their connections are `db::conn`'s
+        .layer(middleware::from_fn(|req: Request, next: Next| {
+            super::daily::with_installed(next.run(req))
+        }))
         .layer(middleware::from_fn(super::limits::admission))
         // Before admission too: a redirect costs nothing
         .layer(middleware::from_fn(canonical_redirect))
