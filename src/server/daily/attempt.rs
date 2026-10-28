@@ -1,11 +1,13 @@
 //! A player's attempt at a daily: starting the clock, hints, checks, giving up and submitting.
 
+use std::future::Future;
+
 use common::{Board, Puzzle};
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, TransactionBehavior, params};
 
 use super::stamps::sync;
-use super::{from_json, get_or_create, json, load, today};
+use super::{Daily, from_json, get_or_create, json, load, today};
 use crate::model::{
     ApiError, AttemptInfo, DailyInfo, Daypart, Flag, MoveEvent, SubmitResult, canonical,
     daily_difficulty, pick_hint, server_times, summarize, verify_log, wrong_edges,
@@ -13,24 +15,13 @@ use crate::model::{
 use crate::server::db::db_err;
 use crate::server::now_ms;
 
-pub async fn attempt(
-    conn: &Connection,
-    user: i64,
-    day: i64,
-) -> Result<Option<AttemptInfo>, ServerFnError> {
-    let mut rows = conn
-        .query(
-            "SELECT started_at, finished_at, hints, checks, revealed, time_ms, bridges, flag, attempt_id
-             FROM attempts WHERE user_id = ?1 AND day = ?2",
-            params![user, day],
-        )
-        .await
-        .map_err(db_err)?;
-    let Some(row) = rows.next().await.map_err(db_err)? else {
-        return Ok(None);
-    };
+/// The columns [`attempt_row`] reads, in its order.
+const ATTEMPT_COLUMNS: &str =
+    "started_at, finished_at, hints, checks, revealed, time_ms, bridges, flag, attempt_id";
+
+fn attempt_row(row: &libsql::Row) -> Result<AttemptInfo, ServerFnError> {
     let bridges: Option<String> = row.get(6).map_err(db_err)?;
-    Ok(Some(AttemptInfo {
+    Ok(AttemptInfo {
         attempt_id: row.get(8).map_err(db_err)?,
         started_at: row.get(0).map_err(db_err)?,
         finished_at: row.get(1).map_err(db_err)?,
@@ -43,7 +34,25 @@ pub async fn attempt(
             .get::<Option<String>>(7)
             .map_err(db_err)?
             .and_then(|f| Flag::from_id(&f)),
-    }))
+    })
+}
+
+pub async fn attempt(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+) -> Result<Option<AttemptInfo>, ServerFnError> {
+    let mut rows = conn
+        .query(
+            &format!("SELECT {ATTEMPT_COLUMNS} FROM attempts WHERE user_id = ?1 AND day = ?2"),
+            params![user, day],
+        )
+        .await
+        .map_err(db_err)?;
+    match rows.next().await.map_err(db_err)? {
+        Some(row) => attempt_row(&row).map(Some),
+        None => Ok(None),
+    }
 }
 
 pub async fn finishers(conn: &Connection, day: i64) -> Result<i64, ServerFnError> {
@@ -121,22 +130,70 @@ pub async fn start(
     day: i64,
     device: Option<&str>,
 ) -> Result<DailyInfo, ServerFnError> {
-    get_or_create(conn, day).await?;
+    start_after(conn, user, day, device, get_or_create(conn, day)).await
+}
+
+/// [`start`] with the puzzle `daily` brings.
+///
+/// The clock runs from the insert, before the board reaches the player: everything else is
+/// done before it, and nothing after it that a fresh attempt doesn't need. On Turso every query
+/// is a round trip of about 100 ms, a reply that read the attempt and synced the stamps after
+/// the insert started the clock 753 ms early (2026-10-28). Starting can't earn a stamp, the
+/// next `daily_today` or submit announces any that are due.
+pub(super) async fn start_after(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+    device: Option<&str>,
+    daily: impl Future<Output = Result<Daily, ServerFnError>>,
+) -> Result<DailyInfo, ServerFnError> {
+    let puzzle = daily.await?.puzzle;
+    // A new attempt isn't finished, the count is the same after the insert
+    let finishers = finishers(conn, day).await?;
     // Stored hashed with the secret and the day, so devices can't be followed from one day to the
     // next, not even by someone who knows a device's id
     let device = device
         .filter(|d| (8..=64).contains(&d.len()))
         .map(|d| crate::server::keyed_hash("device", day, d));
-    conn.execute(
-        "INSERT OR IGNORE INTO attempts (user_id, day, started_at, device, flag)
-         SELECT ?1, ?2, ?3, ?4, CASE WHEN ?4 IS NOT NULL AND EXISTS (
-             SELECT 1 FROM attempts WHERE day = ?2 AND device = ?4 AND user_id != ?1
-         ) THEN ?5 ELSE NULL END",
-        params![user, day, now_ms(), device, Flag::SecondAccount.id()],
-    )
-    .await
-    .map_err(db_err)?;
-    info(conn, Some(user), day).await
+    // The identity is set here and not by the insert trigger, RETURNING doesn't see what an
+    // AFTER trigger changes
+    let mut rows = conn
+        .query(
+            &format!(
+                "INSERT OR IGNORE INTO attempts (user_id, day, started_at, device, flag, attempt_id)
+                 SELECT ?1, ?2, ?3, ?4, CASE WHEN ?4 IS NOT NULL AND EXISTS (
+                     SELECT 1 FROM attempts WHERE day = ?2 AND device = ?4 AND user_id != ?1
+                 ) THEN ?5 ELSE NULL END, lower(hex(randomblob(16)))
+                 RETURNING {ATTEMPT_COLUMNS}"
+            ),
+            params![user, day, now_ms(), device, Flag::SecondAccount.id()],
+        )
+        .await
+        .map_err(db_err)?;
+    let inserted = rows
+        .next()
+        .await
+        .map_err(db_err)?
+        .map(|row| attempt_row(&row))
+        .transpose()?;
+    // Done with the statement before the next one
+    drop(rows);
+    let attempt = match inserted {
+        Some(attempt) => attempt,
+        // Started before (another tab, a double click): its clock keeps running
+        None => attempt(conn, user, day)
+            .await?
+            .ok_or_else(|| ApiError::Internal.fail())?,
+    };
+    Ok(DailyInfo {
+        day,
+        difficulty: daily_difficulty(day),
+        puzzle: Some(puzzle),
+        attempt: Some(attempt),
+        server_now: now_ms(),
+        finishers,
+        stamps: Vec::new(),
+    })
 }
 
 /// The running attempt of a user, or an error if there is none.

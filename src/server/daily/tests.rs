@@ -207,6 +207,145 @@ async fn puzzle_is_only_sent_after_start() {
     assert_eq!(again.attempt.unwrap().started_at, started_at);
 }
 
+/// The clock starts after the work the reply needs anyway (here a slow first generation of the
+/// day), and the reply leaves right after the insert: `server_now - started_at` is what the
+/// board has already lost when it arrives.
+#[tokio::test]
+async fn the_clock_starts_after_the_work_before_it() {
+    let (_db, conn) = test_db().await;
+    let early = user(&conn, "early", Some("early")).await;
+    let late = user(&conn, "late", Some("late")).await;
+    let id = user(&conn, "Quick Otter 3", None).await;
+    finish(&conn, early, MONDAY, 50_000).await;
+    finish(&conn, late, MONDAY, 60_000).await;
+    let flights = Flights::new(4);
+    let generated = std::sync::Mutex::new(None);
+    let slow = |params: GenerateParams| {
+        let generated = &generated;
+        async move {
+            tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+            let puzzle = backend::api::generate(&params);
+            *generated.lock().unwrap() = Some(now_ms());
+            Ok(puzzle)
+        }
+    };
+    let info = attempt::start_after(
+        &conn,
+        id,
+        MONDAY,
+        None,
+        get_or_create_with(&conn, MONDAY, &flights, slow),
+    )
+    .await
+    .unwrap();
+    let ready = generated.lock().unwrap().unwrap();
+    let attempt = info.attempt.unwrap();
+    assert!(
+        attempt.started_at >= ready,
+        "{} < {ready}",
+        attempt.started_at
+    );
+    let lost = info.server_now - attempt.started_at;
+    assert!((0..200).contains(&lost), "{lost} ms");
+    // The reply has the stored puzzle and attempt, and the day's finishers
+    assert_eq!(
+        info.puzzle,
+        Some(get_or_create(&conn, MONDAY).await.unwrap().puzzle)
+    );
+    assert_eq!(
+        Some(attempt),
+        super::attempt(&conn, id, MONDAY).await.unwrap()
+    );
+    assert_eq!(
+        (info.day, info.difficulty, info.finishers),
+        (MONDAY, daily_difficulty(MONDAY), 2)
+    );
+}
+
+/// Starting can't earn a stamp, so the start doesn't sync them (a handful of round trips while
+/// the clock runs): the next visit announces the stamps that are due.
+#[tokio::test]
+async fn starting_leaves_the_stamps_to_the_next_visit() {
+    let (_db, conn) = test_db().await;
+    let id = user(&conn, "alice", Some("alice")).await;
+    finish(&conn, id, today() - 1, 50_000).await;
+    let started = start(&conn, id, MONDAY, None).await.unwrap();
+    assert_eq!(started.stamps, []);
+    let next = info(&conn, Some(id), MONDAY).await.unwrap();
+    assert!(next.stamps.contains(&Stamp::First), "{:?}", next.stamps);
+    assert_eq!(next.attempt, started.attempt);
+}
+
+/// A second start (another tab, a double click) gets the running attempt: same clock, same
+/// identity, and the elapsed time since the first start.
+#[tokio::test]
+async fn starting_again_keeps_the_attempt() {
+    let (_db, conn) = test_db().await;
+    let id = user(&conn, "Brave Koi 40", None).await;
+    let other = user(&conn, "Calm Heron 7", None).await;
+    let first = start(&conn, id, MONDAY, Some("device-of-koi"))
+        .await
+        .unwrap();
+    let first = first.attempt.unwrap();
+    let theirs = start(&conn, other, MONDAY, None)
+        .await
+        .unwrap()
+        .attempt
+        .unwrap();
+    // A fresh identity of its own, the one that is stored
+    assert_eq!(first.attempt_id.len(), 32);
+    assert_ne!(first.attempt_id, theirs.attempt_id);
+    assert_eq!(
+        attempt(&conn, id, MONDAY)
+            .await
+            .unwrap()
+            .unwrap()
+            .attempt_id,
+        first.attempt_id
+    );
+    age(&conn, id, MONDAY, 60_000).await;
+    let again = start(&conn, id, MONDAY, Some("another-device"))
+        .await
+        .unwrap();
+    assert!(again.puzzle.is_some());
+    let attempt = again.attempt.unwrap();
+    assert_eq!(
+        (
+            attempt.started_at,
+            attempt.attempt_id.as_str(),
+            attempt.flag
+        ),
+        (first.started_at - 60_000, first.attempt_id.as_str(), None)
+    );
+    assert!(again.server_now - attempt.started_at >= 60_000);
+}
+
+/// The reply of a start on a device another account started the daily on already says the
+/// result won't be ranked; the first account's attempt stays as it was.
+#[tokio::test]
+async fn the_start_reply_flags_a_second_account() {
+    let (_db, conn) = test_db().await;
+    let scout = user(&conn, "Scout Fox 1", None).await;
+    let main = user(&conn, "main", Some("main")).await;
+    let first = start(&conn, scout, MONDAY, Some("shared-device-1"))
+        .await
+        .unwrap();
+    assert_eq!(first.attempt.unwrap().flag, None);
+    let second = start(&conn, main, MONDAY, Some("shared-device-1"))
+        .await
+        .unwrap();
+    assert_eq!(second.attempt.unwrap().flag, Some(Flag::SecondAccount));
+    assert_eq!(
+        attempt(&conn, main, MONDAY).await.unwrap().unwrap().flag,
+        Some(Flag::SecondAccount)
+    );
+    // Starting again on the shared device doesn't flag the first account after the fact
+    let again = start(&conn, scout, MONDAY, Some("shared-device-1"))
+        .await
+        .unwrap();
+    assert_eq!(again.attempt.unwrap().flag, None);
+}
+
 #[tokio::test]
 async fn submit_validates_and_ranks() {
     let (_db, conn) = test_db().await;
