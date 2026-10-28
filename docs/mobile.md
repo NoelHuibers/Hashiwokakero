@@ -143,8 +143,8 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 13e | iOS release workflow: tag `app-v<version>` builds a signed IPA and uploads it to TestFlight with an App Store Connect API key, skipped without the secrets | 13a | ✓ #154 |
 | 13f | First iOS release: TestFlight, App Store listing and review | 13b–13e | |
 | 14a | Game achievements: the stamps as Game Center and Play Games achievements, leaderboards, icons, upload workflow ([app/README.md](../app/README.md#game-achievements)) | 12, 13f | ✓ #170 |
-| 14b | Games services, native: Game Center and Google Play Games in the app's plugin (sign-in, reports, their screens), Play Games' project id from `app/achievements-play.json`, off without it | 13c | |
-| 14c | The stamps reported: the stamp book and the win screen send the stamps' progress and the leaderboards' scores to the platform | 14a, 14b | |
+| 14b | Games services, native: Game Center and Google Play Games in the app's plugin (sign-in, reports, their screens), Play Games' project id from `app/achievements-play.json`, off without it | 13c | ✓ #171 |
+| 14c | The stamps reported: the stamp book and the win screen send the stamps' progress and the leaderboards' scores to the platform | 14a, 14b | ✓ #172 |
 
 ## Owner tasks
 
