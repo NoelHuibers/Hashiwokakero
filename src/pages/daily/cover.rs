@@ -41,12 +41,13 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
             if !daily.starting.current(request) {
                 return;
             }
-            // Without an account the start made a guest. The board waits until the page knows
-            // them: until then it can't take their clicks, and the new identity reloads the
-            // daily (the identity effect in `DailyPage`), which would swap a board shown now for
-            // the loading placeholder under the first clicks. That reload shows the started daily.
+            // Without an account the start made a guest, whom the reply names (`take_start`).
+            // An older server's reply doesn't: then the board waits until the page knows them.
+            // Until then it can't take their clicks, and the new identity reloads the daily (the
+            // identity effect in `DailyPage`), which would swap a board shown now for the loading
+            // placeholder under the first clicks. That reload shows the started daily.
             let guest = match &response {
-                Ok(_) if auth.user.with_untracked(Option::is_none) => {
+                Ok(start) if start.user.is_none() && auth.user.with_untracked(Option::is_none) => {
                     current_user().await.ok().flatten()
                 }
                 _ => None,
@@ -64,10 +65,7 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
                 return;
             }
             match response {
-                Ok(info) => {
-                    daily.apply(info);
-                    auth.refresh();
-                }
+                Ok(start) => daily.take_start(start),
                 Err(e) => error_toast(e),
             }
         });

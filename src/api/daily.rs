@@ -5,7 +5,9 @@ use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
 use super::HashiClient;
-use crate::model::{DailyInfo, HallOfFame, Leaderboard, MonthBoard, MoveEvent, SubmitResult};
+use crate::model::{
+    DailyInfo, DailyStart, HallOfFame, Leaderboard, MonthBoard, MoveEvent, SubmitResult,
+};
 #[cfg(feature = "ssr")]
 use crate::server::{auth, daily, db};
 
@@ -17,12 +19,17 @@ pub async fn daily_today() -> Result<DailyInfo, ServerFnError> {
     daily::info(&conn, user.map(|u| u.id), daily::today()).await
 }
 
-/// Starts today's daily for the current user (a guest is created if needed).
+/// Starts today's daily for the current user (a guest is created if needed), and says who that
+/// is: the page shows a new guest's board without asking `current_user` first.
 #[server(input = Json, client = HashiClient)]
-pub async fn start_daily(device: Option<String>) -> Result<DailyInfo, ServerFnError> {
+pub async fn start_daily(device: Option<String>) -> Result<DailyStart, ServerFnError> {
     let conn = db::conn()?;
     let user = auth::ensure_user(&conn).await?;
-    daily::start(&conn, user.id, daily::today(), device.as_deref()).await
+    let info = daily::start(&conn, user.id, daily::today(), device.as_deref()).await?;
+    Ok(DailyStart {
+        info,
+        user: Some(user.info()),
+    })
 }
 
 #[cfg(feature = "ssr")]
