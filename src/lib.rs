@@ -63,10 +63,9 @@ pub fn mount(version: &'static str) {
     if let Some(owner) = app.take() {
         owner.set();
     }
-    // Game Center or Play Games, silently and in the background: the platforms want it early
-    leptos::task::spawn_local(async {
-        api::native::games_sign_in().await;
-    });
+    // Game Center or Play Games, silently and in the background: the platforms want the
+    // sign-in early. Then the stamps and scores the server has, for a signed-in player
+    api::native::games_sync();
     mark_ready();
 }
 

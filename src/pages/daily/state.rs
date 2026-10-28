@@ -31,6 +31,13 @@ pub(super) struct MoveSnapshot {
     moves: u32,
 }
 
+/// The server has news for the phone's games service, a daily it took or stamps earned: in the
+/// app, it gets the player's stamps and scores (`api::native::games_sync`).
+pub(super) fn games_sync() {
+    #[cfg(feature = "csr")]
+    crate::api::native::games_sync();
+}
+
 fn finished(info: &DailyInfo) -> bool {
     info.attempt.as_ref().is_some_and(AttemptInfo::finished)
 }
@@ -272,6 +279,9 @@ impl Daily {
     /// a submit may be on its way, see the owned submission recovery.
     pub(super) fn show(&self, info: DailyInfo) {
         announce(&info.stamps);
+        if !info.stamps.is_empty() {
+            games_sync();
+        }
         if let Some(puzzle) = &info.puzzle {
             let status = self.game.status.get_untracked();
             let loaded = status != Status::Empty
@@ -309,6 +319,7 @@ impl Daily {
         });
         self.admired.set(false);
         self.result.set(Some(result));
+        games_sync();
     }
 
     /// The win card over the board: right after this tab's submit, until the player puts it

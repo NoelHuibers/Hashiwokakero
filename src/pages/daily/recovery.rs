@@ -119,6 +119,8 @@ impl Daily {
             self.submission.set(Phase::Idle);
             self.submit_payload.set_value(None);
             self.show(info);
+            // The finish the answer of a submit didn't bring
+            super::state::games_sync();
             return true;
         }
         false
