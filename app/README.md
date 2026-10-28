@@ -952,15 +952,18 @@ node store/achievements/play.mjs --dry-run --ids /tmp/ids.json
 Once, before the first upload, in the **Play Console** (in German; Hashi, then):
 
 1. Mehr Nutzer gewinnen (or Wachstum), Play-Spieldienste, Einrichtung und Verwaltung,
-   Konfiguration: "Ja, mein Spiel verwendet bereits Google-APIs", the Cloud project
-   `hashi-play-512817` (the service account's), Verwenden. Under the game's name is now its
-   Projekt-ID (12 digits): into `project_id` of `app/achievements-play.json` by a pull request
-   (the Android app needs it too).
+   Konfiguration: "Neues Play-Spieldienste-Projekt erstellen", the Cloud project
+   `hashi-play-512817` (the service account's; only its owners see it in the list), Verwenden.
+   Under the game's name is now its Projekt-ID (12 digits): into `project_id` of
+   `app/achievements-play.json` by a pull request (the Android app needs it too). Done
+   2026-10-28: `909299474789`.
 2. On the same page, Eigenschaften bearbeiten: the display name "Hashi", the default language
    English (United States) (the upload finds achievements by their en-US names), and the
    translations: every Play language of `store/locales.mjs`. Speichern.
 3. Anmeldedaten, Anmeldedaten hinzufügen, Android: first the OAuth consent screen (Konfigurieren,
-   in Google Cloud), then OAuth-Client erstellen with the package `rs.hashi` and the SHA-1 of the
+   in Google Cloud: External, then In Produktion on its Zielgruppe page, which wants the home page
+   and the privacy policy's URL under Branding; Play Games' scopes need no verification), then
+   OAuth-Client erstellen with the package `rs.hashi` and the SHA-1 of the
    app signing key (the page the SHA-256 for `fly.toml` came from, docs/mobile.md: App-Signatur,
    the app signing key's certificate); a second credential with the upload key's SHA-1 for
    builds not installed from Play. Änderungen speichern.
