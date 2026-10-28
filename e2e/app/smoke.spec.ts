@@ -2,7 +2,6 @@
 // functions, routes on its own, and takes the language from the path. It talks to the server as
 // the app: its version in a header, its session in its own storage (src/api/app.rs).
 import { addBridge, board, DAILY_KEY, saved } from '../board';
-import { startDaily } from '../daily';
 import { expect, hydrated, test, visit } from '../fixtures';
 
 const PLAY_STORE = 'https://play.google.com/store/apps/details?id=rs.hashi';
@@ -82,8 +81,10 @@ test("a guest's daily starts in the app with the session the start sent, the boa
     if (pathname.startsWith('/api/')) calls.push({ path: pathname, headers: r.allHeaders() });
   });
   await visit(page, '/');
-  const { puzzle, solution } = await startDaily(page);
-  await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
+  await page.getByRole('button', { name: /^Start/ }).click();
+  await expect(board(page)).toHaveClass(/board-interactive/, { timeout: 30_000 });
+  // Any bridge: the solution is in the website's test database, not in the app's server's
+  await addBridge(page, DAILY_KEY, (await saved(page, DAILY_KEY)).puzzle, 0);
 
   const token = await page.evaluate(() => localStorage.getItem('hashi.session'));
   expect(token).toMatch(/^[0-9a-f]{64}$/);
