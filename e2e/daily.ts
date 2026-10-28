@@ -36,8 +36,7 @@ export async function startDaily(page: Page) {
   await expect(page.getByRole('heading', { name: "Today's bridge" })).toBeVisible();
   await page.getByRole('button', { name: /^Start/ }).click();
   // An Oni (Sundays) takes the generator a few seconds. The first board is the daily's once it's
-  // there to play: before, it's the empty one behind the cover, or one of the tips below the
-  // daily while a new guest's daily loads again
+  // there to play: before, it's the empty one behind the cover
   await expect(board(page)).toHaveClass(/board-interactive/, { timeout: 30_000 });
   await expect(board(page).locator('g.island').first()).toBeVisible();
   await expect(penalty(page)).toHaveText('+0s');

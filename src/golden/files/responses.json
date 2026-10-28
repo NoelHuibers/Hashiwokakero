@@ -67,6 +67,59 @@
     "finishers": 0,
     "stamps": []
   },
+  "daily_start": {
+    "day": 20381,
+    "difficulty": "Easy",
+    "puzzle": {
+      "width": 3,
+      "height": 3,
+      "islands": [
+        {
+          "pos": {
+            "x": 0,
+            "y": 0
+          },
+          "required": 2
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 0
+          },
+          "required": 3
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 2
+          },
+          "required": 1
+        }
+      ]
+    },
+    "attempt": {
+      "started_at": 1760000000000,
+      "finished_at": null,
+      "hints": 1,
+      "checks": 2,
+      "revealed": false,
+      "time_ms": null,
+      "bridges": null,
+      "flag": null
+    },
+    "server_now": 1760000000000,
+    "finishers": 3,
+    "stamps": [],
+    "user": {
+      "id": 8,
+      "name": "Guest 1234",
+      "guest": true,
+      "created_at": 1760000000000,
+      "admin": false,
+      "renamed_at": null,
+      "name_locked": false
+    }
+  },
   "submit": {
     "time_ms": 145000,
     "rank": 0,

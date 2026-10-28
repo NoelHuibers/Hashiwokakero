@@ -185,7 +185,11 @@ async fn guests_keep_their_results() {
     let server = Server::start().await;
     // A guest who signs up keeps the same user
     let browser = server.browser();
-    let started = browser.call(StartDaily { device: None }).await.unwrap();
+    let started = browser
+        .call(StartDaily { device: None })
+        .await
+        .unwrap()
+        .info;
     assert!(started.attempt.is_some());
     let guest = browser.call(CurrentUser {}).await.unwrap().unwrap();
     assert!(guest.guest);

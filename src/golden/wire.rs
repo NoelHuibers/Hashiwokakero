@@ -13,12 +13,12 @@ use super::{check, check_json};
 use crate::model::{
     AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, AllTimeEntry, ApiError,
     AttemptInfo, BanOutcome, BannedPlayer, BenchmarkAction, BenchmarkState, CommunityCredit,
-    CommunitySummary, ContactMessage, DailyInfo, DayResult, Daypart, DojoBenchmark, DojoBenchmarks,
-    DojoBoard, DojoBudgetCurve, DojoBudgets, DojoCactus, DojoCrossover, DojoCurve, DojoEntry,
-    DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons, DojoState, DojoSubmission, Flag,
-    GroupToday, HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind,
-    MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress, SubmissionAction,
-    SubmitResult, UserInfo, UserStats,
+    CommunitySummary, ContactMessage, DailyInfo, DailyStart, DayResult, Daypart, DojoBenchmark,
+    DojoBenchmarks, DojoBoard, DojoBudgetCurve, DojoBudgets, DojoCactus, DojoCrossover, DojoCurve,
+    DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons, DojoState, DojoSubmission,
+    Flag, GroupToday, HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark,
+    MarkKind, MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress,
+    SubmissionAction, SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -290,6 +290,7 @@ struct Responses {
     user: UserInfo,
     daily: DailyInfo,
     daily_before_start: DailyInfo,
+    daily_start: DailyStart,
     submit: SubmitResult,
     leaderboard: Leaderboard,
     month: MonthBoard,
@@ -349,7 +350,7 @@ fn responses() -> Responses {
             day: 20_381,
             difficulty: Difficulty::Hard,
             puzzle: Some(puzzle()),
-            attempt: Some(attempt),
+            attempt: Some(attempt.clone()),
             server_now: 1_760_000_100_000,
             finishers: 17,
             stamps: vec![Stamp::Gold, Stamp::Streak7],
@@ -362,6 +363,32 @@ fn responses() -> Responses {
             server_now: 1_760_000_100_000,
             finishers: 0,
             stamps: Vec::new(),
+        },
+        daily_start: DailyStart {
+            info: DailyInfo {
+                day: 20_381,
+                difficulty: Difficulty::Easy,
+                puzzle: Some(puzzle()),
+                attempt: Some(AttemptInfo {
+                    finished_at: None,
+                    time_ms: None,
+                    bridges: None,
+                    flag: None,
+                    ..attempt
+                }),
+                server_now: 1_760_000_000_000,
+                finishers: 3,
+                stamps: Vec::new(),
+            },
+            user: Some(UserInfo {
+                id: 8,
+                name: "Guest 1234".into(),
+                guest: true,
+                created_at: 1_760_000_000_000,
+                admin: false,
+                renamed_at: None,
+                name_locked: false,
+            }),
         },
         submit: SubmitResult {
             time_ms: 145_000,
@@ -703,6 +730,21 @@ fn responses_without_later_fields_load() {
         serde_json::from_str(r#"{"stamp":"First","earned_at":null,"progress":0,"target":1}"#)
             .unwrap();
     assert_eq!(progress.holders, 0, "{RESPONSES}");
+}
+
+/// The start of the daily sends the daily with the player at its side: a page or app from before
+/// reads it as the daily it was, and the reply of an older server, only the daily, loads without
+/// a player.
+#[test]
+fn the_start_of_the_daily_reads_as_the_daily() {
+    let start = responses().daily_start;
+    let json = serde_json::to_string(&start).unwrap();
+    let before: DailyInfo = serde_json::from_str(&json).unwrap();
+    assert_eq!(before, start.info, "{RESPONSES}");
+    let older: DailyStart =
+        serde_json::from_str(&serde_json::to_string(&start.info).unwrap()).unwrap();
+    assert_eq!(older.info, start.info);
+    assert_eq!(older.user, None);
 }
 
 /// `value` with the string at `pointer` replaced by `variant`, loaded again.

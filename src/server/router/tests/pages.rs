@@ -792,7 +792,12 @@ async fn every_visitor_gets_the_same_page() {
     guest.call(StartDaily { device: None }).await.unwrap();
 
     let player = Browser::signed_up(&server, "seen_by_nobody").await;
-    let day = player.call(StartDaily { device: None }).await.unwrap().day;
+    let day = player
+        .call(StartDaily { device: None })
+        .await
+        .unwrap()
+        .info
+        .day;
     let conn = conn().await;
     let id = user_id(&conn, "seen_by_nobody").await;
     // Played for ten minutes, not too fast to be ranked

@@ -100,6 +100,7 @@ pub fn DailyPage() -> impl IntoView {
         submission: RwSignal::new(Phase::Idle),
         submit_payload: StoredValue::new(None),
         refreshing: StoredValue::new(false),
+        loaded_for: StoredValue::new(None),
         logged: StoredValue::new(None),
         #[cfg(feature = "browser")]
         log_clock: StoredValue::new(None),
@@ -141,8 +142,9 @@ pub fn DailyPage() -> impl IntoView {
         )
     });
     Effect::new(move |_| {
-        if identity.get().0 {
-            untrack(|| daily.reload());
+        let (loaded, user) = identity.get();
+        if loaded {
+            untrack(|| daily.identity_changed(user));
         }
     });
 

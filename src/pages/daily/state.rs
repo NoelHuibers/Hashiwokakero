@@ -8,8 +8,8 @@ use super::recovery::{Fetch, Phase, Submission, error_feedback};
 use crate::api::{daily_leaderboard, daily_today};
 use crate::components::stamps::announce;
 use crate::model::{
-    AttemptInfo, DailyInfo, Flag, Leaderboard, MoveEvent, SubmitResult, daily_difficulty,
-    date_string,
+    AttemptInfo, DailyInfo, DailyStart, Flag, Leaderboard, MoveEvent, SubmitResult,
+    daily_difficulty, date_string,
 };
 use crate::state::{Game, Source, Status, load, store};
 
@@ -53,13 +53,24 @@ fn params_for(day: i64) -> GenerateParams {
     }
 }
 
-/// The browser clock, unix time in ms.
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "`Date.now()` is a whole number of ms, far inside the i64 range"
+/// The browser clock, unix time in ms. 0 without a browser (the tests): the server renders no
+/// clock.
+#[cfg_attr(
+    feature = "browser",
+    expect(
+        clippy::cast_possible_truncation,
+        reason = "`Date.now()` is a whole number of ms, far inside the i64 range"
+    )
 )]
 pub(super) fn browser_now() -> i64 {
-    js_sys::Date::now() as i64
+    #[cfg(feature = "browser")]
+    {
+        js_sys::Date::now() as i64
+    }
+    #[cfg(not(feature = "browser"))]
+    {
+        0
+    }
 }
 
 /// Minutes the browser's clock is behind UTC (`getTimezoneOffset`), -120 in Berlin in summer.
@@ -96,6 +107,9 @@ pub struct Daily {
     pub(super) log_clock: StoredValue<Option<super::clock::MoveClock>>,
     /// A quiet [`Self::refresh`] is on its way.
     pub(super) refreshing: StoredValue<bool>,
+    /// Whose daily [`Self::info`] is, while one is loaded: the player it was loaded for, `None`
+    /// for a visitor without an account.
+    pub(super) loaded_for: StoredValue<Option<i64>>,
 }
 
 /// Quiet fetches may overlap a purchase, identity change, day change or page disposal.
@@ -369,25 +383,75 @@ impl Daily {
         let guard = RefreshGuard::new(self);
         spawn_local(async move {
             let response = daily_today().await;
-            if !this.metadata.current(request) {
-                return;
-            }
-            if guard.current(&this) {
-                match response {
-                    Ok(info) => {
-                        this.metadata.finish(request, false);
-                        this.apply(info);
-                    }
-                    Err(error) => {
-                        this.metadata.finish(request, true);
-                        error_feedback(&error);
-                    }
-                }
-            } else {
-                this.metadata.finish(request, false);
-            }
-            this.refreshing.try_set_value(false);
+            this.metadata_arrived(request, &guard, response);
         });
+    }
+
+    /// The reply of the `daily_today` of `request`. It only shows if nothing changed since it was
+    /// asked for (`guard`): an old request can't install another identity's info.
+    fn metadata_arrived(
+        &self,
+        request: u64,
+        guard: &RefreshGuard,
+        response: Result<DailyInfo, ServerFnError>,
+    ) {
+        if !self.metadata.current(request) {
+            return;
+        }
+        if guard.current(self) {
+            match response {
+                Ok(info) => {
+                    self.metadata.finish(request, false);
+                    self.loaded_for.set_value(guard.user);
+                    self.apply(info);
+                }
+                Err(error) => {
+                    self.metadata.finish(request, true);
+                    error_feedback(&error);
+                }
+            }
+        } else {
+            self.metadata.finish(request, false);
+        }
+        self.refreshing.try_set_value(false);
+    }
+
+    /// Shows the daily the player just started. A start without an account made a guest, whom
+    /// the reply names: the page takes them on together with their daily, so the board shows
+    /// at once and takes their clicks. Noted as the daily's player before they become the
+    /// page's, the new identity has nothing to load again ([`Self::identity_changed`]): a reload
+    /// would swap the board for the loading placeholder under the first clicks.
+    pub(super) fn take_start(&self, start: DailyStart) {
+        let auth = self.actions.auth();
+        match start.user {
+            Some(guest) if auth.user.with_untracked(Option::is_none) => {
+                self.loaded_for.set_value(Some(guest.id));
+                auth.user.set(Some(guest));
+                self.apply(start.info);
+                // A ranking still on its way is the visitor's before, dropped when it comes
+                if self.ranking_load.phase.get_untracked() == Phase::Pending {
+                    self.refresh_ranking();
+                }
+            }
+            _ => {
+                self.apply(start.info);
+                auth.refresh();
+            }
+        }
+    }
+
+    /// The page knows who plays (`None`: a visitor without an account), or someone else plays
+    /// now: loads their daily, unless it's the one already shown, a guest's that came with the
+    /// start.
+    pub(super) fn identity_changed(&self, user: Option<i64>) {
+        if !self.is_daily_of(user) {
+            self.reload();
+        }
+    }
+
+    /// Whether the shown daily is the one of `user`.
+    fn is_daily_of(&self, user: Option<i64>) -> bool {
+        self.info.with_untracked(Option::is_some) && self.loaded_for.get_value() == user
     }
 
     fn load_puzzle(&self, info: &DailyInfo, puzzle: &Puzzle) {
@@ -705,6 +769,7 @@ mod tests {
             submission: RwSignal::new(Phase::Idle),
             submit_payload: StoredValue::new(None),
             refreshing: StoredValue::new(false),
+            loaded_for: StoredValue::new(None),
             logged: StoredValue::new(None),
             #[cfg(feature = "browser")]
             log_clock: StoredValue::new(None),
@@ -1016,6 +1081,107 @@ mod tests {
             d.show(info(true));
             d.refresh();
             assert!(!d.refreshing.get_value());
+        });
+    }
+
+    /// Today's daily before the start, as a visitor without an account sees it.
+    fn waiting() -> DailyInfo {
+        DailyInfo {
+            puzzle: None,
+            attempt: None,
+            ..info(false)
+        }
+    }
+
+    fn guest(id: i64) -> crate::model::UserInfo {
+        crate::model::UserInfo {
+            id,
+            name: format!("Guest {id}"),
+            guest: true,
+            created_at: 0,
+            admin: false,
+            renamed_at: None,
+            name_locked: false,
+        }
+    }
+
+    /// The `daily_today` reply to a request asked for now.
+    fn arrive(d: &Daily, reply: DailyInfo) {
+        let request = d.metadata.begin(true).unwrap();
+        d.metadata_arrived(request, &RefreshGuard::new(d), Ok(reply));
+    }
+
+    /// The cover of a visitor without an account: the daily is loaded, its start makes a guest.
+    fn cover(d: &Daily) {
+        d.show(waiting());
+        arrive(d, waiting());
+        assert!(d.is_daily_of(None) && !d.started());
+    }
+
+    /// The start's reply names the guest it made: the board shows and takes clicks at once, and
+    /// the identity change that follows doesn't load the daily again (which would put the
+    /// loading placeholder in place of the board).
+    #[test]
+    fn a_guest_start_shows_the_board_without_a_reload() {
+        tab(|d| {
+            cover(d);
+            d.take_start(DailyStart {
+                info: info(false),
+                user: Some(guest(7)),
+            });
+            assert_eq!(d.actions.user(), Some(7));
+            assert!(d.started() && d.game.status.get_untracked() == Status::Playing);
+            assert!(d.actions.can_start(d, None));
+            // The identity effect, with the guest: their daily stays (a reload would clear it
+            // and fetch it again)
+            d.identity_changed(Some(7));
+            assert_eq!(d.info.get_untracked(), Some(info(false)));
+            assert!(editable(d));
+            assert_eq!(d.metadata.phase.get_untracked(), Phase::Idle);
+        });
+    }
+
+    /// Replies asked for before the guest's start (a refresh when the tab got the focus back)
+    /// or by another identity can't install their info over the guest's daily.
+    #[test]
+    fn a_stale_identity_cant_install_its_daily() {
+        tab(|d| {
+            cover(d);
+            let visitor = (d.metadata.begin(false).unwrap(), RefreshGuard::new(d));
+            d.take_start(DailyStart {
+                info: info(false),
+                user: Some(guest(7)),
+            });
+            d.metadata_arrived(visitor.0, &visitor.1, Ok(waiting()));
+            assert!(d.started() && d.is_daily_of(Some(7)));
+            assert_eq!(d.metadata.phase.get_untracked(), Phase::Idle);
+
+            // Another player signs in while the guest's request is on its way
+            let request = d.metadata.begin(false).unwrap();
+            let guard = RefreshGuard::new(d);
+            d.actions.auth().user.set(Some(guest(8)));
+            let mut theirs = info(true);
+            attempt(&mut theirs).started_at = 2_000;
+            d.metadata_arrived(request, &guard, Ok(theirs));
+            assert_eq!(d.info.get_untracked(), Some(info(false)));
+            // The shown daily is the guest's, so the identity effect loads the new player's
+            assert!(!d.is_daily_of(Some(8)) && !d.is_daily_of(None));
+        });
+    }
+
+    /// The daily loaded for a player is theirs: their identity effect doesn't load it again,
+    /// another's does, and nobody's once it's cleared for a reload.
+    #[test]
+    fn a_loaded_daily_belongs_to_the_identity_it_was_asked_for() {
+        tab(|d| {
+            assert!(!d.is_daily_of(None));
+            d.actions.auth().user.set(Some(guest(3)));
+            d.show(info(false));
+            arrive(d, info(false));
+            assert!(d.is_daily_of(Some(3)));
+            assert!(!d.is_daily_of(None) && !d.is_daily_of(Some(4)));
+            d.info.set(None);
+            assert!(!d.is_daily_of(Some(3)));
         });
     }
 }

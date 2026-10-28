@@ -53,15 +53,24 @@ async fn a_guest_plays_the_daily() {
     let cookie = session_cookie(&started.headers);
     assert!(cookie.contains("HttpOnly"));
     let started = started.result.unwrap();
+    // The reply names the guest the start made, the page needn't ask who it is
+    let guest = started.user.unwrap();
+    assert!(guest.guest);
+    assert_eq!(
+        browser.call(CurrentUser {}).await.unwrap(),
+        Some(guest.clone())
+    );
+    let started = started.info;
     let day = started.day;
     let puzzle = started.puzzle.unwrap();
     assert!(started.attempt.is_some());
-    assert!(browser.call(CurrentUser {}).await.unwrap().unwrap().guest);
     // Starting again neither resets the clock nor makes another guest
     let again = browser.call_with_headers(StartDaily { device: None }).await;
     assert!(again.headers.get(reqwest::header::SET_COOKIE).is_none());
+    let again = again.result.unwrap();
+    assert_eq!(again.user, Some(guest));
     assert_eq!(
-        again.result.unwrap().attempt.unwrap().started_at,
+        again.info.attempt.unwrap().started_at,
         started.attempt.unwrap().started_at
     );
 
@@ -208,6 +217,7 @@ async fn giving_up_and_playing_without_a_session() {
         .call(StartDaily { device: None })
         .await
         .unwrap()
+        .info
         .puzzle
         .unwrap();
     // Our solvers don't help with today's daily
@@ -360,7 +370,7 @@ async fn paid_actions_assert_the_displayed_player_without_trusting_its_identity(
     use crate::api::{DailyPaidAction, PaidAction};
     let server = Server::start().await;
     let first = server.browser();
-    let started = first.call(StartDaily { device: None }).await.unwrap();
+    let started = first.call(StartDaily { device: None }).await.unwrap().info;
     let user = first.call(CurrentUser {}).await.unwrap().unwrap();
     let day = started.day;
     let empty = Board::new(started.puzzle.unwrap()).empty_bridges();
@@ -410,7 +420,7 @@ async fn paid_actions_assert_the_displayed_player_without_trusting_its_identity(
         accepted
     );
     let second = server.browser();
-    let second_started = second.call(StartDaily { device: None }).await.unwrap();
+    let second_started = second.call(StartDaily { device: None }).await.unwrap().info;
     assert_eq!(
         api_error(
             second
@@ -442,7 +452,7 @@ async fn lost_paid_replies_recover_over_http_after_guest_login_but_never_switch_
     let account = Browser::signed_up(&server, "receipt_owner").await;
     let owner = account.call(CurrentUser {}).await.unwrap().unwrap();
     let guest = server.browser();
-    let info = guest.call(StartDaily { device: None }).await.unwrap();
+    let info = guest.call(StartDaily { device: None }).await.unwrap().info;
     let former = guest.call(CurrentUser {}).await.unwrap().unwrap();
     let mut intents = vec![];
     for (action, id) in [
@@ -529,7 +539,11 @@ async fn lost_paid_replies_recover_over_http_after_guest_login_but_never_switch_
     // Registration claims the same numeric identity; the existing purchase endpoint still
     // replays its saved intent and continues asserting that very identity.
     let claiming = server.browser();
-    let started = claiming.call(StartDaily { device: None }).await.unwrap();
+    let started = claiming
+        .call(StartDaily { device: None })
+        .await
+        .unwrap()
+        .info;
     let original = claiming.call(CurrentUser {}).await.unwrap().unwrap();
     let purchase = || DailyPaidAction {
         expected_attempt: started.attempt.as_ref().unwrap().attempt_id.clone(),
@@ -557,7 +571,11 @@ async fn recovery_endpoints_require_the_displayed_user_and_stable_attempt() {
 
     let server = Server::start().await;
     let browser = server.browser();
-    let info = browser.call(StartDaily { device: None }).await.unwrap();
+    let info = browser
+        .call(StartDaily { device: None })
+        .await
+        .unwrap()
+        .info;
     let user = browser.call(CurrentUser {}).await.unwrap().unwrap().id;
     let identity = info.attempt.unwrap().attempt_id;
     for owner in [

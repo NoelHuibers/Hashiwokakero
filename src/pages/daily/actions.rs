@@ -200,6 +200,11 @@ impl Actions {
         self.auth.user.with_untracked(|u| u.as_ref().map(|u| u.id))
     }
 
+    /// Who plays on this page.
+    pub(super) const fn auth(&self) -> Auth {
+        self.auth
+    }
+
     pub(super) fn refresh_revision(&self) -> u64 {
         self.sequence.get_untracked()
     }
@@ -540,6 +545,7 @@ mod tests {
             #[cfg(feature = "browser")]
             log_clock: StoredValue::new(None),
             refreshing: StoredValue::new(false),
+            loaded_for: StoredValue::new(None),
         };
         daily.actions.sync(&daily);
         daily

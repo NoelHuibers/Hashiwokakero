@@ -87,6 +87,19 @@ pub struct DailyInfo {
     pub stamps: Vec<Stamp>,
 }
 
+/// What the start of the daily sends: the started daily and who plays it, a guest the start just
+/// made too, so the page can show the board at once instead of asking who it is first.
+///
+/// The daily's fields are at the top level: a page or app from before reads the reply as the
+/// [`DailyInfo`] it was, and the reply of an older server loads without a player.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DailyStart {
+    #[serde(flatten)]
+    pub info: DailyInfo,
+    #[serde(default)]
+    pub user: Option<UserInfo>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SubmitResult {
     pub time_ms: i64,

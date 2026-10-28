@@ -1,7 +1,8 @@
 // The app's client-side rendered bundle in a browser: it starts, renders pages from the server
 // functions, routes on its own, and takes the language from the path. It talks to the server as
 // the app: its version in a header, its session in its own storage (src/api/app.rs).
-import { board } from '../board';
+import { addBridge, board, DAILY_KEY, saved } from '../board';
+import { startDaily } from '../daily';
 import { expect, hydrated, test, visit } from '../fixtures';
 
 const PLAY_STORE = 'https://play.google.com/store/apps/details?id=rs.hashi';
@@ -72,6 +73,35 @@ test('a guest keeps their session in the app, sent in a header instead of a cook
   await expect(page.locator('a[data-group]').filter({ hasText: 'Header Club' })).toContainText('Owner');
   expect(await page.evaluate(() => localStorage.getItem('hashi.session'))).toBe(token);
   expect((await context.cookies()).map((c) => c.name)).not.toContain('hashi_session');
+});
+
+test("a guest's daily starts in the app with the session the start sent, the board at once", async ({ page, context }) => {
+  const calls: { path: string; headers: Promise<Record<string, string>> }[] = [];
+  page.on('request', (r) => {
+    const { pathname } = new URL(r.url());
+    if (pathname.startsWith('/api/')) calls.push({ path: pathname, headers: r.allHeaders() });
+  });
+  await visit(page, '/');
+  const { puzzle, solution } = await startDaily(page);
+  await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
+
+  const token = await page.evaluate(() => localStorage.getItem('hashi.session'));
+  expect(token).toMatch(/^[0-9a-f]{64}$/);
+  expect((await context.cookies()).map((c) => c.name)).not.toContain('hashi_session');
+  // The start's reply names the guest: nobody asks who that is or for the daily again, and the
+  // calls after it send the guest's token
+  const start = calls.findIndex((c) => c.path === '/api/start_daily');
+  expect(start).toBeGreaterThan(0);
+  const after = calls.slice(start + 1);
+  expect(after.map((c) => c.path)).not.toContain('/api/current_user');
+  expect(after.map((c) => c.path)).not.toContain('/api/daily_today');
+  for (const c of after) expect((await c.headers).authorization).toBe(`Bearer hs1.${token}`);
+
+  // A reload keeps the guest and their running daily
+  await page.reload();
+  await hydrated(page);
+  await expect(board(page)).toHaveClass(/board-interactive/);
+  expect((await saved(page, DAILY_KEY)).moves).toBe(1);
 });
 
 test('an app the server no longer answers asks for an update, once', async ({ page, problems }) => {
