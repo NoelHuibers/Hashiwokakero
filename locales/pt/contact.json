@@ -48,5 +48,14 @@
   "sent": "Sua mensagem chegou. Se você deixou um endereço de e-mail, responderemos por lá.",
   "another": "Escrever outra mensagem",
   "privacy": "Usamos sua mensagem e o que é enviado com ela só para responder e corrigir problemas, e a apagamos em no máximo seis meses. Mais detalhes na <a>política de privacidade</a>.",
-  "by_mail": "Prefere e-mail?"
+  "by_mail": "Prefere e-mail?",
+  "fixed": {
+    "subject": "o que você nos contou está resolvido",
+    "fixed": "O problema que você relatou foi corrigido.",
+    "done": "Sua ideia agora faz parte do Hashi.",
+    "app": "Chega com a próxima atualização do app.",
+    "web": "Já está no ar em hashi.rs.",
+    "quote": "Você escreveu:",
+    "thanks": "Obrigado por ajudar a melhorar o Hashi!"
+  }
 }

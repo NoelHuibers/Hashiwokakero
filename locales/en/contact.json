@@ -48,5 +48,14 @@
   "sent": "Your message has arrived. If you left an email address, we'll answer there.",
   "another": "Write another message",
   "privacy": "We only use your message and what's sent with it to answer you and to fix problems, and delete it after six months at the latest. More in the <a>privacy policy</a>.",
-  "by_mail": "Prefer email?"
+  "by_mail": "Prefer email?",
+  "fixed": {
+    "subject": "what you told us about is done",
+    "fixed": "The problem you reported is fixed.",
+    "done": "Your idea is now part of Hashi.",
+    "app": "It arrives with the next update of the app.",
+    "web": "It is live on hashi.rs already.",
+    "quote": "You wrote:",
+    "thanks": "Thank you for helping make Hashi better!"
+  }
 }

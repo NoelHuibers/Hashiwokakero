@@ -128,7 +128,13 @@ fn Dashboard() -> impl IntoView {
                     <BenchmarksAdmin on_change=Callback::new(move |()| load_overview()) />
                 }
                     .into_any(),
-                "messages" => view! { <MessagesAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
+                "messages" => view! {
+                    <MessagesAdmin
+                        on_change=Callback::new(move |()| load_overview())
+                        issues_repo=Signal::derive(move || overview.with(|o| o.as_ref().and_then(|o| o.issues_repo.clone())))
+                    />
+                }
+                    .into_any(),
                 "names" => view! { <NamesAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
                 "reports" => view! { <ReportsAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),
                 "bans" => view! { <BansAdmin on_change=Callback::new(move |()| load_overview()) /> }.into_any(),

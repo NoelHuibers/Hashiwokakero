@@ -219,6 +219,12 @@ async fn write_rows(conn: &Connection, version: usize) {
         "#)
         .await;
     }
+    if version >= 25 {
+        // An issue was made of the bug, it was fixed and Kim was told
+        run("UPDATE contact_messages SET status = 'issue', github_issue = 190, issue_checked_at = 9600,
+                 issue_closed_at = 9600, fixed_mailed_at = 9600 WHERE message = 'The board froze'")
+        .await;
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -239,7 +245,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        24,
+        25,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -443,6 +449,12 @@ async fn old_databases_migrate_with_their_data() {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'closed_month_%'",
                 4,
             ),
+            // Messages from before issues were looked at: not yet
+            (
+                "SELECT COUNT(*) FROM contact_messages
+                 WHERE issue_checked_at IS NULL AND issue_closed_at IS NULL AND fixed_mailed_at IS NULL",
+                if version >= 25 { 1 } else { i64::from(version >= 7) * (1 + i64::from(version >= 24)) },
+            ),
             // Open, not resolved
             (
                 "SELECT COUNT(*) FROM reports r JOIN blocks b ON b.user_id = r.reporter_id
@@ -471,14 +483,20 @@ async fn old_databases_migrate_with_their_data() {
             let bug = messages.iter().find(|m| m.message == "The board froze");
             assert_eq!(bug.is_some(), version >= 24, "{label}");
             if let Some(bug) = bug {
+                let (status, issue) = if version >= 25 {
+                    (FeedbackStatus::Issue, Some(190))
+                } else {
+                    (FeedbackStatus::Answered, None)
+                };
                 assert_eq!(
-                    (bug.kind, bug.status, bug.locale.as_deref(), bug.handled_at),
                     (
-                        FeedbackKind::Bug,
-                        FeedbackStatus::Answered,
-                        Some("de"),
-                        Some(9500)
+                        bug.kind,
+                        bug.status,
+                        bug.locale.as_deref(),
+                        bug.handled_at,
+                        bug.github_issue
                     ),
+                    (FeedbackKind::Bug, status, Some("de"), Some(9500), issue),
                     "{label}"
                 );
                 let context = bug.context.as_ref().unwrap();

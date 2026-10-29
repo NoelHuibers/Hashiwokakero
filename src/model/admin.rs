@@ -25,6 +25,10 @@ pub struct AdminOverview {
     /// Reports of players nobody looked at yet, see `AdminReport`.
     #[serde(default)]
     pub reports: i64,
+    /// The repository feedback becomes issues in (`owner/name`), `None` without
+    /// `GITHUB_FEEDBACK_TOKEN`.
+    #[serde(default)]
+    pub issues_repo: Option<String>,
 }
 
 /// A name on the boards that the list of blocked names flags: chosen before a word was on the

@@ -764,7 +764,7 @@ pub async fn cleanup_guests(conn: &Connection) -> Result<usize, ServerFnError> {
 }
 
 /// Deletes abandoned guests, old contact messages and old resolved reports now and then every
-/// few hours.
+/// few hours, and tells writers of feedback that their GitHub issue is fixed (`issues`).
 pub fn start_cleanup() {
     tokio::spawn(async {
         loop {
@@ -780,6 +780,11 @@ pub fn start_cleanup() {
                     }
                     if let Err(e) = super::reports::delete_old(&conn).await {
                         eprintln!("cleanup: {e}");
+                    }
+                    match super::issues::notify_fixed_now(&conn).await {
+                        Ok(0) => {}
+                        Ok(n) => println!("cleanup: told {n} players their feedback is fixed"),
+                        Err(e) => eprintln!("cleanup: {e}"),
                     }
                 }
                 Err(e) => eprintln!("cleanup: {e}"),

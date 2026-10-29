@@ -268,9 +268,14 @@ pub(super) async fn notify(subject: &str, body: &str) -> Result<bool, String> {
     Ok(true)
 }
 
+/// The SMTP settings of the environment, `None` if they are incomplete.
+pub(super) fn smtp() -> Result<Option<Smtp>, String> {
+    Smtp::from_vars(env)
+}
+
 /// The SMTP settings (see the top of this file).
 #[derive(Debug)]
-struct Smtp {
+pub(super) struct Smtp {
     host: String,
     port: u16,
     username: String,
@@ -339,6 +344,19 @@ impl Smtp {
         builder.body(body).map_err(|e| e.to_string())
     }
 
+    /// A mail to a player, at `to`; their answer comes to us.
+    fn to_player(&self, to: &str, subject: &str, body: &str) -> Result<Message, String> {
+        let address: Address = to.parse().map_err(|e| format!("address: {e}"))?;
+        Message::builder()
+            .from(self.from.clone())
+            .reply_to(self.to.clone())
+            .to(Mailbox::new(None, address))
+            .subject(subject)
+            .header(ContentType::TEXT_PLAIN)
+            .body(body.to_string())
+            .map_err(|e| e.to_string())
+    }
+
     /// A note from the site itself, no answer expected.
     fn note(&self, subject: &str, body: &str) -> Result<Message, String> {
         Message::builder()
@@ -365,6 +383,12 @@ impl Smtp {
         .build();
         transport.send(mail).await.map_err(|e| e.to_string())?;
         Ok(())
+    }
+}
+
+impl super::issues::Mailer for Smtp {
+    async fn send(&self, to: &str, subject: &str, body: &str) -> Result<(), String> {
+        Self::send(self, self.to_player(to, subject, body)?).await
     }
 }
 
@@ -616,6 +640,16 @@ mod tests {
             "{mail}"
         );
         assert!(mail.contains("Version: Website\n"), "{mail}");
+
+        // A mail to a player: answers come to us
+        let mail = text(
+            s.to_player("kim@example.com", "Hashi: fixed", "It works now.")
+                .unwrap(),
+        );
+        assert!(mail.contains("To: kim@example.com\n"), "{mail}");
+        assert!(mail.contains("Reply-To: admin@hashi.rs\n"), "{mail}");
+        assert!(mail.contains("Subject: Hashi: fixed\n"), "{mail}");
+        assert!(s.to_player("not an address", "x", "y").is_err());
 
         // A note of the site, a report say
         let mail = text(s.note("Meldung #3", "Spieler #17").unwrap());

@@ -568,6 +568,7 @@ fn responses() -> Responses {
             messages: 3,
             names: 1,
             reports: 2,
+            issues_repo: Some("NoelHuibers/Hashiwokakero".into()),
         },
         admin_attempt: AdminAttempt {
             user_id: 7,

@@ -48,5 +48,14 @@
   "sent": "Tin nhắn của bạn đã đến nơi. Nếu bạn để lại địa chỉ email, chúng tôi sẽ trả lời qua đó.",
   "another": "Viết tin nhắn khác",
   "privacy": "Chúng tôi chỉ dùng tin nhắn của bạn và những gì được gửi kèm để trả lời và sửa lỗi, và sẽ xóa nó chậm nhất sau sáu tháng. Xem thêm trong <a>chính sách quyền riêng tư</a>.",
-  "by_mail": "Bạn thích gửi email hơn?"
+  "by_mail": "Bạn thích gửi email hơn?",
+  "fixed": {
+    "subject": "điều bạn góp ý đã được xử lý",
+    "fixed": "Lỗi bạn báo đã được sửa.",
+    "done": "Ý tưởng của bạn giờ đã có trong Hashi.",
+    "app": "Bản sửa sẽ có trong lần cập nhật ứng dụng tiếp theo.",
+    "web": "Đã có trên hashi.rs.",
+    "quote": "Bạn đã viết:",
+    "thanks": "Cảm ơn bạn đã giúp Hashi tốt hơn!"
+  }
 }

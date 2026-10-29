@@ -194,6 +194,11 @@ fn requests() -> Vec<Entry> {
             id: 9,
             status: FeedbackStatus::Answered,
         }),
+        entry(&api::AdminCreateIssue {
+            id: 9,
+            title: "The hint froze the board".into(),
+            body: "After the second check.".into(),
+        }),
         entry(&api::DeleteAdminMessage { id: 9 }),
         entry(&api::AdminNames {}),
         entry(&api::AdminRenamePlayer { id: 9 }),
