@@ -16,8 +16,8 @@
 // The stores' limits: Play's names ≤ 100 and descriptions ≤ 500 characters, names unique per
 // locale, points multiples of 5 from 5 to 200 and ≤ 2000 together, steps ≤ 10000. Game Center's
 // ids ≤ 100 single-byte characters, points ≤ 100 each and ≤ 1000 together, ≤ 100 achievements.
-// Apple documents no length for the texts: they are held to 100 (names) and 255 characters
-// (descriptions, App Store Connect's limit for Game Center's other text fields).
+// Game Center's names are held to 100 characters; App Store Connect refuses descriptions over 120
+// (409 ENTITY_ERROR.ATTRIBUTE.INVALID.TOO_LONG).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,7 +35,7 @@ export const PLAY_IDS = path.join(ROOT, 'app/achievements-play.json');
 export const ICON_SIZE = { apple: 1024, play: 512 };
 export const LIMITS = {
   play: { name: 100, description: 500, points: [5, 200], total: 2000, steps: 10_000, count: 200, leaderboards: 70 },
-  apple: { name: 100, description: 255, points: [5, 100], total: 1000, id: 100, count: 100, leaderboards: 100 },
+  apple: { name: 100, description: 120, points: [5, 100], total: 1000, id: 100, count: 100, leaderboards: 100 },
 };
 
 const chars = (text) => [...text].length;
