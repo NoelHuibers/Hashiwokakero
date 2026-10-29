@@ -101,7 +101,7 @@ test('the daily time is a daily Game Center leaderboard in hundredths, and not o
   const daily = catalogue.apple.leaderboards.find((b) => b.id === 'daily_time');
   assert.equal(daily.defaultFormatter, 'ELAPSED_TIME_CENTISECOND');
   assert.equal(daily.scoreSortType, 'ASC');
-  assert.deepEqual(daily.recurrence, { duration: 'P1D', rule: 'FREQ=DAILY;INTERVAL=1' });
+  assert.deepEqual(daily.recurrence, { duration: 'PT24H', rule: 'FREQ=DAILY;INTERVAL=1' });
   assert.deepEqual(catalogue.play.leaderboards.map((b) => b.id), ['puzzles_solved', 'best_streak']);
   for (const b of catalogue.play.leaderboards) assert.equal(b.scoreOrder, 'LARGER_IS_BETTER');
   assert.equal(catalogue.apple.leaderboards.find((b) => b.id === 'best_streak').recurrence, null);
@@ -176,7 +176,7 @@ test('Game Center: everything once, then nothing', async () => {
   const secret = [...fake.state.components.values()].find((c) => c.attributes.vendorIdentifier === 'stamp_leap_day');
   assert.equal(secret.attributes.showBeforeEarned, false);
   const daily = [...fake.state.components.values()].find((c) => c.attributes.vendorIdentifier === 'daily_time');
-  assert.equal(daily.attributes.recurrenceDuration, 'P1D');
+  assert.equal(daily.attributes.recurrenceDuration, 'PT24H');
   assert.match(daily.attributes.recurrenceStartDate, /T00:00:00Z$/);
 
   const second = counting(fake);
