@@ -272,10 +272,20 @@ test('Game Center signs in without covering the page', async ({ app }) => {
   }
   expect(source, 'a Game Center sheet over the page').not.toMatch(/Game Center/i);
 
-  // The button's command: the sheet GameKit handed over, or a refusal if it handed none
-  const shown = await invoke('plugin:hashi|games_show', { kind: 'achievements' });
+  // The button's command: the sheet GameKit handed over, which answers only once a player signed
+  // in on it (nobody does here), or a refusal if it handed none
+  const shown = await app.evaluate(() =>
+    Promise.race([
+      (window as any).__TAURI_INTERNALS__.invoke('plugin:hashi|games_show', { kind: 'achievements' }).then(
+        (answer: unknown) => ({ answer: answer ?? null }),
+        (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
+      ),
+      new Promise((resolve) => setTimeout(() => resolve({ waiting: true }), 2000)),
+    ]),
+  );
   test.info().annotations.push({ type: 'games_show', description: JSON.stringify(shown) });
   if ('refused' in shown) expect(shown.refused).toContain('not signed in to Game Center');
+  else expect(shown, 'games_show without a sign-in').toEqual({ waiting: true });
   await new Promise((resolve) => setTimeout(resolve, 2000));
   await app.screenshot('game-center.png');
 });

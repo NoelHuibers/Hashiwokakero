@@ -223,7 +223,8 @@ a leaderboard keeps the best score), so the same report again changes nothing.
 The page (`src/api/native.rs`, the arguments in `src/api/games.rs`, nothing on the website):
 
 - `games_sign_in()`, once at the start (`mount`), silently: the platform signs in whoever is
-  signed in on the phone. Its answer, `{ available, signedIn }`, is shared by every later call.
+  signed in on the phone. Its answer, `{ available, signedIn }`, is shared by every later call,
+  until a sign-in through the button (`games_show`, below).
   `available`: the phone has the service, always on iOS, on Android only in a build with Play
   Games' project id (below).
 - `games_report(achievements, scores)`: each achievement as `{ id, steps, target, earned }`
@@ -231,7 +232,8 @@ The page (`src/api/native.rs`, the arguments in `src/api/games.rs`, nothing on t
   `{ id, value }`, with the platform's ids (Apple's vendor ids; Play's own, from
   `app/achievements-play.json`). `games::Report::new` sends only what there is to say: the steps
   within `1..=target`, all of them once earned, an unearned stamp without steps not at all. It
-  waits for the sign-in and runs in the background; the plugin skips it while nobody is signed in.
+  runs in the background; the plugin answers once the platform took it (iOS) or queued it
+  (Android) and skips it while nobody is signed in.
 - When the page reports (`native::games_sync`, `games_progress`): at the start, once the sign-in
   signed a player in, and after each daily the server took (the win screen's `submitted`, or a
   finish the recovery found), or stamps the server announces (yesterday's medal, a Dojo stamp),
@@ -242,12 +244,16 @@ The page (`src/api/native.rs`, the arguments in `src/api/games.rs`, nothing on t
   vendor ids on iOS; on Android Play's, from `app/achievements-play.json` as it was when the page
   was built (`include_str!`): a stamp or leaderboard missing there isn't reported. The page sends
   only what changed since its last report (`games::Reported`), the next start everything again.
-  Without a signed-in player at the start nothing is asked or sent until the next start, even
-  after a sign-in through the button.
+  A report the plugin refuses (offline, a platform's error) is logged and forgotten, so the next
+  report sends it again. Without a signed-in player nothing is asked or sent, until a sign-in
+  through the button.
 - `games_show(Board::Achievements | Leaderboards)`: the service's own screens. The stamp book of
   the account page has a button for the achievements ("Show in Game Center",
   `stamps.games.show` with the service's name, which isn't translated), in the app where the
-  service is available.
+  service is available. The plugin answers once it showed the screens, signing the player in
+  first if nobody was. A player the start didn't sign in is then asked about again
+  (`games::shown`): signed in now, every later call of `games_sign_in` gets that answer and
+  `games_sync` runs once, so the stamps go to the platform without a restart.
 
 All of it is a no-op outside the app, and a failure is only logged, never shown. The commands are
 `games_sign_in`, `games_report` and `games_show` of the app's plugin (`build.rs`,
@@ -267,12 +273,14 @@ Tauri's own plugins; the entitlement `com.apple.developer.game-center` is in
   `percentComplete` of the steps, 100 once earned. Game Center's banner shows when exactly one
   achievement is completed by it (a stamp just earned), not for a row of them at once (the stamps
   from before, at the first sign-in), where the page's own toasts already speak. Scores go
-  through `GKLeaderboard.submitScore`, one board each.
+  through `GKLeaderboard.submitScore`, one board each. The command answers once GameKit answered
+  all of them, refused if one failed.
 - The screens open through `GKAccessPoint.shared.trigger(state:)`, with the access point's
   floating button off: it would sit over the page's header. `GKGameCenterViewController` ends
   with iOS 26 (deprecated in its SDK), and the access point presents and dismisses the screens
   itself. Without a signed-in player the button shows the sign-in sheet GameKit kept, if it
-  handed one over.
+  handed one over; the command answers once GameKit calls the handler again with the player
+  signed in, never if the sheet is cancelled.
 - The release checks that the signed app has the entitlement and its App Store profile Game
   Center (`app-release.yml`).
 
@@ -294,7 +302,8 @@ Tauri's own plugins; the entitlement `com.apple.developer.game-center` is in
   Play unlocks it at its total, which has to be the stamp's target, and the achievement has to be
   incremental in the Play Console) and unlocks the others (`unlock`), and submits the scores
   (`submitScore`); Play sends them when it can. The button signs in first if nobody is (`signIn`,
-  the one time Play Games may ask) and opens `achievementsIntent` or `allLeaderboardsIntent`.
+  the one time Play Games may ask) and opens `achievementsIntent` or `allLeaderboardsIntent`; the
+  command answers when the player leaves that screen (so a new player's stamps go then).
 - The release checks the provider against the id and names it in the job summary.
 
 To turn Play Games on: the Play Games Services project in the Play Console (its credentials for

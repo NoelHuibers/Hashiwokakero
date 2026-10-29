@@ -27,9 +27,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use wasm_bindgen::{JsCast, JsValue};
 
-use super::games::{
-    self, Achievement, Board, Platform, PlayIds, Report, Reported, Score, Show, Status,
-};
+use super::games::{self, Board, Platform, PlayIds, Report, Reported, Show, Status};
 use crate::model::UserStats;
 
 /// Tauri's `invoke` and the object it belongs to, if the page runs in the app's `WebView`.
@@ -82,12 +80,10 @@ fn failed(error: &JsValue) -> ServerFnError {
     self::error(error.as_string().unwrap_or_else(|| format!("{error:?}")))
 }
 
-/// Runs a plugin's command (`plugin:<name>|<command>`) with `args`, in the background: nothing
-/// waits for it, a failure is only logged. `false` outside the app.
-fn run(command: &'static str, args: &impl Serialize) -> bool {
-    let Some((internals, invoke)) = invoke() else {
-        return false;
-    };
+/// Calls a plugin's command (`plugin:<name>|<command>`) with `args`, right away: its answer
+/// (see [`failed`] for its error), `None` outside the app.
+fn plugin(command: &'static str, args: &impl Serialize) -> Option<wasm_bindgen_futures::JsFuture> {
+    let (internals, invoke) = invoke()?;
     let args = serde_json::to_string(args)
         .ok()
         .and_then(|json| js_sys::JSON::parse(&json).ok())
@@ -96,8 +92,17 @@ fn run(command: &'static str, args: &impl Serialize) -> bool {
         Ok(promise) => js_sys::Promise::resolve(&promise),
         Err(e) => js_sys::Promise::reject(&e),
     };
+    Some(wasm_bindgen_futures::JsFuture::from(promise))
+}
+
+/// Runs a plugin's command (`plugin:<name>|<command>`) with `args`, in the background: nothing
+/// waits for it, a failure is only logged. `false` outside the app.
+fn run(command: &'static str, args: &impl Serialize) -> bool {
+    let Some(answer) = plugin(command, args) else {
+        return false;
+    };
     leptos::task::spawn_local(async move {
-        if let Err(e) = wasm_bindgen_futures::JsFuture::from(promise).await {
+        if let Err(e) = answer.await {
             leptos::logging::warn!("{command} failed: {}", failed(&e));
         }
     });
@@ -148,8 +153,9 @@ thread_local! {
 
 /// Signs the player in to the phone's games service, Game Center or Google Play Games
 /// (`api::games`), without asking: the platform signs in whoever is signed in on the phone. Asked
-/// once per page, at the start (`mount`); later calls get the same answer. Never fails: outside
-/// the app, or when the plugin refuses (a desktop build), the service isn't there.
+/// once per page, at the start (`mount`); later calls get the same answer, or the one after a
+/// sign-in through the button ([`games_show`]). Never fails: outside the app, or when the plugin
+/// refuses (a desktop build), the service isn't there.
 ///
 /// iOS may want to show its sign-in sheet; the plugin does that once per install at most, and
 /// never in the simulator (`HashiPlugin.swift`). Android signs in by itself at the start
@@ -194,26 +200,17 @@ async fn ask_games() -> Status {
     })
 }
 
-/// Reports `achievements` and `scores` to the phone's games service, once its sign-in is done.
-/// What the server says the player has, mapped to the platform's ids by the caller (Apple's
-/// vendor ids, Play's from `app/achievements-play.json`); see [`Report::new`] for what is left
-/// out. In the background, a failure is only logged. Nothing outside the app, nor where the
-/// service isn't there; the plugin skips it while nobody is signed in.
-pub(crate) fn games_report(
-    achievements: impl IntoIterator<Item = Achievement>,
-    scores: impl IntoIterator<Item = Score>,
-) {
-    let Some(report) = Report::new(achievements, scores) else {
-        return;
-    };
-    if !available() {
-        return;
-    }
-    leptos::task::spawn_local(async move {
-        if games_sign_in().await.available {
-            run("plugin:hashi|games_report", &report);
-        }
-    });
+/// Reports `report` to the phone's games service: what the server says the player has, with the
+/// platform's ids (Apple's vendor ids, Play's from `app/achievements-play.json`). Done once the
+/// plugin took it, on iOS once Game Center did; it skips it while nobody is signed in. Fails
+/// outside the app.
+#[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
+async fn games_report(report: &Report) -> Result<(), ServerFnError> {
+    plugin("plugin:hashi|games_report", report)
+        .ok_or_else(|| error("the app's commands are missing"))?
+        .await
+        .map_err(|e| failed(&e))
+        .map(drop)
 }
 
 thread_local! {
@@ -224,8 +221,8 @@ thread_local! {
 /// Reports the player's stamps and scores as the server has them (`my_stats`) to the phone's
 /// games service: at the start (`mount`), and whenever the server says something changed, a
 /// daily it took (the daily page's `submitted`) or stamps earned since the last visit. Only for
-/// a player the start's sign-in signed in, otherwise the server isn't even asked. Never fails,
-/// a failed call is only logged.
+/// a player signed in, at the start or through the button ([`games_show`]), otherwise the server
+/// isn't even asked. Never fails, a failed call is only logged.
 pub(crate) fn games_sync() {
     if !available() {
         return;
@@ -245,7 +242,8 @@ pub(crate) fn games_sync() {
 
 /// Reports what the server's statistics `stats` of the player say, those the page has already
 /// (the account page's), see [`games_sync`]: [`games::report`] with the ids of the phone's
-/// platform, only what this page hasn't reported yet.
+/// platform, only what this page hasn't reported yet: a report that failed is logged and goes
+/// again with the next one.
 pub(crate) fn games_progress(stats: &UserStats) {
     if !available() {
         return;
@@ -260,16 +258,43 @@ pub(crate) fn games_progress(stats: &UserStats) {
         if !games_sign_in().await.signed_in {
             return;
         }
-        if let Some(fresh) = REPORTED.with_borrow_mut(|reported| reported.fresh(report)) {
-            games_report(fresh.achievements, fresh.scores);
+        let Some(fresh) = REPORTED.with_borrow_mut(|reported| reported.fresh(report)) else {
+            return;
+        };
+        if let Err(e) = games_report(&fresh).await {
+            leptos::logging::warn!("games_report failed: {e}");
+            REPORTED.with_borrow_mut(|reported| reported.failed(&fresh));
         }
     });
 }
 
 /// Opens the games service's own screens, its achievements or its leaderboards, after its
 /// sign-in when nobody is signed in yet (a tap on a button: the one time the plugin may ask).
+/// A player it signed in gets the stamps reported right away ([`games::shown`]): later calls of
+/// [`games_sign_in`] answer that the player is signed in, and [`games_sync`] runs once.
 pub(crate) fn games_show(kind: Board) {
-    run("plugin:hashi|games_show", &Show { kind });
+    let Some(show) = plugin("plugin:hashi|games_show", &Show { kind }) else {
+        return;
+    };
+    leptos::task::spawn_local(async move {
+        let before = games_sign_in().await;
+        let signed_in = |now: Status| {
+            GAMES.with_borrow_mut(|games| {
+                *games = Some(futures::future::ready(now).boxed_local().shared());
+            });
+            games_sync();
+        };
+        if let Err(e) = games::shown(
+            before,
+            show.map(|r| r.map(drop).map_err(|e| failed(&e))),
+            ask_games,
+            signed_in,
+        )
+        .await
+        {
+            leptos::logging::warn!("games_show failed: {e}");
+        }
+    });
 }
 
 /// The name of the phone's games service, for its button: `None` outside the app.

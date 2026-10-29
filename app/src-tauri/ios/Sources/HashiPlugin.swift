@@ -61,6 +61,8 @@ class HashiPlugin: Plugin {
   private var signInAnswered = false
   /// The sign-in sheet GameKit handed over and nobody saw, for `games_show`.
   private var signInSheet: UIViewController?
+  /// The page's `games_show` that showed that sheet, answered once GameKit signed the player in.
+  private var showWaiting: Invoke?
   /// Set once GameKit's sign-in sheet was shown by itself: once per install, never again.
   private static let promptedKey = "hashi.gameCenterPrompted"
 
@@ -156,6 +158,10 @@ class HashiPlugin: Plugin {
             self.present(sheet)
           }
           self.answerSignIn()
+          if GKLocalPlayer.local.isAuthenticated, let shown = self.showWaiting {
+            self.showWaiting = nil
+            shown.resolve()
+          }
         }
       }
       DispatchQueue.main.asyncAfter(deadline: .now() + 10) { self.answerSignIn() }
@@ -166,7 +172,9 @@ class HashiPlugin: Plugin {
    * What the server says the player has: an achievement's percentComplete (of its steps, 100
    * once earned) and the scores, while a player is signed in. Only achievements that got further
    * than Game Center has them; its completion banner only when one of them is done now, not for
-   * a row of them at once (the stamps from before the app had Game Center).
+   * a row of them at once (the stamps from before the app had Game Center). Answers once Game
+   * Center took all of it, refused if it didn't take something (offline): the page sends that
+   * again with its next report.
    */
   @objc public func gamesReport(_ invoke: Invoke) throws {
     let args = try invoke.parseArgs(GamesReportArgs.self)
@@ -195,23 +203,42 @@ class HashiPlugin: Plugin {
         if completed.count == 1 && error == nil {
           completed[0].showsCompletionBanner = true
         }
+        // GameKit's answers, on the main thread
+        let done = DispatchGroup()
+        var failures: [String] = []
         if !achievements.isEmpty {
+          done.enter()
           GKAchievement.report(achievements) { error in
-            if let error {
-              Logger.info("Game Center: achievements not reported: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+              if let error {
+                Logger.info("Game Center: achievements not reported: \(error.localizedDescription)")
+                failures.append("achievements not reported: \(error.localizedDescription)")
+              }
+              done.leave()
             }
           }
         }
         for score in args.scores {
+          done.enter()
           GKLeaderboard.submitScore(
             Int(score.value), context: 0, player: GKLocalPlayer.local, leaderboardIDs: [score.id]
           ) { error in
-            if let error {
-              Logger.info("Game Center: score not submitted: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+              if let error {
+                Logger.info("Game Center: score not submitted: \(error.localizedDescription)")
+                failures.append("\(score.id) not submitted: \(error.localizedDescription)")
+              }
+              done.leave()
             }
           }
         }
-        invoke.resolve()
+        done.notify(queue: .main) {
+          if failures.isEmpty {
+            invoke.resolve()
+          } else {
+            invoke.reject("Game Center: " + failures.joined(separator: "; "))
+          }
+        }
       }
     }
   }
@@ -220,7 +247,9 @@ class HashiPlugin: Plugin {
    * Game Center's own screens, the achievements or the leaderboards, through the access point
    * (its floating button stays off): GKGameCenterViewController is deprecated since iOS 26, and
    * the access point presents and dismisses them itself. A player who isn't signed in gets
-   * GameKit's sign-in sheet instead, if it handed one over.
+   * GameKit's sign-in sheet instead, if it handed one over: answered once GameKit signed the
+   * player in on it (it calls the sign-in's handler again), so that the page reports the stamps
+   * then, never if the sheet is cancelled.
    */
   @objc public func gamesShow(_ invoke: Invoke) throws {
     let args = try invoke.parseArgs(GamesShowArgs.self)
@@ -238,8 +267,8 @@ class HashiPlugin: Plugin {
         invoke.resolve()
       } else if let sheet = self.signInSheet {
         self.signInSheet = nil
+        self.showWaiting = invoke
         self.present(sheet)
-        invoke.resolve()
       } else {
         invoke.reject("not signed in to Game Center")
       }
