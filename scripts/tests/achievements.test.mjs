@@ -110,7 +110,7 @@ test('the daily time is a daily Game Center leaderboard in hundredths, and not o
 test('each check catches what it is there for', () => {
   has(problems((s) => delete s.stamps.de.names.oni), /locales\/de\/stamps.json: no name for oni/);
   has(problems((s) => (s.stamps.fr.texts.gold = 'x'.repeat(501))), /Play Games fr-FR stamp_gold: description over 500/);
-  has(problems((s) => (s.stamps.fr.texts.gold = 'x'.repeat(256))), /Game Center fr-FR stamp_gold: afterEarnedDescription over 255/);
+  has(problems((s) => (s.stamps.fr.texts.gold = 'x'.repeat(121))), /Game Center fr-FR stamp_gold: afterEarnedDescription over 120/);
   has(problems((s) => (s.stamps.ko.names.gold = 'x'.repeat(101))), /Play Games ko-KR stamp_gold: name over 100/);
   has(problems((s) => (s.stamps.en.names.gold = 'Gold, first')), /no comma in the name/);
   has(problems((s) => (s.stamps.it.names.gold = s.stamps.it.names.podium)), /Play Games it-IT: stamp_gold and stamp_podium|stamp_podium and stamp_gold/);
