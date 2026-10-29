@@ -573,6 +573,27 @@ async fn deleting_an_account_takes_its_open_puzzles_and_attempts() {
     assert_eq!(theirs.stats.map(|s| s.solved), Some(0));
 }
 
+/// Turso refuses a statement given more parameters than it uses, which local SQLite lets through:
+/// deleting an account failed on the site with "Number of arguments mismatch: expected 1, got 2".
+/// Each statement of the deletion and of a guest's sign-in takes exactly what it's given.
+#[tokio::test]
+async fn each_statement_takes_the_parameters_it_is_given() {
+    let conn = db().await;
+    for (statements, given) in [
+        (&ERASE_OPEN[..], 2),
+        (&ERASE[..], 1),
+        (&MERGE_GUEST[..], 2),
+        (&crate::server::groups::ERASE[..], 1),
+        (&crate::server::groups::hanko::ERASE[..], 1),
+        (&crate::server::groups::hanko::MERGE_GUEST[..], 2),
+    ] {
+        for sql in statements {
+            let statement = conn.prepare(sql).await.unwrap();
+            assert_eq!(statement.parameter_count(), given, "{sql}");
+        }
+    }
+}
+
 #[tokio::test]
 async fn abandoned_guests_go_with_their_puzzles() {
     let conn = db().await;

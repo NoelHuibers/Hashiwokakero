@@ -882,19 +882,30 @@ pub async fn locked(
 /// own attempts go. The puzzles of groups that went with them go by the trigger
 /// `group_puzzles_gone` (db.rs).
 pub async fn erase(conn: &Connection, user: i64, now: i64) -> Result<(), ServerFnError> {
-    for sql in [
-        "DELETE FROM group_puzzle_attempts WHERE puzzle_id IN
-            (SELECT id FROM group_puzzles WHERE author_id = ?1 AND closes_at > ?2)",
-        "DELETE FROM group_puzzles WHERE author_id = ?1 AND closes_at > ?2",
-        "UPDATE group_puzzles SET author_id = NULL WHERE author_id = ?1",
-        "DELETE FROM group_puzzle_attempts WHERE user_id = ?1",
-    ] {
+    for sql in ERASE_OPEN {
         conn.execute(sql, params![user, now])
             .await
             .map_err(db_err)?;
     }
+    for sql in ERASE {
+        conn.execute(sql, params![user]).await.map_err(db_err)?;
+    }
     Ok(())
 }
+
+/// [`erase`]'s statements for the open puzzles, `?1` the user, `?2` now.
+const ERASE_OPEN: [&str; 2] = [
+    "DELETE FROM group_puzzle_attempts WHERE puzzle_id IN
+        (SELECT id FROM group_puzzles WHERE author_id = ?1 AND closes_at > ?2)",
+    "DELETE FROM group_puzzles WHERE author_id = ?1 AND closes_at > ?2",
+];
+
+/// [`erase`]'s statements for the rest, `?1` the user. Apart from [`ERASE_OPEN`]: Turso refuses
+/// a statement given more parameters than it uses (local SQLite doesn't mind).
+const ERASE: [&str; 2] = [
+    "UPDATE group_puzzles SET author_id = NULL WHERE author_id = ?1",
+    "DELETE FROM group_puzzle_attempts WHERE user_id = ?1",
+];
 
 /// What signing in does to the group puzzles of the guest who played in this browser before.
 ///
