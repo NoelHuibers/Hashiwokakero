@@ -1,17 +1,52 @@
 {
-  "title": "Kontakt",
-  "description": "Pytania, pomysły albo błąd w Hashi? Napisz do nas.",
-  "intro": "Pytanie, pomysł, błąd albo coś w sprawie twoich danych? Napisz do nas, odpowiemy najszybciej, jak się da.",
+  "title": "Opinie",
+  "description": "Znalazłeś błąd, masz pomysł albo pytanie o Hashi? Daj nam znać.",
+  "intro": "Błąd, pomysł, pytanie albo coś w sprawie twoich danych? Daj nam znać: czytamy każdą wiadomość i odpowiadamy najszybciej, jak się da.",
+  "kind": "Czego to dotyczy?",
+  "kinds": {
+    "bug": "Błąd",
+    "idea": "Pomysł",
+    "question": "Pytanie",
+    "other": "Coś innego"
+  },
+  "kind_hints": {
+    "bug": "Coś nie działa",
+    "idea": "Coś, co Hashi mogłoby robić",
+    "question": "Coś, co chcesz wiedzieć",
+    "other": "Pochwała, twoje dane, cokolwiek"
+  },
+  "placeholders": {
+    "bug": "Co zrobiłeś, co się stało i czego się spodziewałeś?",
+    "idea": "Czego byś chciał i do czego?",
+    "question": "Co chcesz wiedzieć?",
+    "other": "Co chcesz nam powiedzieć?"
+  },
   "name": "Imię",
   "email": "E-mail",
   "optional": "opcjonalnie",
   "email_hint": "Tylko jeśli chcesz dostać odpowiedź.",
   "message": "Wiadomość",
+  "context": {
+    "title": "Wysyłane z twoją wiadomością",
+    "intro": "Żebyśmy szybciej znaleźli problem. Nic więcej o tobie ani twoim urządzeniu nie dodajemy.",
+    "app": "Wersja",
+    "app_version": "Aplikacja {{ version }}",
+    "website": "Strona internetowa",
+    "platform": "Platforma",
+    "system": "System",
+    "browser": "Przeglądarka",
+    "language": "Język",
+    "page": "Strona",
+    "daily": "Most dnia",
+    "player": "Gracz",
+    "screen": "Ekran",
+    "errors": "Ostatnie błędy"
+  },
   "send": "Wyślij",
   "sending": "Wysyłanie…",
   "sent_title": "Dziękujemy!",
   "sent": "Twoja wiadomość dotarła. Jeśli podano adres e-mail, odpowiemy na niego.",
   "another": "Napisz kolejną wiadomość",
-  "privacy": "Używamy twojej wiadomości tylko po to, by na nią odpowiedzieć, i usuwamy ją najpóźniej po sześciu miesiącach. Więcej w <a>polityce prywatności</a>.",
+  "privacy": "Używamy twojej wiadomości i tego, co jest z nią wysyłane, tylko po to, by ci odpowiedzieć i naprawiać błędy, i usuwamy ją najpóźniej po sześciu miesiącach. Więcej w <a>polityce prywatności</a>.",
   "by_mail": "Wolisz e-mail?"
 }

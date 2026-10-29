@@ -220,7 +220,7 @@
     "imprint": "Impressum",
     "privacy": "Datenschutz",
     "english": "English version",
-    "contact": "Kontakt",
+    "contact": "Feedback & Kontakt",
     "rules": "Community-Regeln"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "Musik",
     "music_hint": "Ruhige Koto-Melodien"
   },
-  "settings": "Einstellungen"
+  "settings": "Einstellungen",
+  "help": {
+    "title": "Hilfe",
+    "bug": "Fehler melden",
+    "idea": "Idee vorschlagen",
+    "question": "Frage stellen"
+  }
 }

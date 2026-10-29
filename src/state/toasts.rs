@@ -80,7 +80,11 @@ impl Toasts {
     ///
     /// In the app, a call that didn't reach the server shows a calm notice instead, once while
     /// offline: without a network every call fails, and practice works on.
+    ///
+    /// Every error is noted for the feedback form's context (`note_error`), its code if it has
+    /// one.
     pub fn push_error(&self, error: ServerFnError) {
+        super::note_error(&error_note(&error));
         match self.noted(cfg!(feature = "csr"), &error) {
             Shown::Error => {}
             Shown::Offline => {
@@ -145,6 +149,16 @@ fn shown(app: bool, error: &ServerFnError, noted: bool) -> Shown {
     }
 }
 
+/// How the feedback form's context lists a failed call: `E:<code>` of an error the server
+/// reported, the error itself (cut) otherwise.
+fn error_note(error: &ServerFnError) -> String {
+    let text = error.to_string();
+    match crate::model::ApiError::from_message(&text) {
+        Some(e) => format!("E:{}", e.code()),
+        None => text,
+    }
+}
+
 /// The button of an error's toast: an update for an app that needs one, else a reload for an
 /// outdated tab.
 fn error_action(update: bool, outdated: bool) -> Option<ToastAction> {
@@ -201,6 +215,15 @@ mod tests {
 
     fn text(s: &'static str) -> ToastText {
         std::sync::Arc::new(move |_| s.to_string())
+    }
+
+    /// The feedback form lists an error the server reported by its code, others as they are.
+    #[test]
+    fn errors_are_noted_by_their_code() {
+        let reported = crate::model::ApiError::Database.fail();
+        assert_eq!(error_note(&reported), "E:database");
+        let other = ServerFnError::Request("connection refused".into());
+        assert!(error_note(&other).contains("connection refused"));
     }
 
     /// Three toasts at most, the newest ones, each with its own id.

@@ -220,7 +220,7 @@
     "imprint": "Info legal",
     "privacy": "Privasi",
     "english": "Versi bahasa Inggris",
-    "contact": "Kontak",
+    "contact": "Masukan & kontak",
     "rules": "Aturan komunitas"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "Musik",
     "music_hint": "Melodi koto yang tenang"
   },
-  "settings": "Pengaturan"
+  "settings": "Pengaturan",
+  "help": {
+    "title": "Bantuan",
+    "bug": "Laporkan bug",
+    "idea": "Usulkan ide",
+    "question": "Ajukan pertanyaan"
+  }
 }

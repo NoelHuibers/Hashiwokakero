@@ -819,7 +819,26 @@
     "email": "someone@example.com",
     "message": "Hallo! \"Brücken\" <3",
     "created_at": 1760000000000,
-    "mailed": false
+    "mailed": false,
+    "kind": "Bug",
+    "context": {
+      "app": "1.1.0",
+      "platform": "android",
+      "os": "Android 15",
+      "browser": "WebView 141",
+      "language": "de",
+      "page": "/practice",
+      "daily": 14,
+      "player": 7,
+      "screen": "390×844 @3x",
+      "errors": [
+        "/practice E:database"
+      ]
+    },
+    "locale": "de",
+    "status": "Issue",
+    "github_issue": 185,
+    "handled_at": 1760000100000
   },
   "admin_banned": {
     "id": 9,

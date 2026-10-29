@@ -58,5 +58,9 @@
     "title": "Geblokkeerde spelers",
     "text": "Hun namen zijn voor je verborgen in de ranglijsten, in je groepen en bij je rivalen.",
     "none": "Je hebt niemand geblokkeerd. Je blokkeert een speler op diens profiel."
+  },
+  "feedback": {
+    "title": "Vragen of problemen?",
+    "text": "Meld een bug, stel een idee voor of vraag ons wat je wilt. We lezen elk bericht."
   }
 }

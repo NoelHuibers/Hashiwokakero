@@ -26,11 +26,21 @@ compile_error!("the features `hydrate` and `csr` exclude each other");
 #[cfg(all(feature = "ssr", feature = "csr"))]
 compile_error!("the features `ssr` and `csr` exclude each other");
 
+/// Panics go to the browser's console, and to the page's last errors for the feedback form
+/// (`state::note_error`).
+#[cfg(any(feature = "hydrate", feature = "csr"))]
+fn panic_hook() {
+    std::panic::set_hook(Box::new(|info| {
+        state::note_error(&format!("panic: {info}"));
+        console_error_panic_hook::hook(info);
+    }));
+}
+
 /// The website's entry point: hydrates the page the server rendered (`app::shell`).
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]
 pub fn hydrate() {
-    console_error_panic_hook::set_once();
+    panic_hook();
     leptos::mount::hydrate_body(app::App);
     mark_ready();
 }
@@ -45,7 +55,7 @@ pub fn hydrate() {
 #[cfg(feature = "csr")]
 pub fn mount(version: &'static str) {
     use leptos::prelude::Owner;
-    console_error_panic_hook::set_once();
+    panic_hook();
     api::start_app(version);
     // Before the router's listener, see there
     api::native::open_links_outside();

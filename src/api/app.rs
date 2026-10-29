@@ -126,6 +126,22 @@ pub(super) fn app_platform() -> Option<&'static str> {
     APP.get().map(|app| app.platform)
 }
 
+/// The app's platform (`android`, `ios`, `web` in a browser) and version, for the feedback
+/// form's context; `None` on the website.
+pub fn app_identity() -> Option<(&'static str, &'static str)> {
+    #[cfg(feature = "csr")]
+    {
+        APP.get().map(|app| {
+            let version = app.header.split_once('/').map_or("", |(_, v)| v);
+            (app.platform, version)
+        })
+    }
+    #[cfg(not(feature = "csr"))]
+    {
+        None
+    }
+}
+
 /// The local storage key of the session token.
 #[cfg(any(feature = "csr", test))]
 const SESSION_KEY: &str = "hashi.session";

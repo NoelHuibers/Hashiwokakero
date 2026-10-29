@@ -1,17 +1,52 @@
 {
-  "title": "İletişim",
-  "description": "Hashi hakkında bir soru, fikir ya da hata mı var? Bize yaz.",
-  "intro": "Bir soru, bir fikir, bir hata ya da verilerinle ilgili bir konu mu var? Bize yaz, en kısa sürede sana döneriz.",
+  "title": "Geri bildirim",
+  "description": "Hashi’de bir hata mı buldun, bir fikrin ya da sorun mu var? Bize anlat.",
+  "intro": "Bir hata, bir fikir, bir soru ya da verilerinle ilgili bir konu mu? Bize anlat: her mesajı okuyor, en kısa sürede sana dönüyoruz.",
+  "kind": "Konu nedir?",
+  "kinds": {
+    "bug": "Hata",
+    "idea": "Fikir",
+    "question": "Soru",
+    "other": "Başka bir şey"
+  },
+  "kind_hints": {
+    "bug": "Bir şey çalışmıyor",
+    "idea": "Hashi’nin yapabileceği bir şey",
+    "question": "Bilmek istediğin bir şey",
+    "other": "Övgü, verilerin, herhangi bir şey"
+  },
+  "placeholders": {
+    "bug": "Ne yaptın, ne oldu ve ne bekliyordun?",
+    "idea": "Ne istersin, ve ne için?",
+    "question": "Ne öğrenmek istiyorsun?",
+    "other": "Bize ne söylemek istiyorsun?"
+  },
   "name": "Ad",
   "email": "E-posta",
   "optional": "isteğe bağlı",
   "email_hint": "Sadece yanıt istiyorsan.",
   "message": "Mesaj",
+  "context": {
+    "title": "Mesajınla birlikte gönderilir",
+    "intro": "Bir sorunu daha hızlı bulabilmemiz için. Sen ya da cihazın hakkında başka hiçbir şey eklenmez.",
+    "app": "Sürüm",
+    "app_version": "Uygulama {{ version }}",
+    "website": "Web sitesi",
+    "platform": "Platform",
+    "system": "Sistem",
+    "browser": "Tarayıcı",
+    "language": "Dil",
+    "page": "Sayfa",
+    "daily": "Günün köprüsü",
+    "player": "Oyuncu",
+    "screen": "Ekran",
+    "errors": "Son hatalar"
+  },
   "send": "Gönder",
   "sending": "Gönderiliyor…",
   "sent_title": "Teşekkürler!",
   "sent": "Mesajın ulaştı. Bir e-posta adresi bıraktıysan o adrese yanıt vereceğiz.",
   "another": "Başka bir mesaj yaz",
-  "privacy": "Mesajını yalnızca yanıtlamak için kullanır ve en geç altı ay sonra sileriz. Daha fazlası <a>gizlilik politikasında</a>.",
+  "privacy": "Mesajını ve onunla gönderilenleri yalnızca sana yanıt vermek ve sorunları düzeltmek için kullanır, en geç altı ay sonra sileriz. Daha fazlası <a>gizlilik politikasında</a>.",
   "by_mail": "E-postayı mı tercih edersin?"
 }

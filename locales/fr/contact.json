@@ -1,17 +1,52 @@
 {
-  "title": "Contact",
-  "description": "Une question, une idée ou un bug dans Hashi ? Écris-nous.",
-  "intro": "Une question, une idée, un bug ou quelque chose au sujet de tes données ? Écris-nous, nous te répondrons dès que possible.",
+  "title": "Ton avis",
+  "description": "Un bug, une idée ou une question sur Hashi ? Dis-le-nous.",
+  "intro": "Un bug, une idée, une question ou quelque chose au sujet de tes données ? Dis-le-nous : nous lisons chaque message et te répondons dès que possible.",
+  "kind": "De quoi s’agit-il ?",
+  "kinds": {
+    "bug": "Bug",
+    "idea": "Idée",
+    "question": "Question",
+    "other": "Autre chose"
+  },
+  "kind_hints": {
+    "bug": "Quelque chose ne marche pas",
+    "idea": "Quelque chose que Hashi pourrait faire",
+    "question": "Quelque chose que tu veux savoir",
+    "other": "Un compliment, tes données, n’importe quoi"
+  },
+  "placeholders": {
+    "bug": "Qu’as-tu fait, que s’est-il passé et qu’attendais-tu ?",
+    "idea": "Que voudrais-tu, et pour quoi faire ?",
+    "question": "Que veux-tu savoir ?",
+    "other": "Qu’as-tu à nous dire ?"
+  },
   "name": "Nom",
   "email": "E-mail",
   "optional": "facultatif",
   "email_hint": "Seulement si tu veux une réponse.",
   "message": "Message",
+  "context": {
+    "title": "Envoyé avec ton message",
+    "intro": "Pour trouver un problème plus vite. Rien d’autre sur toi ou ton appareil n’est ajouté.",
+    "app": "Version",
+    "app_version": "Appli {{ version }}",
+    "website": "Site web",
+    "platform": "Plateforme",
+    "system": "Système",
+    "browser": "Navigateur",
+    "language": "Langue",
+    "page": "Page",
+    "daily": "Pont du jour",
+    "player": "Joueur",
+    "screen": "Écran",
+    "errors": "Erreurs récentes"
+  },
   "send": "Envoyer",
   "sending": "Envoi en cours…",
   "sent_title": "Merci !",
   "sent": "Ton message est bien arrivé. Si tu as laissé une adresse e-mail, nous te répondrons à cette adresse.",
   "another": "Écrire un autre message",
-  "privacy": "Nous utilisons ton message uniquement pour y répondre et le supprimons au plus tard après six mois. Plus d’infos dans la <a>politique de confidentialité</a>.",
+  "privacy": "Nous utilisons ton message et ce qui est envoyé avec uniquement pour te répondre et corriger des problèmes, et le supprimons au plus tard après six mois. Plus d’infos dans la <a>politique de confidentialité</a>.",
   "by_mail": "Plutôt par e-mail ?"
 }

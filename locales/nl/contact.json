@@ -1,17 +1,52 @@
 {
-  "title": "Contact",
-  "description": "Vragen, ideeën of een bug in Hashi? Schrijf ons.",
-  "intro": "Een vraag, een idee, een bug of iets over je gegevens? Schrijf ons, we reageren zo snel mogelijk.",
+  "title": "Feedback",
+  "description": "Een bug gevonden, een idee of een vraag over Hashi? Laat het ons weten.",
+  "intro": "Een bug, een idee, een vraag of iets over je gegevens? Laat het ons weten: we lezen elk bericht en reageren zo snel mogelijk.",
+  "kind": "Waar gaat het over?",
+  "kinds": {
+    "bug": "Bug",
+    "idea": "Idee",
+    "question": "Vraag",
+    "other": "Iets anders"
+  },
+  "kind_hints": {
+    "bug": "Iets werkt niet",
+    "idea": "Iets wat Hashi zou kunnen doen",
+    "question": "Iets wat je wilt weten",
+    "other": "Complimenten, je gegevens, van alles"
+  },
+  "placeholders": {
+    "bug": "Wat deed je, wat gebeurde er en wat verwachtte je?",
+    "idea": "Wat zou je willen, en waarvoor?",
+    "question": "Wat wil je weten?",
+    "other": "Wat wil je ons laten weten?"
+  },
   "name": "Naam",
   "email": "E-mail",
   "optional": "optioneel",
   "email_hint": "Alleen als je een antwoord wilt.",
   "message": "Bericht",
+  "context": {
+    "title": "Wordt met je bericht verstuurd",
+    "intro": "Zo vinden we een probleem sneller. Verder wordt niets over jou of je apparaat toegevoegd.",
+    "app": "Versie",
+    "app_version": "App {{ version }}",
+    "website": "Website",
+    "platform": "Platform",
+    "system": "Systeem",
+    "browser": "Browser",
+    "language": "Taal",
+    "page": "Pagina",
+    "daily": "Dagpuzzel",
+    "player": "Speler",
+    "screen": "Scherm",
+    "errors": "Recente fouten"
+  },
   "send": "Versturen",
   "sending": "Bezig met versturen…",
   "sent_title": "Bedankt!",
   "sent": "Je bericht is aangekomen. Als je een e-mailadres hebt opgegeven, antwoorden we daar.",
   "another": "Nog een bericht schrijven",
-  "privacy": "We gebruiken je bericht alleen om het te beantwoorden en verwijderen het uiterlijk na zes maanden. Meer in de <a>privacyverklaring</a>.",
+  "privacy": "We gebruiken je bericht en wat ermee wordt verstuurd alleen om je te antwoorden en problemen op te lossen, en verwijderen het uiterlijk na zes maanden. Meer in de <a>privacyverklaring</a>.",
   "by_mail": "Liever per e-mail?"
 }

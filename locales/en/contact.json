@@ -1,17 +1,52 @@
 {
-  "title": "Contact",
-  "description": "Questions, ideas or a bug in Hashi? Write to us.",
-  "intro": "A question, an idea, a bug, or something about your data? Write to us, we'll get back to you as soon as we can.",
+  "title": "Feedback",
+  "description": "Found a bug, have an idea or a question about Hashi? Tell us.",
+  "intro": "A bug, an idea, a question, or something about your data? Tell us: we read every message and get back to you as soon as we can.",
+  "kind": "What is it about?",
+  "kinds": {
+    "bug": "Bug",
+    "idea": "Idea",
+    "question": "Question",
+    "other": "Something else"
+  },
+  "kind_hints": {
+    "bug": "Something doesn't work",
+    "idea": "Something Hashi could do",
+    "question": "Something you'd like to know",
+    "other": "Praise, your data, anything"
+  },
+  "placeholders": {
+    "bug": "What did you do, what happened, and what did you expect?",
+    "idea": "What would you like, and what for?",
+    "question": "What would you like to know?",
+    "other": "What's on your mind?"
+  },
   "name": "Name",
   "email": "Email",
   "optional": "optional",
   "email_hint": "Only if you'd like an answer.",
   "message": "Message",
+  "context": {
+    "title": "Sent with your message",
+    "intro": "So we can find a problem faster. Nothing else about you or your device is added.",
+    "app": "Version",
+    "app_version": "App {{ version }}",
+    "website": "Website",
+    "platform": "Platform",
+    "system": "System",
+    "browser": "Browser",
+    "language": "Language",
+    "page": "Page",
+    "daily": "Daily",
+    "player": "Player",
+    "screen": "Screen",
+    "errors": "Recent errors"
+  },
   "send": "Send",
   "sending": "Sending…",
   "sent_title": "Thank you!",
   "sent": "Your message has arrived. If you left an email address, we'll answer there.",
   "another": "Write another message",
-  "privacy": "We only use your message to answer it and delete it after six months at the latest. More in the <a>privacy policy</a>.",
+  "privacy": "We only use your message and what's sent with it to answer you and to fix problems, and delete it after six months at the latest. More in the <a>privacy policy</a>.",
   "by_mail": "Prefer email?"
 }

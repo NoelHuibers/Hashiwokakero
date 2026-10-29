@@ -842,6 +842,8 @@ async fn every_visitor_gets_the_same_page() {
             email: String::new(),
             message: "The ranks page doesn't show my time.".into(),
             website: String::new(),
+            kind: crate::model::FeedbackKind::Bug,
+            context: None,
         })
         .await
         .unwrap();

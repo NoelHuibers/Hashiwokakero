@@ -537,6 +537,20 @@ CREATE TABLE IF NOT EXISTS blocks (
 );
 CREATE INDEX IF NOT EXISTS blocks_blocked ON blocks (blocked_id);
 ",
+    // 24
+    "
+-- Feedback, see server/contact.rs: what a message is about (bug, idea, question, other), what
+-- the page sent along with it (model::FeedbackContext as JSON, NULL for messages from before),
+-- the language to answer in, and where it stands in the admins' inbox: new, issue (made a
+-- GitHub issue, `github_issue`), answered or closed, since `handled_at`
+ALTER TABLE contact_messages ADD COLUMN category TEXT NOT NULL DEFAULT 'other';
+ALTER TABLE contact_messages ADD COLUMN context TEXT;
+ALTER TABLE contact_messages ADD COLUMN locale TEXT;
+ALTER TABLE contact_messages ADD COLUMN status TEXT NOT NULL DEFAULT 'new';
+ALTER TABLE contact_messages ADD COLUMN github_issue INTEGER;
+ALTER TABLE contact_messages ADD COLUMN handled_at INTEGER;
+CREATE INDEX IF NOT EXISTS contact_status ON contact_messages (status, id);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

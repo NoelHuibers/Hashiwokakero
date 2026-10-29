@@ -1,11 +1,14 @@
-// The contact form: what it refuses, and a message that arrives. Without SMTP (as here) the
-// message is only stored, the admin dashboard lists it.
-import { allow, expect, test, visit } from '../fixtures';
+// The feedback form: what it refuses, a message that arrives, and one opened from the header's
+// help with the page it came from. Without SMTP (as here) messages are only stored, the admin
+// dashboard lists them.
+import { allow, expect, signIn, test, visit } from '../fixtures';
 
-test('the contact form checks the message and sends it', async ({ page, problems }) => {
+test('the feedback form checks the message and sends it', async ({ page, problems }) => {
   await visit(page, '/kontakt');
   const message = page.getByLabel('Message');
   const send = page.getByRole('button', { name: /^Send/ });
+  // Opened without a type: something else
+  await expect(page.getByRole('radio', { name: 'Something else' })).toHaveAttribute('aria-checked', 'true');
 
   // Too short: the browser keeps the form
   await message.fill('Hi there');
@@ -28,4 +31,54 @@ test('the contact form checks the message and sends it', async ({ page, problems
   await expect(page.getByText('Your message has arrived.', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Write another message' }).click();
   await expect(message).toHaveValue('');
+});
+
+test('a bug report from the help menu brings its page along', async ({ page, context }) => {
+  await signIn(context, 'aiko');
+  await visit(page, '/practice');
+  const help = page.locator('header').getByRole('button', { name: 'Help' });
+  await help.click();
+  await expect(help).toHaveAttribute('aria-expanded', 'true');
+  await page.locator('header').getByRole('link', { name: 'Report a bug' }).click();
+  await expect(page).toHaveURL(/\/kontakt\?type=bug&from=\/practice$/);
+  // The menu closed on the way
+  await expect(page.locator('header').getByRole('link', { name: 'Report a bug' })).toHaveCount(0);
+
+  const bug = page.getByRole('radio', { name: 'Bug' });
+  await expect(bug).toHaveAttribute('aria-checked', 'true');
+  const message = page.getByLabel('Message');
+  await expect(message).toHaveAttribute('placeholder', /what happened/);
+
+  // What goes along is listed before sending
+  const sent = page.getByTestId('feedback-context');
+  await sent.locator('summary').click();
+  for (const [name, value] of [
+    ['Version', 'Website'],
+    ['Platform', 'Web'],
+    ['Language', 'en'],
+    ['Page', '/practice'],
+  ]) {
+    await expect(sent.locator('dt', { hasText: new RegExp(`^${name}$`) }).locator('xpath=following-sibling::dd[1]')).toHaveText(value);
+  }
+  await expect(sent.locator('dt', { hasText: /^Player$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText(/^#\d+$/);
+  await expect(sent.locator('dt', { hasText: /^Screen$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText(/^\d+×\d+ @[\d.]+x$/);
+
+  const text = `The hint on the practice board did nothing ${Date.now()}`;
+  await message.fill(text);
+  await page.getByRole('button', { name: /^Send/ }).click();
+  await expect(page.getByText('Thank you!')).toBeVisible();
+
+  // In the admins' inbox: a new bug, with where it came from
+  await signIn(context, 'admin');
+  await visit(page, '/admin?tab=messages');
+  const article = page.locator('article').filter({ hasText: text });
+  await expect(article).toHaveAttribute('data-status', 'new');
+  await expect(article).toContainText('Bug');
+  await expect(article.getByTestId('message-context')).toContainText('website · Web');
+  await expect(article.getByTestId('message-context')).toContainText('from /practice');
+  // Answered, it leaves the new ones
+  await article.getByRole('button', { name: 'Answered' }).click();
+  await expect(article).toHaveCount(0);
+  await page.getByLabel('Status').selectOption('answered');
+  await expect(page.locator('article').filter({ hasText: text })).toHaveAttribute('data-status', 'answered');
 });

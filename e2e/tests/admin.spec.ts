@@ -26,7 +26,7 @@ test('the dashboard shows the day, the Dojo and the messages', async ({ page, co
   await expect(benchmark.getByRole('button', { name: 'Reject' })).toBeVisible();
 
   await tab('Messages').click();
-  await expect(page.getByText('Contact messages')).toBeVisible();
+  await expect(page.getByText('Feedback', { exact: true })).toBeVisible();
   for (const m of CONTACT_MESSAGES) await expect(page.getByText(m.message)).toBeVisible();
   await expect(page.getByText('mirai@example.com')).toBeVisible();
   await expect(page.getByText('(no email)')).toBeVisible();

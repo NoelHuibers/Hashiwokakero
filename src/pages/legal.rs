@@ -154,11 +154,12 @@ const PRIVACY_DE: &[Section] = &[
         ],
     ),
     (
-        "Kontaktformular und E-Mail",
+        "Feedbackformular und E-Mail",
         &[
-            "Wenn du uns über das Kontaktformular schreibst, speichern wir deine Nachricht, deinen Namen und deine E-Mail-Adresse, falls du sie angibst, sowie einen Hash deiner IP-Adresse, der mit einem geheimen Schlüssel gebildet wird und jeden Tag anders ist, um die Zahl der Nachrichten pro Netz zu begrenzen.",
+            "Wenn du uns über das Feedback- und Kontaktformular schreibst, speichern wir deine Nachricht, worum es geht (Fehler, Idee, Frage oder etwas anderes), deinen Namen und deine E-Mail-Adresse, falls du sie angibst, sowie einen Hash deiner IP-Adresse, der mit einem geheimen Schlüssel gebildet wird und jeden Tag anders ist, um die Zahl der Nachrichten pro Netz zu begrenzen.",
+            "Mit der Nachricht sendet die Seite einige Angaben, die du vor dem Senden unter „Wird mit deiner Nachricht gesendet“ siehst: die Version der App oder „Website“, die Plattform (Android, iOS oder Web), Betriebssystem und Browser mit Hauptversion (aus der Kennung, die dein Browser jeder Seite schickt), die Sprache der Seite, die Seite, von der aus du das Formular geöffnet hast, die Nummer des heutigen Tagesrätsels, deine Spieler-ID, wenn du angemeldet oder als Gast unterwegs bist, die Größe des Fensters und die letzten Fehler der Seite (höchstens fünf; sie liegen nur im Speicher des geöffneten Tabs und gehen nur mit einer Nachricht an uns). Die Angaben helfen uns, Fehler zu finden und dir in deiner Sprache zu antworten. Löschst du dein Konto, entfernen wir die Spieler-ID aus deinen Nachrichten.",
             "Die Nachricht wird uns außerdem per E-Mail über Proton Mail zugestellt (Proton AG, Route de la Galaise 32, 1228 Plan-les-Ouates, Schweiz). Proton verarbeitet die E-Mails in unserem Auftrag (Art. 28 DSGVO); für die Schweiz besteht ein Angemessenheitsbeschluss der EU-Kommission (Art. 45 DSGVO). Dasselbe gilt, wenn du uns direkt eine E-Mail schreibst.",
-            "Wir nutzen deine Angaben nur, um deine Anfrage zu beantworten. Nachrichten in der Datenbank löschen wir, sobald sie erledigt sind, spätestens nach sechs Monaten; E-Mails, sobald wir sie nicht mehr brauchen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse ist, deine Anfrage zu beantworten.",
+            "Wir nutzen deine Angaben nur, um deine Anfrage zu beantworten und Fehler zu beheben, und vermerken, ob eine Nachricht beantwortet oder erledigt ist. Nachrichten in der Datenbank löschen wir spätestens sechs Monate nach ihrem Eingang; E-Mails, sobald wir sie nicht mehr brauchen. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse ist, deine Anfrage zu beantworten und Fehler in Hashi zu beheben.",
         ],
     ),
     (
@@ -267,9 +268,11 @@ const PRIVACY_EN: &[Section] = &[
         ],
     ),
     (
-        "Contact form and email",
+        "Feedback form and email",
         &[
-            "When you write to us through the contact form we store your message, your name and email address if you give them, and a keyed hash of your IP address that changes every day, to limit messages per network. The message is also delivered to us by email through Proton Mail (Proton AG, Route de la Galaise 32, 1228 Plan-les-Ouates, Switzerland) as our processor (Art. 28 GDPR); Switzerland has an EU adequacy decision (Art. 45 GDPR). The same applies when you email us directly. We only use it to answer you and delete stored messages once they're dealt with, after six months at the latest, and emails once we no longer need them (Art. 6 (1) f GDPR).",
+            "When you write to us through the feedback and contact form we store your message, what it is about (bug, idea, question or something else), your name and email address if you give them, and a keyed hash of your IP address that changes every day, to limit messages per network.",
+            "Along with the message the page sends a few details, listed under \"Sent with your message\" before you send it: the app's version or \"website\", the platform (Android, iOS or web), operating system and browser with their major version (from the identifier your browser sends every site), the page's language, the page you opened the form from, the number of today's daily bridge, your player ID if you are signed in or play as a guest, the window's size and the page's last errors (five at most; they are only kept in the open tab's memory and only reach us with a message). They help us find bugs and answer you in your language. Deleting your account removes the player ID from your messages.",
+            "The message is also delivered to us by email through Proton Mail (Proton AG, Route de la Galaise 32, 1228 Plan-les-Ouates, Switzerland) as our processor (Art. 28 GDPR); Switzerland has an EU adequacy decision (Art. 45 GDPR). The same applies when you email us directly. We only use it all to answer you and to fix bugs, note whether a message is answered or dealt with, delete stored messages six months after they arrived at the latest, and emails once we no longer need them (Art. 6 (1) f GDPR; our legitimate interest is answering you and fixing bugs in Hashi).",
         ],
     ),
     (

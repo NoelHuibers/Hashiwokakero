@@ -4,7 +4,8 @@
 /api/admin_benchmarks {}
 /api/admin_flag {"user":7,"day":20381,"flag":"Review"}
 /api/admin_log {"user":7,"day":20381}
-/api/admin_messages {"before":9}
+/api/admin_message_status {"id":9,"status":"Answered"}
+/api/admin_messages {"before":9,"status":"New","kind":"Bug"}
 /api/admin_names {}
 /api/admin_rename_player {"id":9}
 /api/admin_reports {}
@@ -67,7 +68,7 @@
 /api/rival_record {"player":9}
 /api/rotate_invite {"id":2}
 /api/seen_group_puzzle_kudos {"id":4}
-/api/send_message {"name":"Ada","email":"ada@example.com","message":"Hallo!","website":""}
+/api/send_message {"name":"Ada","email":"ada@example.com","message":"Hallo!","website":"","kind":"Bug","context":{"app":"1.1.0","platform":"android","os":"Android 15","browser":"WebView 141","language":"de","page":"/practice","daily":14,"player":7,"screen":"390×844 @3x","errors":["/practice E:database"]}}
 /api/set_hanko {"group":2,"target":9,"day":20381,"kind":"Cheers","on":true}
 /api/set_rival {"player":9,"on":true}
 /api/show_stamp {"stamp":"Gold"}

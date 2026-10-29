@@ -150,3 +150,11 @@ report_reason Other other
 report_outcome Renamed renamed
 report_outcome Banned banned
 report_outcome Dismissed dismissed
+feedback_kind Bug bug
+feedback_kind Idea idea
+feedback_kind Question question
+feedback_kind Other other
+feedback_status New new
+feedback_status Issue issue
+feedback_status Answered answered
+feedback_status Closed closed

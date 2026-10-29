@@ -58,5 +58,9 @@
     "title": "Người chơi đã chặn",
     "text": "Tên của họ được ẩn với bạn trên bảng xếp hạng, trong nhóm của bạn và giữa các đối thủ của bạn.",
     "none": "Bạn chưa chặn ai. Bạn có thể chặn người chơi trên hồ sơ của họ."
+  },
+  "feedback": {
+    "title": "Có câu hỏi hay vấn đề?",
+    "text": "Báo lỗi, đề xuất ý tưởng hoặc hỏi chúng tôi bất cứ điều gì. Chúng tôi đọc mọi tin nhắn."
   }
 }

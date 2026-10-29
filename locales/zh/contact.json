@@ -1,17 +1,52 @@
 {
-  "title": "联系我们",
-  "description": "对 Hashi 有疑问、想法或发现了 bug？给我们写信吧。",
-  "intro": "有疑问、想法、bug，或者关于你的数据的事情？给我们写信，我们会尽快回复你。",
+  "title": "反馈",
+  "description": "在 Hashi 里发现了 bug，或者有想法、有疑问？告诉我们。",
+  "intro": "bug、想法、疑问，或者关于你的数据的事情？告诉我们：每条消息我们都会读，并尽快回复你。",
+  "kind": "关于什么？",
+  "kinds": {
+    "bug": "Bug",
+    "idea": "想法",
+    "question": "疑问",
+    "other": "其他"
+  },
+  "kind_hints": {
+    "bug": "有东西不正常",
+    "idea": "Hashi 可以做的事",
+    "question": "你想知道的事",
+    "other": "称赞、你的数据、任何事"
+  },
+  "placeholders": {
+    "bug": "你做了什么，发生了什么，你原本期望什么？",
+    "idea": "你想要什么，用来做什么？",
+    "question": "你想知道什么？",
+    "other": "你想对我们说什么？"
+  },
   "name": "名字",
   "email": "邮箱",
   "optional": "选填",
   "email_hint": "仅在你希望收到回复时填写。",
   "message": "留言",
+  "context": {
+    "title": "随消息一起发送",
+    "intro": "方便我们更快找到问题。不会附加任何其他关于你或你的设备的信息。",
+    "app": "版本",
+    "app_version": "应用 {{ version }}",
+    "website": "网站",
+    "platform": "平台",
+    "system": "系统",
+    "browser": "浏览器",
+    "language": "语言",
+    "page": "页面",
+    "daily": "每日一桥",
+    "player": "玩家",
+    "screen": "屏幕",
+    "errors": "最近的错误"
+  },
   "send": "发送",
   "sending": "发送中…",
   "sent_title": "谢谢！",
   "sent": "你的消息已送达。如果你留了邮箱地址，我们会回复到那里。",
   "another": "再写一条消息",
-  "privacy": "我们只用你的消息来回复你，最迟六个月后删除。详见<a>隐私政策</a>。",
+  "privacy": "我们只用你的消息及随附信息来回复你和修复问题，最迟六个月后删除。详见<a>隐私政策</a>。",
   "by_mail": "更想用邮件？"
 }

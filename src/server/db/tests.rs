@@ -10,7 +10,7 @@ use super::{
     test_temp_path,
 };
 use crate::golden::puzzle;
-use crate::model::{DojoState, Flag, Stamp};
+use crate::model::{DojoState, FeedbackKind, FeedbackStatus, Flag, Stamp};
 use crate::server::auth::user_by_id;
 use crate::server::daily::{attempt, get_or_create, leaderboard};
 use crate::server::dojo::submission;
@@ -211,6 +211,14 @@ async fn write_rows(conn: &Connection, version: usize) {
         ")
         .await;
     }
+    if version >= 24 {
+        // A bug report from the app, answered
+        run(r#"
+            INSERT INTO contact_messages (name, email, message, created_at, category, context, locale, status, handled_at)
+                VALUES ('Kim', '', 'The board froze', 9000, 'bug', '{"app":"1.1.0","platform":"android","player":2}', 'de', 'answered', 9500);
+        "#)
+        .await;
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -231,7 +239,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        23,
+        24,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -444,6 +452,41 @@ async fn old_databases_migrate_with_their_data() {
         ];
         for (sql, expected) in defaults {
             assert_eq!(count(conn, sql).await, expected, "{label}: {sql}");
+        }
+        // Messages from before the feedback form: something else, new, without a context
+        if version >= 7 {
+            let messages = crate::server::contact::list(conn).await.unwrap();
+            let old = messages.iter().find(|m| m.message == "Hi").unwrap();
+            assert_eq!(
+                (
+                    old.kind,
+                    old.status,
+                    &old.context,
+                    &old.locale,
+                    old.handled_at
+                ),
+                (FeedbackKind::Other, FeedbackStatus::New, &None, &None, None),
+                "{label}"
+            );
+            let bug = messages.iter().find(|m| m.message == "The board froze");
+            assert_eq!(bug.is_some(), version >= 24, "{label}");
+            if let Some(bug) = bug {
+                assert_eq!(
+                    (bug.kind, bug.status, bug.locale.as_deref(), bug.handled_at),
+                    (
+                        FeedbackKind::Bug,
+                        FeedbackStatus::Answered,
+                        Some("de"),
+                        Some(9500)
+                    ),
+                    "{label}"
+                );
+                let context = bug.context.as_ref().unwrap();
+                assert_eq!(
+                    (context.app.as_deref(), context.player),
+                    (Some("1.1.0"), Some(2))
+                );
+            }
         }
         // A review of an old result drops the standings of its month, and only of its month
         conn.execute_batch(
