@@ -9,7 +9,7 @@ use crate::model::{
     DailyInfo, DailyStart, HallOfFame, Leaderboard, MonthBoard, MoveEvent, SubmitResult,
 };
 #[cfg(feature = "ssr")]
-use crate::server::{auth, daily, db};
+use crate::server::{auth, blocks, daily, db};
 
 /// Today's daily, with the puzzle only if the current user already started it.
 #[server(input = Json, client = HashiClient)]
@@ -228,13 +228,15 @@ pub async fn daily_leaderboard(day: Option<i64>) -> Result<Leaderboard, ServerFn
     let me = auth::current_user(&conn).await?.map(|u| u.id);
     let today = daily::today();
     let day = day.unwrap_or(today).min(today);
-    daily::leaderboard(&conn, day, me).await
+    blocks::hidden(&conn, me, daily::leaderboard(&conn, day, me).await?).await
 }
 
 /// The all time rankings: most solved, most medals, longest streaks.
 #[server(input = Json, client = HashiClient)]
 pub async fn load_hall_of_fame() -> Result<HallOfFame, ServerFnError> {
-    daily::hall_of_fame(&db::conn()?).await
+    let conn = db::conn()?;
+    let me = auth::current_user(&conn).await?.map(|u| u.id);
+    blocks::hidden(&conn, me, daily::hall_of_fame(&conn).await?).await
 }
 
 /// The points race of a month (see `model::month_of`), the running one if `month` is `None`.
@@ -242,7 +244,7 @@ pub async fn load_hall_of_fame() -> Result<HallOfFame, ServerFnError> {
 pub async fn month_leaderboard(month: Option<i64>) -> Result<MonthBoard, ServerFnError> {
     let conn = db::conn()?;
     let me = auth::current_user(&conn).await?.map(|u| u.id);
-    daily::month_board(&conn, month, me).await
+    blocks::hidden(&conn, me, daily::month_board(&conn, month, me).await?).await
 }
 
 /// An earlier daily, to play it in practice mode.

@@ -55,6 +55,29 @@
     "since": "Speelt sinds {{ date }}.",
     "you": "Dat ben jij, naar je account",
     "preview": "{{ name }} op Hashi, de dagelijkse Hashiwokakero-puzzel: resultaten en stempelboekje.",
-    "preview_stats": "Dagpuzzels opgelost: {{ solved }} · Beste reeks: {{ best }} · Medailles: {{ medals }}"
+    "preview_stats": "Dagpuzzels opgelost: {{ solved }} · Beste reeks: {{ best }} · Medailles: {{ medals }}",
+    "report": {
+      "button": "Melden",
+      "title": "{{ name }} melden",
+      "intro": "We bekijken elke melding binnen 24 uur. {{ name }} hoort niet wie de melding deed.",
+      "reason": "Wat is er mis?",
+      "name": "Aanstootgevende of ongepaste naam",
+      "cheating": "Valsspelen",
+      "other": "Iets anders",
+      "note": "Toelichting (optioneel)",
+      "note_hint": "Maximaal 500 tekens. Alleen wij lezen het.",
+      "send": "Melding versturen",
+      "cancel": "Annuleren",
+      "sent": "Bedankt voor je melding. We bekijken elke melding binnen 24 uur."
+    },
+    "block": {
+      "button": "Blokkeren",
+      "confirm": "{{ name }} blokkeren? Je ziet de naam dan nergens meer op Hashi, en deze speler is niet langer je rivaal. Hij of zij krijgt dat niet te horen.",
+      "yes": "Blokkeren",
+      "done": "{{ name }} is geblokkeerd.",
+      "blocked": "Je hebt deze speler geblokkeerd: de naam is overal elders op Hashi voor je verborgen.",
+      "unblock": "Deblokkeren",
+      "undone": "{{ name }} is gedeblokkeerd."
+    }
   }
 }

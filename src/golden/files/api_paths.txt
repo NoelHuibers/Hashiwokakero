@@ -7,9 +7,12 @@
 /api/admin_messages POST application/json -> application/json
 /api/admin_names POST application/json -> application/json
 /api/admin_rename_player POST application/json -> application/json
+/api/admin_reports POST application/json -> application/json
+/api/admin_resolve_report POST application/json -> application/json
 /api/admin_submissions POST application/json -> application/json
 /api/admin_unban_player POST application/json -> application/json
 /api/archived_daily POST application/json -> application/json
+/api/block_player POST application/json -> application/json
 /api/change_username POST application/json -> application/json
 /api/create_group POST application/json -> application/json
 /api/current_user POST application/json -> application/json
@@ -51,6 +54,7 @@
 /api/login POST application/json -> application/json
 /api/logout POST application/json -> application/json
 /api/month_leaderboard POST application/json -> application/json
+/api/my_blocks POST application/json -> application/json
 /api/my_groups POST application/json -> application/json
 /api/my_rivals POST application/json -> application/json
 /api/my_stats POST application/json -> application/json
@@ -59,6 +63,7 @@
 /api/puzzle_cnf POST application/json -> application/json
 /api/register POST application/json -> application/json
 /api/remove_member POST application/json -> application/json
+/api/report_player POST application/json -> application/json
 /api/rival_record POST application/json -> application/json
 /api/rotate_invite POST application/json -> application/json
 /api/seen_group_puzzle_kudos POST application/json -> application/json

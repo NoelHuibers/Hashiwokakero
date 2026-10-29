@@ -34,7 +34,7 @@ use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::{
     CHECK_PENALTY_MS, HINT_PENALTY_MS, PuzzlePage, PuzzleSummary, TimeLeft, format_duration,
-    time_left,
+    is_blocked_name, time_left,
 };
 use crate::pages::daily::Stat;
 use crate::pages::play::islands_percent;
@@ -47,18 +47,24 @@ use ranking::RankingCard;
 use result::ResultCard;
 use state::{GAME_KEY, Mode, Play};
 
-/// A puzzle's name: its title, or whose it is.
+/// A puzzle's name: its title, or whose it is. One of a player the viewer blocked has neither
+/// (the server leaves its title out, see `server::blocks`).
 pub fn puzzle_title(locale: Locale, summary: &PuzzleSummary) -> String {
     match (&summary.title, &summary.author) {
         (Some(title), _) => title.clone(),
-        (None, Some(author)) => td_string!(locale, kadai.untitled, name = author.name.clone()),
-        (None, None) => td_string!(locale, kadai.untitled_former).to_string(),
+        (None, Some(author)) if !is_blocked_name(&author.name) => {
+            td_string!(locale, kadai.untitled, name = author.name.clone())
+        }
+        (None, _) => td_string!(locale, kadai.untitled_former).to_string(),
     }
 }
 
 /// Who made it.
 pub fn byline(locale: Locale, summary: &PuzzleSummary) -> String {
     match &summary.author {
+        Some(author) if is_blocked_name(&author.name) => {
+            td_string!(locale, kadai.by_blocked).to_string()
+        }
         Some(author) => td_string!(locale, kadai.by, name = author.name.clone()),
         None => td_string!(locale, kadai.by_former).to_string(),
     }
@@ -818,6 +824,12 @@ mod tests {
         summary.title = None;
         assert_eq!(puzzle_title(Locale::en, &summary), "aiko's puzzle");
         assert_eq!(byline(Locale::en, &summary), "by aiko");
+        // A blocked author's (the server left the title out)
+        if let Some(author) = &mut summary.author {
+            author.name = crate::model::BLOCKED_NAME.into();
+        }
+        assert_eq!(puzzle_title(Locale::en, &summary), "A member's puzzle");
+        assert_eq!(byline(Locale::en, &summary), "by a blocked player");
         summary.author = None;
         assert_eq!(puzzle_title(Locale::en, &summary), "A member's puzzle");
         assert_eq!(byline(Locale::en, &summary), "by a former member");

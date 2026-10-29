@@ -52,5 +52,11 @@
     "button": "Xóa vĩnh viễn",
     "cancel": "Hủy",
     "done": "Tài khoản của bạn đã bị xóa."
+  },
+  "accept_rules": "Khi tạo tài khoản, bạn đồng ý với <a>quy tắc cộng đồng</a>.",
+  "blocks": {
+    "title": "Người chơi đã chặn",
+    "text": "Tên của họ được ẩn với bạn trên bảng xếp hạng, trong nhóm của bạn và giữa các đối thủ của bạn.",
+    "none": "Bạn chưa chặn ai. Bạn có thể chặn người chơi trên hồ sơ của họ."
   }
 }

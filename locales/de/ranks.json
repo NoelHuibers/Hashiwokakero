@@ -55,6 +55,29 @@
     "since": "Spielt seit {{ date }}.",
     "you": "Das bist du, zu deinem Konto",
     "preview": "{{ name }} auf Hashi, dem täglichen Hashiwokakero-Rätsel: Bilanz und Stempelheft.",
-    "preview_stats": "Tagesrätsel gelöst: {{ solved }} · Beste Serie: {{ best }} · Medaillen: {{ medals }}"
+    "preview_stats": "Tagesrätsel gelöst: {{ solved }} · Beste Serie: {{ best }} · Medaillen: {{ medals }}",
+    "report": {
+      "button": "Melden",
+      "title": "{{ name }} melden",
+      "intro": "Wir sehen uns jede Meldung innerhalb von 24 Stunden an. {{ name }} erfährt nicht, wer gemeldet hat.",
+      "reason": "Worum geht es?",
+      "name": "Anstößiger oder unpassender Name",
+      "cheating": "Betrug",
+      "other": "Etwas anderes",
+      "note": "Anmerkung (freiwillig)",
+      "note_hint": "Höchstens 500 Zeichen. Nur wir lesen sie.",
+      "send": "Meldung senden",
+      "cancel": "Abbrechen",
+      "sent": "Danke für deine Meldung. Wir sehen uns jede Meldung innerhalb von 24 Stunden an."
+    },
+    "block": {
+      "button": "Blockieren",
+      "confirm": "{{ name }} blockieren? Der Name wird dir dann nirgends mehr auf Hashi angezeigt, und die Person ist nicht mehr dein Rivale. Sie erfährt davon nichts.",
+      "yes": "Blockieren",
+      "done": "{{ name }} ist blockiert.",
+      "blocked": "Du hast diesen Spieler blockiert: Sein Name wird dir überall sonst auf Hashi nicht angezeigt.",
+      "unblock": "Blockierung aufheben",
+      "undone": "{{ name }} ist nicht mehr blockiert."
+    }
   }
 }

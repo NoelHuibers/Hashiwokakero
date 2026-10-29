@@ -4,6 +4,7 @@
   "untitled_former": "ปริศนาของสมาชิกคนหนึ่ง",
   "by": "โดย {{ name }}",
   "by_former": "โดยอดีตสมาชิก",
+  "by_blocked": "โดยผู้เล่นที่ถูกบล็อก",
   "solved_of": "แก้ได้ {{ solved }} จาก {{ players }} คน",
   "left": {
     "days": "เหลือ {{ count }} วัน",

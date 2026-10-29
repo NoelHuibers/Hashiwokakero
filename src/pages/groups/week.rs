@@ -10,7 +10,7 @@ use crate::api::load_group_week;
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::date_short;
+use crate::lang::{date_short, player_name};
 use crate::model::{GroupWeek, WEEKDAY_KANJI, colour_var};
 use crate::state::error_toast;
 
@@ -87,13 +87,13 @@ fn Grid(week: GroupWeek, me: i64) -> impl IntoView {
                             let colour = colour_var(row.colour);
                             let letter = initial(&row.name);
                             let mine = row.user_id == me;
-                            let name = row.name.clone();
+                            let name = player_name(i18n.get_locale_untracked(), &row.name);
                             view! {
                                 <tr data-member=row.user_id>
                                     <th scope="row" class="max-w-0 pe-2 text-start font-normal">
                                         <span class="flex min-w-0 items-center gap-1.5">
                                             <span class="size-2.5 shrink-0 rounded-[3px]" style=format!("background: {colour}") aria-hidden="true"></span>
-                                            <span class="truncate" class:font-bold=mine>{row.name.clone()}</span>
+                                            <span class="truncate" class:font-bold=mine>{name.clone()}</span>
                                         </span>
                                     </th>
                                     {(0..7usize)

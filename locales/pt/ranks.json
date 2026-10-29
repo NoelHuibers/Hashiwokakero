@@ -55,6 +55,29 @@
     "since": "Joga desde {{ date }}.",
     "you": "É você, ir para sua conta",
     "preview": "{{ name }} no Hashi, o Hashiwokakero diário: histórico e caderno de carimbos.",
-    "preview_stats": "Desafios resolvidos: {{ solved }} · Melhor sequência: {{ best }} · Medalhas: {{ medals }}"
+    "preview_stats": "Desafios resolvidos: {{ solved }} · Melhor sequência: {{ best }} · Medalhas: {{ medals }}",
+    "report": {
+      "button": "Denunciar",
+      "title": "Denunciar {{ name }}",
+      "intro": "Analisamos cada denúncia em até 24 horas. {{ name }} não fica sabendo quem fez a denúncia.",
+      "reason": "Qual é o problema?",
+      "name": "Nome ofensivo ou inadequado",
+      "cheating": "Trapaça",
+      "other": "Outra coisa",
+      "note": "Observação (opcional)",
+      "note_hint": "No máximo 500 caracteres. Só nós lemos.",
+      "send": "Enviar denúncia",
+      "cancel": "Cancelar",
+      "sent": "Obrigado pela denúncia. Analisamos cada denúncia em até 24 horas."
+    },
+    "block": {
+      "button": "Bloquear",
+      "confirm": "Bloquear {{ name }}? O nome não vai mais aparecer para você em nenhum lugar do Hashi, e a pessoa deixa de ser sua rival. Ela não será avisada.",
+      "yes": "Bloquear",
+      "done": "{{ name }} foi bloqueado.",
+      "blocked": "Você bloqueou este jogador: o nome dele fica oculto para você em todo o resto do Hashi.",
+      "unblock": "Desbloquear",
+      "undone": "{{ name }} foi desbloqueado."
+    }
   }
 }

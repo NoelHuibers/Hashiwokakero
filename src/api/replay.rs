@@ -6,7 +6,7 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::ReplayData;
 #[cfg(feature = "ssr")]
-use crate::server::{auth, daily, db, replay};
+use crate::server::{auth, blocks, daily, db, replay};
 
 /// The replay of `day`: a group's (`group`, for its members), or the player's own solve
 /// (`None`). `None` for a group the visitor isn't in (or that doesn't exist), and for a visitor
@@ -25,7 +25,7 @@ pub async fn load_replay(
         return replay::own_replay(&conn, &user, day, today).await.map(Some);
     };
     match replay::group_replay(&conn, group, user.id, day, today).await {
-        Ok(data) => Ok(Some(data)),
+        Ok(data) => blocks::hidden(&conn, Some(user.id), Some(data)).await,
         Err(e)
             if crate::model::ApiError::from_message(&e.to_string())
                 == Some(crate::model::ApiError::GroupNotFound) =>

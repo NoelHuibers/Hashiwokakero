@@ -55,6 +55,29 @@
     "since": "{{ date }} tarihinden beri oynuyor.",
     "you": "Bu sensin, hesabına git",
     "preview": "Günlük Hashiwokakero bulmacası Hashi'de {{ name }}: sonuçlar ve mühür defteri.",
-    "preview_stats": "Çözülen günlük bulmaca: {{ solved }} · En iyi seri: {{ best }} · Madalya: {{ medals }}"
+    "preview_stats": "Çözülen günlük bulmaca: {{ solved }} · En iyi seri: {{ best }} · Madalya: {{ medals }}",
+    "report": {
+      "button": "Bildir",
+      "title": "{{ name }} adlı oyuncuyu bildir",
+      "intro": "Her bildirime 24 saat içinde bakıyoruz. {{ name }}, kimin bildirdiğini öğrenmez.",
+      "reason": "Sorun ne?",
+      "name": "Saldırgan veya uygunsuz ad",
+      "cheating": "Hile",
+      "other": "Başka bir şey",
+      "note": "Not (isteğe bağlı)",
+      "note_hint": "En fazla 500 karakter. Yalnızca biz okuyoruz.",
+      "send": "Bildirimi gönder",
+      "cancel": "İptal",
+      "sent": "Bildirimin için teşekkürler. Her bildirime 24 saat içinde bakıyoruz."
+    },
+    "block": {
+      "button": "Engelle",
+      "confirm": "{{ name }} engellensin mi? Adını Hashi’de artık hiçbir yerde görmezsin ve artık rakibin olmaz. Bundan haberi olmaz.",
+      "yes": "Engelle",
+      "done": "{{ name }} engellendi.",
+      "blocked": "Bu oyuncuyu engelledin: adı Hashi’nin geri kalanında senden gizleniyor.",
+      "unblock": "Engeli kaldır",
+      "undone": "{{ name }} artık engelli değil."
+    }
   }
 }

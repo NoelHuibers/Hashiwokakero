@@ -202,6 +202,15 @@ async fn write_rows(conn: &Connection, version: usize) {
         assert_eq!(row.get::<i64>(0).unwrap(), row.get::<i64>(1).unwrap());
         assert_eq!(row.get::<i64>(2).unwrap(), 96000);
     }
+    if version >= 23 {
+        // The guest reported noel's name, and blocked him
+        run(r"
+            INSERT INTO reports (reporter_id, player_id, reason, note, name, created_at, updated_at)
+                VALUES (2, 1, 'name', 'rude', 'noel', 8000, 8000);
+            INSERT INTO blocks (user_id, blocked_id, created_at) VALUES (2, 1, 8000);
+        ")
+        .await;
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -222,7 +231,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        22,
+        23,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -425,6 +434,12 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'closed_month_%'",
                 4,
+            ),
+            // Open, not resolved
+            (
+                "SELECT COUNT(*) FROM reports r JOIN blocks b ON b.user_id = r.reporter_id
+                 WHERE r.resolved_at IS NULL AND r.resolution IS NULL",
+                i64::from(version >= 23),
             ),
         ];
         for (sql, expected) in defaults {

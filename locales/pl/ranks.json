@@ -55,6 +55,29 @@
     "since": "Gra od {{ date }}.",
     "you": "To ty, przejdź do konta",
     "preview": "{{ name }} na Hashi, codziennej łamigłówce Hashiwokakero: wyniki i album pieczątek.",
-    "preview_stats": "Rozwiązane łamigłówki dnia: {{ solved }} · Najlepsza seria: {{ best }} · Medale: {{ medals }}"
+    "preview_stats": "Rozwiązane łamigłówki dnia: {{ solved }} · Najlepsza seria: {{ best }} · Medale: {{ medals }}",
+    "report": {
+      "button": "Zgłoś",
+      "title": "Zgłoś gracza {{ name }}",
+      "intro": "Sprawdzamy każde zgłoszenie w ciągu 24 godzin. {{ name }} nie dowie się, kto go zgłosił.",
+      "reason": "Co jest nie tak?",
+      "name": "Obraźliwa lub niestosowna nazwa",
+      "cheating": "Oszukiwanie",
+      "other": "Coś innego",
+      "note": "Uwagi (opcjonalnie)",
+      "note_hint": "Najwyżej 500 znaków. Czytamy je tylko my.",
+      "send": "Wyślij zgłoszenie",
+      "cancel": "Anuluj",
+      "sent": "Dziękujemy za zgłoszenie. Sprawdzamy każde zgłoszenie w ciągu 24 godzin."
+    },
+    "block": {
+      "button": "Zablokuj",
+      "confirm": "Zablokować gracza {{ name }}? Jego nazwa nie będzie ci już nigdzie pokazywana w Hashi i przestanie być twoim rywalem. Nie dowie się o tym.",
+      "yes": "Zablokuj",
+      "done": "Gracz {{ name }} jest zablokowany.",
+      "blocked": "Ten gracz jest przez ciebie zablokowany: jego nazwa jest ukryta wszędzie indziej w Hashi.",
+      "unblock": "Odblokuj",
+      "undone": "Gracz {{ name }} jest odblokowany."
+    }
   }
 }

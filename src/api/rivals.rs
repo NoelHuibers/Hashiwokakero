@@ -6,7 +6,7 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::{HeadToHead, RivalsBoard, RivalsToday};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, daily, db};
+use crate::server::{auth, blocks, daily, db};
 
 /// The ids of the current user's rivals, none without a session.
 #[server(input = Json, client = HashiClient)]
@@ -33,7 +33,10 @@ pub async fn set_rival(player: i64, on: bool) -> Result<Vec<i64>, ServerFnError>
 pub async fn todays_rivals() -> Result<Option<RivalsToday>, ServerFnError> {
     let conn = db::conn()?;
     match auth::current_user(&conn).await? {
-        Some(user) => daily::rival_duels(&conn, user.id, daily::today()).await,
+        Some(user) => {
+            let duels = daily::rival_duels(&conn, user.id, daily::today()).await?;
+            blocks::hidden(&conn, Some(user.id), duels).await
+        }
         None => Ok(None),
     }
 }
@@ -43,7 +46,10 @@ pub async fn todays_rivals() -> Result<Option<RivalsToday>, ServerFnError> {
 pub async fn load_rivals_board() -> Result<Option<RivalsBoard>, ServerFnError> {
     let conn = db::conn()?;
     match auth::current_user(&conn).await? {
-        Some(user) => Ok(Some(daily::rivals_board(&conn, user.id).await?)),
+        Some(user) => {
+            let board = daily::rivals_board(&conn, user.id).await?;
+            blocks::hidden(&conn, Some(user.id), Some(board)).await
+        }
         None => Ok(None),
     }
 }

@@ -4,6 +4,7 @@
   "untitled_former": "Łamigłówka członka grupy",
   "by": "autor: {{ name }}",
   "by_former": "autor: były członek grupy",
+  "by_blocked": "autor: zablokowany gracz",
   "solved_of": "Na mecie: {{ solved }} z {{ players }}",
   "left": {
     "days": "zostało {{ count }} d",

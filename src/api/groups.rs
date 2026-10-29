@@ -7,7 +7,7 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::{GroupPage, GroupSummary, GroupToday, GroupWeek, InvitePreview};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, daily, db, groups};
+use crate::server::{auth, blocks, daily, db, groups};
 
 #[cfg(feature = "ssr")]
 async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> {
@@ -45,7 +45,8 @@ pub async fn create_group(name: String) -> Result<GroupPage, ServerFnError> {
 pub async fn group_invite(code: String) -> Result<Option<InvitePreview>, ServerFnError> {
     let conn = db::conn()?;
     let user = auth::current_user(&conn).await?.map(|u| u.id);
-    groups::preview(&conn, &code, user, daily::today()).await
+    let preview = groups::preview(&conn, &code, user, daily::today()).await?;
+    blocks::hidden(&conn, user, preview).await
 }
 
 /// Joins the group of an invite link, as a new guest for a visitor without a user. Returns the
@@ -65,7 +66,7 @@ pub async fn load_group(id: i64) -> Result<Option<GroupPage>, ServerFnError> {
         return Ok(None);
     };
     match groups::page(&conn, id, user.id, daily::today()).await {
-        Ok(page) => Ok(Some(page)),
+        Ok(page) => blocks::hidden(&conn, Some(user.id), Some(page)).await,
         Err(e) if is_not_found(&e) => Ok(None),
         Err(e) => Err(e),
     }
@@ -82,7 +83,8 @@ fn is_not_found(e: &ServerFnError) -> bool {
 #[server(input = Json, client = HashiClient)]
 pub async fn load_group_week(id: i64, monday: Option<i64>) -> Result<GroupWeek, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    groups::week(&conn, id, user.id, monday, daily::today()).await
+    let week = groups::week(&conn, id, user.id, monday, daily::today()).await?;
+    blocks::hidden(&conn, Some(user.id), week).await
 }
 
 #[server(input = Json, client = HashiClient)]
@@ -110,7 +112,10 @@ pub async fn rotate_invite(id: i64) -> Result<String, ServerFnError> {
 pub async fn group_boards() -> Result<Vec<GroupToday>, ServerFnError> {
     let conn = db::conn()?;
     match auth::current_user(&conn).await? {
-        Some(user) => groups::boards(&conn, user.id, daily::today()).await,
+        Some(user) => {
+            let boards = groups::boards(&conn, user.id, daily::today()).await?;
+            blocks::hidden(&conn, Some(user.id), boards).await
+        }
         None => Ok(Vec::new()),
     }
 }

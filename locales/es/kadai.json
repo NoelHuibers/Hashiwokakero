@@ -4,6 +4,7 @@
   "untitled_former": "El puzle de un miembro",
   "by": "de {{ name }}",
   "by_former": "de un antiguo miembro",
+  "by_blocked": "de un jugador bloqueado",
   "solved_of": "resuelto por {{ solved }} de {{ players }}",
   "left": {
     "days": "cierra en {{ count }} d",

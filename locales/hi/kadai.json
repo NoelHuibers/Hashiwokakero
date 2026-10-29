@@ -4,6 +4,7 @@
   "untitled_former": "एक सदस्य की पहेली",
   "by": "{{ name }} द्वारा",
   "by_former": "एक पूर्व सदस्य द्वारा",
+  "by_blocked": "एक ब्लॉक किए गए खिलाड़ी द्वारा",
   "solved_of": "हल किया: {{ players }} में से {{ solved }}",
   "left": {
     "days": "{{ count }} दिन बाकी",

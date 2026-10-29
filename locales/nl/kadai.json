@@ -4,6 +4,7 @@
   "untitled_former": "Puzzel van een lid",
   "by": "door {{ name }}",
   "by_former": "door een oud-lid",
+  "by_blocked": "door een geblokkeerde speler",
   "solved_of": "{{ solved }} van {{ players }} opgelost",
   "left": {
     "days": "nog {{ count }} d",

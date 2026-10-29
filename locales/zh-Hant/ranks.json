@@ -55,6 +55,29 @@
     "since": "自 {{ date }} 起開始遊戲。",
     "you": "這是你，前往我的帳號",
     "preview": "{{ name }} 在 Hashi（每日數橋謎題）的戰績與印章冊。",
-    "preview_stats": "已解每日謎題：{{ solved }} · 最長連勝：{{ best }} · 獎牌：{{ medals }}"
+    "preview_stats": "已解每日謎題：{{ solved }} · 最長連勝：{{ best }} · 獎牌：{{ medals }}",
+    "report": {
+      "button": "檢舉",
+      "title": "檢舉 {{ name }}",
+      "intro": "我們會在 24 小時內處理每一則檢舉。{{ name }} 不會知道是誰檢舉的。",
+      "reason": "有什麼問題？",
+      "name": "冒犯或不當的名稱",
+      "cheating": "作弊",
+      "other": "其他",
+      "note": "備註（選填）",
+      "note_hint": "最多 500 個字元，只有我們會看到。",
+      "send": "送出檢舉",
+      "cancel": "取消",
+      "sent": "感謝你的檢舉。我們會在 24 小時內處理每一則檢舉。"
+    },
+    "block": {
+      "button": "封鎖",
+      "confirm": "要封鎖 {{ name }} 嗎？你在 Hashi 上的任何地方都不會再看到這個名稱，對方也不再是你的對手。對方不會收到通知。",
+      "yes": "封鎖",
+      "done": "已封鎖 {{ name }}。",
+      "blocked": "你已封鎖這位玩家：在 Hashi 的其他地方，你都看不到對方的名稱。",
+      "unblock": "解除封鎖",
+      "undone": "已解除封鎖 {{ name }}。"
+    }
   }
 }

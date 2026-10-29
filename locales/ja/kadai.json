@@ -4,6 +4,7 @@
   "untitled_former": "メンバーの課題",
   "by": "作：{{ name }}",
   "by_former": "作：元メンバー",
+  "by_blocked": "作：ブロックしたプレイヤー",
   "solved_of": "{{ players }}人中{{ solved }}人がクリア",
   "left": {
     "days": "残り{{ count }}日",

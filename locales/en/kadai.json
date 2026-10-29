@@ -4,6 +4,7 @@
   "untitled_former": "A member's puzzle",
   "by": "by {{ name }}",
   "by_former": "by a former member",
+  "by_blocked": "by a blocked player",
   "solved_of": "{{ solved }} of {{ players }} solved",
   "left": {
     "days": "{{ count }}d left",

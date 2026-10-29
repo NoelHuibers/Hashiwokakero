@@ -21,7 +21,8 @@
 //!   carry data (`PaidOutcome`, `TodayState`, `LaneOutcome`, `Title`, `Movement`, `Feat`,
 //!   `BanOutcome`, `SolveOutcome`, `Restarts`, `Rejection`), a page needs to know the variant
 //!   (`PaidAction`, `Answer`, `Difficulty`, `Family`), they echo the page's own settings
-//!   (`SolverKind`, `Heuristic`), or only the admin pages read them (`NameKind`). Error codes
+//!   (`SolverKind`, `Heuristic`), or only the admin pages read them (`NameKind`,
+//!   `ReportReason` in `AdminReport`, `ReportOutcome`). Error codes
 //!   are no enum on the wire: an unknown `E:` code shows as a generic error.
 
 use common::{Difficulty, GenerateParams, Heuristic, Restarts, SolverConfig, SolverKind};
@@ -34,7 +35,10 @@ use serde::de::DeserializeOwned;
 
 use super::{check, path, puzzle};
 use crate::api::{self, DailyOwner, PaidAction, PaidIntent};
-use crate::model::{BenchmarkAction, Flag, HankoKind, MoveEvent, Stamp, SubmissionAction};
+use crate::model::{
+    BenchmarkAction, Flag, HankoKind, MoveEvent, ReportOutcome, ReportReason, Stamp,
+    SubmissionAction,
+};
 
 /// The paths and their encodings.
 const PATHS: &str = "installed apps call these paths for months without an update: removing or \
@@ -173,6 +177,11 @@ fn requests() -> Vec<Entry> {
         }),
         entry(&api::AdminUnbanPlayer { id: 9 }),
         entry(&api::AdminBannedPlayers {}),
+        entry(&api::AdminReports {}),
+        entry(&api::AdminResolveReport {
+            id: 3,
+            outcome: ReportOutcome::Renamed,
+        }),
         // banzuke
         entry(&api::LoadBanzuke {
             id: 2,
@@ -309,6 +318,17 @@ fn requests() -> Vec<Entry> {
         entry(&api::WithdrawGroupPuzzle { id: 4 }),
         entry(&api::SeenGroupPuzzleKudos { id: 4 }),
         entry(&api::LoadPuzzleReplay { id: 4 }),
+        // moderation
+        entry(&api::ReportPlayer {
+            player: 9,
+            reason: ReportReason::Name,
+            note: "rude".into(),
+        }),
+        entry(&api::BlockPlayer {
+            player: 9,
+            on: true,
+        }),
+        entry(&api::MyBlocks {}),
         // puzzle
         entry(&api::GeneratePuzzle {
             params: GenerateParams {

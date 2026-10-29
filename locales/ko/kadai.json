@@ -4,6 +4,7 @@
   "untitled_former": "어느 멤버의 퍼즐",
   "by": "만든 사람: {{ name }}",
   "by_former": "만든 사람: 전 멤버",
+  "by_blocked": "만든 사람: 차단한 플레이어",
   "solved_of": "{{ players }}명 중 {{ solved }}명 해결",
   "left": {
     "days": "{{ count }}일 남음",

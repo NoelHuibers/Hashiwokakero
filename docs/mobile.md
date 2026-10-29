@@ -93,8 +93,9 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
   empty one removes it, unless the token changed while the call was out (an answer to a call
   sent before a sign in doesn't bring the old session back).
 - Single flight: without a token, a call that may make a session (`start_daily`,
-  `create_group`, `join_group`, `set_rival`, `login`, `register`) holds back every other
-  call until its answer's token is kept, so calls at the same time don't make two guests.
+  `create_group`, `join_group`, `set_rival`, `report_player`, `block_player`, `login`,
+  `register`) holds back every other call until its answer's token is kept, so calls at the
+  same time don't make two guests.
 - `AppOutdated`, and the server's 404 page (a server function the server no longer has),
   show one toast with an "Update" button to the store, where the website offers a reload.
   Any other web page instead of an answer (a proxy's 502 or 503 while the server starts or is

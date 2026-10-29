@@ -4,6 +4,7 @@
   "untitled_former": "Rätsel eines Mitglieds",
   "by": "von {{ name }}",
   "by_former": "von einem ehemaligen Mitglied",
+  "by_blocked": "von einem blockierten Spieler",
   "solved_of": "{{ solved }} von {{ players }} gelöst",
   "left": {
     "days": "noch {{ count }} T",

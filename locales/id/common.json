@@ -89,7 +89,8 @@
     "group_not_found": "Grup ini tidak ada, atau kamu bukan anggotanya.",
     "group_full": "Grup ini sudah penuh: anggotanya sudah 50 orang.",
     "too_many_groups": "Kamu sudah ada di 10 grup, keluar dulu dari salah satunya.",
-    "group_owner_only": "Hanya pemilik grup yang bisa melakukan itu."
+    "group_owner_only": "Hanya pemilik grup yang bisa melakukan itu.",
+    "too_many_reports": "Sudah cukup banyak laporan untuk hari ini, coba lagi besok, ya."
   },
   "solver": {
     "title": "Solver SAT",
@@ -135,7 +136,8 @@
     "penalties": "petunjuk · cek",
     "shared": "Peringkat bersama",
     "empty": "Belum ada yang menyeberang. Jadilah yang pertama!",
-    "deleted": "pemain yang dihapus"
+    "deleted": "pemain yang dihapus",
+    "blocked": "pemain yang diblokir"
   },
   "board": {
     "label": "Papan Hashiwokakero",
@@ -218,7 +220,8 @@
     "imprint": "Info legal",
     "privacy": "Privasi",
     "english": "Versi bahasa Inggris",
-    "contact": "Kontak"
+    "contact": "Kontak",
+    "rules": "Aturan komunitas"
   },
   "audio": {
     "sound": "Efek suara",

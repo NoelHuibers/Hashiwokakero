@@ -159,6 +159,7 @@ pub async fn overview(conn: &Connection) -> Result<AdminOverview, ServerFnError>
         dojo_total: count(conn, "SELECT COUNT(*) FROM dojo_submissions WHERE ?1 = ?1", day).await?,
         messages: count(conn, "SELECT COUNT(*) FROM contact_messages WHERE ?1 = ?1", day).await?,
         names: super::count(flagged_names(conn).await?.len()),
+        reports: super::reports::open_count(conn).await?,
     })
 }
 

@@ -4,6 +4,7 @@
   "untitled_former": "Bir üyenin bulmacası",
   "by": "hazırlayan: {{ name }}",
   "by_former": "hazırlayan: eski bir üye",
+  "by_blocked": "hazırlayan: engellenen bir oyuncu",
   "solved_of": "Çözen: {{ solved }} / {{ players }}",
   "left": {
     "days": "{{ count }} gün kaldı",

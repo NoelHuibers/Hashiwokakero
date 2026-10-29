@@ -1,6 +1,7 @@
 //! Client state shared by all pages: the current game, the editor, solver settings and toasts.
 
 mod auth;
+mod blocks;
 mod browser;
 mod editor;
 mod game;
@@ -16,6 +17,7 @@ use common::{Puzzle, SolverConfig};
 use leptos::prelude::*;
 
 pub use auth::Auth;
+pub use blocks::Blocks;
 pub(crate) use browser::store_raw;
 pub use browser::{device_id, download, format_time, load, random_seed, store};
 #[cfg(any(feature = "csr", test))]
@@ -51,6 +53,8 @@ pub fn provide_state() {
     provide_context(auth);
     let rivals = Rivals::new();
     provide_context(rivals);
+    let blocks = Blocks::new();
+    provide_context(blocks);
     let hanko = HankoInbox::new();
     provide_context(hanko);
     provide_context(editor);
@@ -95,11 +99,12 @@ pub fn provide_state() {
         auth.refresh();
     });
 
-    // The rivals and unread hanko of whoever is signed in, again when that changes
+    // The rivals, blocks and unread hanko of whoever is signed in, again when that changes
     Effect::new(move |prev: Option<Option<i64>>| {
         let user = auth.user.with(|u| u.as_ref().map(|u| u.id));
         if prev.is_some_and(|p| p != user) || (prev.is_none() && user.is_some()) {
             rivals.load(user.is_some());
+            blocks.load(user.is_some());
             hanko.load(user.is_some());
         }
         user

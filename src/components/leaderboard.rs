@@ -7,7 +7,7 @@ use super::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
 use crate::lang::prefix;
-use crate::model::{LeaderboardEntry, Stamp, format_score};
+use crate::model::{LeaderboardEntry, Stamp, format_score, is_blocked_name};
 use crate::state::Auth;
 
 /// 🥇🥈🥉 as pixel-ish kanji medals: 金 gold, 銀 silver, 銅 bronze.
@@ -45,7 +45,8 @@ pub fn RankCell(rank: i64, #[prop(optional)] large: bool) -> impl IntoView {
 }
 
 /// A player in a leaderboard: name (a link to their profile), the stamp they show, "you" and
-/// guest labels. Deleted players have no name and no profile, their times stay ranked.
+/// guest labels. Deleted players have no name and no profile, their times stay ranked; nor do
+/// players the viewer blocked (`server::blocks`), whose place stays too.
 ///
 /// The guest label only shows where the table is wide enough (a container query on an
 /// `@container` around the table, boards sit in narrow cards too): the name has priority.
@@ -74,6 +75,14 @@ pub fn PlayerName(
         return view! {
             <div class="flex items-center gap-2">
                 <span class="min-w-0 truncate italic text-muted-foreground">{t!(i18n, common.ranking.deleted)}</span>
+            </div>
+        }
+        .into_any();
+    }
+    if is_blocked_name(&name) {
+        return view! {
+            <div class="flex items-center gap-2" data-blocked="">
+                <span class="min-w-0 truncate italic text-muted-foreground">{t!(i18n, common.ranking.blocked)}</span>
             </div>
         }
         .into_any();

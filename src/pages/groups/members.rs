@@ -13,7 +13,7 @@ use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::separator::Separator;
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{date_short, localized};
+use crate::lang::{date_short, localized, player_name};
 use crate::model::{GroupMember, GroupPage, MAX_MEMBERS, colour_var, group_day};
 use crate::state::{ToastKind, error_toast, toast};
 
@@ -39,9 +39,10 @@ fn MemberRow(member: GroupMember, group: GroupContext, me: i64, owner: bool) -> 
         stamp,
         ..
     } = member;
+    let shown = player_name(i18n.get_locale_untracked(), &name);
     let removable = owner && user_id != me;
     let remove = {
-        let name = name.clone();
+        let name = shown.clone();
         move |_| {
             let l = i18n.get_locale_untracked();
             if !confirm(&td_string!(
@@ -69,7 +70,7 @@ fn MemberRow(member: GroupMember, group: GroupContext, me: i64, owner: bool) -> 
         }
     };
     let joined = group_day(joined_at);
-    let label_name = name.clone();
+    let label_name = shown;
     view! {
         <li class="flex items-center gap-3 py-2" data-member=user_id>
             <span

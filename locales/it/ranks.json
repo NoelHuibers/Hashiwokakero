@@ -55,6 +55,29 @@
     "since": "Gioca dal {{ date }}.",
     "you": "Sei tu, vai al tuo account",
     "preview": "{{ name }} su Hashi, l’Hashiwokakero del giorno: risultati e libretto dei timbri.",
-    "preview_stats": "Sfide risolte: {{ solved }} · Serie migliore: {{ best }} · Medaglie: {{ medals }}"
+    "preview_stats": "Sfide risolte: {{ solved }} · Serie migliore: {{ best }} · Medaglie: {{ medals }}",
+    "report": {
+      "button": "Segnala",
+      "title": "Segnala {{ name }}",
+      "intro": "Esaminiamo ogni segnalazione entro 24 ore. {{ name }} non saprà chi l’ha segnalato.",
+      "reason": "Qual è il problema?",
+      "name": "Nome offensivo o inappropriato",
+      "cheating": "Imbrogli",
+      "other": "Altro",
+      "note": "Nota (facoltativa)",
+      "note_hint": "Al massimo 500 caratteri. La leggiamo solo noi.",
+      "send": "Invia segnalazione",
+      "cancel": "Annulla",
+      "sent": "Grazie per la segnalazione. Esaminiamo ogni segnalazione entro 24 ore."
+    },
+    "block": {
+      "button": "Blocca",
+      "confirm": "Bloccare {{ name }}? Il suo nome non ti verrà più mostrato da nessuna parte su Hashi e non sarà più un tuo rivale. Non ne verrà informato.",
+      "yes": "Blocca",
+      "done": "{{ name }} è bloccato.",
+      "blocked": "Hai bloccato questo giocatore: il suo nome ti è nascosto ovunque su Hashi.",
+      "unblock": "Sblocca",
+      "undone": "{{ name }} è sbloccato."
+    }
   }
 }

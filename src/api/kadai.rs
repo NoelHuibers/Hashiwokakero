@@ -8,7 +8,7 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::{GroupPuzzles, MoveEvent, PuzzlePage};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, db, groups::kadai, now_ms};
+use crate::server::{auth, blocks, db, groups::kadai, now_ms};
 
 #[cfg(feature = "ssr")]
 async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> {
@@ -36,7 +36,8 @@ pub async fn post_group_puzzle(
 #[server(input = Json, client = HashiClient)]
 pub async fn load_group_puzzles(group: i64) -> Result<GroupPuzzles, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    kadai::list(&conn, group, user.id, now_ms()).await
+    let list = kadai::list(&conn, group, user.id, now_ms()).await?;
+    blocks::hidden(&conn, Some(user.id), list).await
 }
 
 /// A group puzzle's page, `None` for one that isn't there (any more) or of a group the visitor
@@ -49,7 +50,7 @@ pub async fn load_group_puzzle(id: i64) -> Result<Option<PuzzlePage>, ServerFnEr
         return Ok(None);
     };
     match kadai::page(&conn, id, user.id, now_ms()).await {
-        Ok(page) => Ok(Some(page)),
+        Ok(page) => blocks::hidden(&conn, Some(user.id), Some(page)).await,
         Err(e)
             if matches!(
                 ApiError::from_message(&e.to_string()),
@@ -66,7 +67,8 @@ pub async fn load_group_puzzle(id: i64) -> Result<Option<PuzzlePage>, ServerFnEr
 #[server(input = Json, client = HashiClient)]
 pub async fn start_group_puzzle(id: i64) -> Result<PuzzlePage, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    kadai::start(&conn, id, user.id, now_ms()).await
+    let page = kadai::start(&conn, id, user.id, now_ms()).await?;
+    blocks::hidden(&conn, Some(user.id), page).await
 }
 
 /// One correct bridge, +30 s.
@@ -90,7 +92,8 @@ pub async fn group_puzzle_check(id: i64, bridges: Vec<u8>) -> Result<Vec<usize>,
 #[server(input = Json, client = HashiClient)]
 pub async fn group_puzzle_reveal(id: i64) -> Result<PuzzlePage, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    kadai::reveal(&conn, id, user.id, now_ms()).await
+    let page = kadai::reveal(&conn, id, user.id, now_ms()).await?;
+    blocks::hidden(&conn, Some(user.id), page).await
 }
 
 /// The solved board, the moves and the move log: the page comes back with the time and place.
@@ -102,7 +105,8 @@ pub async fn submit_group_puzzle(
     log: Vec<MoveEvent>,
 ) -> Result<PuzzlePage, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    kadai::submit(&conn, id, user.id, bridges, moves, log, now_ms()).await
+    let page = kadai::submit(&conn, id, user.id, bridges, moves, log, now_ms()).await?;
+    blocks::hidden(&conn, Some(user.id), page).await
 }
 
 /// The author takes back an open puzzle.
@@ -131,7 +135,7 @@ pub async fn load_puzzle_replay(
         return Ok(None);
     };
     match kadai::replay(&conn, id, user.id, now_ms()).await {
-        Ok(data) => Ok(Some(data)),
+        Ok(data) => blocks::hidden(&conn, Some(user.id), Some(data)).await,
         Err(e)
             if matches!(
                 ApiError::from_message(&e.to_string()),

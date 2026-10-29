@@ -8,7 +8,7 @@ use crate::components::layout::use_localized;
 use crate::components::leaderboard::{HIGHLIGHT_ROW, PlayerName, RANK_TABLE, ROW_INSET, RankCell};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::prefix;
+use crate::lang::{player_name, prefix};
 use crate::model::{GroupToday, TodayEntry, TodayState, colour_var, daily_number, format_score};
 use crate::pages::replay::replay_path;
 
@@ -162,7 +162,10 @@ fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>, hanko: HankoBoard)
     // Their solve can be watched against one's own: finished and not given up
     let duel = duel
         .filter(|_| !me && matches!(state, TodayState::Ranked { .. } | TodayState::Unranked))
-        .map(|(group, day)| view! { <DuelLink group day user_id name=name.clone() /> });
+        .map(|(group, day)| {
+            let name = player_name(i18n.get_locale_untracked(), &name);
+            view! { <DuelLink group day user_id name /> }
+        });
     // Under the time, like the seals under the name: a row is two lines at most, and the name
     // gets the whole width of its column, also on a phone
     let under = (penalties.is_some() || duel.is_some()).then(
@@ -170,7 +173,8 @@ fn Row(entry: TodayEntry, me: bool, duel: Option<(i64, i64)>, hanko: HankoBoard)
     );
     // Hanko 判子: the seals on the result, and the button to press one on someone else's
     let can_stamp = hanko.can_stamp(user_id, state);
-    let seals = view! { <HankoStrip board=hanko target=user_id name=name.clone() can=can_stamp /> };
+    let shown = player_name(i18n.get_locale_untracked(), &name);
+    let seals = view! { <HankoStrip board=hanko target=user_id name=shown can=can_stamp /> };
     view! {
         <tr class=format!("{ROW_INSET} {}", if me { HIGHLIGHT_ROW } else { "" }) data-state=state_id(state)>
             <td class="py-2 pe-2">{first}</td>

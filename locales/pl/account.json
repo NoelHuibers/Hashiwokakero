@@ -52,5 +52,11 @@
     "button": "Usuń na zawsze",
     "cancel": "Anuluj",
     "done": "Twoje konto zostało usunięte."
+  },
+  "accept_rules": "Zakładając konto, akceptujesz <a>zasady społeczności</a>.",
+  "blocks": {
+    "title": "Zablokowani gracze",
+    "text": "Ich nazwy są przed tobą ukryte w rankingach, w twoich grupach i wśród rywali.",
+    "none": "Nikogo nie zablokowano. Gracza możesz zablokować na jego profilu."
   }
 }

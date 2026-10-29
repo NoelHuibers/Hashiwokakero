@@ -25,7 +25,7 @@ use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 23] = [
+const PAGES: [(&str, &str); 24] = [
     ("/", "/"),
     ("/practice", "/practice"),
     ("/ranks", "/ranks"),
@@ -52,6 +52,7 @@ const PAGES: [(&str, &str); 23] = [
     ("/rules", "/rules"),
     ("/impressum", "/impressum"),
     ("/datenschutz", "/datenschutz"),
+    ("/regeln", "/regeln"),
     ("/kontakt", "/kontakt"),
 ];
 
@@ -457,6 +458,19 @@ fn expected(route: &str, l: Locale) -> Expected {
                 CONTACT_EMAIL,
             ]),
             canonical: Some("/datenschutz"),
+            ..Expected::default()
+        },
+        "/regeln" => Expected {
+            title: Some(hashi(td_string!(l, common.legal.rules))),
+            texts: strings([
+                td_string!(l, common.legal.rules),
+                td_string!(l, common.legal.english),
+                "Null Toleranz",
+                "Zero tolerance",
+                "zero tolerance for objectionable content and abusive users",
+                "within 24 hours",
+            ]),
+            canonical: Some("/regeln"),
             ..Expected::default()
         },
         "/kontakt" => Expected {

@@ -110,6 +110,8 @@ pub async fn admission(req: Request, next: Next) -> Response {
                     | "load_dojo_benchmarks"
                     // Proves the puzzle unique with the SAT solver
                     | "post_group_puzzle"
+                    // Mails us, on top of its own limit per player and day (`reports`)
+                    | "report_player"
             )
         )
         // Community benchmark uploads: a download from the GBD, decompression and parsing

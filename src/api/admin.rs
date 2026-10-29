@@ -5,11 +5,12 @@ use leptos::server_fn::codec::Json;
 
 use super::HashiClient;
 use crate::model::{
-    AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, BanOutcome, BannedPlayer,
-    BenchmarkAction, ContactMessage, Flag, FlaggedName, MoveEvent, SubmissionAction,
+    AdminAttempt, AdminBenchmark, AdminOverview, AdminReport, AdminSubmission, BanOutcome,
+    BannedPlayer, BenchmarkAction, ContactMessage, Flag, FlaggedName, MoveEvent, ReportOutcome,
+    SubmissionAction,
 };
 #[cfg(feature = "ssr")]
-use crate::server::{admin, contact, daily, db};
+use crate::server::{admin, contact, daily, db, reports};
 
 #[server(input = Json, client = HashiClient)]
 pub async fn load_admin_overview() -> Result<AdminOverview, ServerFnError> {
@@ -130,4 +131,21 @@ pub async fn admin_banned_players() -> Result<Vec<BannedPlayer>, ServerFnError> 
     let conn = db::conn()?;
     admin::require(&conn).await?;
     admin::banned_players(&conn).await
+}
+
+/// The reports of players nobody dealt with yet, the one waiting longest first.
+#[server(input = Json, client = HashiClient)]
+pub async fn admin_reports() -> Result<Vec<AdminReport>, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    reports::open(&conn).await
+}
+
+/// Marks a report as dealt with, after renaming or banning the player (with the functions
+/// above) or to dismiss it. Returns how many reports that resolved (see `reports::resolve`).
+#[server(input = Json, client = HashiClient)]
+pub async fn admin_resolve_report(id: i64, outcome: ReportOutcome) -> Result<u64, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    reports::resolve(&conn, id, outcome).await
 }

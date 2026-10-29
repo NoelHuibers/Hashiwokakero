@@ -4,6 +4,7 @@
   "untitled_former": "Teka-teki seorang anggota",
   "by": "oleh {{ name }}",
   "by_former": "oleh mantan anggota",
+  "by_blocked": "oleh pemain yang diblokir",
   "solved_of": "Selesai: {{ solved }} dari {{ players }}",
   "left": {
     "days": "{{ count }} hari lagi",

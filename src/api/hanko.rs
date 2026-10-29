@@ -6,7 +6,7 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::{HankoKind, HankoMark, HankoReceived, UnreadHanko};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, daily, db, groups};
+use crate::server::{auth, blocks, daily, db, groups};
 
 /// Presses a seal of `kind` on `target`'s result of `day` in a group (`on`), or takes it back.
 /// Returns the seals on that day's board of the group.
@@ -31,7 +31,10 @@ pub async fn set_hanko(
 pub async fn open_hanko(group: Option<i64>) -> Result<Vec<HankoReceived>, ServerFnError> {
     let conn = db::conn()?;
     match auth::current_user(&conn).await? {
-        Some(user) => groups::hanko::received(&conn, user.id, group, daily::today()).await,
+        Some(user) => {
+            let got = groups::hanko::received(&conn, user.id, group, daily::today()).await?;
+            blocks::hidden(&conn, Some(user.id), got).await
+        }
         None => Ok(Vec::new()),
     }
 }

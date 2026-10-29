@@ -55,6 +55,29 @@
     "since": "Chơi từ {{ date }}.",
     "you": "Đây là bạn, đến tài khoản",
     "preview": "{{ name }} trên Hashi, câu đố Hashiwokakero mỗi ngày: thành tích và sổ con dấu.",
-    "preview_stats": "Câu đố ngày đã giải: {{ solved }} · Chuỗi dài nhất: {{ best }} · Huy chương: {{ medals }}"
+    "preview_stats": "Câu đố ngày đã giải: {{ solved }} · Chuỗi dài nhất: {{ best }} · Huy chương: {{ medals }}",
+    "report": {
+      "button": "Báo cáo",
+      "title": "Báo cáo {{ name }}",
+      "intro": "Chúng tôi xem xét mọi báo cáo trong vòng 24 giờ. {{ name }} sẽ không biết ai đã báo cáo.",
+      "reason": "Có vấn đề gì?",
+      "name": "Tên xúc phạm hoặc không phù hợp",
+      "cheating": "Gian lận",
+      "other": "Vấn đề khác",
+      "note": "Ghi chú (không bắt buộc)",
+      "note_hint": "Tối đa 500 ký tự. Chỉ chúng tôi đọc.",
+      "send": "Gửi báo cáo",
+      "cancel": "Hủy",
+      "sent": "Cảm ơn bạn đã báo cáo. Chúng tôi xem xét mọi báo cáo trong vòng 24 giờ."
+    },
+    "block": {
+      "button": "Chặn",
+      "confirm": "Chặn {{ name }}? Bạn sẽ không còn thấy tên người này ở bất kỳ đâu trên Hashi, và họ không còn là đối thủ của bạn. Họ sẽ không được thông báo.",
+      "yes": "Chặn",
+      "done": "Đã chặn {{ name }}.",
+      "blocked": "Bạn đã chặn người chơi này: tên của họ được ẩn với bạn ở mọi nơi khác trên Hashi.",
+      "unblock": "Bỏ chặn",
+      "undone": "Đã bỏ chặn {{ name }}."
+    }
   }
 }

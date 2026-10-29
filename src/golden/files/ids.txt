@@ -137,9 +137,16 @@ error PuzzleOwn puzzle_own
 error PuzzleLocked puzzle_locked
 error PuzzleAuthorOnly puzzle_author_only
 error AppOutdated app_outdated
+error TooManyReports too_many_reports
 hanko Fast fast
 hanko Wow wow
 hanko Close close
 hanko Funny funny
 hanko Grit grit
 hanko Cheers cheers
+report_reason Name name
+report_reason Cheating cheating
+report_reason Other other
+report_outcome Renamed renamed
+report_outcome Banned banned
+report_outcome Dismissed dismissed

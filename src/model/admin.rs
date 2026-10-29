@@ -1,5 +1,5 @@
-//! The admin dashboard: overview, attempts of a day, Dojo submissions, names, bans and contact
-//! messages.
+//! The admin dashboard: overview, attempts of a day, Dojo submissions, names, bans, reports and
+//! contact messages.
 
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +22,9 @@ pub struct AdminOverview {
     /// Names on the boards the list of blocked names flags, see [`FlaggedName`].
     #[serde(default)]
     pub names: i64,
+    /// Reports of players nobody looked at yet, see `AdminReport`.
+    #[serde(default)]
+    pub reports: i64,
 }
 
 /// A name on the boards that the list of blocked names flags: chosen before a word was on the

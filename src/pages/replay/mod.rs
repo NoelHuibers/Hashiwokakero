@@ -24,7 +24,7 @@ use crate::components::celebration::Stamp;
 use crate::components::layout::use_localized;
 use crate::components::ui::card::Card;
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::{date_short, localized, prefix};
+use crate::lang::{date_short, localized, player_name, prefix};
 use crate::model::{LAUNCH_DAY, ReplayData, daily_number};
 use crate::seo::title_text;
 use crate::state::{Auth, error_toast};
@@ -105,8 +105,13 @@ fn listen_to_keys(theatre: Theatre) {
     clippy::needless_pass_by_value,
     reason = "Leptos components take their props by value"
 )]
-pub fn TheatreView(data: ReplayData, only: Option<Vec<i64>>) -> impl IntoView {
+pub fn TheatreView(mut data: ReplayData, only: Option<Vec<i64>>) -> impl IntoView {
     let still = reduced_motion();
+    // The lanes only show names, as text: a player the viewer blocked is "blocked player"
+    let locale = use_i18n().get_locale_untracked();
+    for lane in &mut data.lanes {
+        lane.name = player_name(locale, &lane.name);
+    }
     let theatre = Theatre::new(data, only.as_deref());
     #[cfg(feature = "browser")]
     {

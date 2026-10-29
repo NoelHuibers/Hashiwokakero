@@ -89,7 +89,8 @@
     "group_not_found": "Bu grup yok ya da üyesi değilsin.",
     "group_full": "Bu grup dolu: zaten 50 üyesi var.",
     "too_many_groups": "Zaten 10 grubun üyesisin, önce birinden ayrıl.",
-    "group_owner_only": "Bunu yalnızca grubun sahibi yapabilir."
+    "group_owner_only": "Bunu yalnızca grubun sahibi yapabilir.",
+    "too_many_reports": "Bugünlük bu kadar bildirim yeter, lütfen yarın tekrar dene."
   },
   "solver": {
     "title": "SAT çözücü",
@@ -135,7 +136,8 @@
     "penalties": "ipucu · kontrol",
     "shared": "Ortak sıra",
     "empty": "Henüz kimse karşıya geçmedi. İlk sen ol!",
-    "deleted": "silinmiş oyuncu"
+    "deleted": "silinmiş oyuncu",
+    "blocked": "engellenen oyuncu"
   },
   "board": {
     "label": "Hashiwokakero tahtası",
@@ -218,7 +220,8 @@
     "imprint": "Künye",
     "privacy": "Gizlilik",
     "english": "İngilizce sürüm",
-    "contact": "İletişim"
+    "contact": "İletişim",
+    "rules": "Topluluk kuralları"
   },
   "audio": {
     "sound": "Ses efektleri",

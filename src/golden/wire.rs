@@ -11,14 +11,15 @@ use serde::{Deserialize, Serialize};
 
 use super::{check, check_json};
 use crate::model::{
-    AdminAttempt, AdminBenchmark, AdminOverview, AdminSubmission, AllTimeEntry, ApiError,
-    AttemptInfo, BanOutcome, BannedPlayer, BenchmarkAction, BenchmarkState, CommunityCredit,
-    CommunitySummary, ContactMessage, DailyInfo, DailyStart, DayResult, Daypart, DojoBenchmark,
-    DojoBenchmarks, DojoBoard, DojoBudgetCurve, DojoBudgets, DojoCactus, DojoCrossover, DojoCurve,
-    DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason, DojoSeasons, DojoState, DojoSubmission,
-    Flag, GroupToday, HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark,
-    MarkKind, MonthBoard, MonthEntry, MoveEvent, PlayerProfile, Run, Stamp, StampProgress,
-    SubmissionAction, SubmitResult, UserInfo, UserStats,
+    AdminAttempt, AdminBenchmark, AdminOverview, AdminReport, AdminSubmission, AllTimeEntry,
+    ApiError, AttemptInfo, BanOutcome, BannedPlayer, BenchmarkAction, BenchmarkState,
+    BlockedPlayer, CommunityCredit, CommunitySummary, ContactMessage, DailyInfo, DailyStart,
+    DayResult, Daypart, DojoBenchmark, DojoBenchmarks, DojoBoard, DojoBudgetCurve, DojoBudgets,
+    DojoCactus, DojoCrossover, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
+    DojoSeasons, DojoState, DojoSubmission, Flag, GroupToday, HallOfFame, HankoKind, Leaderboard,
+    LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard, MonthEntry, MoveEvent, PlayerProfile,
+    ReportOutcome, ReportReason, Run, Stamp, StampProgress, SubmissionAction, SubmitResult,
+    UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -309,6 +310,8 @@ struct Responses {
     admin_banned: BannedPlayer,
     ban_outcomes: Vec<BanOutcome>,
     admin_benchmark: AdminBenchmark,
+    admin_report: AdminReport,
+    blocked: Vec<BlockedPlayer>,
     generated: GeneratedPuzzle,
     solved: SolveReport,
     unsatisfiable: SolveOutcome,
@@ -322,6 +325,8 @@ struct Responses {
     submission_actions: Vec<SubmissionAction>,
     benchmark_states: Vec<BenchmarkState>,
     benchmark_actions: Vec<BenchmarkAction>,
+    report_reasons: Vec<ReportReason>,
+    report_outcomes: Vec<ReportOutcome>,
 }
 
 fn responses() -> Responses {
@@ -562,6 +567,7 @@ fn responses() -> Responses {
             dojo_total: 30,
             messages: 3,
             names: 1,
+            reports: 2,
         },
         admin_attempt: AdminAttempt {
             user_id: 7,
@@ -633,6 +639,26 @@ fn responses() -> Responses {
             hash: "cd".repeat(16),
             created_at: 1_760_000_000_000,
         },
+        admin_report: AdminReport {
+            id: 3,
+            player: 9,
+            player_name: "Player 9".into(),
+            reported_name: "bob".into(),
+            player_username: Some("bob".into()),
+            banned: false,
+            reason: ReportReason::Name,
+            note: "rude".into(),
+            reporter: 7,
+            reporter_name: "Sleepy Koi 12".into(),
+            created_at: 1_760_000_000_000,
+            updated_at: 1_760_000_060_000,
+        },
+        blocked: vec![BlockedPlayer {
+            id: 9,
+            name: "bob".into(),
+            guest: false,
+            blocked_at: 1_760_000_000_000,
+        }],
         generated: GeneratedPuzzle {
             puzzle: puzzle(),
             solution: vec![2, 1],
@@ -690,6 +716,12 @@ fn responses() -> Responses {
             BenchmarkAction::Reject,
             BenchmarkAction::Requeue,
             BenchmarkAction::Delete,
+        ],
+        report_reasons: ReportReason::ALL.to_vec(),
+        report_outcomes: vec![
+            ReportOutcome::Renamed,
+            ReportOutcome::Banned,
+            ReportOutcome::Dismissed,
         ],
     }
 }
@@ -1027,5 +1059,14 @@ fn stored_ids() {
     lines.extend(Heuristic::ALL.map(|h| format!("heuristic {:?} {}", h, h.id())));
     lines.extend(ApiError::ALL.map(|e| format!("error {:?} {}", e, e.code())));
     lines.extend(HankoKind::ALL.map(|k| format!("hanko {:?} {}", k, k.id())));
+    lines.extend(ReportReason::ALL.map(|r| format!("report_reason {:?} {}", r, r.id())));
+    lines.extend(
+        [
+            ReportOutcome::Renamed,
+            ReportOutcome::Banned,
+            ReportOutcome::Dismissed,
+        ]
+        .map(|o| format!("report_outcome {:?} {}", o, o.id())),
+    );
     check("ids.txt", &lines.join("\n"), IDS);
 }

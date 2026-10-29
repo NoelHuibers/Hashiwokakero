@@ -4,6 +4,7 @@
   "untitled_former": "Câu đố của một thành viên",
   "by": "do {{ name }} ra đề",
   "by_former": "do một cựu thành viên ra đề",
+  "by_blocked": "do một người chơi đã bị chặn ra đề",
   "solved_of": "{{ solved }} trên {{ players }} người đã giải",
   "left": {
     "days": "còn {{ count }} ngày",

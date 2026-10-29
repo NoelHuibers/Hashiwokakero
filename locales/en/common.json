@@ -89,7 +89,8 @@
     "group_not_found": "This group doesn't exist, or you're not a member of it.",
     "group_full": "This group is full: it has 50 members already.",
     "too_many_groups": "You're in 10 groups already, leave one first.",
-    "group_owner_only": "Only the group's owner can do that."
+    "group_owner_only": "Only the group's owner can do that.",
+    "too_many_reports": "That's enough reports for today, please try again tomorrow."
   },
   "solver": {
     "title": "SAT Solver",
@@ -135,7 +136,8 @@
     "penalties": "hints · checks",
     "shared": "Shared place",
     "empty": "Nobody has crossed yet. Be the first!",
-    "deleted": "deleted player"
+    "deleted": "deleted player",
+    "blocked": "blocked player"
   },
   "board": {
     "label": "Hashiwokakero board",
@@ -218,7 +220,8 @@
     "imprint": "Legal notice",
     "privacy": "Privacy",
     "english": "English version",
-    "contact": "Contact"
+    "contact": "Contact",
+    "rules": "Community rules"
   },
   "audio": {
     "sound": "Sound effects",
