@@ -278,6 +278,90 @@ fn major(version: &str) -> String {
     leading(version, |c| c.is_ascii_digit())
 }
 
+/// Characters of an issue's title and body at most (GitHub takes 256 and 65 536).
+pub const MAX_ISSUE_TITLE: usize = 200;
+pub const MAX_ISSUE_BODY: usize = 20_000;
+
+/// A GitHub issue made of a message, as the admin edits it before posting it.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct IssueDraft {
+    pub title: String,
+    pub body: String,
+}
+
+/// The labels of an issue made of a message of `kind`: the type's (`bug`, `idea`, `question`)
+/// and `feedback`.
+pub fn issue_labels(kind: FeedbackKind) -> Vec<&'static str> {
+    let kind = match kind {
+        FeedbackKind::Bug => Some("bug"),
+        FeedbackKind::Idea => Some("idea"),
+        FeedbackKind::Question => Some("question"),
+        FeedbackKind::Other => None,
+    };
+    kind.into_iter().chain(["feedback"]).collect()
+}
+
+/// The issue a message would make, for the admin to edit.
+///
+/// Its first line is the title, the message and a table of its context the body. Never the writer's name, address or player
+/// id; what they wrote in the message itself is for the admin to take out.
+pub fn issue_draft(id: i64, message: &str, context: Option<&FeedbackContext>) -> IssueDraft {
+    use std::fmt::Write as _;
+    let first = message
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or_default()
+        .trim();
+    let mut title: String = first.chars().take(80).collect();
+    if first.chars().count() > 80 {
+        title.push('…');
+    }
+    let mut body = format!(
+        "{}\n\n---\n\nFrom the feedback form on hashi.rs (#{id}).\n",
+        message.trim()
+    );
+    if let Some(context) = context {
+        let mut errors = Vec::new();
+        let mut rows = Vec::new();
+        for (field, value) in context.rows() {
+            let name = match field {
+                // Who wrote it stays with us
+                ContextField::Player => continue,
+                ContextField::Errors => {
+                    errors.push(format!("`{}`", value.replace('`', "'")));
+                    continue;
+                }
+                ContextField::App => {
+                    let value = if value.is_empty() {
+                        "website".into()
+                    } else {
+                        format!("app {value}")
+                    };
+                    rows.push(("Version", value));
+                    continue;
+                }
+                ContextField::Platform => "Platform",
+                ContextField::System => "System",
+                ContextField::Browser => "Browser",
+                ContextField::Language => "Language",
+                ContextField::Page => "Page",
+                ContextField::Daily => "Daily",
+                ContextField::Screen => "Screen",
+            };
+            rows.push((name, value));
+        }
+        if !errors.is_empty() {
+            rows.push(("Recent errors", errors.join("<br>")));
+        }
+        body.push_str("\n| | |\n|---|---|\n");
+        for (name, value) in rows {
+            let value = value.replace('|', "\\|").replace(['\n', '\r'], " ");
+            let _ = writeln!(body, "| {name} | {value} |");
+        }
+    }
+    IssueDraft { title, body }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -452,5 +536,63 @@ mod tests {
                 (ContextField::Errors, "/practice panic".into()),
             ]
         );
+    }
+
+    /// An issue has the message and its context, never who wrote it.
+    #[test]
+    fn issues_leave_the_writer_out() {
+        let context = FeedbackContext {
+            app: Some("1.1.0".into()),
+            platform: "android".into(),
+            os: "Android 15".into(),
+            browser: "WebView 141".into(),
+            language: "de".into(),
+            page: Some("/practice".into()),
+            daily: Some(14),
+            player: Some(4711),
+            screen: "390×844 @3x".into(),
+            errors: vec!["/practice E:database".into(), "panic: a | b `c`".into()],
+        };
+        let draft = issue_draft(
+            12,
+            "\n  The hint button does nothing\nafter the second check.",
+            Some(&context),
+        );
+        assert_eq!(draft.title, "The hint button does nothing");
+        assert!(
+            draft
+                .body
+                .starts_with("The hint button does nothing\nafter the second check.\n")
+        );
+        for line in [
+            "From the feedback form on hashi.rs (#12).",
+            "| Version | app 1.1.0 |",
+            "| Platform | Android |",
+            "| Page | /practice |",
+            "| Daily | #14 |",
+            "| Screen | 390×844 @3x |",
+            "| Recent errors | `/practice E:database`<br>`panic: a \\| b 'c'` |",
+        ] {
+            assert!(draft.body.contains(line), "{line}\n{}", draft.body);
+        }
+        assert!(!draft.body.contains("4711"), "{}", draft.body);
+        assert!(!draft.body.contains("Player"), "{}", draft.body);
+
+        // A long first line is cut, a message without context has no table
+        let long = "x".repeat(100);
+        let draft = issue_draft(3, &long, None);
+        assert_eq!(draft.title.chars().count(), 81);
+        assert!(!draft.body.contains('|'));
+    }
+
+    #[test]
+    fn issues_are_labelled_by_type() {
+        assert_eq!(issue_labels(FeedbackKind::Bug), ["bug", "feedback"]);
+        assert_eq!(issue_labels(FeedbackKind::Idea), ["idea", "feedback"]);
+        assert_eq!(
+            issue_labels(FeedbackKind::Question),
+            ["question", "feedback"]
+        );
+        assert_eq!(issue_labels(FeedbackKind::Other), ["feedback"]);
     }
 }

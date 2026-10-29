@@ -32,6 +32,9 @@ test('the dashboard shows the day, the Dojo and the messages', async ({ page, co
   await expect(page.getByText('(no email)')).toBeVisible();
   const mirai = page.locator('article').filter({ hasText: 'mirai@example.com' });
   await expect(mirai.getByRole('link', { name: 'Reply' })).toHaveAttribute('href', /^mailto:mirai@example\.com/);
+  // Without GITHUB_FEEDBACK_TOKEN (as here) no issues: the button is off and says why
+  await expect(page.getByText('Creating issues is off', { exact: false })).toBeVisible();
+  await expect(mirai.getByRole('button', { name: 'Create issue' })).toBeDisabled();
 });
 
 test('admins ban a player and lift the ban', async ({ page, context, browser, baseURL }) => {

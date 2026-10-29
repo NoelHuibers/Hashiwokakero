@@ -5,13 +5,13 @@
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::{admin_message_status, admin_messages, delete_admin_message};
+use crate::api::{admin_create_issue, admin_message_status, admin_messages, delete_admin_message};
 use crate::components::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::model::{
-    ContactMessage, ContextField, FeedbackContext, FeedbackKind, FeedbackStatus, MS_PER_DAY,
-    date_string,
+    ContactMessage, ContextField, FeedbackContext, FeedbackKind, FeedbackStatus, IssueDraft,
+    MAX_ISSUE_BODY, MAX_ISSUE_TITLE, MS_PER_DAY, date_string, issue_draft, issue_labels,
 };
 use crate::pages::contact::encode_component;
 
@@ -87,7 +87,11 @@ fn reply_href(m: &ContactMessage) -> Option<String> {
 }
 
 #[component]
-pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
+pub(super) fn MessagesAdmin(
+    on_change: Callback<()>,
+    /// Where issues go (`owner/name`), `None` while `GITHUB_FEEDBACK_TOKEN` isn't set.
+    issues_repo: Signal<Option<String>>,
+) -> impl IntoView {
     let list = RwSignal::new(None::<Vec<ContactMessage>>);
     let more = RwSignal::new(false);
     let busy = RwSignal::new(false);
@@ -155,8 +159,13 @@ pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
             <CardHeader class="max-sm:px-0">
                 <CardTitle>"Feedback"</CardTitle>
                 <CardDescription>
-                    "Bugs, ideas, questions and the rest, mailed to CONTACT_TO when SMTP is set up. Answer, then mark them answered or close them; they go by themselves after 180 days."
+                    "Bugs, ideas, questions and the rest, mailed to CONTACT_TO when SMTP is set up. Answer, then mark them answered or close them, or make a GitHub issue of them; they go by themselves after 180 days."
                 </CardDescription>
+                <Show when=move || issues_repo.with(Option::is_none)>
+                    <p class="text-xs text-muted-foreground">
+                        "Creating issues is off: set GITHUB_FEEDBACK_TOKEN (docs/deployment.md)."
+                    </p>
+                </Show>
             </CardHeader>
             <CardContent class="flex flex-col gap-3 max-sm:px-0">
                 <div class="flex flex-wrap items-center gap-2 text-sm">
@@ -204,8 +213,13 @@ pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
                             let id = m.id;
                             let reply = reply_href(&m);
                             let (context, errors) = m.context.as_ref().map(context_summary).unwrap_or_default();
-                            let issue = m.github_issue.map(|n| (n, format!("{}/issues/{n}", crate::seo::REPO_URL)));
+                            let issue = m.github_issue;
                             let new = m.status == FeedbackStatus::New;
+                            // The issue being written, `None` while there's no editor
+                            let editing = RwSignal::new(None::<IssueDraft>);
+                            let draft = issue_draft(id, &m.message, m.context.as_ref());
+                            let labels = issue_labels(m.kind).join(", ");
+                            let can_post = m.github_issue.is_none();
                             view! {
                                 <article class="flex flex-col gap-2 rounded-lg border bg-card p-3 sm:p-4" data-status=m.status.id()>
                                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -227,8 +241,8 @@ pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
                                             {errors.into_iter().map(|e| view! { <p class="break-words text-destructive">{e}</p> }).collect_view()}
                                         </div>
                                     })}
-                                    {issue.map(|(n, href)| view! {
-                                        <a href=href target="_blank" rel="noopener" class="w-fit text-sm text-primary underline-offset-4 hover:underline">
+                                    {issue.map(|n| view! {
+                                        <a href=move || issue_url(issues_repo.get().as_deref(), n) target="_blank" rel="noopener" class="w-fit text-sm text-primary underline-offset-4 hover:underline">
                                             {format!("Issue #{n} →")}
                                         </a>
                                     })}
@@ -245,8 +259,22 @@ pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
                                         {(!new).then(|| view! {
                                             <Button variant=ButtonVariant::Ghost size=ButtonSize::Sm on:click=move |_| set_status(id, FeedbackStatus::New)>"Reopen"</Button>
                                         })}
+                                        {can_post.then(|| view! {
+                                            <Button
+                                                variant=ButtonVariant::Outline
+                                                size=ButtonSize::Sm
+                                                attr:disabled=move || issues_repo.with(Option::is_none) || editing.with(Option::is_some)
+                                                on:click=move |_| editing.set(Some(draft.clone()))
+                                            >
+                                                "Create issue"
+                                            </Button>
+                                        })}
                                         <Button variant=ButtonVariant::Ghost size=ButtonSize::Sm on:click=move |_| delete(id)>"Delete"</Button>
                                     </div>
+                                    {move || editing.get().is_some().then(|| issue_editor(id, editing, labels.clone(), move || {
+                                        load(None);
+                                        on_change.run(());
+                                    }))}
                                 </article>
                             }
                         })
@@ -262,6 +290,78 @@ pub(super) fn MessagesAdmin(on_change: Callback<()>) -> impl IntoView {
                 </Show>
             </CardContent>
         </Card>
+    }
+}
+
+/// Issue `n` of `repo`, the site's own repository if none is set.
+fn issue_url(repo: Option<&str>, n: i64) -> String {
+    match repo {
+        Some(repo) => format!("https://github.com/{repo}/issues/{n}"),
+        None => format!("{}/issues/{n}", crate::seo::REPO_URL),
+    }
+}
+
+/// The editor of the issue of message `id` (`editing`, prefilled with the draft), which posts
+/// it and then calls `posted`. The admin takes out what is personal first: the draft has no
+/// name, address or player id, but the message may.
+fn issue_editor(
+    id: i64,
+    editing: RwSignal<Option<IssueDraft>>,
+    labels: String,
+    posted: impl Fn() + Copy + Send + Sync + 'static,
+) -> impl IntoView {
+    let busy = RwSignal::new(false);
+    let failed = RwSignal::new(None::<String>);
+    let field = |f: fn(&IssueDraft) -> String| {
+        move || editing.with(|d| d.as_ref().map(f).unwrap_or_default())
+    };
+    let post = move |_| {
+        let Some(draft) = editing.get_untracked() else {
+            return;
+        };
+        busy.set(true);
+        failed.set(None);
+        spawn_local(async move {
+            match admin_create_issue(id, draft.title, draft.body).await {
+                Ok(_) => {
+                    editing.set(None);
+                    posted();
+                }
+                Err(e) => failed.set(Some(e.to_string())),
+            }
+            busy.set(false);
+        });
+    };
+    let input = "w-full rounded-md border bg-background px-3 py-2 text-sm";
+    view! {
+        <div class="flex flex-col gap-2 rounded-md border border-dashed p-3" data-testid="issue-editor">
+            <p class="text-xs text-muted-foreground">
+                "Public on GitHub: take out names, addresses and anything else personal first. Labels: " {labels}
+            </p>
+            <label class="flex flex-col gap-1 text-sm font-medium">
+                "Title"
+                <input
+                    class=input
+                    maxlength=MAX_ISSUE_TITLE
+                    prop:value=field(|d| d.title.clone())
+                    on:input=move |ev| editing.update(|d| if let Some(d) = d { d.title = event_target_value(&ev) })
+                />
+            </label>
+            <label class="flex flex-col gap-1 text-sm font-medium">
+                "Body"
+                <textarea
+                    class=format!("{input} min-h-60 font-mono text-xs")
+                    maxlength=MAX_ISSUE_BODY
+                    prop:value=field(|d| d.body.clone())
+                    on:input=move |ev| editing.update(|d| if let Some(d) = d { d.body = event_target_value(&ev) })
+                ></textarea>
+            </label>
+            {move || failed.get().map(|e| view! { <p class="text-sm text-destructive">{e}</p> })}
+            <div class="flex gap-2">
+                <Button size=ButtonSize::Sm attr:disabled=move || busy.get() on:click=post>"Post issue"</Button>
+                <Button variant=ButtonVariant::Ghost size=ButtonSize::Sm on:click=move |_| editing.set(None)>"Cancel"</Button>
+            </div>
+        </div>
     }
 }
 
@@ -304,6 +404,18 @@ mod tests {
         let href = reply_href(&message("kim@example.com", &"x".repeat(5000))).unwrap();
         assert!(href.len() < 2 * QUOTE, "{}", href.len());
         assert!(href.contains(&encode_component("…")));
+    }
+
+    #[test]
+    fn issues_link_to_their_repository() {
+        assert_eq!(
+            issue_url(Some("someone/fork"), 7),
+            "https://github.com/someone/fork/issues/7"
+        );
+        assert_eq!(
+            issue_url(None, 7),
+            "https://github.com/NoelHuibers/Hashiwokakero/issues/7"
+        );
     }
 
     #[test]

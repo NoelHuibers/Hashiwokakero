@@ -48,5 +48,14 @@
   "sent": "Deine Nachricht ist angekommen. Wenn du eine E-Mail-Adresse angegeben hast, antworten wir dir dorthin.",
   "another": "Noch eine Nachricht schreiben",
   "privacy": "Wir nutzen deine Nachricht und was mit ihr gesendet wird nur, um dir zu antworten und Fehler zu beheben, und löschen sie spätestens nach sechs Monaten. Mehr in der <a>Datenschutzerklärung</a>.",
-  "by_mail": "Lieber per E-Mail?"
+  "by_mail": "Lieber per E-Mail?",
+  "fixed": {
+    "subject": "Worüber du uns geschrieben hast, ist erledigt",
+    "fixed": "Das Problem, das du gemeldet hast, ist behoben.",
+    "done": "Deine Idee ist jetzt Teil von Hashi.",
+    "app": "Es kommt mit dem nächsten Update der App.",
+    "web": "Es ist auf hashi.rs schon live.",
+    "quote": "Du hattest geschrieben:",
+    "thanks": "Danke, dass du hilfst, Hashi besser zu machen!"
+  }
 }

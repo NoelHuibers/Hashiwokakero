@@ -35,6 +35,25 @@ Store credentials in the deployment platform's secret store.
 - `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`: remote database connection. For a
   local database, set `HASHI_DB_PATH` to a persistent location; it defaults to
   `hashi.db`.
+- `SMTP_HOST`, `SMTP_PORT` (default 587), `SMTP_USERNAME`, `SMTP_PASSWORD`,
+  `SMTP_FROM` (optional) and `CONTACT_TO`: optional, the mail server for the
+  feedback form's and the reports' mail to us and for the "fixed" mail to players
+  (see `src/server/contact.rs`). Without them messages are only stored and listed
+  in the admin dashboard.
+- `GITHUB_FEEDBACK_TOKEN`: optional, lets the admins make a GitHub issue of a
+  feedback message ("Create issue" in `/admin?tab=messages`), and lets the server
+  tell the writer once the issue is closed as completed (checked every six hours,
+  at most 20 issues per run, only for messages with an email address, needs SMTP
+  too). A fine-grained personal access token (GitHub, Settings, Developer
+  settings, Fine-grained tokens): resource owner the repository's owner,
+  "Only select repositories" with just this repository, repository permission
+  "Issues: Read and write" and nothing else (Metadata: read-only comes with it).
+  Set it with `flyctl secrets set GITHUB_FEEDBACK_TOKEN=… -a hashi` or pipe it to
+  `flyctl secrets import`; renew it before it expires (the button is off and no
+  fixed mail goes out without it). The labels `bug`, `idea`, `question` and
+  `feedback` should exist in the repository.
+- `GITHUB_FEEDBACK_REPO`: optional, `owner/name` of the repository for those
+  issues, default `NoelHuibers/Hashiwokakero`.
 - `HASHI_APP_MIN_VERSION`: optional, the oldest app version (`x.y.z`) the server
   answers; older apps are asked to update (see [mobile.md](mobile.md#api-headers)).
   Raise it only when a server function changes incompatibly, and only after the

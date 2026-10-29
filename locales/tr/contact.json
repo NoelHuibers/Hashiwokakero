@@ -48,5 +48,14 @@
   "sent": "Mesajın ulaştı. Bir e-posta adresi bıraktıysan o adrese yanıt vereceğiz.",
   "another": "Başka bir mesaj yaz",
   "privacy": "Mesajını ve onunla gönderilenleri yalnızca sana yanıt vermek ve sorunları düzeltmek için kullanır, en geç altı ay sonra sileriz. Daha fazlası <a>gizlilik politikasında</a>.",
-  "by_mail": "E-postayı mı tercih edersin?"
+  "by_mail": "E-postayı mı tercih edersin?",
+  "fixed": {
+    "subject": "bize yazdığın konu tamamlandı",
+    "fixed": "Bildirdiğin sorun giderildi.",
+    "done": "Fikrin artık Hashi’nin bir parçası.",
+    "app": "Uygulamanın bir sonraki güncellemesiyle gelecek.",
+    "web": "hashi.rs’de şimdiden yayında.",
+    "quote": "Şöyle yazmıştın:",
+    "thanks": "Hashi’yi daha iyi yapmamıza yardım ettiğin için teşekkürler!"
+  }
 }

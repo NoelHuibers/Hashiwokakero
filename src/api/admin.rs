@@ -96,6 +96,21 @@ pub async fn admin_message_status(id: i64, status: FeedbackStatus) -> Result<boo
     contact::set_status(&conn, id, status).await
 }
 
+/// Posts message `id` as a GitHub issue with the admin's `title` and `body` (see
+/// `issues::create`), returns its number. Fails without `GITHUB_FEEDBACK_TOKEN`.
+#[server(input = Json, client = HashiClient)]
+pub async fn admin_create_issue(
+    id: i64,
+    title: String,
+    body: String,
+) -> Result<i64, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    let github = crate::server::github::GitHub::from_env()
+        .ok_or_else(|| ServerFnError::new("GITHUB_FEEDBACK_TOKEN isn't set"))?;
+    crate::server::issues::create(&conn, &github, id, &title, &body).await
+}
+
 /// Deletes a message of the feedback form, spam say.
 #[server(input = Json, client = HashiClient)]
 pub async fn delete_admin_message(id: i64) -> Result<(), ServerFnError> {

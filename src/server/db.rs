@@ -551,6 +551,15 @@ ALTER TABLE contact_messages ADD COLUMN github_issue INTEGER;
 ALTER TABLE contact_messages ADD COLUMN handled_at INTEGER;
 CREATE INDEX IF NOT EXISTS contact_status ON contact_messages (status, id);
 ",
+    // 25
+    "
+-- The GitHub issue of a message, see server/contact.rs (`notify_fixed`): when it was last looked
+-- at, when it was found closed (it isn't looked at again), and when the writer was told it is
+-- fixed (once)
+ALTER TABLE contact_messages ADD COLUMN issue_checked_at INTEGER;
+ALTER TABLE contact_messages ADD COLUMN issue_closed_at INTEGER;
+ALTER TABLE contact_messages ADD COLUMN fixed_mailed_at INTEGER;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

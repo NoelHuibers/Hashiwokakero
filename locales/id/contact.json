@@ -48,5 +48,14 @@
   "sent": "Pesanmu sudah sampai. Kalau kamu mencantumkan alamat email, kami akan membalas ke sana.",
   "another": "Tulis pesan lain",
   "privacy": "Kami hanya memakai pesanmu dan apa yang dikirim bersamanya untuk membalas dan memperbaiki masalah, lalu menghapusnya paling lambat setelah enam bulan. Selengkapnya di <a>kebijakan privasi</a>.",
-  "by_mail": "Lebih suka lewat email?"
+  "by_mail": "Lebih suka lewat email?",
+  "fixed": {
+    "subject": "yang kamu sampaikan sudah selesai",
+    "fixed": "Masalah yang kamu laporkan sudah diperbaiki.",
+    "done": "Idemu sekarang menjadi bagian dari Hashi.",
+    "app": "Ini hadir di pembaruan aplikasi berikutnya.",
+    "web": "Ini sudah aktif di hashi.rs.",
+    "quote": "Kamu menulis:",
+    "thanks": "Terima kasih sudah membantu membuat Hashi lebih baik!"
+  }
 }

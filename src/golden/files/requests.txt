@@ -2,6 +2,7 @@
 /api/admin_ban_player {"id":9,"reason":"a bot"}
 /api/admin_banned_players {}
 /api/admin_benchmarks {}
+/api/admin_create_issue {"id":9,"title":"The hint froze the board","body":"After the second check."}
 /api/admin_flag {"user":7,"day":20381,"flag":"Review"}
 /api/admin_log {"user":7,"day":20381}
 /api/admin_message_status {"id":9,"status":"Answered"}

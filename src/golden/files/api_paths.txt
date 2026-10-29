@@ -2,6 +2,7 @@
 /api/admin_ban_player POST application/json -> application/json
 /api/admin_banned_players POST application/json -> application/json
 /api/admin_benchmarks POST application/json -> application/json
+/api/admin_create_issue POST application/json -> application/json
 /api/admin_flag POST application/json -> application/json
 /api/admin_log POST application/json -> application/json
 /api/admin_message_status POST application/json -> application/json

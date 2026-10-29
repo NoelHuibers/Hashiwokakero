@@ -48,5 +48,14 @@
   "sent": "Je bericht is aangekomen. Als je een e-mailadres hebt opgegeven, antwoorden we daar.",
   "another": "Nog een bericht schrijven",
   "privacy": "We gebruiken je bericht en wat ermee wordt verstuurd alleen om je te antwoorden en problemen op te lossen, en verwijderen het uiterlijk na zes maanden. Meer in de <a>privacyverklaring</a>.",
-  "by_mail": "Liever per e-mail?"
+  "by_mail": "Liever per e-mail?",
+  "fixed": {
+    "subject": "waar je ons over schreef is geregeld",
+    "fixed": "Het probleem dat je meldde is opgelost.",
+    "done": "Je idee is nu onderdeel van Hashi.",
+    "app": "Het komt met de volgende update van de app.",
+    "web": "Het staat al live op hashi.rs.",
+    "quote": "Je schreef:",
+    "thanks": "Bedankt dat je helpt Hashi beter te maken!"
+  }
 }

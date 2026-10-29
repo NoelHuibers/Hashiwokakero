@@ -777,7 +777,8 @@
     "dojo_total": 30,
     "messages": 3,
     "names": 1,
-    "reports": 2
+    "reports": 2,
+    "issues_repo": "NoelHuibers/Hashiwokakero"
   },
   "admin_attempt": {
     "user_id": 7,

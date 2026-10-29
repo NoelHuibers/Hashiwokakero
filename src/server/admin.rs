@@ -165,6 +165,7 @@ pub async fn overview(conn: &Connection) -> Result<AdminOverview, ServerFnError>
         .await?,
         names: super::count(flagged_names(conn).await?.len()),
         reports: super::reports::open_count(conn).await?,
+        issues_repo: super::github::GitHub::from_env().map(|g| g.repo().to_string()),
     })
 }
 
