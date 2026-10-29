@@ -1,131 +1,131 @@
 {
-  "commit": "9606899",
-  "date": "2026-10-25",
+  "commit": "c34f1d4",
+  "date": "2026-10-29",
   "tolerancePercent": 5,
   "assets": {
+    "hashi.js": {
+      "raw": 37651,
+      "gzip": 10271,
+      "brotli": 8825
+    },
     "hashi.wasm": {
-      "raw": 12271558,
-      "gzip": 3983526,
-      "brotli": 2690050
+      "raw": 12883386,
+      "gzip": 4199134,
+      "brotli": 2835635
     },
     "hashi.css": {
-      "raw": 108895,
-      "gzip": 19275,
-      "brotli": 16040
-    },
-    "hashi.js": {
-      "raw": 36031,
-      "gzip": 9940,
-      "brotli": 8562
+      "raw": 114076,
+      "gzip": 20209,
+      "brotli": 16776
     }
   },
   "code": {
-    "raw": 12307589,
-    "gzip": 3993466,
-    "brotli": 2698612
+    "raw": 12921037,
+    "gzip": 4209405,
+    "brotli": 2844460
   },
   "total": {
-    "raw": 12416484,
-    "gzip": 4012741,
-    "brotli": 2714652
+    "raw": 13035113,
+    "gzip": 4229614,
+    "brotli": 2861236
   },
   "hydration": {
     "runs": 5,
     "cpuThrottling": 4,
     "pages": {
       "/": {
-        "median": 943,
-        "min": 920,
-        "max": 1117,
+        "median": 1195,
+        "min": 1119,
+        "max": 1245,
         "runs": [
           {
             "firstByte": 5,
-            "domContentLoaded": 95,
-            "hydrated": 927
-          },
-          {
-            "firstByte": 4,
-            "domContentLoaded": 97,
-            "hydrated": 920
-          },
-          {
-            "firstByte": 4,
-            "domContentLoaded": 347,
-            "hydrated": 943
-          },
-          {
-            "firstByte": 5,
-            "domContentLoaded": 94,
-            "hydrated": 961
+            "domContentLoaded": 480,
+            "hydrated": 1119
           },
           {
             "firstByte": 6,
-            "domContentLoaded": 626,
-            "hydrated": 1117
+            "domContentLoaded": 661,
+            "hydrated": 1245
+          },
+          {
+            "firstByte": 5,
+            "domContentLoaded": 458,
+            "hydrated": 1204
+          },
+          {
+            "firstByte": 6,
+            "domContentLoaded": 839,
+            "hydrated": 1195
+          },
+          {
+            "firstByte": 5,
+            "domContentLoaded": 599,
+            "hydrated": 1179
           }
         ]
       },
       "/practice": {
-        "median": 1064,
-        "min": 853,
-        "max": 1122,
+        "median": 1115,
+        "min": 1055,
+        "max": 1156,
         "runs": [
           {
+            "firstByte": 5,
+            "domContentLoaded": 416,
+            "hydrated": 1055
+          },
+          {
+            "firstByte": 6,
+            "domContentLoaded": 292,
+            "hydrated": 1077
+          },
+          {
+            "firstByte": 6,
+            "domContentLoaded": 405,
+            "hydrated": 1156
+          },
+          {
             "firstByte": 7,
-            "domContentLoaded": 337,
-            "hydrated": 1064
-          },
-          {
-            "firstByte": 6,
-            "domContentLoaded": 381,
-            "hydrated": 1122
-          },
-          {
-            "firstByte": 8,
-            "domContentLoaded": 442,
-            "hydrated": 1082
-          },
-          {
-            "firstByte": 6,
-            "domContentLoaded": 407,
-            "hydrated": 975
+            "domContentLoaded": 417,
+            "hydrated": 1115
           },
           {
             "firstByte": 5,
-            "domContentLoaded": 95,
-            "hydrated": 853
+            "domContentLoaded": 494,
+            "hydrated": 1149
           }
         ]
       },
       "/ranks": {
-        "median": 777,
-        "min": 720,
-        "max": 802,
+        "median": 847,
+        "min": 800,
+        "max": 877,
         "runs": [
           {
             "firstByte": 4,
-            "domContentLoaded": 417,
-            "hydrated": 755
+            "domContentLoaded": 333,
+            "hydrated": 869
           },
           {
-            "firstByte": 3,
-            "domContentLoaded": 361,
-            "hydrated": 777
-          },
-          {
-            "firstByte": 4,
-            "domContentLoaded": 463,
-            "hydrated": 802
-          },
-          {
-            "firstByte": 3,
-            "domContentLoaded": 292,
-            "hydrated": 784
+            "firstByte": 5,
+            "domContentLoaded": 481,
+            "hydrated": 800
           },
           {
             "firstByte": 4,
-            "domContentLoaded": 288,
-            "hydrated": 720
+            "domContentLoaded": 331,
+            "hydrated": 847
+          },
+          {
+            "firstByte": 5,
+            "domContentLoaded": 267,
+            "hydrated": 810
+          },
+          {
+            "firstByte": 4,
+            "domContentLoaded": 321,
+            "hydrated": 877
           }
         ]
       }
