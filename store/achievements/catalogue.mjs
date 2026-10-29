@@ -96,8 +96,9 @@ export function buildCatalogue(sources = loadSources()) {
       defaultFormatter: b.lower_is_better ? 'ELAPSED_TIME_CENTISECOND' : 'INTEGER',
       scoreSortType: b.lower_is_better ? 'ASC' : 'DESC',
       submissionType: 'BEST_SCORE',
-      // The daily's board starts over with the puzzle day, at midnight UTC
-      recurrence: b.id === 'daily_time' ? { duration: 'P1D', rule: 'FREQ=DAILY;INTERVAL=1' } : null,
+      // The daily's board starts over with the puzzle day, at midnight UTC. App Store Connect wants
+      // the duration with a time part: it refuses 'P1D'
+      recurrence: b.id === 'daily_time' ? { duration: 'PT24H', rule: 'FREQ=DAILY;INTERVAL=1' } : null,
       image: `apple/${b.id}.png`,
       localizations: Object.fromEntries(APPLE.map(({ locale, site }) => [locale, { name: sources.leaderboards[site]?.[b.id] }])),
     })),

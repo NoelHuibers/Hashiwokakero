@@ -100,6 +100,12 @@ export function fakeApple({ versions = [{ id: 'asv-1', versionString: '1.1', sta
         const a = body.data.attributes;
         if (!state.detail || body.data.relationships.gameCenterDetail.data.id !== state.detail.id) conflict('no such Game Center');
         if ([...state.components.values()].some((c) => c.attributes.vendorIdentifier === a.vendorIdentifier)) conflict(`${a.vendorIdentifier} exists`);
+        // As App Store Connect: a recurrence's duration needs a time part ('PT24H', not 'P1D')
+        if (a.recurrenceDuration !== undefined && !/^P(\d+[YMWD])*T\d+[HMS]/.test(a.recurrenceDuration)) {
+          throw new HttpError('POST', name, 409, {
+            errors: [{ code: 'ENTITY_ERROR.ATTRIBUTE.TYPE', detail: `'${a.recurrenceDuration}' is not a valid value for the attribute 'recurrenceDuration'. Expected an ISO 8601 duration with time components` }],
+          });
+        }
         if (body.included?.[0]?.type !== k.versionType || body.data.relationships.versions.data[0].id !== body.included[0].id) {
           throw new HttpError('POST', name, 422, { errors: [{ detail: 'a first version is required' }] });
         }
