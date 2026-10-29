@@ -122,6 +122,28 @@ pub(crate) struct Show {
     pub(crate) kind: Board,
 }
 
+/// The stamp book's button (`native::games_show`): `show` opens the service's screens, after
+/// its sign-in when nobody is signed in yet. Once it answered, the sign-in is asked again
+/// (`ask`): a player signed in now who wasn't `before` has nothing reported yet, `signed_in`
+/// gets the new answer to report everything, once. The answer for the next tap, or `show`'s
+/// error (nobody signed in, no service).
+pub(crate) async fn shown<E, A: Future<Output = Status>>(
+    before: Status,
+    show: impl Future<Output = Result<(), E>>,
+    ask: impl FnOnce() -> A,
+    signed_in: impl FnOnce(Status),
+) -> Result<Status, E> {
+    show.await?;
+    if before.signed_in {
+        return Ok(before);
+    }
+    let now = ask().await;
+    if now.signed_in {
+        signed_in(now);
+    }
+    Ok(now)
+}
+
 /// The games service of the app's `platform` (`api::app`), as its owner names it. The page
 /// shows it on the button that opens it, unchanged in every language.
 pub(crate) fn service(platform: &str) -> Option<&'static str> {
@@ -267,7 +289,8 @@ fn achievement(id: &str, progress: &StampProgress) -> Achievement {
 
 /// What this page reported already, so that the next report has only what changed since: a
 /// stamp earned or further along, a new score. The platforms take the same report again, this
-/// only keeps them from getting all 48 stamps after every daily.
+/// only keeps them from getting all 48 stamps after every daily. A report the plugin didn't
+/// take is forgotten again ([`Reported::failed`]), so that the next one sends it anew.
 #[derive(Debug, Default)]
 pub(crate) struct Reported {
     achievements: HashMap<String, Achievement>,
@@ -294,6 +317,21 @@ impl Reported {
             self.scores.insert(s.id.clone(), s.value);
         }
         Report::new(achievements, scores)
+    }
+
+    /// Forgets `report`, which [`Reported::fresh`] gave and the plugin didn't take (offline, a
+    /// platform's error): what of it is still noted, not what a later report noted since.
+    pub(crate) fn failed(&mut self, report: &Report) {
+        for a in &report.achievements {
+            if self.achievements.get(&a.id) == Some(a) {
+                self.achievements.remove(&a.id);
+            }
+        }
+        for s in &report.scores {
+            if self.scores.get(&s.id) == Some(&s.value) {
+                self.scores.remove(&s.id);
+            }
+        }
     }
 }
 
@@ -681,5 +719,95 @@ mod tests {
             reported.fresh(report(Platform::GameCenter, &PlayIds::default(), &later).unwrap()),
             None
         );
+    }
+    /// A report the plugin didn't take goes again with the next one; what a later report noted
+    /// meanwhile stays noted.
+    #[test]
+    fn a_failed_report_is_sent_again() {
+        let mut reported = Reported::default();
+        let first = report(Platform::GameCenter, &PlayIds::default(), &stats()).unwrap();
+        let sent = reported.fresh(first.clone()).unwrap();
+        reported.failed(&sent);
+        assert_eq!(reported.fresh(first.clone()), Some(first.clone()));
+        // Taken this time: not again
+        assert_eq!(reported.fresh(first), None);
+
+        // Two dailies later, the first one's report fails while the second's is on its way
+        let mut later = stats();
+        later.solved = 43;
+        later.stamps[1].progress = 43;
+        let failing = reported
+            .fresh(report(Platform::GameCenter, &PlayIds::default(), &later).unwrap())
+            .unwrap();
+        assert_eq!(
+            failing,
+            Report::new(
+                [achievement("stamp_solved_100", Some(43), Some(100), false)],
+                [score("puzzles_solved", 43)],
+            )
+            .unwrap()
+        );
+        later.solved = 44;
+        later.stamps[1].progress = 44;
+        let newer = reported
+            .fresh(report(Platform::GameCenter, &PlayIds::default(), &later).unwrap())
+            .unwrap();
+        reported.failed(&failing);
+        assert_eq!(
+            reported.fresh(report(Platform::GameCenter, &PlayIds::default(), &later).unwrap()),
+            None
+        );
+        // Then the second one fails too: it goes again
+        reported.failed(&newer);
+        assert_eq!(
+            reported.fresh(report(Platform::GameCenter, &PlayIds::default(), &later).unwrap()),
+            Some(newer)
+        );
+    }
+
+    /// The stamp book's button signs a player in: one sync, not again on the next tap; none
+    /// without a sign-in, nor for a player the start signed in.
+    #[test]
+    fn a_sign_in_through_the_button_syncs_once() {
+        use futures::executor::block_on;
+        use std::cell::{Cell, RefCell};
+
+        const OUT: Status = Status {
+            available: true,
+            signed_in: false,
+        };
+        const IN: Status = Status {
+            available: true,
+            signed_in: true,
+        };
+        let asked = Cell::new(0);
+        let synced = RefCell::new(Vec::new());
+        let tap = |before: Status, opened: bool, now: Status| {
+            block_on(shown(
+                before,
+                async move { if opened { Ok(()) } else { Err("not signed in") } },
+                || {
+                    asked.set(asked.get() + 1);
+                    async move { now }
+                },
+                |status| synced.borrow_mut().push(status),
+            ))
+        };
+
+        // Cancelled: nothing asked, nothing synced
+        assert_eq!(tap(OUT, false, IN), Err("not signed in"));
+        assert_eq!((asked.get(), synced.borrow().len()), (0, 0));
+        // Signed in through the button: one sync, the next tap starts from the new answer
+        let now = tap(OUT, true, IN).unwrap();
+        assert_eq!(now, IN);
+        assert_eq!(*synced.borrow(), [IN]);
+        assert_eq!(tap(now, true, IN), Ok(IN));
+        assert_eq!((asked.get(), synced.borrow().len()), (1, 1));
+        // Opened, but nobody signed in: no sync, the next tap asks again
+        assert_eq!(tap(OUT, true, OUT), Ok(OUT));
+        assert_eq!((asked.get(), synced.borrow().len()), (2, 1));
+        // Signed in since the start, which reported everything already
+        assert_eq!(tap(IN, true, IN), Ok(IN));
+        assert_eq!((asked.get(), synced.borrow().len()), (2, 1));
     }
 }
