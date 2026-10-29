@@ -72,8 +72,8 @@ pub async fn list(conn: &Connection, user: i64) -> Result<Vec<i64>, ServerFnErro
 
 /// Marks `rival` as a rival of `user` (`on`) or not any more, and returns the rivals then.
 ///
-/// Nobody is their own rival, and only players who still play can be marked, at most
-/// [`MAX_RIVALS`]. Unmarking always works, also a rival who is gone.
+/// Nobody is their own rival, and only players who still play (and aren't blocked) can be
+/// marked, at most [`MAX_RIVALS`]. Unmarking always works, also a rival who is gone.
 pub async fn set(
     conn: &Connection,
     user: i64,
@@ -92,10 +92,14 @@ pub async fn set(
     if rival == user {
         return Err(ApiError::RivalSelf.into());
     }
+    // Nor a player they blocked (blocking unmarked them, see `server::blocks`)
     let mut rows = conn
         .query(
-            &format!("SELECT 1 FROM users u WHERE u.id = ?1 AND {VISIBLE}"),
-            params![rival],
+            &format!(
+                "SELECT 1 FROM users u WHERE u.id = ?1 AND {VISIBLE}
+                 AND NOT EXISTS (SELECT 1 FROM blocks b WHERE b.user_id = ?2 AND b.blocked_id = u.id)"
+            ),
+            params![rival, user],
         )
         .await
         .map_err(db_err)?;

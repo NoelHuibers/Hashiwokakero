@@ -14,7 +14,7 @@ use crate::components::leaderboard::RankCell;
 use crate::components::ui::button::{Button, ButtonSize};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, t_string, use_i18n};
-use crate::lang::prefix;
+use crate::lang::{player_name, prefix};
 use crate::model::{
     GroupPuzzles, Kudos, MAX_OPEN, MyPuzzle, PuzzleSummary, colour_var, format_duration,
 };
@@ -169,7 +169,7 @@ fn ClosedRow(summary: PuzzleSummary) -> impl IntoView {
         view! {
             <span class="flex min-w-0 items-center gap-1.5 text-xs">
                 <RankCell rank=1 />
-                <span class="truncate font-medium">{name}</span>
+                <span class="truncate font-medium">{move || player_name(i18n.get_locale(), &name)}</span>
                 <span class="font-pixel tabular-nums text-muted-foreground">{format_duration(time)}</span>
             </span>
         }

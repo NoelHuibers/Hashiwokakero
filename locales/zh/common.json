@@ -89,7 +89,8 @@
     "group_not_found": "这个小组不存在，或者你不是它的成员。",
     "group_full": "这个小组已满，已有 50 名成员。",
     "too_many_groups": "你已加入 10 个小组，请先退出一个。",
-    "group_owner_only": "只有组长才能这样做。"
+    "group_owner_only": "只有组长才能这样做。",
+    "too_many_reports": "今天的举报已经够多了，请明天再试。"
   },
   "solver": {
     "title": "SAT 求解器",
@@ -135,7 +136,8 @@
     "penalties": "提示 · 检查",
     "shared": "并列名次",
     "empty": "还没有人过桥，来当第一个吧！",
-    "deleted": "已删除的玩家"
+    "deleted": "已删除的玩家",
+    "blocked": "已屏蔽的玩家"
   },
   "board": {
     "label": "数桥（Hashiwokakero）棋盘",
@@ -218,7 +220,8 @@
     "imprint": "法律声明",
     "privacy": "隐私政策",
     "english": "英文版",
-    "contact": "联系我们"
+    "contact": "联系我们",
+    "rules": "社区规则"
   },
   "audio": {
     "sound": "音效",

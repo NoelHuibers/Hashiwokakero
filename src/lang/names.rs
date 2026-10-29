@@ -1,9 +1,10 @@
-//! Translated names: dates, difficulties, stamps, solver settings, file and server errors.
+//! Translated names: dates, difficulties, stamps, solver settings, file and server errors, and
+//! the players one blocked.
 
 use leptos::prelude::ServerFnError;
 
 use crate::i18n::{Locale, td_string};
-use crate::model::{ApiError, Stamp, month_civil};
+use crate::model::{ApiError, Stamp, is_blocked_name, month_civil};
 
 fn weekday_name(locale: Locale, weekday: usize) -> &'static str {
     match weekday {
@@ -31,6 +32,16 @@ fn month_name(locale: Locale, month: u32) -> &'static str {
         10 => td_string!(locale, common.month.oct),
         11 => td_string!(locale, common.month.nov),
         _ => td_string!(locale, common.month.dec),
+    }
+}
+
+/// A player's name as the page shows it: "blocked player" for one the viewer blocked (the server
+/// sends `model::BLOCKED_NAME` for them, see `server::blocks`).
+pub fn player_name(locale: Locale, name: &str) -> String {
+    if is_blocked_name(name) {
+        td_string!(locale, common.ranking.blocked).to_string()
+    } else {
+        name.to_string()
     }
 }
 
@@ -357,6 +368,7 @@ fn error_text_in(app: bool, locale: Locale, error: &ServerFnError) -> String {
         ApiError::PuzzleLocked => td_string!(locale, kadai.errors.locked),
         ApiError::PuzzleAuthorOnly => td_string!(locale, kadai.errors.author_only),
         ApiError::AppOutdated => td_string!(locale, common.errors.app_outdated),
+        ApiError::TooManyReports => td_string!(locale, common.errors.too_many_reports),
     }
     .to_string()
 }
@@ -377,6 +389,9 @@ mod tests {
     #[test]
     fn every_name_is_translated() {
         for &l in Locale::get_all() {
+            let blocked = player_name(l, crate::model::BLOCKED_NAME);
+            assert!(filled(&blocked) && !is_blocked_name(&blocked), "{l:?}");
+            assert_eq!(player_name(l, "aiko"), "aiko");
             for stamp in Stamp::ALL {
                 assert!(filled(stamp_name(l, stamp)), "{l:?} {stamp:?}");
                 assert!(filled(stamp_text(l, stamp)), "{l:?} {stamp:?}");

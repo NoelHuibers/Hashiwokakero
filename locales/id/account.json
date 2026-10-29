@@ -52,5 +52,11 @@
     "button": "Hapus selamanya",
     "cancel": "Batal",
     "done": "Akunmu sudah dihapus."
+  },
+  "accept_rules": "Dengan membuat akun, kamu menyetujui <a>aturan komunitas</a>.",
+  "blocks": {
+    "title": "Pemain yang diblokir",
+    "text": "Nama mereka disembunyikan darimu di papan peringkat, di grupmu, dan di antara rivalmu.",
+    "none": "Kamu belum memblokir siapa pun. Kamu bisa memblokir pemain di profilnya."
   }
 }

@@ -1,6 +1,8 @@
-//! The account page: the daily record, signing in and out, renaming and deleting the account.
+//! The account page: the daily record, signing in and out, renaming and deleting the account, and
+//! the players one blocked.
 
 pub mod auth_form;
+pub mod blocked;
 pub mod delete;
 pub mod rename;
 
@@ -22,6 +24,7 @@ use crate::seo::title_text;
 use crate::state::{Auth, ToastKind, error_toast, toast};
 
 use auth_form::{AuthForm, Mode};
+use blocked::BlockedPlayers;
 use delete::DeleteAccount;
 use rename::ChangeUsername;
 
@@ -226,6 +229,7 @@ pub fn AccountPage() -> impl IntoView {
                     </Show>
                 </Card>
 
+                {move || auth.user.with(Option::is_some).then(|| view! { <BlockedPlayers /> })}
                 {move || auth.user.with(Option::is_some).then(|| view! { <DeleteAccount stats /> })}
             </div>
         </section>

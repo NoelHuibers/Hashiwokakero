@@ -586,6 +586,10 @@ async fn each_statement_takes_the_parameters_it_is_given() {
         (&crate::server::groups::ERASE[..], 1),
         (&crate::server::groups::hanko::ERASE[..], 1),
         (&crate::server::groups::hanko::MERGE_GUEST[..], 2),
+        (&crate::server::blocks::ERASE[..], 1),
+        (&crate::server::blocks::MERGE_GUEST[..], 2),
+        (&crate::server::reports::ERASE[..], 1),
+        (&crate::server::reports::MERGE_GUEST[..], 2),
     ] {
         for sql in statements {
             let statement = conn.prepare(sql).await.unwrap();

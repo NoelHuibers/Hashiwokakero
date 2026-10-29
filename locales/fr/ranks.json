@@ -55,6 +55,29 @@
     "since": "Joue depuis le {{ date }}.",
     "you": "C'est toi, vers ton compte",
     "preview": "{{ name }} sur Hashi, le Hashiwokakero du jour : palmarès et carnet de tampons.",
-    "preview_stats": "Défis résolus : {{ solved }} · Meilleure série : {{ best }} · Médailles : {{ medals }}"
+    "preview_stats": "Défis résolus : {{ solved }} · Meilleure série : {{ best }} · Médailles : {{ medals }}",
+    "report": {
+      "button": "Signaler",
+      "title": "Signaler {{ name }}",
+      "intro": "Nous examinons chaque signalement sous 24 heures. {{ name }} ne saura pas qui l’a signalé.",
+      "reason": "Quel est le problème ?",
+      "name": "Nom offensant ou inapproprié",
+      "cheating": "Triche",
+      "other": "Autre chose",
+      "note": "Remarque (facultative)",
+      "note_hint": "500 caractères au plus. Nous seuls la lisons.",
+      "send": "Envoyer le signalement",
+      "cancel": "Annuler",
+      "sent": "Merci pour ton signalement. Nous examinons chaque signalement sous 24 heures."
+    },
+    "block": {
+      "button": "Bloquer",
+      "confirm": "Bloquer {{ name }} ? Son nom ne te sera plus affiché nulle part sur Hashi, et ce joueur ne sera plus ton rival. Il n’en sera pas informé.",
+      "yes": "Bloquer",
+      "done": "{{ name }} est bloqué.",
+      "blocked": "Tu as bloqué ce joueur : son nom t’est masqué partout ailleurs sur Hashi.",
+      "unblock": "Débloquer",
+      "undone": "{{ name }} est débloqué."
+    }
   }
 }

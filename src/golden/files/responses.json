@@ -776,7 +776,8 @@
     "dojo_pending": 2,
     "dojo_total": 30,
     "messages": 3,
-    "names": 1
+    "names": 1,
+    "reports": 2
   },
   "admin_attempt": {
     "user_id": 7,
@@ -850,6 +851,28 @@
     "hash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
     "created_at": 1760000000000
   },
+  "admin_report": {
+    "id": 3,
+    "player": 9,
+    "player_name": "Player 9",
+    "reported_name": "bob",
+    "player_username": "bob",
+    "banned": false,
+    "reason": "Name",
+    "note": "rude",
+    "reporter": 7,
+    "reporter_name": "Sleepy Koi 12",
+    "created_at": 1760000000000,
+    "updated_at": 1760000060000
+  },
+  "blocked": [
+    {
+      "id": 9,
+      "name": "bob",
+      "guest": false,
+      "blocked_at": 1760000000000
+    }
+  ],
   "generated": {
     "puzzle": {
       "width": 3,
@@ -1027,5 +1050,15 @@
     "Reject",
     "Requeue",
     "Delete"
+  ],
+  "report_reasons": [
+    "Name",
+    "Cheating",
+    "Other"
+  ],
+  "report_outcomes": [
+    "Renamed",
+    "Banned",
+    "Dismissed"
   ]
 }

@@ -89,7 +89,8 @@
     "group_not_found": "這個群組不存在，或是你不是它的成員。",
     "group_full": "這個群組已滿，已經有 50 位成員。",
     "too_many_groups": "你已經加入 10 個群組了，請先退出一個。",
-    "group_owner_only": "只有群組擁有者才能這麼做。"
+    "group_owner_only": "只有群組擁有者才能這麼做。",
+    "too_many_reports": "今天的檢舉已經夠多了，請明天再試。"
   },
   "solver": {
     "title": "SAT 求解器",
@@ -135,7 +136,8 @@
     "penalties": "提示 · 檢查",
     "shared": "並列名次",
     "empty": "還沒有人過橋，快來當第一個！",
-    "deleted": "已刪除的玩家"
+    "deleted": "已刪除的玩家",
+    "blocked": "已封鎖的玩家"
   },
   "board": {
     "label": "數橋（Hashiwokakero）盤面",
@@ -218,7 +220,8 @@
     "imprint": "法律聲明",
     "privacy": "隱私權政策",
     "english": "英文版",
-    "contact": "聯絡我們"
+    "contact": "聯絡我們",
+    "rules": "社群規範"
   },
   "audio": {
     "sound": "音效",

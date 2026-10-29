@@ -1,5 +1,5 @@
 //! Data exchanged between the server functions and the pages: users, daily puzzles, results,
-//! groups, replays, group puzzles.
+//! groups, replays, group puzzles, reports and blocks.
 
 mod achievements;
 mod admin;
@@ -13,6 +13,7 @@ mod groups;
 mod hanko;
 mod hints;
 mod kadai;
+mod moderation;
 mod moves;
 mod replay;
 mod rivals;
@@ -34,6 +35,7 @@ pub use groups::*;
 pub use hanko::*;
 pub use hints::*;
 pub use kadai::*;
+pub use moderation::*;
 pub use moves::*;
 pub use replay::*;
 pub use rivals::*;

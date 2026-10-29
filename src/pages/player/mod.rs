@@ -1,7 +1,8 @@
 //! A player's public profile, linked from every leaderboard: their daily record and stamp book,
-//! and the head-to-head record against them if they are a rival.
+//! the head-to-head record against them if they are a rival, and reporting or blocking them.
 
 pub mod head_to_head;
+pub mod moderation;
 
 use leptos::prelude::*;
 use leptos_meta::{Meta, Title};
@@ -20,14 +21,16 @@ use crate::lang::{date_short, localized, og_locale};
 use crate::model::{MS_PER_DAY, PlayerProfile};
 use crate::pages::not_found_status;
 use crate::seo::{SITE_NAME, SITE_URL, og_image, title_text};
-use crate::state::{Auth, error_toast};
+use crate::state::{Auth, Blocks, error_toast};
 
 use head_to_head::HeadToHeadCard;
+use moderation::ProfileActions;
 
 #[component]
 fn Profile(p: PlayerProfile) -> impl IntoView {
     let i18n = use_i18n();
     let auth = expect_context::<Auth>();
+    let blocks = expect_context::<Blocks>();
     let account = use_localized("/account");
     let PlayerProfile {
         id,
@@ -38,6 +41,7 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
     } = p;
     let shown = RwSignal::new(stats.shown);
     let name_for_button = name.clone();
+    let name_for_actions = name.clone();
     let initial = name
         .chars()
         .next()
@@ -55,12 +59,12 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
     let solved = stats.solved > 0;
     let (book, players) = (stats.stamps.clone(), stats.players);
     view! {
-        <div class="mb-6 flex items-center gap-4">
+        <div class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
             <span class=format!(
                 "grid size-16 shrink-0 rotate-[-6deg] place-items-center rounded-lg font-pixel text-3xl {}",
                 if guest { "bg-secondary text-secondary-foreground" } else { "hanko" },
             )>{initial}</span>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
                 <p class="font-pixel text-sm text-primary">"選手 · senshu"</p>
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <h1 class="min-w-0 break-words text-3xl font-black">{name}</h1>
@@ -81,9 +85,18 @@ fn Profile(p: PlayerProfile) -> impl IntoView {
                             })
                     }}
                 </p>
+                // Their name is hidden from the viewer everywhere else
+                <Show when=move || blocks.is(id)>
+                    <p class="text-sm text-muted-foreground" data-blocked-note="">{t!(i18n, ranks.player.block.blocked)}</p>
+                </Show>
             </div>
-            <div class="ms-auto shrink-0 self-start sm:self-center">
-                <RivalButton user_id=id name=name_for_button />
+            // Under the name on phones, beside it from sm on
+            <div class="flex w-full flex-wrap items-center justify-end gap-1 sm:ms-auto sm:w-auto sm:shrink-0 sm:flex-col sm:items-end sm:self-center">
+                // A blocked player can't be a rival
+                <Show when=move || !blocks.is(id)>
+                    <RivalButton user_id=id name=name_for_button.clone() />
+                </Show>
+                <ProfileActions player=id name=name_for_actions />
             </div>
         </div>
 

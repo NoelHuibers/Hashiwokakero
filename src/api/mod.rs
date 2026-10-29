@@ -24,6 +24,7 @@ pub(crate) mod games;
 mod groups;
 mod hanko;
 mod kadai;
+mod moderation;
 #[cfg(feature = "csr")]
 pub(crate) mod native;
 pub mod practice;
@@ -48,6 +49,7 @@ pub use dojo::*;
 pub use groups::*;
 pub use hanko::*;
 pub use kadai::*;
+pub use moderation::*;
 pub use puzzle::*;
 pub use replay::*;
 pub use rivals::*;
@@ -102,6 +104,7 @@ mod tests {
             include_str!("groups.rs"),
             include_str!("hanko.rs"),
             include_str!("kadai.rs"),
+            include_str!("moderation.rs"),
             include_str!("puzzle.rs"),
             include_str!("replay.rs"),
             include_str!("rivals.rs"),

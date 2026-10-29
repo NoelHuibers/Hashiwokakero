@@ -89,7 +89,8 @@
     "group_not_found": "Questo gruppo non esiste, oppure non ne fai parte.",
     "group_full": "Questo gruppo è pieno: ha già 50 membri.",
     "too_many_groups": "Sei già in 10 gruppi, lasciane prima uno.",
-    "group_owner_only": "Solo chi gestisce il gruppo può farlo."
+    "group_owner_only": "Solo chi gestisce il gruppo può farlo.",
+    "too_many_reports": "Per oggi hai inviato abbastanza segnalazioni, riprova domani."
   },
   "solver": {
     "title": "Solver SAT",
@@ -135,7 +136,8 @@
     "penalties": "indizi · verifiche",
     "shared": "Posizione condivisa",
     "empty": "Nessuno ha ancora attraversato. Tocca a te aprire la strada!",
-    "deleted": "giocatore eliminato"
+    "deleted": "giocatore eliminato",
+    "blocked": "giocatore bloccato"
   },
   "board": {
     "label": "Griglia di Hashiwokakero",
@@ -218,7 +220,8 @@
     "imprint": "Note legali",
     "privacy": "Privacy",
     "english": "Versione inglese",
-    "contact": "Contatti"
+    "contact": "Contatti",
+    "rules": "Regole della community"
   },
   "audio": {
     "sound": "Effetti sonori",

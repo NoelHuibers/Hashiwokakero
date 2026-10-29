@@ -19,7 +19,7 @@ use crate::pages::groups::{GroupDetailPage, GroupsPage, JoinGroupPage};
 use crate::pages::kadai::KadaiPage;
 use crate::pages::kadai::replay::KadaiReplayPage;
 use crate::pages::lab::LabPage;
-use crate::pages::legal::{ImpressumPage, PrivacyPage};
+use crate::pages::legal::{CommunityRulesPage, ImpressumPage, PrivacyPage};
 use crate::pages::play::PlayPage;
 use crate::pages::player::PlayerPage;
 use crate::pages::ranks::RanksPage;
@@ -150,6 +150,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/rules") view=RulesPage />
                             <Route path=path!("/impressum") view=ImpressumPage />
                             <Route path=path!("/datenschutz") view=PrivacyPage />
+                            <Route path=path!("/regeln") view=CommunityRulesPage />
                             <Route path=path!("/kontakt") view=ContactPage />
                         </I18nRoute<Locale, _, _>>
                     </Routes>

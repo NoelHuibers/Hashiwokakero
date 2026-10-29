@@ -4,6 +4,7 @@
   "untitled_former": "O puzzle de um membro",
   "by": "por {{ name }}",
   "by_former": "por um ex-membro",
+  "by_blocked": "por um jogador bloqueado",
   "solved_of": "Resolveram: {{ solved }} de {{ players }}",
   "left": {
     "days": "fecha em {{ count }} d",

@@ -1,5 +1,7 @@
-//! Impressum and Datenschutzerklärung. German law applies, so the German text is the binding one;
-//! an English version follows. Email addresses and paths (`/kontakt`) in the text become links.
+//! Impressum, Datenschutzerklärung and the community rules.
+//!
+//! German law applies, so the German text is the binding one; an English version follows. Email
+//! addresses and paths (`/kontakt`) in the text become links.
 
 use leptos::prelude::*;
 use leptos_router::components::A;
@@ -134,6 +136,14 @@ const PRIVACY_DE: &[Section] = &[
         ],
     ),
     (
+        "Meldungen und Blockieren",
+        &[
+            "Du kannst andere Spieler auf ihrem Profil melden, wegen eines anstößigen oder unpassenden Namens, wegen Betrugs oder aus einem anderen Grund, auch als Gast. Wir speichern dazu, wer wen wann gemeldet hat, den Grund, deine freiwillige Anmerkung und den Namen, den der gemeldete Spieler da hatte. Wer gemeldet wird, erfährt nicht, von wem. Jede neue Meldung schicken wir uns außerdem per E-Mail über Proton Mail (siehe Kontaktformular und E-Mail). Nur der Betreiber sieht die Meldungen; er prüft jede innerhalb von 24 Stunden und benennt den Spieler um, sperrt ihn oder verwirft die Meldung. Um Missbrauch zu bremsen, zählen wir die Meldungen pro Spieler und Tag. Erledigte Meldungen löschen wir sechs Monate später, offene bleiben, bis sie erledigt sind. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse ist ein Spiel ohne anstößige Inhalte, Belästigung und Betrug.",
+            "Du kannst andere Spieler auf ihrem Profil blockieren. Wir speichern dazu, wen du wann blockiert hast. Ihre Namen zeigen wir dir dann nirgends mehr, weder in den Ranglisten noch bei deinen Rivalen, in deinen Gruppen oder bei Gruppenrätseln (ihre Rätsel verlieren für dich auch ihren Titel), und sie sind nicht mehr deine Rivalen. Deine Liste ist privat, Blockierte erfahren nichts davon. Aufheben kannst du eine Blockierung jederzeit auf deiner Kontoseite oder dem Profil des Spielers. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Spiels).",
+            "Löschst du dein Konto (oder wird ein verlassenes Gastkonto gelöscht), löschen wir deine Meldungen und Blockierungen und auch die anderer über dich. Meldest du dich an, nachdem du als Gast gespielt hast, übernehmen wir sie in dein Konto.",
+        ],
+    ),
+    (
         "SAT Dojo",
         &[
             "Mit einem registrierten Konto kannst du im SAT Dojo einen eigenen Löser als WebAssembly-Datei einsenden. Wir speichern die Datei, Name, Beschreibung und Quellcode-Link des Lösers, den Zeitpunkt und das Ergebnis. Öffentlich sichtbar sind Name, Beschreibung, Link, dein Benutzername, Datum, Punktzahl (auch nach Antwort und Familie aufgeschlüsselt, als sortierte Kurve des Treibstoffs der gelösten Formeln und als Beitrag im Vergleich mit den anderen Lösern), Prüfsumme und Größe der Datei; die Datei selbst geben wir nicht heraus. Bitte beachte, dass WebAssembly-Dateien Debug-Informationen wie lokale Dateipfade enthalten können; wir speichern die Datei so, wie du sie hochlädst.",
@@ -170,8 +180,8 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Speicherdauer",
         &[
-            "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Stempel, deine Rivalenliste (und deinen Eintrag in den Listen anderer), deine Gruppenmitgliedschaften (deine Gruppen gehen an das dienstälteste Mitglied über, leere Gruppen löschen wir, deine Brücken bleiben ohne Namen in den Flüssen deiner Gruppen), mit wem du Planken gelegt hast, deine gegebenen und erhaltenen Hanko, deine offenen Gruppenrätsel und deine Ergebnisse bei Gruppenrätseln (geschlossene Rätsel bleiben ohne Namen), Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
-            "Die nichtöffentliche Datensatz-ID eines gelöschten Kontos bleibt gesperrt, damit eine Kennung und ihre Berechtigungen niemals an ein neues Konto übergehen. Gastkonten, die ein Jahr lang nicht besucht wurden, löschen wir automatisch auf dieselbe Weise, denn ohne gültige Sitzung kommt niemand mehr an sie heran. Sitzungen laufen ein Jahr nach dem letzten Besuch ab, Kontaktnachrichten löschen wir spätestens nach sechs Monaten.",
+            "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Stempel, deine Rivalenliste (und deinen Eintrag in den Listen anderer), deine Meldungen und Blockierungen (und die anderer über dich), deine Gruppenmitgliedschaften (deine Gruppen gehen an das dienstälteste Mitglied über, leere Gruppen löschen wir, deine Brücken bleiben ohne Namen in den Flüssen deiner Gruppen), mit wem du Planken gelegt hast, deine gegebenen und erhaltenen Hanko, deine offenen Gruppenrätsel und deine Ergebnisse bei Gruppenrätseln (geschlossene Rätsel bleiben ohne Namen), Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
+            "Die nichtöffentliche Datensatz-ID eines gelöschten Kontos bleibt gesperrt, damit eine Kennung und ihre Berechtigungen niemals an ein neues Konto übergehen. Gastkonten, die ein Jahr lang nicht besucht wurden, löschen wir automatisch auf dieselbe Weise, denn ohne gültige Sitzung kommt niemand mehr an sie heran. Sitzungen laufen ein Jahr nach dem letzten Besuch ab, Kontaktnachrichten löschen wir spätestens nach sechs Monaten, erledigte Meldungen sechs Monate, nachdem sie erledigt wurden.",
         ],
     ),
     (
@@ -243,6 +253,13 @@ const PRIVACY_EN: &[Section] = &[
         ],
     ),
     (
+        "Reports and blocks",
+        &[
+            "You can report other players on their profile, for an offensive or inappropriate name, for cheating or for something else, also as a guest. We store who reported whom and when, the reason, your optional note and the name the reported player had then. Reported players aren't told who reported them. Each new report is also emailed to us via Proton Mail (see contact form and email). Only the operator sees reports; we look at each within 24 hours and rename the player, ban them or dismiss the report. To curb abuse we count the reports per player and day. Dealt-with reports are deleted six months later, open ones stay until they are dealt with (Art. 6 (1) f GDPR; our legitimate interest is a game without offensive content, harassment and cheating).",
+            "You can block other players on their profile. We store whom you blocked and when. Their names are then no longer shown to you anywhere, not on the leaderboards, among your rivals, in your groups or on group puzzles (their puzzles lose their titles for you too), and they are no longer your rivals. Your list is private, blocked players aren't told. You can unblock them at any time on your account page or their profile (Art. 6 (1) b GDPR). Deleting your account (or the deletion of an abandoned guest account) deletes your reports and blocks and those of others about you; signing in after playing as a guest moves them to your account.",
+        ],
+    ),
+    (
         "SAT Dojo",
         &[
             "Registered players can submit a solver as a WebAssembly file. We store the file, its name, description, source link, time and result; everything but the file itself is public along with your username, the result also split by answer and family, as a sorted curve of the fuel of the solved formulas and as a contribution compared with the other solvers. WebAssembly files can contain debug information such as local file paths, and we store the file as uploaded. Only the file, without anything about you, is sent to our own benchmark server, also at Fly.io in Frankfurt, and new entries are compared with earlier ones to detect copies (Art. 6 (1) b GDPR). When a season ends, its final results are archived publicly for good: the solver's name and source link, your username, rank, score and the result on every formula. Deleting your account removes the name, link and the link to you from the archive; the numbers stay without a name, so everyone else keeps their places (Art. 6 (1) b GDPR). To limit submissions per network we store a keyed hash of your IP address that changes every day, never the address itself (Art. 6 (1) f GDPR).",
@@ -271,13 +288,78 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Retention",
         &[
-            "We keep your account, results, stamps and your open group puzzles and your results on group puzzles (closed puzzles stay without a name), Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, rivals (your list and your place on everyone else's), group memberships (your groups pass to their longest standing member, empty groups are deleted, the bridges you laid stay in your groups' rivers without a name), with whom you laid planks, the hanko you gave and got, Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest.",
+            "We keep your account, results, stamps and your open group puzzles and your results on group puzzles (closed puzzles stay without a name), Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, rivals (your list and your place on everyone else's), reports and blocks (yours and those of others about you), group memberships (your groups pass to their longest standing member, empty groups are deleted, the bridges you laid stay in your groups' rivers without a name), with whom you laid planks, the hanko you gave and got, Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest, reports six months after they were dealt with.",
         ],
     ),
     (
         "Your rights",
         &[
             "You have the right to access, rectification, erasure, restriction and portability (Art. 15–20 GDPR) and to lodge a complaint with a supervisory authority (Art. 77 GDPR). Where we rely on Art. 6 (1) f GDPR you can object at any time on grounds relating to your particular situation (Art. 21 GDPR). Just email us or use the contact form: /kontakt",
+        ],
+    ),
+    ("Last updated", &["October 2026"]),
+];
+
+/// The community rules everyone accepts with an account (`/regeln`, linked from the sign up).
+const RULES_DE: &[Section] = &[
+    (
+        "Worum es geht",
+        &[
+            "Hashi ist ein Rätselspiel für alle. Wer ein Konto erstellt, akzeptiert diese Regeln; sie gelten genauso, wenn du als Gast spielst. Sie betreffen alles, was andere von dir sehen: deinen Namen, die Namen deiner Gruppen, die Titel deiner Gruppenrätsel und die Namen deiner Löser im SAT Dojo.",
+        ],
+    ),
+    (
+        "Was nicht erlaubt ist",
+        &[
+            "Keine beleidigenden, anstößigen, diskriminierenden, sexuellen, gewaltverherrlichenden oder sonst unangemessenen Namen, Gruppennamen oder Rätseltitel, und keine, die sich als Betreiber oder offizielle Stelle ausgeben.",
+            "Kein Betrug: keine Programme oder Hilfen, die für dich lösen, kein Weitergeben der Lösung der Brücke des Tages, keine zweiten Konten, um die Rangliste zu beeinflussen.",
+            "Keine Belästigung anderer Spieler, auch nicht über Gruppen und Gruppenrätsel.",
+        ],
+    ),
+    (
+        "Null Toleranz",
+        &[
+            "Für anstößige Inhalte und missbräuchliches Verhalten gilt null Toleranz. Wir gehen jeder Meldung innerhalb von 24 Stunden nach. Verstößt ein Spielername gegen diese Regeln, benennen wir den Spieler um; anstößige Gruppennamen und Rätseltitel entfernen wir. Wer betrügt, andere belästigt oder wiederholt gegen die Regeln verstößt, wird gesperrt: Ein gesperrtes Konto kann sich nicht mehr anmelden, seine Ergebnisse und sein Profil verschwinden aus allen Ranglisten.",
+        ],
+    ),
+    (
+        "Melden und Blockieren",
+        &[
+            "Auf dem Profil jedes Spielers (ein Klick auf seinen Namen in einer Rangliste) findest du „Melden“ und „Blockieren“. Eine Meldung geht nur an uns, der gemeldete Spieler erfährt nicht, wer ihn gemeldet hat.",
+            "Blockierst du jemanden, siehst du seinen Namen nirgends mehr auf Hashi, weder in den Ranglisten noch bei deinen Rivalen, in deinen Gruppen oder bei Gruppenrätseln. Blockierte erfahren davon nichts. Auf deiner Kontoseite kannst du Blockierungen jederzeit aufheben.",
+            "Für alles andere, etwa einen anstößigen Gruppennamen, schreib uns über das Kontaktformular: /kontakt",
+        ],
+    ),
+    ("Stand", &["Oktober 2026"]),
+];
+
+const RULES_EN: &[Section] = &[
+    (
+        "What this is about",
+        &[
+            "Hashi is a puzzle game for everyone. Creating an account means accepting these rules, and they apply just the same when you play as a guest. They cover everything others see of you: your name, the names of your groups, the titles of your group puzzles and the names of your solvers in the SAT Dojo.",
+        ],
+    ),
+    (
+        "What isn't allowed",
+        &[
+            "No insulting, offensive, discriminatory, sexual, violent or otherwise objectionable names, group names or puzzle titles, and none that pose as the operator or anything official.",
+            "No cheating: no programs or help that solve for you, no sharing the solution of the daily bridge, no second accounts to sway the leaderboard.",
+            "No harassing other players, also not through groups or group puzzles.",
+        ],
+    ),
+    (
+        "Zero tolerance",
+        &[
+            "There is zero tolerance for objectionable content and abusive users. We act on every report within 24 hours. A player whose name breaks these rules is renamed; offensive group names and puzzle titles are removed. Whoever cheats, harasses others or breaks the rules again is banned: a banned account can't sign in any more, and its results and profile leave every leaderboard.",
+        ],
+    ),
+    (
+        "Reporting and blocking",
+        &[
+            "Every player's profile (a click on their name on a leaderboard) has \"Report\" and \"Block\". A report only goes to us, the reported player isn't told who reported them.",
+            "When you block someone, you don't see their name anywhere on Hashi any more: not on the leaderboards, among your rivals, in your groups or on group puzzles. Blocked players aren't told. You can unblock them at any time on your account page.",
+            "For anything else, an offensive group name say, write to us through the contact form: /kontakt",
         ],
     ),
     ("Last updated", &["October 2026"]),
@@ -387,6 +469,20 @@ pub fn PrivacyPage() -> impl IntoView {
             path="/datenschutz"
             de=PRIVACY_DE
             en=PRIVACY_EN
+        />
+    }
+}
+
+#[component]
+pub fn CommunityRulesPage() -> impl IntoView {
+    let i18n = use_i18n();
+    view! {
+        <LegalPage
+            title=Signal::derive(move || t_string!(i18n, common.legal.rules).to_string())
+            kanji="規約 · kiyaku"
+            path="/regeln"
+            de=RULES_DE
+            en=RULES_EN
         />
     }
 }

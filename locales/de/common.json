@@ -89,7 +89,8 @@
     "group_not_found": "Diese Gruppe gibt es nicht, oder du bist kein Mitglied.",
     "group_full": "Diese Gruppe ist voll: Sie hat schon 50 Mitglieder.",
     "too_many_groups": "Du bist schon in 10 Gruppen, verlass zuerst eine.",
-    "group_owner_only": "Das kann nur die Leitung der Gruppe."
+    "group_owner_only": "Das kann nur die Leitung der Gruppe.",
+    "too_many_reports": "Für heute sind es genug Meldungen, bitte versuch es morgen wieder."
   },
   "solver": {
     "title": "SAT-Solver",
@@ -135,7 +136,8 @@
     "penalties": "Tipps · Prüfungen",
     "shared": "Geteilter Platz",
     "empty": "Noch hat niemand die Brücke überquert. Mach den Anfang!",
-    "deleted": "gelöschter Spieler"
+    "deleted": "gelöschter Spieler",
+    "blocked": "blockierter Spieler"
   },
   "board": {
     "label": "Hashiwokakero-Spielfeld",
@@ -218,7 +220,8 @@
     "imprint": "Impressum",
     "privacy": "Datenschutz",
     "english": "English version",
-    "contact": "Kontakt"
+    "contact": "Kontakt",
+    "rules": "Community-Regeln"
   },
   "audio": {
     "sound": "Soundeffekte",

@@ -52,5 +52,11 @@
     "button": "Supprimer définitivement",
     "cancel": "Annuler",
     "done": "Ton compte est supprimé."
+  },
+  "accept_rules": "En créant un compte, tu acceptes les <a>règles de la communauté</a>.",
+  "blocks": {
+    "title": "Joueurs bloqués",
+    "text": "Leurs noms te sont masqués dans les classements, dans tes groupes et parmi tes rivaux.",
+    "none": "Tu n’as bloqué personne. Tu peux bloquer un joueur depuis son profil."
   }
 }

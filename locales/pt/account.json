@@ -52,5 +52,11 @@
     "button": "Excluir para sempre",
     "cancel": "Cancelar",
     "done": "Sua conta foi excluída."
+  },
+  "accept_rules": "Ao criar uma conta, você aceita as <a>regras da comunidade</a>.",
+  "blocks": {
+    "title": "Jogadores bloqueados",
+    "text": "Os nomes deles ficam ocultos para você nos rankings, nos seus grupos e entre seus rivais.",
+    "none": "Você não bloqueou ninguém. Dá para bloquear um jogador no perfil dele."
   }
 }

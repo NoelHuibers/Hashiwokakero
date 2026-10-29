@@ -7,6 +7,7 @@ use crate::components::sprites::{
     BOAT, BoardDefs, BridgeSprite, CELL, PENNANT, PixelArt, PixelSprite, Span,
 };
 use crate::i18n::{td_string, use_i18n};
+use crate::lang::player_name;
 
 use super::banzuke::CROWN;
 use crate::model::{GroupMember, SharedDays, archipelago, bridge_count, colour_var, shared_days};
@@ -71,9 +72,9 @@ pub fn tag(name: &str) -> (String, f32) {
 #[component]
 fn Island(member: GroupMember, x: i32, y: i32, me: bool, crowned: Signal<bool>) -> impl IntoView {
     let i18n = use_i18n();
-    let (label, width) = tag(&member.name);
+    let name = player_name(i18n.get_locale_untracked(), &member.name);
+    let (label, width) = tag(&name);
     let done = member.done_today;
-    let name = member.name.clone();
     let tooltip = move || {
         let l = i18n.get_locale();
         let state = if done {
@@ -144,7 +145,7 @@ pub fn Archipelago(
         members
             .iter()
             .find(|m| m.user_id == id)
-            .map(|m| m.name.clone())
+            .map(|m| player_name(i18n.get_locale_untracked(), &m.name))
             .unwrap_or_default()
     };
     let bridges: Vec<_> = layout

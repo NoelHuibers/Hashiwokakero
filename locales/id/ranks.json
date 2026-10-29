@@ -55,6 +55,29 @@
     "since": "Bermain sejak {{ date }}.",
     "you": "Itu kamu, ke akunmu",
     "preview": "{{ name }} di Hashi, teka-teki Hashiwokakero harian: catatan dan buku stempel.",
-    "preview_stats": "Teka-teki harian selesai: {{ solved }} · Rekor beruntun: {{ best }} · Medali: {{ medals }}"
+    "preview_stats": "Teka-teki harian selesai: {{ solved }} · Rekor beruntun: {{ best }} · Medali: {{ medals }}",
+    "report": {
+      "button": "Laporkan",
+      "title": "Laporkan {{ name }}",
+      "intro": "Kami memeriksa setiap laporan dalam 24 jam. {{ name }} tidak diberi tahu siapa yang melapor.",
+      "reason": "Apa masalahnya?",
+      "name": "Nama yang menyinggung atau tidak pantas",
+      "cheating": "Curang",
+      "other": "Hal lain",
+      "note": "Catatan (opsional)",
+      "note_hint": "Paling banyak 500 karakter. Hanya kami yang membacanya.",
+      "send": "Kirim laporan",
+      "cancel": "Batal",
+      "sent": "Terima kasih atas laporanmu. Kami memeriksa setiap laporan dalam 24 jam."
+    },
+    "block": {
+      "button": "Blokir",
+      "confirm": "Blokir {{ name }}? Namanya tidak akan ditampilkan lagi untukmu di mana pun di Hashi, dan dia bukan rivalmu lagi. Dia tidak diberi tahu.",
+      "yes": "Blokir",
+      "done": "{{ name }} diblokir.",
+      "blocked": "Kamu memblokir pemain ini: namanya disembunyikan darimu di semua tempat lain di Hashi.",
+      "unblock": "Buka blokir",
+      "undone": "Blokir {{ name }} dibuka."
+    }
   }
 }

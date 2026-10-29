@@ -15,6 +15,7 @@ use crate::api::{open_hanko, set_hanko};
 use crate::components::hanko::Seal;
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{Locale, t, td_string, use_i18n};
+use crate::lang::player_name;
 use crate::model::{
     GroupToday, HankoKind, HankoMark, HankoReceived, TodayState, known_seals, tally, tilt, toggled,
 };
@@ -101,7 +102,7 @@ impl HankoBoard {
             names
                 .iter()
                 .find(|(user, _)| *user == id)
-                .map(|(_, name)| name.clone())
+                .map(|(_, name)| player_name(locale, name))
                 .unwrap_or_default()
         })
     }
@@ -456,7 +457,7 @@ fn ReceivedItem(item: HankoReceived, today: i64, show_group: bool, index: usize)
             <div class="min-w-0 flex-1 text-start">
                 <p class="text-sm leading-snug">
                     {t!(
-                        i18n, hanko.received.item, name = giver_name, kind = kind_label, <b> = <b class="font-semibold" />
+                        i18n, hanko.received.item, name = move || player_name(i18n.get_locale(), &giver_name), kind = kind_label, <b> = <b class="font-semibold" />
                     )}
                 </p>
                 {meta

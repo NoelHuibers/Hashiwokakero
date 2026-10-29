@@ -52,5 +52,11 @@
     "button": "Kalıcı olarak sil",
     "cancel": "İptal",
     "done": "Hesabın silindi."
+  },
+  "accept_rules": "Hesap oluşturarak <a>topluluk kurallarını</a> kabul etmiş olursun.",
+  "blocks": {
+    "title": "Engellenen oyuncular",
+    "text": "Adları sıralamalarda, gruplarında ve rakiplerin arasında senden gizlenir.",
+    "none": "Kimseyi engellemedin. Bir oyuncuyu profilinden engelleyebilirsin."
   }
 }

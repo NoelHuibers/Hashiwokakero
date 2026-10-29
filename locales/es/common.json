@@ -89,7 +89,8 @@
     "group_not_found": "Este grupo no existe o no eres miembro.",
     "group_full": "Este grupo está lleno: ya tiene 50 miembros.",
     "too_many_groups": "Ya estás en 10 grupos, sal de uno primero.",
-    "group_owner_only": "Solo quien gestiona el grupo puede hacer eso."
+    "group_owner_only": "Solo quien gestiona el grupo puede hacer eso.",
+    "too_many_reports": "Ya son suficientes denuncias por hoy, inténtalo de nuevo mañana."
   },
   "solver": {
     "title": "Solver SAT",
@@ -135,7 +136,8 @@
     "penalties": "pistas · comprobaciones",
     "shared": "Puesto compartido",
     "empty": "Nadie ha cruzado todavía. ¡Abre tú el camino!",
-    "deleted": "jugador eliminado"
+    "deleted": "jugador eliminado",
+    "blocked": "jugador bloqueado"
   },
   "board": {
     "label": "Tablero de Hashiwokakero",
@@ -218,7 +220,8 @@
     "imprint": "Aviso legal",
     "privacy": "Privacidad",
     "english": "Versión en inglés",
-    "contact": "Contacto"
+    "contact": "Contacto",
+    "rules": "Normas de la comunidad"
   },
   "audio": {
     "sound": "Efectos de sonido",

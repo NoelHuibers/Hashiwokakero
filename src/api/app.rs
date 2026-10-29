@@ -177,13 +177,15 @@ pub(super) fn keep_session(sent: Option<&str>, received: Option<&str>) {
 }
 
 /// The server functions that make a session for a visitor without one: a guest of the first
-/// daily, group or rival, or the account of a sign in.
+/// daily, group, rival, report or block, or the account of a sign in.
 #[cfg(any(feature = "csr", test))]
-const SESSION_MAKERS: [&str; 6] = [
+const SESSION_MAKERS: [&str; 8] = [
     "start_daily",
     "create_group",
     "join_group",
     "set_rival",
+    "report_player",
+    "block_player",
     "login",
     "register",
 ];
@@ -395,6 +397,7 @@ mod tests {
             include_str!("groups.rs"),
             include_str!("hanko.rs"),
             include_str!("kadai.rs"),
+            include_str!("moderation.rs"),
             include_str!("puzzle.rs"),
             include_str!("replay.rs"),
             include_str!("rivals.rs"),

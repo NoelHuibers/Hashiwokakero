@@ -52,5 +52,11 @@
     "button": "Endgültig löschen",
     "cancel": "Abbrechen",
     "done": "Dein Konto ist gelöscht."
+  },
+  "accept_rules": "Mit dem Erstellen eines Kontos akzeptierst du die <a>Community-Regeln</a>.",
+  "blocks": {
+    "title": "Blockierte Spieler",
+    "text": "Ihre Namen werden dir in den Ranglisten, in deinen Gruppen und bei deinen Rivalen nicht angezeigt.",
+    "none": "Du hast niemanden blockiert. Einen Spieler blockierst du auf seinem Profil."
   }
 }

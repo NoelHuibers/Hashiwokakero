@@ -4,6 +4,7 @@
   "untitled_former": "La grille d’un membre",
   "by": "par {{ name }}",
   "by_former": "par un ancien membre",
+  "by_blocked": "par un joueur bloqué",
   "solved_of": "résolue par {{ solved }} sur {{ players }}",
   "left": {
     "days": "encore {{ count }} j",

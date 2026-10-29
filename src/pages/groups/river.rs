@@ -16,7 +16,7 @@ use crate::components::sprites::{
 use crate::components::ui::button::Button;
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{Locale, t, td_string, use_i18n};
-use crate::lang::{date_short, stamp_name};
+use crate::lang::{date_short, player_name, stamp_name};
 use crate::model::{
     GroupMember, GroupRiver, LEVEL_DAYS, RiverLevel, Stamp, Waters, colour_var, day_of,
     ocean_number, planks_laid,
@@ -191,7 +191,7 @@ fn Plank(i: usize, x: i32, new: Option<u32>) -> impl IntoView {
 #[component]
 fn CrewIsland(member: GroupMember, bridges: i64, x: i32, y: i32, me: bool) -> impl IntoView {
     let i18n = use_i18n();
-    let name = member.name.clone();
+    let name = player_name(i18n.get_locale_untracked(), &member.name);
     let tooltip = move || {
         let l = i18n.get_locale();
         td_string!(
@@ -740,7 +740,7 @@ fn RiverView(
             view! {
                 <li class="flex min-w-0 items-center gap-2 text-sm" data-member=m.user_id>
                     <ColourPip colour=m.colour />
-                    <span class="truncate" class:font-bold=mine>{m.name.clone()}</span>
+                    <span class="truncate" class:font-bold=mine>{player_name(i18n.get_locale_untracked(), &m.name)}</span>
                     <span class="ms-auto font-pixel tabular-nums">
                         {move || thousands(bridges, i18n.get_locale())}
                     </span>

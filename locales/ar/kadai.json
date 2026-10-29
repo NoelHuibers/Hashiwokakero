@@ -4,6 +4,7 @@
   "untitled_former": "لغز أحد الأعضاء",
   "by": "من صنع {{ name }}",
   "by_former": "من صنع عضو سابق",
+  "by_blocked": "من صنع لاعب محظور",
   "solved_of": "حلّوه: {{ solved }} من {{ players }}",
   "left": {
     "days": "أيام متبقية: {{ count }}",

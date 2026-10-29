@@ -52,5 +52,11 @@
     "button": "Delete for good",
     "cancel": "Cancel",
     "done": "Your account is deleted."
+  },
+  "accept_rules": "By creating an account you accept the <a>community rules</a>.",
+  "blocks": {
+    "title": "Blocked players",
+    "text": "Their names are hidden from you on the leaderboards, in your groups and among your rivals.",
+    "none": "You haven't blocked anyone. You can block a player on their profile."
   }
 }

@@ -153,6 +153,16 @@ async fn mail(id: i64, name: &str, email: &str, message: &str) -> Result<bool, S
     Ok(true)
 }
 
+/// Mails a note to us (`CONTACT_TO`), like a report of a player (`server::reports`).
+/// `Ok(false)`: SMTP isn't set up.
+pub(super) async fn notify(subject: &str, body: &str) -> Result<bool, String> {
+    let Some(smtp) = Smtp::from_vars(env)? else {
+        return Ok(false);
+    };
+    smtp.send(smtp.note(subject, body)?).await?;
+    Ok(true)
+}
+
 /// The SMTP settings (see the top of this file).
 #[derive(Debug)]
 struct Smtp {
@@ -209,6 +219,17 @@ impl Smtp {
             if email.is_empty() { "-" } else { email },
         );
         builder.body(body).map_err(|e| e.to_string())
+    }
+
+    /// A note from the site itself, no answer expected.
+    fn note(&self, subject: &str, body: &str) -> Result<Message, String> {
+        Message::builder()
+            .from(self.from.clone())
+            .to(self.to.clone())
+            .subject(format!("Hashi: {subject}"))
+            .header(ContentType::TEXT_PLAIN)
+            .body(format!("{body}\n"))
+            .map_err(|e| e.to_string())
     }
 
     async fn send(&self, mail: Message) -> Result<(), String> {
@@ -369,5 +390,13 @@ mod tests {
         assert!(!mail.contains("Reply-To"), "{mail}");
         let mail = text(s.compose(9, "", "bob@example.org", "Hello there!").unwrap());
         assert!(mail.contains("Reply-To: bob@example.org\n"), "{mail}");
+
+        // A note of the site, a report say
+        let mail = text(s.note("Meldung #3", "Spieler #17").unwrap());
+        assert!(mail.contains("From: Hashi <hello@hashi.rs>\n"), "{mail}");
+        assert!(mail.contains("To: admin@hashi.rs\n"), "{mail}");
+        assert!(mail.contains("Subject: Hashi: Meldung #3\n"), "{mail}");
+        assert!(mail.contains("Spieler #17"), "{mail}");
+        assert!(!mail.contains("Reply-To"), "{mail}");
     }
 }

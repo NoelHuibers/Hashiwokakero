@@ -89,7 +89,8 @@
     "group_not_found": "존재하지 않는 그룹이거나 내가 속한 그룹이 아니에요.",
     "group_full": "이 그룹은 꽉 찼어요. 이미 멤버가 50명이에요.",
     "too_many_groups": "이미 10개 그룹에 속해 있어요. 먼저 하나에서 나가 주세요.",
-    "group_owner_only": "그룹 방장만 할 수 있어요."
+    "group_owner_only": "그룹 방장만 할 수 있어요.",
+    "too_many_reports": "오늘은 신고를 충분히 보냈어요. 내일 다시 시도해 주세요."
   },
   "solver": {
     "title": "SAT 솔버",
@@ -135,7 +136,8 @@
     "penalties": "힌트 · 확인",
     "shared": "공동 순위",
     "empty": "아직 아무도 건너지 않았어요. 첫 번째가 되어 보세요!",
-    "deleted": "삭제된 플레이어"
+    "deleted": "삭제된 플레이어",
+    "blocked": "차단한 플레이어"
   },
   "board": {
     "label": "하시 퍼즐 보드",
@@ -218,7 +220,8 @@
     "imprint": "법적 고지",
     "privacy": "개인정보 처리방침",
     "english": "영어 버전",
-    "contact": "문의"
+    "contact": "문의",
+    "rules": "커뮤니티 규칙"
   },
   "audio": {
     "sound": "효과음",

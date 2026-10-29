@@ -49,6 +49,15 @@ impl Rivals {
         });
     }
 
+    /// Unmarks `id` here, after the server did (blocking them, see `Blocks::set`), and counts
+    /// it as a change.
+    pub fn forget(&self, id: i64) {
+        if self.is(id) {
+            self.ids.update(|ids| ids.retain(|&r| r != id));
+            self.changes.update(|c| *c += 1);
+        }
+    }
+
     /// Marks `id` here at once, or unmarks it. Whether it is marked now.
     fn flip(&self, id: i64) -> bool {
         let mut on = false;
@@ -133,6 +142,21 @@ mod tests {
             rivals.flip(5);
             assert!(!rivals.settle(Err(vec![9, 3])));
             assert_eq!(rivals.ids.get_untracked(), [9, 3]);
+            assert_eq!(rivals.changes.get_untracked(), 1);
+        });
+    }
+
+    /// Blocking a rival takes them off the list here, as the server did.
+    #[test]
+    fn a_blocked_rival_is_forgotten() {
+        Owner::new().with(|| {
+            let rivals = Rivals::new();
+            rivals.ids.set(vec![7, 9]);
+            rivals.forget(7);
+            assert_eq!(rivals.ids.get_untracked(), [9]);
+            assert_eq!(rivals.changes.get_untracked(), 1);
+            // Not a rival: nothing changes
+            rivals.forget(3);
             assert_eq!(rivals.changes.get_untracked(), 1);
         });
     }

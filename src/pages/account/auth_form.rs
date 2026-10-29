@@ -2,8 +2,10 @@
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
+use leptos_router::components::A;
 
 use crate::api::{login, my_stats, register};
+use crate::components::layout::use_localized;
 use crate::components::ui::button::Button;
 use crate::components::ui::input::{Input, InputType};
 use crate::components::ui::label::Label;
@@ -105,6 +107,21 @@ pub(super) fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl I
                     (Mode::Register, false) => format!("{} 登録", t_string!(i18n, account.create)),
                 }}
             </Button>
+            {(mode == Mode::Register)
+                .then(|| {
+                    let rules = use_localized("/regeln");
+                    view! {
+                        <p class="text-center text-xs text-muted-foreground" data-accept-rules="">
+                            {t!(
+                                i18n,
+                                account.accept_rules,
+                                <a> = move |children: ChildrenFn| view! {
+                                    <A href=rules attr:class="text-primary underline underline-offset-4">{children()}</A>
+                                }
+                            )}
+                        </p>
+                    }
+                })}
         </form>
     }
 }

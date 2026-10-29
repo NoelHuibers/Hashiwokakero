@@ -55,6 +55,29 @@
     "since": "Playing since {{ date }}.",
     "you": "That's you, to your account",
     "preview": "{{ name }} on Hashi, the daily Hashiwokakero puzzle: record and stamp book.",
-    "preview_stats": "Dailies solved: {{ solved }} · Best streak: {{ best }} · Medals: {{ medals }}"
+    "preview_stats": "Dailies solved: {{ solved }} · Best streak: {{ best }} · Medals: {{ medals }}",
+    "report": {
+      "button": "Report",
+      "title": "Report {{ name }}",
+      "intro": "We look at every report within 24 hours. {{ name }} isn't told who reported them.",
+      "reason": "What's wrong?",
+      "name": "Offensive or inappropriate name",
+      "cheating": "Cheating",
+      "other": "Something else",
+      "note": "Note (optional)",
+      "note_hint": "At most 500 characters. Only we read it.",
+      "send": "Send report",
+      "cancel": "Cancel",
+      "sent": "Thanks for your report. We look at every report within 24 hours."
+    },
+    "block": {
+      "button": "Block",
+      "confirm": "Block {{ name }}? Their name won't be shown to you anywhere on Hashi any more, and they're no longer your rival. They aren't told.",
+      "yes": "Block",
+      "done": "{{ name }} is blocked.",
+      "blocked": "You blocked this player: their name is hidden from you everywhere else on Hashi.",
+      "unblock": "Unblock",
+      "undone": "{{ name }} is unblocked."
+    }
   }
 }

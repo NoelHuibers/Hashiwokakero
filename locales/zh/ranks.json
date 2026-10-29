@@ -55,6 +55,29 @@
     "since": "自 {{ date }} 起开始游戏。",
     "you": "这是你，前往我的账号",
     "preview": "{{ name }} 在 Hashi（每日数桥谜题）的战绩与印章册。",
-    "preview_stats": "已解每日谜题：{{ solved }} · 最长连胜：{{ best }} · 奖牌：{{ medals }}"
+    "preview_stats": "已解每日谜题：{{ solved }} · 最长连胜：{{ best }} · 奖牌：{{ medals }}",
+    "report": {
+      "button": "举报",
+      "title": "举报 {{ name }}",
+      "intro": "我们会在 24 小时内处理每一条举报。{{ name }} 不会知道是谁举报的。",
+      "reason": "有什么问题？",
+      "name": "冒犯性或不当的名字",
+      "cheating": "作弊",
+      "other": "其他",
+      "note": "备注（可选）",
+      "note_hint": "最多 500 个字符，只有我们能看到。",
+      "send": "提交举报",
+      "cancel": "取消",
+      "sent": "感谢你的举报。我们会在 24 小时内处理每一条举报。"
+    },
+    "block": {
+      "button": "屏蔽",
+      "confirm": "要屏蔽 {{ name }} 吗？你在 Hashi 上的任何地方都不会再看到这个名字，对方也不再是你的对手。对方不会收到通知。",
+      "yes": "屏蔽",
+      "done": "已屏蔽 {{ name }}。",
+      "blocked": "你已屏蔽这位玩家：在 Hashi 的其他地方，你都看不到其名字。",
+      "unblock": "取消屏蔽",
+      "undone": "已取消屏蔽 {{ name }}。"
+    }
   }
 }

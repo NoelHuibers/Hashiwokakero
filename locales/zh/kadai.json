@@ -4,6 +4,7 @@
   "untitled_former": "某位成员的谜题",
   "by": "出题：{{ name }}",
   "by_former": "出题：前成员",
+  "by_blocked": "出题：已屏蔽的玩家",
   "solved_of": "{{ players }} 人中 {{ solved }} 人解出",
   "left": {
     "days": "剩 {{ count }} 天",

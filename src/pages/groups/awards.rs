@@ -7,6 +7,7 @@ use leptos::prelude::*;
 
 use crate::components::sprites::PixelSprite;
 use crate::i18n::{Locale, t, td_string, use_i18n};
+use crate::lang::player_name;
 use crate::model::{AwardKind, Banzuke, BanzukeRow, Feat, MS_PER_DAY, format_duration};
 
 use super::today::ColourPip;
@@ -217,7 +218,7 @@ fn AwardTile(
                 view! {
                     <span class="inline-flex min-w-0 items-center gap-1">
                         <ColourPip colour=w.colour />
-                        <span class="truncate" class:text-primary=w.user_id == me>{w.name}</span>
+                        <span class="truncate" class:text-primary=w.user_id == me>{player_name(i18n.get_locale_untracked(), &w.name)}</span>
                     </span>
                 }
             })

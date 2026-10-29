@@ -504,6 +504,39 @@ ALTER TABLE attempts ADD COLUMN rank_finish INTEGER GENERATED ALWAYS AS
 CREATE INDEX attempts_shared_rank ON attempts (day, rank_ms, rank_finish)
     WHERE finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL;
 ",
+    // 23
+    "
+-- Reports of players to the admins, see server/reports.rs: who reported whom, why (name,
+-- cheating, other), a note for us, and the name the player had then. One open report per
+-- reporter and player, reporting again updates it. Resolved: an admin renamed or banned the
+-- player, or dismissed the report (`resolution`)
+CREATE TABLE IF NOT EXISTS reports (
+    id          INTEGER PRIMARY KEY,
+    reporter_id INTEGER NOT NULL,
+    player_id   INTEGER NOT NULL,
+    reason      TEXT NOT NULL,
+    note        TEXT NOT NULL DEFAULT '',
+    name        TEXT NOT NULL,
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL,
+    resolved_at INTEGER,
+    resolution  TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS reports_open ON reports (reporter_id, player_id)
+    WHERE resolved_at IS NULL;
+CREATE INDEX IF NOT EXISTS reports_reporter ON reports (reporter_id, updated_at);
+CREATE INDEX IF NOT EXISTS reports_player ON reports (player_id);
+
+-- Blocked players, see server/blocks.rs: their names aren't shown to whoever blocked them.
+-- Private, the blocked player isn't told
+CREATE TABLE IF NOT EXISTS blocks (
+    user_id    INTEGER NOT NULL,
+    blocked_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, blocked_id)
+);
+CREATE INDEX IF NOT EXISTS blocks_blocked ON blocks (blocked_id);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

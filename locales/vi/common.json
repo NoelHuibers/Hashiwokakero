@@ -89,7 +89,8 @@
     "group_not_found": "Nhóm này không tồn tại, hoặc bạn không phải thành viên.",
     "group_full": "Nhóm này đã đầy: đã có đủ 50 thành viên.",
     "too_many_groups": "Bạn đã ở trong 10 nhóm rồi, hãy rời một nhóm trước.",
-    "group_owner_only": "Chỉ chủ nhóm mới làm được việc này."
+    "group_owner_only": "Chỉ chủ nhóm mới làm được việc này.",
+    "too_many_reports": "Hôm nay bạn đã gửi đủ báo cáo rồi, vui lòng thử lại vào ngày mai."
   },
   "solver": {
     "title": "Bộ giải SAT",
@@ -135,7 +136,8 @@
     "penalties": "gợi ý · kiểm tra",
     "shared": "Đồng hạng",
     "empty": "Chưa ai qua cầu. Hãy là người đầu tiên!",
-    "deleted": "người chơi đã bị xóa"
+    "deleted": "người chơi đã bị xóa",
+    "blocked": "người chơi đã bị chặn"
   },
   "board": {
     "label": "Bàn chơi Hashiwokakero",
@@ -218,7 +220,8 @@
     "imprint": "Thông tin pháp lý",
     "privacy": "Quyền riêng tư",
     "english": "Bản tiếng Anh",
-    "contact": "Liên hệ"
+    "contact": "Liên hệ",
+    "rules": "Quy tắc cộng đồng"
   },
   "audio": {
     "sound": "Hiệu ứng âm thanh",

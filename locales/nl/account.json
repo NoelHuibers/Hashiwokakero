@@ -52,5 +52,11 @@
     "button": "Voorgoed verwijderen",
     "cancel": "Annuleren",
     "done": "Je account is verwijderd."
+  },
+  "accept_rules": "Door een account aan te maken ga je akkoord met de <a>communityregels</a>.",
+  "blocks": {
+    "title": "Geblokkeerde spelers",
+    "text": "Hun namen zijn voor je verborgen in de ranglijsten, in je groepen en bij je rivalen.",
+    "none": "Je hebt niemand geblokkeerd. Je blokkeert een speler op diens profiel."
   }
 }

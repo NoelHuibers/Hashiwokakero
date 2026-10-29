@@ -89,7 +89,8 @@
     "group_not_found": "Deze groep bestaat niet, of je bent er geen lid van.",
     "group_full": "Deze groep is vol: er zijn al 50 leden.",
     "too_many_groups": "Je zit al in 10 groepen, verlaat er eerst een.",
-    "group_owner_only": "Alleen de eigenaar van de groep kan dat doen."
+    "group_owner_only": "Alleen de eigenaar van de groep kan dat doen.",
+    "too_many_reports": "Genoeg meldingen voor vandaag, probeer het morgen opnieuw."
   },
   "solver": {
     "title": "SAT-solver",
@@ -135,7 +136,8 @@
     "penalties": "hints · controles",
     "shared": "Gedeelde plaats",
     "empty": "Nog niemand is overgestoken. Wees de eerste!",
-    "deleted": "verwijderde speler"
+    "deleted": "verwijderde speler",
+    "blocked": "geblokkeerde speler"
   },
   "board": {
     "label": "Hashiwokakero-speelbord",
@@ -218,7 +220,8 @@
     "imprint": "Colofon",
     "privacy": "Privacy",
     "english": "Engelse versie",
-    "contact": "Contact"
+    "contact": "Contact",
+    "rules": "Communityregels"
   },
   "audio": {
     "sound": "Geluidseffecten",

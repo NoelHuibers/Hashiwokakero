@@ -76,10 +76,12 @@ pub enum ApiError {
     /// The app is older than the oldest version the server still answers (see
     /// `server::apps`). Reloading doesn't help, only an update from the store.
     AppOutdated,
+    /// Too many reports from the player today (`server::reports`).
+    TooManyReports,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 43] = [
+    pub const ALL: [Self; 44] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -123,6 +125,7 @@ impl ApiError {
         Self::PuzzleLocked,
         Self::PuzzleAuthorOnly,
         Self::AppOutdated,
+        Self::TooManyReports,
     ];
 
     pub fn code(self) -> &'static str {
@@ -170,6 +173,7 @@ impl ApiError {
             Self::PuzzleLocked => "puzzle_locked",
             Self::PuzzleAuthorOnly => "puzzle_author_only",
             Self::AppOutdated => "app_outdated",
+            Self::TooManyReports => "too_many_reports",
         }
     }
 
