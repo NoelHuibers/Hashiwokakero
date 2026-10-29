@@ -22,7 +22,9 @@
 //!   `BanOutcome`, `SolveOutcome`, `Restarts`, `Rejection`), a page needs to know the variant
 //!   (`PaidAction`, `Answer`, `Difficulty`, `Family`), they echo the page's own settings
 //!   (`SolverKind`, `Heuristic`), or only the admin pages read them (`NameKind`,
-//!   `ReportReason` in `AdminReport`, `ReportOutcome`). Error codes
+//!   `ReportReason` in `AdminReport`, `ReportOutcome`, `FeedbackKind` and `FeedbackStatus` in
+//!   `ContactMessage`; the form sends a `FeedbackKind` too, a new one is for new pages only).
+//!   Error codes
 //!   are no enum on the wire: an unknown `E:` code shows as a generic error.
 
 use common::{Difficulty, GenerateParams, Heuristic, Restarts, SolverConfig, SolverKind};
@@ -36,8 +38,8 @@ use serde::de::DeserializeOwned;
 use super::{check, path, puzzle};
 use crate::api::{self, DailyOwner, PaidAction, PaidIntent};
 use crate::model::{
-    BenchmarkAction, Flag, HankoKind, MoveEvent, ReportOutcome, ReportReason, Stamp,
-    SubmissionAction,
+    BenchmarkAction, FeedbackContext, FeedbackKind, FeedbackStatus, Flag, HankoKind, MoveEvent,
+    ReportOutcome, ReportReason, Stamp, SubmissionAction,
 };
 
 /// The paths and their encodings.
@@ -112,6 +114,22 @@ fn log() -> Vec<MoveEvent> {
     ]
 }
 
+/// Everything a page sends along with a message, every `Option` `Some`.
+pub(super) fn feedback_context() -> FeedbackContext {
+    FeedbackContext {
+        app: Some("1.1.0".into()),
+        platform: "android".into(),
+        os: "Android 15".into(),
+        browser: "WebView 141".into(),
+        language: "de".into(),
+        page: Some("/practice".into()),
+        daily: Some(14),
+        player: Some(7),
+        screen: "390×844 @3x".into(),
+        errors: vec!["/practice E:database".into()],
+    }
+}
+
 fn owner() -> DailyOwner {
     DailyOwner {
         user: 7,
@@ -167,7 +185,15 @@ fn requests() -> Vec<Entry> {
             id: 4,
             action: BenchmarkAction::Accept,
         }),
-        entry(&api::AdminMessages { before: Some(9) }),
+        entry(&api::AdminMessages {
+            before: Some(9),
+            status: Some(FeedbackStatus::New),
+            kind: Some(FeedbackKind::Bug),
+        }),
+        entry(&api::AdminMessageStatus {
+            id: 9,
+            status: FeedbackStatus::Answered,
+        }),
         entry(&api::DeleteAdminMessage { id: 9 }),
         entry(&api::AdminNames {}),
         entry(&api::AdminRenamePlayer { id: 9 }),
@@ -193,6 +219,8 @@ fn requests() -> Vec<Entry> {
             email: "ada@example.com".into(),
             message: "Hallo!".into(),
             website: String::new(),
+            kind: FeedbackKind::Bug,
+            context: Some(feedback_context()),
         }),
         // daily
         entry(&api::DailyToday {}),
@@ -437,6 +465,28 @@ fn requests_without_later_arguments_load() {
     );
     let messages: api::AdminMessages = serde_json::from_str("{}").unwrap();
     assert_eq!(messages.before, None, "{REQUESTS}");
+    // From before the feedback inbox's filters
+    let messages: api::AdminMessages = serde_json::from_str(r#"{"before":9}"#).unwrap();
+    assert_eq!(
+        (messages.before, messages.status, messages.kind),
+        (Some(9), None, None),
+        "{REQUESTS}"
+    );
+    // Apps from before the feedback form: no type, no context
+    let message: api::SendMessage = serde_json::from_str(
+        r#"{"name":"Ada","email":"ada@example.com","message":"Hallo!","website":""}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        (message.kind, message.context),
+        (FeedbackKind::Other, None),
+        "{REQUESTS}"
+    );
+    // A context of a later page, with a line this server doesn't know yet, and without some
+    let context: FeedbackContext =
+        serde_json::from_str(r#"{"platform":"web","battery":"low"}"#).unwrap();
+    assert_eq!(context.platform, "web", "{REQUESTS}");
+    assert_eq!(context.errors, Vec::<String>::new(), "{REQUESTS}");
     // Intents saved before they had the attempt's id
     let intent: PaidIntent = serde_json::from_str(
         r#"{"user":7,"day":20381,"started_at":0,"action":"Hint","bridges":[],"id":"r1"}"#,

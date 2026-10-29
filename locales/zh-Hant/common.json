@@ -220,7 +220,7 @@
     "imprint": "法律聲明",
     "privacy": "隱私權政策",
     "english": "英文版",
-    "contact": "聯絡我們",
+    "contact": "意見回饋與聯絡",
     "rules": "社群規範"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "音樂",
     "music_hint": "舒緩的箏樂"
   },
-  "settings": "設定"
+  "settings": "設定",
+  "help": {
+    "title": "說明",
+    "bug": "回報錯誤",
+    "idea": "提出想法",
+    "question": "提問"
+  }
 }

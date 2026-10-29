@@ -58,5 +58,9 @@
     "title": "Pemain yang diblokir",
     "text": "Nama mereka disembunyikan darimu di papan peringkat, di grupmu, dan di antara rivalmu.",
     "none": "Kamu belum memblokir siapa pun. Kamu bisa memblokir pemain di profilnya."
+  },
+  "feedback": {
+    "title": "Ada pertanyaan atau masalah?",
+    "text": "Laporkan bug, usulkan ide, atau tanyakan apa saja. Kami membaca setiap pesan."
   }
 }

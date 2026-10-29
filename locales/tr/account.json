@@ -58,5 +58,9 @@
     "title": "Engellenen oyuncular",
     "text": "Adları sıralamalarda, gruplarında ve rakiplerin arasında senden gizlenir.",
     "none": "Kimseyi engellemedin. Bir oyuncuyu profilinden engelleyebilirsin."
+  },
+  "feedback": {
+    "title": "Sorular ya da sorunlar mı?",
+    "text": "Bir hata bildir, bir fikir öner ya da bize istediğini sor. Her mesajı okuyoruz."
   }
 }

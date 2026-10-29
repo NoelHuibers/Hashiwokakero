@@ -220,7 +220,7 @@
     "imprint": "Mentions légales",
     "privacy": "Confidentialité",
     "english": "Version anglaise",
-    "contact": "Contact",
+    "contact": "Avis & contact",
     "rules": "Règles de la communauté"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "Musique",
     "music_hint": "Douces mélodies de koto"
   },
-  "settings": "Réglages"
+  "settings": "Réglages",
+  "help": {
+    "title": "Aide",
+    "bug": "Signaler un bug",
+    "idea": "Proposer une idée",
+    "question": "Poser une question"
+  }
 }

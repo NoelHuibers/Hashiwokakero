@@ -16,10 +16,10 @@ use crate::model::{
     BlockedPlayer, CommunityCredit, CommunitySummary, ContactMessage, DailyInfo, DailyStart,
     DayResult, Daypart, DojoBenchmark, DojoBenchmarks, DojoBoard, DojoBudgetCurve, DojoBudgets,
     DojoCactus, DojoCrossover, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
-    DojoSeasons, DojoState, DojoSubmission, Flag, GroupToday, HallOfFame, HankoKind, Leaderboard,
-    LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard, MonthEntry, MoveEvent, PlayerProfile,
-    ReportOutcome, ReportReason, Run, Stamp, StampProgress, SubmissionAction, SubmitResult,
-    UserInfo, UserStats,
+    DojoSeasons, DojoState, DojoSubmission, FeedbackKind, FeedbackStatus, Flag, GroupToday,
+    HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard,
+    MonthEntry, MoveEvent, PlayerProfile, ReportOutcome, ReportReason, Run, Stamp, StampProgress,
+    SubmissionAction, SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -610,6 +610,12 @@ fn responses() -> Responses {
             message: "Hallo! \"Brücken\" <3".into(),
             created_at: 1_760_000_000_000,
             mailed: false,
+            kind: FeedbackKind::Bug,
+            context: Some(super::api::feedback_context()),
+            locale: Some("de".into()),
+            status: FeedbackStatus::Issue,
+            github_issue: Some(185),
+            handled_at: Some(1_760_000_100_000),
         },
         admin_banned: BannedPlayer {
             id: 9,
@@ -1068,5 +1074,7 @@ fn stored_ids() {
         ]
         .map(|o| format!("report_outcome {:?} {}", o, o.id())),
     );
+    lines.extend(FeedbackKind::ALL.map(|k| format!("feedback_kind {:?} {}", k, k.id())));
+    lines.extend(FeedbackStatus::ALL.map(|s| format!("feedback_status {:?} {}", s, s.id())));
     check("ids.txt", &lines.join("\n"), IDS);
 }

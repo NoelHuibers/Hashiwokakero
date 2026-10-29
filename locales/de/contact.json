@@ -1,17 +1,52 @@
 {
-  "title": "Kontakt",
-  "description": "Fragen, Ideen oder ein Fehler in Hashi? Schreib uns.",
-  "intro": "Eine Frage, eine Idee, ein Fehler oder etwas zu deinen Daten? Schreib uns, wir melden uns so bald wie möglich.",
+  "title": "Feedback",
+  "description": "Einen Fehler gefunden, eine Idee oder eine Frage zu Hashi? Schreib uns.",
+  "intro": "Ein Fehler, eine Idee, eine Frage oder etwas zu deinen Daten? Schreib uns: Wir lesen jede Nachricht und melden uns so bald wie möglich.",
+  "kind": "Worum geht es?",
+  "kinds": {
+    "bug": "Fehler",
+    "idea": "Idee",
+    "question": "Frage",
+    "other": "Etwas anderes"
+  },
+  "kind_hints": {
+    "bug": "Etwas funktioniert nicht",
+    "idea": "Etwas, das Hashi können könnte",
+    "question": "Etwas, das du wissen möchtest",
+    "other": "Lob, deine Daten, alles andere"
+  },
+  "placeholders": {
+    "bug": "Was hast du gemacht, was ist passiert und was hast du erwartet?",
+    "idea": "Was wünschst du dir, und wofür?",
+    "question": "Was möchtest du wissen?",
+    "other": "Was möchtest du uns sagen?"
+  },
   "name": "Name",
   "email": "E-Mail",
   "optional": "freiwillig",
   "email_hint": "Nur wenn du eine Antwort möchtest.",
   "message": "Nachricht",
+  "context": {
+    "title": "Wird mit deiner Nachricht gesendet",
+    "intro": "Damit wir ein Problem schneller finden. Sonst wird nichts über dich oder dein Gerät hinzugefügt.",
+    "app": "Version",
+    "app_version": "App {{ version }}",
+    "website": "Website",
+    "platform": "Plattform",
+    "system": "System",
+    "browser": "Browser",
+    "language": "Sprache",
+    "page": "Seite",
+    "daily": "Tagesrätsel",
+    "player": "Spieler",
+    "screen": "Bildschirm",
+    "errors": "Letzte Fehler"
+  },
   "send": "Senden",
   "sending": "Wird gesendet …",
   "sent_title": "Danke!",
   "sent": "Deine Nachricht ist angekommen. Wenn du eine E-Mail-Adresse angegeben hast, antworten wir dir dorthin.",
   "another": "Noch eine Nachricht schreiben",
-  "privacy": "Wir nutzen deine Nachricht nur, um sie zu beantworten, und löschen sie spätestens nach sechs Monaten. Mehr in der <a>Datenschutzerklärung</a>.",
+  "privacy": "Wir nutzen deine Nachricht und was mit ihr gesendet wird nur, um dir zu antworten und Fehler zu beheben, und löschen sie spätestens nach sechs Monaten. Mehr in der <a>Datenschutzerklärung</a>.",
   "by_mail": "Lieber per E-Mail?"
 }

@@ -1,17 +1,52 @@
 {
-  "title": "Kontak",
-  "description": "Punya pertanyaan, ide, atau menemukan bug di Hashi? Tulis ke kami.",
-  "intro": "Ada pertanyaan, ide, bug, atau hal tentang datamu? Tulis ke kami, kami akan membalas secepatnya.",
+  "title": "Masukan",
+  "description": "Menemukan bug, punya ide atau pertanyaan tentang Hashi? Beri tahu kami.",
+  "intro": "Bug, ide, pertanyaan, atau hal tentang datamu? Beri tahu kami: kami membaca setiap pesan dan membalas secepatnya.",
+  "kind": "Tentang apa?",
+  "kinds": {
+    "bug": "Bug",
+    "idea": "Ide",
+    "question": "Pertanyaan",
+    "other": "Lainnya"
+  },
+  "kind_hints": {
+    "bug": "Ada yang tidak berfungsi",
+    "idea": "Sesuatu yang bisa dilakukan Hashi",
+    "question": "Sesuatu yang ingin kamu ketahui",
+    "other": "Pujian, datamu, apa saja"
+  },
+  "placeholders": {
+    "bug": "Apa yang kamu lakukan, apa yang terjadi, dan apa yang kamu harapkan?",
+    "idea": "Apa yang kamu inginkan, dan untuk apa?",
+    "question": "Apa yang ingin kamu ketahui?",
+    "other": "Apa yang ingin kamu sampaikan?"
+  },
   "name": "Nama",
   "email": "Email",
   "optional": "opsional",
   "email_hint": "Hanya kalau kamu ingin dibalas.",
   "message": "Pesan",
+  "context": {
+    "title": "Dikirim bersama pesanmu",
+    "intro": "Agar kami lebih cepat menemukan masalah. Tidak ada hal lain tentang kamu atau perangkatmu yang ditambahkan.",
+    "app": "Versi",
+    "app_version": "Aplikasi {{ version }}",
+    "website": "Situs web",
+    "platform": "Platform",
+    "system": "Sistem",
+    "browser": "Peramban",
+    "language": "Bahasa",
+    "page": "Halaman",
+    "daily": "Jembatan harian",
+    "player": "Pemain",
+    "screen": "Layar",
+    "errors": "Error terbaru"
+  },
   "send": "Kirim",
   "sending": "Mengirim…",
   "sent_title": "Terima kasih!",
   "sent": "Pesanmu sudah sampai. Kalau kamu mencantumkan alamat email, kami akan membalas ke sana.",
   "another": "Tulis pesan lain",
-  "privacy": "Kami hanya memakai pesanmu untuk membalasnya dan menghapusnya paling lambat setelah enam bulan. Selengkapnya di <a>kebijakan privasi</a>.",
+  "privacy": "Kami hanya memakai pesanmu dan apa yang dikirim bersamanya untuk membalas dan memperbaiki masalah, lalu menghapusnya paling lambat setelah enam bulan. Selengkapnya di <a>kebijakan privasi</a>.",
   "by_mail": "Lebih suka lewat email?"
 }

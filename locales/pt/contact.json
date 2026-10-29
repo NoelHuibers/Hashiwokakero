@@ -1,17 +1,52 @@
 {
-  "title": "Contato",
-  "description": "Dúvidas, ideias ou um bug no Hashi? Escreva para a gente.",
-  "intro": "Uma dúvida, uma ideia, um bug ou algo sobre seus dados? Escreva para a gente, responderemos assim que pudermos.",
+  "title": "Feedback",
+  "description": "Encontrou um bug, tem uma ideia ou uma dúvida sobre o Hashi? Conte para a gente.",
+  "intro": "Um bug, uma ideia, uma dúvida ou algo sobre seus dados? Conte para a gente: lemos todas as mensagens e respondemos assim que pudermos.",
+  "kind": "Sobre o que é?",
+  "kinds": {
+    "bug": "Bug",
+    "idea": "Ideia",
+    "question": "Dúvida",
+    "other": "Outra coisa"
+  },
+  "kind_hints": {
+    "bug": "Algo não funciona",
+    "idea": "Algo que o Hashi poderia fazer",
+    "question": "Algo que você quer saber",
+    "other": "Elogios, seus dados, qualquer coisa"
+  },
+  "placeholders": {
+    "bug": "O que você fez, o que aconteceu e o que esperava?",
+    "idea": "O que você gostaria, e para quê?",
+    "question": "O que você gostaria de saber?",
+    "other": "O que você quer nos dizer?"
+  },
   "name": "Nome",
   "email": "E-mail",
   "optional": "opcional",
   "email_hint": "Só se você quiser uma resposta.",
   "message": "Mensagem",
+  "context": {
+    "title": "Enviado com sua mensagem",
+    "intro": "Assim achamos um problema mais rápido. Nada mais sobre você ou seu aparelho é adicionado.",
+    "app": "Versão",
+    "app_version": "App {{ version }}",
+    "website": "Site",
+    "platform": "Plataforma",
+    "system": "Sistema",
+    "browser": "Navegador",
+    "language": "Idioma",
+    "page": "Página",
+    "daily": "Ponte do dia",
+    "player": "Jogador",
+    "screen": "Tela",
+    "errors": "Erros recentes"
+  },
   "send": "Enviar",
   "sending": "Enviando…",
   "sent_title": "Obrigado!",
   "sent": "Sua mensagem chegou. Se você deixou um endereço de e-mail, responderemos por lá.",
   "another": "Escrever outra mensagem",
-  "privacy": "Usamos sua mensagem só para respondê-la e a apagamos em no máximo seis meses. Mais detalhes na <a>política de privacidade</a>.",
+  "privacy": "Usamos sua mensagem e o que é enviado com ela só para responder e corrigir problemas, e a apagamos em no máximo seis meses. Mais detalhes na <a>política de privacidade</a>.",
   "by_mail": "Prefere e-mail?"
 }

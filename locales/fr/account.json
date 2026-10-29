@@ -58,5 +58,9 @@
     "title": "Joueurs bloqués",
     "text": "Leurs noms te sont masqués dans les classements, dans tes groupes et parmi tes rivaux.",
     "none": "Tu n’as bloqué personne. Tu peux bloquer un joueur depuis son profil."
+  },
+  "feedback": {
+    "title": "Des questions ou un problème ?",
+    "text": "Signale un bug, propose une idée ou pose-nous n’importe quelle question. Nous lisons chaque message."
   }
 }

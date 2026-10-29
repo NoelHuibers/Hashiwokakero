@@ -220,7 +220,7 @@
     "imprint": "Thông tin pháp lý",
     "privacy": "Quyền riêng tư",
     "english": "Bản tiếng Anh",
-    "contact": "Liên hệ",
+    "contact": "Góp ý & liên hệ",
     "rules": "Quy tắc cộng đồng"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "Nhạc nền",
     "music_hint": "Giai điệu koto êm dịu"
   },
-  "settings": "Cài đặt"
+  "settings": "Cài đặt",
+  "help": {
+    "title": "Trợ giúp",
+    "bug": "Báo lỗi",
+    "idea": "Đề xuất ý tưởng",
+    "question": "Đặt câu hỏi"
+  }
 }

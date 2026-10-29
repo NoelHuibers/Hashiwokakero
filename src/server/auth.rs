@@ -698,6 +698,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         .chain(super::groups::ERASE)
         .chain(super::blocks::ERASE)
         .chain(super::reports::ERASE)
+        .chain(super::contact::ERASE)
     {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
     }

@@ -69,6 +69,7 @@ test('the title follows the page', async ({ page }) => {
   await expect(page).toHaveTitle('Hashi · Tägliches Hashiwokakero-Brückenrätsel, gratis');
   // Gone after a page load
   await page.evaluate(() => Object.assign(window, { samePage: true }));
+  await page.locator('header').getByRole('button', { name: 'Hilfe' }).click();
   await page.locator('header').getByRole('link', { name: 'Spielanleitung' }).click();
   await expect(page).toHaveURL(/\/de\/rules$/);
   await expect(page).toHaveTitle('Hashiwokakero spielen · Regeln und Lösungstipps · Hashi');

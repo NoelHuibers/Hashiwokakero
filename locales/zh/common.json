@@ -220,7 +220,7 @@
     "imprint": "法律声明",
     "privacy": "隐私政策",
     "english": "英文版",
-    "contact": "联系我们",
+    "contact": "反馈与联系",
     "rules": "社区规则"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "音乐",
     "music_hint": "舒缓的筝乐"
   },
-  "settings": "设置"
+  "settings": "设置",
+  "help": {
+    "title": "帮助",
+    "bug": "报告 bug",
+    "idea": "提出想法",
+    "question": "提问"
+  }
 }

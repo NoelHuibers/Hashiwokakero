@@ -1,14 +1,26 @@
-//! The contact form. SMTP isn't set up here, messages are only stored.
+//! The feedback form. SMTP isn't set up here, messages are only stored.
 
 use super::*;
-use crate::api::{AdminMessages, DeleteAdminMessage, SendMessage};
+use crate::api::{AdminMessageStatus, AdminMessages, DeleteAdminMessage, SendMessage};
+use crate::model::{FeedbackContext, FeedbackKind, FeedbackStatus};
 
+/// A message as an app from before the feedback form sends it: no type, no context.
 fn message(email: &str, text: &str) -> SendMessage {
     SendMessage {
         name: "Kim".into(),
         email: email.into(),
         message: text.into(),
         website: String::new(),
+        kind: FeedbackKind::Other,
+        context: None,
+    }
+}
+
+fn inbox(status: Option<FeedbackStatus>) -> AdminMessages {
+    AdminMessages {
+        before: None,
+        status,
+        kind: None,
     }
 }
 
@@ -48,7 +60,7 @@ async fn messages_reach_the_admins() {
         .unwrap();
 
     assert_eq!(
-        api_error(visitor.call(AdminMessages { before: None }).await),
+        api_error(visitor.call(inbox(None)).await),
         ApiError::Forbidden
     );
     assert_eq!(
@@ -56,7 +68,7 @@ async fn messages_reach_the_admins() {
         ApiError::Forbidden
     );
     let admin = Browser::admin(&server).await;
-    let messages = admin.call(AdminMessages { before: None }).await.unwrap();
+    let messages = admin.call(inbox(None)).await.unwrap();
     let sent = messages.iter().find(|m| m.message == text).unwrap();
     assert_eq!((&*sent.name, &*sent.email), ("Kim", "kim@example.com"));
     assert!(!sent.mailed);
@@ -73,7 +85,7 @@ async fn messages_reach_the_admins() {
         .call(DeleteAdminMessage { id: sent.id })
         .await
         .unwrap();
-    let messages = admin.call(AdminMessages { before: None }).await.unwrap();
+    let messages = admin.call(inbox(None)).await.unwrap();
     assert!(messages.iter().all(|m| m.id != sent.id));
 }
 
@@ -199,4 +211,107 @@ async fn missing_transport_identity_cannot_store_an_unlimited_contact_message() 
         .await
         .unwrap();
     assert_status(&res, StatusCode::SERVICE_UNAVAILABLE);
+}
+
+/// A bug report with its context: the player is the session's, not the page's word, and the
+/// admins answer it; only they see and change the inbox.
+#[tokio::test]
+async fn feedback_arrives_with_its_context_and_is_answered() {
+    let server = Server::start().await;
+    let admin = Browser::admin(&server).await;
+    let me = admin
+        .call(crate::api::CurrentUser {})
+        .await
+        .unwrap()
+        .unwrap()
+        .id;
+    let text = "Feedback context regression: the hint froze";
+    admin
+        .call(SendMessage {
+            kind: FeedbackKind::Bug,
+            context: Some(FeedbackContext {
+                platform: "web".into(),
+                language: "ja".into(),
+                page: Some("/practice".into()),
+                player: Some(me + 1000),
+                ..FeedbackContext::default()
+            }),
+            ..message("", text)
+        })
+        .await
+        .unwrap();
+    // A visitor without a session gets no player, and no session either
+    let visitor = server.browser_from("203.0.113.40");
+    let anonymous = "Feedback context regression: from nobody";
+    visitor
+        .call(SendMessage {
+            context: Some(FeedbackContext {
+                player: Some(me),
+                ..FeedbackContext::default()
+            }),
+            ..message("", anonymous)
+        })
+        .await
+        .unwrap();
+    assert_eq!(
+        visitor.call(crate::api::CurrentUser {}).await.unwrap(),
+        None
+    );
+
+    let bugs = admin
+        .call(AdminMessages {
+            before: None,
+            status: Some(FeedbackStatus::New),
+            kind: Some(FeedbackKind::Bug),
+        })
+        .await
+        .unwrap();
+    let bug = bugs.iter().find(|m| m.message == text).unwrap();
+    assert!(bugs.iter().all(|m| m.kind == FeedbackKind::Bug));
+    let context = bug.context.as_ref().unwrap();
+    assert_eq!(
+        (
+            context.player,
+            context.page.as_deref(),
+            bug.locale.as_deref()
+        ),
+        (Some(me), Some("/practice"), Some("ja"))
+    );
+    let all = admin.call(inbox(None)).await.unwrap();
+    let other = all.iter().find(|m| m.message == anonymous).unwrap();
+    assert_eq!(other.context.as_ref().unwrap().player, None);
+
+    let answer = AdminMessageStatus {
+        id: bug.id,
+        status: FeedbackStatus::Answered,
+    };
+    assert_eq!(
+        api_error(visitor.call(answer.clone()).await),
+        ApiError::Forbidden
+    );
+    let new = admin
+        .call(crate::api::LoadAdminOverview {})
+        .await
+        .unwrap()
+        .messages;
+    assert!(admin.call(answer).await.unwrap());
+    assert_eq!(
+        admin
+            .call(crate::api::LoadAdminOverview {})
+            .await
+            .unwrap()
+            .messages,
+        new - 1
+    );
+    let answered = admin
+        .call(inbox(Some(FeedbackStatus::Answered)))
+        .await
+        .unwrap();
+    assert!(
+        answered
+            .iter()
+            .any(|m| m.id == bug.id && m.handled_at.is_some())
+    );
+    let still_new = admin.call(inbox(Some(FeedbackStatus::New))).await.unwrap();
+    assert!(still_new.iter().all(|m| m.id != bug.id));
 }

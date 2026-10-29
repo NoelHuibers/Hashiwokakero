@@ -58,5 +58,9 @@
     "title": "Zablokowani gracze",
     "text": "Ich nazwy są przed tobą ukryte w rankingach, w twoich grupach i wśród rywali.",
     "none": "Nikogo nie zablokowano. Gracza możesz zablokować na jego profilu."
+  },
+  "feedback": {
+    "title": "Pytania lub problemy?",
+    "text": "Zgłoś błąd, zaproponuj pomysł albo zapytaj nas o cokolwiek. Czytamy każdą wiadomość."
   }
 }

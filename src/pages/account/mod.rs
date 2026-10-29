@@ -1,5 +1,5 @@
-//! The account page: the daily record, signing in and out, renaming and deleting the account, and
-//! the players one blocked.
+//! The account page: the daily record, signing in and out, renaming and deleting the account,
+//! the players one blocked, and the way to the feedback form.
 
 pub mod auth_form;
 pub mod blocked;
@@ -19,7 +19,8 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::tabs::{Tabs, TabsContent, TabsList, TabsTrigger};
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_short, prefix};
-use crate::model::UserStats;
+use crate::model::{FeedbackKind, UserStats};
+use crate::pages::contact::feedback_link;
 use crate::seo::title_text;
 use crate::state::{Auth, ToastKind, error_toast, toast};
 
@@ -229,9 +230,33 @@ pub fn AccountPage() -> impl IntoView {
                     </Show>
                 </Card>
 
+                <FeedbackCard />
                 {move || auth.user.with(Option::is_some).then(|| view! { <BlockedPlayers /> })}
                 {move || auth.user.with(Option::is_some).then(|| view! { <DeleteAccount stats /> })}
             </div>
         </section>
+    }
+}
+
+/// The way to us from the account: a question (about the account, say) or a bug.
+#[component]
+fn FeedbackCard() -> impl IntoView {
+    let i18n = use_i18n();
+    let link =
+        move |kind: FeedbackKind| move || feedback_link(i18n.get_locale(), Some(kind), "/account");
+    let button = "inline-flex h-10 flex-1 items-center justify-center rounded-md border bg-background px-3 text-sm font-medium shadow-xs hover:bg-accent";
+    view! {
+        <Card class="gap-4 self-start">
+            <CardHeader>
+                <CardTitle class="flex items-baseline gap-2 text-xl">
+                    {t!(i18n, account.feedback.title)} <span class="font-pixel text-sm text-primary">"意見"</span>
+                </CardTitle>
+                <CardDescription>{t!(i18n, account.feedback.text)}</CardDescription>
+            </CardHeader>
+            <CardContent class="flex flex-wrap gap-2">
+                <A href=link(FeedbackKind::Question) attr:class=button>{t!(i18n, common.help.question)}</A>
+                <A href=link(FeedbackKind::Bug) attr:class=button>{t!(i18n, common.help.bug)}</A>
+            </CardContent>
+        </Card>
     }
 }

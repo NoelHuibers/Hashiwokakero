@@ -6,8 +6,8 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::{
     AdminAttempt, AdminBenchmark, AdminOverview, AdminReport, AdminSubmission, BanOutcome,
-    BannedPlayer, BenchmarkAction, ContactMessage, Flag, FlaggedName, MoveEvent, ReportOutcome,
-    SubmissionAction,
+    BannedPlayer, BenchmarkAction, ContactMessage, FeedbackKind, FeedbackStatus, Flag, FlaggedName,
+    MoveEvent, ReportOutcome, SubmissionAction,
 };
 #[cfg(feature = "ssr")]
 use crate::server::{admin, contact, daily, db, reports};
@@ -75,17 +75,28 @@ pub async fn update_admin_benchmark(id: i64, action: BenchmarkAction) -> Result<
     crate::server::dojo::benchmark_action(&conn, id, action).await
 }
 
-/// Messages from the contact form, newest first.
+/// Messages of the feedback form with `status` and of `kind` (`None`: any), newest first.
 #[server(input = Json, client = HashiClient)]
 pub async fn admin_messages(
     #[server(default)] before: Option<i64>,
+    #[server(default)] status: Option<FeedbackStatus>,
+    #[server(default)] kind: Option<FeedbackKind>,
 ) -> Result<Vec<ContactMessage>, ServerFnError> {
     let conn = db::conn()?;
     admin::require(&conn).await?;
-    contact::page(&conn, before).await
+    contact::page(&conn, before, status, kind).await
 }
 
-/// Deletes a contact message once it is answered.
+/// Marks a message as answered or closed, or new again (see `contact::set_status`). `false` if
+/// there is no such message.
+#[server(input = Json, client = HashiClient)]
+pub async fn admin_message_status(id: i64, status: FeedbackStatus) -> Result<bool, ServerFnError> {
+    let conn = db::conn()?;
+    admin::require(&conn).await?;
+    contact::set_status(&conn, id, status).await
+}
+
+/// Deletes a message of the feedback form, spam say.
 #[server(input = Json, client = HashiClient)]
 pub async fn delete_admin_message(id: i64) -> Result<(), ServerFnError> {
     let conn = db::conn()?;

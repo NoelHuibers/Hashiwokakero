@@ -14,6 +14,7 @@ test('the practice board shows a generated puzzle', async ({ page }) => {
 test('the router opens the rules without a page load', async ({ page }) => {
   await visit(page, '/');
   await page.evaluate(() => Object.assign(window, { samePage: true }));
+  await page.locator('header').getByRole('button', { name: 'Help' }).click();
   await page.locator('header').getByRole('link', { name: 'How to play' }).click();
   await expect(page).toHaveURL(/\/rules$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');

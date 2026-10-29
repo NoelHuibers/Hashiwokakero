@@ -220,7 +220,7 @@
     "imprint": "법적 고지",
     "privacy": "개인정보 처리방침",
     "english": "영어 버전",
-    "contact": "문의",
+    "contact": "피드백 및 문의",
     "rules": "커뮤니티 규칙"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "음악",
     "music_hint": "잔잔한 고토 선율"
   },
-  "settings": "설정"
+  "settings": "설정",
+  "help": {
+    "title": "도움말",
+    "bug": "버그 신고",
+    "idea": "아이디어 제안",
+    "question": "질문하기"
+  }
 }

@@ -220,7 +220,7 @@
     "imprint": "Aviso legal",
     "privacy": "Privacidade",
     "english": "Versão em inglês",
-    "contact": "Contato",
+    "contact": "Feedback e contato",
     "rules": "Regras da comunidade"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "Música",
     "music_hint": "Melodias calmas de koto"
   },
-  "settings": "Configurações"
+  "settings": "Configurações",
+  "help": {
+    "title": "Ajuda",
+    "bug": "Relatar um bug",
+    "idea": "Sugerir uma ideia",
+    "question": "Fazer uma pergunta"
+  }
 }

@@ -1,8 +1,9 @@
-//! The footer with the drifting boat, credits, the legal links and, once they are in the
-//! stores, the apps.
+//! The footer with the drifting boat, credits, the legal links, feedback and, once they are in
+//! the stores, the apps.
 
 use leptos::prelude::*;
 use leptos_router::components::A;
+use leptos_router::hooks::use_location;
 
 use super::{Hanko, use_localized};
 use crate::components::sprites::{BOAT, PixelSprite};
@@ -17,7 +18,10 @@ pub fn Footer() -> impl IntoView {
     let dojo = use_localized("/dojo");
     let privacy = use_localized("/datenschutz");
     let community = use_localized("/regeln");
-    let contact = use_localized("/kontakt");
+    // The feedback form, told which page it was opened from
+    let pathname = use_location().pathname;
+    let contact =
+        move || crate::pages::contact::feedback_link(i18n.get_locale(), None, &pathname.get());
     let author = move || {
         view! {
             <a

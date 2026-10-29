@@ -4,6 +4,7 @@ mod auth;
 mod blocks;
 mod browser;
 mod editor;
+mod errors;
 mod game;
 mod hanko;
 mod rivals;
@@ -23,6 +24,7 @@ pub use browser::{device_id, download, format_time, load, random_seed, store};
 #[cfg(any(feature = "csr", test))]
 pub(crate) use browser::{load_raw, remove_item};
 pub use editor::Editor;
+pub use errors::{note_error, recent_errors};
 pub use game::{DailyGame, Game, Source, Status};
 pub use hanko::HankoInbox;
 pub use rivals::Rivals;

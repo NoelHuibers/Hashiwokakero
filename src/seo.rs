@@ -324,7 +324,7 @@ pub fn og_daily_image(locale: Locale, day: i64) -> String {
 }
 
 /// Today's day number (UTC), as the server counts the dailies.
-fn today() -> i64 {
+pub(crate) fn today() -> i64 {
     #[cfg(feature = "ssr")]
     {
         crate::server::daily::today()

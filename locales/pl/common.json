@@ -220,7 +220,7 @@
     "imprint": "Nota prawna",
     "privacy": "Prywatność",
     "english": "Wersja angielska",
-    "contact": "Kontakt",
+    "contact": "Opinie i kontakt",
     "rules": "Zasady społeczności"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "Muzyka",
     "music_hint": "Spokojne melodie koto"
   },
-  "settings": "Ustawienia"
+  "settings": "Ustawienia",
+  "help": {
+    "title": "Pomoc",
+    "bug": "Zgłoś błąd",
+    "idea": "Zaproponuj pomysł",
+    "question": "Zadaj pytanie"
+  }
 }

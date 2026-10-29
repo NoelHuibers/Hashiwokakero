@@ -1,17 +1,52 @@
 {
-  "title": "Contacto",
-  "description": "¿Preguntas, ideas o un error en Hashi? Escríbenos.",
-  "intro": "¿Una pregunta, una idea, un error o algo sobre tus datos? Escríbenos y te responderemos lo antes posible.",
+  "title": "Comentarios",
+  "description": "¿Has encontrado un error, tienes una idea o una pregunta sobre Hashi? Cuéntanoslo.",
+  "intro": "¿Un error, una idea, una pregunta o algo sobre tus datos? Cuéntanoslo: leemos todos los mensajes y te respondemos lo antes posible.",
+  "kind": "¿De qué se trata?",
+  "kinds": {
+    "bug": "Error",
+    "idea": "Idea",
+    "question": "Pregunta",
+    "other": "Otra cosa"
+  },
+  "kind_hints": {
+    "bug": "Algo no funciona",
+    "idea": "Algo que Hashi podría hacer",
+    "question": "Algo que quieres saber",
+    "other": "Elogios, tus datos, lo que sea"
+  },
+  "placeholders": {
+    "bug": "¿Qué hiciste, qué pasó y qué esperabas?",
+    "idea": "¿Qué te gustaría y para qué?",
+    "question": "¿Qué te gustaría saber?",
+    "other": "¿Qué nos quieres decir?"
+  },
   "name": "Nombre",
   "email": "Correo electrónico",
   "optional": "opcional",
   "email_hint": "Solo si quieres una respuesta.",
   "message": "Mensaje",
+  "context": {
+    "title": "Se envía con tu mensaje",
+    "intro": "Así encontramos antes un problema. No se añade nada más sobre ti ni sobre tu dispositivo.",
+    "app": "Versión",
+    "app_version": "App {{ version }}",
+    "website": "Sitio web",
+    "platform": "Plataforma",
+    "system": "Sistema",
+    "browser": "Navegador",
+    "language": "Idioma",
+    "page": "Página",
+    "daily": "Puente del día",
+    "player": "Jugador",
+    "screen": "Pantalla",
+    "errors": "Errores recientes"
+  },
   "send": "Enviar",
   "sending": "Enviando…",
   "sent_title": "¡Gracias!",
   "sent": "Tu mensaje ha llegado. Si dejaste una dirección de correo, te responderemos allí.",
   "another": "Escribir otro mensaje",
-  "privacy": "Solo usamos tu mensaje para responderte y lo borramos como muy tarde a los seis meses. Más información en la <a>política de privacidad</a>.",
+  "privacy": "Solo usamos tu mensaje y lo que se envía con él para responderte y corregir problemas, y lo borramos como muy tarde a los seis meses. Más información en la <a>política de privacidad</a>.",
   "by_mail": "¿Prefieres escribir un correo?"
 }

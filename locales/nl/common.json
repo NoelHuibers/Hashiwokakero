@@ -220,7 +220,7 @@
     "imprint": "Colofon",
     "privacy": "Privacy",
     "english": "Engelse versie",
-    "contact": "Contact",
+    "contact": "Feedback & contact",
     "rules": "Communityregels"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "Muziek",
     "music_hint": "Rustige koto-melodieën"
   },
-  "settings": "Instellingen"
+  "settings": "Instellingen",
+  "help": {
+    "title": "Hulp",
+    "bug": "Bug melden",
+    "idea": "Idee voorstellen",
+    "question": "Vraag stellen"
+  }
 }

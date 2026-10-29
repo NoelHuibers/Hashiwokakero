@@ -220,7 +220,7 @@
     "imprint": "Künye",
     "privacy": "Gizlilik",
     "english": "İngilizce sürüm",
-    "contact": "İletişim",
+    "contact": "Geri bildirim ve iletişim",
     "rules": "Topluluk kuralları"
   },
   "audio": {
@@ -228,5 +228,11 @@
     "music": "Müzik",
     "music_hint": "Sakin koto melodileri"
   },
-  "settings": "Ayarlar"
+  "settings": "Ayarlar",
+  "help": {
+    "title": "Yardım",
+    "bug": "Hata bildir",
+    "idea": "Fikir öner",
+    "question": "Soru sor"
+  }
 }

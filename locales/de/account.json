@@ -58,5 +58,9 @@
     "title": "Blockierte Spieler",
     "text": "Ihre Namen werden dir in den Ranglisten, in deinen Gruppen und bei deinen Rivalen nicht angezeigt.",
     "none": "Du hast niemanden blockiert. Einen Spieler blockierst du auf seinem Profil."
+  },
+  "feedback": {
+    "title": "Fragen oder Probleme?",
+    "text": "Melde einen Fehler, schlag eine Idee vor oder frag uns, was du willst. Wir lesen jede Nachricht."
   }
 }

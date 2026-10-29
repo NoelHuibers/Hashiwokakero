@@ -1,5 +1,5 @@
 //! The admin dashboard: overview, attempts of a day, Dojo submissions, names, bans, reports and
-//! contact messages.
+//! feedback.
 
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +17,7 @@ pub struct AdminOverview {
     pub flagged: i64,
     pub dojo_pending: i64,
     pub dojo_total: i64,
-    /// Contact messages waiting to be answered (and deleted).
+    /// Feedback nobody looked at yet (`FeedbackStatus::New`).
     pub messages: i64,
     /// Names on the boards the list of blocked names flags, see [`FlaggedName`].
     #[serde(default)]
@@ -146,7 +146,10 @@ pub enum BenchmarkAction {
     Delete,
 }
 
-/// A message from the contact form.
+/// A message of the feedback form (`/kontakt`).
+///
+/// The fields after `mailed` came with the feedback inbox: a page from before reads them as
+/// unknown fields, a page reading a server from before gets their defaults.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContactMessage {
     pub id: i64,
@@ -157,4 +160,21 @@ pub struct ContactMessage {
     pub created_at: i64,
     /// Whether it was mailed to us.
     pub mailed: bool,
+    #[serde(default)]
+    pub kind: super::FeedbackKind,
+    /// What the page sent along, `None` for messages from before (and from apps that don't send
+    /// it).
+    #[serde(default)]
+    pub context: Option<super::FeedbackContext>,
+    /// The language to answer in (`de`), if the page said.
+    #[serde(default)]
+    pub locale: Option<String>,
+    #[serde(default)]
+    pub status: super::FeedbackStatus,
+    /// The GitHub issue made of it.
+    #[serde(default)]
+    pub github_issue: Option<i64>,
+    /// When it was answered, closed or made an issue.
+    #[serde(default)]
+    pub handled_at: Option<i64>,
 }

@@ -1082,25 +1082,35 @@ async fn guests_nobody_can_reach_are_cleaned_up() {
 
 #[tokio::test]
 async fn contact_messages_are_checked_stored_and_expire() {
-    use crate::server::contact;
+    use crate::server::contact::{self, Feedback};
     let (_db, conn) = test_db().await;
+    let send = |name: &str, email: &str, message: &str, website: &str| {
+        let feedback = Feedback {
+            name: name.into(),
+            email: email.into(),
+            message: message.into(),
+            website: website.into(),
+            ..Feedback::default()
+        };
+        contact::send(&conn, feedback, None)
+    };
     let message = "Hello, I found a bug in the editor.";
     let code = |r: Result<(), ServerFnError>| ApiError::from_message(&r.unwrap_err().to_string());
     assert_eq!(
-        code(contact::send(&conn, "", "not an address", message, "").await),
+        code(send("", "not an address", message, "").await),
         Some(ApiError::EmailInvalid)
     );
     assert_eq!(
-        code(contact::send(&conn, "", "", "too short", "").await),
+        code(send("", "", "too short", "").await),
         Some(ApiError::MessageInvalid)
     );
     // Bots that fill in the hidden field are thanked, but nothing is kept
-    contact::send(&conn, "Bot", "", message, "https://spam.example")
+    send("Bot", "", message, "https://spam.example")
         .await
         .unwrap();
     assert_eq!(contact::list(&conn).await.unwrap(), []);
 
-    contact::send(&conn, " Ann\n", "ann@example.com", message, "")
+    send(" Ann\n", "ann@example.com", message, "")
         .await
         .unwrap();
     let list = contact::list(&conn).await.unwrap();
@@ -1238,9 +1248,11 @@ async fn contact_history_is_bounded_and_can_be_paged_without_duplicates() {
     for i in 0..105 {
         conn.execute("INSERT INTO contact_messages (name, email, message, created_at) VALUES ('', '', 'message', ?1)", params![i]).await.unwrap();
     }
-    let first = crate::server::contact::page(&conn, None).await.unwrap();
+    let first = crate::server::contact::page(&conn, None, None, None)
+        .await
+        .unwrap();
     assert_eq!(first.len(), 100);
-    let second = crate::server::contact::page(&conn, Some(first.last().unwrap().id))
+    let second = crate::server::contact::page(&conn, Some(first.last().unwrap().id), None, None)
         .await
         .unwrap();
     assert_eq!(second.len(), 5);
