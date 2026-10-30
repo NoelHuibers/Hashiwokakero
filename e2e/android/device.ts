@@ -119,19 +119,40 @@ async function online(device: AndroidDevice) {
 }
 
 /**
- * Cuts the device off: airplane mode, Wi-Fi and mobile data off, then waits until nothing
- * answers. The debug APK calls the production server when it can, and the tests must not
- * make rows there (a guest, a started daily).
+ * Android's own default network (`dumpsys connectivity`): `none` without one. The WebView's
+ * `navigator.onLine` follows it. `null` when the dump doesn't say.
+ */
+async function defaultNetwork(device: AndroidDevice) {
+  return (await shell(device, 'dumpsys connectivity')).match(/Active default network: (\S+)/)?.[1] ?? null;
+}
+
+/**
+ * Cuts the device off: airplane mode, Wi-Fi and mobile data off, then waits until Android has no
+ * network and nothing answers, five seconds in a row. The debug APK calls the production server
+ * when it can, and the tests must not make rows there (a guest, a started daily).
+ *
+ * A failed ping alone isn't enough: right after the boot the network may not be up yet, and once
+ * it came up the app was online again (2026-10-29: `navigator.onLine` true, every call of the
+ * app hanging, 13 of 17 tests timing out). So the switches are flipped again until Android
+ * itself says it has no network.
  */
 export async function goOffline(device: AndroidDevice) {
-  await shell(device, 'cmd connectivity airplane-mode enable');
-  await shell(device, 'svc wifi disable');
-  await shell(device, 'svc data disable');
-  for (let i = 0; i < 30; i++) {
-    if (!(await online(device))) return;
+  let calm = 0;
+  let network: string | null = null;
+  for (let i = 0; i < 60; i++) {
+    if ((await shell(device, 'cmd connectivity airplane-mode')) !== 'enabled') {
+      await shell(device, 'cmd connectivity airplane-mode enable');
+    }
+    await shell(device, 'svc wifi disable');
+    await shell(device, 'svc data disable');
+    network = await defaultNetwork(device);
+    if (network === null && i === 0) console.warn('dumpsys connectivity names no default network, only the ping tells');
+    const offline = (network === null || network === 'none') && !(await online(device));
+    calm = offline ? calm + 1 : 0;
+    if (calm >= 5) return;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  throw new Error('the device is still online with airplane mode on');
+  throw new Error(`the device is still online with airplane mode on (default network: ${network})`);
 }
 
 /** Notes the device for the job summary. */
