@@ -4,60 +4,16 @@
 //! player's name isn't shown to the viewer anywhere else any more (`server::blocks`), their
 //! profile is where to unblock them (and the account page).
 
-use leptos::portal::Portal;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::report_player;
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::ui::card::Card;
+use crate::components::ui::dialog::Dialog;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::error_text;
 use crate::model::{MAX_REPORT_NOTE, ReportReason};
 use crate::state::{Auth, Blocks, ToastKind, toast};
-
-/// A dialog over the page: Escape and a click beside it close it (`open`), it takes the focus.
-/// In a portal at the end of the body: the page's cards would cover it.
-#[component]
-fn Dialog(open: RwSignal<bool>, labelled_by: &'static str, children: ChildrenFn) -> impl IntoView {
-    let dialog = NodeRef::<leptos::html::Div>::new();
-    // The portal wants children it can call more than once
-    let children = StoredValue::new(children);
-    Effect::new(move |_| {
-        let Some(dialog) = dialog.get() else { return };
-        let _ = dialog.focus();
-        let escape = window_event_listener(leptos::ev::keydown, move |ev| {
-            if ev.key() == "Escape" {
-                open.set(false);
-            }
-        });
-        on_cleanup(move || escape.remove());
-    });
-    view! {
-        <Portal>
-        <div
-            class="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/40 p-4"
-            on:click=move |ev| {
-                // Beside the dialog, not in it
-                if ev.target() == ev.current_target() {
-                    open.set(false);
-                }
-            }
-        >
-            <div
-                node_ref=dialog
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby=labelled_by
-                tabindex="-1"
-                class="w-full max-w-md rounded-xl outline-none"
-            >
-                <Card class="gap-4 px-5 py-5 shadow-2xl animate-in zoom-in-95 fade-in">{children.with_value(|c| c())}</Card>
-            </div>
-        </div>
-        </Portal>
-    }
-}
 
 fn reason_label(reason: ReportReason) -> impl Fn() -> &'static str + Send + Sync + Copy {
     let i18n = use_i18n();

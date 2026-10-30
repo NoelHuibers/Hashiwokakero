@@ -12,6 +12,7 @@
   "language": "언어",
   "account": "계정",
   "sign_in": "로그인",
+  "cancel": "취소",
   "theme": {
     "toggle": "다크 모드 전환",
     "to_day": "낮 모드로 전환 昼",

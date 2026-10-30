@@ -82,3 +82,21 @@ test('a bug report from the help menu brings its page along', async ({ page, con
   await page.getByLabel('Status').selectOption('answered');
   await expect(page.locator('article').filter({ hasText: text })).toHaveAttribute('data-status', 'answered');
 });
+
+test('the help menu stays on a phone’s screen', async ({ page }) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 700 });
+    await visit(page, '/rules');
+    const help = page.locator('header').getByRole('button', { name: 'Help' });
+    await help.click();
+    const menu = page.locator('[data-help-menu]');
+    await expect(menu.getByRole('link', { name: 'Ask a question' })).toBeVisible();
+    const box = await menu.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    // Below the header, not over it
+    const header = await page.locator('header').boundingBox();
+    expect(box!.y).toBeGreaterThanOrEqual(header!.y + header!.height - 1);
+  }
+});

@@ -114,7 +114,9 @@ pub fn HelpButton() -> impl IntoView {
                 "?"
             </button>
             <Show when=move || open.get()>
-                <div class="absolute end-0 top-full z-50 mt-2 flex w-60 flex-col gap-0.5 rounded-xl border bg-card p-2 shadow-2xl animate-in fade-in zoom-in-95">
+                // On phones the button sits far from the edge, a menu under it would hang off
+                // the left side: like the language picker's, it opens under the header instead
+                <div data-help-menu="" class="fixed end-3 top-[calc(4.25rem+var(--safe-top))] z-50 flex w-60 flex-col gap-0.5 rounded-xl border bg-card p-2 shadow-2xl animate-in fade-in zoom-in-95 sm:absolute sm:end-0 sm:top-full sm:mt-2">
                     <p class="px-2 pb-1 font-pixel text-xs text-muted-foreground">"助け · " {t!(i18n, common.help.title)}</p>
                     <A href=rules attr:class=item on:click=move |_| open.set(false)>
                         <span class="w-5 text-center font-pixel text-primary" aria-hidden="true">"遊"</span>

@@ -3,11 +3,13 @@
 //! They are copied into the project like shadcn intends (`ui add <component>`), so they can be
 //! adapted freely. `switch.rs` and `select.rs` were changed to be controlled by signals, `toggle_group.rs`
 //! is a radio group for the keyboard, `tooltip.rs` only keeps the look of rust-ui's tooltip (see there why).
+//! `dialog.rs` is our own, from the profile's report dialog.
 
 pub mod alert;
 pub mod badge;
 pub mod button;
 pub mod card;
+pub mod dialog;
 pub mod input;
 pub mod kbd;
 pub mod label;

@@ -12,6 +12,7 @@
   "language": "Langue",
   "account": "Compte",
   "sign_in": "Connexion",
+  "cancel": "Annuler",
   "theme": {
     "toggle": "Basculer le mode sombre",
     "to_day": "Passer au jour 昼",

@@ -13,13 +13,13 @@ async function giveUp(page: Page) {
   await visit(page, '/');
   await page.getByRole('button', { name: /^Start/ }).click();
   await page.getByRole('button', { name: /^Give up/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Give up' }).click();
   await expect(page.getByRole('heading', { name: 'Solved by the SAT solver' })).toBeVisible();
 }
 
 /** A second visitor, in a browser of their own. */
 async function newVisitor(context: BrowserContext): Promise<Page> {
   const page = await context.newPage();
-  page.on('dialog', (d) => void d.accept());
   return page;
 }
 
@@ -29,7 +29,6 @@ test('a member stamps another one’s result, who sees it with an unread dot', a
   baseURL,
 }) => {
   test.slow();
-  page.on('dialog', (d) => void d.accept());
 
   // A guest makes a group, a friend joins with its link
   await visit(page, '/groups');

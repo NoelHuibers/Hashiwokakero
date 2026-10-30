@@ -23,6 +23,7 @@ use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::Petals;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
+use crate::components::ui::dialog::ConfirmDialog;
 use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};
@@ -298,16 +299,14 @@ pub fn DailyPage() -> impl IntoView {
     let hint = move |_| paid(PaidAction::Hint);
     let check = move |_| paid(PaidAction::Check);
 
-    let give_up = move |_| {
-        if !untrack(|| daily.actions.can_start(&daily, None)) {
-            return;
+    // Asked first, in our own dialog (`ConfirmDialog`)
+    let giving_up = RwSignal::new(false);
+    let ask_give_up = move |_| {
+        if untrack(|| daily.actions.can_start(&daily, None)) {
+            giving_up.set(true);
         }
-        let sure = window()
-            .confirm_with_message(t_string!(i18n, daily.give_up_confirm))
-            .unwrap_or(false);
-        if !sure {
-            return;
-        }
+    };
+    let give_up = move || {
         let Some(guard) = daily.actions.begin(&daily, None) else {
             return;
         };
@@ -556,10 +555,17 @@ pub fn DailyPage() -> impl IntoView {
                                 <Button
                                     variant=ButtonVariant::Ghost
                                     attr:disabled=move || !playing.get()
-                                    on:click=give_up
+                                    attr:aria-haspopup="dialog"
+                                    on:click=ask_give_up
                                 >
                                     {t!(i18n, daily.give_up)}
                                 </Button>
+                                <ConfirmDialog
+                                    open=giving_up
+                                    question=Signal::derive(move || t_string!(i18n, daily.give_up_confirm).to_string())
+                                    yes=Signal::derive(move || t_string!(i18n, daily.give_up).to_string())
+                                    on_yes=give_up
+                                />
                             </div>
                         </div>
                     </Show>

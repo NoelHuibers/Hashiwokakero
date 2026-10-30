@@ -11,6 +11,7 @@ use crate::components::leaderboard::PlayerName;
 use crate::components::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
+use crate::components::ui::dialog::ConfirmDialog;
 use crate::components::ui::separator::Separator;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_short, localized, player_name};
@@ -20,11 +21,6 @@ use crate::state::{ToastKind, error_toast, toast};
 use super::GroupContext;
 use super::archipelago::initial;
 use super::invite::InviteLink;
-
-/// Asks before something that can't be undone with a click.
-fn confirm(question: &str) -> bool {
-    window().confirm_with_message(question).unwrap_or(false)
-}
 
 #[component]
 fn MemberRow(member: GroupMember, group: GroupContext, me: i64, owner: bool) -> impl IntoView {
@@ -41,17 +37,10 @@ fn MemberRow(member: GroupMember, group: GroupContext, me: i64, owner: bool) -> 
     } = member;
     let shown = player_name(i18n.get_locale_untracked(), &name);
     let removable = owner && user_id != me;
+    let removing = RwSignal::new(false);
     let remove = {
         let name = shown.clone();
-        move |_| {
-            let l = i18n.get_locale_untracked();
-            if !confirm(&td_string!(
-                l,
-                groups.members.remove_confirm,
-                name = name.clone()
-            )) {
-                return;
-            }
+        move || {
             let Some(id) = group.get().map(|p| p.id) else {
                 return;
             };
@@ -70,7 +59,9 @@ fn MemberRow(member: GroupMember, group: GroupContext, me: i64, owner: bool) -> 
         }
     };
     let joined = group_day(joined_at);
-    let label_name = shown;
+    let label_name = shown.clone();
+    let question_name = shown.clone();
+    let yes_name = shown;
     view! {
         <li class="flex items-center gap-3 py-2" data-member=user_id>
             <span
@@ -106,10 +97,22 @@ fn MemberRow(member: GroupMember, group: GroupContext, me: i64, owner: bool) -> 
                             class="shrink-0 text-muted-foreground hover:text-destructive"
                             attr:aria-label=label.clone()
                             attr:data-tooltip=label
-                            on:click=remove
+                            attr:aria-haspopup="dialog"
+                            on:click=move |_| removing.set(true)
                         >
                             "✕"
                         </Button>
+                        <ConfirmDialog
+                            open=removing
+                            question=Signal::derive(move || {
+                                td_string!(i18n.get_locale(), groups.members.remove_confirm, name = question_name.clone())
+                            })
+                            yes=Signal::derive(move || {
+                                td_string!(i18n.get_locale(), groups.members.remove_label, name = yes_name.clone())
+                            })
+                            on_yes=remove
+                            destructive=true
+                        />
                     }
                 })}
         </li>
@@ -128,10 +131,8 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
             .with(|p| p.as_ref().is_some_and(GroupPage::is_owner))
     };
 
-    let rotate = move |_| {
-        if !confirm(t_string!(i18n, groups.invite.rotate_confirm)) {
-            return;
-        }
+    let rotating = RwSignal::new(false);
+    let rotate = move || {
         let Some(id) = group.get().map(|p| p.id) else {
             return;
         };
@@ -158,18 +159,11 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
             .page
             .with(|p| p.as_ref().is_some_and(GroupPage::last_one))
     };
-    let leave = move |_| {
+    let leaving = RwSignal::new(false);
+    let leave = move || {
         let Some(p) = group.get() else { return };
         let l = i18n.get_locale_untracked();
         let last = p.last_one();
-        let question = if last {
-            td_string!(l, groups.members.delete_confirm, name = p.name.clone())
-        } else {
-            td_string!(l, groups.members.leave_confirm, name = p.name.clone())
-        };
-        if !confirm(&question) {
-            return;
-        }
         let navigate = navigate.clone();
         spawn_local(async move {
             match leave_group(p.id).await {
@@ -189,6 +183,24 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
         });
     };
 
+    let leave_label = move || {
+        if last_one() {
+            t_string!(i18n, groups.members.leave_delete).to_string()
+        } else {
+            t_string!(i18n, groups.members.leave).to_string()
+        }
+    };
+    // The last one is told the group goes with them
+    let leave_question = Signal::derive(move || {
+        let l = i18n.get_locale();
+        group.page.with(|p| match p {
+            Some(p) if p.last_one() => {
+                td_string!(l, groups.members.delete_confirm, name = p.name.clone())
+            }
+            Some(p) => td_string!(l, groups.members.leave_confirm, name = p.name.clone()),
+            None => String::new(),
+        })
+    });
     let name = Signal::derive(move || {
         group
             .page
@@ -215,10 +227,22 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
             <CardContent class="flex flex-col gap-4">
                 <InviteLink name code />
                 <Show when=is_owner>
-                    <Button variant=ButtonVariant::Ghost size=ButtonSize::Sm class="-mt-2 w-fit text-muted-foreground" on:click=rotate>
+                    <Button
+                        variant=ButtonVariant::Ghost
+                        size=ButtonSize::Sm
+                        class="-mt-2 w-fit text-muted-foreground"
+                        attr:aria-haspopup="dialog"
+                        on:click=move |_| rotating.set(true)
+                    >
                         "↻ " {t!(i18n, groups.invite.rotate)}
                     </Button>
                 </Show>
+                <ConfirmDialog
+                    open=rotating
+                    question=Signal::derive(move || t_string!(i18n, groups.invite.rotate_confirm).to_string())
+                    yes=Signal::derive(move || t_string!(i18n, groups.invite.rotate).to_string())
+                    on_yes=rotate
+                />
                 <Separator />
                 <ul class="flex flex-col divide-y" aria-label=move || t_string!(i18n, groups.members.title)>
                     {move || {
@@ -232,15 +256,16 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
                             })
                     }}
                 </ul>
-                <Button variant=ButtonVariant::Outline size=ButtonSize::Sm class="w-full text-destructive" on:click=leave>
-                    {move || {
-                        if last_one() {
-                            t_string!(i18n, groups.members.leave_delete)
-                        } else {
-                            t_string!(i18n, groups.members.leave)
-                        }
-                    }}
+                <Button
+                    variant=ButtonVariant::Outline
+                    size=ButtonSize::Sm
+                    class="w-full text-destructive"
+                    attr:aria-haspopup="dialog"
+                    on:click=move |_| leaving.set(true)
+                >
+                    {leave_label}
                 </Button>
+                <ConfirmDialog open=leaving question=leave_question yes=Signal::derive(leave_label) on_yes=leave destructive=true />
             </CardContent>
         </Card>
     }

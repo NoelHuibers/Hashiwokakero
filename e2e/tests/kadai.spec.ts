@@ -86,8 +86,8 @@ test('a puzzle is posted to the group, a member solves it, both see the ranking'
   await expect(page.getByTestId('kadai-stats')).toContainText(`1 / ${SEEDED_GROUP.members.length - 1}`);
 
   // And takes it back: gone from the group
-  page.on('dialog', (d) => void d.accept());
   await page.getByTestId('kadai-withdraw').click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Withdraw the puzzle' }).click();
   await expect(page).toHaveURL(new RegExp(`/groups/${SEEDED_GROUP.id}$`));
   await hydrated(page);
   await expect(page.getByTestId('kadai-card')).toBeVisible();

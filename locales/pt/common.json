@@ -12,6 +12,7 @@
   "language": "Idioma",
   "account": "Conta",
   "sign_in": "Entrar",
+  "cancel": "Cancelar",
   "theme": {
     "toggle": "Alternar modo escuro",
     "to_day": "Mudar para dia 昼",

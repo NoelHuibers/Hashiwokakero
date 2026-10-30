@@ -12,6 +12,7 @@
   "language": "Language",
   "account": "Account",
   "sign_in": "Sign in",
+  "cancel": "Cancel",
   "theme": {
     "toggle": "Toggle dark mode",
     "to_day": "Switch to day 昼",
