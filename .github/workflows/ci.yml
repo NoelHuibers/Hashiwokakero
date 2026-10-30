@@ -1082,13 +1082,33 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [compatibility, build, build-browser]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     outputs:
       build: ${{ steps.build.outputs.build }}
     steps:
       - uses: actions/checkout@v7
-      # The server and the browser's half of the build, together in dist/
-      - uses: actions/download-artifact@v8
+      # The server and the browser's half of the build, together in dist/.
+      # GitHub's artifact storage fails now and then for a while (2026-10-30: "digest-mismatch",
+      # the action's own retries all within a minute): tried again after a pause, twice
+      - id: site
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: site-*
+          merge-multiple: true
+      - if: steps.site.outcome == 'failure'
+        run: sleep 60
+      - id: site-again
+        if: steps.site.outcome == 'failure'
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: site-*
+          merge-multiple: true
+      - if: steps.site-again.outcome == 'failure'
+        run: sleep 180
+      - if: steps.site-again.outcome == 'failure'
+        uses: actions/download-artifact@v8
         with:
           pattern: site-*
           merge-multiple: true
@@ -1107,11 +1127,9 @@ jobs:
           path: sitemap-before.xml
           retention-days: 1
       - uses: superfly/flyctl-actions/setup-flyctl@1.6
+      # Tried again when Fly's API has a bad minute (scripts/fly-deploy.sh)
       - name: Deploy to fly
-        # pipefail: a failed deploy must fail the job, not just print its last line
-        run: |
-          set -o pipefail
-          flyctl deploy --local-only --dockerfile Dockerfile.prebuilt | tail -n 1 >> "$GITHUB_STEP_SUMMARY"
+        run: scripts/fly-deploy.sh --local-only --dockerfile Dockerfile.prebuilt
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
@@ -1168,18 +1186,35 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [compatibility, build-dojo]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      # GitHub's artifact storage fails now and then for a while (2026-10-30: "digest-mismatch",
+      # the action's own retries all within a minute): tried again after a pause, twice
+      - id: dojo
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: dojo
+      - if: steps.dojo.outcome == 'failure'
+        run: sleep 60
+      - id: dojo-again
+        if: steps.dojo.outcome == 'failure'
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: dojo
+      - if: steps.dojo-again.outcome == 'failure'
+        run: sleep 180
+      - if: steps.dojo-again.outcome == 'failure'
+        uses: actions/download-artifact@v8
         with:
           name: dojo
       - run: tar -xf dojo.tar
       - uses: superfly/flyctl-actions/setup-flyctl@1.6
+      # Tried again when Fly's API has a bad minute (scripts/fly-deploy.sh)
       - name: Deploy to fly
-        run: |
-          set -o pipefail
-          flyctl deploy . --config dojo/fly.toml --dockerfile dojo/Dockerfile.prebuilt --local-only --no-public-ips | tail -n 1 >> "$GITHUB_STEP_SUMMARY"
+        run: scripts/fly-deploy.sh . --config dojo/fly.toml --dockerfile dojo/Dockerfile.prebuilt --local-only --no-public-ips
         env:
           # A deploy token for hashi-dojo only
           FLY_API_TOKEN: ${{ secrets.FLY_DOJO_API_TOKEN }}
