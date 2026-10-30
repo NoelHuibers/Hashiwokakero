@@ -12,6 +12,7 @@
   "language": "Sprache",
   "account": "Konto",
   "sign_in": "Anmelden",
+  "cancel": "Abbrechen",
   "theme": {
     "toggle": "Dunkelmodus umschalten",
     "to_day": "Zum Tag wechseln 昼",

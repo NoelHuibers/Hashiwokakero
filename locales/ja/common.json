@@ -12,6 +12,7 @@
   "language": "言語",
   "account": "アカウント",
   "sign_in": "ログイン",
+  "cancel": "キャンセル",
   "theme": {
     "toggle": "ダークモード切替",
     "to_day": "昼モードにする",

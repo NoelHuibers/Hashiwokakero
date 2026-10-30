@@ -23,7 +23,6 @@ test('a group is made, a friend joins with the link as a guest, times show after
   // Both play today's daily
   test.slow();
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  page.on('dialog', (d) => void d.accept());
 
   // A visitor without a user makes a group: they become a guest, and get the invite step
   await visit(page, '/groups');
@@ -98,6 +97,7 @@ test('a group is made, a friend joins with the link as a guest, times show after
   await hydrated(page);
   await page.getByRole('button', { name: /^Start/ }).click();
   await page.getByRole('button', { name: /^Give up/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Give up' }).click();
   await expect(page.getByRole('heading', { name: 'Solved by the SAT solver' })).toBeVisible();
   await page.goBack();
   await hydrated(page);
@@ -108,8 +108,8 @@ test('a group is made, a friend joins with the link as a guest, times show after
   // The friend leaves: one member left
   await friend.goto(new URL(page.url()).pathname);
   await hydrated(friend);
-  friend.on('dialog', (d) => void d.accept());
   await friend.getByRole('button', { name: 'Leave the group' }).click();
+  await friend.getByRole('dialog').getByRole('button', { name: 'Leave the group' }).click();
   await expect(friend).toHaveURL(/\/groups$/);
   await friendContext.close();
   await page.reload();
@@ -159,22 +159,24 @@ test('the last one to leave deletes the group, and is told so first', async ({ p
   await hydrated(page);
   await expect(page.getByRole('button', { name: 'Leave the group' })).toHaveCount(0);
 
-  // The question says what goes; saying no keeps everything
-  const questions: string[] = [];
-  let accept = false;
-  page.on('dialog', (d) => {
-    questions.push(d.message());
-    void (accept ? d.accept() : d.dismiss());
-  });
+  // The question, in the page's own dialog, says what goes; saying no keeps everything
   const leave = page.getByRole('button', { name: 'Leave and delete the group' });
   await leave.click();
-  await expect.poll(() => questions.length).toBe(1);
-  expect(questions[0]).toContain('You’re the last one in “Solo Bridges”');
-  expect(questions[0]).toContain('deletes the group for good');
+  const question = page.getByRole('dialog');
+  await expect(question).toContainText('You’re the last one in “Solo Bridges”');
+  await expect(question).toContainText('deletes the group for good');
+  await question.getByRole('button', { name: 'Cancel' }).click();
+  await expect(question).toHaveCount(0);
   await expect(page).toHaveURL(/\/groups\/\d+$/);
 
-  accept = true;
+  // Escape says no too
   await leave.click();
+  await expect(question).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(question).toHaveCount(0);
+
+  await leave.click();
+  await question.getByRole('button', { name: 'Leave and delete the group' }).click();
   await expect(page).toHaveURL(/\/groups$/);
   await expect(page.getByText('The group Solo Bridges is deleted.')).toBeVisible();
   await expect(page.locator('a[data-group]')).toHaveCount(0);

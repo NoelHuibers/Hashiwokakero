@@ -9,6 +9,7 @@ use leptos_router::hooks::use_navigate;
 use crate::api::withdraw_group_puzzle;
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
+use crate::components::ui::dialog::ConfirmDialog;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::{PuzzleStats, format_duration};
@@ -117,17 +118,12 @@ pub fn AuthorCard(play: Play) -> impl IntoView {
             .with(|p| p.as_ref().is_some_and(|p| p.summary.open))
     };
     let stats = Memo::new(move |_| play.page.with(|p| p.as_ref().and_then(|p| p.stats.clone())));
-    let withdraw = move |_| {
+    let withdrawing = RwSignal::new(false);
+    let withdraw = move || {
         let Some(id) = play.id() else { return };
         let group = play
             .page
             .with_untracked(|p| p.as_ref().map_or(0, |p| p.group_id));
-        let sure = window()
-            .confirm_with_message(t_string!(i18n, kadai.author.withdraw_confirm))
-            .unwrap_or(false);
-        if !sure {
-            return;
-        }
         play.busy.set(true);
         let navigate = navigate.clone();
         spawn_local(async move {
@@ -176,11 +172,19 @@ pub fn AuthorCard(play: Play) -> impl IntoView {
                         class="w-fit text-destructive"
                         attr:disabled=move || play.busy.get()
                         attr:data-testid="kadai-withdraw"
-                        on:click=withdraw.clone()
+                        attr:aria-haspopup="dialog"
+                        on:click=move |_| withdrawing.set(true)
                     >
                         {t!(i18n, kadai.author.withdraw)}
                     </Button>
                 </Show>
+                <ConfirmDialog
+                    open=withdrawing
+                    question=Signal::derive(move || t_string!(i18n, kadai.author.withdraw_confirm).to_string())
+                    yes=Signal::derive(move || t_string!(i18n, kadai.author.withdraw).to_string())
+                    on_yes=withdraw
+                    destructive=true
+                />
             </CardContent>
         </Card>
     }

@@ -955,3 +955,33 @@ test('midnight replacement of solved metadata keeps the new discovery request', 
   await page.waitForLoadState('networkidle');
   expect(reads).toBe(2);
 });
+
+test('giving up asks in the page’s own dialog, and Cancel or Escape keep playing', async ({ page }) => {
+  // No browser confirm() any more: it looks different in every browser
+  const native: string[] = [];
+  page.on('dialog', (d) => {
+    native.push(d.message());
+    void d.dismiss();
+  });
+  await visit(page, '/');
+  await startDaily(page);
+  const giveUp = page.getByRole('button', { name: /^Give up/ });
+  const question = page.getByRole('dialog');
+
+  await giveUp.click();
+  await expect(question).toContainText('Let the SAT solver show the solution?');
+  await question.getByRole('button', { name: 'Cancel' }).click();
+  await expect(question).toHaveCount(0);
+  await giveUp.click();
+  await expect(question).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(question).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Solved by the SAT solver' })).toHaveCount(0);
+  await expect(giveUp).toBeEnabled();
+
+  await giveUp.click();
+  await question.getByRole('button', { name: 'Give up' }).click();
+  await expect(page.getByRole('heading', { name: 'Solved by the SAT solver' })).toBeVisible();
+  await expect(giveUp).toBeDisabled();
+  expect(native).toEqual([]);
+});

@@ -37,7 +37,6 @@ async function chenWhole(page: Page, board: Locator) {
 
 test('short names stay whole on a phone, on the group page and in the daily tab', async ({ page }) => {
   test.slow();
-  page.on('dialog', (d) => void d.accept());
 
   // A visitor joins the seeded tea group (becoming a guest) and gives up today's daily: the
   // board opens, with chen's and bram's times
@@ -47,6 +46,7 @@ test('short names stay whole on a phone, on the group page and in the daily tab'
   await visit(page, '/');
   await page.getByRole('button', { name: /^Start/ }).click();
   await page.getByRole('button', { name: /^Give up/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Give up' }).click();
   await expect(page.getByRole('heading', { name: 'Solved by the SAT solver' })).toBeVisible();
 
   // The group page, on a phone and a small one

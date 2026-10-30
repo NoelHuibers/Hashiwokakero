@@ -29,6 +29,7 @@ use crate::components::celebration::{Petals, Stamp};
 use crate::components::layout::use_localized;
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
+use crate::components::ui::dialog::ConfirmDialog;
 use crate::components::ui::progress::Progress;
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
@@ -309,14 +310,9 @@ fn Controls(play: Play) -> impl IntoView {
             }
         });
     };
-    let give_up = move |_| {
+    let giving_up = RwSignal::new(false);
+    let give_up = move || {
         let Some(id) = play.id() else { return };
-        let sure = window()
-            .confirm_with_message(t_string!(i18n, kadai.page.give_up_confirm))
-            .unwrap_or(false);
-        if !sure {
-            return;
-        }
         play.busy.set(true);
         spawn_local(async move {
             let reply = group_puzzle_reveal(id).await;
@@ -365,9 +361,20 @@ fn Controls(play: Play) -> impl IntoView {
                 >
                     {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70">"+30s"</span>
                 </Button>
-                <Button variant=ButtonVariant::Ghost attr:disabled=move || !playing.get() on:click=give_up>
+                <Button
+                    variant=ButtonVariant::Ghost
+                    attr:disabled=move || !playing.get()
+                    attr:aria-haspopup="dialog"
+                    on:click=move |_| giving_up.set(true)
+                >
                     {t!(i18n, kadai.page.give_up)}
                 </Button>
+                <ConfirmDialog
+                    open=giving_up
+                    question=Signal::derive(move || t_string!(i18n, kadai.page.give_up_confirm).to_string())
+                    yes=Signal::derive(move || t_string!(i18n, kadai.page.give_up).to_string())
+                    on_yes=give_up
+                />
             </div>
         </div>
     }

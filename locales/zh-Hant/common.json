@@ -12,6 +12,7 @@
   "language": "語言",
   "account": "帳號",
   "sign_in": "登入",
+  "cancel": "取消",
   "theme": {
     "toggle": "切換深色模式",
     "to_day": "切換到白天 昼",
