@@ -2,7 +2,8 @@
 // long races with penalties. Used by behavior tests and screenshot tests.
 import type { Page } from '@playwright/test';
 
-export async function rankingExample(page: Page, kind: 'shared' | 'long' | 'many') {
+/** `today`: on the day of the real board, as the daily page only takes today's. */
+export async function rankingExample(page: Page, kind: 'shared' | 'long' | 'many', today = false) {
   const shared = kind !== 'long';
   const entries = kind === 'many'
     ? Array.from({ length: 8 }, (_, i) => ({ rank: 1, user_id: 501 + i, name: `Winner ${i + 1}`, time_ms: 7830 }))
@@ -22,9 +23,10 @@ export async function rankingExample(page: Page, kind: 'shared' | 'long' | 'many
           { rank: 5, user_id: 505, name: 'Reichus', time_ms: 7427130, hints: 5, checks: 9 },
         ];
   const complete = entries.map((entry) => ({ guest: false, hints: 0, checks: 0, stamp: null, ...entry }));
-  await page.route('**/api/daily_leaderboard', (route) => route.fulfill({
+  await page.route('**/api/daily_leaderboard', async (route) => route.fulfill({
     json: {
-      day: 20752, difficulty: shared ? 'Easy' : 'Oni', finishers: complete.length,
+      day: today ? (await (await route.fetch()).json()).day : 20752,
+      difficulty: shared ? 'Easy' : 'Oni', finishers: complete.length,
       me: complete.find((e) => e.user_id === 501), entries: complete,
     },
   }));

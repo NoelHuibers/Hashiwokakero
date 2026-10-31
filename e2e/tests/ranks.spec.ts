@@ -221,6 +221,23 @@ for (const kind of ['shared', 'long', 'many'] as const) {
   });
 }
 
+test("the daily page's medals keep the same room before the names as the plain ranks", async ({ page }) => {
+  // The daily card shows the top ten in the table, medals included (no podium)
+  await rankingExample(page, 'shared', true);
+  await visit(page, '/');
+  const rows = page.locator('table.rank-table tbody tr:has(> td:nth-child(3))');
+  await expect(rows).toHaveCount(5);
+  for (const width of [320, 390, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    const gaps = await rows.evaluateAll((trs) => trs.map((tr) => {
+      const rank = tr.querySelector(':scope > td:first-child > span')!.getBoundingClientRect();
+      const name = tr.querySelector(':scope > td:nth-child(2) > div')!.getBoundingClientRect();
+      return name.left - rank.right;
+    }));
+    for (const [i, gap] of gaps.entries()) expect(gap, `${width}px, row ${i + 1}`).toBeGreaterThanOrEqual(8);
+  }
+});
+
 test('the monthly medal rows include everyone sharing a medal place', async ({ page }) => {
   await page.route('**/api/month_leaderboard', (route) => route.fulfill({
     json: {
