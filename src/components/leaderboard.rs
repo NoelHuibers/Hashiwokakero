@@ -375,8 +375,9 @@ pub fn LeaderboardTable(
             <div class="@container -mx-2">
                 <table class=format!("{RANK_TABLE} w-full table-fixed text-sm")>
                     <colgroup>
-                        // The first and last columns hold the row inset (ROW_INSET) too
-                        <col class="w-10" />
+                        // The first and last columns hold the row inset (ROW_INSET) too: 2 × 8 px
+                        // around a 28 px medal leaves it 12 px from the name, as in the hall of fame
+                        <col class="w-12" />
                         <col />
                         <col class="w-28" />
                     </colgroup>
