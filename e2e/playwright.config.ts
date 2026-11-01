@@ -39,6 +39,14 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', testIgnore: /visual\.spec\.ts/, use: desktop },
-    ...(VISUAL ? [{ name: 'visual', testMatch: /visual\.spec\.ts/, use: { ...desktop, baseURL: VISUAL_URL } }] : []),
+    ...(VISUAL
+      ? [
+          {
+            name: 'visual',
+            testMatch: /visual\.spec\.ts/,
+            use: { ...desktop, baseURL: VISUAL_URL },
+          },
+        ]
+      : []),
   ],
 });

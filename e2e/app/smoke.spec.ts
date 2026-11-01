@@ -37,11 +37,15 @@ test('the saved theme applies before the app starts', async ({ page }) => {
   await expect(page.locator('html')).toHaveClass(/\bdark\b/);
 });
 
-test('a guest keeps their session in the app, sent in a header instead of a cookie', async ({ page, context }) => {
+test('a guest keeps their session in the app, sent in a header instead of a cookie', async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const calls: { url: string; headers: Promise<Record<string, string>> }[] = [];
   page.on('request', (r) => {
-    if (new URL(r.url()).pathname.startsWith('/api/')) calls.push({ url: r.url(), headers: r.allHeaders() });
+    if (new URL(r.url()).pathname.startsWith('/api/'))
+      calls.push({ url: r.url(), headers: r.allHeaders() });
   });
   // Making a group makes a guest
   await visit(page, '/groups');
@@ -49,7 +53,9 @@ test('a guest keeps their session in the app, sent in a header instead of a cook
   await page.getByRole('button', { name: 'Create the group' }).click();
   const ready = page.getByTestId('group-ready');
   // The invite link is the website's, not the app's own origin
-  await expect(ready.getByTestId('invite-link')).toHaveValue(/^https:\/\/hashi\.rs\/g\/[a-z2-9_]{10}$/);
+  await expect(ready.getByTestId('invite-link')).toHaveValue(
+    /^https:\/\/hashi\.rs\/g\/[a-z2-9_]{10}$/,
+  );
   // A toast after an answer: the app's contexts outlive the mount (hashi::mount)
   await ready.getByRole('button', { name: 'Copy link' }).click();
   await expect(page.getByText('Invite link copied to the clipboard.')).toBeVisible();
@@ -59,23 +65,33 @@ test('a guest keeps their session in the app, sent in a header instead of a cook
   expect((await context.cookies()).map((c) => c.name)).not.toContain('hashi_session');
   // Every call says it is the app, the Pixel's Android with the version of app/Cargo.toml; the
   // calls after the guest was made send its token
-  const sent = await Promise.all(calls.map(async (c) => ({ url: c.url, headers: await c.headers })));
+  const sent = await Promise.all(
+    calls.map(async (c) => ({ url: c.url, headers: await c.headers })),
+  );
   const create = sent.findIndex((c) => c.url.endsWith('/api/create_group'));
   expect(create).toBeGreaterThan(0);
-  for (const { headers } of sent) expect(headers['x-hashi-app']).toMatch(/^android\/\d+\.\d+\.\d+$/);
-  for (const { headers } of sent.slice(0, create + 1)) expect(headers.authorization).toBeUndefined();
+  for (const { headers } of sent)
+    expect(headers['x-hashi-app']).toMatch(/^android\/\d+\.\d+\.\d+$/);
+  for (const { headers } of sent.slice(0, create + 1))
+    expect(headers.authorization).toBeUndefined();
   expect(sent.length).toBeGreaterThan(create + 1);
-  for (const { headers } of sent.slice(create + 1)) expect(headers.authorization).toBe(`Bearer hs1.${token}`);
+  for (const { headers } of sent.slice(create + 1))
+    expect(headers.authorization).toBe(`Bearer hs1.${token}`);
 
   // A reload keeps the guest: the group is still theirs
   await page.reload();
   await hydrated(page);
-  await expect(page.locator('a[data-group]').filter({ hasText: 'Header Club' })).toContainText('Owner');
+  await expect(page.locator('a[data-group]').filter({ hasText: 'Header Club' })).toContainText(
+    'Owner',
+  );
   expect(await page.evaluate(() => localStorage.getItem('hashi.session'))).toBe(token);
   expect((await context.cookies()).map((c) => c.name)).not.toContain('hashi_session');
 });
 
-test("a guest's daily starts in the app with the session the start sent, the board at once", async ({ page, context }) => {
+test("a guest's daily starts in the app with the session the start sent, the board at once", async ({
+  page,
+  context,
+}) => {
   const calls: { path: string; headers: Promise<Record<string, string>> }[] = [];
   page.on('request', (r) => {
     const { pathname } = new URL(r.url());
@@ -111,17 +127,24 @@ test('an app the server no longer answers asks for an update, once', async ({ pa
   let refused = 0;
   await page.route('**/api/**', (route) => {
     refused++;
-    return route.fulfill({ status: 500, contentType: 'text/plain', body: 'ServerError|E:app_outdated' });
+    return route.fulfill({
+      status: 500,
+      contentType: 'text/plain',
+      body: 'ServerError|E:app_outdated',
+    });
   });
   await visit(page, '/');
   const update = page.getByRole('link', { name: 'Update', exact: true });
   await expect(update).toBeVisible();
   await expect(update).toHaveAttribute('href', PLAY_STORE);
-  await expect(page.getByText('This version of the app is too old.', { exact: false })).toHaveCount(1);
+  await expect(page.getByText('This version of the app is too old.', { exact: false })).toHaveCount(
+    1,
+  );
   await expect(update).toHaveCount(1);
   expect(refused).toBeGreaterThan(1);
   // The refused calls (and the browser's note of each), nothing else
-  const refusal = /^(500 POST .*\/api\/\w+|console error: Failed to load resource: .* status of 500 .*)$/;
+  const refusal =
+    /^(500 POST .*\/api\/\w+|console error: Failed to load resource: .* status of 500 .*)$/;
   expect(problems.filter((p) => !refusal.test(p))).toEqual([]);
   problems.length = 0;
 });
@@ -131,10 +154,15 @@ test('the server’s files are linked on the website', async ({ page }) => {
   const set = page.locator('a[download]').first();
   await expect(set).toHaveAttribute('href', /^https:\/\/hashi\.rs\/dojo-dev-\d+\.tar\.gz$/);
   await expect(set).toHaveAttribute('target', '_blank');
-  await expect(page.getByRole('link', { name: '/dojo/board.json' })).toHaveAttribute('href', 'https://hashi.rs/dojo/board.json');
+  await expect(page.getByRole('link', { name: '/dojo/board.json' })).toHaveAttribute(
+    'href',
+    'https://hashi.rs/dojo/board.json',
+  );
 });
 
-test('the header, the tab bar and the sides clear the safe areas the WebView reports', async ({ page }) => {
+test('the header, the tab bar and the sides clear the safe areas the WebView reports', async ({
+  page,
+}) => {
   // What iOS's WKWebView reports as env(safe-area-inset-*) on an iPhone 17, held upright: the
   // status bar with the Dynamic Island, the home indicator. Chromium takes them from DevTools.
   const cdp = await page.context().newCDPSession(page);
@@ -163,7 +191,8 @@ test('the header, the tab bar and the sides clear the safe areas the WebView rep
   await report({ top: 62, right: 0, bottom: 0, left: 0 });
   await page.evaluate(() => {
     const insets = { top: 24, right: 0, bottom: 48, left: 0 };
-    for (const [side, px] of Object.entries(insets)) document.documentElement.style.setProperty(`--app-inset-${side}`, `${px}px`);
+    for (const [side, px] of Object.entries(insets))
+      document.documentElement.style.setProperty(`--app-inset-${side}`, `${px}px`);
   });
   await expect(header).toHaveCSS('padding-top', '24px');
   await expect(tabBar).toHaveCSS('padding-bottom', '48px');

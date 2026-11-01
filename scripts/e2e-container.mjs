@@ -101,7 +101,9 @@ export async function waitForPort(port, { exited, timeout = 60_000, interval = 1
     if (await accepts()) return;
     await new Promise((r) => setTimeout(r, interval));
   }
-  throw new Error(`the browser server didn't listen on 127.0.0.1:${port} within ${timeout / 1000} s`);
+  throw new Error(
+    `the browser server didn't listen on 127.0.0.1:${port} within ${timeout / 1000} s`,
+  );
 }
 
 async function main() {
@@ -140,11 +142,15 @@ async function main() {
   let status = 1;
   try {
     await waitForPort(port, { exited });
-    const tests = spawn(path.join(root, 'node_modules/.bin/playwright'), ['test', '-c', 'e2e', ...process.argv.slice(2)], {
-      cwd: root,
-      stdio: 'inherit',
-      env: { ...process.env, E2E_VISUAL: '1', PW_TEST_CONNECT_WS_ENDPOINT: wsEndpoint(port) },
-    });
+    const tests = spawn(
+      path.join(root, 'node_modules/.bin/playwright'),
+      ['test', '-c', 'e2e', ...process.argv.slice(2)],
+      {
+        cwd: root,
+        stdio: 'inherit',
+        env: { ...process.env, E2E_VISUAL: '1', PW_TEST_CONNECT_WS_ENDPOINT: wsEndpoint(port) },
+      },
+    );
     status = await new Promise((resolve) => tests.once('exit', (code) => resolve(code ?? 1)));
   } catch (e) {
     console.error(`e2e:container: ${e.message}`);
@@ -154,4 +160,5 @@ async function main() {
   process.exit(status);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+  await main();

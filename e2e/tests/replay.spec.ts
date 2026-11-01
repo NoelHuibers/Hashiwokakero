@@ -19,7 +19,10 @@ async function clockMs(page: Page) {
   return Math.round((Number(m) * 60 + Number(s)) * 1000);
 }
 
-test('the seeded group watches yesterday: play, seek, step, side by side', async ({ page, context }) => {
+test('the seeded group watches yesterday: play, seek, step, side by side', async ({
+  page,
+  context,
+}) => {
   await signIn(context, 'aiko');
   await visit(page, `/groups/${SEEDED_GROUP.id}`);
   const card = page.getByTestId('replay-card');
@@ -101,7 +104,9 @@ test('strangers get no replays', async ({ page }) => {
   await expect(page.getByTestId('replay-stage')).toHaveCount(0);
 });
 
-test('after solving: your own replay, and the group tab opens today’s theatre', async ({ page }) => {
+test('after solving: your own replay, and the group tab opens today’s theatre', async ({
+  page,
+}) => {
   test.slow();
   // A guest makes a group and solves the daily
   await visit(page, '/groups');

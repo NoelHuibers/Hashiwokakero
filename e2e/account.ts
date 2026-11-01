@@ -2,7 +2,8 @@
 import { expect, type Page } from '@playwright/test';
 
 /** The form of the open tab: the other one stays in the page, hidden. */
-const field = (page: Page, label: string) => page.getByLabel(label, { exact: true }).filter({ visible: true });
+const field = (page: Page, label: string) =>
+  page.getByLabel(label, { exact: true }).filter({ visible: true });
 
 export async function fillAuthForm(page: Page, username: string, password: string) {
   await field(page, 'Username').fill(username);

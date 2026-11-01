@@ -8,7 +8,10 @@ test('the feedback form checks the message and sends it', async ({ page, problem
   const message = page.getByLabel('Message');
   const send = page.getByRole('button', { name: /^Send/ });
   // Opened without a type: something else
-  await expect(page.getByRole('radio', { name: 'Something else' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: 'Something else' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
 
   // Too short: the browser keeps the form
   await message.fill('Hi there');
@@ -58,10 +61,18 @@ test('a bug report from the help menu brings its page along', async ({ page, con
     ['Language', 'en'],
     ['Page', '/practice'],
   ]) {
-    await expect(sent.locator('dt', { hasText: new RegExp(`^${name}$`) }).locator('xpath=following-sibling::dd[1]')).toHaveText(value);
+    await expect(
+      sent
+        .locator('dt', { hasText: new RegExp(`^${name}$`) })
+        .locator('xpath=following-sibling::dd[1]'),
+    ).toHaveText(value);
   }
-  await expect(sent.locator('dt', { hasText: /^Player$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText(/^#\d+$/);
-  await expect(sent.locator('dt', { hasText: /^Screen$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText(/^\d+×\d+ @[\d.]+x$/);
+  await expect(
+    sent.locator('dt', { hasText: /^Player$/ }).locator('xpath=following-sibling::dd[1]'),
+  ).toHaveText(/^#\d+$/);
+  await expect(
+    sent.locator('dt', { hasText: /^Screen$/ }).locator('xpath=following-sibling::dd[1]'),
+  ).toHaveText(/^\d+×\d+ @[\d.]+x$/);
 
   const text = `The hint on the practice board did nothing ${Date.now()}`;
   await message.fill(text);
@@ -80,7 +91,10 @@ test('a bug report from the help menu brings its page along', async ({ page, con
   await article.getByRole('button', { name: 'Answered' }).click();
   await expect(article).toHaveCount(0);
   await page.getByLabel('Status').selectOption('answered');
-  await expect(page.locator('article').filter({ hasText: text })).toHaveAttribute('data-status', 'answered');
+  await expect(page.locator('article').filter({ hasText: text })).toHaveAttribute(
+    'data-status',
+    'answered',
+  );
 });
 
 test('the help menu stays on a phone’s screen', async ({ page }) => {

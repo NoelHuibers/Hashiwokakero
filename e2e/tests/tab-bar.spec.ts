@@ -8,7 +8,7 @@ import type { Page } from '@playwright/test';
 
 import { ROOT } from '../env';
 import { expect, test, visit } from '../fixtures';
-import { localized, LOCALES } from '../site';
+import { LOCALES, localized } from '../site';
 
 const navLabel = (locale: string): string =>
   JSON.parse(readFileSync(path.join(ROOT, 'locales', locale, 'common.json'), 'utf8')).nav.main;
@@ -19,7 +19,9 @@ async function tabsAt(page: Page, locale: string, width: number) {
   // The groups tab is the current page: its kanji is inked, the widest of the six
   await visit(page, localized(locale, '/groups'));
   await page.evaluate(() => document.fonts.ready);
-  const bar = page.getByRole('navigation', { name: navLabel(locale), exact: true }).filter({ visible: true });
+  const bar = page
+    .getByRole('navigation', { name: navLabel(locale), exact: true })
+    .filter({ visible: true });
   const tabs = bar.getByRole('link');
   await expect(tabs).toHaveCount(6);
   return tabs;
@@ -38,17 +40,30 @@ for (const locale of LOCALES) {
       expect(box.width, `${name} is wide enough to tap`).toBeGreaterThanOrEqual(48);
       const kanjiBox = (await kanji.boundingBox())!;
       expect(kanjiBox.x, `the kanji of ${name} starts in its tab`).toBeGreaterThanOrEqual(box.x);
-      expect(kanjiBox.x + kanjiBox.width, `the kanji of ${name} ends in its tab`).toBeLessThanOrEqual(box.x + box.width);
-      for (const [part, el] of [['kanji', kanji], ['name', label]] as const) {
-        expect(await el.evaluate((e) => e.scrollWidth <= e.clientWidth), `the ${part} of ${name} is whole`).toBe(true);
+      expect(
+        kanjiBox.x + kanjiBox.width,
+        `the kanji of ${name} ends in its tab`,
+      ).toBeLessThanOrEqual(box.x + box.width);
+      for (const [part, el] of [
+        ['kanji', kanji],
+        ['name', label],
+      ] as const) {
+        expect(
+          await el.evaluate((e) => e.scrollWidth <= e.clientWidth),
+          `the ${part} of ${name} is whole`,
+        ).toBe(true);
       }
     }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
   });
 }
 
 test('the tabs share a 390 px phone evenly', async ({ page }) => {
   const tabs = await tabsAt(page, 'en', 390);
-  const widths = await Promise.all((await tabs.all()).map(async (tab) => (await tab.boundingBox())!.width));
+  const widths = await Promise.all(
+    (await tabs.all()).map(async (tab) => (await tab.boundingBox())!.width),
+  );
   for (const width of widths) expect(width).toBeCloseTo(390 / 6, 0);
 });

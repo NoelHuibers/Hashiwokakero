@@ -16,7 +16,10 @@ async function expectLanguage(page: Page, locale: string) {
 async function expectInteractive(page: Page) {
   const html = page.locator('html');
   await expect(html).not.toHaveClass(/\bdark\b/);
-  await page.locator('header button').filter({ hasText: /^[昼夜]$/ }).click();
+  await page
+    .locator('header button')
+    .filter({ hasText: /^[昼夜]$/ })
+    .click();
   await expect(html).toHaveClass(/\bdark\b/);
 }
 

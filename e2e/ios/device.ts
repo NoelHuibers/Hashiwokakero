@@ -1,7 +1,7 @@
 // The simulator the tests run on, and the app on it: the debug build of app/src-tauri for the
 // simulator. Its commands go through `xcrun simctl`; what needs the running app (its page, which
 // app is in front) goes through Appium (app.ts).
-import { execFile, spawn, type ChildProcess } from 'node:child_process';
+import { type ChildProcess, execFile, spawn } from 'node:child_process';
 import { openSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -20,7 +20,10 @@ export const SERVER = 'hashi.rs';
 export const SAFARI = 'com.apple.mobilesafari';
 
 /** `cargo tauri ios build --debug --target aarch64-sim` writes it, CI keeps it as an artifact. */
-export const APP = path.resolve(ROOT, process.env.E2E_IOS_APP ?? 'app/src-tauri/gen/apple/build/arm64-sim/Hashi.app');
+export const APP = path.resolve(
+  ROOT,
+  process.env.E2E_IOS_APP ?? 'app/src-tauri/gen/apple/build/arm64-sim/Hashi.app',
+);
 /** The simulator: its UDID, or the one that's booted. */
 export const SIMULATOR = process.env.E2E_SIMULATOR ?? 'booted';
 /** An Appium server that is already running; without it the global setup starts one. */
@@ -46,11 +49,21 @@ export async function simctl(...args: string[]) {
 /** The simulator's UDID, model and iOS (`simctl list`). */
 export async function device() {
   const list = JSON.parse(await simctl('list', 'devices', '--json')) as {
-    devices: Record<string, { udid: string; name: string; state: string; deviceTypeIdentifier?: string }[]>;
+    devices: Record<
+      string,
+      { udid: string; name: string; state: string; deviceTypeIdentifier?: string }[]
+    >;
   };
-  const all = Object.entries(list.devices).flatMap(([runtime, devices]) => devices.map((d) => ({ ...d, runtime })));
-  const found = all.filter((d) => (SIMULATOR === 'booted' ? d.state === 'Booted' : d.udid === SIMULATOR));
-  if (found.length !== 1) throw new Error(`expected one simulator for ${SIMULATOR}, found ${found.length} (E2E_SIMULATOR)`);
+  const all = Object.entries(list.devices).flatMap(([runtime, devices]) =>
+    devices.map((d) => ({ ...d, runtime })),
+  );
+  const found = all.filter((d) =>
+    SIMULATOR === 'booted' ? d.state === 'Booted' : d.udid === SIMULATOR,
+  );
+  if (found.length !== 1)
+    throw new Error(
+      `expected one simulator for ${SIMULATOR}, found ${found.length} (E2E_SIMULATOR)`,
+    );
   const [d] = found;
   // com.apple.CoreSimulator.SimRuntime.iOS-26-5
   const ios = d.runtime.replace(/^.*\.iOS-/, '').replaceAll('-', '.');
@@ -63,7 +76,9 @@ export async function device() {
  */
 export async function screenshot(udid: string, name: string) {
   try {
-    await run('xcrun', ['simctl', 'io', udid, 'screenshot', path.join(SCREENS, name)], { timeout: 30_000 });
+    await run('xcrun', ['simctl', 'io', udid, 'screenshot', path.join(SCREENS, name)], {
+      timeout: 30_000,
+    });
   } catch (e) {
     console.warn(`no screenshot ${name}: ${(e as Error).message}`);
   }
@@ -94,11 +109,17 @@ export async function startAppium(): Promise<ChildProcess | null> {
   if (await up(APPIUM_URL)) return null;
   const { port, hostname } = new URL(APPIUM_URL);
   const log = openSync(APPIUM_LOG, 'w');
-  const appium = spawn('appium', ['--address', hostname, '--port', port, '--log-timestamp', '--log-no-colors'], {
-    stdio: ['ignore', log, log],
-  });
+  const appium = spawn(
+    'appium',
+    ['--address', hostname, '--port', port, '--log-timestamp', '--log-no-colors'],
+    {
+      stdio: ['ignore', log, log],
+    },
+  );
   const exited = new Promise<never>((_, reject) =>
-    appium.once('exit', (code) => reject(new Error(`appium exited with ${code}, see ${APPIUM_LOG}`))),
+    appium.once('exit', (code) =>
+      reject(new Error(`appium exited with ${code}, see ${APPIUM_LOG}`)),
+    ),
   );
   const ready = (async () => {
     for (let i = 0; i < 120; i++) {

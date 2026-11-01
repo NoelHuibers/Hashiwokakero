@@ -2,7 +2,7 @@
 // a player would leave it. The order is the stores' order: the first ones sell the game.
 import { DatabaseSync } from 'node:sqlite';
 
-import { expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
 
 import { addBridge, DAILY_KEY, edges, PRACTICE_KEY } from '../../e2e/board';
 import { DB_PATH, STORE_URL } from './env';
@@ -133,7 +133,13 @@ function restartClock() {
 
 export async function signIn(context: BrowserContext, user: string) {
   await context.addCookies([
-    { name: 'hashi_session', value: sessionOf(user), url: STORE_URL, httpOnly: true, sameSite: 'Lax' },
+    {
+      name: 'hashi_session',
+      value: sessionOf(user),
+      url: STORE_URL,
+      httpOnly: true,
+      sameSite: 'Lax',
+    },
   ]);
 }
 
@@ -145,7 +151,17 @@ export async function boardShot(context: BrowserContext, out: string) {
   const { puzzle, solution, source } = PUZZLES.practice;
   const last = solution.findLastIndex((b) => b > 0);
   const bridges = solution.map((b, e) => (e === last ? 0 : b));
-  const game = { puzzle, bridges, solution, unique: true, source, status: 'Playing', elapsed: 0, moves: 0, hints: 0 };
+  const game = {
+    puzzle,
+    bridges,
+    solution,
+    unique: true,
+    source,
+    status: 'Playing',
+    elapsed: 0,
+    moves: 0,
+    hints: 0,
+  };
   await context.addInitScript(
     ([key, value]) => {
       if (sessionStorage.getItem('store-seeded')) return;

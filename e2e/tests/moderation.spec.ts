@@ -23,7 +23,9 @@ test('report a player, block them and unblock them', async ({ page, browser, bas
   await dialog.getByLabel('Cheating').check();
   await dialog.getByLabel('Note (optional)').fill(note);
   await dialog.getByRole('button', { name: 'Send report' }).click();
-  await expect(page.getByText('Thanks for your report. We look at every report within 24 hours.')).toBeVisible();
+  await expect(
+    page.getByText('Thanks for your report. We look at every report within 24 hours.'),
+  ).toBeVisible();
   await expect(dialog).toHaveCount(0);
 
   // The admin sees it, and dismisses it
@@ -42,7 +44,9 @@ test('report a player, block them and unblock them', async ({ page, browser, bas
   // Block, after a question; no rival button for a blocked player
   await actions.getByRole('button', { name: 'Block' }).click();
   const question = page.getByRole('dialog');
-  await expect(question).toContainText("Block chen? Their name won't be shown to you anywhere on Hashi any more");
+  await expect(question).toContainText(
+    "Block chen? Their name won't be shown to you anywhere on Hashi any more",
+  );
   // Cancel changes nothing
   await question.getByRole('button', { name: 'Cancel' }).click();
   await expect(question).toHaveCount(0);
@@ -57,13 +61,17 @@ test('report a player, block them and unblock them', async ({ page, browser, bas
   // (seed.ts), on the podium
   await visit(page, '/ranks');
   const main = page.locator('main');
-  await expect(main.locator('li.podium-step').filter({ hasText: 'blocked player' }).first()).toBeVisible();
+  await expect(
+    main.locator('li.podium-step').filter({ hasText: 'blocked player' }).first(),
+  ).toBeVisible();
   await expect(main.getByText('chen', { exact: true })).toHaveCount(0);
   await expect(main.locator(`a[href$="${profile}"]`)).toHaveCount(0);
   // Others still see them
   const other = await browser.newPage({ baseURL });
   await visit(other, '/ranks');
-  await expect(other.locator('main li.podium-step').filter({ hasText: 'chen' }).first()).toBeVisible();
+  await expect(
+    other.locator('main li.podium-step').filter({ hasText: 'chen' }).first(),
+  ).toBeVisible();
   await other.close();
 
   // Unblocked on the account page
@@ -86,5 +94,7 @@ test('signing up accepts the community rules', async ({ page }) => {
   await line.getByRole('link', { name: 'community rules' }).click();
   await expect(page).toHaveURL(/\/regeln$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Community rules' })).toBeVisible();
-  await expect(page.getByText('There is zero tolerance for objectionable content and abusive users.')).toBeVisible();
+  await expect(
+    page.getByText('There is zero tolerance for objectionable content and abusive users.'),
+  ).toBeVisible();
 });

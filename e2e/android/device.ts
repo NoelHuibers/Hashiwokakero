@@ -18,7 +18,8 @@ export const SERVER = 'hashi.rs';
 /** `cargo tauri android build --debug --apk` writes it, CI builds it for the emulator (x86_64). */
 export const APK = path.resolve(
   ROOT,
-  process.env.E2E_APK ?? 'app/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk',
+  process.env.E2E_APK ??
+    'app/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk',
 );
 /** What the job summary shows about the device: its model, Android and WebView. */
 export const DEVICE_INFO = path.join(import.meta.dirname, '..', 'test-results-android-device.json');
@@ -35,7 +36,8 @@ export async function connect(): Promise<AndroidDevice> {
   return devices[0];
 }
 
-export const shell = async (device: AndroidDevice, command: string) => (await device.shell(command)).toString().trim();
+export const shell = async (device: AndroidDevice, command: string) =>
+  (await device.shell(command)).toString().trim();
 
 /** The screen's pixels: `screencap` without `-p`, RGBA after a header (width, height, format…). */
 export interface Screen {
@@ -77,7 +79,9 @@ export interface Bars {
 export async function systemBars(device: AndroidDevice): Promise<Bars> {
   const dump = await shell(device, 'dumpsys window');
   const frame = (type: string) => {
-    const lines = dump.split('\n').filter((l) => new RegExp(`type=${type}\\b`).test(l) && /frame=\[/.test(l));
+    const lines = dump
+      .split('\n')
+      .filter((l) => new RegExp(`type=${type}\\b`).test(l) && /frame=\[/.test(l));
     const frames = lines
       .map((l) => l.match(/frame=\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/))
       .filter((m): m is RegExpMatchArray => !!m)
@@ -88,7 +92,8 @@ export async function systemBars(device: AndroidDevice): Promise<Bars> {
   const status = frame('statusBars');
   const navigation = frame('navigationBars');
   const source = [...status.lines.slice(0, 3), ...navigation.lines.slice(0, 3)].join('\n');
-  if (!status.frames.length || !navigation.frames.length) throw new Error(`no system bars in dumpsys window:\n${source}`);
+  if (!status.frames.length || !navigation.frames.length)
+    throw new Error(`no system bars in dumpsys window:\n${source}`);
   const top = Math.max(...status.frames.map(([, , , b]) => b));
   const height = Math.max(...navigation.frames.map(([, , , b]) => b));
   const bottom = Math.max(...navigation.frames.map(([, t]) => height - t));
@@ -113,7 +118,8 @@ export async function keyboardTop(device: AndroidDevice): Promise<number | null>
 /** Whether the device reaches the internet: an address, or a name to look up. */
 async function online(device: AndroidDevice) {
   for (const host of ['1.1.1.1', SERVER]) {
-    if ((await shell(device, `ping -c 1 -W 2 ${host} > /dev/null 2>&1; echo $?`)) === '0') return true;
+    if ((await shell(device, `ping -c 1 -W 2 ${host} > /dev/null 2>&1; echo $?`)) === '0')
+      return true;
   }
   return false;
 }
@@ -123,7 +129,10 @@ async function online(device: AndroidDevice) {
  * `navigator.onLine` follows it. `null` when the dump doesn't say.
  */
 async function defaultNetwork(device: AndroidDevice) {
-  return (await shell(device, 'dumpsys connectivity')).match(/Active default network: (\S+)/)?.[1] ?? null;
+  return (
+    (await shell(device, 'dumpsys connectivity')).match(/Active default network: (\S+)/)?.[1] ??
+    null
+  );
 }
 
 /**
@@ -146,7 +155,8 @@ export async function goOffline(device: AndroidDevice) {
     await shell(device, 'svc wifi disable');
     await shell(device, 'svc data disable');
     network = await defaultNetwork(device);
-    if (network === null && i === 0) console.warn('dumpsys connectivity names no default network, only the ping tells');
+    if (network === null && i === 0)
+      console.warn('dumpsys connectivity names no default network, only the ping tells');
     const offline = (network === null || network === 'none') && !(await online(device));
     calm = offline ? calm + 1 : 0;
     if (calm >= 5) return;
@@ -157,7 +167,9 @@ export async function goOffline(device: AndroidDevice) {
 
 /** Notes the device for the job summary. */
 export async function describe(device: AndroidDevice) {
-  const webView = (await shell(device, 'dumpsys webviewupdate')).match(/Current WebView package \(name, version\): \((.*)\)/);
+  const webView = (await shell(device, 'dumpsys webviewupdate')).match(
+    /Current WebView package \(name, version\): \((.*)\)/,
+  );
   const info = {
     model: device.model(),
     android: await shell(device, 'getprop ro.build.version.release'),

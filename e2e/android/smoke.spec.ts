@@ -12,20 +12,33 @@ import type { AndroidDevice, Page } from '@playwright/test';
 
 import { board, PRACTICE_KEY } from '../board';
 import { LADDER, LADDER_SOLUTION } from '../puzzles';
-import { closeSystemDialogs, expect, focused, hydrated, inFront, started, test, violations, visit } from './app';
+import {
+  closeSystemDialogs,
+  expect,
+  focused,
+  hydrated,
+  inFront,
+  started,
+  test,
+  violations,
+  visit,
+} from './app';
 import { ACTIVITY, keyboardTop, ORIGIN, PKG, SCREENS, screen, shell, systemBars } from './device';
 
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
 const toasts = (page: Page) => page.locator('[role=log] > div');
 const errorToasts = (page: Page) => toasts(page).filter({ hasText: '✕' });
-const offlineNotice = (page: Page) => toasts(page).filter({ hasText: "You're offline. Practice still works." });
+const offlineNotice = (page: Page) =>
+  toasts(page).filter({ hasText: "You're offline. Practice still works." });
 
 const islands = (page: Page) => board(page).locator('g.island');
 const bridges = (page: Page) => board(page).locator('g.bridge:not(.ghost)');
 
 /** Where the islands are, to tell one puzzle from another. */
 const layout = (page: Page) =>
-  islands(page).evaluateAll((all) => all.map((g) => `${g.getAttribute('transform')}:${g.textContent}`).join(' '));
+  islands(page).evaluateAll((all) =>
+    all.map((g) => `${g.getAttribute('transform')}:${g.textContent}`).join(' '),
+  );
 
 /** The server functions the page called (all of them failed, the device is offline). */
 function apiCalls(page: Page) {
@@ -40,7 +53,9 @@ function apiCalls(page: Page) {
 test('the app starts in its WebView, offline', async ({ page }) => {
   expect(new URL(page.url()).origin).toBe(ORIGIN);
   // Tauri's bridge, which the practice takes for its commands (src/api/native.rs)
-  expect(await page.evaluate(() => typeof (window as any).__TAURI_INTERNALS__?.invoke)).toBe('function');
+  expect(await page.evaluate(() => typeof (window as any).__TAURI_INTERNALS__?.invoke)).toBe(
+    'function',
+  );
   // Without the permission ACCESS_NETWORK_STATE the WebView would take itself for online, always
   expect(await page.evaluate(() => navigator.onLine), 'navigator.onLine').toBe(false);
   // The daily needs the server
@@ -49,13 +64,24 @@ test('the app starts in its WebView, offline', async ({ page }) => {
   expect(await offlineNotice(page).count()).toBeLessThanOrEqual(1);
 });
 
-const PAGES = ['/', '/rules', '/ja/rules', '/practice', '/create', '/lab', '/dojo', '/groups', '/daily'];
+const PAGES = [
+  '/',
+  '/rules',
+  '/ja/rules',
+  '/practice',
+  '/create',
+  '/lab',
+  '/dojo',
+  '/groups',
+  '/daily',
+];
 
 test('no page breaks the content security policy', async ({ page, problems }) => {
   const found: Record<string, string[]> = {};
   const consoleCsp: string[] = [];
   page.on('console', (m) => {
-    if (/Content.Security.Policy/i.test(m.text())) consoleCsp.push(`${new URL(page.url()).pathname}: ${m.text()}`);
+    if (/Content.Security.Policy/i.test(m.text()))
+      consoleCsp.push(`${new URL(page.url()).pathname}: ${m.text()}`);
   });
   for (const path of PAGES) {
     await visit(page, path);
@@ -103,7 +129,11 @@ test('pages that need the server say once that the app is offline', async ({ pag
   await expect(errorToasts(page)).toHaveCount(0);
   // Not again on the next page while offline, once it went away
   await expect(offlineNotice(page)).toHaveCount(0);
-  await page.getByRole('link', { name: /Groups/ }).filter({ visible: true }).first().click();
+  await page
+    .getByRole('link', { name: /Groups/ })
+    .filter({ visible: true })
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/groups$/);
   await hydrated(page);
   await expect(toasts(page)).toHaveCount(0);
@@ -161,7 +191,8 @@ for (const theme of ['light', 'dark'] as const) {
     const page_ = await page.evaluate(() => {
       const style = getComputedStyle(document.documentElement);
       const probe = document.createElement('div');
-      probe.style.cssText = 'position:fixed;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
+      probe.style.cssText =
+        'position:fixed;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
       document.body.append(probe);
       const env = `${getComputedStyle(probe).paddingTop} ${getComputedStyle(probe).paddingBottom}`;
       probe.remove();
@@ -170,17 +201,27 @@ for (const theme of ['light', 'dark'] as const) {
         height: innerHeight,
         width: innerWidth,
         env,
-        app: ['top', 'bottom'].map((side) => style.getPropertyValue(`--app-inset-${side}`)).join(' '),
+        app: ['top', 'bottom']
+          .map((side) => style.getPropertyValue(`--app-inset-${side}`))
+          .join(' '),
       };
     });
-    test.info().annotations.push(
-      { type: 'system bars', description: `top ${bars.top} px, bottom ${bars.bottom} px` },
-      { type: 'insets', description: `env(safe-area-inset-top/bottom) ${page_.env}, --app-inset-top/bottom ${page_.app}` },
-    );
+    test
+      .info()
+      .annotations.push(
+        { type: 'system bars', description: `top ${bars.top} px, bottom ${bars.bottom} px` },
+        {
+          type: 'insets',
+          description: `env(safe-area-inset-top/bottom) ${page_.env}, --app-inset-top/bottom ${page_.app}`,
+        },
+      );
     await test.info().attach('dumpsys window', { body: bars.source, contentType: 'text/plain' });
     const shot = await screen(device);
     // The page fills the screen, under the bars too (edge to edge)
-    expect(Math.abs(page_.height * page_.dpr - shot.height), 'the page is as high as the screen').toBeLessThan(3);
+    expect(
+      Math.abs(page_.height * page_.dpr - shot.height),
+      'the page is as high as the screen',
+    ).toBeLessThan(3);
 
     // In CSS pixels, half a pixel for the rounding
     const statusBar = bars.top / page_.dpr;
@@ -188,11 +229,14 @@ for (const theme of ['light', 'dark'] as const) {
     const header = await page.locator('header > div').first().boundingBox();
     expect(header, 'the header').not.toBeNull();
     expect(header!.y, 'the header below the status bar').toBeGreaterThanOrEqual(statusBar - 0.5);
-    const labels = await page.locator('.tab-label').evaluateAll((all) =>
-      all.filter((l) => l.getClientRects().length).map((l) => l.getBoundingClientRect().bottom),
-    );
+    const labels = await page
+      .locator('.tab-label')
+      .evaluateAll((all) =>
+        all.filter((l) => l.getClientRects().length).map((l) => l.getBoundingClientRect().bottom),
+      );
     expect(labels.length, 'the tab bar').toBe(6);
-    for (const bottom of labels) expect(bottom, 'a tab above the navigation bar').toBeLessThanOrEqual(tabBarEnd + 0.5);
+    for (const bottom of labels)
+      expect(bottom, 'a tab above the navigation bar').toBeLessThanOrEqual(tabBarEnd + 0.5);
 
     // The bars show the page behind them, and their icons have to stand out: dark ones on the
     // light page, light ones on the dark page
@@ -201,7 +245,12 @@ for (const theme of ['light', 'dark'] as const) {
       ['navigation bar', shot.height - bars.bottom, shot.height],
     ] as const) {
       const { darkest, median, brightest } = await extremes(device, from, to);
-      test.info().annotations.push({ type: bar, description: `luminance ${darkest.toFixed(2)} / ${median.toFixed(2)} / ${brightest.toFixed(2)}` });
+      test
+        .info()
+        .annotations.push({
+          type: bar,
+          description: `luminance ${darkest.toFixed(2)} / ${median.toFixed(2)} / ${brightest.toFixed(2)}`,
+        });
       // Android's dark icons are a grey (about 0.37 on the light page), its light ones white
       if (theme === 'light') {
         expect(median, `the light page behind the ${bar}`).toBeGreaterThan(0.6);
@@ -228,7 +277,9 @@ test('the app starts in dark mode without a white frame', async ({ page, device 
     // A row in the middle and one at a quarter of the screen, their middle brightness: the text
     // on them doesn't count
     const row = (shot: Awaited<ReturnType<typeof screen>>, y: number) => {
-      const values = Array.from({ length: shot.width >> 2 }, (_, i) => shot.luminance(i * 4, y)).sort((a, b) => a - b);
+      const values = Array.from({ length: shot.width >> 2 }, (_, i) =>
+        shot.luminance(i * 4, y),
+      ).sort((a, b) => a - b);
       return values[values.length >> 1];
     };
     const samples: number[] = [];
@@ -237,7 +288,12 @@ test('the app starts in dark mode without a white frame', async ({ page, device 
       const shot = await screen(device);
       samples.push(row(shot, shot.height >> 1), row(shot, shot.height >> 2));
     }
-    test.info().annotations.push({ type: 'luminance', description: samples.map((l) => l.toFixed(2)).join(' ') });
+    test
+      .info()
+      .annotations.push({
+        type: 'luminance',
+        description: samples.map((l) => l.toFixed(2)).join(' '),
+      });
     expect(samples.length).toBeGreaterThan(4);
     expect(Math.max(...samples), 'the brightest moment').toBeLessThan(0.5);
   } finally {
@@ -259,9 +315,11 @@ test('links out of the app open outside it', async ({ page, device }) => {
   await shell(device, 'logcat -c');
   await link.click();
   // Android opens the browser (offline here), the app's WebView stays on its page
-  await expect.poll(() => started(device), { message: 'a VIEW intent for the link' }).toContainEqual(
-    expect.stringMatching(/act=android\.intent\.action\.VIEW dat=https:\/\/github\.com/),
-  );
+  await expect
+    .poll(() => started(device), { message: 'a VIEW intent for the link' })
+    .toContainEqual(
+      expect.stringMatching(/act=android\.intent\.action\.VIEW dat=https:\/\/github\.com/),
+    );
   expect(page.url()).toBe(`${ORIGIN}/rules`);
   await backToTheApp(device);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');
@@ -272,9 +330,11 @@ test('links out of the app open outside it', async ({ page, device }) => {
   await page.evaluate(() => {
     location.href = 'https://example.com/';
   });
-  await expect.poll(() => started(device), { message: 'a VIEW intent for the address' }).toContainEqual(
-    expect.stringMatching(/act=android\.intent\.action\.VIEW dat=https:\/\/example\.com/),
-  );
+  await expect
+    .poll(() => started(device), { message: 'a VIEW intent for the address' })
+    .toContainEqual(
+      expect.stringMatching(/act=android\.intent\.action\.VIEW dat=https:\/\/example\.com/),
+    );
   await page.waitForTimeout(1000);
   expect(page.url()).toBe(`${ORIGIN}/rules`);
   await backToTheApp(device);
@@ -289,7 +349,17 @@ test("sharing opens Android's share sheet, copying works", async ({ page, device
     },
     [
       PRACTICE_KEY,
-      JSON.stringify({ puzzle: LADDER, bridges: LADDER_SOLUTION, solution: LADDER_SOLUTION, status: 'Won', moves: 9, hints: 0, unique: null, source: 'Custom', elapsed: 42 }),
+      JSON.stringify({
+        puzzle: LADDER,
+        bridges: LADDER_SOLUTION,
+        solution: LADDER_SOLUTION,
+        status: 'Won',
+        moves: 9,
+        hints: 0,
+        unique: null,
+        source: 'Custom',
+        elapsed: 42,
+      }),
     ],
   );
   await visit(page, '/practice');
@@ -300,13 +370,15 @@ test("sharing opens Android's share sheet, copying works", async ({ page, device
   await expect(toasts(page).filter({ hasText: 'Result copied to the clipboard.' })).toBeVisible();
 
   const chooser = async (what: string) => {
-    await expect.poll(() => started(device), { message: `the share sheet for ${what}` }).toContainEqual(
-      expect.stringMatching(/act=android\.intent\.action\.CHOOSER/),
-    );
+    await expect
+      .poll(() => started(device), { message: `the share sheet for ${what}` })
+      .toContainEqual(expect.stringMatching(/act=android\.intent\.action\.CHOOSER/));
     await expect.poll(() => inFront(device), { message: 'the share sheet in front' }).toBe(false);
     // Its window has the keys only a moment after it is in front: the back button would go to the
     // app's WebView behind it until then
-    await expect.poll(() => focused(device), { message: 'the share sheet has the keys' }).toMatch(/intentresolver|Chooser/i);
+    await expect
+      .poll(() => focused(device), { message: 'the share sheet has the keys' })
+      .toMatch(/intentresolver|Chooser/i);
     await shell(device, 'input keyevent KEYCODE_BACK');
     await expect.poll(() => inFront(device), { message: 'the app in front again' }).toBe(true);
   };
@@ -337,29 +409,56 @@ test('the focused input stays above the soft keyboard', async ({ page, device })
     return { dpr: devicePixelRatio, screenHeight: innerHeight * devicePixelRatio };
   });
   const box = (await input.boundingBox())!;
-  test.info().annotations.push({ type: 'input before', description: `${Math.round(box.y * dpr)}–${Math.round((box.y + box.height) * dpr)} px` });
-  expect((box.y + box.height) * dpr, 'the input in the lower half of the screen').toBeGreaterThan(screenHeight / 2);
+  test
+    .info()
+    .annotations.push({
+      type: 'input before',
+      description: `${Math.round(box.y * dpr)}–${Math.round((box.y + box.height) * dpr)} px`,
+    });
+  expect((box.y + box.height) * dpr, 'the input in the lower half of the screen').toBeGreaterThan(
+    screenHeight / 2,
+  );
 
   // A tap, as a finger does: only that brings the keyboard up
   await closeSystemDialogs(device);
-  await shell(device, `input tap ${Math.round((box.x + box.width / 2) * dpr)} ${Math.round((box.y + box.height - 12) * dpr)}`);
+  await shell(
+    device,
+    `input tap ${Math.round((box.x + box.width / 2) * dpr)} ${Math.round((box.y + box.height - 12) * dpr)}`,
+  );
   await expect.poll(() => keyboardTop(device), { message: 'the keyboard is up' }).not.toBeNull();
   const top = (await keyboardTop(device))!;
-  expect(top, 'the keyboard covers the input where it was').toBeLessThan((box.y + box.height) * dpr);
-  expect(await input.evaluate((el) => el === document.activeElement), 'the input has the focus').toBe(true);
+  expect(top, 'the keyboard covers the input where it was').toBeLessThan(
+    (box.y + box.height) * dpr,
+  );
+  expect(
+    await input.evaluate((el) => el === document.activeElement),
+    'the input has the focus',
+  ).toBe(true);
   // The page ends above the keyboard, and the input scrolled into view
-  await expect.poll(() => page.evaluate(() => innerHeight * devicePixelRatio), { message: 'the page ends at the keyboard' }).toBeLessThanOrEqual(top + 1);
   await expect
-    .poll(async () => {
-      const b = (await input.boundingBox())!;
-      return (b.y + b.height) * dpr;
-    }, { message: 'the input above the keyboard' })
+    .poll(() => page.evaluate(() => innerHeight * devicePixelRatio), {
+      message: 'the page ends at the keyboard',
+    })
+    .toBeLessThanOrEqual(top + 1);
+  await expect
+    .poll(
+      async () => {
+        const b = (await input.boundingBox())!;
+        return (b.y + b.height) * dpr;
+      },
+      { message: 'the input above the keyboard' },
+    )
     .toBeLessThanOrEqual(top);
   const after = (await input.boundingBox())!;
-  test.info().annotations.push(
-    { type: 'keyboard', description: `top ${top} px of ${screenHeight} px` },
-    { type: 'input with the keyboard', description: `${Math.round(after.y * dpr)}–${Math.round((after.y + after.height) * dpr)} px` },
-  );
+  test
+    .info()
+    .annotations.push(
+      { type: 'keyboard', description: `top ${top} px of ${screenHeight} px` },
+      {
+        type: 'input with the keyboard',
+        description: `${Math.round(after.y * dpr)}–${Math.round((after.y + after.height) * dpr)} px`,
+      },
+    );
   expect(after.y, 'the input below the header').toBeGreaterThan(0);
   await page.waitForTimeout(500);
   await device.screenshot({ path: path.join(SCREENS, 'keyboard.png') });
@@ -369,7 +468,11 @@ test('the focused input stays above the soft keyboard', async ({ page, device })
   await expect(input).toHaveValue(/hello$/);
   await shell(device, 'input keyevent KEYCODE_BACK');
   await expect.poll(() => keyboardTop(device), { message: 'the keyboard is down' }).toBeNull();
-  await expect.poll(() => page.evaluate(() => innerHeight * devicePixelRatio), { message: 'the page as high as the screen' }).toBeGreaterThan(screenHeight - 3);
+  await expect
+    .poll(() => page.evaluate(() => innerHeight * devicePixelRatio), {
+      message: 'the page as high as the screen',
+    })
+    .toBeGreaterThan(screenHeight - 3);
   expect(page.url()).toBe(`${ORIGIN}/kontakt`);
 });
 
@@ -387,7 +490,9 @@ test('without a project id, Play Games never starts', async ({ page, device }) =
         ),
       [command, args] as const,
     );
-  expect(await invoke('plugin:hashi|games_sign_in', {})).toEqual({ answer: { available: false, signedIn: false } });
+  expect(await invoke('plugin:hashi|games_sign_in', {})).toEqual({
+    answer: { available: false, signedIn: false },
+  });
   const report = await invoke('plugin:hashi|games_report', {
     achievements: [
       { id: 'stamp_first', steps: null, target: null, earned: true },

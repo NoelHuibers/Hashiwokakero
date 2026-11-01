@@ -6,7 +6,7 @@
 // and sideways, the app's own plugin answers (HashiPlugin.swift), and Game Center's sign-in
 // stays out of the way. Nothing here may reach
 // hashi.rs: no guest, no daily, no group.
-import { expect, inFront, type App, test } from './app';
+import { type App, expect, inFront, test } from './app';
 import { BUNDLE, ORIGIN, SAFARI } from './device';
 import { NATIVE } from './webdriver';
 
@@ -16,8 +16,15 @@ const errorToasts = (app: App) => app.count(TOASTS, '✕');
 const offlineNotices = (app: App) => app.count(TOASTS, "You're offline. Practice still works.");
 
 /** The first board of the app (e2e/board.ts), its islands and its bridges. */
-const islands = (app: App) => app.evaluate(() => document.querySelector('svg.board-svg')?.querySelectorAll('g.island').length ?? 0);
-const bridges = (app: App) => app.evaluate(() => document.querySelector('svg.board-svg')?.querySelectorAll('g.bridge:not(.ghost)').length ?? 0);
+const islands = (app: App) =>
+  app.evaluate(
+    () => document.querySelector('svg.board-svg')?.querySelectorAll('g.island').length ?? 0,
+  );
+const bridges = (app: App) =>
+  app.evaluate(
+    () =>
+      document.querySelector('svg.board-svg')?.querySelectorAll('g.bridge:not(.ghost)').length ?? 0,
+  );
 
 /** Where the islands are, to tell one puzzle from another. */
 const layout = (app: App) =>
@@ -27,12 +34,15 @@ const layout = (app: App) =>
       .join(' '),
   );
 
-const shows = (app: App, text: string) => app.evaluate((t) => document.body.innerText.includes(t), text);
+const shows = (app: App, text: string) =>
+  app.evaluate((t) => document.body.innerText.includes(t), text);
 
 /** The practice board with a puzzle, done growing, its fonts loaded. */
 async function practiceBoard(app: App) {
   await expect.poll(() => islands(app), { message: 'the islands' }).toBeGreaterThan(0);
-  await expect.poll(() => shows(app, 'Growing islands'), { message: 'the generator done' }).toBe(false);
+  await expect
+    .poll(() => shows(app, 'Growing islands'), { message: 'the generator done' })
+    .toBe(false);
   await app.evaluate(() => document.fonts.ready.then(() => null));
 }
 
@@ -40,11 +50,18 @@ test('the app starts in its WebView, offline', async ({ app }) => {
   // The start page, `tauri://localhost` without a path
   expect((await app.url()).replace(/\/$/, '')).toBe(ORIGIN);
   // Tauri's bridge, which the practice takes for its commands (src/api/native.rs)
-  expect(await app.evaluate(() => typeof (window as any).__TAURI_INTERNALS__?.invoke)).toBe('function');
+  expect(await app.evaluate(() => typeof (window as any).__TAURI_INTERNALS__?.invoke)).toBe(
+    'function',
+  );
   // What makes the app send `x-hashi-app: ios/<version>` (src/api/app.rs)
   expect(await app.evaluate(() => navigator.userAgent)).toContain('iPhone');
   // The simulator has the Mac's network: only hashi.rs is out of reach, the WebView is online
-  test.info().annotations.push({ type: 'navigator.onLine', description: String(await app.evaluate(() => navigator.onLine)) });
+  test
+    .info()
+    .annotations.push({
+      type: 'navigator.onLine',
+      description: String(await app.evaluate(() => navigator.onLine)),
+    });
   // The daily needs the server
   await expect.poll(() => shows(app, "Couldn't load today's puzzle. Try again.")).toBe(true);
   expect(await errorToasts(app)).toBe(0);
@@ -52,7 +69,17 @@ test('the app starts in its WebView, offline', async ({ app }) => {
   await app.screenshot('start.png');
 });
 
-const PAGES = ['/', '/rules', '/ja/rules', '/practice', '/create', '/lab', '/dojo', '/groups', '/daily'];
+const PAGES = [
+  '/',
+  '/rules',
+  '/ja/rules',
+  '/practice',
+  '/create',
+  '/lab',
+  '/dojo',
+  '/groups',
+  '/daily',
+];
 
 test('no page breaks the content security policy', async ({ app }) => {
   const found: Record<string, string[]> = {};
@@ -90,8 +117,14 @@ test('practice generates, hints and checks on the phone', async ({ app }) => {
   // Tauri's IPC is a fetch of `ipc://localhost/<command>` on iOS: the generator ran on the phone
   const calls = (await app.records())!.calls;
   test.info().annotations.push({ type: 'calls', description: calls.join(' ') });
-  expect(calls.filter((c) => c.startsWith('ipc://localhost/generate_puzzle')), 'the native generator').toHaveLength(1);
-  expect(calls.filter((c) => /\/api\/(generate_puzzle|solve_puzzle|puzzle_cnf)/.test(c)), 'server functions').toEqual([]);
+  expect(
+    calls.filter((c) => c.startsWith('ipc://localhost/generate_puzzle')),
+    'the native generator',
+  ).toHaveLength(1);
+  expect(
+    calls.filter((c) => /\/api\/(generate_puzzle|solve_puzzle|puzzle_cnf)/.test(c)),
+    'server functions',
+  ).toEqual([]);
   expect(await errorToasts(app)).toBe(0);
 });
 
@@ -116,7 +149,9 @@ test('pages that need the server say once that the app is offline', async ({ app
 /** Safari in front, then the app again: the app is where it was. */
 async function openedInSafari(app: App, what: string) {
   // Safari's first start on a busy runner took 50 s once
-  await expect.poll(() => inFront(app.session), { message: `Safari in front for ${what}`, timeout: 90_000 }).toBe(SAFARI);
+  await expect
+    .poll(() => inFront(app.session), { message: `Safari in front for ${what}`, timeout: 90_000 })
+    .toBe(SAFARI);
   await app.session.mobile('activateApp', { bundleId: BUNDLE });
   await expect.poll(() => inFront(app.session), { message: 'the app in front again' }).toBe(BUNDLE);
   expect(await app.url()).toBe(`${ORIGIN}/rules`);
@@ -146,12 +181,21 @@ const geometry = (app: App) =>
       'position:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
     document.body.append(probe);
     const style = getComputedStyle(probe);
-    const env = { top: style.paddingTop, right: style.paddingRight, bottom: style.paddingBottom, left: style.paddingLeft };
+    const env = {
+      top: style.paddingTop,
+      right: style.paddingRight,
+      bottom: style.paddingBottom,
+      left: style.paddingLeft,
+    };
     probe.remove();
     const body = getComputedStyle(document.body);
-    const labels = [...document.querySelectorAll('.tab-label')].filter((l) => l.getClientRects().length).map((l) => l.getBoundingClientRect());
+    const labels = [...document.querySelectorAll('.tab-label')]
+      .filter((l) => l.getClientRects().length)
+      .map((l) => l.getBoundingClientRect());
     return {
-      env: Object.fromEntries(Object.entries(env).map(([side, px]) => [side, parseFloat(px)])) as Record<'top' | 'right' | 'bottom' | 'left', number>,
+      env: Object.fromEntries(
+        Object.entries(env).map(([side, px]) => [side, parseFloat(px)]),
+      ) as Record<'top' | 'right' | 'bottom' | 'left', number>,
       header: document.querySelector('header > div')!.getBoundingClientRect().top,
       labels: labels.map((r) => ({ left: r.left, right: r.right, bottom: r.bottom })),
       body: { left: parseFloat(body.paddingLeft), right: parseFloat(body.paddingRight) },
@@ -183,33 +227,53 @@ for (const theme of ['light', 'dark'] as const) {
     await expect.poll(() => app.count(TOASTS)).toBe(0);
     await app.screenshot(`practice-${theme}.png`);
     const at = await geometry(app);
-    test.info().annotations.push({ type: 'insets', description: `env(safe-area-inset-*) ${JSON.stringify(at.env)}, header at ${at.header} of ${at.height} px` });
+    test
+      .info()
+      .annotations.push({
+        type: 'insets',
+        description: `env(safe-area-inset-*) ${JSON.stringify(at.env)}, header at ${at.header} of ${at.height} px`,
+      });
     expect(at.env.top, 'the status bar').toBeGreaterThan(0);
     expect(at.env.bottom, 'the home indicator').toBeGreaterThan(0);
     expect(at.header, 'the header below the status bar').toBeGreaterThanOrEqual(at.env.top);
     expect(at.labels, 'the tab bar').toHaveLength(6);
-    for (const label of at.labels) expect(label.bottom, 'a tab above the home indicator').toBeLessThanOrEqual(at.height - at.env.bottom + 0.5);
+    for (const label of at.labels)
+      expect(label.bottom, 'a tab above the home indicator').toBeLessThanOrEqual(
+        at.height - at.env.bottom + 0.5,
+      );
   });
 }
 
-test('turned sideways, the page clears the Dynamic Island and the home indicator', async ({ app }) => {
+test('turned sideways, the page clears the Dynamic Island and the home indicator', async ({
+  app,
+}) => {
   await app.visit('/practice');
   await practiceBoard(app);
   await turn(app, 'LANDSCAPE');
   try {
-    await expect.poll(() => app.evaluate(() => innerWidth > innerHeight), { message: 'the page sideways' }).toBe(true);
+    await expect
+      .poll(() => app.evaluate(() => innerWidth > innerHeight), { message: 'the page sideways' })
+      .toBe(true);
     // UIKit reports the landscape insets only on the scene lifecycle (Info.plist): without it the
     // portrait ones stayed, the top's and none at the sides
-    await expect.poll(async () => (await geometry(app)).env.top, { message: 'no status bar sideways' }).toBe(0);
+    await expect
+      .poll(async () => (await geometry(app)).env.top, { message: 'no status bar sideways' })
+      .toBe(0);
     const at = await geometry(app);
     test.info().annotations.push({ type: 'insets sideways', description: JSON.stringify(at.env) });
     expect(Math.min(at.env.left, at.env.right), 'the sides').toBeGreaterThan(0);
     expect(at.body, "the body's sides").toEqual({ left: at.env.left, right: at.env.right });
     expect(at.labels, 'the tab bar').toHaveLength(6);
     for (const label of at.labels) {
-      expect(label.left, 'a tab right of the Dynamic Island').toBeGreaterThanOrEqual(at.env.left - 0.5);
-      expect(label.right, 'a tab left of the other side').toBeLessThanOrEqual(at.width - at.env.right + 0.5);
-      expect(label.bottom, 'a tab above the home indicator').toBeLessThanOrEqual(at.height - at.env.bottom + 0.5);
+      expect(label.left, 'a tab right of the Dynamic Island').toBeGreaterThanOrEqual(
+        at.env.left - 0.5,
+      );
+      expect(label.right, 'a tab left of the other side').toBeLessThanOrEqual(
+        at.width - at.env.right + 0.5,
+      );
+      expect(label.bottom, 'a tab above the home indicator').toBeLessThanOrEqual(
+        at.height - at.env.bottom + 0.5,
+      );
     }
     await app.screenshot('landscape.png');
   } finally {
@@ -232,7 +296,13 @@ test("the app's own plugin answers on iOS", async ({ app }) => {
     );
   expect(await invoke('plugin:hashi|system_bars', { dark: true })).toBe('ok');
   expect(await invoke('plugin:hashi|system_bars', { dark: false })).toBe('ok');
-  expect(await invoke('plugin:hashi|share', { text: 'p cnf 1 1\n1 0\n', file: 'hashi.cnf', mime: 'text/plain' })).toBe('ok');
+  expect(
+    await invoke('plugin:hashi|share', {
+      text: 'p cnf 1 1\n1 0\n',
+      file: 'hashi.cnf',
+      mime: 'text/plain',
+    }),
+  ).toBe('ok');
   // The sheet over the app, Save to Files among its actions
   await new Promise((resolve) => setTimeout(resolve, 1500));
   await app.screenshot('share.png');
@@ -276,10 +346,12 @@ test('Game Center signs in without covering the page', async ({ app }) => {
   // in on it (nobody does here), or a refusal if it handed none
   const shown = await app.evaluate(() =>
     Promise.race([
-      (window as any).__TAURI_INTERNALS__.invoke('plugin:hashi|games_show', { kind: 'achievements' }).then(
-        (answer: unknown) => ({ answer: answer ?? null }),
-        (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
-      ),
+      (window as any).__TAURI_INTERNALS__
+        .invoke('plugin:hashi|games_show', { kind: 'achievements' })
+        .then(
+          (answer: unknown) => ({ answer: answer ?? null }),
+          (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
+        ),
       new Promise((resolve) => setTimeout(() => resolve({ waiting: true }), 2000)),
     ]),
   );

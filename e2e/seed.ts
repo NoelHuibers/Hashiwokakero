@@ -44,7 +44,11 @@ const NOT_PLAYING = new Set(['kenji']);
 
 /** In the admin dashboard's messages. */
 export const CONTACT_MESSAGES = [
-  { name: 'Mirai', email: 'mirai@example.com', message: 'Could the daily have a 5×5 for beginners?' },
+  {
+    name: 'Mirai',
+    email: 'mirai@example.com',
+    message: 'Could the daily have a 5×5 for beginners?',
+  },
   { name: '', email: '', message: 'The koto music is lovely, thank you for it.' },
 ];
 
@@ -95,8 +99,16 @@ export const CLOSED_PUZZLE = {
     width: 7,
     height: 7,
     islands: [
-      [0, 0, 1], [2, 0, 5], [5, 0, 4], [0, 3, 2], [2, 3, 5],
-      [5, 3, 3], [2, 5, 1], [0, 6, 2], [3, 6, 4], [5, 6, 3],
+      [0, 0, 1],
+      [2, 0, 5],
+      [5, 0, 4],
+      [0, 3, 2],
+      [2, 3, 5],
+      [5, 3, 3],
+      [2, 5, 1],
+      [0, 6, 2],
+      [3, 6, 4],
+      [5, 6, 3],
     ].map(([x, y, required]) => ({ pos: { x, y }, required })),
   },
   solution: [1, 0, 2, 2, 2, 2, 0, 0, 1, 1, 2, 2],
@@ -139,12 +151,9 @@ export function seed(dbPath: string) {
       (today - HISTORY - 20) * MS_PER_DAY,
     );
     if (p.session) {
-      db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(
-        sha256(p.session),
-        p.id,
-        Date.now(),
-        Date.now() + 365 * MS_PER_DAY,
-      );
+      db.prepare(
+        'INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)',
+      ).run(sha256(p.session), p.id, Date.now(), Date.now() + 365 * MS_PER_DAY);
     }
   }
 
@@ -188,14 +197,21 @@ export function seed(dbPath: string) {
       [4, 1],
       [5, 1],
     ];
-    const log = moves.map(([edge, count], k) => ({ t: step * (k + 1) + i * 700, edge, count, tap: true }));
+    const log = moves.map(([edge, count], k) => ({
+      t: step * (k + 1) + i * 700,
+      edge,
+      count,
+      tap: true,
+    }));
     // The hint, bought between the third and fourth move
     const hintAt = i === 1 ? step * 3 + i * 700 + 1_000 : 0;
     logged.run(JSON.stringify(log), hintAt, p.id, today - REPLAY_DAY_BACK);
   });
 
   // The group, a member colour each in the order they joined
-  db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(
+  db.prepare(
+    'INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)',
+  ).run(
     SEEDED_GROUP.id,
     SEEDED_GROUP.name,
     SEEDED_GROUP.invite,
@@ -203,18 +219,17 @@ export function seed(dbPath: string) {
     (today - HISTORY) * MS_PER_DAY,
   );
   SEEDED_GROUP.members.forEach((name, i) => {
-    db.prepare('INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)').run(
-      SEEDED_GROUP.id,
-      player(name).id,
-      (today - HISTORY) * MS_PER_DAY + i * 3_600_000,
-      i,
-    );
+    db.prepare(
+      'INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)',
+    ).run(SEEDED_GROUP.id, player(name).id, (today - HISTORY) * MS_PER_DAY + i * 3_600_000, i);
   });
 
   // The pair's river: the crane's dailies since it was made share its bridges, double bridges
   // and all, as their runs (server/daily/stamps.rs) have them
   const made = (today - RIVER_GROUP.age) * MS_PER_DAY;
-  db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(
+  db.prepare(
+    'INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)',
+  ).run(
     RIVER_GROUP.id,
     RIVER_GROUP.name,
     RIVER_GROUP.invite,
@@ -222,12 +237,9 @@ export function seed(dbPath: string) {
     made,
   );
   RIVER_GROUP.members.forEach((name, i) => {
-    db.prepare('INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)').run(
-      RIVER_GROUP.id,
-      player(name).id,
-      made,
-      i,
-    );
+    db.prepare(
+      'INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)',
+    ).run(RIVER_GROUP.id, player(name).id, made, i);
   });
   const crane = player(RIVER_GROUP.members[0]).id;
   const days = db
@@ -236,9 +248,15 @@ export function seed(dbPath: string) {
     .map((row) => Number(row.day));
   days.forEach((day, i) => {
     // Shared out evenly, the first ones get what doesn't divide
-    const bridges = Math.floor(RIVER_GROUP.bridges / days.length) + (i < RIVER_GROUP.bridges % days.length ? 1 : 0);
+    const bridges =
+      Math.floor(RIVER_GROUP.bridges / days.length) +
+      (i < RIVER_GROUP.bridges % days.length ? 1 : 0);
     const run = { bridges, islands: 0, steady: false, dithers: 0, cleared: false, burst: 0 };
-    db.prepare('UPDATE attempts SET run = ? WHERE user_id = ? AND day = ?').run(JSON.stringify(run), crane, day);
+    db.prepare('UPDATE attempts SET run = ? WHERE user_id = ? AND day = ?').run(
+      JSON.stringify(run),
+      crane,
+      day,
+    );
   });
   // The closed group puzzle and how the members did
   const posted = (today - 9) * MS_PER_DAY + 3_600_000;
@@ -261,7 +279,18 @@ export function seed(dbPath: string) {
   );
   const solved = JSON.stringify(CLOSED_PUZZLE.solution);
   const started = posted + MS_PER_DAY;
-  puzzleAttempt.run(CLOSED_PUZZLE.id, player('aiko').id, started, started + 102_400, 0, 0, 0, 102_400, solved, '[]');
+  puzzleAttempt.run(
+    CLOSED_PUZZLE.id,
+    player('aiko').id,
+    started,
+    started + 102_400,
+    0,
+    0,
+    0,
+    102_400,
+    solved,
+    '[]',
+  );
   puzzleAttempt.run(
     CLOSED_PUZZLE.id,
     player('bram').id,
@@ -277,10 +306,34 @@ export function seed(dbPath: string) {
       { t: 52_000, kind: 'Hint', edges: [4] },
     ]),
   );
-  puzzleAttempt.run(CLOSED_PUZZLE.id, player('fatima').id, started, null, 0, 0, 1, null, solved, '[]');
-  puzzleAttempt.run(CLOSED_PUZZLE.id, player('Drowsy Otter 21').id, started, null, 0, 0, 0, null, null, '[]');
+  puzzleAttempt.run(
+    CLOSED_PUZZLE.id,
+    player('fatima').id,
+    started,
+    null,
+    0,
+    0,
+    1,
+    null,
+    solved,
+    '[]',
+  );
+  puzzleAttempt.run(
+    CLOSED_PUZZLE.id,
+    player('Drowsy Otter 21').id,
+    started,
+    null,
+    0,
+    0,
+    0,
+    null,
+    null,
+    '[]',
+  );
 
-  db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(
+  db.prepare(
+    'INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)',
+  ).run(
     TEA_GROUP.id,
     TEA_GROUP.name,
     TEA_GROUP.invite,
@@ -288,12 +341,9 @@ export function seed(dbPath: string) {
     (today - 3) * MS_PER_DAY,
   );
   TEA_GROUP.members.forEach((name, i) => {
-    db.prepare('INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)').run(
-      TEA_GROUP.id,
-      player(name).id,
-      (today - 3) * MS_PER_DAY + i * 3_600_000,
-      i + 2,
-    );
+    db.prepare(
+      'INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)',
+    ).run(TEA_GROUP.id, player(name).id, (today - 3) * MS_PER_DAY + i * 3_600_000, i + 2);
   });
 
   // A hidden set: the dev families at larger sizes too, and the held-out one as the mystery family
@@ -308,7 +358,15 @@ export function seed(dbPath: string) {
     { family: 'Coloring', solved: 5, total: 7, par2: 6.0 },
     { family: 'Mystery', solved: 3, total: 4, par2: 5.2 },
   ];
-  const score = { par2: 5.9, solved: 35, total: 48, wrong: 0, budget: 10_000_000_000, fuel: 61.2, families };
+  const score = {
+    par2: 5.9,
+    solved: 35,
+    total: 48,
+    wrong: 0,
+    budget: 10_000_000_000,
+    fuel: 61.2,
+    families,
+  };
   const created = (today - 10) * MS_PER_DAY;
   // Per formula, in set order, for the metrics beyond PAR-2 (private while the season runs). The
   // held-out family is stored under its own name, Tseitin, and shown as the mystery's.
@@ -390,13 +448,31 @@ export function seed(dbPath: string) {
   db.prepare(
     `INSERT INTO dojo_seasons (season, started_at, ended_at, commitment, seed, generator_version, rules_version)
      VALUES (?, ?, ?, ?, ?, 2, 3)`,
-  ).run(archived, (today - 40) * MS_PER_DAY, (today - 12) * MS_PER_DAY, ARCHIVED_COMMITMENT, ARCHIVED_SEED);
+  ).run(
+    archived,
+    (today - 40) * MS_PER_DAY,
+    (today - 12) * MS_PER_DAY,
+    ARCHIVED_COMMITMENT,
+    ARCHIVED_SEED,
+  );
   db.prepare(
     'INSERT INTO dojo_season_sets (season, generator_version, archive, sha256, created_at) VALUES (?, 2, ?, ?, ?)',
   ).run(archived, new Uint8Array([0x1f, 0x8b, 8, 0]), sha256('set'), (today - 12) * MS_PER_DAY);
   const results = [
-    { name: 'hashi-01', family: 'Hashi', expected: 'Sat', outcome: { Solved: 'Sat' }, fuel: 1_200_000 },
-    { name: 'pigeonhole-01', family: 'Pigeonhole', expected: 'Unsat', outcome: 'Timeout', fuel: 10_000_000_000 },
+    {
+      name: 'hashi-01',
+      family: 'Hashi',
+      expected: 'Sat',
+      outcome: { Solved: 'Sat' },
+      fuel: 1_200_000,
+    },
+    {
+      name: 'pigeonhole-01',
+      family: 'Pigeonhole',
+      expected: 'Unsat',
+      outcome: 'Timeout',
+      fuel: 10_000_000_000,
+    },
   ];
   db.prepare(
     `INSERT INTO dojo_archive (season, submission_id, user_id, house, name, created_at, par2, solved, wrong, score, results,
@@ -427,15 +503,14 @@ export function seed(dbPath: string) {
     created - 40 * MS_PER_DAY,
     created - 40 * MS_PER_DAY,
   );
-  db.prepare('INSERT INTO dojo_season_pool (season, position, benchmark_id) VALUES (?, 0, 1)').run(archived);
+  db.prepare('INSERT INTO dojo_season_pool (season, position, benchmark_id) VALUES (?, 0, 1)').run(
+    archived,
+  );
   db.prepare("UPDATE dojo_seasons SET pool_digest = 'e2e' WHERE season = ?").run(archived);
   CONTACT_MESSAGES.forEach((m, i) => {
-    db.prepare('INSERT INTO contact_messages (name, email, message, created_at) VALUES (?, ?, ?, ?)').run(
-      m.name,
-      m.email,
-      m.message,
-      Date.now() - (i + 1) * 3_600_000,
-    );
+    db.prepare(
+      'INSERT INTO contact_messages (name, email, message, created_at) VALUES (?, ?, ?, ?)',
+    ).run(m.name, m.email, m.message, Date.now() - (i + 1) * 3_600_000);
   });
   db.exec('COMMIT');
   db.close();

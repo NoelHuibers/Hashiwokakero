@@ -25,7 +25,8 @@ async function fakeTauri(page: Page, start: string | null) {
             return id;
           },
           invoke(cmd: string, args: { event: string; handler: number }) {
-            if (cmd === 'plugin:deep-link|get_current') return Promise.resolve(start === null ? null : [start]);
+            if (cmd === 'plugin:deep-link|get_current')
+              return Promise.resolve(start === null ? null : [start]);
             if (cmd === 'plugin:event|listen') {
               listeners.push(args);
               return Promise.resolve(listeners.length);
@@ -37,7 +38,8 @@ async function fakeTauri(page: Page, start: string | null) {
         // What the plugin sends when Android brings the app back with a link
         openAppLink(url: string) {
           const heard = listeners.filter((l) => l.event === event);
-          for (const l of heard) callbacks.get(l.handler)!({ event, id: l.handler, payload: [url] });
+          for (const l of heard)
+            callbacks.get(l.handler)!({ event, id: l.handler, payload: [url] });
           return heard.length;
         },
       });
@@ -48,13 +50,17 @@ async function fakeTauri(page: Page, start: string | null) {
 
 /** Sends the App Link `url` to the running app, as Android does through the plugin. */
 async function openAppLink(page: Page, url: string) {
-  const heard = await page.evaluate((url) => (window as unknown as { openAppLink(url: string): number }).openAppLink(url), url);
+  const heard = await page.evaluate(
+    (url) => (window as unknown as { openAppLink(url: string): number }).openAppLink(url),
+    url,
+  );
   expect(heard, 'the page listens for App Links').toBe(1);
 }
 
 /** Marks the document: the mark is gone if the page was loaded anew. */
 const mark = (page: Page) => page.evaluate(() => Object.assign(window, { sameDocument: true }));
-const sameDocument = (page: Page) => page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument === true);
+const sameDocument = (page: Page) =>
+  page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument === true);
 
 /** The server is out of reach, as on a phone without a network: the pages show it calmly. */
 async function offline(page: Page) {
@@ -66,7 +72,10 @@ function withoutNetworkErrors(problems: string[]) {
   problems.splice(0, problems.length, ...rest);
 }
 
-test('the app started with an invite shows the invite, in its language', async ({ page, problems }) => {
+test('the app started with an invite shows the invite, in its language', async ({
+  page,
+  problems,
+}) => {
   await fakeTauri(page, 'https://hashi.rs/ja/g/testcode');
   await page.addInitScript(() => Object.assign(window, { startHistory: history.length }));
   await offline(page);
@@ -74,7 +83,9 @@ test('the app started with an invite shows the invite, in its language', async (
   await expect(page).toHaveURL(/\/ja\/g\/testcode$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
   // Instead of the start page: the back button leaves the app rather than going back to it
-  expect(await page.evaluate(() => history.length)).toBe(await page.evaluate(() => (window as unknown as { startHistory: number }).startHistory));
+  expect(await page.evaluate(() => history.length)).toBe(
+    await page.evaluate(() => (window as unknown as { startHistory: number }).startHistory),
+  );
 
   // A reload doesn't go back to the invite: the plugin still has it, the page showed it already
   await page.locator('a[href="/ja/practice"]').filter({ visible: true }).first().click();
@@ -86,7 +97,10 @@ test('the app started with an invite shows the invite, in its language', async (
   withoutNetworkErrors(problems);
 });
 
-test('links that bring the app back show their page on top of the one it was on', async ({ page, problems }) => {
+test('links that bring the app back show their page on top of the one it was on', async ({
+  page,
+  problems,
+}) => {
   await fakeTauri(page, null);
   await offline(page);
   await visit(page, '/rules');
@@ -121,7 +135,12 @@ test('other links change nothing', async ({ page, problems }) => {
   await visit(page, '/rules');
   await page.waitForTimeout(500);
   await expect(page).toHaveURL(/\/rules$/);
-  for (const url of ['https://hashi.rs/admin', 'https://hashi.rs/g/../admin', 'https://example.com/g/abc', 'https://hashi.rs/dojo']) {
+  for (const url of [
+    'https://hashi.rs/admin',
+    'https://hashi.rs/g/../admin',
+    'https://example.com/g/abc',
+    'https://hashi.rs/dojo',
+  ]) {
     await openAppLink(page, url);
   }
   await page.waitForTimeout(500);

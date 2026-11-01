@@ -21,7 +21,9 @@ export default async function globalSetup() {
     await device.webView({ pkg: PKG }, { timeout: 60_000 });
     await shell(device, `am force-stop ${PKG}`);
     const info = await describe(device);
-    console.log(`${info.model}, Android ${info.android} (API ${info.sdk}, ${info.abi}), WebView ${info.webView}`);
+    console.log(
+      `${info.model}, Android ${info.android} (API ${info.sdk}, ${info.abi}), WebView ${info.webView}`,
+    );
   } finally {
     await device.close();
   }

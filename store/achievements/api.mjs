@@ -4,7 +4,12 @@ import crypto from 'node:crypto';
 
 export class HttpError extends Error {
   constructor(method, url, status, body) {
-    super(`${method} ${url}: ${status} ${typeof body === 'string' ? body : JSON.stringify(body)}`.slice(0, 2000));
+    super(
+      `${method} ${url}: ${status} ${typeof body === 'string' ? body : JSON.stringify(body)}`.slice(
+        0,
+        2000,
+      ),
+    );
     this.status = status;
     this.body = body;
   }
@@ -18,7 +23,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * bearer token, asked for again on every request (it may renew it). 429 and 5xx are retried,
  * after Retry-After or a growing pause: App Store Connect allows 3600 requests an hour.
  */
-export function httpClient({ base, token, fetchImpl = fetch, log = console.log, wait = sleep, retries = 8 }) {
+export function httpClient({
+  base,
+  token,
+  fetchImpl = fetch,
+  log = console.log,
+  wait = sleep,
+  retries = 8,
+}) {
   async function send(method, url, { body, headers = {}, raw = false } = {}) {
     for (let attempt = 0; ; attempt++) {
       const auth = raw ? {} : { authorization: `Bearer ${await token()}` };
@@ -30,7 +42,10 @@ export function httpClient({ base, token, fetchImpl = fetch, log = console.log, 
       const response = await fetchImpl(url, init);
       if ((response.status === 429 || response.status >= 500) && attempt < retries) {
         const after = Number(response.headers.get('retry-after'));
-        const pause = Number.isFinite(after) && after > 0 ? after * 1000 : Math.min(60_000 * 2 ** attempt, 15 * 60_000);
+        const pause =
+          Number.isFinite(after) && after > 0
+            ? after * 1000
+            : Math.min(60_000 * 2 ** attempt, 15 * 60_000);
         log(`${method} ${url}: ${response.status}, again in ${Math.round(pause / 1000)} s`);
         await wait(pause);
         continue;

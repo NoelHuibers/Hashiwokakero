@@ -29,7 +29,7 @@ const FONTS = {
   'kaisei-decol': ['@fontsource/kaisei-decol/700.css'],
   // Body text, and every language's fallback for Latin and digits
   murecho: ['@fontsource-variable/murecho/wght.css'],
-  'be-vietnam-pro': [600, 700, 800].map(w => `@fontsource/be-vietnam-pro/${w}.css`),
+  'be-vietnam-pro': [600, 700, 800].map((w) => `@fontsource/be-vietnam-pro/${w}.css`),
   'noto-sans-kr': ['@fontsource-variable/noto-sans-kr/wght.css'],
   'noto-sans-sc': ['@fontsource-variable/noto-sans-sc/wght.css'],
   'noto-sans-tc': ['@fontsource-variable/noto-sans-tc/wght.css'],
@@ -54,10 +54,7 @@ const DIGITS = '0123456789';
 
 // What the pixel font draws in every language (src/server/og/card.rs and model/calendar.rs)
 const PIXEL =
-  'Hashi 橋をかけろ · HASHIWOKAKERO hashi.rs #×' +
-  DIGITS +
-  '月火水木金土日' +
-  '初級中級上級達人鬼';
+  'Hashi 橋をかけろ · HASHIWOKAKERO hashi.rs #×' + DIGITS + '月火水木金土日' + '初級中級上級達人鬼';
 
 function strings(lang, namespace) {
   const file = path.join(root, 'locales', lang, `${namespace}.json`);
@@ -66,7 +63,7 @@ function strings(lang, namespace) {
 
 // A key of a language, English where it has none (as leptos_i18n does)
 function lookup(lang, namespace, key) {
-  const get = json => key.split('.').reduce((o, k) => o?.[k], json);
+  const get = (json) => key.split('.').reduce((o, k) => o?.[k], json);
   const value = get(strings(lang, namespace)) ?? get(strings('en', namespace));
   if (value === undefined) throw new Error(`no ${namespace}.${key}`);
   return value;
@@ -75,8 +72,8 @@ function lookup(lang, namespace, key) {
 // The translated texts on the images of a language, placeholders removed: what the text font
 // draws, and the daily's title, which is in the heading font
 function texts(lang) {
-  const t = key => lookup(lang, 'common', key);
-  const all = obj => Object.values(obj).join(' ');
+  const t = (key) => lookup(lang, 'common', key);
+  const all = (obj) => Object.values(obj).join(' ');
   const text = [
     t('og.tagline'),
     t('og.free'),
@@ -89,12 +86,12 @@ function texts(lang) {
     DIGITS,
   ].join(' ');
   const title = lookup(lang, 'daily', 'title') + DIGITS;
-  const strip = s => s.replace(/\{\{[^}]*\}\}/g, '');
+  const strip = (s) => s.replace(/\{\{[^}]*\}\}/g, '');
   return { text: strip(text), title: strip(title) };
 }
 
 // The characters each font has to have: everything a language draws in it, also as a fallback
-const needed = Object.fromEntries(Object.keys(FONTS).map(f => [f, new Set()]));
+const needed = Object.fromEntries(Object.keys(FONTS).map((f) => [f, new Set()]));
 const add = (font, s) => {
   for (const c of s) needed[font].add(c);
 };
@@ -108,18 +105,19 @@ for (const lang of LOCALES) {
   // The titles' font where the site's headings use it, but not for Cyrillic, Polish and Turkish
   // (see `families` in src/server/og/mod.rs)
   // Its ° is as wide as a kanji, `n° 4` looks torn apart: Murecho draws it
-  if (font === 'murecho' && !['ru', 'uk', 'pl', 'tr'].includes(lang)) add('kaisei-decol', title.replace('°', ''));
+  if (font === 'murecho' && !['ru', 'uk', 'pl', 'tr'].includes(lang))
+    add('kaisei-decol', title.replace('°', ''));
 }
 
 // unicode-range: U+0000-00FF,U+0131 -> a test for code points
 function inRange(ranges) {
-  const parts = ranges.split(',').map(r => {
+  const parts = ranges.split(',').map((r) => {
     const [a, b] = r.trim().replace(/^U\+/i, '').split('-');
     const lo = parseInt(a.replace(/\?/g, '0'), 16);
     const hi = b ? parseInt(b, 16) : parseInt(a.replace(/\?/g, 'f'), 16);
     return [lo, hi];
   });
-  return c => {
+  return (c) => {
     const cp = c.codePointAt(0);
     return parts.some(([lo, hi]) => cp >= lo && cp <= hi);
   };
@@ -139,9 +137,9 @@ function slices(source) {
 // Fonts in one TrueType collection: each font's tables copied as they are, their offsets moved
 function collection(fonts) {
   const header = 12 + 4 * fonts.length;
-  const align = n => (n + 3) & ~3;
+  const align = (n) => (n + 3) & ~3;
   let offset = align(header);
-  const offsets = fonts.map(f => {
+  const offsets = fonts.map((f) => {
     const at = offset;
     offset = align(offset + f.length);
     return at;
@@ -168,7 +166,7 @@ fs.mkdirSync(out, { recursive: true });
 let total = 0;
 for (const [name, sources] of Object.entries(FONTS)) {
   // Every character but controls (the bidi marks have no glyphs)
-  const chars = [...needed[name]].filter(c => !/[\p{Cc}\p{Cf}]/u.test(c));
+  const chars = [...needed[name]].filter((c) => !/[\p{Cc}\p{Cf}]/u.test(c));
   const subsets = [];
   for (const source of sources) {
     for (const slice of slices(source)) {
@@ -183,6 +181,8 @@ for (const [name, sources] of Object.entries(FONTS)) {
   fs.writeFileSync(file, collection(subsets));
   const size = fs.statSync(file).size;
   total += size;
-  console.log(`${name}: ${chars.length} characters, ${subsets.length} slices, ${(size / 1024).toFixed(0)} KB`);
+  console.log(
+    `${name}: ${chars.length} characters, ${subsets.length} slices, ${(size / 1024).toFixed(0)} KB`,
+  );
 }
 console.log(`og fonts: ${(total / 1024).toFixed(0)} KB in src/server/og/fonts`);

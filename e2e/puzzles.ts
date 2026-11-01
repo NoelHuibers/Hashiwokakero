@@ -23,4 +23,6 @@ export const LADDER_SOLUTION: number[] = edges(LADDER).map(([a, b]) => {
 
 /** The edge of a row of the ladder. */
 export const ladderRow = (y: number) =>
-  edges(LADDER).findIndex(([a, b]) => LADDER.islands[a].pos.y === y && LADDER.islands[b].pos.y === y);
+  edges(LADDER).findIndex(
+    ([a, b]) => LADDER.islands[a].pos.y === y && LADDER.islands[b].pos.y === y,
+  );

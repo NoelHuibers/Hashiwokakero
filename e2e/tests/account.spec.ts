@@ -27,7 +27,9 @@ test('delete the account, behind its password', async ({ page, problems }) => {
   await register(page, username, PASSWORD);
 
   await page.getByRole('button', { name: 'Delete account…' }).click();
-  await expect(page.getByText("This can't be undone. Enter your password to confirm.")).toBeVisible();
+  await expect(
+    page.getByText("This can't be undone. Enter your password to confirm."),
+  ).toBeVisible();
   // Cancel keeps everything
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByRole('button', { name: 'Delete for good' })).toHaveCount(0);
@@ -68,7 +70,9 @@ test('change the username, then not again for a month', async ({ page, problems 
   await expect(page.locator('#rename-username')).toHaveValue(username);
   const save = page.getByRole('button', { name: 'Change username', exact: true });
   await expect(save).toBeDisabled();
-  await expect(page.getByText('You can change it once every 30 days.', { exact: false })).toBeVisible();
+  await expect(
+    page.getByText('You can change it once every 30 days.', { exact: false }),
+  ).toBeVisible();
 
   await page.locator('#rename-username').fill(renamed);
   await page.locator('#rename-password').fill('not-the-password');
@@ -98,11 +102,16 @@ test('change the username, then not again for a month', async ({ page, problems 
   await expect(page.getByRole('heading', { name: `こんにちは, ${renamed}` })).toBeVisible();
 });
 
-test('a name the boards do not want is refused, in the player\'s language', async ({ page, problems }) => {
+test("a name the boards do not want is refused, in the player's language", async ({
+  page,
+  problems,
+}) => {
   await visit(page, '/account');
   await fillAuthForm(page, 'Big_Ass_Bridges', PASSWORD);
   await page.getByRole('button', { name: /^Create account 登録/ }).click();
-  await expect(page.getByText("This name isn't allowed here, please choose another one.")).toBeVisible();
+  await expect(
+    page.getByText("This name isn't allowed here, please choose another one."),
+  ).toBeVisible();
   allow(problems, /\/api\/register/, /status of 4\d\d|status of 5\d\d/);
   await expect(page.getByRole('heading', { name: 'Your account' })).toBeVisible();
 

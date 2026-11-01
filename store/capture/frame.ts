@@ -6,7 +6,7 @@ import path from 'node:path';
 import type { Browser, Page } from '@playwright/test';
 
 import { RTL_LOCALES } from '../../e2e/site';
-import { SCREENS, type Frame } from './devices';
+import { type Frame, SCREENS } from './devices';
 import { RAW_DIR, ROOT, STORE_URL } from './env';
 import type { SceneId } from './scenes';
 
@@ -33,12 +33,18 @@ export const HANKO: Record<SceneId, string> = {
  * achievements' icons.
  */
 export async function framePage(browser: Browser, { offline = false } = {}): Promise<Page> {
-  const context = await browser.newContext({ viewport: { width: 1000, height: 1000 }, deviceScaleFactor: 1 });
+  const context = await browser.newContext({
+    viewport: { width: 1000, height: 1000 },
+    deviceScaleFactor: 1,
+  });
   const page = await context.newPage();
   if (offline) {
     const fonts = path.join(ROOT, 'public/fonts');
     await page.route(`${STORE_URL}/fonts/**`, async (route) => {
-      const file = path.join(fonts, new URL(route.request().url()).pathname.replace(/^\/fonts\//, ''));
+      const file = path.join(
+        fonts,
+        new URL(route.request().url()).pathname.replace(/^\/fonts\//, ''),
+      );
       if (!file.startsWith(fonts)) return route.abort();
       const type = file.endsWith('.css') ? 'text/css' : 'font/woff2';
       return route.fulfill({ body: readFileSync(file), contentType: type });
@@ -52,7 +58,10 @@ export async function framePage(browser: Browser, { offline = false } = {}): Pro
       if (!file.startsWith(RAW_DIR)) return route.abort();
       return route.fulfill({ body: readFileSync(file), contentType: 'image/png' });
     }
-    return route.fulfill({ body: readFileSync(path.join(TEMPLATES, rest)), contentType: 'text/html; charset=utf-8' });
+    return route.fulfill({
+      body: readFileSync(path.join(TEMPLATES, rest)),
+      contentType: 'text/html; charset=utf-8',
+    });
   });
   return page;
 }
@@ -60,7 +69,14 @@ export async function framePage(browser: Browser, { offline = false } = {}): Pro
 /** Writes one store image of a scene. */
 export async function frame(
   page: Page,
-  { frame, lang, scene, caption, dark, out }: { frame: Frame; lang: string; scene: SceneId; caption: Caption; dark: boolean; out: string },
+  {
+    frame,
+    lang,
+    scene,
+    caption,
+    dark,
+    out,
+  }: { frame: Frame; lang: string; scene: SceneId; caption: Caption; dark: boolean; out: string },
 ) {
   const screen = SCREENS[frame.screen];
   await page.setViewportSize({ width: frame.width, height: frame.height });
@@ -79,13 +95,18 @@ export async function frame(
     title: caption.title,
     text: caption.text,
   };
-  await page.goto(`${STORE_URL}/__store/frame.html?frame=${encodeURIComponent(JSON.stringify(config))}`);
+  await page.goto(
+    `${STORE_URL}/__store/frame.html?frame=${encodeURIComponent(JSON.stringify(config))}`,
+  );
   await waitReady(page);
   await page.screenshot({ path: out, animations: 'disabled', caret: 'hide' });
 }
 
 /** Writes Google Play's feature graphic in a language (store/templates/feature.html). */
-export async function feature(page: Page, { lang, caption, out }: { lang: string; caption: Caption; out: string }) {
+export async function feature(
+  page: Page,
+  { lang, caption, out }: { lang: string; caption: Caption; out: string },
+) {
   await page.setViewportSize({ width: 1024, height: 500 });
   const config = {
     lang,
@@ -94,7 +115,9 @@ export async function feature(page: Page, { lang, caption, out }: { lang: string
     text: caption.text,
     image: `/__store/raw/${lang}/board.png`,
   };
-  await page.goto(`${STORE_URL}/__store/feature.html?feature=${encodeURIComponent(JSON.stringify(config))}`);
+  await page.goto(
+    `${STORE_URL}/__store/feature.html?feature=${encodeURIComponent(JSON.stringify(config))}`,
+  );
   await waitReady(page);
   await page.screenshot({ path: out, animations: 'disabled', caret: 'hide' });
 }
@@ -102,7 +125,9 @@ export async function feature(page: Page, { lang, caption, out }: { lang: string
 /** Until the template has laid itself out (window.READY), or failed (window.FAILED). */
 export async function waitReady(page: Page) {
   type Status = { READY?: boolean; FAILED?: string };
-  await page.waitForFunction(() => (window as Status).READY || (window as Status).FAILED, null, { timeout: 30_000 });
+  await page.waitForFunction(() => (window as Status).READY || (window as Status).FAILED, null, {
+    timeout: 30_000,
+  });
   const failed = await page.evaluate(() => (window as Status).FAILED);
   if (failed) throw new Error(`the template failed: ${failed}`);
 }

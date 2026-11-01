@@ -42,7 +42,12 @@ test('a member stamps another one’s result, who sees it with an unread dot', a
   await friend.getByRole('button', { name: /^Join the group/ }).click();
   await expect(friend).toHaveURL(/\/groups\/\d+$/);
   const groupPath = new URL(friend.url()).pathname;
-  const friendName = (await card(friend, /^Members/).locator('li[data-member] a').nth(1).innerText()).trim();
+  const friendName = (
+    await card(friend, /^Members/)
+      .locator('li[data-member] a')
+      .nth(1)
+      .innerText()
+  ).trim();
 
   // Before finishing, nobody can stamp anything
   await visit(page, groupPath);
@@ -88,7 +93,10 @@ test('a member stamps another one’s result, who sees it with an unread dot', a
   // The server kept it
   await page.reload();
   await hydrated(page);
-  await expect(card(page, /^Today/).locator('.hanko-pill[data-hanko="wow"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(card(page, /^Today/).locator('.hanko-pill[data-hanko="wow"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 
   // The friend has a dot on the groups' entry and a badge on the group in the list
   await visit(friend, '/groups');

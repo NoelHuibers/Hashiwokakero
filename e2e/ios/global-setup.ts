@@ -17,7 +17,10 @@ async function reachable() {
 
 export default async function globalSetup() {
   if (!existsSync(APP)) throw new Error(`no app at ${APP}, see app/README.md (E2E_IOS_APP)`);
-  if (await reachable()) throw new Error(`${SERVER} answers: block it first (app/README.md), the debug build calls the production server`);
+  if (await reachable())
+    throw new Error(
+      `${SERVER} answers: block it first (app/README.md), the debug build calls the production server`,
+    );
   mkdirSync(SCREENS, { recursive: true });
   const d = await device();
   if (d.state !== 'Booted') throw new Error(`the simulator ${d.name} isn't booted`);

@@ -1,6 +1,6 @@
 // The `test` of every spec: it fails a test on any error in the browser (a panic in the WASM,
 // a console error, a failed request to the site), with helpers to open pages and sign in.
-import { test as base, expect, type BrowserContext, type Page } from '@playwright/test';
+import { type BrowserContext, test as base, expect, type Page } from '@playwright/test';
 
 import { BASE_URL } from './env';
 import { player } from './seed';
@@ -22,7 +22,11 @@ export const test = base.extend<{ problems: string[] }>({
       });
       // Pages are checked by `visit`, this catches what they load: scripts, styles, server functions
       page.on('response', (r) => {
-        if (r.url().startsWith(baseURL ?? BASE_URL) && r.status() >= 400 && !r.request().isNavigationRequest()) {
+        if (
+          r.url().startsWith(baseURL ?? BASE_URL) &&
+          r.status() >= 400 &&
+          !r.request().isNavigationRequest()
+        ) {
           problems.push(`${r.status()} ${r.request().method()} ${r.url()}`);
         }
       });
@@ -63,7 +67,9 @@ export async function hydrated(page: Page) {
 export async function signIn(context: BrowserContext, name: string) {
   const session = player(name).session;
   if (!session) throw new Error(`${name} has no seeded session`);
-  await context.addCookies([{ name: 'hashi_session', value: session, url: site(), httpOnly: true, sameSite: 'Lax' }]);
+  await context.addCookies([
+    { name: 'hashi_session', value: session, url: site(), httpOnly: true, sameSite: 'Lax' },
+  ]);
 }
 
 /**

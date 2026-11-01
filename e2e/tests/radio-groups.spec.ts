@@ -8,8 +8,12 @@ import { LADDER, LADDER_SOLUTION } from '../puzzles';
 
 const SOLVER_KEY = 'hashi.solver.v2';
 const playing = {
-  puzzle: LADDER, bridges: edges(LADDER).map(() => 0), solution: LADDER_SOLUTION,
-  status: 'Playing' as const, moves: 0, hints: 0,
+  puzzle: LADDER,
+  bridges: edges(LADDER).map(() => 0),
+  solution: LADDER_SOLUTION,
+  status: 'Playing' as const,
+  moves: 0,
+  hints: 0,
 };
 
 /** The practice page's solver tools, opened from their summary with the keyboard. */

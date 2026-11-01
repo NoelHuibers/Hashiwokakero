@@ -19,7 +19,10 @@ test('mark rivals on their profiles, then duel them in the daily', async ({ page
   await visit(page, `/player/${player('chen').id}`);
   await page.getByRole('button', { name: /^Mark as rival/ }).click();
   await expect(page.getByText('chen is your rival now. Every daily is a duel!')).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Your rival/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: /^Your rival/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 
   // On the ranks a small mark, no button, and the rivals card with you and chen
   await visit(page, '/ranks');
@@ -33,7 +36,10 @@ test('mark rivals on their profiles, then duel them in the daily', async ({ page
   // aiko from her profile: the head-to-head shows up, empty yet
   await visit(page, `/player/${player('aiko').id}`);
   await page.getByRole('button', { name: /^Mark as rival/ }).click();
-  await expect(page.getByRole('button', { name: /^Your rival/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: /^Your rival/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   const record = page.locator('[data-head-to-head]');
   await expect(record).toContainText('Head-to-head');
   await expect(record).toContainText('No day you both solved yet');
@@ -53,7 +59,9 @@ test('mark rivals on their profiles, then duel them in the daily', async ({ page
   await expect(chen).toContainText('1:38.0');
   await expect(chen).toContainText(/^.*(1–0|0–1)$/s);
   // aiko hasn't played today
-  await expect(duels.locator('li').filter({ hasText: 'aiko' })).toContainText("aiko hasn't played yet");
+  await expect(duels.locator('li').filter({ hasText: 'aiko' })).toContainText(
+    "aiko hasn't played yet",
+  );
 
   // Unmarked on chen's profile, gone from the comparison and the boards
   await visit(page, `/player/${player('chen').id}`);
@@ -75,7 +83,10 @@ test.describe('on a phone', () => {
     // The toggle flips at once, the toast comes with the server's answer: leaving before it
     // left the ranks without the rival now and then
     await expect(page.getByText('chen is your rival now. Every daily is a duel!')).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Your rival/ })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: /^Your rival/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
 
     await visit(page, '/ranks');
     const rivalsCard = page.locator('[data-rivals-board]');
@@ -89,7 +100,9 @@ test.describe('on a phone', () => {
     const mine = rivalsCard.locator('tr.rank-mark');
     expect((await name('tr.rank-mark').boundingBox())!.width).toBeGreaterThan(70);
     await expect(mine).toContainText('you');
-    expect((await mine.getByText('you', { exact: true }).boundingBox())!.width).toBeLessThanOrEqual(1);
+    expect((await mine.getByText('you', { exact: true }).boundingBox())!.width).toBeLessThanOrEqual(
+      1,
+    );
     // And nothing runs out of the card
     expect(await rivalsCard.evaluate((c) => c.scrollWidth <= c.clientWidth)).toBe(true);
   });

@@ -12,7 +12,9 @@ export default defineConfig({
   globalSetup: './app/global-setup.ts',
   forbidOnly: CI,
   retries: CI ? 1 : 0,
-  reporter: CI ? [['github'], ['line'], ['html', { open: 'never', outputFolder: 'playwright-report-app' }]] : [['line']],
+  reporter: CI
+    ? [['github'], ['line'], ['html', { open: 'never', outputFolder: 'playwright-report-app' }]]
+    : [['line']],
   // The first page compiles the WASM, which takes a while on a busy runner
   expect: { timeout: 10_000 },
   use: {

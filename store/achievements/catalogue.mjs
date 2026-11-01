@@ -34,8 +34,24 @@ export const PLAY_IDS = path.join(ROOT, 'app/achievements-play.json');
 
 export const ICON_SIZE = { apple: 1024, play: 512 };
 export const LIMITS = {
-  play: { name: 100, description: 500, points: [5, 200], total: 2000, steps: 10_000, count: 200, leaderboards: 70 },
-  apple: { name: 100, description: 120, points: [5, 100], total: 1000, id: 100, count: 100, leaderboards: 100 },
+  play: {
+    name: 100,
+    description: 500,
+    points: [5, 200],
+    total: 2000,
+    steps: 10_000,
+    count: 200,
+    leaderboards: 70,
+  },
+  apple: {
+    name: 100,
+    description: 120,
+    points: [5, 100],
+    total: 1000,
+    id: 100,
+    count: 100,
+    leaderboards: 100,
+  },
 };
 
 const chars = (text) => [...text].length;
@@ -83,7 +99,11 @@ export function buildCatalogue(sources = loadSources()) {
           const t = texts(sources, site, a.stamp);
           return [
             locale,
-            { name: t.name, beforeEarnedDescription: a.secret ? t.secret : t.text, afterEarnedDescription: t.text },
+            {
+              name: t.name,
+              beforeEarnedDescription: a.secret ? t.secret : t.text,
+              afterEarnedDescription: t.text,
+            },
           ];
         }),
       ),
@@ -98,9 +118,12 @@ export function buildCatalogue(sources = loadSources()) {
       submissionType: 'BEST_SCORE',
       // The daily's board starts over with the puzzle day, at midnight UTC. App Store Connect wants
       // the duration with a time part: it refuses 'P1D'
-      recurrence: b.id === 'daily_time' ? { duration: 'PT24H', rule: 'FREQ=DAILY;INTERVAL=1' } : null,
+      recurrence:
+        b.id === 'daily_time' ? { duration: 'PT24H', rule: 'FREQ=DAILY;INTERVAL=1' } : null,
       image: `apple/${b.id}.png`,
-      localizations: Object.fromEntries(APPLE.map(({ locale, site }) => [locale, { name: sources.leaderboards[site]?.[b.id] }])),
+      localizations: Object.fromEntries(
+        APPLE.map(({ locale, site }) => [locale, { name: sources.leaderboards[site]?.[b.id] }]),
+      ),
     })),
   };
   const play = {
@@ -113,8 +136,12 @@ export function buildCatalogue(sources = loadSources()) {
       points: a.points,
       icon: `play/${a.id}.png`,
       // Play shows a hidden achievement's name and description only once it is unlocked
-      name: Object.fromEntries(PLAY.map(({ locale, site }) => [locale, texts(sources, site, a.stamp).name])),
-      description: Object.fromEntries(PLAY.map(({ locale, site }) => [locale, texts(sources, site, a.stamp).text])),
+      name: Object.fromEntries(
+        PLAY.map(({ locale, site }) => [locale, texts(sources, site, a.stamp).name]),
+      ),
+      description: Object.fromEntries(
+        PLAY.map(({ locale, site }) => [locale, texts(sources, site, a.stamp).text]),
+      ),
     })),
     leaderboards: model.leaderboards
       .filter((b) => b.play)
@@ -122,9 +149,13 @@ export function buildCatalogue(sources = loadSources()) {
         id: b.id,
         scoreOrder: b.lower_is_better ? 'SMALLER_IS_BETTER' : 'LARGER_IS_BETTER',
         // Milliseconds are Play's TIME_DURATION
-        scoreFormat: b.lower_is_better ? { numberFormatType: 'TIME_DURATION' } : { numberFormatType: 'NUMERIC', numDecimalPlaces: 0 },
+        scoreFormat: b.lower_is_better
+          ? { numberFormatType: 'TIME_DURATION' }
+          : { numberFormatType: 'NUMERIC', numDecimalPlaces: 0 },
         icon: `play/${b.id}.png`,
-        name: Object.fromEntries(PLAY.map(({ locale, site }) => [locale, sources.leaderboards[site]?.[b.id]])),
+        name: Object.fromEntries(
+          PLAY.map(({ locale, site }) => [locale, sources.leaderboards[site]?.[b.id]]),
+        ),
       })),
   };
   return { apple, play };
@@ -142,19 +173,25 @@ export function validate(sources = loadSources()) {
     if (ids.has(a.id)) fail('model.json', `${a.id} twice`);
     ids.add(a.id);
     if (a.id !== `stamp_${a.stamp}`) fail('model.json', `${a.id} is not stamp_${a.stamp}`);
-    if (!/^[A-Za-z0-9_.]+$/.test(a.id) || a.id.length > LIMITS.apple.id) fail('model.json', `${a.id}: Game Center ids are ≤ 100 letters, digits, _ and .`);
-    if (a.steps !== null && !(Number.isInteger(a.steps) && a.steps >= 2 && a.steps <= LIMITS.play.steps)) {
+    if (!/^[A-Za-z0-9_.]+$/.test(a.id) || a.id.length > LIMITS.apple.id)
+      fail('model.json', `${a.id}: Game Center ids are ≤ 100 letters, digits, _ and .`);
+    if (
+      a.steps !== null &&
+      !(Number.isInteger(a.steps) && a.steps >= 2 && a.steps <= LIMITS.play.steps)
+    ) {
       fail('model.json', `${a.id}: ${a.steps} steps, 2 to ${LIMITS.play.steps}`);
     }
     for (const store of ['apple', 'play']) {
       const [min, max] = LIMITS[store].points;
-      if (!(a.points % 5 === 0 && a.points >= min && a.points <= max)) fail(`${store} ${a.id}`, `${a.points} points, a multiple of 5 from ${min} to ${max}`);
+      if (!(a.points % 5 === 0 && a.points >= min && a.points <= max))
+        fail(`${store} ${a.id}`, `${a.points} points, a multiple of 5 from ${min} to ${max}`);
     }
   }
   const total = model.achievements.reduce((sum, a) => sum + a.points, 0);
   for (const store of ['apple', 'play']) {
     if (total > LIMITS[store].total) fail(store, `${total} points, at most ${LIMITS[store].total}`);
-    if (model.achievements.length > LIMITS[store].count) fail(store, `${model.achievements.length} achievements, at most ${LIMITS[store].count}`);
+    if (model.achievements.length > LIMITS[store].count)
+      fail(store, `${model.achievements.length} achievements, at most ${LIMITS[store].count}`);
   }
   for (const b of model.leaderboards) {
     if (ids.has(b.id)) fail('model.json', `leaderboard ${b.id} has an achievement's id`);
@@ -168,10 +205,15 @@ export function validate(sources = loadSources()) {
       const t = texts(sources, site, a.stamp);
       if (!t.name) fail(`locales/${site}/stamps.json`, `no name for ${a.stamp}`);
       if (!t.text) fail(`locales/${site}/stamps.json`, `no text for ${a.stamp}`);
-      if (/\{\{/.test(`${t.name}${t.text}`)) fail(`locales/${site}/stamps.json`, `${a.stamp}: a placeholder the stores would show as it is`);
+      if (/\{\{/.test(`${t.name}${t.text}`))
+        fail(
+          `locales/${site}/stamps.json`,
+          `${a.stamp}: a placeholder the stores would show as it is`,
+        );
     }
     for (const b of model.leaderboards) {
-      if (!sources.leaderboards[site]?.[b.id]) fail('store/achievements/leaderboards.json', `no name for ${b.id} in ${site}`);
+      if (!sources.leaderboards[site]?.[b.id])
+        fail('store/achievements/leaderboards.json', `no name for ${b.id} in ${site}`);
     }
   }
   if (errors.length > 0) return errors;
@@ -181,20 +223,25 @@ export function validate(sources = loadSources()) {
   for (const a of apple.achievements) {
     for (const [locale, l] of Object.entries(a.localizations)) {
       const where = `Game Center ${locale} ${a.id}`;
-      if (chars(l.name) > LIMITS.apple.name) fail(where, `name over ${LIMITS.apple.name} characters`);
+      if (chars(l.name) > LIMITS.apple.name)
+        fail(where, `name over ${LIMITS.apple.name} characters`);
       for (const field of ['beforeEarnedDescription', 'afterEarnedDescription']) {
-        if (chars(l[field]) > LIMITS.apple.description) fail(where, `${field} over ${LIMITS.apple.description} characters`);
+        if (chars(l[field]) > LIMITS.apple.description)
+          fail(where, `${field} over ${LIMITS.apple.description} characters`);
       }
     }
   }
   for (const a of play.achievements) {
     for (const locale of play.locales) {
       const where = `Play Games ${locale} ${a.id}`;
-      if (chars(a.name[locale]) > LIMITS.play.name) fail(where, `name over ${LIMITS.play.name} characters`);
-      if (chars(a.description[locale]) > LIMITS.play.description) fail(where, `description over ${LIMITS.play.description} characters`);
+      if (chars(a.name[locale]) > LIMITS.play.name)
+        fail(where, `name over ${LIMITS.play.name} characters`);
+      if (chars(a.description[locale]) > LIMITS.play.description)
+        fail(where, `description over ${LIMITS.play.description} characters`);
     }
     // Play's import ZIP is CSV without quoting
-    if (a.name['en-US'].includes(',')) fail(`Play Games en-US ${a.id}`, 'no comma in the name (the import file is CSV)');
+    if (a.name['en-US'].includes(','))
+      fail(`Play Games en-US ${a.id}`, 'no comma in the name (the import file is CSV)');
   }
   // Play wants every name once per locale (Game Center doesn't, the same rule keeps them apart)
   for (const store of [apple, play]) {
@@ -203,26 +250,37 @@ export function validate(sources = loadSources()) {
       const seen = new Map();
       for (const a of store.achievements) {
         const name = store === apple ? a.localizations[locale].name : a.name[locale];
-        if (seen.has(name)) fail(`${label} ${locale}`, `${a.id} and ${seen.get(name)} are both "${name}"`);
+        if (seen.has(name))
+          fail(`${label} ${locale}`, `${a.id} and ${seen.get(name)} are both "${name}"`);
         seen.set(name, a.id);
       }
       const boards = new Map();
       for (const b of store.leaderboards) {
         const name = store === apple ? b.localizations[locale].name : b.name[locale];
-        if (chars(name) > LIMITS[store === apple ? 'apple' : 'play'].name) fail(`${label} ${locale} ${b.id}`, 'name too long');
-        if (boards.has(name)) fail(`${label} ${locale}`, `leaderboards ${b.id} and ${boards.get(name)} are both "${name}"`);
+        if (chars(name) > LIMITS[store === apple ? 'apple' : 'play'].name)
+          fail(`${label} ${locale} ${b.id}`, 'name too long');
+        if (boards.has(name))
+          fail(
+            `${label} ${locale}`,
+            `leaderboards ${b.id} and ${boards.get(name)} are both "${name}"`,
+          );
         boards.set(name, b.id);
       }
     }
   }
-  if (play.leaderboards.length > LIMITS.play.leaderboards) fail('Play Games', 'too many leaderboards');
+  if (play.leaderboards.length > LIMITS.play.leaderboards)
+    fail('Play Games', 'too many leaderboards');
   return errors;
 }
 
 /** The IDs Play gave, `app/achievements-play.json`. */
 export function loadPlayIds(file = PLAY_IDS) {
   const ids = fs.existsSync(file) ? readJson(file) : {};
-  return { project_id: ids.project_id ?? null, achievements: ids.achievements ?? {}, leaderboards: ids.leaderboards ?? {} };
+  return {
+    project_id: ids.project_id ?? null,
+    achievements: ids.achievements ?? {},
+    leaderboards: ids.leaderboards ?? {},
+  };
 }
 
 /** `app/achievements-play.json` as it is committed: keys in the order of the catalogue. */
@@ -249,14 +307,27 @@ export function formatPlayIds(ids, catalogue = buildCatalogue()) {
 export function playImportFiles(catalogue, icons = ICONS) {
   const metadata = catalogue.play.achievements
     .map((a, i) =>
-      [a.name['en-US'], '', a.steps ? 'True' : 'False', a.steps ?? '', a.initialState === 'HIDDEN' ? 'Hidden' : 'Revealed', a.points, i + 1].join(','),
+      [
+        a.name['en-US'],
+        '',
+        a.steps ? 'True' : 'False',
+        a.steps ?? '',
+        a.initialState === 'HIDDEN' ? 'Hidden' : 'Revealed',
+        a.points,
+        i + 1,
+      ].join(','),
     )
     .join('\n');
-  const mappings = catalogue.play.achievements.map((a) => `${a.name['en-US']},${a.id}.png`).join('\n');
+  const mappings = catalogue.play.achievements
+    .map((a) => `${a.name['en-US']},${a.id}.png`)
+    .join('\n');
   return [
     ['AchievementsMetadata.csv', Buffer.from(`${metadata}\n`)],
     ['AchievementsIconsMappings.csv', Buffer.from(`${mappings}\n`)],
-    ...catalogue.play.achievements.map((a) => [`${a.id}.png`, fs.readFileSync(path.join(icons, a.icon))]),
+    ...catalogue.play.achievements.map((a) => [
+      `${a.id}.png`,
+      fs.readFileSync(path.join(icons, a.icon)),
+    ]),
   ];
 }
 
@@ -310,10 +381,17 @@ export async function checkIcons(catalogue, icons = ICONS) {
   const { checkImage } = await import('../assemble.mjs');
   const problems = [];
   for (const item of [...catalogue.apple.achievements, ...catalogue.apple.leaderboards]) {
-    problems.push(...checkImage(path.join(icons, item.image), { width: ICON_SIZE.apple, height: ICON_SIZE.apple }));
+    problems.push(
+      ...checkImage(path.join(icons, item.image), {
+        width: ICON_SIZE.apple,
+        height: ICON_SIZE.apple,
+      }),
+    );
   }
   for (const item of [...catalogue.play.achievements, ...catalogue.play.leaderboards]) {
-    problems.push(...checkImage(path.join(icons, item.icon), { width: ICON_SIZE.play, height: ICON_SIZE.play }));
+    problems.push(
+      ...checkImage(path.join(icons, item.icon), { width: ICON_SIZE.play, height: ICON_SIZE.play }),
+    );
   }
   return problems;
 }

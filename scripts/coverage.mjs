@@ -80,35 +80,35 @@ report('--html', '--output-dir', out);
 
 // Lines per file and crate
 const summary = JSON.parse(fs.readFileSync(summaryJson, 'utf8'));
-const files = summary.data[0].files.map(f => {
+const files = summary.data[0].files.map((f) => {
   const file = path.relative(root, f.filename).split(path.sep).join('/');
   const crate = CRATES.find(([dir]) => file.startsWith(dir))?.[1] ?? file.split('/')[0];
   return { file, crate, lines: f.summary.lines.count, covered: f.summary.lines.covered };
 });
-const sum = list => ({
+const sum = (list) => ({
   lines: list.reduce((n, f) => n + f.lines, 0),
   covered: list.reduce((n, f) => n + f.covered, 0),
 });
 const percent = ({ lines, covered }) => (lines ? Math.round((covered / lines) * 1e4) / 100 : 100);
-const names = [...new Set(files.map(f => f.crate))].sort();
+const names = [...new Set(files.map((f) => f.crate))].sort();
 const crates = Object.fromEntries(
-  names.map(name => [name, sum(files.filter(f => f.crate === name))]),
+  names.map((name) => [name, sum(files.filter((f) => f.crate === name))]),
 );
 const total = sum(files);
 const current = {
   total: percent(total),
-  crates: Object.fromEntries(names.map(name => [name, percent(crates[name])])),
+  crates: Object.fromEntries(names.map((name) => [name, percent(crates[name])])),
 };
 const baseline = fs.existsSync(baselineFile)
   ? JSON.parse(fs.readFileSync(baselineFile, 'utf8'))
   : { crates: {} };
 
 // Compare with the baseline: a drop beyond the tolerance fails, a rise asks for a new baseline
-const fmt = n => (n === undefined ? '-' : n.toFixed(2));
+const fmt = (n) => (n === undefined ? '-' : n.toFixed(2));
 const dropped = [];
 let rose = false;
 const rows = [
-  ...names.map(name => [name, crates[name], current.crates[name], baseline.crates[name]]),
+  ...names.map((name) => [name, crates[name], current.crates[name], baseline.crates[name]]),
   ['total', total, current.total, baseline.total],
 ].map(([name, lines, now, before]) => {
   let change = 'new';
@@ -145,17 +145,20 @@ if (update) {
 // The job summary in CI, also written to target/llvm-cov/summary.md
 const table = (head, body) =>
   [head, head.map((_, i) => (i ? '--:' : '---')), ...body]
-    .map(cells => `| ${cells.join(' | ')} |\n`)
+    .map((cells) => `| ${cells.join(' | ')} |\n`)
     .join('');
-const fileRow = f => [f.file, f.lines, f.covered, fmt(percent(f))];
+const fileRow = (f) => [f.file, f.lines, f.covered, fmt(percent(f))];
 const byCoverage = (a, b) => a.covered / a.lines - b.covered / b.lines || b.lines - a.lines;
-const least = files.filter(f => f.lines >= SIGNIFICANT_LINES).sort(byCoverage).slice(0, 10);
+const least = files
+  .filter((f) => f.lines >= SIGNIFICANT_LINES)
+  .sort(byCoverage)
+  .slice(0, 10);
 const md = [
   '## Line coverage\n',
   `${verdict}\n`,
   table(
     ['Crate', 'Lines', 'Covered', '%', 'Baseline', 'Change'],
-    rows.map(r => [r.name, r.lines, r.covered, fmt(r.now), fmt(r.before), r.change]),
+    rows.map((r) => [r.name, r.lines, r.covered, fmt(r.now), fmt(r.before), r.change]),
   ),
   `### Least covered files (${SIGNIFICANT_LINES}+ lines)\n`,
   table(['File', 'Lines', 'Covered', '%'], least.map(fileRow)),
@@ -166,7 +169,7 @@ const md = [
 fs.writeFileSync(path.join(out, 'summary.md'), md);
 if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
 
-const line = cells =>
+const line = (cells) =>
   cells.map((c, i) => (i ? String(c).padStart(10) : String(c).padEnd(12))).join('');
 console.log(`\n${line(['crate', 'lines', '%', 'baseline', 'change'])}`);
 for (const r of rows) console.log(line([r.name, r.lines, fmt(r.now), fmt(r.before), r.change]));

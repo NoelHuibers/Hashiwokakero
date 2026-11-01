@@ -26,13 +26,23 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { counting, describe, dryRun, httpClient, jwt } from './api.mjs';
-import { buildCatalogue, formatPlayIds, loadPlayIds, loadSources, OUT, validate } from './catalogue.mjs';
+import {
+  buildCatalogue,
+  formatPlayIds,
+  loadPlayIds,
+  loadSources,
+  OUT,
+  validate,
+} from './catalogue.mjs';
 
 export const BASE = 'https://gamesconfiguration.googleapis.com/games/v1configuration';
 export const SCOPE = 'https://www.googleapis.com/auth/androidpublisher';
 
-const bundle = (byLocale) => ({ translations: Object.entries(byLocale).map(([locale, value]) => ({ locale, value })) });
-const fromBundle = (b) => Object.fromEntries((b?.translations ?? []).map((t) => [t.locale, t.value]));
+const bundle = (byLocale) => ({
+  translations: Object.entries(byLocale).map(([locale, value]) => ({ locale, value })),
+});
+const fromBundle = (b) =>
+  Object.fromEntries((b?.translations ?? []).map((t) => [t.locale, t.value]));
 const sameMap = (a, b) => {
   const ka = Object.keys(a);
   return ka.length === Object.keys(b).length && ka.every((k) => a[k] === b[k]);
@@ -43,7 +53,9 @@ async function all(api, path) {
   const items = [];
   let token = null;
   do {
-    const page = await api.get(`${path}?maxResults=200${token ? `&pageToken=${encodeURIComponent(token)}` : ''}`);
+    const page = await api.get(
+      `${path}?maxResults=200${token ? `&pageToken=${encodeURIComponent(token)}` : ''}`,
+    );
     items.push(...(page?.items ?? []));
     token = page?.nextPageToken ?? null;
   } while (token);
@@ -83,7 +95,10 @@ function leaderboardChanges(remote, b) {
   if (remote.scoreOrder !== b.scoreOrder) changes.push('order');
   if (!sameMap(fromBundle(d.name), b.name)) changes.push('names');
   const f = d.scoreFormat ?? {};
-  if (f.numberFormatType !== b.scoreFormat.numberFormatType || (f.numDecimalPlaces ?? 0) !== (b.scoreFormat.numDecimalPlaces ?? 0)) {
+  if (
+    f.numberFormatType !== b.scoreFormat.numberFormatType ||
+    (f.numDecimalPlaces ?? 0) !== (b.scoreFormat.numDecimalPlaces ?? 0)
+  ) {
     changes.push('format');
   }
   return changes;
@@ -99,8 +114,20 @@ export async function syncPlay({ api, catalogue, ids, projectId, log = console.l
   const failures = [];
   const out = { project_id: projectId, achievements: {}, leaderboards: {} };
   const kinds = [
-    ['achievement', 'achievements', catalogue.play.achievements, achievementBody, achievementChanges],
-    ['leaderboard', 'leaderboards', catalogue.play.leaderboards, leaderboardBody, leaderboardChanges],
+    [
+      'achievement',
+      'achievements',
+      catalogue.play.achievements,
+      achievementBody,
+      achievementChanges,
+    ],
+    [
+      'leaderboard',
+      'leaderboards',
+      catalogue.play.leaderboards,
+      leaderboardBody,
+      leaderboardChanges,
+    ],
   ];
   for (const [kind, plural, items, body, changesOf] of kinds) {
     const remote = await all(api, `/applications/${projectId}/${plural}`);
@@ -108,7 +135,21 @@ export async function syncPlay({ api, catalogue, ids, projectId, log = console.l
     const byName = new Map(remote.map((r) => [fromBundle(r.draft?.name)['en-US'], r]));
     for (const item of items) {
       try {
-        await syncItem({ api, kind, plural, item, body, changesOf, ids, byId, byName, out, notes, projectId, log });
+        await syncItem({
+          api,
+          kind,
+          plural,
+          item,
+          body,
+          changesOf,
+          ids,
+          byId,
+          byName,
+          out,
+          notes,
+          projectId,
+          log,
+        });
       } catch (e) {
         // The others still go up; the run fails at the end
         log(`${kind} ${item.id}: ${e.message}`);
@@ -120,9 +161,24 @@ export async function syncPlay({ api, catalogue, ids, projectId, log = console.l
 }
 
 /** One achievement or leaderboard: found, created or changed; its ID into `out`. */
-async function syncItem({ api, kind, plural, item, body, changesOf, ids, byId, byName, out, notes, projectId, log }) {
+async function syncItem({
+  api,
+  kind,
+  plural,
+  item,
+  body,
+  changesOf,
+  ids,
+  byId,
+  byName,
+  out,
+  notes,
+  projectId,
+  log,
+}) {
   const known = ids[plural][item.id];
-  if (known && !byId.has(known)) notes.push(`${kind} ${item.id}: ${known} of app/achievements-play.json isn't in the project`);
+  if (known && !byId.has(known))
+    notes.push(`${kind} ${item.id}: ${known} of app/achievements-play.json isn't in the project`);
   const found = byId.get(known) ?? byName.get(item.name['en-US']);
   if (!found) {
     log(`${kind} ${item.id}: new`);
@@ -135,7 +191,9 @@ async function syncItem({ api, kind, plural, item, body, changesOf, ids, byId, b
   if (changes.length > 0) {
     log(`${kind} ${item.id}: ${changes.join(', ')}`);
     if (found.published && changes.some((c) => ['type', 'hidden', 'steps', 'order'].includes(c))) {
-      notes.push(`${kind} ${item.id} is published: Play keeps its ${changes.join(', ')} (it refuses to change them)`);
+      notes.push(
+        `${kind} ${item.id} is published: Play keeps its ${changes.join(', ')} (it refuses to change them)`,
+      );
     }
     // `token` is the version read: Play refuses an update without it (410 UpdateTokenInvalid)
     await api.put(`/${plural}/${found.id}`, { id: found.id, token: found.token, ...body(item) });
@@ -159,16 +217,31 @@ export function playClient(env = process.env) {
       const assertion = jwt({
         alg: 'RS256',
         key: account.private_key,
-        payload: { iss: account.client_email, scope: SCOPE, aud: account.token_uri, iat: now, exp: now + 3600 },
+        payload: {
+          iss: account.client_email,
+          scope: SCOPE,
+          aud: account.token_uri,
+          iat: now,
+          exp: now + 3600,
+        },
       });
       const response = await fetch(account.token_uri, {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }),
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion,
+        }),
       });
       const answer = await response.json();
-      if (!response.ok) throw new Error(`Google's token: ${response.status} ${answer.error ?? ''} ${answer.error_description ?? ''}`);
-      cached = { until: now + Math.min(answer.expires_in ?? 3600, 3600) - 300, value: answer.access_token };
+      if (!response.ok)
+        throw new Error(
+          `Google's token: ${response.status} ${answer.error ?? ''} ${answer.error_description ?? ''}`,
+        );
+      cached = {
+        until: now + Math.min(answer.expires_in ?? 3600, 3600) - 300,
+        value: answer.access_token,
+      };
     }
     return cached.value;
   };
@@ -179,7 +252,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const argv = process.argv.slice(2);
   const offline = argv.includes('--offline');
   const dry = offline || argv.includes('--dry-run');
-  const idsFile = argv.includes('--ids') ? argv[argv.indexOf('--ids') + 1] : path.join(OUT, 'achievements-play.json');
+  const idsFile = argv.includes('--ids')
+    ? argv[argv.indexOf('--ids') + 1]
+    : path.join(OUT, 'achievements-play.json');
   const sources = loadSources();
   const errors = validate(sources);
   if (errors.length > 0) {
@@ -208,7 +283,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const result = await syncPlay({ api, catalogue, ids, projectId });
   const changes = describe(api.writes);
   const verb = dry ? 'would send' : 'sent';
-  console.log(`\nPlay Games: ${verb} ${changes.length} change(s)${offline ? ' (to an empty project)' : ''}`);
+  console.log(
+    `\nPlay Games: ${verb} ${changes.length} change(s)${offline ? ' (to an empty project)' : ''}`,
+  );
   for (const c of changes) console.log(`  ${c}`);
   for (const note of result.notes) console.log(`Note: ${note}`);
   for (const failure of result.failures) console.error(`::error::${failure.split('\n')[0]}`);
@@ -216,7 +293,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   fs.mkdirSync(path.dirname(idsFile), { recursive: true });
   fs.writeFileSync(idsFile, json);
   const before = formatPlayIds(ids, catalogue);
-  console.log(json === before ? 'app/achievements-play.json is up to date' : `The IDs changed: ${idsFile} goes into app/achievements-play.json`);
+  console.log(
+    json === before
+      ? 'app/achievements-play.json is up to date'
+      : `The IDs changed: ${idsFile} goes into app/achievements-play.json`,
+  );
   if (process.env.GITHUB_STEP_SUMMARY) {
     const lines = [
       '### Play Games',

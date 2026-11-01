@@ -16,7 +16,9 @@ test('the guide and the leaderboard with its entry', async ({ page }) => {
   await expect(page.getByRole('heading', { name: "Generalize, don't memorize" })).toBeVisible();
   await expect(page.getByText(`Season ${DOJO_SEASON}`, { exact: false }).first()).toBeVisible();
   // Guests are asked for an account first
-  await expect(page.getByText("Submitting needs an account with a username, guests can't submit.")).toBeVisible();
+  await expect(
+    page.getByText("Submitting needs an account with a username, guests can't submit."),
+  ).toBeVisible();
 
   const entry = page.getByRole('link', { name: 'Plain DPLL' });
   await expect(entry).toBeVisible();
@@ -31,7 +33,9 @@ test('the Sprint track, and the Industrial track coming soon', async ({ page, co
   // Signed in, so the page has the submit form
   await signIn(context, 'kenji');
   await visit(page, '/dojo');
-  await expect(page.getByText('Generated formulas of modest size, about half a second per formula.')).toBeVisible();
+  await expect(
+    page.getByText('Generated formulas of modest size, about half a second per formula.'),
+  ).toBeVisible();
   const board = page.locator('#leaderboard');
   await expect(board.getByTestId('sprint-track')).toHaveText('Sprint track');
 
@@ -42,7 +46,10 @@ test('the Sprint track, and the Industrial track coming soon', async ({ page, co
   await expect(industrial).toContainText('Entry will cost a small fee that covers the compute.');
   // Nothing to enter yet: no form, field or button, and the only link is the citation
   await expect(industrial.locator('form, input, textarea, select, button')).toHaveCount(0);
-  await expect(industrial.getByRole('link')).toHaveAttribute('href', 'https://benchmark-database.de');
+  await expect(industrial.getByRole('link')).toHaveAttribute(
+    'href',
+    'https://benchmark-database.de',
+  );
   // The only form on the page enters the Sprint
   await expect(page.locator('form')).toHaveCount(1);
   await expect(page.locator('form')).toHaveAttribute('action', '/dojo/submit');
@@ -92,7 +99,9 @@ test('the season archive with its seed, set and results', async ({ page, request
   const dpllLink = page.getByRole('link', { name: 'Plain DPLL' });
   await expect(archived.locator('tr').filter({ has: dpllLink })).toContainText('35/48');
   // The same views and plot as the leaderboard, with every family under its own name
-  await expect(archived.getByTestId('cactus').locator('polyline[data-series="vbs"]')).toHaveCount(1);
+  await expect(archived.getByTestId('cactus').locator('polyline[data-series="vbs"]')).toHaveCount(
+    1,
+  );
   await archived.getByRole('tab', { name: 'Contribution' }).click();
   await expect(archived.locator('tr').filter({ has: dpllLink })).toContainText('100.0%');
   for (const [name, path] of [
@@ -124,7 +133,10 @@ test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
   const cdcl = page.getByRole('link', { name: 'Plain CDCL' });
   await expect(board.getByRole('link', { name: 'Plain CDCL' })).toBeVisible();
   // The official ranking first
-  await expect(board.getByRole('tab', { name: 'Ranking' })).toHaveAttribute('aria-selected', 'true');
+  await expect(board.getByRole('tab', { name: 'Ranking' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
   await expect(board.locator('tbody tr').first()).toContainText('Plain DPLL');
 
   // SAT/UNSAT: the mystery family's formulas stay out of the split while the season runs
@@ -170,12 +182,17 @@ test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
   await chart.getByRole('img').focus();
   await page.keyboard.press('End');
   await expect(chart.getByText(/fuel per formula, ≈ .* native$/)).toBeVisible();
-  await expect(budgets.getByTestId('crossovers')).toContainText(/overtakes|none of the leading solvers/);
+  await expect(budgets.getByTestId('crossovers')).toContainText(
+    /overtakes|none of the leading solvers/,
+  );
   // The cactus plot marks the ranking budget, the runs went on above it
   await expect(cactus.locator('line[data-testid="ranking-budget"]')).toHaveCount(1);
   // A link to a budget opens the view
   await visit(page, '/dojo?budget=0.1');
-  await expect(page.locator('#leaderboard').getByRole('tab', { name: 'Budget' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#leaderboard').getByRole('tab', { name: 'Budget' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
   await expect(page.locator('a[data-budget="0.1"]')).toHaveAttribute('aria-current', 'true');
   await visit(page, '/dojo');
 
@@ -185,5 +202,7 @@ test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
   await expect(page.getByTestId('answers')).toContainText('All families');
   await expect(page.getByTestId('answers')).toContainText('Mystery family');
   await expect(page.getByTestId('contribution')).toContainText('Shapley');
-  await expect(page.getByTestId('cactus').locator('polyline[data-series="highlight"]')).toHaveCount(1);
+  await expect(page.getByTestId('cactus').locator('polyline[data-series="highlight"]')).toHaveCount(
+    1,
+  );
 });

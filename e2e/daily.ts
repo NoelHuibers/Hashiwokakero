@@ -9,7 +9,10 @@ import { DB_PATH, VISUAL_DB_PATH } from './env';
 
 /** The database of the running test's server, see `VISUAL_URL`. */
 const database = (options: { readOnly?: boolean } = {}) =>
-  new DatabaseSync(test.info().project.name === 'visual' ? VISUAL_DB_PATH : DB_PATH, { ...options, timeout: 5_000 });
+  new DatabaseSync(test.info().project.name === 'visual' ? VISUAL_DB_PATH : DB_PATH, {
+    ...options,
+    timeout: 5_000,
+  });
 
 /** The solution of today's daily, once it was started (`get_or_create` in src/server/daily). */
 export function dailySolution(puzzle: Puzzle): number[] {
@@ -63,14 +66,20 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
   await addBridge(page, DAILY_KEY, puzzle, first);
 
   await page.getByRole('button', { name: /^Check/ }).click();
-  await expect(page.getByText('So far so good: every bridge belongs to the solution.')).toBeVisible();
+  await expect(
+    page.getByText('So far so good: every bridge belongs to the solution.'),
+  ).toBeVisible();
   await expect(penalty(page)).toHaveText(`+${await dailyHelpCost(page, 'Check')}s`);
 
   const hint = page.getByRole('button', { name: /^Hint/ });
   const before = JSON.stringify((await saved(page, DAILY_KEY)).bridges);
   await hint.click();
-  await expect.poll(async () => JSON.stringify((await saved(page, DAILY_KEY)).bridges)).not.toBe(before);
-  await expect(penalty(page)).toHaveText(`+${await dailyHelpCost(page, 'Check') + await dailyHelpCost(page, 'Hint')}s`);
+  await expect
+    .poll(async () => JSON.stringify((await saved(page, DAILY_KEY)).bridges))
+    .not.toBe(before);
+  await expect(penalty(page)).toHaveText(
+    `+${(await dailyHelpCost(page, 'Check')) + (await dailyHelpCost(page, 'Hint'))}s`,
+  );
   await hintUntil(page, solution, 1);
 
   const [last] = missing((await saved(page, DAILY_KEY)).bridges, solution);
@@ -122,12 +131,14 @@ export async function hintUntil(page: Page, solution: number[], left: number) {
 
 /** The result card after the finish. */
 export async function expectResult(page: Page) {
-  const card = page.locator('aside > div').filter({ has: page.getByRole('heading', { name: /Well done!/ }) });
+  const card = page
+    .locator('aside > div')
+    .filter({ has: page.getByRole('heading', { name: /Well done!/ }) });
   await expect(card).toBeVisible();
   // Official scores always show the hundredths used for shared ranking, including penalties.
   await expect(card.locator('p.font-pixel.text-3xl')).toHaveText(/^\d+:\d{2}(?::\d{2})?\.\d{2}$/);
   await expect(card.getByText(/^Rank \d+ of \d+ today$/)).toBeVisible();
-  await expect(card.getByText('Not on today\'s leaderboard')).toHaveCount(0);
+  await expect(card.getByText("Not on today's leaderboard")).toHaveCount(0);
   return card;
 }
 
@@ -138,7 +149,9 @@ export async function expectResult(page: Page) {
 export function deleteResults(username: string) {
   const db = database();
   try {
-    db.prepare('DELETE FROM attempts WHERE user_id IN (SELECT id FROM users WHERE username = ?)').run(username);
+    db.prepare(
+      'DELETE FROM attempts WHERE user_id IN (SELECT id FROM users WHERE username = ?)',
+    ).run(username);
   } finally {
     db.close();
   }

@@ -19,7 +19,12 @@ const ELEMENT = 'element-6066-11e4-a52e-4f735466cecf';
 /** The context of the app's native views (WDA); the page's are `WEBVIEW_<id>`. */
 export const NATIVE = 'NATIVE_APP';
 
-async function send<T>(url: string, method: string, body?: unknown, timeoutMs = 120_000): Promise<T> {
+async function send<T>(
+  url: string,
+  method: string,
+  body?: unknown,
+  timeoutMs = 120_000,
+): Promise<T> {
   const response = await fetch(url, {
     method,
     headers: body === undefined ? undefined : { 'content-type': 'application/json' },
@@ -35,7 +40,10 @@ async function send<T>(url: string, method: string, body?: unknown, timeoutMs = 
   }
   const value = json.value as { error?: string; message?: string } | undefined;
   if (!response.ok || (value && typeof value === 'object' && typeof value.error === 'string')) {
-    throw new WebDriverError(value?.error ?? `HTTP ${response.status}`, value?.message ?? text.slice(0, 500));
+    throw new WebDriverError(
+      value?.error ?? `HTTP ${response.status}`,
+      value?.message ?? text.slice(0, 500),
+    );
   }
   return json.value as T;
 }
@@ -56,7 +64,11 @@ export class Session {
       { capabilities: { alwaysMatch: capabilities, firstMatch: [{}] } },
       480_000,
     );
-    return new Session(`${server}/session/${created.sessionId}`, created.sessionId, created.capabilities);
+    return new Session(
+      `${server}/session/${created.sessionId}`,
+      created.sessionId,
+      created.capabilities,
+    );
   }
 
   command<T>(method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown): Promise<T> {
@@ -96,7 +108,10 @@ export class Session {
 
   /** The first element `selector` (CSS) finds in the page, or an error. */
   async find(selector: string): Promise<string> {
-    const found = await this.command<Record<string, string>>('POST', '/element', { using: 'css selector', value: selector });
+    const found = await this.command<Record<string, string>>('POST', '/element', {
+      using: 'css selector',
+      value: selector,
+    });
     return found[ELEMENT];
   }
 
@@ -107,7 +122,11 @@ export class Session {
 
   /** The log `type`'s entries since the last call (`safariConsole`, `syslog`, ...). */
   logs(type: string) {
-    return this.command<{ timestamp: number; level: string; message: string }[]>('POST', '/se/log', { type });
+    return this.command<{ timestamp: number; level: string; message: string }[]>(
+      'POST',
+      '/se/log',
+      { type },
+    );
   }
 
   /** The screen, as a PNG. */

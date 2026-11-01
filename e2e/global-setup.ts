@@ -40,6 +40,8 @@ function failOnPanics() {
       );
     });
   if (panics.length > 0) {
-    throw new Error(`the server panicked ${panics.length} times (logs in e2e/.run/):\n${panics.join('\n')}`);
+    throw new Error(
+      `the server panicked ${panics.length} times (logs in e2e/.run/):\n${panics.join('\n')}`,
+    );
   }
 }

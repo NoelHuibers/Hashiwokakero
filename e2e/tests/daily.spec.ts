@@ -4,7 +4,14 @@ import type { Locator, Page } from '@playwright/test';
 
 import { register, signInWith, signOut } from '../account';
 import { addBridge, board, DAILY_KEY, saved } from '../board';
-import { dailyHelpCost, dailySolution, expectResult, hintUntil, solveDaily, startDaily } from '../daily';
+import {
+  dailyHelpCost,
+  dailySolution,
+  expectResult,
+  hintUntil,
+  solveDaily,
+  startDaily,
+} from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
 
 /** The card over the board after this tab's finish. */
@@ -12,7 +19,10 @@ const winCard = (page: Page) => page.getByRole('dialog', { name: /Well done!/ })
 
 /** The first card of the ranks page, the monthly race below has the same buttons. */
 const todaysBoard = (page: Page) =>
-  page.locator('[data-name="Card"]').filter({ has: page.getByRole('button', { name: /Earlier/ }) }).first();
+  page
+    .locator('[data-name="Card"]')
+    .filter({ has: page.getByRole('button', { name: /Earlier/ }) })
+    .first();
 
 test('a guest solves the daily and is on the leaderboard', async ({ page, context }) => {
   await visit(page, '/');
@@ -121,14 +131,22 @@ test('the move log saves bridge changes and stays idle while the clock ticks', a
   });
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
-  const writes = () => page.evaluate(() => Number(sessionStorage.getItem('test.daily.log.writes') ?? '0'));
-  const log = () => page.evaluate(() => JSON.parse(localStorage.getItem('hashi.daily.log') ?? 'null'));
+  const writes = () =>
+    page.evaluate(() => Number(sessionStorage.getItem('test.daily.log.writes') ?? '0'));
+  const log = () =>
+    page.evaluate(() => JSON.parse(localStorage.getItem('hashi.daily.log') ?? 'null'));
   const first = solution.findIndex((b) => b > 0);
   await addBridge(page, DAILY_KEY, puzzle, first);
   await expect.poll(writes).toBe(1);
-  expect((await log()).events).toEqual([expect.objectContaining({ edge: first, count: 1, tap: true })]);
+  expect((await log()).events).toEqual([
+    expect.objectContaining({ edge: first, count: 1, tap: true }),
+  ]);
 
-  const timer = page.getByText('Time · 時間', { exact: true }).locator('..').locator('span').first();
+  const timer = page
+    .getByText('Time · 時間', { exact: true })
+    .locator('..')
+    .locator('span')
+    .first();
   const beforeTick = (await timer.textContent())!;
   await page.clock.runFor(1_000);
   await expect(timer).not.toHaveText(beforeTick);
@@ -148,7 +166,9 @@ test('the move log saves bridge changes and stays idle while the clock ticks', a
   expect(await log()).toEqual(before);
 });
 
-test("a new guest's board shows right from the start's reply and takes the first clicks", async ({ page }) => {
+test("a new guest's board shows right from the start's reply and takes the first clicks", async ({
+  page,
+}) => {
   await visit(page, '/');
   await expect(page.getByRole('button', { name: /^Start/ })).toBeEnabled();
   // The start makes a guest and names them in its reply: the page asks neither who that is nor
@@ -156,7 +176,10 @@ test("a new guest's board shows right from the start's reply and takes the first
   const asked: string[] = [];
   const held = new Promise<void>(() => {});
   for (const path of ['**/api/current_user', '**/api/daily_today']) {
-    await page.route(path, async (route) => { asked.push(new URL(route.request().url()).pathname); await held; });
+    await page.route(path, async (route) => {
+      asked.push(new URL(route.request().url()).pathname);
+      await held;
+    });
   }
   await page.getByRole('button', { name: /^Start/ }).click();
   await expect(board(page)).toHaveClass(/board-interactive/); // the daily's, not a tip's below it
@@ -165,23 +188,33 @@ test("a new guest's board shows right from the start's reply and takes the first
   const { puzzle } = await saved(page, DAILY_KEY);
   const solution = dailySolution(puzzle);
   // Right away, no waiting for anything else, and no loading placeholder in place of the board
-  await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
+  await addBridge(
+    page,
+    DAILY_KEY,
+    puzzle,
+    solution.findIndex((b) => b > 0),
+  );
   await expect(board(page)).toHaveAttribute('data-first-board', '');
   expect(asked).toEqual([]);
 });
 
 const paidPath = '**/api/daily_paid_action';
 const actionStatus = (page: Page) => page.getByTestId('daily-action-status');
-const penaltyValue = (page: Page) => page.getByText('Penalty · 罰', { exact: true }).locator('..').locator('span').first();
+const penaltyValue = (page: Page) =>
+  page.getByText('Penalty · 罰', { exact: true }).locator('..').locator('span').first();
 
 // These use the real server, with only transport timing/failure controlled by the browser.
 // They require matching built WASM/server assets (the same prerequisite as the daily suite).
-test('a delayed paid action blocks double taps, keyboard edits and other actions immediately', async ({ page }) => {
+test('a delayed paid action blocks double taps, keyboard edits and other actions immediately', async ({
+  page,
+}) => {
   await visit(page, '/');
   await startDaily(page);
   const before = await saved(page, DAILY_KEY);
   let release!: () => void;
-  const held = new Promise<void>((resolve) => { release = resolve; });
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   let requests = 0;
   await page.route(paidPath, async (route) => {
     requests++;
@@ -192,7 +225,10 @@ test('a delayed paid action blocks double taps, keyboard edits and other actions
   try {
     // Two DOM clicks in one turn exercise the synchronous handler guard, before Leptos has
     // rendered disabled attributes. A disabled flag rendered on the next frame is too late.
-    await hint.evaluate((button) => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
+    await hint.evaluate((button) => {
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+    });
     await expect.poll(() => requests).toBe(1);
     await expect(actionStatus(page)).toHaveText('Waiting for the server…');
     for (const name of [/^Hint/, /^Check/, /^Give up/, /Undo/, /Redo/, /^Clear/]) {
@@ -216,7 +252,9 @@ test('a delayed paid action blocks double taps, keyboard edits and other actions
 });
 
 for (const action of ['Hint', 'Check'] as const) {
-  test(`a lost successful ${action} reply survives reload and retry without another penalty`, async ({ page }) => {
+  test(`a lost successful ${action} reply survives reload and retry without another penalty`, async ({
+    page,
+  }) => {
     await visit(page, '/');
     await startDaily(page);
     const bodies: Record<string, unknown>[] = [];
@@ -225,7 +263,11 @@ for (const action of ['Hint', 'Check'] as const) {
       const response = await route.fetch(); // the real server commits the charge
       if (bodies.length === 1) {
         // Simulate a reply that cannot be decoded after the server committed successfully.
-        await route.fulfill({ response, contentType: 'application/json', body: '{"lost":"reply"}' });
+        await route.fulfill({
+          response,
+          contentType: 'application/json',
+          body: '{"lost":"reply"}',
+        });
       } else {
         await route.fulfill({ response });
       }
@@ -244,7 +286,11 @@ for (const action of ['Hint', 'Check'] as const) {
     expect(bodies[1]).toEqual(bodies[0]);
     const penalty = `+${await dailyHelpCost(page, action)}s`;
     await expect(penaltyValue(page)).toHaveText(penalty);
-    expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')))).toEqual([]);
+    expect(
+      await page.evaluate(() =>
+        Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')),
+      ),
+    ).toEqual([]);
   });
 }
 
@@ -273,12 +319,16 @@ test('a failed paid request clears pending and retries the original intent', asy
   await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Check')}s`);
 });
 
-test('a paid reply arriving after leaving the daily cannot mutate its persistent board', async ({ page }) => {
+test('a paid reply arriving after leaving the daily cannot mutate its persistent board', async ({
+  page,
+}) => {
   await visit(page, '/');
   await startDaily(page);
   const before = (await saved(page, DAILY_KEY)).bridges;
   let release!: () => void;
-  const held = new Promise<void>((resolve) => { release = resolve; });
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   let committed = false;
   await page.route(paidPath, async (route) => {
     const response = await route.fetch();
@@ -289,7 +339,10 @@ test('a paid reply arriving after leaving the daily cannot mutate its persistent
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect.poll(() => committed).toBe(true);
   try {
-    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await page
+      .getByRole('link', { name: /Practice/ })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/practice/);
   } finally {
     release();
@@ -304,7 +357,6 @@ test('a paid reply arriving after leaving the daily cannot mutate its persistent
   await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
 });
 
-
 test('a final paid hint flushes its move log and submits exactly once', async ({ page }) => {
   await visit(page, '/');
   const { solution } = await startDaily(page);
@@ -315,7 +367,9 @@ test('a final paid hint flushes its move log and submits exactly once', async ({
   await hintUntil(page, solution, 0);
   await expectResult(page);
   expect(submissions).toBe(1);
-  const log = await page.evaluate(() => JSON.parse(localStorage.getItem('hashi.daily.log') ?? 'null'));
+  const log = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('hashi.daily.log') ?? 'null'),
+  );
   expect(log.events.length).toBeGreaterThan(0);
   expect(log.events.every((event: { tap: boolean }) => !event.tap)).toBe(true);
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
@@ -351,7 +405,11 @@ test('a solved daily whose submit failed waits to be submitted again', async ({ 
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
 });
 
-test('closing the tab after a lost success preserves the paid intent for the next tab', async ({ page, context, problems }) => {
+test('closing the tab after a lost success preserves the paid intent for the next tab', async ({
+  page,
+  context,
+  problems,
+}) => {
   await visit(page, '/');
   await startDaily(page);
   await page.route(paidPath, async (route) => {
@@ -381,7 +439,8 @@ test('unavailable intent storage prevents a charge and releases pending', async 
   await page.addInitScript(() => {
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
-      if (key.startsWith('hashi.daily.action.')) throw new DOMException('test storage unavailable', 'QuotaExceededError');
+      if (key.startsWith('hashi.daily.action.'))
+        throw new DOMException('test storage unavailable', 'QuotaExceededError');
       set.call(this, key, value);
     };
   });
@@ -393,7 +452,11 @@ test('unavailable intent storage prevents a charge and releases pending', async 
   });
   const hint = page.getByRole('button', { name: /^Hint/ });
   await hint.click();
-  await expect(page.getByText('Browser storage is required to retry this action safely. Enable it and try again.')).toBeVisible();
+  await expect(
+    page.getByText(
+      'Browser storage is required to retry this action safely. Enable it and try again.',
+    ),
+  ).toBeVisible();
   await expect(hint).toBeEnabled();
   await expect(actionStatus(page)).toBeEmpty();
   await expect(penaltyValue(page)).toHaveText('+0s');
@@ -401,7 +464,9 @@ test('unavailable intent storage prevents a charge and releases pending', async 
 });
 
 for (const action of ['Hint', 'Check'] as const) {
-  test(`a lost successful guest ${action} is recovered after login without a new purchase`, async ({ page }) => {
+  test(`a lost successful guest ${action} is recovered after login without a new purchase`, async ({
+    page,
+  }) => {
     const username = newUsername('recover');
     const password = 'recover-bridges-safely';
     await visit(page, '/account');
@@ -439,7 +504,11 @@ for (const action of ['Hint', 'Check'] as const) {
     expect(purchases).toBe(1);
     await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, action)}s`);
     if (action === 'Hint') expect((await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
-    expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')))).toEqual([]);
+    expect(
+      await page.evaluate(() =>
+        Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')),
+      ),
+    ).toEqual([]);
   });
 }
 
@@ -459,7 +528,8 @@ test('a conflicting account attempt never adopts a lost guest hint', async ({ pa
   await page.route(paidPath, async (route) => {
     purchases++;
     const response = await route.fetch();
-    if (purchases === 1) await route.fulfill({ response, contentType: 'application/json', body: 'null' });
+    if (purchases === 1)
+      await route.fulfill({ response, contentType: 'application/json', body: 'null' });
     else await route.fulfill({ response });
   });
   await page.getByRole('button', { name: /^Hint/ }).click();
@@ -478,7 +548,9 @@ test('a conflicting account attempt never adopts a lost guest hint', async ({ pa
   expect(purchases).toBe(2); // a new, intentional purchase for the target account
 });
 
-test('signing out and switching accounts preserves the former account intent without adoption', async ({ page }) => {
+test('signing out and switching accounts preserves the former account intent without adoption', async ({
+  page,
+}) => {
   const first = newUsername('first');
   const second = newUsername('second');
   const password = 'separate-bridge-owners';
@@ -499,7 +571,11 @@ test('signing out and switching accounts preserves the former account intent wit
   await startDaily(page);
   await expect(penaltyValue(page)).toHaveText('+0s');
   await expect(actionStatus(page)).toBeEmpty();
-  expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')).length)).toBe(1);
+  expect(
+    await page.evaluate(
+      () => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')).length,
+    ),
+  ).toBe(1);
   await visit(page, '/account');
   await signOut(page);
   await signInWith(page, first, password);
@@ -512,7 +588,9 @@ test('signing out and switching accounts preserves the former account intent wit
   await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
 });
 
-test('an unknown transfer lookup blocks fresh purchases until recovery succeeds', async ({ page }) => {
+test('an unknown transfer lookup blocks fresh purchases until recovery succeeds', async ({
+  page,
+}) => {
   const username = newUsername('lookup');
   const password = 'unknown-receipt-outcome';
   await visit(page, '/account');
@@ -535,7 +613,8 @@ test('an unknown transfer lookup blocks fresh purchases until recovery succeeds'
   let lookups = 0;
   await page.route('**/api/daily_recover_actions', async (route) => {
     lookups++;
-    if (lookups === 1) await route.fulfill({ contentType: 'application/json', body: '{"unknown":true}' });
+    if (lookups === 1)
+      await route.fulfill({ contentType: 'application/json', body: '{"unknown":true}' });
     else await route.continue();
   });
   await page.getByRole('button', { name: /^Hint/ }).click();
@@ -548,7 +627,11 @@ test('an unknown transfer lookup blocks fresh purchases until recovery succeeds'
   expect(purchases).toBe(1);
 });
 
-test('a guest merge in another tab preserves a committed hint whose reply outlives the daily page', async ({ page, context, problems }) => {
+test('a guest merge in another tab preserves a committed hint whose reply outlives the daily page', async ({
+  page,
+  context,
+  problems,
+}) => {
   const username = newUsername('tabmerge');
   const password = 'cross-tab-bridge-receipt';
   await visit(page, '/account');
@@ -558,7 +641,9 @@ test('a guest merge in another tab preserves a committed hint whose reply outliv
   await startDaily(page);
   const before = (await saved(page, DAILY_KEY)).bridges;
   let release!: () => void;
-  const held = new Promise<void>((resolve) => { release = resolve; });
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   let committed = false;
   let purchases = 0;
   await page.route(paidPath, async (route) => {
@@ -573,7 +658,10 @@ test('a guest merge in another tab preserves a committed hint whose reply outliv
   const other = await context.newPage();
   other.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
   try {
-    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await page
+      .getByRole('link', { name: /Practice/ })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/practice/);
     await visit(other, '/account');
     await signInWith(other, username, password);
@@ -592,12 +680,16 @@ test('a guest merge in another tab preserves a committed hint whose reply outliv
   await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
 });
 
-test('a delayed quiet refresh cannot roll back a paid counter or touch a disposed daily', async ({ page }) => {
+test('a delayed quiet refresh cannot roll back a paid counter or touch a disposed daily', async ({
+  page,
+}) => {
   await visit(page, '/');
   await startDaily(page);
   for (const dispose of [false, true]) {
     let release!: () => void;
-    const held = new Promise<void>((resolve) => { release = resolve; });
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     let captured = false;
     await page.route('**/api/daily_today', async (route) => {
       const response = await route.fetch();
@@ -609,7 +701,10 @@ test('a delayed quiet refresh cannot roll back a paid counter or touch a dispose
     await expect.poll(() => captured).toBe(true);
     try {
       if (dispose) {
-        await page.getByRole('link', { name: /Practice/ }).first().click();
+        await page
+          .getByRole('link', { name: /Practice/ })
+          .first()
+          .click();
         await expect(page).toHaveURL(/\/practice/);
       } else {
         await page.getByRole('button', { name: /^Check/ }).click();
@@ -620,12 +715,15 @@ test('a delayed quiet refresh cannot roll back a paid counter or touch a dispose
       release();
     }
     await page.waitForLoadState('networkidle');
-    if (!dispose) await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Check')}s`);
+    if (!dispose)
+      await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Check')}s`);
     await page.unroute('**/api/daily_today');
   }
 });
 
-test('a definitive missing transferred receipt ends recovery without purchasing on that click', async ({ page }) => {
+test('a definitive missing transferred receipt ends recovery without purchasing on that click', async ({
+  page,
+}) => {
   const username = newUsername('nocharge');
   const password = 'recover-without-purchase';
   await visit(page, '/account');
@@ -670,27 +768,43 @@ const reconcilePath = '**/api/daily_attempt_info';
 /** Width of the metadata status: sr-only shrinks it to 1px, the board placeholder says "Loading" instead. */
 const statusWidth = async (page: Page) => (await metadataStatus(page).boundingBox())?.width ?? 0;
 
-test('loading the puzzle shows one visible loading message, in the board placeholder', async ({ page }) => {
+test('loading the puzzle shows one visible loading message, in the board placeholder', async ({
+  page,
+}) => {
   let release!: () => void;
-  const held = new Promise<void>((resolve) => { release = resolve; });
-  await page.route('**/api/daily_today', async (route) => { await held; await route.continue(); });
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/daily_today', async (route) => {
+    await held;
+    await route.continue();
+  });
   try {
     await page.goto('/');
     await expect(page.getByText('読み込み中 · Loading…')).toBeVisible();
     await expect(metadataStatus(page)).toContainText('Loading'); // still announced to screen readers
     expect(await statusWidth(page)).toBeLessThanOrEqual(1);
-  } finally { release(); }
+  } finally {
+    release();
+  }
   await expect(page.getByRole('button', { name: /^Start/ })).toBeEnabled();
 });
 
-test('initial metadata failure has a persistent manual retry with an immediate pending guard', async ({ page }) => {
+test('initial metadata failure has a persistent manual retry with an immediate pending guard', async ({
+  page,
+}) => {
   let requests = 0;
   let release!: () => void;
-  const held = new Promise<void>((resolve) => { release = resolve; });
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   await page.route('**/api/daily_today', async (route) => {
     requests++;
     if (requests === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
-    else { await held; await route.continue(); }
+    else {
+      await held;
+      await route.continue();
+    }
   });
   await visit(page, '/');
   await expect(metadataStatus(page)).toContainText("Couldn't load today's puzzle.");
@@ -702,13 +816,16 @@ test('initial metadata failure has a persistent manual retry with an immediate p
   expect(requests).toBe(1); // no automatic error loop, including focus
   try {
     await page.getByRole('button', { name: 'Retry puzzle', exact: true }).evaluate((button) => {
-      (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
     });
     await expect.poll(() => requests).toBe(2);
     await expect(metadataStatus(page)).toContainText('Loading');
     expect(await statusWidth(page)).toBeLessThanOrEqual(1);
     expect(requests).toBe(2);
-  } finally { release(); }
+  } finally {
+    release();
+  }
   await expect(metadataStatus(page)).toBeEmpty();
   await expect(page.getByRole('button', { name: /^Start/ })).toBeEnabled();
 });
@@ -726,14 +843,22 @@ test('ranking failure retries independently and preserves the running board', as
   const { puzzle, solution } = await startDaily(page);
   // The new guest's start shows the board without asking for the ranking again
   await expect(rankingStatus(page)).toContainText("Couldn't load the ranking.");
-  await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
+  await addBridge(
+    page,
+    DAILY_KEY,
+    puzzle,
+    solution.findIndex((b) => b > 0),
+  );
   const before = await saved(page, DAILY_KEY);
   const beforeRetry = rankings;
   retrySucceeds = true;
   let metadata = 0;
-  page.on('request', (request) => { if (request.url().endsWith('/api/daily_today')) metadata++; });
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/daily_today')) metadata++;
+  });
   await page.getByRole('button', { name: 'Retry ranking', exact: true }).evaluate((button) => {
-    (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click();
+    (button as HTMLButtonElement).click();
+    (button as HTMLButtonElement).click();
   });
   await expect(rankingStatus(page)).toBeEmpty();
   expect(rankings).toBe(beforeRetry + 1);
@@ -742,13 +867,17 @@ test('ranking failure retries independently and preserves the running board', as
   expect((await saved(page, DAILY_KEY)).moves).toBe(before.moves);
 });
 
-test('a lost submit success and failed reconciliation keep the solution until explicit recovery', async ({ page }) => {
+test('a lost submit success and failed reconciliation keep the solution until explicit recovery', async ({
+  page,
+}) => {
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
   let submissions = 0;
   let reads = 0;
   let release!: () => void;
-  const held = new Promise<void>((resolve) => { release = resolve; });
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   await page.route(submitPath, async (route) => {
     submissions++;
     const response = await route.fetch(); // finish is committed, response is lost
@@ -774,12 +903,15 @@ test('a lost submit success and failed reconciliation keep the solution until ex
   expect([submissions, reads]).toEqual([1, 1]);
   try {
     await page.getByRole('button', { name: 'Retry result', exact: true }).evaluate((button) => {
-      (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
+      (button as HTMLButtonElement).click();
     });
     await expect.poll(() => reads).toBe(2);
     await expect(submitStatus(page)).toHaveText('Saving your result…');
     expect(submissions).toBe(1);
-  } finally { release(); }
+  } finally {
+    release();
+  }
   await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
   expect(submissions).toBe(1); // a failed read must not dispatch a write
   await page.getByRole('button', { name: 'Retry result', exact: true }).click();
@@ -791,7 +923,9 @@ test('a lost submit success and failed reconciliation keep the solution until ex
   await expect(penaltyValue(page)).toHaveText(penalty!);
 });
 
-test('an unsent submission can explicitly retry the original solved board and final log', async ({ page }) => {
+test('an unsent submission can explicitly retry the original solved board and final log', async ({
+  page,
+}) => {
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
   const bodies: Record<string, unknown>[] = [];
@@ -805,7 +939,9 @@ test('an unsent submission can explicitly retry the original solved board and fi
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(solution);
   const log = await page.evaluate(() => JSON.parse(localStorage.getItem('hashi.daily.log')!));
   // A competing tab can rewrite the legacy shared log key while recovery is pending.
-  await page.evaluate(() => localStorage.setItem('hashi.daily.log', JSON.stringify({ day: -1, events: [] })));
+  await page.evaluate(() =>
+    localStorage.setItem('hashi.daily.log', JSON.stringify({ day: -1, events: [] })),
+  );
   await page.getByRole('button', { name: 'Retry result', exact: true }).click();
   await expect(submitStatus(page)).toBeEmpty();
   await expectResult(page);
@@ -819,7 +955,9 @@ test('a delayed submit response cannot touch a disposed daily page', async ({ pa
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
   let release!: () => void;
-  const held = new Promise<void>((resolve) => { release = resolve; });
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   let committed = false;
   await page.route(submitPath, async (route) => {
     const response = await route.fetch();
@@ -832,9 +970,14 @@ test('a delayed submit response cannot touch a disposed daily page', async ({ pa
   const before = await saved(page, DAILY_KEY);
   const log = await page.evaluate(() => localStorage.getItem('hashi.daily.log'));
   try {
-    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await page
+      .getByRole('link', { name: /Practice/ })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/practice/);
-  } finally { release(); }
+  } finally {
+    release();
+  }
   await page.waitForLoadState('networkidle');
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
   expect(await page.evaluate(() => localStorage.getItem('hashi.daily.log'))).toBe(log);
@@ -842,10 +985,17 @@ test('a delayed submit response cannot touch a disposed daily page', async ({ pa
   await expectResult(page);
 });
 
-test('a transient metadata refresh failure preserves running bridges and allows manual recovery', async ({ page }) => {
+test('a transient metadata refresh failure preserves running bridges and allows manual recovery', async ({
+  page,
+}) => {
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
-  await addBridge(page, DAILY_KEY, puzzle, solution.findIndex((b) => b > 0));
+  await addBridge(
+    page,
+    DAILY_KEY,
+    puzzle,
+    solution.findIndex((b) => b > 0),
+  );
   const before = await saved(page, DAILY_KEY);
   let reads = 0;
   await page.route('**/api/daily_today', async (route) => {
@@ -865,7 +1015,9 @@ test('a transient metadata refresh failure preserves running bridges and allows 
   expect((await saved(page, DAILY_KEY)).moves).toBe(before.moves);
 });
 
-test('a reload of an unconfirmed solved daily stays locked for explicit retry', async ({ page }) => {
+test('a reload of an unconfirmed solved daily stays locked for explicit retry', async ({
+  page,
+}) => {
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
   let writes = 0;
@@ -890,19 +1042,25 @@ test('a reload of an unconfirmed solved daily stays locked for explicit retry', 
 });
 
 for (const failFirst of [false, true]) {
-  test(`a solved SPA return discovers metadata${failFirst ? ' after a manual retry' : ''}`, async ({ page }) => {
+  test(`a solved SPA return discovers metadata${failFirst ? ' after a manual retry' : ''}`, async ({
+    page,
+  }) => {
     await visit(page, '/');
     const { puzzle, solution } = await startDaily(page);
     await solveDaily(page, puzzle, solution);
     await expectResult(page);
     await page.keyboard.press('Escape');
-    await page.getByRole('link', { name: /Practice/ }).first().click();
+    await page
+      .getByRole('link', { name: /Practice/ })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/practice/);
-    await page.evaluate(() => document.documentElement.dataset.returnMarker = 'same-document');
+    await page.evaluate(() => (document.documentElement.dataset.returnMarker = 'same-document'));
     let reads = 0;
     await page.route('**/api/daily_today', async (route) => {
       reads++;
-      if (failFirst && reads === 1) await route.fulfill({ contentType: 'application/json', body: 'null' });
+      if (failFirst && reads === 1)
+        await route.fulfill({ contentType: 'application/json', body: 'null' });
       else await route.continue();
     });
     await page.getByRole('link', { name: /Daily/ }).first().click();
@@ -921,13 +1079,18 @@ for (const failFirst of [false, true]) {
   });
 }
 
-test('midnight replacement of solved metadata keeps the new discovery request', async ({ page }) => {
+test('midnight replacement of solved metadata keeps the new discovery request', async ({
+  page,
+}) => {
   await visit(page, '/');
   const { puzzle, solution } = await startDaily(page);
   await solveDaily(page, puzzle, solution);
   await expectResult(page);
   await page.keyboard.press('Escape');
-  await page.getByRole('link', { name: /Practice/ }).first().click();
+  await page
+    .getByRole('link', { name: /Practice/ })
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/practice/);
   let reads = 0;
   let nextDay = 0;
@@ -956,7 +1119,9 @@ test('midnight replacement of solved metadata keeps the new discovery request', 
   expect(reads).toBe(2);
 });
 
-test('giving up asks in the page’s own dialog, and Cancel or Escape keep playing', async ({ page }) => {
+test('giving up asks in the page’s own dialog, and Cancel or Escape keep playing', async ({
+  page,
+}) => {
   // No browser confirm() any more: it looks different in every browser
   const native: string[] = [];
   page.on('dialog', (d) => {

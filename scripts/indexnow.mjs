@@ -26,10 +26,12 @@ const MAX_URLS = 10_000;
 
 /** The `<url>` entries of a sitemap: `{ loc, lastmod }`, `lastmod` null without one. */
 export function parseSitemap(xml) {
-  return [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map(([, entry]) => ({
-    loc: decode(entry.match(/<loc>\s*([^<]*?)\s*<\/loc>/)?.[1] ?? ''),
-    lastmod: entry.match(/<lastmod>\s*([^<]*?)\s*<\/lastmod>/)?.[1] ?? null,
-  })).filter(({ loc }) => loc !== '');
+  return [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)]
+    .map(([, entry]) => ({
+      loc: decode(entry.match(/<loc>\s*([^<]*?)\s*<\/loc>/)?.[1] ?? ''),
+      lastmod: entry.match(/<lastmod>\s*([^<]*?)\s*<\/lastmod>/)?.[1] ?? null,
+    }))
+    .filter(({ loc }) => loc !== '');
 }
 
 function decode(text) {

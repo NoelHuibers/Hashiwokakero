@@ -33,11 +33,14 @@ const PARAMS: Record<string, Record<string, number | string>> = {
 };
 
 /** Every page of the router, parameters filled in: `/`, `/practice`, `/dojo/1`, ... */
-export const ROUTES: string[] = [...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\)/g)].map((m) => {
+export const ROUTES: string[] = [
+  ...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\)/g),
+].map((m) => {
   const route = '/' + m[1].replace(/^\//, '');
   return route.replace(/:(\w+)/g, (_, name: string) => {
     const value = PARAMS[route]?.[name];
-    if (value === undefined) throw new Error(`no seeded value for :${name} of ${route} (e2e/site.ts)`);
+    if (value === undefined)
+      throw new Error(`no seeded value for :${name} of ${route} (e2e/site.ts)`);
     return String(value);
   });
 });

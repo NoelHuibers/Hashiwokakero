@@ -9,13 +9,17 @@ test('the pool and its authors are credited', async ({ page }) => {
   await expect(community).toContainText('Contributed by: aiko');
   await community.getByRole('link', { name: 'Bring your own benchmark' }).click();
   await expect(page).toHaveURL(/\/dojo\/benchmarks$/);
-  await expect(page.getByRole('heading', { name: 'Bring your own benchmark', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Bring your own benchmark', level: 1 }),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'What makes it in' })).toBeVisible();
   const pool = page.locator('#pool');
   await expect(pool).toContainText(COMMUNITY_FAMILY);
   await expect(pool).toContainText('by aiko');
   // Guests are asked for an account first
-  await expect(page.getByText("Submitting needs an account with a username, guests can't submit.")).toBeVisible();
+  await expect(
+    page.getByText("Submitting needs an account with a username, guests can't submit."),
+  ).toBeVisible();
 
   await visit(page, '/dojo/seasons');
   const archived = page.locator(`#season-${DOJO_SEASON - 1}`).getByTestId('season-community');

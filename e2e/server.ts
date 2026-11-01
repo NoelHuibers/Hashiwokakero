@@ -1,7 +1,7 @@
 // Starts the built server binary on a fresh local database. It needs no secrets: without
 // TURSO_DATABASE_URL it uses the SQLite file in HASHI_DB_PATH, the other secrets have local
 // defaults, and without DOJO_URL nothing is sent to a Dojo worker.
-import { spawn, type ChildProcess } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { existsSync, openSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -15,11 +15,20 @@ export interface Server {
   stop(): Promise<void>;
 }
 
-export async function startServer(logName: string, { port = PORT, dbPath = DB_PATH, admins = ADMINS } = {}): Promise<Server> {
+export async function startServer(
+  logName: string,
+  { port = PORT, dbPath = DB_PATH, admins = ADMINS } = {},
+): Promise<Server> {
   const url = `http://127.0.0.1:${port}`;
-  const answers = () => fetch(`${url}/favicon.svg`).then((r) => r.ok, () => false);
+  const answers = () =>
+    fetch(`${url}/favicon.svg`).then(
+      (r) => r.ok,
+      () => false,
+    );
   if (!existsSync(SERVER_BIN)) {
-    throw new Error(`no server binary at ${SERVER_BIN}: run \`cargo leptos build --release\` or set E2E_BIN`);
+    throw new Error(
+      `no server binary at ${SERVER_BIN}: run \`cargo leptos build --release\` or set E2E_BIN`,
+    );
   }
   // Otherwise the tests would quietly run against that other server
   if (await answers()) throw new Error(`something already listens on ${url}, set E2E_PORT`);
@@ -51,12 +60,18 @@ export async function startServer(logName: string, { port = PORT, dbPath = DB_PA
     await waitUntilUp(exited, url, answers);
   } catch (e) {
     child.kill('SIGKILL');
-    throw new Error(`${(e as Error).message}\n--- ${log} ---\n${readFileSync(log, 'utf8').slice(-4000)}`);
+    throw new Error(
+      `${(e as Error).message}\n--- ${log} ---\n${readFileSync(log, 'utf8').slice(-4000)}`,
+    );
   }
   return { stop: () => stop(child, exited) };
 }
 
-async function waitUntilUp(exited: Promise<number | null>, url: string, answers: () => Promise<boolean>) {
+async function waitUntilUp(
+  exited: Promise<number | null>,
+  url: string,
+  answers: () => Promise<boolean>,
+) {
   let gone = false;
   void exited.then(() => (gone = true));
   const deadline = Date.now() + 30_000;

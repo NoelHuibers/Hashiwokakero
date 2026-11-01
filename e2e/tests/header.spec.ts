@@ -8,11 +8,20 @@ import type { Page } from '@playwright/test';
 import { register } from '../account';
 import { expect, newUsername, signIn, test, visit } from '../fixtures';
 import { SEEDED_GROUP } from '../seed';
-import { localized, LOCALES } from '../site';
+import { LOCALES, localized } from '../site';
 
 /** The pages the tab bar leads to, a group, the account, the rules, the Dojo and the contact form. */
 const ALL = [
-  '/', '/practice', '/ranks', '/groups', `/groups/${SEEDED_GROUP.id}`, '/create', '/lab', '/account', '/rules', '/dojo',
+  '/',
+  '/practice',
+  '/ranks',
+  '/groups',
+  `/groups/${SEEDED_GROUP.id}`,
+  '/create',
+  '/lab',
+  '/account',
+  '/rules',
+  '/dojo',
   '/kontakt',
 ];
 const SOME = ['/', '/groups', '/ranks', '/account'];
@@ -26,13 +35,16 @@ async function misfits(page: Page, width: number, { tap }: { tap: boolean }) {
       const scroll = document.documentElement.scrollWidth;
       if (scroll > width) problems.push(`it scrolls sideways to ${scroll} px`);
       const row = document.querySelector('header > div')!;
-      if (row.scrollWidth > row.clientWidth) problems.push(`the header's row needs ${row.scrollWidth} px`);
+      if (row.scrollWidth > row.clientWidth)
+        problems.push(`the header's row needs ${row.scrollWidth} px`);
       for (const el of document.querySelectorAll('header a, header button')) {
         const box = el.getBoundingClientRect();
         if (!box.width) continue;
         const name = el.getAttribute('aria-label') ?? el.textContent?.trim();
-        if (box.left < 0 || box.right > width) problems.push(`${name} lies at ${box.left}..${box.right}`);
-        if (tap && (box.width < 44 || box.height < 44)) problems.push(`${name} is ${box.width}×${box.height}`);
+        if (box.left < 0 || box.right > width)
+          problems.push(`${name} lies at ${box.left}..${box.right}`);
+        if (tap && (box.width < 44 || box.height < 44))
+          problems.push(`${name} is ${box.width}×${box.height}`);
       }
       // No text in it wraps: the wordmark, the tagline, the links' names
       for (const el of document.querySelectorAll<HTMLElement>('header span')) {
@@ -42,7 +54,8 @@ async function misfits(page: Page, width: number, { tap }: { tap: boolean }) {
         text.selectNodeContents(el);
         const tops = [...text.getClientRects()].map((r) => r.top);
         const size = parseFloat(getComputedStyle(el).fontSize);
-        if (Math.max(...tops) - Math.min(...tops) > 0.8 * size) problems.push(`${el.textContent} wraps`);
+        if (Math.max(...tops) - Math.min(...tops) > 0.8 * size)
+          problems.push(`${el.textContent} wraps`);
       }
       return problems;
     },
@@ -50,11 +63,20 @@ async function misfits(page: Page, width: number, { tap }: { tap: boolean }) {
   );
 }
 
-async function expectFits(page: Page, locale: string, width: number, pages: string[], { tap = true } = {}) {
+async function expectFits(
+  page: Page,
+  locale: string,
+  width: number,
+  pages: string[],
+  { tap = true } = {},
+) {
   for (const path of pages) {
     await visit(page, localized(locale, path));
     await page.evaluate(() => document.fonts.ready);
-    expect(await misfits(page, width, { tap }), `${localized(locale, path)} at ${width} px`).toEqual([]);
+    expect(
+      await misfits(page, width, { tap }),
+      `${localized(locale, path)} at ${width} px`,
+    ).toEqual([]);
   }
 }
 
@@ -63,7 +85,10 @@ test.describe('phone', () => {
   test.use({ isMobile: true, hasTouch: true });
 
   for (const locale of LOCALES) {
-    test(`the header fits 320 px in ${locale}, signed out and as a guest at night`, async ({ page, context }) => {
+    test(`the header fits 320 px in ${locale}, signed out and as a guest at night`, async ({
+      page,
+      context,
+    }) => {
       await page.setViewportSize({ width: 320, height: 640 });
       await expectFits(page, locale, 320, SOME);
       // A member of the seeded group

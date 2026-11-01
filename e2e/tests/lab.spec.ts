@@ -10,7 +10,9 @@ test('race the default solvers on a fresh puzzle', async ({ page }) => {
 
   await page.getByRole('button', { name: /^Start the race/ }).click();
   await expect(page.getByRole('button', { name: 'Racing…' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Start the race/ })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: /^Start the race/ })).toBeVisible({
+    timeout: 30_000,
+  });
 
   const rows = page.locator('table tbody tr');
   // The presets selected by default (src/pages/lab/mod.rs)

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, beforeEach, test } from 'node:test';
-import { FILES, check, parse, read, set, versionCode } from '../app-version.mjs';
+import { check, FILES, parse, read, set, versionCode } from '../app-version.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'app-version-'));
@@ -48,8 +48,9 @@ test('set changes every file, and only the app crates in the lock files', () => 
   const packages = /\[\[package\]\]\nname = "([^"]*)"\nversion = "([^"]*)"/g;
   const old = [...text('Cargo.lock').matchAll(packages)]
     .map(([, name, version]) => ({ name, version }))
-    .find(({ name, version }) => name !== 'hashi_app' && /^[0-6]\.\d{1,3}\.\d{1,3}$/.test(version))
-    .version;
+    .find(
+      ({ name, version }) => name !== 'hashi_app' && /^[0-6]\.\d{1,3}\.\d{1,3}$/.test(version),
+    ).version;
   for (const { file, pattern } of FILES) {
     fs.writeFileSync(path.join(dir, file), text(file).replace(pattern, `$1${old}$3`));
   }
@@ -77,10 +78,7 @@ test('set changes every file, and only the app crates in the lock files', () => 
     assert.ok(plist.includes(`<key>${key}</key>\n\t<string>7.8.9</string>`), key);
   }
   const yml = text('app/src-tauri/gen/apple/project.yml');
-  assert.match(
-    yml,
-    /\n {8}CFBundleShortVersionString: 7\.8\.9\n {8}CFBundleVersion: "7\.8\.9"\n/,
-  );
+  assert.match(yml, /\n {8}CFBundleShortVersionString: 7\.8\.9\n {8}CFBundleVersion: "7\.8\.9"\n/);
 });
 
 test('the iOS project has the version nowhere else', () => {

@@ -31,7 +31,10 @@ test('the dashboard shows the day, the Dojo and the messages', async ({ page, co
   await expect(page.getByText('mirai@example.com')).toBeVisible();
   await expect(page.getByText('(no email)')).toBeVisible();
   const mirai = page.locator('article').filter({ hasText: 'mirai@example.com' });
-  await expect(mirai.getByRole('link', { name: 'Reply' })).toHaveAttribute('href', /^mailto:mirai@example\.com/);
+  await expect(mirai.getByRole('link', { name: 'Reply' })).toHaveAttribute(
+    'href',
+    /^mailto:mirai@example\.com/,
+  );
   // Without GITHUB_FEEDBACK_TOKEN (as here) no issues: the button is off and says why
   await expect(page.getByText('Creating issues is off', { exact: false })).toBeVisible();
   await expect(mirai.getByRole('button', { name: 'Create issue' })).toBeDisabled();
@@ -40,7 +43,9 @@ test('the dashboard shows the day, the Dojo and the messages', async ({ page, co
 test('admins ban a player and lift the ban', async ({ page, context, browser, baseURL }) => {
   // A guest of its own, the tests share the database
   const guest = await browser.newContext({ baseURL });
-  expect((await guest.request.post('/api/start_daily', { data: { device: null } })).ok()).toBe(true);
+  expect((await guest.request.post('/api/start_daily', { data: { device: null } })).ok()).toBe(
+    true,
+  );
   const me = async () => (await guest.request.post('/api/current_user', { data: {} })).json();
   const { id } = await me();
 

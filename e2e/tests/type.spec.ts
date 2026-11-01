@@ -5,7 +5,7 @@
 import type { CDPSession, Page } from '@playwright/test';
 
 import { expect, signIn, test, visit } from '../fixtures';
-import { localized, LOCALES } from '../site';
+import { LOCALES, localized } from '../site';
 
 /** Where headings are in Kaisei Decol: languages it draws whole, in proportional letters. */
 const KAISEI = new Set(['en', 'de', 'es', 'fr', 'id', 'it', 'ja', 'nl', 'pt']);
@@ -28,7 +28,10 @@ async function headings(page: Page, cdp: CDPSession): Promise<Drawn[]> {
   const texts = await page.evaluate((selector) => {
     const texts: string[] = [];
     for (const el of document.querySelectorAll(selector)) {
-      const own = [...el.childNodes].filter((c) => c.nodeType === Node.TEXT_NODE).map((c) => c.textContent).join('');
+      const own = [...el.childNodes]
+        .filter((c) => c.nodeType === Node.TEXT_NODE)
+        .map((c) => c.textContent)
+        .join('');
       if (!own.trim() || !el.getClientRects().length) continue;
       el.setAttribute('data-type-test', String(texts.length));
       texts.push(own);
@@ -37,7 +40,10 @@ async function headings(page: Page, cdp: CDPSession): Promise<Drawn[]> {
   }, SELECTOR);
   expect(texts.length, 'headings on the page').toBeGreaterThan(0);
   const { root } = await cdp.send('DOM.getDocument', { depth: 0 });
-  const { nodeIds } = await cdp.send('DOM.querySelectorAll', { nodeId: root.nodeId, selector: '[data-type-test]' });
+  const { nodeIds } = await cdp.send('DOM.querySelectorAll', {
+    nodeId: root.nodeId,
+    selector: '[data-type-test]',
+  });
   return Promise.all(
     nodeIds.map(async (nodeId) => {
       const { attributes } = await cdp.send('DOM.getAttributes', { nodeId });
@@ -64,7 +70,11 @@ for (const locale of LOCALES) {
           expect(families, `not in Kaisei Decol: ${where}`).not.toContain('Kaisei Decol');
         }
         // Kanji and kana may come from another font than the language's letters
-        if (SHAPED.has(locale) || /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) continue;
+        if (
+          SHAPED.has(locale) ||
+          /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)
+        )
+          continue;
         // Every letter from the first font: only spaces, digits and signs may come from another
         // (CDP counts the text of the children too: the pixel font's kanji next to titles)
         const [first, ...others] = fonts
@@ -72,7 +82,10 @@ for (const locale of LOCALES) {
           .sort((a, b) => b.glyphCount - a.glyphCount);
         const notLetters = [...text].filter((c) => !/\p{L}/u.test(c)).length;
         const fallback = others.reduce((sum, f) => sum + f.glyphCount, 0);
-        expect(fallback, `letters of ${where} drawn by another font than ${first.familyName}`).toBeLessThanOrEqual(notLetters);
+        expect(
+          fallback,
+          `letters of ${where} drawn by another font than ${first.familyName}`,
+        ).toBeLessThanOrEqual(notLetters);
       }
     }
   });

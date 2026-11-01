@@ -2,8 +2,8 @@
 // browser tests start theirs (e2e/global-setup.ts). Never Turso: startServer clears
 // TURSO_DATABASE_URL.
 import { mkdirSync, rmSync } from 'node:fs';
-import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 import { startServer } from '../../e2e/server';
 import { DB_PATH, ROOT, RUN_DIR, STORE_PORT } from './env';
@@ -35,7 +35,9 @@ async function stampsTold() {
       Number(
         (
           db
-            .prepare('SELECT COUNT(*) AS n FROM stamps WHERE user_id = (SELECT id FROM users WHERE username = ?)')
+            .prepare(
+              'SELECT COUNT(*) AS n FROM stamps WHERE user_id = (SELECT id FROM users WHERE username = ?)',
+            )
             .get(ME) as { n: number }
         ).n,
       );

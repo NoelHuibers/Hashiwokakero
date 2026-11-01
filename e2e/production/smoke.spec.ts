@@ -11,7 +11,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { test as base, expect, type BrowserContext, type Page } from '@playwright/test';
+import { type BrowserContext, test as base, expect, type Page } from '@playwright/test';
 
 /** The pages, and the language each is in. */
 const PAGES: [string, string][] = [
@@ -49,7 +49,9 @@ function writes(url: string) {
 async function guard(context: BrowserContext, problems: string[]) {
   await context.route('**/api/**', async (route) => {
     if (writes(route.request().url())) {
-      problems.push(`blocked a call that writes: ${route.request().method()} ${route.request().url()}`);
+      problems.push(
+        `blocked a call that writes: ${route.request().method()} ${route.request().url()}`,
+      );
       await route.abort('blockedbyclient');
     } else {
       await route.fallback();
@@ -79,11 +81,15 @@ const test = base.extend<{ problems: string[] }>({
         // A new session: as a cookie for the website, in a header for the app (src/server/auth.rs)
         const cookie = await r.headerValue('set-cookie').catch(() => null);
         const header = await r.headerValue('x-hashi-session').catch(() => null);
-        if (cookie?.includes('hashi_session') || header) problems.push(`a new session from ${r.url()}`);
+        if (cookie?.includes('hashi_session') || header)
+          problems.push(`a new session from ${r.url()}`);
       });
       await use(problems);
       expect(problems, 'errors in the browser').toEqual([]);
-      expect((await context.cookies()).map((c) => c.name), 'cookies').not.toContain('hashi_session');
+      expect(
+        (await context.cookies()).map((c) => c.name),
+        'cookies',
+      ).not.toContain('hashi_session');
     },
     { auto: true },
   ],
@@ -109,7 +115,10 @@ for (const [url, locale] of PAGES) {
     // The build the server names is the one the page loads, and the one just deployed
     const build = await response.headerValue('x-hashi-build');
     expect(build, 'x-hashi-build').toMatch(/^[\w-]{22}$/);
-    await expect(page.locator('link[rel=preload][as=fetch]')).toHaveAttribute('href', `/pkg/hashi.${build}.wasm`);
+    await expect(page.locator('link[rel=preload][as=fetch]')).toHaveAttribute(
+      'href',
+      `/pkg/hashi.${build}.wasm`,
+    );
     if (process.env.SMOKE_BUILD) expect(build, 'the deployed build').toBe(process.env.SMOKE_BUILD);
 
     // The fonts the page uses loaded, none failed
@@ -127,7 +136,10 @@ for (const [url, locale] of PAGES) {
     // Only works once hydrated: the 昼/夜 button in the header switches to night mode (kept in
     // the browser, nothing is sent)
     await expect(html).not.toHaveClass(/\bdark\b/);
-    await page.locator('header button').filter({ hasText: /^[昼夜]$/ }).click();
+    await page
+      .locator('header button')
+      .filter({ hasText: /^[昼夜]$/ })
+      .click();
     await expect(html).toHaveClass(/\bdark\b/);
   });
 }
@@ -135,15 +147,29 @@ for (const [url, locale] of PAGES) {
 // The guard itself, on a made-up origin: what it lets through goes nowhere
 test('the guard stops the calls that write', async ({ page, problems }) => {
   expect(SESSION_MAKERS).toContain('start_daily');
-  for (const name of [...SESSION_MAKERS, 'submit_daily', 'daily_hint', 'send_message', 'set_hanko']) {
+  for (const name of [
+    ...SESSION_MAKERS,
+    'submit_daily',
+    'daily_hint',
+    'send_message',
+    'set_hanko',
+  ]) {
     expect(writes(`https://hashi.rs/api/${name}`), name).toBe(true);
   }
-  for (const name of ['daily_today', 'current_user', 'generate_puzzle', 'load_banzuke', 'month_leaderboard']) {
+  for (const name of [
+    'daily_today',
+    'current_user',
+    'generate_puzzle',
+    'load_banzuke',
+    'month_leaderboard',
+  ]) {
     expect(writes(`https://hashi.rs/api/${name}`), name).toBe(false);
   }
 
   const origin = 'https://smoke.invalid';
-  await page.route(`${origin}/`, (route) => route.fulfill({ contentType: 'text/html', body: '<p>smoke</p>' }));
+  await page.route(`${origin}/`, (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<p>smoke</p>' }),
+  );
   await page.goto(`${origin}/`);
   const sent = await page.evaluate(() =>
     fetch('/api/start_daily', { method: 'POST', body: '{}' }).then(

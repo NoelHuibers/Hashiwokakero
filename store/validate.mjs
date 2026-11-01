@@ -10,7 +10,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { APPLE, APPLE_KNOWN, METADATA, PLAY, PLAY_KNOWN, PLAY_METADATA, SITE_LANGUAGES, siteUrl } from './locales.mjs';
+import {
+  APPLE,
+  APPLE_KNOWN,
+  METADATA,
+  PLAY,
+  PLAY_KNOWN,
+  PLAY_METADATA,
+  SITE_LANGUAGES,
+  siteUrl,
+} from './locales.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -35,20 +44,70 @@ export const SCENES = ['daily', 'ranking', 'practice', 'friends', 'stamps', 'nig
  * (App Store Review Guideline 2.3.7, Play's metadata policy), nor in titles. Lower case.
  */
 export const FORBIDDEN_TERMS = [
-  'sudoku', 'nikoli', 'kakuro', 'kenken', 'picross', 'nonogram', 'wordle', 'tetris', 'flow free',
-  'two dots', 'candy crush', 'nyt', 'new york times', 'apple', 'iphone', 'ipad', 'android',
-  'google', 'app store', 'play store',
+  'sudoku',
+  'nikoli',
+  'kakuro',
+  'kenken',
+  'picross',
+  'nonogram',
+  'wordle',
+  'tetris',
+  'flow free',
+  'two dots',
+  'candy crush',
+  'nyt',
+  'new york times',
+  'apple',
+  'iphone',
+  'ipad',
+  'android',
+  'google',
+  'app store',
+  'play store',
 ];
 /** Ranking, price and calls to action that the stores refuse in names and short texts. */
 export const PROMO_WORDS = [
-  /#\s*1\b/, /\bno\.?\s*1\b/i, /\bbest\b/i, /\btop\b/i, /\bfree\b/i, /\bsale\b/i, /\bdiscount\b/i,
-  /\bnew\b/i, /\bdownload now\b/i, /\binstall now\b/i, /\bplay now\b/i, /\btry now\b/i,
+  /#\s*1\b/,
+  /\bno\.?\s*1\b/i,
+  /\bbest\b/i,
+  /\btop\b/i,
+  /\bfree\b/i,
+  /\bsale\b/i,
+  /\bdiscount\b/i,
+  /\bnew\b/i,
+  /\bdownload now\b/i,
+  /\binstall now\b/i,
+  /\bplay now\b/i,
+  /\btry now\b/i,
 ];
 /** Words for "free"/"best"/"#1" in the other languages, for names and titles. */
 const PROMO_LOCAL = [
-  'gratis', 'kostenlos', 'gratuit', 'gratuito', 'grátis', 'darmo', 'ücretsiz', 'бесплатн',
-  'безкоштовн', 'مجان', 'मुफ़्त', 'miễn phí', 'ฟรี', '無料', '무료', '免费', '免費', 'beste', 'meilleur',
-  'migliore', 'mejor', 'melhor', 'najlepsz', 'en iyi', 'лучш', 'найкращ',
+  'gratis',
+  'kostenlos',
+  'gratuit',
+  'gratuito',
+  'grátis',
+  'darmo',
+  'ücretsiz',
+  'бесплатн',
+  'безкоштовн',
+  'مجان',
+  'मुफ़्त',
+  'miễn phí',
+  'ฟรี',
+  '無料',
+  '무료',
+  '免费',
+  '免費',
+  'beste',
+  'meilleur',
+  'migliore',
+  'mejor',
+  'melhor',
+  'najlepsz',
+  'en iyi',
+  'лучш',
+  'найкращ',
 ];
 
 const EMOJI = /\p{Extended_Pictographic}/u;
@@ -63,22 +122,33 @@ const bytes = (text) => Buffer.byteLength(text, 'utf8');
 export function loadListings(root = ROOT) {
   const listDirs = (dir) =>
     fs.existsSync(dir)
-      ? fs.readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)
+      ? fs
+          .readdirSync(dir, { withFileTypes: true })
+          .filter((d) => d.isDirectory())
+          .map((d) => d.name)
       : [];
   const play = {};
   for (const locale of listDirs(path.join(root, PLAY_METADATA))) {
     play[locale] = Object.fromEntries(
-      Object.keys(PLAY_FIELDS).map((f) => [f, read(path.join(root, PLAY_METADATA, locale, `${f}.txt`))]),
+      Object.keys(PLAY_FIELDS).map((f) => [
+        f,
+        read(path.join(root, PLAY_METADATA, locale, `${f}.txt`)),
+      ]),
     );
   }
   const apple = {};
   for (const locale of listDirs(path.join(root, METADATA)).filter((d) => d !== 'android')) {
     apple[locale] = Object.fromEntries(
-      Object.keys(APPLE_FIELDS).map((f) => [f, read(path.join(root, METADATA, locale, `${f}.txt`))]),
+      Object.keys(APPLE_FIELDS).map((f) => [
+        f,
+        read(path.join(root, METADATA, locale, `${f}.txt`)),
+      ]),
     );
   }
   const captionsFile = path.join(root, 'store/captions.json');
-  const captions = fs.existsSync(captionsFile) ? JSON.parse(fs.readFileSync(captionsFile, 'utf8')) : {};
+  const captions = fs.existsSync(captionsFile)
+    ? JSON.parse(fs.readFileSync(captionsFile, 'utf8'))
+    : {};
   return { play, apple, copyright: read(path.join(root, METADATA, 'copyright.txt')), captions };
 }
 
@@ -99,8 +169,14 @@ export function validate(listings, { play = PLAY, apple = APPLE } = {}) {
     const short = listing.short_description ?? '';
     if (/\n/.test(short)) fail(where, 'the short description is one line');
     if (EMOJI.test(short)) fail(where, 'no emoji in the short description');
-    for (const p of PROMO_WORDS) if (p.test(short)) fail(where, `no promotional wording in the short description (${p})`);
-    checkMentions(where, `${listing.title}\n${short}\n${listing.full_description}`, ['iphone', 'ipad', 'app store', 'ios'], fail);
+    for (const p of PROMO_WORDS)
+      if (p.test(short)) fail(where, `no promotional wording in the short description (${p})`);
+    checkMentions(
+      where,
+      `${listing.title}\n${short}\n${listing.full_description}`,
+      ['iphone', 'ipad', 'app store', 'ios'],
+      fail,
+    );
   }
 
   for (const { locale, site, same } of apple) {
@@ -111,7 +187,12 @@ export function validate(listings, { play = PLAY, apple = APPLE } = {}) {
     checkName(`${where} name`, listing.name, fail);
     checkName(`${where} subtitle`, listing.subtitle, fail);
     if (listing.keywords !== undefined) checkKeywords(where, listing, fail);
-    checkMentions(where, `${listing.name}\n${listing.subtitle}\n${listing.description}\n${listing.promotional_text}`, ['android', 'google play', 'play store'], fail);
+    checkMentions(
+      where,
+      `${listing.name}\n${listing.subtitle}\n${listing.description}\n${listing.promotional_text}`,
+      ['android', 'google play', 'play store'],
+      fail,
+    );
     const urls = {
       support_url: siteUrl(site, '/kontakt'),
       marketing_url: siteUrl(site, '/'),
@@ -135,12 +216,15 @@ export function validate(listings, { play = PLAY, apple = APPLE } = {}) {
 function checkLocales(store, table, known, present, fields, fail) {
   const byLocale = new Map(table.map((l) => [l.locale, l]));
   for (const { locale, site, same } of table) {
-    if (!known.includes(locale)) fail(`${store} ${locale}`, 'not a locale the store (fastlane) knows');
+    if (!known.includes(locale))
+      fail(`${store} ${locale}`, 'not a locale the store (fastlane) knows');
     if (!SITE_LANGUAGES.includes(site)) fail(`${store} ${locale}`, `no site language ${site}`);
     if (same) {
-      if (present[locale]) fail(`${store} ${locale}`, `takes the texts of ${same}, remove its folder`);
+      if (present[locale])
+        fail(`${store} ${locale}`, `takes the texts of ${same}, remove its folder`);
       const source = byLocale.get(same);
-      if (!source || source.same) fail(`${store} ${locale}`, `${same} is not a locale with texts of its own`);
+      if (!source || source.same)
+        fail(`${store} ${locale}`, `${same} is not a locale with texts of its own`);
       continue;
     }
     if (!present[locale]) {
@@ -152,10 +236,12 @@ function checkLocales(store, table, known, present, fields, fail) {
     }
   }
   for (const locale of Object.keys(present)) {
-    if (!byLocale.has(locale)) fail(`${store} ${locale}`, 'a folder for a locale that store/locales.mjs does not list');
+    if (!byLocale.has(locale))
+      fail(`${store} ${locale}`, 'a folder for a locale that store/locales.mjs does not list');
   }
   for (const site of SITE_LANGUAGES) {
-    if (!table.some((l) => l.site === site)) fail(store, `no listing in the site's language ${site}`);
+    if (!table.some((l) => l.site === site))
+      fail(store, `no listing in the site's language ${site}`);
   }
 }
 
@@ -180,7 +266,12 @@ function checkName(where, value, fail) {
   for (const w of PROMO_LOCAL) if (lower.includes(w)) fail(where, `no promotional wording (${w})`);
   for (const t of FORBIDDEN_TERMS) if (lower.includes(t)) fail(where, `no other brands (${t})`);
   for (const word of value.split(/[\s:·–-]+/)) {
-    if (word.length > 3 && /\p{Lu}/u.test(word) && word === word.toUpperCase() && !/\p{Ll}/u.test(word)) {
+    if (
+      word.length > 3 &&
+      /\p{Lu}/u.test(word) &&
+      word === word.toUpperCase() &&
+      !/\p{Ll}/u.test(word)
+    ) {
       fail(where, `no words in capitals (${word})`);
     }
   }
@@ -196,23 +287,28 @@ function checkKeywords(where, listing, fail) {
   if (/\n/.test(keywords)) fail(where, 'keywords are one line');
   if (/\s,|,\s/.test(keywords)) fail(where, 'no spaces around the commas of the keywords');
   const terms = keywords.split(',');
-  if (terms.some((t) => t.trim() === '')) fail(where, 'an empty keyword (two commas, or one at an end)');
+  if (terms.some((t) => t.trim() === ''))
+    fail(where, 'an empty keyword (two commas, or one at an end)');
   const seen = new Set();
   const nameWords = words(`${listing.name ?? ''} ${listing.subtitle ?? ''}`);
   const nameText = `${listing.name ?? ''} ${listing.subtitle ?? ''}`.toLowerCase();
   for (const term of terms.map((t) => t.trim().toLowerCase()).filter(Boolean)) {
     if (seen.has(term)) fail(where, `keyword "${term}" twice`);
     seen.add(term);
-    for (const t of FORBIDDEN_TERMS) if (term.includes(t)) fail(where, `keyword "${term}": no other brands`);
+    for (const t of FORBIDDEN_TERMS)
+      if (term.includes(t)) fail(where, `keyword "${term}": no other brands`);
     if (UNSPACED.test(term)) {
-      if (nameText.includes(term)) fail(where, `keyword "${term}" is in the name or subtitle already`);
+      if (nameText.includes(term))
+        fail(where, `keyword "${term}" is in the name or subtitle already`);
     } else {
       for (const w of words(term)) {
-        if (nameWords.has(w)) fail(where, `keyword "${term}": "${w}" is in the name or subtitle already`);
+        if (nameWords.has(w))
+          fail(where, `keyword "${term}": "${w}" is in the name or subtitle already`);
       }
     }
   }
-  if (/\b(app|game|games)\b/i.test(keywords)) fail(where, 'keywords: "app" and category names count anyway');
+  if (/\b(app|game|games)\b/i.test(keywords))
+    fail(where, 'keywords: "app" and category names count anyway');
 }
 
 const words = (text) =>
@@ -226,7 +322,8 @@ const words = (text) =>
 function checkMentions(where, text, terms, fail) {
   const lower = text.toLowerCase();
   for (const t of terms) {
-    if (new RegExp(`(^|[^\\p{L}])${t}([^\\p{L}]|$)`, 'u').test(lower)) fail(where, `mentions another platform (${t})`);
+    if (new RegExp(`(^|[^\\p{L}])${t}([^\\p{L}]|$)`, 'u').test(lower))
+      fail(where, `mentions another platform (${t})`);
   }
 }
 
@@ -243,12 +340,15 @@ function checkCaptions(captions, fail) {
         fail(`store/captions.json ${site}`, `no caption for ${scene}`);
         continue;
       }
-      if (chars(c.title.replace(/\*/g, '')) > CAPTION_LIMIT) fail(`store/captions.json ${site}`, `${scene}: caption over ${CAPTION_LIMIT} characters`);
+      if (chars(c.title.replace(/\*/g, '')) > CAPTION_LIMIT)
+        fail(`store/captions.json ${site}`, `${scene}: caption over ${CAPTION_LIMIT} characters`);
       if (c.text && chars(c.text) > SUBCAPTION_LIMIT) {
         fail(`store/captions.json ${site}`, `${scene}: text over ${SUBCAPTION_LIMIT} characters`);
       }
-      for (const p of PROMO_WORDS.slice(0, 2)) if (p.test(c.title)) fail(`store/captions.json ${site}`, `${scene}: no ranking claims`);
-      if (EMOJI.test(`${c.title}${c.text ?? ''}`)) fail(`store/captions.json ${site}`, `${scene}: no emoji`);
+      for (const p of PROMO_WORDS.slice(0, 2))
+        if (p.test(c.title)) fail(`store/captions.json ${site}`, `${scene}: no ranking claims`);
+      if (EMOJI.test(`${c.title}${c.text ?? ''}`))
+        fail(`store/captions.json ${site}`, `${scene}: no emoji`);
     }
   }
 }

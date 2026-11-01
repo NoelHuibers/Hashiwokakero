@@ -20,7 +20,11 @@ export default defineConfig({
   // A cold machine of the site may take a moment to start
   expect: { timeout: 20_000 },
   reporter: CI
-    ? [['github'], ['line'], ['html', { open: 'never', outputFolder: 'playwright-report-production' }]]
+    ? [
+        ['github'],
+        ['line'],
+        ['html', { open: 'never', outputFolder: 'playwright-report-production' }],
+      ]
     : [['line']],
   use: {
     ...devices['Desktop Chrome'],
