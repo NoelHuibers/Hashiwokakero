@@ -12,8 +12,10 @@ Built with Rust, [Leptos](https://leptos.dev), and Tailwind CSS. Fonts are self-
 
 ## Run locally
 
-Install Rust through rustup, Node.js 24+ (see `.node-version`), and the pnpm version
-in `package.json`. `rust-toolchain.toml` specifies the Rust targets and components.
+Install Rust through rustup and the pnpm version in `package.json` (npm refuses to install
+the project). Node.js 26 runs the scripts: with another version installed, pnpm downloads
+Node 26 into `node_modules` and runs them with it. `rust-toolchain.toml` specifies the Rust
+targets and components.
 
 ```sh
 cargo install --locked cargo-leptos
@@ -51,6 +53,11 @@ cargo test -p common -p backend -p sat_solver
 cargo bench
 pnpm run coverage                    # requires cargo-llvm-cov
 ```
+
+The JavaScript and TypeScript (the browser tests in `e2e/`, `scripts/`, `store/`) are
+formatted and linted by [Biome](https://biomejs.dev) (`biome.jsonc`): `pnpm run lint`, and
+`pnpm run lint:fix` for the fixes it can make. CI fails on any warning. `git config
+blame.ignoreRevsFile .git-blame-ignore-revs` lets `git blame` skip the formatting commit.
 
 Correctness tests, including default-size generation and solver regressions, run without
 `--ignored`. Timing is measured by `cargo bench`; the optional generation report is:
