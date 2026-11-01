@@ -98,6 +98,9 @@ jobs:
       # Formatting and lints of the JavaScript and TypeScript (biome.json); fails on warnings too
       - name: Biome
         run: pnpm exec biome ci --error-on-warnings
+      # Type checks of the TypeScript (tsconfig.json): strict, nothing is compiled
+      - name: TypeScript
+        run: pnpm exec tsc
       - name: Packaged smoke harness regressions
         run: python3 -m unittest discover -s scripts/tests -p 'test_packaged_smoke.py' -v
       # The scripts' own tests, the mobile app's version among them: it is the same in all its files
