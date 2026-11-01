@@ -25,7 +25,7 @@ const MS_PER_DAY = 86_400_000;
 const today = () => Math.floor(Date.now() / MS_PER_DAY);
 /** The weekday's difficulty, as model::daily_difficulty: the page names it next to the board. */
 const WEEK: Difficulty[] = ['easy', 'medium', 'medium', 'hard', 'hard', 'expert', 'oni'];
-const difficulty = WEEK[(today() + 3) % 7];
+const difficulty = WEEK[(today() + 3) % 7]!;
 /** How long the day's puzzle takes against a medium one. */
 const SCALE: Record<Difficulty, number> = {
   easy: 0.55,
@@ -163,7 +163,7 @@ export function seed(dbPath: string) {
   for (let day = day0 - HISTORY; day < day0; day++) {
     // Sunday's Oni takes everyone five times as long as Monday's easy one
     const weekday = (((day + 3) % 7) + 7) % 7;
-    const scale = [0.6, 0.9, 1.2, 1.6, 2.2, 3.2, 5][weekday];
+    const scale = [0.6, 0.9, 1.2, 1.6, 2.2, 3.2, 5][weekday]!;
     for (const p of PLAYERS) {
       // Not on the leaderboards: the second mika only plays today's
       if (p.username === PLAYING) continue;

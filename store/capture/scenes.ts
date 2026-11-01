@@ -41,12 +41,14 @@ export const SCENES: Scene[] = [
       const built = new Set<number>();
       const target = Math.round(solution.filter((b) => b > 0).length * 0.55);
       const order = edges(puzzle)
-        .map((pair, e) => ({ e, pair }))
-        .filter(({ e }) => solution[e] > 0)
+        .flatMap((pair, e) => {
+          const bridges = solution[e] ?? 0;
+          return bridges > 0 ? [{ e, pair, bridges }] : [];
+        })
         .sort((a, b) => a.pair[0] - b.pair[0] || a.pair[1] - b.pair[1]);
-      for (const { e } of order) {
+      for (const { e, bridges } of order) {
         if (built.size >= target) break;
-        for (let n = 0; n < solution[e]; n++) await addBridge(page, DAILY_KEY, puzzle, e, true);
+        for (let n = 0; n < bridges; n++) await addBridge(page, DAILY_KEY, puzzle, e, true);
         built.add(e);
       }
       await page.evaluate(() => window.scrollTo(0, 0));

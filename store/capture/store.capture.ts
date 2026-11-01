@@ -13,7 +13,7 @@ import { IMAGES_DIR, ONLY_LANGS, RAW_DIR, ROOT, STORE_URL } from './env.ts';
 import { type Caption, feature, frame, framePage } from './frame.ts';
 import { boardShot, SCENES, type Scene, type SceneId, signIn } from './scenes.ts';
 
-const LANGS = (SITE_LANGUAGES as string[]).filter((l) => !ONLY_LANGS || ONLY_LANGS.includes(l));
+const LANGS = SITE_LANGUAGES.filter((l) => !ONLY_LANGS || ONLY_LANGS.includes(l));
 const CAPTIONS = JSON.parse(readFileSync(path.join(ROOT, 'store/captions.json'), 'utf8')) as Record<
   string,
   Record<SceneId | 'feature', Caption>
@@ -41,9 +41,11 @@ for (const lang of LANGS) {
       await context.close();
     }
     const page = await framePage(browser);
+    const featureCaption = CAPTIONS[lang]?.feature;
+    if (!featureCaption) throw new Error(`no feature caption in ${lang} (store/captions.json)`);
     await feature(page, {
       lang,
-      caption: CAPTIONS[lang].feature,
+      caption: featureCaption,
       out: path.join(IMAGES_DIR, lang, 'feature.png'),
     });
     for (const f of FRAMES) {

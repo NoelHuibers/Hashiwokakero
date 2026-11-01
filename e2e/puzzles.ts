@@ -17,12 +17,12 @@ export const LADDER: Puzzle = {
 
 /** A bridge on every row and down the left side. */
 export const LADDER_SOLUTION: number[] = edges(LADDER).map(([a, b]) => {
-  const [p, q] = [LADDER.islands[a].pos, LADDER.islands[b].pos];
+  const [p, q] = [LADDER.islands[a]!.pos, LADDER.islands[b]!.pos];
   return p.y === q.y || p.x === 0 ? 1 : 0;
 });
 
 /** The edge of a row of the ladder. */
 export const ladderRow = (y: number) =>
   edges(LADDER).findIndex(
-    ([a, b]) => LADDER.islands[a].pos.y === y && LADDER.islands[b].pos.y === y,
+    ([a, b]) => LADDER.islands[a]!.pos.y === y && LADDER.islands[b]!.pos.y === y,
   );

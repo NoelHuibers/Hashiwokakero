@@ -49,7 +49,9 @@ async function headings(page: Page, cdp: CDPSession): Promise<Drawn[]> {
       const { attributes } = await cdp.send('DOM.getAttributes', { nodeId });
       const mark = attributes[attributes.indexOf('data-type-test') + 1];
       const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
-      return { text: texts[Number(mark)], fonts };
+      const text = texts[Number(mark)];
+      if (text === undefined) throw new Error(`no heading marked ${mark}`);
+      return { text, fonts };
     }),
   );
 }
@@ -84,7 +86,7 @@ for (const locale of LOCALES) {
         const fallback = others.reduce((sum, f) => sum + f.glyphCount, 0);
         expect(
           fallback,
-          `letters of ${where} drawn by another font than ${first.familyName}`,
+          `letters of ${where} drawn by another font than ${first?.familyName ?? 'none'}`,
         ).toBeLessThanOrEqual(notLetters);
       }
     }

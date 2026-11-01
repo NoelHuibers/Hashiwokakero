@@ -31,11 +31,12 @@ export const SCREENS = path.join(import.meta.dirname, '..', 'android-screens');
 /** The one device on adb (Playwright's own driver app isn't needed for a WebView). */
 export async function connect(): Promise<AndroidDevice> {
   const devices = await _android.devices({ omitDriverInstall: true });
-  if (devices.length !== 1) {
+  const [device, ...others] = devices;
+  if (!device || others.length > 0) {
     await Promise.all(devices.map((d) => d.close()));
     throw new Error(`expected one Android device on adb, found ${devices.length}`);
   }
-  return devices[0];
+  return device;
 }
 
 export const shell = async (device: AndroidDevice, command: string) =>
@@ -60,8 +61,8 @@ export async function screen(device: AndroidDevice): Promise<Screen> {
     height,
     luminance(x, y) {
       const i = start + (y * width + x) * 4;
-      const [r, g, b] = [raw[i], raw[i + 1], raw[i + 2]].map((c) => c / 255);
-      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const channel = (offset: number) => raw.readUInt8(i + offset) / 255;
+      return 0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2);
     },
   };
 }
@@ -87,8 +88,8 @@ export async function systemBars(device: AndroidDevice): Promise<Bars> {
     const frames = lines
       .map((l) => l.match(/frame=\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/))
       .filter((m): m is RegExpMatchArray => m !== null)
-      .map((m) => m.slice(1, 5).map(Number))
-      .filter(([l, t, r, b]) => r > l && b > t);
+      .map(([, l, t, r, b]) => ({ l: Number(l), t: Number(t), r: Number(r), b: Number(b) }))
+      .filter(({ l, t, r, b }) => r > l && b > t);
     return { lines, frames };
   };
   const status = frame('statusBars');
@@ -96,9 +97,9 @@ export async function systemBars(device: AndroidDevice): Promise<Bars> {
   const source = [...status.lines.slice(0, 3), ...navigation.lines.slice(0, 3)].join('\n');
   if (status.frames.length === 0 || navigation.frames.length === 0)
     throw new Error(`no system bars in dumpsys window:\n${source}`);
-  const top = Math.max(...status.frames.map(([, , , b]) => b));
-  const height = Math.max(...navigation.frames.map(([, , , b]) => b));
-  const bottom = Math.max(...navigation.frames.map(([, t]) => height - t));
+  const top = Math.max(...status.frames.map(({ b }) => b));
+  const height = Math.max(...navigation.frames.map(({ b }) => b));
+  const bottom = Math.max(...navigation.frames.map(({ t }) => height - t));
   return { top, bottom, source };
 }
 

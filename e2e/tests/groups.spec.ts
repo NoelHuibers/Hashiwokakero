@@ -48,7 +48,7 @@ test('a group is made, a friend joins with the link as a guest, times show after
   await expect(page.locator('header')).toContainText('Guest');
 
   // A friend in another browser opens the link: nothing happens until they click
-  const friendContext = await browser.newContext({ baseURL });
+  const friendContext = await browser.newContext(baseURL ? { baseURL } : {});
   const friend = await friendContext.newPage();
   await friend.goto(new URL(url).pathname);
   await hydrated(friend);

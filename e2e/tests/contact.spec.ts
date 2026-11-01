@@ -60,7 +60,7 @@ test('a bug report from the help menu brings its page along', async ({ page, con
     ['Platform', 'Web'],
     ['Language', 'en'],
     ['Page', '/practice'],
-  ]) {
+  ] as const) {
     await expect(
       sent
         .locator('dt', { hasText: new RegExp(`^${name}$`) })

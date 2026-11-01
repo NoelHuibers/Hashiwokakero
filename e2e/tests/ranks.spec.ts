@@ -35,10 +35,10 @@ test('the top three stand on a podium, 2 · 1 · 3, the winner highest', async (
   const podium = await daysAgo(page, 1);
   const by = await steps(podium);
   expect(Object.keys(by)).toEqual(['1', '2', '3']);
-  expect(by[2].x).toBeLessThan(by[1].x);
-  expect(by[1].x).toBeLessThan(by[3].x);
-  expect(by[1].height).toBeGreaterThan(by[2].height);
-  expect(by[2].height).toBeGreaterThan(by[3].height);
+  expect(by[2]!.x).toBeLessThan(by[1]!.x);
+  expect(by[1]!.x).toBeLessThan(by[3]!.x);
+  expect(by[1]!.height).toBeGreaterThan(by[2]!.height);
+  expect(by[2]!.height).toBeGreaterThan(by[3]!.height);
   // The rest of the board stays a table, signed out nothing is marked
   await expect(page.locator('table.rank-table').first()).toBeVisible();
   await expect(page.locator('.rank-mark')).toHaveCount(0);
@@ -50,8 +50,8 @@ test('the podium mirrors in right to left languages', async ({ page }) => {
   const podium = page.locator('ol:has(> li.podium-step)').first();
   await expect(podium).toBeVisible();
   const by = await steps(podium);
-  expect(by[3].x).toBeLessThan(by[1].x);
-  expect(by[1].x).toBeLessThan(by[2].x);
+  expect(by[3]!.x).toBeLessThan(by[1]!.x);
+  expect(by[1]!.x).toBeLessThan(by[2]!.x);
 });
 
 test('your own row is outlined and the lines next to it step aside', async ({ page, context }) => {
@@ -68,13 +68,13 @@ test('your own row is outlined and the lines next to it step aside', async ({ pa
       (row) => row !== tr && row.children.length > 1,
     )!;
     return {
-      outline: style(cells[1]).borderTopStyle,
+      outline: style(cells[1]!).borderTopStyle,
       rounded:
-        style(cells[0]).borderTopLeftRadius !== '0px' &&
+        style(cells[0]!).borderTopLeftRadius !== '0px' &&
         style(cells.at(-1)!).borderTopRightRadius !== '0px',
-      lineBefore: before ? style(before.children[0]).borderBottomColor : 'rgba(0, 0, 0, 0)',
+      lineBefore: before ? style(before.children[0]!).borderBottomColor : 'rgba(0, 0, 0, 0)',
       // The marked row's contents don't move
-      shift: cells[1].getBoundingClientRect().x - other.children[1].getBoundingClientRect().x,
+      shift: cells[1]!.getBoundingClientRect().x - other.children[1]!.getBoundingClientRect().x,
     };
   });
   expect(look).toEqual({

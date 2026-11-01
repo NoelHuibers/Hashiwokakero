@@ -33,7 +33,7 @@ const SESSION_MAKERS: string[] = (() => {
   const source = readFileSync(path.join(import.meta.dirname, '../../src/api/app.rs'), 'utf8');
   const list = source.match(/const SESSION_MAKERS: \[&str; \d+\] = \[([^\]]*)\]/);
   if (!list) throw new Error('SESSION_MAKERS not found in src/api/app.rs');
-  return [...list[1].matchAll(/"(\w+)"/g)].map((m) => m[1]);
+  return [...list[1]!.matchAll(/"(\w+)"/g)].map((m) => m[1]!);
 })();
 /** Every other server function that changes something, by the verb its name starts with. */
 const WRITES =

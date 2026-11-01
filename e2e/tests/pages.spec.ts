@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 
 import { allow, expect, signIn, test, visit } from '../fixtures.ts';
 import { player } from '../seed.ts';
-import { LOCALES, localized, ROUTES, RTL_LOCALES } from '../site.ts';
+import { DEFAULT_LOCALE, LOCALES, localized, ROUTES, RTL_LOCALES } from '../site.ts';
 
 async function expectLanguage(page: Page, locale: string) {
   const html = page.locator('html');
@@ -51,7 +51,7 @@ test('the admin dashboard is only for admins', async ({ page, context }) => {
   await expect(page.getByRole('heading', { name: 'Admin', exact: true })).toBeVisible();
 });
 
-for (const locale of [LOCALES[0], 'de', 'ar']) {
+for (const locale of [DEFAULT_LOCALE, 'de', 'ar']) {
   const path = localized(locale, '/no-such-page');
   test(`${path} is a 404 page`, async ({ page, problems }) => {
     // The router's fallback is outside the routes of the languages: LocaleFromPath (src/app.rs)

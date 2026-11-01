@@ -82,9 +82,9 @@ test('short names stay whole on a phone, on the group page and in the daily tab'
   // a guest's (two words and a number, other runs may have joined too) is cut off and chen fits
   await page.addStyleTag({ content: 'a[data-tooltip-clipped] { max-width: 2.75rem }' });
   const tooltip = page.getByRole('tooltip');
-  const [guest] = await names(board)
+  const guest = names(board)
     .filter({ hasNotText: /^(chen|bram)$/ })
-    .all();
+    .first();
   const guestName = (await guest.textContent())!.trim();
   expect(await clipped(guest)).toBe(true);
   await guest.hover();

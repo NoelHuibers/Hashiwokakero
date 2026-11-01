@@ -328,7 +328,7 @@ export const test = base.extend<
         // hashi.rs is blocked: an answer from it means a request got out
         problems.push(
           ...records.answers
-            .filter((a) => new URL(a.split(' ')[1]).hostname === SERVER)
+            .filter((a) => new URL(a.split(' ')[1]!).hostname === SERVER)
             .map((a) => `reached the server: ${a}`),
         );
       }

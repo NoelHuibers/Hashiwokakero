@@ -955,7 +955,7 @@ test('an unsent submission can explicitly retry the original solved board and fi
   await expectResult(page);
   expect(bodies).toHaveLength(2);
   expect(bodies[1]).toEqual(bodies[0]);
-  expect(bodies[0].log).toEqual(log.events);
+  expect(bodies[0]?.log).toEqual(log.events);
   expect(log.events.at(-1).tap).toBe(true); // the final hand-built bridge was flushed
 });
 

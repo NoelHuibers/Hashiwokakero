@@ -68,7 +68,7 @@ test.describe('on a phone', () => {
         expect(box.y + box.height, 'above the tab bar').toBeLessThanOrEqual(bottom);
         expect(box.height, 'a tap target').toBeGreaterThanOrEqual(44);
         expect(box.width, 'a tap target').toBeGreaterThanOrEqual(44);
-        expect(box.y, 'one row').toBe(boxes[0].y);
+        expect(box.y, 'one row').toBe(boxes[0]!.y);
       }
     });
   }
@@ -89,11 +89,11 @@ for (const locale of ['en', 'de', 'ru', 'uk', 'pl', 'nl', 'vi', 'ja', 'ar']) {
     const buttons = Object.values(actions(page, locale));
     const boxes = await Promise.all(buttons.map(async (b) => (await b.boundingBox())!));
     for (const [i, box] of boxes.entries()) {
-      expect(box.y, 'one row').toBe(boxes[0].y);
+      expect(box.y, 'one row').toBe(boxes[0]!.y);
       expect(box.x).toBeGreaterThanOrEqual(16);
       expect(box.x + box.width).toBeLessThanOrEqual(304);
       // The names are whole, not cut off
-      expect(await buttons[i].evaluate((b) => b.scrollWidth <= b.clientWidth)).toBe(true);
+      expect(await buttons[i]!.evaluate((b) => b.scrollWidth <= b.clientWidth)).toBe(true);
     }
     // Undo, redo, check, hint and more from the left in English, from the right in Arabic
     const xs = boxes.map((b) => b.x);

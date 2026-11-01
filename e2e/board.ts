@@ -107,10 +107,12 @@ export async function addBridge(
   edge: number,
   touch = false,
 ) {
-  const [a, b] = edges(puzzle)[edge];
-  const before = (await saved(page, key)).bridges[edge];
+  const pair = edges(puzzle)[edge];
+  if (!pair) throw new Error(`the puzzle has no edge ${edge}`);
+  const [a, b] = pair;
+  const before = (await saved(page, key)).bridges[edge] ?? 0;
   for (const island of [a, b]) {
-    const { x, y } = puzzle.islands[island].pos;
+    const { x, y } = puzzle.islands[island]!.pos;
     await press(page, await cellCenter(page, x, y), touch);
   }
   await expect
@@ -127,14 +129,14 @@ export async function build(
   touch = false,
 ) {
   const current = (await saved(page, key)).bridges;
-  for (let e = 0; e < solution.length; e++) {
-    for (let n = current[e]; n < solution[e]; n++) await addBridge(page, key, puzzle, e, touch);
+  for (const [e, wanted] of solution.entries()) {
+    for (let n = current[e] ?? 0; n < wanted; n++) await addBridge(page, key, puzzle, e, touch);
   }
 }
 
 /** Edges where the board has fewer bridges than the solution. */
 export function missing(bridges: number[], solution: number[]) {
-  return solution.flatMap((s, e) => (bridges[e] < s ? [e] : []));
+  return solution.flatMap((s, e) => ((bridges[e] ?? 0) < s ? [e] : []));
 }
 
 /**
@@ -155,6 +157,6 @@ export async function seedGame(page: Page, key: string, game: SavedGame & { puzz
       localStorage.setItem(k, value);
       sessionStorage.setItem(`seeded:${k}`, '1');
     },
-    [key, JSON.stringify(saved)],
+    [key, JSON.stringify(saved)] as const,
   );
 }

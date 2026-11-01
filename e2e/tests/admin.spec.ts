@@ -42,7 +42,7 @@ test('the dashboard shows the day, the Dojo and the messages', async ({ page, co
 
 test('admins ban a player and lift the ban', async ({ page, context, browser, baseURL }) => {
   // A guest of its own, the tests share the database
-  const guest = await browser.newContext({ baseURL });
+  const guest = await browser.newContext(baseURL ? { baseURL } : {});
   expect((await guest.request.post('/api/start_daily', { data: { device: null } })).ok()).toBe(
     true,
   );

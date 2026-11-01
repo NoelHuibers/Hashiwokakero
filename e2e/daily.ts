@@ -83,8 +83,9 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
   await hintUntil(page, solution, 1);
 
   const [last] = missing((await saved(page, DAILY_KEY)).bridges, solution);
-  const built = (await saved(page, DAILY_KEY)).bridges[last];
-  for (let n = built; n < solution[last]; n++) await addBridge(page, DAILY_KEY, puzzle, last);
+  if (last === undefined) throw new Error('hints left no bridge of the solution to build');
+  const built = (await saved(page, DAILY_KEY)).bridges[last] ?? 0;
+  for (let n = built; n < solution[last]!; n++) await addBridge(page, DAILY_KEY, puzzle, last);
 }
 
 /**
@@ -106,7 +107,7 @@ export async function hintUntil(page: Page, solution: number[], left: number) {
       const bridges = () => JSON.stringify(built());
       const missing = () => {
         const now = built();
-        return solution.filter((s, e) => now[e] < s).length;
+        return solution.filter((s, e) => (now[e] ?? 0) < s).length;
       };
       for (let n = 1; missing() > left; n++) {
         const before = bridges();

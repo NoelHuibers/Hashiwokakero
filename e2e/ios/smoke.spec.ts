@@ -360,7 +360,7 @@ test('Game Center signs in without covering the page', async ({ app }) => {
           (answer: unknown) => ({ answer: answer ?? null }),
           (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
         ),
-      new Promise((resolve) => {
+      new Promise<{ waiting: true }>((resolve) => {
         setTimeout(() => resolve({ waiting: true }), 2000);
       }),
     ]),
