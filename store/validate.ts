@@ -18,6 +18,7 @@ import {
   PLAY_KNOWN,
   PLAY_METADATA,
   SITE_LANGUAGES,
+  type StoreLocale,
   siteUrl,
 } from './locales.ts';
 
@@ -114,20 +115,37 @@ const EMOJI = /\p{Extended_Pictographic}/u;
 /** Scripts written without spaces between words: keywords are compared as substrings. */
 const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}]/u;
 
-const read = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : undefined);
-const chars = (text) => [...text].length;
-const bytes = (text) => Buffer.byteLength(text, 'utf8');
+/** A listing's texts by field (the file name without .txt); undefined when the file is missing. */
+export type Listing = Record<string, string | undefined>;
+/** A screenshot's caption in store/captions.json: the title, *accents* marked, and a line below. */
+export interface Caption {
+  title?: string;
+  text?: string;
+}
+/** Everything loadListings reads, by locale; the captions by site language and scene. */
+export interface Listings {
+  play: Record<string, Listing>;
+  apple: Record<string, Listing>;
+  copyright: string | undefined;
+  captions: Record<string, Record<string, Caption>>;
+}
+type Fail = (where: string, message: string) => void;
+
+const read = (file: string) =>
+  fs.existsSync(file) ? fs.readFileSync(file, 'utf8').trim() : undefined;
+const chars = (text: string) => [...text].length;
+const bytes = (text: string) => Buffer.byteLength(text, 'utf8');
 
 /** Reads every listing of fastlane/metadata: `{ play: { locale: fields }, apple: {...}, dirs }`. */
-export function loadListings(root = ROOT) {
-  const listDirs = (dir) =>
+export function loadListings(root = ROOT): Listings {
+  const listDirs = (dir: string) =>
     fs.existsSync(dir)
       ? fs
           .readdirSync(dir, { withFileTypes: true })
           .filter((d) => d.isDirectory())
           .map((d) => d.name)
       : [];
-  const play = {};
+  const play: Record<string, Listing> = {};
   for (const locale of listDirs(path.join(root, PLAY_METADATA))) {
     play[locale] = Object.fromEntries(
       Object.keys(PLAY_FIELDS).map((f) => [
@@ -136,7 +154,7 @@ export function loadListings(root = ROOT) {
       ]),
     );
   }
-  const apple = {};
+  const apple: Record<string, Listing> = {};
   for (const locale of listDirs(path.join(root, METADATA)).filter((d) => d !== 'android')) {
     apple[locale] = Object.fromEntries(
       Object.keys(APPLE_FIELDS).map((f) => [
@@ -146,16 +164,23 @@ export function loadListings(root = ROOT) {
     );
   }
   const captionsFile = path.join(root, 'store/captions.json');
-  const captions = fs.existsSync(captionsFile)
+  // The repository's own file; checkCaptions checks what is in it
+  const captions: Listings['captions'] = fs.existsSync(captionsFile)
     ? JSON.parse(fs.readFileSync(captionsFile, 'utf8'))
     : {};
   return { play, apple, copyright: read(path.join(root, METADATA, 'copyright.txt')), captions };
 }
 
 /** Every problem of the listings, as messages; empty when everything is fine. */
-export function validate(listings, { play = PLAY, apple = APPLE } = {}) {
-  const errors = [];
-  const fail = (where, message) => errors.push(`${where}: ${message}`);
+export function validate(
+  listings: Listings,
+  {
+    play = PLAY,
+    apple = APPLE,
+  }: { play?: readonly StoreLocale[]; apple?: readonly StoreLocale[] } = {},
+): string[] {
+  const errors: string[] = [];
+  const fail: Fail = (where, message) => errors.push(`${where}: ${message}`);
 
   checkLocales('Google Play', play, PLAY_KNOWN, listings.play, PLAY_FIELDS, fail);
   checkLocales('App Store', apple, APPLE_KNOWN, listings.apple, APPLE_FIELDS, fail);
@@ -186,7 +211,7 @@ export function validate(listings, { play = PLAY, apple = APPLE } = {}) {
     checkLimits(where, listing, APPLE_FIELDS, fail);
     checkName(`${where} name`, listing.name, fail);
     checkName(`${where} subtitle`, listing.subtitle, fail);
-    if (listing.keywords !== undefined) checkKeywords(where, listing, fail);
+    checkKeywords(where, listing, fail);
     checkMentions(
       where,
       `${listing.name}\n${listing.subtitle}\n${listing.description}\n${listing.promotional_text}`,
@@ -213,7 +238,14 @@ export function validate(listings, { play = PLAY, apple = APPLE } = {}) {
   return errors;
 }
 
-function checkLocales(store, table, known, present, fields, fail) {
+function checkLocales(
+  store: string,
+  table: readonly StoreLocale[],
+  known: readonly string[],
+  present: Record<string, Listing>,
+  fields: Record<string, number>,
+  fail: Fail,
+) {
   const byLocale = new Map(table.map((l) => [l.locale, l]));
   for (const { locale, site, same } of table) {
     if (!known.includes(locale))
@@ -227,12 +259,13 @@ function checkLocales(store, table, known, present, fields, fail) {
         fail(`${store} ${locale}`, `${same} is not a locale with texts of its own`);
       continue;
     }
-    if (!present[locale]) {
+    const listing = present[locale];
+    if (!listing) {
       fail(`${store} ${locale}`, 'missing');
       continue;
     }
     for (const field of Object.keys(fields)) {
-      if (!present[locale][field]) fail(`${store} ${locale}`, `${field}.txt is missing or empty`);
+      if (!listing[field]) fail(`${store} ${locale}`, `${field}.txt is missing or empty`);
     }
   }
   for (const locale of Object.keys(present)) {
@@ -245,7 +278,7 @@ function checkLocales(store, table, known, present, fields, fail) {
   }
 }
 
-function checkLimits(where, listing, limits, fail) {
+function checkLimits(where: string, listing: Listing, limits: Record<string, number>, fail: Fail) {
   for (const [field, limit] of Object.entries(limits)) {
     const value = listing[field];
     if (value === undefined) continue;
@@ -256,7 +289,7 @@ function checkLimits(where, listing, limits, fail) {
 }
 
 /** Titles, names and subtitles: no emoji, promotion, other brands, shouting or decoration. */
-function checkName(where, value, fail) {
+function checkName(where: string, value: string | undefined, fail: Fail) {
   if (!value) return;
   if (/\n/.test(value)) fail(where, 'one line');
   if (EMOJI.test(value)) fail(where, 'no emoji');
@@ -282,14 +315,15 @@ function checkName(where, value, fail) {
  * nothing the name or the subtitle already has (they count for search on their own), no other
  * brands.
  */
-function checkKeywords(where, listing, fail) {
+function checkKeywords(where: string, listing: Listing, fail: Fail) {
   const keywords = listing.keywords;
+  if (keywords === undefined) return;
   if (/\n/.test(keywords)) fail(where, 'keywords are one line');
   if (/\s,|,\s/.test(keywords)) fail(where, 'no spaces around the commas of the keywords');
   const terms = keywords.split(',');
   if (terms.some((t) => t.trim() === ''))
     fail(where, 'an empty keyword (two commas, or one at an end)');
-  const seen = new Set();
+  const seen = new Set<string>();
   const nameWords = words(`${listing.name ?? ''} ${listing.subtitle ?? ''}`);
   const nameText = `${listing.name ?? ''} ${listing.subtitle ?? ''}`.toLowerCase();
   for (const term of terms.map((t) => t.trim().toLowerCase()).filter(Boolean)) {
@@ -311,7 +345,7 @@ function checkKeywords(where, listing, fail) {
     fail(where, 'keywords: "app" and category names count anyway');
 }
 
-const words = (text) =>
+const words = (text: string) =>
   new Set(
     text
       .toLowerCase()
@@ -319,7 +353,7 @@ const words = (text) =>
       .filter((w) => w.length > 0),
   );
 
-function checkMentions(where, text, terms, fail) {
+function checkMentions(where: string, text: string, terms: readonly string[], fail: Fail) {
   const lower = text.toLowerCase();
   for (const t of terms) {
     if (new RegExp(`(^|[^\\p{L}])${t}([^\\p{L}]|$)`, 'u').test(lower))
@@ -327,7 +361,7 @@ function checkMentions(where, text, terms, fail) {
   }
 }
 
-function checkCaptions(captions, fail) {
+function checkCaptions(captions: Listings['captions'], fail: Fail) {
   for (const site of SITE_LANGUAGES) {
     const lang = captions[site];
     if (!lang) {

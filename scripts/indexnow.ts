@@ -19,22 +19,29 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ENDPOINT = 'https://api.indexnow.org/indexnow';
 /** IndexNow takes at most 10,000 URLs per request. */
 const MAX_URLS = 10_000;
 
-/** The `<url>` entries of a sitemap: `{ loc, lastmod }`, `lastmod` null without one. */
-export function parseSitemap(xml) {
+/** A `<url>` entry of a sitemap, `lastmod` null without one. */
+export interface Entry {
+  loc: string;
+  lastmod: string | null;
+}
+
+/** The `<url>` entries of a sitemap. */
+export function parseSitemap(xml: string): Entry[] {
   return [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)]
-    .map(([, entry]) => ({
+    .map(([, entry = '']) => ({
       loc: decode(entry.match(/<loc>\s*([^<]*?)\s*<\/loc>/)?.[1] ?? ''),
       lastmod: entry.match(/<lastmod>\s*([^<]*?)\s*<\/lastmod>/)?.[1] ?? null,
     }))
     .filter(({ loc }) => loc !== '');
 }
 
-function decode(text) {
+function decode(text: string): string {
   return text
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
@@ -44,12 +51,12 @@ function decode(text) {
 }
 
 /** The URLs whose `<lastmod>` is `date` (`YYYY-MM-DD`, or a full timestamp on that day). */
-export function changedOn(entries, date) {
+export function changedOn(entries: Entry[], date: string): string[] {
   return entries.filter(({ lastmod }) => lastmod?.slice(0, 10) === date).map(({ loc }) => loc);
 }
 
 /** The URLs of `after` that `before` doesn't have, or has with another `<lastmod>`. */
-export function changedSince(before, after) {
+export function changedSince(before: Entry[], after: Entry[]): string[] {
   const old = new Map(before.map(({ loc, lastmod }) => [loc, lastmod]));
   return after
     .filter(({ loc, lastmod }) => !old.has(loc) || old.get(loc) !== lastmod)
@@ -57,20 +64,23 @@ export function changedSince(before, after) {
 }
 
 /** `HASHI_INDEXNOW_KEY` of a fly.toml, null when it isn't there or is empty. */
-export function keyOf(flyToml) {
+export function keyOf(flyToml: string): string | null {
   const key = flyToml.match(/^\s*HASHI_INDEXNOW_KEY\s*=\s*"([^"]*)"/m)?.[1]?.trim();
   return key ? key : null;
 }
 
 /** What `--before`, `--all` and the default choose (see the top of this file). */
-export function choose(entries, { all = false, before = null, today }) {
+export function choose(
+  entries: Entry[],
+  { all = false, before = null, today }: { all?: boolean; before?: Entry[] | null; today: string },
+): string[] {
   if (all) return entries.map(({ loc }) => loc);
   if (before !== null && before.length > 0) return changedSince(before, entries);
   return changedOn(entries, today);
 }
 
 /** The JSON body IndexNow wants for `urls` of `site`. Only URLs of the site's own host. */
-export function payload(site, key, urls) {
+export function payload(site: string, key: string, urls: string[]) {
   const { host, origin } = new URL(site);
   const own = urls.filter((url) => {
     try {
@@ -87,12 +97,22 @@ export function payload(site, key, urls) {
   };
 }
 
-function options(argv) {
-  const opts = { site: 'https://hashi.rs', before: null, all: false, dryRun: false };
+function options(argv: string[]) {
+  const opts: { site: string; before: string | null; all: boolean; dryRun: boolean } = {
+    site: 'https://hashi.rs',
+    before: null,
+    all: false,
+    dryRun: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--site') opts.site = argv[++i];
-    else if (arg === '--before') opts.before = argv[++i];
+    const value = (): string => {
+      const next = argv[++i];
+      if (next === undefined) throw new Error(`${arg} needs a value`);
+      return next;
+    };
+    if (arg === '--site') opts.site = value();
+    else if (arg === '--before') opts.before = value();
     else if (arg === '--all') opts.all = true;
     else if (arg === '--dry-run') opts.dryRun = true;
     else throw new Error(`unknown argument ${arg}`);
@@ -100,13 +120,13 @@ function options(argv) {
   return opts;
 }
 
-async function text(url) {
+async function text(url: string): Promise<string> {
   const res = await fetch(url, { redirect: 'manual' });
   if (!res.ok) throw new Error(`${url}: ${res.status}`);
   return res.text();
 }
 
-async function main() {
+async function main(): Promise<void> {
   const opts = options(process.argv.slice(2));
   const root = path.resolve(import.meta.dirname, '..');
   const key =
@@ -144,9 +164,9 @@ async function main() {
   console.log(`Submitted, IndexNow answered ${res.status}`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((e) => {
-    console.error(e.message);
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((e: unknown) => {
+    console.error(e instanceof Error ? e.message : String(e));
     process.exit(1);
   });
 }

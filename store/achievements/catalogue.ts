@@ -52,13 +52,108 @@ export const LIMITS = {
     count: 100,
     leaderboards: 100,
   },
-};
+} as const;
 
-const chars = (text) => [...text].length;
-const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+/** A stamp of the Rust model (model.json). */
+export interface ModelAchievement {
+  id: string;
+  kanji: string;
+  points: number;
+  secret: boolean;
+  stamp: string;
+  steps: number | null;
+  tier: number | null;
+}
+/** A leaderboard of the Rust model; `play`: Play Games has it too. */
+export interface ModelLeaderboard {
+  id: string;
+  kanji: string;
+  lower_is_better: boolean;
+  play: boolean;
+}
+/** What the stamp book of a site language (locales/<language>/stamps.json) has for the stores. */
+export interface StampBook {
+  names?: Record<string, string>;
+  texts?: Record<string, string>;
+  secret?: { name?: string; text?: string };
+}
+/** The repository's files the catalogue is made of; validate() checks what is in them. */
+export interface Sources {
+  model: { achievements: ModelAchievement[]; leaderboards: ModelLeaderboard[] };
+  /** By site language */
+  stamps: Record<string, StampBook>;
+  /** The leaderboards' names by site language and id */
+  leaderboards: Record<string, Record<string, string>>;
+}
+
+/** A text per store locale; undefined where the sources have none (validate() says so). */
+export type Texts = Record<string, string | undefined>;
+
+export type AppleAchievement = {
+  id: string;
+  referenceName: string;
+  points: number;
+  showBeforeEarned: boolean;
+  repeatable: boolean;
+  steps: number | null;
+  image: string;
+  localizations: Record<
+    string,
+    {
+      name: string | undefined;
+      beforeEarnedDescription: string | undefined;
+      afterEarnedDescription: string | undefined;
+    }
+  >;
+};
+export type AppleLeaderboard = {
+  id: string;
+  referenceName: string;
+  defaultFormatter: string;
+  scoreSortType: string;
+  submissionType: string;
+  recurrence: { duration: string; rule: string } | null;
+  image: string;
+  localizations: Record<string, { name: string | undefined }>;
+};
+export type PlayAchievement = {
+  id: string;
+  achievementType: 'INCREMENTAL' | 'STANDARD';
+  steps: number | null;
+  initialState: 'HIDDEN' | 'REVEALED';
+  points: number;
+  icon: string;
+  name: Texts;
+  description: Texts;
+};
+export type PlayLeaderboard = {
+  id: string;
+  scoreOrder: 'SMALLER_IS_BETTER' | 'LARGER_IS_BETTER';
+  scoreFormat: { numberFormatType: string; numDecimalPlaces?: number };
+  icon: string;
+  name: Texts;
+};
+export interface Catalogue {
+  apple: {
+    locales: string[];
+    achievements: AppleAchievement[];
+    leaderboards: AppleLeaderboard[];
+  };
+  play: { locales: string[]; achievements: PlayAchievement[]; leaderboards: PlayLeaderboard[] };
+}
+/** The IDs Play gave, by the catalogue's ids (app/achievements-play.json). */
+export interface PlayIds {
+  project_id: string | null;
+  achievements: Record<string, string>;
+  leaderboards: Record<string, string>;
+}
+
+const chars = (text: string | undefined) => (text === undefined ? 0 : [...text].length);
+// The repository's own files: validate() checks them
+const readJson = (file: string) => JSON.parse(fs.readFileSync(file, 'utf8'));
 
 /** The sources: the Rust model, the stamp book's texts of every site language, the names. */
-export function loadSources(root = ROOT) {
+export function loadSources(root = ROOT): Sources {
   const model = readJson(path.join(root, 'store/achievements/model.json'));
   const stamps = Object.fromEntries(
     SITE_LANGUAGES.map((site) => [site, readJson(path.join(root, 'locales', site, 'stamps.json'))]),
@@ -68,12 +163,12 @@ export function loadSources(root = ROOT) {
 }
 
 /** A stamp's name and text in a site language, and the book's text for a secret one. */
-function texts(sources, site, stamp) {
+function texts(sources: Sources, site: string, stamp: string) {
   const book = sources.stamps[site];
   return {
-    name: book.names?.[stamp]?.trim(),
-    text: book.texts?.[stamp]?.trim(),
-    secret: book.secret?.text?.trim(),
+    name: book?.names?.[stamp]?.trim(),
+    text: book?.texts?.[stamp]?.trim(),
+    secret: book?.secret?.text?.trim(),
   };
 }
 
@@ -81,9 +176,9 @@ function texts(sources, site, stamp) {
  * What goes to each platform, in the order of the stamp book:
  * `{ apple: { locales, achievements, leaderboards }, play: {...} }`.
  */
-export function buildCatalogue(sources = loadSources()) {
+export function buildCatalogue(sources = loadSources()): Catalogue {
   const { model } = sources;
-  const apple = {
+  const apple: Catalogue['apple'] = {
     locales: APPLE.map((l) => l.locale),
     achievements: model.achievements.map((a) => ({
       id: a.id,
@@ -110,7 +205,7 @@ export function buildCatalogue(sources = loadSources()) {
     })),
     leaderboards: model.leaderboards.map((b) => ({
       id: b.id,
-      referenceName: `${sources.leaderboards.en[b.id]} (${b.id})`,
+      referenceName: `${sources.leaderboards.en?.[b.id]} (${b.id})`,
       // The daily's time in hundredths of a second (GamesLeaderboard::apple_score), the counts
       // as they are
       defaultFormatter: b.lower_is_better ? 'ELAPSED_TIME_CENTISECOND' : 'INTEGER',
@@ -126,7 +221,7 @@ export function buildCatalogue(sources = loadSources()) {
       ),
     })),
   };
-  const play = {
+  const play: Catalogue['play'] = {
     locales: PLAY.map((l) => l.locale),
     achievements: model.achievements.map((a) => ({
       id: a.id,
@@ -162,13 +257,13 @@ export function buildCatalogue(sources = loadSources()) {
 }
 
 /** Every problem of the catalogue, as messages; empty when everything is fine. */
-export function validate(sources = loadSources()) {
-  const errors = [];
-  const fail = (where, message) => errors.push(`${where}: ${message}`);
+export function validate(sources = loadSources()): string[] {
+  const errors: string[] = [];
+  const fail = (where: string, message: string) => errors.push(`${where}: ${message}`);
   const { model } = sources;
 
   if (model.achievements.length === 0) fail('model.json', 'no achievements');
-  const ids = new Set();
+  const ids = new Set<string>();
   for (const a of model.achievements) {
     if (ids.has(a.id)) fail('model.json', `${a.id} twice`);
     ids.add(a.id);
@@ -181,14 +276,14 @@ export function validate(sources = loadSources()) {
     ) {
       fail('model.json', `${a.id}: ${a.steps} steps, 2 to ${LIMITS.play.steps}`);
     }
-    for (const store of ['apple', 'play']) {
+    for (const store of ['apple', 'play'] as const) {
       const [min, max] = LIMITS[store].points;
       if (!(a.points % 5 === 0 && a.points >= min && a.points <= max))
         fail(`${store} ${a.id}`, `${a.points} points, a multiple of 5 from ${min} to ${max}`);
     }
   }
   const total = model.achievements.reduce((sum, a) => sum + a.points, 0);
-  for (const store of ['apple', 'play']) {
+  for (const store of ['apple', 'play'] as const) {
     if (total > LIMITS[store].total) fail(store, `${total} points, at most ${LIMITS[store].total}`);
     if (model.achievements.length > LIMITS[store].count)
       fail(store, `${model.achievements.length} achievements, at most ${LIMITS[store].count}`);
@@ -225,7 +320,7 @@ export function validate(sources = loadSources()) {
       const where = `Game Center ${locale} ${a.id}`;
       if (chars(l.name) > LIMITS.apple.name)
         fail(where, `name over ${LIMITS.apple.name} characters`);
-      for (const field of ['beforeEarnedDescription', 'afterEarnedDescription']) {
+      for (const field of ['beforeEarnedDescription', 'afterEarnedDescription'] as const) {
         if (chars(l[field]) > LIMITS.apple.description)
           fail(where, `${field} over ${LIMITS.apple.description} characters`);
       }
@@ -240,25 +335,44 @@ export function validate(sources = loadSources()) {
         fail(where, `description over ${LIMITS.play.description} characters`);
     }
     // Play's import ZIP is CSV without quoting
-    if (a.name['en-US'].includes(','))
+    if (a.name['en-US']?.includes(','))
       fail(`Play Games en-US ${a.id}`, 'no comma in the name (the import file is CSV)');
   }
   // Play wants every name once per locale (Game Center doesn't, the same rule keeps them apart)
-  for (const store of [apple, play]) {
-    const label = store === apple ? 'Game Center' : 'Play Games';
+  const names = [
+    {
+      label: 'Game Center',
+      limit: LIMITS.apple.name,
+      locales: apple.locales,
+      achievements: (locale: string) =>
+        apple.achievements.map((a) => ({ id: a.id, name: a.localizations[locale]?.name })),
+      leaderboards: (locale: string) =>
+        apple.leaderboards.map((b) => ({ id: b.id, name: b.localizations[locale]?.name })),
+    },
+    {
+      label: 'Play Games',
+      limit: LIMITS.play.name,
+      locales: play.locales,
+      achievements: (locale: string) =>
+        play.achievements.map((a) => ({ id: a.id, name: a.name[locale] })),
+      leaderboards: (locale: string) =>
+        play.leaderboards.map((b) => ({ id: b.id, name: b.name[locale] })),
+    },
+  ];
+  for (const store of names) {
+    const { label } = store;
     for (const locale of store.locales) {
-      const seen = new Map();
-      for (const a of store.achievements) {
-        const name = store === apple ? a.localizations[locale].name : a.name[locale];
+      const seen = new Map<string | undefined, string>();
+      for (const a of store.achievements(locale)) {
+        const { name } = a;
         if (seen.has(name))
           fail(`${label} ${locale}`, `${a.id} and ${seen.get(name)} are both "${name}"`);
         seen.set(name, a.id);
       }
-      const boards = new Map();
-      for (const b of store.leaderboards) {
-        const name = store === apple ? b.localizations[locale].name : b.name[locale];
-        if (chars(name) > LIMITS[store === apple ? 'apple' : 'play'].name)
-          fail(`${label} ${locale} ${b.id}`, 'name too long');
+      const boards = new Map<string | undefined, string>();
+      for (const b of store.leaderboards(locale)) {
+        const { name } = b;
+        if (chars(name) > store.limit) fail(`${label} ${locale} ${b.id}`, 'name too long');
         if (boards.has(name))
           fail(
             `${label} ${locale}`,
@@ -274,8 +388,8 @@ export function validate(sources = loadSources()) {
 }
 
 /** The IDs Play gave, `app/achievements-play.json`. */
-export function loadPlayIds(file = PLAY_IDS) {
-  const ids = fs.existsSync(file) ? readJson(file) : {};
+export function loadPlayIds(file = PLAY_IDS): PlayIds {
+  const ids: Partial<PlayIds> = fs.existsSync(file) ? readJson(file) : {};
   return {
     project_id: ids.project_id ?? null,
     achievements: ids.achievements ?? {},
@@ -284,8 +398,8 @@ export function loadPlayIds(file = PLAY_IDS) {
 }
 
 /** `app/achievements-play.json` as it is committed: keys in the order of the catalogue. */
-export function formatPlayIds(ids, catalogue = buildCatalogue()) {
-  const ordered = (items, map) =>
+export function formatPlayIds(ids: PlayIds, catalogue = buildCatalogue()): string {
+  const ordered = (items: readonly { id: string }[], map: Record<string, string>) =>
     Object.fromEntries(items.filter((x) => map[x.id]).map((x) => [x.id, map[x.id]]));
   return `${JSON.stringify(
     {
@@ -304,7 +418,7 @@ export function formatPlayIds(ids, catalogue = buildCatalogue()) {
  * set. No descriptions: the file is CSV without quoting and they have commas; play.ts adds
  * them and the translations afterwards.
  */
-export function playImportFiles(catalogue, icons = ICONS) {
+export function playImportFiles(catalogue: Catalogue, icons = ICONS): [string, Buffer][] {
   const metadata = catalogue.play.achievements
     .map((a, i) =>
       [
@@ -324,7 +438,7 @@ export function playImportFiles(catalogue, icons = ICONS) {
   return [
     ['AchievementsMetadata.csv', Buffer.from(`${metadata}\n`)],
     ['AchievementsIconsMappings.csv', Buffer.from(`${mappings}\n`)],
-    ...catalogue.play.achievements.map((a) => [
+    ...catalogue.play.achievements.map((a): [string, Buffer] => [
       `${a.id}.png`,
       fs.readFileSync(path.join(icons, a.icon)),
     ]),
@@ -332,9 +446,9 @@ export function playImportFiles(catalogue, icons = ICONS) {
 }
 
 /** A ZIP of `files` ([name, bytes]), stored without compression (PNGs are compressed already). */
-export function zip(files) {
-  const local = [];
-  const central = [];
+export function zip(files: readonly (readonly [string, Uint8Array])[]): Buffer {
+  const local: Uint8Array[] = [];
+  const central: Uint8Array[] = [];
   let offset = 0;
   for (const [name, data] of files) {
     const nameBytes = Buffer.from(name);
@@ -377,9 +491,9 @@ export function zip(files) {
 }
 
 /** Problems of the icons: every one there, at its platform's size, without alpha. */
-export async function checkIcons(catalogue, icons = ICONS) {
+export async function checkIcons(catalogue: Catalogue, icons = ICONS): Promise<string[]> {
   const { checkImage } = await import('../assemble.ts');
-  const problems = [];
+  const problems: string[] = [];
   for (const item of [...catalogue.apple.achievements, ...catalogue.apple.leaderboards]) {
     problems.push(
       ...checkImage(path.join(icons, item.image), {

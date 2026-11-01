@@ -11,7 +11,7 @@ import {
   wsEndpoint,
 } from '../e2e-container.ts';
 
-const never = new Promise(() => {
+const never = new Promise<never>(() => {
   // Never settles
 });
 
@@ -43,7 +43,7 @@ test('a free port can be listened on', async () => {
   const port = await freePort();
   assert.ok(port > 0);
   const server = net.createServer();
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     server.once('error', reject).listen(port, '127.0.0.1', resolve);
   });
   server.close();

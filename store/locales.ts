@@ -8,8 +8,15 @@
 // Codes: Google Play's are fastlane supply's (Supply::Languages, `-` instead of `_`), Apple's
 // are App Store Connect's (FastlaneCore::Languages::ALL_LANGUAGES, what deliver accepts).
 
+/** A locale of a store, the site language of its screenshots, and the locale it copies. */
+export interface StoreLocale {
+  locale: string;
+  site: string;
+  same?: string;
+}
+
 /** The site's languages, the folders of locales/. */
-export const SITE_LANGUAGES = [
+export const SITE_LANGUAGES: readonly string[] = [
   'en',
   'de',
   'fr',
@@ -33,7 +40,7 @@ export const SITE_LANGUAGES = [
 ];
 
 /** Google Play. The default language of the app is en-US: other locales fall back to it. */
-export const PLAY = [
+export const PLAY: readonly StoreLocale[] = [
   { locale: 'en-US', site: 'en' },
   { locale: 'de-DE', site: 'de' },
   { locale: 'fr-FR', site: 'fr' },
@@ -62,7 +69,7 @@ export const PLAY = [
 ];
 
 /** The App Store. The primary language of the app record is en-US. */
-export const APPLE = [
+export const APPLE: readonly StoreLocale[] = [
   { locale: 'en-US', site: 'en' },
   { locale: 'en-GB', site: 'en', same: 'en-US' },
   { locale: 'en-AU', site: 'en', same: 'en-US' },
@@ -106,7 +113,7 @@ export const APPLE_KNOWN =
   sl-SI sv ta-IN te-IN th tr uk ur-PK vi zh-Hans zh-Hant`.split(/\s+/);
 
 /** The site's URL of a page in a language: `/` in English, `/de/kontakt` in German. */
-export function siteUrl(site, path = '/') {
+export function siteUrl(site: string, path = '/'): string {
   const base = 'https://hashi.rs';
   if (site === 'en') return `${base}${path}`;
   return path === '/' ? `${base}/${site}` : `${base}/${site}${path}`;
