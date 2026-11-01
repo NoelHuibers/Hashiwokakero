@@ -1,6 +1,6 @@
 // The account page: a wrong password, changing the username, and deleting the account for good.
-import { fillAuthForm, register, signInWith, signOut } from '../account';
-import { allow, expect, newUsername, test, visit } from '../fixtures';
+import { fillAuthForm, register, signInWith, signOut } from '../account.ts';
+import { allow, expect, newUsername, test, visit } from '../fixtures.ts';
 
 const PASSWORD = 'eight-planks-wide';
 

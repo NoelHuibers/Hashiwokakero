@@ -1,15 +1,15 @@
-// node --test scripts/tests/: which URLs scripts/indexnow.mjs submits, and how
+// node --test scripts/tests/: which URLs scripts/indexnow.ts submits, and how
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { changedOn, changedSince, choose, keyOf, parseSitemap, payload } from '../indexnow.mjs';
+import { changedOn, changedSince, choose, keyOf, parseSitemap, payload } from '../indexnow.ts';
 
 const root = path.resolve(import.meta.dirname, '../..');
 
 // The shape of the site's sitemap (src/seo.rs): alternates, lastmod only on the daily pages
-const sitemap = (date) => `<?xml version="1.0" encoding="UTF-8"?>
+const sitemap = (date: string) => `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://hashi.rs/</loc>
@@ -105,5 +105,5 @@ test('the key comes from fly.toml, none while it is empty', () => {
   // The real one parses (empty until the owner sets it, docs/seo.md)
   const fly = fs.readFileSync(path.join(root, 'fly.toml'), 'utf8');
   const key = keyOf(fly);
-  assert.ok(key === null || /^[A-Za-z0-9-]{8,128}$/.test(key), key);
+  assert.ok(key === null || /^[A-Za-z0-9-]{8,128}$/.test(key), String(key));
 });

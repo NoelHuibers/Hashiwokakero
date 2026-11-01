@@ -1,8 +1,8 @@
 // The app's client-side rendered bundle in a browser: it starts, renders pages from the server
 // functions, routes on its own, and takes the language from the path. It talks to the server as
 // the app: its version in a header, its session in its own storage (src/api/app.rs).
-import { addBridge, board, DAILY_KEY, saved } from '../board';
-import { expect, hydrated, test, visit } from '../fixtures';
+import { addBridge, board, DAILY_KEY, saved } from '../board.ts';
+import { expect, hydrated, test, visit } from '../fixtures.ts';
 
 const PLAY_STORE = 'https://play.google.com/store/apps/details?id=rs.hashi';
 

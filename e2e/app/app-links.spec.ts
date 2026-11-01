@@ -6,7 +6,7 @@
 // with Android's intents.
 import type { Page } from '@playwright/test';
 
-import { expect, test, visit } from '../fixtures';
+import { expect, test, visit } from '../fixtures.ts';
 
 const EVENT = 'deep-link://new-url';
 

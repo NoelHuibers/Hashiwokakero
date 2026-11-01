@@ -2,7 +2,7 @@
 //!
 //! The proof that the site is ours, for the consoles of Bing (Webmaster Tools) and Yandex
 //! (Webmaster), and the key of `IndexNow`, with which the site tells Bing, Yandex and the other
-//! `IndexNow` engines about pages that changed (`scripts/indexnow.mjs`, docs/seo.md). Google
+//! `IndexNow` engines about pages that changed (`scripts/indexnow.ts`, docs/seo.md). Google
 //! Search Console verifies the whole domain with a DNS record instead, which needs nothing here.
 //!
 //! Each console offers a file to put on the site, whose name or content is a token; the site

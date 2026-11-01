@@ -3,8 +3,8 @@
 // crossed stream is a hanko on the group page and the crew's stamp in the stamp book.
 import type { Page } from '@playwright/test';
 
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { RIVER_GROUP, SEEDED_GROUP } from '../seed';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { RIVER_GROUP, SEEDED_GROUP } from '../seed.ts';
 
 const river = (page: Page) => page.getByTestId('river-card');
 

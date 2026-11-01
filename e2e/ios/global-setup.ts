@@ -3,7 +3,7 @@
 // (/etc/hosts, as CI does) is what keeps the app off the production server.
 import { existsSync, mkdirSync } from 'node:fs';
 
-import { APP, device, deviceInfo, SCREENS, SERVER, simctl, startAppium } from './device';
+import { APP, device, deviceInfo, SCREENS, SERVER, simctl, startAppium } from './device.ts';
 
 /** Whether the server answers from here, and so from the simulator. */
 async function reachable() {

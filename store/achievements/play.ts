@@ -1,12 +1,12 @@
 // Play Games Services: the achievements and leaderboards of the game in the Play Console (app/
-// README.md, Game achievements), from the catalogue (catalogue.mjs), with the Games Services
+// README.md, Game achievements), from the catalogue (catalogue.ts), with the Games Services
 // Publishing API (gamesconfiguration v1configuration, developer.android.com/games/services/
 // publishing/api) and the service account fastlane uploads with.
 //
-//   node store/achievements/play.mjs              upload (PLAY_SERVICE_ACCOUNT_JSON: the key
+//   node store/achievements/play.ts              upload (PLAY_SERVICE_ACCOUNT_JSON: the key
 //                                                 file's contents or path), write the IDs
-//   node store/achievements/play.mjs --dry-run    read what Play has, change nothing
-//   node store/achievements/play.mjs --offline    the same against an empty project, no key
+//   node store/achievements/play.ts --dry-run    read what Play has, change nothing
+//   node store/achievements/play.ts --offline    the same against an empty project, no key
 //   --ids <file>                                  where the IDs go (default
 //                                                 target/store/achievements/achievements-play.json)
 //
@@ -14,7 +14,7 @@
 // Configuration: the project ID under the game's name), or PLAY_GAMES_PROJECT_ID.
 //
 // An achievement or leaderboard is found by its ID in app/achievements-play.json, else by its
-// English name (Play's names are unique, and the import ZIP of catalogue.mjs creates them with
+// English name (Play's names are unique, and the import ZIP of catalogue.ts creates them with
 // these), else created. Then its type, steps, state, points, names and descriptions in every
 // locale are set when they differ, so a second run changes nothing.
 //
@@ -25,45 +25,78 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { counting, dryRun, httpClient, jwt, listWrites } from './api.mjs';
+import {
+  type Api,
+  asArray,
+  asNumber,
+  asString,
+  counting,
+  dig,
+  dryRun,
+  httpClient,
+  isRecord,
+  jwt,
+  listWrites,
+  messageOf,
+  needString,
+  type Recording,
+} from './api.ts';
 import {
   buildCatalogue,
+  type Catalogue,
   formatPlayIds,
   loadPlayIds,
   loadSources,
   OUT,
+  type PlayAchievement,
+  type PlayIds,
+  type PlayLeaderboard,
+  type Texts,
   validate,
-} from './catalogue.mjs';
+} from './catalogue.ts';
 
 export const BASE = 'https://gamesconfiguration.googleapis.com/games/v1configuration';
 export const SCOPE = 'https://www.googleapis.com/auth/androidpublisher';
 
-const bundle = (byLocale) => ({
+const bundle = (byLocale: Texts) => ({
   translations: Object.entries(byLocale).map(([locale, value]) => ({ locale, value })),
 });
-const fromBundle = (b) =>
-  Object.fromEntries((b?.translations ?? []).map((t) => [t.locale, t.value]));
-const sameMap = (a, b) => {
+/** A localized string bundle of Play's answers, by locale. */
+const fromBundle = (b: unknown): Record<string, unknown> =>
+  Object.fromEntries(
+    asArray(dig(b, 'translations')).map((t) => [String(dig(t, 'locale')), dig(t, 'value')]),
+  );
+const sameMap = (a: Record<string, unknown>, b: Record<string, unknown>) => {
   const ka = Object.keys(a);
   return ka.length === Object.keys(b).length && ka.every((k) => a[k] === b[k]);
 };
 
 /** Every item of a list. */
-async function all(api, path) {
-  const items = [];
-  let token = null;
+async function all(api: Api, path: string): Promise<Remote[]> {
+  const items: Remote[] = [];
+  let token: string | undefined;
   do {
     const page = await api.get(
       `${path}?maxResults=200${token ? `&pageToken=${encodeURIComponent(token)}` : ''}`,
     );
-    items.push(...(page?.items ?? []));
-    token = page?.nextPageToken ?? null;
+    items.push(...asArray(dig(page, 'items')).map(remoteItem));
+    token = asString(dig(page, 'nextPageToken'));
   } while (token);
   return items;
 }
 
+/** An achievement or leaderboard as Play has it: its fields as Play sent them, and its ID. */
+interface Remote {
+  id: string;
+  fields: Record<string, unknown>;
+}
+
+function remoteItem(value: unknown): Remote {
+  return { id: needString(dig(value, 'id'), 'id'), fields: isRecord(value) ? value : {} };
+}
+
 /** The configuration Play gets for an achievement. */
-export function achievementBody(a) {
+export function achievementBody(a: PlayAchievement) {
   return {
     achievementType: a.achievementType,
     initialState: a.initialState,
@@ -72,32 +105,31 @@ export function achievementBody(a) {
   };
 }
 
-export function leaderboardBody(b) {
+export function leaderboardBody(b: PlayLeaderboard) {
   return { scoreOrder: b.scoreOrder, draft: { name: bundle(b.name), scoreFormat: b.scoreFormat } };
 }
 
 /** What differs between Play's achievement and ours, by field name. */
-function achievementChanges(remote, a) {
-  const d = remote.draft ?? {};
-  const changes = [];
+function achievementChanges(remote: Record<string, unknown>, a: PlayAchievement) {
+  const changes: string[] = [];
   if (remote.achievementType !== a.achievementType) changes.push('type');
   if (remote.initialState !== a.initialState) changes.push('hidden');
   if ((remote.stepsToUnlock ?? null) !== (a.steps ?? null) && a.steps) changes.push('steps');
-  if (d.pointValue !== a.points) changes.push('points');
-  if (!sameMap(fromBundle(d.name), a.name)) changes.push('names');
-  if (!sameMap(fromBundle(d.description), a.description)) changes.push('descriptions');
+  if (dig(remote, 'draft', 'pointValue') !== a.points) changes.push('points');
+  if (!sameMap(fromBundle(dig(remote, 'draft', 'name')), a.name)) changes.push('names');
+  if (!sameMap(fromBundle(dig(remote, 'draft', 'description')), a.description))
+    changes.push('descriptions');
   return changes;
 }
 
-function leaderboardChanges(remote, b) {
-  const d = remote.draft ?? {};
-  const changes = [];
+function leaderboardChanges(remote: Record<string, unknown>, b: PlayLeaderboard) {
+  const changes: string[] = [];
   if (remote.scoreOrder !== b.scoreOrder) changes.push('order');
-  if (!sameMap(fromBundle(d.name), b.name)) changes.push('names');
-  const f = d.scoreFormat ?? {};
+  if (!sameMap(fromBundle(dig(remote, 'draft', 'name')), b.name)) changes.push('names');
+  const f = (field: string) => dig(remote, 'draft', 'scoreFormat', field);
   if (
-    f.numberFormatType !== b.scoreFormat.numberFormatType ||
-    (f.numDecimalPlaces ?? 0) !== (b.scoreFormat.numDecimalPlaces ?? 0)
+    f('numberFormatType') !== b.scoreFormat.numberFormatType ||
+    (f('numDecimalPlaces') ?? 0) !== (b.scoreFormat.numDecimalPlaces ?? 0)
   ) {
     changes.push('format');
   }
@@ -109,30 +141,34 @@ function leaderboardChanges(remote, b) {
  * app/achievements-play.json has them, also when some failed), notes for the summary and what
  * failed: one that fails doesn't keep the others from going up.
  */
-export async function syncPlay({ api, catalogue, ids, projectId, log = console.log }) {
-  const notes = [];
-  const failures = [];
-  const out = { project_id: projectId, achievements: {}, leaderboards: {} };
-  const kinds = [
-    [
-      'achievement',
-      'achievements',
-      catalogue.play.achievements,
-      achievementBody,
-      achievementChanges,
-    ],
-    [
-      'leaderboard',
-      'leaderboards',
-      catalogue.play.leaderboards,
-      leaderboardBody,
-      leaderboardChanges,
-    ],
-  ];
-  for (const [kind, plural, items, body, changesOf] of kinds) {
+export async function syncPlay({
+  api,
+  catalogue,
+  ids,
+  projectId,
+  log = console.log,
+}: {
+  api: Api;
+  catalogue: Catalogue;
+  ids: PlayIds;
+  projectId: string;
+  log?: (message: string) => void;
+}): Promise<{ ids: PlayIds; notes: string[]; failures: string[] }> {
+  const notes: string[] = [];
+  const failures: string[] = [];
+  const out: PlayIds = { project_id: projectId, achievements: {}, leaderboards: {} };
+  async function syncKind<T extends PlayAchievement | PlayLeaderboard>(
+    kind: string,
+    plural: Plural,
+    items: readonly T[],
+    body: (item: T) => object,
+    changesOf: (remote: Record<string, unknown>, item: T) => string[],
+  ) {
     const remote = await all(api, `/applications/${projectId}/${plural}`);
     const byId = new Map(remote.map((r) => [r.id, r]));
-    const byName = new Map(remote.map((r) => [fromBundle(r.draft?.name)['en-US'], r]));
+    const byName = new Map(
+      remote.map((r) => [fromBundle(dig(r.fields, 'draft', 'name'))['en-US'], r]),
+    );
     for (const item of items) {
       try {
         await syncItem({
@@ -152,16 +188,32 @@ export async function syncPlay({ api, catalogue, ids, projectId, log = console.l
         });
       } catch (e) {
         // The others still go up; the run fails at the end
-        log(`${kind} ${item.id}: ${e.message}`);
-        failures.push(`${kind} ${item.id}: ${e.message}`);
+        log(`${kind} ${item.id}: ${messageOf(e)}`);
+        failures.push(`${kind} ${item.id}: ${messageOf(e)}`);
       }
     }
   }
+  await syncKind(
+    'achievement',
+    'achievements',
+    catalogue.play.achievements,
+    achievementBody,
+    achievementChanges,
+  );
+  await syncKind(
+    'leaderboard',
+    'leaderboards',
+    catalogue.play.leaderboards,
+    leaderboardBody,
+    leaderboardChanges,
+  );
   return { ids: out, notes, failures };
 }
 
+type Plural = 'achievements' | 'leaderboards';
+
 /** One achievement or leaderboard: found, created or changed; its ID into `out`. */
-async function syncItem({
+async function syncItem<T extends PlayAchievement | PlayLeaderboard>({
   api,
   kind,
   plural,
@@ -175,57 +227,84 @@ async function syncItem({
   notes,
   projectId,
   log,
+}: {
+  api: Api;
+  kind: string;
+  plural: Plural;
+  item: T;
+  body: (item: T) => object;
+  changesOf: (remote: Record<string, unknown>, item: T) => string[];
+  ids: PlayIds;
+  byId: Map<string, Remote>;
+  byName: Map<unknown, Remote>;
+  out: PlayIds;
+  notes: string[];
+  projectId: string;
+  log: (message: string) => void;
 }) {
   const known = ids[plural][item.id];
   if (known && !byId.has(known))
     notes.push(`${kind} ${item.id}: ${known} of app/achievements-play.json isn't in the project`);
-  const found = byId.get(known) ?? byName.get(item.name['en-US']);
+  const found = (known && byId.get(known)) || byName.get(item.name['en-US']);
   if (!found) {
     log(`${kind} ${item.id}: new`);
     const created = await api.post(`/applications/${projectId}/${plural}`, body(item));
-    out[plural][item.id] = created.id;
+    out[plural][item.id] = needString(dig(created, 'id'), 'id');
     return;
   }
   out[plural][item.id] = found.id;
-  const changes = changesOf(found, item);
+  const changes = changesOf(found.fields, item);
   if (changes.length > 0) {
     log(`${kind} ${item.id}: ${changes.join(', ')}`);
-    if (found.published && changes.some((c) => ['type', 'hidden', 'steps', 'order'].includes(c))) {
+    if (
+      found.fields.published &&
+      changes.some((c) => ['type', 'hidden', 'steps', 'order'].includes(c))
+    ) {
       notes.push(
         `${kind} ${item.id} is published: Play keeps its ${changes.join(', ')} (it refuses to change them)`,
       );
     }
     // `token` is the version read: Play refuses an update without it (410 UpdateTokenInvalid)
-    await api.put(`/${plural}/${found.id}`, { id: found.id, token: found.token, ...body(item) });
+    await api.put(`/${plural}/${found.id}`, {
+      id: found.id,
+      token: found.fields.token,
+      ...body(item),
+    });
   }
 }
 
 /** What Play answers a write with, for a dry run: the item with a made-up ID. */
-export function playAnswer(method, _path, body, id) {
-  return method === 'POST' ? { ...body, id } : { ...body };
+export function playAnswer(method: string, _path: string, body: unknown, id: string): unknown {
+  const fields = isRecord(body) ? body : {};
+  return method === 'POST' ? { ...fields, id } : { ...fields };
 }
 
 /** Google's token for the service account (its key file's JSON), renewed before it runs out. */
 export function playClient(env = process.env) {
   const raw = env.PLAY_SERVICE_ACCOUNT_JSON;
   if (!raw) throw new Error('PLAY_SERVICE_ACCOUNT_JSON is needed');
-  const account = JSON.parse(raw.trim().startsWith('{') ? raw : fs.readFileSync(raw, 'utf8'));
-  let cached = null;
+  const account: unknown = JSON.parse(
+    raw.trim().startsWith('{') ? raw : fs.readFileSync(raw, 'utf8'),
+  );
+  const privateKey = needString(dig(account, 'private_key'), 'private_key in the key file');
+  const email = needString(dig(account, 'client_email'), 'client_email in the key file');
+  const tokenUri = needString(dig(account, 'token_uri'), 'token_uri in the key file');
+  let cached: { until: number; value: string } | null = null;
   const token = async () => {
     const now = Math.floor(Date.now() / 1000);
     if (!cached || cached.until < now) {
       const assertion = jwt({
         alg: 'RS256',
-        key: account.private_key,
+        key: privateKey,
         payload: {
-          iss: account.client_email,
+          iss: email,
           scope: SCOPE,
-          aud: account.token_uri,
+          aud: tokenUri,
           iat: now,
           exp: now + 3600,
         },
       });
-      const response = await fetch(account.token_uri, {
+      const response = await fetch(tokenUri, {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -233,14 +312,14 @@ export function playClient(env = process.env) {
           assertion,
         }),
       });
-      const answer = await response.json();
+      const answer: unknown = await response.json();
       if (!response.ok)
         throw new Error(
-          `Google's token: ${response.status} ${answer.error ?? ''} ${answer.error_description ?? ''}`,
+          `Google's token: ${response.status} ${asString(dig(answer, 'error')) ?? ''} ${asString(dig(answer, 'error_description')) ?? ''}`,
         );
       cached = {
-        until: now + Math.min(answer.expires_in ?? 3600, 3600) - 300,
-        value: answer.access_token,
+        until: now + Math.min(asNumber(dig(answer, 'expires_in')) ?? 3600, 3600) - 300,
+        value: needString(dig(answer, 'access_token'), "Google's access_token"),
       };
     }
     return cached.value;
@@ -255,6 +334,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const idsFile = argv.includes('--ids')
     ? argv[argv.indexOf('--ids') + 1]
     : path.join(OUT, 'achievements-play.json');
+  if (!idsFile) {
+    console.error('--ids needs a file');
+    process.exit(1);
+  }
   const sources = loadSources();
   const errors = validate(sources);
   if (errors.length > 0) {
@@ -271,9 +354,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     );
     process.exit(1);
   }
-  let api;
+  let api: Recording;
   if (offline) {
-    const { fakePlay } = await import('./fake.mjs');
+    const { fakePlay } = await import('./fake.ts');
     api = counting(fakePlay());
   } else if (dry) {
     api = dryRun(playClient(), { answer: playAnswer, empty: () => ({ items: [] }) });

@@ -1,8 +1,8 @@
 // Reporting and blocking: a new visitor reports a seeded player on their profile, which the admin
 // sees and dismisses, and blocks them: the boards show "blocked player" in their place, without a
 // link, until they're unblocked on the account page.
-import { expect, signIn, test, visit } from '../fixtures';
-import { player } from '../seed';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { player } from '../seed.ts';
 
 test('report a player, block them and unblock them', async ({ page, browser, baseURL }) => {
   const chen = player('chen');
@@ -29,7 +29,7 @@ test('report a player, block them and unblock them', async ({ page, browser, bas
   await expect(dialog).toHaveCount(0);
 
   // The admin sees it, and dismisses it
-  const admin = await browser.newContext({ baseURL });
+  const admin = await browser.newContext(baseURL ? { baseURL } : {});
   await signIn(admin, 'admin');
   const dashboard = await admin.newPage();
   await visit(dashboard, '/admin?tab=reports');
@@ -67,7 +67,7 @@ test('report a player, block them and unblock them', async ({ page, browser, bas
   await expect(main.getByText('chen', { exact: true })).toHaveCount(0);
   await expect(main.locator(`a[href$="${profile}"]`)).toHaveCount(0);
   // Others still see them
-  const other = await browser.newPage({ baseURL });
+  const other = await browser.newPage(baseURL ? { baseURL } : {});
   await visit(other, '/ranks');
   await expect(
     other.locator('main li.podium-step').filter({ hasText: 'chen' }).first(),

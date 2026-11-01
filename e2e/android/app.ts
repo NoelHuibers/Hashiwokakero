@@ -10,7 +10,7 @@ import {
   type TestInfo,
 } from '@playwright/test';
 
-import { ACTIVITY, connect, ORIGIN, PKG, SERVER, shell } from './device';
+import { ACTIVITY, connect, ORIGIN, PKG, SERVER, shell } from './device.ts';
 
 export { expect };
 

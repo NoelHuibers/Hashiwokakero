@@ -1,6 +1,6 @@
 // The admin dashboard of a seeded admin: the overview, and every tab with what the seed put there.
-import { expect, signIn, test, visit } from '../fixtures';
-import { COMMUNITY_FAMILY, CONTACT_MESSAGES } from '../seed';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { COMMUNITY_FAMILY, CONTACT_MESSAGES } from '../seed.ts';
 
 test('the dashboard shows the day, the Dojo and the messages', async ({ page, context }) => {
   await signIn(context, 'admin');
@@ -42,7 +42,7 @@ test('the dashboard shows the day, the Dojo and the messages', async ({ page, co
 
 test('admins ban a player and lift the ban', async ({ page, context, browser, baseURL }) => {
   // A guest of its own, the tests share the database
-  const guest = await browser.newContext({ baseURL });
+  const guest = await browser.newContext(baseURL ? { baseURL } : {});
   expect((await guest.request.post('/api/start_daily', { data: { device: null } })).ok()).toBe(
     true,
   );

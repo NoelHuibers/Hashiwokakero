@@ -10,9 +10,9 @@ import path from 'node:path';
 
 import type { AndroidDevice, Page } from '@playwright/test';
 
-import { board, PRACTICE_KEY } from '../board';
-import { LADDER, LADDER_SOLUTION } from '../puzzles';
-import type { TauriWindow } from '../tauri';
+import { board, PRACTICE_KEY } from '../board.ts';
+import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
+import type { TauriWindow } from '../tauri.ts';
 import {
   closeSystemDialogs,
   expect,
@@ -23,8 +23,17 @@ import {
   test,
   violations,
   visit,
-} from './app';
-import { ACTIVITY, keyboardTop, ORIGIN, PKG, SCREENS, screen, shell, systemBars } from './device';
+} from './app.ts';
+import {
+  ACTIVITY,
+  keyboardTop,
+  ORIGIN,
+  PKG,
+  SCREENS,
+  screen,
+  shell,
+  systemBars,
+} from './device.ts';
 
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
 const toasts = (page: Page) => page.locator('[role=log] > div');
@@ -171,7 +180,8 @@ async function extremes(device: AndroidDevice, from: number, to: number) {
     for (let x = 0; x < shot.width; x += 2) values.push(shot.luminance(x, y));
   }
   values.sort((a, b) => a - b);
-  const at = (q: number) => values[Math.floor(q * (values.length - 1))];
+  if (values.length === 0) throw new Error(`no pixels between the rows ${from} and ${to}`);
+  const at = (q: number) => values[Math.floor(q * (values.length - 1))]!;
   return { darkest: at(0.002), median: at(0.5), brightest: at(0.998) };
 }
 
@@ -282,7 +292,7 @@ test('the app starts in dark mode without a white frame', async ({ page, device 
       const values = Array.from({ length: shot.width >> 2 }, (_, i) =>
         shot.luminance(i * 4, y),
       ).sort((a, b) => a - b);
-      return values[values.length >> 1];
+      return values[values.length >> 1]!;
     };
     const samples: number[] = [];
     const end = Date.now() + 6000;
@@ -361,7 +371,7 @@ test("sharing opens Android's share sheet, copying works", async ({ page, device
         source: 'Custom',
         elapsed: 42,
       }),
-    ],
+    ] as const,
   );
   await visit(page, '/practice');
   await expect(page.getByRole('heading', { name: /Well done!/ })).toBeVisible();

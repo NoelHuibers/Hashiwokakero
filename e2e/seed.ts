@@ -128,7 +128,7 @@ export const RIVER_GROUP = {
   id: 2,
   name: 'Paper Cranes',
   invite: 'papercrane',
-  members: ['Quiet Crane 5', 'bram'],
+  members: ['Quiet Crane 5', 'bram'] as const,
   /** Days before today it was made. */
   age: 30,
   /** A pair's stream takes 400 bridges, its river 850 (model::level_target). */
@@ -384,7 +384,8 @@ export function seed(dbPath: string) {
   const hiddenResults = (solved: (family: string, i: number) => number | null) =>
     families.flatMap(({ family, total }) =>
       Array.from({ length: total }, (_, i) => {
-        const expected = labels[family][i % labels[family].length];
+        const set = labels[family]!;
+        const expected = set[i % set.length];
         const fuel = solved(family, i);
         return {
           name: `f-${family}-${i}`,

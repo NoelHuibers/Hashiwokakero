@@ -2,11 +2,11 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { addBridge, board, cellCenter, edges, PRACTICE_KEY, saved, seedGame } from '../board';
-import { ROOT } from '../env';
-import { expect, signIn, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
-import { localized } from '../site';
+import { addBridge, board, cellCenter, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { ROOT } from '../env.ts';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
+import { localized } from '../site.ts';
 
 const playing = {
   puzzle: LADDER,

@@ -1,7 +1,7 @@
 // Where the store screenshots' server runs and where the images go.
 import path from 'node:path';
 
-import { ROOT } from '../../e2e/env';
+import { ROOT } from '../../e2e/env.ts';
 
 export { ROOT };
 /** Away from the browser tests' ports (e2e/env.ts: 3150 and up). */
@@ -12,7 +12,7 @@ export const RUN_DIR = path.join(STORE_DIR, 'run');
 export const DB_PATH = path.join(RUN_DIR, 'store.db');
 /** The screenshots of the bare pages, per language and device. */
 export const RAW_DIR = path.join(STORE_DIR, 'raw');
-/** The framed images, per store, language and device (store/assemble.mjs sorts them in). */
+/** The framed images, per store, language and device (store/assemble.ts sorts them in). */
 export const IMAGES_DIR = path.join(STORE_DIR, 'images');
 /** Only these site languages, e.g. `STORE_LANGS=en,de,ja`: a quick look while editing. */
 export const ONLY_LANGS = process.env.STORE_LANGS?.split(',').filter(Boolean);

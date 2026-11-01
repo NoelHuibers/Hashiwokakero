@@ -27,19 +27,26 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(import.meta.dirname, '..');
 
 /** The Playwright image of a version of @playwright/test: browsers, fonts and all. */
-export const imageFor = (version) => `mcr.microsoft.com/playwright:v${version}-noble`;
+export const imageFor = (version: string): string =>
+  `mcr.microsoft.com/playwright:v${version}-noble`;
 
 /** Where the tests find the browser server. */
-export const wsEndpoint = (port) => `ws://127.0.0.1:${port}/`;
+export const wsEndpoint = (port: number): string => `ws://127.0.0.1:${port}/`;
 
 /** A port nothing listens on yet, on 127.0.0.1. */
-export function freePort() {
+export function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
     server.once('error', reject);
     server.listen(0, '127.0.0.1', () => {
-      const { port } = server.address();
-      server.close(() => resolve(port));
+      // A TCP server's address, not a pipe's (a string) or a closed one's (null)
+      const address = server.address();
+      if (address === null || typeof address === 'string') {
+        server.close();
+        reject(new Error(`no port to listen on: ${address}`));
+        return;
+      }
+      server.close(() => resolve(address.port));
     });
   });
 }
@@ -49,7 +56,17 @@ export function freePort() {
  * network (rootless podman too): it listens on the host's 127.0.0.1, and the browser reaches the
  * test servers there.
  */
-export function browserServerArgs({ image, root, port, name }) {
+export function browserServerArgs({
+  image,
+  root,
+  port,
+  name,
+}: {
+  image: string;
+  root: string;
+  port: number;
+  name: string;
+}): string[] {
   return [
     'run',
     '--rm',
@@ -81,7 +98,14 @@ export function browserServerArgs({ image, root, port, name }) {
  * Resolves once something accepts connections on 127.0.0.1:`port`. Rejects when `exited`
  * settles first (the container is gone) or after `timeout` ms.
  */
-export async function waitForPort(port, { exited, timeout = 60_000, interval = 100 }) {
+export async function waitForPort(
+  port: number,
+  {
+    exited,
+    timeout = 60_000,
+    interval = 100,
+  }: { exited: Promise<unknown>; timeout?: number; interval?: number },
+): Promise<void> {
   let gone = false;
   exited.then(
     () => {
@@ -93,7 +117,7 @@ export async function waitForPort(port, { exited, timeout = 60_000, interval = 1
   );
   const deadline = Date.now() + timeout;
   const accepts = () =>
-    new Promise((resolve) => {
+    new Promise<boolean>((resolve) => {
       const socket = net.connect(port, '127.0.0.1');
       socket.once('connect', () => {
         socket.destroy();
@@ -111,10 +135,21 @@ export async function waitForPort(port, { exited, timeout = 60_000, interval = 1
   );
 }
 
-async function main() {
-  const version = JSON.parse(
+async function main(): Promise<void> {
+  const manifest: unknown = JSON.parse(
     fs.readFileSync(path.join(root, 'node_modules/@playwright/test/package.json'), 'utf8'),
-  ).version;
+  );
+  const version =
+    typeof manifest === 'object' &&
+    manifest !== null &&
+    'version' in manifest &&
+    typeof manifest.version === 'string'
+      ? manifest.version
+      : undefined;
+  if (!version) {
+    console.error('e2e:container: no version in node_modules/@playwright/test, run pnpm install');
+    process.exit(1);
+  }
   const engine = ['podman', 'docker'].find((cmd) => spawnSync(cmd, ['--version']).status === 0);
   if (!engine) {
     console.error('e2e:container needs podman or docker');
@@ -156,11 +191,11 @@ async function main() {
         env: { ...process.env, E2E_VISUAL: '1', PW_TEST_CONNECT_WS_ENDPOINT: wsEndpoint(port) },
       },
     );
-    status = await new Promise((resolve) => {
+    status = await new Promise<number>((resolve) => {
       tests.once('exit', (code) => resolve(code ?? 1));
     });
   } catch (e) {
-    console.error(`e2e:container: ${e.message}`);
+    console.error(`e2e:container: ${e instanceof Error ? e.message : String(e)}`);
   } finally {
     remove();
   }

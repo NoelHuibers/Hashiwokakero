@@ -3,9 +3,9 @@
 // stays closed until you finished it yourself, and only members get a group's logs.
 import type { Page } from '@playwright/test';
 
-import { solveDaily, startDaily } from '../daily';
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { REPLAY_DAY_BACK, SEEDED_GROUP } from '../seed';
+import { solveDaily, startDaily } from '../daily.ts';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { REPLAY_DAY_BACK, SEEDED_GROUP } from '../seed.ts';
 
 const MS_PER_DAY = 86_400_000;
 const today = () => Math.floor(Date.now() / MS_PER_DAY);

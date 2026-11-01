@@ -12,9 +12,9 @@ import {
   saved,
   seedGame,
   toBoard,
-} from '../board';
-import { expect, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
+} from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
 
 const bridges = (page: Page) => board(page).locator('g.bridge:not(.ghost)');
 
@@ -41,17 +41,18 @@ async function gap(page: Page) {
       const svg = (islands[0] as SVGGElement).ownerSVGElement!;
       const toPage = svg.getScreenCTM()!;
       // translate(x,y) in board units, 16 per cell
-      const cells = islands.map((g) =>
-        g
+      const cells = islands.map((g) => {
+        const [x, y] = g
           .getAttribute('transform')!
           .match(/-?[\d.]+/g)!
-          .map(Number),
-      );
-      for (const [x, y] of cells) {
-        const right = cells.filter(([bx, by]) => by === y && bx > x).sort((p, q) => p[0] - q[0])[0];
+          .map(Number);
+        return { x: x!, y: y! };
+      });
+      for (const { x, y } of cells) {
+        const right = cells.filter((c) => c.y === y && c.x > x).sort((p, q) => p.x - q.x)[0];
         // At least one empty cell between them, so the point is on water and not an island
-        if (right && right[0] - x >= 32) {
-          const p = new DOMPoint((x + right[0]) / 2 + 8, y + 8).matrixTransform(toPage);
+        if (right && right.x - x >= 32) {
+          const p = new DOMPoint((x + right.x) / 2 + 8, y + 8).matrixTransform(toPage);
           return { x: p.x, y: p.y };
         }
       }

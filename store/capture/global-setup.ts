@@ -7,9 +7,9 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import { startServer } from '../../e2e/server';
-import { DB_PATH, ROOT, RUN_DIR, STORE_PORT } from './env';
-import { ME, seed } from './seed';
+import { startServer } from '../../e2e/server.ts';
+import { DB_PATH, ROOT, RUN_DIR, STORE_PORT } from './env.ts';
+import { ME, seed } from './seed.ts';
 
 export default async function globalSetup() {
   rmSync(RUN_DIR, { recursive: true, force: true });

@@ -1,5 +1,5 @@
 // The solver lab: a fresh puzzle raced through the solver presets, every one finds a solution.
-import { expect, test, visit } from '../fixtures';
+import { expect, test, visit } from '../fixtures.ts';
 
 test('race the default solvers on a fresh puzzle', async ({ page }) => {
   await visit(page, '/lab');

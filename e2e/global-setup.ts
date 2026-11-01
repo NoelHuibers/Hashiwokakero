@@ -3,9 +3,9 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
-import { DB_PATH, RUN_DIR, VISUAL, VISUAL_DB_PATH, VISUAL_PORT } from './env';
-import { seed } from './seed';
-import { startServer } from './server';
+import { DB_PATH, RUN_DIR, VISUAL, VISUAL_DB_PATH, VISUAL_PORT } from './env.ts';
+import { seed } from './seed.ts';
+import { startServer } from './server.ts';
 
 async function seededServer(name: string, options: { port?: number; dbPath: string }) {
   // A first start only creates the schema, the seed goes into it

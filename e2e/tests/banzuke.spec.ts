@@ -3,8 +3,8 @@
 // week's yokozuna crowned on the archipelago.
 import type { Page } from '@playwright/test';
 
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { SEEDED_GROUP } from '../seed';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { SEEDED_GROUP } from '../seed.ts';
 
 const banzuke = (page: Page) => page.getByTestId('banzuke');
 

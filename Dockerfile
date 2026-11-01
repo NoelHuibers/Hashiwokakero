@@ -20,7 +20,7 @@ COPY --from=css-deps /usr/local/bin/node /usr/local/bin/node
 COPY . .
 COPY --from=css-deps /app/node_modules ./node_modules
 # The self-hosted fonts from the @fontsource packages, to public/fonts
-RUN node scripts/fonts.mjs
+RUN node scripts/fonts.ts
 
 # Installs the toolchain from rust-toolchain.toml (stable + wasm32-unknown-unknown)
 RUN rustup toolchain install

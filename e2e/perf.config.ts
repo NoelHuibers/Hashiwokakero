@@ -4,7 +4,7 @@
 // docs/performance/bundle-baseline.md.
 import { defineConfig, devices } from '@playwright/test';
 
-import { BASE_URL } from './env';
+import { BASE_URL } from './env.ts';
 
 export default defineConfig({
   testDir: './perf',

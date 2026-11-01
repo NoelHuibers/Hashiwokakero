@@ -5,10 +5,10 @@
 // the header's last button off the screen, so the pages are checked whole too.
 import type { Page } from '@playwright/test';
 
-import { register } from '../account';
-import { expect, newUsername, signIn, test, visit } from '../fixtures';
-import { SEEDED_GROUP } from '../seed';
-import { LOCALES, localized } from '../site';
+import { register } from '../account.ts';
+import { expect, newUsername, signIn, test, visit } from '../fixtures.ts';
+import { SEEDED_GROUP } from '../seed.ts';
+import { LOCALES, localized } from '../site.ts';
 
 /** The pages the tab bar leads to, a group, the account, the rules, the Dojo and the contact form. */
 const ALL = [

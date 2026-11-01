@@ -4,8 +4,8 @@
 // came from another font in the middle of a word. Asks Chromium which fonts drew each heading.
 import type { CDPSession, Page } from '@playwright/test';
 
-import { expect, signIn, test, visit } from '../fixtures';
-import { LOCALES, localized } from '../site';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { LOCALES, localized } from '../site.ts';
 
 /** Where headings are in Kaisei Decol: languages it draws whole, in proportional letters. */
 const KAISEI = new Set(['en', 'de', 'es', 'fr', 'id', 'it', 'ja', 'nl', 'pt']);
@@ -49,7 +49,9 @@ async function headings(page: Page, cdp: CDPSession): Promise<Drawn[]> {
       const { attributes } = await cdp.send('DOM.getAttributes', { nodeId });
       const mark = attributes[attributes.indexOf('data-type-test') + 1];
       const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
-      return { text: texts[Number(mark)], fonts };
+      const text = texts[Number(mark)];
+      if (text === undefined) throw new Error(`no heading marked ${mark}`);
+      return { text, fonts };
     }),
   );
 }
@@ -84,7 +86,7 @@ for (const locale of LOCALES) {
         const fallback = others.reduce((sum, f) => sum + f.glyphCount, 0);
         expect(
           fallback,
-          `letters of ${where} drawn by another font than ${first.familyName}`,
+          `letters of ${where} drawn by another font than ${first?.familyName ?? 'none'}`,
         ).toBeLessThanOrEqual(notLetters);
       }
     }

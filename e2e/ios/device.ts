@@ -8,7 +8,7 @@ import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { promisify } from 'node:util';
 
-import { ROOT } from '../env';
+import { ROOT } from '../env.ts';
 
 /** The app's bundle ID (`identifier` in tauri.conf.json; iOS's debug build has no suffix). */
 export const BUNDLE = 'rs.hashi';
@@ -62,11 +62,11 @@ export async function device() {
   const found = all.filter((d) =>
     SIMULATOR === 'booted' ? d.state === 'Booted' : d.udid === SIMULATOR,
   );
-  if (found.length !== 1)
+  const [d, ...others] = found;
+  if (!d || others.length > 0)
     throw new Error(
       `expected one simulator for ${SIMULATOR}, found ${found.length} (E2E_SIMULATOR)`,
     );
-  const [d] = found;
   // com.apple.CoreSimulator.SimRuntime.iOS-26-5
   const ios = d.runtime.replace(/^.*\.iOS-/, '').replaceAll('-', '.');
   return { udid: d.udid, name: d.name, state: d.state, ios };

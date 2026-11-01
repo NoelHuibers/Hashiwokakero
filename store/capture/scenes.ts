@@ -4,9 +4,9 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
 
-import { addBridge, DAILY_KEY, edges, PRACTICE_KEY } from '../../e2e/board';
-import { DB_PATH, STORE_URL } from './env';
-import { ME, PLAYING, PUZZLES, sessionOf } from './seed';
+import { addBridge, DAILY_KEY, edges, PRACTICE_KEY } from '../../e2e/board.ts';
+import { DB_PATH, STORE_URL } from './env.ts';
+import { ME, PLAYING, PUZZLES, sessionOf } from './seed.ts';
 
 export type SceneId = 'daily' | 'ranking' | 'practice' | 'friends' | 'stamps' | 'night';
 
@@ -41,12 +41,14 @@ export const SCENES: Scene[] = [
       const built = new Set<number>();
       const target = Math.round(solution.filter((b) => b > 0).length * 0.55);
       const order = edges(puzzle)
-        .map((pair, e) => ({ e, pair }))
-        .filter(({ e }) => solution[e] > 0)
+        .flatMap((pair, e) => {
+          const bridges = solution[e] ?? 0;
+          return bridges > 0 ? [{ e, pair, bridges }] : [];
+        })
         .sort((a, b) => a.pair[0] - b.pair[0] || a.pair[1] - b.pair[1]);
-      for (const { e } of order) {
+      for (const { e, bridges } of order) {
         if (built.size >= target) break;
-        for (let n = 0; n < solution[e]; n++) await addBridge(page, DAILY_KEY, puzzle, e, true);
+        for (let n = 0; n < bridges; n++) await addBridge(page, DAILY_KEY, puzzle, e, true);
         built.add(e);
       }
       await page.evaluate(() => window.scrollTo(0, 0));

@@ -25,7 +25,7 @@ interface Load {
 const median = (values: number[]) => {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = sorted.length >> 1;
-  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 };
 const round = (n: number) => Math.round(n);
 
@@ -63,9 +63,9 @@ test('hydration times', async ({ browser, baseURL }) => {
         const [nav] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
         const [mark] = performance.getEntriesByName('hashi:hydrated');
         return {
-          firstByte: nav.responseStart,
-          domContentLoaded: nav.domContentLoadedEventEnd,
-          hydrated: mark.startTime,
+          firstByte: nav!.responseStart,
+          domContentLoaded: nav!.domContentLoadedEventEnd,
+          hydrated: mark!.startTime,
         };
       });
     } finally {
@@ -74,7 +74,7 @@ test('hydration times', async ({ browser, baseURL }) => {
   };
 
   // The browser's own start shouldn't count for the first page
-  await load(PAGES[0]);
+  await load(PAGES[0]!);
   const pages: Record<string, { median: number; min: number; max: number; runs: Load[] }> = {};
   for (const page of PAGES) {
     const runs: Load[] = [];

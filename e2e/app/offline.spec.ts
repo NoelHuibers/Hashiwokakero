@@ -4,9 +4,9 @@
 // with fixed puzzles. Every server function call fails, as without a network.
 import type { Page } from '@playwright/test';
 
-import { board, DAILY_KEY, edges, seedGame } from '../board';
-import { expect, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION } from '../puzzles';
+import { board, DAILY_KEY, edges, seedGame } from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
 
 interface Call {
   cmd: string;
@@ -94,8 +94,8 @@ test('practice generates, hints and checks on the phone', async ({ page, problem
 
   // The seed reaches the phone whole: the JSON is sent as text, not as a JavaScript number
   const [generate] = await calls(page);
-  expect(generate.cmd).toBe('generate_puzzle');
-  expect(generate.args).toMatch(
+  expect(generate?.cmd).toBe('generate_puzzle');
+  expect(generate?.args).toMatch(
     /^\{"params":\{"width":\d+,"height":\d+,"difficulty":"\w+","seed":\d+\}\}$/,
   );
 
@@ -105,7 +105,7 @@ test('practice generates, hints and checks on the phone', async ({ page, problem
   await expect(toasts(page).filter({ hasText: 'So far so good' })).toBeVisible();
   const solve = (await calls(page)).filter((c) => c.cmd === 'solve_puzzle');
   expect(solve).toHaveLength(1);
-  expect(JSON.parse(solve[0].args)).toMatchObject({ puzzle: LADDER, unique: false });
+  expect(JSON.parse(solve[0]!.args)).toMatchObject({ puzzle: LADDER, unique: false });
 
   expect(api.filter((p) => /generate_puzzle|solve_puzzle|puzzle_cnf/.test(p))).toEqual([]);
   await expect(errorToasts(page)).toHaveCount(0);

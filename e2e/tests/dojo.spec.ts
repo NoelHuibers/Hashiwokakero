@@ -1,7 +1,7 @@
 // The SAT Dojo without its worker (pull requests have none): the guide, the seeded house entry
 // on the leaderboard, and an upload the site itself refuses.
-import { expect, signIn, test, visit } from '../fixtures';
-import { ARCHIVED_COMMITMENT, ARCHIVED_SEED, DOJO_SEASON, DOJO_SUBMISSION } from '../seed';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { ARCHIVED_COMMITMENT, ARCHIVED_SEED, DOJO_SEASON, DOJO_SUBMISSION } from '../seed.ts';
 
 test('the guide and the leaderboard with its entry', async ({ page }) => {
   await visit(page, '/dojo');

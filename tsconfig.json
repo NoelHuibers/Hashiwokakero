@@ -1,0 +1,36 @@
+// Type checks the TypeScript of the browser tests (e2e/), the scripts (scripts/) and the store
+// tools (store/): `pnpm run typecheck`, CI runs it in "Test & lint". Nothing is compiled: Node
+// runs the scripts as they are (type stripping) and Playwright loads the tests itself.
+{
+  "include": ["e2e/**/*.ts", "scripts/**/*.ts", "store/**/*.ts"],
+  "compilerOptions": {
+    "noEmit": true,
+
+    // What Node 26 runs: ES2025, ES modules ("type": "module"), imports with their .ts extension.
+    // dom: page.evaluate callbacks run in the browser.
+    "target": "es2025",
+    "lib": ["es2025", "dom", "dom.iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+
+    // Only syntax Node's type stripping can erase (no enums, namespaces, parameter properties),
+    // and type imports marked as such, which it drops
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+
+    // Strict, and beyond strict:
+    "strict": true,
+    // arr[i] and record[key] may be undefined
+    "noUncheckedIndexedAccess": true,
+    // An optional property is absent or of its type, not explicitly undefined
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+
+    // The packages' own declarations are their business
+    "skipLibCheck": true
+  }
+}

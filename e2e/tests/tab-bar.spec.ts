@@ -6,9 +6,9 @@ import path from 'node:path';
 
 import type { Page } from '@playwright/test';
 
-import { ROOT } from '../env';
-import { expect, test, visit } from '../fixtures';
-import { LOCALES, localized } from '../site';
+import { ROOT } from '../env.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LOCALES, localized } from '../site.ts';
 
 const navLabel = (locale: string): string =>
   JSON.parse(readFileSync(path.join(ROOT, 'locales', locale, 'common.json'), 'utf8')).nav.main;
@@ -31,7 +31,8 @@ for (const locale of LOCALES) {
   test(`all six tabs fit a 320 px phone in ${locale}`, async ({ page }) => {
     const tabs = await tabsAt(page, locale, 320);
     for (const tab of await tabs.all()) {
-      const [kanji, label] = await tab.locator(':scope > span').all();
+      const parts = tab.locator(':scope > span');
+      const [kanji, label] = [parts.nth(0), parts.nth(1)];
       const name = `${await kanji.textContent()} ${await label.textContent()}`;
       const box = (await tab.boundingBox())!;
       expect(box.x, `${name} starts on the screen`).toBeGreaterThanOrEqual(0);

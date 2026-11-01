@@ -12,7 +12,7 @@
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* Self-hosted (scripts/fonts.mjs). Murecho covers Latin, Cyrillic, Greek and Japanese; other
+  /* Self-hosted (scripts/fonts.ts). Murecho covers Latin, Cyrillic, Greek and Japanese; other
      scripts put their own font first (loaded by ScriptFont in app.rs). Headings are in Kaisei
      Decol, a decorated mincho, like a title cut into a woodblock. */
   --app-font: "Murecho Variable", system-ui, sans-serif;

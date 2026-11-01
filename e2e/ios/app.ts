@@ -5,8 +5,8 @@
 // violation, and any answer from the server, which the app must not reach.
 import { test as base, expect, type TestInfo } from '@playwright/test';
 
-import { APPIUM_URL, BUNDLE, device, ORIGIN, PROCESS, SERVER, screenshot, WDA } from './device';
-import { NATIVE, Session } from './webdriver';
+import { APPIUM_URL, BUNDLE, device, ORIGIN, PROCESS, SERVER, screenshot, WDA } from './device.ts';
+import { NATIVE, Session } from './webdriver.ts';
 
 export { expect };
 
@@ -328,7 +328,7 @@ export const test = base.extend<
         // hashi.rs is blocked: an answer from it means a request got out
         problems.push(
           ...records.answers
-            .filter((a) => new URL(a.split(' ')[1]).hostname === SERVER)
+            .filter((a) => new URL(a.split(' ')[1]!).hostname === SERVER)
             .map((a) => `reached the server: ${a}`),
         );
       }

@@ -3,8 +3,8 @@
 // and in the group's tab on the daily page. A name that's cut off has its tooltip.
 import type { Locator, Page } from '@playwright/test';
 
-import { expect, test, visit } from '../fixtures';
-import { TEA_GROUP } from '../seed';
+import { expect, test, visit } from '../fixtures.ts';
+import { TEA_GROUP } from '../seed.ts';
 
 const PHONE = { width: 390, height: 844 };
 const SMALL_PHONE = { width: 320, height: 640 };
@@ -82,9 +82,9 @@ test('short names stay whole on a phone, on the group page and in the daily tab'
   // a guest's (two words and a number, other runs may have joined too) is cut off and chen fits
   await page.addStyleTag({ content: 'a[data-tooltip-clipped] { max-width: 2.75rem }' });
   const tooltip = page.getByRole('tooltip');
-  const [guest] = await names(board)
+  const guest = names(board)
     .filter({ hasNotText: /^(chen|bram)$/ })
-    .all();
+    .first();
   const guestName = (await guest.textContent())!.trim();
   expect(await clipped(guest)).toBe(true);
   await guest.hover();

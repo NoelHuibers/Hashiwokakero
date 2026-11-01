@@ -2,7 +2,7 @@
 // and the other finds it on the group page, with an unread dot until they saw it.
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { expect, hydrated, test, visit } from '../fixtures';
+import { expect, hydrated, test, visit } from '../fixtures.ts';
 
 /** A card of the page, by its heading. */
 const card = (page: Page, heading: RegExp) =>
@@ -35,7 +35,7 @@ test('a member stamps another one’s result, who sees it with an unread dot', a
   await page.getByLabel('Group name').fill('Hanko Club');
   await page.getByRole('button', { name: 'Create the group' }).click();
   const url = await page.getByTestId('invite-link').inputValue();
-  const friendContext = await browser.newContext({ baseURL });
+  const friendContext = await browser.newContext(baseURL ? { baseURL } : {});
   const friend = await newVisitor(friendContext);
   await friend.goto(new URL(url).pathname);
   await hydrated(friend);

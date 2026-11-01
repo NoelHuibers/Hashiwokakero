@@ -1,4 +1,4 @@
-// The logic of scripts/e2e-container.mjs that needs no container: `node --test scripts/tests/*.test.mjs`.
+// The logic of scripts/e2e-container.ts that needs no container: `node --test scripts/tests/*.test.ts`.
 import assert from 'node:assert/strict';
 import net from 'node:net';
 import { test } from 'node:test';
@@ -9,9 +9,9 @@ import {
   imageFor,
   waitForPort,
   wsEndpoint,
-} from '../e2e-container.mjs';
+} from '../e2e-container.ts';
 
-const never = new Promise(() => {
+const never = new Promise<never>(() => {
   // Never settles
 });
 
@@ -43,7 +43,7 @@ test('a free port can be listened on', async () => {
   const port = await freePort();
   assert.ok(port > 0);
   const server = net.createServer();
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     server.once('error', reject).listen(port, '127.0.0.1', resolve);
   });
   server.close();

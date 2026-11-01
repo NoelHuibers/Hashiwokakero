@@ -4,8 +4,8 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { addBridge, board, DAILY_KEY, missing, type Puzzle, saved } from './board';
-import { DB_PATH, VISUAL_DB_PATH } from './env';
+import { addBridge, board, DAILY_KEY, missing, type Puzzle, saved } from './board.ts';
+import { DB_PATH, VISUAL_DB_PATH } from './env.ts';
 
 /** The database of the running test's server, see `VISUAL_URL`. */
 const database = (options: { readOnly?: boolean } = {}) =>
@@ -83,8 +83,9 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
   await hintUntil(page, solution, 1);
 
   const [last] = missing((await saved(page, DAILY_KEY)).bridges, solution);
-  const built = (await saved(page, DAILY_KEY)).bridges[last];
-  for (let n = built; n < solution[last]; n++) await addBridge(page, DAILY_KEY, puzzle, last);
+  if (last === undefined) throw new Error('hints left no bridge of the solution to build');
+  const built = (await saved(page, DAILY_KEY)).bridges[last] ?? 0;
+  for (let n = built; n < solution[last]!; n++) await addBridge(page, DAILY_KEY, puzzle, last);
 }
 
 /**
@@ -106,7 +107,7 @@ export async function hintUntil(page: Page, solution: number[], left: number) {
       const bridges = () => JSON.stringify(built());
       const missing = () => {
         const now = built();
-        return solution.filter((s, e) => now[e] < s).length;
+        return solution.filter((s, e) => (now[e] ?? 0) < s).length;
       };
       for (let n = 1; missing() > left; n++) {
         const before = bridges();

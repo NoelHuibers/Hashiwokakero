@@ -27,8 +27,10 @@ async function send<T>(
 ): Promise<T> {
   const response = await fetch(url, {
     method,
-    headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    ...(body !== undefined && {
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
     signal: AbortSignal.timeout(timeoutMs),
   });
   const text = await response.text();
@@ -116,7 +118,10 @@ export class Session {
       using: 'css selector',
       value: selector,
     });
-    return found[ELEMENT];
+    const element = found[ELEMENT];
+    if (element === undefined)
+      throw new Error(`${selector}: no element in ${JSON.stringify(found)}`);
+    return element;
   }
 
   /** A click on an element of the page (WebDriver's atom: mouse events, as a user's gesture). */

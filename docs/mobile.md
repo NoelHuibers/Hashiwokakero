@@ -214,7 +214,7 @@ replaced through Play's support). Left, in this order (details in
    it). Left, in this order (step 13f; how the workflow does it is in
    [app/README.md](../app/README.md#ios-releases)):
    1. **The first TestFlight build.** `app-v0.0.1`'s commit has no iOS job, so the first iOS
-      upload needs a new version: a pull request with `node scripts/app-version.mjs 0.0.2` (and
+      upload needs a new version: a pull request with `node scripts/app-version.ts 0.0.2` (and
       `app/store/whatsnew/whatsnew-en-US`), merged, then the tag `app-v0.0.2` on its merge
       commit. That also uploads 0.0.2 to Play. Apple emails when the build is processed, and it
       then appears in App Store Connect under the app's TestFlight tab.

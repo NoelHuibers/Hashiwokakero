@@ -2,7 +2,7 @@
 // website's tests. `pnpm run app:build`, then `pnpm run app:e2e` from the repository root.
 import { defineConfig, devices } from '@playwright/test';
 
-import { APP_URL } from './app/serve';
+import { APP_URL } from './app/serve.ts';
 
 const CI = Boolean(process.env.CI);
 

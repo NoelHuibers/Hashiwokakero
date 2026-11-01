@@ -7,8 +7,8 @@ import path from 'node:path';
 
 import { test } from '@playwright/test';
 
-import { ROOT, STORE_URL } from './env';
-import { framePage, waitReady } from './frame';
+import { ROOT, STORE_URL } from './env.ts';
+import { framePage, waitReady } from './frame.ts';
 
 interface Model {
   achievements: { id: string; kanji: string; tier: number | null }[];

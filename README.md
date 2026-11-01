@@ -58,6 +58,9 @@ The JavaScript and TypeScript (the browser tests in `e2e/`, `scripts/`, `store/`
 formatted and linted by [Biome](https://biomejs.dev) (`biome.jsonc`): `pnpm run lint`, and
 `pnpm run lint:fix` for the fixes it can make. CI fails on any warning. `git config
 blame.ignoreRevsFile .git-blame-ignore-revs` lets `git blame` skip the formatting commit.
+`pnpm run typecheck` type checks all of it with TypeScript (`tsconfig.json`, strict), as CI
+does. Nothing is compiled: Node 26 runs the scripts' `.ts` as they are, so relative imports
+name the file with its `.ts` extension.
 
 Correctness tests, including default-size generation and solver regressions, run without
 `--ignored`. Timing is measured by `cargo bench`; the optional generation report is:

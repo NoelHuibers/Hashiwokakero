@@ -7,12 +7,12 @@
 // it): dates, the daily's number and difficulty, the monthly race. The project has a server and database of its own (see env.ts), and its tests run
 // one after another, the daily last: until then today's ranking is the seeded one.
 import type { Locator, Page } from '@playwright/test';
-import { register } from '../account';
-import { PRACTICE_KEY, seedGame } from '../board';
-import { deleteResults, expectResult, solveDaily, startDaily } from '../daily';
-import { expect, newUsername, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
-import { rankingExample } from '../ranking';
+import { register } from '../account.ts';
+import { PRACTICE_KEY, seedGame } from '../board.ts';
+import { deleteResults, expectResult, solveDaily, startDaily } from '../daily.ts';
+import { expect, newUsername, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
+import { rankingExample } from '../ranking.ts';
 
 test.describe.configure({ mode: 'serial' });
 

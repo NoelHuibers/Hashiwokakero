@@ -2,9 +2,9 @@
 // solved by another member like a daily, the ranking for both; and a closed one in the archive.
 import type { Page } from '@playwright/test';
 
-import { board, build, cellCenter, saved } from '../board';
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { CLOSED_PUZZLE, player, SEEDED_GROUP } from '../seed';
+import { board, build, cellCenter, saved } from '../board.ts';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { CLOSED_PUZZLE, player, SEEDED_GROUP } from '../seed.ts';
 
 /** Where the page keeps the board of the group puzzle being played (src/pages/kadai/state.rs). */
 const KADAI_KEY = 'hashi.kadai.v1';

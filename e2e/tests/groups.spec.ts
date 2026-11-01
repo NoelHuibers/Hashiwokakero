@@ -2,9 +2,9 @@
 // of today, which shows no times before you finished the daily yourself.
 import type { Page } from '@playwright/test';
 
-import { solveDaily, startDaily } from '../daily';
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { SEEDED_GROUP } from '../seed';
+import { solveDaily, startDaily } from '../daily.ts';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { SEEDED_GROUP } from '../seed.ts';
 
 /** A card of the page, by its heading. */
 const card = (page: Page, heading: RegExp) =>
@@ -48,7 +48,7 @@ test('a group is made, a friend joins with the link as a guest, times show after
   await expect(page.locator('header')).toContainText('Guest');
 
   // A friend in another browser opens the link: nothing happens until they click
-  const friendContext = await browser.newContext({ baseURL });
+  const friendContext = await browser.newContext(baseURL ? { baseURL } : {});
   const friend = await friendContext.newPage();
   await friend.goto(new URL(url).pathname);
   await hydrated(friend);

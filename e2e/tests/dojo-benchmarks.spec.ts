@@ -1,7 +1,7 @@
 // Community benchmarks ("bring your own benchmark") without a worker: the rules and the pool,
 // the credits in the guide and the season archive, and a submission that waits for its check.
-import { expect, signIn, test, visit } from '../fixtures';
-import { COMMUNITY_FAMILY, DOJO_SEASON } from '../seed';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { COMMUNITY_FAMILY, DOJO_SEASON } from '../seed.ts';
 
 test('the pool and its authors are credited', async ({ page }) => {
   await visit(page, '/dojo');

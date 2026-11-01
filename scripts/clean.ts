@@ -40,16 +40,17 @@ const opts = {
   yes: false,
   days: 30,
   minOutputMb: 50,
-  targets: [],
+  targets: [] as string[],
   worktrees: false,
   verbose: false,
 };
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const arg = argv[i];
-  const value = () => {
-    if (i + 1 >= argv.length) fail(`${arg} needs a value\n${usage}`);
-    return argv[++i];
+  const value = (): string => {
+    const next = argv[++i];
+    if (next === undefined) fail(`${arg} needs a value\n${usage}`);
+    return next;
   };
   const number = () => {
     const n = Number(value());
@@ -76,13 +77,13 @@ if (opts.targets.length === 0) {
   );
 }
 
-function fail(message) {
+function fail(message: string): never {
   console.error(message);
   process.exit(1);
 }
 
 const GB = 1024 ** 3;
-const human = (bytes) =>
+const human = (bytes: number): string =>
   bytes >= GB
     ? `${(bytes / GB).toFixed(1)} GB`
     : bytes >= 1024 ** 2
@@ -90,8 +91,8 @@ const human = (bytes) =>
       : `${(bytes / 1024).toFixed(0)} KB`;
 
 // Disk usage like du: allocated blocks, not the apparent size. Never follows symlinks.
-function usage_of(p) {
-  let st;
+function usage_of(p: string): number {
+  let st: fs.Stats;
   try {
     st = fs.lstatSync(p);
   } catch {
@@ -104,7 +105,7 @@ function usage_of(p) {
   return total;
 }
 
-const entries = (dir) => {
+const entries = (dir: string): fs.Dirent[] => {
   try {
     return fs.readdirSync(dir, { withFileTypes: true });
   } catch {
@@ -113,7 +114,7 @@ const entries = (dir) => {
 };
 
 // A target dir cargo made: it writes this tag into every one
-function isTargetDir(dir) {
+function isTargetDir(dir: string): boolean {
   try {
     return fs
       .readFileSync(path.join(dir, 'CACHEDIR.TAG'), 'utf8')
@@ -125,16 +126,26 @@ function isTargetDir(dir) {
 
 // The dirs with a .fingerprint, at most a few levels down (target/debug,
 // target/wasm32-unknown-unknown/debug, target/front/wasm32-unknown-unknown/debug, ...)
-function profileDirs(dir, depth = 0) {
+function profileDirs(dir: string, depth = 0): string[] {
   const children = entries(dir).filter((e) => e.isDirectory());
   if (children.some((e) => e.name === '.fingerprint')) return [dir];
   if (depth >= 4) return [];
   return children.flatMap((e) => profileDirs(path.join(dir, e.name), depth + 1));
 }
 
-const candidates = []; // { kind, path, bytes, label, target }
+/** Something to delete: a file or dir in a target dir, and the group it's listed in. */
+interface Candidate {
+  kind: string;
+  path: string;
+  bytes: number;
+  target: string;
+  label: string;
+  group?: string;
+}
 
-function scanTarget(target) {
+const candidates: Candidate[] = [];
+
+function scanTarget(target: string): void {
   const now = Date.now();
   const cutoff = now - opts.days * 24 * 3600 * 1000;
   for (const profile of profileDirs(target)) {
@@ -160,7 +171,7 @@ function scanTarget(target) {
     }
 
     // incremental/<crate>-<hash>: keep the newest of each crate
-    const byCrate = new Map();
+    const byCrate = new Map<string, { p: string; mtime: number; name: string }[]>();
     for (const e of entries(path.join(profile, 'incremental'))) {
       if (!e.isDirectory()) continue;
       const dash = e.name.lastIndexOf('-');
@@ -172,8 +183,9 @@ function scanTarget(target) {
         ...entries(p).map((s) => fs.lstatSync(path.join(p, s.name)).mtimeMs),
       );
       const crate = e.name.slice(0, dash);
-      if (!byCrate.has(crate)) byCrate.set(crate, []);
-      byCrate.get(crate).push({ p, mtime, name: e.name });
+      const dirs = byCrate.get(crate) ?? [];
+      dirs.push({ p, mtime, name: e.name });
+      byCrate.set(crate, dirs);
     }
     for (const [crate, dirs] of byCrate) {
       dirs.sort((a, b) => b.mtime - a.mtime);
@@ -220,9 +232,9 @@ for (const target of opts.targets) {
 }
 
 // Worktrees whose branch is merged into origin/main
-const git = (args, cwd = root) => spawnSync('git', args, { cwd, encoding: 'utf8' });
-const worktrees = [];
-const keptWorktrees = [];
+const git = (args: string[], cwd = root) => spawnSync('git', args, { cwd, encoding: 'utf8' });
+const worktrees: { dir: string; branch: string; bytes: number; target: number }[] = [];
+const keptWorktrees: string[] = [];
 if (opts.worktrees) {
   if (git(['fetch', '--quiet', 'origin', 'main']).status !== 0)
     console.log('git fetch origin main failed, using the local origin/main');
@@ -236,11 +248,11 @@ if (opts.worktrees) {
     const dir = block.match(/^worktree (.*)$/m)?.[1];
     const head = block.match(/^HEAD (.*)$/m)?.[1];
     const branch = block.match(/^branch refs\/heads\/(.*)$/m)?.[1];
-    const keep = (why) => keptWorktrees.push(`${dir} [${branch ?? 'detached'}]: ${why}`);
+    const keep = (why: string) => keptWorktrees.push(`${dir} [${branch ?? 'detached'}]: ${why}`);
     if (!dir || dir === mainCheckout || path.resolve(dir) === root) continue;
     if (/^locked/m.test(block)) keep('locked');
     else if (/^prunable/m.test(block)) keep('missing, `git worktree prune` forgets it');
-    else if (!branch) keep('detached HEAD');
+    else if (!(branch && head)) keep('detached HEAD');
     else if (git(['merge-base', '--is-ancestor', head, main]).status !== 0) keep('not merged');
     else if (mainLine.has(head)) keep('no commits of its own');
     else {
@@ -260,18 +272,18 @@ if (opts.worktrees) {
 
 // The listing
 let total = 0;
-const groups = new Map();
+const groups = new Map<string, Candidate & { count: number; items: Candidate[] }>();
 for (const c of candidates) {
   const key = `${c.target}\t${c.kind}\t${c.group ?? c.label}`;
-  if (!groups.has(key)) groups.set(key, { ...c, count: 0, bytes: 0, items: [] });
-  const g = groups.get(key);
+  const g = groups.get(key) ?? { ...c, count: 0, bytes: 0, items: [] };
+  groups.set(key, g);
   g.count++;
   g.bytes += c.bytes;
   g.items.push(c);
   total += c.bytes;
 }
-let lastTarget;
-let lastKind;
+let lastTarget: string | undefined;
+let lastKind: string | undefined;
 for (const g of [...groups.values()].sort(
   (a, b) => a.target.localeCompare(b.target) || a.kind.localeCompare(b.kind) || b.bytes - a.bytes,
 )) {

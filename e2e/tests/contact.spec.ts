@@ -1,7 +1,7 @@
 // The feedback form: what it refuses, a message that arrives, and one opened from the header's
 // help with the page it came from. Without SMTP (as here) messages are only stored, the admin
 // dashboard lists them.
-import { allow, expect, signIn, test, visit } from '../fixtures';
+import { allow, expect, signIn, test, visit } from '../fixtures.ts';
 
 test('the feedback form checks the message and sends it', async ({ page, problems }) => {
   await visit(page, '/kontakt');
@@ -60,7 +60,7 @@ test('a bug report from the help menu brings its page along', async ({ page, con
     ['Platform', 'Web'],
     ['Language', 'en'],
     ['Page', '/practice'],
-  ]) {
+  ] as const) {
     await expect(
       sent
         .locator('dt', { hasText: new RegExp(`^${name}$`) })

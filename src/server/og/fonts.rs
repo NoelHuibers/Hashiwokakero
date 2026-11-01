@@ -1,5 +1,5 @@
 //! The fonts of the preview images: the site's fonts, cut down to the characters the images draw
-//! by `scripts/og-fonts.mjs` (run it again when their texts change).
+//! by `scripts/og-fonts.ts` (run it again when their texts change).
 //!
 //! The font packages split every font into slices by script, so a font is a collection of faces
 //! here, one per slice. resvg replaces the glyphs a font lacks with another font's only when both
@@ -33,7 +33,7 @@ pub(super) enum Family {
     NotoSansThai,
 }
 
-/// The files `scripts/og-fonts.mjs` writes, TrueType collections.
+/// The files `scripts/og-fonts.ts` writes, TrueType collections.
 const FILES: [(Family, &[u8]); 10] = [
     (Family::Pixel, include_bytes!("fonts/dotgothic16.ttc")),
     (
