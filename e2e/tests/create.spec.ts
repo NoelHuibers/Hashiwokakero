@@ -2,8 +2,8 @@
 // played.
 import { text } from 'node:stream/consumers';
 
-import { board, build, cellCenter, PRACTICE_KEY, saved } from '../board';
-import { expect, test, visit } from '../fixtures';
+import { board, build, cellCenter, PRACTICE_KEY, saved } from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
 
 /** A 2 and a 3 joined by a double bridge, the 3 by a single one to a 1 below it. */
 const ISLANDS = [
@@ -45,7 +45,9 @@ test('draw a puzzle, check it, export it, import it and play it', async ({ page 
   await expect(page.getByText('8×8 cells, 0 islands')).toBeVisible();
 
   // The exported file brings the same puzzle back
-  await page.locator('input[type=file]').setInputFiles({ name: 'mine.txt', mimeType: 'text/plain', buffer: Buffer.from(txt) });
+  await page
+    .locator('input[type=file]')
+    .setInputFiles({ name: 'mine.txt', mimeType: 'text/plain', buffer: Buffer.from(txt) });
   await expect(page.getByText('Imported mine.txt')).toBeVisible();
   await expect(page.getByText('8×8 cells, 3 islands')).toBeVisible();
   await expect(board(page).locator('g.island text')).toHaveText(['2', '3', '1']);
@@ -54,7 +56,9 @@ test('draw a puzzle, check it, export it, import it and play it', async ({ page 
   await expect(page).toHaveURL(/\/practice$/);
   await expect(page.getByText('Your own puzzle', { exact: true })).toBeVisible();
   const game = await saved(page, PRACTICE_KEY);
-  expect(game.puzzle.islands).toEqual(ISLANDS.map(({ x, y, n }) => ({ pos: { x, y }, required: n })));
+  expect(game.puzzle.islands).toEqual(
+    ISLANDS.map(({ x, y, n }) => ({ pos: { x, y }, required: n })),
+  );
   await build(page, PRACTICE_KEY, game.puzzle, [2, 1]);
   await expect(page.getByRole('heading', { name: /Well done!/ })).toBeVisible();
 });

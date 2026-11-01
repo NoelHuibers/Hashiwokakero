@@ -3,8 +3,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { ROOT } from './env';
-import { CLOSED_PUZZLE, DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed';
+import { ROOT } from './env.ts';
+import { CLOSED_PUZZLE, DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed.ts';
 
 const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 
@@ -12,9 +12,9 @@ const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 export const LOCALES: string[] = (() => {
   const list = source('i18n/build.rs').match(/LOCALES: \[&str; \d+\] = \[([^\]]*)\]/);
   if (!list) throw new Error('LOCALES not found in i18n/build.rs');
-  return [...list[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  return [...list[1]!.matchAll(/"([^"]+)"/g)].map((m) => m[1]!);
 })();
-export const DEFAULT_LOCALE = LOCALES[0];
+export const DEFAULT_LOCALE = LOCALES[0]!;
 
 const replayDay = Math.floor(Date.now() / 86_400_000) - REPLAY_DAY_BACK;
 
@@ -33,11 +33,14 @@ const PARAMS: Record<string, Record<string, number | string>> = {
 };
 
 /** Every page of the router, parameters filled in: `/`, `/practice`, `/dojo/1`, ... */
-export const ROUTES: string[] = [...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\)/g)].map((m) => {
-  const route = '/' + m[1].replace(/^\//, '');
+export const ROUTES: string[] = [
+  ...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\)/g),
+].map((m) => {
+  const route = `/${m[1]!.replace(/^\//, '')}`;
   return route.replace(/:(\w+)/g, (_, name: string) => {
     const value = PARAMS[route]?.[name];
-    if (value === undefined) throw new Error(`no seeded value for :${name} of ${route} (e2e/site.ts)`);
+    if (value === undefined)
+      throw new Error(`no seeded value for :${name} of ${route} (e2e/site.ts)`);
     return String(value);
   });
 });

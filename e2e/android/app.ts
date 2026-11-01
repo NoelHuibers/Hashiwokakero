@@ -2,20 +2,31 @@
 // settings or session) and gets its WebView as `page`. Like e2e/fixtures.ts it fails a test on
 // any error in the page, here also on a content security policy violation and on any answer
 // from the server, which the device must not reach.
-import { test as base, expect, type AndroidDevice, type Page, type TestInfo } from '@playwright/test';
+import {
+  type AndroidDevice,
+  test as base,
+  expect,
+  type Page,
+  type TestInfo,
+} from '@playwright/test';
 
-import { ACTIVITY, connect, ORIGIN, PKG, SERVER, shell } from './device';
+import { ACTIVITY, connect, ORIGIN, PKG, SERVER, shell } from './device.ts';
 
 export { expect };
 
 /** The browser's notes about requests that couldn't go out: expected without a network. */
-const NETWORK_ERROR = /ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED|ERR_ADDRESS_UNREACHABLE|ERR_NETWORK_CHANGED/;
+const NETWORK_ERROR =
+  /ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED|ERR_ADDRESS_UNREACHABLE|ERR_NETWORK_CHANGED/;
 
-export const test = base.extend<{ start: string; problems: string[]; consoleLog: void }, { device: AndroidDevice }>({
+export const test = base.extend<
+  { start: string; problems: string[]; consoleLog: undefined },
+  { device: AndroidDevice }
+>({
   /** What `am start` starts the app with: its launcher's activity, or an intent (an App Link). */
   start: [`-n ${ACTIVITY}`, { option: true }],
 
   device: [
+    // biome-ignore lint/correctness/noEmptyPattern: Playwright reads a fixture's dependencies from its source and needs the pattern
     async ({}, use) => {
       const device = await connect();
       await use(device);
@@ -28,7 +39,10 @@ export const test = base.extend<{ start: string; problems: string[]; consoleLog:
     const page = await launch(device, start, testInfo);
     await use(page);
     if (testInfo.status !== testInfo.expectedStatus) {
-      await testInfo.attach('screen', { body: await device.screenshot(), contentType: 'image/png' });
+      await testInfo.attach('screen', {
+        body: await device.screenshot(),
+        contentType: 'image/png',
+      });
     }
   },
 
@@ -38,8 +52,9 @@ export const test = base.extend<{ start: string; problems: string[]; consoleLog:
       const lines: string[] = [];
       page.on('console', (m) => lines.push(`${m.type()}: ${m.text()}`));
       page.on('pageerror', (e) => lines.push(`page error: ${e.message}`));
-      await use();
-      if (lines.length) await testInfo.attach('console', { body: lines.join('\n'), contentType: 'text/plain' });
+      await use(undefined);
+      if (lines.length > 0)
+        await testInfo.attach('console', { body: lines.join('\n'), contentType: 'text/plain' });
     },
     { auto: true },
   ],
@@ -51,11 +66,13 @@ export const test = base.extend<{ start: string; problems: string[]; consoleLog:
       page.on('console', (m) => {
         const text = m.text();
         if (/Content.Security.Policy/i.test(text)) problems.push(`CSP: ${text}`);
-        else if (m.type() === 'error' && !NETWORK_ERROR.test(text)) problems.push(`console error: ${text}`);
+        else if (m.type() === 'error' && !NETWORK_ERROR.test(text))
+          problems.push(`console error: ${text}`);
       });
       // The device is offline: an answer from the server means a request got out
       page.on('response', (r) => {
-        if (new URL(r.url()).hostname === SERVER) problems.push(`reached the server: ${r.request().method()} ${r.url()}`);
+        if (new URL(r.url()).hostname === SERVER)
+          problems.push(`reached the server: ${r.request().method()} ${r.url()}`);
       });
       await use(problems);
       // The page the app started with has no listener yet. A test that stopped the app leaves a
@@ -63,7 +80,9 @@ export const test = base.extend<{ start: string; problems: string[]; consoleLog:
       const read = page
         .evaluate(() => (window as unknown as { cspViolations?: string[] }).cspViolations ?? [])
         .catch(() => [] as string[]);
-      const seen = page.isClosed() ? [] : await within(10_000, 'reading the violations', read).catch(() => []);
+      const seen = page.isClosed()
+        ? []
+        : await within(10_000, 'reading the violations', read).catch(() => []);
       problems.push(...seen.map((v) => `CSP: ${v}`));
       expect(problems, 'errors in the app').toEqual([]);
     },
@@ -83,13 +102,20 @@ async function launch(device: AndroidDevice, start: string, testInfo: TestInfo):
     for (let attempt = 1; ; attempt++) {
       // Also stops the app; then its old WebView goes away
       expect(await shell(device, `pm clear ${PKG}`)).toBe('Success');
-      await expect.poll(() => device.webViews().some((w) => w.pkg() === PKG), { message: 'the old WebView is gone' }).toBe(false);
+      await expect
+        .poll(() => device.webViews().some((w) => w.pkg() === PKG), {
+          message: 'the old WebView is gone',
+        })
+        .toBe(false);
       const started = Date.now();
-      expect(await shell(device, `am start -W ${start}`), 'the activity started').toMatch(/Status: ok/);
+      expect(await shell(device, `am start -W ${start}`), 'the activity started').toMatch(
+        /Status: ok/,
+      );
       const webView = await device.webView({ pkg: PKG }, { timeout: 60_000 });
       const attached = webView.page();
+      // Only failing with the timeout below, which relaunches the app; no unhandled rejection then
+      attached.catch(() => undefined);
       const page = await within(20_000, 'attaching to the WebView', attached).catch((e: Error) => {
-        attached.catch(() => {});
         if (attempt === 3) throw e;
         testInfo.annotations.push({ type: 'relaunch', description: e.message });
         return null;
@@ -104,7 +130,9 @@ async function launch(device: AndroidDevice, start: string, testInfo: TestInfo):
         const seen: string[] = [];
         Object.defineProperty(window, 'cspViolations', { value: seen });
         document.addEventListener('securitypolicyviolation', (e) =>
-          seen.push(`${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || e.documentURI}:${e.lineNumber})`),
+          seen.push(
+            `${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || e.documentURI}:${e.lineNumber})`,
+          ),
         );
       });
       return page;
@@ -127,7 +155,9 @@ async function within<T>(ms: number, what: string, promise: Promise<T>): Promise
 
 /** The content security policy's violations on the current page, since it loaded. */
 export async function violations(page: Page): Promise<string[]> {
-  const seen = await page.evaluate(() => (window as unknown as { cspViolations?: string[] }).cspViolations ?? null);
+  const seen = await page.evaluate(
+    () => (window as unknown as { cspViolations?: string[] }).cspViolations ?? null,
+  );
   expect(seen, 'the listener for violations is on the page').not.toBeNull();
   return seen!;
 }
@@ -141,22 +171,31 @@ export async function visit(page: Page, path: string) {
 /** Waits for the mark App sets once the WASM rendered the page (src/lib.rs), then for its calls. */
 export async function hydrated(page: Page) {
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', '', { timeout: 60_000 });
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: the page's own calls after hydrating, before a test goes on
   await page.waitForLoadState('networkidle');
 }
 
 /** Whether the app's activity is the one in front. */
 export async function inFront(device: AndroidDevice) {
   const activities = await shell(device, 'dumpsys activity activities');
-  return (activities.match(/(?:mResumedActivity|topResumedActivity)[^\n]*/g) ?? []).some((l) => l.includes(PKG));
+  return (activities.match(/(?:mResumedActivity|topResumedActivity)[^\n]*/g) ?? []).some((l) =>
+    l.includes(PKG),
+  );
 }
 
 /** The activities the device started since `logcat -c`. */
 export const started = async (device: AndroidDevice) =>
-  (await shell(device, 'logcat -d -s ActivityTaskManager:I')).split('\n').filter((l) => /START u\d+ \{/.test(l));
+  (await shell(device, 'logcat -d -s ActivityTaskManager:I'))
+    .split('\n')
+    .filter((l) => /START u\d+ \{/.test(l));
 
 /** The window that gets the keys (`mCurrentFocus`): `<package>/<activity>`, or a dialog's title. */
 export async function focused(device: AndroidDevice) {
-  return (await shell(device, 'dumpsys window')).match(/mCurrentFocus=Window\{\S+ u\d+ ([^}]*)\}/)?.[1] ?? '';
+  return (
+    (await shell(device, 'dumpsys window')).match(
+      /mCurrentFocus=Window\{\S+ u\d+ ([^}]*)\}/,
+    )?.[1] ?? ''
+  );
 }
 
 /**

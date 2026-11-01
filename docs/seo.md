@@ -44,7 +44,7 @@ in [deployment.md](deployment.md#search-engines).
 - **Verification files** for Bing and Yandex, and the IndexNow key file, from
   settings (empty until the tokens exist, see below). Google verifies the domain
   with a DNS record, which needs nothing on the site.
-- **IndexNow**: `scripts/indexnow.mjs`, run by `.github/workflows/indexnow.yml`,
+- **IndexNow**: `scripts/indexnow.ts`, run by `.github/workflows/indexnow.yml`,
   submits to Bing, Yandex and the other IndexNow engines the sitemap URLs a deploy
   added or changed, and after midnight UTC the pages of the new daily (the URLs
   whose `lastmod` is today). Not every deploy's URLs: a deploy changes code, rarely

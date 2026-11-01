@@ -2,9 +2,9 @@
 // what a broken Leptos, wasm-bindgen or leptos_i18n update breaks first.
 import type { Page } from '@playwright/test';
 
-import { allow, expect, signIn, test, visit } from '../fixtures';
-import { player } from '../seed';
-import { LOCALES, localized, ROUTES, RTL_LOCALES } from '../site';
+import { allow, expect, signIn, test, visit } from '../fixtures.ts';
+import { player } from '../seed.ts';
+import { DEFAULT_LOCALE, LOCALES, localized, ROUTES, RTL_LOCALES } from '../site.ts';
 
 async function expectLanguage(page: Page, locale: string) {
   const html = page.locator('html');
@@ -16,7 +16,10 @@ async function expectLanguage(page: Page, locale: string) {
 async function expectInteractive(page: Page) {
   const html = page.locator('html');
   await expect(html).not.toHaveClass(/\bdark\b/);
-  await page.locator('header button').filter({ hasText: /^[昼夜]$/ }).click();
+  await page
+    .locator('header button')
+    .filter({ hasText: /^[昼夜]$/ })
+    .click();
   await expect(html).toHaveClass(/\bdark\b/);
 }
 
@@ -48,7 +51,7 @@ test('the admin dashboard is only for admins', async ({ page, context }) => {
   await expect(page.getByRole('heading', { name: 'Admin', exact: true })).toBeVisible();
 });
 
-for (const locale of [LOCALES[0], 'de', 'ar']) {
+for (const locale of [DEFAULT_LOCALE, 'de', 'ar']) {
   const path = localized(locale, '/no-such-page');
   test(`${path} is a 404 page`, async ({ page, problems }) => {
     // The router's fallback is outside the routes of the languages: LocaleFromPath (src/app.rs)

@@ -2,30 +2,40 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { addBridge, board, cellCenter, edges, PRACTICE_KEY, saved, seedGame } from '../board';
-import { ROOT } from '../env';
-import { expect, signIn, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
-import { localized } from '../site';
+import { addBridge, board, cellCenter, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { ROOT } from '../env.ts';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
+import { localized } from '../site.ts';
 
 const playing = {
-  puzzle: LADDER, bridges: edges(LADDER).map(() => 0), solution: LADDER_SOLUTION,
-  status: 'Playing' as const, moves: 0, hints: 0,
+  puzzle: LADDER,
+  bridges: edges(LADDER).map(() => 0),
+  solution: LADDER_SOLUTION,
+  status: 'Playing' as const,
+  moves: 0,
+  hints: 0,
 };
 const messages = (locale: string, namespace: string) =>
   JSON.parse(readFileSync(path.join(ROOT, 'locales', locale, `${namespace}.json`), 'utf8'));
 
 for (const width of [390, 768]) {
   for (const locale of ['en', 'ar']) {
-    test(`header names survive hidden labels at ${width}px in ${locale}`, async ({ page, context }) => {
+    test(`header names survive hidden labels at ${width}px in ${locale}`, async ({
+      page,
+      context,
+    }) => {
       await page.setViewportSize({ width, height: 844 });
       const common = messages(locale, 'common');
       const header = page.locator('header');
       await visit(page, localized(locale, '/rules'));
-      await expect(header.getByRole('link', { name: `Hashi · ${common.nav.daily}`, exact: true }))
-        .toHaveAttribute('href', localized(locale, '/'));
-      await expect(header.getByRole('link', { name: common.sign_in, exact: true }))
-        .toHaveAttribute('href', localized(locale, '/account'));
+      await expect(
+        header.getByRole('link', { name: `Hashi · ${common.nav.daily}`, exact: true }),
+      ).toHaveAttribute('href', localized(locale, '/'));
+      await expect(header.getByRole('link', { name: common.sign_in, exact: true })).toHaveAttribute(
+        'href',
+        localized(locale, '/account'),
+      );
       for (const name of ['aiko', 'Drowsy Otter 21']) {
         await signIn(context, name);
         await visit(page, localized(locale, '/rules'));
@@ -36,11 +46,16 @@ for (const width of [390, 768]) {
   }
 }
 
-test('difficulty exposes one selected choice and can be changed with the keyboard in RTL', async ({ page }) => {
+test('difficulty exposes one selected choice and can be changed with the keyboard in RTL', async ({
+  page,
+}) => {
   await seedGame(page, PRACTICE_KEY, playing);
   await visit(page, '/ar/practice');
   const common = messages('ar', 'common');
-  const group = page.getByRole('group', { name: messages('ar', 'practice').new_puzzle, exact: true });
+  const group = page.getByRole('group', {
+    name: messages('ar', 'practice').new_puzzle,
+    exact: true,
+  });
   await expect(group.getByRole('button', { pressed: true })).toHaveCount(1);
   const medium = group.getByRole('button', { name: new RegExp(common.difficulty.medium) });
   await expect(medium).toHaveAttribute('aria-pressed', 'true');
@@ -57,7 +72,9 @@ test('difficulty exposes one selected choice and can be changed with the keyboar
   await expect(easy).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('toasts enter an existing polite live region without moving keyboard focus', async ({ page }) => {
+test('toasts enter an existing polite live region without moving keyboard focus', async ({
+  page,
+}) => {
   await seedGame(page, PRACTICE_KEY, playing);
   await visit(page, '/practice');
   const log = page.getByRole('log');
@@ -85,13 +102,20 @@ test('toasts enter an existing polite live region without moving keyboard focus'
 test.describe('native and game gestures on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-  test('swiping a read-only illustration scrolls the page and leaves native zoom available', async ({ page, context }) => {
+  test('swiping a read-only illustration scrolls the page and leaves native zoom available', async ({
+    page,
+    context,
+  }) => {
     await visit(page, '/rules');
     const svg = board(page);
     await expect(svg).toHaveAttribute('role', 'img');
     await expect(svg).toHaveCSS('touch-action', 'auto');
     // A cancelable touchend must remain available to the browser too.
-    expect(await svg.evaluate((el) => el.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true })))).toBe(true);
+    expect(
+      await svg.evaluate((el) =>
+        el.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true })),
+      ),
+    ).toBe(true);
     await svg.evaluate((el) => el.scrollIntoView({ block: 'center' }));
     const rect = (await svg.boundingBox())!;
     const x = rect.x + rect.width / 2;
@@ -100,8 +124,12 @@ test.describe('native and game gestures on a phone', () => {
     const touch = await context.newCDPSession(page);
     await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
     for (let step = 1; step <= 8; step++) {
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - step * 20 }] });
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x, y: y - step * 20 }],
+      });
       // Real time between input samples lets Chromium recognize the swipe as a gesture.
+      // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: real time between the touch samples lets Chromium recognize the swipe
       await page.waitForTimeout(20);
     }
     await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
@@ -114,7 +142,11 @@ test.describe('native and game gestures on a phone', () => {
       await seedGame(page, PRACTICE_KEY, playing);
       await visit(page, localized(locale, '/practice'));
       await expect(board(page)).toHaveCSS('touch-action', 'none');
-      expect(await board(page).evaluate((el) => el.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true })))).toBe(false);
+      expect(
+        await board(page).evaluate((el) =>
+          el.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true })),
+        ),
+      ).toBe(false);
       const start = await cellCenter(page, 0, 1);
       const end = await cellCenter(page, 6, 1);
       await page.mouse.move(start.x, start.y);
@@ -128,7 +160,9 @@ test.describe('native and game gestures on a phone', () => {
       await page.mouse.down();
       await page.mouse.move(end.x, end.y, { steps: 5 });
       await page.mouse.up();
-      await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[ladderRow(1)]).toBe(1);
+      await expect
+        .poll(async () => (await saved(page, PRACTICE_KEY)).bridges[ladderRow(1)])
+        .toBe(1);
     });
   }
 });

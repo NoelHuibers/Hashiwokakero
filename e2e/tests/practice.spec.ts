@@ -2,9 +2,19 @@
 // handling in the WASM), and a whole game up to the win screen, saved in the browser.
 import type { Page } from '@playwright/test';
 
-import { addBridge, board, boardPoint, build, PRACTICE_KEY, type Puzzle, saved, seedGame, toBoard } from '../board';
-import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
-import { expect, test, visit } from '../fixtures';
+import {
+  addBridge,
+  board,
+  boardPoint,
+  build,
+  PRACTICE_KEY,
+  type Puzzle,
+  saved,
+  seedGame,
+  toBoard,
+} from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
 
 const bridges = (page: Page) => board(page).locator('g.bridge:not(.ghost)');
 
@@ -12,7 +22,9 @@ const bridges = (page: Page) => board(page).locator('g.bridge:not(.ghost)');
 const layout = (page: Page) =>
   board(page)
     .locator('g.island')
-    .evaluateAll((islands) => islands.map((g) => `${g.getAttribute('transform')}:${g.textContent}`).join(' '));
+    .evaluateAll((islands) =>
+      islands.map((g) => `${g.getAttribute('transform')}:${g.textContent}`).join(' '),
+    );
 
 /**
  * The middle of the water between an island and its right neighbour, in the viewport
@@ -29,12 +41,18 @@ async function gap(page: Page) {
       const svg = (islands[0] as SVGGElement).ownerSVGElement!;
       const toPage = svg.getScreenCTM()!;
       // translate(x,y) in board units, 16 per cell
-      const cells = islands.map((g) => g.getAttribute('transform')!.match(/-?[\d.]+/g)!.map(Number));
-      for (const [x, y] of cells) {
-        const right = cells.filter(([bx, by]) => by === y && bx > x).sort((p, q) => p[0] - q[0])[0];
+      const cells = islands.map((g) => {
+        const [x, y] = g
+          .getAttribute('transform')!
+          .match(/-?[\d.]+/g)!
+          .map(Number);
+        return { x: x!, y: y! };
+      });
+      for (const { x, y } of cells) {
+        const right = cells.filter((c) => c.y === y && c.x > x).sort((p, q) => p.x - q.x)[0];
         // At least one empty cell between them, so the point is on water and not an island
-        if (right && right[0] - x >= 32) {
-          const p = new DOMPoint((x + right[0]) / 2 + 8, y + 8).matrixTransform(toPage);
+        if (right && right.x - x >= 32) {
+          const p = new DOMPoint((x + right.x) / 2 + 8, y + 8).matrixTransform(toPage);
           return { x: p.x, y: p.y };
         }
       }
@@ -120,7 +138,9 @@ test('play a puzzle from the first bridge to the win screen', async ({ page }) =
   await build(page, PRACTICE_KEY, game.puzzle, solution);
   await expect(wonHeading(page)).toBeVisible();
   await expect(board(page).locator('g.island:not(.done)')).toHaveCount(0);
-  await expect(page.getByText(`${game.puzzle.islands.length} / ${game.puzzle.islands.length}`)).toBeVisible();
+  await expect(
+    page.getByText(`${game.puzzle.islands.length} / ${game.puzzle.islands.length}`),
+  ).toBeVisible();
   await expect.poll(async () => (await saved(page, PRACTICE_KEY)).status).toBe('Won');
 
   // A won game stays won
@@ -134,7 +154,9 @@ test('play a puzzle from the first bridge to the win screen', async ({ page }) =
 
 /** `layout` of a puzzle, without the page. */
 function layoutOf(puzzle: Puzzle) {
-  return puzzle.islands.map((i) => `translate(${i.pos.x * 16},${i.pos.y * 16}):${i.required}`).join(' ');
+  return puzzle.islands
+    .map((i) => `translate(${i.pos.x * 16},${i.pos.y * 16}):${i.required}`)
+    .join(' ');
 }
 
 test.describe('on a phone', () => {
@@ -157,7 +179,14 @@ test.describe('on a phone', () => {
 });
 
 /** The ladder, solved: the win screen shows as soon as the page loads. */
-const wonLadder = { puzzle: LADDER, bridges: LADDER_SOLUTION, solution: LADDER_SOLUTION, status: 'Won', moves: 9, hints: 0 } as const;
+const wonLadder = {
+  puzzle: LADDER,
+  bridges: LADDER_SOLUTION,
+  solution: LADDER_SOLUTION,
+  status: 'Won',
+  moves: 9,
+  hints: 0,
+} as const;
 
 test.describe('on a phone, the last tap', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
@@ -186,14 +215,22 @@ test.describe('on a phone, the last tap', () => {
     await playing.evaluate(() => {
       const w = window as unknown as { clicked: string[] };
       w.clicked = [];
-      document.addEventListener('click', (e) => w.clicked.push((e.target as Element).closest('button')?.textContent ?? ''), true);
+      document.addEventListener(
+        'click',
+        (e) => w.clicked.push((e.target as Element).closest('button')?.textContent ?? ''),
+        true,
+      );
     });
     const point = await boardPoint(playing, target.x, target.y);
     await playing.touchscreen.tap(point.x, point.y);
     await expect(wonHeading(playing)).toBeVisible();
     // Taps are handled in order: once this one is through, a click of the first would be too
     await playing.touchscreen.tap(10, 300);
-    expect(await playing.evaluate(() => (window as unknown as { clicked: string[] }).clicked.filter(Boolean))).toEqual([]);
+    expect(
+      await playing.evaluate(() =>
+        (window as unknown as { clicked: string[] }).clicked.filter(Boolean),
+      ),
+    ).toEqual([]);
     await expect(wonHeading(playing)).toBeVisible();
     expect((await saved(playing, PRACTICE_KEY)).status).toBe('Won');
     await playing.close();
@@ -215,6 +252,8 @@ test.describe('copying the result', () => {
     await visit(page, '/practice');
     await page.getByRole('button', { name: 'Copy' }).click();
     await expect(page.getByText('Result copied to the clipboard.')).toBeVisible();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^🌉 Hashi · Your own puzzle ·/);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
+      /^🌉 Hashi · Your own puzzle ·/,
+    );
   });
 });

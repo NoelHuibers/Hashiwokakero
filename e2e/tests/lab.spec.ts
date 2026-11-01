@@ -1,5 +1,5 @@
 // The solver lab: a fresh puzzle raced through the solver presets, every one finds a solution.
-import { expect, test, visit } from '../fixtures';
+import { expect, test, visit } from '../fixtures.ts';
 
 test('race the default solvers on a fresh puzzle', async ({ page }) => {
   await visit(page, '/lab');
@@ -10,7 +10,9 @@ test('race the default solvers on a fresh puzzle', async ({ page }) => {
 
   await page.getByRole('button', { name: /^Start the race/ }).click();
   await expect(page.getByRole('button', { name: 'Racing…' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Start the race/ })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: /^Start the race/ })).toBeVisible({
+    timeout: 30_000,
+  });
 
   const rows = page.locator('table tbody tr');
   // The presets selected by default (src/pages/lab/mod.rs)

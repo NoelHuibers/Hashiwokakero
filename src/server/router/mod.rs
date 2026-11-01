@@ -238,7 +238,7 @@ fn search_files<S: Clone + Send + Sync + 'static>(
 /// Browsers kept an old stylesheet after a deploy because its URL never changed and no cache
 /// headers were sent. With hashed file names everything under /pkg/ can be cached forever, since
 /// a new build gets new names; everything else is revalidated on every visit. The font files
-/// always have a content hash in their names (scripts/fonts.mjs). Errors are never cached for
+/// always have a content hash in their names (scripts/fonts.ts). Errors are never cached for
 /// good: a hashed name that isn't there yet (a page from another deploy) would stay broken.
 /// A response with the app's session token (see `auth`) is stored nowhere.
 /// A file of `/.well-known` that names the site's apps, JSON, cached for an hour: a 404 without

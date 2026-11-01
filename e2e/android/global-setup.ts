@@ -2,7 +2,7 @@
 // with a network.
 import { existsSync, mkdirSync } from 'node:fs';
 
-import { ACTIVITY, APK, connect, describe, goOffline, PKG, SCREENS, shell } from './device';
+import { ACTIVITY, APK, connect, deviceInfo, goOffline, PKG, SCREENS, shell } from './device.ts';
 
 export default async function globalSetup() {
   if (!existsSync(APK)) throw new Error(`no APK at ${APK}, see app/README.md (E2E_APK)`);
@@ -20,8 +20,10 @@ export default async function globalSetup() {
     await shell(device, `am start -W -n ${ACTIVITY}`);
     await device.webView({ pkg: PKG }, { timeout: 60_000 });
     await shell(device, `am force-stop ${PKG}`);
-    const info = await describe(device);
-    console.log(`${info.model}, Android ${info.android} (API ${info.sdk}, ${info.abi}), WebView ${info.webView}`);
+    const info = await deviceInfo(device);
+    console.log(
+      `${info.model}, Android ${info.android} (API ${info.sdk}, ${info.abi}), WebView ${info.webView}`,
+    );
   } finally {
     await device.close();
   }

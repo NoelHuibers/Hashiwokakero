@@ -5,11 +5,11 @@
 
 /** Appium's answer to a command that failed: the WebDriver error and its message. */
 export class WebDriverError extends Error {
-  constructor(
-    readonly error: string,
-    message: string,
-  ) {
+  readonly error: string;
+
+  constructor(error: string, message: string) {
     super(`${error}: ${message}`);
+    this.error = error;
   }
 }
 
@@ -19,33 +19,47 @@ const ELEMENT = 'element-6066-11e4-a52e-4f735466cecf';
 /** The context of the app's native views (WDA); the page's are `WEBVIEW_<id>`. */
 export const NATIVE = 'NATIVE_APP';
 
-async function send<T>(url: string, method: string, body?: unknown, timeoutMs = 120_000): Promise<T> {
+async function send<T>(
+  url: string,
+  method: string,
+  body?: unknown,
+  timeoutMs = 120_000,
+): Promise<T> {
   const response = await fetch(url, {
     method,
-    headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    ...(body !== undefined && {
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
     signal: AbortSignal.timeout(timeoutMs),
   });
   const text = await response.text();
   let json: { value?: unknown };
   try {
     json = JSON.parse(text);
-  } catch {
-    throw new Error(`${method} ${url}: ${response.status} ${text.slice(0, 500)}`);
+  } catch (e) {
+    throw new Error(`${method} ${url}: ${response.status} ${text.slice(0, 500)}`, { cause: e });
   }
   const value = json.value as { error?: string; message?: string } | undefined;
   if (!response.ok || (value && typeof value === 'object' && typeof value.error === 'string')) {
-    throw new WebDriverError(value?.error ?? `HTTP ${response.status}`, value?.message ?? text.slice(0, 500));
+    throw new WebDriverError(
+      value?.error ?? `HTTP ${response.status}`,
+      value?.message ?? text.slice(0, 500),
+    );
   }
   return json.value as T;
 }
 
 export class Session {
-  private constructor(
-    readonly base: string,
-    readonly id: string,
-    readonly capabilities: Record<string, unknown>,
-  ) {}
+  readonly base: string;
+  readonly id: string;
+  readonly capabilities: Record<string, unknown>;
+
+  private constructor(base: string, id: string, capabilities: Record<string, unknown>) {
+    this.base = base;
+    this.id = id;
+    this.capabilities = capabilities;
+  }
 
   /** A new session on the Appium server at `server`, with `capabilities` (`appium:` ones included). */
   static async create(server: string, capabilities: Record<string, unknown>): Promise<Session> {
@@ -56,7 +70,11 @@ export class Session {
       { capabilities: { alwaysMatch: capabilities, firstMatch: [{}] } },
       480_000,
     );
-    return new Session(`${server}/session/${created.sessionId}`, created.sessionId, created.capabilities);
+    return new Session(
+      `${server}/session/${created.sessionId}`,
+      created.sessionId,
+      created.capabilities,
+    );
   }
 
   command<T>(method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown): Promise<T> {
@@ -96,8 +114,14 @@ export class Session {
 
   /** The first element `selector` (CSS) finds in the page, or an error. */
   async find(selector: string): Promise<string> {
-    const found = await this.command<Record<string, string>>('POST', '/element', { using: 'css selector', value: selector });
-    return found[ELEMENT];
+    const found = await this.command<Record<string, string>>('POST', '/element', {
+      using: 'css selector',
+      value: selector,
+    });
+    const element = found[ELEMENT];
+    if (element === undefined)
+      throw new Error(`${selector}: no element in ${JSON.stringify(found)}`);
+    return element;
   }
 
   /** A click on an element of the page (WebDriver's atom: mouse events, as a user's gesture). */
@@ -107,7 +131,11 @@ export class Session {
 
   /** The log `type`'s entries since the last call (`safariConsole`, `syslog`, ...). */
   logs(type: string) {
-    return this.command<{ timestamp: number; level: string; message: string }[]>('POST', '/se/log', { type });
+    return this.command<{ timestamp: number; level: string; message: string }[]>(
+      'POST',
+      '/se/log',
+      { type },
+    );
   }
 
   /** The screen, as a PNG. */

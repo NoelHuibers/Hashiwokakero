@@ -7,15 +7,17 @@ import path from 'node:path';
 
 import { test } from '@playwright/test';
 
-import { ROOT, STORE_URL } from './env';
-import { framePage, waitReady } from './frame';
+import { ROOT, STORE_URL } from './env.ts';
+import { framePage, waitReady } from './frame.ts';
 
 interface Model {
   achievements: { id: string; kanji: string; tier: number | null }[];
   leaderboards: { id: string; kanji: string; play: boolean }[];
 }
 
-const MODEL = JSON.parse(readFileSync(path.join(ROOT, 'store/achievements/model.json'), 'utf8')) as Model;
+const MODEL = JSON.parse(
+  readFileSync(path.join(ROOT, 'store/achievements/model.json'), 'utf8'),
+) as Model;
 const ICONS = path.join(ROOT, 'target/store/achievements/icons');
 const SIZES = { apple: 1024, play: 512 } as const;
 
@@ -27,13 +29,21 @@ for (const [platform, size] of Object.entries(SIZES)) {
     await page.setViewportSize({ width: size, height: size });
     const items = [
       ...MODEL.achievements,
-      ...MODEL.leaderboards.filter((b) => platform === 'apple' || b.play).map((b) => ({ ...b, tier: null })),
+      ...MODEL.leaderboards
+        .filter((b) => platform === 'apple' || b.play)
+        .map((b) => ({ ...b, tier: null })),
     ];
     for (const { id, kanji, tier } of items) {
       const icon = { size, kanji, tier };
-      await page.goto(`${STORE_URL}/__store/hanko.html?icon=${encodeURIComponent(JSON.stringify(icon))}`);
+      await page.goto(
+        `${STORE_URL}/__store/hanko.html?icon=${encodeURIComponent(JSON.stringify(icon))}`,
+      );
       await waitReady(page);
-      await page.screenshot({ path: path.join(dir, `${id}.png`), animations: 'disabled', caret: 'hide' });
+      await page.screenshot({
+        path: path.join(dir, `${id}.png`),
+        animations: 'disabled',
+        caret: 'hide',
+      });
     }
     await page.context().close();
   });

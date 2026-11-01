@@ -1,28 +1,25 @@
 // The store screenshots: every scene (scenes.ts) in every language of the site, on a phone and a
 // tablet screen (devices.ts), then framed with a caption for each store (frame.ts). One test per
 // language, they run side by side.
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { type Browser, expect, test } from '@playwright/test';
+import { hydrated } from '../../e2e/fixtures.ts';
+import { localized } from '../../e2e/site.ts';
 
-import { expect, test, type Browser } from '@playwright/test';
+import { SITE_LANGUAGES } from '../locales.ts';
+import { FRAMES, SCREENS, type Screen } from './devices.ts';
+import { IMAGES_DIR, ONLY_LANGS, RAW_DIR, ROOT, STORE_URL } from './env.ts';
+import { type Caption, feature, frame, framePage } from './frame.ts';
+import { boardShot, SCENES, type Scene, type SceneId, signIn } from './scenes.ts';
 
-import { hydrated } from '../../e2e/fixtures';
-import { localized } from '../../e2e/site';
-import { readFileSync } from 'node:fs';
-
-import { SITE_LANGUAGES } from '../locales.mjs';
-import { FRAMES, SCREENS, type Screen } from './devices';
-import { IMAGES_DIR, ONLY_LANGS, RAW_DIR, ROOT, STORE_URL } from './env';
-import { feature, frame, framePage, type Caption } from './frame';
-import { boardShot, SCENES, signIn, type Scene, type SceneId } from './scenes';
-
-const LANGS = (SITE_LANGUAGES as string[]).filter((l) => !ONLY_LANGS || ONLY_LANGS.includes(l));
+const LANGS = SITE_LANGUAGES.filter((l) => !ONLY_LANGS || ONLY_LANGS.includes(l));
 const CAPTIONS = JSON.parse(readFileSync(path.join(ROOT, 'store/captions.json'), 'utf8')) as Record<
   string,
   Record<SceneId | 'feature', Caption>
 >;
 /** Frame the screenshots of an earlier run again, without taking them: the templates' turn. */
-const FRAME_ONLY = !!process.env.STORE_FRAME_ONLY;
+const FRAME_ONLY = Boolean(process.env.STORE_FRAME_ONLY);
 
 for (const lang of LANGS) {
   test(`${lang}`, async ({ browser }) => {
@@ -36,19 +33,36 @@ for (const lang of LANGS) {
       }
     }
     if (!FRAME_ONLY) {
-      const context = await browser.newContext({ viewport: { width: 1280, height: 1000 }, deviceScaleFactor: 2 });
+      const context = await browser.newContext({
+        viewport: { width: 1280, height: 1000 },
+        deviceScaleFactor: 2,
+      });
       await boardShot(context, path.join(RAW_DIR, lang, 'board.png'));
       await context.close();
     }
     const page = await framePage(browser);
-    await feature(page, { lang, caption: CAPTIONS[lang].feature, out: path.join(IMAGES_DIR, lang, 'feature.png') });
+    const featureCaption = CAPTIONS[lang]?.feature;
+    if (!featureCaption) throw new Error(`no feature caption in ${lang} (store/captions.json)`);
+    await feature(page, {
+      lang,
+      caption: featureCaption,
+      out: path.join(IMAGES_DIR, lang, 'feature.png'),
+    });
     for (const f of FRAMES) {
       const dir = path.join(IMAGES_DIR, lang, f.id);
       mkdirSync(dir, { recursive: true });
       for (const [i, scene] of SCENES.entries()) {
         const caption = CAPTIONS[lang]?.[scene.id];
-        if (!caption) throw new Error(`no caption for ${scene.id} in ${lang} (store/captions.json)`);
-        await frame(page, { frame: f, lang, scene: scene.id, caption, dark: !!scene.dark, out: path.join(dir, `${i + 1}-${scene.id}.png`) });
+        if (!caption)
+          throw new Error(`no caption for ${scene.id} in ${lang} (store/captions.json)`);
+        await frame(page, {
+          frame: f,
+          lang,
+          scene: scene.id,
+          caption,
+          dark: Boolean(scene.dark),
+          out: path.join(dir, `${i + 1}-${scene.id}.png`),
+        });
       }
     }
     await page.context().close();
@@ -90,11 +104,13 @@ async function capture(browser: Browser, lang: string, scene: Scene, screen: Scr
     // The local server's address where the app shows hashi.rs (the group's invite link)
     await page.evaluate((local) => {
       for (const input of document.querySelectorAll('input')) {
-        if (input.value.startsWith(local)) input.value = input.value.replace(local, 'https://hashi.rs');
+        if (input.value.startsWith(local))
+          input.value = input.value.replace(local, 'https://hashi.rs');
       }
     }, STORE_URL);
     await page.evaluate(() => document.fonts.ready);
     // Toasts and the last transitions gone
+    // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: toasts and the last transitions gone for the store screenshot
     await page.waitForTimeout(800);
     await page.screenshot({
       path: path.join(RAW_DIR, lang, `${scene.id}-${screen.id}.png`),

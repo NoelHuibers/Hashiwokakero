@@ -3,9 +3,9 @@
 // fonts `pnpm install` puts in public/fonts.
 import { defineConfig } from '@playwright/test';
 
-import { STORE_URL } from './env';
+import { STORE_URL } from './env.ts';
 
-const CI = !!process.env.CI;
+const CI = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: '.',

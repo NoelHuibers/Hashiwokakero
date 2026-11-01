@@ -6,8 +6,8 @@
 // assetlinks.json), so the intents name the package, as `adb` lets them.
 import type { AndroidDevice, Page } from '@playwright/test';
 
-import { closeSystemDialogs, expect, hydrated, inFront, started, test, visit } from './app';
-import { ACTIVITY, ORIGIN, PKG, shell } from './device';
+import { closeSystemDialogs, expect, hydrated, inFront, started, test, visit } from './app.ts';
+import { ACTIVITY, ORIGIN, PKG, shell } from './device.ts';
 
 const INVITE = 'https://hashi.rs/g/testcode';
 /** Where a daily result's share text points, in Japanese. */
@@ -17,7 +17,8 @@ const DAILY_JA = 'https://hashi.rs/ja';
 const view = (url: string, target = PKG) => `-a android.intent.action.VIEW -d ${url} ${target}`;
 
 /** The toasts on the screen (src/components/layout/toaster.rs). */
-const offlineNotice = (page: Page) => page.locator('[role=log] > div').filter({ hasText: "You're offline. Practice still works." });
+const offlineNotice = (page: Page) =>
+  page.locator('[role=log] > div').filter({ hasText: "You're offline. Practice still works." });
 
 /** Navigations of the WebView away from the app's pages: it would leave the app for the website. */
 function navigationsOut(page: Page) {
@@ -35,7 +36,11 @@ function navigationsOut(page: Page) {
 async function onlyTheApp(device: AndroidDevice, url: string) {
   await closeSystemDialogs(device);
   const all = await started(device);
-  const from = all.findLastIndex((l) => l.includes(`dat=${url.replace(/^https:\/\/([^/]+).*$/, 'https://$1')}`) && l.includes('act=android.intent.action.VIEW'));
+  const from = all.findLastIndex(
+    (l) =>
+      l.includes(`dat=${url.replace(/^https:\/\/([^/]+).*$/, 'https://$1')}`) &&
+      l.includes('act=android.intent.action.VIEW'),
+  );
   expect(from, `the intent for ${url}`).toBeGreaterThanOrEqual(0);
   const starts = all.slice(from);
   expect(
@@ -53,7 +58,10 @@ async function offlineInvite(page: Page, notice: boolean) {
   await expect(page.getByText('Loading…')).toBeVisible();
   if (notice) await expect(offlineNotice(page)).toHaveCount(1);
   else expect(await offlineNotice(page).count()).toBeLessThanOrEqual(1);
-  await expect(page.locator('[role=log] > div').filter({ hasText: '✕' }), 'error toasts').toHaveCount(0);
+  await expect(
+    page.locator('[role=log] > div').filter({ hasText: '✕' }),
+    'error toasts',
+  ).toHaveCount(0);
 }
 
 test.describe('started by an invite', () => {
@@ -100,7 +108,9 @@ test('links bring the running app to their page', async ({ page, device }) => {
   await onlyTheApp(device, DAILY_JA);
 
   // The router showed them: the same page, with the pages before them in its history
-  expect(await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument)).toBe(true);
+  expect(
+    await page.evaluate(() => (window as unknown as { sameDocument?: boolean }).sameDocument),
+  ).toBe(true);
   await shell(device, 'input keyevent KEYCODE_BACK');
   await expect(page).toHaveURL(`${ORIGIN}/g/testcode`);
   expect(out).toEqual([]);
@@ -110,12 +120,19 @@ test('other pages of the site change nothing', async ({ page, device }) => {
   await visit(page, '/rules');
   const out = navigationsOut(page);
   // No intent filter of the app takes it: Android finds nothing to start in the package
-  expect(await shell(device, `am start -W ${view('https://hashi.rs/admin')}`)).toMatch(/unable to resolve Intent/);
+  expect(await shell(device, `am start -W ${view('https://hashi.rs/admin')}`)).toMatch(
+    /unable to resolve Intent/,
+  );
   // Sent to the app's activity anyway: the app stays where it is
-  for (const url of ['https://hashi.rs/admin', 'https://hashi.rs/dojo/seasons/1/set.tar.gz', 'https://example.com/g/testcode']) {
+  for (const url of [
+    'https://hashi.rs/admin',
+    'https://hashi.rs/dojo/seasons/1/set.tar.gz',
+    'https://example.com/g/testcode',
+  ]) {
     expect(await shell(device, `am start -W ${view(url, `-n ${ACTIVITY}`)}`)).toMatch(/Status: ok/);
     await onlyTheApp(device, url);
   }
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
   await page.waitForTimeout(1000);
   expect(page.url()).toBe(`${ORIGIN}/rules`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');
@@ -126,6 +143,7 @@ test.describe('started by another page of the site', () => {
   test.use({ start: view('https://hashi.rs/admin', `-n ${ACTIVITY}`) });
 
   test('the app starts on its start page', async ({ page, device }) => {
+    // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
     await page.waitForTimeout(1000);
     expect(page.url()).toBe(`${ORIGIN}/`);
     await hydrated(page);

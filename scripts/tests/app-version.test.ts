@@ -1,18 +1,18 @@
-// node --test scripts/tests/: scripts/app-version.mjs on copies of the real files
+// node --test scripts/tests/: scripts/app-version.ts on copies of the real files
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, beforeEach, test } from 'node:test';
-import { FILES, check, parse, read, set, versionCode } from '../app-version.mjs';
+import { check, FILES, parse, read, set, versionCode } from '../app-version.ts';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'app-version-'));
 after(() => fs.rmSync(scratch, { recursive: true, force: true }));
 
 // A fresh copy of the files for every test
-let dir;
+let dir = '';
 let count = 0;
 beforeEach(() => {
   dir = path.join(scratch, String(count++));
@@ -21,7 +21,7 @@ beforeEach(() => {
     fs.copyFileSync(path.join(root, file), path.join(dir, file));
   }
 });
-const text = (file) => fs.readFileSync(path.join(dir, file), 'utf8');
+const text = (file: string): string => fs.readFileSync(path.join(dir, file), 'utf8');
 
 test('the repository agrees on one version', () => {
   assert.match(check(root), /^\d+\.\d+\.\d+$/);
@@ -46,10 +46,11 @@ test('a version is x.y.z with minor and patch below 1000', () => {
 test('set changes every file, and only the app crates in the lock files', () => {
   // The app crates start with the version of another crate in Cargo.lock, which has to keep it
   const packages = /\[\[package\]\]\nname = "([^"]*)"\nversion = "([^"]*)"/g;
-  const old = [...text('Cargo.lock').matchAll(packages)]
-    .map(([, name, version]) => ({ name, version }))
-    .find(({ name, version }) => name !== 'hashi_app' && /^[0-6]\.\d{1,3}\.\d{1,3}$/.test(version))
-    .version;
+  const other = [...text('Cargo.lock').matchAll(packages)]
+    .map(([, name = '', version = '']) => ({ name, version }))
+    .find(({ name, version }) => name !== 'hashi_app' && /^[0-6]\.\d{1,3}\.\d{1,3}$/.test(version));
+  assert.ok(other);
+  const old = other.version;
   for (const { file, pattern } of FILES) {
     fs.writeFileSync(path.join(dir, file), text(file).replace(pattern, `$1${old}$3`));
   }
@@ -59,7 +60,7 @@ test('set changes every file, and only the app crates in the lock files', () => 
   assert.equal(check(dir), '7.8.9');
   for (const file of new Set(FILES.map((entry) => entry.file))) {
     // One line per entry differs: the old version became the new one, nothing else moved
-    const was = before[file].split('\n');
+    const was = (before[file] ?? '').split('\n');
     const now = text(file).split('\n');
     assert.equal(now.length, was.length, file);
     const changed = now.filter((line, i) => line !== was[i]);
@@ -67,7 +68,7 @@ test('set changes every file, and only the app crates in the lock files', () => 
     for (const line of changed) assert.match(line, /7\.8\.9/, file);
   }
   // The other crates with the old version keep it
-  const olds = (lock) => lock.split('\n').filter((l) => l === `version = "${old}"`).length;
+  const olds = (lock = '') => lock.split('\n').filter((l) => l === `version = "${old}"`).length;
   assert.ok(olds(before['Cargo.lock']) > 1);
   assert.equal(olds(text('Cargo.lock')), olds(before['Cargo.lock']) - 1);
   assert.equal(JSON.parse(text('app/src-tauri/tauri.conf.json')).version, '7.8.9');
@@ -77,10 +78,7 @@ test('set changes every file, and only the app crates in the lock files', () => 
     assert.ok(plist.includes(`<key>${key}</key>\n\t<string>7.8.9</string>`), key);
   }
   const yml = text('app/src-tauri/gen/apple/project.yml');
-  assert.match(
-    yml,
-    /\n {8}CFBundleShortVersionString: 7\.8\.9\n {8}CFBundleVersion: "7\.8\.9"\n/,
-  );
+  assert.match(yml, /\n {8}CFBundleShortVersionString: 7\.8\.9\n {8}CFBundleVersion: "7\.8\.9"\n/);
 });
 
 test('the iOS project has the version nowhere else', () => {
@@ -129,7 +127,7 @@ test('check names the key of the iOS project that differs', () => {
   assert.throws(() => check(dir), /differs[\s\S]*Info\.plist \(CFBundleVersion\): 3\.1\.0/);
   // The other key of the file is still the version
   const short = read(dir).find((e) => e.file === file && e.key === 'CFBundleShortVersionString');
-  assert.equal(short.version, '3.0.0');
+  assert.equal(short?.version, '3.0.0');
 });
 
 test('read fails when a file has no version where expected', () => {

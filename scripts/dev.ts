@@ -48,9 +48,10 @@ console.log(
   `jobs ${env.CARGO_BUILD_JOBS}, memory ${scope ? memory : 'not limited (no systemd-run)'}, ` +
     `languages ${env.HASHI_LOCALES ? `${env.HASHI_LOCALES} (HASHI_LOCALES)` : 'all'}`,
 );
-const run = spawnSync(command[0], command.slice(1), { cwd: root, env, stdio: 'inherit' });
+const [program = 'cargo', ...programArgs] = command;
+const run = spawnSync(program, programArgs, { cwd: root, env, stdio: 'inherit' });
 if (run.error) {
-  console.error(`${command[0]}: ${run.error.message}`);
+  console.error(`${program}: ${run.error.message}`);
   process.exit(1);
 }
 process.exit(run.status ?? 1);

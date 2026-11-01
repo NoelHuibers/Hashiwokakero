@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 
-import type { Puzzle } from '../../e2e/board';
+import type { Puzzle } from '../../e2e/board.ts';
 
 interface Fixed {
   puzzle: Puzzle;
@@ -25,16 +25,26 @@ const MS_PER_DAY = 86_400_000;
 const today = () => Math.floor(Date.now() / MS_PER_DAY);
 /** The weekday's difficulty, as model::daily_difficulty: the page names it next to the board. */
 const WEEK: Difficulty[] = ['easy', 'medium', 'medium', 'hard', 'hard', 'expert', 'oni'];
-const difficulty = WEEK[(today() + 3) % 7];
+const difficulty = WEEK[(today() + 3) % 7]!;
 /** How long the day's puzzle takes against a medium one. */
-const SCALE: Record<Difficulty, number> = { easy: 0.55, medium: 1, hard: 1.7, expert: 2.8, oni: 4.6 };
+const SCALE: Record<Difficulty, number> = {
+  easy: 0.55,
+  medium: 1,
+  hard: 1.7,
+  expert: 2.8,
+  oni: 4.6,
+};
 
 /**
  * Today's daily, the fixed one of the weekday's difficulty, and the practice board: the same
  * screenshots every run of a weekday.
  */
 export const PUZZLES = {
-  daily: { difficulty, ...FIXED.daily[difficulty], timeMs: Math.round(124_370 * SCALE[difficulty]) },
+  daily: {
+    difficulty,
+    ...FIXED.daily[difficulty],
+    timeMs: Math.round(124_370 * SCALE[difficulty]),
+  },
   practice: FIXED.practice,
 };
 export const DAILY = PUZZLES.daily;
@@ -100,7 +110,12 @@ export const id = (username: string) => {
 };
 
 /** The group of friends: mika made it, the others joined. */
-export const GROUP = { id: 1, name: 'Bridge Club', invite: 'storeclub1', members: [ME, 'aiko', 'lukas', 'sofia', 'chen_wei', 'fatima'] };
+export const GROUP = {
+  id: 1,
+  name: 'Bridge Club',
+  invite: 'storeclub1',
+  members: [ME, 'aiko', 'lukas', 'sofia', 'chen_wei', 'fatima'],
+};
 export const RIVALS = ['aiko', 'lukas', 'sofia'];
 
 /** Today's times of the others on a medium, in seconds: the leaderboard mika's solve lands in. */
@@ -137,12 +152,9 @@ export function seed(dbPath: string) {
   }
   // A guest with a session isn't cleaned up; every player gets one so none of them is
   for (const p of PLAYERS) {
-    db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(
-      sha256(sessionOf(p.username ?? p.name)),
-      p.id,
-      now,
-      now + 365 * MS_PER_DAY,
-    );
+    db.prepare(
+      'INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)',
+    ).run(sha256(sessionOf(p.username ?? p.name)), p.id, now, now + 365 * MS_PER_DAY);
   }
 
   const attempt = db.prepare(
@@ -151,7 +163,7 @@ export function seed(dbPath: string) {
   for (let day = day0 - HISTORY; day < day0; day++) {
     // Sunday's Oni takes everyone five times as long as Monday's easy one
     const weekday = (((day + 3) % 7) + 7) % 7;
-    const scale = [0.6, 0.9, 1.2, 1.6, 2.2, 3.2, 5][weekday];
+    const scale = [0.6, 0.9, 1.2, 1.6, 2.2, 3.2, 5][weekday]!;
     for (const p of PLAYERS) {
       // Not on the leaderboards: the second mika only plays today's
       if (p.username === PLAYING) continue;
@@ -161,11 +173,21 @@ export function seed(dbPath: string) {
       const finished = day * MS_PER_DAY + 43_200_000 + Math.floor(random() * 30_000_000);
       const hints = random() < 0.15 ? 1 : 0;
       const checks = random() < 0.25 ? 1 : 0;
-      attempt.run(p.id, day, finished - time, finished, hints, checks, time + hints * 30_000 + checks * 10_000);
+      attempt.run(
+        p.id,
+        day,
+        finished - time,
+        finished,
+        hints,
+        checks,
+        time + hints * 30_000 + checks * 10_000,
+      );
     }
   }
 
-  db.prepare('INSERT INTO dailies (day, difficulty, puzzle, solution, created_at) VALUES (?, ?, ?, ?, ?)').run(
+  db.prepare(
+    'INSERT INTO dailies (day, difficulty, puzzle, solution, created_at) VALUES (?, ?, ?, ?, ?)',
+  ).run(
     day0,
     DAILY.difficulty,
     JSON.stringify(DAILY.puzzle),
@@ -199,20 +221,13 @@ export function seed(dbPath: string) {
   // screenshot)
   attempt.run(id(PLAYING), day0, now - 97_000, null, 0, 0, null);
 
-  db.prepare('INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)').run(
-    GROUP.id,
-    GROUP.name,
-    GROUP.invite,
-    id(ME),
-    (day0 - HISTORY) * MS_PER_DAY,
-  );
+  db.prepare(
+    'INSERT INTO groups (id, name, invite, owner_id, created_at) VALUES (?, ?, ?, ?, ?)',
+  ).run(GROUP.id, GROUP.name, GROUP.invite, id(ME), (day0 - HISTORY) * MS_PER_DAY);
   GROUP.members.forEach((name, i) => {
-    db.prepare('INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)').run(
-      GROUP.id,
-      id(name),
-      (day0 - HISTORY) * MS_PER_DAY + i * 3_600_000,
-      i,
-    );
+    db.prepare(
+      'INSERT INTO group_members (group_id, user_id, joined_at, colour) VALUES (?, ?, ?, ?)',
+    ).run(GROUP.id, id(name), (day0 - HISTORY) * MS_PER_DAY + i * 3_600_000, i);
   });
   // The group's river: the bridges of the members' recent dailies, two thirds of the way across
   // its first level (900 for six), so that no visit completes it and celebrates
@@ -226,7 +241,11 @@ export function seed(dbPath: string) {
   runs.forEach((r, i) => {
     const bridges = Math.floor(planks / runs.length) + (i < planks % runs.length ? 1 : 0);
     const run = { bridges, islands: 0, steady: false, dithers: 0, cleared: false, burst: 0 };
-    db.prepare('UPDATE attempts SET run = ? WHERE user_id = ? AND day = ?').run(JSON.stringify(run), r.user_id, r.day);
+    db.prepare('UPDATE attempts SET run = ? WHERE user_id = ? AND day = ?').run(
+      JSON.stringify(run),
+      r.user_id,
+      r.day,
+    );
   });
   for (const name of RIVALS) {
     db.prepare('INSERT INTO rivals (user_id, rival_id, created_at) VALUES (?, ?, ?)').run(
@@ -249,7 +268,7 @@ function mulberry32(seed: number) {
   return () => {
     a = (a + 0x6d2b79f5) | 0;
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
     return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296;
   };
 }

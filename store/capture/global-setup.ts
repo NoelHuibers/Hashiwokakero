@@ -1,13 +1,15 @@
 // A fresh local database with the store's players (seed.ts) and the built site on it, as the
 // browser tests start theirs (e2e/global-setup.ts). Never Turso: startServer clears
 // TURSO_DATABASE_URL.
-import { mkdirSync, rmSync } from 'node:fs';
-import { DatabaseSync } from 'node:sqlite';
-import path from 'node:path';
 
-import { startServer } from '../../e2e/server';
-import { DB_PATH, ROOT, RUN_DIR, STORE_PORT } from './env';
-import { ME, seed } from './seed';
+import { mkdirSync, rmSync } from 'node:fs';
+import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import { setTimeout as sleep } from 'node:timers/promises';
+
+import { startServer } from '../../e2e/server.ts';
+import { DB_PATH, ROOT, RUN_DIR, STORE_PORT } from './env.ts';
+import { ME, seed } from './seed.ts';
 
 export default async function globalSetup() {
   rmSync(RUN_DIR, { recursive: true, force: true });
@@ -35,7 +37,9 @@ async function stampsTold() {
       Number(
         (
           db
-            .prepare('SELECT COUNT(*) AS n FROM stamps WHERE user_id = (SELECT id FROM users WHERE username = ?)')
+            .prepare(
+              'SELECT COUNT(*) AS n FROM stamps WHERE user_id = (SELECT id FROM users WHERE username = ?)',
+            )
             .get(ME) as { n: number }
         ).n,
       );
@@ -47,7 +51,7 @@ async function stampsTold() {
       if (n > 0 && n === last) break;
       if (Date.now() > deadline) throw new Error(`the server didn't hand out the stamps (${n})`);
       last = n;
-      await new Promise((r) => setTimeout(r, 1_000));
+      await sleep(1_000);
     }
     db.prepare('UPDATE stamps SET announced = 1').run();
   } finally {

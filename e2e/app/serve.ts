@@ -5,7 +5,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, request, type Server } from 'node:http';
 import path from 'node:path';
 
-import { PORT, ROOT } from '../env';
+import { PORT, ROOT } from '../env.ts';
 
 /** `pnpm run app:build` writes it, CI unpacks the artifact of the "Build app (web)" job there. */
 export const APP_DIST = path.resolve(ROOT, process.env.E2E_APP_DIST ?? 'target/app-dist');
@@ -48,7 +48,7 @@ export function serveApp(api: string): Promise<Server> {
       return;
     }
     let file = path.join(APP_DIST, path.normalize(decodeURIComponent(url.pathname)));
-    if (!file.startsWith(APP_DIST) || !existsSync(file) || !statSync(file).isFile()) {
+    if (!(file.startsWith(APP_DIST) && existsSync(file) && statSync(file).isFile())) {
       file = path.join(APP_DIST, 'index.html');
     }
     res.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' });

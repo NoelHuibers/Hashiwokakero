@@ -2,9 +2,9 @@
 // solved by another member like a daily, the ranking for both; and a closed one in the archive.
 import type { Page } from '@playwright/test';
 
-import { board, build, cellCenter, saved } from '../board';
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { CLOSED_PUZZLE, SEEDED_GROUP, player } from '../seed';
+import { board, build, cellCenter, saved } from '../board.ts';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { CLOSED_PUZZLE, player, SEEDED_GROUP } from '../seed.ts';
 
 /** Where the page keeps the board of the group puzzle being played (src/pages/kadai/state.rs). */
 const KADAI_KEY = 'hashi.kadai.v1';
@@ -18,9 +18,14 @@ const ISLANDS = [
 const SOLUTION = [2, 1];
 
 /** The ranking's row of a member. */
-const ranked = (page: Page, name: string) => page.getByTestId('kadai-ranking').locator(`tr[data-user="${player(name).id}"]`);
+const ranked = (page: Page, name: string) =>
+  page.getByTestId('kadai-ranking').locator(`tr[data-user="${player(name).id}"]`);
 
-test('a puzzle is posted to the group, a member solves it, both see the ranking', async ({ page, context, browser }) => {
+test('a puzzle is posted to the group, a member solves it, both see the ranking', async ({
+  page,
+  context,
+  browser,
+}) => {
   test.slow();
   const title = `Tiny ${Date.now().toString(36)}`;
   await signIn(context, 'aiko');
@@ -47,7 +52,9 @@ test('a puzzle is posted to the group, a member solves it, both see the ranking'
   await expect(page.getByTestId('kadai-start')).toHaveCount(0);
   await expect(page.getByTestId('kadai-solution')).toBeVisible();
   await expect(ranked(page, 'Drowsy Otter 21')).toHaveAttribute('data-state', 'waiting');
-  await expect(page.getByTestId('kadai-stats')).toContainText(`0 / ${SEEDED_GROUP.members.length - 1}`);
+  await expect(page.getByTestId('kadai-stats')).toContainText(
+    `0 / ${SEEDED_GROUP.members.length - 1}`,
+  );
 
   // The guest finds it on the group page and plays it
   const otterContext = await browser.newContext();
@@ -66,7 +73,9 @@ test('a puzzle is posted to the group, a member solves it, both see the ranking'
   const game = await saved(otter, KADAI_KEY);
   // A check costs 10 s and finds nothing wrong on an empty board
   await otter.getByRole('button', { name: /^Check/ }).click();
-  await expect(otter.getByText('So far so good: every bridge belongs to the solution.')).toBeVisible();
+  await expect(
+    otter.getByText('So far so good: every bridge belongs to the solution.'),
+  ).toBeVisible();
   // The penalty above the board, not the price on the button
   await expect(otter.locator('.font-pixel.text-xl', { hasText: '+10s' })).toBeVisible();
   // A person's pace: three bridges in a fifth of a second would be too fast to be ranked
@@ -74,7 +83,9 @@ test('a puzzle is posted to the group, a member solves it, both see the ranking'
   await build(otter, KADAI_KEY, game.puzzle, SOLUTION);
   const result = otter.getByTestId('kadai-result');
   await expect(result.getByRole('heading', { name: /Well done!/ })).toBeVisible();
-  await expect(result.getByTestId('kadai-place')).toHaveText(`Place 1 of 1 in ${SEEDED_GROUP.name}`);
+  await expect(result.getByTestId('kadai-place')).toHaveText(
+    `Place 1 of 1 in ${SEEDED_GROUP.name}`,
+  );
   await expect(ranked(otter, 'Drowsy Otter 21')).toHaveAttribute('data-state', 'ranked');
   await expect(ranked(otter, 'Drowsy Otter 21')).toContainText('0h 1c');
   await otterContext.close();
@@ -83,7 +94,9 @@ test('a puzzle is posted to the group, a member solves it, both see the ranking'
   await visit(page, puzzleUrl);
   await expect(ranked(page, 'Drowsy Otter 21')).toHaveAttribute('data-state', 'ranked');
   await expect(ranked(page, 'Drowsy Otter 21')).toContainText(/\d:\d\d/);
-  await expect(page.getByTestId('kadai-stats')).toContainText(`1 / ${SEEDED_GROUP.members.length - 1}`);
+  await expect(page.getByTestId('kadai-stats')).toContainText(
+    `1 / ${SEEDED_GROUP.members.length - 1}`,
+  );
 
   // And takes it back: gone from the group
   await page.getByTestId('kadai-withdraw').click();
@@ -94,7 +107,10 @@ test('a puzzle is posted to the group, a member solves it, both see the ranking'
   await expect(page.getByTestId('kadai-card').getByText(title)).toHaveCount(0);
 });
 
-test('a closed puzzle keeps its final board and ranking in the archive', async ({ page, context }) => {
+test('a closed puzzle keeps its final board and ranking in the archive', async ({
+  page,
+  context,
+}) => {
   await signIn(context, 'aiko');
   await visit(page, `/groups/${SEEDED_GROUP.id}`);
   const archive = page.getByTestId('kadai-archive');

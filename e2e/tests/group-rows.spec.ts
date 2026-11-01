@@ -3,8 +3,8 @@
 // and in the group's tab on the daily page. A name that's cut off has its tooltip.
 import type { Locator, Page } from '@playwright/test';
 
-import { expect, test, visit } from '../fixtures';
-import { TEA_GROUP } from '../seed';
+import { expect, test, visit } from '../fixtures.ts';
+import { TEA_GROUP } from '../seed.ts';
 
 const PHONE = { width: 390, height: 844 };
 const SMALL_PHONE = { width: 320, height: 640 };
@@ -18,7 +18,9 @@ const clipped = (el: Locator) => el.evaluate((a) => a.scrollWidth > a.clientWidt
 /** chen's row (seed.ts: ranked first today, with a check) shows all of its parts, and the name. */
 async function chenWhole(page: Page, board: Locator) {
   await expect(board).toHaveAttribute('data-open', 'true');
-  const row = board.locator('tr').filter({ has: page.getByRole('link', { name: 'chen', exact: true }) });
+  const row = board
+    .locator('tr')
+    .filter({ has: page.getByRole('link', { name: 'chen', exact: true }) });
   await expect(row).toHaveAttribute('data-state', 'ranked');
   await expect(row.locator('[data-penalties]')).toHaveText('0h 1c');
   await expect(row.locator('a[data-duel]')).toBeVisible();
@@ -35,7 +37,9 @@ async function chenWhole(page: Page, board: Locator) {
   }
 }
 
-test('short names stay whole on a phone, on the group page and in the daily tab', async ({ page }) => {
+test('short names stay whole on a phone, on the group page and in the daily tab', async ({
+  page,
+}) => {
   test.slow();
 
   // A visitor joins the seeded tea group (becoming a guest) and gives up today's daily: the
@@ -56,7 +60,9 @@ test('short names stay whole on a phone, on the group page and in the daily tab'
     await visit(page, `/groups/${TEA_GROUP.id}`);
     await chenWhole(page, board);
     // The picker still opens under the row, as wide as the board
-    const chen = board.locator('tr').filter({ has: page.getByRole('link', { name: 'chen', exact: true }) });
+    const chen = board
+      .locator('tr')
+      .filter({ has: page.getByRole('link', { name: 'chen', exact: true }) });
     await chen.locator('button[data-hanko-pick]').click();
     await expect(page.getByTestId('hanko-tray').getByRole('button')).toHaveCount(6);
     await page.keyboard.press('Escape');
@@ -76,7 +82,9 @@ test('short names stay whole on a phone, on the group page and in the daily tab'
   // a guest's (two words and a number, other runs may have joined too) is cut off and chen fits
   await page.addStyleTag({ content: 'a[data-tooltip-clipped] { max-width: 2.75rem }' });
   const tooltip = page.getByRole('tooltip');
-  const [guest] = await names(board).filter({ hasNotText: /^(chen|bram)$/ }).all();
+  const guest = names(board)
+    .filter({ hasNotText: /^(chen|bram)$/ })
+    .first();
   const guestName = (await guest.textContent())!.trim();
   expect(await clipped(guest)).toBe(true);
   await guest.hover();

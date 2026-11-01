@@ -29,7 +29,8 @@ export const DAILY_KEY = 'hashi.daily.v1';
 
 /** The edges of a puzzle in the order of `Board::new` (common/src/board.rs): the island pairs. */
 export function edges(puzzle: Puzzle): [number, number][] {
-  const at = (x: number, y: number) => puzzle.islands.findIndex((i) => i.pos.x === x && i.pos.y === y);
+  const at = (x: number, y: number) =>
+    puzzle.islands.findIndex((i) => i.pos.x === x && i.pos.y === y);
   const list: [number, number][] = [];
   puzzle.islands.forEach((island, a) => {
     for (let x = island.pos.x + 1; x < puzzle.width; x++) {
@@ -69,7 +70,8 @@ export async function boardPoint(page: Page, bx: number, by: number) {
     (svg, [x, y]) => {
       const at = () => new DOMPoint(x, y).matrixTransform((svg as SVGSVGElement).getScreenCTM()!);
       const before = at();
-      if (before.y < 120 || before.y > innerHeight - 120) window.scrollBy(0, before.y - innerHeight / 2);
+      if (before.y < 120 || before.y > innerHeight - 120)
+        window.scrollBy(0, before.y - innerHeight / 2);
       const p = at();
       return { x: p.x, y: p.y };
     },
@@ -79,17 +81,15 @@ export async function boardPoint(page: Page, bx: number, by: number) {
 
 /** Where a point of the viewport is on the board, in board units. */
 export async function toBoard(page: Page, point: { x: number; y: number }) {
-  return board(page).evaluate(
-    (svg, { x, y }) => {
-      const p = new DOMPoint(x, y).matrixTransform((svg as SVGSVGElement).getScreenCTM()!.inverse());
-      return { x: p.x, y: p.y };
-    },
-    point,
-  );
+  return board(page).evaluate((svg, { x, y }) => {
+    const p = new DOMPoint(x, y).matrixTransform((svg as SVGSVGElement).getScreenCTM()!.inverse());
+    return { x: p.x, y: p.y };
+  }, point);
 }
 
 /** The middle of a cell, see `boardPoint`. */
-export const cellCenter = (page: Page, x: number, y: number) => boardPoint(page, x * 16 + 8, y * 16 + 8);
+export const cellCenter = (page: Page, x: number, y: number) =>
+  boardPoint(page, x * 16 + 8, y * 16 + 8);
 
 export async function press(page: Page, point: { x: number; y: number }, touch: boolean) {
   if (touch) await page.touchscreen.tap(point.x, point.y);
@@ -100,11 +100,19 @@ export async function press(page: Page, point: { x: number; y: number }, touch: 
  * Adds one bridge between two islands: a click on each. Waits until the game saved it, so the
  * next one starts from it.
  */
-export async function addBridge(page: Page, key: string, puzzle: Puzzle, edge: number, touch = false) {
-  const [a, b] = edges(puzzle)[edge];
-  const before = (await saved(page, key)).bridges[edge];
+export async function addBridge(
+  page: Page,
+  key: string,
+  puzzle: Puzzle,
+  edge: number,
+  touch = false,
+) {
+  const pair = edges(puzzle)[edge];
+  if (!pair) throw new Error(`the puzzle has no edge ${edge}`);
+  const [a, b] = pair;
+  const before = (await saved(page, key)).bridges[edge] ?? 0;
   for (const island of [a, b]) {
-    const { x, y } = puzzle.islands[island].pos;
+    const { x, y } = puzzle.islands[island]!.pos;
     await press(page, await cellCenter(page, x, y), touch);
   }
   await expect
@@ -113,16 +121,22 @@ export async function addBridge(page: Page, key: string, puzzle: Puzzle, edge: n
 }
 
 /** Builds the missing bridges of `solution`, edge by edge. Expects no wrong bridges on the board. */
-export async function build(page: Page, key: string, puzzle: Puzzle, solution: number[], touch = false) {
+export async function build(
+  page: Page,
+  key: string,
+  puzzle: Puzzle,
+  solution: number[],
+  touch = false,
+) {
   const current = (await saved(page, key)).bridges;
-  for (let e = 0; e < solution.length; e++) {
-    for (let n = current[e]; n < solution[e]; n++) await addBridge(page, key, puzzle, e, touch);
+  for (const [e, wanted] of solution.entries()) {
+    for (let n = current[e] ?? 0; n < wanted; n++) await addBridge(page, key, puzzle, e, touch);
   }
 }
 
 /** Edges where the board has fewer bridges than the solution. */
 export function missing(bridges: number[], solution: number[]) {
-  return solution.flatMap((s, e) => (bridges[e] < s ? [e] : []));
+  return solution.flatMap((s, e) => ((bridges[e] ?? 0) < s ? [e] : []));
 }
 
 /**
@@ -143,6 +157,6 @@ export async function seedGame(page: Page, key: string, game: SavedGame & { puzz
       localStorage.setItem(k, value);
       sessionStorage.setItem(`seeded:${k}`, '1');
     },
-    [key, JSON.stringify(saved)],
+    [key, JSON.stringify(saved)] as const,
   );
 }

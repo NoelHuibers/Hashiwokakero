@@ -2,9 +2,9 @@
 // of today, which shows no times before you finished the daily yourself.
 import type { Page } from '@playwright/test';
 
-import { solveDaily, startDaily } from '../daily';
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { SEEDED_GROUP } from '../seed';
+import { solveDaily, startDaily } from '../daily.ts';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { SEEDED_GROUP } from '../seed.ts';
 
 /** A card of the page, by its heading. */
 const card = (page: Page, heading: RegExp) =>
@@ -12,7 +12,9 @@ const card = (page: Page, heading: RegExp) =>
 
 /** The rows of a group's board of today, by member name. */
 const row = (page: Page, name: string) =>
-  card(page, /^Today/).locator('tr').filter({ hasText: name });
+  card(page, /^Today/)
+    .locator('tr')
+    .filter({ hasText: name });
 
 test('a group is made, a friend joins with the link as a guest, times show after the finish', async ({
   page,
@@ -39,12 +41,14 @@ test('a group is made, a friend joins with the link as a guest, times show after
   await expect(page.getByText('Invite link copied to the clipboard.')).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(url);
   // In the list too, with the owner's badge
-  await expect(page.locator('a[data-group]').filter({ hasText: 'Lunch Bridges' })).toContainText('Owner');
+  await expect(page.locator('a[data-group]').filter({ hasText: 'Lunch Bridges' })).toContainText(
+    'Owner',
+  );
   // Creating made them a guest
   await expect(page.locator('header')).toContainText('Guest');
 
   // A friend in another browser opens the link: nothing happens until they click
-  const friendContext = await browser.newContext({ baseURL });
+  const friendContext = await browser.newContext(baseURL ? { baseURL } : {});
   const friend = await friendContext.newPage();
   await friend.goto(new URL(url).pathname);
   await hydrated(friend);
@@ -80,7 +84,9 @@ test('a group is made, a friend joins with the link as a guest, times show after
   const tab = friend.getByRole('tab', { name: /Lunch Bridges/ });
   await expect(tab).toContainText('1/2');
   await tab.click();
-  await expect(friend.locator('aside [data-open="true"] tr[data-state="ranked"]')).toContainText(friendName);
+  await expect(friend.locator('aside [data-open="true"] tr[data-state="ranked"]')).toContainText(
+    friendName,
+  );
 
   // The owner hasn't played: who's done, but no times
   await page.reload();
@@ -117,7 +123,10 @@ test('a group is made, a friend joins with the link as a guest, times show after
   await expect(card(page, /^Members/).locator('li[data-member]')).toHaveCount(1);
 });
 
-test('the seeded group: islands, bridges, a closed board and the week', async ({ page, context }) => {
+test('the seeded group: islands, bridges, a closed board and the week', async ({
+  page,
+  context,
+}) => {
   await signIn(context, 'aiko');
   await visit(page, '/groups');
   const item = page.locator(`a[data-group="${SEEDED_GROUP.id}"]`);
@@ -154,7 +163,10 @@ test('the last one to leave deletes the group, and is told so first', async ({ p
   await visit(page, '/groups');
   await page.getByLabel('Group name').fill('Solo Bridges');
   await page.getByRole('button', { name: 'Create the group' }).click();
-  await page.getByTestId('group-ready').getByRole('link', { name: /Open the group/ }).click();
+  await page
+    .getByTestId('group-ready')
+    .getByRole('link', { name: /Open the group/ })
+    .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Solo Bridges' })).toBeVisible();
   await hydrated(page);
   await expect(page.getByRole('button', { name: 'Leave the group' })).toHaveCount(0);

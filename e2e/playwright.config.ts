@@ -1,9 +1,9 @@
 // Browser tests of the built site, see the README. `pnpm run e2e` from the repository root.
 import { defineConfig, devices } from '@playwright/test';
 
-import { BASE_URL, VISUAL, VISUAL_URL } from './env';
+import { BASE_URL, VISUAL, VISUAL_URL } from './env.ts';
 
-const CI = !!process.env.CI;
+const CI = Boolean(process.env.CI);
 const desktop = { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } };
 const html = ['html', { open: 'never', outputFolder: 'playwright-report' }] as const;
 // CI runs the tests in shards (--shard=1/2, E2E_BLOB=1): each writes a blob report, the E2E
@@ -18,7 +18,8 @@ export default defineConfig({
   forbidOnly: CI,
   // One retry with a trace, to see what went wrong; flaky tests still show up in the report
   retries: CI ? 1 : 0,
-  workers: CI ? 4 : undefined,
+  // Locally Playwright's default, half the cores
+  ...(CI && { workers: 4 }),
   reporter: CI ? [['github'], ['dot'], report] : [['line'], report],
   // The first page of a worker compiles the WASM, which takes a while on a busy runner
   expect: {
@@ -39,6 +40,14 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', testIgnore: /visual\.spec\.ts/, use: desktop },
-    ...(VISUAL ? [{ name: 'visual', testMatch: /visual\.spec\.ts/, use: { ...desktop, baseURL: VISUAL_URL } }] : []),
+    ...(VISUAL
+      ? [
+          {
+            name: 'visual',
+            testMatch: /visual\.spec\.ts/,
+            use: { ...desktop, baseURL: VISUAL_URL },
+          },
+        ]
+      : []),
   ],
 });

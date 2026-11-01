@@ -25,13 +25,18 @@ interface Load {
 const median = (values: number[]) => {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = sorted.length >> 1;
-  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 };
 const round = (n: number) => Math.round(n);
 
 test('hydration times', async ({ browser, baseURL }) => {
   const load = async (page: string): Promise<Load> => {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'en-US', timezoneId: 'UTC', colorScheme: 'light' });
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 900 },
+      locale: 'en-US',
+      timezoneId: 'UTC',
+      colorScheme: 'light',
+    });
     try {
       const tab = await context.newPage();
       const cdp = await context.newCDPSession(tab);
@@ -45,7 +50,11 @@ test('hydration times', async ({ browser, baseURL }) => {
             observer.disconnect();
           }
         });
-        observer.observe(document, { subtree: true, attributes: true, attributeFilter: ['data-hydrated'] });
+        observer.observe(document, {
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['data-hydrated'],
+        });
       });
       const response = await tab.goto(new URL(page, baseURL).href);
       expect(response?.status(), `HTTP status of ${page}`).toBe(200);
@@ -53,7 +62,11 @@ test('hydration times', async ({ browser, baseURL }) => {
       return await tab.evaluate(() => {
         const [nav] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
         const [mark] = performance.getEntriesByName('hashi:hydrated');
-        return { firstByte: nav.responseStart, domContentLoaded: nav.domContentLoadedEventEnd, hydrated: mark.startTime };
+        return {
+          firstByte: nav!.responseStart,
+          domContentLoaded: nav!.domContentLoadedEventEnd,
+          hydrated: mark!.startTime,
+        };
       });
     } finally {
       await context.close();
@@ -61,7 +74,7 @@ test('hydration times', async ({ browser, baseURL }) => {
   };
 
   // The browser's own start shouldn't count for the first page
-  await load(PAGES[0]);
+  await load(PAGES[0]!);
   const pages: Record<string, { median: number; min: number; max: number; runs: Load[] }> = {};
   for (const page of PAGES) {
     const runs: Load[] = [];
@@ -71,10 +84,17 @@ test('hydration times', async ({ browser, baseURL }) => {
       median: round(median(hydrated)),
       min: round(Math.min(...hydrated)),
       max: round(Math.max(...hydrated)),
-      runs: runs.map((r) => ({ firstByte: round(r.firstByte), domContentLoaded: round(r.domContentLoaded), hydrated: round(r.hydrated) })),
+      runs: runs.map((r) => ({
+        firstByte: round(r.firstByte),
+        domContentLoaded: round(r.domContentLoaded),
+        hydrated: round(r.hydrated),
+      })),
     };
     console.log(`${page}: ${pages[page].median} ms (${hydrated.map(round).join(', ')})`);
   }
   mkdirSync(path.dirname(RESULTS), { recursive: true });
-  writeFileSync(RESULTS, `${JSON.stringify({ runs: RUNS, cpuThrottling: CPU_THROTTLING, pages }, null, 2)}\n`);
+  writeFileSync(
+    RESULTS,
+    `${JSON.stringify({ runs: RUNS, cpuThrottling: CPU_THROTTLING, pages }, null, 2)}\n`,
+  );
 });

@@ -2,8 +2,8 @@
 // lines between the rows step aside for).
 import type { Locator, Page } from '@playwright/test';
 
-import { allow, expect, hydrated, signIn, test, visit } from '../fixtures';
-import { rankingExample } from '../ranking';
+import { allow, expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { rankingExample } from '../ranking.ts';
 
 /** The podium of the daily board some days ago (the seed has no results of today). */
 async function daysAgo(page: Page, days: number) {
@@ -35,10 +35,10 @@ test('the top three stand on a podium, 2 · 1 · 3, the winner highest', async (
   const podium = await daysAgo(page, 1);
   const by = await steps(podium);
   expect(Object.keys(by)).toEqual(['1', '2', '3']);
-  expect(by[2].x).toBeLessThan(by[1].x);
-  expect(by[1].x).toBeLessThan(by[3].x);
-  expect(by[1].height).toBeGreaterThan(by[2].height);
-  expect(by[2].height).toBeGreaterThan(by[3].height);
+  expect(by[2]!.x).toBeLessThan(by[1]!.x);
+  expect(by[1]!.x).toBeLessThan(by[3]!.x);
+  expect(by[1]!.height).toBeGreaterThan(by[2]!.height);
+  expect(by[2]!.height).toBeGreaterThan(by[3]!.height);
   // The rest of the board stays a table, signed out nothing is marked
   await expect(page.locator('table.rank-table').first()).toBeVisible();
   await expect(page.locator('.rank-mark')).toHaveCount(0);
@@ -50,8 +50,8 @@ test('the podium mirrors in right to left languages', async ({ page }) => {
   const podium = page.locator('ol:has(> li.podium-step)').first();
   await expect(podium).toBeVisible();
   const by = await steps(podium);
-  expect(by[3].x).toBeLessThan(by[1].x);
-  expect(by[1].x).toBeLessThan(by[2].x);
+  expect(by[3]!.x).toBeLessThan(by[1]!.x);
+  expect(by[1]!.x).toBeLessThan(by[2]!.x);
 });
 
 test('your own row is outlined and the lines next to it step aside', async ({ page, context }) => {
@@ -64,16 +64,25 @@ test('your own row is outlined and the lines next to it step aside', async ({ pa
     const cells = [...tr.children] as HTMLElement[];
     const style = (el: Element) => getComputedStyle(el);
     const before = tr.previousElementSibling;
-    const other = [...tr.parentElement!.children].find((row) => row !== tr && row.children.length > 1)!;
+    const other = [...tr.parentElement!.children].find(
+      (row) => row !== tr && row.children.length > 1,
+    )!;
     return {
-      outline: style(cells[1]).borderTopStyle,
-      rounded: style(cells[0]).borderTopLeftRadius !== '0px' && style(cells.at(-1)!).borderTopRightRadius !== '0px',
-      lineBefore: before ? style(before.children[0]).borderBottomColor : 'rgba(0, 0, 0, 0)',
+      outline: style(cells[1]!).borderTopStyle,
+      rounded:
+        style(cells[0]!).borderTopLeftRadius !== '0px' &&
+        style(cells.at(-1)!).borderTopRightRadius !== '0px',
+      lineBefore: before ? style(before.children[0]!).borderBottomColor : 'rgba(0, 0, 0, 0)',
       // The marked row's contents don't move
-      shift: cells[1].getBoundingClientRect().x - other.children[1].getBoundingClientRect().x,
+      shift: cells[1]!.getBoundingClientRect().x - other.children[1]!.getBoundingClientRect().x,
     };
   });
-  expect(look).toEqual({ outline: 'solid', rounded: true, lineBefore: 'rgba(0, 0, 0, 0)', shift: 0 });
+  expect(look).toEqual({
+    outline: 'solid',
+    rounded: true,
+    lineBefore: 'rgba(0, 0, 0, 0)',
+    shift: 0,
+  });
 });
 
 test('on the podium your step is marked', async ({ page, context }) => {
@@ -86,29 +95,45 @@ test('on the podium your step is marked', async ({ page, context }) => {
   await expect(mine).toContainText('you');
 });
 
-test('a tab of an older version is asked to reload, not shown the 404 page', async ({ page, problems }) => {
+test('a tab of an older version is asked to reload, not shown the 404 page', async ({
+  page,
+  problems,
+}) => {
   // An older WASM calls server functions the new server doesn't have, the server answers with
   // its 404 page: like here, where the leaderboard's call goes to a path the server never had
   await page.route('**/api/daily_leaderboard', (route) =>
-    route.continue({ url: route.request().url().replace(/daily_leaderboard$/, 'daily_leaderboard_old') }),
+    route.continue({
+      url: route
+        .request()
+        .url()
+        .replace(/daily_leaderboard$/, 'daily_leaderboard_old'),
+    }),
   );
   await visit(page, '/ranks');
   const toast = page.getByText('Hashi has been updated. Reload the page to continue.');
   await expect(toast).toHaveCount(1);
   await expect(page.getByText('<!DOCTYPE')).toHaveCount(0);
   await expect(page.getByText('Something went wrong')).toHaveCount(0);
-  allow(problems, /^404 POST .*\/api\/daily_leaderboard/, /console error: Failed to load resource.*404/);
+  allow(
+    problems,
+    /^404 POST .*\/api\/daily_leaderboard/,
+    /console error: Failed to load resource.*404/,
+  );
 
   // Its button reloads the page, which then loads the leaderboard
   await page.unroute('**/api/daily_leaderboard');
-  const leaderboard = page.waitForResponse((r) => r.url().endsWith('/api/daily_leaderboard') && r.ok());
+  const leaderboard = page.waitForResponse(
+    (r) => r.url().endsWith('/api/daily_leaderboard') && r.ok(),
+  );
   await page.getByRole('button', { name: 'Reload' }).click();
   await leaderboard;
   await hydrated(page);
   await expect(toast).toHaveCount(0);
 });
 
-test('a tab of an older build is asked to reload when the server answers in another shape', async ({ page }) => {
+test('a tab of an older build is asked to reload when the server answers in another shape', async ({
+  page,
+}) => {
   // The page names the build of its WASM and every answer the server's, the same here: the server
   // and the WASM come from one build (in CI from two jobs, put together by hash.txt)
   const answered = page.waitForResponse((r) => r.url().endsWith('/api/daily_leaderboard'));
@@ -141,18 +166,23 @@ test('a tab of an older build is asked to reload when the server answers in anot
 });
 
 test('shared hundredths show every tied medalist in equal compact rows', async ({ page }) => {
-  await page.route('**/api/daily_leaderboard', (route) => route.fulfill({
-    json: {
-      day: 20752, difficulty: 'Easy', me: null, finishers: 5,
-      entries: [
-        { rank: 1, user_id: 501, name: 'Noel', time_ms: 7826 },
-        { rank: 1, user_id: 502, name: 'Nele', time_ms: 7831 },
-        { rank: 3, user_id: 503, name: 'Third A', time_ms: 8803 },
-        { rank: 3, user_id: 504, name: 'Third B', time_ms: 8804 },
-        { rank: 5, user_id: 505, name: 'Fifth', time_ms: 9000 },
-      ].map((entry) => ({ ...entry, guest: true, hints: 0, checks: 0, stamp: null })),
-    },
-  }));
+  await page.route('**/api/daily_leaderboard', (route) =>
+    route.fulfill({
+      json: {
+        day: 20752,
+        difficulty: 'Easy',
+        me: null,
+        finishers: 5,
+        entries: [
+          { rank: 1, user_id: 501, name: 'Noel', time_ms: 7826 },
+          { rank: 1, user_id: 502, name: 'Nele', time_ms: 7831 },
+          { rank: 3, user_id: 503, name: 'Third A', time_ms: 8803 },
+          { rank: 3, user_id: 504, name: 'Third B', time_ms: 8804 },
+          { rank: 5, user_id: 505, name: 'Fifth', time_ms: 9000 },
+        ].map((entry) => ({ ...entry, guest: true, hints: 0, checks: 0, stamp: null })),
+      },
+    }),
+  );
   await visit(page, '/ranks');
   const podium = page.locator('ol:has(> li.podium-step)').first();
   await expect(podium.locator('> li')).toHaveCount(4);
@@ -180,35 +210,43 @@ test('shared hundredths show every tied medalist in equal compact rows', async (
 });
 
 for (const kind of ['shared', 'long', 'many'] as const) {
-  test(`${kind} results fit phones without overlapping names, medals, or times`, async ({ page }) => {
+  test(`${kind} results fit phones without overlapping names, medals, or times`, async ({
+    page,
+  }) => {
     await rankingExample(page, kind);
     await visit(page, '/ranks');
     const podium = page.locator('ol.podium').first();
     await expect(podium.locator('> li')).toHaveCount(kind === 'many' ? 8 : 3);
     for (const width of [320, 360, 390, 768, 1024]) {
       await page.setViewportSize({ width, height: 900 });
-      const layout = await podium.locator('> li').evaluateAll((items) => items.map((li) => {
-        const rect = (selector: string) => li.querySelector(selector)!.getBoundingClientRect();
-        const medal = rect('.podium-medal');
-        const name = rect('.podium-player');
-        const value = rect('.podium-value');
-        const box = li.getBoundingClientRect();
-        const compact = getComputedStyle(li).display === 'grid';
-        return {
-          nameWidth: name.width,
-          noOverlap: compact ? medal.right <= name.left && name.right <= value.left : name.bottom <= value.top,
-          contained: value.right <= box.right && value.left >= box.left,
-          height: box.height,
-          compact,
-        };
-      }));
+      const layout = await podium.locator('> li').evaluateAll((items) =>
+        items.map((li) => {
+          const rect = (selector: string) => li.querySelector(selector)!.getBoundingClientRect();
+          const medal = rect('.podium-medal');
+          const name = rect('.podium-player');
+          const value = rect('.podium-value');
+          const box = li.getBoundingClientRect();
+          const compact = getComputedStyle(li).display === 'grid';
+          return {
+            nameWidth: name.width,
+            noOverlap: compact
+              ? medal.right <= name.left && name.right <= value.left
+              : name.bottom <= value.top,
+            contained: value.right <= box.right && value.left >= box.left,
+            height: box.height,
+            compact,
+          };
+        }),
+      );
       for (const row of layout) {
         expect(row.nameWidth, `${width}px name width`).toBeGreaterThan(40);
         expect(row.noOverlap, `${width}px overlaps`).toBe(true);
         expect(row.contained, `${width}px score outside card`).toBe(true);
         if (row.compact) expect(row.height, `${width}px row height`).toBeLessThan(90);
       }
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        width,
+      );
     }
     if (kind === 'long') {
       await expect(podium.locator('.rank-time-long')).toHaveCount(3);
@@ -221,7 +259,9 @@ for (const kind of ['shared', 'long', 'many'] as const) {
   });
 }
 
-test("the daily page's medals keep the same room before the names as the plain ranks", async ({ page }) => {
+test("the daily page's medals keep the same room before the names as the plain ranks", async ({
+  page,
+}) => {
   // The daily card shows the top ten in the table, medals included (no podium)
   await rankingExample(page, 'shared', true);
   await visit(page, '/');
@@ -229,27 +269,41 @@ test("the daily page's medals keep the same room before the names as the plain r
   await expect(rows).toHaveCount(5);
   for (const width of [320, 390, 1024]) {
     await page.setViewportSize({ width, height: 900 });
-    const gaps = await rows.evaluateAll((trs) => trs.map((tr) => {
-      const rank = tr.querySelector(':scope > td:first-child > span')!.getBoundingClientRect();
-      const name = tr.querySelector(':scope > td:nth-child(2) > div')!.getBoundingClientRect();
-      return name.left - rank.right;
-    }));
-    for (const [i, gap] of gaps.entries()) expect(gap, `${width}px, row ${i + 1}`).toBeGreaterThanOrEqual(8);
+    const gaps = await rows.evaluateAll((trs) =>
+      trs.map((tr) => {
+        const rank = tr.querySelector(':scope > td:first-child > span')!.getBoundingClientRect();
+        const name = tr.querySelector(':scope > td:nth-child(2) > div')!.getBoundingClientRect();
+        return name.left - rank.right;
+      }),
+    );
+    for (const [i, gap] of gaps.entries())
+      expect(gap, `${width}px, row ${i + 1}`).toBeGreaterThanOrEqual(8);
   }
 });
 
 test('the monthly medal rows include everyone sharing a medal place', async ({ page }) => {
-  await page.route('**/api/month_leaderboard', (route) => route.fulfill({
-    json: {
-      month: 2026 * 12 + 9, me: null, players: 5,
-      entries: [1, 2, 2, 2, 5].map((rank, i) => ({
-        rank, user_id: 601 + i, name: `Monthly ${i + 1}`, guest: false,
-        points: rank === 1 ? 200 : rank === 2 ? 180 : 100, solved: 10, stamp: null,
-      })),
-    },
-  }));
+  await page.route('**/api/month_leaderboard', (route) =>
+    route.fulfill({
+      json: {
+        month: 2026 * 12 + 9,
+        me: null,
+        players: 5,
+        entries: [1, 2, 2, 2, 5].map((rank, i) => ({
+          rank,
+          user_id: 601 + i,
+          name: `Monthly ${i + 1}`,
+          guest: false,
+          points: rank === 1 ? 200 : rank === 2 ? 180 : 100,
+          solved: 10,
+          stamp: null,
+        })),
+      },
+    }),
+  );
   await visit(page, '/ranks');
-  const monthly = page.locator('[data-name="Card"]').filter({ has: page.getByRole('heading', { name: /^Monthly race/ }) });
+  const monthly = page
+    .locator('[data-name="Card"]')
+    .filter({ has: page.getByRole('heading', { name: /^Monthly race/ }) });
   await expect(monthly.locator('li.podium-step')).toHaveCount(4);
   await expect(monthly.locator('li.podium-step[data-place="2"]')).toHaveCount(3);
   await expect(monthly.locator('.podium-shared-label')).toHaveCount(3);

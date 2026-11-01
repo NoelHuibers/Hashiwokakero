@@ -2,9 +2,9 @@
 import { mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
-import { BASE_URL, RUN_DIR } from '../env';
-import { startServer } from '../server';
-import { serveApp } from './serve';
+import { BASE_URL, RUN_DIR } from '../env.ts';
+import { startServer } from '../server.ts';
+import { serveApp } from './serve.ts';
 
 export default async function globalSetup() {
   mkdirSync(RUN_DIR, { recursive: true });
@@ -13,7 +13,9 @@ export default async function globalSetup() {
   const server = await startServer('app-server.log', { dbPath, admins: '' });
   const app = await serveApp(BASE_URL);
   return async () => {
-    await new Promise((resolve) => app.close(resolve));
+    await new Promise((resolve) => {
+      app.close(resolve);
+    });
     await server.stop();
   };
 }

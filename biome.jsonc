@@ -1,0 +1,120 @@
+// Formatting and lints of the JavaScript and TypeScript: the browser tests (e2e/), the scripts
+// (scripts/) and the store tools (store/). `pnpm run lint`, `pnpm run lint:fix`; CI runs
+// `biome ci --error-on-warnings`, so a warning fails it as well.
+//
+// Strict: Biome's recommended rules, the Playwright, test, project and types domains, and on top
+// the rules below that find real bugs. Rules that are off say why.
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true, "defaultBranch": "main" },
+  "files": {
+    "includes": ["**/*.ts", "**/*.mts", "**/*.js", "**/*.mjs", "**/*.cjs", "biome.jsonc"]
+  },
+  // Like rustfmt and leptosfmt: 100 columns
+  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "assist": { "enabled": true, "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "playwright": "recommended",
+      "test": "recommended",
+      "project": "recommended",
+      "types": "recommended"
+    },
+    "rules": {
+      "preset": "recommended",
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error",
+        "useAwaitThenable": "error",
+        "noUnsafePlusOperands": "error",
+        "noUselessAssignment": "error",
+        "noReturnInFinally": "error",
+        "noPromiseExecutorReturn": "error",
+        "useExhaustiveSwitchCases": "error",
+        "noUnmodifiedLoopCondition": "error",
+        "noDuplicateMapKeys": "error"
+      },
+      "suspicious": {
+        "noEmptyBlockStatements": "error",
+        "noConfusingVoidType": "error",
+        "noNestedPromises": "error",
+        "useIterableCallbackReturn": "error",
+        "noTemplateCurlyInString": "error",
+        "useArraySortCompare": "error",
+        "noMisplacedAssertion": "error",
+        "useExpect": "error",
+        // A fixed wait or networkidle is flaky in most places. The few deliberate ones (proving
+        // that nothing more happens, letting a device settle for a screenshot) say why inline.
+        "noPlaywrightWaitForTimeout": "error",
+        "noPlaywrightNetworkidle": "error",
+        // Biome infers types without the TypeScript checker; this one reported mostly options
+        // that it took for always set
+        "noUnnecessaryConditions": "off",
+        // The tests assert per platform and theme on purpose (Android's bars, iOS)
+        "noConditionalExpect": "off",
+        // A page.evaluate callback runs in the browser and takes the names of its arguments
+        // from the test on purpose
+        "noShadow": "off",
+        // An async function that returns a promise without awaiting it is fine
+        "useAwait": "off",
+        // Flags closures over let and const, which every iteration has its own of
+        "noLoopFunc": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "error",
+        "noParameterProperties": "error",
+        "useShorthandAssign": "error",
+        "useTemplate": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useExplicitLengthCheck": "error",
+        "useNumberNamespace": "error",
+        "useErrorCause": "error"
+      },
+      "correctness": {
+        "useParseIntRadix": "error",
+        "noUnusedFunctionParameters": "error",
+        "noEmptyPattern": "error",
+        "usePlaywrightValidDescribeCallback": "error",
+        // Relative imports name the file with its extension (.ts): Node's type stripping
+        // resolves nothing else, tsconfig.json allows importing .ts
+        "useImportExtensions": "error",
+        // Can't follow the type re-exports of @playwright/test; TypeScript checks imports
+        "noUnresolvedImports": "off"
+      },
+      "complexity": {
+        "noImplicitCoercions": "error",
+        "useSimplifiedLogicExpression": "error",
+        "noVoid": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["e2e/**", "store/capture/**"],
+      "linter": {
+        "rules": {
+          // In a browser test `!` is the assertion: a missing element fails the test right there
+          "style": { "noNonNullAssertion": "off" },
+          // innerText is the text as shown, which is what the tests check
+          "performance": { "useDomNodeTextContent": "off" }
+        }
+      }
+    },
+    {
+      // node:test with node:assert, and the store's screenshot runs, which only use the test runner
+      "includes": ["scripts/tests/**", "store/capture/**"],
+      "linter": {
+        "rules": { "suspicious": { "useExpect": "off", "noMisplacedAssertion": "off" } }
+      }
+    }
+  ]
+}

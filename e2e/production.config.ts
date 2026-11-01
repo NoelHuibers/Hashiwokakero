@@ -4,7 +4,7 @@
 // root; SMOKE_URL points it at another deployment, SMOKE_BUILD names the build it must serve.
 import { defineConfig, devices } from '@playwright/test';
 
-const CI = !!process.env.CI;
+const CI = Boolean(process.env.CI);
 
 const SMOKE_URL = process.env.SMOKE_URL || 'https://hashi.rs';
 
@@ -20,7 +20,11 @@ export default defineConfig({
   // A cold machine of the site may take a moment to start
   expect: { timeout: 20_000 },
   reporter: CI
-    ? [['github'], ['line'], ['html', { open: 'never', outputFolder: 'playwright-report-production' }]]
+    ? [
+        ['github'],
+        ['line'],
+        ['html', { open: 'never', outputFolder: 'playwright-report-production' }],
+      ]
     : [['line']],
   use: {
     ...devices['Desktop Chrome'],

@@ -4,9 +4,9 @@
 // with fixed puzzles. Every server function call fails, as without a network.
 import type { Page } from '@playwright/test';
 
-import { board, DAILY_KEY, edges, seedGame } from '../board';
-import { LADDER, LADDER_SOLUTION } from '../puzzles';
-import { expect, test, visit } from '../fixtures';
+import { board, DAILY_KEY, edges, seedGame } from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
 
 interface Call {
   cmd: string;
@@ -18,9 +18,16 @@ async function fakeTauri(page: Page) {
   await page.addInitScript(
     ([puzzle, solution]) => {
       const calls: { cmd: string; args: string }[] = [];
-      const answers: Record<string, (args: any) => unknown> = {
+      const answers: Record<string, (args: Record<string, unknown>) => unknown> = {
         // Without the solution, so hints and checks ask the solver
-        generate_puzzle: ({ params }) => ({ puzzle, solution: [], params, unique: true, attempts: 0, generate_ms: 1 }),
+        generate_puzzle: ({ params }) => ({
+          puzzle,
+          solution: [],
+          params,
+          unique: true,
+          attempts: 0,
+          generate_ms: 1,
+        }),
         solve_puzzle: ({ config, unique }) => ({
           outcome: { Solved: { bridges: solution, unique: unique ? true : null } },
           stats: {
@@ -56,7 +63,8 @@ async function fakeTauri(page: Page) {
   );
 }
 
-const calls = (page: Page) => page.evaluate(() => (window as unknown as { tauriCalls: Call[] }).tauriCalls);
+const calls = (page: Page) =>
+  page.evaluate(() => (window as unknown as { tauriCalls: Call[] }).tauriCalls);
 
 /** No network: every server function call fails, and the requests are kept. */
 async function offline(page: Page) {
@@ -86,8 +94,10 @@ test('practice generates, hints and checks on the phone', async ({ page, problem
 
   // The seed reaches the phone whole: the JSON is sent as text, not as a JavaScript number
   const [generate] = await calls(page);
-  expect(generate.cmd).toBe('generate_puzzle');
-  expect(generate.args).toMatch(/^\{"params":\{"width":\d+,"height":\d+,"difficulty":"\w+","seed":\d+\}\}$/);
+  expect(generate?.cmd).toBe('generate_puzzle');
+  expect(generate?.args).toMatch(
+    /^\{"params":\{"width":\d+,"height":\d+,"difficulty":"\w+","seed":\d+\}\}$/,
+  );
 
   await page.getByRole('button', { name: 'Hint', exact: true }).click();
   await expect(board(page).locator('g.bridge:not(.ghost)')).toHaveCount(1);
@@ -95,7 +105,7 @@ test('practice generates, hints and checks on the phone', async ({ page, problem
   await expect(toasts(page).filter({ hasText: 'So far so good' })).toBeVisible();
   const solve = (await calls(page)).filter((c) => c.cmd === 'solve_puzzle');
   expect(solve).toHaveLength(1);
-  expect(JSON.parse(solve[0].args)).toMatchObject({ puzzle: LADDER, unique: false });
+  expect(JSON.parse(solve[0]!.args)).toMatchObject({ puzzle: LADDER, unique: false });
 
   expect(api.filter((p) => /generate_puzzle|solve_puzzle|puzzle_cnf/.test(p))).toEqual([]);
   await expect(errorToasts(page)).toHaveCount(0);
@@ -119,7 +129,10 @@ async function seedDaily(page: Page, status: 'Playing' | 'Won') {
 
 /** The daily's puzzle in the workshop, proven unique there. */
 async function proveInWorkshop(page: Page) {
-  await page.addInitScript((puzzle) => localStorage.setItem('hashi.editor.v2', JSON.stringify(puzzle)), LADDER);
+  await page.addInitScript(
+    (puzzle) => localStorage.setItem('hashi.editor.v2', JSON.stringify(puzzle)),
+    LADDER,
+  );
   await visit(page, '/create');
   await page.getByRole('button', { name: 'Unique?' }).click();
 }
@@ -165,8 +178,12 @@ test('pages that need the server say once that the app is offline', async ({ pag
   await expect(errorToasts(page)).toHaveCount(0);
   // Not again on the next page while offline, once it went away
   await expect(notice).toHaveCount(0);
-  await page.getByRole('link', { name: /Groups/ }).first().click();
+  await page
+    .getByRole('link', { name: /Groups/ })
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/groups$/);
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: every call failed before checking that none showed a toast
   await page.waitForLoadState('networkidle');
   await expect(toasts(page)).toHaveCount(0);
   withoutNetworkErrors(problems);

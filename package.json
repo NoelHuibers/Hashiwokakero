@@ -4,35 +4,51 @@
   "type": "module",
   "packageManager": "pnpm@12.11.2",
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^26",
+      "onFail": "download"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^12.11.2",
+      "onFail": "error"
+    }
   },
   "scripts": {
-    "postinstall": "node scripts/fonts.mjs",
-    "dev": "node scripts/dev.mjs",
-    "clean": "node scripts/clean.mjs",
-    "fonts": "node scripts/fonts.mjs",
-    "og-fonts": "node scripts/og-fonts.mjs",
-    "coverage": "node scripts/coverage.mjs",
-    "bundle-size": "node scripts/bundle-size.mjs",
+    "postinstall": "node scripts/fonts.ts",
+    "dev": "node scripts/dev.ts",
+    "clean": "node scripts/clean.ts",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "typecheck": "tsc",
+    "fonts": "node scripts/fonts.ts",
+    "og-fonts": "node scripts/og-fonts.ts",
+    "coverage": "node scripts/coverage.ts",
+    "bundle-size": "node scripts/bundle-size.ts",
     "perf:hydration": "playwright test -c e2e/perf.config.ts",
     "css": "tailwindcss -i style/tailwind.css -o target/site/pkg/hashi.css",
     "css:watch": "tailwindcss -i style/tailwind.css -o target/site/pkg/hashi.css --watch",
     "e2e": "playwright test -c e2e",
-    "e2e:container": "node scripts/e2e-container.mjs",
-    "e2e:update-snapshots": "node scripts/e2e-container.mjs --project visual --update-snapshots",
+    "e2e:container": "node scripts/e2e-container.ts",
+    "e2e:update-snapshots": "node scripts/e2e-container.ts --project visual --update-snapshots",
     "app:web": "cd app && trunk serve --dist ../target/app-dev",
     "app:build": "cd app && trunk build --release",
     "app:e2e": "playwright test -c e2e/app.config.ts",
     "app:android-e2e": "playwright test -c e2e/android.config.ts",
     "app:ios-e2e": "playwright test -c e2e/ios.config.ts",
     "smoke:production": "playwright test -c e2e/production.config.ts",
-    "store:validate": "node store/validate.mjs",
+    "store:validate": "node store/validate.ts",
     "store:images": "playwright test -c store/capture/playwright.config.ts",
-    "store:assemble": "node store/assemble.mjs",
+    "store:assemble": "node store/assemble.ts",
     "store:icons": "playwright test -c store/capture/icons.config.ts",
-    "store:achievements": "node store/achievements/catalogue.mjs"
+    "store:achievements": "node store/achievements/catalogue.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@fontsource-variable/murecho": "^5.3.1",
     "@fontsource-variable/noto-sans-arabic": "^5.3.0",
     "@fontsource-variable/noto-sans-devanagari": "^5.3.0",
@@ -45,8 +61,11 @@
     "@fontsource/kaisei-decol": "^5.3.1",
     "@playwright/test": "^1.64.1",
     "@tailwindcss/cli": "^4.3.3",
+    "@types/node": "26.6.6",
+    "@types/subset-font": "2.3.0",
     "subset-font": "^2.9.0",
     "tailwindcss": "^4.3.3",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "typescript": "7.0.2"
   }
 }

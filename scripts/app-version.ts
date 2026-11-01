@@ -1,8 +1,8 @@
 // The mobile app's version, the same in every file that has it (app/README.md, Releases):
 //
-//   node scripts/app-version.mjs           prints the version; fails when the files disagree
-//   node scripts/app-version.mjs --code    prints Android's versionCode of it
-//   node scripts/app-version.mjs 1.2.3     sets 1.2.3 everywhere
+//   node scripts/app-version.ts           prints the version; fails when the files disagree
+//   node scripts/app-version.ts --code    prints Android's versionCode of it
+//   node scripts/app-version.ts 1.2.3     sets 1.2.3 everywhere
 //
 // The files: app/Cargo.toml (the version the app sends in x-hashi-app), app/src-tauri/Cargo.toml,
 // app/src-tauri/tauri.conf.json (the store's versionName, and the versionCode Tauri derives from
@@ -28,14 +28,35 @@ const MAX_CODE = 2_100_000_000;
 
 // Where the version is, per file (and key, for a file that has it twice): a pattern whose groups
 // are the text before the version, the version, and the text after it. Each matches exactly once.
-const tomlPackage = (name) =>
+const tomlPackage = (name: string) =>
   new RegExp(`(\\[package\\]\\nname = "${name}"\\nversion = ")([^"]*)(")`);
-const lockPackage = (name) =>
+const lockPackage = (name: string) =>
   new RegExp(`(\\[\\[package\\]\\]\\nname = "${name}"\\nversion = ")([^"]*)(")`);
-const plistString = (key) => new RegExp(`(<key>${key}</key>\\n\\t<string>)([^<]*)(</string>)`);
+const plistString = (key: string) =>
+  new RegExp(`(<key>${key}</key>\\n\\t<string>)([^<]*)(</string>)`);
 const infoPlist = 'app/src-tauri/gen/apple/hashi_tauri_iOS/Info.plist';
 const projectYml = 'app/src-tauri/gen/apple/project.yml';
-export const FILES = [
+/** A place of the version: the file, the key where it has two, the pattern of it. */
+export interface Entry {
+  file: string;
+  key?: string;
+  pattern: RegExp;
+}
+
+/** The version found at a place. */
+export interface Found {
+  file: string;
+  key?: string;
+  version: string;
+}
+
+export interface Version {
+  major: number;
+  minor: number;
+  patch: number;
+}
+
+export const FILES: Entry[] = [
   { file: 'app/Cargo.toml', pattern: tomlPackage('hashi_app') },
   { file: 'app/src-tauri/Cargo.toml', pattern: tomlPackage('hashi_tauri') },
   // The top-level "version", indented by two spaces; nested objects are indented further
@@ -60,13 +81,14 @@ export const FILES = [
 ];
 
 /** A file, and the key when it has the version twice. */
-const where = ({ file, key }) => (key ? `${file} (${key})` : file);
+const where = ({ file, key }: { file: string; key?: string }): string =>
+  key ? `${file} (${key})` : file;
 
 /** Parses `x.y.z` (no leading zeros, no pre-release); throws when it isn't one. */
-export function parse(version) {
+export function parse(version: string): Version {
   const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
   if (!match) throw new Error(`${version} is not a version x.y.z`);
-  const [major, minor, patch] = match.slice(1).map(Number);
+  const [major = 0, minor = 0, patch = 0] = match.slice(1).map(Number);
   if (minor >= 1000 || patch >= 1000) {
     throw new Error(`${version}: minor and patch must be below 1000 (Android's versionCode)`);
   }
@@ -76,22 +98,25 @@ export function parse(version) {
   return { major, minor, patch };
 }
 
-const versionCodeOf = ({ major, minor, patch }) => major * 1_000_000 + minor * 1_000 + patch;
+const versionCodeOf = ({ major, minor, patch }: Version): number =>
+  major * 1_000_000 + minor * 1_000 + patch;
 
 /** Android's versionCode of a version, as Tauri derives it. */
-export const versionCode = (version) => versionCodeOf(parse(version));
+export const versionCode = (version: string): number => versionCodeOf(parse(version));
 
-function find(text, entry) {
+function find(text: string, entry: Entry): string {
   const global = new RegExp(entry.pattern.source, 'g');
   const count = [...text.matchAll(global)].length;
   if (count !== 1) {
     throw new Error(`${where(entry)}: the version is there ${count} times, not once`);
   }
-  return entry.pattern.exec(text)[2];
+  const version = entry.pattern.exec(text)?.[2];
+  if (version === undefined) throw new Error(`${where(entry)}: no version`);
+  return version;
 }
 
 /** The version in each file, `[{ file, key, version }]` (`key` only where a file has two). */
-export function read(dir = root) {
+export function read(dir = root): Found[] {
   return FILES.map((entry) => ({
     file: entry.file,
     ...(entry.key && { key: entry.key }),
@@ -100,26 +125,27 @@ export function read(dir = root) {
 }
 
 /** The one version of all files; throws, listing them, when they disagree. */
-export function check(dir = root) {
+export function check(dir = root): string {
   const found = read(dir);
   const versions = new Set(found.map(({ version }) => version));
-  if (versions.size !== 1) {
+  const [version] = versions;
+  if (versions.size !== 1 || version === undefined) {
     const list = found.map((entry) => `  ${where(entry)}: ${entry.version}`).join('\n');
     throw new Error(
       `the app's version differs between the files:\n${list}\n` +
-        'set it with: node scripts/app-version.mjs <x.y.z>',
+        'set it with: node scripts/app-version.ts <x.y.z>',
     );
   }
-  return found[0].version;
+  return version;
 }
 
 /** Sets `version` in every file. Its versionCode must be above that of every file. */
-export function set(version, dir = root) {
+export function set(version: string, dir = root): void {
   const code = versionCode(version);
   for (const entry of read(dir)) {
     const old = entry.version;
     // A version that doesn't parse can't be compared: replacing it is fine
-    let oldCode;
+    let oldCode: number;
     try {
       oldCode = versionCode(old);
     } catch {
@@ -139,17 +165,18 @@ export function set(version, dir = root) {
   }
 }
 
-function main(argv) {
+function main(argv: string[]): void {
   if (argv.length === 0) {
     console.log(check());
   } else if (argv.length === 1 && argv[0] === '--code') {
     console.log(versionCode(check()));
-  } else if (argv.length === 1 && !argv[0].startsWith('-')) {
-    set(argv[0]);
-    console.log(`app version ${argv[0]} (versionCode ${versionCode(argv[0])}) in:`);
+  } else if (argv.length === 1 && argv[0] !== undefined && !argv[0].startsWith('-')) {
+    const [version] = argv;
+    set(version);
+    console.log(`app version ${version} (versionCode ${versionCode(version)}) in:`);
     for (const entry of FILES) console.log(`  ${where(entry)}`);
   } else {
-    throw new Error('usage: node scripts/app-version.mjs [--code | <x.y.z>]');
+    throw new Error('usage: node scripts/app-version.ts [--code | <x.y.z>]');
   }
 }
 
@@ -157,7 +184,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     main(process.argv.slice(2));
   } catch (error) {
-    console.error(`error: ${error.message}`);
+    console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

@@ -5,18 +5,18 @@
 //   target/store/fastlane/apple/metadata/<locale>/ deliver's metadata_path
 //   target/store/fastlane/apple/screenshots/<locale>/ deliver's screenshots_path, with images
 //
-// from fastlane/metadata (the texts; locales with `same` in store/locales.mjs get a copy of
+// from fastlane/metadata (the texts; locales with `same` in store/locales.ts get a copy of
 // another's) and target/store/images (`pnpm run store:images`). Checks every image's size and
 // that the stores' screenshots have no alpha channel.
 //
-//   node store/assemble.mjs            texts and images
-//   node store/assemble.mjs --text     texts only (no images needed)
+//   node store/assemble.ts            texts and images
+//   node store/assemble.ts --text     texts only (no images needed)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { APPLE, METADATA, PLAY, PLAY_METADATA } from './locales.mjs';
-import { loadListings, ROOT, validate } from './validate.mjs';
+import { APPLE, METADATA, PLAY, PLAY_METADATA } from './locales.ts';
+import { loadListings, ROOT, validate } from './validate.ts';
 
 export const OUT = path.join(ROOT, 'target/store/fastlane');
 export const IMAGES = path.join(ROOT, 'target/store/images');
@@ -24,18 +24,26 @@ export const IMAGES = path.join(ROOT, 'target/store/images');
 export const ICON = path.join(ROOT, 'public/icon-512.png');
 
 /** Every image of a locale: [folder of the store tree, source frame folder, width, height]. */
-export const PLAY_SHOTS = [
+type Shots = readonly (readonly [folder: string, frame: string, width: number, height: number])[];
+export const PLAY_SHOTS: Shots = [
   ['phoneScreenshots', 'play-phone', 1080, 1920],
   ['sevenInchScreenshots', 'play-tablet-7', 1080, 1920],
   ['tenInchScreenshots', 'play-tablet-10', 1440, 2560],
 ];
-export const APPLE_SHOTS = [
+export const APPLE_SHOTS: Shots = [
   ['iphone', 'iphone-69', 1320, 2868],
   ['ipad', 'ipad-13', 2064, 2752],
 ];
 
+export interface PngInfo {
+  width: number;
+  height: number;
+  bitDepth: number;
+  colorType: number;
+}
+
 /** Width, height and colour type of a PNG (2 RGB, 6 RGBA, ...), from its header. */
-export function pngInfo(file) {
+export function pngInfo(file: string): PngInfo {
   const head = Buffer.alloc(26);
   const fd = fs.openSync(file, 'r');
   try {
@@ -46,52 +54,91 @@ export function pngInfo(file) {
   if (head.toString('latin1', 1, 4) !== 'PNG' || head.toString('latin1', 12, 16) !== 'IHDR') {
     throw new Error(`${file} is not a PNG`);
   }
-  return { width: head.readUInt32BE(16), height: head.readUInt32BE(20), bitDepth: head[24], colorType: head[25] };
+  return {
+    width: head.readUInt32BE(16),
+    height: head.readUInt32BE(20),
+    bitDepth: head.readUInt8(24),
+    colorType: head.readUInt8(25),
+  };
 }
 
 /** Problems of an image: its size, and an alpha channel where the store refuses one. */
-export function checkImage(file, { width, height, alpha = false }) {
+export function checkImage(
+  file: string,
+  {
+    width,
+    height,
+    alpha = false,
+  }: {
+    width: number;
+    height: number;
+    /** Whether it may have an alpha channel; 'required': it must. */
+    alpha?: boolean | 'required';
+  },
+): string[] {
   if (!fs.existsSync(file)) return [`${path.relative(ROOT, file)} is missing`];
   const info = pngInfo(file);
-  const problems = [];
+  const problems: string[] = [];
   if (info.width !== width || info.height !== height) {
-    problems.push(`${path.relative(ROOT, file)} is ${info.width}×${info.height}, expected ${width}×${height}`);
+    problems.push(
+      `${path.relative(ROOT, file)} is ${info.width}×${info.height}, expected ${width}×${height}`,
+    );
   }
   // Colour types 4 and 6 have an alpha channel
   const hasAlpha = info.colorType === 4 || info.colorType === 6;
-  if (hasAlpha && !alpha) problems.push(`${path.relative(ROOT, file)} has an alpha channel, the store refuses it`);
-  if (alpha === 'required' && !hasAlpha) problems.push(`${path.relative(ROOT, file)} should be a 32-bit PNG`);
+  if (hasAlpha && !alpha)
+    problems.push(`${path.relative(ROOT, file)} has an alpha channel, the store refuses it`);
+  if (alpha === 'required' && !hasAlpha)
+    problems.push(`${path.relative(ROOT, file)} should be a 32-bit PNG`);
   return problems;
 }
 
-const copyText = (from, to) => fs.writeFileSync(to, fs.readFileSync(from, 'utf8').trim());
+const copyText = (from: string, to: string) =>
+  fs.writeFileSync(to, fs.readFileSync(from, 'utf8').trim());
 
-export function assemble({ images = true } = {}) {
+export function assemble({ images = true }: { images?: boolean } = {}): {
+  play: number;
+  apple: number;
+} {
   const errors = validate(loadListings());
-  if (errors.length > 0) throw new Error(`the listings have problems, see node store/validate.mjs:\n${errors.join('\n')}`);
+  if (errors.length > 0)
+    throw new Error(
+      `the listings have problems, see node store/validate.ts:\n${errors.join('\n')}`,
+    );
   fs.rmSync(OUT, { recursive: true, force: true });
-  const problems = [];
-  const shots = (dir) =>
-    fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.png')).sort((a, b) => parseInt(a) - parseInt(b)) : [];
+  const problems: string[] = [];
+  const shots = (dir: string) =>
+    fs.existsSync(dir)
+      ? fs
+          .readdirSync(dir)
+          .filter((f) => f.endsWith('.png'))
+          .sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10))
+      : [];
 
   for (const { locale, site, same } of PLAY) {
     const dir = path.join(OUT, 'android', locale);
     fs.mkdirSync(dir, { recursive: true });
     const source = path.join(ROOT, PLAY_METADATA, same ?? locale);
     // supply sends the files as they are: no trailing newline in a title
-    for (const file of fs.readdirSync(source)) copyText(path.join(source, file), path.join(dir, file));
+    for (const file of fs.readdirSync(source))
+      copyText(path.join(source, file), path.join(dir, file));
     if (!images) continue;
     const img = path.join(dir, 'images');
     fs.mkdirSync(img, { recursive: true });
     fs.copyFileSync(ICON, path.join(img, 'icon.png'));
-    problems.push(...checkImage(path.join(img, 'icon.png'), { width: 512, height: 512, alpha: 'required' }));
+    problems.push(
+      ...checkImage(path.join(img, 'icon.png'), { width: 512, height: 512, alpha: 'required' }),
+    );
     const feature = path.join(IMAGES, site, 'feature.png');
     problems.push(...checkImage(feature, { width: 1024, height: 500 }));
     if (fs.existsSync(feature)) fs.copyFileSync(feature, path.join(img, 'featureGraphic.png'));
     for (const [folder, frame, width, height] of PLAY_SHOTS) {
       const files = shots(path.join(IMAGES, site, frame));
       // At most 8 per kind, at least 2 for phones (4 for tablets to be shown to them)
-      if (files.length < 4 || files.length > 8) problems.push(`Google Play ${locale} ${folder}: ${files.length} screenshots, 4 to 8 expected`);
+      if (files.length < 4 || files.length > 8)
+        problems.push(
+          `Google Play ${locale} ${folder}: ${files.length} screenshots, 4 to 8 expected`,
+        );
       fs.mkdirSync(path.join(img, folder), { recursive: true });
       for (const f of files) {
         const from = path.join(IMAGES, site, frame, f);
@@ -108,13 +155,17 @@ export function assemble({ images = true } = {}) {
     const dir = path.join(appleMeta, locale);
     fs.mkdirSync(dir, { recursive: true });
     const source = path.join(ROOT, METADATA, same ?? locale);
-    for (const file of fs.readdirSync(source)) copyText(path.join(source, file), path.join(dir, file));
+    for (const file of fs.readdirSync(source))
+      copyText(path.join(source, file), path.join(dir, file));
     if (!images) continue;
     const out = path.join(OUT, 'apple', 'screenshots', locale);
     fs.mkdirSync(out, { recursive: true });
     for (const [device, frame, width, height] of APPLE_SHOTS) {
       const files = shots(path.join(IMAGES, site, frame));
-      if (files.length < 3 || files.length > 10) problems.push(`App Store ${locale} ${device}: ${files.length} screenshots, 3 to 10 expected`);
+      if (files.length < 3 || files.length > 10)
+        problems.push(
+          `App Store ${locale} ${device}: ${files.length} screenshots, 3 to 10 expected`,
+        );
       for (const f of files) {
         const from = path.join(IMAGES, site, frame, f);
         problems.push(...checkImage(from, { width, height }));
@@ -135,7 +186,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       `${path.relative(ROOT, OUT)}: Google Play ${play} locales, App Store ${apple} locales, ${text ? 'texts only' : 'texts and images'}`,
     );
   } catch (e) {
-    console.error(e.message);
+    console.error(e instanceof Error ? e.message : e);
     process.exit(1);
   }
 }

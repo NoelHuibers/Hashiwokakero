@@ -5,8 +5,8 @@
 // violation, and any answer from the server, which the app must not reach.
 import { test as base, expect, type TestInfo } from '@playwright/test';
 
-import { APPIUM_URL, BUNDLE, device, ORIGIN, PROCESS, screenshot, SERVER, WDA } from './device';
-import { NATIVE, Session } from './webdriver';
+import { APPIUM_URL, BUNDLE, device, ORIGIN, PROCESS, SERVER, screenshot, WDA } from './device.ts';
+import { NATIVE, Session } from './webdriver.ts';
 
 export { expect };
 
@@ -14,7 +14,8 @@ export { expect };
  * WebKit's console messages about requests that couldn't go out, expected with hashi.rs blocked:
  * the address doesn't answer, and the CORS check of a call that failed.
  */
-const NETWORK_ERROR = /Could not connect to the server|hostname could not be found|network connection was lost|Internet connection appears to be offline|due to access control checks|Load failed/;
+const NETWORK_ERROR =
+  /Could not connect to the server|hostname could not be found|network connection was lost|Internet connection appears to be offline|due to access control checks|Load failed/;
 
 /** A console message of the page, as the WebKit inspector reports it (Appium's `safariConsole` log). */
 interface ConsoleMessage {
@@ -46,14 +47,19 @@ export interface Target {
 
 /** The app's page in its WKWebView, driven through the WebKit inspector. */
 export class App {
-  constructor(
-    readonly session: Session,
-    readonly udid: string,
-  ) {}
+  readonly session: Session;
+  readonly udid: string;
+
+  constructor(session: Session, udid: string) {
+    this.session = session;
+    this.udid = udid;
+  }
 
   /** Runs `fn` with `arg` in the page and returns its result (awaited, as JSON). */
   async evaluate<R, A = null>(fn: (arg: A) => R | Promise<R>, arg?: A): Promise<R> {
-    return this.session.execute<R>(`return (${fn.toString()}).call(null, arguments[0]);`, [arg ?? null]);
+    return this.session.execute<R>(`return (${fn.toString()}).call(null, arguments[0]);`, [
+      arg ?? null,
+    ]);
   }
 
   url() {
@@ -71,10 +77,17 @@ export class App {
     // for the next document, up to 20 s
     await this.session.command('POST', '/url', { url: `${ORIGIN}${path}` });
     await expect
-      .poll(() => this.evaluate((m) => (window as unknown as { e2eDocument?: string }).e2eDocument !== m, mark).catch(() => false), {
-        message: `the page left for ${path}`,
-        timeout: 30_000,
-      })
+      .poll(
+        () =>
+          this.evaluate(
+            (m) => (window as unknown as { e2eDocument?: string }).e2eDocument !== m,
+            mark,
+          ).catch(() => false),
+        {
+          message: `the page left for ${path}`,
+          timeout: 30_000,
+        },
+      )
       .toBe(true);
     await this.hydrated();
   }
@@ -85,10 +98,16 @@ export class App {
    */
   async hydrated() {
     await expect
-      .poll(() => this.evaluate(() => document.documentElement.hasAttribute('data-hydrated')).catch(() => false), {
-        message: 'the page hydrated',
-        timeout: 60_000,
-      })
+      .poll(
+        () =>
+          this.evaluate(() => document.documentElement.hasAttribute('data-hydrated')).catch(
+            () => false,
+          ),
+        {
+          message: 'the page hydrated',
+          timeout: 60_000,
+        },
+      )
       .toBe(true);
     await this.instrument();
   }
@@ -102,7 +121,14 @@ export class App {
   async instrument() {
     await this.evaluate(() => {
       if ('e2e' in window) return;
-      const records: Records = { calls: [], answers: [], pending: 0, last: Date.now(), errors: [], csp: [] };
+      const records: Records = {
+        calls: [],
+        answers: [],
+        pending: 0,
+        last: Date.now(),
+        errors: [],
+        csp: [],
+      };
       Object.defineProperty(window, 'e2e', { value: records });
       const fetch = window.fetch;
       window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
@@ -127,9 +153,13 @@ export class App {
         );
       };
       addEventListener('error', (e) => records.errors.push(`page error: ${e.message}`));
-      addEventListener('unhandledrejection', (e) => records.errors.push(`unhandled rejection: ${String(e.reason)}`));
+      addEventListener('unhandledrejection', (e) =>
+        records.errors.push(`unhandled rejection: ${String(e.reason)}`),
+      );
       document.addEventListener('securitypolicyviolation', (e) =>
-        records.csp.push(`${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || e.documentURI}:${e.lineNumber})`),
+        records.csp.push(
+          `${e.effectiveDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || e.documentURI}:${e.lineNumber})`,
+        ),
       );
     });
   }
@@ -137,10 +167,14 @@ export class App {
   /** Waits until the page's fetches ended, half a second ago (Playwright's `networkidle`). */
   async idle() {
     await expect
-      .poll(() => this.evaluate(() => {
-        const r = (window as unknown as { e2e: Records }).e2e;
-        return r.pending === 0 && Date.now() - r.last > 500;
-      }), { message: 'no fetch for half a second' })
+      .poll(
+        () =>
+          this.evaluate(() => {
+            const r = (window as unknown as { e2e: Records }).e2e;
+            return r.pending === 0 && Date.now() - r.last > 500;
+          }),
+        { message: 'no fetch for half a second' },
+      )
       .toBe(true);
   }
 
@@ -157,10 +191,16 @@ export class App {
           if (name === null) return true;
           // The text that shows (without a translation hidden on narrow screens), or all of it
           // (without the capitals of a `text-transform`)
-          const labels = [el.getAttribute('aria-label'), (el as HTMLElement).innerText, el.textContent].map((l) => (l ?? '').trim());
+          const labels = [
+            el.getAttribute('aria-label'),
+            (el as HTMLElement).innerText,
+            el.textContent,
+          ].map((l) => (l ?? '').trim());
           return labels.some((l) => (regex ? new RegExp(name).test(l) : l === name));
         };
-        const el = [...document.querySelectorAll(css)].find((e) => e.getClientRects().length > 0 && matches(e));
+        const el = [...document.querySelectorAll(css)].find(
+          (e) => e.getClientRects().length > 0 && matches(e),
+        );
         if (!el) return null;
         const mark = String(Math.random()).slice(2);
         el.setAttribute('data-e2e-click', mark);
@@ -179,7 +219,12 @@ export class App {
   /** How many visible elements `css` finds whose text contains `text`. */
   count(css: string, text = '') {
     return this.evaluate(
-      ({ css, text }) => [...document.querySelectorAll(css)].filter((e) => e.getClientRects().length > 0 && ((e as HTMLElement).innerText ?? e.textContent ?? '').includes(text)).length,
+      ({ css, text }) =>
+        [...document.querySelectorAll(css)].filter(
+          (e) =>
+            e.getClientRects().length > 0 &&
+            ((e as HTMLElement).innerText ?? e.textContent ?? '').includes(text),
+        ).length,
       { css, text },
     );
   }
@@ -195,7 +240,11 @@ export class App {
   }
 }
 
-export const test = base.extend<{ app: App; problems: string[] }, { session: Session; udid: string }>({
+export const test = base.extend<
+  { app: App; problems: string[] },
+  { session: Session; udid: string }
+>({
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright reads a fixture's dependencies from its source and needs the pattern
   udid: [async ({}, use) => use((await device()).udid), { scope: 'worker' }],
 
   /**
@@ -229,7 +278,9 @@ export const test = base.extend<{ app: App; problems: string[] }, { session: Ses
         ...(WDA ? { 'appium:usePreinstalledWDA': true, 'appium:prebuiltWDAPath': WDA } : {}),
       });
       await use(session);
-      await session.delete().catch(() => {});
+      await session.delete().catch(() => {
+        // Gone with the simulator already
+      });
     },
     { scope: 'worker', timeout: 480_000 },
   ],
@@ -239,7 +290,9 @@ export const test = base.extend<{ app: App; problems: string[] }, { session: Ses
     await use(app);
     if (testInfo.status !== testInfo.expectedStatus) {
       const shot = `failed-${testInfo.title.replace(/\W+/g, '-')}-${testInfo.retry}.png`;
-      await app.screenshot(shot).catch(() => {});
+      await app.screenshot(shot).catch(() => {
+        // Only a help for the failure, which is reported anyway
+      });
     }
   },
 
@@ -248,29 +301,36 @@ export const test = base.extend<{ app: App; problems: string[] }, { session: Ses
       const problems: string[] = [];
       await use(problems);
       // The inspector's console since the page was selected: the app's start included
-      const console = (await app.session.logs('safariConsole').catch(() => []))
-        .map((e) => {
-          try {
-            return JSON.parse(e.message) as ConsoleMessage;
-          } catch {
-            return { text: e.message } as ConsoleMessage;
-          }
-        });
-      if (console.length) {
-        const lines = console.map((m) => `${m.level ?? ''} ${m.source ?? ''}: ${m.text ?? ''}${m.url ? ` (${m.url}:${m.line})` : ''}`);
+      const console = (await app.session.logs('safariConsole').catch(() => [])).map((e) => {
+        try {
+          return JSON.parse(e.message) as ConsoleMessage;
+        } catch {
+          return { text: e.message } as ConsoleMessage;
+        }
+      });
+      if (console.length > 0) {
+        const lines = console.map(
+          (m) =>
+            `${m.level ?? ''} ${m.source ?? ''}: ${m.text ?? ''}${m.url ? ` (${m.url}:${m.line})` : ''}`,
+        );
         await testInfo.attach('console', { body: lines.join('\n'), contentType: 'text/plain' });
       }
       for (const m of console) {
         const text = m.text ?? '';
         if (/Content.Security.Policy/i.test(text)) problems.push(`CSP: ${text}`);
-        else if (m.level === 'error' && !NETWORK_ERROR.test(text)) problems.push(`console error: ${text}`);
+        else if (m.level === 'error' && !NETWORK_ERROR.test(text))
+          problems.push(`console error: ${text}`);
       }
       // A test that stopped the app or left its page has nothing to read
       const records = await app.records().catch(() => null);
       if (records) {
         problems.push(...records.errors, ...records.csp.map((v) => `CSP: ${v}`));
         // hashi.rs is blocked: an answer from it means a request got out
-        problems.push(...records.answers.filter((a) => new URL(a.split(' ')[1]).hostname === SERVER).map((a) => `reached the server: ${a}`));
+        problems.push(
+          ...records.answers
+            .filter((a) => new URL(a.split(' ')[1]!).hostname === SERVER)
+            .map((a) => `reached the server: ${a}`),
+        );
       }
       expect(problems, 'errors in the app').toEqual([]);
     },
@@ -293,7 +353,10 @@ async function launch(session: Session, udid: string, testInfo: TestInfo): Promi
     await expect
       .poll(
         async () => {
-          const contexts = await session.mobile<{ id: string; url?: string; bundleId?: string }[]>('getContexts', { waitForWebviewMs: 5000 });
+          const contexts = await session.mobile<{ id: string; url?: string; bundleId?: string }[]>(
+            'getContexts',
+            { waitForWebviewMs: 5000 },
+          );
           context = contexts.find((c) => c.id !== NATIVE && c.url?.startsWith(ORIGIN))?.id;
           return context ? 'found' : JSON.stringify(contexts);
         },

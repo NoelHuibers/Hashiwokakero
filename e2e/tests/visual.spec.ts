@@ -7,13 +7,12 @@
 // it): dates, the daily's number and difficulty, the monthly race. The project has a server and database of its own (see env.ts), and its tests run
 // one after another, the daily last: until then today's ranking is the seeded one.
 import type { Locator, Page } from '@playwright/test';
-
-import { PRACTICE_KEY, seedGame } from '../board';
-import { deleteResults, expectResult, solveDaily, startDaily } from '../daily';
-import { register } from '../account';
-import { expect, newUsername, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
-import { rankingExample } from '../ranking';
+import { register } from '../account.ts';
+import { PRACTICE_KEY, seedGame } from '../board.ts';
+import { deleteResults, expectResult, solveDaily, startDaily } from '../daily.ts';
+import { expect, newUsername, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
+import { rankingExample } from '../ranking.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -36,7 +35,8 @@ async function settle(page: Page) {
 /** Hides elements, keeping the space they take. */
 async function hide(...locators: Locator[]) {
   for (const locator of locators) {
-    for (const element of await locator.all()) await element.evaluate((el: HTMLElement) => (el.style.visibility = 'hidden'));
+    for (const element of await locator.all())
+      await element.evaluate((el: HTMLElement) => (el.style.visibility = 'hidden'));
   }
 }
 
@@ -78,7 +78,14 @@ test('practice, a board in play', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-10-19T09:00:00Z') });
   await page.clock.pauseAt(new Date('2026-10-19T09:00:01Z'));
   const bridges = LADDER_SOLUTION.map((b, e) => (e === ladderRow(3) || e === ladderRow(4) ? 0 : b));
-  await seedGame(page, PRACTICE_KEY, { puzzle: LADDER, bridges, solution: LADDER_SOLUTION, status: 'Playing', moves: 7, hints: 0 });
+  await seedGame(page, PRACTICE_KEY, {
+    puzzle: LADDER,
+    bridges,
+    solution: LADDER_SOLUTION,
+    status: 'Playing',
+    moves: 7,
+    hints: 0,
+  });
   await visit(page, '/practice');
   await expect(page.getByText('6 / 10')).toBeVisible();
   // Checked on its own: a digit more or less is within the screenshot's tolerance
@@ -89,7 +96,10 @@ test('practice, a board in play', async ({ page }) => {
 test('ranks', async ({ page }) => {
   await visit(page, '/ranks');
   // The first card, the monthly race below has the same buttons
-  const today = page.locator('[data-name="Card"]').filter({ has: page.getByRole('button', { name: /Earlier/ }) }).first();
+  const today = page
+    .locator('[data-name="Card"]')
+    .filter({ has: page.getByRole('button', { name: /Earlier/ }) })
+    .first();
   // The seeded two of today, on the podium
   await expect(today.locator('li.podium-step')).toHaveCount(2);
   await expectPage(page, 'ranks', [
@@ -108,7 +118,10 @@ for (const kind of ['shared', 'long'] as const) {
     await page.emulateMedia({ colorScheme: 'dark' });
     await rankingExample(page, kind);
     await visit(page, '/ranks');
-    const daily = page.locator('[data-name="Card"]').filter({ has: page.getByRole('button', { name: /Earlier/ }) }).first();
+    const daily = page
+      .locator('[data-name="Card"]')
+      .filter({ has: page.getByRole('button', { name: /Earlier/ }) })
+      .first();
     await expect(daily.locator('li.podium-step')).toHaveCount(3);
     await settle(page);
     await expect(daily).toHaveScreenshot(`ranks-mobile-${kind}.png`);
@@ -119,6 +132,7 @@ for (const [locale, name] of [
   ['ja', 'Japanese'],
   ['ar', 'Arabic, right to left'],
 ] as const) {
+  // biome-ignore lint/suspicious/useExpect: expectPage() asserts
   test(`rules in ${name}`, async ({ page }) => {
     await visit(page, `/${locale}/rules`);
     await expectPage(page, `rules-${locale}`);

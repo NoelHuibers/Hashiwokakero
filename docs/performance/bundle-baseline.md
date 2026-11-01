@@ -7,7 +7,7 @@ compares every build with it and writes both tables to its job summary.
 
 ## What is measured
 
-- **Size** (`scripts/bundle-size.mjs`): every WASM, JS and CSS file in `target/site/pkg` of a
+- **Size** (`scripts/bundle-size.ts`): every WASM, JS and CSS file in `target/site/pkg` of a
   release build, by its name without the content hash. Raw, gzip (level 9) and brotli (quality
   11), the best each compression does; the server compresses on the fly
   (`tower_http::CompressionLayer`), possibly a little less. The fonts aren't counted, a page only

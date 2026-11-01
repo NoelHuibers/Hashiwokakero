@@ -1,10 +1,12 @@
 // The device the tests run on, and the app on it: the debug APK of app/src-tauri.
+
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 import { _android, type AndroidDevice } from '@playwright/test';
 
-import { ROOT } from '../env';
+import { ROOT } from '../env.ts';
 
 /** The debug build's application ID (`debugApplicationIdSuffix` in tauri.conf.json). */
 export const PKG = 'rs.hashi.debug';
@@ -18,7 +20,8 @@ export const SERVER = 'hashi.rs';
 /** `cargo tauri android build --debug --apk` writes it, CI builds it for the emulator (x86_64). */
 export const APK = path.resolve(
   ROOT,
-  process.env.E2E_APK ?? 'app/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk',
+  process.env.E2E_APK ??
+    'app/src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk',
 );
 /** What the job summary shows about the device: its model, Android and WebView. */
 export const DEVICE_INFO = path.join(import.meta.dirname, '..', 'test-results-android-device.json');
@@ -28,14 +31,16 @@ export const SCREENS = path.join(import.meta.dirname, '..', 'android-screens');
 /** The one device on adb (Playwright's own driver app isn't needed for a WebView). */
 export async function connect(): Promise<AndroidDevice> {
   const devices = await _android.devices({ omitDriverInstall: true });
-  if (devices.length !== 1) {
+  const [device, ...others] = devices;
+  if (!device || others.length > 0) {
     await Promise.all(devices.map((d) => d.close()));
     throw new Error(`expected one Android device on adb, found ${devices.length}`);
   }
-  return devices[0];
+  return device;
 }
 
-export const shell = async (device: AndroidDevice, command: string) => (await device.shell(command)).toString().trim();
+export const shell = async (device: AndroidDevice, command: string) =>
+  (await device.shell(command)).toString().trim();
 
 /** The screen's pixels: `screencap` without `-p`, RGBA after a header (width, height, format…). */
 export interface Screen {
@@ -56,8 +61,8 @@ export async function screen(device: AndroidDevice): Promise<Screen> {
     height,
     luminance(x, y) {
       const i = start + (y * width + x) * 4;
-      const [r, g, b] = [raw[i], raw[i + 1], raw[i + 2]].map((c) => c / 255);
-      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const channel = (offset: number) => raw.readUInt8(i + offset) / 255;
+      return 0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2);
     },
   };
 }
@@ -77,21 +82,24 @@ export interface Bars {
 export async function systemBars(device: AndroidDevice): Promise<Bars> {
   const dump = await shell(device, 'dumpsys window');
   const frame = (type: string) => {
-    const lines = dump.split('\n').filter((l) => new RegExp(`type=${type}\\b`).test(l) && /frame=\[/.test(l));
+    const lines = dump
+      .split('\n')
+      .filter((l) => new RegExp(`type=${type}\\b`).test(l) && /frame=\[/.test(l));
     const frames = lines
       .map((l) => l.match(/frame=\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/))
-      .filter((m): m is RegExpMatchArray => !!m)
-      .map((m) => m.slice(1, 5).map(Number))
-      .filter(([l, t, r, b]) => r > l && b > t);
+      .filter((m): m is RegExpMatchArray => m !== null)
+      .map(([, l, t, r, b]) => ({ l: Number(l), t: Number(t), r: Number(r), b: Number(b) }))
+      .filter(({ l, t, r, b }) => r > l && b > t);
     return { lines, frames };
   };
   const status = frame('statusBars');
   const navigation = frame('navigationBars');
   const source = [...status.lines.slice(0, 3), ...navigation.lines.slice(0, 3)].join('\n');
-  if (!status.frames.length || !navigation.frames.length) throw new Error(`no system bars in dumpsys window:\n${source}`);
-  const top = Math.max(...status.frames.map(([, , , b]) => b));
-  const height = Math.max(...navigation.frames.map(([, , , b]) => b));
-  const bottom = Math.max(...navigation.frames.map(([, t]) => height - t));
+  if (status.frames.length === 0 || navigation.frames.length === 0)
+    throw new Error(`no system bars in dumpsys window:\n${source}`);
+  const top = Math.max(...status.frames.map(({ b }) => b));
+  const height = Math.max(...navigation.frames.map(({ b }) => b));
+  const bottom = Math.max(...navigation.frames.map(({ t }) => height - t));
   return { top, bottom, source };
 }
 
@@ -105,15 +113,16 @@ export async function keyboardTop(device: AndroidDevice): Promise<number | null>
     .split('\n')
     .filter((l) => /type=ime\b/.test(l) && /visible=true/.test(l))
     .map((l) => l.match(/frame=\[-?\d+,(-?\d+)\]\[-?\d+,(-?\d+)\]/))
-    .filter((m): m is RegExpMatchArray => !!m && Number(m[2]) > Number(m[1]))
+    .filter((m): m is RegExpMatchArray => m !== null && Number(m[2]) > Number(m[1]))
     .map((m) => Number(m[1]));
-  return tops.length ? Math.min(...tops) : null;
+  return tops.length > 0 ? Math.min(...tops) : null;
 }
 
 /** Whether the device reaches the internet: an address, or a name to look up. */
 async function online(device: AndroidDevice) {
   for (const host of ['1.1.1.1', SERVER]) {
-    if ((await shell(device, `ping -c 1 -W 2 ${host} > /dev/null 2>&1; echo $?`)) === '0') return true;
+    if ((await shell(device, `ping -c 1 -W 2 ${host} > /dev/null 2>&1; echo $?`)) === '0')
+      return true;
   }
   return false;
 }
@@ -123,7 +132,10 @@ async function online(device: AndroidDevice) {
  * `navigator.onLine` follows it. `null` when the dump doesn't say.
  */
 async function defaultNetwork(device: AndroidDevice) {
-  return (await shell(device, 'dumpsys connectivity')).match(/Active default network: (\S+)/)?.[1] ?? null;
+  return (
+    (await shell(device, 'dumpsys connectivity')).match(/Active default network: (\S+)/)?.[1] ??
+    null
+  );
 }
 
 /**
@@ -146,18 +158,21 @@ export async function goOffline(device: AndroidDevice) {
     await shell(device, 'svc wifi disable');
     await shell(device, 'svc data disable');
     network = await defaultNetwork(device);
-    if (network === null && i === 0) console.warn('dumpsys connectivity names no default network, only the ping tells');
+    if (network === null && i === 0)
+      console.warn('dumpsys connectivity names no default network, only the ping tells');
     const offline = (network === null || network === 'none') && !(await online(device));
     calm = offline ? calm + 1 : 0;
     if (calm >= 5) return;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await sleep(1000);
   }
   throw new Error(`the device is still online with airplane mode on (default network: ${network})`);
 }
 
 /** Notes the device for the job summary. */
-export async function describe(device: AndroidDevice) {
-  const webView = (await shell(device, 'dumpsys webviewupdate')).match(/Current WebView package \(name, version\): \((.*)\)/);
+export async function deviceInfo(device: AndroidDevice) {
+  const webView = (await shell(device, 'dumpsys webviewupdate')).match(
+    /Current WebView package \(name, version\): \((.*)\)/,
+  );
   const info = {
     model: device.model(),
     android: await shell(device, 'getprop ro.build.version.release'),

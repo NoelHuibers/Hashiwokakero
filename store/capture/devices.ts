@@ -38,10 +38,50 @@ const TABLET = { top: 6, hanko: 6.5, title: 5.2, text: 2.7 };
 
 export const FRAMES: Frame[] = [
   // App Store: iPhone 6.9" and iPad 13" (App Store Connect scales them for the smaller ones)
-  { id: 'iphone-69', store: 'apple', width: 1320, height: 2868, screen: 'phone', folder: 'iphone69', sizes: PHONE_TALL },
-  { id: 'ipad-13', store: 'apple', width: 2064, height: 2752, screen: 'tablet', folder: 'ipad13', sizes: TABLET },
+  {
+    id: 'iphone-69',
+    store: 'apple',
+    width: 1320,
+    height: 2868,
+    screen: 'phone',
+    folder: 'iphone69',
+    sizes: PHONE_TALL,
+  },
+  {
+    id: 'ipad-13',
+    store: 'apple',
+    width: 2064,
+    height: 2752,
+    screen: 'tablet',
+    folder: 'ipad13',
+    sizes: TABLET,
+  },
   // Google Play: 9:16 portrait, the phone and both tablet sizes
-  { id: 'play-phone', store: 'play', width: 1080, height: 1920, screen: 'phone', folder: 'phoneScreenshots', sizes: PORTRAIT },
-  { id: 'play-tablet-7', store: 'play', width: 1080, height: 1920, screen: 'tablet', folder: 'sevenInchScreenshots', sizes: PORTRAIT },
-  { id: 'play-tablet-10', store: 'play', width: 1440, height: 2560, screen: 'tablet', folder: 'tenInchScreenshots', sizes: PORTRAIT },
+  {
+    id: 'play-phone',
+    store: 'play',
+    width: 1080,
+    height: 1920,
+    screen: 'phone',
+    folder: 'phoneScreenshots',
+    sizes: PORTRAIT,
+  },
+  {
+    id: 'play-tablet-7',
+    store: 'play',
+    width: 1080,
+    height: 1920,
+    screen: 'tablet',
+    folder: 'sevenInchScreenshots',
+    sizes: PORTRAIT,
+  },
+  {
+    id: 'play-tablet-10',
+    store: 'play',
+    width: 1440,
+    height: 2560,
+    screen: 'tablet',
+    folder: 'tenInchScreenshots',
+    sizes: PORTRAIT,
+  },
 ];

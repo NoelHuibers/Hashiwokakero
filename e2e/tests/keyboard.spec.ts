@@ -1,11 +1,15 @@
-import { addBridge, board, edges, PRACTICE_KEY, saved, seedGame } from '../board';
-import { expect, test, visit } from '../fixtures';
-import { LADDER } from '../puzzles';
+import { addBridge, board, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER } from '../puzzles.ts';
 
 test('build and remove bridges with the keyboard and hear island degrees', async ({ page }) => {
   await seedGame(page, PRACTICE_KEY, {
-    puzzle: LADDER, bridges: edges(LADDER).map(() => 0), solution: null,
-    status: 'Playing', moves: 0, hints: 0,
+    puzzle: LADDER,
+    bridges: edges(LADDER).map(() => 0),
+    solution: null,
+    status: 'Playing',
+    moves: 0,
+    hints: 0,
   });
   await visit(page, '/practice');
   await expect(board(page)).toHaveAttribute('tabindex', '0');
@@ -31,8 +35,12 @@ test('build and remove bridges with the keyboard and hear island degrees', async
  */
 test('clicks build their bridge whether or not the keyboard was used first', async ({ page }) => {
   await seedGame(page, PRACTICE_KEY, {
-    puzzle: LADDER, bridges: edges(LADDER).map(() => 0), solution: null,
-    status: 'Playing', moves: 0, hints: 0,
+    puzzle: LADDER,
+    bridges: edges(LADDER).map(() => 0),
+    solution: null,
+    status: 'Playing',
+    moves: 0,
+    hints: 0,
   });
   await visit(page, '/practice');
   await addBridge(page, PRACTICE_KEY, LADDER, 1);

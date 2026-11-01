@@ -60,7 +60,7 @@ pub fn og_locale(locale: Locale) -> &'static str {
     }
 }
 
-/// Stylesheet in /fonts/ (see scripts/fonts.mjs) for a script Murecho doesn't cover.
+/// Stylesheet in /fonts/ (see scripts/fonts.ts) for a script Murecho doesn't cover.
 ///
 /// Its font goes first in the font stacks (see `--app-font` in tailwind.css). Murecho covers
 /// Latin, Cyrillic, Greek and Japanese, but not the Vietnamese diacritics.

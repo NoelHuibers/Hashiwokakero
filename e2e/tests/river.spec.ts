@@ -3,8 +3,8 @@
 // crossed stream is a hanko on the group page and the crew's stamp in the stamp book.
 import type { Page } from '@playwright/test';
 
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { RIVER_GROUP, SEEDED_GROUP } from '../seed';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { RIVER_GROUP, SEEDED_GROUP } from '../seed.ts';
 
 const river = (page: Page) => page.getByTestId('river-card');
 
@@ -29,7 +29,9 @@ test('the seeded group crosses its stream, celebrated once', async ({ page, cont
   // The crossed stream as a hanko, the river under construction
   const row = river(page).getByTestId('river-crossed-row');
   await expect(row.locator('[data-level]')).toHaveCount(1);
-  await expect(row.getByRole('img', { name: /^The stream: crossed on .*, 400 bridges$/ })).toBeVisible();
+  await expect(
+    row.getByRole('img', { name: /^The stream: crossed on .*, 400 bridges$/ }),
+  ).toBeVisible();
   await expect(row.getByRole('img', { name: 'The river: under construction' })).toBeVisible();
 
   await crossed.getByRole('button', { name: /^Onward!/ }).click();
@@ -51,7 +53,10 @@ test('the seeded group crosses its stream, celebrated once', async ({ page, cont
   await expect(stamp).not.toHaveClass(/opacity-60/);
 });
 
-test('a river nobody has laid planks of this week asks for the first one', async ({ page, context }) => {
+test('a river nobody has laid planks of this week asks for the first one', async ({
+  page,
+  context,
+}) => {
   await signIn(context, 'aiko');
   await visit(page, `/groups/${SEEDED_GROUP.id}`);
   // The seeded dailies have no runs: an empty stream for the Bridge Club, six members
