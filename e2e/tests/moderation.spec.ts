@@ -1,8 +1,8 @@
 // Reporting and blocking: a new visitor reports a seeded player on their profile, which the admin
 // sees and dismisses, and blocks them: the boards show "blocked player" in their place, without a
 // link, until they're unblocked on the account page.
-import { expect, signIn, test, visit } from '../fixtures';
-import { player } from '../seed';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { player } from '../seed.ts';
 
 test('report a player, block them and unblock them', async ({ page, browser, baseURL }) => {
   const chen = player('chen');

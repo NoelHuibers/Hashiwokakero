@@ -3,7 +3,7 @@
 // `pnpm run store:images` from the repository root writes target/store/images.
 import { defineConfig } from '@playwright/test';
 
-import { STORE_URL } from './env';
+import { STORE_URL } from './env.ts';
 
 const CI = Boolean(process.env.CI);
 

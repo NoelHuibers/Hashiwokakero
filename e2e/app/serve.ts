@@ -5,7 +5,7 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, request, type Server } from 'node:http';
 import path from 'node:path';
 
-import { PORT, ROOT } from '../env';
+import { PORT, ROOT } from '../env.ts';
 
 /** `pnpm run app:build` writes it, CI unpacks the artifact of the "Build app (web)" job there. */
 export const APP_DIST = path.resolve(ROOT, process.env.E2E_APP_DIST ?? 'target/app-dist');

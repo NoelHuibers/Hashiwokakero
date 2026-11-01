@@ -2,7 +2,7 @@
 // and the other finds it on the group page, with an unread dot until they saw it.
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { expect, hydrated, test, visit } from '../fixtures';
+import { expect, hydrated, test, visit } from '../fixtures.ts';
 
 /** A card of the page, by its heading. */
 const card = (page: Page, heading: RegExp) =>

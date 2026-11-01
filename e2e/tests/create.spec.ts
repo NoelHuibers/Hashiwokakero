@@ -2,8 +2,8 @@
 // played.
 import { text } from 'node:stream/consumers';
 
-import { board, build, cellCenter, PRACTICE_KEY, saved } from '../board';
-import { expect, test, visit } from '../fixtures';
+import { board, build, cellCenter, PRACTICE_KEY, saved } from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
 
 /** A 2 and a 3 joined by a double bridge, the 3 by a single one to a 1 below it. */
 const ISLANDS = [

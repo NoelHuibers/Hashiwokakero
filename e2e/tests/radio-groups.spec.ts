@@ -2,9 +2,9 @@
 // Tab stop, the checked radio, and the arrow keys move the focus and the choice along.
 import type { Locator, Page } from '@playwright/test';
 
-import { board, cellCenter, edges, PRACTICE_KEY, seedGame } from '../board';
-import { expect, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION } from '../puzzles';
+import { board, cellCenter, edges, PRACTICE_KEY, seedGame } from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
 
 const SOLVER_KEY = 'hashi.solver.v2';
 const playing = {

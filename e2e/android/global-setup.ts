@@ -2,7 +2,7 @@
 // with a network.
 import { existsSync, mkdirSync } from 'node:fs';
 
-import { ACTIVITY, APK, connect, deviceInfo, goOffline, PKG, SCREENS, shell } from './device';
+import { ACTIVITY, APK, connect, deviceInfo, goOffline, PKG, SCREENS, shell } from './device.ts';
 
 export default async function globalSetup() {
   if (!existsSync(APK)) throw new Error(`no APK at ${APK}, see app/README.md (E2E_APK)`);

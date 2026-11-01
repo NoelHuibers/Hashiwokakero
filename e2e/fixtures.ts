@@ -2,8 +2,8 @@
 // a console error, a failed request to the site), with helpers to open pages and sign in.
 import { type BrowserContext, test as base, expect, type Page } from '@playwright/test';
 
-import { BASE_URL } from './env';
-import { player } from './seed';
+import { BASE_URL } from './env.ts';
+import { player } from './seed.ts';
 
 export { expect };
 

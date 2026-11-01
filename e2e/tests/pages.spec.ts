@@ -2,9 +2,9 @@
 // what a broken Leptos, wasm-bindgen or leptos_i18n update breaks first.
 import type { Page } from '@playwright/test';
 
-import { allow, expect, signIn, test, visit } from '../fixtures';
-import { player } from '../seed';
-import { LOCALES, localized, ROUTES, RTL_LOCALES } from '../site';
+import { allow, expect, signIn, test, visit } from '../fixtures.ts';
+import { player } from '../seed.ts';
+import { LOCALES, localized, ROUTES, RTL_LOCALES } from '../site.ts';
 
 async function expectLanguage(page: Page, locale: string) {
   const html = page.locator('html');

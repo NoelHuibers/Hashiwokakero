@@ -2,7 +2,7 @@
 // browser, so a reload keeps them.
 import type { Page } from '@playwright/test';
 
-import { expect, test, visit } from '../fixtures';
+import { expect, test, visit } from '../fixtures.ts';
 
 const reload = async (page: Page) => {
   await page.reload();

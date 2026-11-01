@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 
-import type { Puzzle } from '../../e2e/board';
+import type { Puzzle } from '../../e2e/board.ts';
 
 interface Fixed {
   puzzle: Puzzle;

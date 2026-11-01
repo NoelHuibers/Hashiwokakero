@@ -7,10 +7,10 @@
 // stays out of the way. Nothing here may reach
 // hashi.rs: no guest, no daily, no group.
 import { setTimeout as sleep } from 'node:timers/promises';
-import type { TauriWindow } from '../tauri';
-import { type App, expect, inFront, test } from './app';
-import { BUNDLE, ORIGIN, SAFARI } from './device';
-import { NATIVE } from './webdriver';
+import type { TauriWindow } from '../tauri.ts';
+import { type App, expect, inFront, test } from './app.ts';
+import { BUNDLE, ORIGIN, SAFARI } from './device.ts';
+import { NATIVE } from './webdriver.ts';
 
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
 const TOASTS = '[role=log] > div';

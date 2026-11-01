@@ -6,8 +6,8 @@
 // assetlinks.json), so the intents name the package, as `adb` lets them.
 import type { AndroidDevice, Page } from '@playwright/test';
 
-import { closeSystemDialogs, expect, hydrated, inFront, started, test, visit } from './app';
-import { ACTIVITY, ORIGIN, PKG, shell } from './device';
+import { closeSystemDialogs, expect, hydrated, inFront, started, test, visit } from './app.ts';
+import { ACTIVITY, ORIGIN, PKG, shell } from './device.ts';
 
 const INVITE = 'https://hashi.rs/g/testcode';
 /** Where a daily result's share text points, in Japanese. */

@@ -4,8 +4,8 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { addBridge, board, DAILY_KEY, missing, type Puzzle, saved } from './board';
-import { DB_PATH, VISUAL_DB_PATH } from './env';
+import { addBridge, board, DAILY_KEY, missing, type Puzzle, saved } from './board.ts';
+import { DB_PATH, VISUAL_DB_PATH } from './env.ts';
 
 /** The database of the running test's server, see `VISUAL_URL`. */
 const database = (options: { readOnly?: boolean } = {}) =>

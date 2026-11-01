@@ -1,6 +1,6 @@
-import { addBridge, board, edges, PRACTICE_KEY, saved, seedGame } from '../board';
-import { expect, test, visit } from '../fixtures';
-import { LADDER } from '../puzzles';
+import { addBridge, board, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER } from '../puzzles.ts';
 
 test('build and remove bridges with the keyboard and hear island degrees', async ({ page }) => {
   await seedGame(page, PRACTICE_KEY, {

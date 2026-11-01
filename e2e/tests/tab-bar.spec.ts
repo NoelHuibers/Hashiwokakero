@@ -6,9 +6,9 @@ import path from 'node:path';
 
 import type { Page } from '@playwright/test';
 
-import { ROOT } from '../env';
-import { expect, test, visit } from '../fixtures';
-import { LOCALES, localized } from '../site';
+import { ROOT } from '../env.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LOCALES, localized } from '../site.ts';
 
 const navLabel = (locale: string): string =>
   JSON.parse(readFileSync(path.join(ROOT, 'locales', locale, 'common.json'), 'utf8')).nav.main;

@@ -84,6 +84,9 @@
         "noUnusedFunctionParameters": "error",
         "noEmptyPattern": "error",
         "usePlaywrightValidDescribeCallback": "error",
+        // Relative imports name the file with its extension (.ts): Node's type stripping
+        // resolves nothing else, tsconfig.json allows importing .ts
+        "useImportExtensions": "error",
         // Can't follow the type re-exports of @playwright/test; TypeScript checks imports
         "noUnresolvedImports": "off"
       },

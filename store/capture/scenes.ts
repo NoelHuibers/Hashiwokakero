@@ -4,9 +4,9 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
 
-import { addBridge, DAILY_KEY, edges, PRACTICE_KEY } from '../../e2e/board';
-import { DB_PATH, STORE_URL } from './env';
-import { ME, PLAYING, PUZZLES, sessionOf } from './seed';
+import { addBridge, DAILY_KEY, edges, PRACTICE_KEY } from '../../e2e/board.ts';
+import { DB_PATH, STORE_URL } from './env.ts';
+import { ME, PLAYING, PUZZLES, sessionOf } from './seed.ts';
 
 export type SceneId = 'daily' | 'ranking' | 'practice' | 'friends' | 'stamps' | 'night';
 

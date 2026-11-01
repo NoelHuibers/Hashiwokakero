@@ -2,8 +2,8 @@
 // lines between the rows step aside for).
 import type { Locator, Page } from '@playwright/test';
 
-import { allow, expect, hydrated, signIn, test, visit } from '../fixtures';
-import { rankingExample } from '../ranking';
+import { allow, expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { rankingExample } from '../ranking.ts';
 
 /** The podium of the daily board some days ago (the seed has no results of today). */
 async function daysAgo(page: Page, days: number) {

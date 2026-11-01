@@ -2,8 +2,8 @@
 // way. Every test plays as a new player: there is one daily a day per player.
 import type { Locator, Page } from '@playwright/test';
 
-import { register, signInWith, signOut } from '../account';
-import { addBridge, board, DAILY_KEY, saved } from '../board';
+import { register, signInWith, signOut } from '../account.ts';
+import { addBridge, board, DAILY_KEY, saved } from '../board.ts';
 import {
   dailyHelpCost,
   dailySolution,
@@ -11,8 +11,8 @@ import {
   hintUntil,
   solveDaily,
   startDaily,
-} from '../daily';
-import { expect, newUsername, test, visit } from '../fixtures';
+} from '../daily.ts';
+import { expect, newUsername, test, visit } from '../fixtures.ts';
 
 /** The card over the board after this tab's finish. */
 const winCard = (page: Page) => page.getByRole('dialog', { name: /Well done!/ });

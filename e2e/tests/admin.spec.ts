@@ -1,6 +1,6 @@
 // The admin dashboard of a seeded admin: the overview, and every tab with what the seed put there.
-import { expect, signIn, test, visit } from '../fixtures';
-import { COMMUNITY_FAMILY, CONTACT_MESSAGES } from '../seed';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { COMMUNITY_FAMILY, CONTACT_MESSAGES } from '../seed.ts';
 
 test('the dashboard shows the day, the Dojo and the messages', async ({ page, context }) => {
   await signIn(context, 'admin');

@@ -8,7 +8,7 @@ import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { promisify } from 'node:util';
 
-import { ROOT } from '../env';
+import { ROOT } from '../env.ts';
 
 /** The app's bundle ID (`identifier` in tauri.conf.json; iOS's debug build has no suffix). */
 export const BUNDLE = 'rs.hashi';

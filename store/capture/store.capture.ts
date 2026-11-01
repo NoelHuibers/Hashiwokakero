@@ -4,14 +4,14 @@
 import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { type Browser, expect, test } from '@playwright/test';
-import { hydrated } from '../../e2e/fixtures';
-import { localized } from '../../e2e/site';
+import { hydrated } from '../../e2e/fixtures.ts';
+import { localized } from '../../e2e/site.ts';
 
 import { SITE_LANGUAGES } from '../locales.mjs';
-import { FRAMES, SCREENS, type Screen } from './devices';
-import { IMAGES_DIR, ONLY_LANGS, RAW_DIR, ROOT, STORE_URL } from './env';
-import { type Caption, feature, frame, framePage } from './frame';
-import { boardShot, SCENES, type Scene, type SceneId, signIn } from './scenes';
+import { FRAMES, SCREENS, type Screen } from './devices.ts';
+import { IMAGES_DIR, ONLY_LANGS, RAW_DIR, ROOT, STORE_URL } from './env.ts';
+import { type Caption, feature, frame, framePage } from './frame.ts';
+import { boardShot, SCENES, type Scene, type SceneId, signIn } from './scenes.ts';
 
 const LANGS = (SITE_LANGUAGES as string[]).filter((l) => !ONLY_LANGS || ONLY_LANGS.includes(l));
 const CAPTIONS = JSON.parse(readFileSync(path.join(ROOT, 'store/captions.json'), 'utf8')) as Record<

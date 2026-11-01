@@ -3,8 +3,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { ROOT } from './env';
-import { CLOSED_PUZZLE, DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed';
+import { ROOT } from './env.ts';
+import { CLOSED_PUZZLE, DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed.ts';
 
 const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 

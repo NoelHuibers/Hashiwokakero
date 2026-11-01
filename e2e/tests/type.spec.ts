@@ -4,8 +4,8 @@
 // came from another font in the middle of a word. Asks Chromium which fonts drew each heading.
 import type { CDPSession, Page } from '@playwright/test';
 
-import { expect, signIn, test, visit } from '../fixtures';
-import { LOCALES, localized } from '../site';
+import { expect, signIn, test, visit } from '../fixtures.ts';
+import { LOCALES, localized } from '../site.ts';
 
 /** Where headings are in Kaisei Decol: languages it draws whole, in proportional letters. */
 const KAISEI = new Set(['en', 'de', 'es', 'fr', 'id', 'it', 'ja', 'nl', 'pt']);

@@ -1,7 +1,7 @@
 // Browser tests of the built site, see the README. `pnpm run e2e` from the repository root.
 import { defineConfig, devices } from '@playwright/test';
 
-import { BASE_URL, VISUAL, VISUAL_URL } from './env';
+import { BASE_URL, VISUAL, VISUAL_URL } from './env.ts';
 
 const CI = Boolean(process.env.CI);
 const desktop = { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } };

@@ -7,8 +7,8 @@ import { existsSync, openSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import { DB_PATH, PORT, ROOT, RUN_DIR, SERVER_BIN, SITE_ROOT } from './env';
-import { DOJO_SEASON } from './seed';
+import { DB_PATH, PORT, ROOT, RUN_DIR, SERVER_BIN, SITE_ROOT } from './env.ts';
+import { DOJO_SEASON } from './seed.ts';
 
 /** The usernames that see /admin (see `seed.ts`). */
 export const ADMINS = 'admin';

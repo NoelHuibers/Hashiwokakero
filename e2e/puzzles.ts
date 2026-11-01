@@ -1,5 +1,5 @@
 // Fixed puzzles, for tests that need to know where the bridges go before the page does.
-import { edges, type Puzzle } from './board';
+import { edges, type Puzzle } from './board.ts';
 
 /**
  * A ladder on a 7×7 board: an island at both ends of rows 1 to 5, the left ones joined from top

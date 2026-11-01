@@ -1,7 +1,7 @@
 // Where the store screenshots' server runs and where the images go.
 import path from 'node:path';
 
-import { ROOT } from '../../e2e/env';
+import { ROOT } from '../../e2e/env.ts';
 
 export { ROOT };
 /** Away from the browser tests' ports (e2e/env.ts: 3150 and up). */

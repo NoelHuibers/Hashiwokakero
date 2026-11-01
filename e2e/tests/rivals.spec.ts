@@ -1,8 +1,8 @@
 // Rivals: a new player marks two of the seeded ones on their profiles, and after the daily
 // sees how the duels went. The boards only mark them, nothing about the rivals before the finish.
-import { expectResult, solveDaily, startDaily } from '../daily';
-import { expect, test, visit } from '../fixtures';
-import { player } from '../seed';
+import { expectResult, solveDaily, startDaily } from '../daily.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { player } from '../seed.ts';
 
 test('mark rivals on their profiles, then duel them in the daily', async ({ page }) => {
   // A visitor without a session: no rivals card, and the boards have nothing to mark anyone

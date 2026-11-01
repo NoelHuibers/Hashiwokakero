@@ -6,7 +6,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import { _android, type AndroidDevice } from '@playwright/test';
 
-import { ROOT } from '../env';
+import { ROOT } from '../env.ts';
 
 /** The debug build's application ID (`debugApplicationIdSuffix` in tauri.conf.json). */
 export const PKG = 'rs.hashi.debug';

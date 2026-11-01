@@ -4,9 +4,9 @@
 // with fixed puzzles. Every server function call fails, as without a network.
 import type { Page } from '@playwright/test';
 
-import { board, DAILY_KEY, edges, seedGame } from '../board';
-import { expect, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION } from '../puzzles';
+import { board, DAILY_KEY, edges, seedGame } from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
 
 interface Call {
   cmd: string;

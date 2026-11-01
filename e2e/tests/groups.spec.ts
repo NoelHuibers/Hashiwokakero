@@ -2,9 +2,9 @@
 // of today, which shows no times before you finished the daily yourself.
 import type { Page } from '@playwright/test';
 
-import { solveDaily, startDaily } from '../daily';
-import { expect, hydrated, signIn, test, visit } from '../fixtures';
-import { SEEDED_GROUP } from '../seed';
+import { solveDaily, startDaily } from '../daily.ts';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { SEEDED_GROUP } from '../seed.ts';
 
 /** A card of the page, by its heading. */
 const card = (page: Page, heading: RegExp) =>

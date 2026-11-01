@@ -10,9 +10,9 @@ import path from 'node:path';
 
 import type { AndroidDevice, Page } from '@playwright/test';
 
-import { board, PRACTICE_KEY } from '../board';
-import { LADDER, LADDER_SOLUTION } from '../puzzles';
-import type { TauriWindow } from '../tauri';
+import { board, PRACTICE_KEY } from '../board.ts';
+import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
+import type { TauriWindow } from '../tauri.ts';
 import {
   closeSystemDialogs,
   expect,
@@ -23,8 +23,17 @@ import {
   test,
   violations,
   visit,
-} from './app';
-import { ACTIVITY, keyboardTop, ORIGIN, PKG, SCREENS, screen, shell, systemBars } from './device';
+} from './app.ts';
+import {
+  ACTIVITY,
+  keyboardTop,
+  ORIGIN,
+  PKG,
+  SCREENS,
+  screen,
+  shell,
+  systemBars,
+} from './device.ts';
 
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
 const toasts = (page: Page) => page.locator('[role=log] > div');

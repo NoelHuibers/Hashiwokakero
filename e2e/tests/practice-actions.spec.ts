@@ -5,11 +5,11 @@ import path from 'node:path';
 
 import type { Page } from '@playwright/test';
 
-import { board, edges, PRACTICE_KEY, saved, seedGame } from '../board';
-import { ROOT } from '../env';
-import { expect, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION } from '../puzzles';
-import { localized } from '../site';
+import { board, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { ROOT } from '../env.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
+import { localized } from '../site.ts';
 
 const playing = {
   puzzle: LADDER,

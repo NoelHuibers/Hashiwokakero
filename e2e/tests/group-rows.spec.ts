@@ -3,8 +3,8 @@
 // and in the group's tab on the daily page. A name that's cut off has its tooltip.
 import type { Locator, Page } from '@playwright/test';
 
-import { expect, test, visit } from '../fixtures';
-import { TEA_GROUP } from '../seed';
+import { expect, test, visit } from '../fixtures.ts';
+import { TEA_GROUP } from '../seed.ts';
 
 const PHONE = { width: 390, height: 844 };
 const SMALL_PHONE = { width: 320, height: 640 };

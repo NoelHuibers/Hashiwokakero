@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { edges, PRACTICE_KEY, seedGame } from '../board';
-import { ROOT } from '../env';
-import { expect, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION } from '../puzzles';
-import { localized } from '../site';
+import { edges, PRACTICE_KEY, seedGame } from '../board.ts';
+import { ROOT } from '../env.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
+import { localized } from '../site.ts';
 
 const OPEN_KEY = 'hashi.practice.solver.open';
 const playing = {

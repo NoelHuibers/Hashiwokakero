@@ -5,10 +5,10 @@ import path from 'node:path';
 
 import type { Browser, Page } from '@playwright/test';
 
-import { RTL_LOCALES } from '../../e2e/site';
-import { type Frame, SCREENS } from './devices';
-import { RAW_DIR, ROOT, STORE_URL } from './env';
-import type { SceneId } from './scenes';
+import { RTL_LOCALES } from '../../e2e/site.ts';
+import { type Frame, SCREENS } from './devices.ts';
+import { RAW_DIR, ROOT, STORE_URL } from './env.ts';
+import type { SceneId } from './scenes.ts';
 
 const TEMPLATES = path.join(ROOT, 'store/templates');
 

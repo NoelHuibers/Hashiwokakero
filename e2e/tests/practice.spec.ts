@@ -12,9 +12,9 @@ import {
   saved,
   seedGame,
   toBoard,
-} from '../board';
-import { expect, test, visit } from '../fixtures';
-import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles';
+} from '../board.ts';
+import { expect, test, visit } from '../fixtures.ts';
+import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
 
 const bridges = (page: Page) => board(page).locator('g.bridge:not(.ghost)');
 
