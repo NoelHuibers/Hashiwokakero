@@ -19,13 +19,14 @@ const NETWORK_ERROR =
   /ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED|ERR_ADDRESS_UNREACHABLE|ERR_NETWORK_CHANGED/;
 
 export const test = base.extend<
-  { start: string; problems: string[]; consoleLog: void },
+  { start: string; problems: string[]; consoleLog: undefined },
   { device: AndroidDevice }
 >({
   /** What `am start` starts the app with: its launcher's activity, or an intent (an App Link). */
   start: [`-n ${ACTIVITY}`, { option: true }],
 
   device: [
+    // biome-ignore lint/correctness/noEmptyPattern: Playwright reads a fixture's dependencies from its source and needs the pattern
     async ({}, use) => {
       const device = await connect();
       await use(device);
@@ -51,8 +52,8 @@ export const test = base.extend<
       const lines: string[] = [];
       page.on('console', (m) => lines.push(`${m.type()}: ${m.text()}`));
       page.on('pageerror', (e) => lines.push(`page error: ${e.message}`));
-      await use();
-      if (lines.length)
+      await use(undefined);
+      if (lines.length > 0)
         await testInfo.attach('console', { body: lines.join('\n'), contentType: 'text/plain' });
     },
     { auto: true },
@@ -112,8 +113,9 @@ async function launch(device: AndroidDevice, start: string, testInfo: TestInfo):
       );
       const webView = await device.webView({ pkg: PKG }, { timeout: 60_000 });
       const attached = webView.page();
+      // Only failing with the timeout below, which relaunches the app; no unhandled rejection then
+      attached.catch(() => undefined);
       const page = await within(20_000, 'attaching to the WebView', attached).catch((e: Error) => {
-        attached.catch(() => {});
         if (attempt === 3) throw e;
         testInfo.annotations.push({ type: 'relaunch', description: e.message });
         return null;
@@ -169,6 +171,7 @@ export async function visit(page: Page, path: string) {
 /** Waits for the mark App sets once the WASM rendered the page (src/lib.rs), then for its calls. */
 export async function hydrated(page: Page) {
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', '', { timeout: 60_000 });
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: the page's own calls after hydrating, before a test goes on
   await page.waitForLoadState('networkidle');
 }
 

@@ -1,9 +1,11 @@
 // The simulator the tests run on, and the app on it: the debug build of app/src-tauri for the
 // simulator. Its commands go through `xcrun simctl`; what needs the running app (its page, which
 // app is in front) goes through Appium (app.ts).
+
 import { type ChildProcess, execFile, spawn } from 'node:child_process';
 import { openSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { promisify } from 'node:util';
 
 import { ROOT } from '../env';
@@ -85,7 +87,7 @@ export async function screenshot(udid: string, name: string) {
 }
 
 /** Notes the device for the job summary. */
-export async function describe(udid: string) {
+export async function deviceInfo(udid: string) {
   const d = await device();
   const info = { model: d.name, ios: d.ios, udid };
   writeFileSync(DEVICE_INFO, JSON.stringify(info, null, 2));
@@ -116,20 +118,22 @@ export async function startAppium(): Promise<ChildProcess | null> {
       stdio: ['ignore', log, log],
     },
   );
-  const exited = new Promise<never>((_, reject) =>
+  const exited = new Promise<never>((_, reject) => {
     appium.once('exit', (code) =>
       reject(new Error(`appium exited with ${code}, see ${APPIUM_LOG}`)),
-    ),
-  );
+    );
+  });
   const ready = (async () => {
     for (let i = 0; i < 120; i++) {
       if (await up(APPIUM_URL)) return;
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     }
     throw new Error(`appium didn't answer within a minute, see ${APPIUM_LOG}`);
   })();
   await Promise.race([ready, exited]);
   // Once it answered, its end is the teardown's
-  exited.catch(() => {});
+  exited.catch(() => {
+    // Settled by then
+  });
   return appium;
 }

@@ -53,8 +53,7 @@ const LOCALES = fs.readdirSync(path.join(root, 'locales')).sort();
 const DIGITS = '0123456789';
 
 // What the pixel font draws in every language (src/server/og/card.rs and model/calendar.rs)
-const PIXEL =
-  'Hashi 橋をかけろ · HASHIWOKAKERO hashi.rs #×' + DIGITS + '月火水木金土日' + '初級中級上級達人鬼';
+const PIXEL = `Hashi 橋をかけろ · HASHIWOKAKERO hashi.rs #×${DIGITS}月火水木金土日初級中級上級達人鬼`;
 
 function strings(lang, namespace) {
   const file = path.join(root, 'locales', lang, `${namespace}.json`);
@@ -113,8 +112,8 @@ for (const lang of LOCALES) {
 function inRange(ranges) {
   const parts = ranges.split(',').map((r) => {
     const [a, b] = r.trim().replace(/^U\+/i, '').split('-');
-    const lo = parseInt(a.replace(/\?/g, '0'), 16);
-    const hi = b ? parseInt(b, 16) : parseInt(a.replace(/\?/g, 'f'), 16);
+    const lo = Number.parseInt(a.replace(/\?/g, '0'), 16);
+    const hi = b ? Number.parseInt(b, 16) : Number.parseInt(a.replace(/\?/g, 'f'), 16);
     return [lo, hi];
   });
   return (c) => {

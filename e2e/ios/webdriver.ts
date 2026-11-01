@@ -5,11 +5,11 @@
 
 /** Appium's answer to a command that failed: the WebDriver error and its message. */
 export class WebDriverError extends Error {
-  constructor(
-    readonly error: string,
-    message: string,
-  ) {
+  readonly error: string;
+
+  constructor(error: string, message: string) {
     super(`${error}: ${message}`);
+    this.error = error;
   }
 }
 
@@ -35,8 +35,8 @@ async function send<T>(
   let json: { value?: unknown };
   try {
     json = JSON.parse(text);
-  } catch {
-    throw new Error(`${method} ${url}: ${response.status} ${text.slice(0, 500)}`);
+  } catch (e) {
+    throw new Error(`${method} ${url}: ${response.status} ${text.slice(0, 500)}`, { cause: e });
   }
   const value = json.value as { error?: string; message?: string } | undefined;
   if (!response.ok || (value && typeof value === 'object' && typeof value.error === 'string')) {
@@ -49,11 +49,15 @@ async function send<T>(
 }
 
 export class Session {
-  private constructor(
-    readonly base: string,
-    readonly id: string,
-    readonly capabilities: Record<string, unknown>,
-  ) {}
+  readonly base: string;
+  readonly id: string;
+  readonly capabilities: Record<string, unknown>;
+
+  private constructor(base: string, id: string, capabilities: Record<string, unknown>) {
+    this.base = base;
+    this.id = id;
+    this.capabilities = capabilities;
+  }
 
   /** A new session on the Appium server at `server`, with `capabilities` (`appium:` ones included). */
   static async create(server: string, capabilities: Record<string, unknown>): Promise<Session> {

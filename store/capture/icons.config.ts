@@ -5,7 +5,7 @@ import { defineConfig } from '@playwright/test';
 
 import { STORE_URL } from './env';
 
-const CI = !!process.env.CI;
+const CI = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: '.',

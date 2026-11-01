@@ -47,10 +47,13 @@ export interface Target {
 
 /** The app's page in its WKWebView, driven through the WebKit inspector. */
 export class App {
-  constructor(
-    readonly session: Session,
-    readonly udid: string,
-  ) {}
+  readonly session: Session;
+  readonly udid: string;
+
+  constructor(session: Session, udid: string) {
+    this.session = session;
+    this.udid = udid;
+  }
 
   /** Runs `fn` with `arg` in the page and returns its result (awaited, as JSON). */
   async evaluate<R, A = null>(fn: (arg: A) => R | Promise<R>, arg?: A): Promise<R> {
@@ -241,6 +244,7 @@ export const test = base.extend<
   { app: App; problems: string[] },
   { session: Session; udid: string }
 >({
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright reads a fixture's dependencies from its source and needs the pattern
   udid: [async ({}, use) => use((await device()).udid), { scope: 'worker' }],
 
   /**
@@ -274,7 +278,9 @@ export const test = base.extend<
         ...(WDA ? { 'appium:usePreinstalledWDA': true, 'appium:prebuiltWDAPath': WDA } : {}),
       });
       await use(session);
-      await session.delete().catch(() => {});
+      await session.delete().catch(() => {
+        // Gone with the simulator already
+      });
     },
     { scope: 'worker', timeout: 480_000 },
   ],
@@ -284,7 +290,9 @@ export const test = base.extend<
     await use(app);
     if (testInfo.status !== testInfo.expectedStatus) {
       const shot = `failed-${testInfo.title.replace(/\W+/g, '-')}-${testInfo.retry}.png`;
-      await app.screenshot(shot).catch(() => {});
+      await app.screenshot(shot).catch(() => {
+        // Only a help for the failure, which is reported anyway
+      });
     }
   },
 
@@ -300,7 +308,7 @@ export const test = base.extend<
           return { text: e.message } as ConsoleMessage;
         }
       });
-      if (console.length) {
+      if (console.length > 0) {
         const lines = console.map(
           (m) =>
             `${m.level ?? ''} ${m.source ?? ''}: ${m.text ?? ''}${m.url ? ` (${m.url}:${m.line})` : ''}`,

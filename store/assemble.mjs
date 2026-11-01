@@ -88,7 +88,7 @@ export function assemble({ images = true } = {}) {
       ? fs
           .readdirSync(dir)
           .filter((f) => f.endsWith('.png'))
-          .sort((a, b) => parseInt(a) - parseInt(b))
+          .sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10))
       : [];
 
   for (const { locale, site, same } of PLAY) {

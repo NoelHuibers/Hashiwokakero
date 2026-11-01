@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 import { BASE_URL, VISUAL, VISUAL_URL } from './env';
 
-const CI = !!process.env.CI;
+const CI = Boolean(process.env.CI);
 const desktop = { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } };
 const html = ['html', { open: 'never', outputFolder: 'playwright-report' }] as const;
 // CI runs the tests in shards (--shard=1/2, E2E_BLOB=1): each writes a blob report, the E2E

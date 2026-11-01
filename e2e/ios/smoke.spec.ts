@@ -6,6 +6,8 @@
 // and sideways, the app's own plugin answers (HashiPlugin.swift), and Game Center's sign-in
 // stays out of the way. Nothing here may reach
 // hashi.rs: no guest, no daily, no group.
+import { setTimeout as sleep } from 'node:timers/promises';
+import type { TauriWindow } from '../tauri';
 import { type App, expect, inFront, test } from './app';
 import { BUNDLE, ORIGIN, SAFARI } from './device';
 import { NATIVE } from './webdriver';
@@ -50,18 +52,16 @@ test('the app starts in its WebView, offline', async ({ app }) => {
   // The start page, `tauri://localhost` without a path
   expect((await app.url()).replace(/\/$/, '')).toBe(ORIGIN);
   // Tauri's bridge, which the practice takes for its commands (src/api/native.rs)
-  expect(await app.evaluate(() => typeof (window as any).__TAURI_INTERNALS__?.invoke)).toBe(
+  expect(await app.evaluate(() => typeof (window as TauriWindow).__TAURI_INTERNALS__?.invoke)).toBe(
     'function',
   );
   // What makes the app send `x-hashi-app: ios/<version>` (src/api/app.rs)
   expect(await app.evaluate(() => navigator.userAgent)).toContain('iPhone');
   // The simulator has the Mac's network: only hashi.rs is out of reach, the WebView is online
-  test
-    .info()
-    .annotations.push({
-      type: 'navigator.onLine',
-      description: String(await app.evaluate(() => navigator.onLine)),
-    });
+  test.info().annotations.push({
+    type: 'navigator.onLine',
+    description: String(await app.evaluate(() => navigator.onLine)),
+  });
   // The daily needs the server
   await expect.poll(() => shows(app, "Couldn't load today's puzzle. Try again.")).toBe(true);
   expect(await errorToasts(app)).toBe(0);
@@ -87,10 +87,10 @@ test('no page breaks the content security policy', async ({ app }) => {
     await app.visit(path);
     // Late work too: fonts, the board's first drawing
     await app.evaluate(() => document.fonts.ready.then(() => null));
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await sleep(500);
     const seen = (await app.records())?.csp;
     expect(seen, `the listener for violations is on ${path}`).toBeDefined();
-    if (seen!.length) found[path] = seen!;
+    if (seen!.length > 0) found[path] = seen!;
   }
   // The console's CSP messages, from the documents' start on: the `problems` fixture
   expect(found, 'securitypolicyviolation events').toEqual({});
@@ -140,7 +140,9 @@ test('pages that need the server say once that the app is offline', async ({ app
   await app.idle();
   expect(await app.count(TOASTS)).toBe(0);
   // Once the network is back (the window's `online` event), the next call that fails says it again
-  await app.evaluate(() => void window.dispatchEvent(new Event('online')));
+  await app.evaluate(() => {
+    window.dispatchEvent(new Event('online'));
+  });
   await app.click({ css: 'a', name: /Ranks/ });
   await expect.poll(() => app.url()).toMatch(/\/ranks$/);
   await expect.poll(() => offlineNotices(app)).toBe(1);
@@ -158,6 +160,7 @@ async function openedInSafari(app: App, what: string) {
   expect(await app.text('h1')).toBe('How to play Hashiwokakero');
 }
 
+// biome-ignore lint/suspicious/useExpect: openedInSafari() asserts
 test('links out of the app open in Safari', async ({ app }) => {
   // Waits for Safari twice
   test.slow();
@@ -166,7 +169,11 @@ test('links out of the app open in Safari', async ({ app }) => {
   await openedInSafari(app, 'the link');
 
   // A page of another site the WebView would go to by itself: refused, and opened outside too
-  await app.evaluate(() => void setTimeout(() => (location.href = 'https://example.com/'), 0));
+  await app.evaluate(() => {
+    setTimeout(() => {
+      location.href = 'https://example.com/';
+    }, 0);
+  });
   await openedInSafari(app, 'the address');
 });
 
@@ -194,11 +201,14 @@ const geometry = (app: App) =>
       .map((l) => l.getBoundingClientRect());
     return {
       env: Object.fromEntries(
-        Object.entries(env).map(([side, px]) => [side, parseFloat(px)]),
+        Object.entries(env).map(([side, px]) => [side, Number.parseFloat(px)]),
       ) as Record<'top' | 'right' | 'bottom' | 'left', number>,
       header: document.querySelector('header > div')!.getBoundingClientRect().top,
       labels: labels.map((r) => ({ left: r.left, right: r.right, bottom: r.bottom })),
-      body: { left: parseFloat(body.paddingLeft), right: parseFloat(body.paddingRight) },
+      body: {
+        left: Number.parseFloat(body.paddingLeft),
+        right: Number.parseFloat(body.paddingRight),
+      },
       width: innerWidth,
       height: innerHeight,
     };
@@ -227,12 +237,10 @@ for (const theme of ['light', 'dark'] as const) {
     await expect.poll(() => app.count(TOASTS)).toBe(0);
     await app.screenshot(`practice-${theme}.png`);
     const at = await geometry(app);
-    test
-      .info()
-      .annotations.push({
-        type: 'insets',
-        description: `env(safe-area-inset-*) ${JSON.stringify(at.env)}, header at ${at.header} of ${at.height} px`,
-      });
+    test.info().annotations.push({
+      type: 'insets',
+      description: `env(safe-area-inset-*) ${JSON.stringify(at.env)}, header at ${at.header} of ${at.height} px`,
+    });
     expect(at.env.top, 'the status bar').toBeGreaterThan(0);
     expect(at.env.bottom, 'the home indicator').toBeGreaterThan(0);
     expect(at.header, 'the header below the status bar').toBeGreaterThanOrEqual(at.env.top);
@@ -288,7 +296,7 @@ test("the app's own plugin answers on iOS", async ({ app }) => {
   const invoke = (command: string, args: Record<string, unknown>) =>
     app.evaluate(
       ({ command, args }) =>
-        (window as any).__TAURI_INTERNALS__.invoke(command, args).then(
+        (window as TauriWindow).__TAURI_INTERNALS__.invoke(command, args).then(
           () => 'ok',
           (e: unknown) => `refused: ${String(e)}`,
         ),
@@ -304,7 +312,7 @@ test("the app's own plugin answers on iOS", async ({ app }) => {
     }),
   ).toBe('ok');
   // The sheet over the app, Save to Files among its actions
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+  await sleep(1500);
   await app.screenshot('share.png');
 });
 
@@ -316,7 +324,7 @@ test('Game Center signs in without covering the page', async ({ app }) => {
   const invoke = (command: string, args: Record<string, unknown>) =>
     app.evaluate(
       ({ command, args }) =>
-        (window as any).__TAURI_INTERNALS__.invoke(command, args).then(
+        (window as TauriWindow).__TAURI_INTERNALS__.invoke(command, args).then(
           (answer: unknown) => ({ answer: answer ?? null }),
           (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
         ),
@@ -346,18 +354,20 @@ test('Game Center signs in without covering the page', async ({ app }) => {
   // in on it (nobody does here), or a refusal if it handed none
   const shown = await app.evaluate(() =>
     Promise.race([
-      (window as any).__TAURI_INTERNALS__
+      (window as TauriWindow).__TAURI_INTERNALS__
         .invoke('plugin:hashi|games_show', { kind: 'achievements' })
         .then(
           (answer: unknown) => ({ answer: answer ?? null }),
           (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
         ),
-      new Promise((resolve) => setTimeout(() => resolve({ waiting: true }), 2000)),
+      new Promise((resolve) => {
+        setTimeout(() => resolve({ waiting: true }), 2000);
+      }),
     ]),
   );
   test.info().annotations.push({ type: 'games_show', description: JSON.stringify(shown) });
   if ('refused' in shown) expect(shown.refused).toContain('not signed in to Game Center');
   else expect(shown, 'games_show without a sign-in').toEqual({ waiting: true });
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  await sleep(2000);
   await app.screenshot('game-center.png');
 });

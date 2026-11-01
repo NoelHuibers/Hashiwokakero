@@ -9,6 +9,10 @@ import { deflateSync } from 'node:zlib';
 
 import { checkImage, pngInfo } from '../../store/assemble.mjs';
 import { APPLE, PLAY, SITE_LANGUAGES, siteUrl } from '../../store/locales.mjs';
+
+/** The default order of sort(), as a comparison */
+const byCodeUnits = (a, b) => (a < b ? -1 : 1);
+
 import { loadListings, validate } from '../../store/validate.mjs';
 
 const repo = loadListings();
@@ -19,7 +23,7 @@ test('the listings in the repository have no problems', () => {
 
 test('every language of the site has a listing in both stores, in its own words', () => {
   const sites = fs.readdirSync(new URL('../../locales', import.meta.url)).sort();
-  assert.deepEqual([...SITE_LANGUAGES].sort(), sites);
+  assert.deepEqual([...SITE_LANGUAGES].sort(byCodeUnits), sites);
   for (const site of SITE_LANGUAGES) {
     assert.ok(
       PLAY.some((l) => l.site === site && !l.same),
@@ -151,7 +155,7 @@ test('names and titles: no emoji, promotion, other brands or shouting', () => {
 
 test('locales: every one there, none unknown, copies not kept twice', () => {
   has(
-    problems((l) => delete l.apple['ko']),
+    problems((l) => delete l.apple.ko),
     /App Store ko: missing/,
   );
   has(
@@ -163,7 +167,7 @@ test('locales: every one there, none unknown, copies not kept twice', () => {
     /en-GB: takes the texts of en-US, remove its folder/,
   );
   has(
-    problems((l) => (l.play['th'].title = undefined)),
+    problems((l) => (l.play.th.title = undefined)),
     /th: title.txt is missing or empty/,
   );
   assert.ok(

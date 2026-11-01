@@ -144,7 +144,7 @@ function scanTarget(target) {
       if (!unit.isDirectory()) continue;
       const unitDir = path.join(profile, '.fingerprint', unit.name);
       for (const file of entries(unitDir)) {
-        if (!file.isFile() || !file.name.startsWith('output-')) continue;
+        if (!(file.isFile() && file.name.startsWith('output-'))) continue;
         const p = path.join(unitDir, file.name);
         const bytes = usage_of(p);
         if (bytes >= opts.minOutputMb * 1024 ** 2) {
@@ -212,7 +212,7 @@ for (const target of opts.targets) {
     continue;
   }
   // Never the source tree itself, or anything above it
-  if (!path.relative(target, root).startsWith('..') || !isTargetDir(target)) {
+  if (!(path.relative(target, root).startsWith('..') && isTargetDir(target))) {
     console.log(`${target}: not a cargo target dir (no CACHEDIR.TAG), skipped`);
     continue;
   }
@@ -304,7 +304,7 @@ if (opts.worktrees) {
     );
     total += w.bytes;
   }
-  if (keptWorktrees.length) {
+  if (keptWorktrees.length > 0) {
     console.log('kept:');
     for (const k of keptWorktrees) console.log(`               ${k}`);
   }

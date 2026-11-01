@@ -18,7 +18,7 @@ async function fakeTauri(page: Page) {
   await page.addInitScript(
     ([puzzle, solution]) => {
       const calls: { cmd: string; args: string }[] = [];
-      const answers: Record<string, (args: any) => unknown> = {
+      const answers: Record<string, (args: Record<string, unknown>) => unknown> = {
         // Without the solution, so hints and checks ask the solver
         generate_puzzle: ({ params }) => ({
           puzzle,
@@ -183,6 +183,7 @@ test('pages that need the server say once that the app is offline', async ({ pag
     .first()
     .click();
   await expect(page).toHaveURL(/\/groups$/);
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: every call failed before checking that none showed a toast
   await page.waitForLoadState('networkidle');
   await expect(toasts(page)).toHaveCount(0);
   withoutNetworkErrors(problems);

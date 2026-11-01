@@ -41,7 +41,7 @@ for (const [sheet, sources] of Object.entries(SHEETS)) {
     return (
       fs
         .readFileSync(file, 'utf8')
-        .replace(/\/\*[^]*?\*\//g, '')
+        .replace(/\/\*.*?\*\//gs, '')
         // Only woff2 (every current browser), with a content hash in the name so the files can be
         // cached forever (see cache_control in main.rs)
         .replace(
@@ -58,7 +58,7 @@ for (const [sheet, sources] of Object.entries(SHEETS)) {
   });
   fs.writeFileSync(
     path.join(out, `${sheet}.css`),
-    css.join('').replace(/\n\s*/g, '').trim() + '\n',
+    `${css.join('').replace(/\n\s*/g, '').trim()}\n`,
   );
 }
 console.log(`fonts: ${files} files, ${Object.keys(SHEETS).length} stylesheets in public/fonts`);

@@ -21,6 +21,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..');
@@ -82,9 +83,13 @@ export function browserServerArgs({ image, root, port, name }) {
  */
 export async function waitForPort(port, { exited, timeout = 60_000, interval = 100 }) {
   let gone = false;
-  void exited.then(
-    () => (gone = true),
-    () => (gone = true),
+  exited.then(
+    () => {
+      gone = true;
+    },
+    () => {
+      gone = true;
+    },
   );
   const deadline = Date.now() + timeout;
   const accepts = () =>
@@ -99,7 +104,7 @@ export async function waitForPort(port, { exited, timeout = 60_000, interval = 1
   while (Date.now() < deadline) {
     if (gone) throw new Error('the browser container exited before it listened');
     if (await accepts()) return;
-    await new Promise((r) => setTimeout(r, interval));
+    await sleep(interval);
   }
   throw new Error(
     `the browser server didn't listen on 127.0.0.1:${port} within ${timeout / 1000} s`,
@@ -151,7 +156,9 @@ async function main() {
         env: { ...process.env, E2E_VISUAL: '1', PW_TEST_CONNECT_WS_ENDPOINT: wsEndpoint(port) },
       },
     );
-    status = await new Promise((resolve) => tests.once('exit', (code) => resolve(code ?? 1)));
+    status = await new Promise((resolve) => {
+      tests.once('exit', (code) => resolve(code ?? 1));
+    });
   } catch (e) {
     console.error(`e2e:container: ${e.message}`);
   } finally {

@@ -52,7 +52,7 @@ test('admins ban a player and lift the ban', async ({ page, context, browser, ba
   await signIn(context, 'admin');
   await visit(page, '/admin?tab=bans');
   await expect(page.getByRole('tab', { name: 'Bans' })).toHaveAttribute('aria-selected', 'true');
-  page.on('dialog', (d) => void d.accept());
+  page.on('dialog', (d) => d.accept());
   const ban = async (player: string, reason = '') => {
     await page.getByLabel('Player #').fill(player);
     await page.getByLabel('Reason').fill(reason);

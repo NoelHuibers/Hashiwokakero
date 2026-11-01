@@ -12,7 +12,7 @@ export const BASE_URL = `http://127.0.0.1:${PORT}`;
 // The screenshot tests (`visual` project), only with the browser their screenshots were taken
 // in: the Playwright container's (`pnpm run e2e:container`, the CI job). Their own server and database on
 // the next port, so the journeys running next to them don't change the pages they take.
-export const VISUAL = !!process.env.E2E_VISUAL;
+export const VISUAL = Boolean(process.env.E2E_VISUAL);
 export const VISUAL_PORT = PORT + 1;
 export const VISUAL_URL = `http://127.0.0.1:${VISUAL_PORT}`;
 export const VISUAL_DB_PATH = path.join(RUN_DIR, 'visual.db');

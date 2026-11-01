@@ -60,7 +60,7 @@ const assets = fs
       brotli: zlib.brotliCompressSync(data).length,
     };
   });
-if (!assets.some((a) => a.name.endsWith('.wasm')) || !assets.some((a) => a.name.endsWith('.js'))) {
+if (!(assets.some((a) => a.name.endsWith('.wasm')) && assets.some((a) => a.name.endsWith('.js')))) {
   console.error(`no WASM or JS in ${pkg}`);
   process.exit(1);
 }
@@ -165,7 +165,7 @@ const md = [
   ),
   '## Hydration\n',
   hydration
-    ? `From navigation to the hydrated page (the \`data-hydrated\` mark of src/lib.rs), the median of ` +
+    ? 'From navigation to the hydrated page (the `data-hydrated` mark of src/lib.rs), the median of ' +
       `${hydration.runs} cold loads with the CPU slowed down ${hydration.cpuThrottling}× (e2e/perf/). Only ` +
       `reported, the runner's speed varies too much to fail on it.\n`
     : 'No hydration times, run `pnpm run perf:hydration` first.\n',

@@ -36,7 +36,7 @@ test('report a player, block them and unblock them', async ({ page, browser, bas
   const report = dashboard.locator('article').filter({ hasText: note });
   await expect(report).toContainText('chen');
   await expect(report).toContainText('cheating');
-  dashboard.on('dialog', (d) => void d.accept());
+  dashboard.on('dialog', (d) => d.accept());
   await report.getByRole('button', { name: 'Dismiss' }).click();
   await expect(report).toHaveCount(0);
   await admin.close();

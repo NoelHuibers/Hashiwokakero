@@ -19,7 +19,7 @@ const CAPTIONS = JSON.parse(readFileSync(path.join(ROOT, 'store/captions.json'),
   Record<SceneId | 'feature', Caption>
 >;
 /** Frame the screenshots of an earlier run again, without taking them: the templates' turn. */
-const FRAME_ONLY = !!process.env.STORE_FRAME_ONLY;
+const FRAME_ONLY = Boolean(process.env.STORE_FRAME_ONLY);
 
 for (const lang of LANGS) {
   test(`${lang}`, async ({ browser }) => {
@@ -58,7 +58,7 @@ for (const lang of LANGS) {
           lang,
           scene: scene.id,
           caption,
-          dark: !!scene.dark,
+          dark: Boolean(scene.dark),
           out: path.join(dir, `${i + 1}-${scene.id}.png`),
         });
       }
@@ -108,6 +108,7 @@ async function capture(browser: Browser, lang: string, scene: Scene, screen: Scr
     }, STORE_URL);
     await page.evaluate(() => document.fonts.ready);
     // Toasts and the last transitions gone
+    // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: toasts and the last transitions gone for the store screenshot
     await page.waitForTimeout(800);
     await page.screenshot({
       path: path.join(RAW_DIR, lang, `${scene.id}-${screen.id}.png`),

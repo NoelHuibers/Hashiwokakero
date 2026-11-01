@@ -1,6 +1,8 @@
 // The device the tests run on, and the app on it: the debug APK of app/src-tauri.
+
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 import { _android, type AndroidDevice } from '@playwright/test';
 
@@ -84,7 +86,7 @@ export async function systemBars(device: AndroidDevice): Promise<Bars> {
       .filter((l) => new RegExp(`type=${type}\\b`).test(l) && /frame=\[/.test(l));
     const frames = lines
       .map((l) => l.match(/frame=\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/))
-      .filter((m): m is RegExpMatchArray => !!m)
+      .filter((m): m is RegExpMatchArray => m !== null)
       .map((m) => m.slice(1, 5).map(Number))
       .filter(([l, t, r, b]) => r > l && b > t);
     return { lines, frames };
@@ -92,7 +94,7 @@ export async function systemBars(device: AndroidDevice): Promise<Bars> {
   const status = frame('statusBars');
   const navigation = frame('navigationBars');
   const source = [...status.lines.slice(0, 3), ...navigation.lines.slice(0, 3)].join('\n');
-  if (!status.frames.length || !navigation.frames.length)
+  if (status.frames.length === 0 || navigation.frames.length === 0)
     throw new Error(`no system bars in dumpsys window:\n${source}`);
   const top = Math.max(...status.frames.map(([, , , b]) => b));
   const height = Math.max(...navigation.frames.map(([, , , b]) => b));
@@ -110,9 +112,9 @@ export async function keyboardTop(device: AndroidDevice): Promise<number | null>
     .split('\n')
     .filter((l) => /type=ime\b/.test(l) && /visible=true/.test(l))
     .map((l) => l.match(/frame=\[-?\d+,(-?\d+)\]\[-?\d+,(-?\d+)\]/))
-    .filter((m): m is RegExpMatchArray => !!m && Number(m[2]) > Number(m[1]))
+    .filter((m): m is RegExpMatchArray => m !== null && Number(m[2]) > Number(m[1]))
     .map((m) => Number(m[1]));
-  return tops.length ? Math.min(...tops) : null;
+  return tops.length > 0 ? Math.min(...tops) : null;
 }
 
 /** Whether the device reaches the internet: an address, or a name to look up. */
@@ -160,13 +162,13 @@ export async function goOffline(device: AndroidDevice) {
     const offline = (network === null || network === 'none') && !(await online(device));
     calm = offline ? calm + 1 : 0;
     if (calm >= 5) return;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await sleep(1000);
   }
   throw new Error(`the device is still online with airplane mode on (default network: ${network})`);
 }
 
 /** Notes the device for the job summary. */
-export async function describe(device: AndroidDevice) {
+export async function deviceInfo(device: AndroidDevice) {
   const webView = (await shell(device, 'dumpsys webviewupdate')).match(
     /Current WebView package \(name, version\): \((.*)\)/,
   );

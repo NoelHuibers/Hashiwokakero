@@ -132,6 +132,7 @@ for (const [locale, name] of [
   ['ja', 'Japanese'],
   ['ar', 'Arabic, right to left'],
 ] as const) {
+  // biome-ignore lint/suspicious/useExpect: expectPage() asserts
   test(`rules in ${name}`, async ({ page }) => {
     await visit(page, `/${locale}/rules`);
     await expectPage(page, `rules-${locale}`);

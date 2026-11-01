@@ -1,9 +1,11 @@
 // Starts the built server binary on a fresh local database. It needs no secrets: without
 // TURSO_DATABASE_URL it uses the SQLite file in HASHI_DB_PATH, the other secrets have local
 // defaults, and without DOJO_URL nothing is sent to a Dojo worker.
+
 import { type ChildProcess, spawn } from 'node:child_process';
 import { existsSync, openSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 import { DB_PATH, PORT, ROOT, RUN_DIR, SERVER_BIN, SITE_ROOT } from './env';
 import { DOJO_SEASON } from './seed';
@@ -55,13 +57,16 @@ export async function startServer(
       DOJO_SEASON: String(DOJO_SEASON),
     },
   });
-  const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
+  const exited = new Promise<number | null>((resolve) => {
+    child.on('exit', (code) => resolve(code));
+  });
   try {
     await waitUntilUp(exited, url, answers);
   } catch (e) {
     child.kill('SIGKILL');
     throw new Error(
       `${(e as Error).message}\n--- ${log} ---\n${readFileSync(log, 'utf8').slice(-4000)}`,
+      { cause: e },
     );
   }
   return { stop: () => stop(child, exited) };
@@ -73,13 +78,20 @@ async function waitUntilUp(
   answers: () => Promise<boolean>,
 ) {
   let gone = false;
-  void exited.then(() => (gone = true));
+  exited.then(
+    () => {
+      gone = true;
+    },
+    () => {
+      gone = true;
+    },
+  );
   const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
     if (gone) throw new Error('the server exited during startup');
     // Listening means migrated, the server creates the schema before it binds
     if (await answers()) return;
-    await new Promise((r) => setTimeout(r, 100));
+    await sleep(100);
   }
   throw new Error(`the server didn't answer on ${url} within 30 s`);
 }

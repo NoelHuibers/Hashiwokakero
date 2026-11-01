@@ -124,7 +124,7 @@ function restartClock() {
   const db = new DatabaseSync(DB_PATH, { timeout: 5_000 });
   try {
     db.prepare(
-      `UPDATE attempts SET started_at = ? WHERE day = ? AND user_id = (SELECT id FROM users WHERE username = ?)`,
+      'UPDATE attempts SET started_at = ? WHERE day = ? AND user_id = (SELECT id FROM users WHERE username = ?)',
     ).run(Date.now() - 97_000, Math.floor(Date.now() / 86_400_000), PLAYING);
   } finally {
     db.close();
@@ -173,7 +173,9 @@ export async function boardShot(context: BrowserContext, out: string) {
   const page = await context.newPage();
   await page.goto(`${STORE_URL}/practice`);
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: every image loaded for the store screenshot
   await page.waitForLoadState('networkidle');
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: lets the last transitions end for the store screenshot
   await page.waitForTimeout(500);
   await page.locator('svg.board-svg').first().screenshot({ path: out, animations: 'disabled' });
 }

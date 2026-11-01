@@ -36,7 +36,7 @@ const PARAMS: Record<string, Record<string, number | string>> = {
 export const ROUTES: string[] = [
   ...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\)/g),
 ].map((m) => {
-  const route = '/' + m[1].replace(/^\//, '');
+  const route = `/${m[1].replace(/^\//, '')}`;
   return route.replace(/:(\w+)/g, (_, name: string) => {
     const value = PARAMS[route]?.[name];
     if (value === undefined)

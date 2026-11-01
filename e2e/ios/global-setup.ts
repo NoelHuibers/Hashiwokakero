@@ -3,7 +3,7 @@
 // (/etc/hosts, as CI does) is what keeps the app off the production server.
 import { existsSync, mkdirSync } from 'node:fs';
 
-import { APP, describe, device, SCREENS, SERVER, simctl, startAppium } from './device';
+import { APP, device, deviceInfo, SCREENS, SERVER, simctl, startAppium } from './device';
 
 /** Whether the server answers from here, and so from the simulator. */
 async function reachable() {
@@ -26,7 +26,7 @@ export default async function globalSetup() {
   if (d.state !== 'Booted') throw new Error(`the simulator ${d.name} isn't booted`);
   // Also replaces an older build, with its data
   await simctl('install', d.udid, APP);
-  const info = await describe(d.udid);
+  const info = await deviceInfo(d.udid);
   console.log(`${info.model}, iOS ${info.ios} (${info.udid})`);
   const appium = await startAppium();
   return async () => {

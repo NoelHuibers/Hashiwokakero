@@ -48,12 +48,12 @@ async function misfits(page: Page, width: number, { tap }: { tap: boolean }) {
       }
       // No text in it wraps: the wordmark, the tagline, the links' names
       for (const el of document.querySelectorAll<HTMLElement>('header span')) {
-        if (el.children.length || !el.textContent?.trim() || !el.offsetHeight) continue;
+        if (el.children.length > 0 || !el.textContent?.trim() || !el.offsetHeight) continue;
         // A second line starts at least a font size below the first
         const text = document.createRange();
         text.selectNodeContents(el);
         const tops = [...text.getClientRects()].map((r) => r.top);
-        const size = parseFloat(getComputedStyle(el).fontSize);
+        const size = Number.parseFloat(getComputedStyle(el).fontSize);
         if (Math.max(...tops) - Math.min(...tops) > 0.8 * size)
           problems.push(`${el.textContent} wraps`);
       }
@@ -85,6 +85,7 @@ test.describe('phone', () => {
   test.use({ isMobile: true, hasTouch: true });
 
   for (const locale of LOCALES) {
+    // biome-ignore lint/suspicious/useExpect: expectFits() asserts
     test(`the header fits 320 px in ${locale}, signed out and as a guest at night`, async ({
       page,
       context,
@@ -97,6 +98,7 @@ test.describe('phone', () => {
       await expectFits(page, locale, 320, ALL);
     });
 
+    // biome-ignore lint/suspicious/useExpect: expectFits() asserts
     test(`the header fits 390 px in ${locale}, signed in`, async ({ page, context }) => {
       await signIn(context, 'aiko');
       await page.setViewportSize({ width: 390, height: 760 });
@@ -107,6 +109,7 @@ test.describe('phone', () => {
 
 // The name is shown from xl on, the longest one a username can be in its widest letters
 for (const locale of LOCALES) {
+  // biome-ignore lint/suspicious/useExpect: expectFits() asserts
   test(`the header fits a tablet and laptops in ${locale} with a long name`, async ({ page }) => {
     await visit(page, '/account');
     await register(page, newUsername('WWWWWWWWWW'), 'eight-planks-wide');

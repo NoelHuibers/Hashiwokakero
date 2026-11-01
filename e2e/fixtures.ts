@@ -60,6 +60,7 @@ export async function visit(page: Page, path: string, { status = 200 } = {}) {
  */
 export async function hydrated(page: Page) {
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: the page's own calls after hydrating, before a test goes on
   await page.waitForLoadState('networkidle');
 }
 

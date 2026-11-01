@@ -132,6 +132,7 @@ test('other pages of the site change nothing', async ({ page, device }) => {
     expect(await shell(device, `am start -W ${view(url, `-n ${ACTIVITY}`)}`)).toMatch(/Status: ok/);
     await onlyTheApp(device, url);
   }
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
   await page.waitForTimeout(1000);
   expect(page.url()).toBe(`${ORIGIN}/rules`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');
@@ -142,6 +143,7 @@ test.describe('started by another page of the site', () => {
   test.use({ start: view('https://hashi.rs/admin', `-n ${ACTIVITY}`) });
 
   test('the app starts on its start page', async ({ page, device }) => {
+    // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
     await page.waitForTimeout(1000);
     expect(page.url()).toBe(`${ORIGIN}/`);
     await hydrated(page);

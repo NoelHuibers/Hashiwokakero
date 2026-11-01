@@ -4,7 +4,7 @@
 // root; SMOKE_URL points it at another deployment, SMOKE_BUILD names the build it must serve.
 import { defineConfig, devices } from '@playwright/test';
 
-const CI = !!process.env.CI;
+const CI = Boolean(process.env.CI);
 
 const SMOKE_URL = process.env.SMOKE_URL || 'https://hashi.rs';
 

@@ -121,7 +121,9 @@ export async function hintUntil(page: Page, solution: number[], left: number) {
             button.click();
             repeat++;
           }
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await new Promise((resolve) => {
+            setTimeout(resolve, 10);
+          });
         }
       }
     },

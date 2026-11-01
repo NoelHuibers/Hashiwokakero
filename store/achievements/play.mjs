@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { counting, describe, dryRun, httpClient, jwt } from './api.mjs';
+import { counting, dryRun, httpClient, jwt, listWrites } from './api.mjs';
 import {
   buildCatalogue,
   formatPlayIds,
@@ -201,7 +201,7 @@ async function syncItem({
 }
 
 /** What Play answers a write with, for a dry run: the item with a made-up ID. */
-export function playAnswer(method, path, body, id) {
+export function playAnswer(method, _path, body, id) {
   return method === 'POST' ? { ...body, id } : { ...body };
 }
 
@@ -281,7 +281,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     api = counting(playClient());
   }
   const result = await syncPlay({ api, catalogue, ids, projectId });
-  const changes = describe(api.writes);
+  const changes = listWrites(api.writes);
   const verb = dry ? 'would send' : 'sent';
   console.log(
     `\nPlay Games: ${verb} ${changes.length} change(s)${offline ? ' (to an empty project)' : ''}`,

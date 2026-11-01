@@ -100,6 +100,7 @@ async function visit(page: Page, url: string) {
   const response = await page.goto(url);
   expect(response?.status(), `HTTP status of ${url}`).toBe(200);
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: the page's own calls after hydrating, before a test goes on
   await page.waitForLoadState('networkidle');
   return response!;
 }

@@ -48,7 +48,7 @@ export function serveApp(api: string): Promise<Server> {
       return;
     }
     let file = path.join(APP_DIST, path.normalize(decodeURIComponent(url.pathname)));
-    if (!file.startsWith(APP_DIST) || !existsSync(file) || !statSync(file).isFile()) {
+    if (!(file.startsWith(APP_DIST) && existsSync(file) && statSync(file).isFile())) {
       file = path.join(APP_DIST, 'index.html');
     }
     res.writeHead(200, { 'content-type': TYPES[path.extname(file)] ?? 'application/octet-stream' });

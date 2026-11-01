@@ -90,7 +90,7 @@ const sum = (list) => ({
   covered: list.reduce((n, f) => n + f.covered, 0),
 });
 const percent = ({ lines, covered }) => (lines ? Math.round((covered / lines) * 1e4) / 100 : 100);
-const names = [...new Set(files.map((f) => f.crate))].sort();
+const names = [...new Set(files.map((f) => f.crate))].sort((a, b) => (a < b ? -1 : 1));
 const crates = Object.fromEntries(
   names.map((name) => [name, sum(files.filter((f) => f.crate === name))]),
 );
@@ -131,7 +131,7 @@ const UPDATE = '`pnpm run coverage --update` and commit scripts/coverage-baselin
 let verdict;
 if (update) {
   verdict = 'Stored these numbers as the new baseline, commit scripts/coverage-baseline.json.';
-} else if (dropped.length) {
+} else if (dropped.length > 0) {
   verdict =
     `Coverage dropped more than ${TOLERANCE} percentage point below the baseline: ` +
     `${dropped.join(', ')}. Add tests for the new code. If the drop is intended (tested code ` +
@@ -177,7 +177,7 @@ console.log(`\nReports: ${path.join(out, 'html/index.html')}, ${path.join(out, '
 
 if (update) {
   fs.writeFileSync(baselineFile, `${JSON.stringify(current, null, 2)}\n`);
-} else if (dropped.length) {
+} else if (dropped.length > 0) {
   console.error(verdict);
   process.exit(1);
 }

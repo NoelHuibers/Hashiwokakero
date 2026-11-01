@@ -27,14 +27,16 @@ import { APPLE, PLAY } from '../../store/locales.mjs';
 
 const sources = loadSources();
 const catalogue = buildCatalogue(sources);
-const quiet = () => {};
-const describe = (api) => api.writes.map((w) => `${w.method} ${w.path}`);
+const quiet = () => {
+  // No log in the tests
+};
+const writesOf = (api) => api.writes.map((w) => `${w.method} ${w.path}`);
 /** No writes (a short message otherwise: assert's diff of thousands of them takes minutes). */
 const nothing = (api) =>
   assert.equal(
     api.writes.length,
     0,
-    `${api.writes.length} writes:\n${describe(api).slice(0, 10).join('\n')}`,
+    `${api.writes.length} writes:\n${writesOf(api).slice(0, 10).join('\n')}`,
   );
 const temporary = [];
 test.after(() => {
@@ -166,7 +168,9 @@ test('each check catches what it is there for', () => {
     /apple stamp_first: 150 points/,
   );
   has(
-    problems((s) => s.model.achievements.forEach((a) => (a.points = 25))),
+    problems((s) => {
+      for (const a of s.model.achievements) a.points = 25;
+    }),
     /apple: 1200 points, at most 1000/,
   );
   has(
@@ -290,7 +294,7 @@ test('Game Center: a change of a live achievement goes into a new version', asyn
   nothing(same);
 
   const changed = structuredClone(catalogue);
-  changed.apple.achievements[3].localizations['ja'].afterEarnedDescription =
+  changed.apple.achievements[3].localizations.ja.afterEarnedDescription =
     'デイリーを100回クリアした。';
   const run = counting(fake);
   await syncApple({ api: run, catalogue: changed, icons: dir, log: quiet });
@@ -423,7 +427,7 @@ test('Play Games: a change is one PUT; what publishing fixes is a note and an er
   changed.play.achievements[0].description['de-DE'] = 'Löse dein erstes Tagesrätsel!';
   const run = counting(fake);
   await syncPlay({ api: run, catalogue: changed, ids, projectId: '1234', log: quiet });
-  assert.deepEqual(describe(run), [`PUT /achievements/${ids.achievements.stamp_first}`]);
+  assert.deepEqual(writesOf(run), [`PUT /achievements/${ids.achievements.stamp_first}`]);
   assert.equal(
     run.writes[0].body.draft.description.translations.find((t) => t.locale === 'de-DE').value,
     'Löse dein erstes Tagesrätsel!',

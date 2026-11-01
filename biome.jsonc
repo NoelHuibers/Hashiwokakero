@@ -50,7 +50,6 @@
         "useIterableCallbackReturn": "error",
         "noTemplateCurlyInString": "error",
         "useArraySortCompare": "error",
-        "noLoopFunc": "error",
         "noMisplacedAssertion": "error",
         "useExpect": "error",
         // A fixed wait or networkidle is flaky in most places. The few deliberate ones (proving
@@ -66,7 +65,9 @@
         // from the test on purpose
         "noShadow": "off",
         // An async function that returns a promise without awaiting it is fine
-        "useAwait": "off"
+        "useAwait": "off",
+        // Flags closures over let and const, which every iteration has its own of
+        "noLoopFunc": "off"
       },
       "style": {
         "noNonNullAssertion": "error",
@@ -95,14 +96,22 @@
   },
   "overrides": [
     {
-      // In a browser test `!` is the assertion: a missing element fails the test right there
       "includes": ["e2e/**", "store/capture/**"],
-      "linter": { "rules": { "style": { "noNonNullAssertion": "off" } } }
+      "linter": {
+        "rules": {
+          // In a browser test `!` is the assertion: a missing element fails the test right there
+          "style": { "noNonNullAssertion": "off" },
+          // innerText is the text as shown, which is what the tests check
+          "performance": { "useDomNodeTextContent": "off" }
+        }
+      }
     },
     {
       // node:test with node:assert, and the store's screenshot runs, which only use the test runner
       "includes": ["scripts/tests/**", "store/capture/**"],
-      "linter": { "rules": { "suspicious": { "useExpect": "off" } } }
+      "linter": {
+        "rules": { "suspicious": { "useExpect": "off", "noMisplacedAssertion": "off" } }
+      }
     }
   ]
 }

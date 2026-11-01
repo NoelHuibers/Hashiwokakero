@@ -11,7 +11,9 @@ import {
   wsEndpoint,
 } from '../e2e-container.mjs';
 
-const never = new Promise(() => {});
+const never = new Promise(() => {
+  // Never settles
+});
 
 test('the image is the Playwright version of node_modules', () => {
   assert.equal(imageFor('1.64.1'), 'mcr.microsoft.com/playwright:v1.64.1-noble');
@@ -41,9 +43,9 @@ test('a free port can be listened on', async () => {
   const port = await freePort();
   assert.ok(port > 0);
   const server = net.createServer();
-  await new Promise((resolve, reject) =>
-    server.once('error', reject).listen(port, '127.0.0.1', resolve),
-  );
+  await new Promise((resolve, reject) => {
+    server.once('error', reject).listen(port, '127.0.0.1', resolve);
+  });
   server.close();
 });
 

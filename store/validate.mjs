@@ -205,7 +205,7 @@ export function validate(listings, { play = PLAY, apple = APPLE } = {}) {
     }
   }
 
-  if (!listings.copyright || !/^\d{4} \S/.test(listings.copyright)) {
+  if (!(listings.copyright && /^\d{4} \S/.test(listings.copyright))) {
     fail('App Store', 'copyright.txt is "<year> <owner>"');
   }
 

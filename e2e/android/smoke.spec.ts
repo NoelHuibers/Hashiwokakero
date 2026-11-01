@@ -12,6 +12,7 @@ import type { AndroidDevice, Page } from '@playwright/test';
 
 import { board, PRACTICE_KEY } from '../board';
 import { LADDER, LADDER_SOLUTION } from '../puzzles';
+import type { TauriWindow } from '../tauri';
 import {
   closeSystemDialogs,
   expect,
@@ -53,9 +54,9 @@ function apiCalls(page: Page) {
 test('the app starts in its WebView, offline', async ({ page }) => {
   expect(new URL(page.url()).origin).toBe(ORIGIN);
   // Tauri's bridge, which the practice takes for its commands (src/api/native.rs)
-  expect(await page.evaluate(() => typeof (window as any).__TAURI_INTERNALS__?.invoke)).toBe(
-    'function',
-  );
+  expect(
+    await page.evaluate(() => typeof (window as TauriWindow).__TAURI_INTERNALS__?.invoke),
+  ).toBe('function');
   // Without the permission ACCESS_NETWORK_STATE the WebView would take itself for online, always
   expect(await page.evaluate(() => navigator.onLine), 'navigator.onLine').toBe(false);
   // The daily needs the server
@@ -87,9 +88,10 @@ test('no page breaks the content security policy', async ({ page, problems }) =>
     await visit(page, path);
     // Late work too: fonts, the board's first drawing
     await page.evaluate(() => document.fonts.ready);
+    // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: late work (fonts, the board's first drawing) may still report violations; nothing marks its end
     await page.waitForTimeout(500);
     const seen = await violations(page);
-    if (seen.length) found[path] = seen;
+    if (seen.length > 0) found[path] = seen;
   }
   expect(found, 'securitypolicyviolation events').toEqual({});
   expect(consoleCsp, 'CSP messages on the console').toEqual([]);
@@ -154,6 +156,7 @@ test("Android's back button goes back in the app", async ({ page, device }) => {
   await closeSystemDialogs(device);
   await shell(device, 'input keyevent KEYCODE_BACK');
   // Gives the app the time to go back, or Android to close it
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: gives Android the time to close the app, which the test proves it does not
   await page.waitForTimeout(1500);
   expect(page.isClosed() || !(await inFront(device)), 'the app closed').toBe(false);
   await expect(page).toHaveURL(/\/rules$/);
@@ -184,6 +187,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(toasts(page)).toHaveCount(0);
     await closeSystemDialogs(device);
+    // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: lets the device settle before its screenshot; nothing marks the end
     await page.waitForTimeout(500);
     await device.screenshot({ path: path.join(SCREENS, `practice-${theme}.png`) });
 
@@ -206,15 +210,13 @@ for (const theme of ['light', 'dark'] as const) {
           .join(' '),
       };
     });
-    test
-      .info()
-      .annotations.push(
-        { type: 'system bars', description: `top ${bars.top} px, bottom ${bars.bottom} px` },
-        {
-          type: 'insets',
-          description: `env(safe-area-inset-top/bottom) ${page_.env}, --app-inset-top/bottom ${page_.app}`,
-        },
-      );
+    test.info().annotations.push(
+      { type: 'system bars', description: `top ${bars.top} px, bottom ${bars.bottom} px` },
+      {
+        type: 'insets',
+        description: `env(safe-area-inset-top/bottom) ${page_.env}, --app-inset-top/bottom ${page_.app}`,
+      },
+    );
     await test.info().attach('dumpsys window', { body: bars.source, contentType: 'text/plain' });
     const shot = await screen(device);
     // The page fills the screen, under the bars too (edge to edge)
@@ -245,12 +247,10 @@ for (const theme of ['light', 'dark'] as const) {
       ['navigation bar', shot.height - bars.bottom, shot.height],
     ] as const) {
       const { darkest, median, brightest } = await extremes(device, from, to);
-      test
-        .info()
-        .annotations.push({
-          type: bar,
-          description: `luminance ${darkest.toFixed(2)} / ${median.toFixed(2)} / ${brightest.toFixed(2)}`,
-        });
+      test.info().annotations.push({
+        type: bar,
+        description: `luminance ${darkest.toFixed(2)} / ${median.toFixed(2)} / ${brightest.toFixed(2)}`,
+      });
       // Android's dark icons are a grey (about 0.37 on the light page), its light ones white
       if (theme === 'light') {
         expect(median, `the light page behind the ${bar}`).toBeGreaterThan(0.6);
@@ -269,7 +269,9 @@ test('the app starts in dark mode without a white frame', async ({ page, device 
   try {
     await shell(device, `am force-stop ${PKG}`);
     // The test's page goes with it
-    await page.waitForEvent('close', { timeout: 10_000 }).catch(() => {});
+    await page.waitForEvent('close', { timeout: 10_000 }).catch(() => {
+      // Checked below
+    });
     await expect.poll(() => shell(device, 'cmd uimode night')).toMatch(/Night mode: yes/);
     // From the app's first frame on (-W waits for it), not the screen before
     await shell(device, 'input keyevent KEYCODE_HOME');
@@ -288,12 +290,10 @@ test('the app starts in dark mode without a white frame', async ({ page, device 
       const shot = await screen(device);
       samples.push(row(shot, shot.height >> 1), row(shot, shot.height >> 2));
     }
-    test
-      .info()
-      .annotations.push({
-        type: 'luminance',
-        description: samples.map((l) => l.toFixed(2)).join(' '),
-      });
+    test.info().annotations.push({
+      type: 'luminance',
+      description: samples.map((l) => l.toFixed(2)).join(' '),
+    });
     expect(samples.length).toBeGreaterThan(4);
     expect(Math.max(...samples), 'the brightest moment').toBeLessThan(0.5);
   } finally {
@@ -335,6 +335,7 @@ test('links out of the app open outside it', async ({ page, device }) => {
     .toContainEqual(
       expect.stringMatching(/act=android\.intent\.action\.VIEW dat=https:\/\/example\.com/),
     );
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
   await page.waitForTimeout(1000);
   expect(page.url()).toBe(`${ORIGIN}/rules`);
   await backToTheApp(device);
@@ -409,12 +410,10 @@ test('the focused input stays above the soft keyboard', async ({ page, device })
     return { dpr: devicePixelRatio, screenHeight: innerHeight * devicePixelRatio };
   });
   const box = (await input.boundingBox())!;
-  test
-    .info()
-    .annotations.push({
-      type: 'input before',
-      description: `${Math.round(box.y * dpr)}–${Math.round((box.y + box.height) * dpr)} px`,
-    });
+  test.info().annotations.push({
+    type: 'input before',
+    description: `${Math.round(box.y * dpr)}–${Math.round((box.y + box.height) * dpr)} px`,
+  });
   expect((box.y + box.height) * dpr, 'the input in the lower half of the screen').toBeGreaterThan(
     screenHeight / 2,
   );
@@ -450,16 +449,15 @@ test('the focused input stays above the soft keyboard', async ({ page, device })
     )
     .toBeLessThanOrEqual(top);
   const after = (await input.boundingBox())!;
-  test
-    .info()
-    .annotations.push(
-      { type: 'keyboard', description: `top ${top} px of ${screenHeight} px` },
-      {
-        type: 'input with the keyboard',
-        description: `${Math.round(after.y * dpr)}–${Math.round((after.y + after.height) * dpr)} px`,
-      },
-    );
+  test.info().annotations.push(
+    { type: 'keyboard', description: `top ${top} px of ${screenHeight} px` },
+    {
+      type: 'input with the keyboard',
+      description: `${Math.round(after.y * dpr)}–${Math.round((after.y + after.height) * dpr)} px`,
+    },
+  );
   expect(after.y, 'the input below the header').toBeGreaterThan(0);
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: lets the device settle before its screenshot; nothing marks the end
   await page.waitForTimeout(500);
   await device.screenshot({ path: path.join(SCREENS, 'keyboard.png') });
 
@@ -484,7 +482,7 @@ test('without a project id, Play Games never starts', async ({ page, device }) =
   const invoke = (command: string, args: Record<string, unknown>) =>
     page.evaluate(
       ([command, args]) =>
-        (window as any).__TAURI_INTERNALS__.invoke(command, args).then(
+        (window as TauriWindow).__TAURI_INTERNALS__.invoke(command, args).then(
           (answer: unknown) => ({ answer: answer ?? null }),
           (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
         ),

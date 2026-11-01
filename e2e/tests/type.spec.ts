@@ -32,7 +32,7 @@ async function headings(page: Page, cdp: CDPSession): Promise<Drawn[]> {
         .filter((c) => c.nodeType === Node.TEXT_NODE)
         .map((c) => c.textContent)
         .join('');
-      if (!own.trim() || !el.getClientRects().length) continue;
+      if (!own.trim() || el.getClientRects().length === 0) continue;
       el.setAttribute('data-type-test', String(texts.length));
       texts.push(own);
     }

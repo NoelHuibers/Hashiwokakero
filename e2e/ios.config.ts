@@ -7,7 +7,7 @@ import path from 'node:path';
 
 import { defineConfig } from '@playwright/test';
 
-const CI = !!process.env.CI;
+const CI = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: './ios',

@@ -1,6 +1,8 @@
 // HTTP for the achievements' uploads (apple.mjs, play.mjs): JSON requests with a bearer token,
 // retried when the store says to slow down, and a dry run that sends only the reads.
+
 import crypto from 'node:crypto';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 export class HttpError extends Error {
   constructor(method, url, status, body) {
@@ -14,8 +16,6 @@ export class HttpError extends Error {
     this.body = body;
   }
 }
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * A client of a JSON API at `base`: `get`, `post`, `put`, `patch`, `delete` with a path, and
@@ -133,7 +133,7 @@ export function jwt({ alg, key, kid, payload }) {
 }
 
 /** The write-ups of a sync's changes, one line each, for the log and the job summary. */
-export function describe(writes) {
+export function listWrites(writes) {
   return writes.map((w) => `${w.method} ${w.path.replace(/^https:\/\/[^/]+/, '')}`);
 }
 

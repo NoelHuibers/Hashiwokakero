@@ -13,7 +13,9 @@ export default async function globalSetup() {
   const server = await startServer('app-server.log', { dbPath, admins: '' });
   const app = await serveApp(BASE_URL);
   return async () => {
-    await new Promise((resolve) => app.close(resolve));
+    await new Promise((resolve) => {
+      app.close(resolve);
+    });
     await server.stop();
   };
 }

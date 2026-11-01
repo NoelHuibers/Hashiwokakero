@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 import { APP_URL } from './app/serve';
 
-const CI = !!process.env.CI;
+const CI = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: './app',

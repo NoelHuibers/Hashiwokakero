@@ -174,7 +174,9 @@ test("a new guest's board shows right from the start's reply and takes the first
   // The start makes a guest and names them in its reply: the page asks neither who that is nor
   // for the daily again (held, like on a slow connection, a board waiting for them wouldn't show)
   const asked: string[] = [];
-  const held = new Promise<void>(() => {});
+  const held = new Promise<void>(() => {
+    // Never settles
+  });
   for (const path of ['**/api/current_user', '**/api/daily_today']) {
     await page.route(path, async (route) => {
       asked.push(new URL(route.request().url()).pathname);
@@ -347,6 +349,7 @@ test('a paid reply arriving after leaving the daily cannot mutate its persistent
   } finally {
     release();
   }
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: proves that no more requests follow
   await page.waitForLoadState('networkidle');
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
   await page.getByRole('link', { name: /Daily/ }).first().click();
@@ -391,6 +394,7 @@ test('a solved daily whose submit failed waits to be submitted again', async ({ 
   await expect(submitStatus(page)).toContainText('Your result could not be confirmed.');
   // Still solved and locked, and it doesn't retry on its own
   await expect(page.getByRole('button', { name: /Undo/ })).toBeDisabled();
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: proves that no more requests follow
   await page.waitForLoadState('networkidle');
   expect(submissions).toBe(1);
   await expect(winCard(page)).toHaveCount(0);
@@ -670,6 +674,7 @@ test('a guest merge in another tab preserves a committed hint whose reply outliv
     release();
     await other.close();
   }
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: proves that no more requests follow
   await page.waitForLoadState('networkidle');
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
   await visit(page, '/'); // a fresh auth snapshot sees the shared cookie's new identity
@@ -714,6 +719,7 @@ test('a delayed quiet refresh cannot roll back a paid counter or touch a dispose
     } finally {
       release();
     }
+    // biome-ignore lint/suspicious/noPlaywrightNetworkidle: proves that no more requests follow
     await page.waitForLoadState('networkidle');
     if (!dispose)
       await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Check')}s`);
@@ -812,6 +818,7 @@ test('initial metadata failure has a persistent manual retry with an immediate p
   await expect(page.getByRole('button', { name: /^Start/ })).toHaveCount(0);
   await expect(rankingStatus(page)).toBeEmpty(); // ranking succeeded independently
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: proves that no more requests follow
   await page.waitForLoadState('networkidle');
   expect(requests).toBe(1); // no automatic error loop, including focus
   try {
@@ -899,6 +906,7 @@ test('a lost submit success and failed reconciliation keep the solution until ex
     await expect(page.getByRole('button', { name })).toBeDisabled();
   }
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: proves that no more requests follow
   await page.waitForLoadState('networkidle');
   expect([submissions, reads]).toEqual([1, 1]);
   try {
@@ -978,6 +986,7 @@ test('a delayed submit response cannot touch a disposed daily page', async ({ pa
   } finally {
     release();
   }
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: proves that no more requests follow
   await page.waitForLoadState('networkidle');
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before.bridges);
   expect(await page.evaluate(() => localStorage.getItem('hashi.daily.log'))).toBe(log);
@@ -1115,6 +1124,7 @@ test('midnight replacement of solved metadata keeps the new discovery request', 
   await expect(metadataStatus(page)).toBeEmpty();
   await expect(page.getByRole('button', { name: /^Start/ })).toBeEnabled();
   await expect(submitStatus(page)).toHaveCount(0);
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: proves that no more requests follow
   await page.waitForLoadState('networkidle');
   expect(reads).toBe(2);
 });
@@ -1126,7 +1136,9 @@ test('giving up asks in the page’s own dialog, and Cancel or Escape keep playi
   const native: string[] = [];
   page.on('dialog', (d) => {
     native.push(d.message());
-    void d.dismiss();
+    d.dismiss().catch(() => {
+      // The page is gone at the end of the test
+    });
   });
   await visit(page, '/');
   await startDaily(page);

@@ -129,6 +129,7 @@ test.describe('native and game gestures on a phone', () => {
         touchPoints: [{ x, y: y - step * 20 }],
       });
       // Real time between input samples lets Chromium recognize the swipe as a gesture.
+      // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: real time between the touch samples lets Chromium recognize the swipe
       await page.waitForTimeout(20);
     }
     await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });

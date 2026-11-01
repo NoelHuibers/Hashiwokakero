@@ -91,7 +91,9 @@ test('the app started with an invite shows the invite, in its language', async (
   await page.locator('a[href="/ja/practice"]').filter({ visible: true }).first().click();
   await expect(page).toHaveURL(/\/ja\/practice$/);
   await page.reload();
+  // biome-ignore lint/suspicious/noPlaywrightNetworkidle: the reload done, calls included, before checking that it stays
   await page.waitForLoadState('networkidle');
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
   await page.waitForTimeout(500);
   await expect(page).toHaveURL(/\/ja\/practice$/);
   withoutNetworkErrors(problems);
@@ -133,6 +135,7 @@ test('other links change nothing', async ({ page, problems }) => {
   await fakeTauri(page, 'https://hashi.rs/admin');
   await offline(page);
   await visit(page, '/rules');
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
   await page.waitForTimeout(500);
   await expect(page).toHaveURL(/\/rules$/);
   for (const url of [
@@ -143,6 +146,7 @@ test('other links change nothing', async ({ page, problems }) => {
   ]) {
     await openAppLink(page, url);
   }
+  // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
   await page.waitForTimeout(500);
   await expect(page).toHaveURL(/\/rules$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How to play Hashiwokakero');

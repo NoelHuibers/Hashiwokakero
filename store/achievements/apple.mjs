@@ -23,7 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { counting, describe, dryRun, HttpError, httpClient, jwt, tally } from './api.mjs';
+import { counting, dryRun, HttpError, httpClient, jwt, listWrites, tally } from './api.mjs';
 import { buildCatalogue, ICONS, loadSources, validate } from './catalogue.mjs';
 
 export const APP_ID = '6826916346';
@@ -225,10 +225,12 @@ async function syncComponent({ api, k, kind, item, remote, detail, icons, log, n
         attributes: { vendorIdentifier: item.id, ...wanted, ...k.created(item, now) },
         relationships: {
           gameCenterDetail: ref('gameCenterDetails', detail.id),
+          // biome-ignore lint/suspicious/noTemplateCurlyInString: App Store Connect's local ID of an included resource, not a template
           versions: { data: [{ type: k.versionType, id: '${v1}' }] },
         },
       },
       // The first version, made with it
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: the same local ID
       included: [{ type: k.versionType, id: '${v1}' }],
     });
     id = created.data.id;
@@ -374,7 +376,7 @@ export function appleEmpty(path) {
 /** The API key from the environment, as a client that signs a fresh token every 15 minutes. */
 export function appleClient(env = process.env) {
   const { APPLE_API_KEY_ID: kid, APPLE_API_ISSUER: iss, APPLE_API_KEY_P8: p8 } = env;
-  if (!kid || !iss || !p8)
+  if (!(kid && iss && p8))
     throw new Error('APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8 are needed');
   const key = crypto.createPrivateKey(
     p8.includes('BEGIN') ? p8 : Buffer.from(p8, 'base64').toString(),
@@ -418,7 +420,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     api = counting(appleClient());
   }
   const { notes, failures } = await syncApple({ api, catalogue });
-  const changes = describe(api.writes);
+  const changes = listWrites(api.writes);
   const verb = offline || args.has('--dry-run') ? 'would send' : 'sent';
   console.log(
     `\nGame Center: ${verb} ${changes.length} change(s)${offline ? ' (to an empty App Store Connect)' : ''}`,
@@ -429,7 +431,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   for (const failure of failures) console.error(`::error::${failure.split('\n')[0]}`);
   if (process.env.GITHUB_STEP_SUMMARY) {
     const lines = [
-      `### Game Center`,
+      '### Game Center',
       '',
       `${verb} ${changes.length} change(s)`,
       '',
