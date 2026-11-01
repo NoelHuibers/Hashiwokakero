@@ -65,6 +65,7 @@
     "clock": "De puzzel blijft verborgen tot je op Start drukt. Pas dan gaat de klok lopen.",
     "penalty_title": "Controleren en hints kosten tijd",
     "penalty": "Elke controle telt {{ check }} op bij je tijd, elke hint {{ hint }}.",
+    "penalty_update": "Vanaf 1 november hangen de tijdstraffen voor controles en hints af van de moeilijkheid. Elke controle kost tijd, ook als er geen fouten worden gevonden.",
     "give_up_title": "Opgeven",
     "give_up": "Kom je er niet uit? Geef op om de oplossing te zien. Die poging telt niet mee in de ranking, maar morgen is er een nieuwe puzzel.",
     "tips_title": "Tips om Hashiwokakero op te lossen",

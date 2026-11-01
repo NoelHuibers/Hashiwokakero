@@ -331,6 +331,7 @@ struct Responses {
 
 fn responses() -> Responses {
     let attempt = AttemptInfo {
+        penalties: crate::model::HelpPenalties::default(),
         attempt_id: String::new(),
         started_at: 1_760_000_000_000,
         finished_at: Some(1_760_000_095_000),

@@ -65,6 +65,7 @@
     "clock": "Câu đố được giấu cho tới khi bạn nhấn Bắt đầu. Chỉ khi đó đồng hồ mới chạy.",
     "penalty_title": "Kiểm tra và gợi ý tốn thời gian",
     "penalty": "Mỗi lần kiểm tra cộng {{ check }} vào thời gian của bạn, mỗi gợi ý {{ hint }}.",
+    "penalty_update": "Từ ngày 1 tháng 11, thời gian phạt khi kiểm tra và gợi ý tùy thuộc độ khó. Mỗi lần kiểm tra đều cộng thời gian, kể cả khi không tìm thấy lỗi.",
     "give_up_title": "Bỏ cuộc",
     "give_up": "Bí rồi? Bỏ cuộc để xem lời giải. Lượt đó không được xếp hạng, nhưng ngày mai sẽ có câu đố mới.",
     "tips_title": "Mẹo giải Hashiwokakero",

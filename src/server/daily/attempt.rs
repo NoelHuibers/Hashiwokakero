@@ -19,9 +19,10 @@ use crate::server::now_ms;
 const ATTEMPT_COLUMNS: &str =
     "started_at, finished_at, hints, checks, revealed, time_ms, bridges, flag, attempt_id";
 
-fn attempt_row(row: &libsql::Row) -> Result<AttemptInfo, ServerFnError> {
+fn attempt_row(row: &libsql::Row, day: i64) -> Result<AttemptInfo, ServerFnError> {
     let bridges: Option<String> = row.get(6).map_err(db_err)?;
     Ok(AttemptInfo {
+        penalties: crate::model::HelpPenalties::daily(day),
         attempt_id: row.get(8).map_err(db_err)?,
         started_at: row.get(0).map_err(db_err)?,
         finished_at: row.get(1).map_err(db_err)?,
@@ -50,7 +51,7 @@ pub async fn attempt(
         .await
         .map_err(db_err)?;
     match rows.next().await.map_err(db_err)? {
-        Some(row) => attempt_row(&row).map(Some),
+        Some(row) => attempt_row(&row, day).map(Some),
         None => Ok(None),
     }
 }
@@ -174,7 +175,7 @@ pub(super) async fn start_after(
         .next()
         .await
         .map_err(db_err)?
-        .map(|row| attempt_row(&row))
+        .map(|row| attempt_row(&row, day))
         .transpose()?;
     // Done with the statement before the next one
     drop(rows);

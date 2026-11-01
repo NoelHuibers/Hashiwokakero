@@ -516,6 +516,7 @@ mod tests {
                 difficulty: Difficulty::Easy,
                 puzzle: Some(game.board.with_untracked(|b| b.puzzle.clone())),
                 attempt: Some(AttemptInfo {
+                    penalties: crate::model::HelpPenalties::default(),
                     attempt_id: "test-attempt-identity".into(),
                     started_at: 1000,
                     finished_at: None,

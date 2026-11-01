@@ -141,6 +141,17 @@ impl RefreshGuard {
 }
 
 impl Daily {
+    pub(super) fn penalties(&self) -> crate::model::HelpPenalties {
+        self.info.with(|info| {
+            info.as_ref().map_or_else(Default::default, |info| {
+                info.attempt.as_ref().map_or_else(
+                    || crate::model::HelpPenalties::daily(info.day),
+                    |attempt| attempt.penalties,
+                )
+            })
+        })
+    }
+
     pub(super) fn server_now(&self) -> i64 {
         self.now.get() + self.skew.get()
     }
@@ -783,6 +794,7 @@ mod tests {
             difficulty: Difficulty::Easy,
             puzzle: Some(puzzle()),
             attempt: Some(AttemptInfo {
+                penalties: crate::model::HelpPenalties::default(),
                 attempt_id: String::new(),
                 started_at: 1_000,
                 finished_at: finished.then_some(61_000),
@@ -967,6 +979,32 @@ mod tests {
             assert!(!d.started() && !d.finished());
             assert_eq!((d.clock_ms(), d.elapsed_ms()), (0, 0));
             assert_eq!(d.day(), Some(100));
+        });
+    }
+
+    #[test]
+    fn november_prices_match_before_start_and_on_the_running_clock() {
+        tab(|d| {
+            let mut waiting = info(false);
+            waiting.day = crate::model::SCALED_HELP_DAY;
+            waiting.attempt = None;
+            waiting.puzzle = None;
+            d.show(waiting);
+            assert_eq!(d.penalties().check_ms, 30_000);
+            assert_eq!(d.penalties().hint_ms, 90_000);
+
+            let mut running = info(false);
+            running.day = crate::model::SCALED_HELP_DAY;
+            let prices = crate::model::HelpPenalties::daily(running.day);
+            let a = attempt(&mut running);
+            a.penalties = prices;
+            a.hints = 1;
+            a.checks = 2;
+            d.show(running);
+            d.now.set(65_000);
+            d.skew.set(0);
+            assert_eq!(d.elapsed_ms(), 64_000 + 150_000);
+            assert_eq!(d.penalties().check_ms, 30_000);
         });
     }
 

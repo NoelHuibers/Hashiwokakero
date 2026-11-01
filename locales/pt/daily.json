@@ -65,6 +65,7 @@
     "clock": "O puzzle fica escondido até você tocar em Começar. Só então o relógio começa a contar.",
     "penalty_title": "Verificar e dicas custam tempo",
     "penalty": "Cada verificação soma {{ check }} ao seu tempo, cada dica {{ hint }}.",
+    "penalty_update": "A partir de 1 de novembro, as penalidades de verificações e dicas dependem da dificuldade. Cada verificação custa tempo, mesmo sem encontrar erros.",
     "give_up_title": "Desistir",
     "give_up": "Travou? Desista para ver a solução. Essa partida não entra no ranking, mas amanhã chega um puzzle novo.",
     "tips_title": "Dicas para resolver Hashiwokakero",

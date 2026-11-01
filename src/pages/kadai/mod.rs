@@ -693,6 +693,7 @@ mod tests {
             puzzle: (started || known).then(puzzle),
             solution: known.then(|| vec![2, 1]),
             attempt: started.then(|| AttemptInfo {
+                penalties: crate::model::HelpPenalties::default(),
                 attempt_id: String::new(),
                 started_at: 1_000,
                 finished_at: finished.then_some(61_000),

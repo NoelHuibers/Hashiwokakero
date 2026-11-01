@@ -3,11 +3,11 @@
 use leptos::prelude::*;
 use leptos_router::components::A;
 
+use super::state::Daily;
 use crate::components::layout::use_localized;
 use crate::components::rules::Rules;
 use crate::components::tips::TipCards;
 use crate::i18n::{t, use_i18n};
-use crate::model::{CHECK_PENALTY_MS, HINT_PENALTY_MS};
 
 /// How many of the tips the home page shows, the rules page has them all.
 const TIPS: usize = 3;
@@ -70,7 +70,7 @@ fn Question(question: AnyView, children: Children) -> impl IntoView {
 /// who arrive from a search engine (and for the search engine itself, the board is just an SVG
 /// to it). The rules page goes deeper.
 #[component]
-pub(super) fn About() -> impl IntoView {
+pub(super) fn About(daily: Daily) -> impl IntoView {
     const LINK: &str = "font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
     let i18n = use_i18n();
     let rules = use_localized("/rules");
@@ -110,9 +110,10 @@ pub(super) fn About() -> impl IntoView {
                         {t!(
                             i18n,
                             daily.about.penalty,
-                            check = penalty(CHECK_PENALTY_MS),
-                            hint = penalty(HINT_PENALTY_MS)
+                            check = move || penalty(daily.penalties().check_ms),
+                            hint = move || penalty(daily.penalties().hint_ms)
                         )}
+                        <span class="mt-2 block">{t!(i18n, daily.about.penalty_update)}</span>
                     </Fact>
                     <Fact jp="降参" title=t!(i18n, daily.about.give_up_title).into_any()>
                         {t!(i18n, daily.about.give_up)}

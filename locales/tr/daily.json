@@ -65,6 +65,7 @@
     "clock": "Bulmaca, Başla’ya basana kadar gizli kalır. Saat ancak o zaman işlemeye başlar.",
     "penalty_title": "Kontrol ve ipucu zaman kaybettirir",
     "penalty": "Her kontrol süresine {{ check }}, her ipucu {{ hint }} ekler.",
+    "penalty_update": "1 Kasım’dan itibaren kontrol ve ipucu cezaları zorluğa göre değişir. Hata bulunmasa bile her kontrol süre ekler.",
     "give_up_title": "Pes etmek",
     "give_up": "Takıldın mı? Pes edersen çözümü görürsün. O deneme sıralamaya girmez, ama yarın yeni bir bulmaca gelir.",
     "tips_title": "Hashiwokakero çözüm ipuçları",

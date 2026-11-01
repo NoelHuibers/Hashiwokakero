@@ -65,6 +65,7 @@
     "clock": "Il puzzle resta nascosto finché non premi Inizia. Solo allora parte il cronometro.",
     "penalty_title": "Verifiche e indizi costano tempo",
     "penalty": "Ogni verifica aggiunge {{ check }} al tuo tempo, ogni indizio {{ hint }}.",
+    "penalty_update": "Dal 1° novembre, le penalità per controlli e suggerimenti dipendono dalla difficoltà. Ogni controllo costa tempo, anche se non trova errori.",
     "give_up_title": "Arrendersi",
     "give_up": "Bloccato? Arrenditi per vedere la soluzione. Quella partita non va in classifica, ma domani arriva un nuovo puzzle.",
     "tips_title": "Consigli per risolvere Hashiwokakero",

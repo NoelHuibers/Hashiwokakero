@@ -435,6 +435,7 @@ mod tests {
     fn keys_play_step_and_jump() {
         Owner::new().with(|| {
             let lane = Lane {
+                penalties: crate::model::HelpPenalties::default(),
                 user_id: 1,
                 name: "aiko".into(),
                 guest: false,

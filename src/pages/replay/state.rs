@@ -301,6 +301,7 @@ mod tests {
 
     fn lane(user_id: i64, log: Vec<MoveEvent>) -> Lane {
         Lane {
+            penalties: crate::model::HelpPenalties::default(),
             user_id,
             name: format!("p{user_id}"),
             guest: false,

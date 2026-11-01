@@ -65,6 +65,7 @@
     "clock": "Das Rätsel bleibt verdeckt, bis du auf Start drückst. Erst dann läuft die Uhr.",
     "penalty_title": "Prüfen und Tipps kosten Zeit",
     "penalty": "Jedes Prüfen kostet dich {{ check }}, jeder Tipp {{ hint }}.",
+    "penalty_update": "Ab dem 1. November hängen die Zeitstrafen für Prüfungen und Hinweise vom Schwierigkeitsgrad ab. Jede Prüfung kostet Zeit, auch wenn keine Fehler gefunden werden.",
     "give_up_title": "Aufgeben",
     "give_up": "Festgefahren? Gib auf, dann siehst du die Lösung. Dieser Lauf kommt nicht in die Wertung, aber morgen wartet ein neues Rätsel.",
     "tips_title": "Tipps zum Lösen von Hashiwokakero",

@@ -6,10 +6,58 @@ use serde::{Deserialize, Serialize};
 use super::moves::Flag;
 use super::stamps::{Stamp, StampProgress};
 
-/// Added to the time of a daily run for every hint.
+/// Historical daily and group-puzzle price for one hint.
 pub const HINT_PENALTY_MS: i64 = 30_000;
-/// Added to the time of a daily run for every check.
+/// Historical daily and group-puzzle price for one check.
 pub const CHECK_PENALTY_MS: i64 = 10_000;
+/// Difficulty-scaled help starts with the November daily season (2026-11-01 UTC).
+pub const SCALED_HELP_DAY: i64 = 20_758;
+
+/// Prices for one use of help. Historical dailies and group puzzles keep the old prices.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HelpPenalties {
+    pub check_ms: i64,
+    pub hint_ms: i64,
+}
+
+impl Default for HelpPenalties {
+    fn default() -> Self {
+        Self {
+            check_ms: CHECK_PENALTY_MS,
+            hint_ms: HINT_PENALTY_MS,
+        }
+    }
+}
+
+impl HelpPenalties {
+    pub fn daily(day: i64) -> Self {
+        if day < SCALED_HELP_DAY {
+            return Self::default();
+        }
+        let check_ms = match super::daily_difficulty(day) {
+            Difficulty::Easy => 10_000,
+            Difficulty::Medium => 15_000,
+            Difficulty::Hard => 20_000,
+            Difficulty::Expert => 25_000,
+            Difficulty::Oni => 30_000,
+        };
+        Self {
+            check_ms,
+            hint_ms: 3 * check_ms,
+        }
+    }
+
+    pub fn is_legacy(&self) -> bool {
+        *self == Self::default()
+    }
+
+    pub fn total(self, hints: i64, checks: i64) -> i64 {
+        hints
+            .saturating_mul(self.hint_ms)
+            .saturating_add(checks.saturating_mul(self.check_ms))
+    }
+}
+
 /// A username can be changed once in this many days.
 pub const RENAME_EVERY_DAYS: i64 = 30;
 
@@ -42,6 +90,9 @@ impl UserInfo {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AttemptInfo {
+    /// Server-selected prices, retained when the client updates help counts.
+    #[serde(default, skip_serializing_if = "HelpPenalties::is_legacy")]
+    pub penalties: HelpPenalties,
     /// Stable identity across guest transfer, independent of user IDs and wall-clock time.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub attempt_id: String,
@@ -63,7 +114,7 @@ pub struct AttemptInfo {
 
 impl AttemptInfo {
     pub fn penalty_ms(&self) -> i64 {
-        self.hints * HINT_PENALTY_MS + self.checks * CHECK_PENALTY_MS
+        self.penalties.total(self.hints, self.checks)
     }
 
     pub fn finished(&self) -> bool {
@@ -179,4 +230,45 @@ pub struct PlayerProfile {
     pub guest: bool,
     pub created_at: i64,
     pub stats: UserStats,
+}
+
+#[cfg(test)]
+mod penalty_tests {
+    use super::*;
+
+    #[test]
+    fn november_prices_follow_puzzle_date_and_difficulty() {
+        assert_eq!(
+            super::super::parse_date("2026-11-01"),
+            Some(SCALED_HELP_DAY)
+        );
+        assert_eq!(
+            HelpPenalties::daily(SCALED_HELP_DAY - 1),
+            HelpPenalties::default()
+        );
+        // Sunday through Saturday, including both Medium and Hard days.
+        for (offset, seconds) in [30, 10, 15, 15, 20, 20, 25].into_iter().enumerate() {
+            let prices = HelpPenalties::daily(SCALED_HELP_DAY + i64::try_from(offset).unwrap());
+            assert_eq!(prices.check_ms, seconds * 1000);
+            assert_eq!(prices.hint_ms, seconds * 3000);
+            assert_eq!(prices.total(2, 3), seconds * 9000);
+        }
+    }
+
+    #[test]
+    fn old_attempts_default_to_historical_prices_and_new_prices_round_trip() {
+        let old = r#"{"started_at":0,"finished_at":null,"hints":1,"checks":2,"revealed":false,"time_ms":null,"bridges":null}"#;
+        let mut attempt: AttemptInfo = serde_json::from_str(old).unwrap();
+        assert_eq!(attempt.penalty_ms(), 50_000);
+        assert!(
+            !serde_json::to_string(&attempt)
+                .unwrap()
+                .contains("penalties")
+        );
+        attempt.penalties = HelpPenalties::daily(SCALED_HELP_DAY);
+        let restored: AttemptInfo =
+            serde_json::from_str(&serde_json::to_string(&attempt).unwrap()).unwrap();
+        assert_eq!(restored.penalty_ms(), 150_000);
+        assert_eq!(restored, attempt);
+    }
 }

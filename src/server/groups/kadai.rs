@@ -240,6 +240,7 @@ impl Row {
 
     fn attempt(&self) -> AttemptInfo {
         AttemptInfo {
+            penalties: crate::model::HelpPenalties::default(),
             attempt_id: String::new(),
             started_at: self.started_at,
             finished_at: self.finished_at,
@@ -973,6 +974,7 @@ pub async fn replay(
         .map(|m| {
             let row = rows.iter().find(|r| r.user_id == m.user_id);
             let mut lane = Lane {
+                penalties: crate::model::HelpPenalties::default(),
                 user_id: m.user_id,
                 name: m.name,
                 guest: m.guest,

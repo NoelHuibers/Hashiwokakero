@@ -2376,3 +2376,76 @@ async fn receipt_timing_is_server_only_validated_and_idempotent() {
             .is_none()
     );
 }
+
+#[tokio::test]
+async fn help_prices_switch_by_puzzle_date_and_every_check_is_charged() {
+    use crate::api::PaidAction;
+    use crate::model::{HelpPenalties, SCALED_HELP_DAY};
+
+    let (_db, conn) = test_db().await;
+    let player = user(&conn, "help-prices", Some("help-prices")).await;
+    // Reuse a small stored board: this test exercises scoring, not Oni generation.
+    let puzzle = get_or_create(&conn, MONDAY).await.unwrap();
+    let board = Board::new(puzzle.puzzle.clone());
+    for day in [SCALED_HELP_DAY - 1, SCALED_HELP_DAY] {
+        conn.execute(
+            "INSERT INTO dailies (day, difficulty, puzzle, solution, created_at)
+             SELECT ?1, 'oni', puzzle, solution, 0 FROM dailies WHERE day = ?2",
+            params![day, MONDAY],
+        )
+        .await
+        .unwrap();
+        let started = start(&conn, player, day, None).await.unwrap();
+        let prices = HelpPenalties::daily(day);
+        assert_eq!(started.attempt.unwrap().penalties, prices);
+        let mut wrong = board.empty_bridges();
+        let edge = puzzle.solution.iter().position(|&count| count < 2).unwrap();
+        wrong[edge] = puzzle.solution[edge] + 1;
+        for (index, bridges) in [board.empty_bridges(), puzzle.solution.clone(), wrong]
+            .into_iter()
+            .enumerate()
+        {
+            let id = format!("check-price-request-{index}");
+            let reply = paid_current(&conn, player, day, bridges.clone(), PaidAction::Check, &id)
+                .await
+                .unwrap();
+            assert_eq!(reply.checks, i64::try_from(index + 1).unwrap());
+            // Retrying the same purchase never charges twice.
+            let retry = paid_current(&conn, player, day, bridges, PaidAction::Check, &id)
+                .await
+                .unwrap();
+            assert_eq!(retry.checks, reply.checks);
+        }
+        paid_current(
+            &conn,
+            player,
+            day,
+            board.empty_bridges(),
+            PaidAction::Hint,
+            "hint-price-request-01",
+        )
+        .await
+        .unwrap();
+        let saved = attempt(&conn, player, day).await.unwrap().unwrap();
+        assert_eq!((saved.hints, saved.checks), (1, 3));
+        assert_eq!(saved.penalty_ms(), prices.hint_ms + 3 * prices.check_ms);
+        age(&conn, player, day, 600_000).await;
+        let result = submit(
+            &conn,
+            player,
+            day,
+            puzzle.solution.clone(),
+            20,
+            played(&puzzle.solution),
+            None,
+        )
+        .await
+        .unwrap();
+        let finished = attempt(&conn, player, day).await.unwrap().unwrap();
+        assert_eq!(
+            result.time_ms,
+            finished.finished_at.unwrap() - finished.started_at + prices.total(1, 3)
+        );
+        assert_eq!(finished.penalties, prices);
+    }
+}
