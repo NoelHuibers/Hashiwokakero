@@ -912,8 +912,10 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       # Appium's XCUITest driver reaches the WKWebView through the simulator's WebKit inspector.
       # It needs WebDriverAgent on the simulator: the driver's prebuilt one for simulators instead
-      # of an Xcode build of it (minutes).
+      # of an Xcode build of it (minutes). Outside the checkout: Appium's driver manager runs npm,
+      # which the project refuses (devEngines in package.json wants pnpm).
       - name: Appium
+        working-directory: ${{ runner.temp }}
         run: |
           echo "appium $(date +%s)" >> "$TIMES"
           npm install --global --no-fund --no-audit "appium@$APPIUM_VERSION"
