@@ -3,7 +3,7 @@
 //   pnpm run og-fonts
 //
 // The server draws the images with resvg, which reads TrueType/OpenType but not the woff2 files
-// the site serves. This takes the same @fontsource packages as scripts/fonts.mjs, keeps only the
+// the site serves. This takes the same @fontsource packages as scripts/fonts.ts, keeps only the
 // glyphs of the texts on the images in every language, and writes one TrueType collection per
 // font to src/server/og/fonts (committed, a few hundred KB together; the server embeds them, so
 // it needs no node_modules to build or test). The packages split every font into slices by
@@ -20,7 +20,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const modules = path.join(root, 'node_modules');
 const out = path.join(root, 'src/server/og/fonts');
 
-// The stylesheets of each font, as in scripts/fonts.mjs. The keys are the file names, the server
+// The stylesheets of each font, as in scripts/fonts.ts. The keys are the file names, the server
 // lists the same ones (FONTS in src/server/og/mod.rs).
 const FONTS = {
   // The pixel font: the name, island numbers, kanji, sizes

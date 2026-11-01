@@ -1,12 +1,12 @@
 // Play Games Services: the achievements and leaderboards of the game in the Play Console (app/
-// README.md, Game achievements), from the catalogue (catalogue.mjs), with the Games Services
+// README.md, Game achievements), from the catalogue (catalogue.ts), with the Games Services
 // Publishing API (gamesconfiguration v1configuration, developer.android.com/games/services/
 // publishing/api) and the service account fastlane uploads with.
 //
-//   node store/achievements/play.mjs              upload (PLAY_SERVICE_ACCOUNT_JSON: the key
+//   node store/achievements/play.ts              upload (PLAY_SERVICE_ACCOUNT_JSON: the key
 //                                                 file's contents or path), write the IDs
-//   node store/achievements/play.mjs --dry-run    read what Play has, change nothing
-//   node store/achievements/play.mjs --offline    the same against an empty project, no key
+//   node store/achievements/play.ts --dry-run    read what Play has, change nothing
+//   node store/achievements/play.ts --offline    the same against an empty project, no key
 //   --ids <file>                                  where the IDs go (default
 //                                                 target/store/achievements/achievements-play.json)
 //
@@ -14,7 +14,7 @@
 // Configuration: the project ID under the game's name), or PLAY_GAMES_PROJECT_ID.
 //
 // An achievement or leaderboard is found by its ID in app/achievements-play.json, else by its
-// English name (Play's names are unique, and the import ZIP of catalogue.mjs creates them with
+// English name (Play's names are unique, and the import ZIP of catalogue.ts creates them with
 // these), else created. Then its type, steps, state, points, names and descriptions in every
 // locale are set when they differ, so a second run changes nothing.
 //
@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { counting, dryRun, httpClient, jwt, listWrites } from './api.mjs';
+import { counting, dryRun, httpClient, jwt, listWrites } from './api.ts';
 import {
   buildCatalogue,
   formatPlayIds,
@@ -33,7 +33,7 @@ import {
   loadSources,
   OUT,
   validate,
-} from './catalogue.mjs';
+} from './catalogue.ts';
 
 export const BASE = 'https://gamesconfiguration.googleapis.com/games/v1configuration';
 export const SCOPE = 'https://www.googleapis.com/auth/androidpublisher';
@@ -273,7 +273,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   let api;
   if (offline) {
-    const { fakePlay } = await import('./fake.mjs');
+    const { fakePlay } = await import('./fake.ts');
     api = counting(fakePlay());
   } else if (dry) {
     api = dryRun(playClient(), { answer: playAnswer, empty: () => ({ items: [] }) });

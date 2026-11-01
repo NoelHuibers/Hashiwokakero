@@ -1,11 +1,11 @@
-// node --test scripts/tests/: scripts/app-version.mjs on copies of the real files
+// node --test scripts/tests/: scripts/app-version.ts on copies of the real files
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, beforeEach, test } from 'node:test';
-import { check, FILES, parse, read, set, versionCode } from '../app-version.mjs';
+import { check, FILES, parse, read, set, versionCode } from '../app-version.ts';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'app-version-'));

@@ -1,4 +1,4 @@
-// HTTP for the achievements' uploads (apple.mjs, play.mjs): JSON requests with a bearer token,
+// HTTP for the achievements' uploads (apple.ts, play.ts): JSON requests with a bearer token,
 // retried when the store says to slow down, and a dry run that sends only the reads.
 
 import crypto from 'node:crypto';

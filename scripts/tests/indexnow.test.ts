@@ -1,10 +1,10 @@
-// node --test scripts/tests/: which URLs scripts/indexnow.mjs submits, and how
+// node --test scripts/tests/: which URLs scripts/indexnow.ts submits, and how
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { changedOn, changedSince, choose, keyOf, parseSitemap, payload } from '../indexnow.mjs';
+import { changedOn, changedSince, choose, keyOf, parseSitemap, payload } from '../indexnow.ts';
 
 const root = path.resolve(import.meta.dirname, '../..');
 

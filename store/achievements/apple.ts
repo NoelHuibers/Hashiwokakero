@@ -1,12 +1,12 @@
 // Game Center: the achievements and leaderboards of the app in App Store Connect (app/README.md,
-// Game achievements), from the catalogue (catalogue.mjs) and the icons, with the App Store
+// Game achievements), from the catalogue (catalogue.ts) and the icons, with the App Store
 // Connect API (developer.apple.com/documentation/appstoreconnectapi/game-center). fastlane has
 // no action for them.
 //
-//   node store/achievements/apple.mjs              upload (APPLE_API_KEY_ID, APPLE_API_ISSUER,
+//   node store/achievements/apple.ts              upload (APPLE_API_KEY_ID, APPLE_API_ISSUER,
 //                                                  APPLE_API_KEY_P8 in the environment)
-//   node store/achievements/apple.mjs --dry-run    read what App Store Connect has, change nothing
-//   node store/achievements/apple.mjs --offline    the same against an empty App Store Connect,
+//   node store/achievements/apple.ts --dry-run    read what App Store Connect has, change nothing
+//   node store/achievements/apple.ts --offline    the same against an empty App Store Connect,
 //                                                  without a key (pull requests, locally)
 //
 // What it does, each step only when needed, so a second run changes nothing:
@@ -23,8 +23,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { counting, dryRun, HttpError, httpClient, jwt, listWrites, tally } from './api.mjs';
-import { buildCatalogue, ICONS, loadSources, validate } from './catalogue.mjs';
+import { counting, dryRun, HttpError, httpClient, jwt, listWrites, tally } from './api.ts';
+import { buildCatalogue, ICONS, loadSources, validate } from './catalogue.ts';
 
 export const APP_ID = '6826916346';
 export const BASE = 'https://api.appstoreconnect.apple.com';
@@ -412,7 +412,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const catalogue = buildCatalogue(sources);
   let api;
   if (offline) {
-    const { fakeApple } = await import('./fake.mjs');
+    const { fakeApple } = await import('./fake.ts');
     api = counting(fakeApple());
   } else if (args.has('--dry-run')) {
     api = dryRun(appleClient(), { answer: appleAnswer, empty: appleEmpty });

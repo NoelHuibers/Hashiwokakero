@@ -3,7 +3,7 @@
 // receives) which pages of the site changed, so they crawl them soon instead of whenever.
 // docs/seo.md; run by .github/workflows/indexnow.yml after every deploy and after midnight UTC.
 //
-//   node scripts/indexnow.mjs [--site https://hashi.rs] [--before sitemap.xml] [--all] [--dry-run]
+//   node scripts/indexnow.ts [--site https://hashi.rs] [--before sitemap.xml] [--all] [--dry-run]
 //
 // Which URLs of the site's sitemap:
 //   default         the ones whose <lastmod> is today (UTC): the pages of the new daily

@@ -1,4 +1,4 @@
-// The store listings' checks (store/validate.mjs, store/assemble.mjs): the repository's listings
+// The store listings' checks (store/validate.ts, store/assemble.ts): the repository's listings
 // pass, and each rule catches what it is there for.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -7,13 +7,13 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { deflateSync } from 'node:zlib';
 
-import { checkImage, pngInfo } from '../../store/assemble.mjs';
-import { APPLE, PLAY, SITE_LANGUAGES, siteUrl } from '../../store/locales.mjs';
+import { checkImage, pngInfo } from '../../store/assemble.ts';
+import { APPLE, PLAY, SITE_LANGUAGES, siteUrl } from '../../store/locales.ts';
 
 /** The default order of sort(), as a comparison */
 const byCodeUnits = (a, b) => (a < b ? -1 : 1);
 
-import { loadListings, validate } from '../../store/validate.mjs';
+import { loadListings, validate } from '../../store/validate.ts';
 
 const repo = loadListings();
 
@@ -160,7 +160,7 @@ test('locales: every one there, none unknown, copies not kept twice', () => {
   );
   has(
     problems((l) => (l.play['xx-YY'] = { ...l.play['en-US'] })),
-    /xx-YY: a folder for a locale that store\/locales.mjs does not list/,
+    /xx-YY: a folder for a locale that store\/locales.ts does not list/,
   );
   has(
     problems((l) => (l.apple['en-GB'] = { ...l.apple['en-US'] })),

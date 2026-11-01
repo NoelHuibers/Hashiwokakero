@@ -106,8 +106,8 @@ jobs:
       # The scripts' own tests, the mobile app's version among them: it is the same in all its files
       - name: Script tests
         run: |
-          node --test scripts/tests/*.test.mjs
-          node scripts/app-version.mjs
+          node --test scripts/tests/*.test.ts
+          node scripts/app-version.ts
       - name: Clippy (library crates, dojo worker, tests)
         run: cargo clippy --locked -p common -p sat_solver -p backend -p dojo -p house --all-targets --features dojo/worker -- -D warnings
       - name: Clippy (website, server)
@@ -153,7 +153,7 @@ jobs:
       - name: Clippy (app, browser)
         run: cargo clippy --locked -p hashi --lib --no-default-features --features csr --target wasm32-unknown-unknown -- -D warnings
 
-  # The unit, integration and HTTP tests (scripts/coverage.mjs), run once: instrumented for line
+  # The unit, integration and HTTP tests (scripts/coverage.ts), run once: instrumented for line
   # coverage, in debug, with the packages and features they always had. The script fails the job
   # when a test fails, or when coverage drops more than a percentage point below
   # scripts/coverage-baseline.json. The deploys wait for it.
@@ -193,7 +193,7 @@ jobs:
           } >> "$GITHUB_ENV"
       # Writes the per-crate and per-file tables to the job summary
       - name: Tests with coverage
-        run: node scripts/coverage.mjs
+        run: node scripts/coverage.ts
       # Also when the baseline check failed, the report shows which lines lost their tests
       - if: always()
         uses: actions/upload-artifact@v7
@@ -257,7 +257,7 @@ jobs:
         with:
           node-version-file: .node-version
           cache: pnpm
-      # Its postinstall writes the fonts to public/fonts (scripts/fonts.mjs)
+      # Its postinstall writes the fonts to public/fonts (scripts/fonts.ts)
       - run: pnpm install --frozen-lockfile
       # The E2E job runs in the Playwright image of this version, see there
       - id: playwright
@@ -418,7 +418,7 @@ jobs:
 
   # What the browser downloads of the release build above, and how long three pages take to
   # hydrate on a CPU slowed down 4×, against docs/performance/bundle-baseline.json, in the job
-  # summary (scripts/bundle-size.mjs, e2e/perf/). Fails when the gzipped WASM and JS grow more than
+  # summary (scripts/bundle-size.ts, e2e/perf/). Fails when the gzipped WASM and JS grow more than
   # the baseline's tolerance; the hydration times are only reported, a runner's speed varies too
   # much. Not a required check and not in Release compatibility, it holds up no merge or deploy.
   bundle:
@@ -451,7 +451,7 @@ jobs:
           E2E_BIN: dist/hashi
           E2E_SITE_ROOT: dist/site
       - name: Size
-        run: node scripts/bundle-size.mjs --site dist/site
+        run: node scripts/bundle-size.ts --site dist/site
       # bundle.json: these numbers in the baseline's format, to commit as the new baseline
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
@@ -476,7 +476,7 @@ jobs:
         with:
           node-version-file: .node-version
           cache: pnpm
-      # The Tailwind CLI, and the fonts in public/fonts (postinstall, scripts/fonts.mjs)
+      # The Tailwind CLI, and the fonts in public/fonts (postinstall, scripts/fonts.ts)
       - run: pnpm install --frozen-lockfile
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@v2

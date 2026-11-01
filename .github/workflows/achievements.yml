@@ -1,9 +1,9 @@
 name: Game achievements
 # The stamps as Game Center and Play Games achievements, and the leaderboards (app/README.md,
-# Game achievements): the catalogue (store/achievements/catalogue.mjs, from the Rust model and
+# Game achievements): the catalogue (store/achievements/catalogue.ts, from the Rust model and
 # the stamp book's texts), the hanko icons (store/templates/hanko.html), uploaded with the App
-# Store Connect API (store/achievements/apple.mjs) and Play's Games Services Publishing API
-# (store/achievements/play.mjs).
+# Store Connect API (store/achievements/apple.ts) and Play's Games Services Publishing API
+# (store/achievements/play.ts).
 #
 # A pull request that changes them checks the catalogue against the stores' limits, makes every
 # icon and Play's import ZIP, runs the uploads against an empty App Store Connect and Play project
@@ -26,10 +26,10 @@ on:
       - store/capture/achievements.icons.ts
       - store/capture/icons.config.ts
       - store/capture/frame.ts
-      - store/locales.mjs
+      - store/locales.ts
       - locales/*/stamps.json
       - app/achievements-play.json
-      - scripts/tests/achievements.test.mjs
+      - scripts/tests/achievements.test.ts
   workflow_dispatch:
     inputs:
       platform:
@@ -68,8 +68,8 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - id: playwright
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - run: node store/achievements/catalogue.mjs
-      - run: node --test scripts/tests/achievements.test.mjs
+      - run: node store/achievements/catalogue.ts
+      - run: node --test scripts/tests/achievements.test.ts
 
   # Every icon in the Playwright image the store images use (its Chromium), with the site's fonts,
   # and Play's import ZIP with them
@@ -88,12 +88,12 @@ jobs:
         with:
           node-version-file: .node-version
           cache: pnpm
-      # Its postinstall writes the fonts to public/fonts (scripts/fonts.mjs)
+      # Its postinstall writes the fonts to public/fonts (scripts/fonts.ts)
       - run: pnpm install --frozen-lockfile
       - run: pnpm run store:icons
       - name: Check the icons, Play's import ZIP
         run: |
-          node store/achievements/catalogue.mjs
+          node store/achievements/catalogue.ts
           {
             echo "### Achievement icons"
             echo
@@ -108,8 +108,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          node store/achievements/apple.mjs --offline | tail -n 20
-          node store/achievements/play.mjs --offline --ids "$RUNNER_TEMP/ids.json" | tail -n 5
+          node store/achievements/apple.ts --offline | tail -n 20
+          node store/achievements/play.ts --offline --ids "$RUNNER_TEMP/ids.json" | tail -n 5
       - uses: actions/upload-artifact@v7
         with:
           name: achievements
@@ -151,7 +151,7 @@ jobs:
             echo "::error::The APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8 secrets are needed"
             exit 1
           fi
-          node store/achievements/apple.mjs $([ "$VALIDATE_ONLY" = true ] && echo --dry-run)
+          node store/achievements/apple.ts $([ "$VALIDATE_ONLY" = true ] && echo --dry-run)
 
   # Play Games Services, with the service account fastlane uploads with. Needs no icons (Play's
   # API can't take them), only the catalogue.
@@ -175,7 +175,7 @@ jobs:
             echo "::error::No PLAY_SERVICE_ACCOUNT_JSON secret"
             exit 1
           fi
-          node store/achievements/play.mjs $([ "$VALIDATE_ONLY" = true ] && echo --dry-run) --ids target/achievements-play/achievements-play.json
+          node store/achievements/play.ts $([ "$VALIDATE_ONLY" = true ] && echo --dry-run) --ids target/achievements-play/achievements-play.json
       - if: ${{ !inputs.validate_only }}
         uses: actions/upload-artifact@v7
         with:

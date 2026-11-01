@@ -1,8 +1,8 @@
-// App Store Connect and Play Games Services in memory, as far as apple.mjs and play.mjs use
-// them: for their tests (scripts/tests/achievements.test.mjs) and their `--offline` runs. They
+// App Store Connect and Play Games Services in memory, as far as apple.ts and play.ts use
+// them: for their tests (scripts/tests/achievements.test.ts) and their `--offline` runs. They
 // answer like the real APIs and refuse what those refuse (texts of a version under review or
 // live, a second image, changing what a published achievement can't change).
-import { HttpError } from './api.mjs';
+import { HttpError } from './api.ts';
 
 const parse = (url) => {
   const u = new URL(url, 'https://fake.invalid');

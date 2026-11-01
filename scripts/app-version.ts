@@ -1,8 +1,8 @@
 // The mobile app's version, the same in every file that has it (app/README.md, Releases):
 //
-//   node scripts/app-version.mjs           prints the version; fails when the files disagree
-//   node scripts/app-version.mjs --code    prints Android's versionCode of it
-//   node scripts/app-version.mjs 1.2.3     sets 1.2.3 everywhere
+//   node scripts/app-version.ts           prints the version; fails when the files disagree
+//   node scripts/app-version.ts --code    prints Android's versionCode of it
+//   node scripts/app-version.ts 1.2.3     sets 1.2.3 everywhere
 //
 // The files: app/Cargo.toml (the version the app sends in x-hashi-app), app/src-tauri/Cargo.toml,
 // app/src-tauri/tauri.conf.json (the store's versionName, and the versionCode Tauri derives from
@@ -107,7 +107,7 @@ export function check(dir = root) {
     const list = found.map((entry) => `  ${where(entry)}: ${entry.version}`).join('\n');
     throw new Error(
       `the app's version differs between the files:\n${list}\n` +
-        'set it with: node scripts/app-version.mjs <x.y.z>',
+        'set it with: node scripts/app-version.ts <x.y.z>',
     );
   }
   return found[0].version;
@@ -149,7 +149,7 @@ function main(argv) {
     console.log(`app version ${argv[0]} (versionCode ${versionCode(argv[0])}) in:`);
     for (const entry of FILES) console.log(`  ${where(entry)}`);
   } else {
-    throw new Error('usage: node scripts/app-version.mjs [--code | <x.y.z>]');
+    throw new Error('usage: node scripts/app-version.ts [--code | <x.y.z>]');
   }
 }
 

@@ -7,7 +7,7 @@ import { type Browser, expect, test } from '@playwright/test';
 import { hydrated } from '../../e2e/fixtures.ts';
 import { localized } from '../../e2e/site.ts';
 
-import { SITE_LANGUAGES } from '../locales.mjs';
+import { SITE_LANGUAGES } from '../locales.ts';
 import { FRAMES, SCREENS, type Screen } from './devices.ts';
 import { IMAGES_DIR, ONLY_LANGS, RAW_DIR, ROOT, STORE_URL } from './env.ts';
 import { type Caption, feature, frame, framePage } from './frame.ts';

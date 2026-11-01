@@ -1,6 +1,6 @@
 // Checks the store listings in fastlane/metadata against the stores' limits and rules
-// (app/README.md, Store listings). `node store/validate.mjs` prints every problem and fails when
-// there is one; CI runs it, and scripts/tests/store-listing.test.mjs tests the rules.
+// (app/README.md, Store listings). `node store/validate.ts` prints every problem and fails when
+// there is one; CI runs it, and scripts/tests/store-listing.test.ts tests the rules.
 //
 // Google Play: title ≤ 30, short description ≤ 80, full description ≤ 4000 characters.
 // App Store: name and subtitle ≤ 30 characters, keywords ≤ 100 bytes (UTF-8; App Store Connect
@@ -19,7 +19,7 @@ import {
   PLAY_METADATA,
   SITE_LANGUAGES,
   siteUrl,
-} from './locales.mjs';
+} from './locales.ts';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -237,7 +237,7 @@ function checkLocales(store, table, known, present, fields, fail) {
   }
   for (const locale of Object.keys(present)) {
     if (!byLocale.has(locale))
-      fail(`${store} ${locale}`, 'a folder for a locale that store/locales.mjs does not list');
+      fail(`${store} ${locale}`, 'a folder for a locale that store/locales.ts does not list');
   }
   for (const site of SITE_LANGUAGES) {
     if (!table.some((l) => l.site === site))

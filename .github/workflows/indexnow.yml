@@ -1,6 +1,6 @@
 name: IndexNow
 # Tells Bing, Yandex and the other IndexNow engines which pages of hashi.rs changed
-# (scripts/indexnow.mjs, docs/seo.md), so they crawl them soon. Google doesn't take part, it reads
+# (scripts/indexnow.ts, docs/seo.md), so they crawl them soon. Google doesn't take part, it reads
 # the sitemap on its own. Nothing is submitted while fly.toml's HASHI_INDEXNOW_KEY is empty.
 #
 # - After every deploy (CI's "IndexNow" job calls it): the sitemap's URLs that are new or have
@@ -51,7 +51,7 @@ jobs:
           args=()
           if [ "$ALL" = true ]; then args+=(--all); fi
           if [ -n "$BEFORE" ]; then args+=(--before sitemap-before.xml); fi
-          node scripts/indexnow.mjs "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+          node scripts/indexnow.ts "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
         env:
           ALL: ${{ inputs.all }}
           BEFORE: ${{ inputs.before }}

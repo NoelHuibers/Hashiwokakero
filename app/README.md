@@ -528,7 +528,7 @@ object-src 'none'; base-uri 'self'
 `version` in `tauri.conf.json` is the version users see (`versionName`). Tauri derives Android's
 `versionCode`, which must grow with every upload to Play, from it:
 `major × 1,000,000 + minor × 1,000 + patch`, so 0.0.1 is 1, 0.1.0 is 1000 and 1.2.3 is 1,002,003
-(minor and patch stay below 1000). `scripts/app-version.mjs` sets it, see [Releases](#releases).
+(minor and patch stay below 1000). `scripts/app-version.ts` sets it, see [Releases](#releases).
 
 ## Emulator test
 
@@ -593,7 +593,7 @@ platforms from it:
 1. A pull request with the new version and its release notes:
 
    ```sh
-   node scripts/app-version.mjs 0.2.0     # every file below; --code prints the versionCode
+   node scripts/app-version.ts 0.2.0     # every file below; --code prints the versionCode
    $EDITOR app/store/whatsnew/whatsnew-en-US
    ```
 
@@ -602,7 +602,7 @@ platforms from it:
    two crates' entries in `Cargo.lock` and `src-tauri/Cargo.lock`, and the iOS project's
    `CFBundleShortVersionString` and `CFBundleVersion` in `gen/apple` (see [iOS](#ios)). It refuses
    a version whose minor or patch is 1000 or more, or whose versionCode isn't above the current
-   one. "Test & lint" fails when the files disagree (`node scripts/app-version.mjs` without a
+   one. "Test & lint" fails when the files disagree (`node scripts/app-version.ts` without a
    version).
    `whatsnew-en-US` is Play's "What's new" (at most 500 characters); other languages go next to
    it as `whatsnew-<locale>`, e.g. `whatsnew-de-DE`.
@@ -654,7 +654,7 @@ the upload key.
 Run by hand (`gh workflow run app-release.yml --ref <ref>`), or by a pull request, the workflow
 is a dry run: it builds, signs and checks, keeps the files as the artifacts for three days, and
 publishes nothing. On a branch it skips the checks of the tag, of main and of CI. A pull request
-builds the platforms whose files it changes: both for the workflow or `scripts/app-version.mjs`,
+builds the platforms whose files it changes: both for the workflow or `scripts/app-version.ts`,
 Android for `gen/android/app/build.gradle.kts`, iOS for `gen/apple/` or `src-tauri/Info.ios.plist`.
 Without the signing secrets (pull requests of Dependabot or of forks) an Android dry run signs
 with a throwaway key, and iOS is skipped with a notice. With `-f publish=true` on a tag
@@ -691,11 +691,11 @@ workflow; the same as `bundle.iOS.developmentTeam`, which it overrides). It arch
 certificate and the App Store profile of `rs.hashi`. Its private key stays with Apple, and no
 certificate or profile is kept in the repository's secrets.
 
-- **The build number.** `CFBundleVersion` is the versionCode (`node scripts/app-version.mjs
+- **The build number.** `CFBundleVersion` is the versionCode (`node scripts/app-version.ts
   --code`, 2 for 0.0.2), passed as `bundle.iOS.bundleVersion`. App Store Connect needs a higher
   one for every upload of a version, and it refuses four numbers, which `--build-number` would
   give (`0.0.2.1`). `CFBundleShortVersionString` is the version. In `gen/apple` both stay the
-  version (`scripts/app-version.mjs`): only the release's build changes them. Xcode's export
+  version (`scripts/app-version.ts`): only the release's build changes them. Xcode's export
   must not pick another one: with the key it asks App Store Connect and takes the next free
   number once a version's build is there (3 for 0.0.2 in pull requests after its upload), so
   `gen/apple/ExportOptions.plist`, which Tauri's export starts from, turns
@@ -726,7 +726,7 @@ certificate or profile is kept in the repository's secrets.
 `gh workflow run app-release.yml --ref app-v<version> -f publish=true`, builds and uploads again.
 That only works while App Store Connect doesn't have the build: it refuses a build number it
 already has, e.g. after a run whose upload went through but whose GitHub release failed. To ship
-a new build then, bump the version (`scripts/app-version.mjs`) and tag again, as for Play.
+a new build then, bump the version (`scripts/app-version.ts`) and tag again, as for Play.
 
 ### Signing
 
@@ -769,7 +769,7 @@ In fastlane's layout, one folder per store locale:
   URLs: `support_url.txt` (`/kontakt`), `marketing_url.txt` (the home page) and `privacy_url.txt`
   (`/datenschutz`), each the site in the listing's language. `copyright.txt` is for every locale.
 
-`store/locales.mjs` lists the locales of each store and the site language their screenshots are
+`store/locales.ts` lists the locales of each store and the site language their screenshots are
 taken in: all 20 of the site's languages, Spanish and Portuguese twice (es-ES and es-419/es-MX,
 pt-PT and pt-BR, each written for its region). A locale with `same` gets a copy of another's texts
 when the upload tree is put together, so they are written once: on Play fr-CA (fr-FR), es-US
@@ -792,10 +792,10 @@ for things (locales/: "die Brücke von heute", "Stempelheft", 鬼, ...). For the
   "best", "free" in a name; "free, no ads" in a description is fine), calls to action ("download
   now").
 
-`node store/validate.mjs` (`pnpm run store:validate`) checks all of it: every locale there and
+`node store/validate.ts` (`pnpm run store:validate`) checks all of it: every locale there and
 known to fastlane, the limits (keywords in UTF-8 bytes, the safe reading for Chinese, Japanese and
 Korean), the keyword rules, the forbidden words and the URLs, and the screenshots' captions.
-`scripts/tests/store-listing.test.mjs` tests the checks; "Test & lint" runs it with the other
+`scripts/tests/store-listing.test.ts` tests the checks; "Test & lint" runs it with the other
 script tests.
 
 The release notes ("What's new") are not part of this: the release workflow uploads them with each
@@ -829,7 +829,7 @@ STORE_FRAME_ONLY=1 pnpm run store:images      # only frame again (after changing
 pnpm run store:assemble                   # the upload tree, see below
 ```
 
-`node store/assemble.mjs` puts together `target/store/fastlane/` for fastlane: the texts with the
+`node store/assemble.ts` puts together `target/store/fastlane/` for fastlane: the texts with the
 copies of `same`, and the images sorted into supply's and deliver's folders. It checks every
 image's size and that none has an alpha channel (Play's icon has one). With `--text` it leaves the
 images out.
@@ -853,7 +853,7 @@ images out.
 The keys are the release workflow's secrets, `PLAY_SERVICE_ACCOUNT_JSON` and
 `APPLE_API_KEY_ID`/`APPLE_API_ISSUER`/`APPLE_API_KEY_P8`, written to files in the runner's temp
 dir (fastlane's API key JSON for Apple) and deleted at the end of the job, also when it fails. To
-run a lane locally (from the repository root, after `node store/assemble.mjs`):
+run a lane locally (from the repository root, after `node store/assemble.ts`):
 
 ```sh
 BUNDLE_GEMFILE=fastlane/Gemfile bundle install
@@ -893,8 +893,8 @@ upload tooling and fails when that is out of date (`UPDATE_ACHIEVEMENTS=1 cargo 
 
 ### Catalogue and icons
 
-`node store/achievements/catalogue.mjs` (`pnpm run store:achievements`) puts together what each
-platform gets, in the store locales of `store/locales.mjs` (Game Center 26, Play 25): the names
+`node store/achievements/catalogue.ts` (`pnpm run store:achievements`) puts together what each
+platform gets, in the store locales of `store/locales.ts` (Game Center 26, Play 25): the names
 and texts of `locales/<language>/stamps.json`, the leaderboards' names of
 `store/achievements/leaderboards.json`. It checks the limits: Play's names ≤ 100 and descriptions
 ≤ 500 characters, each name once per locale, steps ≤ 10000, points; Game Center's ids, ≤ 100
@@ -905,7 +905,7 @@ The icons are the stamps' hanko, pressed like the stamp book does, with the tier
 stamps share a kanji: `store/templates/hanko.html`, taken by Playwright like the store images
 (`store/capture/achievements.icons.ts`), but without the site: only the fonts `pnpm install`
 writes to `public/fonts`. Game Center's at 1024 × 1024, Play's at 512 × 512, opaque, nothing
-outside the circle Android masks Play's icons with. Then `catalogue.mjs` checks them and writes
+outside the circle Android masks Play's icons with. Then `catalogue.ts` checks them and writes
 Play's import ZIP (below).
 
 ```sh
@@ -918,8 +918,8 @@ pnpm run store:achievements   # the checks, catalogue.json, play-import.zip
 `.github/workflows/achievements.yml` ("Game achievements"):
 
 - **A pull request** that changes the catalogue, the texts of the stamps, the icons' template or
-  the workflow: the checks and their tests (`scripts/tests/achievements.test.mjs`), both uploads
-  against an empty App Store Connect and Play project in memory (`store/achievements/fake.mjs`;
+  the workflow: the checks and their tests (`scripts/tests/achievements.test.ts`), both uploads
+  against an empty App Store Connect and Play project in memory (`store/achievements/fake.ts`;
   `--offline`), and all icons with Play's import ZIP, kept as the artifact `achievements`.
 - **By hand** (Actions, Game achievements, Run workflow; or `gh workflow run achievements.yml -f
   platform=both`): `platform` apple, play or both. `validate_only` reads what the platform has and
@@ -928,7 +928,7 @@ pnpm run store:achievements   # the checks, catalogue.json, play-import.zip
 Each upload looks at what is there first and only changes what differs, so a second run changes
 nothing and never makes a second achievement. Nothing is ever deleted, submitted or published.
 
-- **Game Center** (`store/achievements/apple.mjs`, the App Store Connect API; fastlane has no
+- **Game Center** (`store/achievements/apple.ts`, the App Store Connect API; fastlane has no
   action for it): switches Game Center on for the app and for the iOS version being prepared,
   then every achievement and leaderboard by its vendor id. Since the API's version 4.2 their
   texts and images hang on versions: the run edits the latest one while it is being prepared,
@@ -937,7 +937,7 @@ nothing and never makes a second achievement. Nothing is ever deleted, submitted
   sends about 4000 requests, more than App Store Connect's 3600 an hour: it waits when told to,
   up to the job's three hours; a run stopped halfway is just run again. The daily leaderboard's
   first day is the next midnight UTC, set when it is created.
-- **Play Games** (`store/achievements/play.mjs`, the Games Services Publishing API with the
+- **Play Games** (`store/achievements/play.ts`, the Games Services Publishing API with the
   service account of the releases): finds each achievement and leaderboard by its ID in
   `app/achievements-play.json`, else by its English name, else creates it; sets type, steps,
   hidden, points, names and descriptions in every locale. The new IDs are in the job summary and
@@ -950,10 +950,10 @@ Locally, with the keys in the environment (`APPLE_API_KEY_ID`, `APPLE_API_ISSUER
 `APPLE_API_KEY_P8`; `PLAY_SERVICE_ACCOUNT_JSON`, the key file or its contents):
 
 ```sh
-node store/achievements/apple.mjs --offline   # against an empty App Store Connect, no key
-node store/achievements/apple.mjs --dry-run   # what an upload would change
-node store/achievements/play.mjs --offline
-node store/achievements/play.mjs --dry-run --ids /tmp/ids.json
+node store/achievements/apple.ts --offline   # against an empty App Store Connect, no key
+node store/achievements/apple.ts --dry-run   # what an upload would change
+node store/achievements/play.ts --offline
+node store/achievements/play.ts --dry-run --ids /tmp/ids.json
 ```
 
 ### In the consoles
@@ -968,7 +968,7 @@ Once, before the first upload, in the **Play Console** (in German; Hashi, then):
    2026-10-28: `909299474789`.
 2. On the same page, Eigenschaften bearbeiten: the display name "Hashi", the default language
    English (United States) (the upload finds achievements by their en-US names), and the
-   translations: every Play language of `store/locales.mjs`. Speichern.
+   translations: every Play language of `store/locales.ts`. Speichern.
 3. Anmeldedaten, Anmeldedaten hinzufügen, Android: first the OAuth consent screen (Konfigurieren,
    in Google Cloud: External, then In Produktion on its Zielgruppe page, which wants the home page
    and the privacy policy's URL under Branding; Play Games' scopes need no verification), then
@@ -1034,10 +1034,10 @@ This repository's project was generated in CI and committed like `gen/android`, 
   bits of `project.pbxproj` and `Info.plist`.
 - The version. Every build writes the version of `tauri.conf.json` into `Info.plist`, as
   `CFBundleShortVersionString` and, through `agvtool`, as `CFBundleVersion`; `tauri ios init`
-  writes it into `project.yml`. `scripts/app-version.mjs` sets all four with the other files
+  writes it into `project.yml`. `scripts/app-version.ts` sets all four with the other files
   ([Releases](#releases)), so a build leaves them as they are. App Store Connect wants a
   `CFBundleVersion` that grows with every upload, of at most three numbers: the release
-  ([iOS releases](#ios-releases)) passes Android's versionCode (`node scripts/app-version.mjs --code`) as
+  ([iOS releases](#ios-releases)) passes Android's versionCode (`node scripts/app-version.ts --code`) as
   `--config '{"bundle":{"iOS":{"bundleVersion":"<code>"}}}'`, not as `--build-number`, which
   Tauri appends to the version as a fourth number (`0.0.1.1`). Pull requests keep the version.
 - The scene lifecycle: `UIApplicationSceneManifest` in `Info.plist` and `project.yml`, one scene

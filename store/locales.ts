@@ -2,7 +2,7 @@
 // gets, and which of the site's languages (locales/) their screenshots are taken in.
 //
 // A locale with `text` has its own texts in fastlane/metadata. One with `same` takes the texts of
-// another locale of the same store: `node store/assemble.mjs` copies them into the upload tree,
+// another locale of the same store: `node store/assemble.ts` copies them into the upload tree,
 // so the repository keeps one copy (fr-CA is fr-FR's French, en-GB the en-US English).
 //
 // Codes: Google Play's are fastlane supply's (Supply::Languages, `-` instead of `_`), Apple's

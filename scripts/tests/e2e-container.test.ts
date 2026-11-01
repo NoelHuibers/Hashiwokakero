@@ -1,4 +1,4 @@
-// The logic of scripts/e2e-container.mjs that needs no container: `node --test scripts/tests/*.test.mjs`.
+// The logic of scripts/e2e-container.ts that needs no container: `node --test scripts/tests/*.test.ts`.
 import assert from 'node:assert/strict';
 import net from 'node:net';
 import { test } from 'node:test';
@@ -9,7 +9,7 @@ import {
   imageFor,
   waitForPort,
   wsEndpoint,
-} from '../e2e-container.mjs';
+} from '../e2e-container.ts';
 
 const never = new Promise(() => {
   // Never settles

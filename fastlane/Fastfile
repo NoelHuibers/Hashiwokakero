@@ -1,5 +1,5 @@
 # The store listings of the app (app/README.md, Store listings): names, descriptions, keywords and
-# screenshots, from target/store/fastlane, which `node store/assemble.mjs` puts together from
+# screenshots, from target/store/fastlane, which `node store/assemble.ts` puts together from
 # fastlane/metadata and the generated images. .github/workflows/store-listing.yml runs these lanes:
 #
 #   bundle exec fastlane android listing what:all validate_only:true

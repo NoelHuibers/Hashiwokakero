@@ -1,6 +1,6 @@
 // The game achievements (store/achievements): the catalogue in the repository passes the stores'
 // limits and each check catches what it is there for, and the uploads against App Store Connect
-// and Play Games Services in memory (store/achievements/fake.mjs) create everything once, change
+// and Play Games Services in memory (store/achievements/fake.ts) create everything once, change
 // only what changed and nothing on a second run.
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -9,8 +9,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { counting, dryRun, httpClient, jwt, tally } from '../../store/achievements/api.mjs';
-import { appleAnswer, appleEmpty, syncApple } from '../../store/achievements/apple.mjs';
+import { counting, dryRun, httpClient, jwt, tally } from '../../store/achievements/api.ts';
+import { appleAnswer, appleEmpty, syncApple } from '../../store/achievements/apple.ts';
 import {
   buildCatalogue,
   formatPlayIds,
@@ -20,10 +20,10 @@ import {
   playImportFiles,
   validate,
   zip,
-} from '../../store/achievements/catalogue.mjs';
-import { fakeApple, fakePlay } from '../../store/achievements/fake.mjs';
-import { syncPlay } from '../../store/achievements/play.mjs';
-import { APPLE, PLAY } from '../../store/locales.mjs';
+} from '../../store/achievements/catalogue.ts';
+import { fakeApple, fakePlay } from '../../store/achievements/fake.ts';
+import { syncPlay } from '../../store/achievements/play.ts';
+import { APPLE, PLAY } from '../../store/locales.ts';
 
 const sources = loadSources();
 const catalogue = buildCatalogue(sources);

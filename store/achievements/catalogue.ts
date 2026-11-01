@@ -1,6 +1,6 @@
 // The stamps as Game Center and Play Games achievements, and the leaderboards (app/README.md,
-// Game achievements): what store/achievements/apple.mjs and play.mjs upload, in every store
-// locale of store/locales.mjs.
+// Game achievements): what store/achievements/apple.ts and play.ts upload, in every store
+// locale of store/locales.ts.
 //
 // - model.json: ids, points, steps, hidden, kanji. Written by the test in
 //   src/model/achievements.rs from the Rust model the app reports with, never by hand.
@@ -9,7 +9,7 @@
 //   while the achievement is hidden, but wants one).
 // - leaderboards.json: the leaderboards' names per site language.
 //
-//   node store/achievements/catalogue.mjs   checks it, writes target/store/achievements/
+//   node store/achievements/catalogue.ts   checks it, writes target/store/achievements/
 //                                           catalogue.json and, once the icons are there
 //                                           (`pnpm run store:icons`), Play's import ZIP
 //
@@ -23,7 +23,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32 } from 'node:zlib';
 
-import { APPLE, PLAY, SITE_LANGUAGES } from '../locales.mjs';
+import { APPLE, PLAY, SITE_LANGUAGES } from '../locales.ts';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export const OUT = path.join(ROOT, 'target/store/achievements');
@@ -301,7 +301,7 @@ export function formatPlayIds(ids, catalogue = buildCatalogue()) {
 /**
  * Play Console's bulk import (Play Games Services, Achievements, Import achievements): the
  * English names, type, steps, state, points and order, and the icons, which Play's API can't
- * set. No descriptions: the file is CSV without quoting and they have commas; play.mjs adds
+ * set. No descriptions: the file is CSV without quoting and they have commas; play.ts adds
  * them and the translations afterwards.
  */
 export function playImportFiles(catalogue, icons = ICONS) {
@@ -378,7 +378,7 @@ export function zip(files) {
 
 /** Problems of the icons: every one there, at its platform's size, without alpha. */
 export async function checkIcons(catalogue, icons = ICONS) {
-  const { checkImage } = await import('../assemble.mjs');
+  const { checkImage } = await import('../assemble.ts');
   const problems = [];
   for (const item of [...catalogue.apple.achievements, ...catalogue.apple.leaderboards]) {
     problems.push(

@@ -5,18 +5,18 @@
 //   target/store/fastlane/apple/metadata/<locale>/ deliver's metadata_path
 //   target/store/fastlane/apple/screenshots/<locale>/ deliver's screenshots_path, with images
 //
-// from fastlane/metadata (the texts; locales with `same` in store/locales.mjs get a copy of
+// from fastlane/metadata (the texts; locales with `same` in store/locales.ts get a copy of
 // another's) and target/store/images (`pnpm run store:images`). Checks every image's size and
 // that the stores' screenshots have no alpha channel.
 //
-//   node store/assemble.mjs            texts and images
-//   node store/assemble.mjs --text     texts only (no images needed)
+//   node store/assemble.ts            texts and images
+//   node store/assemble.ts --text     texts only (no images needed)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { APPLE, METADATA, PLAY, PLAY_METADATA } from './locales.mjs';
-import { loadListings, ROOT, validate } from './validate.mjs';
+import { APPLE, METADATA, PLAY, PLAY_METADATA } from './locales.ts';
+import { loadListings, ROOT, validate } from './validate.ts';
 
 export const OUT = path.join(ROOT, 'target/store/fastlane');
 export const IMAGES = path.join(ROOT, 'target/store/images');
@@ -79,7 +79,7 @@ export function assemble({ images = true } = {}) {
   const errors = validate(loadListings());
   if (errors.length > 0)
     throw new Error(
-      `the listings have problems, see node store/validate.mjs:\n${errors.join('\n')}`,
+      `the listings have problems, see node store/validate.ts:\n${errors.join('\n')}`,
     );
   fs.rmSync(OUT, { recursive: true, force: true });
   const problems = [];
