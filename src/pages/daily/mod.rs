@@ -28,8 +28,7 @@ use crate::components::ui::progress::Progress;
 use crate::i18n::{t, t_string, td_string, use_i18n};
 use crate::lang::{date_long, difficulty_name};
 use crate::model::{
-    AttemptInfo, CHECK_PENALTY_MS, HINT_PENALTY_MS, MS_PER_DAY, WEEKDAY_KANJI, daily_difficulty,
-    daily_number, format_score, weekday,
+    AttemptInfo, MS_PER_DAY, WEEKDAY_KANJI, daily_difficulty, daily_number, format_score, weekday,
 };
 use crate::pages::play::islands_percent;
 use crate::seo::{PageMeta, site_ld};
@@ -539,18 +538,18 @@ pub fn DailyPage() -> impl IntoView {
                                 <Button
                                     variant=ButtonVariant::Secondary
                                     attr:disabled=move || !daily.actions.can_start(&daily, Some(PaidAction::Check))
-                                    attr:data-tooltip=format!("+{} s", CHECK_PENALTY_MS / 1000)
+                                    attr:data-tooltip=move || format!("+{} s", daily.penalties().check_ms / 1000)
                                     on:click=check
                                 >
-                                    {t!(i18n, common.game.check)} <span class="hidden sm:inline">" 確認"</span> <span class="text-xs opacity-70">"+10s"</span>
+                                    {t!(i18n, common.game.check)} <span class="hidden sm:inline">" 確認"</span> <span class="text-xs opacity-70" dir="ltr">{move || format!("+{}s", daily.penalties().check_ms / 1000)}</span>
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Secondary
                                     attr:disabled=move || !daily.actions.can_start(&daily, Some(PaidAction::Hint))
-                                    attr:data-tooltip=format!("+{} s", HINT_PENALTY_MS / 1000)
+                                    attr:data-tooltip=move || format!("+{} s", daily.penalties().hint_ms / 1000)
                                     on:click=hint
                                 >
-                                    {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70">"+30s"</span>
+                                    {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70" dir="ltr">{move || format!("+{}s", daily.penalties().hint_ms / 1000)}</span>
                                 </Button>
                                 <Button
                                     variant=ButtonVariant::Ghost
@@ -581,6 +580,6 @@ pub fn DailyPage() -> impl IntoView {
                 </aside>
             </div>
         </section>
-        <About />
+        <About daily=daily />
     }
 }

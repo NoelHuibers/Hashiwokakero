@@ -374,8 +374,10 @@ fn LogView(log: Vec<MoveEvent>, attempt: AdminAttempt) -> impl IntoView {
         attempt.time_ms.map_or_else(|| "–".into(), format_score),
         attempt.time_ms.unwrap_or(0),
         elapsed.unwrap_or(0),
-        attempt.hints * crate::model::HINT_PENALTY_MS
-            + attempt.checks * crate::model::CHECK_PENALTY_MS,
+        attempt
+            .time_ms
+            .zip(elapsed)
+            .map_or(0, |(time, elapsed)| time.saturating_sub(elapsed).max(0)),
         log.last().map_or(0, |e| e.t),
     );
     let mut last_tap: Option<u32> = None;

@@ -65,6 +65,7 @@
     "clock": "El puzle está oculto hasta que pulsas Empezar. Solo entonces arranca el reloj.",
     "penalty_title": "Comprobar y las pistas cuestan tiempo",
     "penalty": "Cada comprobación suma {{ check }} a tu tiempo, cada pista {{ hint }}.",
+    "penalty_update": "Desde el 1 de noviembre, las penalizaciones por comprobaciones y pistas dependen de la dificultad. Cada comprobación cuesta tiempo, aunque no encuentre errores.",
     "give_up_title": "Rendirse",
     "give_up": "¿Atascado? Ríndete para ver la solución. Esa partida no entra en la clasificación, pero mañana llega un puzle nuevo.",
     "tips_title": "Consejos para resolver Hashiwokakero",

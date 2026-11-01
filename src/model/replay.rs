@@ -49,6 +49,8 @@ pub enum LaneOutcome {
 /// A member's solve: who, in which colour, and their moves.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Lane {
+    #[serde(default, skip_serializing_if = "super::HelpPenalties::is_legacy")]
+    pub penalties: super::HelpPenalties,
     pub user_id: i64,
     pub name: String,
     pub guest: bool,
@@ -73,9 +75,7 @@ impl Lane {
                 checks,
                 ..
             } if !self.log.is_empty() => {
-                let elapsed = time_ms
-                    .saturating_sub(hints.saturating_mul(super::HINT_PENALTY_MS))
-                    .saturating_sub(checks.saturating_mul(super::CHECK_PENALTY_MS));
+                let elapsed = time_ms.saturating_sub(self.penalties.total(hints, checks));
                 Some(u32::try_from(elapsed.max(0)).unwrap_or(u32::MAX))
             }
             LaneOutcome::Solved { .. } | LaneOutcome::GaveUp | LaneOutcome::Missing => None,
@@ -338,6 +338,7 @@ mod tests {
 
     fn lane(user_id: i64, log: Vec<MoveEvent>, solved: bool) -> Lane {
         Lane {
+            penalties: crate::model::HelpPenalties::default(),
             user_id,
             name: format!("p{user_id}"),
             guest: false,
@@ -517,6 +518,7 @@ mod scoring_tests {
     #[test]
     fn forged_move_times_cannot_win_the_replay_or_split_a_tie() {
         let lane = |user_id, time_ms, t, ranked| Lane {
+            penalties: crate::model::HelpPenalties::default(),
             user_id,
             name: String::new(),
             guest: false,
@@ -551,5 +553,38 @@ mod scoring_tests {
             finished.iter().map(|f| f.at).collect::<Vec<_>>(),
             [7826, 7831, 8000]
         );
+    }
+}
+
+#[cfg(test)]
+mod penalty_tests {
+    use super::*;
+
+    #[test]
+    fn replay_finish_removes_the_prices_used_for_that_puzzle() {
+        let mut lane = Lane {
+            penalties: super::super::HelpPenalties::daily(super::super::SCALED_HELP_DAY),
+            user_id: 1,
+            name: String::new(),
+            guest: false,
+            colour: 0,
+            outcome: LaneOutcome::Solved {
+                time_ms: 190_000,
+                hints: 1,
+                checks: 2,
+                ranked: true,
+            },
+            log: vec![MoveEvent {
+                t: 1000,
+                edge: 0,
+                count: 1,
+                tap: true,
+            }],
+            marks: vec![],
+            official_rank: None,
+        };
+        assert_eq!(lane.finish(), Some(40_000));
+        lane.penalties = crate::model::HelpPenalties::default();
+        assert_eq!(lane.finish(), Some(140_000));
     }
 }

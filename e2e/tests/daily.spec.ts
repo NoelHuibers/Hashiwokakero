@@ -4,7 +4,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import { register, signInWith, signOut } from '../account';
 import { addBridge, board, DAILY_KEY, saved } from '../board';
-import { dailySolution, expectResult, hintUntil, solveDaily, startDaily } from '../daily';
+import { dailyHelpCost, dailySolution, expectResult, hintUntil, solveDaily, startDaily } from '../daily';
 import { expect, newUsername, test, visit } from '../fixtures';
 
 /** The card over the board after this tab's finish. */
@@ -210,7 +210,7 @@ test('a delayed paid action blocks double taps, keyboard edits and other actions
     release();
   }
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(penaltyValue(page)).toHaveText('+30s');
+  await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
   expect(requests).toBe(1);
   await expect(hint).toBeEnabled();
 });
@@ -242,7 +242,7 @@ for (const action of ['Hint', 'Check'] as const) {
     await expect(actionStatus(page)).toBeEmpty();
     expect(bodies).toHaveLength(2);
     expect(bodies[1]).toEqual(bodies[0]);
-    const penalty = action === 'Hint' ? '+30s' : '+10s';
+    const penalty = `+${await dailyHelpCost(page, action)}s`;
     await expect(penaltyValue(page)).toHaveText(penalty);
     expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')))).toEqual([]);
   });
@@ -270,7 +270,7 @@ test('a failed paid request clears pending and retries the original intent', asy
   await expect(actionStatus(page)).toBeEmpty();
   expect(bodies).toHaveLength(2);
   expect(bodies[1]).toEqual(bodies[0]);
-  await expect(penaltyValue(page)).toHaveText('+10s');
+  await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Check')}s`);
 });
 
 test('a paid reply arriving after leaving the daily cannot mutate its persistent board', async ({ page }) => {
@@ -301,7 +301,7 @@ test('a paid reply arriving after leaving the daily cannot mutate its persistent
   expect((await saved(page, DAILY_KEY)).bridges).toEqual(before);
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(penaltyValue(page)).toHaveText('+30s');
+  await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
 });
 
 
@@ -371,7 +371,7 @@ test('closing the tab after a lost success preserves the paid intent for the nex
     await expect(actionStatus(next)).toContainText('Press the same action again');
     await next.getByRole('button', { name: /^Hint/ }).click();
     await expect(actionStatus(next)).toBeEmpty();
-    await expect(penaltyValue(next)).toHaveText('+30s');
+    await expect(penaltyValue(next)).toHaveText(`+${await dailyHelpCost(next, 'Hint')}s`);
   } finally {
     await next.close();
   }
@@ -437,7 +437,7 @@ for (const action of ['Hint', 'Check'] as const) {
     await page.getByRole('button', { name: new RegExp(`^${action}`) }).click();
     await expect(actionStatus(page)).toBeEmpty();
     expect(purchases).toBe(1);
-    await expect(penaltyValue(page)).toHaveText(action === 'Hint' ? '+30s' : '+10s');
+    await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, action)}s`);
     if (action === 'Hint') expect((await saved(page, DAILY_KEY)).bridges).not.toEqual(before);
     expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('hashi.daily.action.')))).toEqual([]);
   });
@@ -474,7 +474,7 @@ test('a conflicting account attempt never adopts a lost guest hint', async ({ pa
   expect(purchases).toBe(1);
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(penaltyValue(page)).toHaveText('+30s');
+  await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
   expect(purchases).toBe(2); // a new, intentional purchase for the target account
 });
 
@@ -509,7 +509,7 @@ test('signing out and switching accounts preserves the former account intent wit
   await page.unroute(paidPath);
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(penaltyValue(page)).toHaveText('+30s');
+  await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
 });
 
 test('an unknown transfer lookup blocks fresh purchases until recovery succeeds', async ({ page }) => {
@@ -589,7 +589,7 @@ test('a guest merge in another tab preserves a committed hint whose reply outliv
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
   expect(purchases).toBe(1);
-  await expect(penaltyValue(page)).toHaveText('+30s');
+  await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
 });
 
 test('a delayed quiet refresh cannot roll back a paid counter or touch a disposed daily', async ({ page }) => {
@@ -614,13 +614,13 @@ test('a delayed quiet refresh cannot roll back a paid counter or touch a dispose
       } else {
         await page.getByRole('button', { name: /^Check/ }).click();
         await expect(actionStatus(page)).toBeEmpty();
-        await expect(penaltyValue(page)).toHaveText('+10s');
+        await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Check')}s`);
       }
     } finally {
       release();
     }
     await page.waitForLoadState('networkidle');
-    if (!dispose) await expect(penaltyValue(page)).toHaveText('+10s');
+    if (!dispose) await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Check')}s`);
     await page.unroute('**/api/daily_today');
   }
 });
@@ -657,7 +657,7 @@ test('a definitive missing transferred receipt ends recovery without purchasing 
   // Only the next, explicit purchase click can charge this account.
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect(actionStatus(page)).toBeEmpty();
-  await expect(penaltyValue(page)).toHaveText('+30s');
+  await expect(penaltyValue(page)).toHaveText(`+${await dailyHelpCost(page, 'Hint')}s`);
   expect(purchases).toBe(2);
 });
 

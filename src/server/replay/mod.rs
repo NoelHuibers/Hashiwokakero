@@ -168,8 +168,9 @@ async fn attempts(
 }
 
 /// A member's lane from their attempt (if any), its log cleaned for a board of `edges`.
-fn lane(person: Person, row: Option<&Row>, edges: usize) -> Lane {
+fn lane(person: Person, row: Option<&Row>, edges: usize, day: i64) -> Lane {
     let mut lane = Lane {
+        penalties: crate::model::HelpPenalties::daily(day),
         user_id: person.user_id,
         name: person.name,
         guest: person.guest,
@@ -197,8 +198,7 @@ fn lane(person: Person, row: Option<&Row>, edges: usize) -> Lane {
             .unwrap_or_default();
         let elapsed = row
             .time_ms
-            .saturating_sub(row.hints.saturating_mul(crate::model::HINT_PENALTY_MS))
-            .saturating_sub(row.checks.saturating_mul(crate::model::CHECK_PENALTY_MS))
+            .saturating_sub(lane.penalties.total(row.hints, row.checks))
             .max(0);
         // Same event order/clock reconciliation as verification; never sort actions into
         // a different board. Bound playback to the server's finish without changing raw evidence.
@@ -274,7 +274,7 @@ async fn replay(
         .into_iter()
         .map(|p| {
             let row = rows.get(&p.user_id);
-            let mut lane = lane(p, row, edges);
+            let mut lane = lane(p, row, edges, day);
             if let Some(r) = row.filter(|r| r.finished && !r.revealed && !r.flagged) {
                 let key = crate::model::ranking_key(day, r.time_ms, r.finished_at);
                 lane.official_rank =

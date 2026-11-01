@@ -411,6 +411,7 @@ mod tests {
 
     fn lane(user_id: i64, name: &str, log: Vec<MoveEvent>, outcome: LaneOutcome) -> Lane {
         Lane {
+            penalties: crate::model::HelpPenalties::default(),
             user_id,
             name: name.into(),
             guest: false,

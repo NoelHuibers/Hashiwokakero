@@ -110,8 +110,8 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
                     </div>
                     <p class="text-sm leading-relaxed text-muted-foreground">{t!(i18n, daily.cover.lead)}</p>
                     <ul class="flex flex-wrap gap-1.5">
-                        {rule(t_string!(i18n, common.game.hint).to_string(), "+30s".into(), false)}
-                        {rule(t_string!(i18n, common.game.check).to_string(), "+10s".into(), false)}
+                        {move || rule(t_string!(i18n, common.game.hint).to_string(), format!("+{}s", daily.penalties().hint_ms / 1000), false)}
+                        {move || rule(t_string!(i18n, common.game.check).to_string(), format!("+{}s", daily.penalties().check_ms / 1000), false)}
                         {rule(t_string!(i18n, daily.give_up).to_string(), t_string!(i18n, daily.cover.unranked).to_string(), true)}
                     </ul>
                     <div class="flex flex-col gap-2.5">

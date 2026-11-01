@@ -317,6 +317,7 @@ mod tests {
             puzzle: started.then(puzzle),
             solution: None,
             attempt: started.then(|| AttemptInfo {
+                penalties: crate::model::HelpPenalties::default(),
                 attempt_id: String::new(),
                 started_at: 1_000,
                 finished_at: finished.then_some(61_000),

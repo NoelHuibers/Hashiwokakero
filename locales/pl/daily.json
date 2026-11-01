@@ -65,6 +65,7 @@
     "clock": "Łamigłówka jest ukryta, dopóki nie naciśniesz Start. Dopiero wtedy rusza zegar.",
     "penalty_title": "Sprawdzanie i podpowiedzi kosztują czas",
     "penalty": "Każde sprawdzenie dodaje {{ check }} do twojego czasu, każda podpowiedź {{ hint }}.",
+    "penalty_update": "Od 1 listopada kary za sprawdzenia i podpowiedzi zależą od trudności. Każde sprawdzenie kosztuje czas, nawet gdy nie wykryje błędów.",
     "give_up_title": "Poddanie się",
     "give_up": "Utknąłeś? Poddaj się, a zobaczysz rozwiązanie. Ta próba nie trafi do rankingu, ale jutro czeka nowa łamigłówka.",
     "tips_title": "Porady, jak rozwiązywać Hashiwokakero",

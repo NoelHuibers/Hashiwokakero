@@ -65,6 +65,7 @@
     "clock": "Teka-tekinya tersembunyi sampai kamu menekan Mulai. Baru saat itulah jam mulai berjalan.",
     "penalty_title": "Cek dan petunjuk memakan waktu",
     "penalty": "Setiap cek menambah {{ check }} ke waktumu, setiap petunjuk {{ hint }}.",
+    "penalty_update": "Mulai 1 November, penalti cek dan petunjuk mengikuti tingkat kesulitan. Setiap cek menambah waktu, meskipun tidak ada kesalahan.",
     "give_up_title": "Menyerah",
     "give_up": "Buntu? Menyerahlah untuk melihat solusinya. Permainan itu tidak masuk peringkat, tapi besok ada teka-teki baru.",
     "tips_title": "Tips memecahkan Hashiwokakero",

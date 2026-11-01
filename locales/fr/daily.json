@@ -65,6 +65,7 @@
     "clock": "La grille reste cachée jusqu’à ce que tu appuies sur Commencer. Le chrono ne démarre qu’à ce moment-là.",
     "penalty_title": "Vérifier et les indices coûtent du temps",
     "penalty": "Chaque vérification ajoute {{ check }} à ton temps, chaque indice {{ hint }}.",
+    "penalty_update": "À partir du 1er novembre, les pénalités des vérifications et indices dépendent de la difficulté. Chaque vérification coûte du temps, même sans erreur trouvée.",
     "give_up_title": "Abandonner",
     "give_up": "Bloqué ? Abandonne pour voir la solution. Cette partie n’est pas classée, mais demain une nouvelle grille t’attend.",
     "tips_title": "Astuces pour résoudre le Hashiwokakero",

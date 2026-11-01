@@ -65,6 +65,7 @@
     "clock": "The puzzle stays hidden until you press Start. Only then does the clock begin to run.",
     "penalty_title": "Checks and hints cost time",
     "penalty": "Each check adds {{ check }} to your time, each hint {{ hint }}.",
+    "penalty_update": "From November 1, check and hint penalties scale with difficulty. Every check costs time, even when no mistakes are found.",
     "give_up_title": "Giving up",
     "give_up": "Stuck? Give up to see the solution. That run isn't ranked, but tomorrow brings a new puzzle.",
     "tips_title": "Hashiwokakero solving tips",
