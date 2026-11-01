@@ -87,11 +87,19 @@ jobs:
         run: |
           cargo fmt --all --check
           cargo fmt --manifest-path dojo/starter/Cargo.toml --check
-      - name: Packaged smoke harness regressions
-        run: python3 -m unittest discover -s scripts/tests -p 'test_packaged_smoke.py' -v
+      # The pnpm version of packageManager in package.json
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
+          cache: pnpm
+      # Only the tools, no fonts (postinstall)
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Formatting and lints of the JavaScript and TypeScript (biome.json); fails on warnings too
+      - name: Biome
+        run: pnpm exec biome ci --error-on-warnings
+      - name: Packaged smoke harness regressions
+        run: python3 -m unittest discover -s scripts/tests -p 'test_packaged_smoke.py' -v
       # The scripts' own tests, the mobile app's version among them: it is the same in all its files
       - name: Script tests
         run: |

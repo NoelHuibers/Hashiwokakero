@@ -4,12 +4,26 @@
   "type": "module",
   "packageManager": "pnpm@12.11.2",
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^26",
+      "onFail": "download"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^12.11.2",
+      "onFail": "error"
+    }
   },
   "scripts": {
     "postinstall": "node scripts/fonts.mjs",
     "dev": "node scripts/dev.mjs",
     "clean": "node scripts/clean.mjs",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
     "fonts": "node scripts/fonts.mjs",
     "og-fonts": "node scripts/og-fonts.mjs",
     "coverage": "node scripts/coverage.mjs",
@@ -33,6 +47,7 @@
     "store:achievements": "node store/achievements/catalogue.mjs"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@fontsource-variable/murecho": "^5.3.1",
     "@fontsource-variable/noto-sans-arabic": "^5.3.0",
     "@fontsource-variable/noto-sans-devanagari": "^5.3.0",
