@@ -249,7 +249,7 @@ export class App {
 
   /**
    * Saves the screen as `name` in the screenshots of the job. Through WebDriverAgent when simctl
-   * fails, as it does with a simulator turned sideways since Xcode 27.
+   * fails, as it did once with the simulator turned sideways on Xcode 27.1.
    */
   async screenshot(name: string) {
     if (await screenshot(this.udid, name)) return;

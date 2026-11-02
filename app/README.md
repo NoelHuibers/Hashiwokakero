@@ -1151,7 +1151,7 @@ GameKit kept, or is refused without one. The screenshots `start.png`, `practice.
 `practice-light.png`, `practice-dark.png` (the page dark on a light phone: the status bar's icons
 light), `landscape.png`, `share.png` (the share sheet with the file) and `game-center.png` are the
 artifact `ios-simulator-screenshot`. They come from `simctl io screenshot`, or from WebDriverAgent
-where simctl fails (a simulator turned sideways, since Xcode 27).
+where simctl fails (it did once with the simulator turned sideways, on Xcode 27.1).
 
 Not checked, unlike on Android: `navigator.onLine` (the simulator has the Mac's network, only
 hashi.rs is blocked), the back button (iOS has none; the swipe from the edge isn't a WebDriver
