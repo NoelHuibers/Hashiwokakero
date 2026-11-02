@@ -753,11 +753,12 @@ jobs:
             adb logcat -d -v threadtime > "$RUNNER_TEMP/logcat-all.txt"
             grep -E 'rs\.hashi|Tauri|[Ww]ry|RustStdoutStderr|chromium|cr_|WebView|Console|AndroidRuntime|DEBUG|libc|ActivityManager' "$RUNNER_TEMP/logcat-all.txt" > e2e/test-results-android-logcat.txt || true
             test ! -f "$RUNNER_TEMP/android-failed"
-      # The app on an iPhone Duo, for people: the start page on its outer display, then unfolded on
-      # the inner one (regular width and height, which only an app built with the iOS 27.1 SDK
-      # fills), screenshots in ios-simulator-screenshot. Unfolded means the inner display powered
-      # on and the outer one off: simctl has no fold command. After the tests, two simulators at
-      # once would slow both down; nothing here fails the job.
+      # The app on an iPhone Duo, for people: the start page on its outer display, the screenshot
+      # duo-outer.png in ios-simulator-screenshot (the side strip with the clock is the display's
+      # safe area). Not the inner one: simctl can't unfold the simulator. Powering the inner
+      # display on and the outer off (`simctl io screenConfig`), also with the app started again,
+      # leaves the inner one black. After the tests, two simulators at once would slow both down;
+      # nothing here fails the job.
       - name: iPhone Duo
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         continue-on-error: true
@@ -768,19 +769,10 @@ jobs:
           xcrun simctl boot "$duo"
           xcrun simctl bootstatus "$duo" -b > /dev/null
           xcrun simctl install "$duo" app/src-tauri/gen/apple/build/arm64-sim/Hashi.app
-          xcrun simctl io "$duo" enumerate | grep -E -i 'screen|display|power' || true
           xcrun simctl launch "$duo" rs.hashi
           mkdir -p e2e/ios-screens
           sleep 15
           xcrun simctl io "$duo" screenshot --display=primary e2e/ios-screens/duo-outer.png
-          xcrun simctl io "$duo" screenConfig --display=primary-1 power on
-          xcrun simctl io "$duo" screenConfig --display=primary power off
-          xcrun simctl terminate "$duo" rs.hashi
-          sleep 5
-          xcrun simctl launch "$duo" rs.hashi
-          sleep 15
-          xcrun simctl io "$duo" screenshot --display=primary-1 e2e/ios-screens/duo-inner.png
-          xcrun simctl io "$duo" enumerate | grep -E -i 'screen|display|power' || true
       - name: Summary
         if: ${{ !cancelled() }}
         run: |
@@ -856,7 +848,7 @@ jobs:
       # for an iPhone 17), the app (iOS 16.4 and newer) runs on 27.0 as well.
       SIMULATOR_DEVICE: iPhone 17
       SIMULATOR_RUNTIME: iOS 27.0
-      # The screenshots of the iPhone Duo below
+      # The screenshot of the iPhone Duo below
       DUO_RUNTIME: iOS 27.1
       CARGO_PROFILE_DEV_DEBUG: 0
       # The smoke test's driver (e2e/ios/app.ts), pinned

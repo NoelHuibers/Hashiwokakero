@@ -1105,9 +1105,11 @@ icons have no alpha channel. The app is the artifact `ios-simulator-app`, its si
 summary. Then it runs the [simulator test](#simulator-test) on an iPhone 17 simulator of iOS 27.0
 (the image's iOS 27.1 runtime takes the iPhone Duo only), booted while the app builds, with
 hashi.rs blocked on the runner. After it an iPhone Duo simulator (iOS 27.1) starts the app for
-`duo-outer.png` and, unfolded, `duo-inner.png` in `ios-simulator-screenshot`: simctl has no fold
-command, unfolded is the inner display (`primary-1`) powered on and the outer one off
-(`simctl io screenConfig`). Not a required check.
+`duo-outer.png` in `ios-simulator-screenshot`, the outer display: the page stops 84 pt before its
+right edge, where the display's sensor bar puts the clock (its safe area). Not the inner display:
+simctl has no fold command, and powering the inner display on and the outer off
+(`simctl io screenConfig`) leaves it black, also with the app started again. Unfolded layouts are
+checked in the browser instead (`e2e/tests/fold.spec.ts`). Not a required check.
 
 ## Simulator test
 
@@ -1148,8 +1150,8 @@ of GameKit over the page, a report goes through, and the button's command shows 
 GameKit kept, or is refused without one. The screenshots `start.png`, `practice.png`,
 `practice-light.png`, `practice-dark.png` (the page dark on a light phone: the status bar's icons
 light), `landscape.png`, `share.png` (the share sheet with the file) and `game-center.png` are the
-artifact
-`ios-simulator-screenshot`.
+artifact `ios-simulator-screenshot`. They come from `simctl io screenshot`, or from WebDriverAgent
+where simctl fails (a simulator turned sideways, since Xcode 27).
 
 Not checked, unlike on Android: `navigator.onLine` (the simulator has the Mac's network, only
 hashi.rs is blocked), the back button (iOS has none; the swipe from the edge isn't a WebDriver
