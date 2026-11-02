@@ -815,16 +815,18 @@ jobs:
     name: Build app (iOS)
     needs: [changes, build-app]
     if: needs.changes.outputs.code == 'true'
-    # Apple silicon. The App Store only takes builds made with the iOS 26 SDK (Xcode 26) or newer.
-    runs-on: macos-26
+    # Apple silicon, the image with Xcode 27 (a preview image of GitHub's, actions/runner-images
+    # #14404). Xcode 27.1 at least: the iPhone Duo shows an app built with an older SDK as a
+    # phone-sized window on its inner display, only the iOS 27.1 SDK fills it.
+    runs-on: xcode-27
     timeout-minutes: 60
     env:
       # One of the image's Xcodes, pinned (the image's default moves): the release builds with the
-      # same one. Its SDK is iOS 26.5.
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      # same one. Its SDK is iOS 27.1.
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
       # A simulator of the image for that SDK
       SIMULATOR_DEVICE: iPhone 17
-      SIMULATOR_RUNTIME: iOS 26.5
+      SIMULATOR_RUNTIME: iOS 27.1
       CARGO_PROFILE_DEV_DEBUG: 0
       # The smoke test's driver (e2e/ios/app.ts), pinned
       APPIUM_VERSION: 3.8.0
@@ -837,6 +839,17 @@ jobs:
       - uses: actions/checkout@v7
       - name: Xcode
         run: xcodebuild -version | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Probe (temporary)
+        continue-on-error: true
+        run: |
+          xcrun simctl list devicetypes
+          xcrun simctl list runtimes
+          ls "$DEVELOPER_DIR/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator/Profiles/DeviceTypes/" || true
+          find / -path '*iPhone Duo*.simdevicetype*' -name 'profile.plist' 2>/dev/null | head -5 | while read -r f; do echo "== $f"; plutil -p "$f"; done
+          find / -path '*iPhone Duo*.simdevicetype*' -name 'capabilities.plist' 2>/dev/null | head -2 | while read -r f; do echo "== $f"; plutil -p "$f" | head -200; done
+          xcrun simctl help || true
+          xcrun simctl help io || true
+          xcrun simctl help ui || true
       # The first boot takes about two minutes; it runs while the app builds
       - name: Boot a simulator
         run: |

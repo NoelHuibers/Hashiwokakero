@@ -414,11 +414,12 @@ jobs:
     name: Build IPA (iOS)
     needs: [check, build-app]
     if: needs.check.outputs.ios == 'true'
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 60
     env:
-      # The Xcode of ci.yml; its SDK is iOS 26.5 (the App Store takes the iOS 26 SDK or newer)
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      # The Xcode of ci.yml; its SDK is iOS 27.1, which the iPhone Duo's inner display needs to
+      # show the app full-screen (the App Store takes the iOS 26 SDK or newer)
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
       VERSION: ${{ needs.check.outputs.version }}
       CODE: ${{ needs.check.outputs.code }}
       # The team of the signing, Tauri writes it into the Xcode project (not a secret)
