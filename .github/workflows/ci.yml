@@ -753,6 +753,31 @@ jobs:
             adb logcat -d -v threadtime > "$RUNNER_TEMP/logcat-all.txt"
             grep -E 'rs\.hashi|Tauri|[Ww]ry|RustStdoutStderr|chromium|cr_|WebView|Console|AndroidRuntime|DEBUG|libc|ActivityManager' "$RUNNER_TEMP/logcat-all.txt" > e2e/test-results-android-logcat.txt || true
             test ! -f "$RUNNER_TEMP/android-failed"
+      # The app on an iPhone Duo, for people: the start page on its outer display, then unfolded on
+      # the inner one (regular width and height, which only an app built with the iOS 27.1 SDK
+      # fills), screenshots in ios-simulator-screenshot. Unfolded means the inner display powered
+      # on and the outer one off: simctl has no fold command. After the tests, two simulators at
+      # once would slow both down; nothing here fails the job.
+      - name: iPhone Duo
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          runtime=$(xcrun simctl list runtimes -j | jq -r --arg name "$DUO_RUNTIME" '.runtimes[] | select(.name == $name and .isAvailable) | .identifier')
+          duo=$(xcrun simctl create duo "iPhone Duo" "$runtime")
+          xcrun simctl boot "$duo"
+          xcrun simctl bootstatus "$duo" -b > /dev/null
+          xcrun simctl install "$duo" app/src-tauri/gen/apple/build/arm64-sim/Hashi.app
+          xcrun simctl io "$duo" enumerate | grep -E -i 'screen|display|power' || true
+          xcrun simctl launch "$duo" rs.hashi
+          mkdir -p e2e/ios-screens
+          sleep 15
+          xcrun simctl io "$duo" screenshot --display=primary e2e/ios-screens/duo-outer.png
+          xcrun simctl io "$duo" screenConfig --display=primary-1 power on
+          xcrun simctl io "$duo" screenConfig --display=primary power off
+          sleep 10
+          xcrun simctl io "$duo" screenshot --display=primary-1 e2e/ios-screens/duo-inner.png
+          xcrun simctl io "$duo" enumerate | grep -E -i 'screen|display|power' || true
       - name: Summary
         if: ${{ !cancelled() }}
         run: |
@@ -824,9 +849,12 @@ jobs:
       # One of the image's Xcodes, pinned (the image's default moves): the release builds with the
       # same one. Its SDK is iOS 27.1.
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
-      # A simulator of the image for that SDK
+      # A simulator of the image. Its iOS 27.1 is the iPhone Duo's alone ("Incompatible device"
+      # for an iPhone 17), the app (iOS 16.4 and newer) runs on 27.0 as well.
       SIMULATOR_DEVICE: iPhone 17
-      SIMULATOR_RUNTIME: iOS 27.1
+      SIMULATOR_RUNTIME: iOS 27.0
+      # The screenshots of the iPhone Duo below
+      DUO_RUNTIME: iOS 27.1
       CARGO_PROFILE_DEV_DEBUG: 0
       # The smoke test's driver (e2e/ios/app.ts), pinned
       APPIUM_VERSION: 3.8.0
@@ -839,17 +867,6 @@ jobs:
       - uses: actions/checkout@v7
       - name: Xcode
         run: xcodebuild -version | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Probe (temporary)
-        continue-on-error: true
-        run: |
-          xcrun simctl list devicetypes
-          xcrun simctl list runtimes
-          ls "$DEVELOPER_DIR/Platforms/iPhoneOS.platform/Library/Developer/CoreSimulator/Profiles/DeviceTypes/" || true
-          find / -path '*iPhone Duo*.simdevicetype*' -name 'profile.plist' 2>/dev/null | head -5 | while read -r f; do echo "== $f"; plutil -p "$f"; done
-          find / -path '*iPhone Duo*.simdevicetype*' -name 'capabilities.plist' 2>/dev/null | head -2 | while read -r f; do echo "== $f"; plutil -p "$f" | head -200; done
-          xcrun simctl help || true
-          xcrun simctl help io || true
-          xcrun simctl help ui || true
       # The first boot takes about two minutes; it runs while the app builds
       - name: Boot a simulator
         run: |
@@ -886,6 +903,7 @@ jobs:
       # Without beforeBuildCommand, as for Android. --no-sign: an archive for the simulator, without
       # a team or a certificate; the app is moved to gen/apple/build/arm64-sim.
       - name: Build
+        id: build
         working-directory: app/src-tauri
         run: |
           cargo tauri ios build --ci --debug --target aarch64-sim --no-sign --config '{"build":{"beforeBuildCommand":null}}'
@@ -955,6 +973,31 @@ jobs:
           pnpm run app:ios-e2e || failed=1
           echo "tested $(date +%s)" >> "$TIMES"
           test -z "$failed"
+      # The app on an iPhone Duo, for people: the start page on its outer display, then unfolded on
+      # the inner one (regular width and height, which only an app built with the iOS 27.1 SDK
+      # fills), screenshots in ios-simulator-screenshot. Unfolded means the inner display powered
+      # on and the outer one off: simctl has no fold command. After the tests, two simulators at
+      # once would slow both down; nothing here fails the job.
+      - name: iPhone Duo
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          runtime=$(xcrun simctl list runtimes -j | jq -r --arg name "$DUO_RUNTIME" '.runtimes[] | select(.name == $name and .isAvailable) | .identifier')
+          duo=$(xcrun simctl create duo "iPhone Duo" "$runtime")
+          xcrun simctl boot "$duo"
+          xcrun simctl bootstatus "$duo" -b > /dev/null
+          xcrun simctl install "$duo" app/src-tauri/gen/apple/build/arm64-sim/Hashi.app
+          xcrun simctl io "$duo" enumerate | grep -E -i 'screen|display|power' || true
+          xcrun simctl launch "$duo" rs.hashi
+          mkdir -p e2e/ios-screens
+          sleep 15
+          xcrun simctl io "$duo" screenshot --display=primary e2e/ios-screens/duo-outer.png
+          xcrun simctl io "$duo" screenConfig --display=primary-1 power on
+          xcrun simctl io "$duo" screenConfig --display=primary power off
+          sleep 10
+          xcrun simctl io "$duo" screenshot --display=primary-1 e2e/ios-screens/duo-inner.png
+          xcrun simctl io "$duo" enumerate | grep -E -i 'screen|display|power' || true
       - name: Summary
         if: ${{ !cancelled() }}
         run: |
