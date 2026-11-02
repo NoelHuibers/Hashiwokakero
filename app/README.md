@@ -1098,18 +1098,18 @@ uploads the directory as an artifact): the template changes with Tauri.
 
 "Build app (iOS)" in `.github/workflows/ci.yml` runs on `xcode-27` (Apple silicon, GitHub's preview
 image with Xcode 27) with Xcode 27.1 pinned (`DEVELOPER_DIR`; the release uses the same): the
-iOS 27.1 SDK is the first the iPhone Duo's inner display shows full-screen. Like the Android build it takes the bundle
-of "Build app (web)" and skips `beforeBuildCommand`. It runs Clippy for `aarch64-apple-ios`, builds
+iOS 27.1 SDK is the first the iPhone Duo's inner display shows full-screen. Like the Android build
+it takes the bundle of "Build app (web)" and skips `beforeBuildCommand`. It runs Clippy for `aarch64-apple-ios`, builds
 the debug app for the simulator and checks that the build left `gen/apple` as committed and that the
 icons have no alpha channel. The app is the artifact `ios-simulator-app`, its size in the job
 summary. Then it runs the [simulator test](#simulator-test) on an iPhone 17 simulator of iOS 27.0
 (the image's iOS 27.1 runtime takes the iPhone Duo only), booted while the app builds, with
-hashi.rs blocked on the runner. After it an iPhone Duo simulator (iOS 27.1) starts the app for
-`duo-outer.png` in `ios-simulator-screenshot`, the outer display: the page stops 84 pt before its
-right edge, where the display's sensor bar puts the clock (its safe area). Not the inner display:
-simctl has no fold command, and powering the inner display on and the outer off
-(`simctl io screenConfig`) leaves it black, also with the app started again. Unfolded layouts are
-checked in the browser instead (`e2e/tests/fold.spec.ts`). Not a required check.
+hashi.rs blocked on the runner. No iPhone Duo simulator: its first boot takes about 8 minutes,
+and simctl can't unfold it (powering the inner display on and the outer off with
+`simctl io screenConfig` leaves the inner one black, also with the app started again). On its
+outer display the page stops 84 pt before the right edge, where the sensor bar puts the clock
+(the display's safe area). Unfolded layouts are checked in the browser
+(`e2e/tests/fold.spec.ts`). Not a required check.
 
 ## Simulator test
 
