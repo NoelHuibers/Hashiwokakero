@@ -775,7 +775,10 @@ jobs:
           xcrun simctl io "$duo" screenshot --display=primary e2e/ios-screens/duo-outer.png
           xcrun simctl io "$duo" screenConfig --display=primary-1 power on
           xcrun simctl io "$duo" screenConfig --display=primary power off
-          sleep 10
+          xcrun simctl terminate "$duo" rs.hashi
+          sleep 5
+          xcrun simctl launch "$duo" rs.hashi
+          sleep 15
           xcrun simctl io "$duo" screenshot --display=primary-1 e2e/ios-screens/duo-inner.png
           xcrun simctl io "$duo" enumerate | grep -E -i 'screen|display|power' || true
       - name: Summary
@@ -995,7 +998,10 @@ jobs:
           xcrun simctl io "$duo" screenshot --display=primary e2e/ios-screens/duo-outer.png
           xcrun simctl io "$duo" screenConfig --display=primary-1 power on
           xcrun simctl io "$duo" screenConfig --display=primary power off
-          sleep 10
+          xcrun simctl terminate "$duo" rs.hashi
+          sleep 5
+          xcrun simctl launch "$duo" rs.hashi
+          sleep 15
           xcrun simctl io "$duo" screenshot --display=primary-1 e2e/ios-screens/duo-inner.png
           xcrun simctl io "$duo" enumerate | grep -E -i 'screen|display|power' || true
       - name: Summary

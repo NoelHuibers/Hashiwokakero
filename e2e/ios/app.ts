@@ -3,9 +3,22 @@
 // driver, the WebKit inspector of the simulator: debug builds' WKWebViews are inspectable). Like
 // e2e/android/app.ts it fails a test on any error in the page, a content security policy
 // violation, and any answer from the server, which the app must not reach.
+import { writeFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { test as base, expect, type TestInfo } from '@playwright/test';
 
-import { APPIUM_URL, BUNDLE, device, ORIGIN, PROCESS, SERVER, screenshot, WDA } from './device.ts';
+import {
+  APPIUM_URL,
+  BUNDLE,
+  device,
+  ORIGIN,
+  PROCESS,
+  SCREENS,
+  SERVER,
+  screenshot,
+  WDA,
+} from './device.ts';
 import { NATIVE, Session } from './webdriver.ts';
 
 export { expect };
@@ -234,9 +247,17 @@ export class App {
     return this.evaluate((css) => document.querySelector(css)?.textContent?.trim() ?? null, css);
   }
 
-  /** Saves the screen as `name` in the screenshots of the job. */
-  screenshot(name: string) {
-    return screenshot(this.udid, name);
+  /**
+   * Saves the screen as `name` in the screenshots of the job. Through WebDriverAgent when simctl
+   * fails, as it does with a simulator turned sideways since Xcode 27.
+   */
+  async screenshot(name: string) {
+    if (await screenshot(this.udid, name)) return;
+    try {
+      writeFileSync(path.join(SCREENS, name), await this.session.screenshot());
+    } catch (e) {
+      console.warn(`no screenshot ${name}: ${(e as Error).message}`);
+    }
   }
 }
 

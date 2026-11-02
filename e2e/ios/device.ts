@@ -73,16 +73,18 @@ export async function device() {
 }
 
 /**
- * Saves the screen as `name` in SCREENS. `simctl io screenshot` hung for minutes once: it gets
- * 30 s, and a screenshot that fails fails no test, it's for people.
+ * Saves the screen as `name` in SCREENS, whether it did. `simctl io screenshot` hung for minutes
+ * once: it gets 30 s, and a screenshot that fails fails no test, it's for people.
  */
 export async function screenshot(udid: string, name: string) {
   try {
     await run('xcrun', ['simctl', 'io', udid, 'screenshot', path.join(SCREENS, name)], {
       timeout: 30_000,
     });
+    return true;
   } catch (e) {
-    console.warn(`no screenshot ${name}: ${(e as Error).message}`);
+    console.warn(`no screenshot ${name} from simctl: ${(e as Error).message}`);
+    return false;
   }
 }
 
