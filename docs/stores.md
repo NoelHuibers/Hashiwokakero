@@ -26,13 +26,13 @@ need a Chinese company), Poki and CrazyGames (they need their ads SDKs).
 - **foss**, the Android build without any proprietary code (no Google Play Games):
   `HASHI_ANDROID_FLAVOR=foss`, an APK per ABI ([app/README.md](../app/README.md#android-builds)).
   For F-Droid and every store that isn't Google Play.
-- **The direct key** signs it: a PKCS12 keystore, key `direct`, RSA 4096, in the secrets
+- **The direct key** signs it: a PKCS12 keystore, key `hashi-direct`, RSA 4096, in the secrets
   `ANDROID_DIRECT_KEYSTORE_BASE64`, `ANDROID_DIRECT_KEYSTORE_PASSWORD`, `ANDROID_DIRECT_KEY_ALIAS`
   and `ANDROID_DIRECT_KEY_PASSWORD`. SHA-256
   `80:B7:94:1F:80:88:45:EC:15:06:72:CE:3D:16:9F:D9:DB:71:D9:83:56:6B:9B:DD:4C:E7:9C:65:A2:93:22:6A`.
   Not the Play upload key. Every store that takes our signed APK (Amazon, Huawei, Samsung) gets
   APKs signed with it, so an app from one of them updates from another.
-- **The F-Droid index key** signs our F-Droid repository's index: key `fdroid-repo`, in the
+- **The F-Droid index key** signs our F-Droid repository's index: key `hashi-fdroid`, in the
   secrets `FDROID_KEYSTORE_BASE64`, `FDROID_KEYSTORE_PASSWORD`, `FDROID_KEY_ALIAS` and
   `FDROID_KEY_PASSWORD`. Its fingerprint is what users pin.
 

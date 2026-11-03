@@ -491,9 +491,9 @@ jobs:
             exit 0
           else
             echo "::notice::No direct key in this run's secrets, signed with a throwaway key"
-            KEYSTORE_PASSWORD=$(openssl rand -hex 16) KEY_ALIAS=direct
+            KEYSTORE_PASSWORD=$(openssl rand -hex 16) KEY_ALIAS=hashi-direct
             KEY_PASSWORD=$KEYSTORE_PASSWORD
-            keytool -genkeypair -keystore "$key/direct.p12" -storetype PKCS12 -alias direct -keyalg RSA \
+            keytool -genkeypair -keystore "$key/direct.p12" -storetype PKCS12 -alias "$KEY_ALIAS" -keyalg RSA \
               -validity 1 -dname "CN=Throwaway" -storepass "$KEYSTORE_PASSWORD" > /dev/null 2>&1
           fi
           printf '%s\n' "$KEYSTORE_PASSWORD" > "$key/store-password"
@@ -541,7 +541,7 @@ jobs:
           ANDROID_KEY_ALIAS=$(cat "$DIRECT_KEY/alias") \
           ANDROID_KEY_PASSWORD=$(cat "$DIRECT_KEY/key-password") \
             cargo tauri android build --ci --apk --split-per-abi --target aarch64 armv7 x86_64 --config '{"build":{"beforeBuildCommand":null}}'
-          mkdir -p release
+          mkdir -p ../../release
           for flavor in arm64:arm64-v8a arm:armeabi-v7a x86_64:x86_64; do
             cp "gen/android/app/build/outputs/apk/${flavor%%:*}/release/app-${flavor%%:*}-release.apk" \
               "../../release/hashi-$VERSION-foss-${flavor#*:}.apk"
@@ -900,7 +900,7 @@ jobs:
             exit 0
           else
             echo "::notice::No F-Droid index key in this run's secrets, signed with a throwaway key"
-            KEYSTORE_PASSWORD=$(openssl rand -hex 16) KEY_ALIAS=fdroid-repo
+            KEYSTORE_PASSWORD=$(openssl rand -hex 16) KEY_ALIAS=hashi-fdroid
             KEY_PASSWORD=$KEYSTORE_PASSWORD
             keytool -genkeypair -keystore "$WORK/keystore.p12" -storetype PKCS12 -alias "$KEY_ALIAS" -keyalg RSA \
               -validity 1 -dname "CN=Throwaway" -storepass "$KEYSTORE_PASSWORD" > /dev/null 2>&1

@@ -765,7 +765,7 @@ allows main and the tags `app-v*`):
 - **The checks**: `fdroid scanner` on every APK (fdroidserver's list of proprietary libraries and
   trackers), on top of `scripts/foss-apk.ts` in the build.
 - **The index** is signed with the F-Droid index key, a PKCS12 keystore with the key
-  `fdroid-repo` in the secrets `FDROID_KEYSTORE_BASE64`, `FDROID_KEYSTORE_PASSWORD`,
+  `hashi-fdroid` in the secrets `FDROID_KEYSTORE_BASE64`, `FDROID_KEYSTORE_PASSWORD`,
   `FDROID_KEY_ALIAS` and `FDROID_KEY_PASSWORD`, not the direct key that signs the APKs.
   `app/fdroid/config.yml` reads the passwords from the environment. Without the secrets a release
   skips the repository with a notice; a dry run signs with a throwaway key.
@@ -885,7 +885,7 @@ ANDROID_KEYSTORE_FILE=/tmp/test.p12 ANDROID_KEYSTORE_PASSWORD=testtest ANDROID_K
 
 The **direct key** signs the foss build's APKs ([Android builds](#android-builds)): those that
 don't go through Google Play, so nobody but us re-signs them, and phones see this key. A PKCS12
-keystore with the key `direct` (RSA 4096, until 2056), in the secrets
+keystore with the key `hashi-direct` (RSA 4096, until 2056), in the secrets
 `ANDROID_DIRECT_KEYSTORE_BASE64`, `ANDROID_DIRECT_KEYSTORE_PASSWORD`, `ANDROID_DIRECT_KEY_ALIAS`
 and `ANDROID_DIRECT_KEY_PASSWORD`; "Build APKs (Android, foss)" passes it to Gradle in the same
 variables as the upload key. Its SHA-256 is
