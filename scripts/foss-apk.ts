@@ -75,9 +75,19 @@ export function signingBlockIds(apk: Buffer): number[] {
 const PROPRIETARY =
   /com[./]google[./](?:android[./]gms|firebase|android[./]play[./]core|android[./]datatransport)|com[./]android[./]billingclient/g;
 
+/**
+ * Names of Google Play services that aren't its code: the intents of the photo picker's backport,
+ * which AndroidX Activity's `PickVisualMedia` sends (the system answers them without Play
+ * services; R8 drops them from release builds where the app doesn't pick images).
+ */
+const NOT_CODE = /com\.google\.android\.gms\.provider\.(?:action|extra)\.[A-Z_]+/g;
+
 /** The proprietary names in a text or a binary file (the strings of a DEX file). */
 export function proprietaryNames(content: Buffer | string): string[] {
-  const text = typeof content === 'string' ? content : content.toString('latin1');
+  const text = (typeof content === 'string' ? content : content.toString('latin1')).replace(
+    NOT_CODE,
+    '',
+  );
   return [...new Set(text.match(PROPRIETARY) ?? [])].sort((a, b) => (a < b ? -1 : 1));
 }
 

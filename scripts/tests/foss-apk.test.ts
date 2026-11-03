@@ -32,6 +32,16 @@ test('finds proprietary libraries by their package names, also as strings of ren
   assert.deepEqual(proprietaryNames(Buffer.from('\0com.android.billingclient.api\0')), [
     'com.android.billingclient',
   ]);
+  // The photo picker's intents, which AndroidX Activity sends, aren't Play services' code
+  assert.deepEqual(
+    proprietaryNames(
+      '\0com.google.android.gms.provider.action.PICK_IMAGES\0com.google.android.gms.provider.extra.PICK_IMAGES_MAX\0',
+    ),
+    [],
+  );
+  assert.deepEqual(proprietaryNames('com.google.android.gms.provider.FooProvider'), [
+    'com.google.android.gms',
+  ]);
   // Material, AndroidX and the Play Store's package name (an intent target, not code) are fine
   assert.deepEqual(
     proprietaryNames('Lcom/google/android/material/R; androidx.core com.android.vending'),
