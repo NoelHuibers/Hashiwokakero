@@ -284,19 +284,22 @@ Tauri's own plugins; the entitlement `com.apple.developer.game-center` is in
 - The release checks that the signed app has the entitlement and its App Store profile Game
   Center (`app-release.yml`).
 
-**Android** (`HashiPlugin.kt`, `com.google.android.gms:play-services-games-v2`):
+**Android** (`HashiPlugin.kt`, which calls `Games.kt` of `src/play` with
+`com.google.android.gms:play-services-games-v2`; the foss build has neither, see
+[Android builds](#android-builds)):
 
 - Play Games' project id, the numeric one of the Play Console, is a build input
   (`gen/android/app/build.gradle.kts`): release builds take `project_id` of
   `app/achievements-play.json`, next to Play's ids of the achievements, any build
   `HASHI_PLAY_GAMES_APP_ID` of the environment instead. It isn't secret. It goes into the manifest's `com.google.android.gms.games.APP_ID` (as a string
-  resource) and `BuildConfig.PLAY_GAMES_APP_ID`.
+  resource, in `src/play/AndroidManifest.xml`) and `BuildConfig.PLAY_GAMES_APP_ID`.
 - **Empty, `null` or no file means no Play Games**: the SDK's provider (`PlayGamesInitProvider`, which
   starts it with the app since version 22) is off in the manifest (`playGamesEnabled`), and the
   commands never touch the SDK: `games_sign_in` answers `available: false`, `games_report` does
   nothing, `games_show` refuses. Debug builds have no id unless the environment sets one: they
   are `rs.hashi.debug`, which Play Games only signs in with a credential of its own. The
-  emulator test checks that the app's process has no Play Games provider.
+  emulator test checks that the app's process has no Play Games provider. The foss build answers
+  the same way, always.
 - With an id the SDK signs in by itself at the start (automatic sign-in); `games_sign_in` asks
   for its result (`isAuthenticated`). A report sets a counting achievement's steps (`setSteps`;
   Play unlocks it at its total, which has to be the stamp's target, and the achievement has to be
@@ -437,10 +440,12 @@ no clap).
   background, light and dark, so the screen doesn't flash white before the page paints; the
   `WebView` itself is transparent until then), the icons, the checksum of the Gradle download,
   the manifest (`ACCESS_NETWORK_STATE`, `adjustResize`; no Android TV launcher; the App Links'
-  intent filter is the deep-link plugin's; Play Games' project id and provider, see
-  [Games services](#games-services)), `build.gradle.kts` (signing, the NDK, Play Games'
-  project id), `MainActivity.kt` (the system bars and the keyboard, see [On the phone](#on-the-phone)) and `HashiPlugin.kt`, and the template's
-  unused `activity_main.xml` removed. Build outputs and the files Tauri writes on every build
+  intent filter is the deep-link plugin's; Play Games' project id and provider are in
+  `src/play/AndroidManifest.xml`, see [Games services](#games-services)), `build.gradle.kts`
+  (signing, the NDK, Play Games' project id, the [foss build](#android-builds)),
+  `MainActivity.kt` (the system bars and the keyboard, see [On the phone](#on-the-phone)),
+  `HashiPlugin.kt` and the two `Games.kt` (`src/play`, `src/foss`), and the template's unused
+  `activity_main.xml` removed. Build outputs and the files Tauri writes on every build
   are in its `.gitignore`s.
 
 ### Prerequisites
@@ -530,6 +535,55 @@ object-src 'none'; base-uri 'self'
 `major × 1,000,000 + minor × 1,000 + patch`, so 0.0.1 is 1, 0.1.0 is 1000 and 1.2.3 is 1,002,003
 (minor and patch stay below 1000). `scripts/app-version.ts` sets it, see [Releases](#releases).
 
+## Android builds
+
+Two builds of the same app, `rs.hashi` both, the same version and the same native library and
+page:
+
+- **play**, the default: for Google Play, with Google Play Games
+  ([Games services](#games-services)). The App Bundle and the universal APK of a release.
+- **foss**: without any proprietary code, for F-Droid ([our repository](#f-droid-repository)),
+  the GitHub releases and the stores that aren't Google Play. No Play Games SDK
+  (`play-services-games-v2` and the Play services libraries it brings), no `com.google.android.gms`
+  meta-data or provider in the manifest, and no dependency list in the APK's signing block (AGP
+  encrypts it for Google, F-Droid refuses APKs with it: `dependenciesInfo`). Its `Games.kt`
+  (`src/foss`) answers as the play build does without Play Games' project id: `games_sign_in`
+  says the service isn't there, `games_report` does nothing, `games_show` refuses, so the stamp
+  book shows no Play Games button, as for a phone without it. Everything else is the same code:
+  `HashiPlugin.kt`, `MainActivity.kt` and the manifest of `src/main`, AndroidX and Material
+  (Apache 2.0).
+
+The switch is the environment variable `HASHI_ANDROID_FLAVOR=foss` (default `play`), read by
+`gen/android/app/build.gradle.kts`: it picks `src/play/java` or `src/foss/java`, merges
+`src/play/AndroidManifest.xml` into the play build only, and leaves the dependency out. It isn't
+a Gradle product flavor: Tauri's CLI only builds the ABI flavors of its `RustPlugin` (`universal`,
+`arm64`, ...), and a second flavor dimension would rename every task and output it looks for. The
+Rust side needs no switch: it has nothing proprietary.
+
+```sh
+HASHI_ANDROID_FLAVOR=foss cargo tauri android build --apk --split-per-abi --target aarch64 armv7 x86_64
+# gen/android/app/build/outputs/apk/{arm64,arm,x86_64}/release/app-*-release.apk
+```
+
+The foss build ships an **APK per ABI** (Tauri's `--split-per-abi`), about 27 MB each where the
+universal APK of all three is 78 MB, the native library being most of it. Each has its own
+versionCode, as F-Droid's repositories want: the version's times ten plus the ABI's digit
+(`armeabi-v7a` 1, `arm64-v8a` 2, `x86` 3, `x86_64` 4), so 1.2.3 is 1002003 on Play and 10020032 in
+the arm64 APK. A newer version is above an older one on every ABI, and within a version the
+64-bit APK is above the 32-bit one the same phone could run. The scheme fits up to version
+209.x.x. The play build keeps the version's own versionCode.
+
+It is signed with the **direct key**, not the upload key ([Signing](#signing)): an app from Google
+Play, the play APK of a release and the foss APKs never update each other; switching means
+uninstalling first. The same key signs the foss build for the other stores later.
+
+`scripts/foss-apk.ts` checks the release's foss APKs: rs.hashi, the version and each ABI's
+versionCode, not debuggable, its ABI's library alone, 16 KB alignment, signed by the direct key
+alone, and nothing proprietary (the libraries' package names in the DEX files, so R8's renaming
+can't hide them, and in the manifest; the dependency list). "Build app (Android)" in CI builds
+the foss debug APK next to the play one and runs the last part of it (`--proprietary`). The
+release also runs fdroidserver's own scanner on them ([F-Droid repository](#f-droid-repository)).
+
 ## Emulator test
 
 `e2e/android/smoke.spec.ts`, with its own Playwright config (`e2e/android.config.ts`), starts the
@@ -584,6 +638,8 @@ platforms from it:
 
 - Android: the App Bundle for Google Play, signed with the upload key and uploaded to Play's
   internal test track; from there it is promoted in the Play Console (closed test, production).
+- Android, foss ([Android builds](#android-builds)): an APK per ABI, signed with the direct key,
+  on the GitHub release and in [our F-Droid repository](#f-droid-repository).
 - iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key and uploaded
   to App Store Connect, where it shows up in TestFlight; from there it goes to the testers, and
   later to App Review (see [iOS releases](#ios-releases)).
@@ -648,19 +704,95 @@ the upload key.
   draft releases: set the repository variable `PLAY_RELEASE_STATUS` to `draft` until then (the
   default is `completed`).
 - The workflow's artifact `android-release`, the same two files (30 days).
+- The foss APKs, `hashi-<version>-foss-arm64-v8a.apk`, `-armeabi-v7a.apk` and `-x86_64.apk`, on
+  the GitHub release and in the artifact `android-foss-release`, from the job "Build APKs
+  (Android, foss)", which runs next to the bundle's: a failure there doesn't hold up Google Play.
+  Skipped, with a notice, without the direct key's secrets.
+- [Our F-Droid repository](#f-droid-repository), from the GitHub releases' foss APKs.
 - For iOS: App Store Connect, `hashi-<version>.ipa` on the GitHub release, and the artifact
   `ios-release` (see [iOS releases](#ios-releases)).
 
 Run by hand (`gh workflow run app-release.yml --ref <ref>`), or by a pull request, the workflow
-is a dry run: it builds, signs and checks, keeps the files as the artifacts for three days, and
-publishes nothing. On a branch it skips the checks of the tag, of main and of CI. A pull request
-builds the platforms whose files it changes: both for the workflow or `scripts/app-version.ts`,
-Android for `gen/android/app/build.gradle.kts`, iOS for `gen/apple/` or `src-tauri/Info.ios.plist`.
-Without the signing secrets (pull requests of Dependabot or of forks) an Android dry run signs
-with a throwaway key, and iOS is skipped with a notice. With `-f publish=true` on a tag
+is a dry run: it builds, signs and checks, makes the F-Droid repository (the artifact
+`github-pages`), keeps the files as the artifacts for three days, and publishes nothing. On a
+branch it skips the checks of the tag, of main and of CI. A pull request builds the platforms
+whose files it changes: both for the workflow or `scripts/app-version.ts`, Android for
+`gen/android/app/build.gradle.kts`, `gen/android/app/src/play/` or `src/foss/`,
+`app/achievements-play.json`, `app/fdroid/` or `scripts/fdroid-repo.ts`, iOS for `gen/apple/` or
+`src-tauri/Info.ios.plist`. Without the signing secrets (pull requests of Dependabot or of forks)
+an Android dry run signs with throwaway keys (the upload key's, the direct key's and the F-Droid
+index key's), and iOS is skipped with a notice. With `-f publish=true` on a tag
 (`--ref app-v0.2.0`) it is the full release again, e.g. to upload a version once the service
 account exists. The GitHub release then gets its files replaced, and the IPA's notes when the
 IPA is new.
+
+### F-Droid repository
+
+Our own F-Droid repository, on the GitHub Pages of this repository: anyone can add it to F-Droid
+(or Droid-ify, Neo Store, ...) and gets the foss build and its updates from there.
+
+- Repository: `https://noelhuibers.github.io/Hashiwokakero/fdroid/repo`
+- Fingerprint of its index key (SHA-256):
+  `6A8181FD3400E0D24AF2F603D1503D679BD37295DA1A598F1971A6DE9255AFD2`
+- Start page with both, an "Add to F-Droid" link and the QR code:
+  `https://noelhuibers.github.io/Hashiwokakero/`, also as `https://hashi.rs/fdroid` (a temporary
+  redirect of the server, `server::apps::FDROID_PAGE`, so the page can move; F-Droid clients keep
+  the repository's own address, which can't move without everyone adding it again)
+
+To add it: open the start page on the phone and tap "Add to F-Droid", or in F-Droid: Settings,
+Repositories, "+", and paste
+`https://noelhuibers.github.io/Hashiwokakero/fdroid/repo?fingerprint=6A8181FD3400E0D24AF2F603D1503D679BD37295DA1A598F1971A6DE9255AFD2`
+(or scan the QR code of `fdroid/repo/index.html`). F-Droid checks the index against the
+fingerprint, so a changed repository is refused.
+
+The job "F-Droid repository" of `app-release.yml` makes it with
+[fdroidserver](https://f-droid.org/docs/Setup_an_F-Droid_App_Repo/) (pinned, `FDROIDSERVER_VERSION`),
+"Publish the F-Droid repository" deploys it to Pages (the environment `github-pages`, which
+allows main and the tags `app-v*`):
+
+- **The APKs**: GitHub Pages keeps nothing from one deployment to the next, so the job takes the
+  foss APKs of the last `KEEP_VERSIONS` (2) versions from the GitHub releases, the new one
+  included (a dry run: this run's APKs and the releases before). Older versions stay on their
+  GitHub releases; the repository has no archive section (`archive_older: 0`).
+- **The listing** (`scripts/fdroid-repo.ts`): `app/fdroid/rs.hashi.yml` (category, license, links),
+  and Google Play's texts of every locale (`fastlane/metadata/android`, with the copies of
+  `store/locales.ts`) as the name, summary and description, the icon, and as images the feature
+  graphic and the phone screenshots. Those are made in CI ([Images](#images)): the job takes them
+  from the newest "Store listing" run on main whose artifact `store-listing-images` is still
+  there (three days for runs by hand), else it keeps the ones the published repository has (its
+  `index-v2.json`). No changelog: fdroidserver only shows those of versions it built itself; the
+  listing links to the GitHub releases.
+- **The checks**: `fdroid scanner` on every APK (fdroidserver's list of proprietary libraries and
+  trackers), on top of `scripts/foss-apk.ts` in the build.
+- **The index** is signed with the F-Droid index key, a PKCS12 keystore with the key
+  `fdroid-repo` in the secrets `FDROID_KEYSTORE_BASE64`, `FDROID_KEYSTORE_PASSWORD`,
+  `FDROID_KEY_ALIAS` and `FDROID_KEY_PASSWORD`, not the direct key that signs the APKs.
+  `app/fdroid/config.yml` reads the passwords from the environment. Without the secrets a release
+  skips the repository with a notice; a dry run signs with a throwaway key.
+- **The site**: `fdroid/repo/` (the repository, with fdroidserver's own `index.html` and QR
+  code) and `index.html`, the start page (`app/fdroid/index.html` with the address and the
+  fingerprint filled in). Not published while GitHub Pages isn't on with GitHub Actions as its
+  source (a notice).
+
+To publish it again without a release, e.g. after new store texts or a "Store listing" run by hand
+on main for new screenshots (`gh workflow run store-listing.yml -f platform=play -f what=images -f
+validate_only=true` makes the images without saving anything on Play):
+
+```sh
+gh workflow run app-release.yml -f fdroid=true      # from main: the releases' APKs, main's texts
+```
+
+To look at it locally (with Python and the Android SDK; any keystore works for a look):
+
+```sh
+python3 -m venv /tmp/fdroid && /tmp/fdroid/bin/pip install fdroidserver==2.4.5
+node scripts/fdroid-repo.ts /tmp/repo --images target/store/images   # or --carry <repository URL>
+cp hashi-*-foss-*.apk /tmp/repo/repo/
+keytool -genkeypair -keystore /tmp/repo/keystore.p12 -storetype PKCS12 -alias test -keyalg RSA \
+  -dname CN=test -storepass testtest
+cd /tmp/repo && FDROID_KEY_ALIAS=test FDROID_KEYSTORE_PASSWORD=testtest FDROID_KEY_PASSWORD=testtest \
+  ANDROID_HOME=~/Android/Sdk /tmp/fdroid/bin/fdroid update
+```
 
 ### The first release
 
@@ -730,6 +862,9 @@ a new build then, bump the version (`scripts/app-version.ts`) and tag again, as 
 
 ### Signing
 
+Three keys, each its own: the upload key for Google Play, the direct key for the foss APKs
+(below), and the F-Droid index key for [our repository's](#f-droid-repository) index.
+
 The upload key is a PKCS12 keystore with the key `upload`, in the repository's secrets
 `ANDROID_KEYSTORE_BASE64` (the file, base64), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
 `ANDROID_KEY_PASSWORD`. The workflow writes it to a file in the runner's temp dir and deletes it at
@@ -747,6 +882,17 @@ keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 -alias upload -key
 ANDROID_KEYSTORE_FILE=/tmp/test.p12 ANDROID_KEYSTORE_PASSWORD=testtest ANDROID_KEY_ALIAS=upload \
   ANDROID_KEY_PASSWORD=testtest cargo tauri android build --aab --target aarch64
 ```
+
+The **direct key** signs the foss build's APKs ([Android builds](#android-builds)): those that
+don't go through Google Play, so nobody but us re-signs them, and phones see this key. A PKCS12
+keystore with the key `direct` (RSA 4096, until 2056), in the secrets
+`ANDROID_DIRECT_KEYSTORE_BASE64`, `ANDROID_DIRECT_KEYSTORE_PASSWORD`, `ANDROID_DIRECT_KEY_ALIAS`
+and `ANDROID_DIRECT_KEY_PASSWORD`; "Build APKs (Android, foss)" passes it to Gradle in the same
+variables as the upload key. Its SHA-256 is
+`80:B7:94:1F:80:88:45:EC:15:06:72:CE:3D:16:9F:D9:DB:71:D9:83:56:6B:9B:DD:4C:E7:9C:65:A2:93:22:6A`.
+Unlike the upload key it can't be replaced: a new key means every user of the foss build
+uninstalls and installs again. Keep its offline backup. The other stores (Amazon, Huawei, Samsung)
+get APKs signed with it too.
 
 ## Store listings
 

@@ -1,0 +1,78 @@
+<!doctype html>
+<!-- The start page of our F-Droid repository on GitHub Pages (app/README.md, F-Droid
+     repository). The release job fills in the repository's URL and fingerprint. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hashi for F-Droid</title>
+    <link rel="icon" href="fdroid/repo/icons/icon.png" />
+    <style>
+      body {
+        margin: 0 auto;
+        max-width: 40rem;
+        padding: 2rem 1.25rem;
+        font: 1rem/1.5 system-ui, sans-serif;
+        color: #2b2118;
+        background: #f4ecdd;
+      }
+      h1 {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        font-size: 1.6rem;
+      }
+      code {
+        overflow-wrap: anywhere;
+        font-size: 0.9rem;
+      }
+      a {
+        color: #b33a2b;
+      }
+      .add {
+        display: inline-block;
+        padding: 0.6rem 1rem;
+        border-radius: 0.5rem;
+        color: #fff;
+        background: #b33a2b;
+        text-decoration: none;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          color: #efe6d6;
+          background: #1d1915;
+        }
+        a {
+          color: #ef8a6f;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      <img src="fdroid/repo/icons/icon.png" alt="" width="48" height="48" style="image-rendering: pixelated" />
+      Hashi for F-Droid
+    </h1>
+    <p>
+      <a href="https://hashi.rs">Hashi</a>, the daily bridges logic puzzle, has its own F-Droid
+      repository: the Android app built from
+      <a href="https://github.com/NoelHuibers/Hashiwokakero">its source code</a> without any
+      proprietary code, signed by its developer. Updates arrive in F-Droid, Droid-ify, Neo Store
+      and other F-Droid clients.
+    </p>
+    <p><a class="add" href="fdroidrepos://{{HOST_PATH}}?fingerprint={{FINGERPRINT}}">Add to F-Droid</a></p>
+    <p>Or add it by hand: in F-Droid, Settings, Repositories, "+", then paste</p>
+    <p><code>{{REPO_URL}}?fingerprint={{FINGERPRINT}}</code></p>
+    <p>or scan the code of <a href="fdroid/repo/index.html">the repository's page</a>.</p>
+    <p>
+      Repository: <code>{{REPO_URL}}</code><br />
+      Fingerprint (SHA-256): <code>{{FINGERPRINT}}</code>
+    </p>
+    <p>
+      The same APKs are on the
+      <a href="https://github.com/NoelHuibers/Hashiwokakero/releases">GitHub releases</a>. They
+      are signed with another key than the app on Google Play, so neither updates the other: to
+      switch, uninstall the other one first (with an account, your results and streak stay).
+    </p>
+  </body>
+</html>

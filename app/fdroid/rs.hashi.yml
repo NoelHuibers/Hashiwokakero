@@ -1,0 +1,11 @@
+# The app's entry in our F-Droid repository (app/README.md, F-Droid repository). The name, the
+# summary, the description, the changelog, the icon and the screenshots come from the store
+# listings (scripts/fdroid-repo.ts), in every language Google Play has.
+Categories:
+  - Games
+License: MIT
+AuthorName: Noel Huibers
+WebSite: https://hashi.rs
+SourceCode: https://github.com/NoelHuibers/Hashiwokakero
+IssueTracker: https://github.com/NoelHuibers/Hashiwokakero/issues
+Changelog: https://github.com/NoelHuibers/Hashiwokakero/releases

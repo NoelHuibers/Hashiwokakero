@@ -146,6 +146,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
 | 14a | Game achievements: the stamps as Game Center and Play Games achievements, leaderboards, icons, upload workflow ([app/README.md](../app/README.md#game-achievements)) | 12, 13f | ✓ #170 |
 | 14b | Games services, native: Game Center and Google Play Games in the app's plugin (sign-in, reports, their screens), Play Games' project id from `app/achievements-play.json`, off without it | 13c | ✓ #171 |
 | 14c | The stamps reported: the stamp book and the win screen send the stamps' progress and the leaderboards' scores to the platform | 14a, 14b | ✓ #172 |
+| 15 | The other stores ([stores.md](stores.md)): an Android build without proprietary code (foss), our own F-Droid repository, then F-Droid, Samsung, Amazon, Huawei, desktop, ... | 14b | 15.1 ✓ (this PR) |
 
 ## Owner tasks
 
@@ -260,3 +261,5 @@ replaced through Play's support). Left, in this order (details in
    3. **Publish** the Play Games configuration at least two hours before the rollout of the app
       version reporting them, and give the Data safety form Play Games' data (the player's Play
       Games profile and game activity, through Google).
+10. **Other stores**: the owner tasks of F-Droid and the stores after it are in
+    [stores.md](stores.md#owner-tasks).
