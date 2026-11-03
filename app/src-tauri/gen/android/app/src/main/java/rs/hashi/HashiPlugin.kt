@@ -3,7 +3,6 @@ package rs.hashi
 import android.app.Activity
 import android.content.ClipData
 import android.content.Intent
-import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.core.content.FileProvider
 import app.tauri.annotation.ActivityCallback
@@ -13,8 +12,6 @@ import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
-import com.google.android.gms.games.PlayGames
-import com.google.android.gms.tasks.Task
 import java.io.File
 
 @InvokeArg
@@ -64,12 +61,11 @@ class GamesShowArgs {
 @TauriPlugin
 class HashiPlugin(private val activity: Activity) : Plugin(activity) {
   /**
-   * Whether this build has Google Play Games: a project id (build.gradle.kts, playGames), with
-   * which the SDK started itself when the app did (its provider in AndroidManifest.xml) and
-   * signed the player in if it could (automatic sign-in). Without one none of the games_
-   * commands touches the SDK, which never started.
+   * Google Play Games: Games.kt of src/play, the SDK, in the Play build; of src/foss, nothing, in
+   * the foss build (app/README.md, Android builds). Without the service (`available`: the foss
+   * build, or a Play build without a project id) none of the games_ commands calls it.
    */
-  private val games = BuildConfig.PLAY_GAMES_APP_ID.isNotEmpty()
+  private val games = Games(activity)
 
   /** The icons of the system bars for the page's theme, see MainActivity. */
   @Command
@@ -114,42 +110,27 @@ class HashiPlugin(private val activity: Activity) : Plugin(activity) {
    */
   @Command
   fun gamesSignIn(invoke: Invoke) {
-    if (!games) {
+    if (!games.available) {
       invoke.resolve(gamesStatus(false))
       return
     }
-    signedIn { invoke.resolve(gamesStatus(it)) }
+    games.signedIn { invoke.resolve(gamesStatus(it)) }
   }
 
   /**
-   * What the server says the player has: a counting achievement's steps (Play unlocks it at its
-   * total), another one unlocked, the scores. Play keeps the most steps and the best score and
-   * sends them when it can, so a report again changes nothing. Skipped while nobody is signed in.
+   * What the server says the player has (Games.report). Play keeps the most steps and the best
+   * score, so a report again changes nothing. Skipped while nobody is signed in.
    */
   @Command
   fun gamesReport(invoke: Invoke) {
     try {
       val args = invoke.parseArgs(GamesReportArgs::class.java)
-      if (!games) {
+      if (!games.available) {
         invoke.resolve()
         return
       }
-      signedIn { signedIn ->
-        if (signedIn) {
-          val achievements = PlayGames.getAchievementsClient(activity)
-          for (achievement in args.achievements) {
-            val steps = achievement.steps
-            if (steps != null && steps > 0) {
-              achievements.setSteps(achievement.id, steps)
-            } else if (achievement.earned) {
-              achievements.unlock(achievement.id)
-            }
-          }
-          val leaderboards = PlayGames.getLeaderboardsClient(activity)
-          for (score in args.scores) {
-            leaderboards.submitScore(score.id, score.value)
-          }
-        }
+      games.signedIn { signedIn ->
+        if (signedIn) games.report(args.achievements, args.scores)
         invoke.resolve()
       }
     } catch (ex: Exception) {
@@ -164,7 +145,7 @@ class HashiPlugin(private val activity: Activity) : Plugin(activity) {
   @Command
   fun gamesShow(invoke: Invoke) {
     val kind = invoke.parseArgs(GamesShowArgs::class.java).kind
-    if (!games) {
+    if (!games.available) {
       invoke.reject("this build has no Play Games")
       return
     }
@@ -172,23 +153,11 @@ class HashiPlugin(private val activity: Activity) : Plugin(activity) {
       invoke.reject("no such screen: $kind")
       return
     }
-    val client = PlayGames.getGamesSignInClient(activity)
-    client.isAuthenticated().continueWithTask { task ->
-      if (task.isSuccessful && task.result.isAuthenticated) task else client.signIn()
-    }.addOnCompleteListener { task ->
-      if (!task.isSuccessful || !task.result.isAuthenticated) {
-        invoke.reject("not signed in to Play Games")
-        return@addOnCompleteListener
-      }
-      val intent: Task<Intent> = if (kind == "leaderboards") {
-        PlayGames.getLeaderboardsClient(activity).allLeaderboardsIntent
-      } else {
-        PlayGames.getAchievementsClient(activity).achievementsIntent
-      }
-      intent
-        .addOnSuccessListener { startActivityForResult(invoke, it, "gamesShown") }
-        .addOnFailureListener { invoke.reject(it.message) }
-    }
+    games.show(
+      kind,
+      { startActivityForResult(invoke, it, "gamesShown") },
+      { invoke.reject(it) },
+    )
   }
 
   @ActivityCallback
@@ -196,16 +165,8 @@ class HashiPlugin(private val activity: Activity) : Plugin(activity) {
     invoke.resolve()
   }
 
-  /** The automatic sign-in's result, false if it failed. */
-  private fun signedIn(then: (Boolean) -> Unit) {
-    PlayGames.getGamesSignInClient(activity).isAuthenticated().addOnCompleteListener { task ->
-      if (!task.isSuccessful) Log.w("HashiPlugin", "Play Games sign-in failed", task.exception)
-      then(task.isSuccessful && task.result.isAuthenticated)
-    }
-  }
-
   private fun gamesStatus(signedIn: Boolean) = JSObject().apply {
-    put("available", games)
+    put("available", games.available)
     put("signedIn", signedIn)
   }
 }

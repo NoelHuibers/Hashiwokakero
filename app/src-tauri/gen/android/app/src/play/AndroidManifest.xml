@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Play build's part of the manifest (app/README.md, Android builds), merged into
+     src/main/AndroidManifest.xml by build.gradle.kts. The foss build has none of it. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <!-- Google Play Games (Games.kt): the project id from the Gradle build, empty
+             without one. The SDK starts itself through its provider when the app starts, which
+             is off then (playGamesEnabled): without an id, nothing of Play Games runs -->
+        <meta-data
+          android:name="com.google.android.gms.games.APP_ID"
+          android:value="@string/game_services_project_id" />
+        <provider
+          android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"
+          android:authorities="${applicationId}.playgamesinitprovider"
+          android:exported="false"
+          android:enabled="${playGamesEnabled}"
+          tools:replace="android:enabled" />
+    </application>
+</manifest>
