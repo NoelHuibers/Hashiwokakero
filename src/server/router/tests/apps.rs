@@ -637,3 +637,22 @@ async fn with_stores_every_page_offers_the_apps() {
     assert_eq!(manifest["related_applications"][0]["id"], "rs.hashi");
     assert_eq!(manifest["prefer_related_applications"], false);
 }
+
+/// `/fdroid` leads to the F-Droid repository's page, for now: a temporary redirect.
+#[tokio::test]
+async fn fdroid_leads_to_the_repository_page() {
+    use reqwest::header::LOCATION;
+
+    let server = Server::start().await;
+    let browser = server.browser();
+    let res = browser.get("/fdroid").await;
+    assert_status(&res, StatusCode::TEMPORARY_REDIRECT);
+    assert_eq!(
+        res.headers()[LOCATION],
+        "https://noelhuibers.github.io/Hashiwokakero/"
+    );
+    // The trailing slash first goes to /fdroid, as for every page
+    let res = browser.get("/fdroid/").await;
+    assert_status(&res, StatusCode::MOVED_PERMANENTLY);
+    assert_eq!(res.headers()[LOCATION], "/fdroid");
+}

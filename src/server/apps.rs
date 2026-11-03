@@ -42,6 +42,10 @@ const DEFAULT_ORIGINS: &str = "https://tauri.localhost,tauri://localhost";
 /// builds (`rs.hashi.debug`) aren't in the asset links: their links are never verified.
 pub const ANDROID_PACKAGE: &str = "rs.hashi";
 
+/// The page of our F-Droid repository on GitHub Pages, with its address and fingerprint
+/// (app/README.md, F-Droid repository), where `/fdroid` leads.
+pub const FDROID_PAGE: &str = "https://noelhuibers.github.io/Hashiwokakero/";
+
 /// A version of the app, `major.minor.patch`. Ordered as numbers, so 1.10.0 comes after 1.9.0.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Version(pub u32, pub u32, pub u32);

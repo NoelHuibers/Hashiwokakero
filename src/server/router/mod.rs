@@ -6,7 +6,7 @@ use axum::Router;
 use axum::extract::{DefaultBodyLimit, Request};
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::middleware::{self, Next};
-use axum::response::{IntoResponse as _, Response};
+use axum::response::{IntoResponse as _, Redirect, Response};
 use axum::routing::{MethodRouter, get, post};
 use leptos::config::Env;
 use leptos::prelude::{IntoView, LeptosOptions};
@@ -122,6 +122,12 @@ fn router_with_client_source<V: IntoView + 'static>(
         .route(
             "/dojo/house",
             post(dojo::house_handler).layer(DefaultBodyLimit::max(::dojo::MAX_WASM_BYTES)),
+        )
+        // A short address of our F-Droid repository's page. Temporary: the page may move, and the
+        // repository's own address is the one clients keep
+        .route(
+            "/fdroid",
+            get(|| async { Redirect::temporary(super::apps::FDROID_PAGE) }),
         )
         // The web app manifest, with the apps once they are in the stores
         .route("/manifest.webmanifest", {
