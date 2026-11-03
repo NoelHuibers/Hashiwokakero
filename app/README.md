@@ -718,7 +718,7 @@ is a dry run: it builds, signs and checks, makes the F-Droid repository (the art
 branch it skips the checks of the tag, of main and of CI. A pull request builds the platforms
 whose files it changes: both for the workflow or `scripts/app-version.ts`, Android for
 `gen/android/app/build.gradle.kts`, `gen/android/app/src/play/` or `src/foss/`,
-`app/achievements-play.json`, `app/fdroid/` or `scripts/fdroid-repo.ts`, iOS for `gen/apple/` or
+`app/achievements-play.json`, `app/fdroid/`, `scripts/fdroid-repo.ts` or `scripts/foss-apk.ts`, iOS for `gen/apple/` or
 `src-tauri/Info.ios.plist`. Without the signing secrets (pull requests of Dependabot or of forks)
 an Android dry run signs with throwaway keys (the upload key's, the direct key's and the F-Droid
 index key's), and iOS is skipped with a notice. With `-f publish=true` on a tag
