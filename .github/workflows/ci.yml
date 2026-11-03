@@ -815,16 +815,19 @@ jobs:
     name: Build app (iOS)
     needs: [changes, build-app]
     if: needs.changes.outputs.code == 'true'
-    # Apple silicon. The App Store only takes builds made with the iOS 26 SDK (Xcode 26) or newer.
-    runs-on: macos-26
+    # Apple silicon, the image with Xcode 27 (a preview image of GitHub's, actions/runner-images
+    # #14404). Xcode 27.1 at least: the iPhone Duo shows an app built with an older SDK as a
+    # phone-sized window on its inner display, only the iOS 27.1 SDK fills it.
+    runs-on: xcode-27
     timeout-minutes: 60
     env:
       # One of the image's Xcodes, pinned (the image's default moves): the release builds with the
-      # same one. Its SDK is iOS 26.5.
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
-      # A simulator of the image for that SDK
+      # same one. Its SDK is iOS 27.1.
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      # A simulator of the image. Its iOS 27.1 is the iPhone Duo's alone ("Incompatible device"
+      # for an iPhone 17), the app (iOS 16.4 and newer) runs on 27.0 as well.
       SIMULATOR_DEVICE: iPhone 17
-      SIMULATOR_RUNTIME: iOS 26.5
+      SIMULATOR_RUNTIME: iOS 27.0
       CARGO_PROFILE_DEV_DEBUG: 0
       # The smoke test's driver (e2e/ios/app.ts), pinned
       APPIUM_VERSION: 3.8.0

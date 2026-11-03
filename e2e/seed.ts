@@ -177,11 +177,16 @@ export function seed(dbPath: string) {
   attempt.run(player('chen').id, today, Date.now() - 100_000, Date.now() - 2_000, 0, 1, 98_000);
 
   // Move logs of yesterday for the group's members who played it, as the daily stores them:
-  // a few bridges each, quicker or slower by their pace, and a hint for the second
+  // a few bridges each, quicker or slower by their pace, and a hint for the second. Their help is
+  // the help of the log, that one hint: the theatre's finish is the time without its penalties,
+  // and the random help above, at an Oni's prices since November (src/model/daily.rs), cost aiko
+  // more than her time, which put her across the finish line at 0:00. The times and the
+  // ranking stay as they are.
   const logged = db.prepare(
     `UPDATE attempts SET log = ?1, paid_actions = CASE WHEN ?2 > 0 THEN json_array(json_object(
        'id', 'seeded-hint-0001', 'action', 'Hint', 'bridges', json_array(), 'outcome', json_object('Hint', json_array(1, 1)),
-       'at', started_at + ?2)) ELSE '[]' END
+       'at', started_at + ?2)) ELSE '[]' END,
+       hints = CASE WHEN ?2 > 0 THEN 1 ELSE 0 END, checks = 0
      WHERE user_id = ?3 AND day = ?4 AND finished_at IS NOT NULL`,
   );
   SEEDED_GROUP.members.forEach((name, i) => {

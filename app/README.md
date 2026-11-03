@@ -673,7 +673,7 @@ upload key only signs uploads). From then on, with the service account set up
 
 ### iOS releases
 
-"Build IPA (iOS)" runs on `macos-26` with Xcode 26.6, as ["In CI"](#in-ci-1) does, and builds
+"Build IPA (iOS)" runs on `xcode-27` with Xcode 27.1, as ["In CI"](#in-ci-1) does, and builds
 with the secrets `APPLE_API_KEY_ID`, `APPLE_API_ISSUER` and `APPLE_API_KEY_P8`, an App Store
 Connect team key with the Admin role (Admin is needed to make certificates):
 
@@ -1073,7 +1073,9 @@ never change after the first release.
 
 ### Building and running
 
-On a Mac with Xcode 26 (the App Store takes builds with the iOS 26 SDK or newer only), from
+On a Mac with Xcode 27.1 (the App Store takes builds with the iOS 26 SDK or newer, but the iPhone
+Duo shows an app built with an SDK older than iOS 27.1 as a phone-sized window on its inner
+display), from
 `app/src-tauri/`:
 
 ```sh
@@ -1094,13 +1096,20 @@ uploads the directory as an artifact): the template changes with Tauri.
 
 ### In CI
 
-"Build app (iOS)" in `.github/workflows/ci.yml` runs on `macos-26` (Apple silicon) with Xcode 26.6
-pinned (`DEVELOPER_DIR`; the release uses the same). Like the Android build it takes the bundle
-of "Build app (web)" and skips `beforeBuildCommand`. It runs Clippy for `aarch64-apple-ios`, builds
+"Build app (iOS)" in `.github/workflows/ci.yml` runs on `xcode-27` (Apple silicon, GitHub's preview
+image with Xcode 27) with Xcode 27.1 pinned (`DEVELOPER_DIR`; the release uses the same): the
+iOS 27.1 SDK is the first the iPhone Duo's inner display shows full-screen. Like the Android build
+it takes the bundle of "Build app (web)" and skips `beforeBuildCommand`. It runs Clippy for `aarch64-apple-ios`, builds
 the debug app for the simulator and checks that the build left `gen/apple` as committed and that the
 icons have no alpha channel. The app is the artifact `ios-simulator-app`, its size in the job
-summary. Then it runs the [simulator test](#simulator-test) on an iPhone 17 simulator of iOS 26.5,
-booted while the app builds, with hashi.rs blocked on the runner. Not a required check.
+summary. Then it runs the [simulator test](#simulator-test) on an iPhone 17 simulator of iOS 27.0
+(the image's iOS 27.1 runtime takes the iPhone Duo only), booted while the app builds, with
+hashi.rs blocked on the runner. No iPhone Duo simulator: its first boot takes about 8 minutes,
+and simctl can't unfold it (powering the inner display on and the outer off with
+`simctl io screenConfig` leaves the inner one black, also with the app started again). On its
+outer display the page stops 84 pt before the right edge, where the sensor bar puts the clock
+(the display's safe area). Unfolded layouts are checked in the browser
+(`e2e/tests/fold.spec.ts`). Not a required check.
 
 ## Simulator test
 
@@ -1141,8 +1150,8 @@ of GameKit over the page, a report goes through, and the button's command shows 
 GameKit kept, or is refused without one. The screenshots `start.png`, `practice.png`,
 `practice-light.png`, `practice-dark.png` (the page dark on a light phone: the status bar's icons
 light), `landscape.png`, `share.png` (the share sheet with the file) and `game-center.png` are the
-artifact
-`ios-simulator-screenshot`.
+artifact `ios-simulator-screenshot`. They come from `simctl io screenshot`, or from WebDriverAgent
+where simctl fails (it did once with the simulator turned sideways, on Xcode 27.1).
 
 Not checked, unlike on Android: `navigator.onLine` (the simulator has the Mac's network, only
 hashi.rs is blocked), the back button (iOS has none; the swipe from the edge isn't a WebDriver
