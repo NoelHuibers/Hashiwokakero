@@ -7,7 +7,7 @@ until its secrets exist, so its pull request can be merged before the account is
 
 | # | Store | Build | Status |
 |---|-------|-------|--------|
-| 1 | Our own F-Droid repository (GitHub Pages) | foss APKs, direct key | ✓ (this PR) |
+| 1 | Our own F-Droid repository (GitHub Pages) | foss APKs, direct key | ✓ #200 |
 | 2 | F-Droid (f-droid.org) | built by F-Droid from source | |
 | 3 | Samsung Galaxy Store | | |
 | 4 | Amazon Appstore | foss APK | |
