@@ -22,6 +22,7 @@ pub mod replay;
 pub mod reports;
 mod router;
 pub mod search;
+pub mod shares;
 
 pub use router::{build_id, router};
 

@@ -32,6 +32,7 @@ mod puzzle;
 mod replay;
 mod rivals;
 mod river;
+mod shares;
 
 pub use account::*;
 pub use admin::*;
@@ -54,6 +55,7 @@ pub use puzzle::*;
 pub use replay::*;
 pub use rivals::*;
 pub use river::*;
+pub use shares::*;
 
 #[cfg(test)]
 mod tests {

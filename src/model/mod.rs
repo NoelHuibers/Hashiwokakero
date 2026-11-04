@@ -1,5 +1,5 @@
 //! Data exchanged between the server functions and the pages: users, daily puzzles, results,
-//! groups, replays, group puzzles, reports, blocks and feedback.
+//! groups, replays, group puzzles, shared puzzles, reports, blocks and feedback.
 
 mod achievements;
 mod admin;
@@ -20,6 +20,7 @@ mod replay;
 mod rivals;
 mod river;
 mod scoring;
+mod shares;
 mod stamps;
 #[cfg(test)]
 mod tests;
@@ -43,4 +44,5 @@ pub use replay::*;
 pub use rivals::*;
 pub use river::*;
 pub use scoring::*;
+pub use shares::*;
 pub use stamps::*;
