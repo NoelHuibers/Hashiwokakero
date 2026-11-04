@@ -229,6 +229,10 @@ fn LocaleFromPath() -> impl IntoView {
 /// itself before any page renders; this is for the app, whose pages have no server in front of
 /// them (an App Link to `/practice`, a link of a page cached from before), and for client-side
 /// navigation.
+///
+/// After the navigation to the old address is done, in the next frame: the router adds that one
+/// to the history only once its page rendered, so a redirect while it renders replaced the page
+/// before it instead (back skipped it).
 #[component]
 fn MovedPage() -> impl IntoView {
     let location = leptos_router::hooks::use_location();
@@ -237,13 +241,19 @@ fn MovedPage() -> impl IntoView {
         &location.search.get_untracked(),
         &location.hash.get_untracked(),
     );
-    target.map(|path| {
-        let options = leptos_router::NavigateOptions {
-            replace: true,
-            ..Default::default()
-        };
-        view! { <leptos_router::components::Redirect path options /> }
-    })
+    #[cfg(feature = "browser")]
+    if let Some(target) = target {
+        let navigate = leptos_router::hooks::use_navigate();
+        request_animation_frame(move || {
+            let options = leptos_router::NavigateOptions {
+                replace: true,
+                ..Default::default()
+            };
+            navigate(&target, options);
+        });
+    }
+    #[cfg(not(feature = "browser"))]
+    drop(target);
 }
 
 /// Where [`MovedPage`] at `path` leads, with the `search` and `hash` of its URL (with or without
