@@ -341,11 +341,8 @@ test('a paid reply arriving after leaving the daily cannot mutate its persistent
   await page.getByRole('button', { name: /^Hint/ }).click();
   await expect.poll(() => committed).toBe(true);
   try {
-    await page
-      .getByRole('link', { name: /Practice/ })
-      .first()
-      .click();
-    await expect(page).toHaveURL(/\/practice/);
+    await page.getByRole('link', { name: /Play/ }).first().click();
+    await expect(page).toHaveURL(/\/play/);
   } finally {
     release();
   }
@@ -662,11 +659,8 @@ test('a guest merge in another tab preserves a committed hint whose reply outliv
   const other = await context.newPage();
   other.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
   try {
-    await page
-      .getByRole('link', { name: /Practice/ })
-      .first()
-      .click();
-    await expect(page).toHaveURL(/\/practice/);
+    await page.getByRole('link', { name: /Play/ }).first().click();
+    await expect(page).toHaveURL(/\/play/);
     await visit(other, '/account');
     await signInWith(other, username, password);
     await expect(other.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
@@ -706,11 +700,8 @@ test('a delayed quiet refresh cannot roll back a paid counter or touch a dispose
     await expect.poll(() => captured).toBe(true);
     try {
       if (dispose) {
-        await page
-          .getByRole('link', { name: /Practice/ })
-          .first()
-          .click();
-        await expect(page).toHaveURL(/\/practice/);
+        await page.getByRole('link', { name: /Play/ }).first().click();
+        await expect(page).toHaveURL(/\/play/);
       } else {
         await page.getByRole('button', { name: /^Check/ }).click();
         await expect(actionStatus(page)).toBeEmpty();
@@ -978,11 +969,8 @@ test('a delayed submit response cannot touch a disposed daily page', async ({ pa
   const before = await saved(page, DAILY_KEY);
   const log = await page.evaluate(() => localStorage.getItem('hashi.daily.log'));
   try {
-    await page
-      .getByRole('link', { name: /Practice/ })
-      .first()
-      .click();
-    await expect(page).toHaveURL(/\/practice/);
+    await page.getByRole('link', { name: /Play/ }).first().click();
+    await expect(page).toHaveURL(/\/play/);
   } finally {
     release();
   }
@@ -1059,11 +1047,8 @@ for (const failFirst of [false, true]) {
     await solveDaily(page, puzzle, solution);
     await expectResult(page);
     await page.keyboard.press('Escape');
-    await page
-      .getByRole('link', { name: /Practice/ })
-      .first()
-      .click();
-    await expect(page).toHaveURL(/\/practice/);
+    await page.getByRole('link', { name: /Play/ }).first().click();
+    await expect(page).toHaveURL(/\/play/);
     await page.evaluate(() => (document.documentElement.dataset.returnMarker = 'same-document'));
     let reads = 0;
     await page.route('**/api/daily_today', async (route) => {
@@ -1096,11 +1081,8 @@ test('midnight replacement of solved metadata keeps the new discovery request', 
   await solveDaily(page, puzzle, solution);
   await expectResult(page);
   await page.keyboard.press('Escape');
-  await page
-    .getByRole('link', { name: /Practice/ })
-    .first()
-    .click();
-  await expect(page).toHaveURL(/\/practice/);
+  await page.getByRole('link', { name: /Play/ }).first().click();
+  await expect(page).toHaveURL(/\/play/);
   let reads = 0;
   let nextDay = 0;
   await page.route('**/api/daily_today', async (route) => {

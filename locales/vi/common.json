@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Hôm nay",
-    "practice": "Luyện tập",
+    "play": "Chơi",
     "ranks": "Xếp hạng",
     "create": "Tạo",
     "lab": "Lab",
@@ -56,7 +56,7 @@
     "copy_failed": "Không sao chép được vào bộ nhớ tạm.",
     "reload": "Tải lại",
     "update": "Cập nhật",
-    "offline": "Bạn đang ngoại tuyến. Luyện tập vẫn hoạt động."
+    "offline": "Bạn đang ngoại tuyến. Vẫn chơi được như thường."
   },
   "errors": {
     "unknown": "Đã xảy ra lỗi: {{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "Phiên bản ứng dụng này đã quá cũ. Vui lòng cập nhật để tiếp tục chơi trực tuyến.",
     "database": "Cơ sở dữ liệu không phản hồi, vui lòng thử lại.",
     "internal": "Máy chủ gặp sự cố, vui lòng thử lại.",
-    "archive_only_past": "Chỉ có thể luyện các câu đố của những ngày trước.",
+    "archive_only_past": "Chỉ có thể chơi lại các câu đố của những ngày trước.",
     "password_too_short": "Mật khẩu cần ít nhất 8 ký tự.",
     "password_too_long": "Mật khẩu chỉ được tối đa 128 ký tự.",
     "username_invalid": "Tên người dùng gồm 3 đến 20 ký tự: chữ cái, chữ số, _ và -.",

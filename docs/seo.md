@@ -56,7 +56,7 @@ in [deployment.md](deployment.md#search-engines).
 Checked on the live site: all 180 sitemap URLs fetched and their head compared
 (status, canonical, reciprocal hreflang, `lang`, titles, descriptions, `h1`, image
 alt texts), redirects, the 404 page, `robots.txt`, the manifest, and Lighthouse
-(mobile, simulated slow 4G) on `/`, `/ja`, `/rules` and `/practice`.
+(mobile, simulated slow 4G) on `/`, `/ja`, `/rules` and `/play`.
 
 Good already: canonical and hreflang were consistent and reciprocal on every URL,
 every page had one `h1`, no image without alt text (the boards are SVG with
@@ -119,7 +119,7 @@ answer 200 before you press "Verify".
 2. Sitemaps: submit `https://hashi.rs/sitemap.xml`. Status "Success" with 180
    discovered pages.
 3. URL inspection: "Request indexing" for `https://hashi.rs/`, `/rules`,
-   `/practice` and a few languages (`/de`, `/ja`, `/es`); the daily quota is small.
+   `/play` and a few languages (`/de`, `/ja`, `/es`); the daily quota is small.
 4. After a few days, Indexing, Pages: "Excluded by noindex tag" (accounts,
    players, groups, …) and "Page with redirect" (`/en/…`, trailing slashes) are
    expected. "Duplicate without user-selected canonical" or "Alternate page with

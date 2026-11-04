@@ -1,5 +1,5 @@
 //! Server functions. Solving and generating run on the server, in the backend crate (in the app
-//! on the phone, see `practice`); users and daily results live in the database (see `server`).
+//! on the phone, see `compute`); users and daily results live in the database (see `server`).
 
 // In the browser build `#[server]` replaces each body with a request to the server, and the
 // trait impl the macro generates keeps an `async fn` that has nothing to await
@@ -16,6 +16,7 @@ mod admin;
 mod app;
 mod banzuke;
 mod client;
+pub mod compute;
 mod contact;
 mod daily;
 mod dojo;
@@ -27,7 +28,6 @@ mod kadai;
 mod moderation;
 #[cfg(feature = "csr")]
 pub(crate) mod native;
-pub mod practice;
 mod puzzle;
 mod replay;
 mod rivals;

@@ -18,7 +18,7 @@ const view = (url: string, target = PKG) => `-a android.intent.action.VIEW -d ${
 
 /** The toasts on the screen (src/components/layout/toaster.rs). */
 const offlineNotice = (page: Page) =>
-  page.locator('[role=log] > div').filter({ hasText: "You're offline. Practice still works." });
+  page.locator('[role=log] > div').filter({ hasText: "You're offline. Play still works." });
 
 /** Navigations of the WebView away from the app's pages: it would leave the app for the website. */
 function navigationsOut(page: Page) {

@@ -242,7 +242,7 @@ pub fn is_outdated_error(
         )
 }
 
-// On the server, and in the app, whose offline practice answers like the server
+// On the server, and in the app, whose offline Play answers like the server
 #[cfg(any(feature = "ssr", feature = "csr"))]
 impl From<ApiError> for leptos::prelude::ServerFnError {
     fn from(e: ApiError) -> Self {

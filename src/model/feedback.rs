@@ -84,7 +84,7 @@ pub struct FeedbackContext {
     pub browser: String,
     /// The page's language (`de`).
     pub language: String,
-    /// The page the form was opened from, without the language prefix (`/practice`).
+    /// The page the form was opened from, without the language prefix (`/play`).
     pub page: Option<String>,
     /// Today's daily number, as the page counts.
     pub daily: Option<i64>,
@@ -484,7 +484,7 @@ mod tests {
         .sanitized();
         assert_eq!(error.errors[0].chars().count(), MAX_CONTEXT_ERROR);
 
-        for page in ["https://evil.example", "//evil.example/x", "practice"] {
+        for page in ["https://evil.example", "//evil.example/x", "play"] {
             let context = FeedbackContext {
                 page: Some(page.into()),
                 ..FeedbackContext::default()
@@ -518,10 +518,10 @@ mod tests {
         let app = FeedbackContext {
             app: Some("1.1.0".into()),
             platform: "ios".into(),
-            page: Some("/practice".into()),
+            page: Some("/play".into()),
             daily: Some(12),
             player: Some(40),
-            errors: vec!["/ E:database".into(), "/practice panic".into()],
+            errors: vec!["/ E:database".into(), "/play panic".into()],
             ..FeedbackContext::default()
         };
         assert_eq!(
@@ -529,11 +529,11 @@ mod tests {
             [
                 (ContextField::App, "1.1.0".into()),
                 (ContextField::Platform, "iOS".into()),
-                (ContextField::Page, "/practice".into()),
+                (ContextField::Page, "/play".into()),
                 (ContextField::Daily, "#12".into()),
                 (ContextField::Player, "#40".into()),
                 (ContextField::Errors, "/ E:database".into()),
-                (ContextField::Errors, "/practice panic".into()),
+                (ContextField::Errors, "/play panic".into()),
             ]
         );
     }
@@ -547,11 +547,11 @@ mod tests {
             os: "Android 15".into(),
             browser: "WebView 141".into(),
             language: "de".into(),
-            page: Some("/practice".into()),
+            page: Some("/play".into()),
             daily: Some(14),
             player: Some(4711),
             screen: "390×844 @3x".into(),
-            errors: vec!["/practice E:database".into(), "panic: a | b `c`".into()],
+            errors: vec!["/play E:database".into(), "panic: a | b `c`".into()],
         };
         let draft = issue_draft(
             12,
@@ -568,10 +568,10 @@ mod tests {
             "From the feedback form on hashi.rs (#12).",
             "| Version | app 1.1.0 |",
             "| Platform | Android |",
-            "| Page | /practice |",
+            "| Page | /play |",
             "| Daily | #14 |",
             "| Screen | 390×844 @3x |",
-            "| Recent errors | `/practice E:database`<br>`panic: a \\| b 'c'` |",
+            "| Recent errors | `/play E:database`<br>`panic: a \\| b 'c'` |",
         ] {
             assert!(draft.body.contains(line), "{line}\n{}", draft.body);
         }

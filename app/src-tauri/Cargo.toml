@@ -9,7 +9,7 @@ publish = false
 # A workspace of its own with its own Cargo.lock, outside the repository's workspace, so the
 # website's builds and CI never compile Tauri or need its system libraries. It is still built
 # inside the repository, where .cargo/config.toml applies. Its other member, offline/, is the
-# offline practice without Tauri, testable on any machine.
+# offline Play without Tauri, testable on any machine.
 [workspace]
 members = ["offline"]
 
@@ -36,7 +36,7 @@ tauri-plugin-deep-link = "2.6.2"
 # Not called here: `tauri::generate_context!` writes the plugins' config of tauri.conf.json as
 # serde_json values into the app
 serde_json = "1.0.154"
-# The offline practice (offline/): generator and solvers natively, in the app's library
+# The offline Play (offline/): generator and solvers natively, in the app's library
 hashi_offline = { path = "offline" }
 
 [lints]
@@ -81,7 +81,7 @@ opt-level = 3
 debug-assertions = false
 
 # The release build (the store's App Bundle): one optimized library. Speed over size (opt-level
-# 3), the generator and the solvers of the offline practice run in it. Without debug info, but
+# 3), the generator and the solvers of the offline Play run in it. Without debug info, but
 # with its symbol table: Gradle puts that into the bundle for Play's crash reports
 # (debugSymbolLevel) and strips it from the library that phones get.
 [profile.release]

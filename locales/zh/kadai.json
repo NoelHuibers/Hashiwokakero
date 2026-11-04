@@ -62,7 +62,7 @@
     "revealed_title": "答案已揭晓",
     "revealed_text": "这次不计排名。答案就在棋盘上，好好看看吧！",
     "back": "返回 {{ group }}",
-    "practice": "再玩一次当练习"
+    "play_again": "再玩一次"
   },
   "author": {
     "title": "你的谜题",

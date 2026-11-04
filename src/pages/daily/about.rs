@@ -75,7 +75,7 @@ pub(super) fn About(daily: Daily) -> impl IntoView {
     let i18n = use_i18n();
     let rules = use_localized("/rules");
     let tips = move || format!("{}#tips", rules());
-    let practice = use_localized("/practice");
+    let play = use_localized("/play");
     let create = use_localized("/create");
     view! {
         <article class="mx-auto flex max-w-7xl flex-col gap-12 px-4 pb-4 pt-10 sm:px-6">
@@ -151,7 +151,7 @@ pub(super) fn About(daily: Daily) -> impl IntoView {
                         {t!(
                             i18n,
                             daily.about.more_a,
-                            <practice> = move |children: ChildrenFn| view! { <A href=practice attr:class=LINK>{children()}</A> },
+                            <play> = move |children: ChildrenFn| view! { <A href=play attr:class=LINK>{children()}</A> },
                             <workshop> = move |children: ChildrenFn| view! { <A href=create attr:class=LINK>{children()}</A> }
                         )}
                     </Question>
@@ -164,10 +164,10 @@ pub(super) fn About(daily: Daily) -> impl IntoView {
                         {t!(i18n, daily.about.to_rules)}
                     </A>
                     <A
-                        href=practice
+                        href=play
                         attr:class="inline-flex min-h-10 items-center rounded-md border bg-background px-4 py-2 text-sm font-medium shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30"
                     >
-                        {t!(i18n, daily.about.to_practice)}
+                        {t!(i18n, daily.about.to_play)}
                     </A>
                 </div>
             </section>

@@ -30,7 +30,7 @@
     "revealed_text": "This one doesn't count for the ranking. See you tomorrow!",
     "rank": "Rank {{ rank }} of {{ total }} today",
     "ranking": "Ranking…",
-    "more": "More puzzles in practice mode →",
+    "more": "More puzzles in Play →",
     "on_board": "You're on the board as <b>{{ name }}</b>.",
     "claim": "Claim your name to keep your streak on every device →",
     "points": "+{{ points }} points in the monthly race"
@@ -76,9 +76,9 @@
     "next_q": "When is there a new daily?",
     "next_a": "Every day at midnight UTC, at the same moment all over the world. A countdown on this page shows how long until the next one.",
     "more_q": "Where can I play more?",
-    "more_a": "In <practice>practice</practice>: unlimited puzzles in five sizes, from 7×7 to 24×24, with hints whenever you like. Or build your own puzzles in the <workshop>workshop</workshop>.",
+    "more_a": "In <play>Play</play>: unlimited puzzles in five sizes, from 7×7 to 24×24, with hints whenever you like. Or build your own puzzles in the <workshop>workshop</workshop>.",
     "to_rules": "Hashiwokakero rules and solving tips →",
-    "to_practice": "Practice: unlimited puzzles →"
+    "to_play": "Play: unlimited puzzles →"
   },
   "recovery": {
     "metadata_error": "Couldn't load today's puzzle. Try again.",

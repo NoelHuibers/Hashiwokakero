@@ -62,7 +62,7 @@
     "revealed_title": "Solución revelada",
     "revealed_text": "Esta vez sin clasificar. La solución está en el tablero, ¡mírala bien!",
     "back": "Volver a {{ group }}",
-    "practice": "Jugarlo otra vez para practicar"
+    "play_again": "Jugarlo otra vez"
   },
   "author": {
     "title": "Tu puzle",

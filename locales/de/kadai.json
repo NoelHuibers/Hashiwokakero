@@ -62,7 +62,7 @@
     "revealed_title": "Lösung aufgedeckt",
     "revealed_text": "Diesmal ohne Wertung. Die Lösung liegt auf dem Brett, schau sie dir gut an!",
     "back": "Zurück zu {{ group }}",
-    "practice": "Zum Üben noch einmal spielen"
+    "play_again": "Noch einmal spielen"
   },
   "author": {
     "title": "Dein Rätsel",

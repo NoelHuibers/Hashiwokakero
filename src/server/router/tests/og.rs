@@ -82,7 +82,7 @@ async fn pages_name_the_image_of_their_language_the_home_page_todays() {
     let today = daily::today();
     for (path, image) in [
         ("/de/rules", og_image(Locale::de)),
-        ("/zh-Hant/practice", og_image(Locale::zh_Hant)),
+        ("/zh-Hant/play", og_image(Locale::zh_Hant)),
         ("/ranks", og_image(Locale::en)),
         // The home page is the daily: today's card, in its language
         ("/", og_daily_image(Locale::en, today)),

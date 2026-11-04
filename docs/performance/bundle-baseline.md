@@ -15,7 +15,7 @@ compares every build with it and writes both tables to its job summary.
 - **Hydration** (`e2e/perf/hydration.spec.ts`): the time from navigation to the `data-hydrated`
   mark that App sets once the WASM has hydrated the server's HTML (`mark_ready` in `src/lib.rs`),
   the moment the page reacts to clicks. A `MutationObserver` turns the mark into a performance
-  mark, so nothing in the app changes for it. The daily (home), the practice board and the ranks,
+  mark, so nothing in the app changes for it. The daily (home), the board of Play and the ranks,
   each loaded cold (a new browser context, nothing cached) five times with the CPU
   slowed down 4× through DevTools (`Emulation.setCPUThrottlingRate`), after one load to warm up
   the browser; the median counts. The server is the browser tests' release build on their seeded
@@ -49,7 +49,7 @@ build of "Build site (browser)" (cargo-leptos 0.3.11), hydration in the Playwrig
 | Page | Hydrated (median of 5) | Range | Local, 16-core desktop |
 | --- | --: | --: | --: |
 | `/` (daily) | 943 ms | 920–1,117 ms | 880 ms |
-| `/practice` | 1,064 ms | 853–1,122 ms | 872 ms |
+| `/play` | 1,064 ms | 853–1,122 ms | 872 ms |
 | `/ranks` | 777 ms | 720–802 ms | 672 ms |
 
 The WASM is nearly all of it: 12 MB raw, about 2.6 MB over the wire with brotli. A local build

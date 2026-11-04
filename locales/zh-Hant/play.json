@@ -1,14 +1,14 @@
 {
   "meta": {
-    "title": "數橋練習 · 無限免費邏輯謎題 · Hashi",
-    "description": "不計時練習數橋（Hashiwokakero）：無限產生的免費謎題，7×7 到 24×24 五種尺寸，附提示與檢查，每題唯一解。"
+    "title": "暢玩數橋 · 無限免費邏輯謎題 · Hashi",
+    "description": "不計時暢玩數橋（Hashiwokakero）：無限產生的免費謎題，7×7 到 24×24 五種尺寸，附提示與檢查，每題唯一解。"
   },
   "heading": "造橋謎題",
   "generate": "產生",
   "generating": "產生中…",
   "generating_text": "正在長出小島、搭建橋梁，並詢問 SAT 求解器解答是否唯一…",
   "card": {
-    "title": "練習",
+    "title": "暢玩",
     "text": "新謎題想玩幾道就玩幾道，每道都經 SAT 求解器證明只有唯一解。沒有計時壓力，每日一橋在首頁。"
   },
   "legend": {

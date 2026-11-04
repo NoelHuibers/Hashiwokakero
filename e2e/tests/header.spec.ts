@@ -13,7 +13,7 @@ import { LOCALES, localized } from '../site.ts';
 /** The pages the tab bar leads to, a group, the account, the rules, the Dojo and the contact form. */
 const ALL = [
   '/',
-  '/practice',
+  '/play',
   '/ranks',
   '/groups',
   `/groups/${SEEDED_GROUP.id}`,

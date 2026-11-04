@@ -62,7 +62,7 @@
     "revealed_title": "Đã hiện lời giải",
     "revealed_text": "Lần này không xếp hạng. Lời giải đang ở trên bàn, hãy xem kỹ nhé!",
     "back": "Quay lại {{ group }}",
-    "practice": "Chơi lại để luyện tập"
+    "play_again": "Chơi lại"
   },
   "author": {
     "title": "Câu đố của bạn",

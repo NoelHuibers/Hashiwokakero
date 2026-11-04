@@ -30,7 +30,7 @@
     "revealed_text": "Este não conta para o ranking. Até amanhã!",
     "rank": "Posição {{ rank }} de {{ total }} hoje",
     "ranking": "Classificando…",
-    "more": "Mais puzzles no modo treino →",
+    "more": "Jogar mais puzzles →",
     "on_board": "Você está no ranking como <b>{{ name }}</b>.",
     "claim": "Registre seu nome para manter sua sequência em qualquer dispositivo →",
     "points": "+{{ points }} pontos na corrida do mês"
@@ -76,9 +76,9 @@
     "next_q": "Quando sai um novo puzzle diário?",
     "next_a": "Todo dia à meia-noite UTC, no mesmo instante no mundo inteiro. Uma contagem regressiva nesta página mostra quanto falta.",
     "more_q": "Onde posso jogar mais?",
-    "more_a": "No <practice>treino</practice>: puzzles ilimitados em cinco tamanhos, de 7×7 a 24×24, com dicas quando quiser. Ou crie seus próprios puzzles na <workshop>oficina</workshop>.",
+    "more_a": "Em <play>Jogar</play>: puzzles ilimitados em cinco tamanhos, de 7×7 a 24×24, com dicas quando quiser. Ou crie seus próprios puzzles na <workshop>oficina</workshop>.",
     "to_rules": "Regras de Hashiwokakero e dicas →",
-    "to_practice": "Treino: puzzles ilimitados →"
+    "to_play": "Jogar: puzzles ilimitados →"
   },
   "recovery": {
     "metadata_error": "Não foi possível carregar o puzzle de hoje. Tenta novamente.",

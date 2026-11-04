@@ -1,14 +1,14 @@
 {
   "meta": {
-    "title": "Luyện Hashiwokakero · câu đố Nối cầu miễn phí · Hashi",
-    "description": "Luyện Hashiwokakero (Nối cầu) không tính giờ: vô hạn câu đố ở năm kích thước từ 7×7 đến 24×24, có gợi ý và kiểm tra, mỗi câu có đúng một lời giải."
+    "title": "Chơi Hashiwokakero · câu đố Nối cầu miễn phí · Hashi",
+    "description": "Chơi Hashiwokakero (Nối cầu) không tính giờ: vô hạn câu đố ở năm kích thước từ 7×7 đến 24×24, có gợi ý và kiểm tra, mỗi câu có đúng một lời giải."
   },
   "heading": "câu đố nối cầu",
   "generate": "Tạo mới",
   "generating": "Đang tạo…",
   "generating_text": "Đang mọc đảo, xây cầu và hỏi bộ giải SAT xem lời giải có duy nhất không…",
   "card": {
-    "title": "Luyện tập",
+    "title": "Chơi",
     "text": "Bao nhiêu câu đố mới cũng được, mỗi câu đều được bộ giải SAT chứng minh có đúng một lời giải. Không áp lực thời gian, cầu mỗi ngày nằm ở trang chủ."
   },
   "legend": {

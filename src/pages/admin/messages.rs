@@ -425,17 +425,17 @@ mod tests {
             platform: "ios".into(),
             os: "iOS 18.1".into(),
             language: "de".into(),
-            page: Some("/practice".into()),
+            page: Some("/play".into()),
             daily: Some(14),
             player: Some(7),
-            errors: vec!["/practice E:database".into()],
+            errors: vec!["/play E:database".into()],
             ..FeedbackContext::default()
         };
         assert_eq!(
             context_summary(&context),
             (
-                "app 1.1.0 · iOS · iOS 18.1 · de · from /practice · daily #14 · player #7".into(),
-                vec!["/practice E:database".into()]
+                "app 1.1.0 · iOS · iOS 18.1 · de · from /play · daily #14 · player #7".into(),
+                vec!["/play E:database".into()]
             )
         );
         assert_eq!(context_summary(&FeedbackContext::default()).0, "website");

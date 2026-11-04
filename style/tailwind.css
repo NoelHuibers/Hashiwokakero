@@ -286,7 +286,7 @@ html:is([lang="hi"], [lang="th"]) [class*="tracking-"] {
     background-size: 23px 29px, 31px 37px, 41px 43px;
   }
 
-  /* Headings and the small bold capitals (DAILY, PRACTICE, dates above titles) */
+  /* Headings and the small bold capitals (DAILY, PLAY, dates above titles) */
   h1,
   h2,
   h3,

@@ -606,9 +606,9 @@ mod tests {
             context: Some(FeedbackContext {
                 app: Some("1.1.0".into()),
                 platform: "android".into(),
-                page: Some("/practice".into()),
+                page: Some("/play".into()),
                 player: Some(17),
-                errors: vec!["/practice E:database".into()],
+                errors: vec!["/play E:database".into()],
                 ..FeedbackContext::default()
             }),
             ..feedback("Kim", "", "The board froze after a hint")
@@ -621,9 +621,9 @@ mod tests {
         for line in [
             "Version: App 1.1.0",
             "Plattform: Android",
-            "Seite: /practice",
+            "Seite: /play",
             "Spieler: #17",
-            "Fehler: /practice E:database",
+            "Fehler: /play E:database",
             // The `=` is quoted-printable
             "https://hashi.rs/admin?tab",
         ] {
@@ -668,7 +668,7 @@ mod tests {
             context: Some(FeedbackContext {
                 platform: "web".into(),
                 language: "de".into(),
-                page: Some("/practice".into()),
+                page: Some("/play".into()),
                 // The page's claim, the server knows better
                 player: Some(999),
                 errors: (0..9).map(|i| format!("error {i}")).collect(),
@@ -720,7 +720,7 @@ mod tests {
         );
         let context = bug.context.as_ref().unwrap();
         assert_eq!(context.player, Some(7));
-        assert_eq!(context.page.as_deref(), Some("/practice"));
+        assert_eq!(context.page.as_deref(), Some("/play"));
         assert_eq!(context.errors.len(), crate::model::MAX_CONTEXT_ERRORS);
         assert_eq!(context.errors.last().map(String::as_str), Some("error 8"));
         assert_eq!(
@@ -839,7 +839,7 @@ mod tests {
             .iter()
             .map(|m| m.context.as_ref().map(|c| (c.player, c.page.clone())))
             .collect();
-        let page = Some("/practice".to_string());
+        let page = Some("/play".to_string());
         assert_eq!(players, [Some((Some(8), page.clone())), Some((None, page))]);
     }
 }

@@ -160,12 +160,15 @@ reload), the headers, one update toast however many calls the server refuses, an
 Where the app is installed, the phone opens links to some pages of `https://hashi.rs` in the app
 instead of the browser (App Links on Android, Universal Links on iOS), the ones people send each
 other: an invite to a group (`/g/<code>`), the daily (`/`, where a daily result's share text
-points), practice (`/practice`, the practice's), the groups (`/groups`, `/groups/...`) and
+points), Play (`/play`, where Play's share text points, and its old address `/practice`, which
+the app's router redirects like the server), the groups (`/groups`, `/groups/...`) and
 players' pages (`/player/<id>`), each in every language (`/ja/g/<code>`). Not the rules, the legal
 pages, the admin's, the Dojo with its uploads, or anything the server answers itself (`/api`,
 `/og`, the downloads). `seo::APP_LINK_PATHS` and `APP_LINK_PREFIXES` list them;
 `plugins.deep-link.mobile` in `src-tauri/tauri.conf.json` for Android, `seo::app_link_components`
-for iOS. Tests in `seo.rs` compare the three (and print the JSON to paste after a change, a new
+for iOS, without the pages of `seo::NOT_YET_ON_IOS` (`/play` until the first version after 1.1.0
+is in the App Store: iOS reads the site's file whatever app version is installed, and an older
+app would open the link and stay on its page). Tests in `seo.rs` compare the three (and print the JSON to paste after a change, a new
 language say) and check that Apple's patterns match the same paths as Android's.
 
 - **The app:** `tauri-plugin-deep-link` (official) writes, when the app is built, an intent
@@ -322,7 +325,7 @@ credential for `rs.hashi.debug` with the debug key's SHA-1, then
 
 ## Offline
 
-Practice works without a network: in the app, generating a puzzle, hints, checks, revealing the
+Play works without a network: in the app, generating a puzzle, hints, checks, revealing the
 solution, the workshop's uniqueness check and the CNF of a puzzle run on the phone. The
 website's server functions `generate_puzzle`, `solve_puzzle` and `puzzle_cnf`
 (`src/api/puzzle.rs`) are also Tauri commands of the same names (`src-tauri/src/lib.rs`), which
@@ -334,9 +337,9 @@ the generator uses (rand, splr) equal in both `Cargo.lock`s. After Dependabot up
 them in the repository's lock, update the app's: `cargo update -p <name> --precise <version>`
 in `src-tauri`.
 
-- `src/api/practice.rs` decides: in the app, where Tauri's `window.__TAURI_INTERNALS__` is there,
+- `src/api/compute.rs` decides: in the app, where Tauri's `window.__TAURI_INTERNALS__` is there,
   the commands, else (the website, the bundle in a browser) the server functions. The pages call
-  `api::practice` instead of the server functions. Only the app's build (`csr`) has the bridge,
+  `api::compute` instead of the server functions. Only the app's build (`csr`) has the bridge,
   `src/api/native.rs`, which calls Tauri's `invoke` without Tauri's npm package.
 - A command takes the server function's JSON request body as a string (`{"args": "..."}`) and
   answers with the JSON of its answer, also a string: JavaScript's numbers would round the
@@ -354,9 +357,9 @@ gets it solved, like anyone who runs another solver (on the website too). The lo
 puzzles of a player's groups (`puzzle_locked`) isn't repeated on the phone, which doesn't know
 which of them are still open.
 
-**Without a network** the app starts and practice works. The pages that need the server show their
+**Without a network** the app starts and Play works. The pages that need the server show their
 own state (the daily: "Couldn't load today's puzzle"); a call that can't reach the server shows
-one notice, "You're offline. Practice still works.", instead of an error toast each
+one notice, "You're offline. Play still works.", instead of an error toast each
 (`state/toasts.rs`), again only after the window's `online` event. The website shows its errors
 as before.
 
@@ -382,7 +385,7 @@ When `app::shell` changes, change `index.html` with it.
 ## Tests
 
 `e2e/app/smoke.spec.ts`, with its own Playwright config, apart from the website's tests: the
-bundle starts, the practice board shows a generated puzzle, the router opens the rules, a
+bundle starts, the board of Play shows a generated puzzle, the router opens the rules, a
 language prefix like `/ja/rules` works, also after a reload, and the saved theme applies. It
 serves the bundle like the app's WebView does (every unknown path is `index.html`) and passes
 `/api` on to a server it starts on a fresh database:
@@ -394,7 +397,7 @@ pnpm run app:e2e      # E2E_BIN, E2E_SITE_ROOT, E2E_PORT, E2E_APP_DIST as for pn
 ```
 
 `e2e/app/offline.spec.ts` plays the app without a network: a fake `window.__TAURI_INTERNALS__`
-records the commands and answers them, every `/api` request fails. Practice generates, hints and
+records the commands and answers them, every `/api` request fails. Play generates, hints and
 checks through the commands, the workshop's uniqueness check refuses today's unfinished daily,
 the daily shows its offline state, and the ranks one offline notice.
 
@@ -407,7 +410,7 @@ CI runs both in "Smoke test app (web)" on the bundle of "Build app (web)", whose
 the bundle in the system WebView. It has its own `Cargo.lock` and is excluded from the workspace
 (`exclude` in the root `Cargo.toml`), so the website's builds never compile Tauri. It still builds
 inside the repository, where `.cargo/config.toml` applies. Its workspace has a second crate,
-`offline/` (`hashi_offline`), the offline practice without Tauri (see [Offline](#offline)), whose
+`offline/` (`hashi_offline`), the offline Play without Tauri (see [Offline](#offline)), whose
 tests run on any machine. It uses `backend` without its command line (`default-features = false`,
 no clap).
 
@@ -415,8 +418,8 @@ no clap).
   `src/main.rs`, the same on the desktop, for development only.
 - `tauri.conf.json`: application ID `rs.hashi`, the name, the version, the bundle
   (`frontendDist`), the one window, and the content security policy (below).
-- `capabilities/default.json`: what the page may call in Tauri: `core:default`, the offline
-  practice's commands, the opener's `open_url` for `https:` and `mailto:` URLs, the deep-link
+- `capabilities/default.json`: what the page may call in Tauri: `core:default`, the commands
+  of the offline Play, the opener's `open_url` for `https:` and `mailto:` URLs, the deep-link
   plugin's `get_current`, and the app's own plugin `hashi` (`share`, `system_bars`, `games_*` of
   [Games services](#games-services)). `build.rs` lists the commands of the app and of its plugin,
   which makes Tauri check them against the capabilities.
@@ -592,9 +595,9 @@ real debug APK on an Android emulator and drives its WebView through Playwright'
 the app's data and starts it with `am start`: it hydrates and knows it is offline
 (`navigator.onLine`), no page of the app breaks the content security policy
 (`securitypolicyviolation` events and the console's CSP messages on `/`, `/rules`, `/ja/rules`,
-`/practice`, `/create`, `/lab`, `/dojo`, `/groups`, `/daily`), practice generates, hints and
+`/play`, `/create`, `/lab`, `/dojo`, `/groups`, `/daily`), Play generates, hints and
 checks through the native commands, the ranks show one offline notice (again after an `online`
-event), Android's back button goes back from the practice to the rules instead of closing
+event), Android's back button goes back from Play to the rules instead of closing
 the app, and without Play Games' project id the games commands say the service isn't there and
 its SDK never starts.
 
@@ -605,7 +608,7 @@ darkest and brightest pixels of the bars in `screencap`); in the phone's dark mo
 the start is bright; a link to GitHub and a `location` to another site leave the app's page
 where it is and start a `VIEW` intent (the logcat); the share bar's copy works, its share button
 and the CNF button open Android's share sheet (a `CHOOSER` intent), the CNF as a file in the
-app's cache. Screenshots of the practice board, `practice-light.png` and `practice-dark.png`,
+app's cache. Screenshots of the board of Play, `play-light.png` and `play-dark.png`,
 are taken with `screencap`.
 
 The debug APK calls the production server when it can. The whole test runs without a network,
@@ -620,7 +623,7 @@ API 35 with KVM (`reactivecircus/android-emulator-runner`, a cold boot of about 
 snapshot was 2 GB and took longer to restore), and runs the spec. About 5 minutes in all. Emulators are flaky, so this config, and
 only this one, retries a failed test once; the job summary counts the flaky tests next to the
 times of the build, the emulator's start and the tests. The artifact
-`android-emulator-screenshot` has the practice board, light and dark; a failed run also uploads
+`android-emulator-screenshot` has the board of Play, light and dark; a failed run also uploads
 `android-emulator-report`, the Playwright report and the app's, WebView's and Tauri's lines of
 the logcat. Not a required check.
 
@@ -954,7 +957,7 @@ Made in CI, not committed (a run makes about 600). The sources:
 - `store/capture/`: a Playwright run (`store.capture.ts`) on the built site with a seeded local
   database (`seed.ts`, made-up players, never Turso), the same server the browser tests start
   (`e2e/server.ts`). Every language of the site, six scenes (`scenes.ts`): today's daily in
-  progress, the leaderboard with mika on the podium, a hard practice board, the group of friends,
+  progress, the leaderboard with mika on the podium, a hard board of Play, the group of friends,
   the stamp book and the solved daily at night. Each on a phone (402 × 874, three times) and a
   tablet (1032 × 1376, twice), with room left for the system bars as the app leaves it
   (`--app-inset-*`). The dailies are fixed puzzles (`puzzles.json`), one per difficulty: the page
@@ -1282,19 +1285,19 @@ hashi.rs fails the test.
 
 What it checks: the app starts on its start page at `tauri://localhost`, with Tauri's bridge, an
 iPhone's user agent (`x-hashi-app: ios/...`) and the daily's offline state; no page breaks the
-content security policy (`/`, `/rules`, `/ja/rules`, `/practice`, `/create`, `/lab`, `/dojo`,
-`/groups`, `/daily`); practice generates through the native generator (Tauri's IPC is a fetch of
+content security policy (`/`, `/rules`, `/ja/rules`, `/play`, `/create`, `/lab`, `/dojo`,
+`/groups`, `/daily`); Play generates through the native generator (Tauri's IPC is a fetch of
 `ipc://localhost/generate_puzzle` on iOS) and hints and checks without the server; the ranks show
 one offline notice, again after an `online` event; a link to GitHub and a `location` to another site
-leave the app's page where it is and bring Safari to the front; the practice page clears the safe
+leave the app's page where it is and bring Safari to the front; the page of Play clears the safe
 areas (step 13c): the header starts below `env(safe-area-inset-top)` and the tab bar's labels end
 above the home indicator, in both themes, and turned sideways (WebDriver's orientation) the top's
 inset is 0, the body's and the tab bar's sides clear the Dynamic Island, as the scene lifecycle
 gives them; the app's own plugin answers `system_bars` and `share` with a file (without its Swift
 side Tauri refuses them); Game Center's sign-in answers (available, nobody signed in) with nothing
 of GameKit over the page, a report goes through, and the button's command shows the sign-in sheet
-GameKit kept, or is refused without one. The screenshots `start.png`, `practice.png`,
-`practice-light.png`, `practice-dark.png` (the page dark on a light phone: the status bar's icons
+GameKit kept, or is refused without one. The screenshots `start.png`, `play.png`,
+`play-light.png`, `play-dark.png` (the page dark on a light phone: the status bar's icons
 light), `landscape.png`, `share.png` (the share sheet with the file) and `game-center.png` are the
 artifact `ios-simulator-screenshot`. They come from `simctl io screenshot`, or from WebDriverAgent
 where simctl fails (it did once with the simulator turned sideways, on Xcode 27.1).

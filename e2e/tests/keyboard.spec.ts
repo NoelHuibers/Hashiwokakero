@@ -1,9 +1,9 @@
-import { addBridge, board, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { addBridge, board, edges, PLAY_KEY, saved, seedGame } from '../board.ts';
 import { expect, test, visit } from '../fixtures.ts';
 import { LADDER } from '../puzzles.ts';
 
 test('build and remove bridges with the keyboard and hear island degrees', async ({ page }) => {
-  await seedGame(page, PRACTICE_KEY, {
+  await seedGame(page, PLAY_KEY, {
     puzzle: LADDER,
     bridges: edges(LADDER).map(() => 0),
     solution: null,
@@ -11,22 +11,22 @@ test('build and remove bridges with the keyboard and hear island degrees', async
     moves: 0,
     hints: 0,
   });
-  await visit(page, '/practice');
+  await visit(page, '/play');
   await expect(board(page)).toHaveAttribute('tabindex', '0');
   await board(page).focus();
   await expect(page.getByRole('status').filter({ hasText: /^Bridge / })).toContainText('0/2');
   await board(page).press('Enter');
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[0]).toBe(1);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[0]).toBe(1);
   await expect(page.getByRole('status').filter({ hasText: /^Bridge / })).toContainText('1/2');
   await board(page).press('Shift+Enter');
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[0]).toBe(0);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[0]).toBe(0);
   await board(page).press('Shift+=');
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[0]).toBe(1);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[0]).toBe(1);
   await board(page).press('-');
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[0]).toBe(0);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[0]).toBe(0);
   await board(page).press('ArrowRight');
   await board(page).press('Space');
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[1]).toBe(1);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[1]).toBe(1);
 });
 
 /**
@@ -34,7 +34,7 @@ test('build and remove bridges with the keyboard and hear island degrees', async
  * aims at, not the one the keyboard selected (it did, and a first click went to edge 0).
  */
 test('clicks build their bridge whether or not the keyboard was used first', async ({ page }) => {
-  await seedGame(page, PRACTICE_KEY, {
+  await seedGame(page, PLAY_KEY, {
     puzzle: LADDER,
     bridges: edges(LADDER).map(() => 0),
     solution: null,
@@ -42,13 +42,13 @@ test('clicks build their bridge whether or not the keyboard was used first', asy
     moves: 0,
     hints: 0,
   });
-  await visit(page, '/practice');
-  await addBridge(page, PRACTICE_KEY, LADDER, 1);
-  expect((await saved(page, PRACTICE_KEY)).bridges[0]).toBe(0);
+  await visit(page, '/play');
+  await addBridge(page, PLAY_KEY, LADDER, 1);
+  expect((await saved(page, PLAY_KEY)).bridges[0]).toBe(0);
   await board(page).press('Enter');
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[0]).toBe(1);
-  await addBridge(page, PRACTICE_KEY, LADDER, 3);
-  const bridges = (await saved(page, PRACTICE_KEY)).bridges;
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[0]).toBe(1);
+  await addBridge(page, PLAY_KEY, LADDER, 3);
+  const bridges = (await saved(page, PLAY_KEY)).bridges;
   expect([bridges[0], bridges[1], bridges[3]]).toEqual([1, 1, 1]);
 });
 

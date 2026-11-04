@@ -2,7 +2,7 @@
 // Tab stop, the checked radio, and the arrow keys move the focus and the choice along.
 import type { Locator, Page } from '@playwright/test';
 
-import { board, cellCenter, edges, PRACTICE_KEY, seedGame } from '../board.ts';
+import { board, cellCenter, edges, PLAY_KEY, seedGame } from '../board.ts';
 import { expect, test, visit } from '../fixtures.ts';
 import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
 
@@ -16,9 +16,9 @@ const playing = {
   hints: 0,
 };
 
-/** The practice page's solver tools, opened from their summary with the keyboard. */
+/** The solver tools of Play, opened from their summary with the keyboard. */
 async function openSolverTools(page: Page, path: string) {
-  await seedGame(page, PRACTICE_KEY, playing);
+  await seedGame(page, PLAY_KEY, playing);
   await visit(page, path);
   const tools = page.locator('details:has([role=radiogroup])');
   const summary = tools.locator('summary');
@@ -40,7 +40,7 @@ const savedSolver = (page: Page) =>
   page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null')?.kind, SOLVER_KEY);
 
 test('tab into the solver choice and pick a solver with the arrow keys', async ({ page }) => {
-  const { tools, summary, group } = await openSolverTools(page, '/practice');
+  const { tools, summary, group } = await openSolverTools(page, '/play');
   await expect(page.getByRole('radiogroup', { name: 'Solver', exact: true })).toBeVisible();
   const cdcl = group.getByRole('radio', { name: 'Own CDCL' });
   const dpll = group.getByRole('radio', { name: 'Own DPLL' });
@@ -99,12 +99,12 @@ test('tab into the solver choice and pick a solver with the arrow keys', async (
   await expect(tools.locator('.terminal')).toContainText(/c config\s*Own DPLL/);
 
   // And it is still chosen after a reload
-  await visit(page, '/practice');
+  await visit(page, '/play');
   await expect(page.locator('[role=radiogroup] [aria-checked=true]')).toHaveText('Own DPLL');
 });
 
 test('in Arabic the left arrow goes to the next solver', async ({ page }) => {
-  const { summary, group } = await openSolverTools(page, '/ar/practice');
+  const { summary, group } = await openSolverTools(page, '/ar/play');
   const radios = group.getByRole('radio');
   await expect(radios).toHaveCount(3);
   await summary.press('Tab');

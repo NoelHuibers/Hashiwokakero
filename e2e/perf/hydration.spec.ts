@@ -7,8 +7,8 @@ import path from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
-/** The daily (home), the practice board and the ranks. */
-const PAGES = ['/', '/practice', '/ranks'];
+/** The daily (home), the board of Play and the ranks. */
+const PAGES = ['/', '/play', '/ranks'];
 const RUNS = Number(process.env.PERF_RUNS ?? 5);
 /** How many times slower the CPU runs (DevTools' throttling). */
 const CPU_THROTTLING = Number(process.env.PERF_CPU ?? 4);

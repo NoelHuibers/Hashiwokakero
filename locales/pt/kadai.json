@@ -62,7 +62,7 @@
     "revealed_title": "Solução revelada",
     "revealed_text": "Desta vez fica fora do ranking. A solução está no tabuleiro, dê uma boa olhada!",
     "back": "Voltar para {{ group }}",
-    "practice": "Jogar de novo para treinar"
+    "play_again": "Jogar de novo"
   },
   "author": {
     "title": "Seu puzzle",

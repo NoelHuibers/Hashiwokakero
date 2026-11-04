@@ -16,7 +16,7 @@ import { type BrowserContext, test as base, expect, type Page } from '@playwrigh
 /** The pages, and the language each is in. */
 const PAGES: [string, string][] = [
   ['/', 'en'],
-  ['/practice', 'en'],
+  ['/play', 'en'],
   ['/ranks', 'en'],
   ['/rules', 'en'],
   ['/dojo', 'en'],

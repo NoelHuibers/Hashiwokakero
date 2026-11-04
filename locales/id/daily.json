@@ -30,7 +30,7 @@
     "revealed_text": "Yang ini tidak dihitung untuk peringkat. Sampai jumpa besok!",
     "rank": "Peringkat {{ rank }} dari {{ total }} hari ini",
     "ranking": "Menghitung peringkat…",
-    "more": "Teka-teki lain di mode latihan →",
+    "more": "Main teka-teki lainnya →",
     "on_board": "Kamu ada di papan peringkat sebagai <b>{{ name }}</b>.",
     "claim": "Klaim namamu agar rentetanmu tersimpan di semua perangkat →",
     "points": "+{{ points }} poin di balapan bulanan"
@@ -76,9 +76,9 @@
     "next_q": "Kapan ada teka-teki harian baru?",
     "next_a": "Setiap hari pada tengah malam UTC, di saat yang sama di seluruh dunia. Hitung mundur di halaman ini menunjukkan berapa lama lagi.",
     "more_q": "Di mana saya bisa bermain lebih banyak?",
-    "more_a": "Di <practice>latihan</practice>: teka-teki tanpa batas dalam lima ukuran, dari 7×7 sampai 24×24, dengan petunjuk kapan pun kamu mau. Atau buat teka-tekimu sendiri di <workshop>bengkel</workshop>.",
+    "more_a": "Di <play>Main</play>: teka-teki tanpa batas dalam lima ukuran, dari 7×7 sampai 24×24, dengan petunjuk kapan pun kamu mau. Atau buat teka-tekimu sendiri di <workshop>bengkel</workshop>.",
     "to_rules": "Aturan Hashiwokakero dan tips →",
-    "to_practice": "Latihan: teka-teki tanpa batas →"
+    "to_play": "Main: teka-teki tanpa batas →"
   },
   "recovery": {
     "metadata_error": "Teka-teki hari ini gagal dimuat. Coba lagi.",

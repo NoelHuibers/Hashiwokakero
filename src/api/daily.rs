@@ -247,7 +247,7 @@ pub async fn month_leaderboard(month: Option<i64>) -> Result<MonthBoard, ServerF
     blocks::hidden(&conn, me, daily::month_board(&conn, month, me).await?).await
 }
 
-/// An earlier daily, to play it in practice mode.
+/// An earlier daily, to play it again in Play.
 #[server(input = Json, client = HashiClient)]
 pub async fn archived_daily(day: i64) -> Result<Option<Puzzle>, ServerFnError> {
     daily::archived(&db::conn()?, day).await

@@ -30,7 +30,7 @@
     "revealed_text": "Este no cuenta para la clasificación. ¡Hasta mañana!",
     "rank": "Puesto {{ rank }} de {{ total }} hoy",
     "ranking": "Clasificando…",
-    "more": "Más puzles en el modo práctica →",
+    "more": "Más puzles para jugar →",
     "on_board": "Estás en la clasificación como <b>{{ name }}</b>.",
     "claim": "Reserva tu nombre para mantener tu racha en todos tus dispositivos →",
     "points": "+{{ points }} puntos en la carrera del mes"
@@ -76,9 +76,9 @@
     "next_q": "¿Cuándo hay un puzle diario nuevo?",
     "next_a": "Cada día a medianoche UTC, en el mismo momento en todo el mundo. Una cuenta atrás en esta página muestra cuánto falta.",
     "more_q": "¿Dónde puedo jugar más?",
-    "more_a": "En la <practice>práctica</practice>: puzles ilimitados en cinco tamaños, de 7×7 a 24×24, con pistas cuando quieras. O crea tus propios puzles en el <workshop>taller</workshop>.",
+    "more_a": "En <play>Jugar</play>: puzles ilimitados en cinco tamaños, de 7×7 a 24×24, con pistas cuando quieras. O crea tus propios puzles en el <workshop>taller</workshop>.",
     "to_rules": "Reglas de Hashiwokakero y consejos →",
-    "to_practice": "Práctica: puzles ilimitados →"
+    "to_play": "Jugar: puzles ilimitados →"
   },
   "recovery": {
     "metadata_error": "No se pudo cargar el puzle de hoy. Inténtalo de nuevo.",

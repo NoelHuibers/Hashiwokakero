@@ -62,7 +62,7 @@
     "revealed_title": "Solution dévoilée",
     "revealed_text": "Pas de classement cette fois. La solution est sur la grille, regarde-la bien !",
     "back": "Retour à {{ group }}",
-    "practice": "La rejouer pour t’entraîner"
+    "play_again": "La rejouer"
   },
   "author": {
     "title": "Ta grille",
