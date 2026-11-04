@@ -639,7 +639,9 @@ pub struct RacePuzzle {
     pub solution: Vec<u8>,
 }
 
-/// Where a race's puzzle comes from at its start. One source for now: a fresh puzzle of the
+/// Where a race's puzzle comes from at its start.
+///
+/// One source for now: a fresh puzzle of the
 /// generator, of a difficulty's preset size. Another source (a stored puzzle, say) is another
 /// variant here, with what identifies it stored with the race.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -1166,7 +1168,9 @@ pub async fn replay(
     Ok(data)
 }
 
-/// What deleting a user does to races, in `auth::erase`'s transaction (`?1` the user): the lobbies
+/// What deleting a user does to races, in `auth::erase`'s transaction (`?1` the user).
+///
+/// The lobbies
 /// they host go with everyone in them, races they hosted stay without a host, and their own lines
 /// go, also from races that are over, like their attempts at group puzzles. The races of groups that
 /// went with them go by the trigger `group_races_gone` (db.rs).

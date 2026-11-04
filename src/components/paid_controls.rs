@@ -1,5 +1,6 @@
-//! The controls of a game timed on the server (a group puzzle, a race): undo, redo, clear, the
-//! paid hint and check, and giving up. What a hint or check costs and how it reaches the server is
+//! The controls of a game timed on the server (a group puzzle, a race).
+//!
+//! Undo, redo, clear, the paid hint and check, and giving up. What a hint or check costs and how it reaches the server is
 //! the page's; the board shows the answers the same way everywhere ([`show_hint`],
 //! [`show_check`]).
 

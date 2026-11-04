@@ -599,8 +599,8 @@ async fn one_race_at_a_time_per_group_and_lobbies_expire() {
     open(&conn, other, bram, Difficulty::Easy, T0)
         .await
         .unwrap();
-    let races = list(&conn, group, bram, T0 + 1).await.unwrap();
-    let open_one = races.open.unwrap();
+    let listed = list(&conn, group, bram, T0 + 1).await.unwrap();
+    let open_one = listed.open.unwrap();
     assert_eq!(
         (open_one.id, open_one.difficulty, open_one.joined),
         (id, Difficulty::Hard, false)

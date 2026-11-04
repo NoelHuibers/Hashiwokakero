@@ -19,8 +19,7 @@
   "page": {
     "title": "Race",
     "missing": "This race isn't here.",
-    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in.",
-    "back": "Back to {{ group }}"
+    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
   },
   "lobby": {
     "title": "Lobby",

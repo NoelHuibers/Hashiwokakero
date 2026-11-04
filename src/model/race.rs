@@ -345,7 +345,9 @@ pub fn countdown(now: i64, starts_at: i64) -> Countdown {
     }
 }
 
-/// How long until a race's page asks the server again, at the server time `now`. In the lobby
+/// How long until a race's page asks the server again, at the server time `now`.
+///
+/// In the lobby
 /// every 2 s; in the countdown every second, and right at the start for the puzzle; while it runs
 /// every second (a player still without the puzzle sooner); after it, every 2 s for the rematch.
 pub fn poll_delay_ms(view: &RaceView, now: i64, have_puzzle: bool) -> u32 {
