@@ -63,11 +63,11 @@ impl Stored {
 const COLUMNS: &str =
     "id, group_id, author_id, title, puzzle, solution, created_at, closes_at, kudos_seen";
 
-fn json<T: serde::Serialize>(value: &T) -> Result<String, ServerFnError> {
+pub(super) fn json<T: serde::Serialize>(value: &T) -> Result<String, ServerFnError> {
     serde_json::to_string(value).map_err(ServerFnError::new)
 }
 
-fn from_json<T: serde::de::DeserializeOwned>(s: &str) -> Result<T, ServerFnError> {
+pub(super) fn from_json<T: serde::de::DeserializeOwned>(s: &str) -> Result<T, ServerFnError> {
     serde_json::from_str(s).map_err(ServerFnError::new)
 }
 
@@ -639,7 +639,7 @@ async fn running(
     }
 }
 
-fn check_bridges(board: &Board, bridges: &[u8]) -> Result<(), ServerFnError> {
+pub(super) fn check_bridges(board: &Board, bridges: &[u8]) -> Result<(), ServerFnError> {
     if bridges.len() != board.edges.len() || bridges.iter().any(|&b| b > 2) {
         return Err(ApiError::WrongPuzzle.into());
     }
@@ -647,26 +647,45 @@ fn check_bridges(board: &Board, bridges: &[u8]) -> Result<(), ServerFnError> {
 }
 
 /// Ms since the start, for the time of a help.
-fn since(started_at: i64, now: i64) -> u32 {
+pub(super) fn since(started_at: i64, now: i64) -> u32 {
     u32::try_from((now - started_at).max(0)).unwrap_or(u32::MAX)
 }
 
 /// Stores a help with the attempt and counts it.
 async fn record_help(conn: &Connection, row: &Row, help: Help) -> Result<(), ServerFnError> {
+    add_help(
+        conn,
+        ("group_puzzle_attempts", "puzzle_id"),
+        (row.puzzle_id, row.user_id),
+        &row.helps,
+        help,
+    )
+    .await
+}
+
+/// Stores a help with a player's earlier `helps` and counts it, in the row of `table` whose
+/// `key` column is `key` and `user_id` is `user`: a group puzzle's attempt, a race's player.
+pub(super) async fn add_help(
+    conn: &Connection,
+    (table, column_of_key): (&str, &str),
+    (key, user): (i64, i64),
+    helps: &[Help],
+    help: Help,
+) -> Result<(), ServerFnError> {
     let column = match help.kind {
         MarkKind::Hint => "hints",
         MarkKind::Check => "checks",
         // Only a newer server's helps read back by an old one: nothing this one gives
         MarkKind::Unknown => return Ok(()),
     };
-    let mut helps = row.helps.clone();
+    let mut helps = helps.to_vec();
     helps.push(help);
     conn.execute(
         &format!(
-            "UPDATE group_puzzle_attempts SET {column} = {column} + 1, helps = ?3
-             WHERE puzzle_id = ?1 AND user_id = ?2"
+            "UPDATE {table} SET {column} = {column} + 1, helps = ?3
+             WHERE {column_of_key} = ?1 AND user_id = ?2"
         ),
-        params![row.puzzle_id, row.user_id, json(&helps)?],
+        params![key, user, json(&helps)?],
     )
     .await
     .map_err(db_err)?;
@@ -948,6 +967,7 @@ pub async fn replay(
         puzzle: None,
         lanes: Vec::new(),
         group_puzzle: Some(stored.id),
+        race: None,
     };
     if data.locked {
         return Ok(data);

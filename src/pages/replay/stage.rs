@@ -248,6 +248,7 @@ pub fn Stage(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoView {
     let shown = Memo::new(move |_| theatre.shown_lanes());
     let day = theatre.data.with_value(|d| d.day);
     let puzzle_replay = theatre.data.with_value(|d| d.group_puzzle.is_some());
+    let race_replay = theatre.data.with_value(|d| d.race.is_some());
     let label = move || {
         let names = shown.with(|s| {
             theatre.data.with_value(|d| {
@@ -258,7 +259,9 @@ pub fn Stage(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoView {
             })
         });
         let locale = i18n.get_locale();
-        if puzzle_replay {
+        if race_replay {
+            td_string!(locale, race.results.stage, names)
+        } else if puzzle_replay {
             td_string!(locale, kadai.replay.stage, names)
         } else {
             td_string!(
