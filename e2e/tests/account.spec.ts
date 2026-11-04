@@ -1,4 +1,5 @@
-// The account page: a wrong password, changing the username, and deleting the account for good.
+// The account page: a wrong password, changing the username and the password, and deleting the
+// account for good.
 import { fillAuthForm, register, signInWith, signOut } from '../account.ts';
 import { allow, expect, newUsername, test, visit } from '../fixtures.ts';
 
@@ -100,6 +101,48 @@ test('change the username, then not again for a month', async ({ page, problems 
   allow(problems, /\/api\/login/, /status of 4\d\d|status of 5\d\d/);
   await signInWith(page, renamed, PASSWORD);
   await expect(page.getByRole('heading', { name: `こんにちは, ${renamed}` })).toBeVisible();
+});
+
+test('change the password, behind the current one', async ({ page, problems }) => {
+  const username = newUsername('pass');
+  const changed = 'nine-planks-wider';
+  await visit(page, '/account');
+  await register(page, username, PASSWORD);
+
+  // Cancel closes the form
+  await page.getByRole('button', { name: 'Change password…' }).click();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.locator('#password-new')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Change password…' }).click();
+  await expect(page.locator('#password-current')).toHaveAttribute(
+    'autocomplete',
+    'current-password',
+  );
+  await expect(page.locator('#password-new')).toHaveAttribute('autocomplete', 'new-password');
+  await expect(page.getByText('Your other devices are signed out', { exact: false })).toBeVisible();
+  const save = page.getByRole('button', { name: 'Change password', exact: true });
+  await page.getByLabel('Current password').fill('not-the-password');
+  await page.getByLabel('New password').fill(changed);
+  await save.click();
+  await expect(page.getByText('Wrong password.')).toBeVisible();
+  allow(problems, /\/api\/change_password/, /status of 4\d\d|status of 5\d\d/);
+
+  await page.getByLabel('Current password').fill(PASSWORD);
+  await save.click();
+  await expect(page.getByText('Your password is changed.')).toBeVisible();
+  await expect(page.locator('#password-new')).toHaveCount(0);
+  // Still signed in here, after a reload too
+  await page.reload();
+  await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
+
+  // The new password signs in, the old one doesn't
+  await signOut(page);
+  await signInWith(page, username, PASSWORD);
+  await expect(page.getByText('Wrong username or password.')).toBeVisible();
+  allow(problems, /\/api\/login/, /status of 4\d\d|status of 5\d\d/);
+  await signInWith(page, username, changed);
+  await expect(page.getByRole('heading', { name: `こんにちは, ${username}` })).toBeVisible();
 });
 
 test("a name the boards do not want is refused, in the player's language", async ({

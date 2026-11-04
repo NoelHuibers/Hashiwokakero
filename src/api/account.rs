@@ -1,5 +1,5 @@
-//! Accounts: the current user, registering, logging in and out, renaming, deleting, statistics,
-//! public profiles.
+//! Accounts: the current user, registering, logging in and out, renaming, changing the password,
+//! deleting, statistics, public profiles.
 
 use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
@@ -40,6 +40,13 @@ pub async fn change_username(
     Ok(auth::change_username(&conn, username.trim(), password)
         .await?
         .info())
+}
+
+/// Changes the password of the signed in account, behind the current one. Signs the account out
+/// everywhere else, this session stays.
+#[server(input = Json, client = HashiClient)]
+pub async fn change_password(current: String, new: String) -> Result<(), ServerFnError> {
+    auth::change_password(&db::conn()?, current, new).await
 }
 
 #[server(input = Json, client = HashiClient)]

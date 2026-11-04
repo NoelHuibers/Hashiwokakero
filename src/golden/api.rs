@@ -157,6 +157,10 @@ fn requests() -> Vec<Entry> {
             username: "noel2".into(),
             password: "correct horse".into(),
         }),
+        entry(&api::ChangePassword {
+            current: "correct horse".into(),
+            new: "battery staple".into(),
+        }),
         entry(&api::Logout {}),
         entry(&api::DeleteAccount {
             password: Some("correct horse".into()),

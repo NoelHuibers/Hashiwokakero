@@ -15,6 +15,7 @@
 /api/admin_unban_player {"id":9}
 /api/archived_daily {"day":20381}
 /api/block_player {"player":9,"on":true}
+/api/change_password {"current":"correct horse","new":"battery staple"}
 /api/change_username {"username":"noel2","password":"correct horse"}
 /api/create_group {"name":"Tea club"}
 /api/current_user {}

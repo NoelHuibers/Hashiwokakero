@@ -4,8 +4,8 @@ use sha2::{Digest, Sha256};
 
 use super::*;
 use crate::api::{
-    ChangeUsername, CurrentUser, DeleteAccount, LoadPlayer, Login, Logout, MyStats, Register,
-    ShowStamp, StartDaily,
+    ChangePassword, ChangeUsername, CurrentUser, DeleteAccount, LoadPlayer, Login, Logout, MyStats,
+    Register, ShowStamp, StartDaily,
 };
 use crate::model::MS_PER_DAY;
 
@@ -565,6 +565,152 @@ async fn changing_the_username_once_a_month() {
     // The old names are free for others
     Browser::signed_up(&server, "renaming_rae").await;
     Browser::signed_up(&server, "rae_renamed").await;
+}
+
+fn change_password(current: &str, new: &str) -> ChangePassword {
+    ChangePassword {
+        current: current.into(),
+        new: new.into(),
+    }
+}
+
+/// The sessions an account has, signed in anywhere.
+async fn sessions(conn: &Connection, user: i64) -> i64 {
+    let mut rows = conn
+        .query(
+            "SELECT COUNT(*) FROM sessions WHERE user_id = ?1",
+            params![user],
+        )
+        .await
+        .unwrap();
+    rows.next().await.unwrap().unwrap().get(0).unwrap()
+}
+
+const NEW_PASSWORD: &str = "battery staple";
+
+#[tokio::test]
+async fn changing_the_password_signs_out_everywhere_else() {
+    let server = Server::start().await;
+    let nobody = server.browser();
+    assert_eq!(
+        api_error(nobody.call(change_password(PASSWORD, NEW_PASSWORD)).await),
+        ApiError::SessionExpired
+    );
+    // Guests have no password, they get one by registering
+    let guest = server.browser();
+    guest.call(StartDaily { device: None }).await.unwrap();
+    assert_eq!(
+        api_error(guest.call(change_password(PASSWORD, NEW_PASSWORD)).await),
+        ApiError::Forbidden
+    );
+
+    let browser = Browser::signed_up(&server, "paula_pw").await;
+    let token = browser.session().unwrap();
+    let id = browser.call(CurrentUser {}).await.unwrap().unwrap().id;
+    // Signed in on two more devices
+    let laptop = server.browser();
+    laptop.call(login("paula_pw", PASSWORD)).await.unwrap();
+    let phone = server.browser();
+    phone.call(login("paula_pw", PASSWORD)).await.unwrap();
+    let conn = conn().await;
+    assert_eq!(sessions(&conn, id).await, 3);
+
+    for (current, new, error) in [
+        ("not my password", NEW_PASSWORD, ApiError::WrongPassword),
+        (PASSWORD, "short", ApiError::PasswordTooShort),
+        (PASSWORD, &"x".repeat(129), ApiError::PasswordTooLong),
+        // A new password that can't be stored is refused before the current one is checked
+        ("not my password", "short", ApiError::PasswordTooShort),
+    ] {
+        assert_eq!(
+            api_error(browser.call(change_password(current, new)).await),
+            error,
+            "{current} -> {new}"
+        );
+    }
+    // None of that changed anything: the old password signs in, the devices stay signed in
+    assert_eq!(sessions(&conn, id).await, 3);
+    let other = server.browser();
+    assert_eq!(
+        other.call(login("paula_pw", PASSWORD)).await.unwrap().id,
+        id
+    );
+    other.call(Logout {}).await.unwrap();
+    for b in [&browser, &laptop, &phone] {
+        assert_eq!(b.call(CurrentUser {}).await.unwrap().unwrap().id, id);
+    }
+
+    let changed = browser
+        .call_with_headers(change_password(PASSWORD, NEW_PASSWORD))
+        .await;
+    changed.result.unwrap();
+    // This browser keeps its session, the same cookie: nothing new to store
+    assert!(changed.headers.get(reqwest::header::SET_COOKIE).is_none());
+    assert_eq!(browser.session().unwrap(), token);
+    assert_eq!(browser.call(CurrentUser {}).await.unwrap().unwrap().id, id);
+    // The other devices are signed out
+    assert_eq!(sessions(&conn, id).await, 1);
+    for b in [&laptop, &phone] {
+        assert_eq!(b.call(CurrentUser {}).await.unwrap(), None);
+        assert_eq!(
+            api_error(
+                b.call(change_password(NEW_PASSWORD, "third password"))
+                    .await
+            ),
+            ApiError::SessionExpired
+        );
+    }
+    // The new password signs in, the old one doesn't
+    assert_eq!(
+        api_error(laptop.call(login("paula_pw", PASSWORD)).await),
+        ApiError::WrongLogin
+    );
+    assert_eq!(
+        laptop
+            .call(login("paula_pw", NEW_PASSWORD))
+            .await
+            .unwrap()
+            .id,
+        id
+    );
+    assert_eq!(laptop.call(CurrentUser {}).await.unwrap().unwrap().id, id);
+    // And it is what the account asks for now, to change it again
+    assert_eq!(
+        api_error(
+            browser
+                .call(change_password(PASSWORD, "third password"))
+                .await
+        ),
+        ApiError::WrongPassword
+    );
+    browser
+        .call(change_password(NEW_PASSWORD, "third password"))
+        .await
+        .unwrap();
+    assert_eq!(laptop.call(CurrentUser {}).await.unwrap(), None);
+    assert_eq!(browser.call(CurrentUser {}).await.unwrap().unwrap().id, id);
+}
+
+/// A wrong current password counts as a failed sign in: nobody tries out passwords on a session
+/// someone left open.
+#[tokio::test]
+async fn guessing_the_current_password_is_limited_like_signing_in() {
+    let server = Server::start().await;
+    let browser = Browser::signed_up(&server, "guessed_gus").await;
+    for _ in 0..8 {
+        assert_eq!(
+            api_error(browser.call(change_password("a guess", NEW_PASSWORD)).await),
+            ApiError::WrongPassword
+        );
+    }
+    assert_eq!(
+        api_error(browser.call(change_password(PASSWORD, NEW_PASSWORD)).await),
+        ApiError::TooManyAttempts
+    );
+    assert_eq!(
+        api_error(server.browser().call(login("guessed_gus", PASSWORD)).await),
+        ApiError::TooManyAttempts
+    );
 }
 
 /// An admin listed by username in `HASHI_ADMINS` keeps it: freed, it would make its next owner an

@@ -41,6 +41,14 @@
     "done": "You're now {{ name }}.",
     "wait": "You can change your username again from {{ date }}."
   },
+  "password_change": {
+    "start": "Change password…",
+    "current": "Current password",
+    "new": "New password",
+    "hint": "At least 8 characters. Your other devices are signed out, this one stays signed in.",
+    "button": "Change password",
+    "done": "Your password is changed."
+  },
   "delete": {
     "title": "Delete account",
     "intro": "Deletes your name, password, stamps and Dojo submissions for good. Your past times stay on old leaderboards without a name, so the other players keep their places.",
