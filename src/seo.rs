@@ -707,6 +707,8 @@ mod tests {
                 "https://hashi.rs/groups/12/puzzles/3",
                 "/groups/12/puzzles/3",
             ),
+            // A race's lobby link (the share button)
+            ("https://hashi.rs/groups/12/races/7", "/groups/12/races/7"),
             ("https://hashi.rs/player/42", "/player/42"),
             (
                 "https://hashi.rs/player/42?from=ranks#record",
@@ -855,6 +857,8 @@ mod tests {
             ("/groups/12", true),
             ("/groups/12/replay/20400", true),
             ("/fr/groups/12/puzzles/3", true),
+            ("/groups/12/races/7", true),
+            ("/ja/groups/12/races/7", true),
             ("/g/k7m2xq_9", true),
             ("/zh-Hant/g/abc", true),
             ("/g/", true),

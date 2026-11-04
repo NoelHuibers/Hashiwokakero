@@ -12,7 +12,6 @@
     "watch": "Watch",
     "history": "Recent races",
     "none": "No races yet. Open one and challenge the group!",
-    "winner": "won by {{ name }}",
     "no_winner": "no winner",
     "players": "{{ count }} players"
   },
@@ -53,7 +52,6 @@
     "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
     "you": "you",
     "away": "away",
-    "finished": "finished",
     "gave_up": "gave up"
   },
   "watch": {
@@ -73,7 +71,6 @@
     "rematch_join": "Join the rematch",
     "rematch_go": "To the rematch",
     "replay": "Everyone's moves",
-    "solution": "The solution",
     "stage": "The race's board with the bridges of {{ names }}"
   },
   "errors": {

@@ -1,89 +1,86 @@
 {
-  "title": "Race",
+  "title": "Đua",
   "card": {
-    "text": "Race each other live on the same fresh puzzle: open a lobby, the others join, and 3, 2, 1, go!",
-    "difficulty": "Difficulty",
-    "open": "Open a race",
-    "opening": "Opening…",
-    "lobby": "Race open · {{ count }} joined",
-    "running": "Race on · {{ count }} racing",
-    "join": "Join",
-    "to_lobby": "To the lobby",
-    "watch": "Watch",
-    "history": "Recent races",
-    "none": "No races yet. Open one and challenge the group!",
-    "winner": "won by {{ name }}",
-    "no_winner": "no winner",
-    "players": "{{ count }} players"
+    "text": "Đua trực tiếp với nhau trên cùng một câu đố mới: mở phòng chờ, mọi người tham gia, và 3, 2, 1, bắt đầu!",
+    "difficulty": "Độ khó",
+    "open": "Mở cuộc đua",
+    "opening": "Đang mở…",
+    "lobby": "Cuộc đua đang mở · {{ count }} người tham gia",
+    "running": "Đang đua · {{ count }} người",
+    "join": "Tham gia",
+    "to_lobby": "Tới phòng chờ",
+    "watch": "Xem",
+    "history": "Các cuộc đua gần đây",
+    "none": "Chưa có cuộc đua nào. Mở một cuộc và thách đấu cả nhóm!",
+    "no_winner": "không ai thắng",
+    "players": "{{ count }} người chơi"
   },
   "page": {
-    "title": "Race",
-    "missing": "This race isn't here.",
-    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
+    "title": "Đua",
+    "missing": "Cuộc đua này không có ở đây.",
+    "missing_hint": "Phòng chờ có thể đã hết hạn hoặc bị hủy, hoặc thuộc một nhóm bạn không tham gia."
   },
   "lobby": {
-    "title": "Lobby",
-    "text": "Everyone who joins gets the same fresh puzzle at the same moment. The host starts once at least two have joined.",
-    "host": "host",
-    "away": "away",
-    "join": "Join the race",
-    "leave": "Leave",
-    "cancel": "Call it off",
-    "cancel_confirm": "Call off the race? The lobby closes for everyone in it.",
-    "start": "Start",
-    "starting": "Getting the puzzle ready…",
-    "need_more": "Waiting for at least one more player…",
-    "waiting_host": "Waiting for the host to start…",
-    "expires": "The lobby closes in {{ minutes }} min if nobody starts it.",
-    "share": "Share the lobby link",
-    "share_text": "Race me on Hashi! Join the lobby in {{ group }}:"
+    "title": "Phòng chờ",
+    "text": "Ai tham gia cũng nhận cùng một câu đố mới vào cùng một lúc. Chủ phòng bắt đầu khi có ít nhất hai người.",
+    "host": "chủ phòng",
+    "away": "vắng",
+    "join": "Tham gia cuộc đua",
+    "leave": "Rời",
+    "cancel": "Hủy",
+    "cancel_confirm": "Hủy cuộc đua? Phòng chờ sẽ đóng với tất cả mọi người.",
+    "start": "Bắt đầu",
+    "starting": "Đang chuẩn bị câu đố…",
+    "need_more": "Đang chờ thêm ít nhất một người…",
+    "waiting_host": "Đang chờ chủ phòng bắt đầu…",
+    "expires": "Phòng chờ đóng sau {{ minutes }} phút nếu không ai bắt đầu.",
+    "share": "Chia sẻ liên kết phòng chờ",
+    "share_text": "Đua với mình trên Hashi! Vào phòng chờ trong {{ group }}:"
   },
   "countdown": {
-    "ready": "Ready",
-    "go": "Go!"
+    "ready": "Chuẩn bị",
+    "go": "Bắt đầu!"
   },
   "play": {
-    "give_up": "Give up",
-    "give_up_confirm": "Give up the race? You won't get a place, and you'll see the solution once the race is over.",
-    "loading": "The puzzle is on its way…",
-    "time_left": "{{ minutes }} min left"
+    "give_up": "Bỏ cuộc",
+    "give_up_confirm": "Bỏ cuộc đua? Bạn sẽ không có thứ hạng, và sẽ thấy lời giải khi cuộc đua kết thúc.",
+    "loading": "Câu đố đang tới…",
+    "time_left": "còn {{ minutes }} phút"
   },
   "track": {
-    "title": "Progress",
-    "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
-    "you": "you",
-    "away": "away",
-    "finished": "finished",
-    "gave_up": "gave up"
+    "title": "Tiến độ",
+    "text": "Mỗi người đã đi được bao xa: tỉ lệ cầu trên bàn của họ. Không ai thấy cầu của người khác.",
+    "you": "bạn",
+    "away": "vắng",
+    "gave_up": "bỏ cuộc"
   },
   "watch": {
-    "text": "You're watching: the race is on between the players."
+    "text": "Bạn đang xem: cuộc đua diễn ra giữa những người chơi."
   },
   "done": {
-    "solved": "Finished!",
-    "gave_up": "You gave up.",
-    "waiting": "Waiting for the others to finish…"
+    "solved": "Xong rồi!",
+    "gave_up": "Bạn đã bỏ cuộc.",
+    "waiting": "Đang chờ những người khác hoàn thành…"
   },
   "results": {
-    "title": "Results",
-    "flagged": "not placed",
-    "gave_up": "gave up",
-    "out": "didn't finish",
-    "rematch": "Rematch",
-    "rematch_join": "Join the rematch",
-    "rematch_go": "To the rematch",
-    "replay": "Everyone's moves",
-    "solution": "The solution",
-    "stage": "The race's board with the bridges of {{ names }}"
+    "title": "Kết quả",
+    "flagged": "không xếp hạng",
+    "gave_up": "bỏ cuộc",
+    "out": "chưa xong",
+    "rematch": "Tái đấu",
+    "rematch_join": "Tham gia tái đấu",
+    "rematch_go": "Tới trận tái đấu",
+    "replay": "Nước đi của mọi người",
+    "stage": "Bàn của cuộc đua với cầu của {{ names }}"
   },
   "errors": {
-    "open": "There's a race open in this group already: join that one.",
-    "gone": "This race isn't here any more: the lobby expired or was called off.",
-    "started": "This race has started already: you can watch it.",
-    "host_only": "Only the host can start the race.",
-    "too_few": "A race needs at least two players.",
-    "not_joined": "You're not in this race.",
-    "not_running": "The race isn't running.",
-    "done": "You're done with this race."
+    "open": "Nhóm này đã có một cuộc đua đang mở: hãy tham gia cuộc đó.",
+    "gone": "Cuộc đua này không còn nữa: phòng chờ đã hết hạn hoặc bị hủy.",
+    "started": "Cuộc đua này đã bắt đầu: bạn có thể xem.",
+    "host_only": "Chỉ chủ phòng mới có thể bắt đầu cuộc đua.",
+    "too_few": "Cuộc đua cần ít nhất hai người chơi.",
+    "not_joined": "Bạn không tham gia cuộc đua này.",
+    "not_running": "Cuộc đua không diễn ra.",
+    "done": "Bạn đã xong cuộc đua này."
   }
 }

@@ -1,89 +1,86 @@
 {
-  "title": "Race",
+  "title": "Wyścig",
   "card": {
-    "text": "Race each other live on the same fresh puzzle: open a lobby, the others join, and 3, 2, 1, go!",
-    "difficulty": "Difficulty",
-    "open": "Open a race",
-    "opening": "Opening…",
-    "lobby": "Race open · {{ count }} joined",
-    "running": "Race on · {{ count }} racing",
-    "join": "Join",
-    "to_lobby": "To the lobby",
-    "watch": "Watch",
-    "history": "Recent races",
-    "none": "No races yet. Open one and challenge the group!",
-    "winner": "won by {{ name }}",
-    "no_winner": "no winner",
-    "players": "{{ count }} players"
+    "text": "Ścigajcie się na żywo na tej samej świeżej łamigłówce: otwórz poczekalnię, inni dołączą, i 3, 2, 1, start!",
+    "difficulty": "Poziom trudności",
+    "open": "Otwórz wyścig",
+    "opening": "Otwieranie…",
+    "lobby": "Wyścig otwarty · dołączyło: {{ count }}",
+    "running": "Wyścig trwa · ścigających się: {{ count }}",
+    "join": "Dołącz",
+    "to_lobby": "Do poczekalni",
+    "watch": "Oglądaj",
+    "history": "Ostatnie wyścigi",
+    "none": "Jeszcze nie było wyścigów. Otwórz pierwszy i rzuć wyzwanie grupie!",
+    "no_winner": "bez zwycięzcy",
+    "players": "graczy: {{ count }}"
   },
   "page": {
-    "title": "Race",
-    "missing": "This race isn't here.",
-    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
+    "title": "Wyścig",
+    "missing": "Tego wyścigu tu nie ma.",
+    "missing_hint": "Poczekalnia mogła wygasnąć lub zostać odwołana albo należy do grupy, w której cię nie ma."
   },
   "lobby": {
-    "title": "Lobby",
-    "text": "Everyone who joins gets the same fresh puzzle at the same moment. The host starts once at least two have joined.",
-    "host": "host",
-    "away": "away",
-    "join": "Join the race",
-    "leave": "Leave",
-    "cancel": "Call it off",
-    "cancel_confirm": "Call off the race? The lobby closes for everyone in it.",
+    "title": "Poczekalnia",
+    "text": "Każdy, kto dołączy, dostaje tę samą świeżą łamigłówkę w tej samej chwili. Gospodarz startuje, gdy dołączą co najmniej dwie osoby.",
+    "host": "gospodarz",
+    "away": "nieobecny",
+    "join": "Dołącz do wyścigu",
+    "leave": "Wyjdź",
+    "cancel": "Odwołaj",
+    "cancel_confirm": "Odwołać wyścig? Poczekalnia zamknie się dla wszystkich.",
     "start": "Start",
-    "starting": "Getting the puzzle ready…",
-    "need_more": "Waiting for at least one more player…",
-    "waiting_host": "Waiting for the host to start…",
-    "expires": "The lobby closes in {{ minutes }} min if nobody starts it.",
-    "share": "Share the lobby link",
-    "share_text": "Race me on Hashi! Join the lobby in {{ group }}:"
+    "starting": "Przygotowanie łamigłówki…",
+    "need_more": "Czekamy na co najmniej jeszcze jedną osobę…",
+    "waiting_host": "Czekamy, aż gospodarz wystartuje…",
+    "expires": "Poczekalnia zamknie się za {{ minutes }} min, jeśli nikt nie wystartuje.",
+    "share": "Udostępnij link do poczekalni",
+    "share_text": "Zmierz się ze mną w Hashi! Dołącz do poczekalni w {{ group }}:"
   },
   "countdown": {
-    "ready": "Ready",
-    "go": "Go!"
+    "ready": "Gotowi",
+    "go": "Start!"
   },
   "play": {
-    "give_up": "Give up",
-    "give_up_confirm": "Give up the race? You won't get a place, and you'll see the solution once the race is over.",
-    "loading": "The puzzle is on its way…",
-    "time_left": "{{ minutes }} min left"
+    "give_up": "Poddaj się",
+    "give_up_confirm": "Poddać wyścig? Nie zajmiesz miejsca, a rozwiązanie zobaczysz po zakończeniu wyścigu.",
+    "loading": "Łamigłówka jest w drodze…",
+    "time_left": "zostało {{ minutes }} min"
   },
   "track": {
-    "title": "Progress",
-    "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
-    "you": "you",
-    "away": "away",
-    "finished": "finished",
-    "gave_up": "gave up"
+    "title": "Postęp",
+    "text": "Jak daleko jest każdy: część mostów na jego planszy. Nikt nie widzi cudzych mostów.",
+    "you": "ty",
+    "away": "nieobecny",
+    "gave_up": "poddał się"
   },
   "watch": {
-    "text": "You're watching: the race is on between the players."
+    "text": "Oglądasz: wyścig toczy się między uczestnikami."
   },
   "done": {
-    "solved": "Finished!",
-    "gave_up": "You gave up.",
-    "waiting": "Waiting for the others to finish…"
+    "solved": "Ukończone!",
+    "gave_up": "Poddajesz się.",
+    "waiting": "Czekamy, aż pozostali skończą…"
   },
   "results": {
-    "title": "Results",
-    "flagged": "not placed",
-    "gave_up": "gave up",
-    "out": "didn't finish",
-    "rematch": "Rematch",
-    "rematch_join": "Join the rematch",
-    "rematch_go": "To the rematch",
-    "replay": "Everyone's moves",
-    "solution": "The solution",
-    "stage": "The race's board with the bridges of {{ names }}"
+    "title": "Wyniki",
+    "flagged": "bez miejsca",
+    "gave_up": "poddał się",
+    "out": "nie ukończył",
+    "rematch": "Rewanż",
+    "rematch_join": "Dołącz do rewanżu",
+    "rematch_go": "Do rewanżu",
+    "replay": "Ruchy wszystkich",
+    "stage": "Plansza wyścigu z mostami: {{ names }}"
   },
   "errors": {
-    "open": "There's a race open in this group already: join that one.",
-    "gone": "This race isn't here any more: the lobby expired or was called off.",
-    "started": "This race has started already: you can watch it.",
-    "host_only": "Only the host can start the race.",
-    "too_few": "A race needs at least two players.",
-    "not_joined": "You're not in this race.",
-    "not_running": "The race isn't running.",
-    "done": "You're done with this race."
+    "open": "W tej grupie jest już otwarty wyścig: dołącz do niego.",
+    "gone": "Tego wyścigu już nie ma: poczekalnia wygasła lub została odwołana.",
+    "started": "Ten wyścig już się zaczął: możesz go oglądać.",
+    "host_only": "Tylko gospodarz może rozpocząć wyścig.",
+    "too_few": "Wyścig wymaga co najmniej dwóch graczy.",
+    "not_joined": "Nie bierzesz udziału w tym wyścigu.",
+    "not_running": "Wyścig nie trwa.",
+    "done": "Ten wyścig masz już za sobą."
   }
 }

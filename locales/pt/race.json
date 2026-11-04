@@ -1,89 +1,86 @@
 {
-  "title": "Race",
+  "title": "Corrida",
   "card": {
-    "text": "Race each other live on the same fresh puzzle: open a lobby, the others join, and 3, 2, 1, go!",
-    "difficulty": "Difficulty",
-    "open": "Open a race",
-    "opening": "Opening…",
-    "lobby": "Race open · {{ count }} joined",
-    "running": "Race on · {{ count }} racing",
-    "join": "Join",
-    "to_lobby": "To the lobby",
-    "watch": "Watch",
-    "history": "Recent races",
-    "none": "No races yet. Open one and challenge the group!",
-    "winner": "won by {{ name }}",
-    "no_winner": "no winner",
-    "players": "{{ count }} players"
+    "text": "Disputem ao vivo o mesmo quebra-cabeça novinho: abra uma sala, os outros entram e 3, 2, 1, já!",
+    "difficulty": "Dificuldade",
+    "open": "Abrir uma corrida",
+    "opening": "Abrindo…",
+    "lobby": "Corrida aberta · {{ count }} na sala",
+    "running": "Corrida em andamento · {{ count }} correndo",
+    "join": "Entrar",
+    "to_lobby": "Para a sala",
+    "watch": "Assistir",
+    "history": "Corridas recentes",
+    "none": "Ainda não há corridas. Abra uma e desafie o grupo!",
+    "no_winner": "sem vencedor",
+    "players": "{{ count }} jogadores"
   },
   "page": {
-    "title": "Race",
-    "missing": "This race isn't here.",
-    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
+    "title": "Corrida",
+    "missing": "Esta corrida não está aqui.",
+    "missing_hint": "A sala pode ter expirado ou sido cancelada, ou é de um grupo do qual você não faz parte."
   },
   "lobby": {
-    "title": "Lobby",
-    "text": "Everyone who joins gets the same fresh puzzle at the same moment. The host starts once at least two have joined.",
-    "host": "host",
-    "away": "away",
-    "join": "Join the race",
-    "leave": "Leave",
-    "cancel": "Call it off",
-    "cancel_confirm": "Call off the race? The lobby closes for everyone in it.",
-    "start": "Start",
-    "starting": "Getting the puzzle ready…",
-    "need_more": "Waiting for at least one more player…",
-    "waiting_host": "Waiting for the host to start…",
-    "expires": "The lobby closes in {{ minutes }} min if nobody starts it.",
-    "share": "Share the lobby link",
-    "share_text": "Race me on Hashi! Join the lobby in {{ group }}:"
+    "title": "Sala",
+    "text": "Quem entra recebe o mesmo quebra-cabeça novo no mesmo momento. O anfitrião começa quando houver pelo menos dois.",
+    "host": "anfitrião",
+    "away": "ausente",
+    "join": "Entrar na corrida",
+    "leave": "Sair",
+    "cancel": "Cancelar a corrida",
+    "cancel_confirm": "Cancelar a corrida? A sala fecha para todos.",
+    "start": "Começar",
+    "starting": "Preparando o quebra-cabeça…",
+    "need_more": "Esperando pelo menos mais uma pessoa…",
+    "waiting_host": "Esperando o anfitrião começar…",
+    "expires": "A sala fecha em {{ minutes }} min se ninguém começar.",
+    "share": "Compartilhar o link da sala",
+    "share_text": "Corra comigo no Hashi! Entre na sala em {{ group }}:"
   },
   "countdown": {
-    "ready": "Ready",
-    "go": "Go!"
+    "ready": "Preparar",
+    "go": "Já!"
   },
   "play": {
-    "give_up": "Give up",
-    "give_up_confirm": "Give up the race? You won't get a place, and you'll see the solution once the race is over.",
-    "loading": "The puzzle is on its way…",
-    "time_left": "{{ minutes }} min left"
+    "give_up": "Desistir",
+    "give_up_confirm": "Desistir da corrida? Você fica sem posição e vê a solução quando a corrida acabar.",
+    "loading": "O quebra-cabeça está a caminho…",
+    "time_left": "faltam {{ minutes }} min"
   },
   "track": {
-    "title": "Progress",
-    "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
-    "you": "you",
-    "away": "away",
-    "finished": "finished",
-    "gave_up": "gave up"
+    "title": "Progresso",
+    "text": "Até onde cada um chegou: a parte das pontes no tabuleiro. Ninguém vê as pontes dos outros.",
+    "you": "você",
+    "away": "ausente",
+    "gave_up": "desistiu"
   },
   "watch": {
-    "text": "You're watching: the race is on between the players."
+    "text": "Você está assistindo: a corrida é entre os participantes."
   },
   "done": {
-    "solved": "Finished!",
-    "gave_up": "You gave up.",
-    "waiting": "Waiting for the others to finish…"
+    "solved": "Concluído!",
+    "gave_up": "Você desistiu.",
+    "waiting": "Esperando os outros terminarem…"
   },
   "results": {
-    "title": "Results",
-    "flagged": "not placed",
-    "gave_up": "gave up",
-    "out": "didn't finish",
-    "rematch": "Rematch",
-    "rematch_join": "Join the rematch",
-    "rematch_go": "To the rematch",
-    "replay": "Everyone's moves",
-    "solution": "The solution",
-    "stage": "The race's board with the bridges of {{ names }}"
+    "title": "Resultados",
+    "flagged": "sem posição",
+    "gave_up": "desistiu",
+    "out": "não terminou",
+    "rematch": "Revanche",
+    "rematch_join": "Entrar na revanche",
+    "rematch_go": "Para a revanche",
+    "replay": "As jogadas de todos",
+    "stage": "O tabuleiro da corrida com as pontes de {{ names }}"
   },
   "errors": {
-    "open": "There's a race open in this group already: join that one.",
-    "gone": "This race isn't here any more: the lobby expired or was called off.",
-    "started": "This race has started already: you can watch it.",
-    "host_only": "Only the host can start the race.",
-    "too_few": "A race needs at least two players.",
-    "not_joined": "You're not in this race.",
-    "not_running": "The race isn't running.",
-    "done": "You're done with this race."
+    "open": "Já há uma corrida aberta neste grupo: entre nela.",
+    "gone": "Esta corrida não existe mais: a sala expirou ou foi cancelada.",
+    "started": "Esta corrida já começou: você pode assistir.",
+    "host_only": "Só o anfitrião pode começar a corrida.",
+    "too_few": "Uma corrida precisa de pelo menos dois jogadores.",
+    "not_joined": "Você não está nesta corrida.",
+    "not_running": "A corrida não está em andamento.",
+    "done": "Você já terminou esta corrida."
   }
 }

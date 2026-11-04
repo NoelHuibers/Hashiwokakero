@@ -1,89 +1,86 @@
 {
-  "title": "Race",
+  "title": "Yarış",
   "card": {
-    "text": "Race each other live on the same fresh puzzle: open a lobby, the others join, and 3, 2, 1, go!",
-    "difficulty": "Difficulty",
-    "open": "Open a race",
-    "opening": "Opening…",
-    "lobby": "Race open · {{ count }} joined",
-    "running": "Race on · {{ count }} racing",
-    "join": "Join",
-    "to_lobby": "To the lobby",
-    "watch": "Watch",
-    "history": "Recent races",
-    "none": "No races yet. Open one and challenge the group!",
-    "winner": "won by {{ name }}",
-    "no_winner": "no winner",
-    "players": "{{ count }} players"
+    "text": "Aynı yepyeni bulmacada canlı yarışın: bir lobi açın, diğerleri katılsın, ve 3, 2, 1, başla!",
+    "difficulty": "Zorluk",
+    "open": "Yarış aç",
+    "opening": "Açılıyor…",
+    "lobby": "Yarış açık · {{ count }} kişi katıldı",
+    "running": "Yarış sürüyor · {{ count }} kişi yarışıyor",
+    "join": "Katıl",
+    "to_lobby": "Lobiye git",
+    "watch": "İzle",
+    "history": "Son yarışlar",
+    "none": "Henüz yarış yok. Bir tane aç ve gruba meydan oku!",
+    "no_winner": "kazanan yok",
+    "players": "{{ count }} oyuncu"
   },
   "page": {
-    "title": "Race",
-    "missing": "This race isn't here.",
-    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
+    "title": "Yarış",
+    "missing": "Bu yarış burada değil.",
+    "missing_hint": "Lobinin süresi dolmuş ya da iptal edilmiş olabilir, veya üyesi olmadığın bir gruba ait."
   },
   "lobby": {
-    "title": "Lobby",
-    "text": "Everyone who joins gets the same fresh puzzle at the same moment. The host starts once at least two have joined.",
-    "host": "host",
-    "away": "away",
-    "join": "Join the race",
-    "leave": "Leave",
-    "cancel": "Call it off",
-    "cancel_confirm": "Call off the race? The lobby closes for everyone in it.",
-    "start": "Start",
-    "starting": "Getting the puzzle ready…",
-    "need_more": "Waiting for at least one more player…",
-    "waiting_host": "Waiting for the host to start…",
-    "expires": "The lobby closes in {{ minutes }} min if nobody starts it.",
-    "share": "Share the lobby link",
-    "share_text": "Race me on Hashi! Join the lobby in {{ group }}:"
+    "title": "Lobi",
+    "text": "Katılan herkes aynı anda aynı yepyeni bulmacayı alır. Ev sahibi en az iki kişi katılınca başlatır.",
+    "host": "ev sahibi",
+    "away": "yok",
+    "join": "Yarışa katıl",
+    "leave": "Ayrıl",
+    "cancel": "İptal et",
+    "cancel_confirm": "Yarış iptal edilsin mi? Lobi içindeki herkes için kapanır.",
+    "start": "Başlat",
+    "starting": "Bulmaca hazırlanıyor…",
+    "need_more": "En az bir oyuncu daha bekleniyor…",
+    "waiting_host": "Ev sahibinin başlatması bekleniyor…",
+    "expires": "Kimse başlatmazsa lobi {{ minutes }} dk içinde kapanır.",
+    "share": "Lobi bağlantısını paylaş",
+    "share_text": "Hashi'de benimle yarış! {{ group }} grubundaki lobiye katıl:"
   },
   "countdown": {
-    "ready": "Ready",
-    "go": "Go!"
+    "ready": "Hazır",
+    "go": "Başla!"
   },
   "play": {
-    "give_up": "Give up",
-    "give_up_confirm": "Give up the race? You won't get a place, and you'll see the solution once the race is over.",
-    "loading": "The puzzle is on its way…",
-    "time_left": "{{ minutes }} min left"
+    "give_up": "Pes et",
+    "give_up_confirm": "Yarıştan çekilsin mi? Sıralamaya giremezsin, çözümü yarış bitince görürsün.",
+    "loading": "Bulmaca yolda…",
+    "time_left": "{{ minutes }} dk kaldı"
   },
   "track": {
-    "title": "Progress",
-    "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
-    "you": "you",
-    "away": "away",
-    "finished": "finished",
-    "gave_up": "gave up"
+    "title": "İlerleme",
+    "text": "Herkesin durumu: tahtasındaki köprülerin oranı. Kimse başkasının köprülerini görmez.",
+    "you": "sen",
+    "away": "yok",
+    "gave_up": "pes etti"
   },
   "watch": {
-    "text": "You're watching: the race is on between the players."
+    "text": "İzliyorsun: yarış katılımcılar arasında."
   },
   "done": {
-    "solved": "Finished!",
-    "gave_up": "You gave up.",
-    "waiting": "Waiting for the others to finish…"
+    "solved": "Bitti!",
+    "gave_up": "Pes ettin.",
+    "waiting": "Diğerlerinin bitirmesi bekleniyor…"
   },
   "results": {
-    "title": "Results",
-    "flagged": "not placed",
-    "gave_up": "gave up",
-    "out": "didn't finish",
-    "rematch": "Rematch",
-    "rematch_join": "Join the rematch",
-    "rematch_go": "To the rematch",
-    "replay": "Everyone's moves",
-    "solution": "The solution",
-    "stage": "The race's board with the bridges of {{ names }}"
+    "title": "Sonuçlar",
+    "flagged": "sıralama dışı",
+    "gave_up": "pes etti",
+    "out": "bitiremedi",
+    "rematch": "Rövanş",
+    "rematch_join": "Rövanşa katıl",
+    "rematch_go": "Rövanşa git",
+    "replay": "Herkesin hamleleri",
+    "stage": "{{ names }} köprüleriyle yarışın tahtası"
   },
   "errors": {
-    "open": "There's a race open in this group already: join that one.",
-    "gone": "This race isn't here any more: the lobby expired or was called off.",
-    "started": "This race has started already: you can watch it.",
-    "host_only": "Only the host can start the race.",
-    "too_few": "A race needs at least two players.",
-    "not_joined": "You're not in this race.",
-    "not_running": "The race isn't running.",
-    "done": "You're done with this race."
+    "open": "Bu grupta zaten açık bir yarış var: ona katıl.",
+    "gone": "Bu yarış artık yok: lobinin süresi doldu ya da iptal edildi.",
+    "started": "Bu yarış çoktan başladı: izleyebilirsin.",
+    "host_only": "Yarışı yalnızca ev sahibi başlatabilir.",
+    "too_few": "Bir yarış için en az iki oyuncu gerekir.",
+    "not_joined": "Bu yarışta değilsin.",
+    "not_running": "Yarış sürmüyor.",
+    "done": "Bu yarışı zaten bitirdin."
   }
 }

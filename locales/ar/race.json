@@ -1,89 +1,86 @@
 {
-  "title": "Race",
+  "title": "سباق",
   "card": {
-    "text": "Race each other live on the same fresh puzzle: open a lobby, the others join, and 3, 2, 1, go!",
-    "difficulty": "Difficulty",
-    "open": "Open a race",
-    "opening": "Opening…",
-    "lobby": "Race open · {{ count }} joined",
-    "running": "Race on · {{ count }} racing",
-    "join": "Join",
-    "to_lobby": "To the lobby",
-    "watch": "Watch",
-    "history": "Recent races",
-    "none": "No races yet. Open one and challenge the group!",
-    "winner": "won by {{ name }}",
-    "no_winner": "no winner",
-    "players": "{{ count }} players"
+    "text": "تسابقوا مباشرة على اللغز الجديد نفسه: افتح غرفة انتظار، ينضم الآخرون، ثم 3، 2، 1، انطلق!",
+    "difficulty": "الصعوبة",
+    "open": "افتح سباقًا",
+    "opening": "جارٍ الفتح…",
+    "lobby": "سباق مفتوح · انضم {{ count }}",
+    "running": "السباق جارٍ · يتسابق {{ count }}",
+    "join": "انضم",
+    "to_lobby": "إلى غرفة الانتظار",
+    "watch": "شاهد",
+    "history": "سباقات حديثة",
+    "none": "لا سباقات بعد. افتح واحدًا وتحدَّ المجموعة!",
+    "no_winner": "بلا فائز",
+    "players": "{{ count }} لاعبين"
   },
   "page": {
-    "title": "Race",
-    "missing": "This race isn't here.",
-    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
+    "title": "سباق",
+    "missing": "هذا السباق غير موجود هنا.",
+    "missing_hint": "ربما انتهت مهلة غرفة الانتظار أو أُلغيت، أو أنها تخص مجموعة لست عضوًا فيها."
   },
   "lobby": {
-    "title": "Lobby",
-    "text": "Everyone who joins gets the same fresh puzzle at the same moment. The host starts once at least two have joined.",
-    "host": "host",
-    "away": "away",
-    "join": "Join the race",
-    "leave": "Leave",
-    "cancel": "Call it off",
-    "cancel_confirm": "Call off the race? The lobby closes for everyone in it.",
-    "start": "Start",
-    "starting": "Getting the puzzle ready…",
-    "need_more": "Waiting for at least one more player…",
-    "waiting_host": "Waiting for the host to start…",
-    "expires": "The lobby closes in {{ minutes }} min if nobody starts it.",
-    "share": "Share the lobby link",
-    "share_text": "Race me on Hashi! Join the lobby in {{ group }}:"
+    "title": "غرفة الانتظار",
+    "text": "كل من ينضم يحصل على اللغز الجديد نفسه في اللحظة نفسها. يبدأ المضيف حين ينضم لاعبان على الأقل.",
+    "host": "المضيف",
+    "away": "غائب",
+    "join": "انضم إلى السباق",
+    "leave": "غادر",
+    "cancel": "ألغِ السباق",
+    "cancel_confirm": "إلغاء السباق؟ ستُغلق غرفة الانتظار للجميع.",
+    "start": "ابدأ",
+    "starting": "جارٍ تجهيز اللغز…",
+    "need_more": "بانتظار لاعب آخر على الأقل…",
+    "waiting_host": "بانتظار أن يبدأ المضيف…",
+    "expires": "تُغلق غرفة الانتظار بعد {{ minutes }} دقيقة إن لم يبدأ أحد.",
+    "share": "شارك رابط غرفة الانتظار",
+    "share_text": "سابقني في Hashi! انضم إلى غرفة الانتظار في {{ group }}:"
   },
   "countdown": {
-    "ready": "Ready",
-    "go": "Go!"
+    "ready": "استعد",
+    "go": "انطلق!"
   },
   "play": {
-    "give_up": "Give up",
-    "give_up_confirm": "Give up the race? You won't get a place, and you'll see the solution once the race is over.",
-    "loading": "The puzzle is on its way…",
-    "time_left": "{{ minutes }} min left"
+    "give_up": "استسلام",
+    "give_up_confirm": "الاستسلام من السباق؟ لن تحصل على مركز، وسترى الحل حين ينتهي السباق.",
+    "loading": "اللغز في الطريق…",
+    "time_left": "بقي {{ minutes }} دقيقة"
   },
   "track": {
-    "title": "Progress",
-    "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
-    "you": "you",
-    "away": "away",
-    "finished": "finished",
-    "gave_up": "gave up"
+    "title": "التقدم",
+    "text": "إلى أين وصل كل لاعب: نسبة الجسور على لوحته. لا أحد يرى جسور الآخرين.",
+    "you": "أنت",
+    "away": "غائب",
+    "gave_up": "استسلم"
   },
   "watch": {
-    "text": "You're watching: the race is on between the players."
+    "text": "أنت تشاهد: السباق بين المشاركين."
   },
   "done": {
-    "solved": "Finished!",
-    "gave_up": "You gave up.",
-    "waiting": "Waiting for the others to finish…"
+    "solved": "انتهيت!",
+    "gave_up": "لقد استسلمت.",
+    "waiting": "بانتظار أن ينهي الآخرون…"
   },
   "results": {
-    "title": "Results",
-    "flagged": "not placed",
-    "gave_up": "gave up",
-    "out": "didn't finish",
-    "rematch": "Rematch",
-    "rematch_join": "Join the rematch",
-    "rematch_go": "To the rematch",
-    "replay": "Everyone's moves",
-    "solution": "The solution",
-    "stage": "The race's board with the bridges of {{ names }}"
+    "title": "النتائج",
+    "flagged": "بلا مركز",
+    "gave_up": "استسلم",
+    "out": "لم ينهِ",
+    "rematch": "مباراة ثأرية",
+    "rematch_join": "انضم إلى المباراة الثأرية",
+    "rematch_go": "إلى المباراة الثأرية",
+    "replay": "حركات الجميع",
+    "stage": "لوحة السباق مع جسور {{ names }}"
   },
   "errors": {
-    "open": "There's a race open in this group already: join that one.",
-    "gone": "This race isn't here any more: the lobby expired or was called off.",
-    "started": "This race has started already: you can watch it.",
-    "host_only": "Only the host can start the race.",
-    "too_few": "A race needs at least two players.",
-    "not_joined": "You're not in this race.",
-    "not_running": "The race isn't running.",
-    "done": "You're done with this race."
+    "open": "هناك سباق مفتوح في هذه المجموعة بالفعل: انضم إليه.",
+    "gone": "هذا السباق لم يعد موجودًا: انتهت مهلة غرفة الانتظار أو أُلغيت.",
+    "started": "بدأ هذا السباق بالفعل: يمكنك مشاهدته.",
+    "host_only": "المضيف وحده يستطيع بدء السباق.",
+    "too_few": "يحتاج السباق إلى لاعبَين على الأقل.",
+    "not_joined": "لست مشاركًا في هذا السباق.",
+    "not_running": "السباق ليس جاريًا.",
+    "done": "لقد انتهيت من هذا السباق."
   }
 }

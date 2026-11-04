@@ -1,89 +1,86 @@
 {
-  "title": "Race",
+  "title": "रेस",
   "card": {
-    "text": "Race each other live on the same fresh puzzle: open a lobby, the others join, and 3, 2, 1, go!",
-    "difficulty": "Difficulty",
-    "open": "Open a race",
-    "opening": "Opening…",
-    "lobby": "Race open · {{ count }} joined",
-    "running": "Race on · {{ count }} racing",
-    "join": "Join",
-    "to_lobby": "To the lobby",
-    "watch": "Watch",
-    "history": "Recent races",
-    "none": "No races yet. Open one and challenge the group!",
-    "winner": "won by {{ name }}",
-    "no_winner": "no winner",
-    "players": "{{ count }} players"
+    "text": "एक ही नई पहेली पर लाइव मुकाबला करें: लॉबी खोलें, बाकी जुड़ें, और 3, 2, 1, शुरू!",
+    "difficulty": "कठिनाई",
+    "open": "रेस खोलें",
+    "opening": "खुल रही है…",
+    "lobby": "रेस खुली है · {{ count }} जुड़े",
+    "running": "रेस चल रही है · {{ count }} दौड़ में",
+    "join": "जुड़ें",
+    "to_lobby": "लॉबी में जाएँ",
+    "watch": "देखें",
+    "history": "हाल की रेस",
+    "none": "अभी तक कोई रेस नहीं। एक खोलें और समूह को चुनौती दें!",
+    "no_winner": "कोई विजेता नहीं",
+    "players": "{{ count }} खिलाड़ी"
   },
   "page": {
-    "title": "Race",
-    "missing": "This race isn't here.",
-    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
+    "title": "रेस",
+    "missing": "यह रेस यहाँ नहीं है।",
+    "missing_hint": "हो सकता है लॉबी की समय सीमा खत्म हो गई हो या उसे रद्द कर दिया गया हो, या वह किसी ऐसे समूह की हो जिसमें आप नहीं हैं।"
   },
   "lobby": {
-    "title": "Lobby",
-    "text": "Everyone who joins gets the same fresh puzzle at the same moment. The host starts once at least two have joined.",
-    "host": "host",
-    "away": "away",
-    "join": "Join the race",
-    "leave": "Leave",
-    "cancel": "Call it off",
-    "cancel_confirm": "Call off the race? The lobby closes for everyone in it.",
-    "start": "Start",
-    "starting": "Getting the puzzle ready…",
-    "need_more": "Waiting for at least one more player…",
-    "waiting_host": "Waiting for the host to start…",
-    "expires": "The lobby closes in {{ minutes }} min if nobody starts it.",
-    "share": "Share the lobby link",
-    "share_text": "Race me on Hashi! Join the lobby in {{ group }}:"
+    "title": "लॉबी",
+    "text": "जो भी जुड़ता है उसे एक ही समय पर एक ही नई पहेली मिलती है। कम से कम दो लोगों के जुड़ने पर होस्ट शुरू करता है।",
+    "host": "होस्ट",
+    "away": "दूर",
+    "join": "रेस में जुड़ें",
+    "leave": "छोड़ें",
+    "cancel": "रद्द करें",
+    "cancel_confirm": "रेस रद्द करें? लॉबी सबके लिए बंद हो जाएगी।",
+    "start": "शुरू करें",
+    "starting": "पहेली तैयार हो रही है…",
+    "need_more": "कम से कम एक और खिलाड़ी का इंतज़ार…",
+    "waiting_host": "होस्ट के शुरू करने का इंतज़ार…",
+    "expires": "अगर कोई शुरू नहीं करता तो लॉबी {{ minutes }} मिनट में बंद हो जाएगी।",
+    "share": "लॉबी का लिंक साझा करें",
+    "share_text": "Hashi पर मुझसे रेस लगाओ! {{ group }} की लॉबी में आओ:"
   },
   "countdown": {
-    "ready": "Ready",
-    "go": "Go!"
+    "ready": "तैयार",
+    "go": "शुरू!"
   },
   "play": {
-    "give_up": "Give up",
-    "give_up_confirm": "Give up the race? You won't get a place, and you'll see the solution once the race is over.",
-    "loading": "The puzzle is on its way…",
-    "time_left": "{{ minutes }} min left"
+    "give_up": "हार मानें",
+    "give_up_confirm": "रेस छोड़ दें? आपको कोई स्थान नहीं मिलेगा, और रेस खत्म होने पर हल दिखेगा।",
+    "loading": "पहेली आ रही है…",
+    "time_left": "{{ minutes }} मिनट बाकी"
   },
   "track": {
-    "title": "Progress",
-    "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
-    "you": "you",
-    "away": "away",
-    "finished": "finished",
-    "gave_up": "gave up"
+    "title": "प्रगति",
+    "text": "हर कोई कितना आगे है: उसके बोर्ड पर पुलों का हिस्सा। किसी के पुल कोई और नहीं देखता।",
+    "you": "आप",
+    "away": "दूर",
+    "gave_up": "हार मानी"
   },
   "watch": {
-    "text": "You're watching: the race is on between the players."
+    "text": "आप देख रहे हैं: रेस खिलाड़ियों के बीच चल रही है।"
   },
   "done": {
-    "solved": "Finished!",
-    "gave_up": "You gave up.",
-    "waiting": "Waiting for the others to finish…"
+    "solved": "पूरा हुआ!",
+    "gave_up": "आपने हार मान ली।",
+    "waiting": "बाकी लोगों के खत्म करने का इंतज़ार…"
   },
   "results": {
-    "title": "Results",
-    "flagged": "not placed",
-    "gave_up": "gave up",
-    "out": "didn't finish",
-    "rematch": "Rematch",
-    "rematch_join": "Join the rematch",
-    "rematch_go": "To the rematch",
-    "replay": "Everyone's moves",
-    "solution": "The solution",
-    "stage": "The race's board with the bridges of {{ names }}"
+    "title": "नतीजे",
+    "flagged": "कोई स्थान नहीं",
+    "gave_up": "हार मानी",
+    "out": "पूरा नहीं किया",
+    "rematch": "रीमैच",
+    "rematch_join": "रीमैच में जुड़ें",
+    "rematch_go": "रीमैच पर जाएँ",
+    "replay": "सबकी चालें",
+    "stage": "{{ names }} के पुलों के साथ रेस का बोर्ड"
   },
   "errors": {
-    "open": "There's a race open in this group already: join that one.",
-    "gone": "This race isn't here any more: the lobby expired or was called off.",
-    "started": "This race has started already: you can watch it.",
-    "host_only": "Only the host can start the race.",
-    "too_few": "A race needs at least two players.",
-    "not_joined": "You're not in this race.",
-    "not_running": "The race isn't running.",
-    "done": "You're done with this race."
+    "open": "इस समूह में पहले से एक रेस खुली है: उसी में जुड़ें।",
+    "gone": "यह रेस अब नहीं है: लॉबी की समय सीमा खत्म हो गई या उसे रद्द कर दिया गया।",
+    "started": "यह रेस शुरू हो चुकी है: आप इसे देख सकते हैं।",
+    "host_only": "सिर्फ होस्ट रेस शुरू कर सकता है।",
+    "too_few": "रेस के लिए कम से कम दो खिलाड़ी चाहिए।",
+    "not_joined": "आप इस रेस में नहीं हैं।",
+    "not_running": "रेस नहीं चल रही है।",
+    "done": "आप यह रेस पूरी कर चुके हैं।"
   }
 }

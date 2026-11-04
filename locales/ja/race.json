@@ -1,89 +1,86 @@
 {
-  "title": "Race",
+  "title": "勝負",
   "card": {
-    "text": "Race each other live on the same fresh puzzle: open a lobby, the others join, and 3, 2, 1, go!",
-    "difficulty": "Difficulty",
-    "open": "Open a race",
-    "opening": "Opening…",
-    "lobby": "Race open · {{ count }} joined",
-    "running": "Race on · {{ count }} racing",
-    "join": "Join",
-    "to_lobby": "To the lobby",
-    "watch": "Watch",
-    "history": "Recent races",
-    "none": "No races yet. Open one and challenge the group!",
-    "winner": "won by {{ name }}",
-    "no_winner": "no winner",
-    "players": "{{ count }} players"
+    "text": "同じできたての問題で、仲間とリアルタイムに競争！ロビーを開いてみんなが参加したら、3、2、1、始め！",
+    "difficulty": "難易度",
+    "open": "勝負を開く",
+    "opening": "開いています…",
+    "lobby": "勝負受付中 · {{ count }}人参加",
+    "running": "勝負の最中 · {{ count }}人が対戦中",
+    "join": "参加",
+    "to_lobby": "ロビーへ",
+    "watch": "観戦",
+    "history": "最近の勝負",
+    "none": "まだ勝負はありません。勝負を開いて仲間に挑もう！",
+    "no_winner": "勝者なし",
+    "players": "{{ count }}人"
   },
   "page": {
-    "title": "Race",
-    "missing": "This race isn't here.",
-    "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
+    "title": "勝負",
+    "missing": "この勝負は見つかりません。",
+    "missing_hint": "ロビーの期限が切れたか中止されたか、あなたが参加していない仲間の勝負かもしれません。"
   },
   "lobby": {
-    "title": "Lobby",
-    "text": "Everyone who joins gets the same fresh puzzle at the same moment. The host starts once at least two have joined.",
-    "host": "host",
-    "away": "away",
-    "join": "Join the race",
-    "leave": "Leave",
-    "cancel": "Call it off",
-    "cancel_confirm": "Call off the race? The lobby closes for everyone in it.",
-    "start": "Start",
-    "starting": "Getting the puzzle ready…",
-    "need_more": "Waiting for at least one more player…",
-    "waiting_host": "Waiting for the host to start…",
-    "expires": "The lobby closes in {{ minutes }} min if nobody starts it.",
-    "share": "Share the lobby link",
-    "share_text": "Race me on Hashi! Join the lobby in {{ group }}:"
+    "title": "ロビー",
+    "text": "参加した全員が、同じ瞬間に同じできたての問題に挑みます。2人以上集まったら主催者がスタートします。",
+    "host": "主催",
+    "away": "不在",
+    "join": "勝負に参加",
+    "leave": "抜ける",
+    "cancel": "中止する",
+    "cancel_confirm": "勝負を中止しますか？ロビーは全員に対して閉じられます。",
+    "start": "スタート",
+    "starting": "問題を準備中…",
+    "need_more": "あと1人以上の参加を待っています…",
+    "waiting_host": "主催者のスタートを待っています…",
+    "expires": "誰もスタートしなければ、ロビーはあと{{ minutes }}分で閉じます。",
+    "share": "ロビーのリンクを共有",
+    "share_text": "Hashiで勝負しよう！{{ group }}のロビーに参加してね："
   },
   "countdown": {
-    "ready": "Ready",
-    "go": "Go!"
+    "ready": "用意",
+    "go": "始め！"
   },
   "play": {
-    "give_up": "Give up",
-    "give_up_confirm": "Give up the race? You won't get a place, and you'll see the solution once the race is over.",
-    "loading": "The puzzle is on its way…",
-    "time_left": "{{ minutes }} min left"
+    "give_up": "ギブアップ",
+    "give_up_confirm": "勝負をギブアップしますか？順位はつかず、答えは勝負が終わってから表示されます。",
+    "loading": "問題を配っています…",
+    "time_left": "残り{{ minutes }}分"
   },
   "track": {
-    "title": "Progress",
-    "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
-    "you": "you",
-    "away": "away",
-    "finished": "finished",
-    "gave_up": "gave up"
+    "title": "進み具合",
+    "text": "みんなの進み具合：盤面に置いた橋の割合です。他の人の橋は誰にも見えません。",
+    "you": "あなた",
+    "away": "不在",
+    "gave_up": "ギブアップ"
   },
   "watch": {
-    "text": "You're watching: the race is on between the players."
+    "text": "観戦中：勝負は参加者どうしで行われています。"
   },
   "done": {
-    "solved": "Finished!",
-    "gave_up": "You gave up.",
-    "waiting": "Waiting for the others to finish…"
+    "solved": "完成！",
+    "gave_up": "ギブアップしました。",
+    "waiting": "ほかの人が終わるのを待っています…"
   },
   "results": {
-    "title": "Results",
-    "flagged": "not placed",
-    "gave_up": "gave up",
-    "out": "didn't finish",
-    "rematch": "Rematch",
-    "rematch_join": "Join the rematch",
-    "rematch_go": "To the rematch",
-    "replay": "Everyone's moves",
-    "solution": "The solution",
-    "stage": "The race's board with the bridges of {{ names }}"
+    "title": "結果",
+    "flagged": "順位なし",
+    "gave_up": "ギブアップ",
+    "out": "未完",
+    "rematch": "再戦",
+    "rematch_join": "再戦に参加",
+    "rematch_go": "再戦へ",
+    "replay": "みんなの手順",
+    "stage": "{{ names }}の橋が並ぶ勝負の盤面"
   },
   "errors": {
-    "open": "There's a race open in this group already: join that one.",
-    "gone": "This race isn't here any more: the lobby expired or was called off.",
-    "started": "This race has started already: you can watch it.",
-    "host_only": "Only the host can start the race.",
-    "too_few": "A race needs at least two players.",
-    "not_joined": "You're not in this race.",
-    "not_running": "The race isn't running.",
-    "done": "You're done with this race."
+    "open": "この仲間ではすでに勝負が開かれています。そちらに参加してください。",
+    "gone": "この勝負はもうありません。ロビーの期限が切れたか、中止されました。",
+    "started": "この勝負はもう始まっています。観戦できます。",
+    "host_only": "勝負をスタートできるのは主催者だけです。",
+    "too_few": "勝負には2人以上が必要です。",
+    "not_joined": "あなたはこの勝負に参加していません。",
+    "not_running": "勝負は行われていません。",
+    "done": "この勝負はもう終えています。"
   }
 }
