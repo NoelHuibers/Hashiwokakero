@@ -642,6 +642,20 @@ jobs:
           # Already compressed
           compression-level: 0
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+      # The foss build (app/README.md, Android builds), F-Droid's: it compiles, and it has nothing
+      # proprietary (scripts/foss-apk.ts). Its own Kotlin (src/foss) and Gradle switch, on the same
+      # library: only Gradle runs again. After the upload, it writes over the APK.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Build (foss)
+        working-directory: app/src-tauri
+        env:
+          HASHI_ANDROID_FLAVOR: foss
+        run: |
+          cargo tauri android build --ci --debug --apk --target aarch64 --config '{"build":{"beforeBuildCommand":null}}'
+          node ../../scripts/foss-apk.ts --build-tools "$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)" \
+            --proprietary gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
 
   # The debug APK started on an Android emulator (e2e/android/, its own Playwright config): the
   # real WebView with the real content security policy and the offline practice's native

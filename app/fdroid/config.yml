@@ -1,0 +1,26 @@
+# fdroidserver's config of our F-Droid repository (app/README.md, F-Droid repository), used by
+# scripts/fdroid-repo.ts and the "F-Droid repository" job of app-release.yml. The keys come from
+# the environment: never write a password into this file.
+repo_url: https://noelhuibers.github.io/Hashiwokakero/fdroid/repo
+repo_name: Hashi
+# Next to this file (public/icon-512.png, scripts/fdroid-repo.ts), fdroidserver copies it to
+# repo/icons/
+repo_icon: icon.png
+repo_description: >-
+  Hashi, the daily bridges logic puzzle (Hashiwokakero), built from its source code at
+  https://github.com/NoelHuibers/Hashiwokakero without any proprietary code, and signed by its
+  developer. More at https://hashi.rs.
+
+# No archive section: the job puts only the last versions into the repository (KEEP_VERSIONS in
+# app-release.yml), the older ones stay on the GitHub releases
+archive_older: 0
+
+# The index's signing key, a PKCS12 keystore the job writes from the FDROID_* secrets. Not the
+# key the APKs are signed with (the direct key, ANDROID_DIRECT_*)
+keystore: keystore.p12
+repo_keyalias:
+  env: FDROID_KEY_ALIAS
+keystorepass:
+  env: FDROID_KEYSTORE_PASSWORD
+keypass:
+  env: FDROID_KEY_PASSWORD

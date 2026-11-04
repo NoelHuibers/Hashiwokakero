@@ -3,14 +3,18 @@ name: App release
 # all files agree on (scripts/app-version.ts), builds both platforms from the same commit:
 # - Android: the App Bundle for Google Play, signed with the upload key and uploaded to Play's
 #   internal test track.
+# - Android, foss: the build without any proprietary code (no Play Games), an APK per ABI signed
+#   with the direct key, published in our F-Droid repository on GitHub Pages
+#   (https://noelhuibers.github.io/Hashiwokakero/).
 # - iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key (automatic
 #   signing, cloud-managed certificate) and uploaded to App Store Connect, where it shows up in
 #   TestFlight once Apple has processed it.
-# A GitHub release for the tag gets the bundle, a universal APK and the IPA.
+# A GitHub release for the tag gets the bundle, a universal APK, the foss APKs and the IPA.
 #
 # A pull request that changes this workflow or the version script runs it as a dry run for both
-# platforms, below; one that changes the Gradle build or app/achievements-play.json (Play Games'
-# project id) for Android, one that changes the iOS project (gen/apple, Info.ios.plist) for iOS.
+# platforms, below; one that changes the Gradle build, the Play or foss sources, the F-Droid
+# repository's files or app/achievements-play.json (Play Games' project id) for Android, one that
+# changes the iOS project (gen/apple, Info.ios.plist) for iOS.
 #
 # By hand (Actions, Run workflow, or `gh workflow run app-release.yml --ref <ref>`):
 # - publish off (the default): a dry run on any branch or tag. Builds, signs and checks the bundle
@@ -18,9 +22,13 @@ name: App release
 #   release. On a branch it skips the checks of the tag, of main and of CI.
 # - publish on: the same as pushing the tag, the ref has to be one (`--ref app-v1.2.3`). For an
 #   upload that failed or was skipped, e.g. before the PLAY_SERVICE_ACCOUNT_JSON secret was set.
+# - fdroid on: builds nothing, publishes the F-Droid repository again from the foss APKs of the
+#   GitHub releases, with the store texts and images of the ref (main), e.g. after new listings.
 #
 # iOS needs the secrets APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8. Without them
-# (pull requests of Dependabot or forks) it is skipped with a notice; Android goes on.
+# (pull requests of Dependabot or forks) it is skipped with a notice; Android goes on. The foss
+# build needs the direct key (ANDROID_DIRECT_*) and the F-Droid repository its index key
+# (FDROID_*): without them a release skips them with a notice, a dry run signs with throwaway keys.
 on:
   push:
     tags:
@@ -30,6 +38,11 @@ on:
       - .github/workflows/app-release.yml
       - scripts/app-version.ts
       - app/src-tauri/gen/android/app/build.gradle.kts
+      - app/src-tauri/gen/android/app/src/play/**
+      - app/src-tauri/gen/android/app/src/foss/**
+      - app/fdroid/**
+      - scripts/fdroid-repo.ts
+      - scripts/foss-apk.ts
       # Play Games' project id (and ids) for the release's App Bundle
       - app/achievements-play.json
       - app/src-tauri/gen/apple/**
@@ -37,7 +50,11 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Upload to Google Play and App Store Connect and make the GitHub release (the ref must be a tag app-v<x.y.z>)
+        description: Upload to Google Play and App Store Connect, make the GitHub release and publish the F-Droid repository (the ref must be a tag app-v<x.y.z>)
+        type: boolean
+        default: false
+      fdroid:
+        description: Only publish the F-Droid repository again, from the GitHub releases' foss APKs and this ref's store texts (builds nothing)
         type: boolean
         default: false
 
@@ -68,6 +85,8 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       code: ${{ steps.version.outputs.code }}
       publish: ${{ steps.mode.outputs.publish }}
+      # Only the F-Droid repository, from the GitHub releases
+      fdroid: ${{ steps.mode.outputs.fdroid }}
       android: ${{ steps.platforms.outputs.android }}
       ios: ${{ steps.platforms.outputs.ios }}
     steps:
@@ -83,16 +102,28 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           PUBLISH: ${{ inputs.publish }}
+          FDROID: ${{ inputs.fdroid }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
+          if [ "$FDROID" = true ]; then
+            if [ "$PUBLISH" = true ]; then
+              echo "::error::publish and fdroid together: a release publishes the F-Droid repository anyway"
+              exit 1
+            fi
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "fdroid=true" >> "$GITHUB_OUTPUT"
+            echo "The F-Droid repository again, from the GitHub releases and the store texts of the $REF_TYPE $REF_NAME" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "fdroid=false" >> "$GITHUB_OUTPUT"
           if [ "$EVENT" = push ] || [ "$PUBLISH" = true ]; then
             if [ "$REF_TYPE" != tag ]; then
               echo "::error::Publishing needs a tag app-v<x.y.z>, not the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
               exit 1
             fi
             echo "publish=true" >> "$GITHUB_OUTPUT"
-            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight) and a GitHub release" >> "$GITHUB_STEP_SUMMARY"
+            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release and the F-Droid repository" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
             echo "Dry run on the $REF_TYPE $REF_NAME: built, signed and checked, not published" >> "$GITHUB_STEP_SUMMARY"
@@ -102,16 +133,20 @@ jobs:
       - id: platforms
         env:
           EVENT: ${{ github.event_name }}
+          FDROID: ${{ steps.mode.outputs.fdroid }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
         run: |
           android=true ios=true
-          if [ "$EVENT" = pull_request ]; then
+          if [ "$FDROID" = true ]; then
+            android=false ios=false
+          elif [ "$EVENT" = pull_request ]; then
             # Against the first parent, main's head: what merging the pull request changes
             files=$(git diff --no-renames --name-only HEAD^1 HEAD)
             both='^(\.github/workflows/app-release\.yml|scripts/app-version\.ts)$'
-            grep -qE "$both|^app/src-tauri/gen/android/app/build\.gradle\.kts$|^app/achievements-play\.json$" <<< "$files" || android=false
+            android_files='^app/src-tauri/gen/android/app/(build\.gradle\.kts$|src/(play|foss)/)|^app/achievements-play\.json$|^app/fdroid/|^scripts/(fdroid-repo|foss-apk)\.ts$'
+            grep -qE "$both|$android_files" <<< "$files" || android=false
             grep -qE "$both|^app/src-tauri/gen/apple/|^app/src-tauri/Info\.ios\.plist$" <<< "$files" || ios=false
           fi
           if [ "$ios" = true ] && { [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; }; then
@@ -404,6 +439,147 @@ jobs:
           compression-level: 0
           retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
 
+  # The foss build (app/README.md, Android builds): without any proprietary code, as an APK per
+  # ABI with its own versionCode (the version's times ten plus the ABI's digit), signed with the
+  # direct key, which isn't the upload key. For our F-Droid repository, the GitHub release and the
+  # other stores. A job of its own, so a failure here never holds up Google Play's bundle.
+  android-foss:
+    name: Build APKs (Android, foss)
+    needs: [check, build-app]
+    if: needs.check.outputs.android == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    outputs:
+      built: ${{ steps.key.outputs.built }}
+    env:
+      NDK_VERSION: 29.0.14206865
+      BUILD_TOOLS_VERSION: 36.0.0
+      VERSION: ${{ needs.check.outputs.version }}
+      CODE: ${{ needs.check.outputs.code }}
+      HASHI_ANDROID_FLAVOR: foss
+    steps:
+      - uses: actions/checkout@v7
+      # Node 26 runs scripts/foss-apk.ts (the checks)
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      # keytool for the key, Gradle needs a JDK 17 or newer
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      # The direct key in files of the runner's temp dir, gone at the end of the job (below), as
+      # the upload key in "Build App Bundle". A release without it skips the foss build; a dry run
+      # without it (Dependabot, forks) signs with a throwaway key.
+      - id: key
+        name: Direct key
+        env:
+          PUBLISH: ${{ needs.check.outputs.publish }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_DIRECT_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_DIRECT_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_DIRECT_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_DIRECT_KEY_PASSWORD }}
+        run: |
+          key="$RUNNER_TEMP/direct-key"
+          mkdir -m 700 "$key"
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$key/direct.p12"
+          elif [ "$PUBLISH" = true ]; then
+            echo "::notice::No direct key in this run's secrets (ANDROID_DIRECT_KEYSTORE_BASE64, ANDROID_DIRECT_KEYSTORE_PASSWORD, ANDROID_DIRECT_KEY_ALIAS, ANDROID_DIRECT_KEY_PASSWORD): no foss APKs, no F-Droid repository"
+            echo "No direct key in this run's secrets: no foss APKs and no F-Droid repository (once the secrets are set, run this workflow on the tag with publish)." >> "$GITHUB_STEP_SUMMARY"
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "::notice::No direct key in this run's secrets, signed with a throwaway key"
+            KEYSTORE_PASSWORD=$(openssl rand -hex 16) KEY_ALIAS=hashi-direct
+            KEY_PASSWORD=$KEYSTORE_PASSWORD
+            keytool -genkeypair -keystore "$key/direct.p12" -storetype PKCS12 -alias "$KEY_ALIAS" -keyalg RSA \
+              -validity 1 -dname "CN=Throwaway" -storepass "$KEYSTORE_PASSWORD" > /dev/null 2>&1
+          fi
+          printf '%s\n' "$KEYSTORE_PASSWORD" > "$key/store-password"
+          printf '%s\n' "$KEY_PASSWORD" > "$key/key-password"
+          printf '%s\n' "$KEY_ALIAS" > "$key/alias"
+          # Its certificate, to compare the signatures with (not secret)
+          keytool -exportcert -rfc -keystore "$key/direct.p12" -alias "$KEY_ALIAS" \
+            -storepass:file "$key/store-password" > "$RUNNER_TEMP/direct-cert.pem"
+          echo "DIRECT_KEY=$key" >> "$GITHUB_ENV"
+          echo "built=true" >> "$GITHUB_OUTPUT"
+      - if: steps.key.outputs.built == 'true'
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+          cache-read-only: true
+      - if: steps.key.outputs.built == 'true'
+        name: Android NDK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS_VERSION"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+      - if: steps.key.outputs.built == 'true'
+        run: rustup toolchain install && rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
+      - if: steps.key.outputs.built == 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          save-if: false
+      - if: steps.key.outputs.built == 'true'
+        name: Install the Tauri CLI
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y tauri-cli@2.12.4
+      - if: steps.key.outputs.built == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: app-web-release
+          path: target/app-dist
+      # Release, an APK per ABI (arm64 + 32-bit ARM + x86_64), HASHI_ANDROID_FLAVOR=foss (above)
+      - if: steps.key.outputs.built == 'true'
+        name: Build
+        working-directory: app/src-tauri
+        run: |
+          ANDROID_KEYSTORE_FILE="$DIRECT_KEY/direct.p12" \
+          ANDROID_KEYSTORE_PASSWORD=$(cat "$DIRECT_KEY/store-password") \
+          ANDROID_KEY_ALIAS=$(cat "$DIRECT_KEY/alias") \
+          ANDROID_KEY_PASSWORD=$(cat "$DIRECT_KEY/key-password") \
+            cargo tauri android build --ci --apk --split-per-abi --target aarch64 armv7 x86_64 --config '{"build":{"beforeBuildCommand":null}}'
+          mkdir -p ../../release
+          for flavor in arm64:arm64-v8a arm:armeabi-v7a x86_64:x86_64; do
+            cp "gen/android/app/build/outputs/apk/${flavor%%:*}/release/app-${flavor%%:*}-release.apk" \
+              "../../release/hashi-$VERSION-foss-${flavor#*:}.apk"
+          done
+      - if: always()
+        name: Remove the direct key
+        run: rm -rf "$RUNNER_TEMP/direct-key"
+      # Signed with the direct key alone (not the upload key, not a debug key), the store's ID, the
+      # versionCodes, each ABI's library and nothing else, 16 KB pages, and nothing proprietary: no
+      # class of Google Play services, Firebase or the Play Core libraries, nothing of Google in
+      # the manifest, no dependency list encrypted for Google in the signing block
+      - if: steps.key.outputs.built == 'true'
+        name: Check
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          build_tools="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION"
+          expected=$(keytool -printcert -file "$RUNNER_TEMP/direct-cert.pem" | sed -n 's/^\s*SHA256: //p' | tr -d : | tr '[:upper:]' '[:lower:]')
+          [ -n "$expected" ] || fail "no fingerprint of the direct key"
+          node scripts/foss-apk.ts --build-tools "$build_tools" --cert "$expected" \
+            --version "$VERSION" --code "$CODE" release/hashi-"$VERSION"-foss-*.apk
+          {
+            echo "Foss APKs signed with the direct key, SHA-256 $expected"
+            echo
+            echo "| Android $VERSION, foss | versionCode | size |"
+            echo "|---|---|---|"
+            for apk in release/*.apk; do
+              code=$("$build_tools/aapt2" dump badging "$apk" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p")
+              echo "| $(basename "$apk") | $code | $(awk -v b="$(stat -c %s "$apk")" 'BEGIN { printf "%.1f MB", b / 1048576 }') |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: steps.key.outputs.built == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-foss-release
+          path: release
+          compression-level: 0
+          retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
+
   # The IPA for the App Store, as "Build app (iOS)" in ci.yml builds the app (same runner image,
   # Xcode and CLI) but for devices, in release, and signed. Tauri archives it unsigned, then Xcode
   # exports the archive for App Store Connect with automatic signing: with the API key
@@ -577,11 +753,12 @@ jobs:
         run: rm -rf "$RUNNER_TEMP/api-key"
 
   # The bundle and the APK on the tag's GitHub release: the source of the first upload, which has
-  # to be done by hand in the Play Console. And the IPA, when iOS was built: a failed or skipped
-  # iOS build doesn't hold up Android's files (a re-run of it adds the IPA).
+  # to be done by hand in the Play Console. The foss APKs, for those who install by hand, and the
+  # F-Droid repository's store of older versions. And the IPA, when iOS was built: a failed or
+  # skipped foss or iOS build doesn't hold up Android's files (a re-run of it adds them).
   release:
     name: GitHub release
-    needs: [check, android, ios]
+    needs: [check, android, android-foss, ios]
     if: ${{ !cancelled() && needs.check.outputs.publish == 'true' && needs.android.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -592,6 +769,11 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: android-release
+          path: release
+      - if: needs.android-foss.result == 'success' && needs.android-foss.outputs.built == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: android-foss-release
           path: release
       - if: needs.ios.result == 'success'
         uses: actions/download-artifact@v8
@@ -616,6 +798,21 @@ jobs:
             echo "Both are signed with the app's upload key, which only identifies uploads to Google Play;"
             echo "Play signs the app it delivers with its own key. So they're safe to publish, and the APK"
             echo "can't update an app installed from Play (or the other way round): uninstall that first."
+            if compgen -G "release/hashi-$VERSION-foss-*.apk" > /dev/null; then
+              echo
+              echo "## Android without Google (foss)"
+              echo
+              echo "The app without any proprietary code (no Google Play Games), as in our F-Droid repository:"
+              echo "https://noelhuibers.github.io/Hashiwokakero/ has its address and fingerprint, for updates in"
+              echo "F-Droid. One APK per processor; nearly every phone wants arm64-v8a."
+              echo
+              for apk in release/hashi-"$VERSION"-foss-*.apk; do
+                echo "- \`$(basename "$apk")\`"
+              done
+              echo
+              echo "They are signed with the app's direct key (not the upload key), so they don't update an app"
+              echo "from Google Play or the APK above, nor the other way round."
+            fi
             if [ -f "release/hashi-$VERSION.ipa" ]; then
               title="Hashi $VERSION (Android, iOS)"
               echo
@@ -634,6 +831,220 @@ jobs:
           else
             gh release create "$TAG" release/* --verify-tag --prerelease --title "$title" --notes-file notes.md
           fi
+
+  # Our F-Droid repository (app/README.md, F-Droid repository), on GitHub Pages: the foss APKs of
+  # the last KEEP_VERSIONS versions, which the GitHub releases keep (Pages keeps nothing from one
+  # deployment to the next), the store listings' texts in every locale, the icon, and the phone
+  # screenshots from the newest "Store listing" run on main that still has them, else those the
+  # published repository has. Its index is signed with the F-Droid index key (FDROID_*), not the
+  # APKs' key. A release publishes it once the GitHub release has the APKs; a dry run builds it
+  # from this run's APKs (and the releases') and keeps it as an artifact; `fdroid` publishes it
+  # again from the releases alone. Skipped with a notice without the index key, and not published
+  # while GitHub Pages isn't on (Settings, Pages, Source: GitHub Actions).
+  fdroid:
+    name: F-Droid repository
+    needs: [check, android-foss, release]
+    if: >-
+      ${{ !cancelled() && (needs.check.outputs.fdroid == 'true'
+      || (needs.android-foss.result == 'success' && needs.android-foss.outputs.built == 'true'
+      && (needs.check.outputs.publish != 'true' || needs.release.result == 'success'))) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # The images of a "Store listing" run
+      actions: read
+      # Whether GitHub Pages is on
+      pages: read
+    outputs:
+      deploy: ${{ steps.site.outputs.deploy }}
+    env:
+      FDROIDSERVER_VERSION: 2.4.5
+      REPO_URL: https://noelhuibers.github.io/Hashiwokakero/fdroid/repo
+      # This version and the one before: about 27 MB per ABI and version
+      KEEP_VERSIONS: 2
+      PUBLISH: ${{ needs.check.outputs.publish == 'true' || needs.check.outputs.fdroid == 'true' }}
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+      # Node 26 runs scripts/fdroid-repo.ts
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      # keytool, and jar for fdroidserver's index
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      # The index key in the working directory, gone at the end of the job (below). fdroidserver
+      # reads the passwords from the environment (app/fdroid/config.yml).
+      - id: key
+        name: Index key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.FDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.FDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FDROID_KEY_PASSWORD }}
+        run: |
+          # fdroidserver's working directory (scripts/fdroid-repo.ts)
+          WORK="$RUNNER_TEMP/fdroid"
+          mkdir -m 700 "$WORK"
+          echo "WORK=$WORK" >> "$GITHUB_ENV"
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$WORK/keystore.p12"
+          elif [ "$PUBLISH" = true ]; then
+            echo "::notice::No F-Droid index key in this run's secrets (FDROID_KEYSTORE_BASE64, FDROID_KEYSTORE_PASSWORD, FDROID_KEY_ALIAS, FDROID_KEY_PASSWORD), the F-Droid repository isn't published"
+            echo "No F-Droid index key in this run's secrets, the F-Droid repository isn't published (once they are set: \`gh workflow run app-release.yml -f fdroid=true\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          else
+            echo "::notice::No F-Droid index key in this run's secrets, signed with a throwaway key"
+            KEYSTORE_PASSWORD=$(openssl rand -hex 16) KEY_ALIAS=hashi-fdroid
+            KEY_PASSWORD=$KEYSTORE_PASSWORD
+            keytool -genkeypair -keystore "$WORK/keystore.p12" -storetype PKCS12 -alias "$KEY_ALIAS" -keyalg RSA \
+              -validity 1 -dname "CN=Throwaway" -storepass "$KEYSTORE_PASSWORD" > /dev/null 2>&1
+          fi
+          echo "FDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          # Passed on through files: the passwords never go into $GITHUB_ENV
+          printf '%s\n' "$KEYSTORE_PASSWORD" > "$WORK/store-password"
+          printf '%s\n' "$KEY_PASSWORD" > "$WORK/key-password"
+          # The fingerprint that users pin, uppercase hex: the SHA-256 of the key's certificate
+          fingerprint=$(keytool -list -v -keystore "$WORK/keystore.p12" -alias "$KEY_ALIAS" -storepass:file "$WORK/store-password" \
+            | sed -n 's/^\s*SHA256: //p' | tr -d :)
+          [ -n "$fingerprint" ] || { echo "::error::No fingerprint of the F-Droid index key"; exit 1; }
+          echo "FINGERPRINT=$fingerprint" >> "$GITHUB_ENV"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - if: steps.key.outputs.ready == 'true'
+        name: fdroidserver
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install -q "fdroidserver==$FDROIDSERVER_VERSION"
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+      # The phone screenshots and feature graphics of the newest "Store listing" run on main whose
+      # artifact is still there (pull requests' runs may show listings that never got merged)
+      - if: steps.key.outputs.ready == 'true'
+        id: images
+        name: Store images
+        run: |
+          id=$(gh api "repos/$REPO/actions/artifacts?name=store-listing-images&per_page=100" \
+            --jq '[.artifacts[] | select((.expired | not) and .workflow_run.head_branch == "main")][0].id // empty')
+          if [ -z "$id" ]; then
+            echo "No store images of main at hand, the published repository's screenshots are kept" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          gh api "repos/$REPO/actions/artifacts/$id/zip" > "$RUNNER_TEMP/images.zip"
+          unzip -q "$RUNNER_TEMP/images.zip" '*/play-phone/*' '*/feature.png' -d "$RUNNER_TEMP/store-images"
+          rm "$RUNNER_TEMP/images.zip"
+          echo "dir=$RUNNER_TEMP/store-images" >> "$GITHUB_OUTPUT"
+          echo "Screenshots from the store images of artifact $id" >> "$GITHUB_STEP_SUMMARY"
+      - if: steps.key.outputs.ready == 'true'
+        name: Metadata
+        env:
+          IMAGES: ${{ steps.images.outputs.dir }}
+        run: node scripts/fdroid-repo.ts "$WORK" ${IMAGES:+--images "$IMAGES"} --carry "$REPO_URL"
+      - if: steps.key.outputs.ready == 'true' && env.PUBLISH != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: android-foss-release
+          path: ${{ runner.temp }}/foss
+      # A dry run: this run's APKs, and those of the releases before. Publishing: the releases'
+      # alone, this one's included. Each dated by its release (fdroid update --use-date-from-apk),
+      # not by this run: the repository is made anew every time.
+      - if: steps.key.outputs.ready == 'true'
+        name: APKs
+        run: |
+          have=0
+          if [ "$PUBLISH" != true ]; then
+            cp "$RUNNER_TEMP"/foss/hashi-*-foss-*.apk "$WORK/repo/"
+            have=1
+          fi
+          # Newest first
+          gh api "repos/$REPO/releases?per_page=100" \
+            --jq '.[] | select((.draft | not) and (.tag_name | startswith("app-v"))) | select(any(.assets[]; .name | test("-foss-.+\\.apk$"))) | "\(.tag_name) \(.published_at)"' \
+            > "$RUNNER_TEMP/releases"
+          while read -r tag published && [ "$have" -lt "$KEEP_VERSIONS" ]; do
+            gh release download "$tag" -R "$REPO" -p 'hashi-*-foss-*.apk' -D "$WORK/repo"
+            touch -d "$published" "$WORK/repo/hashi-${tag#app-v}"-foss-*.apk
+            have=$((have + 1))
+          done < "$RUNNER_TEMP/releases"
+          if [ "$have" -eq 0 ]; then
+            echo "::error::No foss APKs on the GitHub releases"
+            exit 1
+          fi
+          ls -l "$WORK/repo"
+      # fdroidserver's own check for proprietary code and trackers, then the index
+      - if: steps.key.outputs.ready == 'true'
+        name: fdroid update
+        working-directory: ${{ runner.temp }}/fdroid
+        run: |
+          FDROID_KEYSTORE_PASSWORD=$(cat store-password) FDROID_KEY_PASSWORD=$(cat key-password)
+          export FDROID_KEYSTORE_PASSWORD FDROID_KEY_PASSWORD
+          fdroid scanner --exit-code repo/*.apk
+          fdroid update --use-date-from-apk
+          test -s repo/index-v2.json && test -s repo/entry.jar
+      - if: always()
+        name: Remove the index key
+        run: rm -f "$WORK/keystore.p12" "$WORK/store-password" "$WORK/key-password"
+      # The site: the repository under fdroid/repo, a start page with its address and fingerprint.
+      # Published by a release or `fdroid`, when GitHub Pages is on.
+      - if: steps.key.outputs.ready == 'true'
+        id: site
+        name: Site
+        run: |
+          mkdir -p _site/fdroid
+          cp -r "$WORK/repo" _site/fdroid/repo
+          sed -e "s|{{REPO_URL}}|$REPO_URL|g" -e "s|{{HOST_PATH}}|${REPO_URL#https://}|g" -e "s|{{FINGERPRINT}}|$FINGERPRINT|g" \
+            app/fdroid/index.html > _site/index.html
+          if grep -q '{{' _site/index.html; then echo "::error::A placeholder left in the start page"; exit 1; fi
+          {
+            echo "F-Droid repository: $REPO_URL?fingerprint=$FINGERPRINT"
+            echo
+            echo "| APK | versionCode | size |"
+            echo "|---|---|---|"
+            jq -r '.packages[].versions[] | "| \(.file.name | ltrimstr("/")) | \(.manifest.versionCode) | \(.file.size / 1048576 * 10 | floor / 10) MB |"' \
+              "$WORK/repo/index-v2.json"
+            echo
+            echo "Site: $(du -sh _site | cut -f1)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          pages=$(gh api "repos/$REPO/pages" --jq .build_type 2> /dev/null || true)
+          if [ "$PUBLISH" != true ]; then
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          elif [ "$pages" != workflow ]; then
+            echo "::notice::GitHub Pages isn't on with GitHub Actions as its source (Settings, Pages), the F-Droid repository isn't published"
+            echo "GitHub Pages isn't on with GitHub Actions as its source, the F-Droid repository isn't published." >> "$GITHUB_STEP_SUMMARY"
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.key.outputs.ready == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+          retention-days: ${{ env.PUBLISH == 'true' && 7 || 3 }}
+
+  # The site of the job above on GitHub Pages. The environment github-pages allows main and the
+  # tags app-v* (Settings, Environments).
+  pages:
+    name: Publish the F-Droid repository
+    needs: fdroid
+    if: ${{ !cancelled() && needs.fdroid.outputs.deploy == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    # One deployment at a time, never cancelled halfway
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5
+      - run: echo "Published on ${{ steps.deploy.outputs.page_url }}" >> "$GITHUB_STEP_SUMMARY"
 
   # Google Play's internal test track. Skipped until the PLAY_SERVICE_ACCOUNT_JSON secret (the
   # service account's JSON key) is set, and Play only accepts uploads through the API after the
