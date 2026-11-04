@@ -161,6 +161,28 @@ fn requests() -> Vec<Entry> {
             current: "correct horse".into(),
             new: "battery staple".into(),
         }),
+        entry(&api::LoadRecoveryEmail {}),
+        entry(&api::SetRecoveryEmail {
+            email: "noel@example.org".into(),
+            password: "correct horse".into(),
+            locale: "de".into(),
+        }),
+        entry(&api::RemoveRecoveryEmail {
+            password: "correct horse".into(),
+            locale: "de".into(),
+        }),
+        entry(&api::ConfirmRecoveryEmail {
+            token: "ab".repeat(32),
+        }),
+        entry(&api::PasswordResetAvailable {}),
+        entry(&api::ForgotPassword {
+            login: "noel".into(),
+            locale: "de".into(),
+        }),
+        entry(&api::ResetPassword {
+            token: "ab".repeat(32),
+            password: "battery staple".into(),
+        }),
         entry(&api::Logout {}),
         entry(&api::DeleteAccount {
             password: Some("correct horse".into()),

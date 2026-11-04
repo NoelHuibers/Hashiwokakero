@@ -91,7 +91,10 @@
     "group_full": "這個群組已滿，已經有 50 位成員。",
     "too_many_groups": "你已經加入 10 個群組了，請先退出一個。",
     "group_owner_only": "只有群組擁有者才能這麼做。",
-    "too_many_reports": "今天的檢舉已經夠多了，請明天再試。"
+    "too_many_reports": "今天的檢舉已經夠多了，請明天再試。",
+    "mail_unavailable": "現在無法從這裡寄送電子郵件，所以復原電子郵件和重設密碼都無法使用。",
+    "link_expired": "這個連結已過期或已被使用。",
+    "email_taken": "這個地址已經是另一個帳號的復原電子郵件。請先在那裡移除它。"
   },
   "solver": {
     "title": "SAT 求解器",

@@ -49,6 +49,62 @@
     "button": "Changer le mot de passe",
     "done": "Ton mot de passe est changé."
   },
+  "recovery": {
+    "title": "E-mail de récupération",
+    "text": "Facultatif. Avec une adresse confirmée, tu peux réinitialiser ton mot de passe si tu l’oublies. Nous n’y écrivons qu’au sujet de ton mot de passe et de cette adresse.",
+    "current": "Ton e-mail de récupération : {{ email }}",
+    "none": "Pas encore d’e-mail de récupération.",
+    "pending": "En attente de confirmation : {{ email }}. Ouvre sous 24 heures le lien que nous y avons envoyé.",
+    "add": "Ajouter un e-mail de récupération…",
+    "change": "Changer d’e-mail de récupération…",
+    "address": "Adresse e-mail",
+    "button": "Envoyer le lien de confirmation",
+    "sent": "Cherche le lien de confirmation dans {{ email }}.",
+    "remove": "Retirer l’e-mail de récupération…",
+    "remove_confirm": "Saisis ton mot de passe pour retirer l’adresse. Sans adresse, un mot de passe oublié ne peut pas être réinitialisé.",
+    "remove_button": "Retirer l’adresse",
+    "removed": "Ton e-mail de récupération est retiré."
+  },
+  "forgot": {
+    "link": "Mot de passe oublié ?",
+    "title": "Mot de passe oublié ?",
+    "text": "Saisis ton nom d’utilisateur ou ton e-mail de récupération. Si le compte a un e-mail de récupération confirmé, nous y envoyons un lien pour choisir un nouveau mot de passe. Il est valable une heure.",
+    "login": "Nom d’utilisateur ou e-mail",
+    "button": "M’envoyer un lien",
+    "sent": "Si un compte avec un e-mail de récupération confirmé correspond, le lien est en route. Regarde dans ta boîte de réception, et aussi dans les spams.",
+    "unavailable": "Ce serveur ne peut pas envoyer d’e-mails, un mot de passe oublié ne peut donc pas être réinitialisé ici.",
+    "no_email": "Sans e-mail de récupération, un mot de passe oublié ne peut pas être réinitialisé : nous n’avons pas d’autre moyen de savoir que c’est toi.",
+    "back": "Retour à la connexion"
+  },
+  "reset": {
+    "title": "Choisir un nouveau mot de passe",
+    "text": "Le nouveau mot de passe déconnecte tous les appareils du compte. Celui-ci est connecté avec.",
+    "guest": "Les résultats de l’invité qui joue dans ce navigateur passent au compte, comme lors d’une connexion.",
+    "button": "Enregistrer et se connecter",
+    "again": "Demander un nouveau lien"
+  },
+  "confirm": {
+    "title": "Confirmer ton e-mail de récupération",
+    "text": "Confirme l’adresse à laquelle ce lien a été envoyé comme e-mail de récupération de ton compte Hashi.",
+    "button": "Confirmer l’adresse",
+    "done": "{{ email }} est maintenant l’e-mail de récupération de ton compte.",
+    "to_account": "Vers ton compte"
+  },
+  "mail": {
+    "hello": "Bonjour {{ name }},",
+    "confirm_subject": "Confirme ton e-mail de récupération",
+    "confirm_text": "Ouvre ce lien pour confirmer cette adresse comme e-mail de récupération de ton compte Hashi :",
+    "confirm_valid": "Le lien fonctionne une fois, pendant 24 heures.",
+    "reset_subject": "Réinitialise ton mot de passe",
+    "reset_text": "Ouvre ce lien pour choisir un nouveau mot de passe pour ton compte Hashi :",
+    "reset_valid": "Le lien fonctionne une fois, pendant une heure. Le nouveau mot de passe déconnecte tous les appareils du compte.",
+    "ignore": "Si ce n’était pas toi, ignore cet e-mail : rien ne change.",
+    "changed_subject": "Ton e-mail de récupération a été changé",
+    "changed_text": "Cette adresse n’est plus l’e-mail de récupération de ton compte Hashi : une autre l’a remplacée.",
+    "removed_subject": "Ton e-mail de récupération a été retiré",
+    "removed_text": "Cette adresse n’est plus l’e-mail de récupération de ton compte Hashi : elle a été retirée.",
+    "not_you": "Si ce n’était pas toi, change ton mot de passe sur la page de ton compte et écris-nous :"
+  },
   "delete": {
     "title": "Supprimer le compte",
     "intro": "Supprime définitivement ton pseudo, ton mot de passe, tes tampons et tes soumissions au Dojo. Tes anciens temps restent sans nom dans les anciens classements, pour que les autres joueurs gardent leur place.",

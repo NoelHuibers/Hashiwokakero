@@ -49,6 +49,62 @@
     "button": "Wachtwoord wijzigen",
     "done": "Je wachtwoord is gewijzigd."
   },
+  "recovery": {
+    "title": "Herstel-e-mail",
+    "text": "Optioneel. Met een bevestigd adres kun je je wachtwoord opnieuw instellen als je het vergeet. We schrijven er alleen naartoe over je wachtwoord en dit adres.",
+    "current": "Je herstel-e-mail: {{ email }}",
+    "none": "Nog geen herstel-e-mail.",
+    "pending": "Wacht op bevestiging: {{ email }}. Open binnen 24 uur de link die we daarheen hebben gestuurd.",
+    "add": "Herstel-e-mail toevoegen…",
+    "change": "Herstel-e-mail wijzigen…",
+    "address": "E-mailadres",
+    "button": "Bevestigingslink sturen",
+    "sent": "Kijk in {{ email }} voor de bevestigingslink.",
+    "remove": "Herstel-e-mail verwijderen…",
+    "remove_confirm": "Vul je wachtwoord in om het adres te verwijderen. Zonder adres kan een vergeten wachtwoord niet opnieuw worden ingesteld.",
+    "remove_button": "Adres verwijderen",
+    "removed": "Je herstel-e-mail is verwijderd."
+  },
+  "forgot": {
+    "link": "Wachtwoord vergeten?",
+    "title": "Wachtwoord vergeten?",
+    "text": "Vul je gebruikersnaam of je herstel-e-mail in. Heeft het account een bevestigde herstel-e-mail, dan sturen we daarheen een link om een nieuw wachtwoord te kiezen. Die werkt een uur.",
+    "login": "Gebruikersnaam of e-mail",
+    "button": "Stuur me een link",
+    "sent": "Als er een account met een bevestigde herstel-e-mail bij past, is de link onderweg. Kijk in je inbox, en ook in de spammap.",
+    "unavailable": "Deze server kan geen e-mail versturen, dus een vergeten wachtwoord kan hier niet opnieuw worden ingesteld.",
+    "no_email": "Zonder herstel-e-mail kan een vergeten wachtwoord niet opnieuw worden ingesteld: we kunnen op geen andere manier zien dat jij het bent.",
+    "back": "Terug naar inloggen"
+  },
+  "reset": {
+    "title": "Kies een nieuw wachtwoord",
+    "text": "Het nieuwe wachtwoord meldt alle apparaten van het account af. Dit apparaat logt ermee in.",
+    "guest": "De resultaten van de gast die in deze browser speelt gaan naar het account, net als bij inloggen.",
+    "button": "Opslaan en inloggen",
+    "again": "Vraag een nieuwe link aan"
+  },
+  "confirm": {
+    "title": "Bevestig je herstel-e-mail",
+    "text": "Bevestig het adres waar deze link naartoe ging als herstel-e-mail van je Hashi-account.",
+    "button": "Adres bevestigen",
+    "done": "{{ email }} is nu de herstel-e-mail van je account.",
+    "to_account": "Naar je account"
+  },
+  "mail": {
+    "hello": "Hoi {{ name }},",
+    "confirm_subject": "Bevestig je herstel-e-mail",
+    "confirm_text": "open deze link om dit adres te bevestigen als herstel-e-mail van je Hashi-account:",
+    "confirm_valid": "De link werkt één keer, 24 uur lang.",
+    "reset_subject": "Stel je wachtwoord opnieuw in",
+    "reset_text": "open deze link om een nieuw wachtwoord voor je Hashi-account te kiezen:",
+    "reset_valid": "De link werkt één keer, een uur lang. Het nieuwe wachtwoord meldt alle apparaten van het account af.",
+    "ignore": "Was jij dit niet? Negeer deze e-mail dan: er verandert niets.",
+    "changed_subject": "Je herstel-e-mail is gewijzigd",
+    "changed_text": "dit adres is niet langer de herstel-e-mail van je Hashi-account: een ander adres heeft zijn plaats ingenomen.",
+    "removed_subject": "Je herstel-e-mail is verwijderd",
+    "removed_text": "dit adres is niet langer de herstel-e-mail van je Hashi-account: het is verwijderd.",
+    "not_you": "Was jij dit niet? Wijzig dan je wachtwoord op je accountpagina en schrijf ons:"
+  },
   "delete": {
     "title": "Account verwijderen",
     "intro": "Verwijdert je naam, wachtwoord, stempels en Dojo-inzendingen voorgoed. Je eerdere tijden blijven zonder naam in oude ranglijsten staan, zodat de andere spelers hun plek houden.",

@@ -49,6 +49,62 @@
     "button": "Đổi mật khẩu",
     "done": "Mật khẩu của bạn đã được đổi."
   },
+  "recovery": {
+    "title": "Email khôi phục",
+    "text": "Không bắt buộc. Với một địa chỉ đã xác nhận, bạn có thể đặt lại mật khẩu nếu quên. Chúng tôi chỉ viết đến đó về mật khẩu của bạn và địa chỉ này.",
+    "current": "Email khôi phục của bạn: {{ email }}",
+    "none": "Chưa có email khôi phục.",
+    "pending": "Đang chờ xác nhận: {{ email }}. Hãy mở liên kết chúng tôi đã gửi đến đó trong vòng 24 giờ.",
+    "add": "Thêm email khôi phục…",
+    "change": "Đổi email khôi phục…",
+    "address": "Địa chỉ email",
+    "button": "Gửi liên kết xác nhận",
+    "sent": "Hãy xem liên kết xác nhận trong {{ email }}.",
+    "remove": "Gỡ email khôi phục…",
+    "remove_confirm": "Nhập mật khẩu để gỡ địa chỉ. Không có địa chỉ, mật khẩu bị quên sẽ không thể đặt lại.",
+    "remove_button": "Gỡ địa chỉ",
+    "removed": "Đã gỡ email khôi phục của bạn."
+  },
+  "forgot": {
+    "link": "Quên mật khẩu?",
+    "title": "Bạn quên mật khẩu?",
+    "text": "Nhập tên người dùng hoặc email khôi phục của bạn. Nếu tài khoản có email khôi phục đã xác nhận, chúng tôi sẽ gửi đến đó một liên kết để chọn mật khẩu mới. Liên kết có hiệu lực một giờ.",
+    "login": "Tên người dùng hoặc email",
+    "button": "Gửi liên kết cho tôi",
+    "sent": "Nếu có tài khoản với email khôi phục đã xác nhận khớp, liên kết đang được gửi đi. Hãy xem hộp thư đến và cả thư mục spam.",
+    "unavailable": "Máy chủ này không gửi được email, nên không thể đặt lại mật khẩu bị quên ở đây.",
+    "no_email": "Không có email khôi phục thì không thể đặt lại mật khẩu bị quên: chúng tôi không có cách nào khác để biết đó là bạn.",
+    "back": "Quay lại đăng nhập"
+  },
+  "reset": {
+    "title": "Chọn mật khẩu mới",
+    "text": "Mật khẩu mới sẽ đăng xuất mọi thiết bị của tài khoản. Thiết bị này sẽ đăng nhập bằng nó.",
+    "guest": "Kết quả của khách đang chơi trên trình duyệt này sẽ chuyển sang tài khoản, như khi đăng nhập.",
+    "button": "Lưu và đăng nhập",
+    "again": "Yêu cầu liên kết mới"
+  },
+  "confirm": {
+    "title": "Xác nhận email khôi phục",
+    "text": "Xác nhận địa chỉ nhận liên kết này là email khôi phục của tài khoản Hashi của bạn.",
+    "button": "Xác nhận địa chỉ",
+    "done": "{{ email }} giờ là email khôi phục của tài khoản bạn.",
+    "to_account": "Đến tài khoản của bạn"
+  },
+  "mail": {
+    "hello": "Chào {{ name }},",
+    "confirm_subject": "Xác nhận email khôi phục của bạn",
+    "confirm_text": "Hãy mở liên kết này để xác nhận địa chỉ này là email khôi phục của tài khoản Hashi của bạn:",
+    "confirm_valid": "Liên kết dùng được một lần, trong 24 giờ.",
+    "reset_subject": "Đặt lại mật khẩu",
+    "reset_text": "Hãy mở liên kết này để chọn mật khẩu mới cho tài khoản Hashi của bạn:",
+    "reset_valid": "Liên kết dùng được một lần, trong một giờ. Mật khẩu mới sẽ đăng xuất mọi thiết bị của tài khoản.",
+    "ignore": "Nếu không phải bạn, hãy bỏ qua email này: không có gì thay đổi.",
+    "changed_subject": "Email khôi phục của bạn đã được đổi",
+    "changed_text": "Địa chỉ này không còn là email khôi phục của tài khoản Hashi của bạn: một địa chỉ khác đã thay thế.",
+    "removed_subject": "Email khôi phục của bạn đã bị gỡ",
+    "removed_text": "Địa chỉ này không còn là email khôi phục của tài khoản Hashi của bạn: nó đã bị gỡ.",
+    "not_you": "Nếu không phải bạn, hãy đổi mật khẩu trên trang tài khoản và viết cho chúng tôi:"
+  },
   "delete": {
     "title": "Xóa tài khoản",
     "intro": "Xóa vĩnh viễn tên, mật khẩu, con dấu và các bài gửi Dojo của bạn. Thời gian cũ của bạn vẫn nằm trên các bảng xếp hạng cũ nhưng không có tên, để những người chơi khác giữ nguyên thứ hạng.",

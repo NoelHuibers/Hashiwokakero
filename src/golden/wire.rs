@@ -18,8 +18,8 @@ use crate::model::{
     DojoCactus, DojoCrossover, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
     DojoSeasons, DojoState, DojoSubmission, FeedbackKind, FeedbackStatus, Flag, GroupToday,
     HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard,
-    MonthEntry, MoveEvent, PlayerProfile, ReportOutcome, ReportReason, Run, Stamp, StampProgress,
-    SubmissionAction, SubmitResult, UserInfo, UserStats,
+    MonthEntry, MoveEvent, PlayerProfile, RecoveryEmail, ReportOutcome, ReportReason, Run, Stamp,
+    StampProgress, SubmissionAction, SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -289,6 +289,7 @@ fn dojo_submission() -> DojoSubmission {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct Responses {
     user: UserInfo,
+    recovery_email: RecoveryEmail,
     daily: DailyInfo,
     daily_before_start: DailyInfo,
     daily_start: DailyStart,
@@ -351,6 +352,11 @@ fn responses() -> Responses {
             admin: true,
             renamed_at: Some(1_755_000_000_000),
             name_locked: false,
+        },
+        recovery_email: RecoveryEmail {
+            address: Some("noel@example.org".into()),
+            pending: Some("noel@example.com".into()),
+            mail: true,
         },
         daily: DailyInfo {
             day: 20_381,

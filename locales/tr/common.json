@@ -91,7 +91,10 @@
     "group_full": "Bu grup dolu: zaten 50 üyesi var.",
     "too_many_groups": "Zaten 10 grubun üyesisin, önce birinden ayrıl.",
     "group_owner_only": "Bunu yalnızca grubun sahibi yapabilir.",
-    "too_many_reports": "Bugünlük bu kadar bildirim yeter, lütfen yarın tekrar dene."
+    "too_many_reports": "Bugünlük bu kadar bildirim yeter, lütfen yarın tekrar dene.",
+    "mail_unavailable": "Şu anda buradan e-posta gönderilemiyor, bu yüzden kurtarma e-postaları ve şifre sıfırlama çalışmıyor.",
+    "link_expired": "Bu bağlantının süresi doldu ya da zaten kullanıldı.",
+    "email_taken": "Bu adres zaten başka bir hesabın kurtarma e-postası. Önce oradan kaldır."
   },
   "solver": {
     "title": "SAT çözücü",

@@ -76,20 +76,37 @@ impl Rates {
     }
 }
 
+/// Whether budgets per network are off: browser journeys share one loopback address. An explicit
+/// development-only switch keeps their parallel requests independent; production ignores it even
+/// if accidentally set. Also the mails per network (`recovery`).
+pub(super) fn network_limits_off() -> bool {
+    super::env_var("LEPTOS_ENV").is_some_and(|v| v.eq_ignore_ascii_case("dev"))
+        && super::env_var("FLY_APP_NAME").is_none()
+        && super::env_var("HASHI_RATE_LIMITS").as_deref() == Some("off")
+}
+
 /// Per-network budgets precede parsing/password hashing/solver work. In direct deployments the
 /// socket peer supplies the address; forwarding headers only come from the configured Fly proxy.
 pub async fn admission(req: Request, next: Next) -> Response {
     static RATES: Mutex<Option<Rates>> = Mutex::new(None);
-    // Browser journeys share one loopback address. An explicit development-only switch keeps
-    // their parallel requests independent; production ignores it even if accidentally set.
-    if super::env_var("LEPTOS_ENV").is_some_and(|v| v.eq_ignore_ascii_case("dev"))
-        && super::env_var("FLY_APP_NAME").is_none()
-        && super::env_var("HASHI_RATE_LIMITS").as_deref() == Some("off")
-    {
+    if network_limits_off() {
         return next.run(req).await;
     }
     let endpoint = req.uri().path().strip_prefix("/api/");
-    let auth = matches!(endpoint, Some("register" | "login"));
+    // Password work, and the calls that mail players (each has its own limits on top, see
+    // `recovery`)
+    let auth = matches!(
+        endpoint,
+        Some(
+            "register"
+                | "login"
+                | "set_recovery_email"
+                | "remove_recovery_email"
+                | "confirm_recovery_email"
+                | "forgot_password"
+                | "reset_password"
+        )
+    );
     let expensive = auth
         || matches!(
             endpoint,

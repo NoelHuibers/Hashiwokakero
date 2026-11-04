@@ -49,6 +49,62 @@
     "button": "Cambiar contraseña",
     "done": "Tu contraseña se ha cambiado."
   },
+  "recovery": {
+    "title": "Correo de recuperación",
+    "text": "Opcional. Con una dirección confirmada puedes restablecer tu contraseña si la olvidas. Solo te escribimos ahí sobre tu contraseña y esta dirección.",
+    "current": "Tu correo de recuperación: {{ email }}",
+    "none": "Aún no tienes correo de recuperación.",
+    "pending": "Pendiente de confirmación: {{ email }}. Abre en 24 horas el enlace que te enviamos ahí.",
+    "add": "Añadir correo de recuperación…",
+    "change": "Cambiar correo de recuperación…",
+    "address": "Dirección de correo",
+    "button": "Enviar enlace de confirmación",
+    "sent": "Busca el enlace de confirmación en {{ email }}.",
+    "remove": "Quitar correo de recuperación…",
+    "remove_confirm": "Escribe tu contraseña para quitar la dirección. Sin ella, una contraseña olvidada no se puede restablecer.",
+    "remove_button": "Quitar dirección",
+    "removed": "Tu correo de recuperación se ha quitado."
+  },
+  "forgot": {
+    "link": "¿Olvidaste tu contraseña?",
+    "title": "¿Olvidaste tu contraseña?",
+    "text": "Escribe tu nombre de usuario o tu correo de recuperación. Si la cuenta tiene un correo de recuperación confirmado, te enviamos ahí un enlace para elegir una contraseña nueva. Vale una hora.",
+    "login": "Usuario o correo",
+    "button": "Enviarme un enlace",
+    "sent": "Si coincide una cuenta con un correo de recuperación confirmado, el enlace va en camino. Mira tu bandeja de entrada y también la carpeta de spam.",
+    "unavailable": "Este servidor no puede enviar correos, así que aquí no se puede restablecer una contraseña olvidada.",
+    "no_email": "Sin correo de recuperación no se puede restablecer una contraseña olvidada: no tenemos otra forma de saber que eres tú.",
+    "back": "Volver a entrar"
+  },
+  "reset": {
+    "title": "Elige una contraseña nueva",
+    "text": "La contraseña nueva cierra la sesión en todos los dispositivos de la cuenta. En este entras con ella.",
+    "guest": "Los resultados del invitado que juega en este navegador pasan a la cuenta, como al entrar.",
+    "button": "Guardar y entrar",
+    "again": "Pedir un enlace nuevo"
+  },
+  "confirm": {
+    "title": "Confirma tu correo de recuperación",
+    "text": "Confirma la dirección a la que llegó este enlace como correo de recuperación de tu cuenta de Hashi.",
+    "button": "Confirmar dirección",
+    "done": "{{ email }} es ahora el correo de recuperación de tu cuenta.",
+    "to_account": "A tu cuenta"
+  },
+  "mail": {
+    "hello": "Hola, {{ name }}:",
+    "confirm_subject": "Confirma tu correo de recuperación",
+    "confirm_text": "Abre este enlace para confirmar esta dirección como correo de recuperación de tu cuenta de Hashi:",
+    "confirm_valid": "El enlace funciona una vez, durante 24 horas.",
+    "reset_subject": "Restablece tu contraseña",
+    "reset_text": "Abre este enlace para elegir una contraseña nueva para tu cuenta de Hashi:",
+    "reset_valid": "El enlace funciona una vez, durante una hora. La contraseña nueva cierra la sesión en todos los dispositivos de la cuenta.",
+    "ignore": "Si no fuiste tú, ignora este correo: no cambia nada.",
+    "changed_subject": "Tu correo de recuperación ha cambiado",
+    "changed_text": "Esta dirección ya no es el correo de recuperación de tu cuenta de Hashi: otra ha ocupado su lugar.",
+    "removed_subject": "Tu correo de recuperación se ha quitado",
+    "removed_text": "Esta dirección ya no es el correo de recuperación de tu cuenta de Hashi: se ha quitado.",
+    "not_you": "Si no fuiste tú, cambia tu contraseña en la página de tu cuenta y escríbenos:"
+  },
   "delete": {
     "title": "Eliminar cuenta",
     "intro": "Elimina para siempre tu nombre, tu contraseña, tus sellos y tus envíos al Dojo. Tus tiempos anteriores se quedan sin nombre en las clasificaciones antiguas, para que los demás jugadores conserven su puesto.",

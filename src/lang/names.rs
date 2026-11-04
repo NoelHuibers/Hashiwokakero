@@ -369,6 +369,9 @@ fn error_text_in(app: bool, locale: Locale, error: &ServerFnError) -> String {
         ApiError::PuzzleAuthorOnly => td_string!(locale, kadai.errors.author_only),
         ApiError::AppOutdated => td_string!(locale, common.errors.app_outdated),
         ApiError::TooManyReports => td_string!(locale, common.errors.too_many_reports),
+        ApiError::MailUnavailable => td_string!(locale, common.errors.mail_unavailable),
+        ApiError::LinkExpired => td_string!(locale, common.errors.link_expired),
+        ApiError::EmailTaken => td_string!(locale, common.errors.email_taken),
     }
     .to_string()
 }

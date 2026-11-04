@@ -49,6 +49,62 @@
     "button": "Change password",
     "done": "Your password is changed."
   },
+  "recovery": {
+    "title": "Recovery email",
+    "text": "Optional. With a confirmed address you can reset your password if you forget it. We only write to it about your password and this address.",
+    "current": "Your recovery email: {{ email }}",
+    "none": "No recovery email yet.",
+    "pending": "Waiting for confirmation: {{ email }}. Open the link we mailed there within 24 hours.",
+    "add": "Add recovery email…",
+    "change": "Change recovery email…",
+    "address": "Email address",
+    "button": "Send confirmation link",
+    "sent": "Check {{ email }} for the confirmation link.",
+    "remove": "Remove recovery email…",
+    "remove_confirm": "Enter your password to remove the address. Without one, a forgotten password can't be reset.",
+    "remove_button": "Remove address",
+    "removed": "Your recovery email is removed."
+  },
+  "forgot": {
+    "link": "Forgot password?",
+    "title": "Forgot your password?",
+    "text": "Enter your username or your recovery email. If the account has a confirmed recovery email, we mail a link there to choose a new password. It works for one hour.",
+    "login": "Username or email",
+    "button": "Mail me a link",
+    "sent": "If an account with a confirmed recovery email matches, the link is on its way. Have a look in your inbox, and in the spam folder too.",
+    "unavailable": "This server can't send mail, so a forgotten password can't be reset here.",
+    "no_email": "Without a recovery email a forgotten password can't be reset: we have no other way to tell it's you.",
+    "back": "Back to sign in"
+  },
+  "reset": {
+    "title": "Choose a new password",
+    "text": "The new password signs out every device of the account. This one is signed in with it.",
+    "guest": "The results of the guest playing in this browser move to the account, as when signing in.",
+    "button": "Save and sign in",
+    "again": "Ask for a new link"
+  },
+  "confirm": {
+    "title": "Confirm your recovery email",
+    "text": "Confirm the address this link was mailed to as the recovery email of your Hashi account.",
+    "button": "Confirm address",
+    "done": "{{ email }} is now the recovery email of your account.",
+    "to_account": "To your account"
+  },
+  "mail": {
+    "hello": "Hello {{ name }},",
+    "confirm_subject": "Confirm your recovery email",
+    "confirm_text": "Open this link to confirm this address as the recovery email of your Hashi account:",
+    "confirm_valid": "The link works once, for 24 hours.",
+    "reset_subject": "Reset your password",
+    "reset_text": "Open this link to choose a new password for your Hashi account:",
+    "reset_valid": "The link works once, for one hour. The new password signs out every device of the account.",
+    "ignore": "If this wasn't you, ignore this mail: nothing changes.",
+    "changed_subject": "Your recovery email was changed",
+    "changed_text": "This address is no longer the recovery email of your Hashi account: another one took its place.",
+    "removed_subject": "Your recovery email was removed",
+    "removed_text": "This address is no longer the recovery email of your Hashi account: it was removed.",
+    "not_you": "If this wasn't you, change your password on your account page and write to us:"
+  },
   "delete": {
     "title": "Delete account",
     "intro": "Deletes your name, password, stamps and Dojo submissions for good. Your past times stay on old leaderboards without a name, so the other players keep their places.",

@@ -25,7 +25,7 @@ use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 24] = [
+const PAGES: [(&str, &str); 27] = [
     ("/", "/"),
     ("/practice", "/practice"),
     ("/ranks", "/ranks"),
@@ -42,6 +42,10 @@ const PAGES: [(&str, &str); 24] = [
     // Nobody, user ids start at 1
     ("/player/{id}", "/player/0"),
     ("/account", "/account"),
+    ("/account/forgot", "/account/forgot"),
+    // The token after the `#`, which the server never sees
+    ("/account/reset", "/account/reset"),
+    ("/account/confirm", "/account/confirm"),
     ("/create", "/create"),
     ("/lab", "/lab"),
     ("/dojo", "/dojo"),
@@ -294,13 +298,60 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, account.username),
                 td_string!(l, account.password),
                 td_string!(l, account.password_hint),
+                td_string!(l, account.forgot.link),
             ]),
             absent: strings([
                 td_string!(l, account.sign_out),
+                td_string!(l, account.recovery.title),
                 td_string!(l, account.delete.title),
                 td_string!(l, account.public_profile),
                 "Admin dashboard",
             ]),
+            ..Expected::default()
+        },
+        // The pages of "Forgot password?" and of the links in mails: what they ask for, nothing
+        // of what only the answer says
+        "/account/forgot" => Expected {
+            title: Some(hashi(td_string!(l, account.forgot.title))),
+            texts: strings([
+                td_string!(l, account.forgot.title),
+                td_string!(l, account.forgot.text),
+                td_string!(l, account.forgot.login),
+                td_string!(l, account.forgot.button),
+                td_string!(l, account.forgot.no_email),
+                td_string!(l, account.forgot.back),
+            ]),
+            absent: strings([
+                td_string!(l, account.forgot.sent),
+                td_string!(l, account.forgot.unavailable),
+            ]),
+            ..Expected::default()
+        },
+        "/account/reset" => Expected {
+            title: Some(hashi(td_string!(l, account.reset.title))),
+            texts: strings([
+                td_string!(l, account.reset.title),
+                td_string!(l, account.reset.text),
+                td_string!(l, account.password_change.new),
+                td_string!(l, account.password_hint),
+                td_string!(l, account.reset.button),
+            ]),
+            absent: strings([
+                td_string!(l, account.reset.guest),
+                td_string!(l, account.reset.again),
+                td_string!(l, common.errors.link_expired),
+            ]),
+            ..Expected::default()
+        },
+        "/account/confirm" => Expected {
+            title: Some(hashi(td_string!(l, account.confirm.title))),
+            texts: strings([
+                td_string!(l, account.confirm.title),
+                td_string!(l, account.confirm.text),
+                td_string!(l, account.confirm.button),
+                td_string!(l, account.confirm.to_account),
+            ]),
+            absent: strings([td_string!(l, common.errors.link_expired)]),
             ..Expected::default()
         },
         "/create" => Expected {

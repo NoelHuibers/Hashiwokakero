@@ -5,6 +5,8 @@ export const ROOT = path.resolve(import.meta.dirname, '..');
 // The database and the server's log of a run, recreated every run
 export const RUN_DIR = path.join(import.meta.dirname, '.run');
 export const DB_PATH = path.join(RUN_DIR, 'hashi.db');
+// The mails the server would send (HASHI_MAIL_DIR, see src/server/mail.rs and mail.ts)
+export const MAIL_DIR = path.join(RUN_DIR, 'mail');
 
 export const PORT = Number(process.env.E2E_PORT ?? 3150);
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

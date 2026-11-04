@@ -79,6 +79,20 @@ pub struct UserInfo {
     pub name_locked: bool,
 }
 
+/// What the account page shows of an account's recovery email (`server::recovery`).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecoveryEmail {
+    /// The confirmed address, the one reset links go to. `None`: none.
+    pub address: Option<String>,
+    /// A new address whose confirmation link wasn't opened yet. Until it is, `address` stays.
+    pub pending: Option<String>,
+    /// Whether the server can send mail at all: without SMTP there are no recovery emails.
+    pub mail: bool,
+}
+
+/// The longest email address there can be (RFC 5321), in bytes.
+pub const MAX_EMAIL: usize = 254;
+
 impl UserInfo {
     /// From when the username can be changed again, `None`: right away.
     pub fn rename_from(&self, now: i64) -> Option<i64> {

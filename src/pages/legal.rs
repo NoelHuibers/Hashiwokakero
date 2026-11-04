@@ -93,6 +93,15 @@ const PRIVACY_DE: &[Section] = &[
         ],
     ),
     (
+        "Wiederherstellungs-E-Mail",
+        &[
+            "Auf deiner Kontoseite kannst du freiwillig eine E-Mail-Adresse hinterlegen, um ein vergessenes Passwort zurücksetzen zu können. Dafür brauchst du dein Passwort. Wir schicken an die Adresse einen Link, der 24 Stunden lang einmal funktioniert; erst wenn du ihn öffnest, wird sie die Wiederherstellungs-E-Mail deines Kontos. Bis dahin bleibt eine bisherige Adresse bestehen. Eine Adresse kann nur zu einem Konto gehören.",
+            "Wir nutzen die Adresse nur dafür: für den Bestätigungslink, für Links zum Zurücksetzen deines Passworts, die du mit „Passwort vergessen?“ anforderst (sie funktionieren eine Stunde lang einmal), und für eine Nachricht an die bisherige Adresse, wenn sie geändert oder entfernt wird. Von den Links speichern wir nur einen Hash. Damit niemand mit diesen E-Mails fremde Postfächer füllt, zählen wir die verschickten Links pro Konto und pro Netz, mit dem Hash deiner IP-Adresse, der jeden Tag anders ist (siehe „Feedbackformular und E-Mail“).",
+            "Die E-Mails verschicken wir über Proton Mail (Proton AG, Schweiz), das sie in unserem Auftrag verarbeitet (Art. 28 DSGVO, siehe „Feedbackformular und E-Mail“).",
+            "Die Adresse speichern wir, bis du sie entfernst oder dein Konto löschst. Eine noch nicht bestätigte Adresse löschen wir, sobald ihr Link abgelaufen ist, die Einträge der Links selbst einen Tag nach dem Versand. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (die Wiederherstellung deines Kontos, die du dir mit der Adresse wünschst), für das Zählen der E-Mails Art. 6 Abs. 1 lit. f DSGVO (Schutz vor Missbrauch).",
+        ],
+    ),
+    (
         "Ranglisten und Spielerprofil",
         &[
             "Zu jeder Brücke des Tages speichern wir Start- und Endzeit, deine Zeit, deine Züge, wie oft du Tipps und Prüfungen genutzt hast, und die gelöste Brückenbelegung.",
@@ -182,8 +191,8 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Speicherdauer",
         &[
-            "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Stempel, deine Rivalenliste (und deinen Eintrag in den Listen anderer), deine Meldungen und Blockierungen (und die anderer über dich), deine Gruppenmitgliedschaften (deine Gruppen gehen an das dienstälteste Mitglied über, leere Gruppen löschen wir, deine Brücken bleiben ohne Namen in den Flüssen deiner Gruppen), mit wem du Planken gelegt hast, deine gegebenen und erhaltenen Hanko, deine offenen Gruppenrätsel und deine Ergebnisse bei Gruppenrätseln (geschlossene Rätsel bleiben ohne Namen), Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
-            "Die nichtöffentliche Datensatz-ID eines gelöschten Kontos bleibt gesperrt, damit eine Kennung und ihre Berechtigungen niemals an ein neues Konto übergehen. Gastkonten, die ein Jahr lang nicht besucht wurden, löschen wir automatisch auf dieselbe Weise, denn ohne gültige Sitzung kommt niemand mehr an sie heran. Sitzungen laufen ein Jahr nach dem letzten Besuch ab, Kontaktnachrichten löschen wir spätestens nach sechs Monaten, erledigte Meldungen sechs Monate, nachdem sie erledigt wurden.",
+            "Dein Konto, deine Ergebnisse, Stempel und Dojo-Einsendungen speichern wir, bis du dein Konto löschst. Das geht jederzeit auf deiner Kontoseite. Dabei löschen wir deinen Namen, dein Passwort, deine Wiederherstellungs-E-Mail mit den Links an sie, deine Stempel, deine Rivalenliste (und deinen Eintrag in den Listen anderer), deine Meldungen und Blockierungen (und die anderer über dich), deine Gruppenmitgliedschaften (deine Gruppen gehen an das dienstälteste Mitglied über, leere Gruppen löschen wir, deine Brücken bleiben ohne Namen in den Flüssen deiner Gruppen), mit wem du Planken gelegt hast, deine gegebenen und erhaltenen Hanko, deine offenen Gruppenrätsel und deine Ergebnisse bei Gruppenrätseln (geschlossene Rätsel bleiben ohne Namen), Dojo-Einsendungen (gezogene Benchmarks bleiben ohne Namen, siehe oben), Zugprotokolle, Geräte-Hashes und ungewerteten Ergebnisse. Deine gewerteten Zeiten bleiben ohne Namen in den Ranglisten vergangener Tage, damit die Plätze und Medaillen der anderen gleich bleiben; mit deiner Person lassen sie sich dann nicht mehr verbinden.",
+            "Die nichtöffentliche Datensatz-ID eines gelöschten Kontos bleibt gesperrt, damit eine Kennung und ihre Berechtigungen niemals an ein neues Konto übergehen. Gastkonten, die ein Jahr lang nicht besucht wurden, löschen wir automatisch auf dieselbe Weise, denn ohne gültige Sitzung kommt niemand mehr an sie heran. Sitzungen laufen ein Jahr nach dem letzten Besuch ab, Kontaktnachrichten löschen wir spätestens nach sechs Monaten, erledigte Meldungen sechs Monate, nachdem sie erledigt wurden, die Links unserer E-Mails einen Tag nach dem Versand (siehe „Wiederherstellungs-E-Mail“).",
         ],
     ),
     (
@@ -193,7 +202,7 @@ const PRIVACY_DE: &[Section] = &[
             "Widerspruchsrecht: Soweit wir Daten auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO verarbeiten, kannst du dem aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit widersprechen (Art. 21 DSGVO).",
         ],
     ),
-    ("Stand", &["Oktober 2026"]),
+    ("Stand", &["November 2026"]),
 ];
 
 const PRIVACY_EN: &[Section] = &[
@@ -222,6 +231,14 @@ const PRIVACY_EN: &[Section] = &[
         &[
             "Starting the Bridge of the Day creates a guest account with a random guest name and the cookie \"hashi_session\", which holds a random key we only store as a hash and expires a year after your last visit or when you log out. Registered accounts add a username and an Argon2 password hash. When you change your username we store the time, as it can only be changed every 30 days. Failed logins are counted in memory for 15 minutes to slow down password guessing.",
             "For each daily we store your start and finish time, time, moves, hints, checks and solved board. The daily is a public competition: your name, whether you are a guest, your times, hints, checks, medals, streaks, monthly points, your stamps with their dates and your player profile (the last 35 days with time and place) are public. Player profiles are hidden from search engines. If you don't want to appear publicly, play the practice puzzles (Art. 6 (1) b GDPR).",
+        ],
+    ),
+    (
+        "Recovery email",
+        &[
+            "On your account page you can add an email address, if you want to, so that you can reset a forgotten password; it takes your password. We mail a link to the address that works once for 24 hours, and only once you open it does the address become your account's recovery email. Until then a previous address stays. An address can only belong to one account.",
+            "We only use the address for that: the confirmation link, links to reset your password that you ask for with \"Forgot password?\" (they work once for an hour), and a notice to the previous address when it is changed or removed. Of the links we only store a hash. So that nobody fills other people's inboxes with these mails, we count the links sent per account and per network, with the keyed hash of your IP address that changes every day (see \"Feedback form and email\"). The mails go out through Proton Mail (Proton AG, Switzerland) as our processor (Art. 28 GDPR, see \"Feedback form and email\").",
+            "We keep the address until you remove it or delete your account. An address not confirmed yet is deleted once its link has expired, the records of the links themselves a day after they were sent (Art. 6 (1) b GDPR, the account recovery you ask for by adding the address; counting the mails: Art. 6 (1) f GDPR, preventing abuse).",
         ],
     ),
     (
@@ -293,7 +310,7 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Retention",
         &[
-            "We keep your account, results, stamps and your open group puzzles and your results on group puzzles (closed puzzles stay without a name), Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, stamps, rivals (your list and your place on everyone else's), reports and blocks (yours and those of others about you), group memberships (your groups pass to their longest standing member, empty groups are deleted, the bridges you laid stay in your groups' rivers without a name), with whom you laid planks, the hanko you gave and got, Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest, reports six months after they were dealt with.",
+            "We keep your account, results, stamps and your open group puzzles and your results on group puzzles (closed puzzles stay without a name), Dojo submissions until you delete your account, which you can do at any time on your account page. That deletes your name, password, recovery email with the links sent to it, stamps, rivals (your list and your place on everyone else's), reports and blocks (yours and those of others about you), group memberships (your groups pass to their longest standing member, empty groups are deleted, the bridges you laid stay in your groups' rivers without a name), with whom you laid planks, the hanko you gave and got, Dojo submissions (benchmarks a season drew stay without a name, see above), move logs, device hashes and unranked results; your ranked times stay on the leaderboards of past days without a name, so everyone else keeps their places and medals, and can no longer be connected to you. The non-public record ID of a deleted account stays reserved so an identifier and its permissions can never pass to a new account. Guest accounts nobody has visited for a year are deleted the same way automatically, as nobody can get into them any more. Sessions expire a year after the last visit, contact messages are deleted after six months at the latest, reports six months after they were dealt with, the links in our mails a day after they were sent (see \"Recovery email\").",
         ],
     ),
     (
@@ -302,7 +319,7 @@ const PRIVACY_EN: &[Section] = &[
             "You have the right to access, rectification, erasure, restriction and portability (Art. 15–20 GDPR) and to lodge a complaint with a supervisory authority (Art. 77 GDPR). Where we rely on Art. 6 (1) f GDPR you can object at any time on grounds relating to your particular situation (Art. 21 GDPR). Just email us or use the contact form: /kontakt",
         ],
     ),
-    ("Last updated", &["October 2026"]),
+    ("Last updated", &["November 2026"]),
 ];
 
 /// The community rules everyone accepts with an account (`/regeln`, linked from the sign up).

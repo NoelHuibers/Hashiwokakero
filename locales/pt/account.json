@@ -49,6 +49,62 @@
     "button": "Mudar senha",
     "done": "Sua senha foi alterada."
   },
+  "recovery": {
+    "title": "E-mail de recuperação",
+    "text": "Opcional. Com um endereço confirmado você pode redefinir sua senha se esquecer. Só escrevemos para ele sobre sua senha e este endereço.",
+    "current": "Seu e-mail de recuperação: {{ email }}",
+    "none": "Nenhum e-mail de recuperação ainda.",
+    "pending": "Aguardando confirmação: {{ email }}. Abra em até 24 horas o link que enviamos para lá.",
+    "add": "Adicionar e-mail de recuperação…",
+    "change": "Mudar e-mail de recuperação…",
+    "address": "Endereço de e-mail",
+    "button": "Enviar link de confirmação",
+    "sent": "Procure o link de confirmação em {{ email }}.",
+    "remove": "Remover e-mail de recuperação…",
+    "remove_confirm": "Digite sua senha para remover o endereço. Sem ele, uma senha esquecida não pode ser redefinida.",
+    "remove_button": "Remover endereço",
+    "removed": "Seu e-mail de recuperação foi removido."
+  },
+  "forgot": {
+    "link": "Esqueceu a senha?",
+    "title": "Esqueceu sua senha?",
+    "text": "Digite seu nome de usuário ou seu e-mail de recuperação. Se a conta tiver um e-mail de recuperação confirmado, enviamos para lá um link para escolher uma senha nova. Ele vale por uma hora.",
+    "login": "Usuário ou e-mail",
+    "button": "Enviar um link",
+    "sent": "Se uma conta com e-mail de recuperação confirmado corresponder, o link está a caminho. Veja sua caixa de entrada e também a pasta de spam.",
+    "unavailable": "Este servidor não consegue enviar e-mails, então uma senha esquecida não pode ser redefinida aqui.",
+    "no_email": "Sem e-mail de recuperação, uma senha esquecida não pode ser redefinida: não temos outra forma de saber que é você.",
+    "back": "Voltar para entrar"
+  },
+  "reset": {
+    "title": "Escolha uma senha nova",
+    "text": "A senha nova desconecta todos os dispositivos da conta. Este entra com ela.",
+    "guest": "Os resultados do convidado que joga neste navegador passam para a conta, como ao entrar.",
+    "button": "Salvar e entrar",
+    "again": "Pedir um link novo"
+  },
+  "confirm": {
+    "title": "Confirme seu e-mail de recuperação",
+    "text": "Confirme o endereço para o qual este link foi enviado como e-mail de recuperação da sua conta Hashi.",
+    "button": "Confirmar endereço",
+    "done": "{{ email }} agora é o e-mail de recuperação da sua conta.",
+    "to_account": "Para sua conta"
+  },
+  "mail": {
+    "hello": "Olá, {{ name }},",
+    "confirm_subject": "Confirme seu e-mail de recuperação",
+    "confirm_text": "Abra este link para confirmar este endereço como e-mail de recuperação da sua conta Hashi:",
+    "confirm_valid": "O link funciona uma vez, por 24 horas.",
+    "reset_subject": "Redefina sua senha",
+    "reset_text": "Abra este link para escolher uma senha nova para sua conta Hashi:",
+    "reset_valid": "O link funciona uma vez, por uma hora. A senha nova desconecta todos os dispositivos da conta.",
+    "ignore": "Se não foi você, ignore este e-mail: nada muda.",
+    "changed_subject": "Seu e-mail de recuperação foi alterado",
+    "changed_text": "Este endereço não é mais o e-mail de recuperação da sua conta Hashi: outro tomou o lugar dele.",
+    "removed_subject": "Seu e-mail de recuperação foi removido",
+    "removed_text": "Este endereço não é mais o e-mail de recuperação da sua conta Hashi: ele foi removido.",
+    "not_you": "Se não foi você, mude sua senha na página da sua conta e escreva para nós:"
+  },
   "delete": {
     "title": "Excluir conta",
     "intro": "Exclui para sempre seu nome, sua senha, seus carimbos e seus envios ao Dojo. Seus tempos anteriores continuam nos rankings antigos sem nome, para que os outros jogadores mantenham suas posições.",

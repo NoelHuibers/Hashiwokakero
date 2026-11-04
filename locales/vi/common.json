@@ -91,7 +91,10 @@
     "group_full": "Nhóm này đã đầy: đã có đủ 50 thành viên.",
     "too_many_groups": "Bạn đã ở trong 10 nhóm rồi, hãy rời một nhóm trước.",
     "group_owner_only": "Chỉ chủ nhóm mới làm được việc này.",
-    "too_many_reports": "Hôm nay bạn đã gửi đủ báo cáo rồi, vui lòng thử lại vào ngày mai."
+    "too_many_reports": "Hôm nay bạn đã gửi đủ báo cáo rồi, vui lòng thử lại vào ngày mai.",
+    "mail_unavailable": "Hiện không thể gửi email từ đây, nên email khôi phục và đặt lại mật khẩu không hoạt động.",
+    "link_expired": "Liên kết này đã hết hạn hoặc đã được dùng.",
+    "email_taken": "Địa chỉ này đã là email khôi phục của một tài khoản khác. Hãy gỡ nó ở đó trước."
   },
   "solver": {
     "title": "Bộ giải SAT",

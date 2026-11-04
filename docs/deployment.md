@@ -37,9 +37,13 @@ Store credentials in the deployment platform's secret store.
   `hashi.db`.
 - `SMTP_HOST`, `SMTP_PORT` (default 587), `SMTP_USERNAME`, `SMTP_PASSWORD`,
   `SMTP_FROM` (optional) and `CONTACT_TO`: optional, the mail server for the
-  feedback form's and the reports' mail to us and for the "fixed" mail to players
-  (see `src/server/contact.rs`). Without them messages are only stored and listed
-  in the admin dashboard.
+  feedback form's and the reports' mail to us, for the "fixed" mail to players
+  (see `src/server/contact.rs`) and for the recovery email's confirmation and
+  password reset links (see `src/server/recovery.rs`). Without them messages are
+  only stored and listed in the admin dashboard, and the account page says that
+  recovery emails and password resets aren't available. `HASHI_MAIL_DIR` writes
+  the mails to players as JSON files into a directory instead, only with
+  `LEPTOS_ENV=dev` outside Fly (the browser tests use it).
 - `GITHUB_FEEDBACK_TOKEN`: optional, lets the admins make a GitHub issue of a
   feedback message ("Create issue" in `/admin?tab=messages`), and lets the server
   tell the writer once the issue is closed as completed (checked every six hours,

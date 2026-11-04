@@ -107,6 +107,15 @@ pub(super) fn AuthForm(mode: Mode, stats: RwSignal<Option<UserStats>>) -> impl I
                     (Mode::Register, false) => format!("{} 登録", t_string!(i18n, account.create)),
                 }}
             </Button>
+            {(mode == Mode::SignIn)
+                .then(|| {
+                    let forgot = use_localized("/account/forgot");
+                    view! {
+                        <A href=forgot attr:class="self-center text-sm text-primary underline-offset-4 hover:underline">
+                            {t!(i18n, account.forgot.link)}
+                        </A>
+                    }
+                })}
             {(mode == Mode::Register)
                 .then(|| {
                     let rules = use_localized("/regeln");

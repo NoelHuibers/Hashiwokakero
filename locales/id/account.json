@@ -49,6 +49,62 @@
     "button": "Ganti kata sandi",
     "done": "Kata sandimu sudah diganti."
   },
+  "recovery": {
+    "title": "Email pemulihan",
+    "text": "Opsional. Dengan alamat yang sudah dikonfirmasi, kamu bisa mengatur ulang kata sandi kalau lupa. Kami hanya menulis ke sana soal kata sandimu dan alamat ini.",
+    "current": "Email pemulihanmu: {{ email }}",
+    "none": "Belum ada email pemulihan.",
+    "pending": "Menunggu konfirmasi: {{ email }}. Buka tautan yang kami kirim ke sana dalam 24 jam.",
+    "add": "Tambah email pemulihan…",
+    "change": "Ganti email pemulihan…",
+    "address": "Alamat email",
+    "button": "Kirim tautan konfirmasi",
+    "sent": "Cek {{ email }} untuk tautan konfirmasinya.",
+    "remove": "Hapus email pemulihan…",
+    "remove_confirm": "Masukkan kata sandimu untuk menghapus alamat ini. Tanpa alamat, kata sandi yang terlupa tidak bisa diatur ulang.",
+    "remove_button": "Hapus alamat",
+    "removed": "Email pemulihanmu sudah dihapus."
+  },
+  "forgot": {
+    "link": "Lupa kata sandi?",
+    "title": "Lupa kata sandi?",
+    "text": "Masukkan nama pengguna atau email pemulihanmu. Kalau akun punya email pemulihan yang sudah dikonfirmasi, kami kirim tautan ke sana untuk memilih kata sandi baru. Tautannya berlaku satu jam.",
+    "login": "Nama pengguna atau email",
+    "button": "Kirimi aku tautan",
+    "sent": "Kalau ada akun dengan email pemulihan terkonfirmasi yang cocok, tautannya sedang dikirim. Cek kotak masuk, dan folder spam juga.",
+    "unavailable": "Server ini tidak bisa mengirim email, jadi kata sandi yang terlupa tidak bisa diatur ulang di sini.",
+    "no_email": "Tanpa email pemulihan, kata sandi yang terlupa tidak bisa diatur ulang: kami tidak punya cara lain untuk tahu bahwa itu kamu.",
+    "back": "Kembali ke masuk"
+  },
+  "reset": {
+    "title": "Pilih kata sandi baru",
+    "text": "Kata sandi baru mengeluarkan semua perangkat akun. Perangkat ini masuk dengannya.",
+    "guest": "Hasil tamu yang bermain di browser ini pindah ke akun, sama seperti saat masuk.",
+    "button": "Simpan dan masuk",
+    "again": "Minta tautan baru"
+  },
+  "confirm": {
+    "title": "Konfirmasi email pemulihanmu",
+    "text": "Konfirmasi alamat tujuan tautan ini sebagai email pemulihan akun Hashi-mu.",
+    "button": "Konfirmasi alamat",
+    "done": "{{ email }} sekarang menjadi email pemulihan akunmu.",
+    "to_account": "Ke akunmu"
+  },
+  "mail": {
+    "hello": "Halo {{ name }},",
+    "confirm_subject": "Konfirmasi email pemulihanmu",
+    "confirm_text": "Buka tautan ini untuk mengonfirmasi alamat ini sebagai email pemulihan akun Hashi-mu:",
+    "confirm_valid": "Tautan ini berlaku sekali, selama 24 jam.",
+    "reset_subject": "Atur ulang kata sandimu",
+    "reset_text": "Buka tautan ini untuk memilih kata sandi baru untuk akun Hashi-mu:",
+    "reset_valid": "Tautan ini berlaku sekali, selama satu jam. Kata sandi baru mengeluarkan semua perangkat akun.",
+    "ignore": "Kalau ini bukan kamu, abaikan email ini: tidak ada yang berubah.",
+    "changed_subject": "Email pemulihanmu diganti",
+    "changed_text": "Alamat ini bukan lagi email pemulihan akun Hashi-mu: alamat lain sudah menggantikannya.",
+    "removed_subject": "Email pemulihanmu dihapus",
+    "removed_text": "Alamat ini bukan lagi email pemulihan akun Hashi-mu: alamat ini sudah dihapus.",
+    "not_you": "Kalau ini bukan kamu, ganti kata sandimu di halaman akun dan tulis ke kami:"
+  },
   "delete": {
     "title": "Hapus akun",
     "intro": "Menghapus nama, kata sandi, stempel, dan kiriman Dojo-mu untuk selamanya. Waktu-waktumu sebelumnya tetap ada di papan peringkat lama tanpa nama, supaya pemain lain tetap di posisinya.",

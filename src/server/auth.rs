@@ -67,8 +67,14 @@ fn random_bytes<const N: usize>() -> [u8; N] {
     buf
 }
 
-fn hash_token(token: &str) -> String {
+/// What the database keeps of a token: its SHA-256, so a copy of the database signs nobody in.
+pub(super) fn hash_token(token: &str) -> String {
     hex(&Sha256::digest(token.as_bytes()))
+}
+
+/// A new random token, 64 hex digits: of a session, or of a link in a mail (`recovery`).
+pub(super) fn new_token() -> String {
+    hex(&random_bytes::<32>())
 }
 
 /// The session token of the request, see [`token_from_headers`].
@@ -228,7 +234,7 @@ pub(super) async fn insert_session(
     conn: &Connection,
     user_id: i64,
 ) -> Result<String, ServerFnError> {
-    let token = hex(&random_bytes::<32>());
+    let token = new_token();
     let now = now_ms();
     conn.execute(
         "INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES (?1, ?2, ?3, ?4)",
@@ -493,7 +499,8 @@ pub async fn change_password(
 /// Stores a new password for a registered account and ends all its sessions but `keep`.
 ///
 /// `keep` is the token of the session that asked for the change. `None` ends them all, for a
-/// change by a reset link, where no session of the account asked.
+/// change by a reset link, where no session of the account asked. Reset links still open are
+/// used up either way: they were for the old password.
 ///
 /// The hash is done before the transaction starts: it can take seconds on a busy server, and an
 /// open transaction blocks every write meanwhile (see
@@ -532,6 +539,9 @@ pub(super) async fn set_password(
     )
     .await
     .map_err(db_err)?;
+    tx.execute(super::recovery::USE_UP_RESETS, params![user, now_ms()])
+        .await
+        .map_err(db_err)?;
     tx.commit().await.map_err(db_err)
 }
 
@@ -577,15 +587,21 @@ pub async fn login(
     if super::admin::is_banned(conn, user.id).await? {
         return Err(ApiError::Banned.into());
     }
+    sign_in_here(conn, user.id).await?;
+    Ok(user)
+}
 
-    if let Some(token) = request_token().await
-        && let Some((guest, _)) = user_by_token(conn, &token)
+/// Signs this browser (or app) in to `user` with a new session, as signing in does: the results of
+/// a guest playing here move to the account (see [`merge_guest`]), and the session the request
+/// came with ends, whoever's it was.
+pub(super) async fn sign_in_here(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
+    if let Some(token) = request_token().await {
+        if let Some((guest, _)) = user_by_token(conn, &token)
             .await?
             .filter(|(u, _)| u.username.is_none())
-    {
-        merge_guest(conn, guest.id, user.id, &token).await?;
-    }
-    if let Some(token) = request_token().await {
+        {
+            merge_guest(conn, guest.id, user, &token).await?;
+        }
         conn.execute(
             "DELETE FROM sessions WHERE token_hash = ?1",
             params![hash_token(&token)],
@@ -593,12 +609,11 @@ pub async fn login(
         .await
         .map_err(db_err)?;
     }
-    create_session(conn, user.id).await?;
-    Ok(user)
+    create_session(conn, user).await
 }
 
 /// The account if the password is right, counting failed attempts per username.
-async fn check_password(
+pub(super) async fn check_password(
     conn: &Connection,
     username: &str,
     password: String,
@@ -753,7 +768,7 @@ pub async fn delete_account(
 
 /// Deletes everything personal of a user.
 ///
-/// That is name, password, sessions, stamps, rivals (their list, and their place in everyone
+/// That is name, password, recovery email and the links mailed to it, sessions, stamps, rivals (their list, and their place in everyone
 /// else's), blocks and reports (theirs, and of them), group memberships (groups they own pass on to the longest standing member, groups
 /// nobody else but banned players is in go, see `groups::ERASE`), the hanko seals they pressed
 /// and got, group puzzles (open ones go, closed ones stay without a name, their attempts at
@@ -771,6 +786,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         .chain(super::blocks::ERASE)
         .chain(super::reports::ERASE)
         .chain(super::contact::ERASE)
+        .chain(super::recovery::ERASE)
     {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
     }
@@ -796,8 +812,8 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
     }
     tx.execute(
-        "UPDATE users SET username = NULL, name = '', password_hash = NULL, stamp = NULL,
-            renamed_at = NULL, deleted_at = ?2
+        "UPDATE users SET username = NULL, name = '', password_hash = NULL, email = NULL,
+            stamp = NULL, renamed_at = NULL, deleted_at = ?2
          WHERE id = ?1",
         params![user, now_ms()],
     )
@@ -835,8 +851,10 @@ pub async fn cleanup_guests(conn: &Connection) -> Result<usize, ServerFnError> {
     Ok(guests.len())
 }
 
-/// Deletes abandoned guests, old contact messages and old resolved reports now and then every
-/// few hours, and tells writers of feedback that their GitHub issue is fixed (`issues`).
+/// Cleans up every few hours, and tells writers of feedback that their GitHub issue is fixed.
+///
+/// Deletes abandoned guests, old contact messages, old resolved reports and the expired links of
+/// mails (`recovery`); the fixed issues are `issues`'.
 pub fn start_cleanup() {
     tokio::spawn(async {
         loop {
@@ -851,6 +869,9 @@ pub fn start_cleanup() {
                         eprintln!("cleanup: {e}");
                     }
                     if let Err(e) = super::reports::delete_old(&conn).await {
+                        eprintln!("cleanup: {e}");
+                    }
+                    if let Err(e) = super::recovery::delete_old(&conn).await {
                         eprintln!("cleanup: {e}");
                     }
                     match super::issues::notify_fixed_now(&conn).await {
@@ -917,7 +938,7 @@ mod tests {
 
     #[test]
     fn tokens_are_hashed() {
-        let token = hex(&random_bytes::<32>());
+        let token = new_token();
         assert_eq!(token.len(), 64);
         assert_eq!(hash_token(&token).len(), 64);
         assert_ne!(hash_token(&token), token);

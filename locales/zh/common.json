@@ -91,7 +91,10 @@
     "group_full": "这个小组已满，已有 50 名成员。",
     "too_many_groups": "你已加入 10 个小组，请先退出一个。",
     "group_owner_only": "只有组长才能这样做。",
-    "too_many_reports": "今天的举报已经够多了，请明天再试。"
+    "too_many_reports": "今天的举报已经够多了，请明天再试。",
+    "mail_unavailable": "现在无法从这里发送邮件，所以找回邮箱和重置密码都用不了。",
+    "link_expired": "这个链接已过期或已被使用。",
+    "email_taken": "这个邮箱已经是另一个账号的找回邮箱。请先在那里移除它。"
   },
   "solver": {
     "title": "SAT 求解器",

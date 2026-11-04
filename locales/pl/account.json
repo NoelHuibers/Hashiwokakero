@@ -49,6 +49,62 @@
     "button": "Zmień hasło",
     "done": "Twoje hasło zostało zmienione."
   },
+  "recovery": {
+    "title": "E-mail do odzyskiwania",
+    "text": "Opcjonalnie. Z potwierdzonym adresem możesz zresetować hasło, jeśli je zapomnisz. Piszemy tam tylko w sprawie twojego hasła i tego adresu.",
+    "current": "Twój e-mail do odzyskiwania: {{ email }}",
+    "none": "Brak e-maila do odzyskiwania.",
+    "pending": "Czeka na potwierdzenie: {{ email }}. Otwórz w ciągu 24 godzin link, który tam wysłaliśmy.",
+    "add": "Dodaj e-mail do odzyskiwania…",
+    "change": "Zmień e-mail do odzyskiwania…",
+    "address": "Adres e-mail",
+    "button": "Wyślij link potwierdzający",
+    "sent": "Sprawdź {{ email }}, tam jest link potwierdzający.",
+    "remove": "Usuń e-mail do odzyskiwania…",
+    "remove_confirm": "Wpisz hasło, aby usunąć adres. Bez niego zapomnianego hasła nie da się zresetować.",
+    "remove_button": "Usuń adres",
+    "removed": "Twój e-mail do odzyskiwania został usunięty."
+  },
+  "forgot": {
+    "link": "Nie pamiętasz hasła?",
+    "title": "Nie pamiętasz hasła?",
+    "text": "Wpisz nazwę użytkownika albo e-mail do odzyskiwania. Jeśli konto ma potwierdzony e-mail do odzyskiwania, wyślemy tam link do wyboru nowego hasła. Działa przez godzinę.",
+    "login": "Nazwa użytkownika lub e-mail",
+    "button": "Wyślij mi link",
+    "sent": "Jeśli pasuje konto z potwierdzonym e-mailem do odzyskiwania, link jest w drodze. Zajrzyj do skrzynki odbiorczej i do folderu spam.",
+    "unavailable": "Ten serwer nie może wysyłać e-maili, więc zapomnianego hasła nie da się tu zresetować.",
+    "no_email": "Bez e-maila do odzyskiwania zapomnianego hasła nie da się zresetować: nie mamy innego sposobu, by sprawdzić, że to ty.",
+    "back": "Wróć do logowania"
+  },
+  "reset": {
+    "title": "Wybierz nowe hasło",
+    "text": "Nowe hasło wylogowuje wszystkie urządzenia konta. To urządzenie zostanie nim zalogowane.",
+    "guest": "Wyniki gościa grającego w tej przeglądarce przejdą na konto, jak przy logowaniu.",
+    "button": "Zapisz i zaloguj się",
+    "again": "Poproś o nowy link"
+  },
+  "confirm": {
+    "title": "Potwierdź e-mail do odzyskiwania",
+    "text": "Potwierdź adres, na który przyszedł ten link, jako e-mail do odzyskiwania twojego konta Hashi.",
+    "button": "Potwierdź adres",
+    "done": "{{ email }} jest teraz e-mailem do odzyskiwania twojego konta.",
+    "to_account": "Do twojego konta"
+  },
+  "mail": {
+    "hello": "Cześć {{ name }},",
+    "confirm_subject": "Potwierdź e-mail do odzyskiwania",
+    "confirm_text": "otwórz ten link, aby potwierdzić ten adres jako e-mail do odzyskiwania twojego konta Hashi:",
+    "confirm_valid": "Link działa raz, przez 24 godziny.",
+    "reset_subject": "Zresetuj hasło",
+    "reset_text": "otwórz ten link, aby wybrać nowe hasło do twojego konta Hashi:",
+    "reset_valid": "Link działa raz, przez godzinę. Nowe hasło wylogowuje wszystkie urządzenia konta.",
+    "ignore": "Jeśli to nie ty, zignoruj tę wiadomość: nic się nie zmieni.",
+    "changed_subject": "Twój e-mail do odzyskiwania został zmieniony",
+    "changed_text": "ten adres nie jest już e-mailem do odzyskiwania twojego konta Hashi: zastąpił go inny.",
+    "removed_subject": "Twój e-mail do odzyskiwania został usunięty",
+    "removed_text": "ten adres nie jest już e-mailem do odzyskiwania twojego konta Hashi: został usunięty.",
+    "not_you": "Jeśli to nie ty, zmień hasło na stronie swojego konta i napisz do nas:"
+  },
   "delete": {
     "title": "Usuń konto",
     "intro": "Na zawsze usuwa twoją nazwę, hasło, pieczątki i zgłoszenia do Dojo. Twoje dawne czasy zostają bez nazwy w starych rankingach, żeby pozostali gracze zachowali swoje miejsca.",
