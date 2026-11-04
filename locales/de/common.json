@@ -91,7 +91,10 @@
     "group_full": "Diese Gruppe ist voll: Sie hat schon 50 Mitglieder.",
     "too_many_groups": "Du bist schon in 10 Gruppen, verlass zuerst eine.",
     "group_owner_only": "Das kann nur die Leitung der Gruppe.",
-    "too_many_reports": "Für heute sind es genug Meldungen, bitte versuch es morgen wieder."
+    "too_many_reports": "Für heute sind es genug Meldungen, bitte versuch es morgen wieder.",
+    "mail_unavailable": "Von hier aus lassen sich gerade keine E-Mails senden, deshalb funktionieren Wiederherstellungs-E-Mails und das Zurücksetzen des Passworts nicht.",
+    "link_expired": "Dieser Link ist abgelaufen oder wurde schon benutzt.",
+    "email_taken": "Diese Adresse ist schon die Wiederherstellungs-E-Mail eines anderen Kontos. Entferne sie dort zuerst."
   },
   "solver": {
     "title": "SAT-Solver",

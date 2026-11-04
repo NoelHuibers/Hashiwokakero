@@ -49,6 +49,62 @@
     "button": "Cambia password",
     "done": "La tua password è stata cambiata."
   },
+  "recovery": {
+    "title": "Email di recupero",
+    "text": "Facoltativa. Con un indirizzo confermato puoi reimpostare la password se la dimentichi. Ti scriviamo lì solo per la tua password e per questo indirizzo.",
+    "current": "La tua email di recupero: {{ email }}",
+    "none": "Ancora nessuna email di recupero.",
+    "pending": "In attesa di conferma: {{ email }}. Apri entro 24 ore il link che ti abbiamo mandato lì.",
+    "add": "Aggiungi email di recupero…",
+    "change": "Cambia email di recupero…",
+    "address": "Indirizzo email",
+    "button": "Invia link di conferma",
+    "sent": "Cerca il link di conferma in {{ email }}.",
+    "remove": "Rimuovi email di recupero…",
+    "remove_confirm": "Inserisci la password per rimuovere l’indirizzo. Senza, una password dimenticata non si può reimpostare.",
+    "remove_button": "Rimuovi indirizzo",
+    "removed": "La tua email di recupero è stata rimossa."
+  },
+  "forgot": {
+    "link": "Password dimenticata?",
+    "title": "Hai dimenticato la password?",
+    "text": "Inserisci il tuo nome utente o la tua email di recupero. Se l’account ha un’email di recupero confermata, ti mandiamo lì un link per scegliere una nuova password. Vale un’ora.",
+    "login": "Nome utente o email",
+    "button": "Mandami un link",
+    "sent": "Se corrisponde un account con un’email di recupero confermata, il link è in arrivo. Guarda nella posta in arrivo e anche nello spam.",
+    "unavailable": "Questo server non può inviare email, quindi qui non si può reimpostare una password dimenticata.",
+    "no_email": "Senza email di recupero una password dimenticata non si può reimpostare: non abbiamo altro modo per sapere che sei tu.",
+    "back": "Torna all’accesso"
+  },
+  "reset": {
+    "title": "Scegli una nuova password",
+    "text": "La nuova password disconnette tutti i dispositivi dell’account. Questo accede con quella.",
+    "guest": "I risultati dell’ospite che gioca in questo browser passano all’account, come quando accedi.",
+    "button": "Salva e accedi",
+    "again": "Chiedi un nuovo link"
+  },
+  "confirm": {
+    "title": "Conferma la tua email di recupero",
+    "text": "Conferma l’indirizzo a cui è arrivato questo link come email di recupero del tuo account Hashi.",
+    "button": "Conferma indirizzo",
+    "done": "{{ email }} è ora l’email di recupero del tuo account.",
+    "to_account": "Al tuo account"
+  },
+  "mail": {
+    "hello": "Ciao {{ name }},",
+    "confirm_subject": "Conferma la tua email di recupero",
+    "confirm_text": "Apri questo link per confermare questo indirizzo come email di recupero del tuo account Hashi:",
+    "confirm_valid": "Il link funziona una volta, per 24 ore.",
+    "reset_subject": "Reimposta la tua password",
+    "reset_text": "Apri questo link per scegliere una nuova password per il tuo account Hashi:",
+    "reset_valid": "Il link funziona una volta, per un’ora. La nuova password disconnette tutti i dispositivi dell’account.",
+    "ignore": "Se non sei stato tu, ignora questa email: non cambia nulla.",
+    "changed_subject": "La tua email di recupero è stata cambiata",
+    "changed_text": "Questo indirizzo non è più l’email di recupero del tuo account Hashi: un altro ha preso il suo posto.",
+    "removed_subject": "La tua email di recupero è stata rimossa",
+    "removed_text": "Questo indirizzo non è più l’email di recupero del tuo account Hashi: è stato rimosso.",
+    "not_you": "Se non sei stato tu, cambia la password nella pagina del tuo account e scrivici:"
+  },
   "delete": {
     "title": "Elimina account",
     "intro": "Elimina per sempre il tuo nome, la password, i timbri e gli invii al Dojo. I tuoi tempi passati restano senza nome nelle vecchie classifiche, così gli altri giocatori mantengono la loro posizione.",

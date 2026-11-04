@@ -8,6 +8,11 @@
     "renamed_at": 1755000000000,
     "name_locked": false
   },
+  "recovery_email": {
+    "address": "noel@example.org",
+    "pending": "noel@example.com",
+    "mail": true
+  },
   "daily": {
     "day": 20381,
     "difficulty": "Hard",

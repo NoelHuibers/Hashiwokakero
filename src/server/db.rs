@@ -560,6 +560,33 @@ ALTER TABLE contact_messages ADD COLUMN issue_checked_at INTEGER;
 ALTER TABLE contact_messages ADD COLUMN issue_closed_at INTEGER;
 ALTER TABLE contact_messages ADD COLUMN fixed_mailed_at INTEGER;
 ",
+    // 26
+    "
+-- The optional recovery email of an account, see server/recovery.rs: only confirmed addresses,
+-- one account each, whatever their case
+ALTER TABLE users ADD COLUMN email TEXT COLLATE NOCASE;
+CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users (email);
+
+-- The links mailed to players: confirming an address (`confirm`, with the address it confirms)
+-- and resetting the password (`reset`). Only the SHA-256 of the token, like sessions. A used or
+-- replaced link has `used_at` and no address any more; the rows stay until a day after they were
+-- made (or until they expire), to count the mails per account, per (hashed, per day) network and
+-- per day. `locale`: the language of the page that asked for it
+CREATE TABLE IF NOT EXISTS account_tokens (
+    token_hash TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL,
+    kind       TEXT NOT NULL,
+    email      TEXT,
+    locale     TEXT,
+    ip_hash    TEXT,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS account_tokens_user ON account_tokens (user_id, kind, created_at);
+CREATE INDEX IF NOT EXISTS account_tokens_network ON account_tokens (ip_hash, created_at);
+CREATE INDEX IF NOT EXISTS account_tokens_created ON account_tokens (created_at);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

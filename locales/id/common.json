@@ -91,7 +91,10 @@
     "group_full": "Grup ini sudah penuh: anggotanya sudah 50 orang.",
     "too_many_groups": "Kamu sudah ada di 10 grup, keluar dulu dari salah satunya.",
     "group_owner_only": "Hanya pemilik grup yang bisa melakukan itu.",
-    "too_many_reports": "Sudah cukup banyak laporan untuk hari ini, coba lagi besok, ya."
+    "too_many_reports": "Sudah cukup banyak laporan untuk hari ini, coba lagi besok, ya.",
+    "mail_unavailable": "Saat ini email tidak bisa dikirim dari sini, jadi email pemulihan dan pengaturan ulang kata sandi tidak berfungsi.",
+    "link_expired": "Tautan ini sudah kedaluwarsa atau sudah dipakai.",
+    "email_taken": "Alamat ini sudah menjadi email pemulihan akun lain. Hapus dulu dari sana."
   },
   "solver": {
     "title": "Solver SAT",

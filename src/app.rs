@@ -9,7 +9,7 @@ use crate::components::ui::tooltip::Tooltips;
 use crate::i18n::{I18nContextProvider, Locale, use_i18n};
 use crate::lang::script_font;
 use crate::pages::NotFound;
-use crate::pages::account::AccountPage;
+use crate::pages::account::{AccountPage, ConfirmEmailPage, ForgotPasswordPage, ResetPasswordPage};
 use crate::pages::admin::AdminPage;
 use crate::pages::contact::ContactPage;
 use crate::pages::create::CreatePage;
@@ -140,6 +140,9 @@ pub fn App() -> impl IntoView {
                             // Waits for the player, for the title and the link preview
                             <Route path=path!("/player/:id") view=PlayerPage ssr=SsrMode::Async />
                             <Route path=path!("/account") view=AccountPage />
+                            <Route path=path!("/account/forgot") view=ForgotPasswordPage />
+                            <Route path=path!("/account/reset") view=ResetPasswordPage />
+                            <Route path=path!("/account/confirm") view=ConfirmEmailPage />
                             <Route path=path!("/create") view=CreatePage />
                             <Route path=path!("/lab") view=LabPage />
                             <Route path=path!("/dojo") view=DojoPage />

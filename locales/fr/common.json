@@ -91,7 +91,10 @@
     "group_full": "Ce groupe est complet : il a déjà 50 membres.",
     "too_many_groups": "Tu es déjà dans 10 groupes, quittes-en un d’abord.",
     "group_owner_only": "Seule la personne responsable du groupe peut faire ça.",
-    "too_many_reports": "Ça fait assez de signalements pour aujourd’hui, réessaie demain."
+    "too_many_reports": "Ça fait assez de signalements pour aujourd’hui, réessaie demain.",
+    "mail_unavailable": "Impossible d’envoyer des e-mails d’ici pour le moment : les e-mails de récupération et la réinitialisation du mot de passe ne fonctionnent pas.",
+    "link_expired": "Ce lien a expiré ou a déjà été utilisé.",
+    "email_taken": "Cette adresse est déjà l’e-mail de récupération d’un autre compte. Retire-la d’abord de celui-ci."
   },
   "solver": {
     "title": "Solveur SAT",

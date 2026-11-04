@@ -49,6 +49,62 @@
     "button": "Şifreyi değiştir",
     "done": "Şifren değiştirildi."
   },
+  "recovery": {
+    "title": "Kurtarma e-postası",
+    "text": "İsteğe bağlı. Onaylı bir adresle şifreni unutursan sıfırlayabilirsin. Oraya yalnızca şifren ve bu adres hakkında yazarız.",
+    "current": "Kurtarma e-postan: {{ email }}",
+    "none": "Henüz kurtarma e-postası yok.",
+    "pending": "Onay bekliyor: {{ email }}. Oraya gönderdiğimiz bağlantıyı 24 saat içinde aç.",
+    "add": "Kurtarma e-postası ekle…",
+    "change": "Kurtarma e-postasını değiştir…",
+    "address": "E-posta adresi",
+    "button": "Onay bağlantısı gönder",
+    "sent": "Onay bağlantısı için {{ email }} adresine bak.",
+    "remove": "Kurtarma e-postasını kaldır…",
+    "remove_confirm": "Adresi kaldırmak için şifreni gir. Adres olmadan unutulan bir şifre sıfırlanamaz.",
+    "remove_button": "Adresi kaldır",
+    "removed": "Kurtarma e-postan kaldırıldı."
+  },
+  "forgot": {
+    "link": "Şifreni mi unuttun?",
+    "title": "Şifreni mi unuttun?",
+    "text": "Kullanıcı adını ya da kurtarma e-postanı gir. Hesabın onaylı bir kurtarma e-postası varsa oraya yeni bir şifre seçmen için bir bağlantı göndeririz. Bağlantı bir saat geçerlidir.",
+    "login": "Kullanıcı adı veya e-posta",
+    "button": "Bana bağlantı gönder",
+    "sent": "Onaylı kurtarma e-postası olan bir hesap eşleşirse bağlantı yolda. Gelen kutuna ve spam klasörüne de bak.",
+    "unavailable": "Bu sunucu e-posta gönderemiyor, bu yüzden unutulan bir şifre burada sıfırlanamaz.",
+    "no_email": "Kurtarma e-postası olmadan unutulan bir şifre sıfırlanamaz: senin olduğunu anlamanın başka bir yolu yok.",
+    "back": "Girişe dön"
+  },
+  "reset": {
+    "title": "Yeni bir şifre seç",
+    "text": "Yeni şifre hesabın tüm cihazlarında oturumu kapatır. Bu cihazda onunla giriş yapılır.",
+    "guest": "Bu tarayıcıda oynayan misafirin sonuçları, giriş yaparken olduğu gibi hesaba geçer.",
+    "button": "Kaydet ve giriş yap",
+    "again": "Yeni bağlantı iste"
+  },
+  "confirm": {
+    "title": "Kurtarma e-postanı onayla",
+    "text": "Bu bağlantının gönderildiği adresi Hashi hesabının kurtarma e-postası olarak onayla.",
+    "button": "Adresi onayla",
+    "done": "{{ email }} artık hesabının kurtarma e-postası.",
+    "to_account": "Hesabına git"
+  },
+  "mail": {
+    "hello": "Merhaba {{ name }},",
+    "confirm_subject": "Kurtarma e-postanı onayla",
+    "confirm_text": "Bu adresi Hashi hesabının kurtarma e-postası olarak onaylamak için bu bağlantıyı aç:",
+    "confirm_valid": "Bağlantı bir kez, 24 saat boyunca çalışır.",
+    "reset_subject": "Şifreni sıfırla",
+    "reset_text": "Hashi hesabın için yeni bir şifre seçmek üzere bu bağlantıyı aç:",
+    "reset_valid": "Bağlantı bir kez, bir saat boyunca çalışır. Yeni şifre hesabın tüm cihazlarında oturumu kapatır.",
+    "ignore": "Bu sen değilsen bu e-postayı yok say: hiçbir şey değişmez.",
+    "changed_subject": "Kurtarma e-postan değiştirildi",
+    "changed_text": "Bu adres artık Hashi hesabının kurtarma e-postası değil: yerine başka bir adres geçti.",
+    "removed_subject": "Kurtarma e-postan kaldırıldı",
+    "removed_text": "Bu adres artık Hashi hesabının kurtarma e-postası değil: kaldırıldı.",
+    "not_you": "Bu sen değilsen hesap sayfanda şifreni değiştir ve bize yaz:"
+  },
   "delete": {
     "title": "Hesabı sil",
     "intro": "Adını, şifreni, mühürlerini ve Dojo gönderimlerini kalıcı olarak siler. Geçmiş sürelerin eski sıralamalarda isimsiz olarak kalır, böylece diğer oyuncular yerlerini korur.",

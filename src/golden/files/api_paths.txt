@@ -17,6 +17,7 @@
 /api/block_player POST application/json -> application/json
 /api/change_password POST application/json -> application/json
 /api/change_username POST application/json -> application/json
+/api/confirm_recovery_email POST application/json -> application/json
 /api/create_group POST application/json -> application/json
 /api/current_user POST application/json -> application/json
 /api/daily_attempt_info POST application/json -> application/json
@@ -29,6 +30,7 @@
 /api/daily_today POST application/json -> application/json
 /api/delete_account POST application/json -> application/json
 /api/delete_admin_message POST application/json -> application/json
+/api/forgot_password POST application/json -> application/json
 /api/generate_puzzle POST application/json -> application/json
 /api/group_boards POST application/json -> application/json
 /api/group_invite POST application/json -> application/json
@@ -52,6 +54,7 @@
 /api/load_hall_of_fame POST application/json -> application/json
 /api/load_player POST application/json -> application/json
 /api/load_puzzle_replay POST application/json -> application/json
+/api/load_recovery_email POST application/json -> application/json
 /api/load_replay POST application/json -> application/json
 /api/load_rivals_board POST application/json -> application/json
 /api/login POST application/json -> application/json
@@ -62,16 +65,20 @@
 /api/my_rivals POST application/json -> application/json
 /api/my_stats POST application/json -> application/json
 /api/open_hanko POST application/json -> application/json
+/api/password_reset_available POST application/json -> application/json
 /api/post_group_puzzle POST application/json -> application/json
 /api/puzzle_cnf POST application/json -> application/json
 /api/register POST application/json -> application/json
 /api/remove_member POST application/json -> application/json
+/api/remove_recovery_email POST application/json -> application/json
 /api/report_player POST application/json -> application/json
+/api/reset_password POST application/json -> application/json
 /api/rival_record POST application/json -> application/json
 /api/rotate_invite POST application/json -> application/json
 /api/seen_group_puzzle_kudos POST application/json -> application/json
 /api/send_message POST application/json -> application/json
 /api/set_hanko POST application/json -> application/json
+/api/set_recovery_email POST application/json -> application/json
 /api/set_rival POST application/json -> application/json
 /api/show_stamp POST application/json -> application/json
 /api/solve_puzzle POST application/json -> application/json

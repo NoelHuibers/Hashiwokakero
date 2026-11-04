@@ -21,6 +21,7 @@ mod kadai;
 mod og;
 mod pages;
 mod playing;
+mod recovery;
 mod rivals;
 mod site;
 

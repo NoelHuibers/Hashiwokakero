@@ -1,11 +1,17 @@
-//! The account page: the daily record, signing in and out, renaming the account, changing its
-//! password and deleting it, the players one blocked, and the way to the feedback form.
+//! The account page: the daily record, signing in and out, the account's name, password and
+//! recovery email, deleting it, the players one blocked, and the way to the feedback form.
+//!
+//! The pages of the links in mails, and "Forgot password?", are in `recover`.
 
 pub mod auth_form;
 pub mod blocked;
 pub mod delete;
 pub mod password;
+pub mod recover;
+pub mod recovery;
 pub mod rename;
+
+pub use recover::{ConfirmEmailPage, ForgotPasswordPage, ResetPasswordPage};
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -29,6 +35,7 @@ use auth_form::{AuthForm, Mode};
 use blocked::BlockedPlayers;
 use delete::DeleteAccount;
 use password::ChangePasswordForm;
+use recovery::RecoveryEmailCard;
 use rename::ChangeUsername;
 
 #[component]
@@ -233,6 +240,7 @@ pub fn AccountPage() -> impl IntoView {
                     </Show>
                 </Card>
 
+                {move || registered().then(|| view! { <RecoveryEmailCard /> })}
                 <FeedbackCard />
                 {move || auth.user.with(Option::is_some).then(|| view! { <BlockedPlayers /> })}
                 {move || auth.user.with(Option::is_some).then(|| view! { <DeleteAccount stats /> })}

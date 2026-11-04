@@ -225,6 +225,15 @@ async fn write_rows(conn: &Connection, version: usize) {
                  issue_closed_at = 9600, fixed_mailed_at = 9600 WHERE message = 'The board froze'")
         .await;
     }
+    if version >= 26 {
+        // noel confirmed a recovery email and asked for a reset link
+        run("
+            UPDATE users SET email = 'Noel@Example.org' WHERE id = 1;
+            INSERT INTO account_tokens (token_hash, user_id, kind, locale, created_at, expires_at)
+                VALUES ('cd', 1, 'reset', 'de', 9700, 9000000000000);
+        ")
+        .await;
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -245,7 +254,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        25,
+        26,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -460,6 +469,16 @@ async fn old_databases_migrate_with_their_data() {
                 "SELECT COUNT(*) FROM reports r JOIN blocks b ON b.user_id = r.reporter_id
                  WHERE r.resolved_at IS NULL AND r.resolution IS NULL",
                 i64::from(version >= 23),
+            ),
+            // No recovery emails before 26, and the address is found whatever its case
+            ("SELECT COUNT(*) FROM users WHERE email IS NOT NULL", i64::from(version >= 26)),
+            (
+                "SELECT COUNT(*) FROM users WHERE email = 'noel@EXAMPLE.org' AND id = 1",
+                i64::from(version >= 26),
+            ),
+            (
+                "SELECT COUNT(*) FROM account_tokens WHERE used_at IS NULL AND email IS NULL AND ip_hash IS NULL",
+                i64::from(version >= 26),
             ),
         ];
         for (sql, expected) in defaults {

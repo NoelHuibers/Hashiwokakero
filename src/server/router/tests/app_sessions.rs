@@ -7,8 +7,9 @@ use reqwest::header::{AUTHORIZATION, CACHE_CONTROL, HeaderValue, SET_COOKIE};
 
 use super::*;
 use crate::api::{
-    APP_HEADER, ChangePassword, CurrentUser, DailyToday, DeleteAccount, LoadPlayer, Login, Logout,
-    Register, SESSION_HEADER, StartDaily,
+    APP_HEADER, ChangePassword, ConfirmRecoveryEmail, CurrentUser, DailyToday, DeleteAccount,
+    ForgotPassword, LoadPlayer, LoadRecoveryEmail, Login, Logout, Register, RemoveRecoveryEmail,
+    ResetPassword, SESSION_HEADER, SetRecoveryEmail, StartDaily,
 };
 use crate::model::{MS_PER_DAY, UserInfo};
 
@@ -107,6 +108,100 @@ fn login(username: &str) -> Login {
         username: username.into(),
         password: PASSWORD.into(),
     }
+}
+
+/// The account page's recovery email works from the app, with its token, and so does a reset:
+/// the app that opens the link gets its new session in the header.
+#[tokio::test]
+async fn the_app_keeps_a_recovery_email_and_resets_with_it() {
+    use crate::i18n::{Locale, td_string};
+    use crate::server::mail;
+
+    let server = Server::start().await;
+    let app = App::new(&server);
+    let info = app.call(register("app_recovery")).await.unwrap();
+    let status = app.call(LoadRecoveryEmail {}).await.unwrap();
+    assert_eq!(
+        (status.address, status.pending, status.mail),
+        (None, None, true)
+    );
+    let status = app
+        .call(SetRecoveryEmail {
+            email: "app_recovery@example.org".into(),
+            password: PASSWORD.into(),
+            locale: "ja".into(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(status.pending.as_deref(), Some("app_recovery@example.org"));
+    let token = |mail: &mail::Mail| {
+        let at = mail.body.find('#').unwrap();
+        mail.body[at + 1..at + 65].to_string()
+    };
+    let mail = mail::sent_to("app_recovery@example.org")
+        .await
+        .pop()
+        .unwrap();
+    assert_eq!(
+        mail.subject,
+        format!(
+            "Hashi: {}",
+            td_string!(Locale::ja, account.mail.confirm_subject)
+        )
+    );
+    // The link opens the website
+    assert!(
+        mail.body.contains("https://hashi.rs/ja/account/confirm#"),
+        "{}",
+        mail.body
+    );
+    app.call(ConfirmRecoveryEmail {
+        token: token(&mail),
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        app.call(LoadRecoveryEmail {})
+            .await
+            .unwrap()
+            .address
+            .as_deref(),
+        Some("app_recovery@example.org")
+    );
+
+    let other = App::new(&server);
+    other
+        .call(ForgotPassword {
+            login: "app_recovery".into(),
+            locale: "en".into(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(other.token(), None);
+    let mail = mail::sent_to("app_recovery@example.org")
+        .await
+        .pop()
+        .unwrap();
+    let user = other
+        .call(ResetPassword {
+            token: token(&mail),
+            password: "battery staple".into(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(user.id, info.id);
+    assert!(other.token().is_some());
+    assert_eq!(current(&other).await.unwrap().id, info.id);
+    assert_eq!(current(&app).await, None);
+
+    let status = other
+        .call(RemoveRecoveryEmail {
+            password: "battery staple".into(),
+            locale: "en".into(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(status.address, None);
 }
 
 #[tokio::test]

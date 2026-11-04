@@ -91,7 +91,10 @@
     "group_full": "Este grupo está lleno: ya tiene 50 miembros.",
     "too_many_groups": "Ya estás en 10 grupos, sal de uno primero.",
     "group_owner_only": "Solo quien gestiona el grupo puede hacer eso.",
-    "too_many_reports": "Ya son suficientes denuncias por hoy, inténtalo de nuevo mañana."
+    "too_many_reports": "Ya son suficientes denuncias por hoy, inténtalo de nuevo mañana.",
+    "mail_unavailable": "Ahora mismo no se pueden enviar correos desde aquí, así que los correos de recuperación y el restablecimiento de contraseña no funcionan.",
+    "link_expired": "Este enlace ha caducado o ya se usó.",
+    "email_taken": "Esta dirección ya es el correo de recuperación de otra cuenta. Quítala primero de allí."
   },
   "solver": {
     "title": "Solver SAT",

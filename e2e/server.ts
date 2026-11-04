@@ -1,13 +1,14 @@
 // Starts the built server binary on a fresh local database. It needs no secrets: without
 // TURSO_DATABASE_URL it uses the SQLite file in HASHI_DB_PATH, the other secrets have local
-// defaults, and without DOJO_URL nothing is sent to a Dojo worker.
+// defaults, without DOJO_URL nothing is sent to a Dojo worker, and mails to players go into
+// MAIL_DIR instead of a mail server.
 
 import { type ChildProcess, spawn } from 'node:child_process';
 import { existsSync, openSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import { DB_PATH, PORT, ROOT, RUN_DIR, SERVER_BIN, SITE_ROOT } from './env.ts';
+import { DB_PATH, MAIL_DIR, PORT, ROOT, RUN_DIR, SERVER_BIN, SITE_ROOT } from './env.ts';
 import { DOJO_SEASON } from './seed.ts';
 
 /** The usernames that see /admin (see `seed.ts`). */
@@ -50,6 +51,8 @@ export async function startServer(
       LEPTOS_SITE_PKG_DIR: 'pkg',
       HASHI_DB_PATH: dbPath,
       HASHI_ADMINS: admins,
+      // Mails as files instead of SMTP, for the tests to open their links (mail.ts)
+      HASHI_MAIL_DIR: MAIL_DIR,
       // Never a remote database or worker, whatever the shell has set
       TURSO_DATABASE_URL: '',
       DOJO_URL: '',

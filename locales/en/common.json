@@ -91,7 +91,10 @@
     "group_full": "This group is full: it has 50 members already.",
     "too_many_groups": "You're in 10 groups already, leave one first.",
     "group_owner_only": "Only the group's owner can do that.",
-    "too_many_reports": "That's enough reports for today, please try again tomorrow."
+    "too_many_reports": "That's enough reports for today, please try again tomorrow.",
+    "mail_unavailable": "Mail can't be sent from here right now, so recovery emails and password resets don't work.",
+    "link_expired": "This link has expired or was already used.",
+    "email_taken": "This address is already the recovery email of another account. Remove it there first."
   },
   "solver": {
     "title": "SAT Solver",

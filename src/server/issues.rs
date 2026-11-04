@@ -93,7 +93,7 @@ pub trait Mailer: Sync {
 }
 
 /// The language of a message, English if it has none (or one the site no longer has).
-fn locale(id: Option<&str>) -> Locale {
+pub(super) fn locale(id: Option<&str>) -> Locale {
     use leptos_i18n::Locale as _;
     Locale::get_all()
         .iter()

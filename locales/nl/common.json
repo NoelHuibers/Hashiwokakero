@@ -91,7 +91,10 @@
     "group_full": "Deze groep is vol: er zijn al 50 leden.",
     "too_many_groups": "Je zit al in 10 groepen, verlaat er eerst een.",
     "group_owner_only": "Alleen de eigenaar van de groep kan dat doen.",
-    "too_many_reports": "Genoeg meldingen voor vandaag, probeer het morgen opnieuw."
+    "too_many_reports": "Genoeg meldingen voor vandaag, probeer het morgen opnieuw.",
+    "mail_unavailable": "Vanaf hier kan nu geen e-mail worden verstuurd, dus herstel-e-mails en het opnieuw instellen van wachtwoorden werken niet.",
+    "link_expired": "Deze link is verlopen of al gebruikt.",
+    "email_taken": "Dit adres is al de herstel-e-mail van een ander account. Verwijder het daar eerst."
   },
   "solver": {
     "title": "SAT-solver",

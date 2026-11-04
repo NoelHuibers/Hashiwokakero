@@ -49,6 +49,62 @@
     "button": "Passwort ändern",
     "done": "Dein Passwort ist geändert."
   },
+  "recovery": {
+    "title": "Wiederherstellungs-E-Mail",
+    "text": "Freiwillig. Mit einer bestätigten Adresse kannst du dein Passwort zurücksetzen, wenn du es vergisst. Wir schreiben dorthin nur wegen deines Passworts und dieser Adresse.",
+    "current": "Deine Wiederherstellungs-E-Mail: {{ email }}",
+    "none": "Noch keine Wiederherstellungs-E-Mail.",
+    "pending": "Wartet auf Bestätigung: {{ email }}. Öffne innerhalb von 24 Stunden den Link, den wir dorthin geschickt haben.",
+    "add": "Wiederherstellungs-E-Mail hinzufügen …",
+    "change": "Wiederherstellungs-E-Mail ändern …",
+    "address": "E-Mail-Adresse",
+    "button": "Bestätigungslink senden",
+    "sent": "Schau in {{ email }} nach dem Bestätigungslink.",
+    "remove": "Wiederherstellungs-E-Mail entfernen …",
+    "remove_confirm": "Gib dein Passwort ein, um die Adresse zu entfernen. Ohne Adresse lässt sich ein vergessenes Passwort nicht zurücksetzen.",
+    "remove_button": "Adresse entfernen",
+    "removed": "Deine Wiederherstellungs-E-Mail ist entfernt."
+  },
+  "forgot": {
+    "link": "Passwort vergessen?",
+    "title": "Passwort vergessen?",
+    "text": "Gib deinen Benutzernamen oder deine Wiederherstellungs-E-Mail ein. Hat das Konto eine bestätigte Wiederherstellungs-E-Mail, schicken wir dorthin einen Link, mit dem du ein neues Passwort wählst. Er gilt eine Stunde.",
+    "login": "Benutzername oder E-Mail",
+    "button": "Link schicken",
+    "sent": "Falls ein Konto mit bestätigter Wiederherstellungs-E-Mail passt, ist der Link unterwegs. Schau in deinen Posteingang und auch in den Spam-Ordner.",
+    "unavailable": "Dieser Server kann keine E-Mails senden, deshalb lässt sich ein vergessenes Passwort hier nicht zurücksetzen.",
+    "no_email": "Ohne Wiederherstellungs-E-Mail lässt sich ein vergessenes Passwort nicht zurücksetzen: Anders können wir nicht erkennen, dass du es bist.",
+    "back": "Zurück zur Anmeldung"
+  },
+  "reset": {
+    "title": "Neues Passwort wählen",
+    "text": "Das neue Passwort meldet alle Geräte des Kontos ab. Dieses hier wird damit angemeldet.",
+    "guest": "Die Ergebnisse des Gasts, der in diesem Browser spielt, gehen wie beim Anmelden auf das Konto über.",
+    "button": "Speichern und anmelden",
+    "again": "Neuen Link anfordern"
+  },
+  "confirm": {
+    "title": "Wiederherstellungs-E-Mail bestätigen",
+    "text": "Bestätige die Adresse, an die dieser Link ging, als Wiederherstellungs-E-Mail deines Hashi-Kontos.",
+    "button": "Adresse bestätigen",
+    "done": "{{ email }} ist jetzt die Wiederherstellungs-E-Mail deines Kontos.",
+    "to_account": "Zu deinem Konto"
+  },
+  "mail": {
+    "hello": "Hallo {{ name }},",
+    "confirm_subject": "Bestätige deine Wiederherstellungs-E-Mail",
+    "confirm_text": "öffne diesen Link, um diese Adresse als Wiederherstellungs-E-Mail deines Hashi-Kontos zu bestätigen:",
+    "confirm_valid": "Der Link funktioniert einmal, 24 Stunden lang.",
+    "reset_subject": "Setze dein Passwort zurück",
+    "reset_text": "öffne diesen Link, um ein neues Passwort für dein Hashi-Konto zu wählen:",
+    "reset_valid": "Der Link funktioniert einmal, eine Stunde lang. Das neue Passwort meldet alle Geräte des Kontos ab.",
+    "ignore": "Wenn du das nicht warst, ignoriere diese E-Mail: Es ändert sich nichts.",
+    "changed_subject": "Deine Wiederherstellungs-E-Mail wurde geändert",
+    "changed_text": "diese Adresse ist nicht mehr die Wiederherstellungs-E-Mail deines Hashi-Kontos: Eine andere ist an ihre Stelle getreten.",
+    "removed_subject": "Deine Wiederherstellungs-E-Mail wurde entfernt",
+    "removed_text": "diese Adresse ist nicht mehr die Wiederherstellungs-E-Mail deines Hashi-Kontos: Sie wurde entfernt.",
+    "not_you": "Wenn du das nicht warst, ändere dein Passwort auf deiner Kontoseite und schreib uns:"
+  },
   "delete": {
     "title": "Konto löschen",
     "intro": "Löscht deinen Namen, dein Passwort, deine Stempel und Dojo-Einsendungen endgültig. Deine bisherigen Zeiten bleiben ohne Namen in alten Ranglisten, damit die anderen ihre Plätze behalten.",

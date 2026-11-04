@@ -17,6 +17,7 @@
 /api/block_player {"player":9,"on":true}
 /api/change_password {"current":"correct horse","new":"battery staple"}
 /api/change_username {"username":"noel2","password":"correct horse"}
+/api/confirm_recovery_email {"token":"abababababababababababababababababababababababababababababababab"}
 /api/create_group {"name":"Tea club"}
 /api/current_user {}
 /api/daily_attempt_info {"day":20381,"owner":{"user":7,"attempt":"a1b2c3"}}
@@ -29,6 +30,7 @@
 /api/daily_today {}
 /api/delete_account {"password":"correct horse"}
 /api/delete_admin_message {"id":9}
+/api/forgot_password {"login":"noel","locale":"de"}
 /api/generate_puzzle {"params":{"width":7,"height":7,"difficulty":"Hard","seed":18446744073709551615}}
 /api/group_boards {}
 /api/group_invite {"code":"k3y9q2"}
@@ -52,6 +54,7 @@
 /api/load_hall_of_fame {}
 /api/load_player {"id":7}
 /api/load_puzzle_replay {"id":4}
+/api/load_recovery_email {}
 /api/load_replay {"group":2,"day":20381}
 /api/load_rivals_board {}
 /api/login {"username":"noel","password":"correct horse"}
@@ -62,16 +65,20 @@
 /api/my_rivals {}
 /api/my_stats {}
 /api/open_hanko {"group":2}
+/api/password_reset_available {}
 /api/post_group_puzzle {"group":2,"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"title":"Spiral"}
 /api/puzzle_cnf {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]}}
 /api/register {"username":"noel","password":"correct horse"}
 /api/remove_member {"id":2,"member":9}
+/api/remove_recovery_email {"password":"correct horse","locale":"de"}
 /api/report_player {"player":9,"reason":"Name","note":"rude"}
+/api/reset_password {"token":"abababababababababababababababababababababababababababababababab","password":"battery staple"}
 /api/rival_record {"player":9}
 /api/rotate_invite {"id":2}
 /api/seen_group_puzzle_kudos {"id":4}
 /api/send_message {"name":"Ada","email":"ada@example.com","message":"Hallo!","website":"","kind":"Bug","context":{"app":"1.1.0","platform":"android","os":"Android 15","browser":"WebView 141","language":"de","page":"/practice","daily":14,"player":7,"screen":"390×844 @3x","errors":["/practice E:database"]}}
 /api/set_hanko {"group":2,"target":9,"day":20381,"kind":"Cheers","on":true}
+/api/set_recovery_email {"email":"noel@example.org","password":"correct horse","locale":"de"}
 /api/set_rival {"player":9,"on":true}
 /api/show_stamp {"stamp":"Gold"}
 /api/solve_puzzle {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"config":{"kind":"Cdcl","heuristic":"Vsids","restarts":{"Geometric":{"threshold":100,"factor_percent":150}},"subsumption":true,"timeout_ms":10000},"unique":true}

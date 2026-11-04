@@ -78,10 +78,19 @@ pub enum ApiError {
     AppOutdated,
     /// Too many reports from the player today (`server::reports`).
     TooManyReports,
+    /// The server can't send mail (no SMTP, or the mail server refused): no recovery emails, no
+    /// password resets.
+    MailUnavailable,
+    /// A link from a mail (confirming an address, resetting the password) that expired, was used
+    /// already or was replaced by a newer one.
+    LinkExpired,
+    /// The address is the recovery email of another account already. Only the confirmation
+    /// link says so, to whoever can read that mailbox.
+    EmailTaken,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 44] = [
+    pub const ALL: [Self; 47] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -126,6 +135,9 @@ impl ApiError {
         Self::PuzzleAuthorOnly,
         Self::AppOutdated,
         Self::TooManyReports,
+        Self::MailUnavailable,
+        Self::LinkExpired,
+        Self::EmailTaken,
     ];
 
     pub fn code(self) -> &'static str {
@@ -174,6 +186,9 @@ impl ApiError {
             Self::PuzzleAuthorOnly => "puzzle_author_only",
             Self::AppOutdated => "app_outdated",
             Self::TooManyReports => "too_many_reports",
+            Self::MailUnavailable => "mail_unavailable",
+            Self::LinkExpired => "link_expired",
+            Self::EmailTaken => "email_taken",
         }
     }
 
