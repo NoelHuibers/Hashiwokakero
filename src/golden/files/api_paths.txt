@@ -15,6 +15,7 @@
 /api/admin_unban_player POST application/json -> application/json
 /api/archived_daily POST application/json -> application/json
 /api/block_player POST application/json -> application/json
+/api/change_password POST application/json -> application/json
 /api/change_username POST application/json -> application/json
 /api/create_group POST application/json -> application/json
 /api/current_user POST application/json -> application/json

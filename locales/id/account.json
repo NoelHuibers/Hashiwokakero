@@ -41,6 +41,14 @@
     "done": "Sekarang namamu {{ name }}.",
     "wait": "Kamu bisa mengganti nama pengguna lagi mulai {{ date }}."
   },
+  "password_change": {
+    "start": "Ganti kata sandi…",
+    "current": "Kata sandi saat ini",
+    "new": "Kata sandi baru",
+    "hint": "Minimal 8 karakter. Perangkatmu yang lain akan keluar, perangkat ini tetap masuk.",
+    "button": "Ganti kata sandi",
+    "done": "Kata sandimu sudah diganti."
+  },
   "delete": {
     "title": "Hapus akun",
     "intro": "Menghapus nama, kata sandi, stempel, dan kiriman Dojo-mu untuk selamanya. Waktu-waktumu sebelumnya tetap ada di papan peringkat lama tanpa nama, supaya pemain lain tetap di posisinya.",

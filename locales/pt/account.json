@@ -41,6 +41,14 @@
     "done": "Agora você é {{ name }}.",
     "wait": "Você poderá mudar seu nome de usuário de novo a partir de {{ date }}."
   },
+  "password_change": {
+    "start": "Mudar senha…",
+    "current": "Senha atual",
+    "new": "Nova senha",
+    "hint": "Pelo menos 8 caracteres. Seus outros dispositivos saem da conta, este continua conectado.",
+    "button": "Mudar senha",
+    "done": "Sua senha foi alterada."
+  },
   "delete": {
     "title": "Excluir conta",
     "intro": "Exclui para sempre seu nome, sua senha, seus carimbos e seus envios ao Dojo. Seus tempos anteriores continuam nos rankings antigos sem nome, para que os outros jogadores mantenham suas posições.",

@@ -41,6 +41,14 @@
     "done": "Teraz nazywasz się {{ name }}.",
     "wait": "Nazwę użytkownika możesz znów zmienić od {{ date }}."
   },
+  "password_change": {
+    "start": "Zmień hasło…",
+    "current": "Obecne hasło",
+    "new": "Nowe hasło",
+    "hint": "Co najmniej 8 znaków. Twoje inne urządzenia zostaną wylogowane, to pozostanie zalogowane.",
+    "button": "Zmień hasło",
+    "done": "Twoje hasło zostało zmienione."
+  },
   "delete": {
     "title": "Usuń konto",
     "intro": "Na zawsze usuwa twoją nazwę, hasło, pieczątki i zgłoszenia do Dojo. Twoje dawne czasy zostają bez nazwy w starych rankingach, żeby pozostali gracze zachowali swoje miejsca.",

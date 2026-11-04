@@ -41,6 +41,14 @@
     "done": "Tu t'appelles maintenant {{ name }}.",
     "wait": "Tu pourras changer de pseudo à nouveau à partir du {{ date }}."
   },
+  "password_change": {
+    "start": "Changer de mot de passe…",
+    "current": "Mot de passe actuel",
+    "new": "Nouveau mot de passe",
+    "hint": "Au moins 8 caractères. Tes autres appareils sont déconnectés, celui-ci reste connecté.",
+    "button": "Changer le mot de passe",
+    "done": "Ton mot de passe est changé."
+  },
   "delete": {
     "title": "Supprimer le compte",
     "intro": "Supprime définitivement ton pseudo, ton mot de passe, tes tampons et tes soumissions au Dojo. Tes anciens temps restent sans nom dans les anciens classements, pour que les autres joueurs gardent leur place.",

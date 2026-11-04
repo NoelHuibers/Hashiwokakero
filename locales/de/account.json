@@ -41,6 +41,14 @@
     "done": "Du heißt jetzt {{ name }}.",
     "wait": "Du kannst deinen Benutzernamen ab dem {{ date }} wieder ändern."
   },
+  "password_change": {
+    "start": "Passwort ändern …",
+    "current": "Aktuelles Passwort",
+    "new": "Neues Passwort",
+    "hint": "Mindestens 8 Zeichen. Deine anderen Geräte werden abgemeldet, dieses bleibt angemeldet.",
+    "button": "Passwort ändern",
+    "done": "Dein Passwort ist geändert."
+  },
   "delete": {
     "title": "Konto löschen",
     "intro": "Löscht deinen Namen, dein Passwort, deine Stempel und Dojo-Einsendungen endgültig. Deine bisherigen Zeiten bleiben ohne Namen in alten Ranglisten, damit die anderen ihre Plätze behalten.",

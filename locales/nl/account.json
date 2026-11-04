@@ -41,6 +41,14 @@
     "done": "Je heet nu {{ name }}.",
     "wait": "Je kunt je gebruikersnaam vanaf {{ date }} weer wijzigen."
   },
+  "password_change": {
+    "start": "Wachtwoord wijzigen…",
+    "current": "Huidig wachtwoord",
+    "new": "Nieuw wachtwoord",
+    "hint": "Minstens 8 tekens. Je andere apparaten worden afgemeld, dit apparaat blijft aangemeld.",
+    "button": "Wachtwoord wijzigen",
+    "done": "Je wachtwoord is gewijzigd."
+  },
   "delete": {
     "title": "Account verwijderen",
     "intro": "Verwijdert je naam, wachtwoord, stempels en Dojo-inzendingen voorgoed. Je eerdere tijden blijven zonder naam in oude ranglijsten staan, zodat de andere spelers hun plek houden.",

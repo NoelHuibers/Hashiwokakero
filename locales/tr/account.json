@@ -41,6 +41,14 @@
     "done": "Artık adın {{ name }}.",
     "wait": "Kullanıcı adını {{ date }} tarihinden itibaren yeniden değiştirebilirsin."
   },
+  "password_change": {
+    "start": "Şifreyi değiştir…",
+    "current": "Mevcut şifre",
+    "new": "Yeni şifre",
+    "hint": "En az 8 karakter. Diğer cihazlarında oturumun kapanır, bu cihazda açık kalır.",
+    "button": "Şifreyi değiştir",
+    "done": "Şifren değiştirildi."
+  },
   "delete": {
     "title": "Hesabı sil",
     "intro": "Adını, şifreni, mühürlerini ve Dojo gönderimlerini kalıcı olarak siler. Geçmiş sürelerin eski sıralamalarda isimsiz olarak kalır, böylece diğer oyuncular yerlerini korur.",

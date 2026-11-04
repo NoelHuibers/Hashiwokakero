@@ -41,6 +41,14 @@
     "done": "Giờ bạn là {{ name }}.",
     "wait": "Bạn có thể đổi tên người dùng lại từ {{ date }}."
   },
+  "password_change": {
+    "start": "Đổi mật khẩu…",
+    "current": "Mật khẩu hiện tại",
+    "new": "Mật khẩu mới",
+    "hint": "Ít nhất 8 ký tự. Các thiết bị khác của bạn sẽ bị đăng xuất, thiết bị này vẫn đăng nhập.",
+    "button": "Đổi mật khẩu",
+    "done": "Mật khẩu của bạn đã được đổi."
+  },
   "delete": {
     "title": "Xóa tài khoản",
     "intro": "Xóa vĩnh viễn tên, mật khẩu, con dấu và các bài gửi Dojo của bạn. Thời gian cũ của bạn vẫn nằm trên các bảng xếp hạng cũ nhưng không có tên, để những người chơi khác giữ nguyên thứ hạng.",

@@ -41,6 +41,14 @@
     "done": "Ahora eres {{ name }}.",
     "wait": "Podrás volver a cambiar tu nombre de usuario a partir del {{ date }}."
   },
+  "password_change": {
+    "start": "Cambiar contraseña…",
+    "current": "Contraseña actual",
+    "new": "Nueva contraseña",
+    "hint": "Al menos 8 caracteres. Se cerrará la sesión en tus otros dispositivos; en este sigues conectado.",
+    "button": "Cambiar contraseña",
+    "done": "Tu contraseña se ha cambiado."
+  },
   "delete": {
     "title": "Eliminar cuenta",
     "intro": "Elimina para siempre tu nombre, tu contraseña, tus sellos y tus envíos al Dojo. Tus tiempos anteriores se quedan sin nombre en las clasificaciones antiguas, para que los demás jugadores conserven su puesto.",

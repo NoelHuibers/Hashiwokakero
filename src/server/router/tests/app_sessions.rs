@@ -7,8 +7,8 @@ use reqwest::header::{AUTHORIZATION, CACHE_CONTROL, HeaderValue, SET_COOKIE};
 
 use super::*;
 use crate::api::{
-    APP_HEADER, CurrentUser, DailyToday, DeleteAccount, LoadPlayer, Login, Logout, Register,
-    SESSION_HEADER, StartDaily,
+    APP_HEADER, ChangePassword, CurrentUser, DailyToday, DeleteAccount, LoadPlayer, Login, Logout,
+    Register, SESSION_HEADER, StartDaily,
 };
 use crate::model::{MS_PER_DAY, UserInfo};
 
@@ -260,6 +260,52 @@ async fn signing_out_and_deleting_clear_the_apps_token() {
     assert_eq!(session_header(&deleted.headers), "");
     let stale = App::with_token(&server, Some(token));
     assert_eq!(current(&stale).await, None);
+}
+
+/// The app changes the password like the web: its token stays, the other sessions end, the
+/// browser's cookie too.
+#[tokio::test]
+async fn the_app_changes_its_password_and_keeps_its_token() {
+    let server = Server::start().await;
+    let app = App::new(&server);
+    let info = app.call(register("app_password")).await.unwrap();
+    let token = app.token().unwrap();
+    let other_app = App::new(&server);
+    other_app.call(login("app_password")).await.unwrap();
+    let web = server.browser();
+    web.call(Login {
+        username: "app_password".into(),
+        password: PASSWORD.into(),
+    })
+    .await
+    .unwrap();
+
+    let changed = app
+        .call_with_headers(ChangePassword {
+            current: PASSWORD.into(),
+            new: "battery staple".into(),
+        })
+        .await;
+    changed.result.unwrap();
+    // No new token to store
+    assert!(changed.headers.get(SESSION_HEADER).is_none());
+    assert_eq!(app.token().unwrap(), token);
+    assert_eq!(current(&app).await.unwrap().id, info.id);
+    assert_eq!(current(&other_app).await, None);
+    assert_eq!(web.call(CurrentUser {}).await.unwrap(), None);
+    let fresh = App::new(&server);
+    assert_eq!(
+        api_error(fresh.call(login("app_password")).await),
+        ApiError::WrongLogin
+    );
+    let signed_in = fresh
+        .call(Login {
+            username: "app_password".into(),
+            password: "battery staple".into(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(signed_in.id, info.id);
 }
 
 #[tokio::test]

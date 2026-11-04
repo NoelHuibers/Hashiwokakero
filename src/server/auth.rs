@@ -463,6 +463,78 @@ pub async fn change_username(
         .ok_or_else(|| ApiError::Internal.fail())
 }
 
+/// Gives the signed in account another password, behind the current one.
+///
+/// Every other session of the account ends, this one stays: whoever else knew the old password
+/// is signed out, the player isn't. The app's bearer token and the browser's cookie are the same
+/// kind of session, neither gets a new token.
+pub async fn change_password(
+    conn: &Connection,
+    current: String,
+    new: String,
+) -> Result<(), ServerFnError> {
+    let user = current_user(conn)
+        .await?
+        .ok_or_else(|| ApiError::SessionExpired.fail())?;
+    let Some(username) = &user.username else {
+        return Err(ApiError::Forbidden.into());
+    };
+    // Before the password check: a new password that can't be stored costs no attempt
+    validate_password(&new)?;
+    if check_password(conn, username, current).await?.is_none() {
+        return Err(ApiError::WrongPassword.into());
+    }
+    let token = request_token()
+        .await
+        .ok_or_else(|| ApiError::SessionExpired.fail())?;
+    set_password(conn, user.id, new, Some(&token)).await
+}
+
+/// Stores a new password for a registered account and ends all its sessions but `keep`.
+///
+/// `keep` is the token of the session that asked for the change. `None` ends them all, for a
+/// change by a reset link, where no session of the account asked.
+///
+/// The hash is done before the transaction starts: it can take seconds on a busy server, and an
+/// open transaction blocks every write meanwhile (see
+/// `signing_in_holds_no_lock_while_the_password_is_checked`). With `keep`, its session must still
+/// be there when the password is stored: a change from another device at the same moment may have
+/// ended it, and a session that is signed out changes nothing.
+pub(super) async fn set_password(
+    conn: &Connection,
+    user: i64,
+    password: String,
+    keep: Option<&str>,
+) -> Result<(), ServerFnError> {
+    validate_password(&password)?;
+    let hash = hash_password(password).await?;
+    let keep = keep.map(hash_token);
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    let changed = tx
+        .execute(
+            "UPDATE users SET password_hash = ?1
+             WHERE id = ?2 AND username IS NOT NULL AND deleted_at IS NULL AND banned_at IS NULL
+               AND (?3 IS NULL OR EXISTS (SELECT 1 FROM sessions WHERE token_hash = ?3
+                                          AND user_id = ?2 AND expires_at > ?4))",
+            params![hash, user, keep.clone(), now_ms()],
+        )
+        .await
+        .map_err(db_err)?;
+    if changed != 1 {
+        return Err(ApiError::SessionExpired.fail());
+    }
+    tx.execute(
+        "DELETE FROM sessions WHERE user_id = ?1 AND token_hash IS NOT ?2",
+        params![user, keep],
+    )
+    .await
+    .map_err(db_err)?;
+    tx.commit().await.map_err(db_err)
+}
+
 static FAILED_LOGINS: Mutex<Option<HashMap<String, (u32, i64)>>> = Mutex::new(None);
 
 fn login_allowed(username: &str) -> bool {
@@ -1211,6 +1283,82 @@ mod tests {
             "the write waited for the sign in: {waited:?}"
         );
         assert_eq!(sign_in.await.unwrap().unwrap(), Some(1));
+    }
+
+    /// `set_password` for the change (one session kept) and for a reset by link (none kept).
+    #[tokio::test]
+    async fn a_new_password_ends_the_other_sessions() {
+        use crate::server::db;
+
+        let file = db::TempDb::new("set-password");
+        let database = db::open_local(file.as_str()).await.unwrap();
+        let conn = db::connect(&database).unwrap();
+        db::migrate(&conn).await.unwrap();
+        conn.execute(
+            "INSERT INTO users (username, name, password_hash, created_at) VALUES ('resetting', 'resetting', ?1, 1)",
+            params![STORED_HASH],
+        )
+        .await
+        .unwrap();
+        let id = conn.last_insert_rowid();
+        let sessions = async || {
+            let mut rows = conn
+                .query(
+                    "SELECT token_hash FROM sessions WHERE user_id = ?1 ORDER BY token_hash",
+                    params![id],
+                )
+                .await
+                .unwrap();
+            let mut hashes = Vec::new();
+            while let Some(row) = rows.next().await.unwrap() {
+                hashes.push(row.get::<String>(0).unwrap());
+            }
+            hashes
+        };
+        let signed_in = |password: &'static str| {
+            let conn = &conn;
+            async move {
+                check_password(conn, "resetting", password.into())
+                    .await
+                    .unwrap()
+                    .is_some()
+            }
+        };
+        let keep = insert_session(&conn, id).await.unwrap();
+        insert_session(&conn, id).await.unwrap();
+        insert_session(&conn, id).await.unwrap();
+
+        set_password(&conn, id, "second horse".into(), Some(&keep))
+            .await
+            .unwrap();
+        assert_eq!(sessions().await, [hash_token(&keep)]);
+        assert!(signed_in("second horse").await);
+        assert!(!signed_in("correct horse").await);
+
+        // A reset ends every session
+        insert_session(&conn, id).await.unwrap();
+        set_password(&conn, id, "third horse".into(), None)
+            .await
+            .unwrap();
+        assert_eq!(sessions().await, Vec::<String>::new());
+        assert!(signed_in("third horse").await);
+
+        // A session that ended meanwhile changes nothing, and too short is too short
+        let error = set_password(&conn, id, "fourth horse".into(), Some(&keep))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            ApiError::from_message(&error.to_string()),
+            Some(ApiError::SessionExpired)
+        );
+        let error = set_password(&conn, id, "short".into(), None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            ApiError::from_message(&error.to_string()),
+            Some(ApiError::PasswordTooShort)
+        );
+        assert!(signed_in("third horse").await);
     }
 
     #[test]

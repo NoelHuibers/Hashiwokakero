@@ -1,9 +1,10 @@
-//! The account page: the daily record, signing in and out, renaming and deleting the account,
-//! the players one blocked, and the way to the feedback form.
+//! The account page: the daily record, signing in and out, renaming the account, changing its
+//! password and deleting it, the players one blocked, and the way to the feedback form.
 
 pub mod auth_form;
 pub mod blocked;
 pub mod delete;
+pub mod password;
 pub mod rename;
 
 use leptos::prelude::*;
@@ -27,6 +28,7 @@ use crate::state::{Auth, ToastKind, error_toast, toast};
 use auth_form::{AuthForm, Mode};
 use blocked::BlockedPlayers;
 use delete::DeleteAccount;
+use password::ChangePasswordForm;
 use rename::ChangeUsername;
 
 #[component]
@@ -209,6 +211,7 @@ pub fn AccountPage() -> impl IntoView {
                         <CardContent class="flex flex-col gap-2">
                             // Some admins keep their name, see `auth::change_username`
                             {move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.name_locked)).then(|| view! { <ChangeUsername /> })}
+                            <ChangePasswordForm />
                             {move || {
                                 auth.user
                                     .with(|u| u.as_ref().is_some_and(|u| u.admin))

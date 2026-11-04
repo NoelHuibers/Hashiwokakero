@@ -41,6 +41,14 @@
     "done": "Ora ti chiami {{ name }}.",
     "wait": "Potrai cambiare di nuovo il nome utente dal {{ date }}."
   },
+  "password_change": {
+    "start": "Cambia password…",
+    "current": "Password attuale",
+    "new": "Nuova password",
+    "hint": "Almeno 8 caratteri. Gli altri tuoi dispositivi vengono disconnessi, questo resta connesso.",
+    "button": "Cambia password",
+    "done": "La tua password è stata cambiata."
+  },
   "delete": {
     "title": "Elimina account",
     "intro": "Elimina per sempre il tuo nome, la password, i timbri e gli invii al Dojo. I tuoi tempi passati restano senza nome nelle vecchie classifiche, così gli altri giocatori mantengono la loro posizione.",
