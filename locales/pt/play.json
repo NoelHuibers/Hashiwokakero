@@ -1,14 +1,14 @@
 {
   "meta": {
-    "title": "Treine Hashiwokakero · puzzles grátis e ilimitados · Hashi",
-    "description": "Treine Hashiwokakero (Pontes) sem relógio: puzzles ilimitados em cinco tamanhos de 7×7 a 24×24, dicas e verificações, cada um com uma única solução."
+    "title": "Jogue Hashiwokakero · puzzles grátis e ilimitados · Hashi",
+    "description": "Jogue Hashiwokakero (Pontes) sem relógio: puzzles ilimitados em cinco tamanhos de 7×7 a 24×24, dicas e verificações, cada um com uma única solução."
   },
   "heading": "o puzzle das pontes",
   "generate": "Gerar",
   "generating": "Gerando…",
   "generating_text": "Criando ilhas, construindo pontes e perguntando ao solver SAT se a solução é única…",
   "card": {
-    "title": "Treino",
+    "title": "Jogar",
     "text": "Quantos puzzles novos você quiser, cada um com solução única provada pelo solver SAT. Sem pressão do relógio, a ponte diária está na página inicial."
   },
   "legend": {

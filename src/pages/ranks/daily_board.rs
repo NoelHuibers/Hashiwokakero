@@ -24,7 +24,7 @@ pub(super) fn DailyBoard(
     loading: RwSignal<bool>,
 ) -> impl IntoView {
     let i18n = use_i18n();
-    let practice_path = use_localized("/practice");
+    let play_path = use_localized("/play");
     let game = expect_context::<Game>();
     let navigate = use_navigate();
 
@@ -36,7 +36,7 @@ pub(super) fn DailyBoard(
         }
     };
 
-    let practice = move |_| {
+    let play = move |_| {
         let Some(d) = shown_day() else { return };
         let navigate = navigate.clone();
         spawn_local(async move {
@@ -52,7 +52,7 @@ pub(super) fn DailyBoard(
                             number = daily_number(d)
                         )),
                     );
-                    navigate(&practice_path(), NavigateOptions::default());
+                    navigate(&play_path(), NavigateOptions::default());
                 }
                 Ok(None) => toast(ToastKind::Info, |l| {
                     td_string!(l, ranks.no_puzzle).to_string()
@@ -137,8 +137,8 @@ pub(super) fn DailyBoard(
                 <Show when=move || { shown_day().zip(today.get()).is_some_and(|(d, t)| d < t) }>
                     <div class="flex items-center justify-between gap-3 rounded-lg border border-dashed p-3 text-sm">
                         <span class="text-muted-foreground">{t!(i18n, ranks.missed)}</span>
-                        <Button size=ButtonSize::Sm variant=ButtonVariant::Secondary on:click=practice.clone()>
-                            {t!(i18n, ranks.practice_it)} " 練習"
+                        <Button size=ButtonSize::Sm variant=ButtonVariant::Secondary on:click=play.clone()>
+                            {t!(i18n, ranks.play_it)} " 遊ぶ"
                         </Button>
                     </div>
                 </Show>

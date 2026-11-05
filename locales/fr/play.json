@@ -8,7 +8,7 @@
   "generating": "Génération…",
   "generating_text": "On fait pousser des îles, on construit des ponts et on demande au solveur SAT si la solution est unique…",
   "card": {
-    "title": "Jeu libre",
+    "title": "Jouer",
     "text": "Autant de grilles neuves que tu veux, et le solveur SAT prouve que chacune n’a qu’une seule solution. Pas de chrono : le pont du jour est sur la page d’accueil."
   },
   "legend": {

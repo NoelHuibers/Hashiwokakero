@@ -3,7 +3,7 @@
 // rendering differ from one system to the next.
 //
 //   pnpm run e2e:container                     every test, the screenshots included
-//   pnpm run e2e:container -g "practice"        arguments go to `playwright test`
+//   pnpm run e2e:container -g "Play"           arguments go to `playwright test`
 //   pnpm run e2e:update-snapshots              take the screenshots again, after a change on purpose
 //
 // Only the browser runs in the container (`playwright run-server`), the tests and the servers

@@ -30,7 +30,7 @@
     "revealed_text": "Questa non conta per la classifica. A domani!",
     "rank": "Posizione {{ rank }} su {{ total }} oggi",
     "ranking": "Classifica…",
-    "more": "Altri puzzle in modalità allenamento →",
+    "more": "Gioca altri puzzle →",
     "on_board": "Sei in classifica come <b>{{ name }}</b>.",
     "claim": "Registra il tuo nome per tenere la serie su ogni dispositivo →",
     "points": "+{{ points }} punti nella gara del mese"
@@ -76,9 +76,9 @@
     "next_q": "Quando arriva un nuovo ponte del giorno?",
     "next_a": "Ogni giorno a mezzanotte UTC, nello stesso istante in tutto il mondo. Un conto alla rovescia su questa pagina mostra quanto manca.",
     "more_q": "Dove posso giocare di più?",
-    "more_a": "Nell’<practice>allenamento</practice>: puzzle illimitati in cinque dimensioni, da 7×7 a 24×24, con indizi quando vuoi. Oppure crea i tuoi puzzle nell’<workshop>officina</workshop>.",
+    "more_a": "In <play>Gioca</play>: puzzle illimitati in cinque dimensioni, da 7×7 a 24×24, con indizi quando vuoi. Oppure crea i tuoi puzzle nell’<workshop>officina</workshop>.",
     "to_rules": "Regole di Hashiwokakero e consigli →",
-    "to_practice": "Allenamento: puzzle illimitati →"
+    "to_play": "Gioca: puzzle illimitati →"
   },
   "recovery": {
     "metadata_error": "Impossibile caricare il rompicapo di oggi. Riprova.",

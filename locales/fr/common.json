@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Du jour",
-    "practice": "Libre",
+    "play": "Jouer",
     "ranks": "Podium",
     "create": "Créer",
     "lab": "Labo",
@@ -56,7 +56,7 @@
     "copy_failed": "Impossible de copier dans le presse-papiers.",
     "reload": "Recharger",
     "update": "Mettre à jour",
-    "offline": "Vous êtes hors ligne. Le jeu libre fonctionne toujours."
+    "offline": "Vous êtes hors ligne. Vous pouvez toujours jouer."
   },
   "errors": {
     "unknown": "Un problème est survenu : {{ detail }}",

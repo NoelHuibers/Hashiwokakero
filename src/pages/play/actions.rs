@@ -1,4 +1,4 @@
-//! The row of game actions under the practice board: undo and redo, check and hint, and the
+//! The row of game actions under the board of Play: undo and redo, check and hint, and the
 //! rarer ones (restart, a new puzzle) behind a "more" button, so the row stays one line on phones.
 
 use leptos::prelude::*;
@@ -108,9 +108,9 @@ fn MoreActions(#[prop(into)] busy: Signal<bool>) -> impl IntoView {
                 class:ring-2=move || open.get()
                 class:ring-primary=move || open.get()
                 aria-expanded=move || open.get().to_string()
-                aria-controls="practice-more"
-                aria-label=move || t_string!(i18n, practice.more)
-                data-tooltip=move || t_string!(i18n, practice.more)
+                aria-controls="play-more"
+                aria-label=move || t_string!(i18n, play.more)
+                data-tooltip=move || t_string!(i18n, play.more)
                 on:click=move |_| open.update(|o| *o = !*o)
             >
                 <svg viewBox="0 0 24 24" class="size-5" fill="currentColor" aria-hidden="true">
@@ -121,12 +121,12 @@ fn MoreActions(#[prop(into)] busy: Signal<bool>) -> impl IntoView {
             </button>
             // Above the button: on phones the tab bar is right below the row
             <div
-                id="practice-more"
+                id="play-more"
                 class="absolute end-0 bottom-full z-50 mb-2 w-60 max-w-[calc(100vw-2rem)] flex-col gap-1 rounded-xl border bg-card p-2 shadow-2xl animate-in fade-in zoom-in-95"
                 class:flex=move || open.get()
                 class:hidden=move || !open.get()
             >
-                <p class="px-3 pb-1 pt-1 font-pixel text-xs text-muted-foreground" aria-hidden="true">"他 · " {t!(i18n, practice.more)}</p>
+                <p class="px-3 pb-1 pt-1 font-pixel text-xs text-muted-foreground" aria-hidden="true">"他 · " {t!(i18n, play.more)}</p>
                 <button
                     type="button"
                     class=item
@@ -138,7 +138,7 @@ fn MoreActions(#[prop(into)] busy: Signal<bool>) -> impl IntoView {
                 >
                     <span class="w-6 shrink-0 text-center font-pixel text-primary" aria-hidden="true">"新"</span>
                     <span class="flex min-w-0 flex-col">
-                        {t!(i18n, practice.new_puzzle)}
+                        {t!(i18n, play.new_puzzle)}
                         <span class="text-xs font-normal text-muted-foreground">
                             {move || {
                                 let d = settings.difficulty.get();
@@ -184,13 +184,13 @@ mod tests {
         owner.with(|| {
             crate::app::provide_server_i18n();
             use_i18n().set_locale(Locale::ar);
-            provide_context(Game::new("test.practice.actions"));
+            provide_context(Game::new("test.play.actions"));
             provide_context(Settings::new());
             let html = view! { <GameActions busy=false not_playing=false /> }.to_html();
             for name in [
                 td_string!(Locale::ar, common.game.undo),
                 td_string!(Locale::ar, common.game.redo),
-                td_string!(Locale::ar, practice.more),
+                td_string!(Locale::ar, play.more),
             ] {
                 let button = tag_with(&html, &format!("aria-label=\"{name}\""));
                 assert!(button.starts_with("<button"), "{button}");
@@ -199,13 +199,13 @@ mod tests {
             }
             let more = tag_with(&html, "aria-expanded");
             assert!(more.contains("aria-expanded=\"false\""), "{more}");
-            assert!(more.contains("aria-controls=\"practice-more\""), "{more}");
-            let panel = tag_with(&html, "id=\"practice-more\"");
+            assert!(more.contains("aria-controls=\"play-more\""), "{more}");
+            let panel = tag_with(&html, "id=\"play-more\"");
             assert!(panel.contains("hidden"), "{panel}");
             // Restart and a new puzzle are in the panel, after the button
-            let after = &html[html.find("id=\"practice-more\"").unwrap()..];
+            let after = &html[html.find("id=\"play-more\"").unwrap()..];
             assert!(after.contains(td_string!(Locale::ar, common.game.restart)));
-            assert!(after.contains(td_string!(Locale::ar, practice.new_puzzle)));
+            assert!(after.contains(td_string!(Locale::ar, play.new_puzzle)));
             assert!(html.contains(td_string!(Locale::ar, common.game.check)));
             assert!(html.contains(td_string!(Locale::ar, common.game.hint)));
         });

@@ -2,7 +2,7 @@
 // played.
 import { text } from 'node:stream/consumers';
 
-import { board, build, cellCenter, PRACTICE_KEY, saved } from '../board.ts';
+import { board, build, cellCenter, PLAY_KEY, saved } from '../board.ts';
 import { expect, test, visit } from '../fixtures.ts';
 
 /** A 2 and a 3 joined by a double bridge, the 3 by a single one to a 1 below it. */
@@ -53,12 +53,12 @@ test('draw a puzzle, check it, export it, import it and play it', async ({ page 
   await expect(board(page).locator('g.island text')).toHaveText(['2', '3', '1']);
 
   await page.getByRole('button', { name: /^Play this puzzle/ }).click();
-  await expect(page).toHaveURL(/\/practice$/);
+  await expect(page).toHaveURL(/\/play$/);
   await expect(page.getByText('Your own puzzle', { exact: true })).toBeVisible();
-  const game = await saved(page, PRACTICE_KEY);
+  const game = await saved(page, PLAY_KEY);
   expect(game.puzzle.islands).toEqual(
     ISLANDS.map(({ x, y, n }) => ({ pos: { x, y }, required: n })),
   );
-  await build(page, PRACTICE_KEY, game.puzzle, [2, 1]);
+  await build(page, PLAY_KEY, game.puzzle, [2, 1]);
   await expect(page.getByRole('heading', { name: /Well done!/ })).toBeVisible();
 });

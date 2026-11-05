@@ -181,8 +181,9 @@ async fn unknown_paths_are_not_found() {
     assert_status(&res, StatusCode::NOT_FOUND);
 }
 
-/// One URL per page: a trailing slash and the `/en` of the default language redirect for good
-/// to the page's canonical URL (`router::canonical_target`), with the query. Only reads of pages:
+/// One URL per page: a trailing slash, the `/en` of the default language and the old address of a
+/// page that moved (`/practice`, now `/play`) redirect for good to the page's canonical URL
+/// (`router::canonical_target`), with the query. Only reads of pages:
 /// a form posted there, the server's own files and what isn't a page aren't redirected.
 #[tokio::test]
 async fn other_spellings_of_a_page_redirect_to_it() {
@@ -193,7 +194,13 @@ async fn other_spellings_of_a_page_redirect_to_it() {
     for (path, target) in [
         ("/rules/", "/rules"),
         ("/de/", "/de"),
-        ("/ja/practice/?size=9", "/ja/practice?size=9"),
+        ("/ja/play/?size=9", "/ja/play?size=9"),
+        // Play's old name, in every language, with the query
+        ("/practice", "/play"),
+        ("/practice?size=9", "/play?size=9"),
+        ("/de/practice", "/de/play"),
+        ("/zh-Hant/practice/?size=9", "/zh-Hant/play?size=9"),
+        ("/en/practice", "/play"),
         ("/en", "/"),
         ("/en/rules", "/rules"),
         ("/en/ranks/", "/ranks"),

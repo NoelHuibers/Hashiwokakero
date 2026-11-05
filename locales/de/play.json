@@ -1,14 +1,14 @@
 {
   "meta": {
-    "title": "Hashiwokakero üben · unbegrenzt gratis Rätsel · Hashi",
-    "description": "Hashiwokakero (Brücken bauen) ohne Zeitdruck üben: unbegrenzt viele Rätsel in fünf Größen von 7×7 bis 24×24, mit Tipps, jedes mit genau einer Lösung."
+    "title": "Hashiwokakero spielen · unbegrenzt gratis Rätsel · Hashi",
+    "description": "Hashiwokakero (Brücken bauen) ohne Zeitdruck spielen: unbegrenzt viele Rätsel in fünf Größen von 7×7 bis 24×24, mit Tipps, jedes mit genau einer Lösung."
   },
   "heading": "das Brückenrätsel",
   "generate": "Erzeugen",
   "generating": "Wird erzeugt…",
   "generating_text": "Inseln wachsen lassen, Brücken bauen und den SAT-Solver fragen, ob die Lösung eindeutig ist…",
   "card": {
-    "title": "Üben",
+    "title": "Spielen",
     "text": "So viele frische Rätsel, wie du willst, jedes mit genau einer Lösung, bewiesen vom SAT-Solver. Ganz ohne Zeitdruck – die Brücke des Tages findest du auf der Startseite."
   },
   "legend": {

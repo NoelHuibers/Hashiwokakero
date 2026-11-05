@@ -62,7 +62,7 @@
     "revealed_title": "해답 공개",
     "revealed_text": "이번엔 순위에 들지 않아요. 보드에 해답이 있으니 잘 살펴보세요!",
     "back": "{{ group }}(으)로 돌아가기",
-    "practice": "연습으로 다시 풀기"
+    "play_again": "다시 풀기"
   },
   "author": {
     "title": "내 퍼즐",

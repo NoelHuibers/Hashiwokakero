@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Hashiwokakero pratik · sınırsız ücretsiz bulmaca · Hashi",
+    "title": "Hashiwokakero oyna · sınırsız ücretsiz bulmaca · Hashi",
     "description": "Süre baskısı olmadan Hashiwokakero (Köprüler) çöz: 7×7'den 24×24'e beş boyutta sınırsız bulmaca, ipuçları ve kontroller, hepsinin tek çözümü var."
   },
   "heading": "köprü bulmacası",
@@ -8,7 +8,7 @@
   "generating": "Üretiliyor…",
   "generating_text": "Adalar büyüyor, köprüler kuruluyor ve SAT çözücüye çözümün tek olup olmadığı soruluyor…",
   "card": {
-    "title": "Pratik",
+    "title": "Oyna",
     "text": "İstediğin kadar yeni bulmaca, her birinin tek çözümü SAT çözücü tarafından kanıtlanmış. Süre baskısı yok; günün köprüsü ana sayfada."
   },
   "legend": {

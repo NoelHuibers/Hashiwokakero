@@ -139,7 +139,7 @@ fn SharedMeta(page: SharedPuzzlePage) -> impl IntoView {
 #[component]
 fn Missing() -> impl IntoView {
     let i18n = use_i18n();
-    let play = use_localized("/practice");
+    let play = use_localized("/play");
     not_found_status();
     view! {
         <Title text=title_text(move || format!("{} · Hashi", t_string!(i18n, common.not_found.title))) />
@@ -158,7 +158,7 @@ fn Missing() -> impl IntoView {
 #[component]
 fn Unreachable(retry: Callback<()>) -> impl IntoView {
     let i18n = use_i18n();
-    let play = use_localized("/practice");
+    let play = use_localized("/play");
     view! {
         <div class="mx-auto flex max-w-xl flex-col items-center gap-4 py-16 text-center" data-testid="shared-offline" role="status">
             <Stamp kanji="圏" class="size-20 text-5xl" />

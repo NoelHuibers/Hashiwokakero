@@ -62,7 +62,7 @@
     "revealed_title": "Rozwiązanie odkryte",
     "revealed_text": "Tym razem poza rankingiem. Rozwiązanie jest na planszy, przyjrzyj mu się dobrze!",
     "back": "Wróć do grupy {{ group }}",
-    "practice": "Zagraj jeszcze raz dla treningu"
+    "play_again": "Zagraj jeszcze raz"
   },
   "author": {
     "title": "Twoja łamigłówka",

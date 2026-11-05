@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Harian",
-    "practice": "Latihan",
+    "play": "Main",
     "ranks": "Peringkat",
     "create": "Buat",
     "lab": "Lab",
@@ -56,7 +56,7 @@
     "copy_failed": "Gagal menyalin ke papan klip.",
     "reload": "Muat ulang",
     "update": "Perbarui",
-    "offline": "Kamu sedang offline. Latihan tetap berjalan."
+    "offline": "Kamu sedang offline. Kamu tetap bisa bermain."
   },
   "errors": {
     "unknown": "Terjadi kesalahan: {{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "Versi aplikasi ini terlalu lama. Perbarui aplikasi untuk terus bermain online.",
     "database": "Database tidak merespons, coba lagi.",
     "internal": "Terjadi kesalahan di server, coba lagi.",
-    "archive_only_past": "Hanya teka-teki harian sebelumnya yang bisa dilatih.",
+    "archive_only_past": "Hanya teka-teki harian sebelumnya yang bisa dimainkan lagi.",
     "password_too_short": "Kata sandi minimal 8 karakter.",
     "password_too_long": "Kata sandi maksimal 128 karakter.",
     "username_invalid": "Nama pengguna terdiri dari 3 sampai 20 karakter: huruf, angka, _ dan -.",

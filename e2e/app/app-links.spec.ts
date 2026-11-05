@@ -88,14 +88,14 @@ test('the app started with an invite shows the invite, in its language', async (
   );
 
   // A reload doesn't go back to the invite: the plugin still has it, the page showed it already
-  await page.locator('a[href="/ja/practice"]').filter({ visible: true }).first().click();
-  await expect(page).toHaveURL(/\/ja\/practice$/);
+  await page.locator('a[href="/ja/play"]').filter({ visible: true }).first().click();
+  await expect(page).toHaveURL(/\/ja\/play$/);
   await page.reload();
   // biome-ignore lint/suspicious/noPlaywrightNetworkidle: the reload done, calls included, before checking that it stays
   await page.waitForLoadState('networkidle');
   // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: proves that the app stays where it is; there is no event to wait for
   await page.waitForTimeout(500);
-  await expect(page).toHaveURL(/\/ja\/practice$/);
+  await expect(page).toHaveURL(/\/ja\/play$/);
   withoutNetworkErrors(problems);
 });
 
@@ -122,12 +122,30 @@ test('links that bring the app back show their page on top of the one it was on'
   await expect(page).toHaveURL(/\/rules$/);
 
   // The same link twice shows it twice
-  await openAppLink(page, 'https://hashi.rs/practice');
-  await expect(page).toHaveURL(/\/practice$/);
+  await openAppLink(page, 'https://hashi.rs/play');
+  await expect(page).toHaveURL(/\/play$/);
   await page.goBack();
-  await openAppLink(page, 'https://hashi.rs/practice');
-  await expect(page).toHaveURL(/\/practice$/);
+  await openAppLink(page, 'https://hashi.rs/play');
+  await expect(page).toHaveURL(/\/play$/);
   expect(await sameDocument(page)).toBe(true);
+  withoutNetworkErrors(problems);
+});
+
+// Older links, and older apps' shares, have Play's old address: the app's router takes it to Play
+// (src/app.rs MovedPage) as the server would, without a server in front of it
+test("Play's old address opens Play, with its query and language", async ({ page, problems }) => {
+  await fakeTauri(page, null);
+  await offline(page);
+  await visit(page, '/rules');
+  await mark(page);
+
+  await openAppLink(page, 'https://hashi.rs/ja/practice?size=9');
+  await expect(page).toHaveURL(/\/ja\/play\?size=9$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+  expect(await sameDocument(page)).toBe(true);
+  // In place of the old address: back is the page before it
+  await page.goBack();
+  await expect(page).toHaveURL(/\/rules$/);
   withoutNetworkErrors(problems);
 });
 

@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "每日",
-    "practice": "練習",
+    "play": "暢玩",
     "ranks": "排行",
     "create": "創作",
     "lab": "實驗室",
@@ -56,7 +56,7 @@
     "copy_failed": "無法複製到剪貼簿。",
     "reload": "重新整理",
     "update": "更新",
-    "offline": "你已離線。練習仍可使用。"
+    "offline": "你已離線，仍然可以暢玩。"
   },
   "errors": {
     "unknown": "發生錯誤：{{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "此版本的應用程式過舊，請更新後繼續線上遊戲。",
     "database": "資料庫沒有回應，請再試一次。",
     "internal": "伺服器出了點問題，請再試一次。",
-    "archive_only_past": "只能練習先前的每日謎題。",
+    "archive_only_past": "只能暢玩先前的每日謎題。",
     "password_too_short": "密碼至少需要 8 個字元。",
     "password_too_long": "密碼最多 128 個字元。",
     "username_invalid": "使用者名稱需為 3 到 20 個字元：英文字母、數字、_ 和 -。",

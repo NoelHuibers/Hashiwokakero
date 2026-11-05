@@ -4,11 +4,11 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
 
-import { addBridge, DAILY_KEY, edges, PRACTICE_KEY } from '../../e2e/board.ts';
+import { addBridge, DAILY_KEY, edges, PLAY_KEY } from '../../e2e/board.ts';
 import { DB_PATH, STORE_URL } from './env.ts';
 import { ME, PLAYING, PUZZLES, sessionOf } from './seed.ts';
 
-export type SceneId = 'daily' | 'ranking' | 'practice' | 'friends' | 'stamps' | 'night';
+export type SceneId = 'daily' | 'ranking' | 'play' | 'friends' | 'stamps' | 'night';
 
 export interface Scene {
   id: SceneId;
@@ -61,12 +61,12 @@ export const SCENES: Scene[] = [
     path: '/ranks',
   },
   {
-    // A hard practice board half built
-    id: 'practice',
+    // A hard board of Play half built
+    id: 'play',
     user: ME,
-    path: '/practice',
+    path: '/play',
     before: async (context) => {
-      const { puzzle, solution, source } = PUZZLES.practice;
+      const { puzzle, solution, source } = PUZZLES.play;
       const bridges = solution.map((b, e) => (e % 5 < 3 ? b : 0));
       const game = {
         puzzle,
@@ -85,7 +85,7 @@ export const SCENES: Scene[] = [
           localStorage.setItem(key, value);
           sessionStorage.setItem('store-seeded', '1');
         },
-        [PRACTICE_KEY, JSON.stringify(game)] as const,
+        [PLAY_KEY, JSON.stringify(game)] as const,
       );
     },
   },
@@ -146,11 +146,11 @@ export async function signIn(context: BrowserContext, user: string) {
 }
 
 /**
- * The practice board with every bridge but one, for the feature graphic: a big board full of
+ * The board of Play with every bridge but one, for the feature graphic: a big board full of
  * wooden and vermilion bridges (the last one missing, or the page would celebrate the win).
  */
 export async function boardShot(context: BrowserContext, out: string) {
-  const { puzzle, solution, source } = PUZZLES.practice;
+  const { puzzle, solution, source } = PUZZLES.play;
   const last = solution.findLastIndex((b) => b > 0);
   const bridges = solution.map((b, e) => (e === last ? 0 : b));
   const game = {
@@ -170,10 +170,10 @@ export async function boardShot(context: BrowserContext, out: string) {
       localStorage.setItem(key, value);
       sessionStorage.setItem('store-seeded', '1');
     },
-    [PRACTICE_KEY, JSON.stringify(game)] as const,
+    [PLAY_KEY, JSON.stringify(game)] as const,
   );
   const page = await context.newPage();
-  await page.goto(`${STORE_URL}/practice`);
+  await page.goto(`${STORE_URL}/play`);
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
   // biome-ignore lint/suspicious/noPlaywrightNetworkidle: every image loaded for the store screenshot
   await page.waitForLoadState('networkidle');

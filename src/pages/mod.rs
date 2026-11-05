@@ -21,7 +21,7 @@ use leptos::task::spawn_local;
 use leptos_meta::{Meta, Title};
 use leptos_router::components::A;
 
-use crate::api::practice;
+use crate::api::compute;
 use crate::components::celebration::Stamp;
 use crate::components::layout::use_localized;
 use crate::i18n::{t, t_string, use_i18n};
@@ -31,7 +31,7 @@ use crate::state::{download, error_toast};
 /// Downloads the DIMACS encoding of a puzzle.
 pub fn download_cnf(puzzle: Puzzle) {
     spawn_local(async move {
-        match practice::cnf(puzzle).await {
+        match compute::cnf(puzzle).await {
             Ok(cnf) => download("hashi.cnf", &cnf, "text/plain"),
             Err(e) => error_toast(e),
         }

@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { addBridge, board, cellCenter, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { addBridge, board, cellCenter, edges, PLAY_KEY, saved, seedGame } from '../board.ts';
 import { ROOT } from '../env.ts';
 import { expect, signIn, test, visit } from '../fixtures.ts';
 import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
@@ -49,11 +49,11 @@ for (const width of [390, 768]) {
 test('difficulty exposes one selected choice and can be changed with the keyboard in RTL', async ({
   page,
 }) => {
-  await seedGame(page, PRACTICE_KEY, playing);
-  await visit(page, '/ar/practice');
+  await seedGame(page, PLAY_KEY, playing);
+  await visit(page, '/ar/play');
   const common = messages('ar', 'common');
   const group = page.getByRole('group', {
-    name: messages('ar', 'practice').new_puzzle,
+    name: messages('ar', 'play').new_puzzle,
     exact: true,
   });
   await expect(group.getByRole('button', { pressed: true })).toHaveCount(1);
@@ -75,8 +75,8 @@ test('difficulty exposes one selected choice and can be changed with the keyboar
 test('toasts enter an existing polite live region without moving keyboard focus', async ({
   page,
 }) => {
-  await seedGame(page, PRACTICE_KEY, playing);
-  await visit(page, '/practice');
+  await seedGame(page, PLAY_KEY, playing);
+  await visit(page, '/play');
   const log = page.getByRole('log');
   await expect(log).toBeEmpty();
   await expect(log).toHaveAttribute('aria-live', 'polite');
@@ -89,8 +89,8 @@ test('toasts enter an existing polite live region without moving keyboard focus'
   await expect(log).toContainText('So far so good: every bridge belongs to the solution.');
   await expect(check).toBeFocused();
   // An incorrect double bridge exercises the error message path too, without a network mock.
-  await addBridge(page, PRACTICE_KEY, LADDER, ladderRow(1));
-  await addBridge(page, PRACTICE_KEY, LADDER, ladderRow(1));
+  await addBridge(page, PLAY_KEY, LADDER, ladderRow(1));
+  await addBridge(page, PLAY_KEY, LADDER, ladderRow(1));
   await check.focus();
   await check.press('Enter');
   await expect(log).toContainText('Bridges that are not part of the solution: 1');
@@ -139,8 +139,8 @@ test.describe('native and game gestures on a phone', () => {
 
   for (const locale of ['en', 'ar']) {
     test(`interactive drag cancellation stays safe in ${locale}`, async ({ page }) => {
-      await seedGame(page, PRACTICE_KEY, playing);
-      await visit(page, localized(locale, '/practice'));
+      await seedGame(page, PLAY_KEY, playing);
+      await visit(page, localized(locale, '/play'));
       await expect(board(page)).toHaveCSS('touch-action', 'none');
       expect(
         await board(page).evaluate((el) =>
@@ -155,24 +155,22 @@ test.describe('native and game gestures on a phone', () => {
       await expect(board(page).locator('g.bridge.ghost')).toBeVisible();
       await board(page).dispatchEvent('pointercancel', { pointerId: 1, pointerType: 'mouse' });
       await page.mouse.up();
-      expect((await saved(page, PRACTICE_KEY)).bridges).toEqual(playing.bridges);
+      expect((await saved(page, PLAY_KEY)).bridges).toEqual(playing.bridges);
       await page.mouse.move(start.x, start.y);
       await page.mouse.down();
       await page.mouse.move(end.x, end.y, { steps: 5 });
       await page.mouse.up();
-      await expect
-        .poll(async () => (await saved(page, PRACTICE_KEY)).bridges[ladderRow(1)])
-        .toBe(1);
+      await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[ladderRow(1)]).toBe(1);
     });
   }
 });
 
 test('reduced motion keeps selection and wrong-bridge feedback steady', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await seedGame(page, PRACTICE_KEY, playing);
-  await visit(page, '/practice');
-  await addBridge(page, PRACTICE_KEY, LADDER, ladderRow(1));
-  await addBridge(page, PRACTICE_KEY, LADDER, ladderRow(1));
+  await seedGame(page, PLAY_KEY, playing);
+  await visit(page, '/play');
+  await addBridge(page, PLAY_KEY, LADDER, ladderRow(1));
+  await addBridge(page, PLAY_KEY, LADDER, ladderRow(1));
   const point = await cellCenter(page, 0, 1);
   await page.mouse.click(point.x, point.y);
   const selection = board(page).locator('g.island.selected .sel');

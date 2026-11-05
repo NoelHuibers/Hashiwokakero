@@ -573,7 +573,7 @@ async fn with_stores_every_page_offers_the_apps() {
         ("/", Locale::en, "en", "en", "en"),
         ("/de/rules", Locale::de, "de", "de", "de"),
         // Apple has no Arabic badge, Google no Ukrainian one
-        ("/ar/practice", Locale::ar, "en", "ar", "ar"),
+        ("/ar/play", Locale::ar, "en", "ar", "ar"),
         ("/uk", Locale::uk, "uk", "en", "uk"),
         (
             "/zh-Hant/ranks",

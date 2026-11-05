@@ -1,4 +1,4 @@
-//! What covers the practice board once it is solved or revealed.
+//! What covers the board of Play once it is solved or revealed.
 
 use leptos::prelude::*;
 
@@ -32,12 +32,12 @@ pub(super) fn WinOverlay() -> impl IntoView {
             game.source.get_untracked().title(locale),
             td_string!(
                 locale,
-                practice.share,
+                play.share,
                 time = format_time(game.elapsed.get_untracked()),
                 moves = game.moves.get_untracked(),
                 hints = game.hints.get_untracked()
             ),
-            crate::seo::public_origin() + &localized(locale, "/practice"),
+            crate::seo::public_origin() + &localized(locale, "/play"),
         )
     };
 
@@ -70,7 +70,7 @@ pub(super) fn WinOverlay() -> impl IntoView {
                     <p class="text-muted-foreground">
                         {t!(
                             i18n,
-                            practice.won,
+                            play.won,
                             time = move || format_time(game.elapsed.get()),
                             moves = move || game.moves.get(),
                             hints = move || game.hints.get(),
@@ -79,10 +79,10 @@ pub(super) fn WinOverlay() -> impl IntoView {
                     </p>
                     <div class="flex w-full flex-wrap justify-center gap-2 pt-1">
                         <Button on:click=move |_| new_random(&game, settings.difficulty.get_untracked())>
-                            {t!(i18n, practice.next)} " 次へ"
+                            {t!(i18n, play.next)} " 次へ"
                         </Button>
                         <Button variant=ButtonVariant::Ghost on:click=move |_| dismissed.set(true)>
-                            {t!(i18n, practice.admire)}
+                            {t!(i18n, play.admire)}
                         </Button>
                         <SharePuzzle request text=link_text fallback=Callback::new(move |()| share_text_of_result()) outline=true />
                     </div>
@@ -96,16 +96,16 @@ pub(super) fn WinOverlay() -> impl IntoView {
                     <span class="hanko grid size-9 shrink-0 rotate-[-6deg] place-items-center rounded-md font-pixel text-xl">
                         "解"
                     </span>
-                    <span>{t!(i18n, practice.revealed)}</span>
+                    <span>{t!(i18n, play.revealed)}</span>
                     <Button size=ButtonSize::Sm on:click=move |_| game.restart()>
-                        {t!(i18n, practice.play_myself)}
+                        {t!(i18n, play.play_myself)}
                     </Button>
                     <Button
                         size=ButtonSize::Sm
                         variant=ButtonVariant::Outline
                         on:click=move |_| new_random(&game, settings.difficulty.get_untracked())
                     >
-                        {t!(i18n, practice.new_puzzle)}
+                        {t!(i18n, play.new_puzzle)}
                     </Button>
                     <Button size=ButtonSize::Sm variant=ButtonVariant::Ghost on:click=move |_| dismissed.set(true)>
                         "✕"

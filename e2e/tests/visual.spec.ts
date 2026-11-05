@@ -8,7 +8,7 @@
 // one after another, the daily last: until then today's ranking is the seeded one.
 import type { Locator, Page } from '@playwright/test';
 import { register } from '../account.ts';
-import { PRACTICE_KEY, seedGame } from '../board.ts';
+import { PLAY_KEY, seedGame } from '../board.ts';
 import { deleteResults, expectResult, solveDaily, startDaily } from '../daily.ts';
 import { expect, newUsername, test, visit } from '../fixtures.ts';
 import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
@@ -69,7 +69,7 @@ test('home, the daily before the start', async ({ page }) => {
   ]);
 });
 
-test('practice, a board in play', async ({ page }) => {
+test('Play, a board in play', async ({ page }) => {
   // The clock stands still, it would tick in the corner (a timer of one second on the seeded
   // 00:00). Paused before the page loads: the page starts with it paused and its timer never
   // fires, however long loading takes. Paused after the visit, the second between install and
@@ -78,7 +78,7 @@ test('practice, a board in play', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-10-19T09:00:00Z') });
   await page.clock.pauseAt(new Date('2026-10-19T09:00:01Z'));
   const bridges = LADDER_SOLUTION.map((b, e) => (e === ladderRow(3) || e === ladderRow(4) ? 0 : b));
-  await seedGame(page, PRACTICE_KEY, {
+  await seedGame(page, PLAY_KEY, {
     puzzle: LADDER,
     bridges,
     solution: LADDER_SOLUTION,
@@ -86,11 +86,11 @@ test('practice, a board in play', async ({ page }) => {
     moves: 7,
     hints: 0,
   });
-  await visit(page, '/practice');
+  await visit(page, '/play');
   await expect(page.getByText('6 / 10')).toBeVisible();
   // Checked on its own: a digit more or less is within the screenshot's tolerance
   await expect(page.getByText('00:00', { exact: true })).toBeVisible();
-  await expectPage(page, 'practice');
+  await expectPage(page, 'play');
 });
 
 test('ranks', async ({ page }) => {

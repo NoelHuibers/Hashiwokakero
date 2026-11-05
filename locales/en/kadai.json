@@ -62,7 +62,7 @@
     "revealed_title": "Solution revealed",
     "revealed_text": "Not ranked this time. The solution is on the board, take a good look!",
     "back": "Back to {{ group }}",
-    "practice": "Play it again for practice"
+    "play_again": "Play it again"
   },
   "author": {
     "title": "Your puzzle",

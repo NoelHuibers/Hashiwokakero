@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Günlük",
-    "practice": "Pratik",
+    "play": "Oyna",
     "ranks": "Sıralama",
     "create": "Oluştur",
     "lab": "Lab",
@@ -56,7 +56,7 @@
     "copy_failed": "Panoya kopyalanamadı.",
     "reload": "Yenile",
     "update": "Güncelle",
-    "offline": "Çevrimdışısın. Pratik yine de çalışıyor."
+    "offline": "Çevrimdışısın. Yine de oynayabilirsin."
   },
   "errors": {
     "unknown": "Bir şeyler ters gitti: {{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "Uygulamanın bu sürümü çok eski. Çevrim içi oynamaya devam etmek için uygulamayı güncelle.",
     "database": "Veritabanı yanıt vermedi, lütfen tekrar dene.",
     "internal": "Sunucuda bir şeyler ters gitti, lütfen tekrar dene.",
-    "archive_only_past": "Sadece geçmiş günlük bulmacalarla pratik yapılabilir.",
+    "archive_only_past": "Sadece geçmiş günlük bulmacalar oynanabilir.",
     "password_too_short": "Şifre en az 8 karakter olmalı.",
     "password_too_long": "Şifre en fazla 128 karakter olabilir.",
     "username_invalid": "Kullanıcı adı 3 ila 20 karakter olmalı: harf, rakam, _ ve -.",

@@ -46,7 +46,7 @@ pub async fn solve_puzzle(
 ) -> Result<SolveReport, ServerFnError> {
     let puzzle = normalized(puzzle)?;
     not_the_daily(&puzzle).await?;
-    // The same limits as the app's offline practice (app/src-tauri/offline)
+    // The same limits as the app's offline Play (app/src-tauri/offline)
     let config = backend::api::player_config(config);
     run_blocking(move || {
         if unique {

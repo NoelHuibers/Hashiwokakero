@@ -72,21 +72,21 @@ mod tests {
         let mut recent = RecentErrors::new();
         assert_eq!(recent.list(), Vec::<String>::new());
         for i in 0..8 {
-            recent.push(&format!("/practice E:error_{i}"));
+            recent.push(&format!("/play E:error_{i}"));
         }
         assert_eq!(
             recent.list(),
             (3..8)
-                .map(|i| format!("/practice E:error_{i}"))
+                .map(|i| format!("/play E:error_{i}"))
                 .collect::<Vec<_>>()
         );
         // The same again is no new error, a long one is cut, an empty one isn't one
-        recent.push("/practice E:error_7");
+        recent.push("/play E:error_7");
         recent.push(&"x".repeat(1000));
         recent.push("  ");
         let list = recent.list();
         assert_eq!(list.len(), MAX_CONTEXT_ERRORS);
-        assert_eq!(list[3], "/practice E:error_7");
+        assert_eq!(list[3], "/play E:error_7");
         assert_eq!(list[4].chars().count(), MAX_CONTEXT_ERROR);
     }
 

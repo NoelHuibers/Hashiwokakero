@@ -232,7 +232,7 @@ async fn feedback_arrives_with_its_context_and_is_answered() {
             context: Some(FeedbackContext {
                 platform: "web".into(),
                 language: "ja".into(),
-                page: Some("/practice".into()),
+                page: Some("/play".into()),
                 player: Some(me + 1000),
                 ..FeedbackContext::default()
             }),
@@ -275,7 +275,7 @@ async fn feedback_arrives_with_its_context_and_is_answered() {
             context.page.as_deref(),
             bug.locale.as_deref()
         ),
-        (Some(me), Some("/practice"), Some("ja"))
+        (Some(me), Some("/play"), Some("ja"))
     );
     let all = admin.call(inbox(None)).await.unwrap();
     let other = all.iter().find(|m| m.message == anonymous).unwrap();

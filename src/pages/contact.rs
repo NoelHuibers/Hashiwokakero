@@ -1,7 +1,7 @@
 //! The feedback form: bugs, ideas, questions and anything else, also the second way to reach us
 //! next to email (the Impressum needs one).
 //!
-//! `/kontakt?type=bug&from=/practice`: the links to it (footer, the header's help, the account
+//! `/kontakt?type=bug&from=/play`: the links to it (footer, the header's help, the account
 //! page) pick the type and pass the page they were on. What the page sends along with the
 //! message (`FeedbackContext`) is listed above the button.
 
@@ -415,8 +415,8 @@ mod tests {
     fn links_say_where_they_came_from() {
         assert_eq!(feedback_link(Locale::en, None, "/"), "/kontakt?from=/");
         assert_eq!(
-            feedback_link(Locale::de, Some(FeedbackKind::Bug), "/de/practice"),
-            "/de/kontakt?type=bug&from=/practice"
+            feedback_link(Locale::de, Some(FeedbackKind::Bug), "/de/play"),
+            "/de/kontakt?type=bug&from=/play"
         );
         assert_eq!(
             feedback_link(Locale::ja, Some(FeedbackKind::Question), "/ja/kontakt"),
@@ -452,7 +452,7 @@ mod tests {
             screen: "390×844 @3x".into(),
             errors: vec!["/ E:database".into(), "/ap E:internal".into()],
         };
-        let sent = context(&device, Locale::de, Some("/practice".into()), Some(7));
+        let sent = context(&device, Locale::de, Some("/play".into()), Some(7));
         assert_eq!(
             (
                 sent.app.as_deref(),
@@ -463,12 +463,12 @@ mod tests {
         );
         assert_eq!(
             (sent.page.as_deref(), sent.player),
-            (Some("/practice"), Some(7))
+            (Some("/play"), Some(7))
         );
         assert!(sent.daily.is_some_and(|d| d > 0));
         let rows = context_rows(Locale::de, &sent);
         assert_eq!(rows[0], ("Version", vec!["App 1.1.0".to_string()]));
-        assert!(rows.contains(&("Seite", vec!["/practice".to_string()])));
+        assert!(rows.contains(&("Seite", vec!["/play".to_string()])));
         assert!(rows.contains(&("Spieler", vec!["#7".to_string()])));
         // The errors under one name
         assert_eq!(

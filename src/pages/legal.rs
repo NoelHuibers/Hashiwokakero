@@ -68,7 +68,7 @@ const PRIVACY_DE: &[Section] = &[
         "Kurz gesagt",
         &[
             "Hashi kommt ohne Werbung, Tracking und Analyse-Tools aus. Wir verarbeiten nur die Daten, die für das Spiel nötig sind, und geben sie an niemanden weiter außer an die Dienstleister, die die Website für uns betreiben (Fly.io, Turso und Proton, siehe unten).",
-            "Üben, die Rätselwerkstatt und das Solver-Labor funktionieren ganz ohne Konto. Rätsel, die du dort erzeugen oder lösen lässt, verarbeitet der Server nur für die Antwort und speichert sie nicht.",
+            "„Spielen“, die Rätselwerkstatt und das Solver-Labor funktionieren ganz ohne Konto. Rätsel, die du dort erzeugen oder lösen lässt, verarbeitet der Server nur für die Antwort und speichert sie nicht.",
         ],
     ),
     (
@@ -106,7 +106,7 @@ const PRIVACY_DE: &[Section] = &[
         &[
             "Zu jeder Brücke des Tages speichern wir Start- und Endzeit, deine Zeit, deine Züge, wie oft du Tipps und Prüfungen genutzt hast, und die gelöste Brückenbelegung.",
             "Die Brücke des Tages ist ein öffentlicher Wettbewerb. Öffentlich sichtbar sind daher dein Name (Benutzer- oder Gastname) und ob du als Gast spielst, in der Tagesrangliste deine Zeit, Tipps, Prüfungen und dein gewählter Stempel, in der Ruhmeshalle und im Monatsrennen deine gelösten Rätsel, Serien, Medaillen und Punkte, und dein Spielerprofil mit dem Datum, seit dem du spielst, deiner Bilanz, den letzten 35 Tagen mit Zeit und Platz und deinem Stempelheft. Spielerprofile sind für Suchmaschinen gesperrt.",
-            "Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Spiels). Wenn du nicht öffentlich erscheinen möchtest, spiel die Übungsrätsel.",
+            "Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Spiels). Wenn du nicht öffentlich erscheinen möchtest, spiel die Rätsel unter „Spielen“.",
         ],
     ),
     (
@@ -222,7 +222,7 @@ const PRIVACY_EN: &[Section] = &[
     (
         "In short",
         &[
-            "Hashi has no ads, tracking or analytics. We only process the data the game needs and share it with nobody except the providers that run the site for us (Fly.io, Turso and Proton). Practice, the puzzle workshop and the solver lab need no account; puzzles you generate or solve there are processed only to answer the request and never stored.",
+            "Hashi has no ads, tracking or analytics. We only process the data the game needs and share it with nobody except the providers that run the site for us (Fly.io, Turso and Proton). Play, the puzzle workshop and the solver lab need no account; puzzles you generate or solve there are processed only to answer the request and never stored.",
         ],
     ),
     (
@@ -236,7 +236,7 @@ const PRIVACY_EN: &[Section] = &[
         "Account, leaderboards and player profile",
         &[
             "Starting the Bridge of the Day creates a guest account with a random guest name and the cookie \"hashi_session\", which holds a random key we only store as a hash and expires a year after your last visit or when you log out. Registered accounts add a username and an Argon2 password hash. When you change your username we store the time, as it can only be changed every 30 days. Failed logins are counted in memory for 15 minutes to slow down password guessing.",
-            "For each daily we store your start and finish time, time, moves, hints, checks and solved board. The daily is a public competition: your name, whether you are a guest, your times, hints, checks, medals, streaks, monthly points, your stamps with their dates and your player profile (the last 35 days with time and place) are public. Player profiles are hidden from search engines. If you don't want to appear publicly, play the practice puzzles (Art. 6 (1) b GDPR).",
+            "For each daily we store your start and finish time, time, moves, hints, checks and solved board. The daily is a public competition: your name, whether you are a guest, your times, hints, checks, medals, streaks, monthly points, your stamps with their dates and your player profile (the last 35 days with time and place) are public. Player profiles are hidden from search engines. If you don't want to appear publicly, stick to the puzzles in Play (Art. 6 (1) b GDPR).",
         ],
     ),
     (

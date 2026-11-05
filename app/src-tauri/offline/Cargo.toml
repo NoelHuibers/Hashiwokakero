@@ -5,7 +5,7 @@ edition = "2024"
 license = "MIT"
 publish = false
 
-# The app's offline practice: the puzzle server functions without a server, see src/lib.rs.
+# The app's offline Play: the puzzle server functions without a server, see src/lib.rs.
 # Without Tauri, so its tests build and run on any machine (CI: "Build app (Android)").
 
 [dependencies]

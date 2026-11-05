@@ -12,7 +12,7 @@ use leptos::task::spawn_local;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
-use crate::api::practice;
+use crate::api::compute;
 use crate::components::board::{BoardMode, BoardView, CellAction};
 use crate::components::layout::use_localized;
 use crate::components::solver_panel::{PanelButton, SolverPanel};
@@ -36,7 +36,7 @@ use warnings::{Warnings, warnings};
 #[component]
 pub fn CreatePage() -> impl IntoView {
     let i18n = use_i18n();
-    let practice_path = use_localized("/practice");
+    let play_path = use_localized("/play");
     let editor = expect_context::<Editor>();
     let game = expect_context::<Game>();
     let settings = expect_context::<Settings>();
@@ -126,7 +126,7 @@ pub fn CreatePage() -> impl IntoView {
         let epoch = editor.epoch.get_untracked();
         generating.set(true);
         spawn_local(async move {
-            let result = practice::generate(params).await;
+            let result = compute::generate(params).await;
             if editor.epoch.try_get_untracked() != Some(epoch) {
                 generating.try_set(false);
                 return;
@@ -185,7 +185,7 @@ pub fn CreatePage() -> impl IntoView {
                 _ => None,
             });
         game.set_puzzle(puzzle, solution, unique, Source::Custom);
-        navigate(&practice_path(), NavigateOptions::default());
+        navigate(&play_path(), NavigateOptions::default());
     };
 
     view! {

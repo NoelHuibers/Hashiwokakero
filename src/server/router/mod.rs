@@ -294,9 +294,11 @@ async fn cache_control(hash_files: bool, req: Request, next: Next) -> Response {
 }
 
 /// The page a URL of another spelling is, for a permanent redirect: without a trailing slash
-/// (`/rules/` is `/rules`, `/de/` is `/de`), and without `/en`, the default language, which has
-/// no prefix (`/en/rules` is `/rules`). The query stays. These were 404s (the slash) or a second
-/// URL of the same page (`/en`), which search engines and shared links may have.
+/// (`/rules/` is `/rules`, `/de/` is `/de`), without `/en`, the default language, which has
+/// no prefix (`/en/rules` is `/rules`), and at the new address of a page that moved
+/// (`/de/practice` is `/de/play`, see `seo::MOVED_PAGES`). The query stays. These were 404s (the
+/// slash), a second URL of the same page (`/en`) or the page's old URL, which search engines and
+/// shared links may have.
 ///
 /// Only pages: not the server's own paths, where a slash is another file (Apple's and Google's
 /// verifiers want a 404 there, not a redirect). Never to another site (`//example.com`).
@@ -312,12 +314,13 @@ fn canonical_target(path: &str, query: Option<&str>) -> Option<String> {
     };
     let trimmed = english.trim_end_matches('/');
     let target = if trimmed.is_empty() { "/" } else { trimmed };
+    let target = crate::seo::moved_page(target).unwrap_or_else(|| target.to_string());
     if target == path || target.starts_with("//") {
         return None;
     }
     Some(match query {
         Some(query) => format!("{target}?{query}"),
-        None => target.to_string(),
+        None => target,
     })
 }
 
@@ -351,7 +354,18 @@ mod redirect_tests {
             ("/de/", None, "/de"),
             ("/de/rules/", None, "/de/rules"),
             ("/de/rules///", None, "/de/rules"),
-            ("/practice/", Some("size=9"), "/practice?size=9"),
+            ("/play/", Some("size=9"), "/play?size=9"),
+            // Play's old name, in every spelling
+            ("/practice", None, "/play"),
+            ("/practice", Some("size=9"), "/play?size=9"),
+            ("/practice/", Some("size=9"), "/play?size=9"),
+            ("/de/practice", None, "/de/play"),
+            (
+                "/zh-Hant/practice/",
+                Some("a=1&b=2"),
+                "/zh-Hant/play?a=1&b=2",
+            ),
+            ("/en/practice", None, "/play"),
             ("/en", None, "/"),
             ("/en/", None, "/"),
             ("/en/rules", None, "/rules"),
@@ -372,6 +386,10 @@ mod redirect_tests {
             ("/rules", None),
             ("/de", None),
             ("/ranks", Some("day=20747")),
+            ("/play", None),
+            ("/ja/play", Some("size=9")),
+            ("/practicex", None),
+            ("/Practice", None),
             // Not English
             ("/english", None),
             ("/enx/rules", None),

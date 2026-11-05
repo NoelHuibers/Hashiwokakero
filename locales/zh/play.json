@@ -1,14 +1,14 @@
 {
   "meta": {
-    "title": "数桥练习 · 无限免费逻辑谜题 · Hashi",
-    "description": "不计时练习数桥（Hashiwokakero）：无限生成的免费谜题，7×7 到 24×24 五种尺寸，带提示和检查，每题唯一解。"
+    "title": "畅玩数桥 · 无限免费逻辑谜题 · Hashi",
+    "description": "不计时畅玩数桥（Hashiwokakero）：无限生成的免费谜题，7×7 到 24×24 五种尺寸，带提示和检查，每题唯一解。"
   },
   "heading": "搭桥谜题",
   "generate": "生成",
   "generating": "生成中…",
   "generating_text": "正在长出小岛、搭建桥梁，并询问 SAT 求解器答案是否唯一…",
   "card": {
-    "title": "练习",
+    "title": "畅玩",
     "text": "新谜题想玩多少就玩多少，每道都经 SAT 求解器证明只有唯一解。没有计时压力，每日一桥在首页。"
   },
   "legend": {

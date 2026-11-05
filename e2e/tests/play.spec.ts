@@ -1,4 +1,4 @@
-// Practice: a generated puzzle (a server function), bridges built on it (the board's pointer
+// Play: a generated puzzle (a server function), bridges built on it (the board's pointer
 // handling in the WASM), and a whole game up to the win screen, saved in the browser.
 import type { Page } from '@playwright/test';
 
@@ -7,7 +7,7 @@ import {
   board,
   boardPoint,
   build,
-  PRACTICE_KEY,
+  PLAY_KEY,
   type Puzzle,
   saved,
   seedGame,
@@ -64,7 +64,7 @@ async function gap(page: Page) {
 
 /** A new puzzle of the difficulty picked in the card (Medium unless another is picked). */
 async function newPuzzle(page: Page, difficulty?: string) {
-  await visit(page, '/practice');
+  await visit(page, '/play');
   // The first visit generates a puzzle by itself
   await expect(board(page).locator('g.island').first()).toBeVisible();
   const first = await layout(page);
@@ -87,7 +87,7 @@ test('generate a puzzle and build a bridge with the mouse', async ({ page }) => 
 test('play a puzzle from the first bridge to the win screen', async ({ page }) => {
   await newPuzzle(page, 'Easy');
   await expect(page.getByText(/^Easy 7×7$/)).toBeVisible();
-  const game = await saved(page, PRACTICE_KEY);
+  const game = await saved(page, PLAY_KEY);
   expect(game.puzzle.width).toBe(7);
   // The generator sends the solution along, the hints and checks use it
   const solution = game.solution!;
@@ -95,26 +95,26 @@ test('play a puzzle from the first bridge to the win screen', async ({ page }) =
 
   // A click on a pair of islands cycles their bridges: one, two, none
   const edge = 0;
-  await addBridge(page, PRACTICE_KEY, game.puzzle, edge);
+  await addBridge(page, PLAY_KEY, game.puzzle, edge);
   await expect(bridges(page)).toHaveCount(1);
-  await addBridge(page, PRACTICE_KEY, game.puzzle, edge);
+  await addBridge(page, PLAY_KEY, game.puzzle, edge);
   await expect(bridges(page)).toHaveCount(1);
-  await addBridge(page, PRACTICE_KEY, game.puzzle, edge);
+  await addBridge(page, PLAY_KEY, game.puzzle, edge);
   await expect(bridges(page)).toHaveCount(0);
-  expect((await saved(page, PRACTICE_KEY)).moves).toBe(3);
+  expect((await saved(page, PLAY_KEY)).moves).toBe(3);
 
   // Undo goes back through them, redo forward again
   const undo = page.getByRole('button', { name: /Undo/ });
   const redo = page.getByRole('button', { name: /Redo/ });
   await expect(redo).toBeDisabled();
   await undo.click();
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[edge]).toBe(2);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[edge]).toBe(2);
   await undo.click();
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[edge]).toBe(1);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[edge]).toBe(1);
   await redo.click();
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[edge]).toBe(2);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[edge]).toBe(2);
   await redo.click();
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).bridges[edge]).toBe(0);
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[edge]).toBe(0);
   await expect(redo).toBeDisabled();
 
   // Restart clears the board, it is behind the "more" button
@@ -122,26 +122,26 @@ test('play a puzzle from the first bridge to the win screen', async ({ page }) =
   await page.getByRole('button', { name: 'Restart' }).click();
   await expect(page.getByRole('button', { name: 'Restart' })).toBeHidden();
   await expect(bridges(page)).toHaveCount(0);
-  expect((await saved(page, PRACTICE_KEY)).bridges.every((b) => b === 0)).toBe(true);
+  expect((await saved(page, PLAY_KEY)).bridges.every((b) => b === 0)).toBe(true);
 
   // Half of the solution, then a reload: the game is still there
   const half = solution.map((s, e) => (e < solution.length / 2 ? s : 0));
-  await build(page, PRACTICE_KEY, game.puzzle, half);
-  const before = await saved(page, PRACTICE_KEY);
+  await build(page, PLAY_KEY, game.puzzle, half);
+  const before = await saved(page, PLAY_KEY);
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');
   await expect.poll(() => layout(page)).toBe(layoutOf(game.puzzle));
   await expect(bridges(page)).toHaveCount(half.filter((b) => b > 0).length);
-  expect((await saved(page, PRACTICE_KEY)).bridges).toEqual(before.bridges);
+  expect((await saved(page, PLAY_KEY)).bridges).toEqual(before.bridges);
 
   // The rest, and every island is done
-  await build(page, PRACTICE_KEY, game.puzzle, solution);
+  await build(page, PLAY_KEY, game.puzzle, solution);
   await expect(wonHeading(page)).toBeVisible();
   await expect(board(page).locator('g.island:not(.done)')).toHaveCount(0);
   await expect(
     page.getByText(`${game.puzzle.islands.length} / ${game.puzzle.islands.length}`),
   ).toBeVisible();
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).status).toBe('Won');
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).status).toBe('Won');
 
   // A won game stays won
   await page.reload();
@@ -149,7 +149,7 @@ test('play a puzzle from the first bridge to the win screen', async ({ page }) =
   await expect(wonHeading(page)).toBeVisible();
   await page.getByRole('button', { name: 'Next puzzle' }).click();
   await expect(wonHeading(page)).toBeHidden();
-  await expect.poll(async () => (await saved(page, PRACTICE_KEY)).status).toBe('Playing');
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).status).toBe('Playing');
 });
 
 /** `layout` of a puzzle, without the page. */
@@ -171,8 +171,8 @@ test.describe('on a phone', () => {
 
   test('solve a puzzle by tapping', async ({ page }) => {
     await newPuzzle(page, 'Easy');
-    const game = await saved(page, PRACTICE_KEY);
-    await build(page, PRACTICE_KEY, game.puzzle, game.solution!, true);
+    const game = await saved(page, PLAY_KEY);
+    await build(page, PLAY_KEY, game.puzzle, game.solution!, true);
     await expect(wonHeading(page)).toBeVisible();
     await expect(board(page).locator('g.island:not(.done)')).toHaveCount(0);
   });
@@ -195,8 +195,8 @@ test.describe('on a phone, the last tap', () => {
   // screen under the finger: its buttons got the click
   test("doesn't press the win screen's buttons", async ({ page, context }) => {
     // Where the win screen's first button is, on the board
-    await seedGame(page, PRACTICE_KEY, wonLadder);
-    await visit(page, '/practice');
+    await seedGame(page, PLAY_KEY, wonLadder);
+    await visit(page, '/play');
     const next = page.getByRole('button', { name: /^Next puzzle/ });
     const box = (await next.boundingBox())!;
     const target = await toBoard(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
@@ -210,8 +210,8 @@ test.describe('on a phone, the last tap', () => {
     // The same ladder without that row's bridge, built there with a tap
     const playing = await context.newPage();
     const bridges = LADDER_SOLUTION.map((b, e) => (e === ladderRow(row) ? 0 : b));
-    await seedGame(playing, PRACTICE_KEY, { ...wonLadder, bridges, status: 'Playing', moves: 8 });
-    await visit(playing, '/practice');
+    await seedGame(playing, PLAY_KEY, { ...wonLadder, bridges, status: 'Playing', moves: 8 });
+    await visit(playing, '/play');
     await playing.evaluate(() => {
       const w = window as unknown as { clicked: string[] };
       w.clicked = [];
@@ -232,15 +232,15 @@ test.describe('on a phone, the last tap', () => {
       ),
     ).toEqual([]);
     await expect(wonHeading(playing)).toBeVisible();
-    expect((await saved(playing, PRACTICE_KEY)).status).toBe('Won');
+    expect((await saved(playing, PLAY_KEY)).status).toBe('Won');
     await playing.close();
   });
 });
 
 test.describe('copying the result', () => {
   test('without the permission says so', async ({ page }) => {
-    await seedGame(page, PRACTICE_KEY, wonLadder);
-    await visit(page, '/practice');
+    await seedGame(page, PLAY_KEY, wonLadder);
+    await visit(page, '/play');
     await page.getByRole('button', { name: 'Copy' }).click();
     await expect(page.getByText("Couldn't copy to the clipboard.")).toBeVisible();
     await expect(page.getByText('Result copied to the clipboard.')).toHaveCount(0);
@@ -248,12 +248,56 @@ test.describe('copying the result', () => {
 
   test('with the permission copies it', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await seedGame(page, PRACTICE_KEY, wonLadder);
-    await visit(page, '/practice');
+    await seedGame(page, PLAY_KEY, wonLadder);
+    await visit(page, '/play');
     await page.getByRole('button', { name: 'Copy' }).click();
     await expect(page.getByText('Result copied to the clipboard.')).toBeVisible();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
       /^🌉 Hashi · Your own puzzle ·/,
     );
+  });
+});
+
+// Play was called Practice: its old address, in every language, stays a link to it
+test.describe("Play's old address", () => {
+  test('redirects for good on the server, with the query', async ({ page, request }) => {
+    for (const [from, to] of [
+      ['/practice', '/play'],
+      ['/practice?size=9', '/play?size=9'],
+      ['/de/practice', '/de/play'],
+      ['/zh-Hant/practice/?size=9', '/zh-Hant/play?size=9'],
+    ] as const) {
+      const res = await request.get(from, { maxRedirects: 0 });
+      expect(res.status(), from).toBe(301);
+      expect(res.headers().location, from).toBe(to);
+    }
+    await visit(page, '/ja/practice?size=9');
+    await expect(page).toHaveURL(/\/ja\/play\?size=9$/);
+    await expect(board(page).locator('g.island').first()).toBeVisible();
+  });
+
+  test('leads to Play in the router of a page, from a link of an older build', async ({ page }) => {
+    await visit(page, '/rules');
+    await page.evaluate(() => {
+      const link = Object.assign(document.createElement('a'), {
+        href: '/practice?size=9',
+        id: 'old-link',
+        textContent: 'Practice',
+      });
+      document.querySelector('main')!.append(link);
+      Object.assign(window, { sameDocument: true });
+    });
+    await page.locator('#old-link').click();
+    await expect(page).toHaveURL(/\/play\?size=9$/);
+    await expect(board(page).locator('g.island').first()).toBeVisible();
+    // The router's, not a page load
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { sameDocument?: boolean }).sameDocument === true,
+      ),
+    ).toBe(true);
+    // In place of the old address: back is the page before it
+    await page.goBack();
+    await expect(page).toHaveURL(/\/rules$/);
   });
 });

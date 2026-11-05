@@ -30,7 +30,7 @@
     "revealed_text": "Deze telt niet mee voor de ranking. Tot morgen!",
     "rank": "Plek {{ rank }} van {{ total }} vandaag",
     "ranking": "Plek bepalen…",
-    "more": "Meer puzzels in de oefenmodus →",
+    "more": "Meer puzzels spelen →",
     "on_board": "Je staat in de ranglijst als <b>{{ name }}</b>.",
     "claim": "Claim je naam en houd je reeks op elk apparaat →",
     "points": "+{{ points }} punten in de maandrace"
@@ -76,9 +76,9 @@
     "next_q": "Wanneer is er een nieuwe puzzel van de dag?",
     "next_a": "Elke dag om middernacht UTC, overal ter wereld op hetzelfde moment. Een aftelklok op deze pagina laat zien hoe lang het nog duurt.",
     "more_q": "Waar kan ik meer spelen?",
-    "more_a": "Bij <practice>Oefenen</practice>: onbeperkt puzzels in vijf formaten, van 7×7 tot 24×24, met hints wanneer je wilt. Of bouw je eigen puzzels in de <workshop>werkplaats</workshop>.",
+    "more_a": "Bij <play>Spelen</play>: onbeperkt puzzels in vijf formaten, van 7×7 tot 24×24, met hints wanneer je wilt. Of bouw je eigen puzzels in de <workshop>werkplaats</workshop>.",
     "to_rules": "Hashiwokakero-regels en oplostips →",
-    "to_practice": "Oefenen: onbeperkt puzzels →"
+    "to_play": "Spelen: onbeperkt puzzels →"
   },
   "recovery": {
     "metadata_error": "De puzzel van vandaag kon niet worden geladen. Probeer opnieuw.",

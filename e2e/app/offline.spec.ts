@@ -1,5 +1,5 @@
-// The app without a network: practice runs on the phone, through the app's Tauri commands
-// (src/api/practice.rs, app/src-tauri), and the pages that need the server say so calmly. A fake
+// The app without a network: Play runs on the phone, through the app's Tauri commands
+// (src/api/compute.rs, app/src-tauri), and the pages that need the server say so calmly. A fake
 // `window.__TAURI_INTERNALS__` stands in for Tauri: it records the commands and answers them
 // with fixed puzzles. Every server function call fails, as without a network.
 import type { Page } from '@playwright/test';
@@ -86,10 +86,10 @@ function withoutNetworkErrors(problems: string[]) {
   problems.splice(0, problems.length, ...rest);
 }
 
-test('practice generates, hints and checks on the phone', async ({ page, problems }) => {
+test('Play generates, hints and checks on the phone', async ({ page, problems }) => {
   await fakeTauri(page);
   const api = await offline(page);
-  await visit(page, '/practice');
+  await visit(page, '/play');
   await expect(board(page).locator('g.island')).toHaveCount(LADDER.islands.length);
 
   // The seed reaches the phone whole: the JSON is sent as text, not as a JavaScript number
@@ -173,7 +173,7 @@ test('pages that need the server say once that the app is offline', async ({ pag
   await offline(page);
   // The ranks make several calls at once, all of them fail
   await visit(page, '/ranks');
-  const notice = toasts(page).filter({ hasText: "You're offline. Practice still works." });
+  const notice = toasts(page).filter({ hasText: "You're offline. Play still works." });
   await expect(notice).toHaveCount(1);
   await expect(errorToasts(page)).toHaveCount(0);
   // Not again on the next page while offline, once it went away

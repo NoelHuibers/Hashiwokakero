@@ -6,7 +6,7 @@ this file is updated as they land.
 ## Decisions
 
 - **Tauri 2.** The app bundles a client-side rendered (CSR) build of the same Leptos UI
-  and runs `backend` natively for offline practice. One UI, one language, no second
+  and runs `backend` natively for offline Play. One UI, one language, no second
   code base to keep in sync.
 - **Application ID `rs.hashi`** (Android `applicationId`, iOS bundle id). Fixed once the
   first build is uploaded to a store. Play only accepts IDs with at least one dot,
@@ -14,7 +14,7 @@ this file is updated as they land.
 - **Android first.** Every build runs in CI: a debug APK on pull requests, and a
   signed App Bundle uploaded to Google Play from a tag. iOS follows with the same
   workflow on a macOS runner and TestFlight.
-- **Offline practice in the first release.** Generation, hints and checks of practice
+- **Offline Play (then called Practice) in the first release.** Generation, hints and checks of Play
   and created puzzles run on the phone. The daily, rankings, rivals and groups stay on
   the server, which keeps the daily's timing authoritative. The local solver is never
   used for today's daily.
@@ -36,7 +36,7 @@ common · backend · sat_solver · hashi_i18n        shared crates
         │                        │
    hashi (web)                app/ (Tauri 2)
    Axum + Leptos SSR,         WebView: Leptos CSR build of the same UI
-   hydrate in the browser     Rust: backend natively (offline practice)
+   hydrate in the browser     Rust: backend natively (offline Play)
         ▲                        │
         └──── HTTPS, /api/* ─────┘  bearer token, x-hashi-app version
 ```
@@ -111,13 +111,14 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
   icons follow the page's theme. The page ends above the soft keyboard. On iOS the swipe from the
   screen's edge goes back in the page's history.
 - App Links (Android) and Universal Links (iOS): links to the pages people share (an invite
-  `/g/<code>`, the daily, practice, groups, players, in every language) open in the app where it
+  `/g/<code>`, the daily, Play, groups, players, in every language) open in the app where it
   is installed, on their page (tauri-plugin-deep-link). The site names the app:
   `/.well-known/assetlinks.json` its certificates (`HASHI_ANDROID_CERT_SHA256`),
   `/.well-known/apple-app-site-association` its app ID (`HASHI_IOS_APP_IDS`), both 404 without
   the setting. Android takes the paths from the installed app, iOS from the site's file: a path
   added to `seo::APP_LINK_PATHS`/`APP_LINK_PREFIXES` opens older iOS apps too, whose router
-  ignores it (they stay on their page). Add one only once the app that shows it is out.
+  ignores it (they stay on their page). Add one only once the app that shows it is out
+  (`seo::NOT_YET_ON_IOS` holds back such paths from the site's file: `/play` for now).
 
 ## Steps
 

@@ -309,7 +309,7 @@ impl Game {
     }
 }
 
-/// The daily puzzle, separate from the practice game so neither overwrites the other.
+/// The daily puzzle, separate from the game of Play so neither overwrites the other.
 #[derive(Clone, Copy, Debug)]
 pub struct DailyGame(pub Game);
 

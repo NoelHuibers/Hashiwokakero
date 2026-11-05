@@ -267,7 +267,7 @@ where
         .ok_or_else(|| ApiError::Internal.fail())
 }
 
-/// A puzzle of an earlier day, for practice.
+/// A puzzle of an earlier day, to play it again in Play.
 pub async fn archived(conn: &Connection, day: i64) -> Result<Option<Puzzle>, ServerFnError> {
     if day >= today() {
         return Err(ApiError::ArchiveOnlyPast.into());

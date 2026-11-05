@@ -2,8 +2,8 @@
 //! browser, see `../README.md`). Android and iOS start it through `run`, the desktop (for
 //! development only) through `main.rs`.
 //!
-//! The page calls the commands below for the offline practice instead of the server functions
-//! of the same names (`src/api/practice.rs` in the repository root), with the server functions'
+//! The page calls the commands below for the offline Play instead of the server functions
+//! of the same names (`src/api/compute.rs` in the repository root), with the server functions'
 //! JSON as text both ways (see `hashi_offline::json`). Only the main window may call them
 //! (`capabilities/default.json`, the permissions from `build.rs`).
 //!
