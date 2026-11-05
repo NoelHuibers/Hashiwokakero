@@ -11,7 +11,6 @@ use leptos_router::hooks::use_query_map;
 
 use crate::components::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::prefix;
 use crate::model::{DojoEntry, DojoPortfolio};
 
 use super::budgets::BudgetView;
@@ -231,7 +230,7 @@ pub(super) fn BoardViews(
             .map(|e| {
                 let chips = families.then(|| e.clone());
                 let id = e.id;
-                let href = move || format!("{}/dojo/{id}", prefix(i18n.get_locale()));
+                let href = move || super::solver_href(i18n.get_locale(), id);
                 let medal = match e.rank {
                     1 => "金",
                     2 => "銀",
@@ -528,7 +527,7 @@ mod tests {
             crate::app::provide_server_i18n();
             use_i18n().set_locale(Locale::en);
             // Links need a router, on the server with the request's URL
-            provide_context(leptos_router::location::RequestUrl::new("/dojo"));
+            provide_context(leptos_router::location::RequestUrl::new("/lab/leaderboard"));
             view! {
                 <leptos_router::components::Router>
                     <BoardViews entries=board portfolio=Some(portfolio) families=true />
@@ -538,8 +537,11 @@ mod tests {
         });
         assert_eq!(html.matches("role=\"tab\"").count(), 3, "{html}");
         assert!(html.contains("aria-selected=\"true\""));
-        assert!(html.contains("href=\"/dojo/1\""));
-        assert!(!html.contains("href=\"/dojo/2\""), "no link without a name");
+        assert!(html.contains("href=\"/lab/solver/1\""));
+        assert!(
+            !html.contains("href=\"/lab/solver/2\""),
+            "no link without a name"
+        );
         assert!(html.contains("Virtual best solver of 2 solvers: 8/10 solved, PAR-2 1.500"));
         assert!(html.contains("data-testid=\"cactus\""));
         assert!(!html.contains("budget-view"));
@@ -611,7 +613,7 @@ mod tests {
         let html = owner.with(|| {
             crate::app::provide_server_i18n();
             use_i18n().set_locale(Locale::en);
-            provide_context(leptos_router::location::RequestUrl::new("/dojo?budget=10"));
+            provide_context(leptos_router::location::RequestUrl::new("/lab/leaderboard?budget=10"));
             view! {
                 <leptos_router::components::Router>
                     <BoardViews entries=vec![first, second] portfolio=Some(portfolio) families=true />

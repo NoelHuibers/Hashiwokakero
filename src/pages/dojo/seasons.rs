@@ -3,15 +3,13 @@
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_router::components::A;
 
 use crate::api::load_dojo_seasons;
-use crate::components::layout::use_localized;
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
-use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::i18n::{t, td_string, use_i18n};
 use crate::lang::date_short;
 use crate::model::{DojoEntry, DojoPortfolio, DojoSeason, DojoSeasons, day_of};
-use crate::seo::{PageMeta, server_link, server_link_target};
+use crate::seo::{server_link, server_link_target};
 
 use super::benchmarks::PoolList;
 use super::guide::Code;
@@ -140,10 +138,10 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
     }
 }
 
+/// The Seasons tab of the Lab.
 #[component]
-pub fn DojoSeasonsPage() -> impl IntoView {
+pub fn SeasonsTab() -> impl IntoView {
     let i18n = use_i18n();
-    let back = use_localized("/dojo");
     let seasons = RwSignal::new(None::<DojoSeasons>);
     Effect::new(move |first: Option<()>| {
         if first.is_none() {
@@ -155,18 +153,11 @@ pub fn DojoSeasonsPage() -> impl IntoView {
         }
     });
     view! {
-        <PageMeta
-            title=Signal::derive(move || t_string!(i18n, dojo.seasons.meta_title).to_string())
-            description=Signal::derive(move || t_string!(i18n, dojo.seasons.meta_description).to_string())
-            path="/dojo/seasons"
-        />
-        <section class="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-6 sm:px-6">
-            <A href=back attr:class="text-sm text-primary hover:underline">
-                "← " {t!(i18n, dojo.seasons.back)}
-            </A>
+        <div class="flex max-w-4xl flex-col gap-6">
             <div class="flex flex-col gap-3">
-                <p class="font-pixel text-sm text-primary">"季 · kisetsu"</p>
-                <h1 class="text-4xl font-black">{t!(i18n, dojo.seasons.title)}</h1>
+                <h2 class="flex flex-wrap items-baseline gap-x-3 text-2xl font-black">
+                    {t!(i18n, dojo.seasons.title)} <span class="font-pixel text-sm text-primary">"季 · kisetsu"</span>
+                </h2>
                 <p class="max-w-3xl text-muted-foreground">{t!(i18n, dojo.seasons.intro)}</p>
             </div>
             {move || match seasons.get() {
@@ -228,6 +219,6 @@ pub fn DojoSeasonsPage() -> impl IntoView {
                     </p>
                 </CardContent>
             </Card>
-        </section>
+        </div>
     }
 }

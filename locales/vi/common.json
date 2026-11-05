@@ -99,6 +99,7 @@
   "solver": {
     "title": "Bộ giải SAT",
     "description": "Câu đố được mã hóa thành CNF và giải bằng các bộ giải tự viết của phòng lab SAT.",
+    "lab_link": "Cho các bộ giải đua trong lab",
     "solver": "Bộ giải",
     "own_cdcl": "CDCL tự viết",
     "own_dpll": "DPLL tự viết",

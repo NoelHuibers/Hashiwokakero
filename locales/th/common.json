@@ -99,6 +99,7 @@
   "solver": {
     "title": "ตัวแก้ SAT",
     "description": "ปริศนาถูกแปลงเป็น CNF แล้วแก้ด้วยตัวแก้ของเราเองจากแล็บ SAT",
+    "lab_link": "แข่งตัวแก้ในแล็บ",
     "solver": "ตัวแก้",
     "own_cdcl": "CDCL ของเรา",
     "own_dpll": "DPLL ของเรา",

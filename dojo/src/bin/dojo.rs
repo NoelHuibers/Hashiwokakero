@@ -7,7 +7,7 @@
 //!     on to four times the budget (--budget, the leaderboard's by default), the score counts
 //!     what happened within it and the end shows it at other budgets too. --seed takes
 //!     another seed, with --hidden for a hidden set like a season's (a past season's seed is
-//!     revealed on hashi.rs/dojo/seasons), --set an archived set as downloaded from there. UNSAT proofs are checked with drat-trim and
+//!     revealed on hashi.rs/lab/seasons), --set an archived set as downloaded from there. UNSAT proofs are checked with drat-trim and
 //!     cake_lpr when they are installed (DOJO_DRAT_TRIM and DOJO_CAKE_LPR, or the PATH), like
 //!     on the leaderboard, with the built-in checker otherwise; --checker insists on one.
 //!     --proofs keeps the proof files there (a directory per run) instead of a temp directory.

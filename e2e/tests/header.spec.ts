@@ -1,8 +1,9 @@
 // The header in every language: on a 320 px phone the logo and the help, language, settings
 // and account buttons share the screen, each big enough to tap; on a tablet the tab bar takes
-// the six links, from lg on they're in the header, from xl next to the player's name. A phone browser
-// makes the page as wide as its widest part and zooms out: whatever sticks out of a page pushes
-// the header's last button off the screen, so the pages are checked whole too.
+// five of the links (not the Lab's), from lg on all six are in the header, from xl next to the
+// player's name. A phone browser makes the page as wide as its widest part and zooms out:
+// whatever sticks out of a page pushes the header's last button off the screen, so the pages are
+// checked whole too.
 import type { Page } from '@playwright/test';
 
 import { register } from '../account.ts';
@@ -10,7 +11,7 @@ import { expect, newUsername, signIn, test, visit } from '../fixtures.ts';
 import { SEEDED_GROUP } from '../seed.ts';
 import { LOCALES, localized } from '../site.ts';
 
-/** The pages the tab bar leads to, a group, the account, the rules, the Dojo and the contact form. */
+/** The pages the navigation leads to, a group, the account, the rules, tabs of the Lab and the contact form. */
 const ALL = [
   '/',
   '/play',
@@ -21,7 +22,8 @@ const ALL = [
   '/lab',
   '/account',
   '/rules',
-  '/dojo',
+  '/lab/leaderboard',
+  '/lab/seasons',
   '/kontakt',
 ];
 const SOME = ['/', '/groups', '/ranks', '/account'];

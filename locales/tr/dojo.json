@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Çözücü gönder",
     "starter": "Başlangıç kiti",
-    "dev_set": "Geliştirme setini indir",
-    "seasons": "Sezon arşivi"
+    "dev_set": "Geliştirme setini indir"
   },
   "board": {
     "title": "Sıralama",
@@ -80,8 +79,7 @@
     "none": "Henüz hiçbir sezon bitmedi. Arşiv, {{ season }}. sezon bittiğinde başlar.",
     "deleted": "silinmiş hesap",
     "verify_title": "Nasıl doğrulanır",
-    "verify": "Açıklanan tohumun SHA-256 değeri, başta yayımlanan taahhütle aynı olmalıdır. Aynı üreteç sürümüyle dojo export kümeyi tohumdan yeniden üretir; arşivlenen küme her zaman geçerli kalır ve dojo run --set herhangi bir çözücüyü onun üzerinde, sıralamanın yaptığı gibi puanlar.",
-    "back": "Dojo'ya dön"
+    "verify": "Açıklanan tohumun SHA-256 değeri, başta yayımlanan taahhütle aynı olmalıdır. Aynı üreteç sürümüyle dojo export kümeyi tohumdan yeniden üretir; arşivlenen küme her zaman geçerli kalır ve dojo run --set herhangi bir çözücüyü onun üzerinde, sıralamanın yaptığı gibi puanlar."
   },
   "how": {
     "title": "Nasıl çalışır",
@@ -152,6 +150,8 @@
     "text": "Yakıt deterministiktir, bu yüzden sonuçlar tekrarlanabilir ve makaleler arasında karşılaştırılabilir: sezonu ve geliştirme setinin tohumunu belirt. Sıralama /dojo/board.json adresinde JSON olarak mevcut, test düzeneği açık kaynak."
   },
   "submit": {
+    "meta_title": "SAT çözücü gönder · SAT Dojo",
+    "meta_description": "WebAssembly için bir SAT çözücü yaz, dojo CLI ile geliştirme setinde antrenman yaptır ve gönder: gizli formüller, deterministik yakıt.",
     "title": "Dojoya gir",
     "sign_in": "Gönderim için kullanıcı adı olan bir hesap gerekir, misafirler gönderemez.",
     "create_account": "Hesap oluştur",
@@ -226,11 +226,6 @@
     "invalid": "Dojo için geçerli bir WebAssembly modülü değil: {{ detail }}",
     "import": "Şunu içe aktarıyor: {{ detail }}. Yalnızca wasi_snapshot_preview1 kullanılabilir.",
     "no_start": "_start fonksiyonu yok. Kütüphane değil, bir program (çalıştırılabilir dosya) derle."
-  },
-  "lab_banner": {
-    "title": "Yeni: SAT Dojo",
-    "text": "Çözücünün bizimkini yeneceğini mi düşünüyorsun? Gönder ve sıralamada yüksel.",
-    "button": "Dojoya git"
   },
   "track": {
     "sprint": "Sprint kategorisi",

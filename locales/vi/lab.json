@@ -5,6 +5,17 @@
   },
   "title": "Phòng lab bộ giải",
   "intro": "Cho một câu đố chạy đua qua các bộ giải CDCL và DPLL tự viết ở nhiều chế độ (heuristic phân nhánh, chiến lược khởi động lại, loại mệnh đề bao hàm) và so sánh với splr.",
+  "section": {
+    "intro": "Dành cho người viết bộ giải SAT: cho các bộ giải của chúng tôi đua trên một câu đố, hoặc biên dịch bộ giải của bạn sang WebAssembly và leo bảng xếp hạng Dojo SAT."
+  },
+  "tabs": {
+    "label": "Các mục của lab",
+    "race": "Đua",
+    "leaderboard": "Xếp hạng",
+    "submit": "Gửi bài",
+    "benchmarks": "Benchmark",
+    "seasons": "Mùa giải"
+  },
   "puzzle": {
     "title": "1 · Câu đố",
     "size": "{{ width }}×{{ height }}, {{ count }} đảo",

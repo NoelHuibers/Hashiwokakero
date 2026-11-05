@@ -4,13 +4,13 @@ import { expect, signIn, test, visit } from '../fixtures.ts';
 import { COMMUNITY_FAMILY, DOJO_SEASON } from '../seed.ts';
 
 test('the pool and its authors are credited', async ({ page }) => {
-  await visit(page, '/dojo');
+  await visit(page, '/lab/submit');
   const community = page.getByTestId('community-family');
   await expect(community).toContainText('Contributed by: aiko');
   await community.getByRole('link', { name: 'Bring your own benchmark' }).click();
-  await expect(page).toHaveURL(/\/dojo\/benchmarks$/);
+  await expect(page).toHaveURL(/\/lab\/benchmarks$/);
   await expect(
-    page.getByRole('heading', { name: 'Bring your own benchmark', level: 1 }),
+    page.getByRole('heading', { name: /^Bring your own benchmark/, level: 2 }),
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'What makes it in' })).toBeVisible();
   const pool = page.locator('#pool');
@@ -21,7 +21,7 @@ test('the pool and its authors are credited', async ({ page }) => {
     page.getByText("Submitting needs an account with a username, guests can't submit."),
   ).toBeVisible();
 
-  await visit(page, '/dojo/seasons');
+  await visit(page, '/lab/seasons');
   const archived = page.locator(`#season-${DOJO_SEASON - 1}`).getByTestId('season-community');
   await expect(archived).toContainText(COMMUNITY_FAMILY);
   await expect(archived).toContainText('by aiko');
@@ -29,7 +29,7 @@ test('the pool and its authors are credited', async ({ page }) => {
 
 test('a submitted benchmark waits for verification', async ({ page, context }) => {
   await signIn(context, 'kenji');
-  await visit(page, '/dojo/benchmarks');
+  await visit(page, '/lab/benchmarks');
   await expect(page.getByText(/^Benchmarks left today: \d+$/)).toBeVisible();
   // A formula of its own every run: the database is shared and duplicates are refused. Below
   // dojo::community::MAX_VARS (200,000), or it is refused as too large
@@ -42,7 +42,7 @@ test('a submitted benchmark waits for verification', async ({ page, context }) =
   await page.getByLabel('Family', { exact: true }).fill('e2e-units');
   await page.getByLabel(/^I made this formula/).check();
   await page.getByRole('button', { name: /^Submit benchmark/ }).click();
-  await expect(page).toHaveURL(/\/dojo\/benchmarks\?submitted=\d+#mine$/);
+  await expect(page).toHaveURL(/\/lab\/benchmarks\?submitted=\d+#mine$/);
   await expect(page.getByText('Thanks! Your benchmark is queued for verification.')).toBeVisible();
   const mine = page.getByTestId('my-benchmark').filter({ hasText: 'e2e-units' }).first();
   await expect(mine).toContainText('Waiting for verification');

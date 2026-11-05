@@ -219,7 +219,7 @@ pub fn PlayPage() -> impl IntoView {
                     <NewGameCard />
                     <LegendCard />
                     <SolverTools>
-                    <SolverPanel report=game.report busy=game.solving>
+                    <SolverPanel report=game.report busy=game.solving lab="/lab">
                         <PanelButton
                             primary=true
                             disabled=busy

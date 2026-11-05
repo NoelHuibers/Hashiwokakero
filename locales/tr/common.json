@@ -99,6 +99,7 @@
   "solver": {
     "title": "SAT çözücü",
     "description": "Bulmaca CNF olarak kodlanır ve SAT laboratuvarımızdaki kendi çözücülerimizle çözülür.",
+    "lab_link": "Laboratuvarda çözücüleri yarıştır",
     "solver": "Çözücü",
     "own_cdcl": "Kendi CDCL",
     "own_dpll": "Kendi DPLL",

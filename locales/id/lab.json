@@ -5,6 +5,17 @@
   },
   "title": "Lab solver",
   "intro": "Adu satu teka-teki di solver CDCL dan DPLL buatan kami dalam berbagai mode (heuristik percabangan, kebijakan restart, subsumsi) dan bandingkan dengan splr.",
+  "section": {
+    "intro": "Untuk kamu yang menulis solver SAT: adu solver kami di satu teka-teki, atau kompilasi solvermu ke WebAssembly dan naiki papan peringkat SAT Dojo."
+  },
+  "tabs": {
+    "label": "Bagian lab",
+    "race": "Lomba",
+    "leaderboard": "Peringkat",
+    "submit": "Kirim",
+    "benchmarks": "Benchmark",
+    "seasons": "Musim"
+  },
   "puzzle": {
     "title": "1 · Teka-teki",
     "size": "{{ width }}×{{ height }}, {{ count }} pulau",

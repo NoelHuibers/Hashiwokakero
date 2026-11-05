@@ -74,8 +74,8 @@ fn server_link_in(app: bool, path: &str) -> String {
 /// Play (`/play`, where Play's share text points; `/practice`, its old name, which the app
 /// redirects like the server, see [`MOVED_PAGES`]), and the list of groups. In every language,
 /// `/ja/play` too. The links people send each other, to pages that show what only the player's
-/// own session knows. Not the rest: the rules and the legal pages, the admin's, the Dojo with its
-/// uploads, and nothing the server answers itself (`/api`, `/og`, the downloads), which the app
+/// own session knows. Not the rest: the rules and the legal pages, the admin's, the Lab with the
+/// Dojo's uploads, and nothing the server answers itself (`/api`, `/og`, the downloads), which the app
 /// doesn't have. `plugins.deep-link.mobile` in `app/src-tauri/tauri.conf.json` lists them for
 /// Android, [`app_link_components`] for iOS (a test compares the three).
 pub const APP_LINK_PATHS: &[&str] = &["/", "/play", "/practice", "/groups"];
@@ -107,23 +107,54 @@ pub fn in_every_language(paths: &[&str]) -> Vec<String> {
         .collect()
 }
 
-/// Pages that moved, their old path and the new one, without the language prefix.
+/// Pages that moved, their old path and the new one, without the language prefix, as routes of
+/// the router: `:id` stands for a number, the same in both.
 ///
 /// Links to the old URLs are out there (shared, bookmarked, in search engines, in older apps):
 /// the server redirects them permanently (`server::router`), and so does the router of the page,
 /// for the app, which has no server in front of it, and for links within a page of an older
 /// build.
-pub const MOVED_PAGES: &[(&str, &str)] = &[("/practice", "/play")];
+///
+/// Practice is Play since 2026-11; the SAT Dojo's pages are tabs of the Lab since then too, its
+/// entries the Lab's solvers. Only the pages: the Dojo's files and endpoints (`/dojo/board.json`,
+/// `/dojo/submit`, the seasons' downloads, the worker's reports) stay where they are, the dojo CLI
+/// and the worker call them.
+pub const MOVED_PAGES: &[(&str, &str)] = &[
+    ("/practice", "/play"),
+    ("/dojo", "/lab/leaderboard"),
+    ("/dojo/seasons", "/lab/seasons"),
+    ("/dojo/benchmarks", "/lab/benchmarks"),
+    ("/dojo/:id", "/lab/solver/:id"),
+];
 
 /// Where the page `path` (in any language, without its query) moved to, in the same language:
-/// `/de/practice` -> `/de/play`. `None` for a page that didn't move.
+/// `/de/practice` -> `/de/play`, `/ja/dojo/12` -> `/ja/lab/solver/12`. `None` for a page that
+/// didn't move.
 pub fn moved_page(path: &str) -> Option<String> {
     let page = crate::lang::unlocalized(path);
-    let (_, to) = MOVED_PAGES.iter().find(|(from, _)| *from == page)?;
+    let to = MOVED_PAGES
+        .iter()
+        .find_map(|(from, to)| moved_to(from, to, &page))?;
     Some(localized(
         crate::lang::path_locale(path).unwrap_or_default(),
-        to,
+        &to,
     ))
+}
+
+/// `to` if `page` is the route `from`, with the number of its `:id` in place of the new one's.
+fn moved_to(from: &str, to: &str, page: &str) -> Option<String> {
+    let (mut route, mut segments) = (from.split('/'), page.split('/'));
+    let mut target = to.to_string();
+    loop {
+        match (route.next(), segments.next()) {
+            (None, None) => return Some(target),
+            (Some(":id"), Some(id)) if !id.is_empty() && id.bytes().all(|b| b.is_ascii_digit()) => {
+                target = to.replace(":id", id);
+            }
+            (Some(a), Some(b)) if a == b => {}
+            _ => return None,
+        }
+    }
 }
 
 /// The App Links as Apple wants them, the `components` of the site's
@@ -582,16 +613,19 @@ pub fn faq_ld(locale: Locale) -> String {
 }
 
 /// The pages in the sitemap with their change frequency and priority.
-const SITEMAP: [(&str, &str, &str); 9] = [
+///
+/// The Lab's tabs are pages of their own (`pages::lab::LabTab`), each with its canonical URL.
+const SITEMAP: [(&str, &str, &str); 10] = [
     ("/", "daily", "1.0"),
     ("/play", "monthly", "0.8"),
     ("/ranks", "daily", "0.7"),
     ("/rules", "monthly", "0.8"),
     ("/create", "monthly", "0.6"),
     ("/lab", "monthly", "0.5"),
-    ("/dojo", "daily", "0.7"),
-    ("/dojo/seasons", "monthly", "0.4"),
-    ("/dojo/benchmarks", "monthly", "0.4"),
+    ("/lab/leaderboard", "daily", "0.7"),
+    ("/lab/submit", "monthly", "0.5"),
+    ("/lab/benchmarks", "monthly", "0.4"),
+    ("/lab/seasons", "monthly", "0.4"),
 ];
 
 /// The pages that change with every day's daily, at midnight UTC: the daily itself (its board,
@@ -871,6 +905,9 @@ mod tests {
             ("/ja/admin", false),
             ("/dojo", false),
             ("/de/dojo", false),
+            ("/lab", false),
+            ("/lab/leaderboard", false),
+            ("/ja/lab/solver/12", false),
             ("/dojo/board.json", false),
             ("/dojo/seasons/3/set.tar.gz", false),
             ("/api/daily_today", false),
@@ -912,6 +949,15 @@ mod tests {
             ("/practice", "/play"),
             ("/de/practice", "/de/play"),
             ("/zh-Hant/practice", "/zh-Hant/play"),
+            // The Dojo's pages are the Lab's tabs, its entries the Lab's solvers
+            ("/dojo", "/lab/leaderboard"),
+            ("/ja/dojo", "/ja/lab/leaderboard"),
+            ("/dojo/seasons", "/lab/seasons"),
+            ("/de/dojo/seasons", "/de/lab/seasons"),
+            ("/dojo/benchmarks", "/lab/benchmarks"),
+            ("/zh-Hant/dojo/benchmarks", "/zh-Hant/lab/benchmarks"),
+            ("/dojo/12", "/lab/solver/12"),
+            ("/ar/dojo/9102", "/ar/lab/solver/9102"),
         ] {
             assert_eq!(moved_page(path).as_deref(), Some(target), "{path}");
         }
@@ -924,12 +970,38 @@ mod tests {
             "/Practice",
             "/xx/practice",
             "/groups/practice",
+            "/lab",
+            "/lab/leaderboard",
+            "/lab/solver/12",
+            "/dojox",
+            "/Dojo",
+            "/xx/dojo",
+            // Not a number: no entry's page
+            "/dojo/",
+            "/dojo/abc",
+            "/dojo/12x",
+            "/dojo/-1",
+            "/dojo/12/x",
+            // The Dojo's files and endpoints stay
+            "/dojo/board.json",
+            "/dojo/seasons.json",
+            "/dojo/seasons/3/set.tar.gz",
+            "/dojo/seasons/3/results.csv",
+            "/dojo/submit",
+            "/dojo/report",
+            "/dojo/benchmarks/submit",
+            "/dojo/benchmark-report",
+            "/dojo/set",
+            "/dojo/house",
         ] {
             assert_eq!(moved_page(path), None, "{path}");
         }
-        // Every new page is a page of the router (the sitemap's), every old one is no longer
+        // Every new page is a page of the router (the sitemap's, but the solvers' own pages,
+        // which aren't indexed), every old one is no longer
         for (from, to) in MOVED_PAGES {
-            assert!(SITEMAP.iter().any(|(path, ..)| path == to), "{to}");
+            if !to.contains(':') {
+                assert!(SITEMAP.iter().any(|(path, ..)| path == to), "{to}");
+            }
             assert!(!SITEMAP.iter().any(|(path, ..)| path == from), "{from}");
         }
     }
@@ -1135,6 +1207,23 @@ mod tests {
         }
         // Only pages search engines may index, under 50,000 URLs and 50 MB (one file is enough)
         assert!(!xml.contains("/player/") && !xml.contains("/account") && !xml.contains("/admin"));
+        // The Lab's tabs, not the Dojo's old addresses, and none of the solvers' pages
+        for tab in [
+            "/lab/leaderboard",
+            "/lab/submit",
+            "/lab/benchmarks",
+            "/lab/seasons",
+        ] {
+            assert!(
+                xml.contains(&format!("<loc>https://hashi.rs{tab}</loc>")),
+                "{tab}"
+            );
+            assert!(
+                xml.contains(&format!("<loc>https://hashi.rs/ja{tab}</loc>")),
+                "{tab}"
+            );
+        }
+        assert!(!xml.contains("/dojo") && !xml.contains("/lab/solver"));
         assert!(xml.len() < 50 * 1024 * 1024);
     }
 
@@ -1306,6 +1395,10 @@ mod tests {
                 (
                     td_string!(l, dojo.meta.title),
                     td_string!(l, dojo.meta.description),
+                ),
+                (
+                    td_string!(l, dojo.submit.meta_title),
+                    td_string!(l, dojo.submit.meta_description),
                 ),
                 (
                     td_string!(l, dojo.seasons.meta_title),

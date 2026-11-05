@@ -99,6 +99,7 @@
   "solver": {
     "title": "Solver SAT",
     "description": "El puzle se codifica en CNF y lo resuelven nuestros propios solvers del laboratorio SAT.",
+    "lab_link": "Carrera de solvers en el laboratorio",
     "solver": "Solver",
     "own_cdcl": "CDCL propio",
     "own_dpll": "DPLL propio",

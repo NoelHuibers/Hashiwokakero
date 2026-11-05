@@ -99,6 +99,7 @@
   "solver": {
     "title": "Solver SAT",
     "description": "Łamigłówka jest kodowana jako CNF i rozwiązywana przez nasze własne solvery z laboratorium SAT.",
+    "lab_link": "Wyścig solverów w laboratorium",
     "solver": "Solver",
     "own_cdcl": "Własny CDCL",
     "own_dpll": "Własny DPLL",

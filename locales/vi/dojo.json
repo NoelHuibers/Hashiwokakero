@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Gửi bộ giải",
     "starter": "Bộ khởi đầu",
-    "dev_set": "Tải tập dev",
-    "seasons": "Kho lưu trữ mùa giải"
+    "dev_set": "Tải tập dev"
   },
   "board": {
     "title": "Bảng xếp hạng",
@@ -80,8 +79,7 @@
     "none": "Chưa có mùa nào kết thúc. Kho lưu trữ bắt đầu khi mùa {{ season }} kết thúc.",
     "deleted": "tài khoản đã xóa",
     "verify_title": "Cách kiểm tra",
-    "verify": "SHA-256 của seed đã tiết lộ phải khớp với cam kết công bố lúc đầu. Với cùng phiên bản bộ sinh, dojo export tạo lại bộ công thức từ seed; bộ đã lưu trữ luôn còn hiệu lực, và dojo run --set chấm bất kỳ bộ giải nào trên đó đúng như bảng xếp hạng đã làm.",
-    "back": "Quay lại dojo"
+    "verify": "SHA-256 của seed đã tiết lộ phải khớp với cam kết công bố lúc đầu. Với cùng phiên bản bộ sinh, dojo export tạo lại bộ công thức từ seed; bộ đã lưu trữ luôn còn hiệu lực, và dojo run --set chấm bất kỳ bộ giải nào trên đó đúng như bảng xếp hạng đã làm."
   },
   "how": {
     "title": "Cách hoạt động",
@@ -152,6 +150,8 @@
     "text": "Fuel là tất định, nên kết quả tái lập được và so sánh được giữa các bài báo: hãy ghi rõ mùa và seed dev. Bảng xếp hạng có sẵn dạng JSON tại /dojo/board.json, bộ chấm (harness) là mã nguồn mở."
   },
   "submit": {
+    "meta_title": "Gửi bộ giải SAT · Dojo SAT",
+    "meta_description": "Viết bộ giải SAT cho WebAssembly, luyện trên tập dev với CLI dojo rồi gửi lên: chấm trên công thức ẩn bằng fuel tất định.",
     "title": "Bước vào dojo",
     "sign_in": "Cần tài khoản có tên người dùng để gửi, khách không gửi được.",
     "create_account": "Tạo tài khoản",
@@ -226,11 +226,6 @@
     "invalid": "Không phải mô-đun WebAssembly hợp lệ cho dojo: {{ detail }}",
     "import": "Tệp nhập {{ detail }}, nhưng chỉ có wasi_snapshot_preview1.",
     "no_start": "Không có hàm _start. Hãy build một chương trình (tệp thực thi), không phải thư viện."
-  },
-  "lab_banner": {
-    "title": "Mới: Dojo SAT",
-    "text": "Nghĩ bộ giải của bạn hơn của chúng tôi? Gửi lên và leo bảng xếp hạng.",
-    "button": "Đến dojo"
   },
   "track": {
     "sprint": "Hạng mục Nước rút",

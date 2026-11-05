@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Submit a solver",
     "starter": "Starter kit",
-    "dev_set": "Download the dev set",
-    "seasons": "Season archive"
+    "dev_set": "Download the dev set"
   },
   "board": {
     "title": "Leaderboard",
@@ -80,8 +79,7 @@
     "none": "No season has ended yet. The archive starts when season {{ season }} is over.",
     "deleted": "deleted account",
     "verify_title": "How to verify",
-    "verify": "The SHA-256 of the revealed seed has to match the commitment published at the start. With the same generator version, dojo export regenerates the set from the seed; the archived set stays valid for good, and dojo run --set scores any solver on it exactly like the leaderboard did.",
-    "back": "Back to the dojo"
+    "verify": "The SHA-256 of the revealed seed has to match the commitment published at the start. With the same generator version, dojo export regenerates the set from the seed; the archived set stays valid for good, and dojo run --set scores any solver on it exactly like the leaderboard did."
   },
   "how": {
     "title": "How it works",
@@ -152,6 +150,8 @@
     "text": "Fuel is deterministic, so results are reproducible and comparable between papers: name the season and the dev seed. The leaderboard is available as JSON at /dojo/board.json, the harness is open source."
   },
   "submit": {
+    "meta_title": "Submit a SAT solver · SAT Dojo",
+    "meta_description": "Build a SAT solver for WebAssembly, train it on the dev set with the dojo CLI and submit it: scored on hidden formulas with deterministic fuel.",
     "title": "Enter the dojo",
     "sign_in": "Submitting needs an account with a username, guests can't submit.",
     "create_account": "Create an account",
@@ -226,11 +226,6 @@
     "invalid": "Not a valid WebAssembly module for the dojo: {{ detail }}",
     "import": "It imports {{ detail }}, only wasi_snapshot_preview1 is available.",
     "no_start": "There is no _start function. Build a program (a binary), not a library."
-  },
-  "lab_banner": {
-    "title": "New: the SAT Dojo",
-    "text": "Think your solver beats ours? Submit it and climb the leaderboard.",
-    "button": "To the dojo"
   },
   "track": {
     "sprint": "Sprint track",

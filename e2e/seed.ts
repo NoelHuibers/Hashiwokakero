@@ -58,7 +58,7 @@ export const player = (name: string) => {
   return p;
 };
 
-/** A finished house entry of the SAT Dojo, for /dojo/:id. A second one, `Plain CDCL`, ranks
+/** A finished house entry of the SAT Dojo, for /lab/solver/:id. A second one, `Plain CDCL`, ranks
  * behind it. */
 export const DOJO_SUBMISSION = 1;
 

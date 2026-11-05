@@ -13,6 +13,7 @@ use crate::model::DojoMe;
 use crate::seo::SITE_URL;
 
 use super::names::{StateBadge, par2};
+use super::solver_href;
 
 const FIELD: &str = "flex w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 md:text-sm";
 
@@ -96,7 +97,7 @@ pub(super) fn SubmitCard(me: RwSignal<Option<DojoMe>>) -> impl IntoView {
                     }
                     Some(m) if cfg!(feature = "csr") => {
                         view! {
-                            <UploadOnWebsite path="/dojo" />
+                            <UploadOnWebsite path="/lab/submit" />
                             <MySubmissions me=m />
                         }
                             .into_any()
@@ -163,11 +164,16 @@ pub(super) fn SubmitCard(me: RwSignal<Option<DojoMe>>) -> impl IntoView {
     }
 }
 
+/// The visitor's submissions, each a link to its page; under the form, and on the leaderboard's
+/// tab without the line above them.
 #[component]
-fn MySubmissions(me: DojoMe) -> impl IntoView {
+pub(super) fn MySubmissions(
+    me: DojoMe,
+    #[prop(default = "border-t pt-4")] class: &'static str,
+) -> impl IntoView {
     let i18n = use_i18n();
     view! {
-        <div class="flex flex-col gap-2 border-t pt-4">
+        <div class=format!("flex flex-col gap-2 {class}")>
             <h3 class="text-sm font-bold uppercase tracking-wider text-muted-foreground">{t!(i18n, dojo.mine.title)}</h3>
             {if me.submissions.is_empty() {
                 view! { <p class="text-sm text-muted-foreground">{t!(i18n, dojo.mine.empty)}</p> }.into_any()
@@ -175,7 +181,7 @@ fn MySubmissions(me: DojoMe) -> impl IntoView {
                 me.submissions
                     .into_iter()
                     .map(|s| {
-                        let href = move || format!("{}/dojo/{}", prefix(i18n.get_locale()), s.id);
+                        let href = move || solver_href(i18n.get_locale(), s.id);
                         let disqualified = s.score.as_ref().is_some_and(|sc| sc.wrong > 0);
                         let summary = s.score.as_ref().map(|sc| format!("{}/{} · {}", sc.solved, sc.total, par2(sc)));
                         view! {
@@ -208,10 +214,10 @@ mod tests {
         let html = owner.with(|| {
             crate::app::provide_server_i18n();
             use_i18n().set_locale(Locale::de);
-            view! { <UploadOnWebsite path="/dojo/benchmarks" /> }.to_html()
+            view! { <UploadOnWebsite path="/lab/benchmarks" /> }.to_html()
         });
         assert!(
-            html.contains("href=\"https://hashi.rs/de/dojo/benchmarks\" target=\"_blank\""),
+            html.contains("href=\"https://hashi.rs/de/lab/benchmarks\" target=\"_blank\""),
             "{html}"
         );
         assert!(!html.contains("<form"));

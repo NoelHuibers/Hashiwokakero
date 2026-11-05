@@ -76,7 +76,8 @@ const PAGES = [
   '/play',
   '/create',
   '/lab',
-  '/dojo',
+  '/lab/leaderboard',
+  '/lab/submit',
   '/groups',
   '/daily',
 ];

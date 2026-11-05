@@ -99,6 +99,7 @@
   "solver": {
     "title": "Solver SAT",
     "description": "Teka-teki dikodekan sebagai CNF dan dipecahkan oleh solver buatan kami sendiri dari lab SAT.",
+    "lab_link": "Adu solver di lab",
     "solver": "Solver",
     "own_cdcl": "CDCL kami",
     "own_dpll": "DPLL kami",

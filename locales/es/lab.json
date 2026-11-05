@@ -5,6 +5,17 @@
   },
   "title": "Laboratorio de solvers",
   "intro": "Pon a competir un puzle en nuestros solvers CDCL y DPLL en distintos modos (heurísticas de ramificación, políticas de reinicio, subsunción) y compáralos con splr.",
+  "section": {
+    "intro": "Para quienes escriben solvers SAT: enfrenta los nuestros en un puzle o compila el tuyo a WebAssembly y sube en la clasificación del SAT Dojo."
+  },
+  "tabs": {
+    "label": "Secciones del laboratorio",
+    "race": "Carrera",
+    "leaderboard": "Clasificación",
+    "submit": "Enviar",
+    "benchmarks": "Benchmarks",
+    "seasons": "Temporadas"
+  },
   "puzzle": {
     "title": "1 · Puzle",
     "size": "{{ width }}×{{ height }}, {{ count }} islas",

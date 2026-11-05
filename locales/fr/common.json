@@ -99,6 +99,7 @@
   "solver": {
     "title": "Solveur SAT",
     "description": "La grille est encodée en CNF et résolue par nos propres solveurs, tout droit sortis du labo SAT.",
+    "lab_link": "Faire courir les solveurs au labo",
     "solver": "Solveur",
     "own_cdcl": "CDCL maison",
     "own_dpll": "DPLL maison",

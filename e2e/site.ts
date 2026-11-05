@@ -20,7 +20,7 @@ const replayDay = Math.floor(Date.now() / 86_400_000) - REPLAY_DAY_BACK;
 
 /** A seeded value for the parameters of every route that has some. */
 const PARAMS: Record<string, Record<string, number | string>> = {
-  '/dojo/:id': { id: DOJO_SUBMISSION },
+  '/lab/solver/:id': { id: DOJO_SUBMISSION },
   '/player/:id': { id: player('aiko').id },
   '/groups/:id': { id: SEEDED_GROUP.id },
   '/g/:code': { code: SEEDED_GROUP.invite },
@@ -33,8 +33,8 @@ const PARAMS: Record<string, Record<string, number | string>> = {
 };
 
 /**
- * Every page of the router, parameters filled in: `/`, `/play`, `/dojo/1`, ... Not the old
- * addresses of pages that moved (`MovedPage`, `/practice`), which redirect to one of them.
+ * Every page of the router, parameters filled in: `/`, `/play`, `/lab/solver/1`, ... Not the old
+ * addresses of pages that moved (`MovedPage`, `/practice`, `/dojo`), which redirect to one of them.
  */
 export const ROUTES: string[] = [
   ...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\) view=(\w+)/g),

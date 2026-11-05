@@ -13,7 +13,7 @@ in [deployment.md](deployment.md#search-engines).
   a disallowed API would leave the rendered daily empty. `http://` redirects to
   `https://` (Fly, `force_https`); `www.hashi.rs` has no DNS record, so there is
   no second host to consolidate.
-- **Sitemap**: `/sitemap.xml`, one file (180 URLs, far below the 50,000 URL and
+- **Sitemap**: `/sitemap.xml`, one file (200 URLs, far below the 50,000 URL and
   50 MB limits, so no sitemap index). Every indexable page in all 20 languages,
   each `<url>` with `xhtml:link` alternates for every language, itself among them,
   and `x-default`. No noindex page is in it. `<lastmod>` only on the pages that
@@ -24,8 +24,16 @@ in [deployment.md](deployment.md#search-engines).
 - **One URL per page**: every page has a self-referencing canonical link,
   `hreflang` alternates for all languages and `x-default` (the English URL without
   prefix). `/rules/` and `/en/rules` redirect permanently to `/rules`.
+- **Moved pages** (`seo::MOVED_PAGES`) answer 301 to their new URL in the same language,
+  with the query: `/practice` is `/play`, and since the Lab and the SAT Dojo became one
+  section (2026-11) `/dojo` is `/lab/leaderboard`, `/dojo/seasons` and `/dojo/benchmarks`
+  are `/lab/seasons` and `/lab/benchmarks`, an entry's `/dojo/<id>` is `/lab/solver/<id>`.
+  The old URLs aren't in the sitemap, the Dojo's files and endpoints (`/dojo/board.json`,
+  `/dojo/submit`, the seasons' downloads) stay where they are.
+- **The Lab's tabs** (race, leaderboard, submit, benchmarks, seasons) are a page each, with
+  its own title, description and canonical URL, all five in the sitemap.
 - **No index**: accounts, groups, invites, replays, players' pages, the Dojo's
-  entries, the admin page and the 404 page have `<meta name="robots"
+  entries (`/lab/solver/<id>`), the admin page and the 404 page have `<meta name="robots"
   content="noindex">` and no canonical link.
 - **Titles and descriptions**: per page and language, unique within a language,
   titles at most 60 and descriptions at most 160 characters (a test checks it,
@@ -116,7 +124,7 @@ answer 200 before you press "Verify".
    with name `@` (hashi.rs) and that value, then press Verify (it can take a few
    minutes to an hour to be seen). Keep the record afterwards, Google checks again
    from time to time. No setting on the site.
-2. Sitemaps: submit `https://hashi.rs/sitemap.xml`. Status "Success" with 180
+2. Sitemaps: submit `https://hashi.rs/sitemap.xml`. Status "Success" with 200
    discovered pages.
 3. URL inspection: "Request indexing" for `https://hashi.rs/`, `/rules`,
    `/play` and a few languages (`/de`, `/ja`, `/es`); the daily quota is small.

@@ -5,6 +5,17 @@
   },
   "title": "Solver lab",
   "intro": "Race one puzzle through our own CDCL and DPLL solvers in different modes (branching heuristics, restart policies, subsumption) and compare them to splr.",
+  "section": {
+    "intro": "For people who write SAT solvers: race ours against each other on a puzzle, or compile your own to WebAssembly and climb the SAT Dojo's leaderboard."
+  },
+  "tabs": {
+    "label": "Lab sections",
+    "race": "Race",
+    "leaderboard": "Leaderboard",
+    "submit": "Submit",
+    "benchmarks": "Benchmarks",
+    "seasons": "Seasons"
+  },
   "puzzle": {
     "title": "1 · Puzzle",
     "size": "{{ width }}×{{ height }}, {{ count }} islands",

@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Enviar un solver",
     "starter": "Kit de inicio",
-    "dev_set": "Descargar el conjunto de desarrollo",
-    "seasons": "Archivo de temporadas"
+    "dev_set": "Descargar el conjunto de desarrollo"
   },
   "board": {
     "title": "Clasificación",
@@ -80,8 +79,7 @@
     "none": "Aún no ha terminado ninguna temporada. El archivo empieza cuando acabe la temporada {{ season }}.",
     "deleted": "cuenta eliminada",
     "verify_title": "Cómo comprobarlo",
-    "verify": "El SHA-256 de la semilla revelada tiene que coincidir con el compromiso publicado al principio. Con la misma versión del generador, dojo export regenera el conjunto a partir de la semilla; el conjunto archivado sigue siendo válido para siempre, y dojo run --set puntúa cualquier solver en él exactamente como lo hizo la clasificación.",
-    "back": "Volver al dojo"
+    "verify": "El SHA-256 de la semilla revelada tiene que coincidir con el compromiso publicado al principio. Con la misma versión del generador, dojo export regenera el conjunto a partir de la semilla; el conjunto archivado sigue siendo válido para siempre, y dojo run --set puntúa cualquier solver en él exactamente como lo hizo la clasificación."
   },
   "how": {
     "title": "Cómo funciona",
@@ -152,6 +150,8 @@
     "text": "El combustible es determinista, así que los resultados son reproducibles y comparables entre artículos: indica la temporada y la semilla de desarrollo. La clasificación está disponible en JSON en /dojo/board.json, y el arnés de evaluación es de código abierto."
   },
   "submit": {
+    "meta_title": "Envía un solver SAT · SAT Dojo",
+    "meta_description": "Crea un solver SAT en WebAssembly, entrénalo con el conjunto de desarrollo y la CLI dojo, y envíalo: fórmulas secretas, combustible determinista.",
     "title": "Entra en el dojo",
     "sign_in": "Para enviar necesitas una cuenta con nombre de usuario; los invitados no pueden enviar.",
     "create_account": "Crear una cuenta",
@@ -226,11 +226,6 @@
     "invalid": "No es un módulo WebAssembly válido para el dojo: {{ detail }}",
     "import": "Importa {{ detail }}, solo está disponible wasi_snapshot_preview1.",
     "no_start": "No hay función _start. Compila un programa (un binario), no una biblioteca."
-  },
-  "lab_banner": {
-    "title": "Novedad: el SAT Dojo",
-    "text": "¿Crees que tu solver gana al nuestro? Envíalo y escala en la clasificación.",
-    "button": "Al dojo"
   },
   "track": {
     "sprint": "Modalidad Sprint",

@@ -99,6 +99,7 @@
   "solver": {
     "title": "SAT 求解器",
     "description": "谜题被编码为 CNF，由我们 SAT 求解实验室里的自研求解器求解。",
+    "lab_link": "在实验室让求解器比赛",
     "solver": "求解器",
     "own_cdcl": "自研 CDCL",
     "own_dpll": "自研 DPLL",

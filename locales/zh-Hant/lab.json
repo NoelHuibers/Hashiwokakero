@@ -5,6 +5,17 @@
   },
   "title": "求解器實驗室",
   "intro": "讓一道謎題以不同模式（分支啟發法、重新啟動策略、子句包含消去）跑過我們自製的 CDCL 和 DPLL 求解器，並與 splr 比較。",
+  "section": {
+    "intro": "為撰寫 SAT 求解器的人準備：讓我們的求解器在一道謎題上比賽，或把你自己的編譯成 WebAssembly，在 SAT道場的排行榜上攀升。"
+  },
+  "tabs": {
+    "label": "實驗室欄目",
+    "race": "比賽",
+    "leaderboard": "排行榜",
+    "submit": "提交",
+    "benchmarks": "基準",
+    "seasons": "賽季"
+  },
   "puzzle": {
     "title": "1 · 謎題",
     "size": "{{ width }}×{{ height }}，{{ count }} 座島",

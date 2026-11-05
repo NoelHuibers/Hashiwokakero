@@ -99,6 +99,7 @@
   "solver": {
     "title": "SAT 솔버",
     "description": "퍼즐을 CNF로 인코딩하고 SAT 실험실의 자체 솔버로 풀어요.",
+    "lab_link": "실험실에서 솔버 경주시키기",
     "solver": "솔버",
     "own_cdcl": "자체 CDCL",
     "own_dpll": "자체 DPLL",

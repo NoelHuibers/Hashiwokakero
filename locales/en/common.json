@@ -99,6 +99,7 @@
   "solver": {
     "title": "SAT Solver",
     "description": "The puzzle is encoded as CNF and solved by our own solvers from the SAT solving lab.",
+    "lab_link": "Race solvers in the Lab",
     "solver": "Solver",
     "own_cdcl": "Own CDCL",
     "own_dpll": "Own DPLL",

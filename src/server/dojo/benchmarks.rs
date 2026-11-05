@@ -377,14 +377,14 @@ async fn submit_inner(
 }
 
 /// `POST /dojo/benchmarks/submit`, a multipart form (works without JavaScript). Redirects back to the
-/// page, with the new benchmark or an error code.
+/// page (the Lab's Benchmarks tab), with the new benchmark or an error code.
 pub async fn submit_handler(
     Extension(client): Extension<crate::server::ClientIdentity>,
     headers: HeaderMap,
     mut multipart: Multipart,
 ) -> Response {
     let Ok(admission) = IMPORT_REQUESTS.try_acquire() else {
-        return Redirect::to("/dojo/benchmarks?error=busy#submit").into_response();
+        return Redirect::to("/lab/benchmarks?error=busy#submit").into_response();
     };
     let mut form = BenchmarkForm::default();
     let mut gbd = String::new();
@@ -460,10 +460,10 @@ pub async fn submit_handler(
     .await;
     match result {
         Ok(id) => {
-            Redirect::to(&format!("{prefix}/dojo/benchmarks?submitted={id}#mine")).into_response()
+            Redirect::to(&format!("{prefix}/lab/benchmarks?submitted={id}#mine")).into_response()
         }
         Err(e) => Redirect::to(&format!(
-            "{prefix}/dojo/benchmarks?error={}#submit",
+            "{prefix}/lab/benchmarks?error={}#submit",
             e.code()
         ))
         .into_response(),

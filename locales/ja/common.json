@@ -99,6 +99,7 @@
   "solver": {
     "title": "SATソルバー",
     "description": "パズルをCNFに変換し、SATラボの自作ソルバーで解きます。",
+    "lab_link": "ラボでソルバーを競わせる",
     "solver": "ソルバー",
     "own_cdcl": "自作CDCL",
     "own_dpll": "自作DPLL",

@@ -17,7 +17,6 @@ use web_sys::{Element, KeyboardEvent, PointerEvent};
 
 use crate::components::ui::badge::{Badge, BadgeSize, BadgeVariant};
 use crate::i18n::{t, t_string, td_string, use_i18n};
-use crate::lang::prefix;
 use crate::model::{DojoBudgetCurve, DojoBudgets, DojoEntry};
 
 use super::cactus::{CONTEXT, LineKey, MARK, compact};
@@ -303,7 +302,7 @@ pub(super) fn BudgetView(
                 let entry = entries.with_value(|es| es.iter().find(|e| e.id == id).cloned());
                 let author = entry.as_ref().map(|e| e.author.clone()).unwrap_or_default();
                 let author = if author.is_empty() { t_string!(i18n, dojo.seasons.deleted).to_string() } else { author };
-                let href = move || format!("{}/dojo/{id}", prefix(i18n.get_locale()));
+                let href = move || super::solver_href(i18n.get_locale(), id);
                 let name = if curve.name.is_empty() {
                     view! { <span class="text-muted-foreground">"—"</span> }.into_any()
                 } else {
