@@ -283,8 +283,11 @@ mod tests {
         assert_eq!(Stamp::RiverCrew.achievement_id(), "stamp_river_crew");
         // The SAT Dojo's, now the sharing stamps: ids, points and type as they went live
         assert_eq!(
-            [Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei]
-                .map(|s| (s.achievement_id(), s.points(), s.steps())),
+            [Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei].map(|s| (
+                s.achievement_id(),
+                s.points(),
+                s.steps()
+            )),
             [
                 ("stamp_dojo", 15, None),
                 ("stamp_black_belt", 25, None),

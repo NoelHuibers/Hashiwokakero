@@ -571,7 +571,12 @@ async fn players_reached_earn_the_sharing_stamps_which_stay() {
     let mut solvers = Vec::new();
     let cases: [ReachedCase; 6] = [
         (0, &[], [(0, 1), (0, 10), (0, 25)], &[]),
-        (1, &[Stamp::Dojo], [(1, 1), (1, 10), (1, 25)], &[Stamp::Dojo]),
+        (
+            1,
+            &[Stamp::Dojo],
+            [(1, 1), (1, 10), (1, 25)],
+            &[Stamp::Dojo],
+        ),
         (9, &[Stamp::Dojo], [(1, 1), (9, 10), (9, 25)], &[]),
         (
             10,
@@ -585,7 +590,12 @@ async fn players_reached_earn_the_sharing_stamps_which_stay() {
             [(1, 1), (10, 10), (24, 25)],
             &[],
         ),
-        (25, &[Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei], [(1, 1), (10, 10), (25, 25)], &[Stamp::Sensei]),
+        (
+            25,
+            &[Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei],
+            [(1, 1), (10, 10), (25, 25)],
+            &[Stamp::Sensei],
+        ),
     ];
     for (reached, earned, progress, announced) in cases {
         // Solved through her link, by as many players

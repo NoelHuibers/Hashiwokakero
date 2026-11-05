@@ -12,8 +12,8 @@ use common::Puzzle;
 use super::fame::champion;
 use super::{from_json, json, today};
 use crate::model::{
-    ApiError, Daypart, MS_PER_DAY, MoveEvent, Record, Solve, Stamp, StampProgress, day_of, month_of,
-    summarize,
+    ApiError, Daypart, MS_PER_DAY, MoveEvent, Record, Solve, Stamp, StampProgress, day_of,
+    month_of, summarize,
 };
 use crate::server::db::db_err;
 use crate::server::now_ms;

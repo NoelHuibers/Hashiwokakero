@@ -962,10 +962,18 @@ mod tests {
                 &[Stamp::Dojo, Stamp::BlackBelt],
                 [(1, 1), (10, 10), (24, 25)],
             ),
-            (25, &[Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei], [(1, 1), (10, 10), (25, 25)]),
+            (
+                25,
+                &[Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei],
+                [(1, 1), (10, 10), (25, 25)],
+            ),
         ];
         for (reached, earned, progress) in cases {
-            assert_eq!(at(reached), (earned.to_vec(), progress.to_vec()), "{reached}");
+            assert_eq!(
+                at(reached),
+                (earned.to_vec(), progress.to_vec()),
+                "{reached}"
+            );
         }
         assert_eq!(
             (REACHED_DOJO, REACHED_BLACK_BELT, REACHED_SENSEI),
