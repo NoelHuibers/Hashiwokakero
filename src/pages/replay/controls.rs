@@ -471,6 +471,7 @@ mod tests {
                     puzzle: Some(puzzle),
                     lanes: vec![lane],
                     group_puzzle: None,
+                    race: None,
                 },
                 None,
             );

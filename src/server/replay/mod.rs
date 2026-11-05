@@ -246,6 +246,7 @@ async fn replay(
         puzzle: None,
         lanes: Vec::new(),
         group_puzzle: None,
+        race: None,
     };
     // The future can't be watched, and today only once it's over for the viewer
     if day > today || (day == today && !done(conn, viewer, day).await?) {

@@ -1,0 +1,83 @@
+{
+  "title": "Race",
+  "card": {
+    "text": "Race live tegen elkaar op dezelfde verse puzzel: open een lobby, de anderen doen mee, en 3, 2, 1, start!",
+    "difficulty": "Moeilijkheid",
+    "open": "Race openen",
+    "opening": "Openen…",
+    "lobby": "Race open · {{ count }} doen mee",
+    "running": "Race bezig · {{ count }} racen",
+    "join": "Meedoen",
+    "to_lobby": "Naar de lobby",
+    "watch": "Kijken",
+    "history": "Recente races",
+    "none": "Nog geen races. Open er een en daag de groep uit!",
+    "no_winner": "geen winnaar",
+    "players": "{{ count }} spelers"
+  },
+  "page": {
+    "missing": "Deze race is hier niet.",
+    "missing_hint": "De lobby is misschien verlopen of afgeblazen, of hij hoort bij een groep waar je niet in zit."
+  },
+  "lobby": {
+    "title": "Lobby",
+    "text": "Wie meedoet krijgt op hetzelfde moment dezelfde verse puzzel. De host start zodra er minstens twee meedoen.",
+    "host": "host",
+    "away": "weg",
+    "join": "Meedoen aan de race",
+    "leave": "Verlaten",
+    "cancel": "Afblazen",
+    "cancel_confirm": "De race afblazen? De lobby sluit voor iedereen erin.",
+    "start": "Starten",
+    "starting": "Puzzel wordt klaargemaakt…",
+    "need_more": "Wachten op nog minstens één speler…",
+    "waiting_host": "Wachten tot de host start…",
+    "expires": "De lobby sluit over {{ minutes }} min als niemand start.",
+    "share": "Lobbylink delen",
+    "share_text": "Race tegen me op Hashi! Kom naar de lobby in {{ group }}:"
+  },
+  "countdown": {
+    "ready": "Klaar",
+    "go": "Start!"
+  },
+  "play": {
+    "give_up": "Opgeven",
+    "give_up_confirm": "De race opgeven? Je krijgt geen plaats en ziet de oplossing zodra de race voorbij is.",
+    "loading": "De puzzel komt eraan…",
+    "time_left": "nog {{ minutes }} min"
+  },
+  "track": {
+    "title": "Voortgang",
+    "text": "Hoe ver iedereen is: het deel van de bruggen op hun bord. Niemand ziet de bruggen van een ander.",
+    "you": "jij"
+  },
+  "watch": {
+    "text": "Je kijkt mee: de race is tussen de deelnemers."
+  },
+  "done": {
+    "solved": "Klaar!",
+    "gave_up": "Je hebt opgegeven.",
+    "waiting": "Wachten tot de anderen klaar zijn…"
+  },
+  "results": {
+    "title": "Uitslag",
+    "flagged": "geen plaats",
+    "gave_up": "opgegeven",
+    "out": "niet klaar",
+    "rematch": "Revanche",
+    "rematch_join": "Meedoen aan de revanche",
+    "rematch_go": "Naar de revanche",
+    "replay": "Ieders zetten",
+    "stage": "Het bord van de race met de bruggen van {{ names }}"
+  },
+  "errors": {
+    "open": "Er is al een race open in deze groep: doe daar mee.",
+    "gone": "Deze race is er niet meer: de lobby is verlopen of afgeblazen.",
+    "started": "Deze race is al begonnen: je kunt meekijken.",
+    "host_only": "Alleen de host kan de race starten.",
+    "too_few": "Een race heeft minstens twee spelers nodig.",
+    "not_joined": "Je doet niet mee aan deze race.",
+    "not_running": "De race is niet bezig.",
+    "done": "Je bent klaar met deze race."
+  }
+}

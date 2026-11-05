@@ -34,7 +34,13 @@ impl HelpPenalties {
         if day < SCALED_HELP_DAY {
             return Self::default();
         }
-        let check_ms = match super::daily_difficulty(day) {
+        Self::of(super::daily_difficulty(day))
+    }
+
+    /// The daily's prices for a puzzle of `difficulty` (since [`SCALED_HELP_DAY`]), which races
+    /// pay too.
+    pub fn of(difficulty: Difficulty) -> Self {
+        let check_ms = match difficulty {
             Difficulty::Easy => 10_000,
             Difficulty::Medium => 15_000,
             Difficulty::Hard => 20_000,

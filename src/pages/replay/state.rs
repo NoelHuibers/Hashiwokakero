@@ -116,13 +116,7 @@ impl Theatre {
         });
         let finished = Memo::new(move |_| {
             let t = at.get();
-            data.with_value(|d| {
-                official_finish_order(
-                    &d.lanes,
-                    t,
-                    if d.group_puzzle.is_some() { 0 } else { d.day },
-                )
-            })
+            data.with_value(|d| official_finish_order(&d.lanes, t, d.scoring_day()))
         });
         Self {
             data,
@@ -341,6 +335,7 @@ mod tests {
                 lane(3, Vec::new()),
             ],
             group_puzzle: None,
+            race: None,
         }
     }
 

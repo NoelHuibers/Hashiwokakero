@@ -1,0 +1,83 @@
+{
+  "title": "競速",
+  "card": {
+    "text": "在同一道新題上即時比拼：開一個大廳，大家加入，然後 3、2、1，開始！",
+    "difficulty": "難度",
+    "open": "發起競速",
+    "opening": "正在發起…",
+    "lobby": "競速報名中 · 已有 {{ count }} 人加入",
+    "running": "競速進行中 · {{ count }} 人在比",
+    "join": "加入",
+    "to_lobby": "去大廳",
+    "watch": "觀戰",
+    "history": "最近的競速",
+    "none": "還沒有競速。發起一場，向群組下戰帖吧！",
+    "no_winner": "無人獲勝",
+    "players": "{{ count }} 位玩家"
+  },
+  "page": {
+    "missing": "這場競速不在這裡。",
+    "missing_hint": "大廳可能已過期或被取消，或者它屬於你沒有加入的群組。"
+  },
+  "lobby": {
+    "title": "大廳",
+    "text": "所有加入的人會在同一時刻拿到同一道新題。至少兩人加入後，由房主開始。",
+    "host": "房主",
+    "away": "離開",
+    "join": "加入競速",
+    "leave": "退出",
+    "cancel": "取消競速",
+    "cancel_confirm": "要取消競速嗎？大廳會對所有人關閉。",
+    "start": "開始",
+    "starting": "正在準備題目…",
+    "need_more": "正在等待至少再一位玩家…",
+    "waiting_host": "正在等待房主開始…",
+    "expires": "如果沒人開始，大廳將在 {{ minutes }} 分鐘後關閉。",
+    "share": "分享大廳連結",
+    "share_text": "來 Hashi 和我比一場！加入 {{ group }} 的大廳："
+  },
+  "countdown": {
+    "ready": "預備",
+    "go": "開始！"
+  },
+  "play": {
+    "give_up": "放棄",
+    "give_up_confirm": "要放棄這場競速嗎？你將沒有名次，競速結束後才能看到解答。",
+    "loading": "題目正在送達…",
+    "time_left": "剩餘 {{ minutes }} 分鐘"
+  },
+  "track": {
+    "title": "進度",
+    "text": "每個人的進度：盤面上已放的橋所佔的比例。誰也看不到別人的橋。",
+    "you": "你"
+  },
+  "watch": {
+    "text": "你正在觀戰：競速在參賽者之間進行。"
+  },
+  "done": {
+    "solved": "完成！",
+    "gave_up": "你已放棄。",
+    "waiting": "正在等待其他人完成…"
+  },
+  "results": {
+    "title": "結果",
+    "flagged": "無名次",
+    "gave_up": "已放棄",
+    "out": "未完成",
+    "rematch": "再戰",
+    "rematch_join": "加入再戰",
+    "rematch_go": "去再戰",
+    "replay": "每個人的步驟",
+    "stage": "帶有 {{ names }} 的橋的競速盤面"
+  },
+  "errors": {
+    "open": "這個群組已經有一場競速在進行：加入那一場吧。",
+    "gone": "這場競速已不存在：大廳已過期或被取消。",
+    "started": "這場競速已經開始：你可以觀戰。",
+    "host_only": "只有房主可以開始競速。",
+    "too_few": "競速至少需要兩位玩家。",
+    "not_joined": "你沒有參加這場競速。",
+    "not_running": "競速沒有在進行。",
+    "done": "你已經完成這場競速。"
+  }
+}

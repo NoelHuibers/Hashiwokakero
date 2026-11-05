@@ -372,6 +372,14 @@ fn error_text_in(app: bool, locale: Locale, error: &ServerFnError) -> String {
         ApiError::MailUnavailable => td_string!(locale, common.errors.mail_unavailable),
         ApiError::LinkExpired => td_string!(locale, common.errors.link_expired),
         ApiError::EmailTaken => td_string!(locale, common.errors.email_taken),
+        ApiError::RaceOpen => td_string!(locale, race.errors.open),
+        ApiError::RaceGone => td_string!(locale, race.errors.gone),
+        ApiError::RaceStarted => td_string!(locale, race.errors.started),
+        ApiError::RaceHostOnly => td_string!(locale, race.errors.host_only),
+        ApiError::RaceTooFew => td_string!(locale, race.errors.too_few),
+        ApiError::RaceNotJoined => td_string!(locale, race.errors.not_joined),
+        ApiError::RaceNotRunning => td_string!(locale, race.errors.not_running),
+        ApiError::RaceDone => td_string!(locale, race.errors.done),
     }
     .to_string()
 }

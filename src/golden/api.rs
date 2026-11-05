@@ -412,6 +412,37 @@ fn requests() -> Vec<Entry> {
             unique: true,
         }),
         entry(&api::PuzzleCnf { puzzle: puzzle() }),
+        // race
+        entry(&api::OpenGroupRace {
+            group: 2,
+            difficulty: Difficulty::Hard,
+        }),
+        entry(&api::LoadGroupRaces { group: 2 }),
+        entry(&api::PollGroupRace {
+            id: 6,
+            progress: Some(42),
+            puzzle: true,
+        }),
+        entry(&api::JoinGroupRace { id: 6 }),
+        entry(&api::LeaveGroupRace { id: 6 }),
+        entry(&api::StartGroupRace { id: 6 }),
+        entry(&api::GroupRaceHint {
+            id: 6,
+            bridges: vec![2, 1, 0],
+        }),
+        entry(&api::GroupRaceCheck {
+            id: 6,
+            bridges: vec![2, 1, 0],
+        }),
+        entry(&api::GiveUpGroupRace { id: 6 }),
+        entry(&api::SubmitGroupRace {
+            id: 6,
+            bridges: vec![2, 1, 0],
+            moves: 12,
+            log: log(),
+        }),
+        entry(&api::RematchGroupRace { id: 6 }),
+        entry(&api::LoadRaceReplay { id: 6 }),
         // replay
         entry(&api::LoadReplay {
             group: Some(2),

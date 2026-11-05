@@ -1,0 +1,83 @@
+{
+  "title": "Corrida",
+  "card": {
+    "text": "Disputem ao vivo o mesmo quebra-cabeça novinho: abra uma sala, os outros entram e 3, 2, 1, já!",
+    "difficulty": "Dificuldade",
+    "open": "Abrir uma corrida",
+    "opening": "Abrindo…",
+    "lobby": "Corrida aberta · {{ count }} na sala",
+    "running": "Corrida em andamento · {{ count }} correndo",
+    "join": "Entrar",
+    "to_lobby": "Para a sala",
+    "watch": "Assistir",
+    "history": "Corridas recentes",
+    "none": "Ainda não há corridas. Abra uma e desafie o grupo!",
+    "no_winner": "sem vencedor",
+    "players": "{{ count }} jogadores"
+  },
+  "page": {
+    "missing": "Esta corrida não está aqui.",
+    "missing_hint": "A sala pode ter expirado ou sido cancelada, ou é de um grupo do qual você não faz parte."
+  },
+  "lobby": {
+    "title": "Sala",
+    "text": "Quem entra recebe o mesmo quebra-cabeça novo no mesmo momento. O anfitrião começa quando houver pelo menos dois.",
+    "host": "anfitrião",
+    "away": "ausente",
+    "join": "Entrar na corrida",
+    "leave": "Sair",
+    "cancel": "Cancelar a corrida",
+    "cancel_confirm": "Cancelar a corrida? A sala fecha para todos.",
+    "start": "Começar",
+    "starting": "Preparando o quebra-cabeça…",
+    "need_more": "Esperando pelo menos mais uma pessoa…",
+    "waiting_host": "Esperando o anfitrião começar…",
+    "expires": "A sala fecha em {{ minutes }} min se ninguém começar.",
+    "share": "Compartilhar o link da sala",
+    "share_text": "Corra comigo no Hashi! Entre na sala em {{ group }}:"
+  },
+  "countdown": {
+    "ready": "Preparar",
+    "go": "Já!"
+  },
+  "play": {
+    "give_up": "Desistir",
+    "give_up_confirm": "Desistir da corrida? Você fica sem posição e vê a solução quando a corrida acabar.",
+    "loading": "O quebra-cabeça está a caminho…",
+    "time_left": "faltam {{ minutes }} min"
+  },
+  "track": {
+    "title": "Progresso",
+    "text": "Até onde cada um chegou: a parte das pontes no tabuleiro. Ninguém vê as pontes dos outros.",
+    "you": "você"
+  },
+  "watch": {
+    "text": "Você está assistindo: a corrida é entre os participantes."
+  },
+  "done": {
+    "solved": "Concluído!",
+    "gave_up": "Você desistiu.",
+    "waiting": "Esperando os outros terminarem…"
+  },
+  "results": {
+    "title": "Resultados",
+    "flagged": "sem posição",
+    "gave_up": "desistiu",
+    "out": "não terminou",
+    "rematch": "Revanche",
+    "rematch_join": "Entrar na revanche",
+    "rematch_go": "Para a revanche",
+    "replay": "As jogadas de todos",
+    "stage": "O tabuleiro da corrida com as pontes de {{ names }}"
+  },
+  "errors": {
+    "open": "Já há uma corrida aberta neste grupo: entre nela.",
+    "gone": "Esta corrida não existe mais: a sala expirou ou foi cancelada.",
+    "started": "Esta corrida já começou: você pode assistir.",
+    "host_only": "Só o anfitrião pode começar a corrida.",
+    "too_few": "Uma corrida precisa de pelo menos dois jogadores.",
+    "not_joined": "Você não está nesta corrida.",
+    "not_running": "A corrida não está em andamento.",
+    "done": "Você já terminou esta corrida."
+  }
+}

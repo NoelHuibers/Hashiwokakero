@@ -16,6 +16,7 @@ pub mod join;
 pub mod kadai;
 pub mod list;
 pub mod members;
+pub mod race;
 pub mod replay;
 pub mod river;
 pub mod today;
@@ -43,6 +44,7 @@ use hanko::HankoCard;
 use kadai::KadaiCard;
 use list::GroupList;
 use members::MembersCard;
+use race::RaceCard;
 use replay::ReplayCard;
 use river::RiverCard;
 use today::TodayCard;
@@ -247,6 +249,7 @@ fn GroupView(group: GroupContext) -> impl IntoView {
             <div class="flex min-w-0 flex-col gap-6">
                 <TodayCard group />
                 <HankoCard group />
+                <RaceCard group />
                 <KadaiCard group />
                 <ReplayCard group />
                 <WeekCard group />

@@ -1,0 +1,83 @@
+{
+  "title": "Carrera",
+  "card": {
+    "text": "Competid en directo con el mismo puzle recién hecho: abre una sala, los demás se unen y ¡3, 2, 1, ya!",
+    "difficulty": "Dificultad",
+    "open": "Abrir una carrera",
+    "opening": "Abriendo…",
+    "lobby": "Carrera abierta · {{ count }} dentro",
+    "running": "Carrera en marcha · {{ count }} compitiendo",
+    "join": "Unirse",
+    "to_lobby": "A la sala",
+    "watch": "Mirar",
+    "history": "Carreras recientes",
+    "none": "Aún no hay carreras. ¡Abre una y reta al grupo!",
+    "no_winner": "sin ganador",
+    "players": "{{ count }} jugadores"
+  },
+  "page": {
+    "missing": "Esta carrera no está aquí.",
+    "missing_hint": "Puede que la sala haya caducado o se haya cancelado, o que sea de un grupo en el que no estás."
+  },
+  "lobby": {
+    "title": "Sala",
+    "text": "Todos los que se unen reciben el mismo puzle nuevo en el mismo momento. El anfitrión empieza cuando hay al menos dos.",
+    "host": "anfitrión",
+    "away": "ausente",
+    "join": "Unirse a la carrera",
+    "leave": "Salir",
+    "cancel": "Cancelar la carrera",
+    "cancel_confirm": "¿Cancelar la carrera? La sala se cierra para todos.",
+    "start": "Empezar",
+    "starting": "Preparando el puzle…",
+    "need_more": "Esperando al menos a una persona más…",
+    "waiting_host": "Esperando a que el anfitrión empiece…",
+    "expires": "La sala se cierra en {{ minutes }} min si nadie empieza.",
+    "share": "Compartir el enlace de la sala",
+    "share_text": "¡Compite conmigo en Hashi! Únete a la sala en {{ group }}:"
+  },
+  "countdown": {
+    "ready": "Listos",
+    "go": "¡Ya!"
+  },
+  "play": {
+    "give_up": "Rendirse",
+    "give_up_confirm": "¿Rendirte? No tendrás puesto y verás la solución cuando termine la carrera.",
+    "loading": "El puzle está en camino…",
+    "time_left": "quedan {{ minutes }} min"
+  },
+  "track": {
+    "title": "Progreso",
+    "text": "Cómo va cada uno: la parte de los puentes en su tablero. Nadie ve los puentes de los demás.",
+    "you": "tú"
+  },
+  "watch": {
+    "text": "Estás mirando: la carrera es entre los participantes."
+  },
+  "done": {
+    "solved": "¡Terminado!",
+    "gave_up": "Te has rendido.",
+    "waiting": "Esperando a que terminen los demás…"
+  },
+  "results": {
+    "title": "Resultados",
+    "flagged": "sin puesto",
+    "gave_up": "se rindió",
+    "out": "no terminó",
+    "rematch": "Revancha",
+    "rematch_join": "Unirse a la revancha",
+    "rematch_go": "A la revancha",
+    "replay": "Las jugadas de todos",
+    "stage": "El tablero de la carrera con los puentes de {{ names }}"
+  },
+  "errors": {
+    "open": "Ya hay una carrera abierta en este grupo: únete a esa.",
+    "gone": "Esta carrera ya no existe: la sala caducó o se canceló.",
+    "started": "Esta carrera ya ha empezado: puedes mirarla.",
+    "host_only": "Solo el anfitrión puede empezar la carrera.",
+    "too_few": "Una carrera necesita al menos dos jugadores.",
+    "not_joined": "No estás en esta carrera.",
+    "not_running": "La carrera no está en marcha.",
+    "done": "Ya has terminado esta carrera."
+  }
+}
