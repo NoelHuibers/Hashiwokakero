@@ -44,6 +44,17 @@ pub const fn share_score(time_ms: i64, hints: i64) -> i64 {
     time_ms + hints * HINT_PENALTY_MS
 }
 
+/// A time as Play's clock shows it, in whole seconds: `02:13`, `1:02:03` past the hour.
+pub fn share_clock(ms: i64) -> String {
+    let seconds = ms.max(0) / 1000;
+    let (h, m, s) = (seconds / 3600, seconds / 60 % 60, seconds % 60);
+    if h > 0 {
+        format!("{h}:{m:02}:{s:02}")
+    } else {
+        format!("{m:02}:{s:02}")
+    }
+}
+
 /// A solve of a shared puzzle as the page sends it: the solved board, the time on Play's clock,
 /// the moves and the hints.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -169,6 +180,14 @@ mod tests {
         let mut sorted = SHARE_ALPHABET.to_vec();
         sorted.dedup();
         assert_eq!(sorted.len(), SHARE_ALPHABET.len());
+    }
+
+    #[test]
+    fn times_read_like_plays_clock() {
+        assert_eq!(share_clock(133_999), "02:13");
+        assert_eq!(share_clock(0), "00:00");
+        assert_eq!(share_clock(3_723_000), "1:02:03");
+        assert_eq!(share_clock(-5), "00:00");
     }
 
     #[test]

@@ -11,6 +11,9 @@
 //! - `/og/<lang>.png`: the card of a language (`seo::og_image`)
 //! - `/og/daily/<date>/<lang>.png`: the card of a day's daily (`seo::og_daily_image`), the date
 //!   in the URL so link previews cached yesterday don't show yesterday's
+//! - `/og/p/<code>/<lang>.png`: the card of a shared puzzle (`seo::og_share_image`): its board
+//!   without bridges, its size and the sharer's time to beat, never the sharer's name (the
+//!   card is kept, a name could change or go)
 //! - `/og.png`: the English card, where links shared before these existed point
 
 mod board;
@@ -26,7 +29,7 @@ use axum::body::Bytes;
 use axum::extract::Path;
 use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
-use common::{Difficulty, GenerateParams};
+use common::{Difficulty, GenerateParams, Puzzle};
 use leptos_i18n::Locale as _;
 
 use self::card::{BoardArt, Card, Content};
@@ -35,7 +38,8 @@ use super::coalesce::Flights;
 use crate::i18n::{Locale, td_string};
 use crate::lang::{date_long, difficulty_name};
 use crate::model::{
-    LAUNCH_DAY, WEEKDAY_KANJI, daily_difficulty, daily_number, parse_date, weekday,
+    LAUNCH_DAY, WEEKDAY_KANJI, daily_difficulty, daily_number, is_share_code, parse_date,
+    share_clock, weekday,
 };
 
 /// The images of a language never change between deploys.
@@ -244,4 +248,111 @@ pub async fn daily_image(Path((date, file)): Path<(String, String)>) -> Response
 /// `GET /og.png`, where links shared before the images were made per language point.
 pub async fn legacy_image() -> Response {
     respond(Some(Image::Site(Locale::en)), SITE_CACHE).await
+}
+
+/// What the card of a shared puzzle shows: its board, and the sharer's time to beat (`None`:
+/// shared from the workshop, or the sharer is gone).
+#[derive(Clone, Debug)]
+pub struct SharedCard {
+    pub locale: Locale,
+    pub puzzle: Puzzle,
+    pub score_ms: Option<i64>,
+}
+
+/// The card of a shared puzzle: laid out like the daily's, the puzzle's own board without its
+/// bridges on the side.
+fn shared_card(shared: &SharedCard) -> Card {
+    let locale = shared.locale;
+    let (text_font, title_font) = families(locale);
+    let title = match shared.score_ms {
+        Some(ms) => td_string!(locale, shared.og.beat, time = share_clock(ms)),
+        None => td_string!(locale, shared.og.solve).to_string(),
+    };
+    let empty = vec![0; common::Board::new(shared.puzzle.clone()).edges.len()];
+    Card {
+        content: Content::Daily {
+            weekday_kanji: "共",
+            title,
+            date: td_string!(locale, shared.og.kicker).to_string(),
+            difficulty_kanji: "島",
+            // 島 and the count of islands: the kanji says what they are in every language
+            difficulty: shared.puzzle.islands.len().to_string(),
+            size: format!("{}×{}", shared.puzzle.width, shared.puzzle.height),
+            tagline: td_string!(locale, common.og.unique).to_string(),
+        },
+        rtl: locale == Locale::ar,
+        text_font,
+        title_font,
+        board: board::art(&shared.puzzle, &empty, &FONTS),
+    }
+}
+
+/// The card of a shared puzzle as PNG.
+pub fn render_shared(shared: &SharedCard) -> Result<Vec<u8>, String> {
+    card::render(&shared_card(shared), &FONTS)
+}
+
+/// The cards of shared puzzles drawn lately, by language and code. A link is shared in a few
+/// places at once, then rarely: at most [`SHARED_KEPT`], all of them dropped when full.
+static SHARED: LazyLock<Mutex<HashMap<(Locale, String), Bytes>>> = LazyLock::new(Mutex::default);
+const SHARED_KEPT: usize = 256;
+static SHARED_RENDERING: LazyLock<Flights<(Locale, String), Result<Bytes, StatusCode>>> =
+    LazyLock::new(|| Flights::new(64));
+/// A link's card changes with the sharer's time, which never changes (the first counts), or
+/// when they delete their account: a day.
+const SHARED_CACHE: &str = "public, max-age=86400";
+
+/// `GET /og/p/<code>/<lang>.png`
+pub async fn shared_image(Path((code, file)): Path<(String, String)>) -> Response {
+    let Some(locale) = locale_of(&file).filter(|_| is_share_code(&code)) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let key = (locale, code);
+    let kept = || SHARED.lock().ok().and_then(|c| c.get(&key).cloned());
+    let png = match kept() {
+        Some(png) => Ok(png),
+        None => {
+            let code = key.1.clone();
+            SHARED_RENDERING
+                .run(key.clone(), || async move {
+                    let conn = super::db::conn().map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?;
+                    let page = super::shares::page(&conn, &code, None)
+                        .await
+                        .map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?
+                        .ok_or(StatusCode::NOT_FOUND)?;
+                    let shared = SharedCard {
+                        locale,
+                        score_ms: page
+                            .sharer
+                            .and_then(|s| s.result)
+                            .map(|r| r.score_ms),
+                        puzzle: page.puzzle,
+                    };
+                    let png = Bytes::from(
+                        super::run_blocking(move || render_shared(&shared))
+                            .await
+                            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?,
+                    );
+                    if let Ok(mut cache) = SHARED.lock() {
+                        if cache.len() >= SHARED_KEPT {
+                            cache.clear();
+                        }
+                        cache.insert((locale, code), png.clone());
+                    }
+                    Ok(png)
+                })
+                .await
+        }
+    };
+    match png {
+        Ok(png) => (
+            [
+                (header::CONTENT_TYPE, "image/png"),
+                (header::CACHE_CONTROL, SHARED_CACHE),
+            ],
+            png,
+        )
+            .into_response(),
+        Err(status) => status.into_response(),
+    }
 }

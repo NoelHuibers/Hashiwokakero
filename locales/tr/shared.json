@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "{{ name }} adlı oyuncunun Hashi bulmacası",
+    "title_anonymous": "Paylaşılan bir Hashi bulmacası",
+    "time": "{{ name }} bu {{ size }} Hashiwokakero bulmacasını {{ time }} sürede çözdü. Daha hızlı olabilir misin? Ücretsiz, tarayıcıda.",
+    "untimed": "{{ name }} bu {{ size }} Hashiwokakero bulmacasını hazırladı. Çözebilir misin? Ücretsiz, tarayıcıda.",
+    "anonymous": "Tek çözümlü bir {{ size }} Hashiwokakero bulmacası. Çözebilir misin? Ücretsiz, tarayıcıda."
+  },
+  "page": {
+    "title": "{{ name }} adlı oyuncunun bulmacası",
+    "title_anonymous": "Paylaşılan bir bulmaca",
+    "by": "Paylaşan: {{ name }}",
+    "by_blocked": "Paylaşan: engellenmiş bir oyuncu",
+    "by_former": "Paylaşan: eski bir oyuncu",
+    "to_beat": "Geçilecek süre",
+    "untimed": "Atölyede hazırlandı: ilk süreyi sen belirle.",
+    "missing": "Bu bağlantı bir bulmacaya götürmüyor.",
+    "missing_hint": "Belki tamamı kopyalanmadı. Ya da yeni bir bulmaca oyna.",
+    "to_play": "Yeni bir bulmaca oyna",
+    "offline": "Paylaşılan bulmacalar sunucuda durur: bunun için internet gerekiyor.",
+    "offline_hint": "Bağlanıp yeniden dene. Bu arada yeni bulmacalar çevrimdışı da çalışır.",
+    "retry": "Yeniden dene",
+    "submit_failed": "Süren sunucuya ulaşmadı.",
+    "submit_retry": "Yeniden gönder"
+  },
+  "result": {
+    "title": "Çözüldü!",
+    "first": "Süren: <b>{{ time }}</b>, {{ total }} kişi içinde {{ rank }}. sıra.",
+    "again": "<b>{{ time }}</b> sürede yeniden çözdün. Yalnızca ilk çözümün sayılır: sıralamada <b>{{ first }}</b> kalır.",
+    "beat": "{{ name }} adlı oyuncuyu geçtin!",
+    "again_button": "Yeniden oyna"
+  },
+  "board": {
+    "title": "Çözen herkes",
+    "text": "En hızlılar önce, her ipucu 30 sn ekler. Yalnızca ilk çözüm sayılır.",
+    "empty": "Henüz kimse çözmedi. İlk sen ol!",
+    "sharer": "paylaştı",
+    "solvers": "Çözen: {{ count }}"
+  },
+  "share": {
+    "button": "Bu bulmacayı paylaş",
+    "making": "Bağlantı hazırlanıyor…",
+    "link": "Bulmacanın bağlantısı",
+    "time": "Bu Hashi bulmacasını {{ time }} sürede çözdüm. Beni geçebilir misin?",
+    "time_hints": "Bu Hashi bulmacasını {{ time }} sürede, {{ hints }} ipucuyla (her biri +30 sn) çözdüm. Beni geçebilir misin?",
+    "untimed": "Bu Hashi bulmacasını ben hazırladım. Çözebilir misin?",
+    "failed": "Bu sefer bağlantı yok: {{ error }}"
+  },
+  "create": {
+    "title": "Bağlantı olarak paylaş",
+    "text": "Bağlantıya sahip herkes oynayabilir. Kimin ne kadar hızlı çözdüğünü görürsün.",
+    "unchecked": "Çözücü tek bir çözümü olduğunu kanıtladığında paylaşabilirsin."
+  },
+  "og": {
+    "kicker": "Paylaşılan bir bulmaca",
+    "beat": "{{ time }} süresini geçebilir misin?",
+    "solve": "Çözebilir misin?"
+  }
+}

@@ -80,8 +80,9 @@ fn server_link_in(app: bool, path: &str) -> String {
 pub const APP_LINK_PATHS: &[&str] = &["/", "/practice", "/groups"];
 
 /// The paths whose pages below them open in the app, like [`APP_LINK_PATHS`]: invites to a group
-/// (`/g/<code>`), the pages of a group (its puzzles, its replays) and players' pages.
-pub const APP_LINK_PREFIXES: &[&str] = &["/g/", "/groups/", "/player/"];
+/// (`/g/<code>`), the pages of a group (its puzzles, its replays), players' pages and shared
+/// puzzles (`/p/<code>`).
+pub const APP_LINK_PREFIXES: &[&str] = &["/g/", "/groups/", "/player/", "/p/"];
 
 /// `paths` in every language of the site, the default's first: `/practice`, `/de/practice`, ...
 /// (`/` is `/de` in German).
@@ -321,6 +322,11 @@ pub fn og_daily_image(locale: Locale, day: i64) -> String {
         crate::model::date_string(day),
         locale.as_str()
     )
+}
+
+/// The preview image of a shared puzzle (`/p/<code>`), drawn with its board.
+pub fn og_share_image(locale: Locale, code: &str) -> String {
+    format!("{SITE_URL}/og/p/{code}/{}.png", locale.as_str())
 }
 
 /// Today's day number (UTC), as the server counts the dailies.
@@ -823,6 +829,9 @@ mod tests {
             ("/g/", true),
             ("/player/42", true),
             ("/ar/player/42", true),
+            ("/p/k7m2xq9a", true),
+            ("/ja/p/k7m2xq9a", true),
+            ("/p", false),
             // Only the root, the daily, not what is below it
             ("/rules", false),
             ("/de/rules", false),

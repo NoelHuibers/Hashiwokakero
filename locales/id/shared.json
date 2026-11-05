@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "Teka-teki Hashi dari {{ name }}",
+    "title_anonymous": "Teka-teki Hashi yang dibagikan",
+    "time": "{{ name }} menyelesaikan teka-teki Hashiwokakero {{ size }} ini dalam {{ time }}. Bisakah kamu lebih cepat? Gratis, di browser.",
+    "untimed": "{{ name }} membuat teka-teki Hashiwokakero {{ size }} ini. Bisakah kamu menyelesaikannya? Gratis, di browser.",
+    "anonymous": "Teka-teki Hashiwokakero {{ size }} dengan tepat satu solusi. Bisakah kamu menyelesaikannya? Gratis, di browser."
+  },
+  "page": {
+    "title": "Teka-teki dari {{ name }}",
+    "title_anonymous": "Teka-teki yang dibagikan",
+    "by": "Dibagikan oleh {{ name }}",
+    "by_blocked": "Dibagikan oleh pemain yang diblokir",
+    "by_former": "Dibagikan oleh mantan pemain",
+    "to_beat": "Waktu yang harus dikalahkan",
+    "untimed": "Dibuat di bengkel: jadilah yang pertama mencatat waktu.",
+    "missing": "Tautan ini tidak mengarah ke teka-teki.",
+    "missing_hint": "Mungkin tautannya tidak tersalin utuh. Atau mainkan teka-teki baru.",
+    "to_play": "Main teka-teki baru",
+    "offline": "Teka-teki yang dibagikan ada di server: yang ini butuh internet.",
+    "offline_hint": "Sambungkan lalu coba lagi. Sementara itu, teka-teki baru tetap bisa dimainkan offline.",
+    "retry": "Coba lagi",
+    "submit_failed": "Waktumu tidak sampai ke server.",
+    "submit_retry": "Kirim lagi"
+  },
+  "result": {
+    "title": "Selesai!",
+    "first": "Waktumu: <b>{{ time }}</b>, peringkat {{ rank }} dari {{ total }}.",
+    "again": "Selesai lagi dalam <b>{{ time }}</b>. Hanya percobaan pertama yang dihitung: <b>{{ first }}</b> tetap di papan.",
+    "beat": "Kamu mengalahkan {{ name }}!",
+    "again_button": "Main lagi"
+  },
+  "board": {
+    "title": "Semua yang menyelesaikannya",
+    "text": "Tercepat lebih dulu, tiap petunjuk menambah 30 dtk. Hanya percobaan pertama yang dihitung.",
+    "empty": "Belum ada yang menyelesaikannya. Jadilah yang pertama!",
+    "sharer": "membagikannya",
+    "solvers": "Diselesaikan: {{ count }}"
+  },
+  "share": {
+    "button": "Bagikan teka-teki ini",
+    "making": "Membuat tautan…",
+    "link": "Tautan ke teka-teki",
+    "time": "Aku menyelesaikan teka-teki Hashi ini dalam {{ time }}. Bisakah kamu mengalahkanku?",
+    "time_hints": "Aku menyelesaikan teka-teki Hashi ini dalam {{ time }} dengan {{ hints }} petunjuk (+30 dtk masing-masing). Bisakah kamu mengalahkanku?",
+    "untimed": "Aku membuat teka-teki Hashi ini. Bisakah kamu menyelesaikannya?",
+    "failed": "Kali ini tanpa tautan: {{ error }}"
+  },
+  "create": {
+    "title": "Bagikan sebagai tautan",
+    "text": "Siapa pun yang punya tautannya bisa memainkannya. Kamu bisa lihat siapa yang menyelesaikannya, dan seberapa cepat.",
+    "unchecked": "Setelah solver membuktikan teka-teki ini punya tepat satu solusi, kamu bisa membagikannya."
+  },
+  "og": {
+    "kicker": "Teka-teki yang dibagikan",
+    "beat": "Bisakah kamu mengalahkan {{ time }}?",
+    "solve": "Bisakah kamu menyelesaikannya?"
+  }
+}

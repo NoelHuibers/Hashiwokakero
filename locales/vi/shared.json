@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "Câu đố Hashi của {{ name }}",
+    "title_anonymous": "Một câu đố Hashi được chia sẻ",
+    "time": "{{ name }} đã giải câu đố Hashiwokakero {{ size }} này trong {{ time }}. Bạn có nhanh hơn không? Miễn phí, ngay trên trình duyệt.",
+    "untimed": "{{ name }} đã tạo câu đố Hashiwokakero {{ size }} này. Bạn giải được không? Miễn phí, ngay trên trình duyệt.",
+    "anonymous": "Một câu đố Hashiwokakero {{ size }} chỉ có đúng một lời giải. Bạn giải được không? Miễn phí, ngay trên trình duyệt."
+  },
+  "page": {
+    "title": "Câu đố của {{ name }}",
+    "title_anonymous": "Một câu đố được chia sẻ",
+    "by": "{{ name }} đã chia sẻ",
+    "by_blocked": "Một người chơi bị chặn đã chia sẻ",
+    "by_former": "Một người chơi cũ đã chia sẻ",
+    "to_beat": "Thời gian cần vượt",
+    "untimed": "Tạo trong xưởng: hãy là người đầu tiên lập thời gian.",
+    "missing": "Liên kết này không dẫn tới câu đố nào.",
+    "missing_hint": "Có thể nó chưa được sao chép đầy đủ. Hoặc chơi một câu đố mới.",
+    "to_play": "Chơi câu đố mới",
+    "offline": "Câu đố được chia sẻ nằm trên máy chủ: câu này cần có mạng.",
+    "offline_hint": "Hãy kết nối rồi thử lại. Trong lúc đó, câu đố mới vẫn chơi được khi ngoại tuyến.",
+    "retry": "Thử lại",
+    "submit_failed": "Thời gian của bạn chưa tới được máy chủ.",
+    "submit_retry": "Gửi lại"
+  },
+  "result": {
+    "title": "Đã giải!",
+    "first": "Thời gian của bạn: <b>{{ time }}</b>, hạng {{ rank }} trên {{ total }}.",
+    "again": "Đã giải lại trong <b>{{ time }}</b>. Chỉ lần đầu được tính: <b>{{ first }}</b> vẫn giữ trên bảng.",
+    "beat": "Bạn đã vượt {{ name }}!",
+    "again_button": "Chơi lại"
+  },
+  "board": {
+    "title": "Những người đã giải",
+    "text": "Nhanh nhất đứng đầu, mỗi gợi ý cộng 30 giây. Chỉ lần giải đầu tiên được tính.",
+    "empty": "Chưa ai giải được. Hãy là người đầu tiên!",
+    "sharer": "đã chia sẻ",
+    "solvers": "Số người giải: {{ count }}"
+  },
+  "share": {
+    "button": "Chia sẻ câu đố này",
+    "making": "Đang tạo liên kết…",
+    "link": "Liên kết tới câu đố",
+    "time": "Mình đã giải câu đố Hashi này trong {{ time }}. Bạn có vượt được mình không?",
+    "time_hints": "Mình đã giải câu đố Hashi này trong {{ time }} với {{ hints }} gợi ý (+30 giây mỗi cái). Bạn có vượt được mình không?",
+    "untimed": "Mình đã tạo câu đố Hashi này. Bạn giải được không?",
+    "failed": "Lần này chưa có liên kết: {{ error }}"
+  },
+  "create": {
+    "title": "Chia sẻ bằng liên kết",
+    "text": "Ai có liên kết đều chơi được. Bạn sẽ thấy ai đã giải và nhanh đến mức nào.",
+    "unchecked": "Khi bộ giải chứng minh câu đố có đúng một lời giải, bạn có thể chia sẻ nó."
+  },
+  "og": {
+    "kicker": "Một câu đố được chia sẻ",
+    "beat": "Bạn vượt được {{ time }} không?",
+    "solve": "Bạn giải được không?"
+  }
+}

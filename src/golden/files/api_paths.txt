@@ -57,6 +57,7 @@
 /api/load_recovery_email POST application/json -> application/json
 /api/load_replay POST application/json -> application/json
 /api/load_rivals_board POST application/json -> application/json
+/api/load_shared_puzzle POST application/json -> application/json
 /api/login POST application/json -> application/json
 /api/logout POST application/json -> application/json
 /api/month_leaderboard POST application/json -> application/json
@@ -80,6 +81,7 @@
 /api/set_hanko POST application/json -> application/json
 /api/set_recovery_email POST application/json -> application/json
 /api/set_rival POST application/json -> application/json
+/api/share_puzzle POST application/json -> application/json
 /api/show_stamp POST application/json -> application/json
 /api/solve_puzzle POST application/json -> application/json
 /api/start_daily POST application/json -> application/json
@@ -87,6 +89,7 @@
 /api/submit_daily POST application/json -> application/json
 /api/submit_daily_attempt POST application/json -> application/json
 /api/submit_group_puzzle POST application/json -> application/json
+/api/submit_shared_puzzle POST application/json -> application/json
 /api/todays_rivals POST application/json -> application/json
 /api/unread_hanko_counts POST application/json -> application/json
 /api/update_admin_benchmark POST application/json -> application/json

@@ -3,11 +3,12 @@
 use leptos::prelude::*;
 
 use crate::components::celebration::{Petals, Stamp};
-use crate::components::share::ShareBar;
+use crate::components::share_puzzle::{SharePuzzle, share_text};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::Card;
 use crate::i18n::{t, td_string, use_i18n};
 use crate::lang::localized;
+use crate::model::SharedSolve;
 use crate::state::{Game, Settings, Status, format_time};
 
 use super::new_game::new_random;
@@ -24,7 +25,7 @@ pub(super) fn WinOverlay() -> impl IntoView {
         dismissed.set(false);
     });
 
-    let share_text = move || {
+    let share_text_of_result = move || {
         let locale = i18n.get_locale_untracked();
         format!(
             "🌉 Hashi · {} · {} · 橋をかけろ\n{}",
@@ -38,6 +39,25 @@ pub(super) fn WinOverlay() -> impl IntoView {
             ),
             crate::seo::public_origin() + &localized(locale, "/practice"),
         )
+    };
+
+    // The puzzle itself as a link (`/p/<code>`), the time as the one to beat. Without a link
+    // (offline, more than one solution) the result as before
+    let request = move || {
+        let solve = SharedSolve {
+            bridges: game.bridges.get_untracked(),
+            time_ms: i64::from(game.elapsed.get_untracked()) * 1000,
+            moves: game.moves.get_untracked(),
+            hints: game.hints.get_untracked(),
+        };
+        (game.puzzle(), Some(solve))
+    };
+    let link_text = move |locale, url: &str| {
+        let solve = (
+            i64::from(game.elapsed.get_untracked()) * 1000,
+            game.hints.get_untracked(),
+        );
+        share_text(locale, &game.source.get_untracked().title(locale), Some(solve), url)
     };
 
     view! {
@@ -64,7 +84,7 @@ pub(super) fn WinOverlay() -> impl IntoView {
                         <Button variant=ButtonVariant::Ghost on:click=move |_| dismissed.set(true)>
                             {t!(i18n, practice.admire)}
                         </Button>
-                        <ShareBar text=share_text outline=true />
+                        <SharePuzzle request text=link_text fallback=Callback::new(move |()| share_text_of_result()) outline=true />
                     </div>
                 </Card>
             </div>

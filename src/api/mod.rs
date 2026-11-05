@@ -111,6 +111,7 @@ mod tests {
             include_str!("replay.rs"),
             include_str!("rivals.rs"),
             include_str!("river.rs"),
+            include_str!("shares.rs"),
         ];
         let attributes: Vec<_> = sources
             .iter()

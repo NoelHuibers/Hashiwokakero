@@ -539,12 +539,3 @@ pub const MERGE_GUEST: [&str; 4] = [
     "DELETE FROM shared_results WHERE user_id = ?2",
     "UPDATE puzzle_shares SET user_id = ?1 WHERE user_id = ?2",
 ];
-
-/// What the preview of a link (`server::og`, the page's meta tags) shows: the puzzle, who shared
-/// it, and their score, if they're still there.
-pub async fn preview(
-    conn: &Connection,
-    code: &str,
-) -> Result<Option<SharedPuzzlePage>, ServerFnError> {
-    page(conn, code, None).await
-}

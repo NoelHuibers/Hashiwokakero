@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "{{ name }} 的 Hashi 谜题",
+    "title_anonymous": "分享的 Hashi 谜题",
+    "time": "{{ name }} 用 {{ time }} 解开了这道 {{ size }} 的数桥谜题。你能更快吗？在浏览器中免费玩。",
+    "untimed": "{{ name }} 制作了这道 {{ size }} 的数桥谜题。你能解开吗？在浏览器中免费玩。",
+    "anonymous": "一道只有唯一解的 {{ size }} 数桥谜题。你能解开吗？在浏览器中免费玩。"
+  },
+  "page": {
+    "title": "{{ name }} 的谜题",
+    "title_anonymous": "分享的谜题",
+    "by": "由 {{ name }} 分享",
+    "by_blocked": "由一位已屏蔽的玩家分享",
+    "by_former": "由一位前玩家分享",
+    "to_beat": "待超越的时间",
+    "untimed": "在工坊中制作：来创下第一个成绩吧。",
+    "missing": "这个链接没有指向任何谜题。",
+    "missing_hint": "可能没有完整复制。也可以玩一道新谜题。",
+    "to_play": "玩一道新谜题",
+    "offline": "分享的谜题保存在服务器上：这道谜题需要联网。",
+    "offline_hint": "请联网后重试。在此期间，新谜题也可以离线游玩。",
+    "retry": "重试",
+    "submit_failed": "你的成绩没有送达服务器。",
+    "submit_retry": "重新发送"
+  },
+  "result": {
+    "title": "解开了！",
+    "first": "你的时间：<b>{{ time }}</b>，{{ total }} 人中第 {{ rank }} 名。",
+    "again": "再次用 <b>{{ time }}</b> 解开。只计第一次：排行榜上仍是 <b>{{ first }}</b>。",
+    "beat": "你超过了 {{ name }}！",
+    "again_button": "再玩一次"
+  },
+  "board": {
+    "title": "所有解开的人",
+    "text": "最快的在前，每次提示加 30 秒。只计第一次。",
+    "empty": "还没有人解开。来做第一个吧！",
+    "sharer": "分享者",
+    "solvers": "解开人数：{{ count }}"
+  },
+  "share": {
+    "button": "分享这道谜题",
+    "making": "正在生成链接…",
+    "link": "谜题链接",
+    "time": "我用 {{ time }} 解开了这道 Hashi 谜题。你能赢我吗？",
+    "time_hints": "我用 {{ time }} 解开了这道 Hashi 谜题，用了 {{ hints }} 次提示（每次 +30 秒）。你能赢我吗？",
+    "untimed": "我制作了这道 Hashi 谜题。你能解开吗？",
+    "failed": "这次没能生成链接：{{ error }}"
+  },
+  "create": {
+    "title": "以链接分享",
+    "text": "任何拿到链接的人都能玩。你能看到谁解开了它，用了多久。",
+    "unchecked": "求解器证明它只有唯一解后，就可以分享了。"
+  },
+  "og": {
+    "kicker": "分享的谜题",
+    "beat": "你能超过 {{ time }} 吗？",
+    "solve": "你能解开吗？"
+  }
+}

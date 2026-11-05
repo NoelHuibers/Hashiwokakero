@@ -377,6 +377,28 @@ fn requests() -> Vec<Entry> {
         entry(&api::WithdrawGroupPuzzle { id: 4 }),
         entry(&api::SeenGroupPuzzleKudos { id: 4 }),
         entry(&api::LoadPuzzleReplay { id: 4 }),
+        // shared puzzles
+        entry(&api::SharePuzzle {
+            puzzle: puzzle(),
+            solve: Some(crate::model::SharedSolve {
+                bridges: vec![2, 1],
+                time_ms: 133_000,
+                moves: 4,
+                hints: 1,
+            }),
+        }),
+        entry(&api::LoadSharedPuzzle {
+            code: "k7m2xq9a".into(),
+        }),
+        entry(&api::SubmitSharedPuzzle {
+            code: "k7m2xq9a".into(),
+            solve: crate::model::SharedSolve {
+                bridges: vec![2, 1],
+                time_ms: 95_000,
+                moves: 3,
+                hints: 0,
+            },
+        }),
         // moderation
         entry(&api::ReportPlayer {
             player: 9,

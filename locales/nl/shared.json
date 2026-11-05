@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "De Hashi-puzzel van {{ name }}",
+    "title_anonymous": "Een gedeelde Hashi-puzzel",
+    "time": "{{ name }} loste deze Hashiwokakero van {{ size }} op in {{ time }}. Kun jij dat verbeteren? Gratis, in de browser.",
+    "untimed": "{{ name }} bouwde deze Hashiwokakero van {{ size }}. Kun jij hem oplossen? Gratis, in de browser.",
+    "anonymous": "Een Hashiwokakero van {{ size }} met precies één oplossing. Kun jij hem oplossen? Gratis, in de browser."
+  },
+  "page": {
+    "title": "De puzzel van {{ name }}",
+    "title_anonymous": "Een gedeelde puzzel",
+    "by": "Gedeeld door {{ name }}",
+    "by_blocked": "Gedeeld door een geblokkeerde speler",
+    "by_former": "Gedeeld door een voormalige speler",
+    "to_beat": "Te verslaan",
+    "untimed": "Gemaakt in de werkplaats: zet jij de eerste tijd neer.",
+    "missing": "Deze link leidt niet naar een puzzel.",
+    "missing_hint": "Misschien is hij niet helemaal gekopieerd. Of speel een nieuwe puzzel.",
+    "to_play": "Nieuwe puzzel spelen",
+    "offline": "Gedeelde puzzels staan op de server: deze heeft internet nodig.",
+    "offline_hint": "Maak verbinding en probeer het opnieuw. Nieuwe puzzels werken intussen ook offline.",
+    "retry": "Opnieuw proberen",
+    "submit_failed": "Je tijd is niet bij de server aangekomen.",
+    "submit_retry": "Opnieuw versturen"
+  },
+  "result": {
+    "title": "Opgelost!",
+    "first": "Jouw tijd: <b>{{ time }}</b>, plaats {{ rank }} van {{ total }}.",
+    "again": "Opnieuw opgelost in <b>{{ time }}</b>. Alleen je eerste keer telt: <b>{{ first }}</b> blijft op het bord.",
+    "beat": "Je hebt {{ name }} verslagen!",
+    "again_button": "Nog een keer spelen"
+  },
+  "board": {
+    "title": "Iedereen die hem oploste",
+    "text": "De snelsten eerst, elke hint telt 30 s mee. Alleen de eerste keer telt.",
+    "empty": "Nog niemand heeft hem opgelost. Wees de eerste!",
+    "sharer": "deelde hem",
+    "solvers": "Opgelost door: {{ count }}"
+  },
+  "share": {
+    "button": "Deel deze puzzel",
+    "making": "Link maken…",
+    "link": "Link naar de puzzel",
+    "time": "Ik loste deze Hashi-puzzel op in {{ time }}. Kun jij me verslaan?",
+    "time_hints": "Ik loste deze Hashi-puzzel op in {{ time }} met {{ hints }} hints (+30 s per stuk). Kun jij me verslaan?",
+    "untimed": "Ik heb deze Hashi-puzzel gebouwd. Kun jij hem oplossen?",
+    "failed": "Deze keer geen link: {{ error }}"
+  },
+  "create": {
+    "title": "Delen als link",
+    "text": "Iedereen met de link kan hem spelen. Jij ziet wie hem oploste, en hoe snel.",
+    "unchecked": "Zodra de solver heeft bewezen dat er precies één oplossing is, kun je hem delen."
+  },
+  "og": {
+    "kicker": "Een gedeelde puzzel",
+    "beat": "Versla jij {{ time }}?",
+    "solve": "Kun jij hem oplossen?"
+  }
+}

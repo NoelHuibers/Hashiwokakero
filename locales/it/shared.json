@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "Il puzzle Hashi di {{ name }}",
+    "title_anonymous": "Un puzzle Hashi condiviso",
+    "time": "{{ name }} ha risolto questo Hashiwokakero {{ size }} in {{ time }}. Riesci a fare meglio? Gratis, nel browser.",
+    "untimed": "{{ name }} ha creato questo Hashiwokakero {{ size }}. Riesci a risolverlo? Gratis, nel browser.",
+    "anonymous": "Un Hashiwokakero {{ size }} con un'unica soluzione. Riesci a risolverlo? Gratis, nel browser."
+  },
+  "page": {
+    "title": "Il puzzle di {{ name }}",
+    "title_anonymous": "Un puzzle condiviso",
+    "by": "Condiviso da {{ name }}",
+    "by_blocked": "Condiviso da un giocatore bloccato",
+    "by_former": "Condiviso da un ex giocatore",
+    "to_beat": "Tempo da battere",
+    "untimed": "Creato nel laboratorio: sii il primo a fissare un tempo.",
+    "missing": "Questo link non porta a nessun puzzle.",
+    "missing_hint": "Forse non è stato copiato per intero. Oppure gioca un nuovo puzzle.",
+    "to_play": "Gioca un nuovo puzzle",
+    "offline": "I puzzle condivisi stanno sul server: questo ha bisogno della rete.",
+    "offline_hint": "Connettiti e riprova. Intanto i nuovi puzzle funzionano anche offline.",
+    "retry": "Riprova",
+    "submit_failed": "Il tuo tempo non è arrivato al server.",
+    "submit_retry": "Invia di nuovo"
+  },
+  "result": {
+    "title": "Risolto!",
+    "first": "Il tuo tempo: <b>{{ time }}</b>, posto {{ rank }} su {{ total }}.",
+    "again": "Risolto di nuovo in <b>{{ time }}</b>. Conta solo la prima volta: in classifica resta <b>{{ first }}</b>.",
+    "beat": "Hai battuto {{ name }}!",
+    "again_button": "Gioca di nuovo"
+  },
+  "board": {
+    "title": "Tutti quelli che l'hanno risolto",
+    "text": "Prima i più veloci, ogni suggerimento aggiunge 30 s. Conta solo la prima volta.",
+    "empty": "Nessuno l'ha ancora risolto. Sii il primo!",
+    "sharer": "l'ha condiviso",
+    "solvers": "Risolto da: {{ count }}"
+  },
+  "share": {
+    "button": "Condividi questo puzzle",
+    "making": "Creo il link…",
+    "link": "Link al puzzle",
+    "time": "Ho risolto questo puzzle Hashi in {{ time }}. Riesci a battermi?",
+    "time_hints": "Ho risolto questo puzzle Hashi in {{ time }} con {{ hints }} suggerimenti (+30 s ciascuno). Riesci a battermi?",
+    "untimed": "Ho creato questo puzzle Hashi. Riesci a risolverlo?",
+    "failed": "Niente link stavolta: {{ error }}"
+  },
+  "create": {
+    "title": "Condividi con un link",
+    "text": "Chiunque abbia il link può giocarlo. Vedi chi l'ha risolto e in quanto tempo.",
+    "unchecked": "Quando il solutore avrà dimostrato che ha un'unica soluzione, potrai condividerlo."
+  },
+  "og": {
+    "kicker": "Un puzzle condiviso",
+    "beat": "Riesci a battere {{ time }}?",
+    "solve": "Riesci a risolverlo?"
+  }
+}

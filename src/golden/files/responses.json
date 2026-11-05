@@ -1085,5 +1085,197 @@
     "Renamed",
     "Banned",
     "Dismissed"
-  ]
+  ],
+  "shared_link": {
+    "code": "k7m2xq9a",
+    "user": {
+      "id": 7,
+      "name": "noel",
+      "guest": false,
+      "created_at": 1750000000000,
+      "admin": true,
+      "renamed_at": 1755000000000,
+      "name_locked": false
+    }
+  },
+  "shared_page": {
+    "code": "k7m2xq9a",
+    "puzzle": {
+      "width": 3,
+      "height": 3,
+      "islands": [
+        {
+          "pos": {
+            "x": 0,
+            "y": 0
+          },
+          "required": 2
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 0
+          },
+          "required": 3
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 2
+          },
+          "required": 1
+        }
+      ]
+    },
+    "sharer": {
+      "user_id": 7,
+      "name": "noel",
+      "guest": false,
+      "stamp": "Gold",
+      "result": {
+        "rank": 2,
+        "user_id": 7,
+        "name": "noel",
+        "guest": false,
+        "stamp": "Gold",
+        "time_ms": 95000,
+        "moves": 12,
+        "hints": 1,
+        "score_ms": 125000
+      }
+    },
+    "board": [
+      {
+        "rank": 1,
+        "user_id": 3,
+        "name": "Brave Heron 42",
+        "guest": true,
+        "stamp": "Gold",
+        "time_ms": 95000,
+        "moves": 12,
+        "hints": 0,
+        "score_ms": 95000
+      },
+      {
+        "rank": 2,
+        "user_id": 7,
+        "name": "noel",
+        "guest": false,
+        "stamp": "Gold",
+        "time_ms": 95000,
+        "moves": 12,
+        "hints": 1,
+        "score_ms": 125000
+      }
+    ],
+    "mine": {
+      "rank": 2,
+      "user_id": 7,
+      "name": "noel",
+      "guest": false,
+      "stamp": "Gold",
+      "time_ms": 95000,
+      "moves": 12,
+      "hints": 1,
+      "score_ms": 125000
+    },
+    "solvers": 2,
+    "created_at": 1760000000000
+  },
+  "shared_submit": {
+    "page": {
+      "code": "k7m2xq9a",
+      "puzzle": {
+        "width": 3,
+        "height": 3,
+        "islands": [
+          {
+            "pos": {
+              "x": 0,
+              "y": 0
+            },
+            "required": 2
+          },
+          {
+            "pos": {
+              "x": 2,
+              "y": 0
+            },
+            "required": 3
+          },
+          {
+            "pos": {
+              "x": 2,
+              "y": 2
+            },
+            "required": 1
+          }
+        ]
+      },
+      "sharer": {
+        "user_id": 7,
+        "name": "noel",
+        "guest": false,
+        "stamp": "Gold",
+        "result": {
+          "rank": 2,
+          "user_id": 7,
+          "name": "noel",
+          "guest": false,
+          "stamp": "Gold",
+          "time_ms": 95000,
+          "moves": 12,
+          "hints": 1,
+          "score_ms": 125000
+        }
+      },
+      "board": [
+        {
+          "rank": 1,
+          "user_id": 3,
+          "name": "Brave Heron 42",
+          "guest": true,
+          "stamp": "Gold",
+          "time_ms": 95000,
+          "moves": 12,
+          "hints": 0,
+          "score_ms": 95000
+        },
+        {
+          "rank": 2,
+          "user_id": 7,
+          "name": "noel",
+          "guest": false,
+          "stamp": "Gold",
+          "time_ms": 95000,
+          "moves": 12,
+          "hints": 1,
+          "score_ms": 125000
+        }
+      ],
+      "mine": {
+        "rank": 2,
+        "user_id": 7,
+        "name": "noel",
+        "guest": false,
+        "stamp": "Gold",
+        "time_ms": 95000,
+        "moves": 12,
+        "hints": 1,
+        "score_ms": 125000
+      },
+      "solvers": 2,
+      "created_at": 1760000000000
+    },
+    "counted": true,
+    "user": {
+      "id": 7,
+      "name": "noel",
+      "guest": false,
+      "created_at": 1750000000000,
+      "admin": true,
+      "renamed_at": 1755000000000,
+      "name_locked": false
+    }
+  }
 }

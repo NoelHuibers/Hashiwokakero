@@ -19,7 +19,8 @@ use crate::model::{
     DojoSeasons, DojoState, DojoSubmission, FeedbackKind, FeedbackStatus, Flag, GroupToday,
     HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard,
     MonthEntry, MoveEvent, PlayerProfile, RecoveryEmail, ReportOutcome, ReportReason, Run, Stamp,
-    StampProgress, SubmissionAction, SubmitResult, UserInfo, UserStats,
+    SharedBy, SharedEntry, SharedLink, SharedPuzzlePage, SharedSubmit, StampProgress,
+    SubmissionAction, SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -328,6 +329,43 @@ struct Responses {
     benchmark_actions: Vec<BenchmarkAction>,
     report_reasons: Vec<ReportReason>,
     report_outcomes: Vec<ReportOutcome>,
+    shared_link: SharedLink,
+    shared_page: SharedPuzzlePage,
+    shared_submit: SharedSubmit,
+}
+
+fn shared_entry(rank: i64, user_id: i64, name: &str, hints: i64) -> SharedEntry {
+    SharedEntry {
+        rank,
+        user_id,
+        name: name.into(),
+        guest: user_id == 3,
+        stamp: Some(Stamp::Gold),
+        time_ms: 95_000,
+        moves: 12,
+        hints,
+        score_ms: crate::model::share_score(95_000, hints),
+    }
+}
+
+/// A shared puzzle: noel's link, Brave Heron 42 solved it faster, the viewer is noel.
+fn shared_page() -> SharedPuzzlePage {
+    let noel = shared_entry(2, 7, "noel", 1);
+    SharedPuzzlePage {
+        code: "k7m2xq9a".into(),
+        puzzle: puzzle(),
+        sharer: Some(SharedBy {
+            user_id: 7,
+            name: "noel".into(),
+            guest: false,
+            stamp: Some(Stamp::Gold),
+            result: Some(noel.clone()),
+        }),
+        board: vec![shared_entry(1, 3, "Brave Heron 42", 0), noel.clone()],
+        mine: Some(noel),
+        solvers: 2,
+        created_at: 1_760_000_000_000,
+    }
 }
 
 fn responses() -> Responses {
@@ -343,16 +381,17 @@ fn responses() -> Responses {
         bridges: Some(vec![2, 1]),
         flag: Some(Flag::Pace),
     };
+    let user = UserInfo {
+        id: 7,
+        name: "noel".into(),
+        guest: false,
+        created_at: 1_750_000_000_000,
+        admin: true,
+        renamed_at: Some(1_755_000_000_000),
+        name_locked: false,
+    };
     Responses {
-        user: UserInfo {
-            id: 7,
-            name: "noel".into(),
-            guest: false,
-            created_at: 1_750_000_000_000,
-            admin: true,
-            renamed_at: Some(1_755_000_000_000),
-            name_locked: false,
-        },
+        user: user.clone(),
         recovery_email: RecoveryEmail {
             address: Some("noel@example.org".into()),
             pending: Some("noel@example.com".into()),
@@ -737,6 +776,16 @@ fn responses() -> Responses {
             ReportOutcome::Banned,
             ReportOutcome::Dismissed,
         ],
+        shared_link: SharedLink {
+            code: "k7m2xq9a".into(),
+            user: user.clone(),
+        },
+        shared_page: shared_page(),
+        shared_submit: SharedSubmit {
+            page: shared_page(),
+            counted: true,
+            user,
+        },
     }
 }
 
@@ -894,6 +943,8 @@ fn stored_formats() {
         line("attempts.log", &log),
         line("attempts.run", &run),
         line("group_puzzles.puzzle", &puzzle()),
+        line("shared_puzzles.puzzle", &puzzle()),
+        line("shared_puzzles.solution", &vec![2u8, 1]),
         line(
             "group_puzzle_attempts.helps",
             &vec![

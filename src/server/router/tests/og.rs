@@ -61,6 +61,31 @@ async fn preview_images_are_pngs_cached_by_language_and_day() {
     }
 }
 
+/// A shared puzzle's card: drawn once it's asked for, nothing for a link that isn't one.
+#[tokio::test]
+async fn shared_puzzles_have_cards() {
+    let server = Server::start().await;
+    let conn = conn().await;
+    let puzzle = common::Puzzle::from_grid(&[vec![1, 0, 1], vec![0, 0, 0]]);
+    let code = crate::server::shares::share(&conn, 1, puzzle, None, crate::server::now_ms())
+        .await
+        .unwrap();
+    let browser = server.browser();
+    let res = browser.get(&format!("/og/p/{code}/ja.png")).await;
+    assert_status(&res, StatusCode::OK);
+    assert_eq!(res.headers()[CONTENT_TYPE], "image/png");
+    assert_eq!(res.headers()[CACHE_CONTROL], "public, max-age=86400");
+    let png = res.bytes().await.unwrap();
+    assert_eq!(&png[16..24], [0, 0, 4, 176, 0, 0, 2, 118]);
+    for path in [
+        "/og/p/aaaaaaaa/en.png".to_string(),
+        format!("/og/p/{code}/xx.png"),
+        "/og/p/..%2F/en.png".into(),
+    ] {
+        assert_status(&browser.get(&path).await, StatusCode::NOT_FOUND);
+    }
+}
+
 /// The `content` of a `<meta>` in the head of a page.
 fn meta<'a>(html: &'a str, attribute: &str) -> &'a str {
     let tag = html
