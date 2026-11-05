@@ -527,18 +527,12 @@ fn codes_are_random_and_plain() {
 }
 
 /// Players reached, the stamps earned, (progress, target) of 道, 帯 and 師, the ones announced.
-type ReachedCase = (
-    usize,
-    &'static [crate::model::Stamp],
-    [(i64, i64); 3],
-    &'static [crate::model::Stamp],
-);
+type ReachedCase = (usize, &'static [Stamp], [(i64, i64); 3], &'static [Stamp]);
 
 /// Players reached through a player's links earn the sharing stamps 道 (1), 帯 (10) and 師
 /// (25), announced once and kept when the players are gone; the Dojo's holders keep theirs.
 #[tokio::test]
 async fn players_reached_earn_the_sharing_stamps_which_stay() {
-    use crate::model::Stamp;
     use crate::server::daily::sync_stamps;
 
     let conn = db().await;
