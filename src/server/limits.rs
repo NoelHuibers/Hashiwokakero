@@ -127,6 +127,9 @@ pub async fn admission(req: Request, next: Next) -> Response {
                     | "load_dojo_benchmarks"
                     // Proves the puzzle unique with the SAT solver
                     | "post_group_puzzle"
+                    | "share_puzzle"
+                    // Codes are short: no guessing through them
+                    | "load_shared_puzzle"
                     // Mails us, on top of its own limit per player and day (`reports`)
                     | "report_player"
             )

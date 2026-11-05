@@ -14,6 +14,7 @@ pub mod race;
 pub mod ranks;
 pub mod replay;
 pub mod rules;
+pub mod shares;
 
 use common::Puzzle;
 use leptos::prelude::*;

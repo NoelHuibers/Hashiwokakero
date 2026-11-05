@@ -25,7 +25,7 @@ use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 28] = [
+const PAGES: [(&str, &str); 29] = [
     ("/", "/"),
     ("/play", "/play"),
     ("/ranks", "/ranks"),
@@ -40,6 +40,8 @@ const PAGES: [(&str, &str); 28] = [
     ("/groups/{id}/races/{race}", "/groups/1/races/1"),
     ("/replay/{day}", "/replay/20747"),
     ("/g/{code}", "/g/abcdefgh23"),
+    // Nobody's link
+    ("/p/{code}", "/p/aaaaaaaa"),
     // Nobody, user ids start at 1
     ("/player/{id}", "/player/0"),
     ("/account", "/account"),
@@ -293,6 +295,16 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, groups.join.invalid_title),
             ]),
             nav: Some("/groups"),
+            ..Expected::default()
+        },
+        "/p/{code}" => Expected {
+            title: Some(hashi(td_string!(l, common.not_found.title))),
+            texts: strings([
+                td_string!(l, shared.page.missing),
+                td_string!(l, shared.page.missing_hint),
+            ]),
+            absent: strings([td_string!(l, shared.board.title)]),
+            status: StatusCode::NOT_FOUND,
             ..Expected::default()
         },
         "/account" => Expected {
@@ -643,6 +655,60 @@ fn without_nonces(html: &str) -> String {
         }
     }
     out
+}
+
+/// A link to a shared puzzle names who shared it and their time where it's shared, with the
+/// puzzle's own card, and the server renders the puzzle and its board. Out of search engines.
+#[tokio::test]
+async fn a_shared_puzzle_names_its_sharer_in_link_previews() {
+    use crate::model::{SharedSolve, share_path};
+    let server = Server::start().await;
+    Browser::signed_up(&server, "puzzle_sharer").await;
+    let conn = conn().await;
+    let id = user_id(&conn, "puzzle_sharer").await;
+    let puzzle = common::Puzzle::from_grid(&[vec![2, 0, 3], vec![0, 0, 0], vec![0, 0, 1]]);
+    let solve = SharedSolve {
+        bridges: vec![2, 1],
+        time_ms: 133_000,
+        moves: 2,
+        hints: 0,
+    };
+    let code =
+        crate::server::shares::share(&conn, id, puzzle, Some(solve), crate::server::now_ms())
+            .await
+            .unwrap();
+    let browser = server.browser();
+    for l in [Locale::en, Locale::de] {
+        let path = localized(l, &share_path(&code));
+        let res = browser.get(&path).await;
+        assert_status(&res, StatusCode::OK);
+        let html = res.text().await.unwrap();
+        let name = td_string!(l, shared.meta.title, name = "puzzle_sharer");
+        assert_eq!(title(&html), Some(hashi(&name)), "{path}");
+        assert_eq!(meta(&html, "og:title"), Some(name.clone()), "{path}");
+        let description = meta(&html, "og:description").unwrap();
+        assert!(
+            description.contains("puzzle_sharer") && description.contains("02:13"),
+            "{description}"
+        );
+        assert_eq!(meta(&html, "description"), Some(description.clone()));
+        assert_eq!(meta(&html, "og:url"), Some(format!("{SITE_URL}{path}")));
+        assert_eq!(
+            meta(&html, "og:image"),
+            Some(crate::seo::og_share_image(l, &code)),
+            "{path}"
+        );
+        assert_eq!(meta(&html, "robots").as_deref(), Some("noindex"));
+        assert!(!html.contains("rel=\"canonical\""), "{path}");
+        let text = visible_text(&html);
+        for expected in [
+            td_string!(l, shared.page.by, name = "puzzle_sharer"),
+            td_string!(l, shared.board.title).to_string(),
+        ] {
+            assert!(text.contains(&expected), "{path}: {expected}");
+        }
+        assert!(html.contains("svg"), "{path}: the board");
+    }
 }
 
 /// The routes of the app, `App`'s own list, are the ones tested here. The old addresses of pages

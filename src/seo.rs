@@ -86,13 +86,15 @@ pub const APP_LINK_PATHS: &[&str] = &["/", "/play", "/practice", "/groups"];
 /// Android takes the App Links from the installed app's intent filter, iOS from the site's file,
 /// whatever version of the app is installed. An older app opens a link it has no page for and
 /// stays where it is (its router ignores it), so until the version that has the page is out, its
-/// links open on the website. `/play` (Practice renamed to Play, the app's version after 1.1.0):
-/// remove it from here once that version is in the App Store.
-pub const NOT_YET_ON_IOS: &[&str] = &["/play"];
+/// links open on the website. `/play` (Practice renamed to Play) and the shared puzzles below
+/// `/p/` (paths of [`APP_LINK_PREFIXES`] count too), both of the app's version after 1.1.0:
+/// remove them from here once that version is in the App Store.
+pub const NOT_YET_ON_IOS: &[&str] = &["/play", "/p/"];
 
 /// The paths whose pages below them open in the app, like [`APP_LINK_PATHS`]: invites to a group
-/// (`/g/<code>`), the pages of a group (its puzzles, its replays) and players' pages.
-pub const APP_LINK_PREFIXES: &[&str] = &["/g/", "/groups/", "/player/"];
+/// (`/g/<code>`), the pages of a group (its puzzles, its replays), players' pages and shared
+/// puzzles (`/p/<code>`).
+pub const APP_LINK_PREFIXES: &[&str] = &["/g/", "/groups/", "/player/", "/p/"];
 
 /// `paths` in every language of the site, the default's first: `/play`, `/de/play`, ...
 /// (`/` is `/de` in German).
@@ -140,6 +142,7 @@ pub fn app_link_components() -> Vec<serde_json::Value> {
         .map(|path| json!({ "/": path }));
     let prefixes = in_every_language(APP_LINK_PREFIXES)
         .into_iter()
+        .filter(|prefix| !NOT_YET_ON_IOS.contains(&crate::lang::unlocalized(prefix).as_str()))
         .map(|prefix| json!({ "/": format!("{prefix}*") }));
     paths.chain(prefixes).collect()
 }
@@ -352,6 +355,11 @@ pub fn og_daily_image(locale: Locale, day: i64) -> String {
         crate::model::date_string(day),
         locale.as_str()
     )
+}
+
+/// The preview image of a shared puzzle (`/p/<code>`), drawn with its board.
+pub fn og_share_image(locale: Locale, code: &str) -> String {
+    format!("{SITE_URL}/og/p/{code}/{}.png", locale.as_str())
 }
 
 /// Today's day number (UTC), as the server counts the dailies.
@@ -829,6 +837,7 @@ mod tests {
             .chain(
                 prefixes
                     .iter()
+                    .filter(|p| !NOT_YET_ON_IOS.contains(&crate::lang::unlocalized(p).as_str()))
                     .map(|prefix| json!({ "/": format!("{prefix}*") })),
             )
             .collect();
@@ -864,6 +873,7 @@ mod tests {
             ("/g/", true),
             ("/player/42", true),
             ("/ar/player/42", true),
+            ("/p", false),
             // Only the root, the daily, not what is below it
             ("/rules", false),
             ("/de/rules", false),
@@ -901,8 +911,15 @@ mod tests {
             assert_eq!(android(path), claimed, "Android, {path}");
             assert_eq!(ios(path), claimed, "iOS, {path}");
         }
-        // Play opens in the app on Android, on iOS not yet; its old name in both
-        for path in ["/play", "/ja/play", "/zh-Hant/play"] {
+        // Play and shared puzzles open in the app on Android, on iOS not yet; Play's old name in
+        // both
+        for path in [
+            "/play",
+            "/ja/play",
+            "/zh-Hant/play",
+            "/p/k7m2xq9a",
+            "/ja/p/k7m2xq9a",
+        ] {
             assert!(android(path), "Android, {path}");
             assert!(!ios(path), "iOS, {path}");
         }

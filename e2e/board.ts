@@ -31,6 +31,7 @@ export interface SavedGame {
 }
 
 export const PLAY_KEY = 'hashi.game.v2';
+export const SHARED_KEY = 'hashi.shared.v1';
 export const DAILY_KEY = 'hashi.daily.v1';
 
 /** The edges of a puzzle in the order of `Board::new` (common/src/board.rs): the island pairs. */

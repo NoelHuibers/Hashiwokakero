@@ -64,6 +64,7 @@
 /api/load_recovery_email {}
 /api/load_replay {"group":2,"day":20381}
 /api/load_rivals_board {}
+/api/load_shared_puzzle {"code":"k7m2xq9a"}
 /api/login {"username":"noel","password":"correct horse"}
 /api/logout {}
 /api/month_leaderboard {"month":24321}
@@ -90,6 +91,7 @@
 /api/set_hanko {"group":2,"target":9,"day":20381,"kind":"Cheers","on":true}
 /api/set_recovery_email {"email":"noel@example.org","password":"correct horse","locale":"de"}
 /api/set_rival {"player":9,"on":true}
+/api/share_puzzle {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"solve":{"bridges":[2,1],"time_ms":133000,"moves":4,"hints":1}}
 /api/show_stamp {"stamp":"Gold"}
 /api/solve_puzzle {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"config":{"kind":"Cdcl","heuristic":"Vsids","restarts":{"Geometric":{"threshold":100,"factor_percent":150}},"subsumption":true,"timeout_ms":10000},"unique":true}
 /api/start_daily {"device":"0123456789abcdef0123456789abcdef"}
@@ -99,6 +101,7 @@
 /api/submit_daily_attempt {"day":20381,"bridges":[2,1],"moves":2,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}],"utc_offset":-300,"owner":{"user":7,"attempt":"a1b2c3"}}
 /api/submit_group_puzzle {"id":4,"bridges":[2,1,0],"moves":12,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}]}
 /api/submit_group_race {"id":6,"bridges":[2,1,0],"moves":12,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}]}
+/api/submit_shared_puzzle {"code":"k7m2xq9a","solve":{"bridges":[2,1],"time_ms":95000,"moves":3,"hints":0}}
 /api/todays_rivals {}
 /api/unread_hanko_counts {}
 /api/update_admin_benchmark {"id":4,"action":"Accept"}

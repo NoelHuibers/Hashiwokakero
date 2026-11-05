@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "Łamigłówka Hashi gracza {{ name }}",
+    "title_anonymous": "Udostępniona łamigłówka Hashi",
+    "time": "{{ name }} rozwiązał(a) tę łamigłówkę Hashiwokakero {{ size }} w {{ time }}. Pobijesz ten czas? Za darmo, w przeglądarce.",
+    "untimed": "{{ name }} ułożył(a) tę łamigłówkę Hashiwokakero {{ size }}. Rozwiążesz ją? Za darmo, w przeglądarce.",
+    "anonymous": "Łamigłówka Hashiwokakero {{ size }} z dokładnie jednym rozwiązaniem. Rozwiążesz ją? Za darmo, w przeglądarce."
+  },
+  "page": {
+    "title": "Łamigłówka gracza {{ name }}",
+    "title_anonymous": "Udostępniona łamigłówka",
+    "by": "Udostępnia: {{ name }}",
+    "by_blocked": "Udostępnia: zablokowany gracz",
+    "by_former": "Udostępnia: były gracz",
+    "to_beat": "Czas do pobicia",
+    "untimed": "Ułożona w warsztacie: ustaw pierwszy czas.",
+    "missing": "Ten link nie prowadzi do żadnej łamigłówki.",
+    "missing_hint": "Może nie został skopiowany w całości. Albo zagraj w nową łamigłówkę.",
+    "to_play": "Zagraj w nową łamigłówkę",
+    "offline": "Udostępnione łamigłówki są na serwerze: ta wymaga internetu.",
+    "offline_hint": "Połącz się i spróbuj ponownie. W międzyczasie nowe łamigłówki działają offline.",
+    "retry": "Spróbuj ponownie",
+    "submit_failed": "Twój czas nie dotarł do serwera.",
+    "submit_retry": "Wyślij ponownie"
+  },
+  "result": {
+    "title": "Rozwiązane!",
+    "first": "Twój czas: <b>{{ time }}</b>, miejsce {{ rank }} z {{ total }}.",
+    "again": "Rozwiązane ponownie w <b>{{ time }}</b>. Liczy się tylko pierwsze podejście: w rankingu zostaje <b>{{ first }}</b>.",
+    "beat": "Pokonujesz gracza {{ name }}!",
+    "again_button": "Zagraj jeszcze raz"
+  },
+  "board": {
+    "title": "Wszyscy, którzy ją rozwiązali",
+    "text": "Najszybsi na górze, każda podpowiedź to +30 s. Liczy się tylko pierwsze podejście.",
+    "empty": "Nikt jej jeszcze nie rozwiązał. Bądź pierwszy!",
+    "sharer": "udostępnia",
+    "solvers": "Rozwiązało: {{ count }}"
+  },
+  "share": {
+    "button": "Udostępnij tę łamigłówkę",
+    "making": "Tworzę link…",
+    "link": "Link do łamigłówki",
+    "send": "Wyślij link",
+    "time": "Rozwiązałem/am tę łamigłówkę Hashi w {{ time }}. Pobijesz mój czas?",
+    "time_hints": "Rozwiązałem/am tę łamigłówkę Hashi w {{ time }}, podpowiedzi: {{ hints }} (każda +30 s). Pobijesz mój czas?",
+    "untimed": "Ułożyłem/am tę łamigłówkę Hashi. Rozwiążesz ją?",
+    "failed": "Tym razem bez linku: {{ error }}"
+  },
+  "create": {
+    "title": "Udostępnij jako link",
+    "text": "Każdy z linkiem może w nią zagrać. Zobaczysz, kto ją rozwiązał i jak szybko.",
+    "unchecked": "Gdy solver udowodni, że ma dokładnie jedno rozwiązanie, możesz ją udostępnić."
+  },
+  "og": {
+    "kicker": "Udostępniona łamigłówka",
+    "beat": "Pobijesz {{ time }}?",
+    "solve": "Rozwiążesz ją?"
+  }
+}
