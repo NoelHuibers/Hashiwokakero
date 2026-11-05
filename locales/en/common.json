@@ -181,8 +181,8 @@
     "groups": "{{ count }} separate groups",
     "all_connected": "all connected",
     "islands": "{{ count }} islands",
-    "unique_solution": "unique solution ✓",
-    "several_solutions": "several solutions"
+    "several_solutions": "several solutions",
+    "several_solutions_tooltip": "This puzzle has more than one solution. Check and hints follow one of them, so a correct bridge can still be marked wrong."
   },
   "weekday": {
     "mon": "Monday",

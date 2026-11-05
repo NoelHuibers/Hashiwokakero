@@ -181,8 +181,8 @@
     "groups": "{{ count }} groupes séparés",
     "all_connected": "tout est relié",
     "islands": "{{ count }} îles",
-    "unique_solution": "solution unique ✓",
-    "several_solutions": "plusieurs solutions"
+    "several_solutions": "plusieurs solutions",
+    "several_solutions_tooltip": "Cette grille a plus d’une solution. Vérifier et les indices en suivent une seule, donc un pont correct peut quand même être signalé comme faux."
   },
   "weekday": {
     "mon": "lundi",

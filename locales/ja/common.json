@@ -181,8 +181,8 @@
     "groups": "{{ count }}つのグループに分かれています",
     "all_connected": "すべてつながっています",
     "islands": "島 {{ count }}個",
-    "unique_solution": "唯一解 ✓",
-    "several_solutions": "複数解あり"
+    "several_solutions": "複数解あり",
+    "several_solutions_tooltip": "このパズルには解が複数あります。チェックとヒントはそのうちの1つに基づくため、正しい橋でも誤りと表示されることがあります。"
   },
   "weekday": {
     "mon": "月曜日",

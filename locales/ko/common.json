@@ -181,8 +181,8 @@
     "groups": "{{ count }}개 그룹으로 나뉨",
     "all_connected": "모두 연결됨",
     "islands": "섬 {{ count }}개",
-    "unique_solution": "유일한 해답 ✓",
-    "several_solutions": "해답 여러 개"
+    "several_solutions": "해답 여러 개",
+    "several_solutions_tooltip": "이 퍼즐은 해답이 여러 개예요. 확인과 힌트는 그중 하나를 기준으로 하므로, 맞는 다리도 틀렸다고 표시될 수 있어요."
   },
   "weekday": {
     "mon": "월요일",

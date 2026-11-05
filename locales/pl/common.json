@@ -181,8 +181,8 @@
     "groups": "osobne grupy: {{ count }}",
     "all_connected": "wszystko połączone",
     "islands": "wyspy: {{ count }}",
-    "unique_solution": "jednoznaczne rozwiązanie ✓",
-    "several_solutions": "kilka rozwiązań"
+    "several_solutions": "kilka rozwiązań",
+    "several_solutions_tooltip": "Ta łamigłówka ma więcej niż jedno rozwiązanie. Sprawdzanie i podpowiedzi opierają się na jednym z nich, więc nawet poprawny most może zostać oznaczony jako błędny."
   },
   "weekday": {
     "mon": "Poniedziałek",

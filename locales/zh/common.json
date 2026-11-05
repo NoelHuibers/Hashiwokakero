@@ -181,8 +181,8 @@
     "groups": "{{ count }} 个分离的岛群",
     "all_connected": "全部连通",
     "islands": "{{ count }} 座岛",
-    "unique_solution": "唯一解 ✓",
-    "several_solutions": "多个解"
+    "several_solutions": "多个解",
+    "several_solutions_tooltip": "这道谜题不止一个解。检查和提示只依照其中一个解，因此正确的桥也可能被标为错误。"
   },
   "weekday": {
     "mon": "星期一",

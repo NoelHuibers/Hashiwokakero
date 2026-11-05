@@ -5,7 +5,16 @@ import { DatabaseSync } from 'node:sqlite';
 
 import type { Page } from '@playwright/test';
 
-import { addBridge, board, missing, type Puzzle, saved } from '../board.ts';
+import {
+  addBridge,
+  board,
+  cellCenter,
+  edges,
+  missing,
+  type Puzzle,
+  press,
+  saved,
+} from '../board.ts';
 import { hintUntil } from '../daily.ts';
 import { DB_PATH } from '../env.ts';
 import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
@@ -39,16 +48,47 @@ function stored(race: number) {
 
 const raceId = (page: Page) => Number(new URL(page.url()).pathname.split('/').pop());
 
+/** Waits for the next answer of the race page's poll. */
+const pollAnswer = (page: Page) =>
+  page.waitForResponse((r) => r.url().includes('poll_group_race') && r.ok());
+
+/**
+ * Builds one bridge with a tap on each island and two of the page's polls in between: the island
+ * tapped first stays selected while the answers come in. (Each answer used to build the race's
+ * body anew, board and all, so a tap just before one was lost.)
+ */
+async function addBridgeAcrossPolls(page: Page, puzzle: Puzzle, edge: number) {
+  const pair = edges(puzzle)[edge];
+  if (!pair) throw new Error(`the puzzle has no edge ${edge}`);
+  const [a, b] = pair;
+  const before = (await saved(page, RACE_KEY)).bridges[edge] ?? 0;
+  const first = puzzle.islands[a]!.pos;
+  await press(page, await cellCenter(page, first.x, first.y), false);
+  const selected = board(page).locator('g.island.selected');
+  await expect(selected).toHaveCount(1);
+  await pollAnswer(page);
+  await pollAnswer(page);
+  await expect(selected).toHaveCount(1);
+  const second = puzzle.islands[b]!.pos;
+  await press(page, await cellCenter(page, second.x, second.y), false);
+  await expect
+    .poll(async () => (await saved(page, RACE_KEY)).bridges[edge], {
+      message: `bridge ${a}-${b} built`,
+    })
+    .toBe((before + 1) % 3);
+}
+
 /** Waits for the puzzle after the countdown, then solves it: hints for all but one bridge of the
- * solution, the last one by hand. */
-async function solve(page: Page, solution: number[]) {
+ * solution, the last one by hand (with polls between the taps when `slow`). */
+async function solve(page: Page, solution: number[], slow = false) {
   await expect(board(page).locator('g.island').first()).toBeVisible();
   await hintUntil(page, solution, 1, RACE_KEY);
   const { puzzle, bridges } = await saved(page, RACE_KEY);
   const [last] = missing(bridges, solution);
   if (last === undefined) throw new Error('hints left no bridge to build');
   for (let n = bridges[last] ?? 0; n < solution[last]!; n++) {
-    await addBridge(page, RACE_KEY, puzzle as Puzzle, last);
+    if (slow) await addBridgeAcrossPolls(page, puzzle as Puzzle, last);
+    else await addBridge(page, RACE_KEY, puzzle as Puzzle, last);
   }
 }
 
@@ -106,7 +146,7 @@ test('two players race on one puzzle, see the results and meet again in the rema
   const [host, guest] = players;
 
   // The host solves it first, the friend sees the host's bar at the finish while still racing
-  await solve(page, solution);
+  await solve(page, solution, true);
   await expect(page.getByTestId('race-done')).toContainText('Finished!');
   await expect(
     friend.locator(`[data-testid="race-tracks"] li[data-user="${host}"]`),

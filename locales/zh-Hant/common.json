@@ -181,8 +181,8 @@
     "groups": "{{ count }} 個分開的島群",
     "all_connected": "全部連通",
     "islands": "{{ count }} 座島",
-    "unique_solution": "唯一解 ✓",
-    "several_solutions": "多組解"
+    "several_solutions": "多組解",
+    "several_solutions_tooltip": "這道謎題不只一個解。檢查和提示只依照其中一組解，因此正確的橋也可能被標為錯誤。"
   },
   "weekday": {
     "mon": "週一",

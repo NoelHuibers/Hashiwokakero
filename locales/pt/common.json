@@ -181,8 +181,8 @@
     "groups": "grupos separados: {{ count }}",
     "all_connected": "tudo conectado",
     "islands": "ilhas: {{ count }}",
-    "unique_solution": "solução única ✓",
-    "several_solutions": "várias soluções"
+    "several_solutions": "várias soluções",
+    "several_solutions_tooltip": "Este puzzle tem mais de uma solução. Verificar e as dicas seguem uma delas, por isso uma ponte correta pode ser marcada como errada."
   },
   "weekday": {
     "mon": "segunda-feira",

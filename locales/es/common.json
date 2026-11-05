@@ -181,8 +181,8 @@
     "groups": "{{ count }} grupos separados",
     "all_connected": "todo conectado",
     "islands": "{{ count }} islas",
-    "unique_solution": "solución única ✓",
-    "several_solutions": "varias soluciones"
+    "several_solutions": "varias soluciones",
+    "several_solutions_tooltip": "Este puzle tiene más de una solución. Comprobar y las pistas siguen una de ellas, así que un puente correcto puede marcarse como erróneo."
   },
   "weekday": {
     "mon": "lunes",
