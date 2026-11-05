@@ -144,7 +144,10 @@ test('read fails when a file has no version where expected', () => {
 test("check fails when tauri.conf.json's versionCode isn't the version's", () => {
   set('3.0.0', dir);
   const file = CODE.file;
-  fs.writeFileSync(path.join(dir, file), text(file).replace('"versionCode": 3000000', '"versionCode": 3000001'));
+  fs.writeFileSync(
+    path.join(dir, file),
+    text(file).replace('"versionCode": 3000000', '"versionCode": 3000001'),
+  );
   assert.throws(() => check(dir), /tauri\.conf\.json \(versionCode\) is 3000001, not 3000000/);
   set('3.0.1', dir);
   assert.equal(check(dir), '3.0.1');

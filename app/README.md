@@ -44,7 +44,8 @@ server functions are same-origin calls and need no CORS. Its debug bundle goes t
 
 The release build uses the website's `wasm-release` profile (`opt-level = "z"`, LTO, one codegen
 unit, `panic = "abort"`) and `wasm-opt -Oz`. Trunk downloads the wasm-bindgen CLI of
-`Cargo.lock` and wasm-opt itself.
+`Cargo.lock` and wasm-opt itself, the version of `[tools]` in `Trunk.toml` (F-Droid builds the
+same one from source, see [F-Droid](#f-droid-f-droidorg)).
 
 It has to run inside this repository: `.cargo/config.toml` sets `DISABLE_SERVER_FN_HASH`, which
 makes the server functions answer at `/api/<name>`. Built elsewhere, the paths get a hash the
@@ -537,7 +538,9 @@ object-src 'none'; base-uri 'self'
 `version` in `tauri.conf.json` is the version users see (`versionName`). Tauri derives Android's
 `versionCode`, which must grow with every upload to Play, from it:
 `major × 1,000,000 + minor × 1,000 + patch`, so 0.0.1 is 1, 0.1.0 is 1000 and 1.2.3 is 1,002,003
-(minor and patch stay below 1000). `scripts/app-version.ts` sets it, see [Releases](#releases).
+(minor and patch stay below 1000). `bundle.android.versionCode` has it written out, the same
+number, for F-Droid's checkupdates, which reads it at each tag. `scripts/app-version.ts` sets
+both, see [Releases](#releases).
 
 ## Android builds
 

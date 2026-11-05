@@ -8,7 +8,16 @@
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true, "defaultBranch": "main" },
   "files": {
-    "includes": ["**/*.ts", "**/*.mts", "**/*.js", "**/*.mjs", "**/*.cjs", "biome.jsonc"]
+    "includes": [
+      "**/*.ts",
+      "**/*.mts",
+      "**/*.js",
+      "**/*.mjs",
+      "**/*.cjs",
+      "biome.jsonc",
+      // The sources F-Droid builds tools from (git submodules), not ours
+      "!app/fdroid/third_party"
+    ]
   },
   // Like rustfmt and leptosfmt: 100 columns
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
