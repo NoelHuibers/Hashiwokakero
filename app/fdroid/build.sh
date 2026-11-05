@@ -65,7 +65,8 @@ toolchain() {
   installed=$(rustup target list --installed --toolchain "$RUST_VERSION" 2> /dev/null || true)
   for target in wasm32-unknown-unknown "${TARGETS[@]}"; do
     if ! grep -qx "$target" <<< "$installed"; then
-      rustup toolchain install "$RUST_VERSION" --profile minimal --target wasm32-unknown-unknown "${TARGETS[@]}"
+      rustup toolchain install "$RUST_VERSION" --profile minimal \
+        --target "$(IFS=,; echo "wasm32-unknown-unknown,${TARGETS[*]}")"
       return
     fi
   done
