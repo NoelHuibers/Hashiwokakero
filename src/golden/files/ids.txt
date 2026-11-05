@@ -141,6 +141,14 @@ error TooManyReports too_many_reports
 error MailUnavailable mail_unavailable
 error LinkExpired link_expired
 error EmailTaken email_taken
+error RaceOpen race_open
+error RaceGone race_gone
+error RaceStarted race_started
+error RaceHostOnly race_host_only
+error RaceTooFew race_too_few
+error RaceNotJoined race_not_joined
+error RaceNotRunning race_not_running
+error RaceDone race_done
 hanko Fast fast
 hanko Wow wow
 hanko Close close

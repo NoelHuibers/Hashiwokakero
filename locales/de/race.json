@@ -1,0 +1,83 @@
+{
+  "title": "Rennen",
+  "card": {
+    "text": "Tretet live auf demselben frischen Rätsel gegeneinander an: Lobby öffnen, die anderen kommen dazu, und 3, 2, 1, los!",
+    "difficulty": "Schwierigkeit",
+    "open": "Rennen eröffnen",
+    "opening": "Wird eröffnet…",
+    "lobby": "Rennen offen · {{ count }} dabei",
+    "running": "Rennen läuft · {{ count }} am Start",
+    "join": "Mitmachen",
+    "to_lobby": "Zur Lobby",
+    "watch": "Zuschauen",
+    "history": "Letzte Rennen",
+    "none": "Noch keine Rennen. Eröffne eins und fordere die Gruppe heraus!",
+    "no_winner": "kein Sieger",
+    "players": "{{ count }} Spieler"
+  },
+  "page": {
+    "missing": "Dieses Rennen gibt es hier nicht.",
+    "missing_hint": "Vielleicht ist die Lobby abgelaufen oder wurde abgesagt, oder sie gehört zu einer Gruppe, in der du nicht bist."
+  },
+  "lobby": {
+    "title": "Lobby",
+    "text": "Alle, die mitmachen, bekommen im selben Moment dasselbe frische Rätsel. Der Host startet, sobald mindestens zwei dabei sind.",
+    "host": "Host",
+    "away": "weg",
+    "join": "Beim Rennen mitmachen",
+    "leave": "Verlassen",
+    "cancel": "Absagen",
+    "cancel_confirm": "Rennen absagen? Die Lobby schließt für alle darin.",
+    "start": "Starten",
+    "starting": "Rätsel wird vorbereitet…",
+    "need_more": "Wartet auf mindestens eine weitere Person…",
+    "waiting_host": "Wartet auf den Start durch den Host…",
+    "expires": "Die Lobby schließt in {{ minutes }} Min., wenn niemand startet.",
+    "share": "Lobby-Link teilen",
+    "share_text": "Tritt bei Hashi gegen mich an! Komm in die Lobby in {{ group }}:"
+  },
+  "countdown": {
+    "ready": "Bereit",
+    "go": "Los!"
+  },
+  "play": {
+    "give_up": "Aufgeben",
+    "give_up_confirm": "Rennen aufgeben? Du bekommst keinen Platz und siehst die Lösung, sobald das Rennen vorbei ist.",
+    "loading": "Das Rätsel ist unterwegs…",
+    "time_left": "noch {{ minutes }} Min."
+  },
+  "track": {
+    "title": "Fortschritt",
+    "text": "Wie weit alle sind: der Anteil der Brücken auf ihrem Brett. Niemand sieht die Brücken der anderen.",
+    "you": "du"
+  },
+  "watch": {
+    "text": "Du schaust zu: Das Rennen läuft zwischen den Teilnehmenden."
+  },
+  "done": {
+    "solved": "Geschafft!",
+    "gave_up": "Du hast aufgegeben.",
+    "waiting": "Warte, bis die anderen fertig sind…"
+  },
+  "results": {
+    "title": "Ergebnis",
+    "flagged": "ohne Platz",
+    "gave_up": "aufgegeben",
+    "out": "nicht fertig",
+    "rematch": "Revanche",
+    "rematch_join": "Bei der Revanche mitmachen",
+    "rematch_go": "Zur Revanche",
+    "replay": "Alle Züge",
+    "stage": "Das Brett des Rennens mit den Brücken von {{ names }}"
+  },
+  "errors": {
+    "open": "In dieser Gruppe ist schon ein Rennen offen: Mach dort mit.",
+    "gone": "Dieses Rennen gibt es nicht mehr: Die Lobby ist abgelaufen oder wurde abgesagt.",
+    "started": "Dieses Rennen hat schon begonnen: Du kannst zuschauen.",
+    "host_only": "Nur der Host kann das Rennen starten.",
+    "too_few": "Ein Rennen braucht mindestens zwei Personen.",
+    "not_joined": "Du bist bei diesem Rennen nicht dabei.",
+    "not_running": "Das Rennen läuft nicht.",
+    "done": "Mit diesem Rennen bist du fertig."
+  }
+}

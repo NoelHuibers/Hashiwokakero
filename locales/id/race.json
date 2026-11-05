@@ -1,0 +1,83 @@
+{
+  "title": "Balapan",
+  "card": {
+    "text": "Berpacu langsung di teka-teki baru yang sama: buka lobi, yang lain bergabung, dan 3, 2, 1, mulai!",
+    "difficulty": "Kesulitan",
+    "open": "Buka balapan",
+    "opening": "Membuka…",
+    "lobby": "Balapan terbuka · {{ count }} bergabung",
+    "running": "Balapan berjalan · {{ count }} berpacu",
+    "join": "Gabung",
+    "to_lobby": "Ke lobi",
+    "watch": "Tonton",
+    "history": "Balapan terbaru",
+    "none": "Belum ada balapan. Buka satu dan tantang grup!",
+    "no_winner": "tanpa pemenang",
+    "players": "{{ count }} pemain"
+  },
+  "page": {
+    "missing": "Balapan ini tidak ada di sini.",
+    "missing_hint": "Lobinya mungkin sudah kedaluwarsa atau dibatalkan, atau milik grup yang tidak kamu ikuti."
+  },
+  "lobby": {
+    "title": "Lobi",
+    "text": "Semua yang bergabung mendapat teka-teki baru yang sama pada saat yang sama. Tuan rumah memulai begitu setidaknya dua orang bergabung.",
+    "host": "tuan rumah",
+    "away": "pergi",
+    "join": "Gabung balapan",
+    "leave": "Keluar",
+    "cancel": "Batalkan",
+    "cancel_confirm": "Batalkan balapan? Lobi ditutup untuk semua orang di dalamnya.",
+    "start": "Mulai",
+    "starting": "Menyiapkan teka-teki…",
+    "need_more": "Menunggu setidaknya satu pemain lagi…",
+    "waiting_host": "Menunggu tuan rumah memulai…",
+    "expires": "Lobi ditutup dalam {{ minutes }} menit jika tidak ada yang memulai.",
+    "share": "Bagikan tautan lobi",
+    "share_text": "Balapan denganku di Hashi! Gabung ke lobi di {{ group }}:"
+  },
+  "countdown": {
+    "ready": "Siap",
+    "go": "Mulai!"
+  },
+  "play": {
+    "give_up": "Menyerah",
+    "give_up_confirm": "Menyerah dari balapan? Kamu tidak mendapat peringkat, dan solusinya terlihat setelah balapan selesai.",
+    "loading": "Teka-teki sedang dalam perjalanan…",
+    "time_left": "sisa {{ minutes }} menit"
+  },
+  "track": {
+    "title": "Kemajuan",
+    "text": "Sejauh mana semua orang: bagian jembatan di papan mereka. Tak ada yang melihat jembatan orang lain.",
+    "you": "kamu"
+  },
+  "watch": {
+    "text": "Kamu menonton: balapan berlangsung di antara para pemain."
+  },
+  "done": {
+    "solved": "Selesai!",
+    "gave_up": "Kamu menyerah.",
+    "waiting": "Menunggu yang lain selesai…"
+  },
+  "results": {
+    "title": "Hasil",
+    "flagged": "tanpa peringkat",
+    "gave_up": "menyerah",
+    "out": "tidak selesai",
+    "rematch": "Tanding ulang",
+    "rematch_join": "Gabung tanding ulang",
+    "rematch_go": "Ke tanding ulang",
+    "replay": "Langkah semua orang",
+    "stage": "Papan balapan dengan jembatan {{ names }}"
+  },
+  "errors": {
+    "open": "Sudah ada balapan terbuka di grup ini: gabunglah ke sana.",
+    "gone": "Balapan ini sudah tidak ada: lobinya kedaluwarsa atau dibatalkan.",
+    "started": "Balapan ini sudah dimulai: kamu bisa menontonnya.",
+    "host_only": "Hanya tuan rumah yang bisa memulai balapan.",
+    "too_few": "Balapan butuh setidaknya dua pemain.",
+    "not_joined": "Kamu tidak ikut balapan ini.",
+    "not_running": "Balapan sedang tidak berjalan.",
+    "done": "Kamu sudah selesai dengan balapan ini."
+  }
+}

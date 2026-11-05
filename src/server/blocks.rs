@@ -1,7 +1,7 @@
 //! Blocks: a player blocks another one, whose name then never reaches them.
 //!
 //! Wherever other players' names go out (the daily, monthly and all time boards, rivals, groups
-//! with their boards, banzuke, week, replays, hanko and puzzles), the server functions pass what
+//! with their boards, banzuke, week, replays, hanko, puzzles and races), the server functions pass what
 //! they send through [`hidden`], which puts [`BLOCKED_NAME`] in the place of a blocked player's
 //! name. The rows stay, so places and ranks don't change; the pages show "blocked player" without
 //! a link. A puzzle of theirs loses its title too.
@@ -22,9 +22,10 @@ use super::db::db_err;
 use super::now_ms;
 use crate::model::{
     AllTimeEntry, ApiError, BLOCKED_NAME, Banzuke, BanzukeRow, BlockedPlayer, GroupMember,
-    GroupPage, GroupPuzzles, GroupToday, GroupWeek, HallOfFame, HankoReceived, InvitePreview,
-    Kudos, Lane, Leaderboard, LeaderboardEntry, MonthBoard, MonthEntry, PuzzlePage, PuzzleSummary,
-    ReplayData, RivalDay, RivalRow, RivalsBoard, RivalsToday, TodayEntry, WeekRow,
+    GroupPage, GroupPuzzles, GroupRaces, GroupToday, GroupWeek, HallOfFame, HankoReceived,
+    InvitePreview, Kudos, Lane, Leaderboard, LeaderboardEntry, MonthBoard, MonthEntry, PuzzlePage,
+    PuzzleSummary, RaceEntrant, RacePlayer, RaceSummary, RaceView, ReplayData, RivalDay, RivalRow,
+    RivalsBoard, RivalsToday, TodayEntry, WeekRow,
 };
 
 /// `user` blocks `player` (`on`) or unblocks them, and returns the players blocked then.
@@ -232,6 +233,8 @@ named!(
     WeekRow,
     BanzukeRow,
     Lane,
+    RacePlayer,
+    RaceEntrant,
 );
 
 impl Hide for Leaderboard {
@@ -349,5 +352,24 @@ impl Hide for PuzzlePage {
     fn hide(&mut self, blocked: &Blocked) {
         self.summary.hide(blocked);
         self.board.hide(blocked);
+    }
+}
+
+impl Hide for RaceView {
+    fn hide(&mut self, blocked: &Blocked) {
+        self.players.hide(blocked);
+    }
+}
+
+impl Hide for RaceSummary {
+    fn hide(&mut self, blocked: &Blocked) {
+        self.entrants.hide(blocked);
+    }
+}
+
+impl Hide for GroupRaces {
+    fn hide(&mut self, blocked: &Blocked) {
+        self.open.hide(blocked);
+        self.recent.hide(blocked);
     }
 }
