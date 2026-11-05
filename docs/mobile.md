@@ -111,7 +111,7 @@ The app's side (`src/api/app.rs`, only in the `csr` build; the website sends non
   icons follow the page's theme. The page ends above the soft keyboard. On iOS the swipe from the
   screen's edge goes back in the page's history.
 - App Links (Android) and Universal Links (iOS): links to the pages people share (an invite
-  `/g/<code>`, the daily, Play, groups, players, in every language) open in the app where it
+  `/g/<code>`, the daily, Play, groups, players, shared puzzles `/p/<code>`, in every language) open in the app where it
   is installed, on their page (tauri-plugin-deep-link). The site names the app:
   `/.well-known/assetlinks.json` its certificates (`HASHI_ANDROID_CERT_SHA256`),
   `/.well-known/apple-app-site-association` its app ID (`HASHI_IOS_APP_IDS`), both 404 without

@@ -24,7 +24,7 @@ in [deployment.md](deployment.md#search-engines).
 - **One URL per page**: every page has a self-referencing canonical link,
   `hreflang` alternates for all languages and `x-default` (the English URL without
   prefix). `/rules/` and `/en/rules` redirect permanently to `/rules`.
-- **No index**: accounts, groups, invites, replays, players' pages, the Dojo's
+- **No index**: accounts, groups, invites, replays, players' pages, shared puzzles, the Dojo's
   entries, the admin page and the 404 page have `<meta name="robots"
   content="noindex">` and no canonical link.
 - **Titles and descriptions**: per page and language, unique within a language,
@@ -38,7 +38,9 @@ in [deployment.md](deployment.md#search-engines).
   AI search what the pages are, and costs nothing. No `HowTo` (Google dropped it in
   2023).
 - **Social previews**: Open Graph and Twitter tags on every page, an image per
-  language (`/og/<lang>.png`), the home page today's daily (`/og/daily/<date>/`).
+  language (`/og/<lang>.png`), the home page today's daily (`/og/daily/<date>/`), a shared
+  puzzle (`/p/<code>`) its own card with its board and the time to beat (`/og/p/<code>/`), its
+  title and description naming the sharer.
 - **Languages**: `<html lang dir>` per page (`dir="rtl"` for Arabic), the rules
   ("how to play Hashiwokakero") in every language at `/<lang>/rules`.
 - **Verification files** for Bing and Yandex, and the IndexNow key file, from

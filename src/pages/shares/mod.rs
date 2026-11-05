@@ -230,6 +230,7 @@ pub struct Shared {
     pub solved_ms: RwSignal<Option<i64>>,
     pub sending: RwSignal<bool>,
     pub failed: RwSignal<bool>,
+    auth: Option<Auth>,
 }
 
 impl Shared {
@@ -243,6 +244,7 @@ impl Shared {
             solved_ms: RwSignal::new(None),
             sending: RwSignal::new(false),
             failed: RwSignal::new(false),
+            auth: use_context::<Auth>(),
         }
     }
 
@@ -263,7 +265,7 @@ impl Shared {
         self.solved_ms.set(Some(solve.time_ms));
         self.sending.set(true);
         self.failed.set(false);
-        let auth = use_context::<Auth>();
+        let auth = self.auth;
         spawn_local(async move {
             let reply = submit_shared_puzzle(code, solve).await;
             if self.sending.try_set(false).is_some() {
@@ -305,6 +307,11 @@ fn Playing(initial: SharedPuzzlePage) -> impl IntoView {
         let fresh = shared.page.with_untracked(|p| p.puzzle.clone());
         if !(game.ensure_restored() && game.puzzle() == fresh) {
             game.set_puzzle(fresh, None, Some(true), Source::Custom);
+        } else if game.status.get_untracked() == Status::Won
+            && shared.page.with_untracked(|p| p.mine.is_none())
+        {
+            // Solved here before, and the time never reached the server: it goes now
+            shared.submit();
         }
         if let Ok(handle) = set_interval_with_handle(
             move || {
