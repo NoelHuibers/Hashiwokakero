@@ -180,8 +180,8 @@
     "groups": "{{ count }} ayrı grup",
     "all_connected": "hepsi bağlı",
     "islands": "{{ count }} ada",
-    "unique_solution": "tek çözüm ✓",
-    "several_solutions": "birden çok çözüm"
+    "several_solutions": "birden çok çözüm",
+    "several_solutions_tooltip": "Bu bulmacanın birden fazla çözümü var. Kontrol ve ipuçları bunlardan birini esas alır, bu yüzden doğru bir köprü bile yanlış işaretlenebilir."
   },
   "weekday": {
     "mon": "Pazartesi",

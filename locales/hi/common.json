@@ -180,8 +180,8 @@
     "groups": "{{ count }} अलग समूह",
     "all_connected": "सब जुड़े हुए",
     "islands": "{{ count }} द्वीप",
-    "unique_solution": "अद्वितीय हल ✓",
-    "several_solutions": "कई हल"
+    "several_solutions": "कई हल",
+    "several_solutions_tooltip": "इस पहेली के एक से ज़्यादा हल हैं। जाँच और संकेत इनमें से एक ही हल के हिसाब से चलते हैं, इसलिए सही पुल भी गलत दिख सकता है।"
   },
   "weekday": {
     "mon": "सोमवार",
