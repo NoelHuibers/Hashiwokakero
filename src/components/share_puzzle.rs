@@ -101,7 +101,7 @@ pub fn SharePuzzle(
             _ => fallback.map(|f| f.run(())).unwrap_or_default(),
         }
     };
-    let made = move || matches!(link.get(), Link::Made(_));
+    let has_link = move || matches!(link.get(), Link::Made(_));
     view! {
         <div class="flex w-full flex-col gap-2" data-testid="share-puzzle">
             {move || match link.get() {
@@ -144,12 +144,12 @@ pub fn SharePuzzle(
                     .into_any(),
             }}
             // The result until there is a link, then the link
-            <Show when=move || fallback.is_some() || made()>
+            <Show when=move || fallback.is_some() || has_link()>
                 <ShareBar
                     text=shared_text
                     outline=outline
                     label=Signal::derive(move || {
-                        if made() {
+                        if has_link() {
                             t_string!(i18n, shared.share.send).to_string()
                         } else {
                             t_string!(i18n, common.game.share).to_string()

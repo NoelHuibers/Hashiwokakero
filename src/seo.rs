@@ -909,7 +909,13 @@ mod tests {
         }
         // Play and shared puzzles open in the app on Android, on iOS not yet; Play's old name in
         // both
-        for path in ["/play", "/ja/play", "/zh-Hant/play", "/p/k7m2xq9a", "/ja/p/k7m2xq9a"] {
+        for path in [
+            "/play",
+            "/ja/play",
+            "/zh-Hant/play",
+            "/p/k7m2xq9a",
+            "/ja/p/k7m2xq9a",
+        ] {
             assert!(android(path), "Android, {path}");
             assert!(!ios(path), "iOS, {path}");
         }
