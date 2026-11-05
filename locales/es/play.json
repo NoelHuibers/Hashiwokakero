@@ -4,13 +4,8 @@
     "description": "Juega a Hashiwokakero (Puentes) sin reloj: puzles sin límite en cinco tamaños de 7×7 a 24×24, pistas y comprobaciones, y cada uno con una sola solución."
   },
   "heading": "el puzle de los puentes",
-  "generate": "Generar",
   "generating": "Generando…",
   "generating_text": "Haciendo crecer islas, construyendo puentes y preguntando al solver SAT si la solución es única…",
-  "card": {
-    "title": "Jugar",
-    "text": "Tantos puzles nuevos como quieras, cada uno con una única solución demostrada por el solver SAT. Sin prisas: el puente del día está en la página principal."
-  },
   "legend": {
     "title": "Cómo construir",
     "single": "puente de madera",
@@ -27,5 +22,11 @@
   "revealed": "Resuelto por el solver SAT.",
   "play_myself": "Jugarlo yo",
   "new_puzzle": "Nuevo puzle",
-  "more": "Más acciones"
+  "more": "Más acciones",
+  "pause": "Pausa",
+  "resume": "Continuar",
+  "paused": "En pausa",
+  "paused_text": "El reloj se detiene y el tablero queda oculto hasta que sigas.",
+  "left": "Nuevo puzle empezado.",
+  "back": "Volver al puzle anterior"
 }

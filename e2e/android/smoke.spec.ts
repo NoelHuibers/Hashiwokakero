@@ -124,7 +124,7 @@ test('Play generates, hints and checks on the phone', async ({ page, device }) =
 
   // Another one on request
   const first = await layout(page);
-  await page.getByRole('button', { name: /^Generate/ }).click();
+  await page.getByRole('button', { name: 'New puzzle', exact: true }).click();
   await expect.poll(() => layout(page), { message: 'a new puzzle' }).not.toBe(first);
   await expect(page.getByText('Growing islands')).toBeHidden();
   await expect(bridges(page)).toHaveCount(0);

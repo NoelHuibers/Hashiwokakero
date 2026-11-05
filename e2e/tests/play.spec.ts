@@ -33,7 +33,7 @@ const layout = (page: Page) =>
  */
 async function gap(page: Page) {
   // In the middle of the screen: "if needed" left its top row under the sticky header once
-  // Generate, further down on phones, was clicked
+  // Generate, then further down on phones, was clicked
   await board(page).evaluate((el) => el.scrollIntoView({ block: 'center' }));
   const point = await board(page)
     .locator('g.island')
@@ -62,14 +62,23 @@ async function gap(page: Page) {
   return point!;
 }
 
-/** A new puzzle of the difficulty picked in the card (Medium unless another is picked). */
+/**
+ * A new puzzle: of a difficulty, with its chip above the board, else with the button next to the
+ * clock (Medium unless another was picked).
+ */
 async function newPuzzle(page: Page, difficulty?: string) {
   await visit(page, '/play');
   // The first visit generates a puzzle by itself
   await expect(board(page).locator('g.island').first()).toBeVisible();
   const first = await layout(page);
-  if (difficulty) await page.getByRole('button', { name: new RegExp(difficulty) }).click();
-  await page.getByRole('button', { name: /^Generate/ }).click();
+  if (difficulty) {
+    await page
+      .getByRole('group', { name: 'New puzzle' })
+      .getByRole('button', { name: difficulty, exact: true })
+      .click();
+  } else {
+    await page.getByRole('button', { name: 'New puzzle', exact: true }).click();
+  }
   await expect.poll(() => layout(page), { message: 'a new puzzle' }).not.toBe(first);
   await expect(page.getByText('Growing islands')).toBeHidden();
   await expect(bridges(page)).toHaveCount(0);

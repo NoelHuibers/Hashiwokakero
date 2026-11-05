@@ -40,7 +40,8 @@
     "tap": "Kliknij wodę między dwiema wyspami, by zbudować most, jeszcze raz, by dodać drugi, trzecie kliknięcie usuwa oba.",
     "drag": "Możesz też przeciągnąć od wyspy w stronę sąsiada albo kliknąć kolejno dwie wyspy.",
     "remove": "<right>Prawy przycisk</right> / <shift>Shift</shift> + klik usuwa most.",
-    "colors": "Ukończone wyspy robią się zielone, przepełnione czerwone. Nie wiesz, co dalej? Poproś solver SAT o podpowiedź albo o sprawdzenie twoich mostów."
+    "colors": "Ukończone wyspy robią się zielone, przepełnione czerwone. Nie wiesz, co dalej? Poproś solver SAT o podpowiedź albo o sprawdzenie twoich mostów.",
+    "in_play": "W trybie Graj:"
   },
   "hood": {
     "title": "Pod maską",

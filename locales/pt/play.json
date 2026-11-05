@@ -4,13 +4,8 @@
     "description": "Jogue Hashiwokakero (Pontes) sem relógio: puzzles ilimitados em cinco tamanhos de 7×7 a 24×24, dicas e verificações, cada um com uma única solução."
   },
   "heading": "o puzzle das pontes",
-  "generate": "Gerar",
   "generating": "Gerando…",
   "generating_text": "Criando ilhas, construindo pontes e perguntando ao solver SAT se a solução é única…",
-  "card": {
-    "title": "Jogar",
-    "text": "Quantos puzzles novos você quiser, cada um com solução única provada pelo solver SAT. Sem pressão do relógio, a ponte diária está na página inicial."
-  },
   "legend": {
     "title": "Como construir",
     "single": "ponte de madeira",
@@ -27,5 +22,11 @@
   "revealed": "Resolvido pelo solver SAT.",
   "play_myself": "Quero jogar eu mesmo",
   "new_puzzle": "Novo puzzle",
-  "more": "Mais ações"
+  "more": "Mais ações",
+  "pause": "Pausar",
+  "resume": "Continuar",
+  "paused": "Pausado",
+  "paused_text": "O relógio para e o tabuleiro fica escondido até você continuar.",
+  "left": "Novo puzzle iniciado.",
+  "back": "Voltar ao puzzle anterior"
 }

@@ -4,13 +4,8 @@
     "description": "Gioca a Hashiwokakero (Ponti) senza cronometro: puzzle illimitati in cinque formati da 7×7 a 24×24, indizi, verifiche e una sola soluzione."
   },
   "heading": "il rompicapo dei ponti",
-  "generate": "Genera",
   "generating": "Generazione…",
   "generating_text": "Facciamo crescere isole, costruiamo ponti e chiediamo al solver SAT se la soluzione è unica…",
-  "card": {
-    "title": "Gioca",
-    "text": "Tutti i puzzle nuovi che vuoi, ognuno con una sola soluzione dimostrata dal solver SAT. Niente fretta: il ponte del giorno è nella pagina principale."
-  },
   "legend": {
     "title": "Come costruire",
     "single": "ponte di legno",
@@ -27,5 +22,11 @@
   "revealed": "Risolto dal solver SAT.",
   "play_myself": "Lo gioco io",
   "new_puzzle": "Nuovo puzzle",
-  "more": "Altre azioni"
+  "more": "Altre azioni",
+  "pause": "Pausa",
+  "resume": "Riprendi",
+  "paused": "In pausa",
+  "paused_text": "L’orologio è fermo e la griglia resta nascosta finché non riprendi.",
+  "left": "Nuovo puzzle iniziato.",
+  "back": "Torna al puzzle precedente"
 }

@@ -4,13 +4,8 @@
     "description": "Graj w Hashiwokakero (Mosty) bez zegara: nieograniczone łamigłówki w pięciu rozmiarach od 7×7 do 24×24, podpowiedzi, każda z dokładnie jednym rozwiązaniem."
   },
   "heading": "łamigłówka z mostami",
-  "generate": "Generuj",
   "generating": "Generuję…",
   "generating_text": "Wyspy rosną, mosty powstają, a solver SAT sprawdza, czy rozwiązanie jest jednoznaczne…",
-  "card": {
-    "title": "Graj",
-    "text": "Tyle świeżych łamigłówek, ile chcesz, każda z dokładnie jednym rozwiązaniem, co udowadnia solver SAT. Bez presji czasu, most dnia czeka na stronie głównej."
-  },
   "legend": {
     "title": "Jak budować",
     "single": "drewniany most",
@@ -27,5 +22,11 @@
   "revealed": "Rozwiązane przez solver SAT.",
   "play_myself": "Zagram samodzielnie",
   "new_puzzle": "Nowa łamigłówka",
-  "more": "Więcej działań"
+  "more": "Więcej działań",
+  "pause": "Pauza",
+  "resume": "Wznów",
+  "paused": "Wstrzymano",
+  "paused_text": "Zegar stoi, a plansza pozostaje ukryta, dopóki nie wznowisz gry.",
+  "left": "Zaczęto nową łamigłówkę.",
+  "back": "Wróć do poprzedniej łamigłówki"
 }

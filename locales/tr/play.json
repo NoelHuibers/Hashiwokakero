@@ -4,13 +4,8 @@
     "description": "Süre baskısı olmadan Hashiwokakero (Köprüler) çöz: 7×7'den 24×24'e beş boyutta sınırsız bulmaca, ipuçları ve kontroller, hepsinin tek çözümü var."
   },
   "heading": "köprü bulmacası",
-  "generate": "Üret",
   "generating": "Üretiliyor…",
   "generating_text": "Adalar büyüyor, köprüler kuruluyor ve SAT çözücüye çözümün tek olup olmadığı soruluyor…",
-  "card": {
-    "title": "Oyna",
-    "text": "İstediğin kadar yeni bulmaca, her birinin tek çözümü SAT çözücü tarafından kanıtlanmış. Süre baskısı yok; günün köprüsü ana sayfada."
-  },
   "legend": {
     "title": "Nasıl kurulur",
     "single": "ahşap köprü",
@@ -27,5 +22,11 @@
   "revealed": "SAT çözücü çözdü.",
   "play_myself": "Kendim oynayacağım",
   "new_puzzle": "Yeni bulmaca",
-  "more": "Diğer işlemler"
+  "more": "Diğer işlemler",
+  "pause": "Duraklat",
+  "resume": "Devam et",
+  "paused": "Duraklatıldı",
+  "paused_text": "Saat durdu, devam edene kadar tahta gizli kalır.",
+  "left": "Yeni bulmaca başladı.",
+  "back": "Önceki bulmacaya dön"
 }

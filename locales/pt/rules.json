@@ -40,7 +40,8 @@
     "tap": "Clique na água entre duas ilhas para construir uma ponte, de novo para uma segunda, e um terceiro clique remove as duas.",
     "drag": "Ou arraste de uma ilha em direção à vizinha, ou clique em duas ilhas, uma depois da outra.",
     "remove": "<right>Clique direito</right> / <shift>Shift</shift> + clique remove uma ponte.",
-    "colors": "Ilhas completas ficam verdes, as que passaram do número ficam vermelhas. Travou? Peça ao solver SAT uma dica ou para verificar suas pontes."
+    "colors": "Ilhas completas ficam verdes, as que passaram do número ficam vermelhas. Travou? Peça ao solver SAT uma dica ou para verificar suas pontes.",
+    "in_play": "Em Jogar:"
   },
   "hood": {
     "title": "Por dentro",

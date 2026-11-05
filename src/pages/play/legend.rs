@@ -58,6 +58,9 @@ pub(super) fn LegendCard() -> impl IntoView {
                         <Kbd>"Ctrl Z"</Kbd> " " {t!(i18n, common.game.undo)} " · " <Kbd>"Ctrl Y"</Kbd> " "
                         {t!(i18n, common.game.redo)} " · " <Kbd>"H"</Kbd> " " {t!(i18n, common.game.hint)}
                     </li>
+                    <li>
+                        <Kbd>"N"</Kbd> " " {t!(i18n, play.new_puzzle)} " · " <Kbd>"P"</Kbd> " " {t!(i18n, play.pause)}
+                    </li>
                 </ul>
             </CardContent>
         </Card>

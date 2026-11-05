@@ -146,9 +146,8 @@ fn expected(route: &str, l: Locale) -> Expected {
             texts: [
                 td_string!(l, play.heading),
                 td_string!(l, play.generating),
-                td_string!(l, play.card.title),
-                td_string!(l, play.card.text),
-                td_string!(l, play.generate),
+                td_string!(l, play.new_puzzle),
+                td_string!(l, play.pause),
                 td_string!(l, play.legend.title),
                 td_string!(l, play.legend.build),
                 td_string!(l, common.game.undo),

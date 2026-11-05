@@ -40,7 +40,8 @@
     "tap": "Klik op het water tussen twee eilanden om een brug te bouwen, nog eens voor een tweede, een derde klik haalt ze weg.",
     "drag": "Of sleep van een eiland naar zijn buur, of klik twee eilanden na elkaar aan.",
     "remove": "<right>Rechtsklik</right> / <shift>Shift</shift> + klik haalt een brug weg.",
-    "colors": "Afgeronde eilanden worden groen, overvolle rood. Vastgelopen? Vraag de SAT-solver om een hint of om je bruggen te controleren."
+    "colors": "Afgeronde eilanden worden groen, overvolle rood. Vastgelopen? Vraag de SAT-solver om een hint of om je bruggen te controleren.",
+    "in_play": "Bij Spelen:"
   },
   "hood": {
     "title": "Onder de motorkap",

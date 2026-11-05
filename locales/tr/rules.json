@@ -40,7 +40,8 @@
     "tap": "Köprü kurmak için iki ada arasındaki suya tıkla, ikinci köprü için tekrar tıkla, üçüncü tık köprüleri kaldırır.",
     "drag": "Ya da bir adadan komşusuna doğru sürükle veya iki adaya art arda tıkla.",
     "remove": "<right>Sağ tık</right> / <shift>Shift</shift> + tık bir köprüyü kaldırır.",
-    "colors": "Tamamlanan adalar yeşile, fazla dolanlar kırmızıya döner. Takıldın mı? SAT çözücüden ipucu iste ya da köprülerini kontrol ettir."
+    "colors": "Tamamlanan adalar yeşile, fazla dolanlar kırmızıya döner. Takıldın mı? SAT çözücüden ipucu iste ya da köprülerini kontrol ettir.",
+    "in_play": "Oyna’da:"
   },
   "hood": {
     "title": "Perde arkası",

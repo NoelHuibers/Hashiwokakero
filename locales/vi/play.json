@@ -4,13 +4,8 @@
     "description": "Chơi Hashiwokakero (Nối cầu) không tính giờ: vô hạn câu đố ở năm kích thước từ 7×7 đến 24×24, có gợi ý và kiểm tra, mỗi câu có đúng một lời giải."
   },
   "heading": "câu đố nối cầu",
-  "generate": "Tạo mới",
   "generating": "Đang tạo…",
   "generating_text": "Đang mọc đảo, xây cầu và hỏi bộ giải SAT xem lời giải có duy nhất không…",
-  "card": {
-    "title": "Chơi",
-    "text": "Bao nhiêu câu đố mới cũng được, mỗi câu đều được bộ giải SAT chứng minh có đúng một lời giải. Không áp lực thời gian, cầu mỗi ngày nằm ở trang chủ."
-  },
   "legend": {
     "title": "Cách xây cầu",
     "single": "cầu gỗ",
@@ -27,5 +22,11 @@
   "revealed": "Bộ giải SAT đã giải.",
   "play_myself": "Tự mình chơi",
   "new_puzzle": "Câu đố mới",
-  "more": "Thao tác khác"
+  "more": "Thao tác khác",
+  "pause": "Tạm dừng",
+  "resume": "Tiếp tục",
+  "paused": "Đang tạm dừng",
+  "paused_text": "Đồng hồ dừng lại và bàn chơi được che cho đến khi bạn tiếp tục.",
+  "left": "Đã bắt đầu câu đố mới.",
+  "back": "Quay lại câu đố trước"
 }

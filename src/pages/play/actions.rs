@@ -1,15 +1,14 @@
-//! The row of game actions under the board of Play: undo and redo, check and hint, and the
-//! rarer ones (restart, a new puzzle) behind a "more" button, so the row stays one line on phones.
+//! The row of game actions under the board of Play.
+//!
+//! Undo and redo, check and hint, and the rarer restart behind a "more" button, so the row stays
+//! one line on phones. A new puzzle is above the board (`new_game`).
 
 use leptos::prelude::*;
 
 use crate::components::layout::settings::use_dismiss;
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::i18n::{t, t_string, use_i18n};
-use crate::lang::difficulty_name;
 use crate::state::{self, Game, Settings, Status};
-
-use super::new_game::new_random;
 
 /// Lucide's "undo-2"; "redo-2" is the same arrow mirrored.
 const UNDO: &str = "M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11";
@@ -83,15 +82,12 @@ pub(super) fn GameActions(
     }
 }
 
-/// The "more" button and what it opens: restart, and a new puzzle of the difficulty picked in
-/// the card (which on phones is further down, below the board). A disclosure, not a menu: the
-/// button says whether it is open, Tab walks on into the buttons, Escape or a click elsewhere
-/// closes it.
+/// The "more" button and what it opens: restart. A disclosure, not a menu: the button says
+/// whether it is open, Tab walks on into the buttons, Escape or a click elsewhere closes it.
 #[component]
 fn MoreActions(#[prop(into)] busy: Signal<bool>) -> impl IntoView {
     let i18n = use_i18n();
     let game = expect_context::<Game>();
-    let settings = expect_context::<Settings>();
     let open = RwSignal::new(false);
     let root = NodeRef::<leptos::html::Div>::new();
     let button = NodeRef::<leptos::html::Button>::new();
@@ -127,27 +123,6 @@ fn MoreActions(#[prop(into)] busy: Signal<bool>) -> impl IntoView {
                 class:hidden=move || !open.get()
             >
                 <p class="px-3 pb-1 pt-1 font-pixel text-xs text-muted-foreground" aria-hidden="true">"他 · " {t!(i18n, play.more)}</p>
-                <button
-                    type="button"
-                    class=item
-                    disabled=move || game.loading.get()
-                    on:click=move |_| {
-                        open.set(false);
-                        new_random(&game, settings.difficulty.get_untracked());
-                    }
-                >
-                    <span class="w-6 shrink-0 text-center font-pixel text-primary" aria-hidden="true">"新"</span>
-                    <span class="flex min-w-0 flex-col">
-                        {t!(i18n, play.new_puzzle)}
-                        <span class="text-xs font-normal text-muted-foreground">
-                            {move || {
-                                let d = settings.difficulty.get();
-                                let (w, h) = d.size();
-                                format!("{} {} · {w}×{h}", d.kanji(), difficulty_name(i18n.get_locale(), d))
-                            }}
-                        </span>
-                    </span>
-                </button>
                 <button
                     type="button"
                     class=item
@@ -202,10 +177,10 @@ mod tests {
             assert!(more.contains("aria-controls=\"play-more\""), "{more}");
             let panel = tag_with(&html, "id=\"play-more\"");
             assert!(panel.contains("hidden"), "{panel}");
-            // Restart and a new puzzle are in the panel, after the button
+            // Restart is in the panel, after the button; a new puzzle is above the board
             let after = &html[html.find("id=\"play-more\"").unwrap()..];
             assert!(after.contains(td_string!(Locale::ar, common.game.restart)));
-            assert!(after.contains(td_string!(Locale::ar, play.new_puzzle)));
+            assert!(!after.contains(td_string!(Locale::ar, play.new_puzzle)));
             assert!(html.contains(td_string!(Locale::ar, common.game.check)));
             assert!(html.contains(td_string!(Locale::ar, common.game.hint)));
         });

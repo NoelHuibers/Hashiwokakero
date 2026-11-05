@@ -63,6 +63,29 @@ struct SavedGame {
     elapsed: u32,
     moves: u32,
     hints: u32,
+    /// Play's game paused (`Game::pause`). Left out while false, so older saves still load and
+    /// newer ones only differ when paused.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    paused: bool,
+}
+
+/// Everything about a game in progress, to bring it back exactly as it was (`Game::snapshot`):
+/// Play offers the puzzle left for a new one back for a moment.
+#[derive(Clone, Debug)]
+pub struct Snapshot {
+    puzzle: Puzzle,
+    bridges: Vec<u8>,
+    undo_stack: Vec<Vec<u8>>,
+    redo_stack: Vec<Vec<u8>>,
+    solution: Option<Vec<u8>>,
+    unique: Option<bool>,
+    source: Source,
+    status: Status,
+    elapsed: u32,
+    moves: u32,
+    hints: u32,
+    paused: bool,
+    report: Option<SolveReport>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -87,12 +110,18 @@ pub struct Game {
     /// Solver stats of the last run on this puzzle.
     pub report: RwSignal<Option<SolveReport>>,
     pub solving: RwSignal<bool>,
+    /// The clock stopped and the board covered (`Game::pause`).
+    pub paused: RwSignal<bool>,
+    /// Whether this game can pause at all: only Play's own (`Game::pausable`). A daily, a group
+    /// puzzle or a race is timed for a ranking, where a pause would be free thinking time.
+    pausable: bool,
     restored: StoredValue<bool>,
     /// Local storage key of the saved game.
     key: &'static str,
 }
 
 impl Game {
+    /// A game that never pauses, see [`Self::pausable`].
     pub fn new(key: &'static str) -> Self {
         let board = Board::new(Puzzle::empty(7, 7));
         Self {
@@ -113,8 +142,18 @@ impl Game {
             epoch: RwSignal::new(0),
             report: RwSignal::new(None),
             solving: RwSignal::new(false),
+            paused: RwSignal::new(false),
+            pausable: false,
             restored: StoredValue::new(false),
             key,
+        }
+    }
+
+    /// Play's own game, the only one that can pause.
+    pub fn pausable(key: &'static str) -> Self {
+        Self {
+            pausable: true,
+            ..Self::new(key)
         }
     }
 
@@ -151,12 +190,95 @@ impl Game {
         self.hint.set(None);
         self.report.set(None);
         self.solving.set(false);
+        self.paused.set(false);
         self.loading.set(false);
         self.epoch.update(|e| *e += 1);
     }
 
+    /// Being played and not paused: bridges, undo, redo and hints only then.
     pub fn is_playing(&self) -> bool {
-        self.status.get_untracked() == Status::Playing
+        self.status.get_untracked() == Status::Playing && !self.paused.get_untracked()
+    }
+
+    /// Whether [`Self::pause`] would pause now (tracked, for the pause button).
+    pub fn can_pause(&self) -> bool {
+        self.pausable && self.status.get() == Status::Playing && !self.loading.get()
+    }
+
+    /// Stops the clock and covers the board, only for a game that can pause, while it is played.
+    pub fn pause(&self) {
+        if self.pausable
+            && self.status.get_untracked() == Status::Playing
+            && !self.loading.get_untracked()
+        {
+            self.hint.set(None);
+            self.wrong.set(vec![]);
+            self.paused.set(true);
+        }
+    }
+
+    pub fn resume(&self) {
+        self.paused.set(false);
+    }
+
+    pub fn toggle_pause(&self) {
+        if self.paused.get_untracked() {
+            self.resume();
+        } else {
+            self.pause();
+        }
+    }
+
+    /// One second of the clock, which runs while the game is played, not paused, not loading a
+    /// new puzzle, and the tab is `visible`.
+    pub fn tick(&self, visible: bool) {
+        if visible && self.is_playing() && !self.loading.get_untracked() {
+            self.elapsed.update(|e| *e += 1);
+        }
+    }
+
+    /// A game begun and not finished, which a new puzzle would throw away.
+    pub fn has_progress(&self) -> bool {
+        self.status.get_untracked() == Status::Playing && self.moves.get_untracked() > 0
+    }
+
+    /// The game as it is, for [`Self::restore_snapshot`].
+    pub fn snapshot(&self) -> Snapshot {
+        Snapshot {
+            puzzle: self.puzzle(),
+            bridges: self.bridges.get_untracked(),
+            undo_stack: self.undo_stack.get_untracked(),
+            redo_stack: self.redo_stack.get_untracked(),
+            solution: self.solution.get_untracked(),
+            unique: self.unique.get_untracked(),
+            source: self.source.get_untracked(),
+            status: self.status.get_untracked(),
+            elapsed: self.elapsed.get_untracked(),
+            moves: self.moves.get_untracked(),
+            hints: self.hints.get_untracked(),
+            paused: self.paused.get_untracked(),
+            report: self.report.get_untracked(),
+        }
+    }
+
+    /// Brings a game back as it was when the snapshot was taken, history and clock included. A
+    /// new puzzle on its way is dropped (a new epoch).
+    pub fn restore_snapshot(&self, snapshot: Snapshot) {
+        self.set_puzzle(
+            snapshot.puzzle,
+            snapshot.solution,
+            snapshot.unique,
+            snapshot.source,
+        );
+        self.bridges.set(snapshot.bridges);
+        self.undo_stack.set(snapshot.undo_stack);
+        self.redo_stack.set(snapshot.redo_stack);
+        self.status.set(snapshot.status);
+        self.elapsed.set(snapshot.elapsed);
+        self.moves.set(snapshot.moves);
+        self.hints.set(snapshot.hints);
+        self.report.set(snapshot.report);
+        self.paused.set(snapshot.paused && self.pausable);
     }
 
     /// Applies bridge changes as one undoable step.
@@ -238,6 +360,7 @@ impl Game {
             self.hints.set(0);
         }
         self.hint.set(None);
+        self.paused.set(false);
     }
 
     pub fn puzzle(&self) -> Puzzle {
@@ -258,6 +381,7 @@ impl Game {
             elapsed: self.elapsed.get(),
             moves: self.moves.get(),
             hints: self.hints.get(),
+            paused: self.paused.get(),
         };
         store(self.key, &saved);
     }
@@ -280,6 +404,8 @@ impl Game {
         self.elapsed.set(saved.elapsed);
         self.moves.set(saved.moves);
         self.hints.set(saved.hints);
+        self.paused
+            .set(saved.paused && self.pausable && saved.status == Status::Playing);
         true
     }
 }
@@ -475,6 +601,7 @@ mod tests {
             elapsed: 61,
             moves: 4,
             hints: 1,
+            paused: false,
         };
         let games = [
             saved(Source::Generated(params), Status::Playing),
@@ -619,6 +746,7 @@ mod tests {
                 elapsed: 0,
                 moves: 0,
                 hints: 0,
+                paused: false,
             };
             store("test.bad", &saved(crate::golden::puzzle(), vec![1, 1, 1]));
             assert!(!Game::new("test.bad").ensure_restored());
@@ -675,6 +803,204 @@ mod tests {
             assert_eq!(game.moves.get_untracked(), 0);
             assert!(game.wrong.with_untracked(Vec::is_empty));
             assert!(game.undo_stack.with_untracked(Vec::is_empty));
+        });
+    }
+
+    /// Play's game pauses: the clock stops, bridges, undo, redo and hints wait, and resuming goes
+    /// on from the same second. Not while the puzzle is finished or a new one is on its way.
+    #[test]
+    fn a_paused_game_stops_the_clock_and_the_moves() {
+        Owner::new().with(|| {
+            let game = Game::pausable("test.pause");
+            game.set_puzzle(crate::golden::puzzle(), None, None, Source::Custom);
+            game.tick(true);
+            game.tick(true);
+            game.cycle(0, 1);
+            game.hint.set(Some(1));
+            assert!(game.can_pause());
+            game.toggle_pause();
+            assert!(game.paused.get_untracked());
+            assert_eq!(game.hint.get_untracked(), None, "no hint shows through");
+            for _ in 0..5 {
+                game.tick(true);
+            }
+            assert_eq!(game.elapsed.get_untracked(), 2);
+            game.cycle(1, 1);
+            game.undo();
+            assert_eq!(game.bridges.get_untracked(), vec![1, 0]);
+            assert_eq!(game.moves.get_untracked(), 1);
+            assert!(!game.is_playing());
+
+            game.toggle_pause();
+            assert!(!game.paused.get_untracked());
+            game.tick(true);
+            assert_eq!(game.elapsed.get_untracked(), 3, "on from where it stopped");
+            // A hidden tab stops the clock as before, without pausing
+            game.tick(false);
+            assert_eq!(game.elapsed.get_untracked(), 3);
+            game.cycle(1, 1);
+            assert_eq!(game.bridges.get_untracked(), vec![1, 1]);
+
+            game.loading.set(true);
+            game.pause();
+            assert!(
+                !game.paused.get_untracked(),
+                "not while a new puzzle is generated"
+            );
+            game.tick(true);
+            assert_eq!(game.elapsed.get_untracked(), 3);
+            game.loading.set(false);
+            game.status.set(Status::Won);
+            assert!(!game.can_pause());
+            game.pause();
+            assert!(!game.paused.get_untracked(), "nothing to pause once solved");
+
+            // A new puzzle, or a restart, starts unpaused
+            game.status.set(Status::Playing);
+            game.pause();
+            game.restart();
+            assert!(!game.paused.get_untracked());
+            game.pause();
+            game.set_puzzle(crate::golden::puzzle(), None, None, Source::Custom);
+            assert!(!game.paused.get_untracked());
+        });
+    }
+
+    /// Only Play's game pauses: the daily's, a group puzzle's and a race's (`Game::new`) are
+    /// ranked, a pause there would be free thinking time.
+    #[test]
+    fn other_games_never_pause() {
+        Owner::new().with(|| {
+            let game = Game::new("test.ranked");
+            game.set_puzzle(crate::golden::puzzle(), None, None, Source::Custom);
+            assert!(!game.can_pause());
+            game.pause();
+            game.toggle_pause();
+            assert!(!game.paused.get_untracked());
+            game.tick(true);
+            assert_eq!(game.elapsed.get_untracked(), 1);
+            // Not even from a saved game that says it was paused
+            game.paused.set(true);
+            game.save();
+            let tab = Game::new("test.ranked");
+            assert!(tab.ensure_restored());
+            assert!(!tab.paused.get_untracked());
+            assert!(tab.is_playing());
+        });
+    }
+
+    /// A paused game comes back paused after a reload, with its clock where it stopped, and
+    /// resuming goes on from there. Unpaused saves look as before (`saved_games_still_load`).
+    #[test]
+    fn a_paused_game_comes_back_paused() {
+        Owner::new().with(|| {
+            let game = Game::pausable("test.paused");
+            game.set_puzzle(crate::golden::puzzle(), None, None, Source::Custom);
+            game.cycle(0, 1);
+            game.elapsed.set(61);
+            game.save();
+            let raw = crate::state::load_raw("test.paused").unwrap();
+            assert!(!raw.contains("paused"), "{raw}");
+            game.pause();
+            game.save();
+            let raw = crate::state::load_raw("test.paused").unwrap();
+            assert!(raw.ends_with(",\"paused\":true}"), "{raw}");
+
+            let tab = Game::pausable("test.paused");
+            assert!(tab.ensure_restored());
+            assert!(tab.paused.get_untracked());
+            assert!(!tab.is_playing());
+            tab.tick(true);
+            assert_eq!(tab.elapsed.get_untracked(), 61);
+            tab.resume();
+            tab.tick(true);
+            assert_eq!(tab.elapsed.get_untracked(), 62);
+            assert_eq!(tab.bridges.get_untracked(), vec![1, 0]);
+
+            // A finished game never comes back paused
+            game.paused.set(true);
+            game.status.set(Status::Won);
+            game.save();
+            let tab = Game::pausable("test.paused");
+            assert!(tab.ensure_restored());
+            assert!(!tab.paused.get_untracked());
+        });
+    }
+
+    /// The game left for a new puzzle comes back exactly: board, bridges, history, clock,
+    /// moves, hints, the solver's report, paused or not. A new puzzle still on its way is dropped.
+    #[test]
+    fn a_snapshot_brings_the_game_back_exactly() {
+        Owner::new().with(|| {
+            let game = played("test.snapshot");
+            let game = Game {
+                pausable: true,
+                ..game
+            };
+            game.undo();
+            game.hints.set(2);
+            assert!(game.has_progress());
+            let report = SolveReport {
+                outcome: common::SolveOutcome::Timeout,
+                stats: common::SolveStats::default(),
+            };
+            game.report.set(Some(report.clone()));
+            game.pause();
+            let before = (
+                game.bridges.get_untracked(),
+                game.undo_stack.get_untracked(),
+                game.redo_stack.get_untracked(),
+            );
+            let snapshot = game.snapshot();
+
+            game.set_puzzle(Puzzle::empty(5, 5), None, None, Source::Custom);
+            game.loading.set(true);
+            let epoch = game.epoch.get_untracked();
+            game.restore_snapshot(snapshot);
+            assert_eq!(game.puzzle(), crate::golden::puzzle());
+            assert_eq!(
+                (
+                    game.bridges.get_untracked(),
+                    game.undo_stack.get_untracked(),
+                    game.redo_stack.get_untracked(),
+                ),
+                before
+            );
+            assert_eq!(game.solution.get_untracked(), Some(vec![2, 1]));
+            assert_eq!(game.unique.get_untracked(), Some(true));
+            assert!(matches!(game.source.get_untracked(), Source::Generated(_)));
+            assert_eq!(game.status.get_untracked(), Status::Playing);
+            assert_eq!(
+                (
+                    game.elapsed.get_untracked(),
+                    game.moves.get_untracked(),
+                    game.hints.get_untracked()
+                ),
+                (61, 2, 2)
+            );
+            assert_eq!(game.report.get_untracked(), Some(report));
+            assert!(game.paused.get_untracked());
+            assert!(!game.loading.get_untracked());
+            assert_eq!(
+                game.epoch.get_untracked(),
+                epoch + 1,
+                "the new puzzle is dropped"
+            );
+            // The history works as before
+            game.resume();
+            game.redo();
+            assert_eq!(game.bridges.get_untracked(), vec![1, 1]);
+            game.undo();
+            game.undo();
+            assert_eq!(game.bridges.get_untracked(), vec![0, 0]);
+
+            // Nothing to lose: not begun, or finished
+            game.restart();
+            game.moves.set(0);
+            assert!(!game.has_progress());
+            game.moves.set(3);
+            game.status.set(Status::Won);
+            assert!(!game.has_progress());
         });
     }
 }

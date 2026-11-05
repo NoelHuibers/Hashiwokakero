@@ -125,6 +125,10 @@ pub fn RulesPage() -> impl IntoView {
                             <Kbd>"Ctrl Z"</Kbd> " " {t!(i18n, common.game.undo)} " · " <Kbd>"Ctrl Y"</Kbd> " "
                             {t!(i18n, common.game.redo)} " · " <Kbd>"H"</Kbd> " " {t!(i18n, common.game.hint)}
                         </p>
+                        <p>
+                            {t!(i18n, rules.controls.in_play)} " " <Kbd>"N"</Kbd> " " {t!(i18n, play.new_puzzle)} " · "
+                            <Kbd>"P"</Kbd> " " {t!(i18n, play.pause)}
+                        </p>
                         <p>{t!(i18n, rules.controls.colors)}</p>
                     </CardContent>
                 </Card>

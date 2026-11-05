@@ -1,7 +1,5 @@
 //! Toasts: short messages in a corner of the screen that follow the language picker.
 
-use std::time::Duration;
-
 use leptos::prelude::*;
 
 use crate::i18n::{Locale, td_string};
@@ -13,14 +11,44 @@ pub enum ToastKind {
     Error,
 }
 
-/// The button of a toast that says the client is outdated.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// The button of a toast: for a client that is outdated, or one of a page's own.
+#[derive(Clone)]
 pub enum ToastAction {
     /// Reloads the page: the tab runs an outdated version of the site.
     Reload,
     /// Opens the app's store page (`api::update_url`): the app is outdated, and reloading
     /// would load the same bundle again.
     Update,
+    /// A page's own button (`Toasts::push_action`): its label and what it does, after which the
+    /// toast closes. A newer toast with the same `key` replaces it, as the offer of one moment.
+    Run {
+        key: &'static str,
+        label: ToastText,
+        run: std::sync::Arc<dyn Fn() + Send + Sync>,
+    },
+}
+
+/// Reload and update are the same whatever the toast; a page's buttons never are.
+impl PartialEq for ToastAction {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::Reload, Self::Reload) | (Self::Update, Self::Update)
+        )
+    }
+}
+
+impl std::fmt::Debug for ToastAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Reload => f.write_str("Reload"),
+            Self::Update => f.write_str("Update"),
+            Self::Run { key, .. } => f
+                .debug_struct("Run")
+                .field("key", key)
+                .finish_non_exhaustive(),
+        }
+    }
 }
 
 /// The text of a toast in a given language, so it follows the language picker.
@@ -73,6 +101,29 @@ impl Toasts {
         self.show(kind, None, std::sync::Arc::new(text));
     }
 
+    /// A toast with a button of the page's own, see [`ToastAction::Run`]. It stays a while
+    /// longer than a plain one, for the button to be read and reached.
+    pub fn push_action(
+        &self,
+        kind: ToastKind,
+        key: &'static str,
+        text: impl Fn(Locale) -> String + Send + Sync + 'static,
+        label: impl Fn(Locale) -> String + Send + Sync + 'static,
+        run: impl Fn() + Send + Sync + 'static,
+    ) {
+        let action = ToastAction::Run {
+            key,
+            label: std::sync::Arc::new(label),
+            run: std::sync::Arc::new(run),
+        };
+        self.show(kind, Some(action), std::sync::Arc::new(text));
+    }
+
+    /// Closes a toast, e.g. once its button ran.
+    pub fn dismiss(&self, id: u32) {
+        self.0.update(|l| l.retain(|t| t.id != id));
+    }
+
     /// A server function call that failed, see `lang::error_text`. When the tab runs an outdated
     /// version of the site (`api::is_outdated`: the server didn't know the function, or runs
     /// another build that didn't understand the call), the toast offers a reload and stays a
@@ -114,15 +165,23 @@ impl Toasts {
     }
 
     fn show(&self, kind: ToastKind, action: Option<ToastAction>, text: ToastText) {
+        let shown = match &action {
+            None => 3600,
+            Some(ToastAction::Run { .. }) => 8000,
+            Some(_) => 12_000,
+        };
         let list = self.0;
         let Some(Some(id)) = list.try_update(|l| add(l, kind, action, text)) else {
             return;
         };
-        let shown = if action.is_some() { 12_000 } else { 3600 };
+        // Timers are the browser's, toasts only show there
+        #[cfg(target_arch = "wasm32")]
         set_timeout(
             move || list.update(|l| l.retain(|t| t.id != id)),
-            Duration::from_millis(shown),
+            std::time::Duration::from_millis(shown),
         );
+        #[cfg(not(target_arch = "wasm32"))]
+        let _ = (id, shown);
     }
 }
 
@@ -173,6 +232,7 @@ fn error_action(update: bool, outdated: bool) -> Option<ToastAction> {
 
 /// Adds a toast to the list, which keeps the last three. Its id, or `None` when it asks for a
 /// reload or an update that is already asked for: an outdated tab or app fails every call at once.
+/// A page's button replaces the one with the same key.
 fn add(
     list: &mut Vec<Toast>,
     kind: ToastKind,
@@ -181,6 +241,9 @@ fn add(
 ) -> Option<u32> {
     if action.is_some() && list.iter().any(|t| t.action == action) {
         return None;
+    }
+    if let Some(ToastAction::Run { key, .. }) = &action {
+        list.retain(|t| !matches!(&t.action, Some(ToastAction::Run { key: k, .. }) if k == key));
     }
     let id = list.iter().map(|t| t.id + 1).max().unwrap_or(0);
     list.push(Toast {
@@ -242,11 +305,11 @@ mod tests {
         let reload = Some(ToastAction::Reload);
         let mut list = Vec::new();
         assert_eq!(
-            add(&mut list, ToastKind::Error, reload, text("reload")),
+            add(&mut list, ToastKind::Error, reload.clone(), text("reload")),
             Some(0)
         );
         assert_eq!(
-            add(&mut list, ToastKind::Error, reload, text("reload")),
+            add(&mut list, ToastKind::Error, reload.clone(), text("reload")),
             None
         );
         assert_eq!(
@@ -312,6 +375,64 @@ mod tests {
             toasts.back_online();
             assert_eq!(toasts.noted(false, &offline), Shown::Error);
             assert_eq!(toasts.noted(true, &offline), Shown::Offline);
+        });
+    }
+
+    fn run(key: &'static str) -> ToastAction {
+        ToastAction::Run {
+            key,
+            label: text("back"),
+            run: std::sync::Arc::new(|| {}),
+        }
+    }
+
+    /// A page's button is offered once at a time per key: a newer offer replaces the older one,
+    /// other toasts stay. Unlike a reload, it is never the same as another one.
+    #[test]
+    fn a_newer_offer_replaces_the_older_one() {
+        let mut list = Vec::new();
+        assert_eq!(add(&mut list, ToastKind::Info, None, text("hi")), Some(0));
+        assert_eq!(
+            add(&mut list, ToastKind::Info, Some(run("back")), text("a")),
+            Some(1)
+        );
+        assert_eq!(
+            add(&mut list, ToastKind::Info, Some(run("other")), text("b")),
+            Some(2)
+        );
+        assert_eq!(
+            add(&mut list, ToastKind::Info, Some(run("back")), text("c")),
+            Some(3)
+        );
+        assert_eq!(list.iter().map(|t| t.id).collect::<Vec<_>>(), [0, 2, 3]);
+        assert_eq!((list[2].text)(Locale::en), "c");
+        assert_ne!(run("back"), run("back"));
+        assert_eq!(
+            Some(ToastAction::Reload),
+            error_action(false, true),
+            "reloads are still alike"
+        );
+        Owner::new().with(|| {
+            let toasts = Toasts::new();
+            toasts.push_action(
+                ToastKind::Info,
+                "back",
+                |_| "a".into(),
+                |_| "b".into(),
+                || {},
+            );
+            toasts.push_action(
+                ToastKind::Info,
+                "back",
+                |_| "c".into(),
+                |_| "d".into(),
+                || {},
+            );
+            let shown = toasts.0.get_untracked();
+            assert_eq!(shown.len(), 1);
+            let id = shown[0].id;
+            toasts.dismiss(id);
+            assert!(toasts.0.with_untracked(Vec::is_empty));
         });
     }
 

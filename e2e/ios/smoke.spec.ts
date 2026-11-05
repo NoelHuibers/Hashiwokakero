@@ -109,7 +109,7 @@ test('Play generates, hints and checks on the phone', async ({ app }) => {
 
   // Another one on request
   const first = await layout(app);
-  await app.click({ css: 'button', name: /^Generate/ });
+  await app.click({ css: 'button', name: 'New puzzle' });
   await expect.poll(() => layout(app), { message: 'a new puzzle' }).not.toBe(first);
   await expect.poll(() => shows(app, 'Growing islands')).toBe(false);
   expect(await bridges(app)).toBe(0);

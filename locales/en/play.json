@@ -4,13 +4,8 @@
     "description": "Play Hashiwokakero (Bridges) without the clock: unlimited puzzles in five sizes from 7×7 to 24×24, hints and checks, each with exactly one solution."
   },
   "heading": "the bridges puzzle",
-  "generate": "Generate",
   "generating": "Generating…",
   "generating_text": "Growing islands, building bridges, and asking the SAT solver whether the solution is unique…",
-  "card": {
-    "title": "Play",
-    "text": "As many fresh puzzles as you like, each proven by the SAT solver to have exactly one solution. No clock pressure, the daily bridge is on the home page."
-  },
   "legend": {
     "title": "How to build",
     "single": "wooden bridge",
@@ -27,5 +22,11 @@
   "revealed": "Solved by the SAT solver.",
   "play_myself": "Play it myself",
   "new_puzzle": "New puzzle",
-  "more": "More actions"
+  "more": "More actions",
+  "pause": "Pause",
+  "resume": "Resume",
+  "paused": "Paused",
+  "paused_text": "The clock is stopped and the board stays hidden until you go on.",
+  "left": "New puzzle started.",
+  "back": "Back to previous puzzle"
 }

@@ -40,7 +40,8 @@
     "tap": "Click the water between two islands to build a bridge, again for a second one, a third click removes them.",
     "drag": "Or drag from an island towards its neighbour, or click two islands one after the other.",
     "remove": "<right>Right click</right> / <shift>Shift</shift> + click removes a bridge.",
-    "colors": "Finished islands turn green, overfull ones red. Stuck? Ask the SAT solver for a hint or to check your bridges."
+    "colors": "Finished islands turn green, overfull ones red. Stuck? Ask the SAT solver for a hint or to check your bridges.",
+    "in_play": "In Play:"
   },
   "hood": {
     "title": "Under the hood",
