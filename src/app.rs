@@ -14,11 +14,12 @@ use crate::pages::admin::AdminPage;
 use crate::pages::contact::ContactPage;
 use crate::pages::create::CreatePage;
 use crate::pages::daily::DailyPage;
-use crate::pages::dojo::{DojoBenchmarksPage, DojoPage, DojoSeasonsPage, DojoSubmissionPage};
 use crate::pages::groups::{GroupDetailPage, GroupsPage, JoinGroupPage};
 use crate::pages::kadai::KadaiPage;
 use crate::pages::kadai::replay::KadaiReplayPage;
-use crate::pages::lab::LabPage;
+use crate::pages::lab::{
+    LabBenchmarksPage, LabLeaderboardPage, LabPage, LabSeasonsPage, LabSolverPage, LabSubmitPage,
+};
 use crate::pages::legal::{CommunityRulesPage, ImpressumPage, PrivacyPage};
 use crate::pages::play::PlayPage;
 use crate::pages::player::PlayerPage;
@@ -151,12 +152,19 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/account/reset") view=ResetPasswordPage />
                             <Route path=path!("/account/confirm") view=ConfirmEmailPage />
                             <Route path=path!("/create") view=CreatePage />
+                            // The Lab, a page per tab (`pages::lab::LabTab`)
                             <Route path=path!("/lab") view=LabPage />
-                            <Route path=path!("/dojo") view=DojoPage />
+                            <Route path=path!("/lab/leaderboard") view=LabLeaderboardPage />
+                            <Route path=path!("/lab/submit") view=LabSubmitPage />
+                            <Route path=path!("/lab/benchmarks") view=LabBenchmarksPage />
+                            <Route path=path!("/lab/seasons") view=LabSeasonsPage />
+                            <Route path=path!("/lab/solver/:id") view=LabSolverPage />
+                            // The SAT Dojo's old addresses, its pages are the Lab's tabs now
+                            <Route path=path!("/dojo") view=MovedPage />
+                            <Route path=path!("/dojo/seasons") view=MovedPage />
+                            <Route path=path!("/dojo/benchmarks") view=MovedPage />
+                            <Route path=path!("/dojo/:id") view=MovedPage />
                             <Route path=path!("/admin") view=AdminPage />
-                            <Route path=path!("/dojo/seasons") view=DojoSeasonsPage />
-                            <Route path=path!("/dojo/benchmarks") view=DojoBenchmarksPage />
-                            <Route path=path!("/dojo/:id") view=DojoSubmissionPage />
                             <Route path=path!("/rules") view=RulesPage />
                             <Route path=path!("/impressum") view=ImpressumPage />
                             <Route path=path!("/datenschutz") view=PrivacyPage />
@@ -233,7 +241,8 @@ fn LocaleFromPath() -> impl IntoView {
 /// query and fragment, in place of the old one in the history. The server redirects these
 /// itself before any page renders; this is for the app, whose pages have no server in front of
 /// them (an App Link to `/practice`, a link of a page cached from before), and for client-side
-/// navigation.
+/// navigation. A path the route matches but no page moved from (`/dojo/abc`, no entry's number)
+/// is not found.
 ///
 /// After the navigation to the old address is done, in the next frame: the router adds that one
 /// to the history only once its page rendered, so a redirect while it renders replaced the page
@@ -246,8 +255,11 @@ fn MovedPage() -> impl IntoView {
         &location.search.get_untracked(),
         &location.hash.get_untracked(),
     );
+    let Some(target) = target else {
+        return view! { <NotFound /> }.into_any();
+    };
     #[cfg(feature = "browser")]
-    if let Some(target) = target {
+    {
         let navigate = leptos_router::hooks::use_navigate();
         request_animation_frame(move || {
             let options = leptos_router::NavigateOptions {
@@ -259,6 +271,7 @@ fn MovedPage() -> impl IntoView {
     }
     #[cfg(not(feature = "browser"))]
     drop(target);
+    ().into_any()
 }
 
 /// Where [`MovedPage`] at `path` leads, with the `search` and `hash` of its URL (with or without
@@ -313,6 +326,24 @@ mod tests {
             Some("/ja/play?size=9&x=1#board")
         );
         assert_eq!(moved_target("/play", "?size=9", ""), None);
+        // The Dojo's pages, the Lab's tabs now
+        assert_eq!(
+            moved_target("/dojo", "?budget=4", "#leaderboard").as_deref(),
+            Some("/lab/leaderboard?budget=4#leaderboard")
+        );
+        assert_eq!(
+            moved_target("/ja/dojo/seasons", "", "#season-3").as_deref(),
+            Some("/ja/lab/seasons#season-3")
+        );
+        assert_eq!(
+            moved_target("/de/dojo/benchmarks", "?submitted=3", "#mine").as_deref(),
+            Some("/de/lab/benchmarks?submitted=3#mine")
+        );
+        assert_eq!(
+            moved_target("/dojo/12", "", "").as_deref(),
+            Some("/lab/solver/12")
+        );
+        assert_eq!(moved_target("/dojo/abc", "", ""), None);
     }
 
     /// The mobile app's page (app/index.html, see app/README.md) applies the theme with a copy of

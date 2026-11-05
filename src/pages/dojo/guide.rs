@@ -96,7 +96,7 @@ pub(super) fn HowItWorks() -> impl IntoView {
 #[component]
 pub(super) fn Families(board: RwSignal<Option<DojoBoard>>) -> impl IntoView {
     let i18n = use_i18n();
-    let benchmarks = use_localized("/dojo/benchmarks");
+    let benchmarks = use_localized("/lab/benchmarks");
     // Who contributed to the community pool
     let credits = move || {
         board.with(|b| {

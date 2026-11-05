@@ -19,7 +19,7 @@ async fn pages_are_rendered_in_their_language() {
         ("/rules", "en"),
         ("/de/rules", "de"),
         ("/ja/ranks", "ja"),
-        ("/zh-Hant/dojo", "zh-Hant"),
+        ("/zh-Hant/lab/leaderboard", "zh-Hant"),
         ("/kontakt", "en"),
         ("/de/kontakt", "de"),
     ] {
@@ -201,6 +201,17 @@ async fn other_spellings_of_a_page_redirect_to_it() {
         ("/de/practice", "/de/play"),
         ("/zh-Hant/practice/?size=9", "/zh-Hant/play?size=9"),
         ("/en/practice", "/play"),
+        // The Dojo's pages, the Lab's tabs now, and its entries, the Lab's solvers
+        ("/dojo", "/lab/leaderboard"),
+        ("/dojo?budget=4", "/lab/leaderboard?budget=4"),
+        ("/ja/dojo/", "/ja/lab/leaderboard"),
+        ("/de/dojo/seasons", "/de/lab/seasons"),
+        (
+            "/dojo/benchmarks?submitted=3",
+            "/lab/benchmarks?submitted=3",
+        ),
+        ("/en/dojo/1", "/lab/solver/1"),
+        ("/zh-Hant/dojo/1", "/zh-Hant/lab/solver/1"),
         ("/en", "/"),
         ("/en/rules", "/rules"),
         ("/en/ranks/", "/ranks"),
@@ -231,6 +242,10 @@ async fn other_spellings_of_a_page_redirect_to_it() {
         assert!(res.headers().get(LOCATION).is_none(), "{path}");
     }
     assert_status(&browser.get("/rules").await, StatusCode::OK);
+    // The Dojo's files stay where the CLI, the worker and scripts find them
+    for path in ["/dojo/board.json", "/dojo/seasons.json"] {
+        assert_status(&browser.get(path).await, StatusCode::OK);
+    }
 }
 
 #[tokio::test]

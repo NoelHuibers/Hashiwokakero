@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Enviar um solver",
     "starter": "Kit inicial",
-    "dev_set": "Baixar o dev set",
-    "seasons": "Arquivo de temporadas"
+    "dev_set": "Baixar o dev set"
   },
   "board": {
     "title": "Ranking",
@@ -80,8 +79,7 @@
     "none": "Nenhuma temporada terminou ainda. O arquivo começa quando a temporada {{ season }} acabar.",
     "deleted": "conta excluída",
     "verify_title": "Como conferir",
-    "verify": "O SHA-256 da semente revelada tem de bater com o compromisso publicado no início. Com a mesma versão do gerador, dojo export gera o conjunto de novo a partir da semente; o conjunto arquivado continua válido para sempre, e dojo run --set avalia qualquer solver nele exatamente como o ranking fez.",
-    "back": "Voltar ao dojo"
+    "verify": "O SHA-256 da semente revelada tem de bater com o compromisso publicado no início. Com a mesma versão do gerador, dojo export gera o conjunto de novo a partir da semente; o conjunto arquivado continua válido para sempre, e dojo run --set avalia qualquer solver nele exatamente como o ranking fez."
   },
   "how": {
     "title": "Como funciona",
@@ -152,6 +150,8 @@
     "text": "O combustível é determinístico, então os resultados são reproduzíveis e comparáveis entre artigos: informe a temporada e a semente do dev set. O ranking está disponível em JSON em /dojo/board.json, e o harness é de código aberto."
   },
   "submit": {
+    "meta_title": "Envie um solver SAT · SAT Dojo",
+    "meta_description": "Crie um solver SAT em WebAssembly, treine-o no dev set com a CLI dojo e envie: fórmulas ocultas, combustível determinístico.",
     "title": "Entre no dojo",
     "sign_in": "Para enviar, você precisa de uma conta com nome de usuário; convidados não podem enviar.",
     "create_account": "Criar uma conta",
@@ -226,11 +226,6 @@
     "invalid": "Não é um módulo WebAssembly válido para o dojo: {{ detail }}",
     "import": "Ele importa {{ detail }}, mas só wasi_snapshot_preview1 está disponível.",
     "no_start": "Não há função _start. Compile um programa (um binário), não uma biblioteca."
-  },
-  "lab_banner": {
-    "title": "Novidade: o SAT Dojo",
-    "text": "Acha que seu solver bate o nosso? Envie e suba no ranking.",
-    "button": "Ir para o dojo"
   },
   "track": {
     "sprint": "Modalidade Sprint",

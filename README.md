@@ -134,10 +134,10 @@ the [standalone solver instructions](sat_solver/README.md).
 
 ## SAT Dojo
 
-The [Dojo](https://hashi.rs/dojo) runs WASI preview 1 solvers on seasonal benchmark
+The [Dojo](https://hashi.rs/lab/leaderboard), part of the [Lab](https://hashi.rs/lab), runs WASI preview 1 solvers on seasonal benchmark
 sets. Scores use deterministic WebAssembly fuel; SAT answers require a model and
 UNSAT answers require a proof. Completed seasons publish their benchmark sets and
-results in the [season archive](https://hashi.rs/dojo/seasons).
+results in the [season archive](https://hashi.rs/lab/seasons).
 
 Start with the [solver starter and protocol](dojo/starter/README.md). The
 [calibration study](dojo/CALIBRATION.md) explains fuel scoring, and the

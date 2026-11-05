@@ -21,6 +21,8 @@ const PAGES: [string, string][] = [
   ['/practice', 'en'],
   ['/ranks', 'en'],
   ['/rules', 'en'],
+  // The Dojo's old address: the page until the Lab's tabs are deployed, then its redirect to
+  // /lab/leaderboard. /lab/leaderboard once it is out.
   ['/dojo', 'en'],
   ['/impressum', 'en'],
   ['/datenschutz', 'en'],

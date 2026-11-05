@@ -1,11 +1,10 @@
-// The SAT Dojo without its worker (pull requests have none): the guide, the seeded house entry
-// on the leaderboard, and an upload the site itself refuses.
+// The SAT Dojo without its worker (pull requests have none), the Lab's tabs: the guide, the
+// seeded house entry on the leaderboard, and an upload the site itself refuses.
 import { expect, signIn, test, visit } from '../fixtures.ts';
 import { ARCHIVED_COMMITMENT, ARCHIVED_SEED, DOJO_SEASON, DOJO_SUBMISSION } from '../seed.ts';
 
 test('the guide and the leaderboard with its entry', async ({ page }) => {
-  await visit(page, '/dojo');
-  await expect(page.getByRole('heading', { name: 'SAT Dojo', level: 1 })).toBeVisible();
+  await visit(page, '/lab/submit');
   for (const heading of ['How it works', 'The formulas', 'Fair play']) {
     await expect(page.getByText(new RegExp(`^${heading}`)).first()).toBeVisible();
   }
@@ -14,25 +13,38 @@ test('the guide and the leaderboard with its entry', async ({ page }) => {
     await expect(page.getByRole('heading', { name: family, exact: true })).toBeVisible();
   }
   await expect(page.getByRole('heading', { name: "Generalize, don't memorize" })).toBeVisible();
-  await expect(page.getByText(`Season ${DOJO_SEASON}`, { exact: false }).first()).toBeVisible();
   // Guests are asked for an account first
   await expect(
     page.getByText("Submitting needs an account with a username, guests can't submit."),
   ).toBeVisible();
 
+  await page
+    .getByRole('navigation', { name: 'Lab sections' })
+    .getByRole('link', { name: /Leaderboard/ })
+    .click();
+  await expect(page).toHaveURL(/\/lab\/leaderboard$/);
+  await expect(page.getByRole('heading', { name: /^SAT Dojo/, level: 2 })).toBeVisible();
+  await expect(page.getByText(`Season ${DOJO_SEASON}`, { exact: false }).first()).toBeVisible();
   const entry = page.getByRole('link', { name: 'Plain DPLL' });
   await expect(entry).toBeVisible();
   await expect(page.locator('tr').filter({ has: entry })).toContainText('35/48');
   await entry.click();
-  await expect(page).toHaveURL(new RegExp(`/dojo/${DOJO_SUBMISSION}$`));
+  await expect(page).toHaveURL(new RegExp(`/lab/solver/${DOJO_SUBMISSION}$`));
   await expect(page.getByRole('heading', { name: 'Plain DPLL' })).toBeVisible();
   await expect(page.getByText('Unit propagation and nothing else.')).toBeVisible();
+  // A solver belongs to the leaderboard: its tab, and the way back
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Lab sections' })
+      .getByRole('link', { name: /Leaderboard/ }),
+  ).toHaveAttribute('data-state', 'Active');
+  await page.getByRole('link', { name: '← Back to the leaderboard' }).click();
+  await expect(page).toHaveURL(/\/lab\/leaderboard$/);
 });
 
 test('the Sprint track, and the Industrial track coming soon', async ({ page, context }) => {
-  // Signed in, so the page has the submit form
   await signIn(context, 'kenji');
-  await visit(page, '/dojo');
+  await visit(page, '/lab/leaderboard');
   await expect(
     page.getByText('Generated formulas of modest size, about half a second per formula.'),
   ).toBeVisible();
@@ -50,19 +62,22 @@ test('the Sprint track, and the Industrial track coming soon', async ({ page, co
     'href',
     'https://benchmark-database.de',
   );
-  // The only form on the page enters the Sprint
-  await expect(page.locator('form')).toHaveCount(1);
-  await expect(page.locator('form')).toHaveAttribute('action', '/dojo/submit');
 
   // The leaderboard's note leads to the announcement
   await board.getByRole('link', { name: 'Industrial track' }).click();
-  await expect(page).toHaveURL(/\/dojo#industrial$/);
+  await expect(page).toHaveURL(/\/lab\/leaderboard#industrial$/);
   await expect(industrial).toBeInViewport();
+
+  // Signed in, the Submit tab has the form, the only one, which enters the Sprint (at the
+  // Dojo's endpoint, which stays)
+  await visit(page, '/lab/submit');
+  await expect(page.locator('form')).toHaveCount(1);
+  await expect(page.locator('form')).toHaveAttribute('action', '/dojo/submit');
 });
 
 test('an upload that is no WebAssembly is refused', async ({ page, context }) => {
   await signIn(context, 'kenji');
-  await visit(page, '/dojo');
+  await visit(page, '/lab/submit');
   await expect(page.getByText(/^Submissions left today: \d+$/)).toBeVisible();
   await page.getByLabel('Name of your solver').fill('Not a solver');
   await page.getByLabel(/^WebAssembly file/).setInputFiles({
@@ -71,17 +86,18 @@ test('an upload that is no WebAssembly is refused', async ({ page, context }) =>
     buffer: Buffer.from('#!/bin/sh\necho "s SATISFIABLE"\n'),
   });
   await page.getByRole('button', { name: /^Submit 入門/ }).click();
-  await expect(page).toHaveURL(/\/dojo\?error=not_wasm#submit$/);
+  await expect(page).toHaveURL(/\/lab\/submit\?error=not_wasm#submit$/);
   await expect(page.getByText('That is not a WebAssembly file.')).toBeVisible();
   // Nothing was stored
   await expect(page.getByText('Nothing submitted yet.')).toBeVisible();
 });
 
 test('the season archive with its seed, set and results', async ({ page, request }) => {
-  await visit(page, '/dojo');
-  await page.getByRole('link', { name: 'Season archive' }).click();
-  await expect(page).toHaveURL(/\/dojo\/seasons$/);
-  await expect(page.getByRole('heading', { name: 'Season archive', level: 1 })).toBeVisible();
+  await visit(page, '/lab/leaderboard');
+  // The commitment of the running season leads to the archive
+  await page.getByRole('link', { name: /^Commitment / }).click();
+  await expect(page).toHaveURL(/\/lab\/seasons$/);
+  await expect(page.getByRole('heading', { name: /^Season archive/, level: 2 })).toBeVisible();
 
   // The running season shows its commitment, not its seed
   const current = page.locator('#current-season');
@@ -126,7 +142,7 @@ test('the season archive with its seed, set and results', async ({ page, request
 });
 
 test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
-  await visit(page, '/dojo');
+  await visit(page, '/lab/leaderboard');
   const board = page.locator('#leaderboard');
   // Relative to the page: `has` looks inside the row
   const dpll = page.getByRole('link', { name: 'Plain DPLL' });
@@ -188,17 +204,17 @@ test('the views beyond PAR-2 and the cactus plot', async ({ page }) => {
   // The cactus plot marks the ranking budget, the runs went on above it
   await expect(cactus.locator('line[data-testid="ranking-budget"]')).toHaveCount(1);
   // A link to a budget opens the view
-  await visit(page, '/dojo?budget=0.1');
+  await visit(page, '/lab/leaderboard?budget=0.1');
   await expect(page.locator('#leaderboard').getByRole('tab', { name: 'Budget' })).toHaveAttribute(
     'aria-selected',
     'true',
   );
   await expect(page.locator('a[data-budget="0.1"]')).toHaveAttribute('aria-current', 'true');
-  await visit(page, '/dojo');
+  await visit(page, '/lab/leaderboard');
 
   // The submission's page: its split, its contribution and its line in the plot
   await dpll.click();
-  await expect(page).toHaveURL(new RegExp(`/dojo/${DOJO_SUBMISSION}$`));
+  await expect(page).toHaveURL(new RegExp(`/lab/solver/${DOJO_SUBMISSION}$`));
   await expect(page.getByTestId('answers')).toContainText('All families');
   await expect(page.getByTestId('answers')).toContainText('Mystery family');
   await expect(page.getByTestId('contribution')).toContainText('Shapley');

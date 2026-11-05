@@ -241,7 +241,7 @@ class Smoke:
                                          {"Content-Type": content_type,
                                           "Cookie": "hashi_session=" + SESSION})
             location = headers.get("location", "")
-            match = re.fullmatch(r"/dojo/benchmarks\?submitted=(\d+)#mine", location)
+            match = re.fullmatch(r"/lab/benchmarks\?submitted=(\d+)#mine", location)
             require(status == 303 and match is not None, f"upload failed: {status} {location}")
             benchmark = int(match[1])
 

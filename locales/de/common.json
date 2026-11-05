@@ -99,6 +99,7 @@
   "solver": {
     "title": "SAT-Solver",
     "description": "Das Rätsel wird als CNF kodiert und von unseren eigenen Solvern aus dem SAT-Labor gelöst.",
+    "lab_link": "Solver-Rennen im Labor",
     "solver": "Solver",
     "own_cdcl": "Eigener CDCL",
     "own_dpll": "Eigener DPLL",

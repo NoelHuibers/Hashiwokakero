@@ -5,6 +5,17 @@
   },
   "title": "Labo de solveurs",
   "intro": "Fais courir une grille dans nos solveurs CDCL et DPLL maison selon différents modes (heuristiques de branchement, politiques de redémarrage, subsomption) et compare-les à splr.",
+  "section": {
+    "intro": "Pour celles et ceux qui écrivent des solveurs SAT : fais s’affronter les nôtres sur une grille, ou compile le tien en WebAssembly et grimpe au classement du SAT Dojo."
+  },
+  "tabs": {
+    "label": "Sections du labo",
+    "race": "Course",
+    "leaderboard": "Classement",
+    "submit": "Soumettre",
+    "benchmarks": "Benchmarks",
+    "seasons": "Saisons"
+  },
   "puzzle": {
     "title": "1 · Grille",
     "size": "{{ width }}×{{ height }}, {{ count }} îles",

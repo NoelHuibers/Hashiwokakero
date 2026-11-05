@@ -5,6 +5,17 @@
   },
   "title": "솔버 실험실",
   "intro": "퍼즐 하나를 자체 CDCL·DPLL 솔버의 여러 모드(분기 휴리스틱, 재시작 정책, 포섭 제거)로 경주시키고 splr과 비교해 보세요.",
+  "section": {
+    "intro": "SAT 솔버를 만드는 사람들을 위한 곳: 우리 솔버들을 퍼즐 하나로 경주시키거나, 직접 만든 솔버를 WebAssembly로 컴파일해 SAT 도장 리더보드에 올라 보세요."
+  },
+  "tabs": {
+    "label": "실험실 메뉴",
+    "race": "경주",
+    "leaderboard": "리더보드",
+    "submit": "제출",
+    "benchmarks": "벤치마크",
+    "seasons": "시즌"
+  },
   "puzzle": {
     "title": "1 · 퍼즐",
     "size": "{{ width }}×{{ height }}, 섬 {{ count }}개",

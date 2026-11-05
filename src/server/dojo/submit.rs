@@ -226,8 +226,10 @@ pub async fn submit(
     Ok(id)
 }
 
-/// `POST /dojo/submit`, a multipart form (works without JavaScript). Redirects to the
-/// submission, or back to the form with an error code.
+/// `POST /dojo/submit`, a multipart form (works without JavaScript).
+///
+/// Redirects to the submission's page, or back to the form (the Lab's Submit tab) with an error
+/// code. The endpoint keeps the Dojo's address, the pages are the Lab's (`seo::MOVED_PAGES`).
 pub async fn submit_handler(
     Extension(client): Extension<crate::server::ClientIdentity>,
     headers: HeaderMap,
@@ -288,8 +290,10 @@ pub async fn submit_handler(
     }
     .await;
     match result {
-        Ok(id) => Redirect::to(&format!("{prefix}/dojo/{id}")).into_response(),
-        Err(e) => Redirect::to(&format!("{prefix}/dojo?error={}#submit", e.code())).into_response(),
+        Ok(id) => Redirect::to(&format!("{prefix}/lab/solver/{id}")).into_response(),
+        Err(e) => {
+            Redirect::to(&format!("{prefix}/lab/submit?error={}#submit", e.code())).into_response()
+        }
     }
 }
 

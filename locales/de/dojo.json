@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Solver einreichen",
     "starter": "Starter-Kit",
-    "dev_set": "Dev-Set herunterladen",
-    "seasons": "Saisonarchiv"
+    "dev_set": "Dev-Set herunterladen"
   },
   "board": {
     "title": "Rangliste",
@@ -80,8 +79,7 @@
     "none": "Noch ist keine Saison beendet. Das Archiv beginnt, wenn Saison {{ season }} vorbei ist.",
     "deleted": "gelöschtes Konto",
     "verify_title": "So prüfst du nach",
-    "verify": "Der SHA-256 des aufgedeckten Seeds muss mit dem zu Beginn veröffentlichten Commitment übereinstimmen. Mit derselben Generator-Version erzeugt dojo export das Set aus dem Seed neu; das archivierte Set bleibt dauerhaft gültig, und dojo run --set bewertet jeden Solver darauf genau wie die Rangliste.",
-    "back": "Zurück zum Dojo"
+    "verify": "Der SHA-256 des aufgedeckten Seeds muss mit dem zu Beginn veröffentlichten Commitment übereinstimmen. Mit derselben Generator-Version erzeugt dojo export das Set aus dem Seed neu; das archivierte Set bleibt dauerhaft gültig, und dojo run --set bewertet jeden Solver darauf genau wie die Rangliste."
   },
   "how": {
     "title": "So funktioniert’s",
@@ -152,6 +150,8 @@
     "text": "Treibstoff ist deterministisch, also sind Ergebnisse reproduzierbar und zwischen Papers vergleichbar: Nenn die Saison und den Dev-Seed. Die Rangliste gibt es als JSON unter /dojo/board.json, das Test-Harness ist Open Source."
   },
   "submit": {
+    "meta_title": "SAT-Solver einreichen · SAT-Dojo",
+    "meta_description": "Baue einen SAT-Solver für WebAssembly, trainiere ihn mit der dojo-CLI auf dem Dev-Set und reich ihn ein: geheime Formeln, deterministischer Treibstoff.",
     "title": "Betritt das Dojo",
     "sign_in": "Zum Einreichen brauchst du ein Konto mit Benutzernamen, Gäste können nicht einreichen.",
     "create_account": "Konto erstellen",
@@ -226,11 +226,6 @@
     "invalid": "Kein gültiges WebAssembly-Modul für das Dojo: {{ detail }}",
     "import": "Sie importiert {{ detail }}, verfügbar ist nur wasi_snapshot_preview1.",
     "no_start": "Es gibt keine _start-Funktion. Bau ein Programm (eine Binary), keine Bibliothek."
-  },
-  "lab_banner": {
-    "title": "Neu: das SAT-Dojo",
-    "text": "Glaubst du, dein Solver schlägt unseren? Reich ihn ein und klettere in der Rangliste.",
-    "button": "Zum Dojo"
   },
   "track": {
     "sprint": "Sprint-Track",

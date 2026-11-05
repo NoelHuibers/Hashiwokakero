@@ -16,7 +16,7 @@ use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::card::Card;
 use crate::components::ui::progress::Progress;
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
-use crate::lang::{date_short, prefix};
+use crate::lang::date_short;
 use crate::model::{DojoState, DojoSubmission, day_of};
 use crate::seo::title_text;
 
@@ -72,7 +72,7 @@ fn AnswersTable(breakdown: EntryBreakdown) -> impl IntoView {
     let held_out = breakdown.held_out;
     view! {
         <div class="flex flex-col gap-2" data-testid="answers">
-            <h2 class="font-bold">{t!(i18n, dojo.detail.answers)}</h2>
+            <h3 class="font-bold">{t!(i18n, dojo.detail.answers)}</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
@@ -124,7 +124,7 @@ fn ContributionTiles(contribution: Contribution) -> impl IntoView {
     let c = contribution;
     view! {
         <div class="flex flex-col gap-2" data-testid="contribution">
-            <h2 class="font-bold">{t!(i18n, dojo.detail.contribution)}</h2>
+            <h3 class="font-bold">{t!(i18n, dojo.detail.contribution)}</h3>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {tile(t!(i18n, dojo.board.marginal).into_any(), format!("{:.3}", c.marginal), t_string!(i18n, dojo.board.marginal_tip).to_string())}
                 {tile(t!(i18n, dojo.board.relative).into_any(), format!("{:.1}%", c.relative * 100.0), t_string!(i18n, dojo.board.relative_tip).to_string())}
@@ -224,7 +224,7 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
         {s.portfolio.clone().map(|p| view! { <Cactus cactus=p.cactus highlight=Some(s.id) /> })}
         {match s.similar_to {
             Some(original) => {
-                let href = move || format!("{}/dojo/{original}", prefix(i18n.get_locale()));
+                let href = move || super::solver_href(i18n.get_locale(), original);
                 view! {
                     <p class="rounded-md border border-warning/40 bg-warning-light px-3 py-2 text-sm text-warning-dark">
                         {t!(
@@ -247,11 +247,12 @@ fn ScoreView(s: DojoSubmission, score: Score) -> impl IntoView {
     }
 }
 
+/// A solver's page, under the Lab's leaderboard tab.
 #[component]
-pub fn DojoSubmissionPage() -> impl IntoView {
+pub fn SolverDetail() -> impl IntoView {
     let i18n = use_i18n();
     let params = use_params_map();
-    let back = use_localized("/dojo");
+    let back = use_localized("/lab/leaderboard");
     let id = move || params.with(|p| p.get("id").and_then(|id| id.parse::<i64>().ok()));
     let submission = RwSignal::new(None::<Option<DojoSubmission>>);
     let fetch = move || {
@@ -292,12 +293,13 @@ pub fn DojoSubmissionPage() -> impl IntoView {
         })
     });
     view! {
-        // One entry's page, not the Dojo's: no canonical link to the Dojo with its translations,
-        // as if it were the same page, and kept out of search engines like players' pages
+        // One entry's page, not the leaderboard's: no canonical link to the leaderboard with its
+        // translations, as if it were the same page, and kept out of search engines like
+        // players' pages
         <Title text=title_text(move || title.get()) />
         <Meta name="description" content=move || t_string!(i18n, dojo.meta.description) />
         <Meta name="robots" content="noindex" />
-        <section class="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-6 sm:px-6">
+        <div class="flex max-w-3xl flex-col gap-5">
             <A href=back attr:class="text-sm text-primary hover:underline">
                 "← " {t!(i18n, dojo.detail.back)}
             </A>
@@ -312,7 +314,7 @@ pub fn DojoSubmissionPage() -> impl IntoView {
                         <div class="flex flex-col gap-2">
                             <p class="font-pixel text-sm text-primary">{format!("提出 · teishutsu #{}", s.id)}</p>
                             <div class="flex flex-wrap items-center gap-3">
-                                <h1 class="min-w-0 break-words text-3xl font-black">{s.name.clone()}</h1>
+                                <h2 class="min-w-0 break-words text-3xl font-black">{s.name.clone()}</h2>
                                 <StateBadge state=s.state disqualified />
                                 {s.house.then(|| view! { <Badge variant=BadgeVariant::Secondary>{t!(i18n, dojo.board.house)}</Badge> })}
                             </div>
@@ -370,7 +372,7 @@ pub fn DojoSubmissionPage() -> impl IntoView {
                         .into_any()
                 }
             }}
-        </section>
+        </div>
     }
 }
 

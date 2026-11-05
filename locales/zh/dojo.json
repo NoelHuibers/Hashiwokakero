@@ -15,8 +15,7 @@
   "cta": {
     "submit": "提交求解器",
     "starter": "入门套件",
-    "dev_set": "下载开发集",
-    "seasons": "赛季档案"
+    "dev_set": "下载开发集"
   },
   "board": {
     "title": "排行榜",
@@ -80,8 +79,7 @@
     "none": "还没有结束的赛季。第 {{ season }} 赛季结束后，档案就会开始。",
     "deleted": "已删除的账号",
     "verify_title": "如何核实",
-    "verify": "公开种子的 SHA-256 必须与赛季开始时公布的承诺一致。使用相同版本的生成器，dojo export 可以用种子重新生成测试集；归档的测试集永久有效，dojo run --set 可以在其上为任何求解器评分，与排行榜完全一致。",
-    "back": "返回道场"
+    "verify": "公开种子的 SHA-256 必须与赛季开始时公布的承诺一致。使用相同版本的生成器，dojo export 可以用种子重新生成测试集；归档的测试集永久有效，dojo run --set 可以在其上为任何求解器评分，与排行榜完全一致。"
   },
   "how": {
     "title": "运作方式",
@@ -152,6 +150,8 @@
     "text": "燃料是确定性的，所以结果可复现，也能在论文之间比较：注明赛季和开发集种子即可。排行榜以 JSON 形式提供于 /dojo/board.json，评测框架开源。"
   },
   "submit": {
+    "meta_title": "提交 SAT 求解器 · SAT道场",
+    "meta_description": "为 WebAssembly 构建 SAT 求解器，用 dojo 命令行在开发集上训练，然后提交：在隐藏公式上用确定性的燃料评分。",
     "title": "踏入道场",
     "sign_in": "提交需要一个带用户名的账号，游客无法提交。",
     "create_account": "创建账号",
@@ -226,11 +226,6 @@
     "invalid": "不是道场可用的有效 WebAssembly 模块：{{ detail }}",
     "import": "它导入了 {{ detail }}，但只有 wasi_snapshot_preview1 可用。",
     "no_start": "没有 _start 函数。请构建为程序（可执行文件），而不是库。"
-  },
-  "lab_banner": {
-    "title": "新功能：SAT道场",
-    "text": "觉得你的求解器比我们的强？提交上来，冲上排行榜。",
-    "button": "前往道场"
   },
   "track": {
     "sprint": "冲刺赛道",
