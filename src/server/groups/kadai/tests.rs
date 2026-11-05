@@ -591,6 +591,8 @@ async fn each_statement_takes_the_parameters_it_is_given() {
         (&crate::server::reports::ERASE[..], 1),
         (&crate::server::reports::MERGE_GUEST[..], 2),
         (&crate::server::contact::ERASE[..], 1),
+        (&crate::server::groups::race::ERASE[..], 1),
+        (&crate::server::groups::race::MERGE_GUEST[..], 2),
     ] {
         for sql in statements {
             let statement = conn.prepare(sql).await.unwrap();

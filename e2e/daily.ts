@@ -89,7 +89,8 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
 }
 
 /**
- * Presses Hint until `left` bridges of the solution are missing. A Sunday's Oni takes 150 hints
+ * Presses Hint until `left` bridges of the solution are missing, on the board saved as `key` (the
+ * daily's, or a race's). A Sunday's Oni takes 150 hints
  * and more (172 on 2026-10-25). Pressed through Playwright, every hint also waited for the button
  * to hold still on the animated board and for a poll of the saved game, about half a second
  * each, and the bigger Onis ran out of the test's time. Pressed in the page, a hint is its
@@ -97,8 +98,8 @@ export async function solveDaily(page: Page, puzzle: Puzzle, solution: number[])
  * 1.5 s each: about 70 ms here, but on CI, with four workers on the runner's four cores, today's
  * 172 hints took up to 170 s (main after #144), past the 0.5 s each it had at first.
  */
-export async function hintUntil(page: Page, solution: number[], left: number) {
-  const hints = missing((await saved(page, DAILY_KEY)).bridges, solution).length - left;
+export async function hintUntil(page: Page, solution: number[], left: number, key = DAILY_KEY) {
+  const hints = missing((await saved(page, key)).bridges, solution).length - left;
   if (hints <= 0) return;
   test.setTimeout(test.info().timeout + hints * 1_500);
   await page.getByRole('button', { name: /^Hint/ }).evaluate(
@@ -128,7 +129,7 @@ export async function hintUntil(page: Page, solution: number[], left: number) {
         }
       }
     },
-    { key: DAILY_KEY, solution, left },
+    { key, solution, left },
   );
 }
 

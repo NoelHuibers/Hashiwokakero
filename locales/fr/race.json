@@ -1,0 +1,83 @@
+{
+  "title": "Course",
+  "card": {
+    "text": "Affrontez-vous en direct sur le même puzzle tout neuf : ouvrez un salon, les autres vous rejoignent, et 3, 2, 1, partez !",
+    "difficulty": "Difficulté",
+    "open": "Ouvrir une course",
+    "opening": "Ouverture…",
+    "lobby": "Course ouverte · {{ count }} inscrits",
+    "running": "Course en cours · {{ count }} en lice",
+    "join": "Rejoindre",
+    "to_lobby": "Vers le salon",
+    "watch": "Regarder",
+    "history": "Courses récentes",
+    "none": "Aucune course pour l'instant. Ouvrez-en une et défiez le groupe !",
+    "no_winner": "pas de vainqueur",
+    "players": "{{ count }} joueurs"
+  },
+  "page": {
+    "missing": "Cette course n'est pas ici.",
+    "missing_hint": "Le salon a peut-être expiré ou été annulé, ou il appartient à un groupe dont vous ne faites pas partie."
+  },
+  "lobby": {
+    "title": "Salon",
+    "text": "Tous les inscrits reçoivent le même puzzle tout neuf au même moment. L'hôte lance la course dès qu'au moins deux joueurs sont là.",
+    "host": "hôte",
+    "away": "absent",
+    "join": "Rejoindre la course",
+    "leave": "Quitter",
+    "cancel": "Annuler la course",
+    "cancel_confirm": "Annuler la course ? Le salon ferme pour tout le monde.",
+    "start": "Lancer",
+    "starting": "Préparation du puzzle…",
+    "need_more": "En attente d'au moins un autre joueur…",
+    "waiting_host": "En attente du lancement par l'hôte…",
+    "expires": "Le salon ferme dans {{ minutes }} min si personne ne lance la course.",
+    "share": "Partager le lien du salon",
+    "share_text": "Viens me défier sur Hashi ! Rejoins le salon dans {{ group }} :"
+  },
+  "countdown": {
+    "ready": "Prêts",
+    "go": "Partez !"
+  },
+  "play": {
+    "give_up": "Abandonner",
+    "give_up_confirm": "Abandonner la course ? Vous n'aurez pas de place et verrez la solution une fois la course terminée.",
+    "loading": "Le puzzle arrive…",
+    "time_left": "{{ minutes }} min restantes"
+  },
+  "track": {
+    "title": "Progression",
+    "text": "Où en est chacun : la part des ponts sur son plateau. Personne ne voit les ponts des autres.",
+    "you": "vous"
+  },
+  "watch": {
+    "text": "Vous regardez : la course se joue entre les participants."
+  },
+  "done": {
+    "solved": "Terminé !",
+    "gave_up": "Vous avez abandonné.",
+    "waiting": "En attendant que les autres terminent…"
+  },
+  "results": {
+    "title": "Résultats",
+    "flagged": "sans place",
+    "gave_up": "abandon",
+    "out": "pas terminé",
+    "rematch": "Revanche",
+    "rematch_join": "Rejoindre la revanche",
+    "rematch_go": "Vers la revanche",
+    "replay": "Les coups de chacun",
+    "stage": "Le plateau de la course avec les ponts de {{ names }}"
+  },
+  "errors": {
+    "open": "Une course est déjà ouverte dans ce groupe : rejoignez-la.",
+    "gone": "Cette course n'existe plus : le salon a expiré ou a été annulé.",
+    "started": "Cette course a déjà commencé : vous pouvez la regarder.",
+    "host_only": "Seul l'hôte peut lancer la course.",
+    "too_few": "Une course demande au moins deux joueurs.",
+    "not_joined": "Vous ne participez pas à cette course.",
+    "not_running": "La course n'est pas en cours.",
+    "done": "Vous avez terminé cette course."
+  }
+}

@@ -87,10 +87,26 @@ pub enum ApiError {
     /// The address is the recovery email of another account already. Only the confirmation
     /// link says so, to whoever can read that mailbox.
     EmailTaken,
+    /// A race is open in the group already: one at a time.
+    RaceOpen,
+    /// No such race (any more): a lobby that expired or was called off.
+    RaceGone,
+    /// The race started already: nobody joins or leaves any more.
+    RaceStarted,
+    /// Only the race's host can do that (start it).
+    RaceHostOnly,
+    /// A race needs `MIN_RACERS` players to start.
+    RaceTooFew,
+    /// The player isn't in the race.
+    RaceNotJoined,
+    /// The race hasn't started yet, or it's over.
+    RaceNotRunning,
+    /// The player solved the race or gave up already.
+    RaceDone,
 }
 
 impl ApiError {
-    pub const ALL: [Self; 47] = [
+    pub const ALL: [Self; 55] = [
         Self::Database,
         Self::Internal,
         Self::ArchiveOnlyPast,
@@ -138,6 +154,14 @@ impl ApiError {
         Self::MailUnavailable,
         Self::LinkExpired,
         Self::EmailTaken,
+        Self::RaceOpen,
+        Self::RaceGone,
+        Self::RaceStarted,
+        Self::RaceHostOnly,
+        Self::RaceTooFew,
+        Self::RaceNotJoined,
+        Self::RaceNotRunning,
+        Self::RaceDone,
     ];
 
     pub fn code(self) -> &'static str {
@@ -189,6 +213,14 @@ impl ApiError {
             Self::MailUnavailable => "mail_unavailable",
             Self::LinkExpired => "link_expired",
             Self::EmailTaken => "email_taken",
+            Self::RaceOpen => "race_open",
+            Self::RaceGone => "race_gone",
+            Self::RaceStarted => "race_started",
+            Self::RaceHostOnly => "race_host_only",
+            Self::RaceTooFew => "race_too_few",
+            Self::RaceNotJoined => "race_not_joined",
+            Self::RaceNotRunning => "race_not_running",
+            Self::RaceDone => "race_done",
         }
     }
 

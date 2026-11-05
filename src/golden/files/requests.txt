@@ -32,13 +32,18 @@
 /api/delete_admin_message {"id":9}
 /api/forgot_password {"login":"noel","locale":"de"}
 /api/generate_puzzle {"params":{"width":7,"height":7,"difficulty":"Hard","seed":18446744073709551615}}
+/api/give_up_group_race {"id":6}
 /api/group_boards {}
 /api/group_invite {"code":"k3y9q2"}
 /api/group_puzzle_check {"id":4,"bridges":[2,1,0]}
 /api/group_puzzle_hint {"id":4,"bridges":[2,1,0]}
 /api/group_puzzle_reveal {"id":4}
+/api/group_race_check {"id":6,"bridges":[2,1,0]}
+/api/group_race_hint {"id":6,"bridges":[2,1,0]}
 /api/join_group {"code":"k3y9q2"}
+/api/join_group_race {"id":6}
 /api/leave_group {"id":2}
+/api/leave_group_race {"id":6}
 /api/load_admin_overview {}
 /api/load_banzuke {"id":2,"monday":20377}
 /api/load_dojo_benchmarks {}
@@ -49,11 +54,13 @@
 /api/load_group {"id":2}
 /api/load_group_puzzle {"id":4}
 /api/load_group_puzzles {"group":2}
+/api/load_group_races {"group":2}
 /api/load_group_river {"id":2}
 /api/load_group_week {"id":2,"monday":20377}
 /api/load_hall_of_fame {}
 /api/load_player {"id":7}
 /api/load_puzzle_replay {"id":4}
+/api/load_race_replay {"id":6}
 /api/load_recovery_email {}
 /api/load_replay {"group":2,"day":20381}
 /api/load_rivals_board {}
@@ -64,11 +71,14 @@
 /api/my_groups {}
 /api/my_rivals {}
 /api/my_stats {}
+/api/open_group_race {"group":2,"difficulty":"Hard"}
 /api/open_hanko {"group":2}
 /api/password_reset_available {}
+/api/poll_group_race {"id":6,"progress":42,"puzzle":true}
 /api/post_group_puzzle {"group":2,"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"title":"Spiral"}
 /api/puzzle_cnf {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]}}
 /api/register {"username":"noel","password":"correct horse"}
+/api/rematch_group_race {"id":6}
 /api/remove_member {"id":2,"member":9}
 /api/remove_recovery_email {"password":"correct horse","locale":"de"}
 /api/report_player {"player":9,"reason":"Name","note":"rude"}
@@ -84,9 +94,11 @@
 /api/solve_puzzle {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"config":{"kind":"Cdcl","heuristic":"Vsids","restarts":{"Geometric":{"threshold":100,"factor_percent":150}},"subsumption":true,"timeout_ms":10000},"unique":true}
 /api/start_daily {"device":"0123456789abcdef0123456789abcdef"}
 /api/start_group_puzzle {"id":4}
+/api/start_group_race {"id":6}
 /api/submit_daily {"day":20381,"bridges":[2,1],"moves":2,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}],"utc_offset":120}
 /api/submit_daily_attempt {"day":20381,"bridges":[2,1],"moves":2,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}],"utc_offset":-300,"owner":{"user":7,"attempt":"a1b2c3"}}
 /api/submit_group_puzzle {"id":4,"bridges":[2,1,0],"moves":12,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}]}
+/api/submit_group_race {"id":6,"bridges":[2,1,0],"moves":12,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}]}
 /api/todays_rivals {}
 /api/unread_hanko_counts {}
 /api/update_admin_benchmark {"id":4,"action":"Accept"}

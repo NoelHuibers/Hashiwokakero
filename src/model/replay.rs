@@ -112,6 +112,10 @@ pub struct ReplayData {
     /// `today` don't count then.
     #[serde(default)]
     pub group_puzzle: Option<i64>,
+    /// A race's replay (`model::race`) instead of a day's: the race's id, `day` and `today`
+    /// don't count then.
+    #[serde(default)]
+    pub race: Option<i64>,
 }
 
 impl ReplayData {
@@ -122,6 +126,16 @@ impl ReplayData {
             .filter_map(|l| l.finish().or_else(|| l.log.last().map(|e| e.t)))
             .max()
             .unwrap_or(0)
+    }
+
+    /// The day whose ranking rules the replay's places follow (`model::score_time`): a day's
+    /// daily, none (0) for a group puzzle or a race.
+    pub fn scoring_day(&self) -> i64 {
+        if self.group_puzzle.is_some() || self.race.is_some() {
+            0
+        } else {
+            self.day
+        }
     }
 
     pub fn lane(&self, user_id: i64) -> Option<&Lane> {
@@ -472,6 +486,7 @@ mod tests {
             puzzle: None,
             lanes: lanes.to_vec(),
             group_puzzle: None,
+            race: None,
         };
         assert_eq!(data.end(), 3000);
         assert_eq!(data.lane(2).map(Lane::finish), Some(Some(1800)));
