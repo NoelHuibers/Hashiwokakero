@@ -1,131 +1,131 @@
 {
-  "commit": "fbb2744",
+  "commit": "5eac20b",
   "date": "2026-11-05",
   "tolerancePercent": 5,
   "assets": {
-    "hashi.css": {
-      "raw": 114324,
-      "gzip": 20249,
-      "brotli": 16781
+    "hashi.wasm": {
+      "raw": 13874395,
+      "gzip": 4488683,
+      "brotli": 3022381
     },
     "hashi.js": {
       "raw": 37651,
       "gzip": 10271,
       "brotli": 8825
     },
-    "hashi.wasm": {
-      "raw": 13810284,
-      "gzip": 4452200,
-      "brotli": 2995165
+    "hashi.css": {
+      "raw": 114960,
+      "gzip": 20341,
+      "brotli": 16831
     }
   },
   "code": {
-    "raw": 13847935,
-    "gzip": 4462471,
-    "brotli": 3003990
+    "raw": 13912046,
+    "gzip": 4498954,
+    "brotli": 3031206
   },
   "total": {
-    "raw": 13962259,
-    "gzip": 4482720,
-    "brotli": 3020771
+    "raw": 14027006,
+    "gzip": 4519295,
+    "brotli": 3048037
   },
   "hydration": {
     "runs": 5,
     "cpuThrottling": 4,
     "pages": {
       "/": {
-        "median": 1443,
-        "min": 1293,
-        "max": 1640,
+        "median": 1150,
+        "min": 1069,
+        "max": 1300,
         "runs": [
           {
-            "firstByte": 7,
-            "domContentLoaded": 527,
-            "hydrated": 1443
+            "firstByte": 9,
+            "domContentLoaded": 648,
+            "hydrated": 1300
           },
           {
-            "firstByte": 6,
-            "domContentLoaded": 382,
-            "hydrated": 1293
+            "firstByte": 4,
+            "domContentLoaded": 86,
+            "hydrated": 1069
           },
           {
-            "firstByte": 6,
-            "domContentLoaded": 422,
-            "hydrated": 1364
+            "firstByte": 4,
+            "domContentLoaded": 381,
+            "hydrated": 1202
           },
           {
-            "firstByte": 7,
-            "domContentLoaded": 509,
-            "hydrated": 1475
+            "firstByte": 5,
+            "domContentLoaded": 334,
+            "hydrated": 1150
           },
           {
-            "firstByte": 7,
-            "domContentLoaded": 625,
-            "hydrated": 1640
+            "firstByte": 10,
+            "domContentLoaded": 376,
+            "hydrated": 1144
           }
         ]
       },
       "/play": {
-        "median": 1362,
-        "min": 1337,
-        "max": 1505,
+        "median": 1103,
+        "min": 1080,
+        "max": 1119,
         "runs": [
           {
-            "firstByte": 12,
-            "domContentLoaded": 420,
-            "hydrated": 1505
-          },
-          {
-            "firstByte": 8,
-            "domContentLoaded": 390,
-            "hydrated": 1430
-          },
-          {
-            "firstByte": 7,
-            "domContentLoaded": 518,
-            "hydrated": 1362
+            "firstByte": 6,
+            "domContentLoaded": 678,
+            "hydrated": 1119
           },
           {
             "firstByte": 6,
-            "domContentLoaded": 341,
-            "hydrated": 1342
+            "domContentLoaded": 104,
+            "hydrated": 1109
           },
           {
-            "firstByte": 8,
-            "domContentLoaded": 416,
-            "hydrated": 1337
+            "firstByte": 5,
+            "domContentLoaded": 96,
+            "hydrated": 1103
+          },
+          {
+            "firstByte": 6,
+            "domContentLoaded": 95,
+            "hydrated": 1080
+          },
+          {
+            "firstByte": 6,
+            "domContentLoaded": 96,
+            "hydrated": 1097
           }
         ]
       },
       "/ranks": {
-        "median": 1063,
-        "min": 1008,
-        "max": 1111,
+        "median": 865,
+        "min": 822,
+        "max": 887,
         "runs": [
           {
-            "firstByte": 5,
-            "domContentLoaded": 376,
-            "hydrated": 1008
-          },
-          {
-            "firstByte": 5,
-            "domContentLoaded": 438,
-            "hydrated": 1081
+            "firstByte": 4,
+            "domContentLoaded": 103,
+            "hydrated": 865
           },
           {
             "firstByte": 4,
-            "domContentLoaded": 410,
-            "hydrated": 1039
+            "domContentLoaded": 374,
+            "hydrated": 887
           },
           {
             "firstByte": 4,
-            "domContentLoaded": 455,
-            "hydrated": 1111
+            "domContentLoaded": 305,
+            "hydrated": 887
           },
           {
-            "firstByte": 5,
-            "domContentLoaded": 647,
-            "hydrated": 1063
+            "firstByte": 4,
+            "domContentLoaded": 496,
+            "hydrated": 852
+          },
+          {
+            "firstByte": 4,
+            "domContentLoaded": 263,
+            "hydrated": 822
           }
         ]
       }

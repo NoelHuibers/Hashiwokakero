@@ -466,6 +466,7 @@ mod tests {
                 lane(4, "emre", Vec::new(), LaneOutcome::Missing),
             ],
             group_puzzle: None,
+            race: None,
         }
     }
 

@@ -1,0 +1,83 @@
+{
+  "title": "Wyścig",
+  "card": {
+    "text": "Ścigajcie się na żywo na tej samej świeżej łamigłówce: otwórz poczekalnię, inni dołączą, i 3, 2, 1, start!",
+    "difficulty": "Poziom trudności",
+    "open": "Otwórz wyścig",
+    "opening": "Otwieranie…",
+    "lobby": "Wyścig otwarty · dołączyło: {{ count }}",
+    "running": "Wyścig trwa · ścigających się: {{ count }}",
+    "join": "Dołącz",
+    "to_lobby": "Do poczekalni",
+    "watch": "Oglądaj",
+    "history": "Ostatnie wyścigi",
+    "none": "Jeszcze nie było wyścigów. Otwórz pierwszy i rzuć wyzwanie grupie!",
+    "no_winner": "bez zwycięzcy",
+    "players": "graczy: {{ count }}"
+  },
+  "page": {
+    "missing": "Tego wyścigu tu nie ma.",
+    "missing_hint": "Poczekalnia mogła wygasnąć lub zostać odwołana albo należy do grupy, w której cię nie ma."
+  },
+  "lobby": {
+    "title": "Poczekalnia",
+    "text": "Każdy, kto dołączy, dostaje tę samą świeżą łamigłówkę w tej samej chwili. Gospodarz startuje, gdy dołączą co najmniej dwie osoby.",
+    "host": "gospodarz",
+    "away": "nieobecny",
+    "join": "Dołącz do wyścigu",
+    "leave": "Wyjdź",
+    "cancel": "Odwołaj",
+    "cancel_confirm": "Odwołać wyścig? Poczekalnia zamknie się dla wszystkich.",
+    "start": "Start",
+    "starting": "Przygotowanie łamigłówki…",
+    "need_more": "Czekamy na co najmniej jeszcze jedną osobę…",
+    "waiting_host": "Czekamy, aż gospodarz wystartuje…",
+    "expires": "Poczekalnia zamknie się za {{ minutes }} min, jeśli nikt nie wystartuje.",
+    "share": "Udostępnij link do poczekalni",
+    "share_text": "Zmierz się ze mną w Hashi! Dołącz do poczekalni w {{ group }}:"
+  },
+  "countdown": {
+    "ready": "Gotowi",
+    "go": "Start!"
+  },
+  "play": {
+    "give_up": "Poddaj się",
+    "give_up_confirm": "Poddać wyścig? Nie zajmiesz miejsca, a rozwiązanie zobaczysz po zakończeniu wyścigu.",
+    "loading": "Łamigłówka jest w drodze…",
+    "time_left": "zostało {{ minutes }} min"
+  },
+  "track": {
+    "title": "Postęp",
+    "text": "Jak daleko jest każdy: część mostów na jego planszy. Nikt nie widzi cudzych mostów.",
+    "you": "ty"
+  },
+  "watch": {
+    "text": "Oglądasz: wyścig toczy się między uczestnikami."
+  },
+  "done": {
+    "solved": "Ukończone!",
+    "gave_up": "Poddajesz się.",
+    "waiting": "Czekamy, aż pozostali skończą…"
+  },
+  "results": {
+    "title": "Wyniki",
+    "flagged": "bez miejsca",
+    "gave_up": "poddał się",
+    "out": "nie ukończył",
+    "rematch": "Rewanż",
+    "rematch_join": "Dołącz do rewanżu",
+    "rematch_go": "Do rewanżu",
+    "replay": "Ruchy wszystkich",
+    "stage": "Plansza wyścigu z mostami: {{ names }}"
+  },
+  "errors": {
+    "open": "W tej grupie jest już otwarty wyścig: dołącz do niego.",
+    "gone": "Tego wyścigu już nie ma: poczekalnia wygasła lub została odwołana.",
+    "started": "Ten wyścig już się zaczął: możesz go oglądać.",
+    "host_only": "Tylko gospodarz może rozpocząć wyścig.",
+    "too_few": "Wyścig wymaga co najmniej dwóch graczy.",
+    "not_joined": "Nie bierzesz udziału w tym wyścigu.",
+    "not_running": "Wyścig nie trwa.",
+    "done": "Ten wyścig masz już za sobą."
+  }
+}

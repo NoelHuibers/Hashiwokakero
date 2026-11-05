@@ -712,6 +712,7 @@ pub(super) async fn merge_guest(
     ]
     .into_iter()
     .chain(super::groups::kadai::MERGE_GUEST)
+    .chain(super::groups::race::MERGE_GUEST)
     .chain(super::shares::MERGE_GUEST)
     // After the rivals: nobody keeps a player they blocked as their rival
     .chain(super::blocks::MERGE_GUEST)
@@ -773,8 +774,9 @@ pub async fn delete_account(
 /// else's), blocks and reports (theirs, and of them), group memberships (groups they own pass on to the longest standing member, groups
 /// nobody else but banned players is in go, see `groups::ERASE`), the hanko seals they pressed
 /// and got, group puzzles (open ones go, closed ones stay without a name, their attempts at
-/// others' go, see `groups::kadai::erase`), results on shared puzzles (their links stay
-/// without a name, see `shares::ERASE`), Dojo submissions, and of the daily results the
+/// others' go, see `groups::kadai::erase`), their lines in races (lobbies they host go, see
+/// `groups::race::ERASE`), results on shared puzzles (their links stay without a name, see
+/// `shares::ERASE`), Dojo submissions, and of the daily results the
 /// boards, move logs, devices and unranked attempts. What stays are the ranked times and
 /// penalties, under a user without a name (`deleted_at`), so the rankings of old days and the
 /// medals of everyone else don't change. A user without ranked times remains as an anonymous
@@ -789,6 +791,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         .chain(super::reports::ERASE)
         .chain(super::contact::ERASE)
         .chain(super::recovery::ERASE)
+        .chain(super::groups::race::ERASE)
         .chain(super::shares::ERASE)
     {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
@@ -856,8 +859,9 @@ pub async fn cleanup_guests(conn: &Connection) -> Result<usize, ServerFnError> {
 
 /// Cleans up every few hours, and tells writers of feedback that their GitHub issue is fixed.
 ///
-/// Deletes abandoned guests, old contact messages, old resolved reports and the expired links of
-/// mails (`recovery`); the fixed issues are `issues`'.
+/// Deletes abandoned guests, old contact messages, old resolved reports, the expired links of
+/// mails (`recovery`) and race lobbies nobody started (`groups::race`); the fixed issues are
+/// `issues`'.
 pub fn start_cleanup() {
     tokio::spawn(async {
         loop {
@@ -875,6 +879,9 @@ pub fn start_cleanup() {
                         eprintln!("cleanup: {e}");
                     }
                     if let Err(e) = super::recovery::delete_old(&conn).await {
+                        eprintln!("cleanup: {e}");
+                    }
+                    if let Err(e) = super::groups::race::delete_expired(&conn, now_ms()).await {
                         eprintln!("cleanup: {e}");
                     }
                     match super::issues::notify_fixed_now(&conn).await {

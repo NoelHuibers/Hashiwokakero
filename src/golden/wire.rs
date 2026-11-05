@@ -18,9 +18,10 @@ use crate::model::{
     DojoCactus, DojoCrossover, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
     DojoSeasons, DojoState, DojoSubmission, FeedbackKind, FeedbackStatus, Flag, GroupToday,
     HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard,
-    MonthEntry, MoveEvent, PlayerProfile, RecoveryEmail, ReportOutcome, ReportReason, Run,
-    SharedBy, SharedEntry, SharedLink, SharedPuzzlePage, SharedSubmit, Stamp, StampProgress,
-    SubmissionAction, SubmitResult, UserInfo, UserStats,
+    MonthEntry, MoveEvent, PlayerProfile, RaceEntrant, RaceOutcome, RacePlayer, RaceSummary,
+    RaceView, RecoveryEmail, ReportOutcome, ReportReason, Run, SharedBy, SharedEntry, SharedLink,
+    SharedPuzzlePage, SharedSubmit, Stamp, StampProgress, SubmissionAction, SubmitResult, UserInfo,
+    UserStats,
 };
 
 /// What the server functions send to the pages.
@@ -286,6 +287,80 @@ fn dojo_submission() -> DojoSubmission {
     }
 }
 
+/// A race that is over: aiko won it, bob's finish was flagged, the guest gave up, chen is out.
+fn race_view() -> RaceView {
+    let player = |user_id: i64, name: &str, outcome| RacePlayer {
+        user_id,
+        name: name.into(),
+        guest: user_id == 4,
+        colour: u8::try_from(user_id).unwrap(),
+        joined_at: 1_760_000_000_000 + user_id,
+        progress: 100,
+        away: user_id == 3,
+        hints: 1,
+        checks: 2,
+        flag: (user_id == 2).then_some(Flag::TooFast),
+        outcome,
+    };
+    RaceView {
+        id: 6,
+        group_id: 2,
+        group_name: "Lunch".into(),
+        me: 1,
+        host: Some(1),
+        difficulty: Difficulty::Hard,
+        penalties: crate::model::HelpPenalties::of(Difficulty::Hard),
+        created_at: 1_760_000_000_000,
+        starts_at: Some(1_760_000_010_000),
+        ended_at: Some(1_760_000_100_000),
+        players: vec![
+            player(
+                1,
+                "aiko",
+                RaceOutcome::Solved {
+                    time_ms: 85_000,
+                    place: Some(1),
+                },
+            ),
+            player(
+                2,
+                "bob",
+                RaceOutcome::Solved {
+                    time_ms: 20_000,
+                    place: None,
+                },
+            ),
+            player(3, "chen", RaceOutcome::Out),
+            player(4, "Brave Heron 42", RaceOutcome::GaveUp),
+        ],
+        puzzle: Some(puzzle()),
+        solution: Some(vec![2, 1]),
+        rematch: Some(7),
+        rematch_open: true,
+        server_now: 1_760_000_200_000,
+    }
+}
+
+/// A race on the group page, over if `ended_at`.
+fn race_summary(ended_at: Option<i64>) -> RaceSummary {
+    RaceSummary {
+        id: 6,
+        difficulty: Difficulty::Easy,
+        host: Some(1),
+        created_at: 1_760_000_000_000,
+        starts_at: ended_at.map(|_| 1_760_000_010_000),
+        ended_at,
+        entrants: vec![RaceEntrant {
+            user_id: 1,
+            name: "aiko".into(),
+            colour: 0,
+            place: ended_at.map(|_| 1),
+            time_ms: ended_at.map(|_| 85_000),
+        }],
+        joined: true,
+    }
+}
+
 /// Every server function response type, in one file.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 struct Responses {
@@ -314,6 +389,8 @@ struct Responses {
     admin_benchmark: AdminBenchmark,
     admin_report: AdminReport,
     blocked: Vec<BlockedPlayer>,
+    race: RaceView,
+    races: crate::model::GroupRaces,
     generated: GeneratedPuzzle,
     solved: SolveReport,
     unsatisfiable: SolveOutcome,
@@ -712,6 +789,12 @@ fn responses() -> Responses {
             guest: false,
             blocked_at: 1_760_000_000_000,
         }],
+        race: race_view(),
+        races: crate::model::GroupRaces {
+            open: Some(race_summary(None)),
+            recent: vec![race_summary(Some(1_760_000_100_000))],
+            server_now: 1_760_000_200_000,
+        },
         generated: GeneratedPuzzle {
             puzzle: puzzle(),
             solution: vec![2, 1],
@@ -943,6 +1026,9 @@ fn stored_formats() {
         line("attempts.log", &log),
         line("attempts.run", &run),
         line("group_puzzles.puzzle", &puzzle()),
+        line("group_races.puzzle", &puzzle()),
+        line("group_races.solution", &vec![2u8, 1]),
+        line("group_race_players.log", &log),
         line("shared_puzzles.puzzle", &puzzle()),
         line("shared_puzzles.solution", &vec![2u8, 1]),
         line(

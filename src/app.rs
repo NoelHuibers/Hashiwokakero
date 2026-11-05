@@ -22,6 +22,7 @@ use crate::pages::lab::LabPage;
 use crate::pages::legal::{CommunityRulesPage, ImpressumPage, PrivacyPage};
 use crate::pages::play::PlayPage;
 use crate::pages::player::PlayerPage;
+use crate::pages::race::RacePage;
 use crate::pages::ranks::RanksPage;
 use crate::pages::replay::{GroupReplayPage, OwnReplayPage};
 use crate::pages::rules::RulesPage;
@@ -138,6 +139,7 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/groups/:id/replay/:day") view=GroupReplayPage />
                             <Route path=path!("/groups/:id/puzzles/:puzzle") view=KadaiPage />
                             <Route path=path!("/groups/:id/puzzles/:puzzle/replay") view=KadaiReplayPage />
+                            <Route path=path!("/groups/:id/races/:race") view=RacePage />
                             <Route path=path!("/replay/:day") view=OwnReplayPage />
                             <Route path=path!("/g/:code") view=JoinGroupPage />
                             // A shared puzzle; waits for it, for the title and the link preview

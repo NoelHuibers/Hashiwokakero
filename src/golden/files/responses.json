@@ -898,6 +898,160 @@
       "blocked_at": 1760000000000
     }
   ],
+  "race": {
+    "id": 6,
+    "group_id": 2,
+    "group_name": "Lunch",
+    "me": 1,
+    "host": 1,
+    "difficulty": "Hard",
+    "penalties": {
+      "check_ms": 20000,
+      "hint_ms": 60000
+    },
+    "created_at": 1760000000000,
+    "starts_at": 1760000010000,
+    "ended_at": 1760000100000,
+    "players": [
+      {
+        "user_id": 1,
+        "name": "aiko",
+        "guest": false,
+        "colour": 1,
+        "joined_at": 1760000000001,
+        "progress": 100,
+        "away": false,
+        "hints": 1,
+        "checks": 2,
+        "flag": null,
+        "outcome": {
+          "Solved": {
+            "time_ms": 85000,
+            "place": 1
+          }
+        }
+      },
+      {
+        "user_id": 2,
+        "name": "bob",
+        "guest": false,
+        "colour": 2,
+        "joined_at": 1760000000002,
+        "progress": 100,
+        "away": false,
+        "hints": 1,
+        "checks": 2,
+        "flag": "TooFast",
+        "outcome": {
+          "Solved": {
+            "time_ms": 20000,
+            "place": null
+          }
+        }
+      },
+      {
+        "user_id": 3,
+        "name": "chen",
+        "guest": false,
+        "colour": 3,
+        "joined_at": 1760000000003,
+        "progress": 100,
+        "away": true,
+        "hints": 1,
+        "checks": 2,
+        "flag": null,
+        "outcome": "Out"
+      },
+      {
+        "user_id": 4,
+        "name": "Brave Heron 42",
+        "guest": true,
+        "colour": 4,
+        "joined_at": 1760000000004,
+        "progress": 100,
+        "away": false,
+        "hints": 1,
+        "checks": 2,
+        "flag": null,
+        "outcome": "GaveUp"
+      }
+    ],
+    "puzzle": {
+      "width": 3,
+      "height": 3,
+      "islands": [
+        {
+          "pos": {
+            "x": 0,
+            "y": 0
+          },
+          "required": 2
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 0
+          },
+          "required": 3
+        },
+        {
+          "pos": {
+            "x": 2,
+            "y": 2
+          },
+          "required": 1
+        }
+      ]
+    },
+    "solution": [
+      2,
+      1
+    ],
+    "rematch": 7,
+    "rematch_open": true,
+    "server_now": 1760000200000
+  },
+  "races": {
+    "open": {
+      "id": 6,
+      "difficulty": "Easy",
+      "host": 1,
+      "created_at": 1760000000000,
+      "starts_at": null,
+      "ended_at": null,
+      "entrants": [
+        {
+          "user_id": 1,
+          "name": "aiko",
+          "colour": 0,
+          "place": null,
+          "time_ms": null
+        }
+      ],
+      "joined": true
+    },
+    "recent": [
+      {
+        "id": 6,
+        "difficulty": "Easy",
+        "host": 1,
+        "created_at": 1760000000000,
+        "starts_at": 1760000010000,
+        "ended_at": 1760000100000,
+        "entrants": [
+          {
+            "user_id": 1,
+            "name": "aiko",
+            "colour": 0,
+            "place": 1,
+            "time_ms": 85000
+          }
+        ],
+        "joined": true
+      }
+    ],
+    "server_now": 1760000200000
+  },
   "generated": {
     "puzzle": {
       "width": 3,

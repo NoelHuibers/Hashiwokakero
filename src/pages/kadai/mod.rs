@@ -27,20 +27,19 @@ use crate::api::{
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::{Petals, Stamp};
 use crate::components::layout::use_localized;
+use crate::components::paid_controls::{PaidControls, show_check, show_hint};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
-use crate::components::ui::dialog::ConfirmDialog;
 use crate::components::ui::progress::Progress;
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::{
-    CHECK_PENALTY_MS, HINT_PENALTY_MS, PuzzlePage, PuzzleSummary, TimeLeft, format_duration,
-    is_blocked_name, time_left,
+    HelpPenalties, PuzzlePage, PuzzleSummary, TimeLeft, format_duration, is_blocked_name, time_left,
 };
 use crate::pages::daily::Stat;
 use crate::pages::play::islands_percent;
 use crate::seo::title_text;
-use crate::state::{Auth, Game, Status, ToastKind, error_toast, toast};
+use crate::state::{Auth, Game, Status, error_toast};
 
 use author::{AuthorCard, SummaryCard};
 use cover::Cover;
@@ -242,7 +241,7 @@ fn Controls(play: Play) -> impl IntoView {
             && game.status.get() == Status::Playing
             && !play.busy.get()
     });
-    let hint = move |_| {
+    let hint = move |()| {
         let Some(id) = play.id() else { return };
         play.busy.set(true);
         let bridges = game.bridges.get_untracked();
@@ -253,28 +252,17 @@ fn Controls(play: Play) -> impl IntoView {
                 return;
             }
             match reply {
-                Ok(Some((edge, value))) => {
-                    play.update_attempt(|a| a.hints += 1);
-                    game.set_edges(&[(edge, value)]);
-                    game.hints.update(|h| *h += 1);
-                    game.hint.set(Some(edge));
-                    set_timeout(
-                        move || {
-                            if game.hint.try_get_untracked() == Some(Some(edge)) {
-                                game.hint.set(None);
-                            }
-                        },
-                        Duration::from_millis(3000),
-                    );
+                Ok(hint) => {
+                    if hint.is_some() {
+                        play.update_attempt(|a| a.hints += 1);
+                    }
+                    show_hint(game, hint);
                 }
-                Ok(None) => toast(ToastKind::Info, |l| {
-                    td_string!(l, common.toast.nothing_to_hint).to_string()
-                }),
                 Err(e) => error_toast(e),
             }
         });
     };
-    let check = move |_| {
+    let check = move |()| {
         let Some(id) = play.id() else { return };
         play.busy.set(true);
         let bridges = game.bridges.get_untracked();
@@ -287,31 +275,13 @@ fn Controls(play: Play) -> impl IntoView {
             match reply {
                 Ok(wrong) => {
                     play.update_attempt(|a| a.checks += 1);
-                    if wrong.is_empty() {
-                        crate::audio::play(crate::audio::Sfx::Correct);
-                        toast(ToastKind::Success, |l| {
-                            td_string!(l, common.toast.all_correct).to_string()
-                        });
-                    } else {
-                        let count = wrong.len();
-                        toast(ToastKind::Error, move |l| {
-                            td_string!(l, common.toast.wrong_bridges, count)
-                        });
-                        game.wrong.set(wrong);
-                        set_timeout(
-                            move || {
-                                game.wrong.try_set(vec![]);
-                            },
-                            Duration::from_millis(2400),
-                        );
-                    }
+                    show_check(game, wrong);
                 }
                 Err(e) => error_toast(e),
             }
         });
     };
-    let giving_up = RwSignal::new(false);
-    let give_up = move || {
+    let give_up = move |()| {
         let Some(id) = play.id() else { return };
         play.busy.set(true);
         spawn_local(async move {
@@ -326,57 +296,17 @@ fn Controls(play: Play) -> impl IntoView {
         });
     };
     view! {
-        <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap" aria-busy=move || play.busy.get().to_string()>
-            <Button
-                variant=ButtonVariant::Outline
-                attr:disabled=move || !playing.get() || game.undo_stack.with(Vec::is_empty)
-                on:click=move |_| game.undo()
-            >
-                "↶ " {t!(i18n, common.game.undo)}
-            </Button>
-            <Button
-                variant=ButtonVariant::Outline
-                attr:disabled=move || !playing.get() || game.redo_stack.with(Vec::is_empty)
-                on:click=move |_| game.redo()
-            >
-                {t!(i18n, common.game.redo)} " ↷"
-            </Button>
-            <Button variant=ButtonVariant::Ghost attr:disabled=move || !playing.get() on:click=move |_| game.restart()>
-                {t!(i18n, common.game.clear)}
-            </Button>
-            <div class="contents sm:ms-auto sm:flex sm:gap-2">
-                <Button
-                    variant=ButtonVariant::Secondary
-                    attr:disabled=move || !playing.get()
-                    attr:data-tooltip=format!("+{} s", CHECK_PENALTY_MS / 1000)
-                    on:click=check
-                >
-                    {t!(i18n, common.game.check)} <span class="hidden sm:inline">" 確認"</span> <span class="text-xs opacity-70">"+10s"</span>
-                </Button>
-                <Button
-                    variant=ButtonVariant::Secondary
-                    attr:disabled=move || !playing.get()
-                    attr:data-tooltip=format!("+{} s", HINT_PENALTY_MS / 1000)
-                    on:click=hint
-                >
-                    {t!(i18n, common.game.hint)} <span class="hidden sm:inline">" 助言"</span> <span class="text-xs opacity-70">"+30s"</span>
-                </Button>
-                <Button
-                    variant=ButtonVariant::Ghost
-                    attr:disabled=move || !playing.get()
-                    attr:aria-haspopup="dialog"
-                    on:click=move |_| giving_up.set(true)
-                >
-                    {t!(i18n, kadai.page.give_up)}
-                </Button>
-                <ConfirmDialog
-                    open=giving_up
-                    question=Signal::derive(move || t_string!(i18n, kadai.page.give_up_confirm).to_string())
-                    yes=Signal::derive(move || t_string!(i18n, kadai.page.give_up).to_string())
-                    on_yes=give_up
-                />
-            </div>
-        </div>
+        <PaidControls
+            game
+            playing
+            busy=play.busy
+            penalties=Signal::derive(HelpPenalties::default)
+            on_hint=Callback::new(hint)
+            on_check=Callback::new(check)
+            on_give_up=Callback::new(give_up)
+            give_up=Signal::derive(move || t_string!(i18n, kadai.page.give_up).to_string())
+            give_up_question=Signal::derive(move || t_string!(i18n, kadai.page.give_up_confirm).to_string())
+        />
     }
 }
 
@@ -693,7 +623,7 @@ mod tests {
             puzzle: (started || known).then(puzzle),
             solution: known.then(|| vec![2, 1]),
             attempt: started.then(|| AttemptInfo {
-                penalties: crate::model::HelpPenalties::default(),
+                penalties: HelpPenalties::default(),
                 attempt_id: String::new(),
                 started_at: 1_000,
                 finished_at: finished.then_some(61_000),

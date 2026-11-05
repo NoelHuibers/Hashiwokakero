@@ -10,6 +10,7 @@ pub mod lab;
 pub mod legal;
 pub mod play;
 pub mod player;
+pub mod race;
 pub mod ranks;
 pub mod replay;
 pub mod rules;

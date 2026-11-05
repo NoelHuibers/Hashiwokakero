@@ -235,6 +235,18 @@ async fn write_rows(conn: &Connection, version: usize) {
         .await;
     }
     if version >= 27 {
+        // A finished race of the group: noel won it, the guest gave up
+        run(r#"
+            INSERT INTO group_races (id, group_id, host_id, difficulty, created_at, starts_at, ended_at, puzzle, solution)
+                VALUES (1, 1, 1, 'easy', 9800, 9900, 99000, '{"width":3,"height":3,"islands":[]}', '[2,1]');
+            INSERT INTO group_race_players (race_id, user_id, joined_at, last_seen, finished_at, time_ms, bridges)
+                VALUES (1, 1, 9800, 98000, 95000, 85100, '[2,1]');
+            INSERT INTO group_race_players (race_id, user_id, joined_at, last_seen, revealed)
+                VALUES (1, 2, 9810, 99000, 1);
+        "#)
+        .await;
+    }
+    if version >= 28 {
         // noel shared a puzzle he solved, the guest solved it through his link
         run(r#"
             INSERT INTO shared_puzzles (id, hash, puzzle, solution, created_at)
@@ -266,7 +278,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        27,
+        28,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -455,6 +467,15 @@ async fn old_databases_migrate_with_their_data() {
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name = 'group_puzzles_gone'",
                 1,
             ),
+            (
+                "SELECT COUNT(*) FROM group_race_players p JOIN group_races r ON r.id = p.race_id
+                 WHERE p.progress = 0 AND p.hints = 0 AND p.helps = '[]' AND r.rematch_id IS NULL",
+                if version >= 27 { 2 } else { 0 },
+            ),
+            (
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name = 'group_races_gone'",
+                1,
+            ),
             // 12 only added the indexes of ranked times
             (
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index'
@@ -497,7 +518,7 @@ async fn old_databases_migrate_with_their_data() {
                 "SELECT COUNT(DISTINCT r.user_id) FROM puzzle_shares s
                  JOIN shared_results r ON r.share_id = s.id AND r.user_id != s.user_id
                  WHERE s.user_id = 1",
-                i64::from(version >= 27),
+                i64::from(version >= 28),
             ),
         ];
         for (sql, expected) in defaults {

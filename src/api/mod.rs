@@ -29,6 +29,7 @@ mod moderation;
 #[cfg(feature = "csr")]
 pub(crate) mod native;
 mod puzzle;
+mod race;
 mod replay;
 mod rivals;
 mod river;
@@ -52,6 +53,7 @@ pub use hanko::*;
 pub use kadai::*;
 pub use moderation::*;
 pub use puzzle::*;
+pub use race::*;
 pub use replay::*;
 pub use rivals::*;
 pub use river::*;
@@ -108,6 +110,7 @@ mod tests {
             include_str!("kadai.rs"),
             include_str!("moderation.rs"),
             include_str!("puzzle.rs"),
+            include_str!("race.rs"),
             include_str!("replay.rs"),
             include_str!("rivals.rs"),
             include_str!("river.rs"),

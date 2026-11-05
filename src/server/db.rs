@@ -589,6 +589,62 @@ CREATE INDEX IF NOT EXISTS account_tokens_created ON account_tokens (created_at)
 ",
     // 27
     "
+-- Races (勝負 shōbu): members of a group race each other live on the same fresh puzzle, see
+-- server/groups/race.rs. A lobby has no starts_at yet and is deleted 15 minutes after it was
+-- opened if nobody started it. The puzzle and its solution come with the start. ended_at: over
+-- (everyone done or away, or the time ran out). host_id NULL: the host deleted their account.
+-- rematch_id: the race opened as its rematch
+CREATE TABLE IF NOT EXISTS group_races (
+    id         INTEGER PRIMARY KEY,
+    group_id   INTEGER NOT NULL,
+    host_id    INTEGER,
+    difficulty TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    starts_at  INTEGER,
+    ended_at   INTEGER,
+    puzzle     TEXT,
+    solution   TEXT,
+    rematch_id INTEGER
+);
+CREATE INDEX IF NOT EXISTS group_races_group ON group_races (group_id, starts_at);
+CREATE INDEX IF NOT EXISTS group_races_host ON group_races (host_id);
+-- At most one open race (a lobby or running) per group
+CREATE UNIQUE INDEX IF NOT EXISTS group_races_open ON group_races (group_id) WHERE ended_at IS NULL;
+
+-- A player of a race: when they joined and were last seen (each request of their page), the
+-- progress they reported (percent of the solution's bridges on their board, for the others'
+-- progress bars) and when, and their result, timed like a daily's attempt from the race's start
+CREATE TABLE IF NOT EXISTS group_race_players (
+    race_id     INTEGER NOT NULL,
+    user_id     INTEGER NOT NULL,
+    joined_at   INTEGER NOT NULL,
+    last_seen   INTEGER NOT NULL,
+    progress    INTEGER NOT NULL DEFAULT 0,
+    progress_at INTEGER NOT NULL DEFAULT 0,
+    finished_at INTEGER,
+    revealed    INTEGER NOT NULL DEFAULT 0,
+    -- finished_at - starts_at + penalties
+    time_ms     INTEGER,
+    hints       INTEGER NOT NULL DEFAULT 0,
+    checks      INTEGER NOT NULL DEFAULT 0,
+    moves       INTEGER,
+    bridges     TEXT,
+    log         TEXT,
+    flag        TEXT,
+    -- the hints and checks: when and on which bridges (model::Help), JSON
+    helps       TEXT NOT NULL DEFAULT '[]',
+    PRIMARY KEY (race_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS group_race_players_user ON group_race_players (user_id);
+-- A group that goes takes its races and their players along
+CREATE TRIGGER group_races_gone AFTER DELETE ON groups BEGIN
+    DELETE FROM group_race_players
+        WHERE race_id IN (SELECT id FROM group_races WHERE group_id = OLD.id);
+    DELETE FROM group_races WHERE group_id = OLD.id;
+END;
+",
+    // 28
+    "
 -- Shared puzzles (/p/<code>), see server/shares.rs. The puzzle once, found by the SHA-256 of its
 -- layout (`hash`), with the solution the server proved to be the only one
 CREATE TABLE IF NOT EXISTS shared_puzzles (

@@ -125,6 +125,14 @@ export const SHARED_PUZZLE = {
   ] as const,
 };
 
+/** A race 勝負 of the seeded group, over two days ago (race.spec.ts), on the puzzle of
+ * `CLOSED_PUZZLE`: aiko opened it and won, bram came second with a hint and a check, the guest
+ * otter gave up. */
+export const SEEDED_RACE = {
+  id: 1,
+  host: 'aiko',
+};
+
 /** The day before today: the seeded group's members who played it have move logs, for the
  * replay theatre (replay.spec.ts). Every log moves on the first edges, which every daily has. */
 export const REPLAY_DAY_BACK = 1;
@@ -361,6 +369,79 @@ export function seed(dbPath: string) {
     started,
     null,
     0,
+    0,
+    0,
+    null,
+    null,
+    '[]',
+  );
+
+  // The race that is over, with a move log for the replay
+  const raceStart = (today - 2) * MS_PER_DAY + 12 * 3_600_000;
+  db.prepare(
+    `INSERT INTO group_races (id, group_id, host_id, difficulty, created_at, starts_at, ended_at, puzzle, solution)
+     VALUES (?, ?, ?, 'easy', ?, ?, ?, ?, ?)`,
+  ).run(
+    SEEDED_RACE.id,
+    SEEDED_GROUP.id,
+    player(SEEDED_RACE.host).id,
+    raceStart - 60_000,
+    raceStart,
+    raceStart + 140_000,
+    JSON.stringify(CLOSED_PUZZLE.puzzle),
+    solved,
+  );
+  const raceLog = CLOSED_PUZZLE.solution.flatMap((wanted, edge) =>
+    Array.from({ length: wanted }, (_, n) => ({ edge, count: n + 1, tap: true })),
+  );
+  const racer = db.prepare(
+    `INSERT INTO group_race_players (race_id, user_id, joined_at, last_seen, progress, finished_at, revealed, time_ms, hints, checks, bridges, log, helps)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const timed = (step: number) =>
+    JSON.stringify(raceLog.map((e, i) => ({ t: 4_000 + i * step, ...e })));
+  racer.run(
+    SEEDED_RACE.id,
+    player('aiko').id,
+    raceStart - 60_000,
+    raceStart + 80_000,
+    100,
+    raceStart + 80_000,
+    0,
+    80_000,
+    0,
+    0,
+    solved,
+    timed(4_000),
+    '[]',
+  );
+  racer.run(
+    SEEDED_RACE.id,
+    player('bram').id,
+    raceStart - 50_000,
+    raceStart + 100_000,
+    100,
+    raceStart + 100_000,
+    0,
+    140_000,
+    1,
+    1,
+    solved,
+    timed(5_000),
+    JSON.stringify([
+      { t: 20_000, kind: 'Check', edges: [] },
+      { t: 40_000, kind: 'Hint', edges: [2] },
+    ]),
+  );
+  racer.run(
+    SEEDED_RACE.id,
+    player('Drowsy Otter 21').id,
+    raceStart - 40_000,
+    raceStart + 30_000,
+    35,
+    null,
+    1,
+    null,
     0,
     0,
     null,

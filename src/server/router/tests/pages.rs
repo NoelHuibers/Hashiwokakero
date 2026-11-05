@@ -37,6 +37,7 @@ const PAGES: [(&str, &str); 28] = [
         "/groups/{id}/puzzles/{puzzle}/replay",
         "/groups/1/puzzles/1/replay",
     ),
+    ("/groups/{id}/races/{race}", "/groups/1/races/1"),
     ("/replay/{day}", "/replay/20747"),
     ("/g/{code}", "/g/abcdefgh23"),
     // Nobody's link
@@ -250,6 +251,17 @@ fn expected(route: &str, l: Locale) -> Expected {
             absent: strings([
                 td_string!(l, kadai.page.missing),
                 td_string!(l, kadai.ranking.title),
+            ]),
+            nav: Some("/groups"),
+            ..Expected::default()
+        },
+        // Only members see a race, the browser asks for it
+        "/groups/{id}/races/{race}" => Expected {
+            title: Some(hashi(td_string!(l, race.title))),
+            texts: strings([td_string!(l, groups.page.back), loading]),
+            absent: strings([
+                td_string!(l, race.page.missing),
+                td_string!(l, race.lobby.title),
             ]),
             nav: Some("/groups"),
             ..Expected::default()

@@ -19,9 +19,10 @@ pub const LOCALES: [&str; 20] = [
     "ja", "ko", "zh", "zh-Hant",
 ];
 
-pub const NAMESPACES: [&str; 19] = [
+pub const NAMESPACES: [&str; 20] = [
     "common", "daily", "play", "ranks", "account", "create", "lab", "rules", "dojo", "stamps",
-    "contact", "groups", "replay", "rivals", "banzuke", "hanko", "river", "kadai", "shared",
+    "contact", "groups", "replay", "rivals", "banzuke", "hanko", "river", "kadai", "race",
+    "shared",
 ];
 
 /// At the workspace root, relative to this crate

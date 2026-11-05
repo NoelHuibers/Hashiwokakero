@@ -1,0 +1,83 @@
+{
+  "title": "Yarış",
+  "card": {
+    "text": "Aynı yepyeni bulmacada canlı yarışın: bir lobi açın, diğerleri katılsın, ve 3, 2, 1, başla!",
+    "difficulty": "Zorluk",
+    "open": "Yarış aç",
+    "opening": "Açılıyor…",
+    "lobby": "Yarış açık · {{ count }} kişi katıldı",
+    "running": "Yarış sürüyor · {{ count }} kişi yarışıyor",
+    "join": "Katıl",
+    "to_lobby": "Lobiye git",
+    "watch": "İzle",
+    "history": "Son yarışlar",
+    "none": "Henüz yarış yok. Bir tane aç ve gruba meydan oku!",
+    "no_winner": "kazanan yok",
+    "players": "{{ count }} oyuncu"
+  },
+  "page": {
+    "missing": "Bu yarış burada değil.",
+    "missing_hint": "Lobinin süresi dolmuş ya da iptal edilmiş olabilir, veya üyesi olmadığın bir gruba ait."
+  },
+  "lobby": {
+    "title": "Lobi",
+    "text": "Katılan herkes aynı anda aynı yepyeni bulmacayı alır. Ev sahibi en az iki kişi katılınca başlatır.",
+    "host": "ev sahibi",
+    "away": "yok",
+    "join": "Yarışa katıl",
+    "leave": "Ayrıl",
+    "cancel": "İptal et",
+    "cancel_confirm": "Yarış iptal edilsin mi? Lobi içindeki herkes için kapanır.",
+    "start": "Başlat",
+    "starting": "Bulmaca hazırlanıyor…",
+    "need_more": "En az bir oyuncu daha bekleniyor…",
+    "waiting_host": "Ev sahibinin başlatması bekleniyor…",
+    "expires": "Kimse başlatmazsa lobi {{ minutes }} dk içinde kapanır.",
+    "share": "Lobi bağlantısını paylaş",
+    "share_text": "Hashi'de benimle yarış! {{ group }} grubundaki lobiye katıl:"
+  },
+  "countdown": {
+    "ready": "Hazır",
+    "go": "Başla!"
+  },
+  "play": {
+    "give_up": "Pes et",
+    "give_up_confirm": "Yarıştan çekilsin mi? Sıralamaya giremezsin, çözümü yarış bitince görürsün.",
+    "loading": "Bulmaca yolda…",
+    "time_left": "{{ minutes }} dk kaldı"
+  },
+  "track": {
+    "title": "İlerleme",
+    "text": "Herkesin durumu: tahtasındaki köprülerin oranı. Kimse başkasının köprülerini görmez.",
+    "you": "sen"
+  },
+  "watch": {
+    "text": "İzliyorsun: yarış katılımcılar arasında."
+  },
+  "done": {
+    "solved": "Bitti!",
+    "gave_up": "Pes ettin.",
+    "waiting": "Diğerlerinin bitirmesi bekleniyor…"
+  },
+  "results": {
+    "title": "Sonuçlar",
+    "flagged": "sıralama dışı",
+    "gave_up": "pes etti",
+    "out": "bitiremedi",
+    "rematch": "Rövanş",
+    "rematch_join": "Rövanşa katıl",
+    "rematch_go": "Rövanşa git",
+    "replay": "Herkesin hamleleri",
+    "stage": "{{ names }} köprüleriyle yarışın tahtası"
+  },
+  "errors": {
+    "open": "Bu grupta zaten açık bir yarış var: ona katıl.",
+    "gone": "Bu yarış artık yok: lobinin süresi doldu ya da iptal edildi.",
+    "started": "Bu yarış çoktan başladı: izleyebilirsin.",
+    "host_only": "Yarışı yalnızca ev sahibi başlatabilir.",
+    "too_few": "Bir yarış için en az iki oyuncu gerekir.",
+    "not_joined": "Bu yarışta değilsin.",
+    "not_running": "Yarış sürmüyor.",
+    "done": "Bu yarışı zaten bitirdin."
+  }
+}

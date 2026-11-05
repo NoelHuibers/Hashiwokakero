@@ -4,28 +4,12 @@ use common::{Board, Puzzle};
 use leptos::prelude::*;
 
 use crate::model::{AttemptInfo, MoveEvent, MyPuzzle, PuzzlePage};
-use crate::state::{Game, Source, Status, load, store};
+use crate::state::{Game, MoveLog, Source, Status};
 
 /// The board of the group puzzle being played, kept in the browser like the daily's.
 pub const GAME_KEY: &str = "hashi.kadai.v1";
 /// Its move log, kept in the browser so a reload doesn't lose it.
-pub(super) const LOG_KEY: &str = "hashi.kadai.log";
-
-#[derive(serde::Serialize, serde::Deserialize, Default)]
-pub(super) struct SavedLog {
-    pub(super) puzzle: i64,
-    pub(super) events: Vec<MoveEvent>,
-}
-
-/// The last board the log saw, with the puzzle and game it belongs to, so loading another one
-/// is never logged as moves.
-#[derive(Clone, Debug)]
-pub(super) struct Snapshot {
-    puzzle: Option<i64>,
-    epoch: u32,
-    bridges: Vec<u8>,
-    moves: u32,
-}
+const LOG_KEY: &str = "hashi.kadai.log";
 
 /// What the page shows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -74,7 +58,7 @@ pub struct Play {
     pub failed: RwSignal<bool>,
     /// Solved in this tab just now: the petals.
     pub won_here: RwSignal<bool>,
-    pub(super) logged: StoredValue<Option<Snapshot>>,
+    log: MoveLog,
 }
 
 impl Play {
@@ -87,7 +71,7 @@ impl Play {
             busy: RwSignal::new(false),
             failed: RwSignal::new(false),
             won_here: RwSignal::new(false),
-            logged: StoredValue::new(None),
+            log: MoveLog::new(LOG_KEY),
         }
     }
 
@@ -200,56 +184,16 @@ impl Play {
 
     /// The saved move log of this puzzle.
     pub fn log(&self) -> Vec<MoveEvent> {
-        let id = self.id();
-        load::<SavedLog>(LOG_KEY)
-            .filter(|l| Some(l.puzzle) == id)
-            .map(|l| l.events)
-            .unwrap_or_default()
+        self.log.events(self.id())
     }
 
     /// Logs the bridge changes since the last call, while the clock runs: a click changes one
     /// bridge and counts a move, hints, undo and restart don't.
     pub fn record_moves(&self) {
-        let current = Snapshot {
-            puzzle: self.page.with(|p| p.as_ref().map(|p| p.summary.id)),
-            epoch: self.game.epoch.get(),
-            bridges: self.game.bridges.get(),
-            moves: self.game.moves.get_untracked(),
-        };
-        let previous = self.logged.get_value();
-        self.logged.set_value(Some(current.clone()));
-        let (Some(before), Some(puzzle)) = (previous, current.puzzle) else {
-            return;
-        };
-        if before.puzzle != current.puzzle
-            || before.epoch != current.epoch
-            || before.bridges.len() != current.bridges.len()
-            || !untrack(|| self.started())
-            || untrack(|| self.finished())
-        {
-            return;
-        }
-        let changed: Vec<usize> = (0..current.bridges.len())
-            .filter(|&e| before.bridges[e] != current.bridges[e])
-            .collect();
-        if changed.is_empty() {
-            return;
-        }
-        let tap = changed.len() == 1 && current.moves > before.moves;
-        let t = untrack(|| self.clock_ms());
-        let mut saved = load::<SavedLog>(LOG_KEY)
-            .filter(|l| l.puzzle == puzzle)
-            .unwrap_or_default();
-        saved.puzzle = puzzle;
-        for edge in changed {
-            saved.events.push(MoveEvent {
-                t,
-                edge: u16::try_from(edge).unwrap_or(u16::MAX),
-                count: current.bridges[edge],
-                tap,
-            });
-        }
-        store(LOG_KEY, &saved);
+        let puzzle = self.page.with(|p| p.as_ref().map(|p| p.summary.id));
+        let running = untrack(|| self.started() && !self.finished());
+        self.log
+            .record(&self.game, puzzle, running, || self.clock_ms());
     }
 
     /// Islands with all their bridges, and how many there are.

@@ -1,0 +1,83 @@
+{
+  "title": "Gara",
+  "card": {
+    "text": "Sfidatevi dal vivo sullo stesso puzzle nuovo: apri una sala d'attesa, gli altri si uniscono e 3, 2, 1, via!",
+    "difficulty": "Difficoltà",
+    "open": "Apri una gara",
+    "opening": "Apertura…",
+    "lobby": "Gara aperta · {{ count }} iscritti",
+    "running": "Gara in corso · {{ count }} in gara",
+    "join": "Partecipa",
+    "to_lobby": "Alla sala d'attesa",
+    "watch": "Guarda",
+    "history": "Gare recenti",
+    "none": "Ancora nessuna gara. Aprine una e sfida il gruppo!",
+    "no_winner": "nessun vincitore",
+    "players": "{{ count }} giocatori"
+  },
+  "page": {
+    "missing": "Questa gara non è qui.",
+    "missing_hint": "La sala d'attesa potrebbe essere scaduta o annullata, oppure appartiene a un gruppo di cui non fai parte."
+  },
+  "lobby": {
+    "title": "Sala d'attesa",
+    "text": "Chi partecipa riceve lo stesso puzzle nuovo nello stesso momento. L'host avvia la gara quando ci sono almeno due giocatori.",
+    "host": "host",
+    "away": "assente",
+    "join": "Partecipa alla gara",
+    "leave": "Esci",
+    "cancel": "Annulla la gara",
+    "cancel_confirm": "Annullare la gara? La sala d'attesa si chiude per tutti.",
+    "start": "Avvia",
+    "starting": "Preparazione del puzzle…",
+    "need_more": "In attesa di almeno un altro giocatore…",
+    "waiting_host": "In attesa che l'host avvii la gara…",
+    "expires": "La sala d'attesa si chiude tra {{ minutes }} min se nessuno avvia la gara.",
+    "share": "Condividi il link della sala",
+    "share_text": "Sfidami su Hashi! Entra nella sala d'attesa in {{ group }}:"
+  },
+  "countdown": {
+    "ready": "Pronti",
+    "go": "Via!"
+  },
+  "play": {
+    "give_up": "Arrenditi",
+    "give_up_confirm": "Arrenderti? Non avrai una posizione e vedrai la soluzione quando la gara sarà finita.",
+    "loading": "Il puzzle sta arrivando…",
+    "time_left": "mancano {{ minutes }} min"
+  },
+  "track": {
+    "title": "Progressi",
+    "text": "A che punto è ognuno: la quota di ponti sulla sua griglia. Nessuno vede i ponti degli altri.",
+    "you": "tu"
+  },
+  "watch": {
+    "text": "Stai guardando: la gara è tra i partecipanti."
+  },
+  "done": {
+    "solved": "Finito!",
+    "gave_up": "Ti sei arreso.",
+    "waiting": "In attesa che gli altri finiscano…"
+  },
+  "results": {
+    "title": "Risultati",
+    "flagged": "senza posizione",
+    "gave_up": "si è arreso",
+    "out": "non finito",
+    "rematch": "Rivincita",
+    "rematch_join": "Partecipa alla rivincita",
+    "rematch_go": "Alla rivincita",
+    "replay": "Le mosse di tutti",
+    "stage": "La griglia della gara con i ponti di {{ names }}"
+  },
+  "errors": {
+    "open": "In questo gruppo c'è già una gara aperta: partecipa a quella.",
+    "gone": "Questa gara non c'è più: la sala d'attesa è scaduta o è stata annullata.",
+    "started": "Questa gara è già iniziata: puoi guardarla.",
+    "host_only": "Solo l'host può avviare la gara.",
+    "too_few": "Una gara richiede almeno due giocatori.",
+    "not_joined": "Non partecipi a questa gara.",
+    "not_running": "La gara non è in corso.",
+    "done": "Hai già finito questa gara."
+  }
+}
