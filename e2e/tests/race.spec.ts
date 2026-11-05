@@ -8,7 +8,8 @@ import type { Page } from '@playwright/test';
 import { addBridge, board, missing, type Puzzle, saved } from '../board.ts';
 import { hintUntil } from '../daily.ts';
 import { DB_PATH } from '../env.ts';
-import { expect, hydrated, test, visit } from '../fixtures.ts';
+import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
+import { player, SEEDED_GROUP, SEEDED_RACE } from '../seed.ts';
 
 /** Where the race page keeps the board (src/pages/race/state.rs). */
 const RACE_KEY = 'hashi.race.v1';
@@ -140,7 +141,26 @@ test('two players race on one puzzle, see the results and meet again in the rema
   await friendContext.close();
 });
 
-test('a stranger sees no race', async ({ page }) => {
-  await visit(page, '/groups/1/races/1');
+test("a race that is over shows its places and replay to the group's members only", async ({
+  page,
+  context,
+}) => {
+  const path = `/groups/${SEEDED_GROUP.id}/races/${SEEDED_RACE.id}`;
+  // A stranger: no such race
+  await visit(page, path);
   await expect(page.getByTestId('race-missing')).toBeVisible();
+  await signIn(context, 'aiko');
+  await visit(page, path);
+  const rows = page.getByTestId('race-results').locator('tbody tr');
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toHaveAttribute('data-user', String(player('aiko').id));
+  await expect(rows.nth(1)).toHaveAttribute('data-user', String(player('bram').id));
+  await expect(rows.nth(1)).toContainText('1h 1c');
+  await expect(rows.nth(2)).toHaveAttribute('data-state', 'gave-up');
+  await expect(page.getByTestId('race-replay').locator('svg.board-svg')).toBeVisible();
+  // In the group's history, won by aiko
+  await visit(page, `/groups/${SEEDED_GROUP.id}`);
+  await expect(
+    page.getByTestId('race-history').locator(`a[data-past="${SEEDED_RACE.id}"]`),
+  ).toContainText('aiko');
 });

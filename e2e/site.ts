@@ -4,7 +4,14 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { ROOT } from './env.ts';
-import { CLOSED_PUZZLE, DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed.ts';
+import {
+  CLOSED_PUZZLE,
+  DOJO_SUBMISSION,
+  player,
+  REPLAY_DAY_BACK,
+  SEEDED_GROUP,
+  SEEDED_RACE,
+} from './seed.ts';
 
 const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 
@@ -30,6 +37,8 @@ const PARAMS: Record<string, Record<string, number | string>> = {
   // The closed one: everyone of the group sees it all
   '/groups/:id/puzzles/:puzzle': { id: SEEDED_GROUP.id, puzzle: CLOSED_PUZZLE.id },
   '/groups/:id/puzzles/:puzzle/replay': { id: SEEDED_GROUP.id, puzzle: CLOSED_PUZZLE.id },
+  // The race that is over: the results and the replay
+  '/groups/:id/races/:race': { id: SEEDED_GROUP.id, race: SEEDED_RACE.id },
 };
 
 /**
