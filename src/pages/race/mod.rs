@@ -208,6 +208,9 @@ pub fn RacePage() -> impl IntoView {
         run: StoredValue::new(0),
         found: RwSignal::new(None),
     };
+    // The poll sets `found` on every answer; a memo keeps the page's body (and the board in it,
+    // with the island the player just tapped) from being built anew each time
+    let shown = Memo::new(move |_| poller.found.get());
     let found = poller.found;
 
     // Ask for the race, again when the visitor or the race changes (a rematch)
@@ -297,7 +300,7 @@ pub fn RacePage() -> impl IntoView {
             <A href=back exact=true attr:class="w-fit text-sm text-primary hover:underline">
                 "← " {back_text}
             </A>
-            {move || match found.get() {
+            {move || match shown.get() {
                 None => view! { <p class="text-muted-foreground">{t!(i18n, common.game.loading)}</p> }.into_any(),
                 Some(false) => view! { <Missing /> }.into_any(),
                 Some(true) => view! { <RaceBody race /> }.into_any(),
