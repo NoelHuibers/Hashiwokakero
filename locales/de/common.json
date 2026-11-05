@@ -180,8 +180,8 @@
     "groups": "{{ count }} getrennte Gruppen",
     "all_connected": "alles verbunden",
     "islands": "{{ count }} Inseln",
-    "unique_solution": "eindeutige Lösung ✓",
-    "several_solutions": "mehrere Lösungen"
+    "several_solutions": "mehrere Lösungen",
+    "several_solutions_tooltip": "Dieses Rätsel hat mehr als eine Lösung. Prüfen und Tipps richten sich nach einer davon, daher kann auch eine richtige Brücke als falsch markiert werden."
   },
   "weekday": {
     "mon": "Montag",

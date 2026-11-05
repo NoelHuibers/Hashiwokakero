@@ -22,7 +22,7 @@ const playing = {
 };
 /**
  * The lowest the board's top may be on a 390 px phone, under the heading, the title with pause
- * and a new puzzle, the clock and the difficulty chips (282 px with the "unique solution" badge).
+ * and a new puzzle, the clock and the difficulty chips (282 px with a badge under the title).
  */
 const BOARD_TOP = 285;
 const messages = (locale: string, namespace: string) =>
