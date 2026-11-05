@@ -525,3 +525,110 @@ fn codes_are_random_and_plain() {
     let used: std::collections::HashSet<char> = codes.iter().flat_map(|c| c.chars()).collect();
     assert_eq!(used.len(), SHARE_ALPHABET.len());
 }
+
+/// Players reached, the stamps earned, (progress, target) of 道, 帯 and 師, the ones announced.
+type ReachedCase = (
+    usize,
+    &'static [crate::model::Stamp],
+    [(i64, i64); 3],
+    &'static [crate::model::Stamp],
+);
+
+/// Players reached through a player's links earn the sharing stamps 道 (1), 帯 (10) and 師
+/// (25), announced once and kept when the players are gone; the Dojo's holders keep theirs.
+#[tokio::test]
+async fn players_reached_earn_the_sharing_stamps_which_stay() {
+    use crate::model::Stamp;
+    use crate::server::daily::sync_stamps;
+
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let now = now_ms();
+    let code = create(&conn, aiko, small(), now).await.unwrap();
+    let sharing = [Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei];
+    // Earned in the book (stored), and announced this time
+    let sync = |user: i64| {
+        let conn = conn.clone();
+        async move {
+            let (book, new) = sync_stamps(&conn, user, true).await.unwrap();
+            let earned: Vec<Stamp> = book
+                .iter()
+                .filter(|p| sharing.contains(&p.stamp) && p.earned_at.is_some())
+                .map(|p| p.stamp)
+                .collect();
+            let progress: Vec<(i64, i64)> = book
+                .iter()
+                .filter(|p| sharing.contains(&p.stamp))
+                .map(|p| (p.progress, p.target))
+                .collect();
+            (earned, progress, new)
+        }
+    };
+    // Her own solve reaches nobody
+    add_result(&conn, &code, aiko, Verified::of(&solved(9_000, 0)), now)
+        .await
+        .unwrap();
+    let mut solvers = Vec::new();
+    let cases: [ReachedCase; 6] = [
+        (0, &[], [(0, 1), (0, 10), (0, 25)], &[]),
+        (1, &[Stamp::Dojo], [(1, 1), (1, 10), (1, 25)], &[Stamp::Dojo]),
+        (9, &[Stamp::Dojo], [(1, 1), (9, 10), (9, 25)], &[]),
+        (
+            10,
+            &[Stamp::Dojo, Stamp::BlackBelt],
+            [(1, 1), (10, 10), (10, 25)],
+            &[Stamp::BlackBelt],
+        ),
+        (
+            24,
+            &[Stamp::Dojo, Stamp::BlackBelt],
+            [(1, 1), (10, 10), (24, 25)],
+            &[],
+        ),
+        (25, &[Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei], [(1, 1), (10, 10), (25, 25)], &[Stamp::Sensei]),
+    ];
+    for (reached, earned, progress, announced) in cases {
+        // Solved through her link, by as many players
+        while solvers.len() < reached {
+            let p = player(&conn, &format!("p{}", solvers.len())).await;
+            add_result(&conn, &code, p, Verified::of(&solved(10_000, 0)), now)
+                .await
+                .unwrap();
+            solvers.push(p);
+        }
+        assert_eq!(
+            players_reached(&conn, aiko).await.unwrap(),
+            i64::try_from(reached).unwrap()
+        );
+        let (now_earned, now_progress, new) = sync(aiko).await;
+        assert_eq!(now_earned, earned, "{reached}");
+        assert_eq!(now_progress, progress, "{reached}");
+        let new: Vec<Stamp> = new.into_iter().filter(|s| sharing.contains(s)).collect();
+        assert_eq!(new, announced, "{reached}");
+    }
+
+    // The players banned: nobody reached any more, the stamps stay
+    for &p in &solvers {
+        conn.execute("UPDATE users SET banned_at = 1 WHERE id = ?1", params![p])
+            .await
+            .unwrap();
+    }
+    assert_eq!(players_reached(&conn, aiko).await.unwrap(), 0);
+    let (earned, progress, _) = sync(aiko).await;
+    assert_eq!(earned, sharing);
+    assert_eq!(progress, [(1, 1), (10, 10), (25, 25)]);
+
+    // Earned in the SAT Dojo before, without sharing anything: kept
+    let sensei = player(&conn, "sensei").await;
+    for stamp in sharing {
+        conn.execute(
+            "INSERT INTO stamps (user_id, stamp, earned_at, announced) VALUES (?1, ?2, 1, 1)",
+            params![sensei, stamp.id()],
+        )
+        .await
+        .unwrap();
+    }
+    let (earned, _, new) = sync(sensei).await;
+    assert_eq!(earned, sharing);
+    assert_eq!(new, []);
+}

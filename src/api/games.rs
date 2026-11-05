@@ -665,6 +665,32 @@ mod tests {
         );
     }
 
+    /// The sharing stamps count players reached in the book (3 / 10), but went live as
+    /// achievements earned at once, which they stay: only once earned, without steps.
+    #[test]
+    fn sharing_stamps_are_reported_once_earned() {
+        let reached = |sharing, progress, target, earned| StampProgress {
+            target,
+            ..stamp(sharing, progress, earned)
+        };
+        let stats = UserStats {
+            stamps: vec![
+                reached(Stamp::Dojo, 1, 1, true),
+                reached(Stamp::BlackBelt, 3, 10, false),
+                reached(Stamp::Sensei, 25, 25, true),
+            ],
+            ..UserStats::default()
+        };
+        let report = report(Platform::GameCenter, &PlayIds::default(), &stats).unwrap();
+        assert_eq!(
+            report.achievements,
+            [
+                achievement("stamp_dojo", None, None, true),
+                achievement("stamp_sensei", None, None, true),
+            ]
+        );
+    }
+
     /// Without today's daily solved (or with it unranked) no time; no score of 0.
     #[test]
     fn only_scores_there_are() {

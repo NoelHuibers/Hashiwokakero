@@ -45,6 +45,9 @@ pub async fn submit_shared_puzzle(
     let conn = db::conn()?;
     let user = auth::ensure_user(&conn).await?;
     let (page, counted) = shares::submit(&conn, &code, user.id, &solve, now_ms()).await?;
+    if counted {
+        shares::reached(page.sharer.as_ref().map(|s| s.user_id), user.id);
+    }
     Ok(SharedSubmit {
         page: blocks::hidden(&conn, Some(user.id), page).await?,
         counted,

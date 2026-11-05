@@ -74,19 +74,6 @@ pub(super) async fn apply_for_job(
                 .await?;
             if changed > 0 {
                 mark_copies(conn, *id).await?;
-                crate::server::daily::invalidate_profiles();
-                let mut rows = conn
-                    .query(
-                        "SELECT user_id FROM dojo_submissions WHERE id = ?1",
-                        params![*id],
-                    )
-                    .await?;
-                if let Some(row) = rows.next().await?
-                    && let Some(user) = row.get::<Option<i64>>(0)?
-                    && let Err(e) = crate::server::daily::sync_stamps(conn, user, false).await
-                {
-                    eprintln!("dojo #{id}: stamp reconciliation: {e}");
-                }
             }
             changed
         }

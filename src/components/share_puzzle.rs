@@ -38,6 +38,9 @@ pub fn share_url(locale: Locale, code: &str) -> String {
     crate::seo::public_origin() + &localized(locale, &share_path(code))
 }
 
+/// The kanji of the sharing stamps, 道 帯 師 (`model::stamps`).
+const SHARING_KANJI: &str = "道 帯 師";
+
 /// What the button has done.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Link {
@@ -133,6 +136,11 @@ pub fn SharePuzzle(
                         >
                             {move || url().unwrap_or_default()}
                         </a>
+                        // Who solves it through the link counts for the sharing stamps
+                        <p class="text-xs text-muted-foreground" data-testid="share-stamps">
+                            {t!(i18n, shared.share.stamps)} " "
+                            <span class="font-pixel whitespace-nowrap text-primary">{SHARING_KANJI}</span>
+                        </p>
                     </div>
                 }
                     .into_any(),
@@ -164,6 +172,7 @@ pub fn SharePuzzle(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::Stamp;
 
     #[test]
     fn the_text_says_what_the_player_did() {
@@ -177,5 +186,11 @@ mod tests {
                 .contains("in 02:13 with 2 hints (+30 s each)")
         );
         assert!(share_text(Locale::en, "x", None, url).contains("I built this Hashi puzzle"));
+    }
+
+    #[test]
+    fn the_hint_names_the_sharing_stamps() {
+        let kanji = [Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei].map(Stamp::kanji);
+        assert_eq!(SHARING_KANJI, kanji.join(" "));
     }
 }

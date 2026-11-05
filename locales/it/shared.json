@@ -42,6 +42,7 @@
     "making": "Creo il link…",
     "link": "Link al puzzle",
     "send": "Invia il link",
+    "stamps": "Chi lo risolve dal tuo link conta per tre timbri:",
     "time": "Ho risolto questo puzzle Hashi in {{ time }}. Riesci a battermi?",
     "time_hints": "Ho risolto questo puzzle Hashi in {{ time }} con {{ hints }} suggerimenti (+30 s ciascuno). Riesci a battermi?",
     "untimed": "Ho creato questo puzzle Hashi. Riesci a risolverlo?",

@@ -218,10 +218,11 @@ impl Stamp {
             // The magpies that make a bridge across the Milky Way on Tanabata
             Self::Tanabata => "鵲",
             Self::Anniversary => "誕",
+            // The way, shown to others with a shared puzzle: the stamps of sharing go from the
+            // way to the black belt 黒帯 to the teacher 師範 (they were the SAT Dojo's before,
+            // hence their ids)
             Self::Dojo => "道",
-            // 黒帯, the black belt
             Self::BlackBelt => "帯",
-            // 師範, the master of a dojo
             Self::Sensei => "師",
             Self::Collector => "集",
             Self::SecondThoughts => "迷",
@@ -262,14 +263,20 @@ impl Stamp {
         )
     }
 
-    /// Kept once earned, even when what earned it is gone: a place on the Dojo board doesn't
-    /// last past the season, the group weeks are only looked at for a while
+    /// Kept once earned, even when what earned it is gone: players reached by shared puzzles
+    /// can be banned or delete their account (and the sharing stamps were the SAT Dojo's before,
+    /// whoever earned them there keeps them), the group weeks are only looked at for a while
     /// ([`super::HONOUR_WEEKS`]) and change when members come and go, a group and its river
     /// can go.
     pub const fn sticky(self) -> bool {
         matches!(
             self,
-            Self::BlackBelt | Self::Sensei | Self::Yokozuna | Self::Sansho | Self::RiverCrew
+            Self::Dojo
+                | Self::BlackBelt
+                | Self::Sensei
+                | Self::Yokozuna
+                | Self::Sansho
+                | Self::RiverCrew
         )
     }
 }
@@ -309,6 +316,11 @@ pub const LANTERNE_MIN_FINISHERS: i64 = 20;
 pub const SECOND_THOUGHTS: i64 = 10;
 /// Other stamps for [`Stamp::Collector`].
 pub const COLLECTOR_TARGET: i64 = 20;
+/// Other players who solved puzzles a player shared (`server::shares::players_reached`) for
+/// [`Stamp::Dojo`], [`Stamp::BlackBelt`] and [`Stamp::Sensei`].
+pub const REACHED_DOJO: i64 = 1;
+pub const REACHED_BLACK_BELT: i64 = 10;
+pub const REACHED_SENSEI: i64 = 25;
 
 /// What a daily's move log says about how it was solved, worked out when it's submitted
 /// (see [`summarize`]) and kept with the attempt.
@@ -436,10 +448,9 @@ pub struct Record {
     pub solves: Vec<Solve>,
     /// Months the player finished first, see [`super::month_of`].
     pub champion_months: i64,
-    /// Has a scored solver on the SAT Dojo board.
-    pub dojo: bool,
-    /// Place of the player's best solver on this season's Dojo board.
-    pub dojo_rank: Option<u32>,
+    /// Other players who solved a puzzle through one of the player's links
+    /// (`server::shares::players_reached`).
+    pub players_reached: i64,
     /// The day the account was created.
     pub joined: i64,
     /// [`Stamp::sticky`] stamps already earned, they stay.
@@ -502,6 +513,15 @@ impl Record {
         };
         let (_, joined_m, joined_d) = civil(self.joined);
         let kept = |stamp: Stamp| self.kept.contains(&stamp);
+        // A sharing stamp earned once (or in the SAT Dojo, before) is full
+        let reached = |stamp: Stamp, target: i64| {
+            let done = if kept(stamp) {
+                target
+            } else {
+                self.players_reached
+            };
+            (done, target)
+        };
 
         let mut progress: Vec<(Stamp, i64, i64)> = Stamp::ALL
             .into_iter()
@@ -564,12 +584,9 @@ impl Record {
                         any(&|s| s.day > self.joined && date(s, joined_m, joined_d)),
                         1,
                     ),
-                    Stamp::Dojo => (i64::from(self.dojo), 1),
-                    Stamp::BlackBelt => (
-                        i64::from(self.dojo_rank.is_some_and(|r| r <= 3) || kept(stamp)),
-                        1,
-                    ),
-                    Stamp::Sensei => (i64::from(self.dojo_rank == Some(1) || kept(stamp)), 1),
+                    Stamp::Dojo => reached(stamp, REACHED_DOJO),
+                    Stamp::BlackBelt => reached(stamp, REACHED_BLACK_BELT),
+                    Stamp::Sensei => reached(stamp, REACHED_SENSEI),
                     // Counted below, from the others
                     Stamp::Collector => (0, COLLECTOR_TARGET),
                     Stamp::SecondThoughts => (any(&|s| s.run.dithers >= SECOND_THOUGHTS), 1),
@@ -911,22 +928,81 @@ mod tests {
         assert!(!earns(off, Stamp::Metronome));
     }
 
-    #[test]
-    fn dojo_places_stay_and_collector_counts() {
-        let record = Record {
-            dojo: true,
-            dojo_rank: Some(2),
-            ..Record::default()
-        };
-        let earned = record.earned(LAUNCH_DAY);
-        assert!(earned.contains(&Stamp::BlackBelt) && !earned.contains(&Stamp::Sensei));
-        // Next season the place is gone, the stamp isn't
-        let later = Record {
-            kept: vec![Stamp::BlackBelt],
-            ..Record::default()
-        };
-        assert_eq!(later.earned(LAUNCH_DAY), [Stamp::BlackBelt]);
+    /// Players reached, the stamps earned, (progress, target) of 道, 帯 and 師.
+    type ReachedCase = (i64, &'static [Stamp], [(i64, i64); 3]);
 
+    /// Other players who solved puzzles a player shared earn 道 at 1, 帯 at 10 and 師 at 25.
+    #[test]
+    fn players_reached_by_shared_puzzles_earn_the_sharing_stamps() {
+        let sharing = [Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei];
+        let at = |players_reached| {
+            let record = Record {
+                players_reached,
+                ..Record::default()
+            };
+            let progress: Vec<(i64, i64)> = record
+                .progress(LAUNCH_DAY)
+                .into_iter()
+                .filter(|p| sharing.contains(&p.0))
+                .map(|(_, progress, target)| (progress, target))
+                .collect();
+            (record.earned(LAUNCH_DAY), progress)
+        };
+        let cases: [ReachedCase; 6] = [
+            (0, &[], [(0, 1), (0, 10), (0, 25)]),
+            (1, &[Stamp::Dojo], [(1, 1), (1, 10), (1, 25)]),
+            (9, &[Stamp::Dojo], [(1, 1), (9, 10), (9, 25)]),
+            (
+                10,
+                &[Stamp::Dojo, Stamp::BlackBelt],
+                [(1, 1), (10, 10), (10, 25)],
+            ),
+            (
+                24,
+                &[Stamp::Dojo, Stamp::BlackBelt],
+                [(1, 1), (10, 10), (24, 25)],
+            ),
+            (25, &[Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei], [(1, 1), (10, 10), (25, 25)]),
+        ];
+        for (reached, earned, progress) in cases {
+            assert_eq!(at(reached), (earned.to_vec(), progress.to_vec()), "{reached}");
+        }
+        assert_eq!(
+            (REACHED_DOJO, REACHED_BLACK_BELT, REACHED_SENSEI),
+            (1, 10, 25)
+        );
+    }
+
+    /// The sharing stamps stay: a player reached can be banned or delete their account, and
+    /// whoever earned them in the SAT Dojo before (same ids, on Game Center and Play Games too)
+    /// keeps them, full in the book.
+    #[test]
+    fn sharing_stamps_once_earned_stay() {
+        for stamp in [Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei] {
+            assert!(stamp.sticky() && !stamp.secret(), "{stamp:?}");
+            let record = Record {
+                players_reached: 3,
+                kept: vec![stamp],
+                ..Record::default()
+            };
+            assert!(record.earned(LAUNCH_DAY).contains(&stamp), "{stamp:?}");
+            let (_, done, target) = record
+                .progress(LAUNCH_DAY)
+                .into_iter()
+                .find(|p| p.0 == stamp)
+                .unwrap();
+            assert_eq!(done, target, "{stamp:?}");
+        }
+        // Kept Sensei, without anyone reached now: only that one
+        let old_sensei = Record {
+            kept: vec![Stamp::Sensei],
+            ..Record::default()
+        };
+        assert_eq!(old_sensei.earned(LAUNCH_DAY), [Stamp::Sensei]);
+    }
+
+    #[test]
+    fn collector_counts_the_others() {
         let busy = Record {
             solves: (LAUNCH_DAY..LAUNCH_DAY + 400)
                 .map(|d| solve(d, 1, 12))

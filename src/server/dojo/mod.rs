@@ -28,7 +28,7 @@ pub use benchmarks::{
     admin_list as admin_benchmarks, page as benchmarks_page,
     report_handler as benchmark_report_handler, submit_handler as benchmark_submit_handler,
 };
-pub use board::{board, me, rank_of, submission};
+pub use board::{board, me, submission};
 pub use seasons::{
     ArchivedEntry, ArchivedSeason, MAX_SET_BYTES, SetQuery, archived, commitment, csv, results_csv,
     results_json, seasons, seasons_json, set_download, set_handler,
