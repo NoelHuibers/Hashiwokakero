@@ -16,7 +16,6 @@
     "players": "{{ count }} jogadores"
   },
   "page": {
-    "title": "Corrida",
     "missing": "Esta corrida não está aqui.",
     "missing_hint": "A sala pode ter expirado ou sido cancelada, ou é de um grupo do qual você não faz parte."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Progresso",
     "text": "Até onde cada um chegou: a parte das pontes no tabuleiro. Ninguém vê as pontes dos outros.",
-    "you": "você",
-    "away": "ausente",
-    "gave_up": "desistiu"
+    "you": "você"
   },
   "watch": {
     "text": "Você está assistindo: a corrida é entre os participantes."

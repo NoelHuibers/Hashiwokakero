@@ -16,7 +16,6 @@
     "players": "{{ count }} Spieler"
   },
   "page": {
-    "title": "Rennen",
     "missing": "Dieses Rennen gibt es hier nicht.",
     "missing_hint": "Vielleicht ist die Lobby abgelaufen oder wurde abgesagt, oder sie gehört zu einer Gruppe, in der du nicht bist."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Fortschritt",
     "text": "Wie weit alle sind: der Anteil der Brücken auf ihrem Brett. Niemand sieht die Brücken der anderen.",
-    "you": "du",
-    "away": "weg",
-    "gave_up": "aufgegeben"
+    "you": "du"
   },
   "watch": {
     "text": "Du schaust zu: Das Rennen läuft zwischen den Teilnehmenden."

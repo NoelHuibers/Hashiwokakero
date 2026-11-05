@@ -16,7 +16,6 @@
     "players": "{{ count }} jugadores"
   },
   "page": {
-    "title": "Carrera",
     "missing": "Esta carrera no está aquí.",
     "missing_hint": "Puede que la sala haya caducado o se haya cancelado, o que sea de un grupo en el que no estás."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Progreso",
     "text": "Cómo va cada uno: la parte de los puentes en su tablero. Nadie ve los puentes de los demás.",
-    "you": "tú",
-    "away": "ausente",
-    "gave_up": "se rindió"
+    "you": "tú"
   },
   "watch": {
     "text": "Estás mirando: la carrera es entre los participantes."

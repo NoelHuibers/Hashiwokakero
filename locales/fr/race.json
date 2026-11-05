@@ -16,7 +16,6 @@
     "players": "{{ count }} joueurs"
   },
   "page": {
-    "title": "Course",
     "missing": "Cette course n'est pas ici.",
     "missing_hint": "Le salon a peut-être expiré ou été annulé, ou il appartient à un groupe dont vous ne faites pas partie."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Progression",
     "text": "Où en est chacun : la part des ponts sur son plateau. Personne ne voit les ponts des autres.",
-    "you": "vous",
-    "away": "absent",
-    "gave_up": "abandon"
+    "you": "vous"
   },
   "watch": {
     "text": "Vous regardez : la course se joue entre les participants."

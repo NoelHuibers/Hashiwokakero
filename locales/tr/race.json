@@ -16,7 +16,6 @@
     "players": "{{ count }} oyuncu"
   },
   "page": {
-    "title": "Yarış",
     "missing": "Bu yarış burada değil.",
     "missing_hint": "Lobinin süresi dolmuş ya da iptal edilmiş olabilir, veya üyesi olmadığın bir gruba ait."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "İlerleme",
     "text": "Herkesin durumu: tahtasındaki köprülerin oranı. Kimse başkasının köprülerini görmez.",
-    "you": "sen",
-    "away": "yok",
-    "gave_up": "pes etti"
+    "you": "sen"
   },
   "watch": {
     "text": "İzliyorsun: yarış katılımcılar arasında."

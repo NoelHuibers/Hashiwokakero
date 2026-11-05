@@ -114,10 +114,10 @@ pub fn Placings(race: RaceState) -> impl IntoView {
                     <div class="@container -mx-2">
                         <table class=format!("{RANK_TABLE} w-full table-fixed text-sm")>
                             <colgroup>
-                                <col class="w-12" />
+                                <col class="w-10" />
                                 <col />
-                                <col class="w-16" />
-                                <col class="w-28" />
+                                <col class="w-12" />
+                                <col class="w-20" />
                             </colgroup>
                             <tbody>
                                 {players

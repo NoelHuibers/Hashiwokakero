@@ -255,7 +255,7 @@ fn expected(route: &str, l: Locale) -> Expected {
         },
         // Only members see a race, the browser asks for it
         "/groups/{id}/races/{race}" => Expected {
-            title: Some(hashi(td_string!(l, race.page.title))),
+            title: Some(hashi(td_string!(l, race.title))),
             texts: strings([td_string!(l, groups.page.back), loading]),
             absent: strings([
                 td_string!(l, race.page.missing),

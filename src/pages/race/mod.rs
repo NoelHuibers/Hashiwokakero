@@ -291,7 +291,7 @@ pub fn RacePage() -> impl IntoView {
             .unwrap_or_else(|| t_string!(i18n, groups.page.back).to_string())
     };
     view! {
-        <Title text=title_text(move || format!("{} · Hashi", t_string!(i18n, race.page.title))) />
+        <Title text=title_text(move || format!("{} · Hashi", t_string!(i18n, race.title))) />
         <Meta name="robots" content="noindex" />
         <section class="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6">
             <A href=back exact=true attr:class="w-fit text-sm text-primary hover:underline">
@@ -572,7 +572,11 @@ fn RaceBody(race: RaceState) -> impl IntoView {
                     }.into_any(),
                 }}
             </div>
-            <aside class="flex min-w-0 flex-col gap-4">
+            // On phones the results come before the replay
+            <aside
+                class="flex min-w-0 flex-col gap-4"
+                class=("max-lg:order-first", move || phase.get() == Some(RacePhase::Ended))
+            >
                 <Show when=move || matches!(phase.get(), Some(RacePhase::Countdown | RacePhase::Running))>
                     <Tracks race />
                 </Show>

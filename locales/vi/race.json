@@ -16,7 +16,6 @@
     "players": "{{ count }} người chơi"
   },
   "page": {
-    "title": "Đua",
     "missing": "Cuộc đua này không có ở đây.",
     "missing_hint": "Phòng chờ có thể đã hết hạn hoặc bị hủy, hoặc thuộc một nhóm bạn không tham gia."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Tiến độ",
     "text": "Mỗi người đã đi được bao xa: tỉ lệ cầu trên bàn của họ. Không ai thấy cầu của người khác.",
-    "you": "bạn",
-    "away": "vắng",
-    "gave_up": "bỏ cuộc"
+    "you": "bạn"
   },
   "watch": {
     "text": "Bạn đang xem: cuộc đua diễn ra giữa những người chơi."

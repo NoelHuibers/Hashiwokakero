@@ -16,7 +16,6 @@
     "players": "{{ count }} spelers"
   },
   "page": {
-    "title": "Race",
     "missing": "Deze race is hier niet.",
     "missing_hint": "De lobby is misschien verlopen of afgeblazen, of hij hoort bij een groep waar je niet in zit."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Voortgang",
     "text": "Hoe ver iedereen is: het deel van de bruggen op hun bord. Niemand ziet de bruggen van een ander.",
-    "you": "jij",
-    "away": "weg",
-    "gave_up": "opgegeven"
+    "you": "jij"
   },
   "watch": {
     "text": "Je kijkt mee: de race is tussen de deelnemers."

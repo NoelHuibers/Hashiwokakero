@@ -187,7 +187,7 @@ fn PastRace(race: RaceSummary, group: i64) -> impl IntoView {
     view! {
         <li>
             <A href=href attr:class="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent/40" attr:data-past=id>
-                <span class="font-pixel w-8 shrink-0 text-center text-primary" aria-hidden="true">{difficulty.kanji()}</span>
+                <span class="font-pixel shrink-0 whitespace-nowrap text-primary" aria-hidden="true">{difficulty.kanji()}</span>
                 <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                     <p class="truncate text-xs text-muted-foreground">
                         {move || format!(

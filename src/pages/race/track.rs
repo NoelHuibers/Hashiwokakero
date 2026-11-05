@@ -36,9 +36,9 @@ fn Track(player: RacePlayer, me: bool, #[prop(into)] progress: Signal<u8>) -> im
             </span>
         }
         .into_any(),
-        RaceOutcome::GaveUp => view! { <span class="text-xs text-muted-foreground">{t!(i18n, race.track.gave_up)}</span> }.into_any(),
+        RaceOutcome::GaveUp => view! { <span class="text-xs text-muted-foreground">{t!(i18n, race.results.gave_up)}</span> }.into_any(),
         RaceOutcome::Racing if player.away => view! {
-            <span class="text-xs italic text-muted-foreground">{t!(i18n, race.track.away)}</span>
+            <span class="text-xs italic text-muted-foreground">{t!(i18n, race.lobby.away)}</span>
         }
         .into_any(),
         RaceOutcome::Racing | RaceOutcome::Out => view! {

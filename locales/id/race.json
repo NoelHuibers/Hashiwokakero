@@ -16,7 +16,6 @@
     "players": "{{ count }} pemain"
   },
   "page": {
-    "title": "Balapan",
     "missing": "Balapan ini tidak ada di sini.",
     "missing_hint": "Lobinya mungkin sudah kedaluwarsa atau dibatalkan, atau milik grup yang tidak kamu ikuti."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Kemajuan",
     "text": "Sejauh mana semua orang: bagian jembatan di papan mereka. Tak ada yang melihat jembatan orang lain.",
-    "you": "kamu",
-    "away": "pergi",
-    "gave_up": "menyerah"
+    "you": "kamu"
   },
   "watch": {
     "text": "Kamu menonton: balapan berlangsung di antara para pemain."

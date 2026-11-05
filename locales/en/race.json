@@ -16,7 +16,6 @@
     "players": "{{ count }} players"
   },
   "page": {
-    "title": "Race",
     "missing": "This race isn't here.",
     "missing_hint": "The lobby may have expired or been called off, or it belongs to a group you're not in."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Progress",
     "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
-    "you": "you",
-    "away": "away",
-    "gave_up": "gave up"
+    "you": "you"
   },
   "watch": {
     "text": "You're watching: the race is on between the players."

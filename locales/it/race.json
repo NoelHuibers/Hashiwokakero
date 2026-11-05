@@ -16,7 +16,6 @@
     "players": "{{ count }} giocatori"
   },
   "page": {
-    "title": "Gara",
     "missing": "Questa gara non è qui.",
     "missing_hint": "La sala d'attesa potrebbe essere scaduta o annullata, oppure appartiene a un gruppo di cui non fai parte."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Progressi",
     "text": "A che punto è ognuno: la quota di ponti sulla sua griglia. Nessuno vede i ponti degli altri.",
-    "you": "tu",
-    "away": "assente",
-    "gave_up": "si è arreso"
+    "you": "tu"
   },
   "watch": {
     "text": "Stai guardando: la gara è tra i partecipanti."

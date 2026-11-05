@@ -16,7 +16,6 @@
     "players": "graczy: {{ count }}"
   },
   "page": {
-    "title": "Wyścig",
     "missing": "Tego wyścigu tu nie ma.",
     "missing_hint": "Poczekalnia mogła wygasnąć lub zostać odwołana albo należy do grupy, w której cię nie ma."
   },
@@ -50,9 +49,7 @@
   "track": {
     "title": "Postęp",
     "text": "Jak daleko jest każdy: część mostów na jego planszy. Nikt nie widzi cudzych mostów.",
-    "you": "ty",
-    "away": "nieobecny",
-    "gave_up": "poddał się"
+    "you": "ty"
   },
   "watch": {
     "text": "Oglądasz: wyścig toczy się między uczestnikami."
