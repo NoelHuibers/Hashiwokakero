@@ -82,6 +82,11 @@ test('a difficulty chip makes a new puzzle of it at once and stays marked', asyn
   await newPuzzle(page).click();
   await expect.poll(() => islands(page), { message: 'another puzzle' }).not.toEqual(before);
   await expect(page.getByText(/^Easy 7×7$/)).toBeVisible();
+  // By keyboard the focus stays on the button while the next one is generated
+  const after = await islands(page);
+  await newPuzzle(page).press('Enter');
+  await expect.poll(() => islands(page), { message: 'one more puzzle' }).not.toEqual(after);
+  await expect(newPuzzle(page)).toBeFocused();
 });
 
 test('N makes a new puzzle, but not while typing', async ({ page }) => {
@@ -97,7 +102,7 @@ test('N makes a new puzzle, but not while typing', async ({ page }) => {
   await expect(page.locator('#typing')).toHaveValue('n');
   // A new puzzle would be on its way at once: the chips wait for it
   await expect(page.getByText('Growing islands')).toBeHidden();
-  await expect(chips(page).getByRole('button').first()).toBeEnabled();
+  await expect(chips(page).getByRole('button').first()).toHaveAttribute('aria-disabled', 'false');
   expect((await saved(page, PLAY_KEY)).puzzle).toEqual(LADDER);
 
   await page.locator('h1').click();

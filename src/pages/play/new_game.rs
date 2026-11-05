@@ -79,10 +79,12 @@ pub(super) fn DifficultyChips(
                         <button
                             type="button"
                             aria-pressed=move || pressed().to_string()
-                            disabled=move || game.loading.get()
+                            // Not `disabled` while a puzzle is generated: that would drop the
+                            // focus of the chip just pressed by keyboard
+                            aria-disabled=move || game.loading.get().to_string()
                             class=move || {
                                 format!(
-                                    "flex min-h-11 min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-1 transition-colors disabled:opacity-60 max-[359px]:px-0 sm:px-1 sm:py-1.5 {}",
+                                    "flex min-h-11 min-w-0 flex-col items-center justify-center rounded-lg border px-0.5 py-1 transition-colors aria-disabled:opacity-60 max-[359px]:px-0 sm:px-1 sm:py-1.5 {}",
                                     if pressed() {
                                         "border-primary bg-primary text-primary-foreground shadow-sm"
                                     } else {
@@ -94,6 +96,9 @@ pub(super) fn DifficultyChips(
                                 format!("{} · {w}×{h}", difficulty_name(i18n.get_locale(), d))
                             }
                             on:click=move |_| {
+                                if game.loading.get_untracked() {
+                                    return;
+                                }
                                 settings.difficulty.set(d);
                                 new_random(&game, d);
                             }
@@ -125,7 +130,7 @@ pub(super) fn NewPuzzleButton() -> impl IntoView {
     view! {
         <button
             type="button"
-            class="inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border bg-background px-0 text-sm font-medium shadow-xs transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 sm:h-auto sm:min-w-13 sm:px-4 dark:border-input dark:bg-input/30"
+            class="inline-flex h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-lg border bg-background px-0 text-sm font-medium shadow-xs transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-disabled:opacity-50 sm:h-auto sm:min-w-13 sm:px-4 dark:border-input dark:bg-input/30"
             aria-label=move || t_string!(i18n, play.new_puzzle)
             data-tooltip=move || {
                 let d = settings.difficulty.get();
@@ -136,7 +141,8 @@ pub(super) fn NewPuzzleButton() -> impl IntoView {
                     difficulty_name(i18n.get_locale(), d),
                 )
             }
-            disabled=move || game.loading.get()
+            // Not `disabled` while generating, which would drop the keyboard's focus
+            aria-disabled=move || game.loading.get().to_string()
             on:click=move |_| new_random(&game, settings.difficulty.get_untracked())
         >
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

@@ -105,6 +105,21 @@ test('two players race on one puzzle, see the results and meet again in the rema
   const { solution, players } = stored(race);
   const [host, guest] = players;
 
+  // Ranked like the daily: never a pause, no new puzzle and no difficulty chips while racing
+  for (const p of [page, friend]) {
+    await expect(board(p).locator('g.island').first()).toBeVisible();
+    await expect(p.getByRole('button', { name: 'Pause', exact: true })).toHaveCount(0);
+    await expect(p.getByRole('button', { name: 'New puzzle', exact: true })).toHaveCount(0);
+    await expect(p.getByRole('group', { name: 'New puzzle' })).toHaveCount(0);
+  }
+  const before = (await saved(friend, RACE_KEY)).puzzle;
+  await friend.keyboard.press('p');
+  await friend.keyboard.press('n');
+  await expect(friend.getByTestId('paused')).toHaveCount(0);
+  await expect(board(friend)).toBeVisible();
+  expect((await saved(friend, RACE_KEY)).puzzle).toEqual(before);
+  expect((await saved(friend, RACE_KEY)).paused).toBeUndefined();
+
   // The host solves it first, the friend sees the host's bar at the finish while still racing
   await solve(page, solution);
   await expect(page.getByTestId('race-done')).toContainText('Finished!');
