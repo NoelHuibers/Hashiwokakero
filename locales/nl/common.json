@@ -180,8 +180,8 @@
     "groups": "{{ count }} losse groepen",
     "all_connected": "alles verbonden",
     "islands": "{{ count }} eilanden",
-    "unique_solution": "unieke oplossing ✓",
-    "several_solutions": "meerdere oplossingen"
+    "several_solutions": "meerdere oplossingen",
+    "several_solutions_tooltip": "Deze puzzel heeft meer dan één oplossing. Controleren en hints volgen er één van, dus ook een juiste brug kan als fout worden aangemerkt."
   },
   "weekday": {
     "mon": "Maandag",
