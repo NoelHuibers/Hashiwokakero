@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "{{ name }}s Hashi-Rätsel",
+    "title_anonymous": "Ein geteiltes Hashi-Rätsel",
+    "time": "{{ name }} hat dieses Hashiwokakero-Rätsel ({{ size }}) in {{ time }} gelöst. Schaffst du es schneller? Kostenlos im Browser.",
+    "untimed": "{{ name }} hat dieses Hashiwokakero-Rätsel ({{ size }}) gebaut. Kannst du es lösen? Kostenlos im Browser.",
+    "anonymous": "Ein Hashiwokakero-Rätsel ({{ size }}) mit genau einer Lösung. Kannst du es lösen? Kostenlos im Browser."
+  },
+  "page": {
+    "title": "{{ name }}s Rätsel",
+    "title_anonymous": "Ein geteiltes Rätsel",
+    "by": "Geteilt von {{ name }}",
+    "by_blocked": "Geteilt von einem blockierten Spieler",
+    "by_former": "Geteilt von einem ehemaligen Spieler",
+    "to_beat": "Zu schlagen",
+    "untimed": "In der Werkstatt gebaut: Stell du die erste Zeit auf.",
+    "missing": "Dieser Link führt zu keinem Rätsel.",
+    "missing_hint": "Vielleicht wurde er nicht ganz kopiert. Oder spiel stattdessen ein neues Rätsel.",
+    "to_play": "Neues Rätsel spielen",
+    "offline": "Geteilte Rätsel liegen auf dem Server: Dieses braucht das Netz.",
+    "offline_hint": "Verbinde dich und versuch es noch einmal. Neue Rätsel gehen solange auch offline.",
+    "retry": "Noch einmal versuchen",
+    "submit_failed": "Deine Zeit ist nicht beim Server angekommen.",
+    "submit_retry": "Erneut senden"
+  },
+  "result": {
+    "title": "Gelöst!",
+    "first": "Deine Zeit: <b>{{ time }}</b>, Platz {{ rank }} von {{ total }}.",
+    "again": "Noch einmal gelöst in <b>{{ time }}</b>. Nur dein erster Versuch zählt: <b>{{ first }}</b> bleibt in der Rangliste.",
+    "beat": "Du hast {{ name }} geschlagen!",
+    "again_button": "Noch einmal spielen"
+  },
+  "board": {
+    "title": "Alle, die es gelöst haben",
+    "text": "Die Schnellsten zuerst, jeder Tipp kostet 30 s. Es zählt nur der erste Versuch.",
+    "empty": "Noch hat es niemand gelöst. Sei die oder der Erste!",
+    "sharer": "hat es geteilt",
+    "solvers": "Gelöst: {{ count }}"
+  },
+  "share": {
+    "button": "Dieses Rätsel teilen",
+    "making": "Link wird erstellt …",
+    "link": "Link zum Rätsel",
+    "send": "Link senden",
+    "time": "Ich habe dieses Hashi-Rätsel in {{ time }} gelöst. Schaffst du es schneller?",
+    "time_hints": "Ich habe dieses Hashi-Rätsel in {{ time }} gelöst, mit {{ hints }} Tipps (je +30 s). Schaffst du es schneller?",
+    "untimed": "Ich habe dieses Hashi-Rätsel gebaut. Kannst du es lösen?",
+    "failed": "Diesmal kein Link: {{ error }}"
+  },
+  "create": {
+    "title": "Als Link teilen",
+    "text": "Wer den Link hat, kann es spielen. Du siehst, wer es gelöst hat und wie schnell.",
+    "unchecked": "Sobald der Solver bewiesen hat, dass es genau eine Lösung hat, kannst du es teilen."
+  },
+  "og": {
+    "kicker": "Ein geteiltes Rätsel",
+    "beat": "Schlägst du {{ time }}?",
+    "solve": "Kannst du es lösen?"
+  }
+}

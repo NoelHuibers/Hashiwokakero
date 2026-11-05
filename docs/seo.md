@@ -32,8 +32,8 @@ in [deployment.md](deployment.md#search-engines).
   `/dojo/submit`, the seasons' downloads) stay where they are.
 - **The Lab's tabs** (race, leaderboard, submit, benchmarks, seasons) are a page each, with
   its own title, description and canonical URL, all five in the sitemap.
-- **No index**: accounts, groups, invites, replays, players' pages, the Dojo's
-  entries (`/lab/solver/<id>`), the admin page and the 404 page have `<meta name="robots"
+- **No index**: accounts, groups, invites, replays, players' pages, shared puzzles, the
+  Dojo's entries (`/lab/solver/<id>`), the admin page and the 404 page have `<meta name="robots"
   content="noindex">` and no canonical link.
 - **Titles and descriptions**: per page and language, unique within a language,
   titles at most 60 and descriptions at most 160 characters (a test checks it,
@@ -46,7 +46,9 @@ in [deployment.md](deployment.md#search-engines).
   AI search what the pages are, and costs nothing. No `HowTo` (Google dropped it in
   2023).
 - **Social previews**: Open Graph and Twitter tags on every page, an image per
-  language (`/og/<lang>.png`), the home page today's daily (`/og/daily/<date>/`).
+  language (`/og/<lang>.png`), the home page today's daily (`/og/daily/<date>/`), a shared
+  puzzle (`/p/<code>`) its own card with its board and the time to beat (`/og/p/<code>/`), its
+  title and description naming the sharer.
 - **Languages**: `<html lang dir>` per page (`dir="rtl"` for Arabic), the rules
   ("how to play Hashiwokakero") in every language at `/<lang>/rules`.
 - **Verification files** for Bing and Yandex, and the IndexNow key file, from

@@ -84,6 +84,7 @@ fn router_with_client_source<V: IntoView + 'static>(
         .route("/og.png", get(og::legacy_image))
         .route("/og/{file}", get(og::site_image))
         .route("/og/daily/{date}/{file}", get(og::daily_image))
+        .route("/og/p/{code}/{file}", get(og::shared_image))
         // The SAT Dojo: uploads, reports from the worker, house entries (see server/dojo)
         .route(
             "/dojo/submit",

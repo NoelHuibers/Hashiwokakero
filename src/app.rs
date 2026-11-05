@@ -27,6 +27,7 @@ use crate::pages::race::RacePage;
 use crate::pages::ranks::RanksPage;
 use crate::pages::replay::{GroupReplayPage, OwnReplayPage};
 use crate::pages::rules::RulesPage;
+use crate::pages::shares::SharedPuzzle;
 use crate::state::provide_state;
 
 /// Applies the saved (or system) colour scheme before the first paint, so night mode doesn't flash.
@@ -142,6 +143,8 @@ pub fn App() -> impl IntoView {
                             <Route path=path!("/groups/:id/races/:race") view=RacePage />
                             <Route path=path!("/replay/:day") view=OwnReplayPage />
                             <Route path=path!("/g/:code") view=JoinGroupPage />
+                            // A shared puzzle; waits for it, for the title and the link preview
+                            <Route path=path!("/p/:code") view=SharedPuzzle ssr=SsrMode::Async />
                             // Waits for the player, for the title and the link preview
                             <Route path=path!("/player/:id") view=PlayerPage ssr=SsrMode::Async />
                             <Route path=path!("/account") view=AccountPage />

@@ -114,6 +114,17 @@ export const CLOSED_PUZZLE = {
   solution: [1, 0, 2, 2, 2, 2, 0, 0, 1, 1, 2, 2],
 };
 
+/** A link to a shared puzzle (`/p/<code>`), the 7×7 of the closed group puzzle: aiko shared it
+ * after solving it in 1:42, bram solved it through her link (shared.spec.ts). */
+export const SHARED_PUZZLE = {
+  code: 'seedshr2',
+  sharer: 'aiko',
+  solvers: [
+    ['aiko', 102_000, 0],
+    ['bram', 95_000, 1],
+  ] as const,
+};
+
 /** A race 勝負 of the seeded group, over two days ago (race.spec.ts), on the puzzle of
  * `CLOSED_PUZZLE`: aiko opened it and won, bram came second with a hint and a check, the guest
  * otter gave up. */
@@ -286,6 +297,27 @@ export function seed(dbPath: string) {
     posted,
     posted + 7 * MS_PER_DAY,
   );
+  // The shared puzzle: stored by the hash of its layout, as server/shares.rs does
+  const layout =
+    `${CLOSED_PUZZLE.puzzle.width}x${CLOSED_PUZZLE.puzzle.height}:` +
+    CLOSED_PUZZLE.puzzle.islands.map((i) => `${i.pos.x},${i.pos.y},${i.required};`).join('');
+  db.prepare(
+    'INSERT INTO shared_puzzles (id, hash, puzzle, solution, created_at) VALUES (1, ?, ?, ?, ?)',
+  ).run(
+    sha256(layout),
+    JSON.stringify(CLOSED_PUZZLE.puzzle),
+    JSON.stringify(CLOSED_PUZZLE.solution),
+    posted,
+  );
+  db.prepare(
+    'INSERT INTO puzzle_shares (id, code, puzzle_id, user_id, created_at) VALUES (1, ?, 1, ?, ?)',
+  ).run(SHARED_PUZZLE.code, player(SHARED_PUZZLE.sharer).id, posted);
+  for (const [name, time, hints] of SHARED_PUZZLE.solvers) {
+    db.prepare(
+      `INSERT INTO shared_results (puzzle_id, user_id, share_id, time_ms, moves, hints, score_ms, finished_at)
+       VALUES (1, ?, 1, ?, 20, ?, ?, ?)`,
+    ).run(player(name).id, time, hints, time + hints * 30_000, posted + time);
+  }
   const puzzleAttempt = db.prepare(
     `INSERT INTO group_puzzle_attempts (puzzle_id, user_id, started_at, finished_at, hints, checks, revealed, time_ms, bridges, helps)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

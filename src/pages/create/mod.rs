@@ -2,6 +2,7 @@
 
 pub mod brush;
 pub mod challenge;
+pub mod share;
 pub mod size_input;
 pub mod warnings;
 
@@ -28,6 +29,7 @@ use crate::state::{
 
 use brush::BrushPalette;
 use challenge::ChallengeCard;
+use share::ShareCard;
 use size_input::SizeInput;
 use warnings::{Warnings, warnings};
 
@@ -324,6 +326,7 @@ pub fn CreatePage() -> impl IntoView {
                     </Card>
 
                     <ChallengeCard on_check=Callback::new(move |()| solve(true)) busy />
+                    <ShareCard />
                     <SolverPanel report=editor.report busy=editor.solving lab="/lab?puzzle=workshop">
                         <PanelButton
                             primary=true

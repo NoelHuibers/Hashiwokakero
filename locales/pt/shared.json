@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "O quebra-cabeça Hashi de {{ name }}",
+    "title_anonymous": "Um quebra-cabeça Hashi compartilhado",
+    "time": "{{ name }} resolveu este Hashiwokakero {{ size }} em {{ time }}. Consegue superar? Grátis, no navegador.",
+    "untimed": "{{ name }} criou este Hashiwokakero {{ size }}. Consegue resolver? Grátis, no navegador.",
+    "anonymous": "Um Hashiwokakero {{ size }} com uma única solução. Consegue resolver? Grátis, no navegador."
+  },
+  "page": {
+    "title": "O quebra-cabeça de {{ name }}",
+    "title_anonymous": "Um quebra-cabeça compartilhado",
+    "by": "Compartilhado por {{ name }}",
+    "by_blocked": "Compartilhado por um jogador bloqueado",
+    "by_former": "Compartilhado por um ex-jogador",
+    "to_beat": "Tempo a bater",
+    "untimed": "Feito na oficina: seja o primeiro a marcar um tempo.",
+    "missing": "Este link não leva a nenhum quebra-cabeça.",
+    "missing_hint": "Talvez não tenha sido copiado inteiro. Ou jogue um quebra-cabeça novo.",
+    "to_play": "Jogar um quebra-cabeça novo",
+    "offline": "Os quebra-cabeças compartilhados ficam no servidor: este precisa de internet.",
+    "offline_hint": "Conecte-se e tente de novo. Enquanto isso, quebra-cabeças novos funcionam offline.",
+    "retry": "Tentar de novo",
+    "submit_failed": "Seu tempo não chegou ao servidor.",
+    "submit_retry": "Enviar de novo"
+  },
+  "result": {
+    "title": "Resolvido!",
+    "first": "Seu tempo: <b>{{ time }}</b>, {{ rank }}º lugar de {{ total }}.",
+    "again": "Resolvido de novo em <b>{{ time }}</b>. Só a primeira vez conta: no ranking fica <b>{{ first }}</b>.",
+    "beat": "Você superou {{ name }}!",
+    "again_button": "Jogar de novo"
+  },
+  "board": {
+    "title": "Todos que resolveram",
+    "text": "Os mais rápidos primeiro, cada dica soma 30 s. Só a primeira vez conta.",
+    "empty": "Ninguém resolveu ainda. Seja o primeiro!",
+    "sharer": "compartilhou",
+    "solvers": "Resolvido por: {{ count }}"
+  },
+  "share": {
+    "button": "Compartilhar este quebra-cabeça",
+    "making": "Criando o link…",
+    "link": "Link para o quebra-cabeça",
+    "send": "Enviar o link",
+    "time": "Resolvi este quebra-cabeça Hashi em {{ time }}. Consegue me superar?",
+    "time_hints": "Resolvi este quebra-cabeça Hashi em {{ time }} com {{ hints }} dicas (+30 s cada). Consegue me superar?",
+    "untimed": "Criei este quebra-cabeça Hashi. Consegue resolver?",
+    "failed": "Sem link desta vez: {{ error }}"
+  },
+  "create": {
+    "title": "Compartilhar por link",
+    "text": "Quem tiver o link pode jogar. Você vê quem resolveu e em quanto tempo.",
+    "unchecked": "Assim que o solver provar que ele tem uma única solução, você pode compartilhá-lo."
+  },
+  "og": {
+    "kicker": "Um quebra-cabeça compartilhado",
+    "beat": "Consegue bater {{ time }}?",
+    "solve": "Consegue resolver?"
+  }
+}

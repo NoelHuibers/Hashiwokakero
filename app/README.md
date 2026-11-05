@@ -161,8 +161,9 @@ Where the app is installed, the phone opens links to some pages of `https://hash
 instead of the browser (App Links on Android, Universal Links on iOS), the ones people send each
 other: an invite to a group (`/g/<code>`), the daily (`/`, where a daily result's share text
 points), Play (`/play`, where Play's share text points, and its old address `/practice`, which
-the app's router redirects like the server), the groups (`/groups`, `/groups/...`) and
-players' pages (`/player/<id>`), each in every language (`/ja/g/<code>`). Not the rules, the legal
+the app's router redirects like the server), the groups (`/groups`, `/groups/...`),
+players' pages (`/player/<id>`) and shared puzzles (`/p/<code>`, which need the network: offline
+the page says so), each in every language (`/ja/g/<code>`). Not the rules, the legal
 pages, the admin's, the Dojo with its uploads, or anything the server answers itself (`/api`,
 `/og`, the downloads). `seo::APP_LINK_PATHS` and `APP_LINK_PREFIXES` list them;
 `plugins.deep-link.mobile` in `src-tauri/tauri.conf.json` for Android, `seo::app_link_components`

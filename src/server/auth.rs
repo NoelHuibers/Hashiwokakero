@@ -713,6 +713,7 @@ pub(super) async fn merge_guest(
     .into_iter()
     .chain(super::groups::kadai::MERGE_GUEST)
     .chain(super::groups::race::MERGE_GUEST)
+    .chain(super::shares::MERGE_GUEST)
     // After the rivals: nobody keeps a player they blocked as their rival
     .chain(super::blocks::MERGE_GUEST)
     .chain(super::reports::MERGE_GUEST)
@@ -774,7 +775,8 @@ pub async fn delete_account(
 /// nobody else but banned players is in go, see `groups::ERASE`), the hanko seals they pressed
 /// and got, group puzzles (open ones go, closed ones stay without a name, their attempts at
 /// others' go, see `groups::kadai::erase`), their lines in races (lobbies they host go, see
-/// `groups::race::ERASE`), Dojo submissions, and of the daily results the
+/// `groups::race::ERASE`), results on shared puzzles (their links stay without a name, see
+/// `shares::ERASE`), Dojo submissions, and of the daily results the
 /// boards, move logs, devices and unranked attempts. What stays are the ranked times and
 /// penalties, under a user without a name (`deleted_at`), so the rankings of old days and the
 /// medals of everyone else don't change. A user without ranked times remains as an anonymous
@@ -790,6 +792,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         .chain(super::contact::ERASE)
         .chain(super::recovery::ERASE)
         .chain(super::groups::race::ERASE)
+        .chain(super::shares::ERASE)
     {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
     }
