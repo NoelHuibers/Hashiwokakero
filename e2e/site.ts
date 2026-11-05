@@ -4,7 +4,14 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { ROOT } from './env.ts';
-import { CLOSED_PUZZLE, DOJO_SUBMISSION, player, REPLAY_DAY_BACK, SEEDED_GROUP } from './seed.ts';
+import {
+  CLOSED_PUZZLE,
+  DOJO_SUBMISSION,
+  player,
+  REPLAY_DAY_BACK,
+  SEEDED_GROUP,
+  SHARED_PUZZLE,
+} from './seed.ts';
 
 const source = (file: string) => readFileSync(path.join(ROOT, file), 'utf8');
 
@@ -24,6 +31,7 @@ const PARAMS: Record<string, Record<string, number | string>> = {
   '/player/:id': { id: player('aiko').id },
   '/groups/:id': { id: SEEDED_GROUP.id },
   '/g/:code': { code: SEEDED_GROUP.invite },
+  '/p/:code': { code: SHARED_PUZZLE.code },
   // Yesterday has the seeded move logs
   '/groups/:id/replay/:day': { id: SEEDED_GROUP.id, day: replayDay },
   '/replay/:day': { day: replayDay },

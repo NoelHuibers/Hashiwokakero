@@ -41,6 +41,7 @@
     "button": "Compartilhar este quebra-cabeça",
     "making": "Criando o link…",
     "link": "Link para o quebra-cabeça",
+    "send": "Enviar o link",
     "time": "Resolvi este quebra-cabeça Hashi em {{ time }}. Consegue me superar?",
     "time_hints": "Resolvi este quebra-cabeça Hashi em {{ time }} com {{ hints }} dicas (+30 s cada). Consegue me superar?",
     "untimed": "Criei este quebra-cabeça Hashi. Consegue resolver?",

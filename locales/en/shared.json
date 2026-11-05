@@ -41,6 +41,7 @@
     "button": "Share this puzzle",
     "making": "Making the link…",
     "link": "Link to the puzzle",
+    "send": "Send the link",
     "time": "I solved this Hashi puzzle in {{ time }}. Can you beat me?",
     "time_hints": "I solved this Hashi puzzle in {{ time }} with {{ hints }} hints (+30 s each). Can you beat me?",
     "untimed": "I built this Hashi puzzle. Can you solve it?",

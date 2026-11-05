@@ -41,6 +41,7 @@
     "button": "Partager ce puzzle",
     "making": "Création du lien…",
     "link": "Lien vers le puzzle",
+    "send": "Envoyer le lien",
     "time": "J'ai résolu ce puzzle Hashi en {{ time }}. Feras-tu mieux ?",
     "time_hints": "J'ai résolu ce puzzle Hashi en {{ time }} avec {{ hints }} indices (+30 s chacun). Feras-tu mieux ?",
     "untimed": "J'ai créé ce puzzle Hashi. Sauras-tu le résoudre ?",

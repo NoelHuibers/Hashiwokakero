@@ -41,6 +41,7 @@
     "button": "Deel deze puzzel",
     "making": "Link maken…",
     "link": "Link naar de puzzel",
+    "send": "Link versturen",
     "time": "Ik loste deze Hashi-puzzel op in {{ time }}. Kun jij me verslaan?",
     "time_hints": "Ik loste deze Hashi-puzzel op in {{ time }} met {{ hints }} hints (+30 s per stuk). Kun jij me verslaan?",
     "untimed": "Ik heb deze Hashi-puzzel gebouwd. Kun jij hem oplossen?",

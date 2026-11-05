@@ -48,11 +48,12 @@ enum Link {
     Failed(String),
 }
 
-/// "Share this puzzle", then the link with the share bar.
+/// "Share this puzzle", then the link, and the share bar that shares it.
 ///
 /// `request`: the puzzle and how the player solved it (`None`: not played). `text`: the text
-/// shared with the link's URL. `fallback`: what to share where no link can be made (offline,
-/// a puzzle with more than one solution), `None` for nothing.
+/// shared with the link's URL. `fallback`: what the share bar shares until there is a link (or
+/// where none can be made: offline, a puzzle with more than one solution), the result alone;
+/// `None`: no share bar without a link.
 #[component]
 pub fn SharePuzzle(
     request: impl Fn() -> (Puzzle, Option<SharedSolve>) + Copy + Send + Sync + 'static,
@@ -100,12 +101,13 @@ pub fn SharePuzzle(
             _ => fallback.map(|f| f.run(())).unwrap_or_default(),
         }
     };
+    let made = move || matches!(link.get(), Link::Made(_));
     view! {
         <div class="flex w-full flex-col gap-2" data-testid="share-puzzle">
             {move || match link.get() {
                 Link::None | Link::Making => view! {
                     <Button
-                        variant=if outline { ButtonVariant::Outline } else { ButtonVariant::Default }
+                        variant=ButtonVariant::Default
                         class="w-full"
                         attr:disabled=move || link.get() == Link::Making
                         on:click=make
@@ -132,17 +134,29 @@ pub fn SharePuzzle(
                             {move || url().unwrap_or_default()}
                         </a>
                     </div>
-                    <ShareBar text=shared_text outline=outline />
                 }
                     .into_any(),
                 Link::Failed(why) => view! {
                     <p class="text-sm text-muted-foreground" role="status">
                         {t_string!(i18n, shared.share.failed, error = why)}
                     </p>
-                    {fallback.map(|_| view! { <ShareBar text=shared_text outline=outline /> })}
                 }
                     .into_any(),
             }}
+            // The result until there is a link, then the link
+            <Show when=move || fallback.is_some() || made()>
+                <ShareBar
+                    text=shared_text
+                    outline=outline
+                    label=Signal::derive(move || {
+                        if made() {
+                            t_string!(i18n, shared.share.send).to_string()
+                        } else {
+                            t_string!(i18n, common.game.share).to_string()
+                        }
+                    })
+                />
+            </Show>
         </div>
     }
 }

@@ -41,6 +41,7 @@
     "button": "Bagikan teka-teki ini",
     "making": "Membuat tautan…",
     "link": "Tautan ke teka-teki",
+    "send": "Kirim tautan",
     "time": "Aku menyelesaikan teka-teki Hashi ini dalam {{ time }}. Bisakah kamu mengalahkanku?",
     "time_hints": "Aku menyelesaikan teka-teki Hashi ini dalam {{ time }} dengan {{ hints }} petunjuk (+30 dtk masing-masing). Bisakah kamu mengalahkanku?",
     "untimed": "Aku membuat teka-teki Hashi ini. Bisakah kamu menyelesaikannya?",

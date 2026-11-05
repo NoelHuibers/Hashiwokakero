@@ -41,6 +41,7 @@
     "button": "分享这道谜题",
     "making": "正在生成链接…",
     "link": "谜题链接",
+    "send": "发送链接",
     "time": "我用 {{ time }} 解开了这道 Hashi 谜题。你能赢我吗？",
     "time_hints": "我用 {{ time }} 解开了这道 Hashi 谜题，用了 {{ hints }} 次提示（每次 +30 秒）。你能赢我吗？",
     "untimed": "我制作了这道 Hashi 谜题。你能解开吗？",

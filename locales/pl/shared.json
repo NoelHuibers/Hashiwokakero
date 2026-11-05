@@ -41,6 +41,7 @@
     "button": "Udostępnij tę łamigłówkę",
     "making": "Tworzę link…",
     "link": "Link do łamigłówki",
+    "send": "Wyślij link",
     "time": "Rozwiązałem/am tę łamigłówkę Hashi w {{ time }}. Pobijesz mój czas?",
     "time_hints": "Rozwiązałem/am tę łamigłówkę Hashi w {{ time }}, podpowiedzi: {{ hints }} (każda +30 s). Pobijesz mój czas?",
     "untimed": "Ułożyłem/am tę łamigłówkę Hashi. Rozwiążesz ją?",

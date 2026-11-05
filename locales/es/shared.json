@@ -41,6 +41,7 @@
     "button": "Compartir este puzle",
     "making": "Creando el enlace…",
     "link": "Enlace al puzle",
+    "send": "Enviar el enlace",
     "time": "Resolví este puzle Hashi en {{ time }}. ¿Puedes ganarme?",
     "time_hints": "Resolví este puzle Hashi en {{ time }} con {{ hints }} pistas (+30 s cada una). ¿Puedes ganarme?",
     "untimed": "Creé este puzle Hashi. ¿Puedes resolverlo?",

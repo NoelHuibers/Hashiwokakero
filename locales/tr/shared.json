@@ -41,6 +41,7 @@
     "button": "Bu bulmacayı paylaş",
     "making": "Bağlantı hazırlanıyor…",
     "link": "Bulmacanın bağlantısı",
+    "send": "Bağlantıyı gönder",
     "time": "Bu Hashi bulmacasını {{ time }} sürede çözdüm. Beni geçebilir misin?",
     "time_hints": "Bu Hashi bulmacasını {{ time }} sürede, {{ hints }} ipucuyla (her biri +30 sn) çözdüm. Beni geçebilir misin?",
     "untimed": "Bu Hashi bulmacasını ben hazırladım. Çözebilir misin?",
