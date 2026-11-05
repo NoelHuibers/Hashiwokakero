@@ -15,7 +15,7 @@ pub fn Footer() -> impl IntoView {
     let i18n = use_i18n();
     let rules = use_localized("/rules");
     let impressum = use_localized("/impressum");
-    let dojo = use_localized("/dojo");
+    let lab = use_localized("/lab");
     let privacy = use_localized("/datenschutz");
     let community = use_localized("/regeln");
     // The feedback form, told which page it was opened from
@@ -57,8 +57,9 @@ pub fn Footer() -> impl IntoView {
                         {t!(i18n, common.footer.how_to_play)} " 遊び方"
                     </A>
                     <span aria-hidden="true">"·"</span>
-                    <A href=dojo attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
-                        {t!(i18n, dojo.title)} " 道場"
+                    // The Lab with the SAT Dojo, which isn't in the tab bar
+                    <A href=lab attr:class="underline decoration-primary/50 underline-offset-4 hover:text-foreground">
+                        {t!(i18n, lab.title)} " 研究室"
                     </A>
                     <span aria-hidden="true">"·"</span>
                     <a

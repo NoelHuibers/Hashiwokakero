@@ -327,7 +327,7 @@ pub fn CreatePage() -> impl IntoView {
 
                     <ChallengeCard on_check=Callback::new(move |()| solve(true)) busy />
                     <ShareCard />
-                    <SolverPanel report=editor.report busy=editor.solving>
+                    <SolverPanel report=editor.report busy=editor.solving lab="/lab?puzzle=workshop">
                         <PanelButton
                             primary=true
                             disabled=Signal::derive(move || busy.get() || empty.get())

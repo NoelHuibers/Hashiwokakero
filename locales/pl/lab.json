@@ -5,6 +5,17 @@
   },
   "title": "Laboratorium solverów",
   "intro": "Puść jedną łamigłówkę przez nasze własne solvery CDCL i DPLL w różnych trybach (heurystyki rozgałęziania, strategie restartów, subsumpcja) i porównaj je ze splr.",
+  "section": {
+    "intro": "Dla autorów solverów SAT: puść nasze w wyścig na łamigłówce albo skompiluj własny do WebAssembly i wspinaj się w rankingu SAT Dojo."
+  },
+  "tabs": {
+    "label": "Działy laboratorium",
+    "race": "Wyścig",
+    "leaderboard": "Ranking",
+    "submit": "Zgłoś",
+    "benchmarks": "Benchmarki",
+    "seasons": "Sezony"
+  },
   "puzzle": {
     "title": "1 · Łamigłówka",
     "size": "{{ width }}×{{ height }}, wyspy: {{ count }}",

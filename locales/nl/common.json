@@ -99,6 +99,7 @@
   "solver": {
     "title": "SAT-solver",
     "description": "De puzzel wordt als CNF gecodeerd en opgelost door onze eigen solvers uit het SAT-lab.",
+    "lab_link": "Laat solvers racen in het lab",
     "solver": "Solver",
     "own_cdcl": "Eigen CDCL",
     "own_dpll": "Eigen DPLL",

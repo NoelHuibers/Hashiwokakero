@@ -119,7 +119,7 @@ pub(super) fn NamesAdmin(on_change: Callback<()>) -> impl IntoView {
                             let id = n.id;
                             let (kind, href) = match n.kind {
                                 NameKind::Player => ("player", format!("/player/{id}")),
-                                NameKind::Solver => ("solver", format!("/dojo/{id}")),
+                                NameKind::Solver => ("solver", format!("/lab/solver/{id}")),
                             };
                             view! {
                                 <article class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-card p-3">

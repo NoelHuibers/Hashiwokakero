@@ -5,6 +5,17 @@
   },
   "title": "Solver-Labor",
   "intro": "Schick ein Rätsel ins Rennen durch unsere eigenen CDCL- und DPLL-Solver in verschiedenen Modi (Verzweigungsheuristiken, Neustart-Strategien, Subsumption) und vergleiche sie mit splr.",
+  "section": {
+    "intro": "Für alle, die SAT-Solver schreiben: Lass unsere auf einem Rätsel gegeneinander antreten, oder kompiliere deinen eigenen zu WebAssembly und klettere in der Rangliste des SAT-Dojos."
+  },
+  "tabs": {
+    "label": "Bereiche des Labors",
+    "race": "Rennen",
+    "leaderboard": "Rangliste",
+    "submit": "Einreichen",
+    "benchmarks": "Benchmarks",
+    "seasons": "Saisons"
+  },
   "puzzle": {
     "title": "1 · Rätsel",
     "size": "{{ width }}×{{ height }}, Inseln: {{ count }}",

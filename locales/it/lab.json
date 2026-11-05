@@ -5,6 +5,17 @@
   },
   "title": "Laboratorio dei solver",
   "intro": "Fai correre un puzzle nei nostri solver CDCL e DPLL in diverse modalità (euristiche di branching, politiche di riavvio, sussunzione) e confrontali con splr.",
+  "section": {
+    "intro": "Per chi scrive solver SAT: fai gareggiare i nostri su un puzzle, oppure compila il tuo in WebAssembly e scala la classifica del SAT Dojo."
+  },
+  "tabs": {
+    "label": "Sezioni del laboratorio",
+    "race": "Gara",
+    "leaderboard": "Classifica",
+    "submit": "Invia",
+    "benchmarks": "Benchmark",
+    "seasons": "Stagioni"
+  },
   "puzzle": {
     "title": "1 · Puzzle",
     "size": "{{ width }}×{{ height }}, {{ count }} isole",

@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Invia un solver",
     "starter": "Starter kit",
-    "dev_set": "Scarica il dev set",
-    "seasons": "Archivio delle stagioni"
+    "dev_set": "Scarica il dev set"
   },
   "board": {
     "title": "Classifica",
@@ -80,8 +79,7 @@
     "none": "Nessuna stagione è ancora finita. L'archivio comincia quando la stagione {{ season }} sarà conclusa.",
     "deleted": "account eliminato",
     "verify_title": "Come verificare",
-    "verify": "Lo SHA-256 del seme rivelato deve coincidere con l'impegno pubblicato all'inizio. Con la stessa versione del generatore, dojo export rigenera il set dal seme; il set archiviato resta valido per sempre, e dojo run --set valuta qualsiasi solver su di esso esattamente come la classifica.",
-    "back": "Torna al dojo"
+    "verify": "Lo SHA-256 del seme rivelato deve coincidere con l'impegno pubblicato all'inizio. Con la stessa versione del generatore, dojo export rigenera il set dal seme; il set archiviato resta valido per sempre, e dojo run --set valuta qualsiasi solver su di esso esattamente come la classifica."
   },
   "how": {
     "title": "Come funziona",
@@ -152,6 +150,8 @@
     "text": "Il carburante è deterministico, quindi i risultati sono riproducibili e confrontabili tra articoli: indica la stagione e il seed del dev set. La classifica è disponibile in JSON su /dojo/board.json, l’harness è open source."
   },
   "submit": {
+    "meta_title": "Invia un solver SAT · SAT Dojo",
+    "meta_description": "Costruisci un solver SAT in WebAssembly, allenalo sul dev set con la CLI dojo e invialo: formule segrete, carburante deterministico.",
     "title": "Entra nel dojo",
     "sign_in": "Per inviare serve un account con nome utente, gli ospiti non possono inviare.",
     "create_account": "Crea un account",
@@ -226,11 +226,6 @@
     "invalid": "Non è un modulo WebAssembly valido per il dojo: {{ detail }}",
     "import": "Importa {{ detail }}, è disponibile solo wasi_snapshot_preview1.",
     "no_start": "Manca la funzione _start. Compila un programma (un eseguibile), non una libreria."
-  },
-  "lab_banner": {
-    "title": "Novità: il SAT Dojo",
-    "text": "Pensi che il tuo solver batta il nostro? Invialo e scala la classifica.",
-    "button": "Al dojo"
   },
   "track": {
     "sprint": "Categoria Sprint",

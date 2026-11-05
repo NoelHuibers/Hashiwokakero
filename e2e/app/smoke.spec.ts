@@ -150,7 +150,7 @@ test('an app the server no longer answers asks for an update, once', async ({ pa
 });
 
 test('the server’s files are linked on the website', async ({ page }) => {
-  await visit(page, '/dojo');
+  await visit(page, '/lab/leaderboard');
   const set = page.locator('a[download]').first();
   await expect(set).toHaveAttribute('href', /^https:\/\/hashi\.rs\/dojo-dev-\d+\.tar\.gz$/);
   await expect(set).toHaveAttribute('target', '_blank');

@@ -5,6 +5,17 @@
   },
   "title": "Çözücü laboratuvarı",
   "intro": "Bir bulmacayı kendi CDCL ve DPLL çözücülerimizde farklı modlarla (dallanma sezgiselleri, yeniden başlatma politikaları, kapsama) yarıştır ve splr ile karşılaştır.",
+  "section": {
+    "intro": "SAT çözücü yazanlar için: bizimkileri bir bulmacada yarıştır ya da kendi çözücünü WebAssembly'ye derleyip SAT Dojo sıralamasında yüksel."
+  },
+  "tabs": {
+    "label": "Laboratuvar bölümleri",
+    "race": "Yarış",
+    "leaderboard": "Sıralama",
+    "submit": "Gönder",
+    "benchmarks": "Benchmark'lar",
+    "seasons": "Sezonlar"
+  },
   "puzzle": {
     "title": "1 · Bulmaca",
     "size": "{{ width }}×{{ height }}, {{ count }} ada",

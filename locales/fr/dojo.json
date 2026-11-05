@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Soumettre un solveur",
     "starter": "Kit de démarrage",
-    "dev_set": "Télécharger le jeu de dév",
-    "seasons": "Archives des saisons"
+    "dev_set": "Télécharger le jeu de dév"
   },
   "board": {
     "title": "Classement",
@@ -80,8 +79,7 @@
     "none": "Aucune saison n'est encore terminée. Les archives commencent à la fin de la saison {{ season }}.",
     "deleted": "compte supprimé",
     "verify_title": "Comment vérifier",
-    "verify": "Le SHA-256 de la graine révélée doit correspondre à l'engagement publié au début. Avec la même version du générateur, dojo export régénère le jeu à partir de la graine ; le jeu archivé reste valable pour toujours, et dojo run --set note n'importe quel solveur dessus exactement comme le classement.",
-    "back": "Retour au dojo"
+    "verify": "Le SHA-256 de la graine révélée doit correspondre à l'engagement publié au début. Avec la même version du générateur, dojo export régénère le jeu à partir de la graine ; le jeu archivé reste valable pour toujours, et dojo run --set note n'importe quel solveur dessus exactement comme le classement."
   },
   "how": {
     "title": "Comment ça marche",
@@ -152,6 +150,8 @@
     "text": "Le carburant est déterministe : les résultats sont reproductibles et comparables d’un article à l’autre, il suffit d’indiquer la saison et la graine du jeu de dév. Le classement est disponible en JSON sur /dojo/board.json, le banc d’évaluation est open source."
   },
   "submit": {
+    "meta_title": "Soumettre un solveur SAT · SAT Dojo",
+    "meta_description": "Construis un solveur SAT en WebAssembly, entraîne-le sur le jeu de dév avec la CLI dojo et soumets-le : formules secrètes, carburant déterministe.",
     "title": "Entre dans le dojo",
     "sign_in": "Pour soumettre, il faut un compte avec un pseudo ; les invités ne peuvent pas soumettre.",
     "create_account": "Créer un compte",
@@ -226,11 +226,6 @@
     "invalid": "Module WebAssembly non valide pour le dojo : {{ detail }}",
     "import": "Il importe {{ detail }}, seul wasi_snapshot_preview1 est disponible.",
     "no_start": "Il n’y a pas de fonction _start. Compile un programme (un binaire), pas une bibliothèque."
-  },
-  "lab_banner": {
-    "title": "Nouveau : le SAT Dojo",
-    "text": "Tu crois que ton solveur bat le nôtre ? Soumets-le et grimpe au classement.",
-    "button": "Vers le dojo"
   },
   "track": {
     "sprint": "Épreuve Sprint",

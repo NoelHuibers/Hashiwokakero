@@ -2,7 +2,9 @@ use std::fmt::Write as _;
 
 use common::{Heuristic, Restarts, SolveOutcome, SolveReport, SolverConfig, SolverKind};
 use leptos::prelude::*;
+use leptos_router::components::A;
 
+use super::layout::use_localized;
 use super::ui::badge::{Badge, BadgeVariant};
 use super::ui::button::{Button, ButtonSize, ButtonVariant};
 use super::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
@@ -272,15 +274,18 @@ pub fn SolverTerminal(
     }
 }
 
-/// The solver card: options, actions and output.
+/// The solver card: options, actions and output, and a link to the Lab's race (`lab`, its
+/// path: the workshop's asks for its puzzle), which on a phone isn't in the tab bar.
 #[component]
 pub fn SolverPanel(
     #[prop(into)] report: Signal<Option<SolveReport>>,
     #[prop(into)] busy: Signal<bool>,
+    lab: &'static str,
     children: Children,
 ) -> impl IntoView {
     let i18n = use_i18n();
     let settings = expect_context::<Settings>();
+    let lab = use_localized(lab);
     view! {
         <Card class="gap-4 overflow-hidden">
             <CardHeader>
@@ -302,6 +307,9 @@ pub fn SolverPanel(
                 <SolverOptions />
                 <div class="grid grid-cols-3 gap-2">{children()}</div>
                 <SolverTerminal report=report busy=busy />
+                <A href=lab attr:class="w-fit text-sm font-medium text-primary underline-offset-4 hover:underline" attr:data-testid="lab-link">
+                    {t!(i18n, common.solver.lab_link)} " →"
+                </A>
             </CardContent>
         </Card>
     }
