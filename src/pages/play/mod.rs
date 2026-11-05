@@ -3,6 +3,7 @@
 pub mod actions;
 pub mod legend;
 pub mod new_game;
+pub mod solutions;
 pub mod solver_tools;
 pub mod win;
 
@@ -21,6 +22,7 @@ use crate::state::{self, Game, Settings, Source, Status, format_time};
 use actions::GameActions;
 use legend::LegendCard;
 use new_game::{NewGameCard, new_random};
+use solutions::SolutionsBadge;
 use solver_tools::SolverTools;
 use win::WinOverlay;
 
@@ -132,21 +134,7 @@ pub fn PlayPage() -> impl IntoView {
                                 <div class="flex flex-wrap items-center gap-x-2 gap-y-1 sm:block">
                                 <p class="text-2xl font-black sm:text-3xl">{move || game.source.get().title(i18n.get_locale())}</p>
                                 <div class="flex gap-1.5 sm:mt-1">
-                                    {move || match game.unique.get() {
-                                        Some(true) => {
-                                            view! {
-                                                <Badge variant=BadgeVariant::Success>{t!(i18n, common.game.unique_solution)}</Badge>
-                                            }
-                                                .into_any()
-                                        }
-                                        Some(false) => {
-                                            view! {
-                                                <Badge variant=BadgeVariant::Warning>{t!(i18n, common.game.several_solutions)}</Badge>
-                                            }
-                                                .into_any()
-                                        }
-                                        None => ().into_any(),
-                                    }}
+                                    <SolutionsBadge unique=game.unique />
                                     <Badge variant=BadgeVariant::Muted class="hidden sm:inline-flex">
                                         {move || t_string!(i18n, common.game.islands, count = island_count.get())}
                                     </Badge>

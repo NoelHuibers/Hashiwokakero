@@ -19,6 +19,8 @@ export interface SavedGame {
   puzzle: Puzzle;
   bridges: number[];
   solution: number[] | null;
+  /** Proven to have one solution (`true`), several (`false`), or not checked (`null`). */
+  unique?: boolean | null;
   status: 'Empty' | 'Playing' | 'Won' | 'Revealed';
   moves: number;
   hints: number;

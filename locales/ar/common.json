@@ -180,8 +180,8 @@
     "groups": "مجموعات منفصلة: {{ count }}",
     "all_connected": "كلها متصلة",
     "islands": "الجزر: {{ count }}",
-    "unique_solution": "حل فريد ✓",
-    "several_solutions": "عدة حلول"
+    "several_solutions": "عدة حلول",
+    "several_solutions_tooltip": "لهذا اللغز أكثر من حل. الفحص والتلميحات تتبع أحدها فقط، لذا قد يُعلَّم جسر صحيح على أنه خطأ."
   },
   "weekday": {
     "mon": "الاثنين",

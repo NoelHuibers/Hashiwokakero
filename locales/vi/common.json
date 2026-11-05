@@ -180,8 +180,8 @@
     "groups": "{{ count }} nhóm tách rời",
     "all_connected": "đã nối liền",
     "islands": "{{ count }} đảo",
-    "unique_solution": "lời giải duy nhất ✓",
-    "several_solutions": "nhiều lời giải"
+    "several_solutions": "nhiều lời giải",
+    "several_solutions_tooltip": "Câu đố này có nhiều hơn một lời giải. Kiểm tra và gợi ý dựa theo một trong số đó, nên một cây cầu đúng vẫn có thể bị đánh dấu là sai."
   },
   "weekday": {
     "mon": "Thứ Hai",

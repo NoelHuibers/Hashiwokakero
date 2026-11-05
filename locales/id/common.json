@@ -180,8 +180,8 @@
     "groups": "{{ count }} kelompok terpisah",
     "all_connected": "semua terhubung",
     "islands": "{{ count }} pulau",
-    "unique_solution": "solusi unik ✓",
-    "several_solutions": "beberapa solusi"
+    "several_solutions": "beberapa solusi",
+    "several_solutions_tooltip": "Teka-teki ini punya lebih dari satu solusi. Cek dan petunjuk mengikuti salah satunya, jadi jembatan yang benar pun bisa ditandai salah."
   },
   "weekday": {
     "mon": "Senin",
