@@ -247,7 +247,7 @@ for (const theme of ['light', 'dark'] as const) {
       .evaluateAll((all) =>
         all.filter((l) => l.getClientRects().length).map((l) => l.getBoundingClientRect().bottom),
       );
-    expect(labels.length, 'the tab bar').toBe(6);
+    expect(labels.length, 'the tab bar').toBe(5);
     for (const bottom of labels)
       expect(bottom, 'a tab above the navigation bar').toBeLessThanOrEqual(tabBarEnd + 0.5);
 

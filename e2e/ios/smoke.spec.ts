@@ -245,7 +245,7 @@ for (const theme of ['light', 'dark'] as const) {
     expect(at.env.top, 'the status bar').toBeGreaterThan(0);
     expect(at.env.bottom, 'the home indicator').toBeGreaterThan(0);
     expect(at.header, 'the header below the status bar').toBeGreaterThanOrEqual(at.env.top);
-    expect(at.labels, 'the tab bar').toHaveLength(6);
+    expect(at.labels, 'the tab bar').toHaveLength(5);
     for (const label of at.labels)
       expect(label.bottom, 'a tab above the home indicator').toBeLessThanOrEqual(
         at.height - at.env.bottom + 0.5,
@@ -272,7 +272,7 @@ test('turned sideways, the page clears the Dynamic Island and the home indicator
     test.info().annotations.push({ type: 'insets sideways', description: JSON.stringify(at.env) });
     expect(Math.min(at.env.left, at.env.right), 'the sides').toBeGreaterThan(0);
     expect(at.body, "the body's sides").toEqual({ left: at.env.left, right: at.env.right });
-    expect(at.labels, 'the tab bar').toHaveLength(6);
+    expect(at.labels, 'the tab bar').toHaveLength(5);
     for (const label of at.labels) {
       expect(label.left, 'a tab right of the Dynamic Island').toBeGreaterThanOrEqual(
         at.env.left - 0.5,
