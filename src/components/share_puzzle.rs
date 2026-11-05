@@ -74,7 +74,8 @@ pub fn SharePuzzle(
                 Ok(made) => {
                     // A guest made for the link: the page shows them signed in
                     if let Some(auth) = auth
-                        && auth.user.with_untracked(|u| u.as_ref().map(|u| u.id)) != Some(made.user.id)
+                        && auth.user.with_untracked(|u| u.as_ref().map(|u| u.id))
+                            != Some(made.user.id)
                     {
                         auth.user.try_set(Some(made.user));
                     }

@@ -19,6 +19,8 @@
 #[cfg(test)]
 mod tests;
 
+use std::fmt::Write as _;
+
 use common::{Board, Puzzle};
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, TransactionBehavior, params};
@@ -38,10 +40,11 @@ pub fn puzzle_hash(puzzle: &Puzzle) -> String {
     let puzzle = Puzzle::new(puzzle.width, puzzle.height, puzzle.islands.clone());
     let mut text = format!("{}x{}:", puzzle.width, puzzle.height);
     for island in &puzzle.islands {
-        text.push_str(&format!(
+        let _ = write!(
+            text,
             "{},{},{};",
             island.pos.x, island.pos.y, island.required
-        ));
+        );
     }
     hex(&Sha256::digest(text.as_bytes()))
 }
@@ -114,12 +117,7 @@ struct Known {
     code: Option<String>,
 }
 
-async fn known(
-    conn: &Connection,
-    hash: &str,
-    user: i64,
-    now: i64,
-) -> Result<Known, ServerFnError> {
+async fn known(conn: &Connection, hash: &str, user: i64, now: i64) -> Result<Known, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT (SELECT COUNT(*) FROM puzzle_shares WHERE user_id = ?2 AND created_at > ?3),
@@ -271,12 +269,11 @@ async fn create_checked(
     if known.today >= MAX_SHARES_PER_DAY {
         return Err(ApiError::TooManyAttempts.into());
     }
-    let solution = match known.solution {
-        Some(solution) => solution,
-        None => {
-            let solving = puzzle.clone();
-            run_blocking(move || Ok(super::groups::kadai::unique_solution(&solving))).await??
-        }
+    let solution = if let Some(solution) = known.solution {
+        solution
+    } else {
+        let solving = puzzle.clone();
+        run_blocking(move || Ok(super::groups::kadai::unique_solution(&solving))).await??
     };
     check(&board, &solution)?;
     let tx = conn
@@ -499,8 +496,9 @@ pub async fn submit(
     Ok((page, counted))
 }
 
-/// The other players who solved a puzzle through one of `user`'s links: how many there are
-/// (each counted once, however many of the links they solved). For the sharing stamps: "someone
+/// The other players who solved a puzzle through one of `user`'s links: how many there are.
+///
+/// Each counted once, however many of the links they solved). For the sharing stamps: "someone
 /// else solved a puzzle you shared" is `players_reached(..) >= 1`. Banned players don't count,
 /// deleted ones have no results any more.
 pub async fn players_reached(conn: &Connection, user: i64) -> Result<i64, ServerFnError> {
@@ -528,8 +526,9 @@ pub const ERASE: [&str; 2] = [
     "UPDATE puzzle_shares SET user_id = NULL WHERE user_id = ?1",
 ];
 
-/// What signing in does to the shared puzzles of the guest who played in this browser before,
-/// for `auth::merge_guest` (`?1` the account, `?2` the guest): the account takes their links and
+/// What signing in does to the shared puzzles of the guest who played in this browser before.
+///
+/// For `auth::merge_guest` (`?1` the account, `?2` the guest): the account takes their links and
 /// their results. Where both solved the same puzzle, the earlier result stays, the first counts.
 pub const MERGE_GUEST: [&str; 4] = [
     "DELETE FROM shared_results WHERE user_id = ?1 AND EXISTS (

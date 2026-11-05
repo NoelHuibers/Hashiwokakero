@@ -57,7 +57,12 @@ pub(super) fn WinOverlay() -> impl IntoView {
             i64::from(game.elapsed.get_untracked()) * 1000,
             game.hints.get_untracked(),
         );
-        share_text(locale, &game.source.get_untracked().title(locale), Some(solve), url)
+        share_text(
+            locale,
+            &game.source.get_untracked().title(locale),
+            Some(solve),
+            url,
+        )
     };
 
     view! {

@@ -309,40 +309,36 @@ pub async fn shared_image(Path((code, file)): Path<(String, String)>) -> Respons
     };
     let key = (locale, code);
     let kept = || SHARED.lock().ok().and_then(|c| c.get(&key).cloned());
-    let png = match kept() {
-        Some(png) => Ok(png),
-        None => {
-            let code = key.1.clone();
-            SHARED_RENDERING
-                .run(key.clone(), || async move {
-                    let conn = super::db::conn().map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?;
-                    let page = super::shares::page(&conn, &code, None)
+    let png = if let Some(png) = kept() {
+        Ok(png)
+    } else {
+        let code = key.1.clone();
+        SHARED_RENDERING
+            .run(key.clone(), || async move {
+                let conn = super::db::conn().map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?;
+                let page = super::shares::page(&conn, &code, None)
+                    .await
+                    .map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?
+                    .ok_or(StatusCode::NOT_FOUND)?;
+                let shared = SharedCard {
+                    locale,
+                    score_ms: page.sharer.and_then(|s| s.result).map(|r| r.score_ms),
+                    puzzle: page.puzzle,
+                };
+                let png = Bytes::from(
+                    super::run_blocking(move || render_shared(&shared))
                         .await
-                        .map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?
-                        .ok_or(StatusCode::NOT_FOUND)?;
-                    let shared = SharedCard {
-                        locale,
-                        score_ms: page
-                            .sharer
-                            .and_then(|s| s.result)
-                            .map(|r| r.score_ms),
-                        puzzle: page.puzzle,
-                    };
-                    let png = Bytes::from(
-                        super::run_blocking(move || render_shared(&shared))
-                            .await
-                            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?,
-                    );
-                    if let Ok(mut cache) = SHARED.lock() {
-                        if cache.len() >= SHARED_KEPT {
-                            cache.clear();
-                        }
-                        cache.insert((locale, code), png.clone());
+                        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?,
+                );
+                if let Ok(mut cache) = SHARED.lock() {
+                    if cache.len() >= SHARED_KEPT {
+                        cache.clear();
                     }
-                    Ok(png)
-                })
-                .await
-        }
+                    cache.insert((locale, code), png.clone());
+                }
+                Ok(png)
+            })
+            .await
     };
     match png {
         Ok(png) => (

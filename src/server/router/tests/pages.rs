@@ -662,9 +662,10 @@ async fn a_shared_puzzle_names_its_sharer_in_link_previews() {
         moves: 2,
         hints: 0,
     };
-    let code = crate::server::shares::share(&conn, id, puzzle, Some(solve), crate::server::now_ms())
-        .await
-        .unwrap();
+    let code =
+        crate::server::shares::share(&conn, id, puzzle, Some(solve), crate::server::now_ms())
+            .await
+            .unwrap();
     let browser = server.browser();
     for l in [Locale::en, Locale::de] {
         let path = localized(l, &share_path(&code));
@@ -675,7 +676,10 @@ async fn a_shared_puzzle_names_its_sharer_in_link_previews() {
         assert_eq!(title(&html), Some(hashi(&name)), "{path}");
         assert_eq!(meta(&html, "og:title"), Some(name.clone()), "{path}");
         let description = meta(&html, "og:description").unwrap();
-        assert!(description.contains("puzzle_sharer") && description.contains("02:13"), "{description}");
+        assert!(
+            description.contains("puzzle_sharer") && description.contains("02:13"),
+            "{description}"
+        );
         assert_eq!(meta(&html, "description"), Some(description.clone()));
         assert_eq!(meta(&html, "og:url"), Some(format!("{SITE_URL}{path}")));
         assert_eq!(

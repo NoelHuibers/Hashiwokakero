@@ -15,9 +15,10 @@ use super::stamps::Stamp;
 
 /// Characters of a share code.
 pub const SHARE_CODE_LEN: usize = 8;
-/// What share codes are made of: lower case letters and digits that can't be mistaken for one
-/// another (no 0/o, 1/l/i), 31 of them, so a code has almost 40 random bits. Nothing else, so a
-/// code reads out and types like a word.
+/// What share codes are made of: 31 lower case letters and digits.
+///
+/// None that can be mistaken for one another (no 0/o, 1/l/i), so a code has almost 40 random
+/// bits. Nothing else, so a code reads out and types like a word.
 pub const SHARE_ALPHABET: &[u8; 31] = b"abcdefghjkmnpqrstuvwxyz23456789";
 /// Links a player can make in a day.
 pub const MAX_SHARES_PER_DAY: i64 = 30;
@@ -65,8 +66,9 @@ pub struct SharedSolve {
     pub hints: u32,
 }
 
-/// Whether `solve` solves `board` (whose only solution is `solution`) the way a player can: the
-/// board solved, a time within reason, and a move or a hint for every bridge of the solution
+/// Whether `solve` solves `board` (whose only solution is `solution`) the way a player can.
+///
+/// The board solved, a time within reason, and a move or a hint for every bridge of the solution
 /// (every bridge takes one: a click builds one or, the other way round, two).
 pub fn check_result(board: &Board, solution: &[u8], solve: &SharedSolve) -> Result<(), ApiError> {
     if solve.bridges.len() != board.edges.len() || solve.bridges.iter().any(|&b| b > 2) {
@@ -76,7 +78,8 @@ pub fn check_result(board: &Board, solution: &[u8], solve: &SharedSolve) -> Resu
         return Err(ApiError::NotSolved);
     }
     let needed = solution.iter().filter(|&&b| b > 0).count();
-    let done = usize::try_from(u64::from(solve.moves) + u64::from(solve.hints)).unwrap_or(usize::MAX);
+    let done =
+        usize::try_from(u64::from(solve.moves) + u64::from(solve.hints)).unwrap_or(usize::MAX);
     if !(0..=MAX_SHARE_TIME_MS).contains(&solve.time_ms) || done < needed {
         return Err(ApiError::WrongPuzzle);
     }

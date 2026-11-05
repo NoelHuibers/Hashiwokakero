@@ -36,7 +36,12 @@ fn page(me: Option<i64>) -> SharedPuzzlePage {
             result: Some(aiko.clone()),
         }),
         board: vec![bram.clone(), aiko.clone()],
-        mine: me.and_then(|me| [&aiko, &bram].into_iter().find(|e| e.user_id == me).cloned()),
+        mine: me.and_then(|me| {
+            [&aiko, &bram]
+                .into_iter()
+                .find(|e| e.user_id == me)
+                .cloned()
+        }),
         solvers: 2,
         created_at: 0,
     }

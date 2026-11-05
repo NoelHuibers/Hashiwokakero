@@ -79,7 +79,10 @@ async fn a_puzzle_is_stored_once_with_a_link_per_sharer() {
     shuffled.islands.reverse();
     let bram_code = share(&conn, bram, shuffled, None, now + 2).await.unwrap();
     assert_ne!(bram_code, code);
-    assert_eq!(number(&conn, "SELECT COUNT(*) FROM shared_puzzles").await, 1);
+    assert_eq!(
+        number(&conn, "SELECT COUNT(*) FROM shared_puzzles").await,
+        1
+    );
     assert_eq!(number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await, 2);
     assert_eq!(
         number(&conn, "SELECT COUNT(*) FROM shared_results").await,
@@ -91,7 +94,10 @@ async fn a_puzzle_is_stored_once_with_a_link_per_sharer() {
     let sharer = page.sharer.unwrap();
     assert_eq!((sharer.user_id, sharer.name.as_str()), (aiko, "aiko"));
     let result = sharer.result.unwrap();
-    assert_eq!((result.time_ms, result.score_ms, result.rank), (61_000, 61_000, 1));
+    assert_eq!(
+        (result.time_ms, result.score_ms, result.rank),
+        (61_000, 61_000, 1)
+    );
     assert_eq!(page.solvers, 1);
     assert_eq!(page.mine, None);
     // bram's link: shared without playing, aiko's time is on its board too
@@ -103,11 +109,14 @@ async fn a_puzzle_is_stored_once_with_a_link_per_sharer() {
     // Not a code, or nobody's
     assert_eq!(super::page(&conn, "../admin", None).await.unwrap(), None);
     assert_eq!(super::page(&conn, "aaaaaaaa", None).await.unwrap(), None);
-    assert_eq!(puzzle_hash(&small()), puzzle_hash(&{
-        let mut p = small();
-        p.islands.reverse();
-        p
-    }));
+    assert_eq!(
+        puzzle_hash(&small()),
+        puzzle_hash(&{
+            let mut p = small();
+            p.islands.reverse();
+            p
+        })
+    );
 }
 
 #[tokio::test]
@@ -132,14 +141,41 @@ async fn only_puzzles_with_one_solution_can_be_shared() {
     );
     // A board that isn't solved, a solve that is too quick to be one
     assert_eq!(
-        error(share(&conn, aiko, small(), Some(SharedSolve { bridges: vec![2, 0], ..solved(9_000, 0) }), now).await),
+        error(
+            share(
+                &conn,
+                aiko,
+                small(),
+                Some(SharedSolve {
+                    bridges: vec![2, 0],
+                    ..solved(9_000, 0)
+                }),
+                now
+            )
+            .await
+        ),
         ApiError::NotSolved
     );
     assert_eq!(
-        error(share(&conn, aiko, small(), Some(SharedSolve { moves: 1, ..solved(9_000, 0) }), now).await),
+        error(
+            share(
+                &conn,
+                aiko,
+                small(),
+                Some(SharedSolve {
+                    moves: 1,
+                    ..solved(9_000, 0)
+                }),
+                now
+            )
+            .await
+        ),
         ApiError::WrongPuzzle
     );
-    assert_eq!(number(&conn, "SELECT COUNT(*) FROM shared_puzzles").await, 0);
+    assert_eq!(
+        number(&conn, "SELECT COUNT(*) FROM shared_puzzles").await,
+        0
+    );
     assert_eq!(number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await, 0);
 }
 
@@ -219,7 +255,10 @@ async fn only_the_first_solve_counts() {
         .unwrap();
     assert!(counted);
     let mine = page.mine.unwrap();
-    assert_eq!((mine.time_ms, mine.hints, mine.score_ms, mine.rank), (40_000, 1, 70_000, 2));
+    assert_eq!(
+        (mine.time_ms, mine.hints, mine.score_ms, mine.rank),
+        (40_000, 1, 70_000, 2)
+    );
     // Again, faster: nothing changes
     let (page, counted) = submit(&conn, &code, bram, &solved(5_000, 0), now + 20)
         .await
@@ -236,7 +275,19 @@ async fn only_the_first_solve_counts() {
     assert_eq!(page.solvers, 3);
     // A board that isn't solved doesn't count, nor does one through no link
     assert_eq!(
-        error(submit(&conn, &code, chen, &SharedSolve { bridges: vec![1, 1], ..solved(1, 0) }, now).await),
+        error(
+            submit(
+                &conn,
+                &code,
+                chen,
+                &SharedSolve {
+                    bridges: vec![1, 1],
+                    ..solved(1, 0)
+                },
+                now
+            )
+            .await
+        ),
         ApiError::NotSolved
     );
     assert_eq!(
@@ -265,10 +316,16 @@ async fn the_board_shows_the_best_places_the_viewer_and_the_sharer() {
         .await
         .unwrap();
     let page = page_of(&conn, &code, Some(slow)).await;
-    assert_eq!(page.board.len(), usize::try_from(SHARE_BOARD_SHOWN).unwrap());
+    assert_eq!(
+        page.board.len(),
+        usize::try_from(SHARE_BOARD_SHOWN).unwrap()
+    );
     assert_eq!(page.solvers, SHARE_BOARD_SHOWN + 7);
     assert_eq!(page.mine.unwrap().rank, SHARE_BOARD_SHOWN + 7);
-    assert_eq!(page.sharer.unwrap().result.unwrap().rank, SHARE_BOARD_SHOWN + 6);
+    assert_eq!(
+        page.sharer.unwrap().result.unwrap().rank,
+        SHARE_BOARD_SHOWN + 6
+    );
 }
 
 #[tokio::test]
@@ -283,12 +340,18 @@ async fn other_players_reached_count_for_the_sharer() {
         .unwrap();
     // Her own solve isn't anyone reached
     assert_eq!(players_reached(&conn, aiko).await.unwrap(), 0);
-    submit(&conn, &code, bram, &solved(40_000, 0), now).await.unwrap();
-    submit(&conn, &code, bram, &solved(40_000, 0), now).await.unwrap();
+    submit(&conn, &code, bram, &solved(40_000, 0), now)
+        .await
+        .unwrap();
+    submit(&conn, &code, bram, &solved(40_000, 0), now)
+        .await
+        .unwrap();
     assert_eq!(players_reached(&conn, aiko).await.unwrap(), 1);
     // chen shares it too, bram's solve stays aiko's
     let chen_code = share(&conn, chen, small(), None, now).await.unwrap();
-    submit(&conn, &chen_code, bram, &solved(1_000, 0), now).await.unwrap();
+    submit(&conn, &chen_code, bram, &solved(1_000, 0), now)
+        .await
+        .unwrap();
     assert_eq!(players_reached(&conn, chen).await.unwrap(), 0);
     // aiko solving chen's link is chen's
     let other = Puzzle::from_grid(&[vec![1, 0, 1], vec![0, 0, 0]]);
@@ -303,9 +366,12 @@ async fn other_players_reached_count_for_the_sharer() {
     submit(&conn, &other_code, bram, &one, now).await.unwrap();
     assert_eq!(players_reached(&conn, chen).await.unwrap(), 2);
     // Banned players don't count
-    conn.execute("UPDATE users SET banned_at = 1 WHERE id = ?1", params![bram])
-        .await
-        .unwrap();
+    conn.execute(
+        "UPDATE users SET banned_at = 1 WHERE id = ?1",
+        params![bram],
+    )
+    .await
+    .unwrap();
     assert_eq!(players_reached(&conn, aiko).await.unwrap(), 0);
     assert_eq!(players_reached(&conn, chen).await.unwrap(), 1);
     assert_eq!(page_of(&conn, &code, None).await.solvers, 1);
@@ -324,9 +390,21 @@ async fn results_the_server_checked_go_on_the_board() {
         moves: 2,
         hints: 0,
     };
-    assert!(add_result(&conn, &code, aiko, time(50_000), now).await.unwrap());
-    assert!(add_result(&conn, &code, bram, time(55_000), now).await.unwrap());
-    assert!(!add_result(&conn, &code, bram, time(1_000), now).await.unwrap());
+    assert!(
+        add_result(&conn, &code, aiko, time(50_000), now)
+            .await
+            .unwrap()
+    );
+    assert!(
+        add_result(&conn, &code, bram, time(55_000), now)
+            .await
+            .unwrap()
+    );
+    assert!(
+        !add_result(&conn, &code, bram, time(1_000), now)
+            .await
+            .unwrap()
+    );
     let page = page_of(&conn, &code, None).await;
     assert_eq!(page.sharer.unwrap().result.unwrap().time_ms, 50_000);
     assert_eq!(page.board.len(), 2);
@@ -342,7 +420,9 @@ async fn deleting_an_account_takes_the_results_and_the_name_off_the_links() {
     let code = share(&conn, aiko, small(), Some(solved(61_000, 0)), now)
         .await
         .unwrap();
-    submit(&conn, &code, bram, &solved(40_000, 0), now).await.unwrap();
+    submit(&conn, &code, bram, &solved(40_000, 0), now)
+        .await
+        .unwrap();
     erase_user(&conn, aiko).await.unwrap();
     // The link works on, without her and her time
     let page = page_of(&conn, &code, Some(bram)).await;
@@ -350,15 +430,26 @@ async fn deleting_an_account_takes_the_results_and_the_name_off_the_links() {
     assert_eq!(page.solvers, 1);
     assert_eq!(page.board[0].user_id, bram);
     assert_eq!(
-        number(&conn, &format!("SELECT COUNT(*) FROM shared_results WHERE user_id = {aiko}")).await,
+        number(
+            &conn,
+            &format!("SELECT COUNT(*) FROM shared_results WHERE user_id = {aiko}")
+        )
+        .await,
         0
     );
     assert_eq!(
-        number(&conn, &format!("SELECT COUNT(*) FROM puzzle_shares WHERE user_id = {aiko}")).await,
+        number(
+            &conn,
+            &format!("SELECT COUNT(*) FROM puzzle_shares WHERE user_id = {aiko}")
+        )
+        .await,
         0
     );
     erase_user(&conn, bram).await.unwrap();
-    assert_eq!(number(&conn, "SELECT COUNT(*) FROM shared_results").await, 0);
+    assert_eq!(
+        number(&conn, "SELECT COUNT(*) FROM shared_results").await,
+        0
+    );
     assert_eq!(page_of(&conn, &code, None).await.solvers, 0);
 }
 
@@ -371,7 +462,9 @@ async fn abandoned_guests_take_their_links_and_results_along() {
     let code = share(&conn, guest, small(), Some(solved(61_000, 0)), now)
         .await
         .unwrap();
-    submit(&conn, &code, aiko, &solved(70_000, 0), now).await.unwrap();
+    submit(&conn, &code, aiko, &solved(70_000, 0), now)
+        .await
+        .unwrap();
     // No session: abandoned
     assert_eq!(cleanup_guests(&conn).await.unwrap(), 1);
     let page = page_of(&conn, &code, None).await;
@@ -391,8 +484,12 @@ async fn signing_in_moves_the_guests_links_and_keeps_the_first_result() {
         .await
         .unwrap();
     // The guest solved it first, the account later and faster
-    submit(&conn, &code, guest, &solved(90_000, 0), now).await.unwrap();
-    submit(&conn, &code, aiko, &solved(30_000, 0), now + 10).await.unwrap();
+    submit(&conn, &code, guest, &solved(90_000, 0), now)
+        .await
+        .unwrap();
+    submit(&conn, &code, aiko, &solved(30_000, 0), now + 10)
+        .await
+        .unwrap();
     let other = Puzzle::from_grid(&[vec![1, 0, 1], vec![0, 0, 0]]);
     let guest_code = share(&conn, guest, other, None, now).await.unwrap();
     for sql in MERGE_GUEST {
@@ -402,10 +499,21 @@ async fn signing_in_moves_the_guests_links_and_keeps_the_first_result() {
     assert_eq!(page.mine.unwrap().time_ms, 90_000);
     assert_eq!(page.solvers, 2);
     assert_eq!(
-        number(&conn, &format!("SELECT COUNT(*) FROM shared_results WHERE user_id = {guest}")).await,
+        number(
+            &conn,
+            &format!("SELECT COUNT(*) FROM shared_results WHERE user_id = {guest}")
+        )
+        .await,
         0
     );
-    assert_eq!(page_of(&conn, &guest_code, None).await.sharer.unwrap().user_id, aiko);
+    assert_eq!(
+        page_of(&conn, &guest_code, None)
+            .await
+            .sharer
+            .unwrap()
+            .user_id,
+        aiko
+    );
 }
 
 #[test]

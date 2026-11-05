@@ -18,8 +18,8 @@ use crate::model::{
     DojoCactus, DojoCrossover, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
     DojoSeasons, DojoState, DojoSubmission, FeedbackKind, FeedbackStatus, Flag, GroupToday,
     HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard,
-    MonthEntry, MoveEvent, PlayerProfile, RecoveryEmail, ReportOutcome, ReportReason, Run, Stamp,
-    SharedBy, SharedEntry, SharedLink, SharedPuzzlePage, SharedSubmit, StampProgress,
+    MonthEntry, MoveEvent, PlayerProfile, RecoveryEmail, ReportOutcome, ReportReason, Run,
+    SharedBy, SharedEntry, SharedLink, SharedPuzzlePage, SharedSubmit, Stamp, StampProgress,
     SubmissionAction, SubmitResult, UserInfo, UserStats,
 };
 

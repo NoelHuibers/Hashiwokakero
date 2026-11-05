@@ -88,10 +88,15 @@ fn shared_puzzles_have_cards_of_their_own() {
         assert_eq!(png_size(&png), (WIDTH, HEIGHT));
         assert!(png.len() < 300 * 1024, "{} bytes", png.len());
     }
-    let Content::Daily { title, size, .. } = shared_card(&shared(Locale::en, Some(133_000), 7)).content else {
+    let Content::Daily { title, size, .. } =
+        shared_card(&shared(Locale::en, Some(133_000), 7)).content
+    else {
         unreachable!()
     };
-    assert_eq!((title.as_str(), size.as_str()), ("Can you beat 02:13?", "7×7"));
+    assert_eq!(
+        (title.as_str(), size.as_str()),
+        ("Can you beat 02:13?", "7×7")
+    );
 }
 
 /// Every language's cards in its fonts, without a single empty box. When this fails after a

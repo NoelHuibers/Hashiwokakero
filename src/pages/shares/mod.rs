@@ -1,5 +1,6 @@
-//! A shared puzzle (共有), `/p/:code`: the puzzle of a link a player shared, played like Play
-//! (its clock, undo, hints and checks from the solvers), with who shared it, their time to beat
+//! A shared puzzle (共有), `/p/:code`: the puzzle of a link a player shared.
+//!
+//! Played like Play (its clock, undo, hints and checks from the solvers), with who shared it, their time to beat
 //! and everyone who solved it. Solving it sends the time: a player's first solve is on the board,
 //! later ones change nothing. Guests play too, a guest is made for their first time.
 //!
@@ -86,7 +87,10 @@ pub fn preview(locale: Locale, page: &SharedPuzzlePage) -> (String, String) {
         Some(name) => td_string!(locale, shared.meta.title, name = name.to_string()),
         None => td_string!(locale, shared.meta.title_anonymous).to_string(),
     };
-    let description = match (sharer_name(page), page.sharer.as_ref().and_then(|s| s.result.as_ref())) {
+    let description = match (
+        sharer_name(page),
+        page.sharer.as_ref().and_then(|s| s.result.as_ref()),
+    ) {
         (Some(name), Some(result)) => td_string!(
             locale,
             shared.meta.time,
@@ -268,7 +272,8 @@ impl Shared {
             match reply {
                 Ok(sent) => {
                     if let Some(auth) = auth
-                        && auth.user.with_untracked(|u| u.as_ref().map(|u| u.id)) != Some(sent.user.id)
+                        && auth.user.with_untracked(|u| u.as_ref().map(|u| u.id))
+                            != Some(sent.user.id)
                     {
                         auth.user.set(Some(sent.user));
                     }
@@ -365,7 +370,8 @@ fn Playing(initial: SharedPuzzlePage) -> impl IntoView {
             (done, b.puzzle.islands.len())
         })
     });
-    let playing = Signal::derive(move || game.status.get() == Status::Playing && !game.solving.get());
+    let playing =
+        Signal::derive(move || game.status.get() == Status::Playing && !game.solving.get());
     let won = Signal::derive(move || game.status.get() == Status::Won);
 
     view! {

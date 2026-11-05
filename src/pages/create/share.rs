@@ -1,6 +1,7 @@
-//! Sharing the puzzle of the workshop as a link (共有), once the solver proved it has exactly one
-//! solution: anyone with the link plays it (`/p/<code>`, `server::shares`). The server proves it
-//! again before it makes the link.
+//! Sharing the puzzle of the workshop as a link (共有).
+//!
+//! Once the solver proved it has exactly one solution, anyone with the link plays it
+//! (`/p/<code>`, `server::shares`). The server proves it again before it makes the link.
 
 use common::SolveOutcome;
 use leptos::prelude::*;
@@ -30,12 +31,7 @@ pub fn ShareCard() -> impl IntoView {
     let editor = expect_context::<Editor>();
     let proven = Memo::new(move |_| proven_unique(&editor));
     let text = move |locale, url: &str| {
-        share_text(
-            locale,
-            td_string!(locale, common.source.custom),
-            None,
-            url,
-        )
+        share_text(locale, td_string!(locale, common.source.custom), None, url)
     };
     view! {
         <Card class="gap-4" attr:data-testid="share-card">
