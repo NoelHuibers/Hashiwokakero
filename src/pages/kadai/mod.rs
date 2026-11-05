@@ -746,7 +746,7 @@ mod tests {
                 "/groups/1/puzzles/5",
             ));
             provide_context(crate::state::Rivals::new());
-            provide_context(Game::new("test.practice"));
+            provide_context(Game::new("test.play"));
             let play = Play::new(Game::new("test.kadai"));
             play.show(page);
             view! {

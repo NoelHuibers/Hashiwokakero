@@ -30,7 +30,7 @@
     "revealed_text": "这局不计入排名。明天见！",
     "rank": "今日第 {{ rank }} 名，共 {{ total }} 人",
     "ranking": "排名中…",
-    "more": "练习模式里还有更多谜题 →",
+    "more": "畅玩模式里还有更多谜题 →",
     "on_board": "你以 <b>{{ name }}</b> 的名字上榜了。",
     "claim": "注册你的名字，在所有设备上保留连胜 →",
     "points": "月度竞赛 +{{ points }} 分"
@@ -76,9 +76,9 @@
     "next_q": "新的每日一桥什么时候出？",
     "next_a": "每天 UTC 零点，全世界同一时刻。本页的倒计时会显示距离下一题还有多久。",
     "more_q": "哪里可以玩更多？",
-    "more_a": "在<practice>练习</practice>里：五种尺寸、从 7×7 到 24×24 的无限题目，随时可以用提示。也可以在<workshop>工坊</workshop>里制作自己的谜题。",
+    "more_a": "在<play>畅玩</play>里：五种尺寸、从 7×7 到 24×24 的无限题目，随时可以用提示。也可以在<workshop>工坊</workshop>里制作自己的谜题。",
     "to_rules": "数桥规则与解题技巧 →",
-    "to_practice": "练习：无限题目 →"
+    "to_play": "畅玩：无限题目 →"
   },
   "recovery": {
     "metadata_error": "无法加载今日谜题。请重试。",

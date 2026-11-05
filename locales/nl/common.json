@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Vandaag",
-    "practice": "Oefenen",
+    "play": "Spelen",
     "ranks": "Ranking",
     "create": "Maken",
     "lab": "Lab",
@@ -56,7 +56,7 @@
     "copy_failed": "Kopiëren naar het klembord is niet gelukt.",
     "reload": "Herladen",
     "update": "Bijwerken",
-    "offline": "Je bent offline. Oefenen werkt nog steeds."
+    "offline": "Je bent offline. Spelen werkt nog steeds."
   },
   "errors": {
     "unknown": "Er ging iets mis: {{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "Deze versie van de app is te oud. Werk hem bij om online te blijven spelen.",
     "database": "De database reageerde niet, probeer het opnieuw.",
     "internal": "Er ging iets mis op de server, probeer het opnieuw.",
-    "archive_only_past": "Alleen eerdere dagpuzzels kun je oefenen.",
+    "archive_only_past": "Alleen eerdere dagpuzzels kun je opnieuw spelen.",
     "password_too_short": "Wachtwoorden hebben minstens 8 tekens nodig.",
     "password_too_long": "Wachtwoorden mogen hoogstens 128 tekens hebben.",
     "username_invalid": "Gebruikersnamen hebben 3 tot 20 tekens: letters, cijfers, _ en -.",

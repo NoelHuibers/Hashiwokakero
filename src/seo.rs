@@ -71,19 +71,30 @@ fn server_link_in(app: bool, path: &str) -> String {
 /// Links on iOS).
 ///
 /// Besides [`APP_LINK_PREFIXES`]: the daily (`/`, where a daily result's share text points),
-/// practice (`/practice`, the practice's), and the list of groups. In every language,
-/// `/ja/practice` too. The links people send each other, to pages that show what only the
-/// player's own session knows. Not the rest: the rules and the legal pages, the admin's, the Dojo
-/// with its uploads, and nothing the server answers itself (`/api`, `/og`, the downloads), which
-/// the app doesn't have. `plugins.deep-link.mobile` in `app/src-tauri/tauri.conf.json` lists them
-/// for Android, [`app_link_components`] for iOS (a test compares the three).
-pub const APP_LINK_PATHS: &[&str] = &["/", "/practice", "/groups"];
+/// Play (`/play`, where Play's share text points; `/practice`, its old name, which the app
+/// redirects like the server, see [`MOVED_PAGES`]), and the list of groups. In every language,
+/// `/ja/play` too. The links people send each other, to pages that show what only the player's
+/// own session knows. Not the rest: the rules and the legal pages, the admin's, the Dojo with its
+/// uploads, and nothing the server answers itself (`/api`, `/og`, the downloads), which the app
+/// doesn't have. `plugins.deep-link.mobile` in `app/src-tauri/tauri.conf.json` lists them for
+/// Android, [`app_link_components`] for iOS (a test compares the three).
+pub const APP_LINK_PATHS: &[&str] = &["/", "/play", "/practice", "/groups"];
+
+/// Of [`APP_LINK_PATHS`], the pages the iOS app in the App Store doesn't have yet, which the
+/// site's `apple-app-site-association` leaves out for now.
+///
+/// Android takes the App Links from the installed app's intent filter, iOS from the site's file,
+/// whatever version of the app is installed. An older app opens a link it has no page for and
+/// stays where it is (its router ignores it), so until the version that has the page is out, its
+/// links open on the website. `/play` (Practice renamed to Play, the app's version after 1.1.0):
+/// remove it from here once that version is in the App Store.
+pub const NOT_YET_ON_IOS: &[&str] = &["/play"];
 
 /// The paths whose pages below them open in the app, like [`APP_LINK_PATHS`]: invites to a group
 /// (`/g/<code>`), the pages of a group (its puzzles, its replays) and players' pages.
 pub const APP_LINK_PREFIXES: &[&str] = &["/g/", "/groups/", "/player/"];
 
-/// `paths` in every language of the site, the default's first: `/practice`, `/de/practice`, ...
+/// `paths` in every language of the site, the default's first: `/play`, `/de/play`, ...
 /// (`/` is `/de` in German).
 pub fn in_every_language(paths: &[&str]) -> Vec<String> {
     paths
@@ -96,16 +107,36 @@ pub fn in_every_language(paths: &[&str]) -> Vec<String> {
         .collect()
 }
 
+/// Pages that moved, their old path and the new one, without the language prefix.
+///
+/// Links to the old URLs are out there (shared, bookmarked, in search engines, in older apps):
+/// the server redirects them permanently (`server::router`), and so does the router of the page,
+/// for the app, which has no server in front of it, and for links within a page of an older
+/// build.
+pub const MOVED_PAGES: &[(&str, &str)] = &[("/practice", "/play")];
+
+/// Where the page `path` (in any language, without its query) moved to, in the same language:
+/// `/de/practice` -> `/de/play`. `None` for a page that didn't move.
+pub fn moved_page(path: &str) -> Option<String> {
+    let page = crate::lang::unlocalized(path);
+    let (_, to) = MOVED_PAGES.iter().find(|(from, _)| *from == page)?;
+    Some(localized(
+        crate::lang::path_locale(path).unwrap_or_default(),
+        to,
+    ))
+}
+
 /// The App Links as Apple wants them, the `components` of the site's
 /// `apple-app-site-association` (`server::apps`).
 ///
-/// Each of [`APP_LINK_PATHS`] exactly (`/` itself, not the pages below it), each of
+/// Each of [`APP_LINK_PATHS`] but [`NOT_YET_ON_IOS`] exactly (`/` itself, not the pages below it), each of
 /// [`APP_LINK_PREFIXES`] with anything after it (`*`, which also matches nothing, like Android's
 /// `pathPrefix`), in every language. Without `?` and `#` they match any query and fragment. No
 /// path has a `*` or `?` of its own, which Apple would read as a pattern.
 pub fn app_link_components() -> Vec<serde_json::Value> {
     let paths = in_every_language(APP_LINK_PATHS)
         .into_iter()
+        .filter(|path| !NOT_YET_ON_IOS.contains(&crate::lang::unlocalized(path).as_str()))
         .map(|path| json!({ "/": path }));
     let prefixes = in_every_language(APP_LINK_PREFIXES)
         .into_iter()
@@ -553,7 +584,7 @@ pub fn faq_ld(locale: Locale) -> String {
 /// The pages in the sitemap with their change frequency and priority.
 const SITEMAP: [(&str, &str, &str); 9] = [
     ("/", "daily", "1.0"),
-    ("/practice", "monthly", "0.8"),
+    ("/play", "monthly", "0.8"),
     ("/ranks", "daily", "0.7"),
     ("/rules", "monthly", "0.8"),
     ("/create", "monthly", "0.6"),
@@ -661,8 +692,11 @@ mod tests {
             ("https://hashi.rs/", "/"),
             ("https://hashi.rs", "/"),
             ("https://hashi.rs/de", "/de"),
+            ("https://hashi.rs/play", "/play"),
+            ("https://hashi.rs/ko/play", "/ko/play"),
+            // Play's old name, which the app's router redirects
             ("https://hashi.rs/practice", "/practice"),
-            ("https://hashi.rs/ko/practice", "/ko/practice"),
+            ("https://hashi.rs/ko/practice?size=9", "/ko/practice?size=9"),
             ("https://hashi.rs/groups", "/groups"),
             ("https://hashi.rs/groups/12", "/groups/12"),
             (
@@ -705,6 +739,7 @@ mod tests {
             "https://hashi.rs/g/..%2Fadmin",
             "https://hashi.rs/g/x\\..\\..\\admin",
             "https://hashi.rs//admin.example/g/x",
+            "https://hashi.rs/play/",
             "https://hashi.rs/practice/",
             "https://hashi.rs/gx",
             // Other sites, other schemes
@@ -765,7 +800,8 @@ mod tests {
         }
     }
 
-    /// iOS opens the same links in the app as Android: the `components` of the site's
+    /// iOS opens the same links in the app as Android, but for the pages the App Store's app
+    /// doesn't have yet ([`NOT_YET_ON_IOS`]): the `components` of the site's
     /// `apple-app-site-association` are the intent filter's paths and prefixes, and Apple's
     /// patterns match the URLs Android's `path` (exactly) and `pathPrefix` do. Neither takes
     /// what only the server answers (`/api`, `/og`, the Dojo's files, `/.well-known`), nor the
@@ -786,6 +822,7 @@ mod tests {
         let components = app_link_components();
         let expected: Vec<_> = paths
             .iter()
+            .filter(|path| !NOT_YET_ON_IOS.contains(&crate::lang::unlocalized(path).as_str()))
             .map(|path| json!({ "/": path }))
             .chain(
                 prefixes
@@ -846,17 +883,54 @@ mod tests {
             // Exact paths are exact, prefixes end with a slash
             ("/practice/", false),
             ("/practicex", false),
+            ("/play/", false),
             ("/groupsx", false),
             ("/g", false),
             ("/gx", false),
             ("/player", false),
             ("/Practice", false),
+            ("/Play", false),
             ("/G/abc", false),
             ("/en/g/abc", false),
             ("/xx/g/abc", false),
         ] {
             assert_eq!(android(path), claimed, "Android, {path}");
             assert_eq!(ios(path), claimed, "iOS, {path}");
+        }
+        // Play opens in the app on Android, on iOS not yet; its old name in both
+        for path in ["/play", "/ja/play", "/zh-Hant/play"] {
+            assert!(android(path), "Android, {path}");
+            assert!(!ios(path), "iOS, {path}");
+        }
+    }
+
+    /// The old URLs of a page that moved lead to the new one, in their language; the others
+    /// stay.
+    #[test]
+    fn moved_pages_have_a_new_address() {
+        for (path, target) in [
+            ("/practice", "/play"),
+            ("/de/practice", "/de/play"),
+            ("/zh-Hant/practice", "/zh-Hant/play"),
+        ] {
+            assert_eq!(moved_page(path).as_deref(), Some(target), "{path}");
+        }
+        for path in [
+            "/",
+            "/play",
+            "/ja/play",
+            "/practice/x",
+            "/practicex",
+            "/Practice",
+            "/xx/practice",
+            "/groups/practice",
+        ] {
+            assert_eq!(moved_page(path), None, "{path}");
+        }
+        // Every new page is a page of the router (the sitemap's), every old one is no longer
+        for (from, to) in MOVED_PAGES {
+            assert!(SITEMAP.iter().any(|(path, ..)| path == to), "{to}");
+            assert!(!SITEMAP.iter().any(|(path, ..)| path == from), "{from}");
         }
     }
 
@@ -1210,8 +1284,8 @@ mod tests {
                     td_string!(l, daily.meta.description),
                 ),
                 (
-                    td_string!(l, practice.meta.title),
-                    td_string!(l, practice.meta.description),
+                    td_string!(l, play.meta.title),
+                    td_string!(l, play.meta.description),
                 ),
                 (
                     td_string!(l, ranks.meta.title),

@@ -1,4 +1,4 @@
-//! Picking the difficulty of the next practice puzzle and generating it.
+//! Picking the difficulty of the next puzzle of Play and generating it.
 
 use common::{Difficulty, GenerateParams};
 use leptos::prelude::*;
@@ -25,7 +25,7 @@ fn DifficultyPicker() -> impl IntoView {
     let i18n = use_i18n();
     let settings = expect_context::<Settings>();
     view! {
-        <div class="grid grid-cols-5 gap-1 sm:gap-1.5" role="group" aria-label=move || t_string!(i18n, practice.new_puzzle)>
+        <div class="grid grid-cols-5 gap-1 sm:gap-1.5" role="group" aria-label=move || t_string!(i18n, play.new_puzzle)>
             {Difficulty::ALL
                 .into_iter()
                 .map(|d| {
@@ -71,10 +71,10 @@ pub(super) fn NewGameCard() -> impl IntoView {
         <Card class="gap-3 py-4 sm:gap-4 sm:py-6">
             <CardHeader class="px-4 sm:px-6">
                 <CardTitle class="flex items-baseline gap-2 text-xl">
-                    {t!(i18n, practice.card.title)} <span class="font-pixel text-sm text-primary">"練習"</span>
+                    {t!(i18n, play.card.title)} <span class="font-pixel text-sm text-primary">"遊ぶ"</span>
                 </CardTitle>
                 <CardDescription>
-                    {t!(i18n, practice.card.text)}
+                    {t!(i18n, play.card.text)}
                 </CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-3 px-4 sm:px-6">
@@ -85,7 +85,7 @@ pub(super) fn NewGameCard() -> impl IntoView {
                         attr:disabled=move || game.loading.get()
                         on:click=move |_| new_random(&game, settings.difficulty.get_untracked())
                     >
-                        {move || if game.loading.get() { t_string!(i18n, practice.generating).to_string() } else { format!("{} 生成", t_string!(i18n, practice.generate)) }}
+                        {move || if game.loading.get() { t_string!(i18n, play.generating).to_string() } else { format!("{} 生成", t_string!(i18n, play.generate)) }}
                     </Button>
                 </div>
             </CardContent>
@@ -111,7 +111,7 @@ mod tests {
                 settings.difficulty.set(difficulty);
                 let html = view! { <DifficultyPicker /> }.to_html();
                 assert!(html.contains("role=\"group\""));
-                assert!(html.contains(td_string!(Locale::ar, practice.new_puzzle)));
+                assert!(html.contains(td_string!(Locale::ar, play.new_puzzle)));
                 assert_eq!(html.matches("aria-pressed=\"true\"").count(), 1);
                 assert_eq!(html.matches("aria-pressed=\"false\"").count(), 4);
                 let pressed = html

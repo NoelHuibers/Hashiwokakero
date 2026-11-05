@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Dziś",
-    "practice": "Trening",
+    "play": "Graj",
     "ranks": "Ranking",
     "create": "Twórz",
     "lab": "Lab",
@@ -56,7 +56,7 @@
     "copy_failed": "Nie udało się skopiować do schowka.",
     "reload": "Odśwież",
     "update": "Aktualizuj",
-    "offline": "Jesteś offline. Trening nadal działa."
+    "offline": "Jesteś offline. Nadal możesz grać."
   },
   "errors": {
     "unknown": "Coś poszło nie tak: {{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "Ta wersja aplikacji jest zbyt stara. Zaktualizuj ją, aby dalej grać online.",
     "database": "Baza danych nie odpowiada, spróbuj ponownie.",
     "internal": "Coś poszło nie tak na serwerze, spróbuj ponownie.",
-    "archive_only_past": "Ćwiczyć można tylko wcześniejsze łamigłówki dnia.",
+    "archive_only_past": "Zagrać można tylko we wcześniejsze łamigłówki dnia.",
     "password_too_short": "Hasło musi mieć co najmniej 8 znaków.",
     "password_too_long": "Hasło może mieć najwyżej 128 znaków.",
     "username_invalid": "Nazwa użytkownika ma od 3 do 20 znaków: litery, cyfry, _ i -.",

@@ -1,14 +1,14 @@
 {
   "meta": {
-    "title": "Practice Hashiwokakero · unlimited free puzzles · Hashi",
-    "description": "Practice Hashiwokakero (Bridges) without the clock: unlimited puzzles in five sizes from 7×7 to 24×24, hints and checks, each with exactly one solution."
+    "title": "Play Hashiwokakero · unlimited free puzzles · Hashi",
+    "description": "Play Hashiwokakero (Bridges) without the clock: unlimited puzzles in five sizes from 7×7 to 24×24, hints and checks, each with exactly one solution."
   },
   "heading": "the bridges puzzle",
   "generate": "Generate",
   "generating": "Generating…",
   "generating_text": "Growing islands, building bridges, and asking the SAT solver whether the solution is unique…",
   "card": {
-    "title": "Practice",
+    "title": "Play",
     "text": "As many fresh puzzles as you like, each proven by the SAT solver to have exactly one solution. No clock pressure, the daily bridge is on the home page."
   },
   "legend": {

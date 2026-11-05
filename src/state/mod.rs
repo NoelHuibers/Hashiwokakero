@@ -196,7 +196,7 @@ pub fn provide_state() {
 }
 
 /// The daily this device saved (`DAILY_KEY`): its puzzle, its day (`Source::Daily`) and how far
-/// it got. For the app's daily lock, see `api::practice`.
+/// it got. For the app's daily lock, see `api::compute`.
 #[cfg(feature = "csr")]
 pub fn saved_daily() -> Option<(Puzzle, Source, Status)> {
     game::saved(DAILY_KEY)

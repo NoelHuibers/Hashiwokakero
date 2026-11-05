@@ -38,12 +38,12 @@ test('the feedback form checks the message and sends it', async ({ page, problem
 
 test('a bug report from the help menu brings its page along', async ({ page, context }) => {
   await signIn(context, 'aiko');
-  await visit(page, '/practice');
+  await visit(page, '/play');
   const help = page.locator('header').getByRole('button', { name: 'Help' });
   await help.click();
   await expect(help).toHaveAttribute('aria-expanded', 'true');
   await page.locator('header').getByRole('link', { name: 'Report a bug' }).click();
-  await expect(page).toHaveURL(/\/kontakt\?type=bug&from=\/practice$/);
+  await expect(page).toHaveURL(/\/kontakt\?type=bug&from=\/play$/);
   // The menu closed on the way
   await expect(page.locator('header').getByRole('link', { name: 'Report a bug' })).toHaveCount(0);
 
@@ -59,7 +59,7 @@ test('a bug report from the help menu brings its page along', async ({ page, con
     ['Version', 'Website'],
     ['Platform', 'Web'],
     ['Language', 'en'],
-    ['Page', '/practice'],
+    ['Page', '/play'],
   ] as const) {
     await expect(
       sent
@@ -74,7 +74,7 @@ test('a bug report from the help menu brings its page along', async ({ page, con
     sent.locator('dt', { hasText: /^Screen$/ }).locator('xpath=following-sibling::dd[1]'),
   ).toHaveText(/^\d+×\d+ @[\d.]+x$/);
 
-  const text = `The hint on the practice board did nothing ${Date.now()}`;
+  const text = `The hint on the board of Play did nothing ${Date.now()}`;
   await message.fill(text);
   await page.getByRole('button', { name: /^Send/ }).click();
   await expect(page.getByText('Thank you!')).toBeVisible();
@@ -86,7 +86,7 @@ test('a bug report from the help menu brings its page along', async ({ page, con
   await expect(article).toHaveAttribute('data-status', 'new');
   await expect(article).toContainText('Bug');
   await expect(article.getByTestId('message-context')).toContainText('website · Web');
-  await expect(article.getByTestId('message-context')).toContainText('from /practice');
+  await expect(article.getByTestId('message-context')).toContainText('from /play');
   // Answered, it leaves the new ones
   await article.getByRole('button', { name: 'Answered' }).click();
   await expect(article).toHaveCount(0);

@@ -30,7 +30,7 @@
     "revealed_text": "Ta gra nie liczy się do rankingu. Do jutra!",
     "rank": "Dziś miejsce {{ rank }} na {{ total }}",
     "ranking": "Liczę miejsce…",
-    "more": "Więcej łamigłówek w trybie treningu →",
+    "more": "Zagraj w kolejne łamigłówki →",
     "on_board": "Jesteś w rankingu jako <b>{{ name }}</b>.",
     "claim": "Zarezerwuj swoją nazwę, by mieć serię na każdym urządzeniu →",
     "points": "+{{ points }} pkt w wyścigu miesiąca"
@@ -76,9 +76,9 @@
     "next_q": "Kiedy jest nowy most dnia?",
     "next_a": "Codziennie o północy UTC, w tej samej chwili na całym świecie. Odliczanie na tej stronie pokazuje, ile zostało czasu.",
     "more_q": "Gdzie mogę zagrać więcej?",
-    "more_a": "W <practice>treningu</practice>: nieograniczona liczba łamigłówek w pięciu rozmiarach, od 7×7 do 24×24, z podpowiedziami, kiedy chcesz. Albo twórz własne łamigłówki w <workshop>warsztacie</workshop>.",
+    "more_a": "W zakładce <play>Graj</play>: nieograniczona liczba łamigłówek w pięciu rozmiarach, od 7×7 do 24×24, z podpowiedziami, kiedy chcesz. Albo twórz własne łamigłówki w <workshop>warsztacie</workshop>.",
     "to_rules": "Zasady Hashiwokakero i porady →",
-    "to_practice": "Trening: łamigłówki bez limitu →"
+    "to_play": "Graj: łamigłówki bez limitu →"
   },
   "recovery": {
     "metadata_error": "Nie udało się wczytać dzisiejszej łamigłówki. Spróbuj ponownie.",

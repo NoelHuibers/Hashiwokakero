@@ -1,4 +1,4 @@
-//! The practice page: endless generated puzzles with the solver at hand.
+//! Play: endless generated puzzles with the solver at hand.
 
 pub mod actions;
 pub mod legend;
@@ -109,9 +109,9 @@ pub fn PlayPage() -> impl IntoView {
 
     view! {
         <PageMeta
-            title=Signal::derive(move || t_string!(i18n, practice.meta.title).to_string())
-            description=Signal::derive(move || t_string!(i18n, practice.meta.description).to_string())
-            path="/practice"
+            title=Signal::derive(move || t_string!(i18n, play.meta.title).to_string())
+            description=Signal::derive(move || t_string!(i18n, play.meta.description).to_string())
+            path="/play"
         />
         <section class="mx-auto max-w-7xl px-4 pt-4 pb-6 sm:px-6 sm:pt-6">
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -125,7 +125,7 @@ pub fn PlayPage() -> impl IntoView {
                             </span>
                             <div>
                                 <h1 class="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                                    "Hashiwokakero · " {t!(i18n, practice.heading)}
+                                    "Hashiwokakero · " {t!(i18n, play.heading)}
                                 </h1>
                                 // Phones: the badges next to the title while they fit, and without the
                                 // island count, which the progress under the board shows too
@@ -175,9 +175,9 @@ pub fn PlayPage() -> impl IntoView {
                             <div class="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-background/55 backdrop-blur-sm">
                                 <div class="flex flex-col items-center gap-3 text-center">
                                     <PixelSprite art=&BOAT class="bob w-20" />
-                                    <p class="font-pixel text-lg">"生成中 · " {t!(i18n, practice.generating)}</p>
+                                    <p class="font-pixel text-lg">"生成中 · " {t!(i18n, play.generating)}</p>
                                     <p class="max-w-xs text-sm text-muted-foreground">
-                                        {t!(i18n, practice.generating_text)}
+                                        {t!(i18n, play.generating_text)}
                                     </p>
                                 </div>
                             </div>

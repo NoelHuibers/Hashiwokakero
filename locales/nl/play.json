@@ -1,14 +1,14 @@
 {
   "meta": {
-    "title": "Hashiwokakero oefenen · onbeperkt gratis puzzels · Hashi",
-    "description": "Oefen Hashiwokakero (Bruggen bouwen) zonder klok: onbeperkt puzzels in vijf formaten van 7×7 tot 24×24, met hints en controles, elk met één oplossing."
+    "title": "Hashiwokakero spelen · onbeperkt gratis puzzels · Hashi",
+    "description": "Speel Hashiwokakero (Bruggen bouwen) zonder klok: onbeperkt puzzels in vijf formaten van 7×7 tot 24×24, met hints en controles, elk met één oplossing."
   },
   "heading": "de bruggenpuzzel",
   "generate": "Genereer",
   "generating": "Genereren…",
   "generating_text": "Eilanden laten groeien, bruggen bouwen en de SAT-solver vragen of de oplossing uniek is…",
   "card": {
-    "title": "Oefenen",
+    "title": "Spelen",
     "text": "Zoveel verse puzzels als je wilt, elk met precies één oplossing, bewezen door de SAT-solver. Geen tijdsdruk, de brug van de dag staat op de startpagina."
   },
   "legend": {

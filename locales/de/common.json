@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Täglich",
-    "practice": "Üben",
+    "play": "Spielen",
     "ranks": "Ranking",
     "create": "Bauen",
     "lab": "Labor",
@@ -56,7 +56,7 @@
     "copy_failed": "Kopieren in die Zwischenablage hat nicht geklappt.",
     "reload": "Neu laden",
     "update": "Aktualisieren",
-    "offline": "Du bist offline. Üben geht trotzdem."
+    "offline": "Du bist offline. Spielen geht trotzdem."
   },
   "errors": {
     "unknown": "Etwas ist schiefgelaufen: {{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "Diese Version der App ist zu alt. Bitte aktualisiere sie, um weiter online zu spielen.",
     "database": "Die Datenbank antwortet nicht, bitte versuch es noch einmal.",
     "internal": "Auf dem Server ist etwas schiefgelaufen, bitte versuch es noch einmal.",
-    "archive_only_past": "Nur frühere Tagesrätsel können geübt werden.",
+    "archive_only_past": "Nur frühere Tagesrätsel können frei gespielt werden.",
     "password_too_short": "Passwörter brauchen mindestens 8 Zeichen.",
     "password_too_long": "Passwörter dürfen höchstens 128 Zeichen haben.",
     "username_invalid": "Benutzernamen haben 3 bis 20 Zeichen: Buchstaben, Ziffern, _ und -.",

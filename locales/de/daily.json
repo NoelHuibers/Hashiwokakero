@@ -30,7 +30,7 @@
     "revealed_text": "Das zählt diesmal nicht für die Rangliste. Bis morgen!",
     "rank": "Heute Platz {{ rank }} von {{ total }}",
     "ranking": "Platzierung wird ermittelt…",
-    "more": "Mehr Rätsel im Übungsmodus →",
+    "more": "Weitere Rätsel spielen →",
     "on_board": "Du stehst als <b>{{ name }}</b> in der Rangliste.",
     "claim": "Sichere dir deinen Namen und behalte deine Serie auf jedem Gerät →",
     "points": "+{{ points }} Punkte im Monatsrennen"
@@ -76,9 +76,9 @@
     "next_q": "Wann gibt es ein neues Tagesrätsel?",
     "next_a": "Jeden Tag um Mitternacht UTC, überall auf der Welt im selben Moment. Ein Countdown auf dieser Seite zeigt, wie lange es noch dauert.",
     "more_q": "Wo kann ich mehr spielen?",
-    "more_a": "Beim <practice>Üben</practice>: unbegrenzt viele Rätsel in fünf Größen, von 7×7 bis 24×24, mit Tipps, wann immer du willst. Oder bau eigene Rätsel in der <workshop>Werkstatt</workshop>.",
+    "more_a": "Unter <play>Spielen</play>: unbegrenzt viele Rätsel in fünf Größen, von 7×7 bis 24×24, mit Tipps, wann immer du willst. Oder bau eigene Rätsel in der <workshop>Werkstatt</workshop>.",
     "to_rules": "Hashiwokakero-Regeln und Lösungstipps →",
-    "to_practice": "Üben: unbegrenzt viele Rätsel →"
+    "to_play": "Spielen: unbegrenzt viele Rätsel →"
   },
   "recovery": {
     "metadata_error": "Das heutige Rätsel konnte nicht geladen werden. Versuche es erneut.",

@@ -32,18 +32,23 @@ const PARAMS: Record<string, Record<string, number | string>> = {
   '/groups/:id/puzzles/:puzzle/replay': { id: SEEDED_GROUP.id, puzzle: CLOSED_PUZZLE.id },
 };
 
-/** Every page of the router, parameters filled in: `/`, `/practice`, `/dojo/1`, ... */
+/**
+ * Every page of the router, parameters filled in: `/`, `/play`, `/dojo/1`, ... Not the old
+ * addresses of pages that moved (`MovedPage`, `/practice`), which redirect to one of them.
+ */
 export const ROUTES: string[] = [
-  ...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\)/g),
-].map((m) => {
-  const route = `/${m[1]!.replace(/^\//, '')}`;
-  return route.replace(/:(\w+)/g, (_, name: string) => {
-    const value = PARAMS[route]?.[name];
-    if (value === undefined)
-      throw new Error(`no seeded value for :${name} of ${route} (e2e/site.ts)`);
-    return String(value);
+  ...source('src/app.rs').matchAll(/<Route path=path!\("([^"]*)"\) view=(\w+)/g),
+]
+  .filter((m) => m[2] !== 'MovedPage')
+  .map((m) => {
+    const route = `/${m[1]!.replace(/^\//, '')}`;
+    return route.replace(/:(\w+)/g, (_, name: string) => {
+      const value = PARAMS[route]?.[name];
+      if (value === undefined)
+        throw new Error(`no seeded value for :${name} of ${route} (e2e/site.ts)`);
+      return String(value);
+    });
   });
-});
 if (ROUTES.length < 5) throw new Error('the routes in src/app.rs were not found');
 
 /** `path` in a language: `/rules` -> `/de/rules`, `/` -> `/de`. */

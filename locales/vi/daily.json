@@ -30,7 +30,7 @@
     "revealed_text": "Lượt này không tính vào bảng xếp hạng. Hẹn gặp lại ngày mai!",
     "rank": "Hạng {{ rank }} trên {{ total }} hôm nay",
     "ranking": "Đang xếp hạng…",
-    "more": "Thêm câu đố ở chế độ luyện tập →",
+    "more": "Chơi thêm câu đố →",
     "on_board": "Bạn đã lên bảng với tên <b>{{ name }}</b>.",
     "claim": "Giữ tên của bạn để lưu chuỗi ngày trên mọi thiết bị →",
     "points": "+{{ points }} điểm trong cuộc đua hằng tháng"
@@ -76,9 +76,9 @@
     "next_q": "Khi nào có câu đố mỗi ngày mới?",
     "next_a": "Mỗi ngày lúc nửa đêm UTC, cùng một thời điểm trên toàn thế giới. Đồng hồ đếm ngược trên trang này cho biết còn bao lâu.",
     "more_q": "Tôi có thể chơi thêm ở đâu?",
-    "more_a": "Trong phần <practice>luyện tập</practice>: câu đố không giới hạn ở năm kích thước, từ 7×7 đến 24×24, có gợi ý bất cứ lúc nào. Hoặc tự tạo câu đố trong <workshop>xưởng</workshop>.",
+    "more_a": "Trong phần <play>Chơi</play>: câu đố không giới hạn ở năm kích thước, từ 7×7 đến 24×24, có gợi ý bất cứ lúc nào. Hoặc tự tạo câu đố trong <workshop>xưởng</workshop>.",
     "to_rules": "Luật Hashiwokakero và mẹo giải →",
-    "to_practice": "Luyện tập: câu đố không giới hạn →"
+    "to_play": "Chơi: câu đố không giới hạn →"
   },
   "recovery": {
     "metadata_error": "Không thể tải câu đố hôm nay. Hãy thử lại.",

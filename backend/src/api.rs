@@ -22,7 +22,7 @@ pub const DEFAULT_TIMEOUT_MS: u32 = 10_000;
 /// Upper bound for `timeout_ms`, the server is shared.
 pub const MAX_TIMEOUT_MS: u32 = 120_000;
 /// Bounds of `timeout_ms` for a solver run that a player asks for, whatever the client sends:
-/// the website's server functions and the app's offline practice allow the same.
+/// the website's server functions and the app's offline Play allow the same.
 pub const PLAYER_TIMEOUT_MS: (u32, u32) = (100, 20_000);
 
 /// Solves the puzzle with the configured solver. `unique` of the solution is `None`.

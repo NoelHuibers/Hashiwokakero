@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Diário",
-    "practice": "Treino",
+    "play": "Jogar",
     "ranks": "Ranking",
     "create": "Criar",
     "lab": "Lab",
@@ -56,7 +56,7 @@
     "copy_failed": "Não foi possível copiar para a área de transferência.",
     "reload": "Recarregar",
     "update": "Atualizar",
-    "offline": "Você está offline. O treino continua funcionando."
+    "offline": "Você está offline. Ainda dá para jogar."
   },
   "errors": {
     "unknown": "Algo deu errado: {{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "Esta versão do app está desatualizada. Atualize-o para continuar jogando online.",
     "database": "O banco de dados não respondeu, tente de novo.",
     "internal": "Algo deu errado no servidor, tente de novo.",
-    "archive_only_past": "Só dá para treinar desafios diários anteriores.",
+    "archive_only_past": "Só dá para jogar desafios diários anteriores.",
     "password_too_short": "A senha precisa ter pelo menos 8 caracteres.",
     "password_too_long": "A senha pode ter no máximo 128 caracteres.",
     "username_invalid": "O nome de usuário tem de 3 a 20 caracteres: letras, números, _ e -.",

@@ -21,7 +21,7 @@ Concurrent requests for the same generation now share one computation
 
 ## What is not coalesced
 
-- `generate_puzzle` (practice, editor, lab): the browser picks a random 64-bit seed for every new
+- `generate_puzzle` (Play, editor, lab): the browser picks a random 64-bit seed for every new
   puzzle (`state::random_seed`), and there are no shared seed links. Two different players never
   ask for the same parameters, so coalescing would only add bookkeeping. Results of one player
   are never handed to another.

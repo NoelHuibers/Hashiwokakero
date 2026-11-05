@@ -21,7 +21,7 @@ export interface Caption {
 export const HANKO: Record<SceneId, string> = {
   daily: '橋',
   ranking: '競',
-  practice: '練',
+  play: '遊',
   friends: '仲',
   stamps: '判',
   night: '夜',

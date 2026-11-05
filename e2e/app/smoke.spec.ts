@@ -6,8 +6,8 @@ import { expect, hydrated, test, visit } from '../fixtures.ts';
 
 const PLAY_STORE = 'https://play.google.com/store/apps/details?id=rs.hashi';
 
-test('the practice board shows a generated puzzle', async ({ page }) => {
-  await visit(page, '/practice');
+test('the board of Play shows a generated puzzle', async ({ page }) => {
+  await visit(page, '/play');
   await expect(board(page).locator('g.island').first()).toBeVisible();
 });
 

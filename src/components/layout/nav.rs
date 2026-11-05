@@ -12,7 +12,7 @@ use crate::lang::unlocalized;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Page {
     Daily,
-    Practice,
+    Play,
     Ranks,
     Groups,
     Create,
@@ -22,7 +22,7 @@ pub enum Page {
 /// Path and the decorative kanji of each page in the navigation.
 pub(super) const NAV: [(Page, &str, &str); 6] = [
     (Page::Daily, "/", "今日"),
-    (Page::Practice, "/practice", "練習"),
+    (Page::Play, "/play", "遊ぶ"),
     (Page::Ranks, "/ranks", "順位"),
     (Page::Groups, "/groups", "仲間"),
     (Page::Create, "/create", "作る"),
@@ -34,7 +34,7 @@ fn PageName(page: Page) -> impl IntoView {
     let i18n = use_i18n();
     match page {
         Page::Daily => t!(i18n, common.nav.daily).into_any(),
-        Page::Practice => t!(i18n, common.nav.practice).into_any(),
+        Page::Play => t!(i18n, common.nav.play).into_any(),
         Page::Ranks => t!(i18n, common.nav.ranks).into_any(),
         Page::Groups => t!(i18n, common.nav.groups).into_any(),
         Page::Create => t!(i18n, common.nav.create).into_any(),
@@ -53,7 +53,13 @@ fn is_active(href: &str, path: &str) -> bool {
         "/ranks" => path.starts_with("/ranks") || path.starts_with("/player"),
         // Invite links lead into a group
         "/groups" => path.starts_with("/groups") || path.starts_with("/g/"),
-        _ => path.starts_with(href),
+        // By whole segments: `/play` isn't `/player/3`
+        _ => {
+            path == href
+                || path
+                    .strip_prefix(href)
+                    .is_some_and(|rest| rest.starts_with('/'))
+        }
     }
 }
 
@@ -98,7 +104,7 @@ pub fn MobileNav() -> impl IntoView {
                                     {(page == Page::Groups).then(|| view! { <HankoDot class="absolute top-0 end-0.5" /> })}
                                 </span>
                                 // Smaller and without the spacing on the narrowest phones: six
-                                // names like PRACTICE and GROUPS share 320 px (see tab-bar.spec.ts)
+                                // names like SPIELEN and GRUPPEN share 320 px (see tab-bar.spec.ts)
                                 <span class="tab-label max-w-full truncate px-0.5 text-[10px] font-bold uppercase tracking-wider max-[360px]:px-0 max-[360px]:text-[9px] max-[360px]:tracking-normal">
                                     <PageName page />
                                 </span>
@@ -156,5 +162,11 @@ mod tests {
         assert!(is_active("/ranks", "/player/3"));
         assert!(is_active("/", "/de"));
         assert!(!is_active("/", "/de/groups"));
+        assert!(is_active("/play", "/play"));
+        assert!(is_active("/play", "/ja/play"));
+        // A profile belongs to the ranks, not to Play
+        assert!(!is_active("/play", "/player/3"));
+        assert!(!is_active("/play", "/de/player/3"));
+        assert!(is_active("/create", "/create"));
     }
 }

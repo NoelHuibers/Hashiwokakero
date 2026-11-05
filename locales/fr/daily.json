@@ -30,7 +30,7 @@
     "revealed_text": "Celle-ci ne compte pas pour le classement. À demain !",
     "rank": "Rang {{ rank }} sur {{ total }} aujourd’hui",
     "ranking": "Classement…",
-    "more": "Plus de grilles en jeu libre →",
+    "more": "Jouer d’autres grilles →",
     "on_board": "Tu es au classement sous le nom <b>{{ name }}</b>.",
     "claim": "Réserve ton pseudo pour garder ta série sur tous tes appareils →",
     "points": "+{{ points }} points dans la course du mois"
@@ -76,9 +76,9 @@
     "next_q": "Quand arrive une nouvelle grille du jour ?",
     "next_a": "Chaque jour à minuit UTC, au même moment partout dans le monde. Un compte à rebours sur cette page indique le temps restant.",
     "more_q": "Où jouer davantage ?",
-    "more_a": "En <practice>mode libre</practice> : des grilles illimitées en cinq tailles, de 7×7 à 24×24, avec des indices quand tu veux. Ou crée tes propres grilles dans l’<workshop>atelier</workshop>.",
+    "more_a": "Dans l’onglet <play>Jouer</play> : des grilles illimitées en cinq tailles, de 7×7 à 24×24, avec des indices quand tu veux. Ou crée tes propres grilles dans l’<workshop>atelier</workshop>.",
     "to_rules": "Règles du Hashiwokakero et astuces →",
-    "to_practice": "Mode libre : grilles illimitées →"
+    "to_play": "Jouer : grilles illimitées →"
   },
   "recovery": {
     "metadata_error": "Impossible de charger le puzzle du jour. Réessayez.",

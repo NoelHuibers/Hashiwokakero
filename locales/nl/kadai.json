@@ -62,7 +62,7 @@
     "revealed_title": "Oplossing onthuld",
     "revealed_text": "Deze keer buiten de ranking. De oplossing staat op het bord, bekijk hem goed!",
     "back": "Terug naar {{ group }}",
-    "practice": "Nog eens spelen om te oefenen"
+    "play_again": "Nog eens spelen"
   },
   "author": {
     "title": "Jouw puzzel",

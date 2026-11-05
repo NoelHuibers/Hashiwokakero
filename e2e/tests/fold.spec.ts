@@ -12,7 +12,7 @@
 // the Plus iPhones. Apple publishes no point sizes.
 import type { Page } from '@playwright/test';
 
-import { addBridge, board, DAILY_KEY, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { addBridge, board, DAILY_KEY, edges, PLAY_KEY, saved, seedGame } from '../board.ts';
 import { startDaily } from '../daily.ts';
 import { expect, test, visit } from '../fixtures.ts';
 import { LADDER, LADDER_SOLUTION, ladderRow } from '../puzzles.ts';
@@ -122,9 +122,9 @@ async function foldAndUnfold(page: Page, key: string) {
   }
 }
 
-test('a practice game goes on as the phone unfolds, turns and folds again', async ({ page }) => {
+test('a game of Play goes on as the phone unfolds, turns and folds again', async ({ page }) => {
   await page.clock.install();
-  await seedGame(page, PRACTICE_KEY, {
+  await seedGame(page, PLAY_KEY, {
     puzzle: LADDER,
     bridges: edges(LADDER).map(() => 0),
     solution: LADDER_SOLUTION,
@@ -132,14 +132,14 @@ test('a practice game goes on as the phone unfolds, turns and folds again', asyn
     moves: 0,
     hints: 0,
   });
-  await visit(page, '/practice');
-  await addBridge(page, PRACTICE_KEY, LADDER, ladderRow(1), true);
-  await addBridge(page, PRACTICE_KEY, LADDER, ladderRow(3), true);
+  await visit(page, '/play');
+  await addBridge(page, PLAY_KEY, LADDER, ladderRow(1), true);
+  await addBridge(page, PLAY_KEY, LADDER, ladderRow(3), true);
   await page.clock.runFor(5_000);
   await expect.poll(() => clock(page)).toBeGreaterThanOrEqual(5);
-  await foldAndUnfold(page, PRACTICE_KEY);
+  await foldAndUnfold(page, PLAY_KEY);
   // Still playable on the outer display: the next bridge goes in
-  await addBridge(page, PRACTICE_KEY, LADDER, ladderRow(5), true);
+  await addBridge(page, PLAY_KEY, LADDER, ladderRow(5), true);
 });
 
 test("today's daily goes on as the phone unfolds, turns and folds again", async ({ page }) => {

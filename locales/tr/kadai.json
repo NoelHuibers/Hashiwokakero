@@ -62,7 +62,7 @@
     "revealed_title": "Çözüm gösterildi",
     "revealed_text": "Bu sefer sıralama dışı. Çözüm tahtada, iyice bak!",
     "back": "{{ group }} grubuna dön",
-    "practice": "Pratik için yeniden oyna"
+    "play_again": "Yeniden oyna"
   },
   "author": {
     "title": "Bulmacan",

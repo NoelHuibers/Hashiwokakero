@@ -62,7 +62,7 @@
     "revealed_title": "Solusi ditampilkan",
     "revealed_text": "Kali ini tanpa peringkat. Solusinya ada di papan, perhatikan baik-baik!",
     "back": "Kembali ke {{ group }}",
-    "practice": "Main lagi untuk latihan"
+    "play_again": "Main lagi"
   },
   "author": {
     "title": "Teka-tekimu",

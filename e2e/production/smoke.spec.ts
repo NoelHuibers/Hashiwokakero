@@ -16,6 +16,8 @@ import { type BrowserContext, test as base, expect, type Page } from '@playwrigh
 /** The pages, and the language each is in. */
 const PAGES: [string, string][] = [
   ['/', 'en'],
+  // Play's old address: the page itself until the rename is deployed, then its redirect to /play
+  // (the spec runs on pull requests against the live site). /play once it is out.
   ['/practice', 'en'],
   ['/ranks', 'en'],
   ['/rules', 'en'],

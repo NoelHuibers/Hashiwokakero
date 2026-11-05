@@ -1,4 +1,4 @@
-//! The app's offline practice: the puzzle server functions of the website (`src/api/puzzle.rs`:
+//! The app's offline Play: the puzzle server functions of the website (`src/api/puzzle.rs`:
 //! `generate_puzzle`, `solve_puzzle`, `puzzle_cnf`) on the phone. They call the same `backend`
 //! functions with the same arguments and limits, so the phone's answers are the server's: a seed
 //! gives the puzzle the server generates for it, on any machine (the generator counts work, not
@@ -8,7 +8,7 @@
 //! and run on any machine, without the system libraries Tauri needs on the desktop.
 //!
 //! The server also refuses to solve today's daily for players who haven't finished it; the page
-//! checks that itself before it calls a command (`src/api/practice.rs`).
+//! checks that itself before it calls a command (`src/api/compute.rs`).
 
 use std::future::Future;
 

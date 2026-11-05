@@ -71,7 +71,7 @@ fn NewStamps(stamps: Vec<model::Stamp>) -> impl IntoView {
 #[component]
 pub(super) fn WinCard(daily: Daily) -> impl IntoView {
     let i18n = use_i18n();
-    let practice = use_localized("/practice");
+    let play = use_localized("/play");
     let dialog = NodeRef::<leptos::html::Div>::new();
     Effect::new(move |_| {
         let Some(dialog) = dialog.get() else { return };
@@ -126,9 +126,9 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
                         (!stamps.is_empty()).then(|| view! { <NewStamps stamps /> })
                     }}
                     <div class="flex w-full flex-wrap justify-center gap-2 pt-1">
-                        <Button href=untrack(practice)>{t!(i18n, common.nav.practice)} " 練習"</Button>
+                        <Button href=untrack(play)>{t!(i18n, common.nav.play)} " 遊ぶ"</Button>
                         <Button variant=ButtonVariant::Ghost on:click=move |_| daily.admired.set(true)>
-                            {t!(i18n, practice.admire)}
+                            {t!(i18n, play.admire)}
                         </Button>
                         {move || {
                             daily.info.with(|i| i.as_ref().map(|i| i.day)).map(|day| {

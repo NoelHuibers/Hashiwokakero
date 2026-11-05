@@ -1,14 +1,14 @@
 {
   "meta": {
-    "title": "Hashiwokakero za darmo · trening bez limitu · Hashi",
-    "description": "Ćwicz Hashiwokakero (Mosty) bez zegara: nieograniczone łamigłówki w pięciu rozmiarach od 7×7 do 24×24, podpowiedzi, każda z dokładnie jednym rozwiązaniem."
+    "title": "Hashiwokakero za darmo · graj bez limitu · Hashi",
+    "description": "Graj w Hashiwokakero (Mosty) bez zegara: nieograniczone łamigłówki w pięciu rozmiarach od 7×7 do 24×24, podpowiedzi, każda z dokładnie jednym rozwiązaniem."
   },
   "heading": "łamigłówka z mostami",
   "generate": "Generuj",
   "generating": "Generuję…",
   "generating_text": "Wyspy rosną, mosty powstają, a solver SAT sprawdza, czy rozwiązanie jest jednoznaczne…",
   "card": {
-    "title": "Trening",
+    "title": "Graj",
     "text": "Tyle świeżych łamigłówek, ile chcesz, każda z dokładnie jednym rozwiązaniem, co udowadnia solver SAT. Bez presji czasu, most dnia czeka na stronie głównej."
   },
   "legend": {

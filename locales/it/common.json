@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "Oggi",
-    "practice": "Allenati",
+    "play": "Gioca",
     "ranks": "Podio",
     "create": "Crea",
     "lab": "Lab",
@@ -56,7 +56,7 @@
     "copy_failed": "Impossibile copiare negli appunti.",
     "reload": "Ricarica",
     "update": "Aggiorna",
-    "offline": "Sei offline. L'allenamento funziona lo stesso."
+    "offline": "Sei offline. Puoi continuare a giocare."
   },
   "errors": {
     "unknown": "Qualcosa è andato storto: {{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "Questa versione dell'app è troppo vecchia. Aggiornala per continuare a giocare online.",
     "database": "Il database non ha risposto, riprova.",
     "internal": "Qualcosa è andato storto sul server, riprova.",
-    "archive_only_past": "Puoi allenarti solo con le sfide dei giorni passati.",
+    "archive_only_past": "Puoi rigiocare solo le sfide dei giorni passati.",
     "password_too_short": "La password deve avere almeno 8 caratteri.",
     "password_too_long": "La password può avere al massimo 128 caratteri.",
     "username_invalid": "Il nome utente deve avere da 3 a 20 caratteri: lettere, cifre, _ e -.",

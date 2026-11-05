@@ -27,7 +27,7 @@ use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 /// Every route of the app with a URL to request it by.
 const PAGES: [(&str, &str); 27] = [
     ("/", "/"),
-    ("/practice", "/practice"),
+    ("/play", "/play"),
     ("/ranks", "/ranks"),
     ("/groups", "/groups"),
     ("/groups/{id}", "/groups/1"),
@@ -120,7 +120,7 @@ fn expected(route: &str, l: Locale) -> Expected {
                 td_string!(l, daily.about.account_a),
                 td_string!(l, daily.about.next_q),
                 td_string!(l, daily.about.to_rules),
-                td_string!(l, daily.about.to_practice),
+                td_string!(l, daily.about.to_play),
             ])
             .into_iter()
             .chain([td_string!(
@@ -141,16 +141,16 @@ fn expected(route: &str, l: Locale) -> Expected {
             canonical: Some("/"),
             ..Expected::default()
         },
-        "/practice" => Expected {
-            title: Some(td_string!(l, practice.meta.title).into()),
+        "/play" => Expected {
+            title: Some(td_string!(l, play.meta.title).into()),
             texts: [
-                td_string!(l, practice.heading),
-                td_string!(l, practice.generating),
-                td_string!(l, practice.card.title),
-                td_string!(l, practice.card.text),
-                td_string!(l, practice.generate),
-                td_string!(l, practice.legend.title),
-                td_string!(l, practice.legend.build),
+                td_string!(l, play.heading),
+                td_string!(l, play.generating),
+                td_string!(l, play.card.title),
+                td_string!(l, play.card.text),
+                td_string!(l, play.generate),
+                td_string!(l, play.legend.title),
+                td_string!(l, play.legend.build),
                 td_string!(l, common.game.undo),
                 td_string!(l, common.game.hint),
             ]
@@ -158,8 +158,8 @@ fn expected(route: &str, l: Locale) -> Expected {
             .map(String::from)
             .chain(Difficulty::ALL.map(|d| difficulty_name(l, d)))
             .collect(),
-            nav: Some("/practice"),
-            canonical: Some("/practice"),
+            nav: Some("/play"),
+            canonical: Some("/play"),
             ..Expected::default()
         },
         "/ranks" => Expected {
@@ -634,13 +634,21 @@ fn without_nonces(html: &str) -> String {
     out
 }
 
-/// The routes of the app, `App`'s own list, are the ones tested here.
+/// The routes of the app, `App`'s own list, are the ones tested here. The old addresses of pages
+/// that moved (`seo::MOVED_PAGES`) are routes too, for the app's router; the server redirects
+/// them before they render (`site::other_spellings_of_a_page_redirect_to_it`).
 #[tokio::test]
 async fn every_route_is_tested() {
-    let routes: BTreeSet<String> = leptos_axum::generate_route_list(crate::app::App)
+    let mut routes: BTreeSet<String> = leptos_axum::generate_route_list(crate::app::App)
         .iter()
         .map(|r| route_of(r.path()))
         .collect();
+    for (from, _) in crate::seo::MOVED_PAGES {
+        assert!(
+            routes.remove(*from),
+            "{from} is no route of the app's router"
+        );
+    }
     let tested: BTreeSet<String> = PAGES.iter().map(|(route, _)| (*route).into()).collect();
     assert_eq!(
         routes, tested,
@@ -735,7 +743,7 @@ async fn pages_link_and_describe_themselves() {
     assert!(home.contains(r#""inLanguage":"de""#));
     // The home page leads to the tips in its language
     assert!(home.contains(r#"href="/de/rules#tips""#));
-    assert!(home.contains(r#"href="/de/practice""#));
+    assert!(home.contains(r#"href="/de/play""#));
     let rules = page("/ja/rules").await;
     assert!(rules.contains(r#""@type":"FAQPage""#));
     // The boards of the tips say what they show

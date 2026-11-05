@@ -55,7 +55,7 @@ pub(super) fn share_text(daily: &Daily, locale: Locale) -> String {
 pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
     let i18n = use_i18n();
     let auth = expect_context::<Auth>();
-    let practice = use_localized("/practice");
+    let play = use_localized("/play");
     let account = use_localized("/account");
     let share_text = move || share_text(&daily, i18n.get_locale_untracked());
     let revealed = move || daily.game.status.get() == Status::Revealed;
@@ -168,7 +168,7 @@ pub(super) fn ResultCard(daily: Daily) -> impl IntoView {
                     })
                 }}
                 <A
-                    href=practice
+                    href=play
                     attr:class="inline-flex min-h-10 items-center justify-center text-sm text-primary underline-offset-4 hover:underline"
                 >
                     {t!(i18n, daily.result.more)}

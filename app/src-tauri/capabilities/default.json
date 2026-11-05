@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "default",
-  "description": "The app's one window: Tauri's core defaults, the offline practice's commands, links out of the app (https and mailto only), the App Link the app was opened with, and the app's own plugin (sharing, the system bars, Game Center and Google Play Games)",
+  "description": "The app's one window: Tauri's core defaults, the offline Play's commands, links out of the app (https and mailto only), the App Link the app was opened with, and the app's own plugin (sharing, the system bars, Game Center and Google Play Games)",
   "windows": ["main"],
   "permissions": [
     "core:default",

@@ -62,7 +62,7 @@
     "revealed_title": "Soluzione svelata",
     "revealed_text": "Stavolta fuori classifica. La soluzione è sulla griglia, guardala bene!",
     "back": "Torna a {{ group }}",
-    "practice": "Rigiocalo per allenarti"
+    "play_again": "Rigiocalo"
   },
   "author": {
     "title": "Il tuo puzzle",

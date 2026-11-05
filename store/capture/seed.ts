@@ -14,11 +14,11 @@ interface Fixed {
 type Difficulty = 'easy' | 'medium' | 'hard' | 'expert' | 'oni';
 /**
  * The fixed puzzles of the screenshots, from the generator: a daily for every difficulty and a
- * practice board. Solutions in the order of the board's edges (e2e/board.ts `edges`).
+ * board of Play. Solutions in the order of the board's edges (e2e/board.ts `edges`).
  */
 const FIXED = JSON.parse(readFileSync(new URL('./puzzles.json', import.meta.url), 'utf8')) as {
   daily: Record<Difficulty, Fixed>;
-  practice: Fixed & { source: unknown };
+  play: Fixed & { source: unknown };
 };
 
 const MS_PER_DAY = 86_400_000;
@@ -36,7 +36,7 @@ const SCALE: Record<Difficulty, number> = {
 };
 
 /**
- * Today's daily, the fixed one of the weekday's difficulty, and the practice board: the same
+ * Today's daily, the fixed one of the weekday's difficulty, and the board of Play: the same
  * screenshots every run of a weekday.
  */
 export const PUZZLES = {
@@ -45,7 +45,7 @@ export const PUZZLES = {
     ...FIXED.daily[difficulty],
     timeMs: Math.round(124_370 * SCALE[difficulty]),
   },
-  practice: FIXED.practice,
+  play: FIXED.play,
 };
 export const DAILY = PUZZLES.daily;
 /** Days of dailies before today. */

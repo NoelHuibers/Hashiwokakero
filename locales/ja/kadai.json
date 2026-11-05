@@ -62,7 +62,7 @@
     "revealed_title": "答えを表示しました",
     "revealed_text": "今回はランキングに入りません。盤面に答えが出ているので、じっくり見てみよう！",
     "back": "{{ group }}に戻る",
-    "practice": "練習としてもう一度遊ぶ"
+    "play_again": "もう一度遊ぶ"
   },
   "author": {
     "title": "あなたの課題",

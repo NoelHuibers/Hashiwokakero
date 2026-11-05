@@ -1,10 +1,11 @@
-//! Practice-only solver disclosure. The editor keeps its full solver panel visible.
+//! Play-only solver disclosure. The editor keeps its full solver panel visible.
 
 use leptos::prelude::*;
 
 use crate::i18n::{t, use_i18n};
 use crate::state::{load, store};
 
+/// Named after Play's old name, Practice: renaming it would forget every player's choice.
 const OPEN_KEY: &str = "hashi.practice.solver.open";
 
 #[component]

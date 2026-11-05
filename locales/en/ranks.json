@@ -10,7 +10,7 @@
   "later": "Later",
   "today": "Today",
   "missed": "Missed this one? Play it without the clock.",
-  "practice_it": "Practice it",
+  "play_it": "Play it",
   "archive_name": "Daily #{{ number }}",
   "no_puzzle": "Nobody played that day, so there is no puzzle.",
   "fame": {

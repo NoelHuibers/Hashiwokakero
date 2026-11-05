@@ -79,7 +79,7 @@ impl Toasts {
     /// while; in an outdated app (`api::needs_update`) an update.
     ///
     /// In the app, a call that didn't reach the server shows a calm notice instead, once while
-    /// offline: without a network every call fails, and practice works on.
+    /// offline: without a network every call fails, and Play works on.
     ///
     /// Every error is noted for the feedback form's context (`note_error`), its code if it has
     /// one.

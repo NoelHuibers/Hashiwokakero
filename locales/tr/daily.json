@@ -30,7 +30,7 @@
     "revealed_text": "Bu sıralamaya sayılmaz. Yarın görüşürüz!",
     "rank": "Bugünkü sıran: {{ rank }} / {{ total }}",
     "ranking": "Sıralanıyor…",
-    "more": "Pratik modunda daha fazla bulmaca →",
+    "more": "Daha fazla bulmaca oyna →",
     "on_board": "Sıralamadaki adın: <b>{{ name }}</b>",
     "claim": "Serini her cihazda korumak için adını sahiplen →",
     "points": "Aylık yarışta +{{ points }} puan"
@@ -76,9 +76,9 @@
     "next_q": "Yeni günlük bulmaca ne zaman çıkar?",
     "next_a": "Her gün UTC gece yarısı, tüm dünyada aynı anda. Bu sayfadaki geri sayım, bir sonrakine ne kadar kaldığını gösterir.",
     "more_q": "Daha fazlasını nerede oynayabilirim?",
-    "more_a": "<practice>Pratik</practice> bölümünde: 7×7’den 24×24’e beş boyutta sınırsız bulmaca, istediğin zaman ipucuyla. Ya da <workshop>atölyede</workshop> kendi bulmacalarını yap.",
+    "more_a": "<play>Oyna</play> bölümünde: 7×7’den 24×24’e beş boyutta sınırsız bulmaca, istediğin zaman ipucuyla. Ya da <workshop>atölyede</workshop> kendi bulmacalarını yap.",
     "to_rules": "Hashiwokakero kuralları ve çözüm ipuçları →",
-    "to_practice": "Pratik: sınırsız bulmaca →"
+    "to_play": "Oyna: sınırsız bulmaca →"
   },
   "recovery": {
     "metadata_error": "Bugünün bulmacası yüklenemedi. Tekrar deneyin.",

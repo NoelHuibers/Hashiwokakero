@@ -4,8 +4,8 @@
 //! The page calls `window.__TAURI_INTERNALS__.invoke`, which Tauri's `WebView` defines, without
 //! Tauri's npm package:
 //!
-//! - the app's commands, called like server functions: the offline practice runs the server
-//!   functions of `puzzle.rs` on the phone itself (see `practice`). A command takes the server
+//! - the app's commands, called like server functions: offline, Play runs the server
+//!   functions of `puzzle.rs` on the phone itself (see `compute`). A command takes the server
 //!   function's JSON body as one string `args` and answers with the JSON of its answer, also a
 //!   string: JavaScript's numbers would round the 64-bit seeds of `GenerateParams`. It fails with
 //!   the server function's error text, `E:<code>` included (`ApiError`);

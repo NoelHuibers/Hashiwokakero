@@ -1,5 +1,5 @@
 // The debug build on an iOS simulator with hashi.rs blocked: it starts in its WKWebView, every
-// page keeps to the content security policy of tauri.conf.json, practice runs on the phone
+// page keeps to the content security policy of tauri.conf.json, Play runs on the phone
 // through the app's commands, the pages that need the server say once that the app is offline,
 // and links out of the app and other sites' pages open in Safari. Like e2e/android/smoke.spec.ts,
 // as far as iOS has it (no back button): the header and the tab bar clear the safe areas, upright
@@ -15,7 +15,7 @@ import { NATIVE } from './webdriver.ts';
 /** The toasts on the screen, by their kind's mark (src/components/layout/toaster.rs). */
 const TOASTS = '[role=log] > div';
 const errorToasts = (app: App) => app.count(TOASTS, '✕');
-const offlineNotices = (app: App) => app.count(TOASTS, "You're offline. Practice still works.");
+const offlineNotices = (app: App) => app.count(TOASTS, "You're offline. Play still works.");
 
 /** The first board of the app (e2e/board.ts), its islands and its bridges. */
 const islands = (app: App) =>
@@ -39,8 +39,8 @@ const layout = (app: App) =>
 const shows = (app: App, text: string) =>
   app.evaluate((t) => document.body.innerText.includes(t), text);
 
-/** The practice board with a puzzle, done growing, its fonts loaded. */
-async function practiceBoard(app: App) {
+/** The board of Play with a puzzle, done growing, its fonts loaded. */
+async function playBoard(app: App) {
   await expect.poll(() => islands(app), { message: 'the islands' }).toBeGreaterThan(0);
   await expect
     .poll(() => shows(app, 'Growing islands'), { message: 'the generator done' })
@@ -51,7 +51,7 @@ async function practiceBoard(app: App) {
 test('the app starts in its WebView, offline', async ({ app }) => {
   // The start page, `tauri://localhost` without a path
   expect((await app.url()).replace(/\/$/, '')).toBe(ORIGIN);
-  // Tauri's bridge, which the practice takes for its commands (src/api/native.rs)
+  // Tauri's bridge, which Play takes for its commands (src/api/native.rs)
   expect(await app.evaluate(() => typeof (window as TauriWindow).__TAURI_INTERNALS__?.invoke)).toBe(
     'function',
   );
@@ -73,7 +73,7 @@ const PAGES = [
   '/',
   '/rules',
   '/ja/rules',
-  '/practice',
+  '/play',
   '/create',
   '/lab',
   '/dojo',
@@ -96,11 +96,11 @@ test('no page breaks the content security policy', async ({ app }) => {
   expect(found, 'securitypolicyviolation events').toEqual({});
 });
 
-test('practice generates, hints and checks on the phone', async ({ app }) => {
-  await app.visit('/practice');
+test('Play generates, hints and checks on the phone', async ({ app }) => {
+  await app.visit('/play');
   // The first visit generates a puzzle by itself, without the server
-  await practiceBoard(app);
-  await app.screenshot('practice.png');
+  await playBoard(app);
+  await app.screenshot('play.png');
 
   await app.click({ css: 'button', name: 'Hint' });
   await expect.poll(() => bridges(app), { message: 'the hint' }).toBe(1);
@@ -229,13 +229,13 @@ async function turn(app: App, orientation: 'LANDSCAPE' | 'PORTRAIT') {
 // (step 13c). The status bar's icons follow the page's theme, not the phone's (light here): the
 // screenshots show them.
 for (const theme of ['light', 'dark'] as const) {
-  test(`the practice board clears the safe areas, ${theme}`, async ({ app }) => {
+  test(`the board of Play clears the safe areas, ${theme}`, async ({ app }) => {
     await app.evaluate((t) => localStorage.setItem('hashi.theme', t), theme);
-    await app.visit('/practice');
-    await practiceBoard(app);
+    await app.visit('/play');
+    await playBoard(app);
     await app.evaluate(() => window.scrollTo(0, 0));
     await expect.poll(() => app.count(TOASTS)).toBe(0);
-    await app.screenshot(`practice-${theme}.png`);
+    await app.screenshot(`play-${theme}.png`);
     const at = await geometry(app);
     test.info().annotations.push({
       type: 'insets',
@@ -255,8 +255,8 @@ for (const theme of ['light', 'dark'] as const) {
 test('turned sideways, the page clears the Dynamic Island and the home indicator', async ({
   app,
 }) => {
-  await app.visit('/practice');
-  await practiceBoard(app);
+  await app.visit('/play');
+  await playBoard(app);
   await turn(app, 'LANDSCAPE');
   try {
     await expect

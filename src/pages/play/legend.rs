@@ -1,4 +1,4 @@
-//! The legend next to the practice board: the two kinds of bridge and the controls.
+//! The legend next to the board of Play: the two kinds of bridge and the controls.
 
 use common::{Board, Pos, Puzzle};
 use leptos::prelude::*;
@@ -26,7 +26,7 @@ pub(super) fn LegendCard() -> impl IntoView {
         <Card class="gap-3">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-base">
-                    {t!(i18n, practice.legend.title)} <span class="font-pixel text-sm text-primary">"操作"</span>
+                    {t!(i18n, play.legend.title)} <span class="font-pixel text-sm text-primary">"操作"</span>
                 </CardTitle>
             </CardHeader>
             <CardContent class="flex flex-col gap-3 text-sm">
@@ -38,7 +38,7 @@ pub(super) fn LegendCard() -> impl IntoView {
                             mode=BoardMode::View
                             max_height="2.6rem"
                         />
-                        <span class="text-xs text-muted-foreground">"1 · " {t!(i18n, practice.legend.single)}</span>
+                        <span class="text-xs text-muted-foreground">"1 · " {t!(i18n, play.legend.single)}</span>
                     </div>
                     <div class="flex flex-col items-center gap-1">
                         <BoardView
@@ -47,13 +47,13 @@ pub(super) fn LegendCard() -> impl IntoView {
                             mode=BoardMode::View
                             max_height="2.6rem"
                         />
-                        <span class="text-xs text-muted-foreground">"2 · " {t!(i18n, practice.legend.double)}</span>
+                        <span class="text-xs text-muted-foreground">"2 · " {t!(i18n, play.legend.double)}</span>
                     </div>
                 </div>
                 <ul class="flex flex-col gap-1.5 text-muted-foreground">
-                    <li>{t!(i18n, practice.legend.build)}</li>
-                    <li>{t!(i18n, practice.legend.again)}</li>
-                    <li>{t!(i18n, practice.legend.remove, <kbd> = <Kbd />)}</li>
+                    <li>{t!(i18n, play.legend.build)}</li>
+                    <li>{t!(i18n, play.legend.again)}</li>
+                    <li>{t!(i18n, play.legend.remove, <kbd> = <Kbd />)}</li>
                     <li>
                         <Kbd>"Ctrl Z"</Kbd> " " {t!(i18n, common.game.undo)} " · " <Kbd>"Ctrl Y"</Kbd> " "
                         {t!(i18n, common.game.redo)} " · " <Kbd>"H"</Kbd> " " {t!(i18n, common.game.hint)}

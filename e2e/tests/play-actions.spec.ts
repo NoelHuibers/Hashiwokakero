@@ -1,11 +1,11 @@
-// The practice page on a phone: the board and its actions above the tab bar, one row of actions
+// Play on a phone: the board and its actions above the tab bar, one row of actions
 // in every language, and the rarer ones behind the "more" button.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { Page } from '@playwright/test';
 
-import { board, edges, PRACTICE_KEY, saved, seedGame } from '../board.ts';
+import { board, edges, PLAY_KEY, saved, seedGame } from '../board.ts';
 import { ROOT } from '../env.ts';
 import { expect, test, visit } from '../fixtures.ts';
 import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
@@ -32,7 +32,7 @@ function actions(page: Page, locale: string) {
     redo: button(game.redo),
     check: button(new RegExp(`^${game.check}`)),
     hint: button(new RegExp(`^${game.hint}`)),
-    more: button(messages(locale, 'practice').more),
+    more: button(messages(locale, 'play').more),
   };
 }
 
@@ -52,8 +52,8 @@ test.describe('on a phone', () => {
     test(`the board and every game action fit above the tab bar without scrolling in ${locale}`, async ({
       page,
     }) => {
-      await seedGame(page, PRACTICE_KEY, playing);
-      await visit(page, localized(locale, '/practice'));
+      await seedGame(page, PLAY_KEY, playing);
+      await visit(page, localized(locale, '/play'));
       expect(await page.evaluate(() => scrollY)).toBe(0);
       const bottom = await fold(page);
       const frame = (await board(page).boundingBox())!;
@@ -77,12 +77,12 @@ test.describe('on a phone', () => {
 // The longest names of check and hint (ru, uk, pl) and of the difficulties (uk, nl, ja, vi), long
 // German ones, Arabic from right to left
 for (const locale of ['en', 'de', 'ru', 'uk', 'pl', 'nl', 'vi', 'ja', 'ar']) {
-  test(`the practice page doesn't overflow 320 px and keeps its actions in one row in ${locale}`, async ({
+  test(`Play doesn't overflow 320 px and keeps its actions in one row in ${locale}`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: 320, height: 640 });
-    await seedGame(page, PRACTICE_KEY, playing);
-    await visit(page, localized(locale, '/practice'));
+    await seedGame(page, PLAY_KEY, playing);
+    await visit(page, localized(locale, '/play'));
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       320,
     );
@@ -111,12 +111,12 @@ for (const locale of ['en', 'de', 'ru', 'uk', 'pl', 'nl', 'vi', 'ja', 'ar']) {
 test('the more button discloses restart and a new puzzle, by keyboard and pointer', async ({
   page,
 }) => {
-  await seedGame(page, PRACTICE_KEY, {
+  await seedGame(page, PLAY_KEY, {
     ...playing,
     bridges: LADDER_SOLUTION.map((b, e) => (e === 0 ? b : 0)),
     moves: 1,
   });
-  await visit(page, '/practice');
+  await visit(page, '/play');
   const { more, undo, redo, check, hint } = actions(page, 'en');
   const restart = page.getByRole('button', { name: 'Restart' });
   const fresh = page.getByRole('button', { name: /^New puzzle/ });
@@ -158,7 +158,7 @@ test('the more button discloses restart and a new puzzle, by keyboard and pointe
   await expect(restart).toBeHidden();
   await expect(board(page).locator('g.bridge:not(.ghost)')).toHaveCount(0);
   await expect
-    .poll(async () => (await saved(page, PRACTICE_KEY)).bridges.every((b) => b === 0))
+    .poll(async () => (await saved(page, PLAY_KEY)).bridges.every((b) => b === 0))
     .toBe(true);
 
   // A new puzzle of the difficulty picked in the card
@@ -171,7 +171,7 @@ test('the more button discloses restart and a new puzzle, by keyboard and pointe
   await fresh.click();
   await expect(fresh).toBeHidden();
   await expect
-    .poll(async () => JSON.stringify((await saved(page, PRACTICE_KEY)).puzzle.islands))
+    .poll(async () => JSON.stringify((await saved(page, PLAY_KEY)).puzzle.islands))
     .not.toBe(JSON.stringify(LADDER.islands));
   await expect(page.getByText(/^Easy 7×7$/)).toBeVisible();
 });

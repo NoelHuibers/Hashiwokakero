@@ -1,5 +1,5 @@
 // The debug APK on a device without a network: it starts, every page keeps to the content
-// security policy of tauri.conf.json, practice runs on the phone through the app's commands,
+// security policy of tauri.conf.json, Play runs on the phone through the app's commands,
 // the pages that need the server say once that the app is offline, and Android's back button
 // goes back in the app. What only a phone shows: the header and the tab bar clear the system
 // bars, whose icons follow the page's theme, the app starts without a white frame, links out
@@ -10,7 +10,7 @@ import path from 'node:path';
 
 import type { AndroidDevice, Page } from '@playwright/test';
 
-import { board, PRACTICE_KEY } from '../board.ts';
+import { board, PLAY_KEY } from '../board.ts';
 import { LADDER, LADDER_SOLUTION } from '../puzzles.ts';
 import type { TauriWindow } from '../tauri.ts';
 import {
@@ -39,7 +39,7 @@ import {
 const toasts = (page: Page) => page.locator('[role=log] > div');
 const errorToasts = (page: Page) => toasts(page).filter({ hasText: '✕' });
 const offlineNotice = (page: Page) =>
-  toasts(page).filter({ hasText: "You're offline. Practice still works." });
+  toasts(page).filter({ hasText: "You're offline. Play still works." });
 
 const islands = (page: Page) => board(page).locator('g.island');
 const bridges = (page: Page) => board(page).locator('g.bridge:not(.ghost)');
@@ -62,7 +62,7 @@ function apiCalls(page: Page) {
 
 test('the app starts in its WebView, offline', async ({ page }) => {
   expect(new URL(page.url()).origin).toBe(ORIGIN);
-  // Tauri's bridge, which the practice takes for its commands (src/api/native.rs)
+  // Tauri's bridge, which Play takes for its commands (src/api/native.rs)
   expect(
     await page.evaluate(() => typeof (window as TauriWindow).__TAURI_INTERNALS__?.invoke),
   ).toBe('function');
@@ -78,7 +78,7 @@ const PAGES = [
   '/',
   '/rules',
   '/ja/rules',
-  '/practice',
+  '/play',
   '/create',
   '/lab',
   '/dojo',
@@ -108,14 +108,14 @@ test('no page breaks the content security policy', async ({ page, problems }) =>
   problems.splice(0, problems.length, ...problems.filter((p) => !p.startsWith('CSP:')));
 });
 
-test('practice generates, hints and checks on the phone', async ({ page, device }) => {
+test('Play generates, hints and checks on the phone', async ({ page, device }) => {
   const calls = apiCalls(page);
-  await visit(page, '/practice');
+  await visit(page, '/play');
   // The first visit generates a puzzle by itself, without the server: the device is offline
   await expect(islands(page).first()).toBeVisible();
   await expect(page.getByText('Growing islands')).toBeHidden();
   await page.evaluate(() => document.fonts.ready);
-  await device.screenshot({ path: path.join(SCREENS, 'practice.png') });
+  await device.screenshot({ path: path.join(SCREENS, 'play.png') });
 
   await page.getByRole('button', { name: 'Hint', exact: true }).click();
   await expect(bridges(page)).toHaveCount(1);
@@ -158,8 +158,8 @@ test('pages that need the server say once that the app is offline', async ({ pag
 
 test("Android's back button goes back in the app", async ({ page, device }) => {
   await visit(page, '/rules');
-  await page.locator('a[href="/practice"]').filter({ visible: true }).first().click();
-  await expect(page).toHaveURL(/\/practice$/);
+  await page.locator('a[href="/play"]').filter({ visible: true }).first().click();
+  await expect(page).toHaveURL(/\/play$/);
   await expect(islands(page).first()).toBeVisible();
 
   await closeSystemDialogs(device);
@@ -189,7 +189,7 @@ for (const theme of ['light', 'dark'] as const) {
   test(`the header and the tab bar clear the system bars, ${theme}`, async ({ page, device }) => {
     // The page's theme, whatever the phone's
     await page.evaluate((t) => localStorage.setItem('hashi.theme', t), theme);
-    await visit(page, '/practice');
+    await visit(page, '/play');
     await expect(islands(page).first()).toBeVisible();
     await expect(page.getByText('Growing islands')).toBeHidden();
     await page.evaluate(() => document.fonts.ready);
@@ -199,7 +199,7 @@ for (const theme of ['light', 'dark'] as const) {
     await closeSystemDialogs(device);
     // biome-ignore lint/suspicious/noPlaywrightWaitForTimeout: lets the device settle before its screenshot; nothing marks the end
     await page.waitForTimeout(500);
-    await device.screenshot({ path: path.join(SCREENS, `practice-${theme}.png`) });
+    await device.screenshot({ path: path.join(SCREENS, `play-${theme}.png`) });
 
     const bars = await systemBars(device);
     const page_ = await page.evaluate(() => {
@@ -352,14 +352,14 @@ test('links out of the app open outside it', async ({ page, device }) => {
 });
 
 test("sharing opens Android's share sheet, copying works", async ({ page, device }) => {
-  // A practice puzzle solved: its win screen has the share bar
+  // A puzzle of Play solved: its win screen has the share bar
   await page.evaluate(
     ([key, game]) => {
       localStorage.setItem(key, game);
       localStorage.setItem('hashi.practice.solver.open', 'true');
     },
     [
-      PRACTICE_KEY,
+      PLAY_KEY,
       JSON.stringify({
         puzzle: LADDER,
         bridges: LADDER_SOLUTION,
@@ -373,7 +373,7 @@ test("sharing opens Android's share sheet, copying works", async ({ page, device
       }),
     ] as const,
   );
-  await visit(page, '/practice');
+  await visit(page, '/play');
   await expect(page.getByRole('heading', { name: /Well done!/ })).toBeVisible();
 
   // The clipboard of the WebView itself, on a tap
@@ -404,7 +404,7 @@ test("sharing opens Android's share sheet, copying works", async ({ page, device
   await chooser('the CNF');
   const cnf = await shell(device, `run-as ${PKG} cat cache/share/hashi.cnf`);
   expect(cnf).toMatch(/^p cnf \d+ \d+/m);
-  expect(page.url()).toBe(`${ORIGIN}/practice`);
+  expect(page.url()).toBe(`${ORIGIN}/play`);
 });
 
 test('the focused input stays above the soft keyboard', async ({ page, device }) => {

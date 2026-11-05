@@ -24,7 +24,7 @@ export interface SavedGame {
   hints: number;
 }
 
-export const PRACTICE_KEY = 'hashi.game.v2';
+export const PLAY_KEY = 'hashi.game.v2';
 export const DAILY_KEY = 'hashi.daily.v1';
 
 /** The edges of a puzzle in the order of `Board::new` (common/src/board.rs): the island pairs. */
@@ -51,7 +51,7 @@ export function edges(puzzle: Puzzle): [number, number][] {
   return list;
 }
 
-/** The first board of the page, the practice legend below it draws small ones. */
+/** The first board of the page, the legend of Play below it draws small ones. */
 export const board = (page: Page): Locator => page.locator('svg.board-svg').first();
 
 export async function saved(page: Page, key: string): Promise<SavedGame> {

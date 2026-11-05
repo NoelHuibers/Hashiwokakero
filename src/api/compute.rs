@@ -1,6 +1,6 @@
-//! Generating and solving for practice, the editor and the lab, in the app on the phone itself.
+//! Generating and solving for Play, the editor and the lab, in the app on the phone itself.
 //!
-//! In the app the phone computes, without the network (the offline practice, `native`); on the
+//! In the app the phone computes, without the network (`native`: Play works offline); on the
 //! website the server functions of `puzzle.rs` do. The app's commands run the same `backend` functions with the same
 //! limits, so the answers are the same: a seed gives the same puzzle either way.
 //!
@@ -195,9 +195,9 @@ mod tests {
         let mut other = puzzle();
         other.islands[0].required = 1;
         assert!(!locked(&other, &daily(TODAY, Status::Playing)));
-        // A practice game isn't a daily, nor is nothing saved
-        let practice = (puzzle(), Source::Custom, Status::Playing);
-        assert!(!locked(&puzzle(), &practice));
+        // A game of Play isn't a daily, nor is nothing saved
+        let play = (puzzle(), Source::Custom, Status::Playing);
+        assert!(!locked(&puzzle(), &play));
         assert!(!daily_locked(&puzzle(), None, TODAY));
     }
 

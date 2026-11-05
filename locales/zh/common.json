@@ -1,7 +1,7 @@
 {
   "nav": {
     "daily": "每日",
-    "practice": "练习",
+    "play": "畅玩",
     "ranks": "排行",
     "create": "创作",
     "lab": "实验室",
@@ -56,7 +56,7 @@
     "copy_failed": "无法复制到剪贴板。",
     "reload": "刷新",
     "update": "更新",
-    "offline": "你已离线。练习仍可使用。"
+    "offline": "你已离线，仍然可以畅玩。"
   },
   "errors": {
     "unknown": "出错了：{{ detail }}",
@@ -64,7 +64,7 @@
     "app_outdated": "此版本的应用过旧，请更新后继续在线游戏。",
     "database": "数据库没有响应，请重试。",
     "internal": "服务器出了点问题，请重试。",
-    "archive_only_past": "只能练习以前的每日谜题。",
+    "archive_only_past": "只能畅玩以前的每日谜题。",
     "password_too_short": "密码至少需要 8 个字符。",
     "password_too_long": "密码最多 128 个字符。",
     "username_invalid": "用户名需 3 到 20 个字符：字母、数字、_ 和 -。",

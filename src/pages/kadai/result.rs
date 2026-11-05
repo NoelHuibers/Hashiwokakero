@@ -17,12 +17,12 @@ use crate::state::{Game, Source};
 use super::replay::ReplayLink;
 use super::state::Play;
 
-/// Loads a finished puzzle into the practice board, to play it again for fun.
+/// Loads a finished puzzle into the board of Play, to play it again for fun.
 #[component]
-pub fn PracticeLink(play: Play) -> impl IntoView {
+pub fn PlayAgainLink(play: Play) -> impl IntoView {
     let i18n = use_i18n();
-    let practice_path = use_localized("/practice");
-    let practice = expect_context::<Game>();
+    let play_path = use_localized("/play");
+    let game = expect_context::<Game>();
     let navigate = use_navigate();
     let go = move |_| {
         let Some((puzzle, title)) = play.page.with_untracked(|p| {
@@ -37,8 +37,8 @@ pub fn PracticeLink(play: Play) -> impl IntoView {
         let solution = play
             .page
             .with_untracked(|p| p.as_ref().and_then(|p| p.solution.clone()));
-        practice.set_puzzle(puzzle, solution, Some(true), Source::Imported(title));
-        navigate(&practice_path(), NavigateOptions::default());
+        game.set_puzzle(puzzle, solution, Some(true), Source::Imported(title));
+        navigate(&play_path(), NavigateOptions::default());
     };
     view! {
         <button
@@ -46,7 +46,7 @@ pub fn PracticeLink(play: Play) -> impl IntoView {
             class="inline-flex min-h-10 items-center justify-center text-sm text-primary underline-offset-4 hover:underline"
             on:click=go
         >
-            {t!(i18n, kadai.result.practice)}
+            {t!(i18n, kadai.result.play_again)}
         </button>
     }
 }
@@ -135,7 +135,7 @@ pub fn ResultCard(play: Play) -> impl IntoView {
                     let ids = play.page.with(|p| p.as_ref().map(|p| (p.group_id, p.summary.id)));
                     ids.map(|(group, puzzle)| view! { <ReplayLink group puzzle /> })
                 }}
-                <PracticeLink play />
+                <PlayAgainLink play />
             </div>
         </Card>
     }
