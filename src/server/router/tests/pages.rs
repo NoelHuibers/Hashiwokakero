@@ -25,7 +25,7 @@ use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 28] = [
+const PAGES: [(&str, &str); 29] = [
     ("/", "/"),
     ("/play", "/play"),
     ("/ranks", "/ranks"),
