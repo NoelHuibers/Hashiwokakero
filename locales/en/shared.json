@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "{{ name }}'s Hashi puzzle",
+    "title_anonymous": "A shared Hashi puzzle",
+    "time": "{{ name }} solved this {{ size }} Hashiwokakero puzzle in {{ time }}. Can you beat that? Free, in the browser.",
+    "untimed": "{{ name }} built this {{ size }} Hashiwokakero puzzle. Can you solve it? Free, in the browser.",
+    "anonymous": "A {{ size }} Hashiwokakero puzzle with exactly one solution. Can you solve it? Free, in the browser."
+  },
+  "page": {
+    "title": "{{ name }}'s puzzle",
+    "title_anonymous": "A shared puzzle",
+    "by": "Shared by {{ name }}",
+    "by_blocked": "Shared by a blocked player",
+    "by_former": "Shared by a former player",
+    "to_beat": "Time to beat",
+    "untimed": "Made in the workshop: be the first to set a time.",
+    "missing": "This link doesn't lead to a puzzle.",
+    "missing_hint": "Maybe it wasn't copied whole. Or play a fresh puzzle instead.",
+    "to_play": "Play a new puzzle",
+    "offline": "Shared puzzles live on the server: this one needs the network.",
+    "offline_hint": "Connect and try again. New puzzles work offline in the meantime.",
+    "retry": "Try again",
+    "submit_failed": "Your time didn't reach the server.",
+    "submit_retry": "Send it again"
+  },
+  "result": {
+    "title": "Solved!",
+    "first": "Your time: <b>{{ time }}</b>, place {{ rank }} of {{ total }}.",
+    "again": "Solved again in <b>{{ time }}</b>. Only your first solve counts: <b>{{ first }}</b> stays on the board.",
+    "beat": "You beat {{ name }}!",
+    "again_button": "Play it again"
+  },
+  "board": {
+    "title": "Everyone who solved it",
+    "text": "Fastest first, each hint adds 30 s. Only a player's first solve counts.",
+    "empty": "Nobody has solved it yet. Be the first!",
+    "sharer": "shared it",
+    "solvers": "Solvers: {{ count }}"
+  },
+  "share": {
+    "button": "Share this puzzle",
+    "making": "Making the link…",
+    "link": "Link to the puzzle",
+    "send": "Send the link",
+    "time": "I solved this Hashi puzzle in {{ time }}. Can you beat me?",
+    "time_hints": "I solved this Hashi puzzle in {{ time }} with {{ hints }} hints (+30 s each). Can you beat me?",
+    "untimed": "I built this Hashi puzzle. Can you solve it?",
+    "failed": "No link this time: {{ error }}"
+  },
+  "create": {
+    "title": "Share as a link",
+    "text": "Anyone with the link can play it. You see who solved it, and how fast.",
+    "unchecked": "Once the solver has proven it has exactly one solution, it can be shared."
+  },
+  "og": {
+    "kicker": "A shared puzzle",
+    "beat": "Can you beat {{ time }}?",
+    "solve": "Can you solve it?"
+  }
+}

@@ -53,7 +53,7 @@ const LOCALES = fs.readdirSync(path.join(root, 'locales')).sort();
 const DIGITS = '0123456789';
 
 // What the pixel font draws in every language (src/server/og/card.rs and model/calendar.rs)
-const PIXEL = `Hashi 橋をかけろ · HASHIWOKAKERO hashi.rs #×${DIGITS}月火水木金土日初級中級上級達人鬼`;
+const PIXEL = `Hashi 橋をかけろ · HASHIWOKAKERO hashi.rs #×${DIGITS}月火水木金土日初級中級上級達人鬼共島`;
 
 function strings(lang: string, namespace: string): unknown {
   const file = path.join(root, 'locales', lang, `${namespace}.json`);
@@ -100,9 +100,16 @@ function texts(lang: string): { text: string; title: string } {
     t('weekday'),
     t('month'),
     t('difficulty'),
+    // A shared puzzle's card (`shared_card` in src/server/og/mod.rs)
+    text(lang, 'shared', 'og.kicker'),
     DIGITS,
   ].join(' ');
-  const title = text(lang, 'daily', 'title') + DIGITS;
+  const title = [
+    text(lang, 'daily', 'title'),
+    text(lang, 'shared', 'og.beat'),
+    text(lang, 'shared', 'og.solve'),
+    `${DIGITS}:`,
+  ].join(' ');
   const strip = (s: string) => s.replace(/\{\{[^}]*\}\}/g, '');
   return { text: strip(all), title: strip(title) };
 }

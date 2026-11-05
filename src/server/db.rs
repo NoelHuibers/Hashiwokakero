@@ -643,6 +643,46 @@ CREATE TRIGGER group_races_gone AFTER DELETE ON groups BEGIN
     DELETE FROM group_races WHERE group_id = OLD.id;
 END;
 ",
+    // 28
+    "
+-- Shared puzzles (/p/<code>), see server/shares.rs. The puzzle once, found by the SHA-256 of its
+-- layout (`hash`), with the solution the server proved to be the only one
+CREATE TABLE IF NOT EXISTS shared_puzzles (
+    id         INTEGER PRIMARY KEY,
+    hash       TEXT NOT NULL UNIQUE,
+    puzzle     TEXT NOT NULL,
+    solution   TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+-- A player's link to a puzzle, one per puzzle and player (two after a guest's moved to their
+-- account). user_id NULL: they deleted their account, the link works on without a name
+CREATE TABLE IF NOT EXISTS puzzle_shares (
+    id         INTEGER PRIMARY KEY,
+    code       TEXT NOT NULL UNIQUE,
+    puzzle_id  INTEGER NOT NULL,
+    user_id    INTEGER,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS puzzle_shares_user ON puzzle_shares (user_id, created_at);
+CREATE INDEX IF NOT EXISTS puzzle_shares_puzzle ON puzzle_shares (puzzle_id);
+-- A player's first solve of a shared puzzle, through the link `share_id` (the sharer's own solve
+-- through theirs); solving it again changes nothing. Times are Play's clock, score_ms the time
+-- with 30 s per hint, what the board ranks by
+CREATE TABLE IF NOT EXISTS shared_results (
+    puzzle_id   INTEGER NOT NULL,
+    user_id     INTEGER NOT NULL,
+    share_id    INTEGER NOT NULL,
+    time_ms     INTEGER NOT NULL,
+    moves       INTEGER NOT NULL,
+    hints       INTEGER NOT NULL,
+    score_ms    INTEGER NOT NULL,
+    finished_at INTEGER NOT NULL,
+    PRIMARY KEY (puzzle_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS shared_results_board ON shared_results (puzzle_id, score_ms, finished_at);
+CREATE INDEX IF NOT EXISTS shared_results_user ON shared_results (user_id);
+CREATE INDEX IF NOT EXISTS shared_results_share ON shared_results (share_id, user_id);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

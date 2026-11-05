@@ -63,6 +63,42 @@ fn images_are_pngs_of_1200_by_630_small_enough_for_whatsapp() {
     }
 }
 
+/// A small puzzle and a big one, the most a card of a shared puzzle draws.
+fn shared(locale: Locale, score_ms: Option<i64>, side: u8) -> SharedCard {
+    let generated = backend::api::generate(&GenerateParams {
+        width: side,
+        height: side,
+        difficulty: Difficulty::Hard,
+        seed: 7,
+    });
+    SharedCard {
+        locale,
+        puzzle: generated.puzzle,
+        score_ms,
+    }
+}
+
+#[test]
+fn shared_puzzles_have_cards_of_their_own() {
+    for card in [
+        shared(Locale::en, Some(133_000), 7),
+        shared(Locale::ar, None, 30),
+    ] {
+        let png = render_shared(&card).unwrap();
+        assert_eq!(png_size(&png), (WIDTH, HEIGHT));
+        assert!(png.len() < 300 * 1024, "{} bytes", png.len());
+    }
+    let Content::Daily { title, size, .. } =
+        shared_card(&shared(Locale::en, Some(133_000), 7)).content
+    else {
+        unreachable!()
+    };
+    assert_eq!(
+        (title.as_str(), size.as_str()),
+        ("Can you beat 02:13?", "7×7")
+    );
+}
+
 /// Every language's cards in its fonts, without a single empty box. When this fails after a
 /// translation changed, `pnpm run og-fonts` cuts the fonts to the new texts.
 #[test]
@@ -72,6 +108,15 @@ fn every_language_has_the_glyphs_of_its_cards() {
         assert!(missing.is_empty(), "{locale:?}: {missing:?}");
         let missing = missing_glyphs(&text_card(Image::Daily(locale, LAUNCH_DAY + 3)));
         assert!(missing.is_empty(), "{locale:?} daily: {missing:?}");
+        for score in [Some(3_723_000), None] {
+            let mut card = shared_card(&shared(locale, score, 7));
+            card.board = BoardArt {
+                content: String::new(),
+                view_box: [0, 0, 16, 16],
+            };
+            let missing = missing_glyphs(&card::svg(&card, &FONTS, &FONTS.options()));
+            assert!(missing.is_empty(), "{locale:?} shared: {missing:?}");
+        }
     }
 }
 
@@ -335,6 +380,11 @@ fn samples() {
         for day in [today, today + 4] {
             let png = render(Image::Daily(locale, day)).unwrap();
             let name = format!("daily-{}-{}.png", date_string(day), locale.as_str());
+            std::fs::write(dir.join(name), png).unwrap();
+        }
+        for (score, side) in [(Some(133_000), 7), (None, 14)] {
+            let png = render_shared(&shared(locale, score, side)).unwrap();
+            let name = format!("shared-{side}-{}.png", locale.as_str());
             std::fs::write(dir.join(name), png).unwrap();
         }
     }

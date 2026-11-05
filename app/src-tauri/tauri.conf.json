@@ -63,7 +63,10 @@
             "/de/player/", "/fr/player/", "/it/player/", "/es/player/", "/pt/player/", "/nl/player/",
             "/pl/player/", "/tr/player/", "/ru/player/", "/uk/player/", "/ar/player/", "/hi/player/",
             "/id/player/", "/vi/player/", "/th/player/", "/ja/player/", "/ko/player/", "/zh/player/",
-            "/zh-Hant/player/"
+            "/zh-Hant/player/",
+            "/p/", "/de/p/", "/fr/p/", "/it/p/", "/es/p/", "/pt/p/", "/nl/p/", "/pl/p/", "/tr/p/",
+            "/ru/p/", "/uk/p/", "/ar/p/", "/hi/p/", "/id/p/", "/vi/p/", "/th/p/", "/ja/p/",
+            "/ko/p/", "/zh/p/", "/zh-Hant/p/"
           ]
         }
       ]

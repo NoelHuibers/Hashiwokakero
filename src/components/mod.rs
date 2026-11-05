@@ -8,6 +8,7 @@ pub mod record;
 pub mod rivals;
 pub mod rules;
 pub mod share;
+pub mod share_puzzle;
 pub mod solver_panel;
 pub mod sprites;
 pub mod stamps;

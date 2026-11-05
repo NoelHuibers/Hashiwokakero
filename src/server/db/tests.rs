@@ -246,6 +246,18 @@ async fn write_rows(conn: &Connection, version: usize) {
         "#)
         .await;
     }
+    if version >= 28 {
+        // noel shared a puzzle he solved, the guest solved it through his link
+        run(r#"
+            INSERT INTO shared_puzzles (id, hash, puzzle, solution, created_at)
+                VALUES (1, 'ab', '{"width":3,"height":3,"islands":[]}', '[2,1]', 9800);
+            INSERT INTO puzzle_shares (id, code, puzzle_id, user_id, created_at)
+                VALUES (1, 'k7m2xq9a', 1, 1, 9800);
+            INSERT INTO shared_results (puzzle_id, user_id, share_id, time_ms, moves, hints, score_ms, finished_at)
+                VALUES (1, 1, 1, 61000, 3, 0, 61000, 9800), (1, 2, 1, 50000, 2, 1, 80000, 9900);
+        "#)
+        .await;
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -266,7 +278,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        27,
+        28,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -500,6 +512,13 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM account_tokens WHERE used_at IS NULL AND email IS NULL AND ip_hash IS NULL",
                 i64::from(version >= 26),
+            ),
+            // Another player solved noel's shared puzzle through his link
+            (
+                "SELECT COUNT(DISTINCT r.user_id) FROM puzzle_shares s
+                 JOIN shared_results r ON r.share_id = s.id AND r.user_id != s.user_id
+                 WHERE s.user_id = 1",
+                i64::from(version >= 28),
             ),
         ];
         for (sql, expected) in defaults {
