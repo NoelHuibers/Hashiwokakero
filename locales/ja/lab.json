@@ -5,6 +5,17 @@
   },
   "title": "ソルバーラボ",
   "intro": "ひとつのパズルを、自作のCDCL・DPLLソルバーのさまざまなモード（分岐ヒューリスティック、リスタート方式、包含除去）で競わせ、splrと比べます。",
+  "section": {
+    "intro": "SATソルバーを書く人のために。用意したソルバーどうしをパズルで競わせるもよし、自作をWebAssemblyにしてSAT道場のランキングを登るもよし。"
+  },
+  "tabs": {
+    "label": "ラボのタブ",
+    "race": "レース",
+    "leaderboard": "ランキング",
+    "submit": "提出",
+    "benchmarks": "ベンチマーク",
+    "seasons": "シーズン"
+  },
   "puzzle": {
     "title": "1 · パズル",
     "size": "{{ width }}×{{ height }}、島 {{ count }}個",

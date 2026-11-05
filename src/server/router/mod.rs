@@ -296,8 +296,8 @@ async fn cache_control(hash_files: bool, req: Request, next: Next) -> Response {
 /// The page a URL of another spelling is, for a permanent redirect: without a trailing slash
 /// (`/rules/` is `/rules`, `/de/` is `/de`), without `/en`, the default language, which has
 /// no prefix (`/en/rules` is `/rules`), and at the new address of a page that moved
-/// (`/de/practice` is `/de/play`, see `seo::MOVED_PAGES`). The query stays. These were 404s (the
-/// slash), a second URL of the same page (`/en`) or the page's old URL, which search engines and
+/// (`/de/practice` is `/de/play`, `/dojo/12` is `/lab/solver/12`, see `seo::MOVED_PAGES`). The
+/// query stays. These were 404s (the slash), a second URL of the same page (`/en`) or the page's old URL, which search engines and
 /// shared links may have.
 ///
 /// Only pages: not the server's own paths, where a slash is another file (Apple's and Google's
@@ -371,7 +371,27 @@ mod redirect_tests {
             ("/en/rules", None, "/rules"),
             ("/en/rules/", Some("a=1&b=2"), "/rules?a=1&b=2"),
             ("/en/g/k7m2xq_9", None, "/g/k7m2xq_9"),
-            ("/zh-Hant/dojo/seasons/", None, "/zh-Hant/dojo/seasons"),
+            // The Dojo's pages, now the Lab's tabs, in every spelling
+            ("/dojo", None, "/lab/leaderboard"),
+            ("/dojo", Some("budget=4"), "/lab/leaderboard?budget=4"),
+            ("/dojo/", None, "/lab/leaderboard"),
+            (
+                "/en/dojo",
+                Some("error=name"),
+                "/lab/leaderboard?error=name",
+            ),
+            ("/de/dojo", None, "/de/lab/leaderboard"),
+            ("/zh-Hant/dojo/seasons/", None, "/zh-Hant/lab/seasons"),
+            ("/dojo/seasons", None, "/lab/seasons"),
+            (
+                "/ja/dojo/benchmarks",
+                Some("submitted=3"),
+                "/ja/lab/benchmarks?submitted=3",
+            ),
+            ("/dojo/12", None, "/lab/solver/12"),
+            ("/dojo/12/", None, "/lab/solver/12"),
+            ("/ar/dojo/9102", Some("x=1"), "/ar/lab/solver/9102?x=1"),
+            ("/zh-Hant/lab/seasons/", None, "/zh-Hant/lab/seasons"),
             ("///", None, "/"),
         ] {
             assert_eq!(
@@ -390,6 +410,21 @@ mod redirect_tests {
             ("/ja/play", Some("size=9")),
             ("/practicex", None),
             ("/Practice", None),
+            ("/lab", None),
+            ("/lab/leaderboard", Some("budget=4")),
+            ("/de/lab/solver/12", None),
+            // The Dojo's files and endpoints, which the CLI and the worker call
+            ("/dojo/board.json", None),
+            ("/dojo/seasons.json", None),
+            ("/dojo/seasons/3/set.tar.gz", None),
+            ("/dojo/seasons/3/results.csv", None),
+            ("/dojo/submit", None),
+            ("/dojo/report", None),
+            ("/dojo/benchmarks/submit", None),
+            ("/dojo/benchmark-report", None),
+            ("/dojo/set", Some("id=1&season=2&generator=2")),
+            ("/dojo/house", Some("name=x")),
+            ("/dojo/abc", None),
             // Not English
             ("/english", None),
             ("/enx/rules", None),

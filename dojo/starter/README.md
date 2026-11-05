@@ -1,7 +1,7 @@
 # Hashi SAT Dojo starter
 
-A minimal DPLL solver that speaks the [SAT Dojo](https://hashi.rs/dojo) protocol. Copy this folder,
-make the solver faster, and submit it.
+A minimal DPLL solver that speaks the [SAT Dojo](https://hashi.rs/lab/leaderboard) protocol. Copy this
+folder, make the solver faster, and [submit it](https://hashi.rs/lab/submit).
 
 ```sh
 rustup target add wasm32-wasip1
@@ -84,7 +84,7 @@ and one **mystery family** that the dev set doesn't have, picked by the seed fro
 revealed when the season ends. Tuning your solver to the dev set's families won't be enough, it
 has to generalise (the SAT Competition 2026 raised exactly that after an AI-built solver won with
 over a hundred family-specific sub-solvers). A few **community benchmarks** join it too: formulas
-players brought along (https://hashi.rs/dojo/benchmarks), drawn by the season's seed.
+players brought along (https://hashi.rs/lab/benchmarks), drawn by the season's seed.
 
 ## Testing locally
 
@@ -110,5 +110,5 @@ dojo run my.wasm --checker verified                                # fail if the
 dojo run my.wasm --proofs proofs/                                  # keep every proof file
 ```
 
-Finished seasons are archived at https://hashi.rs/dojo/seasons: the seed of the hidden set (its
+Finished seasons are archived at https://hashi.rs/lab/seasons: the seed of the hidden set (its
 SHA-256 was published when the season started), the set itself and every result per formula.

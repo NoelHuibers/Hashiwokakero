@@ -25,7 +25,7 @@ use crate::seo::{SITE_URL, og_image, rules_faq};
 use crate::server::contact::{MAX_MESSAGE, MIN_MESSAGE};
 
 /// Every route of the app with a URL to request it by.
-const PAGES: [(&str, &str); 29] = [
+const PAGES: [(&str, &str); 30] = [
     ("/", "/"),
     ("/play", "/play"),
     ("/ranks", "/ranks"),
@@ -51,11 +51,12 @@ const PAGES: [(&str, &str); 29] = [
     ("/account/confirm", "/account/confirm"),
     ("/create", "/create"),
     ("/lab", "/lab"),
-    ("/dojo", "/dojo"),
+    ("/lab/leaderboard", "/lab/leaderboard"),
+    ("/lab/submit", "/lab/submit"),
+    ("/lab/benchmarks", "/lab/benchmarks"),
+    ("/lab/seasons", "/lab/seasons"),
+    ("/lab/solver/{id}", "/lab/solver/1"),
     ("/admin", "/admin"),
-    ("/dojo/seasons", "/dojo/seasons"),
-    ("/dojo/benchmarks", "/dojo/benchmarks"),
-    ("/dojo/{id}", "/dojo/1"),
     ("/rules", "/rules"),
     ("/impressum", "/impressum"),
     ("/datenschutz", "/datenschutz"),
@@ -84,6 +85,24 @@ struct Expected {
 
 fn strings<const N: usize>(texts: [&str; N]) -> Vec<String> {
     texts.into_iter().map(String::from).collect()
+}
+
+/// `texts` on a page of the Lab, below the section's header and its tabs
+/// (`pages::lab::LabSection`), which every tab has.
+fn lab_section<const N: usize>(l: Locale, texts: [&str; N]) -> Vec<String> {
+    [
+        td_string!(l, lab.title),
+        td_string!(l, lab.section.intro),
+        td_string!(l, lab.tabs.race),
+        td_string!(l, lab.tabs.leaderboard),
+        td_string!(l, lab.tabs.submit),
+        td_string!(l, lab.tabs.benchmarks),
+        td_string!(l, lab.tabs.seasons),
+    ]
+    .into_iter()
+    .chain(texts)
+    .map(String::from)
+    .collect()
 }
 
 fn hashi(title: &str) -> String {
@@ -397,60 +416,98 @@ fn expected(route: &str, l: Locale) -> Expected {
         },
         "/lab" => Expected {
             title: Some(td_string!(l, lab.meta.title).into()),
-            texts: strings([
-                td_string!(l, lab.title),
-                td_string!(l, lab.intro),
-                td_string!(l, lab.puzzle.title),
-                td_string!(l, lab.puzzle.none),
-                td_string!(l, lab.puzzle.game),
-                td_string!(l, lab.puzzle.workshop),
-                td_string!(l, lab.puzzle.fresh),
-                td_string!(l, lab.solvers.title),
-                td_string!(l, lab.solvers.timeout),
-                td_string!(l, lab.start),
-                td_string!(l, lab.results.title),
-                td_string!(l, lab.results.empty),
-            ]),
+            texts: lab_section(
+                l,
+                [
+                    td_string!(l, lab.intro),
+                    td_string!(l, lab.puzzle.title),
+                    td_string!(l, lab.puzzle.none),
+                    td_string!(l, lab.puzzle.game),
+                    td_string!(l, lab.puzzle.workshop),
+                    td_string!(l, lab.puzzle.fresh),
+                    td_string!(l, lab.solvers.title),
+                    td_string!(l, lab.solvers.timeout),
+                    td_string!(l, lab.start),
+                    td_string!(l, lab.results.title),
+                    td_string!(l, lab.results.empty),
+                ],
+            ),
             nav: Some("/lab"),
             canonical: Some("/lab"),
             ..Expected::default()
         },
-        // The Dojo is being reworked: its title, heading and the parts that wait for data
-        "/dojo" => Expected {
+        // The Dojo's pages, the Lab's tabs: their parts that don't wait for data
+        "/lab/leaderboard" => Expected {
             title: Some(td_string!(l, dojo.meta.title).into()),
-            texts: strings([td_string!(l, dojo.title)]),
-            // The dojo belongs to the lab
+            texts: lab_section(
+                l,
+                [
+                    td_string!(l, dojo.title),
+                    td_string!(l, dojo.intro),
+                    td_string!(l, dojo.cta.submit),
+                    td_string!(l, dojo.board.title),
+                    td_string!(l, dojo.metrics.title),
+                    td_string!(l, dojo.science.title),
+                    loading,
+                ],
+            ),
+            // The visitor's own submissions come in the browser
+            absent: strings([td_string!(l, dojo.mine.title)]),
             nav: Some("/lab"),
-            canonical: Some("/dojo"),
+            canonical: Some("/lab/leaderboard"),
             ..Expected::default()
         },
-        "/dojo/seasons" => Expected {
+        "/lab/submit" => Expected {
+            title: Some(td_string!(l, dojo.submit.meta_title).into()),
+            texts: lab_section(
+                l,
+                [
+                    td_string!(l, dojo.cta.starter),
+                    td_string!(l, dojo.cta.dev_set),
+                    td_string!(l, dojo.how.title),
+                    td_string!(l, dojo.submit.title),
+                    td_string!(l, dojo.family.title),
+                    td_string!(l, dojo.fair.title),
+                    loading,
+                ],
+            ),
+            nav: Some("/lab"),
+            canonical: Some("/lab/submit"),
+            ..Expected::default()
+        },
+        "/lab/seasons" => Expected {
             title: Some(td_string!(l, dojo.seasons.meta_title).into()),
-            texts: strings([
-                td_string!(l, dojo.seasons.back),
-                td_string!(l, dojo.seasons.title),
-                loading,
-            ]),
+            texts: lab_section(
+                l,
+                [
+                    td_string!(l, dojo.seasons.title),
+                    td_string!(l, dojo.seasons.intro),
+                    td_string!(l, dojo.seasons.verify_title),
+                    loading,
+                ],
+            ),
             nav: Some("/lab"),
-            canonical: Some("/dojo/seasons"),
+            canonical: Some("/lab/seasons"),
             ..Expected::default()
         },
-        "/dojo/benchmarks" => Expected {
+        "/lab/benchmarks" => Expected {
             title: Some(td_string!(l, dojo.community.meta_title).into()),
-            texts: strings([
-                td_string!(l, dojo.seasons.back),
-                td_string!(l, dojo.community.title),
-                td_string!(l, dojo.community.form_title),
-                td_string!(l, dojo.community.pool_title),
-                loading,
-            ]),
+            texts: lab_section(
+                l,
+                [
+                    td_string!(l, dojo.community.title),
+                    td_string!(l, dojo.community.form_title),
+                    td_string!(l, dojo.community.pool_title),
+                    loading,
+                ],
+            ),
             nav: Some("/lab"),
-            canonical: Some("/dojo/benchmarks"),
+            canonical: Some("/lab/benchmarks"),
             ..Expected::default()
         },
-        "/dojo/{id}" => Expected {
+        "/lab/solver/{id}" => Expected {
             title: Some(td_string!(l, dojo.meta.title).into()),
-            texts: strings([td_string!(l, dojo.detail.back), loading]),
+            texts: lab_section(l, [td_string!(l, dojo.detail.back), loading]),
             absent: strings([td_string!(l, dojo.detail.not_found)]),
             nav: Some("/lab"),
             // One entry, not indexed (`pages::dojo::submission`)
@@ -721,8 +778,10 @@ async fn every_route_is_tested() {
         .map(|r| route_of(r.path()))
         .collect();
     for (from, _) in crate::seo::MOVED_PAGES {
+        // As axum writes the router's `:id`
+        let from = from.replace(":id", "{id}");
         assert!(
-            routes.remove(*from),
+            routes.remove(&from),
             "{from} is no route of the app's router"
         );
     }

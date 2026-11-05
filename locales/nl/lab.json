@@ -5,6 +5,17 @@
   },
   "title": "Solverlab",
   "intro": "Laat één puzzel racen door onze eigen CDCL- en DPLL-solvers in verschillende modi (vertakkingsheuristieken, herstartstrategieën, subsumptie) en vergelijk ze met splr.",
+  "section": {
+    "intro": "Voor wie SAT-solvers schrijft: laat de onze tegen elkaar racen op een puzzel, of compileer je eigen solver naar WebAssembly en klim op de ranglijst van de SAT Dojo."
+  },
+  "tabs": {
+    "label": "Onderdelen van het lab",
+    "race": "Race",
+    "leaderboard": "Ranglijst",
+    "submit": "Insturen",
+    "benchmarks": "Benchmarks",
+    "seasons": "Seizoenen"
+  },
   "puzzle": {
     "title": "1 · Puzzel",
     "size": "{{ width }}×{{ height }}, eilanden: {{ count }}",

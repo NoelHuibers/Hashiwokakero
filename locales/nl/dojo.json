@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Solver insturen",
     "starter": "Starterkit",
-    "dev_set": "Download de devset",
-    "seasons": "Seizoensarchief"
+    "dev_set": "Download de devset"
   },
   "board": {
     "title": "Ranglijst",
@@ -80,8 +79,7 @@
     "none": "Er is nog geen seizoen afgelopen. Het archief begint als seizoen {{ season }} voorbij is.",
     "deleted": "verwijderd account",
     "verify_title": "Zo controleer je het",
-    "verify": "De SHA-256 van de onthulde seed moet gelijk zijn aan de commitment die bij de start is gepubliceerd. Met dezelfde generatorversie maakt dojo export de set opnieuw uit de seed; de gearchiveerde set blijft altijd geldig, en dojo run --set beoordeelt er elke solver op, precies zoals de ranglijst deed.",
-    "back": "Terug naar de dojo"
+    "verify": "De SHA-256 van de onthulde seed moet gelijk zijn aan de commitment die bij de start is gepubliceerd. Met dezelfde generatorversie maakt dojo export de set opnieuw uit de seed; de gearchiveerde set blijft altijd geldig, en dojo run --set beoordeelt er elke solver op, precies zoals de ranglijst deed."
   },
   "how": {
     "title": "Zo werkt het",
@@ -152,6 +150,8 @@
     "text": "Brandstof is deterministisch, dus resultaten zijn reproduceerbaar en vergelijkbaar tussen papers: noem het seizoen en de dev-seed. De ranglijst is als JSON beschikbaar op /dojo/board.json, de harness is open source."
   },
   "submit": {
+    "meta_title": "Stuur een SAT-solver in · SAT Dojo",
+    "meta_description": "Bouw een SAT-solver voor WebAssembly, train hem op de devset met de dojo-CLI en stuur hem in: geheime formules, deterministische brandstof.",
     "title": "Betreed de dojo",
     "sign_in": "Om in te sturen heb je een account met gebruikersnaam nodig, gasten kunnen niet insturen.",
     "create_account": "Account aanmaken",
@@ -226,11 +226,6 @@
     "invalid": "Geen geldige WebAssembly-module voor de dojo: {{ detail }}",
     "import": "Het importeert {{ detail }}, alleen wasi_snapshot_preview1 is beschikbaar.",
     "no_start": "Er is geen _start-functie. Bouw een programma (een binary), geen bibliotheek."
-  },
-  "lab_banner": {
-    "title": "Nieuw: de SAT Dojo",
-    "text": "Denk je dat jouw solver de onze verslaat? Stuur hem in en klim op de ranglijst.",
-    "button": "Naar de dojo"
   },
   "track": {
     "sprint": "Sprintcategorie",

@@ -596,8 +596,8 @@ real debug APK on an Android emulator and drives its WebView through Playwright'
 the app's data and starts it with `am start`: it hydrates and knows it is offline
 (`navigator.onLine`), no page of the app breaks the content security policy
 (`securitypolicyviolation` events and the console's CSP messages on `/`, `/rules`, `/ja/rules`,
-`/play`, `/create`, `/lab`, `/dojo`, `/groups`, `/daily`), Play generates, hints and
-checks through the native commands, the ranks show one offline notice (again after an `online`
+`/play`, `/create`, `/lab`, `/lab/leaderboard`, `/lab/submit`, `/groups`, `/daily`), Play
+generates, hints and checks through the native commands, the ranks show one offline notice (again after an `online`
 event), Android's back button goes back from Play to the rules instead of closing
 the app, and without Play Games' project id the games commands say the service isn't there and
 its SDK never starts.
@@ -1286,8 +1286,8 @@ hashi.rs fails the test.
 
 What it checks: the app starts on its start page at `tauri://localhost`, with Tauri's bridge, an
 iPhone's user agent (`x-hashi-app: ios/...`) and the daily's offline state; no page breaks the
-content security policy (`/`, `/rules`, `/ja/rules`, `/play`, `/create`, `/lab`, `/dojo`,
-`/groups`, `/daily`); Play generates through the native generator (Tauri's IPC is a fetch of
+content security policy (`/`, `/rules`, `/ja/rules`, `/play`, `/create`, `/lab`,
+`/lab/leaderboard`, `/lab/submit`, `/groups`, `/daily`); Play generates through the native generator (Tauri's IPC is a fetch of
 `ipc://localhost/generate_puzzle` on iOS) and hints and checks without the server; the ranks show
 one offline notice, again after an `online` event; a link to GitHub and a `location` to another site
 leave the app's page where it is and bring Safari to the front; the page of Play clears the safe

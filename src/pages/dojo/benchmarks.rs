@@ -14,7 +14,6 @@ use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
 use crate::model::{BenchmarkState, CommunityCredit, DojoBenchmark, DojoBenchmarks};
-use crate::seo::PageMeta;
 
 use super::submit::UploadOnWebsite;
 
@@ -151,7 +150,7 @@ fn SubmitForm(data: DojoBenchmarks) -> impl IntoView {
             .into_any();
     }
     if cfg!(feature = "csr") {
-        return view! { <UploadOnWebsite path="/dojo/benchmarks" /> }.into_any();
+        return view! { <UploadOnWebsite path="/lab/benchmarks" /> }.into_any();
     }
     let left = data.left_today;
     view! {
@@ -297,10 +296,10 @@ pub(super) fn PoolList(pool: Vec<CommunityCredit>) -> impl IntoView {
         .into_any()
 }
 
+/// The Benchmarks tab of the Lab.
 #[component]
-pub fn DojoBenchmarksPage() -> impl IntoView {
+pub fn BenchmarksTab() -> impl IntoView {
     let i18n = use_i18n();
-    let back = use_localized("/dojo");
     let query = use_query_map();
     let data = RwSignal::new(None::<DojoBenchmarks>);
     Effect::new(move |first: Option<()>| {
@@ -315,18 +314,11 @@ pub fn DojoBenchmarksPage() -> impl IntoView {
     let error = move || query.with(|q| q.get("error"));
     let submitted = move || query.with(|q| q.get("submitted").is_some());
     view! {
-        <PageMeta
-            title=Signal::derive(move || t_string!(i18n, dojo.community.meta_title).to_string())
-            description=Signal::derive(move || t_string!(i18n, dojo.community.meta_description).to_string())
-            path="/dojo/benchmarks"
-        />
-        <section class="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-6 sm:px-6">
-            <A href=back attr:class="text-sm text-primary hover:underline">
-                "← " {t!(i18n, dojo.seasons.back)}
-            </A>
+        <div class="flex max-w-4xl flex-col gap-6">
             <div class="flex flex-col gap-3">
-                <p class="font-pixel text-sm text-primary">"持参 · jisan"</p>
-                <h1 class="text-4xl font-black">{t!(i18n, dojo.community.title)}</h1>
+                <h2 class="flex flex-wrap items-baseline gap-x-3 text-2xl font-black">
+                    {t!(i18n, dojo.community.title)} <span class="font-pixel text-sm text-primary">"持参 · jisan"</span>
+                </h2>
                 <p class="max-w-3xl text-muted-foreground">{t!(i18n, dojo.community.intro)}</p>
             </div>
             {move || data.get().map(|d| view! { <Rules per_set=d.per_set /> })}
@@ -386,6 +378,6 @@ pub fn DojoBenchmarksPage() -> impl IntoView {
                     }}
                 </CardContent>
             </Card>
-        </section>
+        </div>
     }
 }

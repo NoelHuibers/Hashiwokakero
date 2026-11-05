@@ -43,7 +43,8 @@ pub fn Header() -> impl IntoView {
                     <span class="text-[10px] font-bold tracking-[0.18em] text-muted-foreground max-[360px]:tracking-normal">"橋をかけろ"</span>
                 </span>
                 // From lg on: six links with their names don't fit next to the buttons on a
-                // tablet in most languages, it has the tab bar
+                // tablet in most languages, it has the tab bar (without the Lab, which is in the
+                // help menu)
                 <nav
                     class="ms-auto hidden items-center gap-1.5 lg:flex"
                     aria-label=move || t_string!(i18n, common.nav.main)
@@ -83,12 +84,14 @@ pub fn ThemeToggle() -> impl IntoView {
     }
 }
 
-/// Help, reachable from every page (on phones the footer is far down): the rules, and the
-/// feedback form for a bug, an idea or a question, told which page it was opened from.
+/// Help, reachable from every page (on phones the footer is far down): the rules, the Lab (not
+/// in the tab bar), and the feedback form for a bug, an idea or a question, told which page it
+/// was opened from.
 #[component]
 pub fn HelpButton() -> impl IntoView {
     let i18n = use_i18n();
     let rules = use_localized("/rules");
+    let lab = use_localized("/lab");
     let pathname = use_location().pathname;
     let open = RwSignal::new(false);
     let root = NodeRef::<leptos::html::Div>::new();
@@ -121,6 +124,10 @@ pub fn HelpButton() -> impl IntoView {
                     <A href=rules attr:class=item on:click=move |_| open.set(false)>
                         <span class="w-5 text-center font-pixel text-primary" aria-hidden="true">"遊"</span>
                         {t!(i18n, common.footer.how_to_play)}
+                    </A>
+                    <A href=lab attr:class=item on:click=move |_| open.set(false)>
+                        <span class="w-5 text-center font-pixel text-primary" aria-hidden="true">"研"</span>
+                        {t!(i18n, lab.title)}
                     </A>
                     <A href=feedback(FeedbackKind::Bug) attr:class=item on:click=move |_| open.set(false)>
                         <span class="w-5 text-center font-pixel text-primary" aria-hidden="true">"虫"</span>

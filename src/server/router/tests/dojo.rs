@@ -38,18 +38,18 @@ async fn uploads_are_checked() {
     let nobody = server.browser();
     assert_eq!(
         submit(&nobody, upload("Mine", module(1))).await,
-        "/dojo?error=sign_in#submit"
+        "/lab/submit?error=sign_in#submit"
     );
     let guest = server.browser();
     guest.call(StartDaily { device: None }).await.unwrap();
     assert_eq!(
         submit(&guest, upload("Mine", module(1))).await,
-        "/dojo?error=sign_in#submit"
+        "/lab/submit?error=sign_in#submit"
     );
     let browser = Browser::signed_up(&server, "dojo_dan").await;
     assert_eq!(
         submit(&browser, upload("Mine", module(1))).await,
-        "/dojo?error=account_age#submit"
+        "/lab/submit?error=account_age#submit"
     );
 
     // A day later
@@ -60,22 +60,22 @@ async fn uploads_are_checked() {
         .unwrap();
     assert_eq!(
         submit(&browser, upload("Mine", b"not wasm at all".to_vec())).await,
-        "/dojo?error=not_wasm#submit"
+        "/lab/submit?error=not_wasm#submit"
     );
     // Back to the page in the player's language, but nowhere else
     assert_eq!(
         submit(&browser, upload("", module(1)).text("prefix", "/de")).await,
-        "/de/dojo?error=name#submit"
+        "/de/lab/submit?error=name#submit"
     );
     let added = submit(
         &browser,
         upload("Mine", module(1)).text("prefix", "https://evil.example"),
     )
     .await;
-    let id: i64 = added.strip_prefix("/dojo/").unwrap().parse().unwrap();
+    let id: i64 = added.strip_prefix("/lab/solver/").unwrap().parse().unwrap();
     assert_eq!(
         submit(&browser, upload("Mine again", module(1))).await,
-        "/dojo?error=duplicate#submit"
+        "/lab/submit?error=duplicate#submit"
     );
     // Over the body limit: reading the form stops there
     assert_eq!(
@@ -84,7 +84,7 @@ async fn uploads_are_checked() {
             upload("Huge", vec![0; ::dojo::MAX_WASM_BYTES + 128 * 1024])
         )
         .await,
-        "/dojo?error=size#submit"
+        "/lab/submit?error=size#submit"
     );
 
     let mine = browser.call(LoadDojoMe {}).await.unwrap();
@@ -400,7 +400,7 @@ async fn the_board_with_its_metrics() {
         .unwrap();
     assert!(page.contribution.is_some());
     assert_eq!(page.portfolio.unwrap().cactus.curves.len(), 2);
-    assert_status(&browser.get("/dojo/9102").await, StatusCode::OK);
+    assert_status(&browser.get("/lab/solver/9102").await, StatusCode::OK);
 }
 
 /// A finished season (the one before the tests' current season), as the archive keeps it: the
@@ -549,9 +549,13 @@ async fn the_season_archive() {
         &browser.get("/dojo/seasons/first/results.csv").await,
         StatusCode::BAD_REQUEST,
     );
-    // The page itself
-    assert_status(&browser.get("/dojo/seasons").await, StatusCode::OK);
-    assert_status(&browser.get("/ja/dojo/seasons").await, StatusCode::OK);
+    // The page itself, a tab of the Lab (the Dojo's old address redirects there)
+    assert_status(&browser.get("/lab/seasons").await, StatusCode::OK);
+    assert_status(&browser.get("/ja/lab/seasons").await, StatusCode::OK);
+    assert_status(
+        &browser.get("/ja/dojo/seasons").await,
+        StatusCode::MOVED_PERMANENTLY,
+    );
 }
 
 #[tokio::test]
@@ -661,12 +665,12 @@ async fn community_benchmarks() {
     let nobody = server.browser();
     assert_eq!(
         submit_benchmark(&nobody, benchmark("x", "p cnf 1 1\n1 0\n")).await,
-        "/dojo/benchmarks?error=sign_in#submit"
+        "/lab/benchmarks?error=sign_in#submit"
     );
     let browser = Browser::signed_up(&server, "bench_bea").await;
     assert_eq!(
         submit_benchmark(&browser, benchmark("x", "p cnf 1 1\n1 0\n")).await,
-        "/dojo/benchmarks?error=account_age#submit"
+        "/lab/benchmarks?error=account_age#submit"
     );
     // Eligibility precedes even GBD hash validation, before any download is possible.
     let gbd = Form::new()
@@ -675,7 +679,7 @@ async fn community_benchmarks() {
         .text("gbd", "not-a-hash");
     assert_eq!(
         submit_benchmark(&browser, gbd).await,
-        "/dojo/benchmarks?error=account_age#submit"
+        "/lab/benchmarks?error=account_age#submit"
     );
     let conn = conn().await;
     let user = user_id(&conn, "bench_bea").await;
@@ -689,12 +693,12 @@ async fn community_benchmarks() {
     let both = benchmark("x", "p cnf 1 1\n1 0\n").text("gbd", "a".repeat(32));
     assert_eq!(
         submit_benchmark(&browser, both).await,
-        "/dojo/benchmarks?error=source#submit"
+        "/lab/benchmarks?error=source#submit"
     );
     let neither = Form::new().text("family", "x").text("license", "1");
     assert_eq!(
         submit_benchmark(&browser, neither).await,
-        "/dojo/benchmarks?error=source#submit"
+        "/lab/benchmarks?error=source#submit"
     );
     let bad_hash = Form::new()
         .text("family", "x")
@@ -702,14 +706,14 @@ async fn community_benchmarks() {
         .text("gbd", "not-a-hash");
     assert_eq!(
         submit_benchmark(&browser, bad_hash).await,
-        "/dojo/benchmarks?error=gbd#submit"
+        "/lab/benchmarks?error=gbd#submit"
     );
     let unlicensed = Form::new()
         .text("family", "x")
         .part("cnf", Part::bytes(b"p cnf 1 1\n1 0\n".to_vec()));
     assert_eq!(
         submit_benchmark(&browser, unlicensed).await,
-        "/dojo/benchmarks?error=license#submit"
+        "/lab/benchmarks?error=license#submit"
     );
     let added = submit_benchmark(
         &browser,
@@ -717,7 +721,7 @@ async fn community_benchmarks() {
     )
     .await;
     let id: i64 = added
-        .strip_prefix("/de/dojo/benchmarks?submitted=")
+        .strip_prefix("/de/lab/benchmarks?submitted=")
         .and_then(|rest| rest.strip_suffix("#mine"))
         .unwrap()
         .parse()
@@ -831,7 +835,7 @@ async fn direct_uploads_enforce_cross_account_network_quotas() {
             upload("Direct solver", module(90 + n)).text("network", format!("forged-{n}")),
         )
         .await;
-        assert!(location.starts_with("/dojo/"), "{location}");
+        assert!(location.starts_with("/lab/solver/"), "{location}");
         assert!(!location.contains("error="), "{location}");
         let location = submit_benchmark(
             &browsers[0],
@@ -839,17 +843,17 @@ async fn direct_uploads_enforce_cross_account_network_quotas() {
         )
         .await;
         assert!(
-            location.starts_with("/dojo/benchmarks?submitted="),
+            location.starts_with("/lab/benchmarks?submitted="),
             "{location}"
         );
     }
     assert_eq!(
         submit(&browsers[1], upload("Bypass", module(93))).await,
-        "/dojo?error=network_limit#submit"
+        "/lab/submit?error=network_limit#submit"
     );
     assert_eq!(
         submit_benchmark(&browsers[1], benchmark("direct", &formula(23))).await,
-        "/dojo/benchmarks?error=network_limit#submit"
+        "/lab/benchmarks?error=network_limit#submit"
     );
     // A fresh peer keeps its own budget even when it claims the first peer's proxy address.
     assert!(
@@ -860,16 +864,16 @@ async fn direct_uploads_enforce_cross_account_network_quotas() {
     assert!(
         submit_benchmark(&browsers[2], benchmark("direct", &formula(23)))
             .await
-            .starts_with("/dojo/benchmarks?submitted=")
+            .starts_with("/lab/benchmarks?submitted=")
     );
     // The per-account quota still applies, independently of the transport budget.
     assert_eq!(
         submit(&browsers[0], upload("Account limit", module(94))).await,
-        "/dojo?error=limit#submit"
+        "/lab/submit?error=limit#submit"
     );
     assert_eq!(
         submit_benchmark(&browsers[0], benchmark("direct", &formula(24))).await,
-        "/dojo/benchmarks?error=limit#submit"
+        "/lab/benchmarks?error=limit#submit"
     );
     let day = daily::today();
     for table in ["dojo_submissions", "dojo_benchmarks"] {

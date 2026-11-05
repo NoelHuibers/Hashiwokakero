@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Zgłoś solver",
     "starter": "Zestaw startowy",
-    "dev_set": "Pobierz zbiór deweloperski",
-    "seasons": "Archiwum sezonów"
+    "dev_set": "Pobierz zbiór deweloperski"
   },
   "board": {
     "title": "Ranking",
@@ -80,8 +79,7 @@
     "none": "Żaden sezon jeszcze się nie zakończył. Archiwum zacznie się po zakończeniu sezonu {{ season }}.",
     "deleted": "usunięte konto",
     "verify_title": "Jak to sprawdzić",
-    "verify": "SHA-256 ujawnionego ziarna musi zgadzać się ze zobowiązaniem opublikowanym na starcie. Przy tej samej wersji generatora dojo export odtwarza zestaw z ziarna; zarchiwizowany zestaw pozostaje ważny na zawsze, a dojo run --set ocenia na nim dowolny solver dokładnie tak, jak zrobił to ranking.",
-    "back": "Powrót do dojo"
+    "verify": "SHA-256 ujawnionego ziarna musi zgadzać się ze zobowiązaniem opublikowanym na starcie. Przy tej samej wersji generatora dojo export odtwarza zestaw z ziarna; zarchiwizowany zestaw pozostaje ważny na zawsze, a dojo run --set ocenia na nim dowolny solver dokładnie tak, jak zrobił to ranking."
   },
   "how": {
     "title": "Jak to działa",
@@ -152,6 +150,8 @@
     "text": "Paliwo jest deterministyczne, więc wyniki są powtarzalne i porównywalne między publikacjami: podaj sezon i ziarno zbioru deweloperskiego. Ranking jest dostępny jako JSON pod /dojo/board.json, a środowisko testowe jest open source."
   },
   "submit": {
+    "meta_title": "Zgłoś solver SAT · SAT Dojo",
+    "meta_description": "Zbuduj solver SAT dla WebAssembly, trenuj go na zbiorze deweloperskim z CLI dojo i zgłoś: ukryte formuły, deterministyczne paliwo.",
     "title": "Wejdź do dojo",
     "sign_in": "Do zgłaszania potrzebne jest konto z nazwą użytkownika, goście nie mogą zgłaszać.",
     "create_account": "Załóż konto",
@@ -226,11 +226,6 @@
     "invalid": "To nie jest poprawny moduł WebAssembly dla dojo: {{ detail }}",
     "import": "Importuje {{ detail }}, a dostępne jest tylko wasi_snapshot_preview1.",
     "no_start": "Brak funkcji _start. Zbuduj program (plik wykonywalny), a nie bibliotekę."
-  },
-  "lab_banner": {
-    "title": "Nowość: SAT Dojo",
-    "text": "Myślisz, że twój solver jest lepszy od naszego? Zgłoś go i wspinaj się w rankingu.",
-    "button": "Do dojo"
   },
   "track": {
     "sprint": "Kategoria Sprint",

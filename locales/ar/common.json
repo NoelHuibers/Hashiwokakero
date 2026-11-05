@@ -99,6 +99,7 @@
   "solver": {
     "title": "حلّال SAT",
     "description": "يُرمَّز اللغز بصيغة CNF وتحلّه حلّالاتنا الخاصة من مختبر SAT.",
+    "lab_link": "سابِق الحلّالات في المختبر",
     "solver": "الحلّال",
     "own_cdcl": "CDCL خاص بنا",
     "own_dpll": "DPLL خاص بنا",

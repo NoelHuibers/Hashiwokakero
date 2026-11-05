@@ -158,6 +158,9 @@ pub fn RulesPage() -> impl IntoView {
                                 }
                             )}
                         </p>
+                        <A href=lab attr:class="w-fit font-medium text-primary underline-offset-4 hover:underline">
+                            {t!(i18n, common.solver.lab_link)} " →"
+                        </A>
                     </CardContent>
                 </Card>
             </div>

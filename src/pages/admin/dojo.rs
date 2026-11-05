@@ -195,7 +195,7 @@ fn SubmissionRow(
         <tr class="border-b last:border-0">
             <td class="py-2 pe-3 font-pixel">{id}</td>
             <td class="py-2 pe-3">
-                <a href=format!("/dojo/{id}") class="font-medium hover:underline">{s.name.clone()}</a>
+                <a href=format!("/lab/solver/{id}") class="font-medium hover:underline">{s.name.clone()}</a>
                 {s.house.then(|| view! { <Badge variant=BadgeVariant::Secondary size=BadgeSize::Sm class="ms-2">"house"</Badge> })}
                 <span class="block text-xs text-muted-foreground">{s.author.clone()}</span>
             </td>
@@ -226,7 +226,7 @@ fn SubmissionCard(
                 <div class="min-w-0">
                     <p class="truncate">
                         <span class="me-1.5 font-pixel text-muted-foreground">"#"{id}</span>
-                        <a href=format!("/dojo/{id}") class="font-medium hover:underline">{s.name.clone()}</a>
+                        <a href=format!("/lab/solver/{id}") class="font-medium hover:underline">{s.name.clone()}</a>
                     </p>
                     <p class="truncate text-xs text-muted-foreground">{s.author.clone()}" · season "{s.season}</p>
                 </div>

@@ -15,8 +15,7 @@
   "cta": {
     "submit": "Kirim solver",
     "starter": "Paket pemula",
-    "dev_set": "Unduh set dev",
-    "seasons": "Arsip musim"
+    "dev_set": "Unduh set dev"
   },
   "board": {
     "title": "Papan peringkat",
@@ -80,8 +79,7 @@
     "none": "Belum ada musim yang selesai. Arsip dimulai saat musim {{ season }} berakhir.",
     "deleted": "akun dihapus",
     "verify_title": "Cara memeriksa",
-    "verify": "SHA-256 dari seed yang diungkap harus sama dengan komitmen yang dipublikasikan di awal. Dengan versi generator yang sama, dojo export membuat ulang set dari seed; set yang diarsipkan tetap berlaku selamanya, dan dojo run --set menilai solver apa pun di atasnya persis seperti papan peringkat.",
-    "back": "Kembali ke dojo"
+    "verify": "SHA-256 dari seed yang diungkap harus sama dengan komitmen yang dipublikasikan di awal. Dengan versi generator yang sama, dojo export membuat ulang set dari seed; set yang diarsipkan tetap berlaku selamanya, dan dojo run --set menilai solver apa pun di atasnya persis seperti papan peringkat."
   },
   "how": {
     "title": "Cara kerjanya",
@@ -152,6 +150,8 @@
     "text": "Fuel bersifat deterministik, jadi hasilnya bisa direproduksi dan dibandingkan antarmakalah: sebutkan musim dan seed dev-nya. Papan peringkat tersedia sebagai JSON di /dojo/board.json, dan harness-nya sumber terbuka."
   },
   "submit": {
+    "meta_title": "Kirim solver SAT · SAT Dojo",
+    "meta_description": "Buat solver SAT untuk WebAssembly, latih di set dev dengan CLI dojo, lalu kirim: dinilai pada formula tersembunyi dengan fuel deterministik.",
     "title": "Masuki dojo",
     "sign_in": "Untuk mengirim, kamu butuh akun dengan nama pengguna, tamu tidak bisa mengirim.",
     "create_account": "Buat akun",
@@ -226,11 +226,6 @@
     "invalid": "Bukan modul WebAssembly yang valid untuk dojo: {{ detail }}",
     "import": "File ini mengimpor {{ detail }}, padahal hanya wasi_snapshot_preview1 yang tersedia.",
     "no_start": "Tidak ada fungsi _start. Bangun program (biner), bukan pustaka."
-  },
-  "lab_banner": {
-    "title": "Baru: SAT Dojo",
-    "text": "Yakin solvermu mengalahkan solver kami? Kirim dan panjat papan peringkat.",
-    "button": "Ke dojo"
   },
   "track": {
     "sprint": "Kategori Sprint",
