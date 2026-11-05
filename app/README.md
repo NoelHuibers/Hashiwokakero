@@ -830,7 +830,10 @@ comments: fdroiddata takes none). Getting it there is an owner task
   x86_64` too, with CI's prebuilt Trunk and Tauri CLI (the same versions; Trunk downloads the same
   wasm-bindgen and wasm-opt), the script's Rust (`RUST_VERSION`, not the stable of the other
   builds), JDK 21 like F-Droid's Debian, the same NDK and Gradle, and the paths of the machine
-  mapped away (`--remap-path-prefix`: panic messages carry the sources' paths). F-Droid compares
+  mapped away (`--remap-path-prefix`: panic messages carry the sources' paths; and
+  `rustc-wrapper.sh`: Leptos' `wasm_split_macros` hashes `CARGO_MANIFEST_PATH` into the WASM).
+  Tailwind skips `app/fdroid/third_party` (`@source not` in `style/tailwind.css`): F-Droid has the
+  submodules checked out, CI doesn't, and Tailwind would pick up class names from their sources. F-Droid compares
   its unsigned APK with ours from the GitHub release (`binary:` in the recipe) and, when they are
   the same but for the signature, ships ours, signed with the direct key
   (`AllowedAPKSigningKeys`). So the app from F-Droid, from our repository and from the GitHub

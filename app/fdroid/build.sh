@@ -191,6 +191,9 @@ apk() {
     triple=${triple^^}
     export "CARGO_TARGET_${triple//-/_}_RUSTFLAGS=$remap"
   done
+  # And without them in CARGO_MANIFEST_PATH, which a proc macro hashes into the WASM
+  # (rustc-wrapper.sh). Replaces a wrapper of the machine's Cargo config (sccache).
+  export HASHI_FDROID_ROOT=$ROOT RUSTC_WRAPPER=$ROOT/app/fdroid/rustc-wrapper.sh
   # Whatever reads it (the build's own outputs have no time in them), the same on both sides
   SOURCE_DATE_EPOCH=$(git -C "$ROOT" log -1 --format=%ct 2> /dev/null || echo 0)
   export SOURCE_DATE_EPOCH
