@@ -157,7 +157,7 @@ fn Rematch(race: RaceState) -> impl IntoView {
         race.busy.set(true);
         spawn_local(async move {
             let reply = rematch_group_race(id).await;
-            if race.busy.try_set(false).is_none() {
+            if race.busy.try_set(false).is_some() {
                 return;
             }
             match reply {

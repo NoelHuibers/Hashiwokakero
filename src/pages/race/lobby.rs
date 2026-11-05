@@ -49,7 +49,7 @@ pub fn Lobby(race: RaceState) -> impl IntoView {
         spawn_local(async move {
             let sent = browser_now();
             let reply = join_group_race(id).await;
-            if race.busy.try_set(false).is_none() {
+            if race.busy.try_set(false).is_some() {
                 return;
             }
             match reply {
@@ -64,7 +64,7 @@ pub fn Lobby(race: RaceState) -> impl IntoView {
         spawn_local(async move {
             let sent = browser_now();
             let reply = start_group_race(id).await;
-            if race.busy.try_set(false).is_none() {
+            if race.busy.try_set(false).is_some() {
                 return;
             }
             match reply {
@@ -84,7 +84,7 @@ pub fn Lobby(race: RaceState) -> impl IntoView {
         let navigate = navigate.clone();
         spawn_local(async move {
             let reply = leave_group_race(id).await;
-            if race.busy.try_set(false).is_none() {
+            if race.busy.try_set(false).is_some() {
                 return;
             }
             match reply {
