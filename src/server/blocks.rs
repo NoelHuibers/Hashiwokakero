@@ -24,8 +24,9 @@ use crate::model::{
     AllTimeEntry, ApiError, BLOCKED_NAME, Banzuke, BanzukeRow, BlockedPlayer, GroupMember,
     GroupPage, GroupPuzzles, GroupRaces, GroupToday, GroupWeek, HallOfFame, HankoReceived,
     InvitePreview, Kudos, Lane, Leaderboard, LeaderboardEntry, MonthBoard, MonthEntry, PuzzlePage,
-    PuzzleSummary, RaceEntrant, RacePlayer, RaceSummary, RaceView, ReplayData, RivalDay, RivalRow,
-    RivalsBoard, RivalsToday, SharedBy, SharedEntry, SharedPuzzlePage, TodayEntry, WeekRow,
+    PuzzleSummary, RaceEntrant, RacePlayer, RaceShare, RaceSummary, RaceView, ReplayData, RivalDay,
+    RivalRow, RivalsBoard, RivalsToday, SharedBy, SharedEntry, SharedPuzzlePage, TodayEntry,
+    WeekRow,
 };
 
 /// `user` blocks `player` (`on`) or unblocks them, and returns the players blocked then.
@@ -359,12 +360,20 @@ impl Hide for PuzzlePage {
 impl Hide for RaceView {
     fn hide(&mut self, blocked: &Blocked) {
         self.players.hide(blocked);
+        self.shared.hide(blocked);
+    }
+}
+
+impl Hide for RaceShare {
+    fn hide(&mut self, blocked: &Blocked) {
+        self.sharer.hide(blocked);
     }
 }
 
 impl Hide for RaceSummary {
     fn hide(&mut self, blocked: &Blocked) {
         self.entrants.hide(blocked);
+        self.shared.hide(blocked);
     }
 }
 

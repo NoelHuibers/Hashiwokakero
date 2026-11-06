@@ -683,6 +683,13 @@ CREATE INDEX IF NOT EXISTS shared_results_board ON shared_results (puzzle_id, sc
 CREATE INDEX IF NOT EXISTS shared_results_user ON shared_results (user_id);
 CREATE INDEX IF NOT EXISTS shared_results_share ON shared_results (share_id, user_id);
 ",
+    // 29
+    "
+-- A race on a shared puzzle (/p/<code>), see server/groups/race.rs: the puzzle, and the link it
+-- was opened from (the racers' results go on the puzzle's board through it)
+ALTER TABLE group_races ADD COLUMN share_puzzle_id INTEGER;
+ALTER TABLE group_races ADD COLUMN share_code TEXT;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

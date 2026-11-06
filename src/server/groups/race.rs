@@ -19,6 +19,13 @@
 //!
 //! Everything goes through `groups::require_member`, like the group's other pages. Finished races
 //! stay as the group's history and go with the group (trigger `group_races_gone`, db.rs).
+//!
+//! Races and shared puzzles (`shares`, `/p/<code>`): a member can open a race on a shared puzzle
+//! from its page ([`open_shared`], [`PuzzleSource::Shared`]). Its racers came through that link:
+//! their verified results go on the puzzle's board through it and count for its sharer, like a
+//! solve on the page ([`finish`]). And once a race is over, any member can [`share`] its puzzle
+//! as a link of their own, with their own result on its board if they got a place, like sharing
+//! from Play: nobody else's.
 
 #[cfg(test)]
 mod tests;
@@ -35,11 +42,12 @@ use crate::model::{
     AWAY_MS, ApiError, BLOCKED_NAME, Flag, GroupRaces, HISTORY_SHOWN, Help, HelpPenalties,
     LOBBY_MS, Lane, LaneOutcome, MIN_RACERS, Mark, MarkKind, MoveEvent, PROGRESS_CAP,
     PROGRESS_MIN_GAP_MS, RACE_MS, RaceEntrant, RaceOutcome, RacePhase, RacePlayer, RaceResult,
-    RaceSummary, RaceView, ReplayData, ReplayGroup, clean_log, day_of, group_day, pick_hint,
-    race_over, race_places, shown_progress, verify_log, wrong_edges,
+    RaceShare, RaceSummary, RaceView, ReplayData, ReplayGroup, SharedBy, clean_log, day_of,
+    group_day, pick_hint, race_over, race_places, shared_difficulty, shown_progress, verify_log,
+    wrong_edges,
 };
 use crate::server::db::db_err;
-use crate::server::run_blocking;
+use crate::server::{run_blocking, shares};
 
 /// A race as stored, without its puzzle.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -52,6 +60,10 @@ pub struct Race {
     pub starts_at: Option<i64>,
     pub ended_at: Option<i64>,
     pub rematch_id: Option<i64>,
+    /// A race on a shared puzzle: the puzzle (`shared_puzzles.id`) and the link it was opened
+    /// from.
+    pub share_puzzle_id: Option<i64>,
+    pub share_code: Option<String>,
 }
 
 impl Race {
@@ -65,8 +77,8 @@ impl Race {
     }
 }
 
-const RACE_COLUMNS: &str =
-    "id, group_id, host_id, difficulty, created_at, starts_at, ended_at, rematch_id";
+const RACE_COLUMNS: &str = "id, group_id, host_id, difficulty, created_at, starts_at, ended_at,
+    rematch_id, share_puzzle_id, share_code";
 
 fn row_to_race(row: &libsql::Row, at: i32) -> Result<Race, ServerFnError> {
     Ok(Race {
@@ -79,6 +91,8 @@ fn row_to_race(row: &libsql::Row, at: i32) -> Result<Race, ServerFnError> {
         starts_at: row.get(at + 5).map_err(db_err)?,
         ended_at: row.get(at + 6).map_err(db_err)?,
         rematch_id: row.get(at + 7).map_err(db_err)?,
+        share_puzzle_id: row.get(at + 8).map_err(db_err)?,
+        share_code: row.get(at + 9).map_err(db_err)?,
     })
 }
 
@@ -142,6 +156,9 @@ pub struct Player {
     pub name: String,
     pub guest: bool,
     pub colour: u8,
+    /// A race on a shared puzzle: they have a result on it from before the race (only [`read`]
+    /// knows).
+    pub solved_before: bool,
 }
 
 impl Player {
@@ -197,6 +214,7 @@ fn row_to_player(row: &libsql::Row, at: i32) -> Result<Player, ServerFnError> {
             .map_err(db_err)?
             .is_none(),
         colour: u8::try_from(row.get::<i64>(at + 14).map_err(db_err)?).unwrap_or(0),
+        solved_before: false,
     })
 }
 
@@ -311,20 +329,29 @@ async fn open_race(conn: &Connection, group: i64, now: i64) -> Result<Option<Rac
     )
 }
 
-/// A new lobby of `user` in a group, with them in it.
+/// A new lobby of `user` in a group, with them in it, for a puzzle of `source`.
 async fn insert_lobby(
     conn: &Connection,
     group: i64,
     user: i64,
-    difficulty: Difficulty,
+    source: &PuzzleSource,
     now: i64,
 ) -> Result<i64, ServerFnError> {
     if open_race(conn, group, now).await?.is_some() {
         return Err(ApiError::RaceOpen.into());
     }
+    let (difficulty, puzzle_id, code) = match source {
+        PuzzleSource::Preset(difficulty) => (*difficulty, None, None),
+        PuzzleSource::Shared {
+            puzzle_id,
+            code,
+            difficulty,
+        } => (*difficulty, Some(*puzzle_id), Some(code.clone())),
+    };
     conn.execute(
-        "INSERT INTO group_races (group_id, host_id, difficulty, created_at) VALUES (?1, ?2, ?3, ?4)",
-        params![group, user, difficulty.id(), now],
+        "INSERT INTO group_races (group_id, host_id, difficulty, created_at, share_puzzle_id, share_code)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![group, user, difficulty.id(), now, puzzle_id, code],
     )
     .await
     .map_err(db_err)?;
@@ -362,7 +389,37 @@ pub async fn open(
         .await
         .map_err(db_err)?;
     require_member(&tx, group, user).await?;
-    let id = insert_lobby(&tx, group, user, difficulty, now).await?;
+    let id = insert_lobby(&tx, group, user, &PuzzleSource::Preset(difficulty), now).await?;
+    tx.commit().await.map_err(db_err)?;
+    Ok(id)
+}
+
+/// Opens a lobby in a group on the shared puzzle of the link `code` (`/p/<code>`).
+///
+/// With `user` as its host and first player; returns its id. Like [`open`] otherwise: one race at
+/// a time per group, members only. The help costs the prices of the preset closest in size
+/// (`model::shared_difficulty`).
+pub async fn open_shared(
+    conn: &Connection,
+    group: i64,
+    user: i64,
+    code: &str,
+    now: i64,
+) -> Result<i64, ServerFnError> {
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .await
+        .map_err(db_err)?;
+    require_member(&tx, group, user).await?;
+    let (puzzle_id, puzzle, _) = shares::linked_puzzle(&tx, code)
+        .await?
+        .ok_or_else(|| ApiError::WrongPuzzle.fail())?;
+    let source = PuzzleSource::Shared {
+        puzzle_id,
+        code: code.to_string(),
+        difficulty: shared_difficulty(puzzle.width, puzzle.height),
+    };
+    let id = insert_lobby(&tx, group, user, &source, now).await?;
     tx.commit().await.map_err(db_err)?;
     Ok(id)
 }
@@ -372,7 +429,8 @@ pub async fn open(
 /// once it's over in any case).
 ///
 /// One query: the race, its group, the viewer's membership, its rematch and its players with
-/// their names (a player the viewer blocked as `BLOCKED_NAME`), a row per player.
+/// their names (a player the viewer blocked as `BLOCKED_NAME`), a row per player. On a shared
+/// puzzle also its sharer and size, and who solved it before the race.
 async fn read(
     conn: &Connection,
     id: i64,
@@ -384,22 +442,27 @@ async fn read(
         .query(
             &format!(
                 "SELECT r.id, r.group_id, r.host_id, r.difficulty, r.created_at, r.starts_at,
-                     r.ended_at, r.rematch_id, g.name,
+                     r.ended_at, r.rematch_id, r.share_puzzle_id, r.share_code, g.name,
                      x.id, x.starts_at IS NULL AND x.created_at > ?3 - {LOBBY_MS},
                      CASE WHEN ?4 AND r.starts_at <= ?3 THEN r.puzzle END,
                      CASE WHEN r.ended_at IS NOT NULL THEN r.solution END,
                      EXISTS (SELECT 1 FROM blocks b WHERE b.user_id = ?2 AND b.blocked_id = q.user_id),
                      q.race_id, q.user_id, q.joined_at, q.last_seen, q.progress, q.finished_at,
                      q.revealed, q.time_ms, q.hints, q.checks, q.flag, q.helps, q.name, q.username,
-                     q.colour
+                     q.colour,
+                     EXISTS (SELECT 1 FROM shared_results sr WHERE sr.puzzle_id = r.share_puzzle_id
+                         AND sr.user_id = q.user_id AND sr.finished_at < COALESCE(r.starts_at, ?3 + 1)),
+                     {}
                  FROM group_races r
                  JOIN groups g ON g.id = r.group_id
                  JOIN group_members me ON me.group_id = r.group_id AND me.user_id = ?2
                  LEFT JOIN group_races x ON x.id = r.rematch_id
                  LEFT JOIN (SELECT {PLAYER_COLUMNS} FROM {PLAYERS_OF} WHERE p.race_id = ?1) q
                      ON q.race_id = r.id
+                 {SHARE_JOINS}
                  WHERE r.id = ?1
-                 ORDER BY q.joined_at, q.user_id"
+                 ORDER BY q.joined_at, q.user_id",
+                share_columns("?2")
             ),
             params![id, viewer, now, i64::from(puzzle)],
         )
@@ -410,32 +473,34 @@ async fn read(
     while let Some(row) = rows.next().await.map_err(db_err)? {
         if found.is_none() {
             let race = row_to_race(&row, 0)?;
-            let rematch: Option<i64> = row.get(9).map_err(db_err)?;
-            let rematch_open = row.get::<Option<i64>>(10).map_err(db_err)? == Some(1);
+            let rematch: Option<i64> = row.get(11).map_err(db_err)?;
+            let rematch_open = row.get::<Option<i64>>(12).map_err(db_err)? == Some(1);
             let puzzle = row
-                .get::<Option<String>>(11)
+                .get::<Option<String>>(13)
                 .map_err(db_err)?
                 .map(|p| from_json::<Puzzle>(&p))
                 .transpose()?
                 // Stored JSON skips Puzzle::new, keep the islands in reading order
                 .map(|p| Puzzle::new(p.width, p.height, p.islands));
             let solution = row
-                .get::<Option<String>>(12)
+                .get::<Option<String>>(14)
                 .map_err(db_err)?
                 .map(|s| from_json::<Vec<u8>>(&s))
                 .transpose()?;
-            let name: String = row.get(8).map_err(db_err)?;
-            found = Some((race, name, rematch, rematch_open, puzzle, solution));
+            let name: String = row.get(10).map_err(db_err)?;
+            let shared = row_to_share(&row, 32)?;
+            found = Some((race, name, rematch, rematch_open, puzzle, solution, shared));
         }
-        if row.get::<Option<i64>>(14).map_err(db_err)?.is_some() {
-            let mut player = row_to_player(&row, 14)?;
-            if row.get::<i64>(13).map_err(db_err)? != 0 {
+        if row.get::<Option<i64>>(16).map_err(db_err)?.is_some() {
+            let mut player = row_to_player(&row, 16)?;
+            if row.get::<i64>(15).map_err(db_err)? != 0 {
                 BLOCKED_NAME.clone_into(&mut player.name);
             }
+            player.solved_before = row.get::<i64>(31).map_err(db_err)? != 0;
             players.push(player);
         }
     }
-    let Some((race, group_name, rematch, rematch_open, puzzle, solution)) = found else {
+    let Some((race, group_name, rematch, rematch_open, puzzle, solution, shared)) = found else {
         return Ok(None);
     };
     let ended = race.phase(now) == RacePhase::Ended;
@@ -458,8 +523,58 @@ async fn read(
         rematch: rematch.filter(|_| ended),
         rematch_open: rematch_open && ended,
         server_now: now,
+        shared,
     };
     Ok(Some((race, players, view)))
+}
+
+/// The columns of the shared puzzle of a race (`s`, `sp`) and who shared it (`su`) for
+/// [`row_to_share`], with whether the `viewer` (a parameter, `?2`) blocked them.
+fn share_columns(viewer: &str) -> String {
+    format!(
+        "s.code, su.id, su.name, su.username IS NULL,
+         EXISTS (SELECT 1 FROM blocks bs WHERE bs.user_id = {viewer} AND bs.blocked_id = su.id),
+         json_extract(sp.puzzle, '$.width'), json_extract(sp.puzzle, '$.height')"
+    )
+}
+
+/// The joins of [`share_columns`] to a race `r`: its link, the puzzle and the sharer, if they
+/// are still there (not deleted, nor banned).
+const SHARE_JOINS: &str = "LEFT JOIN puzzle_shares s ON s.code = r.share_code
+    LEFT JOIN shared_puzzles sp ON sp.id = s.puzzle_id
+    LEFT JOIN users su ON su.id = s.user_id AND su.deleted_at IS NULL AND su.banned_at IS NULL";
+
+/// The shared puzzle of a race, from [`share_columns`] at `at`: `None` for a race of the generator.
+fn row_to_share(row: &libsql::Row, at: i32) -> Result<Option<RaceShare>, ServerFnError> {
+    let Some(code) = row.get::<Option<String>>(at).map_err(db_err)? else {
+        return Ok(None);
+    };
+    let size = |i| -> Result<u8, ServerFnError> {
+        Ok(u8::try_from(row.get::<Option<i64>>(i).map_err(db_err)?.unwrap_or(0)).unwrap_or(0))
+    };
+    let sharer = match row.get::<Option<i64>>(at + 1).map_err(db_err)? {
+        Some(user_id) => {
+            let blocked = row.get::<Option<i64>>(at + 4).map_err(db_err)? == Some(1);
+            Some(SharedBy {
+                user_id,
+                name: if blocked {
+                    BLOCKED_NAME.to_string()
+                } else {
+                    row.get(at + 2).map_err(db_err)?
+                },
+                guest: row.get::<Option<i64>>(at + 3).map_err(db_err)? == Some(1),
+                stamp: None,
+                result: None,
+            })
+        }
+        None => None,
+    };
+    Ok(Some(RaceShare {
+        code,
+        sharer,
+        width: size(at + 5)?,
+        height: size(at + 6)?,
+    }))
 }
 
 /// The players as the race's page shows them, with their places once they solved it.
@@ -491,6 +606,7 @@ fn view_players(players: &[Player], ended: bool, now: i64) -> Vec<RacePlayer> {
                 checks: p.checks,
                 flag: p.flag,
                 outcome,
+                solved_before: p.solved_before,
             }
         })
         .collect()
@@ -641,24 +757,45 @@ pub struct RacePuzzle {
 
 /// Where a race's puzzle comes from at its start.
 ///
-/// One source for now: a fresh puzzle of the
-/// generator, of a difficulty's preset size. Another source (a stored puzzle, say) is another
-/// variant here, with what identifies it stored with the race.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// A fresh puzzle of the generator, of a difficulty's preset size; or a shared puzzle
+/// (`/p/<code>`), stored with the race (`share_puzzle_id`, `share_code`). Either way the puzzle
+/// is stored with the race at its start and sent at `starts_at`: a shared puzzle is public, but
+/// the race goes the same way.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PuzzleSource {
     Preset(Difficulty),
+    /// The puzzle `puzzle_id` of the link `code` the race was opened from. `difficulty`: whose
+    /// prices the help costs.
+    Shared {
+        puzzle_id: i64,
+        code: String,
+        difficulty: Difficulty,
+    },
 }
 
 impl PuzzleSource {
     /// The source of a race as stored.
-    fn of(race: &Race) -> Self {
-        Self::Preset(race.difficulty)
+    pub fn of(race: &Race) -> Self {
+        match (race.share_puzzle_id, &race.share_code) {
+            (Some(puzzle_id), Some(code)) => Self::Shared {
+                puzzle_id,
+                code: code.clone(),
+                difficulty: race.difficulty,
+            },
+            _ => Self::Preset(race.difficulty),
+        }
     }
 
-    /// The puzzle for a start, proven unique.
-    pub async fn puzzle(self) -> Result<RacePuzzle, ServerFnError> {
+    /// The puzzle for a start, proven unique: a shared puzzle's is (`shares::create`).
+    pub async fn puzzle(self, conn: &Connection) -> Result<RacePuzzle, ServerFnError> {
         match self {
             Self::Preset(difficulty) => generate(difficulty).await,
+            Self::Shared { code, .. } => {
+                let (_, puzzle, solution) = shares::linked_puzzle(conn, &code)
+                    .await?
+                    .ok_or_else(|| ApiError::WrongPuzzle.fail())?;
+                Ok(RacePuzzle { puzzle, solution })
+            }
         }
     }
 }
@@ -696,7 +833,7 @@ pub async fn start(
 ) -> Result<RaceView, ServerFnError> {
     // Before the generator's work, and again below with the lock
     let race = startable(conn, id, user, clock()).await?;
-    let puzzle = PuzzleSource::of(&race).puzzle().await?;
+    let puzzle = PuzzleSource::of(&race).puzzle(conn).await?;
     begin(conn, id, user, &puzzle, clock()).await
 }
 
@@ -904,6 +1041,32 @@ pub async fn submit(
     log: Vec<MoveEvent>,
     now: i64,
 ) -> Result<RaceView, ServerFnError> {
+    Ok(finish(conn, id, user, bridges, moves, log, now).await?.view)
+}
+
+/// A finish recorded by [`finish`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Finished {
+    pub view: RaceView,
+    /// A race on a shared puzzle: the sharer whose link the result went through, if it counted
+    /// (the player's first result on the puzzle). Their stamps need a sync (`shares::reached`).
+    pub reached: Option<i64>,
+}
+
+/// [`submit`], and on a shared puzzle the result on its board.
+///
+/// Through the link the race was opened from, unless it was flagged: the server timed it (Play's
+/// clock: from the start, the hints on top as on the board, not the race's penalties). Only a
+/// player's first result on a puzzle counts, as on its page.
+pub async fn finish(
+    conn: &Connection,
+    id: i64,
+    user: i64,
+    bridges: Vec<u8>,
+    moves: u32,
+    log: Vec<MoveEvent>,
+    now: i64,
+) -> Result<Finished, ServerFnError> {
     let tx = conn
         .transaction_with_behavior(TransactionBehavior::Immediate)
         .await
@@ -942,9 +1105,26 @@ pub async fn submit(
     )
     .await
     .map_err(db_err)?;
+    let counted = match (&run.race.share_code, flag) {
+        (Some(code), None) => {
+            let result = shares::Verified {
+                time_ms: elapsed,
+                moves: i64::from(moves),
+                hints: run.player.hints,
+            };
+            shares::add_result(&tx, code, user, result, now).await?
+        }
+        _ => false,
+    };
     let view = view_of(&tx, id, user, now).await?;
     tx.commit().await.map_err(db_err)?;
-    Ok(view)
+    let reached = view
+        .shared
+        .as_ref()
+        .and_then(|s| s.sharer.as_ref())
+        .map(|s| s.user_id)
+        .filter(|_| counted);
+    Ok(Finished { view, reached })
 }
 
 /// A new lobby with the settings of a race that is over, for everyone still on its results: the
@@ -975,8 +1155,9 @@ pub async fn rematch(
         Some(next) if next.phase(now) != RacePhase::Ended && !next.expired(now) => {
             return Err(ApiError::RaceStarted.into());
         }
+        // The same settings: the same difficulty, or the same shared puzzle again
         _ => {
-            let next = insert_lobby(&tx, group.id, user, race.difficulty, now).await?;
+            let next = insert_lobby(&tx, group.id, user, &PuzzleSource::of(&race), now).await?;
             tx.execute(
                 "UPDATE group_races SET rematch_id = ?2 WHERE id = ?1",
                 params![id, next],
@@ -990,8 +1171,63 @@ pub async fn rematch(
     Ok(next_id)
 }
 
+/// Shares the puzzle of a race that is over as a link of `user` (a player or a member who
+/// watched): the code of their link, made with `shares::create` (its checks and limits) or the one
+/// they have.
+///
+/// Like sharing from Play, their own result goes on its board through their link if they got a
+/// place (solved, not flagged): the server's time from the start, with the board's 30 s per hint,
+/// not the race's penalties. Nobody else's: each racer shares their own. Their result doesn't
+/// count for themselves (`shares::PLAYERS_REACHED`), and only a player's first result on a
+/// puzzle stays (a race on a shared puzzle has put it there already).
+pub async fn share(
+    conn: &Connection,
+    id: i64,
+    user: i64,
+    now: i64,
+) -> Result<String, ServerFnError> {
+    let (_, race) = require(conn, id, user, now).await?;
+    if race.phase(now) != RacePhase::Ended {
+        return Err(ApiError::RaceNotRunning.into());
+    }
+    let start = race.starts_at.unwrap_or_default();
+    let mut rows = conn
+        .query(
+            "SELECT r.puzzle, p.finished_at, COALESCE(p.moves, 0), p.hints FROM group_races r
+             LEFT JOIN group_race_players p ON p.race_id = r.id AND p.user_id = ?2
+                 AND p.finished_at IS NOT NULL AND p.revealed = 0 AND p.flag IS NULL
+             WHERE r.id = ?1",
+            params![id, user],
+        )
+        .await
+        .map_err(db_err)?;
+    let Some(row) = rows.next().await.map_err(db_err)? else {
+        return Err(ApiError::RaceGone.into());
+    };
+    let puzzle: Puzzle = from_json(&row.get::<String>(0).map_err(db_err)?)?;
+    let placed = match row.get::<Option<i64>>(1).map_err(db_err)? {
+        Some(finished_at) => Some(shares::Verified {
+            time_ms: finished_at - start,
+            moves: row.get(2).map_err(db_err)?,
+            hints: row.get(3).map_err(db_err)?,
+        }),
+        None => None,
+    };
+    drop(rows);
+    let code = shares::create(conn, user, puzzle, now).await?;
+    if let Some(result) = placed {
+        shares::add_result(conn, &code, user, result, now).await?;
+    }
+    Ok(code)
+}
+
 /// A race on the group page, as `viewer` sees it.
-fn summary(race: &Race, players: &[Player], viewer: i64) -> RaceSummary {
+fn summary(
+    race: &Race,
+    players: &[Player],
+    shares: &HashMap<i64, RaceShare>,
+    viewer: i64,
+) -> RaceSummary {
     let mine: Vec<&Player> = players.iter().filter(|p| p.race_id == race.id).collect();
     let results: Vec<RaceResult> = mine.iter().map(|p| p.result()).collect();
     let places = race_places(&results);
@@ -1013,7 +1249,40 @@ fn summary(race: &Race, players: &[Player], viewer: i64) -> RaceSummary {
             })
             .collect(),
         joined: mine.iter().any(|p| p.user_id == viewer),
+        shared: shares.get(&race.id).cloned(),
     }
+}
+
+/// The shared puzzles of the races `ids` that are on one, by race, as `viewer` sees their sharers.
+async fn race_shares(
+    conn: &Connection,
+    ids: &[i64],
+    viewer: i64,
+) -> Result<HashMap<i64, RaceShare>, ServerFnError> {
+    if ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+    // Ids are integers from the database
+    let ids: Vec<String> = ids.iter().map(ToString::to_string).collect();
+    let mut rows = conn
+        .query(
+            &format!(
+                "SELECT r.id, {} FROM group_races r {SHARE_JOINS}
+                 WHERE r.id IN ({}) AND r.share_code IS NOT NULL",
+                share_columns("?1"),
+                ids.join(",")
+            ),
+            params![viewer],
+        )
+        .await
+        .map_err(db_err)?;
+    let mut out = HashMap::new();
+    while let Some(row) = rows.next().await.map_err(db_err)? {
+        if let Some(share) = row_to_share(&row, 1)? {
+            out.insert(row.get::<i64>(0).map_err(db_err)?, share);
+        }
+    }
+    Ok(out)
 }
 
 /// The races of a group page: the open one and the last ones that are over.
@@ -1039,6 +1308,12 @@ pub async fn list(
     .await?;
     let ids: Vec<i64> = races.iter().map(|r| r.id).collect();
     let players = players(conn, &ids).await?;
+    let on_shared: Vec<i64> = races
+        .iter()
+        .filter(|r| r.share_code.is_some())
+        .map(|r| r.id)
+        .collect();
+    let shares = race_shares(conn, &on_shared, viewer).await?;
     let mut open = None;
     let mut recent = Vec::new();
     for race in races {
@@ -1051,9 +1326,9 @@ pub async fn list(
             race
         };
         if race.ended_at.is_none() {
-            open = Some(summary(&race, &players, viewer));
+            open = Some(summary(&race, &players, &shares, viewer));
         } else {
-            recent.push(summary(&race, &players, viewer));
+            recent.push(summary(&race, &players, &shares, viewer));
         }
     }
     recent.sort_by_key(|r| std::cmp::Reverse((r.starts_at, r.id)));

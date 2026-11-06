@@ -68,7 +68,9 @@
     "rematch_join": "Join the rematch",
     "rematch_go": "To the rematch",
     "replay": "Everyone's moves",
-    "stage": "The race's board with the bridges of {{ names }}"
+    "stage": "The race's board with the bridges of {{ names }}",
+    "share_text": "We raced this Hashi puzzle. Can you solve it?",
+    "share_hint": "Share the puzzle as a link. If you got a place, your time goes on its board as the one to beat."
   },
   "errors": {
     "open": "There's a race open in this group already: join that one.",
@@ -79,5 +81,15 @@
     "not_joined": "You're not in this race.",
     "not_running": "The race isn't running.",
     "done": "You're done with this race."
+  },
+  "shared": {
+    "badge": "Shared puzzle",
+    "by": "Shared puzzle · by {{ name }}",
+    "by_blocked": "Shared puzzle · by a blocked player",
+    "by_former": "Shared puzzle · by a former player",
+    "lobby": "Everyone who joins gets this shared puzzle at the same moment. The host starts once at least two have joined.",
+    "before": "solved before",
+    "before_hint": "Solved this puzzle before the race, so they know the solution.",
+    "public": "Times of this race go on the shared puzzle's public board."
   }
 }

@@ -68,7 +68,9 @@
     "rematch_join": "Rövanşa katıl",
     "rematch_go": "Rövanşa git",
     "replay": "Herkesin hamleleri",
-    "stage": "{{ names }} köprüleriyle yarışın tahtası"
+    "stage": "{{ names }} köprüleriyle yarışın tahtası",
+    "share_text": "Bu Hashi bulmacasında yarıştık. Sen de çözebilir misin?",
+    "share_hint": "Bulmacayı bağlantı olarak paylaş. Derece aldıysan süren, geçilmesi gereken süre olarak sıralamasına girer."
   },
   "errors": {
     "open": "Bu grupta zaten açık bir yarış var: ona katıl.",
@@ -79,5 +81,15 @@
     "not_joined": "Bu yarışta değilsin.",
     "not_running": "Yarış sürmüyor.",
     "done": "Bu yarışı zaten bitirdin."
+  },
+  "shared": {
+    "badge": "Paylaşılan bulmaca",
+    "by": "Paylaşılan bulmaca · paylaşan: {{ name }}",
+    "by_blocked": "Paylaşılan bulmaca · paylaşan: engellenmiş bir oyuncu",
+    "by_former": "Paylaşılan bulmaca · paylaşan: eski bir oyuncu",
+    "lobby": "Katılan herkes bu paylaşılan bulmacayı aynı anda alır. Ev sahibi en az iki kişi katılınca başlatır.",
+    "before": "önceden çözdü",
+    "before_hint": "Bu bulmacayı yarıştan önce çözdü, yani çözümü biliyor.",
+    "public": "Bu yarışın süreleri paylaşılan bulmacanın herkese açık sıralamasına girer."
   }
 }

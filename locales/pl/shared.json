@@ -57,5 +57,12 @@
     "kicker": "Udostępniona łamigłówka",
     "beat": "Pobijesz {{ time }}?",
     "solve": "Rozwiążesz ją?"
+  },
+  "race": {
+    "title": "Ścigaj się na niej z grupą",
+    "text": "Otwórz wyścig na tej łamigłówce w jednej ze swoich grup: wszyscy dostaną ją w tej samej chwili.",
+    "group": "Grupa",
+    "open": "Otwórz wyścig",
+    "opening": "Otwieranie…"
   }
 }

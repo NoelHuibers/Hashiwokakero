@@ -57,5 +57,12 @@
     "kicker": "Một câu đố được chia sẻ",
     "beat": "Bạn vượt được {{ time }} không?",
     "solve": "Bạn giải được không?"
+  },
+  "race": {
+    "title": "Đua câu đố này với nhóm",
+    "text": "Mở một cuộc đua với câu đố này trong một nhóm của bạn: mọi người nhận được nó cùng một lúc.",
+    "group": "Nhóm",
+    "open": "Mở cuộc đua",
+    "opening": "Đang mở…"
   }
 }

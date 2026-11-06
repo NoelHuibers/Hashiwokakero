@@ -57,5 +57,12 @@
     "kicker": "Un puzle compartido",
     "beat": "¿Puedes superar {{ time }}?",
     "solve": "¿Puedes resolverlo?"
+  },
+  "race": {
+    "title": "Hacer una carrera con mi grupo",
+    "text": "Abre una carrera con este puzle en uno de tus grupos: todos lo reciben en el mismo momento.",
+    "group": "Grupo",
+    "open": "Abrir la carrera",
+    "opening": "Abriendo…"
   }
 }

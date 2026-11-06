@@ -57,5 +57,12 @@
     "kicker": "Un puzzle partagé",
     "beat": "Battras-tu {{ time }} ?",
     "solve": "Sauras-tu le résoudre ?"
+  },
+  "race": {
+    "title": "Faire la course avec mon groupe",
+    "text": "Ouvre une course sur ce puzzle dans un de tes groupes : tout le monde le reçoit au même moment.",
+    "group": "Groupe",
+    "open": "Ouvrir la course",
+    "opening": "Ouverture…"
   }
 }

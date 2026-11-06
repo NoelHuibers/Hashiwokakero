@@ -57,5 +57,12 @@
     "kicker": "A shared puzzle",
     "beat": "Can you beat {{ time }}?",
     "solve": "Can you solve it?"
+  },
+  "race": {
+    "title": "Race this with my group",
+    "text": "Open a race on this puzzle in one of your groups: everyone gets it at the same moment.",
+    "group": "Group",
+    "open": "Open the race",
+    "opening": "Opening…"
   }
 }
