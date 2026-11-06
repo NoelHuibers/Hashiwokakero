@@ -147,13 +147,18 @@ jobs:
           retention-days: 1
 
   # Every scene in every language, phone and tablet, framed for each store, in the Playwright
-  # image the browser tests use (its Chromium and fonts). Then the upload tree, which checks every
-  # image's size and that none has an alpha channel.
-  images:
-    name: Store images
+  # image the browser tests use (its Chromium and fonts). The languages split over five runners
+  # (Playwright's --shard, four languages each, side by side on the runner's four cores): on one
+  # runner the twenty took over 40 minutes.
+  capture:
+    name: Store images (${{ matrix.shard }}/5)
     needs: [validate, build, build-browser]
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
     container:
       image: mcr.microsoft.com/playwright:v${{ needs.build-browser.outputs.playwright }}-noble
       options: --ipc=host
@@ -172,10 +177,43 @@ jobs:
           merge-multiple: true
       - run: tar -xf server.tar && tar -xf browser.tar
       - name: Take the screenshots
-        run: pnpm run store:images
+        run: pnpm run store:images --shard=${{ matrix.shard }}/5
         env:
           E2E_BIN: dist/hashi
           E2E_SITE_ROOT: dist/site
+      - uses: actions/upload-artifact@v7
+        with:
+          name: store-images-${{ matrix.shard }}
+          path: target/store/images
+          retention-days: 1
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: store-listing-logs-${{ matrix.shard }}
+          path: |
+            target/store/test-results
+            e2e/.run/*.log
+          include-hidden-files: true
+          retention-days: 3
+
+  # The shards' images as one artifact, "store-listing-images", for the uploads below. Then the
+  # upload tree, which checks that every language has its images, their sizes and that none has an
+  # alpha channel.
+  images:
+    name: Store images
+    needs: capture
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: store-images-*
+          path: target/store/images
+          merge-multiple: true
       - name: Upload tree (texts and images)
         run: |
           node store/assemble.ts
@@ -196,15 +234,6 @@ jobs:
           name: store-listing-images
           path: target/store/images
           retention-days: ${{ github.event_name == 'pull_request' && 7 || 3 }}
-      - if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: store-listing-logs
-          path: |
-            target/store/test-results
-            e2e/.run/*.log
-          include-hidden-files: true
-          retention-days: 3
 
   # Google Play: the listing of rs.hashi with supply, the service account's key in a file of the
   # runner's temp dir, deleted at the end

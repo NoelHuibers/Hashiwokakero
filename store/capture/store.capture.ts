@@ -1,7 +1,7 @@
 // The store screenshots: every scene (scenes.ts) in every language of the site, on a phone and a
 // tablet screen (devices.ts), then framed with a caption for each store (frame.ts). One test per
 // language, they run side by side.
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { type Browser, expect, test } from '@playwright/test';
 import { hydrated } from '../../e2e/fixtures.ts';
@@ -24,6 +24,8 @@ const FRAME_ONLY = Boolean(process.env.STORE_FRAME_ONLY);
 for (const lang of LANGS) {
   test(`${lang}`, async ({ browser }) => {
     mkdirSync(path.join(RAW_DIR, lang), { recursive: true });
+    // None of an earlier run's left, of a scene since gone or moved
+    rmSync(path.join(IMAGES_DIR, lang), { recursive: true, force: true });
     mkdirSync(path.join(IMAGES_DIR, lang), { recursive: true });
     if (!FRAME_ONLY) {
       for (const scene of SCENES) {

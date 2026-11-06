@@ -16,6 +16,10 @@
       "title": "Play with *friends* and rivals",
       "text": "Groups, duels and replays"
     },
+    "shared": {
+      "title": "Share a puzzle, *beat their time*",
+      "text": "One link, and everyone's time who solved it"
+    },
     "stamps": {
       "title": "Collect *hanko* stamps",
       "text": "One for every milestone of your streak"
@@ -45,6 +49,10 @@
     "friends": {
       "title": "Spiel mit *Freunden* und Rivalen",
       "text": "Gruppen, Duelle und Wiederholungen"
+    },
+    "shared": {
+      "title": "Teile ein Rätsel, *schlag die Zeit*",
+      "text": "Ein Link: wer es gelöst hat und wie schnell"
     },
     "stamps": {
       "title": "Sammle *Hanko*-Stempel",
@@ -76,6 +84,10 @@
       "title": "Joue avec tes *amis* et rivaux",
       "text": "Groupes, duels et rediffusions"
     },
+    "shared": {
+      "title": "Partage une grille, *bats son temps*",
+      "text": "Un lien, puis les temps de chacun"
+    },
     "stamps": {
       "title": "Collectionne les *tampons* hanko",
       "text": "Un pour chaque étape de ta série"
@@ -105,6 +117,10 @@
     "friends": {
       "title": "Gioca con *amici* e rivali",
       "text": "Gruppi, duelli e replay"
+    },
+    "shared": {
+      "title": "Condividi, *batti il suo tempo*",
+      "text": "Un link, e i tempi di chi l'ha risolto"
     },
     "stamps": {
       "title": "Colleziona timbri *hanko*",
@@ -136,6 +152,10 @@
       "title": "Juega con *amigos* y rivales",
       "text": "Grupos, duelos y repeticiones"
     },
+    "shared": {
+      "title": "Comparte un puzle, *bate su tiempo*",
+      "text": "Un enlace y los tiempos de quien lo resuelve"
+    },
     "stamps": {
       "title": "Colecciona sellos *hanko*",
       "text": "Uno por cada hito de tu racha"
@@ -165,6 +185,10 @@
     "friends": {
       "title": "Com *amigos* e rivais",
       "text": "Grupos, duelos e replays"
+    },
+    "shared": {
+      "title": "Envie um puzzle, *bata o tempo*",
+      "text": "Um link e os tempos de quem o resolveu"
     },
     "stamps": {
       "title": "Carimbos *hanko* para colecionar",
@@ -196,6 +220,10 @@
       "title": "Speel met *vrienden* en rivalen",
       "text": "Groepen, duels en herhalingen"
     },
+    "shared": {
+      "title": "Deel een puzzel, *verbeter de tijd*",
+      "text": "Eén link, en de tijden van wie hem oploste"
+    },
     "stamps": {
       "title": "Verzamel *hanko*-stempels",
       "text": "Eén voor elke mijlpaal van je reeks"
@@ -225,6 +253,10 @@
     "friends": {
       "title": "Graj z *przyjaciółmi* i rywalami",
       "text": "Grupy, pojedynki i powtórki"
+    },
+    "shared": {
+      "title": "Udostępnij łamigłówkę, *pobij czas*",
+      "text": "Jeden link i czasy każdego, kto ją rozwiązał"
     },
     "stamps": {
       "title": "Zbieraj pieczątki *hanko*",
@@ -256,6 +288,10 @@
       "title": "*Arkadaşlarınla* ve rakiplerinle",
       "text": "Gruplar, düellolar ve tekrarlar"
     },
+    "shared": {
+      "title": "Bulmaca paylaş, *süresini geç*",
+      "text": "Tek bağlantı, çözen herkesin süresi"
+    },
     "stamps": {
       "title": "*Hanko* mühürleri topla",
       "text": "Her dönüm noktası için bir mühür"
@@ -285,6 +321,10 @@
     "friends": {
       "title": "Играй с *друзьями* и соперниками",
       "text": "Группы, дуэли и повторы"
+    },
+    "shared": {
+      "title": "Отправь головоломку, *побей время*",
+      "text": "Одна ссылка и время всех, кто её решил"
     },
     "stamps": {
       "title": "Собирай печати *ханко*",
@@ -316,6 +356,10 @@
       "title": "Грай із *друзями* й суперниками",
       "text": "Групи, дуелі та повтори"
     },
+    "shared": {
+      "title": "Надішли головоломку, *побий час*",
+      "text": "Одне посилання й час усіх, хто її розвʼязав"
+    },
     "stamps": {
       "title": "Збирай печатки *ханко*",
       "text": "За кожне досягнення в серії"
@@ -345,6 +389,10 @@
     "friends": {
       "title": "العب مع *الأصدقاء* والمنافسين",
       "text": "مجموعات ومبارزات وإعادات"
+    },
+    "shared": {
+      "title": "شارك لغزًا *واهزم وقته*",
+      "text": "رابط واحد وأوقات كل من حلّه"
     },
     "stamps": {
       "title": "اجمع أختام *الهانكو*",
@@ -376,6 +424,10 @@
       "title": "*दोस्तों* और प्रतिद्वंद्वियों संग",
       "text": "ग्रुप, मुक़ाबले और रीप्ले"
     },
+    "shared": {
+      "title": "पहेली भेजें, *समय को मात दें*",
+      "text": "एक लिंक, और हल करने वाले सबका समय"
+    },
     "stamps": {
       "title": "*हांको* मुहरें इकट्ठा करें",
       "text": "आपकी स्ट्रीक के हर पड़ाव के लिए"
@@ -405,6 +457,10 @@
     "friends": {
       "title": "Main bareng *teman* dan rival",
       "text": "Grup, duel, dan tayangan ulang"
+    },
+    "shared": {
+      "title": "Kirim teka-teki, *kalahkan waktunya*",
+      "text": "Satu tautan dan waktu semua pemecahnya"
     },
     "stamps": {
       "title": "Kumpulkan stempel *hanko*",
@@ -436,6 +492,10 @@
       "title": "Chơi cùng *bạn bè* và đối thủ",
       "text": "Nhóm, đấu tay đôi và phát lại"
     },
+    "shared": {
+      "title": "Chia sẻ câu đố, *vượt thành tích*",
+      "text": "Một liên kết, thời gian của mọi người giải"
+    },
     "stamps": {
       "title": "Sưu tầm con dấu *hanko*",
       "text": "Một con dấu cho mỗi cột mốc"
@@ -465,6 +525,10 @@
     "friends": {
       "title": "เล่นกับ*เพื่อน*และคู่แข่ง",
       "text": "กลุ่ม การดวล และรีเพลย์"
+    },
+    "shared": {
+      "title": "แชร์ปริศนา *ทำเวลาให้ดีกว่า*",
+      "text": "ลิงก์เดียว ดูเวลาของทุกคนที่ไขได้"
     },
     "stamps": {
       "title": "สะสมตรา*ฮังโกะ*",
@@ -496,6 +560,10 @@
       "title": "*仲間*とライバルと",
       "text": "グループ、対決、リプレイ"
     },
+    "shared": {
+      "title": "問題を共有、*タイムに挑戦*",
+      "text": "リンクひとつで、解いた人のタイムが並ぶ"
+    },
     "stamps": {
       "title": "*はんこ*を集めよう",
       "text": "節目ごとに、はんこをひとつ"
@@ -525,6 +593,10 @@
     "friends": {
       "title": "*친구*, 라이벌과 함께",
       "text": "그룹, 대결, 리플레이"
+    },
+    "shared": {
+      "title": "퍼즐을 공유하고 *기록에 도전*",
+      "text": "링크 하나로 푼 사람들의 기록을 한눈에"
     },
     "stamps": {
       "title": "*한코* 도장을 모아요",
@@ -556,6 +628,10 @@
       "title": "和*朋友*、对手一起玩",
       "text": "小组、对决和回放"
     },
+    "shared": {
+      "title": "分享题目，*挑战对方的用时*",
+      "text": "一个链接，解开的人用时一目了然"
+    },
     "stamps": {
       "title": "收集*判子*印章",
       "text": "每个里程碑盖一枚"
@@ -585,6 +661,10 @@
     "friends": {
       "title": "和*朋友*、對手一起玩",
       "text": "群組、對決和回放"
+    },
+    "shared": {
+      "title": "分享題目，*挑戰對方的用時*",
+      "text": "一個連結，解開的人用時一目了然"
     },
     "stamps": {
       "title": "收集*印章*",

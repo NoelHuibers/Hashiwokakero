@@ -4,11 +4,11 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
 
-import { addBridge, DAILY_KEY, edges, PLAY_KEY } from '../../e2e/board.ts';
+import { DAILY_KEY, edges, PLAY_KEY, type Puzzle, SHARED_KEY, saved } from '../../e2e/board.ts';
 import { DB_PATH, STORE_URL } from './env.ts';
-import { ME, PLAYING, PUZZLES, sessionOf } from './seed.ts';
+import { ME, PLAYING, PUZZLES, SHARED, sessionOf } from './seed.ts';
 
-export type SceneId = 'daily' | 'ranking' | 'play' | 'friends' | 'stamps' | 'night';
+export type SceneId = 'daily' | 'ranking' | 'play' | 'friends' | 'shared' | 'stamps' | 'night';
 
 export interface Scene {
   id: SceneId;
@@ -29,29 +29,35 @@ export interface Scene {
 
 export const SCENES: Scene[] = [
   {
-    // Today's daily, a good part of the way: the clock running, the moves counted
+    // Today's daily, a good part of the way: the clock running, the moves counted. The board as
+    // the browser saved it (the daily restores it on load): built tap by tap it took minutes on
+    // the weekend's big boards (an Oni has ~230 bridges), which made the run time depend on the
+    // weekday.
     id: 'daily',
     user: PLAYING,
     path: '/',
-    before: async () => restartClock(),
-    play: async (page) => {
+    before: async (context) => {
+      restartClock();
       const { puzzle, solution } = PUZZLES.daily;
+      const bridges = dailyProgress(puzzle, solution);
+      const game = {
+        puzzle,
+        bridges,
+        solution: null,
+        unique: true,
+        source: 'Custom',
+        status: 'Playing',
+        elapsed: 0,
+        moves: bridges.reduce((a, b) => a + b, 0),
+        hints: 0,
+      };
+      await seedGame(context, DAILY_KEY, game);
+    },
+    play: async (page) => {
       await expect(page.locator('svg.board-svg').first()).toHaveClass(/board-interactive/);
-      // Every bridge of the first islands in reading order, as a player works through the board
-      const built = new Set<number>();
-      const target = Math.round(solution.filter((b) => b > 0).length * 0.55);
-      const order = edges(puzzle)
-        .flatMap((pair, e) => {
-          const bridges = solution[e] ?? 0;
-          return bridges > 0 ? [{ e, pair, bridges }] : [];
-        })
-        .sort((a, b) => a.pair[0] - b.pair[0] || a.pair[1] - b.pair[1]);
-      for (const { e, bridges } of order) {
-        if (built.size >= target) break;
-        for (let n = 0; n < bridges; n++) await addBridge(page, DAILY_KEY, puzzle, e, true);
-        built.add(e);
-      }
-      await page.evaluate(() => window.scrollTo(0, 0));
+      // The page took the seeded board, it didn't start an empty one
+      const { puzzle, solution } = PUZZLES.daily;
+      expect((await saved(page, DAILY_KEY)).bridges).toEqual(dailyProgress(puzzle, solution));
     },
   },
   {
@@ -79,14 +85,7 @@ export const SCENES: Scene[] = [
         moves: bridges.reduce((a, b) => a + b, 0) + 3,
         hints: 0,
       };
-      await context.addInitScript(
-        ([key, value]) => {
-          if (sessionStorage.getItem('store-seeded')) return;
-          localStorage.setItem(key, value);
-          sessionStorage.setItem('store-seeded', '1');
-        },
-        [PLAY_KEY, JSON.stringify(game)] as const,
-      );
+      await seedGame(context, PLAY_KEY, game);
     },
   },
   {
@@ -94,6 +93,33 @@ export const SCENES: Scene[] = [
     id: 'friends',
     user: ME,
     path: '/groups/1',
+  },
+  {
+    // A puzzle aiko shared, mika on the way to beat her time; on the tablet everyone who solved
+    // it beside the board
+    id: 'shared',
+    user: ME,
+    path: `/p/${SHARED.code}`,
+    before: async (context) => {
+      const { puzzle, solution } = SHARED;
+      const bridges = solution.map((b, e) => (e % 4 < 3 ? b : 0));
+      const game = {
+        puzzle,
+        bridges,
+        solution: null,
+        unique: true,
+        source: 'Custom',
+        status: 'Playing',
+        elapsed: 81,
+        moves: bridges.reduce((a, b) => a + b, 0) + 2,
+        hints: 0,
+      };
+      await seedGame(context, SHARED_KEY, game);
+    },
+    play: async (page) => {
+      await expect(page.getByTestId('shared-to-beat')).toBeVisible();
+      await expect(page.locator('svg.board-svg').first()).toHaveClass(/board-interactive/);
+    },
   },
   {
     // The stamp book on the account page
@@ -120,6 +146,33 @@ export const SCENES: Scene[] = [
     },
   },
 ];
+
+/**
+ * The daily as a player works through it: every bridge of the first islands in reading order,
+ * until a good half of the solution's edges have theirs.
+ */
+function dailyProgress(puzzle: Puzzle, solution: number[]): number[] {
+  const target = Math.round(solution.filter((b) => b > 0).length * 0.55);
+  const order = edges(puzzle)
+    .flatMap((pair, e) => ((solution[e] ?? 0) > 0 ? [{ e, pair }] : []))
+    .sort((a, b) => a.pair[0] - b.pair[0] || a.pair[1] - b.pair[1])
+    .slice(0, target);
+  const bridges = solution.map(() => 0);
+  for (const { e } of order) bridges[e] = solution[e] ?? 0;
+  return bridges;
+}
+
+/** A game in the browser's storage before the page loads, once: the page saves over it later. */
+async function seedGame(context: BrowserContext, key: string, game: object) {
+  await context.addInitScript(
+    ([key, value]) => {
+      if (sessionStorage.getItem('store-seeded')) return;
+      localStorage.setItem(key, value);
+      sessionStorage.setItem('store-seeded', '1');
+    },
+    [key, JSON.stringify(game)] as const,
+  );
+}
 
 /** The second mika started today's daily a minute and a half ago, whenever the screenshot is. */
 function restartClock() {
@@ -164,14 +217,7 @@ export async function boardShot(context: BrowserContext, out: string) {
     moves: 0,
     hints: 0,
   };
-  await context.addInitScript(
-    ([key, value]) => {
-      if (sessionStorage.getItem('store-seeded')) return;
-      localStorage.setItem(key, value);
-      sessionStorage.setItem('store-seeded', '1');
-    },
-    [PLAY_KEY, JSON.stringify(game)] as const,
-  );
+  await seedGame(context, PLAY_KEY, game);
   const page = await context.newPage();
   await page.goto(`${STORE_URL}/play`);
   await expect(page.locator('html')).toHaveAttribute('data-hydrated', '');

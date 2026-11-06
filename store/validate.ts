@@ -38,7 +38,7 @@ export const APPLE_FIELDS = {
 /** Captions of the screenshots, store/captions.json: short, they sit above the app. */
 export const CAPTION_LIMIT = 34;
 export const SUBCAPTION_LIMIT = 44;
-export const SCENES = ['daily', 'ranking', 'play', 'friends', 'stamps', 'night'];
+export const SCENES = ['daily', 'ranking', 'play', 'friends', 'shared', 'stamps', 'night'];
 
 /**
  * Names of other games and puzzle brands, of the stores and their platforms: not in keywords

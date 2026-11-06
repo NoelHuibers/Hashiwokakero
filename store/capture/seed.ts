@@ -48,6 +48,26 @@ export const PUZZLES = {
   play: FIXED.play,
 };
 export const DAILY = PUZZLES.daily;
+
+/**
+ * A puzzle aiko shared (/p/<code>): a medium one, a hard one on the days the daily is medium (it
+ * is that same puzzle then). Mika is on it, after aiko's time to beat; who solved it is beside it.
+ */
+export const SHARED = {
+  code: 'kakeru27',
+  sharer: 'aiko',
+  ...FIXED.daily[difficulty === 'medium' ? 'hard' : 'medium'],
+  /** Seconds, with the hints; the sharer's the time to beat. */
+  solvers: [
+    ['yuki', 96.4, 0],
+    ['aiko', 102.7, 0],
+    ['chen_wei', 117.2, 0],
+    ['sofia', 101.5, 1],
+    ['lukas', 139.9, 0],
+    ['hana', 152.3, 0],
+    ['emre', 148.8, 1],
+  ] as const,
+};
 /** Days of dailies before today. */
 const HISTORY = 75;
 
@@ -245,6 +265,33 @@ export function seed(dbPath: string) {
       JSON.stringify(run),
       r.user_id,
       r.day,
+    );
+  });
+  // The shared puzzle, stored by the hash of its layout as server/shares.rs does
+  const sharedAt = now - 2 * MS_PER_DAY;
+  const { puzzle } = SHARED;
+  const layout =
+    `${puzzle.width}x${puzzle.height}:` +
+    puzzle.islands.map((i) => `${i.pos.x},${i.pos.y},${i.required};`).join('');
+  db.prepare(
+    'INSERT INTO shared_puzzles (id, hash, puzzle, solution, created_at) VALUES (1, ?, ?, ?, ?)',
+  ).run(sha256(layout), JSON.stringify(puzzle), JSON.stringify(SHARED.solution), sharedAt);
+  db.prepare(
+    'INSERT INTO puzzle_shares (id, code, puzzle_id, user_id, created_at) VALUES (1, ?, 1, ?, ?)',
+  ).run(SHARED.code, id(SHARED.sharer), sharedAt);
+  const moves = SHARED.solution.reduce((a, b) => a + b, 0);
+  SHARED.solvers.forEach(([name, seconds, hints], i) => {
+    const time = Math.round(seconds * 1000);
+    db.prepare(
+      `INSERT INTO shared_results (puzzle_id, user_id, share_id, time_ms, moves, hints, score_ms, finished_at)
+       VALUES (1, ?, 1, ?, ?, ?, ?, ?)`,
+    ).run(
+      id(name),
+      time,
+      moves + (i % 3),
+      hints,
+      time + hints * 30_000,
+      sharedAt + (i + 1) * 3_600_000,
     );
   });
   for (const name of RIVALS) {
