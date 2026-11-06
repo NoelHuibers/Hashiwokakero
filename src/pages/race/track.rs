@@ -140,6 +140,7 @@ mod tests {
             checks: 0,
             flag: None,
             outcome: RaceOutcome::Racing,
+            solved_before: false,
         };
         assert_eq!(state_id(&p), "racing");
         p.away = true;

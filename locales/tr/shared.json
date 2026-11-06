@@ -57,5 +57,12 @@
     "kicker": "Paylaşılan bir bulmaca",
     "beat": "{{ time }} süresini geçebilir misin?",
     "solve": "Çözebilir misin?"
+  },
+  "race": {
+    "title": "Grubumla yarış",
+    "text": "Gruplarından birinde bu bulmacayla bir yarış aç: herkes onu aynı anda alır.",
+    "group": "Grup",
+    "open": "Yarışı aç",
+    "opening": "Açılıyor…"
   }
 }

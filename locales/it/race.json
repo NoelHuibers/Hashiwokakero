@@ -68,7 +68,9 @@
     "rematch_join": "Partecipa alla rivincita",
     "rematch_go": "Alla rivincita",
     "replay": "Le mosse di tutti",
-    "stage": "La griglia della gara con i ponti di {{ names }}"
+    "stage": "La griglia della gara con i ponti di {{ names }}",
+    "share_text": "Abbiamo fatto una gara su questo puzzle Hashi. Riesci a battere i nostri tempi?",
+    "share_hint": "Condividi il puzzle come link: i tempi della gara sono nella sua classifica, quelli da battere."
   },
   "errors": {
     "open": "In questo gruppo c'è già una gara aperta: partecipa a quella.",
@@ -79,5 +81,14 @@
     "not_joined": "Non partecipi a questa gara.",
     "not_running": "La gara non è in corso.",
     "done": "Hai già finito questa gara."
+  },
+  "shared": {
+    "badge": "Puzzle condiviso",
+    "by": "Puzzle condiviso · da {{ name }}",
+    "by_blocked": "Puzzle condiviso · da un giocatore bloccato",
+    "by_former": "Puzzle condiviso · da un ex giocatore",
+    "lobby": "Chi partecipa riceve questo puzzle condiviso nello stesso momento. L'host avvia la gara quando ci sono almeno due giocatori.",
+    "before": "già risolto",
+    "before_hint": "Ha risolto questo puzzle prima della gara, quindi conosce la soluzione."
   }
 }

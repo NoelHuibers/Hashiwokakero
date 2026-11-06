@@ -14,7 +14,10 @@
 //! blocks (`blocks::hidden`), banned players and deleted accounts aren't on the boards.
 //!
 //! For the sharing stamps: [`players_reached`] counts the other players who solved a puzzle
-//! through a player's links, from the index on `shared_results (share_id, user_id)`.
+//! through a player's links, from the index on `shared_results (share_id, user_id)`. A group can
+//! race a shared puzzle (`groups::race`): the racers came through the link, their results count.
+//! A race's puzzle shared after the race gets the racers' results on its board as the times to
+//! beat, but they don't count (`counts = 0`): the racers solved it before there was a link.
 
 #[cfg(test)]
 mod tests;
@@ -165,20 +168,22 @@ impl Verified {
 /// Stores the result of `user` on the puzzle of the link `code`, through that link, unless they
 /// have one: only the first counts. Whether it was stored.
 ///
-/// For results the server checked itself (see [`Verified`]): after a race, every racer's time
-/// goes on the board of the puzzle a racer shared with [`create`].
+/// For results the server checked itself (see [`Verified`]): a solve on the page, or a race
+/// opened from the link (`groups::race`). `counts`: whether it counts for the link's sharer
+/// ([`players_reached`]): every player who came through the link does.
 pub async fn add_result(
     conn: &Connection,
     code: &str,
     user: i64,
     result: Verified,
+    counts: bool,
     now: i64,
 ) -> Result<bool, ServerFnError> {
     let changed = conn
         .execute(
             "INSERT OR IGNORE INTO shared_results
-                 (puzzle_id, user_id, share_id, time_ms, moves, hints, score_ms, finished_at)
-             SELECT puzzle_id, ?2, id, ?3, ?4, ?5, ?6, ?7 FROM puzzle_shares WHERE code = ?1",
+                 (puzzle_id, user_id, share_id, time_ms, moves, hints, score_ms, finished_at, counts)
+             SELECT puzzle_id, ?2, id, ?3, ?4, ?5, ?6, ?7, ?8 FROM puzzle_shares WHERE code = ?1",
             params![
                 code,
                 user,
@@ -186,7 +191,8 @@ pub async fn add_result(
                 result.moves,
                 result.hints,
                 share_score(result.time_ms, result.hints),
-                now
+                now,
+                i64::from(counts)
             ],
         )
         .await
@@ -213,7 +219,7 @@ pub async fn share(
     };
     let (code, _) = create_checked(conn, user, puzzle, now, check).await?;
     if let Some(solve) = &solve {
-        add_result(conn, &code, user, Verified::of(solve), now).await?;
+        add_result(conn, &code, user, Verified::of(solve), true, now).await?;
     }
     Ok(code)
 }
@@ -388,6 +394,17 @@ async fn link(conn: &Connection, code: &str) -> Result<Option<Link>, ServerFnErr
     }))
 }
 
+/// The puzzle of the link `code` (its id, the puzzle and its proven solution), `None` for a code
+/// that isn't one. For a race on it (`groups::race`).
+pub async fn linked_puzzle(
+    conn: &Connection,
+    code: &str,
+) -> Result<Option<(i64, Puzzle, Vec<u8>)>, ServerFnError> {
+    Ok(link(conn, code)
+        .await?
+        .map(|l| (l.puzzle_id, l.puzzle, l.solution)))
+}
+
 /// The board of a puzzle: the best [`SHARE_BOARD_SHOWN`] places, and the results of `viewer` and
 /// the sharer wherever they are. With everyone who solved it.
 async fn board(
@@ -491,7 +508,7 @@ pub async fn submit(
         .await?
         .ok_or_else(|| ApiError::WrongPuzzle.fail())?;
     check_result(&Board::new(link.puzzle.clone()), &link.solution, solve)?;
-    let counted = add_result(conn, code, user, Verified::of(solve), now).await?;
+    let counted = add_result(conn, code, user, Verified::of(solve), true, now).await?;
     let page = page_of(conn, code, link, Some(user)).await?;
     Ok((page, counted))
 }
@@ -535,8 +552,12 @@ pub fn reached(sharer: Option<i64>, solver: i64) {
 
 /// [`players_reached`]'s query, `?1` the sharer. Walks the sharer's links
 /// (`puzzle_shares_user`) and their results (`shared_results_share`).
+///
+/// Only the results that `counts`: not those of a race put on the board when its puzzle was
+/// shared after it (`groups::race::share`). Those racers solved it before there was a link, and a
+/// big group's race would earn a sharer 師 with a single link otherwise.
 pub const PLAYERS_REACHED: &str = "SELECT COUNT(DISTINCT r.user_id) FROM puzzle_shares s
-     JOIN shared_results r ON r.share_id = s.id AND r.user_id != s.user_id
+     JOIN shared_results r ON r.share_id = s.id AND r.user_id != s.user_id AND r.counts = 1
      JOIN users u ON u.id = r.user_id AND u.banned_at IS NULL
      WHERE s.user_id = ?1";
 

@@ -57,5 +57,12 @@
     "kicker": "Teka-teki yang dibagikan",
     "beat": "Bisakah kamu mengalahkan {{ time }}?",
     "solve": "Bisakah kamu menyelesaikannya?"
+  },
+  "race": {
+    "title": "Balapan dengan grupku",
+    "text": "Buka balapan dengan teka-teki ini di salah satu grupmu: semua mendapatkannya pada saat yang sama.",
+    "group": "Grup",
+    "open": "Buka balapan",
+    "opening": "Membuka…"
   }
 }

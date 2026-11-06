@@ -68,7 +68,9 @@
     "rematch_join": "Unirse a la revancha",
     "rematch_go": "A la revancha",
     "replay": "Las jugadas de todos",
-    "stage": "El tablero de la carrera con los puentes de {{ names }}"
+    "stage": "El tablero de la carrera con los puentes de {{ names }}",
+    "share_text": "Hemos hecho una carrera con este puzle de Hashi. ¿Puedes superar nuestros tiempos?",
+    "share_hint": "Comparte el puzle como enlace: los tiempos de la carrera están en su clasificación, como los que hay que superar."
   },
   "errors": {
     "open": "Ya hay una carrera abierta en este grupo: únete a esa.",
@@ -79,5 +81,14 @@
     "not_joined": "No estás en esta carrera.",
     "not_running": "La carrera no está en marcha.",
     "done": "Ya has terminado esta carrera."
+  },
+  "shared": {
+    "badge": "Puzle compartido",
+    "by": "Puzle compartido · de {{ name }}",
+    "by_blocked": "Puzle compartido · de un jugador bloqueado",
+    "by_former": "Puzle compartido · de un antiguo jugador",
+    "lobby": "Todos los que se unen reciben este puzle compartido en el mismo momento. El anfitrión empieza cuando hay al menos dos.",
+    "before": "ya resuelto",
+    "before_hint": "Resolvió este puzle antes de la carrera, así que conoce la solución."
   }
 }

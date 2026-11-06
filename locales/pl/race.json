@@ -68,7 +68,9 @@
     "rematch_join": "Dołącz do rewanżu",
     "rematch_go": "Do rewanżu",
     "replay": "Ruchy wszystkich",
-    "stage": "Plansza wyścigu z mostami: {{ names }}"
+    "stage": "Plansza wyścigu z mostami: {{ names }}",
+    "share_text": "Ścigaliśmy się na tej łamigłówce Hashi. Pobijesz nasze czasy?",
+    "share_hint": "Udostępnij łamigłówkę jako link: czasy z wyścigu są w jej rankingu jako te do pobicia."
   },
   "errors": {
     "open": "W tej grupie jest już otwarty wyścig: dołącz do niego.",
@@ -79,5 +81,14 @@
     "not_joined": "Nie bierzesz udziału w tym wyścigu.",
     "not_running": "Wyścig nie trwa.",
     "done": "Ten wyścig masz już za sobą."
+  },
+  "shared": {
+    "badge": "Udostępniona łamigłówka",
+    "by": "Udostępniona łamigłówka · od: {{ name }}",
+    "by_blocked": "Udostępniona łamigłówka · od zablokowanego gracza",
+    "by_former": "Udostępniona łamigłówka · od byłego gracza",
+    "lobby": "Każdy, kto dołączy, dostaje tę udostępnioną łamigłówkę w tej samej chwili. Gospodarz startuje, gdy dołączą co najmniej dwie osoby.",
+    "before": "już rozwiązana",
+    "before_hint": "Rozwiązał(a) tę łamigłówkę przed wyścigiem, więc zna rozwiązanie."
   }
 }

@@ -6,9 +6,9 @@ use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
 use super::HashiClient;
-use crate::model::{GroupRaces, MoveEvent, RaceView, ReplayData};
+use crate::model::{GroupRaces, MoveEvent, RaceView, ReplayData, SharedLink};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, blocks, db, groups::race, now_ms};
+use crate::server::{auth, blocks, db, groups::race, now_ms, shares};
 
 #[cfg(feature = "ssr")]
 async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> {
@@ -25,6 +25,14 @@ async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> 
 pub async fn open_group_race(group: i64, difficulty: Difficulty) -> Result<i64, ServerFnError> {
     let (conn, user) = signed_in().await?;
     race::open(&conn, group, user.id, difficulty, now_ms()).await
+}
+
+/// Opens a race in a group on the shared puzzle of the link `code` (`/p/<code>`), the player its
+/// host. Returns its id. The racers' results go on the puzzle's board through that link.
+#[server(input = Json, client = HashiClient)]
+pub async fn open_shared_race(group: i64, code: String) -> Result<i64, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    race::open_shared(&conn, group, user.id, &code, now_ms()).await
 }
 
 /// The races of a group page: the open one and the last ones.
@@ -111,7 +119,24 @@ pub async fn submit_group_race(
     log: Vec<MoveEvent>,
 ) -> Result<RaceView, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    race::submit(&conn, id, user.id, bridges, moves, log, now_ms()).await
+    let finished = race::finish(&conn, id, user.id, bridges, moves, log, now_ms()).await?;
+    // Through someone's link (a race on a shared puzzle): their sharing stamps
+    if finished.reached.is_some() {
+        shares::reached(finished.reached, user.id);
+    }
+    Ok(finished.view)
+}
+
+/// Shares the puzzle of a race that is over as a link of the player's (`/p/<code>`). The first
+/// link puts the racers' results on its board as the times to beat.
+#[server(input = Json, client = HashiClient)]
+pub async fn share_group_race(id: i64) -> Result<SharedLink, ServerFnError> {
+    let (conn, user) = signed_in().await?;
+    let code = race::share(&conn, id, user.id, now_ms()).await?;
+    Ok(SharedLink {
+        code,
+        user: user.info(),
+    })
 }
 
 /// A new lobby with the settings of a race that is over, or the one opened for it already:

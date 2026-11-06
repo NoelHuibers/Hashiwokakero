@@ -18,7 +18,7 @@ use crate::pages::groups::today::ColourPip;
 use crate::state::error_toast;
 
 use super::state::RaceState;
-use super::{browser_now, race_path};
+use super::{SolvedBefore, browser_now, race_path};
 
 /// The link to a race's page, on this site.
 pub fn race_url(group: i64, race: i64) -> String {
@@ -128,6 +128,7 @@ pub fn Lobby(race: RaceState) -> impl IntoView {
                                 {move || player_name(i18n.get_locale(), &name)}
                                 {(p.user_id == me).then(|| view! { <span class="text-muted-foreground">" (" {t!(i18n, race.track.you)} ")"</span> })}
                             </span>
+                            {p.solved_before.then(|| view! { <SolvedBefore /> })}
                             {(Some(p.user_id) == host).then(|| view! {
                                 <Badge variant=BadgeVariant::Secondary>
                                     <span class="font-pixel" aria-hidden="true">"主 "</span>{t!(i18n, race.lobby.host)}
@@ -146,7 +147,13 @@ pub fn Lobby(race: RaceState) -> impl IntoView {
                 <CardTitle class="flex items-baseline gap-2 text-xl">
                     {t!(i18n, race.lobby.title)} <span class="font-pixel text-sm text-primary">"控室"</span>
                 </CardTitle>
-                <CardDescription>{t!(i18n, race.lobby.text)}</CardDescription>
+                <CardDescription>
+                    {move || if view_of.with(|v| v.as_ref().is_some_and(|v| v.shared.is_some())) {
+                        t_string!(i18n, race.shared.lobby)
+                    } else {
+                        t_string!(i18n, race.lobby.text)
+                    }}
+                </CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-4">
                 <ul class="flex flex-col gap-2" data-testid="race-players">{players}</ul>
@@ -238,6 +245,7 @@ mod tests {
             rematch: None,
             rematch_open: false,
             server_now: 0,
+            shared: None,
         };
         assert_eq!(minutes_left(&view, 0), 15);
         assert_eq!(minutes_left(&view, 1), 15);

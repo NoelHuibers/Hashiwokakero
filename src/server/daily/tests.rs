@@ -2469,13 +2469,18 @@ async fn sharers_reached_lately_are_synced_in_the_background() {
     };
     // aiko's link solved by bram today, chen's by bram long ago, bram's only by himself
     let fresh = create(&conn, aiko, puzzle(1), now).await.unwrap();
-    add_result(&conn, &fresh, bram, time, now).await.unwrap();
+    add_result(&conn, &fresh, bram, time, true, now).await.unwrap();
     let old = create(&conn, chen, puzzle(2), now).await.unwrap();
-    add_result(&conn, &old, bram, time, now - 5 * MS_PER_DAY)
+    add_result(&conn, &old, bram, time, true, now - 5 * MS_PER_DAY)
         .await
         .unwrap();
     let own = create(&conn, bram, puzzle(1), now).await.unwrap();
-    add_result(&conn, &own, bram, time, now).await.unwrap();
+    add_result(&conn, &own, bram, time, true, now).await.unwrap();
+    // dana's link has chen's time from a race before she shared it: it doesn't count for her
+    let dana = user(&conn, "dana", Some("dana")).await;
+    let three = Puzzle::from_grid(&[vec![1, 0, 1], vec![0, 0, 0], vec![0, 0, 0]]);
+    let raced = create(&conn, dana, three, now).await.unwrap();
+    add_result(&conn, &raced, chen, time, false, now).await.unwrap();
 
     assert_eq!(sync_recent(&conn).await.unwrap(), 1);
     let has = |user: i64| {
@@ -2492,7 +2497,7 @@ async fn sharers_reached_lately_are_synced_in_the_background() {
         }
     };
     assert!(has(aiko).await);
-    assert!(!has(chen).await && !has(bram).await);
+    assert!(!has(chen).await && !has(bram).await && !has(dana).await);
     // Not told yet: on her next visit
     assert_eq!(
         sync_stamps(&conn, aiko, true).await.unwrap().1,

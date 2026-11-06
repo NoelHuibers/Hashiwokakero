@@ -128,8 +128,10 @@ pub async fn admission(req: Request, next: Next) -> Response {
                     // Proves the puzzle unique with the SAT solver
                     | "post_group_puzzle"
                     | "share_puzzle"
+                    | "share_group_race"
                     // Codes are short: no guessing through them
                     | "load_shared_puzzle"
+                    | "open_shared_race"
                     // Mails us, on top of its own limit per player and day (`reports`)
                     | "report_player"
             )

@@ -1,5 +1,5 @@
 //! Sharing a puzzle as a link (`/p/<code>`, see `server::shares`): after solving it on Play or
-//! on a shared puzzle's page, or once the workshop proved it unique.
+//! on a shared puzzle's page, once the workshop proved it unique, or after a race.
 //!
 //! Two steps: the first button asks the server for the link, then the share bar shares a text
 //! with it. The phone's share sheet only opens right after a tap, the server's answer may come
@@ -10,12 +10,26 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use super::share::ShareBar;
-use crate::api::share_puzzle;
+use crate::api::{share_group_race, share_puzzle};
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::{error_text, localized};
 use crate::model::{SharedSolve, share_clock, share_path};
 use crate::state::{Auth, note_error};
+
+/// What a link is made of.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ShareRequest {
+    /// A puzzle, and how the player solved it (`None`: not played).
+    Puzzle(Puzzle, Option<SharedSolve>),
+    /// The puzzle of a race that is over (`server::groups::race::share`).
+    Race(i64),
+}
+
+/// The text a link is shared with: a title, what happened, then the link.
+pub fn share_lines(title: &str, line: &str, url: &str) -> String {
+    format!("🌉 Hashi · {title} · 橋をかけろ\n{line}\n{url}")
+}
 
 /// The text a link to a puzzle is shared with: what the player did, then the link. `solve`:
 /// their time on it, `None` from the workshop.
@@ -30,7 +44,7 @@ pub fn share_text(locale: Locale, title: &str, solve: Option<(i64, u32)>, url: &
         ),
         None => td_string!(locale, shared.share.untimed).to_string(),
     };
-    format!("🌉 Hashi · {title} · 橋をかけろ\n{line}\n{url}")
+    share_lines(title, &line, url)
 }
 
 /// Where the link of `code` points, in the player's language: the website, also from the app.
@@ -53,13 +67,13 @@ enum Link {
 
 /// "Share this puzzle", then the link, and the share bar that shares it.
 ///
-/// `request`: the puzzle and how the player solved it (`None`: not played). `text`: the text
+/// `request`: what the link is made of ([`ShareRequest`]). `text`: the text
 /// shared with the link's URL. `fallback`: what the share bar shares until there is a link (or
 /// where none can be made: offline, a puzzle with more than one solution), the result alone;
 /// `None`: no share bar without a link.
 #[component]
 pub fn SharePuzzle(
-    request: impl Fn() -> (Puzzle, Option<SharedSolve>) + Copy + Send + Sync + 'static,
+    request: impl Fn() -> ShareRequest + Copy + Send + Sync + 'static,
     text: impl Fn(Locale, &str) -> String + Copy + Send + Sync + 'static,
     #[prop(optional)] fallback: Option<Callback<(), String>>,
     #[prop(optional)] outline: bool,
@@ -72,9 +86,13 @@ pub fn SharePuzzle(
             return;
         }
         link.set(Link::Making);
-        let (puzzle, solve) = request();
+        let request = request();
         spawn_local(async move {
-            match share_puzzle(puzzle, solve).await {
+            let made = match request {
+                ShareRequest::Puzzle(puzzle, solve) => share_puzzle(puzzle, solve).await,
+                ShareRequest::Race(id) => share_group_race(id).await,
+            };
+            match made {
                 Ok(made) => {
                     // A guest made for the link: the page shows them signed in
                     if let Some(auth) = auth

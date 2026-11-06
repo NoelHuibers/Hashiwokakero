@@ -391,17 +391,17 @@ async fn results_the_server_checked_go_on_the_board() {
         hints: 0,
     };
     assert!(
-        add_result(&conn, &code, aiko, time(50_000), now)
+        add_result(&conn, &code, aiko, time(50_000), true, now)
             .await
             .unwrap()
     );
     assert!(
-        add_result(&conn, &code, bram, time(55_000), now)
+        add_result(&conn, &code, bram, time(55_000), true, now)
             .await
             .unwrap()
     );
     assert!(
-        !add_result(&conn, &code, bram, time(1_000), now)
+        !add_result(&conn, &code, bram, time(1_000), true, now)
             .await
             .unwrap()
     );
@@ -559,7 +559,7 @@ async fn players_reached_earn_the_sharing_stamps_which_stay() {
         }
     };
     // Her own solve reaches nobody
-    add_result(&conn, &code, aiko, Verified::of(&solved(9_000, 0)), now)
+    add_result(&conn, &code, aiko, Verified::of(&solved(9_000, 0)), true, now)
         .await
         .unwrap();
     let mut solvers = Vec::new();
@@ -595,7 +595,7 @@ async fn players_reached_earn_the_sharing_stamps_which_stay() {
         // Solved through her link, by as many players
         while solvers.len() < reached {
             let p = player(&conn, &format!("p{}", solvers.len())).await;
-            add_result(&conn, &code, p, Verified::of(&solved(10_000, 0)), now)
+            add_result(&conn, &code, p, Verified::of(&solved(10_000, 0)), true, now)
                 .await
                 .unwrap();
             solvers.push(p);

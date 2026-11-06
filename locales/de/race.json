@@ -68,7 +68,9 @@
     "rematch_join": "Bei der Revanche mitmachen",
     "rematch_go": "Zur Revanche",
     "replay": "Alle Züge",
-    "stage": "Das Brett des Rennens mit den Brücken von {{ names }}"
+    "stage": "Das Brett des Rennens mit den Brücken von {{ names }}",
+    "share_text": "Wir haben dieses Hashi-Rätsel um die Wette gelöst. Schaffst du es schneller als wir?",
+    "share_hint": "Teile das Rätsel als Link: Die Zeiten aller Teilnehmenden stehen auf seiner Bestenliste, als die zu schlagenden."
   },
   "errors": {
     "open": "In dieser Gruppe ist schon ein Rennen offen: Mach dort mit.",
@@ -79,5 +81,14 @@
     "not_joined": "Du bist bei diesem Rennen nicht dabei.",
     "not_running": "Das Rennen läuft nicht.",
     "done": "Mit diesem Rennen bist du fertig."
+  },
+  "shared": {
+    "badge": "Geteiltes Rätsel",
+    "by": "Geteiltes Rätsel · von {{ name }}",
+    "by_blocked": "Geteiltes Rätsel · von einem blockierten Spieler",
+    "by_former": "Geteiltes Rätsel · von einem ehemaligen Spieler",
+    "lobby": "Alle, die mitmachen, bekommen im selben Moment dieses geteilte Rätsel. Der Host startet, sobald mindestens zwei dabei sind.",
+    "before": "schon gelöst",
+    "before_hint": "Hat dieses Rätsel schon vor dem Rennen gelöst und kennt die Lösung."
   }
 }

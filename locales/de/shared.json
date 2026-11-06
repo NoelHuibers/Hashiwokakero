@@ -57,5 +57,12 @@
     "kicker": "Ein geteiltes Rätsel",
     "beat": "Schlägst du {{ time }}?",
     "solve": "Kannst du es lösen?"
+  },
+  "race": {
+    "title": "Mit meiner Gruppe um die Wette lösen",
+    "text": "Eröffne ein Rennen auf diesem Rätsel in einer deiner Gruppen: Alle bekommen es im selben Moment.",
+    "group": "Gruppe",
+    "open": "Rennen eröffnen",
+    "opening": "Wird eröffnet…"
   }
 }

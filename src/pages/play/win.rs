@@ -3,7 +3,7 @@
 use leptos::prelude::*;
 
 use crate::components::celebration::{Petals, Stamp};
-use crate::components::share_puzzle::{SharePuzzle, share_text};
+use crate::components::share_puzzle::{SharePuzzle, ShareRequest, share_text};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::Card;
 use crate::i18n::{t, td_string, use_i18n};
@@ -50,7 +50,7 @@ pub(super) fn WinOverlay() -> impl IntoView {
             moves: game.moves.get_untracked(),
             hints: game.hints.get_untracked(),
         };
-        (game.puzzle(), Some(solve))
+        ShareRequest::Puzzle(game.puzzle(), Some(solve))
     };
     let link_text = move |locale, url: &str| {
         let solve = (

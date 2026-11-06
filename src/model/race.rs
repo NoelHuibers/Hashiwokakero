@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 
 use super::daily::HelpPenalties;
 use super::moves::Flag;
+use super::shares::SharedBy;
 
 /// How long a lobby waits for its start, from opening it.
 pub const LOBBY_MS: i64 = 15 * 60_000;
@@ -106,6 +107,34 @@ pub struct RacePlayer {
     /// Why a finish has no place.
     pub flag: Option<Flag>,
     pub outcome: RaceOutcome,
+    /// A race on a shared puzzle: they solved it before this race (on its page, or in an earlier
+    /// race), so they know the solution.
+    #[serde(default)]
+    pub solved_before: bool,
+}
+
+/// The shared puzzle (`/p/<code>`) a race is on: the link it was opened from, who shared it and
+/// the puzzle's size. The racers' results go on the puzzle's board through the link.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RaceShare {
+    pub code: String,
+    /// `None`: they deleted their account (or are banned).
+    pub sharer: Option<SharedBy>,
+    pub width: u8,
+    pub height: u8,
+}
+
+/// The difficulty a race on a shared puzzle of this size pays the help of: the preset of Play
+/// whose size is closest.
+pub fn shared_difficulty(width: u8, height: u8) -> Difficulty {
+    let area = i32::from(width) * i32::from(height);
+    Difficulty::ALL
+        .into_iter()
+        .min_by_key(|d| {
+            let (w, h) = d.size();
+            (i32::from(w) * i32::from(h) - area).abs()
+        })
+        .unwrap_or_default()
 }
 
 /// Everything the page of a race shows, as the viewer may see it.
@@ -137,6 +166,9 @@ pub struct RaceView {
     pub rematch_open: bool,
     /// Server time when the response was made, to correct the browser's clock.
     pub server_now: i64,
+    /// `Some`: a race on a shared puzzle, opened from its page.
+    #[serde(default)]
+    pub shared: Option<RaceShare>,
 }
 
 impl RaceView {
@@ -152,6 +184,13 @@ impl RaceView {
     /// When the race ends at the latest.
     pub fn deadline(&self) -> Option<i64> {
         self.starts_at.map(|s| s + RACE_MS)
+    }
+
+    /// The puzzle's size: the shared puzzle's, or the difficulty's preset.
+    pub fn size(&self) -> (u8, u8) {
+        self.shared
+            .as_ref()
+            .map_or_else(|| self.difficulty.size(), |s| (s.width, s.height))
     }
 
     /// The viewer's line, if they joined.
@@ -205,6 +244,9 @@ pub struct RaceSummary {
     pub entrants: Vec<RaceEntrant>,
     /// The viewer is one of them.
     pub joined: bool,
+    /// `Some`: a race on a shared puzzle.
+    #[serde(default)]
+    pub shared: Option<RaceShare>,
 }
 
 impl RaceSummary {
@@ -419,6 +461,7 @@ mod tests {
             rematch: None,
             rematch_open: false,
             server_now: now,
+            shared: None,
         }
     }
 
@@ -435,6 +478,7 @@ mod tests {
             checks: 0,
             flag: None,
             outcome,
+            solved_before: false,
         }
     }
 
@@ -603,5 +647,41 @@ mod tests {
         // A failed request: the value goes again
         report.failed();
         assert_eq!(report.take(6_100, 20), Some(20));
+    }
+
+    #[test]
+    fn a_shared_puzzle_pays_the_help_of_the_preset_closest_in_size() {
+        assert_eq!(shared_difficulty(7, 7), Difficulty::Easy);
+        assert_eq!(shared_difficulty(3, 3), Difficulty::Easy);
+        assert_eq!(shared_difficulty(9, 9), Difficulty::Medium);
+        assert_eq!(shared_difficulty(10, 12), Difficulty::Medium);
+        assert_eq!(shared_difficulty(14, 14), Difficulty::Hard);
+        assert_eq!(shared_difficulty(20, 16), Difficulty::Expert);
+        assert_eq!(shared_difficulty(30, 30), Difficulty::Oni);
+    }
+
+    #[test]
+    fn a_race_on_a_shared_puzzle_has_its_size() {
+        let mut race = view(None, None, 0);
+        assert_eq!(race.size(), (7, 7));
+        race.shared = Some(RaceShare {
+            code: "k7m2xq9a".into(),
+            sharer: None,
+            width: 9,
+            height: 5,
+        });
+        assert_eq!(race.size(), (9, 5));
+    }
+
+    #[test]
+    fn answers_of_an_older_server_still_load() {
+        // Before races on shared puzzles: no `shared`, no `solved_before`
+        let mut old = serde_json::to_value(view(None, None, 0)).unwrap();
+        old.as_object_mut().unwrap().remove("shared");
+        for p in old["players"].as_array_mut().unwrap() {
+            p.as_object_mut().unwrap().remove("solved_before");
+        }
+        let loaded: RaceView = serde_json::from_value(old).unwrap();
+        assert_eq!(loaded, view(None, None, 0));
     }
 }

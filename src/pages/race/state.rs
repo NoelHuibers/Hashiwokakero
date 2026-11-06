@@ -287,6 +287,7 @@ mod tests {
             checks: 1,
             flag: None,
             outcome,
+            solved_before: false,
         }
     }
 
@@ -311,6 +312,7 @@ mod tests {
             rematch: None,
             rematch_open: false,
             server_now,
+            shared: None,
         }
     }
 

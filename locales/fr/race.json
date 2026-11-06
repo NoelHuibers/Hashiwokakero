@@ -68,7 +68,9 @@
     "rematch_join": "Rejoindre la revanche",
     "rematch_go": "Vers la revanche",
     "replay": "Les coups de chacun",
-    "stage": "Le plateau de la course avec les ponts de {{ names }}"
+    "stage": "Le plateau de la course avec les ponts de {{ names }}",
+    "share_text": "On a fait la course sur ce puzzle Hashi. Peux-tu battre nos temps ?",
+    "share_hint": "Partage le puzzle en lien : les temps de la course sont dans son classement, ceux à battre."
   },
   "errors": {
     "open": "Une course est déjà ouverte dans ce groupe : rejoignez-la.",
@@ -79,5 +81,14 @@
     "not_joined": "Vous ne participez pas à cette course.",
     "not_running": "La course n'est pas en cours.",
     "done": "Vous avez terminé cette course."
+  },
+  "shared": {
+    "badge": "Puzzle partagé",
+    "by": "Puzzle partagé · par {{ name }}",
+    "by_blocked": "Puzzle partagé · par un joueur bloqué",
+    "by_former": "Puzzle partagé · par un ancien joueur",
+    "lobby": "Tous les inscrits reçoivent ce puzzle partagé au même moment. L'hôte lance la course dès qu'au moins deux joueurs sont là.",
+    "before": "déjà résolu",
+    "before_hint": "A résolu ce puzzle avant la course, et connaît donc la solution."
   }
 }

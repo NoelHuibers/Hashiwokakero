@@ -18,7 +18,7 @@ use crate::model::{
     DojoCactus, DojoCrossover, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
     DojoSeasons, DojoState, DojoSubmission, FeedbackKind, FeedbackStatus, Flag, GroupToday,
     HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard,
-    MonthEntry, MoveEvent, PlayerProfile, RaceEntrant, RaceOutcome, RacePlayer, RaceSummary,
+    MonthEntry, MoveEvent, PlayerProfile, RaceEntrant, RaceOutcome, RacePlayer, RaceShare, RaceSummary,
     RaceView, RecoveryEmail, ReportOutcome, ReportReason, Run, SharedBy, SharedEntry, SharedLink,
     SharedPuzzlePage, SharedSubmit, Stamp, StampProgress, SubmissionAction, SubmitResult, UserInfo,
     UserStats,
@@ -301,6 +301,7 @@ fn race_view() -> RaceView {
         checks: 2,
         flag: (user_id == 2).then_some(Flag::TooFast),
         outcome,
+        solved_before: user_id == 2,
     };
     RaceView {
         id: 6,
@@ -338,6 +339,23 @@ fn race_view() -> RaceView {
         rematch: Some(7),
         rematch_open: true,
         server_now: 1_760_000_200_000,
+        shared: Some(race_share()),
+    }
+}
+
+/// The shared puzzle of a race, opened from emre's link.
+fn race_share() -> RaceShare {
+    RaceShare {
+        code: "k7m2xq9a".into(),
+        sharer: Some(SharedBy {
+            user_id: 5,
+            name: "emre".into(),
+            guest: false,
+            stamp: None,
+            result: None,
+        }),
+        width: 7,
+        height: 7,
     }
 }
 
@@ -358,6 +376,7 @@ fn race_summary(ended_at: Option<i64>) -> RaceSummary {
             time_ms: ended_at.map(|_| 85_000),
         }],
         joined: true,
+        shared: ended_at.map(|_| race_share()),
     }
 }
 

@@ -29,9 +29,9 @@ use crate::components::layout::use_localized;
 use crate::components::paid_controls::{PaidControls, show_check, show_hint};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
-use crate::i18n::{t, t_string, use_i18n};
+use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::{difficulty_name, prefix};
-use crate::model::{RaceOutcome, RacePhase, RaceView, format_duration};
+use crate::model::{RaceOutcome, RacePhase, RaceShare, RaceView, format_duration, is_blocked_name};
 use crate::pages::daily::Stat;
 use crate::seo::title_text;
 use crate::state::{Auth, Game, Status, error_toast};
@@ -45,6 +45,33 @@ use track::Tracks;
 /// The path of a race's page (without the language).
 pub fn race_path(group: i64, race: i64) -> String {
     format!("/groups/{group}/races/{race}")
+}
+
+/// Where a race's shared puzzle comes from: "Shared puzzle · by aiko".
+pub fn shared_by(locale: Locale, share: &RaceShare) -> String {
+    match &share.sharer {
+        Some(s) if is_blocked_name(&s.name) => {
+            td_string!(locale, race.shared.by_blocked).to_string()
+        }
+        Some(s) => td_string!(locale, race.shared.by, name = s.name.clone()),
+        None => td_string!(locale, race.shared.by_former).to_string(),
+    }
+}
+
+/// The marker of a player who solved a race's shared puzzle before the race: they know it.
+#[component]
+pub fn SolvedBefore() -> impl IntoView {
+    let i18n = use_i18n();
+    view! {
+        <span
+            class="inline-flex shrink-0 items-center gap-1 rounded border px-1 text-[10px] leading-4 text-muted-foreground"
+            data-tooltip=move || t_string!(i18n, race.shared.before_hint)
+            data-testid="race-solved-before"
+        >
+            <span class="font-pixel" aria-hidden="true">"既"</span>
+            <span class="sr-only sm:not-sr-only">{t!(i18n, race.shared.before)}</span>
+        </span>
+    }
 }
 
 /// The browser clock, unix time in ms.
@@ -309,11 +336,16 @@ pub fn RacePage() -> impl IntoView {
     }
 }
 
-/// The header: 勝負, the group and the puzzle's difficulty and size.
+/// The header: 勝負, the group and the puzzle's difficulty and size, or the shared puzzle's
+/// sharer and size.
 #[component]
 fn Header(race: RaceState) -> impl IntoView {
     let i18n = use_i18n();
-    let difficulty = Memo::new(move |_| race.view.with(|v| v.as_ref().map(|v| v.difficulty)));
+    let difficulty = Memo::new(move |_| {
+        race.view
+            .with(|v| v.as_ref().filter(|v| v.shared.is_none()).map(|v| v.difficulty))
+    });
+    let shared = Memo::new(move |_| race.view.with(|v| v.as_ref().and_then(|v| v.shared.clone())));
     let left = Memo::new(move |_| {
         let deadline = race
             .view
@@ -340,6 +372,16 @@ fn Header(race: RaceState) -> impl IntoView {
                             <Badge variant=BadgeVariant::Muted>{format!("{w}×{h}")}</Badge>
                         }
                     })}
+                    {move || shared.get().map(|share| {
+                        let size = format!("{}×{}", share.width, share.height);
+                        view! {
+                            <Badge variant=BadgeVariant::Muted attr:data-testid="race-shared">
+                                <span class="font-pixel" aria-hidden="true">"共"</span>
+                                " " {move || shared_by(i18n.get_locale(), &share)}
+                            </Badge>
+                            <Badge variant=BadgeVariant::Muted>{size}</Badge>
+                        }
+                    })}
                     {move || left.get().map(|minutes| view! {
                         <Badge variant=BadgeVariant::Default>
                             {move || t_string!(i18n, race.play.time_left, minutes)}
@@ -357,10 +399,7 @@ fn Board(race: RaceState) -> impl IntoView {
     let i18n = use_i18n();
     let game = race.game;
     let has_board = Memo::new(move |_| race.has_board());
-    let size = Memo::new(move |_| {
-        race.view
-            .with(|v| v.as_ref().map_or((7, 7), |v| v.difficulty.size()))
-    });
+    let size = Memo::new(move |_| race.view.with(|v| v.as_ref().map_or((7, 7), RaceView::size)));
     move || {
         if has_board.get() {
             view! {
@@ -585,6 +624,7 @@ fn RaceBody(race: RaceState) -> impl IntoView {
                 </Show>
                 <Show when=move || phase.get() == Some(RacePhase::Ended)>
                     <results::Placings race />
+                    <results::SharePuzzleCard race />
                 </Show>
             </aside>
         </div>
@@ -613,6 +653,7 @@ mod tests {
             checks: 0,
             flag: None,
             outcome,
+            solved_before: false,
         }
     }
 
@@ -668,6 +709,7 @@ mod tests {
             rematch: None,
             rematch_open: false,
             server_now: 10_000,
+            shared: None,
         }
     }
 
