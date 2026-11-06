@@ -112,9 +112,8 @@ prepare() {
   rev=$(git ls-remote https://github.com/wasm-bindgen/wasm-bindgen "refs/tags/$wbg" "refs/tags/$wbg^{}" |
     awk '{ sha = $1 } END { print substr(sha, 1, 9) }')
   [ -n "$rev" ] || fail "wasm-bindgen has no tag $wbg"
+  # (Its --version doesn't show the commit, only the WASM does.)
   WBG_VERSION=$rev cargo install --locked --root "$TOOLS" wasm-bindgen-cli --version "$wbg"
-  [ "$(wasm-bindgen --version)" = "wasm-bindgen $wbg ($rev)" ] ||
-    fail "wasm-bindgen says '$(wasm-bindgen --version)', not 'wasm-bindgen $wbg ($rev)'"
   cargo install --locked --root "$TOOLS" tauri-cli --version "$TAURI_CLI_VERSION"
 }
 
