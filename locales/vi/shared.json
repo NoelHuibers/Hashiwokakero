@@ -42,6 +42,7 @@
     "making": "Đang tạo liên kết…",
     "link": "Liên kết tới câu đố",
     "send": "Gửi liên kết",
+    "stamps": "Mỗi người giải qua liên kết của bạn đều được tính cho ba con dấu:",
     "time": "Mình đã giải câu đố Hashi này trong {{ time }}. Bạn có vượt được mình không?",
     "time_hints": "Mình đã giải câu đố Hashi này trong {{ time }} với {{ hints }} gợi ý (+30 giây mỗi cái). Bạn có vượt được mình không?",
     "untimed": "Mình đã tạo câu đố Hashi này. Bạn giải được không?",

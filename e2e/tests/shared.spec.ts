@@ -30,6 +30,10 @@ test('a puzzle shared after solving it is played through its link and ranked', a
   await expect(link).toHaveText(/\/p\/[a-z2-9]{8}$/);
   const url = (await link.getAttribute('href'))!;
   await expect(page.getByRole('button', { name: 'Send the link', exact: true })).toBeVisible();
+  // Players reached through it count toward the sharing stamps
+  await expect(page.getByTestId('share-stamps')).toHaveText(
+    'Everyone who solves it through your link counts toward three stamps: 道 帯 師',
+  );
   // Sharing made them a guest
   await expect(page.locator('header')).toContainText('Guest');
 
@@ -63,6 +67,16 @@ test('a puzzle shared after solving it is played through its link and ranked', a
   await visit(page, new URL(url).pathname);
   await expect(page.locator('[data-testid="shared-board"] tr[data-user]')).not.toHaveCount(1);
   await friendContext.close();
+
+  // Someone else solved a puzzle they shared: the stamp 道, and one of ten for 帯. The friend's
+  // solve syncs the sharer's stamps in the background, so the book may need another look
+  const tile = (name: string) => page.locator('li').filter({ hasText: name });
+  await expect(async () => {
+    await visit(page, '/account');
+    await expect(tile('Show the way')).not.toHaveClass(/opacity-60/, { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  await expect(tile('Black belt')).toContainText('1 / 10');
+  await expect(tile('Sensei')).toContainText('1 / 25');
 });
 
 test('the seeded link shows its sharer, time and board, a wrong one is lost', async ({

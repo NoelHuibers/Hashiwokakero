@@ -512,6 +512,27 @@ pub async fn players_reached(conn: &Connection, user: i64) -> Result<i64, Server
     }
 }
 
+/// After `solver`'s first solve through a link of `sharer`: the sharer's stamps, synced.
+///
+/// Only if that is someone else, in the background (the solver doesn't wait); they hear of a new
+/// one on their next visit. `stamps::sync_recent` catches what this misses.
+pub fn reached(sharer: Option<i64>, solver: i64) {
+    let Some(sharer) = sharer.filter(|&s| s != solver) else {
+        return;
+    };
+    tokio::spawn(async move {
+        let synced = match super::db::conn() {
+            Ok(conn) => super::daily::sync_stamps(&conn, sharer, false)
+                .await
+                .map(|_| ()),
+            Err(e) => Err(e),
+        };
+        if let Err(e) = synced {
+            eprintln!("shares: stamps of #{sharer}: {e}");
+        }
+    });
+}
+
 /// [`players_reached`]'s query, `?1` the sharer. Walks the sharer's links
 /// (`puzzle_shares_user`) and their results (`shared_results_share`).
 pub const PLAYERS_REACHED: &str = "SELECT COUNT(DISTINCT r.user_id) FROM puzzle_shares s

@@ -42,6 +42,7 @@
     "making": "Link wird erstellt …",
     "link": "Link zum Rätsel",
     "send": "Link senden",
+    "stamps": "Wer es über deinen Link löst, zählt für drei Stempel:",
     "time": "Ich habe dieses Hashi-Rätsel in {{ time }} gelöst. Schaffst du es schneller?",
     "time_hints": "Ich habe dieses Hashi-Rätsel in {{ time }} gelöst, mit {{ hints }} Tipps (je +30 s). Schaffst du es schneller?",
     "untimed": "Ich habe dieses Hashi-Rätsel gebaut. Kannst du es lösen?",

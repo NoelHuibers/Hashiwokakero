@@ -1,7 +1,8 @@
-//! The stamp book: works out a player's stamps from their dailies (and the Dojo) and keeps the `stamps` table
-//! (when each was earned) in step with it.
+//! The stamp book: works out a player's stamps from their dailies (and their groups and shared
+//! puzzles) and keeps the `stamps` table (when each was earned) in step with it.
 
 use std::collections::{HashMap, HashSet};
+use std::sync::LazyLock;
 
 use leptos::prelude::ServerFnError;
 use libsql::{Connection, params};
@@ -11,7 +12,8 @@ use common::Puzzle;
 use super::fame::champion;
 use super::{from_json, json, today};
 use crate::model::{
-    ApiError, Daypart, MoveEvent, Record, Solve, Stamp, StampProgress, day_of, month_of, summarize,
+    ApiError, Daypart, MS_PER_DAY, MoveEvent, Record, Solve, Stamp, StampProgress, day_of,
+    month_of, summarize,
 };
 use crate::server::db::db_err;
 use crate::server::now_ms;
@@ -58,6 +60,19 @@ async fn backfill_runs(conn: &Connection, user: i64) -> Result<(), ServerFnError
 /// Ambiguous ranking keys and legacy NULL own times retain the original window ordering.
 const RECORD_QUERY: &str = include_str!("stamp_record.sql");
 
+/// The rest of a player's [`Record`] in one round trip (`?1` the player): the day they joined,
+/// the levels of a group's river they laid planks of, and the other players who solved a puzzle
+/// they shared (`shares::PLAYERS_REACHED`, for the sharing stamps).
+static PLAYER_QUERY: LazyLock<String> = LazyLock::new(|| {
+    format!(
+        "SELECT created_at,
+                (SELECT COUNT(*) FROM group_river_crew WHERE user_id = ?1),
+                ({})
+         FROM users WHERE id = ?1",
+        crate::server::shares::PLAYERS_REACHED
+    )
+});
+
 /// Everything the stamps of a player depend on. `kept` are the stored stamps that stay.
 pub(super) async fn record(
     conn: &Connection,
@@ -100,48 +115,25 @@ pub(super) async fn record(
     }
 
     let mut rows = conn
-        .query(
-            "SELECT 1 FROM dojo_submissions WHERE user_id = ?1 AND state = 'done' AND similar_to IS NULL LIMIT 1",
-            params![user],
-        )
+        .query(PLAYER_QUERY.as_str(), params![user])
         .await
         .map_err(db_err)?;
-    let dojo = rows.next().await.map_err(db_err)?.is_some();
-    let dojo_rank = if dojo {
-        crate::server::dojo::rank_of(conn, user).await?
-    } else {
-        None
-    };
-
-    let mut rows = conn
-        .query("SELECT created_at FROM users WHERE id = ?1", params![user])
-        .await
-        .map_err(db_err)?;
-    let joined = match rows.next().await.map_err(db_err)? {
-        Some(row) => day_of(row.get(0).map_err(db_err)?),
-        None => 0,
+    let (joined, river_levels, players_reached) = match rows.next().await.map_err(db_err)? {
+        Some(row) => (
+            day_of(row.get(0).map_err(db_err)?),
+            row.get(1).map_err(db_err)?,
+            row.get(2).map_err(db_err)?,
+        ),
+        None => (0, 0, 0),
     };
 
     let (yokozuna_weeks, award_weeks) =
         crate::server::groups::banzuke::honours(conn, user, today()).await?;
 
-    let mut rows = conn
-        .query(
-            "SELECT COUNT(*) FROM group_river_crew WHERE user_id = ?1",
-            params![user],
-        )
-        .await
-        .map_err(db_err)?;
-    let river_levels = match rows.next().await.map_err(db_err)? {
-        Some(row) => row.get(0).map_err(db_err)?,
-        None => 0,
-    };
-
     Ok(Record {
         solves,
         champion_months,
-        dojo,
-        dojo_rank,
+        players_reached,
         joined,
         kept,
         yokozuna_weeks,
@@ -269,8 +261,8 @@ pub(super) async fn book(
         .collect())
 }
 
-/// How many players have each stamp, and how many have any (everyone who solved a daily or got
-/// onto the Dojo board).
+/// How many players have each stamp, and how many have any (everyone who solved a daily, or
+/// earned a stamp another way).
 pub(super) async fn holders(
     conn: &Connection,
 ) -> Result<(HashMap<Stamp, i64>, i64), ServerFnError> {
@@ -295,17 +287,22 @@ pub(super) async fn holders(
 
 /// Syncs the players who finished a daily in the last days, or who have no stamps yet (from
 /// before stamps existed): their medals and the fastest tenth only count once a day is over,
-/// and the leaderboards show stamps without the players visiting first.
+/// and the leaderboards show stamps without the players visiting first. And the players whose
+/// shared puzzles someone else solved in the last days, for the sharing stamps (a solve syncs
+/// the sharer at once, `shares::reached`; this catches what that missed).
 pub(super) async fn sync_recent(conn: &Connection) -> Result<usize, ServerFnError> {
+    let today = today();
     let mut rows = conn
         .query(
             "SELECT DISTINCT user_id FROM attempts a
              WHERE a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL
                AND (a.day >= ?1 - 2 OR NOT EXISTS (SELECT 1 FROM stamps s WHERE s.user_id = a.user_id))
                AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = a.user_id AND u.deleted_at IS NOT NULL)
-             UNION SELECT d.user_id FROM dojo_submissions d JOIN users u ON u.id = d.user_id
-             WHERE d.state = 'done' AND u.deleted_at IS NULL",
-            params![today()],
+             UNION SELECT s.user_id FROM shared_results r
+             JOIN puzzle_shares s ON s.id = r.share_id AND s.user_id != r.user_id
+             JOIN users u ON u.id = s.user_id AND u.deleted_at IS NULL
+             WHERE r.finished_at >= ?2",
+            params![today, (today - 2) * MS_PER_DAY],
         )
         .await
         .map_err(db_err)?;

@@ -21,14 +21,11 @@ fn score_of(json: Option<String>) -> Option<Score> {
 /// An entry of a season's board.
 pub(super) struct Ranked {
     pub(super) entry: DojoEntry,
-    /// `None` for house entries.
-    pub(super) author: Option<i64>,
     /// Per formula, in set order (private while the season runs).
     pub(super) results: Vec<InstanceResult>,
 }
 
-/// The best submission of every author this season, ranked, with the author's id and the
-/// per-formula results. Banned authors aren't on it.
+/// The best submission of every author this season, ranked, with the per-formula results. Banned authors aren't on it.
 pub(super) async fn ranked(conn: &Connection, season: u32) -> Result<Vec<Ranked>, ServerFnError> {
     let mut rows = conn
         .query(
@@ -67,7 +64,6 @@ pub(super) async fn ranked(conn: &Connection, season: u32) -> Result<Vec<Ranked>
         };
         entries.push(Ranked {
             entry,
-            author: user.filter(|_| !house),
             results: results_of(row.get(7).map_err(db_err)?),
         });
         if entries.len() == BOARD_SIZE {
@@ -92,15 +88,6 @@ async fn current_board(
         false,
     );
     Ok((ranked, portfolio))
-}
-
-/// The place of a player's best solver on this season's board, if it made the board.
-pub async fn rank_of(conn: &Connection, user: i64) -> Result<Option<u32>, ServerFnError> {
-    Ok(ranked(conn, season())
-        .await?
-        .into_iter()
-        .find(|r| r.author == Some(user))
-        .map(|r| r.entry.rank))
 }
 
 pub async fn board(conn: &Connection) -> Result<DojoBoard, ServerFnError> {

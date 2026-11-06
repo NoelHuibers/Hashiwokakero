@@ -240,7 +240,7 @@ The page (`src/api/native.rs`, the arguments in `src/api/games.rs`, nothing on t
   (Android) and skips it while nobody is signed in.
 - When the page reports (`native::games_sync`, `games_progress`): at the start, once the sign-in
   signed a player in, and after each daily the server took (the win screen's `submitted`, or a
-  finish the recovery found), or stamps the server announces (yesterday's medal, a Dojo stamp),
+  finish the recovery found), or stamps the server announces (yesterday's medal, a sharing stamp),
   then from the server's statistics (`my_stats`, the stamp book's call), and on the account page
   from its own. `games::report` makes the report: every stamp of the book, earned or its
   progress as steps of `Stamp::steps`, and the scores `puzzles_solved`, `best_streak` and, on
@@ -1026,7 +1026,16 @@ steps from `src/model/achievements.rs`:
   2000), the rest kept for stamps to come. Can't be changed once an achievement is live.
 - `Stamp::steps`: the stamp book's target for stamps that count up to one (10 dailies, 30 days in a
   row, 1000 bridges...): incremental on Play, a percentage on Game Center. `None` for those
-  earned at once and for the full moon, whose target is the month's length.
+  earned at once, for the full moon, whose target is the month's length, and for the sharing
+  stamps 帯 and 師 (below).
+- The sharing stamps 道 `stamp_dojo` (15 points), 帯 `stamp_black_belt` (25) and 師 `stamp_sensei`
+  (40) went live as the SAT Dojo's stamps (a solver on the Dojo board, in its top three, at its
+  top). Since step E of the Play revamp they are earned by sharing puzzles (`/p/<code>`): other
+  players who solved a puzzle through one of the player's links (`shares::players_reached`), 1,
+  10 and 25. Ids, points, type (earned at once, no steps) and kanji, so the icons, stay as they
+  went live; only names, texts and the condition changed. The stamp book shows 帯 and 師 as
+  `3 / 10`, the platforms only hear that they are earned. All three are sticky: whoever earned
+  them in the Dojo keeps them, as does a sharer whose players are later banned or gone.
 - Hidden on both: the book's secret stamps. Game Center wants a description before it's earned
   even so: the book's neutral "A secret stamp. Keep playing to find it!".
 - `GamesLeaderboard`: `daily_time` (today's daily, lower is better), `puzzles_solved` and
@@ -1082,7 +1091,7 @@ nothing and never makes a second achievement. Nothing is ever deleted, submitted
   action for it): switches Game Center on for the app and for the iOS version being prepared,
   then every achievement and leaderboard by its vendor id. Since the API's version 4.2 their
   texts and images hang on versions: the run edits the latest one while it is being prepared,
-  and makes a new one when it is live (it goes to review with the next app version). An image is
+  and makes a new one when it is live (it goes to review, see below). An image is
   uploaded per locale, named by its content's hash, so a changed icon is replaced. The first run
   sends about 4000 requests, more than App Store Connect's 3600 an hour: it waits when told to,
   up to the job's three hours; a run stopped halfway is just run again. The daily leaderboard's
@@ -1105,6 +1114,28 @@ node store/achievements/apple.ts --dry-run   # what an upload would change
 node store/achievements/play.ts --offline
 node store/achievements/play.ts --dry-run --ids /tmp/ids.json
 ```
+
+### Changing live achievements
+
+Names, texts and icons can change, ids, points, type, steps and hidden can't (the sharing stamps
+were the Dojo's, see above). After a pull request that changes them (`locales/*/stamps.json`)
+is merged, the owner runs the workflow (`-f platform=play`, `-f platform=apple`, each first with
+`-f validate_only=true` to see what it would change). Then:
+
+- **Play Games**: the upload changes the drafts of the achievements; players see the new texts
+  once the Play Games Services changes are published (Play Console, Play-Spieldienste,
+  Einrichtung und Verwaltung, Veröffentlichung), which can take up to two hours
+  ([Publish your game changes](https://developer.android.com/games/pgs/console/publish)). No
+  new app version.
+- **Game Center**: "New or modified … achievements … must be reviewed before they can be made
+  available to players". The first ones go to review with an app version; "for subsequent
+  components, you can submit them without an app version", reviewed against the latest version
+  of the platform ([Submit Game Center components](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-game-center-components/)).
+  So a changed text needs **no new app version**: the run makes a new version of each changed
+  achievement (the live one stays until it is approved), then in App Store Connect each one, Add
+  for Review, and Submit for Review. While an achievement's version is in review (the first
+  submission with 1.1.0) the run leaves it and says so ("changed once that is over"): run it
+  again once the review is done.
 
 ### In the consoles
 

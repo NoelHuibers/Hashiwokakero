@@ -123,8 +123,11 @@ impl Stamp {
 
     /// For a stamp that counts up to a fixed target (dailies solved, bridges built, days in a
     /// row...), the target: an incremental achievement on Play, a percentage on Game Center,
-    /// with the progress of the stamp book. `None` for one that is earned at once, and for
-    /// [`Stamp::FullMoon`], whose target is the length of a month.
+    /// with the progress of the stamp book. `None` for one that is earned at once, for
+    /// [`Stamp::FullMoon`], whose target is the length of a month, and for the sharing stamps
+    /// [`Stamp::BlackBelt`] and [`Stamp::Sensei`]: they went live as the SAT Dojo's, earned at
+    /// once, and an achievement's type never changes. The book counts their players reached
+    /// (3 / 10), the platforms only hear when they are earned.
     pub const fn steps(self) -> Option<u32> {
         match self {
             Self::FourSeasons => Some(4),
@@ -278,6 +281,19 @@ mod tests {
         assert_eq!(Stamp::First.achievement_id(), "stamp_first");
         assert_eq!(Stamp::Solved100.achievement_id(), "stamp_solved_100");
         assert_eq!(Stamp::RiverCrew.achievement_id(), "stamp_river_crew");
+        // The SAT Dojo's, now the sharing stamps: ids, points and type as they went live
+        assert_eq!(
+            [Stamp::Dojo, Stamp::BlackBelt, Stamp::Sensei].map(|s| (
+                s.achievement_id(),
+                s.points(),
+                s.steps()
+            )),
+            [
+                ("stamp_dojo", 15, None),
+                ("stamp_black_belt", 25, None),
+                ("stamp_sensei", 40, None),
+            ]
+        );
         let boards: HashSet<&str> = GamesLeaderboard::ALL
             .into_iter()
             .map(GamesLeaderboard::id)
@@ -352,8 +368,9 @@ mod tests {
     }
 
     /// The steps are the stamp book's targets: the progress the server sends is what the app
-    /// reports. Stamps earned at once have a target of 1, and the full moon's depends on the
-    /// month.
+    /// reports. Stamps earned at once have a target of 1, the full moon's depends on the month,
+    /// and the sharing stamps count players in the book but are earned at once on the
+    /// platforms (see [`Stamp::steps`]).
     #[test]
     fn steps_are_the_stamp_books_targets() {
         let records = [
@@ -375,6 +392,8 @@ mod tests {
                         assert!((2..=MAX_STEPS).contains(&steps), "{:?}", p.stamp);
                     }
                     None if p.stamp == Stamp::FullMoon => assert!((28..=31).contains(&p.target)),
+                    None if p.stamp == Stamp::BlackBelt => assert_eq!(p.target, 10),
+                    None if p.stamp == Stamp::Sensei => assert_eq!(p.target, 25),
                     None => assert_eq!(p.target, 1, "{:?}", p.stamp),
                 }
             }

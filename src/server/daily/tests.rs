@@ -2449,3 +2449,53 @@ async fn help_prices_switch_by_puzzle_date_and_every_check_is_charged() {
         assert_eq!(finished.penalties, prices);
     }
 }
+
+/// The background sync also looks at sharers whose links someone else solved in the last days
+/// (the sharing stamps), not at sharers of older solves, their own, or deleted ones.
+#[tokio::test]
+async fn sharers_reached_lately_are_synced_in_the_background() {
+    use crate::server::shares::{Verified, add_result, create};
+
+    let (_db, conn) = test_db().await;
+    let aiko = user(&conn, "aiko", Some("aiko")).await;
+    let bram = user(&conn, "bram", Some("bram")).await;
+    let chen = user(&conn, "chen", Some("chen")).await;
+    let puzzle = |n| Puzzle::from_grid(&[vec![n, 0, n], vec![0, 0, 0]]);
+    let now = now_ms();
+    let time = Verified {
+        time_ms: 5_000,
+        moves: 2,
+        hints: 0,
+    };
+    // aiko's link solved by bram today, chen's by bram long ago, bram's only by himself
+    let fresh = create(&conn, aiko, puzzle(1), now).await.unwrap();
+    add_result(&conn, &fresh, bram, time, now).await.unwrap();
+    let old = create(&conn, chen, puzzle(2), now).await.unwrap();
+    add_result(&conn, &old, bram, time, now - 5 * MS_PER_DAY)
+        .await
+        .unwrap();
+    let own = create(&conn, bram, puzzle(1), now).await.unwrap();
+    add_result(&conn, &own, bram, time, now).await.unwrap();
+
+    assert_eq!(sync_recent(&conn).await.unwrap(), 1);
+    let has = |user: i64| {
+        let conn = conn.clone();
+        async move {
+            let mut rows = conn
+                .query(
+                    "SELECT COUNT(*) FROM stamps WHERE user_id = ?1 AND stamp = 'dojo'",
+                    params![user],
+                )
+                .await
+                .unwrap();
+            rows.next().await.unwrap().unwrap().get::<i64>(0).unwrap() == 1
+        }
+    };
+    assert!(has(aiko).await);
+    assert!(!has(chen).await && !has(bram).await);
+    // Not told yet: on her next visit
+    assert_eq!(
+        sync_stamps(&conn, aiko, true).await.unwrap().1,
+        [Stamp::Dojo]
+    );
+}
