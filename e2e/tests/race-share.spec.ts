@@ -102,7 +102,9 @@ test('a shared puzzle is raced by a group from its page', async ({ page, browser
   await expect(
     results.locator(`tr[data-user="${guest}"]`).getByTestId('race-solved-before'),
   ).toBeVisible();
-  await expect(results.locator(`tr[data-user="${host}"]`).getByTestId('race-solved-before')).toHaveCount(0);
+  await expect(
+    results.locator(`tr[data-user="${host}"]`).getByTestId('race-solved-before'),
+  ).toHaveCount(0);
 
   // The host's race time is on the puzzle's board, through the link it came from; the friend
   // keeps their first solve

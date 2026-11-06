@@ -74,6 +74,7 @@
 /api/my_stats POST application/json -> application/json
 /api/open_group_race POST application/json -> application/json
 /api/open_hanko POST application/json -> application/json
+/api/open_shared_race POST application/json -> application/json
 /api/password_reset_available POST application/json -> application/json
 /api/poll_group_race POST application/json -> application/json
 /api/post_group_puzzle POST application/json -> application/json
@@ -91,6 +92,7 @@
 /api/set_hanko POST application/json -> application/json
 /api/set_recovery_email POST application/json -> application/json
 /api/set_rival POST application/json -> application/json
+/api/share_group_race POST application/json -> application/json
 /api/share_puzzle POST application/json -> application/json
 /api/show_stamp POST application/json -> application/json
 /api/solve_puzzle POST application/json -> application/json
