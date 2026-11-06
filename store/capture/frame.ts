@@ -23,6 +23,7 @@ export const HANKO: Record<SceneId, string> = {
   ranking: '競',
   play: '遊',
   friends: '仲',
+  shared: '共',
   stamps: '判',
   night: '夜',
 };

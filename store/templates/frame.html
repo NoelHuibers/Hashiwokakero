@@ -133,6 +133,8 @@
         text-wrap: balance;
       }
       h1 em { font-style: normal; color: var(--shu); }
+      /* Korean breaks between words, not inside them (its default is any syllable) */
+      html[lang="ko"] :is(h1, p) { word-break: keep-all; }
       p {
         margin: 0;
         font-size: var(--text);

@@ -512,8 +512,10 @@ fn Header(shared: Shared) -> impl IntoView {
                     </Badge>
                     {move || match to_beat.get() {
                         Some(Some((score, hints))) => view! {
-                            <Badge variant=BadgeVariant::Default attr:data-testid="shared-to-beat">
-                                {t_string!(i18n, shared.page.to_beat)} " " <span class="font-pixel">{share_clock(score)}</span>
+                            // A gap, not a space: the badge is a flex box, which drops the
+                            // spaces between its children
+                            <Badge variant=BadgeVariant::Default class="gap-1" attr:data-testid="shared-to-beat">
+                                {t_string!(i18n, shared.page.to_beat)} <span class="font-pixel">{share_clock(score)}</span>
                                 {(hints > 0).then(|| view! {
                                     <span class="opacity-80" data-tooltip=move || t_string!(i18n, common.ranking.penalties)>
                                         {format!(" · {hints}h")}

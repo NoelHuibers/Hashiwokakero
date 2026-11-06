@@ -91,6 +91,8 @@
       }
       p { margin: 0; font-size: 21px; color: var(--muted); font-weight: 500; text-wrap: balance; }
       html[dir="rtl"] .text h1, html[dir="rtl"] .text p { direction: rtl; text-align: left; }
+      /* Korean breaks between words, not inside them (its default is any syllable) */
+      html[lang="ko"] :is(h1, p) { word-break: keep-all; }
       .board {
         position: absolute;
         left: 585px;
