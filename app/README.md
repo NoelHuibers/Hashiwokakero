@@ -44,7 +44,8 @@ server functions are same-origin calls and need no CORS. Its debug bundle goes t
 
 The release build uses the website's `wasm-release` profile (`opt-level = "z"`, LTO, one codegen
 unit, `panic = "abort"`) and `wasm-opt -Oz`. Trunk downloads the wasm-bindgen CLI of
-`Cargo.lock` and wasm-opt itself.
+`Cargo.lock` and wasm-opt itself, the version of `[tools]` in `Trunk.toml` (F-Droid builds the
+same one from source, see [F-Droid](#f-droid-f-droidorg)).
 
 It has to run inside this repository: `.cargo/config.toml` sets `DISABLE_SERVER_FN_HASH`, which
 makes the server functions answer at `/api/<name>`. Built elsewhere, the paths get a hash the
@@ -537,7 +538,9 @@ object-src 'none'; base-uri 'self'
 `version` in `tauri.conf.json` is the version users see (`versionName`). Tauri derives Android's
 `versionCode`, which must grow with every upload to Play, from it:
 `major × 1,000,000 + minor × 1,000 + patch`, so 0.0.1 is 1, 0.1.0 is 1000 and 1.2.3 is 1,002,003
-(minor and patch stay below 1000). `scripts/app-version.ts` sets it, see [Releases](#releases).
+(minor and patch stay below 1000). `bundle.android.versionCode` has it written out, the same
+number, for F-Droid's checkupdates, which reads it at each tag. `scripts/app-version.ts` sets
+both, see [Releases](#releases).
 
 ## Android builds
 
@@ -797,6 +800,72 @@ keytool -genkeypair -keystore /tmp/repo/keystore.p12 -storetype PKCS12 -alias te
 cd /tmp/repo && FDROID_KEY_ALIAS=test FDROID_KEYSTORE_PASSWORD=testtest FDROID_KEY_PASSWORD=testtest \
   ANDROID_HOME=~/Android/Sdk /tmp/fdroid/bin/fdroid update
 ```
+
+### F-Droid (f-droid.org)
+
+F-Droid's own repository builds the foss APKs itself, from source, on its build server (Debian
+with the Android SDK, [fdroiddata's build job](https://gitlab.com/fdroid/fdroiddata/-/blob/master/.gitlab-ci.yml)),
+from a recipe in [fdroiddata](https://gitlab.com/fdroid/fdroiddata): `metadata/rs.hashi.yml`, whose
+copy is `app/fdroid/fdroiddata/rs.hashi.yml` (written as `fdroid rewritemeta` writes it, no
+comments: fdroiddata takes none). Getting it there is an owner task
+([docs/stores.md](../docs/stores.md#f-droid-f-droidorg)).
+
+- **One build per ABI**, as the release's APKs: versionCode the version's times ten plus 1
+  (armeabi-v7a), 2 (arm64-v8a) or 4 (x86_64), as `gen/android/app/build.gradle.kts` makes them.
+- **New versions by themselves**: F-Droid's checkupdates looks for new tags `app-v<x.y.z>`, reads
+  the versionCode and the version from `src-tauri/tauri.conf.json` at the tag (`UpdateCheckData`;
+  `bundle.android.versionCode` is written out for it, `scripts/app-version.ts` keeps it the
+  version's) and adds the three builds of the tag, a copy of the last ones.
+- **The build**, `app/fdroid/build.sh` (its comment has the details):
+  `prepare` (fdroiddata's `prebuild`, the downloads: Node from nodejs.org with its checksum, pnpm,
+  `pnpm install`, Rust from rustup, `cargo fetch`, and Trunk, wasm-bindgen-cli and tauri-cli
+  compiled with `cargo install --locked`), then `tools` (Tailwind's two native modules, oxide and
+  Lightning CSS, and binaryen's wasm-opt, compiled from the git submodules in
+  `app/fdroid/third_party/`), then `apk <abi>` (`cargo tauri android build --apk
+  --split-per-abi`, Trunk's web bundle first, offline but for Gradle). F-Droid's scanner deletes
+  the prebuilt binaries of `node_modules` (`scandelete`) before `tools` puts the compiled modules
+  in their place, and the Gradle wrapper, for which the script calls F-Droid's `gradle`
+  (gradlew-fdroid, the wrapper's version with F-Droid's checksums).
+- **Reproducible**: the release's job "Build APKs (Android, foss)" runs `build.sh apk arm64 arm
+  x86_64` too, with CI's prebuilt Trunk and Tauri CLI (the same versions; Trunk downloads the same
+  wasm-bindgen and wasm-opt), the script's Rust (`RUST_VERSION`, not the stable of the other
+  builds), JDK 21 like F-Droid's Debian, the same NDK and Gradle, and the paths of the machine
+  mapped away (`--remap-path-prefix`: panic messages carry the sources' paths; and
+  `rustc-wrapper.sh`: Leptos' `wasm_split_macros` hashes `CARGO_MANIFEST_PATH` into the WASM;
+  wasm-bindgen-cli is compiled with its release's commit in `WBG_VERSION`, which it writes into
+  the WASM).
+  Tailwind skips `app/fdroid/third_party` (`@source not` in `style/tailwind.css`): F-Droid has the
+  submodules checked out, CI doesn't, and Tailwind would pick up class names from their sources. F-Droid compares
+  its unsigned APK with ours from the GitHub release (`binary:` in the recipe) and, when they are
+  the same but for the signature, ships ours, signed with the direct key
+  (`AllowedAPKSigningKeys`). So the app from F-Droid, from our repository and from the GitHub
+  release update each other. A version whose APKs differ isn't published by F-Droid (its build
+  fails): the job log of fdroiddata's pipeline or of F-Droid's build server says so, diffoscope
+  of the two APKs says where.
+- **The versions**, the same on both sides: Rust, the Tauri CLI and Node pinned in `build.sh`
+  (`TAURI_CLI_VERSION` with the workflows'), Trunk and wasm-opt in `Trunk.toml`
+  (`[tools] wasm_opt`, Trunk's default made explicit), wasm-bindgen in `Cargo.lock`, Tailwind and
+  Lightning CSS in `pnpm-lock.yaml`. The submodules have to be the versions of the last three:
+  "Build app (Android)" runs `app/fdroid/build.sh check` (each submodule's commit against its
+  tag upstream, nothing cloned). After an update of `@tailwindcss/oxide`, `lightningcss` or
+  `wasm_opt`, move the submodule to the new tag in the same pull request:
+
+  ```sh
+  git -C app/fdroid/third_party/tailwindcss fetch --tags
+  git -C app/fdroid/third_party/tailwindcss checkout v4.3.4
+  git add app/fdroid/third_party/tailwindcss
+  ```
+
+  A new `RUST_VERSION` is fine any time (with the next release both sides take it).
+
+To try the recipe, as fdroiddata's CI does it, with podman and a checkout of fdroiddata and of
+fdroidserver: the build job's script of fdroiddata's `.gitlab-ci.yml` in
+`registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie`, ending in
+`fdroid build --verbose --test --refresh-scanner --on-server --no-tarball rs.hashi:<versionCode>`
+(about an hour per ABI with 8 cores: Trunk, wasm-bindgen, the Tauri CLI and binaryen are
+compiled first). `fdroid lint rs.hashi`, `fdroid rewritemeta rs.hashi` (which must change
+nothing) and `fdroid checkupdates --allow-dirty rs.hashi` (without `--auto`, a dry run) run
+anywhere fdroidserver does.
 
 ### The first release
 

@@ -579,6 +579,11 @@ jobs:
       CARGO_PROFILE_DEV_DEBUG: 0
     steps:
       - uses: actions/checkout@v7
+      # F-Droid builds Tailwind's native modules and wasm-opt from the submodules of
+      # app/fdroid/third_party (app/README.md, F-Droid): they are the versions of pnpm-lock.yaml and
+      # app/Trunk.toml. After an update of one of those, move its submodule to the new tag.
+      - name: F-Droid's sources
+        run: app/fdroid/build.sh check
       # Gradle (the Android Gradle plugin) needs a JDK 17 or newer
       - uses: actions/setup-java@v6
         with:

@@ -1,0 +1,116 @@
+AntiFeatures:
+  TetheredNet:
+    en-US: The daily puzzle, rankings, rivals and groups use the developer's server
+      hashi.rs (free software, in the same repository), which can't be changed in
+      the app. Play works offline.
+Categories:
+  - Puzzle Game
+License: MIT
+AuthorName: Noel Huibers
+WebSite: https://hashi.rs
+SourceCode: https://github.com/NoelHuibers/Hashiwokakero
+IssueTracker: https://github.com/NoelHuibers/Hashiwokakero/issues
+Changelog: https://github.com/NoelHuibers/Hashiwokakero/releases
+
+AutoName: Hashi
+
+RepoType: git
+Repo: https://github.com/NoelHuibers/Hashiwokakero.git
+
+Builds:
+  - versionName: 1.1.0
+    versionCode: 10010001
+    commit: COMMIT
+    timeout: 18000
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y build-essential cmake curl pkg-config rustup xz-utils
+    output: 
+      app/src-tauri/gen/android/app/build/outputs/apk/arm/release/app-arm-release-unsigned.apk
+    binary: 
+      https://github.com/NoelHuibers/Hashiwokakero/releases/download/app-v%v/hashi-%v-foss-armeabi-v7a.apk
+    rm:
+      - app/src-tauri/gen/android/app/src/play
+    prebuild:
+      - sed -i -e '/com.google.android.gms/d' app/src-tauri/gen/android/app/build.gradle.kts
+      - app/fdroid/build.sh prepare
+    scandelete:
+      - app/fdroid/third_party/binaryen
+      - dojo/reference
+      - node_modules
+      - public
+      - src/golden/files
+    build:
+      - app/fdroid/build.sh tools
+      - app/fdroid/build.sh apk arm
+    ndk: 29.0.14206865
+
+  - versionName: 1.1.0
+    versionCode: 10010002
+    commit: COMMIT
+    timeout: 18000
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y build-essential cmake curl pkg-config rustup xz-utils
+    output: 
+      app/src-tauri/gen/android/app/build/outputs/apk/arm64/release/app-arm64-release-unsigned.apk
+    binary: 
+      https://github.com/NoelHuibers/Hashiwokakero/releases/download/app-v%v/hashi-%v-foss-arm64-v8a.apk
+    rm:
+      - app/src-tauri/gen/android/app/src/play
+    prebuild:
+      - sed -i -e '/com.google.android.gms/d' app/src-tauri/gen/android/app/build.gradle.kts
+      - app/fdroid/build.sh prepare
+    scandelete:
+      - app/fdroid/third_party/binaryen
+      - dojo/reference
+      - node_modules
+      - public
+      - src/golden/files
+    build:
+      - app/fdroid/build.sh tools
+      - app/fdroid/build.sh apk arm64
+    ndk: 29.0.14206865
+
+  - versionName: 1.1.0
+    versionCode: 10010004
+    commit: COMMIT
+    timeout: 18000
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y build-essential cmake curl pkg-config rustup xz-utils
+    output: 
+      app/src-tauri/gen/android/app/build/outputs/apk/x86_64/release/app-x86_64-release-unsigned.apk
+    binary: 
+      https://github.com/NoelHuibers/Hashiwokakero/releases/download/app-v%v/hashi-%v-foss-x86_64.apk
+    rm:
+      - app/src-tauri/gen/android/app/src/play
+    prebuild:
+      - sed -i -e '/com.google.android.gms/d' app/src-tauri/gen/android/app/build.gradle.kts
+      - app/fdroid/build.sh prepare
+    scandelete:
+      - app/fdroid/third_party/binaryen
+      - dojo/reference
+      - node_modules
+      - public
+      - src/golden/files
+    build:
+      - app/fdroid/build.sh tools
+      - app/fdroid/build.sh apk x86_64
+    ndk: 29.0.14206865
+
+AllowedAPKSigningKeys: 80b7941f808845ec150672ce3d169fd9db71d983566b9bdd4ce79c65a293226a
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^app-v\d+\.\d+\.\d+$
+VercodeOperation:
+  - 10 * %c + 1
+  - 10 * %c + 2
+  - 10 * %c + 4
+UpdateCheckData: 
+  app/src-tauri/tauri.conf.json|"versionCode":\s*(\d+)|.|"version":\s*"(\d+\.\d+\.\d+)"
+CurrentVersion: 1.1.0
+CurrentVersionCode: 10010004
