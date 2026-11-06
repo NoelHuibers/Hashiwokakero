@@ -987,7 +987,10 @@ async fn sharing_a_race_puts_the_racers_times_on_the_board_once() {
         ],
         "chen's flagged finish and dana's giving up aren't on it"
     );
-    let page = shares::page(&conn, &code, Some(erin)).await.unwrap().unwrap();
+    let page = shares::page(&conn, &code, Some(erin))
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(page.puzzle, small().puzzle);
     assert_eq!(page.sharer.map(|s| s.user_id), Some(erin));
     assert_eq!(page.solvers, 2);
@@ -1002,10 +1005,7 @@ async fn sharing_a_race_puts_the_racers_times_on_the_board_once() {
         number(&conn, "SELECT COUNT(*) FROM shared_results").await,
         2
     );
-    assert_eq!(
-        number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await,
-        2
-    );
+    assert_eq!(number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await, 2);
     // The racers solved it before there was a link: nobody reached anyone yet
     for p in [erin, aiko] {
         assert_eq!(shares::players_reached(&conn, p).await.unwrap(), 0);
@@ -1047,10 +1047,7 @@ async fn only_a_race_that_is_over_can_be_shared_by_its_group() {
         error(share(&conn, id, zoe, start + 20_000).await),
         ApiError::GroupNotFound
     );
-    assert_eq!(
-        number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await,
-        0
-    );
+    assert_eq!(number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await, 0);
     assert_eq!(published_at(&conn, id).await, None);
 }
 
@@ -1154,8 +1151,14 @@ async fn a_shared_puzzle_is_raced_through_its_link() {
     // The lobby: zoe's puzzle and its size; bram solved it before
     let lobby = seen(&conn, id, chen, T0 - 20_000).await;
     let shared = lobby.shared.clone().unwrap();
-    assert_eq!((shared.code.as_str(), shared.width, shared.height), (code.as_str(), 3, 3));
-    assert_eq!(shared.sharer.map(|s| (s.user_id, s.name)), Some((zoe, "zoe".to_string())));
+    assert_eq!(
+        (shared.code.as_str(), shared.width, shared.height),
+        (code.as_str(), 3, 3)
+    );
+    assert_eq!(
+        shared.sharer.map(|s| (s.user_id, s.name)),
+        Some((zoe, "zoe".to_string()))
+    );
     assert_eq!(lobby.penalties, HelpPenalties::of(Difficulty::Easy));
     let before: Vec<_> = lobby
         .players

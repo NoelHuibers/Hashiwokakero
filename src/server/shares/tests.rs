@@ -610,9 +610,16 @@ async fn players_reached_earn_the_sharing_stamps_which_stay() {
         }
     };
     // Her own solve reaches nobody
-    add_result(&conn, &code, aiko, Verified::of(&solved(9_000, 0)), true, now)
-        .await
-        .unwrap();
+    add_result(
+        &conn,
+        &code,
+        aiko,
+        Verified::of(&solved(9_000, 0)),
+        true,
+        now,
+    )
+    .await
+    .unwrap();
     let mut solvers = Vec::new();
     let cases: [ReachedCase; 6] = [
         (0, &[], [(0, 1), (0, 10), (0, 25)], &[]),

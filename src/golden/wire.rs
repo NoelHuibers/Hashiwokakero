@@ -18,10 +18,10 @@ use crate::model::{
     DojoCactus, DojoCrossover, DojoCurve, DojoEntry, DojoMe, DojoPortfolio, DojoRow, DojoSeason,
     DojoSeasons, DojoState, DojoSubmission, FeedbackKind, FeedbackStatus, Flag, GroupToday,
     HallOfFame, HankoKind, Leaderboard, LeaderboardEntry, LogSummary, Mark, MarkKind, MonthBoard,
-    MonthEntry, MoveEvent, PlayerProfile, RaceEntrant, RaceOutcome, RacePlayer, RaceShare, RaceSummary,
-    RaceView, RecoveryEmail, ReportOutcome, ReportReason, Run, SharedBy, SharedEntry, SharedLink,
-    SharedPuzzlePage, SharedSubmit, Stamp, StampProgress, SubmissionAction, SubmitResult, UserInfo,
-    UserStats,
+    MonthEntry, MoveEvent, PlayerProfile, RaceEntrant, RaceOutcome, RacePlayer, RaceShare,
+    RaceSummary, RaceView, RecoveryEmail, ReportOutcome, ReportReason, Run, SharedBy, SharedEntry,
+    SharedLink, SharedPuzzlePage, SharedSubmit, Stamp, StampProgress, SubmissionAction,
+    SubmitResult, UserInfo, UserStats,
 };
 
 /// What the server functions send to the pages.

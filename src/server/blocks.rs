@@ -24,8 +24,9 @@ use crate::model::{
     AllTimeEntry, ApiError, BLOCKED_NAME, Banzuke, BanzukeRow, BlockedPlayer, GroupMember,
     GroupPage, GroupPuzzles, GroupRaces, GroupToday, GroupWeek, HallOfFame, HankoReceived,
     InvitePreview, Kudos, Lane, Leaderboard, LeaderboardEntry, MonthBoard, MonthEntry, PuzzlePage,
-    PuzzleSummary, RaceEntrant, RacePlayer, RaceShare, RaceSummary, RaceView, ReplayData, RivalDay, RivalRow,
-    RivalsBoard, RivalsToday, SharedBy, SharedEntry, SharedPuzzlePage, TodayEntry, WeekRow,
+    PuzzleSummary, RaceEntrant, RacePlayer, RaceShare, RaceSummary, RaceView, ReplayData, RivalDay,
+    RivalRow, RivalsBoard, RivalsToday, SharedBy, SharedEntry, SharedPuzzlePage, TodayEntry,
+    WeekRow,
 };
 
 /// `user` blocks `player` (`on`) or unblocks them, and returns the players blocked then.

@@ -342,10 +342,16 @@ pub fn RacePage() -> impl IntoView {
 fn Header(race: RaceState) -> impl IntoView {
     let i18n = use_i18n();
     let difficulty = Memo::new(move |_| {
-        race.view
-            .with(|v| v.as_ref().filter(|v| v.shared.is_none()).map(|v| v.difficulty))
+        race.view.with(|v| {
+            v.as_ref()
+                .filter(|v| v.shared.is_none())
+                .map(|v| v.difficulty)
+        })
     });
-    let shared = Memo::new(move |_| race.view.with(|v| v.as_ref().and_then(|v| v.shared.clone())));
+    let shared = Memo::new(move |_| {
+        race.view
+            .with(|v| v.as_ref().and_then(|v| v.shared.clone()))
+    });
     let left = Memo::new(move |_| {
         let deadline = race
             .view
@@ -399,7 +405,10 @@ fn Board(race: RaceState) -> impl IntoView {
     let i18n = use_i18n();
     let game = race.game;
     let has_board = Memo::new(move |_| race.has_board());
-    let size = Memo::new(move |_| race.view.with(|v| v.as_ref().map_or((7, 7), RaceView::size)));
+    let size = Memo::new(move |_| {
+        race.view
+            .with(|v| v.as_ref().map_or((7, 7), RaceView::size))
+    });
     move || {
         if has_board.get() {
             view! {
@@ -801,9 +810,17 @@ mod tests {
             assert!(lobby.contains(text), "{text}: {lobby}");
         }
         // Its size, not the difficulty's preset
-        assert!(!lobby.contains("10×10") && !lobby.contains("中級"), "{lobby}");
+        assert!(
+            !lobby.contains("10×10") && !lobby.contains("中級"),
+            "{lobby}"
+        );
         let over = render(shared(Some(5_000), Some(9_000)));
-        for text in ["race-results", "race-solved-before", "race-share", "Share this puzzle"] {
+        for text in [
+            "race-results",
+            "race-solved-before",
+            "race-share",
+            "Share this puzzle",
+        ] {
             assert!(over.contains(text), "{text}: {over}");
         }
         // A race of the generator: nobody solved it before; its puzzle can be shared too
