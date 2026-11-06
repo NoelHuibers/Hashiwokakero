@@ -37,7 +37,8 @@ pub fn Lobby(race: RaceState) -> impl IntoView {
     let view_of = Memo::new(move |_| race.view.get());
     let joined = Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(RaceView::joined)));
     let host = Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(RaceView::is_host)));
-    let shared = Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(|v| v.shared.is_some())));
+    let shared =
+        Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(|v| v.shared.is_some())));
     let can_start =
         Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(RaceView::can_start)));
     let left = Memo::new(move |_| {

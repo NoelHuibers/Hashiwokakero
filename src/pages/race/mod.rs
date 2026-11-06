@@ -807,7 +807,7 @@ mod tests {
             "race-solved-before",
             "solved before",
             "race-public",
-            "shared puzzle&#x27;s public board",
+            "Times of this race go on the shared puzzle",
         ] {
             assert!(lobby.contains(text), "{text}: {lobby}");
         }

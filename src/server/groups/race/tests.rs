@@ -979,7 +979,10 @@ async fn sharing_a_race_puts_only_the_sharers_own_time_on_the_board() {
     let page = shares::page(&conn, &code, None).await.unwrap().unwrap();
     assert_eq!(page.puzzle, small().puzzle);
     assert_eq!(page.solvers, 1);
-    assert_eq!(page.sharer.and_then(|s| s.result).map(|r| r.user_id), Some(aiko));
+    assert_eq!(
+        page.sharer.and_then(|s| s.result).map(|r| r.user_id),
+        Some(aiko)
+    );
     // Again: the same link, still one time
     assert_eq!(share(&conn, id, aiko, now + 1).await.unwrap(), code);
     assert_eq!(shared_rows(&conn, &code).await.len(), 1);
@@ -1041,10 +1044,7 @@ async fn only_a_race_that_is_over_can_be_shared_by_its_group() {
         error(share(&conn, id, zoe, start + 20_000).await),
         ApiError::GroupNotFound
     );
-    assert_eq!(
-        number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await,
-        0
-    );
+    assert_eq!(number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await, 0);
 }
 
 #[tokio::test]
@@ -1267,7 +1267,11 @@ async fn shared_race_times_go_with_their_players() {
         [bram]
     );
     assert_eq!(
-        shares::page(&conn, &code, None).await.unwrap().unwrap().sharer,
+        shares::page(&conn, &code, None)
+            .await
+            .unwrap()
+            .unwrap()
+            .sharer,
         None
     );
     // bram's guest solved it on the page before the race: signing in keeps that first result

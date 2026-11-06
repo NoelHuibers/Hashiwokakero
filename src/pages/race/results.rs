@@ -244,7 +244,12 @@ pub fn SharePuzzleCard(race: RaceState) -> impl IntoView {
             .view
             .with_untracked(|v| v.as_ref().map(|v| (v.size(), own_board_time(v))))
             .unwrap_or(((7, 7), None));
-        let title = format!("{} 勝負 · {}×{}", td_string!(locale, race.title), size.0, size.1);
+        let title = format!(
+            "{} 勝負 · {}×{}",
+            td_string!(locale, race.title),
+            size.0,
+            size.1
+        );
         match mine {
             Some(solve) => share_text(locale, &title, Some(solve), url),
             None => share_lines(&title, td_string!(locale, race.results.share_text), url),
@@ -319,10 +324,13 @@ mod tests {
     #[test]
     fn the_shared_time_is_the_viewers_own_without_the_race_penalties() {
         let penalties = crate::model::HelpPenalties::of(common::Difficulty::Easy);
-        let mut me = player(1, RaceOutcome::Solved {
-            time_ms: 20_000 + penalties.hint_ms + penalties.check_ms,
-            place: Some(2),
-        });
+        let mut me = player(
+            1,
+            RaceOutcome::Solved {
+                time_ms: 20_000 + penalties.hint_ms + penalties.check_ms,
+                place: Some(2),
+            },
+        );
         me.hints = 1;
         me.checks = 1;
         let mut view = RaceView {
@@ -336,7 +344,16 @@ mod tests {
             created_at: 0,
             starts_at: Some(0),
             ended_at: Some(1),
-            players: vec![me, player(2, RaceOutcome::Solved { time_ms: 5, place: Some(1) })],
+            players: vec![
+                me,
+                player(
+                    2,
+                    RaceOutcome::Solved {
+                        time_ms: 5,
+                        place: Some(1),
+                    },
+                ),
+            ],
             puzzle: None,
             solution: None,
             rematch: None,
