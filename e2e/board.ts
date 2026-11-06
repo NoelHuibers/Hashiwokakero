@@ -26,6 +26,8 @@ export interface SavedGame {
   hints: number;
   /** Seconds on the clock. */
   elapsed?: number;
+  /** Only there while Play's game is paused. */
+  paused?: true;
 }
 
 export const PLAY_KEY = 'hashi.game.v2';

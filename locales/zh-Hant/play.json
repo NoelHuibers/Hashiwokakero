@@ -4,13 +4,8 @@
     "description": "不計時暢玩數橋（Hashiwokakero）：無限產生的免費謎題，7×7 到 24×24 五種尺寸，附提示與檢查，每題唯一解。"
   },
   "heading": "造橋謎題",
-  "generate": "產生",
   "generating": "產生中…",
   "generating_text": "正在長出小島、搭建橋梁，並詢問 SAT 求解器解答是否唯一…",
-  "card": {
-    "title": "暢玩",
-    "text": "新謎題想玩幾道就玩幾道，每道都經 SAT 求解器證明只有唯一解。沒有計時壓力，每日一橋在首頁。"
-  },
   "legend": {
     "title": "怎麼搭橋",
     "single": "木橋",
@@ -27,5 +22,11 @@
   "revealed": "由 SAT 求解器解出。",
   "play_myself": "我自己來",
   "new_puzzle": "新謎題",
-  "more": "更多操作"
+  "more": "更多操作",
+  "pause": "暫停",
+  "resume": "繼續",
+  "paused": "已暫停",
+  "paused_text": "計時已停止，繼續之前棋盤會一直隱藏。",
+  "left": "已開始新謎題。",
+  "back": "回到上一道謎題"
 }

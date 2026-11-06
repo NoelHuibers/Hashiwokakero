@@ -4,13 +4,8 @@
     "description": "Speel Hashiwokakero (Bruggen bouwen) zonder klok: onbeperkt puzzels in vijf formaten van 7×7 tot 24×24, met hints en controles, elk met één oplossing."
   },
   "heading": "de bruggenpuzzel",
-  "generate": "Genereer",
   "generating": "Genereren…",
   "generating_text": "Eilanden laten groeien, bruggen bouwen en de SAT-solver vragen of de oplossing uniek is…",
-  "card": {
-    "title": "Spelen",
-    "text": "Zoveel verse puzzels als je wilt, elk met precies één oplossing, bewezen door de SAT-solver. Geen tijdsdruk, de brug van de dag staat op de startpagina."
-  },
   "legend": {
     "title": "Zo bouw je",
     "single": "houten brug",
@@ -27,5 +22,11 @@
   "revealed": "Opgelost door de SAT-solver.",
   "play_myself": "Zelf spelen",
   "new_puzzle": "Nieuwe puzzel",
-  "more": "Meer acties"
+  "more": "Meer acties",
+  "pause": "Pauze",
+  "resume": "Verder",
+  "paused": "Gepauzeerd",
+  "paused_text": "De klok staat stil en het bord blijft verborgen tot je verdergaat.",
+  "left": "Nieuwe puzzel gestart.",
+  "back": "Terug naar de vorige puzzel"
 }

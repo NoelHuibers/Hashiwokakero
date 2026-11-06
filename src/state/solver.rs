@@ -13,6 +13,17 @@ use crate::api::compute;
 use crate::i18n::td_string;
 
 pub fn new_puzzle(game: Game, params: GenerateParams, source: Source) {
+    new_puzzle_then(game, params, source, || {});
+}
+
+/// Generates a new puzzle and, once it is on the board, runs `then`: not when generating failed
+/// or the puzzle was replaced meanwhile.
+pub fn new_puzzle_then(
+    game: Game,
+    params: GenerateParams,
+    source: Source,
+    then: impl FnOnce() + 'static,
+) {
     if game.loading.get_untracked() {
         return;
     }
@@ -24,12 +35,15 @@ pub fn new_puzzle(game: Game, params: GenerateParams, source: Source) {
             return;
         }
         match generated {
-            Ok(generated) => game.set_puzzle(
-                generated.puzzle,
-                Some(generated.solution),
-                Some(generated.unique),
-                source,
-            ),
+            Ok(generated) => {
+                game.set_puzzle(
+                    generated.puzzle,
+                    Some(generated.solution),
+                    Some(generated.unique),
+                    source,
+                );
+                then();
+            }
             Err(e) => error_toast(e),
         }
         game.loading.set(false);
@@ -157,6 +171,9 @@ pub fn hint(game: Game, settings: Settings) {
 
 /// Flashes bridges that are not part of the solution.
 pub fn check(game: Game, settings: Settings) {
+    if game.paused.get_untracked() {
+        return;
+    }
     spawn_local(async move {
         let epoch = game.epoch.get_untracked();
         let Some(solution) = ensure_solution(&game, settings).await else {
@@ -186,6 +203,9 @@ pub fn check(game: Game, settings: Settings) {
 
 /// Solves the puzzle with the configured SAT solver and builds the solution bridge by bridge.
 pub fn reveal(game: Game, settings: Settings) {
+    if game.paused.get_untracked() {
+        return;
+    }
     spawn_local(async move {
         let epoch = game.epoch.get_untracked();
         let Some(solution) = game_solver(&game, settings, false).await else {

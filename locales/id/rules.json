@@ -40,7 +40,8 @@
     "tap": "Klik air di antara dua pulau untuk membangun jembatan, klik lagi untuk jembatan kedua, klik ketiga menghapus keduanya.",
     "drag": "Atau seret dari sebuah pulau ke tetangganya, atau klik dua pulau satu per satu.",
     "remove": "<right>Klik kanan</right> / <shift>Shift</shift> + klik menghapus jembatan.",
-    "colors": "Pulau yang lengkap jadi hijau, yang kelebihan jadi merah. Buntu? Minta solver SAT memberi petunjuk atau mengecek jembatanmu."
+    "colors": "Pulau yang lengkap jadi hijau, yang kelebihan jadi merah. Buntu? Minta solver SAT memberi petunjuk atau mengecek jembatanmu.",
+    "in_play": "Di Main:"
   },
   "hood": {
     "title": "Di balik layar",

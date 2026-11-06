@@ -4,13 +4,8 @@
     "description": "Main Hashiwokakero (Jembatan) tanpa jam: teka-teki tanpa batas dalam lima ukuran dari 7×7 sampai 24×24, petunjuk dan cek, masing-masing satu solusi."
   },
   "heading": "teka-teki jembatan",
-  "generate": "Buat",
   "generating": "Membuat…",
   "generating_text": "Menumbuhkan pulau, membangun jembatan, dan bertanya pada solver SAT apakah solusinya unik…",
-  "card": {
-    "title": "Main",
-    "text": "Teka-teki baru sebanyak yang kamu mau, masing-masing terbukti oleh solver SAT punya tepat satu solusi. Tanpa tekanan waktu, jembatan harian ada di beranda."
-  },
   "legend": {
     "title": "Cara membangun",
     "single": "jembatan kayu",
@@ -27,5 +22,11 @@
   "revealed": "Dipecahkan oleh solver SAT.",
   "play_myself": "Main sendiri",
   "new_puzzle": "Teka-teki baru",
-  "more": "Tindakan lain"
+  "more": "Tindakan lain",
+  "pause": "Jeda",
+  "resume": "Lanjutkan",
+  "paused": "Dijeda",
+  "paused_text": "Jam berhenti dan papan tetap tersembunyi sampai kamu lanjut.",
+  "left": "Teka-teki baru dimulai.",
+  "back": "Kembali ke teka-teki sebelumnya"
 }

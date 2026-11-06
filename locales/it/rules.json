@@ -40,7 +40,8 @@
     "tap": "Clicca sull’acqua tra due isole per costruire un ponte, di nuovo per un secondo, un terzo clic li rimuove.",
     "drag": "Oppure trascina da un’isola verso la vicina, o clicca due isole una dopo l’altra.",
     "remove": "<right>Clic destro</right> / <shift>Maiusc</shift> + clic rimuove un ponte.",
-    "colors": "Le isole completate diventano verdi, quelle con troppi ponti rosse. Bloccato? Chiedi al solver SAT un indizio o di verificare i tuoi ponti."
+    "colors": "Le isole completate diventano verdi, quelle con troppi ponti rosse. Bloccato? Chiedi al solver SAT un indizio o di verificare i tuoi ponti.",
+    "in_play": "In Gioca:"
   },
   "hood": {
     "title": "Sotto il cofano",

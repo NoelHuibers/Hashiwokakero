@@ -26,12 +26,12 @@ pub use browser::{device_id, download, format_time, load, random_seed, store};
 pub(crate) use browser::{load_raw, remove_item};
 pub use editor::Editor;
 pub use errors::{note_error, recent_errors};
-pub use game::{DailyGame, Game, Source, Status};
+pub use game::{DailyGame, Game, Snapshot, Source, Status};
 pub use hanko::HankoInbox;
 pub use move_log::MoveLog;
 pub use rivals::Rivals;
 pub use settings::Settings;
-pub use solver::{check, check_unique, hint, new_puzzle, reveal, run_solver};
+pub use solver::{check, check_unique, hint, new_puzzle, new_puzzle_then, reveal, run_solver};
 pub use toasts::{Toast, ToastAction, ToastKind, ToastText, Toasts, error_toast, toast};
 
 const GAME_KEY: &str = "hashi.game.v2";
@@ -44,7 +44,8 @@ const MUSIC_KEY: &str = "hashi.music";
 
 /// Creates all state and wires up persistence, the timer and win detection.
 pub fn provide_state() {
-    let game = Game::new(GAME_KEY);
+    // Play's game, the only one that pauses
+    let game = Game::pausable(GAME_KEY);
     let daily = Game::new(DAILY_KEY);
     let editor = Editor::new();
     let settings = Settings::new();
@@ -177,7 +178,7 @@ pub fn provide_state() {
         });
     }
 
-    // Timer, paused while the tab is hidden
+    // Timer, stopped while the tab is hidden or the game paused (`Game::tick`)
     Effect::new(move |first: Option<()>| {
         if first.is_some() {
             return;
@@ -185,12 +186,7 @@ pub fn provide_state() {
         set_interval(
             move || {
                 let visible = document().visibility_state() == web_sys::VisibilityState::Visible;
-                if visible
-                    && game.status.get_untracked() == Status::Playing
-                    && !game.loading.get_untracked()
-                {
-                    game.elapsed.update(|e| *e += 1);
-                }
+                game.tick(visible);
             },
             Duration::from_secs(1),
         );

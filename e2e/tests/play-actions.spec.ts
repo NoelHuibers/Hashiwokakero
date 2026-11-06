@@ -1,5 +1,6 @@
-// Play on a phone: the board and its actions above the tab bar, one row of actions
-// in every language, and the rarer ones behind the "more" button.
+// Play on a phone: the board, its actions and the controls above it (difficulty chips, pause,
+// a new puzzle) on the screen, one row of each in every language, and restart behind the
+// "more" button.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -19,6 +20,11 @@ const playing = {
   moves: 0,
   hints: 0,
 };
+/**
+ * The lowest the board's top may be on a 390 px phone, under the heading, the title with pause
+ * and a new puzzle, the clock and the difficulty chips (282 px with a badge under the title).
+ */
+const BOARD_TOP = 285;
 const messages = (locale: string, namespace: string) =>
   JSON.parse(readFileSync(path.join(ROOT, 'locales', locale, `${namespace}.json`), 'utf8'));
 
@@ -33,6 +39,17 @@ function actions(page: Page, locale: string) {
     check: button(new RegExp(`^${game.check}`)),
     hint: button(new RegExp(`^${game.hint}`)),
     more: button(messages(locale, 'play').more),
+  };
+}
+
+/** The controls above the board: pause, a new puzzle and the five difficulty chips. */
+function controls(page: Page, locale: string) {
+  const play = messages(locale, 'play');
+  const chips = page.getByRole('group', { name: play.new_puzzle }).getByRole('button');
+  return {
+    pause: page.getByRole('button', { name: play.pause, exact: true }),
+    fresh: page.getByRole('button', { name: play.new_puzzle, exact: true }),
+    chips,
   };
 }
 
@@ -58,8 +75,18 @@ test.describe('on a phone', () => {
       const bottom = await fold(page);
       const frame = (await board(page).boundingBox())!;
       // The title and the clock above the board took 160 px (board at 248 px) before they were
-      // compacted
-      expect(frame.y, 'little above the board').toBeLessThanOrEqual(215);
+      // compacted; the difficulty chips came with one row more
+      expect(frame.y, 'little above the board').toBeLessThanOrEqual(BOARD_TOP);
+      // Pause and a new puzzle next to the title, the chips right above the board
+      const { pause, fresh, chips } = controls(page, locale);
+      const above = [pause, fresh, ...(await chips.all())];
+      expect(above).toHaveLength(7);
+      for (const control of above) {
+        const box = (await control.boundingBox())!;
+        expect(box.y + box.height, 'above the board').toBeLessThanOrEqual(frame.y);
+        expect(box.y, 'below the header').toBeGreaterThan(0);
+        expect(box.height, 'a tap target').toBeGreaterThanOrEqual(44);
+      }
       expect(frame.y + frame.height).toBeLessThanOrEqual(bottom);
       const buttons = Object.values(actions(page, locale));
       const boxes = await Promise.all(buttons.map(async (b) => (await b.boundingBox())!));
@@ -98,6 +125,17 @@ for (const locale of ['en', 'de', 'ru', 'uk', 'pl', 'nl', 'vi', 'ja', 'ar']) {
     // Undo, redo, check, hint and more from the left in English, from the right in Arabic
     const xs = boxes.map((b) => b.x);
     expect(xs).toEqual([...xs].sort((a, b) => (locale === 'ar' ? b - a : a - b)));
+    // The five chips in one row as well, pause and a new puzzle on the screen
+    const { pause, fresh, chips } = controls(page, locale);
+    const chipBoxes = await Promise.all(
+      (await chips.all()).map(async (c) => (await c.boundingBox())!),
+    );
+    expect(chipBoxes).toHaveLength(5);
+    for (const box of [...chipBoxes, (await pause.boundingBox())!, (await fresh.boundingBox())!]) {
+      expect(box.x).toBeGreaterThanOrEqual(16);
+      expect(box.x + box.width).toBeLessThanOrEqual(304);
+    }
+    for (const box of chipBoxes) expect(box.y, 'one row of chips').toBe(chipBoxes[0]!.y);
     // The stats and the difficulty names fit too
     for (const label of await page.locator('main .truncate').filter({ visible: true }).all()) {
       expect(
@@ -108,9 +146,7 @@ for (const locale of ['en', 'de', 'ru', 'uk', 'pl', 'nl', 'vi', 'ja', 'ar']) {
   });
 }
 
-test('the more button discloses restart and a new puzzle, by keyboard and pointer', async ({
-  page,
-}) => {
+test('the more button discloses restart, by keyboard and pointer', async ({ page }) => {
   await seedGame(page, PLAY_KEY, {
     ...playing,
     bridges: LADDER_SOLUTION.map((b, e) => (e === 0 ? b : 0)),
@@ -119,9 +155,9 @@ test('the more button discloses restart and a new puzzle, by keyboard and pointe
   await visit(page, '/play');
   const { more, undo, redo, check, hint } = actions(page, 'en');
   const restart = page.getByRole('button', { name: 'Restart' });
-  const fresh = page.getByRole('button', { name: /^New puzzle/ });
   // Icon-only buttons are named and have a tooltip
-  for (const button of [undo, redo, more]) {
+  const { pause, fresh } = controls(page, 'en');
+  for (const button of [undo, redo, more, pause, fresh]) {
     await expect(button).toHaveAttribute('data-tooltip', /.+/);
     await expect(button).not.toHaveAttribute('title');
   }
@@ -131,16 +167,15 @@ test('the more button discloses restart and a new puzzle, by keyboard and pointe
   await expect(restart).toBeHidden();
   const panel = page.locator(`#${await more.getAttribute('aria-controls')}`);
   await expect(panel).toBeHidden();
+  // A new puzzle is above the board, not in there too
+  await expect(panel.locator('button')).toHaveCount(1);
 
   // Keyboard: open, Tab into it, Escape closes it and gives the focus back
   await more.focus();
   await more.press('Enter');
   await expect(more).toHaveAttribute('aria-expanded', 'true');
   await expect(panel).toBeVisible();
-  await expect(fresh).toContainText('Medium · 10×10');
   await more.press('Tab');
-  await expect(fresh).toBeFocused();
-  await fresh.press('Tab');
   await expect(restart).toBeFocused();
   await restart.press('Escape');
   await expect(more).toHaveAttribute('aria-expanded', 'false');
@@ -160,18 +195,4 @@ test('the more button discloses restart and a new puzzle, by keyboard and pointe
   await expect
     .poll(async () => (await saved(page, PLAY_KEY)).bridges.every((b) => b === 0))
     .toBe(true);
-
-  // A new puzzle of the difficulty picked in the card
-  await page
-    .getByRole('group', { name: 'New puzzle' })
-    .getByRole('button', { name: /Easy/ })
-    .click();
-  await more.click();
-  await expect(fresh).toContainText('Easy · 7×7');
-  await fresh.click();
-  await expect(fresh).toBeHidden();
-  await expect
-    .poll(async () => JSON.stringify((await saved(page, PLAY_KEY)).puzzle.islands))
-    .not.toBe(JSON.stringify(LADDER.islands));
-  await expect(page.getByText(/^Easy 7×7$/)).toBeVisible();
 });

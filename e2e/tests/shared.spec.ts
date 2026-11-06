@@ -46,6 +46,12 @@ test('a puzzle shared after solving it is played through its link and ranked', a
   const sharerRow = friend.locator('[data-testid="shared-board"] tr[data-sharer]');
   await expect(sharerRow).toContainText('00:42');
   await expect(friend.getByTestId('shared-result')).toHaveCount(0);
+  // Ranked per puzzle: never a pause, and no new puzzle or difficulty chips
+  await expect(friend.getByRole('button', { name: 'Pause', exact: true })).toHaveCount(0);
+  await expect(friend.getByRole('button', { name: 'New puzzle', exact: true })).toHaveCount(0);
+  await expect(friend.getByRole('group', { name: 'New puzzle' })).toHaveCount(0);
+  await friend.keyboard.press('p');
+  await expect(friend.getByTestId('paused')).toHaveCount(0);
 
   // Solved there: the time goes on the board, the friend's row marked as theirs
   await build(friend, SHARED_KEY, LADDER, LADDER_SOLUTION);

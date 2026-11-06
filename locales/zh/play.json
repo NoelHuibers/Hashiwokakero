@@ -4,13 +4,8 @@
     "description": "不计时畅玩数桥（Hashiwokakero）：无限生成的免费谜题，7×7 到 24×24 五种尺寸，带提示和检查，每题唯一解。"
   },
   "heading": "搭桥谜题",
-  "generate": "生成",
   "generating": "生成中…",
   "generating_text": "正在长出小岛、搭建桥梁，并询问 SAT 求解器答案是否唯一…",
-  "card": {
-    "title": "畅玩",
-    "text": "新谜题想玩多少就玩多少，每道都经 SAT 求解器证明只有唯一解。没有计时压力，每日一桥在首页。"
-  },
   "legend": {
     "title": "怎么搭桥",
     "single": "木桥",
@@ -27,5 +22,11 @@
   "revealed": "由 SAT 求解器解出。",
   "play_myself": "我自己来",
   "new_puzzle": "新谜题",
-  "more": "更多操作"
+  "more": "更多操作",
+  "pause": "暂停",
+  "resume": "继续",
+  "paused": "已暂停",
+  "paused_text": "计时已停止，继续之前棋盘会一直隐藏。",
+  "left": "已开始新谜题。",
+  "back": "回到上一道谜题"
 }

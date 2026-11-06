@@ -40,7 +40,8 @@
     "tap": "Clique sur l’eau entre deux îles pour construire un pont, encore une fois pour un second, un troisième clic les retire.",
     "drag": "Ou fais glisser d’une île vers sa voisine, ou clique sur deux îles l’une après l’autre.",
     "remove": "<right>Clic droit</right> / <shift>Maj</shift> + clic retire un pont.",
-    "colors": "Les îles terminées passent au vert, celles qui débordent au rouge. Bloqué ? Demande au solveur SAT un indice ou de vérifier tes ponts."
+    "colors": "Les îles terminées passent au vert, celles qui débordent au rouge. Bloqué ? Demande au solveur SAT un indice ou de vérifier tes ponts.",
+    "in_play": "Dans Jouer :"
   },
   "hood": {
     "title": "Sous le capot",

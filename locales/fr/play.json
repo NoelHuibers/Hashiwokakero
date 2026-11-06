@@ -4,13 +4,8 @@
     "description": "Joue au Hashiwokakero (Ponts) sans chrono : grilles illimitées en cinq tailles de 7×7 à 24×24, indices et vérifications, une seule solution par grille."
   },
   "heading": "le casse-tête des ponts",
-  "generate": "Générer",
   "generating": "Génération…",
   "generating_text": "On fait pousser des îles, on construit des ponts et on demande au solveur SAT si la solution est unique…",
-  "card": {
-    "title": "Jouer",
-    "text": "Autant de grilles neuves que tu veux, et le solveur SAT prouve que chacune n’a qu’une seule solution. Pas de chrono : le pont du jour est sur la page d’accueil."
-  },
   "legend": {
     "title": "Comment construire",
     "single": "pont en bois",
@@ -27,5 +22,11 @@
   "revealed": "Résolu par le solveur SAT.",
   "play_myself": "La faire moi-même",
   "new_puzzle": "Nouvelle grille",
-  "more": "Plus d’actions"
+  "more": "Plus d’actions",
+  "pause": "Pause",
+  "resume": "Reprendre",
+  "paused": "En pause",
+  "paused_text": "Le chrono est arrêté et la grille reste cachée jusqu’à ce que tu reprennes.",
+  "left": "Nouvelle grille lancée.",
+  "back": "Revenir à la grille précédente"
 }

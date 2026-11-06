@@ -40,7 +40,8 @@
     "tap": "Haz clic en el agua entre dos islas para construir un puente, otra vez para un segundo, un tercer clic los quita.",
     "drag": "O arrastra desde una isla hacia su vecina, o haz clic en dos islas, una tras otra.",
     "remove": "<right>Clic derecho</right> / <shift>Mayús</shift> + clic quita un puente.",
-    "colors": "Las islas terminadas se vuelven verdes; las que se pasan, rojas. ¿Te has atascado? Pide al solver SAT una pista o que compruebe tus puentes."
+    "colors": "Las islas terminadas se vuelven verdes; las que se pasan, rojas. ¿Te has atascado? Pide al solver SAT una pista o que compruebe tus puentes.",
+    "in_play": "En Jugar:"
   },
   "hood": {
     "title": "Bajo el capó",

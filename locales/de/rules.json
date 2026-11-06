@@ -40,7 +40,8 @@
     "tap": "Klick aufs Wasser zwischen zwei Inseln, um eine Brücke zu bauen, noch einmal für eine zweite, ein dritter Klick entfernt beide.",
     "drag": "Oder zieh von einer Insel zu ihrer Nachbarin oder klick nacheinander zwei Inseln an.",
     "remove": "<right>Rechtsklick</right> / <shift>Shift</shift> + Klick entfernt eine Brücke.",
-    "colors": "Fertige Inseln werden grün, überfüllte rot. Du steckst fest? Bitte den SAT-Solver um einen Tipp oder lass ihn deine Brücken prüfen."
+    "colors": "Fertige Inseln werden grün, überfüllte rot. Du steckst fest? Bitte den SAT-Solver um einen Tipp oder lass ihn deine Brücken prüfen.",
+    "in_play": "Beim Spielen:"
   },
   "hood": {
     "title": "Unter der Haube",

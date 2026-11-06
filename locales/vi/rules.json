@@ -40,7 +40,8 @@
     "tap": "Bấm vào mặt nước giữa hai đảo để xây cầu, bấm lần nữa để thêm cầu thứ hai, lần thứ ba sẽ gỡ bỏ.",
     "drag": "Hoặc kéo từ một đảo về phía đảo láng giềng, hoặc bấm lần lượt vào hai đảo.",
     "remove": "<right>Chuột phải</right> / <shift>Shift</shift> + bấm để gỡ một cây cầu.",
-    "colors": "Đảo hoàn thành chuyển xanh lá, đảo thừa cầu chuyển đỏ. Bí rồi? Hãy nhờ bộ giải SAT gợi ý hoặc kiểm tra các cây cầu của bạn."
+    "colors": "Đảo hoàn thành chuyển xanh lá, đảo thừa cầu chuyển đỏ. Bí rồi? Hãy nhờ bộ giải SAT gợi ý hoặc kiểm tra các cây cầu của bạn.",
+    "in_play": "Trong Chơi:"
   },
   "hood": {
     "title": "Bên trong",

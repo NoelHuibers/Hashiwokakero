@@ -7,6 +7,8 @@ use crate::i18n::{t, use_i18n};
 use crate::state::{ToastAction, ToastKind, Toasts};
 
 const ACTION: &str = "shrink-0 cursor-pointer rounded-md border border-current px-2 py-0.5 font-medium hover:bg-destructive/10";
+/// A page's own button, on a toast that isn't an error.
+const RUN: &str = "shrink-0 cursor-pointer rounded-md border border-current px-2 py-0.5 text-start font-medium hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring";
 
 #[component]
 pub fn Toaster() -> impl IntoView {
@@ -32,6 +34,7 @@ pub fn Toaster() -> impl IntoView {
                         ToastKind::Info => ("◇", "border-border bg-card text-foreground"),
                     };
                     let text = t.text.clone();
+                    let id = t.id;
                     let action = t.action.map(|action| match action {
                         // A button, not an automatic reload: that would throw away a board in
                         // progress
@@ -53,6 +56,20 @@ pub fn Toaster() -> impl IntoView {
                             <a class=ACTION href=update_url() target="_blank" rel="noopener">
                                 {t!(i18n, common.toast.update)}
                             </a>
+                        }
+                        .into_any(),
+                        // The page's own, e.g. Play's way back to the puzzle left
+                        ToastAction::Run { label, run, .. } => view! {
+                            <button
+                                type="button"
+                                class=RUN
+                                on:click=move |_| {
+                                    toasts.dismiss(id);
+                                    run();
+                                }
+                            >
+                                {move || label(i18n.get_locale())}
+                            </button>
                         }
                         .into_any(),
                     });
@@ -119,6 +136,22 @@ mod tests {
             );
             assert!(update.contains(td_string!(Locale::ja, common.toast.update)));
             assert!(!update.contains(td_string!(Locale::ja, common.toast.reload)));
+            // A page's own button, labelled in the language picked
+            toasts.0.set(vec![Toast {
+                id: 2,
+                kind: ToastKind::Info,
+                text: std::sync::Arc::new(|l| td_string!(l, play.left).to_string()),
+                action: Some(ToastAction::Run {
+                    key: "test",
+                    label: std::sync::Arc::new(|l| td_string!(l, play.back).to_string()),
+                    run: std::sync::Arc::new(|| {}),
+                }),
+            }]);
+            let run = view! { <Toaster /> }.to_html();
+            assert!(run.contains(td_string!(Locale::ja, play.left)));
+            let button = run.split("<button").nth(1).unwrap();
+            assert!(button.starts_with(" type=\"button\""), "{button}");
+            assert!(button.contains(td_string!(Locale::ja, play.back)));
         });
     }
 }
