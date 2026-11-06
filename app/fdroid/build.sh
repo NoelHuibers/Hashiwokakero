@@ -103,7 +103,18 @@ prepare() {
   cargo fetch --locked --manifest-path "$ROOT/app/fdroid/third_party/tailwindcss/Cargo.toml"
   cargo fetch --locked --manifest-path "$ROOT/app/fdroid/third_party/lightningcss/Cargo.toml"
   cargo install --locked --root "$TOOLS" trunk --version "$(trunk_version)"
-  cargo install --locked --root "$TOOLS" wasm-bindgen-cli --version "$(lock_version "$ROOT/Cargo.lock" wasm-bindgen)"
+  # wasm-bindgen writes its version into the WASM (the producers section), with the commit when
+  # it knows it: "0.2.129 (165586f85)" from the release Trunk downloads in CI, which was built
+  # in its git checkout. Built from crates.io its build script finds no git, so the commit comes
+  # from the tag (WBG_VERSION is what that build script would set).
+  local wbg rev
+  wbg=$(lock_version "$ROOT/Cargo.lock" wasm-bindgen)
+  rev=$(git ls-remote https://github.com/wasm-bindgen/wasm-bindgen "refs/tags/$wbg" "refs/tags/$wbg^{}" |
+    awk '{ sha = $1 } END { print substr(sha, 1, 9) }')
+  [ -n "$rev" ] || fail "wasm-bindgen has no tag $wbg"
+  WBG_VERSION=$rev cargo install --locked --root "$TOOLS" wasm-bindgen-cli --version "$wbg"
+  [ "$(wasm-bindgen --version)" = "wasm-bindgen $wbg ($rev)" ] ||
+    fail "wasm-bindgen says '$(wasm-bindgen --version)', not 'wasm-bindgen $wbg ($rev)'"
   cargo install --locked --root "$TOOLS" tauri-cli --version "$TAURI_CLI_VERSION"
 }
 

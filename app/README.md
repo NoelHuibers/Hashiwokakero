@@ -831,7 +831,9 @@ comments: fdroiddata takes none). Getting it there is an owner task
   wasm-bindgen and wasm-opt), the script's Rust (`RUST_VERSION`, not the stable of the other
   builds), JDK 21 like F-Droid's Debian, the same NDK and Gradle, and the paths of the machine
   mapped away (`--remap-path-prefix`: panic messages carry the sources' paths; and
-  `rustc-wrapper.sh`: Leptos' `wasm_split_macros` hashes `CARGO_MANIFEST_PATH` into the WASM).
+  `rustc-wrapper.sh`: Leptos' `wasm_split_macros` hashes `CARGO_MANIFEST_PATH` into the WASM;
+  wasm-bindgen-cli is compiled with its release's commit in `WBG_VERSION`, which it writes into
+  the WASM).
   Tailwind skips `app/fdroid/third_party` (`@source not` in `style/tailwind.css`): F-Droid has the
   submodules checked out, CI doesn't, and Tailwind would pick up class names from their sources. F-Droid compares
   its unsigned APK with ours from the GitHub release (`binary:` in the recipe) and, when they are
