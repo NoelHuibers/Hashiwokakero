@@ -1,6 +1,8 @@
-//! "Race this with my group" (勝負) on a shared puzzle's page: a race on this puzzle in one of
-//! the player's groups (`server::groups::race::open_shared`), opened through the link of the page.
-//! Only for players in a group, guests too; who has several picks one.
+//! "Race this with my group" (勝負) on a shared puzzle's page.
+//!
+//! A race on this puzzle in one of the player's groups (`server::groups::race::open_shared`),
+//! opened through the link of the page. Only for players in a group, guests too; who has several
+//! picks one.
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -48,7 +50,7 @@ pub fn RaceWithGroup(code: Signal<String>) -> impl IntoView {
             }
         });
     });
-    let open = move |_| {
+    let open = Callback::new(move |()| {
         let Some(group) = groups.with_untracked(|g| chosen_group(g, picked.get_untracked())) else {
             return;
         };
@@ -69,7 +71,7 @@ pub fn RaceWithGroup(code: Signal<String>) -> impl IntoView {
             }
             busy.try_set(false);
         });
-    };
+    });
     let several = Memo::new(move |_| groups.with(|g| g.len() > 1));
     view! {
         <Show when=move || groups.with(|g| !g.is_empty())>
@@ -100,7 +102,7 @@ pub fn RaceWithGroup(code: Signal<String>) -> impl IntoView {
                                 .collect_view()}
                         </SelectNative>
                     </Show>
-                    <Button class="h-11 w-full" attr:disabled=move || busy.get() attr:data-testid="shared-race-open" on:click=open.clone()>
+                    <Button class="h-11 w-full" attr:disabled=move || busy.get() attr:data-testid="shared-race-open" on:click=move |_| open.run(())>
                         {move || if busy.get() {
                             t_string!(i18n, shared.race.opening).to_string()
                         } else {

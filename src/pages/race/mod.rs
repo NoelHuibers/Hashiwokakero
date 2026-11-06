@@ -769,8 +769,72 @@ mod tests {
         }
     }
 
+    /// [`view`] on zoe's shared 9×9 puzzle, which bram solved before.
+    fn shared(starts_at: Option<i64>, ended_at: Option<i64>) -> RaceView {
+        let mut race = view(starts_at, ended_at);
+        race.shared = Some(RaceShare {
+            code: "k7m2xq9a".into(),
+            sharer: Some(crate::model::SharedBy {
+                user_id: 9,
+                name: "zoe".into(),
+                guest: false,
+                stamp: None,
+                result: None,
+            }),
+            width: 9,
+            height: 9,
+        });
+        race.players[1].solved_before = true;
+        race
+    }
+
+    #[tokio::test]
+    async fn a_race_on_a_shared_puzzle_says_whose_it_is() {
+        let lobby = render(shared(None, None));
+        for text in [
+            "Shared puzzle · by zoe",
+            "9×9",
+            "this shared puzzle",
+            "race-solved-before",
+            "solved before",
+        ] {
+            assert!(lobby.contains(text), "{text}: {lobby}");
+        }
+        // Its size, not the difficulty's preset
+        assert!(!lobby.contains("10×10") && !lobby.contains("中級"), "{lobby}");
+        let over = render(shared(Some(5_000), Some(9_000)));
+        for text in ["race-results", "race-solved-before", "race-share", "Share this puzzle"] {
+            assert!(over.contains(text), "{text}: {over}");
+        }
+        // A race of the generator: nobody solved it before; its puzzle can be shared too
+        let plain = render(view(Some(5_000), Some(9_000)));
+        assert!(!plain.contains("race-solved-before"), "{plain}");
+        assert!(plain.contains("race-share"), "{plain}");
+    }
+
     #[test]
     fn paths_and_texts() {
         assert_eq!(race_path(3, 9), "/groups/3/races/9");
+        let mut share = RaceShare {
+            code: "k7m2xq9a".into(),
+            sharer: None,
+            width: 7,
+            height: 7,
+        };
+        assert_eq!(
+            shared_by(Locale::en, &share),
+            "Shared puzzle · by a former player"
+        );
+        share.sharer = Some(crate::model::SharedBy {
+            user_id: 9,
+            name: crate::model::BLOCKED_NAME.into(),
+            guest: false,
+            stamp: None,
+            result: None,
+        });
+        assert_eq!(
+            shared_by(Locale::en, &share),
+            "Shared puzzle · by a blocked player"
+        );
     }
 }

@@ -411,6 +411,57 @@ async fn results_the_server_checked_go_on_the_board() {
     assert_eq!(players_reached(&conn, aiko).await.unwrap(), 1);
 }
 
+/// The fairness rule of the sharing stamps: times put on a board after the fact (a race whose
+/// puzzle was shared after it) are on the board, but don't count for the sharer; a solve through
+/// the link does, and the first result stays whichever it was.
+#[tokio::test]
+async fn results_from_before_the_link_dont_count_for_the_sharer() {
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let chen = player(&conn, "chen").await;
+    let now = now_ms();
+    let code = create(&conn, aiko, small(), now).await.unwrap();
+    let time = Verified {
+        time_ms: 20_000,
+        moves: 2,
+        hints: 0,
+    };
+    assert!(
+        add_result(&conn, &code, bram, time, false, now)
+            .await
+            .unwrap()
+    );
+    let page = page_of(&conn, &code, None).await;
+    assert_eq!(page.board.len(), 1);
+    assert_eq!(page.board[0].user_id, bram);
+    assert_eq!(players_reached(&conn, aiko).await.unwrap(), 0);
+    // bram solves it again through the link: his first result stays, still not counting
+    let (_, counted) = submit(&conn, &code, bram, &solved(9_000, 0), now + 1)
+        .await
+        .unwrap();
+    assert!(!counted);
+    assert_eq!(players_reached(&conn, aiko).await.unwrap(), 0);
+    // chen comes through the link: counted
+    let (_, counted) = submit(&conn, &code, chen, &solved(30_000, 0), now + 2)
+        .await
+        .unwrap();
+    assert!(counted);
+    assert_eq!(players_reached(&conn, aiko).await.unwrap(), 1);
+    // The stamps follow the count: 道 for chen, not for bram
+    crate::server::daily::sync_stamps(&conn, aiko, false)
+        .await
+        .unwrap();
+    assert_eq!(
+        number(
+            &conn,
+            &format!("SELECT COUNT(*) FROM stamps WHERE user_id = {aiko} AND stamp = 'dojo'")
+        )
+        .await,
+        1
+    );
+}
+
 #[tokio::test]
 async fn deleting_an_account_takes_the_results_and_the_name_off_the_links() {
     let conn = db().await;

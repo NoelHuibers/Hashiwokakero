@@ -26,3 +26,19 @@ export const ladderRow = (y: number) =>
   edges(LADDER).findIndex(
     ([a, b]) => LADDER.islands[a]!.pos.y === y && LADDER.islands[b]!.pos.y === y,
   );
+
+/** [`LADDER`] the other way round: the islands of the right side joined from top to bottom. */
+export const RUNGS: Puzzle = {
+  width: 7,
+  height: 7,
+  islands: [1, 2, 3, 4, 5].flatMap((y) => [
+    { pos: { x: 0, y }, required: 1 },
+    { pos: { x: 6, y }, required: y === 1 || y === 5 ? 2 : 3 },
+  ]),
+};
+
+/** A bridge on every row and down the right side. */
+export const RUNGS_SOLUTION: number[] = edges(RUNGS).map(([a, b]) => {
+  const [p, q] = [RUNGS.islands[a]!.pos, RUNGS.islands[b]!.pos];
+  return p.y === q.y || p.x === 6 ? 1 : 0;
+});

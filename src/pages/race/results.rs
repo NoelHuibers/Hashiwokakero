@@ -227,7 +227,7 @@ pub fn SharePuzzleCard(race: RaceState) -> impl IntoView {
             .with_untracked(|v| v.as_ref().map(crate::model::RaceView::size))
             .unwrap_or((7, 7));
         let title = format!("{} 勝負 · {w}×{h}", td_string!(locale, race.title));
-        share_lines(&title, &td_string!(locale, race.results.share_text), url)
+        share_lines(&title, td_string!(locale, race.results.share_text), url)
     };
     view! {
         <Card class="gap-3" attr:data-testid="race-share">

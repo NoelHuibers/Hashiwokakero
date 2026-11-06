@@ -398,9 +398,10 @@ pub async fn open(
     Ok(id)
 }
 
-/// Opens a lobby in a group on the shared puzzle of the link `code` (`/p/<code>`), with `user` as
-/// its host and first player. Returns its id. Like [`open`] otherwise: one race at a time per
-/// group, members only. The help costs the prices of the preset closest in size
+/// Opens a lobby in a group on the shared puzzle of the link `code` (`/p/<code>`).
+///
+/// With `user` as its host and first player; returns its id. Like [`open`] otherwise: one race at
+/// a time per group, members only. The help costs the prices of the preset closest in size
 /// (`model::shared_difficulty`).
 pub async fn open_shared(
     conn: &Connection,
@@ -1057,14 +1058,11 @@ pub struct Finished {
     pub reached: Option<i64>,
 }
 
-/// [`submit`], and on a shared puzzle the result on its board through the link the race was
-/// opened from, unless it was flagged: the server timed it (Play's clock: from the start, the
-/// hints on top as on the board, not the race's penalties). Only a player's first result on a
-/// puzzle counts, as on its page.
-#[expect(
-    clippy::too_many_arguments,
-    reason = "a submit's parts, as the server function gets them"
-)]
+/// [`submit`], and on a shared puzzle the result on its board.
+///
+/// Through the link the race was opened from, unless it was flagged: the server timed it (Play's
+/// clock: from the start, the hints on top as on the board, not the race's penalties). Only a
+/// player's first result on a puzzle counts, as on its page.
 pub async fn finish(
     conn: &Connection,
     id: i64,
@@ -1230,10 +1228,8 @@ async fn publish(conn: &Connection, id: i64, code: &str, now: i64) -> Result<u64
         )
         .await
         .map_err(db_err)?;
-    let mut published = 0;
-    if claimed > 0 {
-        published = tx
-            .execute(
+    let published = if claimed > 0 {
+        tx.execute(
                 &format!(
                     "INSERT OR IGNORE INTO shared_results
                          (puzzle_id, user_id, share_id, time_ms, moves, hints, score_ms, finished_at, counts)
@@ -1247,11 +1243,13 @@ async fn publish(conn: &Connection, id: i64, code: &str, now: i64) -> Result<u64
                        AND NOT EXISTS (SELECT 1 FROM blocks b
                                        WHERE b.user_id = p.user_id AND b.blocked_id = s.user_id)"
                 ),
-                params![id, code],
-            )
-            .await
-            .map_err(db_err)?;
-    }
+            params![id, code],
+        )
+        .await
+        .map_err(db_err)?
+    } else {
+        0
+    };
     tx.commit().await.map_err(db_err)?;
     Ok(published)
 }
