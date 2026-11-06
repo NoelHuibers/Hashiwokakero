@@ -382,8 +382,8 @@ fn Header(race: RaceState) -> impl IntoView {
                         let size = format!("{}×{}", share.width, share.height);
                         view! {
                             <Badge variant=BadgeVariant::Muted attr:data-testid="race-shared">
-                                <span class="font-pixel" aria-hidden="true">"共"</span>
-                                " " {move || shared_by(i18n.get_locale(), &share)}
+                                <span class="font-pixel me-1" aria-hidden="true">"共"</span>
+                                {move || shared_by(i18n.get_locale(), &share)}
                             </Badge>
                             <Badge variant=BadgeVariant::Muted>{size}</Badge>
                         }

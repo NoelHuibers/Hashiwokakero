@@ -233,7 +233,7 @@ pub fn SharePuzzleCard(race: RaceState) -> impl IntoView {
         <Card class="gap-3" attr:data-testid="race-share">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-lg">
-                    {t!(i18n, shared.share.button)} <span class="font-pixel text-sm text-primary">"共有"</span>
+                    {t!(i18n, shared.share.button)} <span class="font-pixel whitespace-nowrap text-sm text-primary">"共有"</span>
                 </CardTitle>
                 <CardDescription>{t!(i18n, race.results.share_hint)}</CardDescription>
             </CardHeader>

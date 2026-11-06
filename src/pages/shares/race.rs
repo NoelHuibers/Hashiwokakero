@@ -78,7 +78,7 @@ pub fn RaceWithGroup(code: Signal<String>) -> impl IntoView {
             <Card class="gap-3" attr:data-testid="shared-race">
                 <CardHeader>
                     <CardTitle class="flex items-baseline gap-2 text-lg">
-                        {t!(i18n, shared.race.title)} <span class="font-pixel text-sm text-primary">"勝負"</span>
+                        {t!(i18n, shared.race.title)} <span class="font-pixel whitespace-nowrap text-sm text-primary">"勝負"</span>
                     </CardTitle>
                     <CardDescription>{t!(i18n, shared.race.text)}</CardDescription>
                 </CardHeader>
