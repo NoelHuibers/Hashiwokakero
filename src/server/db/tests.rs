@@ -259,12 +259,10 @@ async fn write_rows(conn: &Connection, version: usize) {
         .await;
     }
     if version >= 29 {
-        // The group raced noel's shared puzzle through his link; race 1's puzzle was shared after
-        // it, its times are on a board
+        // The group raced noel's shared puzzle through his link
         run(r#"
             INSERT INTO group_races (id, group_id, host_id, difficulty, created_at, starts_at, ended_at, puzzle, solution, share_puzzle_id, share_code)
                 VALUES (2, 1, 2, 'easy', 99100, 99200, 99900, '{"width":3,"height":3,"islands":[]}', '[2,1]', 1, 'k7m2xq9a');
-            UPDATE group_races SET published_at = 99950 WHERE id = 1;
         "#)
         .await;
     }
@@ -523,17 +521,8 @@ async fn old_databases_migrate_with_their_data() {
                 "SELECT COUNT(*) FROM account_tokens WHERE used_at IS NULL AND email IS NULL AND ip_hash IS NULL",
                 i64::from(version >= 26),
             ),
-            // Results from before races on shared puzzles count for the sharer
-            (
-                "SELECT COUNT(*) FROM shared_results WHERE counts = 1",
-                if version >= 28 { 2 } else { 0 },
-            ),
             (
                 "SELECT COUNT(*) FROM group_races WHERE share_code = 'k7m2xq9a' AND share_puzzle_id = 1",
-                i64::from(version >= 29),
-            ),
-            (
-                "SELECT COUNT(*) FROM group_races WHERE published_at IS NOT NULL",
                 i64::from(version >= 29),
             ),
             // Another player solved noel's shared puzzle through his link

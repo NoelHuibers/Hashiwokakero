@@ -299,7 +299,7 @@ pub(super) async fn sync_recent(conn: &Connection) -> Result<usize, ServerFnErro
                AND (a.day >= ?1 - 2 OR NOT EXISTS (SELECT 1 FROM stamps s WHERE s.user_id = a.user_id))
                AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = a.user_id AND u.deleted_at IS NOT NULL)
              UNION SELECT s.user_id FROM shared_results r
-             JOIN puzzle_shares s ON s.id = r.share_id AND s.user_id != r.user_id AND r.counts = 1
+             JOIN puzzle_shares s ON s.id = r.share_id AND s.user_id != r.user_id
              JOIN users u ON u.id = s.user_id AND u.deleted_at IS NULL
              WHERE r.finished_at >= ?2",
             params![today, (today - 2) * MS_PER_DAY],

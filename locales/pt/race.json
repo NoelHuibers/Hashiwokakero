@@ -69,8 +69,8 @@
     "rematch_go": "Para a revanche",
     "replay": "As jogadas de todos",
     "stage": "O tabuleiro da corrida com as pontes de {{ names }}",
-    "share_text": "Fizemos uma corrida neste quebra-cabeça do Hashi. Consegue bater nossos tempos?",
-    "share_hint": "Compartilhe o quebra-cabeça como link: os tempos da corrida estão no ranking dele, como os que é preciso bater."
+    "share_text": "Fizemos uma corrida neste quebra-cabeça do Hashi. Consegue resolvê-lo?",
+    "share_hint": "Compartilhe o quebra-cabeça como link. Se você ficou colocado, seu tempo vai para o ranking dele como o que é preciso bater."
   },
   "errors": {
     "open": "Já há uma corrida aberta neste grupo: entre nela.",
@@ -89,6 +89,7 @@
     "by_former": "Quebra-cabeça compartilhado · por um ex-jogador",
     "lobby": "Quem entra recebe este quebra-cabeça compartilhado no mesmo momento. O anfitrião começa quando houver pelo menos dois.",
     "before": "já resolveu",
-    "before_hint": "Resolveu este quebra-cabeça antes da corrida, então conhece a solução."
+    "before_hint": "Resolveu este quebra-cabeça antes da corrida, então conhece a solução.",
+    "public": "Os tempos desta corrida vão para o ranking público do quebra-cabeça compartilhado."
   }
 }

@@ -69,8 +69,8 @@
     "rematch_go": "Ke tanding ulang",
     "replay": "Langkah semua orang",
     "stage": "Papan balapan dengan jembatan {{ names }}",
-    "share_text": "Kami balapan di teka-teki Hashi ini. Bisakah kamu mengalahkan waktu kami?",
-    "share_hint": "Bagikan teka-teki sebagai tautan: waktu para pembalap ada di papan peringkatnya, sebagai waktu yang harus dikalahkan."
+    "share_text": "Kami balapan di teka-teki Hashi ini. Bisakah kamu menyelesaikannya?",
+    "share_hint": "Bagikan teka-teki sebagai tautan. Jika kamu dapat peringkat, waktumu masuk ke papan peringkatnya sebagai waktu yang harus dikalahkan."
   },
   "errors": {
     "open": "Sudah ada balapan terbuka di grup ini: gabunglah ke sana.",
@@ -89,6 +89,7 @@
     "by_former": "Teka-teki yang dibagikan · oleh mantan pemain",
     "lobby": "Semua yang bergabung mendapat teka-teki yang dibagikan ini pada saat yang sama. Tuan rumah memulai begitu setidaknya dua orang bergabung.",
     "before": "sudah pernah",
-    "before_hint": "Sudah menyelesaikan teka-teki ini sebelum balapan, jadi tahu jawabannya."
+    "before_hint": "Sudah menyelesaikan teka-teki ini sebelum balapan, jadi tahu jawabannya.",
+    "public": "Waktu balapan ini masuk ke papan peringkat publik teka-teki yang dibagikan."
   }
 }

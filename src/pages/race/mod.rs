@@ -806,9 +806,13 @@ mod tests {
             "this shared puzzle",
             "race-solved-before",
             "solved before",
+            "race-public",
+            "shared puzzle&#x27;s public board",
         ] {
             assert!(lobby.contains(text), "{text}: {lobby}");
         }
+        // A race of the generator says nothing of a public board
+        assert!(!render(view(None, None)).contains("race-public"));
         // Its size, not the difficulty's preset
         assert!(
             !lobby.contains("10×10") && !lobby.contains("中級"),

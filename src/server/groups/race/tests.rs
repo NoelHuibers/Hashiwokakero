@@ -907,12 +907,11 @@ async fn blocked_players_are_nameless_in_races() {
 
 // Races and shared puzzles
 
-/// The shared results of a puzzle: `(user, share code, time, hints, score, counts)`, the fastest
-/// first.
-async fn shared_rows(conn: &Connection, code: &str) -> Vec<(i64, String, i64, i64, i64, bool)> {
+/// The shared results of a puzzle: `(user, share code, time, hints, score)`, the fastest first.
+async fn shared_rows(conn: &Connection, code: &str) -> Vec<(i64, String, i64, i64, i64)> {
     let mut rows = conn
         .query(
-            "SELECT r.user_id, s.code, r.time_ms, r.hints, r.score_ms, r.counts
+            "SELECT r.user_id, s.code, r.time_ms, r.hints, r.score_ms
              FROM shared_results r JOIN puzzle_shares s ON s.id = r.share_id
              WHERE r.puzzle_id = (SELECT puzzle_id FROM puzzle_shares WHERE code = ?1)
              ORDER BY r.score_ms, r.user_id",
@@ -928,14 +927,9 @@ async fn shared_rows(conn: &Connection, code: &str) -> Vec<(i64, String, i64, i6
             row.get(2).unwrap(),
             row.get(3).unwrap(),
             row.get(4).unwrap(),
-            row.get::<i64>(5).unwrap() == 1,
         ));
     }
     out
-}
-
-async fn published_at(conn: &Connection, race: i64) -> Option<i64> {
-    load(conn, race).await.unwrap().unwrap().published_at
 }
 
 /// A race in which aiko solved it clean in 20 s, bram with a hint and a check in 15 s, chen's
@@ -969,61 +963,61 @@ async fn finished_race(conn: &Connection) -> (i64, i64, [i64; 5]) {
 }
 
 #[tokio::test]
-async fn sharing_a_race_puts_the_racers_times_on_the_board_once() {
+async fn sharing_a_race_puts_only_the_sharers_own_time_on_the_board() {
     let conn = db().await;
     let (id, start, [aiko, bram, chen, dana, erin]) = finished_race(&conn).await;
     let now = start + 60_000;
 
-    // erin watched: her link, and the placed racers' times on its board, with the server's
-    // clock (hints at 30 s, as on the board; not the race's penalties)
-    let code = share(&conn, id, erin, now).await.unwrap();
+    // aiko shares it: her time on the board, through her link, with the server's clock. Not
+    // bram's, nor anyone else's: another racer's share never publishes my time
+    let code = share(&conn, id, aiko, now).await.unwrap();
     assert!(crate::model::is_share_code(&code));
-    assert_eq!(published_at(&conn, id).await, Some(now));
+    assert_eq!(
+        shared_rows(&conn, &code).await,
+        [(aiko, code.clone(), 20_000, 0, 20_000)]
+    );
+    let page = shares::page(&conn, &code, None).await.unwrap().unwrap();
+    assert_eq!(page.puzzle, small().puzzle);
+    assert_eq!(page.solvers, 1);
+    assert_eq!(page.sharer.and_then(|s| s.result).map(|r| r.user_id), Some(aiko));
+    // Again: the same link, still one time
+    assert_eq!(share(&conn, id, aiko, now + 1).await.unwrap(), code);
+    assert_eq!(shared_rows(&conn, &code).await.len(), 1);
+
+    // bram shares too: his own link and his time (hints at 30 s, as on the board; not the race's
+    // penalties), on the same puzzle's board
+    let bram_code = share(&conn, id, bram, now + 2).await.unwrap();
+    assert_ne!(bram_code, code);
     assert_eq!(
         shared_rows(&conn, &code).await,
         [
-            (aiko, code.clone(), 20_000, 0, 20_000, false),
-            (bram, code.clone(), 15_000, 1, 45_000, false),
-        ],
-        "chen's flagged finish and dana's giving up aren't on it"
+            (aiko, code.clone(), 20_000, 0, 20_000),
+            (bram, bram_code.clone(), 15_000, 1, 45_000),
+        ]
     );
-    let page = shares::page(&conn, &code, Some(erin))
-        .await
-        .unwrap()
-        .unwrap();
-    assert_eq!(page.puzzle, small().puzzle);
-    assert_eq!(page.sharer.map(|s| s.user_id), Some(erin));
-    assert_eq!(page.solvers, 2);
-    assert_eq!(page.board[0].user_id, aiko);
-
-    // Again, or another member's link: no second time on the board
-    assert_eq!(share(&conn, id, erin, now + 1).await.unwrap(), code);
-    let aiko_code = share(&conn, id, aiko, now + 2).await.unwrap();
-    assert_ne!(aiko_code, code);
-    assert_eq!(published_at(&conn, id).await, Some(now));
-    assert_eq!(
-        number(&conn, "SELECT COUNT(*) FROM shared_results").await,
-        2
-    );
-    assert_eq!(number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await, 2);
-    // The racers solved it before there was a link: nobody reached anyone yet
-    for p in [erin, aiko] {
+    // The watcher, the flagged finish and the one who gave up get a link and put nothing on it
+    for p in [erin, chen, dana] {
+        share(&conn, id, p, now + 3).await.unwrap();
+    }
+    assert_eq!(shared_rows(&conn, &code).await.len(), 2);
+    assert_eq!(number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await, 5);
+    // A sharer's own time doesn't count for themselves: nobody reached anyone
+    for p in [aiko, bram, erin] {
         assert_eq!(shares::players_reached(&conn, p).await.unwrap(), 0);
     }
-    // The flagged racer's first solve on the page does count, for the link they came through
+    // chen's solve on the page through erin's link counts for her
+    let erin_code = share(&conn, id, erin, now + 4).await.unwrap();
     let solve = crate::model::SharedSolve {
         bridges: SOLUTION.to_vec(),
         time_ms: 9_000,
         moves: 3,
         hints: 0,
     };
-    let (_, counted) = shares::submit(&conn, &code, chen, &solve, now + 3)
+    let (_, counted) = shares::submit(&conn, &erin_code, chen, &solve, now + 5)
         .await
         .unwrap();
     assert!(counted);
     assert_eq!(shares::players_reached(&conn, erin).await.unwrap(), 1);
-    assert_eq!(shares::players_reached(&conn, aiko).await.unwrap(), 0);
-    let _ = dana;
 }
 
 #[tokio::test]
@@ -1047,50 +1041,38 @@ async fn only_a_race_that_is_over_can_be_shared_by_its_group() {
         error(share(&conn, id, zoe, start + 20_000).await),
         ApiError::GroupNotFound
     );
-    assert_eq!(number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await, 0);
-    assert_eq!(published_at(&conn, id).await, None);
+    assert_eq!(
+        number(&conn, "SELECT COUNT(*) FROM puzzle_shares").await,
+        0
+    );
 }
 
 #[tokio::test]
 async fn sharing_a_race_keeps_to_the_limits_of_links() {
     let conn = db().await;
-    let (id, start, [aiko, bram, chen, _, erin]) = finished_race(&conn).await;
+    let (id, start, [aiko, ..]) = finished_race(&conn).await;
     let now = start + 60_000;
-    // erin made her links of the day already: none, and nothing on any board
+    // aiko made her links of the day already: none, and her time isn't on any board
     for i in 0..crate::model::MAX_SHARES_PER_DAY {
         conn.execute(
             "INSERT INTO puzzle_shares (code, puzzle_id, user_id, created_at) VALUES (?1, 999, ?2, ?3)",
-            params![format!("erin{i}"), erin, now - 1_000],
+            params![format!("aiko{i}"), aiko, now - 1_000],
         )
         .await
         .unwrap();
     }
     assert_eq!(
-        error(share(&conn, id, erin, now).await),
+        error(share(&conn, id, aiko, now).await),
         ApiError::TooManyAttempts
     );
-    assert_eq!(published_at(&conn, id).await, None);
     assert_eq!(
         number(&conn, "SELECT COUNT(*) FROM shared_results").await,
         0
     );
-    // chen shares it then. aiko is banned since, and bram blocked chen: neither of their times
-    // goes on chen's board (erin's had both, above), and chen's own finish was flagged
-    conn.execute(
-        "INSERT INTO blocks (user_id, blocked_id, created_at) VALUES (?1, ?2, 0)",
-        params![bram, chen],
-    )
-    .await
-    .unwrap();
-    conn.execute(
-        "UPDATE users SET banned_at = 1 WHERE id = ?1",
-        params![aiko],
-    )
-    .await
-    .unwrap();
-    let code = share(&conn, id, chen, now).await.unwrap();
-    assert_eq!(shared_rows(&conn, &code).await, []);
-    assert!(published_at(&conn, id).await.is_some());
+    assert_eq!(
+        number(&conn, "SELECT COUNT(*) FROM shared_puzzles").await,
+        0
+    );
 }
 
 #[tokio::test]
@@ -1192,9 +1174,9 @@ async fn a_shared_puzzle_is_raced_through_its_link() {
     assert_eq!(
         rows,
         [
-            (aiko, code.clone(), 12_000, 0, 12_000, true),
-            (bram, code.clone(), 25_000, 0, 25_000, true),
-            (zoe, code.clone(), 30_000, 0, 30_000, true),
+            (aiko, code.clone(), 12_000, 0, 12_000),
+            (bram, code.clone(), 25_000, 0, 25_000),
+            (zoe, code.clone(), 30_000, 0, 30_000),
         ]
     );
     assert_eq!(shares::players_reached(&conn, zoe).await.unwrap(), 2);
@@ -1206,7 +1188,7 @@ async fn a_shared_puzzle_is_raced_through_its_link() {
         .map(|p| (p.user_id, p.solved_before))
         .collect();
     assert_eq!(before, [(aiko, false), (bram, true), (chen, false)]);
-    // Sharing it afterwards: the racers' own links, nothing published twice
+    // Sharing it afterwards: aiko's own link; her result is on the board already (through zoe's)
     let aiko_code = share(&conn, id, aiko, go + 30_000).await.unwrap();
     assert_ne!(aiko_code, code);
     assert_eq!(shared_rows(&conn, &code).await.len(), 3);
@@ -1269,11 +1251,12 @@ async fn a_shared_race_shows_its_sharer_as_the_viewer_may_see_them() {
 }
 
 #[tokio::test]
-async fn published_times_go_with_their_players() {
+async fn shared_race_times_go_with_their_players() {
     let conn = db().await;
-    let (id, start, [aiko, bram, _, _, erin]) = finished_race(&conn).await;
-    let code = share(&conn, id, erin, start + 60_000).await.unwrap();
-    // aiko deletes her account: her time goes
+    let (id, start, [aiko, bram, ..]) = finished_race(&conn).await;
+    let code = share(&conn, id, aiko, start + 60_000).await.unwrap();
+    let bram_code = share(&conn, id, bram, start + 60_000).await.unwrap();
+    // aiko deletes her account: her time goes, her link stays without her
     erase_user(&conn, aiko).await.unwrap();
     assert_eq!(
         shared_rows(&conn, &code)
@@ -1283,7 +1266,11 @@ async fn published_times_go_with_their_players() {
             .collect::<Vec<_>>(),
         [bram]
     );
-    // bram's guest played it on the page earlier: the earlier result stays, as it was
+    assert_eq!(
+        shares::page(&conn, &code, None).await.unwrap().unwrap().sharer,
+        None
+    );
+    // bram's guest solved it on the page before the race: signing in keeps that first result
     let guest = user(&conn, "Sleepy Tanuki 27", None).await;
     let solve = crate::model::SharedSolve {
         bridges: SOLUTION.to_vec(),
@@ -1291,7 +1278,7 @@ async fn published_times_go_with_their_players() {
         moves: 3,
         hints: 0,
     };
-    shares::submit(&conn, &code, guest, &solve, start)
+    shares::submit(&conn, &bram_code, guest, &solve, start)
         .await
         .unwrap();
     merge_guest(&conn, bram, guest).await.unwrap();
@@ -1300,29 +1287,6 @@ async fn published_times_go_with_their_players() {
     }
     assert_eq!(
         shared_rows(&conn, &code).await,
-        [(bram, code.clone(), 50_000, 0, 50_000, true)]
-    );
-    // A guest's race time (published, not counting) moves to the account they sign in to as it
-    // is: still not counting
-    let other = user(&conn, "Brave Heron 42", None).await;
-    let chen = player(&conn, "chen2").await;
-    conn.execute(
-        "UPDATE shared_results SET user_id = ?1 WHERE user_id = ?2",
-        params![other, bram],
-    )
-    .await
-    .unwrap();
-    conn.execute(
-        "UPDATE shared_results SET counts = 0 WHERE user_id = ?1",
-        params![other],
-    )
-    .await
-    .unwrap();
-    for sql in shares::MERGE_GUEST {
-        conn.execute(sql, params![chen, other]).await.unwrap();
-    }
-    assert_eq!(
-        shared_rows(&conn, &code).await,
-        [(chen, code.clone(), 50_000, 0, 50_000, false)]
+        [(bram, bram_code, 50_000, 0, 50_000)]
     );
 }

@@ -37,6 +37,7 @@ pub fn Lobby(race: RaceState) -> impl IntoView {
     let view_of = Memo::new(move |_| race.view.get());
     let joined = Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(RaceView::joined)));
     let host = Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(RaceView::is_host)));
+    let shared = Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(|v| v.shared.is_some())));
     let can_start =
         Memo::new(move |_| view_of.with(|v| v.as_ref().is_some_and(RaceView::can_start)));
     let left = Memo::new(move |_| {
@@ -148,12 +149,19 @@ pub fn Lobby(race: RaceState) -> impl IntoView {
                     {t!(i18n, race.lobby.title)} <span class="font-pixel text-sm text-primary">"控室"</span>
                 </CardTitle>
                 <CardDescription>
-                    {move || if view_of.with(|v| v.as_ref().is_some_and(|v| v.shared.is_some())) {
+                    {move || if shared.get() {
                         t_string!(i18n, race.shared.lobby)
                     } else {
                         t_string!(i18n, race.lobby.text)
                     }}
                 </CardDescription>
+                // Before anyone joins: the times go on a public board
+                <Show when=move || shared.get()>
+                    <p class="text-sm font-medium" data-testid="race-public">
+                        <span class="font-pixel text-primary" aria-hidden="true">"共 "</span>
+                        {t!(i18n, race.shared.public)}
+                    </p>
+                </Show>
             </CardHeader>
             <CardContent class="flex flex-col gap-4">
                 <ul class="flex flex-col gap-2" data-testid="race-players">{players}</ul>

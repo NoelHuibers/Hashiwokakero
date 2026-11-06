@@ -1,6 +1,7 @@
-// Races 勝負 and shared puzzles 共有: a race's puzzle shared afterwards has the racers' times on
-// its board, and a shared puzzle is raced by a group from its page (/p/<code>). Each test races in
-// a fresh group of its own (one race at a time per group).
+// Races 勝負 and shared puzzles 共有: a racer who shares a race's puzzle afterwards puts their
+// own time on its board (nobody else's), and a shared puzzle is raced by a group from its page
+// (/p/<code>), every racer's time on its board. Each test races in a fresh group of its own (one
+// race at a time per group).
 import type { Page } from '@playwright/test';
 
 import { build, SHARED_KEY } from '../board.ts';
@@ -29,7 +30,7 @@ async function race(page: Page, friend: Page) {
   return { solution, host, guest };
 }
 
-test("a race's puzzle shared afterwards has the racers' times on its board", async ({
+test("a race's puzzle shared afterwards has the sharer's own time on its board", async ({
   page,
   browser,
   baseURL,
@@ -44,6 +45,7 @@ test("a race's puzzle shared afterwards has the racers' times on its board", asy
   await hydrated(page);
   await visit(friend, new URL(page.url()).pathname);
   await friend.getByTestId('race-join').click();
+  const racePath = new URL(page.url()).pathname;
   const { host, guest } = await race(page, friend);
 
   // Over: the host shares the puzzle as a link of theirs
@@ -54,13 +56,22 @@ test("a race's puzzle shared afterwards has the racers' times on its board", asy
   const url = (await link.getAttribute('href'))!;
   await expect(share.getByRole('button', { name: 'Send the link', exact: true })).toBeVisible();
 
-  // Its board has both racers' times, the ones to beat
+  // Its board has the host's time, the one to beat, and not the friend's: only who shares puts
+  // their own time there
+  await visit(friend, new URL(url).pathname);
+  await expect(boardRow(friend, host)).toContainText(/\d\d:\d\d/);
+  await expect(friend.getByTestId('shared-to-beat')).toBeVisible();
+  await expect(friend.locator('[data-testid="shared-board"] tbody tr')).toHaveCount(1);
+  await expect(boardRow(friend, guest)).toHaveCount(0);
+
+  // The friend shares it too, from the results: now both are on it
+  await visit(friend, racePath);
+  const friendShare = friend.getByTestId('race-share');
+  await friendShare.getByRole('button', { name: /^Share this puzzle/ }).click();
+  await expect(friendShare.getByTestId('share-link')).toHaveText(/\/p\/[a-z2-9]{8}$/);
   await visit(friend, new URL(url).pathname);
   await expect(friend.locator('[data-testid="shared-board"] tbody tr')).toHaveCount(2);
-  for (const user of [host, guest]) {
-    await expect(boardRow(friend, user)).toContainText(/\d\d:\d\d/);
-  }
-  await expect(friend.getByTestId('shared-to-beat')).toBeVisible();
+  await expect(boardRow(friend, guest)).toContainText(/\d\d:\d\d/);
   await friend.context().close();
 });
 
@@ -84,6 +95,10 @@ test('a shared puzzle is raced by a group from its page', async ({ page, browser
     `Shared puzzle · by ${RACE_SHARE.sharer}`,
   );
   await expect(page.getByTestId('race-lobby')).toContainText('this shared puzzle');
+  // Before anyone joins, the lobby says the times will be public
+  await expect(page.getByTestId('race-public')).toHaveText(
+    "共 Times of this race go on the shared puzzle's public board.",
+  );
 
   // The friend joins from the group page, which says whose puzzle it is; they know it already
   await visit(friend, groupPath);

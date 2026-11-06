@@ -69,8 +69,8 @@
     "rematch_go": "Naar de revanche",
     "replay": "Ieders zetten",
     "stage": "Het bord van de race met de bruggen van {{ names }}",
-    "share_text": "We hebben een race gedaan op deze Hashi-puzzel. Ben jij sneller dan wij?",
-    "share_hint": "Deel de puzzel als link: de tijden van de race staan op het klassement, als de tijden om te verslaan."
+    "share_text": "We hebben een race gedaan op deze Hashi-puzzel. Kun jij hem oplossen?",
+    "share_hint": "Deel de puzzel als link. Heb je een plaats, dan komt je tijd op het klassement, als de tijd om te verslaan."
   },
   "errors": {
     "open": "Er is al een race open in deze groep: doe daar mee.",
@@ -89,6 +89,7 @@
     "by_former": "Gedeelde puzzel · van een voormalige speler",
     "lobby": "Wie meedoet krijgt deze gedeelde puzzel op hetzelfde moment. De host start zodra er minstens twee meedoen.",
     "before": "al opgelost",
-    "before_hint": "Heeft deze puzzel al voor de race opgelost en kent de oplossing dus."
+    "before_hint": "Heeft deze puzzel al voor de race opgelost en kent de oplossing dus.",
+    "public": "De tijden van deze race komen op het openbare klassement van de gedeelde puzzel."
   }
 }
