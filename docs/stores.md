@@ -8,7 +8,7 @@ until its secrets exist, so its pull request can be merged before the account is
 | # | Store | Build | Status |
 |---|-------|-------|--------|
 | 1 | Our own F-Droid repository (GitHub Pages) | foss APKs, direct key | ✓ #200 |
-| 2 | F-Droid (f-droid.org) | built by F-Droid from source, ships our signed APKs | recipe ready, MR is an owner task |
+| 2 | F-Droid (f-droid.org) | built by F-Droid from source, ships our signed APKs | recipe #211, the MR is an owner task |
 | 3 | Samsung Galaxy Store | | |
 | 4 | Amazon Appstore | foss APK | |
 | 5 | Huawei AppGallery | foss | |

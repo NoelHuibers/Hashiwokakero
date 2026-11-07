@@ -20,7 +20,7 @@ Repo: https://github.com/NoelHuibers/Hashiwokakero.git
 Builds:
   - versionName: 1.1.0
     versionCode: 10010001
-    commit: COMMIT
+    commit: e966f9e2d74f53b08f3617ec2769177d08886c4e
     timeout: 18000
     submodules: true
     sudo:
@@ -48,7 +48,7 @@ Builds:
 
   - versionName: 1.1.0
     versionCode: 10010002
-    commit: COMMIT
+    commit: e966f9e2d74f53b08f3617ec2769177d08886c4e
     timeout: 18000
     submodules: true
     sudo:
@@ -76,7 +76,7 @@ Builds:
 
   - versionName: 1.1.0
     versionCode: 10010004
-    commit: COMMIT
+    commit: e966f9e2d74f53b08f3617ec2769177d08886c4e
     timeout: 18000
     submodules: true
     sudo:

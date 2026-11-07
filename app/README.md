@@ -827,7 +827,10 @@ comments: fdroiddata takes none). Getting it there is an owner task
   in their place, and the Gradle wrapper, for which the script calls F-Droid's `gradle`
   (gradlew-fdroid, the wrapper's version with F-Droid's checksums).
 - **Reproducible**: the release's job "Build APKs (Android, foss)" runs `build.sh apk arm64 arm
-  x86_64` too, with CI's prebuilt Trunk and Tauri CLI (the same versions; Trunk downloads the same
+  x86_64` too, in a copy of the checkout at `/home/vagrant/build/rs.hashi`, where F-Droid's build
+  server builds (Cargo hashes the absolute path of the path dependencies outside
+  `app/src-tauri`'s workspace, `backend`, `common`, ..., into their symbols, which changed the
+  library's code), with CI's prebuilt Trunk and Tauri CLI (the same versions; Trunk downloads the same
   wasm-bindgen and wasm-opt), the script's Rust (`RUST_VERSION`, not the stable of the other
   builds), JDK 21 like F-Droid's Debian, the same NDK and Gradle, and the paths of the machine
   mapped away (`--remap-path-prefix`: panic messages carry the sources' paths; and
