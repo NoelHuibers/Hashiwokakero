@@ -184,6 +184,11 @@ apk() {
       *) fail "unknown ABI $abi (arm64, arm, x86_64)" ;;
     esac
   done
+  # Cargo hashes the absolute path of the path dependencies outside app/src-tauri's workspace
+  # (backend, common, ...) into their symbols: only a build in F-Droid's place equals F-Droid's
+  if [ -n "${ANDROID_KEYSTORE_FILE:-}" ] && [ "$ROOT" != /home/vagrant/build/rs.hashi ]; then
+    echo "fdroid/build.sh: built in $ROOT, not in /home/vagrant/build/rs.hashi: F-Droid's APK won't be this one" >&2
+  fi
   local tauri
   tauri=$(cargo tauri --version 2> /dev/null | awk '{ print $2 }')
   [ "$tauri" = "$TAURI_CLI_VERSION" ] || fail "tauri-cli $TAURI_CLI_VERSION needed, not '${tauri}'"

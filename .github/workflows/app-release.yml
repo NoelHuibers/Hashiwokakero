@@ -531,18 +531,25 @@ jobs:
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall -y trunk@0.22.0 tauri-cli@2.12.4
-      # Release, an APK per ABI (arm64 + 32-bit ARM + x86_64), with the web bundle
+      # Release, an APK per ABI (arm64 + 32-bit ARM + x86_64), with the web bundle. In a copy of the
+      # checkout where F-Droid's build server builds (/home/vagrant/build/rs.hashi): Cargo hashes
+      # the absolute path of the path dependencies outside app/src-tauri's workspace (backend,
+      # common, ...) into their symbols, and the library's code differed elsewhere.
       - if: steps.key.outputs.built == 'true'
         name: Build
         run: |
-          ANDROID_KEYSTORE_FILE="$DIRECT_KEY/direct.p12" \
-          ANDROID_KEYSTORE_PASSWORD=$(cat "$DIRECT_KEY/store-password") \
-          ANDROID_KEY_ALIAS=$(cat "$DIRECT_KEY/alias") \
-          ANDROID_KEY_PASSWORD=$(cat "$DIRECT_KEY/key-password") \
-            app/fdroid/build.sh apk arm64 arm x86_64
+          sudo mkdir -p /home/vagrant/build
+          sudo chown -R "$USER" /home/vagrant
+          cp -a . /home/vagrant/build/rs.hashi
+          (cd /home/vagrant/build/rs.hashi &&
+            ANDROID_KEYSTORE_FILE="$DIRECT_KEY/direct.p12" \
+            ANDROID_KEYSTORE_PASSWORD=$(cat "$DIRECT_KEY/store-password") \
+            ANDROID_KEY_ALIAS=$(cat "$DIRECT_KEY/alias") \
+            ANDROID_KEY_PASSWORD=$(cat "$DIRECT_KEY/key-password") \
+              app/fdroid/build.sh apk arm64 arm x86_64)
           mkdir -p release
           for flavor in arm64:arm64-v8a arm:armeabi-v7a x86_64:x86_64; do
-            cp "app/src-tauri/gen/android/app/build/outputs/apk/${flavor%%:*}/release/app-${flavor%%:*}-release.apk" \
+            cp "/home/vagrant/build/rs.hashi/app/src-tauri/gen/android/app/build/outputs/apk/${flavor%%:*}/release/app-${flavor%%:*}-release.apk" \
               "release/hashi-$VERSION-foss-${flavor#*:}.apk"
           done
       - if: always()
