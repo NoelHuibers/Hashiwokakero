@@ -21,7 +21,7 @@ use crate::lang::{date_short, difficulty_name, player_name, prefix};
 use crate::model::{
     CARD_POLL_MS, GroupRaces, RacePhase, RaceSummary, colour_var, day_of, format_duration,
 };
-use crate::pages::race::race_path;
+use crate::pages::race::{race_path, shared_by};
 use crate::state::error_toast;
 
 use super::GroupContext;
@@ -84,6 +84,19 @@ fn OpenRace(race: RaceSummary, group: i64, now: i64) -> impl IntoView {
         .into_any(),
     };
     let difficulty = race.difficulty;
+    let shared = race.shared.clone();
+    let source = move || match &shared {
+        Some(share) => view! {
+            <span class="font-pixel" aria-hidden="true">"共 "</span>
+            {shared_by(i18n.get_locale(), share)}
+        }
+        .into_any(),
+        None => view! {
+            <span class="font-pixel" aria-hidden="true">{difficulty.kanji()} " "</span>
+            {difficulty_name(i18n.get_locale(), difficulty)}
+        }
+        .into_any(),
+    };
     view! {
         <div class="flex items-center gap-3 rounded-xl border-2 border-primary/50 bg-primary/5 p-3" data-testid="race-open" data-race=id>
             <span class="hanko grid size-10 shrink-0 rotate-[-5deg] place-items-center rounded-md font-pixel text-lg" aria-hidden="true">
@@ -97,10 +110,7 @@ fn OpenRace(race: RaceSummary, group: i64, now: i64) -> impl IntoView {
                         t_string!(i18n, race.card.running, count)
                     }}
                 </p>
-                <p class="truncate text-xs text-muted-foreground">
-                    <span class="font-pixel" aria-hidden="true">{difficulty.kanji()} " "</span>
-                    {move || difficulty_name(i18n.get_locale(), difficulty)}
-                </p>
+                <p class="truncate text-xs text-muted-foreground">{source}</p>
                 <Pips race />
             </div>
             {action}
@@ -183,17 +193,24 @@ fn PastRace(race: RaceSummary, group: i64) -> impl IntoView {
     let day = day_of(race.starts_at.unwrap_or(race.created_at));
     let count = race.entrants.len();
     let difficulty = race.difficulty;
+    let shared = race.shared.is_some();
     let winner = race.winner().cloned();
     view! {
         <li>
             <A href=href attr:class="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent/40" attr:data-past=id>
-                <span class="font-pixel shrink-0 whitespace-nowrap text-primary" aria-hidden="true">{difficulty.kanji()}</span>
+                <span class="font-pixel shrink-0 whitespace-nowrap text-primary" aria-hidden="true">
+                    {if shared { "共" } else { difficulty.kanji() }}
+                </span>
                 <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                     <p class="truncate text-xs text-muted-foreground">
                         {move || format!(
                             "{} · {} · {}",
                             date_short(i18n.get_locale(), day),
-                            difficulty_name(i18n.get_locale(), difficulty),
+                            if shared {
+                                t_string!(i18n, race.shared.badge).to_string()
+                            } else {
+                                difficulty_name(i18n.get_locale(), difficulty)
+                            },
                             t_string!(i18n, race.card.players, count),
                         )}
                     </p>

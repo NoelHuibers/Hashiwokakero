@@ -6,7 +6,7 @@
 use common::SolveOutcome;
 use leptos::prelude::*;
 
-use crate::components::share_puzzle::{SharePuzzle, share_text};
+use crate::components::share_puzzle::{SharePuzzle, ShareRequest, share_text};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::i18n::{t, td_string, use_i18n};
 use crate::state::Editor;
@@ -48,7 +48,7 @@ pub fn ShareCard() -> impl IntoView {
                     if proven.get() {
                         view! {
                             <SharePuzzle
-                                request=move || (editor.puzzle.get_untracked(), None)
+                                request=move || ShareRequest::Puzzle(editor.puzzle.get_untracked(), None)
                                 text
                                 outline=true
                             />

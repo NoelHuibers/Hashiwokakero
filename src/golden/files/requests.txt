@@ -74,6 +74,7 @@
 /api/my_stats {}
 /api/open_group_race {"group":2,"difficulty":"Hard"}
 /api/open_hanko {"group":2}
+/api/open_shared_race {"group":2,"code":"k7m2xq9a"}
 /api/password_reset_available {}
 /api/poll_group_race {"id":6,"progress":42,"puzzle":true}
 /api/post_group_puzzle {"group":2,"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"title":"Spiral"}
@@ -91,6 +92,7 @@
 /api/set_hanko {"group":2,"target":9,"day":20381,"kind":"Cheers","on":true}
 /api/set_recovery_email {"email":"noel@example.org","password":"correct horse","locale":"de"}
 /api/set_rival {"player":9,"on":true}
+/api/share_group_race {"id":6}
 /api/share_puzzle {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"solve":{"bridges":[2,1],"time_ms":133000,"moves":4,"hints":1}}
 /api/show_stamp {"stamp":"Gold"}
 /api/solve_puzzle {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"config":{"kind":"Cdcl","heuristic":"Vsids","restarts":{"Geometric":{"threshold":100,"factor_percent":150}},"subsumption":true,"timeout_ms":10000},"unique":true}

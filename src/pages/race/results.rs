@@ -8,17 +8,18 @@ use leptos_router::hooks::use_navigate;
 
 use crate::api::{load_race_replay, rematch_group_race};
 use crate::components::leaderboard::{HIGHLIGHT_ROW, PlayerName, RANK_TABLE, ROW_INSET, RankCell};
+use crate::components::share_puzzle::{SharePuzzle, ShareRequest, share_lines, share_text};
 use crate::components::ui::button::{Button, ButtonVariant};
-use crate::components::ui::card::{Card, CardContent, CardHeader, CardTitle};
-use crate::i18n::{t, t_string, use_i18n};
+use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
+use crate::i18n::{Locale, t, t_string, td_string, use_i18n};
 use crate::lang::prefix;
-use crate::model::{RaceOutcome, RacePlayer, ReplayData, format_duration};
+use crate::model::{RaceOutcome, RacePlayer, RaceView, ReplayData, format_duration};
 use crate::pages::groups::today::ColourPip;
 use crate::pages::replay::TheatreView;
 use crate::state::error_toast;
 
-use super::race_path;
 use super::state::RaceState;
+use super::{SolvedBefore, race_path};
 
 /// The order of the results: places first, then the finishes without one, then the rest.
 fn order(players: &mut [RacePlayer]) {
@@ -76,6 +77,7 @@ fn Row(player: RacePlayer, me: bool) -> impl IntoView {
                 <div class="flex min-w-0 items-center gap-2 [&>div]:min-w-0">
                     <ColourPip colour=player.colour />
                     <PlayerName user_id=player.user_id name=player.name guest=player.guest stamp=None me />
+                    {player.solved_before.then(|| view! { <SolvedBefore /> })}
                 </div>
             </td>
             <td
@@ -212,6 +214,62 @@ fn Rematch(race: RaceState) -> impl IntoView {
     }
 }
 
+/// The viewer's time as the server puts it on the board of the shared puzzle when they share it
+/// (`server::groups::race::share`): if they got a place, the time from the start (the race's
+/// penalties taken off; the board counts its 30 s per hint), and their hints.
+fn own_board_time(view: &RaceView) -> Option<(i64, u32)> {
+    let me = view.mine()?;
+    match me.outcome {
+        RaceOutcome::Solved {
+            time_ms,
+            place: Some(_),
+        } => Some((
+            time_ms - view.penalties.total(me.hints, me.checks),
+            u32::try_from(me.hints).unwrap_or(u32::MAX),
+        )),
+        _ => None,
+    }
+}
+
+/// The race's puzzle as a link of the viewer's (`/p/<code>`), with their own time on its board as
+/// the one to beat if they got a place, like sharing from Play. For the players and the members
+/// who watched.
+#[component]
+pub fn SharePuzzleCard(race: RaceState) -> impl IntoView {
+    let i18n = use_i18n();
+    let id = Memo::new(move |_| race.view.with(|v| v.as_ref().map(|v| v.id)));
+    let request = move || ShareRequest::Race(id.get_untracked().unwrap_or_default());
+    let text = move |locale: Locale, url: &str| {
+        let (size, mine) = race
+            .view
+            .with_untracked(|v| v.as_ref().map(|v| (v.size(), own_board_time(v))))
+            .unwrap_or(((7, 7), None));
+        let title = format!(
+            "{} 勝負 · {}×{}",
+            td_string!(locale, race.title),
+            size.0,
+            size.1
+        );
+        match mine {
+            Some(solve) => share_text(locale, &title, Some(solve), url),
+            None => share_lines(&title, td_string!(locale, race.results.share_text), url),
+        }
+    };
+    view! {
+        <Card class="gap-3" attr:data-testid="race-share">
+            <CardHeader>
+                <CardTitle class="flex items-baseline gap-2 text-lg">
+                    {t!(i18n, shared.share.button)} <span class="font-pixel whitespace-nowrap text-sm text-primary">"共有"</span>
+                </CardTitle>
+                <CardDescription>{t!(i18n, race.results.share_hint)}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <SharePuzzle request text outline=true />
+            </CardContent>
+        </Card>
+    }
+}
+
 /// Everyone's moves in the replay theatre, loaded once the race is over.
 #[component]
 pub fn Results(race: RaceState) -> impl IntoView {
@@ -259,7 +317,61 @@ mod tests {
             checks: 0,
             flag: None,
             outcome,
+            solved_before: false,
         }
+    }
+
+    #[test]
+    fn the_shared_time_is_the_viewers_own_without_the_race_penalties() {
+        let penalties = crate::model::HelpPenalties::of(common::Difficulty::Easy);
+        let mut me = player(
+            1,
+            RaceOutcome::Solved {
+                time_ms: 20_000 + penalties.hint_ms + penalties.check_ms,
+                place: Some(2),
+            },
+        );
+        me.hints = 1;
+        me.checks = 1;
+        let mut view = RaceView {
+            id: 1,
+            group_id: 1,
+            group_name: String::new(),
+            me: 1,
+            host: Some(1),
+            difficulty: common::Difficulty::Easy,
+            penalties,
+            created_at: 0,
+            starts_at: Some(0),
+            ended_at: Some(1),
+            players: vec![
+                me,
+                player(
+                    2,
+                    RaceOutcome::Solved {
+                        time_ms: 5,
+                        place: Some(1),
+                    },
+                ),
+            ],
+            puzzle: None,
+            solution: None,
+            rematch: None,
+            rematch_open: false,
+            server_now: 2,
+            shared: None,
+        };
+        assert_eq!(own_board_time(&view), Some((20_000, 1)));
+        // Flagged, gave up, or watched: no time to share
+        view.players[0].outcome = RaceOutcome::Solved {
+            time_ms: 9,
+            place: None,
+        };
+        assert_eq!(own_board_time(&view), None);
+        view.players[0].outcome = RaceOutcome::GaveUp;
+        assert_eq!(own_board_time(&view), None);
+        view.me = 9;
+        assert_eq!(own_board_time(&view), None);
     }
 
     #[test]

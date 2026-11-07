@@ -68,7 +68,9 @@
     "rematch_join": "Tham gia tái đấu",
     "rematch_go": "Tới trận tái đấu",
     "replay": "Nước đi của mọi người",
-    "stage": "Bàn của cuộc đua với cầu của {{ names }}"
+    "stage": "Bàn của cuộc đua với cầu của {{ names }}",
+    "share_text": "Bọn mình đã đua trên câu đố Hashi này. Bạn giải được không?",
+    "share_hint": "Chia sẻ câu đố dưới dạng liên kết. Nếu bạn có thứ hạng, thời gian của bạn sẽ lên bảng xếp hạng của nó, là thời gian cần vượt."
   },
   "errors": {
     "open": "Nhóm này đã có một cuộc đua đang mở: hãy tham gia cuộc đó.",
@@ -79,5 +81,15 @@
     "not_joined": "Bạn không tham gia cuộc đua này.",
     "not_running": "Cuộc đua không diễn ra.",
     "done": "Bạn đã xong cuộc đua này."
+  },
+  "shared": {
+    "badge": "Câu đố được chia sẻ",
+    "by": "Câu đố được chia sẻ · của {{ name }}",
+    "by_blocked": "Câu đố được chia sẻ · của một người chơi bị chặn",
+    "by_former": "Câu đố được chia sẻ · của một người chơi cũ",
+    "lobby": "Ai tham gia cũng nhận câu đố được chia sẻ này vào cùng một lúc. Chủ phòng bắt đầu khi có ít nhất hai người.",
+    "before": "đã giải trước",
+    "before_hint": "Đã giải câu đố này trước cuộc đua, nên biết lời giải.",
+    "public": "Thời gian của cuộc đua này được đưa lên bảng xếp hạng công khai của câu đố được chia sẻ."
   }
 }

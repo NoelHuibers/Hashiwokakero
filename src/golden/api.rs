@@ -465,6 +465,11 @@ fn requests() -> Vec<Entry> {
         }),
         entry(&api::RematchGroupRace { id: 6 }),
         entry(&api::LoadRaceReplay { id: 6 }),
+        entry(&api::OpenSharedRace {
+            group: 2,
+            code: "k7m2xq9a".into(),
+        }),
+        entry(&api::ShareGroupRace { id: 6 }),
         // replay
         entry(&api::LoadReplay {
             group: Some(2),

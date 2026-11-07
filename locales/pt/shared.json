@@ -57,5 +57,12 @@
     "kicker": "Um quebra-cabeça compartilhado",
     "beat": "Consegue bater {{ time }}?",
     "solve": "Consegue resolver?"
+  },
+  "race": {
+    "title": "Correr com meu grupo",
+    "text": "Abra uma corrida com este quebra-cabeça em um dos seus grupos: todos o recebem no mesmo momento.",
+    "group": "Grupo",
+    "open": "Abrir a corrida",
+    "opening": "Abrindo…"
   }
 }

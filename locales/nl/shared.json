@@ -57,5 +57,12 @@
     "kicker": "Een gedeelde puzzel",
     "beat": "Versla jij {{ time }}?",
     "solve": "Kun jij hem oplossen?"
+  },
+  "race": {
+    "title": "Race dit met mijn groep",
+    "text": "Open een race op deze puzzel in een van je groepen: iedereen krijgt hem op hetzelfde moment.",
+    "group": "Groep",
+    "open": "Race openen",
+    "opening": "Openen…"
   }
 }

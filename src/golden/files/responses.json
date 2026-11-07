@@ -929,7 +929,8 @@
             "time_ms": 85000,
             "place": 1
           }
-        }
+        },
+        "solved_before": false
       },
       {
         "user_id": 2,
@@ -947,7 +948,8 @@
             "time_ms": 20000,
             "place": null
           }
-        }
+        },
+        "solved_before": true
       },
       {
         "user_id": 3,
@@ -960,7 +962,8 @@
         "hints": 1,
         "checks": 2,
         "flag": null,
-        "outcome": "Out"
+        "outcome": "Out",
+        "solved_before": false
       },
       {
         "user_id": 4,
@@ -973,7 +976,8 @@
         "hints": 1,
         "checks": 2,
         "flag": null,
-        "outcome": "GaveUp"
+        "outcome": "GaveUp",
+        "solved_before": false
       }
     ],
     "puzzle": {
@@ -1009,7 +1013,19 @@
     ],
     "rematch": 7,
     "rematch_open": true,
-    "server_now": 1760000200000
+    "server_now": 1760000200000,
+    "shared": {
+      "code": "k7m2xq9a",
+      "sharer": {
+        "user_id": 5,
+        "name": "emre",
+        "guest": false,
+        "stamp": null,
+        "result": null
+      },
+      "width": 7,
+      "height": 7
+    }
   },
   "races": {
     "open": {
@@ -1028,7 +1044,8 @@
           "time_ms": null
         }
       ],
-      "joined": true
+      "joined": true,
+      "shared": null
     },
     "recent": [
       {
@@ -1047,7 +1064,19 @@
             "time_ms": 85000
           }
         ],
-        "joined": true
+        "joined": true,
+        "shared": {
+          "code": "k7m2xq9a",
+          "sharer": {
+            "user_id": 5,
+            "name": "emre",
+            "guest": false,
+            "stamp": null,
+            "result": null
+          },
+          "width": 7,
+          "height": 7
+        }
       }
     ],
     "server_now": 1760000200000

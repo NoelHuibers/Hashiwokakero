@@ -5,6 +5,8 @@
 import { createHash } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
+import { RUNGS, RUNGS_SOLUTION } from './puzzles.ts';
+
 const MS_PER_DAY = 86_400_000;
 
 export interface Player {
@@ -123,6 +125,12 @@ export const SHARED_PUZZLE = {
     ['aiko', 102_000, 0],
     ['bram', 95_000, 1],
   ] as const,
+};
+
+/** A link of chen's to [`RUNGS`] nobody solved yet: a group races it (race-share.spec.ts). */
+export const RACE_SHARE = {
+  code: 'rungsrc2',
+  sharer: 'chen',
 };
 
 /** A race 勝負 of the seeded group, over two days ago (race.spec.ts), on the puzzle of
@@ -318,6 +326,16 @@ export function seed(dbPath: string) {
        VALUES (1, ?, 1, ?, 20, ?, ?, ?)`,
     ).run(player(name).id, time, hints, time + hints * 30_000, posted + time);
   }
+  // The link a group races (race-share.spec.ts)
+  const rungs =
+    `${RUNGS.width}x${RUNGS.height}:` +
+    RUNGS.islands.map((i) => `${i.pos.x},${i.pos.y},${i.required};`).join('');
+  db.prepare(
+    'INSERT INTO shared_puzzles (id, hash, puzzle, solution, created_at) VALUES (2, ?, ?, ?, ?)',
+  ).run(sha256(rungs), JSON.stringify(RUNGS), JSON.stringify(RUNGS_SOLUTION), posted);
+  db.prepare(
+    'INSERT INTO puzzle_shares (id, code, puzzle_id, user_id, created_at) VALUES (2, ?, 2, ?, ?)',
+  ).run(RACE_SHARE.code, player(RACE_SHARE.sharer).id, posted);
   const puzzleAttempt = db.prepare(
     `INSERT INTO group_puzzle_attempts (puzzle_id, user_id, started_at, finished_at, hints, checks, revealed, time_ms, bridges, helps)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

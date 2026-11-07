@@ -57,5 +57,12 @@
     "kicker": "Un puzzle condiviso",
     "beat": "Riesci a battere {{ time }}?",
     "solve": "Riesci a risolverlo?"
+  },
+  "race": {
+    "title": "Fai una gara con il mio gruppo",
+    "text": "Apri una gara su questo puzzle in uno dei tuoi gruppi: tutti lo ricevono nello stesso momento.",
+    "group": "Gruppo",
+    "open": "Apri la gara",
+    "opening": "Apertura…"
   }
 }

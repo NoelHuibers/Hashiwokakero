@@ -14,7 +14,10 @@
 //! blocks (`blocks::hidden`), banned players and deleted accounts aren't on the boards.
 //!
 //! For the sharing stamps: [`players_reached`] counts the other players who solved a puzzle
-//! through a player's links, from the index on `shared_results (share_id, user_id)`.
+//! through a player's links, from the index on `shared_results (share_id, user_id)`. A group can
+//! race a shared puzzle (`groups::race`): the racers came through the link, their results count.
+//! A racer who shares a race's puzzle afterwards puts their own result on its board through their
+//! own link, like a solve on Play: it never counts for themselves.
 
 #[cfg(test)]
 mod tests;
@@ -165,8 +168,8 @@ impl Verified {
 /// Stores the result of `user` on the puzzle of the link `code`, through that link, unless they
 /// have one: only the first counts. Whether it was stored.
 ///
-/// For results the server checked itself (see [`Verified`]): after a race, every racer's time
-/// goes on the board of the puzzle a racer shared with [`create`].
+/// For results the server checked itself (see [`Verified`]): a solve on the page, a race opened
+/// from the link, or the sharer's own result in a race whose puzzle they shared (`groups::race`).
 pub async fn add_result(
     conn: &Connection,
     code: &str,
@@ -386,6 +389,17 @@ async fn link(conn: &Connection, code: &str) -> Result<Option<Link>, ServerFnErr
             result: None,
         }),
     }))
+}
+
+/// The puzzle of the link `code` (its id, the puzzle and its proven solution), `None` for a code
+/// that isn't one. For a race on it (`groups::race`).
+pub async fn linked_puzzle(
+    conn: &Connection,
+    code: &str,
+) -> Result<Option<(i64, Puzzle, Vec<u8>)>, ServerFnError> {
+    Ok(link(conn, code)
+        .await?
+        .map(|l| (l.puzzle_id, l.puzzle, l.solution)))
 }
 
 /// The board of a puzzle: the best [`SHARE_BOARD_SHOWN`] places, and the results of `viewer` and

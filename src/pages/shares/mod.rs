@@ -8,6 +8,7 @@
 //! (`SsrMode::Async` in app.rs). In the app it needs the network: without it, it says so.
 
 pub mod board;
+pub mod race;
 
 use std::time::Duration;
 
@@ -22,7 +23,7 @@ use crate::api::{load_shared_puzzle, submit_shared_puzzle};
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::celebration::{Petals, Stamp};
 use crate::components::layout::use_localized;
-use crate::components::share_puzzle::{SharePuzzle, share_text};
+use crate::components::share_puzzle::{SharePuzzle, ShareRequest, share_text};
 use crate::components::ui::badge::{Badge, BadgeVariant};
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::Card;
@@ -39,6 +40,7 @@ use crate::seo::{SITE_NAME, SITE_URL, og_share_image, title_text};
 use crate::state::{self, Auth, Game, Settings, Source, Status, error_toast, format_time};
 
 use board::BoardCard;
+use race::RaceWithGroup;
 
 /// Where the game of a shared puzzle is kept in the browser: one at a time, the last one opened.
 pub const SHARED_KEY: &str = "hashi.shared.v1";
@@ -478,6 +480,7 @@ fn Playing(initial: SharedPuzzlePage) -> impl IntoView {
                     <ResultCard shared />
                 </Show>
                 <BoardCard page=shared.page />
+                <RaceWithGroup code=Signal::derive(move || shared.page.with(|p| p.code.clone())) />
             </aside>
         </div>
     }
@@ -576,7 +579,7 @@ fn ResultCard(shared: Shared) -> impl IntoView {
     };
     let request = move || {
         let game = shared.game;
-        (game.puzzle(), Some(shared.solve()))
+        ShareRequest::Puzzle(game.puzzle(), Some(shared.solve()))
     };
     let text = move |locale, url: &str| {
         let solve = page.with_untracked(|p| {
