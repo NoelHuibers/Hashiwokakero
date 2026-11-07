@@ -92,7 +92,16 @@ test('the seeded link shows its sharer, time and board, a wrong one is lost', as
   await visit(page, `/p/${SHARED_PUZZLE.code}`);
   await expect(page.getByTestId('shared-title')).toHaveText("aiko's puzzle");
   // bram's 1:35 and a hint are 2:05, behind aiko's 1:42
-  await expect(page.getByTestId('shared-to-beat')).toContainText('01:42');
+  const toBeat = page.getByTestId('shared-to-beat');
+  await expect(toBeat).toHaveText(/^Time to beat\s*01:42$/);
+  // The label and the time apart on the screen: a flex box drops the space between them
+  const apart = await toBeat.evaluate((badge) => {
+    const label = document.createRange();
+    label.selectNodeContents(badge.firstChild!);
+    const time = badge.querySelector('.font-pixel')!.getBoundingClientRect();
+    return time.left - label.getBoundingClientRect().right;
+  });
+  expect(apart).toBeGreaterThanOrEqual(3);
   const rows = page.locator('[data-testid="shared-board"] tbody tr');
   await expect(rows.first()).toContainText('aiko');
   await expect(rows.nth(1)).toContainText('02:05');

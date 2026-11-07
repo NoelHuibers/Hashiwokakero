@@ -953,13 +953,15 @@ build (`app/store/whatsnew`, [Releases](#releases)).
 
 ### Images
 
-Made in CI, not committed (a run makes about 600). The sources:
+Made in CI, not committed (a run makes about 700). The sources:
 
 - `store/capture/`: a Playwright run (`store.capture.ts`) on the built site with a seeded local
   database (`seed.ts`, made-up players, never Turso), the same server the browser tests start
-  (`e2e/server.ts`). Every language of the site, six scenes (`scenes.ts`): today's daily in
+  (`e2e/server.ts`). Every language of the site, seven scenes (`scenes.ts`): today's daily in
   progress, the leaderboard with mika on the podium, a hard board of Play, the group of friends,
-  the stamp book and the solved daily at night. Each on a phone (402 × 874, three times) and a
+  a puzzle aiko shared with her time to beat, the stamp book and the solved daily at night. The
+  boards in progress are put into the browser's storage before the page opens, not built tap by
+  tap. Each on a phone (402 × 874, three times) and a
   tablet (1032 × 1376, twice), with room left for the system bars as the app leaves it
   (`--app-inset-*`). The dailies are fixed puzzles (`puzzles.json`), one per difficulty: the page
   names the weekday's, so a run on a Monday shows the easy 7×7, on a Sunday the 24×24 Oni.
@@ -990,6 +992,8 @@ images out.
 
 - **A pull request** that changes the listings, `store/` or the workflow: the checks, then all the
   images, kept for a week as the artifact `store-listing-images` to look at. It uploads nothing.
+  The images are taken on five runners at once, four languages each (`--shard=1/5` ...), and put
+  together into that one artifact by the job "Store images".
 - **By hand** (Actions, Store listing, Run workflow; or `gh workflow run store-listing.yml -f
   platform=both -f what=all`): `platform` play, apple or both; `what` text, images or all (text
   needs no images and is quick). `validate_only` lets Google Play check the listing without saving
