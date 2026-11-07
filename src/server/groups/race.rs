@@ -1191,29 +1191,33 @@ pub async fn share(
         return Err(ApiError::RaceNotRunning.into());
     }
     let start = race.starts_at.unwrap_or_default();
-    let mut rows = conn
-        .query(
-            "SELECT r.puzzle, p.finished_at, COALESCE(p.moves, 0), p.hints FROM group_races r
-             LEFT JOIN group_race_players p ON p.race_id = r.id AND p.user_id = ?2
-                 AND p.finished_at IS NOT NULL AND p.revealed = 0 AND p.flag IS NULL
-             WHERE r.id = ?1",
-            params![id, user],
-        )
-        .await
-        .map_err(db_err)?;
-    let Some(row) = rows.next().await.map_err(db_err)? else {
-        return Err(ApiError::RaceGone.into());
+    // Read and let go before `create` writes: a statement still open keeps its snapshot, and
+    // SQLite refuses to write from a snapshot others have written after ("database is locked")
+    let (puzzle, placed) = {
+        let mut rows = conn
+            .query(
+                "SELECT r.puzzle, p.finished_at, COALESCE(p.moves, 0), p.hints FROM group_races r
+                 LEFT JOIN group_race_players p ON p.race_id = r.id AND p.user_id = ?2
+                     AND p.finished_at IS NOT NULL AND p.revealed = 0 AND p.flag IS NULL
+                 WHERE r.id = ?1",
+                params![id, user],
+            )
+            .await
+            .map_err(db_err)?;
+        let Some(row) = rows.next().await.map_err(db_err)? else {
+            return Err(ApiError::RaceGone.into());
+        };
+        let puzzle: Puzzle = from_json(&row.get::<String>(0).map_err(db_err)?)?;
+        let placed = match row.get::<Option<i64>>(1).map_err(db_err)? {
+            Some(finished_at) => Some(shares::Verified {
+                time_ms: finished_at - start,
+                moves: row.get(2).map_err(db_err)?,
+                hints: row.get(3).map_err(db_err)?,
+            }),
+            None => None,
+        };
+        (puzzle, placed)
     };
-    let puzzle: Puzzle = from_json(&row.get::<String>(0).map_err(db_err)?)?;
-    let placed = match row.get::<Option<i64>>(1).map_err(db_err)? {
-        Some(finished_at) => Some(shares::Verified {
-            time_ms: finished_at - start,
-            moves: row.get(2).map_err(db_err)?,
-            hints: row.get(3).map_err(db_err)?,
-        }),
-        None => None,
-    };
-    drop(rows);
     let code = shares::create(conn, user, puzzle, now).await?;
     if let Some(result) = placed {
         shares::add_result(conn, &code, user, result, now).await?;
