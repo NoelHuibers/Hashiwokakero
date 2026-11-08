@@ -48,7 +48,7 @@
     "store:achievements": "node store/achievements/catalogue.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.5",
     "@fontsource-variable/murecho": "^5.3.1",
     "@fontsource-variable/noto-sans-arabic": "^5.3.0",
     "@fontsource-variable/noto-sans-devanagari": "^5.3.0",
