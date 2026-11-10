@@ -1,17 +1,19 @@
 name: Store listing
 # The app's listings on Google Play and the App Store (app/README.md, Store listings): the texts in
 # fastlane/metadata, the images made by store/capture (the built site on a seeded local database,
-# every language, framed by store/templates), uploaded with fastlane (fastlane/Fastfile).
+# every language, framed by store/templates), uploaded with fastlane (fastlane/Fastfile). And the
+# Galaxy Store's, the same texts and phone screenshots, with scripts/galaxy-store.ts.
 #
 # A pull request that changes them checks the texts (store/validate.ts and its tests), makes every
-# image and keeps them as the artifact "store-listing-images" to look at. It uploads nothing.
+# image and keeps them as the artifact "store-listing-images" to look at, and checks them against
+# the Galaxy Store's rules. It uploads nothing.
 #
 # By hand (Actions, Store listing, Run workflow, or
 # `gh workflow run store-listing.yml -f platform=both -f what=all`):
-# - platform: play, apple or both
+# - platform: play, apple, both (the two), or galaxy (the Galaxy Store)
 # - what: text, images or all
-# - validate_only: Google Play checks the listing without saving it (App Store Connect has no
-#   such check: its upload is skipped, the local checks run)
+# - validate_only: Google Play checks the listing without saving it (App Store Connect and the
+#   Galaxy Store have no such check: their upload is skipped, the local checks run)
 # - play_version_code: the release of the internal track supply hangs the listing on, when the
 #   track has more than one
 # Only the listing is uploaded: no binary, release, track, review, age rating, privacy labels,
@@ -34,7 +36,7 @@ on:
       platform:
         description: The store
         type: choice
-        options: [both, play, apple]
+        options: [both, play, apple, galaxy]
         default: both
       what:
         description: What to upload
@@ -42,7 +44,7 @@ on:
         options: [all, text, images]
         default: all
       validate_only:
-        description: Google Play only checks the listing, saves nothing (the App Store upload is skipped)
+        description: Google Play only checks the listing, saves nothing (the App Store and Galaxy Store uploads are skipped)
         type: boolean
         default: false
       play_version_code:
@@ -74,6 +76,8 @@ jobs:
           node-version-file: .node-version
       - run: node store/validate.ts
       - run: node --test scripts/tests/store-listing.test.ts
+      # The texts against the Galaxy Store's limits (sends nothing)
+      - run: node scripts/galaxy-store.ts listing --dry-run
       - name: Upload tree (texts)
         run: node store/assemble.ts --text
 
@@ -240,7 +244,7 @@ jobs:
   play:
     name: Upload to Google Play
     if: >-
-      always() && github.event_name == 'workflow_dispatch' && inputs.platform != 'apple' &&
+      always() && github.event_name == 'workflow_dispatch' && (inputs.platform == 'both' || inputs.platform == 'play') &&
       needs.validate.result == 'success' && (inputs.what == 'text' || needs.images.result == 'success')
     needs: [validate, images]
     runs-on: ubuntu-24.04
@@ -295,7 +299,7 @@ jobs:
   apple:
     name: Upload to App Store Connect
     if: >-
-      always() && github.event_name == 'workflow_dispatch' && inputs.platform != 'play' &&
+      always() && github.event_name == 'workflow_dispatch' && (inputs.platform == 'both' || inputs.platform == 'apple') &&
       needs.validate.result == 'success' && (inputs.what == 'text' || needs.images.result == 'success')
     needs: [validate, images]
     runs-on: ubuntu-24.04
@@ -357,3 +361,48 @@ jobs:
           echo "App Store: the listing ($WHAT) of the version being prepared is updated in 26 locales, not submitted" >> "$GITHUB_STEP_SUMMARY"
       - if: always()
         run: rm -f "$RUNNER_TEMP/asc-key.json"
+
+  # The Galaxy Store (docs/stores.md, Galaxy Store): the texts (title, description) in Samsung's
+  # languages and, unless text, the icon and the phone screenshots, into the app's open update or a
+  # new one, with scripts/galaxy-store.ts. Not submitted: the next release submits it with its
+  # binaries (or Seller Portal does). A pull request and validate_only: Samsung's rules checked
+  # against the texts and this run's images, nothing sent.
+  galaxy:
+    name: Upload to Galaxy Store
+    if: >-
+      always() && needs.validate.result == 'success' && (
+      (github.event_name == 'pull_request' && needs.images.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.platform == 'galaxy' &&
+      (inputs.what == 'text' || needs.images.result == 'success')))
+    needs: [validate, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EVENT: ${{ github.event_name }}
+      WHAT: ${{ inputs.what }}
+      VALIDATE_ONLY: ${{ inputs.validate_only }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: github.event_name == 'pull_request' || inputs.what != 'text'
+        uses: actions/download-artifact@v8
+        with:
+          name: store-listing-images
+          path: target/store/images
+      - name: Upload
+        env:
+          SAMSUNG_SERVICE_ACCOUNT_ID: ${{ secrets.SAMSUNG_SERVICE_ACCOUNT_ID }}
+          SAMSUNG_PRIVATE_KEY: ${{ secrets.SAMSUNG_PRIVATE_KEY }}
+          SAMSUNG_CONTENT_ID: ${{ secrets.SAMSUNG_CONTENT_ID }}
+        run: |
+          args=(listing)
+          if [ "$EVENT" = pull_request ] || [ "$WHAT" != text ]; then args+=(--images target/store/images); fi
+          if [ "$EVENT" = pull_request ] || [ "$VALIDATE_ONLY" = true ]; then
+            args+=(--dry-run)
+          elif [ -z "$SAMSUNG_SERVICE_ACCOUNT_ID" ] || [ -z "$SAMSUNG_PRIVATE_KEY" ] || [ -z "$SAMSUNG_CONTENT_ID" ]; then
+            echo "::error::The SAMSUNG_SERVICE_ACCOUNT_ID, SAMSUNG_PRIVATE_KEY and SAMSUNG_CONTENT_ID secrets are needed"
+            exit 1
+          fi
+          node scripts/galaxy-store.ts "${args[@]}"
