@@ -646,7 +646,9 @@ platforms from it:
 - Android: the App Bundle for Google Play, signed with the upload key and uploaded to Play's
   internal test track; from there it is promoted in the Play Console (closed test, production).
 - Android, foss ([Android builds](#android-builds)): an APK per ABI, signed with the direct key,
-  on the GitHub release and in [our F-Droid repository](#f-droid-repository).
+  on the GitHub release and in [our F-Droid repository](#f-droid-repository), and the arm64-v8a
+  and armeabi-v7a ones to the Samsung Galaxy Store ([stores.md](../docs/stores.md#samsung-galaxy-store))
+  and the Amazon Appstore ([stores.md](../docs/stores.md#amazon-appstore)).
 - iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key and uploaded
   to App Store Connect, where it shows up in TestFlight; from there it goes to the testers, and
   later to App Review (see [iOS releases](#ios-releases)).
@@ -668,7 +670,10 @@ platforms from it:
    one. "Test & lint" fails when the files disagree (`node scripts/app-version.ts` without a
    version).
    `whatsnew-en-US` is Play's "What's new" (at most 500 characters); other languages go next to
-   it as `whatsnew-<locale>`, e.g. `whatsnew-de-DE`.
+   it as `whatsnew-<locale>`, e.g. `whatsnew-de-DE`. The English one is also the GitHub release's
+   notes, the Galaxy Store's "What's new" and the Amazon Appstore's "recent changes" (the app there
+   has no Google Play Games): notes that name Google Play, Play Games or the App Store aren't sent
+   there, Samsung's text stays and Amazon's says "Hashi <version>".
 2. After the merge, tag main's merge commit and push the tag:
 
    ```sh
@@ -716,6 +721,14 @@ the upload key.
   (Android, foss)", which runs next to the bundle's: a failure there doesn't hold up Google Play.
   Skipped, with a notice, without the direct key's secrets.
 - [Our F-Droid repository](#f-droid-repository), from the GitHub releases' foss APKs.
+- The Samsung Galaxy Store, the foss APKs as an update submitted for review, by the job "Upload to
+  Galaxy Store" (`scripts/galaxy-store.ts`, [stores.md](../docs/stores.md#samsung-galaxy-store)).
+  Skipped, with a notice, while its secrets `SAMSUNG_*` aren't set; a dry run checks its input
+  without calling Samsung.
+- The Amazon Appstore, the foss APKs as the binaries of the next version, committed for review, by
+  the job "Upload to Amazon Appstore" (`scripts/amazon-appstore.ts`,
+  [stores.md](../docs/stores.md#amazon-appstore)). Skipped, with a notice, while its secrets
+  `AMAZON_*` aren't set; a dry run checks its input without calling Amazon.
 - For iOS: App Store Connect, `hashi-<version>.ipa` on the GitHub release, and the artifact
   `ios-release` (see [iOS releases](#ios-releases)).
 
@@ -725,7 +738,8 @@ is a dry run: it builds, signs and checks, makes the F-Droid repository (the art
 branch it skips the checks of the tag, of main and of CI. A pull request builds the platforms
 whose files it changes: both for the workflow or `scripts/app-version.ts`, Android for
 `gen/android/app/build.gradle.kts`, `gen/android/app/src/play/` or `src/foss/`,
-`app/achievements-play.json`, `app/fdroid/`, `scripts/fdroid-repo.ts` or `scripts/foss-apk.ts`, iOS for `gen/apple/` or
+`app/achievements-play.json`, `app/fdroid/`, `scripts/fdroid-repo.ts`, `scripts/foss-apk.ts`,
+`scripts/galaxy-store.ts` or `scripts/amazon-appstore.ts`, iOS for `gen/apple/` or
 `src-tauri/Info.ios.plist`. Without the signing secrets (pull requests of Dependabot or of forks)
 an Android dry run signs with throwaway keys (the upload key's, the direct key's and the F-Droid
 index key's), and iOS is skipped with a notice. With `-f publish=true` on a tag
@@ -968,7 +982,8 @@ variables as the upload key. Its SHA-256 is
 `80:B7:94:1F:80:88:45:EC:15:06:72:CE:3D:16:9F:D9:DB:71:D9:83:56:6B:9B:DD:4C:E7:9C:65:A2:93:22:6A`.
 Unlike the upload key it can't be replaced: a new key means every user of the foss build
 uninstalls and installs again. Keep its offline backup. The other stores (Amazon, Huawei, Samsung)
-get APKs signed with it too.
+get APKs signed with it too; Amazon replaces the signature with its own
+([stores.md](../docs/stores.md#amazon-appstore)).
 
 ## Store listings
 

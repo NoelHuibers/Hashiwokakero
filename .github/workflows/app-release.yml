@@ -5,7 +5,8 @@ name: App release
 #   internal test track.
 # - Android, foss: the build without any proprietary code (no Play Games), an APK per ABI signed
 #   with the direct key, published in our F-Droid repository on GitHub Pages
-#   (https://noelhuibers.github.io/Hashiwokakero/).
+#   (https://noelhuibers.github.io/Hashiwokakero/), and uploaded to the Samsung Galaxy Store and
+#   the Amazon Appstore as updates submitted for review.
 # - iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key (automatic
 #   signing, cloud-managed certificate) and uploaded to App Store Connect, where it shows up in
 #   TestFlight once Apple has processed it.
@@ -24,11 +25,16 @@ name: App release
 #   upload that failed or was skipped, e.g. before the PLAY_SERVICE_ACCOUNT_JSON secret was set.
 # - fdroid on: builds nothing, publishes the F-Droid repository again from the foss APKs of the
 #   GitHub releases, with the store texts and images of the ref (main), e.g. after new listings.
+# - galaxy on: builds nothing, uploads the foss APKs of the tag's GitHub release to the Galaxy
+#   Store (`--ref app-v1.2.3`), e.g. once its secrets are set or after a review held it up.
+# - amazon on: the same for the Amazon Appstore (both together are fine).
 #
 # iOS needs the secrets APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8. Without them
 # (pull requests of Dependabot or forks) it is skipped with a notice; Android goes on. The foss
 # build needs the direct key (ANDROID_DIRECT_*) and the F-Droid repository its index key
 # (FDROID_*): without them a release skips them with a notice, a dry run signs with throwaway keys.
+# The Galaxy Store needs its service account (SAMSUNG_*, docs/stores.md), the Amazon Appstore its
+# security profile (AMAZON_*): without them their upload is skipped with a notice.
 on:
   push:
     tags:
@@ -43,6 +49,8 @@ on:
       - app/fdroid/**
       - scripts/fdroid-repo.ts
       - scripts/foss-apk.ts
+      - scripts/galaxy-store.ts
+      - scripts/amazon-appstore.ts
       # Play Games' project id (and ids) for the release's App Bundle
       - app/achievements-play.json
       - app/src-tauri/gen/apple/**
@@ -55,6 +63,14 @@ on:
         default: false
       fdroid:
         description: Only publish the F-Droid repository again, from the GitHub releases' foss APKs and this ref's store texts (builds nothing)
+        type: boolean
+        default: false
+      galaxy:
+        description: Only upload the foss APKs of this tag's GitHub release to the Galaxy Store again (builds nothing; the ref must be a tag app-v<x.y.z>)
+        type: boolean
+        default: false
+      amazon:
+        description: Only upload the foss APKs of this tag's GitHub release to the Amazon Appstore again (builds nothing; the ref must be a tag app-v<x.y.z>)
         type: boolean
         default: false
 
@@ -87,6 +103,9 @@ jobs:
       publish: ${{ steps.mode.outputs.publish }}
       # Only the F-Droid repository, from the GitHub releases
       fdroid: ${{ steps.mode.outputs.fdroid }}
+      # Only the Galaxy Store and/or the Amazon Appstore, from the tag's GitHub release
+      galaxy: ${{ steps.mode.outputs.galaxy }}
+      amazon: ${{ steps.mode.outputs.amazon }}
       android: ${{ steps.platforms.outputs.android }}
       ios: ${{ steps.platforms.outputs.ios }}
     steps:
@@ -103,9 +122,32 @@ jobs:
           EVENT: ${{ github.event_name }}
           PUBLISH: ${{ inputs.publish }}
           FDROID: ${{ inputs.fdroid }}
+          GALAXY: ${{ inputs.galaxy }}
+          AMAZON: ${{ inputs.amazon }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
+          if [ "$GALAXY" = true ] || [ "$AMAZON" = true ]; then
+            if [ "$PUBLISH" = true ] || [ "$FDROID" = true ]; then
+              echo "::error::galaxy or amazon together with publish or fdroid: a release uploads to the stores anyway, fdroid is a run of its own"
+              exit 1
+            fi
+            if [ "$REF_TYPE" != tag ]; then
+              echo "::error::galaxy and amazon upload the foss APKs of a tag's GitHub release, not of the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
+              exit 1
+            fi
+            printf '%s\n' publish=false fdroid=false "galaxy=${GALAXY:-false}" "amazon=${AMAZON:-false}" >> "$GITHUB_OUTPUT"
+            if [ "$GALAXY" = true ] && [ "$AMAZON" = true ]; then
+              stores="the Galaxy Store and the Amazon Appstore"
+            elif [ "$GALAXY" = true ]; then
+              stores="the Galaxy Store"
+            else
+              stores="the Amazon Appstore"
+            fi
+            echo "Again to $stores, from the foss APKs of the GitHub release $REF_NAME" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          printf '%s\n' galaxy=false amazon=false >> "$GITHUB_OUTPUT"
           if [ "$FDROID" = true ]; then
             if [ "$PUBLISH" = true ]; then
               echo "::error::publish and fdroid together: a release publishes the F-Droid repository anyway"
@@ -123,7 +165,7 @@ jobs:
               exit 1
             fi
             echo "publish=true" >> "$GITHUB_OUTPUT"
-            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release and the F-Droid repository" >> "$GITHUB_STEP_SUMMARY"
+            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release, the F-Droid repository, the Galaxy Store and the Amazon Appstore" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
             echo "Dry run on the $REF_TYPE $REF_NAME: built, signed and checked, not published" >> "$GITHUB_STEP_SUMMARY"
@@ -134,18 +176,20 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           FDROID: ${{ steps.mode.outputs.fdroid }}
+          GALAXY: ${{ steps.mode.outputs.galaxy }}
+          AMAZON: ${{ steps.mode.outputs.amazon }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
         run: |
           android=true ios=true
-          if [ "$FDROID" = true ]; then
+          if [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ]; then
             android=false ios=false
           elif [ "$EVENT" = pull_request ]; then
             # Against the first parent, main's head: what merging the pull request changes
             files=$(git diff --no-renames --name-only HEAD^1 HEAD)
             both='^(\.github/workflows/app-release\.yml|scripts/app-version\.ts)$'
-            android_files='^app/src-tauri/gen/android/app/(build\.gradle\.kts$|src/(play|foss)/)|^app/achievements-play\.json$|^app/fdroid/|^scripts/(fdroid-repo|foss-apk)\.ts$'
+            android_files='^app/src-tauri/gen/android/app/(build\.gradle\.kts$|src/(play|foss)/)|^app/achievements-play\.json$|^app/fdroid/|^scripts/(fdroid-repo|foss-apk|galaxy-store|amazon-appstore)\.ts$'
             grep -qE "$both|$android_files" <<< "$files" || android=false
             grep -qE "$both|^app/src-tauri/gen/apple/|^app/src-tauri/Info\.ios\.plist$" <<< "$files" || ios=false
           fi
@@ -1090,3 +1134,166 @@ jobs:
           whatsNewDirectory: app/store/whatsnew
       - if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
         run: echo "Uploaded ${{ needs.check.outputs.version }} to Google Play's internal track" >> "$GITHUB_STEP_SUMMARY"
+
+  # The Samsung Galaxy Store (docs/stores.md, Galaxy Store), with scripts/galaxy-store.ts: the foss
+  # APKs of the ABIs of Samsung's phones become the binaries of an update of the app (the older
+  # ones go), with app/store/whatsnew/whatsnew-en-US as its "what's new", submitted for review. It
+  # goes live after the review unless the app is set to manual publication in Seller Portal. The
+  # foss build, not Play's: Play Games' sign-in only works with Play's signature, and these are the
+  # APKs of F-Droid and the GitHub release, signed with the direct key, which Samsung keeps, so
+  # they update each other. Skipped with a notice until the service account's secrets are set
+  # (SAMSUNG_SERVICE_ACCOUNT_ID, SAMSUNG_PRIVATE_KEY, SAMSUNG_CONTENT_ID); Samsung's API only updates
+  # an app registered by hand. A dry run checks the APKs and the key's use (a throwaway key without
+  # the secrets) and calls nobody. Repository variables: GALAXY_STORE_ABIS (default
+  # "arm64-v8a armeabi-v7a"), GALAXY_STORE_SUBMIT (false: leave the update for Seller Portal).
+  galaxy:
+    name: Upload to Galaxy Store
+    needs: [check, android-foss]
+    if: >-
+      ${{ !cancelled() && (needs.check.outputs.galaxy == 'true'
+      || (needs.android-foss.result == 'success' && needs.android-foss.outputs.built == 'true')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      CODE: ${{ needs.check.outputs.code }}
+      ABIS: ${{ vars.GALAXY_STORE_ABIS || 'arm64-v8a armeabi-v7a' }}
+      SUBMIT: ${{ vars.GALAXY_STORE_SUBMIT != 'false' }}
+      UPLOAD: ${{ needs.check.outputs.publish == 'true' || needs.check.outputs.galaxy == 'true' }}
+    steps:
+      - id: account
+        name: Service account
+        env:
+          SAMSUNG_SERVICE_ACCOUNT_ID: ${{ secrets.SAMSUNG_SERVICE_ACCOUNT_ID }}
+          SAMSUNG_PRIVATE_KEY: ${{ secrets.SAMSUNG_PRIVATE_KEY }}
+          SAMSUNG_CONTENT_ID: ${{ secrets.SAMSUNG_CONTENT_ID }}
+        run: |
+          if [ -n "$SAMSUNG_SERVICE_ACCOUNT_ID" ] && [ -n "$SAMSUNG_PRIVATE_KEY" ] && [ -n "$SAMSUNG_CONTENT_ID" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          elif [ "$UPLOAD" = true ]; then
+            echo "::notice::No Galaxy Store service account in this run's secrets (SAMSUNG_SERVICE_ACCOUNT_ID, SAMSUNG_PRIVATE_KEY, SAMSUNG_CONTENT_ID), nothing is uploaded to the Galaxy Store"
+            echo "No Galaxy Store service account in this run's secrets, nothing is uploaded to the Galaxy Store (once they are set: \`gh workflow run app-release.yml --ref app-v$VERSION -f galaxy=true\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No Galaxy Store service account in this run's secrets, the dry run uses a throwaway key"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/checkout@v7
+      # Node 26 runs scripts/galaxy-store.ts
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.galaxy != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: android-foss-release
+          path: release
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.galaxy == 'true'
+        name: The GitHub release's APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          for abi in $ABIS; do
+            gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "hashi-$VERSION-foss-$abi.apk" -D release
+          done
+          ls -l release
+      - if: steps.account.outputs.ready == 'true'
+        name: Upload
+        env:
+          SAMSUNG_SERVICE_ACCOUNT_ID: ${{ secrets.SAMSUNG_SERVICE_ACCOUNT_ID }}
+          SAMSUNG_PRIVATE_KEY: ${{ secrets.SAMSUNG_PRIVATE_KEY }}
+          SAMSUNG_CONTENT_ID: ${{ secrets.SAMSUNG_CONTENT_ID }}
+        run: |
+          args=(release --version "$VERSION" --code "$CODE" --whatsnew app/store/whatsnew/whatsnew-en-US)
+          if [ "$SUBMIT" = true ]; then args+=(--submit); fi
+          if [ "$UPLOAD" != true ]; then
+            args+=(--dry-run)
+            if [ -z "$SAMSUNG_PRIVATE_KEY" ]; then
+              SAMSUNG_PRIVATE_KEY=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2> /dev/null)
+              SAMSUNG_SERVICE_ACCOUNT_ID=throwaway
+              export SAMSUNG_PRIVATE_KEY SAMSUNG_SERVICE_ACCOUNT_ID
+            fi
+          fi
+          for abi in $ABIS; do args+=("release/hashi-$VERSION-foss-$abi.apk"); done
+          node scripts/galaxy-store.ts "${args[@]}"
+
+  # The Amazon Appstore (docs/stores.md, Amazon Appstore), with scripts/amazon-appstore.ts: the foss
+  # APKs replace the binaries of the app's edit (its next version), each the one of its ABI, which
+  # keeps the Fire tablets it targets; an ABI the app has no binary of stays out (set up in the
+  # Developer Console). The release notes become every language's "recent changes", then the
+  # edit is committed, which submits it for review; it goes live after it. The foss build: Fire
+  # tablets have no Google services. Amazon re-signs the APKs with its own key for the account.
+  # Skipped with a notice until the security profile's secrets are set (AMAZON_CLIENT_ID,
+  # AMAZON_CLIENT_SECRET, AMAZON_APP_ID); the API only updates an app submitted once by hand. A
+  # dry run checks the APKs and the plan and calls nobody. Repository variable:
+  # AMAZON_APPSTORE_SUBMIT (false: leave the edit for the Developer Console).
+  amazon:
+    name: Upload to Amazon Appstore
+    needs: [check, android-foss]
+    if: >-
+      ${{ !cancelled() && (needs.check.outputs.amazon == 'true'
+      || (needs.android-foss.result == 'success' && needs.android-foss.outputs.built == 'true')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      CODE: ${{ needs.check.outputs.code }}
+      # Every Fire tablet is ARM: 64-bit ones and older 32-bit ones
+      ABIS: arm64-v8a armeabi-v7a
+      SUBMIT: ${{ vars.AMAZON_APPSTORE_SUBMIT != 'false' }}
+      UPLOAD: ${{ needs.check.outputs.publish == 'true' || needs.check.outputs.amazon == 'true' }}
+    steps:
+      - id: account
+        name: Security profile
+        env:
+          AMAZON_CLIENT_ID: ${{ secrets.AMAZON_CLIENT_ID }}
+          AMAZON_CLIENT_SECRET: ${{ secrets.AMAZON_CLIENT_SECRET }}
+          AMAZON_APP_ID: ${{ secrets.AMAZON_APP_ID }}
+        run: |
+          if [ -n "$AMAZON_CLIENT_ID" ] && [ -n "$AMAZON_CLIENT_SECRET" ] && [ -n "$AMAZON_APP_ID" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          elif [ "$UPLOAD" = true ]; then
+            echo "::notice::No Amazon Appstore security profile in this run's secrets (AMAZON_CLIENT_ID, AMAZON_CLIENT_SECRET, AMAZON_APP_ID), nothing is uploaded to the Amazon Appstore"
+            echo "No Amazon Appstore security profile in this run's secrets, nothing is uploaded to the Amazon Appstore (once they are set: \`gh workflow run app-release.yml --ref app-v$VERSION -f amazon=true\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            # A dry run needs no secrets
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/checkout@v7
+      # Node 26 runs scripts/amazon-appstore.ts
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.amazon != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: android-foss-release
+          path: release
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.amazon == 'true'
+        name: The GitHub release's APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          for abi in $ABIS; do
+            gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "hashi-$VERSION-foss-$abi.apk" -D release
+          done
+          ls -l release
+      - if: steps.account.outputs.ready == 'true'
+        name: Upload
+        env:
+          AMAZON_CLIENT_ID: ${{ secrets.AMAZON_CLIENT_ID }}
+          AMAZON_CLIENT_SECRET: ${{ secrets.AMAZON_CLIENT_SECRET }}
+          AMAZON_APP_ID: ${{ secrets.AMAZON_APP_ID }}
+        run: |
+          args=(release --version "$VERSION" --code "$CODE" --whatsnew app/store/whatsnew/whatsnew-en-US)
+          if [ "$SUBMIT" = true ]; then args+=(--submit); fi
+          if [ "$UPLOAD" != true ]; then args+=(--dry-run); fi
+          for abi in $ABIS; do args+=("release/hashi-$VERSION-foss-$abi.apk"); done
+          node scripts/amazon-appstore.ts "${args[@]}"
