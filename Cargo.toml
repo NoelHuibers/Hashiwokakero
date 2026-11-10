@@ -136,7 +136,7 @@ lettre = { version = "0.11.23", default-features = false, features = ["builder",
 libsql = { version = "0.10.0", default-features = false, features = ["core", "remote", "tls"], optional = true }
 sha2 = { version = "0.11.1", optional = true }
 # Community benchmarks from the Global Benchmark Database come xz-compressed, pure Rust
-lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "xz"], optional = true }
+lzma-rust2 = { version = "0.25.0", default-features = false, features = ["std", "xz"], optional = true }
 # The social preview images (server/og): SVG rasterized by resvg, which shapes text itself (no
 # system fonts), the character maps of their fonts, and PNG encoding with a palette
 resvg = { version = "0.49.0", default-features = false, features = ["text"], optional = true }
@@ -194,7 +194,7 @@ ssr = [
 
 [dev-dependencies]
 # Generate xz fixtures; the production decoder does not need the encoder.
-lzma-rust2 = { version = "0.23.0", default-features = false, features = ["std", "xz", "encoder"] }
+lzma-rust2 = { version = "0.25.0", default-features = false, features = ["std", "xz", "encoder"] }
 # Property tests of the models and the client state (model/tests.rs, state/game.rs)
 proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 # The HTTP tests (server/router/tests): a client that keeps cookies like a browser and uploads
