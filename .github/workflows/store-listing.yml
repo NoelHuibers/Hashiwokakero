@@ -2,18 +2,19 @@ name: Store listing
 # The app's listings on Google Play and the App Store (app/README.md, Store listings): the texts in
 # fastlane/metadata, the images made by store/capture (the built site on a seeded local database,
 # every language, framed by store/templates), uploaded with fastlane (fastlane/Fastfile). And the
-# Galaxy Store's, the same texts and phone screenshots, with scripts/galaxy-store.ts.
+# Galaxy Store's, the same texts and phone screenshots, with scripts/galaxy-store.ts, and the
+# Amazon Appstore's, the same texts and the 7" tablet screenshots, with scripts/amazon-appstore.ts.
 #
 # A pull request that changes them checks the texts (store/validate.ts and its tests), makes every
 # image and keeps them as the artifact "store-listing-images" to look at, and checks them against
-# the Galaxy Store's rules. It uploads nothing.
+# the Galaxy Store's and the Amazon Appstore's rules. It uploads nothing.
 #
 # By hand (Actions, Store listing, Run workflow, or
 # `gh workflow run store-listing.yml -f platform=both -f what=all`):
-# - platform: play, apple, both (the two), or galaxy (the Galaxy Store)
+# - platform: play, apple, both (the two), galaxy (the Galaxy Store) or amazon (the Amazon Appstore)
 # - what: text, images or all
-# - validate_only: Google Play checks the listing without saving it (App Store Connect and the
-#   Galaxy Store have no such check: their upload is skipped, the local checks run)
+# - validate_only: Google Play checks the listing without saving it (App Store Connect, the Galaxy
+#   Store and the Amazon Appstore have no such check: their upload is skipped, the local checks run)
 # - play_version_code: the release of the internal track supply hangs the listing on, when the
 #   track has more than one
 # Only the listing is uploaded: no binary, release, track, review, age rating, privacy labels,
@@ -31,12 +32,13 @@ on:
       - '!store/capture/icons.config.ts'
       - scripts/tests/store-listing.test.ts
       - public/icon-512.png
+      - app/store/amazon/**
   workflow_dispatch:
     inputs:
       platform:
         description: The store
         type: choice
-        options: [both, play, apple, galaxy]
+        options: [both, play, apple, galaxy, amazon]
         default: both
       what:
         description: What to upload
@@ -44,7 +46,7 @@ on:
         options: [all, text, images]
         default: all
       validate_only:
-        description: Google Play only checks the listing, saves nothing (the App Store and Galaxy Store uploads are skipped)
+        description: Google Play only checks the listing, saves nothing (the App Store, Galaxy Store and Amazon Appstore uploads are skipped)
         type: boolean
         default: false
       play_version_code:
@@ -78,6 +80,8 @@ jobs:
       - run: node --test scripts/tests/store-listing.test.ts
       # The texts against the Galaxy Store's limits (sends nothing)
       - run: node scripts/galaxy-store.ts listing --dry-run
+      # And the Amazon Appstore's (sends nothing)
+      - run: node scripts/amazon-appstore.ts listing --dry-run
       - name: Upload tree (texts)
         run: node store/assemble.ts --text
 
@@ -406,3 +410,49 @@ jobs:
             exit 1
           fi
           node scripts/galaxy-store.ts "${args[@]}"
+
+  # The Amazon Appstore (docs/stores.md, Amazon Appstore): the texts (title, short and long
+  # description, feature bullets) in Amazon's languages and, unless text, the icons, the
+  # promotional image (Play's feature graphic) and the 7" tablet screenshots, into the app's open
+  # edit or a new one, with scripts/amazon-appstore.ts. Not submitted: the next release commits it
+  # with its binaries (or the Developer Console does). A pull request and validate_only: Amazon's
+  # rules checked against the texts and this run's images, nothing sent.
+  amazon:
+    name: Upload to Amazon Appstore
+    if: >-
+      always() && needs.validate.result == 'success' && (
+      (github.event_name == 'pull_request' && needs.images.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.platform == 'amazon' &&
+      (inputs.what == 'text' || needs.images.result == 'success')))
+    needs: [validate, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EVENT: ${{ github.event_name }}
+      WHAT: ${{ inputs.what }}
+      VALIDATE_ONLY: ${{ inputs.validate_only }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: github.event_name == 'pull_request' || inputs.what != 'text'
+        uses: actions/download-artifact@v8
+        with:
+          name: store-listing-images
+          path: target/store/images
+      - name: Upload
+        env:
+          AMAZON_CLIENT_ID: ${{ secrets.AMAZON_CLIENT_ID }}
+          AMAZON_CLIENT_SECRET: ${{ secrets.AMAZON_CLIENT_SECRET }}
+          AMAZON_APP_ID: ${{ secrets.AMAZON_APP_ID }}
+        run: |
+          args=(listing)
+          if [ "$EVENT" = pull_request ] || [ "$WHAT" != text ]; then args+=(--images target/store/images); fi
+          if [ "$EVENT" = pull_request ] || [ "$VALIDATE_ONLY" = true ]; then
+            args+=(--dry-run)
+          elif [ -z "$AMAZON_CLIENT_ID" ] || [ -z "$AMAZON_CLIENT_SECRET" ] || [ -z "$AMAZON_APP_ID" ]; then
+            echo "::error::The AMAZON_CLIENT_ID, AMAZON_CLIENT_SECRET and AMAZON_APP_ID secrets are needed"
+            exit 1
+          fi
+          node scripts/amazon-appstore.ts "${args[@]}"
