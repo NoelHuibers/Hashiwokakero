@@ -15,11 +15,14 @@ updates:
           - "web-sys"
           - "js-sys"
           - "tw_merge"
-      # The dojo's sandbox: wiggle is pinned exactly, all three only compile at the same version
+      # The dojo's sandbox: wiggle is pinned exactly, all three only compile at the same version.
+      # wasmparser validates submissions before wasmtime compiles them, so it stays on the
+      # version wasmtime itself uses
       wasmtime:
         patterns:
           - "wasmtime*"
           - "wiggle*"
+          - "wasmparser"
       rust-minor-and-patch:
         update-types:
           - minor
