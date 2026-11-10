@@ -11,7 +11,7 @@ until its secrets exist, so its pull request can be merged before the account is
 | 2 | F-Droid (f-droid.org) | built by F-Droid from source, ships our signed APKs | recipe #211, the MR is an owner task |
 | 3 | Samsung Galaxy Store | foss APKs (arm64-v8a, armeabi-v7a), direct key | upload in CI, the account is an owner task |
 | 4 | Amazon Appstore (Fire tablets) | foss APKs (arm64-v8a, armeabi-v7a), Amazon re-signs | upload in CI, the account is an owner task |
-| 5 | Huawei AppGallery | foss | |
+| 5 | Huawei AppGallery | foss APKs (arm64-v8a, armeabi-v7a), direct key | upload in CI, the account is an owner task |
 | 6 | Desktop builds (Windows, macOS, Linux) | | |
 | 7 | Microsoft Store | | |
 | 8 | Flathub, Snap | | |
@@ -585,3 +585,170 @@ first review**: the Fire tablets' WebView is Amazon's own Chromium build, update
 not from Google Play, possibly older than the Chrome versions our CSS needs (Tailwind 4 needs
 Chrome 111); if the review or a test on a Fire tablet shows broken styling, exclude the affected
 (older) tablets in the device support.
+
+## Huawei AppGallery
+
+Each release tag uploads the foss APKs to AppGallery as the packages of the app's next version and
+submits it for review: the job "Upload to Huawei AppGallery" of app-release.yml with
+`scripts/huawei-appgallery.ts`, through the
+[Publishing API](https://developer.huawei.com/consumer/en/doc/AppGallery-connect-Guides/agcapi-publish_api_overview-0000001111685332)
+of AppGallery Connect. It is skipped with a notice until the secret below exists, and the API
+can't create an app: it is created by hand first (owner tasks).
+
+**Where the store is** (November 2026). AppGallery is the store of Huawei's phones and tablets.
+Those sold since late 2019 (Mate 30 on) have no Google services at all, only Huawei's (HMS), so
+AppGallery is their main store; older ones have both. Outside China they run EMUI, which is
+Android and installs APKs. HarmonyOS NEXT (HarmonyOS 5 and 6), which runs no Android apps at all,
+is on Huawei's phones in China only; Huawei has announced pilots in other countries without a
+date. Should it come to phones elsewhere, Hashi would need a HarmonyOS app of its own (ArkTS),
+which is out of scope here. China itself is left out (below), so for this store HarmonyOS NEXT
+doesn't matter today.
+
+**Which build.** The foss APKs: Huawei's newer phones have no Google services, so Play Games
+couldn't sign in; the release marks the app as not needing them (`needGms` 0).
+
+**APK, not App Bundle.** AppGallery takes App Bundles only with its App Signing, where Huawei
+signs the APKs it makes from the bundle with a key it keeps (its own, or ours if we hand over the
+direct key's private key, which we won't). An APK is distributed as we signed it, with the direct
+key (`hashi-direct`): the app from AppGallery and the one from F-Droid, our repository, the GitHub
+release or the Galaxy Store update each other. The per-ABI APKs already give what a bundle would
+save in download size.
+
+**Which APKs.** `arm64-v8a` and `armeabi-v7a`, as one multi-APK version (AppGallery Connect's "App
+version (Support multiple APKs)"): AppGallery gives each device the APK of its CPU architecture,
+the higher versionCode where both run, so 64-bit phones get the arm64 one (its versionCode ends in
+2, the 32-bit one's in 1). Every Huawei phone and tablet is ARM, AppGallery requires a 64-bit
+package for phones, and the 32-bit one is for the cheap Huawei and Honor phones that run a 32-bit
+Android on a 64-bit chip. Both are bound to the version in one call, the way Mozilla's AppGallery
+client (mozapkpublisher) binds several APKs. The repository variable `HUAWEI_APPGALLERY_ABIS` changes the set
+(`gh variable set HUAWEI_APPGALLERY_ABIS --body arm64-v8a`), e.g. if AppGallery won't take the
+32-bit package next to the 64-bit one. AppGallery keeps at most 300 APKs per app (150 releases
+with two each); old packages of draft versions can be deleted in AppGallery Connect.
+
+**Android developer verification**: Huawei's phones without Google services aren't certified
+Android devices, so Google's developer verification doesn't apply there; on the older Huawei
+phones with Google services it applies as to every other store (see the Galaxy Store's section).
+
+**What a release does:**
+
+1. Finds the app by its package name (`rs.hashi`) and reads its state. It refuses while the app
+   is in review, being released or waiting for its removal (the job fails saying so: rerun it
+   afterwards, below), and when AppGallery has a newer version; when this version is on sale
+   already there is nothing to do.
+2. Marks the app as not needing Google services.
+3. Uploads each APK (an upload URL per file, with its size and SHA-256, which Huawei's file server
+   checks; not for the Chinese mainland), then binds both to the version being prepared.
+4. Puts the release notes (`app/store/whatsnew/whatsnew-en-US`) into every language's "new
+   features" (at most 500 characters), the English notes for all, as Play shows them. Notes that
+   name Google Play, Play Games or the App Store become "Hashi <version>" instead (AppGallery's
+   guidelines turn away other platforms' names).
+5. Submits the version for review as a full release; after the review it goes live. AppGallery
+   parses uploaded APKs for a few minutes and takes one submission every two minutes, so while it
+   answers "still parsing" the job tries again every two minutes, for up to ten; after that the
+   APKs stay bound and the version is submitted in AppGallery Connect. The repository variable
+   `HUAWEI_APPGALLERY_SUBMIT=false` leaves the version unsubmitted instead.
+
+A rerun (or `gh workflow run app-release.yml --ref app-v<x.y.z> -f huawei=true`, which takes the
+APKs from the tag's GitHub release and builds nothing; `-f galaxy=true` and `-f amazon=true` next
+to it are fine) uploads and binds the APKs again, which replaces the draft's. A pull request's dry
+run checks the APKs, the release notes and the key's use with a throwaway key, and calls nobody.
+
+**No phased release.** AppGallery can roll an update out to a percentage of users, but only for
+an app already released in full, with every call of the version (packages, texts, submission)
+made as a phased one, and it needs a later call to finish it, which nobody would make. For a small
+free game, every user gets a fix at once. For a release that should go out by phase, set
+`HUAWEI_APPGALLERY_SUBMIT=false` and choose "Phased release" when submitting it in AppGallery
+Connect.
+
+**The listing**: `gh workflow run store-listing.yml -f platform=huawei -f what=all` puts the
+texts into the version being prepared, in 23 languages (`HUAWEI` in
+`scripts/huawei-appgallery.ts`: each of Play's locales that AppGallery has, which is all but fr-CA
+and es-US; zh-HK gets zh-TW's texts as on Play): the name, the short description (Play's, at most
+80 characters; AppGallery's "brief introduction") and the full description (at most 8000). The
+name is the app's own, `Hashi` (its label in the APK), not Play's title: AppGallery's review
+wants the name the app shows, at most 30 characters, without keywords or descriptions in it (Review
+Guidelines 1.1, 1.2, 1.20). With the images: the icon (`public/icon-512.png`, 512×512, in the
+default language, which the others fall back to) and each language's phone screenshots (Play's,
+`play-phone`, 1080×1920: AppGallery takes 3 to 8 upright 9:16 screenshots, each side 320 to
+3840 px, at most 2 MB; ours are 7 of about 1 MB). Not submitted: the next release submits it with
+its packages (or submit it in AppGallery Connect); the details of a released app change only
+after a review. `what=text` sends the texts only; `validate_only` only runs the checks, as the
+pull requests of the store listing do. A language the app doesn't have yet is added by the
+script; should AppGallery refuse that, the job says so, and it is added in AppGallery Connect.
+
+### Owner tasks
+
+1. **A HUAWEI ID and developer account**, free (no sign-up or yearly fee): sign up at
+   <https://developer.huawei.com> with hashi@huibers.io, then the console asks for **identity
+   verification** as an **individual** developer, country Germany: a scan of the ID card or the
+   passport, plus a bank document with the full name in English (bank card, statement or account
+   confirmation, valid for at least six more months); Huawei checks it within 1 to 2 working
+   days. An individual may publish free apps and games everywhere but the Chinese mainland (there
+   games need a publication number and apps an ICP filing and a Chinese entity, as for the Chinese
+   stores). Merchant Service and the tax details are only for paid apps and in-app purchases:
+   skip them.
+2. **The next release with foss APKs** (any `app-v*` tag after #200), whose GitHub release has
+   `hashi-<x.y.z>-foss-arm64-v8a.apk` and `-armeabi-v7a.apk`.
+3. **Create the app** (AppGallery Connect, Apps and atomic services, Android, "Release" / "New
+   app"): package type APK, device Mobile phone, app name `Hashi`, category **Game**, default
+   language English (US); don't add it to a project (no Huawei services are used). Then on its
+   pages:
+   - **App information**: the English brief introduction (`short_description.txt`) and full
+     introduction (`full_description.txt`) of `fastlane/metadata/android/en-US`; icon
+     `public/icon-512.png`; 3 to 8 screenshots, the `en/play-phone/*.png` of the artifact
+     `store-listing-images` of a "Store listing" run
+     (`gh workflow run store-listing.yml -f platform=play -f what=images -f validate_only=true`);
+     category Game, Puzzle & casual, Puzzle; game type casual.
+   - **Version information**: countries/regions **all except the Chinese mainland** (and "new
+     countries/regions" on, if offered); open testing No; payment Free, no in-app purchases;
+     **content rating**: the questionnaire, answered as the app is: no violence, horror, sexual
+     content, drugs, gambling or bad language, no ads, no purchases; players' names are public
+     and they can form groups, but there is no free-text chat; not made for children only. Choose
+     the youngest rating it offers (3+ is expected; if it asks about user interaction and gives
+     more, take what it gives).
+   - **Privacy**: privacy policy URL https://hashi.rs/datenschutz, privacy rights (data subject)
+     URL https://hashi.rs/account (where an account is deleted). Privacy tags: collects personal
+     data **Yes**, as in Play's Data safety form: the user or guest name (public in the rankings)
+     and the optional email address (account, account recovery, the contact form's reply);
+     results, times, moves, hints, stamps, groups and rivals (app functionality, fair rankings);
+     own puzzles and their titles, group names, reports and contact messages (user content); a
+     random device ID kept only as a daily hash (fraud prevention). No location, contacts,
+     photos, files, payment or health data, no advertising ID, no analytics or crash logs.
+   - **Generative AI service**: Not involved (the app has no AI features).
+   - **Copyright**: nothing (copyright certificates and the software copyright document are only
+     needed for the Chinese mainland).
+   - **For reviewer**: "No login needed: the app starts as a guest. The daily puzzle, rankings,
+     groups and rivals need an internet connection (our server hashi.rs); Play works offline.
+     Free, no ads, no in-app purchases. Source: https://github.com/NoelHuibers/Hashiwokakero."
+   - Packages: none yet (task 5 uploads them), or upload both APKs by hand ("Manage packages",
+     "Upload", "+" for the second) and submit, then skip task 5's first run.
+4. **The Service Account** for the API: AppGallery Connect, Users and permissions, API key,
+   **Connect API**, tab "Service Account", "Create": a name (e.g. "Hashi CI"), type
+   **Developer-level**, role **App administrator**. The credential file `<...>private.json`
+   downloads once (Huawei doesn't keep its private key). Then:
+
+   ```sh
+   gh secret set HUAWEI_SERVICE_ACCOUNT_JSON < ~/Downloads/<the credential file>
+   ```
+
+   and delete the downloaded file. No backup needed: a lost or leaked key is replaced by a new key
+   of the Service Account (and the old key deleted there), nothing users have depends on it. Use a
+   Service Account, not an "API client": Huawei recommends them and is replacing API clients.
+5. **The first upload through CI**: `gh workflow run app-release.yml --ref app-v<x.y.z> -f
+   huawei=true` uploads the APKs into the version being prepared and submits it. If something
+   the review needs is still missing, the job fails with Huawei's message ("pre-check"): fill it
+   in AppGallery Connect and submit there (the APKs are already bound). Then the listing in the
+   other languages: `gh workflow run store-listing.yml -f platform=huawei -f what=all` (it goes
+   out with the next release, or submit it in AppGallery Connect). From then on each release tag
+   uploads and submits by itself.
+
+**Review**: AppGallery reviews every version, usually within 1 to 3 working days; AppGallery
+Connect shows the status and Huawei emails the result. It also checks each country against local
+rules and may drop some from the release. Common reasons for a rejection: an app name or texts
+that name other platforms, a name with keywords, screenshots that don't show the app, a missing
+privacy policy, or the app failing on some device. While a version is in review, a release tag's
+upload fails saying so; rerun it with `-f huawei=true` afterwards (or cancel the review in
+AppGallery Connect first). A **risk to watch on the first review**: Huawei's phones without Google
+services get their WebView from Huawei rather than from Google Play, possibly older than the
+Chrome versions our CSS needs (Tailwind 4 needs Chrome 111); if the review or a Huawei phone shows
+broken styling, that's where to look.

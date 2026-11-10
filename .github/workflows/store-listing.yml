@@ -2,19 +2,22 @@ name: Store listing
 # The app's listings on Google Play and the App Store (app/README.md, Store listings): the texts in
 # fastlane/metadata, the images made by store/capture (the built site on a seeded local database,
 # every language, framed by store/templates), uploaded with fastlane (fastlane/Fastfile). And the
-# Galaxy Store's, the same texts and phone screenshots, with scripts/galaxy-store.ts, and the
-# Amazon Appstore's, the same texts and the 7" tablet screenshots, with scripts/amazon-appstore.ts.
+# Galaxy Store's, the same texts and phone screenshots, with scripts/galaxy-store.ts, the Amazon
+# Appstore's, the same texts and the 7" tablet screenshots, with scripts/amazon-appstore.ts, and
+# Huawei AppGallery's, the same texts and phone screenshots, with scripts/huawei-appgallery.ts.
 #
 # A pull request that changes them checks the texts (store/validate.ts and its tests), makes every
 # image and keeps them as the artifact "store-listing-images" to look at, and checks them against
-# the Galaxy Store's and the Amazon Appstore's rules. It uploads nothing.
+# the Galaxy Store's, the Amazon Appstore's and AppGallery's rules. It uploads nothing.
 #
 # By hand (Actions, Store listing, Run workflow, or
 # `gh workflow run store-listing.yml -f platform=both -f what=all`):
-# - platform: play, apple, both (the two), galaxy (the Galaxy Store) or amazon (the Amazon Appstore)
+# - platform: play, apple, both (the two), galaxy (the Galaxy Store), amazon (the Amazon Appstore)
+#   or huawei (Huawei AppGallery)
 # - what: text, images or all
 # - validate_only: Google Play checks the listing without saving it (App Store Connect, the Galaxy
-#   Store and the Amazon Appstore have no such check: their upload is skipped, the local checks run)
+#   Store, the Amazon Appstore and AppGallery have no such check: their upload is skipped, the
+#   local checks run)
 # - play_version_code: the release of the internal track supply hangs the listing on, when the
 #   track has more than one
 # Only the listing is uploaded: no binary, release, track, review, age rating, privacy labels,
@@ -33,12 +36,13 @@ on:
       - scripts/tests/store-listing.test.ts
       - public/icon-512.png
       - app/store/amazon/**
+      - scripts/huawei-appgallery.ts
   workflow_dispatch:
     inputs:
       platform:
         description: The store
         type: choice
-        options: [both, play, apple, galaxy, amazon]
+        options: [both, play, apple, galaxy, amazon, huawei]
         default: both
       what:
         description: What to upload
@@ -46,7 +50,7 @@ on:
         options: [all, text, images]
         default: all
       validate_only:
-        description: Google Play only checks the listing, saves nothing (the App Store, Galaxy Store and Amazon Appstore uploads are skipped)
+        description: Google Play only checks the listing, saves nothing (the App Store, Galaxy Store, Amazon Appstore and AppGallery uploads are skipped)
         type: boolean
         default: false
       play_version_code:
@@ -82,6 +86,8 @@ jobs:
       - run: node scripts/galaxy-store.ts listing --dry-run
       # And the Amazon Appstore's (sends nothing)
       - run: node scripts/amazon-appstore.ts listing --dry-run
+      # And AppGallery's (sends nothing)
+      - run: node scripts/huawei-appgallery.ts listing --dry-run
       - name: Upload tree (texts)
         run: node store/assemble.ts --text
 
@@ -456,3 +462,46 @@ jobs:
             exit 1
           fi
           node scripts/amazon-appstore.ts "${args[@]}"
+
+  # Huawei AppGallery (docs/stores.md, Huawei AppGallery): the texts (title, short and full
+  # description) in AppGallery's languages and, unless text, the icon and the phone screenshots,
+  # into the app's version being prepared, with scripts/huawei-appgallery.ts. Not submitted: the
+  # next release submits it with its packages (or AppGallery Connect does). A pull request and
+  # validate_only: AppGallery's rules checked against the texts and this run's images, nothing sent.
+  huawei:
+    name: Upload to Huawei AppGallery
+    if: >-
+      always() && needs.validate.result == 'success' && (
+      (github.event_name == 'pull_request' && needs.images.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.platform == 'huawei' &&
+      (inputs.what == 'text' || needs.images.result == 'success')))
+    needs: [validate, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EVENT: ${{ github.event_name }}
+      WHAT: ${{ inputs.what }}
+      VALIDATE_ONLY: ${{ inputs.validate_only }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: github.event_name == 'pull_request' || inputs.what != 'text'
+        uses: actions/download-artifact@v8
+        with:
+          name: store-listing-images
+          path: target/store/images
+      - name: Upload
+        env:
+          HUAWEI_SERVICE_ACCOUNT_JSON: ${{ secrets.HUAWEI_SERVICE_ACCOUNT_JSON }}
+        run: |
+          args=(listing)
+          if [ "$EVENT" = pull_request ] || [ "$WHAT" != text ]; then args+=(--images target/store/images); fi
+          if [ "$EVENT" = pull_request ] || [ "$VALIDATE_ONLY" = true ]; then
+            args+=(--dry-run)
+          elif [ -z "$HUAWEI_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::The HUAWEI_SERVICE_ACCOUNT_JSON secret is needed"
+            exit 1
+          fi
+          node scripts/huawei-appgallery.ts "${args[@]}"
