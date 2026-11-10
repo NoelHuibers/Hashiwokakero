@@ -84,6 +84,7 @@
     ],
     "android": {
       "minSdkVersion": 24,
+      "versionCode": 1001000,
       "debugApplicationIdSuffix": ".debug"
     },
     "iOS": {

@@ -10,6 +10,12 @@ public_url = "/"
 # policy allows (see README.md). Tailwind minifies the CSS itself, wasm-opt shrinks the WASM.
 minify = "never"
 
+# wasm-opt, pinned (Trunk 0.22.0's default): F-Droid's build compiles this version of binaryen
+# from source (app/fdroid/build.sh), and the release's foss APKs have to equal its.
+# wasm-bindgen's version is Cargo.lock's.
+[tools]
+wasm_opt = "version_131"
+
 [watch]
 # The crates and assets the bundle is made of; target/ (where the CSS goes) must stay out
 watch = [".", "../src", "../style", "../locales", "../public", "../common/src", "../dojo/src"]

@@ -1,0 +1,9 @@
+[submodule "app/fdroid/third_party/tailwindcss"]
+	path = app/fdroid/third_party/tailwindcss
+	url = https://github.com/tailwindlabs/tailwindcss.git
+[submodule "app/fdroid/third_party/lightningcss"]
+	path = app/fdroid/third_party/lightningcss
+	url = https://github.com/parcel-bundler/lightningcss.git
+[submodule "app/fdroid/third_party/binaryen"]
+	path = app/fdroid/third_party/binaryen
+	url = https://github.com/WebAssembly/binaryen.git

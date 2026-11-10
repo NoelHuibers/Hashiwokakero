@@ -5,8 +5,8 @@
 //   node scripts/app-version.ts 1.2.3     sets 1.2.3 everywhere
 //
 // The files: app/Cargo.toml (the version the app sends in x-hashi-app), app/src-tauri/Cargo.toml,
-// app/src-tauri/tauri.conf.json (the store's versionName, and the versionCode Tauri derives from
-// it), the two crates' entries in Cargo.lock and app/src-tauri/Cargo.lock, and the iOS project's
+// app/src-tauri/tauri.conf.json (the store's versionName, and its versionCode, see CODE below),
+// the two crates' entries in Cargo.lock and app/src-tauri/Cargo.lock, and the iOS project's
 // CFBundleShortVersionString and CFBundleVersion in gen/apple: its Info.plist, which every
 // `tauri ios build` rewrites with the version of tauri.conf.json, and project.yml, which
 // `tauri ios init` writes with it. Only those entries change: other packages of the lock files
@@ -80,6 +80,15 @@ export const FILES: Entry[] = [
   { file: projectYml, key: 'CFBundleVersion', pattern: /(\n {8}CFBundleVersion: ")([^"]*)(")/ },
 ];
 
+// Android's versionCode of the version, written out in tauri.conf.json (bundle.android.versionCode,
+// indented by six spaces) although Tauri would derive the same from the version: F-Droid's
+// checkupdates reads it there for a new tag (app/fdroid/fdroiddata/rs.hashi.yml, UpdateCheckData).
+export const CODE: Entry = {
+  file: 'app/src-tauri/tauri.conf.json',
+  key: 'versionCode',
+  pattern: /(\n {6}"versionCode": )([^,\n]*)(,?\n)/,
+};
+
 /** A file, and the key when it has the version twice. */
 const where = ({ file, key }: { file: string; key?: string }): string =>
   key ? `${file} (${key})` : file;
@@ -136,6 +145,13 @@ export function check(dir = root): string {
         'set it with: node scripts/app-version.ts <x.y.z>',
     );
   }
+  const code = find(fs.readFileSync(path.join(dir, CODE.file), 'utf8'), CODE);
+  if (code !== String(versionCode(version))) {
+    throw new Error(
+      `${where(CODE)} is ${code}, not ${versionCode(version)} of the version ${version}\n` +
+        'set it with: node scripts/app-version.ts <x.y.z>',
+    );
+  }
   return version;
 }
 
@@ -163,6 +179,10 @@ export function set(version: string, dir = root): void {
     const text = fs.readFileSync(target, 'utf8');
     fs.writeFileSync(target, text.replace(pattern, `$1${version}$3`));
   }
+  const target = path.join(dir, CODE.file);
+  const text = fs.readFileSync(target, 'utf8');
+  find(text, CODE);
+  fs.writeFileSync(target, text.replace(CODE.pattern, `$1${code}$3`));
 }
 
 function main(argv: string[]): void {

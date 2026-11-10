@@ -443,9 +443,13 @@ jobs:
   # ABI with its own versionCode (the version's times ten plus the ABI's digit), signed with the
   # direct key, which isn't the upload key. For our F-Droid repository, the GitHub release and the
   # other stores. A job of its own, so a failure here never holds up Google Play's bundle.
+  # Built by app/fdroid/build.sh as F-Droid builds it from source (app/README.md, F-Droid): its
+  # own web bundle with the script's pinned Rust, not the one of "Build app (web)", and the JDK
+  # of F-Droid's build server, so F-Droid's APKs are these but for the signature and F-Droid
+  # ships them signed with our key.
   android-foss:
     name: Build APKs (Android, foss)
-    needs: [check, build-app]
+    needs: [check]
     if: needs.check.outputs.android == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -456,18 +460,20 @@ jobs:
       BUILD_TOOLS_VERSION: 36.0.0
       VERSION: ${{ needs.check.outputs.version }}
       CODE: ${{ needs.check.outputs.code }}
-      HASHI_ANDROID_FLAVOR: foss
     steps:
       - uses: actions/checkout@v7
-      # Node 26 runs scripts/foss-apk.ts (the checks)
+      # Node 26 runs Tailwind (the bundle) and scripts/foss-apk.ts (the checks)
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
-      # keytool for the key, Gradle needs a JDK 17 or newer
+          cache: pnpm
+      # keytool for the key; Gradle with Debian's JDK 21 on F-Droid's build server, the same major
+      # version here (javac's output is part of the APK)
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
       # The direct key in files of the runner's temp dir, gone at the end of the job (below), as
       # the upload key in "Build App Bundle". A release without it skips the foss build; a dry run
       # without it (Dependabot, forks) signs with a throwaway key.
@@ -514,37 +520,37 @@ jobs:
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS_VERSION"
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+      # Tailwind, and the fonts of public/fonts (postinstall)
       - if: steps.key.outputs.built == 'true'
-        run: rustup toolchain install && rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
+        run: pnpm install --frozen-lockfile
+      # The script installs its pinned Rust and the targets; no Rust cache, its rustc isn't the one
+      # of the other jobs. Trunk and the Tauri CLI prebuilt (F-Droid compiles them, the same
+      # versions), Trunk downloads wasm-bindgen and wasm-opt of the versions it is pinned to.
       - if: steps.key.outputs.built == 'true'
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: app/src-tauri
-          save-if: false
-      - if: steps.key.outputs.built == 'true'
-        name: Install the Tauri CLI
+        name: Install Trunk and the Tauri CLI
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y tauri-cli@2.12.4
-      - if: steps.key.outputs.built == 'true'
-        uses: actions/download-artifact@v8
-        with:
-          name: app-web-release
-          path: target/app-dist
-      # Release, an APK per ABI (arm64 + 32-bit ARM + x86_64), HASHI_ANDROID_FLAVOR=foss (above)
+          cargo binstall -y trunk@0.22.0 tauri-cli@2.12.4
+      # Release, an APK per ABI (arm64 + 32-bit ARM + x86_64), with the web bundle. In a copy of the
+      # checkout where F-Droid's build server builds (/home/vagrant/build/rs.hashi): Cargo hashes
+      # the absolute path of the path dependencies outside app/src-tauri's workspace (backend,
+      # common, ...) into their symbols, and the library's code differed elsewhere.
       - if: steps.key.outputs.built == 'true'
         name: Build
-        working-directory: app/src-tauri
         run: |
-          ANDROID_KEYSTORE_FILE="$DIRECT_KEY/direct.p12" \
-          ANDROID_KEYSTORE_PASSWORD=$(cat "$DIRECT_KEY/store-password") \
-          ANDROID_KEY_ALIAS=$(cat "$DIRECT_KEY/alias") \
-          ANDROID_KEY_PASSWORD=$(cat "$DIRECT_KEY/key-password") \
-            cargo tauri android build --ci --apk --split-per-abi --target aarch64 armv7 x86_64 --config '{"build":{"beforeBuildCommand":null}}'
-          mkdir -p ../../release
+          sudo mkdir -p /home/vagrant/build
+          sudo chown -R "$USER" /home/vagrant
+          cp -a . /home/vagrant/build/rs.hashi
+          (cd /home/vagrant/build/rs.hashi &&
+            ANDROID_KEYSTORE_FILE="$DIRECT_KEY/direct.p12" \
+            ANDROID_KEYSTORE_PASSWORD=$(cat "$DIRECT_KEY/store-password") \
+            ANDROID_KEY_ALIAS=$(cat "$DIRECT_KEY/alias") \
+            ANDROID_KEY_PASSWORD=$(cat "$DIRECT_KEY/key-password") \
+              app/fdroid/build.sh apk arm64 arm x86_64)
+          mkdir -p release
           for flavor in arm64:arm64-v8a arm:armeabi-v7a x86_64:x86_64; do
-            cp "gen/android/app/build/outputs/apk/${flavor%%:*}/release/app-${flavor%%:*}-release.apk" \
-              "../../release/hashi-$VERSION-foss-${flavor#*:}.apk"
+            cp "/home/vagrant/build/rs.hashi/app/src-tauri/gen/android/app/build/outputs/apk/${flavor%%:*}/release/app-${flavor%%:*}-release.apk" \
+              "release/hashi-$VERSION-foss-${flavor#*:}.apk"
           done
       - if: always()
         name: Remove the direct key

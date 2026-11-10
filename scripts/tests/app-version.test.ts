@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { after, beforeEach, test } from 'node:test';
-import { check, FILES, parse, read, set, versionCode } from '../app-version.ts';
+import { CODE, check, FILES, parse, read, set, versionCode } from '../app-version.ts';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'app-version-'));
@@ -51,8 +51,9 @@ test('set changes every file, and only the app crates in the lock files', () => 
     .find(({ name, version }) => name !== 'hashi_app' && /^[0-6]\.\d{1,3}\.\d{1,3}$/.test(version));
   assert.ok(other);
   const old = other.version;
-  for (const { file, pattern } of FILES) {
-    fs.writeFileSync(path.join(dir, file), text(file).replace(pattern, `$1${old}$3`));
+  for (const { file, pattern } of [...FILES, CODE]) {
+    const value = file === CODE.file && pattern === CODE.pattern ? versionCode(old) : old;
+    fs.writeFileSync(path.join(dir, file), text(file).replace(pattern, `$1${value}$3`));
   }
   assert.equal(check(dir), old);
   const before = Object.fromEntries(FILES.map(({ file }) => [file, text(file)]));
@@ -64,14 +65,18 @@ test('set changes every file, and only the app crates in the lock files', () => 
     const now = text(file).split('\n');
     assert.equal(now.length, was.length, file);
     const changed = now.filter((line, i) => line !== was[i]);
-    assert.equal(changed.length, FILES.filter((entry) => entry.file === file).length, file);
-    for (const line of changed) assert.match(line, /7\.8\.9/, file);
+    const entries = [...FILES, CODE].filter((entry) => entry.file === file).length;
+    assert.equal(changed.length, entries, file);
+    for (const line of changed) assert.match(line, /7\.8\.9|"versionCode": 7008009,/, file);
   }
   // The other crates with the old version keep it
   const olds = (lock = '') => lock.split('\n').filter((l) => l === `version = "${old}"`).length;
   assert.ok(olds(before['Cargo.lock']) > 1);
   assert.equal(olds(text('Cargo.lock')), olds(before['Cargo.lock']) - 1);
-  assert.equal(JSON.parse(text('app/src-tauri/tauri.conf.json')).version, '7.8.9');
+  const conf = JSON.parse(text('app/src-tauri/tauri.conf.json'));
+  assert.equal(conf.version, '7.8.9');
+  // Written out for F-Droid's checkupdates, what Tauri would derive
+  assert.equal(conf.bundle.android.versionCode, 7_008_009);
   // The iOS project as `tauri ios build` (Info.plist) and `tauri ios init` (project.yml) write it
   const plist = text('app/src-tauri/gen/apple/hashi_tauri_iOS/Info.plist');
   for (const key of ['CFBundleShortVersionString', 'CFBundleVersion']) {
@@ -134,4 +139,17 @@ test('read fails when a file has no version where expected', () => {
   const file = 'app/src-tauri/tauri.conf.json';
   fs.writeFileSync(path.join(dir, file), text(file).replace('"version"', '"versio"'));
   assert.throws(() => read(dir), /tauri\.conf\.json: the version is there 0 times/);
+});
+
+test("check fails when tauri.conf.json's versionCode isn't the version's", () => {
+  set('3.0.0', dir);
+  const file = CODE.file;
+  fs.writeFileSync(
+    path.join(dir, file),
+    text(file).replace('"versionCode": 3000000', '"versionCode": 3000001'),
+  );
+  assert.throws(() => check(dir), /tauri\.conf\.json \(versionCode\) is 3000001, not 3000000/);
+  set('3.0.1', dir);
+  assert.equal(check(dir), '3.0.1');
+  assert.equal(JSON.parse(text(file)).bundle.android.versionCode, 3_000_001);
 });
