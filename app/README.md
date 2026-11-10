@@ -647,8 +647,9 @@ platforms from it:
   internal test track; from there it is promoted in the Play Console (closed test, production).
 - Android, foss ([Android builds](#android-builds)): an APK per ABI, signed with the direct key,
   on the GitHub release and in [our F-Droid repository](#f-droid-repository), and the arm64-v8a
-  and armeabi-v7a ones to the Samsung Galaxy Store ([stores.md](../docs/stores.md#samsung-galaxy-store))
-  and the Amazon Appstore ([stores.md](../docs/stores.md#amazon-appstore)).
+  and armeabi-v7a ones to the Samsung Galaxy Store ([stores.md](../docs/stores.md#samsung-galaxy-store)),
+  the Amazon Appstore ([stores.md](../docs/stores.md#amazon-appstore)) and Huawei AppGallery
+  ([stores.md](../docs/stores.md#huawei-appgallery)).
 - iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key and uploaded
   to App Store Connect, where it shows up in TestFlight; from there it goes to the testers, and
   later to App Review (see [iOS releases](#ios-releases)).
@@ -671,9 +672,10 @@ platforms from it:
    version).
    `whatsnew-en-US` is Play's "What's new" (at most 500 characters); other languages go next to
    it as `whatsnew-<locale>`, e.g. `whatsnew-de-DE`. The English one is also the GitHub release's
-   notes, the Galaxy Store's "What's new" and the Amazon Appstore's "recent changes" (the app there
-   has no Google Play Games): notes that name Google Play, Play Games or the App Store aren't sent
-   there, Samsung's text stays and Amazon's says "Hashi <version>".
+   notes, the Galaxy Store's "What's new", the Amazon Appstore's "recent changes" and AppGallery's
+   "new features" (the app there has no Google Play Games): notes that name Google Play, Play Games
+   or the App Store aren't sent there, Samsung's text stays and Amazon's and AppGallery's say
+   "Hashi <version>".
 2. After the merge, tag main's merge commit and push the tag:
 
    ```sh
@@ -729,6 +731,10 @@ the upload key.
   the job "Upload to Amazon Appstore" (`scripts/amazon-appstore.ts`,
   [stores.md](../docs/stores.md#amazon-appstore)). Skipped, with a notice, while its secrets
   `AMAZON_*` aren't set; a dry run checks its input without calling Amazon.
+- Huawei AppGallery, the foss APKs as the packages of the next version, submitted for review, by
+  the job "Upload to Huawei AppGallery" (`scripts/huawei-appgallery.ts`,
+  [stores.md](../docs/stores.md#huawei-appgallery)). Skipped, with a notice, while its secret
+  `HUAWEI_SERVICE_ACCOUNT_JSON` isn't set; a dry run checks its input without calling Huawei.
 - For iOS: App Store Connect, `hashi-<version>.ipa` on the GitHub release, and the artifact
   `ios-release` (see [iOS releases](#ios-releases)).
 
@@ -739,7 +745,7 @@ branch it skips the checks of the tag, of main and of CI. A pull request builds 
 whose files it changes: both for the workflow or `scripts/app-version.ts`, Android for
 `gen/android/app/build.gradle.kts`, `gen/android/app/src/play/` or `src/foss/`,
 `app/achievements-play.json`, `app/fdroid/`, `scripts/fdroid-repo.ts`, `scripts/foss-apk.ts`,
-`scripts/galaxy-store.ts` or `scripts/amazon-appstore.ts`, iOS for `gen/apple/` or
+`scripts/galaxy-store.ts`, `scripts/amazon-appstore.ts` or `scripts/huawei-appgallery.ts`, iOS for `gen/apple/` or
 `src-tauri/Info.ios.plist`. Without the signing secrets (pull requests of Dependabot or of forks)
 an Android dry run signs with throwaway keys (the upload key's, the direct key's and the F-Droid
 index key's), and iOS is skipped with a notice. With `-f publish=true` on a tag
