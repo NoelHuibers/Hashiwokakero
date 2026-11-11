@@ -5,7 +5,8 @@ edition = "2024"
 license = "MIT"
 publish = false
 
-# The mobile app: Tauri 2 around the web bundle of ../ (target/app-dist), see ../README.md.
+# The app: Tauri 2 around the web bundle of ../ (target/app-dist), see ../README.md. For Android
+# and iOS, and for Windows, macOS and Linux (the desktop builds).
 # A workspace of its own with its own Cargo.lock, outside the repository's workspace, so the
 # website's builds and CI never compile Tauri or need its system libraries. It is still built
 # inside the repository, where .cargo/config.toml applies. Its other member, offline/, is the
@@ -38,6 +39,11 @@ tauri-plugin-deep-link = "2.6.2"
 serde_json = "1.0.154"
 # The offline Play (offline/): generator and solvers natively, in the app's library
 hashi_offline = { path = "offline" }
+
+# The desktop: the save dialog of the plugin's `share` (src/desktop.rs). Not on the phones, which
+# share files through the system's share sheet.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-dialog = "2.8.4"
 
 [lints]
 workspace = true

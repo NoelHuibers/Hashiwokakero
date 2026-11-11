@@ -28,6 +28,7 @@ jobs:
     outputs:
       code: ${{ steps.diff.outputs.code }}
       reference: ${{ steps.diff.outputs.reference }}
+      desktop: ${{ steps.diff.outputs.desktop }}
     steps:
       # The merge commit of the pull request and its parents
       - if: github.event_name == 'pull_request'
@@ -42,6 +43,7 @@ jobs:
         run: |
           if [ "$EVENT" != pull_request ]; then
             echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "desktop=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           # Against the first parent, main's head: what merging the pull request changes
@@ -50,6 +52,11 @@ jobs:
           # The reference solvers' sources or binaries: rebuild and compare them
           if printf '%s\n' "$files" | grep -q '^dojo/reference/'; then
             echo "reference=true" >> "$GITHUB_OUTPUT"
+          fi
+          # The desktop app's own files (its Rust, settings, icons, the page's bridge to it) and this
+          # workflow: build and start it ("Build app (desktop)")
+          if printf '%s\n' "$files" | grep -qE '^(app/src-tauri/(src/|capabilities/|icons/|Cargo\.(toml|lock)$|build\.rs$|tauri\.conf\.json$)|src/api/(app|native)\.rs$|\.github/workflows/ci\.yml$)'; then
+            echo "desktop=true" >> "$GITHUB_OUTPUT"
           fi
           # Code, unless every changed file is a doc (and some file changed at all)
           if [ -z "$files" ] || printf '%s\n' "$files" | grep -qvxE "$DOCS"; then
@@ -821,6 +828,88 @@ jobs:
           path: |
             e2e/playwright-report-android
             e2e/test-results-android-logcat.txt
+          retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
+
+  # The desktop app (docs/stores.md, Desktop builds) on Linux x64: Tauri around the bundle of "Build
+  # app (web)", the lints and tests of its desktop side, a debug .deb, and the app started on a
+  # virtual display with hashi.rs blocked (no guest on the production server): it has to show the
+  # page and still run after 20 seconds. Its screenshot is in the artifact. Only for pull requests
+  # that change the desktop's files (`desktop` of Changes) and for main; Windows and macOS are
+  # built by the dry run of app-release.yml when tauri.conf.json or the icons change. Ubuntu 22.04
+  # as the release. Not a required check and not in Release compatibility, like the phones' jobs.
+  desktop:
+    name: Build app (desktop)
+    needs: [changes, build-app]
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      # No debug info in the debug build: far less to compile and link. Panics still say where.
+      CARGO_PROFILE_DEV_DEBUG: 0
+    steps:
+      - uses: actions/checkout@v7
+      # What Tauri needs on Linux, and a virtual display with tools to look at it
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev xvfb xdotool imagemagick dbus-x11
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Install the Tauri CLI
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall -y tauri-cli@2.12.4
+      - uses: actions/download-artifact@v8
+        with:
+          name: app-web
+          path: target/app-dist
+      # The desktop's side (src/desktop.rs) is in no other job's lints; the formatting is checked by
+      # "Build app (Android)"
+      - name: Clippy and tests
+        working-directory: app/src-tauri
+        run: |
+          cargo clippy --locked --workspace --all-targets -- -D warnings
+          cargo test --locked -p hashi_tauri
+      # Without beforeBuildCommand: the bundle is already there, from the artifact
+      - name: Build
+        working-directory: app/src-tauri
+        run: cargo tauri build --ci --debug --bundles deb --config '{"build":{"beforeBuildCommand":null}}'
+      # The page's colours: a window that shows nothing (a blank or failed WebView) has a handful
+      - name: Start it
+        run: |
+          echo "127.0.0.1 hashi.rs" | sudo tee -a /etc/hosts
+          Xvfb :99 -screen 0 1280x800x24 &
+          export DISPLAY=:99
+          sleep 2
+          dbus-run-session -- app/src-tauri/target/debug/hashi > app.log 2>&1 &
+          pid=$!
+          sleep 20
+          import -window root desktop.png
+          colors=$(convert desktop.png -format %k info:)
+          echo "Screenshot: $colors colours"
+          xdotool search --name '^Hashi$' getwindowgeometry || { cat app.log; echo "::error::no window called Hashi"; exit 1; }
+          kill -0 "$pid" || { cat app.log; echo "::error::the app stopped"; exit 1; }
+          [ "$colors" -gt 500 ] || { cat app.log; echo "::error::the window shows no page ($colors colours)"; exit 1; }
+          kill "$pid"
+          mb() { awk -v bytes="$(stat -L -c %s "$1")" 'BEGIN { printf "%.1f MB", bytes / 1048576 }'; }
+          {
+            echo "| Desktop (debug, Linux x64) | size |"
+            echo "|---|---|"
+            echo "| .deb | $(mb app/src-tauri/target/debug/bundle/deb/*.deb) |"
+            echo "| binary | $(mb app/src-tauri/target/debug/hashi) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-debug
+          path: |
+            desktop.png
+            app.log
+            app/src-tauri/target/debug/bundle/deb/*.deb
           retention-days: ${{ github.event_name == 'push' && 7 || 1 }}
 
   # The iOS app (app/src-tauri, gen/apple): Tauri around the bundle of "Build app (web)", taken from

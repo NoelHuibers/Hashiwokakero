@@ -1,18 +1,22 @@
-//! The mobile app: a Tauri window with the web bundle of `app/` (the UI rendered in the
-//! browser, see `../README.md`). Android and iOS start it through `run`, the desktop (for
-//! development only) through `main.rs`.
+//! The app: a Tauri window with the web bundle of `app/` (the UI rendered in the browser, see
+//! `../README.md`). Android and iOS start it through `run`, the desktop (Windows, macOS, Linux)
+//! through `main.rs`.
 //!
 //! The page calls the commands below for the offline Play instead of the server functions
 //! of the same names (`src/api/compute.rs` in the repository root), with the server functions'
 //! JSON as text both ways (see `hashi_offline::json`). Only the main window may call them
 //! (`capabilities/default.json`, the permissions from `build.rs`).
 //!
-//! Links out of the app open in the phone's browser through Tauri's opener plugin; the app's own
+//! Links out of the app open in the system's browser through Tauri's opener plugin; the app's own
 //! plugin ([`hashi`]) shares through the system's share sheet, sets the system bars' icons,
 //! talks to the phone's games service (Game Center, Google Play Games) and keeps the `WebView`
-//! on the app's pages. Links to the app's pages on `https://hashi.rs` (App Links,
+//! on the app's pages. On the desktop it saves files and sets the title bar's theme instead
+//! ([`desktop`]). Links to the app's pages on `https://hashi.rs` (App Links,
 //! `plugins.deep-link` in `tauri.conf.json`) open the app through the deep-link plugin, and the
 //! page shows them (`api::native::follow_app_links`).
+
+#[cfg(desktop)]
+mod desktop;
 
 use tauri::plugin::TauriPlugin;
 use tauri::{Manager as _, Runtime, Url, Webview};
@@ -21,7 +25,12 @@ use tauri_plugin_opener::OpenerExt as _;
 /// Starts the app: one window with `index.html` of the bundle (`tauri.conf.json`).
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // The save dialog of the desktop's `share` (`desktop`), called from Rust only: the page gets
+    // no permission for it
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_dialog::init());
+    builder
         // The page sends the links itself (`api::native` in the repository root), the plugin's
         // own script for them isn't needed
         .plugin(
@@ -48,8 +57,9 @@ tauri::ios_plugin_binding!(init_plugin_hashi);
 
 /// The app's own plugin: its commands are `HashiPlugin.kt` on Android (`gen/android`) and
 /// `HashiPlugin.swift` on iOS (`ios/`), the `share`, `system_bars` and `games_*` of
-/// `api::native`. The desktop, for development, has no side for them: Tauri refuses them there,
-/// and the page only logs that (the games service isn't there then).
+/// `api::native`. On the desktop `share` and `system_bars` are [`desktop`]'s, and the page
+/// learns which desktop it is on from the plugin's script; the games services aren't there, the
+/// page doesn't ask for them.
 ///
 /// It also keeps the `WebView` on the app's pages: a page of another site (a link the page
 /// didn't send to the opener, a script's `location`) opens in the browser instead when it is
@@ -60,14 +70,22 @@ tauri::ios_plugin_binding!(init_plugin_hashi);
 /// the system, which brings it back to the app once it verified the app's links (Android's App
 /// Links, iOS's Universal Links).
 fn hashi<R: Runtime>() -> TauriPlugin<R> {
-    tauri::plugin::Builder::new("hashi")
+    let builder = tauri::plugin::Builder::new("hashi");
+    #[cfg(desktop)]
+    let builder = builder
+        .js_init_script(desktop::init_script())
+        .invoke_handler(tauri::generate_handler![
+            desktop::share,
+            desktop::system_bars
+        ]);
+    builder
         .setup(|_app, api| {
             #[cfg(target_os = "android")]
             api.register_android_plugin("rs.hashi", "HashiPlugin")?;
             #[cfg(target_os = "ios")]
             api.register_ios_plugin(init_plugin_hashi)?;
-            // The desktop, for development, has no side
-            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            // The desktop's side is the invoke handler above
+            #[cfg(desktop)]
             let _ = api;
             Ok(())
         })
@@ -90,8 +108,8 @@ fn hashi<R: Runtime>() -> TauriPlugin<R> {
         .build()
 }
 
-/// Whether `url` is a page of the app: its bundle (`tauri.localhost` on Android, `localhost`
-/// on iOS) or, in development, the development server (`devUrl`).
+/// Whether `url` is a page of the app: its bundle (`tauri.localhost` on Android and Windows,
+/// `localhost` on iOS, macOS and Linux) or, in development, the development server (`devUrl`).
 fn in_app<R: Runtime>(webview: &Webview<R>, url: &Url) -> bool {
     let bundle = match url.scheme() {
         "http" | "https" => url.host_str() == Some("tauri.localhost"),

@@ -19,6 +19,14 @@ const PLAY_STORE_URL: &str = "https://play.google.com/store/apps/details?id=rs.h
 /// Until then the website, where the newest version always runs.
 const APP_STORE_URL: &str = SITE_URL;
 
+/// Where the desktop builds are (docs/stores.md, Desktop builds): the GitHub releases of the app's
+/// tags, which have its installers for Windows, macOS and Linux.
+const DESKTOP_DOWNLOAD_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero/releases";
+
+/// The desktops the app runs on, as the app's plugin names them to the page
+/// (`window.__HASHI_DESKTOP__`, Rust's `std::env::consts::OS`, `app/src-tauri/src/desktop.rs`).
+const DESKTOPS: [&str; 3] = ["windows", "macos", "linux"];
+
 /// Who the app is: set once by [`start`], `None` on the website.
 #[cfg(feature = "csr")]
 static APP: OnceLock<App> = OnceLock::new();
@@ -56,12 +64,15 @@ fn server_url(origin: &str, configured: Option<&'static str>) -> Option<&'static
     })
 }
 
-/// The platform in `x-hashi-app`, from the browser's user agent. iPads ask for the desktop
-/// site and say they are a Mac, one with a touch screen. Anything else is `web`, which the
-/// server accepts like any platform it doesn't know.
+/// The platform in `x-hashi-app`: the desktop the app's plugin names (`desktop`, one of
+/// [`DESKTOPS`]), else the phone of the browser's user agent. iPads ask for the desktop site and
+/// say they are a Mac, one with a touch screen. Anything else is `web`, which the server accepts
+/// like any platform it doesn't know.
 #[cfg(any(feature = "csr", test))]
-fn platform(user_agent: &str, touch_points: i32) -> &'static str {
-    if user_agent.contains("Android") {
+fn platform(desktop: Option<&str>, user_agent: &str, touch_points: i32) -> &'static str {
+    if let Some(desktop) = DESKTOPS.into_iter().find(|&d| Some(d) == desktop) {
+        desktop
+    } else if user_agent.contains("Android") {
         "android"
     } else if ["iPhone", "iPad", "iPod"]
         .iter()
@@ -79,6 +90,7 @@ fn store_url(platform: &str) -> &'static str {
     match platform {
         "android" => PLAY_STORE_URL,
         "ios" => APP_STORE_URL,
+        desktop if DESKTOPS.contains(&desktop) => DESKTOP_DOWNLOAD_URL,
         _ => SITE_URL,
     }
 }
@@ -104,7 +116,12 @@ pub fn start(version: &'static str) {
         leptos::server_fn::client::set_server_url(url);
     }
     let navigator = window.navigator();
+    // Set by the app's plugin on the desktop only
+    let desktop = js_sys::Reflect::get(&window, &"__HASHI_DESKTOP__".into())
+        .ok()
+        .and_then(|value| value.as_string());
     let platform = platform(
+        desktop.as_deref(),
         &navigator.user_agent().unwrap_or_default(),
         navigator.max_touch_points(),
     );
@@ -120,13 +137,14 @@ pub(super) fn app_header() -> Option<&'static str> {
     APP.get().map(|app| app.header.as_str())
 }
 
-/// The phone the app runs on, `android` or `ios` (`web` in a browser), `None` before [`start`].
+/// The platform the app runs on: the phone, `android` or `ios`, or the desktop, `windows`,
+/// `macos` or `linux` (`web` in a browser); `None` before [`start`].
 #[cfg(feature = "csr")]
 pub(super) fn app_platform() -> Option<&'static str> {
     APP.get().map(|app| app.platform)
 }
 
-/// The app's platform (`android`, `ios`, `web` in a browser) and version, for the feedback
+/// The app's platform (`android`, `ios`, a desktop, `web` in a browser) and version, for the feedback
 /// form's context; `None` on the website.
 pub fn app_identity() -> Option<(&'static str, &'static str)> {
     #[cfg(feature = "csr")]
@@ -139,6 +157,37 @@ pub fn app_identity() -> Option<(&'static str, &'static str)> {
     #[cfg(not(feature = "csr"))]
     {
         None
+    }
+}
+
+/// A key pressed, with its modifiers, for [`history_step`].
+#[cfg(any(feature = "csr", test))]
+#[derive(Clone, Copy, Debug, Default)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "the modifiers of a `KeyboardEvent`, as it has them"
+)]
+pub(super) struct Keys<'a> {
+    pub(super) key: &'a str,
+    pub(super) alt: bool,
+    pub(super) ctrl: bool,
+    pub(super) meta: bool,
+    pub(super) shift: bool,
+}
+
+/// Where a key in the desktop app on `platform` goes in the history, as in the browsers there:
+/// one page back (`-1`) or forward (`1`), `None` for other keys. On macOS ⌘[ and ⌘] (Safari's),
+/// on Linux Alt+← and Alt+→. On Windows nothing: `WebView2` has Alt+← and Alt+→ itself, and the
+/// phones have their back gesture.
+#[cfg(any(feature = "csr", test))]
+pub(super) fn history_step(platform: &str, keys: Keys<'_>) -> Option<i32> {
+    let only = |alt, meta| keys.alt == alt && keys.meta == meta && !keys.ctrl && !keys.shift;
+    match (platform, keys.key) {
+        ("macos", "[") if only(false, true) => Some(-1),
+        ("macos", "]") if only(false, true) => Some(1),
+        ("linux", "ArrowLeft") if only(true, false) => Some(-1),
+        ("linux", "ArrowRight") if only(true, false) => Some(1),
+        _ => None,
     }
 }
 
@@ -285,20 +334,98 @@ mod tests {
     }
 
     #[test]
-    fn the_platform_comes_from_the_user_agent() {
+    fn the_platform_comes_from_the_desktop_or_the_user_agent() {
         let android = "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36";
         let iphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
         let ipad = "Mozilla/5.0 (iPad; CPU OS 12_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148";
         let mac = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)";
         let linux = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36";
-        assert_eq!(platform(android, 5), "android");
-        assert_eq!(platform(iphone, 5), "ios");
-        assert_eq!(platform(ipad, 5), "ios");
+        let windows = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0";
+        assert_eq!(platform(None, android, 5), "android");
+        assert_eq!(platform(None, iphone, 5), "ios");
+        assert_eq!(platform(None, ipad, 5), "ios");
         // An iPad asking for the desktop site, and a real Mac (its trackpad has no touch points)
-        assert_eq!(platform(mac, 5), "ios");
-        assert_eq!(platform(mac, 0), "web");
-        assert_eq!(platform(linux, 0), "web");
-        assert_eq!(platform("", 0), "web");
+        assert_eq!(platform(None, mac, 5), "ios");
+        assert_eq!(platform(None, mac, 0), "web");
+        assert_eq!(platform(None, linux, 0), "web");
+        assert_eq!(platform(None, windows, 10), "web");
+        assert_eq!(platform(None, "", 0), "web");
+        // The desktop app: its plugin says which one, whatever the user agent (a touch screen
+        // on Windows, Linux's WebKitGTK that looks like Safari)
+        assert_eq!(platform(Some("windows"), windows, 10), "windows");
+        assert_eq!(platform(Some("macos"), mac, 0), "macos");
+        assert_eq!(platform(Some("linux"), mac, 0), "linux");
+        // Only the desktops it knows: Rust's other systems are left to the user agent
+        assert_eq!(platform(Some("freebsd"), linux, 0), "web");
+        assert_eq!(platform(Some(""), android, 5), "android");
+    }
+
+    fn keys(key: &str) -> Keys<'_> {
+        Keys {
+            key,
+            ..Keys::default()
+        }
+    }
+
+    #[test]
+    fn the_desktops_keys_go_back_and_forward() {
+        let command = |key| Keys {
+            meta: true,
+            ..keys(key)
+        };
+        let alt = |key| Keys {
+            alt: true,
+            ..keys(key)
+        };
+        assert_eq!(history_step("macos", command("[")), Some(-1));
+        assert_eq!(history_step("macos", command("]")), Some(1));
+        assert_eq!(history_step("linux", alt("ArrowLeft")), Some(-1));
+        assert_eq!(history_step("linux", alt("ArrowRight")), Some(1));
+        // WebView2 does it itself, and the phones have their gestures
+        for platform in ["windows", "android", "ios", "web"] {
+            assert_eq!(history_step(platform, alt("ArrowLeft")), None, "{platform}");
+            assert_eq!(history_step(platform, command("[")), None, "{platform}");
+        }
+    }
+
+    #[test]
+    fn other_keys_stay_with_the_page() {
+        // The board's arrows, a bracket typed, the other systems' keys
+        assert_eq!(history_step("linux", keys("ArrowLeft")), None);
+        assert_eq!(history_step("macos", keys("[")), None);
+        assert_eq!(
+            history_step(
+                "macos",
+                Keys {
+                    alt: true,
+                    ..keys("ArrowLeft")
+                }
+            ),
+            None
+        );
+        assert_eq!(
+            history_step(
+                "linux",
+                Keys {
+                    meta: true,
+                    ..keys("[")
+                }
+            ),
+            None
+        );
+        // With another modifier too: a shortcut of its own
+        let shifted = Keys {
+            alt: true,
+            shift: true,
+            ..keys("ArrowLeft")
+        };
+        assert_eq!(history_step("linux", shifted), None);
+        let ctrl = Keys {
+            meta: true,
+            ctrl: true,
+            ..keys("[")
+        };
+        assert_eq!(history_step("macos", ctrl), None);
     }
 
     #[test]
@@ -308,6 +435,12 @@ mod tests {
             "https://play.google.com/store/apps/details?id=rs.hashi"
         );
         assert_eq!(store_url("ios"), APP_STORE_URL);
+        for desktop in DESKTOPS {
+            assert_eq!(
+                store_url(desktop),
+                "https://github.com/NoelHuibers/Hashiwokakero/releases"
+            );
+        }
         assert_eq!(store_url("web"), "https://hashi.rs");
         // Outside the app
         assert_eq!(update_url(), "https://hashi.rs");
