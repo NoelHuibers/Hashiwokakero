@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
   A store screenshot (app/README.md, Store listings): a caption over a phone or tablet with a
-  screenshot of the site in it. store/capture/frame.ts opens it on the local server (for the
+  screenshot of the site in it, or over the desktop app's window. store/capture/frame.ts opens it on the local server (for the
   site's fonts) with its settings as JSON in ?frame=, waits for window.READY and takes the page at
   the frame's size.
 -->
@@ -174,6 +174,19 @@
         background: var(--paper);
       }
       .screen img { display: block; width: 100%; height: 100%; }
+      /* The desktop window's title bar, in the page's theme as the app's (desktop.rs) */
+      .titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Murecho Variable", system-ui, sans-serif;
+        border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+      }
+      .titlebar .controls { display: flex; height: 100%; }
+      .titlebar .controls span { display: grid; place-items: center; height: 100%; }
+      .titlebar svg { width: 30%; height: auto; stroke: currentColor; fill: none; }
       .status {
         position: absolute;
         top: 0;
@@ -216,6 +229,14 @@
     </div>
     <div class="stage">
       <div class="device">
+        <div class="titlebar" hidden>
+          <span class="title">Hashi</span>
+          <span class="controls">
+            <span><svg viewBox="0 0 10 10"><path d="M0 5h10" /></svg></span>
+            <span><svg viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" rx="1.5" /></svg></span>
+            <span><svg viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10" /></svg></span>
+          </span>
+        </div>
         <div class="screen">
           <img alt="" />
           <div class="status">
@@ -232,7 +253,7 @@
       </div>
     </div>
     <script>
-      // ?frame=: { width, height, kind: 'phone' | 'tablet', store: 'apple' | 'play', image,
+      // ?frame=: { width, height, kind: 'phone' | 'tablet' | 'desktop', store: 'apple' | 'play' | 'desktop', image,
       //   screen: { width, height, insetTop, insetBottom }, lang, dir, dark, hanko, title, text,
       //   sizes: { top, hanko, title, text } (in units of a hundredth of the width) }
       (async () => {
@@ -274,17 +295,20 @@
         await img.decode();
         await document.fonts.ready;
 
-        // The device as big as the room below the caption allows, a margin all round
+        // The device as big as the room below the caption allows, a margin all round. The desktop
+        // window: a thin border, the title bar (32 px of the screen's) above the page.
         const stage = document.querySelector('.stage').getBoundingClientRect();
         const s = f.screen;
-        const bezelOf = (w) => w * (f.kind === 'phone' ? 0.032 : 0.022);
+        const desktop = f.kind === 'desktop';
+        const bar = desktop ? 32 : 0;
+        const bezelOf = (w) => w * (f.kind === 'phone' ? 0.032 : desktop ? 0.0025 : 0.022);
         const roomW = stage.width * (f.kind === 'phone' ? 0.86 : 0.9);
-        const roomH = stage.height - f.height * (f.kind === 'phone' ? 0.045 : 0.04);
+        const roomH = stage.height - f.height * (f.kind === 'phone' ? 0.045 : desktop ? 0.07 : 0.04);
         let w = roomW;
         let h = (w * s.height) / s.width;
-        if (h + 2 * bezelOf(w) > roomH) {
-          h = roomH - 2 * bezelOf(w);
-          w = (h * s.width) / s.height;
+        if (h + (w * bar) / s.width + 2 * bezelOf(w) > roomH) {
+          w = ((roomH - 2 * bezelOf(roomW)) * s.width) / (s.height + bar);
+          h = (w * s.height) / s.width;
         }
         const bz = bezelOf(w);
         set('--bz', `${bz}px`);
@@ -292,9 +316,28 @@
         const screen = document.querySelector('.screen');
         screen.style.width = `${w}px`;
         screen.style.height = `${h}px`;
-        const radius = w * (f.kind === 'phone' ? 0.12 : 0.045);
-        screen.style.borderRadius = `${radius}px`;
+        const radius = w * (f.kind === 'phone' ? 0.12 : desktop ? 0.006 : 0.045);
+        screen.style.borderRadius = desktop ? `0 0 ${radius}px ${radius}px` : `${radius}px`;
         device.style.borderRadius = `${radius + bz}px`;
+        if (desktop) {
+          const titlebar = document.querySelector('.titlebar');
+          const px = w / s.width;
+          titlebar.hidden = false;
+          Object.assign(titlebar.style, {
+            width: `${w}px`,
+            height: `${bar * px}px`,
+            fontSize: `${12 * px}px`,
+            paddingInlineStart: `${12 * px}px`,
+            borderRadius: `${radius}px ${radius}px 0 0`,
+          });
+          for (const control of titlebar.querySelectorAll('.controls span')) control.style.width = `${46 * px}px`;
+          // Windows' title bar is left to right whatever the page's language
+          titlebar.dir = 'ltr';
+          for (const el of document.querySelectorAll('.status, .island, .home')) el.remove();
+          device.style.transform = `translateY(${-f.height * 0.005}px)`;
+          window.READY = true;
+          return;
+        }
         // The stage centres it; pushed down a little so it sits closer to the caption's weight
         device.style.transform = `translateY(${-f.height * 0.005}px)`;
 

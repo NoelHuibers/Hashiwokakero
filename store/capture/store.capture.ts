@@ -1,6 +1,6 @@
-// The store screenshots: every scene (scenes.ts) in every language of the site, on a phone and a
-// tablet screen (devices.ts), then framed with a caption for each store (frame.ts). One test per
-// language, they run side by side.
+// The store screenshots: every scene (scenes.ts) in every language of the site, on a phone, a
+// tablet and a desktop screen (devices.ts), then framed with a caption for each store (frame.ts).
+// One test per language, they run side by side.
 import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { type Browser, expect, test } from '@playwright/test';
@@ -76,8 +76,9 @@ async function capture(browser: Browser, lang: string, scene: Scene, screen: Scr
   const context = await browser.newContext({
     viewport: { width: screen.width, height: screen.height },
     deviceScaleFactor: screen.scale,
-    isMobile: true,
-    hasTouch: true,
+    // The desktop app has a mouse: hover styles, scrollbars, no touch
+    isMobile: screen.id !== 'desktop',
+    hasTouch: screen.id !== 'desktop',
     locale: lang,
     timezoneId: 'UTC',
     colorScheme: scene.dark ? 'dark' : 'light',

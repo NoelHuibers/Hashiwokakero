@@ -18,12 +18,29 @@ use tauri::{AppHandle, Manager as _, Runtime, Theme, Window};
 use tauri_plugin_dialog::DialogExt as _;
 
 /// The script the page finds before its own: which desktop it runs on (`windows`, `macos` or
-/// `linux`), read by `api::app` for `x-hashi-app` and the update's download page.
+/// `linux`, or `msstore` for the Windows app from the Microsoft Store), read by `api::app` for
+/// `x-hashi-app` and the update's download page.
 pub(crate) fn init_script() -> String {
+    let packaged = cfg!(windows) && packaged(std::env::current_exe().ok().as_deref());
     format!(
         "window.__HASHI_DESKTOP__ = {};",
-        serde_json::Value::from(std::env::consts::OS)
+        serde_json::Value::from(desktop(std::env::consts::OS, packaged))
     )
+}
+
+/// The desktop as the page knows it: Rust's name of the system, except for the Microsoft
+/// Store's app (`packaged`), whose updates come from the Store, not from the GitHub releases.
+fn desktop(os: &'static str, packaged: bool) -> &'static str {
+    if packaged { "msstore" } else { os }
+}
+
+/// Whether the program `exe` runs from an MSIX package, the Microsoft Store's
+/// (docs/stores.md, Microsoft Store): the package's manifest, `AppxManifest.xml`, lies beside it.
+/// Windows installs a package into a folder of its own and runs the program from there; the
+/// NSIS and MSI installers put no manifest there.
+fn packaged(exe: Option<&Path>) -> bool {
+    exe.and_then(Path::parent)
+        .is_some_and(|dir| dir.join("AppxManifest.xml").is_file())
 }
 
 /// Saves `text` as the file `file` where the player chooses, through the system's save dialog
@@ -90,10 +107,31 @@ mod tests {
 
     #[test]
     fn the_page_learns_which_desktop_it_runs_on() {
+        // Not from a package: this test's program has no AppxManifest.xml beside it
         let script = init_script();
         assert_eq!(
             script,
             format!("window.__HASHI_DESKTOP__ = \"{}\";", std::env::consts::OS)
         );
+        assert_eq!(desktop("windows", false), "windows");
+        assert_eq!(desktop("windows", true), "msstore");
+        assert_eq!(desktop("linux", false), "linux");
+    }
+
+    #[test]
+    fn a_package_has_its_manifest_beside_the_program() {
+        let dir = std::env::temp_dir().join(format!("hashi-msix-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let exe = dir.join("hashi.exe");
+        assert!(!packaged(Some(&exe)));
+        std::fs::write(dir.join("AppxManifest.xml"), "<Package/>").unwrap();
+        assert!(packaged(Some(&exe)));
+        // A folder of that name is no manifest
+        std::fs::remove_file(dir.join("AppxManifest.xml")).unwrap();
+        std::fs::create_dir(dir.join("AppxManifest.xml")).unwrap();
+        assert!(!packaged(Some(&exe)));
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert!(!packaged(None));
+        assert!(!packaged(Some(Path::new("hashi.exe"))));
     }
 }
