@@ -59,6 +59,8 @@ pub fn mount(version: &'static str) {
     api::start_app(version);
     // Before the router's listener, see there
     api::native::open_links_outside();
+    // Back and forward on the desktop, which has no back button
+    api::native::history_keys();
     let app = std::rc::Rc::new(std::cell::Cell::new(None));
     leptos::mount::mount_to_body({
         let app = app.clone();

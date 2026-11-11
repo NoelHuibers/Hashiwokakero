@@ -12,7 +12,7 @@ until its secrets exist, so its pull request can be merged before the account is
 | 3 | Samsung Galaxy Store | foss APKs (arm64-v8a, armeabi-v7a), direct key | upload in CI, the account is an owner task |
 | 4 | Amazon Appstore (Fire tablets) | foss APKs (arm64-v8a, armeabi-v7a), Amazon re-signs | upload in CI, the account is an owner task |
 | 5 | Huawei AppGallery | foss APKs (arm64-v8a, armeabi-v7a), direct key | upload in CI, the account is an owner task |
-| 6 | Desktop builds (Windows, macOS, Linux) | | |
+| 6 | Desktop builds (Windows, macOS, Linux) | Tauri installers: Windows x64/arm64, macOS universal, Linux x64/arm64 | built on each release, macOS signing is an owner task |
 | 7 | Microsoft Store | | |
 | 8 | Flathub, Snap | | |
 | 9 | itch.io | | |
@@ -752,3 +752,143 @@ AppGallery Connect first). A **risk to watch on the first review**: Huawei's pho
 services get their WebView from Huawei rather than from Google Play, possibly older than the
 Chrome versions our CSS needs (Tailwind 4 needs Chrome 111); if the review or a Huawei phone shows
 broken styling, that's where to look.
+
+## Desktop builds
+
+Each release tag also builds the app for Windows, macOS and Linux and puts the installers on the
+tag's GitHub release: the five jobs "Build desktop" of app-release.yml, from the same web bundle
+and the same Tauri crate as the phones. They are the source of the desktop stores that follow
+(7 Microsoft Store, 8 Flathub and Snap, 9 itch.io, 10 Steam), and a download for anyone who
+installs by hand. What the app does differently on a computer is in
+[app/README.md](../app/README.md#desktop).
+
+| System | Architectures | Files on the release | Runner |
+|--------|---------------|----------------------|--------|
+| Windows 10 and 11 | x64 | `hashi-<v>-windows-x64-setup.exe` (NSIS), `hashi-<v>-windows-x64.msi` | `windows-2025` |
+| Windows on ARM | arm64 | `hashi-<v>-windows-arm64-setup.exe` (NSIS) | `windows-2025`, cross-compiled |
+| macOS 11 and newer | universal (Apple silicon and Intel) | `hashi-<v>-macos-universal.dmg`, `hashi-<v>-macos-universal.app.zip` | `macos-26` |
+| Linux | x64, arm64 | `hashi-<v>-linux-<arch>.AppImage`, `.deb`, `.rpm` | `ubuntu-22.04`, `ubuntu-22.04-arm` |
+
+**Why these.**
+
+- **Windows**: the NSIS installer (`setup.exe`) is what people expect from a download, installs per
+  user without admin rights (`installMode: currentUser`), in English or German after the system's
+  language, and fetches WebView2 should a Windows 10 lack it. The MSI is for installing on many
+  computers at once (Intune, Group Policy, `msiexec /quiet`). The Microsoft Store (step 7) takes
+  either or an MSIX, which that step decides. Windows on ARM (Snapdragon laptops) gets its own
+  native installer: cross-compiled on the x64 runner, whose Visual Studio has the ARM64 tools, so
+  it costs no extra runner; Tauri makes MSIs (WiX 3) for x86 and x64 only, so it is NSIS only.
+- **macOS**: one universal app for Apple silicon and Intel, as a disk image (drag to
+  Applications) and as a zip of the app (for itch.io and Steam, which unpack it themselves; `ditto`
+  keeps its signature). macOS 11 at least: the page runs in the system's Safari (`WKWebView`), and
+  the CSS needs Safari 16.4, which macOS 11 Big Sur can still install (a Mac on 11 or 12 with an
+  older Safari shows the page unstyled until Safari is updated). `macos-26`, GitHub's regular Apple
+  silicon image: the desktop app needs none of the iOS SDK that `xcode-27` is there for.
+- **Linux**: an AppImage that runs on most distributions without installing (it brings WebKitGTK,
+  GTK and GStreamer for the sounds; about 110 MB), and `.deb` and `.rpm` packages (about 23 MB)
+  that use the system's WebKitGTK 4.1 (Debian 12, Ubuntu 22.04, Fedora 37 and newer). Built on
+  Ubuntu 22.04, the oldest image GitHub has, so they run on systems with its glibc 2.35 or newer.
+  arm64 too (Raspberry Pi 5, ARM laptops): GitHub's arm64 runners are free for public
+  repositories. Flathub and Snap (step 8) build from source in their own runtimes and don't need
+  these.
+
+**How a release checks them**: the Debian package's name, version and architecture and its
+desktop entry; the Mac app's bundle ID `rs.hashi`, version, both architectures, its signature,
+and once signed the Developer ID, the notarization ticket and Gatekeeper's verdict. The sizes are
+in each job's summary. A failed desktop job holds up nothing else (Play, TestFlight, the APKs);
+`gh workflow run app-release.yml --ref app-v<x.y.z> -f desktop=true` builds the five again and
+replaces the desktop files on the tag's release (and its notes). A pull request that changes
+`tauri.conf.json` (the version too) or the icons runs all five as a dry run; "Build app (desktop)"
+in ci.yml builds and starts the Linux app for pull requests that change the desktop's files.
+
+### Signing
+
+**macOS: Developer ID and notarization.** An app from outside the Mac App Store opens without a
+warning only when it is signed with a Developer ID Application certificate and notarized by
+Apple. Both come with the Apple Developer Program the owner already pays for. The release does it
+through Tauri once the certificate is in the secrets: Tauri imports it into a keychain of its own
+(`APPLE_CERTIFICATE`), signs with the hardened runtime, and notarizes and staples the app with the
+App Store Connect API key the iOS release already has (`APPLE_API_KEY_ID`, `APPLE_API_ISSUER`,
+`APPLE_API_KEY_P8`; notarizing needs the Developer role or higher, it is Admin). New secrets:
+
+- `APPLE_DEVELOPER_ID_CERT_BASE64`: the certificate with its private key, a `.p12`, base64.
+- `APPLE_DEVELOPER_ID_CERT_PASSWORD`: the `.p12`'s password.
+
+Without them the Mac app is signed ad hoc (it runs on Apple silicon, but has no identity), with a
+notice in the run: macOS then says it can't check the app for malware and only opens it after
+System Settings, Privacy & Security, "Open Anyway" (since macOS 15 the Control-click way is gone).
+
+**Windows: unsigned for now (an owner decision).** Unsigned, SmartScreen shows "Windows protected
+your PC" for a new download ("More info", "Run anyway"), and the publisher is "Unknown". The
+options, as of November 2026:
+
+| Option | Cost | Who | In CI | Notes |
+|--------|------|-----|-------|-------|
+| Unsigned | free | | nothing to do | SmartScreen warning on every new version |
+| Microsoft Store with MSIX (step 7) | free (the Store account is free for individuals) | anyone | the Store signs the package | No warning for Store users. Store submissions as EXE or MSI instead must be signed with a trusted certificate ourselves |
+| [SignPath Foundation](https://signpath.org) | free for open source | OSI license (MIT is), public repository, reviewed application | their GitHub action signs the build's artifacts | The certificate is the Foundation's: the publisher shows "SignPath Foundation", not Noel Huibers |
+| [Azure Artifact Signing](https://azure.microsoft.com/products/artifact-signing) (was Trusted Signing) | $9.99 a month (5,000 signatures) | individuals only in the USA and Canada so far, organizations in the EU | `signCommand` with Microsoft's signing tool and an Azure app's secrets | Not open to an individual in Germany today |
+| [Certum Open Source Code Signing](https://shop.certum.eu/open-source-code-signing-on-simplysign.html) (cloud) | about €49 the first year | individuals with open source projects | awkward: the key is in Certum's SimplySign cloud, each session needs its one-time code | Publisher "Open Source Developer, Noel Huibers"; reputation still builds slowly |
+| An OV certificate from another CA | about €200 to €500 a year | anyone, identity checked | the key must be in an HSM or a cloud signing service since 2023 | No faster SmartScreen reputation than the above |
+
+The suggestion: stay unsigned on GitHub, where few people will install from, and reach Windows
+users through the Microsoft Store's MSIX (step 7), which needs no certificate. Should direct
+downloads matter later, try the SignPath Foundation first, then Certum. Signing would hook into
+`bundle.windows.signCommand` (Tauri runs it on every binary and installer), with its secrets
+skipped like the others while they are missing.
+
+### Updates
+
+**No auto-updater** (Tauri's updater plugin) for now:
+
+- Most desktop users will come through stores that update the app themselves (Microsoft Store,
+  Flathub, Snap, Steam, the itch app), and their rules forbid an app that updates itself. The
+  updater would have to be off in their builds, so every system would need two builds.
+- It needs an updater key pair that can never be lost (without it, installed apps take no update
+  ever again), a `latest.json` per release, and signed builds on Windows and macOS for a smooth
+  update (an unsigned update brings the SmartScreen warning back each time).
+- What the GitHub downloads have instead: when the server turns an old version away
+  (`HASHI_APP_MIN_VERSION`, docs/mobile.md), the update toast's button opens
+  `https://github.com/NoelHuibers/Hashiwokakero/releases` (`api::app::store_url` for the
+  desktops). The server functions are a stable contract, so that should be rare.
+
+Adding it later: `tauri-plugin-updater` in the desktop's dependencies, `bundle.createUpdaterArtifacts`,
+a key pair from `cargo tauri signer generate` (the private key and its password as secrets,
+`TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, the public key in
+`plugins.updater.pubkey`), the release writing `latest.json` onto the GitHub release, and a build
+flag that keeps it out of the store builds.
+
+### Owner tasks
+
+1. **The Developer ID certificate** (only the Account Holder can make one): on a Mac, Xcode,
+   Settings, Accounts, the team Q35TCGM5PW, "Manage Certificates…", "+", "Developer ID
+   Application"; or on <https://developer.apple.com/account/resources/certificates>, "+",
+   "Developer ID Application" (G2 Sub-CA) with a certificate signing request from Keychain Access
+   (Certificate Assistant, "Request a Certificate From a Certificate Authority…", saved to disk).
+   Then in Keychain Access, "My Certificates", the new "Developer ID Application: Noel Huibers
+   (Q35TCGM5PW)" with its key, "Export…" as a `.p12` with a strong password, and:
+
+   ```sh
+   base64 -i DeveloperIDApplication.p12 | gh secret set APPLE_DEVELOPER_ID_CERT_BASE64
+   gh secret set APPLE_DEVELOPER_ID_CERT_PASSWORD     # the .p12's password, typed in
+   ```
+
+   Keep the `.p12` and its password offline (password manager), then delete the file. Apple allows
+   only a few Developer ID certificates per team, and never revoke it: a revoked certificate stops
+   every app signed with it from opening (one that merely expires keeps working, notarized apps
+   carry their ticket). Then sign the newest release's Mac app: `gh workflow run app-release.yml
+   --ref app-v<x.y.z> -f desktop=true` (the run's macOS summary says "Signed by Developer ID
+   Application: … and notarized").
+2. **Windows signing: decide** between the options above (nothing to do for unsigned).
+3. **The first release with desktop builds**: the next `app-v*` tag. Try the files: the setup on a
+   Windows PC (SmartScreen's "More info", "Run anyway"), the disk image on a Mac (until task 1,
+   "Open Anyway" in System Settings), the AppImage or `.deb` on a Linux PC. The app should start on
+   the daily, sign in like the phone app, and play offline.
+4. **The iPhone app on Apple silicon Macs** (App Store Connect, the app, Pricing and Availability,
+   "iPhone and iPad Apps on Apple Silicon Macs"): leave it off now that there is a Mac app. Both
+   have the bundle ID `rs.hashi`, and two apps of one ID on one Mac confuse Launch Services.
+
+**Risks**: the Windows and macOS builds have only run in CI (the Linux app was also started and
+used locally: the page, the offline puzzle generator, the save dialog, the theme, Alt+←). The
+arm64 builds are only built, never started. Notarization is untested until the certificate
+exists. Text sharing on the desktop relies on each `WebView`'s share sheet or clipboard.

@@ -3,6 +3,7 @@
   "productName": "Hashi",
   "version": "1.1.0",
   "identifier": "rs.hashi",
+  "mainBinaryName": "hashi",
   "build": {
     "frontendDist": "../../target/app-dist",
     "devUrl": "http://127.0.0.1:8080",
@@ -13,8 +14,11 @@
     "windows": [
       {
         "title": "Hashi",
-        "width": 480,
-        "height": 860,
+        "width": 1100,
+        "height": 720,
+        "minWidth": 360,
+        "minHeight": 560,
+        "center": true,
         "useHttpsScheme": true
       }
     ],
@@ -75,10 +79,19 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Noel Huibers",
+    "copyright": "Copyright (c) 2023-2026 Noel Huibers",
+    "homepage": "https://hashi.rs",
+    "license": "MIT",
+    "category": "PuzzleGame",
+    "shortDescription": "Hashiwokakero logic puzzle: link the islands with bridges. A fresh one each day.",
+    "longDescription": "Hashi is Hashiwokakero, the Japanese bridges logic puzzle, drawn in cute pixel art. Every day brings a new daily bridge, the same puzzle for everyone, and a leaderboard shows how fast you crossed. Connect all the islands with bridges: the number on each island says how many bridges it needs.",
     "icon": [
       "icons/32x32.png",
+      "icons/64x64.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ],
@@ -90,6 +103,26 @@
     "iOS": {
       "minimumSystemVersion": "16.4",
       "developmentTeam": "Q35TCGM5PW"
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "signingIdentity": "-"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English", "German"],
+        "displayLanguageSelector": false
+      }
+    },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      },
+      "deb": {
+        "section": "games",
+        "recommends": ["gstreamer1.0-plugins-base", "gstreamer1.0-plugins-good"]
+      }
     }
   }
 }

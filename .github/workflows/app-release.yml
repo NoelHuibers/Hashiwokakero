@@ -10,12 +10,17 @@ name: App release
 # - iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key (automatic
 #   signing, cloud-managed certificate) and uploaded to App Store Connect, where it shows up in
 #   TestFlight once Apple has processed it.
-# A GitHub release for the tag gets the bundle, a universal APK, the foss APKs and the IPA.
+# - Desktop (docs/stores.md, Desktop builds): installers for Windows (x64 and arm64), macOS
+#   (universal) and Linux (x64 and arm64), the sources of the desktop stores. macOS signed with
+#   the Developer ID and notarized once its certificate is in the secrets, Windows unsigned.
+# A GitHub release for the tag gets the bundle, a universal APK, the foss APKs, the IPA and the
+# desktop installers.
 #
-# A pull request that changes this workflow or the version script runs it as a dry run for both
+# A pull request that changes this workflow or the version script runs it as a dry run for all
 # platforms, below; one that changes the Gradle build, the Play or foss sources, the F-Droid
 # repository's files or app/achievements-play.json (Play Games' project id) for Android, one that
-# changes the iOS project (gen/apple, Info.ios.plist) for iOS.
+# changes the iOS project (gen/apple, Info.ios.plist) for iOS, one that changes tauri.conf.json
+# (the version, the bundles' settings) or the icons for the desktop.
 #
 # By hand (Actions, Run workflow, or `gh workflow run app-release.yml --ref <ref>`):
 # - publish off (the default): a dry run on any branch or tag. Builds, signs and checks the bundle
@@ -29,6 +34,9 @@ name: App release
 #   Store (`--ref app-v1.2.3`), e.g. once its secrets are set or after a review held it up.
 # - amazon on: the same for the Amazon Appstore, huawei on: for Huawei AppGallery (together are
 #   fine).
+# - desktop on: builds only the desktop installers of the tag (`--ref app-v1.2.3`) and puts them
+#   on its GitHub release, replacing those it has, e.g. signed ones once the Developer ID
+#   certificate is in the secrets.
 #
 # iOS needs the secrets APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8. Without them
 # (pull requests of Dependabot or forks) it is skipped with a notice; Android goes on. The foss
@@ -36,7 +44,10 @@ name: App release
 # (FDROID_*): without them a release skips them with a notice, a dry run signs with throwaway keys.
 # The Galaxy Store needs its service account (SAMSUNG_*, docs/stores.md), the Amazon Appstore its
 # security profile (AMAZON_*), AppGallery its Service Account (HUAWEI_SERVICE_ACCOUNT_JSON): without
-# them their upload is skipped with a notice.
+# them their upload is skipped with a notice. The macOS build is signed with the Developer ID
+# certificate (APPLE_DEVELOPER_ID_CERT_BASE64, APPLE_DEVELOPER_ID_CERT_PASSWORD) and notarized
+# with the App Store Connect API key: without the certificate it is built signed ad hoc, with a
+# notice.
 on:
   push:
     tags:
@@ -58,6 +69,9 @@ on:
       - app/achievements-play.json
       - app/src-tauri/gen/apple/**
       - app/src-tauri/Info.ios.plist
+      # The desktop installers: their settings, the version and the icons
+      - app/src-tauri/tauri.conf.json
+      - app/src-tauri/icons/**
   workflow_dispatch:
     inputs:
       publish:
@@ -78,6 +92,10 @@ on:
         default: false
       huawei:
         description: Only upload the foss APKs of this tag's GitHub release to Huawei AppGallery again (builds nothing; the ref must be a tag app-v<x.y.z>)
+        type: boolean
+        default: false
+      desktop:
+        description: Only build the desktop installers and put them on this tag's GitHub release, replacing its ones (the ref must be a tag app-v<x.y.z>)
         type: boolean
         default: false
 
@@ -114,8 +132,11 @@ jobs:
       galaxy: ${{ steps.mode.outputs.galaxy }}
       amazon: ${{ steps.mode.outputs.amazon }}
       huawei: ${{ steps.mode.outputs.huawei }}
+      # Only the desktop installers, onto the tag's GitHub release
+      desktop_only: ${{ steps.mode.outputs.desktop_only }}
       android: ${{ steps.platforms.outputs.android }}
       ios: ${{ steps.platforms.outputs.ios }}
+      desktop: ${{ steps.platforms.outputs.desktop }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -133,9 +154,24 @@ jobs:
           GALAXY: ${{ inputs.galaxy }}
           AMAZON: ${{ inputs.amazon }}
           HUAWEI: ${{ inputs.huawei }}
+          DESKTOP: ${{ inputs.desktop }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
+          if [ "$DESKTOP" = true ]; then
+            if [ "$PUBLISH" = true ] || [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ]; then
+              echo "::error::desktop together with another input: a release builds the desktop installers anyway, desktop is a run of its own"
+              exit 1
+            fi
+            if [ "$REF_TYPE" != tag ]; then
+              echo "::error::desktop puts the installers on a tag's GitHub release, not on the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
+              exit 1
+            fi
+            printf '%s\n' publish=false fdroid=false galaxy=false amazon=false huawei=false desktop_only=true >> "$GITHUB_OUTPUT"
+            echo "The desktop installers of $REF_NAME, onto its GitHub release" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "desktop_only=false" >> "$GITHUB_OUTPUT"
           stores=()
           if [ "$GALAXY" = true ]; then stores+=("the Galaxy Store"); fi
           if [ "$AMAZON" = true ]; then stores+=("the Amazon Appstore"); fi
@@ -172,16 +208,17 @@ jobs:
               exit 1
             fi
             echo "publish=true" >> "$GITHUB_OUTPUT"
-            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release, the F-Droid repository, the Galaxy Store, the Amazon Appstore and Huawei AppGallery" >> "$GITHUB_STEP_SUMMARY"
+            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release with the desktop installers, the F-Droid repository, the Galaxy Store, the Amazon Appstore and Huawei AppGallery" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
             echo "Dry run on the $REF_TYPE $REF_NAME: built, signed and checked, not published" >> "$GITHUB_STEP_SUMMARY"
           fi
-      # Both, except on a pull request: the platforms whose files it changes. iOS only with the App
+      # All, except on a pull request: the platforms whose files it changes. iOS only with the App
       # Store Connect API key, which pull requests of Dependabot and of forks don't get.
       - id: platforms
         env:
           EVENT: ${{ github.event_name }}
+          DESKTOP_ONLY: ${{ steps.mode.outputs.desktop_only }}
           FDROID: ${{ steps.mode.outputs.fdroid }}
           GALAXY: ${{ steps.mode.outputs.galaxy }}
           AMAZON: ${{ steps.mode.outputs.amazon }}
@@ -190,8 +227,10 @@ jobs:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
         run: |
-          android=true ios=true
+          android=true ios=true desktop=true
           if [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ]; then
+            android=false ios=false desktop=false
+          elif [ "$DESKTOP_ONLY" = true ]; then
             android=false ios=false
           elif [ "$EVENT" = pull_request ]; then
             # Against the first parent, main's head: what merging the pull request changes
@@ -200,15 +239,15 @@ jobs:
             android_files='^app/src-tauri/gen/android/app/(build\.gradle\.kts$|src/(play|foss)/)|^app/achievements-play\.json$|^app/fdroid/|^scripts/(fdroid-repo|foss-apk|galaxy-store|amazon-appstore|huawei-appgallery)\.ts$'
             grep -qE "$both|$android_files" <<< "$files" || android=false
             grep -qE "$both|^app/src-tauri/gen/apple/|^app/src-tauri/Info\.ios\.plist$" <<< "$files" || ios=false
+            grep -qE "$both|^app/src-tauri/(tauri\.conf\.json$|icons/)" <<< "$files" || desktop=false
           fi
           if [ "$ios" = true ] && { [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; }; then
             ios=false
             echo "::notice::No App Store Connect API key in this run's secrets (APPLE_API_KEY_ID, APPLE_API_ISSUER, APPLE_API_KEY_P8), the iOS app isn't built"
             echo "No App Store Connect API key in this run's secrets, the iOS app isn't built (for a tag: once the secrets are set, run this workflow on it with publish)." >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "Platforms: Android $android, iOS $ios"
-          echo "android=$android" >> "$GITHUB_OUTPUT"
-          echo "ios=$ios" >> "$GITHUB_OUTPUT"
+          echo "Platforms: Android $android, iOS $ios, desktop $desktop"
+          printf '%s\n' "android=$android" "ios=$ios" "desktop=$desktop" >> "$GITHUB_OUTPUT"
       # Fails when the files disagree; prints the version
       - id: version
         env:
@@ -228,7 +267,7 @@ jobs:
               exit 1
             fi
           fi
-      - if: steps.mode.outputs.publish == 'true'
+      - if: steps.mode.outputs.publish == 'true' || steps.mode.outputs.desktop_only == 'true'
         name: On main
         env:
           GH_TOKEN: ${{ github.token }}
@@ -243,7 +282,7 @@ jobs:
           fi
       # CI ran on main for this very commit and passed. A run still going is waited for (up to an
       # hour), so the tag can follow the merge right away.
-      - if: steps.mode.outputs.publish == 'true'
+      - if: steps.mode.outputs.publish == 'true' || steps.mode.outputs.desktop_only == 'true'
         name: CI passed
         env:
           GH_TOKEN: ${{ github.token }}
@@ -280,7 +319,7 @@ jobs:
   build-app:
     name: Build app (web)
     needs: check
-    if: needs.check.outputs.android == 'true' || needs.check.outputs.ios == 'true'
+    if: needs.check.outputs.android == 'true' || needs.check.outputs.ios == 'true' || needs.check.outputs.desktop == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -810,21 +849,256 @@ jobs:
         name: Remove the API key
         run: rm -rf "$RUNNER_TEMP/api-key"
 
+  # The desktop installers (docs/stores.md, Desktop builds), from the same web bundle: Tauri's
+  # bundles of each system, built on it (Windows arm64 cross-compiled on x64, macOS universal for
+  # Apple silicon and Intel), in release. Named hashi-<version>-<system>-<arch>.<ext> for the
+  # GitHub release and the desktop stores' uploads.
+  # - Linux on Ubuntu 22.04, the oldest the runners have: the AppImage and the binaries run on
+  #   systems with its glibc (2.35) or a newer one. The AppImage brings GStreamer for the sounds.
+  # - Windows: unsigned (docs/stores.md has the options); the NSIS installer per user, without
+  #   admin rights, the MSI for x64 only (Tauri's WiX 3 makes none for arm64).
+  # - macOS: signed with the Developer ID certificate and notarized (Tauri, with the App Store
+  #   Connect API key) once APPLE_DEVELOPER_ID_CERT_BASE64 and APPLE_DEVELOPER_ID_CERT_PASSWORD
+  #   are set; until then signed ad hoc (Gatekeeper refuses to open it until the user allows it in
+  #   System Settings), with a notice.
+  desktop:
+    name: Build desktop (${{ matrix.name }})
+    needs: [check, build-app]
+    if: needs.check.outputs.desktop == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x64
+            system: linux
+            arch: x64
+            runner: ubuntu-22.04
+            bundles: deb,rpm,appimage
+          - name: Linux arm64
+            system: linux
+            arch: arm64
+            runner: ubuntu-22.04-arm
+            bundles: deb,rpm,appimage
+          - name: Windows x64
+            system: windows
+            arch: x64
+            runner: windows-2025
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
+          - name: Windows arm64
+            system: windows
+            arch: arm64
+            runner: windows-2025
+            target: aarch64-pc-windows-msvc
+            bundles: nsis
+          - name: macOS
+            system: macos
+            arch: universal
+            runner: macos-26
+            target: universal-apple-darwin
+            bundles: app,dmg
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      SYSTEM: ${{ matrix.system }}
+      ARCH: ${{ matrix.arch }}
+      TARGET: ${{ matrix.target }}
+      BUNDLES: ${{ matrix.bundles }}
+      # linuxdeploy, an AppImage itself, unpacks itself instead of needing FUSE
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    steps:
+      - uses: actions/checkout@v7
+      # What Tauri needs on Linux (WebKitGTK and its kin), and patchelf for GStreamer in the AppImage
+      - if: matrix.system == 'linux'
+        name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev patchelf
+      - name: Rust
+        run: |
+          rustup toolchain install
+          case "$TARGET" in
+            universal-apple-darwin) rustup target add aarch64-apple-darwin x86_64-apple-darwin ;;
+            ?*) rustup target add "$TARGET" ;;
+          esac
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-binstall
+      # The CLI of the other jobs; the arm64 one on the Mac, as there
+      - name: Install the Tauri CLI
+        run: |
+          if [ "$SYSTEM" = macos ]; then
+            cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
+          else
+            cargo binstall -y tauri-cli@2.12.4
+          fi
+          cargo tauri --version
+      - uses: actions/download-artifact@v8
+        with:
+          name: app-web-release
+          path: target/app-dist
+      # macOS: the Developer ID certificate, which Tauri imports into a keychain of its own
+      # (APPLE_CERTIFICATE), and the App Store Connect API key for the notarization, in a file of
+      # the runner's temp dir, gone at the end of the job (below)
+      - if: matrix.system == 'macos'
+        id: signing
+        name: Signing
+        env:
+          CERT: ${{ secrets.APPLE_DEVELOPER_ID_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERT_PASSWORD }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          if [ -z "$CERT" ] || [ -z "$CERT_PASSWORD" ]; then
+            echo "::notice::No Developer ID certificate in this run's secrets (APPLE_DEVELOPER_ID_CERT_BASE64, APPLE_DEVELOPER_ID_CERT_PASSWORD), the Mac app is signed ad hoc and not notarized"
+            echo "No Developer ID certificate in this run's secrets: the Mac app is signed ad hoc and not notarized (once they are set: \`gh workflow run app-release.yml --ref app-v$VERSION -f desktop=true\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; then
+            echo "::error::The Developer ID certificate is there, but not the App Store Connect API key for the notarization (APPLE_API_KEY_ID, APPLE_API_ISSUER, APPLE_API_KEY_P8)"
+            exit 1
+          fi
+          key="$RUNNER_TEMP/api-key"
+          mkdir -m 700 "$key"
+          (umask 077 && printf '%s\n' "$APPLE_API_KEY_P8" > "$key/AuthKey_$APPLE_API_KEY_ID.p8")
+          {
+            echo "APPLE_CERTIFICATE=$CERT"
+            echo "APPLE_CERTIFICATE_PASSWORD=$CERT_PASSWORD"
+            echo "APPLE_API_KEY=$APPLE_API_KEY_ID"
+            echo "APPLE_API_ISSUER=$APPLE_API_ISSUER"
+            echo "APPLE_API_KEY_PATH=$key/AuthKey_$APPLE_API_KEY_ID.p8"
+          } >> "$GITHUB_ENV"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      - if: matrix.system == 'windows'
+        name: Signing
+        run: |
+          echo "::notice::The Windows installers are unsigned (docs/stores.md, Desktop builds): SmartScreen warns before they run"
+      # Release, without beforeBuildCommand (the bundle is there). Signed: the identity Tauri finds
+      # in the imported certificate's keychain, the only one there.
+      - name: Build
+        working-directory: app/src-tauri
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          config='{"build": {"beforeBuildCommand": null}}'
+          if [ "$SIGNED" = true ]; then
+            config=$(jq -c '.bundle.macOS.signingIdentity = "Developer ID Application"' <<< "$config")
+          fi
+          args=(--ci --bundles "$BUNDLES" --config "$config")
+          if [ -n "$TARGET" ]; then args+=(--target "$TARGET"); fi
+          cargo tauri build "${args[@]}"
+      # The installers under their release names, in release/
+      - name: Collect
+        run: |
+          bundle="app/src-tauri/target/${TARGET:+$TARGET/}release/bundle"
+          name="hashi-$VERSION-$SYSTEM-$ARCH"
+          mkdir -p release
+          one() {
+            local files=("$@")
+            [ "${#files[@]}" -eq 1 ] && [ -f "${files[0]}" ] || { echo "::error::not one file: ${files[*]}"; exit 1; }
+            printf '%s' "${files[0]}"
+          }
+          case "$SYSTEM" in
+            linux)
+              cp "$(one "$bundle"/deb/*.deb)" "release/$name.deb"
+              cp "$(one "$bundle"/rpm/*.rpm)" "release/$name.rpm"
+              cp "$(one "$bundle"/appimage/*.AppImage)" "release/$name.AppImage"
+              ;;
+            windows)
+              cp "$(one "$bundle"/nsis/*-setup.exe)" "release/$name-setup.exe"
+              if [[ "$BUNDLES" == *msi* ]]; then cp "$(one "$bundle"/msi/*.msi)" "release/$name.msi"; fi
+              ;;
+            macos)
+              cp "$(one "$bundle"/dmg/*.dmg)" "release/$name.dmg"
+              # The app itself, for the stores that take a zip (ditto keeps its signature)
+              ditto -c -k --keepParent "$bundle/macos/Hashi.app" "release/$name.app.zip"
+              ;;
+          esac
+          ls -l release
+      # The version, the architectures and, on the Mac, the signature. (The Mac's bash is 3.2.)
+      - name: Check
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          name="release/hashi-$VERSION-$SYSTEM-$ARCH"
+          case "$SYSTEM" in
+            linux)
+              deb_arch=$ARCH
+              if [ "$ARCH" = x64 ]; then deb_arch=amd64; fi
+              [ "$(dpkg-deb -f "$name.deb" Package)" = hashi ] || fail "the package is $(dpkg-deb -f "$name.deb" Package), not hashi"
+              [ "$(dpkg-deb -f "$name.deb" Version)" = "$VERSION" ] || fail "the package's version is $(dpkg-deb -f "$name.deb" Version), not $VERSION"
+              [ "$(dpkg-deb -f "$name.deb" Architecture)" = "$deb_arch" ] || fail "the package is for $(dpkg-deb -f "$name.deb" Architecture), not $deb_arch"
+              dpkg-deb -c "$name.deb" | grep -qE ' (\./)?usr/share/applications/Hashi\.desktop$' || fail "the package has no desktop entry"
+              ;;
+            macos)
+              app="$RUNNER_TEMP/app"
+              rm -rf "$app" && mkdir "$app"
+              ditto -x -k "$name.app.zip" "$app"
+              app="$app/Hashi.app"
+              info() { /usr/libexec/PlistBuddy -c "Print :$1" "$app/Contents/Info.plist"; }
+              [ "$(info CFBundleIdentifier)" = rs.hashi ] || fail "CFBundleIdentifier $(info CFBundleIdentifier), not rs.hashi"
+              [ "$(info CFBundleShortVersionString)" = "$VERSION" ] || fail "CFBundleShortVersionString $(info CFBundleShortVersionString), not $VERSION"
+              binary="$app/Contents/MacOS/$(info CFBundleExecutable)"
+              archs=$(lipo -archs "$binary")
+              [ "$archs" = "x86_64 arm64" ] || fail "the binary is $archs, not x86_64 arm64"
+              codesign --verify --strict --deep "$app" || fail "the app's signature doesn't verify"
+              authority=$(codesign -dvv "$app" 2>&1 | sed -n 's/^Authority=//p' | head -n 1)
+              if [ "$SIGNED" = true ]; then
+                [[ "$authority" == "Developer ID Application: "* ]] || fail "signed by ${authority:-nobody}, not a Developer ID Application certificate"
+                xcrun stapler validate "$app" || fail "the app has no notarization ticket"
+                spctl --assess --type execute -vv "$app" 2>&1 | tee "$RUNNER_TEMP/spctl.txt"
+                grep -q 'source=Notarized Developer ID' "$RUNNER_TEMP/spctl.txt" || fail "Gatekeeper doesn't take the app as notarized"
+                echo "Signed by $authority and notarized" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "Signed ad hoc, not notarized" >> "$GITHUB_STEP_SUMMARY"
+              fi
+              ;;
+          esac
+      - name: Size
+        run: |
+          mb() { awk -v bytes="$(wc -c < "$1")" 'BEGIN { printf "%.1f MB", bytes / 1048576 }'; }
+          {
+            echo "| $SYSTEM $ARCH $VERSION | size |"
+            echo "|---|---|"
+            for file in release/*; do echo "| $(basename "$file") | $(mb "$file") |"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: desktop-${{ matrix.system }}-${{ matrix.arch }}
+          path: release
+          compression-level: 0
+          retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
+      - if: always() && matrix.system == 'macos'
+        name: Remove the API key
+        run: rm -rf "$RUNNER_TEMP/api-key"
+
   # The bundle and the APK on the tag's GitHub release: the source of the first upload, which has
   # to be done by hand in the Play Console. The foss APKs, for those who install by hand, and the
-  # F-Droid repository's store of older versions. And the IPA, when iOS was built: a failed or
-  # skipped foss or iOS build doesn't hold up Android's files (a re-run of it adds them).
+  # F-Droid repository's store of older versions. And the IPA, when iOS was built, and the desktop
+  # installers: a failed or skipped foss, iOS or desktop build doesn't hold up Android's files (a
+  # re-run of it adds them). `desktop` replaces only the desktop installers of the release.
   release:
     name: GitHub release
-    needs: [check, android, android-foss, ios]
-    if: ${{ !cancelled() && needs.check.outputs.publish == 'true' && needs.android.result == 'success' }}
+    needs: [check, android, android-foss, ios, desktop]
+    if: >-
+      ${{ !cancelled() && ((needs.check.outputs.publish == 'true' && needs.android.result == 'success')
+      || (needs.check.outputs.desktop_only == 'true' && needs.desktop.result == 'success')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - if: needs.check.outputs.desktop_only != 'true'
+        uses: actions/download-artifact@v8
         with:
           name: android-release
           path: release
@@ -838,13 +1112,36 @@ jobs:
         with:
           name: ios-release
           path: release
+      - if: needs.desktop.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: desktop-*
+          path: release
+          merge-multiple: true
+      # Only the desktop: the release's other files for its notes, without its old desktop ones
+      - if: needs.check.outputs.desktop_only == 'true'
+        name: The release's other files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir -p others
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -D others
+          rm -f others/hashi-*-windows-* others/hashi-*-macos-* others/hashi-*-linux-*
+          ls others
       - env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
           VERSION: ${{ needs.check.outputs.version }}
           CODE: ${{ needs.check.outputs.code }}
+          DESKTOP_ONLY: ${{ needs.check.outputs.desktop_only }}
+          MACOS_SIGNED: ${{ secrets.APPLE_DEVELOPER_ID_CERT_BASE64 != '' }}
         run: |
-          title="Hashi $VERSION (Android)"
+          # Every file the release has after this run, for the notes
+          files=release
+          if [ "$DESKTOP_ONLY" = true ]; then files=$(mktemp -d) && cp release/* others/* "$files"; fi
+          has() { compgen -G "$files/$1" > /dev/null; }
+          platforms=(Android)
           {
             cat app/store/whatsnew/whatsnew-en-US
             echo
@@ -856,7 +1153,7 @@ jobs:
             echo "Both are signed with the app's upload key, which only identifies uploads to Google Play;"
             echo "Play signs the app it delivers with its own key. So they're safe to publish, and the APK"
             echo "can't update an app installed from Play (or the other way round): uninstall that first."
-            if compgen -G "release/hashi-$VERSION-foss-*.apk" > /dev/null; then
+            if has "hashi-$VERSION-foss-*.apk"; then
               echo
               echo "## Android without Google (foss)"
               echo
@@ -864,15 +1161,15 @@ jobs:
               echo "https://noelhuibers.github.io/Hashiwokakero/ has its address and fingerprint, for updates in"
               echo "F-Droid. One APK per processor; nearly every phone wants arm64-v8a."
               echo
-              for apk in release/hashi-"$VERSION"-foss-*.apk; do
+              for apk in "$files"/hashi-"$VERSION"-foss-*.apk; do
                 echo "- \`$(basename "$apk")\`"
               done
               echo
               echo "They are signed with the app's direct key (not the upload key), so they don't update an app"
               echo "from Google Play or the APK above, nor the other way round."
             fi
-            if [ -f "release/hashi-$VERSION.ipa" ]; then
-              title="Hashi $VERSION (Android, iOS)"
+            if has "hashi-$VERSION.ipa"; then
+              platforms+=(iOS)
               echo
               echo "## iOS"
               echo
@@ -881,8 +1178,43 @@ jobs:
               echo "It is signed for App Store distribution, so it only installs through TestFlight or the"
               echo "App Store, not by hand."
             fi
+            if has "hashi-$VERSION-windows-*" || has "hashi-$VERSION-macos-*" || has "hashi-$VERSION-linux-*"; then
+              echo
+              echo "## Windows, macOS, Linux"
+              echo
+              echo "The desktop app, the same as on the phones (without Game Center and Google Play Games)."
+              echo
+              for file in "$files"/hashi-"$VERSION"-{windows,macos,linux}-*; do
+                [ -e "$file" ] || continue
+                name=$(basename "$file")
+                case "$name" in
+                  *-windows-x64-setup.exe) echo "- \`$name\`: Windows (x64), the installer; it needs no admin rights." ;;
+                  *-windows-arm64-setup.exe) echo "- \`$name\`: Windows on ARM (arm64), the installer." ;;
+                  *-windows-x64.msi) echo "- \`$name\`: Windows (x64) as an MSI package, for installing on many computers." ;;
+                  *-macos-universal.dmg) echo "- \`$name\`: macOS 11 or newer, Apple silicon and Intel." ;;
+                  *-macos-universal.app.zip) echo "- \`$name\`: the same Mac app, zipped." ;;
+                  *-linux-*.AppImage) echo "- \`$name\`: Linux, runs on most distributions without installing (chmod +x)." ;;
+                  *-linux-*.deb) echo "- \`$name\`: Debian, Ubuntu and their kin." ;;
+                  *-linux-*.rpm) echo "- \`$name\`: Fedora, openSUSE and their kin." ;;
+                  *) echo "- \`$name\`" ;;
+                esac
+              done
+              echo
+              echo "The Windows installers aren't signed yet: SmartScreen warns about an unknown publisher (More info,"
+              echo "Run anyway)."
+              if [ "$MACOS_SIGNED" = true ]; then
+                echo "The Mac app is signed with our Developer ID and notarized by Apple."
+              else
+                echo "The Mac app isn't notarized yet: macOS refuses to open it at first; allow it in System Settings,"
+                echo "Privacy & Security, Open Anyway."
+              fi
+              for system in Windows macOS Linux; do
+                if has "hashi-$VERSION-${system,,}-*"; then platforms+=("$system"); fi
+              done
+            fi
           } > notes.md
-          # A re-run replaces the files and adds the IPA's notes
+          title="Hashi $VERSION ($(printf '%s, ' "${platforms[@]}" | sed 's/, $//'))"
+          # A re-run replaces the files and adds the IPA's and the desktop's notes
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" release/* --clobber
             gh release edit "$TAG" --title "$title" --notes-file notes.md

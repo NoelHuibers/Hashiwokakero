@@ -3,8 +3,8 @@
 `hashi_app` renders the whole UI of the website in the browser, without a server rendering the
 page first (client-side rendering, CSR). It is the web part of the mobile app; the plan and the
 steps are in [docs/mobile.md](../docs/mobile.md). The Tauri project that wraps it for Android
-and iOS is `app/src-tauri/`, a crate of its own outside the workspace, see [Android](#android)
-and [iOS](#ios) below.
+and iOS, and for Windows, macOS and Linux, is `app/src-tauri/`, a crate of its own outside the
+workspace, see [Android](#android), [iOS](#ios) and [Desktop](#desktop) below.
 
 The crate is a WASM binary whose `main` calls `hashi::mount()`. It depends on `hashi` with the
 `csr` feature only; `hashi` with `hydrate` or `ssr` (the website) never gets `csr` from it,
@@ -120,8 +120,10 @@ in the repository root, only in the app):
 - **Games services.** The stamps are Google Play Games achievements (Game Center's on iOS), see
   [Games services](#games-services).
 
-On iOS the `WebView` is WebKit's `WKWebView`, which does more of it itself. The app's own plugin
-has its iOS side in `src-tauri/ios/` (`HashiPlugin.swift`, see [iOS](#ios)). Where it differs:
+On the desktop it is WebView2 (Windows), `WKWebView` (macOS) or WebKitGTK (Linux), see
+[Desktop](#desktop). On iOS the `WebView` is WebKit's `WKWebView`, which does more of it itself.
+The app's own plugin has its iOS side in `src-tauri/ios/` (`HashiPlugin.swift`, see [iOS](#ios)).
+Where it differs:
 
 - **Safe areas.** With `viewport-fit=cover` the page draws under the status bar, the Dynamic
   Island and the home indicator, and the sides held sideways, and `WKWebView` reports them as
@@ -417,7 +419,8 @@ tests run on any machine. It uses `backend` without its command line (`default-f
 no clap).
 
 - `src/lib.rs`: `run`, the app's entry point on the phones (`tauri::mobile_entry_point`), and
-  `src/main.rs`, the same on the desktop, for development only.
+  `src/main.rs`, the same on the desktop ([Desktop](#desktop)); `src/desktop.rs`, the desktop's
+  side of the app's plugin.
 - `tauri.conf.json`: application ID `rs.hashi`, the name, the version, the bundle
   (`frontendDist`), the one window, and the content security policy (below).
 - `capabilities/default.json`: what the page may call in Tauri: `core:default`, the commands
@@ -530,7 +533,7 @@ object-src 'none'; base-uri 'self'
   It only works without hashes or nonces next to it, so Tauri must not add any
   (`dangerousDisableAssetCspModification: ["style-src"]`).
 - `connect-src`: the bundle itself, the server, and Tauri's IPC (`https://ipc.localhost` on
-  Android with the https origin, `ipc:` on iOS and the desktop). A development server on another
+  Android and Windows with the https origin, `ipc:` on iOS, macOS and Linux). A development server on another
   host needs `devCsp`.
 
 ### Version and versionCode
@@ -653,6 +656,8 @@ platforms from it:
 - iOS: the IPA for the App Store, signed by Xcode with the App Store Connect API key and uploaded
   to App Store Connect, where it shows up in TestFlight; from there it goes to the testers, and
   later to App Review (see [iOS releases](#ios-releases)).
+- Desktop: installers for Windows, macOS and Linux on the GitHub release
+  ([stores.md](../docs/stores.md#desktop-builds), [Desktop](#desktop)).
 
 ### Cutting one
 
@@ -737,6 +742,10 @@ the upload key.
   `HUAWEI_SERVICE_ACCOUNT_JSON` isn't set; a dry run checks its input without calling Huawei.
 - For iOS: App Store Connect, `hashi-<version>.ipa` on the GitHub release, and the artifact
   `ios-release` (see [iOS releases](#ios-releases)).
+- The desktop installers, `hashi-<version>-<windows|macos|linux>-<arch>.<ext>`, on the GitHub
+  release and in the artifacts `desktop-<system>-<arch>`, from the five jobs "Build desktop"
+  ([stores.md](../docs/stores.md#desktop-builds)). A failure there holds up nothing else;
+  `-f desktop=true` on the tag builds them again and replaces them on the release.
 
 Run by hand (`gh workflow run app-release.yml --ref <ref>`), or by a pull request, the workflow
 is a dry run: it builds, signs and checks, makes the F-Droid repository (the artifact
@@ -746,7 +755,8 @@ whose files it changes: both for the workflow or `scripts/app-version.ts`, Andro
 `gen/android/app/build.gradle.kts`, `gen/android/app/src/play/` or `src/foss/`,
 `app/achievements-play.json`, `app/fdroid/`, `scripts/fdroid-repo.ts`, `scripts/foss-apk.ts`,
 `scripts/galaxy-store.ts`, `scripts/amazon-appstore.ts` or `scripts/huawei-appgallery.ts`, iOS for `gen/apple/` or
-`src-tauri/Info.ios.plist`. Without the signing secrets (pull requests of Dependabot or of forks)
+`src-tauri/Info.ios.plist`, the desktop for `src-tauri/tauri.conf.json` or `src-tauri/icons/`.
+Without the signing secrets (pull requests of Dependabot or of forks)
 an Android dry run signs with throwaway keys (the upload key's, the direct key's and the F-Droid
 index key's), and iOS is skipped with a notice. With `-f publish=true` on a tag
 (`--ref app-v0.2.0`) it is the full release again, e.g. to upload a version once the service
@@ -1466,3 +1476,77 @@ one runs at `E2E_APPIUM_URL` (`http://127.0.0.1:4723`) and writes its log to
 download-wda -- --kind sim --platform iOS --outdir <dir>`) Appium builds WebDriverAgent with Xcode
 on the first run. `E2E_SIMULATOR=<udid>` picks a simulator when more than one is booted. To look
 at the page while a test runs: Safari, Develop, the simulator, then `localhost`.
+
+## Desktop
+
+The same Tauri crate builds the app for Windows, macOS and Linux: `main.rs` starts `run` of the
+library there. What the releases make of it, the signing and the stores that build on it are in
+[stores.md](../docs/stores.md#desktop-builds). What differs from the phones:
+
+- **The plugin's desktop side** is Rust, `src-tauri/src/desktop.rs`, the plugin's invoke handler
+  on the desktop only:
+  - `share` with a file (the CNF of a puzzle, the workshop's puzzle as text) opens the system's
+    save dialog (tauri-plugin-dialog, only a dependency on the desktop, called from Rust, so the
+    page gets no permission for it), starting in the Downloads folder. Text alone (a result) the
+    page shares as in a browser (`components::share`): the `WebView`'s `navigator.share` where it
+    has one, else the clipboard, with the "copied" toast. `api::native::share` says `false` for
+    text on the desktop, so the page takes that path.
+  - `system_bars` sets the window's theme, so the title bar follows the page's dark or light
+    theme.
+  - The games services have no desktop side: `api::native` doesn't ask for them there, and the
+    stamp book shows no Game Center or Play Games button.
+- **Which desktop.** The plugin's script (`desktop::init_script`, before the page's own) sets
+  `window.__HASHI_DESKTOP__` to `windows`, `macos` or `linux`; `api::app` takes it as the
+  platform of `x-hashi-app` (the server accepts any lowercase name), and the update toast then
+  links to the GitHub releases. The user agent can't tell: WebKitGTK says it is Safari on Linux,
+  and an iPad says it is a Mac.
+- **Origins.** Windows' WebView2 serves the page from `https://tauri.localhost` (with
+  `useHttpsScheme`, as Android), macOS and Linux from `tauri://localhost` (as iOS), so the
+  server's CORS list, the content security policy and `on_navigation` already cover them. The
+  local storage (the session, the settings) is per user, in the app's data folder named after
+  `rs.hashi`.
+- **The window**: `tauri.conf.json` asks for 1100×720, at least 360×560, centred (the phones
+  ignore it): wide enough for the website's desktop layout (the header's navigation from 1024 px,
+  `lg`), low enough for a 1366×768 screen. Narrower, the page shows the phone's tab bar. The
+  safe-area insets are 0 (`--app-inset-*` fall back to `env()`, which a desktop reports as 0).
+- **Back and forward.** A window has no back button. WebView2 has Alt+← and Alt+→ (and the
+  mouse's back button) itself, macOS's `WKWebView` the trackpad's swipe (wry turns it on); the
+  page adds ⌘[ and ⌘] on macOS and Alt+← and Alt+→ on Linux (`api::native::history_keys`,
+  `api::app::history_step`).
+- **App Links** aren't on the desktop: `plugins.deep-link` has only `mobile` entries, so the app
+  registers no scheme, and `get_current` answers nothing. Links to hashi.rs open the website.
+- **Sounds**: the Web Audio API, which WebKitGTK plays through GStreamer: the `.deb` recommends
+  its base and good plugins, the AppImage brings them (`bundleMediaFramework`, about 30 MB of
+  its 110).
+- **Icons**: the PNGs of `src-tauri/icons/` for Linux (32 to 512 px), `icon.ico` for Windows,
+  `icon.icns` for macOS, all from `cargo tauri icon app-icon.json`. The binary is `hashi`
+  (`mainBinaryName`; the crate's is `hashi_tauri`).
+
+### Building and running
+
+On Linux (Debian or Ubuntu; Fedora's packages have other names) with WebKitGTK's development
+files, in `app/src-tauri/`, with the web bundle built (`pnpm run app:build`):
+
+```sh
+sudo apt install libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+cargo tauri build --bundles deb --config '{"build":{"beforeBuildCommand":null}}'   # target/release/bundle/deb
+cargo tauri dev                                                                    # with the dev server
+```
+
+Elsewhere a container does it, e.g. `podman run` of `ubuntu:22.04` with those packages, Rust and
+the CLI (`cargo binstall tauri-cli@2.12.4`); `APPIMAGE_EXTRACT_AND_RUN=1` lets linuxdeploy run
+without FUSE for the AppImage. On Windows (WebView2 and Visual Studio's C++ tools) and macOS
+(Xcode's command line tools) it builds as it is, `--bundles nsis` or `--bundles app,dmg`.
+
+### In CI
+
+"Build app (desktop)" in `.github/workflows/ci.yml`, on Ubuntu 22.04 like the release: Clippy and
+the tests of the crate for Linux (`desktop.rs` is in no other job's lints), a debug `.deb`, then
+the app started on a virtual display (Xvfb) with hashi.rs blocked: it has to show a window
+called Hashi with the page in it (a screenshot with more than 500 colours; a blank or failed
+`WebView` has a handful) and still run after 20 seconds. The screenshot, the app's log and the
+`.deb` are the artifact `desktop-debug`. It runs only when a pull request changes the desktop's
+files (`src-tauri/src/`, `capabilities/`, `icons/`, `Cargo.toml`, `Cargo.lock`, `build.rs`,
+`tauri.conf.json`, the page's `src/api/app.rs` and `native.rs`, or `ci.yml`), and on main. Not a
+required check. Windows and macOS are built by the release workflow's dry run, which a pull
+request that changes `tauri.conf.json` or the icons starts.

@@ -18,6 +18,11 @@
 //!   own, the router shows them (see `follow_app_links`);
 //! - the phone's games service, Game Center or Google Play Games (`games_sign_in`,
 //!   `games_report`, `games_show`, with the arguments of `api::games`), through the app's plugin.
+//!
+//! On the desktop (Windows, macOS, Linux) the app's plugin has a side in Rust
+//! (`app/src-tauri/src/desktop.rs`): files go to the system's save dialog, the title bar follows
+//! the theme. Text is shared as in a browser (the `WebView`'s share sheet, or the clipboard),
+//! there are no games services, and the history has the desktop's keys ([`history_keys`]).
 
 use futures::FutureExt as _;
 use futures::future::{LocalBoxFuture, Shared};
@@ -35,6 +40,11 @@ fn invoke() -> Option<(JsValue, js_sys::Function)> {
     let internals = js_sys::Reflect::get(&js_sys::global(), &"__TAURI_INTERNALS__".into()).ok()?;
     let invoke = js_sys::Reflect::get(&internals, &"invoke".into()).ok()?;
     Some((internals, invoke.dyn_into().ok()?))
+}
+
+/// Whether the app runs on a phone, not on a desktop (`api::app`, the platform).
+fn on_phone() -> bool {
+    matches!(super::app::app_platform(), Some("android" | "ios"))
 }
 
 /// Whether the page runs in the app, where the commands are. In a browser (the app's bundle on
@@ -121,13 +131,17 @@ pub(crate) fn open_url(url: &str) -> bool {
 }
 
 /// Opens the system's share sheet with `text`, or with `text` as a file `name` of type `mime`
-/// (`file`). `false` outside the app.
+/// (`file`); on the desktop the save dialog for the file, and text not at all, which the page
+/// shares as in a browser there. `false` outside the app and for text on the desktop.
 pub(crate) fn share(text: &str, file: Option<(&str, &str)>) -> bool {
     #[derive(Serialize)]
     struct Args<'a> {
         text: &'a str,
         file: Option<&'a str>,
         mime: &'a str,
+    }
+    if file.is_none() && !on_phone() {
+        return false;
     }
     let (file, mime) = file.map_or((None, "text/plain"), |(name, mime)| (Some(name), mime));
     run("plugin:hashi|share", &Args { text, file, mime })
@@ -136,7 +150,7 @@ pub(crate) fn share(text: &str, file: Option<(&str, &str)>) -> bool {
 /// Dark icons on the system bars for the light theme, light ones for the dark theme. The page
 /// draws behind the bars (`--app-inset-*` in `style/tailwind.css`), so their icons have to
 /// follow the page's theme, not the phone's (on iOS the status bar's, through the window's
-/// style).
+/// style). On the desktop the window's title bar follows it.
 pub(crate) fn system_bars(dark: bool) {
     #[derive(Serialize)]
     struct Args {
@@ -154,8 +168,8 @@ thread_local! {
 /// Signs the player in to the phone's games service, Game Center or Google Play Games
 /// (`api::games`), without asking: the platform signs in whoever is signed in on the phone. Asked
 /// once per page, at the start (`mount`); later calls get the same answer, or the one after a
-/// sign-in through the button ([`games_show`]). Never fails: outside the app, or when the plugin
-/// refuses (a desktop build), the service isn't there.
+/// sign-in through the button ([`games_show`]). Never fails: outside the app, on the desktop, or
+/// when the plugin refuses, the service isn't there.
 ///
 /// iOS may want to show its sign-in sheet; the plugin does that once per install at most, and
 /// never in the simulator (`HashiPlugin.swift`). Android signs in by itself at the start
@@ -175,7 +189,7 @@ pub(crate) fn games_sign_in() -> impl Future<Output = Status> {
 
 #[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
 async fn ask_games() -> Status {
-    let Some((internals, invoke)) = invoke() else {
+    let Some((internals, invoke)) = invoke().filter(|_| on_phone()) else {
         return Status::default();
     };
     let answer = match invoke.call1(&internals, &"plugin:hashi|games_sign_in".into()) {
@@ -333,6 +347,39 @@ pub(crate) fn open_links_outside() {
     let _ = document().add_event_listener_with_callback("click", on_click.as_ref().unchecked_ref());
     // As long as the page
     on_click.forget();
+}
+
+/// The desktop's keys for back and forward in the history (`app::history_step`): a desktop window
+/// has no back button, and only some of the `WebView`s have these keys themselves. The pages are
+/// one document, so the history never leaves the app.
+pub(crate) fn history_keys() {
+    use wasm_bindgen::closure::Closure;
+    let Some(platform) = super::app::app_platform().filter(|_| available() && !on_phone()) else {
+        return;
+    };
+    let on_key =
+        Closure::<dyn Fn(web_sys::KeyboardEvent)>::new(move |e: web_sys::KeyboardEvent| {
+            if e.default_prevented() {
+                return;
+            }
+            let key = e.key();
+            let keys = super::app::Keys {
+                key: &key,
+                alt: e.alt_key(),
+                ctrl: e.ctrl_key(),
+                meta: e.meta_key(),
+                shift: e.shift_key(),
+            };
+            if let Some(step) = super::app::history_step(platform, keys) {
+                e.prevent_default();
+                if let Ok(history) = window().history() {
+                    let _ = history.go_with_delta(step);
+                }
+            }
+        });
+    let _ = window().add_event_listener_with_callback("keydown", on_key.as_ref().unchecked_ref());
+    // As long as the page
+    on_key.forget();
 }
 
 /// Where the page notes the last App Link it showed, for the page loaded anew (a reload): the
