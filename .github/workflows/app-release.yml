@@ -1022,7 +1022,7 @@ jobs:
               ;;
           esac
           ls -l release
-      # The version, the architectures and, on the Mac, the signature
+      # The version, the architectures and, on the Mac, the signature. (The Mac's bash is 3.2.)
       - name: Check
         env:
           SIGNED: ${{ steps.signing.outputs.signed }}
@@ -1031,7 +1031,8 @@ jobs:
           name="release/hashi-$VERSION-$SYSTEM-$ARCH"
           case "$SYSTEM" in
             linux)
-              deb_arch=$(case "$ARCH" in x64) echo amd64 ;; arm64) echo arm64 ;; esac)
+              deb_arch=$ARCH
+              if [ "$ARCH" = x64 ]; then deb_arch=amd64; fi
               [ "$(dpkg-deb -f "$name.deb" Package)" = hashi ] || fail "the package is $(dpkg-deb -f "$name.deb" Package), not hashi"
               [ "$(dpkg-deb -f "$name.deb" Version)" = "$VERSION" ] || fail "the package's version is $(dpkg-deb -f "$name.deb" Version), not $VERSION"
               [ "$(dpkg-deb -f "$name.deb" Architecture)" = "$deb_arch" ] || fail "the package is for $(dpkg-deb -f "$name.deb" Architecture), not $deb_arch"
