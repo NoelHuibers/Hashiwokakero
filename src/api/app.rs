@@ -7,7 +7,6 @@
 //! would be a third-party one there. The app keeps the token in its local storage instead,
 //! which only the app can read: on Android the `WebView`'s storage is in the app's private data.
 
-#[cfg(feature = "csr")]
 use std::sync::OnceLock;
 
 use crate::seo::SITE_URL;
@@ -23,9 +22,15 @@ const APP_STORE_URL: &str = SITE_URL;
 /// tags, which have its installers for Windows, macOS and Linux.
 const DESKTOP_DOWNLOAD_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero/releases";
 
+/// The Windows app from the Microsoft Store (docs/stores.md, Microsoft Store): its Store ID
+/// (Partner Center, Product identity), which the release's web bundle gets from the repository
+/// variable `MS_STORE_APP_ID` as `HASHI_MS_STORE_ID`.
+const MICROSOFT_STORE_ID: Option<&str> = option_env!("HASHI_MS_STORE_ID");
+
 /// The desktops the app runs on, as the app's plugin names them to the page
-/// (`window.__HASHI_DESKTOP__`, Rust's `std::env::consts::OS`, `app/src-tauri/src/desktop.rs`).
-const DESKTOPS: [&str; 3] = ["windows", "macos", "linux"];
+/// (`window.__HASHI_DESKTOP__`, `app/src-tauri/src/desktop.rs`): Rust's `std::env::consts::OS`,
+/// or `msstore` for the Windows app installed from the Microsoft Store, which the Store updates.
+const DESKTOPS: [&str; 4] = ["windows", "macos", "linux", "msstore"];
 
 /// Who the app is: set once by [`start`], `None` on the website.
 #[cfg(feature = "csr")]
@@ -90,9 +95,30 @@ fn store_url(platform: &str) -> &'static str {
     match platform {
         "android" => PLAY_STORE_URL,
         "ios" => APP_STORE_URL,
+        "msstore" => MICROSOFT_STORE_URL.get_or_init(|| {
+            microsoft_store_url(MICROSOFT_STORE_ID).unwrap_or_else(|| SITE_URL.to_string())
+        }),
         desktop if DESKTOPS.contains(&desktop) => DESKTOP_DOWNLOAD_URL,
         _ => SITE_URL,
     }
+}
+
+/// [`microsoft_store_url`] of the build's Store ID, else the website.
+static MICROSOFT_STORE_URL: OnceLock<String> = OnceLock::new();
+
+/// The app's page in the Microsoft Store, by its Store ID (12 letters and digits, starting with
+/// a 9): the browser offers to open it in the Store app, where the update is. `None` without a
+/// Store ID (a build for no release) or with a malformed one.
+fn microsoft_store_url(id: Option<&str>) -> Option<String> {
+    let id = id?.trim();
+    let well_formed =
+        id.len() == 12 && id.starts_with('9') && id.bytes().all(|b| b.is_ascii_alphanumeric());
+    well_formed.then(|| {
+        format!(
+            "https://apps.microsoft.com/detail/{}",
+            id.to_ascii_lowercase()
+        )
+    })
 }
 
 /// The store page of this app, see [`store_url`]; the website where there is no app.
@@ -138,7 +164,7 @@ pub(super) fn app_header() -> Option<&'static str> {
 }
 
 /// The platform the app runs on: the phone, `android` or `ios`, or the desktop, `windows`,
-/// `macos` or `linux` (`web` in a browser); `None` before [`start`].
+/// `macos`, `linux` or `msstore` (`web` in a browser); `None` before [`start`].
 #[cfg(feature = "csr")]
 pub(super) fn app_platform() -> Option<&'static str> {
     APP.get().map(|app| app.platform)
@@ -355,6 +381,7 @@ mod tests {
         assert_eq!(platform(Some("windows"), windows, 10), "windows");
         assert_eq!(platform(Some("macos"), mac, 0), "macos");
         assert_eq!(platform(Some("linux"), mac, 0), "linux");
+        assert_eq!(platform(Some("msstore"), windows, 10), "msstore");
         // Only the desktops it knows: Rust's other systems are left to the user agent
         assert_eq!(platform(Some("freebsd"), linux, 0), "web");
         assert_eq!(platform(Some(""), android, 5), "android");
@@ -382,7 +409,7 @@ mod tests {
         assert_eq!(history_step("linux", alt("ArrowLeft")), Some(-1));
         assert_eq!(history_step("linux", alt("ArrowRight")), Some(1));
         // WebView2 does it itself, and the phones have their gestures
-        for platform in ["windows", "android", "ios", "web"] {
+        for platform in ["windows", "msstore", "android", "ios", "web"] {
             assert_eq!(history_step(platform, alt("ArrowLeft")), None, "{platform}");
             assert_eq!(history_step(platform, command("[")), None, "{platform}");
         }
@@ -435,12 +462,33 @@ mod tests {
             "https://play.google.com/store/apps/details?id=rs.hashi"
         );
         assert_eq!(store_url("ios"), APP_STORE_URL);
-        for desktop in DESKTOPS {
+        for desktop in ["windows", "macos", "linux"] {
             assert_eq!(
                 store_url(desktop),
                 "https://github.com/NoelHuibers/Hashiwokakero/releases"
             );
         }
+        // The Store's app: its page in the Store, the website in a build without the Store ID
+        assert_eq!(
+            store_url("msstore"),
+            microsoft_store_url(MICROSOFT_STORE_ID)
+                .as_deref()
+                .unwrap_or(SITE_URL)
+        );
+        assert_eq!(
+            microsoft_store_url(Some("9NBLGGH4R315")).as_deref(),
+            Some("https://apps.microsoft.com/detail/9nblggh4r315")
+        );
+        for wrong in [
+            "",
+            "9NBLGGH4R31",
+            "9NBLGGH4R3155",
+            "8NBLGGH4R315",
+            "9NBLGGH4R31/",
+        ] {
+            assert_eq!(microsoft_store_url(Some(wrong)), None, "{wrong}");
+        }
+        assert_eq!(microsoft_store_url(None), None);
         assert_eq!(store_url("web"), "https://hashi.rs");
         // Outside the app
         assert_eq!(update_url(), "https://hashi.rs");

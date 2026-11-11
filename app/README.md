@@ -746,6 +746,13 @@ the upload key.
   release and in the artifacts `desktop-<system>-<arch>`, from the five jobs "Build desktop"
   ([stores.md](../docs/stores.md#desktop-builds)). A failure there holds up nothing else;
   `-f desktop=true` on the tag builds them again and replaces them on the release.
+- The Microsoft Store, the Windows builds as one MSIX bundle (`hashi-<version>-windows-store.msixbundle`,
+  x64 and arm64, also on the GitHub release) as the package of the next submission, committed for
+  certification, by the jobs "Microsoft Store package" and "Upload to Microsoft Store"
+  (`scripts/microsoft-store.ts`, [stores.md](../docs/stores.md#microsoft-store)). The package
+  needs the Store's identity in the repository variables (`MS_STORE_*`), the upload the
+  secrets of its Entra application; without them they are skipped with a notice, and a dry run
+  checks the bundle, installs it on the runner and starts the app from it.
 
 Run by hand (`gh workflow run app-release.yml --ref <ref>`), or by a pull request, the workflow
 is a dry run: it builds, signs and checks, makes the F-Droid repository (the artifact
@@ -755,7 +762,8 @@ whose files it changes: both for the workflow or `scripts/app-version.ts`, Andro
 `gen/android/app/build.gradle.kts`, `gen/android/app/src/play/` or `src/foss/`,
 `app/achievements-play.json`, `app/fdroid/`, `scripts/fdroid-repo.ts`, `scripts/foss-apk.ts`,
 `scripts/galaxy-store.ts`, `scripts/amazon-appstore.ts` or `scripts/huawei-appgallery.ts`, iOS for `gen/apple/` or
-`src-tauri/Info.ios.plist`, the desktop for `src-tauri/tauri.conf.json` or `src-tauri/icons/`.
+`src-tauri/Info.ios.plist`, the desktop (and the Microsoft Store's bundle) for
+`src-tauri/tauri.conf.json`, `src-tauri/icons/` or `scripts/microsoft-store.ts`.
 Without the signing secrets (pull requests of Dependabot or of forks)
 an Android dry run signs with throwaway keys (the upload key's, the direct key's and the F-Droid
 index key's), and iOS is skipped with a notice. With `-f publish=true` on a tag
@@ -1066,13 +1074,16 @@ Made in CI, not committed (a run makes about 700). The sources:
   boards in progress are put into the browser's storage before the page opens, not built tap by
   tap. Each on a phone (402 × 874, three times) and a
   tablet (1032 × 1376, twice), with room left for the system bars as the app leaves it
-  (`--app-inset-*`). The dailies are fixed puzzles (`puzzles.json`), one per difficulty: the page
+  (`--app-inset-*`), and in the desktop app's window (1280 × 800, twice, with a mouse: the
+  website's desktop layout). The dailies are fixed puzzles (`puzzles.json`), one per difficulty: the page
   names the weekday's, so a run on a Monday shows the easy 7×7, on a Sunday the 24×24 Oni.
 - `store/templates/frame.html`: a caption (`store/captions.json`, per language, `*word*` in
   vermilion) and a hanko over the device with the screenshot in it, in the site's colours, fonts
   and waves. `store/capture/devices.ts` has the sizes: the App Store's iPhone 6.9" (1320 × 2868)
   and iPad 13" (2064 × 2752), Google Play's phone (1080 × 1920) and 7" and 10" tablets
-  (1080 × 1920, 1440 × 2560), all 9:16 or Apple's sizes, opaque PNGs.
+  (1080 × 1920, 1440 × 2560), all 9:16 or Apple's sizes, and the desktop stores' 16:9
+  (1920 × 1080: the Microsoft Store, later Steam and itch.io), the window with its title bar,
+  opaque PNGs.
 - `store/templates/feature.html`: Play's feature graphic (1024 × 500), like the site's social
   preview. Play's hi-res icon is `public/icon-512.png`, the app's icon.
 
@@ -1499,12 +1510,19 @@ library there. What the releases make of it, the signing and the stores that bui
   `window.__HASHI_DESKTOP__` to `windows`, `macos` or `linux`; `api::app` takes it as the
   platform of `x-hashi-app` (the server accepts any lowercase name), and the update toast then
   links to the GitHub releases. The user agent can't tell: WebKitGTK says it is Safari on Linux,
-  and an iPad says it is a Mac.
+  and an iPad says it is a Mac. The Microsoft Store's app says `msstore` instead of `windows`:
+  it runs from an MSIX package, whose manifest (`AppxManifest.xml`) lies beside the program,
+  which the NSIS and MSI installs don't have. Its updates come from the Store, so the toast
+  links to its page there (`https://apps.microsoft.com/detail/<Store ID>`, the Store ID from the
+  repository variable `MS_STORE_APP_ID` when the release builds the bundle, `HASHI_MS_STORE_ID`),
+  not to an installer that would put a second Hashi next to it. Otherwise it is the Windows app
+  (`history_step`, sharing). See [stores.md](../docs/stores.md#microsoft-store).
 - **Origins.** Windows' WebView2 serves the page from `https://tauri.localhost` (with
   `useHttpsScheme`, as Android), macOS and Linux from `tauri://localhost` (as iOS), so the
   server's CORS list, the content security policy and `on_navigation` already cover them. The
   local storage (the session, the settings) is per user, in the app's data folder named after
-  `rs.hashi`.
+  `rs.hashi` (for the Store's MSIX package Windows keeps it in the package's own folder, so it is
+  not shared with an NSIS install, and goes when the app is uninstalled).
 - **The window**: `tauri.conf.json` asks for 1100×720, at least 360×560, centred (the phones
   ignore it): wide enough for the website's desktop layout (the header's navigation from 1024 px,
   `lg`), low enough for a 1366×768 screen. Narrower, the page shows the phone's tab bar. The

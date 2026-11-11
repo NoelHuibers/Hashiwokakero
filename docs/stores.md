@@ -13,7 +13,7 @@ until its secrets exist, so its pull request can be merged before the account is
 | 4 | Amazon Appstore (Fire tablets) | foss APKs (arm64-v8a, armeabi-v7a), Amazon re-signs | upload in CI, the account is an owner task |
 | 5 | Huawei AppGallery | foss APKs (arm64-v8a, armeabi-v7a), direct key | upload in CI, the account is an owner task |
 | 6 | Desktop builds (Windows, macOS, Linux) | Tauri installers: Windows x64/arm64, macOS universal, Linux x64/arm64 | built on each release, macOS signing is an owner task |
-| 7 | Microsoft Store | | |
+| 7 | Microsoft Store | the Windows builds as one MSIX bundle (x64, arm64), Microsoft signs it | upload in CI, the account is an owner task |
 | 8 | Flathub, Snap | | |
 | 9 | itch.io | | |
 | 10 | Steam | | |
@@ -774,8 +774,8 @@ installs by hand. What the app does differently on a computer is in
 - **Windows**: the NSIS installer (`setup.exe`) is what people expect from a download, installs per
   user without admin rights (`installMode: currentUser`), in English or German after the system's
   language, and fetches WebView2 should a Windows 10 lack it. The MSI is for installing on many
-  computers at once (Intune, Group Policy, `msiexec /quiet`). The Microsoft Store (step 7) takes
-  either or an MSIX, which that step decides. Windows on ARM (Snapdragon laptops) gets its own
+  computers at once (Intune, Group Policy, `msiexec /quiet`). The Microsoft Store gets the same
+  program as an MSIX bundle ([Microsoft Store](#microsoft-store)). Windows on ARM (Snapdragon laptops) gets its own
   native installer: cross-compiled on the x64 runner, whose Visual Studio has the ARM64 tools, so
   it costs no extra runner; Tauri makes MSIs (WiX 3) for x86 and x64 only, so it is NSIS only.
 - **macOS**: one universal app for Apple silicon and Intel, as a disk image (drag to
@@ -850,7 +850,8 @@ skipped like the others while they are missing.
 - What the GitHub downloads have instead: when the server turns an old version away
   (`HASHI_APP_MIN_VERSION`, docs/mobile.md), the update toast's button opens
   `https://github.com/NoelHuibers/Hashiwokakero/releases` (`api::app::store_url` for the
-  desktops). The server functions are a stable contract, so that should be rare.
+  desktops; the Microsoft Store's app opens its page in the Store). The server functions are a
+  stable contract, so that should be rare.
 
 Adding it later: `tauri-plugin-updater` in the desktop's dependencies, `bundle.createUpdaterArtifacts`,
 a key pair from `cargo tauri signer generate` (the private key and its password as secrets,
@@ -892,3 +893,231 @@ flag that keeps it out of the store builds.
 used locally: the page, the offline puzzle generator, the save dialog, the theme, Alt+←). The
 arm64 builds are only built, never started. Notarization is untested until the certificate
 exists. Text sharing on the desktop relies on each `WebView`'s share sheet or clipboard.
+
+## Microsoft Store
+
+Each release tag packs the Windows builds into one MSIX bundle (x64 and arm64) and uploads it as
+the package of the app's next submission, which it commits for Microsoft's certification: the
+jobs "Microsoft Store package" and "Upload to Microsoft Store" of app-release.yml, with
+`scripts/microsoft-store.ts`, through the
+[Microsoft Store submission API](https://learn.microsoft.com/windows/uwp/monetize/create-and-manage-submissions-using-windows-store-services).
+The package needs the Store's identity of the app (repository variables), the upload the
+secrets of an Entra application; until they exist the package is built with a placeholder
+identity for the checks and the upload is skipped with a notice. The API only makes the
+submissions after the first, so the first one is made by hand in Partner Center (owner tasks).
+
+**Where the store is** (November 2026). The Microsoft Store app is on every Windows 10 and 11 PC,
+and <https://apps.microsoft.com> links into it. A developer account is free for individuals
+since September 2025 (and for companies since October 2026), with an identity check of an ID
+document and a selfie.
+
+**MSIX, not the EXE/MSI route.** The Store takes desktop apps either as MSIX packages or as a link
+to an EXE or MSI installer. For us it has to be MSIX:
+
+- **Games must be MSIX.** The Store Policies (version 7.20, 2026-09-14), 10.2.5: a game has to be
+  submitted in a package type the Store ingests and be installed and updated only through the
+  Store; the EXE/MSI route (10.2.9) is for "non-gaming products" only.
+- **EXE/MSI would need a certificate we don't have.** The installer and every program in it must
+  be signed with a certificate that chains to Microsoft's Trusted Root Program (still so in
+  November 2026; self-signed is refused, and the Store doesn't sign EXE or MSI), see the table in
+  [Signing](#signing). Every release would also need a new versioned HTTPS URL entered in Partner
+  Center, and the app would have to update itself.
+- **MSIX is signed by Microsoft.** The package is uploaded unsigned; after certification the Store
+  signs it with Microsoft's certificate, so there is no SmartScreen warning, and the Store
+  installs, updates and removes it cleanly.
+
+**How the package is made.** Tauri has no MSIX target (tauri-apps/tauri#4818 is still open, and
+Tauri's Store guide covers only the EXE/MSI route). Microsoft's new winapp CLI can pack a Tauri
+app (`winapp pack`, a guide for Tauri), but it is a public preview (0.8); the Windows SDK's MakePri
+and MakeAppx, which it calls, are on GitHub's Windows runners already and do the same:
+
+1. Each Windows job of "Build desktop" puts the release build's `hashi.exe`, the program of the
+   NSIS and MSI installers (one build for all three), into a package folder with its manifest and
+   logos (`node scripts/microsoft-store.ts layout`), indexes the logos' sizes with MakePri
+   (`resources.pri`) and packs it with MakeAppx, which checks the manifest against Windows'
+   schema: `hashi-<v>-windows-<arch>.msix`.
+2. "Microsoft Store package" bundles both into `hashi-<v>-windows-store.msixbundle` (version
+   x.y.z.0), checks the bundle's and each package's manifest (the identity, the version, x64 and
+   arm64, full trust, the program, the languages), then signs a copy with a throwaway certificate
+   of the package's publisher that only the runner trusts, installs it, starts the app from the
+   Start menu entry the package made and checks that it shows its window and runs from the
+   package (a screenshot is the artifact `msstore-smoke`). Built with the Store's identity, the
+   bundle goes onto the GitHub release (like the App Bundle and the IPA it doesn't install by
+   hand there) and to the Store.
+
+**The manifest** (`manifest` in the script):
+
+- **Identity** from Partner Center's Product identity page: `Package/Identity/Name`,
+  `Package/Identity/Publisher` (`CN=<...>`), `Package/Properties/PublisherDisplayName`, and the
+  reserved name as the display name. The repository variables `MS_STORE_IDENTITY_NAME`,
+  `MS_STORE_PUBLISHER`, `MS_STORE_PUBLISHER_DISPLAY_NAME` (default "Noel Huibers") and
+  `MS_STORE_DISPLAY_NAME` (default "Hashi"); they aren't secret. The upload compares the bundle's
+  identity with the app's in Partner Center before it uploads anything.
+- **Version** x.y.z.0: the fourth part is the Store's and must be 0.
+- **Windows 10 1809 and newer** (`Windows.Desktop`, MinVersion 10.0.17763.0, the oldest Windows 10
+  still supported, LTSC 2019; tested up to 10.0.26100.0, Windows 11 24H2), x64 and arm64.
+- **Capabilities**: `internetClient` (hashi.rs) and `runFullTrust`, which every desktop program
+  packed as MSIX needs. `runFullTrust` is a restricted capability: the first submission says why
+  (owner tasks), and the certification checks it.
+- **Languages**: the app's 20 (en-US first, the default), which the Store shows as the app's
+  languages.
+- **Logos**: the icons of `app/src-tauri/icons` (`cargo tauri icon`): the 44 px one with the
+  target sizes 32, 64 and 256 (and their unplated variants, for Windows 11's taskbar), the 71 and
+  150 px tiles of Windows 10's Start menu, and the 50 px Store logo.
+
+**WebView2.** Not in the package: an MSIX can't run WebView2's installer, as the NSIS setup does.
+Windows 11 has it, and so has nearly every Windows 10 (Microsoft rolled it out); where it is
+missing, Tauri shows a dialog that links to its download page (its release builds on Windows do
+that themselves). The Store's policies don't forbid an app that needs it.
+
+**The app's data.** Windows keeps what a packaged app writes into `%LOCALAPPDATA%` in the
+package's own folder: the Store's app has its own local storage (its own guest or session), not
+shared with an NSIS install on the same PC, and it goes when the app is uninstalled. A player
+signs in to have the same account in both.
+
+**Updates.** The Store updates the app; the app never updates itself (it has no updater, see
+[Updates](#updates)). When the server turns an old version away, the update toast links to the
+app's page in the Store, `https://apps.microsoft.com/detail/<Store ID>`, which opens the Store
+app: the page tells it is the Store's app because the plugin reports the desktop `msstore`
+instead of `windows` (the program runs from a package, `AppxManifest.xml` lies beside it), which
+is also the platform of `x-hashi-app` (the feedback form shows it) ([app/README.md](../app/README.md#desktop)).
+The Store ID comes from the repository variable `MS_STORE_APP_ID` when the release builds the
+web bundle. Linking the GitHub releases there, as for the NSIS app, would put a second Hashi
+next to it.
+
+**What a release does** (`release` in the script):
+
+1. Reads the app (the Store ID, `MS_STORE_APP_ID`): its identity, which the bundle has to have,
+   and its published submission. When that has this version already there is nothing to do; when
+   it has a newer one it refuses.
+2. Takes the app's draft submission (one a run before or Partner Center left), or makes a new
+   one, a copy of the published one. It refuses while a submission is in certification or being
+   published (rerun it afterwards, below).
+3. Makes the bundle the submission's only package (the older ones are deleted from it), and puts
+   the release notes (`app/store/whatsnew/whatsnew-en-US`, at most 1500 characters) into every
+   language's "What's new"; notes that name Google Play, Play Games or the App Store become
+   "Hashi <version>" instead (the 1.1 notes do).
+4. Uploads the bundle, zipped, to the submission's upload URL (an Azure blob).
+5. Commits the submission, which sends it to certification, and waits up to 20 minutes for
+   Microsoft to take it (or to name what is wrong). It goes live after the certification,
+   usually within three working days. The repository variable `MS_STORE_SUBMIT=false` leaves the
+   submission as a draft for Partner Center instead. No gradual rollout: every player gets a fix
+   at once.
+
+A rerun (or `gh workflow run app-release.yml --ref app-v<x.y.z> -f msstore=true`, which takes the
+bundle from the tag's GitHub release and builds nothing; the Android stores' inputs next to it
+are fine) uploads the bundle into the draft again. `-f desktop=true` builds the installers and
+the bundle of a tag again, e.g. once the identity variables are set. A pull request's dry run
+(any change to `scripts/microsoft-store.ts`, `tauri.conf.json` or the icons) builds, checks,
+installs and starts the bundle, and calls nobody. Don't change a submission the API made in
+Partner Center: the API can't change or commit it afterwards (delete it there and rerun).
+
+**The listing**: `gh workflow run store-listing.yml -f platform=microsoft -f what=all` puts the
+texts of Google Play's listing into the app's next submission (the draft, or a new one), in 22
+languages (`MICROSOFT` in the script: the app's 20, and Play's European Portuguese and Latin
+American Spanish as pt-PT and es-MX): the description (at most 10,000 characters), the short
+description (Play's, at most 1000) and the features (the first point of each of the
+description's lists, at most 20 of 200). The title stays the one Partner Center has (the
+reserved name); a new language gets the app's name. Keywords and "What's new" stay as they are.
+With the images: each language's desktop screenshots, which replace the Store's.
+
+The screenshots are a new frame of the store images (`desktop` in `store/capture/devices.ts`):
+16:9, 1920 × 1080, the desktop app's window with its title bar, the page in the website's desktop
+layout at 1280 × 800 (twice), under the same captions as the phones'. The Store takes desktop
+screenshots from 1366 × 768, up to 10. Play's tablet images (portrait, 1440 × 2560) would have
+passed too, but would show a phone's layout in a frame of an iPad on a Windows app's page; Steam
+(step 10) wants 16:9 at 1920 × 1080 as well, and itch.io (step 9) takes them too. Not committed:
+the next release commits it with its package (or submit it in Partner Center). A pull request of
+the store listing checks the texts and that run's images against the Store's rules.
+
+The privacy policy URL, the website and the support contact are no longer set through the API:
+they are entered once on the app's Properties page (owner tasks), as are the category, the age
+rating and the markets.
+
+### Owner tasks
+
+1. **The developer account**, free: start at <https://storedeveloper.microsoft.com> (other entry
+   points still show the old paid sign-up), sign in with a personal Microsoft account (an
+   individual account can't use a work account), account type **Individual**, country Germany,
+   publisher display name **Noel Huibers** (what the Store shows as the developer; if another one
+   is chosen: `gh variable set MS_STORE_PUBLISHER_DISPLAY_NAME --body '<it>'`), contact
+   hashi@huibers.io. Then the identity check: a photo of the ID card or passport and a selfie,
+   taken with the phone (the page shows a QR code). Microsoft checks it, usually within a few
+   days.
+2. **Reserve the name**: Partner Center, Apps and games, "New product", "MSIX or PWA app", name
+   **Hashi**. If it is taken: "Hashi: Daily Bridges Puzzle" (Play's title) or "Hashi Bridges", and
+   `gh variable set MS_STORE_DISPLAY_NAME --body '<the name>'`.
+3. **The identity into the repository variables**: the app, Product management, Product
+   identity:
+
+   ```sh
+   gh variable set MS_STORE_IDENTITY_NAME --body '<Package/Identity/Name>'
+   gh variable set MS_STORE_PUBLISHER --body '<Package/Identity/Publisher, CN=...>'
+   gh variable set MS_STORE_APP_ID --body '<Store ID, 9...>'
+   ```
+
+4. **A bundle with that identity**: the next release tag, or for the newest one
+   `gh workflow run app-release.yml --ref app-v<x.y.z> -f desktop=true`. Its GitHub release then
+   has `hashi-<x.y.z>-windows-store.msixbundle`. (The web bundle of a release before task 3 has
+   no Store ID, so its Store app's update toast opens hashi.rs; the next release fixes that.)
+5. **The first submission**, by hand (the API can't make it), on the app's pages in Partner
+   Center:
+   - **Pricing and availability**: all markets, Free, public, no free trial.
+   - **Properties**: category **Games**, genre **Puzzle & trivia** (Partner Center writes "Puzzle
+     + trivia"; a game can't leave the Games category later); privacy policy URL
+     **https://hashi.rs/datenschutz**, website https://hashi.rs, support contact
+     https://hashi.rs/kontakt; it accesses personal information: Yes (the name, the optional email
+     address, results; as Play's Data safety form). Game settings: no Xbox services, not
+     multiplayer; system requirements: nothing beyond the defaults (works with mouse, keyboard
+     and touch).
+   - **Age ratings**: the IARC questionnaire, answered as the app is: no violence, horror, sexual
+     content, drugs, gambling or bad language, no ads, no purchases; players' names are public and
+     they can form groups, but there is no free-text chat and no location is shared. Or enter the
+     IARC rating ID of Google Play's rating, which Partner Center takes instead.
+   - **Packages**: upload the bundle of task 4 (it lists x64 and arm64, Windows 10/11 Desktop).
+   - **Store listings**: English (United States): description, short description and features
+     from `fastlane/metadata/android/en-US` as above, screenshots `en/desktop/*.png` of the
+     artifact `store-listing-images` of a "Store listing" run (`gh workflow run store-listing.yml
+     -f platform=microsoft -f what=images -f validate_only=true`). The other languages come with
+     task 7.
+   - **Submission options**, why it needs `runFullTrust`: "Hashi is a Win32 desktop program
+     (Tauri, with WebView2) packaged as MSIX; runFullTrust is what a packaged desktop program
+     runs with. It uses no other restricted capability." Notes for certification: "No login
+     needed: the app starts as a guest. The daily puzzle, rankings, groups and rivals need an
+     internet connection (our server hashi.rs); Play works offline. Free, no ads, no in-app
+     purchases. Source: https://github.com/NoelHuibers/Hashiwokakero."
+   - Submit. The certification takes up to three working days.
+6. **The Entra application for the API**: Partner Center, Account settings, User management,
+   Microsoft Entra applications (should it ask for a tenant first: Account settings, Tenants,
+   create a new one), "Create Microsoft Entra application", role **Manager**; on its page "Add new key". The tenant ID, the client ID and
+   the key are shown there (the key only once):
+
+   ```sh
+   gh secret set MS_STORE_TENANT_ID       # the tenant ID, typed in
+   gh secret set MS_STORE_CLIENT_ID       # the client ID
+   gh secret set MS_STORE_CLIENT_SECRET   # the key
+   ```
+
+   No backup needed: a lost or leaked key is replaced by a new one of the application (and the
+   old one removed there). The keys expire (Partner Center shows when, at most two years): add
+   a new one and set the secret again before that.
+7. **From then on CI**: each release tag uploads and commits by itself. The listing in the other
+   languages: `gh workflow run store-listing.yml -f platform=microsoft -f what=all` (it goes out
+   with the next release, or submit it in Partner Center). A release made before task 6:
+   `gh workflow run app-release.yml --ref app-v<x.y.z> -f msstore=true`.
+
+**Certification**: Microsoft tests every submission, usually within three working days, and
+mails the result; Partner Center shows the report. While one is in certification, a release
+tag's upload fails saying so; rerun it with `-f msstore=true` afterwards. **Risks**:
+
+- The MSIX app has only been started on the runner (Windows Server 2025, x64, unsigned copy with
+  a test certificate), not on Windows 10 or 11, and the arm64 package not at all.
+- The Windows App Certification Kit's "Package sanity test" has been reported to flag fresh Tauri
+  2 MSIX packages (tauri-apps/tauri#14935, WebView2 suspected); whether the Store's certification
+  minds is unknown. Watch the first certification report.
+- The API is untested against Microsoft (no account): the contract comes from Microsoft's
+  reference (fetched 2026-11-11), and the upload's headers from Azure Storage's. Whether an
+  individual account can use the API through an Entra application isn't stated anywhere; if not,
+  upload each bundle by hand (it is on the GitHub release).
+- Play's description says the offline puzzles are "made on your phone" (one line); the Store's
+  listing shows that on Windows too until there are Windows texts of their own.

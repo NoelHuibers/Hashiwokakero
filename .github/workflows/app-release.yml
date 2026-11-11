@@ -13,8 +13,11 @@ name: App release
 # - Desktop (docs/stores.md, Desktop builds): installers for Windows (x64 and arm64), macOS
 #   (universal) and Linux (x64 and arm64), the sources of the desktop stores. macOS signed with
 #   the Developer ID and notarized once its certificate is in the secrets, Windows unsigned.
-# A GitHub release for the tag gets the bundle, a universal APK, the foss APKs, the IPA and the
-# desktop installers.
+# - Microsoft Store (docs/stores.md, Microsoft Store): the Windows builds as an MSIX bundle (x64
+#   and arm64, unsigned: the Store signs it), uploaded as the app's next submission and committed
+#   for certification.
+# A GitHub release for the tag gets the bundle, a universal APK, the foss APKs, the IPA, the
+# desktop installers and the MSIX bundle.
 #
 # A pull request that changes this workflow or the version script runs it as a dry run for all
 # platforms, below; one that changes the Gradle build, the Play or foss sources, the F-Droid
@@ -34,9 +37,12 @@ name: App release
 #   Store (`--ref app-v1.2.3`), e.g. once its secrets are set or after a review held it up.
 # - amazon on: the same for the Amazon Appstore, huawei on: for Huawei AppGallery (together are
 #   fine).
-# - desktop on: builds only the desktop installers of the tag (`--ref app-v1.2.3`) and puts them
-#   on its GitHub release, replacing those it has, e.g. signed ones once the Developer ID
-#   certificate is in the secrets.
+# - msstore on: builds nothing, uploads the MSIX bundle of the tag's GitHub release to the
+#   Microsoft Store (`--ref app-v1.2.3`; with the Android stores is fine too).
+# - desktop on: builds only the desktop installers and the MSIX bundle of the tag
+#   (`--ref app-v1.2.3`) and puts them on its GitHub release, replacing those it has, e.g. signed
+#   ones once the Developer ID certificate is in the secrets, or the bundle once the Store's
+#   identity is in the variables.
 #
 # iOS needs the secrets APPLE_API_KEY_ID, APPLE_API_ISSUER and APPLE_API_KEY_P8. Without them
 # (pull requests of Dependabot or forks) it is skipped with a notice; Android goes on. The foss
@@ -44,7 +50,11 @@ name: App release
 # (FDROID_*): without them a release skips them with a notice, a dry run signs with throwaway keys.
 # The Galaxy Store needs its service account (SAMSUNG_*, docs/stores.md), the Amazon Appstore its
 # security profile (AMAZON_*), AppGallery its Service Account (HUAWEI_SERVICE_ACCOUNT_JSON): without
-# them their upload is skipped with a notice. The macOS build is signed with the Developer ID
+# them their upload is skipped with a notice; so is the Microsoft Store's without its Entra
+# application (MS_STORE_TENANT_ID, MS_STORE_CLIENT_ID, MS_STORE_CLIENT_SECRET, and the variable
+# MS_STORE_APP_ID); its package needs the Store's identity (the variables MS_STORE_IDENTITY_NAME,
+# MS_STORE_PUBLISHER), else it is built with a placeholder for the checks and not released. The
+# macOS build is signed with the Developer ID
 # certificate (APPLE_DEVELOPER_ID_CERT_BASE64, APPLE_DEVELOPER_ID_CERT_PASSWORD) and notarized
 # with the App Store Connect API key: without the certificate it is built signed ad hoc, with a
 # notice.
@@ -65,6 +75,8 @@ on:
       - scripts/galaxy-store.ts
       - scripts/amazon-appstore.ts
       - scripts/huawei-appgallery.ts
+      # The MSIX package and the Microsoft Store's upload (the desktop's Windows builds)
+      - scripts/microsoft-store.ts
       # Play Games' project id (and ids) for the release's App Bundle
       - app/achievements-play.json
       - app/src-tauri/gen/apple/**
@@ -94,8 +106,12 @@ on:
         description: Only upload the foss APKs of this tag's GitHub release to Huawei AppGallery again (builds nothing; the ref must be a tag app-v<x.y.z>)
         type: boolean
         default: false
+      msstore:
+        description: Only upload the MSIX bundle of this tag's GitHub release to the Microsoft Store again (builds nothing; the ref must be a tag app-v<x.y.z>)
+        type: boolean
+        default: false
       desktop:
-        description: Only build the desktop installers and put them on this tag's GitHub release, replacing its ones (the ref must be a tag app-v<x.y.z>)
+        description: Only build the desktop installers and the MSIX bundle and put them on this tag's GitHub release, replacing its ones (the ref must be a tag app-v<x.y.z>)
         type: boolean
         default: false
 
@@ -132,6 +148,8 @@ jobs:
       galaxy: ${{ steps.mode.outputs.galaxy }}
       amazon: ${{ steps.mode.outputs.amazon }}
       huawei: ${{ steps.mode.outputs.huawei }}
+      # Only the Microsoft Store, from the tag's GitHub release
+      msstore: ${{ steps.mode.outputs.msstore }}
       # Only the desktop installers, onto the tag's GitHub release
       desktop_only: ${{ steps.mode.outputs.desktop_only }}
       android: ${{ steps.platforms.outputs.android }}
@@ -154,12 +172,13 @@ jobs:
           GALAXY: ${{ inputs.galaxy }}
           AMAZON: ${{ inputs.amazon }}
           HUAWEI: ${{ inputs.huawei }}
+          MSSTORE: ${{ inputs.msstore }}
           DESKTOP: ${{ inputs.desktop }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           if [ "$DESKTOP" = true ]; then
-            if [ "$PUBLISH" = true ] || [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ]; then
+            if [ "$PUBLISH" = true ] || [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ]; then
               echo "::error::desktop together with another input: a release builds the desktop installers anyway, desktop is a run of its own"
               exit 1
             fi
@@ -167,8 +186,8 @@ jobs:
               echo "::error::desktop puts the installers on a tag's GitHub release, not on the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
               exit 1
             fi
-            printf '%s\n' publish=false fdroid=false galaxy=false amazon=false huawei=false desktop_only=true >> "$GITHUB_OUTPUT"
-            echo "The desktop installers of $REF_NAME, onto its GitHub release" >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' publish=false fdroid=false galaxy=false amazon=false huawei=false msstore=false desktop_only=true >> "$GITHUB_OUTPUT"
+            echo "The desktop installers and the MSIX bundle of $REF_NAME, onto its GitHub release" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           echo "desktop_only=false" >> "$GITHUB_OUTPUT"
@@ -176,21 +195,22 @@ jobs:
           if [ "$GALAXY" = true ]; then stores+=("the Galaxy Store"); fi
           if [ "$AMAZON" = true ]; then stores+=("the Amazon Appstore"); fi
           if [ "$HUAWEI" = true ]; then stores+=("Huawei AppGallery"); fi
+          if [ "$MSSTORE" = true ]; then stores+=("the Microsoft Store"); fi
           if [ ${#stores[@]} -gt 0 ]; then
             if [ "$PUBLISH" = true ] || [ "$FDROID" = true ]; then
-              echo "::error::galaxy, amazon or huawei together with publish or fdroid: a release uploads to the stores anyway, fdroid is a run of its own"
+              echo "::error::galaxy, amazon, huawei or msstore together with publish or fdroid: a release uploads to the stores anyway, fdroid is a run of its own"
               exit 1
             fi
             if [ "$REF_TYPE" != tag ]; then
-              echo "::error::galaxy, amazon and huawei upload the foss APKs of a tag's GitHub release, not of the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
+              echo "::error::galaxy, amazon, huawei and msstore upload the files of a tag's GitHub release, not of the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
               exit 1
             fi
-            printf '%s\n' publish=false fdroid=false "galaxy=${GALAXY:-false}" "amazon=${AMAZON:-false}" "huawei=${HUAWEI:-false}" >> "$GITHUB_OUTPUT"
+            printf '%s\n' publish=false fdroid=false "galaxy=${GALAXY:-false}" "amazon=${AMAZON:-false}" "huawei=${HUAWEI:-false}" "msstore=${MSSTORE:-false}" >> "$GITHUB_OUTPUT"
             list=$(printf '%s, ' "${stores[@]}")
-            echo "Again to ${list%, }, from the foss APKs of the GitHub release $REF_NAME" >> "$GITHUB_STEP_SUMMARY"
+            echo "Again to ${list%, }, from the files of the GitHub release $REF_NAME" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          printf '%s\n' galaxy=false amazon=false huawei=false >> "$GITHUB_OUTPUT"
+          printf '%s\n' galaxy=false amazon=false huawei=false msstore=false >> "$GITHUB_OUTPUT"
           if [ "$FDROID" = true ]; then
             if [ "$PUBLISH" = true ]; then
               echo "::error::publish and fdroid together: a release publishes the F-Droid repository anyway"
@@ -208,7 +228,7 @@ jobs:
               exit 1
             fi
             echo "publish=true" >> "$GITHUB_OUTPUT"
-            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release with the desktop installers, the F-Droid repository, the Galaxy Store, the Amazon Appstore and Huawei AppGallery" >> "$GITHUB_STEP_SUMMARY"
+            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release with the desktop installers, the F-Droid repository, the Galaxy Store, the Amazon Appstore, Huawei AppGallery and the Microsoft Store" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
             echo "Dry run on the $REF_TYPE $REF_NAME: built, signed and checked, not published" >> "$GITHUB_STEP_SUMMARY"
@@ -223,12 +243,13 @@ jobs:
           GALAXY: ${{ steps.mode.outputs.galaxy }}
           AMAZON: ${{ steps.mode.outputs.amazon }}
           HUAWEI: ${{ steps.mode.outputs.huawei }}
+          MSSTORE: ${{ steps.mode.outputs.msstore }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
         run: |
           android=true ios=true desktop=true
-          if [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ]; then
+          if [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ]; then
             android=false ios=false desktop=false
           elif [ "$DESKTOP_ONLY" = true ]; then
             android=false ios=false
@@ -239,7 +260,7 @@ jobs:
             android_files='^app/src-tauri/gen/android/app/(build\.gradle\.kts$|src/(play|foss)/)|^app/achievements-play\.json$|^app/fdroid/|^scripts/(fdroid-repo|foss-apk|galaxy-store|amazon-appstore|huawei-appgallery)\.ts$'
             grep -qE "$both|$android_files" <<< "$files" || android=false
             grep -qE "$both|^app/src-tauri/gen/apple/|^app/src-tauri/Info\.ios\.plist$" <<< "$files" || ios=false
-            grep -qE "$both|^app/src-tauri/(tauri\.conf\.json$|icons/)" <<< "$files" || desktop=false
+            grep -qE "$both|^app/src-tauri/(tauri\.conf\.json$|icons/)|^scripts/microsoft-store\.ts$" <<< "$files" || desktop=false
           fi
           if [ "$ios" = true ] && { [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; }; then
             ios=false
@@ -339,7 +360,10 @@ jobs:
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall -y trunk@0.22.0
+      # The Microsoft Store's app links its update to its page in the Store (api::app)
       - name: Build
+        env:
+          HASHI_MS_STORE_ID: ${{ vars.MS_STORE_APP_ID }}
         run: pnpm run app:build --locked
       - uses: actions/upload-artifact@v7
         with:
@@ -994,6 +1018,46 @@ jobs:
           args=(--ci --bundles "$BUNDLES" --config "$config")
           if [ -n "$TARGET" ]; then args+=(--target "$TARGET"); fi
           cargo tauri build "${args[@]}"
+      # Windows: the MSIX package of this architecture for the Microsoft Store (docs/stores.md,
+      # Microsoft Store): the same hashi.exe in a package folder with its manifest and logos
+      # (scripts/microsoft-store.ts), the logos' sizes indexed by MakePri, packed by MakeAppx, which
+      # checks the manifest against its schema. Unsigned: the Store signs it. "Microsoft Store
+      # package" bundles both architectures.
+      - if: matrix.system == 'windows'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: matrix.system == 'windows'
+        name: MSIX package
+        shell: pwsh
+        env:
+          MS_STORE_IDENTITY_NAME: ${{ vars.MS_STORE_IDENTITY_NAME }}
+          MS_STORE_PUBLISHER: ${{ vars.MS_STORE_PUBLISHER }}
+          MS_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.MS_STORE_PUBLISHER_DISPLAY_NAME }}
+          MS_STORE_DISPLAY_NAME: ${{ vars.MS_STORE_DISPLAY_NAME }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          # The newest Windows SDK's tools
+          $sdk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64\makeappx.exe" |
+            Sort-Object { [version]$_.Directory.Parent.Name } | Select-Object -Last 1 | ForEach-Object { $_.DirectoryName }
+          if (-not $sdk) { throw 'no Windows SDK with makeappx.exe' }
+          "Windows SDK tools: $sdk"
+          $layout = Join-Path $env:RUNNER_TEMP "msix-$env:ARCH"
+          node scripts/microsoft-store.ts layout --version $env:VERSION --arch $env:ARCH `
+            --exe "app/src-tauri/target/$env:TARGET/release/hashi.exe" --out $layout
+          $config = Join-Path $env:RUNNER_TEMP 'priconfig.xml'
+          & "$sdk\makepri.exe" createconfig /cf $config /dq en-US /pv 10.0.0 /o
+          & "$sdk\makepri.exe" new /pr $layout /cf $config /mn "$layout\AppxManifest.xml" /of "$layout\resources.pri" /o
+          New-Item -ItemType Directory -Force msix | Out-Null
+          & "$sdk\makeappx.exe" pack /d $layout /p "msix\hashi-$env:VERSION-windows-$env:ARCH.msix" /o
+          Get-ChildItem msix
+      - if: matrix.system == 'windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: msix-windows-${{ matrix.arch }}
+          path: msix
+          compression-level: 0
+          retention-days: 1
       # The installers under their release names, in release/
       - name: Collect
         run: |
@@ -1085,9 +1149,124 @@ jobs:
   # F-Droid repository's store of older versions. And the IPA, when iOS was built, and the desktop
   # installers: a failed or skipped foss, iOS or desktop build doesn't hold up Android's files (a
   # re-run of it adds them). `desktop` replaces only the desktop installers of the release.
+  # The Microsoft Store's package (docs/stores.md, Microsoft Store): the MSIX packages of both
+  # Windows architectures in one bundle, version x.y.z.0, unsigned (the Store signs it). Checked:
+  # every manifest (scripts/microsoft-store.ts: the identity, the version, x64 and arm64, full
+  # trust), then installed on this runner, signed with a throwaway certificate of its publisher
+  # that only this runner trusts, and started: the app has to show its window from the package
+  # (a screenshot in the artifact msstore-smoke). Built with the Store's identity (the
+  # repository variables MS_STORE_IDENTITY_NAME, MS_STORE_PUBLISHER), it goes onto the GitHub
+  # release and to the Store; without it with a placeholder, for the checks only.
+  msstore-package:
+    name: Microsoft Store package
+    needs: [check, desktop]
+    if: ${{ !cancelled() && needs.check.outputs.desktop == 'true' }}
+    runs-on: windows-2025
+    timeout-minutes: 20
+    outputs:
+      identity: ${{ steps.bundle.outputs.identity }}
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      MS_STORE_IDENTITY_NAME: ${{ vars.MS_STORE_IDENTITY_NAME }}
+      MS_STORE_PUBLISHER: ${{ vars.MS_STORE_PUBLISHER }}
+      MS_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.MS_STORE_PUBLISHER_DISPLAY_NAME }}
+      MS_STORE_DISPLAY_NAME: ${{ vars.MS_STORE_DISPLAY_NAME }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: msix-windows-*
+          path: msix
+          merge-multiple: true
+      - id: bundle
+        name: Bundle
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $sdk = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64\makeappx.exe" |
+            Sort-Object { [version]$_.Directory.Parent.Name } | Select-Object -Last 1 | ForEach-Object { $_.DirectoryName }
+          if (-not $sdk) { throw 'no Windows SDK with makeappx.exe' }
+          "sdk=$sdk" >> $env:GITHUB_OUTPUT
+          Get-ChildItem msix
+          New-Item -ItemType Directory -Force release | Out-Null
+          & "$sdk\makeappx.exe" bundle /d msix /p "release\hashi-$env:VERSION-windows-store.msixbundle" /bv "$env:VERSION.0" /o
+          if ($env:MS_STORE_IDENTITY_NAME -and $env:MS_STORE_PUBLISHER) {
+            "identity=store" >> $env:GITHUB_OUTPUT
+          } else {
+            "::notice::No Store identity in the repository variables (MS_STORE_IDENTITY_NAME, MS_STORE_PUBLISHER), the MSIX bundle has a placeholder: checked, not released"
+            "identity=placeholder" >> $env:GITHUB_OUTPUT
+          }
+      # The bundle's and every package's manifest, as the upload checks them
+      - name: Check
+        run: node scripts/microsoft-store.ts release --version $env:VERSION --dry-run "release/hashi-$env:VERSION-windows-store.msixbundle"
+      - name: Install and start
+        env:
+          SDK: ${{ steps.bundle.outputs.sdk }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $placeholder = -not ($env:MS_STORE_IDENTITY_NAME -and $env:MS_STORE_PUBLISHER)
+          $name = if ($placeholder) { 'rs.hashi.placeholder' } else { $env:MS_STORE_IDENTITY_NAME.Trim() }
+          $publisher = if ($placeholder) { 'CN=Hashi Placeholder' } else { $env:MS_STORE_PUBLISHER.Trim() }
+          # A throwaway certificate of the package's publisher, trusted by this runner only, signs a copy
+          $cert = New-SelfSignedCertificate -Type Custom -Subject $publisher -KeyUsage DigitalSignature `
+            -FriendlyName 'Hashi MSIX test' -CertStoreLocation Cert:\CurrentUser\My `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+          Export-Certificate -Cert $cert -FilePath "$env:RUNNER_TEMP\test.cer" | Out-Null
+          Import-Certificate -FilePath "$env:RUNNER_TEMP\test.cer" -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
+          $copy = Join-Path $env:RUNNER_TEMP 'test.msixbundle'
+          Copy-Item "release\hashi-$env:VERSION-windows-store.msixbundle" $copy
+          & "$env:SDK\signtool.exe" sign /fd SHA256 /sha1 $cert.Thumbprint /s My $copy
+          Add-AppxPackage -Path $copy
+          $package = Get-AppxPackage -Name $name
+          if (-not $package) { throw "the package $name isn't installed" }
+          "Installed $($package.PackageFullName) ($($package.Architecture)) in $($package.InstallLocation)"
+          $webview = Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -ErrorAction SilentlyContinue
+          "WebView2: $($webview.pv)"
+          Start-Process "shell:AppsFolder\$($package.PackageFamilyName)!Hashi"
+          Start-Sleep -Seconds 20
+          $process = Get-Process hashi -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$($package.InstallLocation)*" }
+          if (-not $process) { throw 'the app from the package is not running after 20 s' }
+          New-Item -ItemType Directory -Force smoke | Out-Null
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $image = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
+          [System.Drawing.Graphics]::FromImage($image).CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+          $image.Save((Join-Path (Get-Location) 'smoke\msix.png'))
+          $title = $process.MainWindowTitle
+          "Running: $($process.Path), window '$title'"
+          if ($title -ne 'Hashi') { throw "the app's window is '$title', not Hashi" }
+          # What desktop.rs looks for to tell the page it is the Store's app (msstore)
+          if (-not (Test-Path (Join-Path (Split-Path $process.Path) 'AppxManifest.xml'))) { throw 'no AppxManifest.xml beside the program' }
+          "The app from the package ($($package.Architecture)) runs and shows its window" >> $env:GITHUB_STEP_SUMMARY
+          $process | Stop-Process
+          Remove-AppxPackage $package.PackageFullName
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: msstore-smoke
+          path: smoke
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Size
+        run: |
+          $lines = @("| Microsoft Store $env:VERSION | size |", '|---|---|')
+          $lines += Get-ChildItem release | ForEach-Object { "| $($_.Name) | $([math]::Round($_.Length / 1MB, 1)) MB |" }
+          $lines >> $env:GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v7
+        with:
+          name: msstore-release
+          path: release
+          compression-level: 0
+          retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
+
   release:
     name: GitHub release
-    needs: [check, android, android-foss, ios, desktop]
+    needs: [check, android, android-foss, ios, desktop, msstore-package]
     if: >-
       ${{ !cancelled() && ((needs.check.outputs.publish == 'true' && needs.android.result == 'success')
       || (needs.check.outputs.desktop_only == 'true' && needs.desktop.result == 'success')) }}
@@ -1118,6 +1297,12 @@ jobs:
           pattern: desktop-*
           path: release
           merge-multiple: true
+      # The MSIX bundle, when it has the Store's identity
+      - if: needs.msstore-package.result == 'success' && needs.msstore-package.outputs.identity == 'store'
+        uses: actions/download-artifact@v8
+        with:
+          name: msstore-release
+          path: release
       # Only the desktop: the release's other files for its notes, without its old desktop ones
       - if: needs.check.outputs.desktop_only == 'true'
         name: The release's other files
@@ -1191,6 +1376,7 @@ jobs:
                   *-windows-x64-setup.exe) echo "- \`$name\`: Windows (x64), the installer; it needs no admin rights." ;;
                   *-windows-arm64-setup.exe) echo "- \`$name\`: Windows on ARM (arm64), the installer." ;;
                   *-windows-x64.msi) echo "- \`$name\`: Windows (x64) as an MSI package, for installing on many computers." ;;
+                  *-windows-store.msixbundle) echo "- \`$name\`: the package uploaded to the Microsoft Store (x64 and arm64). Microsoft signs it there, so it doesn't install by hand." ;;
                   *-macos-universal.dmg) echo "- \`$name\`: macOS 11 or newer, Apple silicon and Intel." ;;
                   *-macos-universal.app.zip) echo "- \`$name\`: the same Mac app, zipped." ;;
                   *-linux-*.AppImage) echo "- \`$name\`: Linux, runs on most distributions without installing (chmod +x)." ;;
@@ -1719,3 +1905,83 @@ jobs:
           fi
           for abi in $ABIS; do args+=("release/hashi-$VERSION-foss-$abi.apk"); done
           node scripts/huawei-appgallery.ts "${args[@]}"
+
+  # The Microsoft Store (docs/stores.md, Microsoft Store), with scripts/microsoft-store.ts: the MSIX
+  # bundle (x64 and arm64) becomes the package of the app's next submission (a copy of the
+  # published one, or the draft a run before or Partner Center left), its only one; the release
+  # notes every language's "what's new"; then the submission is committed, which sends it to
+  # Microsoft's certification; it goes live after it. A game in the Store has to be an MSIX
+  # package, installed and updated by the Store only (Store Policies 10.2.5): no self-updating.
+  # Skipped with a notice until the Entra application's secrets are set (MS_STORE_TENANT_ID,
+  # MS_STORE_CLIENT_ID, MS_STORE_CLIENT_SECRET) and the variable MS_STORE_APP_ID (the Store ID);
+  # the API only makes the submissions after the first, which is made in Partner Center. A dry
+  # run checks the bundle and calls nobody. Repository variable: MS_STORE_SUBMIT (false: leave
+  # the submission as a draft for Partner Center).
+  msstore:
+    name: Upload to Microsoft Store
+    needs: [check, msstore-package]
+    if: >-
+      ${{ !cancelled() && (needs.check.outputs.msstore == 'true'
+      || needs.msstore-package.result == 'success') }}
+    runs-on: ubuntu-24.04
+    # The commit waits up to 20 minutes for Microsoft to take the submission
+    timeout-minutes: 40
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      BUNDLE: hashi-${{ needs.check.outputs.version }}-windows-store.msixbundle
+      SUBMIT: ${{ vars.MS_STORE_SUBMIT != 'false' }}
+      UPLOAD: ${{ needs.check.outputs.publish == 'true' || needs.check.outputs.msstore == 'true' }}
+      MS_STORE_APP_ID: ${{ vars.MS_STORE_APP_ID }}
+      MS_STORE_IDENTITY_NAME: ${{ vars.MS_STORE_IDENTITY_NAME }}
+      MS_STORE_PUBLISHER: ${{ vars.MS_STORE_PUBLISHER }}
+      MS_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.MS_STORE_PUBLISHER_DISPLAY_NAME }}
+      MS_STORE_DISPLAY_NAME: ${{ vars.MS_STORE_DISPLAY_NAME }}
+    steps:
+      - id: account
+        name: Entra application
+        env:
+          MS_STORE_TENANT_ID: ${{ secrets.MS_STORE_TENANT_ID }}
+          MS_STORE_CLIENT_ID: ${{ secrets.MS_STORE_CLIENT_ID }}
+          MS_STORE_CLIENT_SECRET: ${{ secrets.MS_STORE_CLIENT_SECRET }}
+        run: |
+          if [ -n "$MS_STORE_TENANT_ID" ] && [ -n "$MS_STORE_CLIENT_ID" ] && [ -n "$MS_STORE_CLIENT_SECRET" ] && [ -n "$MS_STORE_APP_ID" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          elif [ "$UPLOAD" = true ]; then
+            echo "::notice::No Microsoft Store Entra application in this run's secrets (MS_STORE_TENANT_ID, MS_STORE_CLIENT_ID, MS_STORE_CLIENT_SECRET) or no MS_STORE_APP_ID variable, nothing is uploaded to the Microsoft Store"
+            echo "No Microsoft Store Entra application in this run's secrets (or no MS_STORE_APP_ID variable), nothing is uploaded to the Microsoft Store (once they are set: \`gh workflow run app-release.yml --ref app-v$VERSION -f msstore=true\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            # A dry run needs no secrets
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/checkout@v7
+      # Node 26 runs scripts/microsoft-store.ts
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.msstore != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: msstore-release
+          path: release
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.msstore == 'true'
+        name: The GitHub release's bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "$BUNDLE" -D release
+          ls -l release
+      - if: steps.account.outputs.ready == 'true'
+        name: Upload
+        env:
+          MS_STORE_TENANT_ID: ${{ secrets.MS_STORE_TENANT_ID }}
+          MS_STORE_CLIENT_ID: ${{ secrets.MS_STORE_CLIENT_ID }}
+          MS_STORE_CLIENT_SECRET: ${{ secrets.MS_STORE_CLIENT_SECRET }}
+        run: |
+          args=(release --version "$VERSION" --whatsnew app/store/whatsnew/whatsnew-en-US)
+          if [ "$SUBMIT" = true ]; then args+=(--submit); fi
+          if [ "$UPLOAD" != true ]; then args+=(--dry-run); fi
+          node scripts/microsoft-store.ts "${args[@]}" "release/$BUNDLE"

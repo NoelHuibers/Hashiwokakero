@@ -4,20 +4,23 @@ name: Store listing
 # every language, framed by store/templates), uploaded with fastlane (fastlane/Fastfile). And the
 # Galaxy Store's, the same texts and phone screenshots, with scripts/galaxy-store.ts, the Amazon
 # Appstore's, the same texts and the 7" tablet screenshots, with scripts/amazon-appstore.ts, and
-# Huawei AppGallery's, the same texts and phone screenshots, with scripts/huawei-appgallery.ts.
+# Huawei AppGallery's, the same texts and phone screenshots, with scripts/huawei-appgallery.ts,
+# and the Microsoft Store's, the same texts and the desktop screenshots, with
+# scripts/microsoft-store.ts.
 #
 # A pull request that changes them checks the texts (store/validate.ts and its tests), makes every
 # image and keeps them as the artifact "store-listing-images" to look at, and checks them against
-# the Galaxy Store's, the Amazon Appstore's and AppGallery's rules. It uploads nothing.
+# the Galaxy Store's, the Amazon Appstore's, AppGallery's and the Microsoft Store's rules. It
+# uploads nothing.
 #
 # By hand (Actions, Store listing, Run workflow, or
 # `gh workflow run store-listing.yml -f platform=both -f what=all`):
-# - platform: play, apple, both (the two), galaxy (the Galaxy Store), amazon (the Amazon Appstore)
-#   or huawei (Huawei AppGallery)
+# - platform: play, apple, both (the two), galaxy (the Galaxy Store), amazon (the Amazon Appstore),
+#   huawei (Huawei AppGallery) or microsoft (the Microsoft Store)
 # - what: text, images or all
 # - validate_only: Google Play checks the listing without saving it (App Store Connect, the Galaxy
-#   Store, the Amazon Appstore and AppGallery have no such check: their upload is skipped, the
-#   local checks run)
+#   Store, the Amazon Appstore, AppGallery and the Microsoft Store have no such check: their upload
+#   is skipped, the local checks run)
 # - play_version_code: the release of the internal track supply hangs the listing on, when the
 #   track has more than one
 # Only the listing is uploaded: no binary, release, track, review, age rating, privacy labels,
@@ -37,12 +40,13 @@ on:
       - public/icon-512.png
       - app/store/amazon/**
       - scripts/huawei-appgallery.ts
+      - scripts/microsoft-store.ts
   workflow_dispatch:
     inputs:
       platform:
         description: The store
         type: choice
-        options: [both, play, apple, galaxy, amazon, huawei]
+        options: [both, play, apple, galaxy, amazon, huawei, microsoft]
         default: both
       what:
         description: What to upload
@@ -50,7 +54,7 @@ on:
         options: [all, text, images]
         default: all
       validate_only:
-        description: Google Play only checks the listing, saves nothing (the App Store, Galaxy Store, Amazon Appstore and AppGallery uploads are skipped)
+        description: Google Play only checks the listing, saves nothing (the App Store, Galaxy Store, Amazon Appstore, AppGallery and Microsoft Store uploads are skipped)
         type: boolean
         default: false
       play_version_code:
@@ -88,6 +92,8 @@ jobs:
       - run: node scripts/amazon-appstore.ts listing --dry-run
       # And AppGallery's (sends nothing)
       - run: node scripts/huawei-appgallery.ts listing --dry-run
+      # And the Microsoft Store's (sends nothing)
+      - run: node scripts/microsoft-store.ts listing --dry-run
       - name: Upload tree (texts)
         run: node store/assemble.ts --text
 
@@ -160,7 +166,7 @@ jobs:
           path: browser.tar
           retention-days: 1
 
-  # Every scene in every language, phone and tablet, framed for each store, in the Playwright
+  # Every scene in every language, phone, tablet and desktop, framed for each store, in the Playwright
   # image the browser tests use (its Chromium and fonts). The languages split over five runners
   # (Playwright's --shard, four languages each, side by side on the runner's four cores): on one
   # runner the twenty took over 40 minutes.
@@ -235,7 +241,7 @@ jobs:
             echo "### Store images"
             echo
             echo "Every language's images are in the artifact \`store-listing-images\`: \`<language>/<frame>/<n>-<scene>.png\`"
-            echo "(\`iphone-69\`, \`ipad-13\`, \`play-phone\`, \`play-tablet-7\`, \`play-tablet-10\`) and \`<language>/feature.png\`."
+            echo "(\`iphone-69\`, \`ipad-13\`, \`play-phone\`, \`play-tablet-7\`, \`play-tablet-10\`, \`desktop\`) and \`<language>/feature.png\`."
             echo
             echo "| Language | Images |"
             echo "|---|---|"
@@ -505,3 +511,50 @@ jobs:
             exit 1
           fi
           node scripts/huawei-appgallery.ts "${args[@]}"
+
+  # The Microsoft Store (docs/stores.md, Microsoft Store): the texts (description, short
+  # description, features) in the Store's languages and, unless text, the desktop screenshots,
+  # into the app's next submission (the draft, or a new one), with scripts/microsoft-store.ts. Not
+  # submitted: the next release commits it with its package (or Partner Center does). A pull
+  # request and validate_only: the Store's rules checked against the texts and this run's images,
+  # nothing sent.
+  microsoft:
+    name: Upload to Microsoft Store
+    if: >-
+      always() && needs.validate.result == 'success' && (
+      (github.event_name == 'pull_request' && needs.images.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.platform == 'microsoft' &&
+      (inputs.what == 'text' || needs.images.result == 'success')))
+    needs: [validate, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EVENT: ${{ github.event_name }}
+      WHAT: ${{ inputs.what }}
+      VALIDATE_ONLY: ${{ inputs.validate_only }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: github.event_name == 'pull_request' || inputs.what != 'text'
+        uses: actions/download-artifact@v8
+        with:
+          name: store-listing-images
+          path: target/store/images
+      - name: Upload
+        env:
+          MS_STORE_TENANT_ID: ${{ secrets.MS_STORE_TENANT_ID }}
+          MS_STORE_CLIENT_ID: ${{ secrets.MS_STORE_CLIENT_ID }}
+          MS_STORE_CLIENT_SECRET: ${{ secrets.MS_STORE_CLIENT_SECRET }}
+          MS_STORE_APP_ID: ${{ vars.MS_STORE_APP_ID }}
+        run: |
+          args=(listing)
+          if [ "$EVENT" = pull_request ] || [ "$WHAT" != text ]; then args+=(--images target/store/images); fi
+          if [ "$EVENT" = pull_request ] || [ "$VALIDATE_ONLY" = true ]; then
+            args+=(--dry-run)
+          elif [ -z "$MS_STORE_TENANT_ID" ] || [ -z "$MS_STORE_CLIENT_ID" ] || [ -z "$MS_STORE_CLIENT_SECRET" ] || [ -z "$MS_STORE_APP_ID" ]; then
+            echo "::error::The MS_STORE_TENANT_ID, MS_STORE_CLIENT_ID and MS_STORE_CLIENT_SECRET secrets and the MS_STORE_APP_ID variable are needed"
+            exit 1
+          fi
+          node scripts/microsoft-store.ts "${args[@]}"

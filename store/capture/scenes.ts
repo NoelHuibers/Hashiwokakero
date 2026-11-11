@@ -24,7 +24,11 @@ export interface Scene {
    * What is scrolled to the top of the screen, below the header, on a screen; the page's top
    * without. Found by kanji, which are the same in every language.
    */
-  scrollTo?: { screens: ('phone' | 'tablet')[]; target: (page: Page) => Locator; above?: number };
+  scrollTo?: {
+    screens: ('phone' | 'tablet' | 'desktop')[];
+    target: (page: Page) => Locator;
+    above?: number;
+  };
 }
 
 export const SCENES: Scene[] = [
@@ -127,7 +131,7 @@ export const SCENES: Scene[] = [
     user: ME,
     path: '/account',
     scrollTo: {
-      screens: ['phone', 'tablet'],
+      screens: ['phone', 'tablet', 'desktop'],
       target: (page) => page.locator('span', { hasText: /^判子帳$/ }).first(),
       above: 40,
     },
