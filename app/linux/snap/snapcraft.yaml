@@ -46,11 +46,11 @@ parts:
     plugin: dump
     source: snap/local/hashi.deb
     source-type: deb
-    # Summary, description, links (and the version of its release) from the MetaInfo
+    # Title, summary, description, links and the version (its release's, the .deb's) from the
+    # MetaInfo
     parse-info: [usr/share/metainfo/rs.hashi.metainfo.xml]
     override-build: |
       craftctl default
-      craftctl set version="$(dpkg-deb -f "$CRAFT_PROJECT_DIR/snap/local/hashi.deb" Version)"
       # The icon by its path in the snap: the host's icon theme doesn't have it
       sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/512x512/apps/hashi.png|' \
         "$CRAFT_PART_INSTALL/usr/share/applications/Hashi.desktop"
