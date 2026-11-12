@@ -28,7 +28,7 @@ export const SCREENS: Record<Screen['id'], Screen> = {
 /** A store image: its size, the screen in it, and the store's folder for it. */
 export interface Frame {
   id: string;
-  /** Whose: the App Store's, Google Play's, or the desktop stores' (Microsoft Store, Steam, itch.io). */
+  /** Whose: the App Store's, Google Play's, or the desktop stores' (Microsoft Store, Snap Store). */
   store: 'apple' | 'play' | 'desktop';
   width: number;
   height: number;
@@ -93,7 +93,7 @@ export const FRAMES: Frame[] = [
     sizes: PORTRAIT,
   },
   // The desktop stores: 16:9, 1920 × 1080, the window of the desktop app. The Microsoft Store
-  // takes 1366 × 768 or larger; Steam wants 16:9 at 1920 × 1080 (step 10 of docs/stores.md).
+  // takes 1366 × 768 or larger, the Snap Store any size up to 2 MB.
   {
     id: 'desktop',
     store: 'desktop',

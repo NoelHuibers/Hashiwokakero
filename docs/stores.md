@@ -15,13 +15,12 @@ until its secrets exist, so its pull request can be merged before the account is
 | 6 | Desktop builds (Windows, macOS, Linux) | Tauri installers: Windows x64/arm64, macOS universal, Linux x64/arm64 | built on each release, macOS signing is an owner task |
 | 7 | Microsoft Store | the Windows builds as one MSIX bundle (x64, arm64), Microsoft signs it | upload in CI, the account is an owner task |
 | 8 | Snap Store | the Linux `.deb`s (amd64, arm64) as snaps, core24, strict | upload in CI, the account and the name are owner tasks |
-| 9 | itch.io | | |
-| 10 | Steam | | |
 
 Not planned: IzzyOnDroid (its policy turns away apps written with AI), Flathub (its manifests
 must not be written with AI, and AI-written apps are up to its reviewers, see
 [Flathub](#flathub-not-planned)), the Chinese stores (they need a Chinese company), Poki and
-CrazyGames (they need their ads SDKs).
+CrazyGames (they need their ads SDKs), itch.io and Steam (left out by the owner on
+2026-11-12).
 
 ## The builds and keys
 
@@ -760,7 +759,7 @@ broken styling, that's where to look.
 Each release tag also builds the app for Windows, macOS and Linux and puts the installers on the
 tag's GitHub release: the five jobs "Build desktop" of app-release.yml, from the same web bundle
 and the same Tauri crate as the phones. They are the source of the desktop stores that follow
-(7 Microsoft Store, 8 Flathub and Snap, 9 itch.io, 10 Steam), and a download for anyone who
+(7 Microsoft Store, 8 Snap), and a download for anyone who
 installs by hand. What the app does differently on a computer is in
 [app/README.md](../app/README.md#desktop).
 
@@ -781,8 +780,8 @@ installs by hand. What the app does differently on a computer is in
   native installer: cross-compiled on the x64 runner, whose Visual Studio has the ARM64 tools, so
   it costs no extra runner; Tauri makes MSIs (WiX 3) for x86 and x64 only, so it is NSIS only.
 - **macOS**: one universal app for Apple silicon and Intel, as a disk image (drag to
-  Applications) and as a zip of the app (for itch.io and Steam, which unpack it themselves; `ditto`
-  keeps its signature). macOS 11 at least: the page runs in the system's Safari (`WKWebView`), and
+  Applications) and as a zip of the app (for a store that unpacks it itself; `ditto` keeps its
+  signature). macOS 11 at least: the page runs in the system's Safari (`WKWebView`), and
   the CSS needs Safari 16.4, which macOS 11 Big Sur can still install (a Mac on 11 or 12 with an
   older Safari shows the page unstyled until Safari is updated). `macos-26`, GitHub's regular Apple
   silicon image: the desktop app needs none of the iOS SDK that `xcode-27` is there for.
@@ -847,8 +846,8 @@ skipped like the others while they are missing.
 **No auto-updater** (Tauri's updater plugin) for now:
 
 - Most desktop users will come through stores that update the app themselves (Microsoft Store,
-  Flathub, Snap, Steam, the itch app), and their rules forbid an app that updates itself. The
-  updater would have to be off in their builds, so every system would need two builds.
+  Snap), and their rules forbid an app that updates itself. The updater would have to be off in
+  their builds, so every system would need two builds.
 - It needs an updater key pair that can never be lost (without it, installed apps take no update
   ever again), a `latest.json` per release, and signed builds on Windows and macOS for a smooth
   update (an unsigned update brings the SmartScreen warning back each time).
@@ -1031,8 +1030,8 @@ The screenshots are a new frame of the store images (`desktop` in `store/capture
 16:9, 1920 × 1080, the desktop app's window with its title bar, the page in the website's desktop
 layout at 1280 × 800 (twice), under the same captions as the phones'. The Store takes desktop
 screenshots from 1366 × 768, up to 10. Play's tablet images (portrait, 1440 × 2560) would have
-passed too, but would show a phone's layout in a frame of an iPad on a Windows app's page; Steam
-(step 10) wants 16:9 at 1920 × 1080 as well, and itch.io (step 9) takes them too. Not committed:
+passed too, but would show a phone's layout in a frame of an iPad on a Windows app's page. The Snap
+Store takes them too. Not committed:
 the next release commits it with its package (or submit it in Partner Center). A pull request of
 the store listing checks the texts and that run's images against the Store's rules.
 
