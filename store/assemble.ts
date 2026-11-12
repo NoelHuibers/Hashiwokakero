@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { COVER } from './capture/devices.ts';
 import { APPLE, METADATA, PLAY, PLAY_METADATA } from './locales.ts';
 import { loadListings, ROOT, validate } from './validate.ts';
 
@@ -174,6 +175,8 @@ export function assemble({ images = true }: { images?: boolean } = {}): {
       }
     }
   }
+  // itch.io's cover (docs/stores.md, itch.io), English only: the page has one language
+  if (images) problems.push(...checkImage(path.join(IMAGES, 'en', 'cover.png'), COVER));
   if (problems.length > 0) throw new Error(`the images have problems:\n${problems.join('\n')}`);
   return { play: PLAY.length, apple: APPLE.length };
 }

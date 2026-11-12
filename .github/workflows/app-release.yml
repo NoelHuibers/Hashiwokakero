@@ -18,8 +18,10 @@ name: App release
 #   for certification.
 # - Snap Store (docs/stores.md, Snap Store): the Linux .deb of each architecture (amd64, arm64)
 #   as a snap (app/linux/snap/snapcraft.yaml), uploaded into a channel (stable by default).
+# - itch.io (docs/stores.md, itch.io): the Windows programs without installer, the Mac app, the
+#   Linux AppImages and the foss APKs, each pushed with butler into a channel of the game.
 # A GitHub release for the tag gets the bundle, a universal APK, the foss APKs, the IPA, the
-# desktop installers, the MSIX bundle and the snaps.
+# desktop installers (and the Windows programs zipped), the MSIX bundle and the snaps.
 #
 # A pull request that changes this workflow or the version script runs it as a dry run for all
 # platforms, below; one that changes the Gradle build, the Play or foss sources, the F-Droid
@@ -42,6 +44,7 @@ name: App release
 # - msstore on: builds nothing, uploads the MSIX bundle of the tag's GitHub release to the
 #   Microsoft Store (`--ref app-v1.2.3`; with the Android stores is fine too).
 # - snap on: the same with the snaps of the tag's GitHub release, to the Snap Store.
+# - itch on: the same with the desktop files and foss APKs of the tag's GitHub release, to itch.io.
 # - desktop on: builds only the desktop installers, the MSIX bundle and the snaps of the tag
 #   (`--ref app-v1.2.3`) and puts them on its GitHub release, replacing those it has, e.g. signed
 #   ones once the Developer ID certificate is in the secrets, or the bundle once the Store's
@@ -58,7 +61,8 @@ name: App release
 # MS_STORE_APP_ID); its package needs the Store's identity (the variables MS_STORE_IDENTITY_NAME,
 # MS_STORE_PUBLISHER), else it is built with a placeholder for the checks and not released. The
 # Snap Store's upload needs snapcraft's login (SNAPCRAFT_STORE_CREDENTIALS), else it is skipped
-# with a notice. The macOS build is signed with the Developer ID
+# with a notice, so is itch.io's without butler's API key (BUTLER_API_KEY, and the variable
+# ITCH_GAME). The macOS build is signed with the Developer ID
 # certificate (APPLE_DEVELOPER_ID_CERT_BASE64, APPLE_DEVELOPER_ID_CERT_PASSWORD) and notarized
 # with the App Store Connect API key: without the certificate it is built signed ad hoc, with a
 # notice.
@@ -83,6 +87,8 @@ on:
       - scripts/microsoft-store.ts
       # The snaps and the Linux MetaInfo, and the Snap Store's upload
       - scripts/snap-store.ts
+      # itch.io's builds and pushes
+      - scripts/itch-io.ts
       - app/linux/**
       # Play Games' project id (and ids) for the release's App Bundle
       - app/achievements-play.json
@@ -119,6 +125,10 @@ on:
         default: false
       snap:
         description: Only upload the snaps of this tag's GitHub release to the Snap Store again (builds nothing; the ref must be a tag app-v<x.y.z>)
+        type: boolean
+        default: false
+      itch:
+        description: Only push the desktop files and foss APKs of this tag's GitHub release to itch.io again (builds nothing; the ref must be a tag app-v<x.y.z>)
         type: boolean
         default: false
       desktop:
@@ -163,6 +173,8 @@ jobs:
       msstore: ${{ steps.mode.outputs.msstore }}
       # Only the Snap Store, from the tag's GitHub release
       snap: ${{ steps.mode.outputs.snap }}
+      # Only itch.io, from the tag's GitHub release
+      itch: ${{ steps.mode.outputs.itch }}
       # Only the desktop installers, onto the tag's GitHub release
       desktop_only: ${{ steps.mode.outputs.desktop_only }}
       android: ${{ steps.platforms.outputs.android }}
@@ -187,12 +199,13 @@ jobs:
           HUAWEI: ${{ inputs.huawei }}
           MSSTORE: ${{ inputs.msstore }}
           SNAP: ${{ inputs.snap }}
+          ITCH: ${{ inputs.itch }}
           DESKTOP: ${{ inputs.desktop }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           if [ "$DESKTOP" = true ]; then
-            if [ "$PUBLISH" = true ] || [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ] || [ "$SNAP" = true ]; then
+            if [ "$PUBLISH" = true ] || [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ] || [ "$SNAP" = true ] || [ "$ITCH" = true ]; then
               echo "::error::desktop together with another input: a release builds the desktop installers anyway, desktop is a run of its own"
               exit 1
             fi
@@ -200,7 +213,7 @@ jobs:
               echo "::error::desktop puts the installers on a tag's GitHub release, not on the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
               exit 1
             fi
-            printf '%s\n' publish=false fdroid=false galaxy=false amazon=false huawei=false msstore=false snap=false desktop_only=true >> "$GITHUB_OUTPUT"
+            printf '%s\n' publish=false fdroid=false galaxy=false amazon=false huawei=false msstore=false snap=false itch=false desktop_only=true >> "$GITHUB_OUTPUT"
             echo "The desktop installers, the MSIX bundle and the snaps of $REF_NAME, onto its GitHub release" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
@@ -211,21 +224,22 @@ jobs:
           if [ "$HUAWEI" = true ]; then stores+=("Huawei AppGallery"); fi
           if [ "$MSSTORE" = true ]; then stores+=("the Microsoft Store"); fi
           if [ "$SNAP" = true ]; then stores+=("the Snap Store"); fi
+          if [ "$ITCH" = true ]; then stores+=("itch.io"); fi
           if [ ${#stores[@]} -gt 0 ]; then
             if [ "$PUBLISH" = true ] || [ "$FDROID" = true ]; then
-              echo "::error::galaxy, amazon, huawei, msstore or snap together with publish or fdroid: a release uploads to the stores anyway, fdroid is a run of its own"
+              echo "::error::galaxy, amazon, huawei, msstore, snap or itch together with publish or fdroid: a release uploads to the stores anyway, fdroid is a run of its own"
               exit 1
             fi
             if [ "$REF_TYPE" != tag ]; then
-              echo "::error::galaxy, amazon, huawei, msstore and snap upload the files of a tag's GitHub release, not of the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
+              echo "::error::galaxy, amazon, huawei, msstore, snap and itch upload the files of a tag's GitHub release, not of the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
               exit 1
             fi
-            printf '%s\n' publish=false fdroid=false "galaxy=${GALAXY:-false}" "amazon=${AMAZON:-false}" "huawei=${HUAWEI:-false}" "msstore=${MSSTORE:-false}" "snap=${SNAP:-false}" >> "$GITHUB_OUTPUT"
+            printf '%s\n' publish=false fdroid=false "galaxy=${GALAXY:-false}" "amazon=${AMAZON:-false}" "huawei=${HUAWEI:-false}" "msstore=${MSSTORE:-false}" "snap=${SNAP:-false}" "itch=${ITCH:-false}" >> "$GITHUB_OUTPUT"
             list=$(printf '%s, ' "${stores[@]}")
             echo "Again to ${list%, }, from the files of the GitHub release $REF_NAME" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          printf '%s\n' galaxy=false amazon=false huawei=false msstore=false snap=false >> "$GITHUB_OUTPUT"
+          printf '%s\n' galaxy=false amazon=false huawei=false msstore=false snap=false itch=false >> "$GITHUB_OUTPUT"
           if [ "$FDROID" = true ]; then
             if [ "$PUBLISH" = true ]; then
               echo "::error::publish and fdroid together: a release publishes the F-Droid repository anyway"
@@ -243,7 +257,7 @@ jobs:
               exit 1
             fi
             echo "publish=true" >> "$GITHUB_OUTPUT"
-            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release with the desktop installers, the F-Droid repository, the Galaxy Store, the Amazon Appstore, Huawei AppGallery, the Microsoft Store and the Snap Store" >> "$GITHUB_STEP_SUMMARY"
+            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release with the desktop installers, the F-Droid repository, the Galaxy Store, the Amazon Appstore, Huawei AppGallery, the Microsoft Store, the Snap Store and itch.io" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
             echo "Dry run on the $REF_TYPE $REF_NAME: built, signed and checked, not published" >> "$GITHUB_STEP_SUMMARY"
@@ -260,12 +274,13 @@ jobs:
           HUAWEI: ${{ steps.mode.outputs.huawei }}
           MSSTORE: ${{ steps.mode.outputs.msstore }}
           SNAP: ${{ steps.mode.outputs.snap }}
+          ITCH: ${{ steps.mode.outputs.itch }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
         run: |
           android=true ios=true desktop=true
-          if [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ] || [ "$SNAP" = true ]; then
+          if [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ] || [ "$SNAP" = true ] || [ "$ITCH" = true ]; then
             android=false ios=false desktop=false
           elif [ "$DESKTOP_ONLY" = true ]; then
             android=false ios=false
@@ -276,7 +291,7 @@ jobs:
             android_files='^app/src-tauri/gen/android/app/(build\.gradle\.kts$|src/(play|foss)/)|^app/achievements-play\.json$|^app/fdroid/|^scripts/(fdroid-repo|foss-apk|galaxy-store|amazon-appstore|huawei-appgallery)\.ts$'
             grep -qE "$both|$android_files" <<< "$files" || android=false
             grep -qE "$both|^app/src-tauri/gen/apple/|^app/src-tauri/Info\.ios\.plist$" <<< "$files" || ios=false
-            grep -qE "$both|^app/src-tauri/(tauri\.conf\.json$|icons/)|^app/linux/|^scripts/(microsoft-store|snap-store)\.ts$" <<< "$files" || desktop=false
+            grep -qE "$both|^app/src-tauri/(tauri\.conf\.json$|icons/)|^app/linux/|^scripts/(microsoft-store|snap-store|itch-io)\.ts$" <<< "$files" || desktop=false
           fi
           if [ "$ios" = true ] && { [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; }; then
             ios=false
@@ -1092,7 +1107,10 @@ jobs:
           path: msix
           compression-level: 0
           retention-days: 1
-      # The installers under their release names, in release/
+      # The installers under their release names, in release/. On Windows also the program alone,
+      # zipped: everything the installers put on the PC (Tauri's program is self-contained, the
+      # page is inside it, WebView2 is Windows'), for itch.io and Steam, whose apps unpack and update
+      # it themselves, and for those who want no installer.
       - name: Collect
         run: |
           bundle="app/src-tauri/target/${TARGET:+$TARGET/}release/bundle"
@@ -1112,6 +1130,7 @@ jobs:
             windows)
               cp "$(one "$bundle"/nsis/*-setup.exe)" "release/$name-setup.exe"
               if [[ "$BUNDLES" == *msi* ]]; then cp "$(one "$bundle"/msi/*.msi)" "release/$name.msi"; fi
+              (cd "app/src-tauri/target/$TARGET/release" && 7z a -tzip -mx=9 "$GITHUB_WORKSPACE/release/$name.zip" hashi.exe)
               ;;
             macos)
               cp "$(one "$bundle"/dmg/*.dmg)" "release/$name.dmg"
@@ -1141,6 +1160,11 @@ jobs:
               grep -qE ' (\./)?usr/share/applications/Hashi\.desktop$' <<< "$deb_files" || fail "the package has no desktop entry"
               grep -qE ' (\./)?usr/share/metainfo/rs\.hashi\.metainfo\.xml$' <<< "$deb_files" || fail "the package has no MetaInfo"
               grep -qx /usr/share/metainfo/rs.hashi.metainfo.xml <<< "$rpm_files" || fail "the rpm has no MetaInfo"
+              ;;
+            windows)
+              # The zip: the program alone, at its top
+              entries=$(7z l -ba -slt "$name.zip" | sed -n 's/^Path = //p' | tr -d '\r')
+              [ "$entries" = hashi.exe ] || fail "the zip has $(tr '\n' ' ' <<< "$entries"), not hashi.exe alone"
               ;;
             macos)
               app="$RUNNER_TEMP/app"
@@ -1544,6 +1568,8 @@ jobs:
                 case "$name" in
                   *-windows-x64-setup.exe) echo "- \`$name\`: Windows (x64), the installer; it needs no admin rights." ;;
                   *-windows-arm64-setup.exe) echo "- \`$name\`: Windows on ARM (arm64), the installer." ;;
+                  *-windows-x64.zip) echo "- \`$name\`: the same Windows (x64) program without installer: unzip it anywhere and start hashi.exe (it needs WebView2, which Windows 11 has)." ;;
+                  *-windows-arm64.zip) echo "- \`$name\`: the same for Windows on ARM (arm64)." ;;
                   *-windows-x64.msi) echo "- \`$name\`: Windows (x64) as an MSI package, for installing on many computers." ;;
                   *-windows-store.msixbundle) echo "- \`$name\`: the package uploaded to the Microsoft Store (x64 and arm64). Microsoft signs it there, so it doesn't install by hand." ;;
                   *-macos-universal.dmg) echo "- \`$name\`: macOS 11 or newer, Apple silicon and Intel." ;;
@@ -2226,3 +2252,94 @@ jobs:
             args+=(--dry-run)
           fi
           node scripts/snap-store.ts "${args[@]}" release/hashi-"$VERSION"-linux-*.snap
+
+  # itch.io (docs/stores.md, itch.io), with scripts/itch-io.ts and butler, itch.io's own tool: each
+  # release file itch.io gets goes into a channel of the game (the repository variable
+  # ITCH_GAME, user/game): the Windows programs without installer (the zips), the Mac app, the
+  # Linux AppImages and the foss APKs, with the app's version. The itch app updates its installs
+  # from there, downloading only what changed. A rerun pushes nothing twice; a failed build's
+  # channel is left out with a warning. Skipped with a notice until butler's API key is in the
+  # secrets (BUTLER_API_KEY) and ITCH_GAME is set; the game page is made by hand. A dry run stages
+  # and checks the builds (what the itch app would start) and calls nobody.
+  itch:
+    name: Upload to itch.io
+    needs: [check, desktop, android-foss]
+    if: >-
+      ${{ !cancelled() && (needs.check.outputs.itch == 'true'
+      || needs.desktop.result == 'success' || needs.desktop.result == 'failure'
+      || (needs.android-foss.result == 'success' && needs.android-foss.outputs.built == 'true')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      ITCH_GAME: ${{ vars.ITCH_GAME }}
+      UPLOAD: ${{ needs.check.outputs.publish == 'true' || needs.check.outputs.itch == 'true' }}
+      # butler, pinned: its release on GitHub and the SHA-256 GitHub lists for the file
+      BUTLER_VERSION: 15.32.0
+      BUTLER_SHA256: 5db7b053fc9b578b86ffaf3520a12b952eb95c9225171cc5720dfbc9fe4574b3
+    steps:
+      - id: account
+        name: butler's API key
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          if [ -n "$BUTLER_API_KEY" ] && [ -n "$ITCH_GAME" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          elif [ "$UPLOAD" = true ]; then
+            echo "::notice::No butler API key in this run's secrets (BUTLER_API_KEY) or no ITCH_GAME variable, nothing is pushed to itch.io"
+            echo "No butler API key in this run's secrets (or no ITCH_GAME variable), nothing is pushed to itch.io (once they are set: \`gh workflow run app-release.yml --ref app-v$VERSION -f itch=true\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            # A dry run needs no key, and a game only for its file lists
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "ITCH_GAME=${ITCH_GAME:-noelhuibers/hashi}" >> "$GITHUB_ENV"
+          fi
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/checkout@v7
+      # Node 26 runs scripts/itch-io.ts
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      # The desktop jobs' files (of the systems that built), and the foss APKs
+      - if: steps.account.outputs.ready == 'true' && needs.desktop.result != 'skipped' && needs.check.outputs.itch != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: desktop-*
+          path: release
+          merge-multiple: true
+      - if: steps.account.outputs.ready == 'true' && needs.android-foss.result == 'success' && needs.android-foss.outputs.built == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: android-foss-release
+          path: release
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.itch == 'true'
+        name: The GitHub release's files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -D release \
+            -p "hashi-$VERSION-windows-*.zip" -p "hashi-$VERSION-macos-universal.app.zip" \
+            -p "hashi-$VERSION-linux-*.AppImage" -p "hashi-$VERSION-foss-*.apk"
+          ls -l release
+      - if: steps.account.outputs.ready == 'true'
+        name: Install butler
+        run: |
+          dir="$RUNNER_TEMP/butler"
+          mkdir -p "$dir"
+          curl -fsSL --retry 3 -o "$dir/butler.zip" \
+            "https://github.com/itchio/butler/releases/download/v$BUTLER_VERSION/butler-linux-amd64.zip"
+          echo "$BUTLER_SHA256  $dir/butler.zip" | sha256sum -c -
+          unzip -q -j "$dir/butler.zip" -d "$dir"
+          chmod +x "$dir/butler"
+          echo "$dir" >> "$GITHUB_PATH"
+          "$dir/butler" -V
+      - if: steps.account.outputs.ready == 'true'
+        name: Push
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          args=(release --version "$VERSION" --game "$ITCH_GAME" --dir release)
+          if [ "$UPLOAD" != true ]; then args+=(--dry-run); fi
+          node scripts/itch-io.ts "${args[@]}"

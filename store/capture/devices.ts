@@ -104,3 +104,6 @@ export const FRAMES: Frame[] = [
     sizes: LANDSCAPE,
   },
 ];
+
+/** itch.io's cover image (docs/stores.md, itch.io): 630 × 500 (at least 315 × 250, in that ratio). */
+export const COVER = { width: 630, height: 500 } as const;

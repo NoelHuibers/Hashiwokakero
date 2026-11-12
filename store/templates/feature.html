@@ -3,6 +3,8 @@
   Google Play's feature graphic, 1024 × 500 (app/README.md, Store listings): the name, the
   tagline in the listing's language and a board of the game, in the style of the site's social
   preview (src/server/og). store/capture/frame.ts opens it like frame.html, settings in ?feature=.
+  With "cover": itch.io's cover image instead, 630 × 500 (docs/stores.md, itch.io): the name and
+  the tagline above, the board below.
 -->
 <html>
   <head>
@@ -107,6 +109,17 @@
           0 0 0 4px #7a4b26,
           0 22px 30px rgb(43 36 32 / 0.32);
       }
+      /* itch.io's cover: 630 × 500, the text on top, the board below it, cut by the edges */
+      body.cover { width: 630px; height: 500px; }
+      .cover .waves { inset: 38% 0 0 0; }
+      .cover .text { left: 44px; right: 44px; top: 34px; bottom: auto; width: auto; gap: 8px; }
+      .cover .brand { gap: 18px; }
+      .cover .hanko { width: 76px; height: 76px; border-radius: 15px; font-size: 44px; }
+      .cover .name { font-size: 86px; }
+      .cover .kana { font-size: 16px; }
+      .cover h1 { font-size: 32px; margin-top: 4px; }
+      .cover p { display: none; }
+      .cover .board { left: 150px; top: 262px; width: 520px; border-width: 12px; }
     </style>
   </head>
   <body>
@@ -124,11 +137,12 @@
       <p></p>
     </div>
     <script>
-      // ?feature=: { lang, dir, title, text, image }
+      // ?feature=: { lang, dir, title, text, image, cover }
       (async () => {
         const f = JSON.parse(new URLSearchParams(location.search).get('feature'));
         document.documentElement.lang = f.lang;
         document.documentElement.dir = f.dir;
+        document.body.classList.toggle('cover', Boolean(f.cover));
         const scriptCss = { ko: 'noto-sans-kr', zh: 'noto-sans-sc', 'zh-Hant': 'noto-sans-tc', ar: 'noto-sans-arabic', hi: 'noto-sans-devanagari', th: 'noto-sans-thai', vi: 'be-vietnam-pro' }[f.lang];
         if (scriptCss) {
           const link = document.createElement('link');
@@ -146,7 +160,8 @@
         await document.fonts.ready;
         // A long tagline gets smaller rather than a third line
         const h1 = document.querySelector('h1');
-        for (let size = 38; h1.getBoundingClientRect().height > 2.4 * size * 1.0 && size > 26; size -= 2) {
+        const start = Number.parseFloat(getComputedStyle(h1).fontSize);
+        for (let size = start; h1.getBoundingClientRect().height > 2.4 * size * 1.0 && size > 26; size -= 2) {
           h1.style.fontSize = `${size - 2}px`;
         }
         window.READY = true;

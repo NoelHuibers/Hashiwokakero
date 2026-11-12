@@ -1090,10 +1090,11 @@ Made in CI, not committed (a run makes about 700). The sources:
   and waves. `store/capture/devices.ts` has the sizes: the App Store's iPhone 6.9" (1320 × 2868)
   and iPad 13" (2064 × 2752), Google Play's phone (1080 × 1920) and 7" and 10" tablets
   (1080 × 1920, 1440 × 2560), all 9:16 or Apple's sizes, and the desktop stores' 16:9
-  (1920 × 1080: the Microsoft Store and the Snap Store, later Steam and itch.io), the window with
+  (1920 × 1080: the Microsoft Store, the Snap Store and itch.io, later Steam), the window with
   its title bar, opaque PNGs.
 - `store/templates/feature.html`: Play's feature graphic (1024 × 500), like the site's social
-  preview. Play's hi-res icon is `public/icon-512.png`, the app's icon.
+  preview, and in English itch.io's cover image (630 × 500, `en/cover.png`). Play's hi-res icon
+  is `public/icon-512.png`, the app's icon.
 
 ```sh
 cargo leptos build --release              # the site, as for the browser tests
@@ -1528,7 +1529,8 @@ library there. What the releases make of it, the signing and the stores that bui
   Snap Store's app says `snap` instead of `linux`: snapd starts it with `SNAP`, the snap's
   folder, and the program lies in it. Its toast links to `https://snapcraft.io/<name>` (the
   repository variable `SNAP_NAME` as `HASHI_SNAP_NAME`, else `hashi`); otherwise it is the Linux
-  app. See [stores.md](../docs/stores.md#snap-store).
+  app. See [stores.md](../docs/stores.md#snap-store). itch.io's builds are the GitHub releases'
+  programs and say `windows`, `macos` or `linux` ([stores.md](../docs/stores.md#itchio)).
 - **Origins.** Windows' WebView2 serves the page from `https://tauri.localhost` (with
   `useHttpsScheme`, as Android), macOS and Linux from `tauri://localhost` (as iOS), so the
   server's CORS list, the content security policy and `on_navigation` already cover them. The

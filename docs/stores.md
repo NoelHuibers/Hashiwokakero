@@ -15,7 +15,7 @@ until its secrets exist, so its pull request can be merged before the account is
 | 6 | Desktop builds (Windows, macOS, Linux) | Tauri installers: Windows x64/arm64, macOS universal, Linux x64/arm64 | built on each release, macOS signing is an owner task |
 | 7 | Microsoft Store | the Windows builds as one MSIX bundle (x64, arm64), Microsoft signs it | upload in CI, the account is an owner task |
 | 8 | Snap Store | the Linux `.deb`s (amd64, arm64) as snaps, core24, strict | upload in CI, the account and the name are owner tasks |
-| 9 | itch.io | | |
+| 9 | itch.io | the Windows programs without installer (x64, arm64), the Mac app, the Linux AppImages (x64, arm64), the foss APKs (arm64-v8a, armeabi-v7a), pushed with butler | upload in CI, the account and the page are owner tasks |
 | 10 | Steam | | |
 
 Not planned: IzzyOnDroid (its policy turns away apps written with AI), Flathub (its manifests
@@ -766,8 +766,8 @@ installs by hand. What the app does differently on a computer is in
 
 | System | Architectures | Files on the release | Runner |
 |--------|---------------|----------------------|--------|
-| Windows 10 and 11 | x64 | `hashi-<v>-windows-x64-setup.exe` (NSIS), `hashi-<v>-windows-x64.msi` | `windows-2025` |
-| Windows on ARM | arm64 | `hashi-<v>-windows-arm64-setup.exe` (NSIS) | `windows-2025`, cross-compiled |
+| Windows 10 and 11 | x64 | `hashi-<v>-windows-x64-setup.exe` (NSIS), `hashi-<v>-windows-x64.msi`, `hashi-<v>-windows-x64.zip` (the program alone) | `windows-2025` |
+| Windows on ARM | arm64 | `hashi-<v>-windows-arm64-setup.exe` (NSIS), `hashi-<v>-windows-arm64.zip` | `windows-2025`, cross-compiled |
 | macOS 11 and newer | universal (Apple silicon and Intel) | `hashi-<v>-macos-universal.dmg`, `hashi-<v>-macos-universal.app.zip` | `macos-26` |
 | Linux | x64, arm64 | `hashi-<v>-linux-<arch>.AppImage`, `.deb`, `.rpm` | `ubuntu-22.04`, `ubuntu-22.04-arm` |
 
@@ -776,7 +776,10 @@ installs by hand. What the app does differently on a computer is in
 - **Windows**: the NSIS installer (`setup.exe`) is what people expect from a download, installs per
   user without admin rights (`installMode: currentUser`), in English or German after the system's
   language, and fetches WebView2 should a Windows 10 lack it. The MSI is for installing on many
-  computers at once (Intune, Group Policy, `msiexec /quiet`). The Microsoft Store gets the same
+  computers at once (Intune, Group Policy, `msiexec /quiet`). The zip is the program alone,
+  `hashi.exe`, which is all the installers put on the PC besides their uninstaller (Tauri's
+  program carries the page, WebView2 is Windows'): for itch.io and Steam, whose apps unpack and
+  update it themselves, and for anyone who wants no installer. The Microsoft Store gets the same
   program as an MSIX bundle ([Microsoft Store](#microsoft-store)). Windows on ARM (Snapdragon laptops) gets its own
   native installer: cross-compiled on the x64 runner, whose Visual Studio has the ARM64 tools, so
   it costs no extra runner; Tauri makes MSIs (WiX 3) for x86 and x64 only, so it is NSIS only.
@@ -796,10 +799,11 @@ installs by hand. What the app does differently on a computer is in
   description when they open one. The Snap Store's snaps are made of the `.deb`s
   ([Snap Store](#snap-store)).
 
-**How a release checks them**: the Debian package's name, version and architecture, its
-desktop entry and its MetaInfo (and the `.rpm`'s MetaInfo); the Mac app's bundle ID `rs.hashi`, version, both architectures, its signature,
-and once signed the Developer ID, the notarization ticket and Gatekeeper's verdict. The sizes are
-in each job's summary. A failed desktop job holds up nothing else (Play, TestFlight, the APKs);
+**How a release checks them**: that the Windows zip holds `hashi.exe` alone; the Debian
+package's name, version and architecture, its desktop entry and its MetaInfo (and the `.rpm`'s
+MetaInfo); the Mac app's bundle ID `rs.hashi`, version, both architectures, its signature, and
+once signed the Developer ID, the notarization ticket and Gatekeeper's verdict. The sizes are in
+each job's summary. A failed desktop job holds up nothing else (Play, TestFlight, the APKs);
 `gh workflow run app-release.yml --ref app-v<x.y.z> -f desktop=true` builds the five again (and
 the MSIX bundle and the snaps made of them) and replaces the desktop files on the tag's release
 (and its notes). A pull request that changes `tauri.conf.json` (the version too), the icons,
@@ -856,7 +860,8 @@ skipped like the others while they are missing.
   (`HASHI_APP_MIN_VERSION`, docs/mobile.md), the update toast's button opens
   `https://github.com/NoelHuibers/Hashiwokakero/releases` (`api::app::store_url` for the
   desktops; the Microsoft Store's app opens its page in the Store, the snap its page in the Snap
-  Store). The server functions are a
+  Store; itch.io's builds are the releases' programs and open them too, see
+  [itch.io](#itchio)). The server functions are a
   stable contract, so that should be rare.
 
 Adding it later: `tauri-plugin-updater` in the desktop's dependencies, `bundle.createUpdaterArtifacts`,
@@ -1326,3 +1331,229 @@ policy", in force since its revision of 2026-09-04):
 
 The policy changes now and then (in May 2026 it banned nearly all apps made with AI, September
 softened that to disclosure): look again before deciding.
+
+## itch.io
+
+Each release tag pushes the desktop apps and the foss APKs to the game's page on itch.io with
+[butler](https://itch.io/docs/butler/), itch.io's own command line tool: the job "Upload to
+itch.io" of app-release.yml, with `scripts/itch-io.ts`. It needs butler's API key in the secrets
+and the game in a repository variable; until both exist it is skipped with a notice. The page
+itself is made by hand (owner tasks).
+
+**Where the store is** (November 2026). itch.io is the open store of independent games: free to
+publish, no review before a page goes public, the price up to the developer (free, pay what you
+want, or a price; itch.io keeps an adjustable share of sales, 10 % by default). Players download
+from the page in the browser, or install with the itch app (Windows, macOS, Linux), which keeps
+the games up to date.
+
+**Apps written with AI are allowed, with a disclosure.** itch.io's
+[quality guidelines](https://itch.io/docs/creators/quality-guidelines) (read 2026-11-12) don't
+ban generative AI: "We ask that you accurately tag your project if it contains materials produced
+by generative AI", in the AI disclosure section of the project's edit page. Pages that say yes
+are listed on the "AI Assisted" browse page, and players can filter them out; pages that should
+have said yes and didn't may be taken off the browse and search pages (strictly so far for game
+assets, soundtracks, physical games, comics and books; asked of games). What runs on its own
+without large datasets, like our puzzle generator and solver, needs no disclosure. Only mass
+produced pages are spam. So Hashi can go there, disclosed (owner tasks, the answers there).
+
+**The channels.** butler pushes a folder (or a zip, or one file) into a channel of the game; each
+channel is one download on the page, and itch.io tags its platform by the channel's name. One
+per system and architecture:
+
+| Channel | From the release | The build | Starts in the itch app |
+|---------|------------------|-----------|------------------------|
+| `windows-x64` | `hashi-<v>-windows-x64.zip` | `hashi.exe` | yes |
+| `windows-arm64` | `hashi-<v>-windows-arm64.zip` | `hashi.exe` | yes |
+| `mac-universal` | `hashi-<v>-macos-universal.app.zip` | `Hashi.app` (Apple silicon and Intel) | yes |
+| `linux-x64` | `hashi-<v>-linux-x64.AppImage` | the AppImage | yes |
+| `linux-arm64` | `hashi-<v>-linux-arm64.AppImage` | the AppImage | download only |
+| `android-arm64` | `hashi-<v>-foss-arm64-v8a.apk` | the APK | download only |
+| `android-armv7` | `hashi-<v>-foss-armeabi-v7a.apk` | the APK | download only |
+
+**The programs, not the installers.** The itch app installs a build by unpacking it, and updates
+it with a patch of only what changed (butler's diff of two builds). An installer is a compressed
+blob that changes as a whole each time, and the itch app would have to run it (itch.io's docs
+call installers "the absolute worst" for that). So:
+
+- **Windows**: the program alone. Tauri's `hashi.exe` is self-contained (the page is inside it):
+  the NSIS installer puts nothing else on the PC but its uninstaller (checked in 1.1.0's setup),
+  and the MSIX package of the Microsoft Store is the same program. WebView2 belongs to Windows
+  (Windows 11, and nearly every Windows 10; where it is missing the program says so and links
+  to Microsoft's download). For this, the release puts a zip of each architecture's program on
+  the GitHub release ("Build desktop"), which is also a download for those who want no
+  installer, and Steam (step 10) will take the same.
+- **macOS**: the `.app`, from the release's zip (made with `ditto`, so its signature and modes
+  stay): itch.io's docs call an app bundle "the only macOS builds you should ever push".
+- **Linux**: the AppImage, which runs on most distributions without installing; the `.deb` and
+  `.rpm` need a package manager, which the itch app doesn't use. An AppImage is compressed, so
+  its patches are nearly as big as the file (about 110 MB); unpacking it into its AppDir would
+  patch better, but the itch app would then start `AppRun` with its environment, untested. arm64
+  is a download only: the itch app and butler's validation know only x86 on Linux.
+- **Android**: the foss APKs, signed with the direct key, the same as our F-Droid repository's,
+  the Galaxy Store's and AppGallery's (an itch.io APK updates from those and they from it). A
+  download from the page; there is no itch app on Android. butler pushes a single file as it is,
+  so the page serves the `.apk`, not a zip. arm64-v8a for nearly every phone, armeabi-v7a for
+  old 32-bit ones; not x86_64 (Chromebooks run the ARM ones, and itch.io can't tag an
+  architecture: a third Android download would confuse more than help).
+
+itch.io tags no architecture, so the page shows two Windows, two Linux and two Android
+downloads: the owner names each (owner tasks), and the itch app may ask which one to install.
+
+**No app manifest (`.itch.toml`).** `butler validate` shows that the itch app finds the right
+program in each build without one (`hashi.exe`, `Hashi.app`, the AppImage; checked with 1.1.0's
+builds, and each release checks it again). A manifest could only add launch actions (none
+needed), prerequisites (WebView2 isn't one of itch.io's, and Windows has it) and an itch.io API
+key for the game (none needed); itch.io's docs advise against one just to pick the program.
+
+**The platform the page reports: the system's.** The itch.io builds are the GitHub releases'
+programs, byte for byte, and say `windows`, `macos` or `linux` in `x-hashi-app`; when the server
+turns an old version away, their update toast opens the GitHub releases. No `itch` platform:
+
+- The program can't tell reliably that itch.io brought it: the itch app hands a game a sign of
+  itself (its itch.io API key) only when a manifest asks for one, and a download from the page
+  lands anywhere.
+  Marking the build would make it differ from the release's.
+- It is rare (`HASHI_APP_MIN_VERSION`), and the itch app updates its games by itself, usually
+  before a player would see the toast.
+- A player who takes the GitHub installer instead loses nothing: the installed app and the itch
+  one keep their data in the same folder (`rs.hashi`), so the session and the settings carry
+  over.
+
+The feedback form can't tell itch.io's players apart; that is the price.
+
+**No HTML5 version on itch.io.** itch.io would run the app's web bundle (the CSR build) in a frame
+on `html-classic.itch.zone`, an origin all of itch.io's HTML games share. It isn't worth it:
+
+- hashi.rs is the game in the browser already, the whole site with its links, sharing and
+  language pages. The itch.io page links to it instead ("Play in your browser").
+- The server would have to allow that shared origin in its CORS list (`HASHI_APP_ORIGINS`).
+- The session (the app's bearer token in the local storage) would live in a frame of another
+  site, whose storage browsers partition or restrict: a guest of its own, apart from hashi.rs's.
+- The page reads its language and route from the path, which in the frame is
+  `/html/<id>/index.html`: the web bundle would need a mode for that, only for itch.io.
+
+**butler, pinned.** Version 15.32.0 (2026-10-06), downloaded from its GitHub release and checked
+against the SHA-256 GitHub lists for the file before it runs (`BUTLER_VERSION`,
+`BUTLER_SHA256` in the job). To update it, both from
+`gh api repos/itchio/butler/releases/tags/v<x.y.z> --jq '.assets[] | select(.name == "butler-linux-amd64.zip") | .digest'`.
+
+**What a release does** (`node scripts/itch-io.ts release`):
+
+1. Takes the files of the table from the release's builds (a build that failed is a warning; the
+   others still go).
+2. Stages each into a folder of its own (a zip unpacked, a file alone, the AppImages made
+   executable) and checks it with `butler validate`: the itch app has to find the program to
+   start there (`hashi.exe`, `Hashi.app`, the AppImage).
+3. Asks itch.io for the version of each channel's latest build (`https://api.itch.io/wharf/latest`,
+   no login). A channel that has this version already is left alone (a rerun); one with a newer
+   version stops the release before anything is pushed.
+4. Pushes each build: `butler push <folder> <user>/<game>:<channel> --userversion <version>
+   --if-changed --fix-permissions`. itch.io processes it within minutes; the page offers it,
+   and the itch app updates its installs.
+
+A rerun (or `gh workflow run app-release.yml --ref app-v<x.y.z> -f itch=true`, which takes the
+files from the tag's GitHub release and builds nothing; the other stores' inputs next to it are
+fine) pushes nothing twice. `-f desktop=true` builds the desktop files of a tag again (a tag from
+before this pull request has no Windows zips). A pull request's dry run (any change to
+`scripts/itch-io.ts`, or what makes the desktop builds) stages and checks every build, lists what
+butler would push, and calls nobody.
+
+### Owner tasks
+
+1. **The account**, free: sign up on <https://itch.io/register> (e.g. hashi@huibers.io), username
+   e.g. `noelhuibers` (it is the page's address, `https://<username>.itch.io/hashi`). Turn on
+   two-factor authentication in the settings. No payment setup needed for a free game.
+2. **The page**: Dashboard, "Create new project", saved as a **draft** until the first push
+   (task 5):
+   - **Title** `Hashi`, **Project URL** `hashi`; **Short description or tagline**: "Hashiwokakero
+     logic puzzle: link the islands with bridges. A fresh one each day." (Play's).
+   - **Classification** Games, **Kind of project** Downloadable, **Release status** Released.
+   - **Pricing**: **No payments** for now. "$0 or donate" (pay what you want from 0, with a
+     suggested amount) is an owner decision that goes with issue #186: it needs a payout mode
+     (Settings, Payouts: "Collected by itch.io", a tax interview, itch.io collects and pays the
+     VAT and sends payouts by PayPal or Stripe, keeping its share), and the tips are income to
+     declare (Kleinunternehmer or not). It can be switched on later without touching anything
+     here.
+   - **Uploads**: nothing by hand; CI pushes them (task 5).
+   - **Details, Description**: the English store text (`fastlane/metadata/android/en-US/full_description.txt`),
+     with these changes:
+     - first, a line "Play in your browser at https://hashi.rs, or download it below for
+       Windows, macOS, Linux and Android. With the itch app it installs and updates itself.";
+     - "the puzzles are made on your phone" → "the puzzles are made on your device";
+     - at the end, under a heading "Installing": "Windows: unzip and start hashi.exe (until the
+       program is signed, SmartScreen asks first: More info, Run anyway). macOS: if it says it
+       can't check the app, open it once from System Settings, Privacy & Security, Open Anyway.
+       Linux: make the AppImage executable and start it. Android: allow installing from your
+       browser when asked; it updates from our F-Droid repository too (hashi.rs/fdroid)."
+       (drop the macOS sentence once the Developer ID is in, Desktop builds, Signing.)
+   - **Genre** Puzzle. **Tags** (up to 10, pick from the suggestions): puzzle, logic, pixel-art,
+     relaxing, casual, singleplayer, japan, leaderboards, offline, open-source.
+   - **AI disclosure**: **Yes**, it contains generative AI output, of the kinds
+     **Code** (the app is written almost entirely with AI) and **Text & dialog** (the texts, the
+     translations and the store texts). **Graphics** too: the pixel art (islands, bridges,
+     sprites, the hanko stamps), the icons and the store images are drawn by that code or were
+     made with AI. **Sound** only if anything was made with an AI tool: the sounds and the koto
+     music are synthesized by the code at run time (already under Code). When in doubt, tick it:
+     an answer that says too little can cost the page its place in browse and search, one that
+     says too much costs nothing more than the yes already does.
+   - **App store links**: Google Play
+     (`https://play.google.com/store/apps/details?id=rs.hashi`), and the App Store and the
+     Microsoft Store once live.
+   - **Cover image**: `en/cover.png` (630 × 500) of the artifact `store-listing-images` of a
+     "Store listing" run (`gh workflow run store-listing.yml -f platform=microsoft -f what=images
+     -f validate_only=true`). **Screenshots** (3 to 5 recommended): `en/desktop/1-daily.png`,
+     `3-play.png`, `4-friends.png`, `6-stamps.png`, `7-night.png` of the same artifact
+     (1920 × 1080, each under 1 MB).
+   - **Metadata** (a tab after the first save): Inputs Keyboard, Mouse, Touchscreen; Languages the
+     app's 20 (English, German, French, Italian, Spanish, Portuguese, Dutch, Polish, Turkish,
+     Russian, Ukrainian, Arabic, Hindi, Indonesian, Vietnamese, Thai, Japanese, Korean, Chinese
+     Simplified and Traditional); Average session "A few minutes"; Links: the website
+     https://hashi.rs, the source https://github.com/NoelHuibers/Hashiwokakero, the privacy
+     policy https://hashi.rs/datenschutz, contact https://hashi.rs/kontakt.
+   - **Community**: comments as wanted (they need moderating; feedback reaches us through
+     hashi.rs/kontakt anyway).
+   - Theme (optional): the site's colours, background `#f4ecdd`, text `#2b2420`, links
+     `#cf3a24`.
+3. **The game into the repository variables** (not secret):
+
+   ```sh
+   gh variable set ITCH_GAME --body '<username>/hashi'   # as in https://<username>.itch.io/hashi
+   ```
+
+4. **butler's API key for CI**: on <https://itch.io/user/settings/api-keys>, "Generate new API
+   key", then
+
+   ```sh
+   gh secret set BUTLER_API_KEY   # the key, typed in
+   ```
+
+   (Or `butler login` on a computer and the key from its `butler_creds` file, `~/.config/itch/`
+   on Linux; its source on the API keys page is "wharf".) The key is the whole account's
+   (itch.io's keys have no scopes): never print it. No backup needed: a lost or leaked one is
+   revoked on the same page and replaced by a new one.
+5. **The first push**: the next release tag. For the newest tag from before this pull request
+   (no desktop files yet, no Windows zips): `gh workflow run app-release.yml --ref
+   app-v<x.y.z> -f desktop=true`, then `-f itch=true`. Then, on the page's edit form, Uploads:
+   - name each upload: "Windows (x64)", "Windows on ARM (arm64)", "macOS (Apple silicon and
+     Intel)", "Linux (x64, AppImage)", "Linux (arm64, AppImage)", "Android (arm64-v8a, nearly
+     every phone)", "Android (armeabi-v7a, older phones)"; check each has its platform's tag
+     (from the channel's name);
+   - download the Android one in a browser: it should be an `.apk` (some forum posts saw butler's
+     APKs served zipped; if so, upload the APK by hand instead and tell us);
+   - install with the itch app on a Windows PC or a Mac: it should start Hashi, which starts on
+     the daily and plays offline;
+   - then make the page **Public**.
+
+**Risks**:
+
+- The pushes are untested against itch.io (no account): butler's dry run, its validation and the
+  page's `wharf/latest` answers for an unknown channel are checked; a draft page's answer isn't
+  known (the script then pushes, and `--if-changed` keeps a rerun from pushing the same files).
+- The Mac app downloaded in a browser is quarantined: until the Developer ID (Desktop builds,
+  Signing), "Open Anyway" in System Settings as for the GitHub download. Whether the itch app's
+  installs are quarantined too is untested.
+- The Windows program from a browser's download gets SmartScreen's warning (unsigned), as the
+  setup does.
+- Each Linux update is a patch about as big as the AppImage.
+- itch.io's AI rules have been tightened step by step (asset pages first, more kinds of pages
+  since): look at the guidelines again before the page goes public.

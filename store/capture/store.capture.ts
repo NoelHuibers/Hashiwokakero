@@ -50,6 +50,14 @@ for (const lang of LANGS) {
       caption: featureCaption,
       out: path.join(IMAGES_DIR, lang, 'feature.png'),
     });
+    // itch.io's cover (docs/stores.md, itch.io): its page has one language
+    if (lang === 'en')
+      await feature(page, {
+        lang,
+        caption: featureCaption,
+        out: path.join(IMAGES_DIR, lang, 'cover.png'),
+        cover: true,
+      });
     for (const f of FRAMES) {
       const dir = path.join(IMAGES_DIR, lang, f.id);
       mkdirSync(dir, { recursive: true });

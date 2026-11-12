@@ -6,7 +6,7 @@ import path from 'node:path';
 import type { Browser, Page } from '@playwright/test';
 
 import { RTL_LOCALES } from '../../e2e/site.ts';
-import { type Frame, SCREENS } from './devices.ts';
+import { COVER, type Frame, SCREENS } from './devices.ts';
 import { RAW_DIR, ROOT, STORE_URL } from './env.ts';
 import type { SceneId } from './scenes.ts';
 
@@ -103,18 +103,27 @@ export async function frame(
   await page.screenshot({ path: out, animations: 'disabled', caret: 'hide' });
 }
 
-/** Writes Google Play's feature graphic in a language (store/templates/feature.html). */
+/**
+ * Writes Google Play's feature graphic in a language (store/templates/feature.html), 1024 × 500;
+ * with `cover`, itch.io's cover image, 630 × 500.
+ */
 export async function feature(
   page: Page,
-  { lang, caption, out }: { lang: string; caption: Caption; out: string },
+  {
+    lang,
+    caption,
+    out,
+    cover = false,
+  }: { lang: string; caption: Caption; out: string; cover?: boolean },
 ) {
-  await page.setViewportSize({ width: 1024, height: 500 });
+  await page.setViewportSize({ width: cover ? COVER.width : 1024, height: 500 });
   const config = {
     lang,
     dir: RTL_LOCALES.has(lang) ? 'rtl' : 'ltr',
     title: caption.title,
     text: caption.text,
     image: `/__store/raw/${lang}/board.png`,
+    cover,
   };
   await page.goto(
     `${STORE_URL}/__store/feature.html?feature=${encodeURIComponent(JSON.stringify(config))}`,

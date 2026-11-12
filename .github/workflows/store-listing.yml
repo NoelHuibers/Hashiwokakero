@@ -241,7 +241,7 @@ jobs:
             echo "### Store images"
             echo
             echo "Every language's images are in the artifact \`store-listing-images\`: \`<language>/<frame>/<n>-<scene>.png\`"
-            echo "(\`iphone-69\`, \`ipad-13\`, \`play-phone\`, \`play-tablet-7\`, \`play-tablet-10\`, \`desktop\`) and \`<language>/feature.png\`."
+            echo "(\`iphone-69\`, \`ipad-13\`, \`play-phone\`, \`play-tablet-7\`, \`play-tablet-10\`, \`desktop\`) and \`<language>/feature.png\`, itch.io's cover \`en/cover.png\`."
             echo
             echo "| Language | Images |"
             echo "|---|---|"
