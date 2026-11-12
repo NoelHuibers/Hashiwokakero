@@ -9,3 +9,7 @@
 /hashi.db*
 /public/fonts
 /dojo/starter/target
+# What app-release.yml puts into the snap project (app/linux/snap/snapcraft.yaml)
+/app/linux/snap/local
+/app/linux/snap/gui
+/app/linux/*.snap

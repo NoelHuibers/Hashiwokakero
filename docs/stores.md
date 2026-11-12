@@ -14,12 +14,14 @@ until its secrets exist, so its pull request can be merged before the account is
 | 5 | Huawei AppGallery | foss APKs (arm64-v8a, armeabi-v7a), direct key | upload in CI, the account is an owner task |
 | 6 | Desktop builds (Windows, macOS, Linux) | Tauri installers: Windows x64/arm64, macOS universal, Linux x64/arm64 | built on each release, macOS signing is an owner task |
 | 7 | Microsoft Store | the Windows builds as one MSIX bundle (x64, arm64), Microsoft signs it | upload in CI, the account is an owner task |
-| 8 | Flathub, Snap | | |
+| 8 | Snap Store | the Linux `.deb`s (amd64, arm64) as snaps, core24, strict | upload in CI, the account and the name are owner tasks |
 | 9 | itch.io | | |
 | 10 | Steam | | |
 
-Not planned: IzzyOnDroid (its policy turns away apps written with AI), the Chinese stores (they
-need a Chinese company), Poki and CrazyGames (they need their ads SDKs).
+Not planned: IzzyOnDroid (its policy turns away apps written with AI), Flathub (its manifests
+must not be written with AI, and AI-written apps are up to its reviewers, see
+[Flathub](#flathub-not-planned)), the Chinese stores (they need a Chinese company), Poki and
+CrazyGames (they need their ads SDKs).
 
 ## The builds and keys
 
@@ -789,16 +791,19 @@ installs by hand. What the app does differently on a computer is in
   that use the system's WebKitGTK 4.1 (Debian 12, Ubuntu 22.04, Fedora 37 and newer). Built on
   Ubuntu 22.04, the oldest image GitHub has, so they run on systems with its glibc 2.35 or newer.
   arm64 too (Raspberry Pi 5, ARM laptops): GitHub's arm64 runners are free for public
-  repositories. Flathub and Snap (step 8) build from source in their own runtimes and don't need
-  these.
+  repositories. The `.deb` and the `.rpm` carry the app's AppStream MetaInfo
+  (`/usr/share/metainfo/rs.hashi.metainfo.xml`), so GNOME Software and KDE Discover show its
+  description when they open one. The Snap Store's snaps are made of the `.deb`s
+  ([Snap Store](#snap-store)).
 
-**How a release checks them**: the Debian package's name, version and architecture and its
-desktop entry; the Mac app's bundle ID `rs.hashi`, version, both architectures, its signature,
+**How a release checks them**: the Debian package's name, version and architecture, its
+desktop entry and its MetaInfo (and the `.rpm`'s MetaInfo); the Mac app's bundle ID `rs.hashi`, version, both architectures, its signature,
 and once signed the Developer ID, the notarization ticket and Gatekeeper's verdict. The sizes are
 in each job's summary. A failed desktop job holds up nothing else (Play, TestFlight, the APKs);
-`gh workflow run app-release.yml --ref app-v<x.y.z> -f desktop=true` builds the five again and
-replaces the desktop files on the tag's release (and its notes). A pull request that changes
-`tauri.conf.json` (the version too) or the icons runs all five as a dry run; "Build app (desktop)"
+`gh workflow run app-release.yml --ref app-v<x.y.z> -f desktop=true` builds the five again (and
+the MSIX bundle and the snaps made of them) and replaces the desktop files on the tag's release
+(and its notes). A pull request that changes `tauri.conf.json` (the version too), the icons,
+`app/linux/` or the store scripts of the desktop runs all five as a dry run; "Build app (desktop)"
 in ci.yml builds and starts the Linux app for pull requests that change the desktop's files.
 
 ### Signing
@@ -850,7 +855,8 @@ skipped like the others while they are missing.
 - What the GitHub downloads have instead: when the server turns an old version away
   (`HASHI_APP_MIN_VERSION`, docs/mobile.md), the update toast's button opens
   `https://github.com/NoelHuibers/Hashiwokakero/releases` (`api::app::store_url` for the
-  desktops; the Microsoft Store's app opens its page in the Store). The server functions are a
+  desktops; the Microsoft Store's app opens its page in the Store, the snap its page in the Snap
+  Store). The server functions are a
   stable contract, so that should be rare.
 
 Adding it later: `tauri-plugin-updater` in the desktop's dependencies, `bundle.createUpdaterArtifacts`,
@@ -1121,3 +1127,202 @@ tag's upload fails saying so; rerun it with `-f msstore=true` afterwards. **Risk
   upload each bundle by hand (it is on the GitHub release).
 - Play's description says the offline puzzles are "made on your phone" (one line); the Store's
   listing shows that on Windows too until there are Windows texts of their own.
+
+## Snap Store
+
+Each release tag makes a snap of the Linux app for amd64 and arm64 and uploads both to the Snap
+Store, into the channel `stable`: the jobs "Snap" and "Upload to Snap Store" of app-release.yml,
+with `app/linux/snap/snapcraft.yaml` and `scripts/snap-store.ts`. The upload needs snapcraft's
+login in the secrets; until it exists it is skipped with a notice. The snap's name is registered
+by hand (owner tasks).
+
+**Where the store is** (November 2026). The Snap Store is the software centre of Ubuntu (App
+Center) and works on most other distributions with snapd; <https://snapcraft.io> lists the snaps.
+Publishing is free with an Ubuntu One account. snapd updates installed snaps by itself, several
+times a day. Since 2025 the store reviews every revision of a publisher it doesn't trust yet by
+hand (a forum post of its reviewers, "Revisiting trust"), so the first releases may wait for a
+reviewer; it has no rule against apps written with AI.
+
+**What the snap is.** No build from source: the snap unpacks the release's `.deb` of its
+architecture ("Build desktop", the same program as the `.deb`, `.rpm` and AppImage on the GitHub
+release), so there is one Linux program, built and tested once.
+
+- `core24` (Ubuntu 24.04's base), confinement `strict`, grade `stable`.
+- GNOME's extension (`extensions: [gnome]`) brings GTK, WebKitGTK 4.1 and GStreamer from the
+  shared `gnome-46-2404` snap, and the plugs of a GTK app: `desktop`, `desktop-legacy`,
+  `wayland`, `x11`, `opengl`, `gsettings`. The snap itself is little more than the program.
+- Our plugs on top: `network` (hashi.rs) and `audio-playback` (the sounds). All of them connect
+  by themselves.
+- No `home`: the CNF export's save dialog is GTK's native file chooser (rfd, through
+  tauri-plugin-dialog), which in a snap goes through the desktop's file chooser portal
+  (`GTK_USE_PORTAL=1`), and the portal hands the snap the file the player picked.
+- Summary, description, links and version come from the MetaInfo in the `.deb`
+  (`adopt-info` with `parse-info`), the icon is the app's 512 px one, the desktop entry the
+  `.deb`'s, with the icon's path in the snap.
+
+**The MetaInfo** (`node scripts/snap-store.ts metainfo`): the AppStream file software centres
+read, made for each release from the store texts, so the texts have one source:
+
+- the summary: the store title after "Hashi: " ("Daily Bridges Puzzle"; at most 78 characters,
+  the Snap Store's limit), and the description: Play's, its "•" lines as lists, in the app's 20
+  languages (English untranslated, the others with `xml:lang`, gettext names);
+- the release (version, the tagged commit's date, the release notes unless they name another
+  store, a link to the GitHub release), the links (website, issues, contact, source), the
+  categories (Game, LogicGame), the brand colours (light `#f4ecdd`, dark `#101827`, the page's
+  backgrounds), and the content rating (OARS 1.1: `social-chat` and `social-info` mild, for the
+  rankings and the players' names; no chat, no purchases, nothing else);
+- `rs.hashi` as its ID and `Hashi.desktop` (Tauri's desktop entry) as its launchable.
+  `appstreamcli validate` takes it; it would like an ID of three parts (only a hint, the app's
+  ID stays).
+
+It goes into the `.deb` and the `.rpm` (`bundle.linux.*.files` from the release's `--config`),
+and with the `.deb` into the snap. No screenshots in it: they would need image URLs that stay up,
+and the Snap Store takes its screenshots from the listing anyway.
+
+**What the page says it is: `snap`.** The plugin reports the desktop as `snap` when snapd started
+the program: the environment has `SNAP` (the snap's folder, `/snap/hashi/12`) and the program
+lies in it (`desktop.rs`; `SNAP` alone isn't enough, programs started from a classic snap's
+terminal inherit it). Then:
+
+- `x-hashi-app` says `snap/<version>` (the server takes any name, the feedback form shows it).
+- The update toast opens `https://snapcraft.io/<name>` (the name from the repository variable
+  `SNAP_NAME` when the release builds the web bundle, `HASHI_SNAP_NAME`, else `hashi`), not the
+  GitHub releases: a `.deb` from there would put a second Hashi next to the snap. snapd has
+  usually updated the snap within hours anyway; the page has the store's "Install" button.
+- Everything else (Alt+← and Alt+→, sharing, no games services) is the Linux app's.
+
+Just `linux` with a "update through your software centre" note would have needed a new text in
+20 languages for the same toast; the platform also tells the snap's players apart in the
+feedback.
+
+**The app's data.** A snap's `HOME` is `~/snap/<name>/<revision>`, so the snap has its own local
+storage (its own guest or session), not shared with a `.deb` install; snapd carries it from one
+revision to the next. A player signs in to have the same account in both.
+
+**What a release does.**
+
+1. "Snap" (amd64 on `ubuntu-24.04`, arm64 on `ubuntu-24.04-arm`): puts the `.deb` and the icon
+   into the project, sets the name (`SNAP_NAME`, default `hashi`), builds the snap with
+   snapcraft in an LXD container (`snapcore/action-build`), checks its `meta/snap.yaml` (the
+   name, the version, one architecture, core24, strict, stable) and its MetaInfo
+   (`appstreamcli validate`), installs it (`--dangerous`, unsigned) and starts it on a virtual
+   display with hashi.rs blocked: it has to show the page (a screenshot with over 500 colours,
+   the artifact `snap-smoke-<arch>`) and run from the snap. The snaps go onto the GitHub release
+   as `hashi-<v>-linux-<arch>.snap` (a file installs only with `--dangerous` and never updates;
+   the notes say to install from the store).
+2. "Upload to Snap Store" (`node scripts/snap-store.ts release`): checks the snaps again, then
+   for each architecture asks the store for its revisions (`snapcraft list-revisions`) and
+   - uploads it with `snapcraft upload --release=<channel>`: the store reviews it (automatically,
+     or by hand, see above) and releases it into the channel when the review passes;
+   - releases the revision the store already has of this version instead (a rerun after a
+     failure), or does nothing when the channel has it;
+   - refuses when the channel has a newer version.
+
+**The channel**: `stable` by default, the repository variable `SNAP_CHANNEL` (`candidate`, `beta`,
+`edge`) for another. The other stores' releases go to the public after their review too, and a
+release tag is tested already; to try a snap before its players get it, set `SNAP_CHANNEL` to
+`candidate`, install it with `snap install <name> --candidate`, then promote it on the snap's
+Releases page (or `snapcraft release <name> <revision> stable`).
+
+A rerun of the upload (or `gh workflow run app-release.yml --ref app-v<x.y.z> -f snap=true`,
+which takes the snaps from the tag's GitHub release and builds nothing; the other stores' inputs
+next to it are fine) uploads nothing twice. `-f desktop=true` builds the installers and with them
+the snaps of a tag again. A pull request's dry run (any change to `scripts/snap-store.ts`,
+`app/linux/`, `tauri.conf.json` or the icons) builds, checks, installs and starts both snaps, and
+calls nobody.
+
+**The listing**: the summary, the description, the title and the links come from the snap
+itself with each upload (from the MetaInfo, in English: a snap's listing has one language). The
+screenshots, the banner and the category are set on the snap's Listing page (owner tasks); the
+store has no API for them in snapcraft.
+
+### Owner tasks
+
+1. **The account**, free: sign in on <https://snapcraft.io> with an Ubuntu One account
+   (<https://login.ubuntu.com>, e.g. hashi@huibers.io), accept the developer terms, and set the
+   publisher's display name **Noel Huibers**.
+2. **Register the name**: <https://snapcraft.io/register-snap>, **hashi** (not public now, but
+   someone may have reserved it). If it is taken: `hashi-puzzle` (or file a name dispute on the
+   same page), and `gh variable set SNAP_NAME --body 'hashi-puzzle'`.
+3. **snapcraft's login for CI**. snapcraft runs on Linux with snapd (Fedora:
+   `sudo dnf install snapd`, log out and in, `sudo snap install snapcraft --classic`), then:
+
+   ```sh
+   snapcraft export-login --snaps=hashi --channels=stable,candidate,beta,edge \
+     --acls=package_access,package_push,package_update,package_release \
+     --expires=2027-11-12T00:00:00 hashi-snapcraft.txt   # it asks for the Ubuntu One login
+   gh secret set SNAPCRAFT_STORE_CREDENTIALS < hashi-snapcraft.txt
+   rm hashi-snapcraft.txt
+   ```
+
+   (With another name, that one after `--snaps`.) The full date and time after `--expires`: a
+   date alone was silently ignored by older snapcraft versions, leaving a login that never
+   expires. It can only upload and release this snap. No backup needed: a lost or leaked login
+   is replaced by a new one (and the old one revoked on <https://login.ubuntu.com>, Applications).
+   Set a new one before it expires.
+4. **The listing** on `https://snapcraft.io/<name>/listing`: category **Games**, the screenshots
+   (up to 5, 480 × 480 to 3840 × 2160, at most 2 MB each, PNG or JPEG): `en/desktop/*.png` of
+   the artifact `store-listing-images` of a "Store listing" run (`gh workflow run
+   store-listing.yml -f platform=microsoft -f what=images -f validate_only=true`); one over 2 MB
+   as JPEG (`magick in.png -quality 90 out.jpg`). A banner is optional (3:1, at least 720 × 240).
+   Check that the summary, the description and the links came from the first upload (task 5).
+5. **The first release**: the next release tag, or for the newest one
+   `gh workflow run app-release.yml --ref app-v<x.y.z> -f snap=true` once tasks 2 and 3 are done
+   (a tag from before this pull request has no snaps on its release: `-f desktop=true` makes
+   them, then `-f snap=true`). A reviewer may look at the first revisions by hand (see above).
+   Then on an Ubuntu PC: `snap install <name>` (or App Center), start it, play a daily, try the
+   sound, export a CNF from the workshop (the save dialog should be the desktop's own).
+
+**Risks**:
+
+- The snap has only been started in CI on a virtual display (both architectures), not on a real
+  desktop: the sounds (GStreamer of `gnome-46-2404`), Wayland and the portal's save dialog are
+  untested. The first release's check (task 5) covers them.
+- `snapcraft list-revisions` has no machine-readable output: the script reads its table by the
+  header's columns. Should snapcraft change it, the upload stops with the table in its error
+  (rerun after a fix, nothing is uploaded twice).
+- `snapcore/action-build` (v1, July 2024) runs on Node 20, which GitHub runs on Node 24 now; if it
+  breaks, `snapcraft pack` in LXD can replace it in a few lines.
+- Play's description says the offline puzzles are "made on your phone" (one line); the snap's
+  listing shows it on Linux too until there are desktop texts of their own (as for the Microsoft
+  Store).
+
+## Flathub (not planned)
+
+Flathub was the other half of step 8. It isn't done, and no Flatpak manifest is in this
+repository, because of Flathub's own rules
+([requirements](https://docs.flathub.org/docs/for-app-authors/requirements), "Generative AI
+policy", in force since its revision of 2026-09-04):
+
+- "Flathub manifests must not contain AI-generated or AI-assisted content. Disclosure does not
+  exempt manifests from this restriction." A manifest written here would be just that.
+- "AI tools or agents must not open or automate Flathub submission pull requests, or generate
+  their commit messages, descriptions, review comments, or replies." That rules out preparing
+  the submission or a CI job that bumps the manifest in `flathub/rs.hashi`.
+- Submitters must disclose AI-generated code in the app ("the affected parts and approximate
+  extent"); reviewers then decide, may reject "without further review, based on the extent or
+  role of generated material", and disclosure "does not create a presumption of acceptance".
+  Hashi is written almost entirely with AI, the reason IzzyOnDroid is skipped too.
+- Flathub builds "entirely from source"; prebuilt binaries such as our `.deb` are refused
+  (exceptions only for well-known vendors). The Snap Store has none of these rules.
+
+**If the owner wants it anyway**, it is his own work by hand, not a task for an agent:
+
+- Write the manifest himself: the `org.gnome.Platform` runtime (it has WebKitGTK 4.1), the SDK
+  extensions `rust-stable` and `node24`, the cargo and pnpm sources generated with
+  flatpak-builder-tools (both `Cargo.lock`s, trunk, wasm-bindgen-cli, the pnpm lock), wasm-opt
+  (binaryen) from source as app/fdroid/build.sh does for F-Droid, `cargo build --release
+  --features tauri/custom-protocol` of `app/src-tauri` without the Tauri CLI, the MetaInfo of
+  `scripts/snap-store.ts metainfo` (AI-written: to be disclosed), and the permissions
+  `--share=network --socket=wayland --socket=fallback-x11 --device=dri --socket=pulseaudio`,
+  no file system access (the save dialog goes through the portal, as in the snap).
+- The app would have to know it is a Flatpak (`/.flatpak-info`, a `flatpak` platform as `snap`)
+  so its update toast doesn't send players to the GitHub releases.
+- The app ID `rs.hashi` needs `hashi.rs` verified: a token from Flathub's developer portal at
+  `https://hashi.rs/.well-known/org.flathub.VerifiedApps.txt`, which the server would have to
+  serve.
+- Open the submission pull request to `flathub/flathub` himself, disclosing that the app is
+  written with AI, and expect that it may be refused.
+
+The policy changes now and then (in May 2026 it banned nearly all apps made with AI, September
+softened that to disclosure): look again before deciding.

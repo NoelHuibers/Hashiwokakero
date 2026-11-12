@@ -27,10 +27,16 @@ const DESKTOP_DOWNLOAD_URL: &str = "https://github.com/NoelHuibers/Hashiwokakero
 /// variable `MS_STORE_APP_ID` as `HASHI_MS_STORE_ID`.
 const MICROSOFT_STORE_ID: Option<&str> = option_env!("HASHI_MS_STORE_ID");
 
+/// The Linux app from the Snap Store (docs/stores.md, Snap Store): the snap's name, which the
+/// release's web bundle gets from the repository variable `SNAP_NAME` as `HASHI_SNAP_NAME`
+/// (`hashi` without it).
+const SNAP_NAME: Option<&str> = option_env!("HASHI_SNAP_NAME");
+
 /// The desktops the app runs on, as the app's plugin names them to the page
 /// (`window.__HASHI_DESKTOP__`, `app/src-tauri/src/desktop.rs`): Rust's `std::env::consts::OS`,
-/// or `msstore` for the Windows app installed from the Microsoft Store, which the Store updates.
-const DESKTOPS: [&str; 4] = ["windows", "macos", "linux", "msstore"];
+/// or `msstore` for the Windows app installed from the Microsoft Store and `snap` for the Linux
+/// app from the Snap Store, which their stores update.
+const DESKTOPS: [&str; 5] = ["windows", "macos", "linux", "msstore", "snap"];
 
 /// Who the app is: set once by [`start`], `None` on the website.
 #[cfg(feature = "csr")]
@@ -98,9 +104,32 @@ fn store_url(platform: &str) -> &'static str {
         "msstore" => MICROSOFT_STORE_URL.get_or_init(|| {
             microsoft_store_url(MICROSOFT_STORE_ID).unwrap_or_else(|| SITE_URL.to_string())
         }),
+        "snap" => SNAP_STORE_URL.get_or_init(|| snap_store_url(SNAP_NAME)),
         desktop if DESKTOPS.contains(&desktop) => DESKTOP_DOWNLOAD_URL,
         _ => SITE_URL,
     }
+}
+
+/// [`snap_store_url`] of the build's snap name.
+static SNAP_STORE_URL: OnceLock<String> = OnceLock::new();
+
+/// The snap's page in the Snap Store, `https://snapcraft.io/<name>`, by its name: the one the
+/// build was given if it is a snap's name (lower-case letters, digits and single hyphens, at
+/// most 40, at least one letter, no hyphen at either end), else `hashi`. snapd updates a snap by
+/// itself within hours; the page is where a player who is ahead of it finds the update (the
+/// software centre's "Update" button, or `snap refresh hashi`).
+fn snap_store_url(name: Option<&str>) -> String {
+    let name = name.map(str::trim).filter(|name| {
+        (1..=40).contains(&name.len())
+            && name
+                .bytes()
+                .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+            && name.bytes().any(|b| b.is_ascii_lowercase())
+            && !name.starts_with('-')
+            && !name.ends_with('-')
+            && !name.contains("--")
+    });
+    format!("https://snapcraft.io/{}", name.unwrap_or("hashi"))
 }
 
 /// [`microsoft_store_url`] of the build's Store ID, else the website.
@@ -164,7 +193,7 @@ pub(super) fn app_header() -> Option<&'static str> {
 }
 
 /// The platform the app runs on: the phone, `android` or `ios`, or the desktop, `windows`,
-/// `macos`, `linux` or `msstore` (`web` in a browser); `None` before [`start`].
+/// `macos`, `linux`, `msstore` or `snap` (`web` in a browser); `None` before [`start`].
 #[cfg(feature = "csr")]
 pub(super) fn app_platform() -> Option<&'static str> {
     APP.get().map(|app| app.platform)
@@ -203,7 +232,7 @@ pub(super) struct Keys<'a> {
 
 /// Where a key in the desktop app on `platform` goes in the history, as in the browsers there:
 /// one page back (`-1`) or forward (`1`), `None` for other keys. On macOS ⌘[ and ⌘] (Safari's),
-/// on Linux Alt+← and Alt+→. On Windows nothing: `WebView2` has Alt+← and Alt+→ itself, and the
+/// on Linux (the snap too) Alt+← and Alt+→. On Windows nothing: `WebView2` has Alt+← and Alt+→ itself, and the
 /// phones have their back gesture.
 #[cfg(any(feature = "csr", test))]
 pub(super) fn history_step(platform: &str, keys: Keys<'_>) -> Option<i32> {
@@ -211,8 +240,8 @@ pub(super) fn history_step(platform: &str, keys: Keys<'_>) -> Option<i32> {
     match (platform, keys.key) {
         ("macos", "[") if only(false, true) => Some(-1),
         ("macos", "]") if only(false, true) => Some(1),
-        ("linux", "ArrowLeft") if only(true, false) => Some(-1),
-        ("linux", "ArrowRight") if only(true, false) => Some(1),
+        ("linux" | "snap", "ArrowLeft") if only(true, false) => Some(-1),
+        ("linux" | "snap", "ArrowRight") if only(true, false) => Some(1),
         _ => None,
     }
 }
@@ -382,6 +411,7 @@ mod tests {
         assert_eq!(platform(Some("macos"), mac, 0), "macos");
         assert_eq!(platform(Some("linux"), mac, 0), "linux");
         assert_eq!(platform(Some("msstore"), windows, 10), "msstore");
+        assert_eq!(platform(Some("snap"), mac, 0), "snap");
         // Only the desktops it knows: Rust's other systems are left to the user agent
         assert_eq!(platform(Some("freebsd"), linux, 0), "web");
         assert_eq!(platform(Some(""), android, 5), "android");
@@ -408,6 +438,10 @@ mod tests {
         assert_eq!(history_step("macos", command("]")), Some(1));
         assert_eq!(history_step("linux", alt("ArrowLeft")), Some(-1));
         assert_eq!(history_step("linux", alt("ArrowRight")), Some(1));
+        // The snap is the Linux app
+        assert_eq!(history_step("snap", alt("ArrowLeft")), Some(-1));
+        assert_eq!(history_step("snap", alt("ArrowRight")), Some(1));
+        assert_eq!(history_step("snap", command("[")), None);
         // WebView2 does it itself, and the phones have their gestures
         for platform in ["windows", "msstore", "android", "ios", "web"] {
             assert_eq!(history_step(platform, alt("ArrowLeft")), None, "{platform}");
@@ -489,6 +523,34 @@ mod tests {
             assert_eq!(microsoft_store_url(Some(wrong)), None, "{wrong}");
         }
         assert_eq!(microsoft_store_url(None), None);
+        // The snap: its page in the Snap Store, under the build's name or hashi
+        assert_eq!(store_url("snap"), snap_store_url(SNAP_NAME));
+        assert_eq!(snap_store_url(None), "https://snapcraft.io/hashi");
+        assert_eq!(
+            snap_store_url(Some("hashi-puzzle")),
+            "https://snapcraft.io/hashi-puzzle"
+        );
+        assert_eq!(
+            snap_store_url(Some(" hashi2 ")),
+            "https://snapcraft.io/hashi2"
+        );
+        for wrong in [
+            "",
+            "Hashi",
+            "-hashi",
+            "hashi-",
+            "ha--shi",
+            "2026",
+            "hashi/../x",
+            "hashi.rs",
+            "a-very-long-snap-name-that-is-over-forty-chars",
+        ] {
+            assert_eq!(
+                snap_store_url(Some(wrong)),
+                "https://snapcraft.io/hashi",
+                "{wrong}"
+            );
+        }
         assert_eq!(store_url("web"), "https://hashi.rs");
         // Outside the app
         assert_eq!(update_url(), "https://hashi.rs");

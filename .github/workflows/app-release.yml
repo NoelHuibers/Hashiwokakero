@@ -16,8 +16,10 @@ name: App release
 # - Microsoft Store (docs/stores.md, Microsoft Store): the Windows builds as an MSIX bundle (x64
 #   and arm64, unsigned: the Store signs it), uploaded as the app's next submission and committed
 #   for certification.
+# - Snap Store (docs/stores.md, Snap Store): the Linux .deb of each architecture (amd64, arm64)
+#   as a snap (app/linux/snap/snapcraft.yaml), uploaded into a channel (stable by default).
 # A GitHub release for the tag gets the bundle, a universal APK, the foss APKs, the IPA, the
-# desktop installers and the MSIX bundle.
+# desktop installers, the MSIX bundle and the snaps.
 #
 # A pull request that changes this workflow or the version script runs it as a dry run for all
 # platforms, below; one that changes the Gradle build, the Play or foss sources, the F-Droid
@@ -39,7 +41,8 @@ name: App release
 #   fine).
 # - msstore on: builds nothing, uploads the MSIX bundle of the tag's GitHub release to the
 #   Microsoft Store (`--ref app-v1.2.3`; with the Android stores is fine too).
-# - desktop on: builds only the desktop installers and the MSIX bundle of the tag
+# - snap on: the same with the snaps of the tag's GitHub release, to the Snap Store.
+# - desktop on: builds only the desktop installers, the MSIX bundle and the snaps of the tag
 #   (`--ref app-v1.2.3`) and puts them on its GitHub release, replacing those it has, e.g. signed
 #   ones once the Developer ID certificate is in the secrets, or the bundle once the Store's
 #   identity is in the variables.
@@ -54,7 +57,8 @@ name: App release
 # application (MS_STORE_TENANT_ID, MS_STORE_CLIENT_ID, MS_STORE_CLIENT_SECRET, and the variable
 # MS_STORE_APP_ID); its package needs the Store's identity (the variables MS_STORE_IDENTITY_NAME,
 # MS_STORE_PUBLISHER), else it is built with a placeholder for the checks and not released. The
-# macOS build is signed with the Developer ID
+# Snap Store's upload needs snapcraft's login (SNAPCRAFT_STORE_CREDENTIALS), else it is skipped
+# with a notice. The macOS build is signed with the Developer ID
 # certificate (APPLE_DEVELOPER_ID_CERT_BASE64, APPLE_DEVELOPER_ID_CERT_PASSWORD) and notarized
 # with the App Store Connect API key: without the certificate it is built signed ad hoc, with a
 # notice.
@@ -77,6 +81,9 @@ on:
       - scripts/huawei-appgallery.ts
       # The MSIX package and the Microsoft Store's upload (the desktop's Windows builds)
       - scripts/microsoft-store.ts
+      # The snaps and the Linux MetaInfo, and the Snap Store's upload
+      - scripts/snap-store.ts
+      - app/linux/**
       # Play Games' project id (and ids) for the release's App Bundle
       - app/achievements-play.json
       - app/src-tauri/gen/apple/**
@@ -110,8 +117,12 @@ on:
         description: Only upload the MSIX bundle of this tag's GitHub release to the Microsoft Store again (builds nothing; the ref must be a tag app-v<x.y.z>)
         type: boolean
         default: false
+      snap:
+        description: Only upload the snaps of this tag's GitHub release to the Snap Store again (builds nothing; the ref must be a tag app-v<x.y.z>)
+        type: boolean
+        default: false
       desktop:
-        description: Only build the desktop installers and the MSIX bundle and put them on this tag's GitHub release, replacing its ones (the ref must be a tag app-v<x.y.z>)
+        description: Only build the desktop installers, the MSIX bundle and the snaps and put them on this tag's GitHub release, replacing its ones (the ref must be a tag app-v<x.y.z>)
         type: boolean
         default: false
 
@@ -150,6 +161,8 @@ jobs:
       huawei: ${{ steps.mode.outputs.huawei }}
       # Only the Microsoft Store, from the tag's GitHub release
       msstore: ${{ steps.mode.outputs.msstore }}
+      # Only the Snap Store, from the tag's GitHub release
+      snap: ${{ steps.mode.outputs.snap }}
       # Only the desktop installers, onto the tag's GitHub release
       desktop_only: ${{ steps.mode.outputs.desktop_only }}
       android: ${{ steps.platforms.outputs.android }}
@@ -173,12 +186,13 @@ jobs:
           AMAZON: ${{ inputs.amazon }}
           HUAWEI: ${{ inputs.huawei }}
           MSSTORE: ${{ inputs.msstore }}
+          SNAP: ${{ inputs.snap }}
           DESKTOP: ${{ inputs.desktop }}
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           if [ "$DESKTOP" = true ]; then
-            if [ "$PUBLISH" = true ] || [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ]; then
+            if [ "$PUBLISH" = true ] || [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ] || [ "$SNAP" = true ]; then
               echo "::error::desktop together with another input: a release builds the desktop installers anyway, desktop is a run of its own"
               exit 1
             fi
@@ -186,8 +200,8 @@ jobs:
               echo "::error::desktop puts the installers on a tag's GitHub release, not on the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
               exit 1
             fi
-            printf '%s\n' publish=false fdroid=false galaxy=false amazon=false huawei=false msstore=false desktop_only=true >> "$GITHUB_OUTPUT"
-            echo "The desktop installers and the MSIX bundle of $REF_NAME, onto its GitHub release" >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' publish=false fdroid=false galaxy=false amazon=false huawei=false msstore=false snap=false desktop_only=true >> "$GITHUB_OUTPUT"
+            echo "The desktop installers, the MSIX bundle and the snaps of $REF_NAME, onto its GitHub release" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           echo "desktop_only=false" >> "$GITHUB_OUTPUT"
@@ -196,21 +210,22 @@ jobs:
           if [ "$AMAZON" = true ]; then stores+=("the Amazon Appstore"); fi
           if [ "$HUAWEI" = true ]; then stores+=("Huawei AppGallery"); fi
           if [ "$MSSTORE" = true ]; then stores+=("the Microsoft Store"); fi
+          if [ "$SNAP" = true ]; then stores+=("the Snap Store"); fi
           if [ ${#stores[@]} -gt 0 ]; then
             if [ "$PUBLISH" = true ] || [ "$FDROID" = true ]; then
-              echo "::error::galaxy, amazon, huawei or msstore together with publish or fdroid: a release uploads to the stores anyway, fdroid is a run of its own"
+              echo "::error::galaxy, amazon, huawei, msstore or snap together with publish or fdroid: a release uploads to the stores anyway, fdroid is a run of its own"
               exit 1
             fi
             if [ "$REF_TYPE" != tag ]; then
-              echo "::error::galaxy, amazon, huawei and msstore upload the files of a tag's GitHub release, not of the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
+              echo "::error::galaxy, amazon, huawei, msstore and snap upload the files of a tag's GitHub release, not of the $REF_TYPE $REF_NAME (run it with --ref app-v<x.y.z>)"
               exit 1
             fi
-            printf '%s\n' publish=false fdroid=false "galaxy=${GALAXY:-false}" "amazon=${AMAZON:-false}" "huawei=${HUAWEI:-false}" "msstore=${MSSTORE:-false}" >> "$GITHUB_OUTPUT"
+            printf '%s\n' publish=false fdroid=false "galaxy=${GALAXY:-false}" "amazon=${AMAZON:-false}" "huawei=${HUAWEI:-false}" "msstore=${MSSTORE:-false}" "snap=${SNAP:-false}" >> "$GITHUB_OUTPUT"
             list=$(printf '%s, ' "${stores[@]}")
             echo "Again to ${list%, }, from the files of the GitHub release $REF_NAME" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          printf '%s\n' galaxy=false amazon=false huawei=false msstore=false >> "$GITHUB_OUTPUT"
+          printf '%s\n' galaxy=false amazon=false huawei=false msstore=false snap=false >> "$GITHUB_OUTPUT"
           if [ "$FDROID" = true ]; then
             if [ "$PUBLISH" = true ]; then
               echo "::error::publish and fdroid together: a release publishes the F-Droid repository anyway"
@@ -228,7 +243,7 @@ jobs:
               exit 1
             fi
             echo "publish=true" >> "$GITHUB_OUTPUT"
-            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release with the desktop installers, the F-Droid repository, the Galaxy Store, the Amazon Appstore, Huawei AppGallery and the Microsoft Store" >> "$GITHUB_STEP_SUMMARY"
+            echo "Release of $REF_NAME: Google Play (internal track), App Store Connect (TestFlight), a GitHub release with the desktop installers, the F-Droid repository, the Galaxy Store, the Amazon Appstore, Huawei AppGallery, the Microsoft Store and the Snap Store" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "publish=false" >> "$GITHUB_OUTPUT"
             echo "Dry run on the $REF_TYPE $REF_NAME: built, signed and checked, not published" >> "$GITHUB_STEP_SUMMARY"
@@ -244,12 +259,13 @@ jobs:
           AMAZON: ${{ steps.mode.outputs.amazon }}
           HUAWEI: ${{ steps.mode.outputs.huawei }}
           MSSTORE: ${{ steps.mode.outputs.msstore }}
+          SNAP: ${{ steps.mode.outputs.snap }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
         run: |
           android=true ios=true desktop=true
-          if [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ]; then
+          if [ "$FDROID" = true ] || [ "$GALAXY" = true ] || [ "$AMAZON" = true ] || [ "$HUAWEI" = true ] || [ "$MSSTORE" = true ] || [ "$SNAP" = true ]; then
             android=false ios=false desktop=false
           elif [ "$DESKTOP_ONLY" = true ]; then
             android=false ios=false
@@ -260,7 +276,7 @@ jobs:
             android_files='^app/src-tauri/gen/android/app/(build\.gradle\.kts$|src/(play|foss)/)|^app/achievements-play\.json$|^app/fdroid/|^scripts/(fdroid-repo|foss-apk|galaxy-store|amazon-appstore|huawei-appgallery)\.ts$'
             grep -qE "$both|$android_files" <<< "$files" || android=false
             grep -qE "$both|^app/src-tauri/gen/apple/|^app/src-tauri/Info\.ios\.plist$" <<< "$files" || ios=false
-            grep -qE "$both|^app/src-tauri/(tauri\.conf\.json$|icons/)|^scripts/microsoft-store\.ts$" <<< "$files" || desktop=false
+            grep -qE "$both|^app/src-tauri/(tauri\.conf\.json$|icons/)|^app/linux/|^scripts/(microsoft-store|snap-store)\.ts$" <<< "$files" || desktop=false
           fi
           if [ "$ios" = true ] && { [ -z "$APPLE_API_KEY_ID" ] || [ -z "$APPLE_API_ISSUER" ] || [ -z "$APPLE_API_KEY_P8" ]; }; then
             ios=false
@@ -360,10 +376,12 @@ jobs:
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall -y trunk@0.22.0
-      # The Microsoft Store's app links its update to its page in the Store (api::app)
+      # The Microsoft Store's and the Snap Store's apps link their update to their page in the
+      # store (api::app)
       - name: Build
         env:
           HASHI_MS_STORE_ID: ${{ vars.MS_STORE_APP_ID }}
+          HASHI_SNAP_NAME: ${{ vars.SNAP_NAME }}
         run: pnpm run app:build --locked
       - uses: actions/upload-artifact@v7
         with:
@@ -1004,6 +1022,21 @@ jobs:
         name: Signing
         run: |
           echo "::notice::The Windows installers are unsigned (docs/stores.md, Desktop builds): SmartScreen warns before they run"
+      # Node 26 runs scripts/snap-store.ts (Linux) and scripts/microsoft-store.ts (Windows)
+      - if: matrix.system != 'macos'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      # Linux: the AppStream MetaInfo for the .deb and the .rpm (and through the .deb the snap), from
+      # the store texts, with the date of the tagged commit. "Snap" checks it (Ubuntu 22.04's
+      # appstreamcli predates AppStream 1.0's tags).
+      - if: matrix.system == 'linux'
+        name: MetaInfo
+        run: |
+          node scripts/snap-store.ts metainfo --version "$VERSION" --date "$(git log -1 --format=%cs)" \
+            --whatsnew app/store/whatsnew/whatsnew-en-US --out "$RUNNER_TEMP/rs.hashi.metainfo.xml"
+          # For the check of the .rpm below
+          sudo apt-get install -y --no-install-recommends rpm
       # Release, without beforeBuildCommand (the bundle is there). Signed: the identity Tauri finds
       # in the imported certificate's keychain, the only one there.
       - name: Build
@@ -1015,6 +1048,11 @@ jobs:
           if [ "$SIGNED" = true ]; then
             config=$(jq -c '.bundle.macOS.signingIdentity = "Developer ID Application"' <<< "$config")
           fi
+          if [ "$SYSTEM" = linux ]; then
+            config=$(jq -c --arg file "$RUNNER_TEMP/rs.hashi.metainfo.xml" \
+              '.bundle.linux.deb.files["/usr/share/metainfo/rs.hashi.metainfo.xml"] = $file
+              | .bundle.linux.rpm.files["/usr/share/metainfo/rs.hashi.metainfo.xml"] = $file' <<< "$config")
+          fi
           args=(--ci --bundles "$BUNDLES" --config "$config")
           if [ -n "$TARGET" ]; then args+=(--target "$TARGET"); fi
           cargo tauri build "${args[@]}"
@@ -1023,10 +1061,6 @@ jobs:
       # (scripts/microsoft-store.ts), the logos' sizes indexed by MakePri, packed by MakeAppx, which
       # checks the manifest against its schema. Unsigned: the Store signs it. "Microsoft Store
       # package" bundles both architectures.
-      - if: matrix.system == 'windows'
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
       - if: matrix.system == 'windows'
         name: MSIX package
         shell: pwsh
@@ -1101,6 +1135,8 @@ jobs:
               [ "$(dpkg-deb -f "$name.deb" Version)" = "$VERSION" ] || fail "the package's version is $(dpkg-deb -f "$name.deb" Version), not $VERSION"
               [ "$(dpkg-deb -f "$name.deb" Architecture)" = "$deb_arch" ] || fail "the package is for $(dpkg-deb -f "$name.deb" Architecture), not $deb_arch"
               dpkg-deb -c "$name.deb" | grep -qE ' (\./)?usr/share/applications/Hashi\.desktop$' || fail "the package has no desktop entry"
+              dpkg-deb -c "$name.deb" | grep -qE ' (\./)?usr/share/metainfo/rs\.hashi\.metainfo\.xml$' || fail "the package has no MetaInfo"
+              rpm -qlp "$name.rpm" | grep -qx /usr/share/metainfo/rs.hashi.metainfo.xml || fail "the rpm has no MetaInfo"
               ;;
             macos)
               app="$RUNNER_TEMP/app"
@@ -1264,9 +1300,121 @@ jobs:
           compression-level: 0
           retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
 
+  # The Snap Store's snaps (docs/stores.md, Snap Store), one per architecture, on a runner of it:
+  # the Linux .deb of "Build desktop" unpacked into a snap (app/linux/snap/snapcraft.yaml: core24,
+  # strict, GNOME's extension for GTK and WebKitGTK), built by snapcraft in an LXD container
+  # (snapcore/action-build). Checked: its meta/snap.yaml (scripts/snap-store.ts: the name, the
+  # version, the architecture, core24, strict, stable) and the MetaInfo in it (appstreamcli), then
+  # installed (unsigned, --dangerous) and started on a virtual display with hashi.rs blocked, like
+  # "Build app (desktop)" in ci.yml: the window has to show the page, the program has to run from
+  # the snap (what desktop.rs looks for to tell the page it is the snap). The name is the
+  # repository variable SNAP_NAME, hashi without it.
+  snap:
+    name: Snap (${{ matrix.arch }})
+    needs: [check, desktop]
+    if: ${{ !cancelled() && needs.check.outputs.desktop == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      ARCH: ${{ matrix.arch }}
+      SNAP_NAME: ${{ vars.SNAP_NAME || 'hashi' }}
+    steps:
+      - uses: actions/checkout@v7
+      # Node 26 runs scripts/snap-store.ts
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@v8
+        with:
+          name: desktop-linux-${{ matrix.arch }}
+          path: desktop
+      # The project: the .deb, the snap's icon (the app's 512 px one) and its name
+      - name: Snap project
+        run: |
+          mkdir -p app/linux/snap/local app/linux/snap/gui
+          cp "desktop/hashi-$VERSION-linux-$ARCH.deb" app/linux/snap/local/hashi.deb
+          cp app/src-tauri/icons/icon.png app/linux/snap/gui/icon.png
+          sed -i "s/^name: hashi\$/name: $SNAP_NAME/" app/linux/snap/snapcraft.yaml
+          grep -qx "name: $SNAP_NAME" app/linux/snap/snapcraft.yaml
+      - id: build
+        uses: snapcore/action-build@v1
+        with:
+          path: app/linux
+      - name: Check
+        env:
+          SNAP_FILE: ${{ steps.build.outputs.snap }}
+        run: |
+          mkdir -p release
+          cp "$SNAP_FILE" "release/hashi-$VERSION-linux-$ARCH.snap"
+          command -v unsquashfs > /dev/null || sudo apt-get install -y --no-install-recommends squashfs-tools
+          node scripts/snap-store.ts release --version "$VERSION" --dry-run "release/hashi-$VERSION-linux-$ARCH.snap"
+          unsquashfs -cat "release/hashi-$VERSION-linux-$ARCH.snap" meta/snap.yaml
+          # The MetaInfo the .deb brought, by AppStream 1.0's rules (rs.hashi has only two parts,
+          # which appstreamcli would like to be three: only a hint)
+          unsquashfs -cat "release/hashi-$VERSION-linux-$ARCH.snap" usr/share/metainfo/rs.hashi.metainfo.xml > "$RUNNER_TEMP/rs.hashi.metainfo.xml"
+          sudo apt-get install -y --no-install-recommends appstream
+          appstreamcli validate --no-net --explain --override=cid-desktopapp-is-not-rdns=info "$RUNNER_TEMP/rs.hashi.metainfo.xml"
+      - name: Install and start
+        run: |
+          sudo apt-get install -y --no-install-recommends xvfb xdotool imagemagick dbus-x11
+          # The platform snaps of GNOME's extension, which the store would install with it
+          sudo snap install gnome-46-2404 mesa-2404 gtk-common-themes
+          sudo snap install --dangerous "release/hashi-$VERSION-linux-$ARCH.snap"
+          snap connections "$SNAP_NAME"
+          echo "127.0.0.1 hashi.rs" | sudo tee -a /etc/hosts
+          Xvfb :99 -screen 0 1280x800x24 &
+          export DISPLAY=:99
+          sleep 2
+          dbus-run-session -- snap run "$SNAP_NAME" > app.log 2>&1 &
+          sleep 30
+          mkdir -p smoke
+          import -window root smoke/snap.png
+          cp app.log smoke/
+          colors=$(convert smoke/snap.png -format %k info:)
+          echo "Screenshot: $colors colours"
+          pid=$(pgrep -x hashi | head -n 1)
+          [ -n "$pid" ] || { cat app.log; echo "::error::the app from the snap isn't running after 30 s"; exit 1; }
+          exe=$(sudo readlink "/proc/$pid/exe")
+          echo "Running: $exe"
+          [[ "$exe" == /snap/"$SNAP_NAME"/* ]] || { echo "::error::the program runs from $exe, not from the snap"; exit 1; }
+          xdotool search --name '^Hashi$' getwindowgeometry || { cat app.log; echo "::error::no window called Hashi"; exit 1; }
+          [ "$colors" -gt 500 ] || { cat app.log; echo "::error::the window shows no page ($colors colours)"; exit 1; }
+          echo "The snap ($ARCH) runs and shows the page" >> "$GITHUB_STEP_SUMMARY"
+          kill "$pid"
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: snap-smoke-${{ matrix.arch }}
+          path: smoke
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Size
+        run: |
+          mb() { awk -v bytes="$(wc -c < "$1")" 'BEGIN { printf "%.1f MB", bytes / 1048576 }'; }
+          {
+            echo "| Snap $ARCH $VERSION | size |"
+            echo "|---|---|"
+            for file in release/*; do echo "| $(basename "$file") | $(mb "$file") |"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: snap-linux-${{ matrix.arch }}
+          path: release
+          compression-level: 0
+          retention-days: ${{ needs.check.outputs.publish == 'true' && 30 || 3 }}
+
   release:
     name: GitHub release
-    needs: [check, android, android-foss, ios, desktop, msstore-package]
+    needs: [check, android, android-foss, ios, desktop, msstore-package, snap]
     if: >-
       ${{ !cancelled() && ((needs.check.outputs.publish == 'true' && needs.android.result == 'success')
       || (needs.check.outputs.desktop_only == 'true' && needs.desktop.result == 'success')) }}
@@ -1303,6 +1451,13 @@ jobs:
         with:
           name: msstore-release
           path: release
+      # The snaps, of the architectures that made one
+      - if: needs.snap.result != 'skipped' && needs.check.outputs.desktop == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: snap-linux-*
+          path: release
+          merge-multiple: true
       # Only the desktop: the release's other files for its notes, without its old desktop ones
       - if: needs.check.outputs.desktop_only == 'true'
         name: The release's other files
@@ -1320,6 +1475,7 @@ jobs:
           VERSION: ${{ needs.check.outputs.version }}
           CODE: ${{ needs.check.outputs.code }}
           DESKTOP_ONLY: ${{ needs.check.outputs.desktop_only }}
+          SNAP_NAME: ${{ vars.SNAP_NAME || 'hashi' }}
           MACOS_SIGNED: ${{ secrets.APPLE_DEVELOPER_ID_CERT_BASE64 != '' }}
         run: |
           # Every file the release has after this run, for the notes
@@ -1382,6 +1538,7 @@ jobs:
                   *-linux-*.AppImage) echo "- \`$name\`: Linux, runs on most distributions without installing (chmod +x)." ;;
                   *-linux-*.deb) echo "- \`$name\`: Debian, Ubuntu and their kin." ;;
                   *-linux-*.rpm) echo "- \`$name\`: Fedora, openSUSE and their kin." ;;
+                  *-linux-*.snap) echo "- \`$name\`: the snap uploaded to the Snap Store. Install it from there (\`snap install $SNAP_NAME\`), which updates it; this file installs only with --dangerous, and never updates." ;;
                   *) echo "- \`$name\`" ;;
                 esac
               done
@@ -1985,3 +2142,74 @@ jobs:
           if [ "$SUBMIT" = true ]; then args+=(--submit); fi
           if [ "$UPLOAD" != true ]; then args+=(--dry-run); fi
           node scripts/microsoft-store.ts "${args[@]}" "release/$BUNDLE"
+
+  # The Snap Store (docs/stores.md, Snap Store), with scripts/snap-store.ts and snapcraft: each
+  # architecture's snap is uploaded and released into the channel (the repository variable
+  # SNAP_CHANNEL, stable without it) once the store's automatic review passes; snapd then updates
+  # every installed snap within hours. A rerun uploads nothing twice (a revision of this version
+  # the store has is released instead). Skipped with a notice until snapcraft's login is in the
+  # secrets (SNAPCRAFT_STORE_CREDENTIALS, `snapcraft export-login`); the snap's name (SNAP_NAME)
+  # is registered by hand. A dry run checks the snaps and calls nobody.
+  snapstore:
+    name: Upload to Snap Store
+    needs: [check, snap]
+    if: >-
+      ${{ !cancelled() && (needs.check.outputs.snap == 'true'
+      || needs.snap.result == 'success') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      SNAP_NAME: ${{ vars.SNAP_NAME || 'hashi' }}
+      CHANNEL: ${{ vars.SNAP_CHANNEL || 'stable' }}
+      UPLOAD: ${{ needs.check.outputs.publish == 'true' || needs.check.outputs.snap == 'true' }}
+    steps:
+      - id: account
+        name: Snapcraft login
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          if [ -n "$SNAPCRAFT_STORE_CREDENTIALS" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          elif [ "$UPLOAD" = true ]; then
+            echo "::notice::No snapcraft login in this run's secrets (SNAPCRAFT_STORE_CREDENTIALS), nothing is uploaded to the Snap Store"
+            echo "No snapcraft login in this run's secrets, nothing is uploaded to the Snap Store (once it is set: \`gh workflow run app-release.yml --ref app-v$VERSION -f snap=true\`)." >> "$GITHUB_STEP_SUMMARY"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            # A dry run needs no login
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/checkout@v7
+      # Node 26 runs scripts/snap-store.ts
+      - if: steps.account.outputs.ready == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.snap != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: snap-linux-*
+          path: release
+          merge-multiple: true
+      - if: steps.account.outputs.ready == 'true' && needs.check.outputs.snap == 'true'
+        name: The GitHub release's snaps
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p "hashi-$VERSION-linux-*.snap" -D release
+          ls -l release
+      - if: steps.account.outputs.ready == 'true'
+        name: Upload
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          command -v unsquashfs > /dev/null || sudo apt-get install -y --no-install-recommends squashfs-tools
+          args=(release --version "$VERSION" --channel "$CHANNEL")
+          if [ "$UPLOAD" = true ]; then
+            sudo snap install snapcraft --classic
+          else
+            args+=(--dry-run)
+          fi
+          node scripts/snap-store.ts "${args[@]}" release/hashi-"$VERSION"-linux-*.snap
