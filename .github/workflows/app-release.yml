@@ -1369,16 +1369,24 @@ jobs:
           appstreamcli validate --no-net --explain --override=cid-desktopapp-is-not-rdns=info "$RUNNER_TEMP/rs.hashi.metainfo.xml"
       - name: Install and start
         run: |
-          sudo apt-get install -y --no-install-recommends xvfb xdotool imagemagick dbus-x11
+          sudo apt-get install -y --no-install-recommends xvfb xdotool imagemagick
           # The platform snaps of GNOME's extension, which the store would install with it
           sudo snap install gnome-46-2404 mesa-2404 gtk-common-themes
           sudo snap install --dangerous "release/hashi-$VERSION-linux-$ARCH.snap"
           snap connections "$SNAP_NAME"
           echo "127.0.0.1 hashi.rs" | sudo tee -a /etc/hosts
+          # snap run puts the app into a scope of the user's systemd (snapd's cgroup of the
+          # snap), which the runner's shell, a system service, doesn't have: a user manager with
+          # its session bus, as a desktop session would have it
+          sudo apt-get install -y --no-install-recommends dbus-user-session
+          sudo loginctl enable-linger "$USER"
+          export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          for _ in $(seq 30); do [ -S "$XDG_RUNTIME_DIR/bus" ] && break; sleep 1; done
+          export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
           Xvfb :99 -screen 0 1280x800x24 &
           export DISPLAY=:99
           sleep 2
-          dbus-run-session -- snap run "$SNAP_NAME" > app.log 2>&1 &
+          snap run "$SNAP_NAME" > app.log 2>&1 &
           sleep 30
           mkdir -p smoke
           import -window root smoke/snap.png
