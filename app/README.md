@@ -1090,7 +1090,7 @@ Made in CI, not committed (a run makes about 700). The sources:
   and waves. `store/capture/devices.ts` has the sizes: the App Store's iPhone 6.9" (1320 × 2868)
   and iPad 13" (2064 × 2752), Google Play's phone (1080 × 1920) and 7" and 10" tablets
   (1080 × 1920, 1440 × 2560), all 9:16 or Apple's sizes, and the desktop stores' 16:9
-  (1920 × 1080: the Microsoft Store and the Snap Store, later Steam and itch.io), the window with
+  (1920 × 1080: the Microsoft Store and the Snap Store), the window with
   its title bar, opaque PNGs.
 - `store/templates/feature.html`: Play's feature graphic (1024 × 500), like the site's social
   preview. Play's hi-res icon is `public/icon-512.png`, the app's icon.
