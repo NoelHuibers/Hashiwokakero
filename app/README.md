@@ -753,6 +753,13 @@ the upload key.
   needs the Store's identity in the repository variables (`MS_STORE_*`), the upload the
   secrets of its Entra application; without them they are skipped with a notice, and a dry run
   checks the bundle, installs it on the runner and starts the app from it.
+- The Snap Store, the Linux `.deb` of each architecture as a snap
+  (`hashi-<version>-linux-<x64|arm64>.snap`, also on the GitHub release), uploaded into the
+  channel `stable` (`SNAP_CHANNEL`), by the jobs "Snap" and "Upload to Snap Store"
+  (`app/linux/snap/snapcraft.yaml`, `scripts/snap-store.ts`,
+  [stores.md](../docs/stores.md#snap-store)). The upload needs snapcraft's login
+  (`SNAPCRAFT_STORE_CREDENTIALS`); without it it is skipped with a notice, and a dry run builds,
+  checks, installs and starts the snaps.
 
 Run by hand (`gh workflow run app-release.yml --ref <ref>`), or by a pull request, the workflow
 is a dry run: it builds, signs and checks, makes the F-Droid repository (the artifact
@@ -762,8 +769,9 @@ whose files it changes: both for the workflow or `scripts/app-version.ts`, Andro
 `gen/android/app/build.gradle.kts`, `gen/android/app/src/play/` or `src/foss/`,
 `app/achievements-play.json`, `app/fdroid/`, `scripts/fdroid-repo.ts`, `scripts/foss-apk.ts`,
 `scripts/galaxy-store.ts`, `scripts/amazon-appstore.ts` or `scripts/huawei-appgallery.ts`, iOS for `gen/apple/` or
-`src-tauri/Info.ios.plist`, the desktop (and the Microsoft Store's bundle) for
-`src-tauri/tauri.conf.json`, `src-tauri/icons/` or `scripts/microsoft-store.ts`.
+`src-tauri/Info.ios.plist`, the desktop (and the Microsoft Store's bundle and the snaps) for
+`src-tauri/tauri.conf.json`, `src-tauri/icons/`, `app/linux/`, `scripts/microsoft-store.ts` or
+`scripts/snap-store.ts`.
 Without the signing secrets (pull requests of Dependabot or of forks)
 an Android dry run signs with throwaway keys (the upload key's, the direct key's and the F-Droid
 index key's), and iOS is skipped with a notice. With `-f publish=true` on a tag
@@ -1082,8 +1090,8 @@ Made in CI, not committed (a run makes about 700). The sources:
   and waves. `store/capture/devices.ts` has the sizes: the App Store's iPhone 6.9" (1320 × 2868)
   and iPad 13" (2064 × 2752), Google Play's phone (1080 × 1920) and 7" and 10" tablets
   (1080 × 1920, 1440 × 2560), all 9:16 or Apple's sizes, and the desktop stores' 16:9
-  (1920 × 1080: the Microsoft Store, later Steam and itch.io), the window with its title bar,
-  opaque PNGs.
+  (1920 × 1080: the Microsoft Store and the Snap Store, later Steam and itch.io), the window with
+  its title bar, opaque PNGs.
 - `store/templates/feature.html`: Play's feature graphic (1024 × 500), like the site's social
   preview. Play's hi-res icon is `public/icon-512.png`, the app's icon.
 
@@ -1516,7 +1524,11 @@ library there. What the releases make of it, the signing and the stores that bui
   links to its page there (`https://apps.microsoft.com/detail/<Store ID>`, the Store ID from the
   repository variable `MS_STORE_APP_ID` when the release builds the bundle, `HASHI_MS_STORE_ID`),
   not to an installer that would put a second Hashi next to it. Otherwise it is the Windows app
-  (`history_step`, sharing). See [stores.md](../docs/stores.md#microsoft-store).
+  (`history_step`, sharing). See [stores.md](../docs/stores.md#microsoft-store). Likewise the
+  Snap Store's app says `snap` instead of `linux`: snapd starts it with `SNAP`, the snap's
+  folder, and the program lies in it. Its toast links to `https://snapcraft.io/<name>` (the
+  repository variable `SNAP_NAME` as `HASHI_SNAP_NAME`, else `hashi`); otherwise it is the Linux
+  app. See [stores.md](../docs/stores.md#snap-store).
 - **Origins.** Windows' WebView2 serves the page from `https://tauri.localhost` (with
   `useHttpsScheme`, as Android), macOS and Linux from `tauri://localhost` (as iOS), so the
   server's CORS list, the content security policy and `on_navigation` already cover them. The

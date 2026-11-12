@@ -1,0 +1,56 @@
+# The Linux app as a snap for the Snap Store (docs/stores.md, Snap Store). Not built from source
+# here: the release's .deb of the architecture ("Build desktop" of app-release.yml, the same
+# program as the .deb, .rpm and AppImage on the GitHub release) is unpacked into the snap, with
+# the MetaInfo it carries (scripts/snap-store.ts metainfo) as the snap's summary, description
+# and links. The job "Snap" of app-release.yml puts the .deb at snap/local/hashi.deb and the
+# icon at snap/gui/icon.png, sets the name (the repository variable SNAP_NAME, hashi without it)
+# and builds it on an amd64 and an arm64 runner.
+#
+# GNOME's extension brings GTK, WebKitGTK 4.1 and GStreamer from the gnome-46-2404 platform
+# snap, so the snap holds little more than the program, and the plugs a GTK app on the desktop
+# needs (desktop, wayland, x11, opengl, gsettings). Ours on top: network for hashi.rs, and
+# audio-playback for the sounds. No home: the save dialog of the CNF export is GTK's native file
+# chooser, which goes through the desktop's file chooser portal in a snap (GTK_USE_PORTAL), and
+# the file it picks is the portal's to give.
+name: hashi
+title: Hashi
+base: core24
+adopt-info: hashi
+grade: stable
+confinement: strict
+license: MIT
+website: https://hashi.rs
+contact: https://hashi.rs/kontakt
+issues: https://github.com/NoelHuibers/Hashiwokakero/issues
+source-code: https://github.com/NoelHuibers/Hashiwokakero
+
+platforms:
+  amd64:
+  arm64:
+
+apps:
+  hashi:
+    command: usr/bin/hashi
+    desktop: usr/share/applications/Hashi.desktop
+    # The MetaInfo's id: software centres join the snap and its MetaInfo by it
+    common-id: rs.hashi
+    extensions: [gnome]
+    plugs:
+      - network
+      - audio-playback
+    environment:
+      GTK_USE_PORTAL: "1"
+
+parts:
+  hashi:
+    plugin: dump
+    source: snap/local/hashi.deb
+    source-type: deb
+    # Title, summary, description, links and the version (its release's, the .deb's) from the
+    # MetaInfo
+    parse-info: [usr/share/metainfo/rs.hashi.metainfo.xml]
+    override-build: |
+      craftctl default
+      # The icon by its path in the snap: the host's icon theme doesn't have it
+      sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/512x512/apps/hashi.png|' \
+        "$CRAFT_PART_INSTALL/usr/share/applications/Hashi.desktop"
