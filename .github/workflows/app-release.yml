@@ -1380,7 +1380,8 @@ jobs:
           # its session bus, as a desktop session would have it
           sudo apt-get install -y --no-install-recommends dbus-user-session
           sudo loginctl enable-linger "$USER"
-          export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          export XDG_RUNTIME_DIR
           for _ in $(seq 30); do [ -S "$XDG_RUNTIME_DIR/bus" ] && break; sleep 1; done
           export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
           Xvfb :99 -screen 0 1280x800x24 &
