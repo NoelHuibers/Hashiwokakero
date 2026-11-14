@@ -2,7 +2,8 @@
 //
 //   target/store/fastlane/android/<locale>/       supply's metadata_path: the texts, and with
 //                                                  images images/ (icon, feature graphic, screenshots)
-//   target/store/fastlane/apple/metadata/<locale>/ deliver's metadata_path
+//   target/store/fastlane/apple/metadata/<locale>/ deliver's metadata_path, with release_notes.txt
+//                                                  (What's New) from app/store/whatsnew
 //   target/store/fastlane/apple/screenshots/<locale>/ deliver's screenshots_path, with images
 //
 // from fastlane/metadata (the texts; locales with `same` in store/locales.ts get a copy of
@@ -15,8 +16,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { APPLE, METADATA, PLAY, PLAY_METADATA } from './locales.ts';
-import { loadListings, ROOT, validate } from './validate.ts';
+import { APPLE, METADATA, PLAY, PLAY_METADATA, type StoreLocale } from './locales.ts';
+import { APPLE_OTHER_PLATFORMS, loadListings, mentions, ROOT, validate } from './validate.ts';
 
 export const OUT = path.join(ROOT, 'target/store/fastlane');
 export const IMAGES = path.join(ROOT, 'target/store/images');
@@ -93,12 +94,82 @@ export function checkImage(
   return problems;
 }
 
+/** The release notes of the version, `whatsnew-<locale>` in Google Play's locale codes. */
+export const WHATSNEW = path.join(ROOT, 'app/store/whatsnew');
+/** App Store Connect's limit of "What's New in This Version", in characters. */
+export const RELEASE_NOTES_LIMIT = 4000;
+
+/**
+ * The release notes of an App Store locale in `dir`: its own `whatsnew-<locale>`, else the one of
+ * the Google Play locale with texts in the same language when there is only one (whatsnew-it-IT
+ * for it, whatsnew-ja-JP for ja), else whatsnew-en-US. Undefined when there is none.
+ */
+export function releaseNotesFile(
+  dir: string,
+  { locale, site }: StoreLocale,
+  play: readonly StoreLocale[] = PLAY,
+): string | undefined {
+  const sameLanguage = play.filter((l) => l.site === site && !l.same);
+  const candidates = [
+    locale,
+    ...(sameLanguage.length === 1 ? sameLanguage.map((l) => l.locale) : []),
+    'en-US',
+  ];
+  return candidates.map((l) => path.join(dir, `whatsnew-${l}`)).find((file) => fs.existsSync(file));
+}
+
+/**
+ * Writes each App Store locale's release_notes.txt (deliver's "What's New") into `metadata`, from
+ * the release notes in `whatsnew`. Notes that name another platform (Google Play, Play Games,
+ * Android: Apple turns those away) are left out, so deliver leaves App Store Connect's text as it
+ * is; notes over Apple's limit are refused. Returns how many it wrote, and a note for each file
+ * left out.
+ */
+export function writeReleaseNotes(
+  metadata: string,
+  {
+    whatsnew = WHATSNEW,
+    apple = APPLE,
+    play = PLAY,
+  }: { whatsnew?: string; apple?: readonly StoreLocale[]; play?: readonly StoreLocale[] } = {},
+): { written: number; notes: string[] } {
+  const skipped = new Map<string, { names: string[]; locales: string[] }>();
+  let written = 0;
+  for (const store of apple) {
+    const file = releaseNotesFile(whatsnew, store, play);
+    if (file === undefined) continue;
+    const text = fs.readFileSync(file, 'utf8').trim();
+    if (text === '') continue;
+    const length = [...text].length;
+    if (length > RELEASE_NOTES_LIMIT)
+      throw new Error(
+        `${path.relative(ROOT, file)} has ${length} characters, the App Store takes ${RELEASE_NOTES_LIMIT}`,
+      );
+    const names = mentions(text, APPLE_OTHER_PLATFORMS);
+    if (names.length > 0) {
+      const entry = skipped.get(file) ?? { names, locales: [] };
+      entry.locales.push(store.locale);
+      skipped.set(file, entry);
+      continue;
+    }
+    fs.writeFileSync(path.join(metadata, store.locale, 'release_notes.txt'), text);
+    written++;
+  }
+  const notes = [...skipped].map(
+    ([file, { names, locales }]) =>
+      `${path.relative(ROOT, file)} names ${names.join(', ')}: the App Store's What's New stays as it is in ${locales.length === apple.length ? 'every locale' : locales.join(', ')}`,
+  );
+  return { written, notes };
+}
+
 const copyText = (from: string, to: string) =>
   fs.writeFileSync(to, fs.readFileSync(from, 'utf8').trim());
 
 export function assemble({ images = true }: { images?: boolean } = {}): {
   play: number;
   apple: number;
+  /** The App Store locales that get release notes, and why others don't. */
+  releaseNotes: { written: number; notes: string[] };
 } {
   const errors = validate(loadListings());
   if (errors.length > 0)
@@ -174,17 +245,19 @@ export function assemble({ images = true }: { images?: boolean } = {}): {
       }
     }
   }
+  const releaseNotes = writeReleaseNotes(appleMeta);
   if (problems.length > 0) throw new Error(`the images have problems:\n${problems.join('\n')}`);
-  return { play: PLAY.length, apple: APPLE.length };
+  return { play: PLAY.length, apple: APPLE.length, releaseNotes };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const text = process.argv.includes('--text');
   try {
-    const { play, apple } = assemble({ images: !text });
+    const { play, apple, releaseNotes } = assemble({ images: !text });
     console.log(
-      `${path.relative(ROOT, OUT)}: Google Play ${play} locales, App Store ${apple} locales, ${text ? 'texts only' : 'texts and images'}`,
+      `${path.relative(ROOT, OUT)}: Google Play ${play} locales, App Store ${apple} locales (${releaseNotes.written} with release notes), ${text ? 'texts only' : 'texts and images'}`,
     );
+    for (const note of releaseNotes.notes) console.log(note);
   } catch (e) {
     console.error(e instanceof Error ? e.message : e);
     process.exit(1);

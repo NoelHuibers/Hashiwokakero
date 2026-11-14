@@ -215,7 +215,7 @@ export function validate(
     checkMentions(
       where,
       `${listing.name}\n${listing.subtitle}\n${listing.description}\n${listing.promotional_text}`,
-      ['android', 'google play', 'play store'],
+      APPLE_OTHER_PLATFORMS,
       fail,
     );
     const urls = {
@@ -353,12 +353,17 @@ const words = (text: string) =>
       .filter((w) => w.length > 0),
   );
 
-function checkMentions(where: string, text: string, terms: readonly string[], fail: Fail) {
+/** The other platforms an App Store text must not name (App Store Review Guideline 2.3.10). */
+export const APPLE_OTHER_PLATFORMS = ['android', 'google play', 'play store', 'play games'];
+
+/** The terms (lower case) a text names as words, in any case. */
+export function mentions(text: string, terms: readonly string[]): string[] {
   const lower = text.toLowerCase();
-  for (const t of terms) {
-    if (new RegExp(`(^|[^\\p{L}])${t}([^\\p{L}]|$)`, 'u').test(lower))
-      fail(where, `mentions another platform (${t})`);
-  }
+  return terms.filter((t) => new RegExp(`(^|[^\\p{L}])${t}([^\\p{L}]|$)`, 'u').test(lower));
+}
+
+function checkMentions(where: string, text: string, terms: readonly string[], fail: Fail) {
+  for (const t of mentions(text, terms)) fail(where, `mentions another platform (${t})`);
 }
 
 function checkCaptions(captions: Listings['captions'], fail: Fail) {
