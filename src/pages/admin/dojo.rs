@@ -203,8 +203,8 @@ fn SubmissionRow(
                 {state_badge(&s)}
                 {s.similar_to.map(|c| view! { <span class="ms-2 text-xs text-warning-dark">{format!("copy of #{c}")}</span> })}
             </td>
-            <td class="py-2 pe-3 text-end tabular-nums">{s.solved.map(|n| format!("{n}/{}", s.total)).unwrap_or_default()}</td>
-            <td class="py-2 pe-3 text-end font-pixel tabular-nums">{s.par2.map(|p| format!("{p:.3}")).unwrap_or_default()}</td>
+            <td class="py-2 pe-3 text-end tabular-nums">{s.solved.map_or_default(|n| format!("{n}/{}", s.total))}</td>
+            <td class="py-2 pe-3 text-end font-pixel tabular-nums">{s.par2.map_or_default(|p| format!("{p:.3}"))}</td>
             <td class="py-2 pe-3 text-xs">{date_string(crate::model::day_of(s.created_at))}" · season "{s.season}</td>
             <td class="py-2">
                 <div class="flex justify-end gap-1">{actions(&s, on_action, ButtonSize::Sm, "")}</div>

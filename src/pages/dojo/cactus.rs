@@ -232,8 +232,8 @@ pub(super) fn Cactus(
                 count = c.curves.len() as u64,
                 solved = c.vbs.len() as u64,
                 total = c.formulas,
-                low = vbs.map(|v| compact(v.0)).unwrap_or_default(),
-                high = vbs.map(|v| compact(v.2)).unwrap_or_default()
+                low = vbs.map_or_default(|v| compact(v.0)),
+                high = vbs.map_or_default(|v| compact(v.2))
             )
         })
     };

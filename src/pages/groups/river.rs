@@ -823,7 +823,7 @@ pub fn RiverCard(group: GroupContext) -> impl IntoView {
         };
         let members = group
             .page
-            .with(|p| p.as_ref().map(|p| p.members.clone()).unwrap_or_default());
+            .with(|p| p.as_ref().map_or_default(|p| p.members.clone()));
         view! { <RiverView river=r members me=me() celebrating /> }.into_any()
     };
     view! {

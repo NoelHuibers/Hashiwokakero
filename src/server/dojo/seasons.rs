@@ -624,11 +624,8 @@ pub fn csv(season: &ArchivedSeason) -> String {
                 csv_field(&entry.name),
                 csv_field(&entry.author),
                 u8::from(entry.house),
-                entry.rank.map(|r| r.to_string()).unwrap_or_default(),
-                entry
-                    .rules_version
-                    .map(|v| v.to_string())
-                    .unwrap_or_default(),
+                entry.rank.map_or_default(|r| r.to_string()),
+                entry.rules_version.map_or_default(|v| v.to_string()),
                 csv_field(&r.name),
                 r.family.id(),
                 r.expected.id(),

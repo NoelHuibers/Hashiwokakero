@@ -229,8 +229,8 @@ fn main() {
     let mut out = BufWriter::new(std::io::stdout().lock());
     if solver.solve() {
         write!(out, "s SATISFIABLE\nv").unwrap();
-        for v in 1..=vars {
-            let sign = if solver.value[v] == 2 { "-" } else { "" };
+        for (v, &value) in solver.value.iter().enumerate().skip(1) {
+            let sign = if value == 2 { "-" } else { "" };
             write!(out, " {sign}{v}").unwrap();
         }
         writeln!(out, " 0").unwrap();

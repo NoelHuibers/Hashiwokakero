@@ -44,7 +44,7 @@ fn Mini(theatre: Theatre, board: StoredValue<Board>, lane: usize) -> impl IntoVi
     let bridges = Memo::new(move |_| {
         theatre
             .boards
-            .with(|b| b.get(lane).map(|b| b.bridges.clone()).unwrap_or_default())
+            .with(|b| b.get(lane).map_or_default(|b| b.bridges.clone()))
     });
     let done = Signal::derive(move || board.with_value(|b| bridges.with(|br| islands_done(b, br))));
     let percent = move || bridges.with(|b| progress(b, theatre.total));

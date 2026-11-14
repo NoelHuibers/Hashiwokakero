@@ -139,8 +139,7 @@ impl Daily {
                 moves: self.game.moves.get_untracked(),
                 log: load::<SavedLog>(LOG_KEY)
                     .filter(|l| l.day == day)
-                    .map(|l| l.events)
-                    .unwrap_or_default(),
+                    .map_or_default(|l| l.events),
                 utc_offset: browser_utc_offset(),
             });
         self.submit_payload.set_value(Some(payload.clone()));

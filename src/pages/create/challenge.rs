@@ -117,8 +117,7 @@ pub fn ChallengeCard(
         let name = groups.with_untracked(|g| {
             g.as_ref()
                 .and_then(|g| g.iter().find(|g| g.id == group))
-                .map(|g| g.name.clone())
-                .unwrap_or_default()
+                .map_or_default(|g| g.name.clone())
         });
         let navigate = navigate.clone();
         spawn_local(async move {

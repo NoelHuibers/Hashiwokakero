@@ -300,7 +300,7 @@ pub(super) fn BudgetView(
             .map(|(place, official, curve, score)| {
                 let id = curve.id;
                 let entry = entries.with_value(|es| es.iter().find(|e| e.id == id).cloned());
-                let author = entry.as_ref().map(|e| e.author.clone()).unwrap_or_default();
+                let author = entry.as_ref().map_or_default(|e| e.author.clone());
                 let author = if author.is_empty() { t_string!(i18n, dojo.seasons.deleted).to_string() } else { author };
                 let href = move || super::solver_href(i18n.get_locale(), id);
                 let name = if curve.name.is_empty() {
@@ -351,8 +351,7 @@ pub(super) fn BudgetView(
             b.curves
                 .iter()
                 .find(|c| c.id == id)
-                .map(|c| c.name.clone())
-                .unwrap_or_default()
+                .map_or_default(|c| c.name.clone())
         })
     };
     let sentences = move || {
@@ -430,8 +429,7 @@ pub(super) fn BudgetChart(
     let grid: Vec<u64> = budgets
         .curves
         .first()
-        .map(|c| c.points.iter().map(|p| p.budget).collect())
-        .unwrap_or_default();
+        .map_or_default(|c| c.points.iter().map(|p| p.budget).collect());
     let steps = grid.len();
     let budgets = StoredValue::new(budgets);
     let grid = StoredValue::new(grid);

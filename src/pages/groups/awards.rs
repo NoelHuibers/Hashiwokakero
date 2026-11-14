@@ -292,16 +292,14 @@ pub fn Awards(banzuke: Banzuke, me: i64) -> impl IntoView {
         .into_iter()
         .map(|kind| {
             let award = banzuke.award(kind);
-            let winners: Vec<BanzukeRow> = award
-                .map(|a| {
-                    banzuke
-                        .rows
-                        .iter()
-                        .filter(|r| a.winners.contains(&r.user_id))
-                        .cloned()
-                        .collect()
-                })
-                .unwrap_or_default();
+            let winners: Vec<BanzukeRow> = award.map_or_default(|a| {
+                banzuke
+                    .rows
+                    .iter()
+                    .filter(|r| a.winners.contains(&r.user_id))
+                    .cloned()
+                    .collect()
+            });
             let feat = award.map(|a| a.feat);
             view! { <AwardTile kind winners feat over me /> }
         })

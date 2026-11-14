@@ -96,8 +96,7 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
     let stamps = move || {
         daily.result.with(|r| {
             r.as_ref()
-                .map(|r| model::known_stamps(&r.stamps))
-                .unwrap_or_default()
+                .map_or_default(|r| model::known_stamps(&r.stamps))
         })
     };
     let share = move || share_text(&daily, i18n.get_locale_untracked());

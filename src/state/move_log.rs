@@ -42,8 +42,7 @@ impl MoveLog {
     pub fn events(&self, puzzle: Option<i64>) -> Vec<MoveEvent> {
         load::<SavedLog>(self.key)
             .filter(|l| Some(l.puzzle) == puzzle)
-            .map(|l| l.events)
-            .unwrap_or_default()
+            .map_or_default(|l| l.events)
     }
 
     /// Logs the bridge changes of `game` since the last call, while the clock of `puzzle` runs

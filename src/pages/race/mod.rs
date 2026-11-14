@@ -523,7 +523,7 @@ fn Controls(race: RaceState) -> impl IntoView {
             game
             playing
             busy=race.busy
-            penalties=Signal::derive(move || race.view.with(|v| v.as_ref().map(|v| v.penalties).unwrap_or_default()))
+            penalties=Signal::derive(move || race.view.with(|v| v.as_ref().map_or_default(|v| v.penalties)))
             on_hint=Callback::new(hint)
             on_check=Callback::new(check)
             on_give_up=Callback::new(give_up)
@@ -586,7 +586,7 @@ fn RaceBody(race: RaceState) -> impl IntoView {
         <div
             class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]"
             data-testid="race-page"
-            data-phase=move || phase.get().map(|p| format!("{p:?}")).unwrap_or_default()
+            data-phase=move || phase.get().map_or_default(|p| format!("{p:?}"))
         >
             <div class="flex min-w-0 flex-col gap-4">
                 <div class="flex min-h-16 flex-wrap items-end justify-between gap-3">

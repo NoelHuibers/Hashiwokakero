@@ -76,7 +76,7 @@ pub(super) fn MonthRace() -> impl IntoView {
                         <div>
                             <CardTitle class="text-xl">
                                 {t!(i18n, ranks.month.title)} " · "
-                                {move || shown().map(|m| month_long(i18n.get_locale(), m)).unwrap_or_default()}
+                                {move || shown().map_or_default(|m| month_long(i18n.get_locale(), m))}
                             </CardTitle>
                             <CardDescription>{t!(i18n, ranks.month.text)}</CardDescription>
                         </div>

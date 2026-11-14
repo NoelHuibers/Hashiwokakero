@@ -27,7 +27,7 @@ pub(super) fn ChangeUsername() -> impl IntoView {
     let auth = expect_context::<Auth>();
     let current = move || {
         auth.user
-            .with(|u| u.as_ref().map(|u| u.name.clone()).unwrap_or_default())
+            .with(|u| u.as_ref().map_or_default(|u| u.name.clone()))
     };
     // The day it works again, if the last change was too recent
     let wait_until = move || {

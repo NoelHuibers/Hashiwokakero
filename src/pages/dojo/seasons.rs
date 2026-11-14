@@ -53,10 +53,7 @@ fn PastSeason(season: DojoSeason) -> impl IntoView {
     let link = "inline-flex h-9 items-center rounded-md border bg-card px-3 text-sm font-medium hover:bg-accent";
     let dates = move || {
         let locale = i18n.get_locale();
-        let day = |ms: Option<i64>| {
-            ms.map(|ms| date_short(locale, day_of(ms)))
-                .unwrap_or_default()
-        };
+        let day = |ms: Option<i64>| ms.map_or_default(|ms| date_short(locale, day_of(ms)));
         td_string!(
             locale,
             dojo.seasons.dates,
