@@ -1523,7 +1523,7 @@ dependencies = [
 
 [[package]]
 name = "hashi_tauri"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "hashi_offline",
  "serde_json",
