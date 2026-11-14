@@ -212,7 +212,7 @@ pub(super) fn MessagesAdmin(
                         .map(|m| {
                             let id = m.id;
                             let reply = reply_href(&m);
-                            let (context, errors) = m.context.as_ref().map(context_summary).unwrap_or_default();
+                            let (context, errors) = m.context.as_ref().map_or_default(context_summary);
                             let issue = m.github_issue;
                             let new = m.status == FeedbackStatus::New;
                             // The issue being written, `None` while there's no editor
@@ -312,9 +312,8 @@ fn issue_editor(
 ) -> impl IntoView {
     let busy = RwSignal::new(false);
     let failed = RwSignal::new(None::<String>);
-    let field = |f: fn(&IssueDraft) -> String| {
-        move || editing.with(|d| d.as_ref().map(f).unwrap_or_default())
-    };
+    let field =
+        |f: fn(&IssueDraft) -> String| move || editing.with(|d| d.as_ref().map_or_default(f));
     let post = move |_| {
         let Some(draft) = editing.get_untracked() else {
             return;

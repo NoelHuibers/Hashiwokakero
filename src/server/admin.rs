@@ -470,7 +470,7 @@ pub async fn house_form(headers: HeaderMap, mut multipart: Multipart) -> Respons
     let mut form = dojo::Form::default();
     while let Ok(Some(field)) = multipart.next_field().await {
         match field.name().unwrap_or_default() {
-            "wasm" => form.wasm = field.bytes().await.map(|b| b.to_vec()).unwrap_or_default(),
+            "wasm" => form.wasm = field.bytes().await.map_or_default(|b| b.to_vec()),
             "name" => form.name = field.text().await.unwrap_or_default(),
             "description" => form.description = field.text().await.unwrap_or_default(),
             _ => {}

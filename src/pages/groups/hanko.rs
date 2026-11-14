@@ -102,8 +102,7 @@ impl HankoBoard {
             names
                 .iter()
                 .find(|(user, _)| *user == id)
-                .map(|(_, name)| player_name(locale, name))
-                .unwrap_or_default()
+                .map_or_default(|(_, name)| player_name(locale, name))
         })
     }
 

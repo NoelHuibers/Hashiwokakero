@@ -92,8 +92,7 @@ pub(super) fn art(puzzle: &Puzzle, solution: &[u8], fonts: &Fonts) -> BoardArt {
         let (x, y) = (island.pos.x, island.pos.y);
         let decor = Decor::for_pos(x, y)
             .id()
-            .map(|href| format!("<use href=\"{href}\"/>"))
-            .unwrap_or_default();
+            .map_or_default(|href| format!("<use href=\"{href}\"/>"));
         let number = fonts.spans(&island.required.to_string(), &[Family::Pixel], 400);
         let _ = write!(
             islands,

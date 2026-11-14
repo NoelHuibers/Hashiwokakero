@@ -16,17 +16,14 @@ pub(super) fn warnings(locale: Locale, puzzle: &Puzzle) -> Vec<String> {
     for (i, island) in puzzle.islands.iter().enumerate() {
         let max = board.incident[i].len() * 2;
         if max < usize::from(island.required) {
-            out.push(
-                td_string!(
-                    locale,
-                    create.warning_capacity,
-                    number = island.required,
-                    x = island.pos.x + 1,
-                    y = island.pos.y + 1,
-                    max
-                )
-                .to_string(),
-            );
+            out.push(td_string!(
+                locale,
+                create.warning_capacity,
+                number = island.required,
+                x = island.pos.x + 1,
+                y = island.pos.y + 1,
+                max
+            ));
         }
     }
     let total: u32 = puzzle.islands.iter().map(|i| u32::from(i.required)).sum();

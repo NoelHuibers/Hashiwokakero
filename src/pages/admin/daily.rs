@@ -126,7 +126,7 @@ pub(super) fn DailyAdmin(on_change: Callback<()>) -> impl IntoView {
                     <div class="flex h-10 items-center rounded-lg border bg-card max-sm:flex-1">
                         <button type="button" aria-label="Previous day" class="h-full rounded-s-lg px-3 hover:bg-accent" on:click=move |_| step(-1)>"←"</button>
                         <span class="flex-1 px-3 text-center font-pixel text-base tabular-nums">
-                            {move || shown.get().map(date_string).unwrap_or_default()}
+                            {move || shown.get().map_or_default(date_string)}
                         </span>
                         <button type="button" aria-label="Next day" class="h-full rounded-e-lg px-3 hover:bg-accent" on:click=move |_| step(1)>"→"</button>
                     </div>
@@ -266,7 +266,7 @@ fn AttemptRow(
                 <span class="font-medium">{if a.name.is_empty() { "(deleted)".to_string() } else { a.name.clone() }}</span>
                 <span class="block text-xs text-muted-foreground">{account(&a)}</span>
             </td>
-            <td class="py-2 pe-3 text-end font-pixel tabular-nums">{a.time_ms.map(format_score).unwrap_or_default()}</td>
+            <td class="py-2 pe-3 text-end font-pixel tabular-nums">{a.time_ms.map_or_default(format_score)}</td>
             <td class="py-2 pe-3 text-end tabular-nums">{format!("{} · {}", a.hints, a.checks)}</td>
             <td class="py-2 pe-3 text-end tabular-nums" data-tooltip=format!("{} changes in the log, over {}", a.log.events, seconds(a.log.span_ms))>
                 {a.log.taps}

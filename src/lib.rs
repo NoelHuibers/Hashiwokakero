@@ -1,5 +1,7 @@
 // Leptos views are deeply nested types, release builds need more room
 #![recursion_limit = "256"]
+// Leptos's #[component] derives TypedBuilder, whose expansion has an empty enum on every component
+#![allow(clippy::empty_enums)]
 
 pub mod api;
 pub mod app;

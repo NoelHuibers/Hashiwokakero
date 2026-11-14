@@ -145,8 +145,7 @@ pub fn Archipelago(
         members
             .iter()
             .find(|m| m.user_id == id)
-            .map(|m| player_name(i18n.get_locale_untracked(), &m.name))
-            .unwrap_or_default()
+            .map_or_default(|m| player_name(i18n.get_locale_untracked(), &m.name))
     };
     let bridges: Vec<_> = layout
         .straits()

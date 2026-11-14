@@ -139,7 +139,7 @@ pub(super) fn RivalsCard(daily: Daily) -> impl IntoView {
     });
 
     // Nothing at all while you have no rivals: they are marked on a player's profile
-    let list = move || today.get().map(duels).unwrap_or_default();
+    let list = move || today.get().map_or_default(duels);
     view! {
         <Show when=move || !list().is_empty()>
             <Card class="gap-3" attr:data-rivals="">

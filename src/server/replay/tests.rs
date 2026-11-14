@@ -364,7 +364,7 @@ async fn deleted_players_leave_the_replays() {
 }
 
 fn receipt(action: &str, bridges: &str, outcome: &str, at: Option<i64>) -> String {
-    let at = at.map(|at| format!(r#","at":{at}"#)).unwrap_or_default();
+    let at = at.map_or_default(|at| format!(r#","at":{at}"#));
     format!(r#"{{"id":"x","action":"{action}","bridges":{bridges},"outcome":{outcome}{at}}}"#)
 }
 

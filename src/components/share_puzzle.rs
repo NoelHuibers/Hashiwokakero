@@ -119,7 +119,7 @@ pub fn SharePuzzle(
         let locale = i18n.get_locale_untracked();
         match link.get_untracked() {
             Link::Made(code) => text(locale, &share_url(locale, &code)),
-            _ => fallback.map(|f| f.run(())).unwrap_or_default(),
+            _ => fallback.map_or_default(|f| f.run(())),
         }
     };
     let has_link = move || matches!(link.get(), Link::Made(_));

@@ -90,8 +90,7 @@ pub fn RaceWithGroup(code: Signal<String>) -> impl IntoView {
                             value=Signal::derive(move || {
                                 groups
                                     .with(|g| chosen_group(g, picked.get()))
-                                    .map(|id| id.to_string())
-                                    .unwrap_or_default()
+                                    .map_or_default(|id| id.to_string())
                             })
                             on_change=Callback::new(move |v: String| picked.set(v.parse().ok()))
                         >

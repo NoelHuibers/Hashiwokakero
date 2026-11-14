@@ -81,15 +81,14 @@ pub(super) fn DailyBoard(
                             <CardTitle class="text-xl">
                                 {move || {
                                     shown_day()
-                                        .map(|d| t_string!(i18n, daily.title, number = daily_number(d)))
-                                        .unwrap_or_default()
+                                        .map_or_default(|d| t_string!(i18n, daily.title, number = daily_number(d)))
                                 }}
                             </CardTitle>
                             <CardDescription>
                                 {move || {
                                     board
                                         .get()
-                                        .map(|b| {
+                                        .map_or_default(|b| {
                                             let locale = i18n.get_locale();
                                             format!(
                                                 "{} · {} {} · {}",
@@ -99,7 +98,6 @@ pub(super) fn DailyBoard(
                                                 td_string!(locale, ranks.finished, count = b.finishers),
                                             )
                                         })
-                                        .unwrap_or_default()
                                 }}
                             </CardDescription>
                         </div>

@@ -364,8 +364,7 @@ pub fn use_app_stores() -> AppStores {
             .ok()
             .flatten()
             .and_then(|meta| meta.get_attribute("content"))
-            .map(|content| AppStores::from_meta(&content))
-            .unwrap_or_default()
+            .map_or_default(|content| AppStores::from_meta(&content))
     }
     #[cfg(not(any(feature = "ssr", feature = "hydrate")))]
     {
@@ -821,11 +820,11 @@ mod tests {
         );
         // Each of them is an App Link
         for path in in_every_language(APP_LINK_PATHS) {
-            assert_eq!(app_link(&format!("{SITE_URL}{path}")), Some(path.clone()));
+            assert_eq!(app_link(&format!("{SITE_URL}{path}")), Some(path));
         }
         for prefix in in_every_language(APP_LINK_PREFIXES) {
             let path = format!("{prefix}x1");
-            assert_eq!(app_link(&format!("{SITE_URL}{path}")), Some(path.clone()));
+            assert_eq!(app_link(&format!("{SITE_URL}{path}")), Some(path));
         }
     }
 
