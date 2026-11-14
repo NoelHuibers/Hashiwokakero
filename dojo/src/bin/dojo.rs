@@ -262,8 +262,7 @@ fn calibration_set(args: &[String]) -> Result<Vec<Instance>, String> {
         let (_, instances) = archive::read_tar_gz(&bytes).map_err(|e| format!("{path}: {e}"))?;
         let label = std::path::Path::new(&path)
             .file_name()
-            .map(|f| f.to_string_lossy().trim_end_matches(".tar.gz").to_string())
-            .unwrap_or_default();
+            .map_or_default(|f| f.to_string_lossy().trim_end_matches(".tar.gz").to_string());
         add(&label, instances);
     }
     if set.is_empty() {

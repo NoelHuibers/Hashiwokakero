@@ -204,12 +204,12 @@ pub fn MembersCard(group: GroupContext) -> impl IntoView {
     let name = Signal::derive(move || {
         group
             .page
-            .with(|p| p.as_ref().map(|p| p.name.clone()).unwrap_or_default())
+            .with(|p| p.as_ref().map_or_default(|p| p.name.clone()))
     });
     let code = Signal::derive(move || {
         group
             .page
-            .with(|p| p.as_ref().map(|p| p.invite.clone()).unwrap_or_default())
+            .with(|p| p.as_ref().map_or_default(|p| p.invite.clone()))
     });
     view! {
         <Card class="gap-4">

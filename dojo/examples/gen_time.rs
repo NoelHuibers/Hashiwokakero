@@ -25,20 +25,17 @@ fn main() {
     let family = Family::from_id(&args[0]).expect("unknown family");
     let seeds: usize = flag("--seeds").map_or(1, |s| s.parse().expect("--seeds N"));
     let sandbox = Sandbox::new().expect("a sandbox");
-    let solvers: Vec<(String, dojo::sandbox::Solver)> = flag("--solvers")
-        .map(|list| {
-            list.split(',')
-                .map(|path| {
-                    let wasm = std::fs::read(path).expect("a solver");
-                    let name = std::path::Path::new(path)
-                        .file_stem()
-                        .map(|s| s.to_string_lossy().into_owned())
-                        .unwrap_or_default();
-                    (name, sandbox.load(&wasm).expect("a valid solver"))
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    let solvers: Vec<(String, dojo::sandbox::Solver)> = flag("--solvers").map_or_default(|list| {
+        list.split(',')
+            .map(|path| {
+                let wasm = std::fs::read(path).expect("a solver");
+                let name = std::path::Path::new(path)
+                    .file_stem()
+                    .map_or_default(|s| s.to_string_lossy().into_owned());
+                (name, sandbox.load(&wasm).expect("a valid solver"))
+            })
+            .collect()
+    });
     let options = Options {
         threads: 1,
         ..Options::default()

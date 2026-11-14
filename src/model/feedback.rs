@@ -154,11 +154,11 @@ impl FeedbackContext {
             (ContextField::Page, self.page.clone().unwrap_or_default()),
             (
                 ContextField::Daily,
-                self.daily.map(|d| format!("#{d}")).unwrap_or_default(),
+                self.daily.map_or_default(|d| format!("#{d}")),
             ),
             (
                 ContextField::Player,
-                self.player.map(|p| format!("#{p}")).unwrap_or_default(),
+                self.player.map_or_default(|p| format!("#{p}")),
             ),
             (ContextField::Screen, self.screen.clone()),
         ];
@@ -209,8 +209,7 @@ fn user_agent_os(ua: &str) -> String {
     // `iPhone OS 18_1` on phones, `CPU OS 18_1` on iPads that ask for the mobile site
     if ["iPhone", "iPad", "iPod"].iter().any(|d| ua.contains(d)) {
         let version = after(ua, " OS ")
-            .map(|v| leading(v, |c| c.is_ascii_digit() || c == '_').replace('_', "."))
-            .unwrap_or_default();
+            .map_or_default(|v| leading(v, |c| c.is_ascii_digit() || c == '_').replace('_', "."));
         return format!("iOS {version}").trim_end().to_string();
     }
     if ua.contains("Windows") {

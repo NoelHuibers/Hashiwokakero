@@ -242,7 +242,7 @@ proptest! {
                 prop_assert!(satisfies(&model, clause), "{:?} excludes {:?}", clause, bridges);
             }
             // Models decode to their bridges, and blocking one solution keeps every other
-            prop_assert_eq!(encoding::decode(&board, &model), bridges.clone());
+            prop_assert_eq!(&encoding::decode(&board, &model), &bridges);
             let block = encoding::blocking_clause(&bridges);
             prop_assert!(!satisfies(&model, &block));
             for other in solutions(&board, 5).iter().filter(|o| **o != bridges) {

@@ -182,7 +182,7 @@ fn context_rows(locale: Locale, context: &FeedbackContext) -> Vec<(&'static str,
                 td_string!(locale, contact.context.website).to_string()
             }
             ContextField::App => {
-                td_string!(locale, contact.context.app_version, version = value).to_string()
+                td_string!(locale, contact.context.app_version, version = value)
             }
             _ => value,
         };

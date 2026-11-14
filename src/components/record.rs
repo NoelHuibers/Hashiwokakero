@@ -34,8 +34,7 @@ fn Calendar(stats: UserStats) -> impl IntoView {
                     let (class, title) = match (d.time_ms, d.rank) {
                         (Some(t), r) => {
                             let rank = r
-                                .map(|rank| format!(" · {}", td_string!(locale, account.calendar_rank, rank)))
-                                .unwrap_or_default();
+                                .map_or_default(|rank| format!(" · {}", td_string!(locale, account.calendar_rank, rank)));
                             (
                                 if r.is_some_and(|r| r <= 3) { "bg-[var(--px-gold)]" } else { "bg-[var(--px-grass)]" },
                                 format!("{} · {}{rank}", date_short(locale, d.day), format_score(t)),

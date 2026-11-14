@@ -41,9 +41,9 @@ pub(super) fn share_text(daily: &Daily, locale: Locale) -> String {
         weekday = WEEKDAY_KANJI[weekday(info.day)],
         difficulty = difficulty_name(locale, info.difficulty)
     );
-    let rank = rank
-        .map(|(rank, total)| format!(" · {}", td_string!(locale, daily.share_rank, rank, total)))
-        .unwrap_or_default();
+    let rank = rank.map_or_default(|(rank, total)| {
+        format!(" · {}", td_string!(locale, daily.share_rank, rank, total))
+    });
     format!(
         "{headline}\n⏱ {}{rank}\n{origin}{}",
         format_score(daily.elapsed_ms()),

@@ -97,11 +97,7 @@ pub fn LeaderboardTab() -> impl IntoView {
     };
     let board_stat = move |f: fn(&DojoBoard, Locale) -> String| {
         Signal::derive(move || {
-            board.with(|b| {
-                b.as_ref()
-                    .map(|b| f(b, i18n.get_locale()))
-                    .unwrap_or_default()
-            })
+            board.with(|b| b.as_ref().map_or_default(|b| f(b, i18n.get_locale())))
         })
     };
     // Shown once there is something of the visitor's to show
@@ -135,20 +131,19 @@ pub fn LeaderboardTab() -> impl IntoView {
                 <A href=archive attr:class="rounded-full border bg-card px-3 py-1 text-xs font-semibold hover:border-primary">
                     <span
                         dir="ltr"
-                        data-tooltip=move || board.with(|b| b.as_ref().map(|b| format!("SHA-256 {}", b.commitment)).unwrap_or_default())
+                        data-tooltip=move || board.with(|b| b.as_ref().map_or_default(|b| format!("SHA-256 {}", b.commitment)))
                     >
                         {move || {
                             board
                                 .with(|b| {
                                     b.as_ref()
-                                        .map(|b| {
+                                        .map_or_default(|b| {
                                             td_string!(
                                                 i18n.get_locale(),
                                                 dojo.stats.commitment,
                                                 hash = b.commitment.chars().take(12).collect::<String>()
                                             )
                                         })
-                                        .unwrap_or_default()
                                 })
                         }}
                     </span>

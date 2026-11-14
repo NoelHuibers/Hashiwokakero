@@ -59,8 +59,7 @@ pub(super) fn WeekCard(daily: Daily) -> impl IntoView {
                         {move || {
                             today
                                 .get()
-                                .map(|t| countdown((t + 1) * MS_PER_DAY - daily.server_now()))
-                                .unwrap_or_default()
+                                .map_or_default(|t| countdown((t + 1) * MS_PER_DAY - daily.server_now()))
                         }}
                     </span>
                 </p>

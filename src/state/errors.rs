@@ -60,7 +60,7 @@ pub fn note_error(error: &str) {
 
 /// The page's last errors, the oldest first.
 pub fn recent_errors() -> Vec<String> {
-    RECENT.lock().map(|r| r.list()).unwrap_or_default()
+    RECENT.lock().map_or_default(|r| r.list())
 }
 
 #[cfg(test)]

@@ -742,13 +742,13 @@ async fn a_shared_puzzle_names_its_sharer_in_link_previews() {
         let html = res.text().await.unwrap();
         let name = td_string!(l, shared.meta.title, name = "puzzle_sharer");
         assert_eq!(title(&html), Some(hashi(&name)), "{path}");
-        assert_eq!(meta(&html, "og:title"), Some(name.clone()), "{path}");
+        assert_eq!(meta(&html, "og:title"), Some(name), "{path}");
         let description = meta(&html, "og:description").unwrap();
         assert!(
             description.contains("puzzle_sharer") && description.contains("02:13"),
             "{description}"
         );
-        assert_eq!(meta(&html, "description"), Some(description.clone()));
+        assert_eq!(meta(&html, "description"), Some(description));
         assert_eq!(meta(&html, "og:url"), Some(format!("{SITE_URL}{path}")));
         assert_eq!(
             meta(&html, "og:image"),

@@ -1405,8 +1405,7 @@ pub async fn replay(
             let helps = stored
                 .iter()
                 .find(|s| s.user_id == p.user_id)
-                .map(|s| s.helps.as_slice())
-                .unwrap_or_default();
+                .map_or_default(|s| s.helps.as_slice());
             let mut lane = Lane {
                 penalties: view.penalties,
                 user_id: p.user_id,

@@ -97,14 +97,12 @@ impl Fonts {
                 let font = u32::try_from(index)
                     .ok()
                     .and_then(|i| skrifa::FontRef::from_index(bytes, i).ok());
-                let chars = font
-                    .map(|f| {
-                        f.charmap()
-                            .mappings()
-                            .filter_map(|(c, _)| char::from_u32(c))
-                            .collect()
-                    })
-                    .unwrap_or_default();
+                let chars = font.map_or_default(|f| {
+                    f.charmap()
+                        .mappings()
+                        .filter_map(|(c, _)| char::from_u32(c))
+                        .collect()
+                });
                 let weight = db.face(id).map_or(400, |f| f.weight.0);
                 faces.push(Face {
                     family,

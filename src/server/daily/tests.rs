@@ -54,8 +54,7 @@ async fn paid_current(
 ) -> Result<crate::api::PaidReply, ServerFnError> {
     let identity = attempt(conn, user, day)
         .await?
-        .map(|a| a.attempt_id)
-        .unwrap_or_default();
+        .map_or_default(|a| a.attempt_id);
     paid_action(conn, user, day, bridges, action, id, &identity).await
 }
 

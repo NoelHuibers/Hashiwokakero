@@ -678,10 +678,7 @@ fn evaluator(
         options.set_seed.clone_from(&job.seed);
         let key = (
             job.seed.clone(),
-            job.pool
-                .as_ref()
-                .map(|p| p.digest.clone())
-                .unwrap_or_default(),
+            job.pool.as_ref().map_or_default(|p| p.digest.clone()),
         );
         let set = sets
             .entry(key.clone())
