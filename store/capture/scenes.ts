@@ -5,6 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
 
 import { DAILY_KEY, edges, PLAY_KEY, type Puzzle, SHARED_KEY, saved } from '../../e2e/board.ts';
+import type { Screen } from './devices.ts';
 import { DB_PATH, STORE_URL } from './env.ts';
 import { ME, PLAYING, PUZZLES, SHARED, sessionOf } from './seed.ts';
 
@@ -25,7 +26,7 @@ export interface Scene {
    * without. Found by kanji, which are the same in every language.
    */
   scrollTo?: {
-    screens: ('phone' | 'tablet' | 'desktop')[];
+    screens: Screen['id'][];
     target: (page: Page) => Locator;
     above?: number;
   };
@@ -131,7 +132,7 @@ export const SCENES: Scene[] = [
     user: ME,
     path: '/account',
     scrollTo: {
-      screens: ['phone', 'tablet', 'desktop'],
+      screens: ['phone', 'tablet', 'duo', 'desktop'],
       target: (page) => page.locator('span', { hasText: /^判子帳$/ }).first(),
       above: 40,
     },
