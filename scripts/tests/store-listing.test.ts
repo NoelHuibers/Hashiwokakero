@@ -8,12 +8,15 @@ import { test } from 'node:test';
 import { deflateSync } from 'node:zlib';
 
 import {
+  APPLE_SHOTS,
   checkImage,
+  PLAY_SHOTS,
   pngInfo,
   RELEASE_NOTES_LIMIT,
   releaseNotesFile,
   writeReleaseNotes,
 } from '../../store/assemble.ts';
+import { FRAMES, SCREENS } from '../../store/capture/devices.ts';
 import { APPLE, PLAY, SITE_LANGUAGES, siteUrl } from '../../store/locales.ts';
 
 /** The default order of sort(), as a comparison */
@@ -396,4 +399,21 @@ test('images: their size, and no alpha channel in the screenshots', () => {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("the upload tree takes every store frame at its size, the iPhone Duo's inner display too", () => {
+  const frames = (store: string) =>
+    FRAMES.filter((f) => f.store === store).map((f) => [f.id, f.width, f.height]);
+  const shots = (list: typeof APPLE_SHOTS) => list.map(([, frame, w, h]) => [frame, w, h]);
+  assert.deepEqual(shots(APPLE_SHOTS), frames('apple'));
+  assert.deepEqual(shots(PLAY_SHOTS), frames('play'));
+  // Each App Store set in a folder of its own: deliver keeps the files' order within a set
+  assert.equal(new Set(APPLE_SHOTS.map(([folder]) => folder)).size, APPLE_SHOTS.length);
+  // The size deliver (fastlane 2.241) files as APP_IPHONE_DUO, portrait, the inner display's
+  // screenshot pixel for pixel
+  const duo = FRAMES.find((f) => f.id === 'iphone-duo');
+  assert.ok(duo);
+  assert.deepEqual([duo.store, duo.width, duo.height], ['apple', 2007, 2853]);
+  const screen = SCREENS[duo.screen];
+  assert.deepEqual([screen.width * screen.scale, screen.height * screen.scale], [2007, 2853]);
 });

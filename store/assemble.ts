@@ -34,6 +34,8 @@ export const PLAY_SHOTS: Shots = [
 export const APPLE_SHOTS: Shots = [
   ['iphone', 'iphone-69', 1320, 2868],
   ['ipad', 'ipad-13', 2064, 2752],
+  // The inner display, 2007 × 2853: deliver's iPhone Duo (APP_IPHONE_DUO)
+  ['iphoneDuo', 'iphone-duo', 2007, 2853],
 ];
 
 export interface PngInfo {

@@ -1087,7 +1087,7 @@ leaves them out when they name another platform and refuses them over 4000 chara
 
 ### Images
 
-Made in CI, not committed (a run makes about 700). The sources:
+Made in CI, not committed (a run makes about 1000). The sources:
 
 - `store/capture/`: a Playwright run (`store.capture.ts`) on the built site with a seeded local
   database (`seed.ts`, made-up players, never Turso), the same server the browser tests start
@@ -1095,15 +1095,19 @@ Made in CI, not committed (a run makes about 700). The sources:
   progress, the leaderboard with mika on the podium, a hard board of Play, the group of friends,
   a puzzle aiko shared with her time to beat, the stamp book and the solved daily at night. The
   boards in progress are put into the browser's storage before the page opens, not built tap by
-  tap. Each on a phone (402 × 874, three times) and a
-  tablet (1032 × 1376, twice), with room left for the system bars as the app leaves it
-  (`--app-inset-*`), and in the desktop app's window (1280 × 800, twice, with a mouse: the
-  website's desktop layout). The dailies are fixed puzzles (`puzzles.json`), one per difficulty: the page
+  tap. Each on a phone (402 × 874, three times), a
+  tablet (1032 × 1376, twice) and the iPhone Duo's inner display in portrait (669 × 951, three
+  times; the layout below 1024 px with the tab bar, as `e2e/tests/fold.spec.ts` checks it), with
+  room left for the system bars as the app leaves it (`--app-inset-*`, on the Duo the iPad's),
+  and in the desktop app's window (1280 × 800, twice, with a mouse: the website's desktop
+  layout). The dailies are fixed puzzles (`puzzles.json`), one per difficulty: the page
   names the weekday's, so a run on a Monday shows the easy 7×7, on a Sunday the 24×24 Oni.
 - `store/templates/frame.html`: a caption (`store/captions.json`, per language, `*word*` in
   vermilion) and a hanko over the device with the screenshot in it, in the site's colours, fonts
   and waves. `store/capture/devices.ts` has the sizes: the App Store's iPhone 6.9" (1320 × 2868)
-  and iPad 13" (2064 × 2752), Google Play's phone (1080 × 1920) and 7" and 10" tablets
+  and iPad 13" (2064 × 2752), the iPhone Duo's inner display (2007 × 2853, portrait only: App
+  Store Connect shows "optimized for iPhone Duo" with them; deliver knows the size as
+  `APP_IPHONE_DUO`), Google Play's phone (1080 × 1920) and 7" and 10" tablets
   (1080 × 1920, 1440 × 2560), all 9:16 or Apple's sizes, and the desktop stores' 16:9
   (1920 × 1080: the Microsoft Store and the Snap Store), the window with
   its title bar, opaque PNGs.

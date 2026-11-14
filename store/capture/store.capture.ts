@@ -1,5 +1,6 @@
 // The store screenshots: every scene (scenes.ts) in every language of the site, on a phone, a
-// tablet and a desktop screen (devices.ts), then framed with a caption for each store (frame.ts).
+// tablet, the iPhone Duo's inner display and a desktop screen (devices.ts), then framed with a
+// caption for each store (frame.ts).
 // One test per language, they run side by side.
 import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';

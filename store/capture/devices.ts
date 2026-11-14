@@ -5,7 +5,7 @@
  * (the phones), or the desktop app's window.
  */
 export interface Screen {
-  id: 'phone' | 'tablet' | 'desktop';
+  id: 'phone' | 'tablet' | 'duo' | 'desktop';
   /** CSS pixels, the whole screen. */
   width: number;
   height: number;
@@ -20,6 +20,12 @@ export const SCREENS: Record<Screen['id'], Screen> = {
   phone: { id: 'phone', width: 402, height: 874, scale: 3, insetTop: 54, insetBottom: 30 },
   // An iPad Pro 13": 2064 × 2752
   tablet: { id: 'tablet', width: 1032, height: 1376, scale: 2, insetTop: 28, insetBottom: 20 },
+  // The iPhone Duo unfolded, its inner display in portrait: 2007 × 2853 at scale 3
+  // (e2e/tests/fold.spec.ts), regular width and height like an iPad. Built with the iOS 27.1 SDK
+  // the app fills it (app/README.md, iOS). Apple publishes no safe areas for it; held upright iOS
+  // lays it out as on an iPad, the status bar across the top and the home indicator at the
+  // bottom, no Dynamic Island in the page, so the iPad's insets.
+  duo: { id: 'duo', width: 669, height: 951, scale: 3, insetTop: 28, insetBottom: 20 },
   // The desktop app's window on a laptop (2560 × 1600): the website's desktop layout (from
   // 1024 px), no system bars over the page (the template draws the title bar above it)
   desktop: { id: 'desktop', width: 1280, height: 800, scale: 2, insetTop: 0, insetBottom: 0 },
@@ -42,10 +48,14 @@ export interface Frame {
 const PHONE_TALL = { top: 9, hanko: 9.5, title: 7.4, text: 3.9 };
 const PORTRAIT = { top: 6.5, hanko: 8.5, title: 7, text: 3.6 };
 const TABLET = { top: 6, hanko: 6.5, title: 5.2, text: 2.7 };
+/** The iPhone Duo's inner display (0.70), a little narrower than the iPad's (0.75). */
+const DUO = { top: 6, hanko: 7, title: 5.6, text: 2.9 };
 const LANDSCAPE = { top: 2.6, hanko: 3.8, title: 3.1, text: 1.55 };
 
 export const FRAMES: Frame[] = [
-  // App Store: iPhone 6.9" and iPad 13" (App Store Connect scales them for the smaller ones)
+  // App Store: iPhone 6.9" and iPad 13" (App Store Connect scales them for the smaller ones), and
+  // the iPhone Duo's inner display, for the App Store's "optimized for iPhone Duo": portrait only,
+  // a set takes 10 at most
   {
     id: 'iphone-69',
     store: 'apple',
@@ -63,6 +73,15 @@ export const FRAMES: Frame[] = [
     screen: 'tablet',
     folder: 'ipad13',
     sizes: TABLET,
+  },
+  {
+    id: 'iphone-duo',
+    store: 'apple',
+    width: 2007,
+    height: 2853,
+    screen: 'duo',
+    folder: 'iphoneDuo',
+    sizes: DUO,
   },
   // Google Play: 9:16 portrait, the phone and both tablet sizes
   {

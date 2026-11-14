@@ -184,6 +184,8 @@
         font-family: "Murecho Variable", system-ui, sans-serif;
         border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
       }
+      /* Only on the desktop: display: flex above would show it with hidden set too */
+      .titlebar[hidden] { display: none; }
       .titlebar .controls { display: flex; height: 100%; }
       .titlebar .controls span { display: grid; place-items: center; height: 100%; }
       .titlebar svg { width: 30%; height: auto; stroke: currentColor; fill: none; }
@@ -253,7 +255,8 @@
       </div>
     </div>
     <script>
-      // ?frame=: { width, height, kind: 'phone' | 'tablet' | 'desktop', store: 'apple' | 'play' | 'desktop', image,
+      // ?frame=: { width, height, kind: 'phone' | 'tablet' | 'duo' | 'desktop' (the iPhone Duo's inner
+      //   display framed like the tablet), store: 'apple' | 'play' | 'desktop', image,
       //   screen: { width, height, insetTop, insetBottom }, lang, dir, dark, hanko, title, text,
       //   sizes: { top, hanko, title, text } (in units of a hundredth of the width) }
       (async () => {
