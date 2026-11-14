@@ -38,7 +38,7 @@ platform :android do
       version_code: options[:version_code]&.to_i,
       skip_upload_apk: true,
       skip_upload_aab: true,
-      # The release notes are the release workflow's (app/store/whatsnew)
+      # Play's release notes are the release workflow's (app/store/whatsnew)
       skip_upload_changelogs: true,
       skip_upload_metadata: what == "images",
       skip_upload_images: what == "text",
@@ -58,6 +58,8 @@ platform :ios do
       app_identifier: "rs.hashi",
       api_key_path: ENV.fetch("APPLE_API_KEY_JSON"),
       platform: "ios",
+      # With release_notes.txt, "What's New", from app/store/whatsnew (store/assemble.ts); a
+      # locale without it keeps App Store Connect's
       metadata_path: File.join(STORE, "apple", "metadata"),
       screenshots_path: File.join(STORE, "apple", "screenshots"),
       # The version in "Prepare for Submission" as it is: no new version, no build, no review

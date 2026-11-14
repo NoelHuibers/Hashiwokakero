@@ -680,7 +680,8 @@ platforms from it:
    notes, the Galaxy Store's "What's new", the Amazon Appstore's "recent changes" and AppGallery's
    "new features" (the app there has no Google Play Games): notes that name Google Play, Play Games
    or the App Store aren't sent there, Samsung's text stays and Amazon's and AppGallery's say
-   "Hashi <version>".
+   "Hashi <version>". The App Store's "What's New" (at most 4000 characters) comes from the same
+   files, see step 3.
 2. After the merge, tag main's merge commit and push the tag:
 
    ```sh
@@ -690,6 +691,17 @@ platforms from it:
    ```
 
    The tag can follow the merge right away: the workflow waits for main's CI run of the commit.
+3. Once the version exists in App Store Connect (in "Prepare for Submission"), fill its "What's
+   New" in every language from the release notes:
+
+   ```sh
+   gh workflow run store-listing.yml -f platform=apple -f what=text
+   ```
+
+   Each App Store locale gets its own `whatsnew-<locale>`, else Play's file of the same language
+   when Play has only one listing in it (`whatsnew-it-IT` for `it`, `whatsnew-ja-JP` for `ja`),
+   else `whatsnew-en-US`. Notes that name Google Play, Play Games or Android aren't sent (Apple
+   turns away other platforms): App Store Connect's text stays as it is, fill it in there by hand.
 
 The version is the same on both platforms: `versionName` and `CFBundleShortVersionString`. The
 versionCode is the build number of both, Android's `versionCode` and iOS's `CFBundleVersion`.
@@ -1067,8 +1079,11 @@ Korean), the keyword rules, the forbidden words and the URLs, and the screenshot
 `scripts/tests/store-listing.test.ts` tests the checks; "Test & lint" runs it with the other
 script tests.
 
-The release notes ("What's new") are not part of this: the release workflow uploads them with each
-build (`app/store/whatsnew`, [Releases](#releases)).
+The release notes ("What's new") are not texts of the listing: for Google Play and the other
+Android stores the release workflow uploads them with each build (`app/store/whatsnew`,
+[Releases](#releases)). The App Store takes them with the listing: `node store/assemble.ts` puts
+them into deliver's `release_notes.txt` of each locale (step 3 of [Cutting one](#cutting-one)),
+leaves them out when they name another platform and refuses them over 4000 characters.
 
 ### Images
 
@@ -1104,9 +1119,9 @@ pnpm run store:assemble                   # the upload tree, see below
 ```
 
 `node store/assemble.ts` puts together `target/store/fastlane/` for fastlane: the texts with the
-copies of `same`, and the images sorted into supply's and deliver's folders. It checks every
-image's size and that none has an alpha channel (Play's icon has one). With `--text` it leaves the
-images out.
+copies of `same`, the App Store's release notes, and the images sorted into supply's and
+deliver's folders. It checks every image's size and that none has an alpha channel (Play's icon
+has one). With `--text` it leaves the images out.
 
 ### Uploading
 
@@ -1123,8 +1138,9 @@ images out.
   then. Play: supply needs a release on a track to attach the listing to; it reads the internal
   track's, whose only release is the newest upload (`play_version_code` picks one when it has
   several). The App Store: deliver edits the version in "Prepare for Submission" (no new version,
-  no build, never submitted), replaces its screenshots, and precheck then reports Apple's metadata
-  rules as warnings in the log.
+  no build, never submitted), its texts including "What's New" (the release notes, when there are
+  ones it may take), replaces its screenshots, and precheck then reports Apple's metadata rules as
+  warnings in the log.
 
 The keys are the release workflow's secrets, `PLAY_SERVICE_ACCOUNT_JSON` and
 `APPLE_API_KEY_ID`/`APPLE_API_ISSUER`/`APPLE_API_KEY_P8`, written to files in the runner's temp

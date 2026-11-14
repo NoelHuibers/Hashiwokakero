@@ -7,13 +7,25 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { deflateSync } from 'node:zlib';
 
-import { checkImage, pngInfo } from '../../store/assemble.ts';
+import {
+  checkImage,
+  pngInfo,
+  RELEASE_NOTES_LIMIT,
+  releaseNotesFile,
+  writeReleaseNotes,
+} from '../../store/assemble.ts';
 import { APPLE, PLAY, SITE_LANGUAGES, siteUrl } from '../../store/locales.ts';
 
 /** The default order of sort(), as a comparison */
 const byCodeUnits = (a: string, b: string) => (a < b ? -1 : 1);
 
-import { type Listings, loadListings, validate } from '../../store/validate.ts';
+import {
+  APPLE_OTHER_PLATFORMS,
+  type Listings,
+  loadListings,
+  mentions,
+  validate,
+} from '../../store/validate.ts';
 
 const repo = loadListings();
 
@@ -158,6 +170,121 @@ test('names and titles: no emoji, promotion, other brands or shouting', () => {
     problems((l) => (at(l.play, 'en-US').full_description += '\nAlso on the iPhone.')),
     /mentions another platform \(iphone\)/,
   );
+  has(
+    problems((l) => (at(l.apple, 'de-DE').promotional_text = 'Mit Play Games-Erfolgen.')),
+    /de-DE: mentions another platform \(play games\)/,
+  );
+  assert.deepEqual(mentions('Now with achievements in Google Play Games.', APPLE_OTHER_PLATFORMS), [
+    'google play',
+    'play games',
+  ]);
+  assert.deepEqual(mentions('Puzzles to play, games to share.', APPLE_OTHER_PLATFORMS), []);
+});
+
+/** A whatsnew folder with these files and an App Store metadata tree, for the release notes. */
+function withNotes(files: Record<string, string>, run: (whatsnew: string, meta: string) => void) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'store-notes-'));
+  try {
+    const whatsnew = path.join(dir, 'whatsnew');
+    const meta = path.join(dir, 'metadata');
+    fs.mkdirSync(whatsnew);
+    for (const [name, text] of Object.entries(files))
+      fs.writeFileSync(path.join(whatsnew, name), text);
+    for (const { locale } of APPLE) fs.mkdirSync(path.join(meta, locale), { recursive: true });
+    run(whatsnew, meta);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const notesOf = (meta: string, locale: string) => {
+  const file = path.join(meta, locale, 'release_notes.txt');
+  return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : undefined;
+};
+
+test("release notes: each App Store locale's own, Play's of its language, or English", () => {
+  const apple = (locale: string) => {
+    const l = APPLE.find((a) => a.locale === locale);
+    assert.ok(l, locale);
+    return l;
+  };
+  withNotes(
+    {
+      'whatsnew-en-US': 'Hashi 1.2: a pause button.\n',
+      'whatsnew-de-DE': 'Hashi 1.2: eine Pause-Taste.',
+      'whatsnew-it-IT': 'Hashi 1.2: un tasto di pausa.',
+      'whatsnew-es-ES': 'Hashi 1.2: un botón de pausa.',
+      'whatsnew-zh-Hans': 'Hashi 1.2：暂停按钮。',
+    },
+    (whatsnew, meta) => {
+      const file = (locale: string) =>
+        path.basename(releaseNotesFile(whatsnew, apple(locale)) ?? '');
+      assert.equal(file('de-DE'), 'whatsnew-de-DE');
+      // Play's code of the language: it-IT for the App Store's it
+      assert.equal(file('it'), 'whatsnew-it-IT');
+      // Its own file before Play's (zh-CN)
+      assert.equal(file('zh-Hans'), 'whatsnew-zh-Hans');
+      // Play has two Spanish listings (es-ES, es-419): es-MX isn't guessed
+      assert.equal(file('es-MX'), 'whatsnew-en-US');
+      assert.equal(file('en-GB'), 'whatsnew-en-US');
+      assert.equal(file('ja'), 'whatsnew-en-US');
+
+      const { written, notes } = writeReleaseNotes(meta, { whatsnew });
+      assert.equal(written, APPLE.length);
+      assert.deepEqual(notes, []);
+      assert.equal(notesOf(meta, 'en-US'), 'Hashi 1.2: a pause button.');
+      assert.equal(notesOf(meta, 'en-AU'), 'Hashi 1.2: a pause button.');
+      assert.equal(notesOf(meta, 'it'), 'Hashi 1.2: un tasto di pausa.');
+      assert.equal(notesOf(meta, 'es-ES'), 'Hashi 1.2: un botón de pausa.');
+      assert.equal(notesOf(meta, 'ko'), 'Hashi 1.2: a pause button.');
+    },
+  );
+  // No notes at all, or an empty file: nothing, App Store Connect's text stays
+  withNotes({}, (whatsnew, meta) => {
+    assert.equal(releaseNotesFile(whatsnew, apple('en-US')), undefined);
+    assert.deepEqual(writeReleaseNotes(meta, { whatsnew }), { written: 0, notes: [] });
+  });
+  withNotes({ 'whatsnew-en-US': '\n' }, (whatsnew, meta) => {
+    assert.deepEqual(writeReleaseNotes(meta, { whatsnew }), { written: 0, notes: [] });
+    assert.equal(notesOf(meta, 'en-US'), undefined);
+  });
+});
+
+test('release notes: none where they name another platform, refused over 4000 characters', () => {
+  withNotes(
+    {
+      'whatsnew-en-US': 'Hashi 1.1: your stamps are achievements in Google Play Games.',
+      'whatsnew-de-DE': 'Hashi 1.1: neue Gemeinschaftsregeln.',
+    },
+    (whatsnew, meta) => {
+      const { written, notes } = writeReleaseNotes(meta, { whatsnew });
+      assert.equal(written, 1);
+      assert.equal(notesOf(meta, 'de-DE'), 'Hashi 1.1: neue Gemeinschaftsregeln.');
+      assert.equal(notesOf(meta, 'en-US'), undefined);
+      assert.equal(notesOf(meta, 'fr-FR'), undefined);
+      assert.equal(notes.length, 1);
+      assert.match(notes[0] ?? '', /whatsnew-en-US names google play, play games/);
+      assert.match(notes[0] ?? '', /stays as it is in en-US, en-GB, en-AU, en-CA, fr-FR, /);
+      assert.doesNotMatch(notes[0] ?? '', /de-DE/);
+    },
+  );
+  withNotes({ 'whatsnew-en-US': 'Now on Android too.' }, (whatsnew, meta) => {
+    assert.match(
+      writeReleaseNotes(meta, { whatsnew }).notes[0] ?? '',
+      /names android: .* in every locale$/,
+    );
+  });
+  // Characters, not bytes: 4000 Japanese ones fit
+  withNotes({ 'whatsnew-ja-JP': 'あ'.repeat(RELEASE_NOTES_LIMIT) }, (whatsnew, meta) => {
+    writeReleaseNotes(meta, { whatsnew });
+    assert.equal([...(notesOf(meta, 'ja') ?? '')].length, RELEASE_NOTES_LIMIT);
+  });
+  withNotes({ 'whatsnew-en-US': 'x'.repeat(RELEASE_NOTES_LIMIT + 1) }, (whatsnew, meta) => {
+    assert.throws(
+      () => writeReleaseNotes(meta, { whatsnew }),
+      /whatsnew-en-US has 4001 characters, the App Store takes 4000/,
+    );
+  });
 });
 
 test('locales: every one there, none unknown, copies not kept twice', () => {
