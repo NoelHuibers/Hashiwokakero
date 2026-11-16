@@ -149,7 +149,8 @@ pub(super) fn NotificationSettings() -> impl IntoView {
     // the browser may not show them, the switch goes back. Off turns this browser off.
     let save = move |next: NotificationPrefs| {
         let was_on = prefs.get_untracked().is_some_and(|p| p.enabled);
-        if next.enabled && !was_on && browser() && !here.get_untracked() {
+        let browser = support.get_untracked() == Some(Support::Ready);
+        if next.enabled && !was_on && browser && !here.get_untracked() {
             prefs.set(Some(next));
             turn_on_here(Box::new(move |on| {
                 if on {

@@ -335,7 +335,7 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Cookies and local storage",
         &[
-            "The cookie \"i18n_pref_locale\" remembers your language until you close the browser. Your colour scheme, sound and music settings, running games, puzzle workshop, solver lab settings and the device ID stay in your browser's local storage until you clear it, and, if you turned on notifications in this browser, its registration for them and our service worker (see "Notifications"); only the device ID, the daily's move log and the notification registration are sent to us. All of these are strictly necessary for the features you use (§ 25 (2) 2 TDDDG), so we don't ask for consent.",
+            "The cookie \"i18n_pref_locale\" remembers your language until you close the browser. Your colour scheme, sound and music settings, running games, puzzle workshop, solver lab settings and the device ID stay in your browser's local storage until you clear it, and, if you turned on notifications in this browser, its registration for them and our service worker (see \"Notifications\"); only the device ID, the daily's move log and the notification registration are sent to us. All of these are strictly necessary for the features you use (§ 25 (2) 2 TDDDG), so we don't ask for consent.",
             "The Android and iOS app sets no session cookie. It keeps the same random key in the app's own storage, which other apps can't read, and sends it with every request, along with its platform and version number so we can tell outdated versions. Logging out or clearing the app's data removes the key.",
         ],
     ),
