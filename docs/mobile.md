@@ -274,6 +274,5 @@ replaced through Play's support). Left, in this order (details in
     service), the data is encrypted in transit and deleted with the account. No declaration for
     the permissions: `POST_NOTIFICATIONS` and `RECEIVE_BOOT_COMPLETED` need none, there is no exact
     alarm and no foreground service. App Store Connect's privacy labels change with the iOS
-    notifications, not here. F-Droid: no new anti-feature (WorkManager is AndroidX, Apache 2.0, and
-    the server is ours, `TetheredNet` already); the recipe's `TetheredNet` text names the
-    notifications now.
+    notifications, not here. F-Droid: no change (WorkManager is AndroidX, Apache 2.0, and the
+    server is ours: `TetheredNet` covers the poll too).

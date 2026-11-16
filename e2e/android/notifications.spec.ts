@@ -80,21 +80,22 @@ const invoke = (page: Page, command: string, args: Record<string, unknown> = {})
   );
 
 /**
- * The ids of the app's WorkManager jobs that JobScheduler has: the numbers after the uid on the
- * lines of `dumpsys jobscheduler` with WorkManager's service (`JOB #u0a190/3: … rs.hashi.debug/
- * androidx.work.impl.background.systemjob.SystemJobService`, a namespace before the number on
- * newer Androids). The lines go to the report.
+ * The app's WorkManager jobs that JobScheduler has, from `dumpsys jobscheduler`: WorkManager
+ * keeps them in a namespace of its own (`JOB androidx.work.systemjobscheduler:u0a209/1: …
+ * rs.hashi.debug/androidx.work.impl.background.systemjob.SystemJobService`), which
+ * `cmd jobscheduler run` needs as well. The lines go to the report of a failed test.
  */
 async function jobs(device: AndroidDevice) {
   const service = `${PKG}/androidx.work.impl.background.systemjob.SystemJobService`;
   const lines = (await shell(device, 'dumpsys jobscheduler'))
     .split('\n')
-    .filter((l) => l.includes(service));
-  const ids = lines
-    .map((l) => l.match(/u\d+a\d+\/(?:[^\s/:]+:)?(\d+)\b/)?.[1])
-    .filter((id): id is string => id !== undefined);
+    .filter((l) => l.includes(service) && /^\s*JOB /.test(l));
   jobLines = lines;
-  return [...new Set(ids)];
+  const found = lines
+    .map((l) => l.match(/JOB #?(?:(\S+):)?u\d+a\d+\/(\d+):/))
+    .filter((m): m is RegExpMatchArray => m !== null)
+    .map(([, namespace, id]) => (namespace ? `-n ${namespace} ` : '') + `${PKG} ${id}`);
+  return [...new Set(found)];
 }
 
 /** What `jobs` saw last, attached to a failed test. */
@@ -112,8 +113,8 @@ test.afterEach(async ({ device }, testInfo) => {
 
 /** Runs the app's jobs now, whatever their constraints (no network here). */
 async function runJobs(device: AndroidDevice) {
-  for (const id of await jobs(device)) {
-    await shell(device, `cmd jobscheduler run -f ${PKG} ${id}`);
+  for (const job of await jobs(device)) {
+    await shell(device, `cmd jobscheduler run -f ${job}`);
   }
 }
 
