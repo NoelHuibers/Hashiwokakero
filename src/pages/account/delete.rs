@@ -39,6 +39,8 @@ pub(super) fn DeleteAccount(stats: RwSignal<Option<UserStats>>) -> impl IntoView
         spawn_local(async move {
             match delete_account(password).await {
                 Ok(()) => {
+                    // The server forgot this browser with the account, the subscription ends too
+                    crate::state::web_push::unsubscribe().await;
                     auth.user.set(None);
                     stats.set(None);
                     toast(ToastKind::Info, |l| {

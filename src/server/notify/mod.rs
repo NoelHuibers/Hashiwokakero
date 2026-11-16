@@ -11,9 +11,8 @@
 //! How a notification gets to a device is a channel's business ([`Channel`]): Web Push for
 //! browsers and APNs for the iOS app push it ([`deliver`]), the Android app asks for it itself
 //! ([`poll`], with the device's secret). Each device has a cursor, the last outbox row it got;
-//! moving it is what claims the rows, so two machines running the job never send one twice. This
-//! module has no channel yet: [`channels`] is empty, and the pages offer notifications nowhere
-//! (`state::notify::can_deliver`).
+//! moving it is what claims the rows, so two machines running the job never send one twice. Web
+//! Push is the channel there is ([`web_push`], when its keys are configured).
 //!
 //! Nobody gets more than a handful a day: the same notification (`collapse_key`) comes once in a
 //! while ([`Rule`]), each kind has a daily limit, and all but the last call share one. Nothing
@@ -25,6 +24,7 @@ mod render;
 #[cfg(test)]
 mod tests;
 pub mod timing;
+pub mod web_push;
 
 use std::fmt::Write as _;
 
@@ -906,9 +906,13 @@ pub trait Channel: Send + Sync {
     fn send<'a>(&'a self, device: &'a Device, message: &'a PushMessage) -> BoxFuture<'a, Delivery>;
 }
 
-/// The channels this server pushes through: none yet.
+/// The channels this server pushes through: those configured.
 pub fn channels() -> Vec<Box<dyn Channel>> {
-    Vec::new()
+    let mut channels: Vec<Box<dyn Channel>> = Vec::new();
+    if let Some(web) = web_push::WebPush::from_env() {
+        channels.push(Box::new(web));
+    }
+    channels
 }
 
 /// Pushes the pending notifications of every device a channel serves. Returns how many went out.

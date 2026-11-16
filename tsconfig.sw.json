@@ -1,0 +1,18 @@
+// Type checks the service worker (public/sw.js), which the browser loads as it is: JavaScript
+// with JSDoc types, in a worker's globals instead of a page's. Part of `pnpm run typecheck`.
+{
+  "files": ["public/sw.js"],
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "target": "es2025",
+    "lib": ["es2025", "webworker"],
+    "types": [],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "skipLibCheck": true
+  }
+}

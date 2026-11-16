@@ -69,6 +69,8 @@ pub fn AccountPage() -> impl IntoView {
 
     let sign_out = move |_| {
         spawn_local(async move {
+            // This browser's notifications were the account's
+            crate::state::web_push::unsubscribe().await;
             match logout().await {
                 Ok(()) => {
                     auth.user.set(None);
@@ -83,6 +85,7 @@ pub fn AccountPage() -> impl IntoView {
     };
 
     let registered = move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.guest));
+    let signed_in = Memo::new(move |_| auth.user.with(|u| u.as_ref().map(|u| u.id)));
 
     view! {
         <Title text=title_text(move || format!("{} · Hashi", t_string!(i18n, account.title))) />
@@ -244,7 +247,9 @@ pub fn AccountPage() -> impl IntoView {
                 </Card>
 
                 {move || registered().then(|| view! { <RecoveryEmailCard /> })}
-                {move || auth.user.with(Option::is_some).then(|| view! { <NotificationSettings /> })}
+                // Once per player: loading the same one again mustn't make the card anew in the
+                // middle of turning notifications on
+                {move || signed_in.get().map(|_| view! { <NotificationSettings /> })}
                 <FeedbackCard />
                 {move || auth.user.with(Option::is_some).then(|| view! { <BlockedPlayers /> })}
                 {move || auth.user.with(Option::is_some).then(|| view! { <DeleteAccount stats /> })}

@@ -14,6 +14,7 @@ mod rivals;
 mod settings;
 mod solver;
 mod toasts;
+pub mod web_push;
 
 use std::time::Duration;
 
@@ -22,10 +23,12 @@ use leptos::prelude::*;
 
 pub use auth::Auth;
 pub use blocks::Blocks;
+#[cfg(any(feature = "csr", test))]
+pub(crate) use browser::load_raw;
+#[cfg(any(feature = "browser", test))]
+pub(crate) use browser::remove_item;
 pub(crate) use browser::store_raw;
 pub use browser::{device_id, download, format_time, load, random_seed, store};
-#[cfg(any(feature = "csr", test))]
-pub(crate) use browser::{load_raw, remove_item};
 pub use editor::Editor;
 pub use errors::{note_error, recent_errors};
 pub use game::{DailyGame, Game, Snapshot, Source, Status};

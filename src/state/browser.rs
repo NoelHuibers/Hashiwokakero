@@ -22,7 +22,7 @@ mod storage {
         }
     }
 
-    #[cfg(feature = "csr")]
+    #[cfg(feature = "browser")]
     pub(super) fn remove(key: &str) {
         if let Some(s) = storage() {
             let _ = s.remove_item(key);
@@ -75,7 +75,7 @@ pub(crate) fn load_raw(key: &str) -> Option<String> {
     storage::get(key)
 }
 
-#[cfg(any(feature = "csr", test))]
+#[cfg(any(feature = "browser", test))]
 pub(crate) fn remove_item(key: &str) {
     storage::remove(key);
 }
