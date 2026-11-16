@@ -2,19 +2,24 @@
 //! account (`api::save_notification_prefs`), with the time zone of this browser or phone for the
 //! streak's last call.
 //!
-//! Turned on, this device registers to get them, after asking for leave where it needs one
-//! (`state::notify::allowed_here`, `follow`).
+//! The settings are the account's, delivery is per device: in a browser that can get them
+//! (`state::web_push`), turning them on turns them on here too (the browser asks for permission
+//! first; without it the switch goes back), turning them off here as well, and a row says
+//! whether this browser gets them, with a button for it. In the Android app, turning them on asks
+//! Android for leave first, then the phone registers (`state::notify::allowed_here`, `follow`).
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::{load_notification_prefs, save_notification_prefs};
+use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
 use crate::components::ui::switch::Switch;
 use crate::i18n::{Locale, t, td_string, use_i18n};
 use crate::model::{NotificationPrefs, NotifyKind};
-use crate::state::error_toast;
 use crate::state::notify::{allowed_here, can_deliver, follow, refused_here, time_zone};
+use crate::state::web_push::{self, Outcome, Support};
+use crate::state::{ToastKind, Toasts, error_toast};
 
 /// The name of a kind's switch.
 fn kind_name(locale: Locale, kind: NotifyKind) -> String {
@@ -53,7 +58,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
     let prefs = RwSignal::new(None::<NotificationPrefs>);
     // What the server has: a failed save goes back to it
     let confirmed = StoredValue::new(None::<NotificationPrefs>);
-    // This device may not show notifications (Android's leave)
+    // The Android app without Android's leave
     let refused = RwSignal::new(false);
     Effect::new(move |first: Option<()>| {
         if first.is_none() {
@@ -62,9 +67,10 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                     Ok(loaded) => {
                         confirmed.set_value(loaded);
                         prefs.set(loaded);
-                        // This device as the settings want it: turned on elsewhere, off elsewhere
+                        // The Android app as the settings want it: turned on elsewhere, off
+                        // elsewhere
                         if let Some(p) = loaded {
-                            refused.set(refused_here(p.enabled).await);
+                            let _ = refused.try_set(refused_here(p.enabled).await);
                             if let Err(e) = follow(p.enabled, i18n.get_locale_untracked()).await {
                                 leptos::logging::warn!("notifications on this device: {e}");
                             }
@@ -82,7 +88,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
     // the answers would have been
     let saving = StoredValue::new(false);
     let next_save = StoredValue::new(None::<NotificationPrefs>);
-    let save = move |next: NotificationPrefs| {
+    let persist = move |next: NotificationPrefs| {
         prefs.set(Some(next));
         if saving.get_value() {
             next_save.set_value(Some(next));
@@ -116,22 +122,88 @@ pub(super) fn NotificationSettings() -> impl IntoView {
             saving.set_value(false);
         });
     };
-    // Turning them on asks this device for leave first: refused, the switches go back
-    let change = move |next: NotificationPrefs| {
-        if !next.enabled || prefs.get_untracked().is_some_and(|p| p.enabled) {
-            save(next);
+
+    // This browser, known once the page runs in it: whether it can get notifications, whether
+    // it does, whether the player blocked them for the site, and a subscription under way
+    let support = RwSignal::new(None::<Support>);
+    let here = RwSignal::new(false);
+    let blocked = RwSignal::new(false);
+    let pending = RwSignal::new(false);
+    let deliverable = RwSignal::new(None::<bool>);
+    Effect::new(move || {
+        support.set(Some(web_push::here()));
+        here.set(web_push::is_on());
+        blocked.set(web_push::blocked());
+        deliverable.set(Some(can_deliver()));
+    });
+    let browser = move || support.get() == Some(Support::Ready);
+    // Turns this browser on; `then` with whether it worked. The card may have been rendered
+    // anew by the time the browser answers (the signed in player loaded again): what the browser
+    // did still counts, the old card's signals just don't show it any more.
+    let toasts = use_context::<Toasts>();
+    let turn_on_here = move |then: Box<dyn FnOnce(bool)>| {
+        pending.set(true);
+        let locale = i18n.get_locale_untracked();
+        spawn_local(async move {
+            let outcome = web_push::subscribe(locale).await;
+            let _ = pending.try_set(false);
+            let _ = here.try_set(outcome == Outcome::On);
+            let _ = blocked.try_set(outcome == Outcome::Denied || web_push::blocked());
+            if let Outcome::Failed(e) = &outcome {
+                leptos::logging::warn!("could not turn notifications on here: {e}");
+                if let Some(toasts) = toasts {
+                    toasts.push(ToastKind::Error, |l| {
+                        td_string!(l, account.notifications.push_failed).to_string()
+                    });
+                }
+            }
+            then(outcome == Outcome::On);
+        });
+    };
+    let turn_off_here = move || {
+        here.set(false);
+        spawn_local(web_push::unsubscribe());
+    };
+    // Turning the notifications on in a browser that can get them turns them on here first: if
+    // the browser may not show them, the switch goes back. Off turns this browser off.
+    let save = move |next: NotificationPrefs| {
+        let was_on = prefs.get_untracked().is_some_and(|p| p.enabled);
+        let browser = support.get_untracked() == Some(Support::Ready);
+        if next.enabled && !was_on && browser && !here.get_untracked() {
+            prefs.set(Some(next));
+            turn_on_here(Box::new(move |on| {
+                if !on {
+                    let _ = prefs.try_set(confirmed.try_get_value().flatten());
+                } else if prefs.is_disposed() {
+                    spawn_local(async move {
+                        if let Err(e) = save_notification_prefs(next, time_zone()).await {
+                            leptos::logging::warn!("could not save the notification settings: {e}");
+                        }
+                    });
+                } else {
+                    persist(next);
+                }
+            }));
             return;
         }
-        prefs.set(Some(next));
-        spawn_local(async move {
-            let allowed = allowed_here().await;
-            refused.set(!allowed);
-            if allowed {
-                save(next);
-            } else {
-                prefs.set(confirmed.get_value());
-            }
-        });
+        // The Android app asks Android for leave first: refused, the switches go back
+        if next.enabled && !was_on && !browser {
+            prefs.set(Some(next));
+            spawn_local(async move {
+                let allowed = allowed_here().await;
+                let _ = refused.try_set(!allowed);
+                if allowed {
+                    persist(next);
+                } else {
+                    let _ = prefs.try_set(confirmed.try_get_value().flatten());
+                }
+            });
+            return;
+        }
+        if !next.enabled && was_on && here.get_untracked() {
+            turn_off_here();
+        }
+        persist(next);
     };
 
     let master = RwSignal::new(false);
@@ -151,7 +223,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
         if let Some(p) = prefs.get_untracked()
             && p.enabled != on
         {
-            change(p.with_master(on));
+            save(p.with_master(on));
         }
     });
     for (kind, switch) in switches {
@@ -160,11 +232,11 @@ pub(super) fn NotificationSettings() -> impl IntoView {
             if let Some(p) = prefs.get_untracked()
                 && p.kind(kind) != on
             {
-                change(p.with_kind(kind, on));
+                save(p.with_kind(kind, on));
             }
         });
     }
-    let loading = Signal::derive(move || prefs.with(Option::is_none));
+    let loading = Signal::derive(move || prefs.with(Option::is_none) || pending.get());
 
     let rows = switches
         .into_iter()
@@ -191,17 +263,20 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                 <CardDescription>{t!(i18n, account.notifications.text)}</CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-2">
-                {(!can_deliver())
-                    .then(|| {
-                        view! {
-                            <p class="rounded-md border border-dashed bg-muted/50 p-2 text-xs text-muted-foreground" data-testid="notifications-unavailable">
-                                {t!(i18n, account.notifications.unavailable)}
-                            </p>
-                        }
-                    })}
                 <Show when=move || refused.get()>
                     <p class="rounded-md border border-dashed border-destructive/50 p-2 text-xs text-muted-foreground" data-testid="notifications-refused">
                         {t!(i18n, account.notifications.refused)}
+                    </p>
+                </Show>
+                // Known after hydration: the server can't tell what the browser can do
+                <Show when=move || support.get() == Some(Support::HomeScreen)>
+                    <p class="rounded-md border border-dashed bg-muted/50 p-2 text-xs text-muted-foreground" data-testid="notifications-home-screen">
+                        {t!(i18n, account.notifications.home_screen)}
+                    </p>
+                </Show>
+                <Show when=move || deliverable.get() == Some(false) && support.get() != Some(Support::HomeScreen)>
+                    <p class="rounded-md border border-dashed bg-muted/50 p-2 text-xs text-muted-foreground" data-testid="notifications-unavailable">
+                        {t!(i18n, account.notifications.unavailable)}
                     </p>
                 </Show>
                 <label class="flex min-h-10 cursor-pointer items-center justify-between gap-3 text-sm font-semibold" data-testid="notify-master">
@@ -215,6 +290,47 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                         aria_label=Signal::derive(move || td_string!(i18n.get_locale(), account.notifications.master).to_string())
                     />
                 </label>
+                <Show when=move || browser() && blocked.get()>
+                    <p class="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs" role="status" data-testid="notifications-blocked">
+                        {t!(i18n, account.notifications.blocked)}
+                    </p>
+                </Show>
+                <Show when=move || browser() && (master.get() || here.get())>
+                    <div class="flex min-h-10 items-center justify-between gap-3 rounded-md bg-muted/50 px-2 py-1 text-sm" data-testid="notify-this-browser">
+                        <span>
+                            {t!(i18n, account.notifications.this_browser)}
+                            <span class="block text-xs text-muted-foreground" data-testid="notify-this-browser-state">
+                                {move || {
+                                    if here.get() {
+                                        td_string!(i18n.get_locale(), account.notifications.browser_on)
+                                    } else {
+                                        td_string!(i18n.get_locale(), account.notifications.browser_off)
+                                    }
+                                }}
+                            </span>
+                        </span>
+                        <Button
+                            size=ButtonSize::Sm
+                            variant=ButtonVariant::Outline
+                            attr:disabled=move || pending.get()
+                            on:click=move |_| {
+                                if here.get_untracked() {
+                                    turn_off_here();
+                                } else {
+                                    turn_on_here(Box::new(|_| {}));
+                                }
+                            }
+                        >
+                            {move || {
+                                if here.get() {
+                                    td_string!(i18n.get_locale(), account.notifications.turn_off_here)
+                                } else {
+                                    td_string!(i18n.get_locale(), account.notifications.turn_on_here)
+                                }
+                            }}
+                        </Button>
+                    </div>
+                </Show>
                 <div class="flex flex-col border-s-2 ps-3" class:opacity-60=move || !master.get()>{rows}</div>
             </CardContent>
         </Card>

@@ -27,9 +27,10 @@ The group river doesn't notify.
   (`components/notify_offer.rs`, `model::should_offer`). It is noted as shown as soon as it
   shows; yes turns everything on.
 - **Only where a device can get them.** `state::notify::can_deliver()` says whether this
-  browser or app has a way of delivery (`delivers(DeviceKind)`). It is `true` in the Android app
-  ([The Android app](#the-android-app)) and `false` elsewhere until the channels below land, so
-  the offer doesn't show there and the settings say that notifications can't reach this device
+  browser or app has a way of delivery (`delivers(DeviceKind)`): in browsers once the site has
+  its Web Push keys and the browser can take them (below), in the Android app always
+  ([The Android app](#the-android-app)), in the iOS app not until its channel lands. Where it's
+  `false` the offer never shows and the settings say that notifications can't reach this device
   yet. The switches still work: they are account settings.
 - **Texts in the device's language.** The outbox keeps what a text needs (`notify::Args`,
   JSON), not the text: each device renders it in its own locale
@@ -62,8 +63,8 @@ The group river doesn't notify.
   seen. Deleting an account deletes its settings, devices and notifications, and the
   notifications about it (`notify::ERASE`); a guest's sign-in moves their devices (and their
   settings, if the account has none) to the account (`notify::MERGE_GUEST`). The privacy
-  policy (`pages/legal.rs`, "Benachrichtigungen" / "Notifications") describes this and has to
-  be extended when a channel lands.
+  policy (`pages/legal.rs`, "Benachrichtigungen" / "Notifications") describes this and names
+  the push services that get what; it has to be extended when another channel lands.
 
 ## Schema (migration 30, `server/db.rs`)
 
@@ -104,18 +105,62 @@ The group river doesn't notify.
 | `unregister_notification_device(id, secret)` | none | forgets the device |
 | `poll_notifications(device, secret)` | none | the device's new `PushMessage`s and when its next last call is due (`NotificationPoll`), `None` if unknown |
 
+## Web Push (browsers)
+
+Standard Web Push with our own key pair; no Firebase SDK or project, no web-push service. The
+push service is the one the browser comes with: Google's for Chrome and most Chromium
+browsers, Microsoft's for Edge, Mozilla's for Firefox, Apple's for Safari. It sees the
+endpoint, the size, the timing and our signature, not the text.
+
+- **Keys.** `VAPID_PUBLIC_KEY` (the uncompressed P-256 point, 65 bytes) and
+  `VAPID_PRIVATE_KEY` (the scalar, 32 bytes), both base64url without padding, and optionally
+  `VAPID_SUBJECT` (default `https://hashi.rs`; an `https:` or `mailto:` URL, we use no mail
+  address). Fly secrets in production. `pnpm run vapid-keys` prints a new pair (Node's crypto,
+  nothing leaves the machine). A new pair invalidates every browser's subscription, so keep it.
+  Without the keys the channel is off and the pages don't offer it; half a pair or a pair that
+  doesn't fit stops the server at startup (`validate_configuration`).
+- **Server** (`server/notify/web_push.rs`, in `notify::channels()` when configured): the
+  payload is the device's `PushMessage` as JSON (`title`, `body`, `url`, `tag`), encrypted per
+  RFC 8291 (`aes128gcm`, one record, a fresh key and salt per message), signed per RFC 8292
+  (ES256 JWT, `aud` the endpoint's origin, 12 hours). `TTL` until the outbox row expires (at
+  most four weeks), `Urgency: high` for the last call and `normal` otherwise, `Topic` a hash of
+  the tag so the push service keeps only the latest of one. 2xx is sent; 404 and 410 are
+  `Delivery::Gone` (the device is forgotten), as is a subscription with an endpoint that isn't
+  https or keys that don't parse; anything else is `Failed`. RustCrypto (`p256`, `aes-gcm`,
+  `hkdf`, `sha2`, `base64ct`) and the `reqwest` the server already has.
+- **The page** gets the public key in `<meta name="hashi-push-key">` (`app::shell`, empty when
+  off). `state::web_push::here()` is `Ready` when the key is there and the browser has a
+  service worker, `PushManager` and `Notification`; `HomeScreen` on an iPhone or iPad outside a
+  home screen web app (Safari only pushes there, iOS 16.4 and later; the manifest's
+  `display: standalone` makes the site one), where the card says how to add it; `No`
+  elsewhere, and always in the apps (it is compiled into the website only).
+- **Turning on** (the master switch, a kind with the master off, the offer's yes, the card's
+  "Turn on here"): `Notification.requestPermission()`, then `/sw.js` is registered, then
+  `pushManager.subscribe({ userVisibleOnly, applicationServerKey })` (a subscription for an
+  earlier key is replaced), then `register_notification_device(Web, endpoint, keys, locale,
+  time_zone)`. Id, secret, endpoint, locale and time go to local storage (`hashi.push.v1`).
+  Only then are the settings saved; denied puts the switch back and shows how to allow them
+  in the browser's site settings, a dismissed prompt just puts it back.
+- **Turning off** (the master switch, "Turn off here", signing out, deleting the account):
+  `unregister_notification_device(id, secret)` and `subscription.unsubscribe()`. The account
+  card shows "This browser" with on or off whenever the account's switch or this browser is on.
+- **Later visits** register again once a week or when the site's language changed
+  (`state::web_push::refresh`, from `app.rs`), which keeps `last_seen` fresh; a subscription
+  that is gone ends the registration.
+- **The service worker** (`public/sw.js`, plain JavaScript with JSDoc types, checked by
+  `tsc -p tsconfig.sw.json`) has a `push` handler (`showNotification` with the tag, the
+  192 px icon and `badge-96.png`, a white silhouette of the favicon) and a `notificationclick`
+  handler (focuses an open tab of the site and navigates it, else opens a window, only to
+  the site's own URLs). No `fetch` handler and no caches, so nothing is ever served from it.
+  It is served at its fixed URL with `Cache-Control: no-cache` like every unhashed file; the
+  site has no Content-Security-Policy that would need a `worker-src`.
+
 ## What the next changes add
 
 Each one adds a channel and flips its `delivers(DeviceKind)` in `state/notify.rs`, and
 extends the privacy policy with what goes to whom.
 
-1. **Web Push (website).** VAPID key pair as Fly secrets; a service worker that shows the
-   message and opens `url` on a tap; the page subscribes with `PushManager.subscribe` (only
-   after the player turns something on or accepts the offer) and calls
-   `register_notification_device(Web, endpoint, keys, …)`, again on later visits to keep
-   `last_seen` fresh. Server: an `impl Channel` for `DeviceKind::Web` (RFC 8291 encryption,
-   RFC 8292 VAPID) returned by `notify::channels()`; HTTP 404/410 answers `Delivery::Gone`.
-   `delivers(Web)` becomes "the browser has `PushManager`".
+1. **Web Push (website).** Done, see above.
 2. **APNs (iOS app).** The p8 key, key id and team id as Fly secrets; the app's plugin asks for
    permission and hands the device token to the page, which registers `(Apns, token)`.
    Server: an `impl Channel` for `DeviceKind::Apns` over HTTP/2 with a JWT;

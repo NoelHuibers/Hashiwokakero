@@ -64,6 +64,9 @@ fn app_settings(vars: &[(&str, &str)]) -> crate::server::apps::AppSettings {
     .unwrap()
 }
 
+pub(super) const VAPID_PUBLIC_KEY: &str =
+    "BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8";
+
 /// The settings the tests run with, instead of environment variables (see `server::env_var`).
 pub(in crate::server) fn env_var(name: &str) -> Option<&'static str> {
     match name {
@@ -72,6 +75,9 @@ pub(in crate::server) fn env_var(name: &str) -> Option<&'static str> {
         "HASHI_ADMIN_TOKEN" => Some(ADMIN_TOKEN),
         // Not the first season, so there is a finished one to archive (see `dojo::seasons`)
         "DOJO_SEASON" => Some(CURRENT_SEASON),
+        // Web Push on (RFC 8291's example pair, see `notify::web_push`)
+        "VAPID_PUBLIC_KEY" => Some(VAPID_PUBLIC_KEY),
+        "VAPID_PRIVATE_KEY" => Some("yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw"),
         _ => None,
     }
 }
@@ -95,6 +101,12 @@ async fn setup() -> &'static Path {
         std::fs::write(
             site.join("pkg/hashi.0123abcd.js"),
             "export const x = 1;\n".repeat(200),
+        )
+        .unwrap();
+        // The service worker, as it is
+        std::fs::copy(
+            concat!(env!("CARGO_MANIFEST_DIR"), "/public/sw.js"),
+            site.join("sw.js"),
         )
         .unwrap();
         std::fs::write(site.join("fonts/fonts.css"), "@font-face {}\n".repeat(50)).unwrap();

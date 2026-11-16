@@ -18,15 +18,17 @@ pub fn device_kind(app_platform: Option<&str>) -> Option<DeviceKind> {
     }
 }
 
-/// Whether a way of delivery is built.
+/// Whether a way of delivery is built, and works here.
 ///
-/// Each one flips with its own change: Web Push with the website's service worker, APNs with the
-/// iOS app's push registration (docs/notifications.md). The Android app asks the server itself,
-/// in the background (`Notifications.kt` in `app/src-tauri/gen/android`).
-pub const fn delivers(kind: DeviceKind) -> bool {
+/// Each one flips with its own change (docs/notifications.md): Web Push where the site has its
+/// key and the browser can take them (`state::web_push`, never in the apps), APNs with the iOS
+/// app's push registration. The Android app asks the server itself, in the background
+/// (`Notifications.kt` in `app/src-tauri/gen/android`).
+pub fn delivers(kind: DeviceKind) -> bool {
     match kind {
+        DeviceKind::Web => super::web_push::here() == super::web_push::Support::Ready,
         DeviceKind::Android => true,
-        DeviceKind::Web | DeviceKind::Apns => false,
+        DeviceKind::Apns => false,
     }
 }
 
@@ -161,10 +163,10 @@ mod tests {
         assert_eq!(device_kind(Some("web")), None);
     }
 
-    /// The Android app delivers; outside the app nothing does yet: no offer, and the settings
-    /// say so.
+    /// The Android app delivers; Web Push only in a browser that takes it (not in these tests),
+    /// APNs not yet: no offer there, and the settings say so.
     #[test]
-    fn only_the_android_app_delivers_yet() {
+    fn the_android_app_delivers() {
         assert!(delivers(DeviceKind::Android));
         for kind in [DeviceKind::Web, DeviceKind::Apns] {
             assert!(!delivers(kind), "{kind:?}");

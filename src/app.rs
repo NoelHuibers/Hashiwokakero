@@ -45,6 +45,9 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 // The build of this page's WASM, for the tab to compare with the server's
                 // (`api::client`)
                 <meta name="hashi-build" content=page_build(&options) />
+                // The site's Web Push key, when it sends notifications to browsers
+                // (`state::notify`)
+                <meta name="hashi-push-key" content=push_key() />
                 // The apps in the stores, once they are there (`seo::AppStores`)
                 {app_store_tags()}
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -76,6 +79,17 @@ fn page_build(options: &LeptosOptions) -> Option<String> {
 /// The shell is only rendered on the server.
 #[cfg(not(feature = "ssr"))]
 fn page_build(_: &LeptosOptions) -> Option<String> {
+    None
+}
+
+/// See `server::notify::web_push::public_key`.
+#[cfg(feature = "ssr")]
+fn push_key() -> Option<String> {
+    crate::server::notify::web_push::public_key()
+}
+
+#[cfg(not(feature = "ssr"))]
+fn push_key() -> Option<String> {
     None
 }
 
@@ -178,6 +192,7 @@ pub fn App() -> impl IntoView {
             <MobileNav />
             <Toaster />
             <Tooltips />
+            <PushRefresh />
         </Router>
         </I18nContextProvider>
     }
@@ -295,6 +310,19 @@ fn moved_target(path: &str, search: &str, hash: &str) -> Option<String> {
 fn AppLinks() -> impl IntoView {
     #[cfg(feature = "csr")]
     crate::api::native::follow_app_links(leptos_router::hooks::use_navigate());
+}
+
+/// A browser that gets notifications registers again now and then, and in a new language
+/// (`state::web_push::refresh`).
+#[component]
+fn PushRefresh() -> impl IntoView {
+    let i18n = use_i18n();
+    Effect::new(move || {
+        let locale = i18n.get_locale();
+        if crate::state::web_push::stored().is_some() {
+            leptos::task::spawn_local(crate::state::web_push::refresh(locale));
+        }
+    });
 }
 
 /// Korean, Chinese, Arabic, Hindi, Thai and Vietnamese need a font for their script, loaded only
