@@ -18,7 +18,7 @@ use crate::i18n::{Locale, t, td_string, use_i18n};
 use crate::model::{NotificationPrefs, NotifyKind};
 use crate::state::notify::{can_deliver, time_zone};
 use crate::state::web_push::{self, Outcome, Support};
-use crate::state::{ToastKind, error_toast, toast};
+use crate::state::{ToastKind, Toasts, error_toast};
 
 /// The name of a kind's switch.
 fn kind_name(locale: Locale, kind: NotifyKind) -> String {
@@ -123,20 +123,25 @@ pub(super) fn NotificationSettings() -> impl IntoView {
         deliverable.set(Some(can_deliver()));
     });
     let browser = move || support.get() == Some(Support::Ready);
-    // Turns this browser on; `then` with whether it worked
+    // Turns this browser on; `then` with whether it worked. The card may have been rendered
+    // anew by the time the browser answers (the signed in player loaded again): what the browser
+    // did still counts, the old card's signals just don't show it any more.
+    let toasts = use_context::<Toasts>();
     let turn_on_here = move |then: Box<dyn FnOnce(bool)>| {
         pending.set(true);
         let locale = i18n.get_locale_untracked();
         spawn_local(async move {
             let outcome = web_push::subscribe(locale).await;
-            pending.set(false);
-            here.set(outcome == Outcome::On);
-            blocked.set(outcome == Outcome::Denied || web_push::blocked());
+            let _ = pending.try_set(false);
+            let _ = here.try_set(outcome == Outcome::On);
+            let _ = blocked.try_set(outcome == Outcome::Denied || web_push::blocked());
             if let Outcome::Failed(e) = &outcome {
                 leptos::logging::warn!("could not turn notifications on here: {e}");
-                toast(ToastKind::Error, |l| {
-                    td_string!(l, account.notifications.push_failed).to_string()
-                });
+                if let Some(toasts) = toasts {
+                    toasts.push(ToastKind::Error, |l| {
+                        td_string!(l, account.notifications.push_failed).to_string()
+                    });
+                }
             }
             then(outcome == Outcome::On);
         });
@@ -153,10 +158,16 @@ pub(super) fn NotificationSettings() -> impl IntoView {
         if next.enabled && !was_on && browser && !here.get_untracked() {
             prefs.set(Some(next));
             turn_on_here(Box::new(move |on| {
-                if on {
-                    persist(next);
+                if !on {
+                    let _ = prefs.try_set(confirmed.try_get_value().flatten());
+                } else if prefs.is_disposed() {
+                    spawn_local(async move {
+                        if let Err(e) = save_notification_prefs(next, time_zone()).await {
+                            leptos::logging::warn!("could not save the notification settings: {e}");
+                        }
+                    });
                 } else {
-                    prefs.set(confirmed.get_value());
+                    persist(next);
                 }
             }));
             return;

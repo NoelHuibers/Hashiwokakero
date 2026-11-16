@@ -14,7 +14,7 @@ use crate::i18n::{t, td_string, use_i18n};
 use crate::model::{NotificationPrefs, should_offer};
 use crate::state::notify::{can_deliver, time_zone};
 use crate::state::web_push::{self, Outcome, Support};
-use crate::state::{ToastKind, error_toast, toast};
+use crate::state::{ToastKind, Toasts};
 
 /// The offer, or nothing. Seen counts as answered: it doesn't come again, yes or not.
 #[component]
@@ -38,6 +38,8 @@ pub fn NotificationOffer() -> impl IntoView {
     }
     let blocked = RwSignal::new(false);
     let busy = RwSignal::new(false);
+    let toasts = use_context::<Toasts>();
+    // The offer may be gone by the time the browser answers: what it did still counts
     let accept = move |_| {
         let browser = web_push::here() == Support::Ready;
         let locale = i18n.get_locale_untracked();
@@ -47,30 +49,35 @@ pub fn NotificationOffer() -> impl IntoView {
                 match web_push::subscribe(locale).await {
                     Outcome::On => {}
                     Outcome::Denied => {
-                        busy.set(false);
-                        blocked.set(true);
+                        let _ = busy.try_set(false);
+                        let _ = blocked.try_set(true);
                         return;
                     }
                     Outcome::Dismissed => {
-                        open.set(false);
+                        let _ = open.try_set(false);
                         return;
                     }
                     Outcome::Failed(e) => {
                         leptos::logging::warn!("could not turn notifications on here: {e}");
-                        open.set(false);
-                        toast(ToastKind::Error, |l| {
-                            td_string!(l, account.notifications.push_failed).to_string()
-                        });
+                        let _ = open.try_set(false);
+                        if let Some(toasts) = toasts {
+                            toasts.push(ToastKind::Error, |l| {
+                                td_string!(l, account.notifications.push_failed).to_string()
+                            });
+                        }
                         return;
                     }
                 }
             }
-            open.set(false);
-            if let Err(e) = answer_notification_offer(true, time_zone()).await {
-                error_toast(e);
+            let _ = open.try_set(false);
+            if let Err(e) = answer_notification_offer(true, time_zone()).await
+                && let Some(toasts) = toasts
+            {
+                toasts.push_error(e);
             }
         });
     };
+
     view! {
         <Show when=move || open.get()>
             <div class="flex w-full flex-col items-center gap-2 rounded-lg border bg-muted/50 p-3 text-sm" data-testid="notification-offer">
