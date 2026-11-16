@@ -487,3 +487,33 @@ async fn search_engines_find_their_files() {
     assert_status(&browser.get("/sitemap.xml").await, StatusCode::OK);
     assert_status(&browser.get("/rules").await, StatusCode::OK);
 }
+
+/// The service worker at its fixed address (`public/sw.js`): JavaScript, checked on every visit
+/// (no-cache: a browser looks for a new version anyway, and must find it), and it only shows
+/// notifications: no fetch handler, so no request goes through it and nothing goes stale. Pages
+/// name the key it subscribes with.
+#[tokio::test]
+async fn the_service_worker_is_served_fresh_and_only_notifies() {
+    let server = Server::start().await;
+    let browser = server.browser();
+    let res = browser.get("/sw.js").await;
+    assert_status(&res, StatusCode::OK);
+    assert_eq!(res.headers()[CACHE_CONTROL], "no-cache");
+    let content_type = res.headers()[CONTENT_TYPE].to_str().unwrap();
+    assert!(content_type.contains("javascript"), "{content_type}");
+    let script = res.text().await.unwrap();
+    for event in ["'push'", "'notificationclick'"] {
+        assert!(script.contains(event), "{event}");
+    }
+    assert!(!script.contains("'fetch'") && !script.contains("caches."));
+
+    for path in ["/", "/de/account"] {
+        let html = browser.get(path).await.text().await.unwrap();
+        assert!(
+            html.contains(&format!(
+                r#"<meta name="hashi-push-key" content="{VAPID_PUBLIC_KEY}">"#
+            )),
+            "{path}"
+        );
+    }
+}
