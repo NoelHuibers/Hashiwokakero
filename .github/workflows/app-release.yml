@@ -1710,6 +1710,11 @@ jobs:
             --jq '.[] | select((.draft | not) and (.tag_name | startswith("app-v"))) | select(any(.assets[]; .name | test("-foss-.+\\.apk$"))) | "\(.tag_name) \(.published_at)"' \
             > "$RUNNER_TEMP/releases"
           while read -r tag published && [ "$have" -lt "$KEEP_VERSIONS" ]; do
+            # A dry run of a pull request that doesn't bump the version built a released version
+            # again: its APKs stand for that release (same names), which counts once
+            if compgen -G "$WORK/repo/hashi-${tag#app-v}-foss-*.apk" > /dev/null; then
+              continue
+            fi
             gh release download "$tag" -R "$REPO" -p 'hashi-*-foss-*.apk' -D "$WORK/repo"
             touch -d "$published" "$WORK/repo/hashi-${tag#app-v}"-foss-*.apk
             have=$((have + 1))
