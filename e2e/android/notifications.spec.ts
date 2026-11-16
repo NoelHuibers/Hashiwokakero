@@ -79,15 +79,36 @@ const invoke = (page: Page, command: string, args: Record<string, unknown> = {})
     [command, args] as const,
   );
 
-/** The ids of the app's WorkManager jobs that JobScheduler has. */
+/**
+ * The ids of the app's WorkManager jobs that JobScheduler has: the numbers after the uid on the
+ * lines of `dumpsys jobscheduler` with WorkManager's service (`JOB #u0a190/3: … rs.hashi.debug/
+ * androidx.work.impl.background.systemjob.SystemJobService`, a namespace before the number on
+ * newer Androids). The lines go to the report.
+ */
 async function jobs(device: AndroidDevice) {
-  const dump = await shell(device, 'dumpsys jobscheduler');
-  const pattern = new RegExp(
-    `JOB #u\\d+a\\d+/(\\d+): \\S+ ${PKG.replaceAll('.', '\\.')}/androidx\\.work\\.impl\\.background\\.systemjob\\.SystemJobService`,
-    'g',
-  );
-  return [...new Set([...dump.matchAll(pattern)].map((m) => m[1]))];
+  const service = `${PKG}/androidx.work.impl.background.systemjob.SystemJobService`;
+  const lines = (await shell(device, 'dumpsys jobscheduler'))
+    .split('\n')
+    .filter((l) => l.includes(service));
+  const ids = lines
+    .map((l) => l.match(/u\d+a\d+\/(?:[^\s/:]+:)?(\d+)\b/)?.[1])
+    .filter((id): id is string => id !== undefined);
+  jobLines = lines;
+  return [...new Set(ids)];
 }
+
+/** What `jobs` saw last, attached to a failed test. */
+let jobLines: string[] = [];
+
+test.afterEach(async ({ device }, testInfo) => {
+  if (testInfo.status === testInfo.expectedStatus) return;
+  const dump = await shell(device, 'dumpsys jobscheduler');
+  const app = dump.split('\n').filter((l) => l.includes('hashi'));
+  await testInfo.attach('jobs', {
+    body: [`parsed from: ${jobLines.join('\n')}`, ...app].join('\n'),
+    contentType: 'text/plain',
+  });
+});
 
 /** Runs the app's jobs now, whatever their constraints (no network here). */
 async function runJobs(device: AndroidDevice) {
