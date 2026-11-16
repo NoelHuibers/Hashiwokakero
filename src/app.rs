@@ -192,6 +192,7 @@ pub fn App() -> impl IntoView {
             <MobileNav />
             <Toaster />
             <Tooltips />
+            <PushRefresh />
         </Router>
         </I18nContextProvider>
     }
@@ -309,6 +310,19 @@ fn moved_target(path: &str, search: &str, hash: &str) -> Option<String> {
 fn AppLinks() -> impl IntoView {
     #[cfg(feature = "csr")]
     crate::api::native::follow_app_links(leptos_router::hooks::use_navigate());
+}
+
+/// A browser that gets notifications registers again now and then, and in a new language
+/// (`state::web_push::refresh`).
+#[component]
+fn PushRefresh() -> impl IntoView {
+    let i18n = use_i18n();
+    Effect::new(move || {
+        let locale = i18n.get_locale();
+        if crate::state::web_push::stored().is_some() {
+            leptos::task::spawn_local(crate::state::web_push::refresh(locale));
+        }
+    });
 }
 
 /// Korean, Chinese, Arabic, Hindi, Thai and Vietnamese need a font for their script, loaded only

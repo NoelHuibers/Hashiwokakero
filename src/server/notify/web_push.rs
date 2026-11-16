@@ -1,6 +1,7 @@
-//! Web Push: notifications to browsers, through the push service of the browser's maker (the
-//! address a subscription gives us is that service's: Google's for Chrome, Mozilla's for
-//! Firefox, Apple's for Safari).
+//! Web Push: notifications to browsers, through the push service of the browser's maker.
+//!
+//! The address a subscription gives us is that service's: Google's for Chrome, Mozilla's for
+//! Firefox, Apple's for Safari.
 //!
 //! Standard Web Push, with our own key pair and no third party's SDK or project: the message is
 //! encrypted for the browser (RFC 8291, `aes128gcm` of RFC 8188), so the push service sees only
@@ -172,10 +173,11 @@ fn hkdf<const N: usize>(salt: &[u8], ikm: &[u8], info: &[u8]) -> [u8; N] {
     out
 }
 
-/// Encrypts `plaintext` for a browser (RFC 8291): an ECDH secret of our one-time key (`ours`)
-/// and the browser's key, combined with its authentication secret, keys AES-128-GCM over one
-/// record. The result is the request's body: the header (salt, record size, our one-time public
-/// key) and the ciphertext.
+/// Encrypts `plaintext` for a browser (RFC 8291).
+///
+/// An ECDH secret of our one-time key (`ours`) and the browser's key, combined with its
+/// authentication secret, keys AES-128-GCM over one record. The result is the request's body:
+/// the header (salt, record size, our one-time public key) and the ciphertext.
 pub fn encrypt(plaintext: &[u8], to: &Keys, ours: &SecretKey, salt: &[u8; 16]) -> Vec<u8> {
     let ua_public = to.p256dh.to_sec1_bytes();
     let as_public = ours.public_key().to_sec1_bytes();
@@ -220,9 +222,11 @@ pub struct Request {
     pub body: Vec<u8>,
 }
 
-/// Builds the request that pushes `message` to a browser. Not for a subscription that can't be
-/// used (no https endpoint or broken keys, nothing a later try would fix): [`Delivery::Gone`];
-/// nor for a message too long for a push service: [`Delivery::Failed`].
+/// Builds the request that pushes `message` to a browser.
+///
+/// Not for a subscription that can't be used (no https endpoint or broken keys, nothing a later
+/// try would fix): [`Delivery::Gone`]; nor for a message too long for a push service:
+/// [`Delivery::Failed`].
 ///
 /// `TTL`: until the notification expires (the daily's change, a race's lobby), so a browser that
 /// comes online later doesn't get it after that. `Urgency`: high for the last call, which wakes
@@ -260,7 +264,10 @@ pub fn request(
     let topic = encode(&Sha256::digest(message.tag.as_bytes())[..24]);
     Ok(Request {
         headers: vec![
-            ("authorization", vapid.authorization(&endpoint, now_ms / 1000)),
+            (
+                "authorization",
+                vapid.authorization(&endpoint, now_ms / 1000),
+            ),
             ("ttl", ttl.to_string()),
             ("urgency", urgency.into()),
             ("topic", topic),
@@ -272,9 +279,11 @@ pub fn request(
     })
 }
 
-/// What a push service's answer means (RFC 8030 section 5): 2xx it took it; 404 and 410 the
-/// subscription is gone (unsubscribed, expired), so the device is forgotten; anything else (too
-/// many requests, the service down, a key the browser doesn't know) didn't work this time.
+/// What a push service's answer means (RFC 8030 section 5).
+///
+/// 2xx it took it; 404 and 410 the subscription is gone (unsubscribed, expired), so the device is
+/// forgotten; anything else (too many requests, the service down, a key the browser doesn't
+/// know) didn't work this time.
 pub const fn outcome(status: u16) -> Delivery {
     match status {
         200..=299 => Delivery::Sent,
@@ -324,14 +333,8 @@ impl Channel for WebPush {
     fn send<'a>(&'a self, device: &'a Device, message: &'a PushMessage) -> BoxFuture<'a, Delivery> {
         Box::pin(async move {
             let (ours, salt) = one_time();
-            let request = match request(
-                &self.vapid,
-                device,
-                message,
-                super::now_ms(),
-                &ours,
-                &salt,
-            ) {
+            let request = match request(&self.vapid, device, message, super::now_ms(), &ours, &salt)
+            {
                 Ok(request) => request,
                 Err(delivery) => return delivery,
             };

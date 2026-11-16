@@ -17,14 +17,15 @@ pub fn device_kind(app_platform: Option<&str>) -> Option<DeviceKind> {
     }
 }
 
-/// Whether a way of delivery is built.
+/// Whether a way of delivery is built, and works here.
 ///
-/// Each one flips with its own change: Web Push with the website's service worker, APNs with the
-/// iOS app's push registration, the Android app with its background worker
-/// (docs/notifications.md).
-pub const fn delivers(kind: DeviceKind) -> bool {
+/// Each one flips with its own change (docs/notifications.md): Web Push where the site has its
+/// key and the browser can take them (`state::web_push`, never in the apps), APNs with the iOS
+/// app's push registration, the Android app with its background worker.
+pub fn delivers(kind: DeviceKind) -> bool {
     match kind {
-        DeviceKind::Web | DeviceKind::Apns | DeviceKind::Android => false,
+        DeviceKind::Web => super::web_push::here() == super::web_push::Support::Ready,
+        DeviceKind::Apns | DeviceKind::Android => false,
     }
 }
 

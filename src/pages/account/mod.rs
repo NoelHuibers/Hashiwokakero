@@ -69,6 +69,8 @@ pub fn AccountPage() -> impl IntoView {
 
     let sign_out = move |_| {
         spawn_local(async move {
+            // This browser's notifications were the account's
+            crate::state::web_push::unsubscribe().await;
             match logout().await {
                 Ok(()) => {
                     auth.user.set(None);

@@ -199,8 +199,8 @@ fn the_keys_come_from_the_environment_whole_or_not_at_all() {
             ("VAPID_PRIVATE_KEY", "not base64!".into()),
         ],
         vec![
-            ("VAPID_PUBLIC_KEY", public.clone()),
-            ("VAPID_PRIVATE_KEY", private.clone()),
+            ("VAPID_PUBLIC_KEY", public),
+            ("VAPID_PRIVATE_KEY", private),
             ("VAPID_SUBJECT", "hashi.rs".into()),
         ],
     ] {
@@ -250,18 +250,23 @@ fn header<'a>(request: &'a Request, name: &str) -> &'a str {
         .headers
         .iter()
         .find(|(n, _)| *n == name)
-        .map(|(_, v)| v.as_str())
-        .unwrap_or_else(|| panic!("no {name}"))
+        .map_or_else(|| panic!("no {name}"), |(_, v)| v.as_str())
 }
 
 #[test]
 fn requests_carry_the_encrypted_message_until_it_expires() {
     let now = 1_800_000_000_000;
     let ua = SecretKey::from_slice(&b64(UA_PRIVATE)).unwrap();
-    let browser = device("https://updates.push.services.mozilla.com/wpush/v2/x", &browser_keys());
+    let browser = device(
+        "https://updates.push.services.mozilla.com/wpush/v2/x",
+        &browser_keys(),
+    );
     let last_call = message(NotifyKind::LastCall, now + 3 * 3_600_000);
     let request = request(&vapid(), &browser, &last_call, now, &as_private(), &salt()).unwrap();
-    assert_eq!(request.endpoint.as_str(), browser.endpoint.as_deref().unwrap());
+    assert_eq!(
+        request.endpoint.as_str(),
+        browser.endpoint.as_deref().unwrap()
+    );
     assert_eq!(header(&request, "ttl"), "10800");
     assert_eq!(header(&request, "urgency"), "high");
     assert_eq!(header(&request, "content-encoding"), "aes128gcm");
@@ -308,12 +313,12 @@ fn unusable_subscriptions_are_gone_and_long_messages_fail() {
         send(&device("https://push.example/x", "{}"), &note),
         Err(Delivery::Gone)
     );
-    let mut none = device("https://push.example/x", &browser_keys());
-    none.keys = None;
-    assert_eq!(send(&none, &note), Err(Delivery::Gone));
+    let mut keyless = device("https://push.example/x", &browser_keys());
+    keyless.keys = None;
+    assert_eq!(send(&keyless, &note), Err(Delivery::Gone));
     let long = PushMessage {
         body: "x".repeat(4000),
-        ..note.clone()
+        ..note
     };
     assert_eq!(
         send(&device("https://push.example/x", &browser_keys()), &long),
@@ -370,8 +375,8 @@ async fn a_push_service_gets_the_message_and_its_answer_counts() {
         // Plain http here: the real ones are https only
         request.endpoint = endpoint;
         assert_eq!(post(&http, request, browser.id).await, delivery, "{status}");
-        let got = got.lock().unwrap();
-        let headers = got.headers.as_ref().unwrap();
+        let Got { headers, body } = std::mem::take(&mut *got.lock().unwrap());
+        let headers = headers.unwrap();
         assert_eq!(headers["ttl"], "3600");
         assert_eq!(headers["urgency"], "high");
         assert_eq!(headers["content-encoding"], "aes128gcm");
@@ -382,7 +387,7 @@ async fn a_push_service_gets_the_message_and_its_answer_counts() {
                 .ends_with(&format!(", k={}", vapid().public_key()))
         );
         let payload: serde_json::Value =
-            serde_json::from_slice(&decrypt(&got.body, &ua, &b64(AUTH))).unwrap();
+            serde_json::from_slice(&decrypt(&body, &ua, &b64(AUTH))).unwrap();
         assert_eq!(payload["url"], "https://hashi.rs/de");
     }
     // Nobody there

@@ -285,8 +285,14 @@ mod configuration_tests {
             ("HASHI_YANDEX_VERIFICATION", "0123456789abcdef"),
             ("HASHI_INDEXNOW_KEY", "short"),
             // Half a Web Push key pair (server/notify/web_push.rs)
-            ("VAPID_PUBLIC_KEY", "BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8"),
-            ("VAPID_PRIVATE_KEY", "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw"),
+            (
+                "VAPID_PUBLIC_KEY",
+                "BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8",
+            ),
+            (
+                "VAPID_PRIVATE_KEY",
+                "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
+            ),
         ] {
             let with = |k: &str| (k == name).then(|| value.to_string());
             let error = validate_settings(with).unwrap_err();

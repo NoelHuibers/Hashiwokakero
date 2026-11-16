@@ -964,8 +964,9 @@ async fn channels_push_to_their_devices_once_and_forget_the_gone_ones() {
         .unwrap()
         .unwrap();
     assert_eq!(got.len(), 1);
-    // The empty list of this build sends nothing
-    assert_eq!(channels().len(), 0);
+    // Web Push, with the keys the tests run with (`router::tests::env_var`)
+    let kinds: Vec<DeviceKind> = channels().iter().map(|c| c.kind()).collect();
+    assert_eq!(kinds, [DeviceKind::Web]);
 }
 
 #[tokio::test]
