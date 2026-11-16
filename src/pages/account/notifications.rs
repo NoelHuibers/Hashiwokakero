@@ -265,23 +265,26 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                                 }}
                             </span>
                         </span>
-                        {move || {
-                            if here.get() {
-                                view! {
-                                    <Button size=ButtonSize::Sm variant=ButtonVariant::Outline attr:disabled=move || pending.get() on:click=move |_| turn_off_here()>
-                                        {t!(i18n, account.notifications.turn_off_here)}
-                                    </Button>
+                        <Button
+                            size=ButtonSize::Sm
+                            variant=ButtonVariant::Outline
+                            attr:disabled=move || pending.get()
+                            on:click=move |_| {
+                                if here.get_untracked() {
+                                    turn_off_here();
+                                } else {
+                                    turn_on_here(Box::new(|_| {}));
                                 }
-                                    .into_any()
-                            } else {
-                                view! {
-                                    <Button size=ButtonSize::Sm attr:disabled=move || pending.get() on:click=move |_| turn_on_here(Box::new(|_| {}))>
-                                        {t!(i18n, account.notifications.turn_on_here)}
-                                    </Button>
-                                }
-                                    .into_any()
                             }
-                        }}
+                        >
+                            {move || {
+                                if here.get() {
+                                    td_string!(i18n.get_locale(), account.notifications.turn_off_here)
+                                } else {
+                                    td_string!(i18n.get_locale(), account.notifications.turn_on_here)
+                                }
+                            }}
+                        </Button>
                     </div>
                 </Show>
                 <div class="flex flex-col border-s-2 ps-3" class:opacity-60=move || !master.get()>{rows}</div>

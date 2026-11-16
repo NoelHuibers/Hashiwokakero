@@ -43,15 +43,18 @@ async function withPushKey(page: Page) {
 }
 
 interface PushMock {
-  /** What `Notification.requestPermission()` answers, `undefined` for the browser's own. */
-  answer?: NotificationPermission;
+  /**
+   * What `Notification.requestPermission()` answers. Granting the permission to the context is
+   * not enough: headless Chromium's `Notification.permission` still says denied after a reload.
+   */
+  answer: NotificationPermission;
 }
 
 /**
  * The stand-in push service: `subscribe` and `getSubscription` of every `PushManager`, the
  * subscription kept in local storage across reloads, and what was asked of it in `e2e.push.log`.
  */
-async function mockPush(page: Page, { answer }: PushMock = {}) {
+async function mockPush(page: Page, { answer }: PushMock) {
   await page.addInitScript(
     ({ answer, p256dh, auth }) => {
       const log = (line: string) => {
@@ -59,10 +62,12 @@ async function mockPush(page: Page, { answer }: PushMock = {}) {
         localStorage.setItem('e2e.push.log', JSON.stringify([...lines, line]));
       };
       if (answer) {
-        let permission: NotificationPermission = 'default';
-        Object.defineProperty(Notification, 'permission', { get: () => permission });
+        // The browser's answer, kept like the browser keeps it
+        Object.defineProperty(Notification, 'permission', {
+          get: () => localStorage.getItem('e2e.push.permission') ?? 'default',
+        });
         Notification.requestPermission = () => {
-          permission = answer;
+          localStorage.setItem('e2e.push.permission', answer);
           log(`permission ${answer}`);
           return Promise.resolve(answer);
         };
@@ -136,7 +141,7 @@ test('turning notifications on subscribes this browser, off unsubscribes it', as
 }) => {
   await grant(context);
   await withPushKey(page);
-  await mockPush(page);
+  await mockPush(page, { answer: 'granted' });
   const username = newUsername('webpush');
   await visit(page, '/account');
   await register(page, username, 'bells-over-bridges');
@@ -148,7 +153,10 @@ test('turning notifications on subscribes this browser, off unsubscribes it', as
   await master(page).click();
   await expect(master(page)).toHaveAttribute('aria-checked', 'true');
   await expect(thisBrowser(page)).toHaveText('Gets notifications.');
-  expect(await pushLog(page)).toEqual(['subscribe userVisibleOnly=true key=65']);
+  expect(await pushLog(page)).toEqual([
+    'permission granted',
+    'subscribe userVisibleOnly=true key=65',
+  ]);
   const registered = devices(username);
   expect(registered).toHaveLength(1);
   const [device] = registered;
