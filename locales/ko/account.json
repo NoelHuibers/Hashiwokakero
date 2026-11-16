@@ -126,5 +126,42 @@
   "feedback": {
     "title": "질문이나 문제가 있나요?",
     "text": "버그를 신고하거나 아이디어를 제안하거나 무엇이든 물어보세요. 모든 메시지를 읽어요."
+  },
+  "notifications": {
+    "title": "알림",
+    "text": "Hashi가 알려 주는 내용이에요. 계정에 저장되어, 플레이하는 모든 기기에 적용돼요.",
+    "master": "알림",
+    "master_hint": "모두 한 번에 켜거나 꺼요.",
+    "last_call": "연속 기록 마지막 알림",
+    "last_call_hint": "다음 데일리까지 약 3시간 남았는데 오늘의 데일리를 아직 안 풀었을 때. 그 시간이 사는 곳에서 한밤중이면 전날 저녁 9시에 알려 드려요.",
+    "race": "레이스",
+    "race_hint": "그룹의 누군가가 레이스를 열었을 때.",
+    "rival": "라이벌",
+    "rival_hint": "라이벌이 데일리에서 내 기록을 앞섰을 때.",
+    "shared": "공유한 퍼즐",
+    "shared_hint": "내가 공유한 퍼즐을 누군가 풀었을 때.",
+    "group": "그룹 퍼즐",
+    "group_hint": "그룹에 새 퍼즐이 올라왔을 때.",
+    "unavailable": "이 기기에는 아직 알림을 보낼 수 없어요. 선택한 내용은 계정에 저장되어 가능해지는 대로 적용돼요.",
+    "settings_link": "알림",
+    "offer_title": "연속 기록 마지막 알림을 받을까요?",
+    "offer_text": "다음 데일리 몇 시간 전까지 오늘의 데일리를 안 풀었으면 알려 드려요. 한밤중에는 보내지 않아요. 계정 페이지에서 언제든 바꿀 수 있어요.",
+    "offer_yes": "네, 알려 주세요",
+    "offer_no": "아니요, 괜찮아요",
+    "push": {
+      "last_call_title": "연속 기록 마지막 알림",
+      "last_call_body": "오늘의 데일리가 아직 남았어요. 다음 데일리가 오기 전에 풀어서 연속 기록을 이어 가세요.",
+      "race_title": "{{ name }} 님이 레이스를 열었어요",
+      "race_body": "{{ group }}에서: 시작 전에 로비에 들어오세요.",
+      "rival_title": "{{ name }} 님이 내 기록을 앞섰어요",
+      "rival_body": "오늘의 데일리에서 {{ time }}.",
+      "shared_one_title": "{{ name }} 님이 내 퍼즐을 풀었어요",
+      "shared_one_body": "퍼즐 순위에서 기록을 확인해 보세요.",
+      "shared_many_title": "내 퍼즐을 푸는 사람들이 있어요",
+      "shared_many_body": "새로 푼 사람: {{ count }}명. 최근: {{ name }} 님.",
+      "group_title": "{{ group }}에 새 퍼즐",
+      "group_body": "{{ name }} 님이 “{{ title }}”을(를) 올렸어요.",
+      "group_body_untitled": "{{ name }} 님이 새 퍼즐을 올렸어요."
+    }
   }
 }

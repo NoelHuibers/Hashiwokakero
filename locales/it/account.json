@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Domande o problemi?",
     "text": "Segnala un bug, proponi un’idea o chiedici qualsiasi cosa. Leggiamo ogni messaggio."
+  },
+  "notifications": {
+    "title": "Notifiche",
+    "text": "Le cose di cui Hashi ti avvisa. Salvate con il tuo account, per ogni dispositivo su cui giochi.",
+    "master": "Notifiche",
+    "master_hint": "Tutte attive o disattivate in un colpo.",
+    "last_call": "Ultima chiamata per la tua serie",
+    "last_call_hint": "Quando la sfida di oggi è ancora aperta circa tre ore prima della prossima. Se da te è notte, alle 21 della sera prima.",
+    "race": "Gare",
+    "race_hint": "Qualcuno in uno dei tuoi gruppi apre una gara.",
+    "rival": "Rivali",
+    "rival_hint": "Un rivale batte il tuo tempo nella sfida di oggi.",
+    "shared": "I tuoi puzzle condivisi",
+    "shared_hint": "Altri giocatori risolvono un puzzle che hai condiviso.",
+    "group": "Puzzle del gruppo",
+    "group_hint": "In uno dei tuoi gruppi c’è un nuovo puzzle.",
+    "unavailable": "Le notifiche non arrivano ancora su questo dispositivo. Le tue scelte sono salvate con il tuo account e varranno appena possibile.",
+    "settings_link": "Notifiche",
+    "offer_title": "Un’ultima chiamata per la tua serie?",
+    "offer_text": "Ti avvisiamo quando la sfida di oggi è ancora aperta qualche ora prima della prossima, mai di notte. Puoi cambiarlo quando vuoi nella pagina del tuo account.",
+    "offer_yes": "Sì, avvisami",
+    "offer_no": "No, grazie",
+    "push": {
+      "last_call_title": "Ultima chiamata per la tua serie",
+      "last_call_body": "La sfida di oggi è ancora aperta. Risolvila prima della prossima per non perdere la serie.",
+      "race_title": "{{ name }} ha aperto una gara",
+      "race_body": "In {{ group }}: entra nella sala d'attesa prima che parta.",
+      "rival_title": "{{ name }} ha battuto il tuo tempo",
+      "rival_body": "Nella sfida di oggi, in {{ time }}.",
+      "shared_one_title": "{{ name }} ha risolto il tuo puzzle",
+      "shared_one_body": "Guarda il suo tempo nella classifica del puzzle.",
+      "shared_many_title": "Il tuo puzzle va forte",
+      "shared_many_body": "Nuove soluzioni: {{ count }}. L’ultima di {{ name }}.",
+      "group_title": "Nuovo puzzle in {{ group }}",
+      "group_body": "{{ name }} ha pubblicato “{{ title }}”.",
+      "group_body_untitled": "{{ name }} ha pubblicato un nuovo puzzle."
+    }
   }
 }

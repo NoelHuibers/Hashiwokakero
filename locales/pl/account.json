@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Pytania lub problemy?",
     "text": "Zgłoś błąd, zaproponuj pomysł albo zapytaj nas o cokolwiek. Czytamy każdą wiadomość."
+  },
+  "notifications": {
+    "title": "Powiadomienia",
+    "text": "O czym Hashi daje ci znać. Zapisane na twoim koncie, dla każdego urządzenia, na którym grasz.",
+    "master": "Powiadomienia",
+    "master_hint": "Wszystkie naraz włączone lub wyłączone.",
+    "last_call": "Ostatnie wezwanie dla serii",
+    "last_call_hint": "Gdy dzisiejszy most jest nadal otwarty mniej więcej trzy godziny przed następnym. Jeśli u ciebie wypada to w nocy, o 21:00 poprzedniego wieczoru.",
+    "race": "Wyścigi",
+    "race_hint": "Ktoś w jednej z twoich grup otwiera wyścig.",
+    "rival": "Rywale",
+    "rival_hint": "Rywal bije twój czas w moście dnia.",
+    "shared": "Twoje udostępnione łamigłówki",
+    "shared_hint": "Gracze rozwiązują łamigłówkę udostępnioną przez ciebie.",
+    "group": "Łamigłówki grupy",
+    "group_hint": "W jednej z twoich grup pojawia się nowa łamigłówka.",
+    "unavailable": "Powiadomienia nie docierają jeszcze na to urządzenie. Twój wybór jest zapisany na koncie i zacznie działać, gdy tylko będzie to możliwe.",
+    "settings_link": "Powiadomienia",
+    "offer_title": "Ostatnie wezwanie dla twojej serii?",
+    "offer_text": "Przypomnimy ci, gdy dzisiejszy most będzie nadal otwarty kilka godzin przed następnym, nigdy w nocy. Możesz to zmienić w każdej chwili na stronie konta.",
+    "offer_yes": "Tak, przypominaj",
+    "offer_no": "Nie, dzięki",
+    "push": {
+      "last_call_title": "Ostatnie wezwanie dla serii",
+      "last_call_body": "Dzisiejszy most jest jeszcze otwarty. Rozwiąż go przed następnym, żeby utrzymać serię.",
+      "race_title": "{{ name }} otwiera wyścig",
+      "race_body": "W grupie {{ group }}: dołącz do poczekalni przed startem.",
+      "rival_title": "{{ name }} bije twój czas",
+      "rival_body": "W dzisiejszym moście, w {{ time }}.",
+      "shared_one_title": "{{ name }} rozwiązuje twoją łamigłówkę",
+      "shared_one_body": "Zobacz czas w rankingu łamigłówki.",
+      "shared_many_title": "Twoja łamigłówka jest rozwiązywana",
+      "shared_many_body": "Nowi rozwiązujący: {{ count }}. Ostatnio: {{ name }}.",
+      "group_title": "Nowa łamigłówka w grupie {{ group }}",
+      "group_body": "{{ name }} publikuje „{{ title }}”.",
+      "group_body_untitled": "{{ name }} publikuje nową łamigłówkę."
+    }
   }
 }

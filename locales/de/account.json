@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Fragen oder Probleme?",
     "text": "Melde einen Fehler, schlag eine Idee vor oder frag uns, was du willst. Wir lesen jede Nachricht."
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "text": "Worüber Hashi dir Bescheid gibt. Gespeichert mit deinem Konto, für jedes Gerät, auf dem du spielst.",
+    "master": "Benachrichtigungen",
+    "master_hint": "Alle auf einmal an oder aus.",
+    "last_call": "Letzter Aufruf für deine Serie",
+    "last_call_hint": "Wenn das heutige Tagesrätsel etwa drei Stunden vor dem nächsten noch offen ist. Ist das bei dir nachts, dann um 21 Uhr am Abend davor.",
+    "race": "Rennen",
+    "race_hint": "Jemand in einer deiner Gruppen startet ein Rennen.",
+    "rival": "Rivalen",
+    "rival_hint": "Ein Rivale schlägt deine Zeit beim Tagesrätsel.",
+    "shared": "Deine geteilten Rätsel",
+    "shared_hint": "Andere lösen ein Rätsel, das du geteilt hast.",
+    "group": "Gruppenrätsel",
+    "group_hint": "In einer deiner Gruppen gibt es ein neues Rätsel.",
+    "unavailable": "Benachrichtigungen erreichen dieses Gerät noch nicht. Deine Auswahl ist mit deinem Konto gespeichert und gilt, sobald sie es können.",
+    "settings_link": "Benachrichtigungen",
+    "offer_title": "Ein letzter Aufruf für deine Serie?",
+    "offer_text": "Wir erinnern dich, wenn das heutige Tagesrätsel ein paar Stunden vor dem nächsten noch offen ist, nie nachts. Du kannst das jederzeit auf deiner Kontoseite ändern.",
+    "offer_yes": "Ja, erinnere mich",
+    "offer_no": "Nein, danke",
+    "push": {
+      "last_call_title": "Letzter Aufruf für deine Serie",
+      "last_call_body": "Das heutige Tagesrätsel ist noch offen. Löse es, bevor das nächste kommt, damit deine Serie hält.",
+      "race_title": "{{ name }} hat ein Rennen gestartet",
+      "race_body": "In {{ group }}: komm in die Lobby, bevor es losgeht.",
+      "rival_title": "{{ name }} hat deine Zeit geschlagen",
+      "rival_body": "Beim heutigen Tagesrätsel, in {{ time }}.",
+      "shared_one_title": "{{ name }} hat dein Rätsel gelöst",
+      "shared_one_body": "Sieh dir die Zeit auf seiner Bestenliste an.",
+      "shared_many_title": "Dein Rätsel wird gelöst",
+      "shared_many_body": "Neue Lösungen: {{ count }}. Zuletzt von {{ name }}.",
+      "group_title": "Neues Rätsel in {{ group }}",
+      "group_body": "{{ name }} hat „{{ title }}“ gepostet.",
+      "group_body_untitled": "{{ name }} hat ein neues Rätsel gepostet."
+    }
   }
 }

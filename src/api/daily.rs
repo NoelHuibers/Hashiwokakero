@@ -172,6 +172,7 @@ pub async fn submit_daily(
         received_at,
     )
     .await
+    .inspect(|result| rivals_told(user.id, day, result))
 }
 
 /// Explicit ownership assertion for the recovery-capable endpoints. Legacy requests keep
@@ -219,6 +220,19 @@ pub async fn submit_daily_attempt(
         received_at,
     )
     .await
+    .inspect(|result| rivals_told(user.id, day, result))
+}
+
+/// A ranked result: the rivals it beat get to know, in the background (`notify::rival_finished`,
+/// once per rival and daily, also when a submit is sent again).
+#[cfg(feature = "ssr")]
+fn rivals_told(user: i64, day: i64, result: &SubmitResult) {
+    use crate::server::{notify, now_ms};
+    if result.flag.is_none() {
+        notify::spawn("rival", move |conn| async move {
+            notify::rival_finished(&conn, user, day, now_ms()).await
+        });
+    }
 }
 
 /// The ranking of a day, today if `day` is `None`.

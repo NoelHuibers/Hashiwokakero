@@ -410,6 +410,39 @@ fn requests() -> Vec<Entry> {
             on: true,
         }),
         entry(&api::MyBlocks {}),
+        // notifications
+        entry(&api::LoadNotificationPrefs {}),
+        entry(&api::SaveNotificationPrefs {
+            prefs: crate::model::NotificationPrefs {
+                enabled: true,
+                last_call: true,
+                race: false,
+                rival: true,
+                shared: false,
+                group: true,
+                offer_shown: true,
+            },
+            time_zone: Some("Europe/Berlin".into()),
+        }),
+        entry(&api::AnswerNotificationOffer {
+            accept: true,
+            time_zone: Some("Asia/Tokyo".into()),
+        }),
+        entry(&api::RegisterNotificationDevice {
+            kind: crate::model::DeviceKind::Web,
+            endpoint: Some("https://push.example/abc".into()),
+            keys: Some(r#"{"p256dh":"BNc","auth":"tBH"}"#.into()),
+            locale: "de".into(),
+            time_zone: Some("Europe/Berlin".into()),
+        }),
+        entry(&api::UnregisterNotificationDevice {
+            id: 3,
+            secret: "ab".repeat(32),
+        }),
+        entry(&api::PollNotifications {
+            device: 3,
+            secret: "ab".repeat(32),
+        }),
         // puzzle
         entry(&api::GeneratePuzzle {
             params: GenerateParams {

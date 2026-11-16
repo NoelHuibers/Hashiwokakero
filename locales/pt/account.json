@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Dúvidas ou problemas?",
     "text": "Relate um bug, sugira uma ideia ou pergunte o que quiser. Lemos todas as mensagens."
+  },
+  "notifications": {
+    "title": "Notificações",
+    "text": "Sobre o que o Hashi te avisa. Salvo com a sua conta, para cada dispositivo em que você joga.",
+    "master": "Notificações",
+    "master_hint": "Todas ligadas ou desligadas de uma vez.",
+    "last_call": "Última chamada para sua sequência",
+    "last_call_hint": "Quando o desafio de hoje ainda está aberto umas três horas antes do próximo. Se for de madrugada onde você está, às 21h da noite anterior.",
+    "race": "Corridas",
+    "race_hint": "Alguém em um dos seus grupos abre uma corrida.",
+    "rival": "Rivais",
+    "rival_hint": "Um rival bate seu tempo no desafio de hoje.",
+    "shared": "Seus puzzles compartilhados",
+    "shared_hint": "Outros jogadores resolvem um puzzle que você compartilhou.",
+    "group": "Puzzles do grupo",
+    "group_hint": "Um puzzle novo é publicado em um dos seus grupos.",
+    "unavailable": "As notificações ainda não chegam a este dispositivo. Suas escolhas ficam salvas na sua conta e valem assim que for possível.",
+    "settings_link": "Notificações",
+    "offer_title": "Uma última chamada para sua sequência?",
+    "offer_text": "Avisamos você quando o desafio de hoje ainda estiver aberto algumas horas antes do próximo, nunca de madrugada. Você pode mudar isso a qualquer momento na página da sua conta.",
+    "offer_yes": "Sim, me avise",
+    "offer_no": "Não, obrigado",
+    "push": {
+      "last_call_title": "Última chamada para sua sequência",
+      "last_call_body": "O desafio de hoje ainda está aberto. Resolva antes que chegue o próximo para manter sua sequência.",
+      "race_title": "{{ name }} abriu uma corrida",
+      "race_body": "Em {{ group }}: entre na sala antes que comece.",
+      "rival_title": "{{ name }} bateu seu tempo",
+      "rival_body": "No desafio de hoje, em {{ time }}.",
+      "shared_one_title": "{{ name }} resolveu seu puzzle",
+      "shared_one_body": "Veja o tempo no ranking do puzzle.",
+      "shared_many_title": "Seu puzzle está fazendo sucesso",
+      "shared_many_body": "Novas soluções: {{ count }}. A última, de {{ name }}.",
+      "group_title": "Novo puzzle em {{ group }}",
+      "group_body": "{{ name }} publicou “{{ title }}”.",
+      "group_body_untitled": "{{ name }} publicou um puzzle novo."
+    }
   }
 }

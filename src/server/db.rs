@@ -690,6 +690,67 @@ CREATE INDEX IF NOT EXISTS shared_results_share ON shared_results (share_id, use
 ALTER TABLE group_races ADD COLUMN share_puzzle_id INTEGER;
 ALTER TABLE group_races ADD COLUMN share_code TEXT;
 ",
+    // 30
+    "
+-- Notifications, see server/notify/. What a player wants to be told about, per account: the
+-- master switch, a switch per kind (all off until the player turns them on), whether the one-time
+-- offer was shown, and the IANA time zone their browser or app last reported (the streak's last
+-- call comes in the evening of the player's own day)
+CREATE TABLE IF NOT EXISTS notification_prefs (
+    user_id      INTEGER PRIMARY KEY,
+    enabled      INTEGER NOT NULL DEFAULT 0,
+    last_call    INTEGER NOT NULL DEFAULT 0,
+    race         INTEGER NOT NULL DEFAULT 0,
+    rival        INTEGER NOT NULL DEFAULT 0,
+    shared       INTEGER NOT NULL DEFAULT 0,
+    group_puzzle INTEGER NOT NULL DEFAULT 0,
+    offer_shown  INTEGER NOT NULL DEFAULT 0,
+    time_zone    TEXT,
+    updated_at   INTEGER NOT NULL
+);
+
+-- The devices that get a player's notifications: a browser (web, Web Push), the iOS app (apns)
+-- or the Android app (android, which asks for them itself). endpoint: the Web Push endpoint or
+-- the APNs device token, keys: Web Push's encryption keys (JSON); both NULL for Android. Only the
+-- SHA-256 of the device's secret. cursor: the last outbox row the device got
+CREATE TABLE IF NOT EXISTS notification_devices (
+    id          INTEGER PRIMARY KEY,
+    user_id     INTEGER NOT NULL,
+    kind        TEXT NOT NULL,
+    endpoint    TEXT,
+    keys        TEXT,
+    secret_hash TEXT NOT NULL,
+    locale      TEXT NOT NULL,
+    time_zone   TEXT,
+    cursor      INTEGER NOT NULL DEFAULT 0,
+    created_at  INTEGER NOT NULL,
+    last_seen   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notification_devices_user ON notification_devices (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS notification_devices_endpoint
+    ON notification_devices (endpoint) WHERE endpoint IS NOT NULL;
+
+-- The notifications waiting for the devices, deleted two days after they were made. Ids only
+-- grow (AUTOINCREMENT), so a device's cursor never skips a new one. actor_id: the player it's
+-- about (its args carry their name), collapse_key: what makes two notifications the same one, for
+-- the limits. args: what the text needs (JSON), path: where a tap goes, without the language
+CREATE TABLE IF NOT EXISTS notification_outbox (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER NOT NULL,
+    kind         TEXT NOT NULL,
+    collapse_key TEXT NOT NULL,
+    actor_id     INTEGER,
+    args         TEXT NOT NULL,
+    path         TEXT NOT NULL,
+    created_at   INTEGER NOT NULL,
+    expires_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notification_outbox_user ON notification_outbox (user_id, kind, created_at);
+CREATE INDEX IF NOT EXISTS notification_outbox_actor ON notification_outbox (actor_id);
+CREATE INDEX IF NOT EXISTS notification_outbox_created ON notification_outbox (created_at);
+-- The solves of shared puzzles of the last hours, for their sharers' notifications
+CREATE INDEX IF NOT EXISTS shared_results_finished ON shared_results (finished_at);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

@@ -266,6 +266,18 @@ async fn write_rows(conn: &Connection, version: usize) {
         "#)
         .await;
     }
+    if version >= 30 {
+        // noel turned notifications on with his phone, and the group's race was queued for him
+        run(r#"
+            INSERT INTO notification_prefs (user_id, enabled, last_call, race, rival, shared, group_puzzle, offer_shown, time_zone, updated_at)
+                VALUES (1, 1, 1, 1, 1, 1, 1, 1, 'Europe/Berlin', 99000);
+            INSERT INTO notification_devices (user_id, kind, endpoint, keys, secret_hash, locale, time_zone, cursor, created_at, last_seen)
+                VALUES (1, 'android', NULL, NULL, 'cd', 'de', 'Europe/Berlin', 0, 99000, 99000);
+            INSERT INTO notification_outbox (user_id, kind, collapse_key, actor_id, args, path, created_at, expires_at)
+                VALUES (1, 'race', 'group:1', 2, '{"name":"Brave Heron 42"}', '/groups/1/races/2', 99100, 99999);
+        "#)
+        .await;
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -286,7 +298,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        29,
+        30,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -524,6 +536,12 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM group_races WHERE share_code = 'k7m2xq9a' AND share_puzzle_id = 1",
                 i64::from(version >= 29),
+            ),
+            // Notifications: nothing for anyone from before them, noel's from 30 on
+            (
+                "SELECT COUNT(*) FROM notification_prefs p JOIN notification_devices d ON d.user_id = p.user_id
+                 JOIN notification_outbox o ON o.user_id = p.user_id WHERE p.enabled = 1 AND d.cursor = 0",
+                i64::from(version >= 30),
             ),
             // Another player solved noel's shared puzzle through his link
             (

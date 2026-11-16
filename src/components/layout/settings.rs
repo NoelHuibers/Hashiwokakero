@@ -1,7 +1,10 @@
-//! The settings pop-up for sound, music and (on phones) day or night.
+//! The settings pop-up for sound, music and (on phones) day or night, with the way to the
+//! account's notification settings.
 
 use leptos::prelude::*;
+use leptos_router::components::A;
 
+use crate::components::layout::use_localized;
 use crate::components::ui::switch::Switch;
 use crate::i18n::{t, t_string, use_i18n};
 use crate::state::Settings;
@@ -56,6 +59,7 @@ pub fn SettingsButton() -> impl IntoView {
     let button = NodeRef::<leptos::html::Button>::new();
     use_dismiss(open, root, button);
     let on = move || settings.sound.get() || settings.music.get();
+    let account = use_localized("/account");
     view! {
         <div node_ref=root class="relative shrink-0">
             <button
@@ -112,6 +116,16 @@ pub fn SettingsButton() -> impl IntoView {
                             aria_label=Signal::derive(move || t_string!(i18n, common.audio.music).to_string())
                         />
                     </label>
+                    // Notifications are the account's, set on its page
+                    <A
+                        href=move || format!("{}#notifications", account())
+                        attr:class="flex min-h-10 items-center justify-between gap-3 border-t pt-1 text-sm font-medium hover:text-primary"
+                        attr:data-testid="settings-notifications"
+                        on:click=move |_| open.set(false)
+                    >
+                        {t!(i18n, account.notifications.settings_link)}
+                        <span aria-hidden="true">"→"</span>
+                    </A>
                 </div>
             </Show>
         </div>

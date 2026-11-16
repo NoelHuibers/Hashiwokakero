@@ -28,6 +28,7 @@ mod kadai;
 mod moderation;
 #[cfg(feature = "csr")]
 pub(crate) mod native;
+mod notify;
 mod puzzle;
 mod race;
 mod replay;
@@ -52,6 +53,7 @@ pub use groups::*;
 pub use hanko::*;
 pub use kadai::*;
 pub use moderation::*;
+pub use notify::*;
 pub use puzzle::*;
 pub use race::*;
 pub use replay::*;
@@ -109,6 +111,7 @@ mod tests {
             include_str!("hanko.rs"),
             include_str!("kadai.rs"),
             include_str!("moderation.rs"),
+            include_str!("notify.rs"),
             include_str!("puzzle.rs"),
             include_str!("race.rs"),
             include_str!("replay.rs"),

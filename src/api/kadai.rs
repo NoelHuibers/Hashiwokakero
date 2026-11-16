@@ -8,7 +8,7 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::{GroupPuzzles, MoveEvent, PuzzlePage};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, blocks, db, groups::kadai, now_ms};
+use crate::server::{auth, blocks, db, groups::kadai, notify, now_ms};
 
 #[cfg(feature = "ssr")]
 async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> {
@@ -28,7 +28,11 @@ pub async fn post_group_puzzle(
     title: String,
 ) -> Result<i64, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    kadai::post(&conn, group, user.id, puzzle, &title, now_ms()).await
+    let id = kadai::post(&conn, group, user.id, puzzle, &title, now_ms()).await?;
+    notify::spawn("group puzzle", move |conn| async move {
+        notify::puzzle_posted(&conn, id, now_ms()).await
+    });
+    Ok(id)
 }
 
 /// The puzzles of a group, for its page. Not `group_puzzles`: its generated struct would clash

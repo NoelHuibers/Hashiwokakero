@@ -1460,5 +1460,29 @@
       "renamed_at": 1755000000000,
       "name_locked": false
     }
-  }
+  },
+  "notification_prefs": {
+    "enabled": true,
+    "last_call": true,
+    "race": true,
+    "rival": false,
+    "shared": true,
+    "group": false,
+    "offer_shown": true
+  },
+  "device": {
+    "id": 3,
+    "secret": "abababababababababababababababababababababababababababababababab"
+  },
+  "notifications": [
+    {
+      "id": 12,
+      "kind": "race",
+      "title": "Ada opened a race",
+      "body": "In Lunch club: join the lobby before it starts.",
+      "url": "https://hashi.rs/groups/1/races/7",
+      "tag": "race:group:1",
+      "expires_at": 1760000900000
+    }
+  ]
 }

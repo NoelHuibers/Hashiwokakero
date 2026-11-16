@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Des questions ou un problème ?",
     "text": "Signale un bug, propose une idée ou pose-nous n’importe quelle question. Nous lisons chaque message."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "text": "Ce dont Hashi te prévient. Enregistré avec ton compte, pour chaque appareil sur lequel tu joues.",
+    "master": "Notifications",
+    "master_hint": "Toutes activées ou désactivées d’un coup.",
+    "last_call": "Dernier appel pour ta série",
+    "last_call_hint": "Quand le défi du jour est encore ouvert environ trois heures avant le suivant. Si c’est la nuit chez toi, à 21 h la veille au soir.",
+    "race": "Courses",
+    "race_hint": "Quelqu’un dans un de tes groupes lance une course.",
+    "rival": "Rivaux",
+    "rival_hint": "Un rival bat ton temps sur le défi du jour.",
+    "shared": "Tes grilles partagées",
+    "shared_hint": "Des joueurs résolvent une grille que tu as partagée.",
+    "group": "Grilles du groupe",
+    "group_hint": "Une nouvelle grille est publiée dans un de tes groupes.",
+    "unavailable": "Les notifications n’arrivent pas encore sur cet appareil. Tes choix sont enregistrés avec ton compte et s’appliqueront dès que possible.",
+    "settings_link": "Notifications",
+    "offer_title": "Un dernier appel pour ta série ?",
+    "offer_text": "On te le rappelle quand le défi du jour est encore ouvert quelques heures avant le suivant, jamais la nuit. Tu peux changer ça à tout moment sur la page de ton compte.",
+    "offer_yes": "Oui, rappelle-moi",
+    "offer_no": "Non, merci",
+    "push": {
+      "last_call_title": "Dernier appel pour ta série",
+      "last_call_body": "Le défi du jour est encore ouvert. Résous-le avant le suivant pour garder ta série.",
+      "race_title": "{{ name }} a lancé une course",
+      "race_body": "Dans {{ group }} : rejoins le salon avant le départ.",
+      "rival_title": "{{ name }} a battu ton temps",
+      "rival_body": "Sur le défi du jour, en {{ time }}.",
+      "shared_one_title": "{{ name }} a résolu ta grille",
+      "shared_one_body": "Regarde son temps sur le classement de la grille.",
+      "shared_many_title": "Ta grille a du succès",
+      "shared_many_body": "Nouvelles résolutions : {{ count }}. La dernière par {{ name }}.",
+      "group_title": "Nouvelle grille dans {{ group }}",
+      "group_body": "{{ name }} a publié « {{ title }} ».",
+      "group_body_untitled": "{{ name }} a publié une nouvelle grille."
+    }
   }
 }

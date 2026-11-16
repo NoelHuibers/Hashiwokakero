@@ -169,3 +169,11 @@ feedback_status New new
 feedback_status Issue issue
 feedback_status Answered answered
 feedback_status Closed closed
+notify_kind LastCall last_call
+notify_kind Race race
+notify_kind Rival rival
+notify_kind Shared shared
+notify_kind Group group
+device_kind Web web
+device_kind Apns apns
+device_kind Android android

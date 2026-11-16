@@ -1,11 +1,13 @@
 //! The account page: the daily record, signing in and out, the account's name, password and
-//! recovery email, deleting it, the players one blocked, and the way to the feedback form.
+//! recovery email, its notifications, deleting it, the players one blocked, and the way to the
+//! feedback form.
 //!
 //! The pages of the links in mails, and "Forgot password?", are in `recover`.
 
 pub mod auth_form;
 pub mod blocked;
 pub mod delete;
+pub mod notifications;
 pub mod password;
 pub mod recover;
 pub mod recovery;
@@ -34,6 +36,7 @@ use crate::state::{Auth, ToastKind, error_toast, toast};
 use auth_form::{AuthForm, Mode};
 use blocked::BlockedPlayers;
 use delete::DeleteAccount;
+use notifications::NotificationSettings;
 use password::ChangePasswordForm;
 use recovery::RecoveryEmailCard;
 use rename::ChangeUsername;
@@ -241,6 +244,7 @@ pub fn AccountPage() -> impl IntoView {
                 </Card>
 
                 {move || registered().then(|| view! { <RecoveryEmailCard /> })}
+                {move || auth.user.with(Option::is_some).then(|| view! { <NotificationSettings /> })}
                 <FeedbackCard />
                 {move || auth.user.with(Option::is_some).then(|| view! { <BlockedPlayers /> })}
                 {move || auth.user.with(Option::is_some).then(|| view! { <DeleteAccount stats /> })}

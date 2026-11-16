@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Ada pertanyaan atau masalah?",
     "text": "Laporkan bug, usulkan ide, atau tanyakan apa saja. Kami membaca setiap pesan."
+  },
+  "notifications": {
+    "title": "Notifikasi",
+    "text": "Hal-hal yang diberitahukan Hashi kepadamu. Disimpan di akunmu, untuk setiap perangkat tempat kamu bermain.",
+    "master": "Notifikasi",
+    "master_hint": "Nyalakan atau matikan semuanya sekaligus.",
+    "last_call": "Panggilan terakhir untuk rekor beruntunmu",
+    "last_call_hint": "Saat teka-teki harian hari ini masih terbuka sekitar tiga jam sebelum yang berikutnya. Kalau saat itu di tempatmu sudah malam, pukul 21.00 malam sebelumnya.",
+    "race": "Balapan",
+    "race_hint": "Seseorang di salah satu grupmu membuka balapan.",
+    "rival": "Rival",
+    "rival_hint": "Seorang rival mengalahkan waktumu di teka-teki harian.",
+    "shared": "Teka-teki yang kamu bagikan",
+    "shared_hint": "Pemain menyelesaikan teka-teki yang kamu bagikan.",
+    "group": "Teka-teki grup",
+    "group_hint": "Teka-teki baru diunggah di salah satu grupmu.",
+    "unavailable": "Notifikasi belum bisa sampai ke perangkat ini. Pilihanmu tersimpan di akunmu dan berlaku begitu memungkinkan.",
+    "settings_link": "Notifikasi",
+    "offer_title": "Mau panggilan terakhir untuk rekor beruntunmu?",
+    "offer_text": "Kami akan mengingatkanmu saat teka-teki harian hari ini masih terbuka beberapa jam sebelum yang berikutnya, tidak pernah di malam hari. Kamu bisa mengubahnya kapan saja di halaman akunmu.",
+    "offer_yes": "Ya, ingatkan aku",
+    "offer_no": "Tidak, terima kasih",
+    "push": {
+      "last_call_title": "Panggilan terakhir untuk rekor beruntunmu",
+      "last_call_body": "Teka-teki harian hari ini masih terbuka. Selesaikan sebelum yang berikutnya datang agar rekor beruntunmu tetap jalan.",
+      "race_title": "{{ name }} membuka balapan",
+      "race_body": "Di {{ group }}: masuk ke lobi sebelum dimulai.",
+      "rival_title": "{{ name }} mengalahkan waktumu",
+      "rival_body": "Di teka-teki harian hari ini, dalam {{ time }}.",
+      "shared_one_title": "{{ name }} menyelesaikan teka-tekimu",
+      "shared_one_body": "Lihat waktunya di papan peringkat teka-teki itu.",
+      "shared_many_title": "Teka-tekimu sedang dipecahkan",
+      "shared_many_body": "Pemecah baru: {{ count }}. Terakhir: {{ name }}.",
+      "group_title": "Teka-teki baru di {{ group }}",
+      "group_body": "{{ name }} mengunggah “{{ title }}”.",
+      "group_body_untitled": "{{ name }} mengunggah teka-teki baru."
+    }
   }
 }

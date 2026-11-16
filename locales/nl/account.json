@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Vragen of problemen?",
     "text": "Meld een bug, stel een idee voor of vraag ons wat je wilt. We lezen elk bericht."
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "text": "Waarover Hashi je laat weten. Opgeslagen bij je account, voor elk apparaat waarop je speelt.",
+    "master": "Meldingen",
+    "master_hint": "Allemaal tegelijk aan of uit.",
+    "last_call": "Laatste oproep voor je reeks",
+    "last_call_hint": "Als de dagpuzzel van vandaag zo'n drie uur voor de volgende nog open is. Is dat bij jou 's nachts, dan om 21:00 de avond ervoor.",
+    "race": "Races",
+    "race_hint": "Iemand in een van je groepen opent een race.",
+    "rival": "Rivalen",
+    "rival_hint": "Een rivaal verslaat je tijd op de dagpuzzel.",
+    "shared": "Je gedeelde puzzels",
+    "shared_hint": "Spelers lossen een puzzel op die jij hebt gedeeld.",
+    "group": "Groepspuzzels",
+    "group_hint": "Er staat een nieuwe puzzel in een van je groepen.",
+    "unavailable": "Meldingen bereiken dit apparaat nog niet. Je keuzes zijn opgeslagen bij je account en gelden zodra dat kan.",
+    "settings_link": "Meldingen",
+    "offer_title": "Een laatste oproep voor je reeks?",
+    "offer_text": "We herinneren je eraan als de dagpuzzel van vandaag een paar uur voor de volgende nog open is, nooit 's nachts. Je kunt dit altijd aanpassen op je accountpagina.",
+    "offer_yes": "Ja, herinner me",
+    "offer_no": "Nee, bedankt",
+    "push": {
+      "last_call_title": "Laatste oproep voor je reeks",
+      "last_call_body": "De dagpuzzel van vandaag is nog open. Los hem op voordat de volgende komt, dan blijft je reeks staan.",
+      "race_title": "{{ name }} heeft een race geopend",
+      "race_body": "In {{ group }}: kom naar de lobby voordat hij begint.",
+      "rival_title": "{{ name }} heeft je tijd verslagen",
+      "rival_body": "Op de dagpuzzel van vandaag, in {{ time }}.",
+      "shared_one_title": "{{ name }} heeft je puzzel opgelost",
+      "shared_one_body": "Bekijk de tijd op de ranglijst van de puzzel.",
+      "shared_many_title": "Je puzzel wordt opgelost",
+      "shared_many_body": "Nieuwe oplossers: {{ count }}. De laatste: {{ name }}.",
+      "group_title": "Nieuwe puzzel in {{ group }}",
+      "group_body": "{{ name }} heeft “{{ title }}” geplaatst.",
+      "group_body_untitled": "{{ name }} heeft een nieuwe puzzel geplaatst."
+    }
   }
 }
