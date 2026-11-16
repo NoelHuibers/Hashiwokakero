@@ -203,6 +203,8 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("com.google.android.material:material:1.14.0")
     implementation("androidx.lifecycle:lifecycle-process:2.10.0")
+    // Notifications (Notifications.kt): the poll every 15 minutes, without Google Play services
+    implementation("androidx.work:work-runtime:2.12.0")
     // Google Play Games Services v2: sign-in, achievements, leaderboards (src/play/.../Games.kt).
     // Proprietary: the Play build only
     if (!foss) {

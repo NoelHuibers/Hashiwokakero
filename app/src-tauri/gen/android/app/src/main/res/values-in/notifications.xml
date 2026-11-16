@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Panggilan terakhir untuk rekor beruntunmu</string>
+    <string name="notify_last_call_hint">Saat teka-teki harian hari ini masih terbuka sekitar tiga jam sebelum yang berikutnya. Kalau saat itu di tempatmu sudah malam, pukul 21.00 malam sebelumnya.</string>
+    <string name="notify_race">Balapan</string>
+    <string name="notify_race_hint">Seseorang di salah satu grupmu membuka balapan.</string>
+    <string name="notify_rival">Rival</string>
+    <string name="notify_rival_hint">Seorang rival mengalahkan waktumu di teka-teki harian.</string>
+    <string name="notify_shared">Teka-teki yang kamu bagikan</string>
+    <string name="notify_shared_hint">Pemain menyelesaikan teka-teki yang kamu bagikan.</string>
+    <string name="notify_group">Teka-teki grup</string>
+    <string name="notify_group_hint">Teka-teki baru diunggah di salah satu grupmu.</string>
+    <string name="notify_other">Notifikasi</string>
+</resources>

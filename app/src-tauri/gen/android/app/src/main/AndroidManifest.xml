@@ -5,10 +5,20 @@
     <!-- Without it the WebView takes itself for online, always: navigator.onLine and the window's
          online and offline events (the offline notice, src/state/toasts.rs) -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Notifications (Notifications.kt): showing them (asked for on Android 13 and newer, once
+         the player turns them on), and the last call's alarm again after a restart. WorkManager
+         brings its own (a wake lock, its restart receiver) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- WorkManager's foreground service, for long work this app doesn't have: without it, no
+         foreground service at all -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
 
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:theme="@style/Theme.hashi_tauri"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
         <!-- adjustResize: the window gets the soft keyboard's insets (edge to edge it no longer
@@ -198,6 +208,20 @@
             </intent-filter>
             <!-- DEEP LINK PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
         </activity>
+
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            tools:node="remove" />
+
+        <!-- The streak's last call: its alarm, and setting it again after a restart or an update -->
+        <receiver
+            android:name=".LastCallReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <provider
           android:name="androidx.core.content.FileProvider"

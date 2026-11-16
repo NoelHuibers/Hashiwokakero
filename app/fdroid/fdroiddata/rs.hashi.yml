@@ -1,8 +1,9 @@
 AntiFeatures:
   TetheredNet:
-    en-US: The daily puzzle, rankings, rivals and groups use the developer's server
-      hashi.rs (free software, in the same repository), which can't be changed in
-      the app. Play works offline.
+    en-US: The daily puzzle, rankings, rivals, groups and the notifications (which
+      the app fetches itself, no push service) use the developer's server hashi.rs
+      (free software, in the same repository), which can't be changed in the app.
+      Play works offline.
 Categories:
   - Puzzle Game
 License: MIT

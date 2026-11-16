@@ -143,6 +143,7 @@
     "group": "Łamigłówki grupy",
     "group_hint": "W jednej z twoich grup pojawia się nowa łamigłówka.",
     "unavailable": "Powiadomienia nie docierają jeszcze na to urządzenie. Twój wybór jest zapisany na koncie i zacznie działać, gdy tylko będzie to możliwe.",
+    "refused": "Ten telefon nie pozwala Hashi pokazywać powiadomień. Zezwól na nie w ustawieniach Androida dla Hashi, a potem włącz je tu ponownie.",
     "settings_link": "Powiadomienia",
     "offer_title": "Ostatnie wezwanie dla twojej serii?",
     "offer_text": "Przypomnimy ci, gdy dzisiejszy most będzie nadal otwarty kilka godzin przed następnym, nigdy w nocy. Możesz to zmienić w każdej chwili na stronie konta.",

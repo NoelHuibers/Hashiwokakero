@@ -143,6 +143,7 @@
     "group": "Gruppenrätsel",
     "group_hint": "In einer deiner Gruppen gibt es ein neues Rätsel.",
     "unavailable": "Benachrichtigungen erreichen dieses Gerät noch nicht. Deine Auswahl ist mit deinem Konto gespeichert und gilt, sobald sie es können.",
+    "refused": "Dieses Handy lässt Hashi keine Benachrichtigungen zeigen. Erlaube sie in den Android-Einstellungen für Hashi und schalte sie dann hier noch einmal ein.",
     "settings_link": "Benachrichtigungen",
     "offer_title": "Ein letzter Aufruf für deine Serie?",
     "offer_text": "Wir erinnern dich, wenn das heutige Tagesrätsel ein paar Stunden vor dem nächsten noch offen ist, nie nachts. Du kannst das jederzeit auf deiner Kontoseite ändern.",

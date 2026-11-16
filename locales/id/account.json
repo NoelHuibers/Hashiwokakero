@@ -143,6 +143,7 @@
     "group": "Teka-teki grup",
     "group_hint": "Teka-teki baru diunggah di salah satu grupmu.",
     "unavailable": "Notifikasi belum bisa sampai ke perangkat ini. Pilihanmu tersimpan di akunmu dan berlaku begitu memungkinkan.",
+    "refused": "Ponsel ini tidak mengizinkan Hashi menampilkan notifikasi. Izinkan di setelan Android untuk Hashi, lalu nyalakan lagi di sini.",
     "settings_link": "Notifikasi",
     "offer_title": "Mau panggilan terakhir untuk rekor beruntunmu?",
     "offer_text": "Kami akan mengingatkanmu saat teka-teki harian hari ini masih terbuka beberapa jam sebelum yang berikutnya, tidak pernah di malam hari. Kamu bisa mengubahnya kapan saja di halaman akunmu.",

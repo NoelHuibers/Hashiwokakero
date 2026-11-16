@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Último aviso para tu racha</string>
+    <string name="notify_last_call_hint">Cuando el reto de hoy sigue abierto unas tres horas antes del siguiente. Si allí donde estás es de noche, a las 21:00 de la tarde anterior.</string>
+    <string name="notify_race">Carreras</string>
+    <string name="notify_race_hint">Alguien de uno de tus grupos abre una carrera.</string>
+    <string name="notify_rival">Rivales</string>
+    <string name="notify_rival_hint">Un rival supera tu tiempo en el reto de hoy.</string>
+    <string name="notify_shared">Tus puzles compartidos</string>
+    <string name="notify_shared_hint">Otros jugadores resuelven un puzle que compartiste.</string>
+    <string name="notify_group">Puzles del grupo</string>
+    <string name="notify_group_hint">Se publica un puzle nuevo en uno de tus grupos.</string>
+    <string name="notify_other">Notificaciones</string>
+</resources>

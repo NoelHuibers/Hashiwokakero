@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">連勝最後提醒</string>
+    <string name="notify_last_call_hint">離下一道每日謎題還有約三小時、今天的還沒完成時提醒。如果那時你那裡是深夜，就在前一天晚上 9 點提醒。</string>
+    <string name="notify_race">競速</string>
+    <string name="notify_race_hint">你的某個群組裡有人發起競速。</string>
+    <string name="notify_rival">對手</string>
+    <string name="notify_rival_hint">對手在每日謎題中超越了你的用時。</string>
+    <string name="notify_shared">你分享的謎題</string>
+    <string name="notify_shared_hint">有玩家解開了你分享的謎題。</string>
+    <string name="notify_group">群組謎題</string>
+    <string name="notify_group_hint">你的某個群組發布了新謎題。</string>
+    <string name="notify_other">通知</string>
+</resources>

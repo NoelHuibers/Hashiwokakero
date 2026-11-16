@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">เรียกครั้งสุดท้ายสำหรับสตรีค</string>
+    <string name="notify_last_call_hint">เมื่อปริศนาวันนี้ยังไม่ได้แก้ประมาณสามชั่วโมงก่อนปริศนาถัดไป ถ้าตอนนั้นที่คุณอยู่เป็นกลางคืน จะเตือนตอน 21:00 ของเย็นวันก่อน</string>
+    <string name="notify_race">การแข่ง</string>
+    <string name="notify_race_hint">มีคนในกลุ่มของคุณเปิดการแข่ง</string>
+    <string name="notify_rival">คู่แข่ง</string>
+    <string name="notify_rival_hint">คู่แข่งทำเวลาดีกว่าคุณในปริศนาวันนี้</string>
+    <string name="notify_shared">ปริศนาที่คุณแชร์</string>
+    <string name="notify_shared_hint">ผู้เล่นแก้ปริศนาที่คุณแชร์</string>
+    <string name="notify_group">ปริศนากลุ่ม</string>
+    <string name="notify_group_hint">มีปริศนาใหม่ในกลุ่มของคุณ</string>
+    <string name="notify_other">การแจ้งเตือน</string>
+</resources>

@@ -1,6 +1,9 @@
 //! The account's notification settings: the master switch and one per kind, saved with the
 //! account (`api::save_notification_prefs`), with the time zone of this browser or phone for the
 //! streak's last call.
+//!
+//! Turned on, this device registers to get them, after asking for leave where it needs one
+//! (`state::notify::allowed_here`, `follow`).
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -11,7 +14,7 @@ use crate::components::ui::switch::Switch;
 use crate::i18n::{Locale, t, td_string, use_i18n};
 use crate::model::{NotificationPrefs, NotifyKind};
 use crate::state::error_toast;
-use crate::state::notify::{can_deliver, time_zone};
+use crate::state::notify::{allowed_here, can_deliver, follow, refused_here, time_zone};
 
 /// The name of a kind's switch.
 fn kind_name(locale: Locale, kind: NotifyKind) -> String {
@@ -50,6 +53,8 @@ pub(super) fn NotificationSettings() -> impl IntoView {
     let prefs = RwSignal::new(None::<NotificationPrefs>);
     // What the server has: a failed save goes back to it
     let confirmed = StoredValue::new(None::<NotificationPrefs>);
+    // This device may not show notifications (Android's leave)
+    let refused = RwSignal::new(false);
     Effect::new(move |first: Option<()>| {
         if first.is_none() {
             spawn_local(async move {
@@ -57,6 +62,13 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                     Ok(loaded) => {
                         confirmed.set_value(loaded);
                         prefs.set(loaded);
+                        // This device as the settings want it: turned on elsewhere, off elsewhere
+                        if let Some(p) = loaded {
+                            refused.set(refused_here(p.enabled).await);
+                            if let Err(e) = follow(p.enabled, i18n.get_locale_untracked()).await {
+                                leptos::logging::warn!("notifications on this device: {e}");
+                            }
+                        }
                     }
                     Err(e) => {
                         leptos::logging::warn!("could not load the notification settings: {e}");
@@ -89,6 +101,9 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                             continue;
                         }
                         prefs.set(Some(stored));
+                        if let Err(e) = follow(stored.enabled, i18n.get_locale_untracked()).await {
+                            error_toast(e);
+                        }
                     }
                     Err(e) => {
                         next_save.set_value(None);
@@ -99,6 +114,23 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                 break;
             }
             saving.set_value(false);
+        });
+    };
+    // Turning them on asks this device for leave first: refused, the switches go back
+    let change = move |next: NotificationPrefs| {
+        if !next.enabled || prefs.get_untracked().is_some_and(|p| p.enabled) {
+            save(next);
+            return;
+        }
+        prefs.set(Some(next));
+        spawn_local(async move {
+            let allowed = allowed_here().await;
+            refused.set(!allowed);
+            if allowed {
+                save(next);
+            } else {
+                prefs.set(confirmed.get_value());
+            }
         });
     };
 
@@ -119,7 +151,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
         if let Some(p) = prefs.get_untracked()
             && p.enabled != on
         {
-            save(p.with_master(on));
+            change(p.with_master(on));
         }
     });
     for (kind, switch) in switches {
@@ -128,7 +160,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
             if let Some(p) = prefs.get_untracked()
                 && p.kind(kind) != on
             {
-                save(p.with_kind(kind, on));
+                change(p.with_kind(kind, on));
             }
         });
     }
@@ -167,6 +199,11 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                             </p>
                         }
                     })}
+                <Show when=move || refused.get()>
+                    <p class="rounded-md border border-dashed border-destructive/50 p-2 text-xs text-muted-foreground" data-testid="notifications-refused">
+                        {t!(i18n, account.notifications.refused)}
+                    </p>
+                </Show>
                 <label class="flex min-h-10 cursor-pointer items-center justify-between gap-3 text-sm font-semibold" data-testid="notify-master">
                     <span>
                         {t!(i18n, account.notifications.master)}

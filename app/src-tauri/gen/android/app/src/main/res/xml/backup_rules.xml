@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android's backups (up to Android 11) without the phone's notification secret
+     (Notifications.kt): a restored copy on another phone would ask as this one -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="hashi.notifications.xml" />
+</full-backup-content>

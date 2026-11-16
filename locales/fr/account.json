@@ -143,6 +143,7 @@
     "group": "Grilles du groupe",
     "group_hint": "Une nouvelle grille est publiée dans un de tes groupes.",
     "unavailable": "Les notifications n’arrivent pas encore sur cet appareil. Tes choix sont enregistrés avec ton compte et s’appliqueront dès que possible.",
+    "refused": "Ce téléphone n’autorise pas Hashi à afficher des notifications. Autorise-les dans les paramètres Android de Hashi, puis réactive-les ici.",
     "settings_link": "Notifications",
     "offer_title": "Un dernier appel pour ta série ?",
     "offer_text": "On te le rappelle quand le défi du jour est encore ouvert quelques heures avant le suivant, jamais la nuit. Tu peux changer ça à tout moment sur la page de ton compte.",

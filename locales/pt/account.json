@@ -143,6 +143,7 @@
     "group": "Puzzles do grupo",
     "group_hint": "Um puzzle novo é publicado em um dos seus grupos.",
     "unavailable": "As notificações ainda não chegam a este dispositivo. Suas escolhas ficam salvas na sua conta e valem assim que for possível.",
+    "refused": "Este celular não deixa o Hashi mostrar notificações. Permita-as nas configurações do Android para o Hashi e ative-as aqui de novo.",
     "settings_link": "Notificações",
     "offer_title": "Uma última chamada para sua sequência?",
     "offer_text": "Avisamos você quando o desafio de hoje ainda estiver aberto algumas horas antes do próximo, nunca de madrugada. Você pode mudar isso a qualquer momento na página da sua conta.",

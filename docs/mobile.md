@@ -264,3 +264,16 @@ replaced through Play's support). Left, in this order (details in
       Games profile and game activity, through Google).
 10. **Other stores**: the owner tasks of F-Droid and the stores after it are in
     [stores.md](stores.md#owner-tasks).
+11. **Notifications on Android** ([docs/notifications.md](notifications.md#the-android-app)),
+    before the first app version with them goes to Play: in the Data safety form (App content),
+    Data types, add **Device or other IDs** (the random id and secret our server gives the app
+    for its poll, like a Firebase installation ID): collected, not shared, optional (only with
+    notifications on), purpose App functionality. The account's notification settings and the
+    phone's time zone go with the account's data (app functionality); a time zone is not a
+    location in Play's sense. Nothing else changes: no third party gets anything (no push
+    service), the data is encrypted in transit and deleted with the account. No declaration for
+    the permissions: `POST_NOTIFICATIONS` and `RECEIVE_BOOT_COMPLETED` need none, there is no exact
+    alarm and no foreground service. App Store Connect's privacy labels change with the iOS
+    notifications, not here. F-Droid: no new anti-feature (WorkManager is AndroidX, Apache 2.0, and
+    the server is ours, `TetheredNet` already); the recipe's `TetheredNet` text names the
+    notifications now.

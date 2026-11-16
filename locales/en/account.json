@@ -143,6 +143,7 @@
     "group": "Group puzzles",
     "group_hint": "A new puzzle is posted in one of your groups.",
     "unavailable": "Notifications can't reach this device yet. Your choices are saved with your account and apply as soon as they can.",
+    "refused": "This phone doesn't let Hashi show notifications. Allow them in Android's settings for Hashi, then turn them on here again.",
     "settings_link": "Notifications",
     "offer_title": "A last call for your streak?",
     "offer_text": "We'll remind you when today's daily is still open a few hours before the next one, never at night. You can change this any time on your account page.",

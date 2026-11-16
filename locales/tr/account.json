@@ -143,6 +143,7 @@
     "group": "Grup bulmacaları",
     "group_hint": "Gruplarından birinde yeni bir bulmaca paylaşılıyor.",
     "unavailable": "Bildirimler bu cihaza henüz ulaşamıyor. Seçimlerin hesabınla kaydedildi, mümkün olur olmaz geçerli olacak.",
+    "refused": "Bu telefon Hashi'nin bildirim göstermesine izin vermiyor. Android ayarlarında Hashi için bildirimlere izin ver, sonra burada yeniden aç.",
     "settings_link": "Bildirimler",
     "offer_title": "Serin için son çağrı ister misin?",
     "offer_text": "Bugünün bulmacası bir sonrakinden birkaç saat önce hâlâ açıksa sana hatırlatırız, gece asla. Bunu istediğin zaman hesap sayfandan değiştirebilirsin.",

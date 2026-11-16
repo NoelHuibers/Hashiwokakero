@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Letzter Aufruf für deine Serie</string>
+    <string name="notify_last_call_hint">Wenn das heutige Tagesrätsel etwa drei Stunden vor dem nächsten noch offen ist. Ist das bei dir nachts, dann um 21 Uhr am Abend davor.</string>
+    <string name="notify_race">Rennen</string>
+    <string name="notify_race_hint">Jemand in einer deiner Gruppen startet ein Rennen.</string>
+    <string name="notify_rival">Rivalen</string>
+    <string name="notify_rival_hint">Ein Rivale schlägt deine Zeit beim Tagesrätsel.</string>
+    <string name="notify_shared">Deine geteilten Rätsel</string>
+    <string name="notify_shared_hint">Andere lösen ein Rätsel, das du geteilt hast.</string>
+    <string name="notify_group">Gruppenrätsel</string>
+    <string name="notify_group_hint">In einer deiner Gruppen gibt es ein neues Rätsel.</string>
+    <string name="notify_other">Benachrichtigungen</string>
+</resources>

@@ -119,6 +119,12 @@ in the repository root, only in the app):
   [App Links](#app-links).
 - **Games services.** The stamps are Google Play Games achievements (Game Center's on iOS), see
   [Games services](#games-services).
+- **Notifications** without a push service: `Notifications.kt` asks the server itself every 15
+  minutes (WorkManager) and around the streak's last call (an inexact alarm), and shows what it
+  answers, a channel per kind. The page asks Android for `POST_NOTIFICATIONS` when the player
+  turns them on, registers the phone and hands its id and secret to the plugin (`notify_*`).
+  Play and foss build alike, no Google Play services. See
+  [docs/notifications.md](../docs/notifications.md#the-android-app).
 
 On the desktop it is WebView2 (Windows), `WKWebView` (macOS) or WebKitGTK (Linux), see
 [Desktop](#desktop). On iOS the `WebView` is WebKit's `WKWebView`, which does more of it itself.
@@ -426,7 +432,7 @@ no clap).
 - `capabilities/default.json`: what the page may call in Tauri: `core:default`, the commands
   of the offline Play, the opener's `open_url` for `https:` and `mailto:` URLs, the deep-link
   plugin's `get_current`, and the app's own plugin `hashi` (`share`, `system_bars`, `games_*` of
-  [Games services](#games-services)). `build.rs` lists the commands of the app and of its plugin,
+  [Games services](#games-services), `notify_*` of [On the phone](#on-the-phone)). `build.rs` lists the commands of the app and of its plugin,
   which makes Tauri check them against the capabilities.
 - Plugins: `tauri-plugin-opener` (official, links out of the app, its own click script off),
   `tauri-plugin-deep-link` (official, [App Links](#app-links)), and `hashi`, the app's own, in `src/lib.rs` with its Android side in `gen/android`
@@ -452,8 +458,13 @@ no clap).
   `src/play/AndroidManifest.xml`, see [Games services](#games-services)), `build.gradle.kts`
   (signing, the NDK, Play Games' project id, the [foss build](#android-builds)),
   `MainActivity.kt` (the system bars and the keyboard, see [On the phone](#on-the-phone)),
-  `HashiPlugin.kt` and the two `Games.kt` (`src/play`, `src/foss`), and the template's unused
-  `activity_main.xml` removed. Build outputs and the files Tauri writes on every build
+  `HashiPlugin.kt` and the two `Games.kt` (`src/play`, `src/foss`), the notifications
+  (`Notifications.kt`, WorkManager in `build.gradle.kts`; in the manifest `POST_NOTIFICATIONS`,
+  `RECEIVE_BOOT_COMPLETED`, the alarm's receiver, WorkManager's foreground service removed, the
+  backup rules of `res/xml`; the small icon `res/drawable/ic_notification.xml`; the channels'
+  names `res/values*/notifications.xml`, written from the translations by a test of the server,
+  see [docs/notifications.md](../docs/notifications.md#the-android-app)), and the template's
+  unused `activity_main.xml` removed. Build outputs and the files Tauri writes on every build
   are in its `.gitignore`s.
 
 ### Prerequisites
@@ -607,6 +618,13 @@ generates, hints and checks through the native commands, the ranks show one offl
 event), Android's back button goes back from Play to the rules instead of closing
 the app, and without Play Games' project id the games commands say the service isn't there and
 its SDK never starts.
+
+`e2e/android/notifications.spec.ts` checks the notifications' native side against a fake server
+on the runner that `adb reverse` lends the device (it stays offline): the plugin's commands, the
+WorkManager jobs (run with `cmd jobscheduler run -f`, they wait for a network), the poll's
+request, the notification in its kind's channel (`dumpsys notification`), the last call's alarm
+(`dumpsys alarm`), a tap that opens the message's page in the app, a `null` answer that stops
+everything, and the unregistering after `notify_stop`.
 
 What only the phone shows: in the light and the dark theme, the header starts below the status
 bar and the tab bar's labels end above the navigation bar (their boxes against the bars'

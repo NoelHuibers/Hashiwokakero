@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">연속 기록 마지막 알림</string>
+    <string name="notify_last_call_hint">다음 데일리까지 약 3시간 남았는데 오늘의 데일리를 아직 안 풀었을 때. 그 시간이 사는 곳에서 한밤중이면 전날 저녁 9시에 알려 드려요.</string>
+    <string name="notify_race">레이스</string>
+    <string name="notify_race_hint">그룹의 누군가가 레이스를 열었을 때.</string>
+    <string name="notify_rival">라이벌</string>
+    <string name="notify_rival_hint">라이벌이 데일리에서 내 기록을 앞섰을 때.</string>
+    <string name="notify_shared">공유한 퍼즐</string>
+    <string name="notify_shared_hint">내가 공유한 퍼즐을 누군가 풀었을 때.</string>
+    <string name="notify_group">그룹 퍼즐</string>
+    <string name="notify_group_hint">그룹에 새 퍼즐이 올라왔을 때.</string>
+    <string name="notify_other">알림</string>
+</resources>

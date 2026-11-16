@@ -17,7 +17,9 @@
 //! - the App Links the app is opened with (`tauri-plugin-deep-link`): their pages are the app's
 //!   own, the router shows them (see `follow_app_links`);
 //! - the phone's games service, Game Center or Google Play Games (`games_sign_in`,
-//!   `games_report`, `games_show`, with the arguments of `api::games`), through the app's plugin.
+//!   `games_report`, `games_show`, with the arguments of `api::games`), through the app's plugin;
+//! - notifications on Android (`notify_*`): the permission, and the app's own poll of the server
+//!   in the background (`Notifications.kt`), which gets the phone's id and secret from the page.
 //!
 //! On the desktop (Windows, macOS, Linux) the app's plugin has a side in Rust
 //! (`app/src-tauri/src/desktop.rs`): files go to the system's save dialog, the title bar follows
@@ -33,7 +35,7 @@ use serde::de::DeserializeOwned;
 use wasm_bindgen::{JsCast, JsValue};
 
 use super::games::{self, Board, Platform, PlayIds, Report, Reported, Show, Status};
-use crate::model::UserStats;
+use crate::model::{DeviceRegistration, UserStats};
 
 /// Tauri's `invoke` and the object it belongs to, if the page runs in the app's `WebView`.
 fn invoke() -> Option<(JsValue, js_sys::Function)> {
@@ -314,6 +316,82 @@ pub(crate) fn games_show(kind: Board) {
 /// The name of the phone's games service, for its button: `None` outside the app.
 pub(crate) fn games_service() -> Option<&'static str> {
     super::app::app_platform().and_then(games::service)
+}
+
+/// What the app's plugin says about notifications on the Android phone (`HashiPlugin.kt`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Deserialize)]
+pub(crate) struct NotifyState {
+    /// Whether the app may show notifications: Android's permission (13 and newer) and its
+    /// settings.
+    #[serde(default)]
+    pub(crate) granted: bool,
+    /// The id the server knows the phone by, while the app asks it for notifications.
+    #[serde(default)]
+    pub(crate) device: Option<i64>,
+}
+
+/// The arguments of a command that takes none: an empty object.
+#[derive(Serialize)]
+struct NoArgs {}
+
+const NO_ARGS: NoArgs = NoArgs {};
+
+/// Calls one of the plugin's `notify_*` commands, which all answer the [`NotifyState`] after them.
+#[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
+async fn notify(
+    command: &'static str,
+    args: &impl Serialize,
+) -> Result<NotifyState, ServerFnError> {
+    let answer = plugin(command, args)
+        .ok_or_else(|| error("the app's commands are missing"))?
+        .await
+        .map_err(|e| failed(&e))?;
+    let json = js_sys::JSON::stringify(&answer).map_err(|e| failed(&e))?;
+    serde_json::from_str(&String::from(json)).map_err(|e| error(e.to_string()))
+}
+
+/// Whether the app may show notifications, asking the player on Android 13 and newer (only on a
+/// tap that turns them on). Refused or failed: `false`.
+#[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
+pub(crate) async fn notify_permission() -> bool {
+    notify("plugin:hashi|notify_permission", &NO_ARGS)
+        .await
+        .inspect_err(|e| leptos::logging::warn!("notify_permission failed: {e}"))
+        .is_ok_and(|state| state.granted)
+}
+
+/// Whether the app may show notifications and the phone it asks for them as, without asking.
+#[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
+pub(crate) async fn notify_state() -> Result<NotifyState, ServerFnError> {
+    notify("plugin:hashi|notify_state", &NO_ARGS).await
+}
+
+/// Hands the phone the server registered (`register_notification_device`) to the app, which
+/// asks the server for its notifications from now on, also while the app is closed: where the
+/// page's server functions go, with the page's `x-hashi-app` header.
+#[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
+pub(crate) async fn notify_start(phone: &DeviceRegistration) -> Result<NotifyState, ServerFnError> {
+    #[derive(Serialize)]
+    struct Args<'a> {
+        server: &'a str,
+        app: &'a str,
+        device: i64,
+        secret: &'a str,
+    }
+    let args = Args {
+        server: leptos::server_fn::client::get_server_url(),
+        app: super::app::app_header().unwrap_or_default(),
+        device: phone.id,
+        secret: &phone.secret,
+    };
+    notify("plugin:hashi|notify_start", &args).await
+}
+
+/// Stops the app's poll and has the server forget the phone (the app tells it, also later when
+/// it is offline now).
+#[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
+pub(crate) async fn notify_stop() -> Result<NotifyState, ServerFnError> {
+    notify("plugin:hashi|notify_stop", &NO_ARGS).await
 }
 
 /// Sends every link that leads out of the app (`seo::opens_outside`) to [`open_url`]: the

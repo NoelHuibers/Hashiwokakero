@@ -813,9 +813,10 @@ async fn queue_last_calls_of(
     enqueue(conn, &note, Recipients::Users(&due), now).await
 }
 
-/// When a player's next last call would be due: today's while it can still come, else
-/// tomorrow's (which comes only if today's daily is solved by then; the poll at that time asks
-/// the database again). `None` while the player doesn't want last calls.
+/// When a player's next last call would be due, `None` while they don't want last calls.
+///
+/// Today's while it can still come, else tomorrow's (which comes only if today's daily is solved
+/// by then; the poll at that time asks the database again).
 ///
 /// For the Android app, which asks for its notifications every 15 minutes at best, and much less
 /// often while the phone sleeps: it asks once more around this moment ([`poll`]).

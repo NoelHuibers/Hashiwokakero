@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">連続記録のラストコール</string>
+    <string name="notify_last_call_hint">次のデイリーまで約3時間になっても今日のデイリーが未完了のとき。お住まいの地域でそれが夜中なら、前日の21時にお知らせします。</string>
+    <string name="notify_race">勝負</string>
+    <string name="notify_race_hint">グループのだれかが勝負を始めたとき。</string>
+    <string name="notify_rival">ライバル</string>
+    <string name="notify_rival_hint">ライバルがデイリーであなたのタイムを上回ったとき。</string>
+    <string name="notify_shared">共有したパズル</string>
+    <string name="notify_shared_hint">あなたが共有したパズルをだれかが解いたとき。</string>
+    <string name="notify_group">仲間の課題</string>
+    <string name="notify_group_hint">グループに新しい課題が投稿されたとき。</string>
+    <string name="notify_other">通知</string>
+</resources>

@@ -19,6 +19,10 @@ fn main() {
         "games_sign_in",
         "games_report",
         "games_show",
+        "notify_permission",
+        "notify_state",
+        "notify_start",
+        "notify_stop",
     ]);
     tauri_build::try_build(
         tauri_build::Attributes::new()

@@ -118,6 +118,8 @@ pub(super) fn url(path: &str, locale: Locale) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
+
     use super::*;
 
     fn args() -> Args {
@@ -189,6 +191,119 @@ mod tests {
         assert_eq!(locale_of("ja"), Locale::ja);
         assert_eq!(locale_of("zh-Hant"), Locale::zh_Hant);
         assert_eq!(locale_of("xx"), Locale::en);
+    }
+
+    /// The folder of a language's resources in the Android app: English is the default; Android
+    /// knows Indonesian by its old code `in`, and traditional Chinese by its script.
+    fn android_values(locale: Locale) -> String {
+        match locale.as_str() {
+            "en" => "values".into(),
+            "id" => "values-in".into(),
+            "zh-Hant" => "values-b+zh+Hant".into(),
+            tag => format!("values-{tag}"),
+        }
+    }
+
+    /// A text as an Android string resource: XML, and Android's own escapes on top.
+    fn android_text(text: &str) -> String {
+        let mut out = String::new();
+        for (i, c) in text.chars().enumerate() {
+            match c {
+                '&' => out.push_str("&amp;"),
+                '<' => out.push_str("&lt;"),
+                '>' => out.push_str("&gt;"),
+                '\\' | '"' | '\'' => {
+                    out.push('\\');
+                    out.push(c);
+                }
+                '@' | '?' if i == 0 => {
+                    out.push('\\');
+                    out.push(c);
+                }
+                c => out.push(c),
+            }
+        }
+        out
+    }
+
+    /// The names of the Android app's notification channels in a language
+    /// (`Notifications.kt` of `app/src-tauri/gen/android`), one per kind: those of the account
+    /// page's switches, with their hints as the channels' descriptions.
+    fn android_strings(locale: Locale) -> String {
+        let mut xml = String::from(
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\
+             <!-- The notification channels' names (Notifications.kt): the account page's, written by\n     \
+             the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),\n     \
+             GOLDEN_UPDATE=1 rewrites them. Not by hand -->\n<resources>\n",
+        );
+        let mut string = |name: &str, text: &str| {
+            let _ = writeln!(
+                xml,
+                "    <string name=\"notify_{name}\">{}</string>",
+                android_text(text)
+            );
+        };
+        for (kind, name, hint) in [
+            (
+                NotifyKind::LastCall,
+                td_string!(locale, account.notifications.last_call),
+                td_string!(locale, account.notifications.last_call_hint),
+            ),
+            (
+                NotifyKind::Race,
+                td_string!(locale, account.notifications.race),
+                td_string!(locale, account.notifications.race_hint),
+            ),
+            (
+                NotifyKind::Rival,
+                td_string!(locale, account.notifications.rival),
+                td_string!(locale, account.notifications.rival_hint),
+            ),
+            (
+                NotifyKind::Shared,
+                td_string!(locale, account.notifications.shared),
+                td_string!(locale, account.notifications.shared_hint),
+            ),
+            (
+                NotifyKind::Group,
+                td_string!(locale, account.notifications.group),
+                td_string!(locale, account.notifications.group_hint),
+            ),
+        ] {
+            string(kind.id(), name);
+            string(&format!("{}_hint", kind.id()), hint);
+        }
+        // For kinds a newer server has and this app doesn't know yet
+        string("other", td_string!(locale, account.notifications.master));
+        xml.push_str("</resources>");
+        xml
+    }
+
+    #[test]
+    fn android_channels_are_named_like_the_switches() {
+        assert_eq!(
+            android_text("Today's \"daily\" & <more> \\ @"),
+            "Today\\'s \\\"daily\\\" &amp; &lt;more&gt; \\\\ @"
+        );
+        assert_eq!(android_text("@home ?x"), "\\@home ?x");
+        let res = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("app/src-tauri/gen/android/app/src/main/res");
+        for &locale in Locale::get_all() {
+            let file = res.join(android_values(locale)).join("notifications.xml");
+            let xml = android_strings(locale);
+            if std::env::var_os("GOLDEN_UPDATE").is_some() {
+                std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+                std::fs::write(&file, format!("{xml}\n")).unwrap();
+                continue;
+            }
+            let stored = std::fs::read_to_string(&file).unwrap_or_default();
+            assert!(
+                stored.trim_end() == xml,
+                "{}: the channels' names differ from the translations, run this test with \
+                 GOLDEN_UPDATE=1 to write them\n\n{xml}",
+                file.display()
+            );
+        }
     }
 
     #[test]

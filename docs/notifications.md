@@ -27,9 +27,10 @@ The group river doesn't notify.
   (`components/notify_offer.rs`, `model::should_offer`). It is noted as shown as soon as it
   shows; yes turns everything on.
 - **Only where a device can get them.** `state::notify::can_deliver()` says whether this
-  browser or app has a way of delivery (`delivers(DeviceKind)`). It is `false` everywhere until
-  the channels below land, so the offer never shows and the settings say that notifications
-  can't reach this device yet. The switches still work: they are account settings.
+  browser or app has a way of delivery (`delivers(DeviceKind)`). It is `true` in the Android app
+  ([The Android app](#the-android-app)) and `false` elsewhere until the channels below land, so
+  the offer doesn't show there and the settings say that notifications can't reach this device
+  yet. The switches still work: they are account settings.
 - **Texts in the device's language.** The outbox keeps what a text needs (`notify::Args`,
   JSON), not the text: each device renders it in its own locale
   (`server/notify/render.rs`, keys `account.notifications.push.*` in every language). The tap
@@ -101,7 +102,7 @@ The group river doesn't notify.
 | `answer_notification_offer(accept, time_zone)` | required | marks the offer shown, yes turns all on |
 | `register_notification_device(kind, endpoint, keys, locale, time_zone)` | required | returns `{ id, secret }`; the same endpoint again replaces it |
 | `unregister_notification_device(id, secret)` | none | forgets the device |
-| `poll_notifications(device, secret)` | none | the device's new `PushMessage`s, `None` if unknown |
+| `poll_notifications(device, secret)` | none | the device's new `PushMessage`s and when its next last call is due (`NotificationPoll`), `None` if unknown |
 
 ## What the next changes add
 
@@ -119,8 +120,58 @@ extends the privacy policy with what goes to whom.
    permission and hands the device token to the page, which registers `(Apns, token)`.
    Server: an `impl Channel` for `DeviceKind::Apns` over HTTP/2 with a JWT;
    `BadDeviceToken`/`Unregistered` answer `Delivery::Gone`.
-3. **Android app.** A background worker (WorkManager) that calls `poll_notifications(id,
-   secret)` every so often and shows what comes back, plus a local alarm around the last
-   call's time (`timing::last_call_at`'s rule) that polls before it shows anything, so a daily
-   finished elsewhere silences it. The app registers `(Android, None, None)` once and
-   keeps id and secret in its storage. No server change beyond what is here.
+3. **Android app.** Done, see [The Android app](#the-android-app).
+
+## The Android app
+
+No push service: the app asks our server itself (`Notifications.kt` in
+`app/src-tauri/gen/android/app/src/main/java/rs/hashi/`), with AndroidX's WorkManager, which needs
+no Google Play services. The same code is in the Play and the foss (F-Droid) build.
+
+- **Turning them on** (the master switch, a kind, or yes to the offer) asks Android for
+  `POST_NOTIFICATIONS` first (13 and newer, `notify_permission` of the app's plugin). Refused,
+  the switches go back and the page says to allow them in Android's settings. Allowed, the
+  settings are saved, and `state::notify::follow` registers the phone
+  (`register_notification_device(Android, None, None, locale, time_zone)`) and hands its id and
+  secret, the server's URL and the `x-hashi-app` header to the plugin (`notify_start`), which
+  keeps them in the app's private preferences, left out of Android's backups
+  (`res/xml/backup_rules.xml`, `data_extraction_rules.xml`). The settings page does the same when
+  it finds them on (turned on elsewhere) with Android's leave given, and stops when it finds them
+  off.
+- **Turning them off** (the master switch, or the last kind), signing out and deleting the
+  account call `notify_stop`: the poll stops and a one-time job tells the server
+  (`unregister_notification_device`) as soon as the phone is online.
+- **The poll.** A periodic WorkManager job, every 15 minutes (its shortest period) with a
+  network, calls `poll_notifications` the way the page calls server functions: `POST
+  <server>/api/poll_notifications` with the JSON body `{"device": <id>, "secret": "<secret>"}`
+  and the `x-hashi-app` header, no session. The answer is the JSON of `Option<NotificationPoll>`.
+  `null` means the server forgot the phone (the account deleted, the device idle for 90 days):
+  the app deletes its id and secret and stops. Each message is shown in the notification channel
+  of its kind (`last_call`, `race`, `rival`, `shared`, `group`, and `other` for kinds a newer
+  server has), named like the account page's switches in the phone's language
+  (`res/values-*/notifications.xml`, written from the translations by the test
+  `android_channels_are_named_like_the_switches` in `server/notify/render.rs`), so players can
+  tune each in Android's settings too. The tag replaces an older one of the same tag, an expired
+  message isn't shown and a shown one goes away when it expires (`setTimeoutAfter`). A tap opens
+  the message's URL as an App Link of this app (the package named, so the debug build too), which
+  the deep-link plugin hands to the page like any App Link (`api::native::follow_app_links`).
+- **The last call's time.** Android stretches the 15 minutes to hours while the phone sleeps
+  (Doze), too late for a reminder with a deadline. So every answer says when the player's next
+  last call is due (`next_last_call`: today's while it can still come, else tomorrow's, `None`
+  with the last call off), and the app sets an inexact alarm that may go off in Doze
+  (`setAndAllowWhileIdle`, no exact alarm and no `SCHEDULE_EXACT_ALARM`) one minute after it.
+  Such an alarm comes up to three quarters of its distance late (an hour at most), so it goes in
+  steps: halfway there while the moment is more than 10 minutes away, then at the moment itself,
+  at most about seven minutes late. At the moment the alarm polls (Android gives the app a few
+  seconds and the network for that, also in Doze); a failed poll is retried by a one-time job
+  once the phone is online. The server queues the player's due last call in the poll itself
+  (`notify::poll`) instead of waiting for the next round of the 5-minute job, so the poll at the
+  moment finds it, and checks again that today's daily isn't done.
+- **Restarts.** WorkManager schedules its jobs again after a restart of the phone and an update
+  of the app. The alarm is set again from the stored time by `LastCallReceiver` on
+  `BOOT_COMPLETED` and `MY_PACKAGE_REPLACED`.
+- **Test by hand** (the emulator test does the rest, see app/README.md): turn notifications on in
+  the app, allow them, `adb shell dumpsys jobscheduler | grep rs.hashi` shows the periodic job;
+  `adb shell cmd jobscheduler run -f rs.hashi <job id>` runs it now; a race opened by another
+  member of a group shows up as a notification in the channel "Races", and a tap opens its lobby
+  in the app. Turned off in Android's settings, the switch in the app goes back with the hint.
