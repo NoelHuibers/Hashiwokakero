@@ -205,6 +205,18 @@ pub struct PushMessage {
     pub expires_at: i64,
 }
 
+/// What the Android app gets when it asks for its notifications (`poll_notifications`).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NotificationPoll {
+    /// The new notifications, oldest first.
+    pub messages: Vec<PushMessage>,
+    /// When the app should ask again for the streak's last call (ms since the epoch): the moment
+    /// today's would be due, else tomorrow's. `None` while the player doesn't want it. The app
+    /// asks around then on top of its regular polls, which the phone may hold back for hours.
+    #[serde(default)]
+    pub next_last_call: Option<i64>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
