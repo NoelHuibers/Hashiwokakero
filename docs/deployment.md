@@ -56,6 +56,13 @@ Store credentials in the deployment platform's secret store.
   `flyctl secrets import`; renew it before it expires (the button is off and no
   fixed mail goes out without it). The labels `bug`, `idea`, `question` and
   `feedback` should exist in the repository.
+- `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`: optional, the Web Push key pair
+  that sends notifications to browsers (base64url; `pnpm run vapid-keys` prints a
+  new pair, set both with `flyctl secrets set VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=…
+  -a hashi`). Without them browsers aren't offered notifications; half a pair or
+  a pair that doesn't fit stops the server. Keep the pair: a new one ends every
+  browser's subscription. `VAPID_SUBJECT`: optional, the contact URL in the
+  signature, default `https://hashi.rs`. See [notifications.md](notifications.md#web-push-browsers).
 - `GITHUB_FEEDBACK_REPO`: optional, `owner/name` of the repository for those
   issues, default `NoelHuibers/Hashiwokakero`.
 - `HASHI_APP_MIN_VERSION`: optional, the oldest app version (`x.y.z`) the server
