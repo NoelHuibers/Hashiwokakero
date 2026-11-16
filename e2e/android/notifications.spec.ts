@@ -193,7 +193,15 @@ test('the app asks the server itself, shows what it answers, and stops when it f
     await expect.poll(async () => (await notifications(device)).length).toBe(0);
 
     // `null`: the server forgot the phone (the account deleted, say), the app stops asking
+    // WorkManager skips a periodic job run before its period is up: a start again (as the page's
+    // `follow` does on a later visit) asks right away, with a one-time job
     server.answers.poll_notifications = null;
+    await invoke(page, 'plugin:hashi|notify_start', {
+      server: server.url,
+      app: APP,
+      device: DEVICE,
+      secret: SECRET,
+    });
     await runJobs(device);
     await expect
       .poll(() => invoke(page, 'plugin:hashi|notify_state'), { message: 'forgotten' })
