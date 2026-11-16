@@ -1,5 +1,5 @@
-//! Server only code: database, users, the daily puzzle, groups, replays, reports and blocks, and
-//! the SAT Dojo.
+//! Server only code: database, users, the daily puzzle, groups, replays, reports and blocks,
+//! notifications, and the SAT Dojo.
 
 pub mod admin;
 pub mod apps;
@@ -16,6 +16,7 @@ pub mod issues;
 pub mod limits;
 mod mail;
 pub mod names;
+pub mod notify;
 pub mod og;
 pub mod recovery;
 pub mod replay;

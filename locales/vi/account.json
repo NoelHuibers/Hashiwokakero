@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Có câu hỏi hay vấn đề?",
     "text": "Báo lỗi, đề xuất ý tưởng hoặc hỏi chúng tôi bất cứ điều gì. Chúng tôi đọc mọi tin nhắn."
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "text": "Những điều Hashi báo cho bạn. Được lưu cùng tài khoản, cho mọi thiết bị bạn chơi.",
+    "master": "Thông báo",
+    "master_hint": "Bật hoặc tắt tất cả cùng lúc.",
+    "last_call": "Lời nhắc cuối cho chuỗi của bạn",
+    "last_call_hint": "Khi câu đố hôm nay vẫn còn mở khoảng ba giờ trước câu tiếp theo. Nếu lúc đó chỗ bạn là ban đêm, thì lúc 21:00 tối hôm trước.",
+    "race": "Cuộc đua",
+    "race_hint": "Có người trong một nhóm của bạn mở cuộc đua.",
+    "rival": "Đối thủ",
+    "rival_hint": "Một đối thủ vượt thời gian của bạn ở câu đố hôm nay.",
+    "shared": "Câu đố bạn đã chia sẻ",
+    "shared_hint": "Người chơi giải một câu đố bạn đã chia sẻ.",
+    "group": "Câu đố nhóm",
+    "group_hint": "Có câu đố mới được đăng trong một nhóm của bạn.",
+    "unavailable": "Thông báo chưa thể đến thiết bị này. Lựa chọn của bạn đã được lưu cùng tài khoản và sẽ áp dụng ngay khi có thể.",
+    "settings_link": "Thông báo",
+    "offer_title": "Nhận lời nhắc cuối cho chuỗi của bạn?",
+    "offer_text": "Chúng tôi sẽ nhắc bạn khi câu đố hôm nay vẫn còn mở vài giờ trước câu tiếp theo, không bao giờ vào ban đêm. Bạn có thể đổi bất cứ lúc nào ở trang tài khoản.",
+    "offer_yes": "Có, nhắc tôi",
+    "offer_no": "Không, cảm ơn",
+    "push": {
+      "last_call_title": "Lời nhắc cuối cho chuỗi của bạn",
+      "last_call_body": "Câu đố hôm nay vẫn còn mở. Hãy giải trước khi câu tiếp theo đến để giữ chuỗi.",
+      "race_title": "{{ name }} đã mở một cuộc đua",
+      "race_body": "Trong {{ group }}: vào phòng chờ trước khi bắt đầu.",
+      "rival_title": "{{ name }} đã vượt thời gian của bạn",
+      "rival_body": "Ở câu đố hôm nay, trong {{ time }}.",
+      "shared_one_title": "{{ name }} đã giải câu đố của bạn",
+      "shared_one_body": "Xem thời gian trên bảng xếp hạng của câu đố.",
+      "shared_many_title": "Câu đố của bạn đang được giải",
+      "shared_many_body": "Người giải mới: {{ count }}. Gần nhất: {{ name }}.",
+      "group_title": "Câu đố mới trong {{ group }}",
+      "group_body": "{{ name }} đã đăng “{{ title }}”.",
+      "group_body_untitled": "{{ name }} đã đăng một câu đố mới."
+    }
   }
 }

@@ -126,5 +126,42 @@
   "feedback": {
     "title": "有疑问或遇到问题？",
     "text": "报告 bug、提出想法，或者问我们任何事。每条消息我们都会读。"
+  },
+  "notifications": {
+    "title": "通知",
+    "text": "Hashi 会提醒你的事情。保存在你的账号里，适用于你玩的每台设备。",
+    "master": "通知",
+    "master_hint": "一次全部打开或关闭。",
+    "last_call": "连胜最后提醒",
+    "last_call_hint": "离下一道每日谜题还有约三小时、今天的还没完成时提醒。如果那时你那里是深夜，就在前一天晚上 9 点提醒。",
+    "race": "竞速",
+    "race_hint": "你的某个小组里有人发起竞速。",
+    "rival": "对手",
+    "rival_hint": "对手在每日谜题中超过了你的用时。",
+    "shared": "你分享的谜题",
+    "shared_hint": "有玩家解开了你分享的谜题。",
+    "group": "小组谜题",
+    "group_hint": "你的某个小组发布了新谜题。",
+    "unavailable": "通知暂时还无法送达这台设备。你的选择已保存在账号中，一旦可以就会生效。",
+    "settings_link": "通知",
+    "offer_title": "要为你的连胜设一个最后提醒吗？",
+    "offer_text": "离下一道每日谜题还有几个小时、今天的还没完成时，我们会提醒你，深夜绝不打扰。你可以随时在账号页面更改。",
+    "offer_yes": "好，提醒我",
+    "offer_no": "不用了，谢谢",
+    "push": {
+      "last_call_title": "连胜最后提醒",
+      "last_call_body": "今天的每日谜题还没完成。在下一道到来前解开，保住你的连胜。",
+      "race_title": "{{ name }} 发起了竞速",
+      "race_body": "在 {{ group }}：开始前快进大厅。",
+      "rival_title": "{{ name }} 超过了你的用时",
+      "rival_body": "在今天的每日谜题中，用时 {{ time }}。",
+      "shared_one_title": "{{ name }} 解开了你的谜题",
+      "shared_one_body": "去谜题的排行榜看看用时。",
+      "shared_many_title": "你的谜题有人在解",
+      "shared_many_body": "新的解题者：{{ count }}。最近一位：{{ name }}。",
+      "group_title": "{{ group }} 有新谜题",
+      "group_body": "{{ name }} 发布了“{{ title }}”。",
+      "group_body_untitled": "{{ name }} 发布了一道新谜题。"
+    }
   }
 }

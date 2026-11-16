@@ -1,4 +1,5 @@
-//! Client state shared by all pages: the current game, the editor, solver settings and toasts.
+//! Client state shared by all pages: the current game, the editor, solver settings, toasts, and
+//! what this device can do with notifications.
 
 mod auth;
 mod blocks;
@@ -8,6 +9,7 @@ mod errors;
 mod game;
 mod hanko;
 mod move_log;
+pub mod notify;
 mod rivals;
 mod settings;
 mod solver;

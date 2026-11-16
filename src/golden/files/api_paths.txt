@@ -13,6 +13,7 @@
 /api/admin_resolve_report POST application/json -> application/json
 /api/admin_submissions POST application/json -> application/json
 /api/admin_unban_player POST application/json -> application/json
+/api/answer_notification_offer POST application/json -> application/json
 /api/archived_daily POST application/json -> application/json
 /api/block_player POST application/json -> application/json
 /api/change_password POST application/json -> application/json
@@ -58,6 +59,7 @@
 /api/load_group_river POST application/json -> application/json
 /api/load_group_week POST application/json -> application/json
 /api/load_hall_of_fame POST application/json -> application/json
+/api/load_notification_prefs POST application/json -> application/json
 /api/load_player POST application/json -> application/json
 /api/load_puzzle_replay POST application/json -> application/json
 /api/load_race_replay POST application/json -> application/json
@@ -77,9 +79,11 @@
 /api/open_shared_race POST application/json -> application/json
 /api/password_reset_available POST application/json -> application/json
 /api/poll_group_race POST application/json -> application/json
+/api/poll_notifications POST application/json -> application/json
 /api/post_group_puzzle POST application/json -> application/json
 /api/puzzle_cnf POST application/json -> application/json
 /api/register POST application/json -> application/json
+/api/register_notification_device POST application/json -> application/json
 /api/rematch_group_race POST application/json -> application/json
 /api/remove_member POST application/json -> application/json
 /api/remove_recovery_email POST application/json -> application/json
@@ -87,6 +91,7 @@
 /api/reset_password POST application/json -> application/json
 /api/rival_record POST application/json -> application/json
 /api/rotate_invite POST application/json -> application/json
+/api/save_notification_prefs POST application/json -> application/json
 /api/seen_group_puzzle_kudos POST application/json -> application/json
 /api/send_message POST application/json -> application/json
 /api/set_hanko POST application/json -> application/json
@@ -106,6 +111,7 @@
 /api/submit_shared_puzzle POST application/json -> application/json
 /api/todays_rivals POST application/json -> application/json
 /api/unread_hanko_counts POST application/json -> application/json
+/api/unregister_notification_device POST application/json -> application/json
 /api/update_admin_benchmark POST application/json -> application/json
 /api/update_admin_submission POST application/json -> application/json
 /api/withdraw_group_puzzle POST application/json -> application/json

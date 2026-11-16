@@ -126,5 +126,42 @@
   "feedback": {
     "title": "¿Dudas o problemas?",
     "text": "Informa de un error, propón una idea o pregúntanos lo que quieras. Leemos todos los mensajes."
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "text": "De qué te avisa Hashi. Se guarda con tu cuenta, para cada dispositivo en el que juegas.",
+    "master": "Notificaciones",
+    "master_hint": "Todas activadas o desactivadas de una vez.",
+    "last_call": "Último aviso para tu racha",
+    "last_call_hint": "Cuando el reto de hoy sigue abierto unas tres horas antes del siguiente. Si allí donde estás es de noche, a las 21:00 de la tarde anterior.",
+    "race": "Carreras",
+    "race_hint": "Alguien de uno de tus grupos abre una carrera.",
+    "rival": "Rivales",
+    "rival_hint": "Un rival supera tu tiempo en el reto de hoy.",
+    "shared": "Tus puzles compartidos",
+    "shared_hint": "Otros jugadores resuelven un puzle que compartiste.",
+    "group": "Puzles del grupo",
+    "group_hint": "Se publica un puzle nuevo en uno de tus grupos.",
+    "unavailable": "Las notificaciones aún no llegan a este dispositivo. Tus elecciones se guardan con tu cuenta y se aplicarán en cuanto sea posible.",
+    "settings_link": "Notificaciones",
+    "offer_title": "¿Un último aviso para tu racha?",
+    "offer_text": "Te avisamos cuando el reto de hoy sigue abierto unas horas antes del siguiente, nunca de noche. Puedes cambiarlo cuando quieras en la página de tu cuenta.",
+    "offer_yes": "Sí, avísame",
+    "offer_no": "No, gracias",
+    "push": {
+      "last_call_title": "Último aviso para tu racha",
+      "last_call_body": "El reto de hoy sigue abierto. Resuélvelo antes de que llegue el siguiente para mantener tu racha.",
+      "race_title": "{{ name }} abrió una carrera",
+      "race_body": "En {{ group }}: entra en la sala antes de que empiece.",
+      "rival_title": "{{ name }} superó tu tiempo",
+      "rival_body": "En el reto de hoy, en {{ time }}.",
+      "shared_one_title": "{{ name }} resolvió tu puzle",
+      "shared_one_body": "Mira su tiempo en la clasificación del puzle.",
+      "shared_many_title": "Tu puzle tiene éxito",
+      "shared_many_body": "Nuevas resoluciones: {{ count }}. La última, de {{ name }}.",
+      "group_title": "Nuevo puzle en {{ group }}",
+      "group_body": "{{ name }} publicó «{{ title }}».",
+      "group_body_untitled": "{{ name }} publicó un puzle nuevo."
+    }
   }
 }

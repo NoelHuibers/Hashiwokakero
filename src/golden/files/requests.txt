@@ -13,6 +13,7 @@
 /api/admin_resolve_report {"id":3,"outcome":"Renamed"}
 /api/admin_submissions {}
 /api/admin_unban_player {"id":9}
+/api/answer_notification_offer {"accept":true,"time_zone":"Asia/Tokyo"}
 /api/archived_daily {"day":20381}
 /api/block_player {"player":9,"on":true}
 /api/change_password {"current":"correct horse","new":"battery staple"}
@@ -58,6 +59,7 @@
 /api/load_group_river {"id":2}
 /api/load_group_week {"id":2,"monday":20377}
 /api/load_hall_of_fame {}
+/api/load_notification_prefs {}
 /api/load_player {"id":7}
 /api/load_puzzle_replay {"id":4}
 /api/load_race_replay {"id":6}
@@ -77,9 +79,11 @@
 /api/open_shared_race {"group":2,"code":"k7m2xq9a"}
 /api/password_reset_available {}
 /api/poll_group_race {"id":6,"progress":42,"puzzle":true}
+/api/poll_notifications {"device":3,"secret":"abababababababababababababababababababababababababababababababab"}
 /api/post_group_puzzle {"group":2,"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"title":"Spiral"}
 /api/puzzle_cnf {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]}}
 /api/register {"username":"noel","password":"correct horse"}
+/api/register_notification_device {"kind":"Web","endpoint":"https://push.example/abc","keys":"{\"p256dh\":\"BNc\",\"auth\":\"tBH\"}","locale":"de","time_zone":"Europe/Berlin"}
 /api/rematch_group_race {"id":6}
 /api/remove_member {"id":2,"member":9}
 /api/remove_recovery_email {"password":"correct horse","locale":"de"}
@@ -87,6 +91,7 @@
 /api/reset_password {"token":"abababababababababababababababababababababababababababababababab","password":"battery staple"}
 /api/rival_record {"player":9}
 /api/rotate_invite {"id":2}
+/api/save_notification_prefs {"prefs":{"enabled":true,"last_call":true,"race":false,"rival":true,"shared":false,"group":true,"offer_shown":true},"time_zone":"Europe/Berlin"}
 /api/seen_group_puzzle_kudos {"id":4}
 /api/send_message {"name":"Ada","email":"ada@example.com","message":"Hallo!","website":"","kind":"Bug","context":{"app":"1.1.0","platform":"android","os":"Android 15","browser":"WebView 141","language":"de","page":"/practice","daily":14,"player":7,"screen":"390×844 @3x","errors":["/practice E:database"]}}
 /api/set_hanko {"group":2,"target":9,"day":20381,"kind":"Cheers","on":true}
@@ -106,6 +111,7 @@
 /api/submit_shared_puzzle {"code":"k7m2xq9a","solve":{"bridges":[2,1],"time_ms":95000,"moves":3,"hints":0}}
 /api/todays_rivals {}
 /api/unread_hanko_counts {}
+/api/unregister_notification_device {"id":3,"secret":"abababababababababababababababababababababababababababababababab"}
 /api/update_admin_benchmark {"id":4,"action":"Accept"}
 /api/update_admin_submission {"id":12,"action":"Requeue"}
 /api/withdraw_group_puzzle {"id":4}

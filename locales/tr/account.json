@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Sorular ya da sorunlar mı?",
     "text": "Bir hata bildir, bir fikir öner ya da bize istediğini sor. Her mesajı okuyoruz."
+  },
+  "notifications": {
+    "title": "Bildirimler",
+    "text": "Hashi'nin sana neleri haber verdiği. Hesabınla kaydedilir, oynadığın her cihaz için geçerlidir.",
+    "master": "Bildirimler",
+    "master_hint": "Hepsini tek seferde aç ya da kapat.",
+    "last_call": "Serin için son çağrı",
+    "last_call_hint": "Bugünün bulmacası, bir sonrakinden yaklaşık üç saat önce hâlâ açıksa. Bu senin saatinle gece denk gelirse, önceki akşam saat 21:00'de.",
+    "race": "Yarışlar",
+    "race_hint": "Gruplarından birinde biri yarış açıyor.",
+    "rival": "Rakipler",
+    "rival_hint": "Bir rakibin günlük bulmacada senin süreni geçiyor.",
+    "shared": "Paylaştığın bulmacalar",
+    "shared_hint": "Oyuncular paylaştığın bir bulmacayı çözüyor.",
+    "group": "Grup bulmacaları",
+    "group_hint": "Gruplarından birinde yeni bir bulmaca paylaşılıyor.",
+    "unavailable": "Bildirimler bu cihaza henüz ulaşamıyor. Seçimlerin hesabınla kaydedildi, mümkün olur olmaz geçerli olacak.",
+    "settings_link": "Bildirimler",
+    "offer_title": "Serin için son çağrı ister misin?",
+    "offer_text": "Bugünün bulmacası bir sonrakinden birkaç saat önce hâlâ açıksa sana hatırlatırız, gece asla. Bunu istediğin zaman hesap sayfandan değiştirebilirsin.",
+    "offer_yes": "Evet, hatırlat",
+    "offer_no": "Hayır, teşekkürler",
+    "push": {
+      "last_call_title": "Serin için son çağrı",
+      "last_call_body": "Bugünün bulmacası hâlâ açık. Serini korumak için bir sonraki gelmeden çöz.",
+      "race_title": "{{ name }} bir yarış açtı",
+      "race_body": "{{ group }} grubunda: başlamadan lobiye katıl.",
+      "rival_title": "{{ name }} senin süreni geçti",
+      "rival_body": "Bugünün bulmacasında, {{ time }} ile.",
+      "shared_one_title": "{{ name }} bulmacanı çözdü",
+      "shared_one_body": "Süresine bulmacanın sıralamasından bak.",
+      "shared_many_title": "Bulmacan çözülüyor",
+      "shared_many_body": "Yeni çözenler: {{ count }}. Sonuncusu: {{ name }}.",
+      "group_title": "{{ group }} grubunda yeni bulmaca",
+      "group_body": "{{ name }} “{{ title }}” bulmacasını paylaştı.",
+      "group_body_untitled": "{{ name }} yeni bir bulmaca paylaştı."
+    }
   }
 }

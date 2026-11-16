@@ -428,6 +428,9 @@ struct Responses {
     shared_link: SharedLink,
     shared_page: SharedPuzzlePage,
     shared_submit: SharedSubmit,
+    notification_prefs: crate::model::NotificationPrefs,
+    device: crate::model::DeviceRegistration,
+    notifications: Vec<crate::model::PushMessage>,
 }
 
 fn shared_entry(rank: i64, user_id: i64, name: &str, hints: i64) -> SharedEntry {
@@ -888,6 +891,28 @@ fn responses() -> Responses {
             counted: true,
             user,
         },
+        notification_prefs: crate::model::NotificationPrefs {
+            enabled: true,
+            last_call: true,
+            race: true,
+            rival: false,
+            shared: true,
+            group: false,
+            offer_shown: true,
+        },
+        device: crate::model::DeviceRegistration {
+            id: 3,
+            secret: "ab".repeat(32),
+        },
+        notifications: vec![crate::model::PushMessage {
+            id: 12,
+            kind: "race".into(),
+            title: "Ada opened a race".into(),
+            body: "In Lunch club: join the lobby before it starts.".into(),
+            url: "https://hashi.rs/groups/1/races/7".into(),
+            tag: "race:group:1".into(),
+            expires_at: 1_760_000_900_000,
+        }],
     }
 }
 
@@ -1240,5 +1265,7 @@ fn stored_ids() {
     );
     lines.extend(FeedbackKind::ALL.map(|k| format!("feedback_kind {:?} {}", k, k.id())));
     lines.extend(FeedbackStatus::ALL.map(|s| format!("feedback_status {:?} {}", s, s.id())));
+    lines.extend(crate::model::NotifyKind::ALL.map(|k| format!("notify_kind {:?} {}", k, k.id())));
+    lines.extend(crate::model::DeviceKind::ALL.map(|k| format!("device_kind {:?} {}", k, k.id())));
     check("ids.txt", &lines.join("\n"), IDS);
 }

@@ -3,6 +3,7 @@ pub mod celebration;
 pub mod hanko;
 pub mod layout;
 pub mod leaderboard;
+pub mod notify_offer;
 pub mod paid_controls;
 pub mod record;
 pub mod rivals;

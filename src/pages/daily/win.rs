@@ -1,11 +1,12 @@
 //! The win card over the daily board right after this tab's submit: the time, the rank, the
-//! stamps the result earned and where to go next.
+//! stamps the result earned, the one-time offer of notifications and where to go next.
 
 use leptos::prelude::*;
 use leptos_router::components::A;
 
 use crate::components::celebration::Stamp;
 use crate::components::layout::use_localized;
+use crate::components::notify_offer::NotificationOffer;
 use crate::components::share::ShareBar;
 use crate::components::ui::button::{Button, ButtonVariant};
 use crate::components::ui::card::Card;
@@ -124,6 +125,7 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
                         let stamps = stamps();
                         (!stamps.is_empty()).then(|| view! { <NewStamps stamps /> })
                     }}
+                    <NotificationOffer />
                     <div class="flex w-full flex-wrap justify-center gap-2 pt-1">
                         <Button href=untrack(play)>{t!(i18n, common.nav.play)} " 遊ぶ"</Button>
                         <Button variant=ButtonVariant::Ghost on:click=move |_| daily.admired.set(true)>

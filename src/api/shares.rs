@@ -7,7 +7,7 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::{SharedLink, SharedPuzzlePage, SharedSolve, SharedSubmit};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, blocks, db, now_ms, shares};
+use crate::server::{auth, blocks, db, notify, now_ms, shares};
 
 /// Shares a puzzle as a link, for the current player (a guest is made if needed). `solve`: how
 /// they solved it on Play, their result on its board; `None` from the workshop. The server proves
@@ -47,6 +47,9 @@ pub async fn submit_shared_puzzle(
     let (page, counted) = shares::submit(&conn, &code, user.id, &solve, now_ms()).await?;
     if counted {
         shares::reached(page.sharer.as_ref().map(|s| s.user_id), user.id);
+        notify::spawn("shared", move |conn| async move {
+            notify::shared_solved_code(&conn, &code, now_ms()).await
+        });
     }
     Ok(SharedSubmit {
         page: blocks::hidden(&conn, Some(user.id), page).await?,

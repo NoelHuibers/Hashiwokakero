@@ -126,5 +126,42 @@
   "feedback": {
     "title": "Questions or problems?",
     "text": "Report a bug, suggest an idea or ask us anything. We read every message."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "text": "What Hashi tells you about. Saved with your account, for every device you play on.",
+    "master": "Notifications",
+    "master_hint": "All of them on or off at once.",
+    "last_call": "Streak last call",
+    "last_call_hint": "When today's daily is still open about three hours before the next one comes. If that's at night where you are, at 9 pm the evening before.",
+    "race": "Races",
+    "race_hint": "Someone in one of your groups opens a race.",
+    "rival": "Rivals",
+    "rival_hint": "A rival beats your time on the daily.",
+    "shared": "Your shared puzzles",
+    "shared_hint": "Players solve a puzzle you shared.",
+    "group": "Group puzzles",
+    "group_hint": "A new puzzle is posted in one of your groups.",
+    "unavailable": "Notifications can't reach this device yet. Your choices are saved with your account and apply as soon as they can.",
+    "settings_link": "Notifications",
+    "offer_title": "A last call for your streak?",
+    "offer_text": "We'll remind you when today's daily is still open a few hours before the next one, never at night. You can change this any time on your account page.",
+    "offer_yes": "Yes, remind me",
+    "offer_no": "No, thanks",
+    "push": {
+      "last_call_title": "Last call for your streak",
+      "last_call_body": "Today's daily is still open. Solve it before the next one comes to keep your streak.",
+      "race_title": "{{ name }} opened a race",
+      "race_body": "In {{ group }}: join the lobby before it starts.",
+      "rival_title": "{{ name }} beat your time",
+      "rival_body": "On today's daily, in {{ time }}.",
+      "shared_one_title": "{{ name }} solved your puzzle",
+      "shared_one_body": "See their time on its board.",
+      "shared_many_title": "Your puzzle is being solved",
+      "shared_many_body": "New solvers: {{ count }}. The latest: {{ name }}.",
+      "group_title": "New puzzle in {{ group }}",
+      "group_body": "{{ name }} posted “{{ title }}”.",
+      "group_body_untitled": "{{ name }} posted a new puzzle."
+    }
   }
 }

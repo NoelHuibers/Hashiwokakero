@@ -8,7 +8,7 @@ use leptos::server_fn::codec::Json;
 use super::HashiClient;
 use crate::model::{GroupRaces, MoveEvent, RaceView, ReplayData, SharedLink};
 #[cfg(feature = "ssr")]
-use crate::server::{auth, blocks, db, groups::race, now_ms, shares};
+use crate::server::{auth, blocks, db, groups::race, notify, now_ms, shares};
 
 #[cfg(feature = "ssr")]
 async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> {
@@ -24,7 +24,11 @@ async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> 
 #[server(input = Json, client = HashiClient)]
 pub async fn open_group_race(group: i64, difficulty: Difficulty) -> Result<i64, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    race::open(&conn, group, user.id, difficulty, now_ms()).await
+    let id = race::open(&conn, group, user.id, difficulty, now_ms()).await?;
+    notify::spawn("race", move |conn| async move {
+        notify::race_opened(&conn, id, now_ms()).await
+    });
+    Ok(id)
 }
 
 /// Opens a race in a group on the shared puzzle of the link `code` (`/p/<code>`), the player its
@@ -32,7 +36,11 @@ pub async fn open_group_race(group: i64, difficulty: Difficulty) -> Result<i64, 
 #[server(input = Json, client = HashiClient)]
 pub async fn open_shared_race(group: i64, code: String) -> Result<i64, ServerFnError> {
     let (conn, user) = signed_in().await?;
-    race::open_shared(&conn, group, user.id, &code, now_ms()).await
+    let id = race::open_shared(&conn, group, user.id, &code, now_ms()).await?;
+    notify::spawn("race", move |conn| async move {
+        notify::race_opened(&conn, id, now_ms()).await
+    });
+    Ok(id)
 }
 
 /// The races of a group page: the open one and the last ones.
