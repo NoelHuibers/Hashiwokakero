@@ -94,7 +94,7 @@ async function jobs(device: AndroidDevice) {
   const found = lines
     .map((l) => l.match(/JOB #?(?:(\S+):)?u\d+a\d+\/(\d+):/))
     .filter((m): m is RegExpMatchArray => m !== null)
-    .map(([, namespace, id]) => (namespace ? `-n ${namespace} ` : '') + `${PKG} ${id}`);
+    .map(([, namespace, id]) => `${namespace ? `-n ${namespace} ` : ''}${PKG} ${id}`);
   return [...new Set(found)];
 }
 
