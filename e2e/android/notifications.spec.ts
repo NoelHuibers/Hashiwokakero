@@ -148,12 +148,14 @@ const notifications = async (device: AndroidDevice) =>
     .filter((record) => record.includes(`pkg=${PKG} `));
 
 /**
- * Whether the app's alarm for the streak's last call (Notifications.kt) is set: a pending alarm's
- * `tag=` line in `dumpsys alarm`. The dump's statistics keep naming the alarm after it is
- * cancelled, without the `tag=`.
+ * Whether the app's alarm for the streak's last call (Notifications.kt) is set: a pending alarm,
+ * whose `tag=` is a line of its own in `dumpsys alarm`. The dump's history keeps naming the alarm
+ * after it is cancelled (`type=RTC_WAKEUP tag=…`).
  */
 const lastCallAlarm = async (device: AndroidDevice) =>
-  (await shell(device, 'dumpsys alarm')).includes('tag=*walarm*:rs.hashi.action.LAST_CALL');
+  (await shell(device, 'dumpsys alarm'))
+    .split('\n')
+    .some((l) => /^\s*tag=\*walarm\*:rs\.hashi\.action\.LAST_CALL\s*$/.test(l));
 
 const RACE = {
   id: 12,
@@ -221,16 +223,25 @@ test('the app asks the server itself, shows what it answers, and stops when it f
 
     // `null`: the server forgot the phone (the account deleted, say), the app stops asking
     // WorkManager skips a run of the periodic job before its period is up: a start again asks
-    // right away, with a one-time job
+    // right away, with a one-time job. It reaches JobScheduler a moment after the command answered,
+    // and the periodic job is handed over again too: the app's jobs run until the server is asked
     server.answers.poll_notifications = null;
-    const periodic = await jobs(device);
+    const asked = server.calls.length;
     await invoke(page, 'plugin:hashi|notify_start', {
       server: server.url,
       app: APP,
       device: DEVICE,
       secret: SECRET,
     });
-    await runJobs(device, await newJobs(device, periodic));
+    await expect
+      .poll(
+        async () => {
+          await runJobs(device);
+          return server.calls.length;
+        },
+        { message: 'the poll after the start' },
+      )
+      .toBeGreaterThan(asked);
     await expect
       .poll(() => invoke(page, 'plugin:hashi|notify_state'), { message: 'forgotten' })
       .toEqual({ answer: { granted: true } });
