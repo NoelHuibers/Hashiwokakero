@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notifications' small icon (Notifications.kt): two islands (rings) and a double bridge, in one
+     colour, as Android wants it for the status bar -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M0.75,12a4.25,4.25 0 1,0 8.5,0a4.25,4.25 0 1,0 -8.5,0z M2.75,12a2.25,2.25 0 1,0 4.5,0a2.25,2.25 0 1,0 -4.5,0z M14.75,12a4.25,4.25 0 1,0 8.5,0a4.25,4.25 0 1,0 -8.5,0z M16.75,12a2.25,2.25 0 1,0 4.5,0a2.25,2.25 0 1,0 -4.5,0z M9,9.5h6v1.5h-6z M9,13h6v1.5h-6z" />
+</vector>

@@ -143,6 +143,7 @@
     "group": "Câu đố nhóm",
     "group_hint": "Có câu đố mới được đăng trong một nhóm của bạn.",
     "unavailable": "Thông báo chưa thể đến thiết bị này. Lựa chọn của bạn đã được lưu cùng tài khoản và sẽ áp dụng ngay khi có thể.",
+    "refused": "Điện thoại này không cho Hashi hiển thị thông báo. Hãy cho phép trong cài đặt Android của Hashi, rồi bật lại ở đây.",
     "this_browser": "Trình duyệt này",
     "browser_on": "Đang nhận thông báo.",
     "browser_off": "Không nhận thông báo.",

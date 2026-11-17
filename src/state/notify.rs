@@ -1,6 +1,7 @@
 //! Notifications on this device: whether they can reach it at all, and its time zone for the
 //! streak's last call. The settings themselves are the account's (`server::notify`).
 
+use crate::i18n::Locale;
 use crate::model::DeviceKind;
 
 /// How notifications would reach this device.
@@ -21,11 +22,13 @@ pub fn device_kind(app_platform: Option<&str>) -> Option<DeviceKind> {
 ///
 /// Each one flips with its own change (docs/notifications.md): Web Push where the site has its
 /// key and the browser can take them (`state::web_push`, never in the apps), APNs with the iOS
-/// app's push registration, the Android app with its background worker.
+/// app's push registration. The Android app asks the server itself, in the background
+/// (`Notifications.kt` in `app/src-tauri/gen/android`).
 pub fn delivers(kind: DeviceKind) -> bool {
     match kind {
         DeviceKind::Web => super::web_push::here() == super::web_push::Support::Ready,
-        DeviceKind::Apns | DeviceKind::Android => false,
+        DeviceKind::Android => true,
+        DeviceKind::Apns => false,
     }
 }
 
@@ -52,6 +55,101 @@ pub fn time_zone() -> Option<String> {
     }
 }
 
+/// Whether this is the Android app, which asks for leave to show notifications and polls the
+/// server itself.
+#[cfg(any(feature = "csr", test))]
+fn android() -> bool {
+    device_kind(crate::api::app_identity().map(|(platform, _)| platform))
+        == Some(DeviceKind::Android)
+}
+
+/// Asks for leave to show notifications on this device, where it needs it.
+///
+/// In the Android app (13 and newer ask the player, on a tap that turns them on). `false` when
+/// refused: the page then says where to allow them.
+#[cfg_attr(
+    feature = "csr",
+    expect(
+        clippy::future_not_send,
+        reason = "the app's plugin, on the page's one thread"
+    )
+)]
+pub async fn allowed_here() -> bool {
+    #[cfg(feature = "csr")]
+    if android() {
+        return crate::api::native::notify_permission().await;
+    }
+    true
+}
+
+/// Whether this device refuses notifications although they are on (`enabled`): the Android
+/// app without Android's leave, which the player took back in its settings or never gave.
+#[cfg_attr(
+    feature = "csr",
+    expect(clippy::future_not_send, reason = "as `allowed_here`")
+)]
+pub async fn refused_here(enabled: bool) -> bool {
+    #[cfg(feature = "csr")]
+    if enabled && android() {
+        return crate::api::native::notify_state()
+            .await
+            .is_ok_and(|state| !state.granted);
+    }
+    let _ = enabled;
+    false
+}
+
+/// Makes this device get the player's notifications while they are on, or no more.
+///
+/// `enabled`: the saved master switch. On, the Android app registers once with the server, in the
+/// page's `locale`, and hands the phone's id and secret to its background poll; off, it stops the
+/// poll and has the server forget the phone. Only with Android's leave: without it, nothing
+/// changes.
+#[cfg_attr(
+    feature = "csr",
+    expect(clippy::future_not_send, reason = "as `allowed_here`")
+)]
+pub async fn follow(enabled: bool, locale: Locale) -> Result<(), leptos::prelude::ServerFnError> {
+    #[cfg(feature = "csr")]
+    if android() {
+        use leptos_i18n::Locale as _;
+
+        use crate::api::native;
+        let state = native::notify_state().await?;
+        if !enabled {
+            if state.device.is_some() {
+                native::notify_stop().await?;
+            }
+        } else if state.device.is_none() && state.granted {
+            let phone = crate::api::register_notification_device(
+                DeviceKind::Android,
+                None,
+                None,
+                locale.as_str().to_string(),
+                time_zone(),
+            )
+            .await?;
+            native::notify_start(&phone).await?;
+        }
+        return Ok(());
+    }
+    let _ = (enabled, locale);
+    Ok(())
+}
+
+/// Signing out: this device gets no more notifications of the account (the Android app stops
+/// its poll and has the server forget the phone).
+pub fn forget_here() {
+    #[cfg(feature = "csr")]
+    if android() {
+        leptos::task::spawn_local(async {
+            if let Err(e) = crate::api::native::notify_stop().await {
+                leptos::logging::warn!("could not stop the notifications: {e}");
+            }
+        });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -65,12 +163,15 @@ mod tests {
         assert_eq!(device_kind(Some("web")), None);
     }
 
-    /// Nothing delivers yet: no offer anywhere, and the settings say so.
+    /// The Android app delivers; Web Push only in a browser that takes it (not in these tests),
+    /// APNs not yet: no offer there, and the settings say so.
     #[test]
-    fn no_way_of_delivery_is_built_yet() {
-        for kind in DeviceKind::ALL {
+    fn the_android_app_delivers() {
+        assert!(delivers(DeviceKind::Android));
+        for kind in [DeviceKind::Web, DeviceKind::Apns] {
             assert!(!delivers(kind), "{kind:?}");
         }
         assert!(!can_deliver());
+        assert!(!android());
     }
 }

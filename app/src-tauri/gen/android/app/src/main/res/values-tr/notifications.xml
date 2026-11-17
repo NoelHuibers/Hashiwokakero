@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Serin için son çağrı</string>
+    <string name="notify_last_call_hint">Bugünün bulmacası, bir sonrakinden yaklaşık üç saat önce hâlâ açıksa. Bu senin saatinle gece denk gelirse, önceki akşam saat 21:00\'de.</string>
+    <string name="notify_race">Yarışlar</string>
+    <string name="notify_race_hint">Gruplarından birinde biri yarış açıyor.</string>
+    <string name="notify_rival">Rakipler</string>
+    <string name="notify_rival_hint">Bir rakibin günlük bulmacada senin süreni geçiyor.</string>
+    <string name="notify_shared">Paylaştığın bulmacalar</string>
+    <string name="notify_shared_hint">Oyuncular paylaştığın bir bulmacayı çözüyor.</string>
+    <string name="notify_group">Grup bulmacaları</string>
+    <string name="notify_group_hint">Gruplarından birinde yeni bir bulmaca paylaşılıyor.</string>
+    <string name="notify_other">Bildirimler</string>
+</resources>

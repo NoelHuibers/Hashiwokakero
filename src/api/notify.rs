@@ -5,7 +5,7 @@ use leptos::prelude::*;
 use leptos::server_fn::codec::Json;
 
 use super::HashiClient;
-use crate::model::{DeviceKind, DeviceRegistration, NotificationPrefs, PushMessage};
+use crate::model::{DeviceKind, DeviceRegistration, NotificationPoll, NotificationPrefs};
 #[cfg(feature = "ssr")]
 use crate::server::{auth, db, notify, now_ms};
 
@@ -84,12 +84,13 @@ pub async fn unregister_notification_device(id: i64, secret: String) -> Result<(
 }
 
 /// The Android app asks for its new notifications, by its id and secret (in the background,
-/// without a session). `None`: the device isn't registered (any more).
+/// without a session, from Kotlin: `Notifications.kt` in `app/src-tauri/gen/android`), and when
+/// to ask again for the streak's last call. `None`: the device isn't registered (any more).
 #[server(input = Json, client = HashiClient)]
 pub async fn poll_notifications(
     device: i64,
     secret: String,
-) -> Result<Option<Vec<PushMessage>>, ServerFnError> {
+) -> Result<Option<NotificationPoll>, ServerFnError> {
     let conn = db::conn()?;
     notify::poll(&conn, device, &secret, now_ms()).await
 }

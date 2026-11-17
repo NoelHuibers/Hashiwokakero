@@ -143,6 +143,7 @@
     "group": "小组谜题",
     "group_hint": "你的某个小组发布了新谜题。",
     "unavailable": "通知暂时还无法送达这台设备。你的选择已保存在账号中，一旦可以就会生效。",
+    "refused": "这台手机不允许 Hashi 显示通知。请在 Android 设置中允许 Hashi 的通知，然后在这里重新开启。",
     "this_browser": "此浏览器",
     "browser_on": "接收通知。",
     "browser_off": "不接收通知。",

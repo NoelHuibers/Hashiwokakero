@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">النداء الأخير لسلسلتك</string>
+    <string name="notify_last_call_hint">عندما يكون لغز اليوم ما زال مفتوحًا قبل اللغز التالي بنحو ثلاث ساعات. وإن كان ذلك ليلًا عندك، ففي التاسعة مساءً من الليلة السابقة.</string>
+    <string name="notify_race">السباقات</string>
+    <string name="notify_race_hint">شخص في إحدى مجموعاتك يفتح سباقًا.</string>
+    <string name="notify_rival">المنافسون</string>
+    <string name="notify_rival_hint">منافس يتفوق على وقتك في لغز اليوم.</string>
+    <string name="notify_shared">ألغازك المشتركة</string>
+    <string name="notify_shared_hint">لاعبون يحلون لغزًا شاركته.</string>
+    <string name="notify_group">ألغاز المجموعة</string>
+    <string name="notify_group_hint">نُشر لغز جديد في إحدى مجموعاتك.</string>
+    <string name="notify_other">الإشعارات</string>
+</resources>

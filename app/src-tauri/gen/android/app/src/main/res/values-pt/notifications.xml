@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Última chamada para sua sequência</string>
+    <string name="notify_last_call_hint">Quando o desafio de hoje ainda está aberto umas três horas antes do próximo. Se for de madrugada onde você está, às 21h da noite anterior.</string>
+    <string name="notify_race">Corridas</string>
+    <string name="notify_race_hint">Alguém em um dos seus grupos abre uma corrida.</string>
+    <string name="notify_rival">Rivais</string>
+    <string name="notify_rival_hint">Um rival bate seu tempo no desafio de hoje.</string>
+    <string name="notify_shared">Seus puzzles compartilhados</string>
+    <string name="notify_shared_hint">Outros jogadores resolvem um puzzle que você compartilhou.</string>
+    <string name="notify_group">Puzzles do grupo</string>
+    <string name="notify_group_hint">Um puzzle novo é publicado em um dos seus grupos.</string>
+    <string name="notify_other">Notificações</string>
+</resources>

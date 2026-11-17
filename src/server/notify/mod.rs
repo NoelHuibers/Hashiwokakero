@@ -37,8 +37,8 @@ use super::db::db_err;
 use super::now_ms;
 use crate::i18n::Locale;
 use crate::model::{
-    ApiError, DeviceKind, DeviceRegistration, LOBBY_MS, MS_PER_DAY, NotificationPrefs, NotifyKind,
-    PushMessage, day_of,
+    ApiError, DeviceKind, DeviceRegistration, LOBBY_MS, MS_PER_DAY, NotificationPoll,
+    NotificationPrefs, NotifyKind, PushMessage, day_of,
 };
 pub use render::{Args, locale_of};
 
@@ -749,12 +749,31 @@ pub async fn flush_shared(conn: &Connection, now: i64) -> Result<u64, ServerFnEr
     Ok(queued)
 }
 
+/// SQL: whether the player `p.user_id` can still get the last call of the day `?1` (its key `?2`):
+/// a streak (yesterday's daily solved and ranked), today's daily not done (solved or the solution
+/// shown) and none queued for it yet.
+const LAST_CALL_OPEN: &str = "EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = p.user_id
+        AND a.day = ?1 - 1 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL)
+    AND NOT EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = p.user_id AND a.day = ?1
+        AND (a.finished_at IS NOT NULL OR a.revealed != 0))
+    AND NOT EXISTS (SELECT 1 FROM notification_outbox o WHERE o.user_id = p.user_id
+        AND o.kind = 'last_call' AND o.collapse_key = ?2)";
+
 /// Queues the last calls that are due.
 ///
 /// For the players who want them, with a streak (yesterday's daily solved and ranked) and today's
 /// daily not done yet, once [`timing::last_call_at`] came in their time zone. Once per player and
 /// daily.
 pub async fn queue_last_calls(conn: &Connection, now: i64) -> Result<u64, ServerFnError> {
+    queue_last_calls_of(conn, None, now).await
+}
+
+/// [`queue_last_calls`], of one player only with `only`.
+async fn queue_last_calls_of(
+    conn: &Connection,
+    only: Option<i64>,
+    now: i64,
+) -> Result<u64, ServerFnError> {
     let day = day_of(now);
     let change = (day + 1) * MS_PER_DAY;
     if now >= change - LAST_CALL_UNTIL_MS {
@@ -762,16 +781,13 @@ pub async fn queue_last_calls(conn: &Connection, now: i64) -> Result<u64, Server
     }
     let mut rows = conn
         .query(
-            "SELECT p.user_id, p.time_zone FROM notification_prefs p
-             WHERE p.enabled = 1 AND p.last_call = 1
-               AND EXISTS (SELECT 1 FROM notification_devices d WHERE d.user_id = p.user_id)
-               AND EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = p.user_id AND a.day = ?1 - 1
-                    AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL)
-               AND NOT EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = p.user_id AND a.day = ?1
-                    AND (a.finished_at IS NOT NULL OR a.revealed != 0))
-               AND NOT EXISTS (SELECT 1 FROM notification_outbox o WHERE o.user_id = p.user_id
-                    AND o.kind = 'last_call' AND o.collapse_key = ?2)",
-            params![day, day.to_string()],
+            &format!(
+                "SELECT p.user_id, p.time_zone FROM notification_prefs p
+                 WHERE p.enabled = 1 AND p.last_call = 1 AND (?3 IS NULL OR p.user_id = ?3)
+                   AND EXISTS (SELECT 1 FROM notification_devices d WHERE d.user_id = p.user_id)
+                   AND {LAST_CALL_OPEN}"
+            ),
+            params![day, day.to_string(), only],
         )
         .await
         .map_err(db_err)?;
@@ -795,6 +811,43 @@ pub async fn queue_last_calls(conn: &Connection, now: i64) -> Result<u64, Server
         expires_at: change,
     };
     enqueue(conn, &note, Recipients::Users(&due), now).await
+}
+
+/// When a player's next last call would be due, `None` while they don't want last calls.
+///
+/// Today's while it can still come, else tomorrow's (which comes only if today's daily is solved
+/// by then; the poll at that time asks the database again).
+///
+/// For the Android app, which asks for its notifications every 15 minutes at best, and much less
+/// often while the phone sleeps: it asks once more around this moment ([`poll`]).
+pub async fn next_last_call(
+    conn: &Connection,
+    user: i64,
+    now: i64,
+) -> Result<Option<i64>, ServerFnError> {
+    let day = day_of(now);
+    let mut rows = conn
+        .query(
+            &format!(
+                "SELECT p.time_zone, {LAST_CALL_OPEN} FROM notification_prefs p
+                 WHERE p.user_id = ?3 AND p.enabled = 1 AND p.last_call = 1"
+            ),
+            params![day, day.to_string(), user],
+        )
+        .await
+        .map_err(db_err)?;
+    let Some(row) = rows.next().await.map_err(db_err)? else {
+        return Ok(None);
+    };
+    let zone: Option<String> = row.get(0).map_err(db_err)?;
+    let open = row.get::<i64>(1).map_err(db_err)? != 0;
+    let today = timing::last_call_at(day, zone.as_deref());
+    // Past today's moment, its last call is queued (by the job or the poll) or not to come
+    Ok(Some(if open && now < today {
+        today
+    } else {
+        timing::last_call_at(day + 1, zone.as_deref())
+    }))
 }
 
 // --- Delivery ---
@@ -874,20 +927,29 @@ pub async fn take(
     Ok(if claimed == 1 { messages } else { Vec::new() })
 }
 
-/// What the Android app gets when it asks: its new notifications.
+/// What the Android app gets when it asks: its new notifications, and when to ask again for the
+/// streak's last call ([`next_last_call`]).
 ///
 /// With the device's secret instead of a session (the app asks in the background). `None` for a
-/// device that isn't registered (any more): the app registers again.
+/// device that isn't registered (any more): the app forgets it. A last call that is due is
+/// queued here if the job hasn't yet, so the app's poll at that moment gets it, not the one
+/// after the job's next round.
 pub async fn poll(
     conn: &Connection,
     id: i64,
     secret: &str,
     now: i64,
-) -> Result<Option<Vec<PushMessage>>, ServerFnError> {
+) -> Result<Option<NotificationPoll>, ServerFnError> {
     let Some(device) = device(conn, id, secret).await? else {
         return Ok(None);
     };
-    take(conn, &device, now).await.map(Some)
+    queue_last_calls_of(conn, Some(device.user_id), now).await?;
+    let messages = take(conn, &device, now).await?;
+    let next_last_call = next_last_call(conn, device.user_id, now).await?;
+    Ok(Some(NotificationPoll {
+        messages,
+        next_last_call,
+    }))
 }
 
 /// How a send went.

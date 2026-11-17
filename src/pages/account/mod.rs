@@ -75,6 +75,8 @@ pub fn AccountPage() -> impl IntoView {
                 Ok(()) => {
                     auth.user.set(None);
                     stats.set(None);
+                    // No more notifications of the account on this device
+                    crate::state::notify::forget_here();
                     toast(ToastKind::Info, |l| {
                         format!("{} またね!", td_string!(l, account.signed_out))
                     });

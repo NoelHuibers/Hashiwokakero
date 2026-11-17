@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Ostatnie wezwanie dla serii</string>
+    <string name="notify_last_call_hint">Gdy dzisiejszy most jest nadal otwarty mniej więcej trzy godziny przed następnym. Jeśli u ciebie wypada to w nocy, o 21:00 poprzedniego wieczoru.</string>
+    <string name="notify_race">Wyścigi</string>
+    <string name="notify_race_hint">Ktoś w jednej z twoich grup otwiera wyścig.</string>
+    <string name="notify_rival">Rywale</string>
+    <string name="notify_rival_hint">Rywal bije twój czas w moście dnia.</string>
+    <string name="notify_shared">Twoje udostępnione łamigłówki</string>
+    <string name="notify_shared_hint">Gracze rozwiązują łamigłówkę udostępnioną przez ciebie.</string>
+    <string name="notify_group">Łamigłówki grupy</string>
+    <string name="notify_group_hint">W jednej z twoich grup pojawia się nowa łamigłówka.</string>
+    <string name="notify_other">Powiadomienia</string>
+</resources>

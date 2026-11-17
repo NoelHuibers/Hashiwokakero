@@ -441,8 +441,125 @@ async fn a_last_call_for_a_daily_done_since_never_goes_out() {
     let got = poll(&conn, phone.id, &phone.secret, at(day, 21.1))
         .await
         .unwrap()
-        .unwrap();
+        .unwrap()
+        .messages;
     assert_eq!(got, []);
+}
+
+/// The Android app asks again when the last call is due (`next_last_call`), and gets it then,
+/// without waiting for the job.
+#[tokio::test]
+async fn the_poll_says_when_the_last_call_is_due_and_brings_it_then() {
+    let conn = db("poll-last-call").await;
+    let day = day();
+    let tokyo = player(&conn, "tokyo").await;
+    let phone = wants_all(&conn, tokyo, Some("Asia/Tokyo")).await;
+    solved(&conn, tokyo, day - 1, 60_000).await;
+    let ask = |now: i64| {
+        let conn = &conn;
+        let phone = &phone;
+        async move {
+            poll(conn, phone.id, &phone.secret, now)
+                .await
+                .unwrap()
+                .unwrap()
+        }
+    };
+    // Tokyo's last call: 21:00 local, 12:00 UTC
+    let morning = ask(at(day, 3.0)).await;
+    assert_eq!(morning.messages, []);
+    assert_eq!(morning.next_last_call, Some(at(day, 12.0)));
+    // Asked at that moment: there, before the job ran
+    let due = ask(at(day, 12.0)).await;
+    assert_eq!(
+        due.messages
+            .iter()
+            .map(|m| m.kind.as_str())
+            .collect::<Vec<_>>(),
+        ["last_call"]
+    );
+    assert_eq!(due.messages[0].tag, format!("last_call:{day}"));
+    // Then tomorrow's, once
+    assert_eq!(due.next_last_call, Some(at(day + 1, 12.0)));
+    assert_eq!(queue_last_calls(&conn, at(day, 12.1)).await.unwrap(), 0);
+    let later = ask(at(day, 12.5)).await;
+    assert_eq!(later.messages, []);
+    assert_eq!(later.next_last_call, Some(at(day + 1, 12.0)));
+}
+
+#[tokio::test]
+async fn the_next_last_call_is_tomorrows_once_today_has_none() {
+    let conn = db("next-last-call").await;
+    let day = day();
+    let morning = at(day, 3.0);
+    let done = player(&conn, "done").await;
+    let fresh = player(&conn, "fresh").await;
+    let off = player(&conn, "off").await;
+    let nothing = player(&conn, "nothing").await;
+    for user in [done, fresh, off] {
+        wants_all(&conn, user, None).await;
+    }
+    solved(&conn, done, day - 1, 60_000).await;
+    solved(&conn, done, day, 60_000).await;
+    // UTC: 21:00
+    assert_eq!(
+        next_last_call(&conn, done, morning).await.unwrap(),
+        Some(at(day + 1, 21.0))
+    );
+    // No streak today, maybe one tomorrow
+    assert_eq!(
+        next_last_call(&conn, fresh, morning).await.unwrap(),
+        Some(at(day + 1, 21.0))
+    );
+    // With a streak, today's; past it, tomorrow's
+    solved(&conn, fresh, day - 1, 60_000).await;
+    assert_eq!(
+        next_last_call(&conn, fresh, morning).await.unwrap(),
+        Some(at(day, 21.0))
+    );
+    assert_eq!(
+        next_last_call(&conn, fresh, at(day, 23.9)).await.unwrap(),
+        Some(at(day + 1, 21.0))
+    );
+    // Not wanted: the last call off, everything off, never chosen
+    let all = prefs(&conn, off).await.unwrap();
+    save_prefs(
+        &conn,
+        off,
+        all.with_kind(NotifyKind::LastCall, false),
+        None,
+        0,
+    )
+    .await
+    .unwrap();
+    assert_eq!(next_last_call(&conn, off, morning).await.unwrap(), None);
+    save_prefs(&conn, off, all.with_master(false), None, 0)
+        .await
+        .unwrap();
+    assert_eq!(next_last_call(&conn, off, morning).await.unwrap(), None);
+    assert_eq!(next_last_call(&conn, nothing, morning).await.unwrap(), None);
+}
+
+/// The poll queues only its own player's last call: the others' stay the job's.
+#[tokio::test]
+async fn the_poll_queues_only_its_players_last_call() {
+    let conn = db("poll-own-last-call").await;
+    let day = day();
+    let noel = player(&conn, "noel").await;
+    let ada = player(&conn, "ada").await;
+    let phone = wants_all(&conn, noel, None).await;
+    wants_all(&conn, ada, None).await;
+    for user in [noel, ada] {
+        solved(&conn, user, day - 1, 60_000).await;
+    }
+    let got = poll(&conn, phone.id, &phone.secret, at(day, 21.0))
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(got.messages.len(), 1);
+    assert_eq!(kinds(&conn, ada).await, Vec::<String>::new());
+    assert_eq!(queue_last_calls(&conn, at(day, 21.0)).await.unwrap(), 1);
+    assert_eq!(kinds(&conn, ada).await, ["last_call"]);
 }
 
 // --- Switches, blocks and limits ---
@@ -516,7 +633,8 @@ async fn only_players_who_turned_the_kind_on_and_have_a_device_get_it() {
         poll(&conn, phone.id, &phone.secret, now)
             .await
             .unwrap()
-            .unwrap(),
+            .unwrap()
+            .messages,
         []
     );
 }
@@ -568,7 +686,8 @@ async fn nothing_comes_from_a_blocked_or_banned_player() {
         poll(&conn, phone.id, &phone.secret, now)
             .await
             .unwrap()
-            .unwrap(),
+            .unwrap()
+            .messages,
         []
     );
 }
@@ -673,7 +792,8 @@ async fn a_race_is_told_once_an_hour_per_group_and_expires_with_its_lobby() {
         poll(&conn, phone.id, &phone.secret, now + LOBBY_MS)
             .await
             .unwrap()
-            .unwrap(),
+            .unwrap()
+            .messages,
         []
     );
 }
@@ -855,7 +975,8 @@ async fn a_device_gets_each_notification_once_in_its_language() {
     let got = poll(&conn, first.id, &first.secret, now)
         .await
         .unwrap()
-        .unwrap();
+        .unwrap()
+        .messages;
     assert_eq!(got.len(), 1);
     assert_eq!(got[0].kind, "race");
     assert_eq!(got[0].title, "host opened a race");
@@ -870,13 +991,15 @@ async fn a_device_gets_each_notification_once_in_its_language() {
         poll(&conn, first.id, &first.secret, now)
             .await
             .unwrap()
-            .unwrap(),
+            .unwrap()
+            .messages,
         []
     );
     let got = poll(&conn, german.id, &german.secret, now)
         .await
         .unwrap()
-        .unwrap();
+        .unwrap()
+        .messages;
     assert_eq!(got[0].title, "host hat ein Rennen gestartet");
     assert_eq!(
         got[0].url,
@@ -962,7 +1085,8 @@ async fn channels_push_to_their_devices_once_and_forget_the_gone_ones() {
     let got = poll(&conn, android.id, &android.secret, now)
         .await
         .unwrap()
-        .unwrap();
+        .unwrap()
+        .messages;
     assert_eq!(got.len(), 1);
     // Web Push, with the keys the tests run with (`router::tests::env_var`)
     let kinds: Vec<DeviceKind> = channels().iter().map(|c| c.kind()).collect();

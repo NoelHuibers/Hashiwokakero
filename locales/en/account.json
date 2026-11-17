@@ -143,6 +143,7 @@
     "group": "Group puzzles",
     "group_hint": "A new puzzle is posted in one of your groups.",
     "unavailable": "Notifications can't reach this device yet. Your choices are saved with your account and apply as soon as they can.",
+    "refused": "This phone doesn't let Hashi show notifications. Allow them in Android's settings for Hashi, then turn them on here again.",
     "this_browser": "This browser",
     "browser_on": "Gets notifications.",
     "browser_off": "Gets no notifications.",

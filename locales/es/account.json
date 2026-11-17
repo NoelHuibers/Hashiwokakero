@@ -143,6 +143,7 @@
     "group": "Puzles del grupo",
     "group_hint": "Se publica un puzle nuevo en uno de tus grupos.",
     "unavailable": "Las notificaciones aún no llegan a este dispositivo. Tus elecciones se guardan con tu cuenta y se aplicarán en cuanto sea posible.",
+    "refused": "Este teléfono no deja que Hashi muestre notificaciones. Permítelas en los ajustes de Android para Hashi y vuelve a activarlas aquí.",
     "this_browser": "Este navegador",
     "browser_on": "Recibe notificaciones.",
     "browser_off": "No recibe notificaciones.",

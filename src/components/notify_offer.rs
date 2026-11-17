@@ -3,7 +3,8 @@
 //! Only where notifications can reach this device (`state::notify::can_deliver`), once per
 //! account, and only to a player who hasn't turned them on yet (`model::should_offer`). In a
 //! browser, yes turns them on in this browser first (`state::web_push`): if the player blocks
-//! them there, the offer says how to allow them instead.
+//! them there, the offer says how to allow them instead. In the Android app, yes asks Android for
+//! leave first, then registers the phone (`state::notify::allowed_here`, `follow`).
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -12,7 +13,7 @@ use crate::api::{answer_notification_offer, load_notification_prefs};
 use crate::components::ui::button::{Button, ButtonSize, ButtonVariant};
 use crate::i18n::{t, td_string, use_i18n};
 use crate::model::{NotificationPrefs, should_offer};
-use crate::state::notify::{can_deliver, time_zone};
+use crate::state::notify::{allowed_here, can_deliver, follow, time_zone};
 use crate::state::web_push::{self, Outcome, Support};
 use crate::state::{ToastKind, Toasts};
 
@@ -37,6 +38,8 @@ pub fn NotificationOffer() -> impl IntoView {
         });
     }
     let blocked = RwSignal::new(false);
+    // The Android app without Android's leave: how to allow them there
+    let refused = RwSignal::new(false);
     let busy = RwSignal::new(false);
     let toasts = use_context::<Toasts>();
     // The offer may be gone by the time the browser answers: what it did still counts
@@ -68,9 +71,17 @@ pub fn NotificationOffer() -> impl IntoView {
                         return;
                     }
                 }
+            } else if !allowed_here().await {
+                let _ = busy.try_set(false);
+                let _ = refused.try_set(true);
+                return;
             }
             let _ = open.try_set(false);
-            if let Err(e) = answer_notification_offer(true, time_zone()).await
+            let saved = match answer_notification_offer(true, time_zone()).await {
+                Ok(saved) => follow(saved.enabled, locale).await,
+                Err(e) => Err(e),
+            };
+            if let Err(e) = saved
                 && let Some(toasts) = toasts
             {
                 toasts.push_error(e);
@@ -84,12 +95,23 @@ pub fn NotificationOffer() -> impl IntoView {
                 <p class="font-bold">{t!(i18n, account.notifications.offer_title)}</p>
                 // Blocked: how to allow them, and yes tries again
                 <Show
-                    when=move || blocked.get()
+                    when=move || blocked.get() || refused.get()
                     fallback=move || view! { <p class="text-muted-foreground">{t!(i18n, account.notifications.offer_text)}</p> }
                 >
-                    <p class="text-muted-foreground" role="status" data-testid="notifications-blocked">
-                        {t!(i18n, account.notifications.blocked)}
-                    </p>
+                    <Show
+                        when=move || refused.get()
+                        fallback=move || {
+                            view! {
+                                <p class="text-muted-foreground" role="status" data-testid="notifications-blocked">
+                                    {t!(i18n, account.notifications.blocked)}
+                                </p>
+                            }
+                        }
+                    >
+                        <p class="text-muted-foreground" role="status" data-testid="notifications-refused">
+                            {t!(i18n, account.notifications.refused)}
+                        </p>
+                    </Show>
                 </Show>
                 <div class="flex flex-wrap justify-center gap-2">
                     <Button size=ButtonSize::Sm attr:disabled=move || busy.get() on:click=accept>

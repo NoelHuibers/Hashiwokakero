@@ -43,6 +43,8 @@ pub(super) fn DeleteAccount(stats: RwSignal<Option<UserStats>>) -> impl IntoView
                     crate::state::web_push::unsubscribe().await;
                     auth.user.set(None);
                     stats.set(None);
+                    // The server forgot the phone already, the app stops asking
+                    crate::state::notify::forget_here();
                     toast(ToastKind::Info, |l| {
                         format!("{} さようなら", td_string!(l, account.delete.done))
                     });

@@ -5,7 +5,8 @@
 //! The settings are the account's, delivery is per device: in a browser that can get them
 //! (`state::web_push`), turning them on turns them on here too (the browser asks for permission
 //! first; without it the switch goes back), turning them off here as well, and a row says
-//! whether this browser gets them, with a button for it.
+//! whether this browser gets them, with a button for it. In the Android app, turning them on asks
+//! Android for leave first, then the phone registers (`state::notify::allowed_here`, `follow`).
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -16,7 +17,7 @@ use crate::components::ui::card::{Card, CardContent, CardDescription, CardHeader
 use crate::components::ui::switch::Switch;
 use crate::i18n::{Locale, t, td_string, use_i18n};
 use crate::model::{NotificationPrefs, NotifyKind};
-use crate::state::notify::{can_deliver, time_zone};
+use crate::state::notify::{allowed_here, can_deliver, follow, refused_here, time_zone};
 use crate::state::web_push::{self, Outcome, Support};
 use crate::state::{ToastKind, Toasts, error_toast};
 
@@ -57,6 +58,8 @@ pub(super) fn NotificationSettings() -> impl IntoView {
     let prefs = RwSignal::new(None::<NotificationPrefs>);
     // What the server has: a failed save goes back to it
     let confirmed = StoredValue::new(None::<NotificationPrefs>);
+    // The Android app without Android's leave
+    let refused = RwSignal::new(false);
     Effect::new(move |first: Option<()>| {
         if first.is_none() {
             spawn_local(async move {
@@ -64,6 +67,14 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                     Ok(loaded) => {
                         confirmed.set_value(loaded);
                         prefs.set(loaded);
+                        // The Android app as the settings want it: turned on elsewhere, off
+                        // elsewhere
+                        if let Some(p) = loaded {
+                            let _ = refused.try_set(refused_here(p.enabled).await);
+                            if let Err(e) = follow(p.enabled, i18n.get_locale_untracked()).await {
+                                leptos::logging::warn!("notifications on this device: {e}");
+                            }
+                        }
                     }
                     Err(e) => {
                         leptos::logging::warn!("could not load the notification settings: {e}");
@@ -96,6 +107,9 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                             continue;
                         }
                         prefs.set(Some(stored));
+                        if let Err(e) = follow(stored.enabled, i18n.get_locale_untracked()).await {
+                            error_toast(e);
+                        }
                     }
                     Err(e) => {
                         next_save.set_value(None);
@@ -172,6 +186,20 @@ pub(super) fn NotificationSettings() -> impl IntoView {
             }));
             return;
         }
+        // The Android app asks Android for leave first: refused, the switches go back
+        if next.enabled && !was_on && !browser {
+            prefs.set(Some(next));
+            spawn_local(async move {
+                let allowed = allowed_here().await;
+                let _ = refused.try_set(!allowed);
+                if allowed {
+                    persist(next);
+                } else {
+                    let _ = prefs.try_set(confirmed.try_get_value().flatten());
+                }
+            });
+            return;
+        }
         if !next.enabled && was_on && here.get_untracked() {
             turn_off_here();
         }
@@ -235,6 +263,11 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                 <CardDescription>{t!(i18n, account.notifications.text)}</CardDescription>
             </CardHeader>
             <CardContent class="flex flex-col gap-2">
+                <Show when=move || refused.get()>
+                    <p class="rounded-md border border-dashed border-destructive/50 p-2 text-xs text-muted-foreground" data-testid="notifications-refused">
+                        {t!(i18n, account.notifications.refused)}
+                    </p>
+                </Show>
                 // Known after hydration: the server can't tell what the browser can do
                 <Show when=move || support.get() == Some(Support::HomeScreen)>
                     <p class="rounded-md border border-dashed bg-muted/50 p-2 text-xs text-muted-foreground" data-testid="notifications-home-screen">

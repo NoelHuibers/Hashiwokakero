@@ -1,13 +1,19 @@
 package rs.hashi
 
+import android.Manifest
 import android.app.Activity
 import android.content.ClipData
 import android.content.Intent
+import android.os.Build
 import androidx.activity.result.ActivityResult
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.FileProvider
+import app.tauri.PermissionState
 import app.tauri.annotation.ActivityCallback
 import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
+import app.tauri.annotation.Permission
+import app.tauri.annotation.PermissionCallback
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
 import app.tauri.plugin.JSObject
@@ -55,10 +61,23 @@ class GamesShowArgs {
   var kind: String = "achievements"
 }
 
+/** The phone as the server registered it (`register_notification_device`), see Notifications. */
+@InvokeArg
+class NotifyStartArgs {
+  /** Where the page's server functions go, `https://hashi.rs`. */
+  lateinit var server: String
+  /** The page's `x-hashi-app` header, `android/<version>`. */
+  var app: String = ""
+  var device: Long = 0
+  lateinit var secret: String
+}
+
 // The app's own plugin ("hashi" in src-tauri/src/lib.rs): what the page asks of Android itself.
 // Its commands are allowed in capabilities/default.json, called through `api::native` of the
 // page (src/api/native.rs in the repository root).
-@TauriPlugin
+@TauriPlugin(
+  permissions = [Permission(strings = [Manifest.permission.POST_NOTIFICATIONS], alias = "notifications")],
+)
 class HashiPlugin(private val activity: Activity) : Plugin(activity) {
   /**
    * Google Play Games: Games.kt of src/play, the SDK, in the Play build; of src/foss, nothing, in
@@ -168,5 +187,54 @@ class HashiPlugin(private val activity: Activity) : Plugin(activity) {
   private fun gamesStatus(signedIn: Boolean) = JSObject().apply {
     put("available", games.available)
     put("signedIn", signedIn)
+  }
+
+  /**
+   * May the app show notifications? Asks on Android 13 and newer (POST_NOTIFICATIONS), once the
+   * player turns them on; Android itself shows no dialog any more once they refused twice, the
+   * answer is just no then. `granted`: also false where they are turned off in Android's settings.
+   */
+  @Command
+  fun notifyPermission(invoke: Invoke) {
+    if (Build.VERSION.SDK_INT >= 33 && getPermissionState("notifications") != PermissionState.GRANTED) {
+      requestPermissionForAlias("notifications", invoke, "notifyPermissionAnswered")
+      return
+    }
+    invoke.resolve(notifyStatus())
+  }
+
+  @PermissionCallback
+  private fun notifyPermissionAnswered(invoke: Invoke) {
+    invoke.resolve(notifyStatus())
+  }
+
+  /** Whether the app may show notifications, and the id of the phone it asks for them, if any. */
+  @Command
+  fun notifyState(invoke: Invoke) {
+    invoke.resolve(notifyStatus())
+  }
+
+  /** Starts asking the server for notifications, as the phone it registered (Notifications). */
+  @Command
+  fun notifyStart(invoke: Invoke) {
+    try {
+      val args = invoke.parseArgs(NotifyStartArgs::class.java)
+      Notifications.start(activity, Notifications.Device(args.server, args.app, args.device, args.secret))
+      invoke.resolve(notifyStatus())
+    } catch (ex: Exception) {
+      invoke.reject(ex.message)
+    }
+  }
+
+  /** Stops asking, and has the server forget the phone (on sign-out, or all of them off). */
+  @Command
+  fun notifyStop(invoke: Invoke) {
+    Notifications.stop(activity)
+    invoke.resolve(notifyStatus())
+  }
+
+  private fun notifyStatus() = JSObject().apply {
+    put("granted", NotificationManagerCompat.from(activity).areNotificationsEnabled())
+    put("device", Notifications.device(activity)?.id)
   }
 }

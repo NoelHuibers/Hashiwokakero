@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Dernier appel pour ta série</string>
+    <string name="notify_last_call_hint">Quand le défi du jour est encore ouvert environ trois heures avant le suivant. Si c’est la nuit chez toi, à 21 h la veille au soir.</string>
+    <string name="notify_race">Courses</string>
+    <string name="notify_race_hint">Quelqu’un dans un de tes groupes lance une course.</string>
+    <string name="notify_rival">Rivaux</string>
+    <string name="notify_rival_hint">Un rival bat ton temps sur le défi du jour.</string>
+    <string name="notify_shared">Tes grilles partagées</string>
+    <string name="notify_shared_hint">Des joueurs résolvent une grille que tu as partagée.</string>
+    <string name="notify_group">Grilles du groupe</string>
+    <string name="notify_group_hint">Une nouvelle grille est publiée dans un de tes groupes.</string>
+    <string name="notify_other">Notifications</string>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Последний звонок для серии</string>
+    <string name="notify_last_call_hint">Если мост дня ещё не решён примерно за три часа до следующего. Если у тебя в это время ночь, то в 21:00 накануне вечером.</string>
+    <string name="notify_race">Гонки</string>
+    <string name="notify_race_hint">Кто-то в одной из твоих групп открывает гонку.</string>
+    <string name="notify_rival">Соперники</string>
+    <string name="notify_rival_hint">Соперник обходит твоё время в мосте дня.</string>
+    <string name="notify_shared">Головоломки, которыми ты поделился</string>
+    <string name="notify_shared_hint">Игроки решают головоломку, которой ты поделился.</string>
+    <string name="notify_group">Головоломки группы</string>
+    <string name="notify_group_hint">В одной из твоих групп появилась новая головоломка.</string>
+    <string name="notify_other">Уведомления</string>
+</resources>

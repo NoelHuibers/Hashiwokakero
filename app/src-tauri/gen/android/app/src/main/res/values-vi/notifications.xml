@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification channels' names (Notifications.kt): the account page's, written by
+     the test android_channels_are_named_like_the_switches (src/server/notify/render.rs),
+     GOLDEN_UPDATE=1 rewrites them. Not by hand -->
+<resources>
+    <string name="notify_last_call">Lời nhắc cuối cho chuỗi của bạn</string>
+    <string name="notify_last_call_hint">Khi câu đố hôm nay vẫn còn mở khoảng ba giờ trước câu tiếp theo. Nếu lúc đó chỗ bạn là ban đêm, thì lúc 21:00 tối hôm trước.</string>
+    <string name="notify_race">Cuộc đua</string>
+    <string name="notify_race_hint">Có người trong một nhóm của bạn mở cuộc đua.</string>
+    <string name="notify_rival">Đối thủ</string>
+    <string name="notify_rival_hint">Một đối thủ vượt thời gian của bạn ở câu đố hôm nay.</string>
+    <string name="notify_shared">Câu đố bạn đã chia sẻ</string>
+    <string name="notify_shared_hint">Người chơi giải một câu đố bạn đã chia sẻ.</string>
+    <string name="notify_group">Câu đố nhóm</string>
+    <string name="notify_group_hint">Có câu đố mới được đăng trong một nhóm của bạn.</string>
+    <string name="notify_other">Thông báo</string>
+</resources>
