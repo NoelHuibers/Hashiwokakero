@@ -109,13 +109,36 @@ test.afterEach(async ({ device }, testInfo) => {
     body: [`parsed from: ${jobLines.join('\n')}`, ...app].join('\n'),
     contentType: 'text/plain',
   });
+  const alarms = (await shell(device, 'dumpsys alarm')).split('\n');
+  await testInfo.attach('alarms', {
+    body: alarms.filter((l) => /hashi/.test(l)).join('\n'),
+    contentType: 'text/plain',
+  });
 });
 
 /** Runs the app's jobs now, whatever their constraints (no network here). */
-async function runJobs(device: AndroidDevice) {
-  for (const job of await jobs(device)) {
+async function runJobs(device: AndroidDevice, which?: string[]) {
+  for (const job of which ?? (await jobs(device))) {
     await shell(device, `cmd jobscheduler run -f ${job}`);
   }
+}
+
+/**
+ * The jobs that weren't there `before`, once JobScheduler has them: WorkManager hands a job it
+ * enqueued over in the background, a moment after the command that enqueued it answered.
+ */
+async function newJobs(device: AndroidDevice, before: string[]) {
+  let fresh: string[] = [];
+  await expect
+    .poll(
+      async () => {
+        fresh = (await jobs(device)).filter((job) => !before.includes(job));
+        return fresh.length;
+      },
+      { message: 'a new job' },
+    )
+    .toBeGreaterThan(0);
+  return fresh;
 }
 
 /** The app's notifications on the device, with their extras. */
@@ -124,9 +147,13 @@ const notifications = async (device: AndroidDevice) =>
     .split(/\n\s*NotificationRecord\(/)
     .filter((record) => record.includes(`pkg=${PKG} `));
 
-/** The app's alarm for the streak's last call (Notifications.kt). */
+/**
+ * Whether the app's alarm for the streak's last call (Notifications.kt) is set: a pending alarm's
+ * `tag=` line in `dumpsys alarm`. The dump's statistics keep naming the alarm after it is
+ * cancelled, without the `tag=`.
+ */
 const lastCallAlarm = async (device: AndroidDevice) =>
-  (await shell(device, 'dumpsys alarm')).includes('rs.hashi.action.LAST_CALL');
+  (await shell(device, 'dumpsys alarm')).includes('tag=*walarm*:rs.hashi.action.LAST_CALL');
 
 const RACE = {
   id: 12,
@@ -196,13 +223,14 @@ test('the app asks the server itself, shows what it answers, and stops when it f
     // WorkManager skips a run of the periodic job before its period is up: a start again asks
     // right away, with a one-time job
     server.answers.poll_notifications = null;
+    const periodic = await jobs(device);
     await invoke(page, 'plugin:hashi|notify_start', {
       server: server.url,
       app: APP,
       device: DEVICE,
       secret: SECRET,
     });
-    await runJobs(device);
+    await runJobs(device, await newJobs(device, periodic));
     await expect
       .poll(() => invoke(page, 'plugin:hashi|notify_state'), { message: 'forgotten' })
       .toEqual({ answer: { granted: true } });
@@ -227,12 +255,13 @@ test('turned off, the app tells the server to forget the phone', async ({ page, 
       device: DEVICE,
       secret: SECRET,
     });
+    // The poll's two jobs, then the one that tells the server, in their place
+    await expect.poll(async () => (await jobs(device)).length, { message: 'the jobs' }).toBe(2);
+    const polls = await jobs(device);
     expect(await invoke(page, 'plugin:hashi|notify_stop')).toEqual({
       answer: { granted: true },
     });
-    // Only the job that tells the server is left
-    await expect.poll(async () => (await jobs(device)).length, { message: 'the jobs' }).toBe(1);
-    await runJobs(device);
+    await runJobs(device, await newJobs(device, polls));
     await expect
       .poll(() => server.calls.filter((c) => c.name === 'unregister_notification_device'))
       .toEqual([
@@ -243,6 +272,8 @@ test('turned off, the app tells the server to forget the phone', async ({ page, 
         },
       ]);
     expect(server.calls.filter((c) => c.name === 'poll_notifications')).toEqual([]);
+    // The poll's jobs are cancelled, the other one done
+    await expect.poll(async () => (await jobs(device)).length, { message: 'no jobs' }).toBe(0);
   } finally {
     await server.close();
   }
