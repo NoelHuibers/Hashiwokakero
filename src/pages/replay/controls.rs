@@ -1,4 +1,5 @@
-//! The theatre's controls: play and pause, a move back or on, the speed, together or apart.
+//! The theatre's controls: play and pause, a move back or on, the speed; together or apart
+//! above the boards.
 //!
 //! The timeline is a strip of sea a little boat sails along, with a pennant in each member's colour
 //! where they finished and a mark where they took a hint or a check.
@@ -7,12 +8,12 @@ use leptos::ev::{KeyboardEvent, PointerEvent};
 use leptos::prelude::*;
 
 use crate::components::sprites::{BOAT, PENNANT, PixelSprite, runs};
-use crate::i18n::{t, t_string, td_string, use_i18n};
+use crate::i18n::{t_string, td_string, use_i18n};
 use crate::model::{MarkKind, SPEEDS, colour_var, format_score, fraction};
 
 use super::state::{Layout, Theatre};
 
-/// A button of a segmented control (speed, layout), the look of the ranking's tabs.
+/// A button of the speed's segmented control, the look of the ranking's tabs.
 #[component]
 fn Segment(
     #[prop(into)] pressed: Signal<bool>,
@@ -266,12 +267,14 @@ fn Glyph(
     }
 }
 
-/// Play, pause, step, speed, layout and the timeline.
+/// Play, pause, step, the speed and the timeline.
 ///
-/// Laid out like a media player: the timeline across the top with the clock under its ends,
-/// the transport in the middle, the speed and the layout under it (beside it from `sm` on).
+/// Laid out like a media player, small enough to stay on screen below the boards (see
+/// `TheatreView`): the timeline across the top, under it the clock and the speed with the
+/// transport in the middle; on phones the clock's ends and the speed in a row of their own,
+/// the transport under them.
 #[component]
-pub fn Controls(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoView {
+pub fn Controls(theatre: Theatre) -> impl IntoView {
     let i18n = use_i18n();
     let playing = move || theatre.playing.get();
     let at_end = Memo::new(move |_| theatre.now() >= theatre.end);
@@ -307,32 +310,52 @@ pub fn Controls(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoVie
         }
     };
     view! {
-        <div class="flex flex-col gap-3" data-testid="replay-controls">
-            <div class="flex flex-col gap-1">
-                <Timeline theatre />
-                <p
-                    dir="ltr"
-                    class="flex justify-between px-1 font-pixel text-xs tabular-nums"
-                    data-testid="replay-clock"
-                >
+        <div class="flex flex-col gap-1" data-testid="replay-controls">
+            <Timeline theatre />
+            <div
+                dir="ltr"
+                class="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-2 px-1 font-pixel text-xs tabular-nums"
+                data-testid="replay-clock"
+            >
+                // A cell each on phones, the start of the row together from `sm`
+                <div class="contents sm:flex sm:items-center sm:gap-3">
                     <span class="text-foreground">
                         {move || format_score(i64::from(theatre.now()))}
                     </span>
-                    <span class="text-muted-foreground">
-                        {format_score(i64::from(theatre.end))}
-                    </span>
-                </p>
-            </div>
-            <div class="grid grid-cols-2 items-center gap-x-2 gap-y-3 sm:grid-cols-[1fr_auto_1fr]">
+                    <div
+                        role="group"
+                        aria-label=move || t_string!(i18n, replay.controls.speed)
+                        class="flex w-fit gap-0.5 rounded-lg bg-muted p-[3px] font-sans"
+                    >
+                        {SPEEDS
+                            .into_iter()
+                            .map(|speed| {
+                                view! {
+                                    <Segment
+                                        pressed=Signal::derive(move || theatre.speed.get() == speed)
+                                        label=Signal::derive(move || {
+                                            td_string!(
+                                                i18n.get_locale(), replay.controls.speed_n, n = speed
+                                            )
+                                        })
+                                        on_press=move || theatre.speed.set(speed)
+                                    >
+                                        <span class="font-pixel text-xs">{format!("{speed}×")}</span>
+                                    </Segment>
+                                }
+                            })
+                            .collect_view()}
+                    </div>
+                </div>
+                <span class="justify-self-end text-muted-foreground sm:col-start-3 sm:row-start-1">
+                    {format_score(i64::from(theatre.end))}
+                </span>
                 // Back, play, on: the middle of the card on every width
-                <div
-                    dir="ltr"
-                    class="col-span-2 flex items-center justify-center gap-3 sm:col-span-1 sm:col-start-2 sm:row-start-1"
-                >
+                <div class="col-span-3 flex items-center justify-center gap-3 sm:col-span-1 sm:col-start-2 sm:row-start-1">
                     {step_button(false)}
                     <button
                         type="button"
-                        class="grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95 disabled:opacity-40"
+                        class="grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95 disabled:opacity-40 sm:size-14"
                         aria-label=play_label
                         data-tooltip=play_label
                         data-testid="replay-play"
@@ -347,81 +370,83 @@ pub fn Controls(theatre: Theatre, #[prop(optional)] still: bool) -> impl IntoVie
                                 view! { <Glyph art=&AGAIN scale=3 /> }.into_any()
                             } else {
                                 // A triangle's weight sits left of its box: nudged to look centred
-                                view! { <Glyph art=&PLAY scale=2 class="ms-1" /> }
-                                    .into_any()
+                                view! { <Glyph art=&PLAY scale=2 class="ms-1" /> }.into_any()
                             }
                         }}
                     </button>
                     {step_button(true)}
                 </div>
-                <div
-                    role="group"
-                    aria-label=move || t_string!(i18n, replay.controls.speed)
-                    class="flex w-fit gap-0.5 justify-self-start rounded-lg bg-muted p-[3px] sm:row-start-1"
-                >
-                    {SPEEDS
-                        .into_iter()
-                        .map(|speed| {
-                            view! {
-                                <Segment
-                                    pressed=Signal::derive(move || theatre.speed.get() == speed)
-                                    label=Signal::derive(move || {
-                                        td_string!(
-                                            i18n.get_locale(), replay.controls.speed_n, n = speed
-                                        )
-                                    })
-                                    on_press=move || theatre.speed.set(speed)
-                                >
-                                    <span class="font-pixel text-xs">{format!("{speed}×")}</span>
-                                </Segment>
-                            }
-                        })
-                        .collect_view()}
-                </div>
-                <div
-                    role="group"
-                    aria-label=move || t_string!(i18n, replay.controls.layout)
-                    class="flex w-fit gap-0.5 justify-self-end rounded-lg bg-muted p-[3px] sm:col-start-3 sm:row-start-1"
-                >
-                    <Segment
-                        pressed=Signal::derive(move || theatre.layout.get() == Layout::Together)
-                        label=Signal::derive(move || {
-                            t_string!(i18n, replay.controls.together).to_string()
-                        })
-                        on_press=move || theatre.layout.set(Layout::Together)
-                    >
-                        <span class="font-pixel" aria-hidden="true">
-                            "重"
-                        </span>
-                        <span class="hidden lg:inline">{t!(i18n, replay.controls.together)}</span>
-                    </Segment>
-                    <Segment
-                        pressed=Signal::derive(move || theatre.layout.get() == Layout::Apart)
-                        label=Signal::derive(move || {
-                            t_string!(i18n, replay.controls.apart).to_string()
-                        })
-                        on_press=move || theatre.layout.set(Layout::Apart)
-                    >
-                        <span class="font-pixel" aria-hidden="true">
-                            "並"
-                        </span>
-                        <span class="hidden lg:inline">{t!(i18n, replay.controls.apart)}</span>
-                    </Segment>
-                </div>
             </div>
-            // The keys are no help on a touch screen; reduced motion's note is
-            <p
-                class="border-t pt-3 text-center text-xs text-muted-foreground"
-                class=(["hidden", "pointer-fine:block"], !still)
+        </div>
+    }
+}
+
+/// The note under the controls: the keys where there's a mouse and room (no help on a touch
+/// screen or a phone), reduced motion's everywhere. Outside the controls' card, which stays
+/// small.
+#[component]
+pub fn ControlsNote(#[prop(optional)] still: bool) -> impl IntoView {
+    let i18n = use_i18n();
+    view! {
+        <p
+            class="px-2 text-center text-xs text-muted-foreground"
+            class=(["hidden", "sm:pointer-fine:block"], !still)
+        >
+            {move || {
+                if still {
+                    t_string!(i18n, replay.controls.still)
+                } else {
+                    t_string!(i18n, replay.controls.keys)
+                }
+            }}
+        </p>
+    }
+}
+
+/// Together or side by side, above the boards it changes: its words on every width, the
+/// kanji beside them as decoration.
+#[component]
+pub fn LayoutSwitch(theatre: Theatre) -> impl IntoView {
+    let i18n = use_i18n();
+    let option = move |layout: Layout| {
+        let pressed = move || theatre.layout.get() == layout;
+        let kanji = match layout {
+            Layout::Together => "重",
+            Layout::Apart => "並",
+        };
+        let label = move || match layout {
+            Layout::Together => t_string!(i18n, replay.controls.together),
+            Layout::Apart => t_string!(i18n, replay.controls.apart),
+        };
+        view! {
+            <button
+                type="button"
+                aria-pressed=move || pressed().to_string()
+                class="flex min-h-9 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:px-3"
+                class=(["bg-card", "text-foreground", "shadow-sm", "ring-1", "ring-foreground/15"], pressed)
+                class=(["text-foreground/60", "hover:text-foreground"], move || !pressed())
+                on:click=move |_| theatre.layout.set(layout)
             >
-                {move || {
-                    if still {
-                        t_string!(i18n, replay.controls.still)
-                    } else {
-                        t_string!(i18n, replay.controls.keys)
-                    }
-                }}
-            </p>
+                <span
+                    class="font-pixel"
+                    class=(["text-primary"], pressed)
+                    aria-hidden="true"
+                >
+                    {kanji}
+                </span>
+                <span class="min-w-0 truncate">{label}</span>
+            </button>
+        }
+    };
+    view! {
+        <div
+            role="group"
+            aria-label=move || t_string!(i18n, replay.controls.layout)
+            class="mx-auto grid w-full grid-cols-2 gap-0.5 rounded-lg bg-muted p-[3px] sm:w-fit"
+            data-testid="replay-layout"
+        >
+            {option(Layout::Together)}
+            {option(Layout::Apart)}
         </div>
     }
 }
@@ -506,9 +531,10 @@ mod tests {
         owner.with(|| {
             crate::app::provide_server_i18n();
             let theatre = Theatre::new(super::super::tests::data(), None);
-            let keys = view! { <Controls theatre /> }.to_html();
-            let still = view! { <Controls theatre still=true /> }.to_html();
-            assert!(keys.contains("hidden pointer-fine:block"), "{keys}");
+            let keys = view! { <Controls theatre /> <ControlsNote /> }.to_html();
+            let still = view! { <ControlsNote still=true /> }.to_html();
+            // Not on phones either: the controls stay small there
+            assert!(keys.contains("hidden sm:pointer-fine:block"), "{keys}");
             assert!(keys.contains("Space plays and pauses"));
             assert!(!still.contains("pointer-fine:block"), "{still}");
             assert!(still.contains("Reduced motion is on"));
@@ -516,6 +542,40 @@ mod tests {
             assert!(keys.find("replay-timeline").unwrap() < clock);
             assert!(keys[..keys.find("replay-play").unwrap()].contains("0:00.0"));
             assert!(!keys.contains('▶'));
+            // The speed between the clock's ends; together or apart is above the boards
+            let speed = keys.find("times as fast").unwrap();
+            assert!(clock < speed && speed < keys.find("replay-play").unwrap());
+            assert!(!keys.contains("Side by side") && !keys.contains('重'));
+        });
+    }
+
+    /// The layout switch: both words on every width, the pressed one marked, and pressing the
+    /// other switches.
+    #[tokio::test]
+    async fn the_layout_switch_has_words() {
+        _ = any_spawner::Executor::init_tokio();
+        let owner = Owner::new_root(None);
+        owner.with(|| {
+            crate::app::provide_server_i18n();
+            let theatre = Theatre::new(super::super::tests::data(), None);
+            let html = view! { <LayoutSwitch theatre /> }.to_html();
+            assert!(html.contains("data-testid=\"replay-layout\""), "{html}");
+            assert!(html.contains("role=\"group\""));
+            for word in ["Together", "Side by side"] {
+                // As text, not only a label or a tooltip
+                assert!(html.contains(&format!(">{word}<")), "{word}: {html}");
+            }
+            assert!(!html.contains("hidden lg:inline") && !html.contains("data-tooltip"));
+            assert_eq!(html.matches("aria-pressed=\"true\"").count(), 1);
+            let together = html.find("Together").unwrap();
+            let pressed = html.find("aria-pressed=\"true\"").unwrap();
+            assert!(pressed < together && html[pressed..together].contains("bg-card"));
+            theatre.layout.set(Layout::Apart);
+            let apart = view! { <LayoutSwitch theatre /> }.to_html();
+            let pressed = apart.find("aria-pressed=\"true\"").unwrap();
+            assert!(
+                apart[pressed..].contains("Side by side") && !apart[pressed..].contains("Together")
+            );
         });
     }
 }

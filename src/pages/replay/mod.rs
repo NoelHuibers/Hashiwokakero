@@ -29,7 +29,7 @@ use crate::model::{LAUNCH_DAY, ReplayData, daily_number};
 use crate::seo::title_text;
 use crate::state::{Auth, error_toast};
 
-use controls::Controls;
+use controls::{Controls, ControlsNote, LayoutSwitch};
 use grid::Apart;
 use legend::{FinishLine, Legend};
 use stage::Stage;
@@ -98,8 +98,8 @@ fn listen_to_keys(theatre: Theatre) {
     on_cleanup(move || handle.remove());
 }
 
-/// The theatre of a loaded day: the board (or the little boards), the controls, the finish line
-/// and the members.
+/// The theatre of a loaded day: together or apart above the board (or the little boards), the
+/// controls under it, the finish line and the members.
 #[component]
 #[expect(
     clippy::needless_pass_by_value,
@@ -140,7 +140,8 @@ pub fn TheatreView(mut data: ReplayData, only: Option<Vec<i64>>) -> impl IntoVie
     });
     view! {
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]" data-testid="replay-theatre">
-            <div class="flex min-w-0 flex-col gap-4">
+            <div class="flex min-w-0 flex-col gap-3 sm:gap-4">
+                <LayoutSwitch theatre />
                 {move || match theatre.layout.get() {
                     Layout::Together => view! {
                         <div
@@ -155,9 +156,12 @@ pub fn TheatreView(mut data: ReplayData, only: Option<Vec<i64>>) -> impl IntoVie
                         .into_any(),
                     Layout::Apart => view! { <Apart theatre /> }.into_any(),
                 }}
-                <Card class="p-4 sm:px-5">
-                    <Controls theatre still />
+                // On screen while the boards are: it sticks to the bottom (above the tab bar
+                // on phones and tablets) until the page is scrolled past the boards
+                <Card class="sticky bottom-[calc(4rem+1px+var(--safe-bottom))] z-30 gap-0 p-3 shadow-md sm:px-5 lg:bottom-3">
+                    <Controls theatre />
                 </Card>
+                <ControlsNote still />
             </div>
             <aside class="flex min-w-0 flex-col gap-6">
                 <FinishLine theatre />
@@ -494,6 +498,13 @@ mod tests {
             }
             // Nobody across at the start: the finish line is empty
             assert!(!html.contains("data-place"));
+            // Together or apart above the board, with words; the controls under it, sticky
+            let switch = html.find("data-testid=\"replay-layout\"").unwrap();
+            let stage = html.find("data-testid=\"replay-stage\"").unwrap();
+            let controls = html.find("data-testid=\"replay-controls\"").unwrap();
+            assert!(switch < stage && stage < controls, "{html}");
+            assert!(html[switch..stage].contains(">Side by side<"));
+            assert!(html[..controls].contains("sticky"));
             let duel = view! { <TheatreView data=data() only=Some(vec![1, 2]) /> }.to_html();
             assert!(duel.contains("replay-stage"));
             let theatre = Theatre::new(data(), None);
@@ -501,6 +512,15 @@ mod tests {
             theatre.seek(10_000.0);
             let apart = view! { <Apart theatre /> }.to_html();
             assert!(apart.contains("replay-apart"), "{apart}");
+            // Two shown, side by side on every width
+            assert!(
+                apart.contains("--cols-phone: 2; --rows-phone: 1;"),
+                "{apart}"
+            );
+            assert!(
+                apart.contains("--cols-laptop: 2; --rows-laptop: 1;"),
+                "{apart}"
+            );
             let finish = view! { <FinishLine theatre /> }.to_html();
             assert!(finish.contains("data-place=\"0\""), "{finish}");
             assert!(finish.contains("unranked"));
