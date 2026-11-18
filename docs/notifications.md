@@ -29,9 +29,9 @@ The group river doesn't notify.
 - **Only where a device can get them.** `state::notify::can_deliver()` says whether this
   browser or app has a way of delivery (`delivers(DeviceKind)`): in browsers once the site has
   its Web Push keys and the browser can take them (below), in the Android app always
-  ([The Android app](#the-android-app)), in the iOS app not until its channel lands. Where it's
-  `false` the offer never shows and the settings say that notifications can't reach this device
-  yet. The switches still work: they are account settings.
+  ([The Android app](#the-android-app)), in the iOS app always ([The iOS app](#the-ios-app-apns)).
+  Where it's `false` the offer never shows and the settings say that notifications can't reach
+  this device yet. The switches still work: they are account settings.
 - **Texts in the device's language.** The outbox keeps what a text needs (`notify::Args`,
   JSON), not the text: each device renders it in its own locale
   (`server/notify/render.rs`, keys `account.notifications.push.*` in every language). The tap
@@ -64,7 +64,8 @@ The group river doesn't notify.
   notifications about it (`notify::ERASE`); a guest's sign-in moves their devices (and their
   settings, if the account has none) to the account (`notify::MERGE_GUEST`). The privacy
   policy (`pages/legal.rs`, "Benachrichtigungen" / "Notifications") describes this and names
-  the push services that get what; it has to be extended when another channel lands.
+  the push services that get what, for every channel; a new channel or a change of what one
+  sends has to go there too.
 
 ## Schema (migration 30, `server/db.rs`)
 
@@ -72,7 +73,8 @@ The group river doesn't notify.
   `rival`, `shared`, `group_puzzle`), `offer_shown`, `time_zone` (IANA, the last one a client
   reported), `updated_at`.
 - `notification_devices`: `id`, `user_id`, `kind` (`web` | `apns` | `android`), `endpoint`
-  (Web Push endpoint or APNs token, unique), `keys` (Web Push `p256dh`/`auth`, JSON),
+  (Web Push endpoint or APNs token, unique), `keys` (JSON: Web Push's `p256dh`/`auth`, APNs'
+  `{"env": "production"}` or `"development"`, the push service the token is for),
   `secret_hash` (SHA-256 of the device's secret), `locale`, `time_zone`, `cursor` (the last
   outbox id the device got), `created_at`, `last_seen`. At most 10 per player.
 - `notification_outbox`: `id` (AUTOINCREMENT, only grows), `user_id`, `kind`,
@@ -155,17 +157,14 @@ endpoint, the size, the timing and our signature, not the text.
   It is served at its fixed URL with `Cache-Control: no-cache` like every unhashed file; the
   site has no Content-Security-Policy that would need a `worker-src`.
 
-## What the next changes add
+## Channels
 
-Each one adds a channel and flips its `delivers(DeviceKind)` in `state/notify.rs`, and
-extends the privacy policy with what goes to whom.
+Each one has its own `delivers(DeviceKind)` in `state/notify.rs` and its paragraph in the privacy
+policy, which says what goes to whom.
 
-1. **Web Push (website).** Done, see above.
-2. **APNs (iOS app).** The p8 key, key id and team id as Fly secrets; the app's plugin asks for
-   permission and hands the device token to the page, which registers `(Apns, token)`.
-   Server: an `impl Channel` for `DeviceKind::Apns` over HTTP/2 with a JWT;
-   `BadDeviceToken`/`Unregistered` answer `Delivery::Gone`.
-3. **Android app.** Done, see [The Android app](#the-android-app).
+1. **Web Push (website).** See [above](#web-push-browsers).
+2. **APNs (iOS app).** See [The iOS app](#the-ios-app-apns).
+3. **Android app.** No push service, see [The Android app](#the-android-app).
 
 ## The Android app
 
@@ -220,3 +219,79 @@ no Google Play services. The same code is in the Play and the foss (F-Droid) bui
   `adb shell cmd jobscheduler run -f rs.hashi <job id>` runs it now; a race opened by another
   member of a group shows up as a notification in the channel "Races", and a tap opens its lobby
   in the app. Turned off in Android's settings, the switch in the app goes back with the hint.
+
+## The iOS app (APNs)
+
+Straight from our server to Apple's push service (APNs) with our own key: no Firebase, no SDK and
+no service in between. Unlike Web Push the message isn't encrypted for the device, only on its way
+to Apple (TLS), so Apple sees the text; the privacy policy says so.
+
+- **Key.** A token-based APNs auth key (`.p8`, "Hashi APNs", team scoped, Sandbox & Production)
+  from Certificates, Identifiers & Profiles, Keys. `APNS_KEY_P8` (the file's text, a P-256 key in
+  PKCS #8; newlines as `\n` work too), `APNS_KEY_ID` (its 10 characters), `APNS_TEAM_ID`
+  (`Q35TCGM5PW`) and optionally `APNS_TOPIC` (default `rs.hashi`, the bundle id). Fly secrets in
+  production. Without them the channel is off; part of them or a key that doesn't parse stops the
+  server at startup (`validate_configuration`). The key doesn't expire; revoked in the portal, the
+  sends fail with `InvalidProviderToken` until a new one is set.
+- **Server** (`server/notify/apns.rs`, in `notify::channels()` when configured): one HTTP/2
+  request per message (`reqwest` with HTTP/2 only, ALPN `h2` over rustls), `POST
+  /3/device/<token>` to `api.push.apple.com`, or `api.sandbox.push.apple.com` for a device whose
+  keys say `development`. `authorization: bearer <provider token>`, an ES256 JWT (`kid` the key
+  id, `iss` the team, `iat`), one for every request until it is 40 minutes old (Apple takes it
+  for an hour and refuses new ones more often than every 20 minutes). `apns-topic`,
+  `apns-push-type: alert`, `apns-priority` 10 for the last call and 5 otherwise,
+  `apns-expiration` when the outbox row expires (at most four weeks), `apns-collapse-id` the tag
+  (a hash of it beyond 64 bytes). The payload: `aps.alert` with `title` and `body`,
+  `aps.sound: default`, `aps.thread-id` the kind (the Notification Centre groups by it), and our
+  `url` for the tap; more than 4 KB is `Delivery::Failed`. 200 is sent; 410 and 400
+  `BadDeviceToken`/`DeviceTokenNotForTopic` are `Delivery::Gone` (the device is forgotten), as is
+  a token that isn't hex or keys without the service; 403 with a refused provider token
+  (`InvalidProviderToken`, `ExpiredProviderToken`) drops the token for the next request if it is
+  at least 20 minutes old (a fresher one has a wrong key or id, which a new one wouldn't fix);
+  that and anything else (429, 5xx) is `Failed`. The test against Apple's sandbox with the real
+  key is `apple_s_sandbox_takes_our_provider_token` (ignored, run by hand: a made-up token must
+  answer `BadDeviceToken`).
+- **Entitlement.** `aps-environment` in `hashi_tauri_iOS.entitlements` is `$(APS_ENVIRONMENT)`,
+  a build setting of the Xcode project (`project.yml`, `project.pbxproj`): `development` in the
+  debug configuration, `production` in release (the App Store and TestFlight). The release
+  workflow checks it in the IPA and its profile. The App ID `rs.hashi` has the Push Notifications
+  capability; automatic signing makes the profiles with it.
+- **The app's plugin** (`HashiPlugin.swift`): `notify_permission` asks iOS for alerts and sounds
+  (`requestAuthorization`; iOS asks once, after a no only Settings, Notifications, Hashi changes
+  it), `notify_state` says whether they are allowed, `notify_token` calls
+  `registerForRemoteNotifications` and answers the token in hex and the environment (the
+  `aps-environment` of the embedded provisioning profile, `production` without one as in the App
+  Store and TestFlight, `development` in the simulator), or fails after 30 s. iOS gives the token
+  to the application's delegate, tao's, which has no method for it: `main.mm` adds
+  `application:didRegisterForRemoteNotificationsWithDeviceToken:` and `…didFailToRegister…` to
+  its class before UIKit takes it, and they post the token to the plugin.
+- **Turning on** (the master switch, a kind with the master off, yes to the offer): the
+  permission first; refused, the switches go back and the page says to allow them in iOS's
+  settings (`refused_ios`). Allowed, the settings are saved, then `state::notify::follow`
+  registers the phone (`state::apns::register`: `notify_token`, then
+  `register_notification_device(Apns, token, {"env": …}, locale, time_zone)`). Id, secret,
+  token, environment, locale and time go to local storage (`hashi.apns.v1`).
+- **Turning off** (the master switch, the last kind), signing out and deleting the account:
+  `unregister_notification_device(id, secret)` from the page, and local storage forgets it.
+- **Every start** (`state::notify::refresh` from `app.rs`): a registered phone asks for its
+  token and registers again when iOS gave a new one (a restore, a reinstall), the language
+  changed or a week went by (which keeps `last_seen` fresh); the earlier registration is
+  unregistered. Without iOS's leave any more, the registration ends.
+- **Showing and tapping** (`main.mm`): the notification centre's delegate, set before the app
+  finishes launching, shows a notification that comes while the app is in front as a banner too
+  (`willPresentNotification`). A tap hands the payload's `url` to the scene delegate's
+  `scene:continueUserActivity:` as a web browsing activity, like a Universal Link, so the
+  deep-link plugin passes it to the page (`api::native::follow_app_links`, only the app's own
+  pages, `seo::app_link`). A tap that starts the app waits for its scene, and the response in the
+  scene's connection options counts once.
+- **Tests.** Unit: the provider token (verified with the key's public half), its renewal,
+  the requests, the payload, the environment, the answers, and a fake APNs on localhost over
+  HTTP/2 (h2c; the addresses are the channel's to set in the tests). The iOS smoke test
+  (`e2e/ios/notifications.spec.ts`) allows them on the simulator, asks for a token (noted, the
+  simulator of a runner may not get one), sends a notification with `xcrun simctl push` and taps
+  its banner: the app shows its page. Not in CI: Apple's real service (the test above, by hand)
+  and a real iPhone (TestFlight).
+- **Test by hand** on an iPhone with a TestFlight build: turn notifications on in the app's
+  account page, allow them; a race opened by another member of a group shows up within the
+  5-minute job, and a tap opens its lobby in the app. Turned off in iOS's settings, the switch
+  in the app stays on but the account card says to allow them in iOS's settings.
