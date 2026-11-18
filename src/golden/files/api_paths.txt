@@ -104,6 +104,7 @@
 /api/start_daily POST application/json -> application/json
 /api/start_group_puzzle POST application/json -> application/json
 /api/start_group_race POST application/json -> application/json
+/api/start_warm_up POST application/json -> application/json
 /api/submit_daily POST application/json -> application/json
 /api/submit_daily_attempt POST application/json -> application/json
 /api/submit_group_puzzle POST application/json -> application/json

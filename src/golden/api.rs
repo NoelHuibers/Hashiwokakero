@@ -258,6 +258,7 @@ fn requests() -> Vec<Entry> {
         entry(&api::StartDaily {
             device: Some("0123456789abcdef0123456789abcdef".into()),
         }),
+        entry(&api::StartWarmUp {}),
         entry(&api::DailyHint {
             day,
             bridges: bridges.clone(),
