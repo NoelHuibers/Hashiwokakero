@@ -38,9 +38,10 @@ pub fn stored() -> Option<Stored> {
     super::load(KEY)
 }
 
-/// Whether the phone has to register (again) with this token, push service and language: not
-/// registered yet, a token or a service other than the registered one, another language, or a
-/// week since the last time.
+/// Whether the phone has to register (again) with this token, push service and language.
+///
+/// Not registered yet, a token or a service other than the registered one, another language, or
+/// a week since the last time.
 pub fn due(
     stored: Option<&Stored>,
     token: &str,

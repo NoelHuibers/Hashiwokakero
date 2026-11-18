@@ -2,7 +2,7 @@
 //!
 //! Straight from our server to Apple, no third party in between: an HTTP/2 request per message
 //! to the service the device's token is for (`api.push.apple.com` for the App Store and
-//! TestFlight, `api.sandbox.push.apple.com` for builds signed for development; the app registers
+//! `TestFlight`, `api.sandbox.push.apple.com` for builds signed for development; the app registers
 //! which, [`ApnsEnvironment`]), signed with a provider token (an ES256 JWT of our key, renewed
 //! every [`RENEW_AFTER_S`]).
 //!
@@ -12,6 +12,7 @@
 //! channel is off; half of them or a key that doesn't parse stops the server at startup
 //! (`validate_configuration`).
 
+use std::fmt::Write as _;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -27,7 +28,7 @@ use crate::model::{ApnsEnvironment, DeviceKind, NotifyKind, PushMessage};
 
 /// The topic without `APNS_TOPIC`: the app's bundle id.
 pub const DEFAULT_TOPIC: &str = "rs.hashi";
-/// Apple's push service for the App Store's and TestFlight's apps.
+/// Apple's push service for the App Store's and `TestFlight`'s apps.
 pub const PRODUCTION: &str = "https://api.push.apple.com";
 /// Apple's push service for apps signed for development.
 pub const SANDBOX: &str = "https://api.sandbox.push.apple.com";
@@ -186,10 +187,10 @@ fn collapse_id(tag: &str) -> String {
     if tag.len() <= MAX_COLLAPSE_ID {
         tag.to_string()
     } else {
-        let hex: String = Sha256::digest(tag.as_bytes())
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect();
+        let mut hex = String::with_capacity(64);
+        for b in Sha256::digest(tag.as_bytes()) {
+            let _ = write!(hex, "{b:02x}");
+        }
         hex[..MAX_COLLAPSE_ID].to_string()
     }
 }

@@ -177,9 +177,10 @@ impl DeviceKind {
     }
 }
 
-/// Which of Apple's push services an iOS app's device token belongs to: the app's
-/// `aps-environment` entitlement, `development` for a build signed for development (the
-/// simulator, Xcode's runs), `production` for the App Store and TestFlight.
+/// Which of Apple's push services an iOS app's device token belongs to.
+///
+/// The app's `aps-environment` entitlement: `development` for a build signed for development
+/// (the simulator, Xcode's runs), `production` for the App Store and `TestFlight`.
 ///
 /// The app registers it with its token as the device's keys (`{"env":"production"}`, see
 /// [`Self::keys`]): a token of one only works with that service.

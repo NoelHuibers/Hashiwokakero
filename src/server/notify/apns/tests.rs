@@ -259,7 +259,7 @@ fn device(token: &str, keys: Option<&str>) -> Device {
     }
 }
 
-/// A phone of the App Store or TestFlight.
+/// A phone of the App Store or `TestFlight`.
 fn iphone() -> Device {
     device(TOKEN, Some(&ApnsEnvironment::Production.keys()))
 }
@@ -421,9 +421,9 @@ async fn push_service(
                     body: serde_json::from_slice(&body).unwrap(),
                 });
                 let (status, reason) = answers.lock().unwrap().next().expect("an answer");
-                let body = reason
-                    .map(|r| serde_json::json!({ "reason": r }).to_string())
-                    .unwrap_or_default();
+                let body = reason.map_or_else(String::new, |r| {
+                    serde_json::json!({ "reason": r }).to_string()
+                });
                 (status, body)
             }
         }),

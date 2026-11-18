@@ -156,9 +156,11 @@ pub async fn follow(enabled: bool, locale: Locale) -> Result<(), leptos::prelude
     Ok(())
 }
 
-/// At the app's start: the iOS app registers its token again when that is due, or ends its
-/// registration when iOS's leave was taken back (`state::apns::refresh`). Nothing elsewhere: the
-/// website's browsers have `state::web_push::refresh`, the Android app its own poll.
+/// At the app's start: the iOS app registers its token again when that is due.
+///
+/// Or it ends its registration when iOS's leave was taken back (`state::apns::refresh`). Nothing
+/// elsewhere: the website's browsers have `state::web_push::refresh`, the Android app its own
+/// poll.
 pub fn refresh(locale: Locale) {
     #[cfg(feature = "csr")]
     if ios() && super::apns::stored().is_some() {
