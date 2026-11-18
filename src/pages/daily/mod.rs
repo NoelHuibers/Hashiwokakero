@@ -92,6 +92,7 @@ pub fn DailyPage() -> impl IntoView {
         now: RwSignal::new(0),
         result: RwSignal::new(None),
         admired: RwSignal::new(false),
+        solved_ms: RwSignal::new(None),
         ranking: RwSignal::new(None),
         busy: RwSignal::new(false),
         metadata: Fetch::new(),

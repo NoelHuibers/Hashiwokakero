@@ -1,6 +1,7 @@
-// How long the site's pages take to hydrate (e2e/perf/), apart from the browser tests: one test,
-// one worker, no retries. `pnpm run perf:hydration` from the repository root, on a release build;
-// `pnpm run bundle-size` puts the times next to the bundle's sizes. See
+// How long the site's pages take to hydrate and the daily to start and finish (e2e/perf/), apart
+// from the browser tests: one worker, no retries. `pnpm run perf:hydration` and
+// `pnpm run perf:daily` from the repository root, on a release build; `pnpm run bundle-size` puts
+// the hydration times next to the bundle's sizes. See
 // docs/performance/bundle-baseline.md.
 import { defineConfig, devices } from '@playwright/test';
 

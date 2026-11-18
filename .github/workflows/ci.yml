@@ -424,11 +424,11 @@ jobs:
           include-hidden-files: true
           retention-days: 7
 
-  # What the browser downloads of the release build above, and how long three pages take to
-  # hydrate on a CPU slowed down 4×, against docs/performance/bundle-baseline.json, in the job
-  # summary (scripts/bundle-size.ts, e2e/perf/). Fails when the gzipped WASM and JS grow more than
-  # the baseline's tolerance; the hydration times are only reported, a runner's speed varies too
-  # much. Not a required check and not in Release compatibility, it holds up no merge or deploy.
+  # What the browser downloads of the release build above against
+  # docs/performance/bundle-baseline.json, and on a CPU slowed down 4× how long three pages take
+  # to hydrate and the daily takes to start and finish, in the job summary (scripts/bundle-size.ts,
+  # e2e/perf/). Fails when the gzipped WASM and JS grow more than the baseline's tolerance; the
+  # times are only reported, a runner's speed varies too much. Not a required check and not in Release compatibility, it holds up no merge or deploy.
   bundle:
     name: Bundle size
     needs: [build, build-browser]
@@ -455,6 +455,14 @@ jobs:
       - name: Hydration
         continue-on-error: true
         run: pnpm run perf:hydration
+        env:
+          E2E_BIN: dist/hashi
+          E2E_SITE_ROOT: dist/site
+      # Pressing Start to a board, the last bridge to the win card (e2e/perf/daily.spec.ts), in
+      # the job summary; only reported, like the hydration times
+      - name: Daily start and finish
+        continue-on-error: true
+        run: pnpm run perf:daily
         env:
           E2E_BIN: dist/hashi
           E2E_SITE_ROOT: dist/site

@@ -67,8 +67,11 @@ fn NewStamps(stamps: Vec<model::Stamp>) -> impl IntoView {
     }
 }
 
-/// Covers the board once this tab's submit went through, until the player puts it away to
-/// admire the board (or presses Escape). The result card next to the board stays.
+/// Covers the board as soon as this tab sends the solved board, until the player puts it away
+/// to admire the board (or presses Escape). Until the server confirms, it shows the time the
+/// board was solved at and that the result is being saved; the rank, the stamps, sharing, the
+/// replay and the offer of notifications come with the confirmation. The result card next to
+/// the board stays.
 #[component]
 pub(super) fn WinCard(daily: Daily) -> impl IntoView {
     let i18n = use_i18n();
@@ -85,10 +88,20 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
         on_cleanup(move || escape.remove());
     });
     let place = move || {
+        // A submit whose reply got lost and was confirmed by reading the attempt has no result:
+        // the rank is the ranking's
         let (rank, total) = daily
             .result
-            .with(|r| r.as_ref().map_or((0, 0), |r| (r.rank, r.finishers)));
+            .with(|r| r.as_ref().map(|r| (r.rank, r.finishers)))
+            .or_else(|| {
+                daily.ranking.with(|lb| {
+                    lb.as_ref()
+                        .and_then(|lb| lb.me.as_ref().map(|m| (m.rank, lb.finishers)))
+                })
+            })
+            .unwrap_or((0, 0));
         match daily.flag() {
+            _ if daily.provisional() => t_string!(i18n, daily.recovery.submit_pending).to_string(),
             Some(_) => t_string!(i18n, daily.flag.title).to_string(),
             None if rank > 0 => t_string!(i18n, daily.result.rank, rank, total),
             None => String::new(),
@@ -119,20 +132,31 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
                     <h2 id="daily-win-title" class="text-xl font-black sm:text-2xl">
                         "見事！ " {t!(i18n, common.game.well_done)}
                     </h2>
-                    <p class="font-pixel text-2xl tabular-nums sm:text-3xl">{move || format_score(daily.elapsed_ms())}</p>
-                    <p class="text-sm text-muted-foreground">{place}</p>
+                    <p
+                        class="font-pixel text-2xl tabular-nums transition-opacity sm:text-3xl"
+                        class:opacity-60=move || daily.provisional()
+                        data-testid="daily-win-time"
+                    >
+                        {move || format_score(daily.elapsed_ms())}
+                    </p>
+                    <p class="text-sm text-muted-foreground" role="status" aria-live="polite">{place}</p>
                     {move || {
                         let stamps = stamps();
                         (!stamps.is_empty()).then(|| view! { <NewStamps stamps /> })
                     }}
-                    <NotificationOffer />
+                    // Offered once the server has the finish it is about
+                    <Show when=move || daily.finished()>
+                        <NotificationOffer />
+                    </Show>
                     <div class="flex w-full flex-wrap justify-center gap-2 pt-1">
                         <Button href=untrack(play)>{t!(i18n, common.nav.play)} " 遊ぶ"</Button>
                         <Button variant=ButtonVariant::Ghost on:click=move |_| daily.admired.set(true)>
                             {t!(i18n, play.admire)}
                         </Button>
                         {move || {
-                            daily.info.with(|i| i.as_ref().map(|i| i.day)).map(|day| {
+                            // Shares and replays tell the server's time, once there is one
+                            let day = daily.info.with(|i| i.as_ref().map(|i| i.day));
+                            day.filter(|_| daily.finished()).map(|day| {
                                 let replay = format!("{}/replay/{day}", prefix(i18n.get_locale()));
                                 view! {
                                     <Button variant=ButtonVariant::Outline href=replay attr:data-testid="win-replay">
@@ -142,7 +166,9 @@ pub(super) fn WinCard(daily: Daily) -> impl IntoView {
                                 }
                             })
                         }}
-                        <ShareBar text=share outline=true />
+                        <Show when=move || daily.finished()>
+                            <ShareBar text=share outline=true />
+                        </Show>
                     </div>
                 </Card>
             </div>

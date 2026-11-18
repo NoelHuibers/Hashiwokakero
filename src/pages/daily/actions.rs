@@ -535,6 +535,7 @@ mod tests {
             now: RwSignal::new(2000),
             result: RwSignal::new(None),
             admired: RwSignal::new(false),
+            solved_ms: RwSignal::new(None),
             ranking: RwSignal::new(None),
             busy: RwSignal::new(false),
             metadata: super::super::recovery::Fetch::new(),
@@ -632,6 +633,94 @@ mod tests {
             assert_eq!(d.game.status.get_untracked(), Status::Revealed);
             assert!(d.begin_submit(true).is_none());
             assert!(!d.celebrating()); // a read-only receipt does not invent a win modal
+        });
+    }
+
+    /// What the server answers a submit: its own time, a little after the solve this tab saw.
+    fn submit_reply(time_ms: i64) -> crate::model::SubmitResult {
+        crate::model::SubmitResult {
+            time_ms,
+            rank: 1,
+            finishers: 1,
+            flag: None,
+            stamps: vec![],
+        }
+    }
+
+    /// The solved daily's win shows at once, with the clock stopped where it was solved, not a
+    /// round trip later with the clock still running (2026-11-18: finishing felt slow).
+    #[test]
+    fn the_clock_stops_and_the_win_card_shows_while_the_submit_is_on_its_way() {
+        tab(|d, _| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            // Solved 1 s after the start (the clocks of the tests: `now` 2000, started at 1000)
+            assert_eq!(d.elapsed_ms(), 1000);
+            let _guard = d.begin_submit(false).unwrap();
+            assert!(d.celebrating() && d.provisional());
+            assert_eq!(d.elapsed_ms(), 1000);
+            // The reply takes its time, the shown time stays
+            d.now.set(4000);
+            assert_eq!(d.elapsed_ms(), 1000);
+            assert!(d.celebrating());
+            // The server's time replaces it, the card stays up
+            d.submitted(submit_reply(1040), 4000);
+            d.submission.set(super::super::recovery::Phase::Idle);
+            assert!(!d.provisional() && d.celebrating());
+            assert_eq!(d.elapsed_ms(), 1040);
+        });
+    }
+
+    /// A failed submit is retried by the player from the result card: no win card meanwhile,
+    /// and the clock runs again, the server times the finish when the board reaches it.
+    #[test]
+    fn a_failed_submit_takes_the_win_card_away_and_the_clock_runs_on() {
+        tab(|d, _| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            let _guard = d.begin_submit(false).unwrap();
+            d.now.set(4000);
+            d.busy.set(false);
+            d.submission.set(super::super::recovery::Phase::Error);
+            assert!(!d.celebrating() && !d.provisional());
+            assert_eq!(d.elapsed_ms(), 3000);
+            // The retry stops the clock again, at the moment it is sent
+            let _retry = d.begin_submit(true).unwrap();
+            assert!(d.celebrating());
+            d.now.set(6000);
+            assert_eq!(d.elapsed_ms(), 3000);
+        });
+    }
+
+    #[test]
+    fn a_win_card_put_away_while_the_submit_is_on_its_way_stays_away() {
+        tab(|d, _| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            let _guard = d.begin_submit(false).unwrap();
+            d.admired.set(true);
+            d.submitted(submit_reply(1040), 2040);
+            d.submission.set(super::super::recovery::Phase::Idle);
+            assert!(!d.celebrating());
+            assert_eq!(d.elapsed_ms(), 1040);
+        });
+    }
+
+    /// A reply lost on the way, the finish confirmed by reading the attempt: still this tab's win.
+    #[test]
+    fn a_finish_confirmed_without_the_submits_reply_keeps_the_win_card() {
+        tab(|d, _| {
+            d.game.bridges.set(vec![1]);
+            d.game.status.set(Status::Won);
+            let guard = d.begin_submit(false).unwrap();
+            let mut finished = d.info.get_untracked().unwrap();
+            let attempt = finished.attempt.as_mut().unwrap();
+            attempt.finished_at = Some(2040);
+            attempt.time_ms = Some(1040);
+            attempt.bridges = Some(vec![1]);
+            assert!(d.reconcile(&guard, finished));
+            assert!(d.celebrating() && !d.provisional());
+            assert_eq!(d.elapsed_ms(), 1040);
         });
     }
 
