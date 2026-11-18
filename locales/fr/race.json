@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Progression",
-    "text": "Où en est chacun : la part des ponts sur son plateau. Personne ne voit les ponts des autres.",
+    "text": "Où en est chacun : la part des ponts sur son plateau. Personne encore en course ne voit les ponts des autres.",
     "you": "vous"
   },
   "watch": {
-    "text": "Vous regardez : la course se joue entre les participants."
+    "text": "Vous regardez : la course se joue entre les participants.",
+    "others": "Regarder les autres",
+    "others_text": "Leurs plateaux en direct, maintenant que vous avez terminé. Ceux qui sont encore en course ne les voient pas.",
+    "place": "n° {{ place }}"
   },
   "done": {
     "solved": "Terminé !",

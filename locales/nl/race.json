@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Voortgang",
-    "text": "Hoe ver iedereen is: het deel van de bruggen op hun bord. Niemand ziet de bruggen van een ander.",
+    "text": "Hoe ver iedereen is: het deel van de bruggen op hun bord. Wie nog racet, ziet de bruggen van een ander niet.",
     "you": "jij"
   },
   "watch": {
-    "text": "Je kijkt mee: de race is tussen de deelnemers."
+    "text": "Je kijkt mee: de race is tussen de deelnemers.",
+    "others": "De anderen bekijken",
+    "others_text": "Hun borden live, nu je klaar bent. Wie nog racet, ziet ze niet.",
+    "place": "{{ place }}e"
   },
   "done": {
     "solved": "Klaar!",

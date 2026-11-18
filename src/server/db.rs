@@ -751,6 +751,13 @@ CREATE INDEX IF NOT EXISTS notification_outbox_created ON notification_outbox (c
 -- The solves of shared puzzles of the last hours, for their sharers' notifications
 CREATE INDEX IF NOT EXISTS shared_results_finished ON shared_results (finished_at);
 ",
+    // 31
+    "
+-- A racer's board as they last reported it with their progress, for the players who are done
+-- and watch the others (server/groups/race.rs): a digit (0-2) per edge of the puzzle, like
+-- '0120'. The solved one with a verified finish. NULL: nothing reported yet
+ALTER TABLE group_race_players ADD COLUMN board TEXT;
+",
 ];
 
 pub async fn init() -> Result<(), String> {

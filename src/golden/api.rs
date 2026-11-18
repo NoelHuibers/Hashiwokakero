@@ -477,6 +477,7 @@ fn requests() -> Vec<Entry> {
             id: 6,
             progress: Some(42),
             puzzle: true,
+            board: Some(vec![2, 1, 0]),
         }),
         entry(&api::JoinGroupRace { id: 6 }),
         entry(&api::LeaveGroupRace { id: 6 }),
@@ -615,4 +616,12 @@ fn requests_without_later_arguments_load() {
     )
     .unwrap();
     assert_eq!(intent.attempt_id, "", "{REQUESTS}");
+    // Race pages from before the boards of the others for who's done: no board
+    let poll: api::PollGroupRace =
+        serde_json::from_str(r#"{"id":6,"progress":42,"puzzle":true}"#).unwrap();
+    assert_eq!(
+        (poll.progress, poll.puzzle, poll.board),
+        (Some(42), true, None),
+        "{REQUESTS}"
+    );
 }

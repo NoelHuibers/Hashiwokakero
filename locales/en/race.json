@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Progress",
-    "text": "How far everyone is: the share of the bridges on their board. Nobody sees anyone's bridges.",
+    "text": "How far everyone is: the share of the bridges on their board. Nobody still racing sees anyone's bridges.",
     "you": "you"
   },
   "watch": {
-    "text": "You're watching: the race is on between the players."
+    "text": "You're watching: the race is on between the players.",
+    "others": "Watching the others",
+    "others_text": "Their boards, live, now that you're done. The ones still racing don't see them.",
+    "place": "#{{ place }}"
   },
   "done": {
     "solved": "Finished!",

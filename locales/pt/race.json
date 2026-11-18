@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Progresso",
-    "text": "Até onde cada um chegou: a parte das pontes no tabuleiro. Ninguém vê as pontes dos outros.",
+    "text": "Até onde cada um chegou: a parte das pontes no tabuleiro. Quem ainda está na corrida não vê as pontes dos outros.",
     "you": "você"
   },
   "watch": {
-    "text": "Você está assistindo: a corrida é entre os participantes."
+    "text": "Você está assistindo: a corrida é entre os participantes.",
+    "others": "Assistindo aos outros",
+    "others_text": "Os tabuleiros deles ao vivo, agora que você terminou. Quem ainda está na corrida não os vê.",
+    "place": "{{ place }}º"
   },
   "done": {
     "solved": "Concluído!",

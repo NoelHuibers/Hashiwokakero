@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Progreso",
-    "text": "Cómo va cada uno: la parte de los puentes en su tablero. Nadie ve los puentes de los demás.",
+    "text": "Cómo va cada uno: la parte de los puentes en su tablero. Nadie que siga en carrera ve los puentes de los demás.",
     "you": "tú"
   },
   "watch": {
-    "text": "Estás mirando: la carrera es entre los participantes."
+    "text": "Estás mirando: la carrera es entre los participantes.",
+    "others": "Mirando a los demás",
+    "others_text": "Sus tableros en directo, ahora que has terminado. Quienes siguen en carrera no los ven.",
+    "place": "{{ place }}.º"
   },
   "done": {
     "solved": "¡Terminado!",

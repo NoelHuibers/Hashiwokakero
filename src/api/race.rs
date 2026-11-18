@@ -53,8 +53,9 @@ pub async fn load_group_races(group: i64) -> Result<GroupRaces, ServerFnError> {
 
 /// The race's page asks every second or two: the race, `None` if it isn't there (any more) or of
 /// a group the visitor isn't in. Notes that the player is still there and takes their `progress`
-/// (percent of the solution's bridges on their board, for the others' bars). `puzzle`: the page
-/// doesn't have the puzzle yet, it comes once the race started.
+/// (percent of the solution's bridges on their board, for the others' bars) and their `board`
+/// (the bridges on each edge, for the players who are done and watch; apps from before it don't
+/// send one). `puzzle`: the page doesn't have the puzzle yet, it comes once the race started.
 ///
 /// Polled for now (the site runs on more than one machine, the state is in the database). The
 /// answer is the whole race in one value ([`RaceView`]), so a live connection (WebSocket or SSE,
@@ -64,13 +65,15 @@ pub async fn poll_group_race(
     id: i64,
     progress: Option<u8>,
     puzzle: bool,
+    #[server(default)] board: Option<Vec<u8>>,
 ) -> Result<Option<RaceView>, ServerFnError> {
     let conn = db::conn()?;
     let Some(user) = auth::current_user(&conn).await? else {
         return Ok(None);
     };
     // The names of blocked players are hidden in the same query
-    race::poll(&conn, id, user.id, progress, puzzle, now_ms()).await
+    let board = board.as_deref();
+    race::poll(&conn, id, user.id, progress, board, puzzle, now_ms()).await
 }
 
 /// Joins a race's lobby.

@@ -288,6 +288,8 @@ fn dojo_submission() -> DojoSubmission {
 }
 
 /// A race that is over: aiko won it, bob's finish was flagged, the guest gave up, chen is out.
+/// With a board of bob's for the shape: the server sends the boards only while a race runs, to a
+/// player who is done.
 fn race_view() -> RaceView {
     let player = |user_id: i64, name: &str, outcome| RacePlayer {
         user_id,
@@ -340,6 +342,10 @@ fn race_view() -> RaceView {
         rematch_open: true,
         server_now: 1_760_000_200_000,
         shared: Some(race_share()),
+        boards: vec![crate::model::RaceBoard {
+            user_id: 2,
+            bridges: vec![2, 1],
+        }],
     }
 }
 

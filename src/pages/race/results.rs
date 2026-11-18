@@ -360,6 +360,7 @@ mod tests {
             rematch_open: false,
             server_now: 2,
             shared: None,
+            boards: Vec::new(),
         };
         assert_eq!(own_board_time(&view), Some((20_000, 1)));
         // Flagged, gave up, or watched: no time to share

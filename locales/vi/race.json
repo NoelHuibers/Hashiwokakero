@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Tiến độ",
-    "text": "Mỗi người đã đi được bao xa: tỉ lệ cầu trên bàn của họ. Không ai thấy cầu của người khác.",
+    "text": "Mỗi người đã đi được bao xa: tỉ lệ cầu trên bàn của họ. Ai còn đang đua thì không thấy cầu của người khác.",
     "you": "bạn"
   },
   "watch": {
-    "text": "Bạn đang xem: cuộc đua diễn ra giữa những người chơi."
+    "text": "Bạn đang xem: cuộc đua diễn ra giữa những người chơi.",
+    "others": "Xem những người khác",
+    "others_text": "Bàn của họ trực tiếp, vì bạn đã xong. Những người còn đang đua không thấy chúng.",
+    "place": "hạng {{ place }}"
   },
   "done": {
     "solved": "Xong rồi!",

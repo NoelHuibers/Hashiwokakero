@@ -11,7 +11,10 @@
 //! Everything lives in the database, nothing in the server's memory: the site runs on more than
 //! one machine, and any of them answers. The pages ask for the state every second or two
 //! ([`poll`]), which also notes that the player is still there (`last_seen`) and takes their
-//! progress, the share of the solution's bridges on their board, for everyone's progress bars.
+//! progress, the share of the solution's bridges on their board, for everyone's progress bars,
+//! and the board itself. Only a player who is done (solved or gave up) gets the others' boards
+//! back, to watch them while the race runs; nobody racing, nor a member who didn't join, sees
+//! anyone's bridges before the end.
 //! What changes by time alone is noted lazily, by whoever asks next ([`settle`]): a lobby nobody
 //! started for `LOBBY_MS` is deleted, and a race is over once nobody races any more (everyone
 //! solved, gave up or wasn't seen for `AWAY_MS`) or `RACE_MS` after its start. `auth`'s cleanup
@@ -41,10 +44,10 @@ use super::{Group, require_member};
 use crate::model::{
     AWAY_MS, ApiError, BLOCKED_NAME, Flag, GroupRaces, HISTORY_SHOWN, Help, HelpPenalties,
     LOBBY_MS, Lane, LaneOutcome, MIN_RACERS, Mark, MarkKind, MoveEvent, PROGRESS_CAP,
-    PROGRESS_MIN_GAP_MS, RACE_MS, RaceEntrant, RaceOutcome, RacePhase, RacePlayer, RaceResult,
-    RaceShare, RaceSummary, RaceView, ReplayData, ReplayGroup, SharedBy, clean_log, day_of,
-    group_day, pick_hint, race_over, race_places, shared_difficulty, shown_progress, verify_log,
-    wrong_edges,
+    PROGRESS_MIN_GAP_MS, RACE_MS, RaceBoard, RaceEntrant, RaceOutcome, RacePhase, RacePlayer,
+    RaceResult, RaceShare, RaceSummary, RaceView, ReplayData, ReplayGroup, SharedBy, clean_log,
+    day_of, group_day, pick_hint, race_over, race_places, shared_difficulty, shown_progress,
+    valid_board, verify_log, wrong_edges,
 };
 use crate::server::db::db_err;
 use crate::server::{run_blocking, shares};
@@ -430,7 +433,8 @@ pub async fn open_shared(
 ///
 /// One query: the race, its group, the viewer's membership, its rematch and its players with
 /// their names (a player the viewer blocked as `BLOCKED_NAME`), a row per player. On a shared
-/// puzzle also its sharer and size, and who solved it before the race.
+/// puzzle also its sharer and size, and who solved it before the race. And the others' boards,
+/// only while it runs and only for a player who is done ([`RaceView::boards`]).
 async fn read(
     conn: &Connection,
     id: i64,
@@ -452,12 +456,15 @@ async fn read(
                      q.colour,
                      EXISTS (SELECT 1 FROM shared_results sr WHERE sr.puzzle_id = r.share_puzzle_id
                          AND sr.user_id = q.user_id AND sr.finished_at < COALESCE(r.starts_at, ?3 + 1)),
-                     {}
+                     {},
+                     CASE WHEN r.ended_at IS NULL AND (mine.finished_at IS NOT NULL OR mine.revealed = 1)
+                         AND q.user_id != ?2 THEN q.board END
                  FROM group_races r
                  JOIN groups g ON g.id = r.group_id
                  JOIN group_members me ON me.group_id = r.group_id AND me.user_id = ?2
+                 LEFT JOIN group_race_players mine ON mine.race_id = r.id AND mine.user_id = ?2
                  LEFT JOIN group_races x ON x.id = r.rematch_id
-                 LEFT JOIN (SELECT {PLAYER_COLUMNS} FROM {PLAYERS_OF} WHERE p.race_id = ?1) q
+                 LEFT JOIN (SELECT {PLAYER_COLUMNS}, p.board FROM {PLAYERS_OF} WHERE p.race_id = ?1) q
                      ON q.race_id = r.id
                  {SHARE_JOINS}
                  WHERE r.id = ?1
@@ -470,6 +477,7 @@ async fn read(
         .map_err(db_err)?;
     let mut found = None;
     let mut players = Vec::new();
+    let mut boards = Vec::new();
     while let Some(row) = rows.next().await.map_err(db_err)? {
         if found.is_none() {
             let race = row_to_race(&row, 0)?;
@@ -497,6 +505,16 @@ async fn read(
                 BLOCKED_NAME.clone_into(&mut player.name);
             }
             player.solved_before = row.get::<i64>(31).map_err(db_err)? != 0;
+            if let Some(bridges) = row
+                .get::<Option<String>>(39)
+                .map_err(db_err)?
+                .and_then(|b| board_from_text(&b))
+            {
+                boards.push(RaceBoard {
+                    user_id: player.user_id,
+                    bridges,
+                });
+            }
             players.push(player);
         }
     }
@@ -505,6 +523,9 @@ async fn read(
     };
     let ended = race.phase(now) == RacePhase::Ended;
     let joined = players.iter().any(|p| p.user_id == viewer);
+    // The query sends them only to a player who is done; not once the time ran out either
+    let watching = race.phase(now) == RacePhase::Running
+        && players.iter().any(|p| p.user_id == viewer && p.done());
     let view = RaceView {
         id: race.id,
         group_id: race.group_id,
@@ -524,6 +545,7 @@ async fn read(
         rematch_open: rematch_open && ended,
         server_now: now,
         shared,
+        boards: if watching { boards } else { Vec::new() },
     };
     Ok(Some((race, players, view)))
 }
@@ -646,22 +668,38 @@ async fn view_of(
         .ok_or_else(|| ApiError::RaceGone.fail())
 }
 
+/// A board as stored (`group_race_players.board`): a digit per edge, `None` for one that can't be
+/// a board ([`valid_board`]).
+fn board_text(bridges: &[u8]) -> Option<String> {
+    valid_board(bridges).then(|| bridges.iter().map(|&b| char::from(b'0' + b)).collect())
+}
+
+/// A stored board, `None` for one that doesn't read as a board.
+fn board_from_text(text: &str) -> Option<Vec<u8>> {
+    let bridges: Vec<u8> = text.bytes().map(|b| b.wrapping_sub(b'0')).collect();
+    valid_board(&bridges).then_some(bridges)
+}
+
 /// What a race's page asks every second or two: the race as `viewer` sees it, `None` if it isn't
 /// there (any more) or the viewer isn't in its group.
 ///
 /// Notes that the viewer is still there, if they joined, and takes their `progress` (percent of
 /// the solution's bridges on their board, for the others' bars) at most every
-/// `PROGRESS_MIN_GAP_MS`, while they race. Untrusted, it's only for show: the finish is checked.
+/// `PROGRESS_MIN_GAP_MS`, while they race, with their `board` (for the players who are done and
+/// watch). Untrusted, both are only for show: the finish is checked. A board that isn't one, or
+/// doesn't have the puzzle's edges (as many as its solution), is left out; the progress is taken.
 /// One write and one query, a second write only when the race just ended or expired.
 pub async fn poll(
     conn: &Connection,
     id: i64,
     viewer: i64,
     progress: Option<u8>,
+    board: Option<&[u8]>,
     puzzle: bool,
     now: i64,
 ) -> Result<Option<RaceView>, ServerFnError> {
     let progress = progress.map(|p| i64::from(p.min(PROGRESS_CAP)));
+    let board = board.and_then(board_text);
     let taken = format!(
         "?4 IS NOT NULL AND progress_at <= ?3 - {PROGRESS_MIN_GAP_MS}
          AND finished_at IS NULL AND revealed = 0"
@@ -670,12 +708,15 @@ pub async fn poll(
         &format!(
             "UPDATE group_race_players SET last_seen = ?3,
                  progress = CASE WHEN {taken} THEN ?4 ELSE progress END,
+                 board = CASE WHEN {taken} AND length(?5) = (
+                     SELECT json_array_length(solution) FROM group_races WHERE id = ?1)
+                     THEN ?5 ELSE board END,
                  progress_at = CASE WHEN {taken} THEN ?3 ELSE progress_at END
              WHERE race_id = ?1 AND user_id = ?2 AND EXISTS (
                  SELECT 1 FROM group_races r JOIN group_members m ON m.group_id = r.group_id
                  WHERE r.id = ?1 AND m.user_id = ?2 AND r.ended_at IS NULL)"
         ),
-        params![id, viewer, now, progress],
+        params![id, viewer, now, progress, board],
     )
     .await
     .map_err(db_err)?;
@@ -1090,7 +1131,7 @@ pub async fn finish(
     .err();
     tx.execute(
         "UPDATE group_race_players SET finished_at = ?3, time_ms = ?4, moves = ?5, bridges = ?6,
-             log = ?7, flag = ?8, last_seen = ?3, progress = 100
+             log = ?7, flag = ?8, last_seen = ?3, progress = 100, board = ?9
          WHERE race_id = ?1 AND user_id = ?2 AND finished_at IS NULL AND revealed = 0",
         params![
             id,
@@ -1100,7 +1141,8 @@ pub async fn finish(
             i64::from(moves),
             json(&bridges)?,
             json(&log)?,
-            flag.map(Flag::id)
+            flag.map(Flag::id),
+            board_text(&bridges)
         ],
     )
     .await

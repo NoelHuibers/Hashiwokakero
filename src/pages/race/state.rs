@@ -1,11 +1,11 @@
 //! A race on its page: what the server sent last, the clocks, the player's board, the progress
-//! that goes with the next request and the move log.
+//! and board that go with the next request, and the move log.
 
 use common::{Board, Puzzle};
 use leptos::prelude::*;
 
 use crate::model::{
-    ClockSync, MoveEvent, PROGRESS_CAP, ProgressReport, RaceOutcome, RacePhase, RaceView,
+    ClockSync, MoveEvent, PROGRESS_CAP, ProgressReport, RaceOutcome, RacePhase, RaceView, Report,
     poll_delay_ms, progress, total_bridges,
 };
 use crate::state::{Game, MoveLog, Source, Status};
@@ -199,19 +199,22 @@ impl RaceState {
         u8::try_from(done).unwrap_or(0).min(PROGRESS_CAP)
     }
 
-    /// The progress to send with the next request at `now` (browser clock), if it changed and
-    /// the last went long enough ago; only while racing.
-    pub fn take_progress(&self, now: i64) -> Option<u8> {
+    /// The progress and board to send with the next request at `now` (browser clock), if the
+    /// board changed and the last went long enough ago; only while racing. The board is for the
+    /// players who are done and watch.
+    pub fn take_progress(&self, now: i64) -> Option<Report> {
         if !untrack(|| self.racing() && self.has_board()) {
             return None;
         }
         let value = untrack(|| self.progress());
-        self.report
-            .try_update_value(|r| r.take(now, value))
-            .flatten()
+        self.game.bridges.with_untracked(|board| {
+            self.report
+                .try_update_value(|r| r.take(now, value, board))
+                .flatten()
+        })
     }
 
-    /// The request with the progress failed: it goes again with the next one.
+    /// The request with the progress and board failed: they go again with the next one.
     pub fn progress_failed(&self) {
         self.report.update_value(ProgressReport::failed);
     }
@@ -313,6 +316,7 @@ mod tests {
             rematch_open: false,
             server_now,
             shared: None,
+            boards: Vec::new(),
         }
     }
 
@@ -429,6 +433,14 @@ mod tests {
         });
     }
 
+    /// The progress and the board that went with a request.
+    fn sent(progress: u8, board: &[u8]) -> Report {
+        Report {
+            progress,
+            board: board.to_vec(),
+        }
+    }
+
     #[test]
     fn progress_goes_with_a_request_once_a_second_while_racing() {
         tab(|r| {
@@ -437,19 +449,54 @@ mod tests {
             r.now.set(START);
             r.apply(started, START, START);
             assert_eq!(r.progress(), 0);
-            assert_eq!(r.take_progress(START), Some(0));
+            assert_eq!(r.take_progress(START), Some(sent(0, &[0])));
             assert_eq!(r.take_progress(START + 2_000), None, "unchanged");
             r.game.cycle(0, 1);
             assert_eq!(r.progress(), 50);
-            assert_eq!(r.take_progress(START + 2_000), Some(50));
+            assert_eq!(r.take_progress(START + 2_000), Some(sent(50, &[1])));
             r.game.cycle(0, 1);
             // Solved on the board, but only the server says so
             assert_eq!(r.progress(), PROGRESS_CAP);
             assert_eq!(r.take_progress(START + 2_500), None, "too soon");
-            assert_eq!(r.take_progress(START + 3_000), Some(PROGRESS_CAP));
+            assert_eq!(
+                r.take_progress(START + 3_000),
+                Some(sent(PROGRESS_CAP, &[2]))
+            );
             // A failed request: it goes again
             r.progress_failed();
-            assert_eq!(r.take_progress(START + 3_100), Some(PROGRESS_CAP));
+            assert_eq!(
+                r.take_progress(START + 3_100),
+                Some(sent(PROGRESS_CAP, &[2]))
+            );
+        });
+    }
+
+    #[test]
+    fn the_board_goes_with_a_request_when_it_changed_while_racing() {
+        tab(|r| {
+            r.now.set(START);
+            r.apply(view(RaceOutcome::Racing, START), START, START);
+            assert_eq!(r.take_progress(START), Some(sent(0, &[0])));
+            // A bridge, then taken away again within the second: the board is as it was
+            r.game.cycle(0, 1);
+            r.game.cycle(0, -1);
+            assert_eq!(r.take_progress(START + 1_500), None, "the same board");
+            r.game.cycle(0, 1);
+            assert_eq!(
+                r.take_progress(START + 1_600),
+                Some(sent(PROGRESS_CAP, &[1]))
+            );
+            // Taken away: the progress and the board go back
+            r.game.cycle(0, -1);
+            assert_eq!(r.take_progress(START + 2_000), None, "too soon");
+            assert_eq!(r.take_progress(START + 2_600), Some(sent(0, &[0])));
+            // The request failed: the same board goes again, even unchanged
+            r.progress_failed();
+            assert_eq!(r.take_progress(START + 2_700), Some(sent(0, &[0])));
+            // Done: no more boards
+            r.game.cycle(0, 1);
+            r.show(view(RaceOutcome::GaveUp, START + 4_000));
+            assert_eq!(r.take_progress(START + 4_000), None);
         });
     }
 

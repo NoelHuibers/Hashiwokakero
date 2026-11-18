@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Fortschritt",
-    "text": "Wie weit alle sind: der Anteil der Brücken auf ihrem Brett. Niemand sieht die Brücken der anderen.",
+    "text": "Wie weit alle sind: der Anteil der Brücken auf ihrem Brett. Wer noch im Rennen ist, sieht keine fremden Brücken.",
     "you": "du"
   },
   "watch": {
-    "text": "Du schaust zu: Das Rennen läuft zwischen den Teilnehmenden."
+    "text": "Du schaust zu: Das Rennen läuft zwischen den Teilnehmenden.",
+    "others": "Den anderen zuschauen",
+    "others_text": "Ihre Bretter live, jetzt wo du fertig bist. Wer noch im Rennen ist, sieht sie nicht.",
+    "place": "{{ place }}. Platz"
   },
   "done": {
     "solved": "Geschafft!",

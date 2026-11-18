@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "İlerleme",
-    "text": "Herkesin durumu: tahtasındaki köprülerin oranı. Kimse başkasının köprülerini görmez.",
+    "text": "Herkesin durumu: tahtasındaki köprülerin oranı. Hâlâ yarışan kimse başkasının köprülerini görmez.",
     "you": "sen"
   },
   "watch": {
-    "text": "İzliyorsun: yarış katılımcılar arasında."
+    "text": "İzliyorsun: yarış katılımcılar arasında.",
+    "others": "Diğerlerini izle",
+    "others_text": "Bitirdiğin için tahtaları canlı. Hâlâ yarışanlar bunları görmez.",
+    "place": "{{ place }}."
   },
   "done": {
     "solved": "Bitti!",

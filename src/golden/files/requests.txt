@@ -78,7 +78,7 @@
 /api/open_hanko {"group":2}
 /api/open_shared_race {"group":2,"code":"k7m2xq9a"}
 /api/password_reset_available {}
-/api/poll_group_race {"id":6,"progress":42,"puzzle":true}
+/api/poll_group_race {"id":6,"progress":42,"puzzle":true,"board":[2,1,0]}
 /api/poll_notifications {"device":3,"secret":"abababababababababababababababababababababababababababababababab"}
 /api/post_group_puzzle {"group":2,"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]},"title":"Spiral"}
 /api/puzzle_cnf {"puzzle":{"width":3,"height":3,"islands":[{"pos":{"x":0,"y":0},"required":2},{"pos":{"x":2,"y":0},"required":3},{"pos":{"x":2,"y":2},"required":1}]}}

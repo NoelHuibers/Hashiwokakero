@@ -1,6 +1,8 @@
 //! A race (勝負 shōbu) of a group, `/groups/:id/races/:race`: the lobby, the countdown, the race
 //! with everyone's progress, and the results with the replay and the rematch.
 //!
+//! A player who is done watches the others' boards while the rest still race ([`watch`]).
+//!
 //! Everything comes from the server, which the page asks every second or two
 //! (`poll_group_race`, see [`state::RaceState`] and `model::poll_delay_ms`), not while the tab is
 //! hidden. The answers carry the server's clock: the countdown and the race's clock follow it, not
@@ -11,6 +13,7 @@ pub mod lobby;
 pub mod results;
 pub mod state;
 pub mod track;
+pub mod watch;
 
 use std::time::Duration;
 
@@ -41,6 +44,7 @@ use lobby::Lobby;
 use results::Results;
 use state::{GAME_KEY, RaceState};
 use track::Tracks;
+use watch::Watch;
 
 /// The path of a race's page (without the language).
 pub fn race_path(group: i64, race: i64) -> String {
@@ -122,11 +126,13 @@ impl Poller {
             return;
         }
         let race = self.race;
-        let progress = race.take_progress(browser_now());
+        let report = race.take_progress(browser_now());
+        let reported = report.is_some();
+        let (progress, board) = report.map_or((None, None), |r| (Some(r.progress), Some(r.board)));
         let puzzle = race.view.with_untracked(Option::is_none) || race.wants_puzzle();
         let sent = browser_now();
         spawn_local(async move {
-            let reply = poll_group_race(id, progress, puzzle).await;
+            let reply = poll_group_race(id, progress, puzzle, board).await;
             if self.run.try_get_value() != Some(run) {
                 return;
             }
@@ -140,7 +146,7 @@ impl Poller {
                     return;
                 }
                 Err(e) => {
-                    if progress.is_some() {
+                    if reported {
                         race.progress_failed();
                     }
                     // The first answer: the page has nothing to show; later, the next one may work
@@ -533,24 +539,37 @@ fn Controls(race: RaceState) -> impl IntoView {
     }
 }
 
-/// What the player sees once they're done and the others still race.
+/// What the player sees once they're done and the others still race: first thing, before the
+/// others' boards ([`Watch`]) and their own.
 #[component]
 fn Done(race: RaceState) -> impl IntoView {
     let i18n = use_i18n();
-    move || {
-        let solved = matches!(race.mine(), Some(RaceOutcome::Solved { .. }));
-        view! {
-            <div class="flex flex-col gap-1 rounded-xl border-2 border-primary/40 bg-primary/5 p-4" role="status" data-testid="race-done">
-                <p class="text-lg font-black">
-                    {if solved {
-                        view! { <span class="font-pixel text-primary" aria-hidden="true">"完 "</span> {t!(i18n, race.done.solved)} }.into_any()
-                    } else {
-                        t!(i18n, race.done.gave_up).into_any()
-                    }}
-                </p>
-                <p class="text-sm text-muted-foreground">{t!(i18n, race.done.waiting)}</p>
-            </div>
-        }
+    let solved = Memo::new(move |_| matches!(race.mine(), Some(RaceOutcome::Solved { .. })));
+    let card = NodeRef::<leptos::html::Div>::new();
+    // Done just now, down at the board: up to the card once, the others' boards below it
+    card.on_load(|el| {
+        request_animation_frame(move || {
+            if el.get_bounding_client_rect().top() < 0.0 {
+                el.scroll_into_view_with_bool(true);
+            }
+        });
+    });
+    view! {
+        <div
+            node_ref=card
+            class="-order-2 flex scroll-mt-20 flex-col gap-1 rounded-xl border-2 border-primary/40 bg-primary/5 p-4"
+            role="status"
+            data-testid="race-done"
+        >
+            <p class="text-lg font-black">
+                {move || if solved.get() {
+                    view! { <span class="font-pixel text-primary" aria-hidden="true">"完 "</span> {t!(i18n, race.done.solved)} }.into_any()
+                } else {
+                    t!(i18n, race.done.gave_up).into_any()
+                }}
+            </p>
+            <p class="text-sm text-muted-foreground">{t!(i18n, race.done.waiting)}</p>
+        </div>
     }
 }
 
@@ -596,22 +615,29 @@ fn RaceBody(race: RaceState) -> impl IntoView {
                 {move || match phase.get() {
                     Some(RacePhase::Lobby) => view! { <Lobby race /> }.into_any(),
                     Some(RacePhase::Ended) => view! { <Results race /> }.into_any(),
+                    // Done: the card and the others' boards go first (`order`), the player's own
+                    // board stays where it is, as it is
                     _ if playing_view.get() => view! {
-                        <Board race />
-                        <Show when=move || mine.get() == Some(RaceOutcome::Racing) && phase.get() == Some(RacePhase::Running)>
-                            <Show when=move || race.failed.get()>
-                                <div role="status" class="flex flex-wrap items-center gap-3 rounded-lg border border-warning/40 bg-warning-light px-3 py-2 text-sm text-warning-dark">
-                                    <span>{t!(i18n, kadai.page.submit_failed)}</span>
-                                    <Button variant=ButtonVariant::Outline attr:disabled=move || race.busy.get() on:click=move |_| race.submit()>
-                                        {t!(i18n, kadai.page.submit_retry)}
-                                    </Button>
-                                </div>
+                        <div class="flex flex-col gap-4">
+                            <Board race />
+                            <Show when=move || mine.get() == Some(RaceOutcome::Racing) && phase.get() == Some(RacePhase::Running)>
+                                <Show when=move || race.failed.get()>
+                                    <div role="status" class="flex flex-wrap items-center gap-3 rounded-lg border border-warning/40 bg-warning-light px-3 py-2 text-sm text-warning-dark">
+                                        <span>{t!(i18n, kadai.page.submit_failed)}</span>
+                                        <Button variant=ButtonVariant::Outline attr:disabled=move || race.busy.get() on:click=move |_| race.submit()>
+                                            {t!(i18n, kadai.page.submit_retry)}
+                                        </Button>
+                                    </div>
+                                </Show>
+                                <Controls race />
                             </Show>
-                            <Controls race />
-                        </Show>
-                        <Show when=move || mine.get().is_some_and(RaceOutcome::done)>
-                            <Done race />
-                        </Show>
+                            <Show when=move || mine.get().is_some_and(RaceOutcome::done)>
+                                <Done race />
+                            </Show>
+                            <Show when=move || mine.get().is_some_and(RaceOutcome::done) && phase.get() == Some(RacePhase::Running)>
+                                <Watch race />
+                            </Show>
+                        </div>
                     }.into_any(),
                     _ => view! {
                         <div class="flex flex-col items-center gap-3 rounded-xl border bg-card p-6 text-center" data-testid="race-watching">
@@ -719,6 +745,7 @@ mod tests {
             rematch_open: false,
             server_now: 10_000,
             shared: None,
+            boards: Vec::new(),
         }
     }
 
@@ -776,6 +803,52 @@ mod tests {
         for text in ["race-results", "1:15.0", "gave up", "t finish", "Rematch"] {
             assert!(over.contains(text), "{text}: {over}");
         }
+    }
+
+    #[tokio::test]
+    async fn a_player_who_is_done_watches_the_others_boards() {
+        // aiko solved it, bram and chen still race; the server sent bram's board
+        let mut race = view(Some(5_000), None);
+        race.players[0].outcome = RaceOutcome::Solved {
+            time_ms: 4_000,
+            place: Some(1),
+        };
+        race.puzzle = Some(common::Puzzle::from_grid(&[
+            vec![2, 0, 3],
+            vec![0, 0, 0],
+            vec![0, 0, 1],
+        ]));
+        race.boards = vec![crate::model::RaceBoard {
+            user_id: 2,
+            bridges: vec![2, 0],
+        }];
+        let done = render(race.clone());
+        for text in [
+            "race-done",
+            "race-watch",
+            "Watching the others",
+            "観戦",
+            "data-user=\"2\"",
+            "data-user=\"3\"",
+            "data-state=\"away\"",
+            "bram: 40% of the bridges",
+            "40%",
+        ] {
+            assert!(done.contains(text), "{text}: {done}");
+        }
+        // Not their own
+        assert!(!done.contains("aiko: 40% of the bridges"), "{done}");
+        // bram's double bridge, and the island it completes
+        assert!(done.contains("island done"), "{done}");
+        // Still racing: nobody's boards
+        let mut racing = race.clone();
+        racing.players[0].outcome = RaceOutcome::Racing;
+        let racing = render(racing);
+        assert!(racing.contains("race-board"), "{racing}");
+        assert!(!racing.contains("race-watch"), "{racing}");
+        // Over: the results instead
+        race.ended_at = Some(9_000);
+        assert!(!render(race).contains("race-watch"));
     }
 
     /// [`view`] on zoe's shared 9×9 puzzle, which bram solved before.
