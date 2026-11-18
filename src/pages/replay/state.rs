@@ -1,6 +1,8 @@
 //! The replay theatre's state: the clock, who's shown, and every member's board at the clock's
 //! time, worked out from the logs as the clock moves (see `model::replay`).
 
+use std::fmt::Write as _;
+
 use leptos::prelude::*;
 
 use crate::model::{
@@ -23,6 +25,98 @@ pub enum Layout {
 
 /// More shown members than this start apart: the lanes on one bridge would get too thin.
 pub const MAX_TOGETHER: usize = 8;
+
+/// Room for the little boards side by side, as the theatre's column has it where the together
+/// board would be (see `Apart` and `.replay-apart` in tailwind.css), in CSS px.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Room {
+    pub width: f64,
+    pub height: f64,
+    /// Between the little boards.
+    pub gap: f64,
+    /// Narrower columns would make the islands too small to read.
+    pub most: usize,
+}
+
+/// The rooms the columns are picked for: a phone's, a tablet's and a laptop's.
+///
+/// A phone below `sm` (390 px: the board is as tall as it is wide), a tablet from `sm` to `lg`,
+/// a laptop from `lg`, beside the members (1366 × 768). The together board takes 58 % of the
+/// screen's height at most.
+pub const ROOMS: [(&str, Room); 3] = [
+    (
+        "phone",
+        Room {
+            width: 358.0,
+            height: 358.0,
+            gap: 8.0,
+            most: 4,
+        },
+    ),
+    (
+        "tablet",
+        Room {
+            width: 720.0,
+            height: 560.0,
+            gap: 12.0,
+            most: 6,
+        },
+    ),
+    (
+        "laptop",
+        Room {
+            width: 848.0,
+            height: 445.0,
+            gap: 12.0,
+            most: 6,
+        },
+    ),
+];
+
+/// A little board's card around its sea, in CSS px: the name and the progress bar above and
+/// below it, the padding and the borders (`Mini` in grid.rs).
+pub const CARD_TALL: f64 = 59.0;
+pub const CARD_WIDE: f64 = 18.0;
+
+/// Columns and rows for `lanes` little boards with seas of `aspect` (width / height) in `room`.
+///
+/// The biggest boards that fit the together board's room, so switching keeps the stage about
+/// as tall. Of boards nearly as big (within 5 %), the fewest rows, then the fewest columns: two
+/// rows of three rather than three rows of two.
+pub fn apart_grid(lanes: usize, aspect: f64, room: Room) -> (usize, usize) {
+    let lanes = lanes.max(1);
+    let sea = |cols: usize| sea_width(lanes, cols, aspect, room);
+    let choices = 1..=room.most.clamp(1, lanes);
+    let best = choices.clone().map(sea).fold(f64::MIN, f64::max);
+    let cols = choices
+        .filter(|&c| sea(c) >= best - best.abs() * 0.05)
+        .min_by_key(|&c| (lanes.div_ceil(c), c))
+        .unwrap_or(1);
+    (cols, lanes.div_ceil(cols))
+}
+
+/// How wide a little board's sea can be with `lanes` of them in `cols` columns in `room`: as
+/// wide as a column, as tall as a row.
+#[expect(clippy::cast_precision_loss, reason = "a group has at most 50 members")]
+fn sea_width(lanes: usize, cols: usize, aspect: f64, room: Room) -> f64 {
+    let rows = lanes.div_ceil(cols) as f64;
+    let cols = cols as f64;
+    let across = (room.width - (cols - 1.0) * room.gap) / cols - CARD_WIDE;
+    let down = ((room.height - (rows - 1.0) * room.gap) / rows - CARD_TALL) * aspect;
+    across.min(down)
+}
+
+/// The little boards' grid for `lanes` boards of `aspect`: the columns and rows for every room
+/// (`--cols-phone`, `--rows-phone`, ...), for `.replay-apart` to pick by the screen's width.
+pub fn apart_style(lanes: usize, aspect: f64) -> String {
+    let mut style =
+        format!("--aspect: {aspect:.4}; --card-tall: {CARD_TALL}px; --card-wide: {CARD_WIDE}px;");
+    for (name, room) in ROOMS {
+        let (cols, rows) = apart_grid(lanes, aspect, room);
+        let _ = write!(style, " --cols-{name}: {cols}; --rows-{name}: {rows};");
+    }
+    style
+}
 
 /// A member's board at the clock's time.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -461,5 +555,60 @@ mod tests {
             t.play();
             assert!(!t.playing.get());
         });
+    }
+
+    /// How tall the little boards' grid gets in a room, in CSS px.
+    fn apart_height(lanes: usize, aspect: f64, room: Room) -> f64 {
+        let (cols, rows) = apart_grid(lanes, aspect, room);
+        let r = f64::from(u32::try_from(rows).unwrap());
+        // The grid's floor of 4.5rem a card (tailwind.css), for very big groups
+        let sea = sea_width(lanes, cols, aspect, room).max(72.0 - CARD_WIDE);
+        r * (sea / aspect + CARD_TALL) + (r - 1.0) * room.gap
+    }
+
+    #[test]
+    fn little_boards_fill_the_together_boards_room() {
+        let [(_, phone), (_, tablet), (_, laptop)] = ROOMS;
+        // A phone: two side by side, three and four in twos, five and six in threes, eight in
+        // fours
+        assert_eq!(apart_grid(1, 1.0, phone), (1, 1));
+        assert_eq!(apart_grid(2, 1.0, phone), (2, 1));
+        assert_eq!(apart_grid(3, 1.0, phone), (2, 2));
+        assert_eq!(apart_grid(4, 1.0, phone), (2, 2));
+        assert_eq!(apart_grid(5, 1.0, phone), (3, 2));
+        assert_eq!(apart_grid(6, 1.0, phone), (3, 2));
+        assert_eq!(apart_grid(8, 1.0, phone), (4, 2));
+        assert_eq!(apart_grid(50, 1.0, phone).0, 4);
+        // A laptop: more columns for 5 and more, rows of up to six
+        assert_eq!(apart_grid(2, 1.0, laptop), (2, 1));
+        assert_eq!(apart_grid(3, 1.0, laptop), (3, 1));
+        assert_eq!(apart_grid(5, 1.0, laptop), (3, 2));
+        assert_eq!(apart_grid(8, 1.0, laptop), (4, 2));
+        assert_eq!(apart_grid(12, 1.0, laptop), (6, 2));
+        assert_eq!(apart_grid(6, 1.0, tablet), (3, 2));
+        // A wide board: fewer rows of wider boards
+        assert_eq!(apart_grid(4, 2.0, laptop), (2, 2));
+        // Up to eight (the most that start together) the grid is no taller than the together
+        // board, and not much shorter either
+        for lanes in 1..=MAX_TOGETHER {
+            for (name, room) in ROOMS {
+                let h = apart_height(lanes, 1.0, room);
+                assert!(h <= room.height + 0.5, "{name} {lanes}: {h}");
+                if lanes > 1 {
+                    assert!(h >= room.height * 0.45, "{name} {lanes}: {h}");
+                }
+            }
+        }
+        // The style the grid picks from
+        let style = apart_style(5, 1.0);
+        assert!(style.contains("--aspect: 1.0000;"), "{style}");
+        assert!(
+            style.contains("--cols-phone: 3; --rows-phone: 2;"),
+            "{style}"
+        );
+        assert!(
+            style.contains("--cols-laptop: 3; --rows-laptop: 2;"),
+            "{style}"
+        );
     }
 }
