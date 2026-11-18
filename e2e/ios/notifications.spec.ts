@@ -96,10 +96,16 @@ async function push(udid: string, marker: string, url = LINK) {
   }
 }
 
-/** Taps the banner of the notification with `marker` while it shows (about five seconds). */
+/**
+ * Taps the banner of the notification with `marker` while it shows (about five seconds, in the
+ * Notification Centre's list after that). A lookup in SpringBoard takes a snapshot of its views,
+ * seconds on a busy runner: the search is bounded by time, not by tries. How long it took goes
+ * into the report.
+ */
 async function tapBanner(app: App, marker: string) {
+  const started = Date.now();
   const tapped = await onSpringBoard(app.session, async () => {
-    for (let i = 0; i < 40; i++) {
+    while (Date.now() - started < 45_000) {
       const banner = await element(app.session, `label CONTAINS ${JSON.stringify(marker)}`);
       if (banner) {
         await app.session.command('POST', `/element/${banner}/click`);
@@ -108,6 +114,10 @@ async function tapBanner(app: App, marker: string) {
       await sleep(250);
     }
     return false;
+  });
+  test.info().annotations.push({
+    type: 'banner',
+    description: `${tapped ? 'tapped' : 'not found'} after ${Date.now() - started} ms`,
   });
   if (!tapped) {
     await test.info().attach('springboard', {
@@ -203,6 +213,8 @@ test('a notification shows while the app is in front, and a tap opens its page',
   app,
   udid,
 }) => {
+  // SpringBoard's lookups and, below, a start of the app
+  test.slow();
   await app.visit('/rules');
   await push(udid, 'in-front');
   await tapBanner(app, 'in-front');
@@ -213,6 +225,8 @@ test('a notification shows while the app is in front, and a tap opens its page',
 });
 
 test('a tap on a notification starts the app on its page', async ({ app, udid }) => {
+  // SpringBoard's lookups and, below, a start of the app
+  test.slow();
   await app.session.mobile('terminateApp', { bundleId: BUNDLE });
   await push(udid, 'closed');
   await tapBanner(app, 'closed');
