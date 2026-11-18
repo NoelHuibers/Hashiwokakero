@@ -375,7 +375,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				APS_ENVIRONMENT = development;
 				ARCHS = (
 					arm64,
 				);
@@ -408,7 +407,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				APS_ENVIRONMENT = production;
 				ARCHS = (
 					arm64,
 				);

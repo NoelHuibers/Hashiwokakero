@@ -973,6 +973,10 @@ cargo tauri ios build --ci --target aarch64 --export-method app-store-connect \
   --config '{"build":{"beforeBuildCommand":null},"bundle":{"iOS":{"bundleVersion":"<versionCode>"}}}'
 ```
 
+Before it, the job sets `aps-environment` in `hashi_tauri_iOS.entitlements` to `production`
+(committed as `development`): Tauri signs the archive with that file as it is before Xcode exports
+it, so the App Store's push service has to be in the file, not in a build setting.
+
 The key's `.p8` goes into a file in the runner's temp dir, which is deleted at the end of the
 job, also when the job fails. Tauri gets it through `APPLE_API_KEY`, `APPLE_API_ISSUER` and
 `APPLE_API_KEY_PATH`, and the team through `APPLE_DEVELOPMENT_TEAM` (`Q35TCGM5PW`, in the
@@ -1404,8 +1408,8 @@ This repository's project was generated in CI and committed like `gen/android`, 
 - Notifications, also in `main.mm`: the device token's callbacks of the application's delegate
   (added to tao's class before UIKit takes it), the notification centre's delegate (set before
   the app finishes launching) and the tapped notification's link, which goes the Universal Links'
-  way. The entitlement `aps-environment` is `$(APS_ENVIRONMENT)`, a build setting of the target
-  in `project.yml` and `project.pbxproj`: `development` for debug, `production` for release.
+  way. The entitlement `aps-environment` is `development` in `hashi_tauri_iOS.entitlements`; the
+  release workflow sets it to `production` before it builds ([iOS releases](#ios-releases)).
 
 The iOS side of the app's own plugin `hashi` is outside `gen/apple`, in `src-tauri/ios/`: a Swift
 package (`HashiPlugin.swift`, the counterpart of `HashiPlugin.kt`) that `build.rs` builds with

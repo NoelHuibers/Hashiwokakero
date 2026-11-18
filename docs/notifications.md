@@ -251,10 +251,11 @@ to Apple (TLS), so Apple sees the text; the privacy policy says so.
   that and anything else (429, 5xx) is `Failed`. The test against Apple's sandbox with the real
   key is `apple_s_sandbox_takes_our_provider_token` (ignored, run by hand: a made-up token must
   answer `BadDeviceToken`).
-- **Entitlement.** `aps-environment` in `hashi_tauri_iOS.entitlements` is `$(APS_ENVIRONMENT)`,
-  a build setting of the Xcode project (`project.yml`, `project.pbxproj`): `development` in the
-  debug configuration, `production` in release (the App Store and TestFlight). The release
-  workflow checks it in the IPA and its profile. The App ID `rs.hashi` has the Push Notifications
+- **Entitlement.** `aps-environment` in `hashi_tauri_iOS.entitlements` is `development` as
+  committed (the simulator, builds signed for development). The release workflow sets it to
+  `production` before it builds (the App Store and TestFlight) and checks it in the IPA and its
+  profile. Not a build setting (`$(…)`): Tauri signs the archive with the file as it is before
+  Xcode exports it, and the export dropped the unexpanded value. The App ID `rs.hashi` has the Push Notifications
   capability; automatic signing makes the profiles with it.
 - **The app's plugin** (`HashiPlugin.swift`): `notify_permission` asks iOS for alerts and sounds
   (`requestAuthorization`; iOS asks once, after a no only Settings, Notifications, Hashi changes

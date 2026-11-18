@@ -74,13 +74,6 @@ targets:
         RUST_BACKTRACE: full
         RUST_LOG: info
     settings:
-      # The push service the app's device tokens are for (aps-environment in the entitlements):
-      # Apple's sandbox for development builds, production for the App Store and TestFlight
-      configs:
-        debug:
-          APS_ENVIRONMENT: development
-        release:
-          APS_ENVIRONMENT: production
       base:
         ENABLE_BITCODE: false
         ARCHS: [arm64]
