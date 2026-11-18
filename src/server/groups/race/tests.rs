@@ -91,7 +91,7 @@ async fn started(conn: &Connection, group: i64, host: i64, others: &[i64]) -> (i
 
 /// The view of a race, which has to be there.
 async fn seen(conn: &Connection, id: i64, viewer: i64, now: i64) -> RaceView {
-    poll(conn, id, viewer, None, true, now)
+    poll(conn, id, viewer, None, None, true, now)
         .await
         .unwrap()
         .expect("the race")
@@ -175,7 +175,9 @@ async fn a_race_goes_from_the_lobby_to_the_results() {
     assert_eq!(running.phase(), RacePhase::Running);
     assert_eq!(running.puzzle, Some(small().puzzle));
     assert_eq!(running.solution, None);
-    let not_asked = poll(&conn, id, bram, None, false, start).await.unwrap();
+    let not_asked = poll(&conn, id, bram, None, None, false, start)
+        .await
+        .unwrap();
     assert_eq!(not_asked.unwrap().puzzle, None);
     let watching = seen(&conn, id, chen, start).await;
     assert_eq!((watching.joined(), watching.puzzle), (false, None));
@@ -308,7 +310,9 @@ async fn outsiders_see_nothing_and_join_nothing() {
         .await
         .unwrap();
     assert_eq!(
-        poll(&conn, id, stranger, None, true, T0).await.unwrap(),
+        poll(&conn, id, stranger, None, None, true, T0)
+            .await
+            .unwrap(),
         None
     );
     assert_eq!(
@@ -323,7 +327,9 @@ async fn outsiders_see_nothing_and_join_nothing() {
     begin(&conn, id, aiko, &small(), T0).await.unwrap();
     let start = T0 + COUNTDOWN_MS;
     assert_eq!(
-        poll(&conn, id, stranger, None, true, start).await.unwrap(),
+        poll(&conn, id, stranger, None, None, true, start)
+            .await
+            .unwrap(),
         None
     );
     assert_eq!(
@@ -337,14 +343,16 @@ async fn outsiders_see_nothing_and_join_nothing() {
     // A member who leaves the group drops off the race, and sees it no more
     leave_group(&conn, group, bram).await.unwrap();
     assert_eq!(
-        poll(&conn, id, bram, None, true, start).await.unwrap(),
+        poll(&conn, id, bram, None, None, true, start)
+            .await
+            .unwrap(),
         None
     );
     let view = seen(&conn, id, aiko, start).await;
     assert_eq!(view.players.len(), 1);
     // No such race
     assert_eq!(
-        poll(&conn, id + 100, aiko, None, true, start)
+        poll(&conn, id + 100, aiko, None, None, true, start)
             .await
             .unwrap(),
         None
@@ -466,25 +474,25 @@ async fn progress_is_capped_and_taken_once_a_second() {
     let group = group_of(&conn, aiko, &[bram, chen]).await;
     let (id, start) = started(&conn, group, aiko, &[bram]).await;
     let progress = |view: &RaceView| view.players[1].progress;
-    let view = poll(&conn, id, bram, Some(40), false, start + 1_000)
+    let view = poll(&conn, id, bram, Some(40), None, false, start + 1_000)
         .await
         .unwrap()
         .unwrap();
     assert_eq!(progress(&view), 40);
     // Too soon after the last one: not taken
-    let view = poll(&conn, id, bram, Some(60), false, start + 1_500)
+    let view = poll(&conn, id, bram, Some(60), None, false, start + 1_500)
         .await
         .unwrap()
         .unwrap();
     assert_eq!(progress(&view), 40);
     // Never full before the finish, whatever is reported
-    let view = poll(&conn, id, bram, Some(100), false, start + 2_000)
+    let view = poll(&conn, id, bram, Some(100), None, false, start + 2_000)
         .await
         .unwrap()
         .unwrap();
     assert_eq!(progress(&view), PROGRESS_CAP);
     // A watcher's progress goes nowhere
-    poll(&conn, id, chen, Some(5), false, start + 3_000)
+    poll(&conn, id, chen, Some(5), None, false, start + 3_000)
         .await
         .unwrap();
     assert_eq!(
@@ -497,6 +505,207 @@ async fn progress_is_capped_and_taken_once_a_second() {
     );
 }
 
+/// The board of `user` in race `id` as stored.
+async fn stored_board(conn: &Connection, id: i64, user: i64) -> Option<String> {
+    let mut rows = conn
+        .query(
+            "SELECT board FROM group_race_players WHERE race_id = ?1 AND user_id = ?2",
+            params![id, user],
+        )
+        .await
+        .unwrap();
+    rows.next().await.unwrap().unwrap().get(0).unwrap()
+}
+
+/// The boards of a view, by player.
+fn boards(view: &RaceView) -> Vec<(i64, Vec<u8>)> {
+    view.boards
+        .iter()
+        .map(|b| (b.user_id, b.bridges.clone()))
+        .collect()
+}
+
+#[tokio::test]
+async fn a_racers_board_is_taken_with_the_progress_once_a_second() {
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let group = group_of(&conn, aiko, &[bram]).await;
+    let (id, start) = started(&conn, group, aiko, &[bram]).await;
+    let report = |progress, board: Option<&'static [u8]>, at| {
+        let conn = &conn;
+        async move {
+            poll(conn, id, bram, Some(progress), board, false, at)
+                .await
+                .unwrap()
+                .unwrap()
+        }
+    };
+    assert_eq!(stored_board(&conn, id, bram).await, None);
+    report(0, Some(&[1, 0]), start + 1_000).await;
+    assert_eq!(stored_board(&conn, id, bram).await.as_deref(), Some("10"));
+    // Too soon after the last one: neither is taken
+    let view = report(50, Some(&[2, 0]), start + 1_500).await;
+    assert_eq!(view.players[1].progress, 0);
+    assert_eq!(stored_board(&conn, id, bram).await.as_deref(), Some("10"));
+    report(50, Some(&[2, 0]), start + 2_000).await;
+    assert_eq!(stored_board(&conn, id, bram).await.as_deref(), Some("20"));
+    // Boards that aren't one, or not of this puzzle, are left out; the progress is taken
+    for (at, board) in [
+        (3_000, &[3, 0][..]),
+        (4_000, &[2][..]),
+        (5_000, &[2, 1, 0][..]),
+        (6_000, &[][..]),
+    ] {
+        let view = poll(&conn, id, bram, Some(10), Some(board), false, start + at)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(view.players[1].progress, 10, "{board:?}");
+        assert_eq!(
+            stored_board(&conn, id, bram).await.as_deref(),
+            Some("20"),
+            "{board:?}"
+        );
+    }
+    // An older app sends no board: the progress is taken, the board stays
+    let view = report(60, None, start + 7_000).await;
+    assert_eq!(view.players[1].progress, 60);
+    assert_eq!(stored_board(&conn, id, bram).await.as_deref(), Some("20"));
+    // A board without the progress isn't taken
+    poll(&conn, id, bram, None, Some(&[0, 0]), false, start + 8_000)
+        .await
+        .unwrap();
+    assert_eq!(stored_board(&conn, id, bram).await.as_deref(), Some("20"));
+    assert_eq!(board_text(&[0, 1, 2]).as_deref(), Some("012"));
+    assert_eq!(board_text(&[3]), None);
+    assert_eq!(board_from_text("012"), Some(vec![0, 1, 2]));
+    assert_eq!(board_from_text("0a"), None);
+}
+
+#[tokio::test]
+async fn only_players_who_are_done_see_the_others_boards_while_it_runs() {
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let chen = player(&conn, "chen").await;
+    let dana = player(&conn, "dana").await;
+    let group = group_of(&conn, aiko, &[bram, chen, dana]).await;
+    // dana is a member who didn't join
+    let (id, start) = started(&conn, group, aiko, &[bram, chen]).await;
+    poll(
+        &conn,
+        id,
+        bram,
+        Some(50),
+        Some(&[2, 0]),
+        false,
+        start + 1_000,
+    )
+    .await
+    .unwrap();
+    poll(
+        &conn,
+        id,
+        chen,
+        Some(0),
+        Some(&[1, 0]),
+        false,
+        start + 1_000,
+    )
+    .await
+    .unwrap();
+    // Everyone still racing, and the member who watches from outside: nobody's board
+    for viewer in [aiko, bram, chen, dana] {
+        let view = seen(&conn, id, viewer, start + 2_000).await;
+        assert_eq!(boards(&view), [], "{viewer}");
+    }
+    assert_eq!(seen(&conn, id, dana, start + 2_000).await.puzzle, None);
+    // aiko finishes: her solved board is stored, and she sees the others'
+    let finished = submit(&conn, id, aiko, SOLUTION.to_vec(), 3, log(), start + 10_000)
+        .await
+        .unwrap();
+    assert_eq!(stored_board(&conn, id, aiko).await.as_deref(), Some("21"));
+    assert_eq!(boards(&finished), [(bram, vec![2, 0]), (chen, vec![1, 0])]);
+    // The ones still racing and the member outside still see none, not even hers
+    for viewer in [bram, chen, dana] {
+        let view = seen(&conn, id, viewer, start + 11_000).await;
+        assert_eq!(boards(&view), [], "{viewer}");
+    }
+    // Done, her board goes nowhere any more
+    poll(
+        &conn,
+        id,
+        aiko,
+        Some(10),
+        Some(&[0, 0]),
+        false,
+        start + 12_000,
+    )
+    .await
+    .unwrap();
+    assert_eq!(stored_board(&conn, id, aiko).await.as_deref(), Some("21"));
+    // chen gives up: he sees everyone else's, and his board stays as he left it for aiko
+    let gave_up = give_up(&conn, id, chen, start + 13_000).await.unwrap();
+    assert_eq!(
+        boards(&gave_up),
+        [(aiko, SOLUTION.to_vec()), (bram, vec![2, 0])]
+    );
+    let view = seen(&conn, id, aiko, start + 14_000).await;
+    assert_eq!(boards(&view), [(bram, vec![2, 0]), (chen, vec![1, 0])]);
+    // Over: the results, no boards; and a late one isn't taken
+    let over = give_up(&conn, id, bram, start + 15_000).await.unwrap();
+    assert_eq!(over.phase(), RacePhase::Ended);
+    assert_eq!(boards(&over), []);
+    poll(
+        &conn,
+        id,
+        bram,
+        Some(90),
+        Some(&[2, 1]),
+        false,
+        start + 16_000,
+    )
+    .await
+    .unwrap();
+    assert_eq!(stored_board(&conn, id, bram).await.as_deref(), Some("20"));
+    for viewer in [aiko, chen] {
+        assert_eq!(boards(&seen(&conn, id, viewer, start + 16_000).await), []);
+    }
+}
+
+#[tokio::test]
+async fn the_boards_stop_when_the_time_runs_out_before_anyone_notes_it() {
+    let conn = db().await;
+    let aiko = player(&conn, "aiko").await;
+    let bram = player(&conn, "bram").await;
+    let group = group_of(&conn, aiko, &[bram]).await;
+    let (id, start) = started(&conn, group, aiko, &[bram]).await;
+    poll(
+        &conn,
+        id,
+        bram,
+        Some(50),
+        Some(&[2, 0]),
+        false,
+        start + 1_000,
+    )
+    .await
+    .unwrap();
+    give_up(&conn, id, aiko, start + 2_000).await.unwrap();
+    let (_, _, view) = read(&conn, id, aiko, false, start + 3_000)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(boards(&view), [(bram, vec![2, 0])]);
+    // Past the deadline, as the page sees it before the end is noted
+    let (_, _, late) = read(&conn, id, aiko, false, start + RACE_MS)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!((late.phase(), boards(&late)), (RacePhase::Ended, vec![]));
+}
+
 #[tokio::test]
 async fn players_away_drop_out_and_may_come_back_while_it_runs() {
     let conn = db().await;
@@ -507,11 +716,13 @@ async fn players_away_drop_out_and_may_come_back_while_it_runs() {
     let (id, start) = started(&conn, group, aiko, &[bram, chen]).await;
     // Everyone is there at the start
     for (user, at) in [(aiko, start), (bram, start), (chen, start)] {
-        poll(&conn, id, user, Some(0), true, at).await.unwrap();
+        poll(&conn, id, user, Some(0), None, true, at)
+            .await
+            .unwrap();
     }
     // chen closes the tab; aiko and bram go on
     let later = start + AWAY_MS + 1_000;
-    poll(&conn, id, bram, Some(10), false, later - 500)
+    poll(&conn, id, bram, Some(10), None, false, later - 500)
         .await
         .unwrap();
     let view = seen(&conn, id, aiko, later).await;
@@ -554,9 +765,17 @@ async fn a_race_ends_half_an_hour_after_its_start() {
     // Both play on, seen every minute
     for minute in 0..30 {
         for user in [aiko, bram] {
-            poll(&conn, id, user, Some(1), false, start + minute * 60_000)
-                .await
-                .unwrap();
+            poll(
+                &conn,
+                id,
+                user,
+                Some(1),
+                None,
+                false,
+                start + minute * 60_000,
+            )
+            .await
+            .unwrap();
         }
     }
     let running = seen(&conn, id, aiko, start + RACE_MS - 1).await;
@@ -614,7 +833,9 @@ async fn one_race_at_a_time_per_group_and_lobbies_expire() {
         RacePhase::Lobby
     );
     assert_eq!(
-        poll(&conn, id, aiko, None, true, expired).await.unwrap(),
+        poll(&conn, id, aiko, None, None, true, expired)
+            .await
+            .unwrap(),
         None
     );
     assert_eq!(
@@ -690,7 +911,9 @@ async fn players_leave_the_lobby_and_the_host_calls_it_off() {
     assert_eq!(seen(&conn, id, bram, T0 + 2).await.players.len(), 1);
     leave(&conn, id, aiko, T0 + 3).await.unwrap();
     assert_eq!(
-        poll(&conn, id, bram, None, true, T0 + 4).await.unwrap(),
+        poll(&conn, id, bram, None, None, true, T0 + 4)
+            .await
+            .unwrap(),
         None
     );
     // After the start nobody leaves, they give up

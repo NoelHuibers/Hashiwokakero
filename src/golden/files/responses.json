@@ -1025,7 +1025,16 @@
       },
       "width": 7,
       "height": 7
-    }
+    },
+    "boards": [
+      {
+        "user_id": 2,
+        "bridges": [
+          2,
+          1
+        ]
+      }
+    ]
   },
   "races": {
     "open": {

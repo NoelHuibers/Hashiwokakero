@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Kemajuan",
-    "text": "Sejauh mana semua orang: bagian jembatan di papan mereka. Tak ada yang melihat jembatan orang lain.",
+    "text": "Sejauh mana semua orang: bagian jembatan di papan mereka. Yang masih balapan tak bisa melihat jembatan orang lain.",
     "you": "kamu"
   },
   "watch": {
-    "text": "Kamu menonton: balapan berlangsung di antara para pemain."
+    "text": "Kamu menonton: balapan berlangsung di antara para pemain.",
+    "others": "Menonton yang lain",
+    "others_text": "Papan mereka secara langsung, karena kamu sudah selesai. Yang masih balapan tidak melihatnya.",
+    "place": "peringkat {{ place }}"
   },
   "done": {
     "solved": "Selesai!",

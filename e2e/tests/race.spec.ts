@@ -1,9 +1,10 @@
 // Races 勝負: two players of a group of their own (other tests' races can't get in the way, one
 // race at a time per group) open a lobby, join it, start, count down on the server's clock and
-// both solve the same fresh puzzle; then the results, the replay and the rematch.
-import { board, saved } from '../board.ts';
+// both solve the same fresh puzzle; then the results, the replay and the rematch. Who is done
+// watches the others' boards while they still race.
+import { addBridge, board, type Puzzle, saved } from '../board.ts';
 import { expect, hydrated, signIn, test, visit } from '../fixtures.ts';
-import { RACE_KEY, raceId, solve, stored } from '../race.ts';
+import { groupOfTwo, RACE_KEY, raceId, solve, stored } from '../race.ts';
 import { player, SEEDED_GROUP, SEEDED_RACE } from '../seed.ts';
 
 test('two players race on one puzzle, see the results and meet again in the rematch', async ({
@@ -108,6 +109,49 @@ test('two players race on one puzzle, see the results and meet again in the rema
   await visit(friend, groupPath);
   await expect(friend.getByTestId('race-history').locator(`a[data-past="${race}"]`)).toBeVisible();
   await friendContext.close();
+});
+
+test("who is done watches the other racer's board, live", async ({ page, browser, baseURL }) => {
+  test.setTimeout(180_000);
+  const { friend, groupPath } = await groupOfTwo(page, browser, baseURL);
+  await visit(page, groupPath);
+  const card = page.getByTestId('race-card');
+  await card.getByRole('button', { name: 'Easy' }).click();
+  await card.getByTestId('race-open-new').click();
+  await expect(page).toHaveURL(/\/groups\/\d+\/races\/\d+$/);
+  await hydrated(page);
+  await visit(friend, new URL(page.url()).pathname);
+  await friend.getByTestId('race-join').click();
+  await expect(page.locator('[data-testid="race-players"] li')).toHaveCount(2);
+  await page.getByTestId('race-start').click();
+  await expect(page.getByTestId('race-countdown')).toBeVisible();
+  const { solution, players } = stored(raceId(page));
+  const [, guest] = players;
+
+  // While racing nobody sees a board but their own
+  await expect(board(friend).locator('g.island').first()).toBeVisible();
+  await expect(page.getByTestId('race-watch')).toHaveCount(0);
+  await solve(page, solution);
+  await expect(page.getByTestId('race-done')).toContainText('Finished!');
+
+  // Done: the host watches the friend's board, still empty
+  const mini = page.getByTestId('race-watch').locator(`li[data-user="${guest}"]`);
+  await expect(mini).toHaveAttribute('data-state', 'racing');
+  await expect(mini.locator('svg.board-svg g.island').first()).toBeVisible();
+  await expect(mini.locator('g.bridge')).toHaveCount(0);
+  // The friend builds a bridge of the solution: it shows up on the host's page
+  const edge = solution.findIndex((n) => n > 0);
+  const { puzzle } = await saved(friend, RACE_KEY);
+  await addBridge(friend, RACE_KEY, puzzle as Puzzle, edge);
+  await expect(mini.locator('g.bridge')).toHaveCount(1);
+  // The friend, still racing, sees nobody's
+  await expect(friend.getByTestId('race-watch')).toHaveCount(0);
+
+  // Over: the results, no more watching
+  await solve(friend, solution);
+  await expect(page.getByTestId('race-results')).toBeVisible();
+  await expect(page.getByTestId('race-watch')).toHaveCount(0);
+  await friend.context().close();
 });
 
 test("a race that is over shows its places and replay to the group's members only", async ({

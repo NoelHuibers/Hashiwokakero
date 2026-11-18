@@ -278,6 +278,10 @@ async fn write_rows(conn: &Connection, version: usize) {
         "#)
         .await;
     }
+    if version >= 31 {
+        // The guest's board in the group's race, as they last reported it
+        run("UPDATE group_race_players SET board = '20' WHERE race_id = 1 AND user_id = 2").await;
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -298,7 +302,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        30,
+        31,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -536,6 +540,15 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM group_races WHERE share_code = 'k7m2xq9a' AND share_puzzle_id = 1",
                 i64::from(version >= 29),
+            ),
+            // Boards came with version 31: the players from before have none
+            (
+                "SELECT COUNT(*) FROM group_race_players WHERE board IS NULL",
+                if version >= 31 { 1 } else { 2 * i64::from(version >= 27) },
+            ),
+            (
+                "SELECT COUNT(*) FROM group_race_players WHERE board = '20' AND user_id = 2",
+                i64::from(version >= 31),
             ),
             // Notifications: nothing for anyone from before them, noel's from 30 on
             (

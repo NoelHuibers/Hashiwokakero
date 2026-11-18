@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Progressi",
-    "text": "A che punto è ognuno: la quota di ponti sulla sua griglia. Nessuno vede i ponti degli altri.",
+    "text": "A che punto è ognuno: la quota di ponti sulla sua griglia. Chi è ancora in gara non vede i ponti degli altri.",
     "you": "tu"
   },
   "watch": {
-    "text": "Stai guardando: la gara è tra i partecipanti."
+    "text": "Stai guardando: la gara è tra i partecipanti.",
+    "others": "Guarda gli altri",
+    "others_text": "Le loro griglie in diretta, ora che hai finito. Chi è ancora in gara non le vede.",
+    "place": "{{ place }}º"
   },
   "done": {
     "solved": "Finito!",

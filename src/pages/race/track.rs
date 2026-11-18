@@ -1,5 +1,7 @@
-//! Everyone's progress during the race: a bar per player in their colour, the share of the
-//! solution's bridges on their board. Never the bridges themselves.
+//! Everyone's progress during the race: a bar per player in their colour.
+//!
+//! The share of the solution's bridges on their board, not the bridges themselves: those only the
+//! players who are done see (`watch`).
 
 use leptos::prelude::*;
 
@@ -12,7 +14,7 @@ use crate::pages::groups::today::ColourPip;
 use super::state::RaceState;
 
 /// What a bar says at its end.
-fn state_id(player: &RacePlayer) -> &'static str {
+pub(super) fn state_id(player: &RacePlayer) -> &'static str {
     match player.outcome {
         RaceOutcome::Solved { .. } => "solved",
         RaceOutcome::GaveUp => "gave-up",

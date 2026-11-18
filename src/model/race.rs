@@ -3,9 +3,11 @@
 //! A member opens a lobby on the group page with a difficulty of Play's presets, the others
 //! join. The host starts it once at least [`MIN_RACERS`] joined: the server generates the puzzle
 //! and the race begins [`COUNTDOWN_MS`] later for everyone at once, on the server's clock. While
-//! they play, everyone sees how far the others are (a progress bar, never their bridges). It ends
+//! they play, everyone sees how far the others are (a progress bar, not their bridges). It ends
 //! when everyone finished, gave up or is away, or [`RACE_MS`] after the start; then the results
-//! with the replay of everyone's moves, and a rematch.
+//! with the replay of everyone's moves, and a rematch. A player who is done (solved or gave up)
+//! watches the others' boards while the rest still race ([`RaceView::boards`]); nobody racing
+//! sees anyone's bridges.
 //!
 //! What the server sends the race's page ([`RaceView`]) and the group page ([`GroupRaces`]), and
 //! the rules both sides need: the phases, the places and the progress shown.
@@ -137,6 +139,15 @@ pub fn shared_difficulty(width: u8, height: u8) -> Difficulty {
         .unwrap_or_default()
 }
 
+/// A player's board as they last reported it (or solved it), for the ones who are done and watch
+/// the others race.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RaceBoard {
+    pub user_id: i64,
+    /// The bridges on each edge of the puzzle (0-2), like the player's own board.
+    pub bridges: Vec<u8>,
+}
+
 /// Everything the page of a race shows, as the viewer may see it.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RaceView {
@@ -169,6 +180,11 @@ pub struct RaceView {
     /// `Some`: a race on a shared puzzle, opened from its page.
     #[serde(default)]
     pub shared: Option<RaceShare>,
+    /// The other players' boards as they last reported them: only while the race runs, and only
+    /// for a viewer who raced and is done (solved or gave up). Empty for everyone else, so
+    /// nobody racing or watching from outside sees anyone's bridges.
+    #[serde(default)]
+    pub boards: Vec<RaceBoard>,
 }
 
 impl RaceView {
@@ -408,29 +424,49 @@ pub fn poll_delay_ms(view: &RaceView, now: i64, have_puzzle: bool) -> u32 {
 /// The group page's card asks this often.
 pub const CARD_POLL_MS: u32 = 10_000;
 
-/// Which progress goes with the next request: a new value, once a [`PROGRESS_EVERY_MS`] passed
-/// since the last one went.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// The longest board a poll takes: twice the edges an island could have on the biggest puzzle.
+pub const BOARD_MAX_EDGES: usize = 2 * (common::MAX_SIZE as usize) * (common::MAX_SIZE as usize);
+
+/// Whether `bridges` can be a racer's board: no more than [`BOARD_MAX_EDGES`] edges, each with at
+/// most a double bridge. Whether it fits the puzzle is the server's to check.
+pub fn valid_board(bridges: &[u8]) -> bool {
+    bridges.len() <= BOARD_MAX_EDGES && bridges.iter().all(|&b| b <= 2)
+}
+
+/// What goes with a request: the player's progress and their board.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Report {
+    pub progress: u8,
+    pub board: Vec<u8>,
+}
+
+/// Which progress and board go with the next request: when the board changed (or the progress),
+/// once a [`PROGRESS_EVERY_MS`] passed since the last went.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProgressReport {
-    /// The last value sent, and when (browser clock).
-    sent: Option<(u8, i64)>,
+    /// The last report sent, and when (browser clock).
+    sent: Option<(Report, i64)>,
 }
 
 impl ProgressReport {
-    /// The progress to send at `now`, if any: `value` if it changed and the last one went long
-    /// enough ago. Counts it as sent.
-    pub fn take(&mut self, now: i64, value: u8) -> Option<u8> {
-        match self.sent {
-            Some((last, _)) if last == value => None,
+    /// The report to send at `now`, if any: the progress `value` and the `board` if either
+    /// changed and the last one went long enough ago. Counts it as sent.
+    pub fn take(&mut self, now: i64, value: u8, board: &[u8]) -> Option<Report> {
+        match &self.sent {
+            Some((last, _)) if last.progress == value && last.board == board => None,
             Some((_, at)) if now - at < PROGRESS_EVERY_MS => None,
             _ => {
-                self.sent = Some((value, now));
-                Some(value)
+                let report = Report {
+                    progress: value,
+                    board: board.to_vec(),
+                };
+                self.sent = Some((report.clone(), now));
+                Some(report)
             }
         }
     }
 
-    /// The request with the last value failed: it goes again with the next one.
+    /// The request with the last report failed: it goes again with the next one.
     pub fn failed(&mut self) {
         self.sent = None;
     }
@@ -462,6 +498,7 @@ mod tests {
             rematch_open: false,
             server_now: now,
             shared: None,
+            boards: Vec::new(),
         }
     }
 
@@ -636,17 +673,49 @@ mod tests {
     #[test]
     fn progress_goes_out_when_it_changed_once_a_second() {
         let mut report = ProgressReport::default();
-        assert_eq!(report.take(0, 0), Some(0));
+        let progress = |r: Option<Report>| r.map(|r| r.progress);
+        assert_eq!(progress(report.take(0, 0, &[])), Some(0));
         // The same again: nothing
-        assert_eq!(report.take(5_000, 0), None);
-        assert_eq!(report.take(5_000, 10), Some(10));
+        assert_eq!(report.take(5_000, 0, &[]), None);
+        assert_eq!(progress(report.take(5_000, 10, &[])), Some(10));
         // Changed, but too soon
-        assert_eq!(report.take(5_500, 20), None);
-        assert_eq!(report.take(5_999, 20), None);
-        assert_eq!(report.take(6_000, 20), Some(20));
+        assert_eq!(report.take(5_500, 20, &[]), None);
+        assert_eq!(report.take(5_999, 20, &[]), None);
+        assert_eq!(progress(report.take(6_000, 20, &[])), Some(20));
         // A failed request: the value goes again
         report.failed();
-        assert_eq!(report.take(6_100, 20), Some(20));
+        assert_eq!(progress(report.take(6_100, 20, &[])), Some(20));
+    }
+
+    #[test]
+    fn the_board_goes_out_with_the_progress_when_it_changed_once_a_second() {
+        let mut report = ProgressReport::default();
+        let sent = |progress, board: &[u8]| {
+            Some(Report {
+                progress,
+                board: board.to_vec(),
+            })
+        };
+        assert_eq!(report.take(0, 0, &[0, 0]), sent(0, &[0, 0]));
+        assert_eq!(report.take(2_000, 0, &[0, 0]), None, "unchanged");
+        // A wrong bridge: the progress stays, the board changed
+        assert_eq!(report.take(2_000, 0, &[0, 1]), sent(0, &[0, 1]));
+        // Changed again, but too soon: it waits, and the latest goes then
+        assert_eq!(report.take(2_400, 0, &[0, 2]), None);
+        assert_eq!(report.take(2_900, 0, &[1, 2]), None);
+        assert_eq!(report.take(3_000, 50, &[1, 2]), sent(50, &[1, 2]));
+        // A failed request: the board goes again with the next one, even unchanged
+        report.failed();
+        assert_eq!(report.take(3_100, 50, &[1, 2]), sent(50, &[1, 2]));
+    }
+
+    #[test]
+    fn a_board_has_at_most_double_bridges_and_a_puzzles_edges() {
+        assert!(valid_board(&[]));
+        assert!(valid_board(&[0, 1, 2]));
+        assert!(!valid_board(&[0, 3]));
+        assert!(valid_board(&vec![2; BOARD_MAX_EDGES]));
+        assert!(!valid_board(&vec![0; BOARD_MAX_EDGES + 1]));
     }
 
     #[test]
@@ -675,9 +744,11 @@ mod tests {
 
     #[test]
     fn answers_of_an_older_server_still_load() {
-        // Before races on shared puzzles: no `shared`, no `solved_before`
+        // Before races on shared puzzles: no `shared`, no `solved_before`; before the boards of
+        // the others for who's done: no `boards`
         let mut old = serde_json::to_value(view(None, None, 0)).unwrap();
         old.as_object_mut().unwrap().remove("shared");
+        old.as_object_mut().unwrap().remove("boards");
         for p in old["players"].as_array_mut().unwrap() {
             p.as_object_mut().unwrap().remove("solved_before");
         }

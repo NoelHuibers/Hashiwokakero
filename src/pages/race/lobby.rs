@@ -255,6 +255,7 @@ mod tests {
             rematch_open: false,
             server_now: 0,
             shared: None,
+            boards: Vec::new(),
         };
         assert_eq!(minutes_left(&view, 0), 15);
         assert_eq!(minutes_left(&view, 1), 15);

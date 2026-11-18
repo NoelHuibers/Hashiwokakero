@@ -48,11 +48,14 @@
   },
   "track": {
     "title": "Postęp",
-    "text": "Jak daleko jest każdy: część mostów na jego planszy. Nikt nie widzi cudzych mostów.",
+    "text": "Jak daleko jest każdy: część mostów na jego planszy. Nikt, kto jeszcze się ściga, nie widzi cudzych mostów.",
     "you": "ty"
   },
   "watch": {
-    "text": "Oglądasz: wyścig toczy się między uczestnikami."
+    "text": "Oglądasz: wyścig toczy się między uczestnikami.",
+    "others": "Oglądaj pozostałych",
+    "others_text": "Ich plansze na żywo, skoro już skończyłeś. Ci, którzy wciąż się ścigają, ich nie widzą.",
+    "place": "{{ place }}. miejsce"
   },
   "done": {
     "solved": "Ukończone!",
