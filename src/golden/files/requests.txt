@@ -104,6 +104,7 @@
 /api/start_daily {"device":"0123456789abcdef0123456789abcdef"}
 /api/start_group_puzzle {"id":4}
 /api/start_group_race {"id":6}
+/api/start_warm_up {}
 /api/submit_daily {"day":20381,"bridges":[2,1],"moves":2,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}],"utc_offset":120}
 /api/submit_daily_attempt {"day":20381,"bridges":[2,1],"moves":2,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}],"utc_offset":-300,"owner":{"user":7,"attempt":"a1b2c3"}}
 /api/submit_group_puzzle {"id":4,"bridges":[2,1,0],"moves":12,"log":[{"t":0,"edge":0,"count":1,"tap":true},{"t":1250,"edge":0,"count":2,"tap":false}]}

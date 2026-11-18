@@ -97,10 +97,13 @@ impl Daily {
             return None;
         }
         let guard = self.actions.submit_guard(self)?;
-        self.busy.set(true);
-        self.submission.set(Phase::Pending);
         // Effect ordering cannot omit the last move or append it twice.
         untrack(|| self.record_moves());
+        // The clock stops and the win card shows now, not a round trip later (`elapsed_ms`)
+        self.solved_ms.set(Some(self.clock_ms()));
+        self.admired.set(false);
+        self.busy.set(true);
+        self.submission.set(Phase::Pending);
         Some(guard)
     }
 

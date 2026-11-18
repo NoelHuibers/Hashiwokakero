@@ -32,6 +32,17 @@ pub async fn start_daily(device: Option<String>) -> Result<DailyStart, ServerFnE
     })
 }
 
+/// The player is about to start (their pointer or focus is on the cover's Start): wakes the
+/// server and opens the connections the start then finds ready, the browser's to the server and
+/// the server's to the database, instead of paying for them before the board shows. Reads and
+/// changes nothing of anyone's.
+#[server(input = Json, client = HashiClient)]
+pub async fn start_warm_up() -> Result<(), ServerFnError> {
+    let conn = db::conn()?;
+    conn.query("SELECT 1", ()).await.map_err(db::db_err)?;
+    Ok(())
+}
+
 #[cfg(feature = "ssr")]
 async fn signed_in() -> Result<(libsql::Connection, auth::User), ServerFnError> {
     let conn = db::conn()?;

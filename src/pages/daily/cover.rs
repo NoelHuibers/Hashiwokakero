@@ -4,7 +4,7 @@ use common::{Board, Puzzle};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::{current_user, start_daily};
+use crate::api::{current_user, start_daily, start_warm_up};
 use crate::components::board::{BoardMode, BoardView};
 use crate::components::ui::button::{Button, ButtonSize};
 use crate::components::ui::card::Card;
@@ -12,7 +12,17 @@ use crate::i18n::{t, t_string, use_i18n};
 use crate::model::daily_difficulty;
 use crate::state::{Auth, device_id, error_toast};
 
-use super::state::{Daily, RefreshGuard};
+use super::state::{Daily, RefreshGuard, browser_now};
+
+/// How often hovering, focusing or touching Start warms the server up, at most: a connection
+/// the browser opened stays open about this long without traffic.
+const WARM_UP_EVERY_MS: i64 = 20_000;
+
+/// Whether a warm-up at `now` is due after the last one at `last` (browser ms). A clock that went
+/// back (the computer's time was set) doesn't keep it from ever being due again.
+fn warm_up_due(last: Option<i64>, now: i64) -> bool {
+    last.is_none_or(|last| now < last || now - last >= WARM_UP_EVERY_MS)
+}
 
 /// The board before the start: an empty sea in the fog.
 #[component]
@@ -27,6 +37,21 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
         let (w, h) = size.get();
         Board::new(Puzzle::empty(w, h))
     });
+    // The player is about to press Start: the server wakes up and the connections open while the
+    // pointer moves or the finger comes down, not after the press (`api::start_warm_up`). The
+    // clock starts with the start alone, this changes nothing of it.
+    let warmed = StoredValue::new(None::<i64>);
+    let warm_up = move || {
+        let now = browser_now();
+        if daily.busy.get_untracked() || !warm_up_due(warmed.get_value(), now) {
+            return;
+        }
+        warmed.set_value(Some(now));
+        spawn_local(async move {
+            // Only a head start: a failure shows with the start, if it lasts
+            let _ = start_warm_up().await;
+        });
+    };
     let start = move |_| {
         if daily.busy.get_untracked() {
             return;
@@ -89,7 +114,18 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
         // Board and card share one grid cell, so a card taller than the board
         // (narrow screens) grows the cell instead of spilling over what follows.
         <div class="grid place-items-center">
-            <div class="col-start-1 row-start-1 w-full opacity-50 blur-[3px]" aria-hidden="true">
+            // The fog lifts the moment Start is pressed, while the start's request is on its way
+            <div
+                class=move || {
+                    if daily.busy.get() {
+                        "col-start-1 row-start-1 w-full opacity-90 blur-none transition-[opacity,filter] duration-500"
+                    } else {
+                        "col-start-1 row-start-1 w-full opacity-50 blur-[3px] transition-[opacity,filter] duration-500"
+                    }
+                }
+                data-testid="daily-fog"
+                aria-hidden="true"
+            >
                 <BoardView
                     board=board
                     bridges=Signal::derive(move || board.with(Board::empty_bridges))
@@ -120,6 +156,9 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
                             class="h-12 w-full text-base font-bold shadow-lg shadow-primary/25"
                             attr:disabled=move || daily.busy.get() || daily.info.with(Option::is_none)
                             on:click=start
+                            on:pointerenter=move |_| warm_up()
+                            on:pointerdown=move |_| warm_up()
+                            on:focus=move |_| warm_up()
                         >
                             {move || if daily.busy.get() {
                                 t_string!(i18n, daily.cover.preparing).to_string()
@@ -141,5 +180,20 @@ pub(super) fn Cover(daily: Daily) -> impl IntoView {
                 </Card>
             </div>
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_warm_up_goes_out_at_most_every_twenty_seconds() {
+        assert!(warm_up_due(None, 0));
+        assert!(!warm_up_due(Some(1_000), 1_000));
+        assert!(!warm_up_due(Some(1_000), 20_999));
+        assert!(warm_up_due(Some(1_000), 21_000));
+        // The computer's clock was set back
+        assert!(warm_up_due(Some(50_000), 1_000));
     }
 }

@@ -95,6 +95,10 @@ pub struct Daily {
     pub(super) result: RwSignal<Option<SubmitResult>>,
     /// The player put the win card of [`Self::result`] away to look at the board.
     pub(super) admired: RwSignal<bool>,
+    /// When this tab sent the solved board, on the move log's clock (ms since the start, without
+    /// penalties): the clock stops there while the server confirms, instead of ticking on for a
+    /// round trip. Only shown, never sent: the server times the finish itself.
+    pub(super) solved_ms: RwSignal<Option<u32>>,
     pub(super) ranking: RwSignal<Option<Leaderboard>>,
     pub(super) busy: RwSignal<bool>,
     pub(super) metadata: Fetch,
@@ -253,19 +257,38 @@ impl Daily {
             })
     }
 
-    /// Running time including penalties, or the final time.
+    /// Running time including penalties, or the final time. While the solved board is on its way
+    /// to the server, the time it was solved at: the server's time comes with its reply, a few
+    /// hundredths later (the time the board took to reach it). After a failed submit the clock
+    /// runs again, the server will time the finish when the board reaches it.
     pub(super) fn elapsed_ms(&self) -> i64 {
         let now = self.server_now();
+        let solved = self.provisional_ms();
         self.info.with(|i| {
             let Some(a) = i.as_ref().and_then(|i| i.attempt.as_ref()) else {
                 return 0;
             };
-            match (a.time_ms, a.finished_at) {
-                (Some(t), _) => t,
-                (None, Some(end)) => end - a.started_at + a.penalty_ms(),
+            match (a.time_ms, a.finished_at, solved) {
+                (Some(t), _, _) => t,
+                (None, Some(end), _) => end - a.started_at + a.penalty_ms(),
+                (None, None, Some(solved)) => i64::from(solved) + a.penalty_ms(),
                 _ => now - a.started_at + a.penalty_ms(),
             }
         })
+    }
+
+    /// The time this tab solved the daily at, while its submit is on the way.
+    fn provisional_ms(&self) -> Option<u32> {
+        if self.submission.get() == Phase::Pending {
+            self.solved_ms.get()
+        } else {
+            None
+        }
+    }
+
+    /// The result isn't confirmed yet: the shown time is this tab's, not the server's.
+    pub(super) fn provisional(&self) -> bool {
+        self.provisional_ms().is_some() && !self.finished()
     }
 
     pub(super) fn apply(&self, info: DailyInfo) {
@@ -342,15 +365,27 @@ impl Daily {
             a.finished_at = Some(end);
             a.time_ms = Some(result.time_ms);
         });
-        self.admired.set(false);
+        // A card the player already put away while the submit was on its way stays away
+        if self.solved_ms.get_untracked().is_none() {
+            self.admired.set(false);
+            self.solved_ms.set(Some(self.clock_ms()));
+        }
         self.result.set(Some(result));
         games_sync();
     }
 
-    /// The win card over the board: right after this tab's submit, until the player puts it
-    /// away. A daily finished before the page was opened only has the result card.
+    /// The win card over the board: from the moment this tab sends the solved board, until the
+    /// player puts it away. It doesn't wait for the server's reply, which brings the rank: the
+    /// card shows the time the board was solved at meanwhile. A failed submit takes it away
+    /// again (the result card offers the retry), a daily finished before the page was opened
+    /// only has the result card.
     pub(super) fn celebrating(&self) -> bool {
-        self.result.with(Option::is_some)
+        let submission = self.submission.get();
+        self.solved_ms.with(Option::is_some)
+            && (self.result.with(Option::is_some)
+                || submission == Phase::Pending
+                || (submission == Phase::Idle && self.finished()))
+            && submission != Phase::Error
             && self.game.status.get() == Status::Won
             && !self.admired.get()
     }
@@ -474,6 +509,7 @@ impl Daily {
         game.set_puzzle(puzzle.clone(), None, Some(true), source);
         // A result or a failed submit belongs to the board before
         self.result.set(None);
+        self.solved_ms.set(None);
         match &info.attempt {
             Some(a) if a.finished() => {
                 if let Some(bridges) = &a.bridges {
@@ -772,6 +808,7 @@ mod tests {
             now: RwSignal::new(0),
             result: RwSignal::new(None),
             admired: RwSignal::new(false),
+            solved_ms: RwSignal::new(None),
             ranking: RwSignal::new(None),
             busy: RwSignal::new(false),
             metadata: Fetch::new(),
