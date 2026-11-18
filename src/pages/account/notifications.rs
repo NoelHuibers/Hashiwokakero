@@ -255,7 +255,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
         .collect_view();
 
     view! {
-        <Card class="gap-4 self-start" attr:id="notifications" attr:data-testid="notification-settings">
+        <Card class="gap-4" attr:id="notifications" attr:data-testid="notification-settings">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-xl">
                     {t!(i18n, account.notifications.title)} <span class="font-pixel text-sm text-primary">"通知"</span>

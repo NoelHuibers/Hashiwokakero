@@ -100,7 +100,7 @@ pub(super) fn RecoveryEmailCard() -> impl IntoView {
     let mail = move || info.with(|i| i.as_ref().is_some_and(|i| i.mail));
 
     view! {
-        <Card class="gap-4 self-start" attr:data-recovery-email="">
+        <Card class="gap-4" attr:data-recovery-email="">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-xl">
                     {t!(i18n, account.recovery.title)}

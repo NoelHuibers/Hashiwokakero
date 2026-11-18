@@ -696,6 +696,44 @@ html:is([lang="hi"], [lang="th"]) [class*="tracking-"] {
   opacity: 0.7;
 }
 
+/* The replay theatre's little boards side by side (pages/replay/grid.rs `Apart`): the columns
+   and rows `apart_style` picked for the lanes in each width's room, and no wider than keeps
+   them as tall as the together board (58 % of the screen, or as tall as the column is wide).
+   At least 4.5rem a card, and never wider than the column. */
+.replay-apart {
+  --cols: var(--cols-phone);
+  --rows: var(--rows-phone);
+  --gap: 0.5rem;
+  --stage-h: min(58vh + 14px, 100% / var(--aspect));
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--gap);
+  width: 100%;
+  max-width: max(
+    var(--cols) * 4.5rem + (var(--cols) - 1) * var(--gap),
+    var(--cols) *
+      (
+        ((var(--stage-h) - (var(--rows) - 1) * var(--gap)) / var(--rows) - var(--card-tall)) *
+        var(--aspect) + var(--card-wide)
+      ) +
+      (var(--cols) - 1) * var(--gap)
+  );
+  margin-inline: auto;
+}
+@media (width >= 40rem) {
+  .replay-apart {
+    --cols: var(--cols-tablet);
+    --rows: var(--rows-tablet);
+    --gap: 0.75rem;
+  }
+}
+@media (width >= 64rem) {
+  .replay-apart {
+    --cols: var(--cols-laptop);
+    --rows: var(--rows-laptop);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Groups 仲間: the archipelago of a group's members                    */
 /* ------------------------------------------------------------------ */

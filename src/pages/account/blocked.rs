@@ -40,7 +40,7 @@ pub(super) fn BlockedPlayers() -> impl IntoView {
             .collect_view()
     };
     view! {
-        <Card class="gap-4 self-start" attr:data-blocked-players="">
+        <Card class="gap-4" attr:data-blocked-players="">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-xl">
                     {t!(i18n, account.blocks.title)} <span class="font-pixel text-sm text-primary">"遮断"</span>

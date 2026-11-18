@@ -12,7 +12,7 @@ use crate::i18n::{t_string, td_string, use_i18n};
 use crate::model::{LaneOutcome, colour_var, format_score, progress};
 
 use super::stage::{PAD, StaticIslands};
-use super::state::Theatre;
+use super::state::{Theatre, apart_style};
 
 fn span_of(board: &Board, edge: usize) -> Span {
     let (a, b) = board.endpoints(edge);
@@ -166,13 +166,17 @@ fn Mini(theatre: Theatre, board: StoredValue<Board>, lane: usize) -> impl IntoVi
     .into_any()
 }
 
-/// A little board for every shown member.
+/// A little board for every shown member, in as many columns as keep them about as tall as
+/// the together board (`state::apart_grid`).
 #[component]
 pub fn Apart(theatre: Theatre) -> impl IntoView {
     let i18n = use_i18n();
     let Some(puzzle) = theatre.data.with_value(|d| d.puzzle.clone()) else {
         return ().into_any();
     };
+    // The little boards' seas, width / height: the grid's columns and width follow from it
+    let aspect = f64::from(i32::from(puzzle.width) * CELL + 2 * PAD)
+        / f64::from(i32::from(puzzle.height) * CELL + 2 * PAD);
     let board = StoredValue::new(Board::new(puzzle));
     let shown = Memo::new(move |_| theatre.shown_lanes());
     view! {
@@ -181,7 +185,8 @@ pub fn Apart(theatre: Theatre) -> impl IntoView {
             <BoardDefs />
         </svg>
         <ul
-            class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3"
+            class="replay-apart"
+            style=move || apart_style(shown.with(Vec::len), aspect)
             aria-label=move || t_string!(i18n, replay.controls.apart)
             data-testid="replay-apart"
         >

@@ -98,6 +98,79 @@ test('the seeded group watches yesterday: play, seek, step, side by side', async
   await expect(page.getByTestId('replay-stage')).toHaveCount(0);
 });
 
+/** Whether the element is all on screen and nothing covers its middle (the tab bar, say). */
+const uncovered = (page: Page, testId: string) =>
+  page.getByTestId(testId).evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    return r.top >= 0 && r.bottom <= window.innerHeight && el.contains(hit);
+  });
+
+const box = async (page: Page, testId: string) => {
+  const b = await page.getByTestId(testId).boundingBox();
+  if (!b) throw new Error(`${testId} has no box`);
+  return b;
+};
+
+for (const [device, viewport] of [
+  ['a phone', { width: 390, height: 844 }],
+  ['a laptop', { width: 1366, height: 768 }],
+] as const) {
+  test(`together or side by side on ${device}: the switch above the boards, play on screen`, async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize(viewport);
+    await signIn(context, 'aiko');
+    await visit(page, `/groups/${SEEDED_GROUP.id}/replay/${today() - REPLAY_DAY_BACK}`);
+    const layout = page.getByTestId('replay-layout');
+    const together = layout.getByRole('button', { name: 'Together' });
+    const apart = layout.getByRole('button', { name: 'Side by side' });
+    await expect(page.getByTestId('replay-stage')).toBeVisible();
+    // Its words on every width, the pressed one marked; not among the transport's buttons
+    await expect(together).toContainText('Together');
+    await expect(apart).toContainText('Side by side');
+    await expect(together).toHaveAttribute('aria-pressed', 'true');
+    await expect(apart).toHaveAttribute('aria-pressed', 'false');
+    await expect(
+      page.getByTestId('replay-controls').getByRole('button', { name: /Together|Side by side/ }),
+    ).toHaveCount(0);
+    const above = async (stage: string) => {
+      const [switchBox, stageBox] = [await box(page, 'replay-layout'), await box(page, stage)];
+      expect(switchBox.y + switchBox.height).toBeLessThanOrEqual(stageBox.y);
+    };
+    await above('replay-stage');
+    // The transport on screen from the start, above the tab bar on a phone
+    expect(await uncovered(page, 'replay-play')).toBe(true);
+    expect(await uncovered(page, 'replay-timeline')).toBe(true);
+    const play = await box(page, 'replay-play');
+    const board = await box(page, 'replay-stage');
+
+    await apart.click();
+    await expect(apart).toHaveAttribute('aria-pressed', 'true');
+    await expect(together).toHaveAttribute('aria-pressed', 'false');
+    const boards = page.getByTestId('replay-apart');
+    const shown = page.getByTestId('replay-legend').locator('li[data-lane] button[aria-pressed]');
+    await expect(boards.locator('li[data-lane]')).toHaveCount(await shown.count());
+    await above('replay-apart');
+    // About as tall as the board was, and play still where it was, on screen
+    const grid = await box(page, 'replay-apart');
+    expect(grid.height).toBeLessThanOrEqual(board.height * 1.1);
+    expect(grid.height).toBeGreaterThan(board.height * 0.6);
+    expect(await uncovered(page, 'replay-play')).toBe(true);
+    expect(Math.abs((await box(page, 'replay-play')).y - play.y)).toBeLessThan(24);
+    // And it plays from there
+    const button = page.getByTestId('replay-play');
+    const playing = await button.getAttribute('data-playing');
+    await button.click();
+    await expect(button).toHaveAttribute('data-playing', playing === 'true' ? 'false' : 'true');
+
+    await together.click();
+    await expect(page.getByTestId('replay-stage')).toBeVisible();
+    expect(await uncovered(page, 'replay-play')).toBe(true);
+  });
+}
+
 test('strangers get no replays', async ({ page }) => {
   await visit(page, `/groups/${SEEDED_GROUP.id}/replay/${today() - REPLAY_DAY_BACK}`);
   await expect(page.getByTestId('replay-missing')).toBeVisible();
