@@ -294,7 +294,9 @@ pub struct Apns {
 impl Apns {
     /// The channel, if the key is configured.
     pub fn from_env() -> Option<Self> {
-        let credentials = Credentials::from_env(super::super::env_var).ok().flatten()?;
+        let credentials = Credentials::from_env(super::super::env_var)
+            .ok()
+            .flatten()?;
         Self::new(
             credentials,
             reqwest::Url::parse(PRODUCTION).ok()?,

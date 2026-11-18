@@ -94,17 +94,17 @@ fn the_provider_token_is_renewed_after_40_minutes_and_not_within_20() {
     assert_eq!(tokens.get(&credentials, start + RENEW_AFTER_S - 1), first);
     let second = tokens.get(&credentials, start + RENEW_AFTER_S);
     assert_ne!(second, first);
-    assert_eq!(
-        verified(&second, &public).1["iat"],
-        start + RENEW_AFTER_S
-    );
+    assert_eq!(verified(&second, &public).1["iat"], start + RENEW_AFTER_S);
     const { assert!(RENEW_NOT_BEFORE_S >= 20 * 60 && RENEW_AFTER_S < 60 * 60) };
 
     // Refused when it's fresh: kept (a new one wouldn't help, Apple would refuse it for coming
     // too soon); refused once 20 minutes old: a new one with the next request
     let issued = start + RENEW_AFTER_S;
     tokens.refused(issued + RENEW_NOT_BEFORE_S - 1);
-    assert_eq!(tokens.get(&credentials, issued + RENEW_NOT_BEFORE_S - 1), second);
+    assert_eq!(
+        tokens.get(&credentials, issued + RENEW_NOT_BEFORE_S - 1),
+        second
+    );
     tokens.refused(issued + RENEW_NOT_BEFORE_S);
     let third = tokens.get(&credentials, issued + RENEW_NOT_BEFORE_S);
     assert_ne!(third, second);
@@ -162,7 +162,10 @@ fn the_key_comes_from_the_environment_whole_or_not_at_all() {
         ("APNS_TOPIC", "rs.hashi.debug".to_string()),
     ];
     let on = Credentials::from_env(env(&one_line)).unwrap().unwrap();
-    assert_eq!((on.key_id.as_str(), on.topic.as_str()), (KEY_ID, "rs.hashi.debug"));
+    assert_eq!(
+        (on.key_id.as_str(), on.topic.as_str()),
+        (KEY_ID, "rs.hashi.debug")
+    );
 
     // Part of it
     for part in [
@@ -208,7 +211,11 @@ fn apples_answers_decide_the_device_s_fate() {
         (400, Some("BadDeviceToken")),
         (400, Some("DeviceTokenNotForTopic")),
     ] {
-        assert_eq!(outcome(status, reason), Delivery::Gone, "{status} {reason:?}");
+        assert_eq!(
+            outcome(status, reason),
+            Delivery::Gone,
+            "{status} {reason:?}"
+        );
     }
     for (status, reason) in [
         (400, Some("BadCollapseId")),
@@ -466,12 +473,7 @@ async fn a_push_service_gets_the_message_over_http2_and_its_answer_counts() {
         Arc::clone(&got),
     )
     .await;
-    let sandbox = push_service(
-        "sandbox",
-        vec![(StatusCode::OK, None)],
-        Arc::clone(&got),
-    )
-    .await;
+    let sandbox = push_service("sandbox", vec![(StatusCode::OK, None)], Arc::clone(&got)).await;
     let apns = Apns::new(credentials, production, sandbox).unwrap();
     let start = 1_800_000_000_000;
     let note = message(NotifyKind::LastCall, "last_call:20832", start + 3_600_000);
@@ -503,7 +505,10 @@ async fn a_push_service_gets_the_message_over_http2_and_its_answer_counts() {
     assert_eq!(first.headers["apns-priority"], "10");
     assert_eq!(first.headers["apns-expiration"], "1800003600");
     assert_eq!(first.headers["apns-collapse-id"], "last_call:20832");
-    assert_eq!(first.body["aps"]["alert"]["title"], "Letzter Aufruf für deine Serie");
+    assert_eq!(
+        first.body["aps"]["alert"]["title"],
+        "Letzter Aufruf für deine Serie"
+    );
     assert_eq!(first.body["url"], "https://hashi.rs/de");
     let (token, iat) = bearer(first, &public);
     assert_eq!(iat, start / 1000);

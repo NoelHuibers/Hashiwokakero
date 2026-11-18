@@ -182,11 +182,23 @@ mod tests {
         let token = "ab12".repeat(16);
         let prod = ApnsEnvironment::Production;
         assert!(due(None, &token, prod, "de", 1_000.0));
-        assert!(!due(Some(&s), &token, prod, "de", 1_000.0 + REFRESH_MS - 1.0));
+        assert!(!due(
+            Some(&s),
+            &token,
+            prod,
+            "de",
+            1_000.0 + REFRESH_MS - 1.0
+        ));
         // iOS's hex in either case is the same token
         assert!(!due(Some(&s), &token.to_uppercase(), prod, "de", 1_001.0));
         assert!(due(Some(&s), &"cd34".repeat(16), prod, "de", 1_001.0));
-        assert!(due(Some(&s), &token, ApnsEnvironment::Development, "de", 1_001.0));
+        assert!(due(
+            Some(&s),
+            &token,
+            ApnsEnvironment::Development,
+            "de",
+            1_001.0
+        ));
         assert!(due(Some(&s), &token, prod, "ja", 1_001.0));
         assert!(due(Some(&s), &token, prod, "de", 1_000.0 + REFRESH_MS));
     }

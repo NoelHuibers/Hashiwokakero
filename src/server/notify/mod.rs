@@ -38,8 +38,8 @@ use super::db::db_err;
 use super::now_ms;
 use crate::i18n::Locale;
 use crate::model::{
-    ApiError, ApnsEnvironment, DeviceKind, DeviceRegistration, LOBBY_MS, MS_PER_DAY, NotificationPoll,
-    NotificationPrefs, NotifyKind, PushMessage, day_of,
+    ApiError, ApnsEnvironment, DeviceKind, DeviceRegistration, LOBBY_MS, MS_PER_DAY,
+    NotificationPoll, NotificationPrefs, NotifyKind, PushMessage, day_of,
 };
 pub use render::{Args, locale_of};
 

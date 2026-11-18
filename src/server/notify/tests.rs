@@ -239,7 +239,11 @@ async fn devices_are_checked_and_keep_only_a_hash_of_their_secret() {
             Some("not hex at all, not hex at all!!"),
             None,
         ),
-        (DeviceKind::Apns, Some("abcd"), Some(r#"{"env":"production"}"#)),
+        (
+            DeviceKind::Apns,
+            Some("abcd"),
+            Some(r#"{"env":"production"}"#),
+        ),
         // A token without the push service it is for, or with one that isn't Apple's
         (DeviceKind::Apns, Some(TOKEN), None),
         (DeviceKind::Apns, Some(TOKEN), Some("{}")),
