@@ -259,7 +259,8 @@ fn device(token: &str, keys: Option<&str>) -> Device {
     }
 }
 
-fn production() -> Device {
+/// A phone of the App Store or TestFlight.
+fn iphone() -> Device {
     device(TOKEN, Some(&ApnsEnvironment::Production.keys()))
 }
 
@@ -287,7 +288,7 @@ fn header<'a>(request: &'a Request, name: &str) -> &'a str {
 fn requests_carry_the_alert_until_it_expires() {
     let now = 1_800_000_000_000;
     let last_call = message(NotifyKind::LastCall, "last_call:20832", now + 3 * 3_600_000);
-    let request = request(DEFAULT_TOPIC, &production(), &last_call, now).unwrap();
+    let request = request(DEFAULT_TOPIC, &iphone(), &last_call, now).unwrap();
     assert_eq!(request.environment, ApnsEnvironment::Production);
     assert_eq!(request.path, format!("/3/device/{TOKEN}"));
     assert_eq!(header(&request, "apns-topic"), "rs.hashi");
@@ -331,15 +332,15 @@ fn requests_carry_the_alert_until_it_expires() {
 
     // Expired by now: once, not kept; far away: four weeks at most
     let late = message(NotifyKind::Rival, "rival:day:1:2", now - 5_000);
-    let request = super::request(DEFAULT_TOPIC, &production(), &late, now).unwrap();
+    let request = super::request(DEFAULT_TOPIC, &iphone(), &late, now).unwrap();
     assert_eq!(header(&request, "apns-expiration"), "1800000000");
     let far = message(NotifyKind::Shared, "shared:share:1", now + 400 * 86_400_000);
-    let request = super::request(DEFAULT_TOPIC, &production(), &far, now).unwrap();
+    let request = super::request(DEFAULT_TOPIC, &iphone(), &far, now).unwrap();
     assert_eq!(header(&request, "apns-expiration"), "1802419200");
 
     // A tag beyond 64 bytes collapses by its hash
     let long = message(NotifyKind::Group, &format!("group:{}", "x".repeat(80)), now);
-    let request = super::request(DEFAULT_TOPIC, &production(), &long, now).unwrap();
+    let request = super::request(DEFAULT_TOPIC, &iphone(), &long, now).unwrap();
     let id = header(&request, "apns-collapse-id");
     assert_eq!(id.len(), 64);
     assert!(id.bytes().all(|b| b.is_ascii_hexdigit()));
@@ -367,24 +368,21 @@ fn unusable_devices_are_gone_and_long_messages_fail() {
     ] {
         assert_eq!(send(&broken, &note), Err(Delivery::Gone), "{broken:?}");
     }
-    let mut tokenless = super::tests::production();
+    let mut tokenless = iphone();
     tokenless.endpoint = None;
     assert_eq!(send(&tokenless, &note), Err(Delivery::Gone));
-    assert_eq!(send(&super::tests::production(), &note), Ok(()));
+    assert_eq!(send(&iphone(), &note), Ok(()));
     // 4 KB at most
     let long = PushMessage {
         body: "x".repeat(4000),
         ..note.clone()
     };
-    assert_eq!(
-        send(&super::tests::production(), &long),
-        Err(Delivery::Failed)
-    );
+    assert_eq!(send(&iphone(), &long), Err(Delivery::Failed));
     let fits = PushMessage {
         body: "x".repeat(3800),
         ..note
     };
-    assert_eq!(send(&super::tests::production(), &fits), Ok(()));
+    assert_eq!(send(&iphone(), &fits), Ok(()));
 }
 
 /// What the push service on localhost got.
@@ -453,7 +451,7 @@ fn bearer(got: &Got, public: &VerifyingKey) -> (String, i64) {
 
 #[tokio::test]
 async fn a_push_service_gets_the_message_over_http2_and_its_answer_counts() {
-    let (credentials, public) = credentials();
+    let (ours, public) = credentials();
     let got = Arc::new(Mutex::new(Vec::new()));
     let production = push_service(
         "production",
@@ -474,10 +472,10 @@ async fn a_push_service_gets_the_message_over_http2_and_its_answer_counts() {
     )
     .await;
     let sandbox = push_service("sandbox", vec![(StatusCode::OK, None)], Arc::clone(&got)).await;
-    let apns = Apns::new(credentials, production, sandbox).unwrap();
+    let apns = Apns::new(ours, production, sandbox).unwrap();
     let start = 1_800_000_000_000;
     let note = message(NotifyKind::LastCall, "last_call:20832", start + 3_600_000);
-    let phone = super::tests::production();
+    let phone = iphone();
     for delivery in [
         Delivery::Sent,
         Delivery::Gone,
@@ -531,8 +529,8 @@ async fn a_push_service_gets_the_message_over_http2_and_its_answer_counts() {
 
     // Nobody there
     let nobody = reqwest::Url::parse("http://127.0.0.1:9").unwrap();
-    let (credentials, _) = super::tests::credentials();
-    let apns = Apns::new(credentials, nobody.clone(), nobody).unwrap();
+    let (other, _) = credentials();
+    let apns = Apns::new(other, nobody.clone(), nobody).unwrap();
     assert_eq!(apns.push(&phone, &note, start).await, Delivery::Failed);
 }
 
