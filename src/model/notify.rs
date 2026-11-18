@@ -177,6 +177,49 @@ impl DeviceKind {
     }
 }
 
+/// Which of Apple's push services an iOS app's device token belongs to: the app's
+/// `aps-environment` entitlement, `development` for a build signed for development (the
+/// simulator, Xcode's runs), `production` for the App Store and TestFlight.
+///
+/// The app registers it with its token as the device's keys (`{"env":"production"}`, see
+/// [`Self::keys`]): a token of one only works with that service.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ApnsEnvironment {
+    Development,
+    Production,
+}
+
+impl ApnsEnvironment {
+    pub const ALL: [Self; 2] = [Self::Development, Self::Production];
+
+    /// The entitlement's value. Never changes.
+    pub const fn id(self) -> &'static str {
+        match self {
+            Self::Development => "development",
+            Self::Production => "production",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|e| e.id() == id)
+    }
+
+    /// The device's keys as the app registers them: `{"env":"<id>"}`.
+    pub fn keys(self) -> String {
+        format!(r#"{{"env":"{}"}}"#, self.id())
+    }
+
+    /// The environment of a device's keys, `None` if they don't name one.
+    pub fn of_keys(keys: &str) -> Option<Self> {
+        #[derive(Deserialize)]
+        struct Keys {
+            env: ApnsEnvironment,
+        }
+        serde_json::from_str::<Keys>(keys).ok().map(|k| k.env)
+    }
+}
+
 /// A device registered for notifications: its id and its secret.
 ///
 /// Only the device knows the secret (the server keeps a hash). It identifies the device without
@@ -299,5 +342,24 @@ mod tests {
             assert_eq!(DeviceKind::from_id(kind.id()), Some(kind));
         }
         assert_eq!(NotifyKind::from_id("nope"), None);
+        for env in ApnsEnvironment::ALL {
+            assert_eq!(ApnsEnvironment::from_id(env.id()), Some(env));
+            assert_eq!(ApnsEnvironment::of_keys(&env.keys()), Some(env));
+        }
+    }
+
+    #[test]
+    fn an_ios_device_names_its_push_environment() {
+        assert_eq!(
+            ApnsEnvironment::Production.keys(),
+            r#"{"env":"production"}"#
+        );
+        assert_eq!(
+            ApnsEnvironment::of_keys(r#"{ "env": "development" }"#),
+            Some(ApnsEnvironment::Development)
+        );
+        for broken in ["", "{}", "null", r#"{"env":"staging"}"#, r#"{"env":1}"#] {
+            assert_eq!(ApnsEnvironment::of_keys(broken), None, "{broken}");
+        }
     }
 }

@@ -177,3 +177,5 @@ notify_kind Group group
 device_kind Web web
 device_kind Apns apns
 device_kind Android android
+apns_environment Development development
+apns_environment Production production

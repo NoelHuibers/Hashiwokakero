@@ -789,8 +789,8 @@ jobs:
           cargo tauri ios build --ci --target aarch64 --export-method app-store-connect --config "$config"
       # Signed for the App Store by the team (an Apple Distribution certificate and an App Store
       # profile: no devices, TestFlight allowed, not debuggable), the store's ID with the Universal
-      # Links' domain and Game Center, the version and build number, the export compliance answer,
-      # arm64
+      # Links' domain, Game Center and Apple's production push service, the version and build
+      # number, the export compliance answer, arm64
       - name: Check
         run: |
           fail() { echo "::error::$1"; exit 1; }
@@ -820,6 +820,11 @@ jobs:
           [ "$(entitlement com.apple.developer.game-center)" = true ] || fail "no Game Center entitlement (com.apple.developer.game-center)"
           [ "$(get "$RUNNER_TEMP/profile.plist" Entitlements:com.apple.developer.game-center)" = true ] \
             || fail "the profile $(get "$RUNNER_TEMP/profile.plist" Name) has no Game Center"
+          # Push Notifications (docs/notifications.md): Apple's production push service, the App
+          # ID's capability in the profile
+          [ "$(entitlement aps-environment)" = production ] || fail "aps-environment $(entitlement aps-environment), not production"
+          [ "$(get "$RUNNER_TEMP/profile.plist" Entitlements:aps-environment)" = production ] \
+            || fail "the profile $(get "$RUNNER_TEMP/profile.plist" Name) has no Push Notifications for production"
           profile=$(get "$RUNNER_TEMP/profile.plist" Name)
           [ -z "$(get "$RUNNER_TEMP/profile.plist" ProvisionedDevices)" ] || fail "the profile $profile has devices, it isn't an App Store one"
 

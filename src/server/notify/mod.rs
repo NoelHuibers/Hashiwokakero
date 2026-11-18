@@ -11,8 +11,8 @@
 //! How a notification gets to a device is a channel's business ([`Channel`]): Web Push for
 //! browsers and APNs for the iOS app push it ([`deliver`]), the Android app asks for it itself
 //! ([`poll`], with the device's secret). Each device has a cursor, the last outbox row it got;
-//! moving it is what claims the rows, so two machines running the job never send one twice. Web
-//! Push is the channel there is ([`web_push`], when its keys are configured).
+//! moving it is what claims the rows, so two machines running the job never send one twice. The
+//! channels are Web Push ([`web_push`]) and APNs ([`apns`]), each when its keys are configured.
 //!
 //! Nobody gets more than a handful a day: the same notification (`collapse_key`) comes once in a
 //! while ([`Rule`]), each kind has a daily limit, and all but the last call share one. Nothing
@@ -20,6 +20,7 @@
 //! today's daily is done, wherever it was played: the outbox is checked again when a device gets
 //! it ([`pending`]). Rows go two days after they were made ([`delete_old`]).
 
+pub mod apns;
 mod render;
 #[cfg(test)]
 mod tests;
@@ -37,7 +38,7 @@ use super::db::db_err;
 use super::now_ms;
 use crate::i18n::Locale;
 use crate::model::{
-    ApiError, DeviceKind, DeviceRegistration, LOBBY_MS, MS_PER_DAY, NotificationPoll,
+    ApiError, ApnsEnvironment, DeviceKind, DeviceRegistration, LOBBY_MS, MS_PER_DAY, NotificationPoll,
     NotificationPrefs, NotifyKind, PushMessage, day_of,
 };
 pub use render::{Args, locale_of};
@@ -278,7 +279,8 @@ fn row_to_device(row: &libsql::Row) -> Result<Option<Device>, ServerFnError> {
 }
 
 /// What a device brings along, checked: a browser its Web Push endpoint (https) and keys, the
-/// iOS app its APNs token (hex), the Android app nothing.
+/// iOS app its APNs token (hex) and which of Apple's push services it is for
+/// ([`ApnsEnvironment::keys`]), the Android app nothing.
 fn check_device(
     kind: DeviceKind,
     endpoint: Option<&str>,
@@ -292,7 +294,7 @@ fn check_device(
         DeviceKind::Apns => {
             endpoint.is_some_and(|t| {
                 (32..=200).contains(&t.len()) && t.bytes().all(|b| b.is_ascii_hexdigit())
-            }) && keys.is_none()
+            }) && keys.and_then(ApnsEnvironment::of_keys).is_some()
         }
         DeviceKind::Android => endpoint.is_none() && keys.is_none(),
     };
@@ -973,6 +975,9 @@ pub fn channels() -> Vec<Box<dyn Channel>> {
     let mut channels: Vec<Box<dyn Channel>> = Vec::new();
     if let Some(web) = web_push::WebPush::from_env() {
         channels.push(Box::new(web));
+    }
+    if let Some(apns) = apns::Apns::from_env() {
+        channels.push(Box::new(apns));
     }
     channels
 }

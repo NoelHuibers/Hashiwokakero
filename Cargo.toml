@@ -136,8 +136,9 @@ backend = { path = "./backend", optional = true }
 getrandom = { version = "0.4.3", optional = true }
 leptos_axum = { version = "0.8.10", optional = true }
 # Turso (libSQL): remote databases in production, a local file in development and tests
-# Sends Dojo jobs to the worker
-reqwest = { version = "0.12.28", default-features = false, features = ["rustls-tls"], optional = true }
+# Sends Dojo jobs to the worker, Web Push messages and, over HTTP/2 (which Apple's push service
+# takes only), the iOS app's notifications (server/notify/apns.rs)
+reqwest = { version = "0.12.28", default-features = false, features = ["rustls-tls", "http2"], optional = true }
 # Mails from the contact form, over SMTP (Proton Mail in production)
 lettre = { version = "0.11.23", default-features = false, features = ["builder", "hostname", "smtp-transport", "tokio1", "tokio1-rustls", "rustls-tls"], optional = true }
 libsql = { version = "0.10.0", default-features = false, features = ["core", "remote", "tls"], optional = true }
@@ -147,8 +148,9 @@ jiff = { version = "1.0.0", default-features = false, features = ["std", "tzdb-b
 sha2 = { version = "0.11.1", optional = true }
 # Web Push (server/notify/web_push.rs): the message's encryption (RFC 8291: ECDH on P-256, HKDF,
 # AES-128-GCM) and the VAPID signature (RFC 8292: ES256), RustCrypto like sha2 and argon2;
-# base64ct is argon2's base64 already
-p256 = { version = "0.14.0", default-features = false, features = ["ecdh", "ecdsa", "std"], optional = true }
+# base64ct is argon2's base64 already. APNs (server/notify/apns.rs) signs its provider token with
+# ES256 too, with Apple's key from its .p8 file (PKCS #8 in PEM)
+p256 = { version = "0.14.0", default-features = false, features = ["ecdh", "ecdsa", "std", "pkcs8", "pem"], optional = true }
 aes-gcm = { version = "0.11.1", default-features = false, features = ["aes", "alloc"], optional = true }
 hkdf = { version = "0.13.0", optional = true }
 base64ct = { version = "1.8.3", features = ["alloc"], optional = true }
@@ -222,6 +224,8 @@ proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 # The HTTP tests (server/router/tests): a client that keeps cookies like a browser and uploads
 # forms. Without the gzip/brotli features it leaves responses compressed, so tests see that.
 reqwest = { version = "0.12.28", default-features = false, features = ["cookies", "multipart"] }
+# HTTP/2 without TLS (h2c) for the fake APNs in server/notify/apns/tests.rs, in the tests only
+axum = { version = "0.8.9", features = ["http2"] }
 # Runs leptos' tasks in the tests that render outside the router (seo.rs), as leptos_axum does
 any_spawner = { version = "0.3.0", features = ["tokio"] }
 

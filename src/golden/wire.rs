@@ -1270,5 +1270,8 @@ fn stored_ids() {
     lines.extend(FeedbackStatus::ALL.map(|s| format!("feedback_status {:?} {}", s, s.id())));
     lines.extend(crate::model::NotifyKind::ALL.map(|k| format!("notify_kind {:?} {}", k, k.id())));
     lines.extend(crate::model::DeviceKind::ALL.map(|k| format!("device_kind {:?} {}", k, k.id())));
+    lines.extend(
+        crate::model::ApnsEnvironment::ALL.map(|e| format!("apns_environment {:?} {}", e, e.id())),
+    );
     check("ids.txt", &lines.join("\n"), IDS);
 }

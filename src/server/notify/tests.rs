@@ -220,6 +220,9 @@ async fn the_offer_is_answered_once() {
 
 // --- Devices ---
 
+/// An APNs device token: 32 bytes in hex.
+const TOKEN: &str = "ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12ab12";
+
 #[tokio::test]
 async fn devices_are_checked_and_keep_only_a_hash_of_their_secret() {
     let conn = db("devices").await;
@@ -236,7 +239,11 @@ async fn devices_are_checked_and_keep_only_a_hash_of_their_secret() {
             Some("not hex at all, not hex at all!!"),
             None,
         ),
-        (DeviceKind::Apns, Some("abcd"), None),
+        (DeviceKind::Apns, Some("abcd"), Some(r#"{"env":"production"}"#)),
+        // A token without the push service it is for, or with one that isn't Apple's
+        (DeviceKind::Apns, Some(TOKEN), None),
+        (DeviceKind::Apns, Some(TOKEN), Some("{}")),
+        (DeviceKind::Apns, Some(TOKEN), Some(r#"{"env":"staging"}"#)),
         (DeviceKind::Android, Some("https://push.example/1"), None),
     ] {
         assert_eq!(
@@ -251,13 +258,13 @@ async fn devices_are_checked_and_keep_only_a_hash_of_their_secret() {
     )
     .await
     .unwrap();
-    let token = "ab12".repeat(16);
+    let token = TOKEN.to_string();
     let apns = register_device(
         &conn,
         noel,
         DeviceKind::Apns,
         Some(&token),
-        None,
+        Some(r#"{"env":"development"}"#),
         Locale::ja,
         None,
         1,
@@ -281,6 +288,7 @@ async fn devices_are_checked_and_keep_only_a_hash_of_their_secret() {
         (found.kind, found.locale, found.endpoint.as_deref()),
         (DeviceKind::Apns, Locale::ja, Some(token.as_str()))
     );
+    assert_eq!(found.keys.as_deref(), Some(r#"{"env":"development"}"#));
     assert_eq!(device(&conn, apns.id, &web.secret).await.unwrap(), None);
 
     // The same browser again (another account here): replaces it

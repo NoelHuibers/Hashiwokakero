@@ -18,8 +18,9 @@
 //!   own, the router shows them (see `follow_app_links`);
 //! - the phone's games service, Game Center or Google Play Games (`games_sign_in`,
 //!   `games_report`, `games_show`, with the arguments of `api::games`), through the app's plugin;
-//! - notifications on Android (`notify_*`): the permission, and the app's own poll of the server
-//!   in the background (`Notifications.kt`), which gets the phone's id and secret from the page.
+//! - notifications (`notify_*`): the permission, on Android the app's own poll of the server in
+//!   the background (`Notifications.kt`), which gets the phone's id and secret from the page, on
+//!   iOS the device token for Apple's push service (`notify_token`), which the page registers.
 //!
 //! On the desktop (Windows, macOS, Linux) the app's plugin has a side in Rust
 //! (`app/src-tauri/src/desktop.rs`): files go to the system's save dialog, the title bar follows
@@ -35,7 +36,7 @@ use serde::de::DeserializeOwned;
 use wasm_bindgen::{JsCast, JsValue};
 
 use super::games::{self, Board, Platform, PlayIds, Report, Reported, Show, Status};
-use crate::model::{DeviceRegistration, UserStats};
+use crate::model::{ApnsEnvironment, DeviceRegistration, UserStats};
 
 /// Tauri's `invoke` and the object it belongs to, if the page runs in the app's `WebView`.
 fn invoke() -> Option<(JsValue, js_sys::Function)> {
@@ -318,14 +319,16 @@ pub(crate) fn games_service() -> Option<&'static str> {
     super::app::app_platform().and_then(games::service)
 }
 
-/// What the app's plugin says about notifications on the Android phone (`HashiPlugin.kt`).
+/// What the app's plugin says about notifications on the phone (`HashiPlugin.kt`,
+/// `HashiPlugin.swift`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Deserialize)]
 pub(crate) struct NotifyState {
     /// Whether the app may show notifications: Android's permission (13 and newer) and its
-    /// settings.
+    /// settings, iOS's authorization.
     #[serde(default)]
     pub(crate) granted: bool,
-    /// The id the server knows the phone by, while the app asks it for notifications.
+    /// The id the server knows the phone by, while the app asks it for notifications (Android;
+    /// on iOS the page keeps it, `state::apns`).
     #[serde(default)]
     pub(crate) device: Option<i64>,
 }
@@ -350,8 +353,9 @@ async fn notify(
     serde_json::from_str(&String::from(json)).map_err(|e| error(e.to_string()))
 }
 
-/// Whether the app may show notifications, asking the player on Android 13 and newer (only on a
-/// tap that turns them on). Refused or failed: `false`.
+/// Whether the app may show notifications, asking the player on Android 13 and newer and on iOS
+/// (only on a tap that turns them on; iOS asks once, then only its settings change it). Refused
+/// or failed: `false`.
 #[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
 pub(crate) async fn notify_permission() -> bool {
     notify("plugin:hashi|notify_permission", &NO_ARGS)
@@ -385,6 +389,30 @@ pub(crate) async fn notify_start(phone: &DeviceRegistration) -> Result<NotifySta
         secret: &phone.secret,
     };
     notify("plugin:hashi|notify_start", &args).await
+}
+
+/// The device token iOS has for the app, and which of Apple's push services it is for: what the
+/// iPhone registers with the server (`state::apns`). Asks iOS to register the app for remote
+/// notifications (`registerForRemoteNotifications`), which it may do only once the player
+/// allowed them. Fails when iOS gives no token (no network to Apple, a build without the push
+/// entitlement, the simulator of a Mac that can't).
+#[expect(clippy::future_not_send, reason = "as `games_sign_in`")]
+pub(crate) async fn notify_token() -> Result<PushToken, ServerFnError> {
+    let answer = plugin("plugin:hashi|notify_token", &NO_ARGS)
+        .ok_or_else(|| error("the app's commands are missing"))?
+        .await
+        .map_err(|e| failed(&e))?;
+    let json = js_sys::JSON::stringify(&answer).map_err(|e| failed(&e))?;
+    serde_json::from_str(&String::from(json)).map_err(|e| error(e.to_string()))
+}
+
+/// An iPhone's device token for Apple's push service (`HashiPlugin.swift`).
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize)]
+pub(crate) struct PushToken {
+    /// The token in hex.
+    pub(crate) token: String,
+    /// The app's `aps-environment`: the sandbox's tokens for a build signed for development.
+    pub(crate) environment: ApnsEnvironment,
 }
 
 /// Stops the app's poll and has the server forget the phone (the app tells it, also later when

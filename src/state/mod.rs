@@ -1,6 +1,7 @@
 //! Client state shared by all pages: the current game, the editor, solver settings, toasts, and
 //! what this device can do with notifications.
 
+pub mod apns;
 mod auth;
 mod blocks;
 mod browser;
